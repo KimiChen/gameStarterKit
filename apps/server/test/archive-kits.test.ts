@@ -8,14 +8,14 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BAG_SHARDS, SCHEMA_VERSION } from "../src/core/infra/config";
-import { kBagAll, kKitUser, zoneCtx } from "../src/core/infra/keys";
+import { BAG_SHARDS, SCHEMA_VERSION } from "../src/framework/infra/config";
+import { kBagAll, kKitUser, zoneCtx } from "../src/framework/infra/keys";
 import {
   FREEZE_COMMIT, FREEZE_FIXED_ARGV, FREEZE_FIXED_KEYS, THAW_FIXED_ARGV, THAW_FIXED_KEYS, THAW_RESTORE,
   freezeKeys, freezeKitFieldCounts, kitUserKeyEntries, thawKeys, unknownSnapshotKits, type ArchiveSnapshot,
-} from "../src/core/archive/archiveScripts";
-import { readKitUserHashes, type KitHashReader } from "../src/core/archive/freezeWorker";
-import { lazyMigrateSchema, validateArchiveSnapshotSchema } from "../src/core/archive/lazyMigrate";
+} from "../src/framework/archive/archiveScripts";
+import { readKitUserHashes, type KitHashReader } from "../src/framework/archive/freezeWorker";
+import { lazyMigrateSchema, validateArchiveSnapshotSchema } from "../src/framework/archive/lazyMigrate";
 import type { ServerKitCatalogEntry } from "../src/kits/catalogTypes";
 
 const kit = (id: string, userKeys: string[]): ServerKitCatalogEntry => ({

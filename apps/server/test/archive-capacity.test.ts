@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { PoolConnection } from "../src/core/infra/mysql";
+import type { PoolConnection } from "../src/framework/infra/mysql";
 import {
   memoryPressureAllowsFreeze,
   parseRedisMemoryInfo,
   projectArchiveUsage,
   utf8SnapshotBytes,
-} from "../src/core/archive/capacity";
-import { planArchiveAdmission, writeArchiveUsage } from "../src/core/archive/usageLedger";
+} from "../src/framework/archive/capacity";
+import { planArchiveAdmission, writeArchiveUsage } from "../src/framework/archive/usageLedger";
 
 test("Redis INFO MEMORY 严格解析并按阈值判定", () => {
   const info = "# Memory\r\nused_memory:600\r\nmaxmemory:1000\r\nused_memory_human:600B\r\n";

@@ -52,7 +52,7 @@ janitor 与容量 ledger 都按区操作，后者仍没有运行时读写方。`
 
 ## 3.5 区上下文
 
-`core/infra/keys.ts` 通过 `AsyncLocalStorage` 的 `zoneCtx` 构造 per-zone Redis 前缀：
+`framework/infra/keys.ts` 通过 `AsyncLocalStorage` 的 `zoneCtx` 构造 per-zone Redis 前缀：
 
 - Lobby 每条 RPC 在已认证 `auth.sId` 的 `zoneCtx.run` 中执行。
 - 无请求上下文的领域 worker 必须从权威数据行恢复 `sId` 后再访问 per-zone key。
@@ -68,7 +68,7 @@ janitor 与容量 ledger 都按区操作，后者仍没有运行时读写方。`
 只有记录本身携带合法 `server_id` 的后台路径才能据此重建上下文。当前 outbox relayer 从 intent 行恢复
 区号，match consumer 从已校验 evidence 恢复区号。不能把这条规则泛化成“所有 worker 自动知道区号”。
 
-可选支付参考 `core/economy/purchases.ts` 的回调是同类路径的第三例：`purchases` 带 `server_id`，下单时
+可选支付参考 `modules/economy/purchases.ts` 的回调是同类路径的第三例：`purchases` 带 `server_id`，下单时
 写入当前区，支付回调没有请求上下文，按订单行的 `server_id` 重建区上下文再落对区钱包与缓存。它默认
 关闭（`PAY_ENABLED`），但区列语义与其余经济表一致。
 
@@ -113,8 +113,8 @@ durable 与 cache 是两个物理 Redis，分别通过 `clientFor*` 和 `cacheCl
 
 ## 5.1 配置登记
 
-- `core/infra/config.ts`：`GROUP_ZONES`、Redis URL、超时和跨模块常量的主要登记点。
-- `core/infra/keys.ts`：项目/区前缀、hash-tag 与 key 分类的运行时真源。
+- `framework/infra/config.ts`：`GROUP_ZONES`、Redis URL、超时和跨模块常量的主要登记点。
+- `framework/infra/keys.ts`：项目/区前缀、hash-tag 与 key 分类的运行时真源。
 - `sql/schema.sql`：`server_id` 列、索引与全局表例外的 DDL 真源。
 
 新增按区数据时，要同时检查入口上下文、Redis key、MySQL predicate/unique key、幂等派生、后台重放与

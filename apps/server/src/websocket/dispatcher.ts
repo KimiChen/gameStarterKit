@@ -14,18 +14,18 @@ import { z, ZodError, type ZodType } from "zod";
 import {
   HANDLER_TIMEOUT_MS, IDEM_HASH_BUDGET_MS, IDEM_PENDING_MS,
   RPC_BUDGET_WARN_INTERVAL_MS, RPC_RATE_CAPACITY, RPC_RATE_REFILL_PER_S,
-} from "../core/infra/config";
-import { kIdemPending, kIdemUser, kRl } from "../core/infra/keys";
-import { clientFor, clientForKey } from "../core/infra/redisRoute";
-import { evalshaWithReload, TOKEN_BUCKET } from "../core/infra/redisScripts";
+} from "../framework/infra/config";
+import { kIdemPending, kIdemUser, kRl } from "../framework/infra/keys";
+import { clientFor, clientForKey } from "../framework/infra/redisRoute";
+import { evalshaWithReload, TOKEN_BUCKET } from "../framework/infra/redisScripts";
 import {
   BusyError, InProgressError, InvalidPayloadError, RateLimitedError, RpcFault,
   toRpcFaultCode, UnknownTypeError, toErrCode,
-} from "../core/errors";
+} from "../framework/errors";
 import {
   idemAcquire, idemComplete, idemPayloadHash, idemRelease, newIdemLeaseId,
   type IdemAcquire, type IdemCompleteResult,
-} from "../core/idem";
+} from "../framework/idem";
 import {
   LOBBY_RPC_CONTRACT_VERSIONS,
   LOBBY_RPC_INSPECTABLE,

@@ -18,7 +18,7 @@ import {
     type ISnakeBaselineEnd,
     type ISnakeSnapshotSnake,
 } from "@game/shared";
-import { closeRedis } from "../../src/core/infra/redisRoute";
+import { closeRedis } from "../../src/framework/infra/redisRoute";
 import { GameRoom } from "../../src/rooms/GameRoom";
 import { gameModeRegistry } from "../../src/rooms/GameMode";
 import { createSnakeGameMode } from "../../src/rooms/modes/snake/index";

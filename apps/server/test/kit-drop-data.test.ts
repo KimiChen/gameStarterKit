@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { REDIS_KEY_PREFIX } from "../src/core/infra/config";
+import { REDIS_KEY_PREFIX } from "../src/framework/infra/config";
 import {
   dropKitData, dropKitRedisKeys, dropKitTables, isKitRedisKey, kitRedisScanPattern,
   type DropSqlConn, type ScanUnlinkClient,

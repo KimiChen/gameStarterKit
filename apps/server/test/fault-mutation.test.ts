@@ -25,9 +25,9 @@ import {
   validateS2CPayload,
   WireValidationError,
 } from "@game/shared";
-import { destroyPool, runInPool } from "../src/core/compute/pool";
-import type { IBattleSimInput, IBattleSimResult } from "../src/core/compute/tasks/battleSim";
-import { LifecycleRegistry } from "../src/core/infra/lifecycle";
+import { destroyPool, runInPool } from "../src/framework/compute/pool";
+import type { IBattleSimInput, IBattleSimResult } from "../src/framework/compute/tasks/battleSim";
+import { LifecycleRegistry } from "../src/framework/infra/lifecycle";
 import { CharacterReadyCoordinator } from "../src/player/character";
 import { exerciseFaultPoint } from "./faultMatrix";
 
@@ -152,8 +152,8 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
     const script = `
       import assert from "node:assert/strict";
       import { Worker } from "node:worker_threads";
-      import { COMPUTE_RESPAWN_DELAY_MS } from "./src/core/infra/config.ts";
-      import { _computePoolTestHooks, destroyPool, runInPool } from "./src/core/compute/pool.ts";
+      import { COMPUTE_RESPAWN_DELAY_MS } from "./src/framework/infra/config.ts";
+      import { _computePoolTestHooks, destroyPool, runInPool } from "./src/framework/compute/pool.ts";
 
       const source = ${JSON.stringify(faultWorkerSource)};
       // ⚠ 退避值必须从被验实现自己读，⛔ 不能写死 1000：COMPUTE_RESPAWN_DELAY_MS 现在是可配置的，
@@ -301,8 +301,8 @@ test("故障注入：真实 worker error/exit 会 reap 并退避补位", async (
     const timeoutScript = `
       import assert from "node:assert/strict";
       import { Worker } from "node:worker_threads";
-      import { COMPUTE_RESPAWN_DELAY_MS } from "./src/core/infra/config.ts";
-      import { _computePoolTestHooks, runInPool } from "./src/core/compute/pool.ts";
+      import { COMPUTE_RESPAWN_DELAY_MS } from "./src/framework/infra/config.ts";
+      import { _computePoolTestHooks, runInPool } from "./src/framework/compute/pool.ts";
 
       const source = ${JSON.stringify(faultWorkerSource)};
       const nativeSetTimeout = globalThis.setTimeout;

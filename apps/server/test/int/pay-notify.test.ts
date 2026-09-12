@@ -11,12 +11,12 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { server } from "../../src/app.config";
-import { createUser } from "../../src/core/userRecord";
-import { createOrder } from "../../src/core/economy/purchases";
-import { PURCHASE_CREATED, PURCHASE_DELIVERED } from "../../src/core/infra/config";
-import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { RowDataPacket } from "../../src/core/infra/mysql";
-import { closeRedis } from "../../src/core/infra/redisRoute";
+import { createUser } from "../../src/framework/userRecord";
+import { createOrder } from "../../src/modules/economy/purchases";
+import { PURCHASE_CREATED, PURCHASE_DELIVERED } from "../../src/framework/infra/config";
+import { closeMysql, getPool } from "../../src/framework/infra/mysql";
+import type { RowDataPacket } from "../../src/framework/infra/mysql";
+import { closeRedis } from "../../src/framework/infra/redisRoute";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 // 端点每请求现读 WXPAY_NOTIFY_SECRET（无 import 期缓存），模块级赋值即可

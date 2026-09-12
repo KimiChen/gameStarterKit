@@ -12,7 +12,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SERVER_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const IMPORT = "const { kUser, zoneCtx } = await import('./src/core/infra/keys.ts');";
+const IMPORT = "const { kUser, zoneCtx } = await import('./src/framework/infra/keys.ts');";
 
 function runWith(groupZones: string | undefined, script: string): { status: number | null; stdout: string; stderr: string } {
   const env = { ...process.env };
@@ -43,7 +43,7 @@ test("硬化 fail-fast：GROUP_ZONES 空（单形态）+ 未建 zoneCtx → 回�
 });
 
 // ── 进服区归属闸：区服组下「缺 sId」必须拒（M12d 评审收紧） ─────────────────
-const ADMITS = "const { groupAdmitsZone } = await import('./src/core/infra/config.ts');";
+const ADMITS = "const { groupAdmitsZone } = await import('./src/framework/infra/config.ts');";
 function admits(groupZones: string | undefined, expr: string): string {
   const env = { ...process.env } as Record<string, string | undefined>;
   if (groupZones === undefined) { delete env.GROUP_ZONES; } else { env.GROUP_ZONES = groupZones; }

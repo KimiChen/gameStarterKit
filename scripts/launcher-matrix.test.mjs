@@ -39,7 +39,7 @@ if (`${MARKER_HEAD}${MARKER_TAIL}` !== MARKER || MARKER.includes(MARKER_HEAD + '
   throw new Error("MARKER 拆分自检失败");
 }
 /** inventory 里 outbox-relayer 的 defaultEntry，相对 `apps/server`。 */
-const ENTRY = "src/core/economy/relayer.ts";
+const ENTRY = "src/modules/economy/relayer.ts";
 
 /**
  * 形态表。`shell` 用 bash 跑，`node` 用 node 跑（tsx 与 node 同族，flag 语义一致，
@@ -186,7 +186,7 @@ test("矩阵本身有判别力：入口路径写错时门禁必须说未启动",
   // 防止 gateSaysLaunched 恒真——若它永远返回 true，上面那条用例就是空跑。
   assert.equal(gateSaysLaunched(`bash ${ENTRY}`), true, "正常形态必须被判为已启动");
   assert.equal(
-    gateSaysLaunched("bash src/core/economy/not-the-entry.ts"),
+    gateSaysLaunched("bash src/modules/economy/not-the-entry.ts"),
     false,
     "入口路径不匹配时必须被判为未启动",
   );

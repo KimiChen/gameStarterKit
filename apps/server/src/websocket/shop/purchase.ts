@@ -8,9 +8,9 @@
  * shop.queryOp 领域收据查询恢复（readBack）。
  */
 import { ShopRpc } from "@game/shared";
-import { InvalidPayloadError } from "../../core/errors";
-import { getShopSku } from "../../core/economy/catalog";
-import { purchase } from "../../core/economy/outbox";
+import { InvalidPayloadError } from "../../framework/errors";
+import { getShopSku } from "../../modules/economy/catalog";
+import { purchase } from "../../modules/economy/outbox";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(ShopRpc.Purchase, {

@@ -52,21 +52,21 @@ import {
     GAME_ROOM_START_RETRY_FENCE_MAX_MS,
     groupAdmitsZone,
     normalizeSId,
-} from "../core/infra/config";
-import { safeSecretEqual } from "../core/auth/session";
+} from "../framework/infra/config";
+import { safeSecretEqual } from "../framework/auth/session";
 import { DEFAULT_ROOM_PROFILE_ID, modeDeclaresProfile, resolveRoomProfile, type RoomProfile } from "./core/RoomProfile";
-import { inviteCodeService, type InviteCodeService, type InviteLease } from "../core/rooms/invite/InviteCodeReservation";
-import { accessTicketService, type AccessTicketService } from "../core/rooms/invite/AccessTicket";
+import { inviteCodeService, type InviteCodeService, type InviteLease } from "../modules/rooms/invite/InviteCodeReservation";
+import { accessTicketService, type AccessTicketService } from "../modules/rooms/invite/AccessTicket";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
-import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
+import { joinRefused, joinRefusedAuth, toErrCode } from "../framework/errors";
 import {
     emitMatchEvidence, type EmitEvidenceResult,
     newMatchId,
-} from "../core/match/matchConsumer";
+} from "../modules/match/matchConsumer";
 // ⚠ 仅类型：MatchEvidenceV3 是 core 拥有的通用证据格式；本文件不 import 任何
 // ballMove 规则/证据实现（它们全部住在 modes/ballMove/**）。
-import type { MatchEvidenceV3 } from "../core/match/matchEvidence";
-import { trackTask } from "../core/infra/lifecycle";
+import type { MatchEvidenceV3 } from "../modules/match/matchEvidence";
+import { trackTask } from "../framework/infra/lifecycle";
 import {
     assertGameModeCommands,
     assertGameModeRoster,
@@ -164,7 +164,7 @@ const MAX_CATCH_UP_STEPS = 120;
 /** Keep the advertised rate inside shared S2C.Welcome's runtime contract. */
 const MAX_WELCOME_TICK_RATE = 240;
 /** A stalled room lock must not hold a matchmaking seat forever.
- *  数值真源迁至 core/infra/config.ts（retry-fence 绝对上限的不等式断言需要它）；原名保留 re-export。 */
+ *  数值真源迁至 framework/infra/config.ts（retry-fence 绝对上限的不等式断言需要它）；原名保留 re-export。 */
 export { GAME_ROOM_START_LOCK_TIMEOUT_MS };
 /** 私房定时面（waitingDeadline / retry-fence 上限）的评估周期。 */
 const PRIVATE_ROOM_TIMER_INTERVAL_MS = 1_000;

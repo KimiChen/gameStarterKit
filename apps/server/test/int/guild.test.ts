@@ -14,14 +14,14 @@ import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 
-import { GUILD_CATALOG } from "../../src/core/guild/catalog";
-import { createUser } from "../../src/core/userRecord";
+import { GUILD_CATALOG } from "../../src/modules/guild/catalog";
+import { createUser } from "../../src/framework/userRecord";
 import { stopMailWakeLoop } from "../../src/websocket/push";
 import {
   activeLruBucketOf, kActiveLru, kGuildEvtLog, kGuildEvtSeq, kSess, kUser,
-} from "../../src/core/infra/keys";
-import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
-import { closeMysql } from "../../src/core/infra/mysql";
+} from "../../src/framework/infra/keys";
+import { clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/framework/infra/redisRoute";
+import { closeMysql } from "../../src/framework/infra/mysql";
 import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
 
 let colyseus: ColyseusTestServer;

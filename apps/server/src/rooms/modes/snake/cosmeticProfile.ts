@@ -4,14 +4,14 @@
  * 形态沿用 S2R 的 `demoBalances`（`lifecycle.ts`）：模块级 Map、同步改内存、再 fire-and-forget
  * 写 Redis，写失败只告警不回滚。两点与 S2R 不同，都是 apps/plugins/snake/README.md §5.6 的显式判据：
  *  1. **读函数返回深拷贝**——⛔ 绝不把模块内可变对象交给 handler 或客户端（s3「对外返回排序后的副本」）。
- *  2. **回灌用白名单 `HMGET`**——⛔ 全仓禁 `HGETALL`（09·R1，见 `core/userRecord.ts` 抬头与 docs/SERVER.md）。
+ *  2. **回灌用白名单 `HMGET`**——⛔ 全仓禁 `HGETALL`（09·R1，见 `framework/userRecord.ts` 抬头与 docs/SERVER.md）。
  *
  * ⚠ 本模块只读写三个 cosmetic field（`equippedSkinId` / `ownedSkinIds` / `fragmentBalances`）。
  * `coinBalance` 归 S2R 的钱包路径独占；⛔ 不要在这里合并写——两条 fire-and-forget 路径各持一份
  * 可能过期的快照，合并写会让后到者用旧值覆盖新值。S4 统一终局写入时再处理。
  */
 
-import { clientFor } from "../../../core/infra/redisRoute";
+import { clientFor } from "../../../framework/infra/redisRoute";
 import { kSnakeUser } from "./keys";
 import { SNAKE_ACHIEVEMENTS } from "@game/shared/gameplays/snake/progression";
 import { SNAKE_FRAGMENT_SKIN_IDS, SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "./skinBusinessCatalog";

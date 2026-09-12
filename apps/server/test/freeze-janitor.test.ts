@@ -10,12 +10,12 @@ import {
   sweepOnceWithDependencies,
   type JanitorSweepDependencies,
   type SweepDependencies,
-} from "../src/core/archive/freezeWorker";
-import { LeaseLostError, type SingletonLease } from "../src/core/infra/lease";
-import type { RowDataPacket } from "../src/core/infra/mysql";
-import { currentZoneId } from "../src/core/infra/keys";
+} from "../src/framework/archive/freezeWorker";
+import { LeaseLostError, type SingletonLease } from "../src/framework/infra/lease";
+import type { RowDataPacket } from "../src/framework/infra/mysql";
+import { currentZoneId } from "../src/framework/infra/keys";
 import type Redis from "ioredis";
-import { WHALE_FIELDS } from "../src/core/infra/config";
+import { WHALE_FIELDS } from "../src/framework/infra/config";
 
 // The janitor algorithm is exercised with storage adapters, while the normal
 // integration suite covers the concrete Redis/MySQL adapters.  Keeping a

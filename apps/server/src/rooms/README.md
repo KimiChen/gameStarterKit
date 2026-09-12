@@ -36,7 +36,7 @@
   - `rules.ts`：纯函数化的模拟规则（运动锚点、施法、复位），live 与 replay 共用同一组表达式；
   - `harness.ts`：测试/回放注入边界（`GameRoomInput` 形状与敌意输入快照），⛔ 不是通用玩法契约；
   - `evidence.ts`：v3 证据的房内录入与组装（accepted 输入序列、容量闸、初始快照、build），
-    证据**格式**所有权仍在 `core/match/matchEvidence.ts`；
+    证据**格式**所有权仍在 `modules/match/matchEvidence.ts`；
   - `index.ts`：`createBallMoveGameMode(options?)` 返回 GameMode + harness API
     （`injectInput`/`setInputSource`/`getAcceptedInputs`）的 mode 句柄，`registerBallMoveGameMode`
     供组合根登记。
@@ -60,7 +60,7 @@
   ⛔ 不与 mode.evidence 组合，注册期 fail-fast，语义详表见 docs/SERVER.md「StartPolicy 三变体」）。
   owner-ready 的 Ready/Start core wire、fence 元组
   开局事务、邀请码 lease 生命周期与 access ticket 准入时序见 `GameRoom.ts` 与
-  `../core/rooms/`（invite lease/ticket 的 Redis 层 + prepareCreate/resolve 领域逻辑）。
+  `../modules/rooms/`（invite lease/ticket 的 Redis 层 + prepareCreate/resolve 领域逻辑）。
 - `schema/GameRoomState.ts` 与 `schema/generated/<id>.ts`：由每玩法单源
   `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}` 经
   `apps/server/tools/gameplay-codegen/` 生成——`generated/<id>.ts` 是该 mode 的运行时 Schema 类，

@@ -7,7 +7,7 @@
  * 时客户端只能重试新 clientReqId（幸而纯覆写重执行无害），没有领域收据可查。
  */
 import { UserRpc } from "@game/shared";
-import { withUser } from "../../core/uow";
+import { withUser } from "../../framework/uow";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.UpdateProfile, {

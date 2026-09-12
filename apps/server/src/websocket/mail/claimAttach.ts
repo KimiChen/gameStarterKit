@@ -6,7 +6,7 @@
  * 结果缓存/墓碑不可得时按领域权威（outbox/claimed_at）收敛，重试无害。
  */
 import { MailRpc } from "@game/shared";
-import { claimMailAttach } from "../../core/economy/mailer";
+import { claimMailAttach } from "../../modules/economy/mailer";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(MailRpc.ClaimAttach, {

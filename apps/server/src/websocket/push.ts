@@ -13,12 +13,12 @@ import {
   ForceLogoutReason, KICK_CLOSE_CODE, LobbyPush,
   type ForceLogoutReasonType, type IForceLogoutPush,
 } from "@game/shared";
-import { PUSH_ALL_CHUNK } from "../core/infra/config";
-import { K_STREAM_MAILWAKE } from "../core/infra/keys";
-import { clientForKey } from "../core/infra/redisRoute";
-import { fieldOf, startStreamConsumer, type StreamConsumer } from "../core/infra/streamConsumer";
-import { defaultLifecycle, isAdmissionOpen } from "../core/infra/lifecycle";
-import { storedInt } from "../core/infra/numbers";
+import { PUSH_ALL_CHUNK } from "../framework/infra/config";
+import { K_STREAM_MAILWAKE } from "../framework/infra/keys";
+import { clientForKey } from "../framework/infra/redisRoute";
+import { fieldOf, startStreamConsumer, type StreamConsumer } from "../framework/infra/streamConsumer";
+import { defaultLifecycle, isAdmissionOpen } from "../framework/infra/lifecycle";
+import { storedInt } from "../framework/infra/numbers";
 
 export interface PushSink { (type: string, data: unknown): void }
 

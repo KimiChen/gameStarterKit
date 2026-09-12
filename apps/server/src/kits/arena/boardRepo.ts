@@ -2,7 +2,7 @@
  * arena kit 内部模块：k_arena_board / k_arena_attempt 的 SQL 访问（只经 `tx.query`，表闸由 kit-api 运行时保证）。
  * ⛔ 插件不得 import 本文件——插件可见面只有 api/<surface>/index.ts（docs/KIT.md §4）。
  */
-import type { KitTx, ResultSetHeader, RowDataPacket } from "../../core/infra/kitApi";
+import type { KitTx, ResultSetHeader, RowDataPacket } from "../../framework/infra/kitApi";
 import { ARENA_MAX_POWER, type IArenaTile, fillArenaBoard } from "@game/shared/kits/arena/api/board/index";
 
 interface BoardRow extends RowDataPacket {

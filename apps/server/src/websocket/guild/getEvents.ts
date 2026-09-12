@@ -3,10 +3,10 @@
  * 客户端在 上线首拉 / 断线重连 / 推送 seq 不连续 三种情况下调用，同一条自愈路径。
  */
 import { GuildRpc } from "@game/shared";
-import { readGuildEvents } from "../../core/guild/events";
-import { loadFields } from "../../core/userRecord";
+import { readGuildEvents } from "../../modules/guild/events";
+import { loadFields } from "../../framework/userRecord";
 import { defineRpc } from "../rpc";
-import { optionalStoredInt } from "../../core/infra/numbers";
+import { optionalStoredInt } from "../../framework/infra/numbers";
 
 export default defineRpc(GuildRpc.GetEvents, {
   handler: async (ctx, p) => {

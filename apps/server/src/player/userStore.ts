@@ -3,15 +3,15 @@
  *
  * **日常加玩家档字段的流程**：shared 的 IUserView（protocol/lobbyRpc/user.ts，类型真源）
  * → 本文件 readUser 字段列表 → 07 字段表；跨版本演进另需
- * core/archive/lazyMigrate.ts 写迁移步骤。建号/活跃索引/按需取字段等框架原语在 core/userRecord.ts。
+ * framework/archive/lazyMigrate.ts 写迁移步骤。建号/活跃索引/按需取字段等框架原语在 framework/userRecord.ts。
  *
  * 只读 handler **不取分布式锁、不进脏表**（09·G2）；读别人的档必须 readonly 冻结对象。
  * 字段约定（框架标准字段，05）：货币（gold）权威在 MySQL 不在这里；段位星数为 `star`
  *（applyEffect Lua 的 star 增量正是此字段）；其余标量原名进 user:{uid}。
  */
 import type { IPublicUserView, IUserView } from "@game/shared";
-import { loadFields } from "../core/userRecord";
-import { optionalStoredBool, optionalStoredInt } from "../core/infra/numbers";
+import { loadFields } from "../framework/userRecord";
+import { optionalStoredBool, optionalStoredInt } from "../framework/infra/numbers";
 
 /** 自己可见的档视图 —— 类型真源在 shared/protocol/lobbyRpc/user.ts 的 IUserView（双端同一定义）。 */
 export type UserView = IUserView;

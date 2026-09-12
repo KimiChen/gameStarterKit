@@ -4,10 +4,10 @@ import {
   normalizeOutboxMetadata,
   relayerTick,
   type RelayerDependencies,
-} from "../src/core/economy/relayer";
-import { LeaseLostError, type SingletonLease } from "../src/core/infra/lease";
-import { OUTBOX_DEAD, OUTBOX_MAX_ATTEMPTS, OUTBOX_PENDING } from "../src/core/infra/config";
-import type { PoolConnection } from "../src/core/infra/mysql";
+} from "../src/modules/economy/relayer";
+import { LeaseLostError, type SingletonLease } from "../src/framework/infra/lease";
+import { OUTBOX_DEAD, OUTBOX_MAX_ATTEMPTS, OUTBOX_PENDING } from "../src/framework/infra/config";
+import type { PoolConnection } from "../src/framework/infra/mysql";
 
 test("relayer outbox metadata normalizes mysql numeric strings before routing/arithmetic", () => {
   assert.deepEqual(

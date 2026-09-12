@@ -24,9 +24,9 @@ import {
     validateWebPlatformLoginResponse,
     type IGameRoomJoinOptions,
 } from "@game/shared";
-import { closeRedis } from "../../src/core/infra/redisRoute";
-import { defaultLifecycle } from "../../src/core/infra/lifecycle";
-import { closeMysql } from "../../src/core/infra/mysql";
+import { closeRedis } from "../../src/framework/infra/redisRoute";
+import { defaultLifecycle } from "../../src/framework/infra/lifecycle";
+import { closeMysql } from "../../src/framework/infra/mysql";
 import { mountDevPublicEndpoints } from "../../src/http/_support/devPublic";
 import { createDevAuthProvider, devUidOf } from "../../src/platform/devAuthProvider";
 import { closeWebPlatformClient, installWebPlatformClient } from "../../src/platform/webPlatformClient";

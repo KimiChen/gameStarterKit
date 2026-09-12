@@ -1,0 +1,101 @@
+/**
+ * 邮件发送 + 领附件（10·M6）。
+ *
+ * 投递状态权威 = MySQL `mail.read_at/claimed_at`（09·A6）；领附件走 outbox：
+ * `claimed_at` CAS + INSERT intent 同一事务 → redisApply → markOutboxDone。
+ * 附件是玩法 Effect（货币不进 Effect，09·A2——带币邮件走 creditInTx 扩展，暂不在首版）。
+ */
+import { randomUUID } from "node:crypto";
+import { K_STREAM_MAILWAKE, currentZoneId, zoneCtx } from "../../framework/infra/keys";
+import { withRcTx } from "../../framework/infra/mysql";
+import type { ResultSetHeader, RowDataPacket } from "../../framework/infra/mysql";
+import { clientForKey } from "../../framework/infra/redisRoute";
+import { InvalidPayloadError } from "../../framework/errors";
+import { storedInt } from "../../framework/infra/numbers";
+import {
+  canonicalizeEffect, deriveOpId, insertOutboxIntent, markOutboxDone, readBack, redisApply,
+  type EffectInput, type PurchaseResult,
+} from "./outbox";
+import { ensureLive } from "../../framework/archive/thaw";
+
+/**
+ * 生产侧：投邮件后发实时唤醒（流仅唤醒，⛔ 不承载邮件内容，09·K6）。
+ * 消费循环在 websocket/push.ts（transport 层）——依赖方向保持 websocket→core 单向。
+ */
+export async function emitMailWake(uid: string, mailId: number): Promise<void> {
+  await clientForKey(K_STREAM_MAILWAKE).xadd(K_STREAM_MAILWAKE, "*", "uid", uid, "mailId", String(mailId));
+}
+
+/** 发件（GM/系统调用）。attach 为空 = 纯文本邮件。落库后发实时唤醒（流仅唤醒，09·K6）。 */
+export async function sendMail(uid: string, title: string, body: string, attach?: EffectInput, sId = currentZoneId()): Promise<number> {
+  // sId = 收件人经济区（§3.4，评审 C2）：自发链路默认当前区；⚠ GM/系统跨区发件**必须显式传收件人区**，
+  // 否则 ambient=0 时附件 intent 落 s0 影子背包、玩家在本区看不到货。
+  // 先验证再落 mail.attach_effect；否则坏 effect 会变成永久 durable 垃圾，领取时才失败。
+  const canonicalAttach = attach === undefined || attach === null ? null : canonicalizeEffect(attach);
+  const attachOpId = canonicalAttach && canonicalAttach.grants.length > 0
+    ? deriveOpId(uid, sId, "mail.attach", randomUUID()) // 发件时固化 op_id：领取幂等的锚点（09·I3）
+    : null;
+  const mailId = await withRcTx(async (conn) => {
+    const [r] = await conn.execute<ResultSetHeader>(
+      `INSERT INTO mail (user_id, server_id, title, body, attach_op_id, attach_effect)
+       VALUES (?,?,?,?,?,${attachOpId ? "CAST(? AS JSON)" : "?"})`,
+      [uid, sId, title, body, attachOpId, attachOpId ? JSON.stringify(canonicalAttach) : null]);
+    return r.insertId;
+  });
+  await emitMailWake(uid, mailId).catch(() => {}); // 唤醒是尽力而为：丢了客户端上线自拉
+  return mailId;
+}
+
+interface MailAttachRow extends RowDataPacket {
+  attach_op_id: string | null;
+  attach_effect: unknown;
+  claimed_at: Date | null;
+  server_id: number;
+}
+
+/**
+ * 领附件（DoD：并发双击只发一次货）。
+ * 事务内：`claimed_at IS NULL` CAS → INSERT outbox intent（ODKU 兜底）；
+ * 已领/竞争输了 → 直接 readBack（附件 op 幂等，重复领拿到同一结果）。
+ */
+export async function claimMailAttach(uid: string, mailId: number): Promise<PurchaseResult> {
+  const claim = await withRcTx(async (conn) => {
+    // ⚠ **带 server_id 谓词**（A2）：此前只按 (mail_id, user_id) ⇒ 本区连接**能领走他区的邮件附件**。
+    // ⚠ 措辞要精确：奖励本身仍靠行内 `server_id` 落对区（下方 sId），所以 ⛔ 不是"把钱发错区"，
+    // 串的是**可见性与领取权限**——玩家在 s2 把 s1 的附件领了，货记在 s1，s2 看着像没到账。
+    // ⛔ 别改成读 currentZoneId() 后再比对行内值：那样已领标记 CAS 仍会打在他区的行上。
+    const [rows] = await conn.query<MailAttachRow[]>(
+      "SELECT attach_op_id, attach_effect, claimed_at, server_id FROM mail WHERE mail_id = ? AND user_id = ? AND server_id = ? FOR UPDATE",
+      [mailId, uid, currentZoneId()]);
+    if (rows.length === 0 || rows[0].attach_op_id === null) {
+      throw new InvalidPayloadError("邮件不存在或无附件");
+    }
+    const { attach_op_id: opId, attach_effect: rawEffect } = rows[0];
+    const sId = storedInt(rows[0].server_id, "mail.server_id", { min: 0, max: 65535 }); // 邮件所属区（§3.4/§3.6）：outbox intent + apply 落对区
+    if (rawEffect === null || rawEffect === undefined) { throw new InvalidPayloadError("邮件附件数据缺失"); }
+    const effect = canonicalizeEffect(rawEffect);
+    if (rows[0].claimed_at !== null) { return { opId, effect, sId, fresh: false }; } // 已领：幂等回读
+
+    const [upd] = await conn.execute<ResultSetHeader>(
+      "UPDATE mail SET claimed_at = NOW(3), read_at = COALESCE(read_at, NOW(3)) WHERE mail_id = ? AND user_id = ? AND server_id = ? AND claimed_at IS NULL",
+      [mailId, uid, sId]);
+    if (upd.affectedRows === 0) { return { opId, effect, sId, fresh: false }; } // 并发双击输家
+
+    // ODKU no-op 兜底（⛔ 绝不 INSERT IGNORE，09·DB1）——insertOutboxIntent 的 "ignore" 形态即原 SQL。
+    await insertOutboxIntent(conn, { opId, uid, sId, effect, onDuplicate: "ignore" });
+    return { opId, effect, sId, fresh: true };
+  });
+
+  // 后台/领取无稳定 ALS：按邮件 server_id 包 zoneCtx，redisApply/readBack 才落对区 Redis 前缀（§3.6）。
+  if (claim.fresh && claim.effect) {
+    try {
+      const r = await zoneCtx.run({ sId: claim.sId }, async () => {
+        await ensureLive(uid, claim.sId);
+        return redisApply(uid, claim.opId, claim.effect!);
+      }); // 阶段 2（无 fence，09·X3）
+      if (r === "ok" || r === "dup") { await markOutboxDone(claim.opId, claim.sId); }
+      // cold → 留给 relayer→ensureLive（09·X5）
+    } catch { /* relayer 收敛 */ }
+  }
+  return zoneCtx.run({ sId: claim.sId }, () => readBack(uid, claim.sId, claim.opId));
+}

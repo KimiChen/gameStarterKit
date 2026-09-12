@@ -117,7 +117,7 @@ test("index 顶层启动失败：进程退出前等待 lifecycle cleanup，并�
     writeFileSync(join(invalidDomain, "broken.ts"), "export default null;\n");
     writeFileSync(join(sandbox, "register-cleanup.mjs"), `
       import { writeFile } from "node:fs/promises";
-      import { defaultLifecycle } from "./src/core/infra/lifecycle.ts";
+      import { defaultLifecycle } from "./src/framework/infra/lifecycle.ts";
       defaultLifecycle.register("startup-test-marker", async () => {
         await writeFile(process.env.STARTUP_CLEANUP_MARKER, "disposed\\n");
       });
@@ -164,8 +164,8 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
     cpSync(join(SERVER_ROOT, "src/index.ts"), join(sandbox, "src/index.ts"));
     cpSync(join(SERVER_ROOT, "src/shutdown.ts"), join(sandbox, "src/shutdown.ts"));
     cpSync(
-      join(SERVER_ROOT, "src/core/infra/lifecycle.ts"),
-      join(sandbox, "src/core/infra/lifecycle.ts"),
+      join(SERVER_ROOT, "src/framework/infra/lifecycle.ts"),
+      join(sandbox, "src/framework/infra/lifecycle.ts"),
     );
     symlinkSync(join(REPO_ROOT, "node_modules"), join(sandbox, "node_modules"), "dir");
     writeFileSync(join(sandbox, "package.json"), '{"type":"module"}\n');
@@ -181,7 +181,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
 
     writeSandboxFile(sandbox, "src/probe.ts", `
       import { appendFileSync } from "node:fs";
-      import { isAdmissionOpen } from "./core/infra/lifecycle";
+      import { isAdmissionOpen } from "./framework/infra/lifecycle";
       let readyDrainResolve!: () => void;
       const readyDrained = new Promise<void>((resolve) => { readyDrainResolve = resolve; });
       export function record(name: string): void {
@@ -205,26 +205,26 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
       });
       export default server;
     `);
-    writeSandboxFile(sandbox, "src/core/infra/config.ts", `
+    writeSandboxFile(sandbox, "src/framework/infra/config.ts", `
       export const PORT = Number(process.env.PORT);
     `);
     writeSandboxFile(sandbox, "src/websocket/loader.ts", `
       import { record } from "../probe";
       export async function registerAllRoutes(): Promise<void> { record("routes-ready"); }
     `);
-    writeSandboxFile(sandbox, "src/core/infra/loopMonitor.ts", `
+    writeSandboxFile(sandbox, "src/framework/infra/loopMonitor.ts", `
       import { record } from "../../probe";
       export function startInfraMonitors(): () => Promise<void> {
         record("start-infra");
         return async () => { record("stop-infra"); };
       }
     `);
-    writeSandboxFile(sandbox, "src/core/match/matchConsumer.ts", `
+    writeSandboxFile(sandbox, "src/modules/match/matchConsumer.ts", `
       import { record } from "../../probe";
       export function startStreamDepthAlert(): void { record("start-depth"); }
       export async function stopStreamDepthAlert(): Promise<void> { record("stop-depth"); }
     `);
-    writeSandboxFile(sandbox, "src/core/auth/kickBus.ts", `
+    writeSandboxFile(sandbox, "src/framework/auth/kickBus.ts", `
       import { record } from "../../probe";
       export function setKickHandler(_handler: unknown): void { record("set-kick"); }
       export function startKickConsumer(): void { record("start-kick"); }
@@ -245,11 +245,11 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
       export function kickUser(): boolean { return false; }
       export async function stopMailWakeLoop(): Promise<void> { record("stop-mailwake"); }
     `);
-    writeSandboxFile(sandbox, "src/core/infra/redisRoute.ts", `
+    writeSandboxFile(sandbox, "src/framework/infra/redisRoute.ts", `
       import { record } from "../../probe";
       export async function closeRedis(): Promise<void> { record("close-redis"); }
     `);
-    writeSandboxFile(sandbox, "src/core/infra/mysql.ts", `
+    writeSandboxFile(sandbox, "src/framework/infra/mysql.ts", `
       import { record } from "../../probe";
       export async function closeMysql(): Promise<void> { record("close-mysql"); }
     `);
@@ -259,7 +259,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
     `);
     writeSandboxFile(sandbox, "register-cleanup.mjs", `
       import { appendFileSync } from "node:fs";
-      import { defaultLifecycle, defaultTasks, isAdmissionOpen } from "./src/core/infra/lifecycle.ts";
+      import { defaultLifecycle, defaultTasks, isAdmissionOpen } from "./src/framework/infra/lifecycle.ts";
       import { waitForReadyDrain } from "./src/probe.ts";
       const log = (name) => appendFileSync(process.env.LIFECYCLE_LOG, name + "|admission=" + String(isAdmissionOpen()) + "\\n");
       defaultLifecycle.register("probe-marker", () => { log("marker"); });

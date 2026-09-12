@@ -5,13 +5,13 @@
  * 现状照旧（重试读到 guildId=0 不补发通知）。v2 结果缓存不可得时重试新 clientReqId 无害。
  */
 import { GuildRpc, LobbyPush } from "@game/shared";
-import { guildExists } from "../../core/guild/catalog";
-import { emitGuildEvent } from "../../core/guild/events";
-import { withUser } from "../../core/uow";
+import { guildExists } from "../../modules/guild/catalog";
+import { emitGuildEvent } from "../../modules/guild/events";
+import { withUser } from "../../framework/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
 import { defineRpc } from "../rpc";
-import { currentZoneId } from "../../core/infra/keys";
-import { optionalStoredInt } from "../../core/infra/numbers";
+import { currentZoneId } from "../../framework/infra/keys";
+import { optionalStoredInt } from "../../framework/infra/numbers";
 
 export default defineRpc(GuildRpc.Leave, {
   handler: async (ctx) => {

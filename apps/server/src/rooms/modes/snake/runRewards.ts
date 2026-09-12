@@ -22,7 +22,7 @@ import {
     levelUnlocksBetween,
     type SnakeRunStats,
 } from "@game/shared/gameplays/snake/progression";
-import { clientFor } from "../../../core/infra/redisRoute";
+import { clientFor } from "../../../framework/infra/redisRoute";
 import {
     SNAKE_ACHIEVEMENT_KEYS,
     applyRunGrantToProfile,

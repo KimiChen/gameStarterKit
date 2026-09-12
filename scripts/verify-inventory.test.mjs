@@ -893,7 +893,7 @@ test("inventory verifier rejects an echoed launch entry", async () => {
   try {
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "echo tsx src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "echo tsx src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1144,7 +1144,7 @@ test("inventory verifier rejects an npx-launched entry", async () => {
     // 决定，杜绝后人「给 echo 再加个特判」的误修。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "npx tsx src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "npx tsx src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1178,7 +1178,7 @@ test("inventory verifier rejects an entry mentioned only in a trailing comment",
     // 盖绿章形态；只有把引号外的 `#` 截断掉，那个路径 token 才会消失。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "bash tools/dev-stack.sh # src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "bash tools/dev-stack.sh # src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1196,7 +1196,7 @@ test("inventory verifier rejects a command-substitution launch as coverage", asy
     // 否则会被「首 token 不是启动器」提前挡掉，测不到命令替换这一条规则。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "node $(echo --check) src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "node $(echo --check) src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1247,7 +1247,7 @@ test("inventory verifier rejects a non-executing launcher flag as launch", async
   try {
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "node --check src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "node --check src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1265,7 +1265,7 @@ test("inventory verifier still accepts launchers with value-taking flags", async
     // 这类合法启动误判成未启动。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "node --enable-source-maps -r tsx/cjs src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "node --enable-source-maps -r tsx/cjs src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -1333,7 +1333,7 @@ test("inventory verifier rejects a backgrounded pseudo-launch", async () => {
     // 单个 & 也是命令分隔符：真正被启动的是 smoke.ts，入口只出现在 echo 的参数位。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx smoke.ts & echo src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "tsx smoke.ts & echo src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1350,7 +1350,7 @@ test("inventory verifier still accepts a launcher with shell redirection", async
     // 反向锁：`2>&1` 里的 & 属于重定向，不得被当成命令分隔符。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx src/core/economy/relayer.ts > relayer.log 2>&1";
+    pkg.scripts.relayer = "tsx src/modules/economy/relayer.ts > relayer.log 2>&1";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -1365,7 +1365,7 @@ test("inventory verifier still accepts a heredoc mentioned only inside a comment
     // 反向锁：heredoc 判定必须在引号外、注释外生效，否则注释里写一句 << 就误伤整条脚本。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx src/core/economy/relayer.ts # 见 heredoc << EOF 说明";
+    pkg.scripts.relayer = "tsx src/modules/economy/relayer.ts # 见 heredoc << EOF 说明";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -1380,7 +1380,7 @@ test("inventory verifier rejects a blacklisted flag after a value-taking flag", 
     // 扫描必须覆盖入口之前的全部 token：遇到第一个非 `-` token 就停会漏判。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "node --import tsx --check src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "node --import tsx --check src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1449,7 +1449,7 @@ test("inventory verifier rejects a glued long non-executing flag before the entr
     // `--eval=1` 与 `--eval 1` 同义：node 执行内联表达式后退出，入口不会运行。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "node --eval=1 src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "node --eval=1 src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1466,7 +1466,7 @@ test("inventory verifier rejects a glued short non-executing flag before the ent
     // `-e1` 是 `-e 1` 的粘连短 flag 形式，同样不执行入口。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "node -e1 src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "node -e1 src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1483,7 +1483,7 @@ test("inventory verifier still accepts a value-taking flag before the entry", as
     // 反向锁：`--import tsx` 是仓内真实写法（带取值的合法 flag），不得被粘连判定误伤。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "node --import tsx src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "node --import tsx src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -1498,7 +1498,7 @@ test("inventory verifier rejects an entry that only appears as a redirect target
     // `tsx smoke.ts >& <entry>` 真正执行的是 smoke.ts，入口只是重定向写出的文件名。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx tools/smoke.ts >& src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "tsx tools/smoke.ts >& src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1515,7 +1515,7 @@ test("inventory verifier still accepts an entry followed by a log redirect", asy
     // 反向锁：`tsx <entry> > log` 入口在重定向前，真实执行，不得误判。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx src/core/economy/relayer.ts > /tmp/gsk-relayer.log";
+    pkg.scripts.relayer = "tsx src/modules/economy/relayer.ts > /tmp/gsk-relayer.log";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -1530,7 +1530,7 @@ test("inventory verifier rejects an entry behind a noclobber redirection", async
     // `>|` 是 noclobber 覆盖重定向算子，不是管道；入口只是被写的文件名。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx tools/smoke.ts >| src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "tsx tools/smoke.ts >| src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1547,7 +1547,7 @@ test("inventory verifier rejects an entry behind an fd-allocating redirection", 
     // `{fd}>` 不以数字开头，逐形态枚举挡不住；改为「含 <> 的 token 一律是边界」。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx tools/smoke.ts {fd}> src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "tsx tools/smoke.ts {fd}> src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1564,7 +1564,7 @@ test("inventory verifier still accepts a launcher piped into another command", a
     // 反向锁：真实管道不得被 `>|` 守卫误伤。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx src/core/economy/relayer.ts | tee relayer.log";
+    pkg.scripts.relayer = "tsx src/modules/economy/relayer.ts | tee relayer.log";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -1579,7 +1579,7 @@ test("inventory verifier accepts a shell launcher with clustered short options",
     // 真实 bash 对 `-ex` / `-eu` 照常执行脚本；按 node CLI 语义前缀匹配会把它判成未启动。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "bash -ex src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "bash -ex src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -1594,7 +1594,7 @@ test("inventory verifier rejects a shell launcher whose option cluster contains 
     // 含 `c` 的簇把随后的 token 当命令字符串，入口不会被当脚本执行。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "bash -ce src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "bash -ce src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1611,7 +1611,7 @@ test("inventory verifier rejects a shell launch that reads stdin instead of the 
     // `bash -s` 读 stdin，入口只退化为位置参数，不会被执行（真实 bash 实测 exit 0 静默假绿）。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "bash -s src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "bash -s src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1628,7 +1628,7 @@ test("inventory verifier rejects a shell option that eats the entry as its value
     // `bash -o` 把随后 token 吃成选项名：`bash -o <entry>` 的入口不会被执行。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "bash -o src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "bash -o src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1645,7 +1645,7 @@ test("inventory verifier still accepts an idiomatic shell option cluster with a 
     // 反向锁：`bash -euo pipefail <entry>` 的 pipefail 是 -o 的取值，入口照常执行，不得误伤。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "bash -euo pipefail src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "bash -euo pipefail src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     const result = await runVerifier(root);
     assert.equal(result.status, 0, outputOf(result));
@@ -1661,7 +1661,7 @@ test("inventory verifier rejects an entry after the &| garbage sequence", async 
     // `&` 守卫只看前一字符是 >/<，拦不住它，| 被当管道切段后入口升格为段首。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx tools/smoke.ts >&| src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "tsx tools/smoke.ts >&| src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1678,7 +1678,7 @@ test("inventory verifier rejects an entry after a spaced > | sequence", async ()
     // `> |` 带空格同样是语法错误；守卫读原始字符时中间隔着空格，切段后入口升格为段首。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "tsx tools/smoke.ts > | src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "tsx tools/smoke.ts > | src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1696,7 +1696,7 @@ test("inventory verifier rejects a mid-cluster shell option that eats the entry"
     // 一律报 `invalid option name <entry>`，入口从未执行。只判「簇以 o 结尾」会漏掉这族。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "bash -oe src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "bash -oe src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1709,11 +1709,11 @@ test("inventory verifier rejects a mid-cluster shell option that eats the entry"
 
 // 以下五条反例覆盖白名单化前真实 bash 实测 rc=0 的静默假绿族（入口均未执行）。
 for (const [name, script] of [
-  ["shell -n (noexec)", "bash -n src/core/economy/relayer.ts"],
-  ["shell +s cluster (stdin)", "bash +s src/core/economy/relayer.ts"],
-  ["shell -D (dump implies noexec)", "bash -D src/core/economy/relayer.ts"],
-  ["shell --dump-strings", "bash --dump-strings src/core/economy/relayer.ts"],
-  ["shell -t (exit after one command)", "bash -t src/core/economy/relayer.ts"],
+  ["shell -n (noexec)", "bash -n src/modules/economy/relayer.ts"],
+  ["shell +s cluster (stdin)", "bash +s src/modules/economy/relayer.ts"],
+  ["shell -D (dump implies noexec)", "bash -D src/modules/economy/relayer.ts"],
+  ["shell --dump-strings", "bash --dump-strings src/modules/economy/relayer.ts"],
+  ["shell -t (exit after one command)", "bash -t src/modules/economy/relayer.ts"],
 ]) {
   test(`inventory verifier rejects a non-executing ${name}`, async () => {
     const root = await createFixture();
@@ -1734,9 +1734,9 @@ for (const [name, script] of [
 
 // 正例反向锁：白名单必须放行这些真实 bash 实测会执行入口的形态。
 for (const [name, script] of [
-  ["long-option whitelist (--norc)", "bash --norc src/core/economy/relayer.ts"],
-  ["-- terminator", "bash -- src/core/economy/relayer.ts"],
-  ["interactive flag in cluster", "bash -i src/core/economy/relayer.ts"],
+  ["long-option whitelist (--norc)", "bash --norc src/modules/economy/relayer.ts"],
+  ["-- terminator", "bash -- src/modules/economy/relayer.ts"],
+  ["interactive flag in cluster", "bash -i src/modules/economy/relayer.ts"],
 ]) {
   test(`inventory verifier still accepts ${name}`, async () => {
     const root = await createFixture();
@@ -1759,7 +1759,7 @@ test("inventory verifier rejects a positional operand before the shell entry", a
     // `bash tools/dev-stack.sh <entry>`：真实 bash 执行的是 dev-stack.sh，入口只是它的 argv。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "bash tools/dev-stack.sh src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "bash tools/dev-stack.sh src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1777,7 +1777,7 @@ test("inventory verifier rejects a bare dash as the node entry position (stdin s
     // 语义不同族，不能共用判定。
     const packageFile = join(root, "apps", "server", "package.json");
     const pkg = JSON.parse(readFileSync(packageFile, "utf8"));
-    pkg.scripts.relayer = "node - src/core/economy/relayer.ts";
+    pkg.scripts.relayer = "node - src/modules/economy/relayer.ts";
     writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`);
     await assertRejected(
       root,
@@ -1797,9 +1797,9 @@ function writeFragmentPlugin(root, manifestOverrides = {}, fragmentOverrides = {
   const fragment = {
     id: "fixture-extra-cap",
     category: "extra",
-    defaultEntry: "apps/server/src/core/economy/outbox.ts",
-    sourceOfTruth: "apps/server/src/core/economy",
-    wireBoundary: "apps/server/src/core/economy/outbox.ts",
+    defaultEntry: "apps/server/src/modules/economy/outbox.ts",
+    sourceOfTruth: "apps/server/src/modules/economy",
+    wireBoundary: "apps/server/src/modules/economy/outbox.ts",
     verification: [{ kind: "root", script: "verify:core" }],
     docs: ["docs/EXTRAS.md"],
     ...fragmentOverrides,
@@ -1897,7 +1897,7 @@ test("plugin fragment：与中央能力重复 id / defaultEntry 不存在，均�
   }
   const root2 = await createFixture();
   try {
-    writeFragmentPlugin(root2, {}, { defaultEntry: "apps/server/src/core/economy/ghost.ts" });
+    writeFragmentPlugin(root2, {}, { defaultEntry: "apps/server/src/modules/economy/ghost.ts" });
     await assertRejected(root2, /能力 fixture-extra-cap 路径不存在：apps\/server\/src\/core\/economy\/ghost\.ts/);
   } finally {
     await removeFixture(root2);
@@ -1913,9 +1913,9 @@ function writeFragmentKit(root, manifestOverrides = {}, fragmentOverrides = {}) 
   const fragment = {
     id: "fixture-kit-cap",
     category: "extra",
-    defaultEntry: "apps/server/src/core/economy/outbox.ts",
-    sourceOfTruth: "apps/server/src/core/economy",
-    wireBoundary: "apps/server/src/core/economy/outbox.ts",
+    defaultEntry: "apps/server/src/modules/economy/outbox.ts",
+    sourceOfTruth: "apps/server/src/modules/economy",
+    wireBoundary: "apps/server/src/modules/economy/outbox.ts",
     verification: [{ kind: "root", script: "verify:core" }],
     docs: ["docs/EXTRAS.md"],
     ...fragmentOverrides,

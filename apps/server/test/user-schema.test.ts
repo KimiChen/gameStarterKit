@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SCHEMA_VERSION } from "../src/core/infra/config";
-import { UnitOfWork } from "../src/core/uow";
+import { SCHEMA_VERSION } from "../src/framework/infra/config";
+import { UnitOfWork } from "../src/framework/uow";
 import {
   USER_GENERIC_WRITE_RESERVED_FIELDS,
   USER_SCHEMA_MIGRATIONS,
   migrateUserSchemaToCurrent,
   validateUserSchema,
-} from "../src/core/userSchema";
-import { lazyMigrateSchema } from "../src/core/archive/lazyMigrate";
-import type { ArchiveSnapshot } from "../src/core/archive/archiveScripts";
+} from "../src/framework/userSchema";
+import { lazyMigrateSchema } from "../src/framework/archive/lazyMigrate";
+import type { ArchiveSnapshot } from "../src/framework/archive/archiveScripts";
 
 const v1 = (checkedAt?: string): Record<string, string> => ({
   schemaVersion: "1",

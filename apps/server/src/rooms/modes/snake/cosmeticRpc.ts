@@ -8,7 +8,7 @@
  * ⛔ 构造期不得建连接/读盘/起定时器——端点模块会被 `collectEndpoints()` 在纯内存测试里 import。
  */
 import type { ISnakeCosmeticCatalogEntry } from "@game/shared/protocol/lobbyRpc/domains/snakeCosmetic";
-import { RpcFault } from "../../../core/errors";
+import { RpcFault } from "../../../framework/errors";
 import { SnakeDemoCosmeticStore, type SnakeCosmeticFailure } from "./cosmeticProfile";
 import { SNAKE_SKIN_BUSINESS_CATALOG, canWriteSnakeSkinCosmetics } from "./skinBusinessCatalog";
 

@@ -19,9 +19,9 @@
  *   txns    = 每 worker 事务数；users = 预置 bench 用户数
  */
 import { parseArgs } from "node:util";
-import { CUR_GOLD, LOCK_TTL_MS, OUTBOX_PENDING } from "../../src/core/infra/config";
-import { closeMysql, getPool, retryOnContention, withRcTx } from "../../src/core/infra/mysql";
-import type { ResultSetHeader } from "../../src/core/infra/mysql";
+import { CUR_GOLD, LOCK_TTL_MS, OUTBOX_PENDING } from "../../src/framework/infra/config";
+import { closeMysql, getPool, retryOnContention, withRcTx } from "../../src/framework/infra/mysql";
+import type { ResultSetHeader } from "../../src/framework/infra/mysql";
 
 const { values: args } = parseArgs({
   options: {

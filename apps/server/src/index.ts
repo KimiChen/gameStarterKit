@@ -1,18 +1,18 @@
 import { listen } from "@colyseus/tools";
 import app from "./app.config";
-import { PORT } from "./core/infra/config";
-import { startInfraMonitors } from "./core/infra/loopMonitor";
-import { startStreamDepthAlert, stopStreamDepthAlert } from "./core/match/matchConsumer";
-import { setKickHandler, startKickConsumer, stopKickConsumer } from "./core/auth/kickBus";
+import { PORT } from "./framework/infra/config";
+import { startInfraMonitors } from "./framework/infra/loopMonitor";
+import { startStreamDepthAlert, stopStreamDepthAlert } from "./modules/match/matchConsumer";
+import { setKickHandler, startKickConsumer, stopKickConsumer } from "./framework/auth/kickBus";
 import { kickUser } from "./websocket/push";
 import { registerAllRoutes } from "./websocket/loader";
 import {
   beginShutdown,
   defaultLifecycle,
   drainTasks,
-} from "./core/infra/lifecycle";
-import { closeMysql } from "./core/infra/mysql";
-import { closeRedis } from "./core/infra/redisRoute";
+} from "./framework/infra/lifecycle";
+import { closeMysql } from "./framework/infra/mysql";
+import { closeRedis } from "./framework/infra/redisRoute";
 import {
   startCharacterRepairWorker,
   stopCharacterRepairWorker,

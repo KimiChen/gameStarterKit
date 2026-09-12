@@ -4,7 +4,7 @@
  * 见 board 面 captureTile 抬头）。敌格仍有守备 ⇒ ARENA_TILE_TAKEN（该格已 −1 守备并提交；重放不再削）。
  */
 import { ArenaRpc } from "@game/shared/protocol/lobbyRpc/domains/arena";
-import { RpcFault } from "../../core/infra/kitApi";
+import { RpcFault } from "../../framework/infra/kitApi";
 import { arenaOpId, captureTile } from "../../kits/arena/api/board/index";
 import { currentZoneId, readArenaTrophies } from "../../kits/arena/host";
 import { defineRpc } from "../rpc";

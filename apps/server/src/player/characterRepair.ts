@@ -14,19 +14,19 @@ import {
   CHARACTER_REPAIR_BATCH_SIZE,
   CHARACTER_REPAIR_CONCURRENCY,
   CHARACTER_REPAIR_POLL_MS,
-} from "../core/infra/config";
+} from "../framework/infra/config";
 import {
   K_CHARACTER_REPAIR_ATTEMPTS,
   K_CHARACTER_REPAIR_DUE,
-} from "../core/infra/keys";
-import { clientForKey } from "../core/infra/redisRoute";
-import { defineScript, evalshaWithReload } from "../core/infra/redisScripts";
+} from "../framework/infra/keys";
+import { clientForKey } from "../framework/infra/redisRoute";
+import { defineScript, evalshaWithReload } from "../framework/infra/redisScripts";
 import {
   webPlatformClient,
   type WebPlatformClient,
 } from "../platform/webPlatformClient";
-import { assertAdmissionOpen, defaultLifecycle } from "../core/infra/lifecycle";
-import { storedInt } from "../core/infra/numbers";
+import { assertAdmissionOpen, defaultLifecycle } from "../framework/infra/lifecycle";
+import { storedInt } from "../framework/infra/numbers";
 import { markCharacterRegistrationReady } from "./characterState";
 
 export interface CharacterRepairIntent {

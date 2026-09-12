@@ -5,7 +5,7 @@ import { GameRoom } from "./rooms/GameRoom";
 import { assertRoomProfilesConfigured } from "./rooms/core/RoomProfile";
 import { registerDefaultGameModes } from "./rooms/modes/catalog";
 import { LobbyRoom } from "./websocket/LobbyRoom";
-import { AUTH_PROVIDER, MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
+import { AUTH_PROVIDER, MAX_WS_PAYLOAD_BYTES } from "./framework/infra/config";
 import { routes } from "./http/index";
 import { mountDevPublicEndpoints } from "./http/_support/devPublic";
 import { createDevAuthProvider } from "./platform/devAuthProvider";

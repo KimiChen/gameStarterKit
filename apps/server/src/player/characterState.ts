@@ -1,12 +1,12 @@
-import { clientFor } from "../core/infra/redisRoute";
-import { kLock, kUser, zoneCtx } from "../core/infra/keys";
-import { defineScript, evalshaWithReload } from "../core/infra/redisScripts";
-import { loadFields } from "../core/userRecord";
-import { ensureLive } from "../core/archive/thaw";
-import { withUserLock } from "../core/locks";
-import { BusyError } from "../core/errors";
-import { SCHEMA_VERSION } from "../core/infra/config";
-import { migrateLiveUserSchemaLocked } from "../core/liveSchema";
+import { clientFor } from "../framework/infra/redisRoute";
+import { kLock, kUser, zoneCtx } from "../framework/infra/keys";
+import { defineScript, evalshaWithReload } from "../framework/infra/redisScripts";
+import { loadFields } from "../framework/userRecord";
+import { ensureLive } from "../framework/archive/thaw";
+import { withUserLock } from "../framework/locks";
+import { BusyError } from "../framework/errors";
+import { SCHEMA_VERSION } from "../framework/infra/config";
+import { migrateLiveUserSchemaLocked } from "../framework/liveSchema";
 
 export type CharacterRegistrationState = "pending" | "ready" | null;
 

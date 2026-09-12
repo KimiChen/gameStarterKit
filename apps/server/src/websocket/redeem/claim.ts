@@ -3,8 +3,8 @@
  * 统一处理；同码二次兑换（不同 clientReqId）由 store 的 Lua 原子拒绝。
  */
 import { RedeemRpc } from "@game/shared/protocol/lobbyRpc/domains/redeem";
-import { claimRedeemCode } from "../../core/redeem/claim";
-import { createRedisRedeemStore } from "../../core/redeem/store";
+import { claimRedeemCode } from "../../modules/redeem/claim";
+import { createRedisRedeemStore } from "../../modules/redeem/store";
 import { defineRpc } from "../rpc";
 
 const store = createRedisRedeemStore();

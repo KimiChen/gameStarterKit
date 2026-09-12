@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BusyError, ColdUserError } from "../src/core/errors";
-import { _outboxTrimTestHooks } from "../src/core/economy/outbox";
+import { BusyError, ColdUserError } from "../src/framework/errors";
+import { _outboxTrimTestHooks } from "../src/modules/economy/outbox";
 
 test("trimApplied reports two lost attempts as BUSY instead of cold", async () => {
   let attempts = 0;

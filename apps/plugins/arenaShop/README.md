@@ -19,7 +19,7 @@
 | 端 | 消费的 kit 面 | 消费方式 |
 | --- | --- | --- |
 | shared | `kits/arena/api/board`：`validateTileIndex`、`ARENA_MAX_POWER` | 域文件 `arenaShop.ts` 的 validator 复用 kit 的 tile 校验 |
-| server | `kits/arena/api/board`：`boostTile` / `arenaOpId` / `ArenaTileNotOwnedError` | `core/arenaShop/buy.ts`：`currentZoneId()` 取区 → `withUser(uid)` 拿 fence（与 shop.purchase 同一写路径形态）→ `boostTile(uid, sId, fence, tile, ARENA_SHOP_BOOST_COST, opId)`；kit 错误翻译成本域 `ARENA_SHOP_TILE_NOT_OWNED`；余额只取 kit 面返回值（⛔ 不 import 框架经济模块，`arenaShop-buy.test.ts` 钉 import 集合） |
+| server | `kits/arena/api/board`：`boostTile` / `arenaOpId` / `ArenaTileNotOwnedError` | `modules/arenaShop/buy.ts`：`currentZoneId()` 取区 → `withUser(uid)` 拿 fence（与 shop.purchase 同一写路径形态）→ `boostTile(uid, sId, fence, tile, ARENA_SHOP_BOOST_COST, opId)`；kit 错误翻译成本域 `ARENA_SHOP_TILE_NOT_OWNED`；余额只取 kit 面返回值（⛔ 不 import 框架经济模块，`arenaShop-buy.test.ts` 钉 import 集合） |
 | client | `kits/arena/api/board`：`fetchArenaBoard` / `IArenaBoardRes` / `describeBoard` / `formatTile` | 棋盘只读经 `fetchArenaBoard(ports.lobbyRpc)`（⛔ 不自己 import kit 的 `arena` 域文件 / 点名 `ArenaRpc`——`arena.*` 的 wire 契约随 `api.board.version`，`requires.kits.arena.board` 的闸才覆盖到它）；商店逻辑用它过滤出自己的格并格式化 |
 
 - ⛔ 不 import kit 内部模块（`boardRepo.ts` / `host.ts`），⛔ 不碰 `k_arena_*` 表，⛔ 不自建账本——扣款只发生在 kit-api 的 `tx.debit`；
@@ -33,7 +33,7 @@
 | --- | --- |
 | `apps/plugins/arenaShop/plugin.json` | 身份（id / domains `["arenaShop"]` / `requires.kits`）+ 客户端登记：route `arenaShop` → View `ArenaShop`；menu 入口 |
 | `apps/shared/src/protocol/lobbyRpc/domains/arenaShop.ts` | 域契约：`arenaShop.buyBoost` idempotent-write（`balance: number \| null`，contractVersion 2），errorCodes 一条，`ARENA_SHOP_BOOST_COST = 10` |
-| `apps/server/src/core/arenaShop/buy.ts` | 用例（deps 可注入：假 kit 面 / 假 withUser 单测） |
+| `apps/server/src/modules/arenaShop/buy.ts` | 用例（deps 可注入：假 kit 面 / 假 withUser 单测） |
 | `apps/server/src/websocket/arenaShop/buyBoost.ts` | 端点：`defineRpc(ArenaShopRpc.BuyBoost)` |
 | `apps/server/test/lobbyRpcVectors/arenaShop.ts` | 域向量 sidecar |
 | `apps/server/test/arenaShop-buy.test.ts` | 服务端用例测试（假 kit 面） |

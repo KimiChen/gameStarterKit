@@ -16,7 +16,7 @@ import {
 import {
   CUR_GOLD, RpcFault, applyKitEffect, kitOpId, retryKitTransaction, withKitTx, withKitUserFence,
   type IEffect, type KitEffectApplyResult, type KitTx,
-} from "../../core/infra/kitApi";
+} from "../../framework/infra/kitApi";
 import { readSlgTrophies } from "./host";
 import { createSqlSlgRepository, type SlgReceiptKind, type SlgRepository } from "./repository";
 

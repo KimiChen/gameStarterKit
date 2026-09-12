@@ -126,7 +126,7 @@ export const HARD_EXCLUDED_DIRS: readonly string[] = [
   `${CLIENT_SRC}/shared`, `${CLIENT_SRC}/lib`, `${CLIENT_SRC}/generated`, `${CLIENT_SRC}/app`,
   `${COCOS_SRC}/shared`, `${COCOS_SRC}/lib`, `${COCOS_SRC}/generated`, `${COCOS_SRC}/app`,
   "apps/shared/src/generated", "apps/shared/src/gameplays/generated", "apps/shared/src/protocol",
-  "apps/server/src/rooms/schema", "apps/server/src/rooms/core", "apps/server/src/core/infra",
+  "apps/server/src/rooms/schema", "apps/server/src/rooms/core", "apps/server/src/framework/infra",
 ];
 
 /** 永远不可由包写入的文件名形态。 */
@@ -293,7 +293,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
     rules.push(
       { kind: "dir", path: `apps/shared/src/kits/${id}`, reason: "kit shared 类型 / 校验器 / api 门面（零依赖）" },
       { kind: "dir", path: `apps/server/src/kits/${id}`, reason: "kit 服务端服务与 api 门面（键经 kKit* 工厂）" },
-      { kind: "dir", path: `apps/server/src/core/compute/tasks/kits/${id}`, reason: "kit 长计算任务（铁律 11）" },
+      { kind: "dir", path: `apps/server/src/framework/compute/tasks/kits/${id}`, reason: "kit 长计算任务（铁律 11）" },
       { kind: "dir", path: `${RESOURCES}/kits/${id}`, reason: "kit 运行时资源（resources/kits/<id>/）" },
     );
   } else {

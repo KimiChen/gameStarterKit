@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ForceLogoutReason } from "@game/shared";
-import { broadcastKick, normalizeKickStoredIssuedAt, parseKickFields } from "../src/core/auth/kickBus";
+import { broadcastKick, normalizeKickStoredIssuedAt, parseKickFields } from "../src/framework/auth/kickBus";
 import { kickUser, registerOnline, unregisterOnline } from "../src/websocket/push";
 
 const HASH = "a".repeat(64);

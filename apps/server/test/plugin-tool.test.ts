@@ -165,7 +165,7 @@ test("硬排除与受保护路径永远拒绝：真仓 protected-paths.json 的�
     ".env", ".env.development", ".github/workflows/ci.yml", "scripts/verify-toolchain.mjs", "scripts/packages/chamber.lock",
     "tools/fgui-codegen/cli.ts", "apps/server/tools/plugin/install.ts", "apps/Cocos/assets/scene.scene",
     "apps/client/src/lib/bitecs/index.ts", "apps/client/src/shared/protocol/rooms.ts", "apps/client/src/app/AppRuntime.ts",
-    "apps/shared/src/protocol/rooms.ts", "apps/shared/src/protocol/lobbyRpc/index.ts", "apps/server/src/core/infra/keys.ts",
+    "apps/shared/src/protocol/rooms.ts", "apps/shared/src/protocol/lobbyRpc/index.ts", "apps/server/src/framework/infra/keys.ts",
     "node_modules/x/index.js", "apps/plugins/chamber/node_modules/x.js", "scripts/protocol.fingerprint", "vendor/x.tgz",
     "docs/plugins.generated.md", "apps/client/src/generated/plugins.generated.ts",
   ]) {
@@ -1613,7 +1613,7 @@ test("kit（docs/KIT.md §2/§3）：所有权推导 = kits/ 命名空间 + 逐 
   const ok = (relative: string): boolean => classifyPath(relative, rules, PROTECTED).allowed;
   for (const relative of [
     "apps/kits/kfix/kit.json", "apps/kits/kfix/sql/001-init.sql", "apps/kits/kfix/gameplays/kfixArena/manifest.json",
-    "apps/shared/src/kits/kfix/api/board/index.ts", "apps/server/src/kits/kfix/service.ts", "apps/server/src/core/compute/tasks/kits/kfix/rank.ts",
+    "apps/shared/src/kits/kfix/api/board/index.ts", "apps/server/src/kits/kfix/service.ts", "apps/server/src/framework/compute/tasks/kits/kfix/rank.ts",
     "apps/client/src/kits/kfix/index.ts", "apps/Cocos/assets/src/kits/kfix/index.ts", "apps/Cocos/assets/src/kits/kfix.meta",
     "apps/shared/src/gameplays/kfixArena/wire.ts", "apps/server/src/rooms/modes/kfixArena/index.ts", "apps/client/src/net/rooms/KfixArenaRoom.ts",
     "apps/client/src/view/rooms/kfixArena/KfixArenaView.ts", "apps/server/test/wire-vectors/kfixArena.ts",
@@ -1624,7 +1624,7 @@ test("kit（docs/KIT.md §2/§3）：所有权推导 = kits/ 命名空间 + 逐 
   for (const relative of [
     "apps/server/src/core/kfix/keys.ts", "apps/client/src/plugins/kfix/index.ts", "apps/plugins/kfix/plugin.json",
     "apps/server/src/core/kfixAdmin/x.ts", "apps/shared/src/kits/catalogTypes.ts", "apps/shared/src/kits/catalog.generated.ts",
-    "apps/server/src/kits/catalog.generated.ts", "apps/server/sql/schema.sql", "apps/server/src/core/infra/kitApi.ts",
+    "apps/server/src/kits/catalog.generated.ts", "apps/server/sql/schema.sql", "apps/server/src/framework/infra/kitApi.ts",
     "apps/server/test/kfixArenaX-a.test.ts", "apps/shared/src/kits/other/index.ts",
   ]) assert.ok(!ok(relative), `kit 应拒绝：${relative}`);
   // 形态闸。

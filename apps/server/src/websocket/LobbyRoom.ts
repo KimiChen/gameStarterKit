@@ -14,22 +14,22 @@ import {
   type IRpcEnvelope, type RpcErrCode,
   type ILobbyRoomJoinOptions,
 } from "@game/shared";
-import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
-import { zoneCtx } from "../core/infra/keys";
+import { groupAdmitsZone, normalizeSId } from "../framework/infra/config";
+import { zoneCtx } from "../framework/infra/keys";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
-import { joinRefused, joinRefusedAuth, toErrCode, toRpcFaultCode } from "../core/errors";
-import { loadFields } from "../core/userRecord";
+import { joinRefused, joinRefusedAuth, toErrCode, toRpcFaultCode } from "../framework/errors";
+import { loadFields } from "../framework/userRecord";
 import { ensureCharacterReady } from "../player/character";
 import { dispatchRpc, type RpcCtx, type RpcReply } from "./dispatcher";
-import { optionalStoredInt } from "../core/infra/numbers";
+import { optionalStoredInt } from "../framework/infra/numbers";
 import {
   registerOnline, setOnlineGuild, startMailWakeLoop, unregisterOnline,
   isOnlineRegistrationCurrent,
   type OnlineRegistration, type PushSink,
 } from "./push";
-import { tokenHashOf, verifySession } from "../core/auth/session";
+import { tokenHashOf, verifySession } from "../framework/auth/session";
 import { registerAllRoutes } from "./loader";
-import { isAdmissionOpen, trackTask } from "../core/infra/lifecycle";
+import { isAdmissionOpen, trackTask } from "../framework/infra/lifecycle";
 
 function safeErrorText(error: unknown): string {
   try {

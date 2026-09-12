@@ -11,7 +11,7 @@
  *  - `-0` 规约为 `0`（与 `JSON.stringify` 一致），字符串转义委托 `JSON.stringify`。
  *
  * ⛔ 其他语言或领域代码不得自行解释「稳定排序」——一律复用本实现（服务端经
- * `core/idem.ts` 的 `idemPayloadHash` 消费；客户端 journal 重发字节等同留阶段 5）。
+ * `framework/idem.ts` 的 `idemPayloadHash` 消费；客户端 journal 重发字节等同留阶段 5）。
  * 零依赖纯 TS（铁律 4）：无 npm 包、无宿主 API。
  */
 

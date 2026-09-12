@@ -1,6 +1,6 @@
 /**
  * ws-RPC 类型胶水（项目级，⛔ 不属于 Arthur 回流件）：把 shared 的 lobbyRpc 契约
- * 钉到 dispatcher registerRoute 的 def 形状上。dispatcher.ts / core/errors.ts 保持零改动。
+ * 钉到 dispatcher registerRoute 的 def 形状上。dispatcher.ts / framework/errors.ts 保持零改动。
  *
  * 阶段 3（Non-intrusive §6.10）：defineRpc 由 registry metadata 驱动——endpoint 只写
  * handler；request schema（sharedRpcSchema 适配 shared exact/range validator）与幂等行为
@@ -19,7 +19,7 @@ import {
   type RpcReq,
   type RpcRes,
 } from "@game/shared";
-import { RPC_BUDGET_PROD_SAMPLE, RPC_BUDGET_WARN_INTERVAL_MS, RPC_SYNC_BUDGET_MS } from "../core/infra/config";
+import { RPC_BUDGET_PROD_SAMPLE, RPC_BUDGET_WARN_INTERVAL_MS, RPC_SYNC_BUDGET_MS } from "../framework/infra/config";
 import type { RpcCtx } from "./dispatcher";
 
 /** 单个端点定义。构造一律用 defineRpc（⛔ 不手写对象字面量），由同目录 loader.ts 收集注册。 */
@@ -117,7 +117,7 @@ function withSyncBudget<T extends LobbyRpcType>(
         if (!throttled) {
           lastWarnAt.set(type, now);
           console.warn(`[rpc-budget] ${type} 期间事件循环最长阻塞 ~${maxGapMs.toFixed(1)}ms（预算 ${RPC_SYNC_BUDGET_MS}ms）`
-            + "——重计算应卸载到 core/compute/tasks/（判据与四类清单见 docs/SERVER.md §11）");
+            + "——重计算应卸载到 framework/compute/tasks/（判据与四类清单见 docs/SERVER.md §11）");
         }
       }
     }

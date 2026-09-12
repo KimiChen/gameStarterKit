@@ -9,8 +9,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { ARENA_SHOP_BOOST_COST, validateArenaShopBuyBoostRes } from "@game/shared/protocol/lobbyRpc/domains/arenaShop";
-import { RpcFault } from "../src/core/errors";
-import { type ArenaShopBuyDeps, buyArenaBoost } from "../src/core/arenaShop/buy";
+import { RpcFault } from "../src/framework/errors";
+import { type ArenaShopBuyDeps, buyArenaBoost } from "../src/modules/arenaShop/buy";
 import { ArenaTileNotOwnedError, arenaOpId } from "../src/kits/arena/api/board/index";
 
 function fakeDeps(boost: ArenaShopBuyDeps["boostTile"]) {
@@ -51,7 +51,7 @@ test("arenaShop：账本 DUP（balance=null）原样透传且过响应 validator
 
 test("arenaShop：服务端用例只 import kit 的 board 面与框架 uow / 区 / 错误，⛔ 不 import 经济模块或 kit 内部模块", () => {
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const source = fs.readFileSync(path.join(here, "../src/core/arenaShop/buy.ts"), "utf8");
+  const source = fs.readFileSync(path.join(here, "../src/modules/arenaShop/buy.ts"), "utf8");
   const specifiers = [...source.matchAll(/from "([^"]+)"/gu)].map((m) => m[1]);
   assert.deepEqual(specifiers.sort(), [
     "../../kits/arena/api/board/index",

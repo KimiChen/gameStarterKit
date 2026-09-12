@@ -17,9 +17,9 @@
  * WebPlatform 登录只建账号、不写游戏 Redis；无论 sId=0 还是分区服，玩法档都只在本函数创建。
  */
 import { STAMINA_MAX } from "@game/shared";
-import { zoneCtx } from "../core/infra/keys";
-import { createCharacterUser } from "../core/userRecord";
-import { ensureLive, invalidateUserNegcache } from "../core/archive/thaw";
+import { zoneCtx } from "../framework/infra/keys";
+import { createCharacterUser } from "../framework/userRecord";
+import { ensureLive, invalidateUserNegcache } from "../framework/archive/thaw";
 import { webPlatformClient, WebPlatformUnavailableError } from "../platform/webPlatformClient";
 import { enqueueCharacterRepairIntent, registerCharacterWithRepair } from "./characterRepair";
 import {
@@ -33,7 +33,7 @@ import {
   CHARACTER_READY_TIMEOUT_MS,
   CHARACTER_REGISTRATION_RECHECK_MS,
   CHARACTER_REGISTRATION_GRACE_MS,
-} from "../core/infra/config";
+} from "../framework/infra/config";
 
 /** 首进区角色初始字段（与登录建号一致；缺 musicOn/sfxOn = 读侧默认开，07 字段表）。 */
 const zoneCharInit = (): Record<string, string> => {

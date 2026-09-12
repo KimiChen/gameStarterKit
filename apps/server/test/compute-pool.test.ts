@@ -6,14 +6,14 @@ import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { destroyPool, runInPool } from "../src/core/compute/pool";
+import { destroyPool, runInPool } from "../src/framework/compute/pool";
 import {
   BATTLE_SIM_MAX_ATTACKER_LEVEL,
   BATTLE_SIM_MAX_ITERATIONS,
   validateBattleSimInput,
   type IBattleSimInput,
   type IBattleSimResult,
-} from "../src/core/compute/tasks/battleSim";
+} from "../src/framework/compute/tasks/battleSim";
 
 after(async () => { await destroyPool(); });
 
@@ -96,7 +96,7 @@ test("compute admission：运行中 + 排队任务达到总容量时稳定返回
   // COMPUTE_QUEUE_CAPACITY。
   const serverRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
   const script = `
-    import { ComputeOverloadedError, destroyPool, runInPool } from "./src/core/compute/pool.ts";
+    import { ComputeOverloadedError, destroyPool, runInPool } from "./src/framework/compute/pool.ts";
     const first = runInPool("battleSim", { iterations: 0, attackerLevel: 1 });
     const second = runInPool("battleSim", { iterations: 0, attackerLevel: 1 });
     let overloaded = false;

@@ -108,12 +108,12 @@ AzerothCore 固定 `a5e0e6b8f2bf878cb45cb1dc2251eb1448b9bbc3`：`src/server/game
 | 身份与经济：外部契约、`user_currency` + ledger、幂等 v2、outbox、`singleton_lease` | 无 persona；资产主体只有 account |
 | 同步：snake 分块 baseline + 有序 delta + checksum + cursor | 全房同视图；无兴趣集、enter / leave、背压 |
 | **移动先例**：ballMove 客户端只发 `dirX/dirY ∈ [-1,1]`，服务端常量速度积分并 clamp（`apps/server/src/rooms/modes/ballMove/rules.ts:92-96`）；snake `SpatialGrid` 只产生碰撞候选（`modes/snake/world.ts:121-160`） | — （直接沿用） |
-| **投递**：`websocket/push.ts` 每进程本地在线表；`pushToUser` / `pushToGuild` / `pushToAll` 都不跨节点；跨进程只有「每节点 XREAD 整条流 + 本地过滤」（`core/infra/streamConsumer.ts`，mailwake / kick） | 无区服级广播、无多 uid 定向投递；`pushToGuild` 多节点下静默丢 |
+| **投递**：`websocket/push.ts` 每进程本地在线表；`pushToUser` / `pushToGuild` / `pushToAll` 都不跨节点；跨进程只有「每节点 XREAD 整条流 + 本地过滤」（`framework/infra/streamConsumer.ts`，mailwake / kick） | 无区服级广播、无多 uid 定向投递；`pushToGuild` 多节点下静默丢 |
 | **guild 先例**：成员 = 档字段 `guildId`；事件 `INCR seq` + 有界 `LPUSH`；push 只带 `{seq, guildId}`；客户端 `guild.getEvents` 自愈 | 无名册存储 |
 | **房内 Chat**：100 字、rateCost 1、全房无条件广播（`GameRoom.ts:801-813`） | 不可跨房 |
 | **StateView**：`@colyseus/schema` 4.0.27 / core 0.17.44 有 `client.view`；vendored 客户端 bundle（schema 4.0.13）含 `StateView` 类，手写 `.d.ts` 无 | 首版 per-session 统一走消息流；StateView 只作 MF1 对照实验 |
 | **多进程探针** `apps/server/tools/m0/colyseus-redis-probe.ts`：RedisDriver / Presence 两节点跨进程撮合、定向建房、`kill -9` 后约 4 s 惰性清理 | 键不可前缀、必须独立 Redis 实例（`app.config.ts:74-79`）；无按房租约 |
-| 租约：`singleton_lease`（MySQL，只有 relayer / freezeWorker）、per-uid Redis 锁 + fence（`core/locks.ts`）；`roomEpochId` 只是身份令牌 | 世界房权威租约是新原语 |
+| 租约：`singleton_lease`（MySQL，只有 relayer / freezeWorker）、per-uid Redis 锁 + fence（`framework/locks.ts`）；`roomEpochId` 只是身份令牌 | 世界房权威租约是新原语 |
 | **`test:changed`**：按单条路径判认领，两包同改仍走快路径（`apps/server/tools/plugin/changed.ts:200-226`，`test/plugin-changed.test.ts:116-130`） | ⛔ 不是无侵入证明；验收用完整 diff 分类（§9.4） |
 
 ## 4. 目标形态
@@ -301,12 +301,12 @@ MF10 容量 / 多进程 / 运维（依赖 MF4–MF8）→ MF11 收口审阅与�
 | --- | --- |
 | `apps/server/sql/schema.sql` | 新表 `persona`（per-zone）：`(server_id, persona_id) PK`、`user_id`、`kit_id`、`slot`、`status`、`control_epoch`、`world_address NULL`、`session_generation`、时间戳；`UNIQUE(server_id, user_id, kit_id, slot)`。`user_currency` PK → `(user_id, server_id, owner_kind, owner_id, currency)`；`currency_ledger.uk_idem` 与 `gameplay_outbox` 加 `owner_kind TINYINT DEFAULT 0` / `owner_id VARCHAR(64) DEFAULT ''`（0 = account，存量无损） |
 | `apps/server/tools/db-bootstrap.ts` | TS 迁移步（INFORMATION_SCHEMA 守卫先例）在 `singleton_lease('db_bootstrap')` 下一次性完成；已迁移即跳过 |
-| `core/infra/zoneTables.ts` | `FRAMEWORK_PER_ZONE_TABLES += persona` |
-| `core/economy/{currency,outbox,relayer}.ts` | `debitInTx` / `creditInTx` 加 `owner`（缺省 account）；intent 带 owner；relayer 对 persona 主体只落账本 |
-| `core/infra/kitApi.ts` | `KitTx.debit/credit` 可选 `owner`；`tx.assertControl(personaId, controlEpoch)`（`UPDATE persona … WHERE control_epoch=?`，Rows matched 判定）；固定锁序：account uid → persona id 升序 |
-| `core/infra/keys.ts` | `kCacheCurrency` 带 owner scope |
+| `framework/infra/zoneTables.ts` | `FRAMEWORK_PER_ZONE_TABLES += persona` |
+| `modules/economy/{currency,outbox,relayer}.ts` | `debitInTx` / `creditInTx` 加 `owner`（缺省 account）；intent 带 owner；relayer 对 persona 主体只落账本 |
+| `framework/infra/kitApi.ts` | `KitTx.debit/credit` 可选 `owner`；`tx.assertControl(personaId, controlEpoch)`（`UPDATE persona … WHERE control_epoch=?`，Rows matched 判定）；固定锁序：account uid → persona id 升序 |
+| `framework/infra/keys.ts` | `kCacheCurrency` 带 owner scope |
 | `apps/shared/src/protocol/identity.ts`（新） | `AssetOwnerRef` / `PersonaRef` 类型与零依赖校验器 |
-| `core/auth/{session,kickBus}.ts` | 撤销 / 踢下线抬高该 uid 全部 persona 的 `session_generation` |
+| `framework/auth/{session,kickBus}.ts` | 撤销 / 踢下线抬高该 uid 全部 persona 的 `session_generation` |
 
 退出条件：`test:int` 同账号两 persona 钱包 / 流水互不可见；shop / mail / redeem / arena / arenaShop / snake 回归绿且新 ledger 行 `owner_kind=0`；旧 `control_epoch` 提交 0 行；乱序锁反例被消；freeze / thaw 证明 persona 表不参与冷档。
 变异验证：删 `assertControl` 的 `control_epoch=?` 谓词 → 「旧 epoch 延迟提交」转红；owner 缺省改 persona → arenaShop 回归转红；交换锁序 → 死锁用例转红。
@@ -338,7 +338,7 @@ MF10 容量 / 多进程 / 运维（依赖 MF4–MF8）→ MF11 收口审阅与�
 | `rooms/core/WorldRuntime.ts`（新） | 无头模拟宿主：注入时钟、固定步累积 + catch-up 上限（自 `GameRoom.stepFixed` / `update` 抽出）、命令队列、生命周期状态机；⛔ 不 import `colyseus`（机检） |
 | `rooms/WorldRoom.ts`（新） | 传输壳：`autoDispose=false`；`onAuth` → RoomAuth（比 `WORLD_ROOM_PROTOCOL_VERSION`）；准入：ticket 占位 → 控制 CAS → `onAdmit`；会话表（容量按会话表，不按 state）；喂 C2S 进 WorldRuntime、按 tick 排空出站；租约失效 → Draining |
 | `rooms/core/WorldProfile.ts`（新） | profile `"world"`：AccessPolicy `world-ticket`，无 StartPolicy（⛔ 不往 `StartPolicy` 加 always-on 变体）；`assertRoomProfilesConfigured` 跳过 `kind:"world"`；与 evidence / invite-code 互斥 |
-| `rooms/core/WorldLease.ts`、`core/infra/{keys,redisScripts,config}.ts` | Redis 权威租约：`kWorldFence(sId, instanceId)` INCR 发号 + `kWorldLease` `SET NX PX WORLD_LEASE_TTL_MS`；续租 `CAS_RENEW` Lua（`renew*3 ≤ ttl` 加载期断言）；丢租 → Draining；⛔ 不逐 tick 碰 MySQL |
+| `rooms/core/WorldLease.ts`、`framework/infra/{keys,redisScripts,config}.ts` | Redis 权威租约：`kWorldFence(sId, instanceId)` INCR 发号 + `kWorldLease` `SET NX PX WORLD_LEASE_TTL_MS`；续租 `CAS_RENEW` Lua（`renew*3 ≤ ttl` 加载期断言）；丢租 → Draining；⛔ 不逐 tick 碰 MySQL |
 | `schema.sql`（只新增表） | `world_instance`（per-zone）：`(server_id, instance_id) PK`、`map_id`、`line`、`authority_epoch`、`holder`、`state`、`checkpoint_rev`、`updated_at`；`UNIQUE(server_id, map_id, line)`；`zoneTables.ts` 登记 |
 | `rooms/core/control.ts`（新） | `acquireAuthority(instance) → epoch`（MySQL CAS `authority_epoch+1`）；`acquireControl(persona, worldAddress) → controlEpoch`、`releaseControl`、`assertControl` |
 | `rooms/core/WorldDirectory.ts`（新） | `(sId, mapId, line) → instance` 查找 / 建行；v1 进程内 + MySQL 行 |
@@ -692,7 +692,7 @@ codegen 期与启动期校验：引用完整性（spawn → template、loot → 
 
 ### 7.6 落点与 kit 阶段
 
-- server：`apps/server/src/kits/mmo/{world,aoi,movement,combat,ai,inventory,content,social,orchestration,persistence,workers}/**` + `api/<surface>/index.ts`；`rooms/modes/mmoWorld/index.ts`（登进 `worldModeRegistry`）；`websocket/{mmo,mmoSocial,mmoAdmin}/`；`core/compute/tasks/kits/mmo/pathfind.ts`。只 import `../../core/infra/kitApi`、框架 world 契约与自身。
+- server：`apps/server/src/kits/mmo/{world,aoi,movement,combat,ai,inventory,content,social,orchestration,persistence,workers}/**` + `api/<surface>/index.ts`；`rooms/modes/mmoWorld/index.ts`（登进 `worldModeRegistry`）；`websocket/{mmo,mmoSocial,mmoAdmin}/`；`framework/compute/tasks/kits/mmo/pathfind.ts`。只 import `../../framework/infra/kitApi`、框架 world 契约与自身。
 - shared：`apps/shared/src/kits/mmo/api/<surface>/index.ts`；`apps/shared/src/gameplays/mmoWorld/wire.ts`；`domains/{mmo,mmoSocial,mmoAdmin}.ts`。
 - client：`apps/client/src/kits/mmo/{index.ts,api/**,logic/**,view/MmoCharacterSelectView}`；mode 四件 `gameplay/modes/mmoWorld/`、`net/rooms/MmoWorldRoom.ts`、`logic/rooms/mmoWorld/`、`view/rooms/mmoWorld/MmoWorldView`（默认 HUD：摇杆 / 目标 / 技能轮盘 / 附近聊天 / 队伍；bitECS 实体池 + 插值 + 相机）。竖屏基线 750×1624 不变。
 - kit v1 自带灰盒内容包 `apps/kits/mmo/content/greybox/*.json`（一图一怪一技能），MK4 前可内置 import，MK4 改为经贡献点装载以证明通道。

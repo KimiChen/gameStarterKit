@@ -30,9 +30,9 @@ import {
 import {
     validateMatchEvidenceV3,
     type MatchEvidenceV3,
-} from "../src/core/match/matchEvidence";
-import { replayMatchEvidenceV3 } from "../src/core/match/matchReplay";
-import type { EmitEvidenceResult } from "../src/core/match/matchConsumer";
+} from "../src/modules/match/matchEvidence";
+import { replayMatchEvidenceV3 } from "../src/modules/match/matchReplay";
+import type { EmitEvidenceResult } from "../src/modules/match/matchConsumer";
 import type { GameRoomState } from "../src/rooms/schema/GameRoomState";
 
 // 玩法注册在组合根（modes/catalog）；本文件的 `GameRoom.onAuth` 断言需要生产 registry

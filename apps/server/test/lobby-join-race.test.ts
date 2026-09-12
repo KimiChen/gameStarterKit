@@ -8,14 +8,14 @@ import {
   LOBBY_MSG_PUSH,
   LobbyPush,
 } from "@game/shared";
-import { AuthRequiredError } from "../src/core/errors";
+import { AuthRequiredError } from "../src/framework/errors";
 import {
   LobbyRoom,
   LOBBY_RECONNECT_GRACE_S,
   type LobbyJoinDependencies,
 } from "../src/websocket/LobbyRoom";
 import type { OnlineRegistration } from "../src/websocket/push";
-import { beginShutdown, resetAdmission } from "../src/core/infra/lifecycle";
+import { beginShutdown, resetAdmission } from "../src/framework/infra/lifecycle";
 
 type CapturedOnlineConn = Parameters<LobbyJoinDependencies["registerOnline"]>[2];
 

@@ -8,8 +8,8 @@ import { test } from "node:test";
 import {
   CHARACTER_READY_TIMEOUT_MAX_MS,
   CHARACTER_READY_TIMEOUT_MS,
-} from "../src/core/infra/config";
-import { zoneCtx } from "../src/core/infra/keys";
+} from "../src/framework/infra/config";
+import { zoneCtx } from "../src/framework/infra/keys";
 import {
   CharacterReadyCoordinator,
   CharacterReadyClosedError,

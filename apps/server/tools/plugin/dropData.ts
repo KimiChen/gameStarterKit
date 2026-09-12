@@ -11,9 +11,9 @@
  * `dropKitTables` / `dropKitRedisKeys` 各自注入连接（单测用假连接 / 假客户端）；`dropKitData` 是真连接编排。
  */
 import mysql from "mysql2/promise";
-import { MYSQL_URL, REDIS_KEY_PREFIX } from "../../src/core/infra/config";
-import { closeRedis, durableClients } from "../../src/core/infra/redisRoute";
-import { assertKitTablePrefixesUnique, kitTablePrefix } from "../../src/core/infra/zoneTables";
+import { MYSQL_URL, REDIS_KEY_PREFIX } from "../../src/framework/infra/config";
+import { closeRedis, durableClients } from "../../src/framework/infra/redisRoute";
+import { assertKitTablePrefixesUnique, kitTablePrefix } from "../../src/framework/infra/zoneTables";
 import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
 import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
 

@@ -4,10 +4,10 @@
  * 这里兜「会话中途被冻结」的残余窗口；解冻后仍无档由 ensureLive 抛 USER_DATA_LOST。
  */
 import { UserRpc } from "@game/shared";
-import { ensureLive } from "../../core/archive/thaw";
-import { UserDataLostError } from "../../core/errors";
+import { ensureLive } from "../../framework/archive/thaw";
+import { UserDataLostError } from "../../framework/errors";
 import { readUser } from "../../player/userStore";
-import { currentZoneId } from "../../core/infra/keys";
+import { currentZoneId } from "../../framework/infra/keys";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(UserRpc.GetInfo, {

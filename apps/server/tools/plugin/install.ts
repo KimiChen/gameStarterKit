@@ -485,7 +485,7 @@ export function gitAddExisting(root: string, paths: readonly string[]): void {
 
 /**
  * 目录级所有权冲突：推导集里的 dir/prefix/file 规则在工作树已有**不属本插件（不在旧锁）**的文件 ⇒ 冲突。
- * 文件级比对挡不住「插件 id/domain 与框架既有目录同名」（core/auth、resources/ui …）——那会把插件代码
+ * 文件级比对挡不住「插件 id/domain 与框架既有目录同名」（framework/auth、resources/ui …）——那会把插件代码
  * 放进框架目录随 tsc/测试链一起编译（PLUGIN-REVIEW 实施后审阅）。镜像目录按真源规则一并检查。
  */
 export function ownershipConflicts(
@@ -645,7 +645,7 @@ function gameplayExclusivePrefixes(modeId: string): readonly string[] {
 export function isSharedNamespace(relative: string, id: string, cls: PackageClass = "plugin", modeIds: readonly string[] = [id]): boolean {
   const exclusive = cls === "kit"
     ? [`${kitDir(id)}/`, `apps/client/src/kits/${id}/`, `apps/Cocos/assets/src/kits/${id}/`, `apps/shared/src/kits/${id}/`, `apps/server/src/kits/${id}/`,
-      `apps/server/src/core/compute/tasks/kits/${id}/`, `apps/Cocos/assets/resources/kits/${id}/`, ...modeIds.flatMap(gameplayExclusivePrefixes)]
+      `apps/server/src/framework/compute/tasks/kits/${id}/`, `apps/Cocos/assets/resources/kits/${id}/`, ...modeIds.flatMap(gameplayExclusivePrefixes)]
     : [`${pluginDir(id)}/`, `apps/client/src/plugins/${id}/`, `apps/Cocos/assets/src/plugins/${id}/`, `apps/server/src/core/${id}/`,
       ...modeIds.flatMap(gameplayExclusivePrefixes)];
   if (exclusive.some((prefix) => relative.startsWith(prefix) || relative === `${prefix.slice(0, -1)}.meta`)) return false;

@@ -4,7 +4,7 @@ import { isRpcErrCode, type RpcErrCode } from "./registry.generated";
 /**
  * LobbyRoom ws-RPC 信封 —— 双端共享的**类型真源**。
  *
- * 服务端 websocket/dispatcher.ts（RpcEnvelope/RpcReply）与 core/errors.ts（ErrCode）
+ * 服务端 websocket/dispatcher.ts（RpcEnvelope/RpcReply）与 framework/errors.ts（ErrCode）
  * 直接别名引用本文件（Arthur 停回流后单源合一，不存在镜像漂移）。
  * 错误码全集自阶段 3 起由 registry.generated.ts 聚合（core 码在 coreErrors.ts、领域码在
  * domains/<域>.ts），本文件只 re-export；登记新 core 错误码顺序见 coreErrors.ts 抬头。

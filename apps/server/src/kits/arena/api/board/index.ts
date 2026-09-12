@@ -15,7 +15,7 @@ import {
 } from "@game/shared/kits/arena/api/board/index";
 import {
   CUR_GOLD, type IEffect, type KitEffectApplyResult, type KitTx, applyKitEffect, kitOpId, withKitTx,
-} from "../../../../core/infra/kitApi";
+} from "../../../../framework/infra/kitApi";
 import {
   type ArenaAttemptOutcome, insertAttempt, selectAttemptForUpdate, selectBoard, selectTileForUpdate, upsertTile,
 } from "../../boardRepo";

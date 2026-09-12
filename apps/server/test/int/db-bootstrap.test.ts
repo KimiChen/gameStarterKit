@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import mysql from "mysql2/promise";
 
-import { MYSQL_URL } from "../../src/core/infra/config";
+import { MYSQL_URL } from "../../src/framework/infra/config";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const serverRoot = join(here, "../..");

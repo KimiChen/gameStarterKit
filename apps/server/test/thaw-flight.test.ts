@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { currentZoneId, zoneCtx } from "../src/core/infra/keys";
-import { ZoneSingleFlight } from "../src/core/archive/thaw";
+import { currentZoneId, zoneCtx } from "../src/framework/infra/keys";
+import { ZoneSingleFlight } from "../src/framework/archive/thaw";
 
 function deferred(): { promise: Promise<void>; resolve: () => void } {
   let resolve!: () => void;

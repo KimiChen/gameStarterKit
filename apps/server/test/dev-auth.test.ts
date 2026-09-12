@@ -22,7 +22,7 @@ function loadConfigWith(
   }
   const r = spawnSync(
     process.execPath,
-    ["--import", "tsx", "--input-type=module", "-e", "await import('./src/core/infra/config.ts')"],
+    ["--import", "tsx", "--input-type=module", "-e", "await import('./src/framework/infra/config.ts')"],
     { cwd: SERVER_ROOT, env, encoding: "utf8", timeout: 30_000 },
   );
   return { status: r.status, stderr: r.stderr, stdout: r.stdout };

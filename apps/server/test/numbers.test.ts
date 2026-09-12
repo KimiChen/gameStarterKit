@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   optionalStoredBool, optionalStoredInt, storedBool, storedFinite, storedInt,
-} from "../src/core/infra/numbers";
+} from "../src/framework/infra/numbers";
 
 test("storedInt accepts finite safe integer storage values and rejects coercion", () => {
   assert.equal(storedInt("42", "n", { min: 0, max: 100 }), 42);

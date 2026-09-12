@@ -20,13 +20,13 @@ import {
   type MatchEvidenceEvent,
   type MatchEvidenceRosterEntry,
   type MatchEvidenceV3,
-} from "../src/core/match/matchEvidence";
+} from "../src/modules/match/matchEvidence";
 import {
   MatchReplayError,
   buildReplayParticipants,
   replayMatchEvidenceV3,
   type MatchReplayMetrics,
-} from "../src/core/match/matchReplay";
+} from "../src/modules/match/matchReplay";
 import {
   advanceBallMovePlayers,
   applyBallMoveCast,

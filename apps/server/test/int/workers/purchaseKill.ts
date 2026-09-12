@@ -4,9 +4,9 @@
  *   p2 = 阶段 2（redisApply）后、阶段 3（markOutboxDone）前 SIGKILL —— 道具已发、仍 pending
  * 用法: node --import tsx purchaseKill.ts <uid> <sku> <clientReqId> <p1|p2>
  */
-import { acquireLease } from "../../../src/core/locks";
-import { getShopSku } from "../../../src/core/economy/catalog";
-import { deriveOpId, purchaseTx, redisApply } from "../../../src/core/economy/outbox";
+import { acquireLease } from "../../../src/framework/locks";
+import { getShopSku } from "../../../src/modules/economy/catalog";
+import { deriveOpId, purchaseTx, redisApply } from "../../../src/modules/economy/outbox";
 
 const [uid, skuId, clientReqId, phase] = process.argv.slice(2);
 const sku = getShopSku(skuId);

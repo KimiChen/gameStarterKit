@@ -7,15 +7,15 @@
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { creditInTx, debitInTx, getBalance, invalidateBalanceCache } from "../../src/core/economy/currency";
-import { deriveOpId, purchase } from "../../src/core/economy/outbox";
-import { getShopSku } from "../../src/core/economy/catalog";
-import { createUser } from "../../src/core/userRecord";
-import { CUR_GOLD } from "../../src/core/infra/config";
-import { kApplied, kBag, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
-import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
-import { closeMysql, getPool, withRcTx } from "../../src/core/infra/mysql";
-import type { RowDataPacket } from "../../src/core/infra/mysql";
+import { creditInTx, debitInTx, getBalance, invalidateBalanceCache } from "../../src/modules/economy/currency";
+import { deriveOpId, purchase } from "../../src/modules/economy/outbox";
+import { getShopSku } from "../../src/modules/economy/catalog";
+import { createUser } from "../../src/framework/userRecord";
+import { CUR_GOLD } from "../../src/framework/infra/config";
+import { kApplied, kBag, kSess, kUser, zoneCtx } from "../../src/framework/infra/keys";
+import { clientFor, closeRedis } from "../../src/framework/infra/redisRoute";
+import { closeMysql, getPool, withRcTx } from "../../src/framework/infra/mysql";
+import type { RowDataPacket } from "../../src/framework/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const uids: string[] = [];
@@ -138,7 +138,7 @@ test("per-zone: purchase 全链落对区（sId=5：钱扣 s5 + Redis apply 落 s
 test("A2 邮件按区隔离：s1 的邮件在 s2 ⛔ 不可见、⛔ 不可领、⛔ 不可标已读", async () => {
   // ⚠ 评审实证过的跨区串档：`mail` 表有 server_id、写入也落了值，但三处查询侧都只按 user_id
   //   ⇒ 同账号切到他区就能看到并领走。⛔ 与 GROUP_ZONES 是否非空无关（空 = 承载全部区）。
-  const { sendMail, claimMailAttach } = await import("../../src/core/economy/mailer");
+  const { sendMail, claimMailAttach } = await import("../../src/modules/economy/mailer");
   const listRpc = (await import("../../src/websocket/mail/list")).default;
   const markRpc = (await import("../../src/websocket/mail/markRead")).default;
   const u = uid("a2mail");

@@ -1,5 +1,5 @@
 /**
- * plugin 自有键工厂 `kPluginUser` / `kPluginShared`（core/infra/keys.ts）的中央契约——与
+ * plugin 自有键工厂 `kPluginUser` / `kPluginShared`（framework/infra/keys.ts）的中央契约——与
  * gameplay-keys.test.ts 的 `kGameplay` 对称（docs/PLUGIN.md §8：plugin 侧 Redis 键命名空间的收口）：
  * - scope 显式且 per-zone / global 前缀行为真的不同；
  * - 分段顺序（`pl:` → pluginId → name → `{uid}` 末段）是 09·R3 同槽与「按 plugin 前缀清理」的依据；
@@ -10,7 +10,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { kPluginShared, kPluginUser, kGameplay, kUser, zoneCtx } from "../src/core/infra/keys";
+import { kPluginShared, kPluginUser, kGameplay, kUser, zoneCtx } from "../src/framework/infra/keys";
 
 test("kPluginUser 分段契约：pl 命名空间 + pluginId + name + {uid} 末段", () => {
     const key = kPluginUser("redeem", "claimed", "u1", { zone: "global" });

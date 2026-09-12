@@ -54,7 +54,7 @@
 
 **C. 兼容与信任**
 
-8. 插件对框架 API 没有兼容轴也没有导入边界（redeem 直接 import `core/infra/*`，tally import `GameMode`、
+8. 插件对框架 API 没有兼容轴也没有导入边界（redeem 直接 import `framework/infra/*`，tally import `GameMode`、
    `GameRoomState`）；typecheck 是唯一的闸而 install 不跑它。→ §4.3 与注册表同期做。
 9. **`requires.*SchemaVersion` 事实上 fail-open**：可省略、不进已安装锁、check 不复核、比对基准是硬编码常量；
    tally 的 kinds 含 gameplay 却没钉 gameplaySchemaVersion。
@@ -202,7 +202,7 @@ CI 对所有未下架版本重跑一遍并追加。CLI 安装时比较本地检�
   `requires.pluginApiVersion = X`，宿主 `PLUGIN_API_VERSION < X` 即拒绝。
 - 导入边界机检：新增 `apps/server/test/plugin-import-boundary.test.ts`，按 `scripts/packages/*.lock` + `deriveOwnership`
   枚举插件文件，AST 解析 import 说明符，只允许三处门面、`@game/shared` 的 plugin-api、插件自身推导集内的相对路径；
-  `core/infra/**`、`rooms/core/**`、`app/**`、`GameMode.ts`、`dispatcher.ts` 直接 import 即红。
+  `framework/infra/**`、`rooms/core/**`、`app/**`、`GameMode.ts`、`dispatcher.ts` 直接 import 即红。
   `GameModeRegistry.register` 的 `replace` 选项对生成 catalog 之外的调用方关闭。
 - `install` 在 postinstall 末尾跑 `typecheck`（服务端 + 客户端）或提供 `--verify` 并在 nextSteps 明示，让
   「装得上但编不过」在安装当场暴露。

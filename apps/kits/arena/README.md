@@ -69,7 +69,7 @@ api 命名面、`requires.kits`）。走通的动线：作者侧 `plugin -- pack
 | `apps/shared/src/kits/arena/api/{board,ranking}/index.ts` | shared api 面（零依赖） |
 | `apps/shared/src/protocol/lobbyRpc/domains/arena.ts` + `apps/server/test/lobbyRpcVectors/arena.ts` | 域契约 + 向量 sidecar |
 | `apps/shared/src/gameplays/{arenaCapture,arenaDuel}/wire.ts` + `apps/server/test/wire-vectors/{arenaCapture,arenaDuel}.ts` | 两个 mode 的 wire 与向量 |
-| `apps/server/src/kits/arena/{boardRepo,host}.ts` | 内部模块：SQL 访问（棋盘 + 回执）/ 宿主接线（`currentZoneId` + 只读奖杯，都经 kit-api 门面；本 kit 服务端代码只 import `../../core/infra/kitApi`、本目录与 `@game/shared*`——`apps/server/test/kit-import-boundary.test.ts` 钉住） |
+| `apps/server/src/kits/arena/{boardRepo,host}.ts` | 内部模块：SQL 访问（棋盘 + 回执）/ 宿主接线（`currentZoneId` + 只读奖杯，都经 kit-api 门面；本 kit 服务端代码只 import `../../framework/infra/kitApi`、本目录与 `@game/shared*`——`apps/server/test/kit-import-boundary.test.ts` 钉住） |
 | `apps/server/src/kits/arena/api/{board,ranking}/index.ts` | 服务端 api 面（`withKitTx` / `tx.debit` / `tx.enqueueEffect` / `applyKitEffect` / `kitOpId`） |
 | `apps/server/src/websocket/arena/{board,capture}.ts` | 端点 |
 | `apps/server/src/rooms/modes/{arenaCapture,arenaDuel}/index.ts` | 两个 GameMode |

@@ -3,12 +3,12 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import { BUCKETS } from "../src/core/infra/config";
+import { BUCKETS } from "../src/framework/infra/config";
 import {
   _redisRouteTestHooks,
   parseRedisRouteDocument,
   validateRedisUrl,
-} from "../src/core/infra/redisRoute";
+} from "../src/framework/infra/redisRoute";
 
 const routeDir = mkdtempSync(join(tmpdir(), "game-redis-route-"));
 const previousRouteFile = process.env.REDIS_ROUTE_FILE;

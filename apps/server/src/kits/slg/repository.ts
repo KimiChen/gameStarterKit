@@ -4,7 +4,7 @@ import {
   SLG_CHUNK_SIZE, SLG_MAP_H, SLG_MAP_W, SLG_MAX_GUARD_POWER,
   type ISlgChunkRect, type ISlgTile, tileIdFromGrid, validateSlgTileId,
 } from "@game/shared/kits/slg/api/worldmap/index";
-import type { KitTx, RowDataPacket } from "../../core/infra/kitApi";
+import type { KitTx, RowDataPacket } from "../../framework/infra/kitApi";
 
 export type SlgReceiptKind = "capture" | "dispatch" | "recall" | "settle";
 export interface SlgReceipt {

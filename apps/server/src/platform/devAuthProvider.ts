@@ -11,11 +11,11 @@
  * 生产环境的真实身份只走外部 HTTP 契约。
  */
 import { createHash, randomBytes } from "node:crypto";
-import { SESS_TTL_S } from "../core/infra/config";
-import { kSess, kUser, zoneCtx } from "../core/infra/keys";
-import { clientFor } from "../core/infra/redisRoute";
-import { safeEqualHex, tokenHashOf, writeGroupSess } from "../core/auth/session";
-import { AuthRequiredError } from "../core/errors";
+import { SESS_TTL_S } from "../framework/infra/config";
+import { kSess, kUser, zoneCtx } from "../framework/infra/keys";
+import { clientFor } from "../framework/infra/redisRoute";
+import { safeEqualHex, tokenHashOf, writeGroupSess } from "../framework/auth/session";
+import { AuthRequiredError } from "../framework/errors";
 import { markCharacterRegistrationReady } from "../player/characterState";
 import type { WebPlatformClient } from "./webPlatformClient";
 

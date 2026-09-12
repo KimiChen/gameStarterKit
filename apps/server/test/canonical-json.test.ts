@@ -8,7 +8,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { canonicalJsonString } from "@game/shared";
-import { idemPayloadHash } from "../src/core/idem";
+import { idemPayloadHash } from "../src/framework/idem";
 
 test("golden vectors：标量与空容器", () => {
   assert.equal(canonicalJsonString(null), "null");

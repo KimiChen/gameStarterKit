@@ -8,23 +8,23 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { after, before, test } from "node:test";
-import { EffectConflictError, InvalidEffectError } from "../../src/core/errors";
-import { acquireLease } from "../../src/core/locks";
-import { getShopSku } from "../../src/core/economy/catalog";
-import type { ShopSku } from "../../src/core/economy/catalog";
+import { EffectConflictError, InvalidEffectError } from "../../src/framework/errors";
+import { acquireLease } from "../../src/framework/locks";
+import { getShopSku } from "../../src/modules/economy/catalog";
+import type { ShopSku } from "../../src/modules/economy/catalog";
 import {
   deriveOpId, purchaseTx, readBack, redisApply,
-} from "../../src/core/economy/outbox";
-import { claimMailAttach, sendMail } from "../../src/core/economy/mailer";
-import { createUser } from "../../src/core/userRecord";
-import { CUR_GOLD, OUTBOX_DONE, SCHEMA_VERSION } from "../../src/core/infra/config";
+} from "../../src/modules/economy/outbox";
+import { claimMailAttach, sendMail } from "../../src/modules/economy/mailer";
+import { createUser } from "../../src/framework/userRecord";
+import { CUR_GOLD, OUTBOX_DONE, SCHEMA_VERSION } from "../../src/framework/infra/config";
 import {
   kApplied, kAppliedPayload, kBagAll, kKitUser, kUser, zoneCtx,
-} from "../../src/core/infra/keys";
-import { APPLY_EFFECT, defineScript, evalshaWithReload } from "../../src/core/infra/redisScripts";
-import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
-import { closeMysql, getPool, withTx } from "../../src/core/infra/mysql";
-import type { RowDataPacket } from "../../src/core/infra/mysql";
+} from "../../src/framework/infra/keys";
+import { APPLY_EFFECT, defineScript, evalshaWithReload } from "../../src/framework/infra/redisScripts";
+import { clientFor, clientForKey, closeRedis } from "../../src/framework/infra/redisRoute";
+import { closeMysql, getPool, withTx } from "../../src/framework/infra/mysql";
+import type { RowDataPacket } from "../../src/framework/infra/mysql";
 import { validateGrant } from "@game/shared";
 import type { KitEffectSpec } from "@game/shared/kits/catalogTypes";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";

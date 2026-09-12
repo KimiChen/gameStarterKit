@@ -33,7 +33,7 @@
       "id": "asset-effect-and-zone-isolation",
       "category": "core",
       "defaultEntry": "apps/server/src/websocket/shop/purchase.ts",
-      "sourceOfTruth": "apps/server/src/core/infra/redisScripts.ts",
+      "sourceOfTruth": "apps/server/src/framework/infra/redisScripts.ts",
       "wireBoundary": "apps/shared/src/protocol/lobbyRpc/economy.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
       "docs": ["docs/plan-v5.md", "docs/SERVER.md", "docs/DUAL_MODE.md"]
@@ -41,9 +41,9 @@
     {
       "id": "outbox-relayer",
       "category": "extra",
-      "defaultEntry": "apps/server/src/core/economy/relayer.ts",
-      "sourceOfTruth": "apps/server/src/core/economy/relayer.ts",
-      "wireBoundary": "apps/server/src/core/economy/outbox.ts",
+      "defaultEntry": "apps/server/src/modules/economy/relayer.ts",
+      "sourceOfTruth": "apps/server/src/modules/economy/relayer.ts",
+      "wireBoundary": "apps/server/src/modules/economy/outbox.ts",
       "launch": { "kind": "workspace", "workspace": "@game/server", "script": "relayer" },
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
       "docs": ["docs/EXTRAS.md", "docs/SERVER.md"]
@@ -61,7 +61,7 @@
       "id": "process-lifecycle",
       "category": "core",
       "defaultEntry": "apps/server/src/index.ts",
-      "sourceOfTruth": "apps/server/src/core/infra/lifecycle.ts",
+      "sourceOfTruth": "apps/server/src/framework/infra/lifecycle.ts",
       "wireBoundary": "apps/server/src/index.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }],
       "docs": ["docs/plan-v5.md", "docs/SERVER.md"]
@@ -105,9 +105,9 @@
     {
       "id": "server-infrastructure-boundaries",
       "category": "core",
-      "defaultEntry": "apps/server/src/core/infra/config.ts",
-      "sourceOfTruth": "apps/server/src/core/infra",
-      "wireBoundary": "apps/server/src/core/infra/redisRoute.ts",
+      "defaultEntry": "apps/server/src/framework/infra/config.ts",
+      "sourceOfTruth": "apps/server/src/framework/infra",
+      "wireBoundary": "apps/server/src/framework/infra/redisRoute.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }, { "kind": "workspace", "workspace": "@game/server", "script": "smoke:framework" }],
       "docs": ["docs/plan-v5.md", "docs/SERVER.md"]
     },

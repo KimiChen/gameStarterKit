@@ -112,8 +112,8 @@ C2S 消息、公共 FGUI 基础包改造或全局数据模型变化；这些仍�
 | `apps/shared/src/protocol/lobbyRpc/push.ts` | 手工扩展 push 常量、Map、switch validator | 第二阶段新增唤醒推送仍会修改中央文件 |
 | `apps/shared/src/logic/index.ts` | 手工 re-export 新纯逻辑 | 玩法代码虽然是新增文件，公共入口仍要人工侵入 |
 | `apps/server/src/websocket/rpc.ts` | endpoint 重复声明 schema 和 `idem: true` | shared 已有语义仍需服务端再次登记；剩余风险是手写两字段的机械重复（含 clientReqId 的路由漏开 idem 已是编译期错误） |
-| `apps/server/src/core/errors.ts` | 为新异常维护中央 constructor→code 映射 | 领域错误必须侵入框架核心 |
-| `apps/server/src/core/idem.ts` | 只有短期 pending/result 缓存 | 不绑定 payload，且没有受控状态查询，不能完整承载结果未知恢复 |
+| `apps/server/src/framework/errors.ts` | 为新异常维护中央 constructor→code 映射 | 领域错误必须侵入框架核心 |
+| `apps/server/src/framework/idem.ts` | 只有短期 pending/result 缓存 | 不绑定 payload，且没有受控状态查询，不能完整承载结果未知恢复 |
 | `apps/client/src/view/pages.ts` | 手工组合页面、导航和会话恢复 | 新玩法会继续把分支堆进中央页面组合根 |
 | `apps/client/src/view/viewRegistry.ts` | 每个 View 手工登记动态 import 和元数据 | View 文件与中央 registry 需要同步修改 |
 | `apps/client/src/view/fguiContracts.ts` | 手工维护契约常量和全集 | XML、View AUTO、contract 和 registry 存在多个同步点 |
@@ -230,7 +230,7 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 | 客户端 View catalog / FGUI contract / FGUI 包闭包 | §7.5（`views.generated.ts` + `fguiContracts.generated.ts`） | `codegen:gameplays` 只产出 gameplay 的 View contribution（中间产物），由最终 View 生成器汇总 |
 | Home 菜单数据源 | §7.4 的 menu contribution | gameplay 入口编译成**相同形状**的 contribution |
 | 协议兼容版本与仓库级指纹锁 | §4.8 | 两类实体共用 `GAME_ROOM_PROTOCOL_VERSION` / `LOBBY_PROTOCOL_VERSION`，⛔ 不各自新增版本闸 |
-| Redis Lua 装载与 key 构造 | 仓内既有 `core/infra/redisScripts.ts` + `keys.ts` | 两侧都只**复用**，⛔ 不另建第二套（但 ⛔ 不共用记录结构，见 §6 导语） |
+| Redis Lua 装载与 key 构造 | 仓内既有 `framework/infra/redisScripts.ts` + `keys.ts` | 两侧都只**复用**，⛔ 不另建第二套（但 ⛔ 不共用记录结构，见 §6 导语） |
 | 生成器执行顺序 | 本节 | 当 gameplay 的 View/menu contribution 成为最终 View 生成器的输入时，`codegen:gameplays` 必须在 `codegen:plugins` **之前**运行；两者的 freshness 断言互不依赖顺序。⛔ 不合并成单一 `codegen -- --all` 前端——与仓内 `codegen:fgui` / `codegen:http` / `codegen:state` 三条并存、逐条登记的惯例冲突 |
 
 下面是各自的术语定义：
@@ -252,7 +252,7 @@ Cocos Creator 3.8.8 的 TypeScript 源工程。它适合用于梳理玩法规则
 **plugin 侧**——一次性改造完成后，应满足：
 
 1. 新增 Lobby RPC 领域不再手改 `lobbyRpc/index.ts`、`envelope.ts`、`rpc.ts`、`dispatcher.ts` 或
-   `core/errors.ts`。
+   `framework/errors.ts`。
 2. 新增 plugin 页面不再手改 `pages.ts`、`viewRegistry.ts`、`fguiContracts.ts`、Home、`Main.ts` 或
    `WebSocketClient.ts`。
 3. 路由的请求、响应、执行模式和幂等策略只有一个领域真源；全局错误码全集由 core + domain descriptor
@@ -633,7 +633,7 @@ generated error catalog，或用该玩法自己的 S2C token 表达；不得再�
 
 因为 §9 已把 RPC descriptor（阶段 3）排在 private-room（阶段 8）之前，邀请码的两条 Lobby RPC 只需新增
 `domains/room.ts` 的 `errorCodes`，**零中央侵入**——⛔ 不需要再改 `lobbyRpc/envelope.ts` 与服务端
-`core/errors.ts`。这正是该顺序要换取的收益之一；若实施时倒排顺序，就必须把这两处中央修改显式加回计划。
+`framework/errors.ts`。这正是该顺序要换取的收益之一；若实施时倒排顺序，就必须把这两处中央修改显式加回计划。
 
 一次性引入带 runtime whitelist 的 `RpcFault` 或 `rpcFault(code)`：
 
@@ -650,7 +650,7 @@ Proxy/跨边界属性读取异常。客户端继续只按 `code` 分支，不解
 下发的非 INTERNAL message 必须是有界、可公开文本，禁止包含 SQL、Redis key、完整 payload、内部路径、种子或
 私有状态；不能证明安全时发送稳定通用文案。客户端不解析 msg 并不能自动防止服务端泄漏。
 
-以后领域错误类和错误码都在 plugin 新文件中定义，不再修改 `core/errors.ts`。
+以后领域错误类和错误码都在 plugin 新文件中定义，不再修改 `framework/errors.ts`。
 
 
 ### 4.8 协议身份与版本边界
@@ -1092,7 +1092,7 @@ codegen/sync 产物禁止手改；FGUI 二进制和图集由 FairyGUI 编辑器�
 
 前半章（§6.1–§6.9）是 GameRoom 侧：拆掉 ballMove 默认语义、通用 policy、可回滚开局事务、房间状态机与
 邀请码。后半章（§6.10–§6.14）是 Lobby RPC 侧：metadata 驱动的 `defineRpc`、幂等 v2 与受控 operation 查询。
-两者共用 `core/infra/` 的 Redis Lua 装载器与 `keys.ts` 的 key 构造器，但 ⛔ **不共用记录结构**——
+两者共用 `framework/infra/` 的 Redis Lua 装载器与 `keys.ts` 的 key 构造器，但 ⛔ **不共用记录结构**——
 `StoredIdem` 是「请求 → 结果」的幂等记录（30/60 秒量级 UX 快闸），邀请码租约是「六位码 → 房间」的占位
 记录（生命周期是房间 Waiting 期，需 renew 与绝对 deadline）。
 
@@ -1382,7 +1382,7 @@ lease generation），⛔ 不是同一个量。
 value 外不得出现——⛔ 不进 resolve 响应、不进 room state、不进日志与指标标签、不进 `RoomClient` 的 ownership
 key；CAS 比对使用恒定时间比较。（§4.4 的 token 禁令只覆盖客户端 join options，服务端侧需要本条。）
 
-所有 key 必须通过 `apps/server/src/core/infra/keys.ts` 新增的专用构造器生成，且 **`sId` 作为显式参数逐层
+所有 key 必须通过 `apps/server/src/framework/infra/keys.ts` 新增的专用构造器生成，且 **`sId` 作为显式参数逐层
 传递**，⛔ 不依赖 `zoneCtx` AsyncLocalStorage：GameRoom 不在任何 `zoneCtx.run` 作用域内（区是房级常量），
 而 `prepareCreate` / `resolve` 跑在 LobbyRoom 的 `zoneCtx.run({sId})` 里；create 与 renew/release 若一侧读
 ALS、一侧读房级 `sId`，就会打到不同 key。`sId` 取 GameRoom 已有的房级值（onAuth 权威区号），随 lease value
@@ -1587,7 +1587,7 @@ SHA-256(
 - 读到契约版本不匹配的记录时按 **fail closed** 处理：pending 返回 `IN_PROGRESS`，done 返回
   `OPERATION_RESULT_EXPIRED`，⛔ 不重放、不重新执行。
 
-**key 必须经 `keys.ts` 构造。** 第 3 步的 key 由 `apps/server/src/core/infra/keys.ts` 的
+**key 必须经 `keys.ts` 构造。** 第 3 步的 key 由 `apps/server/src/framework/infra/keys.ts` 的
 `kIdemUser(route, uid, clientReqId)` 生成（已带项目前缀、区前缀与 `{uid}` hash-tag），zone 分量来自
 `zoneCtx` / `currentZoneId()`，**不接受客户端自报**；⛔ 禁止在 dispatcher 或领域代码里就地拼接（铁律 8）。
 这与 §6.7 对邀请码 key 的要求对称。
@@ -2185,8 +2185,8 @@ gameplay generation」双守卫并写清两者失效的先后；`dispatchInput` 
 | Shared | `protocol/lobbyRpc/index.ts`、`envelope.ts`、`push.ts`、现有 user/mail/shop/guild 契约、`logic/index.ts` | 迁移为 domain descriptor + generated registry |
 | 协议身份 | `protocol/rooms.ts`、Lobby/Game join validator、health 类型、协议指纹脚本与测试 | 分离 Lobby 与 GameRoom 协议身份 |
 | Server RPC | `websocket/rpc.ts`、`dispatcher.ts`、`loader.ts`、现有 endpoint | metadata 驱动 schema、响应校验和执行模式 |
-| Server idem | `core/idem.ts`、`core/infra/redisScripts.ts`、必要的 key/config | payload hash、唯一 lease、CAS 和 inspect |
-| Server errors | `core/errors.ts` 及现有异常子类 | 自描述错误，移除领域中央映射 |
+| Server idem | `framework/idem.ts`、`framework/infra/redisScripts.ts`、必要的 key/config | payload hash、唯一 lease、CAS 和 inspect |
+| Server errors | `framework/errors.ts` 及现有异常子类 | 自描述错误，移除领域中央映射 |
 | Client host | `Main.ts`、`view/pages.ts`、`net/WebSocketClient.ts`、`net/session.ts` | 通用 plugin、导航、会话和生命周期接缝 |
 | Home | `HomeView.ts`、`HomeLogic.ts`、Home FGUI XML 与导出物 | 固定按钮改为数据驱动 plugin menu |
 | View/FGUI | `viewRegistry.ts`、`fguiContracts.ts`、`defineView.ts`、必要的 `ViewMgr.ts`、FGUI codegen/manifest | 生成静态 registry 与契约 |
@@ -2228,10 +2228,10 @@ provenance 白名单里单列说明它是人工项。⛔ 不建议把它改成 g
 | `apps/server/src/rooms/ballMoveRules.ts` | 当前由 GameRoom 直接消费 | 移入 `rooms/modes/ballMove/**`，成为 ballMove 私有实现 |
 | `apps/server/src/rooms/modes/catalog.ts` | 手工只登记 idle；ballMove 由 `GameMode.ts` 的**模块顶层副作用** `gameModeRegistry.register(...)` 隐式成为默认——正是 §5.4 明令禁止的自注册形态 | 改为 generated catalog 的稳定 façade，显式登记全部 mode（✅ 2026-09-05 已实施：`codegen:gameplays` 按 manifest.wireExposed 发现 `modes/<id>/index.ts` 的 `register<Constant>GameMode` 生成 `modes/catalog.generated.ts`，`catalog.ts` 只 re-export；`catalog.ts` 与 `app.config.ts` 同批进 §12.2 保护清单） |
 | `apps/server/src/app.config.ts` | 进程根手工调用 mode catalog，普通撮合只按 `sId/mode` 隔离 | 一次性切换 generated bootstrap；仍只注册一个 `RoomName.Game`，多 profile 后按 `sId/mode/profile` 隔离 |
-| `apps/server/src/core/infra/keys.ts`、相关 config/Redis script | 没有邀请码租约 key、TTL 和 CAS | 增加按项目/区隔离的 key、配置校验、lease renew/release Lua |
-| `apps/server/src/core/errors.ts` | Lobby domain 异常仍映射到中央错误表 | 按 §9 的顺序，generated error 已在阶段 3 落地，邀请码只贡献 `domains/room.ts` 的 `errorCodes`，本文件 ⛔ 不需要再改 |
+| `apps/server/src/framework/infra/keys.ts`、相关 config/Redis script | 没有邀请码租约 key、TTL 和 CAS | 增加按项目/区隔离的 key、配置校验、lease renew/release Lua |
+| `apps/server/src/framework/errors.ts` | Lobby domain 异常仍映射到中央错误表 | 按 §9 的顺序，generated error 已在阶段 3 落地，邀请码只贡献 `domains/room.ts` 的 `errorCodes`，本文件 ⛔ 不需要再改 |
 | `apps/server/src/websocket/room/prepareCreate.ts`、`resolve.ts`（新增） | 需要可信创建者声明和定向加入入口 | 使用现有 `zoneCtx/currentZoneId()`，实现认证、专用限流桶、creation/join ticket；保持 handler 轻量。⚠ `websocket/room/` 下每个非 `.test.ts` 的 `.ts` 都会被 loader 当作 endpoint，路由名必须等于 `room.<文件名>`，端点全集与 `ALL_LOBBY_RPC_TYPES` 双向相等（启动期 throw）；helper / decoder 必须放 `core/` |
-| `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`、`matchConsumer.ts`（可选） | 当前可信证据是 ballMove ruleset | 需要多玩法可信战绩时再改为 ruleset registry；首期 Snake 明确 `evidence: none` 可暂不扩展消费者 |
+| `apps/server/src/modules/match/matchEvidence.ts`、`matchReplay.ts`、`matchConsumer.ts`（可选） | 当前可信证据是 ballMove ruleset | 需要多玩法可信战绩时再改为 ruleset registry；首期 Snake 明确 `evidence: none` 可暂不扩展消费者 |
 | 服务端现有 GameRoom/mode/wire/replay 测试 | 测试夹具绑定 ballMove 默认分支和两人自动开局 | 迁移为 core policy 测试、ballMove 私有 harness 和自动遍历的 mode contract 测试 |
 
 两个 room RPC 文件本身是新增式改动，但要让它们成为今后不再侵入中央 RPC 的稳定能力，仍需要上述 shared
@@ -2275,9 +2275,9 @@ apps/server/tools/gameplay-codegen/cli.ts
 apps/server/src/rooms/core/GameplayDispatcher.ts
 apps/server/src/rooms/core/StartPolicy.ts
 apps/server/src/rooms/core/AccessPolicy.ts
-apps/server/src/core/rooms/invite/InviteCodeLease.ts
-apps/server/src/core/rooms/invite/AccessTicket.ts
-apps/server/src/core/rooms/invite/redisScripts.ts
+apps/server/src/modules/rooms/invite/InviteCodeLease.ts
+apps/server/src/modules/rooms/invite/AccessTicket.ts
+apps/server/src/modules/rooms/invite/redisScripts.ts
 apps/client/src/logic/gameplay/GameplayModule.ts
 apps/client/src/net/rooms/matchmaking.ts
 apps/client/src/net/rooms/PrivateRoomService.ts
@@ -2291,9 +2291,9 @@ apps/art/fairygui/assets/<PrivateRoomLobby-package>/**
 
 两点与既有 infra 的边界：
 
-- `core/rooms/invite/redisScripts.ts` 只**复用**既有 `core/infra/redisScripts.ts` 的脚本装载与 NOSCRIPT
+- `modules/rooms/invite/redisScripts.ts` 只**复用**既有 `framework/infra/redisScripts.ts` 的脚本装载与 NOSCRIPT
   重载机制（可以在 invite 目录里只导出脚本常量），⛔ 不另建第二套装载器；
-- `InviteCodeLease.ts` 与 `core/infra/lease.ts` 的 MySQL `singleton_lease`（fence_token）**无关，勿混用**；
+- `InviteCodeLease.ts` 与 `framework/infra/lease.ts` 的 MySQL `singleton_lease`（fence_token）**无关，勿混用**；
   必要时改名为 `InviteCodeReservation.ts` 以免同词不同义。
 
 `apps/server/tools/gameplay-codegen/**/*.ts` 按 §5.4，**由 `apps/server/test/` 下的 freshness 测试
@@ -2325,7 +2325,7 @@ module 的保护条目都追加进同一份，⛔ 不产生第二份。§11.3 �
 
 | 依赖 | 为什么 |
 | --- | --- |
-| Lobby RPC descriptor + 幂等 v2 **先于** private-room（§6.6–§6.9） | 否则 `room.prepareCreate` / `room.resolve` 要显式改 `lobbyRpc/envelope.ts` 与 `core/errors.ts`，多付一笔中央侵入 |
+| Lobby RPC descriptor + 幂等 v2 **先于** private-room（§6.6–§6.9） | 否则 `room.prepareCreate` / `room.resolve` 要显式改 `lobbyRpc/envelope.ts` 与 `framework/errors.ts`，多付一笔中央侵入 |
 | 协议身份拆分（§4.8）**先于** private-room | 阶段 8 要 bump `GAME_ROOM_PROTOCOL_VERSION`，而该常量由协议身份拆分建立 |
 | AppRuntime / Navigation / Home / View 生成 **先于** gameplay 客户端 module | 否则 gameplay 侧要先建一套最小 contribution 与 `pages.ts` 临时接线，随后被二次改写 |
 | 拆 ballMove + gameplay wire/state（阶段 1–2）**与 Lobby 侧无耦合** | 只动 GameRoom、shared gameplay 契约与 gameplay 生成器 |
@@ -2906,8 +2906,8 @@ apps/shared/src/protocol/lobbyRpc/envelope.ts
 apps/shared/src/protocol/lobbyRpc/push.ts
 apps/server/src/websocket/rpc.ts
 apps/server/src/websocket/dispatcher.ts
-apps/server/src/core/idem.ts
-apps/server/src/core/errors.ts
+apps/server/src/framework/idem.ts
+apps/server/src/framework/errors.ts
 apps/client/src/Main.ts
 apps/client/src/view/pages.ts
 apps/client/src/view/viewRegistry.ts

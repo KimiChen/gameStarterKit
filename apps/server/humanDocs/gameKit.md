@@ -17,16 +17,16 @@
 | 服务端启动 | Node 22 + tsx，Colyseus 0.17 | `apps/server/src/index.ts`、`package.json` |
 | 实时房间 | GameRoom、Schema、RedisDriver/Presence 配置 | `apps/server/src/rooms`、`app.config.ts` |
 | RPC 网关 | LobbyRoom、统一信封、路由扫描、错误规约 | `apps/server/src/websocket` |
-| 鉴权 | 微信登录、不透明 token、token_epoch、session 校验 | `apps/server/src/core/auth`、HTTP account |
-| 用户写一致性 | local mutex、Redis lock、fence、UoW、Lua CAS | `core/locks.ts`、`core/uow.ts` |
-| 货币一致性 | MySQL 事务、ledger、三阶段 outbox、relayer | `core/economy` |
-| Redis 可靠性 | durable/cache 分离、桶路由、Lua NOSCRIPT 重载 | `core/infra` |
-| 冷档 | freeze/thaw、fence 水位、janitor、lazy migration | `core/archive` |
-| 后台任务 | relayer、freeze worker、赛季轮换、compute worker | `core/economy`、`core/archive`、`core/compute` |
+| 鉴权 | 微信登录、不透明 token、token_epoch、session 校验 | `apps/server/src/framework/auth`、HTTP account |
+| 用户写一致性 | local mutex、Redis lock、fence、UoW、Lua CAS | `framework/locks.ts`、`framework/uow.ts` |
+| 货币一致性 | MySQL 事务、ledger、三阶段 outbox、relayer | `modules/economy` |
+| Redis 可靠性 | durable/cache 分离、桶路由、Lua NOSCRIPT 重载 | `framework/infra` |
+| 冷档 | freeze/thaw、fence 水位、janitor、lazy migration | `framework/archive` |
+| 后台任务 | relayer、freeze worker、赛季轮换、compute worker | `modules/economy`、`framework/archive`、`framework/compute` |
 | 基础测试 | 单测、集成测试、故障注入、smoke、loadtest 脚本 | `apps/server/test`、`tools` |
 | 无栈联调 | mock HTTP、Playground、monitor 页面 | `core/http/mock`、服务端入口 |
 | 协议单源 | `apps/shared` 同步到客户端 | `scripts/sync-shared.mjs` |
-| 事件循环保护 | rpc budget、loop monitor、worker_threads 计算池 | `core/infra/loopMonitor.ts`、`core/compute` |
+| 事件循环保护 | rpc budget、loop monitor、worker_threads 计算池 | `framework/infra/loopMonitor.ts`、`framework/compute` |
 
 ## 上线前必须补齐
 

@@ -5,12 +5,12 @@
  *  3. EVALSHA 走通 NOSCRIPT 重载路径（使用本次运行唯一脚本，不触碰共享实例的 SCRIPT 缓存）
  * 用法: npm --workspace @game/server run smoke:framework
  */
-import { cacheClient, clientFor, closeRedis } from "../src/core/infra/redisRoute";
-import { CAS_DEL, TOKEN_BUCKET, defineScript, evalshaWithReload } from "../src/core/infra/redisScripts";
-import { closeMysql, getPool } from "../src/core/infra/mysql";
-import type { RowDataPacket } from "../src/core/infra/mysql";
-import { kLock, kRl } from "../src/core/infra/keys";
-import { allTables } from "../src/core/infra/zoneTables";
+import { cacheClient, clientFor, closeRedis } from "../src/framework/infra/redisRoute";
+import { CAS_DEL, TOKEN_BUCKET, defineScript, evalshaWithReload } from "../src/framework/infra/redisScripts";
+import { closeMysql, getPool } from "../src/framework/infra/mysql";
+import type { RowDataPacket } from "../src/framework/infra/mysql";
+import { kLock, kRl } from "../src/framework/infra/keys";
+import { allTables } from "../src/framework/infra/zoneTables";
 
 // 框架表 ∪ 已登记 kit 表（按区表登记，docs/KIT.md §5）；⛔ 不再手抄清单
 const EXPECTED_TABLES = allTables();

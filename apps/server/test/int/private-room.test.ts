@@ -25,25 +25,25 @@ import {
     INVITE_CODE_ALLOC_MAX_ATTEMPTS,
     INVITE_MAX_ROOMS_PER_UID,
     RESOLVE_FAIL_CAPACITY,
-} from "../../src/core/infra/config";
-import { kInviteCode, kInviteCodeGen, kRl, kRoomTicket, kRoomTicketQuota, zoneCtx } from "../../src/core/infra/keys";
-import { closeRedis, coordClient } from "../../src/core/infra/redisRoute";
-import { evalshaWithReload } from "../../src/core/infra/redisScripts";
-import { INVITE_CODE_ALLOCATE } from "../../src/core/rooms/invite/redisScripts";
+} from "../../src/framework/infra/config";
+import { kInviteCode, kInviteCodeGen, kRl, kRoomTicket, kRoomTicketQuota, zoneCtx } from "../../src/framework/infra/keys";
+import { closeRedis, coordClient } from "../../src/framework/infra/redisRoute";
+import { evalshaWithReload } from "../../src/framework/infra/redisScripts";
+import { INVITE_CODE_ALLOCATE } from "../../src/modules/rooms/invite/redisScripts";
 import {
     InviteCodePoolExhaustedError,
     inviteCodeMetrics,
     inviteCodeService,
     readInviteLease,
-} from "../../src/core/rooms/invite/InviteCodeReservation";
+} from "../../src/modules/rooms/invite/InviteCodeReservation";
 import {
     accessTicketHash,
     accessTicketService,
     issueCreationTicket,
     issueJoinTicket,
-} from "../../src/core/rooms/invite/AccessTicket";
-import { handleRoomResolve } from "../../src/core/rooms/privateRoomRpc";
-import { RateLimitedError, RpcFault } from "../../src/core/errors";
+} from "../../src/modules/rooms/invite/AccessTicket";
+import { handleRoomResolve } from "../../src/modules/rooms/privateRoomRpc";
+import { RateLimitedError, RpcFault } from "../../src/framework/errors";
 import { dispatchRpc, type RpcCtx } from "../../src/websocket/dispatcher";
 import { registerAllRoutes } from "../../src/websocket/loader";
 import { GameRoom } from "../../src/rooms/GameRoom";

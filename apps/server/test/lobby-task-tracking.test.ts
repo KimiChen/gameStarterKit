@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { defaultTasks } from "../src/core/infra/lifecycle";
+import { defaultTasks } from "../src/framework/infra/lifecycle";
 import { LobbyRoom, type LobbyJoinDependencies } from "../src/websocket/LobbyRoom";
 import type { OnlineRegistration } from "../src/websocket/push";
 

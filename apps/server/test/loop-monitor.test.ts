@@ -7,9 +7,9 @@ import {
   defaultLifecycle,
   isAdmissionOpen,
   resetAdmission,
-} from "../src/core/infra/lifecycle";
-import { startInfraMonitors } from "../src/core/infra/loopMonitor";
-import { closeMysql, getPool } from "../src/core/infra/mysql";
+} from "../src/framework/infra/lifecycle";
+import { startInfraMonitors } from "../src/framework/infra/loopMonitor";
+import { closeMysql, getPool } from "../src/framework/infra/mysql";
 
 /**
  * The monitor owns a process-global lifecycle slot.  Leave every test at an

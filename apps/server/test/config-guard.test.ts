@@ -14,7 +14,7 @@ const SERVER_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 function loadConfigWith(
   vars: Record<string, string | undefined>,
-  source = "await import('./src/core/infra/config.ts')",
+  source = "await import('./src/framework/infra/config.ts')",
 ): { status: number | null; stderr: string; stdout: string } {
   const env = { ...process.env };
   for (const [k, v] of Object.entries(vars)) {
@@ -220,7 +220,7 @@ test("PAY_ENABLED=1 在非生产：正常加载（联调/灰度留口）", () =>
 
 test("幂等 pending 租约窗口必须覆盖 handler timeout", () => {
   const r = loadConfigWith({},
-    "const c = await import('./src/core/infra/config.ts'); if (!(c.IDEM_PENDING_MS > c.HANDLER_TIMEOUT_MS)) throw new Error('window invariant');",
+    "const c = await import('./src/framework/infra/config.ts'); if (!(c.IDEM_PENDING_MS > c.HANDLER_TIMEOUT_MS)) throw new Error('window invariant');",
   );
   assert.equal(r.status, 0, `配置窗口不满足不等式：${r.stderr.slice(0, 300)}`);
 });

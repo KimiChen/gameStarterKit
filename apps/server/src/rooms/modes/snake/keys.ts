@@ -1,8 +1,8 @@
 /**
- * Snake 自有 Redis 键。玩法名不再出现在 `core/infra/keys.ts` 里——中央只提供 `kGameplay`
+ * Snake 自有 Redis 键。玩法名不再出现在 `framework/infra/keys.ts` 里——中央只提供 `kGameplay`
  * 工厂与分段契约（docs/SERVER.md §13「Redis key」行）。
  */
-import { kGameplay } from "../../../core/infra/keys";
+import { kGameplay } from "../../../framework/infra/keys";
 
 /**
  * Snake demo 钱包 HASH（当前只写 `coinBalance`），无 TTL。逻辑键 `gp:snake:user:{uid}`。

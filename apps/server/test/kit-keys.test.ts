@@ -1,5 +1,5 @@
 /**
- * kit 自有键工厂 `kKitUser` / `kKitShared`（core/infra/keys.ts）的中央契约——与 plugin-keys.test.ts 的
+ * kit 自有键工厂 `kKitUser` / `kKitShared`（framework/infra/keys.ts）的中央契约——与 plugin-keys.test.ts 的
  * `kPluginUser` / `kPluginShared` 对称（docs/KIT.md §2「Redis 键」行）：
  * - scope 显式且 per-zone / global 前缀行为真的不同；
  * - 分段顺序（`kt:` → kitId → name → `{uid}` 末段）是 09·R3 同槽、冷档同条 Lua 与「按 kit 前缀清理」的依据；
@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   kGameplay, kKitShared, kKitUser, kPluginShared, kPluginUser, kUser, zoneCtx,
-} from "../src/core/infra/keys";
+} from "../src/framework/infra/keys";
 
 const tagOf = (key: string): string => key.slice(key.indexOf("{"), key.indexOf("}") + 1);
 

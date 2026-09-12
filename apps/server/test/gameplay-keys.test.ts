@@ -1,5 +1,5 @@
 /**
- * 玩法自有键工厂 `kGameplay`（core/infra/keys.ts）的中央契约：
+ * 玩法自有键工厂 `kGameplay`（framework/infra/keys.ts）的中央契约：
  * - scope 必须显式且只有两种取值，per-zone / global 的前缀行为必须真的不同；
  * - 分段顺序（`gp:` → modeId → name → `{uid}` 末段）是 09·R3 同槽与「按玩法前缀清理」的依据；
  * - 分段字面量闸挡住能拼出歧义物理键的输入。
@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { kGameplay, kUser, zoneCtx } from "../src/core/infra/keys";
+import { kGameplay, kUser, zoneCtx } from "../src/framework/infra/keys";
 
 test("kGameplay 分段契约：gp 命名空间 + modeId + name + {uid} 末段", () => {
     const key = kGameplay("snake", "user", "u1", { zone: "global" });

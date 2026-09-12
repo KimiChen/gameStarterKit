@@ -33,7 +33,7 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 | Lobby RPC 域 | `domains/<d>.ts` + `websocket/<d>/` + 向量 sidecar | 域名必须以包 id 开头（`slg`、`slgAdmin`）；**该规则对插件同样生效**（框架 PR，否则插件可先占 kit 的前缀） |
 | 持久世界状态（SQL） | `apps/kits/<id>/sql/NNN-<name>.sql` | 表名 `k_<id 小写>_*`；每张表在 `kit.json.sql.tables` 里声明 `zone`（§5）；**插件 ⛔ 不可** |
 | Redis 键 | `kKitUser` / `kKitShared` 工厂，前缀 `kt:` | 与 `gp:` / `pl:` 互不可达；`kKitUser(kitId, name, uid, { zone })` → `kt:<kitId>:<name>:{uid}`；`kKitShared(kitId, name, shard, { zone })` 的 hash-tag 恒带分片键——per-zone `{<kitId>:s<sId>:<shard>}`、global `{<kitId>:<shard>}`，`shard` 必填，⛔ 整 kit 一个 tag 在构造上不可能（契约测试 `apps/server/test/kit-keys.test.ts`） |
-| 服务端服务与任务 | `apps/server/src/kits/<id>/**`、`core/compute/tasks/kits/<id>/**` | 长计算仍走 compute 任务（铁律 11）；⛔ 不再给 `core/<id>/`（那是插件的落点） |
+| 服务端服务与任务 | `apps/server/src/kits/<id>/**`、`framework/compute/tasks/kits/<id>/**` | 长计算仍走 compute 任务（铁律 11）；⛔ 不再给 `core/<id>/`（那是插件的落点） |
 | 玩法 | `apps/kits/<id>/gameplays/<modeId>/{manifest,state}.json` + 各玩法既有落点 | 一个 kit 可带多个 mode；modeId 是全仓玩法 id 空间的成员，⛔ 不得与任何包 id 大小写归一相等 |
 | 客户端基础页、端口、路由、菜单 | `apps/client/src/kits/<id>/**`，登记面写在 `kit.json` | 与插件登记面同一字段集，但命名空间是 `kits/` |
 | 给插件用的 API | `apps/{shared,server,client}/src/kits/<id>/api/<surface>/index.ts` | §4 |
@@ -41,7 +41,7 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 
 **不可以（硬排除，与插件相同再加四条）**
 
-- 框架保护面：协议信封、`LOBBY_PROTOCOL_VERSION` / `GAME_ROOM_PROTOCOL_VERSION` 语义、`core/infra`、`rooms/core`、`app/**`、
+- 框架保护面：协议信封、`LOBBY_PROTOCOL_VERSION` / `GAME_ROOM_PROTOCOL_VERSION` 语义、`framework/infra`、`rooms/core`、`app/**`、
   `apps/server/sql/`（含字节锁的 `schema.sql`）、`protected-paths.json` 登记的一切；
 - npm 依赖、根命令、tsconfig、`.env`；
 - 经济原语：⛔ 不得自建第二套货币账本；扣款 / 入账只经 `kit-api/server` 暴露的 `debitInTx` / `creditInTx`（§4）；

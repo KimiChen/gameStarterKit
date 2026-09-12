@@ -3,10 +3,10 @@
  * 投递状态以 MySQL mail 表为唯一权威（09·A6）；客户端按 mailId 去重（至少一次投递）。
  */
 import { MailRpc } from "@game/shared";
-import { getPool } from "../../core/infra/mysql";
-import { currentZoneId } from "../../core/infra/keys";
-import type { RowDataPacket } from "../../core/infra/mysql";
-import { storedInt } from "../../core/infra/numbers";
+import { getPool } from "../../framework/infra/mysql";
+import { currentZoneId } from "../../framework/infra/keys";
+import type { RowDataPacket } from "../../framework/infra/mysql";
+import { storedInt } from "../../framework/infra/numbers";
 import { defineRpc } from "../rpc";
 
 interface MailRow extends RowDataPacket {

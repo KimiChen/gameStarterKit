@@ -6,18 +6,18 @@ import {
   defaultLifecycle,
   isAdmissionOpen,
   resetAdmission,
-} from "../src/core/infra/lifecycle";
+} from "../src/framework/infra/lifecycle";
 import {
   K_STREAM_MATCH,
   K_STREAM_MATCH_V2,
   K_STREAM_MATCH_V3,
-} from "../src/core/infra/keys";
+} from "../src/framework/infra/keys";
 import {
   runMatchStreamDepthCheck,
   startStreamDepthAlert,
   stopStreamDepthAlert,
   type MatchStreamDepthProbe,
-} from "../src/core/match/matchConsumer";
+} from "../src/modules/match/matchConsumer";
 
 async function cleanLifecycle(): Promise<void> {
   await stopStreamDepthAlert();

@@ -17,7 +17,7 @@ import {
     type WebPlatformAreaListResponse,
     type WebPlatformLoginResponse,
 } from "@game/shared";
-import { PORT } from "../../core/infra/config";
+import { PORT } from "../../framework/infra/config";
 import { issueDevSession } from "../../platform/devAuthProvider";
 
 /**

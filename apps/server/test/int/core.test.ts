@@ -14,21 +14,21 @@ import { spawn } from "node:child_process";
 import { after, before, test } from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { acquireLease } from "../../src/core/locks";
-import { _uowTestHooks, withUser } from "../../src/core/uow";
-import { idemAcquire, idemComplete, idemRelease, newIdemLeaseId } from "../../src/core/idem";
-import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
-import { createUser, loadFields } from "../../src/core/userRecord";
-import { writeGroupSess } from "../../src/core/auth/session";
-import { IDEM_PENDING_MS, IDEM_RESULT_MS, LOCK_TTL_MS, SCHEMA_VERSION } from "../../src/core/infra/config";
-import { kApplied, kBag, kBagAll, kIdemPending, kIdemUser, kLock, kSess, kUser } from "../../src/core/infra/keys";
-import { clientFor, closeRedis } from "../../src/core/infra/redisRoute";
-import { CAS_HSET, CREATE_USER, evalshaWithReload } from "../../src/core/infra/redisScripts";
-import { USER_GENERIC_WRITE_RESERVED_FIELDS } from "../../src/core/userSchema";
+import { acquireLease } from "../../src/framework/locks";
+import { _uowTestHooks, withUser } from "../../src/framework/uow";
+import { idemAcquire, idemComplete, idemRelease, newIdemLeaseId } from "../../src/framework/idem";
+import { deriveOpId, redisApply } from "../../src/modules/economy/outbox";
+import { createUser, loadFields } from "../../src/framework/userRecord";
+import { writeGroupSess } from "../../src/framework/auth/session";
+import { IDEM_PENDING_MS, IDEM_RESULT_MS, LOCK_TTL_MS, SCHEMA_VERSION } from "../../src/framework/infra/config";
+import { kApplied, kBag, kBagAll, kIdemPending, kIdemUser, kLock, kSess, kUser } from "../../src/framework/infra/keys";
+import { clientFor, closeRedis } from "../../src/framework/infra/redisRoute";
+import { CAS_HSET, CREATE_USER, evalshaWithReload } from "../../src/framework/infra/redisScripts";
+import { USER_GENERIC_WRITE_RESERVED_FIELDS } from "../../src/framework/userSchema";
 import {
   _liveSchemaTestHooks, migrateLiveUserSchemaLocked,
-} from "../../src/core/liveSchema";
-import { closeMysql } from "../../src/core/infra/mysql";
+} from "../../src/framework/liveSchema";
+import { closeMysql } from "../../src/framework/infra/mysql";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
 
 const here = dirname(fileURLToPath(import.meta.url));

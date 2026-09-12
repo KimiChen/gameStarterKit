@@ -1,5 +1,5 @@
 /**
- * 机检：**除 `core/errors.ts` 外，源码里禁止出现 `new ServerError(`** —— 拒连一律走 `joinRefused()`。
+ * 机检：**除 `framework/errors.ts` 外，源码里禁止出现 `new ServerError(`** —— 拒连一律走 `joinRefused()`。
  *
  * ⚠ 为什么是"白名单式"而不是"解析实参判越界"：Colyseus 把 `ServerError.code` 当 HTTP status 用
  * （`router/default_routes.mjs`: `ctx.error(e.code,…)` → `new Response(…,{status})`），传业务码
@@ -18,18 +18,18 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ErrorCode as ColyseusErrorCode } from "@colyseus/core";
 import { ErrorCode as GameErrorCode, joinErrCodeOf } from "@game/shared";
-import { joinRefused } from "../src/core/errors";
+import { joinRefused } from "../src/framework/errors";
 
 const SRC = fileURLToPath(new URL("../src", import.meta.url));
 /** 唯一允许构造 ServerError 的地方（joinRefused 的实现处；其取值由下面第二条用例锁死）。 */
-const ALLOWED = "core/errors.ts";
+const ALLOWED = "framework/errors.ts";
 
 function walk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
     e.isDirectory() ? walk(join(dir, e.name)) : e.name.endsWith(".ts") ? [join(dir, e.name)] : []);
 }
 
-test("⛔ 除 core/errors.ts 外禁止 `new ServerError(` —— 拒连一律走 joinRefused（防业务码当 HTTP status）", () => {
+test("⛔ 除 framework/errors.ts 外禁止 `new ServerError(` —— 拒连一律走 joinRefused（防业务码当 HTTP status）", () => {
   const offenders: string[] = [];
   for (const file of walk(SRC)) {
     const rel = file.slice(SRC.length + 1).split("\\").join("/");
@@ -41,7 +41,7 @@ test("⛔ 除 core/errors.ts 外禁止 `new ServerError(` —— 拒连一律走
     }
   }
   assert.deepEqual(offenders, [],
-    `拒连请改用 core/errors.ts 的 joinRefused(code, kind)——⛔ ServerError 第一参会被当 HTTP status：\n  ${offenders.join("\n  ")}`);
+    `拒连请改用 framework/errors.ts 的 joinRefused(code, kind)——⛔ ServerError 第一参会被当 HTTP status：\n  ${offenders.join("\n  ")}`);
 });
 
 test("joinRefused：status 恒落 200–599 + 业务码可从 message 还原", () => {

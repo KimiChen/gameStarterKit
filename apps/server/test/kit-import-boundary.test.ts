@@ -1,8 +1,8 @@
 /**
  * kit 服务端代码的导入边界（docs/KIT.md §4 / §6「导入边界：只 import 框架门面、kit-api 与自身」的 K0 形态；
  * K1 换成按解析后路径的机检，与 plugin-api 同批）：`apps/server/src/kits/<id>/**` 的每个 import / export-from 说明符
- *  - 相对路径只能落在本 kit 目录内，或恰好是框架门面 `core/infra/kitApi`（⛔ core/infra 其他模块、core/economy、
- *    core/uow、rooms/、websocket/ …——它们不是 kit-api，走了就等于绕过表闸 / 账本 / 效果通道）；
+ *  - 相对路径只能落在本 kit 目录内，或恰好是框架门面 `framework/infra/kitApi`（⛔ framework/infra 其他模块、modules/economy、
+ *    framework/uow、rooms/、websocket/ …——它们不是 kit-api，走了就等于绕过表闸 / 账本 / 效果通道）；
  *  - 裸说明符只允许 `@game/shared` 及其子路径（零依赖 shared）；⛔ ioredis / mysql2 / colyseus / node:* 等运行时依赖
  *    （kit 触达 Redis / MySQL 只经 kit-api；type-only import 也算——形态一旦放行就会长出值导入）。
  * 框架自己的 kits/catalog*.ts 不在扫描集内（它们是框架文件）。
@@ -15,7 +15,7 @@ import { test } from "node:test";
 
 const SERVER_SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src");
 const KITS_DIR = path.join(SERVER_SRC, "kits");
-const KIT_API = path.join(SERVER_SRC, "core/infra/kitApi");
+const KIT_API = path.join(SERVER_SRC, "framework/infra/kitApi");
 
 function walk(dir: string): string[] {
   const out: string[] = [];
@@ -50,7 +50,7 @@ export function judgeKitImport(file: string, specifier: string): string | null {
   return `裸说明符只允许 @game/shared*：${specifier}`;
 }
 
-test("kit 导入边界：apps/server/src/kits/<id>/** 只 import 本 kit 目录、core/infra/kitApi 与 @game/shared*", () => {
+test("kit 导入边界：apps/server/src/kits/<id>/** 只 import 本 kit 目录、framework/infra/kitApi 与 @game/shared*", () => {
   const kitDirs = fs.existsSync(KITS_DIR)
     ? fs.readdirSync(KITS_DIR, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name)
     : [];
@@ -71,16 +71,16 @@ test("kit 导入边界：apps/server/src/kits/<id>/** 只 import 本 kit 目录�
   assert.deepEqual(violations, []);
 });
 
-test("kit 导入边界自测：门面 / 自身放行，core/infra 其他模块、core/economy、ioredis、mysql2、type-only 越界都拒", () => {
+test("kit 导入边界自测：门面 / 自身放行，framework/infra 其他模块、modules/economy、ioredis、mysql2、type-only 越界都拒", () => {
   const host = path.join(KITS_DIR, "arena/host.ts");
   const surface = path.join(KITS_DIR, "arena/api/board/index.ts");
-  assert.equal(judgeKitImport(host, "../../core/infra/kitApi"), null);
-  assert.equal(judgeKitImport(surface, "../../../../core/infra/kitApi"), null);
+  assert.equal(judgeKitImport(host, "../../framework/infra/kitApi"), null);
+  assert.equal(judgeKitImport(surface, "../../../../framework/infra/kitApi"), null);
   assert.equal(judgeKitImport(surface, "../../boardRepo"), null);
   assert.equal(judgeKitImport(host, "./boardRepo"), null);
   assert.equal(judgeKitImport(host, "@game/shared"), null);
   assert.equal(judgeKitImport(host, "@game/shared/kits/arena/api/board/index"), null);
-  for (const bad of ["../../core/infra/keys", "../../core/infra/redisRoute", "../../core/economy/currency", "../../core/uow", "../../rooms/core/x", "../slg/api/board/index", "../catalog.generated"]) {
+  for (const bad of ["../../framework/infra/keys", "../../framework/infra/redisRoute", "../../modules/economy/currency", "../../framework/uow", "../../rooms/core/x", "../slg/api/board/index", "../catalog.generated"]) {
     assert.match(judgeKitImport(host, bad) ?? "", /越出 kit 目录/u, bad);
   }
   for (const bad of ["ioredis", "mysql2/promise", "colyseus", "node:fs", "@colyseus/core", "@game/server/x"]) {

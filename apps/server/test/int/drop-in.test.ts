@@ -23,7 +23,7 @@ import {
     RoomName,
     type IGameRoomJoinOptions,
 } from "@game/shared";
-import { closeRedis } from "../../src/core/infra/redisRoute";
+import { closeRedis } from "../../src/framework/infra/redisRoute";
 import { GameRoom } from "../../src/rooms/GameRoom";
 import { gameModeRegistry } from "../../src/rooms/GameMode";
 import { DropInFixturePlayerState, type DropInFixtureState } from "../../src/rooms/schema/GameRoomState";

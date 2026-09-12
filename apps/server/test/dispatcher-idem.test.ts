@@ -1,7 +1,7 @@
 /**
  * 幂等 v2 dispatcher 状态机单测（Non-intrusive §6.11/§6.12/§6.13，纯内存 fake store）。
  *
- * MemoryIdem 逐字复刻三条 Lua（core/idem.ts）的判定语义——record + hash/leaseId/
+ * MemoryIdem 逐字复刻三条 Lua（framework/idem.ts）的判定语义——record + hash/leaseId/
  * contractVersion CAS + per-uid 计数；对 Lua 本体的原子性/TTL 断言在 test/int/core.test.ts。
  * 覆盖（§9 阶段 4 退出条件）：同 ID 同 payload 并发互斥与缓存重放；同 ID 异 payload 稳定
  * OPERATION_CONFLICT；done-oversize 既不重跑也不 unknown；per-uid 上限 BUSY；
@@ -11,11 +11,11 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { HANDLER_TIMEOUT_MS } from "../src/core/infra/config";
-import { kIdemUser } from "../src/core/infra/keys";
-import { RpcFault, toRpcFaultCode } from "../src/core/errors";
-import { idemPayloadHash } from "../src/core/idem";
-import type { IdemAcquire, IdemCompleteResult } from "../src/core/idem";
+import { HANDLER_TIMEOUT_MS } from "../src/framework/infra/config";
+import { kIdemUser } from "../src/framework/infra/keys";
+import { RpcFault, toRpcFaultCode } from "../src/framework/errors";
+import { idemPayloadHash } from "../src/framework/idem";
+import type { IdemAcquire, IdemCompleteResult } from "../src/framework/idem";
 import { UserRpc, WireValidationError } from "@game/shared";
 import {
   _dispatcherTestHooks,

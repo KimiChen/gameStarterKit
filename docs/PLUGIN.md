@@ -69,7 +69,7 @@
 
 ### 3.1 「蛇加内战」的实际代价（消费型样本）
 
-邀请好友内战的**框架部分**已交付（阶段 8）：邀请码租约与 access ticket 在 `core/rooms/invite/`、
+邀请好友内战的**框架部分**已交付（阶段 8）：邀请码租约与 access ticket 在 `modules/rooms/invite/`、
 `room.prepareCreate`/`room.resolve` 在框架 core domain `lobbyRpc/domains/room.ts`、Ready/Start 是 core wire、
 `ownerReady`/`inviteRoom` 是 codegen 注入的公共 fragment、`private` profile（invite-code + owner-ready）
 在 `RoomProfile.ts` 注册表里已经现成。
@@ -144,7 +144,7 @@
 推导之前先过**硬排除**：`scripts/`、`tools/`、`apps/server/tools/`、`.github/`、`vendor/`、`node_modules`、
 `package*.json`、`.npmrc`、`tsconfig*`、`.env*`、`*.generated.*`、`*.lock|*.fingerprint|*.sha256`、
 `scene.scene`、`apps/client/src/{shared,lib,generated,app}`、`apps/shared/src/{generated,protocol}`（域 descriptor
-按 allowlist 精确放行）、`apps/server/src/{rooms/schema,rooms/core,core/infra}`；再过 `scripts/protected-paths.json`
+按 allowlist 精确放行）、`apps/server/src/{rooms/schema,rooms/core,framework/infra}`；再过 `scripts/protected-paths.json`
 的两组保护路径与全部 writer 产物。⛔ 任一路径被拒即**整包拒绝**并逐条点名；「新增 npm 依赖 / 改根命令 /
 改协议信封」在这套闸下根本进不了包——它们是框架 PR（Non-intrusive §12.3）。
 
@@ -291,7 +291,7 @@ gameplay `manifest.json` 的 `schemaVersion` 读时与 gameplay-schema 比对（
 所以 `changed` 的价值不在「跳过包测试」，而在**改一个包时跳过宿主那一大批**。
 
 **判据是反过来的。** ⛔ 不是「插件目录变了就只跑插件测试」：包测试直接 import 宿主
-（`GameRoom` / `GameMode` / `GameRoomState` / `core/infra/keys` / `core/errors` / `core/economy/outbox` /
+（`GameRoom` / `GameMode` / `GameRoomState` / `framework/infra/keys` / `framework/errors` / `modules/economy/outbox` /
 `@game/shared` / `http`），**改宿主、不改插件，照样能把它们打红**——F13（`applyRunRewards` 覆盖玩家皮肤/
 碎片/余额）就是改宿主 admission 流程时被 `snake-run-rewards.test.ts` 抓到的，snake 目录一个字没动。
 按插件目录切，等于在最需要那张网的时候把它摘了。

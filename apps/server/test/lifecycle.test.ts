@@ -8,10 +8,10 @@ import {
   LifecycleRegistry,
   resetAdmission,
   TaskTracker,
-} from "../src/core/infra/lifecycle";
-import { closeMysql, getPool } from "../src/core/infra/mysql";
-import { clientFor, closeRedis } from "../src/core/infra/redisRoute";
-import { startStreamConsumer } from "../src/core/infra/streamConsumer";
+} from "../src/framework/infra/lifecycle";
+import { closeMysql, getPool } from "../src/framework/infra/mysql";
+import { clientFor, closeRedis } from "../src/framework/infra/redisRoute";
+import { startStreamConsumer } from "../src/framework/infra/streamConsumer";
 
 test("LifecycleRegistry：按逆序释放、重复 dispose 只执行一次，并继续处理失败资源", async () => {
   const registry = new LifecycleRegistry();

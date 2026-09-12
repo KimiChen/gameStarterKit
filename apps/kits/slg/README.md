@@ -30,7 +30,7 @@
 - 地块采用稀疏存储，缺行表示默认无主格。写入走唯一键插入、冲突后事务内重读，再依据实际状态计算结果。
 - 每区先锁 `k_slg_revision` 行，持锁至事务提交；地块/行军日志逐行分配同一序列的 revision，避免较小 revision 晚提交。单独一张日志可能有缺号。该串行化是当前机制样例的明确取舍，后续按容量证据优化。
 - `k_slg_capture` 和 `k_slg_march_receipt` 持久绑定操作身份、用户、规范载荷摘要、契约版本及原始响应。相同请求跨 RPC 缓存期重放，不重复扣款、削守备、加固或发奖；操作身份与载荷不一致时拒绝。
-- 世界状态、回执、日志、金币账本与奖励 intent 在同一事务提交。领域锁顺序为 revision → tile → march → receipt → 经济/effect；批次有界。服务端 kit 只经 `core/infra/kitApi` 访问 SQL、经济与 effect，不取原始连接。
+- 世界状态、回执、日志、金币账本与奖励 intent 在同一事务提交。领域锁顺序为 revision → tile → march → receipt → 经济/effect；批次有界。服务端 kit 只经 `framework/infra/kitApi` 访问 SQL、经济与 effect，不取原始连接。
 - 行军结束追加 tombstone。阶段 1 / 2a 先写耐久日志；阶段 2b 才实现各房独立游标、保留窗口与 baseline 接续。日志与回执目前不主动裁剪，不能假定仅凭日志表已完成跨房同步。
 
 当前懒结算按全区到达总序处理，每个事务最多 32 条；新操作先推进到期队列，积压超过单轮预算时提交本轮进度，再返回 `SLG_SETTLEMENT_PENDING`，客户端可稍后重试。`slg.mapTiles` 因此登记为 natural-write，读取地图也可能推进到期行军。请求回执重放优先于补算，已完成请求不会因为积压再次执行。

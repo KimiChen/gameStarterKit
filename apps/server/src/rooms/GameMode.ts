@@ -10,7 +10,7 @@ import {
 } from "@game/shared";
 // ⚠ 仅类型：MatchEvidenceV3 是 core 拥有的通用证据格式（不是 ballMove 私有符号），
 // evidence capability 的 build() 返回值需要它。本文件不 import 任何 ballMove 实现。
-import type { MatchEvidenceV3 } from "../core/match/matchEvidence";
+import type { MatchEvidenceV3 } from "../modules/match/matchEvidence";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
 
 /**

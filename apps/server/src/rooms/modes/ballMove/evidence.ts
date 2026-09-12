@@ -10,16 +10,16 @@ import {
     type MatchEvidenceEvent,
     type MatchEvidenceRosterEntry,
     type MatchEvidenceV3,
-} from "../../../core/match/matchEvidence";
-import { MATCH_MODE_CASUAL } from "../../../core/match/matchConsumer";
-import { buildReplayParticipants } from "../../../core/match/matchReplay";
+} from "../../../modules/match/matchEvidence";
+import { MATCH_MODE_CASUAL } from "../../../modules/match/matchConsumer";
+import { buildReplayParticipants } from "../../../modules/match/matchReplay";
 import type { GameRoomState } from "../../schema/GameRoomState";
 import type { BallMoveMotionAnchor } from "./rules";
 import type { AcceptedGameInput, GameRoomInput } from "./harness";
 
 /**
  * ballMove v3 证据的房内录入侧（原 GameRoom 的 record 系列与 capture/build 整体下沉）。
- * 证据**格式**的所有权仍在 `core/match/matchEvidence.ts`（BALL_MOVE_* 常量与 canonical
+ * 证据**格式**的所有权仍在 `modules/match/matchEvidence.ts`（BALL_MOVE_* 常量与 canonical
  * 快照都从那里取）；这里只拥有「一局比赛内的录入与组装」。
  */
 

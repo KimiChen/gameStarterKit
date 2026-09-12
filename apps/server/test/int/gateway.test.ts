@@ -12,16 +12,16 @@ import { boot, type ColyseusTestServer } from "@colyseus/testing";
 import { ErrorCode as SharedErrorCode, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 
-import { setKickHandler } from "../../src/core/auth/kickBus";
+import { setKickHandler } from "../../src/framework/auth/kickBus";
 import { kickUser } from "../../src/websocket/push";
-import { acquireLease } from "../../src/core/locks";
-import { createUser } from "../../src/core/userRecord";
-import { emitMailWake } from "../../src/core/economy/mailer";
+import { acquireLease } from "../../src/framework/locks";
+import { createUser } from "../../src/framework/userRecord";
+import { emitMailWake } from "../../src/modules/economy/mailer";
 import { stopMailWakeLoop } from "../../src/websocket/push";
-import { activeLruBucketOf, kActiveLru, kFence, kLock, kSess, kUser } from "../../src/core/infra/keys";
-import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { ResultSetHeader } from "../../src/core/infra/mysql";
+import { activeLruBucketOf, kActiveLru, kFence, kLock, kSess, kUser } from "../../src/framework/infra/keys";
+import { clientFor, closeRedis, indexClientFor } from "../../src/framework/infra/redisRoute";
+import { closeMysql, getPool } from "../../src/framework/infra/mysql";
+import type { ResultSetHeader } from "../../src/framework/infra/mysql";
 import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
 
 let colyseus: ColyseusTestServer;

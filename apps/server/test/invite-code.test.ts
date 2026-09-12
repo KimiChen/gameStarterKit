@@ -10,7 +10,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { newInviteCode } from "../src/core/rooms/invite/InviteCodeReservation";
+import { newInviteCode } from "../src/modules/rooms/invite/InviteCodeReservation";
 
 const SAMPLES = 400;
 

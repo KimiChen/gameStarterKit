@@ -1,6 +1,6 @@
 /**
  * 经济操作结果 —— mail.claimAttach / shop.purchase / shop.queryOp 共用的响应形状（真源）。
- * 服务端 core/economy/outbox.ts 的 Grant/PurchaseResult 即本文件类型的别名（04 三阶段协议读侧）。
+ * 服务端 modules/economy/outbox.ts 的 Grant/PurchaseResult 即本文件类型的别名（04 三阶段协议读侧）。
  *
  * kit effect kind（docs/KIT.md §4「effect kind 登记通道」）：`kit:<kitId>:<name>` 由构建期
  * `codegen:plugins` 从 `apps/kits/<id>/kit.json.effects` 汇入 `kits/catalog.generated.ts` 的

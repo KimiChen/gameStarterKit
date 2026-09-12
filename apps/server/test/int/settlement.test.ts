@@ -39,21 +39,21 @@ import {
   stopMatchConsumer,
   trimToSafePoint,
   type MatchEvidence,
-} from "../../src/core/match/matchConsumer";
+} from "../../src/modules/match/matchConsumer";
 import {
   BALL_MOVE_RULESET_ID,
   BALL_MOVE_RULESET_VERSION,
   MATCH_EVIDENCE_MAX_ACCEPTED_INPUTS,
   validateMatchEvidenceV3,
   type MatchEvidenceV3,
-} from "../../src/core/match/matchEvidence";
-import { replayMatchEvidenceV3 } from "../../src/core/match/matchReplay";
+} from "../../src/modules/match/matchEvidence";
+import { replayMatchEvidenceV3 } from "../../src/modules/match/matchReplay";
 import {
   activeLruBucketOf, kActiveLru, kSess,
   K_STREAM_MATCH, K_STREAM_MATCH_QUARANTINE, K_STREAM_MATCH_V2, K_STREAM_MATCH_V3,
-} from "../../src/core/infra/keys";
-import { closeMysql, getPool, type RowDataPacket } from "../../src/core/infra/mysql";
-import { bucketOf, clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
+} from "../../src/framework/infra/keys";
+import { closeMysql, getPool, type RowDataPacket } from "../../src/framework/infra/mysql";
+import { bucketOf, clientFor, clientForKey, closeRedis, indexClientFor } from "../../src/framework/infra/redisRoute";
 import { GameRoom } from "../../src/rooms/GameRoom";
 import { createBallMoveGameMode } from "../../src/rooms/modes/ballMove/index";
 import { assertRedisUp, cleanupUser, sleep, testUid } from "./helpers";
@@ -726,7 +726,7 @@ test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收�
   try {
     // 造玩法档 + 组缓存会话。GameRoom strict onAuth 仍需契约一致的 WebPlatform 测试服务。
     const { issueSession } = await import("./helpers");
-    const { createUser } = await import("../../src/core/userRecord");
+    const { createUser } = await import("../../src/framework/userRecord");
     const mk = async (name: string, sId: number) => {
       const uid = testUid(name).slice(0, 32);
       players.push({ uid, sId });

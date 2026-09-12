@@ -1,7 +1,7 @@
 /** 游戏服仍持有的认证原语纯函数守门（无 Redis/MySQL）。 */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { safeEqualHex, safeSecretEqual } from "../src/core/auth/session";
+import { safeEqualHex, safeSecretEqual } from "../src/framework/auth/session";
 
 test("safeEqualHex：损坏的等长 hash fail-closed 且不得抛 RangeError", () => {
   const hash = "a".repeat(64);

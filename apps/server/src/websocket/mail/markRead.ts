@@ -5,9 +5,9 @@
  * 不受 v2 结果缓存/契约版本语义影响。
  */
 import { MailRpc } from "@game/shared";
-import { getPool } from "../../core/infra/mysql";
-import { currentZoneId } from "../../core/infra/keys";
-import type { ResultSetHeader } from "../../core/infra/mysql";
+import { getPool } from "../../framework/infra/mysql";
+import { currentZoneId } from "../../framework/infra/keys";
+import type { ResultSetHeader } from "../../framework/infra/mysql";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(MailRpc.MarkRead, {

@@ -8,24 +8,24 @@
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { InsufficientBalanceError } from "../../src/core/errors";
-import { acquireLease } from "../../src/core/locks";
-import { getShopSku } from "../../src/core/economy/catalog";
-import { getBalance, invalidateBalanceCache } from "../../src/core/economy/currency";
-import { claimMailAttach, sendMail } from "../../src/core/economy/mailer";
+import { InsufficientBalanceError } from "../../src/framework/errors";
+import { acquireLease } from "../../src/framework/locks";
+import { getShopSku } from "../../src/modules/economy/catalog";
+import { getBalance, invalidateBalanceCache } from "../../src/modules/economy/currency";
+import { claimMailAttach, sendMail } from "../../src/modules/economy/mailer";
 import {
   _outboxTrimTestHooks, deriveOpId, drainPendingFor, markOutboxDone, purchase, purchaseTx,
   readBack, redisApply, trimApplied,
-} from "../../src/core/economy/outbox";
-import { createOrder, handleWxPayNotify } from "../../src/core/economy/purchases";
-import { createUser } from "../../src/core/userRecord";
+} from "../../src/modules/economy/outbox";
+import { createOrder, handleWxPayNotify } from "../../src/modules/economy/purchases";
+import { createUser } from "../../src/framework/userRecord";
 import {
   APPLIED_RETENTION_MS, CUR_GOLD, OUTBOX_PENDING, SCHEMA_VERSION,
-} from "../../src/core/infra/config";
-import { kApplied, kAppliedPayload, kBag, kCacheCurrency, kUser } from "../../src/core/infra/keys";
-import { cacheClient, clientFor, closeRedis } from "../../src/core/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { RowDataPacket } from "../../src/core/infra/mysql";
+} from "../../src/framework/infra/config";
+import { kApplied, kAppliedPayload, kBag, kCacheCurrency, kUser } from "../../src/framework/infra/keys";
+import { cacheClient, clientFor, closeRedis } from "../../src/framework/infra/redisRoute";
+import { closeMysql, getPool } from "../../src/framework/infra/mysql";
+import type { RowDataPacket } from "../../src/framework/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
 const uids: string[] = [];

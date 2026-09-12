@@ -25,10 +25,10 @@ import {
 } from "@game/shared";
 import { server } from "../../src/app.config";
 
-import { GROUP_ZONES } from "../../src/core/infra/config";
-import { activeLruBucketOf, kActiveLru, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
-import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
-import { closeMysql } from "../../src/core/infra/mysql";
+import { GROUP_ZONES } from "../../src/framework/infra/config";
+import { activeLruBucketOf, kActiveLru, kSess, kUser, zoneCtx } from "../../src/framework/infra/keys";
+import { clientFor, closeRedis, indexClientFor } from "../../src/framework/infra/redisRoute";
+import { closeMysql } from "../../src/framework/infra/mysql";
 import { LobbyRoom } from "../../src/websocket/LobbyRoom";
 import { stopMailWakeLoop } from "../../src/websocket/push";
 import {

@@ -7,8 +7,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ARENA_BOOST_POWER, ARENA_MAX_POWER, ARENA_TILE_COUNT } from "@game/shared/kits/arena/api/board/index";
-import { CUR_GOLD, type IEffect, type KitTx } from "../src/core/infra/kitApi";
-import { deriveOpId } from "../src/core/economy/outbox";
+import { CUR_GOLD, type IEffect, type KitTx } from "../src/framework/infra/kitApi";
+import { deriveOpId } from "../src/modules/economy/outbox";
 import {
   ARENA_TROPHY_EFFECT_KIND, type ArenaEffectApplier, ArenaTileNotOwnedError, type ArenaTxRunner, arenaOpId, createArenaBoardApi,
 } from "../src/kits/arena/api/board/index";

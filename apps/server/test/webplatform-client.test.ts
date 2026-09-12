@@ -111,10 +111,10 @@ process.env.WEBPLATFORM_REQUEST_TIMEOUT_MS = "1000";
 process.env.WEBPLATFORM_BREAKER_FAILURES = "100";
 
 const clientModule = await import("../src/platform/webPlatformClient");
-const { toErrCode } = await import("../src/core/errors");
+const { toErrCode } = await import("../src/framework/errors");
 const {
   AuthRequiredError,
-} = await import("../src/core/errors");
+} = await import("../src/framework/errors");
 
 after(async () => {
   clientModule.closeWebPlatformClient();

@@ -9,7 +9,7 @@
 - **客户端全 2D**（UI 空间正交相机），无 3D/自由相机/手势缩放先例；但 snake 已验证「世界层节点 scale/translate 伪相机 + 动态网格合批（snakeQuadMesh）+ logic 纯度门无头测试」整条管线，大地图可直接站上这条管线。
 - **kit 机制已完整落地**（K0 全部 ✅），arena 样本四件套（SQL 世界表 + 多 mode + api 面 + requires.kits）全覆盖；`docs/KIT.md` §3 的示例字面上就是 `id:"slg"`（worldmap/march/alliance 三 api 面）。
 - **AOI 是最大空白**：无兴趣集/视野过滤/StateView 任何使用；但 snake 的 per-client 有序 delta 流 + 分块 baseline + checksum + 重同步载体现成，`docs/MMO.md` 已定「消息级 AOI」为方向，并把兴趣集 / `perSession` token / 有界出站队列定为**框架原语 MF5**（未实施）。（2026-09-09 审核补）本 kit ⛔ 不在 kit 内自建 AOI 内核，而是 **MF5 的第一个真实消费方**：kit 只提供 chunk 数学与兴趣矩形（shared 纯函数），差分与投递用框架原语；阶段 2b 的排期跟随 MMO.md §5。
-- **mode 目录直读 Redis 是治理盲区，不是许可**（2026-09-09 审核补）：snake `rooms/modes/snake/runRewards.ts:25` import `core/infra/redisRoute` 的先例为真，kit 边界机检也确实只扫 `apps/server/src/kits/**`（`apps/server/test/kit-import-boundary.test.ts:17`），但 `rooms/modes/<kitMode>/**` 属 kit 所有权集，用它绕闸等于把接缝缺失当合法通道，且 MMO.md MF0（KIT K1 前置）就是要补这类边界。脏标记改走一个一行的框架小 PR：`core/infra/kitApi.ts` 再导出 `kKitShared`（现只导出 `kKitUser`，`kitApi.ts:59`）并给脏标记一个门面；⛔ 不在 `rooms/modes/slgWorld/**` import `core/infra/*`。
+- **mode 目录直读 Redis 是治理盲区，不是许可**（2026-09-09 审核补）：snake `rooms/modes/snake/runRewards.ts:25` import `framework/infra/redisRoute` 的先例为真，kit 边界机检也确实只扫 `apps/server/src/kits/**`（`apps/server/test/kit-import-boundary.test.ts:17`），但 `rooms/modes/<kitMode>/**` 属 kit 所有权集，用它绕闸等于把接缝缺失当合法通道，且 MMO.md MF0（KIT K1 前置）就是要补这类边界。脏标记改走一个一行的框架小 PR：`framework/infra/kitApi.ts` 再导出 `kKitShared`（现只导出 `kKitUser`，`kitApi.ts:59`）并给脏标记一个门面；⛔ 不在 `rooms/modes/slgWorld/**` import `framework/infra/*`。
 - **Lobby RPC 与 GameRoom 不互通**（无 RPC→live room 缝隙）；世界状态权威在 SQL，房间只是实时视图——这正是 arena 已验证的分工形态。
 
 用户已拍板：2D UI 空间瓦片渲染 / `slg` kit（worldmap 首面）/ 首版含行军与 AOI 动态单位 / 地图数据静态配表。
@@ -44,7 +44,7 @@
 
 - **地块**：`k_slg_tile(server_id, tile_id, owner_uid, guard_power, updated_at)` per-zone 稀疏表（`server_id+tile_id` 主键）。地图总量可配（v0 默认 10000×10000 = 1 亿格），只有被占/被改的格才有行 → 避开万行 INSERT 种子。（2026-09-09 拍板，落实 S2）**并发竞争契约 = 唯一键插入 + 冲突事务内重读**：占无主格用裸 `INSERT` 撞 `(server_id,tile_id)` 主键；撞唯一键即在本事务内重读该行，按**实际获得的状态**走加固 / 削守备分支；地块结果 + 回执 + 奖励 intent 同一事务原子提交。⛔ 不依赖 `SELECT … FOR UPDATE` 对不存在行的间隙行为，⛔ 不把 `withKitTx`（READ COMMITTED）当作已处理竞争。请求级幂等另有回执表 `k_slg_capture`（同 opId 重放原样回读，照 arena `k_arena_attempt`）。
 - **行军**：`k_slg_march(server_id, march_id, uid, from_tile, to_tile, depart_at, arrive_at, status, …)` per-zone。位置是 `f(now)` 的确定函数 → 房间崩溃/重启从 SQL 重放即恢复，**不需要框架还没有的 checkpoint 接缝**；到达结算用懒结算（任何触碰该行军/该地块的 RPC 或房间 tick 扫描到 `arrive_at<=now` 即结算写库）。懒结算**必须**带回执表 `k_slg_march_receipt`（并发 RPC 结算同一行军会双写，幂等靠回执 + `withKitTx` 内事务，照 arena `k_arena_attempt`）；无人在线时的到达结算登记为 MMO.md MF7 `kit.json.workers[]` 落地后接 worker（S6：worker 须用租约保护的受限 KitTx，见 §6），落地前是已知取舍（写进 README）。（2026-09-09 拍板，落实 S3）**守备制规则包**：同目标事件按 `arrive_at` 升序、并列再按 `march_id` 升序逐条结算；到达 = 交战——无主格直接占领，敌格削 `guard_power`、归零夺取（改主、power=1）；撤回在 `arrive_at` 前任意时刻可发起、已到达不可撤；派遣 / 撤回 / 懒结算共用 kit API 单一写入口，RPC、视图房、未来 worker 只调该入口；领域锁顺序冻结为 tile → march → receipt → 经济/effect；第四轮增加每区 revision 行先锁并持有至提交，批次有界。
-- **RPC→房同步**（2026-09-09 拍板，落实 S1）：**变更日志表 + 游标**。`slg.*` 写端点、房内懒结算与未来 worker 共用同一 kit API 写入口；每次世界状态变更在**同一事务内**追加 `k_slg_tile_log` / `k_slg_march_log`（per-zone 单调 revision；删除 / 结束有 tombstone 记录；提交顺序 = revision 序）。每个消费方（`slgWorld` 房 / worker）自持游标按 revision 增量消费，并定期向 SQL 对账；Redis 脏标记（经 kit-api 门面，待 §0 的小 PR）**只做低延迟提示，不是正确性来源**；日志有保留窗口，游标落后出窗即走 baseline 重建。⛔ 不在 websocket 端点里 import 房间；⛔ 不在 `rooms/modes/slgWorld/**` import `core/infra/*`。
+- **RPC→房同步**（2026-09-09 拍板，落实 S1）：**变更日志表 + 游标**。`slg.*` 写端点、房内懒结算与未来 worker 共用同一 kit API 写入口；每次世界状态变更在**同一事务内**追加 `k_slg_tile_log` / `k_slg_march_log`（per-zone 单调 revision；删除 / 结束有 tombstone 记录；提交顺序 = revision 序）。每个消费方（`slgWorld` 房 / worker）自持游标按 revision 增量消费，并定期向 SQL 对账；Redis 脏标记（经 kit-api 门面，待 §0 的小 PR）**只做低延迟提示，不是正确性来源**；日志有保留窗口，游标落后出窗即走 baseline 重建。⛔ 不在 websocket 端点里 import 房间；⛔ 不在 `rooms/modes/slgWorld/**` import `framework/infra/*`。
 - **AOI 载体**（2026-09-09 审核改）：消费 MMO.md MF5 的框架原语——兴趣集 `InterestSet`（本 kit 的兴趣集 = 视口 chunk 矩形，chunk 数学与矩形计算是 shared 纯函数）、`diffAndEmit` 产出 enter / update / leave、`defineS2C(..., { perSession: true })` 声明 `tilesEnter/tilesUpdate/tilesLeave`、`armiesEnter/Update/Leave`（框架对 perSession token 的 `broadcastS2C` fail-closed）、只含兴趣集的分块 baseline + checksum + `baselineRequest` 重同步、有界出站队列。C2S `mapSubscribe{center, lod}` 是本 kit 的 token。世界格子**不进 Colyseus Schema root**，正式 root 只放房级公开摘要；不广播全房 players id/name，必要归属随视野对象，当前 GameRoom/codegen 名册接缝由 MF5 先提供（见 §0.1）。⛔ kit 内不自建第二套差分 / 投递。
 - **房间形态**：`slgWorld` mode，dropIn profile，`filterBy(["sId","mode","profile"])` 每区一房**只在未满员时成立**（满员 `joinOrCreate` 开第二房，`apps/server/src/websocket/loader.ts:60`；两房各自缓存与轮询，正确性靠 SQL 权威，验收要补「不同房互见」）；manifest `maxPlayers` v0 定 100——上限来自各 mode 自己的 manifest（`apps/server/src/rooms/GameMode.ts:299-306`，schema 上限 1024），⛔ 不需要改任何框架常量（`MAX_PLAYERS = 4` 只是未进 catalog 的兜底，snake 已用 8）；验证项改为 `patchRate = 50`（`GameRoom.ts:289`）下 100 人 Schema patch 开销，建议复用 MMO.md MF1 的基准台。⚠ GameRoom 未设 `autoDispose`（默认 true）：无人即销毁，仓内唯一零客户端保活是 LobbyRoom；重建成本 = 全量拉 active 行军。（2026-09-09 审核补）
 
@@ -66,7 +66,7 @@
 
 **服务端**
 
-7. `apps/server/src/kits/slg/`：`tileRepo.ts`（内部 SQL）、`api/worldmap/index.ts`（`readTiles(sId,rect)`、`captureTile(uid,sId,tile,opId)`——写路径按 §2 拍板的 S2 契约：裸 INSERT 撞主键 → 冲突事务内重读 → 加固/削守备分支；地块结果 + `k_slg_capture` 回执 + `k_slg_tile_log` 日志 + 奖励 intent 同事务提交）、`host.ts`。⛔ 只 import `core/infra/kitApi` + `@game/shared*`（kit-import-boundary 机检）。
+7. `apps/server/src/kits/slg/`：`tileRepo.ts`（内部 SQL）、`api/worldmap/index.ts`（`readTiles(sId,rect)`、`captureTile(uid,sId,tile,opId)`——写路径按 §2 拍板的 S2 契约：裸 INSERT 撞主键 → 冲突事务内重读 → 加固/削守备分支；地块结果 + `k_slg_capture` 回执 + `k_slg_tile_log` 日志 + 奖励 intent 同事务提交）、`host.ts`。⛔ 只 import `framework/infra/kitApi` + `@game/shared*`（kit-import-boundary 机检）。
 8. `apps/server/src/websocket/slg/{mapTiles,tileCapture}.ts`：薄壳端点（`currentZoneId()` + api 调用 + RpcFault 映射）。
 
 **配表（静态地形）**
@@ -100,7 +100,7 @@
 17. `apps/shared/src/kits/slg/api/march/index.ts`：行军令类型、路径/速度/到达时刻纯函数（`positionAt(order, now)`）、校验器。
 18. `apps/server/src/kits/slg/`：`marchRepo.ts`、`api/march/index.ts`（`dispatchMarch`（`tx.debit` 扣现有 1 金币 + 写行军与回执，照 arena `boostTile` 原子路径）、`recallMarch`、`settleDueMarches`）。第四轮已冻结己方起点、直线 1 格/s、每区每用户最多 3 支、固定 1 点守备作用、撤回不退、到达/撤回立即结束；不新增体力/粮食或返程系统。
 19. `apps/shared/src/protocol/lobbyRpc/domains/slg.ts` 增量：`MarchDispatch/MarchRecall` 路由 + errorCodes + contractVersion bump；websocket 端点两个薄壳；向量 sidecar 同步补。
-20. `apps/server/src/rooms/modes/slgWorld/index.ts`：GameMode——roster dropIn、`createPlayer`、commands（MapSubscribe 等）、`onStep` 低频扫描（脏标记 → 增量拉 SQL → 逐会话兴趣集差分 → per-client 有序 S2C）；AOI 接线 `./aoi.ts` 只做「视口 chunk 矩形 → 兴趣集」（shared 纯函数），差分与投递交 MF5 的 `InterestSet` / `diffAndEmit`（2b，⛔ 不自建差分内核）；脏标记读写经 kit-api 门面（§0 小 PR），⛔ 不 import `core/infra/*`。**先读 SQL 全量 active 行军进内存，房即该区行军缓存；结算写库经 kit-api**。
+20. `apps/server/src/rooms/modes/slgWorld/index.ts`：GameMode——roster dropIn、`createPlayer`、commands（MapSubscribe 等）、`onStep` 低频扫描（脏标记 → 增量拉 SQL → 逐会话兴趣集差分 → per-client 有序 S2C）；AOI 接线 `./aoi.ts` 只做「视口 chunk 矩形 → 兴趣集」（shared 纯函数），差分与投递交 MF5 的 `InterestSet` / `diffAndEmit`（2b，⛔ 不自建差分内核）；脏标记读写经 kit-api 门面（§0 小 PR），⛔ 不 import `framework/infra/*`。**先读 SQL 全量 active 行军进内存，房即该区行军缓存；结算写库经 kit-api**。
 21. Redis 新 key 登记进契约表/登记点（SERVER.md §13，铁律 8）。
 
 **客户端四件套**
@@ -160,7 +160,7 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 
 **原文定位**：§2「地块」、阶段 1 第 7 条「回执可加 / 照 arena」及阶段 1 的占领验收。
 
-**风险**：相同 opId 重放与两个不同 opId 争同一格是两类问题。`withKitTx` 使用 READ COMMITTED（`apps/server/src/core/infra/kitApi.ts`）；对不存在的稀疏行做 `SELECT … FOR UPDATE`，不能据此假定两个事务已经串行。直接照 arena 的「缺行返回默认值 → 无条件 upsert」形态放大，可能让两个请求都按无主格计算并发奖，后写者覆盖前者；每请求一条回执不能消除这种不同操作之间的竞争。
+**风险**：相同 opId 重放与两个不同 opId 争同一格是两类问题。`withKitTx` 使用 READ COMMITTED（`apps/server/src/framework/infra/kitApi.ts`）；对不存在的稀疏行做 `SELECT … FOR UPDATE`，不能据此假定两个事务已经串行。直接照 arena 的「缺行返回默认值 → 无条件 upsert」形态放大，可能让两个请求都按无主格计算并发奖，后写者覆盖前者；每请求一条回执不能消除这种不同操作之间的竞争。
 
 **建议（待落实）**：阶段 1 的写入前先确定请求回执、结果重放与 payload 冲突口径，不能仍以「可加回执或靠 outbox」留空；地块竞争另采用唯一键条件插入、冲突后整事务重读 / 重试，或按需建立可锁定行等方案。无论选择哪种，规则计算必须依据该事务实际获得的有效状态，地块结果、回执与奖励 intent 原子提交；稀疏表允许保留什么中性行也要与此一致。锁竞争重试仅包无事务外副作用、可幂等重放的事务体，不把 `withKitTx` 当作已自动处理全部竞争。
 

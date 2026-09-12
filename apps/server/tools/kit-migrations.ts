@@ -16,7 +16,7 @@
 import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 import type { KitTableZone, ServerKitCatalogEntry } from "../src/kits/catalogTypes";
-import { assertKitTablePrefixesUnique, kitTablePrefix } from "../src/core/infra/zoneTables";
+import { assertKitTablePrefixesUnique, kitTablePrefix } from "../src/framework/infra/zoneTables";
 
 /** 最小连接面：mysql2 Connection / PoolConnection 与测试假连接都满足。 */
 export interface SqlConn {

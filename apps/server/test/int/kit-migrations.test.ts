@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import mysql from "mysql2/promise";
 
-import { MYSQL_URL } from "../../src/core/infra/config";
+import { MYSQL_URL } from "../../src/framework/infra/config";
 import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
 import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
 

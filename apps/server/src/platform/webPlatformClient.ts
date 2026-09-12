@@ -23,7 +23,7 @@ import {
   type VerifySessionRequest,
   type VerifySessionResponse,
 } from "@game/shared";
-import { AuthRequiredError, BannedError } from "../core/errors";
+import { AuthRequiredError, BannedError } from "../framework/errors";
 import {
   WEBPLATFORM_BREAKER_FAILURES,
   WEBPLATFORM_BREAKER_OPEN_MS,
@@ -32,8 +32,8 @@ import {
   WEBPLATFORM_REQUEST_TIMEOUT_MS,
   WEBPLATFORM_SERVICE_ID,
   WEBPLATFORM_SERVICE_SECRET,
-} from "../core/infra/config";
-import { writeGroupSess } from "../core/auth/session";
+} from "../framework/infra/config";
+import { writeGroupSess } from "../framework/auth/session";
 
 const MAX_RESPONSE_BYTES = 64 * 1024;
 const httpAgent = new HttpAgent({ keepAlive: true });

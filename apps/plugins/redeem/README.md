@@ -18,7 +18,7 @@
 | --- | --- |
 | `apps/plugins/redeem/plugin.json` | 身份（id `redeem`、domains `["redeem"]`）+ 客户端登记：route `redeem` → View `Redeem`；menu 入口；`entry` 指向 plugin 自己的 index.ts |
 | `apps/shared/src/protocol/lobbyRpc/domains/redeem.ts` | 域契约：`redeem.claim` idempotent-write，errorCodes 两条，contractVersion 1 |
-| `apps/server/src/core/redeem/{codes,store,claim}.ts` | 码表（静态）/ Redis Lua 原子记账（`kPluginUser` 两键同槽）/ 用例 |
+| `apps/server/src/modules/redeem/{codes,store,claim}.ts` | 码表（静态）/ Redis Lua 原子记账（`kPluginUser` 两键同槽）/ 用例 |
 | `apps/server/src/websocket/redeem/claim.ts` | 端点：`defineRpc(RedeemRpc.Claim)` |
 | `apps/server/test/lobbyRpcVectors/redeem.ts` | 域向量 sidecar（汇入 `index.generated.ts`） |
 | `apps/server/test/redeem-claim.test.ts` | 服务端用例测试（内存 store + Lua 返回解析） |
@@ -33,7 +33,7 @@ client→Cocos 镜像）⛔ 不在包内，由 install 的 postinstall 链在宿
 
 ## 已知取舍（插件自身的后续版本，⛔ 不是框架承诺）
 
-- **码表是进程内静态表**（`core/redeem/codes.ts`）。真实运营需要运营后台/DB 码表、有效期、总量与批次。
+- **码表是进程内静态表**（`modules/redeem/codes.ts`）。真实运营需要运营后台/DB 码表、有效期、总量与批次。
 - **奖励只入本 plugin 钱包**（`pl:redeem:wallet:{uid}`），⛔ 不碰经济系统主钱包/账本：插件只能消费框架 API，
   不能改框架写路径（PLUGIN.md §3）。接入主钱包属于框架侧开放能力（需要一条受治理的经济写 API），未实施。
 - **Cocos 镜像 `.meta` 是脚本合成的占位**（与 eacb687 先例同口径），Creator 打开工程时会按需重写；

@@ -33,14 +33,14 @@ import type {
     InviteRenewResult,
     InviteReleaseResult,
     InviteLease,
-} from "../src/core/rooms/invite/InviteCodeReservation";
+} from "../src/modules/rooms/invite/InviteCodeReservation";
 import type {
     AccessTicketService,
     ClaimCreationArgs,
     ClaimCreationResult,
     ClaimJoinArgs,
     ClaimJoinResult,
-} from "../src/core/rooms/invite/AccessTicket";
+} from "../src/modules/rooms/invite/AccessTicket";
 
 const FIXTURE_MODE_ID = "privateFixture";
 const PRIVATE_PROFILE: RoomProfile = resolveRoomProfile(FIXTURE_MODE_ID, "private");

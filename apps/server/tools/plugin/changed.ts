@@ -2,7 +2,7 @@
  * `plugin -- changed`：内循环用的**收窄跑法**（根别名 `npm run test:changed`）。
  *
  * 判据是**反过来**的：⛔ 不是「插件目录变了就只跑插件测试」。包测试直接 import 宿主
- * （GameRoom / GameMode / GameRoomState / core/infra/keys / core/errors / @game/shared / http），
+ * （GameRoom / GameMode / GameRoomState / framework/infra/keys / framework/errors / @game/shared / http），
  * 改宿主不改插件照样能把它们打红——那正是这些测试存在的理由（F13 是宿主改 admission 流程时被
  * `snake-run-rewards.test.ts` 抓到的，snake 目录一个字没动）。所以这里只在**整次改动都落在包的
  * 所有权推导集内**时才收窄；只要有一条路径不属于任何包，立刻退回 `npm run verify:all`。

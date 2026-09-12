@@ -7,7 +7,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { IDEM_V2_ACQUIRE, IDEM_V2_COMPLETE, IDEM_V2_RELEASE } from "../src/core/idem";
+import { IDEM_V2_ACQUIRE, IDEM_V2_COMPLETE, IDEM_V2_RELEASE } from "../src/framework/idem";
 
 test("IDEM_V2_ACQUIRE：单条原子——GET 判定与 SET pending 在同一脚本，⛔ 无 SET NX", () => {
   const lua = IDEM_V2_ACQUIRE.lua;

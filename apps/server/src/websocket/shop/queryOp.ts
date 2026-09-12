@@ -2,8 +2,8 @@
  * 发放状态查询（只读，无锁）：granting → 客户端继续轮询，⛔ 不要「超时即失败」（04）。
  */
 import { ShopRpc } from "@game/shared";
-import { currentZoneId } from "../../core/infra/keys";
-import { readBack } from "../../core/economy/outbox";
+import { currentZoneId } from "../../framework/infra/keys";
+import { readBack } from "../../modules/economy/outbox";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(ShopRpc.QueryOp, {

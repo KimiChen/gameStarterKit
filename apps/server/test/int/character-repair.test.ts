@@ -6,11 +6,11 @@ import {
   K_CHARACTER_REPAIR_ATTEMPTS,
   K_CHARACTER_REPAIR_DUE,
   kUser,
-} from "../../src/core/infra/keys";
-import { clientFor, clientForKey, closeRedis } from "../../src/core/infra/redisRoute";
-import { closeMysql } from "../../src/core/infra/mysql";
-import { createCharacterUser } from "../../src/core/userRecord";
-import { zoneCtx } from "../../src/core/infra/keys";
+} from "../../src/framework/infra/keys";
+import { clientFor, clientForKey, closeRedis } from "../../src/framework/infra/redisRoute";
+import { closeMysql } from "../../src/framework/infra/mysql";
+import { createCharacterUser } from "../../src/framework/userRecord";
+import { zoneCtx } from "../../src/framework/infra/keys";
 import { readCharacterRegistration } from "../../src/player/characterState";
 import {
   characterRepairMember,

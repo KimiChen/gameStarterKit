@@ -30,8 +30,8 @@ const SERVER_TSCONFIG = join(ROOT, "apps/server/tsconfig.json");
  * 看不见跨函数的 await，属规则本身的已知盲区，⛔ 不是真缺陷。
  */
 const ALLOWLIST = new Map<string, string>([
-  ["apps/server/src/core/match/matchConsumer.ts", "loopDone 存字段，stop() 里 await"],
-  ["apps/server/src/core/archive/thaw.ts", "singleFlight 的 p 存 Map，同 uid 后续请求 await 它"],
+  ["apps/server/src/modules/match/matchConsumer.ts", "loopDone 存字段，stop() 里 await"],
+  ["apps/server/src/framework/archive/thaw.ts", "singleFlight 的 p 存 Map，同 uid 后续请求 await 它"],
   ["apps/server/src/websocket/loader.ts", "registering 存模块级变量，并发调用方 await 它"],
   ["apps/server/src/index.ts", "顶层 listen：失败即启动失败，⛔ 进程就该死（这正是想要的行为）"],
 ]);

@@ -1,7 +1,7 @@
 /**
  * 加入工会——「档字段 + 在线索引 + 事件 + 唤醒推送」四件套的组合样板（demo 级：
  * 无成员上限/审批等真实工会规则，真实工会系统落地时在本域扩展并更新本头注释）。
- * gid 必须在 core/guild/catalog 目录内——铸键权归目录，⛔ 任意 gid 放行 = 恶意
+ * gid 必须在 modules/guild/catalog 目录内——铸键权归目录，⛔ 任意 gid 放行 = 恶意
  * 遍历可无限创建无 TTL 事件键（durable noeviction，写满即全服故障），见 catalog 头注释。
  *
  * 幂等审计（阶段 4，§6.12）：**idempotent-write，无 durable 收据**——写档（casHset）可安全
@@ -9,13 +9,13 @@
  * 所容忍）。v2 结果缓存不可得时重试新 clientReqId 无害（可能重复一条 memberJoin 事件）。
  */
 import { GuildRpc, LobbyPush } from "@game/shared";
-import { InvalidPayloadError } from "../../core/errors";
-import { guildExists } from "../../core/guild/catalog";
-import { emitGuildEvent } from "../../core/guild/events";
-import { withUser } from "../../core/uow";
+import { InvalidPayloadError } from "../../framework/errors";
+import { guildExists } from "../../modules/guild/catalog";
+import { emitGuildEvent } from "../../modules/guild/events";
+import { withUser } from "../../framework/uow";
 import { pushToGuild, setOnlineGuild } from "../push";
 import { defineRpc } from "../rpc";
-import { currentZoneId } from "../../core/infra/keys";
+import { currentZoneId } from "../../framework/infra/keys";
 
 export default defineRpc(GuildRpc.Join, {
   handler: async (ctx, p) => {

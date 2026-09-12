@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { setImmediate as waitImmediate } from "node:timers/promises";
 import { test } from "node:test";
-import { zoneCtx } from "../src/core/infra/keys";
+import { zoneCtx } from "../src/framework/infra/keys";
 import { kSnakeUser } from "../src/rooms/modes/snake/keys";
 import {
     RedisDemoReliveEconomy,

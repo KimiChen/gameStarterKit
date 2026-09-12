@@ -1,7 +1,7 @@
 /** Snake personal-run economy boundary. Production always disables the demo adapter. */
 
 import { createHash } from "node:crypto";
-import { clientFor } from "../../../core/infra/redisRoute";
+import { clientFor } from "../../../framework/infra/redisRoute";
 import { equippedSkinIdOf } from "./cosmeticProfile";
 import { snakeCosmeticStore } from "./cosmeticRpc";
 import { kSnakeUser } from "./keys";

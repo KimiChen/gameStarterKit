@@ -24,42 +24,42 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import {
   COLD_DAYS, OUTBOX_DEAD, OUTBOX_DONE, OUTBOX_PENDING, SCHEMA_VERSION, WHALE_FIELDS,
-} from "../../src/core/infra/config";
+} from "../../src/framework/infra/config";
 import {
   activeLruBucketOf, kActiveLru, kApplied, kAppliedPayload, kArchiveProof, kBag, kBagAll, kFence, kKitUser, kLock, kNegcacheUser,
   kSess, kUser, zoneCtx,
-} from "../../src/core/infra/keys";
-import { cacheClient, clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
-import { CAS_HSET, evalshaWithReload } from "../../src/core/infra/redisScripts";
-import { closeMysql, getPool, withRcTx } from "../../src/core/infra/mysql";
-import type { RowDataPacket } from "../../src/core/infra/mysql";
-import { makeHolderId, tryAcquireLease, type SingletonLease } from "../../src/core/infra/lease";
-import { acquireLease, withUserLock } from "../../src/core/locks";
-import { ArchiveAuthorityConflictError, BusyError, ThawingError } from "../../src/core/errors";
-import { withUser } from "../../src/core/uow";
-import { createUser } from "../../src/core/userRecord";
-import { writeGroupSess } from "../../src/core/auth/session";
-import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
-import { relayerTick } from "../../src/core/economy/relayer"; // cold 行内部直接走 ensureLive 解冻重试（09·X5）
+} from "../../src/framework/infra/keys";
+import { cacheClient, clientFor, closeRedis, indexClientFor } from "../../src/framework/infra/redisRoute";
+import { CAS_HSET, evalshaWithReload } from "../../src/framework/infra/redisScripts";
+import { closeMysql, getPool, withRcTx } from "../../src/framework/infra/mysql";
+import type { RowDataPacket } from "../../src/framework/infra/mysql";
+import { makeHolderId, tryAcquireLease, type SingletonLease } from "../../src/framework/infra/lease";
+import { acquireLease, withUserLock } from "../../src/framework/locks";
+import { ArchiveAuthorityConflictError, BusyError, ThawingError } from "../../src/framework/errors";
+import { withUser } from "../../src/framework/uow";
+import { createUser } from "../../src/framework/userRecord";
+import { writeGroupSess } from "../../src/framework/auth/session";
+import { deriveOpId, redisApply } from "../../src/modules/economy/outbox";
+import { relayerTick } from "../../src/modules/economy/relayer"; // cold 行内部直接走 ensureLive 解冻重试（09·X5）
 import {
   kitUserKeyEntries, prepareArchiveCandidate, thawRestore, type ArchiveSnapshot,
-} from "../../src/core/archive/archiveScripts";
+} from "../../src/framework/archive/archiveScripts";
 import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
 import {
   _thawTestHooks, archiveCounters, ensureLive, resolve, thawLimiter,
-} from "../../src/core/archive/thaw";
+} from "../../src/framework/archive/thaw";
 import {
   _freezeTestHooks, freezeUser, janitorSweep, removeGhostCandidate, resetJanitorCursor,
   resetSweepCursor, sweepOnce,
-} from "../../src/core/archive/freezeWorker";
+} from "../../src/framework/archive/freezeWorker";
 import {
   _archiveUsageTestHooks, archiveJsonStorageBytes, lockArchiveUsage, rebuildArchiveUsage,
   writeArchiveUsage,
-} from "../../src/core/archive/usageLedger";
+} from "../../src/framework/archive/usageLedger";
 import {
   ARCHIVE_PHASE_COMMITTED, ARCHIVE_PHASE_LEGACY, ARCHIVE_PHASE_PREPARED, newFreezeId,
   type ArchivePhase,
-} from "../../src/core/archive/protocol";
+} from "../../src/framework/archive/protocol";
 import {
   _characterStateTestHooks, markCharacterRegistrationReady,
 } from "../../src/player/characterState";

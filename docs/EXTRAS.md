@@ -62,7 +62,7 @@ package、构建/预览/部署脚本或构建产物，也不把它恢复为 gitl
   这些 operation，不表示本仓实现了账号管理服务；
 - `apps/server/src/http/admin/kick.ts` 注册 `POST /admin/kick`；未配置 `ADMIN_API_SECRET` 时
   fail-closed，配置后也只操作当前节点由 `websocket/push.ts` 登记的 Lobby 在线连接；
-- `apps/server/src/core/auth/kickBus.ts` 的组内 kick consumer 随默认服务端进程启动，属于
+- `apps/server/src/framework/auth/kickBus.ts` 的组内 kick consumer 随默认服务端进程启动，属于
   best-effort 唤醒/踢线样例；
 - `apps/server/test/smoke.ts` 可以在显式配置后覆盖部分账号操作与 kick 接缝。
 
@@ -141,7 +141,7 @@ package、构建/预览/部署脚本或构建产物，也不把它恢复为 gitl
   接不住它；开启后的鉴权用 `WXPAY_NOTIFY_SECRET` 头部共享密钥，该变量由端点直接读 `process.env`，
   仓库中只在 `.env.development` 以注释形式出现；
 - 当前配置对 `NODE_ENV=production` 与 `PAY_ENABLED=1` 组合直接 fail-fast；
-- `core/economy/purchases.ts`、充值 SKU、`purchases` 表和集成测试展示了局部订单状态与发货样例；
+- `modules/economy/purchases.ts`、充值 SKU、`purchases` 表和集成测试展示了局部订单状态与发货样例；
 - `createOrder` 只是内部函数，没有对外下单 endpoint。
 
 现有通知只使用共享密钥，并非微信支付 APIv3 平台证书验签。仓库没有完整下单、主动查单、退款、
@@ -181,7 +181,7 @@ package、构建/预览/部署脚本或构建产物，也不把它恢复为 gitl
 - `docs/DUAL_MODE.md` 的多区/双形态历史规则索引；
 - `redis-route.example.yaml` 和 Redis bucket routing；
 - RedisPresence/RedisDriver 依赖与探针；默认 `app.config.ts` 并未启用它们；
-- `core/archive` 的 freeze 路径和独立 worker（worker 内含每小时 janitor：锁内归档解析、陈旧行清理与
+- `framework/archive` 的 freeze 路径和独立 worker（worker 内含每小时 janitor：锁内归档解析、陈旧行清理与
   PITR 后 ARCHIVE_NEWER 修复）。worker 必须使用显式、无重复的 `ARCHIVE_ZONES`，以 per-zone LRU 和
   `(user_id,server_id)` 冷档身份运行；freeze sweep 的跨区/桶轮转预算同时计算候选与空桶探测。janitor
   只轮转配置区，为每区保存 `(frozen_at,user_id)` keyset 游标；其 `batch` 也同时约束行数和空区探测，

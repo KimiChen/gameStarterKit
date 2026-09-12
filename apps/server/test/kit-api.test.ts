@@ -1,5 +1,5 @@
 /**
- * kit-api/server 门面（core/infra/kitApi.ts，docs/KIT.md §4）单测：
+ * kit-api/server 门面（framework/infra/kitApi.ts，docs/KIT.md §4）单测：
  * - `assertKitTableAccess` 表闸矩阵：本 kit 前缀（裸 / backtick / JOIN / STRAIGHT_JOIN / INSERT INTO / 多表 / 别名 /
  *   派生表 / PARTITION / 索引提示 / DELETE … USING）放行，框架表、别的 kit、schema 限定名、注释绕过（含 `/*!` 可执行
  *   注释）、括号表引用、JOIN 条件后逗号接续、提示组后逗号接续、DDL / 多语句一律拒绝；
@@ -14,13 +14,13 @@ import { test } from "node:test";
 import {
   KitEffectScopeError, KitTableAccessError, assertKitEffectScope, assertKitTableAccess, kitOpId, kitTablePrefix, withKitTx,
   type KitTxDeps,
-} from "../src/core/infra/kitApi";
-import { EffectConflictError, InvalidEffectError } from "../src/core/errors";
-import type { PoolConnection } from "../src/core/infra/mysql";
-import { deriveOpId, kitEffectKeysFor } from "../src/core/economy/outbox";
-import { APPLY_EFFECT } from "../src/core/infra/redisScripts";
-import { BAG_SHARDS } from "../src/core/infra/config";
-import { kBagAll, kKitUser, kUser, zoneCtx } from "../src/core/infra/keys";
+} from "../src/framework/infra/kitApi";
+import { EffectConflictError, InvalidEffectError } from "../src/framework/errors";
+import type { PoolConnection } from "../src/framework/infra/mysql";
+import { deriveOpId, kitEffectKeysFor } from "../src/modules/economy/outbox";
+import { APPLY_EFFECT } from "../src/framework/infra/redisScripts";
+import { BAG_SHARDS } from "../src/framework/infra/config";
+import { kBagAll, kKitUser, kUser, zoneCtx } from "../src/framework/infra/keys";
 import type { KitEffectSpec } from "@game/shared/kits/catalogTypes";
 import { EFFECT_SCHEMA_VERSION, type IEffect } from "@game/shared";
 
@@ -403,9 +403,9 @@ test("APPLY_EFFECT Lua：含 kit 分支，键数表达式引用 ARGV[4] 投影�
 // ── 事务之外的两样门面（K0-5 对抗审阅后补）：applyKitEffect / readKitUserField / currentZoneId 再导出 ──────
 
 test("applyKitEffect：提交后收尾——按 sId 包 zoneCtx 走 redisApply，ok/dup 才 markOutboxDone；失败 / cold 只映射返回值；越界 kind 抛", async () => {
-  const { applyKitEffect, currentZoneId: reexported } = await import("../src/core/infra/kitApi");
-  const { currentZoneId } = await import("../src/core/infra/keys");
-  assert.equal(reexported, currentZoneId, "currentZoneId 从门面再导出（kit 不再 import core/infra/keys）");
+  const { applyKitEffect, currentZoneId: reexported } = await import("../src/framework/infra/kitApi");
+  const { currentZoneId } = await import("../src/framework/infra/keys");
+  assert.equal(reexported, currentZoneId, "currentZoneId 从门面再导出（kit 不再 import framework/infra/keys）");
   const calls: { uid: string; opId: string; effect: IEffect; sId: number }[] = [];
   const done: [string, number][] = [];
   const kitEffect: IEffect = { schemaVersion: EFFECT_SCHEMA_VERSION, grants: [{ kind: "kit:arena:score", delta: 3 }] };
@@ -436,7 +436,7 @@ test("applyKitEffect：提交后收尾——按 sId 包 zoneCtx 走 redisApply�
 });
 
 test("readKitUserField：只读 HGET kKitUser(kitId, name, uid, scope) 的一个字段；name 不在本 kit 的 userKeys 即拒", async () => {
-  const { KitUserKeyScopeError, readKitUserField } = await import("../src/core/infra/kitApi");
+  const { KitUserKeyScopeError, readKitUserField } = await import("../src/framework/infra/kitApi");
   const reads: [string, string, string][] = [];
   const deps = {
     hget: async (uid: string, key: string, field: string) => { reads.push([uid, key, field]); return field === "trophies" ? "5" : null; },

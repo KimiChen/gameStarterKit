@@ -8,8 +8,8 @@
  * 是无害信息，而把"没上线"说清楚是这个开关的全部目的。
  */
 import { type RpcErrCode } from "@game/shared";
-import { PAY_ENABLED } from "../../core/infra/config";
-import { safeSecretEqual } from "../../core/auth/session";
+import { PAY_ENABLED } from "../../framework/infra/config";
+import { safeSecretEqual } from "../../framework/auth/session";
 import { createGameEndpoint } from "../contract";
 
 export default createGameEndpoint("PayWxNotify", {
@@ -20,7 +20,7 @@ export default createGameEndpoint("PayWxNotify", {
   if (!safeSecretEqual(ctx.headers?.get?.("x-notify-secret"), secret)) { // 恒时；未配 secret 即拒（fail-closed）
     throw ctx.error(401, { error: "AUTH_REQUIRED" satisfies RpcErrCode });
   }
-  const { handleWxPayNotify } = await import("../../core/economy/purchases");
+  const { handleWxPayNotify } = await import("../../modules/economy/purchases");
   const r = await handleWxPayNotify(ctx.body);
   if (r === "mismatch") { throw ctx.error(400, { error: "ORDER_MISMATCH" satisfies RpcErrCode }); }
   return { code: "SUCCESS" }; // ok / already 都 ack（微信要求幂等应答）

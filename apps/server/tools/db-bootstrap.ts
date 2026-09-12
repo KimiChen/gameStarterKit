@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import mysql from "mysql2/promise";
-import { MYSQL_URL } from "../src/core/infra/config";
+import { MYSQL_URL } from "../src/framework/infra/config";
 import { SERVER_KIT_CATALOG } from "../src/kits/catalog.generated";
 import { applyKitMigrations } from "./kit-migrations";
 

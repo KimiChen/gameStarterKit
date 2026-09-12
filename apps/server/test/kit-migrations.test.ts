@@ -8,7 +8,7 @@ import type { ServerKitCatalogEntry } from "../src/kits/catalogTypes";
 import { SERVER_KIT_CATALOG } from "../src/kits/catalog.generated";
 import {
   FRAMEWORK_GLOBAL_TABLES, FRAMEWORK_PER_ZONE_TABLES, allTables, assertKitTablePrefixesUnique, globalTables, kitTablePrefix, perZoneTables,
-} from "../src/core/infra/zoneTables";
+} from "../src/framework/infra/zoneTables";
 import {
   applyKitMigrations, lintKitStatement, sha256Hex, splitSqlStatements, verifyKitTableShapes,
   type SqlConn,

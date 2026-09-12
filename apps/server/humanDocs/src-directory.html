@@ -38,7 +38,7 @@
 
   <h2>三、一级目录职责</h2>
   <section class="grid">
-    <article class="card"><span class="tag entry">入口</span><h3>index.ts / app.config.ts / shutdown.ts</h3><p>构成进程组合根。<code>index.ts</code> 先注册 Redis/MySQL/WebPlatform 生命周期，再装载 RPC，启动监控、踢人、角色修复和监听端口；异常启动也复用停服清理。</p><p class="small">关联：调用 <code>http</code>、<code>websocket</code>、<code>rooms</code>，并协调 <code>core/infra</code>、<code>player</code>、<code>platform</code>。</p></article>
+    <article class="card"><span class="tag entry">入口</span><h3>index.ts / app.config.ts / shutdown.ts</h3><p>构成进程组合根。<code>index.ts</code> 先注册 Redis/MySQL/WebPlatform 生命周期，再装载 RPC，启动监控、踢人、角色修复和监听端口；异常启动也复用停服清理。</p><p class="small">关联：调用 <code>http</code>、<code>websocket</code>、<code>rooms</code>，并协调 <code>framework/infra</code>、<code>player</code>、<code>platform</code>。</p></article>
     <article class="card"><span class="tag core">基础层</span><h3>core/</h3><p>服务端数据与并发原语的统一入口：锁与 fence、幂等、UoW dirty commit、Redis/MySQL、生命周期、错误映射、经济/工会/兑换码、比赛证据和私房邀请。</p><p class="small">业务 handler 应优先复用这里，避免绕过锁、事务、outbox、缓存和一致性边界。</p></article>
     <article class="card"><span class="tag entry">传输层</span><h3>http/</h3><p>短请求 HTTP endpoint。每个 <code>&lt;domain&gt;/&lt;method&gt;.ts</code> 用 shared contract 创建 endpoint；<code>manifest.generated.ts</code> 是自动生成的静态装配表。</p><p class="small">当前域：misc、notice、admin、pay；<code>_support/</code> 只放复用 helper。</p></article>
     <article class="card"><span class="tag entry">传输层</span><h3>websocket/</h3><p>LobbyRoom 上的 RPC 和 push。<code>loader.ts</code> 扫描 domain handler，<code>dispatcher.ts</code> 做路由、限流、校验、超时与错误映射，<code>push.ts</code> 管理在线连接和 mail wake。</p><p class="small">与 <code>rooms/</code> 分工：这里是请求/响应；实时玩法状态在房间。</p></article>
@@ -61,7 +61,7 @@
   </tbody></table>
 
   <h2>五、典型链路</h2>
-  <div class="card"><h3>登录并进入 Lobby</h3><p><code>websocket/LobbyRoom.ts</code> → <code>platform/webPlatformClient.ts</code> strict verify → <code>core/auth/session.ts</code> 缓存组会话 → <code>player/character.ts</code> 确保角色 → <code>websocket/push.ts</code> 注册在线连接。</p></div>
+  <div class="card"><h3>登录并进入 Lobby</h3><p><code>websocket/LobbyRoom.ts</code> → <code>platform/webPlatformClient.ts</code> strict verify → <code>framework/auth/session.ts</code> 缓存组会话 → <code>player/character.ts</code> 确保角色 → <code>websocket/push.ts</code> 注册在线连接。</p></div>
   <div class="card" style="margin-top:12px"><h3>Lobby RPC</h3><p><code>client → LobbyRoom → dispatcher → websocket/&lt;domain&gt;/&lt;method&gt;.ts → core/player/kits → validated reply</code>。路由全集来自 shared descriptor，loader 启动时校验实现与契约完全一致。</p></div>
   <div class="card" style="margin-top:12px"><h3>实时对局</h3><p><code>client → GameRoom.onAuth/onJoin → rooms/core policy → modes/&lt;mode&gt; → schema state</code>。房间壳持有 transport、认证、锁、时钟和生命周期；mode 持有玩法规则，状态 Schema 由 gameplay 单源生成。</p></div>
   <div class="card" style="margin-top:12px"><h3>写路径一致性</h3><p>handler/mode 产生业务意图 → <code>core</code> 的锁、fence、幂等、UoW 和事务边界 → MySQL/Redis/outbox；需要跨进程处理时进入 stream consumer 或 worker。</p></div>

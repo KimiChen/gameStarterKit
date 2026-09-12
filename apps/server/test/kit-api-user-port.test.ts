@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { withKitUserFence, readKitUserFieldInZone, retryKitTransaction } from "../src/core/infra/kitApi";
-import { currentZoneId, zoneCtx } from "../src/core/infra/keys";
+import { withKitUserFence, readKitUserFieldInZone, retryKitTransaction } from "../src/framework/infra/kitApi";
+import { currentZoneId, zoneCtx } from "../src/framework/infra/keys";
 
 test("kit user fence: explicit zone survives awaits, only frozen fence crosses the facade", async () => {
     const result = await zoneCtx.run({ sId: 3 }, async () => {

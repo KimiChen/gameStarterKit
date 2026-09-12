@@ -147,7 +147,7 @@ ledger `archive_zone_usage` 属默认关闭的实验模块；`user_snapshot_read
 - `user_currency`、`currency_ledger`、`mail`、`match_results`、`gameplay_outbox` 的按区查询与写入均携带
   `server_id`；`readBack`、relayer/replayDead 和邮件领取会把区谓词一路带到状态回读与标记更新。
   仅 `outboxStats` 与保留期清理是有意的全局聚合/清理操作。
-- per-zone Redis key 只由 `core/infra/keys.ts` 构造，并在 `zoneCtx.run` 中解析区前缀。
+- per-zone Redis key 只由 `framework/infra/keys.ts` 构造，并在 `zoneCtx.run` 中解析区前缀。
 - 派生幂等 ID 编入区号；GameRoom/LobbyRoom 同时核对 `sId`、本组配置与认证结果。
 - `user_archive` 与 `user_snapshot_readonly` 的身份键是 `(user_id,server_id)`；归档查询、恢复、清理和
   `active:lru` 候选均携带区号。`archive_zone_usage` 是按区派生的 admission ledger，不是新权威。
@@ -156,7 +156,7 @@ ledger `archive_zone_usage` 属默认关闭的实验模块；`user_snapshot_read
 - kit 表（`k_<id 小写>_*`，来自 `apps/kits/<id>/sql/`）按 `kit.json.sql.tables[].zone` 分区：`per-zone` 表必须有
   `server_id SMALLINT UNSIGNED NOT NULL` 且进主键与每个 UNIQUE，`global` 表不得有；`db:bootstrap` 应用后由
   `tools/kit-migrations.ts` 的 `verifyKitTableShapes` 机检。框架表与 kit 表的按区全集由「按区表登记」
-  `core/infra/zoneTables.ts`（`perZoneTables` / `globalTables` / `allTables`，catalog 可注入）给出：smoke 的
+  `framework/infra/zoneTables.ts`（`perZoneTables` / `globalTables` / `allTables`，catalog 可注入）给出：smoke 的
   表清单已从这里取；关单区 / 统计 / 冷档遍历尚未接入（K0-4 后续，接入时从这里取，⛔ 不再手抄）。kit id 只差
   大小写会共用表前缀，`zoneTables.assertKitTablePrefixesUnique` 对目录 fail-closed。
 
@@ -191,7 +191,7 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
   以 `CharCreateFailed` 结束本次 join，不能进入“已登录但 `GetInfo.user=null`”的半状态；迟到的底层幂等
   操作仍由 repair/下一次 join 收敛。
 - 默认进程的监控、流消费者、repair worker、外部 HTTP agent、MySQL 与 Redis 通过
-  `core/infra/lifecycle.ts` 的单一 registry 注册；Colyseus 只绑定一个 `onBeforeShutdown` 聚合器。
+  `framework/infra/lifecycle.ts` 的单一 registry 注册；Colyseus 只绑定一个 `onBeforeShutdown` 聚合器。
   释放按启动逆序、可等待且幂等，单个组件失败不会跳过其余组件。大厅按需启动的 mail wake 也注册到
   同一 registry，启动半失败会走相同 cleanup 路径。
   Lobby 当前是 `autoDispose = false`、`maxClients = 5000` 的共享房，且注册时没有 `filterBy(["sId"])`：
@@ -229,7 +229,7 @@ tsx 直接执行和运行时文件系统扫描，不是打包产物装载器。
    通用测试 `lobby-rpc-vectors.test.ts` 自动做正反向与幂等断言；再加错误映射及需要的数据库测试。
 
 读写分路：纯读使用 `readUser` / `readUserReadonly` / `loadFields`；单用户热档写使用 `withUser` 和 UoW；
-MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可序列化、无 IO 的纯 CPU 计算；“跨用户写”
+MySQL 权威写使用领域事务。`framework/compute` 只适合请求触发、可序列化、无 IO 的纯 CPU 计算；“跨用户写”
 或“批处理”本身不是进入计算池的理由。
 
 当前边界仍有缺口：
@@ -268,7 +268,7 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
   `s2c.room.error`（RoomControlError 独立数字段）/`s2c.room.codeInvalidated`）；可回滚开局事务的
   fence 元组（owner/sessions/rosterRevision/readyRevision/connectionRevision 同步快照整组重验，
   `starting` 置位期间 Ready/Unready 拒，rollback 保留 Ready 不动 owner，retry-fence 绝对上限
-  fail-closed dispose）；六位邀请码 lease（`core/rooms/invite/`，SET NX + 三态 renew + tombstone 隔离期）
+  fail-closed dispose）；六位邀请码 lease（`modules/rooms/invite/`，SET NX + 三态 renew + tombstone 隔离期）
   与 access ticket 固定准入时序（同步 fence → 同步 pending 占位 → 异步 claim → 同步重验 →
   异步 `mode.onBeforeAdmission`（唯一可 await 的玩法钩子，只预热持久档，⛔ 不分配房间资源，reject 即拒绝入房）
   → `mode.onAdmission` → 落座+seated CAS）。invite 房在 `onCreate` 体内 listing 持久化前
@@ -407,9 +407,9 @@ player/core 写路径直接修改权威数据。
 当前入口：
 
 - `player/userStore.ts` 的 `readUser` / `readUserReadonly`：自档与他档只读视图。
-- `core/userRecord.ts` 的 `loadFields`、`createUser`、`touchActive`：字段读取、建档和活跃索引原语。
-- `core/uow.ts` 的 `withUser` / `UnitOfWork`：本地 mutex、分布式锁、fence、dirty commit。
-- `core/archive/thaw.ts` 的 `ensureLive`：已接入常规写路径的实验性冷档恢复接缝。
+- `framework/userRecord.ts` 的 `loadFields`、`createUser`、`touchActive`：字段读取、建档和活跃索引原语。
+- `framework/uow.ts` 的 `withUser` / `UnitOfWork`：本地 mutex、分布式锁、fence、dirty commit。
+- `framework/archive/thaw.ts` 的 `ensureLive`：已接入常规写路径的实验性冷档恢复接缝。
 
 原则：
 
@@ -422,7 +422,7 @@ player/core 写路径直接修改权威数据。
 4. `loadFields` 用单条只读 Lua 原子取得 `schemaVersion/ver/fence/createdAt/characterRegistrationCheckedAt`
    与请求字段；纯读接受 N/N-1 并深校验但绝不回写，future、过旧、WRONGTYPE 或畸形元数据 fail-closed。
 5. `ensureLive` 的纯热档快路径识别 N/N-1；N-1 经 single-flight 与 `lock:{uid}` 后按
-   `core/userSchema.ts` 的连续 registry 原子迁到 N。`withUser`、ready marker、applied trim、freeze 与
+   `framework/userSchema.ts` 的连续 registry 原子迁到 N。`withUser`、ready marker、applied trim、freeze 与
    janitor 在各自业务锁内、首个业务 callback/写之前再次迁移/校验；relayer 在无 fence apply 前先走
    `ensureLive`。因此锁外快检与实际写之间的滚动发布竞态不能让旧进程越过 future schema 执行业务。
 6. 当前 `SCHEMA_VERSION=2`：v1 缺失 `characterRegistrationCheckedAt` 时补规范字符串 `"0"`，合法旧值
@@ -443,7 +443,7 @@ player/core 写路径直接修改权威数据。
 冻结快照同时保存该绑定，避免冷档往返丢失幂等证据。
 
 `setField` 是绝对值写，与 item/star 增量不同不可交换：旧 intent 被 relayer 迟到重放时会把旧值盖回。
-`core/economy/outbox.ts` 的 `drainPendingFor` 是为此预留的前置吸干函数，但当前没有任何生产写路径调用它，
+`modules/economy/outbox.ts` 的 `drainPendingFor` 是为此预留的前置吸干函数，但当前没有任何生产写路径调用它，
 示例 SKU 也只使用 item 类 grant。新增含 `setField` 的写路径前必须先接线该约定，否则序反转不会被任何
 机制拦住。
 
@@ -453,13 +453,13 @@ Redis apply / `ensureLive`，再用新的守卫短事务 CAS 落 done 或失败�
 `op_id + canonical payload` 的 Redis 幂等绑定收敛；当前不提供多 worker claim/分片语义。
 
 relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（status=2）。dead 行既不会被保留期
-清理删除，也会让对应 `applied` 标记永远跳过裁剪。当前仓库只提供 `core/economy/outbox.ts` 的
+清理删除，也会让对应 `applied` 标记永远跳过裁剪。当前仓库只提供 `modules/economy/outbox.ts` 的
 `replayDead(opId)` 实现，没有调用它的命令、HTTP endpoint 或后台任务，因此死信处置需要采用方自行接入
 入口。
 
 ### 8.1 通用幂等 v2（Non-intrusive §6.11/§6.12，阶段 4）
 
-网关级通用幂等（`core/idem.ts` + dispatcher）自阶段 4 起使用带版本的 JSON 记录，键仍是
+网关级通用幂等（`framework/idem.ts` + dispatcher）自阶段 4 起使用带版本的 JSON 记录，键仍是
 `kIdemUser(route, uid, clientReqId)`（沿用 key 族，无新前缀），新增同 `{uid}` 槽的计数键
 `kIdemPending(uid)`（`idem:pending:{uid}`，per-uid pending 上限的护栏计数，随 pending TTL 自然衰减）：
 
@@ -497,7 +497,7 @@ type StoredIdem =
 
 ## 9. 实验性冷档模块
 
-`core/archive` 展示 freeze/thaw、archive fence 与 lazy migrate。`ensureLive`/thaw 已被部分热档路径引用，
+`framework/archive` 展示 freeze/thaw、archive fence 与 lazy migrate。`ensureLive`/thaw 已被部分热档路径引用，
 但 freeze worker 仍默认关闭。启用时必须同时提供非空、无重复的 `ARCHIVE_ZONES`；worker 只轮询该清单，
 在每个区的 `zoneCtx` 中读取独立 `active:lru`，并以 `(user_id,server_id)` 读写冷档。s0 保留旧物理 LRU
 key，s1+ 使用区前缀。旧版全局 LRU 的成员不携带区号，不能安全拆分；存量部署首次启用前必须从权威的
@@ -524,7 +524,7 @@ fail-closed，保留热档。
 freeze，不会为腾空间删除仍是唯一权威的冷档。
 
 这些上限是 admission guard，不是表空间或磁盘容量保证；模块也不提供备份、分片迁移、自动冷档淘汰或
-通用长期存储方案。热档与冷档现共用 `core/userSchema.ts` 的深校验和迁移 registry：freeze 只写当前版本，
+通用长期存储方案。热档与冷档现共用 `framework/userSchema.ts` 的深校验和迁移 registry：freeze 只写当前版本，
 lazy thaw 在任何 Redis/MySQL identity 改动前完成不可变迁移，future/损坏快照保持两侧零部分写。schema
 闭环不改变 archive 默认关闭的实验性质，配置满足也仍只能按实验模块评估。
 
@@ -568,7 +568,7 @@ bump ver 的直写若改变键存在性 / 字段数则 'changed' 放弃，只改
 
 ## 11. 计算任务
 
-`core/compute` 当前只有 `battleSim` 示例和单元测试，没有默认业务调用点。它面向请求触发、输入输出可
+`framework/compute` 当前只有 `battleSim` 示例和单元测试，没有默认业务调用点。它面向请求触发、输入输出可
 structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批处理和跨用户写由其他进程或领域编排，
 不进入请求计算池。
 
@@ -614,8 +614,8 @@ structured-clone、无 IO、无副作用的纯 CPU 工作。周期任务、批�
 
 - **09·R1–R9**：key 只由构造器产出（框架键在 `keys.ts`，玩法键经 `kGameplay` 工厂在
   `rooms/modes/<id>/keys.ts` 定义，plugin 键经 `kPluginUser` / `kPluginShared` 工厂在各自
-  `core/<pluginId>/` 目录内定义（当前唯一实例 `core/redeem/store.ts`），kit 键经 `kKitUser` / `kKitShared`
-  工厂构造（`kKitUser` 由 `core/infra/kitApi.ts` 再导出供 kit 使用）；⛔ 业务代码一律禁手拼）；按需字段读；相关 Lua key 同槽；durable/cache 语义隔离；
+  `core/<pluginId>/` 目录内定义（当前唯一实例 `modules/redeem/store.ts`），kit 键经 `kKitUser` / `kKitShared`
+  工厂构造（`kKitUser` 由 `framework/infra/kitApi.ts` 再导出供 kit 使用）；⛔ 业务代码一律禁手拼）；按需字段读；相关 Lua key 同槽；durable/cache 语义隔离；
   scan/stream 有界；脚本用 SHA 并处理 `NOSCRIPT`。
 
 Snake S2R demo 是明确登记的非生产例外：`kSnakeUser(uid)`（定义在 `apps/server/src/rooms/modes/snake/keys.ts`，
@@ -698,21 +698,21 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | Room 名、join options | `apps/shared/src/protocol/rooms.ts` |
 | 房内消息（C2S/S2C） | core 消息（Ping/Chat/Pong/Welcome/Error）在 `apps/shared/src/protocol/messages.ts`；玩法消息在各玩法手写 `apps/shared/src/gameplays/<id>/wire.ts` 的 defineC2S/defineS2C token；全集聚合（`C2S`/`S2C`/validator 表/owner/phases/rateCost）由 `codegen:gameplays` 生成在 `apps/shared/src/gameplays/generated/wire-catalog.generated.ts` |
 | Lobby RPC 请求/响应/消息全集 | 各域 descriptor 在 `apps/shared/src/protocol/lobbyRpc/domains/<domain>.ts`（`defineLobbyRpcDomain`：路由/执行模式/validator/领域错误码/域推送）；core 错误码与 core 推送在 `lobbyRpc/coreErrors.ts`；全集聚合（`LobbyRpcMap`/`ALL_LOBBY_RPC_TYPES`/`LOBBY_RPC_ROUTE_MODES`/validator map/`RPC_ERR_CODES`/`LobbyPush`）由 `npm --workspace @game/server run codegen:plugins` 生成在 `lobbyRpc/registry.generated.ts`（AUTO-GENERATED，禁手改；改后重钉协议指纹） |
-| RPC 错误码 | core 码在 `apps/shared/src/protocol/lobbyRpc/coreErrors.ts`（`CORE_RPC_ERROR_CODES` + 历史顺序钉 `RPC_ERR_CODE_ORDER`），领域码在各域 descriptor 的 `errorCodes`（shop / room / redeem / snakeCosmetic / arena / arenaShop 共 6 个域声明）；聚合 `RPC_ERR_CODES`（32 个）生成在 `lobbyRpc/registry.generated.ts`；异常→码映射在 `core/errors.ts` 的 `ERR_MAP`（覆盖 11 个），另有阶段 4 的 `RpcFault(code)` 带 runtime whitelist 直接产出任意白名单码（读取点：dispatcher 与 LobbyRoom 的 `rpcErrorCode`，都经 `toRpcFaultCode`），其余落 `INTERNAL` 兜底。阶段 4 新增 `OPERATION_CONFLICT` / `OPERATION_RESULT_EXPIRED`（幂等 v2，见 §8.1）只经 `RpcFault` 产出、不进 `ERR_MAP`。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
+| RPC 错误码 | core 码在 `apps/shared/src/protocol/lobbyRpc/coreErrors.ts`（`CORE_RPC_ERROR_CODES` + 历史顺序钉 `RPC_ERR_CODE_ORDER`），领域码在各域 descriptor 的 `errorCodes`（shop / room / redeem / snakeCosmetic / arena / arenaShop 共 6 个域声明）；聚合 `RPC_ERR_CODES`（32 个）生成在 `lobbyRpc/registry.generated.ts`；异常→码映射在 `framework/errors.ts` 的 `ERR_MAP`（覆盖 11 个），另有阶段 4 的 `RpcFault(code)` 带 runtime whitelist 直接产出任意白名单码（读取点：dispatcher 与 LobbyRoom 的 `rpcErrorCode`，都经 `toRpcFaultCode`），其余落 `INTERNAL` 兜底。阶段 4 新增 `OPERATION_CONFLICT` / `OPERATION_RESULT_EXPIRED`（幂等 v2，见 §8.1）只经 `RpcFault` 产出、不进 `ERR_MAP`。其中 `GRANTING` 当前没有任何产出点，`AUTH_EPOCH_STALE` 服务端已停产、只保留客户端分支，`ORDER_MISMATCH` 只由可选的 `http/pay/wxNotify.ts` 直接返回，不经 `ERR_MAP` |
 | Colyseus state 形状 | `apps/shared/schema/gameplays/<id>/{manifest.json,state.json}`；纯数据镜像 `apps/shared/src/gameplays/generated/state/<id>.ts` + catalog、运行时 Schema `apps/server/src/rooms/schema/generated/<id>.ts` 与聚合器 `GameRoomState.ts` 都是 `apps/server/tools/gameplay-codegen/` 的生成物（首行带 AUTO-GENERATED 标记，禁手改），改单源后运行 `npm --workspace @game/server run codegen:gameplays` |
-| `ballMove` v3 evidence schema/validator/replay | `apps/server/src/core/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
-| Redis key | 框架键在 `apps/server/src/core/infra/keys.ts`；**玩法自有键不在该文件登记**，由中央工厂 `kGameplay(modeId, name, uid, { zone })` 构造、各玩法在 `apps/server/src/rooms/modes/<id>/keys.ts` 定义；**plugin 自有键同样不在该文件登记**，由对称的中央工厂 `kPluginUser(pluginId, name, uid, { zone })`（逻辑形态 `pl:<pluginId>:<name>:{uid}`，`{uid}` 末段同槽）与 `kPluginShared(pluginId, name, { zone }, key?)`（逻辑形态 `pl:<pluginId>:<name>:{<pluginId>}[:key]`，hash-tag 取 pluginId 使同 plugin 共享键同槽）构造、各 plugin 在各自 `apps/server/src/core/<pluginId>/` 目录内定义（当前实例：`core/redeem/store.ts`）；`pl:` 与 `gp:` 命名空间互不可达，`zone` 同样必须显式（契约测试 `apps/server/test/plugin-keys.test.ts`）。**kit 自有键同样不在该文件登记**（docs/KIT.md §2「Redis 键」行），由中央工厂 `kKitUser(kitId, name, uid, { zone })`（逻辑形态 `kt:<kitId>:<name>:{uid}`，`{uid}` 末段同槽；`name ∈ kit.json.userKeys` 且 per-zone 的键由冷档 freeze 快照 + UNLINK、thaw 恢复，见 §9；**写侧硬契约**：每次写须在 `withUserLock(uid)` 内，或同条 Lua 内确认 `user:{uid}` 存在（缺席 'cold'）并 `HINCRBY ver`，否则窗口内的写会被 `FREEZE_COMMIT` 一并 UNLINK；分段判据 `isKitKeySegment` 是 keys.ts 唯一真源，冷档快照校验器复用）与 `kKitShared(kitId, name, shard, { zone })`（per-zone `kt:<kitId>:<name>:{<kitId>:s<sId>:<shard>}`、global `kt:<kitId>:<name>:{<kitId>:<shard>}`；`shard` 必填非空、过同一分段闸，hash-tag 恒带分片键，⛔ 整 kit 单 tag 在构造上不可能）构造（`kKitUser` 由 `core/infra/kitApi.ts` 再导出，kit 经该门面使用）；`kt:` 与 `pl:` / `gp:` 三个命名空间互不可达（契约测试 `apps/server/test/kit-keys.test.ts`）。逻辑形态 `gp:<modeId>:<name>:{uid}`：`gp:` 命名空间段隔开框架键族，`modeId` 是按玩法前缀 scan/清理的唯一依据，`{uid}` hash-tag 必须是末段（09·R3 同槽），⛔ 分段顺序不可改。`zone` **必须显式**、⛔ 无缺省：`"per-zone"` 走 `P()`（每区独立经济，同 `kUser`/`kBag`），`"global"` 走项目前缀（跨区共享单份）——两者在 `sId=0` 的单形态下前缀相等，缺省值会让分类错误静默通过。Snake demo：`kSnakeUser(uid)` = `kGameplay("snake", "user", uid, { zone: "global" })` → `gp:snake:user:{uid}`，**选 global 是因为 demo 钱包是跨区共享的单份余额**（同一 uid 在任何区读到同一个数），全局 uid 口径、不含 `sId`；当前 snake@5 结算一条 `HSET` 写全六字段 `coinBalance/equippedSkinId/ownedSkinIds/fragmentBalances/snakeXp/achievementProgress`（`rooms/modes/snake/runRewards.ts`）。幂等 v2 键族（阶段 4）：记录键沿用 `kIdemUser`（值升级为 §8.1 的 StoredIdem JSON），新增同 `{uid}` 槽计数键 `kIdemPending`（`idem:pending:{uid}`，per-uid pending 上限护栏）。私房键族（阶段 8，全部 **coordination Redis** + **`sId` 显式参数**，⛔ 不走 `zoneCtx`——GameRoom 不在 `zoneCtx.run` 内而 Lobby RPC 在，ambient 读取会打到不同 key）：`kInviteCode(sId, code)`（`room:code:{s<sId>:<code>}`，lease/tombstone JSON，PX=lease TTL 或 cooldown）、`kInviteCodeGen(sId, code)`（`room:code:gen:{s<sId>:<code>}`，per-(sId,code) 分配代号 INCR，永不重置/删除）、`kRoomTicket(sId, ticketSha256)`（`room:ticket:s<sId>:<sha256hex>`，creation/join ticket 记录 JSON，PX=exp；键名只含 ticket 的 sha256，⛔ 不含 ticket 原文）、`kRoomTicketQuota(sId, uid)`（`room:quota:s<sId>:{<uid>}` ZSET，member=`t:<jti>`/`r:<roomId>`、score=过期时刻，§6.8 配额原子检查）。resolve 专用限流桶复用 `kRl`，scope=`room:resolve:fail:<uid>`/`room:resolve:ok:<uid>`/`room:resolve:zonefail:s<sId>`（⛔ 与通用 `rpc:<uid>` 桶分离） |
-| Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts`。kit effect kind `kit:<kitId>:<name>`（docs/KIT.md §4 登记通道）的规格真源是 `codegen:plugins` 从 `apps/kits/<id>/kit.json.effects` 生成的 `apps/shared/src/kits/catalog.generated.ts` `KIT_EFFECT_KINDS`（validator 与 Lua 共同真源；validator 的 `kinds` 参数可注入、缺省即该表），语义 = 对 `kKitUser(kitId, spec.userKey, uid, { zone: "per-zone" })` 的 `spec.field` 整数累加，`delta ∈ [1, spec.max]`；Lua 侧由 `outbox.kitEffectKeysFor` 把出现的 kind 投影成追加在 bag 分片之后的 KEYS + ARGV[4] `{kind:{k,f,m}}`，键数校验 = 基础键数 + 投影去重键数 |
-| 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |
-| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `core/idem.ts`，私房邀请码/ticket 七条（INVITE_CODE_ALLOCATE / INVITE_CODE_RENEW / INVITE_CODE_TOMBSTONE / TICKET_ISSUE_CREATION / TICKET_CLAIM_CREATION / TICKET_CLAIM_JOIN / TICKET_TRANSITION）在 `core/rooms/invite/redisScripts.ts`（跑在 coordination Redis 单实例上，TICKET_ISSUE_CREATION 刻意跨 hash-tag——⛔ 不得搬到 cluster 化的 durable 实例），都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行 |
-| kit-api/server 门面 | `apps/server/src/core/infra/kitApi.ts`（docs/KIT.md §4）：`withKitTx(kitId, sId, fn)` = READ COMMITTED 事务 + 只能碰 `k_<kitId 小写>_*` 表的 `tx.query()`（运行时表引用列表闸 `assertKitTableAccess`——从 FROM / JOIN / STRAIGHT_JOIN / INTO / UPDATE / USING 起把整段 table_references 走完，含逗号 / JOIN 接续、`JOIN … ON cond, tbl`、表名后的 `PARTITION (…)` 与索引提示组；fail-closed：框架表 / 别的 kit / schema 限定 / 括号表引用 `(tbl)` / `/*!` 可执行注释与 `/*+` 提示 / DDL / 多语句一律拒；走 `conn.execute` 预处理语句，params 只允许原始值 / Date / Buffer，⛔ `toSqlString` 对象；`tx.conn` 是契约保留的原始连接、⛔ 不过闸，kit 代码触碰 `.conn` 由 K1 路径级边界机检拒绝）、`tx.debit` / `tx.credit`（currency.ts `debitInTx` / `creditInTx`，sId 已绑定）、`tx.enqueueEffect`（先按注入 `kinds` 规范化，effect 里的 kit kind 必须是 `kit:<本 kitId>:*` ⇒ 否则 `KitEffectScopeError`；outbox `insertOutboxIntent` ODKU no-op ⇒ "DUP" 后 `assertOutboxIntentMatches` 回读比对，同 opId 不同载荷 ⇒ `EffectConflictError`，与 purchaseTx 同一判定），提交后逐 uid `invalidateBalanceCache`；`kitOpId(kitId, uid, sId, op, clientReqId)` = `deriveOpId` 的 `kit:<kitId>:<op>` 命名空间；kit 需要的错误类型 / `CUR_GOLD` / `kKitUser` 从此文件再导出（kit 从 `apps/server/src/kits/<id>/**` 相对导入 `../../core/infra/kitApi`，⛔ 不直接 import 其他 core/infra 模块）。新增 `withKitUserFence(uid,sId,fn)` 在显式区先取用户锁/冷档自愈，只向 kit 暴露只读 fence；`retryKitTransaction(fn)` 仅对完整幂等事务重试 MySQL 1213/1205（最多三次）；`readKitUserFieldInZone` 显式按区读取 kit 字段。用户锁必须在世界 SQL 锁之前获取，effect apply 只能提交后执行。契约测试 `apps/server/test/kit-api.test.ts` 与 `kit-api-user-port.test.ts` |
-| MySQL DDL | `apps/server/sql/schema.sql`（含 kit 迁移账本 `kit_migration` 与 `singleton_lease('db_bootstrap')` 预置行）；兼容升级逻辑在 `tools/db-bootstrap.ts`；kit 表来自 `apps/kits/<id>/sql/NNN-<name>.sql`，由 `tools/kit-migrations.ts` 在 `db_bootstrap` 租约下按账本逐条语句应用（白名单 lint、已应用文件 sha256 变化 fail-closed、账本记语句粒度进度 `statement_count`/`applied_statements` 供中途失败后续跑），按区表登记在 `core/infra/zoneTables.ts` |
+| `ballMove` v3 evidence schema/validator/replay | `apps/server/src/modules/match/matchEvidence.ts`、`matchReplay.ts`；流生产消费在 `matchConsumer.ts` |
+| Redis key | 框架键在 `apps/server/src/framework/infra/keys.ts`；**玩法自有键不在该文件登记**，由中央工厂 `kGameplay(modeId, name, uid, { zone })` 构造、各玩法在 `apps/server/src/rooms/modes/<id>/keys.ts` 定义；**plugin 自有键同样不在该文件登记**，由对称的中央工厂 `kPluginUser(pluginId, name, uid, { zone })`（逻辑形态 `pl:<pluginId>:<name>:{uid}`，`{uid}` 末段同槽）与 `kPluginShared(pluginId, name, { zone }, key?)`（逻辑形态 `pl:<pluginId>:<name>:{<pluginId>}[:key]`，hash-tag 取 pluginId 使同 plugin 共享键同槽）构造、各 plugin 在各自 `apps/server/src/core/<pluginId>/` 目录内定义（当前实例：`modules/redeem/store.ts`）；`pl:` 与 `gp:` 命名空间互不可达，`zone` 同样必须显式（契约测试 `apps/server/test/plugin-keys.test.ts`）。**kit 自有键同样不在该文件登记**（docs/KIT.md §2「Redis 键」行），由中央工厂 `kKitUser(kitId, name, uid, { zone })`（逻辑形态 `kt:<kitId>:<name>:{uid}`，`{uid}` 末段同槽；`name ∈ kit.json.userKeys` 且 per-zone 的键由冷档 freeze 快照 + UNLINK、thaw 恢复，见 §9；**写侧硬契约**：每次写须在 `withUserLock(uid)` 内，或同条 Lua 内确认 `user:{uid}` 存在（缺席 'cold'）并 `HINCRBY ver`，否则窗口内的写会被 `FREEZE_COMMIT` 一并 UNLINK；分段判据 `isKitKeySegment` 是 keys.ts 唯一真源，冷档快照校验器复用）与 `kKitShared(kitId, name, shard, { zone })`（per-zone `kt:<kitId>:<name>:{<kitId>:s<sId>:<shard>}`、global `kt:<kitId>:<name>:{<kitId>:<shard>}`；`shard` 必填非空、过同一分段闸，hash-tag 恒带分片键，⛔ 整 kit 单 tag 在构造上不可能）构造（`kKitUser` 由 `framework/infra/kitApi.ts` 再导出，kit 经该门面使用）；`kt:` 与 `pl:` / `gp:` 三个命名空间互不可达（契约测试 `apps/server/test/kit-keys.test.ts`）。逻辑形态 `gp:<modeId>:<name>:{uid}`：`gp:` 命名空间段隔开框架键族，`modeId` 是按玩法前缀 scan/清理的唯一依据，`{uid}` hash-tag 必须是末段（09·R3 同槽），⛔ 分段顺序不可改。`zone` **必须显式**、⛔ 无缺省：`"per-zone"` 走 `P()`（每区独立经济，同 `kUser`/`kBag`），`"global"` 走项目前缀（跨区共享单份）——两者在 `sId=0` 的单形态下前缀相等，缺省值会让分类错误静默通过。Snake demo：`kSnakeUser(uid)` = `kGameplay("snake", "user", uid, { zone: "global" })` → `gp:snake:user:{uid}`，**选 global 是因为 demo 钱包是跨区共享的单份余额**（同一 uid 在任何区读到同一个数），全局 uid 口径、不含 `sId`；当前 snake@5 结算一条 `HSET` 写全六字段 `coinBalance/equippedSkinId/ownedSkinIds/fragmentBalances/snakeXp/achievementProgress`（`rooms/modes/snake/runRewards.ts`）。幂等 v2 键族（阶段 4）：记录键沿用 `kIdemUser`（值升级为 §8.1 的 StoredIdem JSON），新增同 `{uid}` 槽计数键 `kIdemPending`（`idem:pending:{uid}`，per-uid pending 上限护栏）。私房键族（阶段 8，全部 **coordination Redis** + **`sId` 显式参数**，⛔ 不走 `zoneCtx`——GameRoom 不在 `zoneCtx.run` 内而 Lobby RPC 在，ambient 读取会打到不同 key）：`kInviteCode(sId, code)`（`room:code:{s<sId>:<code>}`，lease/tombstone JSON，PX=lease TTL 或 cooldown）、`kInviteCodeGen(sId, code)`（`room:code:gen:{s<sId>:<code>}`，per-(sId,code) 分配代号 INCR，永不重置/删除）、`kRoomTicket(sId, ticketSha256)`（`room:ticket:s<sId>:<sha256hex>`，creation/join ticket 记录 JSON，PX=exp；键名只含 ticket 的 sha256，⛔ 不含 ticket 原文）、`kRoomTicketQuota(sId, uid)`（`room:quota:s<sId>:{<uid>}` ZSET，member=`t:<jti>`/`r:<roomId>`、score=过期时刻，§6.8 配额原子检查）。resolve 专用限流桶复用 `kRl`，scope=`room:resolve:fail:<uid>`/`room:resolve:ok:<uid>`/`room:resolve:zonefail:s<sId>`（⛔ 与通用 `rpc:<uid>` 桶分离） |
+| Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/framework/infra/redisScripts.ts`。kit effect kind `kit:<kitId>:<name>`（docs/KIT.md §4 登记通道）的规格真源是 `codegen:plugins` 从 `apps/kits/<id>/kit.json.effects` 生成的 `apps/shared/src/kits/catalog.generated.ts` `KIT_EFFECT_KINDS`（validator 与 Lua 共同真源；validator 的 `kinds` 参数可注入、缺省即该表），语义 = 对 `kKitUser(kitId, spec.userKey, uid, { zone: "per-zone" })` 的 `spec.field` 整数累加，`delta ∈ [1, spec.max]`；Lua 侧由 `outbox.kitEffectKeysFor` 把出现的 kind 投影成追加在 bag 分片之后的 KEYS + ARGV[4] `{kind:{k,f,m}}`，键数校验 = 基础键数 + 投影去重键数 |
+| 跨模块服务端配置 | `apps/server/src/framework/infra/config.ts`；少量模块私有常量仍在实现文件内 |
+| Lua | `apps/server/src/framework/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `framework/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `framework/idem.ts`，私房邀请码/ticket 七条（INVITE_CODE_ALLOCATE / INVITE_CODE_RENEW / INVITE_CODE_TOMBSTONE / TICKET_ISSUE_CREATION / TICKET_CLAIM_CREATION / TICKET_CLAIM_JOIN / TICKET_TRANSITION）在 `modules/rooms/invite/redisScripts.ts`（跑在 coordination Redis 单实例上，TICKET_ISSUE_CREATION 刻意跨 hash-tag——⛔ 不得搬到 cluster 化的 durable 实例），都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行 |
+| kit-api/server 门面 | `apps/server/src/framework/infra/kitApi.ts`（docs/KIT.md §4）：`withKitTx(kitId, sId, fn)` = READ COMMITTED 事务 + 只能碰 `k_<kitId 小写>_*` 表的 `tx.query()`（运行时表引用列表闸 `assertKitTableAccess`——从 FROM / JOIN / STRAIGHT_JOIN / INTO / UPDATE / USING 起把整段 table_references 走完，含逗号 / JOIN 接续、`JOIN … ON cond, tbl`、表名后的 `PARTITION (…)` 与索引提示组；fail-closed：框架表 / 别的 kit / schema 限定 / 括号表引用 `(tbl)` / `/*!` 可执行注释与 `/*+` 提示 / DDL / 多语句一律拒；走 `conn.execute` 预处理语句，params 只允许原始值 / Date / Buffer，⛔ `toSqlString` 对象；`tx.conn` 是契约保留的原始连接、⛔ 不过闸，kit 代码触碰 `.conn` 由 K1 路径级边界机检拒绝）、`tx.debit` / `tx.credit`（currency.ts `debitInTx` / `creditInTx`，sId 已绑定）、`tx.enqueueEffect`（先按注入 `kinds` 规范化，effect 里的 kit kind 必须是 `kit:<本 kitId>:*` ⇒ 否则 `KitEffectScopeError`；outbox `insertOutboxIntent` ODKU no-op ⇒ "DUP" 后 `assertOutboxIntentMatches` 回读比对，同 opId 不同载荷 ⇒ `EffectConflictError`，与 purchaseTx 同一判定），提交后逐 uid `invalidateBalanceCache`；`kitOpId(kitId, uid, sId, op, clientReqId)` = `deriveOpId` 的 `kit:<kitId>:<op>` 命名空间；kit 需要的错误类型 / `CUR_GOLD` / `kKitUser` 从此文件再导出（kit 从 `apps/server/src/kits/<id>/**` 相对导入 `../../framework/infra/kitApi`，⛔ 不直接 import 其他 framework/infra 模块）。新增 `withKitUserFence(uid,sId,fn)` 在显式区先取用户锁/冷档自愈，只向 kit 暴露只读 fence；`retryKitTransaction(fn)` 仅对完整幂等事务重试 MySQL 1213/1205（最多三次）；`readKitUserFieldInZone` 显式按区读取 kit 字段。用户锁必须在世界 SQL 锁之前获取，effect apply 只能提交后执行。契约测试 `apps/server/test/kit-api.test.ts` 与 `kit-api-user-port.test.ts` |
+| MySQL DDL | `apps/server/sql/schema.sql`（含 kit 迁移账本 `kit_migration` 与 `singleton_lease('db_bootstrap')` 预置行）；兼容升级逻辑在 `tools/db-bootstrap.ts`；kit 表来自 `apps/kits/<id>/sql/NNN-<name>.sql`，由 `tools/kit-migrations.ts` 在 `db_bootstrap` 租约下按账本逐条语句应用（白名单 lint、已应用文件 sha256 变化 fail-closed、账本记语句粒度进度 `statement_count`/`applied_statements` 供中途失败后续跑），按区表登记在 `framework/infra/zoneTables.ts` |
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
 | HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配表是生成物 `apps/server/src/http/manifest.generated.ts`（禁手改），新增后运行 `npm --workspace @game/server run codegen:http`，`http/index.ts` 只消费该 manifest |
 | 外部身份契约 | 锁定的 `@gono/webplatform-contract` 与 `apps/shared/src/generated/webplatform` |
 | 协议指纹 | `scripts/protocol.fingerprint`（单行 `g<GAME_ROOM_PROTOCOL_VERSION> l<LOBBY_PROTOCOL_VERSION> <sha256>`）；更新命令 `node scripts/protocol-fingerprint.mjs --write`（`--check` 只读比对，⛔ 无隐式重钉）。当前只覆盖 `apps/shared/src/protocol/**` 与两个协议身份整数（GAME_ROOM 管信封与 core wire、LOBBY 管 Lobby RPC 面，各自的 join 闸只比较自己的整数；指纹只做字节审计锁，不参与 join 判定），由 `npm run test:client` 中的 `protocolFingerprint.test.ts` 校验；`constants/errors.ts` 的 `ErrorCode` 数值、`constants/game.ts` 的 `GamePhase` 与帧率等常量、`logic/battle.ts` 的技能表与伤害公式同为双端契约，但不在该闸内 |
-| 计算任务 | `apps/server/src/core/compute/tasks` |
-| 本地环境变量与项目命名空间 | 根 `.env.development`；加载与校验在 `apps/server/src/core/infra/config.ts`（`PROJECT_ID` / `PORT` 加载期 fail-fast） |
+| 计算任务 | `apps/server/src/framework/compute/tasks` |
+| 本地环境变量与项目命名空间 | 根 `.env.development`；加载与校验在 `apps/server/src/framework/infra/config.ts`（`PROJECT_ID` / `PORT` 加载期 fail-fast） |
 
 新增能力时先更新契约和登记点，再实现调用方；不要依赖历史“07 表”等已不存在的文档作为真源。
 
@@ -732,7 +732,7 @@ npm --workspace @game/server run test
 当前 `loadtest/bot.ts` 缺少严格鉴权所需 token/sId，不能作为可用验证入口；其状态见 EXTRAS。
 
 `apps/server/tools/m0/` 保留两个一次性探测脚本，不进入常规验证命令：`currency-txn-bench.ts` 测货币同步
-事务 p99（`core/infra/config.ts` 的 `LOCK_TTL_MS = 5000` 必须罩住该值），`colyseus-redis-probe.ts` 实测
+事务 p99（`framework/infra/config.ts` 的 `LOCK_TTL_MS = 5000` 必须罩住该值），`colyseus-redis-probe.ts` 实测
 RedisDriver/RedisPresence 下的跨进程建房与定向建房。它们没有 npm 入口，运行时会占用额外端口、写 Redis
 db 9 或向 MySQL 写压测行；是当时定数用的本地实验，不是可复用的性能基线工具，文件头注释里的历史章节号
 （如“04 · 阶段 1”）已失效；重新调整锁 TTL 或启用 Redis 驱动前应重跑并自行复核结论。仓库未保存基线结果。

@@ -2,14 +2,14 @@
  * 集成测试公共件：真实 Redis（⛔ 不 mock，10·M2 DoD），先 `npm run stack`（apps/server）起本地栈。
  * uid 带运行期前缀隔离，跑完 UNLINK 清理（09·R6）。
  */
-import { writeGroupSess } from "../../src/core/auth/session";
+import { writeGroupSess } from "../../src/framework/auth/session";
 import { writeDevTokenIndex } from "../../src/platform/devAuthProvider";
-import { kApplied, kAppliedPayload, kArchiveProof, kBagAll, kFence, kLock, kUser } from "../../src/core/infra/keys";
-import { clientFor } from "../../src/core/infra/redisRoute";
-import { kitUserKeyEntries } from "../../src/core/archive/archiveScripts";
+import { kApplied, kAppliedPayload, kArchiveProof, kBagAll, kFence, kLock, kUser } from "../../src/framework/infra/keys";
+import { clientFor } from "../../src/framework/infra/redisRoute";
+import { kitUserKeyEntries } from "../../src/framework/archive/archiveScripts";
 import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
 import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
-import { AuthRequiredError } from "../../src/core/errors";
+import { AuthRequiredError } from "../../src/framework/errors";
 import {
   installWebPlatformClientForTests,
   type WebPlatformClient,

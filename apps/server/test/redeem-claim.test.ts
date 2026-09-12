@@ -4,9 +4,9 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { RpcFault } from "../src/core/errors";
-import { claimRedeemCode } from "../src/core/redeem/claim";
-import { createMemoryRedeemStore, createRedisRedeemStore, kRedeemClaimed, kRedeemWallet, REDEEM_CLAIM } from "../src/core/redeem/store";
+import { RpcFault } from "../src/framework/errors";
+import { claimRedeemCode } from "../src/modules/redeem/claim";
+import { createMemoryRedeemStore, createRedisRedeemStore, kRedeemClaimed, kRedeemWallet, REDEEM_CLAIM } from "../src/modules/redeem/store";
 
 test("redeem：未登记码 → REDEEM_CODE_INVALID，且不动余额", async () => {
   const store = createMemoryRedeemStore();

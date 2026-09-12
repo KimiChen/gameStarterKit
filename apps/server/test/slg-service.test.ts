@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SLG_SETTLEMENT_BATCH_SIZE, type ISlgMarch } from "@game/shared/kits/slg/api/march/index";
 import { SLG_CHUNK_SIZE, tileIdToCoord, type ISlgTile } from "@game/shared/kits/slg/api/worldmap/index";
-import { type IEffect, type KitTx, InsufficientBalanceError } from "../src/core/infra/kitApi";
+import { type IEffect, type KitTx, InsufficientBalanceError } from "../src/framework/infra/kitApi";
 import { createSlgApi, slgOperation, type SlgOperation, type SlgTxRunner } from "../src/kits/slg/service";
 import type { SlgChange, SlgReceipt, SlgRepository } from "../src/kits/slg/repository";
 

@@ -11,8 +11,8 @@
  * ⚠ 鉴权走共享密钥头（同 pay/wxNotify 范式）；**未配置 `ADMIN_API_SECRET` 即端点关闭**（fail-closed）。
  */
 import { ForceLogoutReason, type ForceLogoutReasonType, type RpcErrCode } from "@game/shared";
-import { ADMIN_API_SECRET } from "../../core/infra/config";
-import { safeSecretEqual } from "../../core/auth/session";
+import { ADMIN_API_SECRET } from "../../framework/infra/config";
+import { safeSecretEqual } from "../../framework/auth/session";
 import { kickUser } from "../../websocket/push";
 import { createGameEndpoint } from "../contract";
 
