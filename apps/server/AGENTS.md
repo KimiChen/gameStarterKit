@@ -1,6 +1,9 @@
 ## 适用范围
 
 - 本文件约束 `apps/server`；默认只修改当前目录及其明确需要同步的生成物。
+- **目录访问边界：**除测试客户端时可访问
+  [`apps/client/test/server/`](../client/test/server/) 外，正常情况下只访问 `./`（即 `apps/server`）内的目录；
+  不访问 `./` 之外的其他目录。
 - `humanDocs/` 仅供人类阅读，AI 不读取、不搜索、不修改。
 - 各模块入口见 [AI-INDEX.md](AI-INDEX.md)。
 
