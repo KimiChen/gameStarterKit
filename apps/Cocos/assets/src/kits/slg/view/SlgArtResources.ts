@@ -82,8 +82,8 @@ export async function loadSlgArtResources(mapId: string): Promise<SlgArtResource
         if (island.width <= 0 || island.height <= 0) throw new Error("SLG island ground must have dimensions");
         if (sea.width <= 0 || sea.height <= 0) throw new Error("SLG sea tile must have dimensions");
         const tiles = tilesData.json as SlgGroundTileIndex;
-        if (!Number.isInteger(tiles.tile) || tiles.tile !== 64 || !Number.isInteger(tiles.image) || tiles.image <= 0
-            || !Array.isArray(tiles.blocks)) {
+        if (!Number.isInteger(tiles.tile) || tiles.tile <= 0 || (tiles.tile & (tiles.tile - 1)) !== 0
+            || !Number.isInteger(tiles.image) || tiles.image <= 0 || !Array.isArray(tiles.blocks)) {
             throw new Error(`SLG ground tiles contract violation (${mapId})`);
         }
         return { mapId, terrain, ground, decorations, overview, island, sea, groundTiles: tiles,
