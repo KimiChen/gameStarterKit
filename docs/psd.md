@@ -96,7 +96,7 @@ Creator 导入、Scenario 验收、receipt 冻结
 | 通用 PSD CLI / Schema | 当前无 `ui:psd:*` 或 `psd:*` 仓库命令 | 计划能力 |
 | CLI FairyGUI 编译器 / Editor 映射 | 当前无实现 | 计划能力 |
 | 根据契约和 XML 实现前后端 | 仓库有现成 codegen 与开发动线，但无本文编排器 | 人工可执行，自动编排是计划能力 |
-| PSD/design 源图 → UniFlex Web Golden | `ui:render-source` 按 `design.json` 独立合成 RGB 源图，`ui:verify` 按颜色阈值 `0.1`、区域差异 `5%` 比较，并检查组件、交互、九宫格和字体契约；传入 `--report` 时输出 `componentization` 审计 | **主验收链已实现**；Backpack RGB 源图与 Web proposal 整图 `AE=0`，组件报告明确其为 1 个含栅格化子层的语义容器，不把整图误报为完全可编辑；两个越界 group frame 保留诊断警告 |
+| PSD/design 源图 → UniFlex Web Golden | `ui:render-source` 按 `design.json` 独立合成 RGB 源图，`ui:verify` 按颜色阈值 `0.1`、区域差异 `5%` 比较，并检查组件、交互、九宫格和字体契约；传入 `--report` 时输出 `componentization` 审计及 `decomposition.candidates` 拆分候选清单 | **主验收链已实现**；Backpack RGB 源图与 Web proposal 整图 `AE=0`，组件报告明确其为 1 个含栅格化子层的语义容器，不把整图误报为完全可编辑；候选清单列出 22 个保留层、3 个页签文字层及其字体/效果阻塞原因；两个越界 group frame 保留诊断警告 |
 | UniFlex Web → Cocos 运行时冒烟 | Cocos 复用 UniFlex AOT/资源/布局语义；`ui:capture-cocos-golden` 从真实引擎 RenderTexture 读取契约画布 | **辅助验证已实现**；禁止使用带 Creator 工具栏的截图或非等比缩放。正式运行证据仍受当前 Creator 预览环境阻塞，不影响 Web 主链的判断 |
 | 交互回归 | Backpack `BackpackLogic.runCheckpoint()` 按稳定 name 执行 `primary/back/tab` | 已实现最小业务闭环；尚非完整跨页面 Storybook/Checkpoint manager |
 | 九宫格与字体契约 | `decompositionSpec.nineSlice`、`fontRef/path/hash/advances` 检查 | 已实现诊断；未声明的候选只报警，生产包仍需逐项确认 |

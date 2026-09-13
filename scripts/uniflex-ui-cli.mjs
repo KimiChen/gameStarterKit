@@ -1,4 +1,4 @@
-import { access, mkdir, readFile } from "node:fs/promises";
+import { access, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { dirname, extname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -94,6 +94,14 @@ export async function runCli(argv, {
     if (![1, 2].includes(manifest.schemaVersion) || manifest.kind !== "uniflex-import-package"
         || manifest.name !== values.name)
         throw new Error("Converter returned an incompatible UniFlex package.");
+    // Keep parsed PSD fields beside design.json so rasterization and component
+    // decisions remain auditable after the external converter's handoff.
+    const supplement = join(design, "psd-extra.json");
+    if (await access(supplement).then(() => true).catch(() => false)) {
+        await copyFile(supplement, join(projectPackage, "psd-extra.json"));
+        manifest.sourceSupplement = "psd-extra.json";
+        await writeFile(join(projectPackage, "components.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+    }
     run(process.execPath, [join(root, "scripts/import-uniflex-package.mjs"),
         ...(values.update ? ["--update"] : []), projectPackage]);
 }
