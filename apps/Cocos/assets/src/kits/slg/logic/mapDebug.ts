@@ -34,8 +34,10 @@ export const SLG_MAP_DEBUG_GLOBAL = "slgMapDebug";
 /**
  * 桌面调试入口：`slgMapDebug.setLod(0..3|null)`、`slgMapDebug.hide("grid")`、`slgMapDebug.show("grid")`、
  * `slgMapDebug.layers()`、`slgMapDebug.reset()`。返回注销函数（视图关闭时调用）；⛔ 非 gameplay 语义，不进存档/网络。
+ * extra：视图侧追加的调试回调（如 locate——纯相机导航，与总览定位同一写路径）。
  */
-export function installSlgMapDebugGlobal(target: Record<string, unknown> = globalThis as Record<string, unknown>): () => void {
+export function installSlgMapDebugGlobal(target: Record<string, unknown> = globalThis as Record<string, unknown>,
+    extra?: Record<string, unknown>): () => void {
     const api = {
         setLod: (lod: number | null) => { slgMapDebug.setForceLod(lod); return slgMapDebug.snapshot(); },
         hide: (id: MapLayerId) => { slgMapDebug.setLayerHidden(id, true); return slgMapDebug.snapshot(); },
@@ -43,6 +45,7 @@ export function installSlgMapDebugGlobal(target: Record<string, unknown> = globa
         layers: () => MAP_LAYERS.map((layer) => layer.id),
         reset: () => { slgMapDebug.reset(); return slgMapDebug.snapshot(); },
         state: () => slgMapDebug.snapshot(),
+        ...(extra ?? {}),
     };
     target[SLG_MAP_DEBUG_GLOBAL] = api;
     return () => {

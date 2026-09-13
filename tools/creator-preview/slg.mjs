@@ -8,12 +8,16 @@ const inView = (node) => node.path.includes(`${VIEW}/`);
 /** 世界格边长（真源 = shared worldmap 的 SLG_MAP_W；creator-preview-tool.test.ts 钉住两者一致）。 */
 export const SLG_WORLD_SIZE = 1500;
 
+/** 泽之国浅滩涉水目检定位点：入库 layout.json 中 ground_at==Shallow 的 portal+4chest 集群中心
+ *  （tools/slg-maps extract-layout 产出；坐标变更需同步该文件的浅水实体分布）。 */
+export const SLG_ZEZHIGUO_SHALLOW_SPOT = { x: 524, y: 756 };
+
 /** Parse the public UI, deliberately rejecting missing/loading titles and incomplete tile details. */
 export function readSlgMapEvidence(walk) {
   if (!walk?.nodes.some((node) => node.name === VIEW)) return null;
   const nodes = walk.nodes.filter(inView);
-  const title = nodes.find((node) => typeof node.text === "string" && /^.+ · LOD [1-4] · 奖杯 \d+$/u.test(node.text));
-  const titleMatch = title?.text.match(/^(.+) · LOD ([1-4]) · 奖杯 (\d+)$/u);
+  const title = nodes.find((node) => typeof node.text === "string" && /^.+ · LOD [1-4](?:（GM）)? · 奖杯 \d+$/u.test(node.text));
+  const titleMatch = title?.text.match(/^(.+) · LOD ([1-4])(?:（GM）)? · 奖杯 (\d+)$/u);
   const details = nodes.find((node) => typeof node.text === "string" && /^\(\d+, \d+\) · 地形 \d+ · .+ · 守备 \d+$/u.test(node.text));
   const tileMatch = details?.text.match(/^\((\d+), (\d+)\) · 地形 (\d+) · (无主|我方|敌方 .+) · 守备 (\d+)$/u);
   // 近档：瓦片层合并网格（slg-tiles-*，每原版层一张，见 §10.6）或旧 chunk 网格都算「已加载」。
@@ -447,8 +451,32 @@ export async function replaySlgMap(runner) {
     throw new Error("64 次滚轮后仍未到 LOD 4（山之国）");
   });
 
-  await runner.step("切回森之国并恢复近档", async () => {
+  await runner.step("切换到泽之国并 GM 定位浅滩：涉水装饰目检", async () => {
     await runner.tapText("山之国", { pathIncludes: `${VIEW}/slg-minimap` });
+    await runner.waitFor("切换面板出现（泽之国）", (walk) =>
+      walk.nodes.some((node) => node.name === "slg-map-switcher" && inView(node)) ? true : null);
+    await runner.tapText("泽之国", { pathIncludes: "slg-map-option-zezhiguo" });
+    await runner.waitFor("标题变泽之国且网格重载", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.loaded && value.title?.startsWith("泽之国 ·") && value.chunks.length > 0 ? value : null;
+    }, 60_000);
+    // GM 定位到浅水簇（坐标 = 入库 layout.json 的管线产出：ground_at==Shallow 的 portal+4chest 集群）。
+    await runner.client.evaluate(`slgMapDebug.locate(${SLG_ZEZHIGUO_SHALLOW_SPOT.x}, ${SLG_ZEZHIGUO_SHALLOW_SPOT.y})`);
+    await runner.waitFor("选格详情落在目标浅滩坐标", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.tile && Math.abs(value.tile.x - SLG_ZEZHIGUO_SHALLOW_SPOT.x) <= 1
+        && Math.abs(value.tile.y - SLG_ZEZHIGUO_SHALLOW_SPOT.y) <= 1 ? value : null;
+    });
+    // 钉 LOD 1 近档截图（涉水渐隐只在近档装饰层），拍完解除 GM 档。
+    await runner.client.evaluate("slgMapDebug.setLod(0)");
+    const frame = await stableSlgFrame(runner, 1);
+    await runner.client.evaluate("slgMapDebug.setLod(null)");
+    return { spot: SLG_ZEZHIGUO_SHALLOW_SPOT, ...frame, assets: await renderedMapAssets(runner),
+      shot: await runner.shot("slg-zezhiguo-shallow") };
+  });
+
+  await runner.step("切回森之国并恢复近档", async () => {
+    await runner.tapText("泽之国", { pathIncludes: `${VIEW}/slg-minimap` });
     await runner.waitFor("切换面板出现", (walk) => walk.nodes.some((node) => node.name === "slg-map-switcher" && inView(node)) ? true : null);
     await runner.tapText("森之国", { pathIncludes: "slg-map-option-senzhiguo" });
     const evidence = await runner.waitFor("标题回森之国且网格重载", (walk) => {
