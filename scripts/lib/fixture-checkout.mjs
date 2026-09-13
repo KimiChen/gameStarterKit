@@ -78,6 +78,10 @@ export function buildCheckout({ prefix, excludeEnvVariants = true, gitCommit = f
     git("init", "-q");
     git("config", "user.email", "matrix@example.invalid");
     git("config", "user.name", "sync matrix");
+    // commit 会派生 `git maintenance run --auto --detach` 守护进程，几秒后异步 repack
+    // 本夹具的松散对象（删 objects/xx 扇出目录、落 pack）——矩阵用例此刻正在并发 cp pristine，
+    // lstat ENOENT 打红整面矩阵（2026-09-13 实证）。夹具是一次性检出，⛔ 不需要后台维护。
+    git("config", "maintenance.auto", "false");
     git("add", "-A");
     git("commit", "-qm", "fixture");
   }
