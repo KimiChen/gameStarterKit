@@ -13,6 +13,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -175,12 +176,21 @@ def main() -> None:
 
     # ── tileset 图集打包（256²/格，等比放大装满；内容子矩形随 meta 下发）────────────────────
     def to_cell(img):
-        """等比放大到贴满图集格（至少一边顶格），居中摆放；返回 (格图, 内容子矩形 0..1)。"""
+        """等比放大到贴满图集格（至少一边顶格），居中摆放；返回 (格图, 内容子矩形 0..1)。
+        保边：PIL LANCZOS 把格外当作透明黑，会把瓦片自带 1px 软边（原版 alpha≈243）拖成
+        2px 且压暗到 ~220（接缝网格线的直接成因）。先边缘复制填充 2px 再缩放，最后裁回。"""
         s = min(CELL / img.size[0], CELL / img.size[1])
-        piece = img.resize((max(1, round(img.size[0] * s)), max(1, round(img.size[1] * s))), Image.LANCZOS)
+        tw, th = max(1, round(img.size[0] * s)), max(1, round(img.size[1] * s))
+        pw, ph = max(1, round(2 * s)), max(1, round(2 * s))
+        arr = np.asarray(img.convert("RGBA"))
+        arr = np.pad(arr, ((2, 2), (2, 2), (0, 0)), mode="edge")
+        padded = Image.fromarray(arr).resize((tw + 2 * pw, th + 2 * ph), Image.LANCZOS)
+        piece = padded.crop((pw, ph, pw + tw, ph + th))
         cell = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
         ox, oy = (CELL - piece.size[0]) // 2, (CELL - piece.size[1]) // 2
-        cell.paste(piece, (ox, oy), piece)
+        # ⛔ 不能 paste(piece, ..., piece)：mask 会再乘一次源 alpha，边缘 243→231 被二次衰减
+        # （接缝网格线的真元凶之一）；无 mask 直接替换，透明格底 + RGBA 源语义正确。
+        cell.paste(piece, (ox, oy))
         rect = (ox / CELL, oy / CELL, (ox + piece.size[0]) / CELL, (oy + piece.size[1]) / CELL)
         return cell, rect
 
