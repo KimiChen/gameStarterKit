@@ -8,6 +8,9 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
+    // UniFlex authoring（*.authoring.tsx，@uniflex/compiler defineView 写法）进入 src 依赖图后
+    // tsc 需要 jsx 开关；类型走 @uniflex/compiler/jsx 的全局 JSX 命名空间（client-test-stubs.d.ts 引入）。
+    "jsx": "preserve",
     // AUTO binding fields are protected by codegen; retain the strict unused
     // declaration check for business code as well as the structural contract.
     "noUnusedLocals": true,
@@ -19,6 +22,7 @@
   },
   "include": [
     "client-test-stubs.d.ts",
+    "uniflex-jsx.d.ts",
     "src/**/*.ts",
     "test/**/*.ts",
     "../../tools/fgui-codegen/**/*.ts"
