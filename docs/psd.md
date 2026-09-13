@@ -5,9 +5,9 @@
 > 打开—保存—关闭—重开自动验收、Editor takeover、`.psdt.io` 容器命令或完整
 > Storybook/Checkpoint manager。Web/Cocos 预览成功不等于 Golden 批准。
 
-> 版本：0.4（方案稿）<br>
+> 版本：0.5（实施状态记录）<br>
 > 日期：2026-09-02<br>
-> 状态：已有一次 `referenceCompositeOnly` PSD 生成记录；通用 CLI、Schema、元素级可编辑性验证、FairyGUI 编译器和全栈编排仍未实现<br>
+> 状态（2026-09-13）：PSD ↔ UniFlex 的 Backpack 导入样例已具备源图契约、Web/Cocos 运行入口、交互候选绑定、九宫格/字体诊断和 Web Golden 检查；Photoshop 往返、`.psdt.io` 容器、完整 Storybook/Checkpoint manager、真实 Cocos 截图门禁仍未完成。<br>
 > 决策：使用 CLI 编译器 PSD 版承担 PSD 解析、资产导出、装配计划生成和候选 FairyGUI 工程编译。
 > 核心契约：明确采用“**命名 + sidecar 契约 + Editor 映射**”三层方案。
 
@@ -92,6 +92,10 @@ Creator 导入、Scenario 验收、receipt 冻结
 | 通用 PSD CLI / Schema | 当前无 `ui:psd:*` 或 `psd:*` 仓库命令 | 计划能力 |
 | CLI FairyGUI 编译器 / Editor 映射 | 当前无实现 | 计划能力 |
 | 根据契约和 XML 实现前后端 | 仓库有现成 codegen 与开发动线，但无本文编排器 | 人工可执行，自动编排是计划能力 |
+| UniFlex 源图 → Web Golden | `ui:verify` 已按颜色阈值 `0.1`、区域差异 `5%` 比较独立源图与 Web proposal | 已实现门禁；当前 Backpack 的 `design.json` 灰度源图与彩色 Web 不一致，未批准 |
+| Web proposal → Cocos Golden | 必须提供 Web approval；Cocos 入口为 `assets/uniflex.scene` | 契约已实现；本机无 GPU 的截图浏览器报 WebGL 不支持，尚无真实 Cocos 视觉证据 |
+| 交互回归 | Backpack `BackpackLogic.runCheckpoint()` 按稳定 name 执行 `primary/back/tab` | 已实现最小业务闭环；尚非完整跨页面 Storybook/Checkpoint manager |
+| 九宫格与字体契约 | `decompositionSpec.nineSlice`、`fontRef/path/hash/advances` 检查 | 已实现诊断；未声明的候选只报警，生产包仍需逐项确认 |
 
 [`docs/ui/undergroundIdle/ue-v01/`](ui/undergroundIdle/ue-v01/README.md) 的 11 份 UE PSD（未入库，仅存本机，见其
 README）同样属于
