@@ -1,6 +1,7 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -14,6 +15,9 @@ const reportPath = value("--report");
 const strict = args.includes("--strict");
 const sourceImage = value("--source-image");
 const webImage = value("--web-image");
+const cocosImage = value("--cocos-image");
+const approvalPath = value("--approval");
+const approveWeb = args.includes("--approve-web");
 
 if (!packageDir) {
     console.error("Usage: npm run ui:verify -- --package <project-package> [--strict] [--report <file>]");
@@ -98,6 +102,8 @@ if (!packageDir) {
             cocosRequiresApprovedWebProposal: true,
             checks, errors, warnings,
         };
+        const sha256 = (file) => createHash("sha256").update(requireFile(file)).digest("hex");
+        const requireFile = (file) => execFileSync("cat", [resolve(root, file)]);
         if (sourceImage || webImage) {
             add("golden.images", Boolean(sourceImage && webImage), "provide both --source-image and --web-image");
             if (sourceImage && webImage) {
@@ -110,9 +116,34 @@ if (!packageDir) {
                     const metric = execFileSync("magick", ["compare", "-metric", "AE", "-fuzz", "10%", resolve(root, sourceImage), resolve(root, webImage), "null:"],
                         { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
                     add("golden.pixelDiff", metric.trim() === "0", `10% color threshold differing pixels=${metric.trim()}`);
+                    if (approveWeb && sourceImage && webImage && metric.trim() === "0" && sourceSize === webSize) {
+                        if (!approvalPath) add("golden.approvalPath", false, "--approve-web requires --approval");
+                        else {
+                            const approval = {
+                                schemaVersion: 1, kind: "uniflex-web-golden-approval",
+                                package: dir, canvas, sourceImage, webImage,
+                                sourceSha256: sha256(sourceImage), webSha256: sha256(webImage),
+                                colorThreshold: 0.1, regionDiffPercent: 5,
+                            };
+                            const output = resolve(root, approvalPath);
+                            await mkdir(dirname(output), { recursive: true });
+                            await writeFile(output, JSON.stringify(approval, null, 2) + "\n");
+                            console.log(`Approved Web proposal: ${output}`);
+                        }
+                    }
                 } catch (error) {
                     add("golden.images", false, `unable to compare images: ${error.message}`);
                 }
+            }
+        }
+        if (cocosImage) {
+            add("cocos.approval", Boolean(approvalPath && await access(resolve(root, approvalPath)).then(() => true).catch(() => false)),
+                "Cocos evidence requires an approved Web proposal");
+            if (approvalPath && await access(resolve(root, approvalPath)).then(() => true).catch(() => false)) {
+                const approval = JSON.parse(await readFile(resolve(root, approvalPath), "utf8"));
+                add("cocos.approval.package", approval.package === dir, "approval belongs to a different package");
+                add("cocos.approval.webHash", approval.webSha256 === sha256(approval.webImage),
+                    "approved Web proposal hash changed");
             }
         }
         report.status = errors.length || (strict && warnings.length) ? "blocked" : "diagnostic";
