@@ -98,7 +98,18 @@ export class SlgMapView extends CocosView {
         this.action = actionNode.getComponentInChildren(Label);
         this.status = this.label("", 17, MUTED, 0, -height / 2 + footer * 0.17, width * 0.94);
         this.bindInput(true);
-        this.uninstallDebug = installSlgMapDebugGlobal();
+        this.uninstallDebug = installSlgMapDebugGlobal(globalThis as Record<string, unknown>, {
+            // 纯相机导航（与总览定位同一写路径）：预览工具浅滩涉水目检用，⛔ 无 gameplay 语义。
+            locate: (x: number, y: number) => {
+                if (!this.active || !this.logic) return false;
+                if (!Number.isInteger(x) || !Number.isInteger(y)) throw new RangeError("slgMapDebug.locate 需要整数格坐标");
+                this.logic.camera.locate(x, y);
+                this.logic.updateViewport();
+                this.logic.select(x, y);
+                this.render();
+                return true;
+            },
+        });
         this.offTick = runtime?.tick((dt) => {
             const logic = this.logic;
             if (!logic || this.overview?.visible) return;
