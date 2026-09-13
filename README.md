@@ -167,6 +167,9 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 由外部 `web-ui-to-psd` CLI 生成 PSD 中间文件和 UniFlex 项目包，并导入项目；CI 可通过 `WEB_UI_TO_PSD_CLI` 或 `WEB_UI_TO_PSD_ROOT` 指定工具 |
 | `npm run ui:export-psd -- --url <url> --out <dir>` | 由外部 CLI 执行网页转 PSD；不依赖操作页面服务 |
 | `npm run ui:check-source` | 检查 CI 配置的 `web-ui-to-psd` CLI 是否可执行 |
+| `npm run ui:render-source` | 渲染 UniFlex 独立源图（Golden 比对输入） |
+| `npm run ui:verify` | 按颜色阈值与区域差异比较独立源图与 Web proposal |
+| `npm run ui:approve-web` | 批准当前 Web proposal 为新的 Golden 基线 |
 | `npm run check:uniflex-ui` | 只读校验 UniFlex AOT、字体与双端生成物是否过期 |
 | `npm run typecheck:uniflex-ui` | 检查 UniFlex TSX 作者态和独立 Web 预览入口 |
 | `npm run dev:uniflex-web` | 启动独立 WebProvider 预览；默认 Confirm，访问输出地址的 `?screen=backpack` 可预览 PSD 导入的 Backpack 组件和交互 |
