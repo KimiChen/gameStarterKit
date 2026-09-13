@@ -32,6 +32,7 @@ $P bake-island.py <mapId>            # island-ground.png（纯地表缩放到 24
 $P frame-overview.py <mapId>         # world-overview.png（MapNN_web.jpg 装裱 2048² 海青底）+ 256² mini
 $P extract-tileset.py <mapId>        # 近档真地表：解 bare Tilemap 全层 + TileChunkData 稀疏瓦片
                                      # → out/<mapId>/tiles.json（格→瓦片引用表）+ tileset-0.png（去重单页图集）
+                                     # （to_cell 保边：edge-pad + paste 不带 mask——软边被二次衰减会叠出格线，见 slg.md §10.5）
 $P verify-redraw.py <mapId>          # 用 tiles.json+tileset 重绘全图与 ground.png 对比（目检一致才入库）
 ```
 

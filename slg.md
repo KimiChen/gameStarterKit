@@ -400,4 +400,16 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 
 验收：typecheck 0；客户端 slg-* 57/57（slg-tilemap-mesh 8 项：分桶/quad 尺寸×scale/m_TileAnchor 位移/pivot/UV 内缩/子矩形保比例/LOD3 减层/归属色与 fade alpha）；verify:all 退出 0；Creator 预览 23 步全过（/tmp/slg-tilemap-preview-9，LOD1 连续草地+海面、切山之国资源重载、远档岛貌）。
 
-开放项回写（§8 追加）：①近档 tile 边缘在极近档仍有轻微接缝感（瓦片间无 blending，原版靠 LightRegion 光照+Rug 贴花柔化，未复刻）；②跨 chunk 的高瓦片（树/崖柱 2-3 格）在 chunk 边界处绘制序按 chunk 网格而非全图 y 序，极端平移时可能短暂穿插；③羽之国云台/泽之国浅滩的涉水变体（Fording/PartialSubmersion）仍开放（承 §10.3）。
+开放项回写（§8 追加）：①近档 tile 边缘在极近档仍有轻微接缝感~~（瓦片间无 blending，原版靠 LightRegion 光照+Rug 贴花柔化，未复刻）~~ ✅ 2026-09-13 §10.5 落地（真凶是图集打包 alpha 二次衰减，与 LightRegion 无关）；②跨 chunk 的高瓦片（树/崖柱 2-3 格）在 chunk 边界处绘制序按 chunk 网格而非全图 y 序，极端平移时可能短暂穿插；③羽之国云台/泽之国浅滩的涉水变体（Fording/PartialSubmersion）仍开放（承 §10.3）。
+
+### 10.5 接缝修复与 LightRegion 实证（2026-09-13）
+
+**接缝真凶（empirical，逐层排查）**：图集格边缘 alpha 被**二次衰减**——原版 ground_1 自带 1px 软边（alpha≈239，中心 255），extract-tileset.py `to_cell` 的 `cell.paste(piece, (ox,oy), piece)` 把 piece 自身的 alpha 又当 mask 乘了一遍（239→239²/255≈222，第二像素 255→246²/255≈237），格间细线以 ~10% 透明度叠在深色海底上 = 全图网格线。修复：①paste 去 mask（透明格底 + RGBA 源直接替换语义）；②LANCZOS 前 numpy `pad(mode="edge")` 2px 边缘复制，消除「格外的当作透明黑」对软边的向内拖拽。修后边缘 alpha 238/246/255 ≈ 原版 239/255，五图重绘草地读作连续毯面（verify-redraw 内陆覆盖率：森 99.3=基线 / 山 97.8 vs 97.9 / 泽 99.4 vs 99.0↑ / 鲸背 100.0 vs 99.8↑ / 羽 96.9 vs 96.1↑，红线下 0.5pp）。
+
+**LightRegion 归因修正（此前推断错误）**：`MapRegionLight.cs`（Assembly-CSharp 反编译实证）= **昼夜区域灯**：`ChangeState(DayNightState)` 切 DayNode/Night 子节点；Night 挂 URP Light2D（raw 解析：蓝调色 (0.5,0.60,0.76)、alpha 0.93、parametric）；Day 节点**空**（白天无区域光，全局光 = bare bundle 的 `Light 2D Global`）。即白天地面观感与 LightRegion 无关；原版的接缝观感与我们相同（同款 1px 软边美术），由 Rug 贴花层（已在 tiles.json 近档全量渲染）与装饰密度弱化。昼夜系统（MapEnvEffect/RegionLightHub 的 DayLights/NightLights 淡入淡出）属玩法级特性，**未复刻，留开放项**（待 2b/DayNight 拍板）。
+
+**鲸背岛说明**：其 Ground 层本就由 4 种大色块瓦片拼铺（top4 各 15-33%，23 唯一瓦片）——拼布感是原版数据的真实面貌，非缺陷。
+
+**顺手修复的测试基建**（阻塞 verify:all，与素材无关）：①`fixture-checkout.mjs` 夹具 `git commit` 会派生 `git maintenance run --auto --detach` 守护进程，数秒后异步 repack pristine（删 objects/xx 扇出目录），矩阵并发 cp 撞上 lstat ENOENT 打红整面 sync-mirror-matrix——夹具内 `git config maintenance.auto false` 根治；②上游误将 `apps/Cocos/assets/src/ui-uniflex/generated/`（.gitignore 明列的 build 产物）入库，夹具中源侧缺失→镜像侧成孤儿，`git rm --cached` 退出跟踪（本地产物不受影响）；③补交 `BackpackComponent.tsx.meta`（verify:sync 只认已跟踪 .meta）。
+
+验收：typecheck 0；test:client 556/556；服务端 757/757；verify:core 全项（sync-mirror 21/21）；Creator 预览 23 步全过（/tmp/slg-seamfix-preview4，LOD1 连续草地目检无网格线、五图切换、远档岛貌）。
