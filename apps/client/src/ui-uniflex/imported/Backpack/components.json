@@ -41,6 +41,20 @@
       "action": "tab"
     }
   ],
+  "bindings": {
+    "ROLE::layer-2": "BackpackLogic.onAction",
+    "ROLE::layer-13": "BackpackLogic.onAction",
+    "ROLE::layer-27": "BackpackLogic.onAction",
+    "ROLE::layer-57": "BackpackLogic.onAction"
+  },
+  "decompositionSpec": {
+    "nineSlice": {
+      "ROLE::layer-57": {
+        "status": "not-applicable",
+        "reason": "当前导入包为固定尺寸整页/栅格图层，未提供可拉伸底框或按钮源图"
+      }
+    }
+  },
   "resources": [
     {
       "id": "asset-32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161",
