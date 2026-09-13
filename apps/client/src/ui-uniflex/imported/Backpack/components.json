@@ -18,18 +18,26 @@
   "interactiveNodes": [
     {
       "id": "layer-2",
+      "name": "ROLE::layer-2",
+      "stableKey": "layer-2",
       "action": "primary"
     },
     {
       "id": "layer-27",
+      "name": "ROLE::layer-27",
+      "stableKey": "layer-27",
       "action": "back"
     },
     {
       "id": "layer-13",
+      "name": "ROLE::layer-13",
+      "stableKey": "layer-13",
       "action": "primary"
     },
     {
       "id": "layer-57",
+      "name": "ROLE::layer-57",
+      "stableKey": "layer-57",
       "action": "tab"
     }
   ],
