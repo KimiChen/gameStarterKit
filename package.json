@@ -19,6 +19,7 @@
     "ui:import-psd": "node scripts/uniflex-ui-cli.mjs import-psd",
     "ui:export-psd": "node scripts/uniflex-ui-cli.mjs export-psd",
     "ui:render-source": "node scripts/render-uniflex-source.mjs",
+    "ui:capture-cocos-golden": "node tools/creator-preview/capture-uniflex-golden.mjs",
     "ui:check-source": "node scripts/uniflex-ui-cli.mjs check-source",
     "ui:verify": "node scripts/verify-uniflex-ui.mjs",
     "ui:approve-web": "node scripts/verify-uniflex-ui.mjs --approve-web",

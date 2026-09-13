@@ -29,7 +29,13 @@ node tools/creator-preview/run.mjs redeem --code SNAKE90 --out /tmp/redeem-run
 node tools/creator-preview/run.mjs tally --reuse            # 复用已打开的预览页（已在首屏时跳过登录）
 node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 node tools/creator-preview/run.mjs slg --out /tmp/slg-preview --format png         # SLG 地图独立验收
+node tools/creator-preview/capture-uniflex-golden.mjs --screen backpack --out /tmp/gameStarterKit-cocos-backpack.png
 ```
+
+`capture-uniflex-golden.mjs` 用真实 Cocos RenderTexture 直接读取契约画布（默认从
+`components.json.canvas` 读取），不会使用带 Creator 工具栏的浏览器截图，也不会做非等比缩放。
+运行前需要 Creator 3.8.8 打开 `apps/Cocos` 并启动预览服务 `7456`，Chrome 需要开启本机
+`9222` 调试端口。输出 PNG 可直接作为 `ui:verify --cocos-image` 的 Cocos 证据。
 
 | 场景 | 步骤与判据 |
 | --- | --- |

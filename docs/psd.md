@@ -93,7 +93,7 @@ Creator 导入、Scenario 验收、receipt 冻结
 | CLI FairyGUI 编译器 / Editor 映射 | 当前无实现 | 计划能力 |
 | 根据契约和 XML 实现前后端 | 仓库有现成 codegen 与开发动线，但无本文编排器 | 人工可执行，自动编排是计划能力 |
 | UniFlex 源图 → Web Golden | `ui:render-source` 按 `design.json` 独立合成 RGB 源图，`ui:verify` 按颜色阈值 `0.1`、区域差异 `5%` 比较 | 已实现门禁；Backpack RGB 源图与 Web proposal 整图 `AE=0`，但两个越界 group frame 保留诊断警告 |
-| Web proposal → Cocos Golden | 必须提供 Web approval；Cocos 入口为 `assets/uniflex.scene` | 已取得真实 Cocos Creator 3.8.8 运行截图（`/tmp/gameStarterKit-cocos-backpack-creator388-visible.png`），证明场景、UniFlex 组件和图片资源可渲染；正式像素门禁仍需将截图裁剪到契约画布 `750x1334` 后再执行 `ui:verify`，当前 CLI/无头黑屏证据不得替代该截图 |
+| Web proposal → Cocos Golden | 必须提供 Web approval；Cocos 入口为 `assets/uniflex.scene`；用 `ui:capture-cocos-golden` 从真实引擎 RenderTexture 读取契约画布 | 采集脚本已实现，禁止使用带 Creator 工具栏的截图或非等比缩放；此前的真实 3.8.8 运行截图（`/tmp/gameStarterKit-cocos-backpack-creator388-visible.png`）仍只是运行佐证，当前本机因 Creator/Chrome 调试端口未启动，尚未取得可入门禁的 `750x1334` PNG |
 | 交互回归 | Backpack `BackpackLogic.runCheckpoint()` 按稳定 name 执行 `primary/back/tab` | 已实现最小业务闭环；尚非完整跨页面 Storybook/Checkpoint manager |
 | 九宫格与字体契约 | `decompositionSpec.nineSlice`、`fontRef/path/hash/advances` 检查 | 已实现诊断；未声明的候选只报警，生产包仍需逐项确认 |
 
