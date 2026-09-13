@@ -107,6 +107,11 @@ apps/Cocos/
   形成 Web 对照，只有通过后才可用 `ui:approve-web` 生成批准件。
   Web proposal 通过后用 `npm run ui:approve-web -- --package <package> --source-image <source.png>
   --web-image <proposal.png> --approval <approval.json>` 生成批准件；Cocos 证据必须带同一批准件。
+  Cocos 正式 Golden 使用真实 Creator 预览中的 RenderTexture 采集，命令为
+  `npm run ui:capture-cocos-golden -- --screen backpack --out /tmp/backpack-cocos.png`；
+  该命令输出必须是 `components.json.canvas` 的原生尺寸，再交给
+  `npm run ui:verify -- ... --cocos-image /tmp/backpack-cocos.png --approval <approval.json>`。
+  Creator 工具栏截图只能作为运行佐证，不能作为像素验收输入。
 - `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
 - `apps/Cocos/assets/src` 整体禁止手改；运行 `npm run sync:client`。
 - `.meta` 与镜像一起提交，保持 UUID 稳定。
