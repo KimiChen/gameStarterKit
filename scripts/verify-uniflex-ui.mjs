@@ -191,6 +191,8 @@ if (!packageDir) {
             }
         }
         if (cocosImage) {
+            add("cocos.image", await access(resolve(root, cocosImage)).then(() => true).catch(() => false),
+                `Cocos evidence image does not exist: ${cocosImage}`);
             add("cocos.approval", Boolean(approvalPath && await access(resolve(root, approvalPath)).then(() => true).catch(() => false)),
                 "Cocos evidence requires an approved Web proposal");
             if (approvalPath && await access(resolve(root, approvalPath)).then(() => true).catch(() => false)) {
@@ -198,6 +200,29 @@ if (!packageDir) {
                 add("cocos.approval.package", approval.package === dir, "approval belongs to a different package");
                 add("cocos.approval.webHash", approval.webSha256 === sha256(approval.webImage),
                     "approved Web proposal hash changed");
+                if (await access(resolve(root, cocosImage)).then(() => true).catch(() => false)) {
+                    try {
+                        const dimensions = (file) => execFileSync("magick", [
+                            "identify", "-format", "%w %h", resolve(root, file),
+                        ], { encoding: "utf8" }).trim();
+                        const cocosSize = dimensions(cocosImage);
+                        add("cocos.canvas", cocosSize === `${canvas.width} ${canvas.height}`,
+                            `cocos=${cocosSize}, contract=${canvas.width} ${canvas.height}`);
+                        const proposalSize = dimensions(approval.webImage);
+                        add("cocos.webCanvas", cocosSize === proposalSize,
+                            `cocos=${cocosSize}, approvedWeb=${proposalSize}`);
+                        if (cocosSize === proposalSize) {
+                            const metric = compareMetric([
+                                "compare", "-metric", "AE", "-fuzz", "10%",
+                                resolve(root, approval.webImage), resolve(root, cocosImage), "null:",
+                            ]);
+                            add("cocos.pixelDiff", metric === "0",
+                                `10% color threshold differing pixels=${metric}`);
+                        }
+                    } catch (error) {
+                        add("cocos.image", false, `unable to compare Cocos evidence: ${error.message}`);
+                    }
+                }
             }
         }
         report.status = errors.length || (strict && warnings.length) ? "blocked" : "diagnostic";
