@@ -8,7 +8,7 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const help = `Usage:
   npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001 [--font-dir fonts] [--update]
   npm run ui:export-psd -- --url http://127.0.0.1:8000 --out .cache/psd/export-001
-  npm run ui:check-source
+  npm run ui:check-source [-- --package .cache/psd/job-001/project-package --strict]
 
 CLI resolution (first match):
   WEB_UI_TO_PSD_CLI    Executable path or JS entry file; not a shell command.
@@ -63,17 +63,20 @@ export async function runCli(argv, {
         if (!/^[A-Z][A-Za-z0-9_]*$/.test(values.name))
             throw new Error("--name must be a PascalCase ASCII component identifier.");
         await access(resolve(root, values.file));
-    } else if (command === "check-source" && args.length) {
-        throw new Error("check-source does not accept arguments.");
+    } else if (command === "check-source") {
+        const packageIndex = args.indexOf("--package");
+        if (packageIndex >= 0 && !args[packageIndex + 1])
+            throw new Error("Missing --package value.");
+    }
+    if (command === "check-source") {
+        const verifier = join(root, "scripts/verify-uniflex-ui.mjs");
+        execute(process.execPath, [verifier, ...args], { cwd: root, env, stdio: "inherit" });
+        return;
     }
     const cli = await resolveConverter(root, env);
     const run = (executable, parameters) =>
         execute(executable, parameters, { cwd: root, env, stdio: "inherit" });
     const convert = (parameters) => run(cli.command, [...cli.args, ...parameters]);
-    if (command === "check-source") {
-        convert(["--help"]);
-        return;
-    }
     if (command === "export-psd") {
         convert(["export", ...args]);
         return;
@@ -88,7 +91,7 @@ export async function runCli(argv, {
     convert(["uniflex-package", "--design", join(design, "design.json"),
         "--name", values.name, "--out", projectPackage]);
     const manifest = JSON.parse(await readFile(join(projectPackage, "components.json"), "utf8"));
-    if (manifest.schemaVersion !== 1 || manifest.kind !== "uniflex-import-package"
+    if (![1, 2].includes(manifest.schemaVersion) || manifest.kind !== "uniflex-import-package"
         || manifest.name !== values.name)
         throw new Error("Converter returned an incompatible UniFlex package.");
     run(process.execPath, [join(root, "scripts/import-uniflex-package.mjs"),

@@ -8,6 +8,7 @@ import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
 const container = document.getElementById("ui")!;
 const screen = new URLSearchParams(location.search).get("screen");
 const designHeight = screen === "backpack" ? 1334 : DESIGN_HEIGHT;
+container.style.height = `${designHeight}px`;
 const resize = () => {
     const scale = Math.min(innerWidth / DESIGN_WIDTH, innerHeight / designHeight);
     container.style.transform = `translate(-50%, -50%) scale(${scale})`;
