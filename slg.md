@@ -400,7 +400,7 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 
 验收：typecheck 0；客户端 slg-* 57/57（slg-tilemap-mesh 8 项：分桶/quad 尺寸×scale/m_TileAnchor 位移/pivot/UV 内缩/子矩形保比例/LOD3 减层/归属色与 fade alpha）；verify:all 退出 0；Creator 预览 23 步全过（/tmp/slg-tilemap-preview-9，LOD1 连续草地+海面、切山之国资源重载、远档岛貌）。
 
-开放项回写（§8 追加）：①近档 tile 边缘在极近档仍有轻微接缝感~~（瓦片间无 blending，原版靠 LightRegion 光照+Rug 贴花柔化，未复刻）~~ ✅ 2026-09-13 §10.5 落地（真凶是图集打包 alpha 二次衰减，与 LightRegion 无关）；②~~跨 chunk 的高瓦片（树/崖柱 2-3 格）在 chunk 边界处绘制序按 chunk 网格而非全图 y 序，极端平移时可能短暂穿插~~ ✅ 2026-09-13 §10.6 落地（per-chunk 网格改每原版层一张合并网格，层内全局 y 降 x 升 = 原版单 Tilemap 同构）；③羽之国云台/泽之国浅滩的涉水变体（Fording/PartialSubmersion）仍开放（承 §10.3）。
+开放项回写（§8 追加）：①近档 tile 边缘在极近档仍有轻微接缝感~~（瓦片间无 blending，原版靠 LightRegion 光照+Rug 贴花柔化，未复刻）~~ ✅ 2026-09-13 §10.5 落地（真凶是图集打包 alpha 二次衰减，与 LightRegion 无关）；②~~跨 chunk 的高瓦片（树/崖柱 2-3 格）在 chunk 边界处绘制序按 chunk 网格而非全图 y 序，极端平移时可能短暂穿插~~ ✅ 2026-09-13 §10.6 落地（per-chunk 网格改每原版层一张合并网格，层内全局 y 降 x 升 = 原版单 Tilemap 同构）；③~~羽之国云台/泽之国浅滩的涉水变体（Fording/PartialSubmersion）仍开放（承 §10.3）~~ ✅ 2026-09-13 §10.7 落地（站位 GroundType=Shallow 的实体顶点渐隐近似，shader 无源码不复制）。
 
 ### 10.5 接缝修复与 LightRegion 实证（2026-09-13）
 
@@ -429,3 +429,18 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 **证据契约**：近档已加载判据从 `slg-chunk-x-y` 扩为 `slg-tiles-*|slg-chunk-*`（tools/creator-preview/slg.mjs 三处）；cc 桩补 `Node.insertChild` 声明（真实引擎 3.8 一直有）。
 
 验收：typecheck 0；test:client 560/560（新增 4 项：跨 chunk 全局序/顶点 alpha/LOD3 裁剪/bounds 并集 + 独立归属构建器）；服务端 757/757；verify:core 全项（sync-mirror 21/21）；Creator 预览 23 步全过（/tmp/slg-merged-preview，LOD1 树/崖沿跨块互叠目检正确，115 draw call、帧时 1.88ms）。
+
+### 10.7 涉水变体（Fording）静态落地（2026-09-13，开放项③关闭）
+
+**原版机制实证**（CustomWater/FordingSpriteRenderer.cs + Prefab 逐字段解析）：
+- 浅水外观 = **同一 icon sprite + FordingSpriteRenderer 网格包装**（UV1 携带 (worldY, FordingScale, FordingOffset) 供涉水 shader 裁浸没部）——⛔ 没有独立浅水贴图，图集零改动；
+- prefab 实证默认参数 **scale=1.0 / offset=0.56**；`PartialSubmersion`（mSR/mAbove/mMask 三件套）与 `SpineShallowEffect`（角色骨骼版）同族，均 shader 驱动；
+- 实例判定 **按站位 GroundType**（MovementSensor.StandingGroundType：mask&0x40→Shallow），⛔ 不看 DisplayPath 后缀——CSV 把 84 个常驻浅水类族的 DisplayPath 直接登记为 `*_shallow_view`，那些类放在普通地上的实例运行时仍换普通外观（交叉验证：森之国 810/814 在 None 格）。shader 无源码，与 §10.3「水面动态」同行原则：不在复刻范围。
+
+**本仓落地**：
+- `extract-layout.py`：`ground_at(entity)==GT_SHALLOW(6)`（MapRootEntityLite 直读，与地形同帧）→ decoration 加 `shallow: true`；五图重出（泽 494 / 鲸背 444 / 羽 95 / 森 4 / 山 3）；
+- `validateSlgForestLayout` fail-closed 扩展：shallow 只允许缺省或字面 true；`buildSlgLayoutIndex` 透传到 `SlgDecoration.shallow`；
+- `slgFordingAlpha`（mapArt.ts 纯函数）：quad 归一化高度 0.56 以上全显、向底线性渐隐到 0（prefab 默认 offset 的静态等价）；
+- `SlgDecorationRenderer`：涉水 decoration 的 quad 顶两顶点 alpha=1、底两顶点按渐隐值写顶点色（builtin-unlit 顶点色线性插值），与 chunk 淡出 alpha 相乘。
+
+验收：typecheck 0；test:client 563/563（新增 fording 曲线/校验闸/入库 layout 含标记 3 项）；服务端 757/757；verify:core 全项；Creator 预览 23 步全过（/tmp/slg-fording-preview2）。

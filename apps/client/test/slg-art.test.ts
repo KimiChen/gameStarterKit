@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
-    SLG_ART_ATLAS_CELL_SIZE, SLG_ART_ATLAS_COLUMNS, SLG_ART_ATLAS_ROWS, SLG_LANDMARK_FOOT, SLG_MAX_DECORATIONS_PER_CHUNK,
+    SLG_ART_ATLAS_CELL_SIZE, SLG_ART_ATLAS_COLUMNS, SLG_ART_ATLAS_ROWS, SLG_FORDING_FULL_ALPHA_AT, SLG_LANDMARK_FOOT, SLG_MAX_DECORATIONS_PER_CHUNK,
     buildSlgLayoutIndex, buildSlgOverviewRects, overviewToWorld, overviewViewportRect, slgArtAtlasRect, slgAtlasUv,
-    slgDecorationsForChunk, slgTerrainUv, validateSlgForestLayout, worldToOverview, type SlgLayoutIndex,
+    slgDecorationsForChunk, slgFordingAlpha, slgTerrainUv, validateSlgForestLayout, worldToOverview, type SlgLayoutIndex,
 } from "../src/kits/slg/logic/mapArt";
-import { SLG_CHUNK_SIZE, SLG_TERRAIN_MAX_REGIONS, slgMapInfo, terrainAt, validateSlgTerrain,
+import { SLG_CHUNK_SIZE, SLG_TERRAIN_MAX_REGIONS, chunkKey, slgMapInfo, terrainAt, validateSlgTerrain,
     type ISlgTerrain } from "../src/shared/kits/slg/api/worldmap/index";
 
 /** 默认图森之国（catalog 登记 1500×1500）；五国多图化后尺寸按图取，不再用全局常量。 */
@@ -178,4 +178,40 @@ test("SLG overview: ordered geographic quads reproduce terrainAt without enumera
         }
         assert.deepEqual(color, terrainAt(terrain, point.x, point.y).color);
     }
+});
+
+test("SLG fording alpha: full above the waterline, linear fade to zero at the quad bottom", () => {
+    near(slgFordingAlpha(1), 1);
+    near(slgFordingAlpha(SLG_FORDING_FULL_ALPHA_AT), 1);
+    near(slgFordingAlpha(0), 0);
+    near(slgFordingAlpha(0.28), 0.5);
+    near(slgFordingAlpha(0.56 / 2), 0.5);
+    near(slgFordingAlpha(-3), 0);
+    near(slgFordingAlpha(2), 1);
+    assert.throws(() => slgFordingAlpha(Number.NaN), RangeError);
+});
+
+test("SLG layout shallow marker: only literal true passes the fail-closed gate and reaches decorations", () => {
+    const base = { source: "fixture", id: MAP.id, mapSize: MAP.width, landmarks: [],
+        decorations: [{ x: 3, y: 5, kind: "chest" as const }] };
+    assert.equal(validateSlgForestLayout(base), true);
+    const withShallow = { ...base, decorations: [{ x: 3, y: 5, kind: "chest" as const, shallow: true }] };
+    assert.equal(validateSlgForestLayout(withShallow), true);
+    const index = buildSlgLayoutIndex(withShallow);
+    assert.equal(index.index.get(chunkKey(0, 0))![0].shallow, true);
+    const plain = buildSlgLayoutIndex(base);
+    assert.equal(plain.index.get(chunkKey(0, 0))![0].shallow, undefined);
+    // fail-closed：false / 非布尔 / 字符串一律拒。
+    for (const bad of [false, 1, "true", null]) {
+        assert.equal(validateSlgForestLayout({ ...base, decorations: [{ x: 3, y: 5, kind: "chest" as const, shallow: bad }] }), false,
+            `shallow=${JSON.stringify(bad)} 必须拒`);
+    }
+});
+
+test("SLG森之国 shipped layout: shallow flags survive the shipped contract", () => {
+    const data: unknown = JSON.parse(readFileSync(new URL("../../kits/slg/data/maps/senzhiguo/layout.json", import.meta.url), "utf8"));
+    assert.equal(validateSlgForestLayout(data), true);
+    const layout = data as { decorations: readonly { shallow?: boolean }[] };
+    const flagged = layout.decorations.filter((entry) => entry.shallow === true).length;
+    assert.ok(flagged > 0, "森之国入库 layout 应含浅水标记（管线 ground_at==Shallow 产出）");
 });
