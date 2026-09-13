@@ -1,8 +1,8 @@
 # tools/slg-maps — SLG 五国地图素材管线
 
 把 zjcs-1.2.6 学习包（仓外，只读）的地图数据转成 slg kit 的运行时数据：`terrain.json`（地形矩形）、
-`layout.json`（装饰/地标/生态）、`terrain-atlas.png`（地表图集）、`decoration-atlas.png`（装饰图集）、
-`island-ground.png`（远档岛貌烘图）、`world-overview.png`（山河绘卷）。
+`layout.json`（装饰/地标/生态）、`tiles.json` + `tileset-0.png`（原版 Tilemap 格→瓦片表与去重图集）、
+`decoration-atlas.png`（装饰图集）、`island-ground.png`（远档岛貌烘图）、`world-overview.png`（山河绘卷）。
 
 五国：森之国 `senzhiguo`(11)、山之国 `shanzhiguo`(12)、泽之国 `zezhiguo`(13)、鲸背岛 `jingbeidao`(16)、
 羽之国 `yuzhiguo`(17)（ClassId 见 `maps.config.json`）。
@@ -30,7 +30,9 @@ $P calibrate.py <mapId> --check-landmarks     # 地标旱地+9×9 足迹校验�
 $P build-atlases.py <mapId>          # 装饰切片图集 + 地表图集（config atlas/terrainTiles 策展）
 $P bake-island.py <mapId>            # island-ground.png（纯地表缩放到 2400 宽，远档地表）
 $P frame-overview.py <mapId>         # world-overview.png（MapNN_web.jpg 装裱 2048² 海青底）+ 256² mini
-$P build-ground-tiles.py <mapId>     # 近档真地表：世界格 64×64 切块 1024² JPG（剔全海块）+ ground-tiles.json
+$P extract-tileset.py <mapId>        # 近档真地表：解 bare Tilemap 全层 + TileChunkData 稀疏瓦片
+                                     # → out/<mapId>/tiles.json（格→瓦片引用表）+ tileset-0.png（去重单页图集）
+$P verify-redraw.py <mapId>          # 用 tiles.json+tileset 重绘全图与 ground.png 对比（目检一致才入库）
 ```
 
 装饰切片策展（config `atlas`）：从 `Image/Mapscence/mapNN/objectNN/` 与 `AppearanceAssets/Map/` 挑摆件
@@ -66,5 +68,7 @@ $P bake-island.py senzhiguo        # island-ground.png 与入库逐像素一致
 - render-ground.py 画 Ground/WaterMask/Ground_Under + TileChunkData 植被层（Rug/Highland/Shadow/
   UnderObject/Object·Dense_Object——树阵/贴花/崖沿，反分类「林地」与近档真地表的纹理来源），
   跳过 Ground_Manual（纯遮罩）与 prefabs 大装饰。
-- 近档地表（2026-09-12 起）= `ground-tiles/` 块贴图（B 方案：渲染图本身切块，替代 palette 图集平铺）；
-  terrain-atlas.png 保留为装饰/回退色用，全水块不产贴图（海色顶点色回退）。
+- 近档地表（2026-09-13 起）= 原版 Tilemap 路线：`tiles.json`（格→瓦片引用，全层按 seq 排序）+
+  `tileset-0.png`（同纹理全图复用的去重单页图集），客户端 SlgTilemapRenderer 逐格摆瓦片；
+  渲染图切块（ground-tiles，B 方案）已随 build-ground-tiles.py 一并退役删除。
+  terrain-atlas.png 保留为装饰/回退色用。
