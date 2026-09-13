@@ -105,6 +105,56 @@ if (!packageDir) {
                     "text layer has no explicit fontRef/path/hash");
             }
         }
+        const componentAudit = [];
+        for (const component of Array.isArray(manifest.components) ? manifest.components : []) {
+            const sourceNode = sourceDesign?.nodes?.[component.id] ?? null;
+            const interactive = nodes.find((node) => node.id === component.id) ?? null;
+            const stableKey = component.stableKey
+                ?? interactive?.stableKey
+                ?? (typeof interactive?.name === "string" && interactive.name.startsWith("ROLE::")
+                    ? interactive.name.slice("ROLE::".length) : null);
+            const frame = sourceNode?.frame ?? null;
+            const frameValid = Boolean(frame
+                && [frame.x, frame.y, frame.width, frame.height].every(Number.isFinite)
+                && frame.width > 0 && frame.height > 0);
+            const fileValid = typeof component.file === "string" && await exists(component.file);
+            const semanticKind = component.kind ?? sourceNode?.kind ?? "unknown";
+            const descendants = [];
+            const visit = (id) => {
+                const node = sourceDesign?.nodes?.[id];
+                if (!node) return;
+                descendants.push(node);
+                for (const child of Array.isArray(node.children) ? node.children : []) visit(child);
+            };
+            if (sourceNode) visit(sourceNode.id);
+            const rasterizedLayers = descendants.filter((node) => node.kind === "image").map((node) => node.id);
+            const rasterized = rasterizedLayers.length > 0;
+            add(`component.${component.id}.sourceNode`, Boolean(sourceNode),
+                `component must reference a node in sourceDesign: ${component.id}`);
+            add(`component.${component.id}.file`, fileValid,
+                `component source file is missing: ${component.file}`);
+            add(`component.${component.id}.frame`, frameValid,
+                "component must have a positive sourceDesign frame");
+            add(`component.${component.id}.stableKey`, typeof stableKey === "string" && stableKey.length > 0,
+                "component needs a stableKey or a matching ROLE:: interactive candidate", "warning");
+            componentAudit.push({
+                id: component.id,
+                name: component.name ?? sourceNode?.name ?? component.id,
+                stableKey,
+                file: component.file ?? null,
+                semanticKind,
+                rasterized,
+                visualMode: rasterized
+                    ? (semanticKind === "image" ? "rasterized" : "semantic-container-with-rasterized-children")
+                    : "semantic",
+                rasterizedLayers,
+                editable: component.editable ?? rasterizedLayers.length === 0,
+                frame: frameValid ? frame : null,
+                interactive: interactive
+                    ? { name: interactive.name ?? null, action: interactive.action, bound: Boolean(interactive.binding || manifest.bindings?.[interactive.name ?? stableKey]) }
+                    : null,
+            });
+        }
         const report = {
             schemaVersion: 1,
             kind: "uniflex-ui-verification",
@@ -112,6 +162,12 @@ if (!packageDir) {
             thresholds: { color: 0.1, regionDiffPercent: 5 },
             sourceToWebIsRequired: true,
             cocosRequiresApprovedWebProposal: true,
+            componentization: {
+                total: componentAudit.length,
+                semantic: componentAudit.filter((component) => !component.rasterized).length,
+                rasterized: componentAudit.filter((component) => component.rasterized).length,
+                components: componentAudit,
+            },
             checks, errors, warnings,
         };
         const sha256 = (file) => createHash("sha256").update(requireFile(file)).digest("hex");
@@ -170,7 +226,8 @@ if (!packageDir) {
                                 `region=${geometry}, differing=${differingPixels}, diff=${percent.toFixed(2)}%, limit=5%`);
                         }
                     }
-                    if (approveWeb && sourceImage && webImage && metric.trim() === "0" && sourceSize === webSize) {
+                    if (approveWeb && sourceImage && webImage && metric.trim() === "0"
+                        && sourceSize === webSize && errors.length === 0) {
                         if (!approvalPath) add("golden.approvalPath", false, "--approve-web requires --approval");
                         else {
                             const approval = {
