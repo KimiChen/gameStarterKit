@@ -1,0 +1,528 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "roots": [
+    "layer-1",
+    "layer-2",
+    "layer-27",
+    "layer-3",
+    "layer-58",
+    "layer-23",
+    "layer-24",
+    "layer-21",
+    "layer-4",
+    "layer-6",
+    "layer-19",
+    "layer-13",
+    "layer-7",
+    "layer-8",
+    "layer-15",
+    "layer-10",
+    "layer-59",
+    "layer-12",
+    "layer-57"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "背景",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161"
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "背包-可使用道具",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-af3335fc500654fa5397d02a2e1025d901215281f5d59a2e226b01542cf1697d"
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "组件-全屏底部返回",
+      "kind": "image",
+      "frame": {
+        "x": 1,
+        "y": 1226,
+        "width": 750,
+        "height": 108
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-7444808bbeff49cccb95a054cf83e73289542bedbd2b8fbc319e083be7985f14"
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "图层 1",
+      "kind": "image",
+      "frame": {
+        "x": 17,
+        "y": 252,
+        "width": 727,
+        "height": 981
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-160408331efbfbc63a7fbb1993565274d2d50968e3d8a327e3f5053c1307c02c"
+    },
+    "layer-58": {
+      "id": "layer-58",
+      "name": "图层 22",
+      "kind": "image",
+      "frame": {
+        "x": 563,
+        "y": 1088,
+        "width": 166,
+        "height": 140
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-c7479ea87081f196ac56e041868b54d12baf8ce8c8383f7921cb1eb144e8d319"
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "图层 8 拷贝",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 743,
+        "width": 750,
+        "height": 174
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-6ecb96f3d6bd2fc5fcf44f53427e18c70d065ca760f1fa9ecab3c7561f83d41b"
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "图层 8 拷贝 2",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 921,
+        "width": 750,
+        "height": 142
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-c6be0db152eeb5aee6a1f32366ec77d66d3af7cc7d75dbe270ea783f506efa80"
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "图层 8",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 597,
+        "width": 750,
+        "height": 174
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-6ecb96f3d6bd2fc5fcf44f53427e18c70d065ca760f1fa9ecab3c7561f83d41b"
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "矩形 1",
+      "kind": "image",
+      "frame": {
+        "x": 32,
+        "y": 257,
+        "width": 686,
+        "height": 353
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-3f7f8d33478bff92b3eda438d1b490a7cfa46bec97465185a63a73995946c05c"
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "100钻石",
+      "kind": "image",
+      "frame": {
+        "x": 310,
+        "y": 286,
+        "width": 131,
+        "height": 33
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-2825f8acc18771c7fd2b7602d1724feae4de0708c6d3f2314003eff75357259a"
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "矩形 4 拷贝",
+      "kind": "image",
+      "frame": {
+        "x": 276,
+        "y": 293,
+        "width": 198,
+        "height": 18
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-701e7a20f403eaf5b892c08b10d348b1fcdea72587534093b07c75b63424cbe9"
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "使用后获得5000点装备经验",
+      "kind": "image",
+      "frame": {
+        "x": 57,
+        "y": 344,
+        "width": 318,
+        "height": 25
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-be40e1e3efe9f2a15159d2327b419ad2a4f061a1749f7121fc7a305ecd4948db"
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "矩形 2",
+      "kind": "image",
+      "frame": {
+        "x": 57,
+        "y": 384,
+        "width": 637,
+        "height": 91
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-c3b8b8fd543455309333963155494805309329c5a98e636d476b0c65f9cc65ec"
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "图层 3",
+      "kind": "image",
+      "frame": {
+        "x": 72,
+        "y": 402,
+        "width": 547,
+        "height": 57
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-7f47dbe004839cbb7c573d03f442b30986126bb70e86ef85b5a8165dc7edb686"
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "图层 1066 拷贝 2",
+      "kind": "image",
+      "frame": {
+        "x": 628,
+        "y": 403,
+        "width": 51,
+        "height": 51
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-bb91f0f5828db69fc81e6bd8e5a0c24189afc85af56ce2aad38780e1516038cb"
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "图层 5",
+      "kind": "image",
+      "frame": {
+        "x": 241,
+        "y": 494,
+        "width": 268,
+        "height": 92
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-a81a3df8a52c4a4eb3053db23d57856d13da589d4fef51b94130de3512c3da4a"
+    },
+    "layer-59": {
+      "id": "layer-59",
+      "name": "组 1",
+      "kind": "image",
+      "frame": {
+        "x": 87,
+        "y": 246,
+        "width": 39,
+        "height": 16
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-930b9d4d5999c59d06f0db299b52c3ddeb1aee46051df5f976d5ba59294c067a"
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "图层 6",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-2fe8e6c2a228cc8932b1a02ef77d563dddc0618eb038ea3ea29338b35f37fdc6"
+    },
+    "layer-57": {
+      "id": "layer-57",
+      "name": "分页-训练",
+      "kind": "group",
+      "frame": {
+        "x": 27,
+        "y": 1114,
+        "width": 915,
+        "height": 487
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-38",
+        "layer-47",
+        "layer-56"
+      ]
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "组 486",
+      "kind": "image",
+      "frame": {
+        "x": 163,
+        "y": 150,
+        "width": 169,
+        "height": 55
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-b760169e911b9a9f89c4608392ab86d7e12e2313c4409f731a83aa7a88acab55"
+    },
+    "layer-47": {
+      "id": "layer-47",
+      "name": "组 486",
+      "kind": "image",
+      "frame": {
+        "x": 351,
+        "y": 150,
+        "width": 169,
+        "height": 55
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-abb0b1b0022bc067ed3ab57005a202b873e11337aad963d58dcab8eb90d240c9"
+    },
+    "layer-56": {
+      "id": "layer-56",
+      "name": "组 486",
+      "kind": "image",
+      "frame": {
+        "x": 539,
+        "y": 150,
+        "width": 169,
+        "height": 55
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-be072b6d590611827c6df2e3fe7d8aaeb9651be8f005e8042b2f225998a41892"
+    }
+  },
+  "assets": {
+    "asset-57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f": {
+      "path": "assets/57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f.png",
+      "sha256": "57dfd8c09ea378a4801ef08c67f8d23d53dd079915c703dc83bb1727e448385f",
+      "mime": "image/png",
+      "width": 750,
+      "height": 108
+    },
+    "asset-ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271": {
+      "path": "assets/ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271.png",
+      "sha256": "ec3f7f19edcf64bf1720a365b1fb770d4a8d4452fe04bb8e05f8c35753b50271",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1334
+    },
+    "asset-068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676": {
+      "path": "assets/068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676.bin",
+      "sha256": "068372b4c674d4fe1adfb8efe16505becfe80d3a1909291a47a45bca03139676",
+      "mime": "application/octet-stream"
+    },
+    "asset-5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5": {
+      "path": "assets/5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5.bin",
+      "sha256": "5250daa5d3dc397d8e7117d2352f42f11db74b332e480a1c8842ae87ecc854d5",
+      "mime": "application/octet-stream"
+    },
+    "asset-32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161": {
+      "path": "assets/32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161.png",
+      "sha256": "32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1334
+    },
+    "asset-af3335fc500654fa5397d02a2e1025d901215281f5d59a2e226b01542cf1697d": {
+      "path": "assets/af3335fc500654fa5397d02a2e1025d901215281f5d59a2e226b01542cf1697d.png",
+      "sha256": "af3335fc500654fa5397d02a2e1025d901215281f5d59a2e226b01542cf1697d",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1334
+    },
+    "asset-7444808bbeff49cccb95a054cf83e73289542bedbd2b8fbc319e083be7985f14": {
+      "path": "assets/7444808bbeff49cccb95a054cf83e73289542bedbd2b8fbc319e083be7985f14.png",
+      "sha256": "7444808bbeff49cccb95a054cf83e73289542bedbd2b8fbc319e083be7985f14",
+      "mime": "image/png",
+      "width": 750,
+      "height": 108
+    },
+    "asset-160408331efbfbc63a7fbb1993565274d2d50968e3d8a327e3f5053c1307c02c": {
+      "path": "assets/160408331efbfbc63a7fbb1993565274d2d50968e3d8a327e3f5053c1307c02c.png",
+      "sha256": "160408331efbfbc63a7fbb1993565274d2d50968e3d8a327e3f5053c1307c02c",
+      "mime": "image/png",
+      "width": 727,
+      "height": 981
+    },
+    "asset-c7479ea87081f196ac56e041868b54d12baf8ce8c8383f7921cb1eb144e8d319": {
+      "path": "assets/c7479ea87081f196ac56e041868b54d12baf8ce8c8383f7921cb1eb144e8d319.png",
+      "sha256": "c7479ea87081f196ac56e041868b54d12baf8ce8c8383f7921cb1eb144e8d319",
+      "mime": "image/png",
+      "width": 166,
+      "height": 140
+    },
+    "asset-6ecb96f3d6bd2fc5fcf44f53427e18c70d065ca760f1fa9ecab3c7561f83d41b": {
+      "path": "assets/6ecb96f3d6bd2fc5fcf44f53427e18c70d065ca760f1fa9ecab3c7561f83d41b.png",
+      "sha256": "6ecb96f3d6bd2fc5fcf44f53427e18c70d065ca760f1fa9ecab3c7561f83d41b",
+      "mime": "image/png",
+      "width": 750,
+      "height": 174
+    },
+    "asset-c6be0db152eeb5aee6a1f32366ec77d66d3af7cc7d75dbe270ea783f506efa80": {
+      "path": "assets/c6be0db152eeb5aee6a1f32366ec77d66d3af7cc7d75dbe270ea783f506efa80.png",
+      "sha256": "c6be0db152eeb5aee6a1f32366ec77d66d3af7cc7d75dbe270ea783f506efa80",
+      "mime": "image/png",
+      "width": 750,
+      "height": 142
+    },
+    "asset-2825f8acc18771c7fd2b7602d1724feae4de0708c6d3f2314003eff75357259a": {
+      "path": "assets/2825f8acc18771c7fd2b7602d1724feae4de0708c6d3f2314003eff75357259a.png",
+      "sha256": "2825f8acc18771c7fd2b7602d1724feae4de0708c6d3f2314003eff75357259a",
+      "mime": "image/png",
+      "width": 131,
+      "height": 33
+    },
+    "asset-be40e1e3efe9f2a15159d2327b419ad2a4f061a1749f7121fc7a305ecd4948db": {
+      "path": "assets/be40e1e3efe9f2a15159d2327b419ad2a4f061a1749f7121fc7a305ecd4948db.png",
+      "sha256": "be40e1e3efe9f2a15159d2327b419ad2a4f061a1749f7121fc7a305ecd4948db",
+      "mime": "image/png",
+      "width": 318,
+      "height": 25
+    },
+    "asset-7f47dbe004839cbb7c573d03f442b30986126bb70e86ef85b5a8165dc7edb686": {
+      "path": "assets/7f47dbe004839cbb7c573d03f442b30986126bb70e86ef85b5a8165dc7edb686.png",
+      "sha256": "7f47dbe004839cbb7c573d03f442b30986126bb70e86ef85b5a8165dc7edb686",
+      "mime": "image/png",
+      "width": 547,
+      "height": 57
+    },
+    "asset-bb91f0f5828db69fc81e6bd8e5a0c24189afc85af56ce2aad38780e1516038cb": {
+      "path": "assets/bb91f0f5828db69fc81e6bd8e5a0c24189afc85af56ce2aad38780e1516038cb.png",
+      "sha256": "bb91f0f5828db69fc81e6bd8e5a0c24189afc85af56ce2aad38780e1516038cb",
+      "mime": "image/png",
+      "width": 51,
+      "height": 51
+    },
+    "asset-a81a3df8a52c4a4eb3053db23d57856d13da589d4fef51b94130de3512c3da4a": {
+      "path": "assets/a81a3df8a52c4a4eb3053db23d57856d13da589d4fef51b94130de3512c3da4a.png",
+      "sha256": "a81a3df8a52c4a4eb3053db23d57856d13da589d4fef51b94130de3512c3da4a",
+      "mime": "image/png",
+      "width": 268,
+      "height": 92
+    },
+    "asset-930b9d4d5999c59d06f0db299b52c3ddeb1aee46051df5f976d5ba59294c067a": {
+      "path": "assets/930b9d4d5999c59d06f0db299b52c3ddeb1aee46051df5f976d5ba59294c067a.png",
+      "sha256": "930b9d4d5999c59d06f0db299b52c3ddeb1aee46051df5f976d5ba59294c067a",
+      "mime": "image/png",
+      "width": 39,
+      "height": 16
+    },
+    "asset-2fe8e6c2a228cc8932b1a02ef77d563dddc0618eb038ea3ea29338b35f37fdc6": {
+      "path": "assets/2fe8e6c2a228cc8932b1a02ef77d563dddc0618eb038ea3ea29338b35f37fdc6.png",
+      "sha256": "2fe8e6c2a228cc8932b1a02ef77d563dddc0618eb038ea3ea29338b35f37fdc6",
+      "mime": "image/png",
+      "width": 1,
+      "height": 1
+    },
+    "asset-3f7f8d33478bff92b3eda438d1b490a7cfa46bec97465185a63a73995946c05c": {
+      "path": "assets/3f7f8d33478bff92b3eda438d1b490a7cfa46bec97465185a63a73995946c05c.png",
+      "sha256": "3f7f8d33478bff92b3eda438d1b490a7cfa46bec97465185a63a73995946c05c",
+      "mime": "image/png",
+      "width": 686,
+      "height": 353
+    },
+    "asset-701e7a20f403eaf5b892c08b10d348b1fcdea72587534093b07c75b63424cbe9": {
+      "path": "assets/701e7a20f403eaf5b892c08b10d348b1fcdea72587534093b07c75b63424cbe9.png",
+      "sha256": "701e7a20f403eaf5b892c08b10d348b1fcdea72587534093b07c75b63424cbe9",
+      "mime": "image/png",
+      "width": 198,
+      "height": 18
+    },
+    "asset-c3b8b8fd543455309333963155494805309329c5a98e636d476b0c65f9cc65ec": {
+      "path": "assets/c3b8b8fd543455309333963155494805309329c5a98e636d476b0c65f9cc65ec.png",
+      "sha256": "c3b8b8fd543455309333963155494805309329c5a98e636d476b0c65f9cc65ec",
+      "mime": "image/png",
+      "width": 637,
+      "height": 91
+    },
+    "asset-b760169e911b9a9f89c4608392ab86d7e12e2313c4409f731a83aa7a88acab55": {
+      "path": "assets/b760169e911b9a9f89c4608392ab86d7e12e2313c4409f731a83aa7a88acab55.png",
+      "sha256": "b760169e911b9a9f89c4608392ab86d7e12e2313c4409f731a83aa7a88acab55",
+      "mime": "image/png",
+      "width": 169,
+      "height": 55
+    },
+    "asset-abb0b1b0022bc067ed3ab57005a202b873e11337aad963d58dcab8eb90d240c9": {
+      "path": "assets/abb0b1b0022bc067ed3ab57005a202b873e11337aad963d58dcab8eb90d240c9.png",
+      "sha256": "abb0b1b0022bc067ed3ab57005a202b873e11337aad963d58dcab8eb90d240c9",
+      "mime": "image/png",
+      "width": 169,
+      "height": 55
+    },
+    "asset-be072b6d590611827c6df2e3fe7d8aaeb9651be8f005e8042b2f225998a41892": {
+      "path": "assets/be072b6d590611827c6df2e3fe7d8aaeb9651be8f005e8042b2f225998a41892.png",
+      "sha256": "be072b6d590611827c6df2e3fe7d8aaeb9651be8f005e8042b2f225998a41892",
+      "mime": "image/png",
+      "width": 169,
+      "height": 55
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "Missing font AlibabaPuHuiTi_2_105_Heavy; affected text will be rasterized. Supply --font-dir to keep it editable.",
+    "背包-可使用道具: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "组件-全屏底部返回: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "矩形 1: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "100钻石: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
+    "矩形 4 拷贝: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "使用后获得5000点装备经验: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
+    "矩形 2: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "图层 1066 拷贝 2: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "组 1: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "组 486 (layer-38): group effects/masks/clipping rendered as one image; child layers and text remain in psd-extra.json, not individually editable in Web.",
+    "组 486 (layer-47): group effects/masks/clipping rendered as one image; child layers and text remain in psd-extra.json, not individually editable in Web.",
+    "组 486 (layer-56): group effects/masks/clipping rendered as one image; child layers and text remain in psd-extra.json, not individually editable in Web.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}
