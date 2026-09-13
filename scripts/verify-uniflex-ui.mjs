@@ -1,6 +1,6 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
@@ -18,6 +18,15 @@ const webImage = value("--web-image");
 const cocosImage = value("--cocos-image");
 const approvalPath = value("--approval");
 const approveWeb = args.includes("--approve-web");
+const compareMetric = (arguments_) => {
+    const result = spawnSync("magick", arguments_, { encoding: "utf8" });
+    if (result.error) throw result.error;
+    const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+    const metric = output.match(/^\s*([0-9]+(?:\.[0-9]+)?(?:e[+-]?[0-9]+)?)\s*(?:\(|$)/im)?.[1];
+    if (metric === undefined)
+        throw new Error(`ImageMagick compare returned no metric: ${output.trim()}`);
+    return metric;
+};
 
 if (!packageDir) {
     console.error("Usage: npm run ui:verify -- --package <project-package> [--strict] [--report <file>]");
@@ -72,7 +81,9 @@ if (!packageDir) {
         const candidates = (manifest.components || []).filter((item) =>
             /button|btn|frame|panel|底框|按钮|面板/i.test(`${item.name} ${item.node}`));
         for (const candidate of candidates)
-            add(`nineSlice.${candidate.id}`, Boolean(candidate.nineSlice || spec?.nineSlice?.[candidate.id]),
+            add(`nineSlice.${candidate.id}`, Boolean(candidate.nineSlice
+                || spec?.nineSlice?.[candidate.id]
+                || spec?.nineSlice?.[`ROLE::${candidate.id}`]),
                 "frame/button component has no explicit nine-slice bounds", "warning");
 
         const resources = Array.isArray(manifest.resources) ? manifest.resources : [];
@@ -84,11 +95,12 @@ if (!packageDir) {
                     "font resource has no advances metrics; empty font catalog cannot render editable text", "warning");
         }
         const sourcePath = manifest.sourceDesign && resolve(dir, manifest.sourceDesign);
+        let sourceDesign = null;
         if (sourcePath && manifest.sourceDesign?.endsWith(".json") && await exists(manifest.sourceDesign)) {
-            const source = JSON.parse(await readFile(sourcePath, "utf8"));
-            const textNodes = Object.values(source.nodes || {}).filter((node) => node.kind === "text");
+            sourceDesign = JSON.parse(await readFile(sourcePath, "utf8"));
+            const textNodes = Object.values(sourceDesign.nodes || {}).filter((node) => node.kind === "text");
             for (const node of textNodes) {
-                const font = source.fonts?.[node.text?.fontId];
+                const font = sourceDesign.fonts?.[node.text?.fontId];
                 add(`text.fontRef.${node.id}`, Boolean(node.text?.fontId && font?.path && font?.sha256),
                     "text layer has no explicit fontRef/path/hash");
             }
@@ -113,9 +125,51 @@ if (!packageDir) {
                     const webSize = dimensions(webImage);
                     add("golden.canvas", sourceSize === webSize && sourceSize === `${canvas.width} ${canvas.height}`,
                         `source=${sourceSize}, web=${webSize}, contract=${canvas.width} ${canvas.height}`);
-                    const metric = execFileSync("magick", ["compare", "-metric", "AE", "-fuzz", "10%", resolve(root, sourceImage), resolve(root, webImage), "null:"],
-                        { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-                    add("golden.pixelDiff", metric.trim() === "0", `10% color threshold differing pixels=${metric.trim()}`);
+                    const metric = compareMetric(["compare", "-metric", "AE", "-fuzz", "10%",
+                        resolve(root, sourceImage), resolve(root, webImage), "null:"]);
+                    add("golden.pixelDiff", metric === "0", `10% color threshold differing pixels=${metric}`);
+                    if (sourceSize === webSize && typeof sourceDesign === "object") {
+                        const regions = [
+                            ...nodes.map((node) => ({ id: node.name ?? node.stableKey ?? node.id, nodeId: node.id })),
+                            ...(Array.isArray(manifest.components) ? manifest.components
+                                .map((component) => ({ id: component.name ?? component.id, nodeId: component.id })) : []),
+                        ];
+                        const seenRegions = new Set();
+                        for (const region of regions) {
+                            if (seenRegions.has(region.nodeId)) continue;
+                            seenRegions.add(region.nodeId);
+                            const frame = sourceDesign.nodes?.[region.nodeId]?.frame;
+                            if (!frame || ![frame.x, frame.y, frame.width, frame.height].every(Number.isFinite)
+                                || frame.width <= 0 || frame.height <= 0) continue;
+                            const x = Math.round(frame.x);
+                            const y = Math.round(frame.y);
+                            const right = Math.min(canvas.width, x + Math.round(frame.width));
+                            const bottom = Math.min(canvas.height, y + Math.round(frame.height));
+                            const left = Math.max(0, x);
+                            const top = Math.max(0, y);
+                            if (left !== x || top !== y || right !== x + Math.round(frame.width)
+                                || bottom !== y + Math.round(frame.height)) {
+                                add(`golden.regionBounds.${region.id}`, false,
+                                    `design region exceeds canvas and was clipped: frame=${x},${y},${Math.round(frame.width)},${Math.round(frame.height)}, canvas=${canvas.width}x${canvas.height}`,
+                                    "warning");
+                            }
+                            if (right <= left || bottom <= top) continue;
+                            const width = right - left;
+                            const height = bottom - top;
+                            const geometry = `${width}x${height}+${left}+${top}`;
+                            const regionMetric = compareMetric([
+                                "compare", "-metric", "AE", "-fuzz", "10%",
+                                `${resolve(root, sourceImage)}[${geometry}]`,
+                                `${resolve(root, webImage)}[${geometry}]`, "null:",
+                            ]);
+                            const differingPixels = Number.parseInt(regionMetric, 10);
+                            const area = width * height;
+                            const percent = Number.isFinite(differingPixels) && area > 0
+                                ? differingPixels / area * 100 : 100;
+                            add(`golden.region.${region.id}`, percent <= 5,
+                                `region=${geometry}, differing=${differingPixels}, diff=${percent.toFixed(2)}%, limit=5%`);
+                        }
+                    }
                     if (approveWeb && sourceImage && webImage && metric.trim() === "0" && sourceSize === webSize) {
                         if (!approvalPath) add("golden.approvalPath", false, "--approve-web requires --approval");
                         else {

@@ -4,6 +4,7 @@ import { Backpack, Confirm, loadGameUI } from "./generated/ui";
 import type { BackpackAction } from "./generated/Backpack";
 import { resourceMap } from "./generated/resource-map";
 import { ConfirmLogic } from "../logic/page/ConfirmLogic";
+import { BackpackLogic } from "../logic/page/BackpackLogic";
 
 export function createConfirmPreview(parent: Node, hasCancel: boolean) {
     const root = new Node("UniFlex");
@@ -59,6 +60,7 @@ export function createBackpackPreview(
     resize();
     view.on("canvas-resize", resize);
     const runtime = new UniFlexCocosRuntime({ container: root, resources: resourceMap, loadUI: loadGameUI });
+    const logic = new BackpackLogic();
     let disposed = false;
     const dispose = (): void => {
         if (disposed) return;
@@ -73,6 +75,7 @@ export function createBackpackPreview(
     return {
         ready: runtime.start(Backpack, {
             onAction: (action) => {
+                logic.onAction(action);
                 onAction(action);
                 if (action.action === "back" || action.action === "close") dispose();
             },
