@@ -1,4 +1,4 @@
-import { access, readFile } from "node:fs/promises";
+import { access, mkdir, readFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -76,6 +76,8 @@ for (const layer of composites) {
     }
     command.push(")", "-geometry", `+${layer.x}+${layer.y}`, "-composite");
 }
-command.push("-colorspace", "sRGB", resolve(root, output));
+const outputPath = resolve(root, output);
+await mkdir(dirname(outputPath), { recursive: true });
+command.push("-colorspace", "sRGB", "-depth", "8", outputPath);
 await execFileAsync("magick", command);
-console.log(`Rendered independent UniFlex source: ${resolve(root, output)}`);
+console.log(`Rendered independent UniFlex source: ${outputPath}`);
