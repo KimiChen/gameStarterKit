@@ -444,3 +444,36 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 - `SlgDecorationRenderer`：涉水 decoration 的 quad 顶两顶点 alpha=1、底两顶点按渐隐值写顶点色（builtin-unlit 顶点色线性插值），与 chunk 淡出 alpha 相乘。
 
 验收：typecheck 0；test:client 563/563（新增 fording 曲线/校验闸/入库 layout 含标记 3 项）；服务端 757/757；verify:core 全项；Creator 预览 23 步全过（/tmp/slg-fording-preview2）。
+
+### 10.8 MF5 依赖面盘点（2026-09-13，2b 接框架准备）
+
+按 docs/MMO.md §5 MF5 规格逐项核对框架现状（`apps/server/src/rooms/core/` 实列目录 + 全文检索），结论：**MF5 尚未实施，2b 全部 14/15/20–24 条被阻塞**；2a 与 shared 数学已就绪，MF5 的泛化源（snake）质量良好。
+
+**已具备（2b 不需要重做）**：
+
+| 面 | 现状证据 |
+| --- | --- |
+| 每会话 baseline 载体（泛化源） | `modes/snake/index.ts:327-352`：per-sessionId `baselineId` + Begin/Chunk/End + checksum，delta 流同文件——MF5 `Baseline` 泛化对象 |
+| 每会话发送端口 | `context.sendS2C(client, token, payload)`（GameMode context，snake 全量使用） |
+| 兴趣矩形/chunk 数学 | shared `worldmap/index.ts`：`chunkKey`/`chunkRectForGridRect`（纯函数 ✓）；客户端流式器 `mapStreamer.ts` added/removed 差分已跑数月 |
+| 2a 行军面 | `sql/002-march.sql`（k_slg_march/receipt/log 三表）、`apps/server/src/kits/slg/api/march/`、`slg.marchDispatch/Recall` RPC 域（mapTiles 懒结算 natural-write ✓） |
+| 第二房机制 | `websocket/loader.ts:60` 注释证实 joinOrCreate 满员开新房的并发 onCreate 已处理 |
+| kit 边界机检 | `apps/server/test/kit-import-boundary.test.ts` 只扫 `apps/server/src/kits/**`（rooms/modes 路径属 kit 所有权集，绕闸先例被登记为治理盲区） |
+
+**框架缺口（= MF5 实施清单，按规格逐项）**：
+
+| MF5 规格项 | 现状 |
+| --- | --- |
+| `rooms/core/InterestSet.ts` | ⛔ 不存在（目录仅 AccessPolicy/RoomProfile/StartPolicy） |
+| `rooms/core/ObserverSync.ts`（diffAndEmit） | ⛔ 不存在 |
+| `rooms/core/Baseline.ts`（分块/checksum/cursor 自 snake 泛化） | ⛔ snake 版为 mode 私有，未泛化 |
+| `rooms/core/OutboundQueue.ts`（有界队列/合并/不可丢/超限重同步） | ⛔ 不存在 |
+| `rooms/core/S2CPorts.ts`（broadcastS2C 对 perSession fail-closed） | ⛔ 不存在；现在只有 per-client sendS2C，无「per-session 广播」概念 |
+| `defineS2C(name, validate, { perSession, coalesceKey? })` + `GAME_WIRE_PER_SESSION` 生成（shared + tools/gameplay-codegen） | ⛔ `defineGameplayWire.ts:84` 仅 (type, validate) 两参 |
+| GameRoom/GameMode 消费路径（SQL 视图房，端口不强制 WorldAddress/personaId） | ⛔ 未接线 |
+| **D4 名册分离**：`GameRoomState.ts:33 players: MapSchema<RoomStatePlayerLifecycle>`（id+name 全房广播）——MF5 必须把内部名册与 Schema 投影分离，⛔ 不能把现有 players map 当默认例外（MMO.md §0.1/§5 重复声明） | ⛔ 未分离——这是 slg 正式范围（不广播全房 id/name）的硬阻塞 |
+| 夹具（worldFixture perSession + SQL 视图房 kitfix 双房）与验收矩阵（超视距零互见/enter-leave 各一次/重连 baseline 只含兴趣集/perSession 广播被拒/私有字段零泄露/慢会话重同步） | ⛔ 未建（S4：WorldRoom 单路径通过 ≠ slg 2b 开工证据，SQL 视图房路径须逐项过矩阵） |
+
+**2b 侧待办（框架就绪后同批）**：① kit.json 增 `modes` + `apps/shared/gameplays/slgWorld/{manifest,state}.json` + 手写 `wire.ts`（S2C 全族 `defineS2C(..., {perSession:true})`，baseline 族 token 由框架注入，⛔ 不自写分块/checksum）；② `rooms/modes/slgWorld/`（commands + `aoi.ts` 只做「视口 chunk 矩形→兴趣集」+ onStep 脏标记扫描）；③ 框架小 PR：`core/infra/kitApi.ts` 再导出 `kKitShared`（脏标记门面，现只导出 `kKitUser`，`kitApi.ts:59-60`）；④ 客户端四件套（`apps/client/src/gameplay/modes/slgWorld/` 必须存在并导出 `createGameplayModule`，codegen `lib.ts:445-471` 硬闸）+ SlgMapView 接房间；⑤ 2b 验收矩阵（两房互见/dispatch 2s 可见/到达易主双方 tilesUpdate/视口外零泄露/断线 baseline 重同步）。
+
+**排期建议**：MF5 按 MMO.md §5 自行实施，批次序 = wire perSession 声明与生成 → 四件套 core 原语（InterestSet/ObserverSync/Baseline/OutboundQueue，Baseline 从 snake 泛化）→ S2CPorts fail-closed → GameRoom 消费路径 + D4 名册分离 → 双夹具与验收矩阵。MF7 `workers[]` 不阻塞 2b 核心（无人在线结算已是 README 已知取舍）。2b 开工条件维持拍板：MF5 落地且含 GameRoom 消费路径与名册策略验收（S4）。
