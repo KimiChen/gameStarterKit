@@ -153,6 +153,7 @@ declare module "cc" {
         static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string;
           MOUSE_DOWN: string; MOUSE_MOVE: string; MOUSE_UP: string; MOUSE_WHEEL: string; MOUSE_LEAVE: string };
         addChild(child: Node): void;
+        insertChild(child: Node, index: number): void;
         removeFromParent(): void;
         destroy(): boolean;
         setSiblingIndex(index: number): void;

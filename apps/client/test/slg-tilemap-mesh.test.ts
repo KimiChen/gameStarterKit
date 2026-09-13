@@ -1,7 +1,7 @@
 /** Tilemap 瓦片网格几何：格→瓦片摆放、pivot 对齐、LOD 减层与归属 overlay。 */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildSlgTileIndex, buildSlgTilemapMeshes, type SlgTilesData } from "../src/kits/slg/logic/tilemapMesh";
+import { buildSlgOwnershipMesh, buildSlgTileIndex, buildSlgTileLayerMeshes, buildSlgTilemapMeshes, type SlgTilesData } from "../src/kits/slg/logic/tilemapMesh";
 import { SLG_GRID_PIXELS } from "../src/kits/slg/logic/mapCamera";
 import { SLG_CHUNK_SIZE, chunkKey, slgMapInfo, tileIdFromGrid,
     type ISlgTerrain, type ISlgTile } from "../src/shared/kits/slg/api/worldmap/index";
@@ -135,4 +135,61 @@ test("SLG tilemap mesh: invalid lod or alpha are rejected before any geometry is
     const index = buildSlgTileIndex(data);
     assert.throws(() => buildSlgTilemapMeshes(terrain(), data, index, 0, 0, 4, EMPTY_TILES, SELF), RangeError);
     assert.throws(() => buildSlgTilemapMeshes(terrain(), data, index, 0, 0, 0, EMPTY_TILES, SELF, 1.5), RangeError);
+});
+
+test("SLG tile layer meshes: cross-chunk global y-order keeps tall tiles above upper-chunk tiles", () => {
+    // 两格树（168×336，pivot 底中）在 (0,15)（chunk 0 顶行），顶边到世界格 21 → 伸进 chunk (0,1)；
+    // 单格地表在 (0,16)（chunk 1）。层内全局序必须 y 降：地表先画、树后画（树压在地表上）。
+    const tallTree: SlgTilesData["tiles"][number] = { atlas: 0, cell: 5, w: 168, h: 336, ppu: 168, pivotX: 0.5, pivotY: 0 };
+    const data: SlgTilesData = { ...tilesData([{ name: "Ground", seq: 0, cells: [[0, 15, 1], [0, 16, 0]] }]),
+        tiles: [tilesData([]).tiles[0], tallTree] };
+    const index = buildSlgTileIndex(data);
+    const layers = buildSlgTileLayerMeshes(data, index, [chunkKey(0, 0), chunkKey(0, 1)], 0);
+    assert.equal(layers.length, 1);
+    assert.equal(layers[0].quadCount, 2);
+    // quad0 = 地表 (0,16)：顶 16*48+72；quad1 = 树：顶 21*48、底 15*48。
+    near(layers[0].geometry.positions[1], 16 * SLG_GRID_PIXELS + 72);
+    near(layers[0].geometry.positions[13], 21 * SLG_GRID_PIXELS);
+    near(layers[0].geometry.positions[19], 15 * SLG_GRID_PIXELS);
+    // bounds = 可见 chunk 矩形并集。
+    near(layers[0].geometry.minY, 0); near(layers[0].geometry.maxY, 32 * SLG_GRID_PIXELS);
+    near(layers[0].geometry.maxX, 16 * SLG_GRID_PIXELS);
+});
+
+test("SLG tile layer meshes: per-chunk fade alpha lands in vertex colors", () => {
+    const data = tilesData([{ name: "Ground", seq: 0, cells: [[0, 0, 0], [0, 16, 0]] }]);
+    const index = buildSlgTileIndex(data);
+    const fading = buildSlgTileLayerMeshes(data, index, [chunkKey(0, 0), chunkKey(0, 1)], 0,
+        (key) => (key === chunkKey(0, 1) ? 0.5 : 1));
+    assert.equal(fading[0].quadCount, 2);
+    // y 降序：quad0 = (0,16)（chunk 0,1，alpha 0.5）；quad1 = (0,0)（alpha 1）。
+    near(fading[0].geometry.colors[3], 0.5);
+    near(fading[0].geometry.colors[16 + 3], 1);
+    assert.throws(() => buildSlgTileLayerMeshes(data, index, [chunkKey(0, 0)], 4), RangeError);
+    assert.deepEqual(buildSlgTileLayerMeshes(data, index, [], 0), []);
+});
+
+test("SLG tile layer meshes: LOD 3 trims fine layers from the merged set too", () => {
+    const data = tilesData([
+        { name: "Ground", seq: 0, cells: [[0, 0, 0]] },
+        { name: "Shadow", seq: 5, cells: [[1, 0, 0]] },
+        { name: "Object", seq: 10, cells: [[2, 0, 1]] },
+    ]);
+    const index = buildSlgTileIndex(data);
+    const nearLayers = buildSlgTileLayerMeshes(data, index, [chunkKey(0, 0)], 2);
+    const farLayers = buildSlgTileLayerMeshes(data, index, [chunkKey(0, 0)], 3);
+    assert.deepEqual(nearLayers.map((l) => l.layer.name), ["Ground", "Shadow", "Object"]);
+    assert.deepEqual(farLayers.map((l) => l.layer.name), ["Ground", "Object"]);
+});
+
+test("SLG ownership mesh: standalone builder matches overlay contract", () => {
+    const owned = new Map<number, ISlgTile>([
+        [tileIdFromGrid(0, 1, 1), { tileId: tileIdFromGrid(0, 1, 1), ownerUid: SELF, guardPower: 1 }],
+    ]);
+    const mesh = buildSlgOwnershipMesh(terrain(), 0, 0, owned, SELF);
+    assert.ok(mesh);
+    assert.equal(mesh!.positions.length, 12);
+    near(Array.from(mesh!.colors.slice(0, 4))[3], 0.4);
+    assert.equal(buildSlgOwnershipMesh(terrain(), 1, 1, owned, SELF), null);
+    assert.throws(() => buildSlgOwnershipMesh(terrain(), 0, 0, owned, SELF, 1.5), RangeError);
 });

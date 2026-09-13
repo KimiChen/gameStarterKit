@@ -16,7 +16,8 @@ export function readSlgMapEvidence(walk) {
   const titleMatch = title?.text.match(/^(.+) · LOD ([1-4]) · 奖杯 (\d+)$/u);
   const details = nodes.find((node) => typeof node.text === "string" && /^\(\d+, \d+\) · 地形 \d+ · .+ · 守备 \d+$/u.test(node.text));
   const tileMatch = details?.text.match(/^\((\d+), (\d+)\) · 地形 (\d+) · (无主|我方|敌方 .+) · 守备 (\d+)$/u);
-  const chunks = nodes.filter((node) => /^slg-chunk-\d+-\d+$/u.test(node.name)).map((node) => node.name).sort();
+  // 近档：瓦片层合并网格（slg-tiles-*，每原版层一张，见 §10.6）或旧 chunk 网格都算「已加载」。
+  const chunks = nodes.filter((node) => /^slg-(tiles-.+|chunk-\d+-\d+)$/u.test(node.name)).map((node) => node.name).sort();
   // LOD 4 远档：逐 chunk 网格被整图层（slg-far-*）替代——整图层存在同样算「已加载」。
   const farNodes = nodes.filter((node) => /^slg-far-(sea|island|landmarks|ownership)$/u.test(node.name)).map((node) => node.name).sort();
   const farGround = farNodes.includes("slg-far-sea") || farNodes.includes("slg-far-island");
@@ -83,7 +84,7 @@ function readSlgRenderAssets() {
   const visit = (node, inMap) => {
     if (!node.activeInHierarchy) return;
     const inside = inMap || node.name === "SlgMapView";
-    if (inside && (/^slg-chunk-\d+-\d+$/u.test(node.name) || /^slg-decorations-\d+-\d+$/u.test(node.name)
+    if (inside && (/^slg-(tiles-.+|chunk-\d+-\d+)$/u.test(node.name) || /^slg-decorations-\d+-\d+$/u.test(node.name)
         || /^slg-far-(sea|island|landmarks|ownership)$/u.test(node.name))) {
       const renderer = node.getComponent("cc.MeshRenderer");
       const material = renderer?.getSharedMaterial(0);
@@ -138,7 +139,7 @@ async function settingsScrollUnchanged(runner, before) {
 
 async function renderedMapAssets(runner) {
   const assets = await runner.client.evaluate(slgRenderAssetsSource);
-  const terrain = assets.filter((entry) => /^slg-chunk-/u.test(entry.name));
+  const terrain = assets.filter((entry) => /^slg-(tiles-|chunk-)/u.test(entry.name));
   const decorations = assets.filter((entry) => /^slg-decorations-/u.test(entry.name));
   if (!terrain.length || !decorations.length || [...terrain, ...decorations].some((entry) => !entry.textured)) {
     throw new Error(`地图贴图/装饰材质尚未就绪：${JSON.stringify({ terrain: terrain.slice(0, 2), decorations: decorations.slice(0, 2) })}`);

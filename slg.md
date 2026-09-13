@@ -400,7 +400,7 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 
 验收：typecheck 0；客户端 slg-* 57/57（slg-tilemap-mesh 8 项：分桶/quad 尺寸×scale/m_TileAnchor 位移/pivot/UV 内缩/子矩形保比例/LOD3 减层/归属色与 fade alpha）；verify:all 退出 0；Creator 预览 23 步全过（/tmp/slg-tilemap-preview-9，LOD1 连续草地+海面、切山之国资源重载、远档岛貌）。
 
-开放项回写（§8 追加）：①近档 tile 边缘在极近档仍有轻微接缝感~~（瓦片间无 blending，原版靠 LightRegion 光照+Rug 贴花柔化，未复刻）~~ ✅ 2026-09-13 §10.5 落地（真凶是图集打包 alpha 二次衰减，与 LightRegion 无关）；②跨 chunk 的高瓦片（树/崖柱 2-3 格）在 chunk 边界处绘制序按 chunk 网格而非全图 y 序，极端平移时可能短暂穿插；③羽之国云台/泽之国浅滩的涉水变体（Fording/PartialSubmersion）仍开放（承 §10.3）。
+开放项回写（§8 追加）：①近档 tile 边缘在极近档仍有轻微接缝感~~（瓦片间无 blending，原版靠 LightRegion 光照+Rug 贴花柔化，未复刻）~~ ✅ 2026-09-13 §10.5 落地（真凶是图集打包 alpha 二次衰减，与 LightRegion 无关）；②~~跨 chunk 的高瓦片（树/崖柱 2-3 格）在 chunk 边界处绘制序按 chunk 网格而非全图 y 序，极端平移时可能短暂穿插~~ ✅ 2026-09-13 §10.6 落地（per-chunk 网格改每原版层一张合并网格，层内全局 y 降 x 升 = 原版单 Tilemap 同构）；③羽之国云台/泽之国浅滩的涉水变体（Fording/PartialSubmersion）仍开放（承 §10.3）。
 
 ### 10.5 接缝修复与 LightRegion 实证（2026-09-13）
 
@@ -413,3 +413,19 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 **顺手修复的测试基建**（阻塞 verify:all，与素材无关）：①`fixture-checkout.mjs` 夹具 `git commit` 会派生 `git maintenance run --auto --detach` 守护进程，数秒后异步 repack pristine（删 objects/xx 扇出目录），矩阵并发 cp 撞上 lstat ENOENT 打红整面 sync-mirror-matrix——夹具内 `git config maintenance.auto false` 根治；②上游误将 `apps/Cocos/assets/src/ui-uniflex/generated/`（.gitignore 明列的 build 产物）入库，夹具中源侧缺失→镜像侧成孤儿，`git rm --cached` 退出跟踪（本地产物不受影响）；③补交 `BackpackComponent.tsx.meta`（verify:sync 只认已跟踪 .meta）。
 
 验收：typecheck 0；test:client 556/556；服务端 757/757；verify:core 全项（sync-mirror 21/21）；Creator 预览 23 步全过（/tmp/slg-seamfix-preview4，LOD1 连续草地目检无网格线、五图切换、远档岛貌）。
+
+### 10.6 跨 chunk 高瓦片绘制序：per-chunk 网格 → 每原版层一张合并网格（2026-09-13）
+
+**问题**：瓦片网格按 chunk 各建一张（16×16 世界格），层内绘制序只有 chunk 粒度——高/宽瓦片（树/崖沿 2-3 渲染格）跨越 chunk 边界时，与相邻 chunk 内容的互叠序按「chunk 节点到达序」而非基格 y，平移补块时两 chunk 相对序随机，极端平移短暂穿插（开放项②）。原版无此问题：每层一个整图 Tilemap，天然全局序。
+
+**方案**（对齐原版结构，而非打补丁排序）：
+- `buildSlgTileLayerMeshes`（tilemapMesh.ts 新增）：可见 chunk 集合 × 层 → **每层一张合并网格**，层内格按 y 降 x 升**全局**稳定排序（跨 chunk 正确互叠）；quad 数学抽成 `tileQuadRect` 与 per-chunk 旧构建器共用，防漂移；
+- `SlgTilemapRenderer` 重写：层节点按层 seq 序入树（兄弟序=绘制序，sea 永远垫底），chunk 淡入淡出改为**顶点 alpha**（ChunkFadeTracker 语义不变，alpha 变化的帧整层重建——淡出窗口 240ms，重建量=视口可见集，实测帧时无感）；网格容量按可见集增长就地换大（旧网格帧末回收）；
+- 归属 overlay 是 chunk 内整格 quad、不跨 chunk、无互叠序问题，**保留 per-chunk 建销 + 淡出**（`buildSlgOwnershipMesh` 独立导出）；
+- 每层 quad 上限钉 Uint16（16383），超限即红（视口 bug 不应静默）。
+
+**取舍记录**：曾评估「高瓦片按顶边格重新分桶 + chunk 行序入树」的保守改法——只能保证垂直方向，宽瓦片（崖沿横向 2-3 格）在同行相邻 chunk 间仍无 y 互叠序，放弃；合并层网格与原版「每层一个 Tilemap」同构，一劳永逸。per-chunk 旧构建器 `buildSlgTilemapMeshes` 保留（测试与单 chunk 消费方）。
+
+**证据契约**：近档已加载判据从 `slg-chunk-x-y` 扩为 `slg-tiles-*|slg-chunk-*`（tools/creator-preview/slg.mjs 三处）；cc 桩补 `Node.insertChild` 声明（真实引擎 3.8 一直有）。
+
+验收：typecheck 0；test:client 560/560（新增 4 项：跨 chunk 全局序/顶点 alpha/LOD3 裁剪/bounds 并集 + 独立归属构建器）；服务端 757/757；verify:core 全项（sync-mirror 21/21）；Creator 预览 23 步全过（/tmp/slg-merged-preview，LOD1 树/崖沿跨块互叠目检正确，115 draw call、帧时 1.88ms）。
