@@ -47,6 +47,10 @@ if (!packageDir) {
         add("manifest.schemaVersion", [1, 2].includes(manifest.schemaVersion), `unsupported schema ${manifest.schemaVersion}`);
         add("manifest.sourceDesign", typeof manifest.sourceDesign === "string" && await exists(manifest.sourceDesign),
             `sourceDesign must be a file in the package: ${manifest.sourceDesign}`);
+        if (manifest.sourceSupplement !== undefined)
+            add("manifest.sourceSupplement", typeof manifest.sourceSupplement === "string"
+                && await exists(manifest.sourceSupplement),
+            `sourceSupplement must be a file in the package: ${manifest.sourceSupplement}`);
         const canvas = manifest.canvas;
         add("manifest.canvas", Number.isInteger(canvas?.width) && Number.isInteger(canvas?.height)
             && canvas.width > 0 && canvas.height > 0, "canvas width/height must be positive integers");
@@ -96,6 +100,7 @@ if (!packageDir) {
         }
         const sourcePath = manifest.sourceDesign && resolve(dir, manifest.sourceDesign);
         let sourceDesign = null;
+        let sourceSupplement = null;
         if (sourcePath && manifest.sourceDesign?.endsWith(".json") && await exists(manifest.sourceDesign)) {
             sourceDesign = JSON.parse(await readFile(sourcePath, "utf8"));
             const textNodes = Object.values(sourceDesign.nodes || {}).filter((node) => node.kind === "text");
@@ -104,6 +109,19 @@ if (!packageDir) {
                 add(`text.fontRef.${node.id}`, Boolean(node.text?.fontId && font?.path && font?.sha256),
                     "text layer has no explicit fontRef/path/hash");
             }
+        }
+        if (manifest.sourceSupplement && await exists(manifest.sourceSupplement)) {
+            sourceSupplement = JSON.parse(await readFile(resolve(dir, manifest.sourceSupplement), "utf8"));
+            add("sourceSupplement.kind", sourceSupplement.kind === "psd-supplement",
+                `expected psd-supplement, got ${sourceSupplement.kind}`);
+            add("sourceSupplement.schemaVersion", sourceSupplement.schemaVersion === 1,
+                `unsupported supplement schema ${sourceSupplement.schemaVersion}`);
+            add("sourceSupplement.sourceSha256", /^[a-f0-9]{64}$/i.test(sourceSupplement.sourceSha256 ?? ""),
+                "supplement must retain the 64-character source PSD SHA-256");
+            add("sourceSupplement.layers", sourceSupplement.layers
+                && typeof sourceSupplement.layers === "object"
+                && !Array.isArray(sourceSupplement.layers),
+            "supplement layers must be an object keyed by stable layer id");
         }
         const componentAudit = [];
         for (const component of Array.isArray(manifest.components) ? manifest.components : []) {
@@ -155,6 +173,66 @@ if (!packageDir) {
                     : null,
             });
         }
+        const decompositionCandidates = [];
+        if (sourceSupplement?.layers && sourceDesign?.nodes) {
+            const supplementLayers = sourceSupplement.layers;
+            const nodeById = sourceDesign.nodes;
+            const rasterizedGroupIds = new Set(Object.values(supplementLayers)
+                .map((layer) => layer.renderedBy)
+                .filter((id) => typeof id === "string"));
+            const rasterizedGroups = [...rasterizedGroupIds]
+                .map((id) => nodeById[id])
+                .filter(Boolean);
+            for (const group of rasterizedGroups) {
+                const groupLayers = Object.entries(supplementLayers)
+                    .filter(([, layer]) => layer.renderedBy === group.id);
+                for (const [id, layer] of groupLayers) {
+                    const node = nodeById[id] ?? {
+                        id,
+                        name: layer.properties?.name ?? id,
+                        kind: layer.properties?.text ? "text" : "image",
+                    };
+                    const properties = layer?.properties ?? {};
+                    const reasons = ["parent group is currently rasterized"];
+                    if (properties.clipping) reasons.push("clipping layer");
+                    if (properties.blendMode && properties.blendMode !== "normal")
+                        reasons.push(`blend mode ${properties.blendMode}`);
+                    if (properties.effects && Object.keys(properties.effects).length > 1)
+                        reasons.push("layer effects");
+                    if (layer?.renderedBy) reasons.push(`renderedBy ${layer.renderedBy}`);
+                    const text = properties.text;
+                    const candidateKind = text ? "text" : properties.vectorFill || properties.vectorMask ? "shape" : "image";
+                    const editable = candidateKind === "text"
+                        && node.kind === "text"
+                        && Boolean(node.text?.fontId)
+                        && reasons.length === 0;
+                    if (candidateKind === "text" && !node.text?.fontId)
+                        reasons.push("no UniFlex fontRef/advances mapping");
+                    const bounds = ["left", "top", "right", "bottom"].every((key) =>
+                        Number.isFinite(properties[key]));
+                    decompositionCandidates.push({
+                        id: node.id,
+                        name: node.name ?? node.id,
+                        parent: group.id,
+                        parentName: group.name ?? group.id,
+                        kind: candidateKind,
+                        frame: node.frame ?? (bounds ? {
+                            x: properties.left,
+                            y: properties.top,
+                            width: properties.right - properties.left,
+                            height: properties.bottom - properties.top,
+                        } : null),
+                        status: editable ? "candidate" : "blocked",
+                        editable,
+                        recommendation: candidateKind === "text"
+                            ? "restore-text-after-font-and-effect-review"
+                            : "keep-raster-until-visual-regression",
+                        reasons,
+                        sourceLayerPresent: Boolean(layer),
+                    });
+                }
+            }
+        }
         const report = {
             schemaVersion: 1,
             kind: "uniflex-ui-verification",
@@ -167,6 +245,12 @@ if (!packageDir) {
                 semantic: componentAudit.filter((component) => !component.rasterized).length,
                 rasterized: componentAudit.filter((component) => component.rasterized).length,
                 components: componentAudit,
+            },
+            decomposition: {
+                sourceSupplement: manifest.sourceSupplement ?? null,
+                candidates: decompositionCandidates,
+                candidateCount: decompositionCandidates.filter((item) => item.status === "candidate").length,
+                blockedCount: decompositionCandidates.filter((item) => item.status === "blocked").length,
             },
             checks, errors, warnings,
         };
