@@ -152,7 +152,9 @@ for (const [name, pagePlan] of Object.entries(plans))
     resourceMap[`ui/${name}`] = { path: `uniflex/ui/${name}`, sha256: jsonHash(pagePlan) };
 for (const entry of entries.slice(1))
     resourceMap[entry.id] = {
-        path: `uniflex/${entry.file.replace(/\.(png|jpe?g|webp|ttf|otf)$/i, "")}`,
+        path: entry.kind === "image"
+            ? `uniflex/${entry.file}/spriteFrame`
+            : `uniflex/${entry.file}`,
         sha256: entry.sha256,
     };
 await emit(resolve(generated, "resource-map.ts"), header +

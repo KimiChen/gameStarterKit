@@ -100,6 +100,8 @@ apps/Cocos/
   `components.json.sourceDesign` 与 `canvas` 是正式验收输入，Web 只能先与独立源图形成 proposal，
   经人工批准后才允许 Cocos 对照。导入组件保持纯展示态，业务 Logic、路由和服务端命令绑定放在
   业务目录，不写入 `imported/`。
+  Web proposal 通过后用 `npm run ui:approve-web -- --package <package> --source-image <source.png>
+  --web-image <proposal.png> --approval <approval.json>` 生成批准件；Cocos 证据必须带同一批准件。
 - `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
 - `apps/Cocos/assets/src` 整体禁止手改；运行 `npm run sync:client`。
 - `.meta` 与镜像一起提交，保持 UUID 稳定。

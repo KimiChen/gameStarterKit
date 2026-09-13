@@ -20,6 +20,7 @@
     "ui:export-psd": "node scripts/uniflex-ui-cli.mjs export-psd",
     "ui:check-source": "node scripts/uniflex-ui-cli.mjs check-source",
     "ui:verify": "node scripts/verify-uniflex-ui.mjs",
+    "ui:approve-web": "node scripts/verify-uniflex-ui.mjs --approve-web",
     "check:uniflex-ui": "node scripts/build-uniflex-ui.mjs --check config/uniflex.ui.json",
     "typecheck:uniflex-ui": "tsc -p apps/client/tsconfig.ui.json && tsc -p apps/web-ui-preview/tsconfig.json",
     "dev:uniflex-web": "node scripts/dev-uniflex-web.mjs",
