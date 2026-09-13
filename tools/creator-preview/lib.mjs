@@ -276,7 +276,10 @@ export async function openScene(client, { preview, sceneUuid, timeoutMs }) {
   await client.send("Fetch.enable", { patterns: [{ urlPattern: "*settings.js*", requestStage: "Request" }] });
   await client.send("Page.enable");
   await client.send("Page.bringToFront");
-  await client.send("Page.navigate", { url: `${preview}/` });
+  // The preview server may serve the editor's current scene from settings.js.
+  // Pass the target explicitly as well, so evidence does not depend on the
+  // editor's foreground scene or on a server-specific settings rewrite.
+  await client.send("Page.navigate", { url: `${preview}/?scene=${encodeURIComponent(sceneUuid)}` });
   const deadline = Date.now() + timeoutMs;
   let last = null;
   try {

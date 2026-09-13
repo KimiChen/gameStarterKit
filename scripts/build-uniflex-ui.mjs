@@ -153,15 +153,14 @@ for (const [name, pagePlan] of Object.entries(plans))
 for (const entry of entries.slice(1))
     resourceMap[entry.id] = {
         path: entry.kind === "image"
-            // Cocos Creator resources.load resolves image sub-assets from the
-            // extensionless asset path; including ".png" makes the resources
-            // bundle key miss in Creator 3.8.8.
-            ? `uniflex/${entry.file.replace(/\.[^/.]+$/, "")}`
+            // PNG imports expose the renderable SpriteFrame as a sub-asset.
+            // The explicit suffix is required by Cocos Creator 3.8.8.
+            ? `uniflex/${entry.file.replace(/\.[^/.]+$/, "")}/spriteFrame`
             : `uniflex/${entry.file}`,
         sha256: entry.sha256,
     };
 for (const entry of entries.slice(1)) {
-    if (entry.kind === "image" && /\.[^/.]+$/.test(resourceMap[entry.id].path))
+    if (entry.kind === "image" && !/\/spriteFrame$/u.test(resourceMap[entry.id].path))
         throw new Error(`Invalid Cocos image resource path with extension: ${resourceMap[entry.id].path}`);
 }
 await emit(resolve(generated, "resource-map.ts"), header +
