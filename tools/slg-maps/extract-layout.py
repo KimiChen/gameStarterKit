@@ -35,6 +35,19 @@ def classify(display: dict, ecid: int, refresh_group: int) -> str | None:
     return "tree" if refresh_group == 0 else "crystal"  # 未解析的静态物件按植被/灵晶兜底
 
 
+# GroundType.Shallow（Console/Common/GroundType.cs 实证）；按实例站位判定，⛔ 不看 DisplayPath 后缀——
+# CSV 把 84 个常驻浅水类族的 DisplayPath 直接登记为 *_shallow_view，那些类放在普通地上的实例
+# 原版运行时仍换普通外观（2026-09-13 交叉验证：森 810/814 在 None 格）。
+GT_SHALLOW = 6
+
+
+def ground_at(grid, width: int, height: int, ex: float, ey: float) -> int:
+    xi, yi = int(ex), int(ey)
+    if 0 <= xi < width and 0 <= yi < height:
+        return grid[yi][xi][1]
+    return -1
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("map_id")
@@ -59,6 +72,8 @@ def main() -> None:
     regions = load_mapinfowrap(cfg, mc["classId"])
     area_names = load_area_names(cfg, mc["classId"])
     display = load_display(cfg)
+    grid, _areas, _maxstep = load_map_grid(cfg, mc["classId"])
+    grid_h, grid_w = len(grid), len(grid[0])
     scale, off = e2w["scale"], e2w["offset"]
 
     def tx(v): return v * scale
@@ -78,7 +93,10 @@ def main() -> None:
                 skipped += 1
                 continue
             ex, ey = entity_xy(e)
-            decorations.append({"x": tx(ex) + off[0], "y": tx(ey) + off[1], "kind": kind})
+            entry = {"x": tx(ex) + off[0], "y": tx(ey) + off[1], "kind": kind}
+            if ground_at(grid, grid_w, grid_h, ex, ey) == GT_SHALLOW:
+                entry["shallow"] = True
+            decorations.append(entry)
 
     centroids = {}
     for rid, ents in regions.items():

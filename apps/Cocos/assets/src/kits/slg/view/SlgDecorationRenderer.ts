@@ -2,7 +2,7 @@
 import { EffectAsset, gfx, Material, Mesh, MeshRenderer, Node, Texture2D, UIMeshRenderer, utils, Vec3 } from "cc";
 import { gridFromTileId, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
 import { ChunkFadeTracker } from "../logic/chunkFade";
-import { SLG_MAX_DECORATIONS_PER_CHUNK, slgAtlasUv, slgDecorationsForChunk, type SlgDecoration } from "../logic/mapArt";
+import { SLG_MAX_DECORATIONS_PER_CHUNK, slgAtlasUv, slgDecorationsForChunk, slgFordingAlpha, type SlgDecoration } from "../logic/mapArt";
 import { SLG_GRID_PIXELS } from "../logic/mapCamera";
 import { slgMapDebug } from "../logic/mapDebug";
 import { visibleMapLayers } from "../logic/mapLayers";
@@ -117,7 +117,6 @@ export class SlgDecorationRenderer {
         const positions = new Float32Array(decorations.length * 12);
         const uvs = new Float32Array(decorations.length * 8);
         const colors = new Float32Array(decorations.length * 16).fill(1);
-        for (let channel = 3; channel < colors.length; channel += 4) colors[channel] = alpha;
         const indices16 = new Uint16Array(decorations.length * 6);
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         decorations.forEach((decoration, quad) => {
@@ -132,6 +131,13 @@ export class SlgDecorationRenderer {
             const u1 = uv.u1 - this.insetU, v1 = uv.v1 - this.insetV;
             positions.set([left, top, 0, right, top, 0, left, bottom, 0, right, bottom, 0], quad * 12);
             uvs.set([u0, v0, u1, v0, u0, v1, u1, v1], quad * 8);
+            // 涉水变体：底部按 Fording 参数渐隐（顶 1、底 0），与 chunk 淡出 alpha 相乘。
+            const vertices = decoration.shallow === true
+                ? [slgFordingAlpha(1), slgFordingAlpha(1), slgFordingAlpha(0), slgFordingAlpha(0)]
+                : [1, 1, 1, 1];
+            for (let vertex = 0; vertex < 4; vertex += 1) {
+                colors[quad * 16 + vertex * 4 + 3] = alpha * vertices[vertex];
+            }
             const v = quad * 4;
             indices16.set([v, v + 1, v + 2, v + 2, v + 1, v + 3], quad * 6);
             minX = Math.min(minX, left); minY = Math.min(minY, bottom);

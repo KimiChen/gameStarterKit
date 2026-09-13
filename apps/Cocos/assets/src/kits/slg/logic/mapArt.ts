@@ -42,6 +42,8 @@ export interface SlgDecoration extends SlgArtPoint {
     readonly kind: SlgDecorationKind;
     readonly landmark: boolean;
     readonly name?: string;
+    /** 涉水变体（原版 GroundType=Shallow 的实例）：渲染时 quad 底部按 Fording 参数渐隐（见 slgFordingAlpha）。 */
+    readonly shallow?: true;
 }
 export interface SlgLandmark extends SlgDecoration { readonly landmark: true; readonly name: string }
 
@@ -127,7 +129,7 @@ export function buildSlgOverviewRects(terrain: ISlgTerrain): readonly SlgOvervie
 
 
 /** <mapId>/layout.json 的运行时形状（五国真实布局复刻，tools/slg-maps 管线产出）。 */
-export interface SlgForestLayoutDecoration { readonly x: number; readonly y: number; readonly kind: SlgDecorationKind }
+export interface SlgForestLayoutDecoration { readonly x: number; readonly y: number; readonly kind: SlgDecorationKind; readonly shallow?: boolean }
 export interface SlgForestLayout {
     readonly source: string;
     readonly id: string;
@@ -158,12 +160,25 @@ export function validateSlgForestLayout(input: unknown): input is SlgForestLayou
     if (!Array.isArray(value.decorations)) return false;
     for (const entry of value.decorations) {
         if (!entry || typeof entry !== "object") return false;
-        const { x, y, kind } = entry as { x?: unknown; y?: unknown; kind?: unknown };
+        const { x, y, kind, shallow } = entry as { x?: unknown; y?: unknown; kind?: unknown; shallow?: unknown };
         if (!Number.isInteger(x) || !Number.isInteger(y) || (x as number) < 0 || (x as number) >= info.width
             || (y as number) < 0 || (y as number) >= info.height) return false;
         if (typeof kind !== "string" || !LAYOUT_KINDS.includes(kind)) return false;
+        // fail-closed：涉水标记只允许缺省或字面 true（管线只写 true；false/其它类型视为坏数据）。
+        if (shallow !== undefined && shallow !== true) return false;
     }
     return true;
+}
+
+/** Fording 静态近似参数：原版 FordingSpriteRenderer prefab 实证默认值（scale=1、offset=0.56），
+ *  shader 无源码不在复刻范围（同 §10.3 水面动态行）——取「quad 高度 56% 以下向底部线性渐隐」的静态等价。 */
+export const SLG_FORDING_FULL_ALPHA_AT = 0.56;
+/** localY01：quad 内归一化高度（0=底，1=顶）→ 顶点 alpha（1=全显，0=淹没）。 */
+export function slgFordingAlpha(localY01: number): number {
+    if (!Number.isFinite(localY01)) throw new RangeError("SLG fording y invalid");
+    const t = Math.max(0, Math.min(1, localY01));
+    if (t >= SLG_FORDING_FULL_ALPHA_AT) return 1;
+    return t / SLG_FORDING_FULL_ALPHA_AT;
 }
 
 const LAYOUT_SIZE: Readonly<Record<SlgDecorationKind, number>> = {
@@ -187,6 +202,7 @@ export function buildSlgLayoutIndex(layout: SlgForestLayout): SlgLayoutIndex {
         const decoration: SlgDecoration = {
             id: `layout-${index}`, kind: entry.kind, atlasIndex: DECORATION_ATLAS_INDEX[entry.kind],
             landmark: false, width: size, height: size, x: entry.x, y: entry.y,
+            ...(entry.shallow === true ? { shallow: true } as const : {}),
         };
         const key = chunkKey(Math.floor(entry.x / SLG_CHUNK_SIZE), Math.floor(entry.y / SLG_CHUNK_SIZE));
         const bucket = buckets.get(key);
