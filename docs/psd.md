@@ -1,5 +1,10 @@
 # PSD 到 FairyGUI 的“CLI 编译器 PSD 版”实施方案
 
+> 当前真实状态（2026-09-13）：本仓已具备 `ui:import-psd`、`ui:export-psd`、
+> UniFlex Web/Cocos 预览和 `ui:check-source` 契约诊断；尚未具备 Photoshop
+> 打开—保存—关闭—重开自动验收、Editor takeover、`.psdt.io` 容器命令或完整
+> Storybook/Checkpoint manager。Web/Cocos 预览成功不等于 Golden 批准。
+
 > 版本：0.4（方案稿）<br>
 > 日期：2026-09-02<br>
 > 状态：已有一次 `referenceCompositeOnly` PSD 生成记录；通用 CLI、Schema、元素级可编辑性验证、FairyGUI 编译器和全栈编排仍未实现<br>

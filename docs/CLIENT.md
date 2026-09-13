@@ -96,6 +96,10 @@ apps/Cocos/
   `cancel=0` 验证单按钮模式；加 `screen=backpack` 可预览 PSD 导入页面，点击后由
   `BackpackAction` 回调输出动作。独立 WebProvider 宿主在 `apps/web-ui-preview/`，通过
   `npm run dev:uniflex-web` 启动，消费相同 AOT、字体和页面资源。
+- PSD 导入包必须经过 `npm run ui:check-source -- --package <package> --strict`；
+  `components.json.sourceDesign` 与 `canvas` 是正式验收输入，Web 只能先与独立源图形成 proposal，
+  经人工批准后才允许 Cocos 对照。导入组件保持纯展示态，业务 Logic、路由和服务端命令绑定放在
+  业务目录，不写入 `imported/`。
 - `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
 - `apps/Cocos/assets/src` 整体禁止手改；运行 `npm run sync:client`。
 - `.meta` 与镜像一起提交，保持 UUID 稳定。

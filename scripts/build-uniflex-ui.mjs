@@ -151,15 +151,23 @@ const resourceMap = {
 for (const [name, pagePlan] of Object.entries(plans))
     resourceMap[`ui/${name}`] = { path: `uniflex/ui/${name}`, sha256: jsonHash(pagePlan) };
 for (const entry of entries.slice(1))
-    resourceMap[entry.id] = { path: `uniflex/${entry.file}`, sha256: entry.sha256 };
+    resourceMap[entry.id] = {
+        path: `uniflex/${entry.file.replace(/\.(png|jpe?g|webp|ttf|otf)$/i, "")}`,
+        sha256: entry.sha256,
+    };
 await emit(resolve(generated, "resource-map.ts"), header +
     `import type { CocosResourceMapping } from '../../kits/uniflex/api/cocos/index';\n` +
     `export const resourceMap = ${JSON.stringify(resourceMap, null, 2)} as const satisfies CocosResourceMapping;\n`);
-const webResourceMap = Object.fromEntries(Object.entries(resourceMap).map(([id, entry]) => {
-    const suffix = id === "ui/catalog" || id.startsWith("ui/") ? ".json"
-        : id === fontEntry.id ? ".ttf" : "";
-    return [id, { url: `/${entry.path}${suffix}`, sha256: entry.sha256 }];
-}));
+const webResourceMap = Object.fromEntries([
+    ["ui/catalog", { url: "/uniflex/catalog.json", sha256: catalogHash }],
+    [fontEntry.id, { url: `/uniflex/${fontEntry.file}`, sha256: fontEntry.sha256 }],
+    ...Object.entries(plans).map(([name, pagePlan]) => [
+        `ui/${name}`, { url: `/uniflex/ui/${name}.json`, sha256: jsonHash(pagePlan) },
+    ]),
+    ...entries.slice(1).map((entry) => [
+        entry.id, { url: `/uniflex/${entry.file}`, sha256: entry.sha256 },
+    ]),
+]);
 await emit(resolve(generated, "web-resource-map.ts"), header +
     `import type { WebResourceMapping } from '../../kits/uniflex/api/web/index';\n` +
     `export const webResourceMap = ${JSON.stringify(webResourceMap, null, 2)} as const satisfies WebResourceMapping;\n`);
