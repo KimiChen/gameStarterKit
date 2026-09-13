@@ -130,15 +130,35 @@ async function main() {
     fs.readFileSync(path.join(ROOT, "apps/Cocos/assets/uniflex.scene.meta"), "utf8"),
   );
   const out = path.resolve(options.out ?? path.join(os.tmpdir(), `uniflex-${options.screen}-cocos.png`));
-  const tab = await acquireTab(options);
+  let tab;
+  try {
+    tab = await acquireTab(options);
+  } catch (error) {
+    throw new Error(
+      `无法连接 Chrome DevTools ${options.devtools}；请用 Chrome 9222 启动可见预览标签页。${error instanceof Error ? ` (${error.message})` : ""}`,
+    );
+  }
   const client = await CdpClient.connect(tab.wsUrl);
   try {
-    await openScene(client, {
-      preview: options.preview,
-      sceneUuid,
-      timeoutMs: options.bootTimeoutMs,
-      query: { screen: options.screen },
-    });
+    try {
+      await openScene(client, {
+        preview: options.preview,
+        sceneUuid,
+        timeoutMs: options.bootTimeoutMs,
+        query: { screen: options.screen },
+      });
+    } catch (error) {
+      const state = await client.evaluate(`(() => ({
+        url: location.href,
+        engine: typeof cc === "undefined" ? null : (cc.ENGINE_VERSION || null),
+        scene: typeof cc === "undefined" || !cc.director ? null : (cc.director.getScene()?.name || null),
+        frames: typeof cc === "undefined" || !cc.director ? null : cc.director.getTotalFrames(),
+      }))()`).catch(() => null);
+      const suffix = state
+        ? ` 当前页面=${state.url}，引擎=${state.engine ?? "unknown"}，scene=${state.scene ?? "null"}，frames=${state.frames ?? "unknown"}`
+        : "";
+      throw new Error(`${error instanceof Error ? error.message : String(error)}${suffix}`);
+    }
     const result = await client.evaluate(captureSource(width, height));
     if (result.width !== width || result.height !== height) {
       throw new Error(`Cocos RenderTexture 尺寸错误：${result.width}x${result.height}，契约 ${width}x${height}`);
