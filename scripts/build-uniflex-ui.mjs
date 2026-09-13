@@ -153,10 +153,17 @@ for (const [name, pagePlan] of Object.entries(plans))
 for (const entry of entries.slice(1))
     resourceMap[entry.id] = {
         path: entry.kind === "image"
-            ? `uniflex/${entry.file}/spriteFrame`
+            // Cocos Creator resources.load resolves image sub-assets from the
+            // extensionless asset path; including ".png" makes the resources
+            // bundle key miss in Creator 3.8.8.
+            ? `uniflex/${entry.file.replace(/\.[^/.]+$/, "")}`
             : `uniflex/${entry.file}`,
         sha256: entry.sha256,
     };
+for (const entry of entries.slice(1)) {
+    if (entry.kind === "image" && /\.[^/.]+$/.test(resourceMap[entry.id].path))
+        throw new Error(`Invalid Cocos image resource path with extension: ${resourceMap[entry.id].path}`);
+}
 await emit(resolve(generated, "resource-map.ts"), header +
     `import type { CocosResourceMapping } from '../../kits/uniflex/api/cocos/index';\n` +
     `export const resourceMap = ${JSON.stringify(resourceMap, null, 2)} as const satisfies CocosResourceMapping;\n`);
