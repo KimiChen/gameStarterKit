@@ -20,7 +20,12 @@ export class UniFlexPreview extends Component {
             ? createBackpackPreview(this.node)
             : createConfirmPreview(this.node, query?.get("cancel") !== "0");
         this.runtime = preview;
-        void preview.ready.catch((error) => {
+        void preview.ready.then(() => {
+            if (this.runtime !== preview) return;
+            this.statusNode?.destroy();
+            this.statusNode = null;
+        }).catch((error) => {
+            if (this.runtime !== preview) return;
             const message = error instanceof Error ? error.message : String(error);
             console.error("[UniFlexPreview] 预览启动失败：", error);
             this.runtime?.dispose();
@@ -39,8 +44,7 @@ export class UniFlexPreview extends Component {
 
     private showError(message: string): void {
         this.statusNode?.destroy();
-        this.statusNode = null;
-        this.showMessage(`UniFlex preview failed\n${message}`, true);
+        this.statusNode = this.showMessage(`UniFlex preview failed\n${message}`, true);
     }
 
     private showMessage(message: string, error = false): Node {
