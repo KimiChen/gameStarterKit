@@ -87,9 +87,12 @@ function readSlgRenderAssets() {
         || /^slg-far-(sea|island|landmarks|ownership)$/u.test(node.name))) {
       const renderer = node.getComponent("cc.MeshRenderer");
       const material = renderer?.getSharedMaterial(0);
-      const texture = material?.getProperty("mainTexture");
+      let texture = null, materialError = null;
+      try { texture = material?.getProperty("mainTexture"); }
+      catch (error) { materialError = error instanceof Error ? error.message : String(error); }
       result.push({ name: node.name, kind: "mesh", textured: !!texture && texture.width > 0 && texture.height > 0,
-        width: texture?.width ?? null, height: texture?.height ?? null });
+        width: texture?.width ?? null, height: texture?.height ?? null,
+        ...(materialError ? { materialError, materialDestroyed: !!material?.destroyed } : null) });
     }
     if (inside && node.name === "slg-overview-art") {
       const texture = node.getComponent("cc.Sprite")?.spriteFrame?.texture;

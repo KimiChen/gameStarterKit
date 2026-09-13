@@ -365,3 +365,39 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 36MB；海面由 sea-tile 平铺承担（滑窗自动选纯海区），零重复文件。
 
 验收：typecheck 0；客户端 slg-* 49/49；verify:all 退出 0（VERIFY_EXIT=0）。
+
+### 10.4 地表 Tilemap 化：放弃渲染图切块，按原版真实实现（2026-09-13）
+
+用户拍板「找原游戏是如何实现的，而不是切割他的渲染图」。逆向闭环原版实现后全链重写：
+
+**原版实现（bundle/csharp-hotupdate 实证）**
+
+| 问题 | 实证结论 |
+| --- | --- |
+| 连续草地哪来 | bare bundle 的 `Ground` Tilemap **逐格烘焙全岛**（森 17,752 格 ≈ 非水格 18,510；93.3% 是同一张 `ground_1`（168²/PPU168 自带噪点），其余 ~1,200 格 `island-edge*`/`ground_edge*`/`highland*` 边崖变片）。「稀疏覆盖不全」是单位误读：原版 1 渲染格 = kit `scale`×`scale` 世界格（森/山/泽/羽 scale=3、鲸背 5） |
+| 自动瓦片？ | **不存在**：`m_TileAssetArray` 全是 `MyTile`（`Assembly-CSharp/MyTile.cs:16`，`GetTileData` 直调 base，零邻接逻辑）；过渡方向美术烘焙期写死在 `m_TileSpriteIndex` |
+| 运行时填充 | 只有装饰层：`PartitionLoader.OnTileChunkLoaded`（`PartitionLoader.cs:605`，`SetTilesBlock:641`）把 `TileChunkData` 各层灌进宿主 Tilemap；GroundType 数据只服务逻辑与小地图（`MiniMap.cs:41`），大世界地表与它无关 |
+| 摆放语义 | `m_TileAnchor=(0,0)`（几乎全部宿主层；个别装饰层 (0.5,0.5)）+ sprite `m_Pivot=(0,0)` → **sprite 左下角对格左下角**；`m_TileIndex==m_TileSpriteIndex` 逐格 1:1，TilemapRenderer 直接按烘焙索引出图。⚠ render_map_full 对 Ground 硬编码中心 pivot——1 格瓦片与 Unity 等效，多格瓦片（崖沿 2-3 格）差半格，本仓按 Unity 实义 |
+
+**本仓落地**
+
+| 层 | 实现 |
+| --- | --- |
+| 管线 | `extract-tileset.py`：bare Tilemap（Ground/Ground_Under/Ground_Above）+ chunks `TileChunkData` 全层 → `tiles.json`（格→瓦片引用表，层按原版 seq + **每层 m_TileAnchor**，格按 y 降 x 升，**带 scale**）+ `tileset-0.png`（sprite 去重单页 4096²，16×16=256 格，0.84 边距）。五图：森 23 层 49,259 格/150 瓦片、山 48 层 82,285/191、泽 61 层 113,731/177、鲸背 23 层 33,550/129、羽 65 层 176,433/222——全部单页 |
+| 客户端 | `logic/tilemapMesh.ts`（chunk 分桶索引 + 锚点=(格+anchor×scale) quad/UV/pivot 摆放（w/ppu 渲染格 ×48px×scale）+ LOD3 减层 + 归属 overlay 与 terrainMesh 同款）；`view/SlgTilemapRenderer.ts`（每 chunk 单 mesh 单材质 + ChunkFadeTracker 淡入淡出 + 销毁先摘除激活态）替代 `SlgChunkRenderer`（连同 `SlgGroundTileCache` 一起删除） |
+| 海面 | `slg-sea-base` 整图静态平铺底（原版 CustomWater 的静态近似，永远垫在瓦片下）+ 远档 `slg-far-sea` 同源；`sea-tile.png` meta wrap 改 repeat（UV 16 格/张） |
+| 退役 | `build-ground-tiles.py` 删除；ground-tiles 块图 **2,410 文件 ~119MB** git rm（五图 ground-tiles/ + 注册表 + meta）；B 方案渲染图切块路线整体下线 |
+| 回归闸 | `verify-redraw.py` 重写：**kit 世界格系**按客户端同数学重绘 + 内陆覆盖率基线闸（海岸过渡带豁免——原版岸线本就由 edge 瓦片+水面承担）：森 99.3%/山 97.8%/泽 99.4%/羽 96.9%/鲸背 100.0%，跌破基线 0.5pp 即红 |
+
+**排障（近档黑海 → 全绿）**
+
+1. 瓦片世界尺寸漏乘 `scale`（每瓦片只占 1/9 面积）。
+2. 近档没有海面底（Ground 层只盖陆地，海区无任何绘制）→ `slg-sea-base`。
+3. **UV v 轴翻转**：按 v=1=PNG 顶写公式，实际引擎约定 v=0=PNG 顶（far island 层实证）→ 低行草地全部采到图集底部空行不可见。
+4. **render() 新建 chunk 批从未入 `batches` 表**（`batches.set` 漏写）→ 每帧重复建批泄漏（731 draw call），切图 dispose 后旧批节点残留持已毁材质，证据收集器 walker 撞上 `Material.getProperty` 崩（`_props` null）。`slg.mjs` walker 硬化为逐节点报错不崩（带 materialError/materialDestroyed 字段）。
+5. 环境坑：`ELECTRON_RUN_AS_NODE=1` 残留在 shell 环境时，编辑器二进制按 Node 模式解析参数、打印 `bad option: --project` 静默拒启——`env -i PATH=/usr/bin:/bin HOME=$HOME` 拉起即恢复。此前「bad option 无碍」的归因是错的。
+6. 预览编译陈旧探测：拉 `/scripting/x/import-map.json` 找到目标 chunk，grep 内容特征确认编译时点，别信「重启过编辑器」。
+
+验收：typecheck 0；客户端 slg-* 57/57（slg-tilemap-mesh 8 项：分桶/quad 尺寸×scale/m_TileAnchor 位移/pivot/UV 内缩/子矩形保比例/LOD3 减层/归属色与 fade alpha）；verify:all 退出 0；Creator 预览 23 步全过（/tmp/slg-tilemap-preview-9，LOD1 连续草地+海面、切山之国资源重载、远档岛貌）。
+
+开放项回写（§8 追加）：①近档 tile 边缘在极近档仍有轻微接缝感（瓦片间无 blending，原版靠 LightRegion 光照+Rug 贴花柔化，未复刻）；②跨 chunk 的高瓦片（树/崖柱 2-3 格）在 chunk 边界处绘制序按 chunk 网格而非全图 y 序，极端平移时可能短暂穿插；③羽之国云台/泽之国浅滩的涉水变体（Fording/PartialSubmersion）仍开放（承 §10.3）。

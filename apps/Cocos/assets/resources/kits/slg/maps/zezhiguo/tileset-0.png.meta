@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "c23ebe7b-7318-4639-98da-3a74d34dd3f8",
+  "uuid": "7b44f433-f340-4c00-8aee-eb9b91f38c22",
   "files": [
     ".json",
     ".png"
@@ -10,19 +10,19 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "c23ebe7b-7318-4639-98da-3a74d34dd3f8@6c48a",
-      "displayName": "sea-tile",
+      "uuid": "7b44f433-f340-4c00-8aee-eb9b91f38c22@6c48a",
+      "displayName": "tileset-0",
       "id": "6c48a",
       "name": "texture",
       "userData": {
-        "wrapModeS": "repeat",
-        "wrapModeT": "repeat",
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
         "minfilter": "linear",
         "magfilter": "linear",
         "mipfilter": "none",
         "anisotropy": 0,
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "c23ebe7b-7318-4639-98da-3a74d34dd3f8",
+        "imageUuidOrDatabaseUri": "7b44f433-f340-4c00-8aee-eb9b91f38c22",
         "visible": false
       },
       "ver": "1.0.22",
@@ -36,7 +36,7 @@
   "userData": {
     "type": "texture",
     "fixAlphaTransparencyArtifacts": false,
-    "hasAlpha": false,
-    "redirect": "c23ebe7b-7318-4639-98da-3a74d34dd3f8@6c48a"
+    "hasAlpha": true,
+    "redirect": "7b44f433-f340-4c00-8aee-eb9b91f38c22@6c48a"
   }
 }

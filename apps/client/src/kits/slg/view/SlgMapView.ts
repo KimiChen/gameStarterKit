@@ -8,12 +8,12 @@ import { SLG_GRID_PIXELS } from "../logic/mapCamera";
 import { installSlgMapDebugGlobal, slgMapDebug } from "../logic/mapDebug";
 import { SlgMapLogic } from "../logic/SlgMapLogic";
 import { getSlgRuntime } from "../logic/slgRuntime";
-import { SlgChunkRenderer } from "./SlgChunkRenderer";
+import { SlgTilemapRenderer } from "./SlgTilemapRenderer";
 import { SlgDecorationRenderer } from "./SlgDecorationRenderer";
 import { SlgFarLayerRenderer } from "./SlgFarLayerRenderer";
 import { SlgMapSwitcher } from "./SlgMapSwitcher";
 import { SlgWorldOverview } from "./SlgWorldOverview";
-import { loadSlgArtResources, SlgGroundTileCache, type SlgArtResources } from "./SlgArtResources";
+import { loadSlgArtResources, type SlgArtResources } from "./SlgArtResources";
 
 const BACK = new Color(19, 29, 32, 255);
 const PANEL = new Color(19, 28, 38, 255);
@@ -28,13 +28,12 @@ export class SlgMapView extends CocosView {
     private terrainLayer: Node | null = null;
     private decorationLayer: Node | null = null;
     private selection: Node | null = null;
-    private renderer: SlgChunkRenderer | null = null;
+    private renderer: SlgTilemapRenderer | null = null;
     private decorationRenderer: SlgDecorationRenderer | null = null;
     private farRenderer: SlgFarLayerRenderer | null = null;
     private overview: SlgWorldOverview | null = null;
     private switcher: SlgMapSwitcher | null = null;
     private art: SlgArtResources | null = null;
-    private tileCache: SlgGroundTileCache | null = null;
     private terrain: ISlgTerrain | null = null;
     /** 会话级地图记忆：重进地图/切图后 reopen 保持上次所选。 */
     private static lastMapId = SLG_DEFAULT_MAP_ID;
@@ -136,8 +135,7 @@ export class SlgMapView extends CocosView {
             }
             this.disposeArt();
             this.art = art; this.terrain = art.terrain;
-            this.tileCache = new SlgGroundTileCache(mapId);
-            this.renderer = new SlgChunkRenderer(this.terrainLayer, this.terrain, art.groundTiles, this.tileCache, art.island, art.sea);
+            this.renderer = new SlgTilemapRenderer(this.terrainLayer, this.terrain, art.tiles, art.tileIndex, art.tileset, art.sea);
             this.decorationRenderer = new SlgDecorationRenderer(this.decorationLayer, this.terrain, art.decorations, art.layout);
             this.farRenderer = new SlgFarLayerRenderer(this.world, this.terrain, art.layout, art.decorations, art.island, art.sea);
             this.overview = new SlgWorldOverview(this.root, this.terrain, art.layout.landmarks, art.island, art.overview, art.decorations,
@@ -183,7 +181,6 @@ export class SlgMapView extends CocosView {
         this.farRenderer?.dispose(); this.farRenderer = null;
         this.decorationRenderer?.dispose(); this.decorationRenderer = null;
         this.renderer?.dispose(); this.renderer = null;
-        this.tileCache?.dispose(); this.tileCache = null;
         this.art?.release(); this.art = null;
     }
 
@@ -204,6 +201,7 @@ export class SlgMapView extends CocosView {
             this.decorationRenderer?.clear();
         }
         this.farRenderer?.setVisible(far);
+        this.renderer?.setSeaVisible(!far);
         if (far) {
             this.farRenderer?.render(logic.tiles, logic.runtime?.selfUid() ?? "",
                 slgFarOwnershipVersion(logic.tiles, logic.chunkVersions));

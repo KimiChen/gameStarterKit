@@ -25,3 +25,11 @@
 - 素材来自本机两个逆向学习包（zlbAllVersion / zjcs-1.2.6），仅本仓私有研究用，**禁止二次分发**；
   版权归原厂商（灵犀互娱 / 心动）所有。
 - 本包不改变玩法规则：地形与装饰只影响显示（无阻挡/寻路/资源点语义），行军与占领规则不变。
+
+## 2026-09-13 增补：Tilemap 近档地表
+
+- [tileset-0.png](tileset-0.png)：4096×4096 RGBA 单页图集（16×16=256 格，等比装满），瓦片全部解自
+  原游戏 bare Tilemap（Ground/Ground_Under/Ground_Above）与 TileChunkData 全层的 sprite 引用，去重后单页。
+- `../../data/maps/senzhiguo/tiles.json`：格→瓦片引用表（层按原版 sortLayer/Order 排序，每层带宿主 m_TileAnchor，
+  每瓦片带 scale/pivot/内容子矩形），管线 `tools/slg-maps/extract-tileset.py` 产出，客户端 SlgTilemapRenderer 逐格铺设。
+- 自此近档地表不再用渲染图切块（ground-tiles 已退役删除），与原版同构：同纹理瓦片全图复用。

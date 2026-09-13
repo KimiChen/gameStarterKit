@@ -45,7 +45,7 @@ class FakeCocosView {
     readonly layerWidth = 800;
     readonly layerHeight = 1200;
 }
-class FakeRenderer { render(): void {} dispose(): void {} }
+class FakeRenderer { render(): void {} update(): void {} clear(): void {} setSeaVisible(): void {} dispose(): void {} }
 class FakeFarRenderer {
     readonly node = new FakeNode();
     render(): void {}
@@ -77,15 +77,16 @@ async function loadSubject(): Promise<Subject> {
         if (request === "cc") return cc;
         if (request === "../../../view/CocosView") return { CocosView: FakeCocosView };
         if (request === "../../../view/uiPlate") return { createSolidPlate: () => { throw new Error("input tests do not build renderer nodes"); } };
-        if (request === "./SlgChunkRenderer") return { SlgChunkRenderer: FakeRenderer };
+        if (request === "./SlgTilemapRenderer") return { SlgTilemapRenderer: FakeRenderer };
         if (request === "./SlgDecorationRenderer") return { SlgDecorationRenderer: FakeRenderer };
         if (request === "./SlgFarLayerRenderer") return { SlgFarLayerRenderer: FakeFarRenderer };
         if (request === "./SlgWorldOverview") return { SlgWorldOverview: FakeOverview };
         if (request === "./SlgArtResources") return { loadSlgArtResources: async (mapId: string) => ({
             mapId, terrain: {}, overview: null, decorations: null, island: null, sea: null,
-            groundTiles: { tile: 64, image: 1024, blocks: [] },
+            tiles: { id: mapId, tile: 16, scale: 3, atlasCols: 16, cellPx: 256, atlas: [], layers: [], tiles: [] },
+            tileIndex: new Map(), tileset: null,
             layout: { index: new Map(), landmarks: [] }, release(): void {},
-        }), SlgGroundTileCache: class { dispose(): void {} } };
+        }) };
         return originalLoad.call(this, request, parent, isMain);
     };
     try { loaded = await import("../src/kits/slg/view/SlgMapView"); return loaded; }
