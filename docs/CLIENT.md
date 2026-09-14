@@ -82,7 +82,8 @@ apps/Cocos/
 - UniFlex 通用 UI 核心在 `src/kits/uniflex/`，由独立的 `api/cocos/index.ts`、
   `api/web/index.ts` 提供宿主入口，共用资源与导航生命周期；业务侧不得导入 kit 内部实现。
   清单与 API 规则见 [UniFlex kit](../apps/kits/uniflex/README.md)，不将业务作者态、Logic 或路由放入 kit。
-- UniFlex 增量迁移的作者态在 `src/ui-uniflex/*.authoring.tsx`，`generated/` 子目录及
+- UniFlex 增量迁移的作者态在 `src/ui-uniflex/pages/<Page>/*.tsx`，共享组件在
+  `src/ui-uniflex/components/`，`generated/` 子目录及
   `apps/Cocos/assets/resources/uniflex/` 由 `npm run build:uniflex-ui` 生成，不手改、不入库。
   编译器默认使用项目内 `tools/uniflex-compiler.mjs` 调用
   `vendor/uniflex/bin/<platform>-<arch>/`；显式设置 `UNIFLEX_COMPILER` 可覆盖项目内制品。
@@ -97,9 +98,9 @@ apps/Cocos/
   `BackpackAction` 回调输出动作。独立 WebProvider 宿主在 `apps/web-ui-preview/`，通过
   `npm run dev:uniflex-web` 启动，消费相同 AOT、字体和页面资源。
 - PSD 导入包必须经过 `npm run ui:check-source -- --package <package> --strict`；
-  `design.json` 的 `canvas` 是正式验收输入，Web 只能先与独立源图形成 proposal，
+  `apps/client/resources/ui/<Page>/design.json` 的 `canvas` 是正式验收输入，Web 只能先与独立源图形成 proposal，
   经人工批准后才允许 Cocos 对照。导入组件保持纯展示态，业务 Logic、路由和服务端命令绑定放在
-  业务目录，不写入 `imported/`。
+  业务目录，不写入资源包目录。
   对 `design.json` 源图可使用
   `npm run ui:render-source -- --package <package> --out <source.png>` 按契约独立合成 RGB
   源图；它读取 `roots`、group 相对坐标、资源和 opacity，不读取 Web 预览截图。随后使用

@@ -1,4 +1,4 @@
-import type { BackpackAction } from "../../ui-uniflex/imported/Backpack/Backpack.authoring";
+import type { BackpackAction } from "../../ui-uniflex/pages/Backpack/Backpack";
 
 export type BackpackCheckpointStep =
     | { readonly type: "press"; readonly name: string }
