@@ -5,8 +5,10 @@ const root = resolve(import.meta.dirname, "..");
 const update = process.argv.includes("--update");
 const outIndex = process.argv.indexOf("--out");
 const outputArg = outIndex >= 0 ? process.argv[outIndex + 1] : undefined;
+const nameIndex = process.argv.indexOf("--name");
+const nameArg = nameIndex >= 0 ? process.argv[nameIndex + 1] : undefined;
 const packageArg = process.argv.slice(2).find((arg, index, args) =>
-    !arg.startsWith("--") && !(index > 0 && args[index - 1] === "--out"));
+    !arg.startsWith("--") && !(index > 0 && ["--out", "--name"].includes(args[index - 1])));
 const packageDir = resolve(packageArg || "");
 if (!packageDir) throw new Error("Usage: npm run import:uniflex-ui -- /path/to/project-package");
 const project = JSON.parse(await readFile(resolve(packageDir, "design.json"), "utf8"));
@@ -15,7 +17,7 @@ if (project.schemaVersion !== 1 || project.kind !== "uniflex-design")
     throw new Error("Invalid UniFlex import package.");
 if (resourcesManifest.version !== 1 || !Array.isArray(resourcesManifest.assets))
     throw new Error("Invalid UniFlex resource manifest.");
-const name = String(project.name).replace(/[^a-zA-Z0-9_-]+/g, "_");
+const name = String(nameArg || project.name || "ImportedUI").replace(/[^a-zA-Z0-9_-]+/g, "_");
 const target = outputArg
     ? resolve(root, outputArg)
     : resolve(root, "apps/client/src/ui-uniflex/imported", name);
