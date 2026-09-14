@@ -1,4 +1,3 @@
-/// <reference types="@uniflex/compiler/jsx" />
 import { defineView } from '@uniflex/compiler';
 import { imageRef, fontRef } from '../../../kits/uniflex/api/core/index';
 
