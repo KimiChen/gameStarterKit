@@ -18,6 +18,16 @@ const check = process.argv.includes("--check");
 const configFile = process.argv.find((argument) => argument.endsWith(".json"))
     ?? "config/uniflex.ui.json";
 const emit = createOutputWriter(root, check);
+const validateResource = (resource) => {
+    if (!Array.isArray(resource.nineSlice)) return;
+    if (resource.nineSlice.length !== 4 || resource.nineSlice.some((value) =>
+        !Number.isFinite(value) || value < 0))
+        throw new Error(`Invalid nineSlice: ${resource.id}`);
+    if (Number.isInteger(resource.width) && Number.isInteger(resource.height)
+        && (resource.nineSlice[0] + resource.nineSlice[2] > resource.width
+            || resource.nineSlice[1] + resource.nineSlice[3] > resource.height))
+        throw new Error(`nineSlice exceeds image bounds: ${resource.id}`);
+};
 
 const GENERATED_SPECIFIERS = {
     "@uniflex/core": "../../kits/uniflex/api/core/index",
@@ -97,6 +107,7 @@ for (const packageName of await readdir(resolve(client, "src/ui-uniflex/imported
         throw new Error(`Invalid UniFlex resource manifest: ${packageName}/manifest.json`);
     const resources = resourceManifest.assets;
     for (const resource of resources) {
+        validateResource(resource);
         const bytes = await readFile(resolve(packageRoot, resource.file));
         if (sha256(bytes) !== resource.sha256)
             throw new Error(`Imported UniFlex resource hash mismatch: ${packageName}/${resource.file}`);

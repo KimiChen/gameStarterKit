@@ -10,7 +10,7 @@ export interface PreviewHomeParams {
 /** Local preview router: keeps feature previews discoverable without coupling production navigation. */
 export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen' }, (context) => {
     const go = context.params.onNavigate;
-    return <view name="PreviewHome" style={{ width: 750, height: '100%', backgroundColor: '#101318', flexDirection: 'column', alignItems: 'center', padding: { top: 180 } }}>
+    return <view name="PreviewHome" style={{ width: 750, height: 1334, backgroundColor: '#101318', flexDirection: 'column', alignItems: 'center', padding: { top: 180 } }}>
         <text value="UniFlex UI 预览" style={{ width: 650, height: 72, font: theme.font, fontSize: 42, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
         <text value="选择功能界面" style={{ width: 650, height: 50, font: theme.font, fontSize: 24, color: '#aab4c4', horizontalAlign: 'center', verticalAlign: 'center' }} />
         <view style={{ padding: { top: 60 }, gap: 24, alignItems: 'center' }}>
