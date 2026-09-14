@@ -90,17 +90,14 @@ export async function runCli(argv, {
         ...(values["font-dir"] ? ["--font-dir", resolve(root, values["font-dir"])] : [])]);
     convert(["uniflex-package", "--design", join(design, "design.json"),
         "--name", values.name, "--out", projectPackage]);
-    const manifest = JSON.parse(await readFile(join(projectPackage, "components.json"), "utf8"));
-    if (![1, 2].includes(manifest.schemaVersion) || manifest.kind !== "uniflex-import-package"
-        || manifest.name !== values.name)
+    const project = JSON.parse(await readFile(join(projectPackage, "design.json"), "utf8"));
+    if (project.schemaVersion !== 1 || project.kind !== "uniflex-design")
         throw new Error("Converter returned an incompatible UniFlex package.");
     // Keep parsed PSD fields beside design.json so rasterization and component
     // decisions remain auditable after the external converter's handoff.
     const supplement = join(design, "psd-extra.json");
     if (await access(supplement).then(() => true).catch(() => false)) {
         await copyFile(supplement, join(projectPackage, "psd-extra.json"));
-        manifest.sourceSupplement = "psd-extra.json";
-        await writeFile(join(projectPackage, "components.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     }
     run(process.execPath, [join(root, "scripts/import-uniflex-package.mjs"),
         ...(values.update ? ["--update"] : []), projectPackage]);

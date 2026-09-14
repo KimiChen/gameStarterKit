@@ -92,9 +92,6 @@ const entries = [fontEntry];
 const importedPackages = [];
 for (const packageName of await readdir(resolve(client, "src/ui-uniflex/imported")).catch(() => [])) {
     const packageRoot = resolve(client, "src/ui-uniflex/imported", packageName);
-    const manifest = JSON.parse(await readFile(resolve(packageRoot, "components.json"), "utf8"));
-    if (manifest.kind !== "uniflex-import-package")
-        throw new Error(`Invalid imported UniFlex package: ${packageName}`);
     const resourceManifest = JSON.parse(await readFile(resolve(packageRoot, "manifest.json"), "utf8"));
     if (!Array.isArray(resourceManifest.assets) || resourceManifest.version !== 1)
         throw new Error(`Invalid UniFlex resource manifest: ${packageName}/manifest.json`);
@@ -107,7 +104,7 @@ for (const packageName of await readdir(resolve(client, "src/ui-uniflex/imported
             entries.push({
                 id: resource.id,
                 kind: "font",
-                file: `imported/${packageName}/${resource.path}`,
+                file: `imported/${packageName}/${resource.file}`,
                 ...(resource.weight === undefined ? {} : { weight: resource.weight }),
                 sha256: resource.sha256,
             });
