@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createImageResourceEntry } from "./lib/uniflex-resources.mjs";
+import {
+    createImageResourceEntry,
+    normalizeImportedImageResource,
+} from "./lib/uniflex-resources.mjs";
 
 test("UniFlex image resource preserves nine-slice insets", () => {
     assert.deepEqual(createImageResourceEntry({
@@ -27,4 +30,11 @@ test("UniFlex image resource omits unset nine-slice metadata", () => {
         path: "assets/icon.png",
         sha256: "def",
     }, "Example"), "nineSlice"), false);
+});
+
+test("UniFlex resource manifest entries use file while legacy entries use path", () => {
+    assert.equal(normalizeImportedImageResource({ file: "assets/panel.png" }).path,
+        "assets/panel.png");
+    assert.equal(normalizeImportedImageResource({ path: "assets/legacy.png" }).path,
+        "assets/legacy.png");
 });
