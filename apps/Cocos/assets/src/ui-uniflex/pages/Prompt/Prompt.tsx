@@ -28,7 +28,7 @@ export const Prompt = defineView<PromptParams, void>({ zIndex: 'window' }, (cont
         <view name="Prompt/Content" style={{ width: '100%', height: '100%' }}>
             <text name="Prompt/Message" value={p.message}
                 style={{ width: '100%', height: 104, font: theme.font, fontSize: 28,
-                    color: p.theme?.messageColor ?? theme.text, bold: true,
+                    color: p.theme?.messageColor ?? theme.text,
                     horizontalAlign: 'center', verticalAlign: 'center', wrap: true, overflow: 'shrink' }} />
             <view name="Prompt/Actions" style={{ position: 'absolute', bottom: 0, width: '100%',
                 flexDirection: 'row', justifyContent: 'center', gap: 87 }}>
