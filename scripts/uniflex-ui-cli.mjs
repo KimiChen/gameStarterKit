@@ -100,7 +100,7 @@ export async function runCli(argv, {
         await copyFile(supplement, join(projectPackage, "psd-extra.json"));
     }
     run(process.execPath, [join(root, "scripts/import-uniflex-package.mjs"),
-        ...(values.update ? ["--update"] : []), projectPackage]);
+        ...(values.update ? ["--update"] : []), "--name", values.name, projectPackage]);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
