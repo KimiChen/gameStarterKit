@@ -9,10 +9,13 @@ const packageArg = process.argv.slice(2).find((arg, index, args) =>
     !arg.startsWith("--") && !(index > 0 && args[index - 1] === "--out"));
 const packageDir = resolve(packageArg || "");
 if (!packageDir) throw new Error("Usage: npm run import:uniflex-ui -- /path/to/project-package");
-const manifest = JSON.parse(await readFile(resolve(packageDir, "components.json"), "utf8"));
-if (![1, 2].includes(manifest.schemaVersion) || manifest.kind !== "uniflex-import-package")
+const project = JSON.parse(await readFile(resolve(packageDir, "design.json"), "utf8"));
+const resourcesManifest = JSON.parse(await readFile(resolve(packageDir, "manifest.json"), "utf8"));
+if (project.schemaVersion !== 1 || project.kind !== "uniflex-design")
     throw new Error("Invalid UniFlex import package.");
-const name = String(manifest.name).replace(/[^a-zA-Z0-9_-]+/g, "_");
+if (resourcesManifest.version !== 1 || !Array.isArray(resourcesManifest.assets))
+    throw new Error("Invalid UniFlex resource manifest.");
+const name = String(project.name).replace(/[^a-zA-Z0-9_-]+/g, "_");
 const target = outputArg
     ? resolve(root, outputArg)
     : resolve(root, "apps/client/src/ui-uniflex/imported", name);
@@ -24,23 +27,5 @@ if (exists && !update)
     throw new Error(`Import target already exists: ${target}; pass --update to refresh it.`);
 await mkdir(dirname(target), { recursive: true });
 await cp(packageDir, target, { recursive: true });
-const resources = Array.isArray(manifest.resources) ? manifest.resources : [];
-await writeFile(resolve(target, "manifest.json"), JSON.stringify({
-    version: 1,
-    assets: resources.map((resource) => ({
-        id: resource.id,
-        name: resource.name ?? resource.id,
-        kind: resource.kind,
-        file: resource.path,
-        ...(resource.width === undefined ? {} : { width: resource.width }),
-        ...(resource.height === undefined ? {} : { height: resource.height }),
-        ...(resource.sha256 === undefined ? {} : { sha256: resource.sha256 }),
-        ...(resource.nineSlice === undefined ? {} : { nineSlice: resource.nineSlice }),
-    })),
-}, null, 2) + "\n");
-await writeFile(resolve(target, "import.json"), JSON.stringify({
-    schemaVersion: 1, kind: "uniflex-project-import", name,
-    source: manifest.sourceDesign, canvas: manifest.canvas,
-    interactiveNodes: manifest.interactiveNodes,
-}, null, 2) + "\n");
+await writeFile(resolve(target, "manifest.json"), JSON.stringify(resourcesManifest, null, 2) + "\n");
 console.log(`Imported UniFlex UI ${name} into ${target}`);

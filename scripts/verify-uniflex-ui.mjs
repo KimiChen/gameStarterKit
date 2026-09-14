@@ -42,27 +42,17 @@ if (!packageDir) {
         if (!ok) (severity === "error" ? errors : warnings).push(`${name}: ${detail}`);
     };
     try {
-        const manifest = JSON.parse(await readFile(resolve(dir, "components.json"), "utf8"));
-        add("manifest.kind", manifest.kind === "uniflex-import-package", `expected uniflex-import-package, got ${manifest.kind}`);
-        add("manifest.schemaVersion", [1, 2].includes(manifest.schemaVersion), `unsupported schema ${manifest.schemaVersion}`);
-        add("manifest.sourceDesign", typeof manifest.sourceDesign === "string" && await exists(manifest.sourceDesign),
-            `sourceDesign must be a file in the package: ${manifest.sourceDesign}`);
-        if (manifest.sourceSupplement !== undefined)
-            add("manifest.sourceSupplement", typeof manifest.sourceSupplement === "string"
-                && await exists(manifest.sourceSupplement),
-            `sourceSupplement must be a file in the package: ${manifest.sourceSupplement}`);
-        const canvas = manifest.canvas;
-        add("manifest.canvas", Number.isInteger(canvas?.width) && Number.isInteger(canvas?.height)
+        const project = JSON.parse(await readFile(resolve(dir, "design.json"), "utf8"));
+        const resourcesManifest = JSON.parse(await readFile(resolve(dir, "manifest.json"), "utf8"));
+        add("design.kind", project.kind === "uniflex-design", `expected uniflex-design, got ${project.kind}`);
+        add("design.schemaVersion", project.schemaVersion === 1, `unsupported schema ${project.schemaVersion}`);
+        add("manifest.version", resourcesManifest.version === 1, `unsupported resource manifest version ${resourcesManifest.version}`);
+        add("manifest.assets", Array.isArray(resourcesManifest.assets), "manifest.assets must be an array");
+        const canvas = project.canvas;
+        add("design.canvas", Number.isInteger(canvas?.width) && Number.isInteger(canvas?.height)
             && canvas.width > 0 && canvas.height > 0, "canvas width/height must be positive integers");
 
-        if (canvas?.width && canvas?.height && typeof manifest.sourceDesign === "string"
-            && manifest.sourceDesign.endsWith(".json") && await exists(manifest.sourceDesign)) {
-            const source = JSON.parse(await readFile(resolve(dir, manifest.sourceDesign), "utf8"));
-            add("sourceDesign.canvas", source.canvas?.width === canvas.width && source.canvas?.height === canvas.height,
-                `source=${source.canvas?.width}x${source.canvas?.height}, package=${canvas.width}x${canvas.height}`);
-        }
-
-        const nodes = Array.isArray(manifest.interactiveNodes) ? manifest.interactiveNodes : [];
+        const nodes = [];
         const names = new Set();
         for (const node of nodes) {
             const stableName = node.name ?? node.stableKey;
@@ -75,43 +65,31 @@ if (!packageDir) {
             }
             add(`interactive.action.${node.id}`, ["primary", "back", "tab", "close", "select"].includes(node.action),
                 `unsupported action ${node.action}`);
-            add(`interactive.binding.${node.id}`, Boolean(node.binding || manifest.bindings?.[stableName]),
+            add(`interactive.binding.${node.id}`, Boolean(node.binding || project.bindings?.[stableName]),
                 "candidate has no business onAction binding; it will be listed as unbound", "warning");
         }
 
-        const spec = manifest.decompositionSpec || manifest.decomposition;
-        add("nineSlice.spec", Boolean(spec?.nineSlice || manifest.nineSlice),
+        const spec = project.decompositionSpec || project.decomposition;
+        add("nineSlice.spec", Boolean(spec?.nineSlice || project.nineSlice),
             "no explicit nine-slice declarations; bottom/frame/button layers must be reviewed", "warning");
-        const candidates = (manifest.components || []).filter((item) =>
-            /button|btn|frame|panel|底框|按钮|面板/i.test(`${item.name} ${item.node}`));
-        for (const candidate of candidates)
-            add(`nineSlice.${candidate.id}`, Boolean(candidate.nineSlice
-                || spec?.nineSlice?.[candidate.id]
-                || spec?.nineSlice?.[`ROLE::${candidate.id}`]),
-                "frame/button component has no explicit nine-slice bounds", "warning");
-
-        const resources = Array.isArray(manifest.resources) ? manifest.resources : [];
+        const resources = Array.isArray(resourcesManifest.assets) ? resourcesManifest.assets : [];
         for (const resource of resources) {
-            add(`resource.${resource.id}`, await exists(resource.path),
-                `missing resource ${resource.path}`);
+            add(`resource.${resource.id}`, await exists(resource.file),
+                `missing resource ${resource.file}`);
             if (resource.kind === "font")
                 add(`font.metrics.${resource.id}`, Boolean(resource.metrics?.advances),
                     "font resource has no advances metrics; empty font catalog cannot render editable text", "warning");
         }
-        const sourcePath = manifest.sourceDesign && resolve(dir, manifest.sourceDesign);
-        let sourceDesign = null;
+        const sourceDesign = project;
         let sourceSupplement = null;
-        if (sourcePath && manifest.sourceDesign?.endsWith(".json") && await exists(manifest.sourceDesign)) {
-            sourceDesign = JSON.parse(await readFile(sourcePath, "utf8"));
-            const textNodes = Object.values(sourceDesign.nodes || {}).filter((node) => node.kind === "text");
-            for (const node of textNodes) {
-                const font = sourceDesign.fonts?.[node.text?.fontId];
-                add(`text.fontRef.${node.id}`, Boolean(node.text?.fontId && font?.path && font?.sha256),
-                    "text layer has no explicit fontRef/path/hash");
-            }
+        const textNodes = Object.values(sourceDesign.nodes || {}).filter((node) => node.kind === "text");
+        for (const node of textNodes) {
+            const font = sourceDesign.fonts?.[node.text?.fontId];
+            add(`text.fontRef.${node.id}`, Boolean(node.text?.fontId && font?.path && font?.sha256),
+                "text layer has no explicit fontRef/path/hash");
         }
-        if (manifest.sourceSupplement && await exists(manifest.sourceSupplement)) {
-            sourceSupplement = JSON.parse(await readFile(resolve(dir, manifest.sourceSupplement), "utf8"));
+        if (await exists("psd-extra.json")) {
+            sourceSupplement = JSON.parse(await readFile(resolve(dir, "psd-extra.json"), "utf8"));
             add("sourceSupplement.kind", sourceSupplement.kind === "psd-supplement",
                 `expected psd-supplement, got ${sourceSupplement.kind}`);
             add("sourceSupplement.schemaVersion", sourceSupplement.schemaVersion === 1,
@@ -124,55 +102,6 @@ if (!packageDir) {
             "supplement layers must be an object keyed by stable layer id");
         }
         const componentAudit = [];
-        for (const component of Array.isArray(manifest.components) ? manifest.components : []) {
-            const sourceNode = sourceDesign?.nodes?.[component.id] ?? null;
-            const interactive = nodes.find((node) => node.id === component.id) ?? null;
-            const stableKey = component.stableKey
-                ?? interactive?.stableKey
-                ?? (typeof interactive?.name === "string" && interactive.name.startsWith("ROLE::")
-                    ? interactive.name.slice("ROLE::".length) : null);
-            const frame = sourceNode?.frame ?? null;
-            const frameValid = Boolean(frame
-                && [frame.x, frame.y, frame.width, frame.height].every(Number.isFinite)
-                && frame.width > 0 && frame.height > 0);
-            const fileValid = typeof component.file === "string" && await exists(component.file);
-            const semanticKind = component.kind ?? sourceNode?.kind ?? "unknown";
-            const descendants = [];
-            const visit = (id) => {
-                const node = sourceDesign?.nodes?.[id];
-                if (!node) return;
-                descendants.push(node);
-                for (const child of Array.isArray(node.children) ? node.children : []) visit(child);
-            };
-            if (sourceNode) visit(sourceNode.id);
-            const rasterizedLayers = descendants.filter((node) => node.kind === "image").map((node) => node.id);
-            const rasterized = rasterizedLayers.length > 0;
-            add(`component.${component.id}.sourceNode`, Boolean(sourceNode),
-                `component must reference a node in sourceDesign: ${component.id}`);
-            add(`component.${component.id}.file`, fileValid,
-                `component source file is missing: ${component.file}`);
-            add(`component.${component.id}.frame`, frameValid,
-                "component must have a positive sourceDesign frame");
-            add(`component.${component.id}.stableKey`, typeof stableKey === "string" && stableKey.length > 0,
-                "component needs a stableKey or a matching ROLE:: interactive candidate", "warning");
-            componentAudit.push({
-                id: component.id,
-                name: component.name ?? sourceNode?.name ?? component.id,
-                stableKey,
-                file: component.file ?? null,
-                semanticKind,
-                rasterized,
-                visualMode: rasterized
-                    ? (semanticKind === "image" ? "rasterized" : "semantic-container-with-rasterized-children")
-                    : "semantic",
-                rasterizedLayers,
-                editable: component.editable ?? rasterizedLayers.length === 0,
-                frame: frameValid ? frame : null,
-                interactive: interactive
-                    ? { name: interactive.name ?? null, action: interactive.action, bound: Boolean(interactive.binding || manifest.bindings?.[interactive.name ?? stableKey]) }
-                    : null,
-            });
-        }
         const decompositionCandidates = [];
         if (sourceSupplement?.layers && sourceDesign?.nodes) {
             const supplementLayers = sourceSupplement.layers;
@@ -247,7 +176,7 @@ if (!packageDir) {
                 components: componentAudit,
             },
             decomposition: {
-                sourceSupplement: manifest.sourceSupplement ?? null,
+                sourceSupplement: sourceSupplement ? "psd-extra.json" : null,
                 candidates: decompositionCandidates,
                 candidateCount: decompositionCandidates.filter((item) => item.status === "candidate").length,
                 blockedCount: decompositionCandidates.filter((item) => item.status === "blocked").length,
@@ -271,8 +200,6 @@ if (!packageDir) {
                     if (sourceSize === webSize && typeof sourceDesign === "object") {
                         const regions = [
                             ...nodes.map((node) => ({ id: node.name ?? node.stableKey ?? node.id, nodeId: node.id })),
-                            ...(Array.isArray(manifest.components) ? manifest.components
-                                .map((component) => ({ id: component.name ?? component.id, nodeId: component.id })) : []),
                         ];
                         const seenRegions = new Set();
                         for (const region of regions) {

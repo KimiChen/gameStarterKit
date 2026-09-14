@@ -20,10 +20,11 @@ if (!packageDir || !output) {
 }
 
 const dir = resolve(root, packageDir);
-const manifest = JSON.parse(await readFile(resolve(dir, "components.json"), "utf8"));
-const designPath = resolve(dir, manifest.sourceDesign);
+const project = JSON.parse(await readFile(resolve(dir, "design.json"), "utf8"));
+const resourcesManifest = JSON.parse(await readFile(resolve(dir, "manifest.json"), "utf8"));
+const designPath = resolve(dir, "design.json");
 const design = JSON.parse(await readFile(designPath, "utf8"));
-const canvas = design.canvas;
+const canvas = project.canvas ?? design.canvas;
 if (!Number.isInteger(canvas?.width) || !Number.isInteger(canvas?.height)) {
     throw new Error("sourceDesign.canvas must contain positive integer width and height");
 }
@@ -35,9 +36,9 @@ for (const [id, asset] of Object.entries(design.assets ?? {})) {
     await access(path);
     assets.set(id, path);
 }
-for (const resource of manifest.resources ?? []) {
+for (const resource of resourcesManifest.assets ?? []) {
     if (resource.kind !== "image" || assets.has(resource.id)) continue;
-    const path = resolve(dir, resource.path);
+    const path = resolve(dir, resource.file);
     await access(path);
     assets.set(resource.id, path);
 }

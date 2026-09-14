@@ -97,7 +97,7 @@ apps/Cocos/
   `BackpackAction` 回调输出动作。独立 WebProvider 宿主在 `apps/web-ui-preview/`，通过
   `npm run dev:uniflex-web` 启动，消费相同 AOT、字体和页面资源。
 - PSD 导入包必须经过 `npm run ui:check-source -- --package <package> --strict`；
-  `components.json.sourceDesign` 与 `canvas` 是正式验收输入，Web 只能先与独立源图形成 proposal，
+  `design.json` 的 `canvas` 是正式验收输入，Web 只能先与独立源图形成 proposal，
   经人工批准后才允许 Cocos 对照。导入组件保持纯展示态，业务 Logic、路由和服务端命令绑定放在
   业务目录，不写入 `imported/`。
   对 `design.json` 源图可使用
@@ -109,7 +109,7 @@ apps/Cocos/
   --web-image <proposal.png> --approval <approval.json>` 生成批准件；Cocos 证据必须带同一批准件。
   Cocos 正式 Golden 使用真实 Creator 预览中的 RenderTexture 采集，命令为
   `npm run ui:capture-cocos-golden -- --screen backpack --out /tmp/backpack-cocos.png`；
-  该命令输出必须是 `components.json.canvas` 的原生尺寸，再交给
+  该命令输出必须是 `design.json.canvas` 的原生尺寸，再交给
   `npm run ui:verify -- ... --cocos-image /tmp/backpack-cocos.png --approval <approval.json>`。
   Creator 工具栏截图只能作为运行佐证，不能作为像素验收输入。
 - `apps/client/src/shared` 禁止手改；改 `apps/shared/src`。
