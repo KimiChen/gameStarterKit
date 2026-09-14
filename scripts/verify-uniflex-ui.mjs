@@ -69,17 +69,27 @@ if (!packageDir) {
                 "candidate has no business onAction binding; it will be listed as unbound", "warning");
         }
 
-        const spec = project.decompositionSpec || project.decomposition;
-        add("nineSlice.spec", Boolean(spec?.nineSlice || project.nineSlice),
-            "no explicit nine-slice declarations; bottom/frame/button layers must be reviewed", "warning");
         const resources = Array.isArray(resourcesManifest.assets) ? resourcesManifest.assets : [];
+        let nineSliceCount = 0;
         for (const resource of resources) {
             add(`resource.${resource.id}`, await exists(resource.file),
                 `missing resource ${resource.file}`);
+            if (resource.nineSlice !== undefined) {
+                nineSliceCount += 1;
+                const valid = Array.isArray(resource.nineSlice) && resource.nineSlice.length === 4
+                    && resource.nineSlice.every((value) => Number.isFinite(value) && value >= 0)
+                    && (!Number.isInteger(resource.width) || !Number.isInteger(resource.height)
+                        || (resource.nineSlice[0] + resource.nineSlice[2] <= resource.width
+                            && resource.nineSlice[1] + resource.nineSlice[3] <= resource.height));
+                add(`nineSlice.${resource.id}`, valid,
+                    "nineSlice must be four non-negative insets within the image bounds");
+            }
             if (resource.kind === "font")
                 add(`font.metrics.${resource.id}`, Boolean(resource.metrics?.advances),
                     "font resource has no advances metrics; empty font catalog cannot render editable text", "warning");
         }
+        add("nineSlice.declarations", nineSliceCount > 0,
+            "no resource declares nineSlice; review stretchable frame and button assets", "warning");
         const sourceDesign = project;
         let sourceSupplement = null;
         const textNodes = Object.values(sourceDesign.nodes || {}).filter((node) => node.kind === "text");
