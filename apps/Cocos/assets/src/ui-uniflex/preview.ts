@@ -96,7 +96,7 @@ export function createPromptPreview(parent: Node, hasCancel: boolean) {
     let disposed = false;
     const dispose = (): void => { if (disposed) return; disposed = true; view.off("canvas-resize", resize); try { runtime.dispose(); } finally { root.destroy(); } };
     return {
-        ready: runtime.start(Prompt, { theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254", confirmOutline: "#643e14", cancelOutline: "#4e783b" }, title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: hasCancel ? "取消" : null, onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: dispose, onClose: dispose }),
+        ready: runtime.start(Prompt, { theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" }, title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: hasCancel ? "取消" : null, onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: dispose, onClose: dispose }),
         dispose,
     };
 }

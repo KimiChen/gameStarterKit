@@ -2,12 +2,14 @@
   "schemaVersion": 1,
   "kind": "uniflex-import-package",
   "name": "Prompt",
-  "canvas": { "width": 750, "height": 1624 },
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
   "entry": "Prompt.authoring.tsx",
-  "resources": [
-    { "id": "prompt/popup", "kind": "image", "path": "assets/popup_prompt_bg_9slice.png", "sha256": "2797dd1809f98ce5af8824f9fb91f1546d28a72de30bbfd32202b214e12d6a3e", "width": 130, "height": 126, "nineSlice": [90, 88, 36, 34], "mime": "image/png" },
-    { "id": "prompt/close", "kind": "image", "path": "assets/popup_prompt_close.png", "sha256": "b8b0aad4e792ac342604ef003be7f7e7493f850bd4bccfd626efb3cb091c0f78", "width": 50, "height": 50, "mime": "image/png" },
-    { "id": "prompt/confirm", "kind": "image", "path": "assets/button_confirm_bg_9slice.png", "sha256": "f050525d5e2da557f727a0b57edc40a1a4d236f96044266d4668a49128d61611", "width": 82, "height": 75, "nineSlice": [26, 32, 52, 39], "mime": "image/png" },
-    { "id": "prompt/cancel", "kind": "image", "path": "assets/button_cancel_bg_9slice.png", "sha256": "d3505f7f9823e207f76158497cf8eb4acfc203cd8312340eae4842d8c0d47083", "width": 82, "height": 75, "nineSlice": [26, 32, 52, 39], "mime": "image/png" }
+  "sharedComponents": [
+    "components/popup/PopupFrame",
+    "components/button/ConfirmButton",
+    "components/button/CancelButton"
   ]
 }

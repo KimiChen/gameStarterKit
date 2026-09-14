@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, Confirm, Prompt, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, Confirm, PreviewHome, Prompt, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from "../client/src/designSpec";
@@ -8,6 +8,8 @@ import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
 const container = document.getElementById("ui")!;
 const screen = new URLSearchParams(location.search).get("screen");
 const prompt = new URLSearchParams(location.search).get("ui") === "prompt";
+const smallPopup = new URLSearchParams(location.search).get("ui") === "small-popup";
+const route = new URLSearchParams(location.search).get("ui");
 const designHeight = screen === "backpack" ? 1334 : DESIGN_HEIGHT;
 container.style.height = `${designHeight}px`;
 const resize = () => {
@@ -27,10 +29,17 @@ function dispose() {
     window.removeEventListener("resize", resize);
     runtime.dispose();
 }
+function backToPreview() {
+    location.href = '/';
+}
 window.addEventListener("pagehide", dispose, { once: true });
 try {
-    if (prompt) {
-        await runtime.start(Prompt, { theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254", confirmOutline: "#643e14", cancelOutline: "#4e783b" }, title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: "取消", onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: dispose, onClose: dispose });
+    if (!route) {
+        await runtime.start(PreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
+    } else if (smallPopup) {
+        await runtime.start(SmallPopup, { title: "标题", onClose: backToPreview });
+    } else if (prompt) {
+        await runtime.start(Prompt, { theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" }, title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: "取消", onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: backToPreview, onClose: backToPreview });
     } else if (screen === "backpack") {
         document.title = "UniFlex Backpack";
         const onAction = (action: BackpackAction) => {

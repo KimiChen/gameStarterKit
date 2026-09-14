@@ -1,5 +1,5 @@
 import { access, cp, mkdir } from "node:fs/promises";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { context } from "esbuild";
 
 const root = resolve(import.meta.dirname, "..");
@@ -19,6 +19,17 @@ const build = await context({
     target: "es2022",
     sourcemap: true,
     logLevel: "info",
+    plugins: [{
+        name: "uniflex-generated-relative-imports",
+        setup(api) {
+            api.onResolve({ filter: /^(\.\.\/)+kits\/|^(\.\.\/)+themes\// }, (args) => {
+                const marker = args.path.includes("/kits/") ? "/kits/" : "/themes/";
+                const suffix = args.path.slice(args.path.indexOf(marker) + marker.length);
+                const base = marker === "/themes/" ? resolve(root, "apps/client/src/ui-uniflex/themes", suffix) : resolve(root, "apps/client/src/kits", suffix);
+                return { path: base.endsWith(".ts") ? base : `${base}.ts` };
+            });
+        },
+    }],
 });
 await build.watch();
 const { port } = await build.serve({ host: "127.0.0.1", servedir: output });
