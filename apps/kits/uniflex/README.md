@@ -24,6 +24,28 @@ kit 不反向导入这些文件；调用方传入 provider 资源映射、`loadU
 作者态的 `defineView` 保留 `@uniflex/compiler` 导入，这是 AOT 编译器识别的标记；
 编译器输出中的 SDK 内部导入由生成器管理，不人工修改。
 
+图片九宫格直接写在导入包 `components.json` 的图片资源条目中，不读取图片旁边的同名
+JSON 文件。`nineSlice` 顺序为 `[left, top, right, bottom]`，单位是原图像素；组件中的
+`<image>` 还必须设置 `sizeMode: "sliced"`，例如：
+
+```json
+{
+  "id": "panel-bg",
+  "kind": "image",
+  "path": "assets/panel-bg.png",
+  "width": 200,
+  "height": 100,
+  "nineSlice": [16, 16, 16, 16]
+}
+```
+
+```tsx
+<image source={imageRef("panel-bg")} style={{ width: 640, height: 300, sizeMode: "sliced" }} />
+```
+
+`npm run build:uniflex-ui` 会把该字段写入共享 resource catalog，Cocos 和 Web 共用同一份
+资源元数据；构建时也会校验 inset 不超过原图尺寸。
+
 依赖安装、AOT 命令和产物边界见 [客户端文档](../../../docs/CLIENT.md)。
 源码经 `npm run sync:client` 镜像到 Cocos，禁止手改镜像。
 `npm run test:client` 覆盖两端生命周期和 kit 导入边界；
