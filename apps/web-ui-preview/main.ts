@@ -4,6 +4,7 @@ import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from "../client/src/designSpec";
 import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
+import { promptPsdOwnership } from "./psd-ownership";
 
 const container = document.getElementById("ui")!;
 const screen = new URLSearchParams(location.search).get("screen");
@@ -60,9 +61,10 @@ try {
     logic.onClose = dispose;
     await runtime.start(Confirm, { logic, isActive: () => !stopped });
     }
-    document.documentElement.dataset.uniflexReady = "true";
+    const snapshot = runtime.snapshot(DESIGN_WIDTH, designHeight);
     (window as typeof window & { __UNIFLEX_DESIGN_SNAPSHOT__?: unknown }).__UNIFLEX_DESIGN_SNAPSHOT__ =
-        runtime.snapshot(DESIGN_WIDTH, designHeight);
+        prompt ? { ...snapshot, componentDeclarations: promptPsdOwnership(snapshot.nodes) } : snapshot;
+    document.documentElement.dataset.uniflexReady = "true";
 } catch (error) {
     if (!stopped) console.error("[UniFlex Web] 预览启动失败：", error);
     dispose();
