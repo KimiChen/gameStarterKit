@@ -3,6 +3,7 @@ import { UniFlexRuntime, type UniFlexUIBundle } from "../../runtime";
 
 export { WebProvider };
 export type { WebProviderOptions, WebResourceMapping } from "../../../../lib/uniflex/mod/web/index";
+export type { UniFlexDesignSnapshot } from "../../runtime";
 
 export interface UniFlexWebRuntimeOptions extends WebProviderOptions {
     readonly loadUI: (provider: WebProvider) => Promise<UniFlexUIBundle>;

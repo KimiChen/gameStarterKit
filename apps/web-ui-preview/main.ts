@@ -61,6 +61,8 @@ try {
     await runtime.start(Confirm, { logic, isActive: () => !stopped });
     }
     document.documentElement.dataset.uniflexReady = "true";
+    (window as typeof window & { __UNIFLEX_DESIGN_SNAPSHOT__?: unknown }).__UNIFLEX_DESIGN_SNAPSHOT__ =
+        runtime.snapshot(DESIGN_WIDTH, designHeight);
 } catch (error) {
     if (!stopped) console.error("[UniFlex Web] 预览启动失败：", error);
     dispose();
