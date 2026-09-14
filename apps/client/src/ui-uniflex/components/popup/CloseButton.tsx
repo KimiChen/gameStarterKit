@@ -6,6 +6,6 @@ export const CloseButton = defineComponent<{ readonly onClick?: () => void }>((p
     <view name="CloseButton" interaction="press" onClick={() => p.onClick?.()}
         style={{ position: 'absolute', right: 15, top: 6, width: 72, height: 72 }}>
         <image source={imageRef('ui/popup/close')}
-            style={{ left: 11, top: 11, width: 50, height: 50 }} />
+            style={{ position: 'absolute', left: 11, top: 11, width: 50, height: 50 }} />
     </view>
 ));
