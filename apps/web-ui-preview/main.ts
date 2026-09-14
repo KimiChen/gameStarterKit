@@ -1,6 +1,7 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, Confirm, PreviewHome, Prompt, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, Confirm, MailBattleReport, PreviewHome, Prompt, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
+import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from "../client/src/designSpec";
 import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
@@ -12,7 +13,7 @@ const prompt = new URLSearchParams(location.search).get("ui") === "prompt";
 const smallPopup = new URLSearchParams(location.search).get("ui") === "small-popup";
 const route = new URLSearchParams(location.search).get("ui");
 const backpack = screen === "backpack" || route === "backpack";
-const designHeight = backpack ? 1334 : DESIGN_HEIGHT;
+const designHeight = backpack || screen === "mail" || route === "mail" ? 1334 : DESIGN_HEIGHT;
 container.style.height = `${designHeight}px`;
 const resize = () => {
     const scale = Math.min(innerWidth / DESIGN_WIDTH, innerHeight / designHeight);
@@ -36,7 +37,7 @@ function backToPreview() {
 }
 window.addEventListener("pagehide", dispose, { once: true });
 try {
-    if (!route) {
+    if (!route && !screen) {
         await runtime.start(PreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
     } else if (smallPopup) {
         await runtime.start(SmallPopup, { title: "标题", onClose: backToPreview });
@@ -50,6 +51,15 @@ try {
         };
         await runtime.start(Backpack, { onAction });
         console.info("[UniFlex Backpack] ready");
+    } else if (screen === "mail" || route === "mail") {
+        document.title = "UniFlex Mail Battle Report";
+        const params: MailBattleReportParams = {
+            onBack: backToPreview,
+            onDeleteRead: () => console.info("[UniFlex MailBattleReport] delete-read"),
+            onConfirm: () => console.info("[UniFlex MailBattleReport] confirm"),
+        };
+        await runtime.start(MailBattleReport, params);
+        console.info("[UniFlex MailBattleReport] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "assets": [
+    {"id":"ui/mail/header","kind":"image","file":"assets/mail_header.png","width":172,"height":90,"sha256":"d0c56ce54a511f5c5ab9603448ebd904dc32cc18e0afd7fd40a4af0975ed68a2","nineSlice":[164,0,4,0]},
+    {"id":"ui/mail/footer","kind":"image","file":"assets/mail_footer.png","width":16,"height":21,"sha256":"c5e57dfb2188a457e71999ee277148a00bfc011ab5e8d67d7ad54ba6f2e1683a","nineSlice":[6,8,6,9]},
+    {"id":"ui/mail/back","kind":"image","file":"assets/back.png","width":64,"height":56,"sha256":"57947f8cae29a4c6c1b4033d835f0856af046ecb50161d96d8cab828813298ff"},
+    {"id":"ui/mail/tab-active","kind":"image","file":"assets/mail_tab_active.png","width":40,"height":22,"sha256":"819e790499db92b1b34ddfc2115d20e158c6d878728fb812fcd89a87517065f8","nineSlice":[18,18,18,0]},
+    {"id":"ui/mail/tab-inactive","kind":"image","file":"assets/mail_tab_inactive.png","width":36,"height":20,"sha256":"7386b155ee6569ecb201d7f5f8df5ffab1023942b803d473a4a4d573e199273c","nineSlice":[16,16,16,0]},
+    {"id":"ui/mail/number-badge","kind":"image","file":"assets/mail_number_badge.png","width":34,"height":34,"sha256":"d5f683de928013b2241fbdb52a71c76ebeab8b00a42c056ea8d394ccab309fdc"},
+    {"id":"ui/mail/count-bg","kind":"image","file":"assets/mail_count_bg.png","width":48,"height":40,"sha256":"b5fea296b72365ec0d1e8455671e281cbbc609393bd54f2ab0ec567b8ec699c1","nineSlice":[22,0,22,0]},
+    {"id":"ui/mail/count-icon","kind":"image","file":"assets/mail_count_icon.png","width":30,"height":32,"sha256":"a3d4c2052bfb102cd052e6629151a45a14e194687e0bb85c217957e2cc7f2871"},
+    {"id":"ui/mail/row","kind":"image","file":"assets/mail_row.png","width":730,"height":163,"sha256":"8c6ed2cdf3c0f07910ccdec778e665555370c17b23b87e735f309212fb54db45"},
+    {"id":"ui/mail/icon-bg","kind":"image","file":"assets/mail_icon_bg.png","width":40,"height":40,"sha256":"014d757b57beb5e1473caab7269d1518cc9aadb952cc86c73883b3340e558fca","nineSlice":[18,20,18,16]},
+    {"id":"ui/mail/battle-icon","kind":"image","file":"assets/mail_battle_icon.png","width":91,"height":82,"sha256":"d4540689ddfc66eddfa4c3ffeb9248c0235b5acb6adf4f01255f7ca52a6e9a1d"},
+    {"id":"ui/mail/unread-dot","kind":"image","file":"assets/mail_unread_dot.png","width":24,"height":24,"sha256":"49a12d1599392c6b0346db2c3774512e74f2ced28831a5d664d09ea77a748f30"},
+    {"id":"ui/mail/read-stamp","kind":"image","file":"assets/mail_read_stamp.png","width":125,"height":78,"sha256":"c10decba81405acf16c409d5422f5137ff9bfd931878d4473b31d26a06ad71de"},
+    {"id":"ui/mail/read-overlay","kind":"image","file":"assets/mail_read_overlay.png","width":68,"height":74,"sha256":"9dcbd3055b45552d840ccf060960a81a1abb6620760dfdb81bd59880e3f82e11","nineSlice":[32,32,32,38]},
+    {"id":"ui/button/red","kind":"image","file":"assets/button_red.png","width":82,"height":75,"sha256":"9c5717140286289dd1691b0fcc05adc3bd7361979e7f6e4fd088e219c20e3ce6","nineSlice":[26,32,52,39]},
+    {"id":"ui/button/yellow","kind":"image","file":"assets/button_yellow.png","width":82,"height":75,"sha256":"f050525d5e2da557f727a0b57edc40a1a4d236f96044266d4668a49128d61611","nineSlice":[26,32,52,39]}
+  ]
+}

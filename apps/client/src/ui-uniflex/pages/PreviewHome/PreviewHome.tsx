@@ -4,7 +4,7 @@ import { CancelButton } from '../../components/button/CancelButton';
 import { theme } from '../../themes/active';
 
 export interface PreviewHomeParams {
-    readonly onNavigate: (target: 'prompt' | 'small-popup' | 'backpack') => void;
+    readonly onNavigate: (target: 'prompt' | 'small-popup' | 'backpack' | 'mail') => void;
 }
 
 /** Local preview router: keeps feature previews discoverable without coupling production navigation. */
@@ -18,6 +18,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             <CancelButton label="小弹窗底板" width={300} onClick={() => go('small-popup')} />
             <view interaction="press" onClick={() => go('backpack')} style={{ width: 300, height: 102, backgroundColor: '#53657d', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="背包界面" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('mail')} style={{ width: 300, height: 102, backgroundColor: '#72558f', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="邮件战报" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
         </view>
     </view>;
