@@ -30,7 +30,7 @@ function dispose() {
 window.addEventListener("pagehide", dispose, { once: true });
 try {
     if (prompt) {
-        await runtime.start(Prompt, { title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: "取消", onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: dispose, onClose: dispose });
+        await runtime.start(Prompt, { theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254", confirmOutline: "#643e14", cancelOutline: "#4e783b" }, title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: "取消", onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: dispose, onClose: dispose });
     } else if (screen === "backpack") {
         document.title = "UniFlex Backpack";
         const onAction = (action: BackpackAction) => {
