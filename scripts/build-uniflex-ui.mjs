@@ -6,10 +6,7 @@ import { create as createFont } from "fontkit";
 import ts from "typescript";
 import { canonicalJson, jsonHash, parseResourceCatalog } from "@uniflex/core/provider";
 import { createOutputWriter } from "./lib/uniflex-output.mjs";
-import {
-    createImageResourceEntry,
-    normalizeImportedImageResource,
-} from "./lib/uniflex-resources.mjs";
+import { createImageResourceEntry } from "./lib/uniflex-resources.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const client = resolve(root, "apps/client");
@@ -98,21 +95,14 @@ for (const packageName of await readdir(resolve(client, "src/ui-uniflex/imported
     const manifest = JSON.parse(await readFile(resolve(packageRoot, "components.json"), "utf8"));
     if (manifest.kind !== "uniflex-import-package")
         throw new Error(`Invalid imported UniFlex package: ${packageName}`);
-    const resourceManifest = await readFile(resolve(packageRoot, "manifest.json"), "utf8")
-        .then((value) => JSON.parse(value))
-        .catch((error) => {
-            if (error.code !== "ENOENT") throw error;
-            return null;
-        });
-    if (resourceManifest && (!Array.isArray(resourceManifest.assets)
-        || resourceManifest.version !== 1))
+    const resourceManifest = JSON.parse(await readFile(resolve(packageRoot, "manifest.json"), "utf8"));
+    if (!Array.isArray(resourceManifest.assets) || resourceManifest.version !== 1)
         throw new Error(`Invalid UniFlex resource manifest: ${packageName}/manifest.json`);
-    const resources = (resourceManifest?.assets || manifest.resources || [])
-        .map(normalizeImportedImageResource);
+    const resources = resourceManifest.assets;
     for (const resource of resources) {
-        const bytes = await readFile(resolve(packageRoot, resource.path));
+        const bytes = await readFile(resolve(packageRoot, resource.file));
         if (sha256(bytes) !== resource.sha256)
-            throw new Error(`Imported UniFlex resource hash mismatch: ${packageName}/${resource.path}`);
+            throw new Error(`Imported UniFlex resource hash mismatch: ${packageName}/${resource.file}`);
         if (resource.kind === "font") {
             entries.push({
                 id: resource.id,
@@ -143,8 +133,8 @@ for (const destination of [cocosResources, resolve(cache, "uniflex")]) {
         await emit(resolve(destination, `ui/${name}.json`), canonicalJson(pagePlan) + "\n");
     for (const imported of importedPackages) {
         for (const resource of imported.resources) {
-            await emit(resolve(destination, `imported/${imported.name}/${resource.path}`),
-                await readFile(resolve(client, "src/ui-uniflex/imported", imported.name, resource.path)));
+            await emit(resolve(destination, `imported/${imported.name}/${resource.file}`),
+                await readFile(resolve(client, "src/ui-uniflex/imported", imported.name, resource.file)));
         }
     }
     await emit(resolve(destination, "catalog.json"), canonicalJson(catalog) + "\n");
