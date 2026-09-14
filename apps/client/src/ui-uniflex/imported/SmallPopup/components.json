@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-import-package",
+  "name": "SmallPopup",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "entry": "SmallPopup.authoring.tsx",
+  "sharedComponents": [
+    "components/popup/PopupFrame"
+  ]
+}

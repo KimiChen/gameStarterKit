@@ -1,9 +1,1 @@
-{
-  "version": 1,
-  "assets": [
-    {"id":"prompt/popup","kind":"image","file":"assets/popup_prompt_bg_9slice.png","width":130,"height":126,"sha256":"2797dd1809f98ce5af8824f9fb91f1546d28a72de30bbfd32202b214e12d6a3e","nineSlice":[90,88,36,34]},
-    {"id":"prompt/close","kind":"image","file":"assets/popup_prompt_close.png","width":50,"height":50,"sha256":"b8b0aad4e792ac342604ef003be7f7e7493f850bd4bccfd626efb3cb091c0f78"},
-    {"id":"prompt/confirm","kind":"image","file":"assets/button_confirm_bg_9slice.png","width":82,"height":75,"sha256":"f050525d5e2da557f727a0b57edc40a1a4d236f96044266d4668a49128d61611","nineSlice":[26,32,52,39]},
-    {"id":"prompt/cancel","kind":"image","file":"assets/button_cancel_bg_9slice.png","width":82,"height":75,"sha256":"d3505f7f9823e207f76158497cf8eb4acfc203cd8312340eae4842d8c0d47083","nineSlice":[26,32,52,39]}
-  ]
-}
+{"version":1,"assets":[]}
