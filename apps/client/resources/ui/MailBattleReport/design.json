@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {"width": 750, "height": 1334},
+  "fonts": {"regular": {"path": "../../../../apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf", "sha256": "1846353947485b97808030078b5856b7be22e1b270e3231d907a0798bfd0ff14"}},
+  "assets": {
+    "header": {"path":"assets/mail_header.png"}, "footer": {"path":"assets/mail_footer.png"}, "back": {"path":"assets/back.png"},
+    "tabActive": {"path":"assets/mail_tab_active.png"}, "tabInactive": {"path":"assets/mail_tab_inactive.png"}, "badge": {"path":"assets/mail_number_badge.png"},
+    "countBg": {"path":"assets/mail_count_bg.png"}, "countIcon": {"path":"assets/mail_count_icon.png"}, "row": {"path":"assets/mail_row.png"},
+    "iconBg": {"path":"assets/mail_icon_bg.png"}, "battle": {"path":"assets/mail_battle_icon.png"}, "dot": {"path":"assets/mail_unread_dot.png"},
+    "stamp": {"path":"assets/mail_read_stamp.png"}, "overlay": {"path":"assets/mail_read_overlay.png"}, "red": {"path":"assets/button_red.png"}, "yellow": {"path":"assets/button_yellow.png"}
+  },
+  "roots": ["header", "tabs", "row1", "row2", "count", "footer", "back", "delete", "confirm"],
+  "bindings": {"邮件页签":"tab", "战报页签1":"tab", "战报页签2":"tab", "战报页签3":"tab", "战报页签4":"tab", "返回按钮":"back", "删除已读按钮":"primary", "确定按钮":"primary"},
+  "nodes": {
+    "header":{"id":"header","name":"邮件标题栏","kind":"image","frame":{"x":0,"y":0,"width":750,"height":90},"asset":"header"},
+    "tabs":{"id":"tabs","name":"邮件页签","kind":"group","frame":{"x":0,"y":90,"width":750,"height":90},"children":["tab1","tab2","tab3","tab4","badge"]},
+    "tab1":{"id":"tab1","name":"战报页签1","kind":"image","frame":{"x":14,"y":118,"width":170,"height":52},"asset":"tabInactive"},
+    "tab2":{"id":"tab2","name":"战报页签2","kind":"image","frame":{"x":195,"y":103,"width":176,"height":67},"asset":"tabActive"},
+    "tab3":{"id":"tab3","name":"战报页签3","kind":"image","frame":{"x":382,"y":118,"width":170,"height":52},"asset":"tabInactive"},
+    "tab4":{"id":"tab4","name":"战报页签4","kind":"image","frame":{"x":566,"y":118,"width":170,"height":52},"asset":"tabInactive"},
+    "badge":{"id":"badge","name":"未读数量","kind":"image","frame":{"x":346,"y":99,"width":34,"height":34},"asset":"badge"},
+    "row1":{"id":"row1","name":"未读战报条目","kind":"image","frame":{"x":10,"y":236,"width":730,"height":163},"asset":"row"},
+    "row2":{"id":"row2","name":"已读战报条目","kind":"image","frame":{"x":10,"y":424,"width":730,"height":163},"asset":"row"},
+    "count":{"id":"count","name":"邮件计数","kind":"image","frame":{"x":266,"y":1166,"width":218,"height":40},"asset":"countBg"},
+    "footer":{"id":"footer","name":"邮件底栏","kind":"image","frame":{"x":0,"y":1225,"width":750,"height":110},"asset":"footer"},
+    "back":{"id":"back","name":"返回按钮","kind":"image","frame":{"x":13,"y":1252,"width":64,"height":56},"asset":"back"},
+    "delete":{"id":"delete","name":"删除已读按钮","kind":"image","frame":{"x":143,"y":1242,"width":191,"height":76},"asset":"red"},
+    "confirm":{"id":"confirm","name":"确定按钮","kind":"image","frame":{"x":416,"y":1242,"width":191,"height":77},"asset":"yellow"},
+    "title":{"id":"title","name":"邮件标题文字","kind":"text","frame":{"x":38,"y":16,"width":300,"height":60},"text":{"fontId":"regular"}},
+    "countLabel":{"id":"countLabel","name":"邮件数文字","kind":"text","frame":{"x":300,"y":1166,"width":184,"height":40},"text":{"fontId":"regular"}}
+  }
+}
