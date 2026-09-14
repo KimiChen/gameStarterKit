@@ -1,6 +1,6 @@
 import { Node, UITransform, view } from "cc";
 import { UniFlexCocosRuntime } from "../kits/uniflex/api/cocos/index";
-import { Backpack, Confirm, MailBattleReport, Prompt, loadGameUI } from "./generated/ui";
+import { Backpack, Confirm, MailBattleReport, Prompt, Settings, loadGameUI } from "./generated/ui";
 import type { BackpackAction } from "./generated/Backpack";
 import type { MailBattleReportParams } from "./generated/MailBattleReport";
 import { resourceMap } from "./generated/resource-map";
@@ -128,6 +128,34 @@ export function createMailBattleReportPreview(
         ready: runtime.start(MailBattleReport, {
             ...params,
             onBack: () => { params.onBack?.(); dispose(); },
+        }),
+        dispose,
+    };
+}
+
+export function createSettingsPreview(parent: Node) {
+    const root = new Node("UniFlexSettings");
+    root.layer = parent.layer;
+    const transform = root.addComponent(UITransform);
+    parent.addChild(root);
+    const resize = (): void => {
+        const size = view.getVisibleSize();
+        transform.setContentSize(size.width, size.height);
+    };
+    resize();
+    view.on("canvas-resize", resize);
+    const runtime = new UniFlexCocosRuntime({ container: root, resources: resourceMap, loadUI: loadGameUI });
+    let disposed = false;
+    const dispose = (): void => {
+        if (disposed) return;
+        disposed = true;
+        view.off("canvas-resize", resize);
+        try { runtime.dispose(); } finally { root.destroy(); }
+    };
+    return {
+        ready: runtime.start(Settings, {
+            onClose: dispose,
+            onSelect: (id) => console.info("[UniFlex Settings] select", id),
         }),
         dispose,
     };
