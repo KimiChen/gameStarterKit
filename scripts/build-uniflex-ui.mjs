@@ -6,6 +6,7 @@ import { create as createFont } from "fontkit";
 import ts from "typescript";
 import { canonicalJson, jsonHash, parseResourceCatalog } from "@uniflex/core/provider";
 import { createOutputWriter } from "./lib/uniflex-output.mjs";
+import { createImageResourceEntry } from "./lib/uniflex-resources.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const client = resolve(root, "apps/client");
@@ -107,14 +108,7 @@ for (const packageName of await readdir(resolve(client, "src/ui-uniflex/imported
                 sha256: resource.sha256,
             });
         } else {
-            entries.push({
-                id: resource.id,
-                kind: "image",
-                file: `imported/${packageName}/${resource.path}`,
-                ...(resource.width === undefined ? {} : { width: resource.width }),
-                ...(resource.height === undefined ? {} : { height: resource.height }),
-                sha256: resource.sha256,
-            });
+            entries.push(createImageResourceEntry(resource, packageName));
         }
     }
     importedPackages.push({ name: packageName, resources: manifest.resources || [] });
