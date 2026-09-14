@@ -60,6 +60,7 @@ try {
     logic.onClose = dispose;
     await runtime.start(Confirm, { logic, isActive: () => !stopped });
     }
+    document.documentElement.dataset.uniflexReady = "true";
 } catch (error) {
     if (!stopped) console.error("[UniFlex Web] 预览启动失败：", error);
     dispose();
