@@ -27,6 +27,15 @@ const compareMetric = (arguments_) => {
         throw new Error(`ImageMagick compare returned no metric: ${output.trim()}`);
     return metric;
 };
+const actionFor = (name) => {
+    if (!/(按钮|使用|返回|关闭|确定|取消|页签|分页|标签|tab|加|减|下一|上一|选择|装备|领取|确认|提交|use|button|back|close)/i.test(name))
+        return null;
+    if (/(返回|上一|back)/i.test(name)) return "back";
+    if (/(关闭|取消|close)/i.test(name)) return "close";
+    if (/(页签|标签|tab|分页)/i.test(name)) return "tab";
+    if (/(使用|领取|确认|提交|装备|use)/i.test(name)) return "primary";
+    return "select";
+};
 
 if (!packageDir) {
     console.error("Usage: npm run ui:verify -- --package <project-package> [--strict] [--report <file>]");
@@ -52,7 +61,10 @@ if (!packageDir) {
         add("design.canvas", Number.isInteger(canvas?.width) && Number.isInteger(canvas?.height)
             && canvas.width > 0 && canvas.height > 0, "canvas width/height must be positive integers");
 
-        const nodes = [];
+        const nodes = Object.values(project.nodes || {})
+            .map((node) => ({ id: node.id, name: node.name, action: actionFor(node.name ?? "") }))
+            .filter((node) => node.action)
+            .map((node) => ({ ...node, stableKey: node.id, binding: false }));
         const names = new Set();
         for (const node of nodes) {
             const stableName = node.name ?? node.stableKey;
