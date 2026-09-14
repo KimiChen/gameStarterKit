@@ -1,6 +1,6 @@
 import { _decorator, Color, Component, Label, Node, ResolutionPolicy, UITransform, view } from "cc";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "../designSpec";
-import { createBackpackPreview, createConfirmPreview, createMailBattleReportPreview, createPromptPreview } from "./preview";
+import { createBackpackPreview, createConfirmPreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
 
 const { ccclass } = _decorator;
 
@@ -16,12 +16,15 @@ export class UniFlexPreview extends Component {
         const query = typeof location === "undefined" ? null : new URLSearchParams(location.search);
         const backpack = query?.get("screen") === "backpack";
         const mail = query?.get("screen") === "mail";
+        const settings = query?.get("screen") === "settings";
         const prompt = query?.get("ui") === "prompt";
         if (backpack) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (mail) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
+        if (settings) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         const preview = backpack
             ? createBackpackPreview(this.node)
             : mail ? createMailBattleReportPreview(this.node)
+            : settings ? createSettingsPreview(this.node)
             : prompt ? createPromptPreview(this.node, query?.get("cancel") !== "0")
             : createConfirmPreview(this.node, query?.get("cancel") !== "0");
         this.runtime = preview;

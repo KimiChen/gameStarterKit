@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, Confirm, MailBattleReport, PreviewHome, Prompt, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, Confirm, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -13,7 +13,7 @@ const prompt = new URLSearchParams(location.search).get("ui") === "prompt";
 const smallPopup = new URLSearchParams(location.search).get("ui") === "small-popup";
 const route = new URLSearchParams(location.search).get("ui");
 const backpack = screen === "backpack" || route === "backpack";
-const designHeight = backpack || screen === "mail" || route === "mail" ? 1334 : DESIGN_HEIGHT;
+const designHeight = backpack || screen === "mail" || route === "mail" || screen === "settings" || route === "settings" ? 1334 : DESIGN_HEIGHT;
 container.style.height = `${designHeight}px`;
 const resize = () => {
     const scale = Math.min(innerWidth / DESIGN_WIDTH, innerHeight / designHeight);
@@ -60,6 +60,13 @@ try {
         };
         await runtime.start(MailBattleReport, params);
         console.info("[UniFlex MailBattleReport] ready");
+    } else if (screen === "settings" || route === "settings") {
+        document.title = "UniFlex Settings";
+        await runtime.start(Settings, {
+            onClose: backToPreview,
+            onSelect: (id) => console.info("[UniFlex Settings] select", id),
+        });
+        console.info("[UniFlex Settings] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",
