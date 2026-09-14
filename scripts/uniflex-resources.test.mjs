@@ -13,7 +13,7 @@ test("UniFlex image resource preserves nine-slice insets", () => {
     }, "Example"), {
         id: "panel-bg",
         kind: "image",
-        file: "imported/Example/assets/panel-bg.png",
+        file: "ui/Example/assets/panel-bg.png",
         width: 200,
         height: 100,
         nineSlice: [16, 12, 18, 14],
@@ -34,5 +34,5 @@ test("UniFlex resource manifest entries use file", () => {
         id: "panel-bg",
         file: "assets/panel.png",
         sha256: "abc",
-    }, "Example").file, "imported/Example/assets/panel.png");
+    }, "Example").file, "ui/Example/assets/panel.png");
 });

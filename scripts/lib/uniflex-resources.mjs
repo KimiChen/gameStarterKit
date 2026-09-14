@@ -2,7 +2,7 @@ export function createImageResourceEntry(resource, packageName) {
     return {
         id: resource.id,
         kind: "image",
-        file: `imported/${packageName}/${resource.file}`,
+        file: `ui/${packageName}/${resource.file}`,
         ...(resource.width === undefined ? {} : { width: resource.width }),
         ...(resource.height === undefined ? {} : { height: resource.height }),
         ...(resource.nineSlice === undefined ? {} : { nineSlice: resource.nineSlice }),

@@ -121,7 +121,7 @@ async function main() {
     console.log("用法：node tools/creator-preview/capture-uniflex-golden.mjs --out <png> [--screen backpack] [--reuse]");
     return 0;
   }
-  const packagePath = path.join(ROOT, "apps/client/src/ui-uniflex/imported", options.screen, "design.json");
+  const packagePath = path.join(ROOT, "apps/client/resources/ui", options.screen, "design.json");
   const manifest = JSON.parse(fs.readFileSync(packagePath, "utf8"));
   const width = options.width ?? manifest.canvas?.width;
   const height = options.height ?? manifest.canvas?.height;

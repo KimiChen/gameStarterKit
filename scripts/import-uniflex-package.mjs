@@ -1,5 +1,5 @@
-import { access, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { access, cp, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, extname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const update = process.argv.includes("--update");
@@ -18,16 +18,39 @@ if (project.schemaVersion !== 1 || project.kind !== "uniflex-design")
 if (resourcesManifest.version !== 1 || !Array.isArray(resourcesManifest.assets))
     throw new Error("Invalid UniFlex resource manifest.");
 const name = String(nameArg || project.name || "ImportedUI").replace(/[^a-zA-Z0-9_-]+/g, "_");
-const target = outputArg
-    ? resolve(root, outputArg)
-    : resolve(root, "apps/client/src/ui-uniflex/imported", name);
-const exists = await access(target).then(() => true).catch((error) => {
+const projectRoot = outputArg ? resolve(root, outputArg) : root;
+const pageTarget = resolve(projectRoot, "apps/client/src/ui-uniflex/pages", name);
+const resourceTarget = resolve(projectRoot, "apps/client/resources/ui", name);
+const exists = await access(resourceTarget).then(() => true).catch((error) => {
     if (error.code === "ENOENT") return false;
     throw error;
 });
 if (exists && !update)
-    throw new Error(`Import target already exists: ${target}; pass --update to refresh it.`);
-await mkdir(dirname(target), { recursive: true });
-await cp(packageDir, target, { recursive: true });
-await writeFile(resolve(target, "manifest.json"), JSON.stringify(resourcesManifest, null, 2) + "\n");
-console.log(`Imported UniFlex UI ${name} into ${target}`);
+    throw new Error(`Import target already exists: ${resourceTarget}; pass --update to refresh it.`);
+await mkdir(dirname(resourceTarget), { recursive: true });
+await mkdir(resourceTarget, { recursive: true });
+await writeFile(resolve(resourceTarget, "manifest.json"), JSON.stringify(resourcesManifest, null, 2) + "\n");
+
+// A package may optionally carry authoring source. Keep it beside the runtime
+// resources, but never mix design metadata or binary assets into the page tree.
+const sourceNames = [];
+const resourceNames = new Set(["assets", "design.json", "manifest.json", "psd-extra.json"]);
+for (const entry of await readdir(packageDir, { withFileTypes: true })) {
+    const isSource = entry.isDirectory()
+        ? entry.name === "components"
+        : [".ts", ".tsx"].includes(extname(entry.name)) || entry.name === "README.md";
+    if (isSource) {
+        const targetName = entry.name.replace(/\.authoring\.tsx$/u, ".tsx");
+        sourceNames.push(targetName);
+        await mkdir(pageTarget, { recursive: true });
+        await cp(resolve(packageDir, entry.name), resolve(pageTarget, targetName),
+            { recursive: true, force: true });
+        continue;
+    }
+    if (resourceNames.has(entry.name)) {
+        await cp(resolve(packageDir, entry.name), resolve(resourceTarget, entry.name),
+            { recursive: true, force: true });
+    }
+}
+console.log(`Imported UniFlex UI ${name}: resources=${resourceTarget}`
+    + (sourceNames.length ? `, authoring=${pageTarget}` : ""));
