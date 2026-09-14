@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, Confirm, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, Confirm, Prompt, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { DESIGN_WIDTH, DESIGN_HEIGHT } from "../client/src/designSpec";
@@ -7,6 +7,7 @@ import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
 
 const container = document.getElementById("ui")!;
 const screen = new URLSearchParams(location.search).get("screen");
+const prompt = new URLSearchParams(location.search).get("ui") === "prompt";
 const designHeight = screen === "backpack" ? 1334 : DESIGN_HEIGHT;
 container.style.height = `${designHeight}px`;
 const resize = () => {
@@ -28,7 +29,9 @@ function dispose() {
 }
 window.addEventListener("pagehide", dispose, { once: true });
 try {
-    if (screen === "backpack") {
+    if (prompt) {
+        await runtime.start(Prompt, { title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: "取消", onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: dispose, onClose: dispose });
+    } else if (screen === "backpack") {
         document.title = "UniFlex Backpack";
         const onAction = (action: BackpackAction) => {
             console.info("[UniFlex Backpack] action", action);
