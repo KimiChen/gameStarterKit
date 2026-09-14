@@ -26,8 +26,9 @@ kit 不反向导入这些文件；调用方传入 provider 资源映射、`loadU
 
 图片资源统一由导入包根目录的 `manifest.json` 管理，不读取图片旁边的同名 JSON 文件。
 其结构与 `cocos-flex-layout` 的资源 manifest 一致：使用 `assets[]`，登记 `file`、尺寸、
-hash 和可选的 `nineSlice`。旧版只含 `components.json.resources` 的导入包仍兼容，导入时会
-自动生成 `manifest.json`。`nineSlice` 顺序为 `[left, top, right, bottom]`，单位是原图像素；
+hash 和可选的 `nineSlice`。PSD 转换器的临时交接包可以包含 `components.json`，但项目导入后
+由 `manifest.json` 作为唯一资源输入。`nineSlice` 顺序为 `[left, top, right, bottom]`，
+单位是原图像素；
 组件中的 `<image>` 还必须设置 `sizeMode: "sliced"`，例如：
 
 ```json
