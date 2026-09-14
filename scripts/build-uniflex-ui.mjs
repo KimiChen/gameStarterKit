@@ -6,7 +6,10 @@ import { create as createFont } from "fontkit";
 import ts from "typescript";
 import { canonicalJson, jsonHash, parseResourceCatalog } from "@uniflex/core/provider";
 import { createOutputWriter } from "./lib/uniflex-output.mjs";
-import { createImageResourceEntry } from "./lib/uniflex-resources.mjs";
+import {
+    createImageResourceEntry,
+    normalizeImportedImageResource,
+} from "./lib/uniflex-resources.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const client = resolve(root, "apps/client");
@@ -95,7 +98,18 @@ for (const packageName of await readdir(resolve(client, "src/ui-uniflex/imported
     const manifest = JSON.parse(await readFile(resolve(packageRoot, "components.json"), "utf8"));
     if (manifest.kind !== "uniflex-import-package")
         throw new Error(`Invalid imported UniFlex package: ${packageName}`);
-    for (const resource of manifest.resources || []) {
+    const resourceManifest = await readFile(resolve(packageRoot, "manifest.json"), "utf8")
+        .then((value) => JSON.parse(value))
+        .catch((error) => {
+            if (error.code !== "ENOENT") throw error;
+            return null;
+        });
+    if (resourceManifest && (!Array.isArray(resourceManifest.assets)
+        || resourceManifest.version !== 1))
+        throw new Error(`Invalid UniFlex resource manifest: ${packageName}/manifest.json`);
+    const resources = (resourceManifest?.assets || manifest.resources || [])
+        .map(normalizeImportedImageResource);
+    for (const resource of resources) {
         const bytes = await readFile(resolve(packageRoot, resource.path));
         if (sha256(bytes) !== resource.sha256)
             throw new Error(`Imported UniFlex resource hash mismatch: ${packageName}/${resource.path}`);
@@ -111,7 +125,7 @@ for (const packageName of await readdir(resolve(client, "src/ui-uniflex/imported
             entries.push(createImageResourceEntry(resource, packageName));
         }
     }
-    importedPackages.push({ name: packageName, resources: manifest.resources || [] });
+    importedPackages.push({ name: packageName, resources });
 }
 const catalog = parseResourceCatalog({
     version: 1, hash: jsonHash(entries), resources: entries,

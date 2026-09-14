@@ -24,6 +24,20 @@ if (exists && !update)
     throw new Error(`Import target already exists: ${target}; pass --update to refresh it.`);
 await mkdir(dirname(target), { recursive: true });
 await cp(packageDir, target, { recursive: true });
+const resources = Array.isArray(manifest.resources) ? manifest.resources : [];
+await writeFile(resolve(target, "manifest.json"), JSON.stringify({
+    version: 1,
+    assets: resources.map((resource) => ({
+        id: resource.id,
+        name: resource.name ?? resource.id,
+        kind: resource.kind,
+        file: resource.path,
+        ...(resource.width === undefined ? {} : { width: resource.width }),
+        ...(resource.height === undefined ? {} : { height: resource.height }),
+        ...(resource.sha256 === undefined ? {} : { sha256: resource.sha256 }),
+        ...(resource.nineSlice === undefined ? {} : { nineSlice: resource.nineSlice }),
+    })),
+}, null, 2) + "\n");
 await writeFile(resolve(target, "import.json"), JSON.stringify({
     schemaVersion: 1, kind: "uniflex-project-import", name,
     source: manifest.sourceDesign, canvas: manifest.canvas,

@@ -24,15 +24,17 @@ kit 不反向导入这些文件；调用方传入 provider 资源映射、`loadU
 作者态的 `defineView` 保留 `@uniflex/compiler` 导入，这是 AOT 编译器识别的标记；
 编译器输出中的 SDK 内部导入由生成器管理，不人工修改。
 
-图片九宫格直接写在导入包 `components.json` 的图片资源条目中，不读取图片旁边的同名
-JSON 文件。`nineSlice` 顺序为 `[left, top, right, bottom]`，单位是原图像素；组件中的
-`<image>` 还必须设置 `sizeMode: "sliced"`，例如：
+图片资源统一由导入包根目录的 `manifest.json` 管理，不读取图片旁边的同名 JSON 文件。
+其结构与 `cocos-flex-layout` 的资源 manifest 一致：使用 `assets[]`，登记 `file`、尺寸、
+hash 和可选的 `nineSlice`。旧版只含 `components.json.resources` 的导入包仍兼容，导入时会
+自动生成 `manifest.json`。`nineSlice` 顺序为 `[left, top, right, bottom]`，单位是原图像素；
+组件中的 `<image>` 还必须设置 `sizeMode: "sliced"`，例如：
 
 ```json
 {
   "id": "panel-bg",
   "kind": "image",
-  "path": "assets/panel-bg.png",
+  "file": "assets/panel-bg.png",
   "width": 200,
   "height": 100,
   "nineSlice": [16, 16, 16, 16]
