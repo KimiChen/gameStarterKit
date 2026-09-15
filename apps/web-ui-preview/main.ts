@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroScreen, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
@@ -170,6 +170,15 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onClose: backToPreview,
                 onSelectPlayer: (id) => console.info("[UniFlex CharacterManageRestored] player", id),
                 onSelectServer: (id) => console.info("[UniFlex CharacterManageRestored] server", id),
+            });
+            return;
+        case "hero":
+            await runtime.start(HeroScreen, {
+                onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
+                onSelectCard: (id) => console.info("[UniFlex HeroScreen] card", id),
+                onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
+                onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
+                onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
             });
             return;
         default:

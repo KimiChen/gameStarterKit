@@ -1,0 +1,376 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/hero/recruit",
+      "kind": "image",
+      "file": "assets/recruit.png",
+      "width": 217,
+      "height": 51,
+      "sha256": "1a965687f457f04636a6521dbc68b24d15b659f7254ed7249ff8a9db619390f0"
+    },
+    {
+      "id": "ui/hero/list-panel",
+      "kind": "image",
+      "file": "assets/list_panel.png",
+      "width": 720,
+      "height": 948,
+      "sha256": "5a05895689a77651e5bfb96f9a784e960ff54d738fdc733fc50d1e71284d6bcb",
+      "nineSlice": [
+        32,
+        32,
+        32,
+        32
+      ]
+    },
+    {
+      "id": "ui/hero/nav-base",
+      "kind": "image",
+      "file": "assets/nav_base.png",
+      "width": 750,
+      "height": 110,
+      "sha256": "3bc8dfa867514bb4fd9bbbed58b48d23ada768f9855a9450c0f133c0bf3371a4"
+    },
+    {
+      "id": "ui/hero/nav-selected",
+      "kind": "image",
+      "file": "assets/nav_selected.png",
+      "width": 154,
+      "height": 110,
+      "sha256": "84a0f2d3176c19a7a5df815b2c2b5addd391828a31459fb93372497a996b3a6e"
+    },
+    {
+      "id": "ui/hero/nav-wheel",
+      "kind": "image",
+      "file": "assets/nav_wheel.png",
+      "width": 90,
+      "height": 84,
+      "sha256": "a7066175e473abc7f1d748a1e96ec06d9806434672b28e1b4bd581957b80cf00"
+    },
+    {
+      "id": "ui/hero/nav-island",
+      "kind": "image",
+      "file": "assets/nav_island.png",
+      "width": 95,
+      "height": 83,
+      "sha256": "5a9a4cb6597b1bc9ea71e6f4efe3efafbae2b627c3d2593fe927c2147c8bec4d"
+    },
+    {
+      "id": "ui/hero/nav-hero",
+      "kind": "image",
+      "file": "assets/nav_hero.png",
+      "width": 115,
+      "height": 116,
+      "sha256": "32d46c6c8fa126fd022ce3be86b4d28df9c1f549c2f5bc02673c12698ddb2fdf"
+    },
+    {
+      "id": "ui/hero/nav-ship",
+      "kind": "image",
+      "file": "assets/nav_ship.png",
+      "width": 89,
+      "height": 95,
+      "sha256": "f4881543e53288da98b3def00883ba78b3e5b74b0c7bdd1159d37dc212fbb769"
+    },
+    {
+      "id": "ui/hero/frame-purple",
+      "kind": "image",
+      "file": "assets/frame_purple.png",
+      "width": 170,
+      "height": 248,
+      "sha256": "7f0f82059e65f9a58cfa273ebe01c27022f2b88b7ae5f464dba112b1de537ca2"
+    },
+    {
+      "id": "ui/hero/frame-green",
+      "kind": "image",
+      "file": "assets/frame_green.png",
+      "width": 170,
+      "height": 248,
+      "sha256": "f97ba35fd565ef4c0393cbfae19bfc1cdf61990485d26d0b9563ab24b657d959"
+    },
+    {
+      "id": "ui/hero/frame-red",
+      "kind": "image",
+      "file": "assets/frame_red.png",
+      "width": 170,
+      "height": 248,
+      "sha256": "60af8634f7b481548292eceef5f564489f674981e5ca8429ff8bf93e20288bf0"
+    },
+    {
+      "id": "ui/hero/frame-yellow",
+      "kind": "image",
+      "file": "assets/frame_yellow.png",
+      "width": 170,
+      "height": 248,
+      "sha256": "1634f1b78ac2ca3de9d9b6524a6b2a360399e28c6112bc0e8ccf02e5a985e4d8"
+    },
+    {
+      "id": "ui/hero/frame-blue",
+      "kind": "image",
+      "file": "assets/frame_blue.png",
+      "width": 170,
+      "height": 248,
+      "sha256": "a17859b375bc0b52ed870ad8824100cab39470fa75e01bcdb32655e203a92920"
+    },
+    {
+      "id": "ui/hero/portrait",
+      "kind": "image",
+      "file": "assets/portrait.png",
+      "width": 162,
+      "height": 180,
+      "sha256": "487e1dde3e2c7b5d850e4bf03623314325de0bd585d35bceba4d2cce2f57ab4a"
+    },
+    {
+      "id": "ui/hero/class-shield",
+      "kind": "image",
+      "file": "assets/class_shield.png",
+      "width": 34,
+      "height": 42,
+      "sha256": "338f95c72b9b864ed45271173372e9a9aab2abf2e30304fa7991a0b79b678d43"
+    },
+    {
+      "id": "ui/hero/class-sword",
+      "kind": "image",
+      "file": "assets/class_sword.png",
+      "width": 34,
+      "height": 42,
+      "sha256": "f823df6eb2d186de1baa971fb9b0adf32bf4803aef6560baa3f0beec81c19bf2"
+    },
+    {
+      "id": "ui/hero/class-anchor",
+      "kind": "image",
+      "file": "assets/class_anchor.png",
+      "width": 34,
+      "height": 42,
+      "sha256": "1ad5942444e8c5ecaddae856a88df84d2afcecbe50f5c9167fd4d2fe54216f7b"
+    },
+    {
+      "id": "ui/hero/upgrade",
+      "kind": "image",
+      "file": "assets/upgrade.png",
+      "width": 39,
+      "height": 38,
+      "sha256": "ce3fc758d2b9b4de7c607f79bfd1d54de765760564422dab5a5ce8ebaa599d19"
+    },
+    {
+      "id": "ui/hero/star-empty",
+      "kind": "image",
+      "file": "assets/star_empty.png",
+      "width": 30,
+      "height": 28,
+      "sha256": "936130b4dc9c3c3a9102dc3d382b89b3229cdb3b3b0fabb862de5ae1c957e75c"
+    },
+    {
+      "id": "ui/hero/star-filled",
+      "kind": "image",
+      "file": "assets/star_filled.png",
+      "width": 30,
+      "height": 28,
+      "sha256": "b62fc26b2dbd9ea11509bd585ef9ee35be05c5ba6edb183aafaff09b35d79f87"
+    },
+    {
+      "id": "ui/hero/unowned",
+      "kind": "image",
+      "file": "assets/unowned.png",
+      "width": 166,
+      "height": 244,
+      "sha256": "bffd59d3d8bf505064a3a34e844f6bb5a4c1a7725b1d5b1535ad4b97d16f8e84"
+    },
+    {
+      "id": "ui/hero/progress-track",
+      "kind": "image",
+      "file": "assets/progress_track.png",
+      "width": 124,
+      "height": 26,
+      "sha256": "76650d99ab06823687b848a1165cebde3e1db68b99a9b1d0c76b62776e45e116"
+    },
+    {
+      "id": "ui/hero/progress-fill",
+      "kind": "image",
+      "file": "assets/progress_fill.png",
+      "width": 110,
+      "height": 22,
+      "sha256": "30d83d5667efb47565febbbf7a0574cca06332bc92f4cac122b5acdfbcda4db5",
+      "nineSlice": [11, 0, 11, 0]
+    },
+    {
+      "id": "ui/hero/team-short",
+      "kind": "image",
+      "file": "assets/team_short.png",
+      "width": 35,
+      "height": 44,
+      "sha256": "c6035189896009a6b54aa69302182e7d43d76b1a1e91de5e37d72a9fc12be621"
+    },
+    {
+      "id": "ui/hero/team-long",
+      "kind": "image",
+      "file": "assets/team_long.png",
+      "width": 35,
+      "height": 66,
+      "sha256": "cdec2ea960b075f112088782fc70e995350663f7cce399fe6c09a21d5801cf2a"
+    },
+    {
+      "id": "ui/hero/tabs-base",
+      "kind": "image",
+      "file": "assets/tabs_base.png",
+      "width": 682,
+      "height": 80,
+      "sha256": "d5d09198770e51f748e68fd72b892e2937d62a0a28cb5adb082e10ba4330b557"
+    },
+    {
+      "id": "ui/hero/tabs-selected",
+      "kind": "image",
+      "file": "assets/tabs_selected.png",
+      "width": 222,
+      "height": 74,
+      "sha256": "8427a262f001ae68cc9ecfef561c600f3e1e7bb8530f2543bb0e3147bf85bce6"
+    },
+    {
+      "id": "ui/hero/filter-bg",
+      "kind": "image",
+      "file": "assets/filter_bg.png",
+      "width": 280,
+      "height": 52,
+      "sha256": "9ad3adccc19e693637bb2d4f8fd355ec016fdae0ca029c5d8278579dafc8e2e0"
+    },
+    {
+      "id": "ui/hero/filter-icon",
+      "kind": "image",
+      "file": "assets/filter_icon.png",
+      "width": 29,
+      "height": 27,
+      "sha256": "b210f6eee86dea75c0d2cbe57d51373da226a7fb64cb9244b9e73a9748dd74b3"
+    },
+    {
+      "id": "ui/hero/filter-arrow",
+      "kind": "image",
+      "file": "assets/filter_arrow.png",
+      "width": 34,
+      "height": 23,
+      "sha256": "69f7fa9089b156eebc5751468add94fbc2c5e3cd60cf9110095c2e3378103ef6"
+    },
+    {
+      "id": "ui/hero/filter-dropdown",
+      "kind": "image",
+      "file": "assets/filter_dropdown.png",
+      "width": 281,
+      "height": 254,
+      "sha256": "f0a77eec3c7ba44fb4322fcdc0e4b51a688116aa22ce671163081734de01e4b5"
+    },
+    {
+      "id": "ui/hero/filter-option",
+      "kind": "image",
+      "file": "assets/filter_option.png",
+      "width": 277,
+      "height": 50,
+      "sha256": "a32334f443c9ca18c161f7d764a29dd1cef51b49b2f913d3c6d992a3dc359c42"
+    },
+    {
+      "id": "ui/hero/bond-scroll",
+      "kind": "image",
+      "file": "assets/bond_scroll.png",
+      "width": 281,
+      "height": 360,
+      "sha256": "5fe274e560f7c92c9d5a16cc475fc668327837c6e358802b775a8894e854747c"
+    },
+    {
+      "id": "ui/hero/bond-art",
+      "kind": "image",
+      "file": "assets/bond_art.png",
+      "width": 210,
+      "height": 277,
+      "sha256": "26910d5c638507446dba04cc31de769e008b5bf451e08ba625e05636ed57aa73"
+    },
+    {
+      "id": "ui/hero/bond-dim",
+      "kind": "image",
+      "file": "assets/bond_dim.png",
+      "width": 281,
+      "height": 360,
+      "sha256": "6a54da5eeb8a6abd6dee70cce237767b3576674d4f5e5d98db3d378cb4b8ef24"
+    },
+    {
+      "id": "ui/hero/bond-info",
+      "kind": "image",
+      "file": "assets/bond_info.png",
+      "width": 48,
+      "height": 48,
+      "sha256": "d83381599357676db4f8ed643e7e6cf5bd88d173c6905aec6b1e549c894ba8fa",
+      "nineSlice": [
+        22,
+        22,
+        22,
+        22
+      ]
+    },
+    {
+      "id": "ui/hero/bond-detail",
+      "kind": "image",
+      "file": "assets/bond_detail.png",
+      "width": 76,
+      "height": 76,
+      "sha256": "58e2c1f2033f23992300ac9d5306a00a3612d9139df159de6d69793617f2babe"
+    },
+    {
+      "id": "ui/hero/bond-panel",
+      "kind": "image",
+      "file": "assets/bond_panel.png",
+      "width": 68,
+      "height": 36,
+      "sha256": "d0c6968027ad9cf54148d9c615d5f0d77f1a0eb6c4f290e50a1465aa5ab1637b",
+      "nineSlice": [
+        32,
+        32,
+        32,
+        0
+      ]
+    },
+    {
+      "id": "ui/hero/bond-portrait",
+      "kind": "image",
+      "file": "assets/bond_portrait.png",
+      "width": 138,
+      "height": 138,
+      "sha256": "a0561659bff3b185d5fa156d5836edbc9a9f87c6bf16d78e66ced1d245efa981"
+    },
+    {
+      "id": "ui/hero/bond-class",
+      "kind": "image",
+      "file": "assets/bond_class.png",
+      "width": 46,
+      "height": 56,
+      "sha256": "2f21029ee359a5bb37be8946c4d32ec552327aa53e2f5fa2009a20fc85bd469a"
+    },
+    {
+      "id": "ui/hero/bond-lock",
+      "kind": "image",
+      "file": "assets/bond_lock.png",
+      "width": 158,
+      "height": 163,
+      "sha256": "ef7ce58efd5db02105fe64793e37568d5f30a6e0f31edaa7035dba9a48c1b0ab"
+    },
+    {
+      "id": "ui/hero/filter-arrow-up",
+      "kind": "image",
+      "file": "assets/filter_arrow_up.png",
+      "width": 34,
+      "height": 23,
+      "sha256": "7a7892f0cf43801272115f2f96192f74d567e016743cc8e18091e4d5e42a7727"
+    },
+    {
+      "id": "ui/hero/filter-option-icon",
+      "kind": "image",
+      "file": "assets/filter_option_icon.png",
+      "width": 26,
+      "height": 27,
+      "sha256": "feb02841dd636e477b2c4e68975cd7b9a4fa8d0ef02fab41ecffecde436925f3"
+    },
+    {
+      "id": "ui/hero/bond-bg",
+      "kind": "image",
+      "file": "assets/bond_bg.png",
+      "width": 750,
+      "height": 1624,
+      "sha256": "39a172a802cb5ebc8002eb2d03f25b0fb725bc8a2c99e6795a34695d2f8cee86"
+    }
+  ]
+}
