@@ -88,7 +88,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         case "backpack": {
             const onAction = (action: BackpackAction) => {
                 console.info("[UniFlex Backpack] action", action);
-                if (action.action === "back" || action.action === "close") dispose();
+                if (action.action === "back" || action.action === "close") backToPreview();
             };
             await runtime.start(Backpack, { onAction });
             return;

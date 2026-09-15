@@ -1,48 +1,149 @@
-import { defineView, useState } from '@uniflex/compiler';
-import { imageRef } from '../../../kits/uniflex/api/core/index';
-import { BackpackComponent } from './components/BackpackComponent';
+import { defineView, For, useMemo, useState } from '@uniflex/compiler';
+import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { BackpackItemCard, type BackpackItem, type BackpackQuality } from './components/BackpackItemCard';
+import { BackpackQuantityControl } from './components/BackpackQuantityControl';
+import { BackpackResourceCounter } from './components/BackpackResourceCounter';
+import { BackpackTab } from './components/BackpackTab';
 
 export type BackpackAction = {
     readonly id: string;
     readonly action: 'back' | 'close' | 'tab' | 'primary' | 'select';
+    readonly value?: string | number;
 };
+export interface BackpackTabData {
+    readonly id: string;
+    readonly label: string;
+    readonly items: readonly BackpackItem[];
+}
+export type BackpackTabs = readonly [BackpackTabData, BackpackTabData, BackpackTabData, BackpackTabData, BackpackTabData];
 export interface BackpackParams {
+    readonly title?: string;
+    readonly tabs?: BackpackTabs;
+    readonly resources?: readonly [string, string, string, string];
     readonly onAction?: (action: BackpackAction) => void;
 }
 
+const item = (
+    slot: number,
+    id: string,
+    name: string,
+    description: string,
+    quality: BackpackQuality,
+    count: number,
+    maxUseCount: number,
+): BackpackItem => ({ id, slot, name, description, quality, count, detailCount: count * 5, maxUseCount });
+
+const defaultTabs: BackpackTabs = [
+    { id: 'equipment', label: '装备', items: [
+        item(0, 'equipment-hammer', '锻造锤', '用于装备锻造，可显著提升锻造成功率。', 'orange', 6, 3),
+        item(1, 'equipment-core', '秘银核心', '稀有装备突破材料，蕴含稳定的魔力。', 'purple', 18, 5),
+        item(2, 'equipment-crystal', '龙晶碎片', '传说装备升阶所需的珍贵结晶。', 'red', 2, 1),
+    ] },
+    { id: 'resource', label: '资源', items: [
+        item(0, 'resource-diamond-1', '强化扳手', '有效的提高陷阱等级，增加联盟成员对【巨蛇】造成的伤害。', 'green', 99, 1),
+        item(1, 'resource-diamond-2', '精炼晶石', '用于精炼装备属性，提升基础战斗能力。', 'green', 64, 5),
+        item(2, 'resource-diamond-3', '联盟勋章', '可在联盟商店兑换稀有道具。', 'green', 37, 5),
+        item(3, 'resource-diamond-4', '建筑图纸', '升级高级建筑时使用的通用材料。', 'green', 82, 5),
+        item(4, 'resource-diamond-5', '秘境粉尘', '蕴含微弱魔力的基础合成材料。', 'green', 48, 5),
+        item(5, 'resource-diamond-6', '星辉矿石', '来自深层矿脉的稀有强化材料。', 'green', 23, 3),
+        item(6, 'resource-diamond-7', '远古齿轮', '修复遗迹机关所需的精密零件。', 'green', 16, 4),
+        item(7, 'resource-diamond-8', '英雄徽记', '用于提升英雄星级和技能上限。', 'green', 11, 2),
+    ] },
+    { id: 'speedup', label: '加速', items: [
+        item(0, 'speedup-build', '建筑加速', '立即减少建筑队列 60 分钟。', 'blue', 12, 5),
+        item(1, 'speedup-research', '研究加速', '立即减少科技研究 30 分钟。', 'blue', 27, 5),
+        item(2, 'speedup-train', '训练加速', '立即减少部队训练 15 分钟。', 'purple', 8, 4),
+        item(3, 'speedup-heal', '治疗加速', '立即减少伤兵治疗 10 分钟。', 'green', 45, 5),
+    ] },
+    { id: 'boost', label: '增益', items: [
+        item(0, 'boost-attack', '攻击增益', '部队攻击力提高 10%，持续 8 小时。', 'red', 3, 1),
+        item(1, 'boost-defense', '防御增益', '部队防御力提高 10%，持续 8 小时。', 'orange', 5, 2),
+        item(2, 'boost-gather', '采集增益', '资源采集速度提高 25%，持续 12 小时。', 'purple', 9, 3),
+        item(3, 'boost-shield', '和平护盾', '保护城池免受侦察和攻击，持续 8 小时。', 'blue', 7, 1),
+        item(4, 'boost-energy', '体力药剂', '立即恢复 50 点行动体力。', 'green', 21, 5),
+    ] },
+    { id: 'other', label: '其他', items: [] },
+];
+
 export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, (context) => {
-    const [selected, setSelected] = useState<string | null>(null);
-    const emit = (id: string, action: BackpackAction['action']) => {
-        setSelected(id);
-        context.params?.onAction?.({ id, action });
+    const params = context.params ?? {};
+    const tabs = params.tabs ?? defaultTabs;
+    const resources = params.resources ?? ['999.99k', '999.99k', '999.99k', '999.99k'];
+    const [activeTab, setActiveTab] = useState(1);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [quantity, setQuantity] = useState(0);
+    const items = tabs[activeTab].items;
+    const detailItem = useMemo(() => items.find((entry) => entry.id === selectedId) ?? items[0], [items, selectedId]);
+    const emit = (id: string, action: BackpackAction['action'], value?: string | number) =>
+        params.onAction?.({ id, action, value });
+    const selectTab = (index: number) => {
+        setActiveTab(index);
+        setSelectedId(null);
+        setQuantity(0);
+        emit(`tab-${tabs[index].id}`, 'tab', tabs[index].id);
     };
+    const selectItem = (entry: BackpackItem) => {
+        setSelectedId(entry.id);
+        setQuantity(1);
+        emit(`item-${entry.id}`, 'select', entry.id);
+    };
+    const setSafeQuantity = (next: number) => {
+        if (!detailItem) return;
+        const value = Math.max(0, Math.min(detailItem.maxUseCount, Math.round(next)));
+        setQuantity(value);
+        emit('quantity', 'select', value);
+    };
+    const hasItems = items.length > 0;
     return (
-        <view name="Backpack" style={{ width: 750, height: 1334 }}>
-            <image name="背景" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1334 }} source={imageRef("asset-32916f407d08982f7711a649b30d6d3b83f883f471c800fba267272c37a58161")} />
-            <view name="背包-可使用道具" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1334, opacity: selected === "layer-2" ? 0.72 : 1 }} interaction="press" onClick={() => emit("layer-2", "primary")}>
-                <image style={{ width: '100%', height: '100%' }} source={imageRef("asset-af3335fc500654fa5397d02a2e1025d901215281f5d59a2e226b01542cf1697d")} />
+        <view name="Backpack" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
+            <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
+            <image source={imageRef('ui/mail/header')} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
+            <text value={params.title ?? '背包'} style={{ position: 'absolute', left: 38, top: 16, width: 118, height: 60,
+                font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true,
+                outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <BackpackResourceCounter id="resource-1" value={resources[0]} left={159} onClick={() => emit('resource-1', 'primary')} />
+            <BackpackResourceCounter id="resource-2" value={resources[1]} left={303} onClick={() => emit('resource-2', 'primary')} />
+            <BackpackResourceCounter id="resource-3" value={resources[2]} left={447} onClick={() => emit('resource-3', 'primary')} />
+            <BackpackResourceCounter id="resource-4" value={resources[3]} left={591} onClick={() => emit('resource-4', 'primary')} />
+
+            <BackpackTab label={tabs[0].label} active={activeTab === 0} left={14} onClick={() => selectTab(0)} />
+            <BackpackTab label={tabs[1].label} active={activeTab === 1} left={161} onClick={() => selectTab(1)} />
+            <BackpackTab label={tabs[2].label} active={activeTab === 2} left={308} onClick={() => selectTab(2)} />
+            <BackpackTab label={tabs[3].label} active={activeTab === 3} left={455} onClick={() => selectTab(3)} />
+            <BackpackTab label={tabs[4].label} active={activeTab === 4} left={602} onClick={() => selectTab(4)} />
+
+            <view visible={hasItems} name="Backpack/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>
+                <For each={items} key="id">
+                    {(entry) => <BackpackItemCard item={entry} selected={selectedId === entry.id}
+                        slot={entry.slot} onClick={() => selectItem(entry)} />}
+                </For>
             </view>
-            <view name="组件-全屏底部返回" style={{ position: 'absolute', left: 1, top: 1226, width: 750, height: 108, opacity: selected === "layer-27" ? 0.72 : 1 }} interaction="press" onClick={() => emit("layer-27", "back")}>
-                <image style={{ width: '100%', height: '100%' }} source={imageRef("asset-7444808bbeff49cccb95a054cf83e73289542bedbd2b8fbc319e083be7985f14")} />
+            <image source={imageRef('ui/settings/divider')} style={{ position: 'absolute', left: 26, top: 928, width: 698, height: 3, sizeMode: 'sliced' }} />
+
+            <view visible={!hasItems} name="Backpack/Empty" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
+                <image source={imageRef('ui/backpack/empty')} style={{ position: 'absolute', left: 321, top: 977, width: 108, height: 116 }} />
+                <text value="背包里没有任何道具" style={{ position: 'absolute', left: 150, top: 1117, width: 450, height: 64,
+                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#837A91', bold: true,
+                    horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
-            <image name="图层 1" style={{ position: 'absolute', left: 17, top: 252, width: 727, height: 981 }} source={imageRef("asset-160408331efbfbc63a7fbb1993565274d2d50968e3d8a327e3f5053c1307c02c")} />
-            <image name="图层 22" style={{ position: 'absolute', left: 563, top: 1088, width: 166, height: 140 }} source={imageRef("asset-c7479ea87081f196ac56e041868b54d12baf8ce8c8383f7921cb1eb144e8d319")} />
-            <image name="图层 8 拷贝" style={{ position: 'absolute', left: 0, top: 743, width: 750, height: 174 }} source={imageRef("asset-6ecb96f3d6bd2fc5fcf44f53427e18c70d065ca760f1fa9ecab3c7561f83d41b")} />
-            <image name="图层 8 拷贝 2" style={{ position: 'absolute', left: 0, top: 921, width: 750, height: 142 }} source={imageRef("asset-c6be0db152eeb5aee6a1f32366ec77d66d3af7cc7d75dbe270ea783f506efa80")} />
-            <image name="图层 8" style={{ position: 'absolute', left: 0, top: 597, width: 750, height: 174 }} source={imageRef("asset-6ecb96f3d6bd2fc5fcf44f53427e18c70d065ca760f1fa9ecab3c7561f83d41b")} />
-            <image name="矩形 1" style={{ position: 'absolute', left: 32, top: 257, width: 686, height: 353 }} source={imageRef("asset-3f7f8d33478bff92b3eda438d1b490a7cfa46bec97465185a63a73995946c05c")} />
-            <image name="100钻石" style={{ position: 'absolute', left: 310, top: 286, width: 131, height: 33 }} source={imageRef("asset-2825f8acc18771c7fd2b7602d1724feae4de0708c6d3f2314003eff75357259a")} />
-            <image name="矩形 4 拷贝" style={{ position: 'absolute', left: 276, top: 293, width: 198, height: 18 }} source={imageRef("asset-701e7a20f403eaf5b892c08b10d348b1fcdea72587534093b07c75b63424cbe9")} />
-            <view name="使用后获得5000点装备经验" style={{ position: 'absolute', left: 57, top: 344, width: 318, height: 25, opacity: selected === "layer-13" ? 0.72 : 1 }} interaction="press" onClick={() => emit("layer-13", "primary")}>
-                <image style={{ width: '100%', height: '100%' }} source={imageRef("asset-be40e1e3efe9f2a15159d2327b419ad2a4f061a1749f7121fc7a305ecd4948db")} />
+
+            <view visible={hasItems} name="Backpack/Details" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
+                <text value={detailItem?.name ?? ''} style={{ position: 'absolute', left: 23, top: 946, width: 704, height: 48,
+                    font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,
+                    verticalAlign: 'center', overflow: 'shrink' }} />
+                <text value={detailItem?.description ?? ''} style={{ position: 'absolute', left: 23, top: 998, width: 704, height: 58,
+                    font: fontRef('fonts/regular', 700), fontSize: 26, color: '#837A91', bold: true,
+                    verticalAlign: 'center', overflow: 'shrink' }} />
+                <BackpackQuantityControl value={quantity} max={detailItem?.maxUseCount ?? 1}
+                    onDecrease={() => setSafeQuantity(quantity - 1)} onIncrease={() => setSafeQuantity(quantity + 1)}
+                    onChange={setSafeQuantity} />
             </view>
-            <image name="矩形 2" style={{ position: 'absolute', left: 57, top: 384, width: 637, height: 91 }} source={imageRef("asset-c3b8b8fd543455309333963155494805309329c5a98e636d476b0c65f9cc65ec")} />
-            <image name="图层 3" style={{ position: 'absolute', left: 72, top: 402, width: 547, height: 57 }} source={imageRef("asset-7f47dbe004839cbb7c573d03f442b30986126bb70e86ef85b5a8165dc7edb686")} />
-            <image name="图层 1066 拷贝 2" style={{ position: 'absolute', left: 628, top: 403, width: 51, height: 51 }} source={imageRef("asset-bb91f0f5828db69fc81e6bd8e5a0c24189afc85af56ce2aad38780e1516038cb")} />
-            <image name="图层 5" style={{ position: 'absolute', left: 241, top: 494, width: 268, height: 92 }} source={imageRef("asset-a81a3df8a52c4a4eb3053db23d57856d13da589d4fef51b94130de3512c3da4a")} />
-            <image name="组 1" style={{ position: 'absolute', left: 87, top: 246, width: 39, height: 16 }} source={imageRef("asset-930b9d4d5999c59d06f0db299b52c3ddeb1aee46051df5f976d5ba59294c067a")} />
-            <image name="图层 6" style={{ position: 'absolute', left: 0, top: 0, width: 1, height: 1 }} source={imageRef("asset-2fe8e6c2a228cc8932b1a02ef77d563dddc0618eb038ea3ea29338b35f37fdc6")} />
-            <BackpackComponent selected={selected} emit={emit} />
+
+            <image source={imageRef('ui/mail/footer')} style={{ position: 'absolute', left: 0, top: 1225, width: 750, height: 110, sizeMode: 'sliced' }} />
+            <view name="Backpack/Back" interaction="press" accessibilityLabel="返回" onClick={() => emit('back', 'back')}
+                style={{ position: 'absolute', left: 13, top: 1252, width: 64, height: 56 }}>
+                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
+            </view>
         </view>
     );
 });
