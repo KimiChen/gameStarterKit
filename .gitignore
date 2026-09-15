@@ -1,6 +1,7 @@
 # Node
 node_modules/
 apps/client/.cache/
+/.cache/
 # UniFlex authoring is source; these outputs are recreated by build:uniflex-ui.
 apps/client/src/ui-uniflex/generated/
 apps/Cocos/assets/src/ui-uniflex/generated/

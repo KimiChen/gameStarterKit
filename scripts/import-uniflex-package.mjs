@@ -54,3 +54,22 @@ for (const entry of await readdir(packageDir, { withFileTypes: true })) {
 }
 console.log(`Imported UniFlex UI ${name}: resources=${resourceTarget}`
     + (sourceNames.length ? `, authoring=${pageTarget}` : ""));
+
+// The converter emits self-references to `<Name>.authoring`; the importer renames
+// that entry to `<Name>.tsx`, so rewrite the references to match.
+if (sourceNames.length) {
+    const stack = [pageTarget];
+    while (stack.length) {
+        const current = stack.pop();
+        for (const entry of await readdir(current, { withFileTypes: true })) {
+            const full = resolve(current, entry.name);
+            if (entry.isDirectory()) {
+                stack.push(full);
+            } else if ([".ts", ".tsx"].includes(extname(entry.name))) {
+                const text = await readFile(full, "utf8");
+                const rewritten = text.replaceAll(`${name}.authoring`, name);
+                if (rewritten !== text) await writeFile(full, rewritten);
+            }
+        }
+    }
+}
