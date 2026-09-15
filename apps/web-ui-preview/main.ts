@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackRestored, CharacterManage, Confirm, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
@@ -130,6 +130,46 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onClose: backToPreview,
                 onSelectPlayer: (id) => console.info("[UniFlex CharacterManage] player", id),
                 onSelectServer: (id) => console.info("[UniFlex CharacterManage] server", id),
+            });
+            return;
+        case "prompt-restored":
+            await runtime.start(PromptRestored, {
+                theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" },
+                title: "创建角色",
+                message: "在该服务器创建1名新角色?",
+                confirmText: "确定",
+                cancelText: "取消",
+                onConfirm: () => console.info("[UniFlex PromptRestored] result=true"),
+                onCancel: backToPreview,
+                onClose: backToPreview,
+            });
+            return;
+        case "confirm-restored": {
+            const logic = new ConfirmLogic({
+                title: "UniFlex Confirm",
+                content: "这是 UniFlex 在 gameStarterKit 中的本地运行预览。",
+                noText: params.get("cancel") === "0" ? null : "取消",
+                onYes: () => console.info("[UniFlex ConfirmRestored] result=true"),
+                onNo: () => console.info("[UniFlex ConfirmRestored] result=false"),
+            });
+            logic.onClose = dispose;
+            await runtime.start(ConfirmRestored, { logic, isActive: () => !stopped });
+            return;
+        }
+        case "small-popup-restored":
+            await runtime.start(SmallPopupRestored, { title: "标题", onClose: backToPreview });
+            return;
+        case "settings-restored":
+            await runtime.start(SettingsRestored, {
+                onClose: backToPreview,
+                onSelect: (id) => console.info("[UniFlex SettingsRestored] select", id),
+            });
+            return;
+        case "character-restored":
+            await runtime.start(CharacterManageRestored, {
+                onClose: backToPreview,
+                onSelectPlayer: (id) => console.info("[UniFlex CharacterManageRestored] player", id),
+                onSelectServer: (id) => console.info("[UniFlex CharacterManageRestored] server", id),
             });
             return;
         default:
