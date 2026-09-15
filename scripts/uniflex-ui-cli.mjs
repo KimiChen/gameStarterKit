@@ -19,9 +19,13 @@ const help = `Usage:
   npm run ui:check-source [-- --package .cache/psd/job-001/project-package --strict]
 
 CLI resolution (first match):
-  WEB_UI_TO_PSD_CLI    Executable path or JS entry file; not a shell command.
-  WEB_UI_TO_PSD_ROOT   Tool checkout/install root containing bin/cli.mjs.
-  node_modules/web-ui-to-psd/bin/cli.mjs in this project.
+  WEB_UI_TO_PSD_CLI    Optional override: executable path or JS entry; not a shell command.
+  WEB_UI_TO_PSD_ROOT   Optional override: install root containing bin/cli.mjs.
+  node_modules/web-ui-to-psd/bin/cli.mjs
+                       Pinned file:vendor/web-ui-to-psd-*.tgz; default after npm ci.
+
+CI does not need a sibling converter checkout. Chrome and uv remain machine
+requirements of the converter.
 
 Export and roundtrip default to the UniFlex adapter, #ui, and the preview ready
 signal. Pass --adapter dom to forward a generic webpage. --screen starts a local
@@ -58,8 +62,8 @@ export async function resolveConverter(root, env) {
     try {
         await access(entry);
     } catch (error) {
-        throw new Error("web-ui-to-psd CLI is unavailable. Install a pinned tool package, "
-            + "or set WEB_UI_TO_PSD_CLI / WEB_UI_TO_PSD_ROOT.", { cause: error });
+        throw new Error("web-ui-to-psd CLI is unavailable. Run npm ci to install the pinned vendor package, "
+            + "or set WEB_UI_TO_PSD_CLI / WEB_UI_TO_PSD_ROOT to override.", { cause: error });
     }
     return [".js", ".mjs", ".cjs"].includes(extname(entry))
         ? { command: process.execPath, args: [entry] }

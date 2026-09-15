@@ -40,7 +40,7 @@ apps/
 docs/           当前开发架构说明
 scripts/        同步、校验、依赖抓取与协议指纹脚本，及其锁文件基线（bitecs/vendor/protocol/fgui）与保护路径规则（protected-paths.json）
 tools/          FairyGUI codegen、Excel 配表转换、性能基线与 Creator 预览证据等工具
-vendor/         精确锁定的外部身份契约与 UniFlex SDK tarball（由 package.json 以 file: 引用）
+vendor/         精确锁定的外部身份契约、UniFlex SDK 与 web-ui-to-psd CLI tarball（由 package.json 以 file: 引用）
 ```
 
 `apps/client/src/shared/` 和 `apps/Cocos/assets/src/` 是生成镜像，不是源码入口。
@@ -60,6 +60,9 @@ UniFlex 原生 `uniflex-compiler` 已按宿主平台放入 `vendor/uniflex/bin/`
 `config/uniflex.ui.json` 使用项目内 wrapper 调用；也可以用 `UNIFLEX_COMPILER` 覆盖。当前仓库包含
 `darwin-arm64` 制品，其他平台需补充对应平台制品。UI 生成物不入库，首次类型检查或预览前
 必须显式生成。双端预览与源码边界见 [客户端开发](docs/CLIENT.md#2-源码与工程壳)。
+`ui:import-psd` / `ui:export-psd` / `ui:roundtrip` 使用锁定的 `vendor/web-ui-to-psd-0.1.0.tgz`，
+`npm ci` 后即可运行，不依赖本机转换器源码目录；转换器还需要本机 Chrome 与 `uv`。可选
+`WEB_UI_TO_PSD_CLI` / `WEB_UI_TO_PSD_ROOT` 仅用于覆盖锁定包。
 
 只验证 UniFlex Web 页面时，生成后运行：
 
@@ -164,8 +167,8 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
 | `npm run build:uniflex-ui` | 用仓库内 `vendor/uniflex/bin/` 的原生编译器生成 UniFlex Confirm 与双端资源；随后运行 `sync:client` |
 | `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/pages/<Name>` 与 `apps/client/resources/ui/<Name>` |
-| `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 由外部 `web-ui-to-psd` CLI 生成 PSD 中间文件和 UniFlex 项目包，并导入项目；CI 可通过 `WEB_UI_TO_PSD_CLI` 或 `WEB_UI_TO_PSD_ROOT` 指定工具 |
-| `npm run ui:export-psd -- --url <url> --out <dir>` | 由外部 CLI 把 UniFlex 预览页导出为分层 PSD；可用 `--screen` 拉起本地预览，不必先开 `dev:uniflex-web` |
+| `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 用锁定的 `vendor/web-ui-to-psd-*.tgz` 生成 PSD 中间文件和 UniFlex 项目包并导入项目；`npm ci` 后即可运行 |
+| `npm run ui:export-psd -- --url <url> --out <dir>` | 用锁定 CLI 把 UniFlex 预览页导出为分层 PSD；可用 `--screen` 拉起本地预览，不必先开 `dev:uniflex-web` |
 | `npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001` | UniFlex → PSD → UniFlex 项目包往返；默认不写项目源，加 `--apply` 才导入 |
 | `npm run ui:check-source` | 校验 UniFlex 项目包的 design/manifest 契约；传入 `--package` |
 | `npm run ui:render-source` | 渲染 UniFlex 独立源图（Golden 比对输入） |

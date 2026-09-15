@@ -1,37 +1,86 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { access, mkdtemp, readFile, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
+import { resolveConverter } from "./uniflex-ui-cli.mjs";
 
 const execFileAsync = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
-const converterRoot = process.env.WEB_UI_TO_PSD_ROOT || "/Volumes/wx/src/web-ui-to-psd";
-const converter = join(converterRoot, "bin/cli.mjs");
-const design = resolve(root, "apps/client/resources/ui/Backpack/design.json");
+const env = { ...process.env };
+delete env.WEB_UI_TO_PSD_CLI;
+delete env.WEB_UI_TO_PSD_ROOT;
 
+let converter;
 let available = true;
 try {
-    await access(converter);
+    converter = await resolveConverter(root, env);
 } catch {
     available = false;
 }
 
+const PIXEL_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64",
+);
+
+async function writeConverterDesign(directory) {
+    await mkdir(join(directory, "assets"), { recursive: true });
+    await writeFile(join(directory, "assets/pixel.png"), PIXEL_PNG);
+    const sha256 = createHash("sha256").update(PIXEL_PNG).digest("hex");
+    const design = {
+        schemaVersion: 1,
+        kind: "uniflex-design",
+        canvas: { width: 8, height: 8 },
+        roots: ["root"],
+        fonts: {},
+        assets: {
+            pixel: { path: "assets/pixel.png", sha256, mime: "image/png", width: 1, height: 1 },
+        },
+        nodes: {
+            root: {
+                id: "root",
+                name: "Component",
+                kind: "group",
+                frame: { x: 0, y: 0, width: 8, height: 8 },
+                opacity: 1,
+                visible: true,
+                children: ["fill"],
+            },
+            fill: {
+                id: "fill",
+                name: "fill",
+                kind: "image",
+                frame: { x: 0, y: 0, width: 8, height: 8 },
+                opacity: 1,
+                visible: true,
+                asset: "pixel",
+            },
+        },
+    };
+    const file = join(directory, "design.json");
+    await writeFile(file, JSON.stringify(design));
+    return file;
+}
+
 test("PSD UniFlex package contract uses manifest.json without page sidecars", {
-    skip: available ? false : "web-ui-to-psd is unavailable",
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
 }, async () => {
     const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-contract-"));
+    const designDir = join(tempRoot, "design");
     const packageDir = join(tempRoot, "package");
     const importRoot = join(tempRoot, "import");
     const resourceDir = join(importRoot, "apps/client/resources/ui/Backpack");
     const pageDir = join(importRoot, "apps/client/src/ui-uniflex/pages/Backpack");
     try {
-        await execFileAsync(process.execPath, [
-            converter, "uniflex-package", "--design", design,
+        const design = await writeConverterDesign(designDir);
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", design,
             "--name", "Backpack", "--out", packageDir,
-        ], { cwd: root });
+        ], { cwd: root, env });
         const manifest = JSON.parse(await readFile(join(packageDir, "manifest.json"), "utf8"));
         assert.equal(manifest.version, 1);
         assert.ok(Array.isArray(manifest.assets) && manifest.assets.length > 0);
