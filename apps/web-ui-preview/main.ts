@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, CharacterManage, Confirm, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, CharacterManage, Confirm, HeroScreen, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -15,6 +15,7 @@ const designHeight = screen === "character" || route === "character" ? DESIGN_HE
     : screen === "backpack" || route === "backpack"
         || screen === "mail" || route === "mail"
         || screen === "settings" || route === "settings"
+        || screen === "hero" || route === "hero"
         || (!route && !screen) ? 1334
     : DESIGN_HEIGHT;
 container.style.height = `${designHeight}px`;
@@ -78,6 +79,16 @@ try {
             onSelectServer: (id) => console.info("[UniFlex CharacterManage] server", id),
         });
         console.info("[UniFlex CharacterManage] ready");
+    } else if (screen === "hero" || route === "hero") {
+        document.title = "UniFlex Hero Screen";
+        await runtime.start(HeroScreen, {
+            onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
+            onSelectCard: (id) => console.info("[UniFlex HeroScreen] card", id),
+            onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
+            onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
+            onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
+        });
+        console.info("[UniFlex HeroScreen] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",

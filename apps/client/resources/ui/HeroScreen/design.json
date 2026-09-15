@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {"width": 750, "height": 1334},
+  "fonts": {
+    "regular": {
+      "path": "../../../../apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf",
+      "sha256": "1846353947485b97808030078b5856b7be22e1b270e3231d907a0798bfd0ff14"
+    }
+  },
+  "assets": {
+    "header": {"path": "../MailBattleReport/assets/mail_header.png"},
+    "recruit": {"path": "assets/recruit.png"},
+    "listPanel": {"path": "assets/list_panel.png"},
+    "tabsBase": {"path": "assets/tabs_base.png"},
+    "navBase": {"path": "assets/nav_base.png"}
+  },
+  "roots": ["header", "recruit", "listPanel", "tabsBase", "navBase", "title"],
+  "bindings": {
+    "招募英雄": "recruit",
+    "页签-英雄": "tab-hero",
+    "页签-队伍": "tab-team",
+    "页签-羁绊": "tab-bonds"
+  },
+  "nodes": {
+    "header": {"id": "header", "name": "顶栏", "kind": "image", "frame": {"x": 0, "y": 0, "width": 750, "height": 90}, "asset": "header"},
+    "title": {"id": "title", "name": "英雄标题", "kind": "text", "frame": {"x": 20, "y": 16, "width": 160, "height": 58}, "text": {"fontId": "regular"}},
+    "recruit": {"id": "recruit", "name": "招募英雄", "kind": "image", "frame": {"x": 518, "y": 21, "width": 217, "height": 51}, "asset": "recruit"},
+    "listPanel": {"id": "listPanel", "name": "列表底板", "kind": "image", "frame": {"x": 15, "y": 157, "width": 720, "height": 948}, "asset": "listPanel"},
+    "tabsBase": {"id": "tabsBase", "name": "页签底", "kind": "image", "frame": {"x": 34, "y": 1122, "width": 682, "height": 80}, "asset": "tabsBase"},
+    "navBase": {"id": "navBase", "name": "导航底", "kind": "image", "frame": {"x": 0, "y": 1225, "width": 750, "height": 110}, "asset": "navBase"}
+  }
+}

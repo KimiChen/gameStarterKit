@@ -1,6 +1,6 @@
 import { Node, UITransform, view } from "cc";
 import { UniFlexCocosRuntime } from "../kits/uniflex/api/cocos/index";
-import { Backpack, CharacterManage, Confirm, MailBattleReport, Prompt, Settings, loadGameUI } from "./generated/ui";
+import { Backpack, CharacterManage, Confirm, HeroScreen, MailBattleReport, Prompt, Settings, loadGameUI } from "./generated/ui";
 import type { BackpackAction } from "./generated/Backpack";
 import type { MailBattleReportParams } from "./generated/MailBattleReport";
 import { resourceMap } from "./generated/resource-map";
@@ -185,6 +185,37 @@ export function createCharacterManagePreview(parent: Node) {
             onClose: dispose,
             onSelectPlayer: (id) => console.info("[UniFlex CharacterManage] player", id),
             onSelectServer: (id) => console.info("[UniFlex CharacterManage] server", id),
+        }),
+        dispose,
+    };
+}
+
+export function createHeroScreenPreview(parent: Node) {
+    const root = new Node("UniFlexHeroScreen");
+    root.layer = parent.layer;
+    const transform = root.addComponent(UITransform);
+    parent.addChild(root);
+    const resize = (): void => {
+        const size = view.getVisibleSize();
+        transform.setContentSize(size.width, size.height);
+    };
+    resize();
+    view.on("canvas-resize", resize);
+    const runtime = new UniFlexCocosRuntime({ container: root, resources: resourceMap, loadUI: loadGameUI });
+    let disposed = false;
+    const dispose = (): void => {
+        if (disposed) return;
+        disposed = true;
+        view.off("canvas-resize", resize);
+        try { runtime.dispose(); } finally { root.destroy(); }
+    };
+    return {
+        ready: runtime.start(HeroScreen, {
+            onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
+            onSelectCard: (id) => console.info("[UniFlex HeroScreen] card", id),
+            onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
+            onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
+            onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
         }),
         dispose,
     };
