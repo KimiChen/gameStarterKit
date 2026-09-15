@@ -175,3 +175,59 @@ test("pinned converter restores catalog ConfirmButton from layer identity", {
         await rm(tempRoot, { recursive: true, force: true });
     }
 });
+
+test("pinned converter restores MailBattleRow and BackpackTab from layer identity", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-complex-identity-"));
+    try {
+        const frame = { x: 10, y: 236, width: 730, height: 163 };
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        await mkdir(designDir, { recursive: true });
+        await writeFile(join(designDir, "design.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-design", canvas: { width: 750, height: 1334 },
+            roots: ["page"], fonts: {}, assets: {},
+            nodes: {
+                page: {
+                    id: "page", name: "MailBattleReport", kind: "group",
+                    frame: { x: 0, y: 0, width: 750, height: 1334 }, opacity: 1, visible: true,
+                    children: ["row"],
+                    identity: { key: "MailBattleReport.root", role: "page", definitionKey: "MailBattleReport" },
+                },
+                row: {
+                    id: "row", name: "MailBattleRow", kind: "group", frame, opacity: 1, visible: true,
+                    children: [],
+                    identity: {
+                        key: "MailBattleRow:MailBattleReport/MailBattleRow:0", role: "component",
+                        definitionKey: "MailBattleRow",
+                    },
+                },
+            },
+        }));
+        await writeFile(join(designDir, "component-declarations.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-component-declarations",
+            definitions: [
+                { key: "MailBattleReport", source: "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleReport.tsx" },
+                { key: "MailBattleRow", source: "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx" },
+            ],
+            instances: [
+                { key: "MailBattleReport.root", definitionKey: "MailBattleReport", role: "page", rootRecordId: 1 },
+                {
+                    key: "MailBattleRow:MailBattleReport/MailBattleRow:0", definitionKey: "MailBattleRow",
+                    role: "component", rootRecordId: 2,
+                },
+            ],
+        }));
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "MailBattleReport", "--out", packageDir,
+        ], { cwd: root, env });
+        const source = await readFile(join(packageDir, "MailBattleReport.authoring.tsx"), "utf8");
+        assert.match(source, /import \{ MailBattleRow \} from '\.\/MailBattleRow'/);
+        assert.match(source, /<MailBattleRow /);
+        assert.doesNotMatch(source, /MailBattleReportMailBattleRow/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
