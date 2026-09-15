@@ -391,7 +391,9 @@ export class CocosHostDriver {
                 const local = transform.convertToNodeSpaceAR(new Vec3(point.x, point.y, 0));
                 const min = Number((_a = handle.controlProps.min) !== null && _a !== void 0 ? _a : 0);
                 const max = Number((_b = handle.controlProps.max) !== null && _b !== void 0 ? _b : 100);
-                return normalizeRangeValue(min + Math.max(0, Math.min(1, local.x / transform.width + 0.5)) * (max - min), min, max, Number((_c = handle.controlProps.step) !== null && _c !== void 0 ? _c : 1));
+                const rangeWidth = Number(handle.controlProps.rangeWidth);
+                const inputWidth = Number.isFinite(rangeWidth) && rangeWidth > 0 ? Math.min(transform.width, rangeWidth) : transform.width;
+                return normalizeRangeValue(min + Math.max(0, Math.min(1, (local.x + transform.width / 2) / inputWidth)) * (max - min), min, max, Number((_c = handle.controlProps.step) !== null && _c !== void 0 ? _c : 1));
             };
             const change = (event) => {
                 var _a, _b;

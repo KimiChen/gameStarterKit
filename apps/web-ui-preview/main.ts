@@ -11,7 +11,7 @@ const screen = new URLSearchParams(location.search).get("screen");
 const prompt = new URLSearchParams(location.search).get("ui") === "prompt";
 const smallPopup = new URLSearchParams(location.search).get("ui") === "small-popup";
 const route = new URLSearchParams(location.search).get("ui");
-const designHeight = screen === "backpack" ? 1334
+const designHeight = screen === "backpack" || route === "backpack" ? 1334
     : screen === "mail" || route === "mail" || screen === "settings" || route === "settings" ? 1334
     : DESIGN_HEIGHT;
 container.style.height = `${designHeight}px`;
@@ -43,11 +43,11 @@ try {
         await runtime.start(SmallPopup, { title: "标题", onClose: backToPreview });
     } else if (prompt) {
         await runtime.start(Prompt, { theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" }, title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: "取消", onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: backToPreview, onClose: backToPreview });
-    } else if (screen === "backpack") {
+    } else if (screen === "backpack" || route === "backpack") {
         document.title = "UniFlex Backpack";
         const onAction = (action: BackpackAction) => {
             console.info("[UniFlex Backpack] action", action);
-            if (action.action === "back" || action.action === "close") dispose();
+            if (action.action === "back" || action.action === "close") backToPreview();
         };
         await runtime.start(Backpack, { onAction });
         console.info("[UniFlex Backpack] ready");

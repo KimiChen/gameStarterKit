@@ -259,7 +259,9 @@ export class DOMHostDriver {
                 const rect = element.getBoundingClientRect();
                 const min = Number((_a = handle.props.min) !== null && _a !== void 0 ? _a : 0);
                 const max = Number((_b = handle.props.max) !== null && _b !== void 0 ? _b : 100);
-                const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+                const rangeWidth = Number(handle.props.rangeWidth);
+                const inputWidth = Number.isFinite(rangeWidth) && rangeWidth > 0 ? Math.min(rect.width, rangeWidth) : rect.width;
+                const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / inputWidth));
                 return normalizeRangeValue(min + ratio * (max - min), min, max, Number((_c = handle.props.step) !== null && _c !== void 0 ? _c : 1));
             };
             const down = (event) => {

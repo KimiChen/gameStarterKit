@@ -7,17 +7,19 @@ export type BackpackCheckpointStep =
 export class BackpackLogic {
     readonly events: BackpackAction[] = [];
     private readonly bindings: Readonly<Record<string, BackpackAction["action"]>> = {
-        "ROLE::layer-2": "primary",
-        "ROLE::layer-13": "primary",
-        "ROLE::layer-27": "back",
-        "ROLE::layer-57": "tab",
+        "ROLE::tab-resource": "tab",
+        "ROLE::item-resource-diamond-1": "select",
+        "ROLE::resource-1": "primary",
+        "ROLE::quantity": "select",
+        "ROLE::back": "back",
     };
 
     onAction(action: BackpackAction): void {
-        const expected = this.bindings[action.id === "layer-2" ? "ROLE::layer-2"
-            : action.id === "layer-13" ? "ROLE::layer-13"
-                : action.id === "layer-27" ? "ROLE::layer-27"
-                    : action.id === "layer-57" ? "ROLE::layer-57" : ""];
+        const expected = action.id === "back" ? "back"
+            : /^tab-(equipment|resource|speedup|boost|other)$/.test(action.id) ? "tab"
+                : action.id.startsWith("item-") ? "select"
+                    : /^resource-[1-4]$/.test(action.id) ? "primary"
+                        : action.id === "quantity" ? "select" : undefined;
         if (!expected || expected !== action.action)
             throw new Error(`Unbound or invalid Backpack action: ${action.id}/${action.action}`);
         this.events.push(action);
@@ -26,7 +28,7 @@ export class BackpackLogic {
     runCheckpoint(steps: readonly BackpackCheckpointStep[]): readonly BackpackAction[] {
         for (const step of steps) {
             if (step.type === "back") {
-                this.onAction({ id: "layer-27", action: "back" });
+                this.onAction({ id: "back", action: "back" });
                 continue;
             }
             const stableKey = step.name.startsWith("ROLE::") ? step.name : `ROLE::${step.name}`;

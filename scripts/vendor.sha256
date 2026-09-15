@@ -4,7 +4,7 @@ fbdda2c55b2c0d1d17238e8c338e3dba560e2daa4605539e7d9dd85be00a6c85  apps/client/sr
 cbec8a9707e64874c67e8d9722b25bdb924c0e2965fb7ec336437a6a43dea93b  apps/client/src/lib/uniflex/cocos/cancellation.d.ts
 0a5e9e375b8345faafb7f06025eac9bae7b84c7feeedb90203eb36959df76bcb  apps/client/src/lib/uniflex/cocos/cancellation.js
 a5e3671c2fe11a2c69d94db5edec6327701f23336dba4c763dd01ca5e11a7ab3  apps/client/src/lib/uniflex/cocos/cocos-host.d.ts
-789997ea0a8904791f3af7a7fb1a346f21facac4917d55d929182309443859e6  apps/client/src/lib/uniflex/cocos/cocos-host.js
+1793a0191e7fa01b137692b59e4a8e8bd23f4d161b34a0d13126dea7a746e43a  apps/client/src/lib/uniflex/cocos/cocos-host.js
 7a98e3156cd82e15f779ef5c2584869ea0e6d1d9d6d78c82b82a2c618b6e1283  apps/client/src/lib/uniflex/cocos/cocos-performance.d.ts
 7919c361516df19d4f3a38156fbf459f89b32d4ca4287e769ade71ae5615528f  apps/client/src/lib/uniflex/cocos/cocos-performance.js
 9f19f6f2b56d79d09dd7b30ff2948f6ee1d2c9c43037575c3ac3000d0b056c57  apps/client/src/lib/uniflex/cocos/cocos-provider.d.ts
@@ -55,7 +55,7 @@ e14aca7baf14a80a78b9b044ab3665df6e5af0aa23ab33b7d0059b08f44878d2  apps/client/sr
 764fc6292a1d0b66e011c634948a16b96334e25e2645d32d8092d1915ec8f594  apps/client/src/lib/uniflex/core/dts/provider/resource-store.d.ts
 c937c8e4d067c438b420d18d6b58acc901f8930cc7eeeb6860f03974ef98346f  apps/client/src/lib/uniflex/core/dts/provider/ui-provider.d.ts
 656af2506793667163a8f164f818e3c545a55ec59d512e2f8395cd3fca484928  apps/client/src/lib/uniflex/core/dts/runtime/host-frame-scheduler.d.ts
-ed0f0c11c589ed5a5b2c85f3aff36a19aecfbb8e995bfe23109ebbc49a474bda  apps/client/src/lib/uniflex/core/dts/runtime/host-plan.d.ts
+2ba91a15771c2731c3b62e1865a68690958aa84ace53c72483cdea401757ddea  apps/client/src/lib/uniflex/core/dts/runtime/host-plan.d.ts
 2a4df3a6cd40714c891b6720c5b594eda80ef60e6c2c3ecc7a10d140ce2a2530  apps/client/src/lib/uniflex/core/dts/runtime/initial-render.d.ts
 7208016d805de17f4639cb49ea00bfa9332a1640c7269fa356926e0a6387a742  apps/client/src/lib/uniflex/core/dts/runtime/parse-host-plan.d.ts
 904d1389162eaa3b38a2ce3d4186a7caa93872703f460013773c3a0bf2585708  apps/client/src/lib/uniflex/core/dts/runtime/runtime.d.ts
@@ -117,7 +117,7 @@ ec5a9f7e31777ad70b5b3f8154e3b38150abe2f45921408304af7f7f1f89ab31  apps/client/sr
 5d5088fe35b23910e80b076ab657adc78e7eb7352004af83fe1aa2024a0c4877  apps/client/src/lib/uniflex/mod/web/web-provider.ts
 4987ecfe0f89a575631a734ce8c3240b2ee0163d6cb7ec49ccbe693922a6df3e  apps/client/src/lib/uniflex/package.json
 30e1e713ee4ff2960b9767c4e693a87feb2f8ff7e40b4c4126adb4716765d03c  apps/client/src/lib/uniflex/web/dom-host.d.ts
-9f03691139c90224de2c04874d66268feb6886eb9fd188c479c163c333d961ad  apps/client/src/lib/uniflex/web/dom-host.js
+a7622872aefdb78f855717579c056a700cb13a86e68d8df3be1c96f52a331ba9  apps/client/src/lib/uniflex/web/dom-host.js
 40d474c59129217557f9305ab71ae5bbf21086e51d933c8b9a4fb506526ec488  apps/client/src/lib/uniflex/web/frozen-snapshot.d.ts
 1c22a5e432652a4d1dd9a7d8e02bc2eac05bf8ca5c095e06dab5798b588cd3a2  apps/client/src/lib/uniflex/web/frozen-snapshot.js
 5835a4dea47d01d11cb7e515100176445ccd56db439b7e81bbe139cce36720c6  apps/client/src/lib/uniflex/web/index.d.ts

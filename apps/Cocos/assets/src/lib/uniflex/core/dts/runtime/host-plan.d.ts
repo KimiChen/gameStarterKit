@@ -215,6 +215,8 @@ export interface InitialRenderOptions {
 export interface BaseViewProps {
     children?: unknown;
     name?: string;
+    /** Optional range hit length; consumed only by range interactions. */
+    rangeWidth?: number;
     style?: FlexStyle;
     backgroundColor?: string;
     opacity?: number;
@@ -240,6 +242,8 @@ export interface RangeViewProps extends BaseViewProps {
     min?: number;
     max?: number;
     step?: number;
+    /** Optional logical hit length used to map pointer positions when the visual thumb travels a shorter distance. */
+    rangeWidth?: number;
     interactable?: boolean;
     accessibilityLabel?: string;
     onChange?: (value: number) => void;
