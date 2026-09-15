@@ -1,6 +1,6 @@
 import { _decorator, Color, Component, Label, Node, ResolutionPolicy, UITransform, view } from "cc";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "../designSpec";
-import { createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
+import { createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
 
 const { ccclass } = _decorator;
 
@@ -18,15 +18,20 @@ export class UniFlexPreview extends Component {
         const mail = query?.get("screen") === "mail";
         const settings = query?.get("screen") === "settings";
         const character = query?.get("screen") === "character";
+        const hero = query?.get("screen") === "hero";
+        const heroDetail = query?.get("screen") === "hero-detail";
         const prompt = query?.get("ui") === "prompt";
         if (backpack) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (mail) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (settings) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
+        if (hero) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         const preview = backpack
             ? createBackpackPreview(this.node)
             : mail ? createMailBattleReportPreview(this.node)
             : settings ? createSettingsPreview(this.node)
             : character ? createCharacterManagePreview(this.node)
+            : hero ? createHeroScreenPreview(this.node)
+            : heroDetail ? createHeroDetailPreview(this.node)
             : prompt ? createPromptPreview(this.node, query?.get("cancel") !== "0")
             : createConfirmPreview(this.node, query?.get("cancel") !== "0");
         this.runtime = preview;

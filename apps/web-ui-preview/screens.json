@@ -82,6 +82,22 @@
       "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManage.tsx"
     },
     {
+      "id": "hero",
+      "aliases": ["hero", "hero-screen"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "HeroScreen",
+      "rootName": "HeroScreen",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroScreen.tsx"
+    },
+    {
+      "id": "hero-detail",
+      "aliases": ["hero-detail", "heroDetail"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "HeroDetail",
+      "rootName": "HeroDetail",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetail.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },
@@ -207,6 +223,61 @@
       "key": "CharacterServerItem",
       "rootName": "CharacterServerItem",
       "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterServerItem.tsx"
+    },
+    {
+      "key": "MainNav",
+      "rootName": "MainNav",
+      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx"
+    },
+    {
+      "key": "HeroListPanel",
+      "rootName": "HeroListPanel",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroListPanel.tsx"
+    },
+    {
+      "key": "HeroBondsPanel",
+      "rootName": "HeroBondsPanel",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroBondsPanel.tsx"
+    },
+    {
+      "key": "HeroCard",
+      "rootName": "HeroCard",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroCard.tsx"
+    },
+    {
+      "key": "HeroFilterBar",
+      "rootName": "HeroFilterBar",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroFilterBar.tsx"
+    },
+    {
+      "key": "HeroBondItem",
+      "rootName": "HeroBondItem",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroBondItem.tsx"
+    },
+    {
+      "key": "HeroRequiredHero",
+      "rootName": "HeroRequiredHero",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroRequiredHero.tsx"
+    },
+    {
+      "key": "HeroDetailTabs",
+      "rootName": "HeroDetailTabs",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailTabs.tsx"
+    },
+    {
+      "key": "HeroDetailAttributes",
+      "rootName": "HeroDetailAttributes",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailAttributes.tsx"
+    },
+    {
+      "key": "HeroDetailSkills",
+      "rootName": "HeroDetailSkills",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailSkills.tsx"
+    },
+    {
+      "key": "HeroSkillSlot",
+      "rootName": "HeroSkillSlot",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroSkillSlot.tsx"
     }
   ]
 }

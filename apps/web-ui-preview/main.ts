@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroScreen, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
@@ -130,6 +130,25 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onClose: backToPreview,
                 onSelectPlayer: (id) => console.info("[UniFlex CharacterManage] player", id),
                 onSelectServer: (id) => console.info("[UniFlex CharacterManage] server", id),
+            });
+            return;
+        case "hero":
+            await runtime.start(HeroScreen, {
+                onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
+                onSelectCard: () => { location.href = "?ui=hero-detail"; },
+                onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
+                onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
+                onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
+            });
+            return;
+        case "hero-detail":
+            await runtime.start(HeroDetail, {
+                onBack: backToPreview,
+                onPrev: () => console.info("[UniFlex HeroDetail] prev"),
+                onNext: () => console.info("[UniFlex HeroDetail] next"),
+                onStarUp: () => console.info("[UniFlex HeroDetail] star-up"),
+                onUpgrade: () => console.info("[UniFlex HeroDetail] upgrade"),
+                onSelectSkill: (id) => console.info("[UniFlex HeroDetail] skill", id),
             });
             return;
         case "prompt-restored":
