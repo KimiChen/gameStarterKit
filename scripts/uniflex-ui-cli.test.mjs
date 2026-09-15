@@ -129,8 +129,8 @@ test("roundtrip from a preview screen exports, packages and checks without writi
     assert.equal(exported[0][0], "export");
     assert.ok(exported[0].includes("--adapter"));
     assert.deepEqual(exported[1].slice(0, 3), ["psd-import", "--file", resolve(output, "export/web-ui.psd")]);
-    assert.deepEqual(exported[2].slice(0, 5), ["uniflex-package", "--design",
-        resolve(output, "design/design.json"), "--name", "Prompt"]);
+    assert.deepEqual(exported[2].slice(0, 7), ["uniflex-package", "--design",
+        resolve(output, "design/design.json"), "--name", "Prompt", "--source-root", root]);
     assert.equal(calls[3][1][0], resolve(root, "scripts/verify-uniflex-ui.mjs"));
     assert.equal(calls.length, 4);
 });

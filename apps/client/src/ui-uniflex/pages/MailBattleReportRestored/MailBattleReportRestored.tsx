@@ -12,12 +12,8 @@ export interface MailBattleTab {
     readonly id: string;
     readonly label: string;
     readonly items: readonly MailBattleItem[];
-};
+}
 export type MailBattleTabs = readonly [MailBattleTab, MailBattleTab, MailBattleTab, MailBattleTab];
-export type MailBattleReportRestoredAction = {
-    readonly id: string;
-    readonly action: 'back' | 'close' | 'tab' | 'primary' | 'select';
-};
 export interface MailBattleReportRestoredParams {
     readonly title?: string;
     readonly countText?: string;
@@ -26,7 +22,6 @@ export interface MailBattleReportRestoredParams {
     readonly onBack?: () => void;
     readonly onDeleteRead?: () => void;
     readonly onConfirm?: () => void;
-    readonly onAction?: (action: MailBattleReportRestoredAction) => void;
 }
 
 const defaultTabs: MailBattleTabs = [
@@ -64,8 +59,6 @@ const defaultTabs: MailBattleTabs = [
 
 export const MailBattleReportRestored = defineView<MailBattleReportRestoredParams | void>({ zIndex: 'window' }, (context) => {
     const params = context.params ?? {};
-    const emit = (id: string, action: MailBattleReportRestoredAction['action']) =>
-        params.onAction?.({ id, action });
     const [activeTab, setActiveTab] = useState(1);
     const [openedById, setOpenedById] = useState<Readonly<Record<string, boolean>>>({});
     const [deletedById, setDeletedById] = useState<Readonly<Record<string, boolean>>>({});
@@ -102,10 +95,6 @@ export const MailBattleReportRestored = defineView<MailBattleReportRestoredParam
     const badgeLeft1 = badgeLeft(1);
     const badgeLeft2 = badgeLeft(2);
     const badgeLeft3 = badgeLeft(3);
-    const selectTab = (index: number) => {
-        setActiveTab(index);
-        emit(`tab-${tabGroups[index].id}`, 'tab');
-    };
     const deleteRead = () => {
         const readItems = items.filter((item) => item.read || openedById[item.id]);
         if (readItems.length > 0) {
@@ -116,26 +105,25 @@ export const MailBattleReportRestored = defineView<MailBattleReportRestoredParam
             });
         }
         params.onDeleteRead?.();
-        emit('delete-read', 'select');
     };
     return (
         <view name="MailBattleReportRestored" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
             <image source={imageRef('ui/mail/header')} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
             <text value={params.title ?? '邮件'} style={{ position: 'absolute', left: 38, top: 16, width: 300, height: 60, font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true, outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
-            <view interaction="press" onClick={() => selectTab(0)} style={{ position: 'absolute', left: tabs[0], top: activeTab === 0 ? 103 : 118, width: tabWidth(0), height: tabHeight(0) }}>
+            <view interaction="press" onClick={() => setActiveTab(0)} style={{ position: 'absolute', left: tabs[0], top: activeTab === 0 ? 103 : 118, width: tabWidth(0), height: tabHeight(0) }}>
                 <image source={tab0} style={{ width: '100%', height: '100%', sizeMode: 'sliced' }} />
                 <text value={tabGroups[0].label} style={{ position: 'absolute', width: '100%', height: '100%', font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
-            <view interaction="press" onClick={() => selectTab(1)} style={{ position: 'absolute', left: tabs[1], top: activeTab === 1 ? 103 : 118, width: tabWidth(1), height: tabHeight(1) }}>
+            <view interaction="press" onClick={() => setActiveTab(1)} style={{ position: 'absolute', left: tabs[1], top: activeTab === 1 ? 103 : 118, width: tabWidth(1), height: tabHeight(1) }}>
                 <image source={tab1} style={{ width: '100%', height: '100%', sizeMode: 'sliced' }} />
                 <text value={tabGroups[1].label} style={{ position: 'absolute', width: '100%', height: '100%', font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
-            <view interaction="press" onClick={() => selectTab(2)} style={{ position: 'absolute', left: tabs[2], top: activeTab === 2 ? 103 : 118, width: tabWidth(2), height: tabHeight(2) }}>
+            <view interaction="press" onClick={() => setActiveTab(2)} style={{ position: 'absolute', left: tabs[2], top: activeTab === 2 ? 103 : 118, width: tabWidth(2), height: tabHeight(2) }}>
                 <image source={tab2} style={{ width: '100%', height: '100%', sizeMode: 'sliced' }} />
                 <text value={tabGroups[2].label} style={{ position: 'absolute', width: '100%', height: '100%', font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
-            <view interaction="press" onClick={() => selectTab(3)} style={{ position: 'absolute', left: tabs[3], top: activeTab === 3 ? 103 : 118, width: tabWidth(3), height: tabHeight(3) }}>
+            <view interaction="press" onClick={() => setActiveTab(3)} style={{ position: 'absolute', left: tabs[3], top: activeTab === 3 ? 103 : 118, width: tabWidth(3), height: tabHeight(3) }}>
                 <image source={tab3} style={{ width: '100%', height: '100%', sizeMode: 'sliced' }} />
                 <text value={tabGroups[3].label} style={{ position: 'absolute', width: '100%', height: '100%', font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
@@ -147,20 +135,20 @@ export const MailBattleReportRestored = defineView<MailBattleReportRestoredParam
                 controller={listController} inertia elastic style={{ position: 'absolute', left: 10, top: 236, width: 730, height: 905 }}>
                 {(item) => <MailBattleRow title={item.title} subtitle={item.subtitle} sentAt={item.sentAt} expiresAt={item.expiresAt}
                     read={item.read ? true : openedById[item.id] === true}
-                    onClick={() => { setOpenedById((current) => ({ ...current, [item.id]: true })); emit(item.id, 'select'); }} />}
+                    onClick={() => setOpenedById((current) => ({ ...current, [item.id]: true }))} />}
             </VirtualList>
             <image source={imageRef('ui/mail/count-bg')} style={{ position: 'absolute', left: 266, top: 1166, width: 218, height: 40, sizeMode: 'sliced' }} />
             <image source={imageRef('ui/mail/count-icon')} style={{ position: 'absolute', left: 273, top: 1171, width: 30, height: 32 }} />
             <text value={`邮件数:${params.countText ?? `${items.length}/200`}`} style={{ position: 'absolute', left: 300, top: 1166, width: 184, height: 40, font: fontRef('fonts/regular', 700), fontSize: 24, color: '#584871', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
             <image source={imageRef('ui/mail/footer')} style={{ position: 'absolute', left: 0, top: 1225, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view interaction="press" onClick={() => { params.onBack?.(); emit('back', 'back'); }} style={{ position: 'absolute', left: 13, top: 1252, width: 64, height: 56 }}>
+            <view interaction="press" onClick={() => params.onBack?.()} style={{ position: 'absolute', left: 13, top: 1252, width: 64, height: 56 }}>
                 <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
             </view>
             <view style={{ position: 'absolute', left: 111.125, top: 1229.25, width: 255, height: 102, scale: 0.75 }}>
                 <ActionButton label="删除已读" source={redButton} outlineColor="#6A2A28" onClick={deleteRead} />
             </view>
             <view style={{ position: 'absolute', left: 384.125, top: 1229.25, width: 255, height: 102, scale: 0.75 }}>
-                <ActionButton label="确定" source={yellowButton} outlineColor="#643E14" onClick={() => { params.onConfirm?.(); emit('confirm', 'primary'); }} />
+                <ActionButton label="确定" source={yellowButton} outlineColor="#643E14" onClick={params.onConfirm} />
             </view>
         </view>
     );

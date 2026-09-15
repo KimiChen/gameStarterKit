@@ -80,7 +80,7 @@
     "fontkit": "2.0.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "web-ui-to-psd": "file:vendor/web-ui-to-psd-0.1.5.tgz",
+    "web-ui-to-psd": "file:vendor/web-ui-to-psd-0.1.6.tgz",
     "xlsx": "^0.18.5"
   },
   "dependencies": {

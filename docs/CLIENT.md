@@ -101,8 +101,9 @@ apps/Cocos/
   `node_modules/web-ui-to-psd`），不依赖本机转换器源码目录；`ui:import-psd` /
   `ui:export-psd` / `ui:roundtrip` 默认解析该包。转换器还需要本机 Chrome 与 `uv`。
   预览快照会给每个节点打上组件身份；导出写成 PSD 原生 layer ID + 图层名
-  `label [ui:key#role]`（octane-lite 同款）。`uniflex-package` 按这些身份还原
-  `PopupFrame` / `ConfirmButton` 等 catalog 组件，而不是摊成 view。
+  `label [ui:key#role]`（octane-lite 同款），并带上 UniFlex 布局框。`uniflex-package`
+  按这些身份还原 `PopupFrame` / `ConfirmButton` 等 catalog 组件，而不是摊成 view；
+  PSD 里换图、改大小或位置只覆盖视觉，不改组件结构。
   PSD 导入包必须经过 `npm run ui:check-source -- --package <package> --strict`；
   `apps/client/resources/ui/<Page>/design.json` 的 `canvas` 是正式验收输入，Web 只能先与独立源图形成 proposal，
   经人工批准后才允许 Cocos 对照。导入组件保持纯展示态，业务 Logic、路由和服务端命令绑定放在

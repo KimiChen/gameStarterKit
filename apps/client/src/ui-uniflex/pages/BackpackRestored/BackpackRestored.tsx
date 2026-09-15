@@ -14,7 +14,7 @@ export interface BackpackTabData {
     readonly id: string;
     readonly label: string;
     readonly items: readonly BackpackItem[];
-};
+}
 export type BackpackTabs = readonly [BackpackTabData, BackpackTabData, BackpackTabData, BackpackTabData, BackpackTabData];
 export interface BackpackRestoredParams {
     readonly title?: string;
@@ -112,7 +112,7 @@ export const BackpackRestored = defineView<BackpackRestoredParams | void>({ zInd
             <BackpackTab label={tabs[3].label} active={activeTab === 3} left={455} onClick={() => selectTab(3)} />
             <BackpackTab label={tabs[4].label} active={activeTab === 4} left={602} onClick={() => selectTab(4)} />
 
-            <view visible={hasItems} name="Backpack/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>
+            <view visible={hasItems} name="BackpackRestored/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>
                 <For each={items} key="id">
                     {(entry) => <BackpackItemCard item={entry} selected={selectedId === entry.id}
                         slot={entry.slot} onClick={() => selectItem(entry)} />}
@@ -120,14 +120,14 @@ export const BackpackRestored = defineView<BackpackRestoredParams | void>({ zInd
             </view>
             <image source={imageRef('ui/settings/divider')} style={{ position: 'absolute', left: 26, top: 928, width: 698, height: 3, sizeMode: 'sliced' }} />
 
-            <view visible={!hasItems} name="Backpack/Empty" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
+            <view visible={!hasItems} name="BackpackRestored/Empty" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
                 <image source={imageRef('ui/backpack/empty')} style={{ position: 'absolute', left: 321, top: 977, width: 108, height: 116 }} />
                 <text value="背包里没有任何道具" style={{ position: 'absolute', left: 150, top: 1117, width: 450, height: 64,
                     font: fontRef('fonts/regular', 700), fontSize: 40, color: '#837A91', bold: true,
                     horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
 
-            <view visible={hasItems} name="Backpack/Details" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
+            <view visible={hasItems} name="BackpackRestored/Details" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
                 <text value={detailItem?.name ?? ''} style={{ position: 'absolute', left: 23, top: 946, width: 704, height: 48,
                     font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,
                     verticalAlign: 'center', overflow: 'shrink' }} />
@@ -140,7 +140,7 @@ export const BackpackRestored = defineView<BackpackRestoredParams | void>({ zInd
             </view>
 
             <image source={imageRef('ui/mail/footer')} style={{ position: 'absolute', left: 0, top: 1225, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="Backpack/Back" interaction="press" accessibilityLabel="返回" onClick={() => emit('back', 'back')}
+            <view name="BackpackRestored/Back" interaction="press" accessibilityLabel="返回" onClick={() => emit('back', 'back')}
                 style={{ position: 'absolute', left: 13, top: 1252, width: 64, height: 56 }}>
                 <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
             </view>
