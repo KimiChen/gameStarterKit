@@ -1,6 +1,5 @@
 {
   "version": 1,
-  "feature": "uniflex-import",
   "assets": [
     {"id":"ui/backpack/empty","kind":"image","file":"assets/bag_empty.png","width":108,"height":116,"sha256":"088ec07120c4b1dee35b399213fbced39187e78d9259136fab2c8ae50a19bf28"},
     {"id":"ui/backpack/slider-track","kind":"image","file":"assets/bag_slider_track.png","width":32,"height":44,"sha256":"f394c51f908095167f209e9e6fd757d1b506244e8eb1bfbb941b858a846c22b4","nineSlice":[14,0,14,0]},

@@ -93,11 +93,6 @@
       "key": "MailBattleRow",
       "rootName": "MailBattleRow",
       "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
-    },
-    {
-      "key": "BackpackComponent",
-      "rootName": "分页-训练",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackComponent.tsx"
     }
   ]
 }
