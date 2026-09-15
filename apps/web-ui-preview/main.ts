@@ -4,7 +4,7 @@ import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
-import { declarePsdOwnership } from "./psd-ownership";
+import { declarePsdOwnership, stampPsdIdentities } from "./psd-ownership";
 import { findPreviewScreen, screenCatalog, type ScreenEntry } from "./screens";
 
 const params = new URLSearchParams(location.search);
@@ -123,13 +123,15 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
 try {
     await startScreen(active);
     const snapshot = runtime.snapshot(active.canvas.width, active.canvas.height);
+    const componentDeclarations = declarePsdOwnership(snapshot.nodes, {
+        key: active.componentName,
+        source: active.source,
+        rootName: active.rootName,
+    }, screenCatalog.components);
     (window as typeof window & { __UNIFLEX_DESIGN_SNAPSHOT__?: unknown }).__UNIFLEX_DESIGN_SNAPSHOT__ = {
         ...snapshot,
-        componentDeclarations: declarePsdOwnership(snapshot.nodes, {
-            key: active.componentName,
-            source: active.source,
-            rootName: active.rootName,
-        }, screenCatalog.components),
+        nodes: stampPsdIdentities(snapshot.nodes, componentDeclarations),
+        componentDeclarations,
     };
     document.documentElement.dataset.uniflexReady = "true";
 } catch (error) {

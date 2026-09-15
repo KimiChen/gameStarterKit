@@ -8,10 +8,12 @@ export const CancelButton = defineComponent<ConfirmButtonProps>((p) => {
     const label = p.label ?? '取消';
     const source = imageRef('ui/button/cancel');
     const outlineColor = '#4e783b';
-    const width = p.width;
-    const height = p.height;
     const disabled = p.disabled;
     const onClick = p.onClick;
-    return <ActionButton label={label} source={source} outlineColor={outlineColor}
-        width={width} height={height} disabled={disabled} onClick={onClick} />;
+    return (
+        <view name="CancelButton" style={{ width: p.width ?? 255, height: p.height ?? 102 }}>
+            <ActionButton label={label} source={source} outlineColor={outlineColor}
+                width={p.width} height={p.height} disabled={disabled} onClick={onClick} />
+        </view>
+    );
 });

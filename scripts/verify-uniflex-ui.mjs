@@ -28,9 +28,10 @@ const compareMetric = (arguments_) => {
     return metric;
 };
 const actionFor = (name) => {
+    if (/(background|backdrop)/i.test(name) && !/(按钮|button)/i.test(name)) return null;
     if (!/(按钮|使用|返回|关闭|确定|取消|页签|分页|标签|tab|加|减|下一|上一|选择|装备|领取|确认|提交|use|button|back|close)/i.test(name))
         return null;
-    if (/(返回|上一|back)/i.test(name)) return "back";
+    if (/(返回|上一)/i.test(name) || /(^|[^a-z])back([^a-z]|$)/i.test(name)) return "back";
     if (/(关闭|取消|close)/i.test(name)) return "close";
     if (/(页签|标签|tab|分页)/i.test(name)) return "tab";
     if (/(使用|领取|确认|提交|装备|use)/i.test(name)) return "primary";

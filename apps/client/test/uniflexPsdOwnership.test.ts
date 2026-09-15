@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { declarePsdOwnership, promptPsdOwnership } from '../../web-ui-preview/psd-ownership';
+import { declarePsdOwnership, promptPsdOwnership, stampPsdIdentities } from '../../web-ui-preview/psd-ownership';
 
 function fixture(offset = 0) {
     const names = ['PopupFrame', 'PopupFrame/Panel', 'PopupFrame/Content', 'Prompt/Content',
@@ -57,8 +57,8 @@ test('duplicate sibling component roots stay unique without inferred group names
     }, registered);
     assert.deepEqual(contract.instances.filter((instance) => instance.definitionKey === 'SettingsMenuButton')
         .map((instance) => instance.key).sort(), [
-        'SettingsMenuButton:Settings/Content/SettingsMenuButton#0',
-        'SettingsMenuButton:Settings/Content/SettingsMenuButton#1',
+        'SettingsMenuButton:Settings/Content/SettingsMenuButton:0',
+        'SettingsMenuButton:Settings/Content/SettingsMenuButton:1',
     ]);
 });
 
@@ -67,4 +67,13 @@ test('generic declarations fail closed when the page root is missing or ambiguou
     assert.throws(() => declarePsdOwnership([...fixture(), {
         id: 99, parent: null, name: 'Prompt/Content', kind: 'view',
     }], page, registered), /Ambiguous or missing page root/);
+});
+
+test('snapshot identities use instance keys without # so PSD layer tags can round-trip', () => {
+    const contract = declarePsdOwnership(fixture(), page, registered);
+    const stamped = stampPsdIdentities(fixture(), contract) as Array<{ identity: { key: string, role: string } }>;
+    assert.equal(stamped[0]!.identity.role, 'component');
+    assert.equal(stamped[3]!.identity.role, 'page');
+    assert.equal(stamped[5]!.identity.definitionKey, 'ActionButton');
+    assert.ok(stamped.every((node) => !node.identity.key.includes('#')));
 });

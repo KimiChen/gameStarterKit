@@ -1,5 +1,7 @@
 import { defineView } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { CancelButton } from '../../components/button/CancelButton';
+import { ConfirmButton } from '../../components/button/ConfirmButton';
 import type { ConfirmLogic } from '../../../logic/page/ConfirmLogic';
 
 export interface ConfirmParams {
@@ -61,27 +63,15 @@ export const Confirm = defineView<ConfirmParams, boolean>(
                             verticalAlign: 'center',
                         }}
                     />
-                    <view name="Confirm/CancelButton" visible={hasCancel} interaction="press"
-                        onClick={() => {
+                    <view visible={hasCancel} style={{ position: 'absolute', left: 397, top: 233 }}>
+                        <CancelButton label={params.noText ?? '取消'} onClick={() => {
                             if (context.params.isActive()) params.no();
-                        }}
-                        style={{ position: 'absolute', left: 397, top: 233, width: 257, height: 110 }}>
-                        <image style={{ position: 'absolute', left: 0, top: 0, width: 255, height: 102, sizeMode: 'sliced' }} source={imageRef('ui/button/cancel')} />
-                            <text
-                                value={params.noText ?? '取消'}
-                                style={{ position: 'absolute', left: 0, top: 13, width: 255, height: 70, font: fontRef('fonts/regular', 400), fontSize: 40, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }}
-                            />
+                        }} />
                     </view>
-                    <view name="ConfirmButton" interaction="press"
-                        onClick={() => {
+                    <view style={{ position: 'absolute', left: 55, top: 233 }}>
+                        <ConfirmButton label={params.yesText ?? '确定'} onClick={() => {
                             if (context.params.isActive()) params.yes();
-                        }}
-                        style={{ position: 'absolute', left: 55, top: 233, width: 257, height: 110 }}>
-                        <image style={{ position: 'absolute', left: 0, top: 0, width: 255, height: 102, sizeMode: 'sliced' }} source={imageRef('ui/button/confirm')} />
-                            <text
-                                value={params.yesText ?? '确定'}
-                                style={{ position: 'absolute', left: 0, top: 13, width: 255, height: 70, font: fontRef('fonts/regular', 400), fontSize: 40, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }}
-                            />
+                        }} />
                     </view>
                 </view>
             </view>

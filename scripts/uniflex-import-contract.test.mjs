@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -104,6 +104,73 @@ test("PSD UniFlex package contract uses manifest.json without page sidecars", {
         assert.equal(await access(join(resourceDir, "IMPORT.md")).then(() => true).catch(() => false), false);
         assert.equal(await access(join(resourceDir, "components.json")).then(() => true).catch(() => false), false);
         assert.equal(await access(join(resourceDir, "import.json")).then(() => true).catch(() => false), false);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("pinned converter restores catalog ConfirmButton from layer identity", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-identity-"));
+    try {
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        await mkdir(join(designDir, "assets"), { recursive: true });
+        await writeFile(join(designDir, "assets/pixel.png"), PIXEL_PNG);
+        const sha256 = createHash("sha256").update(PIXEL_PNG).digest("hex");
+        const frame = { x: 0, y: 0, width: 8, height: 8 };
+        await writeFile(join(designDir, "design.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-design", canvas: { width: 8, height: 8 },
+            roots: ["page"], fonts: {},
+            assets: { pixel: { path: "assets/pixel.png", sha256, mime: "image/png", width: 1, height: 1 } },
+            nodes: {
+                page: {
+                    id: "page", name: "Confirm", kind: "group", frame, opacity: 1, visible: true,
+                    children: ["button"],
+                    identity: { key: "Confirm.root", role: "page", definitionKey: "Confirm" },
+                },
+                button: {
+                    id: "button", name: "ConfirmButton", kind: "group", frame, opacity: 1, visible: true,
+                    children: ["fill"],
+                    identity: {
+                        key: "ConfirmButton:Confirm/ConfirmButton", role: "component",
+                        definitionKey: "ConfirmButton",
+                    },
+                },
+                fill: {
+                    id: "fill", name: "ActionButton/Background", kind: "image", frame, opacity: 1,
+                    visible: true, asset: "pixel",
+                    identity: {
+                        key: "ConfirmButton:Confirm/ConfirmButton/Background", role: "fill",
+                        definitionKey: "ConfirmButton",
+                    },
+                },
+            },
+        }));
+        await writeFile(join(designDir, "component-declarations.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-component-declarations",
+            definitions: [
+                { key: "Confirm", source: "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx" },
+                { key: "ConfirmButton", source: "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx" },
+            ],
+            instances: [
+                { key: "Confirm.root", definitionKey: "Confirm", role: "page", rootRecordId: 1 },
+                {
+                    key: "ConfirmButton:Confirm/ConfirmButton", definitionKey: "ConfirmButton",
+                    role: "component", rootRecordId: 2,
+                },
+            ],
+        }));
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "Confirm", "--out", packageDir,
+        ], { cwd: root, env });
+        const source = await readFile(join(packageDir, "Confirm.authoring.tsx"), "utf8");
+        assert.match(source, /import \{ ConfirmButton \} from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+        assert.match(source, /<ConfirmButton /);
+        assert.doesNotMatch(source, /ConfirmConfirmButton/);
+        assert.deepEqual(await readdir(join(packageDir, "components")), []);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }

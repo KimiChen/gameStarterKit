@@ -32,20 +32,24 @@ function readNodes(values: readonly unknown[]): SnapshotNode[] {
     });
 }
 
-function authorPath(nodes: readonly SnapshotNode[], node: SnapshotNode): string {
+function authorPath(
+    nodes: readonly SnapshotNode[],
+    node: SnapshotNode,
+    ancestorId: number | null = null,
+): string {
     const byId = new Map(nodes.map((entry) => [entry.id, entry]));
     const seen = new Set<number>();
     const parts: string[] = [];
     let current: SnapshotNode | undefined = node;
-    while (current) {
+    while (current && current.id !== ancestorId) {
         if (seen.has(current.id)) throw new Error('Cycle in PSD snapshot parent chain');
         seen.add(current.id);
         const siblings = nodes.filter((entry) =>
             entry.parent === current!.parent && entry.name === current!.name && entry.kind === current!.kind);
         const index = siblings.findIndex((entry) => entry.id === current!.id);
         const label = current.name || '_';
-        parts.unshift(siblings.length > 1 ? `${label}#${index}` : label);
-        if (current.parent === null) break;
+        parts.unshift(siblings.length > 1 ? `${label}:${index}` : label);
+        if (current.parent === null || current.parent === ancestorId) break;
         const parent = byId.get(current.parent);
         if (!parent) throw new Error(`Broken PSD snapshot parent for ${current.id}`);
         current = parent;
@@ -139,4 +143,77 @@ export function declarePsdOwnership(
         definitions,
         instances,
     };
+}
+
+export type IdentityRole = 'node' | 'component' | 'page' | 'layout' | 'fill';
+
+export interface NodeIdentity {
+    readonly key: string;
+    readonly role: IdentityRole;
+    readonly definitionKey?: string;
+}
+
+function instanceDepth(nodes: readonly SnapshotNode[], rootId: number): number {
+    const byId = new Map(nodes.map((entry) => [entry.id, entry]));
+    let depth = 0;
+    let current: SnapshotNode | undefined = byId.get(rootId);
+    const seen = new Set<number>();
+    while (current) {
+        if (seen.has(current.id)) throw new Error('Cycle in PSD snapshot parent chain');
+        seen.add(current.id);
+        depth += 1;
+        current = current.parent === null ? undefined : byId.get(current.parent);
+    }
+    return depth;
+}
+
+/**
+ * Stamp a stable octane-lite identity onto every snapshot node. Keys never
+ * contain `#` because PSD layer names use `[ui:key#role]`.
+ */
+export function stampPsdIdentities(
+    values: readonly unknown[],
+    declarations: ReturnType<typeof declarePsdOwnership>,
+): unknown[] {
+    const nodes = readNodes(values);
+    const children = new Map<number, number[]>();
+    for (const node of nodes) {
+        if (node.parent === null) continue;
+        const list = children.get(node.parent) ?? [];
+        list.push(node.id);
+        children.set(node.parent, list);
+    }
+    const ranked = [...declarations.instances].sort((left, right) =>
+        instanceDepth(nodes, left.rootRecordId) - instanceDepth(nodes, right.rootRecordId));
+    const owner = new Map<number, (typeof declarations.instances)[number]>();
+    const cover = (id: number, instance: (typeof declarations.instances)[number]): void => {
+        owner.set(id, instance);
+        for (const child of children.get(id) ?? []) cover(child, instance);
+    };
+    for (const instance of ranked) cover(instance.rootRecordId, instance);
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    return values.map((value, index) => {
+        const node = nodes[index]!;
+        const instance = owner.get(node.id);
+        let identity: NodeIdentity;
+        if (!instance) {
+            identity = { key: authorPath(nodes, node), role: 'node' };
+        } else if (node.id === instance.rootRecordId) {
+            identity = {
+                key: instance.key,
+                role: instance.role,
+                definitionKey: instance.definitionKey,
+            };
+        } else {
+            identity = {
+                key: `${instance.key}/${authorPath(nodes, byId.get(node.id)!, instance.rootRecordId)}`,
+                role: 'node',
+                definitionKey: instance.definitionKey,
+            };
+        }
+        if (identity.key.includes('#') || identity.key.includes(']')) {
+            throw new Error(`Identity key must not contain # or ]: ${identity.key}`);
+        }
+        return { ...(value as object), identity };
+    });
 }
