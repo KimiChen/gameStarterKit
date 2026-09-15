@@ -79,11 +79,13 @@ export class UniFlexRuntime<Provider extends UniFlexRuntimeProvider> {
     }
 
     snapshot(width: number, height: number): UniFlexDesignSnapshot {
+        const nodes: unknown[] = [];
+        for (const entry of this.provider.inspect()) nodes.push(...entry.nodes);
         return {
             schemaVersion: 1,
             kind: 'uniflex-design-snapshot',
             canvas: { width, height },
-            nodes: this.provider.inspect().flatMap((entry) => entry.nodes),
+            nodes,
         };
     }
 

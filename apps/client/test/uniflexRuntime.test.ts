@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { UniFlexRuntime, type UniFlexUIBundle } from "../src/kits/uniflex/runtime";
+import { UniFlexRuntime, type UniFlexRuntimeProvider, type UniFlexUIBundle } from "../src/kits/uniflex/runtime";
 import type { SurfaceNavigator, UIDefinition } from "../src/kits/uniflex/api/navigation/index";
-import type { UIProvider } from "../src/kits/uniflex/api/core/index";
 
 function deferred<T>() {
     let resolve!: (value: T) => void;
@@ -19,6 +18,7 @@ test("UniFlex kit runtimes own loading, navigation and disposal", async (t) => {
     let destroyError: Error | undefined;
     let createError: Error | undefined;
     class FakeProvider {
+        inspect() { return []; }
         dispose() { providerDisposals++; }
     }
     const initial = {} as UIDefinition<void, boolean>;
@@ -29,7 +29,7 @@ test("UniFlex kit runtimes own loading, navigation and disposal", async (t) => {
         destroyError = undefined;
         createError = undefined;
         return new UniFlexRuntime({
-            provider: new FakeProvider() as UIProvider & { dispose(): void },
+            provider: new FakeProvider() as unknown as UniFlexRuntimeProvider,
             loadUI,
             createNavigator: () => {
                 navigatorCreations++;
