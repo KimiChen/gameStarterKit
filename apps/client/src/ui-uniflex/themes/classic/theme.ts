@@ -13,4 +13,8 @@ export const classicTheme = defineTheme({
         close: imageRef('ui/popup/close'),
         title: '#ffffff', outline: '#593d84', mask: '#00000099',
     },
+    checkbox: {
+        on: imageRef('ui/character/check-on'),
+        off: imageRef('ui/character/check-off'),
+    },
 });
