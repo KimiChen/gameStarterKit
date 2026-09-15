@@ -3,7 +3,6 @@ import { Backpack, BackpackRestored, CharacterManage, Confirm, MailBattleReport,
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
-import type { MailBattleReportRestoredAction } from "../client/src/ui-uniflex/generated/MailBattleReportRestored";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
 import { declarePsdOwnership, stampPsdIdentities } from "./psd-ownership";
@@ -105,11 +104,11 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
             return;
         }
         case "mail-restored": {
-            const onAction = (action: MailBattleReportRestoredAction) => {
-                console.info("[UniFlex MailBattleReportRestored] action", action);
-                if (action.action === "back" || action.action === "close") backToPreview();
-            };
-            await runtime.start(MailBattleReportRestored, { onAction });
+            await runtime.start(MailBattleReportRestored, {
+                onBack: backToPreview,
+                onDeleteRead: () => console.info("[UniFlex MailBattleReportRestored] delete-read"),
+                onConfirm: () => console.info("[UniFlex MailBattleReportRestored] confirm"),
+            });
             return;
         }
         case "backpack-restored": {

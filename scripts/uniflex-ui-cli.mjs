@@ -114,7 +114,7 @@ export async function runCli(argv, {
         await convert(["psd-import", "--file", file, "--out", design,
             ...(fontDir ? ["--font-dir", fontDir] : [])]);
         await convert(["uniflex-package", "--design", join(design, "design.json"),
-            "--name", name, "--out", projectPackage]);
+            "--name", name, "--source-root", root, "--out", projectPackage]);
         const project = JSON.parse(await readText(join(projectPackage, "design.json")));
         if (project.schemaVersion !== 1 || project.kind !== "uniflex-design")
             throw new Error("Converter returned an incompatible UniFlex package.");
