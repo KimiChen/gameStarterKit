@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, Confirm, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, CharacterManage, Confirm, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -11,8 +11,11 @@ const screen = new URLSearchParams(location.search).get("screen");
 const prompt = new URLSearchParams(location.search).get("ui") === "prompt";
 const smallPopup = new URLSearchParams(location.search).get("ui") === "small-popup";
 const route = new URLSearchParams(location.search).get("ui");
-const designHeight = screen === "backpack" || route === "backpack" ? 1334
-    : screen === "mail" || route === "mail" || screen === "settings" || route === "settings" ? 1334
+const designHeight = screen === "character" || route === "character" ? DESIGN_HEIGHT
+    : screen === "backpack" || route === "backpack"
+        || screen === "mail" || route === "mail"
+        || screen === "settings" || route === "settings"
+        || (!route && !screen) ? 1334
     : DESIGN_HEIGHT;
 container.style.height = `${designHeight}px`;
 const resize = () => {
@@ -67,6 +70,14 @@ try {
             onSelect: (id) => console.info("[UniFlex Settings] select", id),
         });
         console.info("[UniFlex Settings] ready");
+    } else if (screen === "character" || route === "character") {
+        document.title = "UniFlex Character Manage";
+        await runtime.start(CharacterManage, {
+            onClose: backToPreview,
+            onSelectPlayer: (id) => console.info("[UniFlex CharacterManage] player", id),
+            onSelectServer: (id) => console.info("[UniFlex CharacterManage] server", id),
+        });
+        console.info("[UniFlex CharacterManage] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",

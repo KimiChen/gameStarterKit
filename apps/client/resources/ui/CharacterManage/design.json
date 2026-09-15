@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {"width": 750, "height": 1624},
+  "fonts": {
+    "regular": {
+      "path": "../../../../apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf",
+      "sha256": "1846353947485b97808030078b5856b7be22e1b270e3231d907a0798bfd0ff14"
+    }
+  },
+  "assets": {
+    "window": {"path": "source/window.png"},
+    "content": {"path": "source/content.png"},
+    "close": {"path": "../ThemeClassic/popup/close.png"},
+    "tabSelected": {"path": "assets/tab_selected.png"},
+    "tabUnselected": {"path": "assets/tab_unselected.png"},
+    "playerBg": {"path": "source/player_bg.png"},
+    "avatar": {"path": "source/avatar.png"},
+    "checkOn": {"path": "assets/check_on.png"},
+    "checkOff": {"path": "assets/check_off.png"},
+    "serverBg": {"path": "source/server_bg.png"},
+    "statusGray": {"path": "assets/status_gray.png"}
+  },
+  "roots": ["window", "close", "content", "tab0", "tab1", "tab2", "title"],
+  "bindings": {
+    "关闭按钮": "close",
+    "页签-我的服务器": "tab-mine",
+    "页签-推荐服务器": "tab-recommend",
+    "页签-所有服务器": "tab-all"
+  },
+  "nodes": {
+    "window": {"id": "window", "name": "角色管理窗口", "kind": "image", "frame": {"x": 21, "y": 316, "width": 708, "height": 992}, "asset": "window"},
+    "close": {"id": "close", "name": "关闭按钮", "kind": "image", "frame": {"x": 653, "y": 333, "width": 50, "height": 50}, "asset": "close"},
+    "title": {"id": "title", "name": "角色管理标题", "kind": "text", "frame": {"x": 296, "y": 338, "width": 159, "height": 40}, "text": {"fontId": "regular"}},
+    "tab0": {"id": "tab0", "name": "页签-我的服务器", "kind": "image", "frame": {"x": 58, "y": 418, "width": 195, "height": 58}, "asset": "tabSelected"},
+    "tab1": {"id": "tab1", "name": "页签-推荐服务器", "kind": "image", "frame": {"x": 278, "y": 418, "width": 195, "height": 58}, "asset": "tabUnselected"},
+    "tab2": {"id": "tab2", "name": "页签-所有服务器", "kind": "image", "frame": {"x": 498, "y": 418, "width": 195, "height": 58}, "asset": "tabUnselected"},
+    "content": {"id": "content", "name": "内容底", "kind": "image", "frame": {"x": 36, "y": 476, "width": 678, "height": 796}, "asset": "content"}
+  }
+}
