@@ -113,6 +113,26 @@
       "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
     },
     {
+      "key": "BackpackTab",
+      "rootName": "BackpackTab",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackTab.tsx"
+    },
+    {
+      "key": "BackpackItemCard",
+      "rootName": "BackpackItemCard",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"
+    },
+    {
+      "key": "BackpackResourceCounter",
+      "rootName": "BackpackResourceCounter",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackResourceCounter.tsx"
+    },
+    {
+      "key": "BackpackQuantityControl",
+      "rootName": "BackpackQuantityControl",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackQuantityControl.tsx"
+    },
+    {
       "key": "CheckBox",
       "rootName": "CheckBox",
       "source": "apps/client/src/ui-uniflex/components/checkbox/CheckBox.tsx"

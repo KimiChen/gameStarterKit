@@ -60,7 +60,7 @@ UniFlex 原生 `uniflex-compiler` 已按宿主平台放入 `vendor/uniflex/bin/`
 `config/uniflex.ui.json` 使用项目内 wrapper 调用；也可以用 `UNIFLEX_COMPILER` 覆盖。当前仓库包含
 `darwin-arm64` 制品，其他平台需补充对应平台制品。UI 生成物不入库，首次类型检查或预览前
 必须显式生成。双端预览与源码边界见 [客户端开发](docs/CLIENT.md#2-源码与工程壳)。
-`ui:import-psd` / `ui:export-psd` / `ui:roundtrip` 使用锁定的 `vendor/web-ui-to-psd-0.1.1.tgz`，
+`ui:import-psd` / `ui:export-psd` / `ui:roundtrip` 使用锁定的 `vendor/web-ui-to-psd-0.1.3.tgz`，
 `npm ci` 后即可运行，不依赖本机转换器源码目录；转换器还需要本机 Chrome 与 `uv`。导出把
 UniFlex 组件身份打到 PSD 图层（`[ui:key#role]`，与 octane-lite 相同）；导入按图层身份还原
 catalog 组件。可选 `WEB_UI_TO_PSD_CLI` / `WEB_UI_TO_PSD_ROOT` 仅用于覆盖锁定包。
