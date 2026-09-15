@@ -1,7 +1,9 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, CharacterManage, Confirm, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackRestored, CharacterManage, Confirm, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
+import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
+import type { MailBattleReportRestoredAction } from "../client/src/ui-uniflex/generated/MailBattleReportRestored";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
 import { declarePsdOwnership, stampPsdIdentities } from "./psd-ownership";
@@ -100,6 +102,22 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onConfirm: () => console.info("[UniFlex MailBattleReport] confirm"),
             };
             await runtime.start(MailBattleReport, mailParams);
+            return;
+        }
+        case "mail-restored": {
+            const onAction = (action: MailBattleReportRestoredAction) => {
+                console.info("[UniFlex MailBattleReportRestored] action", action);
+                if (action.action === "back" || action.action === "close") backToPreview();
+            };
+            await runtime.start(MailBattleReportRestored, { onAction });
+            return;
+        }
+        case "backpack-restored": {
+            const onAction = (action: BackpackRestoredAction) => {
+                console.info("[UniFlex BackpackRestored] action", action);
+                if (action.action === "back" || action.action === "close") backToPreview();
+            };
+            await runtime.start(BackpackRestored, { onAction });
             return;
         }
         case "settings":

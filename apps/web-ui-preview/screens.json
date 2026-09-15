@@ -50,6 +50,22 @@
       "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleReport.tsx"
     },
     {
+      "id": "mail-restored",
+      "aliases": ["mail-restored", "mailRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "MailBattleReportRestored",
+      "rootName": "MailBattleReportRestored",
+      "source": "apps/client/src/ui-uniflex/pages/MailBattleReportRestored/MailBattleReportRestored.tsx"
+    },
+    {
+      "id": "backpack-restored",
+      "aliases": ["backpack-restored", "backpackRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "BackpackRestored",
+      "rootName": "BackpackRestored",
+      "source": "apps/client/src/ui-uniflex/pages/BackpackRestored/BackpackRestored.tsx"
+    },
+    {
       "id": "settings",
       "aliases": ["settings"],
       "canvas": { "width": 750, "height": 1334 },
