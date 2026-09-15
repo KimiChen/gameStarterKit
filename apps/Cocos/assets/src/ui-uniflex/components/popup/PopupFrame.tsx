@@ -25,7 +25,7 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => (
                 style={{ position: 'absolute', left: p.kind === 'settings' ? 120 : 90,
                     right: p.kind === 'settings' ? 120 : 90,
                     top: p.kind === 'settings' ? 11 : 18, height: p.kind === 'settings' ? 64 : 58,
-                    font: fontRef('fonts/regular', 400), fontSize: 40,
+                    font: fontRef('fonts/regular', 400), fontSize: 40, bold: true,
                     color: p.titleColor ?? '#ffffff', outlineColor: p.titleOutline ?? '#593d84',
                     outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
             <view name="PopupFrame/Content"

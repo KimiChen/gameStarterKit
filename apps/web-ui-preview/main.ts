@@ -13,7 +13,8 @@ const prompt = new URLSearchParams(location.search).get("ui") === "prompt";
 const smallPopup = new URLSearchParams(location.search).get("ui") === "small-popup";
 const route = new URLSearchParams(location.search).get("ui");
 const backpack = screen === "backpack" || route === "backpack";
-const designHeight = backpack || screen === "mail" || route === "mail" || screen === "settings" || route === "settings" ? 1334 : DESIGN_HEIGHT;
+const designHeight = backpack || screen === "mail" || route === "mail"
+    || screen === "settings" || route === "settings" ? 1334 : DESIGN_HEIGHT;
 container.style.height = `${designHeight}px`;
 const resize = () => {
     const scale = Math.min(innerWidth / DESIGN_WIDTH, innerHeight / designHeight);
