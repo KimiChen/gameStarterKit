@@ -4,7 +4,7 @@ import { CancelButton } from '../../components/button/CancelButton';
 import { theme } from '../../themes/active';
 
 export interface PreviewHomeParams {
-    readonly onNavigate: (target: 'prompt' | 'small-popup' | 'backpack' | 'mail' | 'mail-restored' | 'backpack-restored' | 'settings' | 'character' | 'hero') => void;
+    readonly onNavigate: (target: 'prompt' | 'small-popup' | 'backpack' | 'mail' | 'mail-restored' | 'backpack-restored' | 'settings' | 'character' | 'hero' | 'hero-detail') => void;
 }
 
 /** Local preview router: keeps feature previews discoverable without coupling production navigation. */
@@ -34,8 +34,11 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             <view interaction="press" onClick={() => go('character')} style={{ width: 300, height: 102, backgroundColor: '#7a5a9a', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="角色管理" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
-            <view interaction="press" onClick={() => go('hero')} style={{ width: 300, height: 102, backgroundColor: '#8a4a62', justifyContent: 'center', alignItems: 'center' }}>
+            <view interaction="press" onClick={() => go('hero')} style={{ width: 300, height: 90, backgroundColor: '#8a4a62', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="英雄卡牌" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('hero-detail')} style={{ width: 300, height: 90, backgroundColor: '#c4a035', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="英雄详情" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
         </view>
     </view>;
