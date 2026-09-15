@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolve } from "node:path";
-import { runCli } from "./uniflex-ui-cli.mjs";
+import { join, resolve } from "node:path";
+import { resolveConverter, runCli } from "./uniflex-ui-cli.mjs";
 import {
     findScreen, injectUniflexExportArgs, loadScreenCatalog, resolvePreviewUrl, screenFromUrl,
 } from "./lib/uniflex-screens.mjs";
@@ -71,11 +71,17 @@ test("export-psd --adapter dom does not force the UniFlex capture adapter", asyn
         "--out", resolve(root, "x")]);
 });
 
+test("default converter is the pinned node_modules package", async () => {
+    const converter = await resolveConverter(root, {});
+    assert.equal(converter.command, process.execPath);
+    assert.equal(converter.args[0], join(root, "node_modules/web-ui-to-psd/bin/cli.mjs"));
+});
+
 test("missing converter fails with an actionable error", async () => {
     const { calls, execute } = capture();
     await assert.rejects(
         runCli(["export-psd", "--url", "http://127.0.0.1:8000", "--out", "x"],
-            { root, env: {}, execute }),
+            { root, env: { WEB_UI_TO_PSD_CLI: "missing-web-ui-to-psd-cli" }, execute }),
         /web-ui-to-psd CLI is unavailable.*WEB_UI_TO_PSD_CLI/s,
     );
     assert.equal(calls.length, 0);
