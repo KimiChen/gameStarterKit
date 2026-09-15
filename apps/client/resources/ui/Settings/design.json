@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {"width":750,"height":1334},
+  "fonts": {"regular":{"path":"../../../../apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf","sha256":"1846353947485b97808030078b5856b7be22e1b270e3231d907a0798bfd0ff14"}},
+  "assets": {
+    "panel":{"path":"source/panel.png"},
+    "close":{"path":"../ThemeClassic/popup/close.png"},
+    "button":{"path":"source/button.png"},
+    "gear":{"path":"assets/gear.png"},
+    "divider":{"path":"source/divider.png"}
+  },
+  "roots":["panel","close","divider","button1","gear1","button2","gear2","button3","gear3","button4","gear4","button5","gear5","button6","gear6","button7","gear7","button8","gear8","button9","gear9","button10","gear10","title"],
+  "bindings":{
+    "关闭按钮":"close",
+    "设置按钮1":"select-general",
+    "设置按钮2":"select-audio",
+    "设置按钮3":"select-language",
+    "设置按钮4":"select-notifications",
+    "设置按钮5":"select-privacy",
+    "设置按钮6":"select-account",
+    "设置按钮7":"select-support",
+    "设置按钮8":"select-terms",
+    "设置按钮9":"select-switch-account",
+    "设置按钮10":"select-exit"
+  },
+  "nodes": {
+    "panel":{"id":"panel","name":"设置面板","kind":"image","frame":{"x":21,"y":171,"width":708,"height":992},"asset":"panel"},
+    "close":{"id":"close","name":"关闭按钮","kind":"image","frame":{"x":653,"y":188,"width":50,"height":50},"asset":"close"},
+    "divider":{"id":"divider","name":"分隔线","kind":"image","frame":{"x":44,"y":708,"width":662,"height":3},"asset":"divider"},
+    "button1":{"id":"button1","name":"设置按钮1","kind":"image","frame":{"x":42,"y":284,"width":326,"height":114},"asset":"button"},
+    "button2":{"id":"button2","name":"设置按钮2","kind":"image","frame":{"x":383,"y":284,"width":326,"height":114},"asset":"button"},
+    "button3":{"id":"button3","name":"设置按钮3","kind":"image","frame":{"x":42,"y":425,"width":326,"height":114},"asset":"button"},
+    "button4":{"id":"button4","name":"设置按钮4","kind":"image","frame":{"x":383,"y":425,"width":326,"height":114},"asset":"button"},
+    "button5":{"id":"button5","name":"设置按钮5","kind":"image","frame":{"x":42,"y":566,"width":326,"height":114},"asset":"button"},
+    "button6":{"id":"button6","name":"设置按钮6","kind":"image","frame":{"x":42,"y":738,"width":326,"height":114},"asset":"button"},
+    "button7":{"id":"button7","name":"设置按钮7","kind":"image","frame":{"x":383,"y":738,"width":326,"height":114},"asset":"button"},
+    "button8":{"id":"button8","name":"设置按钮8","kind":"image","frame":{"x":42,"y":879,"width":326,"height":114},"asset":"button"},
+    "button9":{"id":"button9","name":"设置按钮9","kind":"image","frame":{"x":383,"y":879,"width":326,"height":114},"asset":"button"},
+    "button10":{"id":"button10","name":"设置按钮10","kind":"image","frame":{"x":42,"y":1020,"width":326,"height":114},"asset":"button"},
+    "gear1":{"id":"gear1","name":"齿轮1","kind":"image","frame":{"x":75,"y":315,"width":54,"height":54},"asset":"gear"},
+    "gear2":{"id":"gear2","name":"齿轮2","kind":"image","frame":{"x":416,"y":315,"width":54,"height":54},"asset":"gear"},
+    "gear3":{"id":"gear3","name":"齿轮3","kind":"image","frame":{"x":75,"y":456,"width":54,"height":54},"asset":"gear"},
+    "gear4":{"id":"gear4","name":"齿轮4","kind":"image","frame":{"x":416,"y":456,"width":54,"height":54},"asset":"gear"},
+    "gear5":{"id":"gear5","name":"齿轮5","kind":"image","frame":{"x":75,"y":597,"width":54,"height":54},"asset":"gear"},
+    "gear6":{"id":"gear6","name":"齿轮6","kind":"image","frame":{"x":75,"y":769,"width":54,"height":54},"asset":"gear"},
+    "gear7":{"id":"gear7","name":"齿轮7","kind":"image","frame":{"x":416,"y":769,"width":54,"height":54},"asset":"gear"},
+    "gear8":{"id":"gear8","name":"齿轮8","kind":"image","frame":{"x":75,"y":910,"width":54,"height":54},"asset":"gear"},
+    "gear9":{"id":"gear9","name":"齿轮9","kind":"image","frame":{"x":416,"y":910,"width":54,"height":54},"asset":"gear"},
+    "gear10":{"id":"gear10","name":"齿轮10","kind":"image","frame":{"x":75,"y":1051,"width":54,"height":54},"asset":"gear"},
+    "title":{"id":"title","name":"设置标题文字","kind":"text","frame":{"x":141,"y":184,"width":468,"height":60},"text":{"fontId":"regular"}}
+  }
+}

@@ -5,7 +5,7 @@ import { CloseButton } from './CloseButton';
 
 export interface PopupFrameProps {
     readonly title: string;
-    readonly kind?: 'prompt' | 'small';
+    readonly kind?: 'prompt' | 'small' | 'settings';
     readonly width?: number;
     readonly height?: number;
     readonly titleColor?: string;
@@ -22,11 +22,17 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => (
         <view name="PopupFrame/Panel" style={{ width: p.width ?? 708, height: p.height ?? 510 }}>
             <PopupBackground kind={p.kind} />
             <text name="PopupFrame/Title" value={p.title}
-                style={{ position: 'absolute', left: 90, right: 90, top: 18, height: 58,
-                    font: fontRef('fonts/regular', 400), fontSize: 40,
+                style={{ position: 'absolute', left: p.kind === 'settings' ? 120 : 90,
+                    right: p.kind === 'settings' ? 120 : 90,
+                    top: p.kind === 'settings' ? 11 : 18, height: p.kind === 'settings' ? 64 : 58,
+                    font: fontRef('fonts/regular', 400), fontSize: 40, bold: true,
                     color: p.titleColor ?? '#ffffff', outlineColor: p.titleOutline ?? '#593d84',
                     outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-            <view name="PopupFrame/Content" style={{ position: 'absolute', left: 40, right: 40, top: 108, bottom: 38 }}>
+            <view name="PopupFrame/Content"
+                style={{ position: 'absolute', left: p.kind === 'settings' ? 0 : 40,
+                    right: p.kind === 'settings' ? 0 : 40,
+                    top: p.kind === 'settings' ? 0 : 108,
+                    bottom: p.kind === 'settings' ? 0 : 38 }}>
                 <Slot />
             </view>
             <CloseButton onClick={p.onClose} />
