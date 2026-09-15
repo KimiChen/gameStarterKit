@@ -1,8 +1,20 @@
+export interface RegisteredComponent {
+    readonly key: string;
+    readonly rootName: string;
+    readonly source: string;
+}
+
 interface SnapshotNode {
     readonly id: number;
     readonly parent: number | null;
     readonly name: string;
     readonly kind: string;
+}
+
+export interface PageOwnershipSpec {
+    readonly key: string;
+    readonly source: string;
+    readonly rootName: string;
 }
 
 function readNodes(values: readonly unknown[]): SnapshotNode[] {
@@ -18,6 +30,27 @@ function readNodes(values: readonly unknown[]): SnapshotNode[] {
         ids.add(node.id!);
         return node as SnapshotNode;
     });
+}
+
+function authorPath(nodes: readonly SnapshotNode[], node: SnapshotNode): string {
+    const byId = new Map(nodes.map((entry) => [entry.id, entry]));
+    const seen = new Set<number>();
+    const parts: string[] = [];
+    let current: SnapshotNode | undefined = node;
+    while (current) {
+        if (seen.has(current.id)) throw new Error('Cycle in PSD snapshot parent chain');
+        seen.add(current.id);
+        const siblings = nodes.filter((entry) =>
+            entry.parent === current!.parent && entry.name === current!.name && entry.kind === current!.kind);
+        const index = siblings.findIndex((entry) => entry.id === current!.id);
+        const label = current.name || '_';
+        parts.unshift(siblings.length > 1 ? `${label}#${index}` : label);
+        if (current.parent === null) break;
+        const parent = byId.get(current.parent);
+        if (!parent) throw new Error(`Broken PSD snapshot parent for ${current.id}`);
+        current = parent;
+    }
+    return parts.join('/');
 }
 
 /** Explicit author paths for this preview. Never infer components from a group name alone. */
@@ -48,5 +81,62 @@ export function promptPsdOwnership(values: readonly unknown[]) {
             { key: 'prompt.cancel.action', definitionKey: 'ActionButton', role: 'component',
                 rootRecordId: resolve([...actions, '', 'ActionButton']) },
         ],
+    };
+}
+
+/**
+ * Page definition plus every registered component whose named root is in the
+ * snapshot. Duplicate sibling names are distinguished by author path index.
+ * Missing registered components are skipped; a missing page root fails closed.
+ */
+export function declarePsdOwnership(
+    values: readonly unknown[],
+    page: PageOwnershipSpec,
+    components: readonly RegisteredComponent[],
+) {
+    const nodes = readNodes(values);
+    const views = nodes.filter((node) => node.kind === 'view');
+    const pageRoots = views.filter((node) => node.name === page.rootName);
+    if (pageRoots.length !== 1) {
+        throw new Error(`Ambiguous or missing page root ${page.rootName} (${pageRoots.length} matches)`);
+    }
+    const definitions = [{ key: page.key, source: page.source }];
+    const instances: Array<{
+        key: string;
+        definitionKey: string;
+        role: 'page' | 'component';
+        rootRecordId: number;
+    }> = [{
+        key: `${page.key}.root`,
+        definitionKey: page.key,
+        role: 'page',
+        rootRecordId: pageRoots[0]!.id,
+    }];
+    const defined = new Set([page.key]);
+    for (const component of components) {
+        const matches = views.filter((node) => node.name === component.rootName);
+        if (!matches.length) continue;
+        if (!defined.has(component.key)) {
+            definitions.push({ key: component.key, source: component.source });
+            defined.add(component.key);
+        }
+        const seen = new Set<string>();
+        for (const match of matches) {
+            const key = `${component.key}:${authorPath(nodes, match)}`;
+            if (seen.has(key)) throw new Error(`Ambiguous component instance ${key}`);
+            seen.add(key);
+            instances.push({
+                key,
+                definitionKey: component.key,
+                role: 'component',
+                rootRecordId: match.id,
+            });
+        }
+    }
+    return {
+        schemaVersion: 1 as const,
+        kind: 'uniflex-component-declarations' as const,
+        definitions,
+        instances,
     };
 }
