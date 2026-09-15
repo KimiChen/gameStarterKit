@@ -132,6 +132,25 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onSelectServer: (id) => console.info("[UniFlex CharacterManage] server", id),
             });
             return;
+        case "hero":
+            await runtime.start(HeroScreen, {
+                onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
+                onSelectCard: () => { location.href = "?ui=hero-detail"; },
+                onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
+                onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
+                onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
+            });
+            return;
+        case "hero-detail":
+            await runtime.start(HeroDetail, {
+                onBack: backToPreview,
+                onPrev: () => console.info("[UniFlex HeroDetail] prev"),
+                onNext: () => console.info("[UniFlex HeroDetail] next"),
+                onStarUp: () => console.info("[UniFlex HeroDetail] star-up"),
+                onUpgrade: () => console.info("[UniFlex HeroDetail] upgrade"),
+                onSelectSkill: (id) => console.info("[UniFlex HeroDetail] skill", id),
+            });
+            return;
         case "prompt-restored":
             await runtime.start(PromptRestored, {
                 theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" },
@@ -170,25 +189,6 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onClose: backToPreview,
                 onSelectPlayer: (id) => console.info("[UniFlex CharacterManageRestored] player", id),
                 onSelectServer: (id) => console.info("[UniFlex CharacterManageRestored] server", id),
-            });
-            return;
-        case "hero":
-            await runtime.start(HeroScreen, {
-                onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
-                onSelectCard: () => { location.href = `?ui=hero-detail`; },
-                onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
-                onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
-                onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
-            });
-            return;
-        case "hero-detail":
-            await runtime.start(HeroDetail, {
-                onBack: backToPreview,
-                onPrev: () => console.info("[UniFlex HeroDetail] prev"),
-                onNext: () => console.info("[UniFlex HeroDetail] next"),
-                onStarUp: () => console.info("[UniFlex HeroDetail] star-up"),
-                onUpgrade: () => console.info("[UniFlex HeroDetail] upgrade"),
-                onSelectSkill: (id) => console.info("[UniFlex HeroDetail] skill", id),
             });
             return;
         default:
