@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, CharacterManage, Confirm, HeroScreen, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -83,12 +83,23 @@ try {
         document.title = "UniFlex Hero Screen";
         await runtime.start(HeroScreen, {
             onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
-            onSelectCard: (id) => console.info("[UniFlex HeroScreen] card", id),
+            onSelectCard: () => { location.href = `?ui=hero-detail`; },
             onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
             onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
             onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
         });
         console.info("[UniFlex HeroScreen] ready");
+    } else if (screen === "hero-detail" || route === "hero-detail") {
+        document.title = "UniFlex Hero Detail";
+        await runtime.start(HeroDetail, {
+            onBack: backToPreview,
+            onPrev: () => console.info("[UniFlex HeroDetail] prev"),
+            onNext: () => console.info("[UniFlex HeroDetail] next"),
+            onStarUp: () => console.info("[UniFlex HeroDetail] star-up"),
+            onUpgrade: () => console.info("[UniFlex HeroDetail] upgrade"),
+            onSelectSkill: (id) => console.info("[UniFlex HeroDetail] skill", id),
+        });
+        console.info("[UniFlex HeroDetail] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",

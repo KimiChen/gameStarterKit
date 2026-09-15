@@ -1,0 +1,353 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/hero-detail/bg-purple",
+      "kind": "image",
+      "file": "assets/bg_purple.png",
+      "width": 750,
+      "height": 1624,
+      "sha256": "9e2d2447f558c9a90c7c4cc9abecb3ea7c20ff7731addec348543573bb420891"
+    },
+    {
+      "id": "ui/hero-detail/bg-red",
+      "kind": "image",
+      "file": "assets/bg_red.png",
+      "width": 750,
+      "height": 1624,
+      "sha256": "302cfe2dc2ebe3d91b7752fe08ad31fd6f0ded180a3f4bf17fec8de03dff29b6"
+    },
+    {
+      "id": "ui/hero-detail/bg-blue",
+      "kind": "image",
+      "file": "assets/bg_blue.png",
+      "width": 750,
+      "height": 1624,
+      "sha256": "9c4418ca5bcbf55d76811b91db32189ac5a50fdc7a2925034172350a6d4c3dc5"
+    },
+    {
+      "id": "ui/hero-detail/bg-green",
+      "kind": "image",
+      "file": "assets/bg_green.png",
+      "width": 750,
+      "height": 1624,
+      "sha256": "a46f50a88330c7ef554748e90bdcf78e88830cac32b2487dee7a28e147322b93"
+    },
+    {
+      "id": "ui/hero-detail/bg-yellow",
+      "kind": "image",
+      "file": "assets/bg_yellow.png",
+      "width": 750,
+      "height": 1624,
+      "sha256": "9c65c2eb8ee1cf4a9b709e44b8702bdcf45055a5a9bc2e7bc6a2d4d4a84c00b2"
+    },
+    {
+      "id": "ui/hero-detail/art",
+      "kind": "image",
+      "file": "assets/art.png",
+      "width": 469,
+      "height": 650,
+      "sha256": "6ed6cce931d9d2502a2c75e2193c06bf0aa3aa7b023b8ab2df780c292042d5ce"
+    },
+    {
+      "id": "ui/hero-detail/shadow",
+      "kind": "image",
+      "file": "assets/shadow.png",
+      "width": 601,
+      "height": 186,
+      "sha256": "e33aeb73445de0211c3f8ca0e0d1cde823fd7e43791b399c221f0032fe42449f"
+    },
+    {
+      "id": "ui/hero-detail/rank-s",
+      "kind": "image",
+      "file": "assets/rank_s.png",
+      "width": 122,
+      "height": 160,
+      "sha256": "00fe366060d4586a5f45f583a7c8fa0a8a40930de5cc910b53eb33477d796faa"
+    },
+    {
+      "id": "ui/hero-detail/arrow",
+      "kind": "image",
+      "file": "assets/arrow.png",
+      "width": 58,
+      "height": 80,
+      "sha256": "398e16270df98ae72f162860caa066d51b91bc1aa3d719e17fd02d09159b403f"
+    },
+    {
+      "id": "ui/hero-detail/nav-base",
+      "kind": "image",
+      "file": "assets/nav_base.png",
+      "width": 12,
+      "height": 110,
+      "sha256": "d066c148509aff69dd9aedc1d8f1003a4a0ba40febe6bd396441baf4a2b14f6b",
+      "nineSlice": [
+        4,
+        0,
+        4,
+        0
+      ]
+    },
+    {
+      "id": "ui/hero-detail/nav-selected",
+      "kind": "image",
+      "file": "assets/nav_selected.png",
+      "width": 84,
+      "height": 90,
+      "sha256": "5c69f6a652d26bb4ecb369d24ec9f0f997f9185b5a7bb058793b06537c02fc9a",
+      "nineSlice": [
+        40,
+        0,
+        40,
+        0
+      ]
+    },
+    {
+      "id": "ui/hero-detail/nav-back",
+      "kind": "image",
+      "file": "assets/nav_back.png",
+      "width": 62,
+      "height": 54,
+      "sha256": "a60bb4c0cfa5dee6598a1055ec47ab6c3bb9c3040e950cf6bd15ca7f273b6a42"
+    },
+    {
+      "id": "ui/hero-detail/power-bg",
+      "kind": "image",
+      "file": "assets/power_bg.png",
+      "width": 381,
+      "height": 74,
+      "sha256": "112844849d42068425f29982ee3ed23ec24649b89fd4b5c541a9f09119f917ff"
+    },
+    {
+      "id": "ui/hero-detail/power-fist",
+      "kind": "image",
+      "file": "assets/power_fist.png",
+      "width": 58,
+      "height": 54,
+      "sha256": "fa34e3aa57e8324736247f0cff4eb432efa009fff90aafd5bb6010f2334d6078"
+    },
+    {
+      "id": "ui/hero-detail/power-info",
+      "kind": "image",
+      "file": "assets/power_info.png",
+      "width": 40,
+      "height": 40,
+      "sha256": "f00468c50261cd28195837dbad7f8297a4a63638ba7e81fb8ee0d233b50d5312"
+    },
+    {
+      "id": "ui/hero-detail/star-empty",
+      "kind": "image",
+      "file": "assets/star_empty.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "5d24897f57b87ecdcd19349c8c930ecd5565eee6b005d45b7b77cecdae62a514"
+    },
+    {
+      "id": "ui/hero-detail/star-filled",
+      "kind": "image",
+      "file": "assets/star_filled.png",
+      "width": 61,
+      "height": 58,
+      "sha256": "0ae0b265098497d43e128ed4abcf865fe65c2ec783e6afab6db4845f0e1cbac7"
+    },
+    {
+      "id": "ui/hero-detail/star-button",
+      "kind": "image",
+      "file": "assets/star_button.png",
+      "width": 76,
+      "height": 85,
+      "sha256": "28ed669c1268e7d7f4f737dd11256d184d25f111868f791ac6190a85fed1d3e4"
+    },
+    {
+      "id": "ui/hero-detail/attr-header",
+      "kind": "image",
+      "file": "assets/attr_header.png",
+      "width": 68,
+      "height": 47,
+      "sha256": "96dda2fb3d162cba8834e607dea01b01f37ee4c6a7850bc9de22acd285f40987",
+      "nineSlice": [
+        32,
+        0,
+        32,
+        0
+      ]
+    },
+    {
+      "id": "ui/hero-detail/attr-body",
+      "kind": "image",
+      "file": "assets/attr_body.png",
+      "width": 68,
+      "height": 44,
+      "sha256": "7ba67af05839fd9200eb877097783677bfd79aa195a754fbb6395eca4bfdba2e",
+      "nineSlice": [
+        32,
+        20,
+        32,
+        20
+      ]
+    },
+    {
+      "id": "ui/hero-detail/attr-sword",
+      "kind": "image",
+      "file": "assets/attr_sword.png",
+      "width": 69,
+      "height": 109,
+      "sha256": "22b7780e663d9d18006790cb63cafc889e75ce691320f71296c51a634bbdcfee"
+    },
+    {
+      "id": "ui/hero-detail/attr-shield",
+      "kind": "image",
+      "file": "assets/attr_shield.png",
+      "width": 80,
+      "height": 97,
+      "sha256": "e3da8266c95dd8f62dce9cb6c3fdac5a7d38e58d267cee09c73e22d1d13e3806"
+    },
+    {
+      "id": "ui/hero-detail/attr-icon4",
+      "kind": "image",
+      "file": "assets/attr_icon4.png",
+      "width": 104,
+      "height": 90,
+      "sha256": "a272247d9564d9e5fef3c8c831dc750c522c41ac7579b4616556cdb54da03346"
+    },
+    {
+      "id": "ui/hero-detail/attr-icon5",
+      "kind": "image",
+      "file": "assets/attr_icon5.png",
+      "width": 96,
+      "height": 88,
+      "sha256": "fe8abddbe66482bf516d9cba23773874f3bb0ab8b61bc0b27962f587baa582fc"
+    },
+    {
+      "id": "ui/hero-detail/faction",
+      "kind": "image",
+      "file": "assets/faction.png",
+      "width": 84,
+      "height": 102,
+      "sha256": "70fffd5d227f9c2f8622211d99a37db1ee87856f4740d4f8702753dd3e69eee7"
+    },
+    {
+      "id": "ui/hero-detail/bond-icon",
+      "kind": "image",
+      "file": "assets/bond_icon.png",
+      "width": 71,
+      "height": 74,
+      "sha256": "866ec840c0eec4858ed51049108457302832009432ee6af107256efc91f1531b"
+    },
+    {
+      "id": "ui/hero-detail/upgrade-bg",
+      "kind": "image",
+      "file": "assets/upgrade_bg.png",
+      "width": 84,
+      "height": 68,
+      "sha256": "209551b4fc5ef417cb1c46600debd99e1103fe4ec50471af23342033a2fed93e",
+      "nineSlice": [
+        40,
+        32,
+        40,
+        32
+      ]
+    },
+    {
+      "id": "ui/hero-detail/upgrade-cost-bg",
+      "kind": "image",
+      "file": "assets/upgrade_cost_bg.png",
+      "width": 240,
+      "height": 28,
+      "sha256": "197f9e83d3cc6c678196fb9f3d38e2bcbae0d6d9c25b0f040514b2d3d7b0bb5e"
+    },
+    {
+      "id": "ui/hero-detail/skill-base",
+      "kind": "image",
+      "file": "assets/skill_base.png",
+      "width": 144,
+      "height": 144,
+      "sha256": "13522e0a2db73dfebc96b4395b0f3a45dd6ea569433a44a49aed1bff76e1a3c5"
+    },
+    {
+      "id": "ui/hero-detail/skill-lock",
+      "kind": "image",
+      "file": "assets/skill_lock.png",
+      "width": 138,
+      "height": 138,
+      "sha256": "6d5fe2a49673c21debb84a6ed920b92233232e093a416e18c22541a6cf5b02e1"
+    },
+    {
+      "id": "ui/hero-detail/skill-level-bg",
+      "kind": "image",
+      "file": "assets/skill_level_bg.png",
+      "width": 120,
+      "height": 42,
+      "sha256": "1d3dddcc0c5ee3643a86ab6cc43b0ca99dc1f5533e24c1e2299a20d91a7878e7"
+    },
+    {
+      "id": "ui/hero-detail/skill-ring",
+      "kind": "image",
+      "file": "assets/skill_ring.png",
+      "width": 194,
+      "height": 194,
+      "sha256": "bf172c0c1d296e6dedf40d320de1ed6f6c2e3044669d2c4d04ab4d5bdd4de48e"
+    },
+    {
+      "id": "ui/hero-detail/skill-arrow",
+      "kind": "image",
+      "file": "assets/skill_arrow.png",
+      "width": 74,
+      "height": 59,
+      "sha256": "96d6bf622396ad5cbab4318f984b2d651bb3ad5543091390028fa77c72e7f872"
+    },
+    {
+      "id": "ui/hero-detail/skill-panel",
+      "kind": "image",
+      "file": "assets/skill_panel.png",
+      "width": 52,
+      "height": 52,
+      "sha256": "d8dcd774ce54373c0e0f0fb1f09dbe695d6ef107d537791f8168ef91744f77b7",
+      "nineSlice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "ui/hero-detail/popup-power",
+      "kind": "image",
+      "file": "assets/popup_power.png",
+      "width": 390,
+      "height": 290,
+      "sha256": "eec98731caaf04a5d2ecb8af03ab5465334df8034020890832f98e5c9cb58f18"
+    },
+    {
+      "id": "ui/hero-detail/popup-attr",
+      "kind": "image",
+      "file": "assets/popup_attr.png",
+      "width": 390,
+      "height": 256,
+      "sha256": "b6e902a8e8ce55fc8ba3dbaab05f3fbbeddda789457f84b6bf643592d466d48e"
+    },
+    {
+      "id": "ui/hero-detail/popup-faction",
+      "kind": "image",
+      "file": "assets/popup_faction.png",
+      "width": 532,
+      "height": 433,
+      "sha256": "b0ea313b1d8ee003ed82dda1f1bd72f51d57a8bdb13ca76e7cf26bc782d2fca6"
+    },
+    {
+      "id": "ui/hero-detail/popup-trait",
+      "kind": "image",
+      "file": "assets/popup_trait.png",
+      "width": 532,
+      "height": 83,
+      "sha256": "1bd8a9caecc28c5d2c796845e68b18cddbab3106191b5382f4cce9d27498af4b"
+    },
+    {
+      "id": "ui/hero-detail/arrow-right",
+      "kind": "image",
+      "file": "assets/arrow_right.png",
+      "width": 58,
+      "height": 80,
+      "sha256": "0f017f7d0270fa05bf4747bdffb999b2763390ccaf9ec2d664938adc5a44e00c"
+    }
+  ]
+}
