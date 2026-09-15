@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, Confirm, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, CharacterManage, Confirm, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -106,6 +106,13 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
             await runtime.start(Settings, {
                 onClose: backToPreview,
                 onSelect: (id) => console.info("[UniFlex Settings] select", id),
+            });
+            return;
+        case "character":
+            await runtime.start(CharacterManage, {
+                onClose: backToPreview,
+                onSelectPlayer: (id) => console.info("[UniFlex CharacterManage] player", id),
+                onSelectServer: (id) => console.info("[UniFlex CharacterManage] server", id),
             });
             return;
         default:

@@ -56,6 +56,14 @@
       "componentName": "Settings",
       "rootName": "Settings/Content",
       "source": "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx"
+    },
+    {
+      "id": "character",
+      "aliases": ["character", "character-manage"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "CharacterManage",
+      "rootName": "CharacterManage/Content",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManage.tsx"
     }
   ],
   "components": [
@@ -93,6 +101,26 @@
       "key": "MailBattleRow",
       "rootName": "MailBattleRow",
       "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
+    },
+    {
+      "key": "CheckBox",
+      "rootName": "CheckBox",
+      "source": "apps/client/src/ui-uniflex/components/checkbox/CheckBox.tsx"
+    },
+    {
+      "key": "CharacterManageTab",
+      "rootName": "CharacterManageTab",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManageTab.tsx"
+    },
+    {
+      "key": "CharacterPlayerRow",
+      "rootName": "CharacterPlayerRow",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterPlayerRow.tsx"
+    },
+    {
+      "key": "CharacterServerItem",
+      "rootName": "CharacterServerItem",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterServerItem.tsx"
     }
   ]
 }
