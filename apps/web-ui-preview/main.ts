@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroScreen, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
@@ -189,6 +189,25 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onClose: backToPreview,
                 onSelectPlayer: (id) => console.info("[UniFlex CharacterManageRestored] player", id),
                 onSelectServer: (id) => console.info("[UniFlex CharacterManageRestored] server", id),
+            });
+            return;
+        case "hero-restored":
+            await runtime.start(HeroScreenRestored, {
+                onRecruit: () => console.info("[UniFlex HeroScreenRestored] recruit"),
+                onSelectCard: (id) => console.info("[UniFlex HeroScreenRestored] card", id),
+                onSelectBond: (id) => console.info("[UniFlex HeroScreenRestored] bond", id),
+                onBondDetail: (id) => console.info("[UniFlex HeroScreenRestored] bond-detail", id),
+                onNav: (slot) => console.info("[UniFlex HeroScreenRestored] nav", slot),
+            });
+            return;
+        case "hero-detail-restored":
+            await runtime.start(HeroDetailRestored, {
+                onBack: backToPreview,
+                onPrev: () => console.info("[UniFlex HeroDetailRestored] prev"),
+                onNext: () => console.info("[UniFlex HeroDetailRestored] next"),
+                onStarUp: () => console.info("[UniFlex HeroDetailRestored] star-up"),
+                onUpgrade: () => console.info("[UniFlex HeroDetailRestored] upgrade"),
+                onSelectSkill: (id) => console.info("[UniFlex HeroDetailRestored] skill", id),
             });
             return;
         default:

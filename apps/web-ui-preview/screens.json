@@ -136,6 +136,22 @@
       "componentName": "CharacterManageRestored",
       "rootName": "CharacterManageRestored/Content",
       "source": "apps/client/src/ui-uniflex/pages/CharacterManageRestored/CharacterManageRestored.tsx"
+    },
+    {
+      "id": "hero-restored",
+      "aliases": ["hero-restored", "heroRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "HeroScreenRestored",
+      "rootName": "HeroScreenRestored",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreenRestored/HeroScreenRestored.tsx"
+    },
+    {
+      "id": "hero-detail-restored",
+      "aliases": ["hero-detail-restored", "heroDetailRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "HeroDetailRestored",
+      "rootName": "HeroDetailRestored",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetailRestored/HeroDetailRestored.tsx"
     }
   ],
   "components": [
