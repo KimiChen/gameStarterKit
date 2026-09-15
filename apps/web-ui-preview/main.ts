@@ -3,27 +3,41 @@ import { Backpack, Confirm, MailBattleReport, PreviewHome, Prompt, Settings, Sma
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
-import { DESIGN_WIDTH, DESIGN_HEIGHT } from "../client/src/designSpec";
 import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
-import { promptPsdOwnership } from "./psd-ownership";
+import { declarePsdOwnership } from "./psd-ownership";
+import { findPreviewScreen, screenCatalog, type ScreenEntry } from "./screens";
 
+const params = new URLSearchParams(location.search);
+const requested = params.get("screen") || params.get("ui");
+const active = requested ? findPreviewScreen(requested) : findPreviewScreen(null);
+if (requested && !active) {
+    throw new Error(`Unknown UniFlex preview screen: ${requested}`);
+}
+if (!active) throw new Error("UniFlex preview catalog has no default screen.");
+
+const exportMode = params.get("psd") === "1";
 const container = document.getElementById("ui")!;
-const screen = new URLSearchParams(location.search).get("screen");
-const prompt = new URLSearchParams(location.search).get("ui") === "prompt";
-const smallPopup = new URLSearchParams(location.search).get("ui") === "small-popup";
-const route = new URLSearchParams(location.search).get("ui");
-const backpack = screen === "backpack" || route === "backpack";
-const designHeight = backpack || screen === "mail" || route === "mail"
-    || screen === "settings" || route === "settings" ? 1334 : DESIGN_HEIGHT;
-container.style.height = `${designHeight}px`;
+container.style.width = `${active.canvas.width}px`;
+container.style.height = `${active.canvas.height}px`;
 const resize = () => {
-    const scale = Math.min(innerWidth / DESIGN_WIDTH, innerHeight / designHeight);
+    const scale = Math.min(innerWidth / active.canvas.width, innerHeight / active.canvas.height);
     container.style.transform = `translate(-50%, -50%) scale(${scale})`;
 };
-resize();
-window.addEventListener("resize", resize);
+if (exportMode) {
+    container.style.left = "0";
+    container.style.top = "0";
+    container.style.transform = "none";
+    container.style.transformOrigin = "top left";
+    document.documentElement.style.overflow = "visible";
+    document.body.style.overflow = "visible";
+    document.documentElement.style.background = "transparent";
+    document.body.style.background = "transparent";
+} else {
+    resize();
+    window.addEventListener("resize", resize);
+}
 const runtime = new UniFlexWebRuntime({
-    container, resources: webResourceMap, width: DESIGN_WIDTH, height: designHeight,
+    container, resources: webResourceMap, width: active.canvas.width, height: active.canvas.height,
     loadUI: loadGameUI,
 });
 let stopped = false;
@@ -34,54 +48,82 @@ function dispose() {
     runtime.dispose();
 }
 function backToPreview() {
-    location.href = '/';
+    location.href = "/";
 }
 window.addEventListener("pagehide", dispose, { once: true });
-try {
-    if (!route && !screen) {
-        await runtime.start(PreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
-    } else if (smallPopup) {
-        await runtime.start(SmallPopup, { title: "标题", onClose: backToPreview });
-    } else if (prompt) {
-        await runtime.start(Prompt, { theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" }, title: "创建角色", message: "在该服务器创建1名新角色?", confirmText: "确定", cancelText: "取消", onConfirm: () => console.info("[UniFlex Prompt] result=true"), onCancel: backToPreview, onClose: backToPreview });
-    } else if (backpack) {
-        document.title = "UniFlex Backpack";
-        const onAction = (action: BackpackAction) => {
-            console.info("[UniFlex Backpack] action", action);
-            if (action.action === "back" || action.action === "close") dispose();
-        };
-        await runtime.start(Backpack, { onAction });
-        console.info("[UniFlex Backpack] ready");
-    } else if (screen === "mail" || route === "mail") {
-        document.title = "UniFlex Mail Battle Report";
-        const params: MailBattleReportParams = {
-            onBack: backToPreview,
-            onDeleteRead: () => console.info("[UniFlex MailBattleReport] delete-read"),
-            onConfirm: () => console.info("[UniFlex MailBattleReport] confirm"),
-        };
-        await runtime.start(MailBattleReport, params);
-        console.info("[UniFlex MailBattleReport] ready");
-    } else if (screen === "settings" || route === "settings") {
-        document.title = "UniFlex Settings";
-        await runtime.start(Settings, {
-            onClose: backToPreview,
-            onSelect: (id) => console.info("[UniFlex Settings] select", id),
-        });
-        console.info("[UniFlex Settings] ready");
-    } else {
-    const logic = new ConfirmLogic({
-        title: "UniFlex Confirm",
-        content: "这是 UniFlex 在 gameStarterKit 中的本地运行预览。",
-        noText: new URLSearchParams(location.search).get("cancel") === "0" ? null : "取消",
-        onYes: () => console.info("[UniFlex Confirm] result=true"),
-        onNo: () => console.info("[UniFlex Confirm] result=false"),
-    });
-    logic.onClose = dispose;
-    await runtime.start(Confirm, { logic, isActive: () => !stopped });
+
+async function startScreen(entry: ScreenEntry): Promise<void> {
+    document.title = `UniFlex ${entry.componentName}`;
+    switch (entry.id) {
+        case "preview-home":
+            await runtime.start(PreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
+            return;
+        case "prompt":
+            await runtime.start(Prompt, {
+                theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" },
+                title: "创建角色",
+                message: "在该服务器创建1名新角色?",
+                confirmText: "确定",
+                cancelText: "取消",
+                onConfirm: () => console.info("[UniFlex Prompt] result=true"),
+                onCancel: backToPreview,
+                onClose: backToPreview,
+            });
+            return;
+        case "small-popup":
+            await runtime.start(SmallPopup, { title: "标题", onClose: backToPreview });
+            return;
+        case "confirm": {
+            const logic = new ConfirmLogic({
+                title: "UniFlex Confirm",
+                content: "这是 UniFlex 在 gameStarterKit 中的本地运行预览。",
+                noText: params.get("cancel") === "0" ? null : "取消",
+                onYes: () => console.info("[UniFlex Confirm] result=true"),
+                onNo: () => console.info("[UniFlex Confirm] result=false"),
+            });
+            logic.onClose = dispose;
+            await runtime.start(Confirm, { logic, isActive: () => !stopped });
+            return;
+        }
+        case "backpack": {
+            const onAction = (action: BackpackAction) => {
+                console.info("[UniFlex Backpack] action", action);
+                if (action.action === "back" || action.action === "close") dispose();
+            };
+            await runtime.start(Backpack, { onAction });
+            return;
+        }
+        case "mail": {
+            const mailParams: MailBattleReportParams = {
+                onBack: backToPreview,
+                onDeleteRead: () => console.info("[UniFlex MailBattleReport] delete-read"),
+                onConfirm: () => console.info("[UniFlex MailBattleReport] confirm"),
+            };
+            await runtime.start(MailBattleReport, mailParams);
+            return;
+        }
+        case "settings":
+            await runtime.start(Settings, {
+                onClose: backToPreview,
+                onSelect: (id) => console.info("[UniFlex Settings] select", id),
+            });
+            return;
+        default:
+            throw new Error(`No UniFlex preview starter for screen: ${entry.id}`);
     }
-    const snapshot = runtime.snapshot(DESIGN_WIDTH, designHeight);
-    (window as typeof window & { __UNIFLEX_DESIGN_SNAPSHOT__?: unknown }).__UNIFLEX_DESIGN_SNAPSHOT__ =
-        prompt ? { ...snapshot, componentDeclarations: promptPsdOwnership(snapshot.nodes) } : snapshot;
+}
+
+try {
+    await startScreen(active);
+    const snapshot = runtime.snapshot(active.canvas.width, active.canvas.height);
+    (window as typeof window & { __UNIFLEX_DESIGN_SNAPSHOT__?: unknown }).__UNIFLEX_DESIGN_SNAPSHOT__ = {
+        ...snapshot,
+        componentDeclarations: declarePsdOwnership(snapshot.nodes, {
+            key: active.componentName,
+            source: active.source,
+            rootName: active.rootName,
+        }, screenCatalog.components),
+    };
     document.documentElement.dataset.uniflexReady = "true";
 } catch (error) {
     if (!stopped) console.error("[UniFlex Web] 预览启动失败：", error);

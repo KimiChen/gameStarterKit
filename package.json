@@ -18,6 +18,7 @@
     "import:uniflex-ui": "node scripts/import-uniflex-package.mjs",
     "ui:import-psd": "node scripts/uniflex-ui-cli.mjs import-psd",
     "ui:export-psd": "node scripts/uniflex-ui-cli.mjs export-psd",
+    "ui:roundtrip": "node scripts/uniflex-ui-cli.mjs roundtrip",
     "ui:render-source": "node scripts/render-uniflex-source.mjs",
     "ui:capture-cocos-golden": "node tools/creator-preview/capture-uniflex-golden.mjs",
     "ui:check-source": "node scripts/uniflex-ui-cli.mjs check-source",

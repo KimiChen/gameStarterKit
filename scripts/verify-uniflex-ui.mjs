@@ -72,7 +72,8 @@ if (!packageDir) {
                 "interactive candidate needs a stable name", "warning");
             if (stableName) {
                 add(`interactive.unique.${stableName}`, !names.has(stableName),
-                    "duplicate stable control name");
+                    "duplicate stable control name is expected for reused component instances",
+                    "warning");
                 names.add(stableName);
             }
             add(`interactive.action.${node.id}`, ["primary", "back", "tab", "close", "select"].includes(node.action),

@@ -163,16 +163,17 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run test:faults` / `npm run test:faults:int` | 运行核心 fault-matrix；前者默认不连接本地栈，后者使用本地 Redis/MySQL |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
 | `npm run build:uniflex-ui` | 用仓库内 `vendor/uniflex/bin/` 的原生编译器生成 UniFlex Confirm 与双端资源；随后运行 `sync:client` |
-| `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/imported/` |
+| `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/pages/<Name>` 与 `apps/client/resources/ui/<Name>` |
 | `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 由外部 `web-ui-to-psd` CLI 生成 PSD 中间文件和 UniFlex 项目包，并导入项目；CI 可通过 `WEB_UI_TO_PSD_CLI` 或 `WEB_UI_TO_PSD_ROOT` 指定工具 |
-| `npm run ui:export-psd -- --url <url> --out <dir>` | 由外部 CLI 执行网页转 PSD；不依赖操作页面服务 |
-| `npm run ui:check-source` | 检查 CI 配置的 `web-ui-to-psd` CLI 是否可执行 |
+| `npm run ui:export-psd -- --url <url> --out <dir>` | 由外部 CLI 把 UniFlex 预览页导出为分层 PSD；可用 `--screen` 拉起本地预览，不必先开 `dev:uniflex-web` |
+| `npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001` | UniFlex → PSD → UniFlex 项目包往返；默认不写项目源，加 `--apply` 才导入 |
+| `npm run ui:check-source` | 校验 UniFlex 项目包的 design/manifest 契约；传入 `--package` |
 | `npm run ui:render-source` | 渲染 UniFlex 独立源图（Golden 比对输入） |
 | `npm run ui:verify` | 按颜色阈值与区域差异比较独立源图与 Web proposal |
 | `npm run ui:approve-web` | 批准当前 Web proposal 为新的 Golden 基线 |
 | `npm run check:uniflex-ui` | 只读校验 UniFlex AOT、字体与双端生成物是否过期 |
 | `npm run typecheck:uniflex-ui` | 检查 UniFlex TSX 作者态和独立 Web 预览入口 |
-| `npm run dev:uniflex-web` | 启动独立 WebProvider 预览；默认 Confirm，访问输出地址的 `?screen=backpack` 可预览 PSD 导入的 Backpack 组件和交互 |
+| `npm run dev:uniflex-web` | 启动独立 WebProvider 预览；默认 PreviewHome，`?screen=` / `?ui=` 打开已登记页面，`?psd=1` 为导出用未缩放画布 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
 | `npm run fetch:fgui` / `npm run fetch:colyseus` / `npm run fetch:uniflex` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
 | `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表与入库生成物；均属额外功能 |

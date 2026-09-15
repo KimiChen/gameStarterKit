@@ -1,0 +1,103 @@
+{
+  "screens": [
+    {
+      "id": "preview-home",
+      "aliases": ["home"],
+      "default": true,
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "PreviewHome",
+      "rootName": "PreviewHome",
+      "source": "apps/client/src/ui-uniflex/pages/PreviewHome/PreviewHome.tsx"
+    },
+    {
+      "id": "prompt",
+      "aliases": ["prompt"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Prompt",
+      "rootName": "Prompt/Content",
+      "source": "apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx"
+    },
+    {
+      "id": "small-popup",
+      "aliases": ["small-popup"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "SmallPopup",
+      "rootName": "SmallPopup/Content",
+      "source": "apps/client/src/ui-uniflex/pages/SmallPopup/SmallPopup.tsx"
+    },
+    {
+      "id": "confirm",
+      "aliases": ["confirm"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Confirm",
+      "rootName": "Confirm",
+      "source": "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx"
+    },
+    {
+      "id": "backpack",
+      "aliases": ["backpack"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "Backpack",
+      "rootName": "Backpack",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/Backpack.tsx"
+    },
+    {
+      "id": "mail",
+      "aliases": ["mail"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "MailBattleReport",
+      "rootName": "MailBattleReport",
+      "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleReport.tsx"
+    },
+    {
+      "id": "settings",
+      "aliases": ["settings"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "Settings",
+      "rootName": "Settings/Content",
+      "source": "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx"
+    }
+  ],
+  "components": [
+    {
+      "key": "PopupFrame",
+      "rootName": "PopupFrame",
+      "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"
+    },
+    {
+      "key": "PopupBackground",
+      "rootName": "PopupBackground",
+      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx"
+    },
+    {
+      "key": "CloseButton",
+      "rootName": "CloseButton",
+      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx"
+    },
+    {
+      "key": "ActionButton",
+      "rootName": "ActionButton",
+      "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx"
+    },
+    {
+      "key": "SettingsMenuButton",
+      "rootName": "SettingsMenuButton",
+      "source": "apps/client/src/ui-uniflex/pages/Settings/SettingsMenuButton.tsx"
+    },
+    {
+      "key": "NotificationBadge",
+      "rootName": "NotificationBadge",
+      "source": "apps/client/src/ui-uniflex/components/badge/NotificationBadge.tsx"
+    },
+    {
+      "key": "MailBattleRow",
+      "rootName": "MailBattleRow",
+      "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
+    },
+    {
+      "key": "BackpackComponent",
+      "rootName": "分页-训练",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackComponent.tsx"
+    }
+  ]
+}
