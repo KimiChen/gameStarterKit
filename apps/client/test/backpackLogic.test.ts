@@ -5,14 +5,16 @@ import { BackpackLogic } from "../src/logic/page/BackpackLogic";
 test("Backpack Checkpoint resolves stable control names to business actions", () => {
     const logic = new BackpackLogic();
     const events = logic.runCheckpoint([
-        { type: "press", name: "ROLE::layer-57" },
-        { type: "press", name: "ROLE::layer-2" },
+        { type: "press", name: "ROLE::tab-resource" },
+        { type: "press", name: "ROLE::item-resource-diamond-1" },
+        { type: "press", name: "ROLE::resource-1" },
         { type: "back" },
     ]);
     assert.deepEqual(events, [
-        { id: "layer-57", action: "tab" },
-        { id: "layer-2", action: "primary" },
-        { id: "layer-27", action: "back" },
+        { id: "tab-resource", action: "tab" },
+        { id: "item-resource-diamond-1", action: "select" },
+        { id: "resource-1", action: "primary" },
+        { id: "back", action: "back" },
     ]);
 });
 
