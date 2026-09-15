@@ -180,6 +180,7 @@ const CHAIN_LOAD_BEARING: Record<string, string[]> = {
   ],
   "verify:all": [
     "npm run verify:core",
+    "npm run test:uniflex-ui-contract",
     "npm --workspace @game/server run test",
   ],
 };
@@ -191,7 +192,7 @@ const CHAIN_LOAD_BEARING: Record<string, string[]> = {
  */
 const EXACT_LOAD_BEARING: Record<string, string> = {
   "test:client":
-    "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs ../../scripts/uniflex-output.test.mjs",
+    "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs ../../scripts/uniflex-output.test.mjs ../../scripts/uniflex-resources.test.mjs ../../scripts/uniflex-ui-cli.test.mjs",
   "test:fgui":
     "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",
   "test:inventory": "node --test scripts/verify-inventory.test.mjs",
