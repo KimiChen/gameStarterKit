@@ -88,6 +88,16 @@
       "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx"
     },
     {
+      "key": "ConfirmButton",
+      "rootName": "ConfirmButton",
+      "source": "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx"
+    },
+    {
+      "key": "CancelButton",
+      "rootName": "CancelButton",
+      "source": "apps/client/src/ui-uniflex/components/button/CancelButton.tsx"
+    },
+    {
       "key": "SettingsMenuButton",
       "rootName": "SettingsMenuButton",
       "source": "apps/client/src/ui-uniflex/pages/Settings/SettingsMenuButton.tsx"
