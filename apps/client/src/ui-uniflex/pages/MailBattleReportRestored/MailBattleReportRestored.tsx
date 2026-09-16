@@ -2,6 +2,7 @@ import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../components/badge/NotificationBadge';
 import { ActionButton } from '../../components/button/ActionButton';
+import { PanelTab } from '../../components/tab/PanelTab';
 import { MailBattleRow, type MailBattleRowProps } from '../MailBattleReport/MailBattleRow';
 
 export type MailBattleItem = Omit<MailBattleRowProps, 'onClick' | 'read'> & {
@@ -78,14 +79,7 @@ export const MailBattleReportRestored = defineView<MailBattleReportRestoredParam
     const redButton = imageRef('ui/button/red');
     const yellowButton = imageRef('ui/button/yellow');
     const badgeSource = imageRef('ui/mail/number-badge');
-    const tabActive = imageRef('ui/mail/tab-active');
-    const tabInactive = imageRef('ui/mail/tab-inactive');
-    const tab0 = activeTab === 0 ? tabActive : tabInactive;
-    const tab1 = activeTab === 1 ? tabActive : tabInactive;
-    const tab2 = activeTab === 2 ? tabActive : tabInactive;
-    const tab3 = activeTab === 3 ? tabActive : tabInactive;
     const tabWidth = (index: number) => activeTab === index ? 176 : 170;
-    const tabHeight = (index: number) => activeTab === index ? 67 : 52;
     const unreadCounts = tabGroups.map((tab) => tab.items.reduce(
         (count, item) => count + (!deletedById[item.id] && !item.read && !openedById[item.id] ? 1 : 0),
         0,
@@ -111,22 +105,14 @@ export const MailBattleReportRestored = defineView<MailBattleReportRestoredParam
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
             <image source={imageRef('ui/mail/header')} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
             <text value={params.title ?? '邮件'} style={{ position: 'absolute', left: 38, top: 16, width: 300, height: 60, font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true, outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
-            <view interaction="press" onClick={() => setActiveTab(0)} style={{ position: 'absolute', left: tabs[0], top: activeTab === 0 ? 103 : 118, width: tabWidth(0), height: tabHeight(0) }}>
-                <image source={tab0} style={{ width: '100%', height: '100%', sizeMode: 'sliced' }} />
-                <text value={tabGroups[0].label} style={{ position: 'absolute', width: '100%', height: '100%', font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => setActiveTab(1)} style={{ position: 'absolute', left: tabs[1], top: activeTab === 1 ? 103 : 118, width: tabWidth(1), height: tabHeight(1) }}>
-                <image source={tab1} style={{ width: '100%', height: '100%', sizeMode: 'sliced' }} />
-                <text value={tabGroups[1].label} style={{ position: 'absolute', width: '100%', height: '100%', font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => setActiveTab(2)} style={{ position: 'absolute', left: tabs[2], top: activeTab === 2 ? 103 : 118, width: tabWidth(2), height: tabHeight(2) }}>
-                <image source={tab2} style={{ width: '100%', height: '100%', sizeMode: 'sliced' }} />
-                <text value={tabGroups[2].label} style={{ position: 'absolute', width: '100%', height: '100%', font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => setActiveTab(3)} style={{ position: 'absolute', left: tabs[3], top: activeTab === 3 ? 103 : 118, width: tabWidth(3), height: tabHeight(3) }}>
-                <image source={tab3} style={{ width: '100%', height: '100%', sizeMode: 'sliced' }} />
-                <text value={tabGroups[3].label} style={{ position: 'absolute', width: '100%', height: '100%', font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
+            <PanelTab label={tabGroups[0].label} active={activeTab === 0} left={tabs[0]} top={118} width={170}
+                onClick={() => setActiveTab(0)} />
+            <PanelTab label={tabGroups[1].label} active={activeTab === 1} left={tabs[1]} top={103} width={176}
+                onClick={() => setActiveTab(1)} />
+            <PanelTab label={tabGroups[2].label} active={activeTab === 2} left={tabs[2]} top={118} width={170}
+                onClick={() => setActiveTab(2)} />
+            <PanelTab label={tabGroups[3].label} active={activeTab === 3} left={tabs[3]} top={118} width={170}
+                onClick={() => setActiveTab(3)} />
             <NotificationBadge count={unreadCounts[0]} source={badgeSource} left={badgeLeft0} top={99} />
             <NotificationBadge count={unreadCounts[1]} source={badgeSource} left={badgeLeft1} top={99} />
             <NotificationBadge count={unreadCounts[2]} source={badgeSource} left={badgeLeft2} top={99} />
