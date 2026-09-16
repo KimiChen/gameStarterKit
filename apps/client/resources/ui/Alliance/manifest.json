@@ -68,6 +68,44 @@
       ]
     },
     {
+      "id": "ui/alliance/create-diamond",
+      "kind": "image",
+      "file": "assets/alliance_create_diamond.png",
+      "width": 46,
+      "height": 38,
+      "sha256": "4fc7207e1aa48b7298c14d4514a2f45c8f6e677b12b361f27835594fd7212122"
+    },
+    {
+      "id": "ui/alliance/flag-swap",
+      "kind": "image",
+      "file": "assets/alliance_flag_swap.png",
+      "width": 61,
+      "height": 66,
+      "sha256": "a400db10f39e4296ad11b53ecbca4f588449c359be2adc997ee77f9ae6475969"
+    },
+    {
+      "id": "ui/alliance/input-bg",
+      "kind": "image",
+      "file": "assets/alliance_input_bg.png",
+      "width": 36,
+      "height": 36,
+      "sha256": "4c3474bc97923cbb58afe1e3668133a9be60cbd6587f01b213578e55e1c2a6a7",
+      "nineSlice": [
+        16,
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "id": "ui/alliance/nation-flag",
+      "kind": "image",
+      "file": "assets/alliance_nation_flag.png",
+      "width": 67,
+      "height": 43,
+      "sha256": "8cab0fda8d6636d40ee3c3fb7ad527956ac92a53d3f0be6cbcade4e7ea557e51"
+    },
+    {
       "id": "ui/alliance/button",
       "kind": "image",
       "file": "assets/alliance_button_bg.png",
