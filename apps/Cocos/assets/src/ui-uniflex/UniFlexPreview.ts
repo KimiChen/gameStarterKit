@@ -1,6 +1,6 @@
 import { _decorator, Color, Component, Label, Node, ResolutionPolicy, UITransform, view } from "cc";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "../designSpec";
-import { createAllianceAnnouncePreview, createAllianceCreatePreview, createAllianceJoinPreview, createAlliancePreview, createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createHeroStarUpgradePreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
+import { createAllianceAnnouncePreview, createAllianceCreatePreview, createAllianceJoinPreview, createAllianceMemberSettingsPreview, createAlliancePreview, createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createHeroStarUpgradePreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
 
 const { ccclass } = _decorator;
 
@@ -25,6 +25,7 @@ export class UniFlexPreview extends Component {
         const allianceAnnounce = query?.get("screen") === "alliance-announce";
         const allianceCreate = query?.get("screen") === "alliance-create";
         const allianceJoin = query?.get("screen") === "alliance-join";
+        const allianceMemberSettings = query?.get("screen") === "alliance-member-settings";
         const prompt = query?.get("ui") === "prompt";
         if (backpack) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (mail) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
@@ -42,6 +43,7 @@ export class UniFlexPreview extends Component {
             : allianceAnnounce ? createAllianceAnnouncePreview(this.node)
             : allianceCreate ? createAllianceCreatePreview(this.node)
             : allianceJoin ? createAllianceJoinPreview(this.node)
+            : allianceMemberSettings ? createAllianceMemberSettingsPreview(this.node)
             : prompt ? createPromptPreview(this.node, query?.get("cancel") !== "0")
             : createConfirmPreview(this.node, query?.get("cancel") !== "0");
         this.runtime = preview;

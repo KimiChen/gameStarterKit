@@ -4,6 +4,7 @@ import { NotificationBadge } from '../../components/badge/NotificationBadge';
 import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
+import { AllianceMemberSettingsPanel } from '../AllianceMemberSettings/AllianceMemberSettingsPanel';
 import { AllianceHomePanel } from './AllianceHomePanel';
 import { AllianceMembersPanel } from './AllianceMembersPanel';
 import { AllianceSettingsPanel } from './AllianceSettingsPanel';
@@ -30,6 +31,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     const [tab, setTab] = useState<AllianceTab>(params.tab ?? 'home');
     const [nav, setNav] = useState<MainNavSlot>(params.nav ?? 'hero');
     const [announceOpen, setAnnounceOpen] = useState(false);
+    const [memberSettingsOpen, setMemberSettingsOpen] = useState(false);
     const selectTab = (next: AllianceTab) => {
         setTab(next);
         params.onSelectTab?.(next);
@@ -40,6 +42,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     };
     const onAction = (id: string) => {
         if (id === 'edit_announcement') setAnnounceOpen(true);
+        if (id === 'open_member_config') setMemberSettingsOpen(true);
         params.onAction?.(id);
     };
     const badge = imageRef('ui/mail/number-badge');
@@ -80,6 +83,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
 
             <MainNav selected={nav} noticeExplore onSelect={selectNav} />
             <AllianceAnnouncePanel visible={announceOpen} onClose={() => setAnnounceOpen(false)} />
+            <AllianceMemberSettingsPanel visible={memberSettingsOpen} onClose={() => setMemberSettingsOpen(false)} />
         </view>
     );
 });
