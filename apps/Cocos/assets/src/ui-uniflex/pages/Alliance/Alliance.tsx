@@ -4,6 +4,7 @@ import { NotificationBadge } from '../../components/badge/NotificationBadge';
 import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
+import { AllianceInvitePanel } from '../AllianceInvite/AllianceInvitePanel';
 import { AllianceMemberSettingsPanel } from '../AllianceMemberSettings/AllianceMemberSettingsPanel';
 import { AllianceWarPanel } from '../AllianceWar/AllianceWarPanel';
 import { AllianceTerritoryPanel } from '../AllianceTerritory/AllianceTerritoryPanel';
@@ -33,6 +34,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     const [tab, setTab] = useState<AllianceTab>(params.tab ?? 'home');
     const [nav, setNav] = useState<MainNavSlot>(params.nav ?? 'hero');
     const [announceOpen, setAnnounceOpen] = useState(false);
+    const [inviteOpen, setInviteOpen] = useState(false);
     const [memberSettingsOpen, setMemberSettingsOpen] = useState(false);
     const [warOpen, setWarOpen] = useState(false);
     const [territoryOpen, setTerritoryOpen] = useState(false);
@@ -46,6 +48,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     };
     const onAction = (id: string) => {
         if (id === 'edit_announcement') setAnnounceOpen(true);
+        if (id === 'open_invite') setInviteOpen(true);
         if (id === 'open_member_config') setMemberSettingsOpen(true);
         if (id === 'open_war') setWarOpen(true);
         if (id === 'open_territory') setTerritoryOpen(true);
@@ -89,6 +92,10 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
 
             <MainNav selected={nav} noticeExplore onSelect={selectNav} />
             <AllianceAnnouncePanel visible={announceOpen} onClose={() => setAnnounceOpen(false)} />
+            <AllianceInvitePanel visible={inviteOpen} onClose={() => setInviteOpen(false)}
+                onSearch={(query) => params.onAction?.(`search_player:${query}`)}
+                onInvite={() => params.onAction?.('invite_selected')}
+                onPublicInvite={() => params.onAction?.('invite_public')} />
             <AllianceMemberSettingsPanel visible={memberSettingsOpen} onClose={() => setMemberSettingsOpen(false)} />
             <AllianceWarPanel visible={warOpen} onBack={() => setWarOpen(false)}
                 onAction={params.onAction} />

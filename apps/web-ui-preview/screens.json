@@ -178,6 +178,14 @@
       "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoost/AllianceMarchBoost.tsx"
     },
     {
+      "id": "alliance-invite",
+      "aliases": ["alliance-invite", "allianceInvite"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceInvite",
+      "rootName": "AllianceInvitePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceInvite/AllianceInvite.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },

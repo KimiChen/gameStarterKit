@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceCreate, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -234,6 +234,14 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onClose: backToPreview,
                 onPayGem: () => console.info("[UniFlex AllianceMarchBoost] pay-gem"),
                 onPayCoin: () => console.info("[UniFlex AllianceMarchBoost] pay-coin"),
+            });
+            return;
+        case "alliance-invite":
+            await runtime.start(AllianceInvite, {
+                onClose: backToPreview,
+                onSearch: (query) => console.info("[UniFlex AllianceInvite] search", query),
+                onInvite: () => console.info("[UniFlex AllianceInvite] invite"),
+                onPublicInvite: () => console.info("[UniFlex AllianceInvite] public"),
             });
             return;
         case "prompt-restored":
