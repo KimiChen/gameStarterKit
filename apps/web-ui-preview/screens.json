@@ -10,6 +10,14 @@
       "source": "apps/client/src/ui-uniflex/pages/PreviewHome/PreviewHome.tsx"
     },
     {
+      "id": "restored-home",
+      "aliases": ["restored", "restored-preview", "restore"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "RestoredPreviewHome",
+      "rootName": "RestoredPreviewHome",
+      "source": "apps/client/src/ui-uniflex/pages/RestoredPreviewHome/RestoredPreviewHome.tsx"
+    },
+    {
       "id": "prompt",
       "aliases": ["prompt"],
       "canvas": { "width": 750, "height": 1624 },

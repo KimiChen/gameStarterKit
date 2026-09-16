@@ -3,8 +3,19 @@ import { ConfirmButton } from '../../components/button/ConfirmButton';
 import { CancelButton } from '../../components/button/CancelButton';
 import { theme } from '../../themes/active';
 
+export type PreviewHomeTarget =
+    | 'prompt'
+    | 'small-popup'
+    | 'backpack'
+    | 'mail'
+    | 'settings'
+    | 'character'
+    | 'hero'
+    | 'hero-detail'
+    | 'restored-home';
+
 export interface PreviewHomeParams {
-    readonly onNavigate: (target: 'prompt' | 'small-popup' | 'backpack' | 'mail' | 'mail-restored' | 'backpack-restored' | 'settings' | 'character' | 'hero' | 'hero-detail') => void;
+    readonly onNavigate: (target: PreviewHomeTarget) => void;
 }
 
 /** Local preview router: keeps feature previews discoverable without coupling production navigation. */
@@ -22,12 +33,6 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             <view interaction="press" onClick={() => go('mail')} style={{ width: 300, height: 102, backgroundColor: '#72558f', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="邮件战报" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
-            <view interaction="press" onClick={() => go('mail-restored')} style={{ width: 300, height: 102, backgroundColor: '#4a3a6a', justifyContent: 'center', alignItems: 'center' }}>
-                <text value="还原邮件" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => go('backpack-restored')} style={{ width: 300, height: 102, backgroundColor: '#3d4f64', justifyContent: 'center', alignItems: 'center' }}>
-                <text value="还原背包" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
             <view interaction="press" onClick={() => go('settings')} style={{ width: 300, height: 102, backgroundColor: '#596b5e', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="设置界面" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
@@ -39,6 +44,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('hero-detail')} style={{ width: 300, height: 90, backgroundColor: '#c4a035', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="英雄详情" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('restored-home')} style={{ width: 300, height: 90, backgroundColor: '#1e4d6b', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="还原 UI 预览" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
         </view>
     </view>;

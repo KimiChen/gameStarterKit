@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -52,6 +52,9 @@ function dispose() {
 function backToPreview() {
     location.href = "/";
 }
+function backToRestored() {
+    location.href = "?ui=restored-home";
+}
 window.addEventListener("pagehide", dispose, { once: true });
 
 async function startScreen(entry: ScreenEntry): Promise<void> {
@@ -59,6 +62,9 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
     switch (entry.id) {
         case "preview-home":
             await runtime.start(PreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
+            return;
+        case "restored-home":
+            await runtime.start(RestoredPreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
             return;
         case "preview-home-restored":
             await runtime.start(PreviewHomeRestored, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
@@ -109,7 +115,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         }
         case "mail-restored": {
             await runtime.start(MailBattleReportRestored, {
-                onBack: backToPreview,
+                onBack: backToRestored,
                 onDeleteRead: () => console.info("[UniFlex MailBattleReportRestored] delete-read"),
                 onConfirm: () => console.info("[UniFlex MailBattleReportRestored] confirm"),
             });
@@ -118,7 +124,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         case "backpack-restored": {
             const onAction = (action: BackpackRestoredAction) => {
                 console.info("[UniFlex BackpackRestored] action", action);
-                if (action.action === "back" || action.action === "close") backToPreview();
+                if (action.action === "back" || action.action === "close") backToRestored();
             };
             await runtime.start(BackpackRestored, { onAction });
             return;
@@ -126,7 +132,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         case "backpack-edited": {
             const onAction = (action: BackpackEditedRestoredAction) => {
                 console.info("[UniFlex BackpackEditedRestored] action", action);
-                if (action.action === "back" || action.action === "close") backToPreview();
+                if (action.action === "back" || action.action === "close") backToRestored();
             };
             await runtime.start(BackpackEditedRestored, { onAction });
             return;
@@ -171,8 +177,8 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 confirmText: "确定",
                 cancelText: "取消",
                 onConfirm: () => console.info("[UniFlex PromptRestored] result=true"),
-                onCancel: backToPreview,
-                onClose: backToPreview,
+                onCancel: backToRestored,
+                onClose: backToRestored,
             });
             return;
         case "confirm-restored": {
@@ -188,17 +194,17 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
             return;
         }
         case "small-popup-restored":
-            await runtime.start(SmallPopupRestored, { title: "标题", onClose: backToPreview });
+            await runtime.start(SmallPopupRestored, { title: "标题", onClose: backToRestored });
             return;
         case "settings-restored":
             await runtime.start(SettingsRestored, {
-                onClose: backToPreview,
+                onClose: backToRestored,
                 onSelect: (id) => console.info("[UniFlex SettingsRestored] select", id),
             });
             return;
         case "character-restored":
             await runtime.start(CharacterManageRestored, {
-                onClose: backToPreview,
+                onClose: backToRestored,
                 onSelectPlayer: (id) => console.info("[UniFlex CharacterManageRestored] player", id),
                 onSelectServer: (id) => console.info("[UniFlex CharacterManageRestored] server", id),
             });
@@ -206,7 +212,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         case "hero-restored":
             await runtime.start(HeroScreenRestored, {
                 onRecruit: () => console.info("[UniFlex HeroScreenRestored] recruit"),
-                onSelectCard: (id) => console.info("[UniFlex HeroScreenRestored] card", id),
+                onSelectCard: (id) => { location.href = "?ui=hero-detail-restored"; },
                 onSelectBond: (id) => console.info("[UniFlex HeroScreenRestored] bond", id),
                 onBondDetail: (id) => console.info("[UniFlex HeroScreenRestored] bond-detail", id),
                 onNav: (slot) => console.info("[UniFlex HeroScreenRestored] nav", slot),
@@ -214,7 +220,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
             return;
         case "hero-detail-restored":
             await runtime.start(HeroDetailRestored, {
-                onBack: backToPreview,
+                onBack: backToRestored,
                 onPrev: () => console.info("[UniFlex HeroDetailRestored] prev"),
                 onNext: () => console.info("[UniFlex HeroDetailRestored] next"),
                 onStarUp: () => console.info("[UniFlex HeroDetailRestored] star-up"),
