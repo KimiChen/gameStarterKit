@@ -106,6 +106,22 @@
       "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetail.tsx"
     },
     {
+      "id": "hero-star-upgrade",
+      "aliases": ["hero-star-upgrade", "heroStarUpgrade"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "HeroStarUpgrade",
+      "rootName": "HeroStarUpgradePage",
+      "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarUpgrade.tsx"
+    },
+    {
+      "id": "alliance",
+      "aliases": ["alliance"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Alliance",
+      "rootName": "Alliance",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },
