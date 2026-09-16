@@ -196,6 +196,28 @@
       ]
     },
     {
+      "id": "ui/alliance/help-badge",
+      "kind": "image",
+      "file": "assets/alliance_help_badge.png",
+      "width": 100,
+      "height": 78,
+      "sha256": "57d7ae2ecc85ce074bc4e93fd7c254e7f5130d54ab22515f41c5122029569853"
+    },
+    {
+      "id": "ui/alliance/help-track",
+      "kind": "image",
+      "file": "assets/alliance_help_track.png",
+      "width": 42,
+      "height": 38,
+      "sha256": "76ef87cd7fed2d5499cd5f1122540e4299466d7878bc169838c32337c1e46f5e",
+      "nineSlice": [
+        19,
+        0,
+        19,
+        0
+      ]
+    },
+    {
       "id": "ui/alliance/mset-card",
       "kind": "image",
       "file": "assets/alliance_mset_card.png",
