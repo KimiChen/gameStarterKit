@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "applyTarget": "restored",
+  "pages": [
+    {
+      "screen": "prompt",
+      "componentName": "Prompt",
+      "restoredName": "PromptRestored",
+      "source": "apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx",
+      "canvas": { "width": 750, "height": 1624 }
+    },
+    {
+      "screen": "small-popup",
+      "componentName": "SmallPopup",
+      "restoredName": "SmallPopupRestored",
+      "source": "apps/client/src/ui-uniflex/pages/SmallPopup/SmallPopup.tsx",
+      "canvas": { "width": 750, "height": 1624 }
+    },
+    {
+      "screen": "confirm",
+      "componentName": "Confirm",
+      "restoredName": "ConfirmRestored",
+      "source": "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx",
+      "canvas": { "width": 750, "height": 1624 }
+    },
+    {
+      "screen": "backpack",
+      "componentName": "Backpack",
+      "restoredName": "BackpackRestored",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/Backpack.tsx",
+      "canvas": { "width": 750, "height": 1334 }
+    },
+    {
+      "screen": "mail",
+      "componentName": "MailBattleReport",
+      "restoredName": "MailBattleReportRestored",
+      "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleReport.tsx",
+      "canvas": { "width": 750, "height": 1334 }
+    },
+    {
+      "screen": "settings",
+      "componentName": "Settings",
+      "restoredName": "SettingsRestored",
+      "source": "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx",
+      "canvas": { "width": 750, "height": 1334 }
+    },
+    {
+      "screen": "character",
+      "componentName": "CharacterManage",
+      "restoredName": "CharacterManageRestored",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManage.tsx",
+      "canvas": { "width": 750, "height": 1624 }
+    },
+    {
+      "screen": "hero",
+      "componentName": "HeroScreen",
+      "restoredName": "HeroScreenRestored",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroScreen.tsx",
+      "canvas": { "width": 750, "height": 1334 }
+    },
+    {
+      "screen": "hero-detail",
+      "componentName": "HeroDetail",
+      "restoredName": "HeroDetailRestored",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetail.tsx",
+      "canvas": { "width": 750, "height": 1624 }
+    }
+  ]
+}

@@ -242,6 +242,9 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onPrev: () => console.info("[UniFlex HeroDetailRestored] prev"),
                 onNext: () => console.info("[UniFlex HeroDetailRestored] next"),
                 onStarUp: () => console.info("[UniFlex HeroDetailRestored] star-up"),
+                onConfirmStarUpgrade: () => console.info("[UniFlex HeroDetailRestored] confirm-star-upgrade"),
+                onObtainFragments: () => console.info("[UniFlex HeroDetailRestored] obtain-fragments"),
+                onExchange: () => console.info("[UniFlex HeroDetailRestored] exchange"),
                 onUpgrade: () => console.info("[UniFlex HeroDetailRestored] upgrade"),
                 onSelectSkill: (id) => console.info("[UniFlex HeroDetailRestored] skill", id),
             });

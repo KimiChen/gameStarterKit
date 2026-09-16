@@ -1,0 +1,21 @@
+{
+  "screen": "confirm",
+  "componentName": "Confirm",
+  "restoredName": "ConfirmRestored",
+  "source": "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "5bc510360ac3b3b57a7af9a9d5c99ddb9ad5454f289ce2dcda6bb7f5a2e68d1f",
+    "psdSha256": "b1a7643c12c54b9196130beb5d0f32365c65f57db50ad05e1f3036f5c9f7bf65",
+    "at": "2026-09-16T03:31:57.686Z"
+  },
+  "import": {
+    "psdSha256": "b1a7643c12c54b9196130beb5d0f32365c65f57db50ad05e1f3036f5c9f7bf65",
+    "at": "2026-09-16T03:31:59.080Z",
+    "target": "restored"
+  }
+}

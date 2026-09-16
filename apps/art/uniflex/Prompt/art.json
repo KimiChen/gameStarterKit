@@ -1,0 +1,21 @@
+{
+  "screen": "prompt",
+  "componentName": "Prompt",
+  "restoredName": "PromptRestored",
+  "source": "apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "3cc608083849b046043c27d5b64c115a2a985a0717667cd14d835ee7e2c64dc4",
+    "psdSha256": "f78863f9ece48824df11c8544fa8c470d087288ae5902f569fe67850ff5ff78f",
+    "at": "2026-09-16T03:31:41.482Z"
+  },
+  "import": {
+    "psdSha256": "f78863f9ece48824df11c8544fa8c470d087288ae5902f569fe67850ff5ff78f",
+    "at": "2026-09-16T03:31:44.432Z",
+    "target": "restored"
+  }
+}

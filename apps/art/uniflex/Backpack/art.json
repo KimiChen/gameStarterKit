@@ -1,0 +1,21 @@
+{
+  "screen": "backpack",
+  "componentName": "Backpack",
+  "restoredName": "BackpackRestored",
+  "source": "apps/client/src/ui-uniflex/pages/Backpack/Backpack.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "212a3cd9983079248f59cbe6eb676240af730b12628ac387aac75f57ebe9ec7e",
+    "psdSha256": "4f87b2a8dd2a85e7d219bb46c8379919f5081ab50e84ba9e050a6de8310b55f2",
+    "at": "2026-09-16T03:35:17.417Z"
+  },
+  "import": {
+    "psdSha256": "4f87b2a8dd2a85e7d219bb46c8379919f5081ab50e84ba9e050a6de8310b55f2",
+    "at": "2026-09-16T03:35:18.974Z",
+    "target": "restored"
+  }
+}
