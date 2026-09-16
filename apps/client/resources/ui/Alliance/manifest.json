@@ -324,6 +324,14 @@
       "sha256": "54428e4211bb4335094de95e4754fd4a9d0831643b421bc2f9340df1eb4136ac"
     },
     {
+      "id": "ui/alliance/rank-arrow-down",
+      "kind": "image",
+      "file": "assets/alliance_rank_arrow_down.png",
+      "width": 40,
+      "height": 26,
+      "sha256": "d2fec550fda31681c0813e23fd75537c5600d953c1776db87e9f1a2724bbddb3"
+    },
+    {
       "id": "ui/alliance/rank-header",
       "kind": "image",
       "file": "assets/alliance_rank_header.png",

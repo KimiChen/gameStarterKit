@@ -3,8 +3,6 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 
 export interface AllianceMemberRowProps {
     readonly visible?: boolean;
-    readonly left?: number;
-    readonly top?: number;
     readonly power?: string;
     readonly combat?: string;
     readonly status?: string;
@@ -13,7 +11,7 @@ export interface AllianceMemberRowProps {
 
 export const AllianceMemberRow = defineComponent<AllianceMemberRowProps>((p) => (
     <view name="AllianceMemberRow" visible={p.visible !== false}
-        style={{ position: 'absolute', left: p.left ?? 0, top: p.top ?? 0, width: 661, height: 78 }}>
+        style={{ position: 'relative', width: 661, height: 78 }}>
         <image source={imageRef('ui/alliance/member-row')}
             style={{ position: 'absolute', width: 661, height: 78, sizeMode: 'sliced' }} />
         <image source={imageRef('ui/alliance/member-avatar')}
