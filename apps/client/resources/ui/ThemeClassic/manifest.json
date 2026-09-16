@@ -52,6 +52,20 @@
       ]
     },
     {
+      "id": "ui/button/cyan",
+      "kind": "image",
+      "file": "button/cyan.png",
+      "width": 82,
+      "height": 75,
+      "sha256": "2c4c44eb77ca14f69980c44c94b712df478e810661f7b40d2f6b30990e4c64ed",
+      "nineSlice": [
+        26,
+        32,
+        52,
+        39
+      ]
+    },
+    {
       "id": "ui/popup/small",
       "kind": "image",
       "file": "popup/small.png",

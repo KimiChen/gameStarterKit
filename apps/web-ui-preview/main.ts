@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings, AllianceWar } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -287,6 +287,16 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onToggleR3: (enabled) => console.info("[UniFlex AllianceMemberSettings] r3", enabled),
             });
             console.info("[UniFlex AllianceMemberSettings] ready");
+            return;
+        }
+        case "alliance-war": {
+            document.title = "UniFlex Alliance War";
+            await runtime.start(AllianceWar, {
+                onBack: backToPreview,
+                onAction: (id) => console.info("[UniFlex AllianceWar] action", id),
+                onSelectTab: (tab) => console.info("[UniFlex AllianceWar] tab", tab),
+            });
+            console.info("[UniFlex AllianceWar] ready");
             return;
         }
         default:
