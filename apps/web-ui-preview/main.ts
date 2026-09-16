@@ -312,5 +312,11 @@ try {
     document.documentElement.dataset.uniflexReady = "true";
 } catch (error) {
     if (!stopped) console.error("[UniFlex Web] 预览启动失败：", error);
+    const detail = error instanceof Error ? `${error.message}\n${error.stack ?? ""}` : String(error);
+    container.textContent = `预览启动失败：${detail}`;
+    container.style.color = "#ff8a80";
+    container.style.whiteSpace = "pre-wrap";
+    container.style.fontSize = "28px";
+    container.style.padding = "40px";
     dispose();
 }
