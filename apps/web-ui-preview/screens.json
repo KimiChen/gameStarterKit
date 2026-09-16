@@ -170,6 +170,14 @@
       "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritory.tsx"
     },
     {
+      "id": "alliance-march-boost",
+      "aliases": ["alliance-march-boost", "allianceMarchBoost"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceMarchBoost",
+      "rootName": "AllianceMarchBoostPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoost/AllianceMarchBoost.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },
