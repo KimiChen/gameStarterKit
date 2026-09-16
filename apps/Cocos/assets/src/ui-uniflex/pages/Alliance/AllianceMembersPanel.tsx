@@ -32,7 +32,7 @@ export const AllianceMembersPanel = defineComponent<AllianceMembersPanelProps>((
     const slots = p.slots ?? ['炮手', '先锋', '队长', '枪手'];
     return (
         <view name="AllianceMembers" visible={p.visible !== false}
-            style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1369 }}>
+            style={{ position: 'absolute', left: 0, top: 0, width: 750, bottom: 0 }}>
             <view interaction="press" onClick={() => p.onAction?.('open_member_notice')}
                 style={{ position: 'absolute', left: 687, top: 329, width: 50, height: 50 }}>
                 <image source={imageRef('ui/alliance/alert')} style={{ width: 50, height: 50 }} />
@@ -84,8 +84,8 @@ export const AllianceMembersPanel = defineComponent<AllianceMembersPanelProps>((
                         horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <image source={imageRef('ui/alliance/list-panel')}
-                style={{ position: 'absolute', left: 24, top: 725, width: 703, height: 624, sizeMode: 'sliced' }} />
-            <view style={{ position: 'absolute', left: 24, top: 725, width: 703, height: 624 }}>
+                style={{ position: 'absolute', left: 24, top: 725, width: 703, bottom: 125, sizeMode: 'sliced' }} />
+            <view style={{ position: 'absolute', left: 24, top: 725, width: 703, bottom: 125 }}>
                 <AllianceRankGroup top={7} rank="R5" rankColor="#EF4B4B" expanded={openR5}
                     members={p.r5 ?? defaultR5} onToggle={() => setOpenR5(!openR5)} />
                 <AllianceRankGroup top={247} rank="R4" rankColor="#CD7443" expanded={openR4}
