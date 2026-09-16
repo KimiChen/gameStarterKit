@@ -19,6 +19,7 @@ export type PreviewHomeTarget =
     | 'alliance-join'
     | 'alliance-member-settings'
     | 'alliance-war'
+    | 'alliance-territory'
     | 'restored-home';
 
 export interface PreviewHomeParams {
@@ -72,6 +73,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('alliance-war')} style={{ width: 300, height: 72, backgroundColor: '#3a6a8a', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="联盟战争" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-territory')} style={{ width: 300, height: 72, backgroundColor: '#2f5a72', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="领地旗帜" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <view interaction="press" onClick={() => go('restored-home')} style={{ width: 300, height: 90, backgroundColor: '#1e4d6b', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="还原 UI 预览" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />

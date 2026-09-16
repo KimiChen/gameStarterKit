@@ -6,6 +6,7 @@ import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
 import { AllianceMemberSettingsPanel } from '../AllianceMemberSettings/AllianceMemberSettingsPanel';
 import { AllianceWarPanel } from '../AllianceWar/AllianceWarPanel';
+import { AllianceTerritoryPanel } from '../AllianceTerritory/AllianceTerritoryPanel';
 import { AllianceHomePanel } from './AllianceHomePanel';
 import { AllianceMembersPanel } from './AllianceMembersPanel';
 import { AllianceSettingsPanel } from './AllianceSettingsPanel';
@@ -34,6 +35,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     const [announceOpen, setAnnounceOpen] = useState(false);
     const [memberSettingsOpen, setMemberSettingsOpen] = useState(false);
     const [warOpen, setWarOpen] = useState(false);
+    const [territoryOpen, setTerritoryOpen] = useState(false);
     const selectTab = (next: AllianceTab) => {
         setTab(next);
         params.onSelectTab?.(next);
@@ -46,6 +48,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
         if (id === 'edit_announcement') setAnnounceOpen(true);
         if (id === 'open_member_config') setMemberSettingsOpen(true);
         if (id === 'open_war') setWarOpen(true);
+        if (id === 'open_territory') setTerritoryOpen(true);
         params.onAction?.(id);
     };
     const badge = imageRef('ui/mail/number-badge');
@@ -88,6 +91,8 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
             <AllianceAnnouncePanel visible={announceOpen} onClose={() => setAnnounceOpen(false)} />
             <AllianceMemberSettingsPanel visible={memberSettingsOpen} onClose={() => setMemberSettingsOpen(false)} />
             <AllianceWarPanel visible={warOpen} onBack={() => setWarOpen(false)}
+                onAction={params.onAction} />
+            <AllianceTerritoryPanel visible={territoryOpen} onBack={() => setTerritoryOpen(false)}
                 onAction={params.onAction} />
         </view>
     );
