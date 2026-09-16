@@ -5,6 +5,7 @@ UniFlex 通用运行时入口在 `apps/client/src/kits/uniflex/`，SDK 运行时
 它是纯客户端 UI kit，只登记在 `KIT_CATALOG`，不进入 `plugins.generated.ts` / PluginHost。
 正式 Confirm 已使用 UniFlex，既有 NavigationService 继续拥有业务路由；其他页面按原实现运行。
 
+- 按切图实现业务页（作者态、预览路由、AOT）：[UNIFLEX-UI.md](UNIFLEX-UI.md)。
 - 核心源码、API 面与依赖方向：[UniFlex kit](../apps/kits/uniflex/README.md)。
 - 作者态、生成物、编译器配置与预览命令：[客户端文档](CLIENT.md#2-源码与工程壳)。
 - 混合 FGUI/Cocos 排序和输入：[模态输入规则](CLIENT.md#interactive-的含义)。
