@@ -5,6 +5,7 @@ import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
 import { AllianceGiftPanel } from '../AllianceGift/AllianceGiftPanel';
+import { AllianceHelpPanel } from '../AllianceHelp/AllianceHelpPanel';
 import { AllianceInvitePanel } from '../AllianceInvite/AllianceInvitePanel';
 import { AllianceMemberSettingsPanel } from '../AllianceMemberSettings/AllianceMemberSettingsPanel';
 import { AllianceWarPanel } from '../AllianceWar/AllianceWarPanel';
@@ -40,6 +41,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     const [warOpen, setWarOpen] = useState(false);
     const [territoryOpen, setTerritoryOpen] = useState(false);
     const [giftOpen, setGiftOpen] = useState(false);
+    const [helpOpen, setHelpOpen] = useState(false);
     const selectTab = (next: AllianceTab) => {
         setTab(next);
         params.onSelectTab?.(next);
@@ -55,6 +57,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
         if (id === 'open_war') setWarOpen(true);
         if (id === 'open_territory') setTerritoryOpen(true);
         if (id === 'open_gift' || id === 'open_mailgift') setGiftOpen(true);
+        if (id === 'open_help') setHelpOpen(true);
         params.onAction?.(id);
     };
     const badge = imageRef('ui/mail/number-badge');
@@ -106,6 +109,8 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
                 onAction={params.onAction} />
             <AllianceGiftPanel visible={giftOpen} onBack={() => setGiftOpen(false)}
                 onAction={params.onAction} onClaimAll={() => params.onAction?.('claim_all')} />
+            <AllianceHelpPanel visible={helpOpen} onClose={() => setHelpOpen(false)}
+                onAction={params.onAction} onCreate={() => params.onAction?.('create')} />
         </view>
     );
 });
