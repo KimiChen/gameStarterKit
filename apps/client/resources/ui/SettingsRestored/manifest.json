@@ -1,5 +1,14 @@
 {
   "version": 1,
   "feature": "uniflex-import",
-  "assets": []
+  "assets": [
+    {
+      "id": "SettingsRestored-asset-25e60a05cef1895a4eea985d01fd18bb01c0f523c28accd14a1df2486bb627c9",
+      "kind": "image",
+      "file": "assets/25e60a05cef1895a4eea985d01fd18bb01c0f523c28accd14a1df2486bb627c9.png",
+      "width": 60,
+      "height": 60,
+      "sha256": "25e60a05cef1895a4eea985d01fd18bb01c0f523c28accd14a1df2486bb627c9"
+    }
+  ]
 }
