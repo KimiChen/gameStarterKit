@@ -2,6 +2,7 @@ import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../components/badge/NotificationBadge';
 import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
+import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceHomePanel } from './AllianceHomePanel';
 import { AllianceMembersPanel } from './AllianceMembersPanel';
 import { AllianceSettingsPanel } from './AllianceSettingsPanel';
@@ -60,42 +61,12 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
                     font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
                     outlineColor: '#593d84', outlineWidth: 2, verticalAlign: 'center' }} />
 
-            <image visible={tab !== 'home'} source={imageRef('ui/alliance/tab-unselected')}
-                style={{ position: 'absolute', left: 13, top: 262, width: 200, height: 52 }} />
-            <image visible={tab !== 'members'} source={imageRef('ui/alliance/tab-unselected')}
-                style={{ position: 'absolute', left: 227, top: 262, width: 200, height: 52 }} />
-            <image visible={tab !== 'settings'} source={imageRef('ui/alliance/tab-unselected')}
-                style={{ position: 'absolute', left: 440, top: 262, width: 200, height: 52 }} />
-            <image visible={tab === 'home'} source={imageRef('ui/alliance/tab-selected')}
-                style={{ position: 'absolute', left: 10, top: 247, width: 206, height: 67 }} />
-            <image visible={tab === 'members'} source={imageRef('ui/alliance/tab-selected')}
-                style={{ position: 'absolute', left: 224, top: 247, width: 206, height: 67 }} />
-            <image visible={tab === 'settings'} source={imageRef('ui/alliance/tab-selected')}
-                style={{ position: 'absolute', left: 437, top: 247, width: 206, height: 67 }} />
-            <view interaction="press" onClick={() => selectTab('home')}
-                style={{ position: 'absolute', left: 10, top: 247, width: 206, height: 67 }}>
-                <text value="联盟"
-                    style={{ position: 'absolute', left: 3, top: 15, width: 200, height: 52,
-                        font: fontRef('fonts/regular', 700), fontSize: 28,
-                        color: tab === 'home' ? '#3F3254' : '#ffffff', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => selectTab('members')}
-                style={{ position: 'absolute', left: 224, top: 247, width: 206, height: 67 }}>
-                <text value="成员"
-                    style={{ position: 'absolute', left: 3, top: 15, width: 200, height: 52,
-                        font: fontRef('fonts/regular', 700), fontSize: 28,
-                        color: tab === 'members' ? '#3F3254' : '#ffffff', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => selectTab('settings')}
-                style={{ position: 'absolute', left: 437, top: 247, width: 206, height: 67 }}>
-                <text value="设置"
-                    style={{ position: 'absolute', left: 3, top: 15, width: 200, height: 52,
-                        font: fontRef('fonts/regular', 700), fontSize: 28,
-                        color: tab === 'settings' ? '#3F3254' : '#ffffff', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
+            <PanelTab label="联盟" active={tab === 'home'} left={13} top={262} width={200}
+                onClick={() => selectTab('home')} />
+            <PanelTab label="成员" active={tab === 'members'} left={227} top={262} width={200}
+                onClick={() => selectTab('members')} />
+            <PanelTab label="设置" active={tab === 'settings'} left={440} top={262} width={200}
+                onClick={() => selectTab('settings')} />
             <NotificationBadge count={tab === 'members' ? 0 : badgeCount}
                 source={badge} left={401} top={248} />
             <NotificationBadge count={tab === 'members' ? badgeCount : 0}
