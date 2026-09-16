@@ -1,15 +1,20 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 
-export const BackpackTab = defineComponent<{
+export interface PanelTabProps {
     readonly label: string;
     readonly active: boolean;
     readonly left: number;
+    readonly top: number;
+    readonly width: number;
     readonly onClick?: () => void;
-}>((p) => (
-    <view name="BackpackTab" interaction="press" onClick={p.onClick}
-        style={{ position: 'absolute', left: p.active ? p.left - 3 : p.left, top: p.active ? 103 : 118,
-            width: p.active ? 140 : 134, height: p.active ? 67 : 52 }}>
+}
+
+/** Raised window tab shared by mail, backpack and alliance. `left`/`top`/`width` are the unselected chip. */
+export const PanelTab = defineComponent<PanelTabProps>((p) => (
+    <view name="PanelTab" interaction="press" onClick={() => p.onClick?.()}
+        style={{ position: 'absolute', left: p.active ? p.left - 3 : p.left, top: p.active ? p.top - 15 : p.top,
+            width: p.active ? p.width + 6 : p.width, height: p.active ? 67 : 52 }}>
         <image visible={p.active} source={imageRef('ui/mail/tab-active')}
             style={{ position: 'absolute', width: '100%', height: '100%', sizeMode: 'sliced' }} />
         <image visible={!p.active} source={imageRef('ui/mail/tab-inactive')}

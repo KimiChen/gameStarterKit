@@ -2,6 +2,10 @@ import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../components/badge/NotificationBadge';
 import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
+import { PanelTab } from '../../components/tab/PanelTab';
+import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
+import { AllianceMemberSettingsPanel } from '../AllianceMemberSettings/AllianceMemberSettingsPanel';
+import { AllianceWarPanel } from '../AllianceWar/AllianceWarPanel';
 import { AllianceHomePanel } from './AllianceHomePanel';
 import { AllianceMembersPanel } from './AllianceMembersPanel';
 import { AllianceSettingsPanel } from './AllianceSettingsPanel';
@@ -27,6 +31,9 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     const params = context.params ?? {};
     const [tab, setTab] = useState<AllianceTab>(params.tab ?? 'home');
     const [nav, setNav] = useState<MainNavSlot>(params.nav ?? 'hero');
+    const [announceOpen, setAnnounceOpen] = useState(false);
+    const [memberSettingsOpen, setMemberSettingsOpen] = useState(false);
+    const [warOpen, setWarOpen] = useState(false);
     const selectTab = (next: AllianceTab) => {
         setTab(next);
         params.onSelectTab?.(next);
@@ -34,6 +41,12 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     const selectNav = (slot: MainNavSlot) => {
         setNav(slot);
         params.onNav?.(slot);
+    };
+    const onAction = (id: string) => {
+        if (id === 'edit_announcement') setAnnounceOpen(true);
+        if (id === 'open_member_config') setMemberSettingsOpen(true);
+        if (id === 'open_war') setWarOpen(true);
+        params.onAction?.(id);
     };
     const badge = imageRef('ui/mail/number-badge');
     const badgeCount = params.badgeCount ?? 3;
@@ -47,11 +60,11 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
 
             <AllianceHomePanel visible={tab === 'home'} tag={params.tag} name={params.name}
                 leader={params.leader} power={params.power} memberCount={params.memberCount}
-                onAction={params.onAction} />
-            <AllianceMembersPanel visible={tab === 'members'} onAction={params.onAction} />
+                onAction={onAction} />
+            <AllianceMembersPanel visible={tab === 'members'} onAction={onAction} />
             <AllianceSettingsPanel visible={tab === 'settings'} tag={params.tag} name={params.name}
                 leader={params.leader} power={params.power} memberCount={params.memberCount}
-                onAction={params.onAction} />
+                onAction={onAction} />
 
             <image source={imageRef('ui/mail/header')}
                 style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
@@ -60,48 +73,22 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
                     font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
                     outlineColor: '#593d84', outlineWidth: 2, verticalAlign: 'center' }} />
 
-            <image visible={tab !== 'home'} source={imageRef('ui/alliance/tab-unselected')}
-                style={{ position: 'absolute', left: 13, top: 262, width: 200, height: 52 }} />
-            <image visible={tab !== 'members'} source={imageRef('ui/alliance/tab-unselected')}
-                style={{ position: 'absolute', left: 227, top: 262, width: 200, height: 52 }} />
-            <image visible={tab !== 'settings'} source={imageRef('ui/alliance/tab-unselected')}
-                style={{ position: 'absolute', left: 440, top: 262, width: 200, height: 52 }} />
-            <image visible={tab === 'home'} source={imageRef('ui/alliance/tab-selected')}
-                style={{ position: 'absolute', left: 10, top: 247, width: 206, height: 67 }} />
-            <image visible={tab === 'members'} source={imageRef('ui/alliance/tab-selected')}
-                style={{ position: 'absolute', left: 224, top: 247, width: 206, height: 67 }} />
-            <image visible={tab === 'settings'} source={imageRef('ui/alliance/tab-selected')}
-                style={{ position: 'absolute', left: 437, top: 247, width: 206, height: 67 }} />
-            <view interaction="press" onClick={() => selectTab('home')}
-                style={{ position: 'absolute', left: 10, top: 247, width: 206, height: 67 }}>
-                <text value="联盟"
-                    style={{ position: 'absolute', left: 3, top: 15, width: 200, height: 52,
-                        font: fontRef('fonts/regular', 700), fontSize: 28,
-                        color: tab === 'home' ? '#3F3254' : '#ffffff', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => selectTab('members')}
-                style={{ position: 'absolute', left: 224, top: 247, width: 206, height: 67 }}>
-                <text value="成员"
-                    style={{ position: 'absolute', left: 3, top: 15, width: 200, height: 52,
-                        font: fontRef('fonts/regular', 700), fontSize: 28,
-                        color: tab === 'members' ? '#3F3254' : '#ffffff', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => selectTab('settings')}
-                style={{ position: 'absolute', left: 437, top: 247, width: 206, height: 67 }}>
-                <text value="设置"
-                    style={{ position: 'absolute', left: 3, top: 15, width: 200, height: 52,
-                        font: fontRef('fonts/regular', 700), fontSize: 28,
-                        color: tab === 'settings' ? '#3F3254' : '#ffffff', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
+            <PanelTab label="联盟" active={tab === 'home'} left={13} top={262} width={200}
+                onClick={() => selectTab('home')} />
+            <PanelTab label="成员" active={tab === 'members'} left={227} top={262} width={200}
+                onClick={() => selectTab('members')} />
+            <PanelTab label="设置" active={tab === 'settings'} left={440} top={262} width={200}
+                onClick={() => selectTab('settings')} />
             <NotificationBadge count={tab === 'members' ? 0 : badgeCount}
                 source={badge} left={401} top={248} />
             <NotificationBadge count={tab === 'members' ? badgeCount : 0}
                 source={badge} left={614} top={248} />
 
             <MainNav selected={nav} noticeExplore onSelect={selectNav} />
+            <AllianceAnnouncePanel visible={announceOpen} onClose={() => setAnnounceOpen(false)} />
+            <AllianceMemberSettingsPanel visible={memberSettingsOpen} onClose={() => setMemberSettingsOpen(false)} />
+            <AllianceWarPanel visible={warOpen} onBack={() => setWarOpen(false)}
+                onAction={params.onAction} />
         </view>
     );
 });

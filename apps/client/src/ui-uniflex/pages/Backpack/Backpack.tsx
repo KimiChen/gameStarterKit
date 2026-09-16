@@ -3,7 +3,7 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { BackpackItemCard, type BackpackItem, type BackpackQuality } from './components/BackpackItemCard';
 import { BackpackQuantityControl } from './components/BackpackQuantityControl';
 import { BackpackResourceCounter } from './components/BackpackResourceCounter';
-import { BackpackTab } from './components/BackpackTab';
+import { PanelTab } from '../../components/tab/PanelTab';
 
 export type BackpackAction = {
     readonly id: string;
@@ -106,11 +106,16 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
             <BackpackResourceCounter id="resource-3" value={resources[2]} left={447} onClick={() => emit('resource-3', 'primary')} />
             <BackpackResourceCounter id="resource-4" value={resources[3]} left={591} onClick={() => emit('resource-4', 'primary')} />
 
-            <BackpackTab label={tabs[0].label} active={activeTab === 0} left={14} onClick={() => selectTab(0)} />
-            <BackpackTab label={tabs[1].label} active={activeTab === 1} left={161} onClick={() => selectTab(1)} />
-            <BackpackTab label={tabs[2].label} active={activeTab === 2} left={308} onClick={() => selectTab(2)} />
-            <BackpackTab label={tabs[3].label} active={activeTab === 3} left={455} onClick={() => selectTab(3)} />
-            <BackpackTab label={tabs[4].label} active={activeTab === 4} left={602} onClick={() => selectTab(4)} />
+            <PanelTab label={tabs[0].label} active={activeTab === 0} left={14} top={118} width={134}
+                onClick={() => selectTab(0)} />
+            <PanelTab label={tabs[1].label} active={activeTab === 1} left={161} top={118} width={134}
+                onClick={() => selectTab(1)} />
+            <PanelTab label={tabs[2].label} active={activeTab === 2} left={308} top={118} width={134}
+                onClick={() => selectTab(2)} />
+            <PanelTab label={tabs[3].label} active={activeTab === 3} left={455} top={118} width={134}
+                onClick={() => selectTab(3)} />
+            <PanelTab label={tabs[4].label} active={activeTab === 4} left={602} top={118} width={134}
+                onClick={() => selectTab(4)} />
 
             <view visible={hasItems} name="Backpack/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>
                 <For each={items} key="id">

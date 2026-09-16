@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -185,6 +185,41 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onAction: (id) => console.info("[UniFlex Alliance] action", id),
                 onNav: (slot) => console.info("[UniFlex Alliance] nav", slot),
                 onSelectTab: (tab) => console.info("[UniFlex Alliance] tab", tab),
+            });
+            return;
+        case "alliance-announce":
+            await runtime.start(AllianceAnnounce, {
+                onClose: backToPreview,
+            });
+            return;
+        case "alliance-create":
+            await runtime.start(AllianceCreate, {
+                onClose: backToPreview,
+                onCreate: () => console.info("[UniFlex AllianceCreate] create"),
+                onChangeBanner: () => console.info("[UniFlex AllianceCreate] change-banner"),
+            });
+            return;
+        case "alliance-join":
+            await runtime.start(AllianceJoin, {
+                onBack: backToPreview,
+                onSearch: (query) => console.info("[UniFlex AllianceJoin] search", query),
+                onCreate: () => console.info("[UniFlex AllianceJoin] create"),
+                onJoin: (id) => console.info("[UniFlex AllianceJoin] join", id),
+                onAction: (id) => console.info("[UniFlex AllianceJoin] action", id),
+            });
+            return;
+        case "alliance-member-settings":
+            await runtime.start(AllianceMemberSettings, {
+                onClose: backToPreview,
+                onToggleR2: (enabled) => console.info("[UniFlex AllianceMemberSettings] r2", enabled),
+                onToggleR3: (enabled) => console.info("[UniFlex AllianceMemberSettings] r3", enabled),
+            });
+            return;
+        case "alliance-war":
+            await runtime.start(AllianceWar, {
+                onBack: backToPreview,
+                onAction: (id) => console.info("[UniFlex AllianceWar] action", id),
+                onSelectTab: (tab) => console.info("[UniFlex AllianceWar] tab", tab),
             });
             return;
         case "prompt-restored":

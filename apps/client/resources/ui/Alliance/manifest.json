@@ -54,6 +54,176 @@
       ]
     },
     {
+      "id": "ui/alliance/announce-panel",
+      "kind": "image",
+      "file": "assets/alliance_announce_panel.png",
+      "width": 48,
+      "height": 48,
+      "sha256": "40a46a78df5de489032a2ac260f25e820d9854286c184ad169b61b5924c55c1c",
+      "nineSlice": [
+        22,
+        22,
+        22,
+        22
+      ]
+    },
+    {
+      "id": "ui/alliance/create-diamond",
+      "kind": "image",
+      "file": "assets/alliance_create_diamond.png",
+      "width": 46,
+      "height": 38,
+      "sha256": "4fc7207e1aa48b7298c14d4514a2f45c8f6e677b12b361f27835594fd7212122"
+    },
+    {
+      "id": "ui/alliance/flag-swap",
+      "kind": "image",
+      "file": "assets/alliance_flag_swap.png",
+      "width": 61,
+      "height": 66,
+      "sha256": "a400db10f39e4296ad11b53ecbca4f588449c359be2adc997ee77f9ae6475969"
+    },
+    {
+      "id": "ui/alliance/input-bg",
+      "kind": "image",
+      "file": "assets/alliance_input_bg.png",
+      "width": 36,
+      "height": 36,
+      "sha256": "4c3474bc97923cbb58afe1e3668133a9be60cbd6587f01b213578e55e1c2a6a7",
+      "nineSlice": [
+        16,
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "id": "ui/alliance/join-banner",
+      "kind": "image",
+      "file": "assets/alliance_join_banner.png",
+      "width": 723,
+      "height": 200,
+      "sha256": "02ccfa759ca2cdfd97e8771ff24752d05801012058bed37e76419cf59d5b8125"
+    },
+    {
+      "id": "ui/alliance/join-create-bg",
+      "kind": "image",
+      "file": "assets/alliance_join_create_bg.png",
+      "width": 139,
+      "height": 70,
+      "sha256": "a0e23bc3732ed6470556211a561636807383b203088004a17689a2969c844300"
+    },
+    {
+      "id": "ui/alliance/join-fist",
+      "kind": "image",
+      "file": "assets/alliance_join_fist.png",
+      "width": 42,
+      "height": 38,
+      "sha256": "846ac85aead6355e41b8f0d523e7d10cb5792a01407289d09cf799569fcf03f1"
+    },
+    {
+      "id": "ui/alliance/join-people",
+      "kind": "image",
+      "file": "assets/alliance_join_people.png",
+      "width": 34,
+      "height": 30,
+      "sha256": "a57aaf83b039680985581f5d19f03bfdc0b21e4079adde8c6d6b1066a0a33067"
+    },
+    {
+      "id": "ui/alliance/join-power-bg",
+      "kind": "image",
+      "file": "assets/alliance_join_power_bg.png",
+      "width": 36,
+      "height": 33,
+      "sha256": "963121a6ac44bb77c9558044576ceb4e4fdb7923a3de837b316e8f82455ee63b",
+      "nineSlice": [
+        16,
+        0,
+        16,
+        0
+      ]
+    },
+    {
+      "id": "ui/alliance/join-row-bg",
+      "kind": "image",
+      "file": "assets/alliance_join_row_bg.png",
+      "width": 44,
+      "height": 44,
+      "sha256": "fcf2ef9ec65e004915d58322d60e34d90e4e0a24aef8e4a5143d32fe6659887e",
+      "nineSlice": [
+        20,
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "id": "ui/alliance/join-search",
+      "kind": "image",
+      "file": "assets/alliance_join_search.png",
+      "width": 72,
+      "height": 70,
+      "sha256": "47dd0e9e1fa1401207aee063f8bcacfdc0a286426dd421f9736dec3e2c81c731"
+    },
+    {
+      "id": "ui/alliance/mset-card",
+      "kind": "image",
+      "file": "assets/alliance_mset_card.png",
+      "width": 52,
+      "height": 52,
+      "sha256": "ee7687369234acbe92ec8add94b11359ad336be70fd0888da3dfacace9e523d7",
+      "nineSlice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "ui/alliance/mset-fist",
+      "kind": "image",
+      "file": "assets/alliance_mset_fist.png",
+      "width": 51,
+      "height": 48,
+      "sha256": "94f548f2ed4b430392c829e51c684a317084e8a62562611f9f1b387b2f24355b"
+    },
+    {
+      "id": "ui/alliance/mset-header",
+      "kind": "image",
+      "file": "assets/alliance_mset_header.png",
+      "width": 44,
+      "height": 55,
+      "sha256": "8b4f29d18e80440d1f0bb22446d147d2e06c14e5362e5a3bd83d526a40084941",
+      "nineSlice": [
+        20,
+        0,
+        20,
+        0
+      ]
+    },
+    {
+      "id": "ui/alliance/mset-power-bg",
+      "kind": "image",
+      "file": "assets/alliance_mset_power_bg.png",
+      "width": 36,
+      "height": 37,
+      "sha256": "9ab5de9170aa35c435f060f46451b46e2e98ec6021d4102bb231896bdb294f29",
+      "nineSlice": [
+        16,
+        0,
+        16,
+        0
+      ]
+    },
+    {
+      "id": "ui/alliance/nation-flag",
+      "kind": "image",
+      "file": "assets/alliance_nation_flag.png",
+      "width": 67,
+      "height": 43,
+      "sha256": "8cab0fda8d6636d40ee3c3fb7ad527956ac92a53d3f0be6cbcade4e7ea557e51"
+    },
+    {
       "id": "ui/alliance/button",
       "kind": "image",
       "file": "assets/alliance_button_bg.png",
@@ -322,6 +492,14 @@
       "width": 40,
       "height": 26,
       "sha256": "54428e4211bb4335094de95e4754fd4a9d0831643b421bc2f9340df1eb4136ac"
+    },
+    {
+      "id": "ui/alliance/rank-arrow-down",
+      "kind": "image",
+      "file": "assets/alliance_rank_arrow_down.png",
+      "width": 40,
+      "height": 26,
+      "sha256": "d2fec550fda31681c0813e23fd75537c5600d953c1776db87e9f1a2724bbddb3"
     },
     {
       "id": "ui/alliance/rank-header",

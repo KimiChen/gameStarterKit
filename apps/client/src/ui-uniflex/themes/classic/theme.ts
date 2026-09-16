@@ -7,6 +7,7 @@ export const classicTheme = defineTheme({
         label: '#ffffff',
         confirm: { image: imageRef('ui/button/confirm'), outline: '#643e14' },
         cancel: { image: imageRef('ui/button/cancel'), outline: '#4e783b' },
+        cyan: { image: imageRef('ui/button/cyan'), outline: '#2e5a68' },
     },
     popup: {
         prompt: imageRef('ui/popup/prompt'), small: imageRef('ui/popup/small'),
