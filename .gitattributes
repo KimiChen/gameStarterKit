@@ -9,6 +9,8 @@ apps/client/** text=auto eol=lf
 apps/Cocos/assets/src/** text=auto eol=lf
 apps/Cocos/extensions/** text=auto eol=lf
 apps/art/fairygui/assets/** text=auto eol=lf
+# UniFlex 设计师 PSD：本机未装 Git LFS 时按普通二进制入库
+apps/art/uniflex/**/*.psd binary
 apps/shared/** text=auto eol=lf
 scripts/** text=auto eol=lf
 *.sha256 text eol=lf

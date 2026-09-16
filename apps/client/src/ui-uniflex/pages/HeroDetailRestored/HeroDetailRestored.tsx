@@ -1,5 +1,6 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { HeroStarUpgradePanel } from '../HeroStarUpgrade/HeroStarUpgradePanel';
 import { HeroDetailAttributes } from '../HeroDetail/HeroDetailAttributes';
 import { HeroDetailSkills } from '../HeroDetail/HeroDetailSkills';
 import { HeroDetailTabs, type HeroDetailTab } from '../HeroDetail/HeroDetailTabs';
@@ -18,6 +19,9 @@ export interface HeroDetailRestoredParams {
     readonly onPrev?: () => void;
     readonly onNext?: () => void;
     readonly onStarUp?: () => void;
+    readonly onConfirmStarUpgrade?: () => void;
+    readonly onObtainFragments?: () => void;
+    readonly onExchange?: () => void;
     readonly onUpgrade?: () => void;
     readonly onSelectSkill?: (id: string) => void;
 }
@@ -26,7 +30,7 @@ export const HeroDetailRestored = defineView<HeroDetailRestoredParams | void>({ 
     const params = context.params ?? {};
     const quality = params.quality ?? 'yellow';
     const [tab, setTab] = useState<HeroDetailTab>('attributes');
-    const [popup, setPopup] = useState<'none' | 'power'>('none');
+    const [popup, setPopup] = useState<'none' | 'power' | 'star'>('none');
     return (
         <view name="HeroDetailRestored" style={{ width: 750, height: 1624 }}>
             <image visible={quality === 'yellow'} source={imageRef('ui/hero-detail/bg-yellow')}
@@ -57,7 +61,9 @@ export const HeroDetailRestored = defineView<HeroDetailRestoredParams | void>({ 
             </view>
             <HeroDetailAttributes visible={tab === 'attributes'} power={params.power} level={params.level}
                 stars={params.stars ?? 0} stats={params.stats} cost={params.cost}
-                onPowerInfo={() => setPopup('power')} onStarUp={params.onStarUp} onUpgrade={params.onUpgrade} />
+                onPowerInfo={() => setPopup('power')}
+                onStarUp={() => { setPopup('star'); params.onStarUp?.(); }}
+                onUpgrade={params.onUpgrade} />
             <HeroDetailSkills visible={tab === 'skills'} onSelectSkill={params.onSelectSkill} />
             <HeroDetailTabs tab={tab} onBack={params.onBack} onSelect={setTab} />
             <view visible={popup === 'power'} interaction="press" onClick={() => setPopup('none')}
@@ -74,6 +80,11 @@ export const HeroDetailRestored = defineView<HeroDetailRestoredParams | void>({ 
                             font: fontRef('fonts/regular', 700), fontSize: 26, color: '#3F3254', bold: true }} />
                 </view>
             </view>
+            <HeroStarUpgradePanel visible={popup === 'star'} stars={params.stars ?? 1}
+                onClose={() => setPopup('none')}
+                onUpgrade={() => params.onConfirmStarUpgrade?.()}
+                onObtainFragments={() => params.onObtainFragments?.()}
+                onExchange={() => params.onExchange?.()} />
         </view>
     );
 });

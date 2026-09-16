@@ -74,6 +74,10 @@ npm run import:uniflex-ui -- /path/to/project-package
 npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001
 npm run ui:export-psd -- --url <url> --out <dir>
 npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001
+npm run ui:art-export -- --screen backpack
+npm run ui:art-import -- --changed
+npm run ui:art-sync
+npm run ui:art-check
 npm run ui:check-source
 npm run ui:render-source
 npm run ui:verify

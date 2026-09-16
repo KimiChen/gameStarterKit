@@ -1,0 +1,21 @@
+{
+  "screen": "hero",
+  "componentName": "HeroScreen",
+  "restoredName": "HeroScreenRestored",
+  "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroScreen.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "c2eefbc6053ca6a81ce0c7fd2f4f7ae7a48f9511b28842d7e948976331456dfd",
+    "psdSha256": "01b83d617739d4a79c942a92ac8a55dbd329baa040e7fd623f15a2da3f803408",
+    "at": "2026-09-16T03:44:11.131Z"
+  },
+  "import": {
+    "psdSha256": "01b83d617739d4a79c942a92ac8a55dbd329baa040e7fd623f15a2da3f803408",
+    "at": "2026-09-16T03:44:12.708Z",
+    "target": "restored"
+  }
+}

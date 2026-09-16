@@ -63,8 +63,9 @@ UniFlex 原生 `uniflex-compiler` 已按宿主平台放入 `vendor/uniflex/bin/`
 `ui:import-psd` / `ui:export-psd` / `ui:roundtrip` 使用锁定的 `vendor/web-ui-to-psd-0.1.6.tgz`，
 `npm ci` 后即可运行，不依赖本机转换器源码目录；转换器还需要本机 Chrome 与 `uv`。导出把
 UniFlex 组件身份和布局框打到 PSD 图层（`[ui:key#role]`，与 octane-lite 相同）；导入按身份还原
-catalog 组件，并把换图/改大小/改位置叠回原结构。可选 `WEB_UI_TO_PSD_CLI` /
-`WEB_UI_TO_PSD_ROOT` 仅用于覆盖锁定包。
+catalog 组件，并把换图/改大小/改位置叠回原结构。设计师 PSD 落在 `apps/art/uniflex/<Page>/screen.psd`，
+用 `ui:art-export` / `ui:art-import` / `ui:art-sync` / `ui:art-check` 同步；当前只写回 `*Restored`。
+可选 `WEB_UI_TO_PSD_CLI` / `WEB_UI_TO_PSD_ROOT` 仅用于覆盖锁定包。
 
 只验证 UniFlex Web 页面时，生成后运行：
 
@@ -172,6 +173,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 用锁定的 `vendor/web-ui-to-psd-*.tgz` 生成 PSD 中间文件和 UniFlex 项目包并导入项目；`npm ci` 后即可运行 |
 | `npm run ui:export-psd -- --url <url> --out <dir>` | 用锁定 CLI 把 UniFlex 预览页导出为分层 PSD；可用 `--screen` 拉起本地预览，不必先开 `dev:uniflex-web` |
 | `npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001` | UniFlex → PSD → UniFlex 项目包往返；默认不写项目源，加 `--apply` 才导入 |
+| `npm run ui:art-export` / `ui:art-import` / `ui:art-sync` / `ui:art-check` | 原稿 ↔ `apps/art/uniflex` PSD；一阶段导入只写 `*Restored`，`art-check` 是 CI 闸 |
 | `npm run ui:check-source` | 校验 UniFlex 项目包的 design/manifest 契约；传入 `--package` |
 | `npm run ui:render-source` | 渲染 UniFlex 独立源图（Golden 比对输入） |
 | `npm run ui:verify` | 按颜色阈值与区域差异比较独立源图与 Web proposal |

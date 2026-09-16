@@ -104,6 +104,10 @@ apps/Cocos/
   `label [ui:key#role]`（octane-lite 同款），并带上 UniFlex 布局框。`uniflex-package`
   按这些身份还原 `PopupFrame` / `ConfirmButton` 等 catalog 组件，而不是摊成 view；
   PSD 里换图、改大小或位置只覆盖视觉，不改组件结构。
+  设计师可编辑 PSD 的落点是 `apps/art/uniflex/<Page>/screen.psd`（建议 Git LFS；本机未装则按二进制入库）。
+  `ui:art-export` 从原稿功能页导出；`ui:art-import` / `ui:art-sync` 按身份 overlay 回去。
+  当前 catalog `applyTarget` 为 `restored`，只写 `*Restored`，不覆盖原稿；`ui:art-check` 是只读新鲜度闸。
+  PreviewHome 与还原预览首页不进 art catalog。中间产物仍在 `.cache/psd/`。
   PSD 导入包必须经过 `npm run ui:check-source -- --package <package> --strict`；
   `apps/client/resources/ui/<Page>/design.json` 的 `canvas` 是正式验收输入，Web 只能先与独立源图形成 proposal，
   经人工批准后才允许 Cocos 对照。导入组件保持纯展示态，业务 Logic、路由和服务端命令绑定放在
