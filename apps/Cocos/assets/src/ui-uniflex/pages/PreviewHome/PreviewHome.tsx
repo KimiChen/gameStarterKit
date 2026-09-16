@@ -13,7 +13,8 @@ export type PreviewHomeTarget =
     | 'hero'
     | 'hero-detail'
     | 'restored-home'
-    | 'hero-star-upgrade';
+    | 'hero-star-upgrade'
+    | 'alliance';
 
 export interface PreviewHomeParams {
     readonly onNavigate: (target: PreviewHomeTarget) => void;
@@ -51,6 +52,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('hero-star-upgrade')} style={{ width: 300, height: 72, backgroundColor: '#6b4ea2', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="升星弹窗" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance')} style={{ width: 300, height: 72, backgroundColor: '#4a6a9a', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="联盟主页" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
         </view>
     </view>;

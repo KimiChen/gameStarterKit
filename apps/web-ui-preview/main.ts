@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI, HeroStarUpgrade } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI, HeroStarUpgrade, Alliance } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -240,6 +240,16 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onExchange: () => console.info("[UniFlex HeroStarUpgrade] exchange"),
             });
             console.info("[UniFlex HeroStarUpgrade] ready");
+            return;
+        }
+        case "alliance": {
+            document.title = "UniFlex Alliance";
+            await runtime.start(Alliance, {
+                onAction: (id) => console.info("[UniFlex Alliance] action", id),
+                onNav: (slot) => console.info("[UniFlex Alliance] nav", slot),
+                onSelectTab: (tab) => console.info("[UniFlex Alliance] tab", tab),
+            });
+            console.info("[UniFlex Alliance] ready");
             return;
         }
         default:

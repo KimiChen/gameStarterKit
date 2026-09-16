@@ -1,0 +1,365 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/alliance/alert",
+      "kind": "image",
+      "file": "assets/alliance_alert.png",
+      "width": 50,
+      "height": 50,
+      "sha256": "9b2d2e7f00dd6fd047017048092383d91271f3bde22c4c634cd8bfc90aa3039c"
+    },
+    {
+      "id": "ui/alliance/announce-bg",
+      "kind": "image",
+      "file": "assets/alliance_announce_bg.png",
+      "width": 36,
+      "height": 36,
+      "sha256": "2d16b16610922cb59b4dd5f76d884d3fcd9f19aee0ff834f9e5653eee401cd18",
+      "nineSlice": [
+        16,
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "id": "ui/alliance/announce-copy",
+      "kind": "image",
+      "file": "assets/alliance_announce_copy.png",
+      "width": 38,
+      "height": 38,
+      "sha256": "c54216091e9cf46bd8fe934ea9a3b13f69819a438d7ac1f1efc0e1ebde120655"
+    },
+    {
+      "id": "ui/alliance/announce-edit",
+      "kind": "image",
+      "file": "assets/alliance_announce_edit.png",
+      "width": 38,
+      "height": 38,
+      "sha256": "42dc31e3cd05ceb38540843c8449750493fd05ae208ea34436aa07b409a23f0e"
+    },
+    {
+      "id": "ui/alliance/announce-header",
+      "kind": "image",
+      "file": "assets/alliance_announce_header.png",
+      "width": 36,
+      "height": 41,
+      "sha256": "8f21f38b33eabff4751da32c4f809ff21155ae35c423dcf5fc93bd3bc04eec27",
+      "nineSlice": [
+        16,
+        0,
+        16,
+        0
+      ]
+    },
+    {
+      "id": "ui/alliance/button",
+      "kind": "image",
+      "file": "assets/alliance_button_bg.png",
+      "width": 160,
+      "height": 114,
+      "sha256": "fe4d12ffd416fdbdc87fd0f64194ee07b1229d9ae8c74128339432fbba269f1e",
+      "nineSlice": [
+        134,
+        0,
+        22,
+        0
+      ]
+    },
+    {
+      "id": "ui/alliance/fist",
+      "kind": "image",
+      "file": "assets/alliance_fist.png",
+      "width": 35,
+      "height": 32,
+      "sha256": "7c6c018601df97958c4500a340e1ba4b6279883847821a626dbfed4fc364abba"
+    },
+    {
+      "id": "ui/alliance/flag",
+      "kind": "image",
+      "file": "assets/alliance_flag.png",
+      "width": 198,
+      "height": 178,
+      "sha256": "6fba0f6718d61c4f75debce1bfe4ef2ed730af759a027e666c391ca34735581a"
+    },
+    {
+      "id": "ui/alliance/icon-castle",
+      "kind": "image",
+      "file": "assets/alliance_icon_castle.png",
+      "width": 57,
+      "height": 58,
+      "sha256": "78fe06aae2c8ca5d0ac39ef35a97f2392e88efcf1e91c6a3ae0a46a3d976ff21"
+    },
+    {
+      "id": "ui/alliance/icon-config",
+      "kind": "image",
+      "file": "assets/alliance_icon_config.png",
+      "width": 57,
+      "height": 57,
+      "sha256": "bf086975c3fc9f2246802fa49dd2ccb2b29e06eb1dea86a66aa988f4c50beb41"
+    },
+    {
+      "id": "ui/alliance/icon-envelope",
+      "kind": "image",
+      "file": "assets/alliance_icon_envelope.png",
+      "width": 66,
+      "height": 48,
+      "sha256": "8a8184b623c859c95206ffeef36d85189ce39a85a324c7adbd4644d1dc080b94"
+    },
+    {
+      "id": "ui/alliance/icon-gather",
+      "kind": "image",
+      "file": "assets/alliance_icon_gather.png",
+      "width": 71,
+      "height": 54,
+      "sha256": "a72618a1f06b576ca09874e9f19239a73f330b3bb85fdca5c4005f046a557823"
+    },
+    {
+      "id": "ui/alliance/icon-gift",
+      "kind": "image",
+      "file": "assets/alliance_icon_gift.png",
+      "width": 52,
+      "height": 56,
+      "sha256": "6a375123b279af071016598d41207410baa9e5b30dcf482cc032fc796eed60a6"
+    },
+    {
+      "id": "ui/alliance/icon-help",
+      "kind": "image",
+      "file": "assets/alliance_icon_help.png",
+      "width": 69,
+      "height": 56,
+      "sha256": "a02427e3642948561b195427af26c5a0579a37a2d136b02eb8c3cb02725c0e01"
+    },
+    {
+      "id": "ui/alliance/icon-info",
+      "kind": "image",
+      "file": "assets/alliance_icon_info.png",
+      "width": 52,
+      "height": 58,
+      "sha256": "820e930063af954d5f744fc79af5e4fd5f7ebcf52fc9eb6e07c14a6381c07725"
+    },
+    {
+      "id": "ui/alliance/icon-invite",
+      "kind": "image",
+      "file": "assets/alliance_icon_invite.png",
+      "width": 64,
+      "height": 59,
+      "sha256": "2c83b4de3cc1e9a4783958a9e356f6cb8235b037f8b1a7de6e0a0adcff995534"
+    },
+    {
+      "id": "ui/alliance/icon-leader",
+      "kind": "image",
+      "file": "assets/alliance_icon_leader.png",
+      "width": 33,
+      "height": 28,
+      "sha256": "faa510c258aee7ebf030cdd10246994dd2d34034dd435ef8df82b6f064675e32"
+    },
+    {
+      "id": "ui/alliance/icon-list",
+      "kind": "image",
+      "file": "assets/alliance_icon_list.png",
+      "width": 47,
+      "height": 54,
+      "sha256": "bf18de916dcf0ad04e5c3ee40d4d6cfd547a0f5748d394cfc0aebbb96fa5cf66"
+    },
+    {
+      "id": "ui/alliance/icon-member-config",
+      "kind": "image",
+      "file": "assets/alliance_icon_member_config.png",
+      "width": 57,
+      "height": 56,
+      "sha256": "22231e625d86e136793686aba99305819ea6731e22f620e937c39ebe8634bc26"
+    },
+    {
+      "id": "ui/alliance/icon-members",
+      "kind": "image",
+      "file": "assets/alliance_icon_members.png",
+      "width": 36,
+      "height": 30,
+      "sha256": "563919599b52c1d2d4c356cf8d909545a7640c3fec706dc29e6b6c4120e5912a"
+    },
+    {
+      "id": "ui/alliance/icon-power",
+      "kind": "image",
+      "file": "assets/alliance_icon_power.png",
+      "width": 29,
+      "height": 29,
+      "sha256": "42647bd72fcf9f6d888900aaa343f662d658056ead3b61822ff2cdda43a0accf"
+    },
+    {
+      "id": "ui/alliance/icon-rank",
+      "kind": "image",
+      "file": "assets/alliance_icon_rank.png",
+      "width": 63,
+      "height": 58,
+      "sha256": "1035db84fdfb1c13b43e45a6c113277060d6b24c81de0ca289859df751afb2c6"
+    },
+    {
+      "id": "ui/alliance/icon-shop",
+      "kind": "image",
+      "file": "assets/alliance_icon_shop.png",
+      "width": 65,
+      "height": 59,
+      "sha256": "2e7d7bf6cf2bea498ba6fabf68a18e95284d756c7a2b6715d32b62383c212fe3"
+    },
+    {
+      "id": "ui/alliance/icon-tech",
+      "kind": "image",
+      "file": "assets/alliance_icon_tech.png",
+      "width": 59,
+      "height": 58,
+      "sha256": "315c1eb6cfba2786ad43aee3113901beb47abfba0d5d4a268985095d341ac725"
+    },
+    {
+      "id": "ui/alliance/icon-territory",
+      "kind": "image",
+      "file": "assets/alliance_icon_territory.png",
+      "width": 58,
+      "height": 58,
+      "sha256": "5d162e154452c6da940174d7a8d1fbb6c7d56d93f19aa3bf07626a990f0f3462"
+    },
+    {
+      "id": "ui/alliance/icon-war",
+      "kind": "image",
+      "file": "assets/alliance_icon_war.png",
+      "width": 55,
+      "height": 54,
+      "sha256": "f37fc17cf4ec30fe8e64ad7e7adf183f16f64c41360c5ac47cdabef55dc7f3fb"
+    },
+    {
+      "id": "ui/alliance/info-panel",
+      "kind": "image",
+      "file": "assets/alliance_info_panel.png",
+      "width": 48,
+      "height": 48,
+      "sha256": "46f1ad9632cf94371e08cb6c734f86c843fd731d7c0061d9dda246e8bc049916",
+      "nineSlice": [
+        22,
+        22,
+        22,
+        22
+      ]
+    },
+    {
+      "id": "ui/alliance/leader-avatar",
+      "kind": "image",
+      "file": "assets/alliance_leader_avatar.png",
+      "width": 134,
+      "height": 137,
+      "sha256": "5171bb0ef1db70bafc92a306e9fd9d10a4150ddf260caf4307b6100cee86632a"
+    },
+    {
+      "id": "ui/alliance/list-panel",
+      "kind": "image",
+      "file": "assets/alliance_list_panel.png",
+      "width": 36,
+      "height": 36,
+      "sha256": "4c3474bc97923cbb58afe1e3668133a9be60cbd6587f01b213578e55e1c2a6a7",
+      "nineSlice": [
+        16,
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "id": "ui/alliance/member-avatar",
+      "kind": "image",
+      "file": "assets/alliance_member_avatar.png",
+      "width": 67,
+      "height": 68,
+      "sha256": "4fcc51b09d9a2b52c6a6e89737ee922f8724328ee9dfaecd192f4be70ed65fca"
+    },
+    {
+      "id": "ui/alliance/member-row",
+      "kind": "image",
+      "file": "assets/alliance_member_row.png",
+      "width": 36,
+      "height": 36,
+      "sha256": "db0c57270c6e8b70727b5add64bd92444667ac77246fe6b46398e440f6ed7011",
+      "nineSlice": [
+        16,
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "id": "ui/alliance/nav-dot",
+      "kind": "image",
+      "file": "assets/alliance_nav_dot.png",
+      "width": 24,
+      "height": 24,
+      "sha256": "6bd4fba2587b140fa242d0ff628f373600954e2a2a57a5019d682de6aa7fdcac"
+    },
+    {
+      "id": "ui/alliance/power-bar",
+      "kind": "image",
+      "file": "assets/alliance_power_bar.png",
+      "width": 36,
+      "height": 45,
+      "sha256": "3ce31604a7aec29f04183159e7daeb3e04696f12f74fa43d97bfeb4ed5aa9fb9",
+      "nineSlice": [
+        16,
+        0,
+        16,
+        0
+      ]
+    },
+    {
+      "id": "ui/alliance/power-medal",
+      "kind": "image",
+      "file": "assets/alliance_power_medal.png",
+      "width": 37,
+      "height": 47,
+      "sha256": "575ae1ef4edd0c7cda986424783f016bbb59131cc72bca744809c61d9f3d07ba"
+    },
+    {
+      "id": "ui/alliance/rank-arrow",
+      "kind": "image",
+      "file": "assets/alliance_rank_arrow.png",
+      "width": 40,
+      "height": 26,
+      "sha256": "54428e4211bb4335094de95e4754fd4a9d0831643b421bc2f9340df1eb4136ac"
+    },
+    {
+      "id": "ui/alliance/rank-header",
+      "kind": "image",
+      "file": "assets/alliance_rank_header.png",
+      "width": 44,
+      "height": 44,
+      "sha256": "74154ab4d9caa2449e77728897c64ca9f4f1efc3bf24c040fc7404c0c66e44f3",
+      "nineSlice": [
+        20,
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "id": "ui/alliance/slot-empty",
+      "kind": "image",
+      "file": "assets/alliance_slot_empty.png",
+      "width": 134,
+      "height": 137,
+      "sha256": "e0546f076463475df574972024e95a93ace9028a811d7d242ef77cc1059ea4f6"
+    },
+    {
+      "id": "ui/alliance/tab-selected",
+      "kind": "image",
+      "file": "assets/alliance_tab_selected.png",
+      "width": 206,
+      "height": 67,
+      "sha256": "21b1a440f4aa9725d5bba913db66d55229328691368fe2e70553c05149abf399"
+    },
+    {
+      "id": "ui/alliance/tab-unselected",
+      "kind": "image",
+      "file": "assets/alliance_tab_unselected.png",
+      "width": 200,
+      "height": 52,
+      "sha256": "6540e1a27996bb35a30aa30afd047a59709769ae5ca52edf1712939ce921921c"
+    }
+  ]
+}
