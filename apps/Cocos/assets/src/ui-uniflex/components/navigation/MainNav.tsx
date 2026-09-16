@@ -15,7 +15,7 @@ export interface MainNavProps {
 export const MainNav = defineComponent<MainNavProps>((p) => {
     const selected = p.selected ?? 'hero';
     return (
-        <view name="MainNav" style={{ position: 'absolute', left: 0, top: 1210, width: 750, height: 125 }}>
+        <view name="MainNav" style={{ position: 'absolute', left: 0, bottom: 0, width: 750, height: 125 }}>
             <image source={imageRef('ui/hero/nav-base')}
                 style={{ position: 'absolute', left: 0, top: 15, width: 750, height: 110 }} />
             <image visible={selected === 'wheel'} source={imageRef('ui/hero/nav-selected')}

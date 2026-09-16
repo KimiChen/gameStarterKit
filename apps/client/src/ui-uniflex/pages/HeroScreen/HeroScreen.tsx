@@ -87,8 +87,7 @@ export const HeroScreen = defineView<HeroScreenParams | void>({ zIndex: 'screen'
                 <image source={imageRef('ui/hero/recruit')} style={{ width: 217, height: 51 }} />
             </view>
 
-            <HeroListPanel visible={tab === 'hero'} cards={cards}
-                onSelectCard={params.onSelectCard} onFilter={(id) => params.onSelectCard?.(id)} />
+            <HeroListPanel visible={tab === 'hero'} cards={cards} onSelectCard={params.onSelectCard} />
             <HeroBondsPanel visible={tab === 'bonds'} bonds={bonds} members={members}
                 onSelectBond={params.onSelectBond} onBondDetail={params.onBondDetail}
                 onSelectMember={params.onSelectCard} />

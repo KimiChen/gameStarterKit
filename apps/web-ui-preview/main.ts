@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -165,8 +165,26 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onPrev: () => console.info("[UniFlex HeroDetail] prev"),
                 onNext: () => console.info("[UniFlex HeroDetail] next"),
                 onStarUp: () => console.info("[UniFlex HeroDetail] star-up"),
+                onConfirmStarUpgrade: () => console.info("[UniFlex HeroDetail] confirm-star-upgrade"),
+                onObtainFragments: () => console.info("[UniFlex HeroDetail] obtain-fragments"),
+                onExchange: () => console.info("[UniFlex HeroDetail] exchange"),
                 onUpgrade: () => console.info("[UniFlex HeroDetail] upgrade"),
                 onSelectSkill: (id) => console.info("[UniFlex HeroDetail] skill", id),
+            });
+            return;
+        case "hero-star-upgrade":
+            await runtime.start(HeroStarUpgrade, {
+                onClose: backToPreview,
+                onUpgrade: () => console.info("[UniFlex HeroStarUpgrade] upgrade"),
+                onObtainFragments: () => console.info("[UniFlex HeroStarUpgrade] obtain-fragments"),
+                onExchange: () => console.info("[UniFlex HeroStarUpgrade] exchange"),
+            });
+            return;
+        case "alliance":
+            await runtime.start(Alliance, {
+                onAction: (id) => console.info("[UniFlex Alliance] action", id),
+                onNav: (slot) => console.info("[UniFlex Alliance] nav", slot),
+                onSelectTab: (tab) => console.info("[UniFlex Alliance] tab", tab),
             });
             return;
         case "prompt-restored":
