@@ -152,6 +152,22 @@
       "componentName": "HeroDetailRestored",
       "rootName": "HeroDetailRestored",
       "source": "apps/client/src/ui-uniflex/pages/HeroDetailRestored/HeroDetailRestored.tsx"
+    },
+    {
+      "id": "preview-home-restored",
+      "aliases": ["preview-home-restored", "previewHomeRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "PreviewHomeRestored",
+      "rootName": "PreviewHomeRestored",
+      "source": "apps/client/src/ui-uniflex/pages/PreviewHomeRestored/PreviewHomeRestored.tsx"
+    },
+    {
+      "id": "backpack-edited",
+      "aliases": ["backpack-edited", "backpackEdited"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "BackpackEditedRestored",
+      "rootName": "BackpackEditedRestored",
+      "source": "apps/client/src/ui-uniflex/pages/BackpackEditedRestored/BackpackEditedRestored.tsx"
     }
   ],
   "components": [
