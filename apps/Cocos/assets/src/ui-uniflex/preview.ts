@@ -1,6 +1,6 @@
 import { Node, UITransform, view } from "cc";
 import { UniFlexCocosRuntime } from "../kits/uniflex/api/cocos/index";
-import { Alliance, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, Prompt, Settings, loadGameUI } from "./generated/ui";
+import { Alliance, AllianceAnnounce, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, Prompt, Settings, loadGameUI } from "./generated/ui";
 import type { BackpackAction } from "./generated/Backpack";
 import type { MailBattleReportParams } from "./generated/MailBattleReport";
 import { resourceMap } from "./generated/resource-map";
@@ -280,6 +280,33 @@ export function createAlliancePreview(parent: Node) {
             onAction: (id) => console.info("[UniFlex Alliance] action", id),
             onNav: (slot) => console.info("[UniFlex Alliance] nav", slot),
             onSelectTab: (tab) => console.info("[UniFlex Alliance] tab", tab),
+        }),
+        dispose,
+    };
+}
+
+export function createAllianceAnnouncePreview(parent: Node) {
+    const root = new Node("UniFlexAllianceAnnounce");
+    root.layer = parent.layer;
+    const transform = root.addComponent(UITransform);
+    parent.addChild(root);
+    const resize = (): void => {
+        const size = view.getVisibleSize();
+        transform.setContentSize(size.width, size.height);
+    };
+    resize();
+    view.on("canvas-resize", resize);
+    const runtime = new UniFlexCocosRuntime({ container: root, resources: resourceMap, loadUI: loadGameUI });
+    let disposed = false;
+    const dispose = (): void => {
+        if (disposed) return;
+        disposed = true;
+        view.off("canvas-resize", resize);
+        try { runtime.dispose(); } finally { root.destroy(); }
+    };
+    return {
+        ready: runtime.start(AllianceAnnounce, {
+            onClose: dispose,
         }),
         dispose,
     };
