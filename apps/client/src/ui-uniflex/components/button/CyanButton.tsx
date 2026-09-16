@@ -12,6 +12,10 @@ export const CyanButton = defineComponent<ConfirmButtonProps>((p) => {
     const height = p.height;
     const disabled = p.disabled;
     const onClick = p.onClick;
+    const icon = p.icon;
+    const iconWidth = p.iconWidth;
+    const iconHeight = p.iconHeight;
     return <ActionButton label={label} source={source} outlineColor={outlineColor}
-        width={width} height={height} disabled={disabled} onClick={onClick} />;
+        width={width} height={height} disabled={disabled} onClick={onClick}
+        icon={icon} iconWidth={iconWidth} iconHeight={iconHeight} />;
 });

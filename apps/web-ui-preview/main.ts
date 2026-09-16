@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -227,6 +227,13 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onBack: backToPreview,
                 onAction: (id) => console.info("[UniFlex AllianceTerritory] action", id),
                 onSelectTab: (tab) => console.info("[UniFlex AllianceTerritory] tab", tab),
+            });
+            return;
+        case "alliance-march-boost":
+            await runtime.start(AllianceMarchBoost, {
+                onClose: backToPreview,
+                onPayGem: () => console.info("[UniFlex AllianceMarchBoost] pay-gem"),
+                onPayCoin: () => console.info("[UniFlex AllianceMarchBoost] pay-coin"),
             });
             return;
         case "prompt-restored":
