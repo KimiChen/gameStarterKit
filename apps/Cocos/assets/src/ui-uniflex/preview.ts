@@ -1,6 +1,6 @@
 import { Node, UITransform, view } from "cc";
 import { UniFlexCocosRuntime } from "../kits/uniflex/api/cocos/index";
-import { Alliance, AllianceAnnounce, AllianceCreate, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, Prompt, Settings, loadGameUI } from "./generated/ui";
+import { Alliance, AllianceAnnounce, AllianceCreate, AllianceGift, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, Prompt, Settings, loadGameUI } from "./generated/ui";
 import type { BackpackAction } from "./generated/Backpack";
 import type { MailBattleReportParams } from "./generated/MailBattleReport";
 import { resourceMap } from "./generated/resource-map";
@@ -367,6 +367,36 @@ export function createAllianceMemberSettingsPreview(parent: Node) {
             onClose: dispose,
             onToggleR2: (enabled) => console.info("[UniFlex AllianceMemberSettings] r2", enabled),
             onToggleR3: (enabled) => console.info("[UniFlex AllianceMemberSettings] r3", enabled),
+        }),
+        dispose,
+    };
+}
+
+export function createAllianceGiftPreview(parent: Node) {
+    const root = new Node("UniFlexAllianceGift");
+    root.layer = parent.layer;
+    const transform = root.addComponent(UITransform);
+    parent.addChild(root);
+    const resize = (): void => {
+        const size = view.getVisibleSize();
+        transform.setContentSize(size.width, size.height);
+    };
+    resize();
+    view.on("canvas-resize", resize);
+    const runtime = new UniFlexCocosRuntime({ container: root, resources: resourceMap, loadUI: loadGameUI });
+    let disposed = false;
+    const dispose = (): void => {
+        if (disposed) return;
+        disposed = true;
+        view.off("canvas-resize", resize);
+        try { runtime.dispose(); } finally { root.destroy(); }
+    };
+    return {
+        ready: runtime.start(AllianceGift, {
+            onBack: dispose,
+            onClaimAll: () => console.info("[UniFlex AllianceGift] claim-all"),
+            onAction: (id) => console.info("[UniFlex AllianceGift] action", id),
+            onSelectTab: (tab) => console.info("[UniFlex AllianceGift] tab", tab),
         }),
         dispose,
     };
