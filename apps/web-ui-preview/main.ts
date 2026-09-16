@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings, AllianceWar, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -152,6 +152,14 @@ try {
             onToggleR3: (enabled) => console.info("[UniFlex AllianceMemberSettings] r3", enabled),
         });
         console.info("[UniFlex AllianceMemberSettings] ready");
+    } else if (screen === "alliance-war" || route === "alliance-war") {
+        document.title = "UniFlex Alliance War";
+        await runtime.start(AllianceWar, {
+            onBack: backToPreview,
+            onAction: (id) => console.info("[UniFlex AllianceWar] action", id),
+            onSelectTab: (tab) => console.info("[UniFlex AllianceWar] tab", tab),
+        });
+        console.info("[UniFlex AllianceWar] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",
