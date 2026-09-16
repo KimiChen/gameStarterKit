@@ -5,6 +5,7 @@
 > - [docs/OVERVIEW.md](docs/OVERVIEW.md)：整体设计、单源契约与标准开发动线
 > - [docs/SERVER.md](docs/SERVER.md)：服务端目录、RPC、数据一致性与开发约束
 > - [docs/CLIENT.md](docs/CLIENT.md)：客户端目录、View/Logic、FGUI 与本地预览
+> - [docs/UNIFLEX-UI.md](docs/UNIFLEX-UI.md)：实现 UniFlex 界面时必读（切图作者态、预览路由登记、AOT）
 > - [docs/WEBPLATFORM.md](docs/WEBPLATFORM.md)：外部身份服务的开发契约边界
 > - [docs/EXTRAS.md](docs/EXTRAS.md)：可选额外功能、现有实现与非承诺说明
 > - [docs/undergroundIdle/README.md](docs/undergroundIdle/README.md)：未实现的玩法策划案与扩展草案
@@ -200,6 +201,8 @@ shared 契约
   → npm run sync:client
   → 本地类型检查与测试
 ```
+
+实现 UniFlex 切图页（不是 FGUI）时改走 [docs/UNIFLEX-UI.md](docs/UNIFLEX-UI.md)，不要套上面的 shared / codegen 动线。
 
 `net/`、dispatcher/loader 和 `Main.ts` 属于框架接缝，新增普通功能时优先通过登记点扩展。
 

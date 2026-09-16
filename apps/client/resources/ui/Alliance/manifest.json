@@ -166,6 +166,36 @@
       "sha256": "47dd0e9e1fa1401207aee063f8bcacfdc0a286426dd421f9736dec3e2c81c731"
     },
     {
+      "id": "ui/alliance/invite-search",
+      "kind": "image",
+      "file": "assets/alliance_invite_search.png",
+      "width": 69,
+      "height": 76,
+      "sha256": "ab0412c713e09679e5e9d475d43a3ab5a0f9bbe1224d8a2c6c3fe0962c8d52c3"
+    },
+    {
+      "id": "ui/alliance/gift-banner",
+      "kind": "image",
+      "file": "assets/alliance_gift_banner.png",
+      "width": 750,
+      "height": 370,
+      "sha256": "076e50a18a236bb2331e26d9166dd3390cf9ed22beb69ca379c232be70b14cce"
+    },
+    {
+      "id": "ui/alliance/gift-cap",
+      "kind": "image",
+      "file": "assets/alliance_gift_cap.png",
+      "width": 34,
+      "height": 34,
+      "sha256": "ccf86f63a97d8bf108f53e259c72765000d11e2406d8e40a35356b7bb686430f",
+      "nineSlice": [
+        15,
+        15,
+        15,
+        15
+      ]
+    },
+    {
       "id": "ui/alliance/mset-card",
       "kind": "image",
       "file": "assets/alliance_mset_card.png",
@@ -538,6 +568,310 @@
       "width": 200,
       "height": 52,
       "sha256": "6540e1a27996bb35a30aa30afd047a59709769ae5ca52edf1712939ce921921c"
+    },
+    {
+      "id": "ui/alliance/flag-header",
+      "kind": "image",
+      "file": "assets/alliance_flag_header.png",
+      "width": 750,
+      "height": 90,
+      "sha256": "1c04b3fa85da86412520614902a247f80a8f433aa963109455c38e11344744e0"
+    },
+    {
+      "id": "ui/alliance/flag-tab-track",
+      "kind": "image",
+      "file": "assets/alliance_flag_tab_track.png",
+      "width": 750,
+      "height": 209,
+      "sha256": "8962c8ff8e759ac105b7d1932ca0457b199b0f9b628e6aa5acdc184f88721752"
+    },
+    {
+      "id": "ui/alliance/flag-content-bg",
+      "kind": "image",
+      "file": "assets/alliance_flag_content_bg.png",
+      "width": 36,
+      "height": 36,
+      "sha256": "be528ad59cf4911da7c2e1f35ad1b964ccd66953482b6c8173b2e83efb080909",
+      "nineSlice": [
+        16,
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "id": "ui/alliance/flag-tab-selected",
+      "kind": "image",
+      "file": "assets/alliance_flag_tab_selected.png",
+      "width": 176,
+      "height": 67,
+      "sha256": "accc19192aba705ffcaaf56110ee9b595d0050228279da9add6892cdf4efc33b"
+    },
+    {
+      "id": "ui/alliance/flag-tab-unselected",
+      "kind": "image",
+      "file": "assets/alliance_flag_tab_unselected.png",
+      "width": 170,
+      "height": 52,
+      "sha256": "62363cdddf4625feb57d46213ed798f4a36f3ce6f82a73350d89242eb3331622"
+    },
+    {
+      "id": "ui/alliance/flag-bottom",
+      "kind": "image",
+      "file": "assets/alliance_flag_bottom.png",
+      "width": 20,
+      "height": 110,
+      "sha256": "810eecc4c4686c93a0087bcbdf15a61f1ebdc391cf1f21f81b6927d3853fdeb2",
+      "nineSlice": [
+        8,
+        0,
+        8,
+        0
+      ]
+    },
+    {
+      "id": "ui/alliance/flag-banner-land",
+      "kind": "image",
+      "file": "assets/alliance_flag_banner_land.png",
+      "width": 723,
+      "height": 200,
+      "sha256": "0c1cab89db8da811e9cb7d11a723e8f783797ea4530bc882e9036ae332151d10"
+    },
+    {
+      "id": "ui/alliance/flag-banner-port",
+      "kind": "image",
+      "file": "assets/alliance_flag_banner_port.png",
+      "width": 723,
+      "height": 200,
+      "sha256": "c1b5c73a01894b0f3821291b0391d32d7a1571b84e395e1415428cc060644cd4"
+    },
+    {
+      "id": "ui/alliance/flag-banner-fort",
+      "kind": "image",
+      "file": "assets/alliance_flag_banner_fort.png",
+      "width": 723,
+      "height": 200,
+      "sha256": "76e25ae71b40d95f902e2c0aecccabea445b17068b64375b2ee0d490efb4769b"
+    },
+    {
+      "id": "ui/alliance/flag-list-bg",
+      "kind": "image",
+      "file": "assets/alliance_flag_list_bg.png",
+      "width": 52,
+      "height": 52,
+      "sha256": "91d15776d7c5a9a4855aef8f161d9e561183935b80f7532c4e9d03ef1d78fa52",
+      "nineSlice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "ui/alliance/flag-section-header",
+      "kind": "image",
+      "file": "assets/alliance_flag_section_header.png",
+      "width": 719,
+      "height": 64,
+      "sha256": "33cd56d30f752a444f59813f672c028a22f06c406f1cb2818092511f4fd0b55a"
+    },
+    {
+      "id": "ui/alliance/flag-row-stripe",
+      "kind": "image",
+      "file": "assets/alliance_flag_row_stripe.png",
+      "width": 719,
+      "height": 58,
+      "sha256": "dce8f465c427614ba90d41ac51e75cf0647a2852376ac66254310ea066c11fa4"
+    },
+    {
+      "id": "ui/alliance/flag-row-icon",
+      "kind": "image",
+      "file": "assets/alliance_flag_row_icon.png",
+      "width": 64,
+      "height": 52,
+      "sha256": "02b4939ae61123e9428ed35aaba300ba2255ad0f71bbe2b1847b6385745f63f2"
+    },
+    {
+      "id": "ui/alliance/flag-fort-card",
+      "kind": "image",
+      "file": "assets/alliance_flag_fort_card.png",
+      "width": 52,
+      "height": 52,
+      "sha256": "68964d700fd139e036ddccc0d44416dfb353904cff3de989b8821d58e9f3259d",
+      "nineSlice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "ui/alliance/flag-fort-thumb",
+      "kind": "image",
+      "file": "assets/alliance_flag_fort_thumb.png",
+      "width": 163,
+      "height": 208,
+      "sha256": "8405de583a1b13fe327955abace3c727e3b4838c448911c04e738d6fc8a654ec"
+    },
+    {
+      "id": "ui/alliance/flag-building",
+      "kind": "image",
+      "file": "assets/alliance_flag_building.png",
+      "width": 111,
+      "height": 119,
+      "sha256": "0de641739bb36f6f2525ffb5f7b8be2ce847dba28697340ec9b4bea8d30a8d3c"
+    },
+    {
+      "id": "ui/alliance/flag-star",
+      "kind": "image",
+      "file": "assets/alliance_flag_star.png",
+      "width": 28,
+      "height": 28,
+      "sha256": "94173879e87db05f5e6e4f25a08ac02410edcca423bcd2b7e93b0362444d8806"
+    },
+    {
+      "id": "ui/alliance/flag-res-small",
+      "kind": "image",
+      "file": "assets/alliance_flag_res_small.png",
+      "width": 30,
+      "height": 25,
+      "sha256": "9e22954ba58eea59fc0922154f1c4f0d6c30276fe1332e79dfeaafb8baa52120"
+    },
+    {
+      "id": "ui/alliance/flag-arrow",
+      "kind": "image",
+      "file": "assets/alliance_flag_arrow.png",
+      "width": 44,
+      "height": 30,
+      "sha256": "a130fa38b13086b2d189a8954c517ee6df6b248dd8a3e09c264578171d4a69ea"
+    },
+    {
+      "id": "ui/alliance/flag-arrow-down",
+      "kind": "image",
+      "file": "assets/alliance_flag_arrow_down.png",
+      "width": 44,
+      "height": 30,
+      "sha256": "92125b73df6c11687fa84245c23a9bfaa6f211bad04ce8dd676a868a1ce158a8"
+    },
+    {
+      "id": "ui/alliance/flag-item-icon",
+      "kind": "image",
+      "file": "assets/alliance_flag_item_icon.png",
+      "width": 129,
+      "height": 107,
+      "sha256": "cd5896c45e8fda74b217d5a6bf78f9e2f8ad8866afd01a80edad81b82028ea0f"
+    },
+    {
+      "id": "ui/alliance/flag-share",
+      "kind": "image",
+      "file": "assets/alliance_flag_share.png",
+      "width": 61,
+      "height": 68,
+      "sha256": "ce1d1a6b7081d88917e2a4ff35a32c2e62b7cbfabddfbf708721058e602eea03"
+    },
+    {
+      "id": "ui/alliance/flag-progress-bg",
+      "kind": "image",
+      "file": "assets/alliance_flag_progress_bg.png",
+      "width": 514,
+      "height": 28,
+      "sha256": "a53141cdedbc7088d1c52534bcce4d4a5cab6d404c666d6f8f35cb1862811997"
+    },
+    {
+      "id": "ui/alliance/flag-progress-fill",
+      "kind": "image",
+      "file": "assets/alliance_flag_progress_fill.png",
+      "width": 329,
+      "height": 24,
+      "sha256": "4f2432f9f72116039fd499de1332c7925b94b09639f4b02a1b717a41b87ce91d"
+    },
+    {
+      "id": "ui/alliance/flag-icon-person",
+      "kind": "image",
+      "file": "assets/alliance_flag_icon_person.png",
+      "width": 34,
+      "height": 30,
+      "sha256": "a57aaf83b039680985581f5d19f03bfdc0b21e4079adde8c6d6b1066a0a33067"
+    },
+    {
+      "id": "ui/alliance/flag-icon-power",
+      "kind": "image",
+      "file": "assets/alliance_flag_icon_power.png",
+      "width": 42,
+      "height": 38,
+      "sha256": "846ac85aead6355e41b8f0d523e7d10cb5792a01407289d09cf799569fcf03f1"
+    },
+    {
+      "id": "ui/alliance/flag-icon-close",
+      "kind": "image",
+      "file": "assets/alliance_flag_icon_close.png",
+      "width": 28,
+      "height": 29,
+      "sha256": "5b3d27d4bbdd89c5a38f48807df9a205980061c0639451d8e1ed38248f710464"
+    },
+    {
+      "id": "ui/alliance/flag-land-thumb",
+      "kind": "image",
+      "file": "assets/alliance_flag_land_thumb.png",
+      "width": 163,
+      "height": 168,
+      "sha256": "059f0b11a3642c42eef742353453720a77fac38dfb8716ba7cd118e007d0f2b9"
+    },
+    {
+      "id": "ui/alliance/flag-land-stats",
+      "kind": "image",
+      "file": "assets/alliance_flag_land_stats.png",
+      "width": 511,
+      "height": 96,
+      "sha256": "ff41c7dc93241813c7d566b4a26ea83be39d0af8ed4c466090855ce268c21931"
+    },
+    {
+      "id": "ui/alliance/flag-level-bar",
+      "kind": "image",
+      "file": "assets/alliance_flag_level_bar.png",
+      "width": 113,
+      "height": 26,
+      "sha256": "c8e4986673eb705a5de217ce62d878e80264779222088e6abeecbf361e44222a"
+    },
+    {
+      "id": "ui/alliance/flag-reward-slot",
+      "kind": "image",
+      "file": "assets/alliance_flag_reward_slot.png",
+      "width": 359,
+      "height": 126,
+      "sha256": "a8ebadaaf23acd9852384bfcb62afbc82fe50a63a38a113f98e97a1612e26cf1"
+    },
+    {
+      "id": "ui/alliance/flag-build-button",
+      "kind": "image",
+      "file": "assets/alliance_flag_build_button.png",
+      "width": 204,
+      "height": 81,
+      "sha256": "828e8237710abb51c93f6d816deee7d72d1d307ca0f5050eacdd3cbdee8b319d"
+    },
+    {
+      "id": "ui/alliance/flag-item-green",
+      "kind": "image",
+      "file": "assets/alliance_flag_item_green.png",
+      "width": 154,
+      "height": 159,
+      "sha256": "85f0293c79d090a0e63614aefe02553e0416ad08448ba65de990ff8dd37cade6"
+    },
+    {
+      "id": "ui/alliance/flag-item-purple",
+      "kind": "image",
+      "file": "assets/alliance_flag_item_purple.png",
+      "width": 154,
+      "height": 159,
+      "sha256": "3604fda06ac375bd0a0320a1c71f2e2bae8d6a4dae15f5f4637d60422745f388"
+    },
+    {
+      "id": "ui/alliance/flag-item-red",
+      "kind": "image",
+      "file": "assets/alliance_flag_item_red.png",
+      "width": 154,
+      "height": 159,
+      "sha256": "cb11b1dd852442f235cf3e2cd65908e5398765a34289fa9d4d58603fc3d59af0"
     }
   ]
 }

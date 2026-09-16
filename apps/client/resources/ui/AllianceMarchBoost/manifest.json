@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/alliance-march/skill",
+      "kind": "image",
+      "file": "assets/alliance_march_skill.png",
+      "width": 183,
+      "height": 212,
+      "sha256": "ac8e4af82c4cf6888210a7dc6927d91b0a696a8a127e1276400ad1d2e1502bac"
+    },
+    {
+      "id": "ui/alliance-march/gem",
+      "kind": "image",
+      "file": "assets/alliance_march_gem.png",
+      "width": 59,
+      "height": 53,
+      "sha256": "368045f33ad94a8f28cda8d6b8a7ef76c49385da1056591838010dfc129fd9f2"
+    },
+    {
+      "id": "ui/alliance-march/leaf",
+      "kind": "image",
+      "file": "assets/alliance_march_leaf.png",
+      "width": 51,
+      "height": 50,
+      "sha256": "4d17b2632c759754eadd5c90d47cb26ff162d99d9941d7025d890adb9dab9e05"
+    },
+    {
+      "id": "ui/alliance-march/ticket",
+      "kind": "image",
+      "file": "assets/alliance_march_ticket.png",
+      "width": 48,
+      "height": 52,
+      "sha256": "bb630fe160db5e6b476e1df4a78b42a2e93bb47725a646bc5152a35ee62ce95b"
+    },
+    {
+      "id": "ui/alliance-march/pay-gem",
+      "kind": "image",
+      "file": "assets/alliance_march_pay_gem.png",
+      "width": 51,
+      "height": 49,
+      "sha256": "dd35f736bf84f42fb7834ee0e2c5127ff694de06cd5b7280a5d3406e0ee18a3c"
+    },
+    {
+      "id": "ui/alliance-march/pay-coin",
+      "kind": "image",
+      "file": "assets/alliance_march_pay_coin.png",
+      "width": 54,
+      "height": 55,
+      "sha256": "ea7965538a6ced1b1a0fda349e7ffc510a0de274a220d26eaa5b6b049b56e753"
+    },
+    {
+      "id": "ui/alliance-march/track",
+      "kind": "image",
+      "file": "assets/alliance_march_track.png",
+      "width": 28,
+      "height": 28,
+      "sha256": "37c28d4c364e8760353be4450c900502d3c5e56960d26860f0b3ac08431897aa",
+      "nineSlice": [12, 0, 12, 0]
+    },
+    {
+      "id": "ui/alliance-march/fill",
+      "kind": "image",
+      "file": "assets/alliance_march_fill.png",
+      "width": 28,
+      "height": 24,
+      "sha256": "88ff6c1d11f1c8bc26968a5dba9feecd49656cd6d5d6daaba0f3b8a77855c8b8",
+      "nineSlice": [12, 0, 12, 0]
+    },
+    {
+      "id": "ui/alliance-march/gem-slot",
+      "kind": "image",
+      "file": "assets/alliance_march_gem_slot.png",
+      "width": 65,
+      "height": 65,
+      "sha256": "432bd7193502620fb08849192201a619720611c1dd0ab1ee5eea3966a1e7a040"
+    }
+  ]
+}

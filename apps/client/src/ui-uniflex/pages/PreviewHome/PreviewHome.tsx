@@ -19,6 +19,10 @@ export type PreviewHomeTarget =
     | 'alliance-join'
     | 'alliance-member-settings'
     | 'alliance-war'
+    | 'alliance-territory'
+    | 'alliance-march-boost'
+    | 'alliance-invite'
+    | 'alliance-gift'
     | 'restored-home';
 
 export interface PreviewHomeParams {
@@ -31,7 +35,7 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
     return <view name="PreviewHome" style={{ width: 750, height: 1334, backgroundColor: '#101318', flexDirection: 'column', alignItems: 'center', padding: { top: 40 } }}>
         <text value="UniFlex UI 预览" style={{ width: 650, height: 72, font: theme.font, fontSize: 42, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
         <text value="选择功能界面" style={{ width: 650, height: 50, font: theme.font, fontSize: 24, color: '#aab4c4', horizontalAlign: 'center', verticalAlign: 'center' }} />
-        <view style={{ padding: { top: 36 }, gap: 16, alignItems: 'center', flexDirection: 'column' }}>
+        <view style={{ width: 616, padding: { top: 36 }, gap: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flexStart', alignItems: 'flexStart' }}>
             <ConfirmButton label="提示弹窗" width={300} onClick={() => go('prompt')} />
             <CancelButton label="小弹窗底板" width={300} onClick={() => go('small-popup')} />
             <view interaction="press" onClick={() => go('backpack')} style={{ width: 300, height: 102, backgroundColor: '#53657d', justifyContent: 'center', alignItems: 'center' }}>
@@ -72,6 +76,18 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('alliance-war')} style={{ width: 300, height: 72, backgroundColor: '#3a6a8a', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="联盟战争" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-territory')} style={{ width: 300, height: 72, backgroundColor: '#2f5a72', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="领地旗帜" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-march-boost')} style={{ width: 300, height: 72, backgroundColor: '#6a3d7a', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="行军加速" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-invite')} style={{ width: 300, height: 72, backgroundColor: '#5a4a72', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="邀请成员" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-gift')} style={{ width: 300, height: 72, backgroundColor: '#6a4a3d', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="联盟礼物" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <view interaction="press" onClick={() => go('restored-home')} style={{ width: 300, height: 90, backgroundColor: '#1e4d6b', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="还原 UI 预览" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
