@@ -178,7 +178,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run ui:approve-web` | 批准当前 Web proposal 为新的 Golden 基线 |
 | `npm run check:uniflex-ui` | 只读校验 UniFlex AOT、字体与双端生成物是否过期 |
 | `npm run typecheck:uniflex-ui` | 检查 UniFlex TSX 作者态和独立 Web 预览入口 |
-| `npm run dev:uniflex-web` | 启动独立 WebProvider 预览；默认 PreviewHome，`?screen=` / `?ui=` 打开已登记页面，`?psd=1` 为导出用未缩放画布 |
+| `npm run dev:uniflex-web` | 启动独立 WebProvider 预览；默认 PreviewHome（原稿），`?ui=restored-home` 打开还原 UI 预览，`?screen=` / `?ui=` 打开已登记页面，`?psd=1` 为导出用未缩放画布 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
 | `npm run fetch:fgui` / `npm run fetch:colyseus` / `npm run fetch:uniflex` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
 | `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表与入库生成物；均属额外功能 |
