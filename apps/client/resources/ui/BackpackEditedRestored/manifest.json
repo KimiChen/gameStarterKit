@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "feature": "uniflex-import",
+  "assets": [
+    {
+      "id": "BackpackEditedRestored-asset-84419f3f805363f9d4ad0643ebe6c9557dbebf2b7ccad880ff2b7f8a5210d012",
+      "kind": "image",
+      "file": "assets/84419f3f805363f9d4ad0643ebe6c9557dbebf2b7ccad880ff2b7f8a5210d012.png",
+      "width": 750,
+      "height": 90,
+      "sha256": "84419f3f805363f9d4ad0643ebe6c9557dbebf2b7ccad880ff2b7f8a5210d012"
+    }
+  ]
+}

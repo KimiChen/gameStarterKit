@@ -1,6 +1,7 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
+import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -58,6 +59,9 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
     switch (entry.id) {
         case "preview-home":
             await runtime.start(PreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
+            return;
+        case "preview-home-restored":
+            await runtime.start(PreviewHomeRestored, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
             return;
         case "prompt":
             await runtime.start(Prompt, {
@@ -117,6 +121,14 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 if (action.action === "back" || action.action === "close") backToPreview();
             };
             await runtime.start(BackpackRestored, { onAction });
+            return;
+        }
+        case "backpack-edited": {
+            const onAction = (action: BackpackEditedRestoredAction) => {
+                console.info("[UniFlex BackpackEditedRestored] action", action);
+                if (action.action === "back" || action.action === "close") backToPreview();
+            };
+            await runtime.start(BackpackEditedRestored, { onAction });
             return;
         }
         case "settings":
