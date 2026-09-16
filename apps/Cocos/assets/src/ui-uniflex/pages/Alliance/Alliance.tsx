@@ -3,6 +3,7 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../components/badge/NotificationBadge';
 import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
 import { PanelTab } from '../../components/tab/PanelTab';
+import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
 import { AllianceHomePanel } from './AllianceHomePanel';
 import { AllianceMembersPanel } from './AllianceMembersPanel';
 import { AllianceSettingsPanel } from './AllianceSettingsPanel';
@@ -28,6 +29,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     const params = context.params ?? {};
     const [tab, setTab] = useState<AllianceTab>(params.tab ?? 'home');
     const [nav, setNav] = useState<MainNavSlot>(params.nav ?? 'hero');
+    const [announceOpen, setAnnounceOpen] = useState(false);
     const selectTab = (next: AllianceTab) => {
         setTab(next);
         params.onSelectTab?.(next);
@@ -35,6 +37,10 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     const selectNav = (slot: MainNavSlot) => {
         setNav(slot);
         params.onNav?.(slot);
+    };
+    const onAction = (id: string) => {
+        if (id === 'edit_announcement') setAnnounceOpen(true);
+        params.onAction?.(id);
     };
     const badge = imageRef('ui/mail/number-badge');
     const badgeCount = params.badgeCount ?? 3;
@@ -48,11 +54,11 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
 
             <AllianceHomePanel visible={tab === 'home'} tag={params.tag} name={params.name}
                 leader={params.leader} power={params.power} memberCount={params.memberCount}
-                onAction={params.onAction} />
-            <AllianceMembersPanel visible={tab === 'members'} onAction={params.onAction} />
+                onAction={onAction} />
+            <AllianceMembersPanel visible={tab === 'members'} onAction={onAction} />
             <AllianceSettingsPanel visible={tab === 'settings'} tag={params.tag} name={params.name}
                 leader={params.leader} power={params.power} memberCount={params.memberCount}
-                onAction={params.onAction} />
+                onAction={onAction} />
 
             <image source={imageRef('ui/mail/header')}
                 style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
@@ -73,6 +79,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
                 source={badge} left={614} top={248} />
 
             <MainNav selected={nav} noticeExplore onSelect={selectNav} />
+            <AllianceAnnouncePanel visible={announceOpen} onClose={() => setAnnounceOpen(false)} />
         </view>
     );
 });

@@ -54,6 +54,20 @@
       ]
     },
     {
+      "id": "ui/alliance/announce-panel",
+      "kind": "image",
+      "file": "assets/alliance_announce_panel.png",
+      "width": 48,
+      "height": 48,
+      "sha256": "40a46a78df5de489032a2ac260f25e820d9854286c184ad169b61b5924c55c1c",
+      "nineSlice": [
+        22,
+        22,
+        22,
+        22
+      ]
+    },
+    {
       "id": "ui/alliance/button",
       "kind": "image",
       "file": "assets/alliance_button_bg.png",

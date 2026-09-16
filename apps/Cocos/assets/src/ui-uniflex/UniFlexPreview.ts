@@ -1,6 +1,6 @@
 import { _decorator, Color, Component, Label, Node, ResolutionPolicy, UITransform, view } from "cc";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "../designSpec";
-import { createAlliancePreview, createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createHeroStarUpgradePreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
+import { createAllianceAnnouncePreview, createAlliancePreview, createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createHeroStarUpgradePreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
 
 const { ccclass } = _decorator;
 
@@ -22,6 +22,7 @@ export class UniFlexPreview extends Component {
         const heroDetail = query?.get("screen") === "hero-detail";
         const heroStarUpgrade = query?.get("screen") === "hero-star-upgrade";
         const alliance = query?.get("screen") === "alliance";
+        const allianceAnnounce = query?.get("screen") === "alliance-announce";
         const prompt = query?.get("ui") === "prompt";
         if (backpack) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (mail) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
@@ -36,6 +37,7 @@ export class UniFlexPreview extends Component {
             : heroDetail ? createHeroDetailPreview(this.node)
             : heroStarUpgrade ? createHeroStarUpgradePreview(this.node)
             : alliance ? createAlliancePreview(this.node)
+            : allianceAnnounce ? createAllianceAnnouncePreview(this.node)
             : prompt ? createPromptPreview(this.node, query?.get("cancel") !== "0")
             : createConfirmPreview(this.node, query?.get("cancel") !== "0");
         this.runtime = preview;
