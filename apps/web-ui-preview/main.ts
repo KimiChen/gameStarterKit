@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -112,6 +112,14 @@ try {
             onExchange: () => console.info("[UniFlex HeroStarUpgrade] exchange"),
         });
         console.info("[UniFlex HeroStarUpgrade] ready");
+    } else if (screen === "alliance" || route === "alliance") {
+        document.title = "UniFlex Alliance";
+        await runtime.start(Alliance, {
+            onAction: (id) => console.info("[UniFlex Alliance] action", id),
+            onNav: (slot) => console.info("[UniFlex Alliance] nav", slot),
+            onSelectTab: (tab) => console.info("[UniFlex Alliance] tab", tab),
+        });
+        console.info("[UniFlex Alliance] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",
