@@ -162,6 +162,14 @@
       "source": "apps/client/src/ui-uniflex/pages/AllianceWar/AllianceWar.tsx"
     },
     {
+      "id": "alliance-territory",
+      "aliases": ["alliance-territory", "allianceTerritory"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceTerritory",
+      "rootName": "AllianceTerritoryPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritory.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },

@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -222,6 +222,13 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onSelectTab: (tab) => console.info("[UniFlex AllianceWar] tab", tab),
             });
             return;
+        case "alliance-territory":
+            await runtime.start(AllianceTerritory, {
+                onBack: backToPreview,
+                onAction: (id) => console.info("[UniFlex AllianceTerritory] action", id),
+                onSelectTab: (tab) => console.info("[UniFlex AllianceTerritory] tab", tab),
+            });
+            return;
         case "prompt-restored":
             await runtime.start(PromptRestored, {
                 theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" },
@@ -265,7 +272,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         case "hero-restored":
             await runtime.start(HeroScreenRestored, {
                 onRecruit: () => console.info("[UniFlex HeroScreenRestored] recruit"),
-                onSelectCard: (id) => { location.href = "?ui=hero-detail-restored"; },
+                onSelectCard: (_id) => { location.href = "?ui=hero-detail-restored"; },
                 onSelectBond: (id) => console.info("[UniFlex HeroScreenRestored] bond", id),
                 onBondDetail: (id) => console.info("[UniFlex HeroScreenRestored] bond-detail", id),
                 onNav: (slot) => console.info("[UniFlex HeroScreenRestored] nav", slot),
