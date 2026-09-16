@@ -1,7 +1,7 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../components/badge/NotificationBadge';
-import { type MainNavSlot } from '../../components/navigation/MainNav';
+import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
 import { AllianceHomePanel } from './AllianceHomePanel';
 import { AllianceMembersPanel } from './AllianceMembersPanel';
 import { AllianceSettingsPanel } from './AllianceSettingsPanel';
@@ -101,47 +101,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
             <NotificationBadge count={tab === 'members' ? badgeCount : 0}
                 source={badge} left={614} top={248} />
 
-            <view name="Alliance/Nav" style={{ position: 'absolute', left: 0, top: 1354, width: 750, height: 125 }}>
-                <image source={imageRef('ui/hero/nav-base')}
-                    style={{ position: 'absolute', left: 0, top: 15, width: 750, height: 110 }} />
-                <image visible={nav === 'wheel'} source={imageRef('ui/hero/nav-selected')}
-                    style={{ position: 'absolute', left: -2, top: 15, width: 154, height: 110 }} />
-                <image visible={nav === 'island'} source={imageRef('ui/hero/nav-selected')}
-                    style={{ position: 'absolute', left: 148, top: 15, width: 154, height: 110 }} />
-                <image visible={nav === 'hero'} source={imageRef('ui/hero/nav-selected')}
-                    style={{ position: 'absolute', left: 298, top: 15, width: 154, height: 110 }} />
-                <image visible={nav === 'explore'} source={imageRef('ui/hero/nav-selected')}
-                    style={{ position: 'absolute', left: 448, top: 15, width: 154, height: 110 }} />
-                <image visible={nav === 'ship'} source={imageRef('ui/hero/nav-selected')}
-                    style={{ position: 'absolute', left: 598, top: 15, width: 154, height: 110 }} />
-                <view interaction="press" onClick={() => selectNav('wheel')}
-                    style={{ position: 'absolute', left: 0, top: 0, width: 150, height: 125 }}>
-                    <image source={imageRef('ui/hero/nav-wheel')}
-                        style={{ position: 'absolute', left: 28, top: 28, width: 90, height: 84 }} />
-                </view>
-                <view interaction="press" onClick={() => selectNav('island')}
-                    style={{ position: 'absolute', left: 150, top: 0, width: 150, height: 125 }}>
-                    <image source={imageRef('ui/hero/nav-island')}
-                        style={{ position: 'absolute', left: 30, top: 28, width: 95, height: 83 }} />
-                </view>
-                <view interaction="press" onClick={() => selectNav('hero')}
-                    style={{ position: 'absolute', left: 300, top: 0, width: 150, height: 125 }}>
-                    <image source={imageRef('ui/hero/nav-hero')}
-                        style={{ position: 'absolute', left: 18, top: 0, width: 115, height: 116 }} />
-                </view>
-                <view interaction="press" onClick={() => selectNav('explore')}
-                    style={{ position: 'absolute', left: 450, top: 0, width: 150, height: 125 }}>
-                    <image source={imageRef('ui/hero/nav-wheel')}
-                        style={{ position: 'absolute', left: 29, top: 28, width: 90, height: 84 }} />
-                </view>
-                <view interaction="press" onClick={() => selectNav('ship')}
-                    style={{ position: 'absolute', left: 600, top: 0, width: 150, height: 125 }}>
-                    <image source={imageRef('ui/hero/nav-ship')}
-                        style={{ position: 'absolute', left: 29, top: 22, width: 89, height: 95 }} />
-                </view>
-                <image source={imageRef('ui/alliance/nav-dot')}
-                    style={{ position: 'absolute', left: 560, top: 16, width: 24, height: 24 }} />
-            </view>
+            <MainNav selected={nav} noticeExplore onSelect={selectNav} />
         </view>
     );
 });
