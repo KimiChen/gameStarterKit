@@ -26,9 +26,13 @@ export const HeroFilterBar = defineComponent<HeroFilterBarProps>((p) => {
     };
     const title = labels[selected];
     return (
-        <view name="HeroFilterBar" style={{ position: 'absolute', left: 456, top: 98, width: 281, height: open ? 311 : 52 }}>
+        <view name="HeroFilterBar" style={open
+            ? { position: 'absolute', left: 0, top: 0, width: 750, height: 1334 }
+            : { position: 'absolute', left: 456, top: 98, width: 281, height: 52 }}>
+            <view visible={open} interaction="press" onClick={() => setOpen(false)}
+                style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1334 }} />
             <view interaction="press" onClick={() => setOpen(!open)}
-                style={{ position: 'absolute', left: 0, top: 0, width: 280, height: 52 }}>
+                style={{ position: 'absolute', left: open ? 456 : 0, top: open ? 98 : 0, width: 280, height: 52 }}>
                 <image source={imageRef('ui/hero/filter-bg')}
                     style={{ position: 'absolute', width: 280, height: 52 }} />
                 <image visible={selected === 'all'} source={imageRef('ui/hero/filter-icon')}
@@ -49,7 +53,7 @@ export const HeroFilterBar = defineComponent<HeroFilterBarProps>((p) => {
                 <image visible={open} source={imageRef('ui/hero/filter-arrow-up')}
                     style={{ position: 'absolute', left: 236, top: 15, width: 34, height: 23 }} />
             </view>
-            <view visible={open} style={{ position: 'absolute', left: -1, top: 57, width: 281, height: 254 }}>
+            <view visible={open} style={{ position: 'absolute', left: 455, top: 155, width: 281, height: 254 }}>
                 <image source={imageRef('ui/hero/filter-dropdown')}
                     style={{ position: 'absolute', width: 281, height: 254 }} />
                 <image visible={selected === 'all'} source={imageRef('ui/hero/filter-option')}
