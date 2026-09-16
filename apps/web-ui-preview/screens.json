@@ -194,6 +194,22 @@
       "source": "apps/client/src/ui-uniflex/pages/AllianceGift/AllianceGift.tsx"
     },
     {
+      "id": "alliance-help",
+      "aliases": ["alliance-help", "allianceHelp"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceHelp",
+      "rootName": "AllianceHelpPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceHelp/AllianceHelp.tsx"
+    },
+    {
+      "id": "alliance-board",
+      "aliases": ["alliance-board", "allianceBoard", "alliance-apply"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceBoard",
+      "rootName": "AllianceBoardPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceBoard/AllianceBoard.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },
