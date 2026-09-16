@@ -1,6 +1,6 @@
 import { _decorator, Color, Component, Label, Node, ResolutionPolicy, UITransform, view } from "cc";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "../designSpec";
-import { createAllianceAnnouncePreview, createAllianceCreatePreview, createAllianceJoinPreview, createAllianceMarchBoostPreview, createAllianceMemberSettingsPreview, createAlliancePreview, createAllianceTerritoryPreview, createAllianceWarPreview, createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createHeroStarUpgradePreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
+import { createAllianceAnnouncePreview, createAllianceCreatePreview, createAllianceInvitePreview, createAllianceJoinPreview, createAllianceMarchBoostPreview, createAllianceMemberSettingsPreview, createAlliancePreview, createAllianceTerritoryPreview, createAllianceWarPreview, createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createHeroStarUpgradePreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview } from "./preview";
 
 const { ccclass } = _decorator;
 
@@ -29,6 +29,7 @@ export class UniFlexPreview extends Component {
         const allianceWar = query?.get("screen") === "alliance-war";
         const allianceTerritory = query?.get("screen") === "alliance-territory";
         const allianceMarchBoost = query?.get("screen") === "alliance-march-boost";
+        const allianceInvite = query?.get("screen") === "alliance-invite";
         const prompt = query?.get("ui") === "prompt";
         if (backpack) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (mail) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
@@ -50,6 +51,7 @@ export class UniFlexPreview extends Component {
             : allianceWar ? createAllianceWarPreview(this.node)
             : allianceTerritory ? createAllianceTerritoryPreview(this.node)
             : allianceMarchBoost ? createAllianceMarchBoostPreview(this.node)
+            : allianceInvite ? createAllianceInvitePreview(this.node)
             : prompt ? createPromptPreview(this.node, query?.get("cancel") !== "0")
             : createConfirmPreview(this.node, query?.get("cancel") !== "0");
         this.runtime = preview;

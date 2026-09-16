@@ -166,6 +166,14 @@
       "sha256": "47dd0e9e1fa1401207aee063f8bcacfdc0a286426dd421f9736dec3e2c81c731"
     },
     {
+      "id": "ui/alliance/invite-search",
+      "kind": "image",
+      "file": "assets/alliance_invite_search.png",
+      "width": 69,
+      "height": 76,
+      "sha256": "ab0412c713e09679e5e9d475d43a3ab5a0f9bbe1224d8a2c6c3fe0962c8d52c3"
+    },
+    {
       "id": "ui/alliance/mset-card",
       "kind": "image",
       "file": "assets/alliance_mset_card.png",
