@@ -1,4 +1,4 @@
-import { access, readdir, readFile, rm } from "node:fs/promises";
+import { access, readdir, readFile, rm, stat } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { relative, resolve } from "node:path";
@@ -103,6 +103,7 @@ const entries = [fontEntry];
 const resourcePackages = [];
 for (const packageName of await readdir(uiResources).catch(() => [])) {
     const packageRoot = resolve(uiResources, packageName);
+    if (!(await stat(packageRoot)).isDirectory()) continue;
     const resourceManifest = JSON.parse(await readFile(resolve(packageRoot, "manifest.json"), "utf8"));
     if (!Array.isArray(resourceManifest.assets) || resourceManifest.version !== 1)
         throw new Error(`Invalid UniFlex resource manifest: ${packageName}/manifest.json`);

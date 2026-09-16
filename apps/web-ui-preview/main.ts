@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI, HeroStarUpgrade } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -165,6 +165,9 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onPrev: () => console.info("[UniFlex HeroDetail] prev"),
                 onNext: () => console.info("[UniFlex HeroDetail] next"),
                 onStarUp: () => console.info("[UniFlex HeroDetail] star-up"),
+                onConfirmStarUpgrade: () => console.info("[UniFlex HeroDetail] confirm-star-upgrade"),
+                onObtainFragments: () => console.info("[UniFlex HeroDetail] obtain-fragments"),
+                onExchange: () => console.info("[UniFlex HeroDetail] exchange"),
                 onUpgrade: () => console.info("[UniFlex HeroDetail] upgrade"),
                 onSelectSkill: (id) => console.info("[UniFlex HeroDetail] skill", id),
             });
@@ -228,6 +231,17 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onSelectSkill: (id) => console.info("[UniFlex HeroDetailRestored] skill", id),
             });
             return;
+        case "hero-star-upgrade": {
+            document.title = "UniFlex Hero Star Upgrade";
+            await runtime.start(HeroStarUpgrade, {
+                onClose: backToPreview,
+                onUpgrade: () => console.info("[UniFlex HeroStarUpgrade] upgrade"),
+                onObtainFragments: () => console.info("[UniFlex HeroStarUpgrade] obtain-fragments"),
+                onExchange: () => console.info("[UniFlex HeroStarUpgrade] exchange"),
+            });
+            console.info("[UniFlex HeroStarUpgrade] ready");
+            return;
+        }
         default:
             throw new Error(`No UniFlex preview starter for screen: ${entry.id}`);
     }

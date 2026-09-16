@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/star-upgrade/attribute-panel",
+      "kind": "image",
+      "file": "assets/star_upgrade_attribute_panel.png",
+      "width": 40,
+      "height": 78,
+      "sha256": "c98f021fb1721e003a1b3e82162f0e18a107d0fbf12537ec7d967a088d976b41",
+      "nineSlice": [12, 50, 12, 12]
+    },
+    {
+      "id": "ui/star-upgrade/power",
+      "kind": "image",
+      "file": "assets/star_upgrade_power.png",
+      "width": 296,
+      "height": 55,
+      "sha256": "4399c2319126e6bff826879e417e42e99ee7135453b1c3a7f7cdf35e2b73cf74",
+      "nineSlice": [140, 0, 140, 0]
+    },
+    {
+      "id": "ui/star-upgrade/star-empty",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_empty.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "4066a7cb871ef0fecb28aa411b506ca16999b406b8c1e784afc10f5137e58f17"
+    },
+    {
+      "id": "ui/star-upgrade/star-full",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_full.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "5b8d76667662961842e5a6079fb799818b59e49983bc7e63a4f8c8be0039847c"
+    },
+    {
+      "id": "ui/star-upgrade/progress-track",
+      "kind": "image",
+      "file": "assets/star_upgrade_progress_track.png",
+      "width": 40,
+      "height": 40,
+      "sha256": "ca61faec11fe8657132987e43fa63918109bdabd84f2ca463487e23c7837c9bd",
+      "nineSlice": [12, 12, 12, 12]
+    },
+    {
+      "id": "ui/star-upgrade/progress-fill",
+      "kind": "image",
+      "file": "assets/star_upgrade_progress_fill.png",
+      "width": 40,
+      "height": 40,
+      "sha256": "c354ece6b4a5c757c668af9941aa98cf443d7ef724dfd201645e771e001e33b0",
+      "nineSlice": [12, 0, 12, 0]
+    },
+    {
+      "id": "ui/star-upgrade/fragment",
+      "kind": "image",
+      "file": "assets/star_upgrade_fragment.png",
+      "width": 94,
+      "height": 103,
+      "sha256": "2387c2e56b89b83cd66bcffff1e7d59ea50f33a37b8815f6e57606d7c24691f2"
+    },
+    {
+      "id": "ui/star-upgrade/exchange",
+      "kind": "image",
+      "file": "assets/star_upgrade_exchange.png",
+      "width": 81,
+      "height": 81,
+      "sha256": "0f19d9bce377860b7250fcc75c9c3527c6516cd6511fc33ad80e96b066974f2b"
+    },
+    {
+      "id": "ui/star-upgrade/row-bg",
+      "kind": "image",
+      "file": "assets/star_upgrade_row_bg.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "37f0df0cb44f420b6326cd75070080f0d118fbf823878b3f28224b26cd999ed5"
+    },
+    {
+      "id": "ui/star-upgrade/arrow",
+      "kind": "image",
+      "file": "assets/star_upgrade_arrow.png",
+      "width": 41,
+      "height": 38,
+      "sha256": "402d8ac1ee90c93377bc809e3d7ce57d3e799a3677da68d762bc09a32262fd89"
+    },
+    {
+      "id": "ui/star-upgrade/attack-icon",
+      "kind": "image",
+      "file": "assets/star_upgrade_attack_icon.png",
+      "width": 25,
+      "height": 32,
+      "sha256": "5e24458287b7a96880660112581a085c2b13622e312d6021440d6795106c27cf"
+    }
+  ]
+}
