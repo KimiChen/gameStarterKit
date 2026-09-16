@@ -108,7 +108,7 @@ export const BackpackRestored = defineView<BackpackRestoredParams | void>({ zInd
 
             <PanelTab label={tabs[0].label} active={activeTab === 0} left={14} top={118} width={134}
                 onClick={() => selectTab(0)} />
-            <PanelTab label={tabs[1].label} active={activeTab === 1} left={161} top={118} width={134}
+            <PanelTab label={tabs[1].label} active={activeTab === 1} left={158} top={103} width={140}
                 onClick={() => selectTab(1)} />
             <PanelTab label={tabs[2].label} active={activeTab === 2} left={308} top={118} width={134}
                 onClick={() => selectTab(2)} />
