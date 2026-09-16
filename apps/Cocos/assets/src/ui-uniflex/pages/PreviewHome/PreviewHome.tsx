@@ -14,12 +14,12 @@ export type PreviewHomeTarget =
     | 'hero-detail'
     | 'hero-star-upgrade'
     | 'alliance'
-    | 'restored-home'
     | 'alliance-announce'
     | 'alliance-create'
     | 'alliance-join'
     | 'alliance-member-settings'
-    | 'alliance-war';
+    | 'alliance-war'
+    | 'restored-home';
 
 export interface PreviewHomeParams {
     readonly onNavigate: (target: PreviewHomeTarget) => void;
@@ -58,9 +58,6 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             <view interaction="press" onClick={() => go('alliance')} style={{ width: 300, height: 72, backgroundColor: '#4a6a9a', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="联盟主页" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
-            <view interaction="press" onClick={() => go('restored-home')} style={{ width: 300, height: 90, backgroundColor: '#1e4d6b', justifyContent: 'center', alignItems: 'center' }}>
-                <text value="还原 UI 预览" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
             <view interaction="press" onClick={() => go('alliance-announce')} style={{ width: 300, height: 72, backgroundColor: '#3d5a80', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="联盟公告" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
@@ -75,6 +72,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('alliance-war')} style={{ width: 300, height: 72, backgroundColor: '#3a6a8a', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="联盟战争" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('restored-home')} style={{ width: 300, height: 90, backgroundColor: '#1e4d6b', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="还原 UI 预览" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
         </view>
     </view>;

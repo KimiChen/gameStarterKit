@@ -122,6 +122,46 @@
       "source": "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx"
     },
     {
+      "id": "alliance-announce",
+      "aliases": ["alliance-announce", "allianceAnnounce"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceAnnounce",
+      "rootName": "AllianceAnnouncePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounce/AllianceAnnounce.tsx"
+    },
+    {
+      "id": "alliance-create",
+      "aliases": ["alliance-create", "allianceCreate"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceCreate",
+      "rootName": "AllianceCreatePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceCreate/AllianceCreate.tsx"
+    },
+    {
+      "id": "alliance-join",
+      "aliases": ["alliance-join", "allianceJoin"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceJoin",
+      "rootName": "AllianceJoin",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceJoin/AllianceJoin.tsx"
+    },
+    {
+      "id": "alliance-member-settings",
+      "aliases": ["alliance-member-settings", "allianceMemberSettings"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceMemberSettings",
+      "rootName": "AllianceMemberSettingsPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettings/AllianceMemberSettings.tsx"
+    },
+    {
+      "id": "alliance-war",
+      "aliases": ["alliance-war", "allianceWar"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceWar",
+      "rootName": "AllianceWarPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceWar/AllianceWar.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },
@@ -241,9 +281,9 @@
       "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
     },
     {
-      "key": "BackpackTab",
-      "rootName": "BackpackTab",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackTab.tsx"
+      "key": "PanelTab",
+      "rootName": "PanelTab",
+      "source": "apps/client/src/ui-uniflex/components/tab/PanelTab.tsx"
     },
     {
       "key": "BackpackItemCard",
