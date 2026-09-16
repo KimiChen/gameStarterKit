@@ -4,7 +4,7 @@ import { CancelButton } from '../../components/button/CancelButton';
 import { theme } from '../../themes/active';
 
 export interface PreviewHomeParams {
-    readonly onNavigate: (target: 'prompt' | 'small-popup' | 'backpack' | 'mail' | 'settings' | 'character' | 'hero' | 'hero-detail' | 'hero-star-upgrade' | 'alliance' | 'alliance-announce' | 'alliance-create' | 'alliance-join') => void;
+    readonly onNavigate: (target: 'prompt' | 'small-popup' | 'backpack' | 'mail' | 'settings' | 'character' | 'hero' | 'hero-detail' | 'hero-star-upgrade' | 'alliance' | 'alliance-announce' | 'alliance-create' | 'alliance-join' | 'alliance-member-settings') => void;
 }
 
 /** Local preview router: keeps feature previews discoverable without coupling production navigation. */
@@ -48,6 +48,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('alliance-join')} style={{ width: 300, height: 72, backgroundColor: '#3d6b8a', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="加入联盟" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-member-settings')} style={{ width: 300, height: 72, backgroundColor: '#5a4a8a', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="成员设置" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
         </view>
     </view>;

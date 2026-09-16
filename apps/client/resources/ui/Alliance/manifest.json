@@ -166,6 +166,56 @@
       "sha256": "47dd0e9e1fa1401207aee063f8bcacfdc0a286426dd421f9736dec3e2c81c731"
     },
     {
+      "id": "ui/alliance/mset-card",
+      "kind": "image",
+      "file": "assets/alliance_mset_card.png",
+      "width": 52,
+      "height": 52,
+      "sha256": "ee7687369234acbe92ec8add94b11359ad336be70fd0888da3dfacace9e523d7",
+      "nineSlice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "ui/alliance/mset-fist",
+      "kind": "image",
+      "file": "assets/alliance_mset_fist.png",
+      "width": 51,
+      "height": 48,
+      "sha256": "94f548f2ed4b430392c829e51c684a317084e8a62562611f9f1b387b2f24355b"
+    },
+    {
+      "id": "ui/alliance/mset-header",
+      "kind": "image",
+      "file": "assets/alliance_mset_header.png",
+      "width": 44,
+      "height": 55,
+      "sha256": "8b4f29d18e80440d1f0bb22446d147d2e06c14e5362e5a3bd83d526a40084941",
+      "nineSlice": [
+        20,
+        0,
+        20,
+        0
+      ]
+    },
+    {
+      "id": "ui/alliance/mset-power-bg",
+      "kind": "image",
+      "file": "assets/alliance_mset_power_bg.png",
+      "width": 36,
+      "height": 37,
+      "sha256": "9ab5de9170aa35c435f060f46451b46e2e98ec6021d4102bb231896bdb294f29",
+      "nineSlice": [
+        16,
+        0,
+        16,
+        0
+      ]
+    },
+    {
       "id": "ui/alliance/nation-flag",
       "kind": "image",
       "file": "assets/alliance_nation_flag.png",

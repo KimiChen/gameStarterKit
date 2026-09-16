@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, AllianceMemberSettings, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -144,6 +144,14 @@ try {
             onAction: (id) => console.info("[UniFlex AllianceJoin] action", id),
         });
         console.info("[UniFlex AllianceJoin] ready");
+    } else if (screen === "alliance-member-settings" || route === "alliance-member-settings") {
+        document.title = "UniFlex Alliance Member Settings";
+        await runtime.start(AllianceMemberSettings, {
+            onClose: backToPreview,
+            onToggleR2: (enabled) => console.info("[UniFlex AllianceMemberSettings] r2", enabled),
+            onToggleR3: (enabled) => console.info("[UniFlex AllianceMemberSettings] r3", enabled),
+        });
+        console.info("[UniFlex AllianceMemberSettings] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",
