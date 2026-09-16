@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceCreate, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceCreate, AllianceJoin, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, PreviewHome, Prompt, Settings, SmallPopup, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
@@ -134,6 +134,16 @@ try {
             onChangeBanner: () => console.info("[UniFlex AllianceCreate] change-banner"),
         });
         console.info("[UniFlex AllianceCreate] ready");
+    } else if (screen === "alliance-join" || route === "alliance-join") {
+        document.title = "UniFlex Alliance Join";
+        await runtime.start(AllianceJoin, {
+            onBack: backToPreview,
+            onSearch: (query) => console.info("[UniFlex AllianceJoin] search", query),
+            onCreate: () => console.info("[UniFlex AllianceJoin] create"),
+            onJoin: (id) => console.info("[UniFlex AllianceJoin] join", id),
+            onAction: (id) => console.info("[UniFlex AllianceJoin] action", id),
+        });
+        console.info("[UniFlex AllianceJoin] ready");
     } else {
     const logic = new ConfirmLogic({
         title: "UniFlex Confirm",
