@@ -10,6 +10,8 @@ export interface PopupFrameProps {
     readonly height?: number;
     readonly titleColor?: string;
     readonly titleOutline?: string;
+    readonly titleOutlineWidth?: number;
+    readonly titleFontSize?: number;
     readonly onClose?: () => void;
     readonly children?: unknown;
 }
@@ -26,9 +28,9 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => (
                     right: p.kind === 'settings' || p.kind === 'profile' ? 120 : 90,
                     top: p.kind === 'settings' || p.kind === 'profile' ? 11 : 18,
                     height: p.kind === 'settings' || p.kind === 'profile' ? 64 : 58,
-                    font: fontRef('fonts/regular', 400), fontSize: 40, bold: true,
+                    font: fontRef('fonts/regular', 400), fontSize: p.titleFontSize ?? 40, bold: true,
                     color: p.titleColor ?? '#ffffff', outlineColor: p.titleOutline ?? '#593d84',
-                    outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+                    outlineWidth: p.titleOutlineWidth ?? 2, horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
             <view name="PopupFrame/Content"
                 style={{ position: 'absolute', left: p.kind === 'settings' || p.kind === 'profile' ? 0 : 40,
                     right: p.kind === 'settings' || p.kind === 'profile' ? 0 : 40,
