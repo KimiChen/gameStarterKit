@@ -1,6 +1,6 @@
 # apps/art/uniflex — UniFlex 设计师 PSD
 
-原稿功能页由 CLI 导出为分层 PSD，设计师只改图、大小和位置。导入按图层身份 overlay 回 UniFlex，不摊平组件结构。
+原稿功能页由 CLI 导出为分层 PSD，设计师改图、大小、位置和文字填色/描边/字号。导入按图层身份 overlay 回 UniFlex，不摊平组件结构。
 
 当前 `catalog.json` 的 `applyTarget` 是 `restored`：PSD 改动写回 `*Restored` 页，不覆盖原稿。流程稳定后再切 `original`。
 

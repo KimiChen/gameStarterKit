@@ -12,6 +12,10 @@ export interface SettingsMenuButtonProps {
     readonly iconTop?: number;
     readonly iconWidth?: number;
     readonly iconHeight?: number;
+    readonly labelColor?: string;
+    readonly labelOutline?: string;
+    readonly labelOutlineWidth?: number;
+    readonly labelFontSize?: number;
     readonly onSelect?: (id: string) => void;
 }
 
@@ -25,7 +29,9 @@ export const SettingsMenuButton = defineComponent<SettingsMenuButtonProps>((p) =
                 width: p.iconWidth ?? 54, height: p.iconHeight ?? 54 }} />
         <text name="SettingsMenuButton/Label" value={p.label}
             style={{ position: 'absolute', left: 128, top: 30, width: 184, height: 54,
-                font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true,
+                font: fontRef('fonts/regular', 700), fontSize: p.labelFontSize ?? 28,
+                color: p.labelColor ?? '#3F3254', bold: true,
+                outlineColor: p.labelOutline, outlineWidth: p.labelOutlineWidth ?? 0,
                 horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
     </view>
 ));

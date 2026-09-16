@@ -42,7 +42,7 @@ export const SettingsRestored = defineView<SettingsRestoredParams | void>({ zInd
         <PopupFrame title={params.title ?? '设置'} kind="settings" width={708} height={992} onClose={params.onClose} titleOutline={"#19a112"}>
             <view name="SettingsRestored/Content" style={{ width: '100%', height: '100%' }}>
                 <For each={items} key="id">
-                    {(item) => <SettingsMenuButton id={item.id} label={item.label} left={item.left} top={item.top} onSelect={params.onSelect} icon={item.icon} iconLeft={item.iconLeft} iconTop={item.iconTop} iconWidth={item.iconWidth} iconHeight={item.iconHeight} />}
+                    {(item) => <SettingsMenuButton id={item.id} label={item.label} left={item.left} top={item.top} onSelect={params.onSelect} icon={item.icon} iconLeft={item.iconLeft} iconTop={item.iconTop} iconWidth={item.iconWidth} iconHeight={item.iconHeight}/>}
                 </For>
                 <image source={imageRef('ui/settings/divider')}
                     style={{ position: 'absolute', left: 23, top: 537, width: 662, height: 3, sizeMode: 'sliced' }} />
