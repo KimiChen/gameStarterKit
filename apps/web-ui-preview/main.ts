@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI, AllianceAnnounce, AllianceCreate } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI, AllianceAnnounce, AllianceCreate, AllianceJoin } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -265,6 +265,18 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onChangeBanner: () => console.info("[UniFlex AllianceCreate] change-banner"),
             });
             console.info("[UniFlex AllianceCreate] ready");
+            return;
+        }
+        case "alliance-join": {
+            document.title = "UniFlex Alliance Join";
+            await runtime.start(AllianceJoin, {
+                onBack: backToPreview,
+                onSearch: (query) => console.info("[UniFlex AllianceJoin] search", query),
+                onCreate: () => console.info("[UniFlex AllianceJoin] create"),
+                onJoin: (id) => console.info("[UniFlex AllianceJoin] join", id),
+                onAction: (id) => console.info("[UniFlex AllianceJoin] action", id),
+            });
+            console.info("[UniFlex AllianceJoin] ready");
             return;
         }
         default:

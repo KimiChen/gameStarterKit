@@ -16,7 +16,8 @@ export type PreviewHomeTarget =
     | 'alliance'
     | 'restored-home'
     | 'alliance-announce'
-    | 'alliance-create';
+    | 'alliance-create'
+    | 'alliance-join';
 
 export interface PreviewHomeParams {
     readonly onNavigate: (target: PreviewHomeTarget) => void;
@@ -63,6 +64,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('alliance-create')} style={{ width: 300, height: 72, backgroundColor: '#2f6b62', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="创建联盟" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-join')} style={{ width: 300, height: 72, backgroundColor: '#3d6b8a', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="加入联盟" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
         </view>
     </view>;
