@@ -218,6 +218,36 @@
       ]
     },
     {
+      "id": "ui/alliance/board-input",
+      "kind": "image",
+      "file": "assets/alliance_board_input.png",
+      "width": 26,
+      "height": 30,
+      "sha256": "7698edeac44df3bd87bd2f6353eb082976b487c7dcd950d8b26e77e89e5d628d",
+      "nineSlice": [
+        11,
+        13,
+        11,
+        13
+      ]
+    },
+    {
+      "id": "ui/alliance/board-emoji",
+      "kind": "image",
+      "file": "assets/alliance_board_emoji.png",
+      "width": 59,
+      "height": 60,
+      "sha256": "54b7ec7e82365f01726ac72c7f27fdcab59e3aa80ded81a536268dc5c1dfcf3b"
+    },
+    {
+      "id": "ui/alliance/board-send",
+      "kind": "image",
+      "file": "assets/alliance_board_send.png",
+      "width": 154,
+      "height": 77,
+      "sha256": "217378b22f5692cef5db99298c429b38c49a666014099cfc7d5bd0e23944b174"
+    },
+    {
       "id": "ui/alliance/mset-card",
       "kind": "image",
       "file": "assets/alliance_mset_card.png",
