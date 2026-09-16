@@ -22,6 +22,7 @@ export type PreviewHomeTarget =
     | 'alliance-territory'
     | 'alliance-march-boost'
     | 'alliance-invite'
+    | 'alliance-gift'
     | 'restored-home';
 
 export interface PreviewHomeParams {
@@ -84,6 +85,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('alliance-invite')} style={{ width: 300, height: 72, backgroundColor: '#5a4a72', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="邀请成员" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-gift')} style={{ width: 300, height: 72, backgroundColor: '#6a4a3d', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="联盟礼物" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <view interaction="press" onClick={() => go('restored-home')} style={{ width: 300, height: 90, backgroundColor: '#1e4d6b', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="还原 UI 预览" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />

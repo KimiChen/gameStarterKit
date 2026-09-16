@@ -186,6 +186,14 @@
       "source": "apps/client/src/ui-uniflex/pages/AllianceInvite/AllianceInvite.tsx"
     },
     {
+      "id": "alliance-gift",
+      "aliases": ["alliance-gift", "allianceGift"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceGift",
+      "rootName": "AllianceGiftPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceGift/AllianceGift.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },
