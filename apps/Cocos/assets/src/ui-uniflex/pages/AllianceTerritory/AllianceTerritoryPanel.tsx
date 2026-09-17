@@ -1,5 +1,6 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { BackButton } from '../../components/chrome/BackButton';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceTerritoryFortPanel } from './AllianceTerritoryFortPanel';
 import { AllianceTerritoryLandPanel } from './AllianceTerritoryLandPanel';
@@ -56,10 +57,7 @@ export const AllianceTerritoryPanel = defineComponent<AllianceTerritoryPanelProp
 
             <image source={imageRef('ui/alliance/flag-bottom')}
                 style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="AllianceTerritory/Back" interaction="press" onClick={back}
-                style={{ position: 'absolute', left: 16, top: 1399, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <BackButton left={16} top={1399} onClick={back} />
         </view>
     );
 });

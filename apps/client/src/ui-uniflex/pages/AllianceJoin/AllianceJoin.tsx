@@ -1,5 +1,6 @@
 import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../kits/uniflex/api/core/index';
+import { BackButton } from '../../components/chrome/BackButton';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { AllianceCreatePanel } from '../AllianceCreate/AllianceCreatePanel';
 import { AllianceJoinRow } from './AllianceJoinRow';
@@ -104,10 +105,7 @@ export const AllianceJoin = defineView<AllianceJoinParams | void>({ zIndex: 'scr
 
             <image source={imageRef('ui/mail/footer')}
                 style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="AllianceJoin/Back" interaction="press" onClick={() => params.onBack?.()}
-                style={{ position: 'absolute', left: 13, top: 1396, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <BackButton top={1396} onClick={() => params.onBack?.()} />
 
             <AllianceCreatePanel visible={createOpen}
                 onClose={() => setCreateOpen(false)}

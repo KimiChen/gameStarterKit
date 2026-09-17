@@ -2,6 +2,7 @@ import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../components/badge/NotificationBadge';
 import { ActionButton } from '../../components/button/ActionButton';
+import { BackButton } from '../../components/chrome/BackButton';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { MailBattleRow, type MailBattleRowProps } from './MailBattleRow';
@@ -127,9 +128,7 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
             <image source={imageRef('ui/mail/count-icon')} style={{ position: 'absolute', left: 273, top: 1171, width: 30, height: 32 }} />
             <text value={`邮件数:${params.countText ?? `${items.length}/200`}`} style={{ position: 'absolute', left: 300, top: 1166, width: 184, height: 40, font: fontRef('fonts/regular', 700), fontSize: 24, color: '#584871', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
             <image source={imageRef('ui/mail/footer')} style={{ position: 'absolute', left: 0, top: 1225, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view interaction="press" onClick={() => params.onBack?.()} style={{ position: 'absolute', left: 13, top: 1252, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <BackButton top={1252} onClick={() => params.onBack?.()} />
             <view style={{ position: 'absolute', left: 111.125, top: 1229.25, width: 255, height: 102, scale: 0.75 }}>
                 <ActionButton label="删除已读" source={redButton} outlineColor="#6A2A28" onClick={deleteRead} />
             </view>
