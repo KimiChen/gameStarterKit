@@ -34,7 +34,7 @@ const page = {
 const registered = [
     { key: 'PopupFrame', rootName: 'PopupFrame', source: 'apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx' },
     { key: 'ActionButton', rootName: 'ActionButton', source: 'apps/client/src/ui-uniflex/components/button/ActionButton.tsx' },
-    { key: 'SettingsMenuButton', rootName: 'SettingsMenuButton', source: 'apps/client/src/ui-uniflex/pages/Settings/SettingsMenuButton.tsx' },
+    { key: 'WideMenuButton', rootName: 'WideMenuButton', source: 'apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx' },
 ];
 
 test('generic declarations bind the page root and every registered instance by author path', () => {
@@ -48,17 +48,17 @@ test('generic declarations bind the page root and every registered instance by a
 test('duplicate sibling component roots stay unique without inferred group names', () => {
     const nodes = [
         { id: 1, parent: null, name: 'Settings/Content', kind: 'view' },
-        { id: 2, parent: 1, name: 'SettingsMenuButton', kind: 'view' },
-        { id: 3, parent: 1, name: 'SettingsMenuButton', kind: 'view' },
+        { id: 2, parent: 1, name: 'WideMenuButton', kind: 'view' },
+        { id: 3, parent: 1, name: 'WideMenuButton', kind: 'view' },
     ];
     const contract = declarePsdOwnership(nodes, {
         key: 'Settings', source: 'apps/client/src/ui-uniflex/pages/Settings/Settings.tsx',
         rootName: 'Settings/Content',
     }, registered);
-    assert.deepEqual(contract.instances.filter((instance) => instance.definitionKey === 'SettingsMenuButton')
+    assert.deepEqual(contract.instances.filter((instance) => instance.definitionKey === 'WideMenuButton')
         .map((instance) => instance.key).sort(), [
-        'SettingsMenuButton:Settings/Content/SettingsMenuButton:0',
-        'SettingsMenuButton:Settings/Content/SettingsMenuButton:1',
+        'WideMenuButton:Settings/Content/WideMenuButton:0',
+        'WideMenuButton:Settings/Content/WideMenuButton:1',
     ]);
 });
 

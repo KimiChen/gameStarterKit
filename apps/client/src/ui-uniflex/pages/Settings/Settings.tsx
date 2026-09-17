@@ -1,7 +1,7 @@
 import { defineView, For } from '@uniflex/compiler';
 import { imageRef } from '../../../kits/uniflex/api/core/index';
+import { WideMenuButton } from '../../components/button/WideMenuButton';
 import { PopupFrame } from '../../components/popup/PopupFrame';
-import { SettingsMenuButton } from './SettingsMenuButton';
 
 export interface SettingsMenuItem {
     readonly id: string;
@@ -38,6 +38,8 @@ const PANEL_HEIGHT = 992;
 export const Settings = defineView<SettingsParams | void>({ zIndex: 'window' }, (context) => {
     const params = context.params ?? {};
     const items = params.items ?? defaultItems;
+    const buttonBg = imageRef('ui/settings/button');
+    const gear = imageRef('ui/settings/gear');
     return (
         <view name="SettingsPage" style={{ width: 750, height: 1334 }}>
             <PopupFrame title={params.title ?? '设置'} kind="settings" left={PANEL_LEFT} top={PANEL_TOP}
@@ -45,7 +47,11 @@ export const Settings = defineView<SettingsParams | void>({ zIndex: 'window' }, 
             <view name="Settings/Content"
                 style={{ position: 'absolute', left: PANEL_LEFT, top: PANEL_TOP, width: PANEL_WIDTH, height: PANEL_HEIGHT }}>
                 <For each={items} key="id">
-                    {(item) => <SettingsMenuButton id={item.id} label={item.label} left={item.left} top={item.top} onSelect={params.onSelect} />}
+                    {(item) => <WideMenuButton background={buttonBg} icon={gear}
+                        iconWidth={54} iconHeight={54}
+                        label={item.label} left={item.left} top={item.top}
+                        labelLeft={128} labelTop={30} labelWidth={184} labelHeight={54}
+                        onClick={() => params.onSelect?.(item.id)} />}
                 </For>
                 <image source={imageRef('ui/settings/divider')}
                     style={{ position: 'absolute', left: 23, top: 537, width: 662, height: 3, sizeMode: 'sliced' }} />

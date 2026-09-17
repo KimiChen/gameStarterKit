@@ -1,7 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { WideMenuButton } from '../../components/button/WideMenuButton';
 import { AllianceInfoHeader } from './AllianceInfoHeader';
-import { AllianceMenuButton } from './AllianceMenuButton';
 
 export interface AllianceHomePanelProps {
     readonly visible?: boolean;
@@ -30,6 +30,7 @@ export const AllianceHomePanel = defineComponent<AllianceHomePanelProps>((p) => 
     const iconTerritory = imageRef('ui/alliance/icon-territory');
     const iconShop = imageRef('ui/alliance/icon-shop');
     const iconGather = imageRef('ui/alliance/icon-gather');
+    const menuBg = imageRef('ui/alliance/button');
     return (
     <view name="AllianceHome" visible={p.visible !== false}
         style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1369 }}>
@@ -61,19 +62,19 @@ export const AllianceHomePanel = defineComponent<AllianceHomePanelProps>((p) => 
         <text value={p.announceLines?.[2] ?? defaultLines[2]}
             style={{ position: 'absolute', left: 48, top: 696, width: 654, height: 32,
                 font: fontRef('fonts/regular', 700), fontSize: 22, color: '#837A91', bold: true, verticalAlign: 'center', overflow: 'shrink' }} />
-        <AllianceMenuButton left={32} top={776} label="战争" icon={iconWar}
+        <WideMenuButton background={menuBg} left={32} top={776} label="战争" icon={iconWar}
             iconWidth={55} iconHeight={54} onClick={() => p.onAction?.('open_war')} />
-        <AllianceMenuButton left={392} top={776} label="联盟帮助" icon={iconHelp}
+        <WideMenuButton background={menuBg} left={392} top={776} label="联盟帮助" icon={iconHelp}
             iconWidth={69} iconHeight={56} onClick={() => p.onAction?.('open_help')} />
-        <AllianceMenuButton left={32} top={925} label="礼物" icon={iconGift}
+        <WideMenuButton background={menuBg} left={32} top={925} label="礼物" icon={iconGift}
             iconWidth={52} iconHeight={56} onClick={() => p.onAction?.('open_gift')} />
-        <AllianceMenuButton left={392} top={925} label="科技" icon={iconTech}
+        <WideMenuButton background={menuBg} left={392} top={925} label="科技" icon={iconTech}
             iconWidth={59} iconHeight={58} onClick={() => p.onAction?.('open_tech')} />
-        <AllianceMenuButton left={32} top={1075} label="领地" icon={iconTerritory}
+        <WideMenuButton background={menuBg} left={32} top={1075} label="领地" icon={iconTerritory}
             iconWidth={58} iconHeight={58} onClick={() => p.onAction?.('open_territory')} />
-        <AllianceMenuButton left={392} top={1075} label="商店" icon={iconShop}
+        <WideMenuButton background={menuBg} left={392} top={1075} label="商店" icon={iconShop}
             iconWidth={65} iconHeight={59} onClick={() => p.onAction?.('open_shop')} />
-        <AllianceMenuButton left={32} top={1224} label="召集" icon={iconGather}
+        <WideMenuButton background={menuBg} left={32} top={1224} label="召集" icon={iconGather}
             iconWidth={71} iconHeight={54} onClick={() => p.onAction?.('open_gather')} />
     </view>
     );
