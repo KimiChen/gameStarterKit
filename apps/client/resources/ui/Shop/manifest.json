@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/shop/getitem-icon",
+      "kind": "image",
+      "file": "assets/shop_getitem_icon.png",
+      "width": 129,
+      "height": 107,
+      "sha256": "cd5896c45e8fda74b217d5a6bf78f9e2f8ad8866afd01a80edad81b82028ea0f"
+    },
+    {
+      "id": "ui/shop/getitem-pay-gem",
+      "kind": "image",
+      "file": "assets/shop_getitem_pay_gem.png",
+      "width": 64,
+      "height": 54,
+      "sha256": "3e6c16ef2bbe57798dff4f78a08a282cbcaaba09c7a13a8bf896283e19dd0172"
+    },
+    {
+      "id": "ui/shop/getitem-max",
+      "kind": "image",
+      "file": "assets/shop_getitem_max.png",
+      "width": 76,
+      "height": 85,
+      "sha256": "5337df1fa2e5f97c873710a403a4b7a18e3465315be72f506a9c381734f259f3"
+    },
+    {
+      "id": "ui/shop/getitem-thumb",
+      "kind": "image",
+      "file": "assets/shop_getitem_thumb.png",
+      "width": 28,
+      "height": 30,
+      "sha256": "91828f1cfc197086034b43ba396228ccb1e89fa40ef1231894734bb1cd78b90c",
+      "nineSlice": [12, 13, 12, 13]
+    }
+  ]
+}
