@@ -127,6 +127,12 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
     const crossGap = 19;
     const showRestock = !isGem;
     const showMedal = isAlliance;
+    const diamondIcon = imageRef('ui/backpack/resource-diamond');
+    const medalIcon = imageRef('ui/shop/res-medal');
+    const currencyIcon = showMedal ? medalIcon : diamondIcon;
+    const currencyLeft = showMedal ? 6 : 8;
+    const currencyTop = showMedal ? 9 : 6;
+    const currencyWidth = showMedal ? 40 : 37;
     const source = useMemo(() => new ArrayVirtualListDataSource(cards), [cards]);
     const list = useRef<VirtualCollectionController | null>(null);
     useEffect(() => () => source.dispose(), [source]);
@@ -170,10 +176,8 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
                 style={{ position: 'absolute', left: 597, top: 180, width: 153, height: 45 }}>
                 <image source={imageRef('ui/backpack/resource-bg')}
                     style={{ position: 'absolute', left: 11, top: 7, width: 138, height: 32, sizeMode: 'sliced' }} />
-                <image visible={!showMedal} source={imageRef('ui/backpack/resource-diamond')}
-                    style={{ position: 'absolute', left: 8, top: 6, width: 37, height: 31 }} />
-                <image visible={showMedal} source={imageRef('ui/shop/res-medal')}
-                    style={{ position: 'absolute', left: 6, top: 9, width: 40, height: 31 }} />
+                <image source={currencyIcon}
+                    style={{ position: 'absolute', left: currencyLeft, top: currencyTop, width: currencyWidth, height: 31 }} />
                 <image source={imageRef('ui/shop/res-plus')}
                     style={{ position: 'absolute', left: 27, top: 19, width: 20, height: 21 }} />
                 <text value={p.currency ?? '999.99k'}

@@ -23,7 +23,12 @@ export interface AllianceRankGroupProps {
 export const HEADER_HEIGHT = 65;
 export const ROW_STEP = 84;
 
-export const AllianceRankGroup = defineComponent<AllianceRankGroupProps>((p) => (
+export const AllianceRankGroup = defineComponent<AllianceRankGroupProps>((p) => {
+    const expanded = p.expanded;
+    const arrowUp = imageRef('ui/alliance/rank-arrow');
+    const arrowDown = imageRef('ui/alliance/rank-arrow-down');
+    const arrow = expanded ? arrowUp : arrowDown;
+    return (
     <view name="AllianceRankGroup" style={{ width: 703, height: p.height }}>
         <view visible={p.isHeader} interaction="press" onClick={() => p.onToggle?.()}
             style={{ position: 'absolute', left: 6, top: 0, width: 690, height: HEADER_HEIGHT }}>
@@ -35,9 +40,7 @@ export const AllianceRankGroup = defineComponent<AllianceRankGroupProps>((p) => 
             <text value={p.count}
                 style={{ position: 'absolute', left: 58, top: 0, width: 120, height: HEADER_HEIGHT,
                     font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true, verticalAlign: 'center' }} />
-            <image visible={p.expanded} source={imageRef('ui/alliance/rank-arrow')}
-                style={{ position: 'absolute', left: 632, top: 20, width: 40, height: 26 }} />
-            <image visible={!p.expanded} source={imageRef('ui/alliance/rank-arrow-down')}
+            <image source={arrow}
                 style={{ position: 'absolute', left: 632, top: 20, width: 40, height: 26 }} />
         </view>
         <view visible={!p.isHeader}
@@ -45,4 +48,5 @@ export const AllianceRankGroup = defineComponent<AllianceRankGroupProps>((p) => 
             <AllianceMemberRow power={p.power} combat={p.combat} status={p.status} online={p.online} />
         </view>
     </view>
-));
+    );
+});

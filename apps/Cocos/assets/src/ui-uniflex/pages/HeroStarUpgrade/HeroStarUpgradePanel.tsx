@@ -46,6 +46,13 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
     const required = p.required ?? 45;
     const fillWidth = fragmentFillWidth(owned, required);
     const rows = [334, 389, 444, 499] as const;
+    const starEmpty = imageRef('ui/star-upgrade/star-empty');
+    const starFull = imageRef('ui/star-upgrade/star-full');
+    const star1 = stars >= 1 ? starFull : starEmpty;
+    const star2 = stars >= 2 ? starFull : starEmpty;
+    const star3 = stars >= 3 ? starFull : starEmpty;
+    const star4 = stars >= 4 ? starFull : starEmpty;
+    const star5 = stars >= 5 ? starFull : starEmpty;
     return (
         <view name="HeroStarUpgrade" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624,
@@ -60,25 +67,15 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
                         outlineColor: '#593D84', outlineWidth: 2,
                         horizontalAlign: 'center', verticalAlign: 'center' }} />
                 <CloseButton onClick={p.onClose} />
-                <image visible={stars < 1} source={imageRef('ui/star-upgrade/star-empty')}
+                <image source={star1}
                     style={{ position: 'absolute', left: starSlots[0], top: 123, width: 68, height: 64 }} />
-                <image visible={stars >= 1} source={imageRef('ui/star-upgrade/star-full')}
-                    style={{ position: 'absolute', left: starSlots[0], top: 123, width: 68, height: 64 }} />
-                <image visible={stars < 2} source={imageRef('ui/star-upgrade/star-empty')}
+                <image source={star2}
                     style={{ position: 'absolute', left: starSlots[1], top: 123, width: 68, height: 64 }} />
-                <image visible={stars >= 2} source={imageRef('ui/star-upgrade/star-full')}
-                    style={{ position: 'absolute', left: starSlots[1], top: 123, width: 68, height: 64 }} />
-                <image visible={stars < 3} source={imageRef('ui/star-upgrade/star-empty')}
+                <image source={star3}
                     style={{ position: 'absolute', left: starSlots[2], top: 123, width: 68, height: 64 }} />
-                <image visible={stars >= 3} source={imageRef('ui/star-upgrade/star-full')}
-                    style={{ position: 'absolute', left: starSlots[2], top: 123, width: 68, height: 64 }} />
-                <image visible={stars < 4} source={imageRef('ui/star-upgrade/star-empty')}
+                <image source={star4}
                     style={{ position: 'absolute', left: starSlots[3], top: 123, width: 68, height: 64 }} />
-                <image visible={stars >= 4} source={imageRef('ui/star-upgrade/star-full')}
-                    style={{ position: 'absolute', left: starSlots[3], top: 123, width: 68, height: 64 }} />
-                <image visible={stars < 5} source={imageRef('ui/star-upgrade/star-empty')}
-                    style={{ position: 'absolute', left: starSlots[4], top: 123, width: 68, height: 64 }} />
-                <image visible={stars >= 5} source={imageRef('ui/star-upgrade/star-full')}
+                <image source={star5}
                     style={{ position: 'absolute', left: starSlots[4], top: 123, width: 68, height: 64 }} />
                 <image source={imageRef('ui/star-upgrade/power')}
                     style={{ position: 'absolute', left: 120, top: 219, width: 469, height: 55, sizeMode: 'sliced' }} />

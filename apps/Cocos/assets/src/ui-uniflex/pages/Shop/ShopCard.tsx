@@ -56,9 +56,13 @@ export const ShopCard = defineComponent<ShopCardProps>((p) => {
     const buybarHeight = 63;
     const payGap = 4;
     const priceWidth = Math.max(36, goods.price.length * 20);
+    const gemPayIcon = imageRef('ui/shop/getitem-icon');
+    const medalPayIcon = imageRef('ui/shop/price-medal');
+    const payIcon = isGemPay ? gemPayIcon : medalPayIcon;
+    const payIconWidth = isGemPay ? 42 : 44;
+    const payIconHeight = isGemPay ? 36 : 35;
     const lockText = goods.lock ?? '';
-    const showGemPay = buyable && isGemPay;
-    const showMedalPay = buyable && !isGemPay;
+    const showPay = buyable;
     return (
         <view name="ShopCard" interaction="press" onClick={() => p.onClick?.()}
             style={{ position: 'relative', width: width, height: height }}>
@@ -71,21 +75,11 @@ export const ShopCard = defineComponent<ShopCardProps>((p) => {
                 style={{ position: 'absolute', left: 20, top: 188, width: 190, height: 36,
                     font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true,
                     horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-            <view visible={showGemPay}
+            <view visible={showPay}
                 style={{ position: 'absolute', left: 0, top: buybarTop, width: width, height: buybarHeight,
                     flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: payGap }}>
-                <image source={imageRef('ui/shop/getitem-icon')}
-                    style={{ width: 42, height: 36 }} />
-                <text value={goods.price}
-                    style={{ width: priceWidth, height: 40,
-                        font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,
-                        verticalAlign: 'center', overflow: 'shrink' }} />
-            </view>
-            <view visible={showMedalPay}
-                style={{ position: 'absolute', left: 0, top: buybarTop, width: width, height: buybarHeight,
-                    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: payGap }}>
-                <image source={imageRef('ui/shop/price-medal')}
-                    style={{ width: 44, height: 35 }} />
+                <image source={payIcon}
+                    style={{ width: payIconWidth, height: payIconHeight }} />
                 <text value={goods.price}
                     style={{ width: priceWidth, height: 40,
                         font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,

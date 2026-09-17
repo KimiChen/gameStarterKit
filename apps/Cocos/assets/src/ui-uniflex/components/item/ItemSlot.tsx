@@ -35,7 +35,7 @@ export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
             <image source={icon}
                 style={{ position: 'absolute', left: 13, top: 24, width: 129, height: 107 }} />
             <text visible={showCount} value={count}
-                style={{ position: 'absolute', left: 87, top: 111, width: 57, height: 42,
+                style={{ position: 'absolute', left: 87, top: 107, width: 57, height: 42,
                     font: fontRef('fonts/regular', 700), fontSize: 32, color: '#FFFFFF', bold: true,
                     outlineColor: '#000000', outlineWidth: 2,
                     horizontalAlign: 'right', verticalAlign: 'center', overflow: 'shrink' }} />
