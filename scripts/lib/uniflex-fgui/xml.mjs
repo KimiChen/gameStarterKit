@@ -1,5 +1,10 @@
-import { toFguiXmlColor } from "./bytes.mjs";
+import { parseCssColor, toFguiXmlColor } from "./bytes.mjs";
 import { BUTTON_CONTROLLER_PAGES } from "./constants.mjs";
+
+function cssToRgbInt(css) {
+    const { r, g, b } = parseCssColor(css);
+    return String((r << 16) + (g << 8) + b);
+}
 
 export function escapeXml(value) {
     return String(value ?? "")
@@ -96,6 +101,9 @@ function displayItemXml(child, packages, indent) {
         if (child.button.icon) button += attr("icon", child.button.icon);
         button += `/>`;
         inner.push(button);
+        if (child.button.outlineColor) {
+            inner.push(`${indent}  <property target="title" propertyId="3" value="${escapeXml(cssToRgbInt(child.button.outlineColor))}"/>`);
+        }
     }
     const body = (tag, extra = "", selfClosing = !inner.length) => {
         if (selfClosing) return `${indent}<${tag}${common}${extra}/>`;
@@ -110,7 +118,8 @@ function displayItemXml(child, packages, indent) {
     }
     if (child.kind === "text") {
         return body("text",
-            attr("fontSize", child.fontSize)
+            attr("font", child.font)
+            + attr("fontSize", child.fontSize)
             + attr("color", toFguiXmlColor(child.color ?? "#ffffff"))
             + attr("align", child.align === "center" ? "center" : child.align === "right" ? "right" : undefined)
             + attr("vAlign", child.vAlign === "middle" || child.vAlign === "center" ? "middle" : child.vAlign === "bottom" ? "bottom" : undefined)

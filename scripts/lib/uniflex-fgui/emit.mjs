@@ -6,6 +6,7 @@ import { publishPackage } from "./publish-dom.mjs";
 import { buildProjectIR } from "./ir.mjs";
 import { loadImageCatalog } from "./resources.mjs";
 import { extractFairyguiDom } from "./vendor.mjs";
+import { PREVIEW_FONT_CANDIDATES, PREVIEW_FONT_FAMILY } from "./constants.mjs";
 
 export async function exportFgui({
     snapshot, out, root, screen, catalog, hostPlan, images,
@@ -62,7 +63,9 @@ async function writePreview(output, ir, root) {
     } finally {
         runtime.cleanup();
     }
-    await writeFile(join(preview, "index.html"), previewHtml(ir));
+    const font = previewFontPath(root);
+    if (font) await copyBinary(font, join(preview, "regular.ttf"));
+    await writeFile(join(preview, "index.html"), previewHtml(ir, { font: Boolean(font) }));
 }
 
 function loadDefaultHostPlan(root, screen) {
@@ -82,31 +85,63 @@ async function copyBinary(from, to) {
     await writeFile(to, await readFile(from));
 }
 
-function previewHtml(ir) {
+function previewFontPath(root) {
+    return PREVIEW_FONT_CANDIDATES.map((relative) => join(root, relative)).find((file) => existsSync(file));
+}
+
+function previewHtml(ir, { font } = {}) {
     const page = ir.packages[1];
     const common = ir.packages[0];
     const component = page.components.find((item) => item.exported) ?? page.components.at(-1);
+    const width = ir.canvas.width;
+    const height = ir.canvas.height;
+    const face = PREVIEW_FONT_FAMILY;
     return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>UniFlex FairyGUI preview (candidate) — ${escapeHtml(component.name)}</title>
   <style>
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #222; color: #eee; font: 14px/1.4 sans-serif; }
-    #meta { position: relative; z-index: 2; padding: 8px 12px; pointer-events: none; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #101318; }
+    #ui { position: absolute; left: 50%; top: 50%; width: ${width}px; height: ${height}px; transform-origin: center; overflow: hidden; }
+    .fgui-text { padding: 0 !important; paint-order: stroke fill; }
+    ${font ? `@font-face { font-family: ${face}; src: url("./regular.ttf") format("truetype"); font-weight: 400; font-style: normal; }` : ""}
   </style>
 </head>
 <body>
-  <div id="meta">候选 FairyGUI 工程 DOM 预览（官方 fairygui-dom）。不是旧 Cocos 发布物。</div>
+  <main id="ui"></main>
   <script src="./fairygui.js"></script>
   <script type="module">
     const fgui = window.fgui;
     if (!fgui) throw new Error("fairygui-dom failed to load");
+    const canvas = { width: ${width}, height: ${height} };
+    const host = document.getElementById("ui");
+    let groot;
+    const resize = () => {
+      const scale = Math.min(innerWidth / canvas.width, innerHeight / canvas.height);
+      host.style.transform = \`translate(-50%, -50%) scale(\${scale})\`;
+      groot?.setSize(canvas.width, canvas.height);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    ${font ? `fgui.UIConfig.defaultFont = "${face}";
+    await document.fonts.load("40px ${face}");
+    await document.fonts.ready;` : ""}
     await fgui.UIPackage.loadPackage("./${common.name}");
     await fgui.UIPackage.loadPackage("./${page.name}");
     const view = fgui.UIPackage.createObject("${page.name}", "${component.name}");
     if (!view) throw new Error("createObject failed");
-    fgui.GRoot.inst.addChild(view);
+    view.setSize(canvas.width, canvas.height);
+    groot = fgui.GRoot.inst;
+    groot.addChild(view);
+    host.appendChild(groot.element);
+    groot.setSize(canvas.width, canvas.height);
+    const relayout = (obj) => {
+      obj?.element?.applyText?.();
+      if (obj?.numChildren) for (let i = 0; i < obj.numChildren; i++) relayout(obj.getChildAt(i));
+    };
+    relayout(view);
     window.__FGUI_PREVIEW__ = { view, packageName: "${page.name}", componentName: "${component.name}" };
     document.documentElement.dataset.fguiReady = "true";
   </script>
