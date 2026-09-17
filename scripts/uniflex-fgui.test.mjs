@@ -204,6 +204,209 @@ test("IR rejects a non-snapshot payload", () => {
     assert.throws(() => buildProjectIR({ kind: "nope" }), /uniflex-design-snapshot/);
 });
 
+test("parent-local inspect rects become FairyGUI component-space xy", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-local-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "prompt",
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
+                node(3, 1, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
+                node(4, 3, "PopupBackground", "view", rect(0, 0, 708, 375)),
+                node(5, 4, "", "image", rect(0, 0, 708, 375), { resourceId: "ui/popup/prompt" }),
+                node(6, 3, "PopupFrame/Title", "text", rect(90, 18, 528, 58), { value: "创建角色" }),
+                node(7, 3, "PopupFrame/Content", "view", rect(40, 108, 628, 229)),
+                node(8, 7, "Prompt/Content", "view", rect(0, 0, 628, 229)),
+                node(9, 8, "Prompt/Message", "text", rect(0, 0, 628, 104), { value: "在该服务器创建1名新角色?" }),
+            ],
+        };
+        const { ir } = await exportFgui({
+            snapshot, out, root,
+            screen: catalog.screens.find((entry) => entry.id === "prompt"),
+            catalog, images,
+        });
+        const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
+        assert.match(promptXml, /name="PopupFrame\/Panel" xy="21,625"/);
+        assert.match(promptXml, /name="PopupBackground" xy="21,625"/);
+        assert.match(promptXml, /name="PopupFrame\/Title" xy="111,643"/);
+        assert.match(promptXml, /name="Prompt\/Message" xy="61,733"/);
+        assert.equal(ir.screen.componentName, "Prompt");
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+function smallPopupSnapshot() {
+    const nodes = [
+        node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
+        node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
+        node(3, 1, "PopupFrame/Panel", "view", rect(21, 557, 708, 510)),
+        node(4, 3, "PopupBackground", "view", rect(21, 557, 708, 510)),
+        node(5, 4, "", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/prompt", visible: false }),
+        node(6, 4, "", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/small" }),
+        node(7, 3, "PopupFrame/Title", "text", rect(111, 575, 528, 58), { value: "标题" }),
+        node(8, 3, "PopupFrame/Content", "view", rect(61, 665, 628, 364)),
+        node(9, 8, "SmallPopup/Content", "view", rect(61, 665, 628, 364)),
+        node(10, 3, "CloseButton", "view", rect(642, 563, 72, 72), { interaction: "press" }),
+        node(11, 10, "", "image", rect(653, 574, 50, 50), { resourceId: "ui/popup/close" }),
+    ];
+    return {
+        schemaVersion: 1,
+        kind: "uniflex-design-snapshot",
+        screenId: "small-popup",
+        canvas: { width: 750, height: 1624 },
+        nodes,
+    };
+}
+
+function confirmSnapshot() {
+    const nodes = [
+        node(1, null, "Confirm", "view", rect(0, 0, 750, 1624)),
+        node(2, 1, "Confirm/Backdrop", "view", rect(0, 0, 750, 1624)),
+        node(3, 1, "Confirm/Panel", "view", rect(21, 625, 708, 375)),
+        node(4, 3, "Confirm/Background", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/prompt" }),
+        node(5, 3, "Confirm/Title", "text", rect(111, 643, 528, 58), { value: "提示" }),
+        node(6, 3, "Confirm/Message", "text", rect(61, 757, 628, 48), { value: "确认操作?" }),
+        node(7, 3, "", "view", rect(418, 858, 255, 102)),
+        node(8, 7, "CancelButton", "view", rect(418, 858, 255, 102)),
+        node(9, 8, "ActionButton", "view", rect(418, 858, 255, 102), { interaction: "press" }),
+        node(10, 9, "ActionButton/Background", "image", rect(418, 858, 255, 102), { resourceId: "ui/button/cancel" }),
+        node(11, 9, "ActionButton/Label", "text", rect(426, 862, 239, 86), { value: "取消" }),
+        node(12, 3, "", "view", rect(76, 858, 255, 102)),
+        node(13, 12, "ConfirmButton", "view", rect(76, 858, 255, 102)),
+        node(14, 13, "ActionButton", "view", rect(76, 858, 255, 102), { interaction: "press" }),
+        node(15, 14, "ActionButton/Background", "image", rect(76, 858, 255, 102), { resourceId: "ui/button/confirm" }),
+        node(16, 14, "ActionButton/Label", "text", rect(84, 862, 239, 86), { value: "确定" }),
+    ];
+    return {
+        schemaVersion: 1,
+        kind: "uniflex-design-snapshot",
+        screenId: "confirm",
+        canvas: { width: 750, height: 1624 },
+        nodes,
+    };
+}
+
+test("SmallPopup and Confirm compile as their own page packages", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-pages-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const smallScreen = catalog.screens.find((entry) => entry.id === "small-popup");
+        const confirmScreen = catalog.screens.find((entry) => entry.id === "confirm");
+        await exportFgui({
+            snapshot: smallPopupSnapshot(), out: join(out, "small"), root, screen: smallScreen, catalog, images,
+        });
+        await exportFgui({
+            snapshot: confirmSnapshot(), out: join(out, "confirm"), root, screen: confirmScreen, catalog, images,
+        });
+        const smallXml = readFileSync(join(out, "small/assets/UniFlex_SmallPopup/SmallPopup.xml"), "utf8");
+        const confirmXml = readFileSync(join(out, "confirm/assets/UniFlex_Confirm/Confirm.xml"), "utf8");
+        assert.match(smallXml, /name="SmallPopup\/Content"/);
+        assert.match(smallXml, /name="CloseButton"/);
+        assert.doesNotMatch(smallXml, /Prompt\/Message/);
+        assert.match(confirmXml, /name="Confirm\/Title"/);
+        assert.match(confirmXml, /name="ConfirmButton"/);
+        assert.match(confirmXml, /name="CancelButton"/);
+        assert.match(confirmXml, /fileName="images\/prompt.png"/);
+        assert.match(confirmXml, / pkg="/);
+        assert.doesNotMatch(confirmXml, /name="PopupFrame"/);
+        parseFguiComponent(smallXml);
+        parseFguiComponent(confirmXml);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("multi-page export shares Common and inlines PopupBackground kind variants", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-catalog-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const { ir } = await exportFgui({
+            snapshots: [
+                {
+                    snapshot: promptSnapshot(),
+                    screen: catalog.screens.find((entry) => entry.id === "prompt"),
+                },
+                {
+                    snapshot: smallPopupSnapshot(),
+                    screen: catalog.screens.find((entry) => entry.id === "small-popup"),
+                },
+                {
+                    snapshot: confirmSnapshot(),
+                    screen: catalog.screens.find((entry) => entry.id === "confirm"),
+                },
+            ],
+            out, root, catalog, images,
+        });
+        assert.deepEqual(ir.screens.map((entry) => entry.id), ["prompt", "small-popup", "confirm"]);
+        assert.ok(existsSync(join(out, "assets/UniFlex_Prompt/Prompt.xml")));
+        assert.ok(existsSync(join(out, "assets/UniFlex_SmallPopup/SmallPopup.xml")));
+        assert.ok(existsSync(join(out, "assets/UniFlex_Confirm/Confirm.xml")));
+        const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
+        const smallXml = readFileSync(join(out, "assets/UniFlex_SmallPopup/SmallPopup.xml"), "utf8");
+        const preview = readFileSync(join(out, "preview/index.html"), "utf8");
+        assert.match(promptXml, /name="PopupBackground"/);
+        assert.match(smallXml, /small\.png/);
+        assert.match(smallXml, / pkg="/);
+        assert.match(preview, /id="picker"/);
+        assert.match(preview, /\?screen=/);
+        assert.match(preview, /"id":"small-popup"/);
+        assert.match(preview, /"id":"confirm"/);
+        assert.equal(JSON.parse(readFileSync(join(out, "mapping.json"), "utf8")).Confirm.package, "UniFlex_Confirm");
+        assert.equal(JSON.parse(readFileSync(join(out, "report.json"), "utf8")).screens.length, 3);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("export-fgui --snapshot twice builds one catalog project", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-cli-multi-"));
+    const { writeFileSync } = await import("node:fs");
+    const promptFile = join(out, "prompt.json");
+    const confirmFile = join(out, "confirm.json");
+    writeFileSync(promptFile, JSON.stringify(promptSnapshot()));
+    writeFileSync(confirmFile, JSON.stringify(confirmSnapshot()));
+    try {
+        await runCli([
+            "export-fgui",
+            "--snapshot", promptFile,
+            "--snapshot", confirmFile,
+            "--out", join(out, "fgui"),
+        ], {
+            root,
+            env: {},
+            execute: () => { throw new Error("should not run"); },
+            startPreview: async () => { throw new Error("preview should not start"); },
+            readText: (file) => readFileSync(file, "utf8"),
+        });
+        assert.ok(existsSync(join(out, "fgui/assets/UniFlex_Prompt/Prompt.xml")));
+        assert.ok(existsSync(join(out, "fgui/assets/UniFlex_Confirm/Confirm.xml")));
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("export-fgui --all rejects --screen", async () => {
+    await assert.rejects(
+        () => runCli(["export-fgui", "--all", "--screen", "prompt", "--out", "x"], {
+            root,
+            env: {},
+            execute: () => { throw new Error("should not run"); },
+            startPreview: async () => { throw new Error("preview should not start"); },
+            readText: async () => "",
+        }),
+        /either --all or --screen/,
+    );
+});
+
 function snapshotDir(dir) {
     if (!existsSync(dir)) return [];
     const walk = (current) => {

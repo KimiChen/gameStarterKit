@@ -52,6 +52,29 @@ export function flagValue(args, name) {
     return index >= 0 ? args[index + 1] : undefined;
 }
 
+export function flagValues(args, name) {
+    const flag = `--${name}`;
+    const values = [];
+    for (let i = 0; i < args.length; i += 1) {
+        if (args[i] !== flag) continue;
+        const value = args[i + 1];
+        if (!value || value.startsWith("--")) throw new Error(`Missing --${name} value.`);
+        values.push(value);
+        i += 1;
+    }
+    return values;
+}
+
+export function parseScreenList(value, catalog) {
+    const ids = String(value).split(",").map((id) => id.trim()).filter(Boolean);
+    if (!ids.length) throw new Error("Missing --screens value.");
+    return ids.map((id) => {
+        const screen = findScreen(catalog, id);
+        if (!screen) throw new Error(`Unknown UniFlex preview screen: ${id}. Known: ${knownScreenIds(catalog)}`);
+        return screen;
+    });
+}
+
 export function resolvePreviewUrl(base, screen, { exportMode = true } = {}) {
     const url = new URL(base);
     if (screen) url.searchParams.set("screen", screen.id);

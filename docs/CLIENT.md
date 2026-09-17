@@ -100,7 +100,7 @@ apps/Cocos/
 - PSD ↔ UniFlex 走锁定的 `vendor/web-ui-to-psd-*.tgz`（`npm ci` 安装到
   `node_modules/web-ui-to-psd`），不依赖本机转换器源码目录；`ui:import-psd` /
   `ui:export-psd` / `ui:roundtrip` 默认解析该包。转换器还需要本机 Chrome 与 `uv`。
-  `ui:export-fgui` / `ui:preview-fgui` 从同一套 snapshot 另出一份候选独立 FairyGUI 工程（只写 `--out`）和官方 FairyGUI-dom 预览包；不写 `apps/art/fairygui`，也不实现 `docs/psd.md` 的 `ui:fgui:*`。
+  `ui:export-fgui` / `ui:preview-fgui` 从同一套 snapshot 另出一份候选独立 FairyGUI 工程（只写 `--out`）和官方 FairyGUI-dom 预览包；`--screens` / `--all` 出多页工程。不写 `apps/art/fairygui`，也不实现 `docs/psd.md` 的 `ui:fgui:*`。
   预览快照会给每个节点打上组件身份；导出写成 PSD 原生 layer ID + 图层名
   `label [ui:key#role]`（octane-lite 同款），并带上 UniFlex 布局框。`uniflex-package`
   按这些身份还原 `PopupFrame` / `ConfirmButton` 等 catalog 组件，而不是摊成 view；

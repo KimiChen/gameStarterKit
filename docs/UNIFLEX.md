@@ -14,4 +14,4 @@ Cocos 预览分两个场景：默认 `assets/scene.scene` 走原来的登录宿�
 
 ## 候选 FairyGUI 导出（独立工程）
 
-`ui:export-fgui` 从 UniFlex 组件树 + 布局快照写出一份**候选**独立 FairyGUI 工程（只写 `--out`，不写 `apps/art/fairygui`，不伪造 Cocos `.bin` / 图集 / `.meta`）。首期金样是 Prompt。`PopupFrame` 因 Slot 限制只出外壳模板；Prompt 页是特化树。`ui:preview-fgui` 用锁定的官方 `fairygui-dom@1.0.0` 预览发布态包。未完成 Editor 保存—重开前，不要把它当成已发布 FGUI 资源。
+`ui:export-fgui` 从 UniFlex 组件树 + 布局快照写出一份**候选**独立 FairyGUI 工程（只写 `--out`，不写 `apps/art/fairygui`，不伪造 Cocos `.bin` / 图集 / `.meta`）。共享组件来自 `screens.json` 的 `components`（出现在快照里才进 `UniFlex_Common`）。`--screen` 出单页包 `UniFlex_<Page>`；`--screens a,b` 或 `--all` 把多页收进同一工程，预览用 `?screen=` 切换。`PopupFrame` 因 Slot 限制只出外壳模板；各页是特化树。变体组件（如 `PopupBackground` 的 kind）按首次出现做模板，可见图不同则内联，不生成 controller。`ui:preview-fgui` 用锁定的官方 `fairygui-dom@1.0.0` 预览发布态包。未完成 Editor 保存—重开前，不要把它当成已发布 FGUI 资源。

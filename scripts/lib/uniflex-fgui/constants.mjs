@@ -140,5 +140,6 @@ export const KNOWN_LOSSES = Object.freeze([
     "flex 不进 FGUI，只进烘焙坐标",
     "visible 只导出当前预览态，不生成 controller",
     "disabled 只反映当前 opacity，不生成 setGray gear",
+    "共享组件以首次出现为模板；可见图不同则内联到页面，不生成 controller",
     "FairyGUI-dom 用 webkit-text-stroke，字重/抗锯齿与 UniFlex canvas 不完全同像素",
 ]);

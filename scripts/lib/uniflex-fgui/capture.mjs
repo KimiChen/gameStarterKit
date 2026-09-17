@@ -11,27 +11,58 @@ const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 export async function captureSnapshot({
     root, screenId, url, startPreview = startUniflexWebPreview, env = process.env,
 } = {}) {
+    const { results, catalog } = await captureSnapshots({
+        root, screens: undefined, screenId, url, startPreview, env,
+    });
+    const first = results[0];
+    return { snapshot: first.snapshot, screen: first.screen, catalog, page: first.page };
+}
+
+export async function captureSnapshots({
+    root, screens, screenId, url, startPreview = startUniflexWebPreview, env = process.env,
+} = {}) {
     const catalog = await loadScreenCatalog(root);
-    const screen = screenId ? findScreen(catalog, screenId) : findScreen(catalog, null);
-    if (screenId && !screen) throw new Error(`Unknown UniFlex preview screen: ${screenId}`);
+    let wanted = screens;
+    if (!wanted) {
+        const screen = screenId ? findScreen(catalog, screenId) : findScreen(catalog, null);
+        if (screenId && !screen) throw new Error(`Unknown UniFlex preview screen: ${screenId}`);
+        wanted = [screen];
+    }
+    if (!wanted.length) throw new Error("No UniFlex screens to capture.");
+
     let preview;
-    let chrome;
+    let session;
     try {
         let base = url || env.UNIFLEX_PREVIEW_URL;
         if (!base) {
             preview = await startPreview({ root, port: 0 });
             base = preview.url;
         }
-        const page = resolvePreviewUrl(base, screen);
-        const snapshot = await evaluateSnapshot(page, env);
-        return { snapshot, screen, catalog, page };
+        const firstPage = resolvePreviewUrl(base, wanted[0]);
+        session = await connectDevtools(firstPage, env);
+        const results = [];
+        const failures = [];
+        for (const screen of wanted) {
+            const page = resolvePreviewUrl(base, screen);
+            try {
+                const snapshot = await session.capture(page);
+                results.push({
+                    snapshot: { ...snapshot, screenId: screen.id },
+                    screen,
+                    page,
+                });
+            } catch (error) {
+                failures.push({ screen: screen.id, error: error.message });
+            }
+        }
+        return { results, failures, catalog };
     } finally {
+        session?.close();
         if (preview) await preview.dispose();
-        if (chrome) chrome.kill("SIGTERM");
     }
 }
 
-async function evaluateSnapshot(pageUrl, env) {
+async function connectDevtools(pageUrl, env) {
     const devtools = env.CHROME_DEVTOOLS || DEFAULT_DEVTOOLS;
     let opened = await listTabs(devtools).catch(() => null);
     let child;
@@ -50,30 +81,33 @@ async function evaluateSnapshot(pageUrl, env) {
     const tab = await openTab(devtools, pageUrl);
     const ws = new WebSocket(tab.webSocketDebuggerUrl);
     await once(ws, "open");
-    try {
-        await cdp(ws, "Page.enable");
-        await cdp(ws, "Runtime.enable");
-        await cdp(ws, "Page.navigate", { url: pageUrl });
-        await waitFor(async () => {
-            const result = await cdp(ws, "Runtime.evaluate", {
-                expression: "document.documentElement.dataset.uniflexReady === 'true'",
-                returnByValue: true,
-            });
-            return result.result?.value === true ? true : null;
-        }, 30_000);
-        const result = await cdp(ws, "Runtime.evaluate", {
-            expression: "window.__UNIFLEX_DESIGN_SNAPSHOT__",
-            returnByValue: true,
-        });
-        const snapshot = result.result?.value;
-        if (!snapshot || snapshot.kind !== "uniflex-design-snapshot") {
-            throw new Error("Preview did not expose __UNIFLEX_DESIGN_SNAPSHOT__.");
-        }
-        return snapshot;
-    } finally {
-        ws.close();
-        if (child) child.kill("SIGTERM");
-    }
+    await cdp(ws, "Page.enable");
+    await cdp(ws, "Runtime.enable");
+    return {
+        async capture(targetUrl) {
+            const loaded = waitForCdpEvent(ws, "Page.loadEventFired");
+            await cdp(ws, "Page.navigate", { url: targetUrl });
+            await Promise.race([loaded, sleep(2_000)]);
+            return waitFor(async () => {
+                const ready = await cdp(ws, "Runtime.evaluate", {
+                    expression: "document.documentElement.dataset.uniflexReady === 'true'",
+                    returnByValue: true,
+                });
+                if (ready.result?.value !== true) return null;
+                const result = await cdp(ws, "Runtime.evaluate", {
+                    expression: "window.__UNIFLEX_DESIGN_SNAPSHOT__",
+                    returnByValue: true,
+                });
+                const snapshot = result.result?.value;
+                if (!snapshot || snapshot.kind !== "uniflex-design-snapshot") return null;
+                return snapshot;
+            }, 30_000);
+        },
+        close() {
+            try { ws.close(); } catch { /* ignore */ }
+            if (child) child.kill("SIGTERM");
+        },
+    };
 }
 
 async function listTabs(devtools) {
@@ -107,11 +141,33 @@ function cdp(ws, method, params = {}) {
     });
 }
 
+function waitForCdpEvent(ws, method) {
+    return new Promise((resolvePromise, reject) => {
+        const onMessage = (event) => {
+            const payload = JSON.parse(event.data);
+            if (payload.method !== method) return;
+            ws.removeEventListener("message", onMessage);
+            ws.removeEventListener("error", onError);
+            resolvePromise(payload.params ?? {});
+        };
+        const onError = () => {
+            ws.removeEventListener("message", onMessage);
+            reject(new Error("Chrome DevTools WebSocket error"));
+        };
+        ws.addEventListener("message", onMessage);
+        ws.addEventListener("error", onError, { once: true });
+    });
+}
+
 function once(ws, type) {
     return new Promise((resolvePromise, reject) => {
         ws.addEventListener(type, resolvePromise, { once: true });
         ws.addEventListener("error", () => reject(new Error("Chrome DevTools WebSocket error")), { once: true });
     });
+}
+
+function sleep(ms) {
+    return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 }
 
 async function waitFor(probe, timeoutMs) {
