@@ -1,5 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { StarRow } from '../../components/star/StarRow';
 
 export interface HeroDetailAttributesProps {
     readonly visible?: boolean;
@@ -13,36 +14,14 @@ export interface HeroDetailAttributesProps {
     readonly onUpgrade?: () => void;
 }
 
+const STAR_LEFTS = [170, 256, 342, 427, 513] as const;
+
 export const HeroDetailAttributes = defineComponent<HeroDetailAttributesProps>((p) => {
     const stars = p.stars ?? 0;
     const stats = p.stats ?? ['3941', '3941', '3941', '3941'];
     const starEmpty = imageRef('ui/hero-detail/star-empty');
     const starFilled = imageRef('ui/hero-detail/star-filled');
-    const star1 = stars >= 1 ? starFilled : starEmpty;
-    const star2 = stars >= 2 ? starFilled : starEmpty;
-    const star3 = stars >= 3 ? starFilled : starEmpty;
-    const star4 = stars >= 4 ? starFilled : starEmpty;
-    const star5 = stars >= 5 ? starFilled : starEmpty;
-    const starLeft1 = stars >= 1 ? 173 : 170;
-    const starLeft2 = stars >= 2 ? 259 : 256;
-    const starLeft3 = stars >= 3 ? 345 : 342;
-    const starLeft4 = stars >= 4 ? 430 : 427;
-    const starLeft5 = stars >= 5 ? 516 : 513;
-    const starTop = stars >= 1 ? 953 : 950;
-    const starTop2 = stars >= 2 ? 953 : 950;
-    const starTop3 = stars >= 3 ? 953 : 950;
-    const starTop4 = stars >= 4 ? 953 : 950;
-    const starTop5 = stars >= 5 ? 953 : 950;
-    const starW1 = stars >= 1 ? 61 : 68;
-    const starW2 = stars >= 2 ? 61 : 68;
-    const starW3 = stars >= 3 ? 61 : 68;
-    const starW4 = stars >= 4 ? 61 : 68;
-    const starW5 = stars >= 5 ? 61 : 68;
-    const starH1 = stars >= 1 ? 58 : 64;
-    const starH2 = stars >= 2 ? 58 : 64;
-    const starH3 = stars >= 3 ? 58 : 64;
-    const starH4 = stars >= 4 ? 58 : 64;
-    const starH5 = stars >= 5 ? 58 : 64;
+    const starLefts = STAR_LEFTS;
     return (
         <view name="HeroDetailAttributes" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -66,16 +45,9 @@ export const HeroDetailAttributes = defineComponent<HeroDetailAttributesProps>((
                 <image source={imageRef('ui/hero-detail/power-info')}
                     style={{ position: 'absolute', left: 333, top: 17, width: 40, height: 40 }} />
             </view>
-            <image source={star1}
-                style={{ position: 'absolute', left: starLeft1, top: starTop, width: starW1, height: starH1 }} />
-            <image source={star2}
-                style={{ position: 'absolute', left: starLeft2, top: starTop2, width: starW2, height: starH2 }} />
-            <image source={star3}
-                style={{ position: 'absolute', left: starLeft3, top: starTop3, width: starW3, height: starH3 }} />
-            <image source={star4}
-                style={{ position: 'absolute', left: starLeft4, top: starTop4, width: starW4, height: starH4 }} />
-            <image source={star5}
-                style={{ position: 'absolute', left: starLeft5, top: starTop5, width: starW5, height: starH5 }} />
+            <StarRow filled={starFilled} empty={starEmpty} value={stars}
+                lefts={starLefts} top={950} width={68} height={64}
+                filledWidth={61} filledHeight={58} />
             <view interaction="press" onClick={() => p.onStarUp?.()}
                 style={{ position: 'absolute', left: 603, top: 956, width: 76, height: 85 }}>
                 <image source={imageRef('ui/hero-detail/star-button')} style={{ width: 76, height: 85 }} />

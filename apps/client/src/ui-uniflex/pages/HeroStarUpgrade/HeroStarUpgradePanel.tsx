@@ -3,6 +3,7 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
 import { PopupFrame } from '../../components/popup/PopupFrame';
 import { ProgressBar } from '../../components/progress/ProgressBar';
+import { StarRow } from '../../components/star/StarRow';
 import { HeroStarAttributeRow, type HeroStarAttributeRowProps } from './HeroStarAttributeRow';
 
 export interface HeroStarAttribute extends Omit<HeroStarAttributeRowProps, 'striped'> {
@@ -44,27 +45,15 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
     const rows = [334, 389, 444, 499] as const;
     const starEmpty = imageRef('ui/star-upgrade/star-empty');
     const starFull = imageRef('ui/star-upgrade/star-full');
-    const star1 = stars >= 1 ? starFull : starEmpty;
-    const star2 = stars >= 2 ? starFull : starEmpty;
-    const star3 = stars >= 3 ? starFull : starEmpty;
-    const star4 = stars >= 4 ? starFull : starEmpty;
-    const star5 = stars >= 5 ? starFull : starEmpty;
+    const starLefts = starSlots;
     return (
         <view name="HeroStarUpgrade" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
             <PopupFrame title={p.title ?? '升星'} kind="prompt" left={21} top={377} width={708} height={870}
                 onClose={p.onClose} />
             <view style={{ position: 'absolute', left: 21, top: 377, width: 708, height: 870 }}>
-                <image source={star1}
-                    style={{ position: 'absolute', left: starSlots[0], top: 123, width: 68, height: 64 }} />
-                <image source={star2}
-                    style={{ position: 'absolute', left: starSlots[1], top: 123, width: 68, height: 64 }} />
-                <image source={star3}
-                    style={{ position: 'absolute', left: starSlots[2], top: 123, width: 68, height: 64 }} />
-                <image source={star4}
-                    style={{ position: 'absolute', left: starSlots[3], top: 123, width: 68, height: 64 }} />
-                <image source={star5}
-                    style={{ position: 'absolute', left: starSlots[4], top: 123, width: 68, height: 64 }} />
+                <StarRow filled={starFull} empty={starEmpty} value={stars}
+                    lefts={starLefts} top={123} width={68} height={64} />
                 <image source={imageRef('ui/star-upgrade/power')}
                     style={{ position: 'absolute', left: 120, top: 219, width: 469, height: 55, sizeMode: 'sliced' }} />
                 <view style={{ position: 'absolute', left: 261, top: 219, width: 255, height: 55 }}>
