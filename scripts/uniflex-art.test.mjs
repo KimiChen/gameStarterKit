@@ -1,19 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classifyArtPage, findArtPage, loadArtCatalog } from "./lib/uniflex-art.mjs";
+import { classifyArtPage, findArtPage, isArtScreen, loadArtCatalog } from "./lib/uniflex-art.mjs";
+import { loadScreenCatalog } from "./lib/uniflex-screens.mjs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 
 test("art catalog lists original feature pages only", async () => {
     const catalog = await loadArtCatalog(root);
+    const preview = await loadScreenCatalog(root);
     assert.equal(catalog.applyTarget, "restored");
-    const screens = catalog.pages.map((page) => page.screen);
-    assert.deepEqual(screens, [
-        "prompt", "small-popup", "confirm", "backpack", "mail",
-        "settings", "character", "hero", "hero-detail",
-    ]);
+    const expected = preview.screens.filter(isArtScreen).map((screen) => screen.id);
+    assert.deepEqual(catalog.pages.map((page) => page.screen), expected);
+    assert.ok(expected.includes("alliance"));
+    assert.ok(expected.includes("hero-star-upgrade"));
     assert.equal(findArtPage(catalog, "MailBattleReport").screen, "mail");
+    assert.equal(findArtPage(catalog, "Alliance").componentName, "Alliance");
     assert.equal(findArtPage(catalog, "preview-home"), null);
     assert.equal(findArtPage(catalog, "backpack-restored"), null);
 });

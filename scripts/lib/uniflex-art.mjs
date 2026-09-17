@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { access, readdir, readFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
+import { loadScreenCatalog } from "./uniflex-screens.mjs";
 
 export const ART_ROOT = "apps/art/uniflex";
 export const CATALOG_FILE = `${ART_ROOT}/catalog.json`;
@@ -32,20 +33,56 @@ export function applyName(page, applyTarget) {
     return page.restoredName;
 }
 
+export function isArtScreen(screen) {
+    const id = String(screen?.id || "");
+    const name = String(screen?.componentName || "");
+    if (!id || !name || !screen.source) return false;
+    if (screen.default) return false;
+    if (id === "preview-home" || id === "restored-home") return false;
+    if (id.endsWith("-restored") || name.endsWith("Restored")) return false;
+    if (id === "backpack-edited") return false;
+    return true;
+}
+
+function pageFromScreen(screen, override = {}) {
+    return {
+        screen: screen.id,
+        componentName: override.componentName || screen.componentName,
+        restoredName: override.restoredName || `${screen.componentName}Restored`,
+        source: override.source || screen.source,
+        canvas: override.canvas || screen.canvas,
+        ...(override.applyTarget ? { applyTarget: override.applyTarget } : {}),
+    };
+}
+
 export async function loadArtCatalog(root, readText = (file) => readFile(file, "utf8")) {
     const catalog = JSON.parse(await readText(resolve(root, CATALOG_FILE)));
-    if (catalog?.schemaVersion !== 1 || !Array.isArray(catalog.pages) || catalog.pages.length === 0)
+    if (catalog?.schemaVersion !== 1)
         throw new Error("Invalid UniFlex art catalog.");
     if (!["restored", "original"].includes(catalog.applyTarget))
         throw new Error("art catalog applyTarget must be restored or original.");
-    const screens = new Set();
-    for (const page of catalog.pages) {
+    const preview = await loadScreenCatalog(root);
+    const overrides = new Map((catalog.pages || []).map((page) => [page.screen, page]));
+    const pages = [];
+    const seen = new Set();
+    for (const screen of preview.screens) {
+        if (!isArtScreen(screen)) continue;
+        const page = pageFromScreen(screen, overrides.get(screen.id) || {});
         if (!page.screen || !page.componentName || !page.restoredName || !page.source)
             throw new Error("art catalog page is missing screen/componentName/restoredName/source.");
-        if (screens.has(page.screen)) throw new Error(`Duplicate art screen: ${page.screen}`);
-        screens.add(page.screen);
+        if (seen.has(page.screen)) throw new Error(`Duplicate art screen: ${page.screen}`);
+        seen.add(page.screen);
+        pages.push(page);
     }
-    return catalog;
+    for (const page of catalog.pages || []) {
+        if (seen.has(page.screen)) continue;
+        if (!page.screen || !page.componentName || !page.restoredName || !page.source)
+            throw new Error("art catalog page is missing screen/componentName/restoredName/source.");
+        seen.add(page.screen);
+        pages.push(page);
+    }
+    if (!pages.length) throw new Error("Invalid UniFlex art catalog.");
+    return { ...catalog, pages };
 }
 
 export function findArtPage(catalog, screen) {

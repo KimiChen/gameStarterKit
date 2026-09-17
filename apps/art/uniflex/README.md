@@ -22,7 +22,7 @@
 | `npm run ui:art-sync` | 按「干净 PSD 则导出，脏 PSD 则导入」分流；两边都脏则失败 |
 | `npm run ui:art-check` | 只读闸：PSD / 哈希 / Restored 是否新鲜 |
 
-不要手改 `art.json`。不要把 PreviewHome 或 `*Restored` 自己再导出进这里。中间产物在 `.cache/psd/`，不入库。
+art catalog 从 `screens.json` 收录原稿功能页（排除 PreviewHome / `*Restored`）。不要手改 `art.json`。不要把 PreviewHome 或 `*Restored` 自己再导出进这里。中间产物在 `.cache/psd/`，不入库。
 导入字体共用 `apps/art/uniflex/fonts/`，不按页复制。
 
 本机尚未装 Git LFS 时 `.psd` 按普通二进制入库；装上后执行

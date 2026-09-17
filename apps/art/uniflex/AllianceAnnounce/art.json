@@ -1,0 +1,16 @@
+{
+  "screen": "alliance-announce",
+  "componentName": "AllianceAnnounce",
+  "restoredName": "AllianceAnnounceRestored",
+  "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounce/AllianceAnnounce.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "d5d8b69e8320d302754166245e2b1dcbebf41cd0c8750963cb92b8997905f50e",
+    "psdSha256": "f1e7d78fa14faa686ce4c5de3f8a480fc95b69dca74ce024cae64064c71654f7",
+    "at": "2026-09-17T03:32:18.251Z"
+  }
+}
