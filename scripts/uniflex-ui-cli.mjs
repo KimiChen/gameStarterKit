@@ -25,6 +25,7 @@ const help = `Usage:
   npm run ui:export-fgui -- --all --out .cache/fgui/catalog
   npm run ui:export-fgui -- --snapshot path/to/snapshot.json --out .cache/fgui/prompt
   npm run ui:preview-fgui -- --out .cache/fgui/prompt
+  npm run ui:preview-fgui -- --catalog --port 8771
 
 CLI resolution (first match):
   WEB_UI_TO_PSD_CLI    Optional override: executable path or JS entry; not a shell command.
@@ -46,7 +47,8 @@ FairyGUI-dom preview package under --out. It never writes apps/art/fairygui.
 --snapshot / --snapshots-dir is for tests and offline replay; --screen,
 --screens, or --all captures the UniFlex web preview (Chrome 9222 preferred).
 One snapshot becomes UniFlex_<Page>; several share UniFlex_Common and get a
-preview picker (?screen=). ui:preview-fgui serves <out>/preview.
+preview catalog (FairyGUI PreviewHome clicks, or an HTML directory). ui:preview-fgui
+serves <out>/preview. --catalog merges the grouped exports under .cache/fgui.
 `;
 
 const commands = ["import-psd", "export-psd", "roundtrip", "check-source", "export-fgui", "preview-fgui"];
@@ -258,11 +260,13 @@ export async function runCli(argv, {
 
 async function runFguiCommand(command, args, { root, env, startPreview, readText }) {
     const out = flagValue(args, "out");
-    if (!out?.trim()) throw new Error("Missing --out.");
+    const catalogMode = hasFlag(args, "catalog");
+    const merge = (flagValue(args, "merge") ?? "").split(",").map((value) => value.trim()).filter(Boolean);
     if (command === "preview-fgui") {
+        if (!catalogMode && !out?.trim() && merge.length === 0) throw new Error("Missing --out.");
         const port = flagValue(args, "port");
         const server = await servePreview({
-            root, out, host: "127.0.0.1", port: port ? Number(port) : 0,
+            root, out, merge, catalog: catalogMode, host: "127.0.0.1", port: port ? Number(port) : 0,
         });
         console.log(`FairyGUI-dom preview: ${server.url}`);
         if (args.includes("--once")) {
@@ -272,6 +276,7 @@ async function runFguiCommand(command, args, { root, env, startPreview, readText
         await new Promise(() => {});
         return;
     }
+    if (!out?.trim()) throw new Error("Missing --out.");
 
     const catalog = await loadScreenCatalog(root);
     const pages = await loadFguiPages(args, { root, env, catalog, startPreview, readText });
