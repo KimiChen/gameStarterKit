@@ -109,6 +109,7 @@ export function buildCatalogIR(pages, options = {}) {
     for (const key of keys) {
         const template = templates.get(key);
         if (!template) continue;
+        if (template.root.interaction === "press") buttons.add(key);
         const skipSlot = SLOT_HOSTS.includes(key);
         const displayList = flatten({
             ...sharedCtx,
@@ -117,13 +118,14 @@ export function buildCatalogIR(pages, options = {}) {
             skipSlot,
             pkg: commonPkg,
         });
+        const isButton = buttons.has(key);
         commonPkg.components.push({
             id: fairyId(`comp:${COMMON_PACKAGE}:${key}`),
             name: key,
             exported: true,
             size: roundSize(template.root.rect),
-            extension: buttons.has(key) ? "Button" : null,
-            objectType: buttons.has(key) ? ObjectType.Button : ObjectType.Component,
+            extension: isButton ? "Button" : null,
+            objectType: isButton ? ObjectType.Button : ObjectType.Component,
             children: displayList,
             remark: skipSlot
                 ? `${key} is a shell template; slot content lives on the page.`
@@ -408,53 +410,133 @@ function flatten(ctx) {
         if (!fill) return;
         displayList.push(graphChild(ctx, node, groupIndex, fill));
     };
-    const walk = (node, groupIndex) => {
-        for (const child of ctx.childrenOf.get(node.id) ?? []) {
-            if (child.visible === false) continue;
-            if (ctx.skipSlot && isSlotContent(node.name)) continue;
-            const instance = ctx.instanceByRoot.get(child.id);
-            const shared = instance && ctx.shared.has(instance.definitionKey);
-            const slotHost = instance && SLOT_HOSTS.includes(instance.definitionKey);
-            if (shared && isReusableInstance(instance, child, ctx)) {
-                displayList.push(componentChild(ctx, child, instance.definitionKey, groupIndex));
-                continue;
-            }
-            if (slotHost && ctx.inlineSlotHosts) {
-                const index = displayList.length;
-                displayList.push(groupChild(ctx, child, groupIndex));
-                pushFill(child, index);
-                walk(child, index);
-                continue;
-            }
-            if (isContainer(child)) {
-                const nested = ctx.childrenOf.get(child.id) ?? [];
-                const fill = styleOf(child, ctx).backgroundColor;
-                if (!nested.length && fill) {
-                    displayList.push(graphChild(ctx, child, groupIndex, fill));
-                    continue;
-                }
-                const index = displayList.length;
-                displayList.push(groupChild(ctx, child, groupIndex));
-                if (fill) displayList.push(graphChild(ctx, child, index, fill));
-                walk(child, index);
-                continue;
-            }
-            const primitive = primitiveChild(ctx, child, groupIndex);
-            if (primitive) displayList.push(primitive);
-        }
-    };
     if (ctx.inlineSlotHosts && SLOT_HOSTS.includes(ctx.root.name)) {
         const index = displayList.length;
         displayList.push(groupChild(ctx, ctx.root, -1));
         pushFill(ctx.root, index);
-        walk(ctx.root, index);
+        flattenWalk(ctx, ctx.root, index, displayList);
     } else {
         pushFill(ctx.root, -1);
-        walk(ctx.root, -1);
+        flattenWalk(ctx, ctx.root, -1, displayList);
     }
     assignChildIds(ctx.root.name || "root", displayList);
     if (!ctx.inlineSlotHosts) nameUnnamedTexts(displayList);
     return displayList;
+}
+
+function flattenWalk(ctx, node, groupIndex, displayList) {
+    for (const child of ctx.childrenOf.get(node.id) ?? []) {
+        if (child.visible === false) continue;
+        if (ctx.skipSlot && isSlotContent(node.name)) continue;
+        const instance = ctx.instanceByRoot.get(child.id);
+        const shared = instance && ctx.shared.has(instance.definitionKey);
+        const slotHost = instance && SLOT_HOSTS.includes(instance.definitionKey);
+        if (shared && isReusableInstance(instance, child, ctx)) {
+            displayList.push(componentChild(ctx, child, instance.definitionKey, groupIndex));
+            continue;
+        }
+        if (isPressButton(child) && !ctx.shared.has(instance?.definitionKey)) {
+            displayList.push(pressComponentChild(ctx, child, groupIndex));
+            continue;
+        }
+        if (slotHost && ctx.inlineSlotHosts) {
+            const index = displayList.length;
+            displayList.push(groupChild(ctx, child, groupIndex));
+            pushFillInto(ctx, child, index, displayList);
+            flattenWalk(ctx, child, index, displayList);
+            continue;
+        }
+        if (isContainer(child)) {
+            const nested = ctx.childrenOf.get(child.id) ?? [];
+            const fill = styleOf(child, ctx).backgroundColor;
+            if (!nested.length && fill) {
+                displayList.push(graphChild(ctx, child, groupIndex, fill));
+                continue;
+            }
+            const index = displayList.length;
+            displayList.push(groupChild(ctx, child, groupIndex));
+            if (fill) displayList.push(graphChild(ctx, child, index, fill));
+            if (child.interaction === "range") {
+                displayList.push({
+                    ...graphChild(ctx, child, index, "#00000000"),
+                    name: "",
+                    touchable: true,
+                });
+            }
+            flattenWalk(ctx, child, index, displayList);
+            continue;
+        }
+        const primitive = primitiveChild(ctx, child, groupIndex);
+        if (primitive) displayList.push(primitive);
+    }
+}
+
+function pushFillInto(ctx, node, groupIndex, displayList) {
+    const fill = styleOf(node, ctx).backgroundColor;
+    if (fill) displayList.push(graphChild(ctx, node, groupIndex, fill));
+}
+
+function isOverlayPress(node) {
+    const name = String(node.name || "");
+    return name === "Mask" || name.endsWith("/Mask");
+}
+
+function isPressButton(node) {
+    return node.interaction === "press" && isContainer(node) && !isOverlayPress(node);
+}
+
+function pressComponentName(name) {
+    const cleaned = String(name || "Press").replaceAll(/[^A-Za-z0-9]+/g, "_").replaceAll(/^_|_$/g, "");
+    return cleaned || "Press";
+}
+
+function internPressButton(ctx, node) {
+    const base = pressComponentName(node.name);
+    const sig = componentSignature(node, ctx.childrenOf);
+    const pressKey = `${base}:${sig}`;
+    const existing = ctx.pkg.components.find((item) => item.pressKey === pressKey);
+    if (existing) return existing;
+    const nestedCtx = { ...ctx, origin: node.rect, root: node };
+    const children = [];
+    const fill = styleOf(node, ctx).backgroundColor;
+    if (fill) {
+        children.push({ ...graphChild(nestedCtx, node, -1, fill), name: "", touchable: false });
+    }
+    flattenWalk(nestedCtx, node, -1, children);
+    assignChildIds(base, children);
+    nameUnnamedTexts(children);
+    let name = base;
+    if (ctx.pkg.components.some((item) => item.name === name)) {
+        name = `${base}_${fairyId(pressKey, 4)}`;
+    }
+    const item = {
+        id: fairyId(`comp:${ctx.pkg.name}:${pressKey}`),
+        name,
+        pressKey,
+        exported: true,
+        size: roundSize(node.rect),
+        extension: "Button",
+        objectType: ObjectType.Button,
+        children,
+    };
+    ctx.pkg.components.push(item);
+    return item;
+}
+
+function pressComponentChild(ctx, node, groupIndex) {
+    const button = internPressButton(ctx, node);
+    const xy = rel(node.rect, ctx.origin);
+    const title = titleOf(node, ctx);
+    return {
+        kind: "component",
+        name: node.name || button.name,
+        srcName: button.name,
+        ...xy,
+        group: groupIndex,
+        visible: node.visible !== false,
+        touchable: true,
+        button: title ? { title } : undefined,
+    };
 }
 
 function isContainer(node) {
@@ -658,7 +740,8 @@ function titleOf(node, ctx) {
     const visible = kids.find((item) => item.kind === "text" && item.visible !== false
         && (item.name === "ActionButton/IconLabel" || item.name === "ActionButton/Label"));
     const label = kids.find((item) => item.name === "ActionButton/Label");
-    return visible?.value || label?.value || node.value || "";
+    const any = kids.find((item) => item.kind === "text" && item.visible !== false);
+    return visible?.value || label?.value || any?.value || node.value || "";
 }
 
 function outlineOf(node, ctx) {
@@ -856,7 +939,10 @@ function buildMapping(commonPkg, pagePkgs, screens) {
     for (const [index, pagePkg] of pagePkgs.entries()) {
         const screen = screens[index];
         mapping[screen.componentName] = {
-            package: pagePkg.name, component: screen.componentName, id: pagePkg.components.at(-1)?.id,
+            package: pagePkg.name,
+            component: screen.componentName,
+            id: pagePkg.components.find((entry) => entry.name === screen.componentName)?.id
+                ?? pagePkg.components.at(-1)?.id,
         };
     }
     for (const component of commonPkg.components) {
