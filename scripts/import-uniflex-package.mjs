@@ -1,4 +1,4 @@
-import { access, cp, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, extname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
@@ -27,28 +27,38 @@ const exists = await access(resourceTarget).then(() => true).catch((error) => {
 });
 if (exists && !update)
     throw new Error(`Import target already exists: ${resourceTarget}; pass --update to refresh it.`);
-await mkdir(dirname(resourceTarget), { recursive: true });
+await rm(resourceTarget, { recursive: true, force: true });
 await mkdir(resourceTarget, { recursive: true });
 await writeFile(resolve(resourceTarget, "manifest.json"), JSON.stringify(resourcesManifest, null, 2) + "\n");
 
 // A package may optionally carry authoring source. Keep it beside the runtime
 // resources, but never mix design metadata or binary assets into the page tree.
-const sourceNames = [];
+const sourceEntries = [];
 const resourceNames = new Set(["assets", "design.json", "manifest.json", "psd-extra.json"]);
 for (const entry of await readdir(packageDir, { withFileTypes: true })) {
     const isSource = entry.isDirectory()
         ? entry.name === "components"
         : [".ts", ".tsx"].includes(extname(entry.name)) || entry.name === "README.md";
     if (isSource) {
-        const targetName = entry.name.replace(/\.authoring\.tsx$/u, ".tsx");
-        sourceNames.push(targetName);
-        await mkdir(pageTarget, { recursive: true });
-        await cp(resolve(packageDir, entry.name), resolve(pageTarget, targetName),
-            { recursive: true, force: true });
+        if (entry.isDirectory() && (await readdir(resolve(packageDir, entry.name))).length === 0) {
+            continue;
+        }
+        sourceEntries.push(entry);
         continue;
     }
     if (resourceNames.has(entry.name)) {
         await cp(resolve(packageDir, entry.name), resolve(resourceTarget, entry.name),
+            { recursive: true, force: true });
+    }
+}
+const sourceNames = [];
+if (sourceEntries.length) {
+    await rm(pageTarget, { recursive: true, force: true });
+    await mkdir(pageTarget, { recursive: true });
+    for (const entry of sourceEntries) {
+        const targetName = entry.name.replace(/\.authoring\.tsx$/u, ".tsx");
+        sourceNames.push(targetName);
+        await cp(resolve(packageDir, entry.name), resolve(pageTarget, targetName),
             { recursive: true, force: true });
     }
 }

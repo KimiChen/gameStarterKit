@@ -390,7 +390,7 @@
       "aliases": ["alliance-tech-restored", "allianceTechRestored"],
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceTechRestored",
-      "rootName": "AllianceTechRestored",
+      "rootName": "AllianceTechPage",
       "source": "apps/client/src/ui-uniflex/pages/AllianceTechRestored/AllianceTechRestored.tsx"
     },
     {

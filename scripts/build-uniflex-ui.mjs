@@ -5,6 +5,7 @@ import { relative, resolve } from "node:path";
 import { create as createFont } from "fontkit";
 import ts from "typescript";
 import { canonicalJson, jsonHash, parseResourceCatalog } from "@uniflex/core/provider";
+import { discoverPsdComponents } from "./lib/uniflex-component-catalog.mjs";
 import { createOutputWriter } from "./lib/uniflex-output.mjs";
 import { createImageResourceEntry } from "./lib/uniflex-resources.mjs";
 
@@ -19,6 +20,10 @@ const check = process.argv.includes("--check");
 const configFile = process.argv.find((argument) => argument.endsWith(".json"))
     ?? "config/uniflex.ui.json";
 const emit = createOutputWriter(root, check);
+await emit(
+    resolve(root, "apps/web-ui-preview/components.generated.json"),
+    `${JSON.stringify(await discoverPsdComponents(root), null, 2)}\n`,
+);
 const validateResource = (resource) => {
     if (!Array.isArray(resource.nineSlice)) return;
     if (resource.nineSlice.length !== 4 || resource.nineSlice.some((value) =>
