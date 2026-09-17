@@ -1,5 +1,5 @@
 import { defineView } from '@uniflex/compiler';
-import { AllianceTechPanel, type AllianceTechPanelProps } from '../AllianceTech/AllianceTechPanel';
+import { AllianceTechPanel, type AllianceTechPanelProps } from './AllianceTechPanel';
 
 export type AllianceTechRestoredParams = Omit<AllianceTechPanelProps, 'visible'>;
 
