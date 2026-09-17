@@ -1,5 +1,6 @@
 import { defineComponent, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../kits/uniflex/api/core/index';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceBoardApplyPanel } from './AllianceBoardApplyPanel';
 import { AllianceBoardMessagePanel } from './AllianceBoardMessagePanel';
@@ -39,12 +40,7 @@ export const AllianceBoardPanel = defineComponent<AllianceBoardPanelProps>((p) =
 
             <AllianceBoardApplyPanel visible={tab === 'apply'} emptyText={p.emptyText} />
 
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={p.title ?? '联盟'}
-                style={{ position: 'absolute', left: 38, top: 160, width: 200, height: 58,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={p.title ?? '联盟'} top={144} />
 
             <PanelTab label="留言板" active={tab === 'board'} left={13} top={262} width={200}
                 onClick={() => selectTab('board')} />

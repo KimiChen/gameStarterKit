@@ -3,6 +3,7 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { BackpackItemCard, type BackpackItem, type BackpackQuality } from './components/BackpackItemCard';
 import { BackpackQuantityControl } from './components/BackpackQuantityControl';
 import { BackpackResourceCounter } from './components/BackpackResourceCounter';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 
 export type BackpackAction = {
@@ -97,10 +98,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
     return (
         <view name="Backpack" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
-            <image source={imageRef('ui/mail/header')} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={params.title ?? '背包'} style={{ position: 'absolute', left: 38, top: 16, width: 118, height: 60,
-                font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true,
-                outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={params.title ?? '背包'} titleWidth={118} titleHeight={60} />
             <BackpackResourceCounter id="resource-1" value={resources[0]} left={159} onClick={() => emit('resource-1', 'primary')} />
             <BackpackResourceCounter id="resource-2" value={resources[1]} left={303} onClick={() => emit('resource-2', 'primary')} />
             <BackpackResourceCounter id="resource-3" value={resources[2]} left={447} onClick={() => emit('resource-3', 'primary')} />

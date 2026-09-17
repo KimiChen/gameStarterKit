@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 
 export type AllianceGiftTab = 'normal' | 'rare';
@@ -65,12 +66,7 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
                     font: fontRef('fonts/regular', 700), fontSize: 24, color: CAP, bold: true,
                     horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
 
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={p.title ?? '联盟礼物'}
-                style={{ position: 'absolute', left: 38, top: 160, width: 280, height: 58,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={p.title ?? '联盟礼物'} top={144} titleWidth={280} />
 
             <PanelTab label="普通礼物" active={tab === 'normal'} left={13} top={492} width={200}
                 onClick={() => selectTab('normal')} />

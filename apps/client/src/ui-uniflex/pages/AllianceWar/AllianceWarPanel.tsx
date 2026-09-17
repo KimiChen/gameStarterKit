@@ -1,7 +1,8 @@
 import { defineComponent, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
 import { CyanButton } from '../../components/button/CyanButton';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 
 export type AllianceWarTab = 'rally' | 'war' | 'event';
@@ -34,12 +35,7 @@ export const AllianceWarPanel = defineComponent<AllianceWarPanelProps>((p) => {
             <view style={{ position: 'absolute', left: 0, top: 140, width: 750, height: 209, backgroundColor: '#553E78' }} />
             <view style={{ position: 'absolute', left: 0, top: 314, width: 750, height: 1310, backgroundColor: '#F3EFE9' }} />
 
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={p.title ?? '战争'}
-                style={{ position: 'absolute', left: 41, top: 160, width: 200, height: 58,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={p.title ?? '战争'} top={144} titleLeft={41} />
 
             <PanelTab label="集结" active={tab === 'rally'} left={13} top={262} width={200}
                 onClick={() => selectTab('rally')} />
