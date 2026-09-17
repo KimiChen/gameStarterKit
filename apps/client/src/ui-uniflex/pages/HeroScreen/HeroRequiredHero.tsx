@@ -1,5 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { ItemSlot, type ItemQuality } from '../../components/item/ItemSlot';
 import type { HeroCardQuality } from './HeroCard';
 
 export interface HeroRequiredHeroProps {
@@ -11,19 +12,14 @@ export interface HeroRequiredHeroProps {
     readonly onClick?: () => void;
 }
 
+function slotQuality(quality: HeroCardQuality): ItemQuality {
+    return quality === 'yellow' ? 'orange' : quality;
+}
+
 export const HeroRequiredHero = defineComponent<HeroRequiredHeroProps>((p) => (
     <view name="HeroRequiredHero" interaction="press" onClick={p.onClick}
         style={{ position: 'relative', width: 158, height: 196 }}>
-        <image visible={p.quality === 'green'} source={imageRef('ui/backpack/item-green')}
-            style={{ position: 'absolute', left: 4, top: 4, width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image visible={p.quality === 'blue'} source={imageRef('ui/backpack/item-blue')}
-            style={{ position: 'absolute', left: 4, top: 4, width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image visible={p.quality === 'purple'} source={imageRef('ui/backpack/item-purple')}
-            style={{ position: 'absolute', left: 4, top: 4, width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image visible={p.quality === 'yellow'} source={imageRef('ui/backpack/item-orange')}
-            style={{ position: 'absolute', left: 4, top: 4, width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image visible={p.quality === 'red'} source={imageRef('ui/backpack/item-red')}
-            style={{ position: 'absolute', left: 4, top: 4, width: 154, height: 159, sizeMode: 'sliced' }} />
+        <ItemSlot left={4} top={4} quality={slotQuality(p.quality)} />
         <image source={imageRef('ui/hero/bond-portrait')}
             style={{ position: 'absolute', left: 12, top: 13, width: 138, height: 138 }} />
         <image source={imageRef('ui/hero/bond-class')}

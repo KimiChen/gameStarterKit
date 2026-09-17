@@ -63,6 +63,7 @@ export function buildCatalogIR(pages, options = {}) {
     const templates = new Map();
     const signatures = new Map();
     const extraSignatures = new Map();
+    const nestedVariants = new Map();
     const textSkins = new Map();
     const prepared = [];
 
@@ -92,6 +93,7 @@ export function buildCatalogIR(pages, options = {}) {
             templates.set(key, { root, byId, childrenOf, instanceByRoot, ...planIndex });
             signatures.set(key, componentSignature(root, childrenOf));
             extraSignatures.set(key, extraVisibleImages(root, childrenOf));
+            nestedVariants.set(key, nestedVariantSignature(root, childrenOf, instanceByRoot));
             textSkins.set(key, textSkinSignature(root, childrenOf));
         }
         prepared.push({ snapshot, screen, canvas, nodes, byId, childrenOf, instanceByRoot, ...planIndex });
@@ -106,6 +108,7 @@ export function buildCatalogIR(pages, options = {}) {
         shared,
         signatures,
         extraSignatures,
+        nestedVariants,
         textSkins,
         buttons,
         wrappers: new Set(WRAPPER_BUTTONS),
@@ -360,7 +363,37 @@ function extraVisibleImages(root, childrenOf) {
     return images.join("|");
 }
 
+function nestedVariantSignature(root, childrenOf, instanceByRoot) {
+    const parts = [];
+    const walk = (node) => {
+        for (const child of childrenOf.get(node.id) ?? []) {
+            const nested = instanceByRoot.get(child.id);
+            if (nested?.definitionKey === "ItemSlot") {
+                parts.push(`ItemSlot:${componentSignature(child, childrenOf)}:${textValues(child, childrenOf)}`);
+                continue;
+            }
+            walk(child);
+        }
+    };
+    walk(root);
+    return parts.join("||");
+}
+
+function textValues(root, childrenOf) {
+    const texts = [];
+    const walk = (node) => {
+        if (node.visible === false) return;
+        if (node.kind === "text") texts.push(node.value ?? "");
+        for (const child of childrenOf.get(node.id) ?? []) walk(child);
+    };
+    walk(root);
+    return texts.join("|");
+}
+
 function isReusableInstance(instance, node, ctx) {
+    if (instance.definitionKey === "ItemSlot") return true;
+    if ((ctx.nestedVariants?.get(instance.definitionKey) ?? "")
+        !== nestedVariantSignature(node, ctx.childrenOf, ctx.instanceByRoot)) return false;
     if ((ctx.textSkins?.get(instance.definitionKey) ?? "")
         !== textSkinSignature(node, ctx.childrenOf)) return false;
     if (ctx.buttons.has(instance.definitionKey)) {
@@ -538,9 +571,53 @@ function flatten(ctx) {
         pushFill(ctx.root, -1);
         flattenWalk(ctx, ctx.root, -1, displayList);
     }
+    if (ctx.root.name === "ItemSlot") ensureItemSlotParts(displayList);
     assignChildIds(ctx.root.name || "root", displayList);
     if (!ctx.inlineSlotHosts) nameUnnamedTexts(displayList);
     return displayList;
+}
+
+/** Keep frame/icon/title on the ItemSlot template even if the first snapshot omits them. */
+function ensureItemSlotParts(displayList) {
+    if (!displayList.some((child) => child.kind === "loader" && child.name === "icon")) {
+        displayList.push({
+            kind: "loader",
+            name: "icon",
+            uniflexName: "ItemSlot/Icon",
+            x: 13, y: 24, width: 129, height: 107,
+            xy: [13, 24], size: [129, 107],
+            url: "",
+            fill: "none",
+            group: -1,
+            visible: true,
+            touchable: false,
+            relations: [],
+        });
+    }
+    if (!displayList.some((child) => child.kind === "text" && child.name === "title")) {
+        displayList.push({
+            kind: "text",
+            name: "title",
+            uniflexName: "ItemSlot/Count",
+            text: "",
+            x: 87, y: 107, width: 57, height: 42,
+            xy: [87, 107], size: [57, 42],
+            fontSize: 32,
+            font: PREVIEW_FONT_FAMILY,
+            color: "#ffffff",
+            align: "right",
+            vAlign: "center",
+            autoSize: "shrink",
+            bold: true,
+            strokeColor: "#000000",
+            strokeSize: uniflexStrokeSize(2),
+            singleLine: true,
+            group: -1,
+            visible: false,
+            touchable: false,
+            relations: [{ target: "", sidePair: "width-width,height-height" }],
+        });
+    }
 }
 
 function flattenWalk(ctx, node, groupIndex, displayList) {
@@ -614,13 +691,66 @@ function componentChild(ctx, node, definitionKey, groupIndex) {
             outlineColor: outlineOf(node, ctx),
         };
     } else {
-        const properties = textProperties(ctx, node, definitionKey);
+        const properties = [
+            ...textProperties(ctx, node, definitionKey),
+            ...imageProperties(ctx, node, definitionKey),
+        ];
         const wrapper = wrapperButtonProperty(ctx, node, definitionKey);
         if (wrapper) properties.push(wrapper);
         if (properties.length) def.properties = properties;
     }
     if (node.interaction === "press") def.touchable = true;
     return def;
+}
+
+function imageProperties(ctx, node, definitionKey) {
+    const loaders = (ctx.templateOf?.(definitionKey)?.children ?? [])
+        .filter((child) => child.kind === "loader" && child.name);
+    if (!loaders.length) return [];
+    const instanceImages = collectFlattenedImages(node, ctx);
+    const properties = [];
+    for (let i = 0; i < loaders.length; i += 1) {
+        const loader = loaders[i];
+        const instance = instanceImages.find((item) => item.name && (
+            item.name === loader.uniflexName || item.name === loader.name
+        ));
+        if (!instance?.resourceId) {
+            if (loader.url) {
+                properties.push({ target: loader.name, id: ObjectPropID.Icon, value: "" });
+            }
+            continue;
+        }
+        const image = ctx.internImage(instance.resourceId);
+        if (!image) continue;
+        const url = uiUrl(ctx.pkg, image);
+        if (url === loader.url) continue;
+        properties.push({
+            target: loader.name,
+            id: ObjectPropID.Icon,
+            value: url,
+        });
+    }
+    return properties;
+}
+
+function collectFlattenedImages(root, ctx) {
+    const out = [];
+    const walk = (node) => {
+        for (const child of ctx.childrenOf.get(node.id) ?? []) {
+            if (child.visible === false) continue;
+            if (ctx.skipSlot && isSlotContent(node.name)) continue;
+            const instance = ctx.instanceByRoot.get(child.id);
+            const shared = instance && ctx.shared.has(instance.definitionKey);
+            if (shared && isReusableInstance(instance, child, ctx)) continue;
+            if (child.kind === "image") {
+                out.push(child);
+                continue;
+            }
+            if (isContainer(child)) walk(child);
+        }
+    };
+    walk(root);
+    return out;
 }
 
 function textProperties(ctx, node, definitionKey) {
@@ -718,18 +848,23 @@ function primitiveChild(ctx, node, groupIndex) {
         const image = ctx.internImage(node.resourceId);
         if (!image) return null;
         const reserved = reservedName(node, ctx);
-        if (reserved === "icon") {
+        if (reserved === "icon" || reserved === "frame") {
+            const fillParent = reserved === "frame"
+                || ctx.root.name === "ActionButton"
+                || ctx.root.name === "CloseButton";
             return {
                 kind: "loader",
-                name: "icon",
+                name: reserved,
                 uniflexName: node.name,
                 ...xy,
                 url: uiUrl(ctx.pkg, image),
-                fill: style.sizeMode === "sliced" ? "scaleFree" : "none",
+                fill: reserved === "frame" || style.sizeMode === "sliced" ? "scaleFree" : "none",
                 group: groupIndex,
                 visible,
                 touchable: false,
-                relations: [{ target: "", sidePair: "width-width,height-height" }],
+                relations: fillParent
+                    ? [{ target: "", sidePair: "width-width,height-height" }]
+                    : [],
             };
         }
         return {
@@ -780,6 +915,11 @@ function reservedName(node, ctx) {
     if (ctx.root.name === "ActionButton") {
         if (node.name === "ActionButton/Background") return "icon";
         if (node.name === "ActionButton/Label") return "title";
+    }
+    if (ctx.root.name === "ItemSlot") {
+        if (node.name === "ItemSlot/Frame") return "frame";
+        if (node.name === "ItemSlot/Icon") return "icon";
+        if (node.name === "ItemSlot/Count") return "title";
     }
     if (ctx.root.name === "CloseButton" && node.kind === "image") return "icon";
     return null;

@@ -435,6 +435,11 @@
       "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx"
     },
     {
+      "key": "ItemSlot",
+      "rootName": "ItemSlot",
+      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx"
+    },
+    {
       "key": "ActionButton",
       "rootName": "ActionButton",
       "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx"

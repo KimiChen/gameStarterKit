@@ -1081,6 +1081,105 @@ test("UniFlex components export as FairyGUI components; fills are images not gra
     }
 });
 
+test("ItemSlot is a shared loader component; backpack, shop, and hero instance it", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-itemslot-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const backpack = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "backpack",
+            canvas: { width: 750, height: 1334 },
+            nodes: [
+                node(1, null, "Backpack", "view", rect(0, 0, 750, 1334)),
+                node(2, 1, "BackpackItemCard", "view", rect(25, 216, 154, 159), { interaction: "press" }),
+                node(3, 2, "ItemSlot", "view", rect(25, 216, 154, 159)),
+                node(4, 3, "ItemSlot/Frame", "image", rect(25, 216, 154, 159), { resourceId: "ui/backpack/item-green" }),
+                node(5, 3, "ItemSlot/Icon", "image", rect(38, 240, 129, 107), { resourceId: "ui/backpack/diamond" }),
+                node(6, 3, "ItemSlot/Count", "text", rect(112, 323, 57, 42), { value: "99" }),
+                node(7, 1, "BackpackItemCard", "view", rect(207, 216, 154, 159), { interaction: "press" }),
+                node(8, 7, "ItemSlot", "view", rect(207, 216, 154, 159)),
+                node(9, 8, "ItemSlot/Frame", "image", rect(207, 216, 154, 159), { resourceId: "ui/backpack/item-blue" }),
+                node(10, 8, "ItemSlot/Icon", "image", rect(220, 240, 129, 107), { resourceId: "ui/backpack/diamond" }),
+                node(11, 8, "ItemSlot/Count", "text", rect(294, 323, 57, 42), { value: "64" }),
+                node(12, 1, "BackpackItemCard", "view", rect(389, 216, 154, 159), { interaction: "press" }),
+                node(13, 12, "ItemSlot", "view", rect(389, 216, 154, 159)),
+                node(14, 13, "ItemSlot/Frame", "image", rect(389, 216, 154, 159), { resourceId: "ui/backpack/item-green" }),
+                node(15, 13, "ItemSlot/Icon", "image", rect(402, 240, 129, 107), { resourceId: "ui/backpack/diamond" }),
+                node(16, 13, "ItemSlot/Count", "text", rect(476, 323, 57, 42), { value: "12" }),
+            ],
+        };
+        const shop = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "shop-getitem",
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                node(1, null, "ShopGetItemPage", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "ShopGetItem", "view", rect(0, 0, 750, 1624)),
+                node(3, 2, "ItemSlot", "view", rect(39, 621, 154, 159)),
+                node(4, 3, "ItemSlot/Frame", "image", rect(39, 621, 154, 159), { resourceId: "ui/backpack/item-orange" }),
+                node(5, 3, "ItemSlot/Icon", "image", rect(52, 645, 129, 107), { resourceId: "ui/shop/getitem-icon" }),
+                node(6, 3, "ItemSlot/Count", "text", rect(126, 728, 57, 42), { value: "99" }),
+            ],
+        };
+        const hero = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "hero",
+            canvas: { width: 750, height: 1334 },
+            nodes: [
+                node(1, null, "HeroScreen", "view", rect(0, 0, 750, 1334)),
+                node(2, 1, "HeroRequiredHero", "view", rect(20, 400, 158, 196), { interaction: "press" }),
+                node(3, 2, "ItemSlot", "view", rect(24, 404, 154, 159)),
+                node(4, 3, "ItemSlot/Frame", "image", rect(24, 404, 154, 159), { resourceId: "ui/backpack/item-purple" }),
+                node(5, 2, "", "image", rect(32, 413, 138, 138), { resourceId: "ui/hero/bond-portrait" }),
+            ],
+        };
+        await exportFgui({
+            snapshots: [
+                { snapshot: backpack, screen: catalog.screens.find((entry) => entry.id === "backpack") },
+                { snapshot: shop, screen: catalog.screens.find((entry) => entry.id === "shop-getitem") },
+                { snapshot: hero, screen: catalog.screens.find((entry) => entry.id === "hero") },
+            ],
+            out, root, catalog, images,
+        });
+        const common = join(out, "assets/UniFlex_Common");
+        const readCommon = (name) => {
+            const file = join(common, name);
+            return existsSync(file) ? readFileSync(file, "utf8") : "";
+        };
+        const slotXml = readFileSync(join(common, "ItemSlot.xml"), "utf8");
+        const cardXml = readCommon("BackpackItemCard.xml");
+        const shopPanelXml = readCommon("ShopGetItemPanel.xml");
+        const requiredXml = readCommon("HeroRequiredHero.xml");
+        const backpackXml = readFileSync(join(out, "assets/UniFlex_Backpack/Backpack.xml"), "utf8");
+        const shopXml = readFileSync(join(out, "assets/UniFlex_ShopGetItem/ShopGetItem.xml"), "utf8");
+        const heroXml = readFileSync(join(out, "assets/UniFlex_HeroScreen/HeroScreen.xml"), "utf8");
+        assert.match(slotXml, /<loader[^>]*name="frame"/);
+        assert.match(slotXml, /<loader[^>]*name="icon"/);
+        assert.match(slotXml, /<text[^>]*name="title"/);
+        assert.doesNotMatch(slotXml, /<graph/);
+        assert.match(`${backpackXml}\n${cardXml}`, /fileName="ItemSlot.xml"/);
+        assert.match(`${shopXml}\n${shopPanelXml}`, /fileName="ItemSlot.xml"/);
+        assert.match(`${heroXml}\n${requiredXml}`, /fileName="ItemSlot.xml"/);
+        assert.doesNotMatch(`${shopXml}\n${shopPanelXml}`, /<image[^>]*fileName="images\/bag_item_orange\.png"/);
+        assert.doesNotMatch(`${heroXml}\n${requiredXml}`, /<image[^>]*fileName="images\/bag_item_purple\.png"/);
+        const pkgXml = readFileSync(join(common, "package.xml"), "utf8");
+        assert.match(pkgXml, /bag_item_green/);
+        assert.match(pkgXml, /bag_item_blue/);
+        assert.match(pkgXml, /bag_item_orange/);
+        assert.match(pkgXml, /bag_item_purple/);
+        assert.match(backpackXml, /target="frame"/);
+        assert.match(backpackXml, /value="12"/);
+        assert.match(shopPanelXml, /target="frame"/);
+        assert.match(requiredXml, /target="frame"/);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
 function writeFakeExport(dir, _name, mapping, screens) {
     mkdirSync(join(dir, "preview"), { recursive: true });
     writeFileSync(join(dir, "preview", "index.html"), "<html></html>");

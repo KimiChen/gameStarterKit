@@ -76,6 +76,7 @@ export const COMMON_COMPONENTS = Object.freeze([
     "ConfirmButton",
     "CancelButton",
     "CloseButton",
+    "ItemSlot",
     "PopupBackground",
     "PopupFrame",
 ]);
