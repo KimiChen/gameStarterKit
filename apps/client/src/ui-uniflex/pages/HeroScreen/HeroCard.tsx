@@ -1,5 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { ProgressBar } from '../../components/progress/ProgressBar';
 
 export type HeroCardQuality = 'purple' | 'green' | 'red' | 'yellow' | 'blue';
 export type HeroCardClass = 'shield' | 'sword' | 'anchor';
@@ -44,6 +45,9 @@ export const HeroCard = defineComponent<HeroCardProps>((p) => {
     const star5 = stars >= 5 ? starFilled : starEmpty;
     const fillWidth = p.fillWidth ?? 99;
     const fragments = p.fragments ?? '9/10';
+    const unowned = !owned;
+    const progressTrack = imageRef('ui/hero/progress-track');
+    const progressFill = imageRef('ui/hero/progress-fill');
     const level = p.level ?? 'Lv.20';
     const team = p.team ?? '';
     const showTeam = owned && p.team != null && p.team !== '';
@@ -58,14 +62,9 @@ export const HeroCard = defineComponent<HeroCardProps>((p) => {
             style={{ position: 'absolute', left: 6, top: 6, width: 34, height: 42 }} />
         <image visible={!owned} source={imageRef('ui/hero/unowned')}
             style={{ position: 'absolute', left: 2, top: 0, width: 166, height: 244 }} />
-        <image visible={!owned} source={imageRef('ui/hero/progress-track')}
-            style={{ position: 'absolute', left: 23, top: 207, width: 124, height: 26 }} />
-        <image visible={!owned} source={imageRef('ui/hero/progress-fill')}
-            style={{ position: 'absolute', left: 25, top: 209, width: fillWidth, height: 22, sizeMode: 'sliced' }} />
-        <text visible={!owned} value={fragments}
-            style={{ position: 'absolute', left: 23, top: 205, width: 124, height: 30,
-                font: fontRef('fonts/regular', 700), fontSize: 22, color: '#ffffff', bold: true,
-                outlineColor: '#000000', outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center' }} />
+        <ProgressBar visible={unowned} left={23} top={207} width={124} height={26}
+            track={progressTrack} fill={progressFill} fillWidth={fillWidth}
+            label={fragments} labelSize={22} />
         <text visible={owned} value={level}
             style={{ position: 'absolute', left: 10, top: 168, width: 110, height: 32,
                 font: fontRef('fonts/regular', 700), fontSize: 28, color: '#ffffff', bold: true,

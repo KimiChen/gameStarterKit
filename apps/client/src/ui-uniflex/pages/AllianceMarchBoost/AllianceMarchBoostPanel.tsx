@@ -3,6 +3,7 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { CancelButton } from '../../components/button/CancelButton';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
 import { PopupFrame } from '../../components/popup/PopupFrame';
+import { ProgressBar } from '../../components/progress/ProgressBar';
 
 export interface AllianceMarchBoostPanelProps {
     readonly visible?: boolean;
@@ -27,24 +28,20 @@ export interface AllianceMarchBoostPanelProps {
     readonly onPayCoin?: () => void;
 }
 
-const TRACK_INNER = 569;
 const PSD_FILL_WIDTH = 329;
 const DARK = '#3F3254';
 const GRAY = '#837A91';
 
-function marchFillWidth(current: number, max: number): number {
-    if (current <= 0 || max <= 0) return 0;
-    return Math.round(TRACK_INNER * Math.max(0, Math.min(1, current / max)));
-}
-
 export const AllianceMarchBoostPanel = defineComponent<AllianceMarchBoostPanelProps>((p) => {
-    const hasProgress = p.progressCurrent != null && p.progressMax != null;
+    const progressCurrent = p.progressCurrent;
+    const progressMax = p.progressMax;
+    const hasProgress = progressCurrent != null && progressMax != null;
     const progressText = hasProgress
-        ? `${p.progressCurrent}/${p.progressMax}`
+        ? `${progressCurrent}/${progressMax}`
         : (p.progressText ?? '54826/5245212');
-    const fillWidth = hasProgress
-        ? marchFillWidth(p.progressCurrent!, p.progressMax!)
-        : PSD_FILL_WIDTH;
+    const fillWidth = hasProgress ? 0 : PSD_FILL_WIDTH;
+    const progressTrack = imageRef('ui/alliance-march/track');
+    const progressFill = imageRef('ui/alliance-march/fill');
     return (
         <view name="AllianceMarchBoost" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -90,19 +87,13 @@ export const AllianceMarchBoostPanel = defineComponent<AllianceMarchBoostPanelPr
 
                 <image source={imageRef('ui/alliance/announce-panel')}
                     style={{ position: 'absolute', left: 12, top: 399, width: 683, height: 74, sizeMode: 'sliced' }} />
-                <image source={imageRef('ui/alliance-march/track')}
-                    style={{ position: 'absolute', left: 85, top: 421, width: 573, height: 28, sizeMode: 'sliced' }} />
-                <image visible={fillWidth > 0} source={imageRef('ui/alliance-march/fill')}
-                    style={{ position: 'absolute', left: 87, top: 423, width: fillWidth, height: 24, sizeMode: 'sliced' }} />
+                <ProgressBar left={85} top={421} width={573} height={28}
+                    track={progressTrack} fill={progressFill} value={progressCurrent} max={progressMax}
+                    fillWidth={fillWidth} label={progressText} />
                 <image source={imageRef('ui/alliance-march/gem-slot')}
                     style={{ position: 'absolute', left: 18, top: 404, width: 65, height: 65 }} />
                 <image source={imageRef('ui/alliance-march/gem')}
                     style={{ position: 'absolute', left: 20, top: 410, width: 59, height: 53 }} />
-                <text value={progressText}
-                    style={{ position: 'absolute', left: 85, top: 421, width: 573, height: 28,
-                        font: fontRef('fonts/regular', 700), fontSize: 24, color: '#ffffff', bold: true,
-                        outlineColor: '#000000', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
 
                 <text value="奖励"
                     style={{ position: 'absolute', left: 12, top: 489, width: 683, height: 30,

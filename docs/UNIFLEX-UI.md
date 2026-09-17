@@ -59,6 +59,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uni
 | 弹窗 | `PopupBackground` / `PopupFrame` / `CloseButton` |
 | 勾选 | `CheckBox` |
 | 数量加减 / 滑条 | `QuantityControl` |
+| 进度条 | `ProgressBar` |
 | 道具格 | `ItemSlot` |
 | 全屏标题栏 | `ScreenHeader` |
 | 全屏底栏 | `ScreenFooter` |

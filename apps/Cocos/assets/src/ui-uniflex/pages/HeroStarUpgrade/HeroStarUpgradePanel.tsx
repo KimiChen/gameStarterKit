@@ -2,6 +2,7 @@ import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
 import { PopupFrame } from '../../components/popup/PopupFrame';
+import { ProgressBar } from '../../components/progress/ProgressBar';
 import { HeroStarAttributeRow, type HeroStarAttributeRowProps } from './HeroStarAttributeRow';
 
 export interface HeroStarAttribute extends Omit<HeroStarAttributeRowProps, 'striped'> {
@@ -24,7 +25,6 @@ export interface HeroStarUpgradePanelProps {
     readonly onExchange?: () => void;
 }
 
-const PROGRESS_FULL_WIDTH = 387;
 const defaultAttributes: readonly HeroStarAttribute[] = [
     { name: '攻击力', current: '44444', next: '44444' },
     { name: '攻击力', current: '44444', next: '44444' },
@@ -33,17 +33,14 @@ const defaultAttributes: readonly HeroStarAttribute[] = [
 ];
 const starSlots = [148, 234, 320, 405, 491] as const;
 
-function fragmentFillWidth(owned: number, required: number): number {
-    if (owned <= 0 || required <= 0) return 0;
-    return Math.round(PROGRESS_FULL_WIDTH * Math.max(0, Math.min(1, owned / required)));
-}
-
 export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((p) => {
     const stars = Math.max(0, Math.min(5, p.stars ?? 1));
     const attributes = p.attributes ?? defaultAttributes;
     const owned = p.owned ?? 40;
     const required = p.required ?? 45;
-    const fillWidth = fragmentFillWidth(owned, required);
+    const progressText = `${owned}/${required}`;
+    const progressTrack = imageRef('ui/star-upgrade/progress-track');
+    const progressFill = imageRef('ui/star-upgrade/progress-fill');
     const rows = [334, 389, 444, 499] as const;
     const starEmpty = imageRef('ui/star-upgrade/star-empty');
     const starFull = imageRef('ui/star-upgrade/star-full');
@@ -112,17 +109,11 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
                         current={attributes[3]?.current ?? '44444'}
                         next={attributes[3]?.next ?? '44444'} />
                 </view>
-                <image source={imageRef('ui/star-upgrade/progress-track')}
-                    style={{ position: 'absolute', left: 157, top: 604, width: 391, height: 44, sizeMode: 'sliced' }} />
-                <image visible={fillWidth > 0} source={imageRef('ui/star-upgrade/progress-fill')}
-                    style={{ position: 'absolute', left: 159, top: 606, width: fillWidth, height: 40, sizeMode: 'sliced' }} />
+                <ProgressBar left={157} top={604} width={391} height={44}
+                    track={progressTrack} fill={progressFill} value={owned} max={required}
+                    label={progressText} labelColor="#65EE62" labelSize={32} />
                 <image source={imageRef('ui/star-upgrade/fragment')}
                     style={{ position: 'absolute', left: 81, top: 575, width: 94, height: 103 }} />
-                <text value={`${owned}/${required}`}
-                    style={{ position: 'absolute', left: 157, top: 604, width: 391, height: 44,
-                        font: fontRef('fonts/regular', 700), fontSize: 32, color: '#65EE62', bold: true,
-                        outlineColor: '#000000', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
                 <view interaction="press" accessibilityLabel="获取碎片" onClick={() => p.onObtainFragments?.()}
                     style={{ position: 'absolute', left: 557, top: 586, width: 76, height: 85 }}>
                     <image source={imageRef('ui/backpack/button-plus')} style={{ width: 76, height: 85 }} />
