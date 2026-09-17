@@ -72,6 +72,14 @@ async function selectPages(catalog, { screen, all, changed }, rootDir) {
         }
         return selected;
     }
+    if (all) {
+        const selected = [];
+        for (const page of catalog.pages) {
+            const state = await inspectArtPage(rootDir, page);
+            if (state.action === "export") selected.push(page);
+        }
+        return selected;
+    }
     return catalog.pages;
 }
 
@@ -149,7 +157,9 @@ async function checkPages(catalog) {
             problems.push(`${page.screen}: missing source ${page.source}`);
         const restored = resolve(root, "apps/client/src/ui-uniflex/pages",
             page.restoredName, `${page.restoredName}.tsx`);
-        if ((page.applyTarget || catalog.applyTarget) === "restored" && !await pathExists(restored))
+        const art = await readArtJson(root, page);
+        if ((page.applyTarget || catalog.applyTarget) === "restored"
+            && art?.import && !await pathExists(restored))
             problems.push(`${page.screen}: missing restored page ${page.restoredName}`);
         const state = await inspectArtPage(root, page);
         if (state.action === "export")

@@ -1,0 +1,16 @@
+{
+  "screen": "alliance-invite",
+  "componentName": "AllianceInvite",
+  "restoredName": "AllianceInviteRestored",
+  "source": "apps/client/src/ui-uniflex/pages/AllianceInvite/AllianceInvite.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "1c4243147792c4025b6867b751f417c46899605287c272a1d8891b0e4ccafcf3",
+    "psdSha256": "5a29079ebf7bf563b77fa27614ee2ba7e50ff757d0ffee1fdcd52c1047d27454",
+    "at": "2026-09-17T03:32:58.770Z"
+  }
+}

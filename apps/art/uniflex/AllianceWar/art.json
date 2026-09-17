@@ -1,0 +1,16 @@
+{
+  "screen": "alliance-war",
+  "componentName": "AllianceWar",
+  "restoredName": "AllianceWarRestored",
+  "source": "apps/client/src/ui-uniflex/pages/AllianceWar/AllianceWar.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "31b3d42b08b007a3db878ad1ef83f375c846313892257aa3c830f810104bce06",
+    "psdSha256": "5f84c147a47f71f9fbc0712fd394d2d92a978fac54cdb82e3afe8be4284540b1",
+    "at": "2026-09-17T03:32:39.813Z"
+  }
+}
