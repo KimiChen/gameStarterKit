@@ -112,6 +112,15 @@ test("unknown commands are rejected", async () => {
         /Unknown command: not-a-command/);
 });
 
+test("export-fgui requires --out and does not call the PSD converter", async () => {
+    const { calls, execute } = capture();
+    await assert.rejects(
+        runCli(["export-fgui", "--snapshot", "missing.json"], { root, env: {}, execute }),
+        /Missing --out/,
+    );
+    assert.equal(calls.length, 0);
+});
+
 test("roundtrip from a preview screen exports, packages and checks without writing the project", async () => {
     const { calls, execute } = capture();
     await runCli(["roundtrip", "--screen", "prompt", "--out", ".cache/psd/cli-test-roundtrip"], {
