@@ -225,6 +225,7 @@ function flatten(ctx) {
     const displayList = [];
     const walk = (node, groupIndex) => {
         for (const child of ctx.childrenOf.get(node.id) ?? []) {
+            if (child.visible === false) continue;
             if (ctx.skipSlot && node.name === "PopupFrame/Content") continue;
             const instance = ctx.instanceByRoot.get(child.id);
             const shared = instance && SHARED.has(instance.definitionKey);

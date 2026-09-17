@@ -92,14 +92,12 @@ function previewHtml(ir) {
   <meta charset="utf-8"/>
   <title>UniFlex FairyGUI preview (candidate) — ${escapeHtml(component.name)}</title>
   <style>
-    html, body { margin: 0; background: #222; color: #eee; font: 14px/1.4 sans-serif; }
-    #stage-host { width: ${ir.canvas.width}px; height: ${ir.canvas.height}px; transform-origin: top left; }
-    #meta { padding: 8px 12px; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #222; color: #eee; font: 14px/1.4 sans-serif; }
+    #meta { position: relative; z-index: 2; padding: 8px 12px; pointer-events: none; }
   </style>
 </head>
 <body>
   <div id="meta">候选 FairyGUI 工程 DOM 预览（官方 fairygui-dom）。不是旧 Cocos 发布物。</div>
-  <div id="stage-host"></div>
   <script src="./fairygui.js"></script>
   <script type="module">
     const fgui = window.fgui;
