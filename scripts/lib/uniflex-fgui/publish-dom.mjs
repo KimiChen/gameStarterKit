@@ -1,9 +1,15 @@
 import { ByteWriter, StringTable, writeSegments } from "./bytes.mjs";
 import {
     AlignType, AutoSizeType, BUTTON_CONTROLLER_PAGES, ButtonMode, DownEffect,
-    FGUI_MAGIC, FGUI_VERSION, GraphType, LoaderFillType, ObjectType, OverflowType,
+    FGUI_MAGIC, FGUI_VERSION, GraphType, LoaderFillType, ObjectPropID, ObjectType, OverflowType,
     PackageItemType, RelationType, VertAlignType,
 } from "./constants.mjs";
+import { parseCssColor } from "./bytes.mjs";
+
+function cssToRgbInt(css) {
+    const { r, g, b } = parseCssColor(css);
+    return String((r << 16) + (g << 8) + b);
+}
 
 const ALIGN = { left: AlignType.Left, center: AlignType.Center, right: AlignType.Right };
 const VALIGN = {
@@ -249,7 +255,7 @@ function writeChild(child, strings, pkg, packages, siblings) {
         segs[5] = extra;
     } else if (child.kind === "text") {
         const extra = new ByteWriter(strings);
-        extra.s(null);
+        extra.s(child.font ?? null);
         extra.i16(child.fontSize ?? 24);
         extra.color(child.color ?? "#ffffff", { alpha: false });
         extra.u8(ALIGN[child.align] ?? AlignType.Left);
@@ -294,7 +300,20 @@ function writeChild(child, strings, pkg, packages, siblings) {
         const after = new ByteWriter(strings);
         after.i16(-1);
         after.i16(0);
-        after.i16(0);
+        const props = [];
+        if (child.button?.outlineColor) {
+            props.push({
+                target: "title",
+                id: ObjectPropID.OutlineColor,
+                value: cssToRgbInt(child.button.outlineColor),
+            });
+        }
+        after.i16(props.length);
+        for (const prop of props) {
+            after.s(prop.target);
+            after.i16(prop.id);
+            after.s(prop.value);
+        }
         segs[4] = after;
         const target = findComponent(packages, child.srcName);
         if (target?.extension === "Button" || child.button) {

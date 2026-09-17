@@ -2,8 +2,8 @@ import { childId, fairyId, packageIds, projectId } from "./ids.mjs";
 import { toScale9Grid } from "./nine-slice.mjs";
 import { imageBasename, imageStem } from "./resources.mjs";
 import {
-    BUTTON_COMPONENTS, COMMON_COMPONENTS, COMMON_PACKAGE, DEFAULT_STYLES, KNOWN_LOSSES,
-    ObjectType, SLOT_HOSTS,
+    ACTION_OUTLINE, BUTTON_COMPONENTS, COMMON_COMPONENTS, COMMON_PACKAGE, DEFAULT_STYLES,
+    KNOWN_LOSSES, ObjectType, PREVIEW_FONT_FAMILY, SLOT_HOSTS, uniflexStrokeSize,
 } from "./constants.mjs";
 
 const SHARED = new Set(COMMON_COMPONENTS.filter((key) => !SLOT_HOSTS.includes(key)));
@@ -278,6 +278,7 @@ function componentChild(ctx, node, definitionKey, groupIndex) {
         def.button = {
             title: titleOf(node, ctx),
             icon: iconUrlOf(node, ctx),
+            outlineColor: outlineOf(node, ctx),
         };
     }
     if (node.interaction === "press") def.touchable = true;
@@ -356,13 +357,14 @@ function primitiveChild(ctx, node, groupIndex) {
             text: node.value ?? "",
             ...xy,
             fontSize: style.fontSize ?? 24,
+            font: PREVIEW_FONT_FAMILY,
             color: style.color ?? "#ffffff",
             align: style.horizontalAlign ?? "left",
             vAlign: style.verticalAlign ?? "top",
             autoSize: style.overflow === "shrink" ? "shrink" : "none",
             bold: Boolean(style.bold),
             strokeColor: style.outlineColor,
-            strokeSize: style.outlineWidth ?? 0,
+            strokeSize: uniflexStrokeSize(style.outlineWidth),
             singleLine: style.wrap === true ? false : true,
             group: groupIndex,
             visible,
@@ -388,6 +390,16 @@ function titleOf(node, ctx) {
     const kids = collectNamed(node, ctx.childrenOf);
     const label = kids.find((item) => item.name === "ActionButton/Label");
     return label?.value || node.value || "";
+}
+
+function outlineOf(node, ctx) {
+    const parent = ctx.byId.get(node.parent);
+    if (parent?.name && ACTION_OUTLINE[parent.name]) return ACTION_OUTLINE[parent.name];
+    const kids = collectNamed(node, ctx.childrenOf);
+    const label = kids.find((item) => item.name === "ActionButton/Label");
+    return styleOf(label ?? node, ctx.planByName).outlineColor
+        ?? DEFAULT_STYLES["ActionButton/Label"]?.outlineColor
+        ?? null;
 }
 
 function iconUrlOf(node, ctx) {

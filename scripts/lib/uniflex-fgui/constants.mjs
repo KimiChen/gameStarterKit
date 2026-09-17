@@ -81,6 +81,32 @@ export const COMMON_COMPONENTS = Object.freeze([
 export const COMMON_PACKAGE = "UniFlex_Common";
 export const PROJECT_TYPE = "CocosCreator";
 
+/** Same face UniFlex web preview uses (`fonts/regular`). */
+export const PREVIEW_FONT_FAMILY = "UniFlex";
+export const PREVIEW_FONT_CANDIDATES = Object.freeze([
+    "apps/Cocos/assets/resources/uniflex/fonts/regular.ttf",
+    "apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf",
+]);
+
+/** UniFlex web uses outlineWidth*2 as -webkit-text-stroke. FairyGUI-dom uses the same CSS. */
+export function uniflexStrokeSize(outlineWidth) {
+    const width = Number(outlineWidth) || 0;
+    return width > 0 ? width * 2 : 0;
+}
+
+export const ACTION_OUTLINE = Object.freeze({
+    ConfirmButton: "#643e14",
+    CancelButton: "#4e783b",
+});
+
+export const ObjectPropID = Object.freeze({
+    Text: 0,
+    Icon: 1,
+    Color: 2,
+    OutlineColor: 3,
+    FontSize: 8,
+});
+
 export const BUTTON_CONTROLLER_PAGES = Object.freeze([
     ["0", "up"],
     ["1", "down"],
@@ -114,6 +140,5 @@ export const KNOWN_LOSSES = Object.freeze([
     "flex 不进 FGUI，只进烘焙坐标",
     "visible 只导出当前预览态，不生成 controller",
     "disabled 只反映当前 opacity，不生成 setGray gear",
-    "字体退回 Editor 默认，不承诺与 Web 像素级一致",
-    "ActionButton 描边取组件定义上的默认值；实例级 outlineColor 不能在无 Gear 时覆盖",
+    "FairyGUI-dom 用 webkit-text-stroke，字重/抗锯齿与 UniFlex canvas 不完全同像素",
 ]);
