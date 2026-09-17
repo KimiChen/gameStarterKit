@@ -150,6 +150,7 @@ function previewHtml(ir, { font } = {}) {
     const host = document.getElementById("ui");
     const canvas = { width: ${first.width}, height: ${first.height} };
     const exportMode = new URLSearchParams(location.search).get("psd") === "1";
+    if (exportMode) document.getElementById("picker")?.style.setProperty("display", "none");
     let groot;
     let view;
     const resize = () => {

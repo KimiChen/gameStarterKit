@@ -149,6 +149,7 @@ export function buildCatalogIR(pages, options = {}) {
             instanceByRoot: item.instanceByRoot,
             planByName: item.planByName,
             planById: item.planById,
+            planByComponent: item.planByComponent,
             skipSlot: false,
             inlineSlotHosts: true,
         });
@@ -319,29 +320,62 @@ function firstInstances(instances, byId) {
     for (const instance of instances) {
         if (found.has(instance.definitionKey)) continue;
         const node = byId.get(instance.rootRecordId);
-        if (node) found.set(instance.definitionKey, node);
+        if (!node || !isVisibleLaidOut(node, byId)) continue;
+        found.set(instance.definitionKey, node);
     }
     return found;
 }
 
+function isVisibleLaidOut(node, byId) {
+    let current = node;
+    const seen = new Set();
+    while (current) {
+        if (seen.has(current.id)) break;
+        seen.add(current.id);
+        if (current.visible === false) return false;
+        current = current.parent != null ? byId.get(current.parent) : null;
+    }
+    return (node.rect?.width ?? 0) >= 1 && (node.rect?.height ?? 0) >= 1;
+}
+
 function indexPlan(plan) {
-    const planByName = new Map();
-    const planById = new Map();
-    if (!plan) return { planByName, planById };
-    const visit = (node) => {
-        if (!node || typeof node !== "object") return;
-        if (node.planId != null && !planById.has(node.planId)) planById.set(node.planId, node);
-        const name = node.props?.name;
-        if (typeof name === "string" && name) planByName.set(name, node);
-        for (const child of node.children ?? []) visit(child);
-        if (node.root) visit(node.root);
-        if (node.repeat?.template) visit(node.repeat.template);
-        if (node.virtual?.template) visit(node.virtual.template);
-        if (node.props?.virtual?.template) visit(node.props.virtual.template);
+    const empty = () => ({ planByName: new Map(), planById: new Map() });
+    if (!plan) return { ...empty(), planByComponent: new Map() };
+    const indexTree = (root) => {
+        const planByName = new Map();
+        const planById = new Map();
+        const visit = (node) => {
+            if (!node || typeof node !== "object") return;
+            if (node.planId != null && !planById.has(node.planId)) planById.set(node.planId, node);
+            const name = node.props?.name;
+            if (typeof name === "string" && name && !planByName.has(name)) planByName.set(name, node);
+            for (const child of node.children ?? []) visit(child);
+            if (node.root) visit(node.root);
+            if (node.repeat?.template) visit(node.repeat.template);
+            if (node.virtual?.template) visit(node.virtual.template);
+            if (node.props?.virtual?.template) visit(node.props.virtual.template);
+        };
+        visit(root);
+        return { planByName, planById };
     };
-    visit(plan.root);
-    for (const entry of Object.values(plan.components ?? {})) visit(entry.root ?? entry);
-    return { planByName, planById };
+    const page = indexTree(plan.root);
+    const planByComponent = new Map();
+    for (const [entryKey, entry] of Object.entries(plan.components ?? {})) {
+        const root = entry.root ?? entry;
+        const indexed = indexTree(root);
+        const aliases = [];
+        const name = root?.props?.name;
+        if (typeof name === "string" && name) aliases.push(name);
+        if (typeof entryKey === "string" && entryKey) {
+            aliases.push(entryKey);
+            const suffix = entryKey.includes("_") ? entryKey.slice(entryKey.lastIndexOf("_") + 1) : "";
+            if (suffix) aliases.push(suffix);
+        }
+        for (const alias of aliases) {
+            if (!planByComponent.has(alias)) planByComponent.set(alias, indexed);
+        }
+    }
+    return { ...page, planByComponent };
 }
 
 function flatten(ctx) {
@@ -439,8 +473,7 @@ function textProperties(ctx, node, definitionKey) {
     const templateTexts = (ctx.templateOf?.(definitionKey)?.children ?? [])
         .filter((child) => child.kind === "text");
     if (!templateTexts.length) return [];
-    const instanceTexts = collectNamed(node, ctx.childrenOf)
-        .filter((item) => item.kind === "text" && item.visible !== false);
+    const instanceTexts = collectFlattenedTexts(node, ctx);
     const properties = [];
     for (let i = 0; i < templateTexts.length; i += 1) {
         const templateText = templateTexts[i];
@@ -457,6 +490,27 @@ function textProperties(ctx, node, definitionKey) {
         });
     }
     return properties;
+}
+
+/** Texts flatten would emit on this node — skip nested shared instances (their texts belong there). */
+function collectFlattenedTexts(root, ctx) {
+    const out = [];
+    const walk = (node) => {
+        for (const child of ctx.childrenOf.get(node.id) ?? []) {
+            if (child.visible === false) continue;
+            if (ctx.skipSlot && isSlotContent(node.name)) continue;
+            const instance = ctx.instanceByRoot.get(child.id);
+            const shared = instance && ctx.shared.has(instance.definitionKey);
+            if (shared && isReusableInstance(instance, child, ctx)) continue;
+            if (child.kind === "text") {
+                out.push(child);
+                continue;
+            }
+            if (isContainer(child)) walk(child);
+        }
+    };
+    walk(root);
+    return out;
 }
 
 function groupChild(ctx, node, groupIndex) {
@@ -617,13 +671,35 @@ function styleOf(node, ctx) {
 }
 
 function lookupPlan(node, ctx) {
+    const scoped = componentPlan(node, ctx);
     if (node.name) {
-        const named = ctx.planByName?.get(node.name);
+        const named = scoped?.planByName.get(node.name) ?? ctx.planByName?.get(node.name);
         if (planKindOk(named, node)) return named;
     }
     if (node.planId != null) {
+        if (scoped) {
+            const byId = scoped.planById.get(node.planId);
+            return planKindOk(byId, node) ? byId : null;
+        }
         const byId = ctx.planById?.get(node.planId);
         if (planKindOk(byId, node)) return byId;
+    }
+    return null;
+}
+
+function componentPlan(node, ctx) {
+    let current = node;
+    const seen = new Set();
+    while (current) {
+        if (seen.has(current.id)) break;
+        seen.add(current.id);
+        const instance = ctx.instanceByRoot?.get(current.id);
+        const keys = [instance?.definitionKey, current.name].filter(Boolean);
+        for (const key of keys) {
+            const scoped = ctx.planByComponent?.get(key);
+            if (scoped) return scoped;
+        }
+        current = current.parent != null ? ctx.byId?.get(current.parent) : null;
     }
     return null;
 }
