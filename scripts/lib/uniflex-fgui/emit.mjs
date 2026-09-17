@@ -149,11 +149,19 @@ function previewHtml(ir, { font } = {}) {
     const screens = ${JSON.stringify(screens)};
     const host = document.getElementById("ui");
     const canvas = { width: ${first.width}, height: ${first.height} };
+    const exportMode = new URLSearchParams(location.search).get("psd") === "1";
     let groot;
     let view;
     const resize = () => {
-      const scale = Math.min(innerWidth / canvas.width, innerHeight / canvas.height);
-      host.style.transform = \`translate(-50%, -50%) scale(\${scale})\`;
+      if (exportMode) {
+        host.style.left = "0";
+        host.style.top = "0";
+        host.style.transform = "none";
+        host.style.transformOrigin = "top left";
+      } else {
+        const scale = Math.min(innerWidth / canvas.width, innerHeight / canvas.height);
+        host.style.transform = \`translate(-50%, -50%) scale(\${scale})\`;
+      }
       groot?.setSize(canvas.width, canvas.height);
     };
     resize();

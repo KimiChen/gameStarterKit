@@ -130,6 +130,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(previewHtml, /id="ui"/);
         assert.match(previewHtml, /#101318/);
         assert.match(previewHtml, /regular\.ttf/);
+        assert.match(previewHtml, /get\("psd"\)/);
         assert.ok(existsSync(join(out, "preview/regular.ttf")));
         assert.match(frameXml, /name="PopupFrame\/Content"/);
         assert.doesNotMatch(frameXml, /Prompt\/Message/);
@@ -405,6 +406,155 @@ test("export-fgui --all rejects --screen", async () => {
         }),
         /either --all or --screen/,
     );
+});
+
+test("panel pages emit fills, virtual-list rows, and shared text overrides", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-panels-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "mail",
+            canvas: { width: 750, height: 1334 },
+            nodes: [
+                node(1, null, "MailBattleReport", "view", rect(0, 0, 750, 1334), { planId: 1 }),
+                node(2, 1, "", "view", rect(0, 0, 750, 170), { planId: 2 }),
+                node(3, 1, "PanelTab", "view", rect(14, 118, 170, 52), { planId: 5 }),
+                node(4, 3, "", "image", rect(14, 118, 170, 52), { resourceId: "ui/mail/tab-inactive" }),
+                node(5, 3, "", "text", rect(14, 118, 170, 52), { value: "系统", planId: 10 }),
+                node(6, 1, "PanelTab", "view", rect(192, 118, 170, 52)),
+                node(7, 6, "", "image", rect(192, 118, 170, 52), { resourceId: "ui/mail/tab-inactive" }),
+                node(8, 6, "", "text", rect(192, 118, 170, 52), { value: "战报" }),
+                node(9, 1, "", "virtual-list", rect(10, 236, 730, 905)),
+                node(10, 9, "MailBattleRow", "view", rect(10, 236, 730, 163)),
+                node(11, 10, "", "image", rect(10, 236, 730, 163), { resourceId: "ui/mail/row" }),
+                node(12, 10, "", "text", rect(155, 262, 480, 36), { value: "野怪讨伐胜利", planId: 46 }),
+                node(13, 9, "MailBattleRow", "view", rect(10, 424, 730, 163)),
+                node(14, 13, "", "image", rect(10, 424, 730, 163), { resourceId: "ui/mail/row" }),
+                node(15, 13, "", "text", rect(155, 450, 480, 36), { value: "资源点侦察报告" }),
+                node(16, 1, "NotificationBadge", "view", rect(159, 99, 34, 34)),
+                node(17, 16, "NotificationBadge/Background", "image", rect(159, 99, 34, 34), { resourceId: "ui/mail/number-badge" }),
+                node(18, 16, "NotificationBadge/Count", "text", rect(161, 99, 30, 34), { value: "2" }),
+                node(19, 1, "NotificationBadge", "view", rect(346, 99, 34, 34)),
+                node(20, 19, "NotificationBadge/Background", "image", rect(346, 99, 34, 34), { resourceId: "ui/mail/number-badge" }),
+                node(21, 19, "NotificationBadge/Count", "text", rect(348, 99, 30, 34), { value: "4" }),
+            ],
+        };
+        const hostPlan = {
+            name: "MailBattleReport",
+            components: {
+                uniflexComponent3_ActionButton: {
+                    root: { planId: 1, kind: "view", props: { name: "ActionButton" } },
+                },
+            },
+            root: {
+                planId: 1,
+                kind: "view",
+                props: { name: "MailBattleReport", backgroundColor: "#F3EFE9" },
+                children: [
+                    { planId: 2, kind: "view", props: { backgroundColor: "#553E78" } },
+                    {
+                        planId: 5, kind: "view", props: { name: "PanelTab" },
+                        children: [{
+                            planId: 10, kind: "text",
+                            props: { bold: true, color: "#3F3254", fontSize: 28, horizontalAlign: "center" },
+                        }],
+                    },
+                    {
+                        kind: "virtual-list",
+                        props: {
+                            virtual: {
+                                template: {
+                                    planId: 42, kind: "view", props: { name: "MailBattleRow" },
+                                    children: [{
+                                        planId: 46, kind: "text",
+                                        props: { bold: true, color: "#3F3254", fontSize: 26 },
+                                    }],
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+        };
+        await exportFgui({
+            snapshot,
+            out,
+            root,
+            screen: catalog.screens.find((entry) => entry.id === "mail"),
+            catalog,
+            images,
+            hostPlan,
+        });
+        const pageXml = readFileSync(join(out, "assets/UniFlex_MailBattleReport/MailBattleReport.xml"), "utf8");
+        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
+        const rowXml = readFileSync(join(out, "assets/UniFlex_Common/MailBattleRow.xml"), "utf8");
+        const badgeXml = readFileSync(join(out, "assets/UniFlex_Common/NotificationBadge.xml"), "utf8");
+        assert.match(pageXml, /fillColor="#fff3efe9"/);
+        assert.match(pageXml, /fillColor="#ff553e78"/);
+        assert.match(pageXml, /fileName="MailBattleRow.xml"/);
+        assert.match(pageXml, /propertyId="0" value="战报"/);
+        assert.match(pageXml, /propertyId="0" value="资源点侦察报告"/);
+        assert.match(pageXml, /propertyId="0" value="4"/);
+        assert.match(tabXml, /color="#3f3254"/);
+        assert.match(tabXml, /text="系统"/);
+        assert.match(rowXml, /color="#3f3254"/);
+        assert.match(rowXml, /text="野怪讨伐胜利"/);
+        assert.match(badgeXml, /text="2"/);
+        assert.equal((pageXml.match(/fileName="MailBattleRow.xml"/g) ?? []).length, 2);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("SettingsMenuButton instances override labels and keep plan color", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-settings-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "settings",
+            canvas: { width: 750, height: 1334 },
+            nodes: [
+                node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1334)),
+                node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1334)),
+                node(3, 1, "PopupFrame/Panel", "view", rect(21, 171, 708, 992)),
+                node(4, 3, "PopupBackground", "view", rect(21, 171, 708, 992)),
+                node(5, 4, "", "image", rect(21, 171, 708, 992), { resourceId: "ui/settings/panel" }),
+                node(6, 3, "PopupFrame/Title", "text", rect(141, 182, 468, 64), { value: "设置" }),
+                node(7, 3, "PopupFrame/Content", "view", rect(21, 171, 708, 992)),
+                node(8, 7, "Settings/Content", "view", rect(21, 171, 708, 992)),
+                node(9, 8, "SettingsMenuButton", "view", rect(42, 284, 326, 114)),
+                node(10, 9, "SettingsMenuButton/Background", "image", rect(42, 284, 326, 114), { resourceId: "ui/settings/button" }),
+                node(11, 9, "SettingsMenuButton/Icon", "image", rect(75, 315, 54, 54), { resourceId: "ui/settings/gear" }),
+                node(12, 9, "SettingsMenuButton/Label", "text", rect(170, 314, 184, 54), { value: "通用设置" }),
+                node(13, 8, "SettingsMenuButton", "view", rect(383, 284, 326, 114)),
+                node(14, 13, "SettingsMenuButton/Background", "image", rect(383, 284, 326, 114), { resourceId: "ui/settings/button" }),
+                node(15, 13, "SettingsMenuButton/Icon", "image", rect(416, 315, 54, 54), { resourceId: "ui/settings/gear" }),
+                node(16, 13, "SettingsMenuButton/Label", "text", rect(511, 314, 184, 54), { value: "声音设置" }),
+            ],
+        };
+        await exportFgui({
+            snapshot,
+            out,
+            root,
+            screen: catalog.screens.find((entry) => entry.id === "settings"),
+            catalog,
+            images,
+        });
+        const pageXml = readFileSync(join(out, "assets/UniFlex_Settings/Settings.xml"), "utf8");
+        const buttonXml = readFileSync(join(out, "assets/UniFlex_Common/SettingsMenuButton.xml"), "utf8");
+        assert.match(buttonXml, /text="通用设置"/);
+        assert.match(buttonXml, /color="#3f3254"/);
+        assert.match(pageXml, /propertyId="0" value="声音设置"/);
+        assert.match(pageXml, /fileName="SettingsMenuButton.xml"/);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
 });
 
 function snapshotDir(dir) {

@@ -300,7 +300,7 @@ function writeChild(child, strings, pkg, packages, siblings) {
         const after = new ByteWriter(strings);
         after.i16(-1);
         after.i16(0);
-        const props = [];
+        const props = [...(child.properties ?? [])];
         if (child.button?.outlineColor) {
             props.push({
                 target: "title",

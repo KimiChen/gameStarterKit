@@ -99,6 +99,13 @@ export const ACTION_OUTLINE = Object.freeze({
     CancelButton: "#4e783b",
 });
 
+export const ACTION_OUTLINE_BY_RESOURCE = Object.freeze({
+    "ui/button/confirm": "#643e14",
+    "ui/button/cancel": "#4e783b",
+    "ui/button/yellow": "#643E14",
+    "ui/button/red": "#6A2A28",
+});
+
 export const ObjectPropID = Object.freeze({
     Text: 0,
     Icon: 1,
@@ -132,6 +139,15 @@ export const DEFAULT_STYLES = Object.freeze({
     "ActionButton/IconLabel": Object.freeze({
         fontSize: 40, color: "#ffffff", outlineWidth: 2, overflow: "shrink",
         horizontalAlign: "left", verticalAlign: "center",
+    }),
+    "SettingsMenuButton/Label": Object.freeze({
+        fontSize: 28, color: "#3F3254", bold: true, overflow: "shrink",
+        horizontalAlign: "center", verticalAlign: "center",
+    }),
+    "NotificationBadge/Count": Object.freeze({
+        fontSize: 24, color: "#FFFFFF", bold: true, overflow: "shrink",
+        horizontalAlign: "center", verticalAlign: "center",
+        outlineColor: "#000000", outlineWidth: 2,
     }),
     "PopupFrame/Mask": Object.freeze({ backgroundColor: "#00000099" }),
 });
