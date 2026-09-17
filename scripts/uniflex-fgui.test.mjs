@@ -875,6 +875,65 @@ test("nested component planIds do not reuse the page title style", async () => {
     }
 });
 
+test("QuantityControl inspect skin overrides the white default and IconLabel keeps confirm stroke", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-qty-skin-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "shop-getitem",
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                node(1, null, "ShopGetItemPage", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "QuantityControl", "view", rect(39, 841, 669, 85)),
+                node(3, 2, "", "text", rect(604, 1132, 121, 54), { value: "0" }),
+                node(4, 1, "QuantityControl", "view", rect(39, 841, 669, 85)),
+                node(5, 4, "", "text", rect(533, 852, 94, 64), {
+                    value: "8",
+                    fontSize: 32,
+                    color: "#3F3254",
+                    outlineWidth: 0,
+                    outlineColor: "#000000",
+                    bold: true,
+                }),
+                node(6, 1, "ActionButton", "view", rect(77, 860, 255, 102), { interaction: "press" }),
+                node(7, 6, "ActionButton/Background", "image", rect(77, 860, 255, 102), {
+                    resourceId: "ui/button/confirm",
+                }),
+                node(8, 6, "ActionButton/Label", "text", rect(85, 864, 239, 86), { value: "确定" }),
+                node(9, 6, "ActionButton/IconRow", "view", rect(85, 864, 239, 86), { visible: false }),
+                node(10, 1, "ActionButton", "view", rect(247, 979, 255, 102), { interaction: "press" }),
+                node(11, 10, "ActionButton/Background", "image", rect(247, 979, 255, 102), {
+                    resourceId: "ui/button/confirm",
+                }),
+                node(12, 10, "ActionButton/Label", "text", rect(255, 983, 239, 86), {
+                    value: "1000", visible: false,
+                }),
+                node(13, 10, "ActionButton/IconRow", "view", rect(255, 983, 239, 86)),
+                node(14, 13, "ActionButton/Icon", "image", rect(283, 999, 64, 54), {
+                    resourceId: "ui/shop/getitem-pay-gem",
+                }),
+                node(15, 13, "ActionButton/IconLabel", "text", rect(363, 983, 104, 86), { value: "1000" }),
+            ],
+        };
+        await exportFgui({
+            snapshot, out, root,
+            screen: catalog.screens.find((entry) => entry.id === "shop-getitem"),
+            catalog, images,
+        });
+        const pageXml = readFileSync(join(out, "assets/UniFlex_ShopGetItem/ShopGetItem.xml"), "utf8");
+        assert.match(pageXml, /fontSize="33"[^>]*color="#ffffff"[^>]*strokeColor="#000000"[^>]*strokeSize="4"[^>]*text="0"/);
+        assert.match(pageXml, /fontSize="32"[^>]*color="#3f3254"[^>]*text="8"/);
+        assert.doesNotMatch(pageXml, /strokeSize="[^"]+"[^>]*text="8"/);
+        assert.doesNotMatch(pageXml, /text="8"[^>]*strokeSize=/);
+        assert.match(pageXml, /name="ActionButton\/IconLabel"[^>]*strokeColor="#643e14"[^>]*strokeSize="4"[^>]*text="1000"/);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
 function snapshotDir(dir) {
     if (!existsSync(dir)) return [];
     const walk = (current) => {

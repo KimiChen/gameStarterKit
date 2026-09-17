@@ -703,11 +703,63 @@ function uiUrl(pkg, image) {
 function styleOf(node, ctx) {
     const planNode = lookupPlan(node, ctx);
     const props = planNode?.props ?? {};
-    const fallback = {
+    const merged = {
         ...(DEFAULT_STYLES[node.name] ?? {}),
         ...(parentTextStyle(node, ctx) ?? {}),
+        ...(inspectTextStyle(node) ?? {}),
+        ...props.style,
+        ...props,
     };
-    return { ...fallback, ...props.style, ...props };
+    if (!merged.outlineColor && (node.name === "ActionButton/IconLabel" || node.name === "ActionButton/Label")) {
+        const outline = actionOutlineColor(node, ctx);
+        if (outline) merged.outlineColor = outline;
+    }
+    return merged;
+}
+
+/** Live inspect / capture may stamp runtime text props that AOT plans leave as slots. */
+function inspectTextStyle(node) {
+    if (!node || node.kind !== "text") return null;
+    const source = node.style && typeof node.style === "object" ? { ...node, ...node.style } : node;
+    const out = {};
+    if (source.fontSize != null && source.fontSize !== "") out.fontSize = Number(source.fontSize);
+    if (typeof source.color === "string" && source.color) out.color = source.color;
+    if (typeof source.outlineColor === "string" && source.outlineColor) out.outlineColor = source.outlineColor;
+    if (source.outlineWidth != null && source.outlineWidth !== "") out.outlineWidth = Number(source.outlineWidth);
+    if (source.bold != null) out.bold = Boolean(source.bold);
+    if (typeof source.horizontalAlign === "string" && source.horizontalAlign) {
+        out.horizontalAlign = source.horizontalAlign;
+    }
+    if (typeof source.verticalAlign === "string" && source.verticalAlign) {
+        out.verticalAlign = source.verticalAlign;
+    }
+    if (typeof source.overflow === "string" && source.overflow) out.overflow = source.overflow;
+    return Object.keys(out).length ? out : null;
+}
+
+function actionOutlineColor(node, ctx) {
+    const action = ancestorNamed(node, ctx, "ActionButton");
+    if (!action) return null;
+    const parent = ctx.byId.get(action.parent);
+    if (parent?.name && ACTION_OUTLINE[parent.name]) return ACTION_OUTLINE[parent.name];
+    const kids = collectNamed(action, ctx.childrenOf);
+    const background = kids.find((item) => item.name === "ActionButton/Background" || item.kind === "image");
+    if (background?.resourceId && ACTION_OUTLINE_BY_RESOURCE[background.resourceId]) {
+        return ACTION_OUTLINE_BY_RESOURCE[background.resourceId];
+    }
+    return null;
+}
+
+function ancestorNamed(node, ctx, name) {
+    let current = node;
+    const seen = new Set();
+    while (current) {
+        if (seen.has(current.id)) break;
+        seen.add(current.id);
+        if (current.name === name) return current;
+        current = current.parent != null ? ctx.byId?.get(current.parent) : null;
+    }
+    return null;
 }
 
 function lookupPlan(node, ctx) {
