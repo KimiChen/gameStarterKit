@@ -118,6 +118,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(promptXml, /name="CloseButton"/);
         assert.match(promptXml, /name="PopupBackground"/);
         assert.match(promptXml, /name="Prompt\/Message"/);
+        assert.doesNotMatch(promptXml, /<graph/);
         assert.doesNotMatch(promptXml, /ui\/button\/confirm/);
         assert.match(actionXml, /extention="Button"/);
         assert.match(actionXml, /name="title"/);
@@ -509,8 +510,9 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
         const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
         const rowXml = readFileSync(join(out, "assets/UniFlex_Common/MailBattleRow.xml"), "utf8");
         const badgeXml = readFileSync(join(out, "assets/UniFlex_Common/NotificationBadge.xml"), "utf8");
-        assert.match(pageXml, /fillColor="#fff3efe9"/);
-        assert.match(pageXml, /fillColor="#ff553e78"/);
+        assert.doesNotMatch(pageXml, /<graph/);
+        assert.match(pageXml, /fill_fff3efe9\.png/);
+        assert.match(pageXml, /fill_ff553e78\.png/);
         assert.match(pageXml, /fileName="MailBattleRow.xml"/);
         assert.match(pageXml, /propertyId="0" value="战报"/);
         assert.match(pageXml, /propertyId="0" value="资源点侦察报告"/);
@@ -882,10 +884,14 @@ test("nested component planIds do not reuse the page title style", async () => {
             catalog, images, hostPlan,
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_Alliance/Alliance.xml"), "utf8");
+        const headerXml = readFileSync(join(out, "assets/UniFlex_Common/AllianceInfoHeader.xml"), "utf8");
+        const menuXml = readFileSync(join(out, "assets/UniFlex_Common/AllianceMenuButton.xml"), "utf8");
         assert.match(pageXml, /fontSize="40"[^>]*text="联盟"/);
-        assert.match(pageXml, /fontSize="24"[^>]*color="#3f3254"[^>]*text="盟主"/);
-        assert.doesNotMatch(pageXml, /fontSize="40"[^>]*text="盟主"/);
-        assert.match(pageXml, /fontSize="28"[^>]*color="#3f3254"[^>]*text="战争"/);
+        assert.match(pageXml, /fileName="AllianceHomePanel.xml"/);
+        assert.doesNotMatch(pageXml, /text="盟主"/);
+        assert.match(headerXml, /fontSize="24"[^>]*color="#3f3254"[^>]*text="盟主"/);
+        assert.doesNotMatch(headerXml, /fontSize="40"/);
+        assert.match(menuXml, /fontSize="28"[^>]*color="#3f3254"[^>]*text="战争"/);
     } finally {
         rmSync(out, { recursive: true, force: true });
     }
@@ -940,7 +946,9 @@ test("QuantityControl inspect skin overrides the white default and IconLabel kee
             catalog, images,
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_ShopGetItem/ShopGetItem.xml"), "utf8");
-        assert.match(pageXml, /fontSize="33"[^>]*color="#ffffff"[^>]*strokeColor="#000000"[^>]*strokeSize="4"[^>]*text="0"/);
+        const qtyXml = readFileSync(join(out, "assets/UniFlex_Common/QuantityControl.xml"), "utf8");
+        assert.match(pageXml, /fileName="QuantityControl.xml"/);
+        assert.match(qtyXml, /fontSize="33"[^>]*color="#ffffff"[^>]*strokeColor="#000000"[^>]*strokeSize="4"[^>]*text="0"/);
         assert.match(pageXml, /fontSize="32"[^>]*color="#3f3254"[^>]*text="8"/);
         assert.doesNotMatch(pageXml, /strokeSize="[^"]+"[^>]*text="8"/);
         assert.doesNotMatch(pageXml, /text="8"[^>]*strokeSize=/);
@@ -1020,7 +1028,7 @@ test("preview server catalog page lists merged screens", async () => {
     }
 });
 
-test("press views export as FairyGUI buttons; overlays stay graphs", async () => {
+test("UniFlex components export as FairyGUI components; fills are images not graphs", async () => {
     const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-press-"));
     try {
         const catalog = await loadScreenCatalog(root);
@@ -1053,16 +1061,18 @@ test("press views export as FairyGUI buttons; overlays stay graphs", async () =>
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_Backpack/Backpack.xml"), "utf8");
         const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
-        const backXml = readFileSync(join(out, "assets/UniFlex_Backpack/Backpack_Back.xml"), "utf8");
-        const decXml = readFileSync(join(out, "assets/UniFlex_Backpack/QuantityControl_Decrease.xml"), "utf8");
+        const qtyXml = readFileSync(join(out, "assets/UniFlex_Common/QuantityControl.xml"), "utf8");
         assert.match(tabXml, /extention="Button"/);
-        assert.match(backXml, /extention="Button"/);
-        assert.match(decXml, /extention="Button"/);
+        assert.match(pageXml, /fileName="QuantityControl.xml"/);
+        assert.match(pageXml, /fileName="PanelTab.xml"/);
         assert.match(pageXml, /name="Backpack\/Back"/);
-        assert.match(pageXml, /fileName="Backpack_Back.xml"/);
+        assert.doesNotMatch(pageXml, /fileName="Backpack_Back.xml"/);
+        assert.doesNotMatch(pageXml, /fileName="QuantityControl_Decrease.xml"/);
+        assert.match(qtyXml, /name="QuantityControl\/Decrease"/);
         assert.match(pageXml, /name="PopupFrame\/Mask"/);
-        assert.match(pageXml, /<graph[^>]*name="PopupFrame\/Mask"/);
-        assert.doesNotMatch(pageXml, /fileName="PopupFrame_Mask.xml"/);
+        assert.match(pageXml, /fill_99000000\.png/);
+        assert.doesNotMatch(pageXml, /<graph/);
+        assert.doesNotMatch(qtyXml, /<graph/);
         const preview = readFileSync(join(out, "preview/index.html"), "utf8");
         assert.match(preview, /bindPageInteractions/);
         assert.match(preview, /QuantityControl\/Decrease/);

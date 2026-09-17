@@ -26,7 +26,7 @@ export interface ScreenCatalog {
 
 export const screenCatalog = catalog as ScreenCatalog;
 
-/** defineComponent discovery for PSD ownership. FGUI still uses screenCatalog.components. */
+/** defineComponent discovery for PSD ownership. FGUI export merges this with screenCatalog.components. */
 export const psdComponents = generatedPsdComponents.components as readonly RegisteredComponent[];
 
 export function findPreviewScreen(id: string | null | undefined): ScreenEntry | null {

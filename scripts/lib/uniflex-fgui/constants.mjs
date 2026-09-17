@@ -158,7 +158,9 @@ export const KNOWN_LOSSES = Object.freeze([
     "flex 不进 FGUI，只进烘焙坐标",
     "visible 只导出当前预览态，页签内容不生成 controller",
     "disabled 只反映当前 opacity，不生成 setGray gear",
-    "共享组件以首次出现为模板；可见图不同则内联到页面，不生成 controller",
-    "press 导出为 FairyGUI Button（全屏 Mask 除外）；range 只在预览拖动，不生成 GSlider",
+    "UniFlex defineComponent 导出为同名 FairyGUI 组件；可见图/尺寸/文字皮肤不同则内联，不生成 controller",
+    "纯色背景导出为 9 宫格填充图，不使用 Graph",
+    "press 的 UniFlex 组件导出为 Button；未登记的 press 容器保持为组",
+    "range 只在预览拖动，不生成 GSlider",
     "FairyGUI-dom 用 webkit-text-stroke，字重/抗锯齿与 UniFlex canvas 不完全同像素",
 ]);
