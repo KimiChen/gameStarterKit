@@ -61,7 +61,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uni
 | 数量加减 / 滑条 | `QuantityControl` |
 | 道具格 | `ItemSlot` |
 | 全屏标题栏 | `ScreenHeader` |
-| 返回 | `BackButton` |
+| 全屏底栏 | `ScreenFooter` |
 | 底栏 / 红点 | `MainNav` / `NotificationBadge` |
 
 按钮不要抄错皮：领地「驻防」和要塞「前往」不是同一张图；对照 assembled 量尺寸。

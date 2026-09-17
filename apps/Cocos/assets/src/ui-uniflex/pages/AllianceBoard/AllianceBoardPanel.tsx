@@ -1,6 +1,6 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../kits/uniflex/api/core/index';
-import { BackButton } from '../../components/chrome/BackButton';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceBoardApplyPanel } from './AllianceBoardApplyPanel';
@@ -48,9 +48,7 @@ export const AllianceBoardPanel = defineComponent<AllianceBoardPanelProps>((p) =
             <PanelTab label="申请列表" active={tab === 'apply'} left={227} top={262} width={200}
                 onClick={() => selectTab('apply')} />
 
-            <image source={imageRef('ui/mail/footer')}
-                style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <BackButton top={1396} onClick={back} />
+            <ScreenFooter top={1369} onBack={back} />
             <AllianceBoardMessagePanel visible={tab === 'board'} placeholder={p.placeholder}
                 onSend={p.onSend} onAction={p.onAction} />
         </view>

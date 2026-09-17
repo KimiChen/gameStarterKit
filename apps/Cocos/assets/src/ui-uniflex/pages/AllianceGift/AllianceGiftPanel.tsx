@@ -1,7 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
-import { BackButton } from '../../components/chrome/BackButton';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 
@@ -74,9 +74,7 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
             <PanelTab label="稀有礼物" active={tab === 'rare'} left={227} top={492} width={200}
                 onClick={() => selectTab('rare')} />
 
-            <image source={imageRef('ui/mail/footer')}
-                style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <BackButton top={1396} onClick={back} />
+            <ScreenFooter top={1369} onBack={back} />
             <view style={{ position: 'absolute', left: 280, top: 1386, width: claimWidth, height: claimHeight }}>
                 <ConfirmButton label={p.claimLabel ?? '一键领取'} width={claimWidth} height={claimHeight}
                     onClick={claim} />

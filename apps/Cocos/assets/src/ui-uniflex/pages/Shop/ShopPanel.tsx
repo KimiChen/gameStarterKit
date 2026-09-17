@@ -1,6 +1,6 @@
 import { defineComponent, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../kits/uniflex/api/core/index';
-import { BackButton } from '../../components/chrome/BackButton';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { ShopGetItemPanel } from '../ShopGetItem/ShopGetItemPanel';
 import { ShopCard, type ShopGoods } from './ShopCard';
@@ -203,9 +203,7 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
             <PanelTab label="宝石商店" active={isGem} left={447} top={302} width={200} kind="alliance"
                 onClick={() => selectTab('gem')} />
 
-            <image source={imageRef('ui/mail/footer')}
-                style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <BackButton top={1396} onClick={back} />
+            <ScreenFooter top={1369} onBack={back} />
             <text visible={showRestock} value={p.restockLabel ?? '每周一补货'}
                 style={{ position: 'absolute', left: 300, top: 1389, width: 149, height: 30,
                     font: fontRef('fonts/regular', 700), fontSize: 26, color: '#ffffff', bold: true,

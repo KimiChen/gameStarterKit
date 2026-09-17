@@ -3,7 +3,7 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { BackpackItemCard, type BackpackItem, type BackpackQuality } from './components/BackpackItemCard';
 import { BackpackQuantityControl } from './components/BackpackQuantityControl';
 import { BackpackResourceCounter } from './components/BackpackResourceCounter';
-import { BackButton } from '../../components/chrome/BackButton';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 
@@ -143,8 +143,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
                     onChange={setSafeQuantity} />
             </view>
 
-            <image source={imageRef('ui/mail/footer')} style={{ position: 'absolute', left: 0, top: 1225, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <BackButton top={1252} onClick={() => emit('back', 'back')} />
+            <ScreenFooter top={1225} onBack={() => emit('back', 'back')} />
         </view>
     );
 });
