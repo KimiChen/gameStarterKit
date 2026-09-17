@@ -2,8 +2,9 @@ import { childId, fairyId, packageIds, projectId } from "./ids.mjs";
 import { toScale9Grid } from "./nine-slice.mjs";
 import { imageBasename, imageStem } from "./resources.mjs";
 import {
-    ACTION_OUTLINE, BUTTON_COMPONENTS, COMMON_COMPONENTS, COMMON_PACKAGE, DEFAULT_STYLES,
-    KNOWN_LOSSES, ObjectType, PREVIEW_FONT_FAMILY, SLOT_HOSTS, uniflexStrokeSize,
+    ACTION_OUTLINE, ACTION_OUTLINE_BY_RESOURCE, BUTTON_COMPONENTS, COMMON_COMPONENTS,
+    COMMON_PACKAGE, DEFAULT_STYLES, KNOWN_LOSSES, ObjectPropID, ObjectType,
+    PREVIEW_FONT_FAMILY, SLOT_HOSTS, uniflexStrokeSize,
 } from "./constants.mjs";
 
 export function buildProjectIR(snapshot, options = {}) {
@@ -80,19 +81,26 @@ export function buildCatalogIR(pages, options = {}) {
         const instanceByRoot = new Map(
             (declarations.instances ?? []).map((instance) => [instance.rootRecordId, instance]),
         );
-        const planByName = indexPlan(page.hostPlan);
+        const planIndex = indexPlan(page.hostPlan);
         const found = firstInstances(declarations.instances ?? [], byId);
         for (const key of keys) {
             if (templates.has(key)) continue;
             const root = found.get(key);
             if (!root) continue;
-            templates.set(key, { root, byId, childrenOf, instanceByRoot, planByName });
+            templates.set(key, { root, byId, childrenOf, instanceByRoot, ...planIndex });
             signatures.set(key, componentSignature(root, childrenOf));
         }
-        prepared.push({ snapshot, screen, canvas, nodes, byId, childrenOf, instanceByRoot, planByName });
+        prepared.push({ snapshot, screen, canvas, nodes, byId, childrenOf, instanceByRoot, ...planIndex });
     }
 
-    const sharedCtx = { internImage, losses, shared, signatures, buttons };
+    const sharedCtx = {
+        internImage,
+        losses,
+        shared,
+        signatures,
+        buttons,
+        templateOf: (key) => commonPkg.components.find((item) => item.name === key),
+    };
 
     for (const key of keys) {
         const template = templates.get(key);
@@ -140,6 +148,7 @@ export function buildCatalogIR(pages, options = {}) {
             childrenOf: item.childrenOf,
             instanceByRoot: item.instanceByRoot,
             planByName: item.planByName,
+            planById: item.planById,
             skipSlot: false,
             inlineSlotHosts: true,
         });
@@ -316,22 +325,32 @@ function firstInstances(instances, byId) {
 }
 
 function indexPlan(plan) {
-    const byName = new Map();
-    if (!plan) return byName;
+    const planByName = new Map();
+    const planById = new Map();
+    if (!plan) return { planByName, planById };
     const visit = (node) => {
         if (!node || typeof node !== "object") return;
+        if (node.planId != null && !planById.has(node.planId)) planById.set(node.planId, node);
         const name = node.props?.name;
-        if (typeof name === "string" && name) byName.set(name, node);
+        if (typeof name === "string" && name) planByName.set(name, node);
         for (const child of node.children ?? []) visit(child);
         if (node.root) visit(node.root);
+        if (node.repeat?.template) visit(node.repeat.template);
+        if (node.virtual?.template) visit(node.virtual.template);
+        if (node.props?.virtual?.template) visit(node.props.virtual.template);
     };
     visit(plan.root);
     for (const entry of Object.values(plan.components ?? {})) visit(entry.root ?? entry);
-    return byName;
+    return { planByName, planById };
 }
 
 function flatten(ctx) {
     const displayList = [];
+    const pushFill = (node, groupIndex) => {
+        const fill = styleOf(node, ctx).backgroundColor;
+        if (!fill) return;
+        displayList.push(graphChild(ctx, node, groupIndex, fill));
+    };
     const walk = (node, groupIndex) => {
         for (const child of ctx.childrenOf.get(node.id) ?? []) {
             if (child.visible === false) continue;
@@ -346,18 +365,20 @@ function flatten(ctx) {
             if (slotHost && ctx.inlineSlotHosts) {
                 const index = displayList.length;
                 displayList.push(groupChild(ctx, child, groupIndex));
+                pushFill(child, index);
                 walk(child, index);
                 continue;
             }
             if (isContainer(child)) {
                 const nested = ctx.childrenOf.get(child.id) ?? [];
-                const fill = styleOf(child, ctx.planByName).backgroundColor;
+                const fill = styleOf(child, ctx).backgroundColor;
                 if (!nested.length && fill) {
                     displayList.push(graphChild(ctx, child, groupIndex, fill));
                     continue;
                 }
                 const index = displayList.length;
                 displayList.push(groupChild(ctx, child, groupIndex));
+                if (fill) displayList.push(graphChild(ctx, child, index, fill));
                 walk(child, index);
                 continue;
             }
@@ -368,30 +389,74 @@ function flatten(ctx) {
     if (ctx.inlineSlotHosts && SLOT_HOSTS.includes(ctx.root.name)) {
         const index = displayList.length;
         displayList.push(groupChild(ctx, ctx.root, -1));
+        pushFill(ctx.root, index);
         walk(ctx.root, index);
     } else {
+        pushFill(ctx.root, -1);
         walk(ctx.root, -1);
     }
     assignChildIds(ctx.root.name || "root", displayList);
+    if (!ctx.inlineSlotHosts) nameUnnamedTexts(displayList);
     return displayList;
 }
 
 function isContainer(node) {
-    return node.kind === "view";
+    return node.kind === "view" || node.kind === "virtual-list" || node.kind === "scroll-view"
+        || node.kind === "component";
+}
+
+function nameUnnamedTexts(displayList) {
+    const texts = displayList.filter((child) => child.kind === "text" && !child.name);
+    if (texts.length === 1) texts[0].name = "title";
+    else texts.forEach((child, index) => { child.name = `t${index}`; });
 }
 
 function componentChild(ctx, node, definitionKey, groupIndex) {
     const xy = rel(node.rect, ctx.origin);
-    const def = { kind: "component", name: node.name || definitionKey, srcName: definitionKey, ...xy, group: groupIndex, visible: node.visible !== false };
-    if (definitionKey === "ActionButton") {
+    const def = {
+        kind: "component",
+        name: node.name || definitionKey,
+        srcName: definitionKey,
+        ...xy,
+        group: groupIndex,
+        visible: node.visible !== false,
+    };
+    if (ctx.buttons.has(definitionKey)) {
         def.button = {
             title: titleOf(node, ctx),
             icon: iconUrlOf(node, ctx),
             outlineColor: outlineOf(node, ctx),
         };
+    } else {
+        const properties = textProperties(ctx, node, definitionKey);
+        if (properties.length) def.properties = properties;
     }
     if (node.interaction === "press") def.touchable = true;
     return def;
+}
+
+function textProperties(ctx, node, definitionKey) {
+    const templateTexts = (ctx.templateOf?.(definitionKey)?.children ?? [])
+        .filter((child) => child.kind === "text");
+    if (!templateTexts.length) return [];
+    const instanceTexts = collectNamed(node, ctx.childrenOf)
+        .filter((item) => item.kind === "text" && item.visible !== false);
+    const properties = [];
+    for (let i = 0; i < templateTexts.length; i += 1) {
+        const templateText = templateTexts[i];
+        const instance = instanceTexts.find((item) => item.name && (
+            item.name === templateText.name || item.name === templateText.uniflexName
+        )) ?? instanceTexts[i];
+        if (!instance || !templateText.name) continue;
+        const value = instance.value ?? "";
+        if (value === (templateText.text ?? "")) continue;
+        properties.push({
+            target: templateText.name,
+            id: ObjectPropID.Text,
+            value,
+        });
+    }
+    return properties;
 }
 
 function groupChild(ctx, node, groupIndex) {
@@ -426,7 +491,7 @@ function graphChild(ctx, node, groupIndex, fill) {
 
 function primitiveChild(ctx, node, groupIndex) {
     const xy = rel(node.rect, ctx.origin);
-    const style = styleOf(node, ctx.planByName);
+    const style = styleOf(node, ctx);
     const visible = node.visible !== false;
     if (node.kind === "image") {
         const image = ctx.internImage(node.resourceId);
@@ -506,8 +571,12 @@ function outlineOf(node, ctx) {
     const parent = ctx.byId.get(node.parent);
     if (parent?.name && ACTION_OUTLINE[parent.name]) return ACTION_OUTLINE[parent.name];
     const kids = collectNamed(node, ctx.childrenOf);
+    const background = kids.find((item) => item.name === "ActionButton/Background" || item.kind === "image");
+    if (background?.resourceId && ACTION_OUTLINE_BY_RESOURCE[background.resourceId]) {
+        return ACTION_OUTLINE_BY_RESOURCE[background.resourceId];
+    }
     const label = kids.find((item) => item.name === "ActionButton/Label");
-    return styleOf(label ?? node, ctx.planByName).outlineColor
+    return styleOf(label ?? node, ctx).outlineColor
         ?? DEFAULT_STYLES["ActionButton/Label"]?.outlineColor
         ?? null;
 }
@@ -537,10 +606,60 @@ function uiUrl(pkg, image) {
     return `ui://${id}${image.id}`;
 }
 
-function styleOf(node, planByName) {
-    const plan = planByName.get(node.name)?.props ?? {};
-    const fallback = DEFAULT_STYLES[node.name] ?? {};
-    return { ...fallback, ...plan };
+function styleOf(node, ctx) {
+    const planNode = lookupPlan(node, ctx);
+    const props = planNode?.props ?? {};
+    const fallback = {
+        ...(DEFAULT_STYLES[node.name] ?? {}),
+        ...(parentTextStyle(node, ctx) ?? {}),
+    };
+    return { ...fallback, ...props.style, ...props };
+}
+
+function lookupPlan(node, ctx) {
+    if (node.name) {
+        const named = ctx.planByName?.get(node.name);
+        if (planKindOk(named, node)) return named;
+    }
+    if (node.planId != null) {
+        const byId = ctx.planById?.get(node.planId);
+        if (planKindOk(byId, node)) return byId;
+    }
+    return null;
+}
+
+function planKindOk(planNode, node) {
+    if (!planNode) return false;
+    return !planNode.kind || !node.kind || planNode.kind === node.kind;
+}
+
+function parentTextStyle(node, ctx) {
+    if (node.kind !== "text") return null;
+    const parent = ctx.byId?.get(node.parent);
+    const name = parent?.name;
+    if (name === "PanelTab") {
+        const active = (parent.rect?.height ?? 0) >= 60;
+        return {
+            fontSize: active ? 32 : 28,
+            color: "#3F3254",
+            bold: true,
+            horizontalAlign: "center",
+            verticalAlign: "center",
+            overflow: "shrink",
+        };
+    }
+    if (name === "QuantityControl" || name === "BackpackQuantityControl") {
+        return {
+            fontSize: 33,
+            color: "#FFFFFF",
+            bold: true,
+            outlineColor: "#000000",
+            outlineWidth: 2,
+            horizontalAlign: "center",
+            verticalAlign: "center",
+        };
+    }
+    return null;
 }
 
 function rel(rect, origin) {

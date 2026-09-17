@@ -105,6 +105,13 @@ function displayItemXml(child, packages, indent) {
             inner.push(`${indent}  <property target="title" propertyId="3" value="${escapeXml(cssToRgbInt(child.button.outlineColor))}"/>`);
         }
     }
+    if (child.kind === "component" && child.properties?.length) {
+        for (const prop of child.properties) {
+            inner.push(
+                `${indent}  <property target="${escapeXml(prop.target)}" propertyId="${prop.id}" value="${escapeXml(prop.value)}"/>`,
+            );
+        }
+    }
     const body = (tag, extra = "", selfClosing = !inner.length) => {
         if (selfClosing) return `${indent}<${tag}${common}${extra}/>`;
         return `${indent}<${tag}${common}${extra}>\n${inner.join("\n")}\n${indent}</${tag}>`;
