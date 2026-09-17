@@ -1,6 +1,8 @@
 import { childId, fairyId, packageIds, projectId } from "./ids.mjs";
+import { parseCssColor, toFguiXmlColor } from "./bytes.mjs";
 import { toScale9Grid } from "./nine-slice.mjs";
 import { imageBasename, imageStem } from "./resources.mjs";
+import { solidPng } from "./solid-png.mjs";
 import {
     ACTION_OUTLINE, ACTION_OUTLINE_BY_RESOURCE, BUTTON_COMPONENTS, COMMON_COMPONENTS,
     COMMON_PACKAGE, DEFAULT_STYLES, KNOWN_LOSSES, ObjectPropID, ObjectType,
@@ -15,7 +17,6 @@ export function buildCatalogIR(pages, options = {}) {
     if (!Array.isArray(pages) || pages.length === 0) throw new Error("Missing snapshot.");
     const catalog = options.catalog ?? { components: [] };
     const keys = sharedKeysFrom(catalog);
-    const shared = new Set(keys.filter((key) => !SLOT_HOSTS.includes(key)));
     const buttons = new Set(BUTTON_COMPONENTS);
     const images = options.images ?? new Map();
     const losses = [...KNOWN_LOSSES];
@@ -62,6 +63,7 @@ export function buildCatalogIR(pages, options = {}) {
     const templates = new Map();
     const signatures = new Map();
     const extraSignatures = new Map();
+    const textSkins = new Map();
     const prepared = [];
 
     for (const page of pages) {
@@ -75,8 +77,7 @@ export function buildCatalogIR(pages, options = {}) {
         if (!Array.isArray(rawNodes) || rawNodes.length === 0) throw new Error("Snapshot has no nodes.");
         const nodes = toComponentSpace(rawNodes);
 
-        const declarations = snapshot.componentDeclarations
-            ?? declareOwnership(nodes, screen, catalog.components ?? []);
+        const declarations = declarationsFor(snapshot, screen, catalog.components ?? [], nodes);
         const byId = new Map(nodes.map((node) => [node.id, node]));
         const childrenOf = indexChildren(nodes);
         const instanceByRoot = new Map(
@@ -91,22 +92,27 @@ export function buildCatalogIR(pages, options = {}) {
             templates.set(key, { root, byId, childrenOf, instanceByRoot, ...planIndex });
             signatures.set(key, componentSignature(root, childrenOf));
             extraSignatures.set(key, extraVisibleImages(root, childrenOf));
+            textSkins.set(key, textSkinSignature(root, childrenOf));
         }
         prepared.push({ snapshot, screen, canvas, nodes, byId, childrenOf, instanceByRoot, ...planIndex });
     }
 
+    const internFill = internFillImage(commonPkg);
+    const shared = new Set([...templates.keys()].filter((key) => !SLOT_HOSTS.includes(key)));
     const sharedCtx = {
         internImage,
+        internFill,
         losses,
         shared,
         signatures,
         extraSignatures,
+        textSkins,
         buttons,
         wrappers: new Set(WRAPPER_BUTTONS),
         templateOf: (key) => commonPkg.components.find((item) => item.name === key),
     };
 
-    for (const key of keys) {
+    for (const key of topoComponentKeys([...templates.keys()], templates, shared)) {
         const template = templates.get(key);
         if (!template) continue;
         if (template.root.interaction === "press") buttons.add(key);
@@ -226,6 +232,99 @@ function sharedKeysFrom(catalog) {
     return keys.length ? keys : [...COMMON_COMPONENTS];
 }
 
+function internFillImage(commonPkg) {
+    const items = new Map();
+    return (css) => {
+        if (!css) return null;
+        const hex = toFguiXmlColor(css, { alpha: true }).replace("#", "").toLowerCase();
+        if (items.has(hex)) return items.get(hex);
+        const { r, g, b, a } = parseCssColor(css);
+        const fileName = `fill_${hex}.png`;
+        const item = {
+            id: fairyId(`img:${COMMON_PACKAGE}:fill:${hex}`),
+            name: `fill_${hex}`,
+            fileName,
+            path: "/images/",
+            width: 4,
+            height: 4,
+            scale9grid: { x: 1, y: 1, width: 2, height: 2, attr: "1,1,2,2" },
+            bytes: solidPng(r, g, b, a, 4),
+            resourceId: `fill:${hex}`,
+            exported: true,
+        };
+        items.set(hex, item);
+        commonPkg.images.push(item);
+        return item;
+    };
+}
+
+function nestedComponentKeys(root, childrenOf, instanceByRoot, shared) {
+    const keys = new Set();
+    const walk = (node) => {
+        for (const child of childrenOf.get(node.id) ?? []) {
+            const instance = instanceByRoot.get(child.id);
+            if (instance && shared.has(instance.definitionKey)) {
+                keys.add(instance.definitionKey);
+                continue;
+            }
+            walk(child);
+        }
+    };
+    walk(root);
+    return [...keys];
+}
+
+function topoComponentKeys(keys, templates, shared) {
+    const remaining = new Set(keys);
+    const ordered = [];
+    while (remaining.size) {
+        let progressed = false;
+        for (const key of [...remaining]) {
+            const template = templates.get(key);
+            const deps = template
+                ? nestedComponentKeys(
+                    template.root, template.childrenOf, template.instanceByRoot, shared,
+                ).filter((dep) => dep !== key && remaining.has(dep))
+                : [];
+            if (deps.length) continue;
+            ordered.push(key);
+            remaining.delete(key);
+            progressed = true;
+        }
+        if (!progressed) {
+            ordered.push(...remaining);
+            break;
+        }
+    }
+    return ordered;
+}
+
+function declarationsFor(snapshot, screen, components, nodes) {
+    let inferred = { definitions: [], instances: [] };
+    try {
+        inferred = declareOwnership(nodes, screen, components);
+    } catch {
+        inferred = { definitions: [], instances: [] };
+    }
+    const stamped = snapshot.componentDeclarations;
+    if (!stamped) return inferred;
+    const used = new Set((stamped.instances ?? []).map((instance) => instance.rootRecordId));
+    const instances = [...(stamped.instances ?? [])];
+    const definitions = [...(stamped.definitions ?? [])];
+    const defKeys = new Set(definitions.map((entry) => entry.key));
+    for (const instance of inferred.instances ?? []) {
+        if (used.has(instance.rootRecordId)) continue;
+        instances.push(instance);
+        used.add(instance.rootRecordId);
+    }
+    for (const definition of inferred.definitions ?? []) {
+        if (defKeys.has(definition.key)) continue;
+        definitions.push(definition);
+        defKeys.add(definition.key);
+    }
+    return { schemaVersion: 1, kind: "uniflex-component-declarations", definitions, instances };
+}
+
 function unionCanvas(screens) {
     return {
         width: Math.max(...screens.map((entry) => entry.canvas.width)),
@@ -262,6 +361,8 @@ function extraVisibleImages(root, childrenOf) {
 }
 
 function isReusableInstance(instance, node, ctx) {
+    if ((ctx.textSkins?.get(instance.definitionKey) ?? "")
+        !== textSkinSignature(node, ctx.childrenOf)) return false;
     if (ctx.buttons.has(instance.definitionKey)) {
         if (ctx.extraSignatures.get(instance.definitionKey)
             !== extraVisibleImages(node, ctx.childrenOf)) return false;
@@ -270,6 +371,25 @@ function isReusableInstance(instance, node, ctx) {
         return templateSize === size;
     }
     return ctx.signatures.get(instance.definitionKey) === componentSignature(node, ctx.childrenOf);
+}
+
+function textSkinSignature(root, childrenOf) {
+    const parts = [];
+    const walk = (node) => {
+        if (node.visible === false) return;
+        if (node.kind === "text") {
+            parts.push([
+                node.color ?? "",
+                node.fontSize ?? "",
+                node.outlineColor ?? "",
+                node.outlineWidth ?? "",
+                node.bold ?? "",
+            ].join(":"));
+        }
+        for (const child of childrenOf.get(node.id) ?? []) walk(child);
+    };
+    walk(root);
+    return parts.join("|");
 }
 
 function assertSnapshot(snapshot) {
@@ -406,9 +526,8 @@ function indexPlan(plan) {
 function flatten(ctx) {
     const displayList = [];
     const pushFill = (node, groupIndex) => {
-        const fill = styleOf(node, ctx).backgroundColor;
-        if (!fill) return;
-        displayList.push(graphChild(ctx, node, groupIndex, fill));
+        const fill = fillChild(ctx, node, groupIndex, styleOf(node, ctx).backgroundColor);
+        if (fill) displayList.push(fill);
     };
     if (ctx.inlineSlotHosts && SLOT_HOSTS.includes(ctx.root.name)) {
         const index = displayList.length;
@@ -435,33 +554,29 @@ function flattenWalk(ctx, node, groupIndex, displayList) {
             displayList.push(componentChild(ctx, child, instance.definitionKey, groupIndex));
             continue;
         }
-        if (isPressButton(child) && !ctx.shared.has(instance?.definitionKey)) {
-            displayList.push(pressComponentChild(ctx, child, groupIndex));
-            continue;
-        }
         if (slotHost && ctx.inlineSlotHosts) {
             const index = displayList.length;
             displayList.push(groupChild(ctx, child, groupIndex));
-            pushFillInto(ctx, child, index, displayList);
+            const fill = fillChild(ctx, child, index, styleOf(child, ctx).backgroundColor);
+            if (fill) displayList.push(fill);
             flattenWalk(ctx, child, index, displayList);
             continue;
         }
         if (isContainer(child)) {
             const nested = ctx.childrenOf.get(child.id) ?? [];
-            const fill = styleOf(child, ctx).backgroundColor;
-            if (!nested.length && fill) {
-                displayList.push(graphChild(ctx, child, groupIndex, fill));
+            const color = styleOf(child, ctx).backgroundColor;
+            if (!nested.length && color) {
+                const fill = fillChild(ctx, child, groupIndex, color);
+                if (fill) displayList.push(fill);
                 continue;
             }
             const index = displayList.length;
             displayList.push(groupChild(ctx, child, groupIndex));
-            if (fill) displayList.push(graphChild(ctx, child, index, fill));
+            const fill = fillChild(ctx, child, index, color);
+            if (fill) displayList.push(fill);
             if (child.interaction === "range") {
-                displayList.push({
-                    ...graphChild(ctx, child, index, "#00000000"),
-                    name: "",
-                    touchable: true,
-                });
+                const hit = fillChild(ctx, child, index, "#00000000");
+                if (hit) displayList.push({ ...hit, name: "", touchable: true });
             }
             flattenWalk(ctx, child, index, displayList);
             continue;
@@ -469,74 +584,6 @@ function flattenWalk(ctx, node, groupIndex, displayList) {
         const primitive = primitiveChild(ctx, child, groupIndex);
         if (primitive) displayList.push(primitive);
     }
-}
-
-function pushFillInto(ctx, node, groupIndex, displayList) {
-    const fill = styleOf(node, ctx).backgroundColor;
-    if (fill) displayList.push(graphChild(ctx, node, groupIndex, fill));
-}
-
-function isOverlayPress(node) {
-    const name = String(node.name || "");
-    return name === "Mask" || name.endsWith("/Mask");
-}
-
-function isPressButton(node) {
-    return node.interaction === "press" && isContainer(node) && !isOverlayPress(node);
-}
-
-function pressComponentName(name) {
-    const cleaned = String(name || "Press").replaceAll(/[^A-Za-z0-9]+/g, "_").replaceAll(/^_|_$/g, "");
-    return cleaned || "Press";
-}
-
-function internPressButton(ctx, node) {
-    const base = pressComponentName(node.name);
-    const sig = componentSignature(node, ctx.childrenOf);
-    const pressKey = `${base}:${sig}`;
-    const existing = ctx.pkg.components.find((item) => item.pressKey === pressKey);
-    if (existing) return existing;
-    const nestedCtx = { ...ctx, origin: node.rect, root: node };
-    const children = [];
-    const fill = styleOf(node, ctx).backgroundColor;
-    if (fill) {
-        children.push({ ...graphChild(nestedCtx, node, -1, fill), name: "", touchable: false });
-    }
-    flattenWalk(nestedCtx, node, -1, children);
-    assignChildIds(base, children);
-    nameUnnamedTexts(children);
-    let name = base;
-    if (ctx.pkg.components.some((item) => item.name === name)) {
-        name = `${base}_${fairyId(pressKey, 4)}`;
-    }
-    const item = {
-        id: fairyId(`comp:${ctx.pkg.name}:${pressKey}`),
-        name,
-        pressKey,
-        exported: true,
-        size: roundSize(node.rect),
-        extension: "Button",
-        objectType: ObjectType.Button,
-        children,
-    };
-    ctx.pkg.components.push(item);
-    return item;
-}
-
-function pressComponentChild(ctx, node, groupIndex) {
-    const button = internPressButton(ctx, node);
-    const xy = rel(node.rect, ctx.origin);
-    const title = titleOf(node, ctx);
-    return {
-        kind: "component",
-        name: node.name || button.name,
-        srcName: button.name,
-        ...xy,
-        group: groupIndex,
-        visible: node.visible !== false,
-        touchable: true,
-        button: title ? { title } : undefined,
-    };
 }
 
 function isContainer(node) {
@@ -642,18 +689,21 @@ function groupChild(ctx, node, groupIndex) {
     };
 }
 
-function graphChild(ctx, node, groupIndex, fill) {
+function fillChild(ctx, node, groupIndex, fill) {
+    if (!fill) return null;
+    const image = ctx.internFill?.(fill);
+    if (!image) return null;
     const xy = rel(node.rect, ctx.origin);
     return {
-        kind: "graph",
+        kind: "image",
         name: node.name || "",
+        src: image.id,
+        pkg: ctx.pkg.name === COMMON_PACKAGE ? undefined : ctx.pkg.dependencies?.[0]?.id,
+        fileName: `images/${image.fileName}`,
         ...xy,
-        fill,
-        type: "rect",
-        lineSize: 0,
         group: groupIndex,
         visible: node.visible !== false,
-        touchable: node.interaction === "press",
+        touchable: node.interaction === "press" || node.interaction === "range",
         relations: node.name === "PopupFrame/Mask"
             ? [{ target: "", sidePair: "width-width,height-height" }]
             : [],

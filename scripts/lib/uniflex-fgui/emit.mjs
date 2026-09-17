@@ -19,7 +19,11 @@ export async function exportFgui({
     }
     const pages = normalizePages({ snapshot, snapshots, screen, hostPlan, root });
     const imageCatalog = images ?? await loadImageCatalog(root);
-    const ir = buildCatalogIR(pages, { catalog, images: imageCatalog });
+    const components = await loadComponentCatalog(root, catalog);
+    const ir = buildCatalogIR(pages, {
+        catalog: { ...(catalog ?? {}), components },
+        images: imageCatalog,
+    });
     await mkdir(output, { recursive: true });
     await writeEditorProject(output, ir);
     await writePreview(output, ir, root);
@@ -54,7 +58,7 @@ async function writeEditorProject(output, ir) {
         await mkdir(join(dir, "images"), { recursive: true });
         await writeFile(join(dir, "package.xml"), packageXml(pkg));
         for (const image of pkg.images) {
-            await copyBinary(image.sourcePath, join(dir, "images", image.fileName));
+            await writeImage(image, join(dir, "images", image.fileName));
         }
         for (const component of pkg.components) {
             await writeFile(join(dir, `${component.name}.xml`), componentXml(component, pkg, ir.packages));
@@ -70,7 +74,7 @@ async function writePreview(output, ir, root) {
         await mkdir(dir, { recursive: true });
         await writeFile(join(dir, "package.xml"), publishPackage(pkg, ir.packages));
         for (const image of pkg.images) {
-            await copyBinary(image.sourcePath, join(dir, image.fileName));
+            await writeImage(image, join(dir, image.fileName));
         }
     }
     const runtime = await extractFairyguiDom(root);
@@ -97,6 +101,33 @@ function loadDefaultHostPlan(root, screen) {
     } catch {
         return null;
     }
+}
+
+async function loadComponentCatalog(root, catalog) {
+    const byKey = new Map();
+    for (const entry of catalog?.components ?? []) {
+        if (entry?.key) byKey.set(entry.key, entry);
+    }
+    try {
+        const generated = JSON.parse(
+            await readFile(join(root, "apps/web-ui-preview/components.generated.json"), "utf8"),
+        );
+        for (const entry of generated.components ?? []) {
+            if (entry?.key) byKey.set(entry.key, entry);
+        }
+    } catch {
+        /* optional generated catalog */
+    }
+    return [...byKey.values()];
+}
+
+async function writeImage(image, to) {
+    await mkdir(dirname(to), { recursive: true });
+    if (image.bytes) {
+        await writeFile(to, image.bytes);
+        return;
+    }
+    await writeFile(to, await readFile(image.sourcePath));
 }
 
 async function copyBinary(from, to) {
