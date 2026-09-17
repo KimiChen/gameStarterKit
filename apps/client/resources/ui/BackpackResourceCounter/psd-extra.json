@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "8f133415125014e95c8256b24268239307dec593edca02c107813371a172b0b5",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 153,
+    "height": 45,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"37f225c157d578c22abe5ab1b27ad8b29820272efb4bc6572f5f764e976c3b30\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjE1MywiaGVpZ2h0Ijo0NX0sIm5vZGVzIjpbeyJpZCI6NSwicGFyZW50IjpudWxsLCJwbGFuSWQiOjUsImtpbmQiOiJ2aWV3IiwibmFtZSI6IkJhY2twYWNrUmVzb3VyY2VDb3VudGVyIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjoxNTMsImhlaWdodCI6NDV9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJCYWNrcGFja1Jlc291cmNlQ291bnRlcjpCYWNrcGFjay9CYWNrcGFja1Jlc291cmNlQ291bnRlcjowIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJCYWNrcGFja1Jlc291cmNlQ291bnRlciJ9fSx7ImlkIjo2LCJwYXJlbnQiOjUsInBsYW5JZCI6Niwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo3LCJ5Ijo1LCJ3aWR0aCI6MTM4LCJoZWlnaHQiOjMyfSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL3Jlc291cmNlLWJnIiwiaWRlbnRpdHkiOnsia2V5IjoiQmFja3BhY2tSZXNvdXJjZUNvdW50ZXI6QmFja3BhY2svQmFja3BhY2tSZXNvdXJjZUNvdW50ZXI6MC9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJCYWNrcGFja1Jlc291cmNlQ291bnRlciJ9fSx7ImlkIjo3LCJwYXJlbnQiOjUsInBsYW5JZCI6Nywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo0LCJ5Ijo0LCJ3aWR0aCI6MzcsImhlaWdodCI6MzF9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svcmVzb3VyY2UtZGlhbW9uZCIsImlkZW50aXR5Ijp7ImtleSI6IkJhY2twYWNrUmVzb3VyY2VDb3VudGVyOkJhY2twYWNrL0JhY2twYWNrUmVzb3VyY2VDb3VudGVyOjAvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQmFja3BhY2tSZXNvdXJjZUNvdW50ZXIifX0seyJpZCI6OCwicGFyZW50Ijo1LCJwbGFuSWQiOjgsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjMsInkiOjE3LCJ3aWR0aCI6MjAsImhlaWdodCI6MjF9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svcmVzb3VyY2UtcGx1cyIsImlkZW50aXR5Ijp7ImtleSI6IkJhY2twYWNrUmVzb3VyY2VDb3VudGVyOkJhY2twYWNrL0JhY2twYWNrUmVzb3VyY2VDb3VudGVyOjAvXzoyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQmFja3BhY2tSZXNvdXJjZUNvdW50ZXIifX0seyJpZCI6OSwicGFyZW50Ijo1LCJwbGFuSWQiOjksImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiOTk5Ljk5ayIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NDQsInkiOjUsIndpZHRoIjoxMDEsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJCYWNrcGFja1Jlc291cmNlQ291bnRlcjpCYWNrcGFjay9CYWNrcGFja1Jlc291cmNlQ291bnRlcjowL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJCYWNrcGFja1Jlc291cmNlQ291bnRlciJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQmFja3BhY2tSZXNvdXJjZUNvdW50ZXIiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9CYWNrcGFjay9jb21wb25lbnRzL0JhY2twYWNrUmVzb3VyY2VDb3VudGVyLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiQmFja3BhY2tSZXNvdXJjZUNvdW50ZXIiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9CYWNrcGFjay9jb21wb25lbnRzL0JhY2twYWNrUmVzb3VyY2VDb3VudGVyLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJCYWNrcGFja1Jlc291cmNlQ291bnRlcjpCYWNrcGFjay9CYWNrcGFja1Jlc291cmNlQ291bnRlcjowIiwiZGVmaW5pdGlvbktleSI6IkJhY2twYWNrUmVzb3VyY2VDb3VudGVyIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6NX1dfSwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQmFja3BhY2tSZXNvdXJjZUNvdW50ZXIiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9CYWNrcGFjay9jb21wb25lbnRzL0JhY2twYWNrUmVzb3VyY2VDb3VudGVyLnRzeCJ9fQ==\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-8": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "BackpackResourceCounter [ui:BackpackResourceCounter:Backpack/BackpackResourceCounter:0#component]",
+        "id": 8,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-9": {
+      "parent": "layer-8",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 9,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-10": {
+      "parent": "layer-9",
+      "properties": {
+        "top": 5,
+        "left": 7,
+        "bottom": 37,
+        "right": 145,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:BackpackResourceCounter:Backpack/BackpackResourceCounter:0/_:0#node]",
+        "id": 10,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-11": {
+      "parent": "layer-8",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 11,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-12": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 4,
+        "left": 4,
+        "bottom": 35,
+        "right": 41,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:BackpackResourceCounter:Backpack/BackpackResourceCounter:0/_:1#node]",
+        "id": 12,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-13": {
+      "parent": "layer-8",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 13,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-14": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 17,
+        "left": 23,
+        "bottom": 38,
+        "right": 43,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:BackpackResourceCounter:Backpack/BackpackResourceCounter:0/_:2#node]",
+        "id": 14,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-15": {
+      "parent": "layer-8",
+      "properties": {
+        "top": 5,
+        "left": 44,
+        "bottom": 37,
+        "right": 145,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "999.99k [ui:BackpackResourceCounter:Backpack/BackpackResourceCounter:0/_#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            46,
+            29.14
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "999.99k",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 22,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 22,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0
+              }
+            }
+          ]
+        },
+        "id": 15,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

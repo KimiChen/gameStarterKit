@@ -4,10 +4,23 @@ import { dirname, join, relative, resolve } from "node:path";
 import { loadScreenCatalog } from "./uniflex-screens.mjs";
 
 export const ART_ROOT = "apps/art/uniflex";
+export const ART_COMPONENTS = `${ART_ROOT}/components`;
 export const CATALOG_FILE = `${ART_ROOT}/catalog.json`;
 
 export function artPageDir(root, page) {
     return resolve(root, ART_ROOT, page.componentName);
+}
+
+export function artComponentDir(root, key) {
+    return resolve(root, ART_COMPONENTS, key);
+}
+
+export function artComponentPsdPath(root, key) {
+    return join(artComponentDir(root, key), "component.psd");
+}
+
+export function artComponentJsonPath(root, key) {
+    return join(artComponentDir(root, key), "art.json");
 }
 
 export function artPsdPath(root, page) {
@@ -101,6 +114,20 @@ export async function fileSha256(file) {
     }
 }
 
+export async function hashUniflexFile(root, sourceFile) {
+    const file = resolve(root, sourceFile);
+    const hash = createHash("sha256");
+    hash.update(String(sourceFile).split("\\").join("/"));
+    hash.update("\0");
+    try {
+        hash.update(await readFile(file));
+    } catch (error) {
+        if (error.code === "ENOENT") return null;
+        throw error;
+    }
+    return hash.digest("hex");
+}
+
 export async function hashUniflexSources(root, sourceFile) {
     const dir = dirname(resolve(root, sourceFile));
     const files = [];
@@ -137,6 +164,51 @@ export async function readArtJson(root, page) {
         if (error.code === "ENOENT") return null;
         throw error;
     }
+}
+
+export async function readComponentArtJson(root, key) {
+    try {
+        return JSON.parse(await readFile(artComponentJsonPath(root, key), "utf8"));
+    } catch (error) {
+        if (error.code === "ENOENT") return null;
+        throw error;
+    }
+}
+
+export async function listArtComponents(root) {
+    const directory = resolve(root, ART_COMPONENTS);
+    let entries;
+    try {
+        entries = await readdir(directory, { withFileTypes: true });
+    } catch (error) {
+        if (error.code === "ENOENT") return [];
+        throw error;
+    }
+    const keys = [];
+    for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        if (!await pathExists(artComponentPsdPath(root, entry.name))) continue;
+        keys.push(entry.name);
+    }
+    keys.sort();
+    return keys;
+}
+
+export async function inspectArtComponent(root, key) {
+    const art = await readComponentArtJson(root, key);
+    const source = art?.source;
+    const [psdSha, uniflexSha] = await Promise.all([
+        fileSha256(artComponentPsdPath(root, key)),
+        source ? hashUniflexFile(root, source) : Promise.resolve(null),
+    ]);
+    return {
+        key,
+        source,
+        psdSha,
+        uniflexSha,
+        art,
+        action: classifyArtPage({ psdSha, uniflexSha: uniflexSha || art?.export?.uniflexSha256, art }),
+    };
 }
 
 export function classifyArtPage({ psdSha, uniflexSha, art }) {

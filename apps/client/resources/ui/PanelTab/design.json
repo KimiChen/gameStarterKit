@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 134,
+    "height": 52
+  },
+  "roots": [
+    "layer-40"
+  ],
+  "nodes": {
+    "layer-40": {
+      "id": "layer-40",
+      "name": "PanelTab",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 134,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:Backpack/PanelTab:0",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "children": [
+        "layer-41",
+        "layer-43"
+      ]
+    },
+    "layer-41": {
+      "id": "layer-41",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 134,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-42"
+      ]
+    },
+    "layer-42": {
+      "id": "layer-42",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 134,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:Backpack/PanelTab:0/_:1",
+        "role": "node"
+      },
+      "asset": "asset-360e1873b7251d77702c5d5e317b59e874c35b2584ebc43e85e2bf8c41fee53b"
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "装备",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 12,
+        "width": 138,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:Backpack/PanelTab:0/_",
+        "role": "node"
+      },
+      "text": {
+        "value": "装备",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    }
+  },
+  "assets": {
+    "asset-360e1873b7251d77702c5d5e317b59e874c35b2584ebc43e85e2bf8c41fee53b": {
+      "path": "assets/360e1873b7251d77702c5d5e317b59e874c35b2584ebc43e85e2bf8c41fee53b.png",
+      "sha256": "360e1873b7251d77702c5d5e317b59e874c35b2584ebc43e85e2bf8c41fee53b",
+      "mime": "image/png",
+      "width": 134,
+      "height": 52
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

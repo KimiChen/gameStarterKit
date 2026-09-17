@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 154,
+    "height": 159
+  },
+  "roots": [
+    "layer-61"
+  ],
+  "nodes": {
+    "layer-61": {
+      "id": "layer-61",
+      "name": "BackpackItemCard",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:0",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "children": [
+        "layer-62"
+      ]
+    },
+    "layer-62": {
+      "id": "layer-62",
+      "name": "ItemSlot",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ItemSlot:Backpack/Backpack/Items/_/BackpackItemCard:0/ItemSlot",
+        "role": "component",
+        "definitionKey": "ItemSlot"
+      },
+      "asset": "asset-d0b9198ef428f30acb8bc67d7b8846826d3547f53829802a47675e91ff4673dd"
+    }
+  },
+  "assets": {
+    "asset-d0b9198ef428f30acb8bc67d7b8846826d3547f53829802a47675e91ff4673dd": {
+      "path": "assets/d0b9198ef428f30acb8bc67d7b8846826d3547f53829802a47675e91ff4673dd.png",
+      "sha256": "d0b9198ef428f30acb8bc67d7b8846826d3547f53829802a47675e91ff4673dd",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "ItemSlot: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

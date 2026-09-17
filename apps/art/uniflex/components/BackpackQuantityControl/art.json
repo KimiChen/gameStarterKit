@@ -1,0 +1,14 @@
+{
+  "key": "BackpackQuantityControl",
+  "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackQuantityControl.tsx",
+  "export": {
+    "uniflexSha256": "7dd9da6736ed0a51cead016351e39f84f67bd6da11a44e58184aa5cb6b2deee4",
+    "psdSha256": "f224849a920b93835db29b58f0435d25124be4b9fe6391d776322d1e5e3eb643",
+    "at": "2026-09-17T17:33:35.179Z"
+  },
+  "import": {
+    "psdSha256": "f224849a920b93835db29b58f0435d25124be4b9fe6391d776322d1e5e3eb643",
+    "at": "2026-09-17T17:48:41.904Z",
+    "target": "restored"
+  }
+}

@@ -9,13 +9,21 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "5d4d65fe492fcd139a9748e8a556b9d6b636dffaf68c9733d2e48ff4a10b90b1",
-    "psdSha256": "a0b4ef4747a7fcfa5da3902ad172731e7f70083e3a6b9733d2ecbdff2c6ec8dc",
-    "at": "2026-09-17T03:35:49.349Z"
+    "uniflexSha256": "6a0cc2a22cae4180785375c89843dd82a81150f14f5c0a2b2a4d90360139eb6f",
+    "psdSha256": "6b4cb726b826560377275fe37b7d357e1da77b2e5e2f5f92ef9ceade34add29f",
+    "at": "2026-09-17T17:33:35.180Z"
   },
   "import": {
-    "psdSha256": "a0b4ef4747a7fcfa5da3902ad172731e7f70083e3a6b9733d2ecbdff2c6ec8dc",
-    "at": "2026-09-17T06:41:14.110Z",
+    "psdSha256": "6b4cb726b826560377275fe37b7d357e1da77b2e5e2f5f92ef9ceade34add29f",
+    "at": "2026-09-17T17:48:41.906Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "BackpackResourceCounter",
+    "PanelTab",
+    "ItemSlot",
+    "BackpackItemCard",
+    "QuantityControl",
+    "BackpackQuantityControl"
+  ]
 }
