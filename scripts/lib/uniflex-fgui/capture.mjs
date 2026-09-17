@@ -95,7 +95,7 @@ async function connectDevtools(pageUrl, env) {
                 });
                 if (ready.result?.value !== true) return null;
                 const result = await cdp(ws, "Runtime.evaluate", {
-                    expression: "window.__UNIFLEX_DESIGN_SNAPSHOT__",
+                    expression: STAMP_INSPECT_TEXT_STYLES,
                     returnByValue: true,
                 });
                 const snapshot = result.result?.value;
@@ -169,6 +169,67 @@ function once(ws, type) {
 function sleep(ms) {
     return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 }
+
+/** Slot-bound text (QuantityControl skin, ActionButton outlineColor) is not in the AOT plan. */
+const STAMP_INSPECT_TEXT_STYLES = `(() => {
+  const snap = window.__UNIFLEX_DESIGN_SNAPSHOT__;
+  if (!snap || snap.kind !== "uniflex-design-snapshot" || !Array.isArray(snap.nodes)) return snap;
+  const toHex = (color) => {
+    if (!color) return null;
+    const value = String(color).trim();
+    if (value.startsWith("#")) {
+      if (value.length === 4) {
+        return ("#" + value[1] + value[1] + value[2] + value[2] + value[3] + value[3]).toLowerCase();
+      }
+      return value.slice(0, 7).toLowerCase();
+    }
+    const match = value.match(/rgba?\\(\\s*([\\d.]+)\\s*,\\s*([\\d.]+)\\s*,\\s*([\\d.]+)/);
+    if (!match) return null;
+    const hex = (n) => Math.round(Number(n)).toString(16).padStart(2, "0");
+    return "#" + hex(match[1]) + hex(match[2]) + hex(match[3]);
+  };
+  const texts = [...document.querySelectorAll("[data-kind=\\"text\\"]")];
+  const taken = new Set();
+  for (const node of snap.nodes) {
+    if (node.kind !== "text") continue;
+    let found = -1;
+    for (let i = 0; i < texts.length; i++) {
+      if (taken.has(i)) continue;
+      const el = texts[i];
+      if (node.planId != null && el.dataset.planId && el.dataset.planId !== String(node.planId)) continue;
+      if (node.name && el.dataset.name && el.dataset.name !== node.name) continue;
+      const got = String(el.innerText || el.textContent || "").replace(/\\s+/g, " ").trim();
+      const want = String(node.value ?? "").replace(/\\s+/g, " ").trim();
+      if (want && got && got !== want) continue;
+      if (node.rect) {
+        const box = el.getBoundingClientRect();
+        if (Math.abs(box.width - node.rect.width) > 3) continue;
+        if (Math.abs(box.height - node.rect.height) > 3) continue;
+      }
+      found = i;
+      break;
+    }
+    if (found < 0) continue;
+    taken.add(found);
+    const el = texts[found];
+    const span = el.querySelector("span") || el;
+    const cs = getComputedStyle(span);
+    const fontSize = parseFloat(cs.fontSize);
+    const color = toHex(cs.color);
+    const strokeWidth = parseFloat(cs.webkitTextStrokeWidth || cs.getPropertyValue("-webkit-text-stroke-width") || "0");
+    const strokeColor = toHex(cs.webkitTextStrokeColor || cs.getPropertyValue("-webkit-text-stroke-color"));
+    if (Number.isFinite(fontSize)) node.fontSize = fontSize;
+    if (color) node.color = color;
+    if (Number.isFinite(strokeWidth)) node.outlineWidth = strokeWidth / 2;
+    if (strokeColor) node.outlineColor = strokeColor;
+    const weight = parseFloat(cs.fontWeight);
+    if (Number.isFinite(weight)) node.bold = weight >= 700;
+    if (cs.textAlign === "center" || cs.textAlign === "right" || cs.textAlign === "left") {
+      node.horizontalAlign = cs.textAlign;
+    }
+  }
+  return snap;
+})()`;
 
 async function waitFor(probe, timeoutMs) {
     const start = Date.now();
