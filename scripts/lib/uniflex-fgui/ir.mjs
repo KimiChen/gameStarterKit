@@ -4,7 +4,7 @@ import { imageBasename, imageStem } from "./resources.mjs";
 import {
     ACTION_OUTLINE, ACTION_OUTLINE_BY_RESOURCE, BUTTON_COMPONENTS, COMMON_COMPONENTS,
     COMMON_PACKAGE, DEFAULT_STYLES, KNOWN_LOSSES, ObjectPropID, ObjectType,
-    PREVIEW_FONT_FAMILY, SLOT_HOSTS, uniflexStrokeSize,
+    PREVIEW_FONT_FAMILY, SLOT_HOSTS, WRAPPER_BUTTONS, uniflexStrokeSize,
 } from "./constants.mjs";
 
 export function buildProjectIR(snapshot, options = {}) {
@@ -61,6 +61,7 @@ export function buildCatalogIR(pages, options = {}) {
 
     const templates = new Map();
     const signatures = new Map();
+    const extraSignatures = new Map();
     const prepared = [];
 
     for (const page of pages) {
@@ -89,6 +90,7 @@ export function buildCatalogIR(pages, options = {}) {
             if (!root) continue;
             templates.set(key, { root, byId, childrenOf, instanceByRoot, ...planIndex });
             signatures.set(key, componentSignature(root, childrenOf));
+            extraSignatures.set(key, extraVisibleImages(root, childrenOf));
         }
         prepared.push({ snapshot, screen, canvas, nodes, byId, childrenOf, instanceByRoot, ...planIndex });
     }
@@ -98,7 +100,9 @@ export function buildCatalogIR(pages, options = {}) {
         losses,
         shared,
         signatures,
+        extraSignatures,
         buttons,
+        wrappers: new Set(WRAPPER_BUTTONS),
         templateOf: (key) => commonPkg.components.find((item) => item.name === key),
     };
 
@@ -242,8 +246,27 @@ function isSlotContent(name) {
     return SLOT_HOSTS.some((host) => name === `${host}/Content`);
 }
 
+function extraVisibleImages(root, childrenOf) {
+    const images = [];
+    const walk = (node) => {
+        if (node.visible === false) return;
+        if (node.kind === "image" && node.resourceId && node.name !== "ActionButton/Background") {
+            images.push(node.resourceId);
+        }
+        for (const child of childrenOf.get(node.id) ?? []) walk(child);
+    };
+    walk(root);
+    return images.join("|");
+}
+
 function isReusableInstance(instance, node, ctx) {
-    if (ctx.buttons.has(instance.definitionKey)) return true;
+    if (ctx.buttons.has(instance.definitionKey)) {
+        if (ctx.extraSignatures.get(instance.definitionKey)
+            !== extraVisibleImages(node, ctx.childrenOf)) return false;
+        const templateSize = String(ctx.signatures.get(instance.definitionKey) ?? "").split(":")[0];
+        const size = `${Math.round(node.rect?.width ?? 0)}x${Math.round(node.rect?.height ?? 0)}`;
+        return templateSize === size;
+    }
     return ctx.signatures.get(instance.definitionKey) === componentSignature(node, ctx.childrenOf);
 }
 
@@ -463,6 +486,8 @@ function componentChild(ctx, node, definitionKey, groupIndex) {
         };
     } else {
         const properties = textProperties(ctx, node, definitionKey);
+        const wrapper = wrapperButtonProperty(ctx, node, definitionKey);
+        if (wrapper) properties.push(wrapper);
         if (properties.length) def.properties = properties;
     }
     if (node.interaction === "press") def.touchable = true;
@@ -490,6 +515,16 @@ function textProperties(ctx, node, definitionKey) {
         });
     }
     return properties;
+}
+
+function wrapperButtonProperty(ctx, node, definitionKey) {
+    if (!ctx.wrappers?.has(definitionKey)) return null;
+    const nested = ctx.templateOf?.(definitionKey)?.children
+        ?.find((child) => child.name === "ActionButton" && child.kind === "component");
+    if (!nested) return null;
+    const title = titleOf(node, ctx);
+    if (!title || (nested.button?.title ?? "") === title) return null;
+    return { target: "ActionButton", id: ObjectPropID.Text, value: title };
 }
 
 /** Texts flatten would emit on this node — skip nested shared instances (their texts belong there). */
@@ -598,6 +633,9 @@ function primitiveChild(ctx, node, groupIndex) {
             group: groupIndex,
             visible,
             touchable: false,
+            relations: reserved === "title"
+                ? [{ target: "", sidePair: "width-width,height-height" }]
+                : [],
         };
     }
     if (node.kind === "view" && style.backgroundColor) {
@@ -617,8 +655,10 @@ function reservedName(node, ctx) {
 
 function titleOf(node, ctx) {
     const kids = collectNamed(node, ctx.childrenOf);
+    const visible = kids.find((item) => item.kind === "text" && item.visible !== false
+        && (item.name === "ActionButton/IconLabel" || item.name === "ActionButton/Label"));
     const label = kids.find((item) => item.name === "ActionButton/Label");
-    return label?.value || node.value || "";
+    return visible?.value || label?.value || node.value || "";
 }
 
 function outlineOf(node, ctx) {

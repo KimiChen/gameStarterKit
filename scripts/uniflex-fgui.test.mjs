@@ -118,6 +118,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(actionXml, /extention="Button"/);
         assert.match(actionXml, /name="title"/);
         assert.match(actionXml, /name="icon"/);
+        assert.match(actionXml, /sidePair="width-width,height-height"/);
         assert.match(actionXml, /font="UniFlex"/);
         assert.match(actionXml, /strokeSize="4"/);
         assert.doesNotMatch(actionXml, /ActionButton\/IconRow/);
@@ -655,6 +656,138 @@ test("hidden empty buttons do not become the shared CloseButton template", async
         assert.match(pageXml, /fileName="CloseButton.xml"/);
         assert.match(pageXml, /fileName="ActionButton.xml"/);
         assert.match(pageXml, /title="升星"/);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("ConfirmButton instances override nested ActionButton title", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-confirm-title-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const create = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "alliance-create",
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                node(1, null, "AllianceCreatePage", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "ConfirmButton", "view", rect(248, 1168, 255, 102)),
+                node(3, 2, "ActionButton", "view", rect(248, 1168, 255, 102), { interaction: "press" }),
+                node(4, 3, "ActionButton/Background", "image", rect(248, 1168, 255, 102), {
+                    resourceId: "ui/button/confirm",
+                }),
+                node(5, 3, "ActionButton/Label", "text", rect(256, 1172, 239, 86), { value: "创建" }),
+            ],
+        };
+        await exportFgui({
+            snapshots: [
+                {
+                    snapshot: promptSnapshot(),
+                    screen: catalog.screens.find((entry) => entry.id === "prompt"),
+                },
+                {
+                    snapshot: create,
+                    screen: catalog.screens.find((entry) => entry.id === "alliance-create"),
+                },
+            ],
+            out, root, catalog, images,
+        });
+        const createXml = readFileSync(join(out, "assets/UniFlex_AllianceCreate/AllianceCreate.xml"), "utf8");
+        assert.match(createXml, /fileName="ConfirmButton.xml"/);
+        assert.match(createXml, /target="ActionButton" propertyId="0" value="创建"/);
+        const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
+        assert.doesNotMatch(promptXml, /value="创建"/);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("ActionButton with a cost icon is inlined instead of sharing the label-only skin", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-action-icon-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "alliance-march-boost",
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                node(1, null, "AllianceMarchBoostPage", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "ActionButton", "view", rect(76, 1100, 255, 102), { interaction: "press" }),
+                node(3, 2, "ActionButton/Background", "image", rect(76, 1100, 255, 102), {
+                    resourceId: "ui/button/confirm",
+                }),
+                node(4, 2, "ActionButton/Label", "text", rect(84, 1104, 239, 86), { value: "确定" }),
+                node(5, 2, "ActionButton/IconRow", "view", rect(84, 1104, 239, 86), { visible: false }),
+                node(6, 1, "ActionButton", "view", rect(418, 1100, 255, 102), { interaction: "press" }),
+                node(7, 6, "ActionButton/Background", "image", rect(418, 1100, 255, 102), {
+                    resourceId: "ui/button/confirm",
+                }),
+                node(8, 6, "ActionButton/Label", "text", rect(426, 1104, 239, 86), {
+                    value: "10", visible: false,
+                }),
+                node(9, 6, "ActionButton/IconRow", "view", rect(426, 1104, 239, 86)),
+                node(10, 9, "ActionButton/Icon", "image", rect(450, 1128, 48, 48), {
+                    resourceId: "ui/alliance/create-diamond",
+                }),
+                node(11, 9, "ActionButton/IconLabel", "text", rect(514, 1104, 80, 86), { value: "10" }),
+            ],
+        };
+        await exportFgui({
+            snapshot, out, root,
+            screen: catalog.screens.find((entry) => entry.id === "alliance-march-boost"),
+            catalog, images,
+        });
+        const pageXml = readFileSync(join(out, "assets/UniFlex_AllianceMarchBoost/AllianceMarchBoost.xml"), "utf8");
+        const actionXml = readFileSync(join(out, "assets/UniFlex_Common/ActionButton.xml"), "utf8");
+        assert.match(actionXml, /text="确定"/);
+        assert.doesNotMatch(actionXml, /ActionButton\/IconRow/);
+        assert.match(pageXml, /fileName="ActionButton.xml"/);
+        assert.match(pageXml, /alliance_create_diamond\.png/);
+        assert.match(pageXml, /text="10"/);
+        assert.equal((pageXml.match(/fileName="ActionButton\.xml"/g) ?? []).length, 1);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("smaller ActionButton instances are inlined instead of stretching the 255x102 template", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-action-size-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "alliance-gift",
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                node(1, null, "AllianceGiftPage", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "ActionButton", "view", rect(76, 1100, 255, 102), { interaction: "press" }),
+                node(3, 2, "ActionButton/Background", "image", rect(76, 1100, 255, 102), {
+                    resourceId: "ui/button/confirm",
+                }),
+                node(4, 2, "ActionButton/Label", "text", rect(84, 1104, 239, 86), { value: "确定" }),
+                node(5, 1, "ActionButton", "view", rect(280, 1386, 191, 77), { interaction: "press" }),
+                node(6, 5, "ActionButton/Background", "image", rect(280, 1386, 191, 77), {
+                    resourceId: "ui/button/confirm",
+                }),
+                node(7, 5, "ActionButton/Label", "text", rect(288, 1390, 175, 61), { value: "一键领取" }),
+            ],
+        };
+        await exportFgui({
+            snapshot, out, root,
+            screen: catalog.screens.find((entry) => entry.id === "alliance-gift"),
+            catalog, images,
+        });
+        const pageXml = readFileSync(join(out, "assets/UniFlex_AllianceGift/AllianceGift.xml"), "utf8");
+        assert.match(pageXml, /fileName="ActionButton.xml"/);
+        assert.match(pageXml, /text="一键领取"/);
+        assert.doesNotMatch(pageXml, /title="一键领取"/);
+        assert.equal((pageXml.match(/fileName="ActionButton\.xml"/g) ?? []).length, 1);
     } finally {
         rmSync(out, { recursive: true, force: true });
     }
