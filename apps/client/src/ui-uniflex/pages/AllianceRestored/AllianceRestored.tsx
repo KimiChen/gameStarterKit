@@ -91,7 +91,7 @@ export const AllianceRestored = defineView<AllianceRestoredParams | void>({ zInd
                     font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
                     outlineColor: '#593d84', outlineWidth: 2, verticalAlign: 'center' }} />
 
-            <PanelTab label="联盟" active={tab === 'home'} left={10} top={247} width={206}
+            <PanelTab label="联盟" active={tab === 'home'} left={13} top={262} width={200}
                 onClick={() => selectTab('home')} />
             <PanelTab label="成员" active={tab === 'members'} left={227} top={262} width={200}
                 onClick={() => selectTab('members')} />
