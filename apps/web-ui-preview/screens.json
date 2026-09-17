@@ -4,7 +4,7 @@
       "id": "preview-home",
       "aliases": ["home"],
       "default": true,
-      "canvas": { "width": 750, "height": 1334 },
+      "canvas": { "width": 750, "height": 1424 },
       "componentName": "PreviewHome",
       "rootName": "PreviewHome",
       "source": "apps/client/src/ui-uniflex/pages/PreviewHome/PreviewHome.tsx"
@@ -216,6 +216,14 @@
       "componentName": "AllianceTech",
       "rootName": "AllianceTechPage",
       "source": "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTech.tsx"
+    },
+    {
+      "id": "shop-getitem",
+      "aliases": ["shop-getitem", "shopGetItem", "get-item", "getitem"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "ShopGetItem",
+      "rootName": "ShopGetItemPage",
+      "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItem.tsx"
     },
     {
       "id": "prompt-restored",
