@@ -210,6 +210,14 @@
       "source": "apps/client/src/ui-uniflex/pages/AllianceBoard/AllianceBoard.tsx"
     },
     {
+      "id": "alliance-tech",
+      "aliases": ["alliance-tech", "allianceTech", "alliance-science"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceTech",
+      "rootName": "AllianceTechPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTech.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },
