@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
+import { InputText } from '../../components/input/InputText';
 import { PopupFrame } from '../../components/popup/PopupFrame';
 
 export interface AllianceCreatePanelProps {
@@ -23,6 +24,7 @@ export const AllianceCreatePanel = defineComponent<AllianceCreatePanelProps>((p)
         if (level > 0) setLevel(level - 1);
     };
     const plusLevel = () => setLevel(level + 1);
+    const inputBg = imageRef('ui/alliance/input-bg');
     return (
         <view name="AllianceCreate" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -41,28 +43,16 @@ export const AllianceCreatePanel = defineComponent<AllianceCreatePanelProps>((p)
                 <text value="联盟简称"
                     style={{ position: 'absolute', left: 31, top: 368, width: 160, height: 26,
                         font: fontRef('fonts/regular', 700), fontSize: 26, color: LABEL, bold: true, verticalAlign: 'center' }} />
-                <image source={imageRef('ui/alliance/input-bg')}
-                    style={{ position: 'absolute', left: 23, top: 400, width: 663, height: 64, sizeMode: 'sliced' }} />
-                <input value={shortName} placeholder="" maxLength={4} onInput={setShortName}
-                    style={{ position: 'absolute', left: 23, top: 400, width: 663, height: 64,
-                        fontSize: 26, color: FIELD, textAlign: 'center' }} />
-                <text visible={shortName === ''} value="请输入简称，3-4字符"
-                    style={{ position: 'absolute', left: 23, top: 400, width: 663, height: 64,
-                        font: fontRef('fonts/regular', 700), fontSize: 26, color: FIELD, bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
+                <InputText background={inputBg} left={23} top={400} width={663} height={64}
+                    value={shortName} onInput={setShortName} maxLength={4}
+                    placeholder="请输入简称，3-4字符" />
 
                 <text value="联盟名称"
                     style={{ position: 'absolute', left: 31, top: 479, width: 160, height: 26,
                         font: fontRef('fonts/regular', 700), fontSize: 26, color: LABEL, bold: true, verticalAlign: 'center' }} />
-                <image source={imageRef('ui/alliance/input-bg')}
-                    style={{ position: 'absolute', left: 23, top: 511, width: 663, height: 64, sizeMode: 'sliced' }} />
-                <input value={fullName} placeholder="" maxLength={15} onInput={setFullName}
-                    style={{ position: 'absolute', left: 23, top: 511, width: 663, height: 64,
-                        fontSize: 26, color: FIELD, textAlign: 'center' }} />
-                <text visible={fullName === ''} value="请输入全称，最多15个字符"
-                    style={{ position: 'absolute', left: 23, top: 511, width: 663, height: 64,
-                        font: fontRef('fonts/regular', 700), fontSize: 26, color: FIELD, bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
+                <InputText background={inputBg} left={23} top={511} width={663} height={64}
+                    value={fullName} onInput={setFullName} maxLength={15}
+                    placeholder="请输入全称，最多15个字符" />
 
                 <text value="需要等级"
                     style={{ position: 'absolute', left: 32, top: 590, width: 160, height: 26,

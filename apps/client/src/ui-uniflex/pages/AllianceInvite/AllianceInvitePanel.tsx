@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
+import { InputText } from '../../components/input/InputText';
 import { PopupFrame } from '../../components/popup/PopupFrame';
 
 export interface AllianceInvitePanelProps {
@@ -16,7 +17,6 @@ export interface AllianceInvitePanelProps {
     readonly onPublicInvite?: () => void;
 }
 
-const FIELD = '#6F6555';
 const GRAY = '#837A91';
 
 export const AllianceInvitePanel = defineComponent<AllianceInvitePanelProps>((p) => {
@@ -24,21 +24,16 @@ export const AllianceInvitePanel = defineComponent<AllianceInvitePanelProps>((p)
     const search = () => {
         p.onSearch?.(query);
     };
+    const inputBg = imageRef('ui/alliance/input-bg');
+    const placeholder = p.placeholder ?? '点击此处输入想要搜索的玩家';
     return (
         <view name="AllianceInvite" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
             <PopupFrame title={p.title ?? '邀请成员'} kind="prompt" left={21} top={318} width={708} height={992}
                 onClose={p.onClose} />
             <view style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
-                <image source={imageRef('ui/alliance/input-bg')}
-                    style={{ position: 'absolute', left: 15, top: 106, width: 596, height: 54, sizeMode: 'sliced' }} />
-                <input value={query} placeholder="" onInput={setQuery}
-                    style={{ position: 'absolute', left: 15, top: 106, width: 596, height: 54,
-                        fontSize: 26, color: FIELD, textAlign: 'center' }} />
-                <text visible={query === ''} value={p.placeholder ?? '点击此处输入想要搜索的玩家'}
-                    style={{ position: 'absolute', left: 15, top: 106, width: 596, height: 54,
-                        font: fontRef('fonts/regular', 700), fontSize: 26, color: FIELD, bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
+                <InputText background={inputBg} left={15} top={106} width={596} height={54}
+                    value={query} onInput={setQuery} placeholder={placeholder} />
                 <view name="AllianceInvite/Search" interaction="press" onClick={search}
                     style={{ position: 'absolute', left: 622, top: 96, width: 69, height: 76 }}>
                     <image source={imageRef('ui/alliance/invite-search')} style={{ width: 69, height: 76 }} />
