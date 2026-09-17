@@ -1,0 +1,863 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "AllianceBoardPage",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-2"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "AllianceBoard",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-3",
+        "layer-5",
+        "layer-7",
+        "layer-9",
+        "layer-11",
+        "layer-13",
+        "layer-14",
+        "layer-18",
+        "layer-22",
+        "layer-24",
+        "layer-27"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:0",
+        "role": "node",
+        "definitionKey": "AllianceBoard",
+        "resourceId": "ui/hero/bond-bg",
+        "captureHash": "d1b78222fb69a37d1e6e0d52214a070dfbe114ceb43fdbf81bcbf654339a0098"
+      },
+      "asset": "asset-20b507979acab65ee3fa9d93e96cf144ac9ce6a1fd7f805405bdf0cdf160a5c8"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:0",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "children": [
+        "layer-6"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:0",
+        "role": "fill",
+        "definitionKey": "AllianceBoard",
+        "captureHash": "cb3a3628a4ff9bac7d0cc9b2accee150e829eb53bca56bbb3819114d9e4f4df4"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 140,
+        "width": 750,
+        "height": 209
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:1",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "children": [
+        "layer-8"
+      ]
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 209
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:1",
+        "role": "fill",
+        "definitionKey": "AllianceBoard",
+        "captureHash": "902c7733ce5a425c902b56a310f891f69216af867757495ef97854e2352f4ae3"
+      },
+      "asset": "asset-f222be3d968e3bbb61f9ed3b4f03bb886c49b2c3c9a212921b6c9d7c49a743de"
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 314,
+        "width": 750,
+        "height": 1310
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:2",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "children": [
+        "layer-10"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1310
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:2",
+        "role": "fill",
+        "definitionKey": "AllianceBoard",
+        "captureHash": "415efb769bc89615cb749409e447ee3632c5c8d34191f5eeefcd2be75de430d3"
+      },
+      "asset": "asset-d0707a9e2b6bb06c1e72c08fe1ed4bdd74ca42b13632caaa134101365e6b9e81"
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 144,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-12"
+      ]
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:1",
+        "role": "node",
+        "definitionKey": "AllianceBoard",
+        "resourceId": "ui/mail/header",
+        "captureHash": "00638b6427156fef741a1afd010f0216dc44e64bc9525ff77e19d780ba0d66e2"
+      },
+      "asset": "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db"
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "联盟",
+      "kind": "text",
+      "frame": {
+        "x": 38,
+        "y": 167,
+        "width": 208,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "text": {
+        "value": "联盟",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "PanelTab",
+      "kind": "group",
+      "frame": {
+        "x": 10,
+        "y": 247,
+        "width": 206,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:AllianceBoardPage/AllianceBoard/PanelTab:0",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "children": [
+        "layer-15",
+        "layer-17"
+      ]
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 206,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-16"
+      ]
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 206,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:AllianceBoardPage/AllianceBoard/PanelTab:0/_:0",
+        "role": "node",
+        "definitionKey": "PanelTab",
+        "resourceId": "ui/mail/tab-active",
+        "captureHash": "e8d81fc9faa9673cbd2320c7de382cba40dd5314bca5b765c0ff1ba35d86e12a"
+      },
+      "asset": "asset-5833a4c2221871f36dacb7c69fff9e9669badc1addf5969662197871509a3bdc"
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "留言板",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 17.5,
+        "width": 210,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:AllianceBoardPage/AllianceBoard/PanelTab:0/_",
+        "role": "node",
+        "definitionKey": "PanelTab"
+      },
+      "text": {
+        "value": "留言板",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "PanelTab",
+      "kind": "group",
+      "frame": {
+        "x": 227,
+        "y": 262,
+        "width": 200,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:AllianceBoardPage/AllianceBoard/PanelTab:1",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "children": [
+        "layer-19",
+        "layer-21"
+      ]
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-20"
+      ]
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:AllianceBoardPage/AllianceBoard/PanelTab:1/_:1",
+        "role": "node",
+        "definitionKey": "PanelTab",
+        "resourceId": "ui/mail/tab-inactive",
+        "captureHash": "12e789c656b2ea65930c8c6db5ead07d0d6f855b3b965f9febfee0646c308c7d"
+      },
+      "asset": "asset-edb9f2e2bddc76a40ae5c46f633a1845a275b87a5058269ec12f3717bd1beffa"
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "申请列表",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 12,
+        "width": 204,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:AllianceBoardPage/AllianceBoard/PanelTab:1/_",
+        "role": "node",
+        "definitionKey": "PanelTab"
+      },
+      "text": {
+        "value": "申请列表",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1369,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-23"
+      ]
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/_:2",
+        "role": "node",
+        "definitionKey": "AllianceBoard",
+        "resourceId": "ui/mail/footer",
+        "captureHash": "0e8b740b5382056889b3a262eb9f54748cb87eeacc2ada3d452aef39352a7bc2"
+      },
+      "asset": "asset-165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2"
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "AllianceBoard/Back",
+      "kind": "group",
+      "frame": {
+        "x": 13,
+        "y": 1396,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoard/Back",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "children": [
+        "layer-25"
+      ]
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-26"
+      ]
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoard/Back/_",
+        "role": "node",
+        "definitionKey": "AllianceBoard",
+        "resourceId": "ui/mail/back",
+        "captureHash": "d077b5cd1da699994316051b7dfdb1edbae1f821fac9631236833588ad730461"
+      },
+      "asset": "asset-8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50"
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "AllianceBoardMessage",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1369,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoardMessage",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "children": [
+        "layer-28",
+        "layer-30",
+        "layer-31",
+        "layer-34"
+      ]
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 102,
+        "y": 20,
+        "width": 483,
+        "height": 62
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-29"
+      ]
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 483,
+        "height": 62
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoardMessage/_",
+        "role": "node",
+        "definitionKey": "AllianceBoard",
+        "resourceId": "ui/alliance/board-input",
+        "captureHash": "99ff65aa7aabbd1b4e069492a05d2503fe063c78aa0a13d75b0e9335198ff2f4"
+      },
+      "asset": "asset-e3338f2a7f5cdfc1b058bf657470606fd47dc758094eab4035762c76cbdd675f"
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "再次输入内容...",
+      "kind": "text",
+      "frame": {
+        "x": 113,
+        "y": 38,
+        "width": 404,
+        "height": 62
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoardMessage/_",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "text": {
+        "value": "再次输入内容...",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#9684b2"
+      }
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "AllianceBoard/Emoji",
+      "kind": "group",
+      "frame": {
+        "x": 521,
+        "y": 21,
+        "width": 59,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoardMessage/AllianceBoard/Emoji",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "children": [
+        "layer-32"
+      ]
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 59,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-33"
+      ]
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 59,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoardMessage/AllianceBoard/Emoji/_",
+        "role": "node",
+        "definitionKey": "AllianceBoard",
+        "resourceId": "ui/alliance/board-emoji",
+        "captureHash": "8975ecfd84299c06484e81ecf1a28dade674d586a2b70bc05d8fb5cc2eb79bf4"
+      },
+      "asset": "asset-6c23a4e3b3c956f0d6ba00d3e212afec93e1f677f58036108c371e75b9e61ffe"
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "AllianceBoard/Send",
+      "kind": "group",
+      "frame": {
+        "x": 589,
+        "y": 14,
+        "width": 154,
+        "height": 77
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoardMessage/AllianceBoard/Send",
+        "role": "node",
+        "definitionKey": "AllianceBoard"
+      },
+      "children": [
+        "layer-35"
+      ]
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 154,
+        "height": 77
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-36"
+      ]
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 154,
+        "height": 77
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceBoard.root/AllianceBoard/AllianceBoardMessage/AllianceBoard/Send/_",
+        "role": "node",
+        "definitionKey": "AllianceBoard",
+        "resourceId": "ui/alliance/board-send",
+        "captureHash": "55dd91be945563c5a7105293275bd5472b5db89269f454caf210999ddbbf0bae"
+      },
+      "asset": "asset-5653c3ae15427a9a3e8ca65d800109eb5ff830bdaa165dcabb1c67cd16aeb566"
+    }
+  },
+  "assets": {
+    "asset-20b507979acab65ee3fa9d93e96cf144ac9ce6a1fd7f805405bdf0cdf160a5c8": {
+      "path": "assets/20b507979acab65ee3fa9d93e96cf144ac9ce6a1fd7f805405bdf0cdf160a5c8.png",
+      "sha256": "20b507979acab65ee3fa9d93e96cf144ac9ce6a1fd7f805405bdf0cdf160a5c8",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-f222be3d968e3bbb61f9ed3b4f03bb886c49b2c3c9a212921b6c9d7c49a743de": {
+      "path": "assets/f222be3d968e3bbb61f9ed3b4f03bb886c49b2c3c9a212921b6c9d7c49a743de.png",
+      "sha256": "f222be3d968e3bbb61f9ed3b4f03bb886c49b2c3c9a212921b6c9d7c49a743de",
+      "mime": "image/png",
+      "width": 750,
+      "height": 209
+    },
+    "asset-d0707a9e2b6bb06c1e72c08fe1ed4bdd74ca42b13632caaa134101365e6b9e81": {
+      "path": "assets/d0707a9e2b6bb06c1e72c08fe1ed4bdd74ca42b13632caaa134101365e6b9e81.png",
+      "sha256": "d0707a9e2b6bb06c1e72c08fe1ed4bdd74ca42b13632caaa134101365e6b9e81",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1310
+    },
+    "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db": {
+      "path": "assets/c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db.png",
+      "sha256": "c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db",
+      "mime": "image/png",
+      "width": 750,
+      "height": 90
+    },
+    "asset-5833a4c2221871f36dacb7c69fff9e9669badc1addf5969662197871509a3bdc": {
+      "path": "assets/5833a4c2221871f36dacb7c69fff9e9669badc1addf5969662197871509a3bdc.png",
+      "sha256": "5833a4c2221871f36dacb7c69fff9e9669badc1addf5969662197871509a3bdc",
+      "mime": "image/png",
+      "width": 206,
+      "height": 67
+    },
+    "asset-edb9f2e2bddc76a40ae5c46f633a1845a275b87a5058269ec12f3717bd1beffa": {
+      "path": "assets/edb9f2e2bddc76a40ae5c46f633a1845a275b87a5058269ec12f3717bd1beffa.png",
+      "sha256": "edb9f2e2bddc76a40ae5c46f633a1845a275b87a5058269ec12f3717bd1beffa",
+      "mime": "image/png",
+      "width": 200,
+      "height": 52
+    },
+    "asset-165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2": {
+      "path": "assets/165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2.png",
+      "sha256": "165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2",
+      "mime": "image/png",
+      "width": 750,
+      "height": 110
+    },
+    "asset-8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50": {
+      "path": "assets/8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50.png",
+      "sha256": "8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50",
+      "mime": "image/png",
+      "width": 64,
+      "height": 56
+    },
+    "asset-e3338f2a7f5cdfc1b058bf657470606fd47dc758094eab4035762c76cbdd675f": {
+      "path": "assets/e3338f2a7f5cdfc1b058bf657470606fd47dc758094eab4035762c76cbdd675f.png",
+      "sha256": "e3338f2a7f5cdfc1b058bf657470606fd47dc758094eab4035762c76cbdd675f",
+      "mime": "image/png",
+      "width": 483,
+      "height": 62
+    },
+    "asset-6c23a4e3b3c956f0d6ba00d3e212afec93e1f677f58036108c371e75b9e61ffe": {
+      "path": "assets/6c23a4e3b3c956f0d6ba00d3e212afec93e1f677f58036108c371e75b9e61ffe.png",
+      "sha256": "6c23a4e3b3c956f0d6ba00d3e212afec93e1f677f58036108c371e75b9e61ffe",
+      "mime": "image/png",
+      "width": 59,
+      "height": 60
+    },
+    "asset-5653c3ae15427a9a3e8ca65d800109eb5ff830bdaa165dcabb1c67cd16aeb566": {
+      "path": "assets/5653c3ae15427a9a3e8ca65d800109eb5ff830bdaa165dcabb1c67cd16aeb566.png",
+      "sha256": "5653c3ae15427a9a3e8ca65d800109eb5ff830bdaa165dcabb1c67cd16aeb566",
+      "mime": "image/png",
+      "width": 154,
+      "height": 77
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

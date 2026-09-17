@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceBoard, AllianceCreate, AllianceGift, AllianceHelp, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTech, AllianceTerritory, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, ShopGetItem, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -340,6 +340,116 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onExchange: () => console.info("[UniFlex HeroDetailRestored] exchange"),
                 onUpgrade: () => console.info("[UniFlex HeroDetailRestored] upgrade"),
                 onSelectSkill: (id) => console.info("[UniFlex HeroDetailRestored] skill", id),
+            });
+            return;
+        case "hero-star-upgrade-restored":
+            await runtime.start(HeroStarUpgradeRestored, {
+                onClose: backToRestored,
+                onUpgrade: () => console.info("[UniFlex HeroStarUpgradeRestored] upgrade"),
+                onObtainFragments: () => console.info("[UniFlex HeroStarUpgradeRestored] obtain-fragments"),
+                onExchange: () => console.info("[UniFlex HeroStarUpgradeRestored] exchange"),
+            });
+            return;
+        case "alliance-restored":
+            await runtime.start(AllianceRestored, {
+                onAction: (id) => console.info("[UniFlex AllianceRestored] action", id),
+                onNav: (slot) => console.info("[UniFlex AllianceRestored] nav", slot),
+                onSelectTab: (tab) => console.info("[UniFlex AllianceRestored] tab", tab),
+            });
+            return;
+        case "alliance-announce-restored":
+            await runtime.start(AllianceAnnounceRestored, {
+                onClose: backToRestored,
+            });
+            return;
+        case "alliance-create-restored":
+            await runtime.start(AllianceCreateRestored, {
+                onClose: backToRestored,
+                onCreate: () => console.info("[UniFlex AllianceCreateRestored] create"),
+                onChangeBanner: () => console.info("[UniFlex AllianceCreateRestored] change-banner"),
+            });
+            return;
+        case "alliance-join-restored":
+            await runtime.start(AllianceJoinRestored, {
+                onBack: backToRestored,
+                onSearch: (query) => console.info("[UniFlex AllianceJoinRestored] search", query),
+                onCreate: () => console.info("[UniFlex AllianceJoinRestored] create"),
+                onJoin: (id) => console.info("[UniFlex AllianceJoinRestored] join", id),
+                onAction: (id) => console.info("[UniFlex AllianceJoinRestored] action", id),
+            });
+            return;
+        case "alliance-member-settings-restored":
+            await runtime.start(AllianceMemberSettingsRestored, {
+                onClose: backToRestored,
+                onToggleR2: (enabled) => console.info("[UniFlex AllianceMemberSettingsRestored] r2", enabled),
+                onToggleR3: (enabled) => console.info("[UniFlex AllianceMemberSettingsRestored] r3", enabled),
+            });
+            return;
+        case "alliance-war-restored":
+            await runtime.start(AllianceWarRestored, {
+                onBack: backToRestored,
+                onAction: (id) => console.info("[UniFlex AllianceWarRestored] action", id),
+                onSelectTab: (tab) => console.info("[UniFlex AllianceWarRestored] tab", tab),
+            });
+            return;
+        case "alliance-territory-restored":
+            await runtime.start(AllianceTerritoryRestored, {
+                onBack: backToRestored,
+                onAction: (id) => console.info("[UniFlex AllianceTerritoryRestored] action", id),
+                onSelectTab: (tab) => console.info("[UniFlex AllianceTerritoryRestored] tab", tab),
+            });
+            return;
+        case "alliance-march-boost-restored":
+            await runtime.start(AllianceMarchBoostRestored, {
+                onClose: backToRestored,
+                onPayGem: () => console.info("[UniFlex AllianceMarchBoostRestored] pay-gem"),
+                onPayCoin: () => console.info("[UniFlex AllianceMarchBoostRestored] pay-coin"),
+            });
+            return;
+        case "alliance-invite-restored":
+            await runtime.start(AllianceInviteRestored, {
+                onClose: backToRestored,
+                onSearch: (query) => console.info("[UniFlex AllianceInviteRestored] search", query),
+                onInvite: () => console.info("[UniFlex AllianceInviteRestored] invite"),
+                onPublicInvite: () => console.info("[UniFlex AllianceInviteRestored] public"),
+            });
+            return;
+        case "alliance-gift-restored":
+            await runtime.start(AllianceGiftRestored, {
+                onBack: backToRestored,
+                onClaimAll: () => console.info("[UniFlex AllianceGiftRestored] claim-all"),
+                onAction: (id) => console.info("[UniFlex AllianceGiftRestored] action", id),
+                onSelectTab: (tab) => console.info("[UniFlex AllianceGiftRestored] tab", tab),
+            });
+            return;
+        case "alliance-help-restored":
+            await runtime.start(AllianceHelpRestored, {
+                onClose: backToRestored,
+                onCreate: () => console.info("[UniFlex AllianceHelpRestored] create"),
+                onAction: (id) => console.info("[UniFlex AllianceHelpRestored] action", id),
+            });
+            return;
+        case "alliance-board-restored":
+            await runtime.start(AllianceBoardRestored, {
+                onBack: backToRestored,
+                onSend: (text) => console.info("[UniFlex AllianceBoardRestored] send", text),
+                onAction: (id) => console.info("[UniFlex AllianceBoardRestored] action", id),
+                onSelectTab: (tab) => console.info("[UniFlex AllianceBoardRestored] tab", tab),
+            });
+            return;
+        case "alliance-tech-restored":
+            await runtime.start(AllianceTechRestored, {
+                onAction: (action) => {
+                    console.info("[UniFlex AllianceTechRestored] action", action);
+                    if (action.action === "back" || action.action === "close") backToRestored();
+                },
+            });
+            return;
+        case "shop-getitem-restored":
+            await runtime.start(ShopGetItemRestored, {
+                onClose: backToRestored,
+                onChange: (quantity) => console.info("[UniFlex ShopGetItemRestored] quantity", quantity),
+                onBuy: (quantity) => console.info("[UniFlex ShopGetItemRestored] buy", quantity),
             });
             return;
         default:
