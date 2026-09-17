@@ -12,7 +12,7 @@
     {
       "id": "restored-home",
       "aliases": ["restored", "restored-preview", "restore"],
-      "canvas": { "width": 750, "height": 1334 },
+      "canvas": { "width": 750, "height": 1424 },
       "componentName": "RestoredPreviewHome",
       "rootName": "RestoredPreviewHome",
       "source": "apps/client/src/ui-uniflex/pages/RestoredPreviewHome/RestoredPreviewHome.tsx"
@@ -280,6 +280,126 @@
       "componentName": "HeroDetailRestored",
       "rootName": "HeroDetailRestored",
       "source": "apps/client/src/ui-uniflex/pages/HeroDetailRestored/HeroDetailRestored.tsx"
+    },
+    {
+      "id": "hero-star-upgrade-restored",
+      "aliases": ["hero-star-upgrade-restored", "heroStarUpgradeRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "HeroStarUpgradeRestored",
+      "rootName": "HeroStarUpgradePage",
+      "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgradeRestored/HeroStarUpgradeRestored.tsx"
+    },
+    {
+      "id": "alliance-restored",
+      "aliases": ["alliance-restored", "allianceRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceRestored",
+      "rootName": "AllianceRestored",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceRestored/AllianceRestored.tsx"
+    },
+    {
+      "id": "alliance-announce-restored",
+      "aliases": ["alliance-announce-restored", "allianceAnnounceRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceAnnounceRestored",
+      "rootName": "AllianceAnnouncePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounceRestored/AllianceAnnounceRestored.tsx"
+    },
+    {
+      "id": "alliance-create-restored",
+      "aliases": ["alliance-create-restored", "allianceCreateRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceCreateRestored",
+      "rootName": "AllianceCreatePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceCreateRestored/AllianceCreateRestored.tsx"
+    },
+    {
+      "id": "alliance-join-restored",
+      "aliases": ["alliance-join-restored", "allianceJoinRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceJoinRestored",
+      "rootName": "AllianceJoinRestored",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceJoinRestored/AllianceJoinRestored.tsx"
+    },
+    {
+      "id": "alliance-member-settings-restored",
+      "aliases": ["alliance-member-settings-restored", "allianceMemberSettingsRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceMemberSettingsRestored",
+      "rootName": "AllianceMemberSettingsPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettingsRestored/AllianceMemberSettingsRestored.tsx"
+    },
+    {
+      "id": "alliance-war-restored",
+      "aliases": ["alliance-war-restored", "allianceWarRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceWarRestored",
+      "rootName": "AllianceWarPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceWarRestored/AllianceWarRestored.tsx"
+    },
+    {
+      "id": "alliance-territory-restored",
+      "aliases": ["alliance-territory-restored", "allianceTerritoryRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceTerritoryRestored",
+      "rootName": "AllianceTerritoryPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritoryRestored/AllianceTerritoryRestored.tsx"
+    },
+    {
+      "id": "alliance-march-boost-restored",
+      "aliases": ["alliance-march-boost-restored", "allianceMarchBoostRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceMarchBoostRestored",
+      "rootName": "AllianceMarchBoostPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoostRestored/AllianceMarchBoostRestored.tsx"
+    },
+    {
+      "id": "alliance-invite-restored",
+      "aliases": ["alliance-invite-restored", "allianceInviteRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceInviteRestored",
+      "rootName": "AllianceInvitePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceInviteRestored/AllianceInviteRestored.tsx"
+    },
+    {
+      "id": "alliance-gift-restored",
+      "aliases": ["alliance-gift-restored", "allianceGiftRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceGiftRestored",
+      "rootName": "AllianceGiftPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceGiftRestored/AllianceGiftRestored.tsx"
+    },
+    {
+      "id": "alliance-help-restored",
+      "aliases": ["alliance-help-restored", "allianceHelpRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceHelpRestored",
+      "rootName": "AllianceHelpPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceHelpRestored/AllianceHelpRestored.tsx"
+    },
+    {
+      "id": "alliance-board-restored",
+      "aliases": ["alliance-board-restored", "allianceBoardRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceBoardRestored",
+      "rootName": "AllianceBoardPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceBoardRestored/AllianceBoardRestored.tsx"
+    },
+    {
+      "id": "alliance-tech-restored",
+      "aliases": ["alliance-tech-restored", "allianceTechRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceTechRestored",
+      "rootName": "AllianceTechRestored",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTechRestored/AllianceTechRestored.tsx"
+    },
+    {
+      "id": "shop-getitem-restored",
+      "aliases": ["shop-getitem-restored", "shopGetItemRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "ShopGetItemRestored",
+      "rootName": "ShopGetItemPage",
+      "source": "apps/client/src/ui-uniflex/pages/ShopGetItemRestored/ShopGetItemRestored.tsx"
     },
     {
       "id": "preview-home-restored",

@@ -1,0 +1,3413 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "AllianceTechPage",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1628
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-2"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "AllianceTech",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1628
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-3",
+        "layer-5",
+        "layer-7",
+        "layer-9",
+        "layer-11",
+        "layer-138",
+        "layer-140",
+        "layer-142",
+        "layer-144",
+        "layer-145",
+        "layer-147",
+        "layer-150"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:0",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/hero/bond-bg",
+        "captureHash": "d1b78222fb69a37d1e6e0d52214a070dfbe114ceb43fdbf81bcbf654339a0098"
+      },
+      "asset": "asset-20b507979acab65ee3fa9d93e96cf144ac9ce6a1fd7f805405bdf0cdf160a5c8"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:0",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-6"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:0",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "cb3a3628a4ff9bac7d0cc9b2accee150e829eb53bca56bbb3819114d9e4f4df4"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 138,
+        "width": 750,
+        "height": 212
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:1",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-8"
+      ]
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 212
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:1",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "008b7dda3471b8d28f03e5d1d426a72052a7ece6ffcf969ec7553e96f8c53913"
+      },
+      "asset": "asset-27ada948ee1f32f9dbec4636f5ee622c4c93fca90581905c37ec649df35f675c"
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 222,
+        "width": 750,
+        "height": 1404
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:2",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-10"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1404
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:2",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "b4b4a81a07c8a522699f8e6a83ec84cf9df0320ef1c0033b0d7a0df6f3fa92e0"
+      },
+      "asset": "asset-d907555bd557d2ced87f18d6d89f2316f1082a47ed9de7efa6a3eb78c48e0c54"
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "AllianceTech/Tree",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 112,
+        "width": 750,
+        "height": 1257
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-12"
+      ],
+      "clip": true
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "AllianceTech/TreeContent",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1516
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-13",
+        "layer-14",
+        "layer-16",
+        "layer-18",
+        "layer-20",
+        "layer-22",
+        "layer-24",
+        "layer-26",
+        "layer-28",
+        "layer-30",
+        "layer-32",
+        "layer-34",
+        "layer-36",
+        "layer-38",
+        "layer-40",
+        "layer-42",
+        "layer-44",
+        "layer-46",
+        "layer-48",
+        "layer-50",
+        "layer-52",
+        "layer-54",
+        "layer-56",
+        "layer-58",
+        "layer-60",
+        "layer-62",
+        "layer-64",
+        "layer-72",
+        "layer-80",
+        "layer-88",
+        "layer-98",
+        "layer-108",
+        "layer-118",
+        "layer-128"
+      ]
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "AllianceTech/TreeContent / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1516
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "2e6cbe83097c36c51e23691c2dc720de064e1a534d98a1bbb918237db8a206be"
+      },
+      "asset": "asset-1eb795077cbdf7a4d8aacfd82c2d126212a110228e78fc6b039986ba33d260f5"
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1399
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-15"
+      ]
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1399
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-tree-bg",
+        "captureHash": "37cff60b11ae31ff0e110fe76dccbc39c9f9bba234d1e2ff0b95c93c0129c092"
+      },
+      "asset": "asset-89858c4a9b8d6e62dc8f35a745f99118a08b707884557ea880b71cf776d42cd3"
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 350,
+        "width": 12,
+        "height": 36
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:0",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-17"
+      ]
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 36
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:0",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "59f741ee51a5e858fb1dfada1098957f30dff20498f7e141b55cba51d920b798"
+      },
+      "asset": "asset-f35a733d018e3e005778cb6ab5620efa9dfc7d864514bc0867e491c1ab6212c8"
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 380,
+        "width": 250,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:1",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-19"
+      ]
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 250,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:1",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "94b7753d05ee67916e0c13fdaa44a9a0ecb296f85c035f474c0ce5fd6f24f778"
+      },
+      "asset": "asset-33e1f3db44bf031f85eb8233e632731662e794d3ae92c4a7c45c3c8c8e6027f1"
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 386,
+        "width": 12,
+        "height": 36
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:2",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-21"
+      ]
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 36
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:2",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "59f741ee51a5e858fb1dfada1098957f30dff20498f7e141b55cba51d920b798"
+      },
+      "asset": "asset-f35a733d018e3e005778cb6ab5620efa9dfc7d864514bc0867e491c1ab6212c8"
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 350,
+        "width": 12,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:3",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-23"
+      ]
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:3",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "8e8f830d801d019eb4639f6556b961d03c6176876c0b390723efce4f61cfb421"
+      },
+      "asset": "asset-24729875abd22a9c5535fc4e08c6dcf6f76a7ff1e97ea68dd310464cc1ea6832"
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 379,
+        "width": 247,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:4",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-25"
+      ]
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 247,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:4",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "c6f18d1aac65d7649ac4d47669c20011a7041c3db207dfc462515c4c3201a0f6"
+      },
+      "asset": "asset-22fc49716917d1b07df5cc41b0f5c21692f9e35f0305f1b0c2468420e3fb5542"
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 606,
+        "y": 385,
+        "width": 12,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:5",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-27"
+      ]
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:5",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "8e8f830d801d019eb4639f6556b961d03c6176876c0b390723efce4f61cfb421"
+      },
+      "asset": "asset-24729875abd22a9c5535fc4e08c6dcf6f76a7ff1e97ea68dd310464cc1ea6832"
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 611,
+        "width": 12,
+        "height": 45
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:6",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-29"
+      ]
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 45
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:6",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "901167197083082be817a989e9437f4fdd0806e43739f727be2e4c76a694119d"
+      },
+      "asset": "asset-92c2eef371846fc137b19e6f7f4b0fa9aa353199d0948b13c1642bf502f70969"
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 650,
+        "width": 13,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:7",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-31"
+      ]
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 13,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:7",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "5a3483229c1e6f6ca8716285668cd2d7874ee530c08bfeea399aec0b464d3f6c"
+      },
+      "asset": "asset-b2d1ee4c1d4f9e666983f2546df29e89b0b764ceb1a500dd8863c887e16dc52b"
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 656,
+        "width": 12,
+        "height": 45
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:8",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-33"
+      ]
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 45
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:8",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "901167197083082be817a989e9437f4fdd0806e43739f727be2e4c76a694119d"
+      },
+      "asset": "asset-92c2eef371846fc137b19e6f7f4b0fa9aa353199d0948b13c1642bf502f70969"
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 606,
+        "y": 612,
+        "width": 12,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:9",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-35"
+      ]
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:9",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "e55e2ca28fd6857fc7f8459fcc89da8ca2e583b1a70bd74182ba6964817ed8fc"
+      },
+      "asset": "asset-9475d4cff7cafda6fc702e75b30e2842c2753287d8ce4859528b9c09d5863aff"
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 606,
+        "y": 650,
+        "width": 12,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:10",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-37"
+      ]
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:10",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "470decad226a883ee4ff5592441dbe83aa5964416ad93861908366d0a12466fa"
+      },
+      "asset": "asset-9f5eebf05eb9fc59648fabbb5ac2cd4780462c0d35edcf7947ae3316bd96b767"
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 606,
+        "y": 656,
+        "width": 12,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:11",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-39"
+      ]
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:11",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "e55e2ca28fd6857fc7f8459fcc89da8ca2e583b1a70bd74182ba6964817ed8fc"
+      },
+      "asset": "asset-9475d4cff7cafda6fc702e75b30e2842c2753287d8ce4859528b9c09d5863aff"
+    },
+    "layer-40": {
+      "id": "layer-40",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 892,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:12",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-41"
+      ]
+    },
+    "layer-41": {
+      "id": "layer-41",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:12",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "fc3d32dcf5002b2ed25e7ce074c4673f5a78bc273f00500e0dab921d48646d59"
+      },
+      "asset": "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189"
+    },
+    "layer-42": {
+      "id": "layer-42",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 926,
+        "width": 250,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:13",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-43"
+      ]
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 250,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:13",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "ec71b632b9387225c0cc9b5fdbfd7b28d22dda2c39864df2eb58af3c9b7654fc"
+      },
+      "asset": "asset-2e9c697f5f715392e21426b9342166f4e019add6a85b7d4b0056c890b934b00d"
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 932,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-45"
+      ]
+    },
+    "layer-45": {
+      "id": "layer-45",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "fc3d32dcf5002b2ed25e7ce074c4673f5a78bc273f00500e0dab921d48646d59"
+      },
+      "asset": "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189"
+    },
+    "layer-46": {
+      "id": "layer-46",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 606,
+        "y": 892,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:15",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-47"
+      ]
+    },
+    "layer-47": {
+      "id": "layer-47",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:15",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "fc3d32dcf5002b2ed25e7ce074c4673f5a78bc273f00500e0dab921d48646d59"
+      },
+      "asset": "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189"
+    },
+    "layer-48": {
+      "id": "layer-48",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 926,
+        "width": 247,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:16",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-49"
+      ]
+    },
+    "layer-49": {
+      "id": "layer-49",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 247,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:16",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "193bee6e2010e84b69c32f13a8b28bca373a28b34936cae5fdb9db576508bcf4"
+      },
+      "asset": "asset-267fb4c542fd5eea37c7304b29b6d46a8a14f34a5d411c7fb05de1c841c131a8"
+    },
+    "layer-50": {
+      "id": "layer-50",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 932,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-51"
+      ]
+    },
+    "layer-51": {
+      "id": "layer-51",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "fc3d32dcf5002b2ed25e7ce074c4673f5a78bc273f00500e0dab921d48646d59"
+      },
+      "asset": "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189"
+    },
+    "layer-52": {
+      "id": "layer-52",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 1164,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-53"
+      ]
+    },
+    "layer-53": {
+      "id": "layer-53",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "fc3d32dcf5002b2ed25e7ce074c4673f5a78bc273f00500e0dab921d48646d59"
+      },
+      "asset": "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189"
+    },
+    "layer-54": {
+      "id": "layer-54",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 1198,
+        "width": 250,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:19",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-55"
+      ]
+    },
+    "layer-55": {
+      "id": "layer-55",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 250,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:19",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "ec71b632b9387225c0cc9b5fdbfd7b28d22dda2c39864df2eb58af3c9b7654fc"
+      },
+      "asset": "asset-2e9c697f5f715392e21426b9342166f4e019add6a85b7d4b0056c890b934b00d"
+    },
+    "layer-56": {
+      "id": "layer-56",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 1204,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:20",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-57"
+      ]
+    },
+    "layer-57": {
+      "id": "layer-57",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:20",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "fc3d32dcf5002b2ed25e7ce074c4673f5a78bc273f00500e0dab921d48646d59"
+      },
+      "asset": "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189"
+    },
+    "layer-58": {
+      "id": "layer-58",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 1164,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-59"
+      ]
+    },
+    "layer-59": {
+      "id": "layer-59",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "fc3d32dcf5002b2ed25e7ce074c4673f5a78bc273f00500e0dab921d48646d59"
+      },
+      "asset": "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189"
+    },
+    "layer-60": {
+      "id": "layer-60",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 371,
+        "y": 1198,
+        "width": 247,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:22",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-61"
+      ]
+    },
+    "layer-61": {
+      "id": "layer-61",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 247,
+        "height": 12
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:22",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "193bee6e2010e84b69c32f13a8b28bca373a28b34936cae5fdb9db576508bcf4"
+      },
+      "asset": "asset-267fb4c542fd5eea37c7304b29b6d46a8a14f34a5d411c7fb05de1c841c131a8"
+    },
+    "layer-62": {
+      "id": "layer-62",
+      "name": "AllianceTechLink",
+      "kind": "group",
+      "frame": {
+        "x": 606,
+        "y": 1204,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:23",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-63"
+      ]
+    },
+    "layer-63": {
+      "id": "layer-63",
+      "name": "AllianceTechLink / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:0/AllianceTechLink:23",
+        "role": "fill",
+        "definitionKey": "AllianceTech",
+        "captureHash": "fc3d32dcf5002b2ed25e7ce074c4673f5a78bc273f00500e0dab921d48646d59"
+      },
+      "asset": "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189"
+    },
+    "layer-64": {
+      "id": "layer-64",
+      "name": "AllianceTechNode",
+      "kind": "group",
+      "frame": {
+        "x": 294,
+        "y": 158,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:0",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-65",
+        "layer-67",
+        "layer-69",
+        "layer-71"
+      ]
+    },
+    "layer-65": {
+      "id": "layer-65",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-66"
+      ]
+    },
+    "layer-66": {
+      "id": "layer-66",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:0/_:0",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-hex-unlocked",
+        "captureHash": "f4e6f009bc0dae12e18711bc65e4618ba0b3b250c4becc1508c8930de14b05cf"
+      },
+      "asset": "asset-e551b3092f8580e49e2e8d93a94b0de14d590d849b476b9fca180f85c95ce014"
+    },
+    "layer-67": {
+      "id": "layer-67",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 7,
+        "y": 24,
+        "width": 155,
+        "height": 146
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-68"
+      ]
+    },
+    "layer-68": {
+      "id": "layer-68",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 155,
+        "height": 146
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:0/_:3",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-icon-shield",
+        "captureHash": "4ffc671554d41cde5d01da14bd38832041d0aceffba8005cf539790bdf2b3a1d"
+      },
+      "asset": "asset-dbbc18719ab3848f93ad35d0dc815cb895111037fedbf39687403bd5b02cfbb2"
+    },
+    "layer-69": {
+      "id": "layer-69",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 142,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-70"
+      ]
+    },
+    "layer-70": {
+      "id": "layer-70",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:0/_:8",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-badge",
+        "captureHash": "7a89d4b88f56fe70b9b86523e9d1d0c1809632ea950ab67ef6d33d5beee7118a"
+      },
+      "asset": "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3"
+    },
+    "layer-71": {
+      "id": "layer-71",
+      "name": "5/5",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 146.5,
+        "width": 126,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:0/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "5/5",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-72": {
+      "id": "layer-72",
+      "name": "AllianceTechNode",
+      "kind": "group",
+      "frame": {
+        "x": 57,
+        "y": 421,
+        "width": 164,
+        "height": 190
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:1",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-73",
+        "layer-75",
+        "layer-77",
+        "layer-79"
+      ]
+    },
+    "layer-73": {
+      "id": "layer-73",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 164,
+        "height": 190
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-74"
+      ]
+    },
+    "layer-74": {
+      "id": "layer-74",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 164,
+        "height": 190
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:1/_:1",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-hex-heart",
+        "captureHash": "d87ebb7fbdfcc2b6021ef1e7e9629cc042b7a57475b640525107ac9401fd2d3b"
+      },
+      "asset": "asset-3c4879950a8651f753ea6139f4f35e10eddc760b276c7582c1ee8d7f72570a1e"
+    },
+    "layer-75": {
+      "id": "layer-75",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 19,
+        "y": 47,
+        "width": 125,
+        "height": 108
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-76"
+      ]
+    },
+    "layer-76": {
+      "id": "layer-76",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 125,
+        "height": 108
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:1/_:4",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-icon-heart",
+        "captureHash": "58b86802f8ea70be8f62b8b8aa2c31db77dcb14c93263eccc97c31f080ffc774"
+      },
+      "asset": "asset-23bc2b73b97ccc672c2e0843880f607143d35391230e73d3ca3f15db3ea7aaa9"
+    },
+    "layer-77": {
+      "id": "layer-77",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 142,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-78"
+      ]
+    },
+    "layer-78": {
+      "id": "layer-78",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:1/_:8",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-badge",
+        "captureHash": "7a89d4b88f56fe70b9b86523e9d1d0c1809632ea950ab67ef6d33d5beee7118a"
+      },
+      "asset": "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3"
+    },
+    "layer-79": {
+      "id": "layer-79",
+      "name": "1/5",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 146.5,
+        "width": 126,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:1/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "1/5",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-80": {
+      "id": "layer-80",
+      "name": "AllianceTechNode",
+      "kind": "group",
+      "frame": {
+        "x": 529,
+        "y": 420,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:2",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-81",
+        "layer-83",
+        "layer-85",
+        "layer-87"
+      ]
+    },
+    "layer-81": {
+      "id": "layer-81",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-82"
+      ]
+    },
+    "layer-82": {
+      "id": "layer-82",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:2/_:0",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-hex-unlocked",
+        "captureHash": "f4e6f009bc0dae12e18711bc65e4618ba0b3b250c4becc1508c8930de14b05cf"
+      },
+      "asset": "asset-e551b3092f8580e49e2e8d93a94b0de14d590d849b476b9fca180f85c95ce014"
+    },
+    "layer-83": {
+      "id": "layer-83",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 16,
+        "y": 24,
+        "width": 136,
+        "height": 122
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-84"
+      ]
+    },
+    "layer-84": {
+      "id": "layer-84",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 136,
+        "height": 122
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:2/_:5",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-icon-swords",
+        "captureHash": "7d850b9df367ec9ece7d97159c588f4a1cb492dc958ca1421b9674b0dccd3380"
+      },
+      "asset": "asset-55ec21447ed578e9c93ec1094faf0d6f597174e4fe65120be87f8a7236d1d58f"
+    },
+    "layer-85": {
+      "id": "layer-85",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 142,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-86"
+      ]
+    },
+    "layer-86": {
+      "id": "layer-86",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:2/_:8",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-badge",
+        "captureHash": "7a89d4b88f56fe70b9b86523e9d1d0c1809632ea950ab67ef6d33d5beee7118a"
+      },
+      "asset": "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3"
+    },
+    "layer-87": {
+      "id": "layer-87",
+      "name": "1/5",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 146.5,
+        "width": 126,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:2/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "1/5",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-88": {
+      "id": "layer-88",
+      "name": "AllianceTechNode",
+      "kind": "group",
+      "frame": {
+        "x": 56,
+        "y": 700,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:3",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-89",
+        "layer-91",
+        "layer-93",
+        "layer-95",
+        "layer-97"
+      ]
+    },
+    "layer-89": {
+      "id": "layer-89",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-90"
+      ]
+    },
+    "layer-90": {
+      "id": "layer-90",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:3/_:2",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-hex-locked",
+        "captureHash": "2179d6d3635f7ca7514971c4d999d8d8244d532db43b64bbaae244317d265ea4"
+      },
+      "asset": "asset-7347a8ab9c3c70b61094e273c778e69830a79f62952a279008aff8158552bae0"
+    },
+    "layer-91": {
+      "id": "layer-91",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 18,
+        "y": 33,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-92"
+      ]
+    },
+    "layer-92": {
+      "id": "layer-92",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:3/_:6",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-icon-crate",
+        "captureHash": "7db89f4b1fe2addc67d3f934f3c56fb9e7c55c21225718b6df95c133af7d0635"
+      },
+      "asset": "asset-14d56b55f0cbf5906530cc4abe93d20e5490287a27cafe0fcd5cd2425fc0558d"
+    },
+    "layer-93": {
+      "id": "layer-93",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3,
+        "y": 3,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-94"
+      ]
+    },
+    "layer-94": {
+      "id": "layer-94",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:3/_:7",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-lock",
+        "captureHash": "868973472c66a3e01e66c6b79a4c062772d51c0dd9f390f7f3d5f72536f21d43"
+      },
+      "asset": "asset-c34f17b35d00f2653199ba2a56b1aef87fc2c8feb8c2fd2f07659ae31140bdac"
+    },
+    "layer-95": {
+      "id": "layer-95",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 142,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-96"
+      ]
+    },
+    "layer-96": {
+      "id": "layer-96",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:3/_:8",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-badge",
+        "captureHash": "7a89d4b88f56fe70b9b86523e9d1d0c1809632ea950ab67ef6d33d5beee7118a"
+      },
+      "asset": "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3"
+    },
+    "layer-97": {
+      "id": "layer-97",
+      "name": "0/5",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 146.5,
+        "width": 126,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:3/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "0/5",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-98": {
+      "id": "layer-98",
+      "name": "AllianceTechNode",
+      "kind": "group",
+      "frame": {
+        "x": 529,
+        "y": 700,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:4",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-99",
+        "layer-101",
+        "layer-103",
+        "layer-105",
+        "layer-107"
+      ]
+    },
+    "layer-99": {
+      "id": "layer-99",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-100"
+      ]
+    },
+    "layer-100": {
+      "id": "layer-100",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:4/_:2",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-hex-locked",
+        "captureHash": "2179d6d3635f7ca7514971c4d999d8d8244d532db43b64bbaae244317d265ea4"
+      },
+      "asset": "asset-7347a8ab9c3c70b61094e273c778e69830a79f62952a279008aff8158552bae0"
+    },
+    "layer-101": {
+      "id": "layer-101",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 18,
+        "y": 33,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-102"
+      ]
+    },
+    "layer-102": {
+      "id": "layer-102",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:4/_:6",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-icon-crate",
+        "captureHash": "7db89f4b1fe2addc67d3f934f3c56fb9e7c55c21225718b6df95c133af7d0635"
+      },
+      "asset": "asset-14d56b55f0cbf5906530cc4abe93d20e5490287a27cafe0fcd5cd2425fc0558d"
+    },
+    "layer-103": {
+      "id": "layer-103",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3,
+        "y": 3,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-104"
+      ]
+    },
+    "layer-104": {
+      "id": "layer-104",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:4/_:7",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-lock",
+        "captureHash": "868973472c66a3e01e66c6b79a4c062772d51c0dd9f390f7f3d5f72536f21d43"
+      },
+      "asset": "asset-c34f17b35d00f2653199ba2a56b1aef87fc2c8feb8c2fd2f07659ae31140bdac"
+    },
+    "layer-105": {
+      "id": "layer-105",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 142,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-106"
+      ]
+    },
+    "layer-106": {
+      "id": "layer-106",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:4/_:8",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-badge",
+        "captureHash": "7a89d4b88f56fe70b9b86523e9d1d0c1809632ea950ab67ef6d33d5beee7118a"
+      },
+      "asset": "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3"
+    },
+    "layer-107": {
+      "id": "layer-107",
+      "name": "0/5",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 146.5,
+        "width": 126,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:4/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "0/5",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-108": {
+      "id": "layer-108",
+      "name": "AllianceTechNode",
+      "kind": "group",
+      "frame": {
+        "x": 294,
+        "y": 972,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:5",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-109",
+        "layer-111",
+        "layer-113",
+        "layer-115",
+        "layer-117"
+      ]
+    },
+    "layer-109": {
+      "id": "layer-109",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-110"
+      ]
+    },
+    "layer-110": {
+      "id": "layer-110",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:5/_:2",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-hex-locked",
+        "captureHash": "2179d6d3635f7ca7514971c4d999d8d8244d532db43b64bbaae244317d265ea4"
+      },
+      "asset": "asset-7347a8ab9c3c70b61094e273c778e69830a79f62952a279008aff8158552bae0"
+    },
+    "layer-111": {
+      "id": "layer-111",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 18,
+        "y": 33,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-112"
+      ]
+    },
+    "layer-112": {
+      "id": "layer-112",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:5/_:6",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-icon-crate",
+        "captureHash": "7db89f4b1fe2addc67d3f934f3c56fb9e7c55c21225718b6df95c133af7d0635"
+      },
+      "asset": "asset-14d56b55f0cbf5906530cc4abe93d20e5490287a27cafe0fcd5cd2425fc0558d"
+    },
+    "layer-113": {
+      "id": "layer-113",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3,
+        "y": 3,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-114"
+      ]
+    },
+    "layer-114": {
+      "id": "layer-114",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:5/_:7",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-lock",
+        "captureHash": "868973472c66a3e01e66c6b79a4c062772d51c0dd9f390f7f3d5f72536f21d43"
+      },
+      "asset": "asset-c34f17b35d00f2653199ba2a56b1aef87fc2c8feb8c2fd2f07659ae31140bdac"
+    },
+    "layer-115": {
+      "id": "layer-115",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 142,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-116"
+      ]
+    },
+    "layer-116": {
+      "id": "layer-116",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:5/_:8",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-badge",
+        "captureHash": "7a89d4b88f56fe70b9b86523e9d1d0c1809632ea950ab67ef6d33d5beee7118a"
+      },
+      "asset": "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3"
+    },
+    "layer-117": {
+      "id": "layer-117",
+      "name": "0/5",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 146.5,
+        "width": 126,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:5/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "0/5",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-118": {
+      "id": "layer-118",
+      "name": "AllianceTechNode",
+      "kind": "group",
+      "frame": {
+        "x": 56,
+        "y": 1244,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:6",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-119",
+        "layer-121",
+        "layer-123",
+        "layer-125",
+        "layer-127"
+      ]
+    },
+    "layer-119": {
+      "id": "layer-119",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-120"
+      ]
+    },
+    "layer-120": {
+      "id": "layer-120",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:6/_:2",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-hex-locked",
+        "captureHash": "2179d6d3635f7ca7514971c4d999d8d8244d532db43b64bbaae244317d265ea4"
+      },
+      "asset": "asset-7347a8ab9c3c70b61094e273c778e69830a79f62952a279008aff8158552bae0"
+    },
+    "layer-121": {
+      "id": "layer-121",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 18,
+        "y": 33,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-122"
+      ]
+    },
+    "layer-122": {
+      "id": "layer-122",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:6/_:6",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-icon-crate",
+        "captureHash": "7db89f4b1fe2addc67d3f934f3c56fb9e7c55c21225718b6df95c133af7d0635"
+      },
+      "asset": "asset-14d56b55f0cbf5906530cc4abe93d20e5490287a27cafe0fcd5cd2425fc0558d"
+    },
+    "layer-123": {
+      "id": "layer-123",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3,
+        "y": 3,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-124"
+      ]
+    },
+    "layer-124": {
+      "id": "layer-124",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:6/_:7",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-lock",
+        "captureHash": "868973472c66a3e01e66c6b79a4c062772d51c0dd9f390f7f3d5f72536f21d43"
+      },
+      "asset": "asset-c34f17b35d00f2653199ba2a56b1aef87fc2c8feb8c2fd2f07659ae31140bdac"
+    },
+    "layer-125": {
+      "id": "layer-125",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 142,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-126"
+      ]
+    },
+    "layer-126": {
+      "id": "layer-126",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:6/_:8",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-badge",
+        "captureHash": "7a89d4b88f56fe70b9b86523e9d1d0c1809632ea950ab67ef6d33d5beee7118a"
+      },
+      "asset": "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3"
+    },
+    "layer-127": {
+      "id": "layer-127",
+      "name": "0/5",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 146.5,
+        "width": 126,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:6/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "0/5",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-128": {
+      "id": "layer-128",
+      "name": "AllianceTechNode",
+      "kind": "group",
+      "frame": {
+        "x": 529,
+        "y": 1244,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:7",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-129",
+        "layer-131",
+        "layer-133",
+        "layer-135",
+        "layer-137"
+      ]
+    },
+    "layer-129": {
+      "id": "layer-129",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-130"
+      ]
+    },
+    "layer-130": {
+      "id": "layer-130",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 165,
+        "height": 192
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:7/_:2",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-hex-locked",
+        "captureHash": "2179d6d3635f7ca7514971c4d999d8d8244d532db43b64bbaae244317d265ea4"
+      },
+      "asset": "asset-7347a8ab9c3c70b61094e273c778e69830a79f62952a279008aff8158552bae0"
+    },
+    "layer-131": {
+      "id": "layer-131",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 18,
+        "y": 33,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-132"
+      ]
+    },
+    "layer-132": {
+      "id": "layer-132",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 132,
+        "height": 121
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:7/_:6",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-icon-crate",
+        "captureHash": "7db89f4b1fe2addc67d3f934f3c56fb9e7c55c21225718b6df95c133af7d0635"
+      },
+      "asset": "asset-14d56b55f0cbf5906530cc4abe93d20e5490287a27cafe0fcd5cd2425fc0558d"
+    },
+    "layer-133": {
+      "id": "layer-133",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3,
+        "y": 3,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-134"
+      ]
+    },
+    "layer-134": {
+      "id": "layer-134",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 159,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:7/_:7",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-lock",
+        "captureHash": "868973472c66a3e01e66c6b79a4c062772d51c0dd9f390f7f3d5f72536f21d43"
+      },
+      "asset": "asset-c34f17b35d00f2653199ba2a56b1aef87fc2c8feb8c2fd2f07659ae31140bdac"
+    },
+    "layer-135": {
+      "id": "layer-135",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 142,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-136"
+      ]
+    },
+    "layer-136": {
+      "id": "layer-136",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 35
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:7/_:8",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-badge",
+        "captureHash": "7a89d4b88f56fe70b9b86523e9d1d0c1809632ea950ab67ef6d33d5beee7118a"
+      },
+      "asset": "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3"
+    },
+    "layer-137": {
+      "id": "layer-137",
+      "name": "0/5",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 146.5,
+        "width": 126,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Tree/AllianceTech/TreeContent/_:1/AllianceTechNode:7/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "0/5",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-138": {
+      "id": "layer-138",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 225,
+        "width": 750,
+        "height": 21
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-139"
+      ]
+    },
+    "layer-139": {
+      "id": "layer-139",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 21
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:1",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-fade-top",
+        "captureHash": "71f0ef505b6deafa8b6754e07efff0d562a3a0c023bfd0540e2a732e0944e330"
+      },
+      "asset": "asset-2cf36e1fde547ff2a3412753f1f37396b53398a9786710cbb793c0d49997c210"
+    },
+    "layer-140": {
+      "id": "layer-140",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1357,
+        "width": 750,
+        "height": 20
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-141"
+      ]
+    },
+    "layer-141": {
+      "id": "layer-141",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 20
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:2",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-fade-bot",
+        "captureHash": "be0901a2f85d08d5c714f593bcac07e2c3fd6ab51799a7341af29752ceef967e"
+      },
+      "asset": "asset-91f2128a9e91f79ed07acf04b9651583585fbe3aa5d224e89b96ee5c08445da5"
+    },
+    "layer-142": {
+      "id": "layer-142",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 144,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-143"
+      ]
+    },
+    "layer-143": {
+      "id": "layer-143",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:3",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/mail/header",
+        "captureHash": "00638b6427156fef741a1afd010f0216dc44e64bc9525ff77e19d780ba0d66e2"
+      },
+      "asset": "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db"
+    },
+    "layer-144": {
+      "id": "layer-144",
+      "name": "科技",
+      "kind": "text",
+      "frame": {
+        "x": 38,
+        "y": 172,
+        "width": 208,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "科技",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-145": {
+      "id": "layer-145",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1369,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-146"
+      ]
+    },
+    "layer-146": {
+      "id": "layer-146",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/_:4",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/mail/footer",
+        "captureHash": "0e8b740b5382056889b3a262eb9f54748cb87eeacc2ada3d452aef39352a7bc2"
+      },
+      "asset": "asset-165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2"
+    },
+    "layer-147": {
+      "id": "layer-147",
+      "name": "AllianceTech/Back",
+      "kind": "group",
+      "frame": {
+        "x": 13,
+        "y": 1396,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Back",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-148"
+      ]
+    },
+    "layer-148": {
+      "id": "layer-148",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-149"
+      ]
+    },
+    "layer-149": {
+      "id": "layer-149",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/AllianceTech/Back/_",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/mail/back",
+        "captureHash": "d077b5cd1da699994316051b7dfdb1edbae1f821fac9631236833588ad730461"
+      },
+      "asset": "asset-8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50"
+    },
+    "layer-150": {
+      "id": "layer-150",
+      "name": "IconCaptionButton",
+      "kind": "group",
+      "frame": {
+        "x": 646,
+        "y": 1376,
+        "width": 82,
+        "height": 97
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/IconCaptionButton",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-151",
+        "layer-154"
+      ]
+    },
+    "layer-151": {
+      "id": "layer-151",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 82,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/IconCaptionButton/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "children": [
+        "layer-152"
+      ]
+    },
+    "layer-152": {
+      "id": "layer-152",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 82,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-153"
+      ]
+    },
+    "layer-153": {
+      "id": "layer-153",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 82,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/IconCaptionButton/_/_",
+        "role": "node",
+        "definitionKey": "AllianceTech",
+        "resourceId": "ui/alliance/tech-rank",
+        "captureHash": "35631df3bdcd96fdee572df3fde616f1677cf1cc5b3c37baea683ee825719115"
+      },
+      "asset": "asset-3052a3b962f41ab783c4faf7584ae95bba0f01ec3131c3fd3691e23d0bbbb0b2"
+    },
+    "layer-154": {
+      "id": "layer-154",
+      "name": "排行榜",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 71,
+        "width": 86,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceTech.root/AllianceTech/IconCaptionButton/_",
+        "role": "node",
+        "definitionKey": "AllianceTech"
+      },
+      "text": {
+        "value": "排行榜",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-20b507979acab65ee3fa9d93e96cf144ac9ce6a1fd7f805405bdf0cdf160a5c8": {
+      "path": "assets/20b507979acab65ee3fa9d93e96cf144ac9ce6a1fd7f805405bdf0cdf160a5c8.png",
+      "sha256": "20b507979acab65ee3fa9d93e96cf144ac9ce6a1fd7f805405bdf0cdf160a5c8",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-27ada948ee1f32f9dbec4636f5ee622c4c93fca90581905c37ec649df35f675c": {
+      "path": "assets/27ada948ee1f32f9dbec4636f5ee622c4c93fca90581905c37ec649df35f675c.png",
+      "sha256": "27ada948ee1f32f9dbec4636f5ee622c4c93fca90581905c37ec649df35f675c",
+      "mime": "image/png",
+      "width": 750,
+      "height": 212
+    },
+    "asset-d907555bd557d2ced87f18d6d89f2316f1082a47ed9de7efa6a3eb78c48e0c54": {
+      "path": "assets/d907555bd557d2ced87f18d6d89f2316f1082a47ed9de7efa6a3eb78c48e0c54.png",
+      "sha256": "d907555bd557d2ced87f18d6d89f2316f1082a47ed9de7efa6a3eb78c48e0c54",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1404
+    },
+    "asset-2402488f7709a576211cc3337ab31b831af0cf9ba0f4cfb7019f7c5eafcb9a7e": {
+      "path": "assets/2402488f7709a576211cc3337ab31b831af0cf9ba0f4cfb7019f7c5eafcb9a7e.png",
+      "sha256": "2402488f7709a576211cc3337ab31b831af0cf9ba0f4cfb7019f7c5eafcb9a7e",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1257
+    },
+    "asset-1eb795077cbdf7a4d8aacfd82c2d126212a110228e78fc6b039986ba33d260f5": {
+      "path": "assets/1eb795077cbdf7a4d8aacfd82c2d126212a110228e78fc6b039986ba33d260f5.png",
+      "sha256": "1eb795077cbdf7a4d8aacfd82c2d126212a110228e78fc6b039986ba33d260f5",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1516
+    },
+    "asset-89858c4a9b8d6e62dc8f35a745f99118a08b707884557ea880b71cf776d42cd3": {
+      "path": "assets/89858c4a9b8d6e62dc8f35a745f99118a08b707884557ea880b71cf776d42cd3.png",
+      "sha256": "89858c4a9b8d6e62dc8f35a745f99118a08b707884557ea880b71cf776d42cd3",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1399
+    },
+    "asset-f35a733d018e3e005778cb6ab5620efa9dfc7d864514bc0867e491c1ab6212c8": {
+      "path": "assets/f35a733d018e3e005778cb6ab5620efa9dfc7d864514bc0867e491c1ab6212c8.png",
+      "sha256": "f35a733d018e3e005778cb6ab5620efa9dfc7d864514bc0867e491c1ab6212c8",
+      "mime": "image/png",
+      "width": 12,
+      "height": 36
+    },
+    "asset-33e1f3db44bf031f85eb8233e632731662e794d3ae92c4a7c45c3c8c8e6027f1": {
+      "path": "assets/33e1f3db44bf031f85eb8233e632731662e794d3ae92c4a7c45c3c8c8e6027f1.png",
+      "sha256": "33e1f3db44bf031f85eb8233e632731662e794d3ae92c4a7c45c3c8c8e6027f1",
+      "mime": "image/png",
+      "width": 250,
+      "height": 12
+    },
+    "asset-24729875abd22a9c5535fc4e08c6dcf6f76a7ff1e97ea68dd310464cc1ea6832": {
+      "path": "assets/24729875abd22a9c5535fc4e08c6dcf6f76a7ff1e97ea68dd310464cc1ea6832.png",
+      "sha256": "24729875abd22a9c5535fc4e08c6dcf6f76a7ff1e97ea68dd310464cc1ea6832",
+      "mime": "image/png",
+      "width": 12,
+      "height": 35
+    },
+    "asset-22fc49716917d1b07df5cc41b0f5c21692f9e35f0305f1b0c2468420e3fb5542": {
+      "path": "assets/22fc49716917d1b07df5cc41b0f5c21692f9e35f0305f1b0c2468420e3fb5542.png",
+      "sha256": "22fc49716917d1b07df5cc41b0f5c21692f9e35f0305f1b0c2468420e3fb5542",
+      "mime": "image/png",
+      "width": 247,
+      "height": 12
+    },
+    "asset-92c2eef371846fc137b19e6f7f4b0fa9aa353199d0948b13c1642bf502f70969": {
+      "path": "assets/92c2eef371846fc137b19e6f7f4b0fa9aa353199d0948b13c1642bf502f70969.png",
+      "sha256": "92c2eef371846fc137b19e6f7f4b0fa9aa353199d0948b13c1642bf502f70969",
+      "mime": "image/png",
+      "width": 12,
+      "height": 45
+    },
+    "asset-b2d1ee4c1d4f9e666983f2546df29e89b0b764ceb1a500dd8863c887e16dc52b": {
+      "path": "assets/b2d1ee4c1d4f9e666983f2546df29e89b0b764ceb1a500dd8863c887e16dc52b.png",
+      "sha256": "b2d1ee4c1d4f9e666983f2546df29e89b0b764ceb1a500dd8863c887e16dc52b",
+      "mime": "image/png",
+      "width": 13,
+      "height": 12
+    },
+    "asset-9475d4cff7cafda6fc702e75b30e2842c2753287d8ce4859528b9c09d5863aff": {
+      "path": "assets/9475d4cff7cafda6fc702e75b30e2842c2753287d8ce4859528b9c09d5863aff.png",
+      "sha256": "9475d4cff7cafda6fc702e75b30e2842c2753287d8ce4859528b9c09d5863aff",
+      "mime": "image/png",
+      "width": 12,
+      "height": 44
+    },
+    "asset-9f5eebf05eb9fc59648fabbb5ac2cd4780462c0d35edcf7947ae3316bd96b767": {
+      "path": "assets/9f5eebf05eb9fc59648fabbb5ac2cd4780462c0d35edcf7947ae3316bd96b767.png",
+      "sha256": "9f5eebf05eb9fc59648fabbb5ac2cd4780462c0d35edcf7947ae3316bd96b767",
+      "mime": "image/png",
+      "width": 12,
+      "height": 12
+    },
+    "asset-7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189": {
+      "path": "assets/7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189.png",
+      "sha256": "7a9b84eba2944e3e3693a2cb47f29f826f550b7ac1a9fe9dce092063d555c189",
+      "mime": "image/png",
+      "width": 12,
+      "height": 40
+    },
+    "asset-2e9c697f5f715392e21426b9342166f4e019add6a85b7d4b0056c890b934b00d": {
+      "path": "assets/2e9c697f5f715392e21426b9342166f4e019add6a85b7d4b0056c890b934b00d.png",
+      "sha256": "2e9c697f5f715392e21426b9342166f4e019add6a85b7d4b0056c890b934b00d",
+      "mime": "image/png",
+      "width": 250,
+      "height": 12
+    },
+    "asset-267fb4c542fd5eea37c7304b29b6d46a8a14f34a5d411c7fb05de1c841c131a8": {
+      "path": "assets/267fb4c542fd5eea37c7304b29b6d46a8a14f34a5d411c7fb05de1c841c131a8.png",
+      "sha256": "267fb4c542fd5eea37c7304b29b6d46a8a14f34a5d411c7fb05de1c841c131a8",
+      "mime": "image/png",
+      "width": 247,
+      "height": 12
+    },
+    "asset-e551b3092f8580e49e2e8d93a94b0de14d590d849b476b9fca180f85c95ce014": {
+      "path": "assets/e551b3092f8580e49e2e8d93a94b0de14d590d849b476b9fca180f85c95ce014.png",
+      "sha256": "e551b3092f8580e49e2e8d93a94b0de14d590d849b476b9fca180f85c95ce014",
+      "mime": "image/png",
+      "width": 165,
+      "height": 192
+    },
+    "asset-dbbc18719ab3848f93ad35d0dc815cb895111037fedbf39687403bd5b02cfbb2": {
+      "path": "assets/dbbc18719ab3848f93ad35d0dc815cb895111037fedbf39687403bd5b02cfbb2.png",
+      "sha256": "dbbc18719ab3848f93ad35d0dc815cb895111037fedbf39687403bd5b02cfbb2",
+      "mime": "image/png",
+      "width": 155,
+      "height": 146
+    },
+    "asset-c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3": {
+      "path": "assets/c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3.png",
+      "sha256": "c503979deb4156a0bcff7f10a1820c4297b055527a3a87317c229557492363f3",
+      "mime": "image/png",
+      "width": 122,
+      "height": 35
+    },
+    "asset-3c4879950a8651f753ea6139f4f35e10eddc760b276c7582c1ee8d7f72570a1e": {
+      "path": "assets/3c4879950a8651f753ea6139f4f35e10eddc760b276c7582c1ee8d7f72570a1e.png",
+      "sha256": "3c4879950a8651f753ea6139f4f35e10eddc760b276c7582c1ee8d7f72570a1e",
+      "mime": "image/png",
+      "width": 164,
+      "height": 190
+    },
+    "asset-23bc2b73b97ccc672c2e0843880f607143d35391230e73d3ca3f15db3ea7aaa9": {
+      "path": "assets/23bc2b73b97ccc672c2e0843880f607143d35391230e73d3ca3f15db3ea7aaa9.png",
+      "sha256": "23bc2b73b97ccc672c2e0843880f607143d35391230e73d3ca3f15db3ea7aaa9",
+      "mime": "image/png",
+      "width": 125,
+      "height": 108
+    },
+    "asset-55ec21447ed578e9c93ec1094faf0d6f597174e4fe65120be87f8a7236d1d58f": {
+      "path": "assets/55ec21447ed578e9c93ec1094faf0d6f597174e4fe65120be87f8a7236d1d58f.png",
+      "sha256": "55ec21447ed578e9c93ec1094faf0d6f597174e4fe65120be87f8a7236d1d58f",
+      "mime": "image/png",
+      "width": 136,
+      "height": 122
+    },
+    "asset-7347a8ab9c3c70b61094e273c778e69830a79f62952a279008aff8158552bae0": {
+      "path": "assets/7347a8ab9c3c70b61094e273c778e69830a79f62952a279008aff8158552bae0.png",
+      "sha256": "7347a8ab9c3c70b61094e273c778e69830a79f62952a279008aff8158552bae0",
+      "mime": "image/png",
+      "width": 165,
+      "height": 192
+    },
+    "asset-14d56b55f0cbf5906530cc4abe93d20e5490287a27cafe0fcd5cd2425fc0558d": {
+      "path": "assets/14d56b55f0cbf5906530cc4abe93d20e5490287a27cafe0fcd5cd2425fc0558d.png",
+      "sha256": "14d56b55f0cbf5906530cc4abe93d20e5490287a27cafe0fcd5cd2425fc0558d",
+      "mime": "image/png",
+      "width": 132,
+      "height": 121
+    },
+    "asset-c34f17b35d00f2653199ba2a56b1aef87fc2c8feb8c2fd2f07659ae31140bdac": {
+      "path": "assets/c34f17b35d00f2653199ba2a56b1aef87fc2c8feb8c2fd2f07659ae31140bdac.png",
+      "sha256": "c34f17b35d00f2653199ba2a56b1aef87fc2c8feb8c2fd2f07659ae31140bdac",
+      "mime": "image/png",
+      "width": 159,
+      "height": 186
+    },
+    "asset-2cf36e1fde547ff2a3412753f1f37396b53398a9786710cbb793c0d49997c210": {
+      "path": "assets/2cf36e1fde547ff2a3412753f1f37396b53398a9786710cbb793c0d49997c210.png",
+      "sha256": "2cf36e1fde547ff2a3412753f1f37396b53398a9786710cbb793c0d49997c210",
+      "mime": "image/png",
+      "width": 750,
+      "height": 21
+    },
+    "asset-91f2128a9e91f79ed07acf04b9651583585fbe3aa5d224e89b96ee5c08445da5": {
+      "path": "assets/91f2128a9e91f79ed07acf04b9651583585fbe3aa5d224e89b96ee5c08445da5.png",
+      "sha256": "91f2128a9e91f79ed07acf04b9651583585fbe3aa5d224e89b96ee5c08445da5",
+      "mime": "image/png",
+      "width": 750,
+      "height": 20
+    },
+    "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db": {
+      "path": "assets/c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db.png",
+      "sha256": "c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db",
+      "mime": "image/png",
+      "width": 750,
+      "height": 90
+    },
+    "asset-165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2": {
+      "path": "assets/165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2.png",
+      "sha256": "165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2",
+      "mime": "image/png",
+      "width": 750,
+      "height": 110
+    },
+    "asset-8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50": {
+      "path": "assets/8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50.png",
+      "sha256": "8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50",
+      "mime": "image/png",
+      "width": 64,
+      "height": 56
+    },
+    "asset-3052a3b962f41ab783c4faf7584ae95bba0f01ec3131c3fd3691e23d0bbbb0b2": {
+      "path": "assets/3052a3b962f41ab783c4faf7584ae95bba0f01ec3131c3fd3691e23d0bbbb0b2.png",
+      "sha256": "3052a3b962f41ab783c4faf7584ae95bba0f01ec3131c3fd3691e23d0bbbb0b2",
+      "mime": "image/png",
+      "width": 82,
+      "height": 78
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "AllianceTech/Tree (layer-11): overflow mask kept as clip viewport",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

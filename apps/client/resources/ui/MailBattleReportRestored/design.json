@@ -1,0 +1,3674 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "MailBattleReport",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root",
+        "role": "page",
+        "definitionKey": "MailBattleReport"
+      },
+      "children": [
+        "layer-2",
+        "layer-3",
+        "layer-5",
+        "layer-7",
+        "layer-8",
+        "layer-12",
+        "layer-16",
+        "layer-20",
+        "layer-24",
+        "layer-28",
+        "layer-32",
+        "layer-36",
+        "layer-40",
+        "layer-138",
+        "layer-140",
+        "layer-142",
+        "layer-143",
+        "layer-145",
+        "layer-148",
+        "layer-153"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "MailBattleReport / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root",
+        "role": "fill",
+        "definitionKey": "MailBattleReport",
+        "captureHash": "dfbea937142d7464344025102f3db799e01599bb64d000139932ca2d334159ce"
+      },
+      "asset": "asset-10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a"
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 170
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleReport"
+      },
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 170
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:0",
+        "role": "fill",
+        "definitionKey": "MailBattleReport",
+        "captureHash": "37d39031f313cabd1717dd8747846d111600776e9b79ac4dfe0c1ab331aeada5"
+      },
+      "asset": "asset-ac55c98e3bfd0f9b3335f4a3c659061a85606523dfe7a8281dfaf7a0469b680c"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-6"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleReport",
+        "resourceId": "ui/mail/header",
+        "captureHash": "00638b6427156fef741a1afd010f0216dc44e64bc9525ff77e19d780ba0d66e2"
+      },
+      "asset": "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db"
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "邮件",
+      "kind": "text",
+      "frame": {
+        "x": 38,
+        "y": 24,
+        "width": 308,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleReport"
+      },
+      "text": {
+        "value": "邮件",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "PanelTab",
+      "kind": "group",
+      "frame": {
+        "x": 14,
+        "y": 118,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:0",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "children": [
+        "layer-9",
+        "layer-11"
+      ]
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-10"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:0/_:1",
+        "role": "node",
+        "definitionKey": "PanelTab",
+        "resourceId": "ui/mail/tab-inactive",
+        "captureHash": "40415f5bfdbe20767da04e52402a7e9a31bc18845fa63a9544a499f40d6a456d"
+      },
+      "asset": "asset-b4bb797848e5eae4e8c82db4cf8a4eec974b6789f090f3bd08be29f6a8ddeb7f"
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "系统",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 12,
+        "width": 174,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:0/_",
+        "role": "node",
+        "definitionKey": "PanelTab"
+      },
+      "text": {
+        "value": "系统",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "PanelTab",
+      "kind": "group",
+      "frame": {
+        "x": 192,
+        "y": 103,
+        "width": 176,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:1",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "children": [
+        "layer-13",
+        "layer-15"
+      ]
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 176,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-14"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 176,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:1/_:0",
+        "role": "node",
+        "definitionKey": "PanelTab",
+        "resourceId": "ui/mail/tab-active",
+        "captureHash": "cff51ccd5d7f4a11ca05257f4a75c0e4dc9782b1418242f1ca8b1b2f5e4a232c"
+      },
+      "asset": "asset-b6c90fbc78484a1779c6b03ab6fb98fd372cf87237a009f8e62eae91a5a97609"
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "战报",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 17.5,
+        "width": 180,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:1/_",
+        "role": "node",
+        "definitionKey": "PanelTab"
+      },
+      "text": {
+        "value": "战报",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "PanelTab",
+      "kind": "group",
+      "frame": {
+        "x": 382,
+        "y": 118,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:2",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "children": [
+        "layer-17",
+        "layer-19"
+      ]
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-18"
+      ]
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:2/_:1",
+        "role": "node",
+        "definitionKey": "PanelTab",
+        "resourceId": "ui/mail/tab-inactive",
+        "captureHash": "40415f5bfdbe20767da04e52402a7e9a31bc18845fa63a9544a499f40d6a456d"
+      },
+      "asset": "asset-b4bb797848e5eae4e8c82db4cf8a4eec974b6789f090f3bd08be29f6a8ddeb7f"
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "联盟",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 12,
+        "width": 174,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:2/_",
+        "role": "node",
+        "definitionKey": "PanelTab"
+      },
+      "text": {
+        "value": "联盟",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "PanelTab",
+      "kind": "group",
+      "frame": {
+        "x": 566,
+        "y": 118,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:3",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "children": [
+        "layer-21",
+        "layer-23"
+      ]
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-22"
+      ]
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:3/_:1",
+        "role": "node",
+        "definitionKey": "PanelTab",
+        "resourceId": "ui/mail/tab-inactive",
+        "captureHash": "40415f5bfdbe20767da04e52402a7e9a31bc18845fa63a9544a499f40d6a456d"
+      },
+      "asset": "asset-b4bb797848e5eae4e8c82db4cf8a4eec974b6789f090f3bd08be29f6a8ddeb7f"
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "活动",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 12,
+        "width": 174,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:MailBattleReport/PanelTab:3/_",
+        "role": "node",
+        "definitionKey": "PanelTab"
+      },
+      "text": {
+        "value": "活动",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "NotificationBadge",
+      "kind": "group",
+      "frame": {
+        "x": 159,
+        "y": 99,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:0",
+        "role": "component",
+        "definitionKey": "NotificationBadge"
+      },
+      "children": [
+        "layer-25",
+        "layer-27"
+      ]
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "NotificationBadge/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-26"
+      ]
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "NotificationBadge/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:0/NotificationBadge/Background",
+        "role": "node",
+        "definitionKey": "NotificationBadge",
+        "resourceId": "ui/mail/number-badge",
+        "captureHash": "8a5efd6dbbd42257ccde098519cabd7d769ea497d0e57e2911c579839019ce82"
+      },
+      "asset": "asset-2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a"
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "NotificationBadge/Count",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 3,
+        "width": 38,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:0/NotificationBadge/Count",
+        "role": "node",
+        "definitionKey": "NotificationBadge"
+      },
+      "text": {
+        "value": "2",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "NotificationBadge",
+      "kind": "group",
+      "frame": {
+        "x": 346,
+        "y": 99,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:1",
+        "role": "component",
+        "definitionKey": "NotificationBadge"
+      },
+      "children": [
+        "layer-29",
+        "layer-31"
+      ]
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "NotificationBadge/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-30"
+      ]
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "NotificationBadge/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:1/NotificationBadge/Background",
+        "role": "node",
+        "definitionKey": "NotificationBadge",
+        "resourceId": "ui/mail/number-badge",
+        "captureHash": "8a5efd6dbbd42257ccde098519cabd7d769ea497d0e57e2911c579839019ce82"
+      },
+      "asset": "asset-2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a"
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "NotificationBadge/Count",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 3,
+        "width": 38,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:1/NotificationBadge/Count",
+        "role": "node",
+        "definitionKey": "NotificationBadge"
+      },
+      "text": {
+        "value": "4",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "NotificationBadge",
+      "kind": "group",
+      "frame": {
+        "x": 527,
+        "y": 99,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:2",
+        "role": "component",
+        "definitionKey": "NotificationBadge"
+      },
+      "children": [
+        "layer-33",
+        "layer-35"
+      ]
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "NotificationBadge/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-34"
+      ]
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "NotificationBadge/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:2/NotificationBadge/Background",
+        "role": "node",
+        "definitionKey": "NotificationBadge",
+        "resourceId": "ui/mail/number-badge",
+        "captureHash": "8a5efd6dbbd42257ccde098519cabd7d769ea497d0e57e2911c579839019ce82"
+      },
+      "asset": "asset-2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a"
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "NotificationBadge/Count",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 3,
+        "width": 38,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:2/NotificationBadge/Count",
+        "role": "node",
+        "definitionKey": "NotificationBadge"
+      },
+      "text": {
+        "value": "3",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "NotificationBadge",
+      "kind": "group",
+      "frame": {
+        "x": 711,
+        "y": 99,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:3",
+        "role": "component",
+        "definitionKey": "NotificationBadge"
+      },
+      "children": [
+        "layer-37",
+        "layer-39"
+      ]
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "NotificationBadge/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-38"
+      ]
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "NotificationBadge/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:3/NotificationBadge/Background",
+        "role": "node",
+        "definitionKey": "NotificationBadge",
+        "resourceId": "ui/mail/number-badge",
+        "captureHash": "8a5efd6dbbd42257ccde098519cabd7d769ea497d0e57e2911c579839019ce82"
+      },
+      "asset": "asset-2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a"
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "NotificationBadge/Count",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 3,
+        "width": 38,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:MailBattleReport/NotificationBadge:3/NotificationBadge/Count",
+        "role": "node",
+        "definitionKey": "NotificationBadge"
+      },
+      "text": {
+        "value": "4",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-40": {
+      "id": "layer-40",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 10,
+        "y": 236,
+        "width": 730,
+        "height": 905
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-41",
+        "layer-54",
+        "layer-69",
+        "layer-82",
+        "layer-97",
+        "layer-110",
+        "layer-125"
+      ],
+      "clip": true
+    },
+    "layer-41": {
+      "id": "layer-41",
+      "name": "MailBattleRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0",
+        "role": "component",
+        "definitionKey": "MailBattleRow"
+      },
+      "children": [
+        "layer-42",
+        "layer-44",
+        "layer-46",
+        "layer-48",
+        "layer-49",
+        "layer-50",
+        "layer-51",
+        "layer-52"
+      ]
+    },
+    "layer-42": {
+      "id": "layer-42",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-43"
+      ]
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/row",
+        "captureHash": "d5830dac68c3cc09ebdd89e69bbc957f040c72c07b082f52c194c3777502b7bf"
+      },
+      "asset": "asset-b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb"
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 28,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-45"
+      ]
+    },
+    "layer-45": {
+      "id": "layer-45",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/icon-bg",
+        "captureHash": "ad95d9fabedc70863a984ffe3b0ecaeafcaddb46c6780f7384491595a3adadad"
+      },
+      "asset": "asset-450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0"
+    },
+    "layer-46": {
+      "id": "layer-46",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 43,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-47"
+      ]
+    },
+    "layer-47": {
+      "id": "layer-47",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/battle-icon",
+        "captureHash": "f04c31051dd9fdc39117ca5b7613148e186f3fff5ae804314824814733417469"
+      },
+      "asset": "asset-07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc"
+    },
+    "layer-48": {
+      "id": "layer-48",
+      "name": "野怪讨伐胜利",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 26,
+        "width": 484,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "野怪讨伐胜利",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-49": {
+      "id": "layer-49",
+      "name": "击败 Lv.18 荒原巨蝎",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 67,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "击败 Lv.18 荒原巨蝎",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-50": {
+      "id": "layer-50",
+      "name": "2026-9-8 11:14",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 94,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "2026-9-8 11:14",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-51": {
+      "id": "layer-51",
+      "name": "UTC2026-11-7 11:14过期",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 119,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "UTC2026-11-7 11:14过期",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-52": {
+      "id": "layer-52",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 660,
+        "y": 9,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-53"
+      ]
+    },
+    "layer-53": {
+      "id": "layer-53",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:0/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/unread-dot",
+        "captureHash": "f9d9c5e67c02539c813c067ba845f1c2653a67d5dc3c4fa36e4430e0ccb14f26"
+      },
+      "asset": "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701"
+    },
+    "layer-54": {
+      "id": "layer-54",
+      "name": "MailBattleRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 188,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1",
+        "role": "component",
+        "definitionKey": "MailBattleRow"
+      },
+      "children": [
+        "layer-55",
+        "layer-57",
+        "layer-59",
+        "layer-61",
+        "layer-62",
+        "layer-63",
+        "layer-64",
+        "layer-65",
+        "layer-67"
+      ]
+    },
+    "layer-55": {
+      "id": "layer-55",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-56"
+      ]
+    },
+    "layer-56": {
+      "id": "layer-56",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/row",
+        "captureHash": "d5830dac68c3cc09ebdd89e69bbc957f040c72c07b082f52c194c3777502b7bf"
+      },
+      "asset": "asset-b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb"
+    },
+    "layer-57": {
+      "id": "layer-57",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 28,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-58"
+      ]
+    },
+    "layer-58": {
+      "id": "layer-58",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/icon-bg",
+        "captureHash": "ad95d9fabedc70863a984ffe3b0ecaeafcaddb46c6780f7384491595a3adadad"
+      },
+      "asset": "asset-450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0"
+    },
+    "layer-59": {
+      "id": "layer-59",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 43,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-60"
+      ]
+    },
+    "layer-60": {
+      "id": "layer-60",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/battle-icon",
+        "captureHash": "f04c31051dd9fdc39117ca5b7613148e186f3fff5ae804314824814733417469"
+      },
+      "asset": "asset-07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc"
+    },
+    "layer-61": {
+      "id": "layer-61",
+      "name": "资源点侦察报告",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 26,
+        "width": 484,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "资源点侦察报告",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-62": {
+      "id": "layer-62",
+      "name": "发现 6级稀有矿脉",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 67,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "发现 6级稀有矿脉",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-63": {
+      "id": "layer-63",
+      "name": "2026-9-8 10:46",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 94,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "2026-9-8 10:46",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-64": {
+      "id": "layer-64",
+      "name": "UTC2026-11-7 10:46过期",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 119,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "UTC2026-11-7 10:46过期",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-65": {
+      "id": "layer-65",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 515,
+        "y": 77,
+        "width": 125,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-66"
+      ]
+    },
+    "layer-66": {
+      "id": "layer-66",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 125,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:4",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/read-stamp",
+        "captureHash": "9a1d6305f7ad7ce36d81ad6582ffb562699bf03fabfa86ea5c0e575bdfdbb980"
+      },
+      "asset": "asset-133c1f7f2ef65ccc0d0f06d0b9bf2a3df52549a3752110d3a33b2acb305d6a57"
+    },
+    "layer-67": {
+      "id": "layer-67",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-68"
+      ]
+    },
+    "layer-68": {
+      "id": "layer-68",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:1/_:5",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/read-overlay",
+        "captureHash": "ce9c083ad1afb59cd4f047fba6a96f48631f1cb69ecca389c0ced11b2fb93173"
+      },
+      "asset": "asset-efadaa692ccf295edbc6b65237a50499ffd198c9861177e9116253e46ac131d5"
+    },
+    "layer-69": {
+      "id": "layer-69",
+      "name": "MailBattleRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 376,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2",
+        "role": "component",
+        "definitionKey": "MailBattleRow"
+      },
+      "children": [
+        "layer-70",
+        "layer-72",
+        "layer-74",
+        "layer-76",
+        "layer-77",
+        "layer-78",
+        "layer-79",
+        "layer-80"
+      ]
+    },
+    "layer-70": {
+      "id": "layer-70",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-71"
+      ]
+    },
+    "layer-71": {
+      "id": "layer-71",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/row",
+        "captureHash": "d5830dac68c3cc09ebdd89e69bbc957f040c72c07b082f52c194c3777502b7bf"
+      },
+      "asset": "asset-b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb"
+    },
+    "layer-72": {
+      "id": "layer-72",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 28,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-73"
+      ]
+    },
+    "layer-73": {
+      "id": "layer-73",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/icon-bg",
+        "captureHash": "ad95d9fabedc70863a984ffe3b0ecaeafcaddb46c6780f7384491595a3adadad"
+      },
+      "asset": "asset-450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0"
+    },
+    "layer-74": {
+      "id": "layer-74",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 43,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-75"
+      ]
+    },
+    "layer-75": {
+      "id": "layer-75",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/battle-icon",
+        "captureHash": "f04c31051dd9fdc39117ca5b7613148e186f3fff5ae804314824814733417469"
+      },
+      "asset": "asset-07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc"
+    },
+    "layer-76": {
+      "id": "layer-76",
+      "name": "城防战斗胜利",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 26,
+        "width": 484,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "城防战斗胜利",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-77": {
+      "id": "layer-77",
+      "name": "成功击退来犯部队",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 67,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "成功击退来犯部队",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-78": {
+      "id": "layer-78",
+      "name": "2026-9-8 10:18",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 94,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "2026-9-8 10:18",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-79": {
+      "id": "layer-79",
+      "name": "UTC2026-11-7 10:18过期",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 119,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "UTC2026-11-7 10:18过期",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-80": {
+      "id": "layer-80",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 660,
+        "y": 9,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-81"
+      ]
+    },
+    "layer-81": {
+      "id": "layer-81",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:2/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/unread-dot",
+        "captureHash": "f9d9c5e67c02539c813c067ba845f1c2653a67d5dc3c4fa36e4430e0ccb14f26"
+      },
+      "asset": "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701"
+    },
+    "layer-82": {
+      "id": "layer-82",
+      "name": "MailBattleRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 564,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3",
+        "role": "component",
+        "definitionKey": "MailBattleRow"
+      },
+      "children": [
+        "layer-83",
+        "layer-85",
+        "layer-87",
+        "layer-89",
+        "layer-90",
+        "layer-91",
+        "layer-92",
+        "layer-93",
+        "layer-95"
+      ]
+    },
+    "layer-83": {
+      "id": "layer-83",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-84"
+      ]
+    },
+    "layer-84": {
+      "id": "layer-84",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/row",
+        "captureHash": "d5830dac68c3cc09ebdd89e69bbc957f040c72c07b082f52c194c3777502b7bf"
+      },
+      "asset": "asset-b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb"
+    },
+    "layer-85": {
+      "id": "layer-85",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 28,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-86"
+      ]
+    },
+    "layer-86": {
+      "id": "layer-86",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/icon-bg",
+        "captureHash": "ad95d9fabedc70863a984ffe3b0ecaeafcaddb46c6780f7384491595a3adadad"
+      },
+      "asset": "asset-450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0"
+    },
+    "layer-87": {
+      "id": "layer-87",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 43,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-88"
+      ]
+    },
+    "layer-88": {
+      "id": "layer-88",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/battle-icon",
+        "captureHash": "f04c31051dd9fdc39117ca5b7613148e186f3fff5ae804314824814733417469"
+      },
+      "asset": "asset-07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc"
+    },
+    "layer-89": {
+      "id": "layer-89",
+      "name": "采集队伍返回",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 26,
+        "width": 484,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "采集队伍返回",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-90": {
+      "id": "layer-90",
+      "name": "获得木材 128,600",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 67,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "获得木材 128,600",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-91": {
+      "id": "layer-91",
+      "name": "2026-9-8 09:52",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 94,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "2026-9-8 09:52",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-92": {
+      "id": "layer-92",
+      "name": "UTC2026-11-7 09:52过期",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 119,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "UTC2026-11-7 09:52过期",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-93": {
+      "id": "layer-93",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 515,
+        "y": 77,
+        "width": 125,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-94"
+      ]
+    },
+    "layer-94": {
+      "id": "layer-94",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 125,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:4",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/read-stamp",
+        "captureHash": "9a1d6305f7ad7ce36d81ad6582ffb562699bf03fabfa86ea5c0e575bdfdbb980"
+      },
+      "asset": "asset-133c1f7f2ef65ccc0d0f06d0b9bf2a3df52549a3752110d3a33b2acb305d6a57"
+    },
+    "layer-95": {
+      "id": "layer-95",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-96"
+      ]
+    },
+    "layer-96": {
+      "id": "layer-96",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:3/_:5",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/read-overlay",
+        "captureHash": "ce9c083ad1afb59cd4f047fba6a96f48631f1cb69ecca389c0ced11b2fb93173"
+      },
+      "asset": "asset-efadaa692ccf295edbc6b65237a50499ffd198c9861177e9116253e46ac131d5"
+    },
+    "layer-97": {
+      "id": "layer-97",
+      "name": "MailBattleRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 752,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4",
+        "role": "component",
+        "definitionKey": "MailBattleRow"
+      },
+      "children": [
+        "layer-98",
+        "layer-100",
+        "layer-102",
+        "layer-104",
+        "layer-105",
+        "layer-106",
+        "layer-107",
+        "layer-108"
+      ]
+    },
+    "layer-98": {
+      "id": "layer-98",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-99"
+      ]
+    },
+    "layer-99": {
+      "id": "layer-99",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/row",
+        "captureHash": "d5830dac68c3cc09ebdd89e69bbc957f040c72c07b082f52c194c3777502b7bf"
+      },
+      "asset": "asset-b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb"
+    },
+    "layer-100": {
+      "id": "layer-100",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 28,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-101"
+      ]
+    },
+    "layer-101": {
+      "id": "layer-101",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/icon-bg",
+        "captureHash": "ad95d9fabedc70863a984ffe3b0ecaeafcaddb46c6780f7384491595a3adadad"
+      },
+      "asset": "asset-450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0"
+    },
+    "layer-102": {
+      "id": "layer-102",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 43,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-103"
+      ]
+    },
+    "layer-103": {
+      "id": "layer-103",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/battle-icon",
+        "captureHash": "f04c31051dd9fdc39117ca5b7613148e186f3fff5ae804314824814733417469"
+      },
+      "asset": "asset-07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc"
+    },
+    "layer-104": {
+      "id": "layer-104",
+      "name": "联盟集结胜利",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 26,
+        "width": 484,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "联盟集结胜利",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-105": {
+      "id": "layer-105",
+      "name": "攻克黑石要塞",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 67,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "攻克黑石要塞",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-106": {
+      "id": "layer-106",
+      "name": "2026-9-8 09:27",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 94,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "2026-9-8 09:27",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-107": {
+      "id": "layer-107",
+      "name": "UTC2026-11-7 09:27过期",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 119,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "UTC2026-11-7 09:27过期",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-108": {
+      "id": "layer-108",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 660,
+        "y": 9,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-109"
+      ]
+    },
+    "layer-109": {
+      "id": "layer-109",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:4/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/unread-dot",
+        "captureHash": "f9d9c5e67c02539c813c067ba845f1c2653a67d5dc3c4fa36e4430e0ccb14f26"
+      },
+      "asset": "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701"
+    },
+    "layer-110": {
+      "id": "layer-110",
+      "name": "MailBattleRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 940,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5",
+        "role": "component",
+        "definitionKey": "MailBattleRow"
+      },
+      "children": [
+        "layer-111",
+        "layer-113",
+        "layer-115",
+        "layer-117",
+        "layer-118",
+        "layer-119",
+        "layer-120",
+        "layer-121",
+        "layer-123"
+      ]
+    },
+    "layer-111": {
+      "id": "layer-111",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-112"
+      ]
+    },
+    "layer-112": {
+      "id": "layer-112",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/row",
+        "captureHash": "d5830dac68c3cc09ebdd89e69bbc957f040c72c07b082f52c194c3777502b7bf"
+      },
+      "asset": "asset-b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb"
+    },
+    "layer-113": {
+      "id": "layer-113",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 28,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-114"
+      ]
+    },
+    "layer-114": {
+      "id": "layer-114",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/icon-bg",
+        "captureHash": "ad95d9fabedc70863a984ffe3b0ecaeafcaddb46c6780f7384491595a3adadad"
+      },
+      "asset": "asset-450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0"
+    },
+    "layer-115": {
+      "id": "layer-115",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 43,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-116"
+      ]
+    },
+    "layer-116": {
+      "id": "layer-116",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/battle-icon",
+        "captureHash": "f04c31051dd9fdc39117ca5b7613148e186f3fff5ae804314824814733417469"
+      },
+      "asset": "asset-07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc"
+    },
+    "layer-117": {
+      "id": "layer-117",
+      "name": "复仇目标已定位",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 26,
+        "width": 484,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "复仇目标已定位",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-118": {
+      "id": "layer-118",
+      "name": "敌军坐标 X:428 Y:917",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 67,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "敌军坐标 X:428 Y:917",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-119": {
+      "id": "layer-119",
+      "name": "2026-9-8 08:55",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 94,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "2026-9-8 08:55",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-120": {
+      "id": "layer-120",
+      "name": "UTC2026-11-7 08:55过期",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 119,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "UTC2026-11-7 08:55过期",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-121": {
+      "id": "layer-121",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 515,
+        "y": 77,
+        "width": 125,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-122"
+      ]
+    },
+    "layer-122": {
+      "id": "layer-122",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 125,
+        "height": 78
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:4",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/read-stamp",
+        "captureHash": "9a1d6305f7ad7ce36d81ad6582ffb562699bf03fabfa86ea5c0e575bdfdbb980"
+      },
+      "asset": "asset-133c1f7f2ef65ccc0d0f06d0b9bf2a3df52549a3752110d3a33b2acb305d6a57"
+    },
+    "layer-123": {
+      "id": "layer-123",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-124"
+      ]
+    },
+    "layer-124": {
+      "id": "layer-124",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:5/_:5",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/read-overlay",
+        "captureHash": "ce9c083ad1afb59cd4f047fba6a96f48631f1cb69ecca389c0ced11b2fb93173"
+      },
+      "asset": "asset-efadaa692ccf295edbc6b65237a50499ffd198c9861177e9116253e46ac131d5"
+    },
+    "layer-125": {
+      "id": "layer-125",
+      "name": "MailBattleRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1128,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6",
+        "role": "component",
+        "definitionKey": "MailBattleRow"
+      },
+      "children": [
+        "layer-126",
+        "layer-128",
+        "layer-130",
+        "layer-132",
+        "layer-133",
+        "layer-134",
+        "layer-135",
+        "layer-136"
+      ]
+    },
+    "layer-126": {
+      "id": "layer-126",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-127"
+      ]
+    },
+    "layer-127": {
+      "id": "layer-127",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 730,
+        "height": 163
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/row",
+        "captureHash": "d5830dac68c3cc09ebdd89e69bbc957f040c72c07b082f52c194c3777502b7bf"
+      },
+      "asset": "asset-b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb"
+    },
+    "layer-128": {
+      "id": "layer-128",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 28,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-129"
+      ]
+    },
+    "layer-129": {
+      "id": "layer-129",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 110,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/icon-bg",
+        "captureHash": "ad95d9fabedc70863a984ffe3b0ecaeafcaddb46c6780f7384491595a3adadad"
+      },
+      "asset": "asset-450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0"
+    },
+    "layer-130": {
+      "id": "layer-130",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 43,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-131"
+      ]
+    },
+    "layer-131": {
+      "id": "layer-131",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 91,
+        "height": 82
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/battle-icon",
+        "captureHash": "f04c31051dd9fdc39117ca5b7613148e186f3fff5ae804314824814733417469"
+      },
+      "asset": "asset-07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc"
+    },
+    "layer-132": {
+      "id": "layer-132",
+      "name": "竞技场挑战结果",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 26,
+        "width": 484,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6/_:0",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "竞技场挑战结果",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-133": {
+      "id": "layer-133",
+      "name": "排名提升至 1,286",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 67,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "排名提升至 1,286",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-134": {
+      "id": "layer-134",
+      "name": "2026-9-7 22:31",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 94,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "2026-9-7 22:31",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-135": {
+      "id": "layer-135",
+      "name": "UTC2026-11-6 22:31过期",
+      "kind": "text",
+      "frame": {
+        "x": 145,
+        "y": 119,
+        "width": 484,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow"
+      },
+      "text": {
+        "value": "UTC2026-11-6 22:31过期",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-136": {
+      "id": "layer-136",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 660,
+        "y": 9,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-137"
+      ]
+    },
+    "layer-137": {
+      "id": "layer-137",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleRow:MailBattleReport/_/MailBattleRow:6/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleRow",
+        "resourceId": "ui/mail/unread-dot",
+        "captureHash": "f9d9c5e67c02539c813c067ba845f1c2653a67d5dc3c4fa36e4430e0ccb14f26"
+      },
+      "asset": "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701"
+    },
+    "layer-138": {
+      "id": "layer-138",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 266,
+        "y": 1166,
+        "width": 218,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-139"
+      ]
+    },
+    "layer-139": {
+      "id": "layer-139",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 218,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleReport",
+        "resourceId": "ui/mail/count-bg",
+        "captureHash": "3b76958ea9a1ce3290ed19805cc014216df0ea4896bd488b5290e779b99e0e47"
+      },
+      "asset": "asset-54d87309a941acb2d2bbcbe5cb82cf823fc0da60e3eb5a444d6f412b2a61d6dc"
+    },
+    "layer-140": {
+      "id": "layer-140",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 273,
+        "y": 1171,
+        "width": 30,
+        "height": 32
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-141"
+      ]
+    },
+    "layer-141": {
+      "id": "layer-141",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 32
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleReport",
+        "resourceId": "ui/mail/count-icon",
+        "captureHash": "37698dfcdb463ad4b27bebbdb0fe0514b348cc6f9a5776787b7dd7295f6652a2"
+      },
+      "asset": "asset-150f735847dd8a8ae38f3998c4072a26f8acc3479296aaeaf75539dc147d2d42"
+    },
+    "layer-142": {
+      "id": "layer-142",
+      "name": "邮件数:7/200",
+      "kind": "text",
+      "frame": {
+        "x": 298,
+        "y": 1174,
+        "width": 188,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleReport"
+      },
+      "text": {
+        "value": "邮件数:7/200",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#584871"
+      }
+    },
+    "layer-143": {
+      "id": "layer-143",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1225,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-144"
+      ]
+    },
+    "layer-144": {
+      "id": "layer-144",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleReport",
+        "resourceId": "ui/mail/footer",
+        "captureHash": "0e8b740b5382056889b3a262eb9f54748cb87eeacc2ada3d452aef39352a7bc2"
+      },
+      "asset": "asset-165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2"
+    },
+    "layer-145": {
+      "id": "layer-145",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 13,
+        "y": 1252,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:1",
+        "role": "node",
+        "definitionKey": "MailBattleReport"
+      },
+      "children": [
+        "layer-146"
+      ]
+    },
+    "layer-146": {
+      "id": "layer-146",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-147"
+      ]
+    },
+    "layer-147": {
+      "id": "layer-147",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:1/_",
+        "role": "node",
+        "definitionKey": "MailBattleReport",
+        "resourceId": "ui/mail/back",
+        "captureHash": "d077b5cd1da699994316051b7dfdb1edbae1f821fac9631236833588ad730461"
+      },
+      "asset": "asset-8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50"
+    },
+    "layer-148": {
+      "id": "layer-148",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 111.125,
+        "y": 1229.25,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:2",
+        "role": "node",
+        "definitionKey": "MailBattleReport",
+        "scale": 0.75
+      },
+      "children": [
+        "layer-149"
+      ]
+    },
+    "layer-149": {
+      "id": "layer-149",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:MailBattleReport/_:2/ActionButton",
+        "role": "component",
+        "definitionKey": "ActionButton",
+        "scale": 0.75
+      },
+      "children": [
+        "layer-150",
+        "layer-152"
+      ]
+    },
+    "layer-150": {
+      "id": "layer-150",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 31.875,
+        "y": 12.75,
+        "width": 192,
+        "height": 77
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-151"
+      ]
+    },
+    "layer-151": {
+      "id": "layer-151",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 192,
+        "height": 77
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:MailBattleReport/_:2/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/red",
+        "captureHash": "57e1ee774f63e9bfe581c4ac1a12ef686c330d349f2532bcfaad7e152e179e1a"
+      },
+      "asset": "asset-c70de9d135c4a1e34fd9fe52972ee033883dc282b6c76201a42cbdacd8c768d1"
+    },
+    "layer-152": {
+      "id": "layer-152",
+      "name": "ActionButton/Label",
+      "kind": "text",
+      "frame": {
+        "x": 34,
+        "y": 31.5,
+        "width": 187,
+        "height": 65
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:MailBattleReport/_:2/ActionButton/ActionButton/Label",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "删除已读",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 30,
+        "lineHeight": 30,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 1.5,
+        "outlineColor": "#6a2a28",
+        "color": "#ffffff"
+      }
+    },
+    "layer-153": {
+      "id": "layer-153",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 384.125,
+        "y": 1229.25,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MailBattleReport.root/_:3",
+        "role": "node",
+        "definitionKey": "MailBattleReport",
+        "scale": 0.75
+      },
+      "children": [
+        "layer-154"
+      ]
+    },
+    "layer-154": {
+      "id": "layer-154",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:MailBattleReport/_:3/ActionButton",
+        "role": "component",
+        "definitionKey": "ActionButton",
+        "scale": 0.75
+      },
+      "children": [
+        "layer-155",
+        "layer-157"
+      ]
+    },
+    "layer-155": {
+      "id": "layer-155",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 31.875,
+        "y": 12.75,
+        "width": 192,
+        "height": 77
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-156"
+      ]
+    },
+    "layer-156": {
+      "id": "layer-156",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 192,
+        "height": 77
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:MailBattleReport/_:3/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/yellow",
+        "captureHash": "b1bd5ca4f555521ef48bf7f6a213d02ba427ee08e4280edce3f32d277e000ba4"
+      },
+      "asset": "asset-c144fa842e30041e40727b0041d7f09335158fedc8f1746cac491199692f4f9a"
+    },
+    "layer-157": {
+      "id": "layer-157",
+      "name": "ActionButton/Label",
+      "kind": "text",
+      "frame": {
+        "x": 34,
+        "y": 31.5,
+        "width": 187,
+        "height": 65
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:MailBattleReport/_:3/ActionButton/ActionButton/Label",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "确定",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 30,
+        "lineHeight": 30,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 1.5,
+        "outlineColor": "#643e14",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a": {
+      "path": "assets/10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a.png",
+      "sha256": "10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1334
+    },
+    "asset-ac55c98e3bfd0f9b3335f4a3c659061a85606523dfe7a8281dfaf7a0469b680c": {
+      "path": "assets/ac55c98e3bfd0f9b3335f4a3c659061a85606523dfe7a8281dfaf7a0469b680c.png",
+      "sha256": "ac55c98e3bfd0f9b3335f4a3c659061a85606523dfe7a8281dfaf7a0469b680c",
+      "mime": "image/png",
+      "width": 750,
+      "height": 170
+    },
+    "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db": {
+      "path": "assets/c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db.png",
+      "sha256": "c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db",
+      "mime": "image/png",
+      "width": 750,
+      "height": 90
+    },
+    "asset-b4bb797848e5eae4e8c82db4cf8a4eec974b6789f090f3bd08be29f6a8ddeb7f": {
+      "path": "assets/b4bb797848e5eae4e8c82db4cf8a4eec974b6789f090f3bd08be29f6a8ddeb7f.png",
+      "sha256": "b4bb797848e5eae4e8c82db4cf8a4eec974b6789f090f3bd08be29f6a8ddeb7f",
+      "mime": "image/png",
+      "width": 170,
+      "height": 52
+    },
+    "asset-b6c90fbc78484a1779c6b03ab6fb98fd372cf87237a009f8e62eae91a5a97609": {
+      "path": "assets/b6c90fbc78484a1779c6b03ab6fb98fd372cf87237a009f8e62eae91a5a97609.png",
+      "sha256": "b6c90fbc78484a1779c6b03ab6fb98fd372cf87237a009f8e62eae91a5a97609",
+      "mime": "image/png",
+      "width": 176,
+      "height": 67
+    },
+    "asset-2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a": {
+      "path": "assets/2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a.png",
+      "sha256": "2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a",
+      "mime": "image/png",
+      "width": 34,
+      "height": 34
+    },
+    "asset-0c49aef158d000989988a11f94f96cba4b6b686597c8a3af2befe072b09af490": {
+      "path": "assets/0c49aef158d000989988a11f94f96cba4b6b686597c8a3af2befe072b09af490.png",
+      "sha256": "0c49aef158d000989988a11f94f96cba4b6b686597c8a3af2befe072b09af490",
+      "mime": "image/png",
+      "width": 730,
+      "height": 905
+    },
+    "asset-b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb": {
+      "path": "assets/b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb.png",
+      "sha256": "b98485987cab8013d0134bac46d03c18a6f1047730e0ddd8e0b12ac1fdf372bb",
+      "mime": "image/png",
+      "width": 730,
+      "height": 163
+    },
+    "asset-450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0": {
+      "path": "assets/450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0.png",
+      "sha256": "450b778424d0fedf1f09629dfdb5ffa857f9f3ac99569603d7ce24b3862fcfc0",
+      "mime": "image/png",
+      "width": 110,
+      "height": 110
+    },
+    "asset-07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc": {
+      "path": "assets/07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc.png",
+      "sha256": "07122e9a08a5634db7cf4e05c1c48b9e860af15872e072679e1021dc009fa8dc",
+      "mime": "image/png",
+      "width": 91,
+      "height": 82
+    },
+    "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701": {
+      "path": "assets/c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701.png",
+      "sha256": "c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701",
+      "mime": "image/png",
+      "width": 24,
+      "height": 24
+    },
+    "asset-133c1f7f2ef65ccc0d0f06d0b9bf2a3df52549a3752110d3a33b2acb305d6a57": {
+      "path": "assets/133c1f7f2ef65ccc0d0f06d0b9bf2a3df52549a3752110d3a33b2acb305d6a57.png",
+      "sha256": "133c1f7f2ef65ccc0d0f06d0b9bf2a3df52549a3752110d3a33b2acb305d6a57",
+      "mime": "image/png",
+      "width": 125,
+      "height": 78
+    },
+    "asset-efadaa692ccf295edbc6b65237a50499ffd198c9861177e9116253e46ac131d5": {
+      "path": "assets/efadaa692ccf295edbc6b65237a50499ffd198c9861177e9116253e46ac131d5.png",
+      "sha256": "efadaa692ccf295edbc6b65237a50499ffd198c9861177e9116253e46ac131d5",
+      "mime": "image/png",
+      "width": 730,
+      "height": 163
+    },
+    "asset-54d87309a941acb2d2bbcbe5cb82cf823fc0da60e3eb5a444d6f412b2a61d6dc": {
+      "path": "assets/54d87309a941acb2d2bbcbe5cb82cf823fc0da60e3eb5a444d6f412b2a61d6dc.png",
+      "sha256": "54d87309a941acb2d2bbcbe5cb82cf823fc0da60e3eb5a444d6f412b2a61d6dc",
+      "mime": "image/png",
+      "width": 218,
+      "height": 40
+    },
+    "asset-150f735847dd8a8ae38f3998c4072a26f8acc3479296aaeaf75539dc147d2d42": {
+      "path": "assets/150f735847dd8a8ae38f3998c4072a26f8acc3479296aaeaf75539dc147d2d42.png",
+      "sha256": "150f735847dd8a8ae38f3998c4072a26f8acc3479296aaeaf75539dc147d2d42",
+      "mime": "image/png",
+      "width": 30,
+      "height": 32
+    },
+    "asset-165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2": {
+      "path": "assets/165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2.png",
+      "sha256": "165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2",
+      "mime": "image/png",
+      "width": 750,
+      "height": 110
+    },
+    "asset-8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50": {
+      "path": "assets/8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50.png",
+      "sha256": "8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50",
+      "mime": "image/png",
+      "width": 64,
+      "height": 56
+    },
+    "asset-c70de9d135c4a1e34fd9fe52972ee033883dc282b6c76201a42cbdacd8c768d1": {
+      "path": "assets/c70de9d135c4a1e34fd9fe52972ee033883dc282b6c76201a42cbdacd8c768d1.png",
+      "sha256": "c70de9d135c4a1e34fd9fe52972ee033883dc282b6c76201a42cbdacd8c768d1",
+      "mime": "image/png",
+      "width": 192,
+      "height": 77
+    },
+    "asset-c144fa842e30041e40727b0041d7f09335158fedc8f1746cac491199692f4f9a": {
+      "path": "assets/c144fa842e30041e40727b0041d7f09335158fedc8f1746cac491199692f4f9a.png",
+      "sha256": "c144fa842e30041e40727b0041d7f09335158fedc8f1746cac491199692f4f9a",
+      "mime": "image/png",
+      "width": 192,
+      "height": 77
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Group (layer-40): overflow mask kept as clip viewport",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

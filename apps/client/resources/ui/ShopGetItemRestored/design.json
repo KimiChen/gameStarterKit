@@ -1,0 +1,1167 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "ShopGetItemPage",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-2"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "ShopGetItem",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-3",
+        "layer-5"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "ShopGetItem/Mask",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Mask",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "ShopGetItem/Mask / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Mask",
+        "role": "fill",
+        "definitionKey": "ShopGetItem",
+        "captureHash": "cb3a3628a4ff9bac7d0cc9b2accee150e829eb53bca56bbb3819114d9e4f4df4"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "ShopGetItem/Panel",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 502,
+        "width": 708,
+        "height": 620
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "children": [
+        "layer-6",
+        "layer-9",
+        "layer-10",
+        "layer-13",
+        "layer-15",
+        "layer-17",
+        "layer-18",
+        "layer-19",
+        "layer-20",
+        "layer-22",
+        "layer-42"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "PopupBackground",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 620
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/PopupBackground",
+        "role": "component",
+        "definitionKey": "PopupBackground"
+      },
+      "children": [
+        "layer-7"
+      ]
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 620
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-8"
+      ]
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 620
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/PopupBackground/_:0",
+        "role": "node",
+        "definitionKey": "PopupBackground",
+        "resourceId": "ui/popup/prompt",
+        "captureHash": "5a8c8fa793f86fff11753863a7e6bfe196afb4d0e62648841bd1746b6db00b79"
+      },
+      "asset": "asset-fc1b0f22ff4dab7e0df4a8df7457e0079374983ade27a33c85284700c71fc9e6"
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "获取道具",
+      "kind": "text",
+      "frame": {
+        "x": 86,
+        "y": 25,
+        "width": 536,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/_:0",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "text": {
+        "value": "获取道具",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "CloseButton",
+      "kind": "group",
+      "frame": {
+        "x": 621,
+        "y": 6,
+        "width": 72,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
+      },
+      "children": [
+        "layer-11"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 11,
+        "y": 11,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-12"
+      ]
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton/_",
+        "role": "node",
+        "definitionKey": "CloseButton",
+        "resourceId": "ui/popup/close",
+        "captureHash": "e54a38834ed5cf3ad76fd53dfd8a911f7332986480aa304c7255a44b53f13a4e"
+      },
+      "asset": "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534"
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 18,
+        "y": 119,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-14"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/_:0",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/backpack/item-orange",
+        "captureHash": "73b63b7662a0b52d648ef68b0753c851dd06df56b6e1c5b3b15f5f48c465da70"
+      },
+      "asset": "asset-49c3eeb5af58f0c0438ef30e71f56531cb6a4e0418b91ec73b5debf154299609"
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 31,
+        "y": 143,
+        "width": 129,
+        "height": 107
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-16"
+      ]
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 129,
+        "height": 107
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/_:1",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/shop/getitem-icon",
+        "captureHash": "c2ee31e0160d9339f0896243ed223b6f4f3b1c11d25f5d35a243e7d198a31948"
+      },
+      "asset": "asset-c98e03b0cceee5af4441578373d099fbe391e9935ac96ef1cc06a6b11386986f"
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "99",
+      "kind": "text",
+      "frame": {
+        "x": 80,
+        "y": 225,
+        "width": 84,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/_:1",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "text": {
+        "value": "99",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#3f3254",
+        "color": "#ffffff"
+      }
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "高级钻石",
+      "kind": "text",
+      "frame": {
+        "x": 191,
+        "y": 134,
+        "width": 474,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/_:2",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "text": {
+        "value": "高级钻石",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "可以购买好多东西",
+      "kind": "text",
+      "frame": {
+        "x": 191,
+        "y": 181,
+        "width": 474,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/_:3",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "text": {
+        "value": "可以购买好多东西",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 13,
+        "y": 318,
+        "width": 683,
+        "height": 118
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-21"
+      ]
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 683,
+        "height": 118
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/_:2",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/alliance/announce-panel",
+        "captureHash": "97c100d7139e83040395948367130f5e2b76d1f982a569a1e9e7ebfd15bea155"
+      },
+      "asset": "asset-0453519e7c9ca7fe6d9b67ff3afe463a780258a3ad81cd54c9895d8ed83893fd"
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "QuantityControl",
+      "kind": "group",
+      "frame": {
+        "x": 18,
+        "y": 339,
+        "width": 669,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "children": [
+        "layer-23",
+        "layer-26",
+        "layer-33",
+        "layer-36",
+        "layer-38",
+        "layer-39"
+      ]
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "QuantityControl/Decrease",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Decrease",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "children": [
+        "layer-24"
+      ]
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-25"
+      ]
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Decrease/_",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/backpack/button-minus",
+        "captureHash": "c2ae32df90cd3fd75d024348a7d5370381a897a7afc26e4962aa713cd1274b76"
+      },
+      "asset": "asset-36dd4436cbdf4701d920d5377f295c9ec9050724ca88b727909e86e9fad2a7e3"
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "QuantityControl/Slider",
+      "kind": "group",
+      "frame": {
+        "x": 85,
+        "y": 9,
+        "width": 321,
+        "height": 59
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Slider",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "children": [
+        "layer-27",
+        "layer-29",
+        "layer-31"
+      ]
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 9,
+        "width": 321,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-28"
+      ]
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 321,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Slider/_:0",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/star-upgrade/progress-track",
+        "captureHash": "c5ab2126760cbf2f2651eef61b1aae62416bf791b953ca61af44a8111e9c1050"
+      },
+      "asset": "asset-eee665986794a9d82620cb746ecb57f2167b15ba3d7fc9f53f2c14a7dacea64f"
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3,
+        "y": 11,
+        "width": 247,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-30"
+      ]
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 247,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Slider/_:1",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/star-upgrade/progress-fill",
+        "captureHash": "f3928f93840e4cbf31fadd7c78cf6af5b41230cba87755e0c9cceb72465ea25c"
+      },
+      "asset": "asset-a310579d1a753c61aced550a0c2bcbe267b843ff7911c8f4e822da7516da5523"
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 230,
+        "y": 0,
+        "width": 34,
+        "height": 59
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-32"
+      ]
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 59
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Slider/_:2",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/shop/getitem-thumb",
+        "captureHash": "aff867de81d4057b3e8d8a62b3051a87192b69fe92e00185b56d6313775b6448"
+      },
+      "asset": "asset-91f8727fd3bedc75f28f6ead7ce01cc3fd88a19e64dff687e224c8e012391348"
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "QuantityControl/Increase",
+      "kind": "group",
+      "frame": {
+        "x": 414,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Increase",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "children": [
+        "layer-34"
+      ]
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-35"
+      ]
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Increase/_",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/backpack/button-plus",
+        "captureHash": "2b589c551c7eaa35347572cd52bcfd930f2c9f65cc7bab9a3586d65017bf6770"
+      },
+      "asset": "asset-15dcaf86276ee35ed2c6d0191d362f2de1896ee48a4670eff464d1045e987dcf"
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 494,
+        "y": 11,
+        "width": 94,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-37"
+      ]
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 94,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/_",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/alliance/input-bg",
+        "captureHash": "ff46015f03c764747108808a620b3f2b37ebbfa46e17914a5062f22976a4e8cd"
+      },
+      "asset": "asset-4604f7bcd2ed6dbee3f05779e4a8623090d403efddafe1a57cf0e3eceac886c8"
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "8",
+      "kind": "text",
+      "frame": {
+        "x": 492,
+        "y": 27,
+        "width": 98,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/_",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "text": {
+        "value": "8",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "QuantityControl/Max",
+      "kind": "group",
+      "frame": {
+        "x": 593,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Max",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "children": [
+        "layer-40"
+      ]
+    },
+    "layer-40": {
+      "id": "layer-40",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-41"
+      ]
+    },
+    "layer-41": {
+      "id": "layer-41",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/QuantityControl/QuantityControl/Max/_",
+        "role": "node",
+        "definitionKey": "ShopGetItem",
+        "resourceId": "ui/shop/getitem-max",
+        "captureHash": "b2195034d47ca431bf552ea4d6ce8cb02b83d568445f1fadb6611c06e0be463d"
+      },
+      "asset": "asset-950b510615d69f954cfcf72cd48efeba53c6f72986a90b8ac13cf23ff63b351f"
+    },
+    "layer-42": {
+      "id": "layer-42",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 226,
+        "y": 477,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItem.root/ShopGetItem/ShopGetItem/Panel/_",
+        "role": "node",
+        "definitionKey": "ShopGetItem"
+      },
+      "children": [
+        "layer-43"
+      ]
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "ConfirmButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-44"
+      ]
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-45",
+        "layer-47"
+      ]
+    },
+    "layer-45": {
+      "id": "layer-45",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-46"
+      ]
+    },
+    "layer-46": {
+      "id": "layer-46",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/confirm",
+        "captureHash": "234047b8ed5f1919407bc7516d79c7cd613b5bc9514e33bce648a1103a9a79b8"
+      },
+      "asset": "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6"
+    },
+    "layer-47": {
+      "id": "layer-47",
+      "name": "ActionButton/IconRow",
+      "kind": "group",
+      "frame": {
+        "x": 8,
+        "y": 4,
+        "width": 239,
+        "height": 86
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton/ActionButton/IconRow",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "children": [
+        "layer-48",
+        "layer-50"
+      ]
+    },
+    "layer-48": {
+      "id": "layer-48",
+      "name": "ActionButton/Icon",
+      "kind": "group",
+      "frame": {
+        "x": 28,
+        "y": 16,
+        "width": 64,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-49"
+      ]
+    },
+    "layer-49": {
+      "id": "layer-49",
+      "name": "ActionButton/Icon",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton/ActionButton/IconRow/ActionButton/Icon",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/shop/getitem-pay-gem",
+        "captureHash": "b25e7738eb8669404626873a34c54d33bf848f938f1a8f7beb89089153bd5326"
+      },
+      "asset": "asset-9429fae98688e09a7df6a06a54360e4725fe564023bc521741f99e59e419e630"
+    },
+    "layer-50": {
+      "id": "layer-50",
+      "name": "ActionButton/IconLabel",
+      "kind": "text",
+      "frame": {
+        "x": 107.5,
+        "y": 21,
+        "width": 112,
+        "height": 86
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton/ActionButton/IconRow/ActionButton/IconLabel",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "1000",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "left",
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#643e14",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-fc1b0f22ff4dab7e0df4a8df7457e0079374983ade27a33c85284700c71fc9e6": {
+      "path": "assets/fc1b0f22ff4dab7e0df4a8df7457e0079374983ade27a33c85284700c71fc9e6.png",
+      "sha256": "fc1b0f22ff4dab7e0df4a8df7457e0079374983ade27a33c85284700c71fc9e6",
+      "mime": "image/png",
+      "width": 708,
+      "height": 620
+    },
+    "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534": {
+      "path": "assets/08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534.png",
+      "sha256": "08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534",
+      "mime": "image/png",
+      "width": 50,
+      "height": 50
+    },
+    "asset-49c3eeb5af58f0c0438ef30e71f56531cb6a4e0418b91ec73b5debf154299609": {
+      "path": "assets/49c3eeb5af58f0c0438ef30e71f56531cb6a4e0418b91ec73b5debf154299609.png",
+      "sha256": "49c3eeb5af58f0c0438ef30e71f56531cb6a4e0418b91ec73b5debf154299609",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-c98e03b0cceee5af4441578373d099fbe391e9935ac96ef1cc06a6b11386986f": {
+      "path": "assets/c98e03b0cceee5af4441578373d099fbe391e9935ac96ef1cc06a6b11386986f.png",
+      "sha256": "c98e03b0cceee5af4441578373d099fbe391e9935ac96ef1cc06a6b11386986f",
+      "mime": "image/png",
+      "width": 129,
+      "height": 107
+    },
+    "asset-0453519e7c9ca7fe6d9b67ff3afe463a780258a3ad81cd54c9895d8ed83893fd": {
+      "path": "assets/0453519e7c9ca7fe6d9b67ff3afe463a780258a3ad81cd54c9895d8ed83893fd.png",
+      "sha256": "0453519e7c9ca7fe6d9b67ff3afe463a780258a3ad81cd54c9895d8ed83893fd",
+      "mime": "image/png",
+      "width": 683,
+      "height": 118
+    },
+    "asset-36dd4436cbdf4701d920d5377f295c9ec9050724ca88b727909e86e9fad2a7e3": {
+      "path": "assets/36dd4436cbdf4701d920d5377f295c9ec9050724ca88b727909e86e9fad2a7e3.png",
+      "sha256": "36dd4436cbdf4701d920d5377f295c9ec9050724ca88b727909e86e9fad2a7e3",
+      "mime": "image/png",
+      "width": 76,
+      "height": 85
+    },
+    "asset-eee665986794a9d82620cb746ecb57f2167b15ba3d7fc9f53f2c14a7dacea64f": {
+      "path": "assets/eee665986794a9d82620cb746ecb57f2167b15ba3d7fc9f53f2c14a7dacea64f.png",
+      "sha256": "eee665986794a9d82620cb746ecb57f2167b15ba3d7fc9f53f2c14a7dacea64f",
+      "mime": "image/png",
+      "width": 321,
+      "height": 44
+    },
+    "asset-a310579d1a753c61aced550a0c2bcbe267b843ff7911c8f4e822da7516da5523": {
+      "path": "assets/a310579d1a753c61aced550a0c2bcbe267b843ff7911c8f4e822da7516da5523.png",
+      "sha256": "a310579d1a753c61aced550a0c2bcbe267b843ff7911c8f4e822da7516da5523",
+      "mime": "image/png",
+      "width": 247,
+      "height": 40
+    },
+    "asset-91f8727fd3bedc75f28f6ead7ce01cc3fd88a19e64dff687e224c8e012391348": {
+      "path": "assets/91f8727fd3bedc75f28f6ead7ce01cc3fd88a19e64dff687e224c8e012391348.png",
+      "sha256": "91f8727fd3bedc75f28f6ead7ce01cc3fd88a19e64dff687e224c8e012391348",
+      "mime": "image/png",
+      "width": 34,
+      "height": 59
+    },
+    "asset-15dcaf86276ee35ed2c6d0191d362f2de1896ee48a4670eff464d1045e987dcf": {
+      "path": "assets/15dcaf86276ee35ed2c6d0191d362f2de1896ee48a4670eff464d1045e987dcf.png",
+      "sha256": "15dcaf86276ee35ed2c6d0191d362f2de1896ee48a4670eff464d1045e987dcf",
+      "mime": "image/png",
+      "width": 76,
+      "height": 85
+    },
+    "asset-4604f7bcd2ed6dbee3f05779e4a8623090d403efddafe1a57cf0e3eceac886c8": {
+      "path": "assets/4604f7bcd2ed6dbee3f05779e4a8623090d403efddafe1a57cf0e3eceac886c8.png",
+      "sha256": "4604f7bcd2ed6dbee3f05779e4a8623090d403efddafe1a57cf0e3eceac886c8",
+      "mime": "image/png",
+      "width": 94,
+      "height": 64
+    },
+    "asset-950b510615d69f954cfcf72cd48efeba53c6f72986a90b8ac13cf23ff63b351f": {
+      "path": "assets/950b510615d69f954cfcf72cd48efeba53c6f72986a90b8ac13cf23ff63b351f.png",
+      "sha256": "950b510615d69f954cfcf72cd48efeba53c6f72986a90b8ac13cf23ff63b351f",
+      "mime": "image/png",
+      "width": 76,
+      "height": 85
+    },
+    "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6": {
+      "path": "assets/4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6.png",
+      "sha256": "4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    },
+    "asset-9429fae98688e09a7df6a06a54360e4725fe564023bc521741f99e59e419e630": {
+      "path": "assets/9429fae98688e09a7df6a06a54360e4725fe564023bc521741f99e59e419e630.png",
+      "sha256": "9429fae98688e09a7df6a06a54360e4725fe564023bc521741f99e59e419e630",
+      "mime": "image/png",
+      "width": 64,
+      "height": 54
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

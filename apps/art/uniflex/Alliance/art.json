@@ -12,5 +12,10 @@
     "uniflexSha256": "81d922c93797d33f5cf3c3f8963202c53c1b43df837f4b01fa99b0861880cc52",
     "psdSha256": "28c705886c934c46bc0871d85c352288760fbb2fee3d06c8236125fd511e162d",
     "at": "2026-09-17T03:35:57.745Z"
+  },
+  "import": {
+    "psdSha256": "28c705886c934c46bc0871d85c352288760fbb2fee3d06c8236125fd511e162d",
+    "at": "2026-09-17T03:58:33.342Z",
+    "target": "restored"
   }
 }

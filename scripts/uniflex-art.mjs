@@ -54,7 +54,7 @@ async function writeArtJson(rootDir, page, catalog, patch) {
     return next;
 }
 
-async function selectPages(catalog, { screen, all, changed }, rootDir) {
+async function selectPages(catalog, { screen, all, changed, mode }, rootDir) {
     if (screen && (all || changed)) throw new Error("Use either --screen or --all/--changed.");
     if (screen) {
         const page = findArtPage(catalog, screen);
@@ -72,11 +72,18 @@ async function selectPages(catalog, { screen, all, changed }, rootDir) {
         }
         return selected;
     }
-    if (all) {
+    if (all && mode === "export") {
         const selected = [];
         for (const page of catalog.pages) {
             const state = await inspectArtPage(rootDir, page);
             if (state.action === "export") selected.push(page);
+        }
+        return selected;
+    }
+    if (all && mode === "import") {
+        const selected = [];
+        for (const page of catalog.pages) {
+            if (await pathExists(artPsdPath(rootDir, page))) selected.push(page);
         }
         return selected;
     }
@@ -219,14 +226,18 @@ export async function runArtCli(argv, { env = process.env } = {}) {
         return;
     }
     if (command === "export") {
-        const pages = await selectPages(catalog, { screen, all: all || !screen && !changed, changed }, root);
+        const pages = await selectPages(catalog, {
+            screen, all: all || !screen && !changed, changed, mode: "export",
+        }, root);
         await withPreview(env, async (previewEnv) => {
             for (const page of pages) await exportPage(page, catalog, { env: previewEnv, force });
         });
         return;
     }
     if (command === "import") {
-        const pages = await selectPages(catalog, { screen, all, changed: changed || !screen && !all }, root);
+        const pages = await selectPages(catalog, {
+            screen, all, changed: changed || !screen && !all, mode: "import",
+        }, root);
         if (!pages.length) {
             console.log("no changed art PSDs to import");
             return;

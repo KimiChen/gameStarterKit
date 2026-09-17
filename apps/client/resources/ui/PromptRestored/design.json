@@ -1,0 +1,631 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "PopupFrame",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame",
+        "role": "component",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-2",
+        "layer-4"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "PopupFrame/Mask",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Mask",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-3"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "PopupFrame/Mask / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Mask",
+        "role": "fill",
+        "definitionKey": "PopupFrame",
+        "captureHash": "cb3a3628a4ff9bac7d0cc9b2accee150e829eb53bca56bbb3819114d9e4f4df4"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "PopupFrame/Panel",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 624.5,
+        "width": 708,
+        "height": 375
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-5",
+        "layer-8",
+        "layer-9",
+        "layer-24"
+      ]
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "PopupBackground",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 375
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:PopupFrame/PopupFrame/Panel/PopupBackground",
+        "role": "component",
+        "definitionKey": "PopupBackground"
+      },
+      "children": [
+        "layer-6"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0.5,
+        "width": 708,
+        "height": 375
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-7"
+      ]
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 375
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:PopupFrame/PopupFrame/Panel/PopupBackground/_:0",
+        "role": "node",
+        "definitionKey": "PopupBackground",
+        "resourceId": "ui/popup/prompt",
+        "captureHash": "e0c60c28d60d31286c84573fcc4102db3095e8a32025af8dfaf4a692e047f3ca"
+      },
+      "asset": "asset-25e186c22e87f438bcbecc22f44ffd66089982940f96b4e33db0fdb2304c760f"
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "PopupFrame/Title",
+      "kind": "text",
+      "frame": {
+        "x": 86,
+        "y": 25,
+        "width": 536,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel/PopupFrame/Title",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "text": {
+        "value": "创建角色",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "PopupFrame/Content",
+      "kind": "group",
+      "frame": {
+        "x": 40,
+        "y": 108,
+        "width": 628,
+        "height": 229
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel/PopupFrame/Content",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-10"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Prompt/Content",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 628,
+        "height": 229
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Prompt.root",
+        "role": "page",
+        "definitionKey": "Prompt"
+      },
+      "children": [
+        "layer-11",
+        "layer-12"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Prompt/Message",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 38,
+        "width": 632,
+        "height": 104
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Prompt.root/Prompt/Message",
+        "role": "node",
+        "definitionKey": "Prompt"
+      },
+      "text": {
+        "value": "在该服务器创建1名新角色?",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Prompt/Actions",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 127,
+        "width": 628,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Prompt.root/Prompt/Actions",
+        "role": "node",
+        "definitionKey": "Prompt"
+      },
+      "children": [
+        "layer-13",
+        "layer-18"
+      ]
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "ConfirmButton",
+      "kind": "group",
+      "frame": {
+        "x": 15.5,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ConfirmButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/ConfirmButton",
+        "role": "component",
+        "definitionKey": "ConfirmButton"
+      },
+      "children": [
+        "layer-14"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/ConfirmButton/ActionButton",
+        "role": "component",
+        "definitionKey": "ActionButton"
+      },
+      "children": [
+        "layer-15",
+        "layer-17"
+      ]
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0.5,
+        "y": 0.5,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-16"
+      ]
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/ConfirmButton/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/confirm",
+        "captureHash": "234047b8ed5f1919407bc7516d79c7cd613b5bc9514e33bce648a1103a9a79b8"
+      },
+      "asset": "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6"
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "ActionButton/Label",
+      "kind": "text",
+      "frame": {
+        "x": 4,
+        "y": 25,
+        "width": 247,
+        "height": 86
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/ConfirmButton/ActionButton/ActionButton/Label",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "确定",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#643e14",
+        "color": "#ffffff"
+      }
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 357.5,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Prompt.root/Prompt/Actions/_",
+        "role": "node",
+        "definitionKey": "Prompt"
+      },
+      "children": [
+        "layer-19"
+      ]
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "CancelButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CancelButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton",
+        "role": "component",
+        "definitionKey": "CancelButton"
+      },
+      "children": [
+        "layer-20"
+      ]
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton/ActionButton",
+        "role": "component",
+        "definitionKey": "ActionButton"
+      },
+      "children": [
+        "layer-21",
+        "layer-23"
+      ]
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0.5,
+        "y": 0.5,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-22"
+      ]
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/cancel",
+        "captureHash": "0df4757e82425bc408e9af1f662cded9150cea9a871014b4427306b7e542a5ea"
+      },
+      "asset": "asset-f4e0a76476268b9d13d9a086a7a1f22ca9c9d06d987a4ec15d1db6bb6e99ae6b"
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "ActionButton/Label",
+      "kind": "text",
+      "frame": {
+        "x": 4,
+        "y": 25,
+        "width": 247,
+        "height": 86
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton/ActionButton/ActionButton/Label",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "取消",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#4e783b",
+        "color": "#ffffff"
+      }
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "CloseButton",
+      "kind": "group",
+      "frame": {
+        "x": 621,
+        "y": 6,
+        "width": 72,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:PopupFrame/PopupFrame/Panel/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
+      },
+      "children": [
+        "layer-25"
+      ]
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 11,
+        "y": 11.5,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-26"
+      ]
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:PopupFrame/PopupFrame/Panel/CloseButton/_",
+        "role": "node",
+        "definitionKey": "CloseButton",
+        "resourceId": "ui/popup/close",
+        "captureHash": "e54a38834ed5cf3ad76fd53dfd8a911f7332986480aa304c7255a44b53f13a4e"
+      },
+      "asset": "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534"
+    }
+  },
+  "assets": {
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-25e186c22e87f438bcbecc22f44ffd66089982940f96b4e33db0fdb2304c760f": {
+      "path": "assets/25e186c22e87f438bcbecc22f44ffd66089982940f96b4e33db0fdb2304c760f.png",
+      "sha256": "25e186c22e87f438bcbecc22f44ffd66089982940f96b4e33db0fdb2304c760f",
+      "mime": "image/png",
+      "width": 708,
+      "height": 375
+    },
+    "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6": {
+      "path": "assets/4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6.png",
+      "sha256": "4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    },
+    "asset-f4e0a76476268b9d13d9a086a7a1f22ca9c9d06d987a4ec15d1db6bb6e99ae6b": {
+      "path": "assets/f4e0a76476268b9d13d9a086a7a1f22ca9c9d06d987a4ec15d1db6bb6e99ae6b.png",
+      "sha256": "f4e0a76476268b9d13d9a086a7a1f22ca9c9d06d987a4ec15d1db6bb6e99ae6b",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    },
+    "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534": {
+      "path": "assets/08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534.png",
+      "sha256": "08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534",
+      "mime": "image/png",
+      "width": 50,
+      "height": 50
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

@@ -157,12 +157,12 @@
     "layer-8": {
       "id": "layer-8",
       "name": "PopupFrame/Title",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 117,
-        "y": 8,
-        "width": 474,
-        "height": 70
+        "x": 116,
+        "y": 21,
+        "width": 476,
+        "height": 84
       },
       "opacity": 1,
       "visible": true,
@@ -171,7 +171,18 @@
         "role": "node",
         "definitionKey": "PopupFrame"
       },
-      "asset": "asset-cec7b425279b7101981faff5e6b783b2a92f57d037953c92d661cb8687232547"
+      "text": {
+        "value": "设置",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
     },
     "layer-9": {
       "id": "layer-9",
@@ -325,12 +336,12 @@
     "layer-16": {
       "id": "layer-16",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -339,7 +350,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-9508311feb8b34aa87ef9d03ba6b05137246b71ff721666ce082f250b4d4c3c0"
+      "text": {
+        "value": "通用设置",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-17": {
       "id": "layer-17",
@@ -441,12 +463,12 @@
     "layer-22": {
       "id": "layer-22",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -455,7 +477,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-6625612b801c84aa9e80de6def192481f7a48d181eb6f394a929edae6159d14b"
+      "text": {
+        "value": "声音设置",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-23": {
       "id": "layer-23",
@@ -557,12 +590,12 @@
     "layer-28": {
       "id": "layer-28",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -571,7 +604,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-fe5a77096d2145087d0c72026f066c87a3d35bf5cace219a3cb5cad87908d4d2"
+      "text": {
+        "value": "语言设置",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-29": {
       "id": "layer-29",
@@ -654,10 +698,10 @@
       "name": "SettingsMenuButton/Icon",
       "kind": "image",
       "frame": {
-        "x": -3,
-        "y": -3,
-        "width": 60,
-        "height": 60
+        "x": 0,
+        "y": 0,
+        "width": 54,
+        "height": 54
       },
       "opacity": 1,
       "visible": true,
@@ -666,20 +710,19 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton",
         "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac",
-        "imageChanged": true
+        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
       },
-      "asset": "asset-25e60a05cef1895a4eea985d01fd18bb01c0f523c28accd14a1df2486bb627c9"
+      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
     },
     "layer-34": {
       "id": "layer-34",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -688,7 +731,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-164db73f83d0705c4cd7b0cc35cc7451aab73ff56fdfd7139a1d9a51aecff054"
+      "text": {
+        "value": "推送通知",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-35": {
       "id": "layer-35",
@@ -790,12 +844,12 @@
     "layer-40": {
       "id": "layer-40",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -804,7 +858,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-adf4e0d34e2caa92d4c8ea454517af6ba83a4bb39c126498720013c0dd2fe7fa"
+      "text": {
+        "value": "隐私设置",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-41": {
       "id": "layer-41",
@@ -906,12 +971,12 @@
     "layer-46": {
       "id": "layer-46",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -920,7 +985,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-14e5daefbc8739e5f52d63e8f8f80e7e9be4315935ccb8a88649d1b0c8f9a3d9"
+      "text": {
+        "value": "用户中心",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-47": {
       "id": "layer-47",
@@ -1022,12 +1098,12 @@
     "layer-52": {
       "id": "layer-52",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -1036,7 +1112,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-2fd2b82ba263089d6c5d5893ef2923fb0c65d57ec104a4c3f614b86694469ea0"
+      "text": {
+        "value": "客服帮助",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-53": {
       "id": "layer-53",
@@ -1138,12 +1225,12 @@
     "layer-58": {
       "id": "layer-58",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -1152,7 +1239,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-e7d5de54088d1a454753989c58374354b8144f6ca8944383576800e4a89a28ab"
+      "text": {
+        "value": "服务条款",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-59": {
       "id": "layer-59",
@@ -1254,12 +1352,12 @@
     "layer-64": {
       "id": "layer-64",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -1268,7 +1366,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-d777736f04a79994fcde526e581422d318c1aea8426074412b871c953a24acd4"
+      "text": {
+        "value": "切换账号",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-65": {
       "id": "layer-65",
@@ -1370,12 +1479,12 @@
     "layer-70": {
       "id": "layer-70",
       "name": "SettingsMenuButton/Label",
-      "kind": "image",
+      "kind": "text",
       "frame": {
-        "x": 128,
-        "y": 30,
-        "width": 184,
-        "height": 54
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
       },
       "opacity": 1,
       "visible": true,
@@ -1384,7 +1493,18 @@
         "role": "node",
         "definitionKey": "SettingsMenuButton"
       },
-      "asset": "asset-7d675b669c31f490712eb81a7b1b241578c8fb3b09ba06b39cb68dae3f7b8e14"
+      "text": {
+        "value": "退出游戏",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
     },
     "layer-71": {
       "id": "layer-71",
@@ -1511,76 +1631,6 @@
       "width": 54,
       "height": 54
     },
-    "asset-9508311feb8b34aa87ef9d03ba6b05137246b71ff721666ce082f250b4d4c3c0": {
-      "path": "assets/9508311feb8b34aa87ef9d03ba6b05137246b71ff721666ce082f250b4d4c3c0.png",
-      "sha256": "9508311feb8b34aa87ef9d03ba6b05137246b71ff721666ce082f250b4d4c3c0",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-6625612b801c84aa9e80de6def192481f7a48d181eb6f394a929edae6159d14b": {
-      "path": "assets/6625612b801c84aa9e80de6def192481f7a48d181eb6f394a929edae6159d14b.png",
-      "sha256": "6625612b801c84aa9e80de6def192481f7a48d181eb6f394a929edae6159d14b",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-fe5a77096d2145087d0c72026f066c87a3d35bf5cace219a3cb5cad87908d4d2": {
-      "path": "assets/fe5a77096d2145087d0c72026f066c87a3d35bf5cace219a3cb5cad87908d4d2.png",
-      "sha256": "fe5a77096d2145087d0c72026f066c87a3d35bf5cace219a3cb5cad87908d4d2",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-164db73f83d0705c4cd7b0cc35cc7451aab73ff56fdfd7139a1d9a51aecff054": {
-      "path": "assets/164db73f83d0705c4cd7b0cc35cc7451aab73ff56fdfd7139a1d9a51aecff054.png",
-      "sha256": "164db73f83d0705c4cd7b0cc35cc7451aab73ff56fdfd7139a1d9a51aecff054",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-adf4e0d34e2caa92d4c8ea454517af6ba83a4bb39c126498720013c0dd2fe7fa": {
-      "path": "assets/adf4e0d34e2caa92d4c8ea454517af6ba83a4bb39c126498720013c0dd2fe7fa.png",
-      "sha256": "adf4e0d34e2caa92d4c8ea454517af6ba83a4bb39c126498720013c0dd2fe7fa",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-14e5daefbc8739e5f52d63e8f8f80e7e9be4315935ccb8a88649d1b0c8f9a3d9": {
-      "path": "assets/14e5daefbc8739e5f52d63e8f8f80e7e9be4315935ccb8a88649d1b0c8f9a3d9.png",
-      "sha256": "14e5daefbc8739e5f52d63e8f8f80e7e9be4315935ccb8a88649d1b0c8f9a3d9",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-2fd2b82ba263089d6c5d5893ef2923fb0c65d57ec104a4c3f614b86694469ea0": {
-      "path": "assets/2fd2b82ba263089d6c5d5893ef2923fb0c65d57ec104a4c3f614b86694469ea0.png",
-      "sha256": "2fd2b82ba263089d6c5d5893ef2923fb0c65d57ec104a4c3f614b86694469ea0",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-e7d5de54088d1a454753989c58374354b8144f6ca8944383576800e4a89a28ab": {
-      "path": "assets/e7d5de54088d1a454753989c58374354b8144f6ca8944383576800e4a89a28ab.png",
-      "sha256": "e7d5de54088d1a454753989c58374354b8144f6ca8944383576800e4a89a28ab",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-d777736f04a79994fcde526e581422d318c1aea8426074412b871c953a24acd4": {
-      "path": "assets/d777736f04a79994fcde526e581422d318c1aea8426074412b871c953a24acd4.png",
-      "sha256": "d777736f04a79994fcde526e581422d318c1aea8426074412b871c953a24acd4",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
-    "asset-7d675b669c31f490712eb81a7b1b241578c8fb3b09ba06b39cb68dae3f7b8e14": {
-      "path": "assets/7d675b669c31f490712eb81a7b1b241578c8fb3b09ba06b39cb68dae3f7b8e14.png",
-      "sha256": "7d675b669c31f490712eb81a7b1b241578c8fb3b09ba06b39cb68dae3f7b8e14",
-      "mime": "image/png",
-      "width": 184,
-      "height": 54
-    },
     "asset-864af9cd5beda040fa6228bbc1801d280faf50eff64c5751975e823f6f720156": {
       "path": "assets/864af9cd5beda040fa6228bbc1801d280faf50eff64c5751975e823f6f720156.png",
       "sha256": "864af9cd5beda040fa6228bbc1801d280faf50eff64c5751975e823f6f720156",
@@ -1594,20 +1644,6 @@
       "mime": "image/png",
       "width": 50,
       "height": 50
-    },
-    "asset-cec7b425279b7101981faff5e6b783b2a92f57d037953c92d661cb8687232547": {
-      "path": "assets/cec7b425279b7101981faff5e6b783b2a92f57d037953c92d661cb8687232547.png",
-      "sha256": "cec7b425279b7101981faff5e6b783b2a92f57d037953c92d661cb8687232547",
-      "mime": "image/png",
-      "width": 474,
-      "height": 70
-    },
-    "asset-25e60a05cef1895a4eea985d01fd18bb01c0f523c28accd14a1df2486bb627c9": {
-      "path": "assets/25e60a05cef1895a4eea985d01fd18bb01c0f523c28accd14a1df2486bb627c9.png",
-      "sha256": "25e60a05cef1895a4eea985d01fd18bb01c0f523c28accd14a1df2486bb627c9",
-      "mime": "image/png",
-      "width": 60,
-      "height": 60
     }
   },
   "fonts": {
@@ -1621,17 +1657,6 @@
   },
   "warnings": [
     "UniFlex export baseline recovered; it is not the edited PSD state.",
-    "PopupFrame/Title: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
-    "SettingsMenuButton/Label: rendered as an image; text retained in psd-extra.json. Text transform/path is not supported",
     "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
     "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
     "Install and license the original fonts; browser and Photoshop text rendering may differ."

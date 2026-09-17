@@ -85,19 +85,22 @@ for (const file of aotFiles) {
 }
 await emit(resolve(generated, "plan-refs.ts"), await readFile(resolve(cache, "aot/plan-refs.ts")));
 
-const fontPath = resolve(root, "apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf");
-const fontBytes = await readFile(fontPath);
-const font = createFont(fontBytes);
-const fontEntry = {
-    id: "fonts/regular", kind: "font", file: "fonts/regular.ttf", weight: 400,
-    sha256: sha256(fontBytes), fallbackCharacter: "?",
-    metrics: {
+function fontMetrics(bytes) {
+    const font = createFont(bytes);
+    return {
         unitsPerEm: font.unitsPerEm, ascender: font.ascent, descender: font.descent,
         lineGap: font.lineGap,
         advances: Object.fromEntries(font.characterSet.map((cp) => [
             String.fromCodePoint(cp), font.glyphForCodePoint(cp).advanceWidth,
         ])),
-    },
+    };
+}
+const fontPath = resolve(root, "apps/art/fairygui/assets/L10n_zh_hans/Font/siyuanheitiCNRegular.ttf");
+const fontBytes = await readFile(fontPath);
+const fontEntry = {
+    id: "fonts/regular", kind: "font", file: "fonts/regular.ttf", weight: 400,
+    sha256: sha256(fontBytes), fallbackCharacter: "?",
+    metrics: fontMetrics(fontBytes),
 };
 const entries = [fontEntry];
 const resourcePackages = [];
@@ -120,6 +123,8 @@ for (const packageName of await readdir(uiResources).catch(() => [])) {
                 file: `ui/${packageName}/${resource.file}`,
                 ...(resource.weight === undefined ? {} : { weight: resource.weight }),
                 sha256: resource.sha256,
+                fallbackCharacter: resource.fallbackCharacter ?? "?",
+                metrics: fontMetrics(bytes),
             });
         } else {
             entries.push(createImageResourceEntry(resource, packageName));
@@ -225,7 +230,7 @@ ${aotFiles.filter(file => file !== "Confirm.logic.ts").map(file => {
     return { registry, layers };
 }
 `);
-console.log(`UniFlex UI${check ? " checked" : ""}: Confirm, ${font.characterSet.length} font glyphs, catalog ${catalogHash}`);
+console.log(`UniFlex UI${check ? " checked" : ""}: Confirm, ${Object.keys(fontEntry.metrics.advances).length} font glyphs, catalog ${catalogHash}`);
 
 function sha256(value) {
     return createHash("sha256").update(value).digest("hex");

@@ -1,0 +1,7041 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "HeroScreen",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-2",
+        "layer-3",
+        "layer-5",
+        "layer-6",
+        "layer-9",
+        "layer-302",
+        "layer-304",
+        "layer-306",
+        "layer-308",
+        "layer-310",
+        "layer-312",
+        "layer-314"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "HeroScreen / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "asset": "asset-10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a"
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:1",
+        "role": "node",
+        "definitionKey": "HeroScreen",
+        "resourceId": "ui/mail/header",
+        "captureHash": "00638b6427156fef741a1afd010f0216dc44e64bc9525ff77e19d780ba0d66e2"
+      },
+      "asset": "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "英雄",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 23,
+        "width": 208,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_",
+        "role": "node",
+        "definitionKey": "HeroScreen"
+      },
+      "text": {
+        "value": "英雄",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 518,
+        "y": 21,
+        "width": 217,
+        "height": 51
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:1",
+        "role": "node",
+        "definitionKey": "HeroScreen"
+      },
+      "children": [
+        "layer-7"
+      ]
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 217,
+        "height": 51
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-8"
+      ]
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 217,
+        "height": 51
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:1/_",
+        "role": "node",
+        "definitionKey": "HeroScreen",
+        "resourceId": "ui/hero/recruit",
+        "captureHash": "af21a18c2029b3b4acb732b139142470a0552b895eb96bbecd2e61e91988e668"
+      },
+      "asset": "asset-08b61c5c2795ac3eaffefd0225365dc33bb438635a1fd0f8d89d797664d46e6c"
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "HeroListPanel",
+      "kind": "group",
+      "frame": {
+        "x": 15,
+        "y": 98,
+        "width": 721,
+        "height": 1099
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-10",
+        "layer-12",
+        "layer-293"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 59,
+        "width": 720,
+        "height": 948
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-11"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 720,
+        "height": 948
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroListPanel:HeroScreen/HeroListPanel/_",
+        "role": "node",
+        "definitionKey": "HeroListPanel",
+        "resourceId": "ui/hero/list-panel",
+        "captureHash": "717fc1bba3de66bf04469a34359db6e61e125ae17a954f8062f4912c81f33105"
+      },
+      "asset": "asset-e218b3a431bf8bce4837e4c9dfd8aeec40f4dd9764ef4b77d89b9d508179d1f0"
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 10,
+        "y": 71,
+        "width": 696,
+        "height": 923
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-13",
+        "layer-37",
+        "layer-61",
+        "layer-85",
+        "layer-109",
+        "layer-129",
+        "layer-153",
+        "layer-167",
+        "layer-181",
+        "layer-195",
+        "layer-209",
+        "layer-223",
+        "layer-237",
+        "layer-251",
+        "layer-265",
+        "layer-279"
+      ],
+      "clip": true
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-14",
+        "layer-16",
+        "layer-18",
+        "layer-20",
+        "layer-21",
+        "layer-23",
+        "layer-25",
+        "layer-27",
+        "layer-29",
+        "layer-31",
+        "layer-33"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-15"
+      ]
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:2",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-red",
+        "captureHash": "bea50bba6454327bfbdc118f1f73b14a5ab4d4755ab21bb3aed52e1f7d64bf82"
+      },
+      "asset": "asset-f871169300d22b0c1edb91f957f4f0038132b1a30acf3ea6db46ca8253a7a6ee"
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-17"
+      ]
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-19"
+      ]
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:8",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-anchor",
+        "captureHash": "3715ed82afc927ea8bacaca24e6875017472632624ab30e31726c1e82e140d31"
+      },
+      "asset": "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95"
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "Lv.20",
+      "kind": "text",
+      "frame": {
+        "x": 2,
+        "y": 168,
+        "width": 118,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "Lv.20",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 126,
+        "y": 167,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-22"
+      ]
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:12",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/upgrade",
+        "captureHash": "59fa40d0df2bb04b2e8f8c550c403d42eb095e35a0f4dee4c4f250b1b0ad0357"
+      },
+      "asset": "asset-0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b"
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 8,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-24"
+      ]
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:13",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 39,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-26"
+      ]
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:16",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 71,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-28"
+      ]
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:18",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 102,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-30"
+      ]
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:20",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-32"
+      ]
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:22",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 127,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-34",
+        "layer-36"
+      ]
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-35"
+      ]
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/team-short",
+        "captureHash": "25325e45e72f7eb52bbbd51e09e6de798773635f1bc403609305d432ce74bf20"
+      },
+      "asset": "asset-07f34e2275c5ae7ed0f35eda6be59f174fc702fa6f4643ac2d43343ae620dc67"
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "1",
+      "kind": "text",
+      "frame": {
+        "x": -4,
+        "y": 3,
+        "width": 43,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "1",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#806241",
+        "color": "#ffffff"
+      }
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 175.25,
+        "y": 0,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-38",
+        "layer-40",
+        "layer-42",
+        "layer-44",
+        "layer-45",
+        "layer-47",
+        "layer-49",
+        "layer-51",
+        "layer-53",
+        "layer-55",
+        "layer-57"
+      ]
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": -0.25,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-39"
+      ]
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:3",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-yellow",
+        "captureHash": "98571a5072171202e35506b42350d0174538bf5a0c507218edb219df678c825b"
+      },
+      "asset": "asset-f55224ac7a12cd08a75534b1431a083d6b7c4fc6e5ddd0b2ed2e8cbac4b32b70"
+    },
+    "layer-40": {
+      "id": "layer-40",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3.75,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-41"
+      ]
+    },
+    "layer-41": {
+      "id": "layer-41",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-42": {
+      "id": "layer-42",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 5.75,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-43"
+      ]
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:6",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-shield",
+        "captureHash": "9b1383d49ae1548f2d798ddb8b3e5c6d129d44f77527ffe5637dbb1759578a81"
+      },
+      "asset": "asset-12962be49d3d908ead0712303bcb43f67929e756578b85ef39f1795b365515a5"
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "Lv.18",
+      "kind": "text",
+      "frame": {
+        "x": 2,
+        "y": 168,
+        "width": 118,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "Lv.18",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-45": {
+      "id": "layer-45",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 125.75,
+        "y": 167,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-46"
+      ]
+    },
+    "layer-46": {
+      "id": "layer-46",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:12",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/upgrade",
+        "captureHash": "59fa40d0df2bb04b2e8f8c550c403d42eb095e35a0f4dee4c4f250b1b0ad0357"
+      },
+      "asset": "asset-0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b"
+    },
+    "layer-47": {
+      "id": "layer-47",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 7.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-48"
+      ]
+    },
+    "layer-48": {
+      "id": "layer-48",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:13",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-49": {
+      "id": "layer-49",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 38.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-50"
+      ]
+    },
+    "layer-50": {
+      "id": "layer-50",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:15",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-51": {
+      "id": "layer-51",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 70.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-52"
+      ]
+    },
+    "layer-52": {
+      "id": "layer-52",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:18",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-53": {
+      "id": "layer-53",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 101.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-54"
+      ]
+    },
+    "layer-54": {
+      "id": "layer-54",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:20",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-55": {
+      "id": "layer-55",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 132.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-56"
+      ]
+    },
+    "layer-56": {
+      "id": "layer-56",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_:22",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-57": {
+      "id": "layer-57",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 127,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-58",
+        "layer-60"
+      ]
+    },
+    "layer-58": {
+      "id": "layer-58",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": -0.25,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-59"
+      ]
+    },
+    "layer-59": {
+      "id": "layer-59",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/team-short",
+        "captureHash": "25325e45e72f7eb52bbbd51e09e6de798773635f1bc403609305d432ce74bf20"
+      },
+      "asset": "asset-07f34e2275c5ae7ed0f35eda6be59f174fc702fa6f4643ac2d43343ae620dc67"
+    },
+    "layer-60": {
+      "id": "layer-60",
+      "name": "1",
+      "kind": "text",
+      "frame": {
+        "x": -4,
+        "y": 3,
+        "width": 43,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "1",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#806241",
+        "color": "#ffffff"
+      }
+    },
+    "layer-61": {
+      "id": "layer-61",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 350.5,
+        "y": 0,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-62",
+        "layer-64",
+        "layer-66",
+        "layer-68",
+        "layer-69",
+        "layer-71",
+        "layer-73",
+        "layer-75",
+        "layer-77",
+        "layer-79",
+        "layer-81"
+      ]
+    },
+    "layer-62": {
+      "id": "layer-62",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.5,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-63"
+      ]
+    },
+    "layer-63": {
+      "id": "layer-63",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-purple",
+        "captureHash": "c8c3357beae0d961dbeb29fdc1f0f0565ba66d1b4dd0ff73ddca814328bb9577"
+      },
+      "asset": "asset-0f6dbb3f31a99f1dbf8c3155bde1c3058fd5696de0224e9d90cfe00921837698"
+    },
+    "layer-64": {
+      "id": "layer-64",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4.5,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-65"
+      ]
+    },
+    "layer-65": {
+      "id": "layer-65",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-66": {
+      "id": "layer-66",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6.5,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-67"
+      ]
+    },
+    "layer-67": {
+      "id": "layer-67",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:7",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-sword",
+        "captureHash": "f4a1c7b2e4ced62a0b5a94b948f56e799c758fbef487d8788c3d125c85f20434"
+      },
+      "asset": "asset-eadb9f66cee20e63cf3744635e004ac9e7500c2fdf2ddd6e81a2b6de5a63c743"
+    },
+    "layer-68": {
+      "id": "layer-68",
+      "name": "Lv.24",
+      "kind": "text",
+      "frame": {
+        "x": 2,
+        "y": 168,
+        "width": 118,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "Lv.24",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-69": {
+      "id": "layer-69",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 126.5,
+        "y": 167,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-70"
+      ]
+    },
+    "layer-70": {
+      "id": "layer-70",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:12",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/upgrade",
+        "captureHash": "59fa40d0df2bb04b2e8f8c550c403d42eb095e35a0f4dee4c4f250b1b0ad0357"
+      },
+      "asset": "asset-0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b"
+    },
+    "layer-71": {
+      "id": "layer-71",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 8.5,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-72"
+      ]
+    },
+    "layer-72": {
+      "id": "layer-72",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:13",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-73": {
+      "id": "layer-73",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 39.5,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-74"
+      ]
+    },
+    "layer-74": {
+      "id": "layer-74",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:15",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-75": {
+      "id": "layer-75",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 71.5,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-76"
+      ]
+    },
+    "layer-76": {
+      "id": "layer-76",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:17",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-77": {
+      "id": "layer-77",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 102.5,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-78"
+      ]
+    },
+    "layer-78": {
+      "id": "layer-78",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:20",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-79": {
+      "id": "layer-79",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 133.5,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-80"
+      ]
+    },
+    "layer-80": {
+      "id": "layer-80",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_:22",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-81": {
+      "id": "layer-81",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 127,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-82",
+        "layer-84"
+      ]
+    },
+    "layer-82": {
+      "id": "layer-82",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.5,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-83"
+      ]
+    },
+    "layer-83": {
+      "id": "layer-83",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/team-short",
+        "captureHash": "25325e45e72f7eb52bbbd51e09e6de798773635f1bc403609305d432ce74bf20"
+      },
+      "asset": "asset-07f34e2275c5ae7ed0f35eda6be59f174fc702fa6f4643ac2d43343ae620dc67"
+    },
+    "layer-84": {
+      "id": "layer-84",
+      "name": "1",
+      "kind": "text",
+      "frame": {
+        "x": -4,
+        "y": 3,
+        "width": 43,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "1",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#806241",
+        "color": "#ffffff"
+      }
+    },
+    "layer-85": {
+      "id": "layer-85",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 525.75,
+        "y": 0,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-86",
+        "layer-88",
+        "layer-90",
+        "layer-92",
+        "layer-93",
+        "layer-95",
+        "layer-97",
+        "layer-99",
+        "layer-101",
+        "layer-103",
+        "layer-105"
+      ]
+    },
+    "layer-86": {
+      "id": "layer-86",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.25,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-87"
+      ]
+    },
+    "layer-87": {
+      "id": "layer-87",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:4",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-blue",
+        "captureHash": "2908facdbc78c44789c1078adcd41e16accbdd4634524b0e51944cb00ea599ed"
+      },
+      "asset": "asset-5823f5fcbe59813055fa485b36c8c29350c2ee211f8e4c26d5a2414306bb50e3"
+    },
+    "layer-88": {
+      "id": "layer-88",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4.25,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-89"
+      ]
+    },
+    "layer-89": {
+      "id": "layer-89",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-90": {
+      "id": "layer-90",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6.25,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-91"
+      ]
+    },
+    "layer-91": {
+      "id": "layer-91",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:6",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-shield",
+        "captureHash": "9b1383d49ae1548f2d798ddb8b3e5c6d129d44f77527ffe5637dbb1759578a81"
+      },
+      "asset": "asset-12962be49d3d908ead0712303bcb43f67929e756578b85ef39f1795b365515a5"
+    },
+    "layer-92": {
+      "id": "layer-92",
+      "name": "Lv.12",
+      "kind": "text",
+      "frame": {
+        "x": 2,
+        "y": 168,
+        "width": 118,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "Lv.12",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-93": {
+      "id": "layer-93",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 126.25,
+        "y": 167,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-94"
+      ]
+    },
+    "layer-94": {
+      "id": "layer-94",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:12",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/upgrade",
+        "captureHash": "59fa40d0df2bb04b2e8f8c550c403d42eb095e35a0f4dee4c4f250b1b0ad0357"
+      },
+      "asset": "asset-0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b"
+    },
+    "layer-95": {
+      "id": "layer-95",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 8.25,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-96"
+      ]
+    },
+    "layer-96": {
+      "id": "layer-96",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:13",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-97": {
+      "id": "layer-97",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 39.25,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-98"
+      ]
+    },
+    "layer-98": {
+      "id": "layer-98",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:16",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-99": {
+      "id": "layer-99",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 71.25,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-100"
+      ]
+    },
+    "layer-100": {
+      "id": "layer-100",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:18",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-101": {
+      "id": "layer-101",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 102.25,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-102"
+      ]
+    },
+    "layer-102": {
+      "id": "layer-102",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:20",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-103": {
+      "id": "layer-103",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 133.25,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-104"
+      ]
+    },
+    "layer-104": {
+      "id": "layer-104",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_:22",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-105": {
+      "id": "layer-105",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 127,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-106",
+        "layer-108"
+      ]
+    },
+    "layer-106": {
+      "id": "layer-106",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.25,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-107"
+      ]
+    },
+    "layer-107": {
+      "id": "layer-107",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/team-short",
+        "captureHash": "25325e45e72f7eb52bbbd51e09e6de798773635f1bc403609305d432ce74bf20"
+      },
+      "asset": "asset-07f34e2275c5ae7ed0f35eda6be59f174fc702fa6f4643ac2d43343ae620dc67"
+    },
+    "layer-108": {
+      "id": "layer-108",
+      "name": "2",
+      "kind": "text",
+      "frame": {
+        "x": -4,
+        "y": 3,
+        "width": 43,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "2",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#806241",
+        "color": "#ffffff"
+      }
+    },
+    "layer-109": {
+      "id": "layer-109",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 260,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-110",
+        "layer-112",
+        "layer-114",
+        "layer-116",
+        "layer-117",
+        "layer-119",
+        "layer-121",
+        "layer-123",
+        "layer-125",
+        "layer-127"
+      ]
+    },
+    "layer-110": {
+      "id": "layer-110",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-111"
+      ]
+    },
+    "layer-111": {
+      "id": "layer-111",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-green",
+        "captureHash": "9cdc739be33b6104b773b9792402048b19c8922051a20cdb30386c27b3627266"
+      },
+      "asset": "asset-202397c48d75b92a31a1bf578973ae662832e06adc12c866a43307ee066cbdc0"
+    },
+    "layer-112": {
+      "id": "layer-112",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-113"
+      ]
+    },
+    "layer-113": {
+      "id": "layer-113",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-114": {
+      "id": "layer-114",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-115"
+      ]
+    },
+    "layer-115": {
+      "id": "layer-115",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:6",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-shield",
+        "captureHash": "9b1383d49ae1548f2d798ddb8b3e5c6d129d44f77527ffe5637dbb1759578a81"
+      },
+      "asset": "asset-12962be49d3d908ead0712303bcb43f67929e756578b85ef39f1795b365515a5"
+    },
+    "layer-116": {
+      "id": "layer-116",
+      "name": "Lv.8",
+      "kind": "text",
+      "frame": {
+        "x": 2,
+        "y": 168,
+        "width": 118,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "Lv.8",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-117": {
+      "id": "layer-117",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 126,
+        "y": 167,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-118"
+      ]
+    },
+    "layer-118": {
+      "id": "layer-118",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:12",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/upgrade",
+        "captureHash": "59fa40d0df2bb04b2e8f8c550c403d42eb095e35a0f4dee4c4f250b1b0ad0357"
+      },
+      "asset": "asset-0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b"
+    },
+    "layer-119": {
+      "id": "layer-119",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 8,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-120"
+      ]
+    },
+    "layer-120": {
+      "id": "layer-120",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:13",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-121": {
+      "id": "layer-121",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 39,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-122"
+      ]
+    },
+    "layer-122": {
+      "id": "layer-122",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:16",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-123": {
+      "id": "layer-123",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 71,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-124"
+      ]
+    },
+    "layer-124": {
+      "id": "layer-124",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:18",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-125": {
+      "id": "layer-125",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 102,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-126"
+      ]
+    },
+    "layer-126": {
+      "id": "layer-126",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:20",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-127": {
+      "id": "layer-127",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 133,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-128"
+      ]
+    },
+    "layer-128": {
+      "id": "layer-128",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4/_:22",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-129": {
+      "id": "layer-129",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 175.25,
+        "y": 260,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-130",
+        "layer-132",
+        "layer-134",
+        "layer-136",
+        "layer-137",
+        "layer-139",
+        "layer-141",
+        "layer-143",
+        "layer-145",
+        "layer-147",
+        "layer-149"
+      ]
+    },
+    "layer-130": {
+      "id": "layer-130",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": -0.25,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-131"
+      ]
+    },
+    "layer-131": {
+      "id": "layer-131",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:3",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-yellow",
+        "captureHash": "98571a5072171202e35506b42350d0174538bf5a0c507218edb219df678c825b"
+      },
+      "asset": "asset-f55224ac7a12cd08a75534b1431a083d6b7c4fc6e5ddd0b2ed2e8cbac4b32b70"
+    },
+    "layer-132": {
+      "id": "layer-132",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3.75,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-133"
+      ]
+    },
+    "layer-133": {
+      "id": "layer-133",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-134": {
+      "id": "layer-134",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 5.75,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-135"
+      ]
+    },
+    "layer-135": {
+      "id": "layer-135",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:8",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-anchor",
+        "captureHash": "3715ed82afc927ea8bacaca24e6875017472632624ab30e31726c1e82e140d31"
+      },
+      "asset": "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95"
+    },
+    "layer-136": {
+      "id": "layer-136",
+      "name": "Lv.30",
+      "kind": "text",
+      "frame": {
+        "x": 2,
+        "y": 168,
+        "width": 118,
+        "height": 60
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "Lv.30",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-137": {
+      "id": "layer-137",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 125.75,
+        "y": 167,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-138"
+      ]
+    },
+    "layer-138": {
+      "id": "layer-138",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 39,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:12",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/upgrade",
+        "captureHash": "59fa40d0df2bb04b2e8f8c550c403d42eb095e35a0f4dee4c4f250b1b0ad0357"
+      },
+      "asset": "asset-0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b"
+    },
+    "layer-139": {
+      "id": "layer-139",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 7.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-140"
+      ]
+    },
+    "layer-140": {
+      "id": "layer-140",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:13",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-141": {
+      "id": "layer-141",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 38.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-142"
+      ]
+    },
+    "layer-142": {
+      "id": "layer-142",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:15",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-143": {
+      "id": "layer-143",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 70.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-144"
+      ]
+    },
+    "layer-144": {
+      "id": "layer-144",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:17",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-145": {
+      "id": "layer-145",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 101.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-146"
+      ]
+    },
+    "layer-146": {
+      "id": "layer-146",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:19",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-filled",
+        "captureHash": "b6d4904c35fad6475f075818d96da178f5eb4a2c00fbf0782cd8caf678bc1531"
+      },
+      "asset": "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd"
+    },
+    "layer-147": {
+      "id": "layer-147",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 132.75,
+        "y": 205,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-148"
+      ]
+    },
+    "layer-148": {
+      "id": "layer-148",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_:22",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/star-empty",
+        "captureHash": "88dd34b930bb55a57f1a4cea1f3cfcb4317fd745119d8f9b790f6dc51ad94fe7"
+      },
+      "asset": "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a"
+    },
+    "layer-149": {
+      "id": "layer-149",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 127,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-150",
+        "layer-152"
+      ]
+    },
+    "layer-150": {
+      "id": "layer-150",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": -0.25,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-151"
+      ]
+    },
+    "layer-151": {
+      "id": "layer-151",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 35,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/team-short",
+        "captureHash": "25325e45e72f7eb52bbbd51e09e6de798773635f1bc403609305d432ce74bf20"
+      },
+      "asset": "asset-07f34e2275c5ae7ed0f35eda6be59f174fc702fa6f4643ac2d43343ae620dc67"
+    },
+    "layer-152": {
+      "id": "layer-152",
+      "name": "2",
+      "kind": "text",
+      "frame": {
+        "x": -4,
+        "y": 3,
+        "width": 43,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5/_/_",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "2",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#806241",
+        "color": "#ffffff"
+      }
+    },
+    "layer-153": {
+      "id": "layer-153",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 350.5,
+        "y": 260,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-154",
+        "layer-156",
+        "layer-158",
+        "layer-160",
+        "layer-162",
+        "layer-164",
+        "layer-166"
+      ]
+    },
+    "layer-154": {
+      "id": "layer-154",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.5,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-155"
+      ]
+    },
+    "layer-155": {
+      "id": "layer-155",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-purple",
+        "captureHash": "c8c3357beae0d961dbeb29fdc1f0f0565ba66d1b4dd0ff73ddca814328bb9577"
+      },
+      "asset": "asset-0f6dbb3f31a99f1dbf8c3155bde1c3058fd5696de0224e9d90cfe00921837698"
+    },
+    "layer-156": {
+      "id": "layer-156",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4.5,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-157"
+      ]
+    },
+    "layer-157": {
+      "id": "layer-157",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-158": {
+      "id": "layer-158",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6.5,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-159"
+      ]
+    },
+    "layer-159": {
+      "id": "layer-159",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6/_:8",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-anchor",
+        "captureHash": "3715ed82afc927ea8bacaca24e6875017472632624ab30e31726c1e82e140d31"
+      },
+      "asset": "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95"
+    },
+    "layer-160": {
+      "id": "layer-160",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2.5,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-161"
+      ]
+    },
+    "layer-161": {
+      "id": "layer-161",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-162": {
+      "id": "layer-162",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23.5,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-163"
+      ]
+    },
+    "layer-163": {
+      "id": "layer-163",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-164": {
+      "id": "layer-164",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25.5,
+        "y": 209,
+        "width": 99,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-165"
+      ]
+    },
+    "layer-165": {
+      "id": "layer-165",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 99,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "26567dd500014184776cb9a829e34d90ec1da2079d76b4453bfe413a287b9c9d"
+      },
+      "asset": "asset-a98f973e998d2f4ec093d7973f57ee805c95c2f1fa4a9cbc4e464c6d8aad0e1c"
+    },
+    "layer-166": {
+      "id": "layer-166",
+      "name": "9/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "9/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-167": {
+      "id": "layer-167",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 525.75,
+        "y": 260,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-168",
+        "layer-170",
+        "layer-172",
+        "layer-174",
+        "layer-176",
+        "layer-178",
+        "layer-180"
+      ]
+    },
+    "layer-168": {
+      "id": "layer-168",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.25,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-169"
+      ]
+    },
+    "layer-169": {
+      "id": "layer-169",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-purple",
+        "captureHash": "c8c3357beae0d961dbeb29fdc1f0f0565ba66d1b4dd0ff73ddca814328bb9577"
+      },
+      "asset": "asset-0f6dbb3f31a99f1dbf8c3155bde1c3058fd5696de0224e9d90cfe00921837698"
+    },
+    "layer-170": {
+      "id": "layer-170",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4.25,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-171"
+      ]
+    },
+    "layer-171": {
+      "id": "layer-171",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-172": {
+      "id": "layer-172",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6.25,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-173"
+      ]
+    },
+    "layer-173": {
+      "id": "layer-173",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7/_:8",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-anchor",
+        "captureHash": "3715ed82afc927ea8bacaca24e6875017472632624ab30e31726c1e82e140d31"
+      },
+      "asset": "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95"
+    },
+    "layer-174": {
+      "id": "layer-174",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2.25,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-175"
+      ]
+    },
+    "layer-175": {
+      "id": "layer-175",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-176": {
+      "id": "layer-176",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23.25,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-177"
+      ]
+    },
+    "layer-177": {
+      "id": "layer-177",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-178": {
+      "id": "layer-178",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25.25,
+        "y": 209,
+        "width": 33,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-179"
+      ]
+    },
+    "layer-179": {
+      "id": "layer-179",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 33,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "b686f2a559100076819da50a27a59401e849bc4817958fbf9a7d531c5d3f75b0"
+      },
+      "asset": "asset-1084b63e0e41ad483993b325ea53208faf4e79ec7c2e9d2dbf54d416eb7fafb2"
+    },
+    "layer-180": {
+      "id": "layer-180",
+      "name": "3/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "3/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-181": {
+      "id": "layer-181",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 520,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-182",
+        "layer-184",
+        "layer-186",
+        "layer-188",
+        "layer-190",
+        "layer-192",
+        "layer-194"
+      ]
+    },
+    "layer-182": {
+      "id": "layer-182",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-183"
+      ]
+    },
+    "layer-183": {
+      "id": "layer-183",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-purple",
+        "captureHash": "c8c3357beae0d961dbeb29fdc1f0f0565ba66d1b4dd0ff73ddca814328bb9577"
+      },
+      "asset": "asset-0f6dbb3f31a99f1dbf8c3155bde1c3058fd5696de0224e9d90cfe00921837698"
+    },
+    "layer-184": {
+      "id": "layer-184",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-185"
+      ]
+    },
+    "layer-185": {
+      "id": "layer-185",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-186": {
+      "id": "layer-186",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-187"
+      ]
+    },
+    "layer-187": {
+      "id": "layer-187",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8/_:8",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-anchor",
+        "captureHash": "3715ed82afc927ea8bacaca24e6875017472632624ab30e31726c1e82e140d31"
+      },
+      "asset": "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95"
+    },
+    "layer-188": {
+      "id": "layer-188",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-189"
+      ]
+    },
+    "layer-189": {
+      "id": "layer-189",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-190": {
+      "id": "layer-190",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-191"
+      ]
+    },
+    "layer-191": {
+      "id": "layer-191",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-192": {
+      "id": "layer-192",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25,
+        "y": 209,
+        "width": 66,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-193"
+      ]
+    },
+    "layer-193": {
+      "id": "layer-193",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 66,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "c9e844df121fd52943c037ac0394fc390aa93c7c84f1f2002f46644aad19b0a3"
+      },
+      "asset": "asset-9c381a883fa82e691281c8f10e75fdd48aea6d437de49adda4539686af44798a"
+    },
+    "layer-194": {
+      "id": "layer-194",
+      "name": "6/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "6/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-195": {
+      "id": "layer-195",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 175.25,
+        "y": 520,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-196",
+        "layer-198",
+        "layer-200",
+        "layer-202",
+        "layer-204",
+        "layer-206",
+        "layer-208"
+      ]
+    },
+    "layer-196": {
+      "id": "layer-196",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": -0.25,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-197"
+      ]
+    },
+    "layer-197": {
+      "id": "layer-197",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9/_:4",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-blue",
+        "captureHash": "2908facdbc78c44789c1078adcd41e16accbdd4634524b0e51944cb00ea599ed"
+      },
+      "asset": "asset-5823f5fcbe59813055fa485b36c8c29350c2ee211f8e4c26d5a2414306bb50e3"
+    },
+    "layer-198": {
+      "id": "layer-198",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3.75,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-199"
+      ]
+    },
+    "layer-199": {
+      "id": "layer-199",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-200": {
+      "id": "layer-200",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 5.75,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-201"
+      ]
+    },
+    "layer-201": {
+      "id": "layer-201",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9/_:7",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-sword",
+        "captureHash": "f4a1c7b2e4ced62a0b5a94b948f56e799c758fbef487d8788c3d125c85f20434"
+      },
+      "asset": "asset-eadb9f66cee20e63cf3744635e004ac9e7500c2fdf2ddd6e81a2b6de5a63c743"
+    },
+    "layer-202": {
+      "id": "layer-202",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 1.75,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-203"
+      ]
+    },
+    "layer-203": {
+      "id": "layer-203",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-204": {
+      "id": "layer-204",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22.75,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-205"
+      ]
+    },
+    "layer-205": {
+      "id": "layer-205",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-206": {
+      "id": "layer-206",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 24.75,
+        "y": 209,
+        "width": 22,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-207"
+      ]
+    },
+    "layer-207": {
+      "id": "layer-207",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 22,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "e23c2b780f8a9cd2f865b48ecacb30121ebcaea556de1c7398bc8227d02a5d1a"
+      },
+      "asset": "asset-3b80d708d0dbe75aca7d371ebdc4b1336d68714d39a78f70e05af62b227f6242"
+    },
+    "layer-208": {
+      "id": "layer-208",
+      "name": "1/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "1/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-209": {
+      "id": "layer-209",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 350.5,
+        "y": 520,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-210",
+        "layer-212",
+        "layer-214",
+        "layer-216",
+        "layer-218",
+        "layer-220",
+        "layer-222"
+      ]
+    },
+    "layer-210": {
+      "id": "layer-210",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.5,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-211"
+      ]
+    },
+    "layer-211": {
+      "id": "layer-211",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-green",
+        "captureHash": "9cdc739be33b6104b773b9792402048b19c8922051a20cdb30386c27b3627266"
+      },
+      "asset": "asset-202397c48d75b92a31a1bf578973ae662832e06adc12c866a43307ee066cbdc0"
+    },
+    "layer-212": {
+      "id": "layer-212",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4.5,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-213"
+      ]
+    },
+    "layer-213": {
+      "id": "layer-213",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-214": {
+      "id": "layer-214",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6.5,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-215"
+      ]
+    },
+    "layer-215": {
+      "id": "layer-215",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10/_:7",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-sword",
+        "captureHash": "f4a1c7b2e4ced62a0b5a94b948f56e799c758fbef487d8788c3d125c85f20434"
+      },
+      "asset": "asset-eadb9f66cee20e63cf3744635e004ac9e7500c2fdf2ddd6e81a2b6de5a63c743"
+    },
+    "layer-216": {
+      "id": "layer-216",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2.5,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-217"
+      ]
+    },
+    "layer-217": {
+      "id": "layer-217",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-218": {
+      "id": "layer-218",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23.5,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-219"
+      ]
+    },
+    "layer-219": {
+      "id": "layer-219",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-220": {
+      "id": "layer-220",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25.5,
+        "y": 209,
+        "width": 88,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-221"
+      ]
+    },
+    "layer-221": {
+      "id": "layer-221",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 88,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "879f3528c79ca5fef942e9509db95ea2f405be5fdf729bd5ac7ad778d0127c35"
+      },
+      "asset": "asset-a09686ec67670381ec2b0d2c0a9f529aa8d30b5497932e1be0aa6520711f6f85"
+    },
+    "layer-222": {
+      "id": "layer-222",
+      "name": "8/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "8/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-223": {
+      "id": "layer-223",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 525.75,
+        "y": 520,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-224",
+        "layer-226",
+        "layer-228",
+        "layer-230",
+        "layer-232",
+        "layer-234",
+        "layer-236"
+      ]
+    },
+    "layer-224": {
+      "id": "layer-224",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.25,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-225"
+      ]
+    },
+    "layer-225": {
+      "id": "layer-225",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11/_:2",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-red",
+        "captureHash": "bea50bba6454327bfbdc118f1f73b14a5ab4d4755ab21bb3aed52e1f7d64bf82"
+      },
+      "asset": "asset-f871169300d22b0c1edb91f957f4f0038132b1a30acf3ea6db46ca8253a7a6ee"
+    },
+    "layer-226": {
+      "id": "layer-226",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4.25,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-227"
+      ]
+    },
+    "layer-227": {
+      "id": "layer-227",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-228": {
+      "id": "layer-228",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6.25,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-229"
+      ]
+    },
+    "layer-229": {
+      "id": "layer-229",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11/_:8",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-anchor",
+        "captureHash": "3715ed82afc927ea8bacaca24e6875017472632624ab30e31726c1e82e140d31"
+      },
+      "asset": "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95"
+    },
+    "layer-230": {
+      "id": "layer-230",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2.25,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-231"
+      ]
+    },
+    "layer-231": {
+      "id": "layer-231",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-232": {
+      "id": "layer-232",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23.25,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-233"
+      ]
+    },
+    "layer-233": {
+      "id": "layer-233",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-234": {
+      "id": "layer-234",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25.25,
+        "y": 209,
+        "width": 55,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-235"
+      ]
+    },
+    "layer-235": {
+      "id": "layer-235",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 55,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "60482bf610c02f1227f91c00d7c0fcfb5016fdb7234c3700f3fb350495474dd6"
+      },
+      "asset": "asset-7c8d20fb8b25dbe733ee2fb427767983bf0933b544a2e3a5654f4eeb67e2f217"
+    },
+    "layer-236": {
+      "id": "layer-236",
+      "name": "5/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "5/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-237": {
+      "id": "layer-237",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 780,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-238",
+        "layer-240",
+        "layer-242",
+        "layer-244",
+        "layer-246",
+        "layer-248",
+        "layer-250"
+      ]
+    },
+    "layer-238": {
+      "id": "layer-238",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-239"
+      ]
+    },
+    "layer-239": {
+      "id": "layer-239",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-purple",
+        "captureHash": "c8c3357beae0d961dbeb29fdc1f0f0565ba66d1b4dd0ff73ddca814328bb9577"
+      },
+      "asset": "asset-0f6dbb3f31a99f1dbf8c3155bde1c3058fd5696de0224e9d90cfe00921837698"
+    },
+    "layer-240": {
+      "id": "layer-240",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-241"
+      ]
+    },
+    "layer-241": {
+      "id": "layer-241",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-242": {
+      "id": "layer-242",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-243"
+      ]
+    },
+    "layer-243": {
+      "id": "layer-243",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12/_:8",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-anchor",
+        "captureHash": "3715ed82afc927ea8bacaca24e6875017472632624ab30e31726c1e82e140d31"
+      },
+      "asset": "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95"
+    },
+    "layer-244": {
+      "id": "layer-244",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-245"
+      ]
+    },
+    "layer-245": {
+      "id": "layer-245",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-246": {
+      "id": "layer-246",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-247"
+      ]
+    },
+    "layer-247": {
+      "id": "layer-247",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-248": {
+      "id": "layer-248",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25,
+        "y": 209,
+        "width": 22,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-249"
+      ]
+    },
+    "layer-249": {
+      "id": "layer-249",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 22,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "e23c2b780f8a9cd2f865b48ecacb30121ebcaea556de1c7398bc8227d02a5d1a"
+      },
+      "asset": "asset-3b80d708d0dbe75aca7d371ebdc4b1336d68714d39a78f70e05af62b227f6242"
+    },
+    "layer-250": {
+      "id": "layer-250",
+      "name": "2/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "2/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-251": {
+      "id": "layer-251",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 175.25,
+        "y": 780,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-252",
+        "layer-254",
+        "layer-256",
+        "layer-258",
+        "layer-260",
+        "layer-262",
+        "layer-264"
+      ]
+    },
+    "layer-252": {
+      "id": "layer-252",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": -0.25,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-253"
+      ]
+    },
+    "layer-253": {
+      "id": "layer-253",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13/_:3",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-yellow",
+        "captureHash": "98571a5072171202e35506b42350d0174538bf5a0c507218edb219df678c825b"
+      },
+      "asset": "asset-f55224ac7a12cd08a75534b1431a083d6b7c4fc6e5ddd0b2ed2e8cbac4b32b70"
+    },
+    "layer-254": {
+      "id": "layer-254",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3.75,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-255"
+      ]
+    },
+    "layer-255": {
+      "id": "layer-255",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-256": {
+      "id": "layer-256",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 5.75,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-257"
+      ]
+    },
+    "layer-257": {
+      "id": "layer-257",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13/_:6",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-shield",
+        "captureHash": "9b1383d49ae1548f2d798ddb8b3e5c6d129d44f77527ffe5637dbb1759578a81"
+      },
+      "asset": "asset-12962be49d3d908ead0712303bcb43f67929e756578b85ef39f1795b365515a5"
+    },
+    "layer-258": {
+      "id": "layer-258",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 1.75,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-259"
+      ]
+    },
+    "layer-259": {
+      "id": "layer-259",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-260": {
+      "id": "layer-260",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22.75,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-261"
+      ]
+    },
+    "layer-261": {
+      "id": "layer-261",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-262": {
+      "id": "layer-262",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 24.75,
+        "y": 209,
+        "width": 77,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-263"
+      ]
+    },
+    "layer-263": {
+      "id": "layer-263",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 77,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "199285bc044584decc6119af00f69d3096a3458f99f0b6b6d7891c10cae554ee"
+      },
+      "asset": "asset-e3556bd35d10bc8aa80fbb5879921811168ea274e29c9adfb521a1eb7ce12e72"
+    },
+    "layer-264": {
+      "id": "layer-264",
+      "name": "7/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "7/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-265": {
+      "id": "layer-265",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 350.5,
+        "y": 780,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-266",
+        "layer-268",
+        "layer-270",
+        "layer-272",
+        "layer-274",
+        "layer-276",
+        "layer-278"
+      ]
+    },
+    "layer-266": {
+      "id": "layer-266",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.5,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-267"
+      ]
+    },
+    "layer-267": {
+      "id": "layer-267",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14/_:4",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-blue",
+        "captureHash": "2908facdbc78c44789c1078adcd41e16accbdd4634524b0e51944cb00ea599ed"
+      },
+      "asset": "asset-5823f5fcbe59813055fa485b36c8c29350c2ee211f8e4c26d5a2414306bb50e3"
+    },
+    "layer-268": {
+      "id": "layer-268",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4.5,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-269"
+      ]
+    },
+    "layer-269": {
+      "id": "layer-269",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-270": {
+      "id": "layer-270",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6.5,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-271"
+      ]
+    },
+    "layer-271": {
+      "id": "layer-271",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14/_:8",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-anchor",
+        "captureHash": "3715ed82afc927ea8bacaca24e6875017472632624ab30e31726c1e82e140d31"
+      },
+      "asset": "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95"
+    },
+    "layer-272": {
+      "id": "layer-272",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2.5,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-273"
+      ]
+    },
+    "layer-273": {
+      "id": "layer-273",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-274": {
+      "id": "layer-274",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23.5,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-275"
+      ]
+    },
+    "layer-275": {
+      "id": "layer-275",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-276": {
+      "id": "layer-276",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25.5,
+        "y": 209,
+        "width": 44,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-277"
+      ]
+    },
+    "layer-277": {
+      "id": "layer-277",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 44,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "3085c3fc3ca0cc6268d6526bbe55af7800dd4cd61f424fe06c99e5ae193d1353"
+      },
+      "asset": "asset-9b79d0914f2c71717bd042658cf74efa7ee91ea13f7f9c69bc3701bb9aa6a2cb"
+    },
+    "layer-278": {
+      "id": "layer-278",
+      "name": "4/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "4/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-279": {
+      "id": "layer-279",
+      "name": "HeroCard",
+      "kind": "group",
+      "frame": {
+        "x": 525.75,
+        "y": 780,
+        "width": 170.25,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "children": [
+        "layer-280",
+        "layer-282",
+        "layer-284",
+        "layer-286",
+        "layer-288",
+        "layer-290",
+        "layer-292"
+      ]
+    },
+    "layer-280": {
+      "id": "layer-280",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0.25,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-281"
+      ]
+    },
+    "layer-281": {
+      "id": "layer-281",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15/_:1",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/frame-green",
+        "captureHash": "9cdc739be33b6104b773b9792402048b19c8922051a20cdb30386c27b3627266"
+      },
+      "asset": "asset-202397c48d75b92a31a1bf578973ae662832e06adc12c866a43307ee066cbdc0"
+    },
+    "layer-282": {
+      "id": "layer-282",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4.25,
+        "y": 4,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-283"
+      ]
+    },
+    "layer-283": {
+      "id": "layer-283",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 162,
+        "height": 180
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15/_:5",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/portrait",
+        "captureHash": "593f569f11b569a7170753afbeb498e1c4d690fb16c3e106aeeb419c1b3fc5bd"
+      },
+      "asset": "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40"
+    },
+    "layer-284": {
+      "id": "layer-284",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 6.25,
+        "y": 6,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-285"
+      ]
+    },
+    "layer-285": {
+      "id": "layer-285",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 42
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15/_:7",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/class-sword",
+        "captureHash": "f4a1c7b2e4ced62a0b5a94b948f56e799c758fbef487d8788c3d125c85f20434"
+      },
+      "asset": "asset-eadb9f66cee20e63cf3744635e004ac9e7500c2fdf2ddd6e81a2b6de5a63c743"
+    },
+    "layer-286": {
+      "id": "layer-286",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2.25,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-287"
+      ]
+    },
+    "layer-287": {
+      "id": "layer-287",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 166,
+        "height": 244
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15/_:9",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/unowned",
+        "captureHash": "af254a8fb445c510810fa69065eb8fa230618864b995233067ea24939017ff08"
+      },
+      "asset": "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae"
+    },
+    "layer-288": {
+      "id": "layer-288",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 23.25,
+        "y": 207,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-289"
+      ]
+    },
+    "layer-289": {
+      "id": "layer-289",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 124,
+        "height": 26
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15/_:10",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-track",
+        "captureHash": "76edeadca06ae17f8cea5ecaf069aed8f35f3dcacd761e583fdaca31ca5fffd5"
+      },
+      "asset": "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905"
+    },
+    "layer-290": {
+      "id": "layer-290",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25.25,
+        "y": 209,
+        "width": 99,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-291"
+      ]
+    },
+    "layer-291": {
+      "id": "layer-291",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 99,
+        "height": 22
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15/_:11",
+        "role": "node",
+        "definitionKey": "HeroCard",
+        "resourceId": "ui/hero/progress-fill",
+        "captureHash": "26567dd500014184776cb9a829e34d90ec1da2079d76b4453bfe413a287b9c9d"
+      },
+      "asset": "asset-a98f973e998d2f4ec093d7973f57ee805c95c2f1fa4a9cbc4e464c6d8aad0e1c"
+    },
+    "layer-292": {
+      "id": "layer-292",
+      "name": "9/10",
+      "kind": "text",
+      "frame": {
+        "x": 19,
+        "y": 207,
+        "width": 132,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15/_:0",
+        "role": "node",
+        "definitionKey": "HeroCard"
+      },
+      "text": {
+        "value": "9/10",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-293": {
+      "id": "layer-293",
+      "name": "HeroFilterBar",
+      "kind": "group",
+      "frame": {
+        "x": 441,
+        "y": 0,
+        "width": 281,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar",
+        "role": "component",
+        "definitionKey": "HeroFilterBar"
+      },
+      "children": [
+        "layer-294"
+      ]
+    },
+    "layer-294": {
+      "id": "layer-294",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1",
+        "role": "node",
+        "definitionKey": "HeroFilterBar"
+      },
+      "children": [
+        "layer-295",
+        "layer-297",
+        "layer-299",
+        "layer-300"
+      ]
+    },
+    "layer-295": {
+      "id": "layer-295",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-296"
+      ]
+    },
+    "layer-296": {
+      "id": "layer-296",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1/_:0",
+        "role": "node",
+        "definitionKey": "HeroFilterBar",
+        "resourceId": "ui/hero/filter-bg",
+        "captureHash": "52bab3d7d9493d076da8010155595708c42f1707181071868ea1db21d8a2405a"
+      },
+      "asset": "asset-24830db3af5fd0bb4671fddde9bba9c285687585e18d81fdaabc2ae7334aafa8"
+    },
+    "layer-297": {
+      "id": "layer-297",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 15,
+        "y": 13,
+        "width": 29,
+        "height": 27
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-298"
+      ]
+    },
+    "layer-298": {
+      "id": "layer-298",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 29,
+        "height": 27
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1/_:1",
+        "role": "node",
+        "definitionKey": "HeroFilterBar",
+        "resourceId": "ui/hero/filter-icon",
+        "captureHash": "2b0a984e98a0b4d752e9379029322ae75da39303b286d5eea8cdb92e1f12090b"
+      },
+      "asset": "asset-80cea0e6be6116c27d2e013d179dab52202425c4ae2f420741f61a0777e8aad2"
+    },
+    "layer-299": {
+      "id": "layer-299",
+      "name": "全部",
+      "kind": "text",
+      "frame": {
+        "x": 54,
+        "y": 12,
+        "width": 174,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1/_",
+        "role": "node",
+        "definitionKey": "HeroFilterBar"
+      },
+      "text": {
+        "value": "全部",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#584871"
+      }
+    },
+    "layer-300": {
+      "id": "layer-300",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 236,
+        "y": 18,
+        "width": 34,
+        "height": 23
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-301"
+      ]
+    },
+    "layer-301": {
+      "id": "layer-301",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 23
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1/_:6",
+        "role": "node",
+        "definitionKey": "HeroFilterBar",
+        "resourceId": "ui/hero/filter-arrow",
+        "captureHash": "e39d391f93e09b9e0fb4f1112d3b76965e66b1201a67fdfabcc98e9c4b09d2b3"
+      },
+      "asset": "asset-100b1a45f400e98192ae12360e58c7fb33128fcd3ef65f9881924fbd9a47b410"
+    },
+    "layer-302": {
+      "id": "layer-302",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 34,
+        "y": 1122,
+        "width": 682,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-303"
+      ]
+    },
+    "layer-303": {
+      "id": "layer-303",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 682,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:2",
+        "role": "node",
+        "definitionKey": "HeroScreen",
+        "resourceId": "ui/hero/tabs-base",
+        "captureHash": "e5f3acbc176681ecf91c5865eb40586f0d133c10141dae578455e3459d691b73"
+      },
+      "asset": "asset-2dc50e0e937edd4750f844852589584b0461554b506f976c400496d4f8b50187"
+    },
+    "layer-304": {
+      "id": "layer-304",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 37,
+        "y": 1127,
+        "width": 222,
+        "height": 74
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-305"
+      ]
+    },
+    "layer-305": {
+      "id": "layer-305",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 222,
+        "height": 74
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:3",
+        "role": "node",
+        "definitionKey": "HeroScreen",
+        "resourceId": "ui/hero/tabs-selected",
+        "captureHash": "fd96227e18b329dab1da5573a510964c64449a58b7a449e98cdd060cabba23e9"
+      },
+      "asset": "asset-d64d9ae175fa8be9e9ecb662b947561bb59904319844d77f3da4a84c44593d63"
+    },
+    "layer-306": {
+      "id": "layer-306",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 34,
+        "y": 1122,
+        "width": 227,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:2",
+        "role": "node",
+        "definitionKey": "HeroScreen"
+      },
+      "children": [
+        "layer-307"
+      ]
+    },
+    "layer-307": {
+      "id": "layer-307",
+      "name": "英雄",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 24,
+        "width": 231,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:2/_",
+        "role": "node",
+        "definitionKey": "HeroScreen"
+      },
+      "text": {
+        "value": "英雄",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#584871"
+      }
+    },
+    "layer-308": {
+      "id": "layer-308",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 261,
+        "y": 1122,
+        "width": 227,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:3",
+        "role": "node",
+        "definitionKey": "HeroScreen"
+      },
+      "children": [
+        "layer-309"
+      ]
+    },
+    "layer-309": {
+      "id": "layer-309",
+      "name": "队伍",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 24,
+        "width": 231,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:3/_",
+        "role": "node",
+        "definitionKey": "HeroScreen"
+      },
+      "text": {
+        "value": "队伍",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#584871"
+      }
+    },
+    "layer-310": {
+      "id": "layer-310",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 489,
+        "y": 1122,
+        "width": 227,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:4",
+        "role": "node",
+        "definitionKey": "HeroScreen"
+      },
+      "children": [
+        "layer-311"
+      ]
+    },
+    "layer-311": {
+      "id": "layer-311",
+      "name": "羁绊",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 24,
+        "width": 231,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:4/_",
+        "role": "node",
+        "definitionKey": "HeroScreen"
+      },
+      "text": {
+        "value": "羁绊",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#584871"
+      }
+    },
+    "layer-312": {
+      "id": "layer-312",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 236,
+        "y": 1124,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-313"
+      ]
+    },
+    "layer-313": {
+      "id": "layer-313",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroScreen.root/_:6",
+        "role": "node",
+        "definitionKey": "HeroScreen",
+        "resourceId": "ui/mail/unread-dot",
+        "captureHash": "f9d9c5e67c02539c813c067ba845f1c2653a67d5dc3c4fa36e4430e0ccb14f26"
+      },
+      "asset": "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701"
+    },
+    "layer-314": {
+      "id": "layer-314",
+      "name": "MainNav",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1209,
+        "width": 750,
+        "height": 125
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav",
+        "role": "component",
+        "definitionKey": "MainNav"
+      },
+      "children": [
+        "layer-315",
+        "layer-317",
+        "layer-319",
+        "layer-322",
+        "layer-325",
+        "layer-328",
+        "layer-331",
+        "layer-334"
+      ]
+    },
+    "layer-315": {
+      "id": "layer-315",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 15,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-316"
+      ]
+    },
+    "layer-316": {
+      "id": "layer-316",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:0",
+        "role": "node",
+        "definitionKey": "MainNav",
+        "resourceId": "ui/hero/nav-base",
+        "captureHash": "43ee455659fe6e5715d7a4d34abfdc2a85cfb38a4298a48ad0e3e657bdd1ceaa"
+      },
+      "asset": "asset-881a76c7d4f54dba0ca40607dc3c7da036bf64eae315f4d300a149c07c9ff979"
+    },
+    "layer-317": {
+      "id": "layer-317",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 298,
+        "y": 15,
+        "width": 154,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-318"
+      ]
+    },
+    "layer-318": {
+      "id": "layer-318",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 154,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:3",
+        "role": "node",
+        "definitionKey": "MainNav",
+        "resourceId": "ui/hero/nav-selected",
+        "captureHash": "fbb3065745bf83a3b95978d169d987692a209450c3d29bd59445f6023a3b3496"
+      },
+      "asset": "asset-637fa770703b5359c43bdaccc4dbfa420a7285bf3562fd98a074acddf8d50409"
+    },
+    "layer-319": {
+      "id": "layer-319",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 150,
+        "height": 125
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:0",
+        "role": "node",
+        "definitionKey": "MainNav"
+      },
+      "children": [
+        "layer-320"
+      ]
+    },
+    "layer-320": {
+      "id": "layer-320",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 28,
+        "y": 28,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-321"
+      ]
+    },
+    "layer-321": {
+      "id": "layer-321",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:0/_",
+        "role": "node",
+        "definitionKey": "MainNav",
+        "resourceId": "ui/hero/nav-wheel",
+        "captureHash": "62b3c6c8d6419721867b5ff1200ce3405d03a959a632618e73ddcbdaa2ba3192"
+      },
+      "asset": "asset-c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01"
+    },
+    "layer-322": {
+      "id": "layer-322",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 150,
+        "y": 0,
+        "width": 150,
+        "height": 125
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:1",
+        "role": "node",
+        "definitionKey": "MainNav"
+      },
+      "children": [
+        "layer-323"
+      ]
+    },
+    "layer-323": {
+      "id": "layer-323",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 30,
+        "y": 28,
+        "width": 95,
+        "height": 83
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-324"
+      ]
+    },
+    "layer-324": {
+      "id": "layer-324",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 95,
+        "height": 83
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:1/_",
+        "role": "node",
+        "definitionKey": "MainNav",
+        "resourceId": "ui/hero/nav-island",
+        "captureHash": "e308eb0b39b7a362f4101af0890a07a3b02d6d4cf3e9508ba716c87b58c33a48"
+      },
+      "asset": "asset-eef66ecf19ec98c1d277fe18ce1f19bc7aa116fa7cc9db90c0cbd80d9a26470a"
+    },
+    "layer-325": {
+      "id": "layer-325",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 300,
+        "y": 0,
+        "width": 150,
+        "height": 125
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:2",
+        "role": "node",
+        "definitionKey": "MainNav"
+      },
+      "children": [
+        "layer-326"
+      ]
+    },
+    "layer-326": {
+      "id": "layer-326",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 18,
+        "y": 0,
+        "width": 115,
+        "height": 116
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-327"
+      ]
+    },
+    "layer-327": {
+      "id": "layer-327",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 115,
+        "height": 116
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:2/_",
+        "role": "node",
+        "definitionKey": "MainNav",
+        "resourceId": "ui/hero/nav-hero",
+        "captureHash": "a8651c0f2b6210db9edbc82511118aa669d02b74d4f42262634cefe94a1ae8e4"
+      },
+      "asset": "asset-ef36e9327dc2265320a7d69bdf54ae3b97e859e12e5867447f6cb5d8cc5d2c27"
+    },
+    "layer-328": {
+      "id": "layer-328",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 450,
+        "y": 0,
+        "width": 150,
+        "height": 125
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:3",
+        "role": "node",
+        "definitionKey": "MainNav"
+      },
+      "children": [
+        "layer-329"
+      ]
+    },
+    "layer-329": {
+      "id": "layer-329",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 29,
+        "y": 28,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-330"
+      ]
+    },
+    "layer-330": {
+      "id": "layer-330",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:3/_",
+        "role": "node",
+        "definitionKey": "MainNav",
+        "resourceId": "ui/hero/nav-wheel",
+        "captureHash": "62b3c6c8d6419721867b5ff1200ce3405d03a959a632618e73ddcbdaa2ba3192"
+      },
+      "asset": "asset-c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01"
+    },
+    "layer-331": {
+      "id": "layer-331",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 600,
+        "y": 0,
+        "width": 150,
+        "height": 125
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:4",
+        "role": "node",
+        "definitionKey": "MainNav"
+      },
+      "children": [
+        "layer-332"
+      ]
+    },
+    "layer-332": {
+      "id": "layer-332",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 29,
+        "y": 22,
+        "width": 89,
+        "height": 95
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-333"
+      ]
+    },
+    "layer-333": {
+      "id": "layer-333",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 89,
+        "height": 95
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:4/_",
+        "role": "node",
+        "definitionKey": "MainNav",
+        "resourceId": "ui/hero/nav-ship",
+        "captureHash": "e10cfd86d9a6e2b4e253932c68f6e9121103ad4c36947182603ff5c12979e4f3"
+      },
+      "asset": "asset-bb7051f7c35949ef45965eeb5dd0517823ba39b17bd97d5e318f5b34f18df526"
+    },
+    "layer-334": {
+      "id": "layer-334",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 560,
+        "y": 16,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-335"
+      ]
+    },
+    "layer-335": {
+      "id": "layer-335",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:6",
+        "role": "node",
+        "definitionKey": "MainNav",
+        "resourceId": "ui/mail/unread-dot",
+        "captureHash": "f9d9c5e67c02539c813c067ba845f1c2653a67d5dc3c4fa36e4430e0ccb14f26"
+      },
+      "asset": "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701"
+    }
+  },
+  "assets": {
+    "asset-10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a": {
+      "path": "assets/10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a.png",
+      "sha256": "10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1334
+    },
+    "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db": {
+      "path": "assets/c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db.png",
+      "sha256": "c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db",
+      "mime": "image/png",
+      "width": 750,
+      "height": 90
+    },
+    "asset-08b61c5c2795ac3eaffefd0225365dc33bb438635a1fd0f8d89d797664d46e6c": {
+      "path": "assets/08b61c5c2795ac3eaffefd0225365dc33bb438635a1fd0f8d89d797664d46e6c.png",
+      "sha256": "08b61c5c2795ac3eaffefd0225365dc33bb438635a1fd0f8d89d797664d46e6c",
+      "mime": "image/png",
+      "width": 217,
+      "height": 51
+    },
+    "asset-e218b3a431bf8bce4837e4c9dfd8aeec40f4dd9764ef4b77d89b9d508179d1f0": {
+      "path": "assets/e218b3a431bf8bce4837e4c9dfd8aeec40f4dd9764ef4b77d89b9d508179d1f0.png",
+      "sha256": "e218b3a431bf8bce4837e4c9dfd8aeec40f4dd9764ef4b77d89b9d508179d1f0",
+      "mime": "image/png",
+      "width": 720,
+      "height": 948
+    },
+    "asset-bec1db5e6c80dfdab306f2f308afaf307b08a4c83618de6dfd15b5d58d99ef5a": {
+      "path": "assets/bec1db5e6c80dfdab306f2f308afaf307b08a4c83618de6dfd15b5d58d99ef5a.png",
+      "sha256": "bec1db5e6c80dfdab306f2f308afaf307b08a4c83618de6dfd15b5d58d99ef5a",
+      "mime": "image/png",
+      "width": 696,
+      "height": 923
+    },
+    "asset-f871169300d22b0c1edb91f957f4f0038132b1a30acf3ea6db46ca8253a7a6ee": {
+      "path": "assets/f871169300d22b0c1edb91f957f4f0038132b1a30acf3ea6db46ca8253a7a6ee.png",
+      "sha256": "f871169300d22b0c1edb91f957f4f0038132b1a30acf3ea6db46ca8253a7a6ee",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40": {
+      "path": "assets/49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40.png",
+      "sha256": "49492075f009ad9af032fd5d278c90be42345aa4fc3a98ea98a51d053c291b40",
+      "mime": "image/png",
+      "width": 162,
+      "height": 180
+    },
+    "asset-31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95": {
+      "path": "assets/31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95.png",
+      "sha256": "31dab10f5b4970089073dc1f4e6ebe790bbe57ab29193b13ae018eb4d6c5cc95",
+      "mime": "image/png",
+      "width": 34,
+      "height": 42
+    },
+    "asset-0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b": {
+      "path": "assets/0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b.png",
+      "sha256": "0e81e8b8057ce67b11afa8674e788ff8e31f5953057b2129bc8dbe7e497faf1b",
+      "mime": "image/png",
+      "width": 39,
+      "height": 38
+    },
+    "asset-4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd": {
+      "path": "assets/4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd.png",
+      "sha256": "4aaabff5d1369b27c0eeddea90b90b97ea09115901ade96a54f46f38b013f0bd",
+      "mime": "image/png",
+      "width": 30,
+      "height": 28
+    },
+    "asset-d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a": {
+      "path": "assets/d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a.png",
+      "sha256": "d99275ee264d91c69d38587ce1a603a26d71fa91dc873b76e01bd6e34245c00a",
+      "mime": "image/png",
+      "width": 30,
+      "height": 28
+    },
+    "asset-07f34e2275c5ae7ed0f35eda6be59f174fc702fa6f4643ac2d43343ae620dc67": {
+      "path": "assets/07f34e2275c5ae7ed0f35eda6be59f174fc702fa6f4643ac2d43343ae620dc67.png",
+      "sha256": "07f34e2275c5ae7ed0f35eda6be59f174fc702fa6f4643ac2d43343ae620dc67",
+      "mime": "image/png",
+      "width": 35,
+      "height": 44
+    },
+    "asset-f55224ac7a12cd08a75534b1431a083d6b7c4fc6e5ddd0b2ed2e8cbac4b32b70": {
+      "path": "assets/f55224ac7a12cd08a75534b1431a083d6b7c4fc6e5ddd0b2ed2e8cbac4b32b70.png",
+      "sha256": "f55224ac7a12cd08a75534b1431a083d6b7c4fc6e5ddd0b2ed2e8cbac4b32b70",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-12962be49d3d908ead0712303bcb43f67929e756578b85ef39f1795b365515a5": {
+      "path": "assets/12962be49d3d908ead0712303bcb43f67929e756578b85ef39f1795b365515a5.png",
+      "sha256": "12962be49d3d908ead0712303bcb43f67929e756578b85ef39f1795b365515a5",
+      "mime": "image/png",
+      "width": 34,
+      "height": 42
+    },
+    "asset-0f6dbb3f31a99f1dbf8c3155bde1c3058fd5696de0224e9d90cfe00921837698": {
+      "path": "assets/0f6dbb3f31a99f1dbf8c3155bde1c3058fd5696de0224e9d90cfe00921837698.png",
+      "sha256": "0f6dbb3f31a99f1dbf8c3155bde1c3058fd5696de0224e9d90cfe00921837698",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-eadb9f66cee20e63cf3744635e004ac9e7500c2fdf2ddd6e81a2b6de5a63c743": {
+      "path": "assets/eadb9f66cee20e63cf3744635e004ac9e7500c2fdf2ddd6e81a2b6de5a63c743.png",
+      "sha256": "eadb9f66cee20e63cf3744635e004ac9e7500c2fdf2ddd6e81a2b6de5a63c743",
+      "mime": "image/png",
+      "width": 34,
+      "height": 42
+    },
+    "asset-5823f5fcbe59813055fa485b36c8c29350c2ee211f8e4c26d5a2414306bb50e3": {
+      "path": "assets/5823f5fcbe59813055fa485b36c8c29350c2ee211f8e4c26d5a2414306bb50e3.png",
+      "sha256": "5823f5fcbe59813055fa485b36c8c29350c2ee211f8e4c26d5a2414306bb50e3",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-202397c48d75b92a31a1bf578973ae662832e06adc12c866a43307ee066cbdc0": {
+      "path": "assets/202397c48d75b92a31a1bf578973ae662832e06adc12c866a43307ee066cbdc0.png",
+      "sha256": "202397c48d75b92a31a1bf578973ae662832e06adc12c866a43307ee066cbdc0",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae": {
+      "path": "assets/d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae.png",
+      "sha256": "d03ef6d0d653439698671f699ff8ac4edfaa79b1380e5b1d0be8005a137ee4ae",
+      "mime": "image/png",
+      "width": 166,
+      "height": 244
+    },
+    "asset-06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905": {
+      "path": "assets/06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905.png",
+      "sha256": "06166300e0cd5b5a610003fad83f4768e3f981ea915aaedd1f0a69e077918905",
+      "mime": "image/png",
+      "width": 124,
+      "height": 26
+    },
+    "asset-a98f973e998d2f4ec093d7973f57ee805c95c2f1fa4a9cbc4e464c6d8aad0e1c": {
+      "path": "assets/a98f973e998d2f4ec093d7973f57ee805c95c2f1fa4a9cbc4e464c6d8aad0e1c.png",
+      "sha256": "a98f973e998d2f4ec093d7973f57ee805c95c2f1fa4a9cbc4e464c6d8aad0e1c",
+      "mime": "image/png",
+      "width": 99,
+      "height": 22
+    },
+    "asset-1084b63e0e41ad483993b325ea53208faf4e79ec7c2e9d2dbf54d416eb7fafb2": {
+      "path": "assets/1084b63e0e41ad483993b325ea53208faf4e79ec7c2e9d2dbf54d416eb7fafb2.png",
+      "sha256": "1084b63e0e41ad483993b325ea53208faf4e79ec7c2e9d2dbf54d416eb7fafb2",
+      "mime": "image/png",
+      "width": 33,
+      "height": 22
+    },
+    "asset-9c381a883fa82e691281c8f10e75fdd48aea6d437de49adda4539686af44798a": {
+      "path": "assets/9c381a883fa82e691281c8f10e75fdd48aea6d437de49adda4539686af44798a.png",
+      "sha256": "9c381a883fa82e691281c8f10e75fdd48aea6d437de49adda4539686af44798a",
+      "mime": "image/png",
+      "width": 66,
+      "height": 22
+    },
+    "asset-3b80d708d0dbe75aca7d371ebdc4b1336d68714d39a78f70e05af62b227f6242": {
+      "path": "assets/3b80d708d0dbe75aca7d371ebdc4b1336d68714d39a78f70e05af62b227f6242.png",
+      "sha256": "3b80d708d0dbe75aca7d371ebdc4b1336d68714d39a78f70e05af62b227f6242",
+      "mime": "image/png",
+      "width": 22,
+      "height": 22
+    },
+    "asset-a09686ec67670381ec2b0d2c0a9f529aa8d30b5497932e1be0aa6520711f6f85": {
+      "path": "assets/a09686ec67670381ec2b0d2c0a9f529aa8d30b5497932e1be0aa6520711f6f85.png",
+      "sha256": "a09686ec67670381ec2b0d2c0a9f529aa8d30b5497932e1be0aa6520711f6f85",
+      "mime": "image/png",
+      "width": 88,
+      "height": 22
+    },
+    "asset-7c8d20fb8b25dbe733ee2fb427767983bf0933b544a2e3a5654f4eeb67e2f217": {
+      "path": "assets/7c8d20fb8b25dbe733ee2fb427767983bf0933b544a2e3a5654f4eeb67e2f217.png",
+      "sha256": "7c8d20fb8b25dbe733ee2fb427767983bf0933b544a2e3a5654f4eeb67e2f217",
+      "mime": "image/png",
+      "width": 55,
+      "height": 22
+    },
+    "asset-e3556bd35d10bc8aa80fbb5879921811168ea274e29c9adfb521a1eb7ce12e72": {
+      "path": "assets/e3556bd35d10bc8aa80fbb5879921811168ea274e29c9adfb521a1eb7ce12e72.png",
+      "sha256": "e3556bd35d10bc8aa80fbb5879921811168ea274e29c9adfb521a1eb7ce12e72",
+      "mime": "image/png",
+      "width": 77,
+      "height": 22
+    },
+    "asset-9b79d0914f2c71717bd042658cf74efa7ee91ea13f7f9c69bc3701bb9aa6a2cb": {
+      "path": "assets/9b79d0914f2c71717bd042658cf74efa7ee91ea13f7f9c69bc3701bb9aa6a2cb.png",
+      "sha256": "9b79d0914f2c71717bd042658cf74efa7ee91ea13f7f9c69bc3701bb9aa6a2cb",
+      "mime": "image/png",
+      "width": 44,
+      "height": 22
+    },
+    "asset-24830db3af5fd0bb4671fddde9bba9c285687585e18d81fdaabc2ae7334aafa8": {
+      "path": "assets/24830db3af5fd0bb4671fddde9bba9c285687585e18d81fdaabc2ae7334aafa8.png",
+      "sha256": "24830db3af5fd0bb4671fddde9bba9c285687585e18d81fdaabc2ae7334aafa8",
+      "mime": "image/png",
+      "width": 280,
+      "height": 52
+    },
+    "asset-80cea0e6be6116c27d2e013d179dab52202425c4ae2f420741f61a0777e8aad2": {
+      "path": "assets/80cea0e6be6116c27d2e013d179dab52202425c4ae2f420741f61a0777e8aad2.png",
+      "sha256": "80cea0e6be6116c27d2e013d179dab52202425c4ae2f420741f61a0777e8aad2",
+      "mime": "image/png",
+      "width": 29,
+      "height": 27
+    },
+    "asset-100b1a45f400e98192ae12360e58c7fb33128fcd3ef65f9881924fbd9a47b410": {
+      "path": "assets/100b1a45f400e98192ae12360e58c7fb33128fcd3ef65f9881924fbd9a47b410.png",
+      "sha256": "100b1a45f400e98192ae12360e58c7fb33128fcd3ef65f9881924fbd9a47b410",
+      "mime": "image/png",
+      "width": 34,
+      "height": 23
+    },
+    "asset-2dc50e0e937edd4750f844852589584b0461554b506f976c400496d4f8b50187": {
+      "path": "assets/2dc50e0e937edd4750f844852589584b0461554b506f976c400496d4f8b50187.png",
+      "sha256": "2dc50e0e937edd4750f844852589584b0461554b506f976c400496d4f8b50187",
+      "mime": "image/png",
+      "width": 682,
+      "height": 80
+    },
+    "asset-d64d9ae175fa8be9e9ecb662b947561bb59904319844d77f3da4a84c44593d63": {
+      "path": "assets/d64d9ae175fa8be9e9ecb662b947561bb59904319844d77f3da4a84c44593d63.png",
+      "sha256": "d64d9ae175fa8be9e9ecb662b947561bb59904319844d77f3da4a84c44593d63",
+      "mime": "image/png",
+      "width": 222,
+      "height": 74
+    },
+    "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701": {
+      "path": "assets/c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701.png",
+      "sha256": "c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701",
+      "mime": "image/png",
+      "width": 24,
+      "height": 24
+    },
+    "asset-881a76c7d4f54dba0ca40607dc3c7da036bf64eae315f4d300a149c07c9ff979": {
+      "path": "assets/881a76c7d4f54dba0ca40607dc3c7da036bf64eae315f4d300a149c07c9ff979.png",
+      "sha256": "881a76c7d4f54dba0ca40607dc3c7da036bf64eae315f4d300a149c07c9ff979",
+      "mime": "image/png",
+      "width": 750,
+      "height": 110
+    },
+    "asset-637fa770703b5359c43bdaccc4dbfa420a7285bf3562fd98a074acddf8d50409": {
+      "path": "assets/637fa770703b5359c43bdaccc4dbfa420a7285bf3562fd98a074acddf8d50409.png",
+      "sha256": "637fa770703b5359c43bdaccc4dbfa420a7285bf3562fd98a074acddf8d50409",
+      "mime": "image/png",
+      "width": 154,
+      "height": 110
+    },
+    "asset-c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01": {
+      "path": "assets/c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01.png",
+      "sha256": "c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01",
+      "mime": "image/png",
+      "width": 90,
+      "height": 84
+    },
+    "asset-eef66ecf19ec98c1d277fe18ce1f19bc7aa116fa7cc9db90c0cbd80d9a26470a": {
+      "path": "assets/eef66ecf19ec98c1d277fe18ce1f19bc7aa116fa7cc9db90c0cbd80d9a26470a.png",
+      "sha256": "eef66ecf19ec98c1d277fe18ce1f19bc7aa116fa7cc9db90c0cbd80d9a26470a",
+      "mime": "image/png",
+      "width": 95,
+      "height": 83
+    },
+    "asset-ef36e9327dc2265320a7d69bdf54ae3b97e859e12e5867447f6cb5d8cc5d2c27": {
+      "path": "assets/ef36e9327dc2265320a7d69bdf54ae3b97e859e12e5867447f6cb5d8cc5d2c27.png",
+      "sha256": "ef36e9327dc2265320a7d69bdf54ae3b97e859e12e5867447f6cb5d8cc5d2c27",
+      "mime": "image/png",
+      "width": 115,
+      "height": 116
+    },
+    "asset-bb7051f7c35949ef45965eeb5dd0517823ba39b17bd97d5e318f5b34f18df526": {
+      "path": "assets/bb7051f7c35949ef45965eeb5dd0517823ba39b17bd97d5e318f5b34f18df526.png",
+      "sha256": "bb7051f7c35949ef45965eeb5dd0517823ba39b17bd97d5e318f5b34f18df526",
+      "mime": "image/png",
+      "width": 89,
+      "height": 95
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Group (layer-12): overflow mask kept as clip viewport",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

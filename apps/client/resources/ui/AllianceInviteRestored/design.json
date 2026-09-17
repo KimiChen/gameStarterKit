@@ -1,0 +1,761 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "AllianceInvitePage",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-2"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "AllianceInvite",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-3",
+        "layer-5"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "AllianceInvite/Mask",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Mask",
+        "role": "node",
+        "definitionKey": "AllianceInvite"
+      },
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "AllianceInvite/Mask / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Mask",
+        "role": "fill",
+        "definitionKey": "AllianceInvite",
+        "captureHash": "cb3a3628a4ff9bac7d0cc9b2accee150e829eb53bca56bbb3819114d9e4f4df4"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "AllianceInvite/Window",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 318,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window",
+        "role": "node",
+        "definitionKey": "AllianceInvite"
+      },
+      "children": [
+        "layer-6",
+        "layer-9",
+        "layer-10",
+        "layer-13",
+        "layer-15",
+        "layer-16",
+        "layer-19",
+        "layer-21",
+        "layer-22",
+        "layer-28"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "PopupBackground",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:AllianceInvitePage/AllianceInvite/AllianceInvite/Window/PopupBackground",
+        "role": "component",
+        "definitionKey": "PopupBackground"
+      },
+      "children": [
+        "layer-7"
+      ]
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-8"
+      ]
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:AllianceInvitePage/AllianceInvite/AllianceInvite/Window/PopupBackground/_:0",
+        "role": "node",
+        "definitionKey": "PopupBackground",
+        "resourceId": "ui/popup/prompt",
+        "captureHash": "ac963780549a9a64ef14b229ab74955582209e489156a43a315d4c03e4d3b977"
+      },
+      "asset": "asset-d0e9d4de559edab68fdb0c9c1abca50a431a91cc5247eae25305c2ca512a006d"
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "邀请成员",
+      "kind": "text",
+      "frame": {
+        "x": 86,
+        "y": 25,
+        "width": 536,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/_:0",
+        "role": "node",
+        "definitionKey": "AllianceInvite"
+      },
+      "text": {
+        "value": "邀请成员",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "CloseButton",
+      "kind": "group",
+      "frame": {
+        "x": 621,
+        "y": 6,
+        "width": 72,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:AllianceInvitePage/AllianceInvite/AllianceInvite/Window/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
+      },
+      "children": [
+        "layer-11"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 11,
+        "y": 11,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-12"
+      ]
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:AllianceInvitePage/AllianceInvite/AllianceInvite/Window/CloseButton/_",
+        "role": "node",
+        "definitionKey": "CloseButton",
+        "resourceId": "ui/popup/close",
+        "captureHash": "e54a38834ed5cf3ad76fd53dfd8a911f7332986480aa304c7255a44b53f13a4e"
+      },
+      "asset": "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534"
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 15,
+        "y": 106,
+        "width": 596,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-14"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 596,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/_:0",
+        "role": "node",
+        "definitionKey": "AllianceInvite",
+        "resourceId": "ui/alliance/input-bg",
+        "captureHash": "381e827672bc6345ce31dce463d7663da92651b9c9b98de3929b21b0b7e0ab6f"
+      },
+      "asset": "asset-1f8d1fc5f70531e0e273af2764488518ca6d268330c75a02d2691cb64f4bd992"
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "点击此处输入想要搜索的玩家",
+      "kind": "text",
+      "frame": {
+        "x": 13,
+        "y": 120,
+        "width": 600,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/_:1",
+        "role": "node",
+        "definitionKey": "AllianceInvite"
+      },
+      "text": {
+        "value": "点击此处输入想要搜索的玩家",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#6f6555"
+      }
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "AllianceInvite/Search",
+      "kind": "group",
+      "frame": {
+        "x": 622,
+        "y": 96,
+        "width": 69,
+        "height": 76
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/AllianceInvite/Search",
+        "role": "node",
+        "definitionKey": "AllianceInvite"
+      },
+      "children": [
+        "layer-17"
+      ]
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 69,
+        "height": 76
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-18"
+      ]
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 69,
+        "height": 76
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/AllianceInvite/Search/_",
+        "role": "node",
+        "definitionKey": "AllianceInvite",
+        "resourceId": "ui/alliance/invite-search",
+        "captureHash": "d9137c20600b5d491d7b60b05f052dce2eb82a3c44e3282f7989cdf55f0901de"
+      },
+      "asset": "asset-4ca2fa0b11991ba858c86628388a16cbbb4f8232df241b6fa012053764f5ead3"
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 300,
+        "y": 428,
+        "width": 108,
+        "height": 116
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-20"
+      ]
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 108,
+        "height": 116
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/_:1",
+        "role": "node",
+        "definitionKey": "AllianceInvite",
+        "resourceId": "ui/backpack/empty",
+        "captureHash": "b869dd65727a03e34918371c2fc77bfe58826d6f95b9f3799b6510f34267daee"
+      },
+      "asset": "asset-593adc857b795cbc5b0a35d6adb7744d16e245e04bf9ce9f7bacaf334fde9144"
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "找不到符合条件的玩家",
+      "kind": "text",
+      "frame": {
+        "x": 10,
+        "y": 583,
+        "width": 688,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/_:2",
+        "role": "node",
+        "definitionKey": "AllianceInvite"
+      },
+      "text": {
+        "value": "找不到符合条件的玩家",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 56,
+        "y": 850,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/_:0",
+        "role": "node",
+        "definitionKey": "AllianceInvite"
+      },
+      "children": [
+        "layer-23"
+      ]
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "ConfirmButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-24"
+      ]
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-25",
+        "layer-27"
+      ]
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-26"
+      ]
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:AllianceInvitePage/AllianceInvite/AllianceInvite/Window/_:0/ConfirmButton/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/confirm",
+        "captureHash": "234047b8ed5f1919407bc7516d79c7cd613b5bc9514e33bce648a1103a9a79b8"
+      },
+      "asset": "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6"
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "ActionButton/Label",
+      "kind": "text",
+      "frame": {
+        "x": 4,
+        "y": 25,
+        "width": 247,
+        "height": 86
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:AllianceInvitePage/AllianceInvite/AllianceInvite/Window/_:0/ConfirmButton/ActionButton/ActionButton/Label",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "邀请",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#643e14",
+        "color": "#ffffff"
+      }
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 397,
+        "y": 850,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInvite.root/AllianceInvite/AllianceInvite/Window/_:1",
+        "role": "node",
+        "definitionKey": "AllianceInvite"
+      },
+      "children": [
+        "layer-29"
+      ]
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "ConfirmButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-30"
+      ]
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-31",
+        "layer-33"
+      ]
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-32"
+      ]
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:AllianceInvitePage/AllianceInvite/AllianceInvite/Window/_:1/ConfirmButton/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/confirm",
+        "captureHash": "234047b8ed5f1919407bc7516d79c7cd613b5bc9514e33bce648a1103a9a79b8"
+      },
+      "asset": "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6"
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "ActionButton/Label",
+      "kind": "text",
+      "frame": {
+        "x": 4,
+        "y": 25,
+        "width": 247,
+        "height": 86
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:AllianceInvitePage/AllianceInvite/AllianceInvite/Window/_:1/ConfirmButton/ActionButton/ActionButton/Label",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "公开邀请",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#643e14",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-d0e9d4de559edab68fdb0c9c1abca50a431a91cc5247eae25305c2ca512a006d": {
+      "path": "assets/d0e9d4de559edab68fdb0c9c1abca50a431a91cc5247eae25305c2ca512a006d.png",
+      "sha256": "d0e9d4de559edab68fdb0c9c1abca50a431a91cc5247eae25305c2ca512a006d",
+      "mime": "image/png",
+      "width": 708,
+      "height": 992
+    },
+    "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534": {
+      "path": "assets/08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534.png",
+      "sha256": "08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534",
+      "mime": "image/png",
+      "width": 50,
+      "height": 50
+    },
+    "asset-1f8d1fc5f70531e0e273af2764488518ca6d268330c75a02d2691cb64f4bd992": {
+      "path": "assets/1f8d1fc5f70531e0e273af2764488518ca6d268330c75a02d2691cb64f4bd992.png",
+      "sha256": "1f8d1fc5f70531e0e273af2764488518ca6d268330c75a02d2691cb64f4bd992",
+      "mime": "image/png",
+      "width": 596,
+      "height": 54
+    },
+    "asset-4ca2fa0b11991ba858c86628388a16cbbb4f8232df241b6fa012053764f5ead3": {
+      "path": "assets/4ca2fa0b11991ba858c86628388a16cbbb4f8232df241b6fa012053764f5ead3.png",
+      "sha256": "4ca2fa0b11991ba858c86628388a16cbbb4f8232df241b6fa012053764f5ead3",
+      "mime": "image/png",
+      "width": 69,
+      "height": 76
+    },
+    "asset-593adc857b795cbc5b0a35d6adb7744d16e245e04bf9ce9f7bacaf334fde9144": {
+      "path": "assets/593adc857b795cbc5b0a35d6adb7744d16e245e04bf9ce9f7bacaf334fde9144.png",
+      "sha256": "593adc857b795cbc5b0a35d6adb7744d16e245e04bf9ce9f7bacaf334fde9144",
+      "mime": "image/png",
+      "width": 108,
+      "height": 116
+    },
+    "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6": {
+      "path": "assets/4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6.png",
+      "sha256": "4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}
