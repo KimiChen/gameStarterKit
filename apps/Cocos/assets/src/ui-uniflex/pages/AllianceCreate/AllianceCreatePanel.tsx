@@ -1,8 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
-import { CloseButton } from '../../components/popup/CloseButton';
-import { PopupBackground } from '../../components/popup/PopupBackground';
+import { PopupFrame } from '../../components/popup/PopupFrame';
 
 export interface AllianceCreatePanelProps {
     readonly visible?: boolean;
@@ -27,17 +26,9 @@ export const AllianceCreatePanel = defineComponent<AllianceCreatePanelProps>((p)
     return (
         <view name="AllianceCreate" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <view name="AllianceCreate/Mask" interaction="press"
-                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
-            <view name="AllianceCreate/Window"
-                style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
-                <PopupBackground kind="prompt" />
-                <text value={p.title ?? '创建联盟'}
-                    style={{ position: 'absolute', left: 90, top: 18, width: 528, height: 58,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                        outlineColor: '#593D84', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-                <CloseButton onClick={p.onClose} />
+            <PopupFrame title={p.title ?? '创建联盟'} kind="prompt" left={21} top={318} width={708} height={992}
+                onClose={p.onClose} />
+            <view style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
                 <image source={imageRef('ui/alliance/nation-flag')}
                     style={{ position: 'absolute', left: 611, top: 99, width: 67, height: 43 }} />
                 <image source={imageRef('ui/alliance/flag')}

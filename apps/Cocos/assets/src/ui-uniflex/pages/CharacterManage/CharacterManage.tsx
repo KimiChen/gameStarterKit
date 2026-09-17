@@ -112,9 +112,14 @@ export const CharacterManage = defineView<CharacterManageParams | void>({ zIndex
         params.onSelectPlayer?.(id);
     };
     const showPlayers = tab === 'mine';
+    const panelLeft = 21;
+    const panelTop = 316;
     return (
-        <PopupFrame title={params.title ?? '角色管理'} kind="profile" width={708} height={992} onClose={params.onClose}>
-            <view name="CharacterManage/Content" style={{ width: '100%', height: '100%' }}>
+        <view name="CharacterManagePage" style={{ width: 750, height: 1624 }}>
+            <PopupFrame title={params.title ?? '角色管理'} kind="profile" left={panelLeft} top={panelTop}
+                width={708} height={992} onClose={params.onClose} />
+            <view name="CharacterManage/Content"
+                style={{ position: 'absolute', left: panelLeft, top: panelTop, width: 708, height: 992 }}>
                 <CharacterManageTab label={tabs[0].label} active={tab === 'mine'} left={tabs[0].left} onClick={() => setTab('mine')} />
                 <CharacterManageTab label={tabs[1].label} active={tab === 'recommend'} left={tabs[1].left} onClick={() => setTab('recommend')} />
                 <CharacterManageTab label={tabs[2].label} active={tab === 'all'} left={tabs[2].left} onClick={() => setTab('all')} />
@@ -144,6 +149,6 @@ export const CharacterManage = defineView<CharacterManageParams | void>({ zIndex
                         font: fontRef('fonts/regular', 700), fontSize: 28, color: '#837A91', bold: true,
                         horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
             </view>
-        </PopupFrame>
+        </view>
     );
 });

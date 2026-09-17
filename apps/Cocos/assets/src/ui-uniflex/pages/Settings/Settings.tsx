@@ -30,18 +30,26 @@ const defaultItems: readonly SettingsMenuItem[] = [
     { id: 'exit', label: '退出游戏', left: 21, top: 849 },
 ];
 
+const PANEL_LEFT = 21;
+const PANEL_TOP = 171;
+const PANEL_WIDTH = 708;
+const PANEL_HEIGHT = 992;
+
 export const Settings = defineView<SettingsParams | void>({ zIndex: 'window' }, (context) => {
     const params = context.params ?? {};
     const items = params.items ?? defaultItems;
     return (
-        <PopupFrame title={params.title ?? '设置'} kind="settings" width={708} height={992} onClose={params.onClose}>
-            <view name="Settings/Content" style={{ width: '100%', height: '100%' }}>
+        <view name="SettingsPage" style={{ width: 750, height: 1334 }}>
+            <PopupFrame title={params.title ?? '设置'} kind="settings" left={PANEL_LEFT} top={PANEL_TOP}
+                width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={params.onClose} />
+            <view name="Settings/Content"
+                style={{ position: 'absolute', left: PANEL_LEFT, top: PANEL_TOP, width: PANEL_WIDTH, height: PANEL_HEIGHT }}>
                 <For each={items} key="id">
                     {(item) => <SettingsMenuButton id={item.id} label={item.label} left={item.left} top={item.top} onSelect={params.onSelect} />}
                 </For>
                 <image source={imageRef('ui/settings/divider')}
                     style={{ position: 'absolute', left: 23, top: 537, width: 662, height: 3, sizeMode: 'sliced' }} />
             </view>
-        </PopupFrame>
+        </view>
     );
 });
