@@ -2,6 +2,7 @@ import { defineComponent, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
 import { CyanButton } from '../../components/button/CyanButton';
+import { BackButton } from '../../components/chrome/BackButton';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 
@@ -46,10 +47,7 @@ export const AllianceWarPanel = defineComponent<AllianceWarPanelProps>((p) => {
 
             <image source={imageRef('ui/mail/footer')}
                 style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="AllianceWar/Back" interaction="press" onClick={back}
-                style={{ position: 'absolute', left: 13, top: 1396, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <BackButton top={1396} onClick={back} />
             <view style={{ position: 'absolute', left: 111.125, top: 1373.25, width: 255, height: 102, scale: 0.75 }}>
                 <CyanButton label="自动集结" onClick={() => p.onAction?.('auto_rally')} />
             </view>

@@ -1,6 +1,7 @@
 import { defineComponent, For, useMemo } from '@uniflex/compiler';
 import { imageRef } from '../../../kits/uniflex/api/core/index';
 import { IconCaptionButton } from '../../components/button/IconCaptionButton';
+import { BackButton } from '../../components/chrome/BackButton';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { AllianceTechLink, type AllianceTechLinkData } from './AllianceTechLink';
 import { AllianceTechNode, allianceTechNodeSize, type AllianceTechNodeData } from './AllianceTechNode';
@@ -142,10 +143,7 @@ export const AllianceTechPanel = defineComponent<AllianceTechPanelProps>((p) => 
 
             <image source={imageRef('ui/mail/footer')}
                 style={{ position: 'absolute', left: 0, top: FOOTER_TOP, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="AllianceTech/Back" interaction="press" onClick={back}
-                style={{ position: 'absolute', left: 13, top: 1396, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <BackButton top={1396} onClick={back} />
             <IconCaptionButton icon={rankIcon} label={rankLabel} left={646} top={1376}
                 iconWidth={82} iconHeight={78} labelTop={71} labelHeight={26}
                 onClick={() => p.onAction?.('open_tech_rank')} />

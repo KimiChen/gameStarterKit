@@ -1,5 +1,6 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../kits/uniflex/api/core/index';
+import { BackButton } from '../../components/chrome/BackButton';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceBoardApplyPanel } from './AllianceBoardApplyPanel';
@@ -49,10 +50,7 @@ export const AllianceBoardPanel = defineComponent<AllianceBoardPanelProps>((p) =
 
             <image source={imageRef('ui/mail/footer')}
                 style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="AllianceBoard/Back" interaction="press" onClick={back}
-                style={{ position: 'absolute', left: 13, top: 1396, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <BackButton top={1396} onClick={back} />
             <AllianceBoardMessagePanel visible={tab === 'board'} placeholder={p.placeholder}
                 onSend={p.onSend} onAction={p.onAction} />
         </view>
