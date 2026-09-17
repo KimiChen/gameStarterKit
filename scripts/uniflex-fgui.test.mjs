@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fairyId, childId } from "./lib/uniflex-fgui/ids.mjs";
 import { toScale9Grid } from "./lib/uniflex-fgui/nine-slice.mjs";
 import { parseCssColor, toFguiXmlColor } from "./lib/uniflex-fgui/bytes.mjs";
 import { buildProjectIR } from "./lib/uniflex-fgui/ir.mjs";
 import { exportFgui } from "./lib/uniflex-fgui/emit.mjs";
+import { servePreview, resolvePreviewFile } from "./lib/uniflex-fgui/preview.mjs";
+import {
+    CATALOG_TITLES, catalogIdFor, loadMergedScreens, resolvePreviewGroups,
+} from "./lib/uniflex-fgui/catalog.mjs";
 import { FAIRYGUI_DOM, verifyFairyguiDomTarball } from "./lib/uniflex-fgui/vendor.mjs";
 import { loadImageCatalog } from "./lib/uniflex-fgui/resources.mjs";
 import { loadScreenCatalog } from "./lib/uniflex-screens.mjs";
@@ -132,6 +136,12 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(previewHtml, /#101318/);
         assert.match(previewHtml, /regular\.ttf/);
         assert.match(previewHtml, /get\("psd"\)/);
+        assert.match(previewHtml, /FairyGUI 预览/);
+        assert.match(previewHtml, /id="catalog"/);
+        assert.match(previewHtml, /提示弹窗/);
+        assert.match(previewHtml, />目录</);
+        assert.match(previewHtml, /bindLabeled/);
+        assert.match(previewHtml, /currentId, go/);
         assert.ok(existsSync(join(out, "preview/regular.ttf")));
         assert.match(frameXml, /name="PopupFrame\/Content"/);
         assert.doesNotMatch(frameXml, /Prompt\/Message/);
@@ -359,9 +369,14 @@ test("multi-page export shares Common and inlines PopupBackground kind variants"
         assert.match(smallXml, /small\.png/);
         assert.match(smallXml, / pkg="/);
         assert.match(preview, /id="picker"/);
-        assert.match(preview, /\?screen=/);
+        assert.match(preview, /query\.set\("screen"/);
         assert.match(preview, /"id":"small-popup"/);
         assert.match(preview, /"id":"confirm"/);
+        assert.match(preview, /id="catalog"/);
+        assert.match(preview, /catalogId/);
+        assert.equal(CATALOG_TITLES["提示弹窗"], "prompt");
+        assert.equal(catalogIdFor([{ id: "prompt" }]), "catalog");
+        assert.equal(catalogIdFor([{ id: "preview-home" }]), "preview-home");
         assert.equal(JSON.parse(readFileSync(join(out, "mapping.json"), "utf8")).Confirm.package, "UniFlex_Confirm");
         assert.equal(JSON.parse(readFileSync(join(out, "report.json"), "utf8")).screens.length, 3);
     } finally {
@@ -933,6 +948,90 @@ test("QuantityControl inspect skin overrides the white default and IconLabel kee
         rmSync(out, { recursive: true, force: true });
     }
 });
+
+test("merged catalog screens keep the first group and prefix package urls", () => {
+    const a = mkdtempSync(join(tmpdir(), "fgui-group-a-"));
+    const b = mkdtempSync(join(tmpdir(), "fgui-group-b-"));
+    try {
+        writeFakeExport(a, "popups", {
+            Prompt: { package: "UniFlex_Prompt", component: "Prompt" },
+        }, ["prompt"]);
+        writeFakeExport(b, "home-shop", {
+            Prompt: { package: "UniFlex_Prompt", component: "Prompt" },
+            PreviewHome: { package: "UniFlex_PreviewHome", component: "PreviewHome" },
+            ShopGetItem: { package: "UniFlex_ShopGetItem", component: "ShopGetItem" },
+        }, ["prompt", "preview-home", "shop-getitem"]);
+        const catalog = { screens: [
+            { id: "prompt", componentName: "Prompt", canvas: { width: 750, height: 1624 } },
+            { id: "preview-home", componentName: "PreviewHome", canvas: { width: 750, height: 1424 } },
+            { id: "shop-getitem", componentName: "ShopGetItem", canvas: { width: 750, height: 1624 } },
+        ] };
+        const groups = resolvePreviewGroups({ root: "/", out: a, merge: [b] });
+        const screens = loadMergedScreens(groups, catalog);
+        assert.deepEqual(screens.map((entry) => entry.id), ["prompt", "preview-home", "shop-getitem"]);
+        assert.equal(screens[0].group, basename(a));
+        assert.equal(screens.find((entry) => entry.id === "shop-getitem").packageName, "UniFlex_ShopGetItem");
+        const file = resolvePreviewFile(`${basename(b)}/UniFlex_ShopGetItem/package.xml`, {
+            multi: true,
+            assets: join(a, "preview"),
+            byName: new Map(groups.map((group) => [group.name, group])),
+        });
+        assert.equal(file, join(b, "preview/UniFlex_ShopGetItem/package.xml"));
+        assert.equal(resolvePreviewFile("../secret", {
+            multi: false, assets: join(a, "preview"), byName: new Map(),
+        }), null);
+    } finally {
+        rmSync(a, { recursive: true, force: true });
+        rmSync(b, { recursive: true, force: true });
+    }
+});
+
+test("preview server catalog page lists merged screens", async () => {
+    const a = mkdtempSync(join(tmpdir(), "fgui-serve-a-"));
+    const b = mkdtempSync(join(tmpdir(), "fgui-serve-b-"));
+    try {
+        writeFakeExport(a, "popups", {
+            Prompt: { package: "UniFlex_Prompt", component: "Prompt" },
+        }, ["prompt"]);
+        writeFakeExport(b, "home-shop", {
+            PreviewHome: { package: "UniFlex_PreviewHome", component: "PreviewHome" },
+        }, ["preview-home"]);
+        writeFileSync(join(a, "preview/fairygui.js"), "window.fgui={};");
+        const server = await servePreview({ root, out: a, merge: [b], port: 0 });
+        try {
+            const html = await (await fetch(server.url)).text();
+            assert.match(html, /FairyGUI 预览/);
+            assert.match(html, /"id":"prompt"/);
+            assert.match(html, /"id":"preview-home"/);
+            assert.match(html, /bindCatalogClicks/);
+            assert.match(html, /bindLabeled/);
+            assert.match(html, /currentId, go/);
+            const pkg = await fetch(`${server.url}${basename(a)}/UniFlex_Prompt/package.xml`);
+            assert.equal(pkg.status, 200);
+            assert.match(await pkg.text(), /UniFlex_Prompt/);
+        } finally {
+            await server.close();
+        }
+    } finally {
+        rmSync(a, { recursive: true, force: true });
+        rmSync(b, { recursive: true, force: true });
+    }
+});
+
+function writeFakeExport(dir, _name, mapping, screens) {
+    mkdirSync(join(dir, "preview"), { recursive: true });
+    writeFileSync(join(dir, "preview", "index.html"), "<html></html>");
+    writeFileSync(join(dir, "report.json"), JSON.stringify({
+        kind: "uniflex-fgui-export",
+        screens,
+    }));
+    writeFileSync(join(dir, "mapping.json"), JSON.stringify(mapping));
+    for (const entry of Object.values(mapping)) {
+        const pkg = join(dir, "preview", entry.package);
+        mkdirSync(pkg, { recursive: true });
+        writeFileSync(join(pkg, "package.xml"), `<packageDescription name="${entry.package}"/>`);
+    }
+}
 
 function snapshotDir(dir) {
     if (!existsSync(dir)) return [];
