@@ -1,5 +1,6 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
 import { HeroBondsPanel, type HeroBond, type HeroBondMember } from './HeroBondsPanel';
 import { HeroListPanel, type HeroCardItem } from './HeroListPanel';
@@ -76,12 +77,7 @@ export const HeroScreen = defineView<HeroScreenParams | void>({ zIndex: 'screen'
                 style={{ position: 'absolute', left: 0, top: -144, width: 750, height: 1624 }} />
             <view visible={tab === 'bonds'}
                 style={{ position: 'absolute', left: 0, top: -144, width: 750, height: 1624, backgroundColor: '#00000099' }} />
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={params.title ?? '英雄'}
-                style={{ position: 'absolute', left: 20, top: 16, width: 200, height: 58,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593d84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={params.title ?? '英雄'} titleLeft={20} />
             <view interaction="press" onClick={() => params.onRecruit?.()}
                 style={{ position: 'absolute', left: 518, top: 21, width: 217, height: 51 }}>
                 <image source={imageRef('ui/hero/recruit')} style={{ width: 217, height: 51 }} />

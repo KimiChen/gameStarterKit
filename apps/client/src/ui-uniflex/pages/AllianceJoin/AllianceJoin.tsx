@@ -1,5 +1,6 @@
 import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../kits/uniflex/api/core/index';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { AllianceCreatePanel } from '../AllianceCreate/AllianceCreatePanel';
 import { AllianceJoinRow } from './AllianceJoinRow';
 
@@ -99,12 +100,7 @@ export const AllianceJoin = defineView<AllianceJoinParams | void>({ zIndex: 'scr
                     onClick={() => params.onJoin?.(item.id)} />}
             </VirtualList>
 
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={params.title ?? '加入一个联盟'}
-                style={{ position: 'absolute', left: 38, top: 160, width: 400, height: 58,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={params.title ?? '加入一个联盟'} top={144} titleWidth={400} />
 
             <image source={imageRef('ui/mail/footer')}
                 style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />

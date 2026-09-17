@@ -1,6 +1,7 @@
 import { defineComponent, For, useMemo } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../kits/uniflex/api/core/index';
 import { IconCaptionButton } from '../../components/button/IconCaptionButton';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { AllianceTechLink, type AllianceTechLinkData } from './AllianceTechLink';
 import { AllianceTechNode, allianceTechNodeSize, type AllianceTechNodeData } from './AllianceTechNode';
 
@@ -137,12 +138,7 @@ export const AllianceTechPanel = defineComponent<AllianceTechPanelProps>((p) => 
             <image source={imageRef('ui/alliance/tech-fade-bot')}
                 style={{ position: 'absolute', left: 0, top: 1357, width: 750, height: 20 }} />
 
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={p.title ?? '科技'}
-                style={{ position: 'absolute', left: 38, top: 169, width: 200, height: 50,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={p.title ?? '科技'} top={144} titleTop={169} titleHeight={50} />
 
             <image source={imageRef('ui/mail/footer')}
                 style={{ position: 'absolute', left: 0, top: FOOTER_TOP, width: 750, height: 110, sizeMode: 'sliced' }} />
