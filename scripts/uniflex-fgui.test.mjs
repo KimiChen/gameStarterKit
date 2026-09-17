@@ -118,6 +118,11 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(actionXml, /extention="Button"/);
         assert.match(actionXml, /name="title"/);
         assert.match(actionXml, /name="icon"/);
+        assert.doesNotMatch(actionXml, /ActionButton\/IconRow/);
+        const cancelXml = readFileSync(join(out, "assets/UniFlex_Common/CancelButton.xml"), "utf8");
+        assert.match(cancelXml, /title="取消"/);
+        const backgroundXml = readFileSync(join(out, "assets/UniFlex_Common/PopupBackground.xml"), "utf8");
+        assert.doesNotMatch(backgroundXml, /small\.png/);
         assert.match(frameXml, /name="PopupFrame\/Content"/);
         assert.doesNotMatch(frameXml, /Prompt\/Message/);
         assert.match(commonXml, /scale="9grid" scale9grid="26,32,4,4"/);
