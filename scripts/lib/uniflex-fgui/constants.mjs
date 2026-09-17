@@ -69,6 +69,8 @@ export const DownEffect = Object.freeze({
 
 export const SLOT_HOSTS = Object.freeze(["PopupFrame"]);
 export const BUTTON_COMPONENTS = Object.freeze(["ActionButton", "CloseButton"]);
+/** Thin wrappers around ActionButton; instance label lives on the nested button. */
+export const WRAPPER_BUTTONS = Object.freeze(["ConfirmButton", "CancelButton"]);
 export const COMMON_COMPONENTS = Object.freeze([
     "ActionButton",
     "ConfirmButton",
