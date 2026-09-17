@@ -557,6 +557,191 @@ test("SettingsMenuButton instances override labels and keep plan color", async (
     }
 });
 
+test("nested shared cards do not remap parent list instance text", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-heroes-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "hero",
+            canvas: { width: 750, height: 1334 },
+            nodes: [
+                node(1, null, "HeroScreen", "view", rect(0, 0, 750, 1334)),
+                node(2, 1, "HeroListPanel", "view", rect(0, 0, 750, 1334)),
+                node(3, 2, "", "image", rect(15, 157, 720, 948), { resourceId: "ui/hero/list-panel" }),
+                node(4, 2, "HeroCard", "view", rect(25, 169, 170, 248)),
+                node(5, 4, "", "image", rect(25, 169, 170, 248), { resourceId: "ui/hero/frame-red" }),
+                node(6, 4, "", "text", rect(35, 337, 110, 32), { value: "Lv.20" }),
+                node(7, 2, "HeroCard", "view", rect(200, 169, 170, 248)),
+                node(8, 7, "", "image", rect(200, 169, 170, 248), { resourceId: "ui/hero/frame-yellow" }),
+                node(9, 7, "", "text", rect(210, 337, 110, 32), { value: "Lv.18" }),
+            ],
+        };
+        await exportFgui({
+            snapshot,
+            out,
+            root,
+            screen: catalog.screens.find((entry) => entry.id === "hero"),
+            catalog,
+            images,
+        });
+        const pageXml = readFileSync(join(out, "assets/UniFlex_HeroScreen/HeroScreen.xml"), "utf8");
+        const listXml = readFileSync(join(out, "assets/UniFlex_Common/HeroListPanel.xml"), "utf8");
+        const cardXml = readFileSync(join(out, "assets/UniFlex_Common/HeroCard.xml"), "utf8");
+        assert.match(cardXml, /text="Lv.20"/);
+        assert.match(listXml, /fileName="HeroCard.xml"/);
+        assert.match(listXml, /text="Lv.18"/);
+        assert.equal(pageXml.includes('propertyId="0" value="Lv.20"'), false);
+        assert.equal(pageXml.includes('propertyId="0" value="Lv.18"'), false);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("hidden empty buttons do not become the shared CloseButton template", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-hidden-btn-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const hidden = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "hero-detail",
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                node(1, null, "HeroDetail", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "HeroStarUpgrade", "view", rect(0, 0, 0, 0), { visible: false }),
+                node(3, 2, "CloseButton", "view", rect(0, 0, 0, 0), { visible: false, interaction: "press" }),
+                node(4, 3, "", "image", rect(0, 0, 0, 0), { resourceId: "ui/popup/close", visible: false }),
+                node(5, 2, "ActionButton", "view", rect(0, 0, 0, 0), { visible: false, interaction: "press" }),
+                node(6, 5, "ActionButton/Background", "image", rect(0, 0, 0, 0), {
+                    resourceId: "ui/button/confirm", visible: false,
+                }),
+                node(7, 5, "ActionButton/Label", "text", rect(0, 0, 0, 0), { value: "升星", visible: false }),
+            ],
+        };
+        const visible = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "hero-star-upgrade",
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                node(1, null, "HeroStarUpgradePage", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "CloseButton", "view", rect(642, 383, 72, 72), { interaction: "press" }),
+                node(3, 2, "", "image", rect(653, 394, 50, 50), { resourceId: "ui/popup/close" }),
+                node(4, 1, "ActionButton", "view", rect(247, 1105, 255, 102), { interaction: "press" }),
+                node(5, 4, "ActionButton/Background", "image", rect(247, 1105, 255, 102), {
+                    resourceId: "ui/button/confirm",
+                }),
+                node(6, 4, "ActionButton/Label", "text", rect(255, 1109, 239, 86), { value: "升星" }),
+            ],
+        };
+        await exportFgui({
+            snapshots: [
+                { snapshot: hidden, screen: catalog.screens.find((entry) => entry.id === "hero-detail") },
+                { snapshot: visible, screen: catalog.screens.find((entry) => entry.id === "hero-star-upgrade") },
+            ],
+            out, root, catalog, images,
+        });
+        const closeXml = readFileSync(join(out, "assets/UniFlex_Common/CloseButton.xml"), "utf8");
+        const actionXml = readFileSync(join(out, "assets/UniFlex_Common/ActionButton.xml"), "utf8");
+        const pageXml = readFileSync(join(out, "assets/UniFlex_HeroStarUpgrade/HeroStarUpgrade.xml"), "utf8");
+        assert.match(closeXml, /size="72,72"/);
+        assert.match(closeXml, /name="icon"/);
+        assert.match(actionXml, /size="255,102"/);
+        assert.match(actionXml, /text="升星"/);
+        assert.match(pageXml, /fileName="CloseButton.xml"/);
+        assert.match(pageXml, /fileName="ActionButton.xml"/);
+        assert.match(pageXml, /title="升星"/);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
+test("nested component planIds do not reuse the page title style", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-plan-scope-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "alliance",
+            canvas: { width: 750, height: 1624 },
+            componentDeclarations: {
+                schemaVersion: 1,
+                kind: "uniflex-component-declarations",
+                definitions: [{ key: "AllianceHomePanel" }],
+                instances: [
+                    { key: "Alliance.root", definitionKey: "Alliance", role: "page", rootRecordId: 1 },
+                    {
+                        key: "AllianceHomePanel:Alliance/AllianceHome",
+                        definitionKey: "AllianceHomePanel",
+                        role: "component",
+                        rootRecordId: 3,
+                    },
+                ],
+            },
+            nodes: [
+                node(1, null, "Alliance", "view", rect(0, 0, 750, 1624), { planId: 1 }),
+                node(2, 1, "", "text", rect(20, 160, 200, 58), { value: "联盟", planId: 10 }),
+                node(3, 1, "AllianceHome", "view", rect(0, 0, 750, 1369), { planId: 40 }),
+                node(4, 3, "AllianceInfoHeader", "view", rect(0, 0, 750, 541)),
+                node(5, 4, "", "text", rect(296, 398, 160, 32), { value: "盟主", planId: 10 }),
+                node(6, 3, "AllianceMenuButton", "view", rect(32, 776, 326, 114)),
+                node(7, 6, "", "text", rect(150, 804, 190, 58), { value: "战争", planId: 31 }),
+            ],
+        };
+        const hostPlan = {
+            name: "Alliance",
+            components: {
+                uniflexComponent0_AllianceHomePanel: {
+                    root: {
+                        planId: 1, kind: "view", props: { name: "AllianceHome" },
+                        children: [
+                            {
+                                planId: 10, kind: "text",
+                                props: { value: "盟主", color: "#3F3254", fontSize: 24, bold: true },
+                            },
+                            {
+                                planId: 31, kind: "text",
+                                props: {
+                                    value: "战争", color: "#3F3254", fontSize: 28, bold: true,
+                                    horizontalAlign: "center", overflow: "shrink",
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+            root: {
+                planId: 1, kind: "view", props: { name: "Alliance" },
+                children: [{
+                    planId: 10, kind: "text",
+                    props: {
+                        value: "联盟", color: "#ffffff", fontSize: 40, bold: true,
+                        outlineColor: "#593d84", outlineWidth: 2,
+                    },
+                }],
+            },
+        };
+        await exportFgui({
+            snapshot, out, root,
+            screen: catalog.screens.find((entry) => entry.id === "alliance"),
+            catalog, images, hostPlan,
+        });
+        const pageXml = readFileSync(join(out, "assets/UniFlex_Alliance/Alliance.xml"), "utf8");
+        assert.match(pageXml, /fontSize="40"[^>]*text="联盟"/);
+        assert.match(pageXml, /fontSize="24"[^>]*color="#3f3254"[^>]*text="盟主"/);
+        assert.doesNotMatch(pageXml, /fontSize="40"[^>]*text="盟主"/);
+        assert.match(pageXml, /fontSize="28"[^>]*color="#3f3254"[^>]*text="战争"/);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
+    }
+});
+
 function snapshotDir(dir) {
     if (!existsSync(dir)) return [];
     const walk = (current) => {
