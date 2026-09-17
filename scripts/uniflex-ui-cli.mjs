@@ -8,6 +8,9 @@ import {
     findScreen, flagValue, injectUniflexExportArgs, knownScreenIds, loadScreenCatalog,
     resolvePreviewUrl, screenFromUrl, takeOption,
 } from "./lib/uniflex-screens.mjs";
+import { exportFgui } from "./lib/uniflex-fgui/emit.mjs";
+import { captureSnapshot } from "./lib/uniflex-fgui/capture.mjs";
+import { servePreview } from "./lib/uniflex-fgui/preview.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const help = `Usage:
@@ -17,6 +20,9 @@ const help = `Usage:
   npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001
   npm run ui:roundtrip -- --file artwork.psd --name Prompt --out .cache/psd/from-psd
   npm run ui:check-source [-- --package .cache/psd/job-001/project-package --strict]
+  npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt
+  npm run ui:export-fgui -- --snapshot path/to/snapshot.json --out .cache/fgui/prompt
+  npm run ui:preview-fgui -- --out .cache/fgui/prompt
 
 CLI resolution (first match):
   WEB_UI_TO_PSD_CLI    Optional override: executable path or JS entry; not a shell command.
@@ -32,9 +38,14 @@ signal. Pass --adapter dom to forward a generic webpage. --screen starts a local
 preview unless --url or UNIFLEX_PREVIEW_URL is set. Roundtrip exports, imports
 the PSD, and packages UniFlex source; it does not write the project unless
 --apply. This wrapper does not call the converter's pinball uniflex-build.
+
+ui:export-fgui writes a candidate standalone FairyGUI Editor project plus a
+FairyGUI-dom preview package under --out. It never writes apps/art/fairygui.
+--snapshot is for tests and offline replay; --screen captures the UniFlex web
+preview (Chrome 9222 preferred). ui:preview-fgui serves <out>/preview.
 `;
 
-const commands = ["import-psd", "export-psd", "roundtrip", "check-source"];
+const commands = ["import-psd", "export-psd", "roundtrip", "check-source", "export-fgui", "preview-fgui"];
 
 export function runProcess(executable, parameters, options) {
     return new Promise((resolvePromise, reject) => {
@@ -87,9 +98,14 @@ export async function runCli(argv, {
     }
     if (!commands.includes(command))
         throw new Error(`Unknown command: ${command}`);
-    if ((command === "import-psd" || command === "export-psd" || command === "roundtrip")
+    if ((command === "import-psd" || command === "export-psd" || command === "roundtrip"
+        || command === "export-fgui" || command === "preview-fgui")
         && args.includes("--help")) {
         console.log(help);
+        return;
+    }
+    if (command === "export-fgui" || command === "preview-fgui") {
+        await runFguiCommand(command, args, { root, env, startPreview, readText });
         return;
     }
     if (command === "check-source") {
@@ -234,6 +250,47 @@ export async function runCli(argv, {
     } finally {
         if (preview) await preview.dispose();
     }
+}
+
+async function runFguiCommand(command, args, { root, env, startPreview, readText }) {
+    const out = flagValue(args, "out");
+    if (!out?.trim()) throw new Error("Missing --out.");
+    if (command === "preview-fgui") {
+        const port = flagValue(args, "port");
+        const server = await servePreview({
+            root, out, host: "127.0.0.1", port: port ? Number(port) : 0,
+        });
+        console.log(`FairyGUI-dom preview: ${server.url}`);
+        if (args.includes("--once")) {
+            await server.close();
+            return;
+        }
+        await new Promise(() => {});
+        return;
+    }
+
+    const snapshotPath = flagValue(args, "snapshot");
+    const screenId = flagValue(args, "screen");
+    const catalog = await loadScreenCatalog(root);
+    let snapshot;
+    let screen;
+    if (snapshotPath) {
+        snapshot = JSON.parse(await readText(resolve(root, snapshotPath)));
+        screen = screenId ? findScreen(catalog, screenId) : findScreen(catalog, snapshot.screenId ?? snapshot.screen?.id);
+        if (!screen && snapshot.screen) screen = snapshot.screen;
+        if (!screen) screen = findScreen(catalog, "prompt");
+    } else {
+        const captured = await captureSnapshot({
+            root, screenId, url: flagValue(args, "url") || env.UNIFLEX_PREVIEW_URL, startPreview, env,
+        });
+        snapshot = captured.snapshot;
+        screen = captured.screen;
+    }
+    if (screenId && !findScreen(catalog, screenId) && !snapshotPath) {
+        throw new Error(`Unknown UniFlex preview screen: ${screenId}. Known: ${knownScreenIds(catalog)}`);
+    }
+    const result = await exportFgui({ snapshot, out, root, screen, catalog });
+    console.log(`Wrote candidate FairyGUI project to ${result.out}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

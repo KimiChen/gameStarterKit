@@ -11,3 +11,7 @@ UniFlex 通用运行时入口在 `apps/client/src/kits/uniflex/`，SDK 运行时
 - 混合 FGUI/Cocos 排序和输入：[模态输入规则](CLIENT.md#interactive-的含义)。
 
 Cocos 预览分两个场景：默认 `assets/scene.scene` 走原来的登录宿主；`assets/uniflex.scene` 只挂 UniFlex Confirm 预览。Web 预览仍是 `npm run dev:uniflex-web`。
+
+## 候选 FairyGUI 导出（独立工程）
+
+`ui:export-fgui` 从 UniFlex 组件树 + 布局快照写出一份**候选**独立 FairyGUI 工程（只写 `--out`，不写 `apps/art/fairygui`，不伪造 Cocos `.bin` / 图集 / `.meta`）。首期金样是 Prompt。`PopupFrame` 因 Slot 限制只出外壳模板；Prompt 页是特化树。`ui:preview-fgui` 用锁定的官方 `fairygui-dom@1.0.0` 预览发布态包。未完成 Editor 保存—重开前，不要把它当成已发布 FGUI 资源。
