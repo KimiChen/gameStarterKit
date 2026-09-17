@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { CyanButton } from '../../components/button/CyanButton';
+import { ProgressBar } from '../../components/progress/ProgressBar';
 
 export interface AllianceTerritoryLandCardProps {
     readonly title: string;
@@ -23,6 +24,8 @@ export const LAND_CARD_SIZE = 352;
 
 export const AllianceTerritoryLandCard = defineComponent<AllianceTerritoryLandCardProps>((p) => {
     const fillWidth = p.fillWidth ?? 329;
+    const progressTrack = imageRef('ui/alliance/flag-progress-bg');
+    const progressFill = imageRef('ui/alliance/flag-progress-fill');
     return (
         <view name="AllianceTerritoryLandCard" style={{ position: 'relative', width: 750, height: LAND_CARD_SIZE }}>
             <image source={imageRef('ui/alliance/flag-fort-card')}
@@ -73,10 +76,8 @@ export const AllianceTerritoryLandCard = defineComponent<AllianceTerritoryLandCa
                     style={{ position: 'absolute', left: 548, top: 189, width: 174, height: 26,
                         font: fontRef('fonts/regular', 700), fontSize: 22, color: LABEL, bold: true,
                         horizontalAlign: 'right', verticalAlign: 'center' }} />
-                <image source={imageRef('ui/alliance/flag-progress-bg')}
-                    style={{ position: 'absolute', left: 208, top: 214, width: 514, height: 28 }} />
-                <image source={imageRef('ui/alliance/flag-progress-fill')}
-                    style={{ position: 'absolute', left: 210, top: 216, width: fillWidth, height: 24 }} />
+                <ProgressBar left={208} top={214} width={514} height={28}
+                    track={progressTrack} fill={progressFill} fillWidth={fillWidth} />
                 <view style={{ position: 'absolute', left: 273, top: 248, width: 204, height: 81 }}>
                     <CyanButton label="驻防" width={204} height={81} onClick={() => p.onGarrison?.()} />
                 </view>
