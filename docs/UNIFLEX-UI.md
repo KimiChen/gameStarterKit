@@ -54,10 +54,12 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uni
 
 | 用途 | 组件 |
 |---|---|
-| 黄确定 / 绿取消 / 青前往 | `ConfirmButton` / `CancelButton` / `CyanButton`（底层 `ActionButton`） |
-| 页签 | `PanelTab`；邮件/背包/联盟主页省略 `kind`；领地旗帜 `kind="flag"`。未选中字色也是 `#3F3254` |
+| 黄确定 / 绿取消 / 青前往 | `ConfirmButton` / `CancelButton` / `CyanButton` |
+| 页签 | `PanelTab`；邮件/背包/联盟主页省略 `kind`；领地旗帜 `kind="flag"` |
 | 弹窗 | `PopupBackground` / `PopupFrame` / `CloseButton` |
-| 勾选 | `CheckBox`（调用方传入 on/off 图，自己处理点击） |
+| 勾选 | `CheckBox` |
+| 数量加减 / 滑条 | `QuantityControl` |
+| 道具格 | `ItemSlot` |
 | 底栏 / 红点 | `MainNav` / `NotificationBadge` |
 
 按钮不要抄错皮：领地「驻防」和要塞「前往」不是同一张图；对照 assembled 量尺寸。

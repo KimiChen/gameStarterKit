@@ -27,6 +27,7 @@ export type PreviewHomeTarget =
     | 'alliance-board'
     | 'alliance-tech'
     | 'shop-getitem'
+    | 'shop'
     | 'restored-home';
 
 export interface PreviewHomeParams {
@@ -104,6 +105,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('shop-getitem')} style={{ width: 300, height: 72, backgroundColor: '#8a6a2d', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="获取道具" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('shop')} style={{ width: 300, height: 72, backgroundColor: '#8a4a3d', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="商店" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <view interaction="press" onClick={() => go('restored-home')} style={{ width: 300, height: 90, backgroundColor: '#1e4d6b', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="还原 UI 预览" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />

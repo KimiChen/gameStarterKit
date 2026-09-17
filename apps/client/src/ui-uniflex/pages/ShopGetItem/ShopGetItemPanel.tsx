@@ -32,6 +32,7 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
     const price = String((p.unitPrice ?? 125) * quantity);
     const owned = String(p.owned ?? 99);
     const payGem = imageRef('ui/shop/getitem-pay-gem');
+    const itemIcon = imageRef('ui/shop/getitem-icon');
     const qtyTrack = imageRef('ui/star-upgrade/progress-track');
     const qtyFill = imageRef('ui/star-upgrade/progress-fill');
     const qtyThumb = imageRef('ui/shop/getitem-thumb');
@@ -60,8 +61,7 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
                         horizontalAlign: 'center', verticalAlign: 'center' }} />
                 <CloseButton onClick={p.onClose} />
 
-                <ItemSlot left={18} top={119} quality="orange" icon={imageRef('ui/shop/getitem-icon')}
-                    count={owned} />
+                <ItemSlot left={18} top={119} quality="orange" icon={itemIcon} count={owned} />
                 <text value={p.name ?? '高级钻石'}
                     style={{ position: 'absolute', left: 191, top: 132, width: 470, height: 36,
                         font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,
