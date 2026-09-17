@@ -6,27 +6,16 @@ import {
     KNOWN_LOSSES, ObjectType, PREVIEW_FONT_FAMILY, SLOT_HOSTS, uniflexStrokeSize,
 } from "./constants.mjs";
 
-const SHARED = new Set(COMMON_COMPONENTS.filter((key) => !SLOT_HOSTS.includes(key)));
-const BUTTONS = new Set(BUTTON_COMPONENTS);
-
 export function buildProjectIR(snapshot, options = {}) {
-    assertSnapshot(snapshot);
-    const screen = options.screen ?? inferScreen(snapshot, options.catalog);
-    if (!screen?.componentName) throw new Error("Missing screen metadata (componentName).");
-    const canvas = snapshot.canvas ?? screen.canvas;
-    if (!canvas?.width || !canvas?.height) throw new Error("Snapshot is missing canvas size.");
-    const nodes = snapshot.nodes;
-    if (!Array.isArray(nodes) || nodes.length === 0) throw new Error("Snapshot has no nodes.");
+    return buildCatalogIR([{ snapshot, screen: options.screen, hostPlan: options.hostPlan }], options);
+}
 
+export function buildCatalogIR(pages, options = {}) {
+    if (!Array.isArray(pages) || pages.length === 0) throw new Error("Missing snapshot.");
     const catalog = options.catalog ?? { components: [] };
-    const declarations = snapshot.componentDeclarations
-        ?? declareOwnership(nodes, screen, catalog.components ?? []);
-    const byId = new Map(nodes.map((node) => [node.id, node]));
-    const childrenOf = indexChildren(nodes);
-    const instanceByRoot = new Map(
-        (declarations.instances ?? []).map((instance) => [instance.rootRecordId, instance]),
-    );
-    const planByName = indexPlan(options.hostPlan);
+    const keys = sharedKeysFrom(catalog);
+    const shared = new Set(keys.filter((key) => !SLOT_HOSTS.includes(key)));
+    const buttons = new Set(BUTTON_COMPONENTS);
     const images = options.images ?? new Map();
     const losses = [...KNOWN_LOSSES];
     const missing = [];
@@ -38,16 +27,7 @@ export function buildProjectIR(snapshot, options = {}) {
         components: [],
         dependencies: [],
     };
-    const pagePackageName = `UniFlex_${screen.componentName}`;
-    const pagePkg = {
-        ...packageIds(pagePackageName),
-        name: pagePackageName,
-        images: [],
-        components: [],
-        dependencies: [{ id: commonPkg.id, name: commonPkg.name }],
-    };
     const imageItems = new Map();
-
     const internImage = (resourceId) => {
         if (!resourceId) return null;
         if (imageItems.has(resourceId)) return imageItems.get(resourceId);
@@ -78,85 +58,143 @@ export function buildProjectIR(snapshot, options = {}) {
         return item;
     };
 
-    const addComponent = (pkg, def) => {
-        pkg.components.push(def);
-        return def;
-    };
+    const templates = new Map();
+    const signatures = new Map();
+    const prepared = [];
 
-    const templates = firstInstances(declarations.instances ?? [], byId);
-    for (const key of COMMON_COMPONENTS) {
-        const root = templates.get(key);
-        if (!root) continue;
+    for (const page of pages) {
+        const snapshot = page.snapshot;
+        assertSnapshot(snapshot);
+        const screen = page.screen ?? inferScreen(snapshot, catalog);
+        if (!screen?.componentName) throw new Error("Missing screen metadata (componentName).");
+        const canvas = snapshot.canvas ?? screen.canvas;
+        if (!canvas?.width || !canvas?.height) throw new Error("Snapshot is missing canvas size.");
+        const rawNodes = snapshot.nodes;
+        if (!Array.isArray(rawNodes) || rawNodes.length === 0) throw new Error("Snapshot has no nodes.");
+        const nodes = toComponentSpace(rawNodes);
+
+        const declarations = snapshot.componentDeclarations
+            ?? declareOwnership(nodes, screen, catalog.components ?? []);
+        const byId = new Map(nodes.map((node) => [node.id, node]));
+        const childrenOf = indexChildren(nodes);
+        const instanceByRoot = new Map(
+            (declarations.instances ?? []).map((instance) => [instance.rootRecordId, instance]),
+        );
+        const planByName = indexPlan(page.hostPlan);
+        const found = firstInstances(declarations.instances ?? [], byId);
+        for (const key of keys) {
+            if (templates.has(key)) continue;
+            const root = found.get(key);
+            if (!root) continue;
+            templates.set(key, { root, byId, childrenOf, instanceByRoot, planByName });
+            signatures.set(key, componentSignature(root, childrenOf));
+        }
+        prepared.push({ snapshot, screen, canvas, nodes, byId, childrenOf, instanceByRoot, planByName });
+    }
+
+    const sharedCtx = { internImage, losses, shared, signatures, buttons };
+
+    for (const key of keys) {
+        const template = templates.get(key);
+        if (!template) continue;
         const skipSlot = SLOT_HOSTS.includes(key);
         const displayList = flatten({
-            root, origin: root.rect, childrenOf, byId, instanceByRoot,
-            internImage, planByName, skipSlot, losses, pkg: commonPkg,
+            ...sharedCtx,
+            ...template,
+            origin: template.root.rect,
+            skipSlot,
+            pkg: commonPkg,
         });
-        addComponent(commonPkg, {
+        commonPkg.components.push({
             id: fairyId(`comp:${COMMON_PACKAGE}:${key}`),
             name: key,
             exported: true,
-            size: roundSize(root.rect),
-            extension: BUTTONS.has(key) ? "Button" : null,
-            objectType: BUTTONS.has(key) ? ObjectType.Button : ObjectType.Component,
+            size: roundSize(template.root.rect),
+            extension: buttons.has(key) ? "Button" : null,
+            objectType: buttons.has(key) ? ObjectType.Button : ObjectType.Component,
             children: displayList,
             remark: skipSlot
-                ? "PopupFrame is a shell template; slot content lives on the page."
+                ? `${key} is a shell template; slot content lives on the page.`
                 : undefined,
         });
     }
 
-    const pageRoot = nodes.find((node) => node.parent == null) ?? nodes[0];
-    const pageDisplay = flatten({
-        root: pageRoot, origin: { x: 0, y: 0 }, childrenOf, byId, instanceByRoot,
-        internImage, planByName, skipSlot: false, inlineSlotHosts: true,
-        losses, pkg: pagePkg,
-    });
-    addComponent(pagePkg, {
-        id: fairyId(`comp:${pagePackageName}:${screen.componentName}`),
-        name: screen.componentName,
-        exported: true,
-        size: { width: canvas.width, height: canvas.height },
-        extension: null,
-        objectType: ObjectType.Component,
-        children: pageDisplay,
-        relations: [{ target: "", sidePair: "width-width,height-height" }],
-    });
+    const pagePkgs = [];
+    const screens = [];
+    for (const item of prepared) {
+        const pagePackageName = `UniFlex_${item.screen.componentName}`;
+        const pagePkg = {
+            ...packageIds(pagePackageName),
+            name: pagePackageName,
+            images: [],
+            components: [],
+            dependencies: [{ id: commonPkg.id, name: commonPkg.name }],
+        };
+        const pageRoot = item.nodes.find((node) => node.parent == null) ?? item.nodes[0];
+        const pageDisplay = flatten({
+            ...sharedCtx,
+            pkg: pagePkg,
+            root: pageRoot,
+            origin: { x: 0, y: 0 },
+            byId: item.byId,
+            childrenOf: item.childrenOf,
+            instanceByRoot: item.instanceByRoot,
+            planByName: item.planByName,
+            skipSlot: false,
+            inlineSlotHosts: true,
+        });
+        pagePkg.components.push({
+            id: fairyId(`comp:${pagePackageName}:${item.screen.componentName}`),
+            name: item.screen.componentName,
+            exported: true,
+            size: { width: item.canvas.width, height: item.canvas.height },
+            extension: null,
+            objectType: ObjectType.Component,
+            children: pageDisplay,
+            relations: [{ target: "", sidePair: "width-width,height-height" }],
+        });
+        pagePkgs.push(pagePkg);
+        screens.push({
+            id: item.screen.id ?? item.snapshot.screenId ?? item.screen.componentName.toLowerCase(),
+            componentName: item.screen.componentName,
+            source: item.screen.source,
+            rootName: item.screen.rootName,
+            packageName: pagePkg.name,
+            canvas: item.canvas,
+        });
+    }
 
     if (missing.length) {
         losses.push(`未找到资源：${[...new Set(missing)].join(", ")}`);
     }
 
-    const mapping = buildMapping(commonPkg, pagePkg, screen);
+    const projectName = screens.length === 1 ? screens[0].componentName : "catalog";
     return {
         kind: "uniflex-fgui-ir",
         candidate: true,
         project: {
-            id: projectId(`uniflex-fgui:${screen.componentName}`),
+            id: projectId(`uniflex-fgui:${projectName}`),
             name: "UniFlexExport",
             type: "CocosCreator",
         },
-        canvas,
-        screen: {
-            id: screen.id ?? snapshot.screenId ?? screen.componentName.toLowerCase(),
-            componentName: screen.componentName,
-            source: screen.source,
-            rootName: screen.rootName,
-        },
-        packages: [commonPkg, pagePkg],
-        mapping,
+        canvas: unionCanvas(screens),
+        screen: screens[0],
+        screens,
+        packages: [commonPkg, ...pagePkgs],
+        mapping: buildMapping(commonPkg, pagePkgs, screens),
         report: {
             kind: "uniflex-fgui-export",
             candidate: true,
-            screen: screen.id ?? screen.componentName,
-            slot: "PopupFrame 是外壳模板；Prompt 页是特化树，不是 PopupFrame 实例 + 运行时插槽。",
-            components: [...commonPkg.components, ...pagePkg.components].map((item) => ({
-                package: commonPkg.components.includes(item) ? commonPkg.name : pagePkg.name,
+            screen: screens.length === 1 ? screens[0].id : screens.map((entry) => entry.id),
+            screens: screens.map((entry) => entry.id),
+            slot: "PopupFrame 是外壳模板；各页是特化树，不是 PopupFrame 实例 + 运行时插槽。",
+            components: [commonPkg, ...pagePkgs].flatMap((pkg) => pkg.components.map((item) => ({
+                package: pkg.name,
                 name: item.name,
                 id: item.id,
                 exported: item.exported,
                 extension: item.extension ?? null,
-            })),
+            }))),
             resources: commonPkg.images.map((item) => ({
                 id: item.id, name: item.name, resourceId: item.resourceId,
                 scale9grid: item.scale9grid?.attr ?? null,
@@ -165,6 +203,38 @@ export function buildProjectIR(snapshot, options = {}) {
             losses,
         },
     };
+}
+
+function sharedKeysFrom(catalog) {
+    const keys = (catalog.components ?? []).map((entry) => entry.key).filter(Boolean);
+    return keys.length ? keys : [...COMMON_COMPONENTS];
+}
+
+function unionCanvas(screens) {
+    return {
+        width: Math.max(...screens.map((entry) => entry.canvas.width)),
+        height: Math.max(...screens.map((entry) => entry.canvas.height)),
+    };
+}
+
+function componentSignature(root, childrenOf) {
+    const images = [];
+    const walk = (node) => {
+        if (node.visible === false) return;
+        if (node.kind === "image" && node.resourceId) images.push(node.resourceId);
+        for (const child of childrenOf.get(node.id) ?? []) walk(child);
+    };
+    walk(root);
+    return `${Math.round(root.rect?.width ?? 0)}x${Math.round(root.rect?.height ?? 0)}:${images.join("|")}`;
+}
+
+function isSlotContent(name) {
+    return SLOT_HOSTS.some((host) => name === `${host}/Content`);
+}
+
+function isReusableInstance(instance, node, ctx) {
+    if (ctx.buttons.has(instance.definitionKey)) return true;
+    return ctx.signatures.get(instance.definitionKey) === componentSignature(node, ctx.childrenOf);
 }
 
 function assertSnapshot(snapshot) {
@@ -183,6 +253,45 @@ function inferScreen(snapshot, catalog) {
         return catalog.screens.find((entry) => entry.id === id || entry.componentName === id);
     }
     return catalog?.screens?.find((entry) => entry.default) ?? null;
+}
+
+/** FairyGUI displayList xy is component space. UniFlex inspect frames are parent-local. */
+function toComponentSpace(nodes) {
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    if (!snapshotUsesLocalRects(nodes, byId)) return nodes;
+    return nodes.map((node) => ({ ...node, rect: absoluteRect(node, byId) }));
+}
+
+function snapshotUsesLocalRects(nodes, byId) {
+    for (const node of nodes) {
+        if (node.parent == null || node.visible === false) continue;
+        const parent = byId.get(node.parent);
+        const rect = node.rect;
+        const prect = parent?.rect;
+        if (!rect || !prect) continue;
+        const localInside = rect.x >= -0.5 && rect.y >= -0.5
+            && rect.x + rect.width <= prect.width + 0.5
+            && rect.y + rect.height <= prect.height + 0.5;
+        const aboveOrLeft = rect.x + 0.5 < prect.x || rect.y + 0.5 < prect.y;
+        if (localInside && aboveOrLeft && (prect.x > 0.5 || prect.y > 0.5)) return true;
+    }
+    return false;
+}
+
+function absoluteRect(node, byId) {
+    let x = node.rect?.x ?? 0;
+    let y = node.rect?.y ?? 0;
+    let current = node;
+    const seen = new Set();
+    while (current.parent != null) {
+        if (seen.has(current.id)) break;
+        seen.add(current.id);
+        current = byId.get(current.parent);
+        if (!current) break;
+        x += current.rect?.x ?? 0;
+        y += current.rect?.y ?? 0;
+    }
+    return { x, y, width: node.rect?.width ?? 0, height: node.rect?.height ?? 0 };
 }
 
 function indexChildren(nodes) {
@@ -226,11 +335,11 @@ function flatten(ctx) {
     const walk = (node, groupIndex) => {
         for (const child of ctx.childrenOf.get(node.id) ?? []) {
             if (child.visible === false) continue;
-            if (ctx.skipSlot && node.name === "PopupFrame/Content") continue;
+            if (ctx.skipSlot && isSlotContent(node.name)) continue;
             const instance = ctx.instanceByRoot.get(child.id);
-            const shared = instance && SHARED.has(instance.definitionKey);
+            const shared = instance && ctx.shared.has(instance.definitionKey);
             const slotHost = instance && SLOT_HOSTS.includes(instance.definitionKey);
-            if (shared) {
+            if (shared && isReusableInstance(instance, child, ctx)) {
                 displayList.push(componentChild(ctx, child, instance.definitionKey, groupIndex));
                 continue;
             }
@@ -341,6 +450,7 @@ function primitiveChild(ctx, node, groupIndex) {
             kind: "image",
             name: node.name || image.name,
             src: image.id,
+            pkg: ctx.pkg.name === COMMON_PACKAGE ? undefined : ctx.pkg.dependencies?.[0]?.id,
             fileName: `images/${image.fileName}`,
             ...xy,
             group: groupIndex,
@@ -454,12 +564,14 @@ function assignChildIds(seed, displayList) {
     });
 }
 
-function buildMapping(commonPkg, pagePkg, screen) {
-    const mapping = {
-        [screen.componentName]: {
+function buildMapping(commonPkg, pagePkgs, screens) {
+    const mapping = {};
+    for (const [index, pagePkg] of pagePkgs.entries()) {
+        const screen = screens[index];
+        mapping[screen.componentName] = {
             package: pagePkg.name, component: screen.componentName, id: pagePkg.components.at(-1)?.id,
-        },
-    };
+        };
+    }
     for (const component of commonPkg.components) {
         mapping[component.name] = { package: commonPkg.name, component: component.name, id: component.id };
         for (const child of component.children) {

@@ -1,15 +1,15 @@
-import { access, copyFile, mkdir, readFile } from "node:fs/promises";
+import { access, copyFile, mkdir, readdir, readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { dirname, extname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { startUniflexWebPreview } from "./lib/uniflex-web-preview.mjs";
 import {
-    findScreen, flagValue, injectUniflexExportArgs, knownScreenIds, loadScreenCatalog,
-    resolvePreviewUrl, screenFromUrl, takeOption,
+    findScreen, flagValue, flagValues, hasFlag, injectUniflexExportArgs, knownScreenIds,
+    loadScreenCatalog, parseScreenList, resolvePreviewUrl, screenFromUrl, takeOption,
 } from "./lib/uniflex-screens.mjs";
 import { exportFgui } from "./lib/uniflex-fgui/emit.mjs";
-import { captureSnapshot } from "./lib/uniflex-fgui/capture.mjs";
+import { captureSnapshots } from "./lib/uniflex-fgui/capture.mjs";
 import { servePreview } from "./lib/uniflex-fgui/preview.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -21,6 +21,8 @@ const help = `Usage:
   npm run ui:roundtrip -- --file artwork.psd --name Prompt --out .cache/psd/from-psd
   npm run ui:check-source [-- --package .cache/psd/job-001/project-package --strict]
   npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt
+  npm run ui:export-fgui -- --screens prompt,small-popup,confirm --out .cache/fgui/popups
+  npm run ui:export-fgui -- --all --out .cache/fgui/catalog
   npm run ui:export-fgui -- --snapshot path/to/snapshot.json --out .cache/fgui/prompt
   npm run ui:preview-fgui -- --out .cache/fgui/prompt
 
@@ -41,8 +43,10 @@ the PSD, and packages UniFlex source; it does not write the project unless
 
 ui:export-fgui writes a candidate standalone FairyGUI Editor project plus a
 FairyGUI-dom preview package under --out. It never writes apps/art/fairygui.
---snapshot is for tests and offline replay; --screen captures the UniFlex web
-preview (Chrome 9222 preferred). ui:preview-fgui serves <out>/preview.
+--snapshot / --snapshots-dir is for tests and offline replay; --screen,
+--screens, or --all captures the UniFlex web preview (Chrome 9222 preferred).
+One snapshot becomes UniFlex_<Page>; several share UniFlex_Common and get a
+preview picker (?screen=). ui:preview-fgui serves <out>/preview.
 `;
 
 const commands = ["import-psd", "export-psd", "roundtrip", "check-source", "export-fgui", "preview-fgui"];
@@ -269,28 +273,68 @@ async function runFguiCommand(command, args, { root, env, startPreview, readText
         return;
     }
 
-    const snapshotPath = flagValue(args, "snapshot");
-    const screenId = flagValue(args, "screen");
     const catalog = await loadScreenCatalog(root);
-    let snapshot;
-    let screen;
-    if (snapshotPath) {
-        snapshot = JSON.parse(await readText(resolve(root, snapshotPath)));
-        screen = screenId ? findScreen(catalog, screenId) : findScreen(catalog, snapshot.screenId ?? snapshot.screen?.id);
-        if (!screen && snapshot.screen) screen = snapshot.screen;
-        if (!screen) screen = findScreen(catalog, "prompt");
-    } else {
-        const captured = await captureSnapshot({
-            root, screenId, url: flagValue(args, "url") || env.UNIFLEX_PREVIEW_URL, startPreview, env,
-        });
-        snapshot = captured.snapshot;
-        screen = captured.screen;
+    const pages = await loadFguiPages(args, { root, env, catalog, startPreview, readText });
+    const result = await exportFgui({ snapshots: pages, out, root, catalog });
+    const names = pages.map((page) => page.screen?.componentName ?? page.snapshot.screenId).join(", ");
+    console.log(`Wrote candidate FairyGUI project (${names}) to ${result.out}`);
+}
+
+async function loadFguiPages(args, { root, env, catalog, startPreview, readText }) {
+    const all = hasFlag(args, "all");
+    const screensFlag = flagValue(args, "screens");
+    const screenId = flagValue(args, "screen");
+    const snapshotPaths = flagValues(args, "snapshot");
+    const snapshotsDir = flagValue(args, "snapshots-dir");
+    if (all && (screenId || screensFlag)) {
+        throw new Error("Use either --all or --screen/--screens.");
     }
-    if (screenId && !findScreen(catalog, screenId) && !snapshotPath) {
+    if (screenId && screensFlag) throw new Error("Use either --screen or --screens.");
+    if ((snapshotPaths.length || snapshotsDir) && (all || screensFlag)) {
+        throw new Error("Use --snapshot/--snapshots-dir without --all/--screens.");
+    }
+
+    if (snapshotPaths.length || snapshotsDir) {
+        const files = [...snapshotPaths.map((file) => resolve(root, file))];
+        if (snapshotsDir) {
+            const dir = resolve(root, snapshotsDir);
+            const entries = await readdir(dir);
+            files.push(...entries.filter((name) => name.endsWith(".json")).sort()
+                .map((name) => join(dir, name)));
+        }
+        if (!files.length) throw new Error("No snapshot JSON files to export.");
+        const pages = [];
+        for (const file of files) {
+            const snapshot = JSON.parse(await readText(file));
+            let screen = findScreen(catalog, snapshot.screenId ?? snapshot.screen?.id);
+            if (!screen && screenId) screen = findScreen(catalog, screenId);
+            if (!screen && snapshot.screen) screen = snapshot.screen;
+            if (!screen) screen = findScreen(catalog, "prompt");
+            pages.push({ snapshot, screen });
+        }
+        return pages;
+    }
+
+    if (screenId && !findScreen(catalog, screenId)) {
         throw new Error(`Unknown UniFlex preview screen: ${screenId}. Known: ${knownScreenIds(catalog)}`);
     }
-    const result = await exportFgui({ snapshot, out, root, screen, catalog });
-    console.log(`Wrote candidate FairyGUI project to ${result.out}`);
+    const wanted = all
+        ? catalog.screens
+        : screensFlag
+            ? parseScreenList(screensFlag, catalog)
+            : [screenId ? findScreen(catalog, screenId) : findScreen(catalog, null)];
+    const captured = await captureSnapshots({
+        root,
+        screens: wanted,
+        url: flagValue(args, "url") || env.UNIFLEX_PREVIEW_URL,
+        startPreview,
+        env,
+    });
+    if (captured.failures.length) {
+        const detail = captured.failures.map((item) => `${item.screen}: ${item.error}`).join("; ");
+        throw new Error(`Capture failed (${captured.failures.length}/${wanted.length}): ${detail}`);
+    }
+    return captured.results;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

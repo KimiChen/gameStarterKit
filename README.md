@@ -174,7 +174,9 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 用锁定的 `vendor/web-ui-to-psd-*.tgz` 生成 PSD 中间文件和 UniFlex 项目包并导入项目；`npm ci` 后即可运行 |
 | `npm run ui:export-psd -- --url <url> --out <dir>` | 用锁定 CLI 把 UniFlex 预览页导出为分层 PSD；可用 `--screen` 拉起本地预览，不必先开 `dev:uniflex-web` |
 | `npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt` | 从 UniFlex snapshot 写出候选独立 FairyGUI 工程 + DOM 预览包（只写 `--out`） |
-| `npm run ui:preview-fgui -- --out .cache/fgui/prompt` | 用锁定的 `fairygui-dom@1.0.0` 预览刚导出的发布态包 |
+| `npm run ui:export-fgui -- --screens prompt,small-popup,confirm --out .cache/fgui/popups` | 多页收进同一候选工程，共享 `UniFlex_Common` |
+| `npm run ui:export-fgui -- --all --out .cache/fgui/catalog` | 捕获 `screens.json` 全部预览页并导出 |
+| `npm run ui:preview-fgui -- --out .cache/fgui/prompt` | 用锁定的 `fairygui-dom@1.0.0` 预览刚导出的发布态包；多页用 `?screen=` |
 | `npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001` | UniFlex → PSD → UniFlex 项目包往返；默认不写项目源，加 `--apply` 才导入 |
 | `npm run ui:art-export` / `ui:art-import` / `ui:art-sync` / `ui:art-check` | 原稿 ↔ `apps/art/uniflex` PSD；一阶段导入只写 `*Restored`，`art-check` 是 CI 闸 |
 | `npm run ui:check-source` | 校验 UniFlex 项目包的 design/manifest 契约；传入 `--package` |
