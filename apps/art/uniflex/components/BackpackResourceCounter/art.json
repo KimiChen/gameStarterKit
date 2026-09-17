@@ -1,0 +1,14 @@
+{
+  "key": "BackpackResourceCounter",
+  "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackResourceCounter.tsx",
+  "export": {
+    "uniflexSha256": "63fe226bf2e87e3b9b7b19e974291bfe59a4c42acdefb511f1cb29b141c58026",
+    "psdSha256": "8f133415125014e95c8256b24268239307dec593edca02c107813371a172b0b5",
+    "at": "2026-09-17T17:33:35.171Z"
+  },
+  "import": {
+    "psdSha256": "8f133415125014e95c8256b24268239307dec593edca02c107813371a172b0b5",
+    "at": "2026-09-17T17:48:36.511Z",
+    "target": "restored"
+  }
+}

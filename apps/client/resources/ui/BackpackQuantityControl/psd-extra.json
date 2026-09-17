@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "f224849a920b93835db29b58f0435d25124be4b9fe6391d776322d1e5e3eb643",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 750,
+    "height": 1225,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"ce2abdd3aee0fd8117d6e31185f1621cc288d245fe6bbc321e8e7e2356a47ca9\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjc1MCwiaGVpZ2h0IjoxMjI1fSwibm9kZXMiOlt7ImlkIjo2NCwicGFyZW50IjpudWxsLCJwbGFuSWQiOjY5LCJraW5kIjoidmlldyIsIm5hbWUiOiJCYWNrcGFja1F1YW50aXR5Q29udHJvbCIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzUwLCJoZWlnaHQiOjEyMjV9LCJpZGVudGl0eSI6eyJrZXkiOiJCYWNrcGFja1F1YW50aXR5Q29udHJvbDpCYWNrcGFjay9CYWNrcGFjay9EZXRhaWxzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJCYWNrcGFja1F1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo2NSwicGFyZW50Ijo2NCwicGxhbklkIjoxLCJraW5kIjoidmlldyIsIm5hbWUiOiJRdWFudGl0eUNvbnRyb2wiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjUsInkiOjExMTgsIndpZHRoIjo3MDAsImhlaWdodCI6ODV9LCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wiLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo2NiwicGFyZW50Ijo2NSwicGxhbklkIjoyLCJraW5kIjoidmlldyIsIm5hbWUiOiJRdWFudGl0eUNvbnRyb2wvRGVjcmVhc2UiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc2LCJoZWlnaHQiOjg1fSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9EZWNyZWFzZSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo2NywicGFyZW50Ijo2NiwicGxhbklkIjozLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3NiwiaGVpZ2h0Ijo4NX0sInJlc291cmNlSWQiOiJ1aS9iYWNrcGFjay9idXR0b24tbWludXMiLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL0RlY3JlYXNlL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6NjgsInBhcmVudCI6NjUsInBsYW5JZCI6NCwia2luZCI6InZpZXciLCJuYW1lIjoiUXVhbnRpdHlDb250cm9sL1NsaWRlciIsInZhbHVlIjoiMCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6ODYsInkiOjAsIndpZHRoIjozOTEsImhlaWdodCI6ODV9LCJpbnRlcmFjdGlvbiI6InJhbmdlIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJyYW5nZSI6eyJtaW4iOjAsIm1heCI6MSwic3RlcCI6MX0sImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpCYWNrcGFjay9CYWNrcGFjay9EZXRhaWxzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvU2xpZGVyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjY5LCJwYXJlbnQiOjY4LCJwbGFuSWQiOjUsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MTgsIndpZHRoIjozOTEsImhlaWdodCI6NDR9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svc2xpZGVyLXRyYWNrIiwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9TbGlkZXIvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjcwLCJwYXJlbnQiOjY4LCJwbGFuSWQiOjYsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MiwieSI6MjAsIndpZHRoIjoxOC41LCJoZWlnaHQiOjQwfSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL3NsaWRlci1maWxsIiwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9TbGlkZXIvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjcxLCJwYXJlbnQiOjY4LCJwbGFuSWQiOjcsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6Niwid2lkdGgiOjM3LCJoZWlnaHQiOjcxfSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL3NsaWRlci1oYW5kbGUiLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1NsaWRlci9fOjIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6NzIsInBhcmVudCI6NjUsInBsYW5JZCI6OCwia2luZCI6InZpZXciLCJuYW1lIjoiUXVhbnRpdHlDb250cm9sL0luY3JlYXNlIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjQ4NiwieSI6MCwid2lkdGgiOjc2LCJoZWlnaHQiOjg1fSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9JbmNyZWFzZSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo3MywicGFyZW50Ijo3MiwicGxhbklkIjo5LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3NiwiaGVpZ2h0Ijo4NX0sInJlc291cmNlSWQiOiJ1aS9iYWNrcGFjay9idXR0b24tcGx1cyIsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpCYWNrcGFjay9CYWNrcGFjay9EZXRhaWxzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvSW5jcmVhc2UvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo3NCwicGFyZW50Ijo2NSwicGxhbklkIjoxMCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1NzksInkiOjE0LCJ3aWR0aCI6MTIxLCJoZWlnaHQiOjU0fSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL3F1YW50aXR5LWJnIiwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6NzUsInBhcmVudCI6NjUsInBsYW5JZCI6MTEsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiMCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NTc5LCJ5IjoxNCwid2lkdGgiOjEyMSwiaGVpZ2h0Ijo1NH0sImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpCYWNrcGFjay9CYWNrcGFjay9EZXRhaWxzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjc2LCJwYXJlbnQiOjY1LCJwbGFuSWQiOjEyLCJraW5kIjoidmlldyIsIm5hbWUiOiJRdWFudGl0eUNvbnRyb2wvTWF4IiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9NYXgiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6NzcsInBhcmVudCI6NzYsInBsYW5JZCI6MTMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svYnV0dG9uLW1pbnVzIiwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9NYXgvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQmFja3BhY2tRdWFudGl0eUNvbnRyb2wiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9CYWNrcGFjay9jb21wb25lbnRzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiQmFja3BhY2tRdWFudGl0eUNvbnRyb2wiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9CYWNrcGFjay9jb21wb25lbnRzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sLnRzeCJ9LHsia2V5IjoiUXVhbnRpdHlDb250cm9sIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9xdWFudGl0eS9RdWFudGl0eUNvbnRyb2wudHN4In1dLCJpbnN0YW5jZXMiOlt7ImtleSI6IkJhY2twYWNrUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wiLCJkZWZpbml0aW9uS2V5IjoiQmFja3BhY2tRdWFudGl0eUNvbnRyb2wiLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjo2NH0seyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6NjV9XX0sImNvbXBvbmVudERvY3VtZW50Ijp7ImtleSI6IkJhY2twYWNrUXVhbnRpdHlDb250cm9sIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvcGFnZXMvQmFja3BhY2svY29tcG9uZW50cy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC50c3gifX0=\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    },
+    "linkedFiles": [
+      {
+        "id": "8db7b07c-1556-f5e4-0c9e-823e81c8a797",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-17T17:33:33.276Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 78486,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../QuantityControl/component.psd"
+        }
+      }
+    ]
+  },
+  "layers": {
+    "layer-122": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "BackpackQuantityControl [ui:BackpackQuantityControl:Backpack/Backpack/Details/BackpackQuantityControl#component]",
+        "id": 122,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-123": {
+      "parent": "layer-122",
+      "properties": {
+        "top": 1118,
+        "left": 25,
+        "bottom": 1203,
+        "right": 725,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "QuantityControl [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl#component]",
+        "id": 123,
+        "placedLayer": {
+          "id": "8db7b07c-1556-f5e4-0c9e-823e81c8a797",
+          "placed": "3b27ca50-88a4-eb09-01c4-185e3beebef6",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            25,
+            1118,
+            725,
+            1118,
+            725,
+            1203,
+            25,
+            1203
+          ],
+          "width": 700,
+          "height": 85,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 85,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 700,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 233.33333333333334,
+                  "y": 0
+                },
+                {
+                  "x": 466.6666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 700,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 28.333333333333332
+                },
+                {
+                  "x": 233.33333333333334,
+                  "y": 28.333333333333332
+                },
+                {
+                  "x": 466.6666666666667,
+                  "y": 28.333333333333332
+                },
+                {
+                  "x": 700,
+                  "y": 28.333333333333332
+                },
+                {
+                  "x": 0,
+                  "y": 56.666666666666664
+                },
+                {
+                  "x": 233.33333333333334,
+                  "y": 56.666666666666664
+                },
+                {
+                  "x": 466.6666666666667,
+                  "y": 56.666666666666664
+                },
+                {
+                  "x": 700,
+                  "y": 56.666666666666664
+                },
+                {
+                  "x": 0,
+                  "y": 85
+                },
+                {
+                  "x": 233.33333333333334,
+                  "y": 85
+                },
+                {
+                  "x": 466.6666666666667,
+                  "y": 85
+                },
+                {
+                  "x": 700,
+                  "y": 85
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

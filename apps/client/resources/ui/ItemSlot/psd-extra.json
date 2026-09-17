@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "5c829defe6fc882f7e4bb921fd29cec50767b5a0fdf7a8bb3576a1c8c8fa8d62",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 154,
+    "height": 159,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"b2c39c07e5b4fc4c7409515185f3912550527dc810322cac71620ec66577d2c1\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjE1NCwiaGVpZ2h0IjoxNTl9LCJub2RlcyI6W3siaWQiOjgyLCJwYXJlbnQiOm51bGwsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiSXRlbVNsb3QiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjE1NCwiaGVpZ2h0IjoxNTl9LCJpZGVudGl0eSI6eyJrZXkiOiJJdGVtU2xvdDpCYWNrcGFjay9CYWNrcGFjay9JdGVtcy9fL0JhY2twYWNrSXRlbUNhcmQ6MC9JdGVtU2xvdCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiSXRlbVNsb3QifX0seyJpZCI6ODMsInBhcmVudCI6ODIsInBsYW5JZCI6Miwia2luZCI6ImltYWdlIiwibmFtZSI6Ikl0ZW1TbG90L0ZyYW1lIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjoxNTQsImhlaWdodCI6MTU5fSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL2l0ZW0tZ3JlZW4iLCJpZGVudGl0eSI6eyJrZXkiOiJJdGVtU2xvdDpCYWNrcGFjay9CYWNrcGFjay9JdGVtcy9fL0JhY2twYWNrSXRlbUNhcmQ6MC9JdGVtU2xvdC9JdGVtU2xvdC9GcmFtZSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikl0ZW1TbG90In19LHsiaWQiOjg0LCJwYXJlbnQiOjgyLCJwbGFuSWQiOjMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiJJdGVtU2xvdC9JY29uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjEzLCJ5IjoyNCwid2lkdGgiOjEyOSwiaGVpZ2h0IjoxMDd9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svZGlhbW9uZCIsImlkZW50aXR5Ijp7ImtleSI6Ikl0ZW1TbG90OkJhY2twYWNrL0JhY2twYWNrL0l0ZW1zL18vQmFja3BhY2tJdGVtQ2FyZDowL0l0ZW1TbG90L0l0ZW1TbG90L0ljb24iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJJdGVtU2xvdCJ9fSx7ImlkIjo4NSwicGFyZW50Ijo4MiwicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiJJdGVtU2xvdC9Db3VudCIsInZhbHVlIjoiOTkiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjg3LCJ5IjoxMDcsIndpZHRoIjo1NywiaGVpZ2h0Ijo0Mn0sImlkZW50aXR5Ijp7ImtleSI6Ikl0ZW1TbG90OkJhY2twYWNrL0JhY2twYWNrL0l0ZW1zL18vQmFja3BhY2tJdGVtQ2FyZDowL0l0ZW1TbG90L0l0ZW1TbG90L0NvdW50Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSXRlbVNsb3QifX1dLCJjb21wb25lbnREZWNsYXJhdGlvbnMiOnsic2NoZW1hVmVyc2lvbiI6MSwia2luZCI6InVuaWZsZXgtY29tcG9uZW50LWRlY2xhcmF0aW9ucyIsImNvbXBvbmVudERvY3VtZW50Ijp7ImtleSI6Ikl0ZW1TbG90Iiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9pdGVtL0l0ZW1TbG90LnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiSXRlbVNsb3QiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2l0ZW0vSXRlbVNsb3QudHN4In1dLCJpbnN0YW5jZXMiOlt7ImtleSI6Ikl0ZW1TbG90OkJhY2twYWNrL0JhY2twYWNrL0l0ZW1zL18vQmFja3BhY2tJdGVtQ2FyZDowL0l0ZW1TbG90IiwiZGVmaW5pdGlvbktleSI6Ikl0ZW1TbG90Iiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6ODJ9XX0sImNvbXBvbmVudERvY3VtZW50Ijp7ImtleSI6Ikl0ZW1TbG90Iiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9pdGVtL0l0ZW1TbG90LnRzeCJ9fQ==\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-62": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ItemSlot [ui:ItemSlot:Backpack/Backpack/Items/_/BackpackItemCard:0/ItemSlot#component]",
+        "id": 62,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-63": {
+      "parent": "layer-62",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ItemSlot/Frame",
+        "id": 63,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-64": {
+      "parent": "layer-63",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 159,
+        "right": 154,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ItemSlot/Frame [ui:ItemSlot:Backpack/Backpack/Items/_/BackpackItemCard:0/ItemSlot/ItemSlot/Frame#node]",
+        "id": 64,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-65": {
+      "parent": "layer-62",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ItemSlot/Icon",
+        "id": 65,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-66": {
+      "parent": "layer-65",
+      "properties": {
+        "top": 24,
+        "left": 13,
+        "bottom": 131,
+        "right": 142,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ItemSlot/Icon [ui:ItemSlot:Backpack/Backpack/Items/_/BackpackItemCard:0/ItemSlot/ItemSlot/Icon#node]",
+        "id": 66,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-67": {
+      "parent": "layer-62",
+      "properties": {
+        "top": 107,
+        "left": 87,
+        "bottom": 149,
+        "right": 144,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ItemSlot/Count [ui:ItemSlot:Backpack/Backpack/Items/_/BackpackItemCard:0/ItemSlot/ItemSlot/Count#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            142,
+            139.84000000000003
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "99",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "right",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 32,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 32,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0
+              }
+            }
+          ]
+        },
+        "id": 67,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

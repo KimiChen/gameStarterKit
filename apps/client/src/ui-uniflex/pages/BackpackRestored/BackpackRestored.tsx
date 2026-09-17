@@ -1,9 +1,9 @@
 import { defineView, For, useMemo, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
-import { BackpackItemCard, type BackpackItem, type BackpackQuality } from '../Backpack/components/BackpackItemCard';
-import { BackpackQuantityControl } from '../Backpack/components/BackpackQuantityControl';
-import { BackpackResourceCounter } from '../Backpack/components/BackpackResourceCounter';
-import { PanelTab } from '../../components/tab/PanelTab';
+import { BackpackItemCard, type BackpackItem, type BackpackQuality } from '../../restored/pages/Backpack/components/BackpackItemCard';
+import { BackpackQuantityControl } from '../../restored/pages/Backpack/components/BackpackQuantityControl';
+import { BackpackResourceCounter } from '../../restored/pages/Backpack/components/BackpackResourceCounter';
+import { PanelTab } from '../../restored/components/tab/PanelTab';
 
 export type BackpackRestoredAction = {
     readonly id: string;

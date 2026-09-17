@@ -3,10 +3,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { resolveConverter } from "./uniflex-ui-cli.mjs";
+import { artComponentPsdPath } from "./lib/uniflex-art.mjs";
 
 const execFileAsync = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -369,11 +371,116 @@ export const AllianceTech = defineView(() => (
             "--name", "AllianceTechRestored", "--source-root", tempRoot, "--out", packageDir,
         ], { cwd: root, env });
         const pageSource = await readFile(join(packageDir, "AllianceTechRestored.authoring.tsx"), "utf8");
-        const panel = await readFile(join(packageDir, "AllianceTechPanel.tsx"), "utf8");
-        assert.match(pageSource, /from '\.\/AllianceTechPanel'/);
+        const panel = await readFile(join(packageDir, "restored/pages/AllianceTech/AllianceTechPanel.tsx"), "utf8");
+        assert.match(pageSource, /from '\.\.\/\.\.\/restored\/pages\/AllianceTech\/AllianceTechPanel'/);
         assert.match(panel, /id: 'shield', kind: 'shield', left: 310, top: 170/);
-        assert.match(panel, /from '\.\.\/AllianceTech\/AllianceTechNode'/);
+        assert.match(panel, /from '\.\/AllianceTechNode'/);
+        assert.equal(await access(join(packageDir, "AllianceTechPanel.tsx")).then(() => true).catch(() => false), false);
         assert.equal(await access(join(packageDir, "AllianceTechNode.tsx")).then(() => true).catch(() => false), false);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("import merges restored/ copies without wiping other restored files", async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-restored-merge-"));
+    const packageDir = join(tempRoot, "package");
+    const importRoot = join(tempRoot, "import");
+    try {
+        await mkdir(join(packageDir, "assets"), { recursive: true });
+        await mkdir(join(packageDir, "restored/pages/Backpack/components"), { recursive: true });
+        await mkdir(join(importRoot, "apps/client/src/ui-uniflex/restored/components/button"),
+            { recursive: true });
+        await writeFile(join(packageDir, "design.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-design", name: "BackpackItemCard",
+            canvas: { width: 8, height: 8 }, roots: [], fonts: {}, assets: {}, nodes: {},
+        }));
+        await writeFile(join(packageDir, "manifest.json"), JSON.stringify({
+            version: 1, assets: [],
+        }));
+        await writeFile(join(packageDir, "restored/pages/Backpack/components/BackpackItemCard.tsx"),
+            "export const BackpackItemCard = 1;\n");
+        await writeFile(join(importRoot, "apps/client/src/ui-uniflex/restored/components/button/ActionButton.tsx"),
+            "export const ActionButton = 1;\n");
+        await execFileAsync(process.execPath, [
+            resolve(root, "scripts/import-uniflex-package.mjs"),
+            "--update", "--name", "BackpackItemCard", "--out", importRoot, packageDir,
+        ], { cwd: root });
+        const restored = join(importRoot, "apps/client/src/ui-uniflex/restored");
+        assert.equal(await readFile(join(restored, "pages/Backpack/components/BackpackItemCard.tsx"), "utf8"),
+            "export const BackpackItemCard = 1;\n");
+        assert.equal(await readFile(join(restored, "components/button/ActionButton.tsx"), "utf8"),
+            "export const ActionButton = 1;\n");
+        assert.equal(await access(join(importRoot, "apps/client/src/ui-uniflex/pages/BackpackItemCard"))
+            .then(() => true).catch(() => false), false);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("editing BackpackItemCard PSD overlays the shared restored copy and leaves originals", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artComponentPsdPath(root, "BackpackItemCard");
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    function findPlaced(layer) {
+        if (layer.placedLayer) return layer;
+        for (const child of layer.children || []) {
+            const found = findPlaced(child);
+            if (found) return found;
+        }
+        return null;
+    }
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-card-component-edit-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const slot = findPlaced(psd);
+        assert.ok(slot, "BackpackItemCard.psd should link ItemSlot as a placed smart object");
+        const dx = 8;
+        slot.left += dx;
+        slot.right += dx;
+        slot.placedLayer.transform = slot.placedLayer.transform.map((value, index) =>
+            index % 2 === 0 ? value + dx : value);
+        const edited = join(tempRoot, "component.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        const importRoot = join(tempRoot, "import");
+        await execFileAsync(converter.command, [
+            ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+        ], { cwd: root, env });
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "BackpackItemCard", "--source-root", root, "--out", packageDir,
+        ], { cwd: root, env });
+        const overlayed = await readFile(
+            join(packageDir, "restored/pages/Backpack/components/BackpackItemCard.tsx"), "utf8");
+        assert.match(overlayed, /<ItemSlot left=\{8\} top=\{0\}/);
+        assert.match(overlayed, /from '\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
+        const original = await readFile(
+            resolve(root, "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"),
+            "utf8");
+        assert.match(original, /<ItemSlot left=\{0\} top=\{0\}/);
+        await execFileAsync(process.execPath, [
+            resolve(root, "scripts/import-uniflex-package.mjs"),
+            "--update", "--name", "BackpackItemCard", "--out", importRoot, packageDir,
+        ], { cwd: root });
+        assert.equal(await readFile(join(importRoot,
+            "apps/client/src/ui-uniflex/restored/pages/Backpack/components/BackpackItemCard.tsx"),
+        "utf8"), overlayed);
+        assert.equal(await access(join(importRoot,
+            "apps/client/src/ui-uniflex/pages/BackpackItemCard")).then(() => true).catch(() => false),
+            false);
+        assert.match(await readFile(
+            resolve(root, "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"),
+            "utf8"), /<ItemSlot left=\{0\} top=\{0\}/);
+        assert.match(await readFile(
+            resolve(root, "apps/client/src/ui-uniflex/pages/Backpack/Backpack.tsx"), "utf8"),
+            /from '\.\/components\/BackpackItemCard'/);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }

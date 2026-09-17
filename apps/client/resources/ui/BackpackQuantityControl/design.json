@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1225
+  },
+  "roots": [
+    "layer-122"
+  ],
+  "nodes": {
+    "layer-122": {
+      "id": "layer-122",
+      "name": "BackpackQuantityControl",
+      "kind": "group",
+      "frame": {
+        "x": 25,
+        "y": 1118,
+        "width": 700,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackQuantityControl:Backpack/Backpack/Details/BackpackQuantityControl",
+        "role": "component",
+        "definitionKey": "BackpackQuantityControl"
+      },
+      "children": [
+        "layer-123"
+      ]
+    },
+    "layer-123": {
+      "id": "layer-123",
+      "name": "QuantityControl",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 700,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl",
+        "role": "component",
+        "definitionKey": "QuantityControl"
+      },
+      "asset": "asset-2c065a919a278ee9d39d54e97e4538581a2466952442b2b1260858599bea59af"
+    }
+  },
+  "assets": {
+    "asset-2c065a919a278ee9d39d54e97e4538581a2466952442b2b1260858599bea59af": {
+      "path": "assets/2c065a919a278ee9d39d54e97e4538581a2466952442b2b1260858599bea59af.png",
+      "sha256": "2c065a919a278ee9d39d54e97e4538581a2466952442b2b1260858599bea59af",
+      "mime": "image/png",
+      "width": 700,
+      "height": 85
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "QuantityControl: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

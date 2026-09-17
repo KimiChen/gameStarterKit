@@ -35,7 +35,19 @@ await writeFile(resolve(resourceTarget, "manifest.json"), JSON.stringify(resourc
 // resources, but never mix design metadata or binary assets into the page tree.
 const sourceEntries = [];
 const resourceNames = new Set(["assets", "design.json", "manifest.json", "psd-extra.json"]);
+let copiedRestored = false;
 for (const entry of await readdir(packageDir, { withFileTypes: true })) {
+    if (entry.isDirectory() && entry.name === "restored") {
+        const restoredSource = resolve(packageDir, entry.name);
+        const restoredTarget = resolve(projectRoot, "apps/client/src/ui-uniflex/restored");
+        await mkdir(restoredTarget, { recursive: true });
+        for (const child of await readdir(restoredSource, { withFileTypes: true })) {
+            await cp(resolve(restoredSource, child.name), resolve(restoredTarget, child.name),
+                { recursive: true, force: true });
+        }
+        copiedRestored = true;
+        continue;
+    }
     const isSource = entry.isDirectory()
         ? entry.name === "components"
         : [".ts", ".tsx"].includes(extname(entry.name)) || entry.name === "README.md";
@@ -63,7 +75,8 @@ if (sourceEntries.length) {
     }
 }
 console.log(`Imported UniFlex UI ${name}: resources=${resourceTarget}`
-    + (sourceNames.length ? `, authoring=${pageTarget}` : ""));
+    + (sourceNames.length ? `, authoring=${pageTarget}` : "")
+    + (copiedRestored ? `, restored=${resolve(projectRoot, "apps/client/src/ui-uniflex/restored")}` : ""));
 
 // The converter emits self-references to `<Name>.authoring`; the importer renames
 // that entry to `<Name>.tsx`, so rewrite the references to match.

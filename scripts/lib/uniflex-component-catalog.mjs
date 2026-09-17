@@ -6,7 +6,7 @@ const UI_ROOT = "apps/client/src/ui-uniflex";
 
 function skipRelative(rel) {
     const parts = rel.split(/[\\/]/);
-    if (parts.includes("generated")) return true;
+    if (parts.includes("generated") || parts.includes("restored")) return true;
     return parts.some((part) => part.endsWith("Restored"));
 }
 

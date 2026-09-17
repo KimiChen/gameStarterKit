@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "7dc2da925a146b9f1a3113bef026f762f76a1c83e85d288ebe85a1a2ed19f45b",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 134,
+    "height": 52,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"f129c7ef08ee7e16a04bfccdb78dd25f2a9db7b902c749f78291825d9f408ea6\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjEzNCwiaGVpZ2h0Ijo1Mn0sIm5vZGVzIjpbeyJpZCI6MjUsInBhcmVudCI6bnVsbCwicGxhbklkIjoyNSwia2luZCI6InZpZXciLCJuYW1lIjoiUGFuZWxUYWIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjEzNCwiaGVpZ2h0Ijo1Mn0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IlBhbmVsVGFiOkJhY2twYWNrL1BhbmVsVGFiOjAiLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IlBhbmVsVGFiIn19LHsiaWQiOjI2LCJwYXJlbnQiOjI1LCJwbGFuSWQiOjI2LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL21haWwvdGFiLWFjdGl2ZSIsImlkZW50aXR5Ijp7ImtleSI6IlBhbmVsVGFiOkJhY2twYWNrL1BhbmVsVGFiOjAvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUGFuZWxUYWIifX0seyJpZCI6MjcsInBhcmVudCI6MjUsInBsYW5JZCI6MjcsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjEzNCwiaGVpZ2h0Ijo1Mn0sInJlc291cmNlSWQiOiJ1aS9tYWlsL3RhYi1pbmFjdGl2ZSIsImlkZW50aXR5Ijp7ImtleSI6IlBhbmVsVGFiOkJhY2twYWNrL1BhbmVsVGFiOjAvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUGFuZWxUYWIifX0seyJpZCI6MjgsInBhcmVudCI6MjUsInBsYW5JZCI6MjgsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvZmxhZy10YWItc2VsZWN0ZWQiLCJpZGVudGl0eSI6eyJrZXkiOiJQYW5lbFRhYjpCYWNrcGFjay9QYW5lbFRhYjowL186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBhbmVsVGFiIn19LHsiaWQiOjI5LCJwYXJlbnQiOjI1LCJwbGFuSWQiOjI5LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2ZsYWctdGFiLXVuc2VsZWN0ZWQiLCJpZGVudGl0eSI6eyJrZXkiOiJQYW5lbFRhYjpCYWNrcGFjay9QYW5lbFRhYjowL186MyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBhbmVsVGFiIn19LHsiaWQiOjMwLCJwYXJlbnQiOjI1LCJwbGFuSWQiOjMwLCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuijheWkhyIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjEzNCwiaGVpZ2h0Ijo1Mn0sImlkZW50aXR5Ijp7ImtleSI6IlBhbmVsVGFiOkJhY2twYWNrL1BhbmVsVGFiOjAvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBhbmVsVGFiIn19XSwiY29tcG9uZW50RGVjbGFyYXRpb25zIjp7InNjaGVtYVZlcnNpb24iOjEsImtpbmQiOiJ1bmlmbGV4LWNvbXBvbmVudC1kZWNsYXJhdGlvbnMiLCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJQYW5lbFRhYiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvdGFiL1BhbmVsVGFiLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiUGFuZWxUYWIiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3RhYi9QYW5lbFRhYi50c3gifV0sImluc3RhbmNlcyI6W3sia2V5IjoiUGFuZWxUYWI6QmFja3BhY2svUGFuZWxUYWI6MCIsImRlZmluaXRpb25LZXkiOiJQYW5lbFRhYiIsInJvbGUiOiJjb21wb25lbnQiLCJyb290UmVjb3JkSWQiOjI1fV19LCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJQYW5lbFRhYiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvdGFiL1BhbmVsVGFiLnRzeCJ9fQ==\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-40": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "PanelTab [ui:PanelTab:Backpack/PanelTab:0#component]",
+        "id": 40,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-41": {
+      "parent": "layer-40",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 41,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-42": {
+      "parent": "layer-41",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 52,
+        "right": 134,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:PanelTab:Backpack/PanelTab:0/_:1#node]",
+        "id": 42,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-43": {
+      "parent": "layer-40",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 52,
+        "right": 134,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "装备 [ui:PanelTab:Backpack/PanelTab:0/_#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            67,
+            36.360000000000014
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "装备",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 28,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 28,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 43,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}
