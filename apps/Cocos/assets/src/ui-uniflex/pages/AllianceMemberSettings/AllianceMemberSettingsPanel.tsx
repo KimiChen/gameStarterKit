@@ -1,7 +1,6 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
-import { CloseButton } from '../../components/popup/CloseButton';
-import { PopupBackground } from '../../components/popup/PopupBackground';
+import { PopupFrame } from '../../components/popup/PopupFrame';
 import { AllianceMemberSettingsRow } from './AllianceMemberSettingsRow';
 
 export interface AllianceMemberSettingsPanelProps {
@@ -37,17 +36,9 @@ export const AllianceMemberSettingsPanel = defineComponent<AllianceMemberSetting
     return (
         <view name="AllianceMemberSettings" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <view name="AllianceMemberSettings/Mask" interaction="press"
-                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
-            <view name="AllianceMemberSettings/Window"
-                style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
-                <PopupBackground kind="prompt" />
-                <text value={p.title ?? '成员设置'}
-                    style={{ position: 'absolute', left: 90, top: 18, width: 528, height: 58,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                        outlineColor: '#593D84', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-                <CloseButton onClick={p.onClose} />
+            <PopupFrame title={p.title ?? '成员设置'} kind="prompt" left={21} top={318} width={708} height={992}
+                onClose={p.onClose} />
+            <view style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
                 <image source={imageRef('ui/alliance/mset-card')}
                     style={{ position: 'absolute', left: 13, top: 107, width: 685, height: 292, sizeMode: 'sliced' }} />
                 <image source={imageRef('ui/alliance/mset-header')}

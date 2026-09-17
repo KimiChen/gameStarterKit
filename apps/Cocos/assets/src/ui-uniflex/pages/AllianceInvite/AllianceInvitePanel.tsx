@@ -1,8 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
-import { CloseButton } from '../../components/popup/CloseButton';
-import { PopupBackground } from '../../components/popup/PopupBackground';
+import { PopupFrame } from '../../components/popup/PopupFrame';
 
 export interface AllianceInvitePanelProps {
     readonly visible?: boolean;
@@ -28,18 +27,9 @@ export const AllianceInvitePanel = defineComponent<AllianceInvitePanelProps>((p)
     return (
         <view name="AllianceInvite" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <view name="AllianceInvite/Mask" interaction="press"
-                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
-            <view name="AllianceInvite/Window"
-                style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
-                <PopupBackground kind="prompt" />
-                <text value={p.title ?? '邀请成员'}
-                    style={{ position: 'absolute', left: 90, top: 18, width: 528, height: 58,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                        outlineColor: '#593D84', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-                <CloseButton onClick={p.onClose} />
-
+            <PopupFrame title={p.title ?? '邀请成员'} kind="prompt" left={21} top={318} width={708} height={992}
+                onClose={p.onClose} />
+            <view style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
                 <image source={imageRef('ui/alliance/input-bg')}
                     style={{ position: 'absolute', left: 15, top: 106, width: 596, height: 54, sizeMode: 'sliced' }} />
                 <input value={query} placeholder="" onInput={setQuery}

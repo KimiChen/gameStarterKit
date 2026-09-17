@@ -2,8 +2,7 @@ import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { CancelButton } from '../../components/button/CancelButton';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
-import { CloseButton } from '../../components/popup/CloseButton';
-import { PopupBackground } from '../../components/popup/PopupBackground';
+import { PopupFrame } from '../../components/popup/PopupFrame';
 
 export interface AllianceMarchBoostPanelProps {
     readonly visible?: boolean;
@@ -49,18 +48,9 @@ export const AllianceMarchBoostPanel = defineComponent<AllianceMarchBoostPanelPr
     return (
         <view name="AllianceMarchBoost" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <view name="AllianceMarchBoost/Mask" interaction="press"
-                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
-            <view name="AllianceMarchBoost/Window"
-                style={{ position: 'absolute', left: 21, top: 371, width: 708, height: 882 }}>
-                <PopupBackground kind="prompt" />
-                <text value={p.title ?? '行军加速'}
-                    style={{ position: 'absolute', left: 90, top: 18, width: 528, height: 58,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                        outlineColor: '#593D84', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-                <CloseButton onClick={p.onClose} />
-
+            <PopupFrame title={p.title ?? '行军加速'} kind="prompt" left={21} top={371} width={708} height={882}
+                onClose={p.onClose} />
+            <view style={{ position: 'absolute', left: 21, top: 371, width: 708, height: 882 }}>
                 <image source={imageRef('ui/alliance/announce-panel')}
                     style={{ position: 'absolute', left: 12, top: 99, width: 683, height: 164, sizeMode: 'sliced' }} />
                 <image source={imageRef('ui/alliance-march/skill')}
