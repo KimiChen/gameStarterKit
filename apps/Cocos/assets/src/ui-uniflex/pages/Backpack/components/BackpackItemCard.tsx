@@ -1,5 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { ItemSlot } from '../../../components/item/ItemSlot';
 
 export type BackpackQuality = 'green' | 'blue' | 'purple' | 'orange' | 'red';
 export interface BackpackItem {
@@ -21,24 +22,13 @@ export const BackpackItemCard = defineComponent<{
 }>((p) => {
     const left = 25 + p.slot % 4 * 182;
     const top = p.slot < 4 ? 216 : 407;
+    const quality = p.item.quality;
+    const count = String(p.item.count);
+    const icon = imageRef('ui/backpack/diamond');
     return (
     <view name="BackpackItemCard" interaction="press" accessibilityLabel={`${p.item.name} 数量${p.item.count}`}
         onClick={p.onClick} style={{ position: 'absolute', left: left, top: top, width: 154, height: 159 }}>
-        <image visible={p.item.quality === 'green'} source={imageRef('ui/backpack/item-green')}
-            style={{ position: 'absolute', width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image visible={p.item.quality === 'blue'} source={imageRef('ui/backpack/item-blue')}
-            style={{ position: 'absolute', width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image visible={p.item.quality === 'purple'} source={imageRef('ui/backpack/item-purple')}
-            style={{ position: 'absolute', width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image visible={p.item.quality === 'orange'} source={imageRef('ui/backpack/item-orange')}
-            style={{ position: 'absolute', width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image visible={p.item.quality === 'red'} source={imageRef('ui/backpack/item-red')}
-            style={{ position: 'absolute', width: 154, height: 159, sizeMode: 'sliced' }} />
-        <image source={imageRef('ui/backpack/diamond')}
-            style={{ position: 'absolute', left: 13, top: 24, width: 129, height: 107 }} />
-        <text value={String(p.item.count)} style={{ position: 'absolute', left: 87, top: 111, width: 57, height: 42,
-            font: fontRef('fonts/regular', 700), fontSize: 32, color: '#FFFFFF', bold: true,
-            outlineColor: '#000000', outlineWidth: 2, horizontalAlign: 'right', verticalAlign: 'center', overflow: 'shrink' }} />
+        <ItemSlot left={0} top={0} quality={quality} icon={icon} count={count} />
         <image visible={p.selected} source={imageRef('ui/backpack/detail-count-bg')}
             style={{ position: 'absolute', left: 8, top: 8, width: 138, height: 40, sizeMode: 'sliced' }} />
         <text visible={p.selected} value={String(p.item.detailCount)}

@@ -226,6 +226,14 @@
       "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItem.tsx"
     },
     {
+      "id": "shop",
+      "aliases": ["shop", "shop-vip", "vip-shop", "vipshop"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Shop",
+      "rootName": "ShopPage",
+      "source": "apps/client/src/ui-uniflex/pages/Shop/Shop.tsx"
+    },
+    {
       "id": "prompt-restored",
       "aliases": ["prompt-restored", "promptRestored"],
       "canvas": { "width": 750, "height": 1624 },

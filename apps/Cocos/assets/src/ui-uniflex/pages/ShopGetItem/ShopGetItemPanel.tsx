@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
+import { ItemSlot } from '../../components/item/ItemSlot';
 import { QuantityControl } from '../../components/quantity/QuantityControl';
 import { CloseButton } from '../../components/popup/CloseButton';
 import { PopupBackground } from '../../components/popup/PopupBackground';
@@ -31,6 +32,7 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
     const price = String((p.unitPrice ?? 125) * quantity);
     const owned = String(p.owned ?? 99);
     const payGem = imageRef('ui/shop/getitem-pay-gem');
+    const itemIcon = imageRef('ui/shop/getitem-icon');
     const qtyTrack = imageRef('ui/star-upgrade/progress-track');
     const qtyFill = imageRef('ui/star-upgrade/progress-fill');
     const qtyThumb = imageRef('ui/shop/getitem-thumb');
@@ -59,15 +61,7 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
                         horizontalAlign: 'center', verticalAlign: 'center' }} />
                 <CloseButton onClick={p.onClose} />
 
-                <image source={imageRef('ui/backpack/item-orange')}
-                    style={{ position: 'absolute', left: 18, top: 119, width: 154, height: 159, sizeMode: 'sliced' }} />
-                <image source={imageRef('ui/shop/getitem-icon')}
-                    style={{ position: 'absolute', left: 31, top: 143, width: 129, height: 107 }} />
-                <text value={owned}
-                    style={{ position: 'absolute', left: 88, top: 226, width: 76, height: 28,
-                        font: fontRef('fonts/regular', 700), fontSize: 26, color: '#ffffff', bold: true,
-                        outlineColor: '#3F3254', outlineWidth: 2,
-                        horizontalAlign: 'right', verticalAlign: 'center' }} />
+                <ItemSlot left={18} top={119} quality="orange" icon={itemIcon} count={owned} />
                 <text value={p.name ?? '高级钻石'}
                     style={{ position: 'absolute', left: 191, top: 132, width: 470, height: 36,
                         font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,
