@@ -7,7 +7,7 @@ import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
 import { declarePsdOwnership, stampPsdIdentities } from "./psd-ownership";
-import { findPreviewScreen, screenCatalog, type ScreenEntry } from "./screens";
+import { findPreviewScreen, psdComponents, type ScreenEntry } from "./screens";
 
 const params = new URLSearchParams(location.search);
 const requested = params.get("screen") || params.get("ui");
@@ -439,10 +439,8 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
             return;
         case "alliance-tech-restored":
             await runtime.start(AllianceTechRestored, {
-                onAction: (action) => {
-                    console.info("[UniFlex AllianceTechRestored] action", action);
-                    if (action.action === "back" || action.action === "close") backToRestored();
-                },
+                onBack: backToRestored,
+                onAction: (id) => console.info("[UniFlex AllianceTechRestored] action", id),
             });
             return;
         case "shop-getitem-restored":
@@ -464,7 +462,7 @@ try {
         key: active.componentName,
         source: active.source,
         rootName: active.rootName,
-    }, screenCatalog.components);
+    }, psdComponents);
     (window as typeof window & { __UNIFLEX_DESIGN_SNAPSHOT__?: unknown }).__UNIFLEX_DESIGN_SNAPSHOT__ = {
         ...snapshot,
         nodes: stampPsdIdentities(snapshot.nodes, componentDeclarations),

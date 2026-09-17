@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["*.ts", "screens.json"]
+  "include": ["*.ts", "screens.json", "components.generated.json"]
 }

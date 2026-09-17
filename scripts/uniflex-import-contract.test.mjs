@@ -109,6 +109,38 @@ test("PSD UniFlex package contract uses manifest.json without page sidecars", {
     }
 });
 
+test("authoring import replaces leftover dump components instead of merging", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-replace-authoring-"));
+    const designDir = join(tempRoot, "design");
+    const packageDir = join(tempRoot, "package");
+    const importRoot = join(tempRoot, "import");
+    const pageDir = join(importRoot, "apps/client/src/ui-uniflex/pages/Backpack");
+    try {
+        const design = await writeConverterDesign(designDir);
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", design,
+            "--name", "Backpack", "--out", packageDir,
+        ], { cwd: root, env });
+        await mkdir(join(pageDir, "components"), { recursive: true });
+        await writeFile(join(pageDir, "components/LeftoverDump.tsx"), "export const LeftoverDump = 1;\n");
+        const leftoverAsset = join(importRoot, "apps/client/resources/ui/Backpack/assets/leftover.bin");
+        await mkdir(join(importRoot, "apps/client/resources/ui/Backpack/assets"), { recursive: true });
+        await writeFile(leftoverAsset, "stale");
+        await execFileAsync(process.execPath, [
+            resolve(root, "scripts/import-uniflex-package.mjs"),
+            "--update", "--name", "Backpack", "--out", importRoot, packageDir,
+        ], { cwd: root });
+        assert.equal(await access(join(pageDir, "Backpack.tsx")).then(() => true), true);
+        assert.equal(await access(join(pageDir, "components", "BackpackComponent.tsx")).then(() => true), true);
+        assert.equal(await access(join(pageDir, "components", "LeftoverDump.tsx")).then(() => true).catch(() => false), false);
+        assert.equal(await access(leftoverAsset).then(() => true).catch(() => false), false);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
 test("pinned converter restores catalog ConfirmButton from layer identity", {
     skip: available ? false : "pinned web-ui-to-psd package is not installed",
 }, async () => {
@@ -164,13 +196,17 @@ test("pinned converter restores catalog ConfirmButton from layer identity", {
         }));
         await execFileAsync(converter.command, [
             ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
-            "--name", "Confirm", "--out", packageDir,
+            "--name", "Confirm", "--source-root", tempRoot, "--out", packageDir,
         ], { cwd: root, env });
         const source = await readFile(join(packageDir, "Confirm.authoring.tsx"), "utf8");
         assert.match(source, /import \{ ConfirmButton \} from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
         assert.match(source, /<ConfirmButton /);
         assert.doesNotMatch(source, /ConfirmConfirmButton/);
-        assert.deepEqual(await readdir(join(packageDir, "components")), []);
+        const dumped = await readdir(join(packageDir, "components")).catch((error) => {
+            if (error.code === "ENOENT") return [];
+            throw error;
+        });
+        assert.deepEqual(dumped, []);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }
@@ -221,7 +257,7 @@ test("pinned converter restores MailBattleRow and BackpackTab from layer identit
         }));
         await execFileAsync(converter.command, [
             ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
-            "--name", "MailBattleReport", "--out", packageDir,
+            "--name", "MailBattleReport", "--source-root", tempRoot, "--out", packageDir,
         ], { cwd: root, env });
         const source = await readFile(join(packageDir, "MailBattleReport.authoring.tsx"), "utf8");
         assert.match(source, /import \{ MailBattleRow \} from '\.\/MailBattleRow'/);

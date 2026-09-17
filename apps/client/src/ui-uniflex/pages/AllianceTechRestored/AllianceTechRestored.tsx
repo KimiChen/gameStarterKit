@@ -1,23 +1,14 @@
-import { defineView, useState } from '@uniflex/compiler';
-import { AllianceTechRestoredAllianceTechPage } from './components/AllianceTechRestoredAllianceTechPage';
+import { defineView } from '@uniflex/compiler';
+import { AllianceTechPanel, type AllianceTechPanelProps } from '../AllianceTech/AllianceTechPanel';
 
-export type AllianceTechRestoredAction = {
-    readonly id: string;
-    readonly action: 'back' | 'close' | 'tab' | 'primary' | 'select';
-};
-export interface AllianceTechRestoredParams {
-    readonly onAction?: (action: AllianceTechRestoredAction) => void;
-}
+export type AllianceTechRestoredParams = Omit<AllianceTechPanelProps, 'visible'>;
 
-export const AllianceTechRestored = defineView<AllianceTechRestoredParams | void>({ zIndex: 'window' }, (context) => {
-    const [selected, setSelected] = useState<string | null>(null);
-    const emit = (id: string, action: AllianceTechRestoredAction['action']) => {
-        setSelected(id);
-        context.params?.onAction?.({ id, action });
-    };
+export const AllianceTechRestored = defineView<AllianceTechRestoredParams | void>({ zIndex: 'screen' }, (context) => {
+    const params = context.params ?? {};
     return (
-        <view name="AllianceTechRestored" style={{ width: 750, height: 1624 }}>
-            <AllianceTechRestoredAllianceTechPage selected={selected} emit={emit} />
+        <view name="AllianceTechPage" style={{ width: 750, height: 1624 }}>
+            <AllianceTechPanel title={params.title} rankLabel={params.rankLabel}
+                nodes={params.nodes} onBack={params.onBack} onAction={params.onAction} />
         </view>
     );
 });

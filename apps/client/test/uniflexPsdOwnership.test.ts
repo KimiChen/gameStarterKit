@@ -69,6 +69,27 @@ test('generic declarations fail closed when the page root is missing or ambiguou
     }], page, registered), /Ambiguous or missing page root/);
 });
 
+test('full-canvas nested panel stamps as a component when it is registered', () => {
+    const nodes = [
+        { id: 1, parent: null, name: 'AllianceTechPage', kind: 'view' },
+        { id: 2, parent: 1, name: 'AllianceTech', kind: 'view' },
+    ];
+    const contract = declarePsdOwnership(nodes, {
+        key: 'AllianceTech',
+        source: 'apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTech.tsx',
+        rootName: 'AllianceTechPage',
+    }, [{
+        key: 'AllianceTechPanel',
+        rootName: 'AllianceTech',
+        source: 'apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechPanel.tsx',
+    }]);
+    assert.deepEqual(contract.instances.map((instance) =>
+        [instance.role, instance.definitionKey, instance.rootRecordId]), [
+        ['page', 'AllianceTech', 1],
+        ['component', 'AllianceTechPanel', 2],
+    ]);
+});
+
 test('snapshot identities use instance keys without # so PSD layer tags can round-trip', () => {
     const contract = declarePsdOwnership(fixture(), page, registered);
     const stamped = stampPsdIdentities(fixture(), contract) as Array<{ identity: { key: string, role: string } }>;
