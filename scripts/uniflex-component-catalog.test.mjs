@@ -30,6 +30,7 @@ test("discoverPsdComponents skips Restored dumps and fails closed on duplicate r
     try {
         await mkdir(join(ui, "pages/Demo"), { recursive: true });
         await mkdir(join(ui, "pages/DemoRestored/components"), { recursive: true });
+        await mkdir(join(ui, "restored/pages/Demo/components"), { recursive: true });
         await mkdir(join(ui, "generated"), { recursive: true });
         await writeFile(join(ui, "pages/Demo/DemoPanel.tsx"), `
 export const DemoPanel = defineComponent(() => (
@@ -39,6 +40,11 @@ export const DemoPanel = defineComponent(() => (
         await writeFile(join(ui, "pages/DemoRestored/components/Dump.tsx"), `
 export const Dump = defineComponent(() => (
     <view name="DumpRoot" />
+));
+`);
+        await writeFile(join(ui, "restored/pages/Demo/components/Shared.tsx"), `
+export const Shared = defineComponent(() => (
+    <view name="SharedRoot" />
 ));
 `);
         await writeFile(join(ui, "generated/Skip.tsx"), `
@@ -68,11 +74,14 @@ test("PSD ownership catalog is discovered from defineComponent, not the FGUI scr
     assert.ok(psdKeys.has("AllianceTechNode"));
     assert.ok(psdKeys.has("AllianceTechLink"));
     assert.ok(psdKeys.has("IconCaptionButton"));
+    assert.ok(psdKeys.has("ItemSlot"));
     assert.equal(previewKeys.has("AllianceTechPanel"), false);
     assert.equal(previewKeys.has("IconCaptionButton"), false);
     assert.ok(previewKeys.has("PopupFrame"));
+    assert.ok(previewKeys.has("ItemSlot"));
     assert.ok(psdKeys.has("PopupFrame"));
     assert.equal(psdKeys.has("CyanButton"), false);
     assert.ok(psd.components.every((entry) => !entry.source.includes("Restored")));
+    assert.ok(psd.components.every((entry) => !entry.source.includes("/restored/")));
     assert.ok(psd.components.every((entry) => !entry.source.includes("/generated/")));
 });

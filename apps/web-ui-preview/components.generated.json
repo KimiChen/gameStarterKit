@@ -278,6 +278,11 @@
       "source": "apps/client/src/ui-uniflex/components/button/IconCaptionButton.tsx"
     },
     {
+      "key": "ItemSlot",
+      "rootName": "ItemSlot",
+      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx"
+    },
+    {
       "key": "MailBattleRow",
       "rootName": "MailBattleRow",
       "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
