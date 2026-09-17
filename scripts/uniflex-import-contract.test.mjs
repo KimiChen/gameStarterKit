@@ -267,3 +267,114 @@ test("pinned converter restores MailBattleRow and BackpackTab from layer identit
         await rm(tempRoot, { recursive: true, force: true });
     }
 });
+
+test("pinned converter copies unique page-local panels and overlays For defaultItems", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-nested-overlay-"));
+    try {
+        const pageDir = join(tempRoot, "apps/client/src/ui-uniflex/pages/AllianceTech");
+        const packageDir = join(tempRoot, "package");
+        const designDir = join(tempRoot, "design");
+        await mkdir(pageDir, { recursive: true });
+        await mkdir(designDir, { recursive: true });
+        await writeFile(join(pageDir, "AllianceTechNode.tsx"),
+            "export const AllianceTechNode = defineComponent((p) => <view name=\"AllianceTechNode\" />);\n");
+        await writeFile(join(pageDir, "AllianceTechPanel.tsx"), `import { AllianceTechNode } from './AllianceTechNode';
+export const DEFAULT_ALLIANCE_TECH_NODES = [
+    { id: 'shield', kind: 'shield', left: 294, top: 158, level: 5, maxLevel: 5 },
+    { id: 'heart', kind: 'heart', left: 57, top: 421, parentIds: ['shield'], level: 1, maxLevel: 5 },
+];
+export const AllianceTechPanel = defineComponent((p) => {
+    const nodes = p.nodes ?? DEFAULT_ALLIANCE_TECH_NODES;
+    return (
+        <view name="AllianceTech">
+            <For each={nodes} key="id">
+                {(node) => <AllianceTechNode node={node} />}
+            </For>
+        </view>
+    );
+});
+`);
+        await writeFile(join(pageDir, "AllianceTech.tsx"), `import { AllianceTechPanel } from './AllianceTechPanel';
+export const AllianceTech = defineView(() => (
+    <view name="AllianceTechPage">
+        <AllianceTechPanel />
+    </view>
+));
+`);
+        const page = { x: 0, y: 0, width: 750, height: 1624 };
+        await writeFile(join(designDir, "design.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-design", canvas: { width: 750, height: 1624 },
+            roots: ["page"], fonts: {}, assets: {},
+            nodes: {
+                page: {
+                    id: "page", name: "AllianceTechPage", kind: "group", frame: page,
+                    opacity: 1, visible: true, children: ["panel"],
+                    identity: { key: "AllianceTech.root", role: "page", definitionKey: "AllianceTech" },
+                },
+                panel: {
+                    id: "panel", name: "AllianceTech", kind: "group", frame: page,
+                    opacity: 1, visible: true, children: ["node0", "node1"],
+                    identity: {
+                        key: "AllianceTechPanel:AllianceTechPage/AllianceTech", role: "component",
+                        definitionKey: "AllianceTechPanel",
+                    },
+                },
+                node0: {
+                    id: "node0", name: "AllianceTechNode", kind: "group",
+                    frame: { x: 310, y: 170, width: 165, height: 192 },
+                    opacity: 1, visible: true, children: [],
+                    identity: {
+                        key: "AllianceTechNode:AllianceTechPage/AllianceTech/AllianceTechNode:0",
+                        role: "component", definitionKey: "AllianceTechNode",
+                    },
+                },
+                node1: {
+                    id: "node1", name: "AllianceTechNode", kind: "group",
+                    frame: { x: 57, y: 421, width: 164, height: 190 },
+                    opacity: 1, visible: true, children: [],
+                    identity: {
+                        key: "AllianceTechNode:AllianceTechPage/AllianceTech/AllianceTechNode:1",
+                        role: "component", definitionKey: "AllianceTechNode",
+                    },
+                },
+            },
+        }));
+        await writeFile(join(designDir, "component-declarations.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-component-declarations",
+            definitions: [
+                { key: "AllianceTech", source: "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTech.tsx" },
+                { key: "AllianceTechPanel", source: "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechPanel.tsx" },
+                { key: "AllianceTechNode", source: "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechNode.tsx" },
+            ],
+            instances: [
+                { key: "AllianceTech.root", definitionKey: "AllianceTech", role: "page", rootRecordId: 1 },
+                {
+                    key: "AllianceTechPanel:AllianceTechPage/AllianceTech", definitionKey: "AllianceTechPanel",
+                    role: "component", rootRecordId: 2,
+                },
+                {
+                    key: "AllianceTechNode:AllianceTechPage/AllianceTech/AllianceTechNode:0",
+                    definitionKey: "AllianceTechNode", role: "component", rootRecordId: 3,
+                },
+                {
+                    key: "AllianceTechNode:AllianceTechPage/AllianceTech/AllianceTechNode:1",
+                    definitionKey: "AllianceTechNode", role: "component", rootRecordId: 4,
+                },
+            ],
+        }));
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "AllianceTechRestored", "--source-root", tempRoot, "--out", packageDir,
+        ], { cwd: root, env });
+        const pageSource = await readFile(join(packageDir, "AllianceTechRestored.authoring.tsx"), "utf8");
+        const panel = await readFile(join(packageDir, "AllianceTechPanel.tsx"), "utf8");
+        assert.match(pageSource, /from '\.\/AllianceTechPanel'/);
+        assert.match(panel, /id: 'shield', kind: 'shield', left: 310, top: 170/);
+        assert.match(panel, /from '\.\.\/AllianceTech\/AllianceTechNode'/);
+        assert.equal(await access(join(packageDir, "AllianceTechNode.tsx")).then(() => true).catch(() => false), false);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
