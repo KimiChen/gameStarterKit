@@ -107,7 +107,7 @@ export const MailBattleReportRestored = defineView<MailBattleReportRestoredParam
             <text value={params.title ?? '邮件'} style={{ position: 'absolute', left: 38, top: 16, width: 300, height: 60, font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true, outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
             <PanelTab label={tabGroups[0].label} active={activeTab === 0} left={tabs[0]} top={118} width={170}
                 onClick={() => setActiveTab(0)} />
-            <PanelTab label={tabGroups[1].label} active={activeTab === 1} left={tabs[1]} top={103} width={176}
+            <PanelTab label={tabGroups[1].label} active={activeTab === 1} left={tabs[1]} top={118} width={170}
                 onClick={() => setActiveTab(1)} />
             <PanelTab label={tabGroups[2].label} active={activeTab === 2} left={tabs[2]} top={118} width={170}
                 onClick={() => setActiveTab(2)} />
