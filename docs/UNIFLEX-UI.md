@@ -60,7 +60,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uni
 | 勾选 | `CheckBox` |
 | 数量加减 / 滑条 | `QuantityControl` |
 | 道具格 | `ItemSlot` |
-| 全屏标题栏 | `ScreenHeader`（`ui/mail/header` + 白描边标题；领地旗帜头不要用） |
+| 全屏标题栏 | `ScreenHeader` |
 | 底栏 / 红点 | `MainNav` / `NotificationBadge` |
 
 按钮不要抄错皮：领地「驻防」和要塞「前往」不是同一张图；对照 assembled 量尺寸。
