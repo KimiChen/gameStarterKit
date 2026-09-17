@@ -338,9 +338,9 @@
       "source": "apps/client/src/ui-uniflex/components/button/CancelButton.tsx"
     },
     {
-      "key": "SettingsMenuButton",
-      "rootName": "SettingsMenuButton",
-      "source": "apps/client/src/ui-uniflex/pages/Settings/SettingsMenuButton.tsx"
+      "key": "WideMenuButton",
+      "rootName": "WideMenuButton",
+      "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx"
     },
     {
       "key": "NotificationBadge",
