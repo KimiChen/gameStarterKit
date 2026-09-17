@@ -248,6 +248,124 @@
       "sha256": "217378b22f5692cef5db99298c429b38c49a666014099cfc7d5bd0e23944b174"
     },
     {
+      "id": "ui/alliance/tech-tree-bg",
+      "kind": "image",
+      "file": "assets/alliance_tech_tree_bg.png",
+      "width": 750,
+      "height": 1399,
+      "sha256": "46e2338c11ece115ae7e75e6860ebe32910fe455eddf61bec4ff119e095290f5"
+    },
+    {
+      "id": "ui/alliance/tech-hex-locked",
+      "kind": "image",
+      "file": "assets/alliance_tech_hex_locked.png",
+      "width": 165,
+      "height": 192,
+      "sha256": "f9a1e5d6d1c55573660420c01b0253cbe8a017fb395cccd675049e21a85d4d18"
+    },
+    {
+      "id": "ui/alliance/tech-hex-unlocked",
+      "kind": "image",
+      "file": "assets/alliance_tech_hex_unlocked.png",
+      "width": 165,
+      "height": 192,
+      "sha256": "d87237e0ca57d333253cb399a0befae4a07c0b4b0eb3c57019fdc8b753f49adc"
+    },
+    {
+      "id": "ui/alliance/tech-hex-heart",
+      "kind": "image",
+      "file": "assets/alliance_tech_hex_heart.png",
+      "width": 164,
+      "height": 190,
+      "sha256": "8bbc16699580a692e51dce0a3823c4b99d9925c02fe8f2fd803c9ef504341e43"
+    },
+    {
+      "id": "ui/alliance/tech-icon-crate",
+      "kind": "image",
+      "file": "assets/alliance_tech_icon_crate.png",
+      "width": 132,
+      "height": 121,
+      "sha256": "dcd372bad06334127c3be156d206e0b85e08bf32917dfcd6f366648f6a1eed75"
+    },
+    {
+      "id": "ui/alliance/tech-icon-shield",
+      "kind": "image",
+      "file": "assets/alliance_tech_icon_shield.png",
+      "width": 155,
+      "height": 146,
+      "sha256": "0aaba46965ffd1cdc85ee7071f67b6950fffd7f069e12ed7d68405cd000c6eb8"
+    },
+    {
+      "id": "ui/alliance/tech-icon-heart",
+      "kind": "image",
+      "file": "assets/alliance_tech_icon_heart.png",
+      "width": 125,
+      "height": 108,
+      "sha256": "10bc608219e94733e9bfe8ed41630131086e555a6c38f7ef3880cee989511647"
+    },
+    {
+      "id": "ui/alliance/tech-icon-swords",
+      "kind": "image",
+      "file": "assets/alliance_tech_icon_swords.png",
+      "width": 136,
+      "height": 122,
+      "sha256": "6b1304f68d627b82faddff5b8a4f4072c1b6f6f19c95819c013a8f9e2364d893"
+    },
+    {
+      "id": "ui/alliance/tech-lock",
+      "kind": "image",
+      "file": "assets/alliance_tech_lock.png",
+      "width": 159,
+      "height": 186,
+      "sha256": "cd5cf27115c59b2d2740f799646c330fccdc2f4fa15055eef1f36f5d9c3dd462"
+    },
+    {
+      "id": "ui/alliance/tech-badge",
+      "kind": "image",
+      "file": "assets/alliance_tech_badge.png",
+      "width": 24,
+      "height": 24,
+      "sha256": "3477e612af7a296fd222c543a43c9f5264320b726024722e6ff3a20f827d5305",
+      "nineSlice": [
+        10,
+        10,
+        10,
+        10
+      ]
+    },
+    {
+      "id": "ui/alliance/tech-lines",
+      "kind": "image",
+      "file": "assets/alliance_tech_lines.png",
+      "width": 494,
+      "height": 901,
+      "sha256": "9300528792f7b4f7195edf16c7ac5b3638564320029054b5fc0d2a1b245471dd"
+    },
+    {
+      "id": "ui/alliance/tech-rank",
+      "kind": "image",
+      "file": "assets/alliance_tech_rank.png",
+      "width": 82,
+      "height": 78,
+      "sha256": "c1122f1d4e553853940919eebc6f63f4933f2228c58055cf5b878ff0de7b8464"
+    },
+    {
+      "id": "ui/alliance/tech-fade-top",
+      "kind": "image",
+      "file": "assets/alliance_tech_fade_top.png",
+      "width": 1,
+      "height": 21,
+      "sha256": "31b62a8bc9985a92d4afcbca854870dadc06350118a89b7ba42b1d2454302fed"
+    },
+    {
+      "id": "ui/alliance/tech-fade-bot",
+      "kind": "image",
+      "file": "assets/alliance_tech_fade_bot.png",
+      "width": 1,
+      "height": 20,
+      "sha256": "abc7baccddd552ca1ac2dc2757d2218cce99424f79a9355c659eec888721e55f"
+    },
+    {
       "id": "ui/alliance/mset-card",
       "kind": "image",
       "file": "assets/alliance_mset_card.png",

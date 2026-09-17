@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceBoard, AllianceCreate, AllianceGift, AllianceHelp, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceBoard, AllianceCreate, AllianceGift, AllianceHelp, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTech, AllianceTerritory, AllianceWar, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, ShopGetItem, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -265,6 +265,19 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onSend: (text) => console.info("[UniFlex AllianceBoard] send", text),
                 onAction: (id) => console.info("[UniFlex AllianceBoard] action", id),
                 onSelectTab: (tab) => console.info("[UniFlex AllianceBoard] tab", tab),
+            });
+            return;
+        case "alliance-tech":
+            await runtime.start(AllianceTech, {
+                onBack: backToPreview,
+                onAction: (id) => console.info("[UniFlex AllianceTech] action", id),
+            });
+            return;
+        case "shop-getitem":
+            await runtime.start(ShopGetItem, {
+                onClose: backToPreview,
+                onChange: (quantity) => console.info("[UniFlex ShopGetItem] quantity", quantity),
+                onBuy: (quantity) => console.info("[UniFlex ShopGetItem] buy", quantity),
             });
             return;
         case "prompt-restored":

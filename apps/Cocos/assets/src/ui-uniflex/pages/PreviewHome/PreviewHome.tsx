@@ -25,6 +25,8 @@ export type PreviewHomeTarget =
     | 'alliance-gift'
     | 'alliance-help'
     | 'alliance-board'
+    | 'alliance-tech'
+    | 'shop-getitem'
     | 'restored-home';
 
 export interface PreviewHomeParams {
@@ -34,7 +36,7 @@ export interface PreviewHomeParams {
 /** Local preview router: keeps feature previews discoverable without coupling production navigation. */
 export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen' }, (context) => {
     const go = context.params.onNavigate;
-    return <view name="PreviewHome" style={{ width: 750, height: 1334, backgroundColor: '#101318', flexDirection: 'column', alignItems: 'center', padding: { top: 40 } }}>
+    return <view name="PreviewHome" style={{ width: 750, height: 1424, backgroundColor: '#101318', flexDirection: 'column', alignItems: 'center', padding: { top: 40 } }}>
         <text value="UniFlex UI 预览" style={{ width: 650, height: 72, font: theme.font, fontSize: 42, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
         <text value="选择功能界面" style={{ width: 650, height: 50, font: theme.font, fontSize: 24, color: '#aab4c4', horizontalAlign: 'center', verticalAlign: 'center' }} />
         <view style={{ width: 616, padding: { top: 36 }, gap: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flexStart', alignItems: 'flexStart' }}>
@@ -96,6 +98,12 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('alliance-board')} style={{ width: 300, height: 72, backgroundColor: '#3d4a6a', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="留言板" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('alliance-tech')} style={{ width: 300, height: 72, backgroundColor: '#4d3d6a', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="联盟科技" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('shop-getitem')} style={{ width: 300, height: 72, backgroundColor: '#8a6a2d', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="获取道具" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <view interaction="press" onClick={() => go('restored-home')} style={{ width: 300, height: 90, backgroundColor: '#1e4d6b', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="还原 UI 预览" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />

@@ -1,6 +1,6 @@
 import { Node, UITransform, view } from "cc";
 import { UniFlexCocosRuntime } from "../kits/uniflex/api/cocos/index";
-import { Alliance, AllianceAnnounce, AllianceBoard, AllianceCreate, AllianceGift, AllianceHelp, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTerritory, AllianceWar, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, Prompt, Settings, loadGameUI } from "./generated/ui";
+import { Alliance, AllianceAnnounce, AllianceBoard, AllianceCreate, AllianceGift, AllianceHelp, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTech, AllianceTerritory, AllianceWar, Backpack, CharacterManage, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, Prompt, Settings, ShopGetItem, loadGameUI } from "./generated/ui";
 import type { BackpackAction } from "./generated/Backpack";
 import type { MailBattleReportParams } from "./generated/MailBattleReport";
 import { resourceMap } from "./generated/resource-map";
@@ -372,6 +372,34 @@ export function createAllianceMemberSettingsPreview(parent: Node) {
     };
 }
 
+export function createAllianceTechPreview(parent: Node) {
+    const root = new Node("UniFlexAllianceTech");
+    root.layer = parent.layer;
+    const transform = root.addComponent(UITransform);
+    parent.addChild(root);
+    const resize = (): void => {
+        const size = view.getVisibleSize();
+        transform.setContentSize(size.width, size.height);
+    };
+    resize();
+    view.on("canvas-resize", resize);
+    const runtime = new UniFlexCocosRuntime({ container: root, resources: resourceMap, loadUI: loadGameUI });
+    let disposed = false;
+    const dispose = (): void => {
+        if (disposed) return;
+        disposed = true;
+        view.off("canvas-resize", resize);
+        try { runtime.dispose(); } finally { root.destroy(); }
+    };
+    return {
+        ready: runtime.start(AllianceTech, {
+            onBack: dispose,
+            onAction: (id) => console.info("[UniFlex AllianceTech] action", id),
+        }),
+        dispose,
+    };
+}
+
 export function createAllianceBoardPreview(parent: Node) {
     const root = new Node("UniFlexAllianceBoard");
     root.layer = parent.layer;
@@ -602,6 +630,35 @@ export function createAllianceMarchBoostPreview(parent: Node) {
             onClose: dispose,
             onPayGem: () => console.info("[UniFlex AllianceMarchBoost] pay-gem"),
             onPayCoin: () => console.info("[UniFlex AllianceMarchBoost] pay-coin"),
+        }),
+        dispose,
+    };
+}
+
+export function createShopGetItemPreview(parent: Node) {
+    const root = new Node("UniFlexShopGetItem");
+    root.layer = parent.layer;
+    const transform = root.addComponent(UITransform);
+    parent.addChild(root);
+    const resize = (): void => {
+        const size = view.getVisibleSize();
+        transform.setContentSize(size.width, size.height);
+    };
+    resize();
+    view.on("canvas-resize", resize);
+    const runtime = new UniFlexCocosRuntime({ container: root, resources: resourceMap, loadUI: loadGameUI });
+    let disposed = false;
+    const dispose = (): void => {
+        if (disposed) return;
+        disposed = true;
+        view.off("canvas-resize", resize);
+        try { runtime.dispose(); } finally { root.destroy(); }
+    };
+    return {
+        ready: runtime.start(ShopGetItem, {
+            onClose: dispose,
+            onChange: (quantity) => console.info("[UniFlex ShopGetItem] quantity", quantity),
+            onBuy: (quantity) => console.info("[UniFlex ShopGetItem] buy", quantity),
         }),
         dispose,
     };
