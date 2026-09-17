@@ -16,7 +16,10 @@ function slotQuality(quality: HeroCardQuality): ItemQuality {
     return quality === 'yellow' ? 'orange' : quality;
 }
 
-export const HeroRequiredHero = defineComponent<HeroRequiredHeroProps>((p) => (
+export const HeroRequiredHero = defineComponent<HeroRequiredHeroProps>((p) => {
+    const owned = p.owned;
+    const nameColor = p.nameColor;
+    return (
     <view name="HeroRequiredHero" interaction="press" onClick={p.onClick}
         style={{ position: 'relative', width: 158, height: 196 }}>
         <ItemSlot left={4} top={4} quality={slotQuality(p.quality)} />
@@ -24,15 +27,16 @@ export const HeroRequiredHero = defineComponent<HeroRequiredHeroProps>((p) => (
             style={{ position: 'absolute', left: 12, top: 13, width: 138, height: 138 }} />
         <image source={imageRef('ui/hero/bond-class')}
             style={{ position: 'absolute', left: 0, top: 0, width: 46, height: 56 }} />
-        <text visible={p.owned} value={p.level}
+        <text visible={owned} value={p.level}
             style={{ position: 'absolute', left: 8, top: 108, width: 142, height: 40,
                 font: fontRef('fonts/regular', 700), fontSize: 36, color: '#FFE57B', bold: true,
                 outlineColor: '#000000', outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center' }} />
-        <image visible={!p.owned} source={imageRef('ui/hero/bond-lock')}
+        <image visible={!owned} source={imageRef('ui/hero/bond-lock')}
             style={{ position: 'absolute', left: 1, top: 0, width: 158, height: 163 }} />
         <text value={p.name}
             style={{ position: 'absolute', left: 0, top: 168, width: 158, height: 28,
-                font: fontRef('fonts/regular', 700), fontSize: 26, color: p.nameColor, bold: true,
+                font: fontRef('fonts/regular', 700), fontSize: 26, color: nameColor, bold: true,
                 horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
     </view>
-));
+    );
+});
