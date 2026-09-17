@@ -141,6 +141,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(previewHtml, /提示弹窗/);
         assert.match(previewHtml, />目录</);
         assert.match(previewHtml, /bindLabeled/);
+        assert.match(previewHtml, /bindPageInteractions/);
         assert.match(previewHtml, /currentId, go/);
         assert.ok(existsSync(join(out, "preview/regular.ttf")));
         assert.match(frameXml, /name="PopupFrame\/Content"/);
@@ -1005,6 +1006,7 @@ test("preview server catalog page lists merged screens", async () => {
             assert.match(html, /"id":"preview-home"/);
             assert.match(html, /bindCatalogClicks/);
             assert.match(html, /bindLabeled/);
+            assert.match(html, /bindPageInteractions/);
             assert.match(html, /currentId, go/);
             const pkg = await fetch(`${server.url}${basename(a)}/UniFlex_Prompt/package.xml`);
             assert.equal(pkg.status, 200);
@@ -1015,6 +1017,57 @@ test("preview server catalog page lists merged screens", async () => {
     } finally {
         rmSync(a, { recursive: true, force: true });
         rmSync(b, { recursive: true, force: true });
+    }
+});
+
+test("press views export as FairyGUI buttons; overlays stay graphs", async () => {
+    const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-press-"));
+    try {
+        const catalog = await loadScreenCatalog(root);
+        const images = await loadImageCatalog(root);
+        const snapshot = {
+            schemaVersion: 1,
+            kind: "uniflex-design-snapshot",
+            screenId: "backpack",
+            canvas: { width: 750, height: 1334 },
+            nodes: [
+                node(1, null, "Backpack", "view", rect(0, 0, 750, 1334)),
+                node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1334), { interaction: "press" }),
+                node(3, 1, "Backpack/Back", "view", rect(13, 1252, 64, 56), { interaction: "press" }),
+                node(4, 3, "", "image", rect(13, 1252, 64, 56), { resourceId: "ui/mail/back" }),
+                node(5, 1, "QuantityControl", "view", rect(25, 1118, 700, 85)),
+                node(6, 5, "QuantityControl/Decrease", "view", rect(25, 1118, 76, 85), { interaction: "press" }),
+                node(7, 6, "", "image", rect(25, 1118, 76, 85), { resourceId: "ui/backpack/button-minus" }),
+                node(8, 5, "QuantityControl/Increase", "view", rect(511, 1118, 76, 85), { interaction: "press" }),
+                node(9, 8, "", "image", rect(511, 1118, 76, 85), { resourceId: "ui/backpack/button-plus" }),
+                node(10, 5, "", "text", rect(604, 1132, 121, 54), { value: "0" }),
+                node(11, 1, "PanelTab", "view", rect(14, 118, 134, 52), { interaction: "press" }),
+                node(12, 11, "", "image", rect(14, 118, 134, 52), { resourceId: "ui/mail/tab-inactive" }),
+                node(13, 11, "", "text", rect(14, 118, 134, 52), { value: "装备" }),
+            ],
+        };
+        await exportFgui({
+            snapshot, out, root,
+            screen: catalog.screens.find((entry) => entry.id === "backpack"),
+            catalog, images,
+        });
+        const pageXml = readFileSync(join(out, "assets/UniFlex_Backpack/Backpack.xml"), "utf8");
+        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
+        const backXml = readFileSync(join(out, "assets/UniFlex_Backpack/Backpack_Back.xml"), "utf8");
+        const decXml = readFileSync(join(out, "assets/UniFlex_Backpack/QuantityControl_Decrease.xml"), "utf8");
+        assert.match(tabXml, /extention="Button"/);
+        assert.match(backXml, /extention="Button"/);
+        assert.match(decXml, /extention="Button"/);
+        assert.match(pageXml, /name="Backpack\/Back"/);
+        assert.match(pageXml, /fileName="Backpack_Back.xml"/);
+        assert.match(pageXml, /name="PopupFrame\/Mask"/);
+        assert.match(pageXml, /<graph[^>]*name="PopupFrame\/Mask"/);
+        assert.doesNotMatch(pageXml, /fileName="PopupFrame_Mask.xml"/);
+        const preview = readFileSync(join(out, "preview/index.html"), "utf8");
+        assert.match(preview, /bindPageInteractions/);
+        assert.match(preview, /QuantityControl\/Decrease/);
+    } finally {
+        rmSync(out, { recursive: true, force: true });
     }
 });
 

@@ -154,9 +154,106 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
         if (id) bindLabeled(obj, () => goScreen(id));
       });
     };
-    const bindCloseToCatalog = (root, goCatalog) => {
+    const enableHits = (obj) => {
+      if (!obj) return;
+      obj.opaque = true;
+      obj.touchable = true;
+      if (!obj.numChildren) return;
+      for (let i = 0; i < obj.numChildren; i++) {
+        const child = obj.getChildAt(i);
+        if (!child) continue;
+        child.opaque = true;
+        child.touchable = true;
+      }
+    };
+    const hit = (obj, handler) => {
+      if (!obj) return;
+      enableHits(obj);
+      bindClick(obj, handler);
+      if (obj.numChildren) {
+        for (let i = 0; i < obj.numChildren; i++) bindClick(obj.getChildAt(i), handler);
+      }
+      const parent = obj.parent;
+      if (!parent?.numChildren) return;
+      for (let i = 0; i < parent.numChildren; i++) {
+        const child = parent.getChildAt(i);
+        if (child.group === obj) {
+          enableHits(child);
+          bindClick(child, handler);
+        }
+      }
+    };
+    const isDismiss = (name) => {
+      const n = String(name || "");
+      return n === "CloseButton" || n === "Back" || n === "Close"
+        || n.endsWith("/Back") || n.endsWith("/Close") || n.endsWith("/Mask") || n === "Mask";
+    };
+    const layoutSlider = (slider, value, min, max) => {
+      if (!slider?.numChildren) return;
+      const kids = [];
+      for (let i = 0; i < slider.numChildren; i++) kids.push(slider.getChildAt(i));
+      const images = kids.filter((child) => child.width > 0 && (child.icon != null || child.src || child.name));
+      const track = images[0] || kids[0];
+      const thumb = images[images.length - 1] || kids[kids.length - 1];
+      const fill = images.length > 2 ? images[1] : null;
+      const span = Math.max(0, (track?.width ?? slider.width) - (thumb?.width ?? 0));
+      const ratio = max <= min ? 0 : Math.max(0, Math.min(1, (value - min) / (max - min)));
+      if (thumb && track) thumb.x = track.x + ratio * span;
+      if (fill && track) fill.width = Math.max(1, ratio * track.width);
+    };
+    const bindQuantity = (root) => {
+      const named = {};
+      const texts = [];
       walk(root, (obj) => {
-        if (obj.name === "CloseButton") bindLabeled(obj, goCatalog);
+        if (obj.name) named[obj.name] = obj;
+        if (!obj.numChildren && obj.text != null && /^\\d+$/.test(String(obj.text).trim())) texts.push(obj);
+      });
+      const dec = named["QuantityControl/Decrease"];
+      const inc = named["QuantityControl/Increase"];
+      const maxBtn = named["QuantityControl/Max"];
+      const slider = named["QuantityControl/Slider"];
+      if (!dec && !inc && !maxBtn && !slider) return;
+      const qtyGroup = (dec || inc || slider)?.group || named.QuantityControl;
+      const title = texts.find((obj) => qtyGroup && obj.group === qtyGroup)
+        || texts.find((obj) => obj.parent === (dec || inc || slider)?.parent && obj.group === qtyGroup)
+        || named.title || named.t0;
+      const min = 0;
+      const max = 99;
+      const read = () => {
+        const n = Number.parseInt(String(title?.text ?? title?.title ?? "0"), 10);
+        return Number.isFinite(n) ? n : 0;
+      };
+      const apply = (value) => {
+        const next = Math.max(min, Math.min(max, Math.round(value)));
+        if (title) {
+          title.text = String(next);
+          if (title.title != null) title.title = String(next);
+          title.element?.applyText?.();
+        }
+        layoutSlider(slider, next, min, max);
+      };
+      hit(dec, () => apply(read() - 1));
+      hit(inc, () => apply(read() + 1));
+      hit(maxBtn, () => apply(max));
+      if (slider) {
+        enableHits(slider);
+        const fromEvent = (evt) => {
+          const pos = evt?.pos ?? evt?.input;
+          const gx = pos?.x ?? 0;
+          const gy = pos?.y ?? 0;
+          const local = slider.globalToLocal ? slider.globalToLocal(gx, gy) : { x: gx - slider.x };
+          const width = slider.width || 1;
+          apply(min + (Math.max(0, Math.min(1, local.x / width)) * (max - min)));
+        };
+        slider.on?.("pointer_down", fromEvent);
+        hit(slider, fromEvent);
+      }
+    };
+    const bindPageInteractions = (root, goCatalog, { dismissActions = true } = {}) => {
+      bindQuantity(root);
+      walk(root, (obj) => {
+        if (isDismiss(obj.name)) hit(obj, goCatalog);
+        if (dismissActions && (obj.name === "ConfirmButton" || obj.name === "CancelButton")) hit(obj, goCatalog);
       });
     };
     const setCanvas = (width, height) => {
@@ -212,7 +309,7 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
       resize();
       currentId = screen.id;
       if (screen.id === "preview-home") bindCatalogClicks(view, go);
-      else bindCloseToCatalog(view, () => go(catalogId));
+      bindPageInteractions(view, () => go(catalogId), { dismissActions: screen.id !== "preview-home" && screen.id !== catalogId });
       if (homeBtn && !exportMode) homeBtn.hidden = screen.id === catalogId;
       window.__FGUI_PREVIEW__ = {
         view, packageName: screen.packageName, componentName: screen.componentName,
