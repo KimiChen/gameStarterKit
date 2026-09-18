@@ -6,8 +6,6 @@ import { theme } from '../../../themes/active';
 
 /** Optional presentation overrides; normal pages use the shared active theme. */
 export interface PromptTheme {
-    readonly titleColor?: string;
-    readonly titleOutline?: string;
     readonly messageColor?: string;
 }
 export interface PromptParams {
@@ -31,8 +29,7 @@ export const Prompt = defineView<PromptParams, void>({ zIndex: 'window' }, (cont
     return (
         <view name="PromptPage" style={{ width: 750, height: 1624 }}>
             <PopupFrame title={p.title ?? '提示'} left={PANEL_LEFT} top={PANEL_TOP}
-                width={PANEL_WIDTH} height={PANEL_HEIGHT}
-                titleColor={p.theme?.titleColor} titleOutline={p.theme?.titleOutline} onClose={p.onClose} />
+                width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={p.onClose} />
             <view name="Prompt/Content"
                 style={{ position: 'absolute', left: PANEL_LEFT + 40, top: PANEL_TOP + 108, width: 628, height: 229 }}>
                 <text name="Prompt/Message" value={p.message}
