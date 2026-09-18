@@ -1,5 +1,6 @@
 import { defineComponent, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../kits/uniflex/api/core/index';
+import { InputText } from '../../components/input/InputText';
 
 export interface AllianceBoardMessagePanelProps {
     readonly visible?: boolean;
@@ -18,18 +19,15 @@ export const AllianceBoardMessagePanel = defineComponent<AllianceBoardMessagePan
         p.onAction?.('send_message');
         setDraft('');
     };
+    const inputBg = imageRef('ui/alliance/board-input');
+    const placeholder = p.placeholder ?? '再次输入内容...';
     return (
         <view name="AllianceBoardMessage" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, bottom: 0, width: 750, height: 110 }}>
-            <image source={imageRef('ui/alliance/board-input')}
-                style={{ position: 'absolute', left: 102, top: 20, width: 483, height: 62, sizeMode: 'sliced' }} />
-            <input value={draft} placeholder="" onInput={setDraft}
-                style={{ position: 'absolute', left: 113, top: 20, width: 400, height: 62,
-                    fontSize: 26, color: FIELD, textAlign: 'left' }} />
-            <text visible={draft === ''} value={p.placeholder ?? '再次输入内容...'}
-                style={{ position: 'absolute', left: 113, top: 20, width: 400, height: 62,
-                    font: fontRef('fonts/regular', 700), fontSize: 26, color: PLACEHOLDER, bold: true,
-                    verticalAlign: 'center' }} />
+            <InputText background={inputBg} left={102} top={20} width={483} height={62}
+                value={draft} onInput={setDraft} placeholder={placeholder}
+                color={FIELD} placeholderColor={PLACEHOLDER} textAlign="left"
+                textLeft={11} textWidth={400} />
             <view name="AllianceBoard/Emoji" interaction="press" onClick={() => p.onAction?.('open_emoji')}
                 style={{ position: 'absolute', left: 521, top: 21, width: 59, height: 60 }}>
                 <image source={imageRef('ui/alliance/board-emoji')} style={{ width: 59, height: 60 }} />
