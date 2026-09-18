@@ -1,0 +1,14 @@
+{
+  "key": "CancelButton",
+  "source": "apps/client/src/ui-uniflex/components/button/CancelButton.tsx",
+  "export": {
+    "uniflexSha256": "f9fe5918f34406b84793812f7ded409fb3014807bc70d70864f92036519ccae9",
+    "psdSha256": "780918951a6862b4c458c39b9c183f3dd102cce2676e77822eca74d50fd95c6e",
+    "at": "2026-09-18T02:10:30.315Z"
+  },
+  "import": {
+    "psdSha256": "780918951a6862b4c458c39b9c183f3dd102cce2676e77822eca74d50fd95c6e",
+    "at": "2026-09-18T02:10:50.241Z",
+    "target": "restored"
+  }
+}

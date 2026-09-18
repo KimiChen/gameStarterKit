@@ -1,5 +1,5 @@
 /** Presentation-only map art. No engine state, network reads or gameplay semantics. */
-import { SLG_CHUNK_SIZE, SLG_MAP_H, SLG_MAP_W, chunkKey, terrainAt, type ISlgChunkRect, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
+import { SLG_CHUNK_SIZE, SLG_MAPS, chunkKey, type ISlgChunkRect, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
 
 export const SLG_ART_ATLAS_COLUMNS = 3;
 export const SLG_ART_ATLAS_ROWS = 2;
@@ -33,7 +33,7 @@ export function slgTerrainUv(terrainId: number): SlgAtlasUv {
     return slgAtlasUv(terrainId < 6 ? terrainId : 0);
 }
 
-export type SlgDecorationKind = "tree" | "mountain" | "snowMountain" | "sect" | "ruin" | "crystal";
+export type SlgDecorationKind = "tree" | "chest" | "portal" | "stele" | "crystal" | "sword";
 export interface SlgDecoration extends SlgArtPoint {
     readonly id: string;
     readonly width: number;
@@ -42,79 +42,46 @@ export interface SlgDecoration extends SlgArtPoint {
     readonly kind: SlgDecorationKind;
     readonly landmark: boolean;
     readonly name?: string;
+    /** 涉水变体（原版 GroundType=Shallow 的实例）：渲染时 quad 底部按 Fording 参数渐隐（见 slgFordingAlpha）。 */
+    readonly shallow?: true;
 }
 export interface SlgLandmark extends SlgDecoration { readonly landmark: true; readonly name: string }
 
 const DECORATION_ATLAS_INDEX: Readonly<Record<SlgDecorationKind, number>> = {
-    tree: 0, mountain: 1, snowMountain: 2, sect: 3, ruin: 4, crystal: 5,
+    tree: 0, chest: 1, portal: 2, stele: 3, crystal: 4, sword: 5,
 };
-/** Centers and complete footprints belong to different chunks; all five are on dry land. */
-export const SLG_LANDMARKS: readonly SlgLandmark[] = [
-    { id: "qingyun-sect", name: "青云宗", x: 5005, y: 5005, width: 6, height: 6, kind: "sect", atlasIndex: 3, landmark: true },
-    { id: "chiyan-ruin", name: "赤岩遗迹", x: 1688, y: 5688, width: 6, height: 6, kind: "ruin", atlasIndex: 4, landmark: true },
-    { id: "nanzhu-sect", name: "南竹洞天", x: 3256, y: 2008, width: 6, height: 6, kind: "sect", atlasIndex: 3, landmark: true },
-    { id: "beiling-ruin", name: "北岭遗迹", x: 5480, y: 8584, width: 6, height: 6, kind: "ruin", atlasIndex: 4, landmark: true },
-    { id: "linhu-crystal", name: "临湖灵晶", x: 7144, y: 5016, width: 6, height: 6, kind: "crystal", atlasIndex: 5, landmark: true },
-];
+/** 地标占地固定 9×9（管线 calibrate --check-landmarks 按此校验 chunk 足迹）。 */
+export const SLG_LANDMARK_FOOT = 9;
+/** layout.json 的地标条目（管线 tools/slg-maps 产出；x/y 为中心格锚；kind 即图集 kind）。 */
+export interface SlgLayoutLandmark { readonly name: string; readonly x: number; readonly y: number; readonly tag: string; readonly kind: SlgDecorationKind }
 
-function artHash(cx: number, cy: number, slot: number, salt: number): number {
-    let value = Math.imul(cx + 1, 0x9e3779b1) ^ Math.imul(cy + 1, 0x85ebca77) ^ Math.imul(slot + 1, 0xc2b2ae3d) ^ salt;
-    value = Math.imul(value ^ value >>> 16, 0x7feb352d);
-    value = Math.imul(value ^ value >>> 15, 0x846ca68b);
-    return (value ^ value >>> 16) >>> 0;
+/** 布局地标 → 运行时装饰（数据驱动；曾硬编码 SLG_LANDMARKS，五图化后从 layout 读）。
+ *  坐标为中心格锚（管线 calibrate 按 x−4..x+4 校验 9×9 足迹）。 */
+export function slgLandmarkOf(entry: SlgLayoutLandmark): SlgLandmark {
+    return {
+        id: `landmark-${entry.name}`, name: entry.name, x: entry.x, y: entry.y,
+        width: SLG_LANDMARK_FOOT, height: SLG_LANDMARK_FOOT,
+        kind: entry.kind, atlasIndex: DECORATION_ATLAS_INDEX[entry.kind], landmark: true,
+    };
 }
-function unitHash(cx: number, cy: number, slot: number, salt: number): number {
-    return artHash(cx, cy, slot, salt) / 0x100000000;
-}
+
 function bounded(value: number, min: number, max: number): number { return Math.max(min, Math.min(max, value)); }
-function intersects(a: SlgDecoration, b: SlgDecoration): boolean {
-    return Math.abs(a.x - b.x) < (a.width + b.width) / 2 + 0.2
-        && Math.abs(a.y - b.y) < (a.height + b.height) / 2 + 0.2;
-}
-
-function ordinaryKind(terrain: number, slot: number, roll: number, central: boolean): SlgDecorationKind | null {
-    if (terrain === 0) {
-        if (slot >= 2 || (!central && roll > 0.42)) return null;
-        return central ? slot === 0 ? "tree" : "crystal" : roll < 0.06 ? "crystal" : "tree";
-    }
-    if (terrain === 1) return "tree";
-    if (terrain === 3 && slot < 3 && roll < 0.75) return roll < 0.16 ? "crystal" : "mountain";
-    if (terrain === 4 && slot < 4) return roll < 0.12 ? "crystal" : "mountain";
-    if (terrain === 5 && slot < 4) return roll < 0.1 ? "crystal" : "snowMountain";
-    return null;
-}
 
 /**
- * Enumerate at most six fixed slots, never the world's cells. X/Y are center anchors in grid
- * units; complete bounds stay inside their owning chunk. LODs select prefixes of the same
- * candidates, so zooming never moves retained objects or introduces duplicate neighbors.
+ * chunk 装饰枚举：地标 + layout.json 真实点位（全部来自 mapinfowrap 原版实体布局）。
+ * 无布局覆盖的 chunk 就是空白——拒绝确定性哈希兜底摆位（原版没有的就是没有）。
+ * LOD 只截断数量，缩放不会移动或增删已展示的物件。
  */
-export function slgDecorationsForChunk(terrain: ISlgTerrain, cx: number, cy: number, lod: number): readonly SlgDecoration[] {
+export function slgDecorationsForChunk(terrain: ISlgTerrain, cx: number, cy: number, lod: number,
+    layout?: SlgLayoutIndex): readonly SlgDecoration[] {
     chunkKey(cx, cy);
     if (!Number.isInteger(lod) || lod < 0 || lod > 3) throw new RangeError("SLG art LOD invalid");
     const minX = cx * SLG_CHUNK_SIZE, minY = cy * SLG_CHUNK_SIZE;
-    const maxX = Math.min(SLG_MAP_W, minX + SLG_CHUNK_SIZE), maxY = Math.min(SLG_MAP_H, minY + SLG_CHUNK_SIZE);
-    const landmarks = SLG_LANDMARKS.filter((entry) => entry.x >= minX && entry.x < maxX && entry.y >= minY && entry.y < maxY);
-    const ordinary: SlgDecoration[] = [];
-    const central = cx === Math.floor(5005 / SLG_CHUNK_SIZE) && cy === Math.floor(5005 / SLG_CHUNK_SIZE);
+    const maxX = Math.min(terrain.width, minX + SLG_CHUNK_SIZE), maxY = Math.min(terrain.height, minY + SLG_CHUNK_SIZE);
+    const landmarks = (layout?.landmarks ?? []).filter((entry) => entry.x >= minX && entry.x < maxX && entry.y >= minY && entry.y < maxY);
+    const bucket = layout?.index.get(chunkKey(cx, cy)) ?? [];
     const limit = [6, 4, 2, 0][lod];
-    for (let slot = 0; slot < 6 && ordinary.length < limit; slot++) {
-        const seedX = minX + (slot % 3 + 0.5) * (maxX - minX) / 3;
-        const seedY = minY + (Math.floor(slot / 3) + 0.5) * (maxY - minY) / 2;
-        const kind = ordinaryKind(terrainAt(terrain, Math.floor(seedX), Math.floor(seedY)).id, slot,
-            unitHash(cx, cy, slot, 0x51494e47), central);
-        if (!kind) continue;
-        const size = kind === "tree" ? 2.5 : kind === "crystal" ? 2.25 : 4;
-        const variance = 0.9 + unitHash(cx, cy, slot, 0x41525431) * 0.2;
-        const width = size * variance, height = size * variance;
-        const entry: SlgDecoration = {
-            id: `decor-${cx}-${cy}-${slot}`, kind, atlasIndex: DECORATION_ATLAS_INDEX[kind], landmark: false, width, height,
-            x: bounded(seedX + unitHash(cx, cy, slot, 0x584a4954) - 0.5, minX + width / 2, maxX - width / 2),
-            y: bounded(seedY + unitHash(cx, cy, slot, 0x594a4954) - 0.5, minY + height / 2, maxY - height / 2),
-        };
-        if (!landmarks.some((landmark) => intersects(entry, landmark))) ordinary.push(entry);
-    }
-    return [...ordinary, ...landmarks].sort((a, b) => b.y - a.y || a.x - b.x);
+    return [...bucket.slice(0, Math.max(0, limit - landmarks.length)), ...landmarks].sort((a, b) => b.y - a.y || a.x - b.x);
 }
 
 function validateOverview(point: SlgArtPoint, width: number, height: number): void {
@@ -123,31 +90,31 @@ function validateOverview(point: SlgArtPoint, width: number, height: number): vo
     }
 }
 
-/** World space uses continuous outer bounds 0..10000; overview uses top-left, north-up pixels. */
-export function worldToOverview(point: SlgArtPoint, width = 1, height = 1): SlgArtPoint {
+/** World space uses the terrain's own bounds; overview uses top-left, north-up pixels. */
+export function worldToOverview(terrain: ISlgTerrain, point: SlgArtPoint, width = 1, height = 1): SlgArtPoint {
     validateOverview(point, width, height);
-    return { x: bounded(point.x, 0, SLG_MAP_W) / SLG_MAP_W * width,
-        y: (1 - bounded(point.y, 0, SLG_MAP_H) / SLG_MAP_H) * height };
+    return { x: bounded(point.x, 0, terrain.width) / terrain.width * width,
+        y: (1 - bounded(point.y, 0, terrain.height) / terrain.height) * height };
 }
 
-/** Returns continuous world bounds, including 10000. A tile lookup must floor and clamp to 9999. */
-export function overviewToWorld(point: SlgArtPoint, width = 1, height = 1): SlgArtPoint {
+/** Returns continuous world bounds, including width/height. A tile lookup must floor and clamp. */
+export function overviewToWorld(terrain: ISlgTerrain, point: SlgArtPoint, width = 1, height = 1): SlgArtPoint {
     validateOverview(point, width, height);
-    return { x: bounded(point.x / width, 0, 1) * SLG_MAP_W,
-        y: (1 - bounded(point.y / height, 0, 1)) * SLG_MAP_H };
+    return { x: bounded(point.x / width, 0, 1) * terrain.width,
+        y: (1 - bounded(point.y / height, 0, 1)) * terrain.height };
 }
 
 /** Accepts MapCamera.visibleRect(): maxima INCLUDE their last grid cell. Add one exactly here. */
-export function overviewViewportRect(rect: ISlgChunkRect, width = 1, height = 1): SlgOverviewRect {
+export function overviewViewportRect(terrain: ISlgTerrain, rect: ISlgChunkRect, width = 1, height = 1): SlgOverviewRect {
     if (![rect.minX, rect.minY, rect.maxX, rect.maxY].every(Number.isFinite)
         || rect.minX > rect.maxX || rect.minY > rect.maxY) throw new RangeError("SLG overview viewport invalid");
-    const topLeft = worldToOverview({ x: rect.minX, y: rect.maxY + 1 }, width, height);
-    const bottomRight = worldToOverview({ x: rect.maxX + 1, y: rect.minY }, width, height);
+    const topLeft = worldToOverview(terrain, { x: rect.minX, y: rect.maxY + 1 }, width, height);
+    const bottomRight = worldToOverview(terrain, { x: rect.maxX + 1, y: rect.minY }, width, height);
     return { x: topLeft.x, y: topLeft.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y };
 }
 
 export interface SlgOverviewTerrainRect extends SlgOverviewRect { readonly color: readonly [number, number, number] }
-/** Default quad followed by ordered overlays: at most 513 quads, without sampling world cells. */
+/** Default quad followed by ordered overlays: at most 2049 quads（2048 区域上限 + 默认底）, without sampling world cells. */
 export function buildSlgOverviewRects(terrain: ISlgTerrain): readonly SlgOverviewTerrainRect[] {
     const colors = new Map(terrain.palette.map((entry) => [entry.id, entry.color] as const));
     const colorFor = (id: number): readonly [number, number, number] => {
@@ -158,4 +125,90 @@ export function buildSlgOverviewRects(terrain: ISlgTerrain): readonly SlgOvervie
     return [{ x: 0, y: 0, width: terrain.width, height: terrain.height, color: colorFor(0) },
         ...terrain.regions.map((region) => ({ x: region.x, y: region.y, width: region.width, height: region.height,
             color: colorFor(region.terrain) }))];
+}
+
+
+/** <mapId>/layout.json 的运行时形状（五国真实布局复刻，tools/slg-maps 管线产出）。 */
+export interface SlgForestLayoutDecoration { readonly x: number; readonly y: number; readonly kind: SlgDecorationKind; readonly shallow?: boolean }
+export interface SlgForestLayout {
+    readonly source: string;
+    readonly id: string;
+    /** 方图为单值（森之国 legacy），非方图为 [width, height]。 */
+    readonly mapSize: number | readonly [number, number];
+    readonly landmarks: readonly SlgLayoutLandmark[];
+    readonly decorations: readonly SlgForestLayoutDecoration[];
+}
+
+const LAYOUT_KINDS: readonly string[] = ["tree", "chest", "portal", "stele", "crystal", "sword"];
+
+/** 布局文件的 fail-closed 形状闸：id 对照 SLG_MAPS catalog，mapSize 匹配该图尺寸，kind 必须是六类之一。 */
+export function validateSlgForestLayout(input: unknown): input is SlgForestLayout {
+    if (!input || typeof input !== "object") return false;
+    const value = input as { id?: unknown; mapSize?: unknown; landmarks?: unknown; decorations?: unknown };
+    if (typeof value.id !== "string") return false;
+    const info = SLG_MAPS.find((m) => m.id === value.id);
+    if (!info) return false;
+    const size = Array.isArray(value.mapSize) ? value.mapSize : [value.mapSize, value.mapSize];
+    if (size.length !== 2 || size[0] !== info.width || size[1] !== info.height) return false;
+    if (!Array.isArray(value.landmarks)) return false;
+    for (const lm of value.landmarks) {
+        if (!lm || typeof lm !== "object") return false;
+        const { name, x, y, kind } = lm as { name?: unknown; x?: unknown; y?: unknown; kind?: unknown };
+        if (typeof name !== "string" || !name || typeof kind !== "string" || !LAYOUT_KINDS.includes(kind)) return false;
+        if (!Number.isInteger(x) || !Number.isInteger(y)) return false;
+    }
+    if (!Array.isArray(value.decorations)) return false;
+    for (const entry of value.decorations) {
+        if (!entry || typeof entry !== "object") return false;
+        const { x, y, kind, shallow } = entry as { x?: unknown; y?: unknown; kind?: unknown; shallow?: unknown };
+        if (!Number.isInteger(x) || !Number.isInteger(y) || (x as number) < 0 || (x as number) >= info.width
+            || (y as number) < 0 || (y as number) >= info.height) return false;
+        if (typeof kind !== "string" || !LAYOUT_KINDS.includes(kind)) return false;
+        // fail-closed：涉水标记只允许缺省或字面 true（管线只写 true；false/其它类型视为坏数据）。
+        if (shallow !== undefined && shallow !== true) return false;
+    }
+    return true;
+}
+
+/** Fording 静态近似参数：原版 FordingSpriteRenderer prefab 实证默认值（scale=1、offset=0.56），
+ *  shader 无源码不在复刻范围（同 §10.3 水面动态行）——取「quad 高度 56% 以下向底部线性渐隐」的静态等价。 */
+export const SLG_FORDING_FULL_ALPHA_AT = 0.56;
+/** localY01：quad 内归一化高度（0=底，1=顶）→ 顶点 alpha（1=全显，0=淹没）。 */
+export function slgFordingAlpha(localY01: number): number {
+    if (!Number.isFinite(localY01)) throw new RangeError("SLG fording y invalid");
+    const t = Math.max(0, Math.min(1, localY01));
+    if (t >= SLG_FORDING_FULL_ALPHA_AT) return 1;
+    return t / SLG_FORDING_FULL_ALPHA_AT;
+}
+
+const LAYOUT_SIZE: Readonly<Record<SlgDecorationKind, number>> = {
+    tree: 4.5, chest: 3, portal: 5, stele: 6, crystal: 3.5, sword: 5,
+};
+
+export interface SlgLayoutIndex {
+    readonly index: ReadonlyMap<number, readonly SlgDecoration[]>;
+    readonly landmarks: readonly SlgLandmark[];
+}
+
+/**
+ * 布局点位 → 按 chunk 分桶的索引（chunkKey → 装饰数组）。每 chunk 上限 6（超出按输入序截断），
+ * 与确定性哈希路径共用同一上限族。地标从布局 landmarks 构建（数据驱动）。
+ */
+export function buildSlgLayoutIndex(layout: SlgForestLayout): SlgLayoutIndex {
+    if (!validateSlgForestLayout(layout)) throw new RangeError("SLG layout invalid");
+    const buckets = new Map<number, SlgDecoration[]>();
+    layout.decorations.forEach((entry, index) => {
+        const size = LAYOUT_SIZE[entry.kind];
+        const decoration: SlgDecoration = {
+            id: `layout-${index}`, kind: entry.kind, atlasIndex: DECORATION_ATLAS_INDEX[entry.kind],
+            landmark: false, width: size, height: size, x: entry.x, y: entry.y,
+            ...(entry.shallow === true ? { shallow: true } as const : {}),
+        };
+        const key = chunkKey(Math.floor(entry.x / SLG_CHUNK_SIZE), Math.floor(entry.y / SLG_CHUNK_SIZE));
+        const bucket = buckets.get(key);
+        if (bucket) bucket.push(decoration);
+        else buckets.set(key, [decoration]);
+    });
+    for (const bucket of buckets.values()) bucket.sort((a, b) => a.id < b.id ? -1 : 1);
+    return { index: buckets, landmarks: layout.landmarks.map(slgLandmarkOf) };
 }

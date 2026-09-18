@@ -267,7 +267,7 @@ export async function acquireTab({ devtools, preview, reuse }) {
  * 导航到预览并把 `scene=` 改写为目标场景；轮询到场景里出现 Canvas 且已渲染 >30 帧为止。
  * 首次加载会按需编译全部 TS（实测 77～125 s），超时默认 5 分钟。
  */
-export async function openScene(client, { preview, sceneUuid, timeoutMs }) {
+export async function openScene(client, { preview, sceneUuid, timeoutMs, query = {} }) {
   const off = client.on((message) => {
     if (message.method !== "Fetch.requestPaused") return;
     const { requestId, request } = message.params;
@@ -276,7 +276,13 @@ export async function openScene(client, { preview, sceneUuid, timeoutMs }) {
   await client.send("Fetch.enable", { patterns: [{ urlPattern: "*settings.js*", requestStage: "Request" }] });
   await client.send("Page.enable");
   await client.send("Page.bringToFront");
-  await client.send("Page.navigate", { url: `${preview}/` });
+  // The preview server may serve the editor's current scene from settings.js.
+  // Pass the target explicitly as well, so evidence does not depend on the
+  // editor's foreground scene or on a server-specific settings rewrite.
+  const target = new URL(preview);
+  target.searchParams.set("scene", sceneUuid);
+  for (const [key, value] of Object.entries(query)) target.searchParams.set(key, String(value));
+  await client.send("Page.navigate", { url: target.toString() });
   const deadline = Date.now() + timeoutMs;
   let last = null;
   try {

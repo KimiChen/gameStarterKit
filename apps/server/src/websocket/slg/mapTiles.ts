@@ -4,5 +4,5 @@ import { currentZoneId } from "../../kits/slg/host";
 import { defineRpc } from "../rpc";
 
 export default defineRpc(SlgRpc.MapTiles, {
-  handler: (ctx, payload) => readTiles(ctx.uid, currentZoneId(), payload.rect),
+  handler: (ctx, payload) => readTiles(ctx.uid, currentZoneId(), payload.mapId, payload.rect),
 });

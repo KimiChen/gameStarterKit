@@ -1,0 +1,946 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "Backpack",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root",
+        "role": "page",
+        "definitionKey": "Backpack"
+      },
+      "children": [
+        "layer-2",
+        "layer-3",
+        "layer-5",
+        "layer-7",
+        "layer-8",
+        "layer-16",
+        "layer-24",
+        "layer-32",
+        "layer-40",
+        "layer-44",
+        "layer-48",
+        "layer-52",
+        "layer-56",
+        "layer-60",
+        "layer-117",
+        "layer-119",
+        "layer-140",
+        "layer-142"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "Backpack / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root",
+        "role": "fill",
+        "definitionKey": "Backpack",
+        "captureHash": "dfbea937142d7464344025102f3db799e01599bb64d000139932ca2d334159ce"
+      },
+      "asset": "asset-10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a"
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 170
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/_",
+        "role": "node",
+        "definitionKey": "Backpack"
+      },
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 170
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/_",
+        "role": "fill",
+        "definitionKey": "Backpack",
+        "captureHash": "37d39031f313cabd1717dd8747846d111600776e9b79ac4dfe0c1ab331aeada5"
+      },
+      "asset": "asset-ac55c98e3bfd0f9b3335f4a3c659061a85606523dfe7a8281dfaf7a0469b680c"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-6"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/_:0",
+        "role": "node",
+        "definitionKey": "Backpack",
+        "resourceId": "ui/mail/header",
+        "captureHash": "00638b6427156fef741a1afd010f0216dc44e64bc9525ff77e19d780ba0d66e2"
+      },
+      "asset": "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db"
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "背包",
+      "kind": "text",
+      "frame": {
+        "x": 38,
+        "y": 24,
+        "width": 126,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/_",
+        "role": "node",
+        "definitionKey": "Backpack"
+      },
+      "text": {
+        "value": "背包",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "BackpackResourceCounter",
+      "kind": "image",
+      "frame": {
+        "x": 159,
+        "y": 22,
+        "width": 153,
+        "height": 45
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:0",
+        "role": "component",
+        "definitionKey": "BackpackResourceCounter"
+      },
+      "asset": "asset-8704b47a254c1ee88206a166452b5dca2804c214aad039321e98aaac3a1745f3"
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "BackpackResourceCounter",
+      "kind": "image",
+      "frame": {
+        "x": 303,
+        "y": 22,
+        "width": 153,
+        "height": 45
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:1",
+        "role": "component",
+        "definitionKey": "BackpackResourceCounter"
+      },
+      "asset": "asset-8704b47a254c1ee88206a166452b5dca2804c214aad039321e98aaac3a1745f3"
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "BackpackResourceCounter",
+      "kind": "image",
+      "frame": {
+        "x": 447,
+        "y": 22,
+        "width": 153,
+        "height": 45
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:2",
+        "role": "component",
+        "definitionKey": "BackpackResourceCounter"
+      },
+      "asset": "asset-8704b47a254c1ee88206a166452b5dca2804c214aad039321e98aaac3a1745f3"
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "BackpackResourceCounter",
+      "kind": "image",
+      "frame": {
+        "x": 591,
+        "y": 22,
+        "width": 153,
+        "height": 45
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:3",
+        "role": "component",
+        "definitionKey": "BackpackResourceCounter"
+      },
+      "asset": "asset-8704b47a254c1ee88206a166452b5dca2804c214aad039321e98aaac3a1745f3"
+    },
+    "layer-40": {
+      "id": "layer-40",
+      "name": "PanelTab",
+      "kind": "image",
+      "frame": {
+        "x": 14,
+        "y": 118,
+        "width": 134,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:Backpack/PanelTab:0",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "asset": "asset-326180ccd5a68d18bc9b2527d30f04bd09c39bf3e40a453abbf6309547134724"
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "PanelTab",
+      "kind": "image",
+      "frame": {
+        "x": 158,
+        "y": 103,
+        "width": 140,
+        "height": 67
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:Backpack/PanelTab:1",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "asset": "asset-4b4a63a87c74627bfe342ceb945a5913bdf49d94288d2f2da649a4058dbb6914"
+    },
+    "layer-48": {
+      "id": "layer-48",
+      "name": "PanelTab",
+      "kind": "image",
+      "frame": {
+        "x": 308,
+        "y": 118,
+        "width": 134,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:Backpack/PanelTab:2",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "asset": "asset-ffe5e705b32d4caeda6ca4e9e587fa99ff20585d3a7ff8f5d0ca2615a38b99b8"
+    },
+    "layer-52": {
+      "id": "layer-52",
+      "name": "PanelTab",
+      "kind": "image",
+      "frame": {
+        "x": 455,
+        "y": 118,
+        "width": 134,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:Backpack/PanelTab:3",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "asset": "asset-84217e78fbc3cb6b5e3724ec14b3bcd6ae08a4d216e2bb7a841b734feef8fd42"
+    },
+    "layer-56": {
+      "id": "layer-56",
+      "name": "PanelTab",
+      "kind": "image",
+      "frame": {
+        "x": 602,
+        "y": 118,
+        "width": 134,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PanelTab:Backpack/PanelTab:4",
+        "role": "component",
+        "definitionKey": "PanelTab"
+      },
+      "asset": "asset-df4deb4e65a302649a3bc2ed622c6cc57608f0b9d7b2bb04aa55045e6531ca56"
+    },
+    "layer-60": {
+      "id": "layer-60",
+      "name": "Backpack/Items",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 900
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/Backpack/Items",
+        "role": "node",
+        "definitionKey": "Backpack"
+      },
+      "children": [
+        "layer-61",
+        "layer-68",
+        "layer-75",
+        "layer-82",
+        "layer-89",
+        "layer-96",
+        "layer-103",
+        "layer-110"
+      ]
+    },
+    "layer-61": {
+      "id": "layer-61",
+      "name": "BackpackItemCard",
+      "kind": "image",
+      "frame": {
+        "x": 25,
+        "y": 216,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:0",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "asset": "asset-d0b9198ef428f30acb8bc67d7b8846826d3547f53829802a47675e91ff4673dd"
+    },
+    "layer-68": {
+      "id": "layer-68",
+      "name": "BackpackItemCard",
+      "kind": "image",
+      "frame": {
+        "x": 207,
+        "y": 216,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:1",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "asset": "asset-ffa539108112a65f6aa8fca2126f1511c478ab0120f78db6bfa05a24868a6710"
+    },
+    "layer-75": {
+      "id": "layer-75",
+      "name": "BackpackItemCard",
+      "kind": "image",
+      "frame": {
+        "x": 389,
+        "y": 216,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:2",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "asset": "asset-0a0685985c4254b0780031e788a58abb6bf50b166c7683722448c1536bbbd463"
+    },
+    "layer-82": {
+      "id": "layer-82",
+      "name": "BackpackItemCard",
+      "kind": "image",
+      "frame": {
+        "x": 571,
+        "y": 216,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:3",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "asset": "asset-2da47c9d2e4c5621fd077d44ea36ea4b235850d26acb1313ab8a9238de8aa0bb"
+    },
+    "layer-89": {
+      "id": "layer-89",
+      "name": "BackpackItemCard",
+      "kind": "image",
+      "frame": {
+        "x": 25,
+        "y": 407,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:4",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "asset": "asset-e94abd06f8412841662739051020a4da73cff05fc2f5d8cc7ae1c53edefc3e21"
+    },
+    "layer-96": {
+      "id": "layer-96",
+      "name": "BackpackItemCard",
+      "kind": "image",
+      "frame": {
+        "x": 207,
+        "y": 407,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:5",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "asset": "asset-840f1e895c6340fb6eae544cb5a2cc6909197a96fe8d0903ec814691a6656644"
+    },
+    "layer-103": {
+      "id": "layer-103",
+      "name": "BackpackItemCard",
+      "kind": "image",
+      "frame": {
+        "x": 389,
+        "y": 407,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:6",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "asset": "asset-24cbe3e6c0b89bdde968a0a63413bf0bf76a69b00dc719938c239a885c084c60"
+    },
+    "layer-110": {
+      "id": "layer-110",
+      "name": "BackpackItemCard",
+      "kind": "image",
+      "frame": {
+        "x": 571,
+        "y": 407,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackItemCard:Backpack/Backpack/Items/_/BackpackItemCard:7",
+        "role": "component",
+        "definitionKey": "BackpackItemCard"
+      },
+      "asset": "asset-74da971ce451a6c4fd6671f14ab921e7365105812a9df437043cc1023b1d72bc"
+    },
+    "layer-117": {
+      "id": "layer-117",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 26,
+        "y": 928,
+        "width": 698,
+        "height": 3
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-118"
+      ]
+    },
+    "layer-118": {
+      "id": "layer-118",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 698,
+        "height": 3
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/_:1",
+        "role": "node",
+        "definitionKey": "Backpack",
+        "resourceId": "ui/settings/divider",
+        "captureHash": "666dc74bde92edcbbfb68f5ab6d9d49cd673c65a17dd03e8853e597f6ad67cb6"
+      },
+      "asset": "asset-cac5f0459672c9dd881cd600b862834fef160733031f98cec46928b60b4ef0ef"
+    },
+    "layer-119": {
+      "id": "layer-119",
+      "name": "Backpack/Details",
+      "kind": "group",
+      "frame": {
+        "x": -23,
+        "y": -946,
+        "width": 796,
+        "height": 2193
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/Backpack/Details",
+        "role": "node",
+        "definitionKey": "Backpack"
+      },
+      "children": [
+        "layer-120",
+        "layer-121",
+        "layer-122"
+      ]
+    },
+    "layer-120": {
+      "id": "layer-120",
+      "name": "强化扳手",
+      "kind": "text",
+      "frame": {
+        "x": 46,
+        "y": 1900,
+        "width": 708,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/Backpack/Details/_:0",
+        "role": "node",
+        "definitionKey": "Backpack"
+      },
+      "text": {
+        "value": "强化扳手",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-121": {
+      "id": "layer-121",
+      "name": "有效的提高陷阱等级，增加联盟成员对【巨蛇】造成的伤害。",
+      "kind": "text",
+      "frame": {
+        "x": 46,
+        "y": 1960,
+        "width": 708,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/Backpack/Details/_:1",
+        "role": "node",
+        "definitionKey": "Backpack"
+      },
+      "text": {
+        "value": "有效的提高陷阱等级，增加联盟成员对【巨蛇】造成的伤害。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-122": {
+      "id": "layer-122",
+      "name": "BackpackQuantityControl",
+      "kind": "image",
+      "frame": {
+        "x": 23,
+        "y": 946,
+        "width": 750,
+        "height": 1225
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackQuantityControl:Backpack/Backpack/Details/BackpackQuantityControl",
+        "role": "component",
+        "definitionKey": "BackpackQuantityControl"
+      },
+      "asset": "asset-b17b68fd2d67c5d509db4e0fe158522d1583a5ac5cc220531f925aa073a43f77"
+    },
+    "layer-140": {
+      "id": "layer-140",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1225,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-141"
+      ]
+    },
+    "layer-141": {
+      "id": "layer-141",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/_:2",
+        "role": "node",
+        "definitionKey": "Backpack",
+        "resourceId": "ui/mail/footer",
+        "captureHash": "0e8b740b5382056889b3a262eb9f54748cb87eeacc2ada3d452aef39352a7bc2"
+      },
+      "asset": "asset-165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2"
+    },
+    "layer-142": {
+      "id": "layer-142",
+      "name": "Backpack/Back",
+      "kind": "group",
+      "frame": {
+        "x": 13,
+        "y": 1252,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/Backpack/Back",
+        "role": "node",
+        "definitionKey": "Backpack"
+      },
+      "children": [
+        "layer-143"
+      ]
+    },
+    "layer-143": {
+      "id": "layer-143",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-144"
+      ]
+    },
+    "layer-144": {
+      "id": "layer-144",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 64,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Backpack.root/Backpack/Back/_",
+        "role": "node",
+        "definitionKey": "Backpack",
+        "resourceId": "ui/mail/back",
+        "captureHash": "d077b5cd1da699994316051b7dfdb1edbae1f821fac9631236833588ad730461"
+      },
+      "asset": "asset-8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50"
+    }
+  },
+  "assets": {
+    "asset-10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a": {
+      "path": "assets/10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a.png",
+      "sha256": "10a2c7ac1a3617ded3097883de35281d95411f47cda12cb3274183920f35819a",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1334
+    },
+    "asset-ac55c98e3bfd0f9b3335f4a3c659061a85606523dfe7a8281dfaf7a0469b680c": {
+      "path": "assets/ac55c98e3bfd0f9b3335f4a3c659061a85606523dfe7a8281dfaf7a0469b680c.png",
+      "sha256": "ac55c98e3bfd0f9b3335f4a3c659061a85606523dfe7a8281dfaf7a0469b680c",
+      "mime": "image/png",
+      "width": 750,
+      "height": 170
+    },
+    "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db": {
+      "path": "assets/c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db.png",
+      "sha256": "c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db",
+      "mime": "image/png",
+      "width": 750,
+      "height": 90
+    },
+    "asset-8704b47a254c1ee88206a166452b5dca2804c214aad039321e98aaac3a1745f3": {
+      "path": "assets/8704b47a254c1ee88206a166452b5dca2804c214aad039321e98aaac3a1745f3.png",
+      "sha256": "8704b47a254c1ee88206a166452b5dca2804c214aad039321e98aaac3a1745f3",
+      "mime": "image/png",
+      "width": 153,
+      "height": 45
+    },
+    "asset-326180ccd5a68d18bc9b2527d30f04bd09c39bf3e40a453abbf6309547134724": {
+      "path": "assets/326180ccd5a68d18bc9b2527d30f04bd09c39bf3e40a453abbf6309547134724.png",
+      "sha256": "326180ccd5a68d18bc9b2527d30f04bd09c39bf3e40a453abbf6309547134724",
+      "mime": "image/png",
+      "width": 134,
+      "height": 52
+    },
+    "asset-4b4a63a87c74627bfe342ceb945a5913bdf49d94288d2f2da649a4058dbb6914": {
+      "path": "assets/4b4a63a87c74627bfe342ceb945a5913bdf49d94288d2f2da649a4058dbb6914.png",
+      "sha256": "4b4a63a87c74627bfe342ceb945a5913bdf49d94288d2f2da649a4058dbb6914",
+      "mime": "image/png",
+      "width": 140,
+      "height": 67
+    },
+    "asset-ffe5e705b32d4caeda6ca4e9e587fa99ff20585d3a7ff8f5d0ca2615a38b99b8": {
+      "path": "assets/ffe5e705b32d4caeda6ca4e9e587fa99ff20585d3a7ff8f5d0ca2615a38b99b8.png",
+      "sha256": "ffe5e705b32d4caeda6ca4e9e587fa99ff20585d3a7ff8f5d0ca2615a38b99b8",
+      "mime": "image/png",
+      "width": 134,
+      "height": 52
+    },
+    "asset-84217e78fbc3cb6b5e3724ec14b3bcd6ae08a4d216e2bb7a841b734feef8fd42": {
+      "path": "assets/84217e78fbc3cb6b5e3724ec14b3bcd6ae08a4d216e2bb7a841b734feef8fd42.png",
+      "sha256": "84217e78fbc3cb6b5e3724ec14b3bcd6ae08a4d216e2bb7a841b734feef8fd42",
+      "mime": "image/png",
+      "width": 134,
+      "height": 52
+    },
+    "asset-df4deb4e65a302649a3bc2ed622c6cc57608f0b9d7b2bb04aa55045e6531ca56": {
+      "path": "assets/df4deb4e65a302649a3bc2ed622c6cc57608f0b9d7b2bb04aa55045e6531ca56.png",
+      "sha256": "df4deb4e65a302649a3bc2ed622c6cc57608f0b9d7b2bb04aa55045e6531ca56",
+      "mime": "image/png",
+      "width": 134,
+      "height": 52
+    },
+    "asset-d0b9198ef428f30acb8bc67d7b8846826d3547f53829802a47675e91ff4673dd": {
+      "path": "assets/d0b9198ef428f30acb8bc67d7b8846826d3547f53829802a47675e91ff4673dd.png",
+      "sha256": "d0b9198ef428f30acb8bc67d7b8846826d3547f53829802a47675e91ff4673dd",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-ffa539108112a65f6aa8fca2126f1511c478ab0120f78db6bfa05a24868a6710": {
+      "path": "assets/ffa539108112a65f6aa8fca2126f1511c478ab0120f78db6bfa05a24868a6710.png",
+      "sha256": "ffa539108112a65f6aa8fca2126f1511c478ab0120f78db6bfa05a24868a6710",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-0a0685985c4254b0780031e788a58abb6bf50b166c7683722448c1536bbbd463": {
+      "path": "assets/0a0685985c4254b0780031e788a58abb6bf50b166c7683722448c1536bbbd463.png",
+      "sha256": "0a0685985c4254b0780031e788a58abb6bf50b166c7683722448c1536bbbd463",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-2da47c9d2e4c5621fd077d44ea36ea4b235850d26acb1313ab8a9238de8aa0bb": {
+      "path": "assets/2da47c9d2e4c5621fd077d44ea36ea4b235850d26acb1313ab8a9238de8aa0bb.png",
+      "sha256": "2da47c9d2e4c5621fd077d44ea36ea4b235850d26acb1313ab8a9238de8aa0bb",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-e94abd06f8412841662739051020a4da73cff05fc2f5d8cc7ae1c53edefc3e21": {
+      "path": "assets/e94abd06f8412841662739051020a4da73cff05fc2f5d8cc7ae1c53edefc3e21.png",
+      "sha256": "e94abd06f8412841662739051020a4da73cff05fc2f5d8cc7ae1c53edefc3e21",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-840f1e895c6340fb6eae544cb5a2cc6909197a96fe8d0903ec814691a6656644": {
+      "path": "assets/840f1e895c6340fb6eae544cb5a2cc6909197a96fe8d0903ec814691a6656644.png",
+      "sha256": "840f1e895c6340fb6eae544cb5a2cc6909197a96fe8d0903ec814691a6656644",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-24cbe3e6c0b89bdde968a0a63413bf0bf76a69b00dc719938c239a885c084c60": {
+      "path": "assets/24cbe3e6c0b89bdde968a0a63413bf0bf76a69b00dc719938c239a885c084c60.png",
+      "sha256": "24cbe3e6c0b89bdde968a0a63413bf0bf76a69b00dc719938c239a885c084c60",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-74da971ce451a6c4fd6671f14ab921e7365105812a9df437043cc1023b1d72bc": {
+      "path": "assets/74da971ce451a6c4fd6671f14ab921e7365105812a9df437043cc1023b1d72bc.png",
+      "sha256": "74da971ce451a6c4fd6671f14ab921e7365105812a9df437043cc1023b1d72bc",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-cac5f0459672c9dd881cd600b862834fef160733031f98cec46928b60b4ef0ef": {
+      "path": "assets/cac5f0459672c9dd881cd600b862834fef160733031f98cec46928b60b4ef0ef.png",
+      "sha256": "cac5f0459672c9dd881cd600b862834fef160733031f98cec46928b60b4ef0ef",
+      "mime": "image/png",
+      "width": 698,
+      "height": 3
+    },
+    "asset-b17b68fd2d67c5d509db4e0fe158522d1583a5ac5cc220531f925aa073a43f77": {
+      "path": "assets/b17b68fd2d67c5d509db4e0fe158522d1583a5ac5cc220531f925aa073a43f77.png",
+      "sha256": "b17b68fd2d67c5d509db4e0fe158522d1583a5ac5cc220531f925aa073a43f77",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1225
+    },
+    "asset-165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2": {
+      "path": "assets/165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2.png",
+      "sha256": "165862c8ecddaae20147bb532e78f31c2f5202667a9b4143aa59c5984672f9c2",
+      "mime": "image/png",
+      "width": 750,
+      "height": 110
+    },
+    "asset-8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50": {
+      "path": "assets/8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50.png",
+      "sha256": "8e086790a66e7594123d93e31d25dec3cb72e47c76d747ac65bf15e10a232d50",
+      "mime": "image/png",
+      "width": 64,
+      "height": 56
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "BackpackResourceCounter: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackResourceCounter: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackResourceCounter: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackResourceCounter: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "PanelTab: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "PanelTab: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "PanelTab: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "PanelTab: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "PanelTab: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackItemCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackItemCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackItemCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackItemCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackItemCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackItemCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackItemCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackItemCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "BackpackQuantityControl: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

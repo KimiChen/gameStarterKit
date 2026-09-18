@@ -10,7 +10,8 @@ import { test } from "node:test";
 // @ts-expect-error 纯 ESM 工具模块，无类型声明。
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
-import { readSlgMapEvidence, readSlgOverviewEvidence, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource } from "../../../tools/creator-preview/slg.mjs";
+import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, SLG_WORLD_SIZE, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
+import { SLG_MAPS } from "@game/shared/kits/slg/api/worldmap/index";
 
 const UUID = "33a6cd88-ca61-42f3-97e1-6b18a9096a34";
 
@@ -144,7 +145,7 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
   assert.equal(hiddenWorld.worldCenter, null);
   assert.deepEqual(hiddenWorld.chunks, []);
   assert.equal(hiddenWorld.tile.x, 5000, "总览外的选格详情仍然可读");
-  const overview = readSlgOverviewEvidence(walk);
+  const overview = readSlgOverviewEvidence(walk, 10000, 10000);
   assert.equal(overview.mode, "navigation");
   assert.equal(overview.title, "青原仙洲 · 世界总览");
   assert.deepEqual(overview.bounds, { x: 50, y: 250, width: 300, height: 300 });
@@ -156,7 +157,7 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
   assert.equal(overview.artVisible, false);
   assert.equal(readSlgOverviewEvidence(null), null);
   assert.equal(readSlgOverviewEvidence({ ...walk, nodes: walk.nodes.filter((entry) => entry.path !== root) }), null);
-  const badDimensions = readSlgOverviewEvidence({ ...walk, visible: { width: 0, height: 1600 } });
+  const badDimensions = readSlgOverviewEvidence({ ...walk, visible: { width: 0, height: 1600 } }, 10000, 10000);
   assert.equal(badDimensions.bounds, null);
   assert.equal(badDimensions.landmarks[0].expected, null, "没有有效公开地图尺寸就不能猜定位坐标");
   const scrollPath = `${root}/slg-overview-scroll`;
@@ -164,7 +165,7 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
     ...walk.nodes.filter((entry) => !entry.path.startsWith(nav)).map((entry) => entry.name === "footer" ? { ...entry, text: "山河绘卷" } : entry),
     node("slg-overview-scroll", null, scrollPath, { x: 200, y: 400, width: 600, height: 600 }),
     node("slg-overview-art", null, `${scrollPath}/slg-overview-art`),
-  ] });
+  ] }, 10000, 10000);
   assert.equal(scroll.mode, "scroll");
   assert.equal(scroll.artVisible, true);
   assert.equal(scroll.position, null);
@@ -175,9 +176,14 @@ test("SLG 总览证据：区分实地图与绘卷，地标坐标只取公开锚�
     node("slg-world", null, "scene/Canvas/SlgMapView/slg-world", { x: -1200, y: 1700 }),
     node("slg-chunk-312-312", null, "scene/Canvas/SlgMapView/slg-world/slg-chunk-312-312", null),
   ] };
-  assert.equal(readSlgOverviewEvidence(closed), null);
+  assert.equal(readSlgOverviewEvidence(closed, 10000, 10000), null);
   assert.equal(readSlgMapEvidence(closed).loaded, true);
   assert.deepEqual(readSlgMapEvidence(closed).worldCenter, { x: -1200, y: 1700 }, "只在关闭总览后比对重新激活的公开地图坐标");
+});
+
+test("SLG 预览工具世界尺寸与 shared 常量一致（换图改尺寸时必须同改）", () => {
+  assert.equal(SLG_WORLD_SIZE, SLG_MAPS[0].width);
+  assert.equal(SLG_MAPS[0].id, "senzhiguo");
 });
 
 test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精灵，不创实例、不加载资源", () => {
@@ -200,16 +206,68 @@ test("SLG 材质证据：页面脚本自包含，只读公开共享材质和精�
       node("slg-chunk-2-2", [], { "cc.MeshRenderer": { getSharedMaterial: () => ({ getProperty: () => null }) } }),
       node("slg-overview-art", [], { "cc.Sprite": { spriteFrame: { texture: { width: 1254, height: 1254 } } } }),
       node("slg-decorations-3-3", [], texturedMesh, false),
+      node("slg-far-sea", [], texturedMesh),
+      node("slg-far-island", [], texturedMesh),
+      node("slg-far-landmarks", [], texturedMesh),
+      node("slg-far-ownership", [], texturedMesh, false),
     ]),
   ]);
   const evaluate = new Function("cc", `return ${slgRenderAssetsSource};`);
   const result = evaluate({ director: { getScene: () => scene } });
-  assert.deepEqual(result.map((entry: { name: string }) => entry.name), ["slg-chunk-1-2", "slg-decorations-1-2", "slg-chunk-2-2", "slg-overview-art"]);
+  assert.deepEqual(result.map((entry: { name: string }) => entry.name),
+    ["slg-chunk-1-2", "slg-decorations-1-2", "slg-chunk-2-2", "slg-overview-art", "slg-far-sea", "slg-far-island", "slg-far-landmarks"]);
   assert.equal(result[0].textured, true);
   assert.equal(result[1].width, 1536);
   assert.equal(result[2].textured, false);
   assert.deepEqual(result[3], { name: "slg-overview-art", kind: "sprite", textured: true, width: 1254, height: 1254 });
+  assert.deepEqual(result[4], { name: "slg-far-sea", kind: "mesh", textured: true, width: 1536, height: 1024 },
+    "远档海面为 sea-tile 贴图整图层（渲染水面平铺）");
+  assert.equal(result[5].textured, true, "远档岛貌地表使用纯地表烘图贴图");
+  assert.equal(result[6].textured, true, "远档地标使用装饰图集贴图");
+  assert.ok(!result.some((entry: { name: string }) => entry.name === "slg-far-ownership"), "隐藏节点不参与证据");
   assert.deepEqual(evaluate({ director: { getScene: () => null } }), []);
+});
+
+test("SLG 后台滚动证据：页面脚本自包含，只读取设置视口并复制公开偏移", () => {
+  const offset = { x: 0, y: 12 };
+  interface TestNode {
+    name: string; children: TestNode[]; activeInHierarchy: boolean;
+    getChildByName: (id: string) => TestNode | null;
+    getComponent: (id: string) => unknown;
+  }
+  const node = (name: string, children: TestNode[] = [], components: Record<string, unknown> = {}, activeInHierarchy = true): TestNode => ({
+    name, children, activeInHierarchy,
+    getChildByName: (id) => children.find((child) => child.name === id) ?? null,
+    getComponent: (id) => components[id] ?? null,
+  });
+  const scroll = { getScrollOffset: () => offset };
+  const settings = node("SettingsView", [node("panel", [node("viewport", [], { "cc.ScrollView": scroll })])]);
+  const evaluate = new Function("cc", `return ${slgSettingsScrollSource};`);
+  const scene = node("scene", [
+    node("SettingsView", [], {}, false),
+    node("OtherView", [node("viewport", [], { "cc.ScrollView": { getScrollOffset: () => ({ x: 99, y: 99 }) } })]),
+    settings,
+  ]);
+  const snapshot = evaluate({ director: { getScene: () => scene } });
+  assert.deepEqual(snapshot, { x: 0, y: 12 });
+  offset.y = 20;
+  assert.equal(snapshot.y, 12, "保存快照，不能把引擎复用 Vec2 的新偏移当成原值");
+  assert.deepEqual(evaluate({ director: { getScene: () => scene } }), { x: 0, y: 20 });
+  assert.equal(evaluate({ director: { getScene: () => node("scene") } }), null);
+  assert.equal(evaluate({ director: { getScene: () => null } }), null);
+  offset.y = Number.NaN;
+  assert.equal(evaluate({ director: { getScene: () => scene } }), null);
+});
+
+test("SLG 输入隔离断言：检测两轴后台偏移，不把缺失证据或失效组件算通过", () => {
+  const before = { x: 0, y: 12 };
+  assert.deepEqual(assertSlgSettingsScrollUnchanged(before, { x: 0, y: 12 }),
+    { before, after: { x: 0, y: 12 }, unchanged: true });
+  assert.throws(() => assertSlgSettingsScrollUnchanged(before, { x: 0, y: 13 }), /穿透到后台设置滚动/u);
+  assert.throws(() => assertSlgSettingsScrollUnchanged(before, { x: 2, y: 12 }), /穿透到后台设置滚动/u);
+  assert.throws(() => assertSlgSettingsScrollUnchanged(null, null), /不可观测/u);
+  assert.throws(() => assertSlgSettingsScrollUnchanged(before, null), /不可观测/u);
+  assert.throws(() => assertSlgSettingsScrollUnchanged(before, { x: 0, y: Number.NaN }), /不可观测/u);
 });
 
 test("SLG 预览输入：从公开帮助/详情行定位地图内区域，缺失/倒置时拒绝猜坐标", () => {
@@ -244,4 +302,42 @@ test("SLG LOD 截图等待：网格集合变化/限流退避重置稳定计时�
   assert.equal(slgFrameStability(state, changed, 9200, 4).ready, true);
   assert.equal(slgFrameStability(state, { ...changed, loaded: false }, 9200, 4).ready, false);
   assert.equal(slgFrameStability(state, { ...changed, lod: 3 }, 9200, 4).ready, false);
+});
+
+
+test("SLG 预览证据：LOD 4 远档整图层（slg-far-*）替代逐 chunk 网格同样算已加载", () => {
+  const node = (name: string, text: string | null, center: object | null = { x: 100, y: 100 }) => ({ name, text, path: `scene/Canvas/SlgMapView/${name}`, center });
+  const walk = { nodes: [
+    node("SlgMapView", null),
+    node("title", "青原仙洲 · LOD 4 · 奖杯 7"),
+    node("details", "(5006, 4999) · 地形 0 · 我方 · 守备 1"),
+    node("slg-far-sea", null, null),
+    node("slg-far-island", null, null),
+    node("slg-far-landmarks", null, null),
+    node("slg-far-ownership", null, null),
+    node("slg-world", null, { x: -1000, y: 1100 }),
+  ] };
+  const result = readSlgMapEvidence(walk)!;
+  assert.equal(result.loaded, true, "整图层存在即已加载（远档无逐 chunk 节点）");
+  assert.deepEqual(result.chunks, []);
+  assert.deepEqual(result.farNodes, ["slg-far-island", "slg-far-landmarks", "slg-far-ownership", "slg-far-sea"]);
+  assert.equal(result.farGround, true);
+  assert.equal(result.farLandmarks, true);
+  assert.equal(result.farOwnership, true);
+  assert.equal(readSlgMapEvidence({ nodes: walk.nodes.filter((entry) => entry.name !== "slg-far-sea" && entry.name !== "slg-far-island") })!.loaded,
+    false, "远档缺地表整图层与近档缺全部 chunk 一样未就绪");
+});
+
+test("SLG LOD 截图等待：远档整图层集合变化同样重置稳定计时", () => {
+  const evidence = { loaded: true, lod: 4, chunks: [] as string[],
+    farNodes: ["slg-far-sea", "slg-far-landmarks"], notice: null, worldCenter: { x: 50, y: 60 } };
+  let state = slgFrameStability(null, evidence, 0, 4);
+  state = slgFrameStability(state, evidence, 1200, 4);
+  state = slgFrameStability(state, evidence, 2400, 4);
+  assert.equal(state.ready, true);
+  const changed = { ...evidence, farNodes: ["slg-far-sea", "slg-far-landmarks", "slg-far-ownership"] };
+  state = slgFrameStability(state, changed, 2500, 4);
+  assert.equal(state.ready, false, "farNodes 变化（归属网格重建/图层增删）也须重新稳定 1.2 秒");
+  state = slgFrameStability(state, changed, 3700, 4);
+  assert.equal(state.ready, true);
 });

@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 281,
+    "height": 52
+  },
+  "roots": [
+    "layer-293"
+  ],
+  "nodes": {
+    "layer-293": {
+      "id": "layer-293",
+      "name": "HeroFilterBar",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar",
+        "role": "component",
+        "definitionKey": "HeroFilterBar"
+      },
+      "children": [
+        "layer-294"
+      ]
+    },
+    "layer-294": {
+      "id": "layer-294",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1",
+        "role": "node"
+      },
+      "children": [
+        "layer-295",
+        "layer-297",
+        "layer-299",
+        "layer-300"
+      ]
+    },
+    "layer-295": {
+      "id": "layer-295",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-296"
+      ]
+    },
+    "layer-296": {
+      "id": "layer-296",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1/_:0",
+        "role": "node"
+      },
+      "asset": "asset-24830db3af5fd0bb4671fddde9bba9c285687585e18d81fdaabc2ae7334aafa8"
+    },
+    "layer-297": {
+      "id": "layer-297",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 15,
+        "y": 13,
+        "width": 29,
+        "height": 27
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-298"
+      ]
+    },
+    "layer-298": {
+      "id": "layer-298",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 29,
+        "height": 27
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1/_:1",
+        "role": "node"
+      },
+      "asset": "asset-80cea0e6be6116c27d2e013d179dab52202425c4ae2f420741f61a0777e8aad2"
+    },
+    "layer-299": {
+      "id": "layer-299",
+      "name": "全部",
+      "kind": "text",
+      "frame": {
+        "x": 54,
+        "y": 12,
+        "width": 174,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1/_",
+        "role": "node"
+      },
+      "text": {
+        "value": "全部",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#584871"
+      }
+    },
+    "layer-300": {
+      "id": "layer-300",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 236,
+        "y": 18,
+        "width": 34,
+        "height": 23
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-301"
+      ]
+    },
+    "layer-301": {
+      "id": "layer-301",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 23
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar/_:1/_:6",
+        "role": "node"
+      },
+      "asset": "asset-100b1a45f400e98192ae12360e58c7fb33128fcd3ef65f9881924fbd9a47b410"
+    }
+  },
+  "assets": {
+    "asset-24830db3af5fd0bb4671fddde9bba9c285687585e18d81fdaabc2ae7334aafa8": {
+      "path": "assets/24830db3af5fd0bb4671fddde9bba9c285687585e18d81fdaabc2ae7334aafa8.png",
+      "sha256": "24830db3af5fd0bb4671fddde9bba9c285687585e18d81fdaabc2ae7334aafa8",
+      "mime": "image/png",
+      "width": 280,
+      "height": 52
+    },
+    "asset-80cea0e6be6116c27d2e013d179dab52202425c4ae2f420741f61a0777e8aad2": {
+      "path": "assets/80cea0e6be6116c27d2e013d179dab52202425c4ae2f420741f61a0777e8aad2.png",
+      "sha256": "80cea0e6be6116c27d2e013d179dab52202425c4ae2f420741f61a0777e8aad2",
+      "mime": "image/png",
+      "width": 29,
+      "height": 27
+    },
+    "asset-100b1a45f400e98192ae12360e58c7fb33128fcd3ef65f9881924fbd9a47b410": {
+      "path": "assets/100b1a45f400e98192ae12360e58c7fb33128fcd3ef65f9881924fbd9a47b410.png",
+      "sha256": "100b1a45f400e98192ae12360e58c7fb33128fcd3ef65f9881924fbd9a47b410",
+      "mime": "image/png",
+      "width": 34,
+      "height": 23
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

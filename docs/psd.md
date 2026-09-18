@@ -1,9 +1,18 @@
 # PSD 到 FairyGUI 的“CLI 编译器 PSD 版”实施方案
 
-> 版本：0.4（方案稿）<br>
+> 当前真实状态（2026-09-13）：本仓已具备 `ui:import-psd`、`ui:export-psd`、
+> UniFlex Web/Cocos 预览和 `ui:check-source` 契约诊断；尚未具备 Photoshop
+> 打开—保存—关闭—重开自动验收、Editor takeover、`.psdt.io` 容器命令或完整
+> Storybook/Checkpoint manager。Web/Cocos 预览成功不等于 Golden 批准。
+
+> 版本：0.5（实施状态记录）<br>
 > 日期：2026-09-02<br>
-> 状态：已有一次 `referenceCompositeOnly` PSD 生成记录；通用 CLI、Schema、元素级可编辑性验证、FairyGUI 编译器和全栈编排仍未实现<br>
+> 状态（2026-09-13）：PSD ↔ UniFlex 的 Backpack 导入样例已具备源图契约、Web/Cocos 运行入口、交互候选绑定、九宫格/字体诊断和 Web Golden 检查；Photoshop 往返、`.psdt.io` 容器、完整 Storybook/Checkpoint manager、真实 Cocos 截图门禁仍未完成。<br>
 > 决策：使用 CLI 编译器 PSD 版承担 PSD 解析、资产导出、装配计划生成和候选 FairyGUI 工程编译。
+>
+> 验收优先级修正（2026-09-13）：UniFlex 负责统一 Web/Cocos 的布局与渲染语义，因此 PSD 链路的主验收对象是
+> “PSD/design 源图 → UniFlex Web proposal”的像素与组件语义一致性；Cocos Golden 只作为同一 UniFlex 运行时的
+> 实际加载/渲染冒烟证据，不再把 Web 与 Cocos 当作两套独立的视觉实现对账。
 > 核心契约：明确采用“**命名 + sidecar 契约 + Editor 映射**”三层方案。
 
 这套命令行产品统一命名为“**CLI 编译器 PSD 版**”，机器可读 `authoringMode` 固定为 `cliPSDCompiler`。
@@ -87,6 +96,10 @@ Creator 导入、Scenario 验收、receipt 冻结
 | 通用 PSD CLI / Schema | 当前无 `ui:psd:*` 或 `psd:*` 仓库命令 | 计划能力 |
 | CLI FairyGUI 编译器 / Editor 映射 | 当前无实现 | 计划能力 |
 | 根据契约和 XML 实现前后端 | 仓库有现成 codegen 与开发动线，但无本文编排器 | 人工可执行，自动编排是计划能力 |
+| PSD/design 源图 → UniFlex Web Golden | `ui:render-source` 按 `design.json` 独立合成 RGB 源图，`ui:verify` 按颜色阈值 `0.1`、区域差异 `5%` 比较，并检查组件、交互、九宫格和字体契约；传入 `--report` 时输出 `componentization` 审计及 `decomposition.candidates` 拆分候选清单 | **主验收链已实现**；Backpack RGB 源图与 Web proposal 整图 `AE=0`，组件报告明确其为 1 个含栅格化子层的语义容器，不把整图误报为完全可编辑；候选清单列出 22 个保留层、3 个页签文字层及其字体/效果阻塞原因；两个越界 group frame 保留诊断警告 |
+| UniFlex Web → Cocos 运行时冒烟 | Cocos 复用 UniFlex AOT/资源/布局语义；`ui:capture-cocos-golden` 从真实引擎 RenderTexture 读取契约画布 | **辅助验证已实现**；禁止使用带 Creator 工具栏的截图或非等比缩放。正式运行证据仍受当前 Creator 预览环境阻塞，不影响 Web 主链的判断 |
+| 交互回归 | Backpack `BackpackLogic.runCheckpoint()` 按稳定 name 执行 `primary/back/tab` | 已实现最小业务闭环；尚非完整跨页面 Storybook/Checkpoint manager |
+| 九宫格与字体契约 | `decompositionSpec.nineSlice`、`fontRef/path/hash/advances` 检查 | 已实现诊断；未声明的候选只报警，生产包仍需逐项确认 |
 
 [`docs/ui/undergroundIdle/ue-v01/`](ui/undergroundIdle/ue-v01/README.md) 的 11 份 UE PSD（未入库，仅存本机，见其
 README）同样属于

@@ -1,0 +1,21 @@
+{
+  "screen": "alliance-march-boost",
+  "componentName": "AllianceMarchBoost",
+  "restoredName": "AllianceMarchBoostRestored",
+  "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoost/AllianceMarchBoost.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "58b021cdaa04d127c273b1da3c6850c7cceb9b95fc1a18950e2d61687e614fb1",
+    "psdSha256": "acc68e517a4b7719d1045ed03c7f465934388f2075face34d0bedbd59952881e",
+    "at": "2026-09-17T03:32:53.796Z"
+  },
+  "import": {
+    "psdSha256": "acc68e517a4b7719d1045ed03c7f465934388f2075face34d0bedbd59952881e",
+    "at": "2026-09-17T03:58:43.430Z",
+    "target": "restored"
+  }
+}

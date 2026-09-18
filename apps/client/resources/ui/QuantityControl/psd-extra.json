@@ -1,0 +1,512 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "00f784e4604a89f56d2936ea14076e7cd86d1733b9665acd789c8d75eec125d6",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 700,
+    "height": 85,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"2c52b97413aebc1d974bb70e6fbab91276b72b2ed5d7e03757eb789b87e127db\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjcwMCwiaGVpZ2h0Ijo4NX0sIm5vZGVzIjpbeyJpZCI6NjUsInBhcmVudCI6bnVsbCwicGxhbklkIjoxLCJraW5kIjoidmlldyIsIm5hbWUiOiJRdWFudGl0eUNvbnRyb2wiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjcwMCwiaGVpZ2h0Ijo4NX0sImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpCYWNrcGFjay9CYWNrcGFjay9EZXRhaWxzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjY2LCJwYXJlbnQiOjY1LCJwbGFuSWQiOjIsImtpbmQiOiJ2aWV3IiwibmFtZSI6IlF1YW50aXR5Q29udHJvbC9EZWNyZWFzZSIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzYsImhlaWdodCI6ODV9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL0RlY3JlYXNlIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjY3LCJwYXJlbnQiOjY2LCJwbGFuSWQiOjMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc2LCJoZWlnaHQiOjg1fSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL2J1dHRvbi1taW51cyIsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpCYWNrcGFjay9CYWNrcGFjay9EZXRhaWxzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvRGVjcmVhc2UvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo2OCwicGFyZW50Ijo2NSwicGxhbklkIjo0LCJraW5kIjoidmlldyIsIm5hbWUiOiJRdWFudGl0eUNvbnRyb2wvU2xpZGVyIiwidmFsdWUiOiIwIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo4NiwieSI6MCwid2lkdGgiOjM5MSwiaGVpZ2h0Ijo4NX0sImludGVyYWN0aW9uIjoicmFuZ2UiLCJpbnRlcmFjdGFibGUiOnRydWUsInJhbmdlIjp7Im1pbiI6MCwibWF4IjoxLCJzdGVwIjoxfSwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9TbGlkZXIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6NjksInBhcmVudCI6NjgsInBsYW5JZCI6NSwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjoxOCwid2lkdGgiOjM5MSwiaGVpZ2h0Ijo0NH0sInJlc291cmNlSWQiOiJ1aS9iYWNrcGFjay9zbGlkZXItdHJhY2siLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1NsaWRlci9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6NzAsInBhcmVudCI6NjgsInBsYW5JZCI6Niwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyLCJ5IjoyMCwid2lkdGgiOjE4LjUsImhlaWdodCI6NDB9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svc2xpZGVyLWZpbGwiLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1NsaWRlci9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6NzEsInBhcmVudCI6NjgsInBsYW5JZCI6Nywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5Ijo2LCJ3aWR0aCI6MzcsImhlaWdodCI6NzF9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svc2xpZGVyLWhhbmRsZSIsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpCYWNrcGFjay9CYWNrcGFjay9EZXRhaWxzL0JhY2twYWNrUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvU2xpZGVyL186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo3MiwicGFyZW50Ijo2NSwicGxhbklkIjo4LCJraW5kIjoidmlldyIsIm5hbWUiOiJRdWFudGl0eUNvbnRyb2wvSW5jcmVhc2UiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NDg2LCJ5IjowLCJ3aWR0aCI6NzYsImhlaWdodCI6ODV9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL0luY3JlYXNlIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjczLCJwYXJlbnQiOjcyLCJwbGFuSWQiOjksImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc2LCJoZWlnaHQiOjg1fSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL2J1dHRvbi1wbHVzIiwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9JbmNyZWFzZS9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjc0LCJwYXJlbnQiOjY1LCJwbGFuSWQiOjEwLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjU3OSwieSI6MTQsIndpZHRoIjoxMjEsImhlaWdodCI6NTR9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svcXVhbnRpdHktYmciLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo3NSwicGFyZW50Ijo2NSwicGxhbklkIjoxMSwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiIwIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1NzksInkiOjE0LCJ3aWR0aCI6MTIxLCJoZWlnaHQiOjU0fSwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOkJhY2twYWNrL0JhY2twYWNrL0RldGFpbHMvQmFja3BhY2tRdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6NzYsInBhcmVudCI6NjUsInBsYW5JZCI6MTIsImtpbmQiOiJ2aWV3IiwibmFtZSI6IlF1YW50aXR5Q29udHJvbC9NYXgiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL01heCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjo3NywicGFyZW50Ijo3NiwicGxhbklkIjoxMywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9iYWNrcGFjay9idXR0b24tbWludXMiLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvUXVhbnRpdHlDb250cm9sL01heC9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19XSwiY29tcG9uZW50RGVjbGFyYXRpb25zIjp7InNjaGVtYVZlcnNpb24iOjEsImtpbmQiOiJ1bmlmbGV4LWNvbXBvbmVudC1kZWNsYXJhdGlvbnMiLCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2wiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3F1YW50aXR5L1F1YW50aXR5Q29udHJvbC50c3gifSwiZGVmaW5pdGlvbnMiOlt7ImtleSI6IlF1YW50aXR5Q29udHJvbCIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvcXVhbnRpdHkvUXVhbnRpdHlDb250cm9sLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6QmFja3BhY2svQmFja3BhY2svRGV0YWlscy9CYWNrcGFja1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6NjV9XX0sImNvbXBvbmVudERvY3VtZW50Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbCIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvcXVhbnRpdHkvUXVhbnRpdHlDb250cm9sLnRzeCJ9fQ==\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-123": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "QuantityControl [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl#component]",
+        "id": 123,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-124": {
+      "parent": "layer-123",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "QuantityControl/Decrease [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Decrease#node]",
+        "id": 124,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-125": {
+      "parent": "layer-124",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 125,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-126": {
+      "parent": "layer-125",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 85,
+        "right": 76,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Decrease/_#node]",
+        "id": 126,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-127": {
+      "parent": "layer-123",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "QuantityControl/Slider [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Slider#node]",
+        "id": 127,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-128": {
+      "parent": "layer-127",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 128,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-129": {
+      "parent": "layer-128",
+      "properties": {
+        "top": 18,
+        "left": 86,
+        "bottom": 62,
+        "right": 477,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Slider/_:0#node]",
+        "id": 129,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-130": {
+      "parent": "layer-127",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 130,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-131": {
+      "parent": "layer-130",
+      "properties": {
+        "top": 20,
+        "left": 88,
+        "bottom": 60,
+        "right": 107,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Slider/_:1#node]",
+        "id": 131,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-132": {
+      "parent": "layer-127",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 132,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-133": {
+      "parent": "layer-132",
+      "properties": {
+        "top": 6,
+        "left": 86,
+        "bottom": 77,
+        "right": 123,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Slider/_:2#node]",
+        "id": 133,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-134": {
+      "parent": "layer-123",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "QuantityControl/Increase [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Increase#node]",
+        "id": 134,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-135": {
+      "parent": "layer-134",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 135,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-136": {
+      "parent": "layer-135",
+      "properties": {
+        "top": 0,
+        "left": 486,
+        "bottom": 85,
+        "right": 562,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Increase/_#node]",
+        "id": 136,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-137": {
+      "parent": "layer-123",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 137,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-138": {
+      "parent": "layer-137",
+      "properties": {
+        "top": 14,
+        "left": 579,
+        "bottom": 68,
+        "right": 700,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/_#node]",
+        "id": 138,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-139": {
+      "parent": "layer-123",
+      "properties": {
+        "top": 14,
+        "left": 579,
+        "bottom": 68,
+        "right": 700,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "0 [ui:QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/_#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            639.5,
+            53.210000000000036
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "0",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 33,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 33,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0
+              }
+            }
+          ]
+        },
+        "id": 139,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

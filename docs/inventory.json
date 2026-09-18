@@ -134,7 +134,9 @@
           { "kind": "root", "script": "verify:protected-paths" },
           { "kind": "root", "script": "verify:inventory" },
           { "kind": "root", "script": "test:inventory" },
-          { "kind": "root", "script": "test:client" }
+          { "kind": "root", "script": "test:client" },
+          { "kind": "root", "script": "check:uniflex-ui" },
+          { "kind": "root", "script": "typecheck:uniflex-ui" }
         ]
       }],
       "docs": ["docs/plan-v5.md", "README.md"]

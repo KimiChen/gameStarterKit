@@ -6,7 +6,7 @@ export function createPluginModule(): PluginModule {
     return { install(context) {
         context.own(setSlgRuntime({
             selfUid: () => context.ports.session.getUserId(),
-            mapTiles: (rect) => fetchMapTiles(context.ports.lobbyRpc, rect),
+            mapTiles: (mapId, rect) => fetchMapTiles(context.ports.lobbyRpc, mapId, rect),
             capture: (tileId) => context.ports.lobbyRpc.sendIdempotent(SlgRpc.TileCapture, { tileId }),
             now: () => context.ports.clock.now(),
             tick: (callback) => context.ports.ticker.add(callback),

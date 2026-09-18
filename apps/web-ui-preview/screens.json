@@ -1,0 +1,576 @@
+{
+  "screens": [
+    {
+      "id": "preview-home",
+      "aliases": ["home"],
+      "default": true,
+      "canvas": { "width": 750, "height": 1424 },
+      "componentName": "PreviewHome",
+      "rootName": "PreviewHome",
+      "source": "apps/client/src/ui-uniflex/pages/PreviewHome/PreviewHome.tsx"
+    },
+    {
+      "id": "restored-home",
+      "aliases": ["restored", "restored-preview", "restore"],
+      "canvas": { "width": 750, "height": 1424 },
+      "componentName": "RestoredPreviewHome",
+      "rootName": "RestoredPreviewHome",
+      "source": "apps/client/src/ui-uniflex/pages/RestoredPreviewHome/RestoredPreviewHome.tsx"
+    },
+    {
+      "id": "prompt",
+      "aliases": ["prompt"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Prompt",
+      "rootName": "Prompt/Content",
+      "source": "apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx"
+    },
+    {
+      "id": "small-popup",
+      "aliases": ["small-popup"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "SmallPopup",
+      "rootName": "SmallPopup/Content",
+      "source": "apps/client/src/ui-uniflex/pages/SmallPopup/SmallPopup.tsx"
+    },
+    {
+      "id": "confirm",
+      "aliases": ["confirm"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Confirm",
+      "rootName": "Confirm",
+      "source": "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx"
+    },
+    {
+      "id": "backpack",
+      "aliases": ["backpack"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "Backpack",
+      "rootName": "Backpack",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/Backpack.tsx"
+    },
+    {
+      "id": "mail",
+      "aliases": ["mail"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "MailBattleReport",
+      "rootName": "MailBattleReport",
+      "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleReport.tsx"
+    },
+    {
+      "id": "mail-restored",
+      "aliases": ["mail-restored", "mailRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "MailBattleReportRestored",
+      "rootName": "MailBattleReportRestored",
+      "source": "apps/client/src/ui-uniflex/pages/MailBattleReportRestored/MailBattleReportRestored.tsx"
+    },
+    {
+      "id": "backpack-restored",
+      "aliases": ["backpack-restored", "backpackRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "BackpackRestored",
+      "rootName": "BackpackRestored",
+      "source": "apps/client/src/ui-uniflex/pages/BackpackRestored/BackpackRestored.tsx"
+    },
+    {
+      "id": "settings",
+      "aliases": ["settings"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "Settings",
+      "rootName": "Settings/Content",
+      "source": "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx"
+    },
+    {
+      "id": "character",
+      "aliases": ["character", "character-manage"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "CharacterManage",
+      "rootName": "CharacterManage/Content",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManage.tsx"
+    },
+    {
+      "id": "hero",
+      "aliases": ["hero", "hero-screen"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "HeroScreen",
+      "rootName": "HeroScreen",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroScreen.tsx"
+    },
+    {
+      "id": "hero-detail",
+      "aliases": ["hero-detail", "heroDetail"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "HeroDetail",
+      "rootName": "HeroDetail",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetail.tsx"
+    },
+    {
+      "id": "hero-star-upgrade",
+      "aliases": ["hero-star-upgrade", "heroStarUpgrade"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "HeroStarUpgrade",
+      "rootName": "HeroStarUpgradePage",
+      "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarUpgrade.tsx"
+    },
+    {
+      "id": "alliance",
+      "aliases": ["alliance"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Alliance",
+      "rootName": "Alliance",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx"
+    },
+    {
+      "id": "alliance-announce",
+      "aliases": ["alliance-announce", "allianceAnnounce"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceAnnounce",
+      "rootName": "AllianceAnnouncePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounce/AllianceAnnounce.tsx"
+    },
+    {
+      "id": "alliance-create",
+      "aliases": ["alliance-create", "allianceCreate"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceCreate",
+      "rootName": "AllianceCreatePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceCreate/AllianceCreate.tsx"
+    },
+    {
+      "id": "alliance-join",
+      "aliases": ["alliance-join", "allianceJoin"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceJoin",
+      "rootName": "AllianceJoin",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceJoin/AllianceJoin.tsx"
+    },
+    {
+      "id": "alliance-member-settings",
+      "aliases": ["alliance-member-settings", "allianceMemberSettings"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceMemberSettings",
+      "rootName": "AllianceMemberSettingsPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettings/AllianceMemberSettings.tsx"
+    },
+    {
+      "id": "alliance-war",
+      "aliases": ["alliance-war", "allianceWar"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceWar",
+      "rootName": "AllianceWarPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceWar/AllianceWar.tsx"
+    },
+    {
+      "id": "alliance-territory",
+      "aliases": ["alliance-territory", "allianceTerritory"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceTerritory",
+      "rootName": "AllianceTerritoryPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritory.tsx"
+    },
+    {
+      "id": "alliance-march-boost",
+      "aliases": ["alliance-march-boost", "allianceMarchBoost"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceMarchBoost",
+      "rootName": "AllianceMarchBoostPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoost/AllianceMarchBoost.tsx"
+    },
+    {
+      "id": "alliance-invite",
+      "aliases": ["alliance-invite", "allianceInvite"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceInvite",
+      "rootName": "AllianceInvitePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceInvite/AllianceInvite.tsx"
+    },
+    {
+      "id": "alliance-gift",
+      "aliases": ["alliance-gift", "allianceGift"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceGift",
+      "rootName": "AllianceGiftPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceGift/AllianceGift.tsx"
+    },
+    {
+      "id": "alliance-help",
+      "aliases": ["alliance-help", "allianceHelp"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceHelp",
+      "rootName": "AllianceHelpPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceHelp/AllianceHelp.tsx"
+    },
+    {
+      "id": "alliance-board",
+      "aliases": ["alliance-board", "allianceBoard", "alliance-apply"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceBoard",
+      "rootName": "AllianceBoardPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceBoard/AllianceBoard.tsx"
+    },
+    {
+      "id": "alliance-tech",
+      "aliases": ["alliance-tech", "allianceTech", "alliance-science"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceTech",
+      "rootName": "AllianceTechPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTech.tsx"
+    },
+    {
+      "id": "shop-getitem",
+      "aliases": ["shop-getitem", "shopGetItem", "get-item", "getitem"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "ShopGetItem",
+      "rootName": "ShopGetItemPage",
+      "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItem.tsx"
+    },
+    {
+      "id": "shop",
+      "aliases": ["shop", "shop-vip", "vip-shop", "vipshop"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Shop",
+      "rootName": "ShopPage",
+      "source": "apps/client/src/ui-uniflex/pages/Shop/Shop.tsx"
+    },
+    {
+      "id": "prompt-restored",
+      "aliases": ["prompt-restored", "promptRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "PromptRestored",
+      "rootName": "PromptRestored/Content",
+      "source": "apps/client/src/ui-uniflex/pages/PromptRestored/PromptRestored.tsx"
+    },
+    {
+      "id": "confirm-restored",
+      "aliases": ["confirm-restored", "confirmRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "ConfirmRestored",
+      "rootName": "ConfirmRestored",
+      "source": "apps/client/src/ui-uniflex/pages/ConfirmRestored/ConfirmRestored.tsx"
+    },
+    {
+      "id": "small-popup-restored",
+      "aliases": ["small-popup-restored", "smallPopupRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "SmallPopupRestored",
+      "rootName": "SmallPopupRestored/Content",
+      "source": "apps/client/src/ui-uniflex/pages/SmallPopupRestored/SmallPopupRestored.tsx"
+    },
+    {
+      "id": "settings-restored",
+      "aliases": ["settings-restored", "settingsRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "SettingsRestored",
+      "rootName": "SettingsRestored/Content",
+      "source": "apps/client/src/ui-uniflex/pages/SettingsRestored/SettingsRestored.tsx"
+    },
+    {
+      "id": "character-restored",
+      "aliases": ["character-restored", "characterRestored", "character-manage-restored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "CharacterManageRestored",
+      "rootName": "CharacterManageRestored/Content",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManageRestored/CharacterManageRestored.tsx"
+    },
+    {
+      "id": "hero-restored",
+      "aliases": ["hero-restored", "heroRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "HeroScreenRestored",
+      "rootName": "HeroScreenRestored",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreenRestored/HeroScreenRestored.tsx"
+    },
+    {
+      "id": "hero-detail-restored",
+      "aliases": ["hero-detail-restored", "heroDetailRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "HeroDetailRestored",
+      "rootName": "HeroDetailRestored",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetailRestored/HeroDetailRestored.tsx"
+    },
+    {
+      "id": "hero-star-upgrade-restored",
+      "aliases": ["hero-star-upgrade-restored", "heroStarUpgradeRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "HeroStarUpgradeRestored",
+      "rootName": "HeroStarUpgradePage",
+      "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgradeRestored/HeroStarUpgradeRestored.tsx"
+    },
+    {
+      "id": "alliance-restored",
+      "aliases": ["alliance-restored", "allianceRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceRestored",
+      "rootName": "AllianceRestored",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceRestored/AllianceRestored.tsx"
+    },
+    {
+      "id": "alliance-announce-restored",
+      "aliases": ["alliance-announce-restored", "allianceAnnounceRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceAnnounceRestored",
+      "rootName": "AllianceAnnouncePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounceRestored/AllianceAnnounceRestored.tsx"
+    },
+    {
+      "id": "alliance-create-restored",
+      "aliases": ["alliance-create-restored", "allianceCreateRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceCreateRestored",
+      "rootName": "AllianceCreatePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceCreateRestored/AllianceCreateRestored.tsx"
+    },
+    {
+      "id": "alliance-join-restored",
+      "aliases": ["alliance-join-restored", "allianceJoinRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceJoinRestored",
+      "rootName": "AllianceJoinRestored",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceJoinRestored/AllianceJoinRestored.tsx"
+    },
+    {
+      "id": "alliance-member-settings-restored",
+      "aliases": ["alliance-member-settings-restored", "allianceMemberSettingsRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceMemberSettingsRestored",
+      "rootName": "AllianceMemberSettingsPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettingsRestored/AllianceMemberSettingsRestored.tsx"
+    },
+    {
+      "id": "alliance-war-restored",
+      "aliases": ["alliance-war-restored", "allianceWarRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceWarRestored",
+      "rootName": "AllianceWarPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceWarRestored/AllianceWarRestored.tsx"
+    },
+    {
+      "id": "alliance-territory-restored",
+      "aliases": ["alliance-territory-restored", "allianceTerritoryRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceTerritoryRestored",
+      "rootName": "AllianceTerritoryPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritoryRestored/AllianceTerritoryRestored.tsx"
+    },
+    {
+      "id": "alliance-march-boost-restored",
+      "aliases": ["alliance-march-boost-restored", "allianceMarchBoostRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceMarchBoostRestored",
+      "rootName": "AllianceMarchBoostPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoostRestored/AllianceMarchBoostRestored.tsx"
+    },
+    {
+      "id": "alliance-invite-restored",
+      "aliases": ["alliance-invite-restored", "allianceInviteRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceInviteRestored",
+      "rootName": "AllianceInvitePage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceInviteRestored/AllianceInviteRestored.tsx"
+    },
+    {
+      "id": "alliance-gift-restored",
+      "aliases": ["alliance-gift-restored", "allianceGiftRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceGiftRestored",
+      "rootName": "AllianceGiftPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceGiftRestored/AllianceGiftRestored.tsx"
+    },
+    {
+      "id": "alliance-help-restored",
+      "aliases": ["alliance-help-restored", "allianceHelpRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceHelpRestored",
+      "rootName": "AllianceHelpPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceHelpRestored/AllianceHelpRestored.tsx"
+    },
+    {
+      "id": "alliance-board-restored",
+      "aliases": ["alliance-board-restored", "allianceBoardRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceBoardRestored",
+      "rootName": "AllianceBoardPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceBoardRestored/AllianceBoardRestored.tsx"
+    },
+    {
+      "id": "alliance-tech-restored",
+      "aliases": ["alliance-tech-restored", "allianceTechRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "AllianceTechRestored",
+      "rootName": "AllianceTechPage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTechRestored/AllianceTechRestored.tsx"
+    },
+    {
+      "id": "shop-getitem-restored",
+      "aliases": ["shop-getitem-restored", "shopGetItemRestored"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "ShopGetItemRestored",
+      "rootName": "ShopGetItemPage",
+      "source": "apps/client/src/ui-uniflex/pages/ShopGetItemRestored/ShopGetItemRestored.tsx"
+    },
+    {
+      "id": "preview-home-restored",
+      "aliases": ["preview-home-restored", "previewHomeRestored"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "PreviewHomeRestored",
+      "rootName": "PreviewHomeRestored",
+      "source": "apps/client/src/ui-uniflex/pages/PreviewHomeRestored/PreviewHomeRestored.tsx"
+    },
+    {
+      "id": "backpack-edited",
+      "aliases": ["backpack-edited", "backpackEdited"],
+      "canvas": { "width": 750, "height": 1334 },
+      "componentName": "BackpackEditedRestored",
+      "rootName": "BackpackEditedRestored",
+      "source": "apps/client/src/ui-uniflex/pages/BackpackEditedRestored/BackpackEditedRestored.tsx"
+    }
+  ],
+  "components": [
+    {
+      "key": "PopupFrame",
+      "rootName": "PopupFrame",
+      "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"
+    },
+    {
+      "key": "PopupBackground",
+      "rootName": "PopupBackground",
+      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx"
+    },
+    {
+      "key": "CloseButton",
+      "rootName": "CloseButton",
+      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx"
+    },
+    {
+      "key": "ItemSlot",
+      "rootName": "ItemSlot",
+      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx"
+    },
+    {
+      "key": "ActionButton",
+      "rootName": "ActionButton",
+      "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx"
+    },
+    {
+      "key": "ConfirmButton",
+      "rootName": "ConfirmButton",
+      "source": "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx"
+    },
+    {
+      "key": "CancelButton",
+      "rootName": "CancelButton",
+      "source": "apps/client/src/ui-uniflex/components/button/CancelButton.tsx"
+    },
+    {
+      "key": "WideMenuButton",
+      "rootName": "WideMenuButton",
+      "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx"
+    },
+    {
+      "key": "NotificationBadge",
+      "rootName": "NotificationBadge",
+      "source": "apps/client/src/ui-uniflex/components/badge/NotificationBadge.tsx"
+    },
+    {
+      "key": "MailBattleRow",
+      "rootName": "MailBattleRow",
+      "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
+    },
+    {
+      "key": "PanelTab",
+      "rootName": "PanelTab",
+      "source": "apps/client/src/ui-uniflex/components/tab/PanelTab.tsx"
+    },
+    {
+      "key": "BackpackItemCard",
+      "rootName": "BackpackItemCard",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"
+    },
+    {
+      "key": "BackpackResourceCounter",
+      "rootName": "BackpackResourceCounter",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackResourceCounter.tsx"
+    },
+    {
+      "key": "BackpackQuantityControl",
+      "rootName": "BackpackQuantityControl",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackQuantityControl.tsx"
+    },
+    {
+      "key": "CheckBox",
+      "rootName": "CheckBox",
+      "source": "apps/client/src/ui-uniflex/components/checkbox/CheckBox.tsx"
+    },
+    {
+      "key": "CharacterManageTab",
+      "rootName": "CharacterManageTab",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManageTab.tsx"
+    },
+    {
+      "key": "CharacterPlayerRow",
+      "rootName": "CharacterPlayerRow",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterPlayerRow.tsx"
+    },
+    {
+      "key": "CharacterServerItem",
+      "rootName": "CharacterServerItem",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterServerItem.tsx"
+    },
+    {
+      "key": "MainNav",
+      "rootName": "MainNav",
+      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx"
+    },
+    {
+      "key": "HeroListPanel",
+      "rootName": "HeroListPanel",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroListPanel.tsx"
+    },
+    {
+      "key": "HeroBondsPanel",
+      "rootName": "HeroBondsPanel",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroBondsPanel.tsx"
+    },
+    {
+      "key": "HeroCard",
+      "rootName": "HeroCard",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroCard.tsx"
+    },
+    {
+      "key": "HeroFilterBar",
+      "rootName": "HeroFilterBar",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroFilterBar.tsx"
+    },
+    {
+      "key": "HeroBondItem",
+      "rootName": "HeroBondItem",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroBondItem.tsx"
+    },
+    {
+      "key": "HeroRequiredHero",
+      "rootName": "HeroRequiredHero",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroRequiredHero.tsx"
+    },
+    {
+      "key": "HeroDetailTabs",
+      "rootName": "HeroDetailTabs",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailTabs.tsx"
+    },
+    {
+      "key": "HeroDetailAttributes",
+      "rootName": "HeroDetailAttributes",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailAttributes.tsx"
+    },
+    {
+      "key": "HeroDetailSkills",
+      "rootName": "HeroDetailSkills",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailSkills.tsx"
+    },
+    {
+      "key": "HeroSkillSlot",
+      "rootName": "HeroSkillSlot",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroSkillSlot.tsx"
+    }
+  ]
+}

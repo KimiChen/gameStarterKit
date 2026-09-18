@@ -1,0 +1,473 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "7071873dd4c929d94d048a8e41927164f73cabc721ab73c376ce57b6f0288370",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 683,
+    "height": 55,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"bd4836f975553cfe2370b360da4f6289d8268085c28bd83114994ac953bda895\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjY4MywiaGVpZ2h0Ijo1NX0sIm5vZGVzIjpbeyJpZCI6MzAsInBhcmVudCI6bnVsbCwicGxhbklkIjoyOSwia2luZCI6InZpZXciLCJuYW1lIjoiSGVyb1N0YXJBdHRyaWJ1dGVSb3ciLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjY4MywiaGVpZ2h0Ijo1NX0sImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9TdGFyQXR0cmlidXRlUm93Okhlcm9TdGFyVXBncmFkZVBhZ2UvSGVyb1N0YXJVcGdyYWRlL0hlcm9TdGFyVXBncmFkZS9QYW5lbC9fOjEvSGVyb1N0YXJBdHRyaWJ1dGVSb3ciLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6Ikhlcm9TdGFyQXR0cmlidXRlUm93In19LHsiaWQiOjMxLCJwYXJlbnQiOjMwLCJwbGFuSWQiOjMwLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL3N0YXItdXBncmFkZS9yb3ctYmciLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvU3RhckF0dHJpYnV0ZVJvdzpIZXJvU3RhclVwZ3JhZGVQYWdlL0hlcm9TdGFyVXBncmFkZS9IZXJvU3RhclVwZ3JhZGUvUGFuZWwvXzoxL0hlcm9TdGFyQXR0cmlidXRlUm93L186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9TdGFyQXR0cmlidXRlUm93In19LHsiaWQiOjMyLCJwYXJlbnQiOjMwLCJwbGFuSWQiOjMxLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI5LCJ5IjoxMiwid2lkdGgiOjI1LCJoZWlnaHQiOjMyfSwicmVzb3VyY2VJZCI6InVpL3N0YXItdXBncmFkZS9hdHRhY2staWNvbiIsImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9TdGFyQXR0cmlidXRlUm93Okhlcm9TdGFyVXBncmFkZVBhZ2UvSGVyb1N0YXJVcGdyYWRlL0hlcm9TdGFyVXBncmFkZS9QYW5lbC9fOjEvSGVyb1N0YXJBdHRyaWJ1dGVSb3cvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb1N0YXJBdHRyaWJ1dGVSb3cifX0seyJpZCI6MzMsInBhcmVudCI6MzAsInBsYW5JZCI6MzIsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoi5pS75Ye75YqbIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1NywieSI6MTAsIndpZHRoIjoxNjAsImhlaWdodCI6MzZ9LCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvU3RhckF0dHJpYnV0ZVJvdzpIZXJvU3RhclVwZ3JhZGVQYWdlL0hlcm9TdGFyVXBncmFkZS9IZXJvU3RhclVwZ3JhZGUvUGFuZWwvXzoxL0hlcm9TdGFyQXR0cmlidXRlUm93L186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9TdGFyQXR0cmlidXRlUm93In19LHsiaWQiOjM0LCJwYXJlbnQiOjMwLCJwbGFuSWQiOjMzLCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IjQ0NDQ0IiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyMzcsInkiOjEwLCJ3aWR0aCI6MTQwLCJoZWlnaHQiOjM2fSwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb1N0YXJBdHRyaWJ1dGVSb3c6SGVyb1N0YXJVcGdyYWRlUGFnZS9IZXJvU3RhclVwZ3JhZGUvSGVyb1N0YXJVcGdyYWRlL1BhbmVsL186MS9IZXJvU3RhckF0dHJpYnV0ZVJvdy9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvU3RhckF0dHJpYnV0ZVJvdyJ9fSx7ImlkIjozNSwicGFyZW50IjozMCwicGxhbklkIjozNCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjozOTcsInkiOjksIndpZHRoIjo0MSwiaGVpZ2h0IjozOH0sInJlc291cmNlSWQiOiJ1aS9zdGFyLXVwZ3JhZGUvYXJyb3ciLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvU3RhckF0dHJpYnV0ZVJvdzpIZXJvU3RhclVwZ3JhZGVQYWdlL0hlcm9TdGFyVXBncmFkZS9IZXJvU3RhclVwZ3JhZGUvUGFuZWwvXzoxL0hlcm9TdGFyQXR0cmlidXRlUm93L186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9TdGFyQXR0cmlidXRlUm93In19LHsiaWQiOjM2LCJwYXJlbnQiOjMwLCJwbGFuSWQiOjM1LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IjQ0NDQ0IiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1MjIsInkiOjEwLCJ3aWR0aCI6MTQwLCJoZWlnaHQiOjM2fSwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb1N0YXJBdHRyaWJ1dGVSb3c6SGVyb1N0YXJVcGdyYWRlUGFnZS9IZXJvU3RhclVwZ3JhZGUvSGVyb1N0YXJVcGdyYWRlL1BhbmVsL186MS9IZXJvU3RhckF0dHJpYnV0ZVJvdy9fOjIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvU3RhckF0dHJpYnV0ZVJvdyJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiSGVyb1N0YXJBdHRyaWJ1dGVSb3ciLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9IZXJvU3RhclVwZ3JhZGUvSGVyb1N0YXJBdHRyaWJ1dGVSb3cudHN4In0sImRlZmluaXRpb25zIjpbeyJrZXkiOiJIZXJvU3RhckF0dHJpYnV0ZVJvdyIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L3BhZ2VzL0hlcm9TdGFyVXBncmFkZS9IZXJvU3RhckF0dHJpYnV0ZVJvdy50c3gifV0sImluc3RhbmNlcyI6W3sia2V5IjoiSGVyb1N0YXJBdHRyaWJ1dGVSb3c6SGVyb1N0YXJVcGdyYWRlUGFnZS9IZXJvU3RhclVwZ3JhZGUvSGVyb1N0YXJVcGdyYWRlL1BhbmVsL186MS9IZXJvU3RhckF0dHJpYnV0ZVJvdyIsImRlZmluaXRpb25LZXkiOiJIZXJvU3RhckF0dHJpYnV0ZVJvdyIsInJvbGUiOiJjb21wb25lbnQiLCJyb290UmVjb3JkSWQiOjMwfV19LCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJIZXJvU3RhckF0dHJpYnV0ZVJvdyIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L3BhZ2VzL0hlcm9TdGFyVXBncmFkZS9IZXJvU3RhckF0dHJpYnV0ZVJvdy50c3gifX0=\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-32": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "HeroStarAttributeRow [ui:HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow#component]",
+        "id": 32,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-33": {
+      "parent": "layer-32",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 33,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-34": {
+      "parent": "layer-33",
+      "properties": {
+        "top": 12,
+        "left": 29,
+        "bottom": 44,
+        "right": 54,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:1#node]",
+        "id": 34,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-35": {
+      "parent": "layer-32",
+      "properties": {
+        "top": 10,
+        "left": 57,
+        "bottom": 46,
+        "right": 217,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "攻击力 [ui:HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:0#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            57,
+            38.360000000000014
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "攻击力",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 28,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 28,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 35,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-36": {
+      "parent": "layer-32",
+      "properties": {
+        "top": 10,
+        "left": 237,
+        "bottom": 46,
+        "right": 377,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "44444 [ui:HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:1#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            237,
+            38.360000000000014
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "44444",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 28,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 28,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 89.0001,
+              "g": 72.99885,
+              "b": 109.99934999999999
+            }
+          }
+        },
+        "id": 36,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-37": {
+      "parent": "layer-32",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 37,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-38": {
+      "parent": "layer-37",
+      "properties": {
+        "top": 9,
+        "left": 397,
+        "bottom": 47,
+        "right": 438,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:2#node]",
+        "id": 38,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-39": {
+      "parent": "layer-32",
+      "properties": {
+        "top": 10,
+        "left": 522,
+        "bottom": 46,
+        "right": 662,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "44444 [ui:HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:2#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            522,
+            38.360000000000014
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "44444",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 28,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 28,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 53.9988,
+              "g": 136.99875,
+              "b": 51.9996
+            }
+          }
+        },
+        "id": 39,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

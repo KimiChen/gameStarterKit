@@ -62,4 +62,21 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
             "stats",
         ],
     },
+    {
+        id: "uniflex",
+        version: null,
+        api: {
+            cocos: { version: 1, minSupported: 1 },
+            core: { version: 1, minSupported: 1 },
+            navigation: { version: 1, minSupported: 1 },
+            provider: { version: 1, minSupported: 1 },
+            web: { version: 1, minSupported: 1 },
+        },
+        modes: [],
+        domains: [],
+        effects: [],
+        sqlFiles: [],
+        sqlTables: [],
+        userKeys: [],
+    },
 ];

@@ -18,6 +18,8 @@
     "moduleResolution": "bundler",
     "lib": ["ES2017", "DOM"],
     "types": [],
+    // 同 tsconfig.test.json：UniFlex authoring tsx 进入依赖图后需要 jsx 开关与全局 JSX 命名空间。
+    "jsx": "preserve",
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -28,6 +30,7 @@
   },
   "include": [
     "cc-stub.d.ts",
+    "uniflex-jsx.d.ts",
     "src/**/*.ts"
   ],
   "exclude": [

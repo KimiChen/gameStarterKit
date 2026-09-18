@@ -1,0 +1,21 @@
+{
+  "screen": "alliance-help",
+  "componentName": "AllianceHelp",
+  "restoredName": "AllianceHelpRestored",
+  "source": "apps/client/src/ui-uniflex/pages/AllianceHelp/AllianceHelp.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "ef217dc85470b92fb6749953a8e8ec91525c76e11b890de0220301a3ab409cde",
+    "psdSha256": "b44401a93ab9c7fe2f60dc73351a80fc70b49bbd41b03154801c2e963b94b4d5",
+    "at": "2026-09-17T03:33:09.158Z"
+  },
+  "import": {
+    "psdSha256": "b44401a93ab9c7fe2f60dc73351a80fc70b49bbd41b03154801c2e963b94b4d5",
+    "at": "2026-09-17T03:58:47.432Z",
+    "target": "restored"
+  }
+}

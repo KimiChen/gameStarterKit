@@ -1,0 +1,21 @@
+{
+  "screen": "alliance-board",
+  "componentName": "AllianceBoard",
+  "restoredName": "AllianceBoardRestored",
+  "source": "apps/client/src/ui-uniflex/pages/AllianceBoard/AllianceBoard.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "d8dbf2712af15bb027083bfff544194e24c5267673847a35e3138b812c677565",
+    "psdSha256": "299cd35cefa0c45cb2e58457993a489c9b09f60e90f57b7efc49414d5de0131f",
+    "at": "2026-09-17T03:33:14.123Z"
+  },
+  "import": {
+    "psdSha256": "299cd35cefa0c45cb2e58457993a489c9b09f60e90f57b7efc49414d5de0131f",
+    "at": "2026-09-17T03:58:48.779Z",
+    "target": "restored"
+  }
+}

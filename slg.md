@@ -256,6 +256,224 @@ cc 桩缺口按需补 `apps/client/cc-stub.d.ts` / `client-test-stubs.d.ts`（`c
 | 空库与包测试 | 独立空库首次应用 SLG 001/002 共 4+3 条语句，七表齐全；锁驱动 `plugin -- test slg --int` 35/35，通过且无跳过（含真实 SQL/Redis 集成 9 条）；重复 bootstrap 新应用 0、跳过 3（含 arena），临时库清理成功。 |
 | Creator 实证 | Cocos Creator 3.8.8 桌面真实预览 17 步通过、13 截图、console 空；入口/占领/刷新/鼠标平移/滚轮 LOD 1–4/关闭，稳定 LOD 4 已目视铺满。触屏 pinch 仅逻辑测试，单次 60 FPS 读数不构成容量结论。 |
 
-机器日志、截图与复跑动线统一见 [docs/evidence/creator-2026-09-09/slg/README.md](docs/evidence/creator-2026-09-09/slg/README.md)，干净安装细节见其 [clean-install](docs/evidence/creator-2026-09-09/slg/clean-install/README.md)。
+机器日志、截图与复跑动线统一见 docs/evidence/creator-2026-09-09/slg/，干净安装细节见其 clean-install/（本地预览证据，按 .gitignore 政策不入库）。
 
 **未进入本轮范围**：2b 的 GameRoom/AOI、军队与行军线、跨房可见性及正式名册策略，继续等待 MF5（含 GameRoom 消费/名册验收）；无人在线 worker 等待 MF7 受租约保护 KitTx。日志消费者的故障恢复窗口和容量也不以本轮阶段 1 / 2a 结果代验。
+
+## 8. 与源游戏（zlbAllVersion）大地图设计的差距分析与开放项（2026-09-10）
+
+> 对照 `../zlbAllVersion/docs/LOD-LOGIC.md` / `TERRAIN-LOD.md` 与 `script/logic/map/` 模块清单逐条盘点。
+> 「已在路线图内」（AOI / 军队 / 行军线 / worker）见 §0.1、§3 与 §5，不重复登记；3D 几何类设计
+> （真 3D 地形 / 高度场 / PCG 画布 / 水面双档 shader / 视锥反投影 / 共享索引缓冲 / LOD 段表）判定为
+> 引擎形式差异，不移植，其精髓（早退链 / 差分 / 滞回 / 共享几何）已体现在现有客户端实现。
+
+| # | 源游戏的做法 | 去向 | 状态（2026-09-10） |
+| --- | --- | --- | --- |
+| 1 | ZOOM_AOI 分尺度信息粒度：远档只下发聚合信息，近档才全量 | 并入 2b：MF5 兴趣集设计须含「LOD 档 → 下发字段集」 | 开放（2b） |
+| 2 | 服务端按 AOI 过滤，视野外内容不可得 | 并入 2b：军队 / 侦查等敏感信息必须按兴趣集在服务端裁剪；当前 `slg.mapTiles` 可查任意矩形仅因地块归属是公开信息 | 开放（2b） |
+| 3 | 远档 chunk 聚合（grid 10→60）与 LOD4 整图贴图 `lod4_terr_map`，draw call 不随缩放出图 | 本轮已实现：**LOD 3 远档整图层**（静态区域色块地表 + 地标 + 稀疏归属 overlay，共 3~5 张网格替代 200+ draw call），数据管线与 RPC 粒度不变；进出远档整批硬切 | ✅ 已实现 |
+| 4 | LOD 缩放滞回（zoom in/out 双阈值表 + tween/防抖），防阈值附近图层 flapping | 本轮已实现：`slgLodForScaleStable`（±8% 滞回带，shared 单源）+ `MapCamera` 状态化 LOD | ✅ 已实现 |
+| 5 | chunk 内容建销走 alpha 渐变 tween，非硬切 | 本轮已实现：顶点 alpha 淡入淡出 240ms（`ChunkFadeTracker`，淡出并发上限 12，批量/整档切换硬切兜底） | ✅ 已实现 |
+| 6 | 平台画质分档（HIGH/MIDDLE/LOW）+ GM LOD 覆写与逐层隐藏调试表 | GM 调试本轮已实现（`globalThis.slgMapDebug`：`setLod(0..3|null)` / `hide` / `show` / `reset`，页开安装页关注销）；**画质分档留待容量证据后定档** | ✅ GM 已实现；画质档开放 |
+| 7 | `minimap_mgr` / `minimap_march_mgr` 常驻 HUD 小地图（带军队/行军标记） | 并入 2b：总览的常驻缩略形态，与 AOI 兴趣集同数据源 | 开放（2b） |
+| 8 | 地形高度 / 阻挡 / 官道加速影响行军路径与战斗 | **冻结维持 v0 拍板**（地形仅展示）；若解冻，接缝在 `marchDurationMs` 与 dispatch 目标校验 | 冻结（不实施） |
+| 9 | 玩法内容层：资源地 / 建筑 / 城市影响范围 / 地块标记 / 气泡 / 通报 / 侦查 / 天气冻土 / 八阵区 / NPC 军队 / 官道 | 玩法策划选题，超出机制样例 v0 定位，非缺陷 | 开放（策划） |
+
+**本轮（差距分析小版本）验收**：typecheck 退出 0；客户端测试 550/550（新增 `slg-map-lod.test.ts` 8 项：滞回分档 / 相机状态化 / 远档地表 / 地标 UV / 稀疏归属 / fade 状态机 / 调试开关）；镜像同步检查一致；Creator 预览 23 步全过（含 LOD 4 远档整图层、地标定位、关闭重开资源），预览工具随之适配 `slg-far-*` 证据（`tools/creator-preview/slg.mjs` + 其单测 15/15）。
+
+## 9. 森之国主题换肤与 1500×1500 尺寸（2026-09-10）
+
+按用户要求：地图尺寸改用三战标准图 **1500×1500**（`zlbAllVersion/code/script/config/config_3d.lua:11` 的 `MAP_WIDTH/MAP_HEIGHT=1500`，正方形格）；主题换为《杖剑传说》森之国素材（zjcs-1.2.6）。
+
+| 决策 | 结果 |
+| --- | --- |
+| 地表真贴图 | **混合落地**：UnityPy 链未遂（chunk sprite 的外部引用 bundle `CAB-a4f77805…` 不在学习包内）；用户指明 `Mapscence/map11/ground11/` PNG 直供后，草地（`ground_1.png`）、林地（真草乘色）、岩石（Ground11_Atlas 崖壁切 (360,676)-(628,816)）换真贴图；水面/沙滩/裸土包内无平铺真贴图（水面=shader+mask）维持程序化 |
+| 摆件 | 从 `AppearanceAssets/Map` 部件图人工策展切片六类：藤蔓 / 宝箱 / 传送门 / 祭坛 / 灵晶 / 古剑碑 |
+| 布局 | `mapinfowrap_11`（77 区 1803 实体，MessagePack）解码，坐标 5× 放大复刻中心区；装饰双源（中心区真实点位 + 其余确定性哈希）；地标换森之国五地名（经 chunk 足迹与旱地校验微调） |
+| 尺寸切换 | `SLG_MAP_W/H` 10000→1500；`SLG_TILE_ID_STRIDE` / SQL 列宽兼容；尾块 12 格由既有部分块逻辑承接 |
+| 旧 SQL 数据 | dev 库 10000 尺度数据作废（本地重建即可） |
+| 版权口径 | 素材仅本仓私有研究，禁止二次分发；写进 `art/senzhiguo-v1/README.md` |
+
+验收：typecheck 0；客户端 550/550、服务端 755/755、集成 9/9（真实 MySQL/Redis）；Creator 预览 23 步见下节复核记录。
+
+## 10. 五国多地图与小地图切换（2026-09-12）
+
+按用户要求：大地图扩为 zjcs-1.2.6 五国可切换地图——森之国 `senzhiguo`(ClassId 11)、山之国 `shanzhiguo`(12)、泽之国 `zezhiguo`(13)、鲸背岛 `jingbeidao`(16)、羽之国 `yuzhiguo`(17)；地图区右上角常显小地图预览（`SlgMapSwitcher`），点击展开五图切换面板。
+
+| 决策 | 结果 |
+| --- | --- |
+| 状态隔离 | **按图隔离**：tileId 重打包 `mapIndex×2²² + y×2048 + x`（图 4bit、每轴 11bit，`SLG_TILE_ID_STRIDE` 65536→2048）；SQL 主键 `(server_id, tile_id)` 与 INT UNSIGNED 列宽不变；dev 库旧数据作废（同 §9 先例）；`slg.mapTiles` 请求加 `mapId`，slg 域 contractVersion 1→2 |
+| 每图尺寸 | 不再全局统一 1500²：森之国保持 1500×1500；新四图 = 逻辑格×scale + 海环 margin（山 1148×983、泽 1044×1080、鲸背 940×850、羽 1325×1166），登记进 `SLG_MAPS` catalog（shared 单源），`validateSlgTerrain` 对照 catalog |
+| 地形管线 | `tools/slg-maps/` 入库可复跑：render-ground（复用 zjcs render_map_full 的装载/解码出纯地表）→ calibrate（auto-offset 落陆率寻优 entityToRender、主色建议、地标足迹校验/自动寻优 fix-landmarks）→ classify-terrain（逐格反分类+贪心矩形分解，**y 翻转修正**：渲染图顶=北=世界 y 大）→ extract-layout → build-atlases → bake-island / frame-overview。森之国回归基线：layout 字节级、terrain regions/palette 一致、图集/island 像素级 |
+| 地形契约 | `ISlgTerrain` 增 `id`/`islandRect`；regions 上限 2048→`SLG_TERRAIN_MAX_REGIONS=4096`（羽之国群岛 3949 条实测）；总览预算闸同步 |
+| 客户端硬编码清除 | `SLG_LANDMARKS`/`SLG_ISLAND_RECT` 删除：地标从 layout.json 读（`kind` 即图集 kind，坐标中心格锚），岛矩形进 terrain.islandRect；相机/流式/远档/总览全部按当前图尺寸参数化；`SlgMapLogic.switchMap`（清稀疏模型+在途作废+相机重建，首开落点=地标[0] 且仅在用户未触碰相机时） |
+| 资源布局 | `resources/kits/slg/maps/<mapId>/`（terrain.json/layout.json/两图集/island-ground/world-overview + 256² mini）；森之国迁入 `maps/senzhiguo/`，旧顶层 json 与 senzhiguo/ 目录下线；qingyuan 留档不动 |
+| 小地图纹理自持 | 切换面板与小地图用各图 256² mini 绘卷（独立引用计数），与地图 bundle 释放解耦（曾踩 disposeArt 后 Sprite 渲染空纹理 `null.hash` 的坑） |
+| 鲸背岛素材 | 无专属贴图目录：地砖走共享图集（render-ground 经 bundle 依赖自动解析），装饰 tree 格复用森之国命运树藤 |
+
+预览工具新增 4 步（`slg.mjs`）：小地图开面板 → 切山之国（标题/地块/资源重载）→ 山之国 LOD 4 远档岛貌 → 切回森之国。
+
+验收：typecheck 0；客户端 550/550（五图化等价改造 + 地标中心锚足迹校验）、服务端 756/756；Creator 预览 27 步全过（/tmp/slg-five-maps-2，含五图切换）。
+开放项回写：§8 #7 常驻 HUD 小地图 ✅ 本轮落地（缩略预览 + 切换；军队/行军标记仍属 2b AOI 范畴）。
+
+### 10.1 近档真地表切块（2026-09-12，B 方案）
+
+用户反馈「地表表现形式与 zjcs 不同」。排查定位四类根因：①四图 palette 图集地表格粗采样污染（山 grass 格含蓝水道 → 平铺蓝色竖条纹；羽含云台；鲸背含岛缘）②水面程序化色块无浪边 ③单变体 4 格镜像平铺缺原版瓦片丰富度 ④岸线被 6 类硬分类抹平。拍板 B 方案：**近档地表直接用原版渲染图切块**（像素级一致），不做图集增强。
+
+| 决策 | 结果 |
+| --- | --- |
+| 渲染层补齐 | `render-ground.py` 增画 TileChunkData 植被层（树阵/地坪贴花/崖沿，`render_map_full` 的 draw_tile_chunks 复用），否则四图近档无林地纹理；跳过 Shadow 之外的 prefabs 大装饰（可移动游戏件） |
+| 切块产物 | `build-ground-tiles.py`：世界格 64×64（恰 4×4 chunk 整数对齐）1024² JPG q88，剔全海块；五图共 442 块（森 61/山 88/泽 90/鲸背 65/羽 138）+ `ground-tiles.json` 注册表 |
+| 运行时 | `SlgGroundTileCache`（懒加载 + 引用计数 + dispose 防在飞泄漏）；`SlgChunkRenderer` 块材质池（16 chunk 共享一块材质），未就绪/海块回退 palette 顶点色，贴图就绪后 update() 逐帧换肤重建；块随 chunk 生命周期 retain/release |
+| 网格几何 | `buildSlgTerrainMeshes` 加 `groundMode`：`{kind:"tile", tile:64}` 块内子区 UV（块顶=北 v 翻转）+ 顶点白；`{kind:"palette"}` 回退染色；缺省保持图集 span 采样（旧测试不炸） |
+| 资源包 | 块贴图 ~29MB（JPG）；terrain-atlas 保留（装饰/回退色）；island-ground 四图换含植被版重烘 |
+| 环境坑 | 预览卡住一度误诊：Chrome tab 的 CDP Input 域在被杀的工具会话后卡死（mouseWheel 超时），换新 tab 即恢复，与代码无关 |
+
+验收：typecheck 0；客户端 49/49（slg-* 全绿）；verify:all 退出 0；Creator 预览 27 步全过（/tmp/slg-ground-tiles-3，近档真地表、山之国画廊污染条纹消失、纹理内存 ~95MB）。
+
+### 10.2 拒绝程序化推导（2026-09-12 晚）
+
+用户拍板「尽可能用原版素材，拒绝程序化推导」。消灭生产路径残留的四类程序化内容：
+
+| 项 | 原做法（反推） | 现做法（原版） |
+| --- | --- | --- |
+| 地形分类 | 渲染图逐格颜色 → 最近质心反推 6 类 | **直读 `MapRootEntityLite` 逐格 GroundType**（agent 破解：root+11B framing+`array16(H)×array16(W)` [area,gt]；838/658 完整版交叉验证 18,547/18,547 全等）。映射：None→草 / Tree→林 / Block+Water→水 / Hill→岩 / Shallow→沙 / Wall+HyalineBlock→土。森对照：rock 从反分类 2,412 → 直读 37,791（Hill 被严重低估），sand/dirt 从 0/54 → 1,107/990；矩形 2,364→3,532（泽 4,792、羽 5,908——契约上限 4096→`SLG_TERRAIN_MAX_REGIONS=8192`） |
+| 海面 | palette 顶点色平涂 | 渲染图水面（含 WaterMask 浪边混合）：**ground-tiles 全量产海块**（剔海→全产 442→1,762 块、~63MB）；远档 sea 层换 `sea-tile.png`（滑窗自动选纯海区 512²）贴图平铺 |
+| 空白区装饰 | `ordinaryKind` 确定性哈希兜底摆位 | **删除**——layout.json（mapinfowrap 原版实体）无覆盖的 chunk 一律空白，原版没有的就是没有 |
+| 总览实地图 | palette 色块矩形网格 | **island-ground 渲染图**（纯地表含植被）；海色底取 palette id 2（渲染海色）；地标/视口框/定位交互不变 |
+| 块贴图回退 | palette 顶点色 | island-ground 同区 UV 采样（bundle 已有纹理，零新资源） |
+
+附带升级：biomes 区域质心改 `AreaInfos` 原版质心（`[[Σx,Σy],count]`）、biome.terrain 改区域内主导 GroundType（不再关键词反推）；地标 25/25 在直读版地形上重校验定稿（山裂谷河岸 Δ-9,-7、羽结晶螺旋树 Δ0,-3 微调）。
+
+原版合规说明：装饰图集 chest/portal/stele/crystal/sword 五格复用森之国策展件**不是**程序化推导——`entity_map_display.csv` 的 `MapClassId=0` 通用行（344 条）证明宝箱/传送门是全图通用件，原版各国本来同一套。
+
+验收：typecheck 0；客户端 slg-* 49/49；verify:all 退出 0。预览因编辑器构建服务罢工两次重启，最终手动 ▶ 后验证（见下节）。
+
+### 10.3 素材溯源到「对方的实现」（2026-09-12 深夜）
+
+用户要求「确保所有素材都从原游戏移植，不要自己创造」。逆向 agent 闭环了原版实现链后，逐项对齐：
+
+| 项 | 原版实现（csharp-hotupdate/bundle 实证） | 本仓对齐 |
+| --- | --- | --- |
+| 海色 | **按图调色**：CustomWater 材质森 Water2(66,142,164)、山 Water12(66,121,164)、泽/鲸背 Water13(43,94,141 深蓝)、羽 Water17(92,168,192)——`Assets/Effect/CustomWater/Materials/` 实取 | `maps.config.json` 五图 seaColor/seaEdge/seaShallow 按原版材质回填；render-ground/terrain palette/sea-tile 全链按图取色（此前错用统一森色） |
+| 装饰实体形态 | **DisplayPath → view prefab**：`entity_map_display.csv` → `Assets/Prefabs/<DisplayPath>.prefab`（ECViewDriver + 主件），运行时对象池摆放；宝箱/树藤等主件是 **Spine 骨骼**（静态 icon 仅兜底隐藏） | **extract-decorations.py 新建**：从 bundle 解 view prefab，取 active 主件（SpriteRenderer sprite / Spine 材质 _MainTex 纹理）进图集——chest=8200_view Spine 宝箱纹理、portal=8628_14_view 命运树根门、stele=6330_11_view 古要塞群、crystal=8007_view 宝石矿、sword=6541_17_view 纹饰板。**手工框选子矩形全部废弃** |
+| 装饰分类 | 原版无枚举，目录族约定：`EntityDisplaysWorld{Door,Bonus,Building,GamePlay,Monster,NPC}` | classify 按目录族精确匹配（WorldDoor→portal、WorldBonus→chest、WorldBuilding→stele、WorldGamePlay→sword） |
+| 小地图 | 原版=实时渲染（RT 相机 + 逐格 GroundType 着色 tilemap + MiniMap_Atlas 图标），**无预渲染大图** | 本仓小地图/绘卷用 render_map_full 渲染的原版全图装裱（素材全部来自原版渲染图，实现形态不同但零自造内容） |
+| 水面动态 | CustomWater2 shader（焦散/泡沫/噪声/屏幕 RT 遮罩，WaterController 全局参数） | 静态近岸：海面 = 渲染图 WaterMask 混合（材质实取色）。**shader 动态水无源码，不在本仓复刻范围** |
+| 浅水变体 | `_shallow_view`（GroundType=Shallow 选浅水外观，Fording 涉水材质） | ⏳ 开放项：浅滩（Shallow 格）装饰目前用普通版，未做浅水涉水变体（Fording/PartialSubmersion 机制待跟进） |
+
+ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 36MB；海面由 sea-tile 平铺承担（滑窗自动选纯海区），零重复文件。
+
+验收：typecheck 0；客户端 slg-* 49/49；verify:all 退出 0（VERIFY_EXIT=0）。
+
+### 10.4 地表 Tilemap 化：放弃渲染图切块，按原版真实实现（2026-09-13）
+
+用户拍板「找原游戏是如何实现的，而不是切割他的渲染图」。逆向闭环原版实现后全链重写：
+
+**原版实现（bundle/csharp-hotupdate 实证）**
+
+| 问题 | 实证结论 |
+| --- | --- |
+| 连续草地哪来 | bare bundle 的 `Ground` Tilemap **逐格烘焙全岛**（森 17,752 格 ≈ 非水格 18,510；93.3% 是同一张 `ground_1`（168²/PPU168 自带噪点），其余 ~1,200 格 `island-edge*`/`ground_edge*`/`highland*` 边崖变片）。「稀疏覆盖不全」是单位误读：原版 1 渲染格 = kit `scale`×`scale` 世界格（森/山/泽/羽 scale=3、鲸背 5） |
+| 自动瓦片？ | **不存在**：`m_TileAssetArray` 全是 `MyTile`（`Assembly-CSharp/MyTile.cs:16`，`GetTileData` 直调 base，零邻接逻辑）；过渡方向美术烘焙期写死在 `m_TileSpriteIndex` |
+| 运行时填充 | 只有装饰层：`PartitionLoader.OnTileChunkLoaded`（`PartitionLoader.cs:605`，`SetTilesBlock:641`）把 `TileChunkData` 各层灌进宿主 Tilemap；GroundType 数据只服务逻辑与小地图（`MiniMap.cs:41`），大世界地表与它无关 |
+| 摆放语义 | `m_TileAnchor=(0,0)`（几乎全部宿主层；个别装饰层 (0.5,0.5)）+ sprite `m_Pivot=(0,0)` → **sprite 左下角对格左下角**；`m_TileIndex==m_TileSpriteIndex` 逐格 1:1，TilemapRenderer 直接按烘焙索引出图。⚠ render_map_full 对 Ground 硬编码中心 pivot——1 格瓦片与 Unity 等效，多格瓦片（崖沿 2-3 格）差半格，本仓按 Unity 实义 |
+
+**本仓落地**
+
+| 层 | 实现 |
+| --- | --- |
+| 管线 | `extract-tileset.py`：bare Tilemap（Ground/Ground_Under/Ground_Above）+ chunks `TileChunkData` 全层 → `tiles.json`（格→瓦片引用表，层按原版 seq + **每层 m_TileAnchor**，格按 y 降 x 升，**带 scale**）+ `tileset-0.png`（sprite 去重单页 4096²，16×16=256 格，0.84 边距）。五图：森 23 层 49,259 格/150 瓦片、山 48 层 82,285/191、泽 61 层 113,731/177、鲸背 23 层 33,550/129、羽 65 层 176,433/222——全部单页 |
+| 客户端 | `logic/tilemapMesh.ts`（chunk 分桶索引 + 锚点=(格+anchor×scale) quad/UV/pivot 摆放（w/ppu 渲染格 ×48px×scale）+ LOD3 减层 + 归属 overlay 与 terrainMesh 同款）；`view/SlgTilemapRenderer.ts`（每 chunk 单 mesh 单材质 + ChunkFadeTracker 淡入淡出 + 销毁先摘除激活态）替代 `SlgChunkRenderer`（连同 `SlgGroundTileCache` 一起删除） |
+| 海面 | `slg-sea-base` 整图静态平铺底（原版 CustomWater 的静态近似，永远垫在瓦片下）+ 远档 `slg-far-sea` 同源；`sea-tile.png` meta wrap 改 repeat（UV 16 格/张） |
+| 退役 | `build-ground-tiles.py` 删除；ground-tiles 块图 **2,410 文件 ~119MB** git rm（五图 ground-tiles/ + 注册表 + meta）；B 方案渲染图切块路线整体下线 |
+| 回归闸 | `verify-redraw.py` 重写：**kit 世界格系**按客户端同数学重绘 + 内陆覆盖率基线闸（海岸过渡带豁免——原版岸线本就由 edge 瓦片+水面承担）：森 99.3%/山 97.8%/泽 99.4%/羽 96.9%/鲸背 100.0%，跌破基线 0.5pp 即红 |
+
+**排障（近档黑海 → 全绿）**
+
+1. 瓦片世界尺寸漏乘 `scale`（每瓦片只占 1/9 面积）。
+2. 近档没有海面底（Ground 层只盖陆地，海区无任何绘制）→ `slg-sea-base`。
+3. **UV v 轴翻转**：按 v=1=PNG 顶写公式，实际引擎约定 v=0=PNG 顶（far island 层实证）→ 低行草地全部采到图集底部空行不可见。
+4. **render() 新建 chunk 批从未入 `batches` 表**（`batches.set` 漏写）→ 每帧重复建批泄漏（731 draw call），切图 dispose 后旧批节点残留持已毁材质，证据收集器 walker 撞上 `Material.getProperty` 崩（`_props` null）。`slg.mjs` walker 硬化为逐节点报错不崩（带 materialError/materialDestroyed 字段）。
+5. 环境坑：`ELECTRON_RUN_AS_NODE=1` 残留在 shell 环境时，编辑器二进制按 Node 模式解析参数、打印 `bad option: --project` 静默拒启——`env -i PATH=/usr/bin:/bin HOME=$HOME` 拉起即恢复。此前「bad option 无碍」的归因是错的。
+6. 预览编译陈旧探测：拉 `/scripting/x/import-map.json` 找到目标 chunk，grep 内容特征确认编译时点，别信「重启过编辑器」。
+
+验收：typecheck 0；客户端 slg-* 57/57（slg-tilemap-mesh 8 项：分桶/quad 尺寸×scale/m_TileAnchor 位移/pivot/UV 内缩/子矩形保比例/LOD3 减层/归属色与 fade alpha）；verify:all 退出 0；Creator 预览 23 步全过（/tmp/slg-tilemap-preview-9，LOD1 连续草地+海面、切山之国资源重载、远档岛貌）。
+
+开放项回写（§8 追加）：①近档 tile 边缘在极近档仍有轻微接缝感~~（瓦片间无 blending，原版靠 LightRegion 光照+Rug 贴花柔化，未复刻）~~ ✅ 2026-09-13 §10.5 落地（真凶是图集打包 alpha 二次衰减，与 LightRegion 无关）；②~~跨 chunk 的高瓦片（树/崖柱 2-3 格）在 chunk 边界处绘制序按 chunk 网格而非全图 y 序，极端平移时可能短暂穿插~~ ✅ 2026-09-13 §10.6 落地（per-chunk 网格改每原版层一张合并网格，层内全局 y 降 x 升 = 原版单 Tilemap 同构）；③~~羽之国云台/泽之国浅滩的涉水变体（Fording/PartialSubmersion）仍开放（承 §10.3）~~ ✅ 2026-09-13 §10.7 落地（站位 GroundType=Shallow 的实体顶点渐隐近似，shader 无源码不复制）。
+
+### 10.5 接缝修复与 LightRegion 实证（2026-09-13）
+
+**接缝真凶（empirical，逐层排查）**：图集格边缘 alpha 被**二次衰减**——原版 ground_1 自带 1px 软边（alpha≈239，中心 255），extract-tileset.py `to_cell` 的 `cell.paste(piece, (ox,oy), piece)` 把 piece 自身的 alpha 又当 mask 乘了一遍（239→239²/255≈222，第二像素 255→246²/255≈237），格间细线以 ~10% 透明度叠在深色海底上 = 全图网格线。修复：①paste 去 mask（透明格底 + RGBA 源直接替换语义）；②LANCZOS 前 numpy `pad(mode="edge")` 2px 边缘复制，消除「格外的当作透明黑」对软边的向内拖拽。修后边缘 alpha 238/246/255 ≈ 原版 239/255，五图重绘草地读作连续毯面（verify-redraw 内陆覆盖率：森 99.3=基线 / 山 97.8 vs 97.9 / 泽 99.4 vs 99.0↑ / 鲸背 100.0 vs 99.8↑ / 羽 96.9 vs 96.1↑，红线下 0.5pp）。
+
+**LightRegion 归因修正（此前推断错误）**：`MapRegionLight.cs`（Assembly-CSharp 反编译实证）= **昼夜区域灯**：`ChangeState(DayNightState)` 切 DayNode/Night 子节点；Night 挂 URP Light2D（raw 解析：蓝调色 (0.5,0.60,0.76)、alpha 0.93、parametric）；Day 节点**空**（白天无区域光，全局光 = bare bundle 的 `Light 2D Global`）。即白天地面观感与 LightRegion 无关；原版的接缝观感与我们相同（同款 1px 软边美术），由 Rug 贴花层（已在 tiles.json 近档全量渲染）与装饰密度弱化。昼夜系统（MapEnvEffect/RegionLightHub 的 DayLights/NightLights 淡入淡出）属玩法级特性，**未复刻，留开放项**（待 2b/DayNight 拍板）。
+
+**鲸背岛说明**：其 Ground 层本就由 4 种大色块瓦片拼铺（top4 各 15-33%，23 唯一瓦片）——拼布感是原版数据的真实面貌，非缺陷。
+
+**顺手修复的测试基建**（阻塞 verify:all，与素材无关）：①`fixture-checkout.mjs` 夹具 `git commit` 会派生 `git maintenance run --auto --detach` 守护进程，数秒后异步 repack pristine（删 objects/xx 扇出目录），矩阵并发 cp 撞上 lstat ENOENT 打红整面 sync-mirror-matrix——夹具内 `git config maintenance.auto false` 根治；②上游误将 `apps/Cocos/assets/src/ui-uniflex/generated/`（.gitignore 明列的 build 产物）入库，夹具中源侧缺失→镜像侧成孤儿，`git rm --cached` 退出跟踪（本地产物不受影响）；③补交 `BackpackComponent.tsx.meta`（verify:sync 只认已跟踪 .meta）。
+
+验收：typecheck 0；test:client 556/556；服务端 757/757；verify:core 全项（sync-mirror 21/21）；Creator 预览 23 步全过（/tmp/slg-seamfix-preview4，LOD1 连续草地目检无网格线、五图切换、远档岛貌）。
+
+### 10.6 跨 chunk 高瓦片绘制序：per-chunk 网格 → 每原版层一张合并网格（2026-09-13）
+
+**问题**：瓦片网格按 chunk 各建一张（16×16 世界格），层内绘制序只有 chunk 粒度——高/宽瓦片（树/崖沿 2-3 渲染格）跨越 chunk 边界时，与相邻 chunk 内容的互叠序按「chunk 节点到达序」而非基格 y，平移补块时两 chunk 相对序随机，极端平移短暂穿插（开放项②）。原版无此问题：每层一个整图 Tilemap，天然全局序。
+
+**方案**（对齐原版结构，而非打补丁排序）：
+- `buildSlgTileLayerMeshes`（tilemapMesh.ts 新增）：可见 chunk 集合 × 层 → **每层一张合并网格**，层内格按 y 降 x 升**全局**稳定排序（跨 chunk 正确互叠）；quad 数学抽成 `tileQuadRect` 与 per-chunk 旧构建器共用，防漂移；
+- `SlgTilemapRenderer` 重写：层节点按层 seq 序入树（兄弟序=绘制序，sea 永远垫底），chunk 淡入淡出改为**顶点 alpha**（ChunkFadeTracker 语义不变，alpha 变化的帧整层重建——淡出窗口 240ms，重建量=视口可见集，实测帧时无感）；网格容量按可见集增长就地换大（旧网格帧末回收）；
+- 归属 overlay 是 chunk 内整格 quad、不跨 chunk、无互叠序问题，**保留 per-chunk 建销 + 淡出**（`buildSlgOwnershipMesh` 独立导出）；
+- 每层 quad 上限钉 Uint16（16383），超限即红（视口 bug 不应静默）。
+
+**取舍记录**：曾评估「高瓦片按顶边格重新分桶 + chunk 行序入树」的保守改法——只能保证垂直方向，宽瓦片（崖沿横向 2-3 格）在同行相邻 chunk 间仍无 y 互叠序，放弃；合并层网格与原版「每层一个 Tilemap」同构，一劳永逸。per-chunk 旧构建器 `buildSlgTilemapMeshes` 保留（测试与单 chunk 消费方）。
+
+**证据契约**：近档已加载判据从 `slg-chunk-x-y` 扩为 `slg-tiles-*|slg-chunk-*`（tools/creator-preview/slg.mjs 三处）；cc 桩补 `Node.insertChild` 声明（真实引擎 3.8 一直有）。
+
+验收：typecheck 0；test:client 560/560（新增 4 项：跨 chunk 全局序/顶点 alpha/LOD3 裁剪/bounds 并集 + 独立归属构建器）；服务端 757/757；verify:core 全项（sync-mirror 21/21）；Creator 预览 23 步全过（/tmp/slg-merged-preview，LOD1 树/崖沿跨块互叠目检正确，115 draw call、帧时 1.88ms）。
+
+### 10.7 涉水变体（Fording）静态落地（2026-09-13，开放项③关闭）
+
+**原版机制实证**（CustomWater/FordingSpriteRenderer.cs + Prefab 逐字段解析）：
+- 浅水外观 = **同一 icon sprite + FordingSpriteRenderer 网格包装**（UV1 携带 (worldY, FordingScale, FordingOffset) 供涉水 shader 裁浸没部）——⛔ 没有独立浅水贴图，图集零改动；
+- prefab 实证默认参数 **scale=1.0 / offset=0.56**；`PartialSubmersion`（mSR/mAbove/mMask 三件套）与 `SpineShallowEffect`（角色骨骼版）同族，均 shader 驱动；
+- 实例判定 **按站位 GroundType**（MovementSensor.StandingGroundType：mask&0x40→Shallow），⛔ 不看 DisplayPath 后缀——CSV 把 84 个常驻浅水类族的 DisplayPath 直接登记为 `*_shallow_view`，那些类放在普通地上的实例运行时仍换普通外观（交叉验证：森之国 810/814 在 None 格）。shader 无源码，与 §10.3「水面动态」同行原则：不在复刻范围。
+
+**本仓落地**：
+- `extract-layout.py`：`ground_at(entity)==GT_SHALLOW(6)`（MapRootEntityLite 直读，与地形同帧）→ decoration 加 `shallow: true`；五图重出（泽 494 / 鲸背 444 / 羽 95 / 森 4 / 山 3）；
+- `validateSlgForestLayout` fail-closed 扩展：shallow 只允许缺省或字面 true；`buildSlgLayoutIndex` 透传到 `SlgDecoration.shallow`；
+- `slgFordingAlpha`（mapArt.ts 纯函数）：quad 归一化高度 0.56 以上全显、向底线性渐隐到 0（prefab 默认 offset 的静态等价）；
+- `SlgDecorationRenderer`：涉水 decoration 的 quad 顶两顶点 alpha=1、底两顶点按渐隐值写顶点色（builtin-unlit 顶点色线性插值），与 chunk 淡出 alpha 相乘。
+
+验收：typecheck 0；test:client 563/563（新增 fording 曲线/校验闸/入库 layout 含标记 3 项）；服务端 757/757；verify:core 全项；Creator 预览 23 步全过（/tmp/slg-fording-preview2）。
+
+### 10.8 MF5 依赖面盘点（2026-09-13，2b 接框架准备）
+
+按 docs/MMO.md §5 MF5 规格逐项核对框架现状（`apps/server/src/rooms/core/` 实列目录 + 全文检索），结论：**MF5 尚未实施，2b 全部 14/15/20–24 条被阻塞**；2a 与 shared 数学已就绪，MF5 的泛化源（snake）质量良好。
+
+**已具备（2b 不需要重做）**：
+
+| 面 | 现状证据 |
+| --- | --- |
+| 每会话 baseline 载体（泛化源） | `modes/snake/index.ts:327-352`：per-sessionId `baselineId` + Begin/Chunk/End + checksum，delta 流同文件——MF5 `Baseline` 泛化对象 |
+| 每会话发送端口 | `context.sendS2C(client, token, payload)`（GameMode context，snake 全量使用） |
+| 兴趣矩形/chunk 数学 | shared `worldmap/index.ts`：`chunkKey`/`chunkRectForGridRect`（纯函数 ✓）；客户端流式器 `mapStreamer.ts` added/removed 差分已跑数月 |
+| 2a 行军面 | `sql/002-march.sql`（k_slg_march/receipt/log 三表）、`apps/server/src/kits/slg/api/march/`、`slg.marchDispatch/Recall` RPC 域（mapTiles 懒结算 natural-write ✓） |
+| 第二房机制 | `websocket/loader.ts:60` 注释证实 joinOrCreate 满员开新房的并发 onCreate 已处理 |
+| kit 边界机检 | `apps/server/test/kit-import-boundary.test.ts` 只扫 `apps/server/src/kits/**`（rooms/modes 路径属 kit 所有权集，绕闸先例被登记为治理盲区） |
+
+**框架缺口（= MF5 实施清单，按规格逐项）**：
+
+| MF5 规格项 | 现状 |
+| --- | --- |
+| `rooms/core/InterestSet.ts` | ⛔ 不存在（目录仅 AccessPolicy/RoomProfile/StartPolicy） |
+| `rooms/core/ObserverSync.ts`（diffAndEmit） | ⛔ 不存在 |
+| `rooms/core/Baseline.ts`（分块/checksum/cursor 自 snake 泛化） | ⛔ snake 版为 mode 私有，未泛化 |
+| `rooms/core/OutboundQueue.ts`（有界队列/合并/不可丢/超限重同步） | ⛔ 不存在 |
+| `rooms/core/S2CPorts.ts`（broadcastS2C 对 perSession fail-closed） | ⛔ 不存在；现在只有 per-client sendS2C，无「per-session 广播」概念 |
+| `defineS2C(name, validate, { perSession, coalesceKey? })` + `GAME_WIRE_PER_SESSION` 生成（shared + tools/gameplay-codegen） | ⛔ `defineGameplayWire.ts:84` 仅 (type, validate) 两参 |
+| GameRoom/GameMode 消费路径（SQL 视图房，端口不强制 WorldAddress/personaId） | ⛔ 未接线 |
+| **D4 名册分离**：`GameRoomState.ts:33 players: MapSchema<RoomStatePlayerLifecycle>`（id+name 全房广播）——MF5 必须把内部名册与 Schema 投影分离，⛔ 不能把现有 players map 当默认例外（MMO.md §0.1/§5 重复声明） | ⛔ 未分离——这是 slg 正式范围（不广播全房 id/name）的硬阻塞 |
+| 夹具（worldFixture perSession + SQL 视图房 kitfix 双房）与验收矩阵（超视距零互见/enter-leave 各一次/重连 baseline 只含兴趣集/perSession 广播被拒/私有字段零泄露/慢会话重同步） | ⛔ 未建（S4：WorldRoom 单路径通过 ≠ slg 2b 开工证据，SQL 视图房路径须逐项过矩阵） |
+
+**2b 侧待办（框架就绪后同批）**：① kit.json 增 `modes` + `apps/shared/gameplays/slgWorld/{manifest,state}.json` + 手写 `wire.ts`（S2C 全族 `defineS2C(..., {perSession:true})`，baseline 族 token 由框架注入，⛔ 不自写分块/checksum）；② `rooms/modes/slgWorld/`（commands + `aoi.ts` 只做「视口 chunk 矩形→兴趣集」+ onStep 脏标记扫描）；③ 框架小 PR：`core/infra/kitApi.ts` 再导出 `kKitShared`（脏标记门面，现只导出 `kKitUser`，`kitApi.ts:59-60`）；④ 客户端四件套（`apps/client/src/gameplay/modes/slgWorld/` 必须存在并导出 `createGameplayModule`，codegen `lib.ts:445-471` 硬闸）+ SlgMapView 接房间；⑤ 2b 验收矩阵（两房互见/dispatch 2s 可见/到达易主双方 tilesUpdate/视口外零泄露/断线 baseline 重同步）。
+
+**排期建议**：MF5 按 MMO.md §5 自行实施，批次序 = wire perSession 声明与生成 → 四件套 core 原语（InterestSet/ObserverSync/Baseline/OutboundQueue，Baseline 从 snake 泛化）→ S2CPorts fail-closed → GameRoom 消费路径 + D4 名册分离 → 双夹具与验收矩阵。MF7 `workers[]` 不阻塞 2b 核心（无人在线结算已是 README 已知取舍）。2b 开工条件维持拍板：MF5 落地且含 GameRoom 消费路径与名册策略验收（S4）。

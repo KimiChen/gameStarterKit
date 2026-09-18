@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "HeroStarUpgradePage",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroStarUpgrade.root",
+        "role": "page",
+        "definitionKey": "HeroStarUpgrade"
+      },
+      "children": [
+        "layer-2"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "HeroStarUpgrade",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroStarUpgradePanel:HeroStarUpgradePage/HeroStarUpgrade",
+        "role": "component",
+        "definitionKey": "HeroStarUpgradePanel"
+      },
+      "asset": "asset-ad8d6e34cd043cc391e337c62e782f7f1ede57ec9726ff7f670b042af2d3e0fd"
+    }
+  },
+  "assets": {
+    "asset-ad8d6e34cd043cc391e337c62e782f7f1ede57ec9726ff7f670b042af2d3e0fd": {
+      "path": "assets/ad8d6e34cd043cc391e337c62e782f7f1ede57ec9726ff7f670b042af2d3e0fd.png",
+      "sha256": "ad8d6e34cd043cc391e337c62e782f7f1ede57ec9726ff7f670b042af2d3e0fd",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "HeroStarUpgrade: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

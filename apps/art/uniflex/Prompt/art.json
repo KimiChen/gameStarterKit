@@ -1,0 +1,28 @@
+{
+  "screen": "prompt",
+  "componentName": "Prompt",
+  "restoredName": "PromptRestored",
+  "source": "apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "3cc608083849b046043c27d5b64c115a2a985a0717667cd14d835ee7e2c64dc4",
+    "psdSha256": "692a95c1df33aeedfa4a4257c4f3bb5021c02256e2216c228855165b1132c98c",
+    "at": "2026-09-18T02:10:30.317Z"
+  },
+  "import": {
+    "psdSha256": "692a95c1df33aeedfa4a4257c4f3bb5021c02256e2216c228855165b1132c98c",
+    "at": "2026-09-18T02:10:46.635Z",
+    "target": "restored"
+  },
+  "linkedComponents": [
+    "PopupBackground",
+    "ActionButton",
+    "ConfirmButton",
+    "CancelButton",
+    "CloseButton"
+  ]
+}

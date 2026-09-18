@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/character/window",
+      "kind": "image",
+      "file": "assets/window.png",
+      "width": 130,
+      "height": 126,
+      "sha256": "b748ddff9191ec31b8f4f455eb261a11fe7bfa10d1a867605ef49aad02c15c96",
+      "nineSlice": [
+        90,
+        88,
+        36,
+        34
+      ]
+    },
+    {
+      "id": "ui/character/content",
+      "kind": "image",
+      "file": "assets/content.png",
+      "width": 48,
+      "height": 48,
+      "sha256": "6f054428da6dd0f7788d3448de2be295dbe29e22cd2cc811844db29ec917d3eb",
+      "nineSlice": [
+        22,
+        22,
+        22,
+        22
+      ]
+    },
+    {
+      "id": "ui/character/tab-selected",
+      "kind": "image",
+      "file": "assets/tab_selected.png",
+      "width": 195,
+      "height": 58,
+      "sha256": "373ca31be671d44d1bbb517b888f9f0193de8d655ec3569dfe645e08534f6b8d"
+    },
+    {
+      "id": "ui/character/tab-unselected",
+      "kind": "image",
+      "file": "assets/tab_unselected.png",
+      "width": 195,
+      "height": 58,
+      "sha256": "136d937d1fa39111d6f098ad553d5d7d2b2143490afde04587e7891206880b69"
+    },
+    {
+      "id": "ui/character/server-bg",
+      "kind": "image",
+      "file": "assets/server_bg.png",
+      "width": 306,
+      "height": 74,
+      "sha256": "210d9b35dbe2cbc2e9fb654a0176990c21ecde5481e09224f8613a9c44e9d501"
+    },
+    {
+      "id": "ui/character/status-gray",
+      "kind": "image",
+      "file": "assets/status_gray.png",
+      "width": 28,
+      "height": 28,
+      "sha256": "908ab645ee800123e180b73907d39b583e10fcb3e363f6eb6567740108bc417b"
+    },
+    {
+      "id": "ui/character/status-green",
+      "kind": "image",
+      "file": "assets/status_green.png",
+      "width": 28,
+      "height": 28,
+      "sha256": "aff884fe08c23a0854788442122eefa554acc64fed5a293fe152f1e24297cf7d"
+    },
+    {
+      "id": "ui/character/status-yellow",
+      "kind": "image",
+      "file": "assets/status_yellow.png",
+      "width": 28,
+      "height": 28,
+      "sha256": "866ba5145c66ab19e097d163facb8918ba56fbc149d35a647390a986b870ab6c"
+    },
+    {
+      "id": "ui/character/status-red",
+      "kind": "image",
+      "file": "assets/status_red.png",
+      "width": 28,
+      "height": 28,
+      "sha256": "ea36e868f9e90787d01ffb4bec29d0222bf2f3275b05f08f92e2b5c0eb2d606d"
+    },
+    {
+      "id": "ui/character/player-bg",
+      "kind": "image",
+      "file": "assets/player_bg.png",
+      "width": 626,
+      "height": 130,
+      "sha256": "24538c203c53a4a83353def9cf057b41e718de0243f0fd680193e25d0cc9f716"
+    },
+    {
+      "id": "ui/character/avatar",
+      "kind": "image",
+      "file": "assets/avatar.png",
+      "width": 100,
+      "height": 102,
+      "sha256": "d2da6dbb292820c357d198f881594fee74e0aee5e2852b525ce2e67ca3f1f1c6"
+    },
+    {
+      "id": "ui/character/check-on",
+      "kind": "image",
+      "file": "assets/check_on.png",
+      "width": 44,
+      "height": 44,
+      "sha256": "bd1d816231e988bd9d951bc6eefcf6aacf4cdaa2a0b823b7ee63eab60e1fb230"
+    },
+    {
+      "id": "ui/character/check-off",
+      "kind": "image",
+      "file": "assets/check_off.png",
+      "width": 44,
+      "height": 44,
+      "sha256": "6edb51d4f789179cc9fe8eccfcd5ada7d3f3d753c8e3c341041527c1b80919f4"
+    }
+  ]
+}

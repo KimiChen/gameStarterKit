@@ -1,0 +1,471 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 125
+  },
+  "roots": [
+    "layer-314"
+  ],
+  "nodes": {
+    "layer-314": {
+      "id": "layer-314",
+      "name": "MainNav",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 125
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav",
+        "role": "component",
+        "definitionKey": "MainNav"
+      },
+      "children": [
+        "layer-315",
+        "layer-317",
+        "layer-319",
+        "layer-322",
+        "layer-325",
+        "layer-328",
+        "layer-331",
+        "layer-334"
+      ]
+    },
+    "layer-315": {
+      "id": "layer-315",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 15,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-316"
+      ]
+    },
+    "layer-316": {
+      "id": "layer-316",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:0",
+        "role": "node"
+      },
+      "asset": "asset-881a76c7d4f54dba0ca40607dc3c7da036bf64eae315f4d300a149c07c9ff979"
+    },
+    "layer-317": {
+      "id": "layer-317",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 298,
+        "y": 15,
+        "width": 154,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-318"
+      ]
+    },
+    "layer-318": {
+      "id": "layer-318",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 154,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:3",
+        "role": "node"
+      },
+      "asset": "asset-637fa770703b5359c43bdaccc4dbfa420a7285bf3562fd98a074acddf8d50409"
+    },
+    "layer-319": {
+      "id": "layer-319",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 28,
+        "y": 28,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:0",
+        "role": "node"
+      },
+      "children": [
+        "layer-320"
+      ]
+    },
+    "layer-320": {
+      "id": "layer-320",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-321"
+      ]
+    },
+    "layer-321": {
+      "id": "layer-321",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:0/_",
+        "role": "node"
+      },
+      "asset": "asset-c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01"
+    },
+    "layer-322": {
+      "id": "layer-322",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 180,
+        "y": 28,
+        "width": 95,
+        "height": 83
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:1",
+        "role": "node"
+      },
+      "children": [
+        "layer-323"
+      ]
+    },
+    "layer-323": {
+      "id": "layer-323",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 95,
+        "height": 83
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-324"
+      ]
+    },
+    "layer-324": {
+      "id": "layer-324",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 95,
+        "height": 83
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:1/_",
+        "role": "node"
+      },
+      "asset": "asset-eef66ecf19ec98c1d277fe18ce1f19bc7aa116fa7cc9db90c0cbd80d9a26470a"
+    },
+    "layer-325": {
+      "id": "layer-325",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 318,
+        "y": 0,
+        "width": 115,
+        "height": 116
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:2",
+        "role": "node"
+      },
+      "children": [
+        "layer-326"
+      ]
+    },
+    "layer-326": {
+      "id": "layer-326",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 115,
+        "height": 116
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-327"
+      ]
+    },
+    "layer-327": {
+      "id": "layer-327",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 115,
+        "height": 116
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:2/_",
+        "role": "node"
+      },
+      "asset": "asset-ef36e9327dc2265320a7d69bdf54ae3b97e859e12e5867447f6cb5d8cc5d2c27"
+    },
+    "layer-328": {
+      "id": "layer-328",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 479,
+        "y": 28,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:3",
+        "role": "node"
+      },
+      "children": [
+        "layer-329"
+      ]
+    },
+    "layer-329": {
+      "id": "layer-329",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-330"
+      ]
+    },
+    "layer-330": {
+      "id": "layer-330",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 90,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:3/_",
+        "role": "node"
+      },
+      "asset": "asset-c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01"
+    },
+    "layer-331": {
+      "id": "layer-331",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 629,
+        "y": 22,
+        "width": 89,
+        "height": 95
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:4",
+        "role": "node"
+      },
+      "children": [
+        "layer-332"
+      ]
+    },
+    "layer-332": {
+      "id": "layer-332",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 89,
+        "height": 95
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-333"
+      ]
+    },
+    "layer-333": {
+      "id": "layer-333",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 89,
+        "height": 95
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:4/_",
+        "role": "node"
+      },
+      "asset": "asset-bb7051f7c35949ef45965eeb5dd0517823ba39b17bd97d5e318f5b34f18df526"
+    },
+    "layer-334": {
+      "id": "layer-334",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 560,
+        "y": 16,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-335"
+      ]
+    },
+    "layer-335": {
+      "id": "layer-335",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "MainNav:HeroScreen/MainNav/_:6",
+        "role": "node"
+      },
+      "asset": "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701"
+    }
+  },
+  "assets": {
+    "asset-881a76c7d4f54dba0ca40607dc3c7da036bf64eae315f4d300a149c07c9ff979": {
+      "path": "assets/881a76c7d4f54dba0ca40607dc3c7da036bf64eae315f4d300a149c07c9ff979.png",
+      "sha256": "881a76c7d4f54dba0ca40607dc3c7da036bf64eae315f4d300a149c07c9ff979",
+      "mime": "image/png",
+      "width": 750,
+      "height": 110
+    },
+    "asset-637fa770703b5359c43bdaccc4dbfa420a7285bf3562fd98a074acddf8d50409": {
+      "path": "assets/637fa770703b5359c43bdaccc4dbfa420a7285bf3562fd98a074acddf8d50409.png",
+      "sha256": "637fa770703b5359c43bdaccc4dbfa420a7285bf3562fd98a074acddf8d50409",
+      "mime": "image/png",
+      "width": 154,
+      "height": 110
+    },
+    "asset-c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01": {
+      "path": "assets/c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01.png",
+      "sha256": "c8f8b2ee02328559cd4f80c8c7bfb0cfd78385110cc716a631fd814533c2ee01",
+      "mime": "image/png",
+      "width": 90,
+      "height": 84
+    },
+    "asset-eef66ecf19ec98c1d277fe18ce1f19bc7aa116fa7cc9db90c0cbd80d9a26470a": {
+      "path": "assets/eef66ecf19ec98c1d277fe18ce1f19bc7aa116fa7cc9db90c0cbd80d9a26470a.png",
+      "sha256": "eef66ecf19ec98c1d277fe18ce1f19bc7aa116fa7cc9db90c0cbd80d9a26470a",
+      "mime": "image/png",
+      "width": 95,
+      "height": 83
+    },
+    "asset-ef36e9327dc2265320a7d69bdf54ae3b97e859e12e5867447f6cb5d8cc5d2c27": {
+      "path": "assets/ef36e9327dc2265320a7d69bdf54ae3b97e859e12e5867447f6cb5d8cc5d2c27.png",
+      "sha256": "ef36e9327dc2265320a7d69bdf54ae3b97e859e12e5867447f6cb5d8cc5d2c27",
+      "mime": "image/png",
+      "width": 115,
+      "height": 116
+    },
+    "asset-bb7051f7c35949ef45965eeb5dd0517823ba39b17bd97d5e318f5b34f18df526": {
+      "path": "assets/bb7051f7c35949ef45965eeb5dd0517823ba39b17bd97d5e318f5b34f18df526.png",
+      "sha256": "bb7051f7c35949ef45965eeb5dd0517823ba39b17bd97d5e318f5b34f18df526",
+      "mime": "image/png",
+      "width": 89,
+      "height": 95
+    },
+    "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701": {
+      "path": "assets/c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701.png",
+      "sha256": "c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701",
+      "mime": "image/png",
+      "width": 24,
+      "height": 24
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

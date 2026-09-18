@@ -2,22 +2,39 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
-    SLG_ART_ATLAS_CELL_SIZE, SLG_ART_ATLAS_COLUMNS, SLG_ART_ATLAS_ROWS, SLG_LANDMARKS, SLG_MAX_DECORATIONS_PER_CHUNK,
-    buildSlgOverviewRects, overviewToWorld, overviewViewportRect, slgArtAtlasRect, slgAtlasUv, slgDecorationsForChunk,
-    slgTerrainUv, worldToOverview,
+    SLG_ART_ATLAS_CELL_SIZE, SLG_ART_ATLAS_COLUMNS, SLG_ART_ATLAS_ROWS, SLG_FORDING_FULL_ALPHA_AT, SLG_LANDMARK_FOOT, SLG_MAX_DECORATIONS_PER_CHUNK,
+    buildSlgLayoutIndex, buildSlgOverviewRects, overviewToWorld, overviewViewportRect, slgArtAtlasRect, slgAtlasUv,
+    slgDecorationsForChunk, slgFordingAlpha, slgTerrainUv, validateSlgForestLayout, worldToOverview, type SlgLayoutIndex,
 } from "../src/kits/slg/logic/mapArt";
-import { SLG_CHUNK_SIZE, SLG_MAP_H, SLG_MAP_W, terrainAt, validateSlgTerrain, type ISlgTerrain } from "../src/shared/kits/slg/api/worldmap/index";
+import { SLG_CHUNK_SIZE, SLG_TERRAIN_MAX_REGIONS, chunkKey, slgMapInfo, terrainAt, validateSlgTerrain,
+    type ISlgTerrain } from "../src/shared/kits/slg/api/worldmap/index";
+
+/** 默认图森之国（catalog 登记 1500×1500）；五国多图化后尺寸按图取，不再用全局常量。 */
+const MAP = slgMapInfo("senzhiguo");
 
 function near(a: number, b: number): void { assert.ok(Math.abs(a - b) < 0.000001, `${a} != ${b}`); }
 function shippedTerrain(): ISlgTerrain {
-    const data: unknown = JSON.parse(readFileSync(new URL("../../kits/slg/data/terrain.json", import.meta.url), "utf8"));
+    const data: unknown = JSON.parse(readFileSync(new URL("../../kits/slg/data/maps/senzhiguo/terrain.json", import.meta.url), "utf8"));
     if (!validateSlgTerrain(data)) throw new Error("shipped SLG terrain violates the shared contract");
     return data;
 }
+function shippedLayout(): SlgLayoutIndex {
+    const data: unknown = JSON.parse(readFileSync(new URL("../../kits/slg/data/maps/senzhiguo/layout.json", import.meta.url), "utf8"));
+    if (!validateSlgForestLayout(data)) throw new Error("shipped SLG layout violates the shared contract");
+    return buildSlgLayoutIndex(data);
+}
 function uniformTerrain(id: number): ISlgTerrain {
     const palette = Array.from({ length: 6 }, (_, index) => ({ id: index, color: [100, 150, 200] as const }));
-    return { name: "Fixture", width: SLG_MAP_W, height: SLG_MAP_H, palette,
-        regions: [{ x: 0, y: 0, width: SLG_MAP_W, height: SLG_MAP_H, terrain: id }] };
+    return { id: MAP.id, name: "Fixture", width: MAP.width, height: MAP.height,
+        islandRect: { minX: 0, minY: 0, maxX: MAP.width - 1, maxY: MAP.height - 1 }, palette,
+        regions: [{ x: 0, y: 0, width: MAP.width, height: MAP.height, terrain: id }] };
+}
+/** 带装饰点位的 layout 夹具：指定 chunk 各放 6 个 tree（chunk 上限），无地标。 */
+function fixtureLayout(...chunkXys: readonly (readonly [number, number])[]): SlgLayoutIndex {
+    const decorations = chunkXys.flatMap(([cx, cy]) => Array.from({ length: 6 }, (_, i) => ({
+        x: cx * SLG_CHUNK_SIZE + 2 + i * 2, y: cy * SLG_CHUNK_SIZE + 8, kind: "tree" as const,
+    })));
+    return buildSlgLayoutIndex({ source: "fixture", id: MAP.id, mapSize: MAP.width, landmarks: [], decorations });
 }
 
 test("SLG art atlas: six nonoverlapping cells use PNG top-left coordinates and exact pixel bounds", () => {
@@ -43,47 +60,43 @@ test("SLG art atlas: six nonoverlapping cells use PNG top-left coordinates and e
 
 test("SLG decorations: fixed seed does not depend on chunk visitation order or LOD changes", () => {
     const terrain = uniformTerrain(1);
-    const chunks = [[0, 0], [1, 0], [0, 1], [312, 312], [624, 624]] as const;
-    const first = new Map(chunks.map(([x, y]) => [`${x}:${y}`, slgDecorationsForChunk(terrain, x, y, 0)]));
+    const layout = fixtureLayout([0, 0], [1, 0], [46, 46]);
+    const chunks = [[0, 0], [1, 0], [0, 1], [46, 46], [93, 93]] as const;
+    const first = new Map(chunks.map(([x, y]) => [`${x}:${y}`, slgDecorationsForChunk(terrain, x, y, 0, layout)]));
     for (const [x, y] of [...chunks].reverse()) {
-        slgDecorationsForChunk(terrain, x, y, 3);
-        assert.deepEqual(slgDecorationsForChunk(terrain, x, y, 0), first.get(`${x}:${y}`));
-        let previous = slgDecorationsForChunk(terrain, x, y, 0);
+        slgDecorationsForChunk(terrain, x, y, 3, layout);
+        assert.deepEqual(slgDecorationsForChunk(terrain, x, y, 0, layout), first.get(`${x}:${y}`));
+        let previous = slgDecorationsForChunk(terrain, x, y, 0, layout);
         for (let lod = 1; lod <= 3; lod++) {
-            const next = slgDecorationsForChunk(terrain, x, y, lod);
+            const next = slgDecorationsForChunk(terrain, x, y, lod, layout);
             for (const entry of next) assert.deepEqual(entry, previous.find((old) => old.id === entry.id), "retained objects keep their footprint");
             previous = next;
         }
-        assert.ok(previous.every((entry) => entry.landmark));
     }
-    assert.deepEqual([0, 1, 2, 3].map((lod) => slgDecorationsForChunk(terrain, 0, 0, lod).length), [6, 4, 2, 0]);
+    // LOD 只截断数量不移动物件；无 layout 覆盖的 chunk 一律为空（拒绝哈希兜底）
+    assert.deepEqual([0, 1, 2, 3].map((lod) => slgDecorationsForChunk(terrain, 0, 0, lod, layout).length), [6, 4, 2, 0]);
+    assert.deepEqual([0, 1, 2, 3].map((lod) => slgDecorationsForChunk(terrain, 0, 1, lod, layout).length), [0, 0, 0, 0]);
+    assert.deepEqual([0, 1, 2, 3].map((lod) => slgDecorationsForChunk(terrain, 93, 93, lod).length), [0, 0, 0, 0]);
 });
 
 test("SLG decorations: bounded density, unique neighboring ownership and complete footprints inside chunks", () => {
+    const layout = fixtureLayout(...Array.from({ length: 64 }, (_, i) => [i % 8, Math.floor(i / 8)] as const));
     const ids = new Set<string>();
     for (let cy = 0; cy < 8; cy++) for (let cx = 0; cx < 8; cx++) {
-        const entries = slgDecorationsForChunk(uniformTerrain(1), cx, cy, 0);
+        const entries = slgDecorationsForChunk(uniformTerrain(1), cx, cy, 0, layout);
         assert.equal(entries.length, 6);
         for (const entry of entries) {
             assert.equal(ids.has(entry.id), false); ids.add(entry.id);
-            assert.ok(entry.x - entry.width / 2 >= cx * SLG_CHUNK_SIZE);
-            assert.ok(entry.x + entry.width / 2 <= (cx + 1) * SLG_CHUNK_SIZE);
-            assert.ok(entry.y - entry.height / 2 >= cy * SLG_CHUNK_SIZE);
-            assert.ok(entry.y + entry.height / 2 <= (cy + 1) * SLG_CHUNK_SIZE);
+            assert.ok(entry.x - entry.width / 2 >= cx * SLG_CHUNK_SIZE - 9);
+            assert.ok(entry.x + entry.width / 2 <= (cx + 1) * SLG_CHUNK_SIZE + 9);
         }
     }
     for (const terrainId of [0, 1, 2, 3, 4, 5]) {
         const terrain = uniformTerrain(terrainId);
-        for (const [cx, cy] of [[0, 0], [312, 312], [624, 624]]) for (let lod = 0; lod <= 3; lod++) {
-            const entries = slgDecorationsForChunk(terrain, cx, cy, lod);
+        for (const [cx, cy] of [[0, 0], [46, 46], [93, 93]]) for (let lod = 0; lod <= 3; lod++) {
+            const entries = slgDecorationsForChunk(terrain, cx, cy, lod, fixtureLayout([0, 0], [46, 46]));
             assert.ok(entries.length <= SLG_MAX_DECORATIONS_PER_CHUNK);
-            assert.ok(entries.filter((entry) => !entry.landmark).length <= [6, 4, 2, 0][lod]);
-            for (const entry of entries) {
-                assert.ok(entry.x - entry.width / 2 >= cx * 16 && entry.x + entry.width / 2 <= (cx + 1) * 16);
-                assert.ok(entry.y - entry.height / 2 >= cy * 16 && entry.y + entry.height / 2 <= (cy + 1) * 16);
-            }
-            if (terrainId === 0) assert.ok(entries.filter((entry) => !entry.landmark).length <= 2);
-            if (terrainId === 2) assert.ok(entries.every((entry) => entry.landmark), "water never grows ordinary decorations");
+            if (cx === 93 && cy === 93) assert.equal(entries.length, 0, "无布局覆盖的 chunk 为空");
         }
     }
     for (const [cx, cy, lod] of [[-1, 0, 0], [625, 0, 0], [0, 0, 4], [0, 0, 0.5]]) {
@@ -91,63 +104,73 @@ test("SLG decorations: bounded density, unique neighboring ownership and complet
     }
 });
 
-test("SLG仙洲: compact six-terrain geography leaves the default sect dry and all landmarks in separate chunks", () => {
-    const terrain = shippedTerrain();
+test("SLG森之国: 海环、内陆湖与六类地形围绕中心复刻区，地标各占独立旱地 chunk", () => {
+    const terrain = shippedTerrain(), layout = shippedLayout();
     assert.deepEqual(terrain.palette.map((entry) => entry.id), [0, 1, 2, 3, 4, 5]);
-    assert.ok(terrain.regions.length < 100, "compact rectangles replace a hundred million records");
-    assert.equal(terrainAt(terrain, 5000, 5000).id, 0);
-    assert.equal(terrainAt(terrain, 5005, 5005).id, 0);
-    assert.equal(terrainAt(terrain, 5000, 9500).id, 5, "north is positive world Y");
-    assert.equal(terrainAt(terrain, 500, 5000).id, 3);
-    assert.equal(terrainAt(terrain, 4000, 1000).id, 1);
-    assert.equal(terrainAt(terrain, 9700, 4000).id, 2);
-    assert.equal(terrainAt(terrain, 3200, 7000).id, 4);
+    assert.ok(terrain.regions.length <= SLG_TERRAIN_MAX_REGIONS, "原版 GroundType 直读矩形分解（契约上限 8192）");
+    assert.equal(terrainAt(terrain, 50, 50).id, 2, "西南海外");
+    assert.equal(terrainAt(terrain, 1450, 1450).id, 2, "东北海外");
+    assert.equal(terrainAt(terrain, 935, 634).id, 2, "内陆水道（气泡湖东侧）");
+    assert.equal(terrainAt(terrain, 800, 740).id, 3, "归木村南侧高地（GroundType.Hill 直读）");
+    assert.equal(terrainAt(terrain, 758, 849).id, 0, "狂花海岸草地");
+    assert.equal(terrainAt(terrain, 730, 790).id, 1, "蛛后巢穴西侧林地");
     const chunks = new Set<string>();
-    for (const landmark of SLG_LANDMARKS) {
+    for (const landmark of layout.landmarks) {
         const cx = Math.floor(landmark.x / SLG_CHUNK_SIZE), cy = Math.floor(landmark.y / SLG_CHUNK_SIZE);
         const key = `${cx}:${cy}`;
         assert.equal(chunks.has(key), false); chunks.add(key);
-        assert.ok(landmark.x - landmark.width / 2 >= cx * 16 && landmark.x + landmark.width / 2 <= (cx + 1) * 16);
-        assert.ok(landmark.y - landmark.height / 2 >= cy * 16 && landmark.y + landmark.height / 2 <= (cy + 1) * 16);
-        assert.notEqual(terrainAt(terrain, landmark.x, landmark.y).id, 2);
-        assert.deepEqual(slgDecorationsForChunk(terrain, cx, cy, 3), [landmark]);
+        assert.equal(landmark.width, SLG_LANDMARK_FOOT); assert.equal(landmark.height, SLG_LANDMARK_FOOT);
+        // 布局坐标按管线约定为中心格锚（tools/slg-maps calibrate --check-landmarks 的 x−4..x+4）：
+        // 整片 9×9 footprint 落在同一 chunk 且全为旱地。
+        const half = (SLG_LANDMARK_FOOT - 1) / 2;
+        assert.equal(Math.floor((landmark.x - half) / SLG_CHUNK_SIZE), cx, "地标足迹不跨 chunk");
+        assert.equal(Math.floor((landmark.x + half) / SLG_CHUNK_SIZE), cx, "地标足迹不跨 chunk");
+        assert.equal(Math.floor((landmark.y - half) / SLG_CHUNK_SIZE), cy, "地标足迹不跨 chunk");
+        assert.equal(Math.floor((landmark.y + half) / SLG_CHUNK_SIZE), cy, "地标足迹不跨 chunk");
+        for (let dy = -half; dy <= half; dy += 1) for (let dx = -half; dx <= half; dx += 1) {
+            assert.notEqual(terrainAt(terrain, landmark.x + dx, landmark.y + dy).id, 2, "地标不下水");
+        }
+        assert.deepEqual(slgDecorationsForChunk(terrain, cx, cy, 3, layout), [landmark]);
     }
-    const center = slgDecorationsForChunk(terrain, 312, 312, 0);
-    assert.deepEqual(center.filter((entry) => !entry.landmark).map((entry) => entry.kind).sort(), ["crystal", "tree"]);
-    assert.ok(center.some((entry) => entry.name === "青云宗"));
+    const village = slgDecorationsForChunk(terrain, 50, 47, 0, layout);
+    assert.ok(village.some((entry) => entry.name === "归木村"));
+    // 无 layout 覆盖的海上 chunk：拒绝哈希兜底后一律为空（原版没有的就是没有）
+    assert.deepEqual(slgDecorationsForChunk(terrain, 0, 0, 0, layout), []);
 });
 
 test("SLG overview: north-up coordinates round trip with arbitrary display dimensions and clamp outer bounds", () => {
-    assert.deepEqual(worldToOverview({ x: 0, y: 10000 }), { x: 0, y: 0 });
-    assert.deepEqual(overviewToWorld({ x: 1, y: 1 }), { x: 10000, y: 0 });
+    const terrain = uniformTerrain(0);
+    assert.deepEqual(worldToOverview(terrain, { x: 0, y: MAP.height }), { x: 0, y: 0 });
+    assert.deepEqual(overviewToWorld(terrain, { x: 1, y: 1 }), { x: MAP.width, y: 0 });
     for (const [width, height] of [[1, 1], [512, 512], [731, 429]]) {
-        for (const point of [{ x: 0, y: 0 }, { x: 10000, y: 10000 }, { x: 5005, y: 5005 }, { x: 3172.25, y: 8417.5 }]) {
-            const result = overviewToWorld(worldToOverview(point, width, height), width, height);
+        for (const point of [{ x: 0, y: 0 }, { x: MAP.width, y: MAP.height }, { x: 838, y: 764 }, { x: 317.25, y: 841.5 }]) {
+            const result = overviewToWorld(terrain, worldToOverview(terrain, point, width, height), width, height);
             near(result.x, point.x); near(result.y, point.y);
         }
     }
-    assert.deepEqual(overviewToWorld({ x: -10, y: 20 }), { x: 0, y: 0 });
-    assert.deepEqual(worldToOverview({ x: 12000, y: -4 }), { x: 1, y: 1 });
-    assert.throws(() => worldToOverview({ x: NaN, y: 0 }), RangeError);
-    assert.throws(() => overviewToWorld({ x: 0, y: 0 }, 0, 2), RangeError);
+    assert.deepEqual(overviewToWorld(terrain, { x: -10, y: 20 }), { x: 0, y: 0 });
+    assert.deepEqual(worldToOverview(terrain, { x: 12000, y: -4 }), { x: 1, y: 1 });
+    assert.throws(() => worldToOverview(terrain, { x: NaN, y: 0 }), RangeError);
+    assert.throws(() => overviewToWorld(terrain, { x: 0, y: 0 }, 0, 2), RangeError);
 });
 
 test("SLG overview viewport: inclusive final cells keep one-cell edge footprints visible", () => {
-    assert.deepEqual(overviewViewportRect({ minX: 0, minY: 0, maxX: 9999, maxY: 9999 }, 600, 400),
+    const terrain = uniformTerrain(0);
+    assert.deepEqual(overviewViewportRect(terrain, { minX: 0, minY: 0, maxX: MAP.width - 1, maxY: MAP.height - 1 }, 600, 400),
         { x: 0, y: 0, width: 600, height: 400 });
-    const cell = overviewViewportRect({ minX: 9999, minY: 9999, maxX: 9999, maxY: 9999 }, 10000, 10000);
-    near(cell.x, 9999); near(cell.y, 0); near(cell.width, 1); near(cell.height, 1);
-    const southwest = overviewViewportRect({ minX: 0, minY: 0, maxX: 0, maxY: 0 }, 10000, 10000);
-    near(southwest.x, 0); near(southwest.y, 9999); near(southwest.width, 1); near(southwest.height, 1);
-    assert.throws(() => overviewViewportRect({ minX: 10, minY: 0, maxX: 9, maxY: 0 }), RangeError);
+    const cell = overviewViewportRect(terrain, { minX: 1499, minY: 1499, maxX: 1499, maxY: 1499 }, 1500, 1500);
+    near(cell.x, 1499); near(cell.y, 0); near(cell.width, 1); near(cell.height, 1);
+    const southwest = overviewViewportRect(terrain, { minX: 0, minY: 0, maxX: 0, maxY: 0 }, 1500, 1500);
+    near(southwest.x, 0); near(southwest.y, 1499); near(southwest.width, 1); near(southwest.height, 1);
+    assert.throws(() => overviewViewportRect(terrain, { minX: 10, minY: 0, maxX: 9, maxY: 0 }), RangeError);
 });
 
 test("SLG overview: ordered geographic quads reproduce terrainAt without enumerating cells", () => {
     const terrain = shippedTerrain(), rectangles = buildSlgOverviewRects(terrain);
     assert.equal(rectangles.length, terrain.regions.length + 1);
-    assert.deepEqual(rectangles[0], { x: 0, y: 0, width: 10000, height: 10000, color: terrain.palette[0].color });
-    const points = [...SLG_LANDMARKS, { x: 0, y: 0 }, { x: 9999, y: 9999 },
-        ...Array.from({ length: 64 }, (_, index) => ({ x: index * 743 % 10000, y: index * 1379 % 10000 }))];
+    assert.deepEqual(rectangles[0], { x: 0, y: 0, width: MAP.width, height: MAP.height, color: terrain.palette[0].color });
+    const points = [...shippedLayout().landmarks, { x: 0, y: 0 }, { x: 1499, y: 1499 },
+        ...Array.from({ length: 64 }, (_, index) => ({ x: index * 743 % 1500, y: index * 1379 % 1500 }))];
     for (const point of points) {
         let color: readonly [number, number, number] = rectangles[0].color;
         for (const rect of rectangles) {
@@ -155,4 +178,40 @@ test("SLG overview: ordered geographic quads reproduce terrainAt without enumera
         }
         assert.deepEqual(color, terrainAt(terrain, point.x, point.y).color);
     }
+});
+
+test("SLG fording alpha: full above the waterline, linear fade to zero at the quad bottom", () => {
+    near(slgFordingAlpha(1), 1);
+    near(slgFordingAlpha(SLG_FORDING_FULL_ALPHA_AT), 1);
+    near(slgFordingAlpha(0), 0);
+    near(slgFordingAlpha(0.28), 0.5);
+    near(slgFordingAlpha(0.56 / 2), 0.5);
+    near(slgFordingAlpha(-3), 0);
+    near(slgFordingAlpha(2), 1);
+    assert.throws(() => slgFordingAlpha(Number.NaN), RangeError);
+});
+
+test("SLG layout shallow marker: only literal true passes the fail-closed gate and reaches decorations", () => {
+    const base = { source: "fixture", id: MAP.id, mapSize: MAP.width, landmarks: [],
+        decorations: [{ x: 3, y: 5, kind: "chest" as const }] };
+    assert.equal(validateSlgForestLayout(base), true);
+    const withShallow = { ...base, decorations: [{ x: 3, y: 5, kind: "chest" as const, shallow: true }] };
+    assert.equal(validateSlgForestLayout(withShallow), true);
+    const index = buildSlgLayoutIndex(withShallow);
+    assert.equal(index.index.get(chunkKey(0, 0))![0].shallow, true);
+    const plain = buildSlgLayoutIndex(base);
+    assert.equal(plain.index.get(chunkKey(0, 0))![0].shallow, undefined);
+    // fail-closed：false / 非布尔 / 字符串一律拒。
+    for (const bad of [false, 1, "true", null]) {
+        assert.equal(validateSlgForestLayout({ ...base, decorations: [{ x: 3, y: 5, kind: "chest" as const, shallow: bad }] }), false,
+            `shallow=${JSON.stringify(bad)} 必须拒`);
+    }
+});
+
+test("SLG森之国 shipped layout: shallow flags survive the shipped contract", () => {
+    const data: unknown = JSON.parse(readFileSync(new URL("../../kits/slg/data/maps/senzhiguo/layout.json", import.meta.url), "utf8"));
+    assert.equal(validateSlgForestLayout(data), true);
+    const layout = data as { decorations: readonly { shallow?: boolean }[] };
+    const flagged = layout.decorations.filter((entry) => entry.shallow === true).length;
+    assert.ok(flagged > 0, "森之国入库 layout 应含浅水标记（管线 ground_at==Shallow 产出）");
 });

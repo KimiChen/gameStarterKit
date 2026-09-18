@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 700,
+    "height": 85
+  },
+  "roots": [
+    "layer-123"
+  ],
+  "nodes": {
+    "layer-123": {
+      "id": "layer-123",
+      "name": "QuantityControl",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 700,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl",
+        "role": "component",
+        "definitionKey": "QuantityControl"
+      },
+      "children": [
+        "layer-124",
+        "layer-127",
+        "layer-134",
+        "layer-137",
+        "layer-139"
+      ]
+    },
+    "layer-124": {
+      "id": "layer-124",
+      "name": "QuantityControl/Decrease",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Decrease",
+        "role": "node"
+      },
+      "children": [
+        "layer-125"
+      ]
+    },
+    "layer-125": {
+      "id": "layer-125",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-126"
+      ]
+    },
+    "layer-126": {
+      "id": "layer-126",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Decrease/_",
+        "role": "node"
+      },
+      "asset": "asset-36dd4436cbdf4701d920d5377f295c9ec9050724ca88b727909e86e9fad2a7e3"
+    },
+    "layer-127": {
+      "id": "layer-127",
+      "name": "QuantityControl/Slider",
+      "kind": "group",
+      "frame": {
+        "x": 86,
+        "y": 6,
+        "width": 391,
+        "height": 71
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Slider",
+        "role": "node"
+      },
+      "children": [
+        "layer-128",
+        "layer-130",
+        "layer-132"
+      ]
+    },
+    "layer-128": {
+      "id": "layer-128",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 12,
+        "width": 391,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-129"
+      ]
+    },
+    "layer-129": {
+      "id": "layer-129",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 391,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Slider/_:0",
+        "role": "node"
+      },
+      "asset": "asset-60e79bf76b346f827b002834958ba5e53016c309befa52fef55bd5682a6b2c89"
+    },
+    "layer-130": {
+      "id": "layer-130",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 2,
+        "y": 14,
+        "width": 19,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-131"
+      ]
+    },
+    "layer-131": {
+      "id": "layer-131",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 19,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Slider/_:1",
+        "role": "node"
+      },
+      "asset": "asset-1ae57b6c6896fe15cd07b71505ff60ff3f69ffe033941e1c00ec58253cb33cf2"
+    },
+    "layer-132": {
+      "id": "layer-132",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 37,
+        "height": 71
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-133"
+      ]
+    },
+    "layer-133": {
+      "id": "layer-133",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 37,
+        "height": 71
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Slider/_:2",
+        "role": "node"
+      },
+      "asset": "asset-b8dfb4b477c2a67b42c062bf959ce749ff7351e5689c9297975dd55719278228"
+    },
+    "layer-134": {
+      "id": "layer-134",
+      "name": "QuantityControl/Increase",
+      "kind": "group",
+      "frame": {
+        "x": 486,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Increase",
+        "role": "node"
+      },
+      "children": [
+        "layer-135"
+      ]
+    },
+    "layer-135": {
+      "id": "layer-135",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-136"
+      ]
+    },
+    "layer-136": {
+      "id": "layer-136",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/QuantityControl/Increase/_",
+        "role": "node"
+      },
+      "asset": "asset-15dcaf86276ee35ed2c6d0191d362f2de1896ee48a4670eff464d1045e987dcf"
+    },
+    "layer-137": {
+      "id": "layer-137",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 579,
+        "y": 14,
+        "width": 121,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-138"
+      ]
+    },
+    "layer-138": {
+      "id": "layer-138",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 121,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/_",
+        "role": "node"
+      },
+      "asset": "asset-4904ef43553ec7eb9fde5930780a19319fc3bb9d38b053c1e9160a739d2e527f"
+    },
+    "layer-139": {
+      "id": "layer-139",
+      "name": "0",
+      "kind": "text",
+      "frame": {
+        "x": 575,
+        "y": 22.5,
+        "width": 129,
+        "height": 70
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:Backpack/Backpack/Details/BackpackQuantityControl/QuantityControl/_",
+        "role": "node"
+      },
+      "text": {
+        "value": "0",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 33,
+        "lineHeight": 33,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-36dd4436cbdf4701d920d5377f295c9ec9050724ca88b727909e86e9fad2a7e3": {
+      "path": "assets/36dd4436cbdf4701d920d5377f295c9ec9050724ca88b727909e86e9fad2a7e3.png",
+      "sha256": "36dd4436cbdf4701d920d5377f295c9ec9050724ca88b727909e86e9fad2a7e3",
+      "mime": "image/png",
+      "width": 76,
+      "height": 85
+    },
+    "asset-60e79bf76b346f827b002834958ba5e53016c309befa52fef55bd5682a6b2c89": {
+      "path": "assets/60e79bf76b346f827b002834958ba5e53016c309befa52fef55bd5682a6b2c89.png",
+      "sha256": "60e79bf76b346f827b002834958ba5e53016c309befa52fef55bd5682a6b2c89",
+      "mime": "image/png",
+      "width": 391,
+      "height": 44
+    },
+    "asset-1ae57b6c6896fe15cd07b71505ff60ff3f69ffe033941e1c00ec58253cb33cf2": {
+      "path": "assets/1ae57b6c6896fe15cd07b71505ff60ff3f69ffe033941e1c00ec58253cb33cf2.png",
+      "sha256": "1ae57b6c6896fe15cd07b71505ff60ff3f69ffe033941e1c00ec58253cb33cf2",
+      "mime": "image/png",
+      "width": 19,
+      "height": 40
+    },
+    "asset-b8dfb4b477c2a67b42c062bf959ce749ff7351e5689c9297975dd55719278228": {
+      "path": "assets/b8dfb4b477c2a67b42c062bf959ce749ff7351e5689c9297975dd55719278228.png",
+      "sha256": "b8dfb4b477c2a67b42c062bf959ce749ff7351e5689c9297975dd55719278228",
+      "mime": "image/png",
+      "width": 37,
+      "height": 71
+    },
+    "asset-15dcaf86276ee35ed2c6d0191d362f2de1896ee48a4670eff464d1045e987dcf": {
+      "path": "assets/15dcaf86276ee35ed2c6d0191d362f2de1896ee48a4670eff464d1045e987dcf.png",
+      "sha256": "15dcaf86276ee35ed2c6d0191d362f2de1896ee48a4670eff464d1045e987dcf",
+      "mime": "image/png",
+      "width": 76,
+      "height": 85
+    },
+    "asset-4904ef43553ec7eb9fde5930780a19319fc3bb9d38b053c1e9160a739d2e527f": {
+      "path": "assets/4904ef43553ec7eb9fde5930780a19319fc3bb9d38b053c1e9160a739d2e527f.png",
+      "sha256": "4904ef43553ec7eb9fde5930780a19319fc3bb9d38b053c1e9160a739d2e527f",
+      "mime": "image/png",
+      "width": 121,
+      "height": 54
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

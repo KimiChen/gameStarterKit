@@ -1,0 +1,14 @@
+{
+  "key": "ItemSlot",
+  "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx",
+  "export": {
+    "uniflexSha256": "22c07651c2995ddb625a8c1484f7583f4173d53c2e0c260cc64ab9f71305fbe9",
+    "psdSha256": "5c829defe6fc882f7e4bb921fd29cec50767b5a0fdf7a8bb3576a1c8c8fa8d62",
+    "at": "2026-09-17T17:33:35.174Z"
+  },
+  "import": {
+    "psdSha256": "5c829defe6fc882f7e4bb921fd29cec50767b5a0fdf7a8bb3576a1c8c8fa8d62",
+    "at": "2026-09-18T02:01:13.422Z",
+    "target": "restored"
+  }
+}

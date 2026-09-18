@@ -1,0 +1,371 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-psd-components",
+  "components": [
+    {
+      "key": "ActionButton",
+      "rootName": "ActionButton",
+      "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx"
+    },
+    {
+      "key": "AllianceAnnouncePanel",
+      "rootName": "AllianceAnnounce",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounce/AllianceAnnouncePanel.tsx"
+    },
+    {
+      "key": "AllianceBoardApplyPanel",
+      "rootName": "AllianceBoardApply",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceBoard/AllianceBoardApplyPanel.tsx"
+    },
+    {
+      "key": "AllianceBoardMessagePanel",
+      "rootName": "AllianceBoardMessage",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceBoard/AllianceBoardMessagePanel.tsx"
+    },
+    {
+      "key": "AllianceBoardPanel",
+      "rootName": "AllianceBoard",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceBoard/AllianceBoardPanel.tsx"
+    },
+    {
+      "key": "AllianceCreatePanel",
+      "rootName": "AllianceCreate",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceCreate/AllianceCreatePanel.tsx"
+    },
+    {
+      "key": "AllianceGiftPanel",
+      "rootName": "AllianceGift",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceGift/AllianceGiftPanel.tsx"
+    },
+    {
+      "key": "AllianceHelpPanel",
+      "rootName": "AllianceHelp",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceHelp/AllianceHelpPanel.tsx"
+    },
+    {
+      "key": "AllianceHomePanel",
+      "rootName": "AllianceHome",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceHomePanel.tsx"
+    },
+    {
+      "key": "AllianceInfoHeader",
+      "rootName": "AllianceInfoHeader",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceInfoHeader.tsx"
+    },
+    {
+      "key": "AllianceInvitePanel",
+      "rootName": "AllianceInvite",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceInvite/AllianceInvitePanel.tsx"
+    },
+    {
+      "key": "AllianceJoinRow",
+      "rootName": "AllianceJoinRow",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceJoin/AllianceJoinRow.tsx"
+    },
+    {
+      "key": "AllianceMarchBoostPanel",
+      "rootName": "AllianceMarchBoost",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoost/AllianceMarchBoostPanel.tsx"
+    },
+    {
+      "key": "AllianceMemberRow",
+      "rootName": "AllianceMemberRow",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceMemberRow.tsx"
+    },
+    {
+      "key": "AllianceMemberSettingsPanel",
+      "rootName": "AllianceMemberSettings",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettings/AllianceMemberSettingsPanel.tsx"
+    },
+    {
+      "key": "AllianceMemberSettingsRow",
+      "rootName": "AllianceMemberSettingsRow",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettings/AllianceMemberSettingsRow.tsx"
+    },
+    {
+      "key": "AllianceMembersPanel",
+      "rootName": "AllianceMembers",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceMembersPanel.tsx"
+    },
+    {
+      "key": "AllianceRankGroup",
+      "rootName": "AllianceRankGroup",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceRankGroup.tsx"
+    },
+    {
+      "key": "AllianceSettingsPanel",
+      "rootName": "AllianceSettings",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceSettingsPanel.tsx"
+    },
+    {
+      "key": "AllianceTechLink",
+      "rootName": "AllianceTechLink",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechLink.tsx"
+    },
+    {
+      "key": "AllianceTechNode",
+      "rootName": "AllianceTechNode",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechNode.tsx"
+    },
+    {
+      "key": "AllianceTechPanel",
+      "rootName": "AllianceTech",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechPanel.tsx"
+    },
+    {
+      "key": "AllianceTerritoryFortCard",
+      "rootName": "AllianceTerritoryFortCard",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritoryFortCard.tsx"
+    },
+    {
+      "key": "AllianceTerritoryFortItem",
+      "rootName": "AllianceTerritoryFortItem",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritoryFortItem.tsx"
+    },
+    {
+      "key": "AllianceTerritoryFortPanel",
+      "rootName": "AllianceTerritoryFort",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritoryFortPanel.tsx"
+    },
+    {
+      "key": "AllianceTerritoryLandCard",
+      "rootName": "AllianceTerritoryLandCard",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritoryLandCard.tsx"
+    },
+    {
+      "key": "AllianceTerritoryLandPanel",
+      "rootName": "AllianceTerritoryLand",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritoryLandPanel.tsx"
+    },
+    {
+      "key": "AllianceTerritoryPanel",
+      "rootName": "AllianceTerritory",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritoryPanel.tsx"
+    },
+    {
+      "key": "AllianceTerritoryPortPanel",
+      "rootName": "AllianceTerritoryPort",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritoryPortPanel.tsx"
+    },
+    {
+      "key": "AllianceTerritoryPortRow",
+      "rootName": "AllianceTerritoryPortRow",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritoryPortRow.tsx"
+    },
+    {
+      "key": "AllianceWarPanel",
+      "rootName": "AllianceWar",
+      "source": "apps/client/src/ui-uniflex/pages/AllianceWar/AllianceWarPanel.tsx"
+    },
+    {
+      "key": "BackButton",
+      "rootName": "BackButton",
+      "source": "apps/client/src/ui-uniflex/components/chrome/BackButton.tsx"
+    },
+    {
+      "key": "BackpackItemCard",
+      "rootName": "BackpackItemCard",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"
+    },
+    {
+      "key": "BackpackQuantityControl",
+      "rootName": "BackpackQuantityControl",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackQuantityControl.tsx"
+    },
+    {
+      "key": "BackpackResourceCounter",
+      "rootName": "BackpackResourceCounter",
+      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackResourceCounter.tsx"
+    },
+    {
+      "key": "CancelButton",
+      "rootName": "CancelButton",
+      "source": "apps/client/src/ui-uniflex/components/button/CancelButton.tsx"
+    },
+    {
+      "key": "CharacterManageTab",
+      "rootName": "CharacterManageTab",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManageTab.tsx"
+    },
+    {
+      "key": "CharacterPlayerRow",
+      "rootName": "CharacterPlayerRow",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterPlayerRow.tsx"
+    },
+    {
+      "key": "CharacterServerItem",
+      "rootName": "CharacterServerItem",
+      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterServerItem.tsx"
+    },
+    {
+      "key": "CheckBox",
+      "rootName": "CheckBox",
+      "source": "apps/client/src/ui-uniflex/components/checkbox/CheckBox.tsx"
+    },
+    {
+      "key": "CloseButton",
+      "rootName": "CloseButton",
+      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx"
+    },
+    {
+      "key": "ConfirmButton",
+      "rootName": "ConfirmButton",
+      "source": "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx"
+    },
+    {
+      "key": "EmptyState",
+      "rootName": "EmptyState",
+      "source": "apps/client/src/ui-uniflex/components/empty/EmptyState.tsx"
+    },
+    {
+      "key": "HeroBondItem",
+      "rootName": "HeroBondItem",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroBondItem.tsx"
+    },
+    {
+      "key": "HeroBondsPanel",
+      "rootName": "HeroBondsPanel",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroBondsPanel.tsx"
+    },
+    {
+      "key": "HeroCard",
+      "rootName": "HeroCard",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroCard.tsx"
+    },
+    {
+      "key": "HeroDetailAttributes",
+      "rootName": "HeroDetailAttributes",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailAttributes.tsx"
+    },
+    {
+      "key": "HeroDetailSkills",
+      "rootName": "HeroDetailSkills",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailSkills.tsx"
+    },
+    {
+      "key": "HeroDetailTabs",
+      "rootName": "HeroDetailTabs",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailTabs.tsx"
+    },
+    {
+      "key": "HeroFilterBar",
+      "rootName": "HeroFilterBar",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroFilterBar.tsx"
+    },
+    {
+      "key": "HeroListPanel",
+      "rootName": "HeroListPanel",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroListPanel.tsx"
+    },
+    {
+      "key": "HeroRequiredHero",
+      "rootName": "HeroRequiredHero",
+      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroRequiredHero.tsx"
+    },
+    {
+      "key": "HeroSkillSlot",
+      "rootName": "HeroSkillSlot",
+      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroSkillSlot.tsx"
+    },
+    {
+      "key": "HeroStarAttributeRow",
+      "rootName": "HeroStarAttributeRow",
+      "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarAttributeRow.tsx"
+    },
+    {
+      "key": "HeroStarUpgradePanel",
+      "rootName": "HeroStarUpgrade",
+      "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarUpgradePanel.tsx"
+    },
+    {
+      "key": "IconCaptionButton",
+      "rootName": "IconCaptionButton",
+      "source": "apps/client/src/ui-uniflex/components/button/IconCaptionButton.tsx"
+    },
+    {
+      "key": "InputText",
+      "rootName": "InputText",
+      "source": "apps/client/src/ui-uniflex/components/input/InputText.tsx"
+    },
+    {
+      "key": "ItemSlot",
+      "rootName": "ItemSlot",
+      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx"
+    },
+    {
+      "key": "MailBattleRow",
+      "rootName": "MailBattleRow",
+      "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
+    },
+    {
+      "key": "MainNav",
+      "rootName": "MainNav",
+      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx"
+    },
+    {
+      "key": "NotificationBadge",
+      "rootName": "NotificationBadge",
+      "source": "apps/client/src/ui-uniflex/components/badge/NotificationBadge.tsx"
+    },
+    {
+      "key": "PanelTab",
+      "rootName": "PanelTab",
+      "source": "apps/client/src/ui-uniflex/components/tab/PanelTab.tsx"
+    },
+    {
+      "key": "PopupBackground",
+      "rootName": "PopupBackground",
+      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx"
+    },
+    {
+      "key": "PopupFrame",
+      "rootName": "PopupFrame",
+      "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"
+    },
+    {
+      "key": "ProgressBar",
+      "rootName": "ProgressBar",
+      "source": "apps/client/src/ui-uniflex/components/progress/ProgressBar.tsx"
+    },
+    {
+      "key": "QuantityControl",
+      "rootName": "QuantityControl",
+      "source": "apps/client/src/ui-uniflex/components/quantity/QuantityControl.tsx"
+    },
+    {
+      "key": "ScreenFooter",
+      "rootName": "ScreenFooter",
+      "source": "apps/client/src/ui-uniflex/components/chrome/ScreenFooter.tsx"
+    },
+    {
+      "key": "ScreenHeader",
+      "rootName": "ScreenHeader",
+      "source": "apps/client/src/ui-uniflex/components/chrome/ScreenHeader.tsx"
+    },
+    {
+      "key": "ShopCard",
+      "rootName": "ShopCard",
+      "source": "apps/client/src/ui-uniflex/pages/Shop/ShopCard.tsx"
+    },
+    {
+      "key": "ShopGetItemPanel",
+      "rootName": "ShopGetItem",
+      "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItemPanel.tsx"
+    },
+    {
+      "key": "ShopPanel",
+      "rootName": "Shop",
+      "source": "apps/client/src/ui-uniflex/pages/Shop/ShopPanel.tsx"
+    },
+    {
+      "key": "StarRow",
+      "rootName": "StarRow",
+      "source": "apps/client/src/ui-uniflex/components/star/StarRow.tsx"
+    },
+    {
+      "key": "WideMenuButton",
+      "rootName": "WideMenuButton",
+      "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx"
+    }
+  ]
+}

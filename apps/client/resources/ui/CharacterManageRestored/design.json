@@ -1,0 +1,2951 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "PopupFrame",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame",
+        "role": "component",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-2",
+        "layer-4"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "PopupFrame/Mask",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Mask",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-3"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "PopupFrame/Mask / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Mask",
+        "role": "fill",
+        "definitionKey": "PopupFrame",
+        "captureHash": "cb3a3628a4ff9bac7d0cc9b2accee150e829eb53bca56bbb3819114d9e4f4df4"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "PopupFrame/Panel",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 316,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-5",
+        "layer-8",
+        "layer-9",
+        "layer-122"
+      ]
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "PopupBackground",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:PopupFrame/PopupFrame/Panel/PopupBackground",
+        "role": "component",
+        "definitionKey": "PopupBackground"
+      },
+      "children": [
+        "layer-6"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-7"
+      ]
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:PopupFrame/PopupFrame/Panel/PopupBackground/_:3",
+        "role": "node",
+        "definitionKey": "PopupBackground",
+        "resourceId": "ui/character/window",
+        "captureHash": "b58cd8affaf762d6a614365a200400e6da3a5d0af95b145ebc0880e1e00ac06c"
+      },
+      "asset": "asset-0fe6cbb816cbef521ab98d287d43b814e2029c0815317f31f9729b83797fe4c6"
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "PopupFrame/Title",
+      "kind": "text",
+      "frame": {
+        "x": 116,
+        "y": 21,
+        "width": 476,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel/PopupFrame/Title",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "text": {
+        "value": "角色管理",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "PopupFrame/Content",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel/PopupFrame/Content",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-10"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "CharacterManage/Content",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 992
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManage.root",
+        "role": "page",
+        "definitionKey": "CharacterManage"
+      },
+      "children": [
+        "layer-11",
+        "layer-15",
+        "layer-19",
+        "layer-23",
+        "layer-25"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "CharacterManageTab",
+      "kind": "group",
+      "frame": {
+        "x": 37,
+        "y": 102,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:0",
+        "role": "component",
+        "definitionKey": "CharacterManageTab"
+      },
+      "children": [
+        "layer-12",
+        "layer-14"
+      ]
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-13"
+      ]
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterManageTab",
+        "resourceId": "ui/character/tab-selected",
+        "captureHash": "cedb6e1d2866cb8a3d5523ef86616a40217ba5c37168a2c381da2233f967311a"
+      },
+      "asset": "asset-ec9cc46511053b5cdfe0337a850969c7a289264cabd249c425ae98c8e05cca1f"
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "我的服务器",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 15,
+        "width": 199,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:0/_",
+        "role": "node",
+        "definitionKey": "CharacterManageTab"
+      },
+      "text": {
+        "value": "我的服务器",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "CharacterManageTab",
+      "kind": "group",
+      "frame": {
+        "x": 257,
+        "y": 102,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:1",
+        "role": "component",
+        "definitionKey": "CharacterManageTab"
+      },
+      "children": [
+        "layer-16",
+        "layer-18"
+      ]
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-17"
+      ]
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterManageTab",
+        "resourceId": "ui/character/tab-unselected",
+        "captureHash": "511c0e5d5e60111a9332c2f84d8056e2579a86a81d62a8ae6dbafc1ea94f1333"
+      },
+      "asset": "asset-ab0aaa37de9e9fdb9f1223f6d49b1251696ce84100f2afab0bf750178e19eebb"
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "推荐服务器",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 15,
+        "width": 199,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:1/_",
+        "role": "node",
+        "definitionKey": "CharacterManageTab"
+      },
+      "text": {
+        "value": "推荐服务器",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "CharacterManageTab",
+      "kind": "group",
+      "frame": {
+        "x": 477,
+        "y": 102,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:2",
+        "role": "component",
+        "definitionKey": "CharacterManageTab"
+      },
+      "children": [
+        "layer-20",
+        "layer-22"
+      ]
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-21"
+      ]
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 195,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:2/_:1",
+        "role": "node",
+        "definitionKey": "CharacterManageTab",
+        "resourceId": "ui/character/tab-unselected",
+        "captureHash": "511c0e5d5e60111a9332c2f84d8056e2579a86a81d62a8ae6dbafc1ea94f1333"
+      },
+      "asset": "asset-ab0aaa37de9e9fdb9f1223f6d49b1251696ce84100f2afab0bf750178e19eebb"
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "所有服务器",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 15,
+        "width": 199,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManageTab:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/CharacterManageTab:2/_",
+        "role": "node",
+        "definitionKey": "CharacterManageTab"
+      },
+      "text": {
+        "value": "所有服务器",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 15,
+        "y": 160,
+        "width": 678,
+        "height": 796
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-24"
+      ]
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 678,
+        "height": 796
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterManage.root/_",
+        "role": "node",
+        "definitionKey": "CharacterManage",
+        "resourceId": "ui/character/content",
+        "captureHash": "f96a6188470897960fe4cb37a5d21633ea770102d870478fde61f1f8c6d0327f"
+      },
+      "asset": "asset-ffb66cfbc9838818d444a92d6610dc3df913f91340df4535b419da093ef43a3f"
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 41,
+        "y": 182,
+        "width": 626,
+        "height": 774
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-26",
+        "layer-42",
+        "layer-58",
+        "layer-74",
+        "layer-90",
+        "layer-106"
+      ],
+      "clip": true
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "CharacterPlayerRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0",
+        "role": "component",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-27",
+        "layer-29",
+        "layer-31",
+        "layer-32",
+        "layer-35",
+        "layer-38"
+      ]
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-28"
+      ]
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/player-bg",
+        "captureHash": "1bfbd9c20674e281ec30ffd83a8256525365d6314d5efe5a56440864da83362a"
+      },
+      "asset": "asset-e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d"
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 14,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-30"
+      ]
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/avatar",
+        "captureHash": "89464a0f26c4a98be34cc363faaf353f78932878da3e014efc874f7d5a466a33"
+      },
+      "asset": "asset-539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5"
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "北境狼王",
+      "kind": "text",
+      "frame": {
+        "x": 146,
+        "y": 15,
+        "width": 364,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "北境狼王",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 49,
+        "width": 390,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-33",
+        "layer-34"
+      ]
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "等级:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 2,
+        "width": 64,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "等级: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "99",
+      "kind": "text",
+      "frame": {
+        "x": 60.0469,
+        "y": 2,
+        "width": 334,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:0/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "99",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 85,
+        "width": 390,
+        "height": 30
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-36",
+        "layer-37"
+      ]
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "服务器:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 3,
+        "width": 88,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:1/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "服务器: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "Voyage1",
+      "kind": "text",
+      "frame": {
+        "x": 84.0469,
+        "y": 3,
+        "width": 310,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "Voyage1",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 552,
+        "y": 39,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:2",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-39"
+      ]
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "CheckBox",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:2/CheckBox",
+        "role": "component",
+        "definitionKey": "CheckBox"
+      },
+      "children": [
+        "layer-40"
+      ]
+    },
+    "layer-40": {
+      "id": "layer-40",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-41"
+      ]
+    },
+    "layer-41": {
+      "id": "layer-41",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:0/_:2/CheckBox/_:0",
+        "role": "node",
+        "definitionKey": "CheckBox",
+        "resourceId": "ui/character/check-on",
+        "captureHash": "77f5bcd2a0df4e5f683625ee507791791c575fbaf17527eb99f40579017f2895"
+      },
+      "asset": "asset-fb5820c038d67cf953a4fde3c4bf7b6a6399488a7cc2793fe90908b6540e13c9"
+    },
+    "layer-42": {
+      "id": "layer-42",
+      "name": "CharacterPlayerRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 148,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1",
+        "role": "component",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-43",
+        "layer-45",
+        "layer-47",
+        "layer-48",
+        "layer-51",
+        "layer-54"
+      ]
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-44"
+      ]
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/player-bg",
+        "captureHash": "1bfbd9c20674e281ec30ffd83a8256525365d6314d5efe5a56440864da83362a"
+      },
+      "asset": "asset-e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d"
+    },
+    "layer-45": {
+      "id": "layer-45",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 14,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-46"
+      ]
+    },
+    "layer-46": {
+      "id": "layer-46",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/avatar",
+        "captureHash": "89464a0f26c4a98be34cc363faaf353f78932878da3e014efc874f7d5a466a33"
+      },
+      "asset": "asset-539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5"
+    },
+    "layer-47": {
+      "id": "layer-47",
+      "name": "星海旅人",
+      "kind": "text",
+      "frame": {
+        "x": 146,
+        "y": 15,
+        "width": 364,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "星海旅人",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-48": {
+      "id": "layer-48",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 49,
+        "width": 390,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-49",
+        "layer-50"
+      ]
+    },
+    "layer-49": {
+      "id": "layer-49",
+      "name": "等级:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 2,
+        "width": 64,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "等级: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-50": {
+      "id": "layer-50",
+      "name": "76",
+      "kind": "text",
+      "frame": {
+        "x": 60.0469,
+        "y": 2,
+        "width": 334,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:0/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "76",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-51": {
+      "id": "layer-51",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 85,
+        "width": 390,
+        "height": 30
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-52",
+        "layer-53"
+      ]
+    },
+    "layer-52": {
+      "id": "layer-52",
+      "name": "服务器:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 3,
+        "width": 88,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:1/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "服务器: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-53": {
+      "id": "layer-53",
+      "name": "翡翠海",
+      "kind": "text",
+      "frame": {
+        "x": 84.0469,
+        "y": 3,
+        "width": 310,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "翡翠海",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-54": {
+      "id": "layer-54",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 552,
+        "y": 39,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:2",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-55"
+      ]
+    },
+    "layer-55": {
+      "id": "layer-55",
+      "name": "CheckBox",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:2/CheckBox",
+        "role": "component",
+        "definitionKey": "CheckBox"
+      },
+      "children": [
+        "layer-56"
+      ]
+    },
+    "layer-56": {
+      "id": "layer-56",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-57"
+      ]
+    },
+    "layer-57": {
+      "id": "layer-57",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:1/_:2/CheckBox/_:1",
+        "role": "node",
+        "definitionKey": "CheckBox",
+        "resourceId": "ui/character/check-off",
+        "captureHash": "467b024952ece20b979ef8894db0ff17b83f7b632bc92dadbd89544c281605a7"
+      },
+      "asset": "asset-385bb5fe4403ef74e9ea9036b5004ed31f9e9c05fc600a84fd10c1d7747ac068"
+    },
+    "layer-58": {
+      "id": "layer-58",
+      "name": "CharacterPlayerRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 296,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2",
+        "role": "component",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-59",
+        "layer-61",
+        "layer-63",
+        "layer-64",
+        "layer-67",
+        "layer-70"
+      ]
+    },
+    "layer-59": {
+      "id": "layer-59",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-60"
+      ]
+    },
+    "layer-60": {
+      "id": "layer-60",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/player-bg",
+        "captureHash": "1bfbd9c20674e281ec30ffd83a8256525365d6314d5efe5a56440864da83362a"
+      },
+      "asset": "asset-e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d"
+    },
+    "layer-61": {
+      "id": "layer-61",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 14,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-62"
+      ]
+    },
+    "layer-62": {
+      "id": "layer-62",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/avatar",
+        "captureHash": "89464a0f26c4a98be34cc363faaf353f78932878da3e014efc874f7d5a466a33"
+      },
+      "asset": "asset-539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5"
+    },
+    "layer-63": {
+      "id": "layer-63",
+      "name": "赤焰剑心",
+      "kind": "text",
+      "frame": {
+        "x": 146,
+        "y": 15,
+        "width": 364,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "赤焰剑心",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-64": {
+      "id": "layer-64",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 49,
+        "width": 390,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-65",
+        "layer-66"
+      ]
+    },
+    "layer-65": {
+      "id": "layer-65",
+      "name": "等级:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 2,
+        "width": 64,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "等级: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-66": {
+      "id": "layer-66",
+      "name": "54",
+      "kind": "text",
+      "frame": {
+        "x": 60.0469,
+        "y": 2,
+        "width": 334,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:0/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "54",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-67": {
+      "id": "layer-67",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 85,
+        "width": 390,
+        "height": 30
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-68",
+        "layer-69"
+      ]
+    },
+    "layer-68": {
+      "id": "layer-68",
+      "name": "服务器:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 3,
+        "width": 88,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:1/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "服务器: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-69": {
+      "id": "layer-69",
+      "name": "赤焰要塞",
+      "kind": "text",
+      "frame": {
+        "x": 84.0469,
+        "y": 3,
+        "width": 310,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "赤焰要塞",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-70": {
+      "id": "layer-70",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 552,
+        "y": 39,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:2",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-71"
+      ]
+    },
+    "layer-71": {
+      "id": "layer-71",
+      "name": "CheckBox",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:2/CheckBox",
+        "role": "component",
+        "definitionKey": "CheckBox"
+      },
+      "children": [
+        "layer-72"
+      ]
+    },
+    "layer-72": {
+      "id": "layer-72",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-73"
+      ]
+    },
+    "layer-73": {
+      "id": "layer-73",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:2/_:2/CheckBox/_:1",
+        "role": "node",
+        "definitionKey": "CheckBox",
+        "resourceId": "ui/character/check-off",
+        "captureHash": "467b024952ece20b979ef8894db0ff17b83f7b632bc92dadbd89544c281605a7"
+      },
+      "asset": "asset-385bb5fe4403ef74e9ea9036b5004ed31f9e9c05fc600a84fd10c1d7747ac068"
+    },
+    "layer-74": {
+      "id": "layer-74",
+      "name": "CharacterPlayerRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 444,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3",
+        "role": "component",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-75",
+        "layer-77",
+        "layer-79",
+        "layer-80",
+        "layer-83",
+        "layer-86"
+      ]
+    },
+    "layer-75": {
+      "id": "layer-75",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-76"
+      ]
+    },
+    "layer-76": {
+      "id": "layer-76",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/player-bg",
+        "captureHash": "1bfbd9c20674e281ec30ffd83a8256525365d6314d5efe5a56440864da83362a"
+      },
+      "asset": "asset-e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d"
+    },
+    "layer-77": {
+      "id": "layer-77",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 14,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-78"
+      ]
+    },
+    "layer-78": {
+      "id": "layer-78",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/avatar",
+        "captureHash": "89464a0f26c4a98be34cc363faaf353f78932878da3e014efc874f7d5a466a33"
+      },
+      "asset": "asset-539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5"
+    },
+    "layer-79": {
+      "id": "layer-79",
+      "name": "霜月祭司",
+      "kind": "text",
+      "frame": {
+        "x": 146,
+        "y": 15,
+        "width": 364,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "霜月祭司",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-80": {
+      "id": "layer-80",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 49,
+        "width": 390,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-81",
+        "layer-82"
+      ]
+    },
+    "layer-81": {
+      "id": "layer-81",
+      "name": "等级:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 2,
+        "width": 64,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "等级: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-82": {
+      "id": "layer-82",
+      "name": "31",
+      "kind": "text",
+      "frame": {
+        "x": 60.0469,
+        "y": 2,
+        "width": 334,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:0/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "31",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-83": {
+      "id": "layer-83",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 85,
+        "width": 390,
+        "height": 30
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-84",
+        "layer-85"
+      ]
+    },
+    "layer-84": {
+      "id": "layer-84",
+      "name": "服务器:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 3,
+        "width": 88,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:1/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "服务器: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-85": {
+      "id": "layer-85",
+      "name": "霜月平原",
+      "kind": "text",
+      "frame": {
+        "x": 84.0469,
+        "y": 3,
+        "width": 310,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "霜月平原",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-86": {
+      "id": "layer-86",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 552,
+        "y": 39,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:2",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-87"
+      ]
+    },
+    "layer-87": {
+      "id": "layer-87",
+      "name": "CheckBox",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:2/CheckBox",
+        "role": "component",
+        "definitionKey": "CheckBox"
+      },
+      "children": [
+        "layer-88"
+      ]
+    },
+    "layer-88": {
+      "id": "layer-88",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-89"
+      ]
+    },
+    "layer-89": {
+      "id": "layer-89",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:3/_:2/CheckBox/_:1",
+        "role": "node",
+        "definitionKey": "CheckBox",
+        "resourceId": "ui/character/check-off",
+        "captureHash": "467b024952ece20b979ef8894db0ff17b83f7b632bc92dadbd89544c281605a7"
+      },
+      "asset": "asset-385bb5fe4403ef74e9ea9036b5004ed31f9e9c05fc600a84fd10c1d7747ac068"
+    },
+    "layer-90": {
+      "id": "layer-90",
+      "name": "CharacterPlayerRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 592,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4",
+        "role": "component",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-91",
+        "layer-93",
+        "layer-95",
+        "layer-96",
+        "layer-99",
+        "layer-102"
+      ]
+    },
+    "layer-91": {
+      "id": "layer-91",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-92"
+      ]
+    },
+    "layer-92": {
+      "id": "layer-92",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/player-bg",
+        "captureHash": "1bfbd9c20674e281ec30ffd83a8256525365d6314d5efe5a56440864da83362a"
+      },
+      "asset": "asset-e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d"
+    },
+    "layer-93": {
+      "id": "layer-93",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 14,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-94"
+      ]
+    },
+    "layer-94": {
+      "id": "layer-94",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/avatar",
+        "captureHash": "89464a0f26c4a98be34cc363faaf353f78932878da3e014efc874f7d5a466a33"
+      },
+      "asset": "asset-539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5"
+    },
+    "layer-95": {
+      "id": "layer-95",
+      "name": "暗影猎手",
+      "kind": "text",
+      "frame": {
+        "x": 146,
+        "y": 15,
+        "width": 364,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "暗影猎手",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-96": {
+      "id": "layer-96",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 49,
+        "width": 390,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-97",
+        "layer-98"
+      ]
+    },
+    "layer-97": {
+      "id": "layer-97",
+      "name": "等级:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 2,
+        "width": 64,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "等级: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-98": {
+      "id": "layer-98",
+      "name": "88",
+      "kind": "text",
+      "frame": {
+        "x": 60.0469,
+        "y": 2,
+        "width": 334,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:0/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "88",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-99": {
+      "id": "layer-99",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 85,
+        "width": 390,
+        "height": 30
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-100",
+        "layer-101"
+      ]
+    },
+    "layer-100": {
+      "id": "layer-100",
+      "name": "服务器:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 3,
+        "width": 88,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:1/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "服务器: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-101": {
+      "id": "layer-101",
+      "name": "暗影峡谷",
+      "kind": "text",
+      "frame": {
+        "x": 84.0469,
+        "y": 3,
+        "width": 310,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "暗影峡谷",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-102": {
+      "id": "layer-102",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 552,
+        "y": 39,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:2",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-103"
+      ]
+    },
+    "layer-103": {
+      "id": "layer-103",
+      "name": "CheckBox",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:2/CheckBox",
+        "role": "component",
+        "definitionKey": "CheckBox"
+      },
+      "children": [
+        "layer-104"
+      ]
+    },
+    "layer-104": {
+      "id": "layer-104",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-105"
+      ]
+    },
+    "layer-105": {
+      "id": "layer-105",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:4/_:2/CheckBox/_:1",
+        "role": "node",
+        "definitionKey": "CheckBox",
+        "resourceId": "ui/character/check-off",
+        "captureHash": "467b024952ece20b979ef8894db0ff17b83f7b632bc92dadbd89544c281605a7"
+      },
+      "asset": "asset-385bb5fe4403ef74e9ea9036b5004ed31f9e9c05fc600a84fd10c1d7747ac068"
+    },
+    "layer-106": {
+      "id": "layer-106",
+      "name": "CharacterPlayerRow",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 740,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5",
+        "role": "component",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-107",
+        "layer-109",
+        "layer-111",
+        "layer-112",
+        "layer-115",
+        "layer-118"
+      ]
+    },
+    "layer-107": {
+      "id": "layer-107",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-108"
+      ]
+    },
+    "layer-108": {
+      "id": "layer-108",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 626,
+        "height": 130
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/player-bg",
+        "captureHash": "1bfbd9c20674e281ec30ffd83a8256525365d6314d5efe5a56440864da83362a"
+      },
+      "asset": "asset-e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d"
+    },
+    "layer-109": {
+      "id": "layer-109",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 22,
+        "y": 14,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-110"
+      ]
+    },
+    "layer-110": {
+      "id": "layer-110",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 100,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow",
+        "resourceId": "ui/character/avatar",
+        "captureHash": "89464a0f26c4a98be34cc363faaf353f78932878da3e014efc874f7d5a466a33"
+      },
+      "asset": "asset-539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5"
+    },
+    "layer-111": {
+      "id": "layer-111",
+      "name": "初出茅庐",
+      "kind": "text",
+      "frame": {
+        "x": 146,
+        "y": 15,
+        "width": 364,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "初出茅庐",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-112": {
+      "id": "layer-112",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 49,
+        "width": 390,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-113",
+        "layer-114"
+      ]
+    },
+    "layer-113": {
+      "id": "layer-113",
+      "name": "等级:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 2,
+        "width": 64,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:0/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "等级: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-114": {
+      "id": "layer-114",
+      "name": "12",
+      "kind": "text",
+      "frame": {
+        "x": 60.0469,
+        "y": 2,
+        "width": 334,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:0/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "12",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-115": {
+      "id": "layer-115",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 147,
+        "y": 85,
+        "width": 390,
+        "height": 30
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-116",
+        "layer-117"
+      ]
+    },
+    "layer-116": {
+      "id": "layer-116",
+      "name": "服务器:",
+      "kind": "text",
+      "frame": {
+        "x": 0,
+        "y": 3,
+        "width": 88,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:1/_:0",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "服务器: ",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-117": {
+      "id": "layer-117",
+      "name": "新手村",
+      "kind": "text",
+      "frame": {
+        "x": 84.0469,
+        "y": 3,
+        "width": 310,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:1/_:1",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "text": {
+        "value": "新手村",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-118": {
+      "id": "layer-118",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 552,
+        "y": 39,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CharacterPlayerRow:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:2",
+        "role": "node",
+        "definitionKey": "CharacterPlayerRow"
+      },
+      "children": [
+        "layer-119"
+      ]
+    },
+    "layer-119": {
+      "id": "layer-119",
+      "name": "CheckBox",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 52,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:2/CheckBox",
+        "role": "component",
+        "definitionKey": "CheckBox"
+      },
+      "children": [
+        "layer-120"
+      ]
+    },
+    "layer-120": {
+      "id": "layer-120",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-121"
+      ]
+    },
+    "layer-121": {
+      "id": "layer-121",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 44,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CheckBox:PopupFrame/PopupFrame/Panel/PopupFrame/Content/CharacterManage/Content/_:0/CharacterPlayerRow:5/_:2/CheckBox/_:1",
+        "role": "node",
+        "definitionKey": "CheckBox",
+        "resourceId": "ui/character/check-off",
+        "captureHash": "467b024952ece20b979ef8894db0ff17b83f7b632bc92dadbd89544c281605a7"
+      },
+      "asset": "asset-385bb5fe4403ef74e9ea9036b5004ed31f9e9c05fc600a84fd10c1d7747ac068"
+    },
+    "layer-122": {
+      "id": "layer-122",
+      "name": "CloseButton",
+      "kind": "group",
+      "frame": {
+        "x": 621,
+        "y": 6,
+        "width": 72,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:PopupFrame/PopupFrame/Panel/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
+      },
+      "children": [
+        "layer-123"
+      ]
+    },
+    "layer-123": {
+      "id": "layer-123",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 11,
+        "y": 11,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-124"
+      ]
+    },
+    "layer-124": {
+      "id": "layer-124",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:PopupFrame/PopupFrame/Panel/CloseButton/_",
+        "role": "node",
+        "definitionKey": "CloseButton",
+        "resourceId": "ui/popup/close",
+        "captureHash": "e54a38834ed5cf3ad76fd53dfd8a911f7332986480aa304c7255a44b53f13a4e"
+      },
+      "asset": "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534"
+    }
+  },
+  "assets": {
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-0fe6cbb816cbef521ab98d287d43b814e2029c0815317f31f9729b83797fe4c6": {
+      "path": "assets/0fe6cbb816cbef521ab98d287d43b814e2029c0815317f31f9729b83797fe4c6.png",
+      "sha256": "0fe6cbb816cbef521ab98d287d43b814e2029c0815317f31f9729b83797fe4c6",
+      "mime": "image/png",
+      "width": 708,
+      "height": 992
+    },
+    "asset-ec9cc46511053b5cdfe0337a850969c7a289264cabd249c425ae98c8e05cca1f": {
+      "path": "assets/ec9cc46511053b5cdfe0337a850969c7a289264cabd249c425ae98c8e05cca1f.png",
+      "sha256": "ec9cc46511053b5cdfe0337a850969c7a289264cabd249c425ae98c8e05cca1f",
+      "mime": "image/png",
+      "width": 195,
+      "height": 58
+    },
+    "asset-ab0aaa37de9e9fdb9f1223f6d49b1251696ce84100f2afab0bf750178e19eebb": {
+      "path": "assets/ab0aaa37de9e9fdb9f1223f6d49b1251696ce84100f2afab0bf750178e19eebb.png",
+      "sha256": "ab0aaa37de9e9fdb9f1223f6d49b1251696ce84100f2afab0bf750178e19eebb",
+      "mime": "image/png",
+      "width": 195,
+      "height": 58
+    },
+    "asset-ffb66cfbc9838818d444a92d6610dc3df913f91340df4535b419da093ef43a3f": {
+      "path": "assets/ffb66cfbc9838818d444a92d6610dc3df913f91340df4535b419da093ef43a3f.png",
+      "sha256": "ffb66cfbc9838818d444a92d6610dc3df913f91340df4535b419da093ef43a3f",
+      "mime": "image/png",
+      "width": 678,
+      "height": 796
+    },
+    "asset-22ae659ef1b311781024846e5a047a212ba4eb696bccd01b23f5d8f71dca9a65": {
+      "path": "assets/22ae659ef1b311781024846e5a047a212ba4eb696bccd01b23f5d8f71dca9a65.png",
+      "sha256": "22ae659ef1b311781024846e5a047a212ba4eb696bccd01b23f5d8f71dca9a65",
+      "mime": "image/png",
+      "width": 626,
+      "height": 774
+    },
+    "asset-e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d": {
+      "path": "assets/e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d.png",
+      "sha256": "e6722fb9c74c648ca7b0b2d6337be0089d6bf70d57ba080cce6d6e97cd1ea63d",
+      "mime": "image/png",
+      "width": 626,
+      "height": 130
+    },
+    "asset-539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5": {
+      "path": "assets/539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5.png",
+      "sha256": "539d61fb66ca1bcb9e332b7b7f7846eaa2907fb933d087504c40829dd4207cc5",
+      "mime": "image/png",
+      "width": 100,
+      "height": 102
+    },
+    "asset-fb5820c038d67cf953a4fde3c4bf7b6a6399488a7cc2793fe90908b6540e13c9": {
+      "path": "assets/fb5820c038d67cf953a4fde3c4bf7b6a6399488a7cc2793fe90908b6540e13c9.png",
+      "sha256": "fb5820c038d67cf953a4fde3c4bf7b6a6399488a7cc2793fe90908b6540e13c9",
+      "mime": "image/png",
+      "width": 44,
+      "height": 44
+    },
+    "asset-385bb5fe4403ef74e9ea9036b5004ed31f9e9c05fc600a84fd10c1d7747ac068": {
+      "path": "assets/385bb5fe4403ef74e9ea9036b5004ed31f9e9c05fc600a84fd10c1d7747ac068.png",
+      "sha256": "385bb5fe4403ef74e9ea9036b5004ed31f9e9c05fc600a84fd10c1d7747ac068",
+      "mime": "image/png",
+      "width": 44,
+      "height": 44
+    },
+    "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534": {
+      "path": "assets/08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534.png",
+      "sha256": "08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534",
+      "mime": "image/png",
+      "width": 50,
+      "height": 50
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Group (layer-25): overflow mask kept as clip viewport",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

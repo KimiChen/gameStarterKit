@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "PopupFrame",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame",
+        "role": "component",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-2",
+        "layer-4"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "PopupFrame/Mask",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Mask",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-3"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "PopupFrame/Mask / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Mask",
+        "role": "fill",
+        "definitionKey": "PopupFrame",
+        "captureHash": "cb3a3628a4ff9bac7d0cc9b2accee150e829eb53bca56bbb3819114d9e4f4df4"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "PopupFrame/Panel",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 624.5,
+        "width": 708,
+        "height": 375
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-5",
+        "layer-8",
+        "layer-9",
+        "layer-24"
+      ]
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "PopupBackground",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0.5,
+        "width": 708,
+        "height": 375
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:PopupFrame/PopupFrame/Panel/PopupBackground",
+        "role": "component",
+        "definitionKey": "PopupBackground"
+      },
+      "asset": "asset-25e186c22e87f438bcbecc22f44ffd66089982940f96b4e33db0fdb2304c760f"
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "PopupFrame/Title",
+      "kind": "text",
+      "frame": {
+        "x": 86,
+        "y": 25,
+        "width": 536,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel/PopupFrame/Title",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "text": {
+        "value": "创建角色",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "PopupFrame/Content",
+      "kind": "group",
+      "frame": {
+        "x": 40,
+        "y": 108,
+        "width": 628,
+        "height": 229
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:PopupFrame/PopupFrame/Panel/PopupFrame/Content",
+        "role": "node",
+        "definitionKey": "PopupFrame"
+      },
+      "children": [
+        "layer-10"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Prompt/Content",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 628,
+        "height": 229
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Prompt.root",
+        "role": "page",
+        "definitionKey": "Prompt"
+      },
+      "children": [
+        "layer-11",
+        "layer-12"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Prompt/Message",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 38,
+        "width": 632,
+        "height": 104
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Prompt.root/Prompt/Message",
+        "role": "node",
+        "definitionKey": "Prompt"
+      },
+      "text": {
+        "value": "在该服务器创建1名新角色?",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Prompt/Actions",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 127,
+        "width": 628,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Prompt.root/Prompt/Actions",
+        "role": "node",
+        "definitionKey": "Prompt"
+      },
+      "children": [
+        "layer-13",
+        "layer-18"
+      ]
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "ConfirmButton",
+      "kind": "image",
+      "frame": {
+        "x": 16,
+        "y": 0.5,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ConfirmButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/ConfirmButton",
+        "role": "component",
+        "definitionKey": "ConfirmButton"
+      },
+      "asset": "asset-fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe"
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 357.5,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "Prompt.root/Prompt/Actions/_",
+        "role": "node",
+        "definitionKey": "Prompt"
+      },
+      "children": [
+        "layer-19"
+      ]
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "CancelButton",
+      "kind": "image",
+      "frame": {
+        "x": 0.5,
+        "y": 0.5,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CancelButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton",
+        "role": "component",
+        "definitionKey": "CancelButton"
+      },
+      "asset": "asset-8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96"
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "CloseButton",
+      "kind": "image",
+      "frame": {
+        "x": 621,
+        "y": 6.5,
+        "width": 72,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:PopupFrame/PopupFrame/Panel/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
+      },
+      "asset": "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c"
+    }
+  },
+  "assets": {
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-25e186c22e87f438bcbecc22f44ffd66089982940f96b4e33db0fdb2304c760f": {
+      "path": "assets/25e186c22e87f438bcbecc22f44ffd66089982940f96b4e33db0fdb2304c760f.png",
+      "sha256": "25e186c22e87f438bcbecc22f44ffd66089982940f96b4e33db0fdb2304c760f",
+      "mime": "image/png",
+      "width": 708,
+      "height": 375
+    },
+    "asset-fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe": {
+      "path": "assets/fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe.png",
+      "sha256": "fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    },
+    "asset-8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96": {
+      "path": "assets/8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96.png",
+      "sha256": "8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    },
+    "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c": {
+      "path": "assets/d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c.png",
+      "sha256": "d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c",
+      "mime": "image/png",
+      "width": 72,
+      "height": 72
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "PopupBackground: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "ConfirmButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "CancelButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "CloseButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

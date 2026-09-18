@@ -1,9 +1,26 @@
 # Node
 node_modules/
+apps/client/.cache/
+/.cache/
+# UniFlex authoring is source; these outputs are recreated by build:uniflex-ui.
+apps/client/src/ui-uniflex/generated/
+apps/Cocos/assets/src/ui-uniflex/generated/
+apps/Cocos/assets/src/ui-uniflex/generated.meta
+apps/Cocos/assets/resources/uniflex/
+apps/Cocos/assets/resources/uniflex.meta
+# Cocos CLI 本地配置，指向 temp schema，不是作者态。
+apps/Cocos/settings/cocos.config.json
 *.log
 
 # 构建产物
 dist/
+
+# SLG 地图管线中间产物（渲染大图/校准叠图；入库产物在 apps/kits/slg/{data,art}）
+tools/slg-maps/out/
+__pycache__/
+
+# 本地预览验收截图与报告
+/docs/evidence/
 
 # ImageGen 概念图输出；设计说明与提示词另存 docs/concepts/
 output/imagegen/

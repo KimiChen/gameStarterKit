@@ -1,0 +1,26 @@
+{
+  "screen": "confirm",
+  "componentName": "Confirm",
+  "restoredName": "ConfirmRestored",
+  "source": "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "5bc510360ac3b3b57a7af9a9d5c99ddb9ad5454f289ce2dcda6bb7f5a2e68d1f",
+    "psdSha256": "a09bdadb5e11410f81ef4fe78df6cac9d3b4b66ae7ac592a8902f95246d507ea",
+    "at": "2026-09-18T02:10:34.075Z"
+  },
+  "import": {
+    "psdSha256": "a09bdadb5e11410f81ef4fe78df6cac9d3b4b66ae7ac592a8902f95246d507ea",
+    "at": "2026-09-18T02:10:51.124Z",
+    "target": "restored"
+  },
+  "linkedComponents": [
+    "ActionButton",
+    "CancelButton",
+    "ConfirmButton"
+  ]
+}

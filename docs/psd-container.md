@@ -1,5 +1,9 @@
 # PSD 可 diff 容器（`.psdt.io`）方案稿
 
+> 当前真实状态（2026-09-13）：本文仍是未落地的容器设计。仓库当前没有可执行的
+> `ui:psd:unpack`、`ui:psd:build` 或 `verify:psd` 命令；不要把目录示例、方案命令或历史
+> `psdt.io` 样例描述为已支持的生产能力。
+
 > 版本：0.1（方案稿）<br>
 > 日期：2026-09-02<br>
 > 状态：设计已定稿，`ui:psd:unpack` / `ui:psd:build` / `verify:psd`、合成引擎、夹具与登记均未实现<br>

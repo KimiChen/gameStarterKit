@@ -5,22 +5,37 @@ const VIEW = "SlgMapView";
 const OVERVIEW = "slg-world-overview";
 const inView = (node) => node.path.includes(`${VIEW}/`);
 
+/** 世界格边长（真源 = shared worldmap 的 SLG_MAP_W；creator-preview-tool.test.ts 钉住两者一致）。 */
+export const SLG_WORLD_SIZE = 1500;
+
+/** 泽之国浅滩涉水目检定位点：入库 layout.json 中 ground_at==Shallow 的 portal+4chest 集群中心
+ *  （tools/slg-maps extract-layout 产出；坐标变更需同步该文件的浅水实体分布）。 */
+export const SLG_ZEZHIGUO_SHALLOW_SPOT = { x: 524, y: 756 };
+
 /** Parse the public UI, deliberately rejecting missing/loading titles and incomplete tile details. */
 export function readSlgMapEvidence(walk) {
   if (!walk?.nodes.some((node) => node.name === VIEW)) return null;
   const nodes = walk.nodes.filter(inView);
-  const title = nodes.find((node) => typeof node.text === "string" && /^.+ · LOD [1-4] · 奖杯 \d+$/u.test(node.text));
-  const titleMatch = title?.text.match(/^(.+) · LOD ([1-4]) · 奖杯 (\d+)$/u);
+  const title = nodes.find((node) => typeof node.text === "string" && /^.+ · LOD [1-4](?:（GM）)? · 奖杯 \d+$/u.test(node.text));
+  const titleMatch = title?.text.match(/^(.+) · LOD ([1-4])(?:（GM）)? · 奖杯 (\d+)$/u);
   const details = nodes.find((node) => typeof node.text === "string" && /^\(\d+, \d+\) · 地形 \d+ · .+ · 守备 \d+$/u.test(node.text));
   const tileMatch = details?.text.match(/^\((\d+), (\d+)\) · 地形 (\d+) · (无主|我方|敌方 .+) · 守备 (\d+)$/u);
-  const chunks = nodes.filter((node) => /^slg-chunk-\d+-\d+$/u.test(node.name)).map((node) => node.name).sort();
+  // 近档：瓦片层合并网格（slg-tiles-*，每原版层一张，见 §10.6）或旧 chunk 网格都算「已加载」。
+  const chunks = nodes.filter((node) => /^slg-(tiles-.+|chunk-\d+-\d+)$/u.test(node.name)).map((node) => node.name).sort();
+  // LOD 4 远档：逐 chunk 网格被整图层（slg-far-*）替代——整图层存在同样算「已加载」。
+  const farNodes = nodes.filter((node) => /^slg-far-(sea|island|landmarks|ownership)$/u.test(node.name)).map((node) => node.name).sort();
+  const farGround = farNodes.includes("slg-far-sea") || farNodes.includes("slg-far-island");
   const notice = nodes.find((node) => typeof node.text === "string" && /^(已占领|已加固|已削减|地图资源加载失败|操作失败|地图加载或操作失败|网络暂不可用|地图请求较多|地图已恢复加载)/u.test(node.text));
   return {
-    loaded: !!titleMatch && titleMatch[1] !== "大地图" && chunks.length > 0,
+    loaded: !!titleMatch && titleMatch[1] !== "大地图" && (chunks.length > 0 || farGround),
     title: title?.text ?? null,
     lod: titleMatch ? Number(titleMatch[2]) : null,
     trophies: titleMatch ? Number(titleMatch[3]) : null,
     chunks,
+    farNodes,
+    farGround,
+    farLandmarks: farNodes.includes("slg-far-landmarks"),
+    farOwnership: farNodes.includes("slg-far-ownership"),
     terrainLayer: nodes.some((node) => node.name === "slg-terrain-layer"),
     decorationLayer: nodes.some((node) => node.name === "slg-decoration-layer"),
     decorationChunks: nodes.filter((node) => /^slg-decorations-\d+-\d+$/u.test(node.name)).map((node) => node.name).sort(),
@@ -31,7 +46,7 @@ export function readSlgMapEvidence(walk) {
 }
 
 /** Read actual visible overview nodes; hidden scroll/navigation branches are absent from pageWalk. */
-export function readSlgOverviewEvidence(walk, worldWidth = 10000, worldHeight = 10000) {
+export function readSlgOverviewEvidence(walk, worldWidth = SLG_WORLD_SIZE, worldHeight = SLG_WORLD_SIZE) {
   const panel = walk?.nodes.find((node) => inView(node) && node.name === OVERVIEW);
   if (!panel) return null;
   const nodes = walk.nodes.filter((node) => node.path.startsWith(`${panel.path}/`));
@@ -73,12 +88,16 @@ function readSlgRenderAssets() {
   const visit = (node, inMap) => {
     if (!node.activeInHierarchy) return;
     const inside = inMap || node.name === "SlgMapView";
-    if (inside && (/^slg-chunk-\d+-\d+$/u.test(node.name) || /^slg-decorations-\d+-\d+$/u.test(node.name))) {
+    if (inside && (/^slg-(tiles-.+|chunk-\d+-\d+)$/u.test(node.name) || /^slg-decorations-\d+-\d+$/u.test(node.name)
+        || /^slg-far-(sea|island|landmarks|ownership)$/u.test(node.name))) {
       const renderer = node.getComponent("cc.MeshRenderer");
       const material = renderer?.getSharedMaterial(0);
-      const texture = material?.getProperty("mainTexture");
+      let texture = null, materialError = null;
+      try { texture = material?.getProperty("mainTexture"); }
+      catch (error) { materialError = error instanceof Error ? error.message : String(error); }
       result.push({ name: node.name, kind: "mesh", textured: !!texture && texture.width > 0 && texture.height > 0,
-        width: texture?.width ?? null, height: texture?.height ?? null });
+        width: texture?.width ?? null, height: texture?.height ?? null,
+        ...(materialError ? { materialError, materialDestroyed: !!material?.destroyed } : null) });
     }
     if (inside && node.name === "slg-overview-art") {
       const texture = node.getComponent("cc.Sprite")?.spriteFrame?.texture;
@@ -92,14 +111,57 @@ function readSlgRenderAssets() {
 }
 export const slgRenderAssetsSource = `(${readSlgRenderAssets.toString()})()`;
 
+/** Observe the still-mounted settings panel without changing its event listeners or scroll state. */
+function readSlgSettingsScroll() {
+  if (typeof cc === "undefined" || !cc.director?.getScene()) return null;
+  const find = (node) => {
+    if (!node.activeInHierarchy) return null;
+    if (node.name === "SettingsView") return node;
+    for (const child of node.children) { const found = find(child); if (found) return found; }
+    return null;
+  };
+  const settings = find(cc.director.getScene());
+  const viewport = settings?.getChildByName("panel")?.getChildByName("viewport");
+  const offset = viewport?.getComponent("cc.ScrollView")?.getScrollOffset();
+  return offset && Number.isFinite(offset.x) && Number.isFinite(offset.y) ? { x: offset.x, y: offset.y } : null;
+}
+export const slgSettingsScrollSource = `(${readSlgSettingsScroll.toString()})()`;
+
+export function assertSlgSettingsScrollUnchanged(before, after) {
+  if (![before?.x, before?.y, after?.x, after?.y].every(Number.isFinite)) {
+    throw new Error("后台 SettingsView 的 ScrollView 偏移不可观测，无法验证地图输入隔离");
+  }
+  if (Math.hypot(after.x - before.x, after.y - before.y) > 0.1) {
+    throw new Error(`地图操作穿透到后台设置滚动：${JSON.stringify({ before, after })}`);
+  }
+  return { before, after, unchanged: true };
+}
+
+async function settingsScrollUnchanged(runner, before) {
+  return assertSlgSettingsScrollUnchanged(before, await runner.client.evaluate(slgSettingsScrollSource));
+}
+
 async function renderedMapAssets(runner) {
   const assets = await runner.client.evaluate(slgRenderAssetsSource);
-  const terrain = assets.filter((entry) => /^slg-chunk-/u.test(entry.name));
+  const terrain = assets.filter((entry) => /^slg-(tiles-|chunk-)/u.test(entry.name));
   const decorations = assets.filter((entry) => /^slg-decorations-/u.test(entry.name));
   if (!terrain.length || !decorations.length || [...terrain, ...decorations].some((entry) => !entry.textured)) {
     throw new Error(`地图贴图/装饰材质尚未就绪：${JSON.stringify({ terrain: terrain.slice(0, 2), decorations: decorations.slice(0, 2) })}`);
   }
   return { terrainCount: terrain.length, decorationCount: decorations.length, samples: [terrain[0], decorations[0]] };
+}
+
+/** 远档（标题 LOD 4）整图层证据：海面/岛貌地表/地标三层都必须有贴图（海面=sea-tile 渲染水面平铺）。 */
+async function renderedFarAssets(runner) {
+  const assets = await runner.client.evaluate(slgRenderAssetsSource);
+  const sea = assets.find((entry) => entry.name === "slg-far-sea");
+  const island = assets.find((entry) => entry.name === "slg-far-island");
+  const landmarks = assets.find((entry) => entry.name === "slg-far-landmarks");
+  if (!sea?.textured) throw new Error(`远档海面应为 sea-tile 贴图整图层：${JSON.stringify(sea ?? null)}`);
+  if (!island?.textured) throw new Error(`远档岛貌地表贴图尚未就绪：${JSON.stringify(island ?? null)}`);
+  if (!landmarks?.textured) throw new Error(`远档地标贴图尚未就绪：${JSON.stringify(landmarks ?? null)}`);
+  return { seaTextured: true, islandTextured: true, landmarksTextured: true,
+    ownership: assets.some((entry) => entry.name === "slg-far-ownership") };
 }
 
 /** Anchor the gestures between the visible help row and tile detail row, never in the toolbars. */
@@ -127,7 +189,7 @@ export function slgFrameStability(previous, evidence, now, lod) {
   const valid = !!evidence?.loaded && evidence.lod === lod && !/稍后自动重试/u.test(evidence.notice ?? "");
   // Also wait out residual drag inertia; subpixel noise smaller than 0.1 CSS px is immaterial.
   const position = evidence?.worldCenter ? [evidence.worldCenter.x, evidence.worldCenter.y].map((n) => Math.round(n * 10)) : [];
-  const key = valid ? JSON.stringify([lod, evidence.chunks, position]) : null;
+  const key = valid ? JSON.stringify([lod, evidence.chunks, evidence.farNodes ?? [], position]) : null;
   const lastChangeAt = !valid || previous?.key !== key ? now : previous.lastChangeAt;
   const elapsedMs = now - startedAt;
   const stableMs = now - lastChangeAt;
@@ -145,8 +207,8 @@ async function stableSlgFrame(runner, lod) {
 
 /** Run after SettingsView has been reached by the shared login/settings flow. */
 export async function replaySlgMap(runner) {
-  await runner.step("进入「大地图 · slg」（设置菜单的正式 route）", async () => {
-    return runner.tapText("进入", { near: /^大地图\s+·\s+slg$/u });
+  await runner.step("点设置中的「大地图」卡片（正式 route）", async () => {
+    return runner.tapSettingsEntry("map");
   });
   await runner.step("SlgMapView 加载地表贴图与独立装饰层", async () => {
     const evidence = await runner.waitFor("地图标题、chunk 网格与装饰节点", (walk) => {
@@ -201,25 +263,32 @@ export async function replaySlgMap(runner) {
     return { ...evidence, shot: await runner.shot("slg-refreshed") };
   });
 
-  await runner.step("鼠标拖动平移（地图节点位置实际改变）", async () => {
+  await runner.step("中央鼠标拖动平移，后台设置不滚动", async () => {
     const walk = await runner.walk();
     const before = readSlgMapEvidence(walk)?.worldCenter;
     const area = slgMapGestureArea(walk);
+    const settingsBefore = await runner.client.evaluate(slgSettingsScrollSource);
+    assertSlgSettingsScrollUnchanged(settingsBefore, settingsBefore);
     if (!before) throw new Error("找不到 slg-world 的可测坐标");
     const from = { x: area.x - area.width * 0.15, y: area.y };
     const to = { x: area.x + area.width * 0.15, y: area.y + area.height * 0.1 };
     await runner.client.send("Input.dispatchMouseEvent", { type: "mouseMoved", ...from });
     await runner.client.send("Input.dispatchMouseEvent", { type: "mousePressed", ...from, button: "left", buttons: 1, clickCount: 1 });
-    for (let step = 1; step <= 8; step++) {
-      await runner.client.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x + (to.x - from.x) * step / 8, y: from.y + (to.y - from.y) * step / 8, button: "left", buttons: 1 });
-      await sleep(40);
+    try {
+      for (let step = 1; step <= 8; step++) {
+        await runner.client.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: from.x + (to.x - from.x) * step / 8, y: from.y + (to.y - from.y) * step / 8, button: "left", buttons: 1 });
+        await sleep(40);
+        await settingsScrollUnchanged(runner, settingsBefore);
+      }
+    } finally {
+      await runner.client.send("Input.dispatchMouseEvent", { type: "mouseReleased", ...to, button: "left", buttons: 0, clickCount: 1 });
     }
-    await runner.client.send("Input.dispatchMouseEvent", { type: "mouseReleased", ...to, button: "left", buttons: 0, clickCount: 1 });
     const evidence = await runner.waitFor("平移后的世界节点坐标", (next) => {
       const value = failed(readSlgMapEvidence(next));
       return value?.worldCenter && Math.hypot(value.worldCenter.x - before.x, value.worldCenter.y - before.y) > 5 ? value : null;
     });
-    return { from, to, before, after: evidence.worldCenter, shot: await runner.shot("slg-panned") };
+    return { from, to, before, after: evidence.worldCenter, settingsScroll: await settingsScrollUnchanged(runner, settingsBefore),
+      shot: await runner.shot("slg-panned") };
   });
 
   const lods = new Set();
@@ -229,18 +298,22 @@ export async function replaySlgMap(runner) {
   await runner.step("记录 LOD 1 近景（网格稳定后）", async () => ({ ...(await stableSlgFrame(runner, 1)), shot: await runner.shot("slg-lod-1") }));
   let direction = 1;
   for (const target of [2, 3, 4]) {
-    await runner.step(`滚轮缩放到 LOD ${target}`, async () => {
+    await runner.step(`中央滚轮缩放到 LOD ${target}，后台设置不滚动`, async () => {
       const area = slgMapGestureArea(await runner.walk());
+      const settingsBefore = await runner.client.evaluate(slgSettingsScrollSource);
+      assertSlgSettingsScrollUnchanged(settingsBefore, settingsBefore);
       const deltas = [];
       for (let attempt = 0; attempt < 64; attempt++) {
         const deltaY = 60 * direction;
         await runner.client.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: area.x, y: area.y, deltaX: 0, deltaY });
         deltas.push(deltaY);
         await sleep(120);
+        await settingsScrollUnchanged(runner, settingsBefore);
         const evidence = failed(readSlgMapEvidence(await runner.walk()));
         if (evidence?.lod === target) {
           lods.add(target);
-          return { ...(await stableSlgFrame(runner, target)), deltas, shot: await runner.shot(`slg-lod-${target}`) };
+          return { ...(await stableSlgFrame(runner, target)), deltas,
+            settingsScroll: await settingsScrollUnchanged(runner, settingsBefore), shot: await runner.shot(`slg-lod-${target}`) };
         }
         if (evidence?.lod > target) throw new Error(`滚轮从 LOD ${target - 1} 跳过 ${target} 到 ${evidence.lod}`);
         // Cocos/browser wheel conventions vary. Decide by observed LOD, never mutate camera fields.
@@ -318,7 +391,9 @@ export async function replaySlgMap(runner) {
       return !readSlgOverviewEvidence(walk) && value?.loaded && value.tile
         && Math.abs(value.tile.x - landmark.expected.x) <= 1 && Math.abs(value.tile.y - landmark.expected.y) <= 1 ? value : null;
     });
-    return { landmark, ...(await stableSlgFrame(runner, located.lod)), assets: await renderedMapAssets(runner),
+    return { landmark, ...(await stableSlgFrame(runner, located.lod)),
+      // 定位落点在哪一档就按哪一档断言：LOD 4 远档是整图层（无贴图地表 + 贴图地标），近档是逐 chunk 贴图与装饰。
+      assets: located.lod >= 4 ? await renderedFarAssets(runner) : await renderedMapAssets(runner),
       shot: await runner.shot("slg-world-located") };
   });
 
@@ -336,6 +411,82 @@ export async function replaySlgMap(runner) {
     return { ...after, positionUnchanged: true, shot: await runner.shot("slg-world-returned") };
   });
 
+  await runner.step("小地图展开五图切换面板", async () => {
+    const current = failed(readSlgMapEvidence(await runner.walk()));
+    if (!current?.title) throw new Error("当前地图标题不可读");
+    const currentName = current.title.split(" · ")[0];
+    await runner.tapText(currentName, { pathIncludes: `${VIEW}/slg-minimap` });
+    await runner.waitFor("切换面板与五图选项出现", (walk) => {
+      const panel = walk.nodes.find((node) => node.name === "slg-map-switcher" && inView(node));
+      const options = walk.nodes.filter((node) => /^slg-map-option-/u.test(node.name) && inView(node));
+      return panel && options.length === 5 ? { options: options.map((node) => node.name).sort() } : null;
+    });
+    return { shot: await runner.shot("slg-switcher-opened") };
+  });
+
+  await runner.step("切换到山之国：标题、地块与资源按图重载", async () => {
+    await runner.tapText("山之国", { pathIncludes: "slg-map-option-shanzhiguo" });
+    const evidence = await runner.waitFor("标题变山之国且网格重载", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.loaded && value.title?.startsWith("山之国 ·") && value.chunks.length > 0 ? value : null;
+    }, 60_000);
+    return { ...(await stableSlgFrame(runner, evidence.lod)), assets: await renderedMapAssets(runner),
+      shot: await runner.shot("slg-switch-shanzhiguo") };
+  });
+
+  await runner.step("山之国缩到 LOD 4 看远档岛貌", async () => {
+    const area = slgMapGestureArea(await runner.walk());
+    let direction = 1;
+    for (let attempt = 0; attempt < 64; attempt += 1) {
+      await runner.client.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: area.x, y: area.y, deltaX: 0, deltaY: 60 * direction });
+      await sleep(120);
+      const evidence = failed(readSlgMapEvidence(await runner.walk()));
+      if (evidence?.lod === 4) {
+        return { ...(await stableSlgFrame(runner, 4)), assets: await renderedFarAssets(runner),
+          shot: await runner.shot("slg-shanzhiguo-lod-4") };
+      }
+      // 与 LOD 2-4 步同一约定：首开档 7 次后不动则换向（一次性探测）
+      if (attempt === 7 && evidence?.lod === 1) direction = -1;
+    }
+    throw new Error("64 次滚轮后仍未到 LOD 4（山之国）");
+  });
+
+  await runner.step("切换到泽之国并 GM 定位浅滩：涉水装饰目检", async () => {
+    await runner.tapText("山之国", { pathIncludes: `${VIEW}/slg-minimap` });
+    await runner.waitFor("切换面板出现（泽之国）", (walk) =>
+      walk.nodes.some((node) => node.name === "slg-map-switcher" && inView(node)) ? true : null);
+    await runner.tapText("泽之国", { pathIncludes: "slg-map-option-zezhiguo" });
+    await runner.waitFor("标题变泽之国且网格重载", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.loaded && value.title?.startsWith("泽之国 ·") && value.chunks.length > 0 ? value : null;
+    }, 60_000);
+    // GM 定位到浅水簇（坐标 = 入库 layout.json 的管线产出：ground_at==Shallow 的 portal+4chest 集群）。
+    await runner.client.evaluate(`slgMapDebug.locate(${SLG_ZEZHIGUO_SHALLOW_SPOT.x}, ${SLG_ZEZHIGUO_SHALLOW_SPOT.y})`);
+    await runner.waitFor("选格详情落在目标浅滩坐标", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.tile && Math.abs(value.tile.x - SLG_ZEZHIGUO_SHALLOW_SPOT.x) <= 1
+        && Math.abs(value.tile.y - SLG_ZEZHIGUO_SHALLOW_SPOT.y) <= 1 ? value : null;
+    });
+    // 钉 LOD 1 近档截图（涉水渐隐只在近档装饰层），拍完解除 GM 档。
+    await runner.client.evaluate("slgMapDebug.setLod(0)");
+    const frame = await stableSlgFrame(runner, 1);
+    await runner.client.evaluate("slgMapDebug.setLod(null)");
+    return { spot: SLG_ZEZHIGUO_SHALLOW_SPOT, ...frame, assets: await renderedMapAssets(runner),
+      shot: await runner.shot("slg-zezhiguo-shallow") };
+  });
+
+  await runner.step("切回森之国并恢复近档", async () => {
+    await runner.tapText("泽之国", { pathIncludes: `${VIEW}/slg-minimap` });
+    await runner.waitFor("切换面板出现", (walk) => walk.nodes.some((node) => node.name === "slg-map-switcher" && inView(node)) ? true : null);
+    await runner.tapText("森之国", { pathIncludes: "slg-map-option-senzhiguo" });
+    const evidence = await runner.waitFor("标题回森之国且网格重载", (walk) => {
+      const value = failed(readSlgMapEvidence(walk));
+      return value?.loaded && value.title?.startsWith("森之国 ·") && value.chunks.length > 0 ? value : null;
+    }, 60_000);
+    return { ...(await stableSlgFrame(runner, evidence.lod)), assets: await renderedMapAssets(runner),
+      shot: await runner.shot("slg-switch-back-senzhiguo") };
+  });
+
   await runner.step("关闭地图回设置面板", async () => {
     await runner.tapText("关闭", { pathIncludes: VIEW });
     await runner.waitFor("SlgMapView 卸载，SettingsView 保留", (walk) => {
@@ -346,7 +497,7 @@ export async function replaySlgMap(runner) {
   });
 
   await runner.step("重新进入地图，地表和装饰重新加载", async () => {
-    await runner.tapText("进入", { near: /^大地图\s+·\s+slg$/u });
+    await runner.tapSettingsEntry("map");
     const evidence = await runner.waitFor("重开后的地图与装饰层", (walk) => {
       const value = failed(readSlgMapEvidence(walk));
       return value?.loaded && value.terrainLayer && value.decorationLayer && value.decorationChunks.length ? value : null;

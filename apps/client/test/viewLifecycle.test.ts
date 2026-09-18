@@ -39,10 +39,13 @@ interface ViewRuntime {
   makeText(name?: string): any;
   makeProgress(name?: string): any;
   getInputEnabled(): boolean;
+  getInputProcessor(): any;
+  Button: any;
   /** ViewMgr 层容器的 Cocos 节点（cocos 页面的挂载父节点）。 */
   getLayerNode(layer: string): any;
   /** UIPackage.createObject 调用次数：cocos 分支必须一次都不碰 FGUI 组件工厂。 */
   fguiObjectsCreated(): number;
+  uniflexInstances: any[];
 }
 
 let installedRuntime: ViewRuntime | null = null;
@@ -50,12 +53,14 @@ let installedRuntime: ViewRuntime | null = null;
 interface Deferred<T> {
   promise: Promise<T>;
   resolve(value: T): void;
+  reject(reason: unknown): void;
 }
 
 function deferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((res) => { resolve = res; });
-  return { promise, resolve };
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+  return { promise, resolve, reject };
 }
 
 function addChild(root: any, child: any): any {
@@ -119,23 +124,71 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
   class FakeNode {
     name = "node";
     layer = 0;
-    active = true;
+    private _active = true;
+    get active(): boolean { return this._active; }
+    set active(value: boolean) {
+      this._active = value;
+      this.activateSubtree();
+    }
+    get activeInHierarchy(): boolean { return this.active && (this.parent?.activeInHierarchy ?? true); }
     isValid = true;
     parent: FakeNode | null = null;
     children: FakeNode[] = [];
+    inputPaused = false;
+    private readonly nodeListeners = new Map<string, FakeListener[]>();
+    on(type: string, callback: FakeListener["callback"], target?: unknown): void {
+      const listeners = this.nodeListeners.get(type) ?? [];
+      listeners.push({ callback, target });
+      this.nodeListeners.set(type, listeners);
+    }
+    off(type: string, callback: FakeListener["callback"], target?: unknown): void {
+      this.nodeListeners.set(type, (this.nodeListeners.get(type) ?? [])
+        .filter((listener) => listener.callback !== callback || listener.target !== target));
+    }
+    pauseSystemEvents(recursive = false): void {
+      if (this.inputPaused) return;
+      this.inputPaused = true;
+      if (recursive) for (const child of this.children) child.pauseSystemEvents(true);
+    }
+    resumeSystemEvents(recursive = false): void {
+      if (!this.inputPaused) return;
+      this.inputPaused = false;
+      if (recursive) for (const child of this.children) child.resumeSystemEvents(true);
+    }
 
     constructor(name = "node") { this.name = name; }
+
+    dispatchEvent(event: any): void {
+      for (const listener of this.nodeListeners.get(event.type) ?? [])
+        listener.callback.call(listener.target, event);
+      if (event.bubbles) this.parent?.dispatchEvent(event);
+    }
+
+    private activateSubtree(): void {
+      const activate = (node: FakeNode): void => {
+        node.inputPaused = !node.activeInHierarchy;
+        for (const child of node.children) activate(child);
+      };
+      activate(this);
+      for (const listener of this.nodeListeners.get("active-in-hierarchy-changed") ?? [])
+        listener.callback.call(listener.target, this);
+    }
 
     addChild(child: FakeNode): void {
       child.parent?.removeChild(child);
       this.children.push(child);
       child.parent = this;
+      for (const listener of this.nodeListeners.get("child-added") ?? [])
+        listener.callback.call(listener.target, child);
+      child.activateSubtree();
     }
 
     removeChild(child: FakeNode): void {
       const index = this.children.indexOf(child);
       if (index >= 0) this.children.splice(index, 1);
       if (child.parent === this) child.parent = null;
+      for (const listener of this.nodeListeners.get("child-removed") ?? [])
+        listener.callback.call(listener.target, child);
     }
 
     setSiblingIndex(index: number): void {
@@ -280,6 +333,7 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
       if (old < 0) return;
       this.childrenList.splice(old, 1);
       this.childrenList.splice(Math.max(0, Math.min(index, this.childrenList.length)), 0, child);
+      child.node.setSiblingIndex(index);
     }
 
     getChild<T extends FakeGObject = FakeGObject>(name: string): T {
@@ -330,7 +384,11 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
 
   class FakeGRoot extends FakeGComponent {
     static _inst: FakeGRoot | undefined;
-    readonly inputProcessor = { enabled: false };
+    readonly inputProcessor = {
+      enabled: false, touches: [] as any[],
+      getAllTouches() { return this.touches.filter((touch) => touch.touchId !== -1).map((touch) => touch.touchId); },
+      getInfo(id: number) { return this.touches.find((touch) => touch.touchId === id) ?? null; },
+    };
 
     static get inst(): FakeGRoot {
       if (!FakeGRoot._inst) FakeGRoot._inst = new FakeGRoot();
@@ -350,6 +408,13 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
 
   const packages = new Map<string, object>();
   let fguiObjectsCreated = 0;
+  class FakeFguiEvent {
+    static CLICK_ITEM = "clickItem";
+    static STATUS_CHANGED = "statusChanged";
+    static TOUCH_END = "fui_touch_end";
+    pos = { x: 0, y: 0 };
+    constructor(public type: string, public bubbles = false) {}
+  }
   const fakeFgui = {
     GObject: FakeGObject,
     GComponent: FakeGComponent,
@@ -363,7 +428,7 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
     GGroup: FakeGGroup,
     GProgressBar: FakeGProgressBar,
     RelationType: { Size: 1 },
-    Event: { CLICK_ITEM: "clickItem", STATUS_CHANGED: "statusChanged" },
+    Event: FakeFguiEvent,
     UIPackage: {
       getByName(name: string): object | undefined { return packages.get(name); },
       loadPackage(path: string, callback: (error: unknown, pkg?: object) => void): void {
@@ -376,9 +441,23 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
     },
   };
   const canvasNode = new FakeNode("Canvas");
+  const uniflexInstances: any[] = [];
+  class FakeUniFlexRuntime {
+    readonly ready = deferred<void>();
+    params: any;
+    disposals = 0;
+    constructor() { uniflexInstances.push(this); }
+    start(_definition: unknown, params: unknown): Promise<void> {
+      this.params = params;
+      return this.ready.promise;
+    }
+    dispose(): void { this.disposals++; }
+  }
   const cc = {
     Node: FakeNode,
     UITransform: FakeUITransform,
+    BlockInputEvents: class {},
+    Button: class { enabled = true; },
     Canvas: class { readonly node = canvasNode; },
     director: {
       getScene(): { getComponentInChildren(): { node: FakeNode } } {
@@ -398,6 +477,9 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
   moduleApi._load = function patchedLoad(request, parent, isMain): unknown {
     if (request === "cc") return cc;
     if (request === "db://fairygui-cc/fairygui.mjs") return fakeFgui;
+    if (request === "../kits/uniflex/api/cocos/index") return { UniFlexCocosRuntime: FakeUniFlexRuntime };
+    if (request === "../ui-uniflex/generated/ui") return { Confirm: {}, loadGameUI: async () => ({}) };
+    if (request === "../ui-uniflex/generated/resource-map") return { resourceMap: {} };
     return originalLoad.call(this, request, parent, isMain);
   };
   try {
@@ -412,6 +494,7 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
       import("../src/view/LoginNoticeView"),
       import("../src/view/pages"),
     ]);
+    await import("../src/view/ConfirmView");
     installedRuntime = {
       FguiView,
       CocosView,
@@ -455,8 +538,11 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
         return progress;
       },
       getInputEnabled: () => FakeGRoot.inst.inputProcessor.enabled,
+      getInputProcessor: () => FakeGRoot.inst.inputProcessor,
+      Button: cc.Button,
       getLayerNode: (layer: string) => FakeGRoot.inst.node.children.find((child) => child.name === `layer_${layer}`),
       fguiObjectsCreated: () => fguiObjectsCreated,
+      uniflexInstances,
       LoginView,
       HomeView,
       AreaListView,
@@ -695,8 +781,9 @@ test("ViewMgr kind:\"cocos\" 路由页面：跳过 FGUI 创建、挂层容器节
 
     const layerNode = runtime.getLayerNode("base");
     assert.ok(layerNode, "base 层容器必须已建立");
-    assert.equal(handle.view.root.parent, layerNode,
-      "cocos 页面必须挂在层容器的 .node 下（⛔ 不挂 GComponent）");
+    assert.equal(handle.view.root.parent.parent, layerNode,
+      "cocos 页面必须挂在独占 slot 下，避免与 FGUI 子节点混排");
+    assert.equal(handle.view.root.parent.name, `view_${name}`);
     const transform = handle.view.root.getComponent(runtime.UITransform);
     assert.equal(transform.width, 750, "全屏 cocos 页面必须按层容器尺寸铺满（宽）");
     assert.equal(transform.height, 1334, "全屏 cocos 页面必须按层容器尺寸铺满（高）");
@@ -715,7 +802,7 @@ test("ViewMgr kind:\"cocos\" 路由页面：跳过 FGUI 创建、挂层容器节
     reopened = await runtime.ViewMgr.open(name);
     assert.notEqual(reopened.view, first, "重开必须得到新实例（非 permanent）");
     assert.equal(created.length, 2);
-    assert.equal(reopened.view.root.parent, runtime.getLayerNode("base"));
+    assert.equal(reopened.view.root.parent.parent, runtime.getLayerNode("base"));
   } finally {
     handle?.close();
     reopened?.close();
@@ -771,7 +858,7 @@ test("ViewMgr cocos 路由页面：在途 close 在实例化前拦截；teardown
 
     afterTeardown = await runtime.ViewMgr.open(name);
     assert.notEqual(afterTeardown.view, view, "teardown 后必须能在新层容器上重开");
-    assert.equal(afterTeardown.view.root.parent, runtime.getLayerNode("base"));
+    assert.equal(afterTeardown.view.root.parent.parent, runtime.getLayerNode("base"));
     afterTeardown.close();
     assert.equal(closeCalls, 2);
   } finally {
@@ -985,6 +1072,144 @@ test("ViewMgr interactive lease stays enabled until the last view closes, then r
   }
 });
 
+test("ViewMgr mixed modal slots keep rendering and input order aligned", async () => {
+  const runtime = await loadViewRuntime();
+  class Fgui extends runtime.FguiView { protected bind(): void {} }
+  class Cocos extends runtime.CocosView {}
+  const names = ["__mix_base", "__mix_cocos", "__mix_fg", "__mix_lower"];
+  const fguiMeta = (name: string, layer: string) => ({
+    name, kind: "fgui", contract: { pkg: name, comp: "Root", required: [] },
+    layer, fullscreen: true, onlyOne: true, permanent: false, interactive: true, load: async () => Fgui,
+  });
+  runtime.VIEW_REGISTRY[names[0]] = fguiMeta(names[0], "base");
+  runtime.VIEW_REGISTRY[names[1]] = cocosRouteMeta(names[1], Cocos, {
+    layer: "top", interactive: true, onlyOne: true,
+  });
+  runtime.VIEW_REGISTRY[names[2]] = fguiMeta(names[2], "top");
+  runtime.VIEW_REGISTRY[names[3]] = fguiMeta(names[3], "popup");
+  const handles: any[] = [];
+  try {
+    runtime.ViewMgr.disposeViewRoot();
+    const base = await runtime.ViewMgr.open(names[0]); handles.push(base);
+    const cocos = await runtime.ViewMgr.open(names[1]); handles.push(cocos);
+    assert.equal(runtime.getInputEnabled(), false);
+    assert.equal(cocos.view.root.inputPaused, false);
+    assert.equal(base.view.root.parent.touchable, false);
+    const lower = await runtime.ViewMgr.open(names[3]); handles.push(lower);
+    assert.equal(runtime.getInputEnabled(), false, "later lower layer must not steal ownership");
+    const upper = await runtime.ViewMgr.open(names[2]); handles.push(upper);
+    assert.equal(runtime.getInputEnabled(), true);
+    assert.equal(cocos.view.root.inputPaused, true, "FGUI modal must also disable lower native buttons");
+    const layer = runtime.getLayerNode("top");
+    assert.deepEqual(layer.children.map((n: any) => n.name), [`view_${names[1]}`, `view_${names[2]}`]);
+    const lateNode = runtime.makeObject().node;
+    const lateButton = lateNode.addComponent(runtime.Button);
+    cocos.view.root.addChild(lateNode);
+    assert.equal(lateNode.inputPaused, true, "late prepared UI children must inherit blocked input");
+    assert.equal(lateButton.enabled, false);
+    const child = runtime.makeObject().node;
+    lateNode.addChild(child);
+    lateNode.active = false;
+    lateNode.active = true;
+    assert.equal(child.inputPaused, true, "reactivation must re-pause the entire activated subtree");
+    layer.active = false;
+    layer.active = true;
+    assert.equal(child.inputPaused, true, "ancestor activation must preserve modal blocking");
+    lateNode.inputPaused = false;
+    cocos.view.setInputEnabled(false);
+    assert.equal(lateNode.inputPaused, true, "an already paused root cannot short-circuit repair");
+    assert.equal(await runtime.ViewMgr.open(names[1]), cocos, "onlyOne should reuse handle");
+    assert.deepEqual(layer.children.map((n: any) => n.name), [`view_${names[2]}`, `view_${names[1]}`]);
+    assert.equal(runtime.getInputEnabled(), false);
+    assert.equal(lateNode.inputPaused, false);
+    assert.equal(lateButton.enabled, true);
+    lower.close();
+    assert.equal(runtime.getInputEnabled(), false, "out-of-order lower closure must keep top Cocos active");
+    cocos.close();
+    assert.equal(runtime.getInputEnabled(), true);
+    assert.equal(upper.view.root.parent.touchable, true);
+    upper.close();
+    assert.equal(runtime.getInputEnabled(), true, "base FGUI restores only after top closes");
+    base.close();
+    assert.equal(runtime.getInputEnabled(), false);
+  } finally {
+    for (const handle of handles) handle.close();
+    runtime.ViewMgr.disposeViewRoot();
+    for (const name of names) delete runtime.VIEW_REGISTRY[name];
+  }
+});
+
+test("FGUI modal ownership cancellation ends captures without clicks or stale re-entry", async () => {
+  const runtime = await loadViewRuntime();
+  runtime.FguiView.ensureRoot();
+  const ip = runtime.getInputProcessor();
+  const target = runtime.makeObject();
+  const monitor = runtime.makeObject();
+  let ends = 0;
+  let clicks = 0;
+  let down = true;
+  const touch = {
+    touchId: 0, button: 0, began: true, clickCancelled: false,
+    target, pos: { x: 123, y: 456 }, downTargets: [target], touchMonitors: [monitor],
+  };
+  ip.touches = [touch];
+  target.node.on("fui_touch_end", (event: any) => {
+    ends++;
+    down = false;
+    assert.equal(event.touchId, 0);
+    assert.deepEqual(event.pos, { x: 123, y: 456 });
+    runtime.FguiView.cancelPendingInput();
+  });
+  target.node.on("fui_click", () => { clicks++; });
+  monitor.node.on("fui_touch_end", () => { ends++; });
+  try {
+    runtime.FguiView.cancelPendingInput();
+    runtime.FguiView.setInputEnabled(false);
+    runtime.FguiView.setInputEnabled(true);
+    assert.equal(down, false);
+    assert.equal(ends, 2);
+    assert.equal(clicks, 0);
+    assert.equal(touch.began, false);
+    assert.equal(touch.clickCancelled, true);
+    assert.deepEqual(ip.getAllTouches(), []);
+    assert.deepEqual(touch.downTargets, []);
+    assert.deepEqual(touch.touchMonitors, []);
+  } finally {
+    ip.touches = [];
+    runtime.ViewMgr.disposeViewRoot();
+  }
+});
+
+test("ViewMgr multiple native modal instances and failed setup restore their predecessor", async () => {
+  const runtime = await loadViewRuntime();
+  class Cocos extends runtime.CocosView {}
+  const name = "__native_multi";
+  runtime.VIEW_REGISTRY[name] = cocosRouteMeta(name, Cocos, {
+    layer: "top", interactive: true, onlyOne: false,
+  });
+  const handles: any[] = [];
+  try {
+    runtime.ViewMgr.disposeViewRoot();
+    const first = await runtime.ViewMgr.open(name); handles.push(first);
+    const second = await runtime.ViewMgr.open(name); handles.push(second);
+    assert.notEqual(first.view, second.view);
+    assert.equal(first.view.root.inputPaused, true);
+    assert.equal(second.view.root.inputPaused, false);
+    await assert.rejects(runtime.ViewMgr.open(name, async () => { throw new Error("setup failed"); }), /setup failed/);
+    assert.equal(second.view.root.inputPaused, false);
+    assert.equal(runtime.getLayerNode("top").children.length, 2, "failed mount slot must be removed");
+    first.close();
+    assert.equal(second.view.root.inputPaused, false);
+    runtime.ViewMgr.disposeViewRoot();
+    assert.equal(second.signal.aborted, true);
+    assert.equal(runtime.getInputEnabled(), false);
+  } finally {
+    for (const handle of handles) handle.close();
+    runtime.ViewMgr.disposeViewRoot();
+    delete runtime.VIEW_REGISTRY[name];
+  }
+});
+
 test("concrete View setup is idempotent across repeated calls and keeps the latest callback", async () => {
   const runtime = await loadViewRuntime();
 
@@ -1039,6 +1264,70 @@ test("concrete View setup is idempotent across repeated calls and keeps the late
   home.dispose();
   areaView.dispose();
   noticeView.dispose();
+});
+
+test("official openConfirm uses separate UniFlex instances and settles through existing logic", async () => {
+  const runtime = await loadViewRuntime();
+  const pages = await import("../src/view/pages");
+  runtime.ViewMgr.disposeViewRoot();
+  const start = runtime.uniflexInstances.length;
+  const first = pages.openConfirm({ content: "first" });
+  const pending = [first];
+  try {
+    await waitForPageFlow(() => runtime.uniflexInstances.length === start + 1, "first Confirm runtime");
+    const a = runtime.uniflexInstances[start];
+    a.ready.resolve();
+    const second = pages.openConfirm({ content: "second", noText: null });
+    pending.push(second);
+    await waitForPageFlow(() => runtime.uniflexInstances.length === start + 2, "second Confirm runtime");
+    const b = runtime.uniflexInstances[start + 1];
+    b.ready.resolve();
+    assert.equal(a.params.logic.content, "first");
+    assert.equal(b.params.logic.hasCancel, false);
+    assert.equal(a.params.isActive(), false, "covered Confirm must reject stale UI actions");
+    assert.equal(b.params.isActive(), true);
+    b.params.logic.yes();
+    assert.equal(await second, true);
+    assert.equal(b.disposals, 1);
+    assert.equal(a.params.isActive(), true);
+    a.params.logic.no();
+    assert.equal(await first, false);
+    assert.equal(a.disposals, 1);
+    a.params.logic.yes();
+    assert.equal(a.disposals, 1);
+  } finally {
+    await cleanupConfirmFlows(runtime, start, pending);
+  }
+});
+
+test("official openConfirm rolls back rejected async setup and late completion after root disposal", async () => {
+  const runtime = await loadViewRuntime();
+  const pages = await import("../src/view/pages");
+  runtime.ViewMgr.disposeViewRoot();
+  const start = runtime.uniflexInstances.length;
+  const failed = pages.openConfirm({ content: "failure" });
+  const pending = [failed];
+  try {
+    await waitForPageFlow(() => runtime.uniflexInstances.length === start + 1, "failed Confirm runtime");
+    const a = runtime.uniflexInstances[start];
+    a.ready.reject(new Error("font preparation failed"));
+    assert.equal(await failed, false, "setup Promise must be awaited, otherwise caller hangs");
+    assert.equal(a.disposals, 1);
+    assert.equal(runtime.getLayerNode("top").children.length, 0);
+    const late = pages.openConfirm({ content: "late" });
+    pending.push(late);
+    await waitForPageFlow(() => runtime.uniflexInstances.length === start + 2, "late Confirm runtime");
+    const b = runtime.uniflexInstances[start + 1];
+    runtime.ViewMgr.disposeViewRoot();
+    assert.equal(await late, false);
+    assert.equal(b.params.isActive(), false);
+    b.ready.resolve();
+    await Promise.resolve();
+    assert.equal(b.disposals, 1);
+    assert.equal(runtime.getInputEnabled(), false);
+  } finally {
+    await cleanupConfirmFlows(runtime, start, pending);
+  }
 });
 
 test("concrete AreaList/LoginNotice closeLifecycle stops pending logic before late UI callbacks", async () => {
@@ -1412,11 +1701,22 @@ interface PageFlowHarnessOptions {
 }
 
 async function waitForPageFlow(predicate: () => boolean, message: string): Promise<void> {
-  for (let spin = 0; spin < 100; spin++) {
+  for (let spin = 0; spin < 400; spin++) {
     if (predicate()) return;
-    await Promise.resolve();
+    await new Promise<void>((resolve) => setTimeout(resolve, 5));
   }
   assert.fail(message);
+}
+
+async function cleanupConfirmFlows(runtime: ViewRuntime, start: number, pending: Promise<boolean>[]): Promise<void> {
+  let settled = false;
+  void Promise.allSettled(pending).then(() => { settled = true; });
+  await waitForPageFlow(() => {
+    // A cold dynamic import may enter ViewMgr after the first teardown.
+    runtime.ViewMgr.disposeViewRoot();
+    for (const instance of runtime.uniflexInstances.slice(start)) instance.ready.resolve();
+    return settled;
+  }, "Confirm flows must settle after teardown");
 }
 
 async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarnessOptions = {}) {

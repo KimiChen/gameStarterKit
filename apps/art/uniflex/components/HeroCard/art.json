@@ -1,0 +1,14 @@
+{
+  "key": "HeroCard",
+  "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroCard.tsx",
+  "export": {
+    "uniflexSha256": "6de0429e30ccd405f4b212851945935da25896091b39617f7bba5df32428cbb1",
+    "psdSha256": "b663ffbe16de6c00bf2024d47f16fcd2c568a5b41a2d377a953e902a5e0ad647",
+    "at": "2026-09-18T01:57:27.259Z"
+  },
+  "import": {
+    "psdSha256": "b663ffbe16de6c00bf2024d47f16fcd2c568a5b41a2d377a953e902a5e0ad647",
+    "at": "2026-09-18T02:01:21.123Z",
+    "target": "restored"
+  }
+}

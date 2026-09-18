@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 153,
+    "height": 45
+  },
+  "roots": [
+    "layer-8"
+  ],
+  "nodes": {
+    "layer-8": {
+      "id": "layer-8",
+      "name": "BackpackResourceCounter",
+      "kind": "group",
+      "frame": {
+        "x": 4,
+        "y": 4,
+        "width": 141,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:0",
+        "role": "component",
+        "definitionKey": "BackpackResourceCounter"
+      },
+      "children": [
+        "layer-9",
+        "layer-11",
+        "layer-13",
+        "layer-15"
+      ]
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 3,
+        "y": 1,
+        "width": 138,
+        "height": 32
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-10"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 138,
+        "height": 32
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:0/_:0",
+        "role": "node"
+      },
+      "asset": "asset-bb7c124d3fe5b8096e9625af2b7c56be57f34af555eb5875ff8589212c376007"
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 37,
+        "height": 31
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-12"
+      ]
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 37,
+        "height": 31
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:0/_:1",
+        "role": "node"
+      },
+      "asset": "asset-dd4ec1df78a41470c1e8d6860763cc6c933e5a785b16ad79ece8d2313bb4753e"
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 19,
+        "y": 13,
+        "width": 20,
+        "height": 21
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-14"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 20,
+        "height": 21
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:0/_:2",
+        "role": "node"
+      },
+      "asset": "asset-4ffda836b84f460fac01f9830bef89a7e6df6ee7a82b0dece09be4dc4d9424ba"
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "999.99k",
+      "kind": "text",
+      "frame": {
+        "x": 40,
+        "y": 4,
+        "width": 109,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "BackpackResourceCounter:Backpack/BackpackResourceCounter:0/_",
+        "role": "node"
+      },
+      "text": {
+        "value": "999.99k",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-bb7c124d3fe5b8096e9625af2b7c56be57f34af555eb5875ff8589212c376007": {
+      "path": "assets/bb7c124d3fe5b8096e9625af2b7c56be57f34af555eb5875ff8589212c376007.png",
+      "sha256": "bb7c124d3fe5b8096e9625af2b7c56be57f34af555eb5875ff8589212c376007",
+      "mime": "image/png",
+      "width": 138,
+      "height": 32
+    },
+    "asset-dd4ec1df78a41470c1e8d6860763cc6c933e5a785b16ad79ece8d2313bb4753e": {
+      "path": "assets/dd4ec1df78a41470c1e8d6860763cc6c933e5a785b16ad79ece8d2313bb4753e.png",
+      "sha256": "dd4ec1df78a41470c1e8d6860763cc6c933e5a785b16ad79ece8d2313bb4753e",
+      "mime": "image/png",
+      "width": 37,
+      "height": 31
+    },
+    "asset-4ffda836b84f460fac01f9830bef89a7e6df6ee7a82b0dece09be4dc4d9424ba": {
+      "path": "assets/4ffda836b84f460fac01f9830bef89a7e6df6ee7a82b0dece09be4dc4d9424ba.png",
+      "sha256": "4ffda836b84f460fac01f9830bef89a7e6df6ee7a82b0dece09be4dc4d9424ba",
+      "mime": "image/png",
+      "width": 20,
+      "height": 21
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

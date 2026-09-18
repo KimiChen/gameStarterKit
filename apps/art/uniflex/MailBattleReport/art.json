@@ -1,0 +1,21 @@
+{
+  "screen": "mail",
+  "componentName": "MailBattleReport",
+  "restoredName": "MailBattleReportRestored",
+  "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleReport.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "e5d9e89ea88ff365fc9f54c9a275325e417920c02c906efbe3143a41b45aee7a",
+    "psdSha256": "bc3f807dd4132c784915eaa5a8d640b00eeb1adff46d060593951de6562e6fe0",
+    "at": "2026-09-16T06:55:31.035Z"
+  },
+  "import": {
+    "psdSha256": "bc3f807dd4132c784915eaa5a8d640b00eeb1adff46d060593951de6562e6fe0",
+    "at": "2026-09-17T06:41:15.620Z",
+    "target": "restored"
+  }
+}

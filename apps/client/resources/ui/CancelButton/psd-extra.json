@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "780918951a6862b4c458c39b9c183f3dd102cce2676e77822eca74d50fd95c6e",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 255,
+    "height": 102,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"dd02117bae4331f1099099a421c2768f00ab069a6681fe8a92da370ffa8beacb\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJub2RlcyI6W3siaWQiOjIyLCJwYXJlbnQiOm51bGwsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiQ2FuY2VsQnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjoyNTUsImhlaWdodCI6MTAyfSwiaWRlbnRpdHkiOnsia2V5IjoiQ2FuY2VsQnV0dG9uOlBvcHVwRnJhbWUvUG9wdXBGcmFtZS9QYW5lbC9Qb3B1cEZyYW1lL0NvbnRlbnQvUHJvbXB0L0NvbnRlbnQvUHJvbXB0L0FjdGlvbnMvXy9DYW5jZWxCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkNhbmNlbEJ1dHRvbiJ9fSx7ImlkIjoyMywicGFyZW50IjoyMiwicGxhbklkIjoxLCJraW5kIjoidmlldyIsIm5hbWUiOiJBY3Rpb25CdXR0b24iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246UG9wdXBGcmFtZS9Qb3B1cEZyYW1lL1BhbmVsL1BvcHVwRnJhbWUvQ29udGVudC9Qcm9tcHQvQ29udGVudC9Qcm9tcHQvQWN0aW9ucy9fL0NhbmNlbEJ1dHRvbi9BY3Rpb25CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fSx7ImlkIjoyNCwicGFyZW50IjoyMywicGxhbklkIjoyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0JhY2tncm91bmQiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJyZXNvdXJjZUlkIjoidWkvYnV0dG9uL2NhbmNlbCIsImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpQb3B1cEZyYW1lL1BvcHVwRnJhbWUvUGFuZWwvUG9wdXBGcmFtZS9Db250ZW50L1Byb21wdC9Db250ZW50L1Byb21wdC9BY3Rpb25zL18vQ2FuY2VsQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vQmFja2dyb3VuZCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fSx7ImlkIjoyNSwicGFyZW50IjoyMywicGxhbklkIjozLCJraW5kIjoidGV4dCIsIm5hbWUiOiJBY3Rpb25CdXR0b24vTGFiZWwiLCJ2YWx1ZSI6IuWPlua2iCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6OCwieSI6NCwid2lkdGgiOjIzOSwiaGVpZ2h0Ijo4Nn0sImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpQb3B1cEZyYW1lL1BvcHVwRnJhbWUvUGFuZWwvUG9wdXBGcmFtZS9Db250ZW50L1Byb21wdC9Db250ZW50L1Byb21wdC9BY3Rpb25zL18vQ2FuY2VsQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vTGFiZWwiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MjYsInBhcmVudCI6MjMsInBsYW5JZCI6NCwia2luZCI6InZpZXciLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0ljb25Sb3ciLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246UG9wdXBGcmFtZS9Qb3B1cEZyYW1lL1BhbmVsL1BvcHVwRnJhbWUvQ29udGVudC9Qcm9tcHQvQ29udGVudC9Qcm9tcHQvQWN0aW9ucy9fL0NhbmNlbEJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3ciLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MjcsInBhcmVudCI6MjYsInBsYW5JZCI6NSwia2luZCI6ImltYWdlIiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9JY29uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL2J1dHRvbi9jYW5jZWwiLCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246UG9wdXBGcmFtZS9Qb3B1cEZyYW1lL1BhbmVsL1BvcHVwRnJhbWUvQ29udGVudC9Qcm9tcHQvQ29udGVudC9Qcm9tcHQvQWN0aW9ucy9fL0NhbmNlbEJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3cvQWN0aW9uQnV0dG9uL0ljb24iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MjgsInBhcmVudCI6MjYsInBsYW5JZCI6Niwia2luZCI6InRleHQiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0ljb25MYWJlbCIsInZhbHVlIjoi5Y+W5raIIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpQb3B1cEZyYW1lL1BvcHVwRnJhbWUvUGFuZWwvUG9wdXBGcmFtZS9Db250ZW50L1Byb21wdC9Db250ZW50L1Byb21wdC9BY3Rpb25zL18vQ2FuY2VsQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vSWNvblJvdy9BY3Rpb25CdXR0b24vSWNvbkxhYmVsIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19XSwiY29tcG9uZW50RGVjbGFyYXRpb25zIjp7InNjaGVtYVZlcnNpb24iOjEsImtpbmQiOiJ1bmlmbGV4LWNvbXBvbmVudC1kZWNsYXJhdGlvbnMiLCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJDYW5jZWxCdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2J1dHRvbi9DYW5jZWxCdXR0b24udHN4In0sImRlZmluaXRpb25zIjpbeyJrZXkiOiJBY3Rpb25CdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2J1dHRvbi9BY3Rpb25CdXR0b24udHN4In0seyJrZXkiOiJDYW5jZWxCdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2J1dHRvbi9DYW5jZWxCdXR0b24udHN4In1dLCJpbnN0YW5jZXMiOlt7ImtleSI6IkFjdGlvbkJ1dHRvbjpQb3B1cEZyYW1lL1BvcHVwRnJhbWUvUGFuZWwvUG9wdXBGcmFtZS9Db250ZW50L1Byb21wdC9Db250ZW50L1Byb21wdC9BY3Rpb25zL18vQ2FuY2VsQnV0dG9uL0FjdGlvbkJ1dHRvbiIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoyM30seyJrZXkiOiJDYW5jZWxCdXR0b246UG9wdXBGcmFtZS9Qb3B1cEZyYW1lL1BhbmVsL1BvcHVwRnJhbWUvQ29udGVudC9Qcm9tcHQvQ29udGVudC9Qcm9tcHQvQWN0aW9ucy9fL0NhbmNlbEJ1dHRvbiIsImRlZmluaXRpb25LZXkiOiJDYW5jZWxCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoyMn1dfSwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQ2FuY2VsQnV0dG9uIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9idXR0b24vQ2FuY2VsQnV0dG9uLnRzeCJ9fQ==\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    },
+    "linkedFiles": [
+      {
+        "id": "195a7234-83bd-2ff4-90ec-819667f5c218",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T02:10:27.452Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 52297,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../ActionButton/component.psd"
+        }
+      }
+    ]
+  },
+  "layers": {
+    "layer-19": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "CancelButton [ui:CancelButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton#component]",
+        "id": 19,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-20": {
+      "parent": "layer-19",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 102,
+        "right": 255,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton [ui:ActionButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton/ActionButton#component]",
+        "id": 20,
+        "placedLayer": {
+          "id": "195a7234-83bd-2ff4-90ec-819667f5c218",
+          "placed": "06dda850-74a2-bffe-46ed-7a3eae1fb64d",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            0,
+            0,
+            255,
+            0,
+            255,
+            102,
+            0,
+            102
+          ],
+          "width": 255,
+          "height": 102,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 102,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 255,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 85,
+                  "y": 0
+                },
+                {
+                  "x": 170,
+                  "y": 0
+                },
+                {
+                  "x": 255,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 34
+                },
+                {
+                  "x": 85,
+                  "y": 34
+                },
+                {
+                  "x": 170,
+                  "y": 34
+                },
+                {
+                  "x": 255,
+                  "y": 34
+                },
+                {
+                  "x": 0,
+                  "y": 68
+                },
+                {
+                  "x": 85,
+                  "y": 68
+                },
+                {
+                  "x": 170,
+                  "y": 68
+                },
+                {
+                  "x": 255,
+                  "y": 68
+                },
+                {
+                  "x": 0,
+                  "y": 102
+                },
+                {
+                  "x": 85,
+                  "y": 102
+                },
+                {
+                  "x": 170,
+                  "y": 102
+                },
+                {
+                  "x": 255,
+                  "y": 102
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

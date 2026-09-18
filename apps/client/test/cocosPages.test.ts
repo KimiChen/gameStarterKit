@@ -299,7 +299,8 @@ test("PromoHomeView：挂载后节点树可用，首屏唯一可点节点是设�
     assert.ok(rendered.includes(line), `首屏必须渲染出「${line}」`);
   }
 
-  const tappable = root.flatten().filter((node) => node.listeners.length > 0);
+  const tappable = root.flatten().filter((node) =>
+    node.listeners.some((listener) => listener.type === FakeNode.EventType.TOUCH_END));
   assert.equal(tappable.length, 1, "宣传首屏只应有设置按钮一个可点节点（⛔ 不摆玩法入口）");
   assert.equal(tappable[0].name, "btn-settings");
   tapAll(tappable);

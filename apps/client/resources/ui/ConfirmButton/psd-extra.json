@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "df3123f43f6742f50bdc0f680d3589422f1577a3cdc65694abeb2b5688d7f021",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 255,
+    "height": 102,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"940952e90b526bb5b60bbe5d8fbf9e2a0f7a59b96b8789700cd0a852b5f9cc03\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJub2RlcyI6W3siaWQiOjM0LCJwYXJlbnQiOm51bGwsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiQ29uZmlybUJ1dHRvbiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MjU1LCJoZWlnaHQiOjEwMn0sImlkZW50aXR5Ijp7ImtleSI6IkNvbmZpcm1CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbiIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiQ29uZmlybUJ1dHRvbiJ9fSx7ImlkIjozNSwicGFyZW50IjozNCwicGxhbklkIjoxLCJraW5kIjoidmlldyIsIm5hbWUiOiJBY3Rpb25CdXR0b24iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fSx7ImlkIjozNiwicGFyZW50IjozNSwicGxhbklkIjoyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0JhY2tncm91bmQiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJyZXNvdXJjZUlkIjoidWkvYnV0dG9uL2NvbmZpcm0iLCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0JhY2tncm91bmQiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MzcsInBhcmVudCI6MzUsInBsYW5JZCI6Mywia2luZCI6InRleHQiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0xhYmVsIiwidmFsdWUiOiIxMDAwIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vTGFiZWwiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MzgsInBhcmVudCI6MzUsInBsYW5JZCI6NCwia2luZCI6InZpZXciLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0ljb25Sb3ciLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6OCwieSI6NCwid2lkdGgiOjIzOSwiaGVpZ2h0Ijo4Nn0sImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vSWNvblJvdyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fSx7ImlkIjozOSwicGFyZW50IjozOCwicGxhbklkIjo1LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0ljb24iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjcuNSwieSI6MTYsIndpZHRoIjo2NCwiaGVpZ2h0Ijo1NH0sInJlc291cmNlSWQiOiJ1aS9zaG9wL2dldGl0ZW0tcGF5LWdlbSIsImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vSWNvblJvdy9BY3Rpb25CdXR0b24vSWNvbiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fSx7ImlkIjo0MCwicGFyZW50IjozOCwicGxhbklkIjo2LCJraW5kIjoidGV4dCIsIm5hbWUiOiJBY3Rpb25CdXR0b24vSWNvbkxhYmVsIiwidmFsdWUiOiIxMDAwIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoxMDcuNSwieSI6MCwid2lkdGgiOjEwNCwiaGVpZ2h0Ijo4Nn0sImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vSWNvblJvdy9BY3Rpb25CdXR0b24vSWNvbkxhYmVsIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19XSwiY29tcG9uZW50RGVjbGFyYXRpb25zIjp7InNjaGVtYVZlcnNpb24iOjEsImtpbmQiOiJ1bmlmbGV4LWNvbXBvbmVudC1kZWNsYXJhdGlvbnMiLCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJDb25maXJtQnV0dG9uIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9idXR0b24vQ29uZmlybUJ1dHRvbi50c3gifSwiZGVmaW5pdGlvbnMiOlt7ImtleSI6IkFjdGlvbkJ1dHRvbiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvYnV0dG9uL0FjdGlvbkJ1dHRvbi50c3gifSx7ImtleSI6IkNvbmZpcm1CdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2J1dHRvbi9Db25maXJtQnV0dG9uLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24iLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6MzV9LHsia2V5IjoiQ29uZmlybUJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvXy9Db25maXJtQnV0dG9uIiwiZGVmaW5pdGlvbktleSI6IkNvbmZpcm1CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjozNH1dfSwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQ29uZmlybUJ1dHRvbiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvYnV0dG9uL0NvbmZpcm1CdXR0b24udHN4In19\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    },
+    "linkedFiles": [
+      {
+        "id": "195a7234-83bd-2ff4-90ec-819667f5c218",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T01:57:19.100Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 71329,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../ActionButton/component.psd"
+        }
+      }
+    ]
+  },
+  "layers": {
+    "layer-44": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ConfirmButton [ui:ConfirmButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton#component]",
+        "id": 44,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-45": {
+      "parent": "layer-44",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 102,
+        "right": 255,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton [ui:ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton#component]",
+        "id": 45,
+        "placedLayer": {
+          "id": "195a7234-83bd-2ff4-90ec-819667f5c218",
+          "placed": "2b094878-c22f-0900-eaa4-b2fc29b7e3b1",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            0,
+            0,
+            255,
+            0,
+            255,
+            102,
+            0,
+            102
+          ],
+          "width": 255,
+          "height": 102,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 102,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 255,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 85,
+                  "y": 0
+                },
+                {
+                  "x": 170,
+                  "y": 0
+                },
+                {
+                  "x": 255,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 34
+                },
+                {
+                  "x": 85,
+                  "y": 34
+                },
+                {
+                  "x": 170,
+                  "y": 34
+                },
+                {
+                  "x": 255,
+                  "y": 34
+                },
+                {
+                  "x": 0,
+                  "y": 68
+                },
+                {
+                  "x": 85,
+                  "y": 68
+                },
+                {
+                  "x": 170,
+                  "y": 68
+                },
+                {
+                  "x": 255,
+                  "y": 68
+                },
+                {
+                  "x": 0,
+                  "y": 102
+                },
+                {
+                  "x": 85,
+                  "y": 102
+                },
+                {
+                  "x": 170,
+                  "y": 102
+                },
+                {
+                  "x": 255,
+                  "y": 102
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

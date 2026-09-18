@@ -1,0 +1,767 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "b663ffbe16de6c00bf2024d47f16fcd2c568a5b41a2d377a953e902a5e0ad647",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 170,
+    "height": 248,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"7adee5860fe61b6dc4ae587f0b8fa4fbe1c7acab29e876e5cb15fc76b4aa81f7\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjE3MCwiaGVpZ2h0IjoyNDh9LCJub2RlcyI6W3siaWQiOjQ1LCJwYXJlbnQiOm51bGwsInBsYW5JZCI6NCwia2luZCI6InZpZXciLCJuYW1lIjoiSGVyb0NhcmQiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjE3MCwiaGVpZ2h0IjoyNDh9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJ2aXJ0dWFsS2V5IjoiYzEiLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo0NiwicGFyZW50Ijo0NSwicGxhbklkIjo1LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL2hlcm8vZnJhbWUtcHVycGxlIiwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo0NywicGFyZW50Ijo0NSwicGxhbklkIjo2LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL2hlcm8vZnJhbWUtZ3JlZW4iLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIn19LHsiaWQiOjQ4LCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjcsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjE3MCwiaGVpZ2h0IjoyNDh9LCJyZXNvdXJjZUlkIjoidWkvaGVyby9mcmFtZS1yZWQiLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIn19LHsiaWQiOjQ5LCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjgsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJyZXNvdXJjZUlkIjoidWkvaGVyby9mcmFtZS15ZWxsb3ciLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIn19LHsiaWQiOjUwLCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjksImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJyZXNvdXJjZUlkIjoidWkvaGVyby9mcmFtZS1ibHVlIiwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fOjQiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo1MSwicGFyZW50Ijo0NSwicGxhbklkIjoxMCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo0LCJ5Ijo0LCJ3aWR0aCI6MTYyLCJoZWlnaHQiOjE4MH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL3BvcnRyYWl0IiwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fOjUiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo1MiwicGFyZW50Ijo0NSwicGxhbklkIjoxMSwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL2NsYXNzLXNoaWVsZCIsImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9DYXJkOkhlcm9TY3JlZW4vSGVyb0xpc3RQYW5lbC9fL0hlcm9DYXJkOjAvXzo2Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NTMsInBhcmVudCI6NDUsInBsYW5JZCI6MTIsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJyZXNvdXJjZUlkIjoidWkvaGVyby9jbGFzcy1zd29yZCIsImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9DYXJkOkhlcm9TY3JlZW4vSGVyb0xpc3RQYW5lbC9fL0hlcm9DYXJkOjAvXzo3Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NTQsInBhcmVudCI6NDUsInBsYW5JZCI6MTMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NiwieSI6Niwid2lkdGgiOjM0LCJoZWlnaHQiOjQyfSwicmVzb3VyY2VJZCI6InVpL2hlcm8vY2xhc3MtYW5jaG9yIiwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fOjgiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo1NSwicGFyZW50Ijo0NSwicGxhbklkIjoxNCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL3Vub3duZWQiLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186OSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIn19LHsiaWQiOjU2LCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjE1LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL2hlcm8vcHJvZ3Jlc3MtdHJhY2siLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MTAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo1NywicGFyZW50Ijo0NSwicGxhbklkIjoxNiwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL3Byb2dyZXNzLWZpbGwiLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MTEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo1OCwicGFyZW50Ijo0NSwicGxhbklkIjoxNywia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiI5LzEwIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9DYXJkOkhlcm9TY3JlZW4vSGVyb0xpc3RQYW5lbC9fL0hlcm9DYXJkOjAvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NTksInBhcmVudCI6NDUsInBsYW5JZCI6MTgsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiTHYuMjAiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjEwLCJ5IjoxNjgsIndpZHRoIjoxMTAsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIn19LHsiaWQiOjYwLCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjE5LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjEyNiwieSI6MTY3LCJ3aWR0aCI6MzksImhlaWdodCI6Mzh9LCJyZXNvdXJjZUlkIjoidWkvaGVyby91cGdyYWRlIiwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fOjEyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NjEsInBhcmVudCI6NDUsInBsYW5JZCI6MjAsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6OCwieSI6MjA1LCJ3aWR0aCI6MzAsImhlaWdodCI6Mjh9LCJyZXNvdXJjZUlkIjoidWkvaGVyby9zdGFyLWZpbGxlZCIsImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9DYXJkOkhlcm9TY3JlZW4vSGVyb0xpc3RQYW5lbC9fL0hlcm9DYXJkOjAvXzoxMyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIn19LHsiaWQiOjYyLCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjIxLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL2hlcm8vc3Rhci1lbXB0eSIsImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9DYXJkOkhlcm9TY3JlZW4vSGVyb0xpc3RQYW5lbC9fL0hlcm9DYXJkOjAvXzoxNCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIn19LHsiaWQiOjYzLCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjIyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL2hlcm8vc3Rhci1maWxsZWQiLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MTUiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo2NCwicGFyZW50Ijo0NSwicGxhbklkIjoyMywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjozOSwieSI6MjA1LCJ3aWR0aCI6MzAsImhlaWdodCI6Mjh9LCJyZXNvdXJjZUlkIjoidWkvaGVyby9zdGFyLWVtcHR5IiwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fOjE2Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NjUsInBhcmVudCI6NDUsInBsYW5JZCI6MjQsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJyZXNvdXJjZUlkIjoidWkvaGVyby9zdGFyLWZpbGxlZCIsImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9DYXJkOkhlcm9TY3JlZW4vSGVyb0xpc3RQYW5lbC9fL0hlcm9DYXJkOjAvXzoxNyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIn19LHsiaWQiOjY2LCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjI1LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjcxLCJ5IjoyMDUsIndpZHRoIjozMCwiaGVpZ2h0IjoyOH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL3N0YXItZW1wdHkiLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MTgiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo2NywicGFyZW50Ijo0NSwicGxhbklkIjoyNiwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL3N0YXItZmlsbGVkIiwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fOjE5Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NjgsInBhcmVudCI6NDUsInBsYW5JZCI6MjcsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTAyLCJ5IjoyMDUsIndpZHRoIjozMCwiaGVpZ2h0IjoyOH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL3N0YXItZW1wdHkiLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo2OSwicGFyZW50Ijo0NSwicGxhbklkIjoyOCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL3N0YXItZmlsbGVkIiwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fOjIxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NzAsInBhcmVudCI6NDUsInBsYW5JZCI6MjksImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTMzLCJ5IjoyMDUsIndpZHRoIjozMCwiaGVpZ2h0IjoyOH0sInJlc291cmNlSWQiOiJ1aS9oZXJvL3N0YXItZW1wdHkiLCJpZGVudGl0eSI6eyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowL186MjIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fSx7ImlkIjo3MSwicGFyZW50Ijo0NSwicGxhbklkIjozMCwia2luZCI6InZpZXciLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjEyNywieSI6MCwid2lkdGgiOjM1LCJoZWlnaHQiOjQ0fSwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NzIsInBhcmVudCI6NzEsInBsYW5JZCI6MzEsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjM1LCJoZWlnaHQiOjQ0fSwicmVzb3VyY2VJZCI6InVpL2hlcm8vdGVhbS1zaG9ydCIsImlkZW50aXR5Ijp7ImtleSI6Ikhlcm9DYXJkOkhlcm9TY3JlZW4vSGVyb0xpc3RQYW5lbC9fL0hlcm9DYXJkOjAvXy9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiSGVyb0NhcmQifX0seyJpZCI6NzMsInBhcmVudCI6NzEsInBsYW5JZCI6MzIsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiMSIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjM1LCJoZWlnaHQiOjMyfSwiaWRlbnRpdHkiOnsia2V5IjoiSGVyb0NhcmQ6SGVyb1NjcmVlbi9IZXJvTGlzdFBhbmVsL18vSGVyb0NhcmQ6MC9fL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJIZXJvQ2FyZCJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiSGVyb0NhcmQiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9IZXJvU2NyZWVuL0hlcm9DYXJkLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiSGVyb0NhcmQiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9IZXJvU2NyZWVuL0hlcm9DYXJkLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJIZXJvQ2FyZDpIZXJvU2NyZWVuL0hlcm9MaXN0UGFuZWwvXy9IZXJvQ2FyZDowIiwiZGVmaW5pdGlvbktleSI6Ikhlcm9DYXJkIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6NDV9XX0sImNvbXBvbmVudERvY3VtZW50Ijp7ImtleSI6Ikhlcm9DYXJkIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvcGFnZXMvSGVyb1NjcmVlbi9IZXJvQ2FyZC50c3gifX0=\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-13": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "HeroCard [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0#component]",
+        "id": 13,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-14": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 14,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-15": {
+      "parent": "layer-14",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 248,
+        "right": 170,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:2#node]",
+        "id": 15,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-16": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 16,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-17": {
+      "parent": "layer-16",
+      "properties": {
+        "top": 4,
+        "left": 4,
+        "bottom": 184,
+        "right": 166,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:5#node]",
+        "id": 17,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-18": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 18,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-19": {
+      "parent": "layer-18",
+      "properties": {
+        "top": 6,
+        "left": 6,
+        "bottom": 48,
+        "right": 40,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:8#node]",
+        "id": 19,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-20": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 168,
+        "left": 10,
+        "bottom": 200,
+        "right": 120,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Lv.20 [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:1#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            118,
+            194.36
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "Lv.20",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "right",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 28,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 28,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0
+              }
+            }
+          ]
+        },
+        "id": 20,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-21": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 21,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-22": {
+      "parent": "layer-21",
+      "properties": {
+        "top": 167,
+        "left": 126,
+        "bottom": 205,
+        "right": 165,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:12#node]",
+        "id": 22,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-23": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 23,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-24": {
+      "parent": "layer-23",
+      "properties": {
+        "top": 205,
+        "left": 8,
+        "bottom": 233,
+        "right": 38,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:13#node]",
+        "id": 24,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-25": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 25,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-26": {
+      "parent": "layer-25",
+      "properties": {
+        "top": 205,
+        "left": 39,
+        "bottom": 233,
+        "right": 69,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:16#node]",
+        "id": 26,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-27": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 27,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-28": {
+      "parent": "layer-27",
+      "properties": {
+        "top": 205,
+        "left": 71,
+        "bottom": 233,
+        "right": 101,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:18#node]",
+        "id": 28,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-29": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 29,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-30": {
+      "parent": "layer-29",
+      "properties": {
+        "top": 205,
+        "left": 102,
+        "bottom": 233,
+        "right": 132,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:20#node]",
+        "id": 30,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-31": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 31,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-32": {
+      "parent": "layer-31",
+      "properties": {
+        "top": 205,
+        "left": 133,
+        "bottom": 233,
+        "right": 163,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_:22#node]",
+        "id": 32,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-33": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_#node]",
+        "id": 33,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-34": {
+      "parent": "layer-33",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 34,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-35": {
+      "parent": "layer-34",
+      "properties": {
+        "top": 0,
+        "left": 127,
+        "bottom": 44,
+        "right": 162,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_/_#node]",
+        "id": 35,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-36": {
+      "parent": "layer-33",
+      "properties": {
+        "top": 0,
+        "left": 127,
+        "bottom": 32,
+        "right": 162,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "1 [ui:HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0/_/_#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            144.5,
+            24.139999999999986
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "1",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 22,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 22,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 128,
+                "g": 98,
+                "b": 65
+              }
+            }
+          ]
+        },
+        "id": 36,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

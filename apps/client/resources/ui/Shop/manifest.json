@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/shop/getitem-icon",
+      "kind": "image",
+      "file": "assets/shop_getitem_icon.png",
+      "width": 129,
+      "height": 107,
+      "sha256": "cd5896c45e8fda74b217d5a6bf78f9e2f8ad8866afd01a80edad81b82028ea0f"
+    },
+    {
+      "id": "ui/shop/getitem-pay-gem",
+      "kind": "image",
+      "file": "assets/shop_getitem_pay_gem.png",
+      "width": 64,
+      "height": 54,
+      "sha256": "3e6c16ef2bbe57798dff4f78a08a282cbcaaba09c7a13a8bf896283e19dd0172"
+    },
+    {
+      "id": "ui/shop/getitem-max",
+      "kind": "image",
+      "file": "assets/shop_getitem_max.png",
+      "width": 76,
+      "height": 85,
+      "sha256": "5337df1fa2e5f97c873710a403a4b7a18e3465315be72f506a9c381734f259f3"
+    },
+    {
+      "id": "ui/shop/getitem-thumb",
+      "kind": "image",
+      "file": "assets/shop_getitem_thumb.png",
+      "width": 28,
+      "height": 30,
+      "sha256": "91828f1cfc197086034b43ba396228ccb1e89fa40ef1231894734bb1cd78b90c",
+      "nineSlice": [12, 13, 12, 13]
+    },
+    {
+      "id": "ui/shop/awning",
+      "kind": "image",
+      "file": "assets/shop_awning.png",
+      "width": 750,
+      "height": 128,
+      "sha256": "d4125ff9a1f79708525c9465e3fa352f60ebbf7553ab2a29ac49543740ea8060"
+    },
+    {
+      "id": "ui/shop/panel",
+      "kind": "image",
+      "file": "assets/shop_panel.png",
+      "width": 44,
+      "height": 44,
+      "sha256": "ddec5411062ac470edacf1b65a036b32a56336a311be3e2fcde8feefa9381d8e",
+      "nineSlice": [20, 20, 20, 20]
+    },
+    {
+      "id": "ui/shop/card-bg",
+      "kind": "image",
+      "file": "assets/shop_card_bg.png",
+      "width": 223,
+      "height": 302,
+      "sha256": "7f2f5f5a0056cb7ffb1089b8be86c7f7b3ec313b8f0f80631d77c6a9d963ef39"
+    },
+    {
+      "id": "ui/shop/card-buybar",
+      "kind": "image",
+      "file": "assets/shop_card_buybar.png",
+      "width": 48,
+      "height": 63,
+      "sha256": "9f2dac5d33d544faf48888022006f924b6cf69844dc0cc84a79678a76fb700b8",
+      "nineSlice": [22, 0, 22, 0]
+    },
+    {
+      "id": "ui/shop/discount",
+      "kind": "image",
+      "file": "assets/shop_discount.png",
+      "width": 64,
+      "height": 66,
+      "sha256": "d137d23e61e81130f94e44be6d8d8e8e8c4359b54913d7efe1f4d5e0d707d6eb"
+    },
+    {
+      "id": "ui/shop/clock",
+      "kind": "image",
+      "file": "assets/shop_clock.png",
+      "width": 35,
+      "height": 42,
+      "sha256": "0451edd0dbcf527250a58fa6bf2db772f789c949ff9e76997caa36ca7bc44f96"
+    },
+    {
+      "id": "ui/shop/res-plus",
+      "kind": "image",
+      "file": "assets/shop_res_plus.png",
+      "width": 20,
+      "height": 21,
+      "sha256": "4832149f8ff21586845fc9694db624ab82622c8a68d1291cc1b43b9dab54fbdb"
+    },
+    {
+      "id": "ui/shop/price-medal",
+      "kind": "image",
+      "file": "assets/shop_price_medal.png",
+      "width": 44,
+      "height": 35,
+      "sha256": "fb17733f462e54fbb32204b103b576addad0733ab5023fd60a7fb47089cf9352"
+    },
+    {
+      "id": "ui/shop/res-medal",
+      "kind": "image",
+      "file": "assets/shop_res_medal.png",
+      "width": 40,
+      "height": 31,
+      "sha256": "5234d2724126be2bc00b37c80640b26b2795717963a2b93de3a15fb4d9b2f50d"
+    },
+    {
+      "id": "ui/shop/item-egg",
+      "kind": "image",
+      "file": "assets/shop_item_egg.png",
+      "width": 149,
+      "height": 150,
+      "sha256": "6854c6133b8f5a7d6d89acceaef97f6efc2b1ad8ece5ab917d0b6209cd4a15f6"
+    },
+    {
+      "id": "ui/shop/item-meat",
+      "kind": "image",
+      "file": "assets/shop_item_meat.png",
+      "width": 144,
+      "height": 128,
+      "sha256": "a42098e2687da028a654fd598ed7e5f469fe62aec220681185b43b694016170b"
+    },
+    {
+      "id": "ui/shop/item-book",
+      "kind": "image",
+      "file": "assets/shop_item_book.png",
+      "width": 102,
+      "height": 112,
+      "sha256": "01b2cb38d6573cfd8212340702e593fbe6be8a4f85c6b042ae98c2e0c139063f"
+    },
+    {
+      "id": "ui/shop/item-scroll",
+      "kind": "image",
+      "file": "assets/shop_item_scroll.png",
+      "width": 119,
+      "height": 127,
+      "sha256": "c04693bbd0318b354819412603c7c53ce26da12897e58887215e7da19477603f"
+    }
+  ]
+}

@@ -1,0 +1,2370 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "0318379994c8fe6f5735aa5d2c4b7e5fa459aa7af411a157695e706af7984e25",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 750,
+    "height": 1624,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"da8e381d5ca6245d7db05f33f3a9bc2cf7b15ad4423fdee2d6fc6528f3a70e3a\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fSwibm9kZXMiOlt7ImlkIjoyLCJwYXJlbnQiOm51bGwsInBsYW5JZCI6Miwia2luZCI6InZpZXciLCJuYW1lIjoiQWxsaWFuY2VBbm5vdW5jZSIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzUwLCJoZWlnaHQiOjE2MjR9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWw6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZSIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjMsInBhcmVudCI6MiwicGxhbklkIjozLCJraW5kIjoidmlldyIsIm5hbWUiOiJBbGxpYW5jZUFubm91bmNlL01hc2siLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9NYXNrIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjQsInBhcmVudCI6MiwicGxhbklkIjo0LCJraW5kIjoidmlldyIsIm5hbWUiOiJBbGxpYW5jZUFubm91bmNlL1dpbmRvdyIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyMSwieSI6MzE4LCJ3aWR0aCI6NzA4LCJoZWlnaHQiOjkxMn0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjUsInBhcmVudCI6NCwicGxhbklkIjo1LCJraW5kIjoidmlldyIsIm5hbWUiOiJQb3B1cEJhY2tncm91bmQiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjcwOCwiaGVpZ2h0Ijo5MTJ9LCJpZGVudGl0eSI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9Qb3B1cEJhY2tncm91bmQiLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo2LCJwYXJlbnQiOjUsInBsYW5JZCI6Niwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzA4LCJoZWlnaHQiOjkxMn0sInJlc291cmNlSWQiOiJ1aS9wb3B1cC9wcm9tcHQiLCJpZGVudGl0eSI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9Qb3B1cEJhY2tncm91bmQvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19LHsiaWQiOjcsInBhcmVudCI6NSwicGxhbklkIjo3LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL3BvcHVwL3NtYWxsIiwiaWRlbnRpdHkiOnsia2V5IjoiUG9wdXBCYWNrZ3JvdW5kOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvUG9wdXBCYWNrZ3JvdW5kL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo4LCJwYXJlbnQiOjUsInBsYW5JZCI6OCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9zZXR0aW5ncy9wYW5lbCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L1BvcHVwQmFja2dyb3VuZC9fOjIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJQb3B1cEJhY2tncm91bmQifX0seyJpZCI6OSwicGFyZW50Ijo1LCJwbGFuSWQiOjksImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJyZXNvdXJjZUlkIjoidWkvY2hhcmFjdGVyL3dpbmRvdyIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L1BvcHVwQmFja2dyb3VuZC9fOjMiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJQb3B1cEJhY2tncm91bmQifX0seyJpZCI6MTAsInBhcmVudCI6NCwicGxhbklkIjoxMCwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiLogZTnm5/lhazlkYoiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjkwLCJ5IjoxOCwid2lkdGgiOjUyOCwiaGVpZ2h0Ijo1OH0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbCJ9fSx7ImlkIjoxMSwicGFyZW50Ijo0LCJwbGFuSWQiOjExLCJraW5kIjoidmlldyIsIm5hbWUiOiJDbG9zZUJ1dHRvbiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo2MjEsInkiOjYsIndpZHRoIjo3MiwiaGVpZ2h0Ijo3Mn0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IkNsb3NlQnV0dG9uOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvQ2xvc2VCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkNsb3NlQnV0dG9uIn19LHsiaWQiOjEyLCJwYXJlbnQiOjExLCJwbGFuSWQiOjEyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjExLCJ5IjoxMSwid2lkdGgiOjUwLCJoZWlnaHQiOjUwfSwicmVzb3VyY2VJZCI6InVpL3BvcHVwL2Nsb3NlIiwiaWRlbnRpdHkiOnsia2V5IjoiQ2xvc2VCdXR0b246QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9DbG9zZUJ1dHRvbi9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQ2xvc2VCdXR0b24ifX0seyJpZCI6MTMsInBhcmVudCI6NCwicGxhbklkIjoxMywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoxMiwieSI6OTksIndpZHRoIjo2ODMsImhlaWdodCI6Njc0fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2Fubm91bmNlLXBhbmVsIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbCJ9fSx7ImlkIjoxNCwicGFyZW50Ijo0LCJwbGFuSWQiOjE0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6Iuasoui/juWKoOWFpeiBlOebn37liqrlipvlj5HlsZXogZTnm5/vvIzorqnmiJHku6zlj5jlvpfmm7TlvLrlpKfvvIEiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI4LCJ5IjoxMjUsIndpZHRoIjo2NjAsImhlaWdodCI6MzR9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWw6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWwifX0seyJpZCI6MTUsInBhcmVudCI6NCwicGxhbklkIjoxNSwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiItLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjgsInkiOjE1OSwid2lkdGgiOjY2MCwiaGVpZ2h0IjozNH0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbCJ9fSx7ImlkIjoxNiwicGFyZW50Ijo0LCJwbGFuSWQiOjE2LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IjEuIOWNh+e6p+enkeaKgO+8muavj+aXpeaNkOeMruiBlOebn+enkeaKgO+8jOWPr+S9v+iBlOebn+W/q+mAn+WPkeWxleOAgiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjgsInkiOjE5Mywid2lkdGgiOjY2MCwiaGVpZ2h0IjozNH0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L186MyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbCJ9fSx7ImlkIjoxNywicGFyZW50Ijo0LCJwbGFuSWQiOjE3LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IjEuIOWNh+e6p+enkeaKgCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjgsInkiOjE5Mywid2lkdGgiOjE4MCwiaGVpZ2h0IjozNH0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L186NCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbCJ9fSx7ImlkIjoxOCwicGFyZW50Ijo0LCJwbGFuSWQiOjE4LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IjIuIOmbhue7k+eroOmxvOeOi++8muWPkei1t+mbhue7k+eroOmxvOeOi+WPr+iOt+W+l+S4sOWOmuWlluWKse+8jOW/q+mAn+aPkOmrmOaImFxu5Yqb44CCIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyOCwieSI6MjI3LCJ3aWR0aCI6NjYwLCJoZWlnaHQiOjY4fSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXzo1Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjE5LCJwYXJlbnQiOjQsInBsYW5JZCI6MTksImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiMi4g6ZuG57uT56ug6bG8546LIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyOCwieSI6MjI3LCJ3aWR0aCI6MjAwLCJoZWlnaHQiOjM0fSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXzo2Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjIwLCJwYXJlbnQiOjQsInBsYW5JZCI6MjAsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiMy7lj4LkuI7pm4bnu5PvvJrlnKjmiJjkuonnlYzpnaLkuK3miZPlvIDoh6rliqjpm4bnu5PvvIzmr4/lpKnmnIkgNTAg5qyh5Y+C5LiO5aWW5Yqx44CCIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyOCwieSI6Mjk1LCJ3aWR0aCI6NjYwLCJoZWlnaHQiOjY4fSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXzo3Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjIxLCJwYXJlbnQiOjQsInBsYW5JZCI6MjEsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiMy7lj4LkuI7pm4bnu5MiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI4LCJ5IjoyOTUsIndpZHRoIjoxODAsImhlaWdodCI6MzR9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWw6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9fOjgiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWwifX0seyJpZCI6MjIsInBhcmVudCI6NCwicGxhbklkIjoyMiwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiI0LiDmianlpKfpooblnLDvvJrlnKjpooblnLDnlYzpnaLlj6/ku6Xlu7rpgKDogZTnm5/loKHlnpLjgIHogZTnm5/ml5fluJzmianlpKfpooblnLDojIPlm7TjgIIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI4LCJ5IjozNjMsIndpZHRoIjo2NjAsImhlaWdodCI6Njh9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWw6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9fOjkiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWwifX0seyJpZCI6MjMsInBhcmVudCI6NCwicGxhbklkIjoyMywia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiI0LiDmianlpKfpooblnLAiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI4LCJ5IjozNjMsIndpZHRoIjoxODAsImhlaWdodCI6MzR9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWw6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9fOjEwIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjI0LCJwYXJlbnQiOjQsInBsYW5JZCI6MjQsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiNS7ogZTnm5/lsZ7mgKfvvJrljaDpoobmuK/lj6PjgIHkuonlpLropoHloZ7vvIzlhajogZTnm5/lj6/ojrflvpflpKfph4/lsZ7mgKfliqDmiJDjgIIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI4LCJ5Ijo0MzEsIndpZHRoIjo2NjAsImhlaWdodCI6Njh9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWw6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9fOjExIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjI1LCJwYXJlbnQiOjQsInBsYW5JZCI6MjUsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiNS7ogZTnm5/lsZ7mgKciLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI4LCJ5Ijo0MzEsIndpZHRoIjoxODAsImhlaWdodCI6MzR9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWw6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9fOjEyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIn19LHsiaWQiOjI2LCJwYXJlbnQiOjQsInBsYW5JZCI6MjYsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyOCwieSI6NDk5LCJ3aWR0aCI6NjYwLCJoZWlnaHQiOjM0fSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXzoxMyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbCJ9fSx7ImlkIjoyNywicGFyZW50Ijo0LCJwbGFuSWQiOjI3LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuazqO+8mlI0IOaIkOWRmOWPr+S7peWcqOmihuWcsOeVjOmdou+8jOmAieS4reiBlOebn+W7uuetkeW8gOWQr+S/ruW7uu+8jOaJgOacieiBlOebn+aIkOWRmOWdh+WPr+a0vumBo+mDqOmYn+WJjeW+gOato+WcqOS/ruW7uiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjgsInkiOjUzMywid2lkdGgiOjY2MCwiaGVpZ2h0Ijo2OH0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L186MTQiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWwifX0seyJpZCI6MjgsInBhcmVudCI6NCwicGxhbklkIjoyOCwia2luZCI6InZpZXciLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjIyNywieSI6Nzg5LCJ3aWR0aCI6MjU1LCJoZWlnaHQiOjEwMn0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbDpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWwifX0seyJpZCI6MjksInBhcmVudCI6MjgsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiQ29uZmlybUJ1dHRvbiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MjU1LCJoZWlnaHQiOjEwMn0sImlkZW50aXR5Ijp7ImtleSI6IkNvbmZpcm1CdXR0b246QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9fL0NvbmZpcm1CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkNvbmZpcm1CdXR0b24ifX0seyJpZCI6MzAsInBhcmVudCI6MjksInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiQWN0aW9uQnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjoyNTUsImhlaWdodCI6MTAyfSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbiIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19LHsiaWQiOjMxLCJwYXJlbnQiOjMwLCJwbGFuSWQiOjIsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiJBY3Rpb25CdXR0b24vQmFja2dyb3VuZCIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MjU1LCJoZWlnaHQiOjEwMn0sInJlc291cmNlSWQiOiJ1aS9idXR0b24vY29uZmlybSIsImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0JhY2tncm91bmQiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MzIsInBhcmVudCI6MzAsInBsYW5JZCI6Mywia2luZCI6InRleHQiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0xhYmVsIiwidmFsdWUiOiLnoa7lrpoiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjgsInkiOjQsIndpZHRoIjoyMzksImhlaWdodCI6ODZ9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uL0FjdGlvbkJ1dHRvbi9MYWJlbCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fSx7ImlkIjozMywicGFyZW50IjozMCwicGxhbklkIjo0LCJraW5kIjoidmlldyIsIm5hbWUiOiJBY3Rpb25CdXR0b24vSWNvblJvdyIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpBbGxpYW5jZUFubm91bmNlUGFnZS9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2UvV2luZG93L18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3ciLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MzQsInBhcmVudCI6MzMsInBsYW5JZCI6NSwia2luZCI6ImltYWdlIiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9JY29uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL2J1dHRvbi9jb25maXJtIiwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vSWNvblJvdy9BY3Rpb25CdXR0b24vSWNvbiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fSx7ImlkIjozNSwicGFyZW50IjozMywicGxhbklkIjo2LCJraW5kIjoidGV4dCIsIm5hbWUiOiJBY3Rpb25CdXR0b24vSWNvbkxhYmVsIiwidmFsdWUiOiLnoa7lrpoiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vSWNvblJvdy9BY3Rpb25CdXR0b24vSWNvbkxhYmVsIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19XSwiY29tcG9uZW50RGVjbGFyYXRpb25zIjp7InNjaGVtYVZlcnNpb24iOjEsImtpbmQiOiJ1bmlmbGV4LWNvbXBvbmVudC1kZWNsYXJhdGlvbnMiLCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWwiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9BbGxpYW5jZUFubm91bmNlL0FsbGlhbmNlQW5ub3VuY2VQYW5lbC50c3gifSwiZGVmaW5pdGlvbnMiOlt7ImtleSI6IkFjdGlvbkJ1dHRvbiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvYnV0dG9uL0FjdGlvbkJ1dHRvbi50c3gifSx7ImtleSI6IkFsbGlhbmNlQW5ub3VuY2VQYW5lbCIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L3BhZ2VzL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZVBhbmVsLnRzeCJ9LHsia2V5IjoiQ2xvc2VCdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3BvcHVwL0Nsb3NlQnV0dG9uLnRzeCJ9LHsia2V5IjoiQ29uZmlybUJ1dHRvbiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvYnV0dG9uL0NvbmZpcm1CdXR0b24udHN4In0seyJrZXkiOiJQb3B1cEJhY2tncm91bmQiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3BvcHVwL1BvcHVwQmFja2dyb3VuZC50c3gifV0sImluc3RhbmNlcyI6W3sia2V5IjoiQWN0aW9uQnV0dG9uOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbiIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjozMH0seyJrZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWw6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUFubm91bmNlUGFuZWwiLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoyfSx7ImtleSI6IkNsb3NlQnV0dG9uOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvQ2xvc2VCdXR0b24iLCJkZWZpbml0aW9uS2V5IjoiQ2xvc2VCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoxMX0seyJrZXkiOiJDb25maXJtQnV0dG9uOkFsbGlhbmNlQW5ub3VuY2VQYWdlL0FsbGlhbmNlQW5ub3VuY2UvQWxsaWFuY2VBbm5vdW5jZS9XaW5kb3cvXy9Db25maXJtQnV0dG9uIiwiZGVmaW5pdGlvbktleSI6IkNvbmZpcm1CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoyOX0seyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6QWxsaWFuY2VBbm5vdW5jZVBhZ2UvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlL1dpbmRvdy9Qb3B1cEJhY2tncm91bmQiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6NX1dfSwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQWxsaWFuY2VBbm5vdW5jZVBhbmVsIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvcGFnZXMvQWxsaWFuY2VBbm5vdW5jZS9BbGxpYW5jZUFubm91bmNlUGFuZWwudHN4In19\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    },
+    "linkedFiles": [
+      {
+        "id": "cbb83c69-8a36-efe1-9e43-1744791c9b07",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T02:40:35.039Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 136658,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../PopupBackground/component.psd"
+        }
+      },
+      {
+        "id": "b96a3df5-b42c-d5b2-9c67-be96cd2ed47c",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T02:40:35.048Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 23262,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../CloseButton/component.psd"
+        }
+      },
+      {
+        "id": "4858f333-4df9-d321-de1d-47ee65cd7d82",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T02:40:35.058Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 46429,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../ConfirmButton/component.psd"
+        }
+      }
+    ]
+  },
+  "layers": {
+    "layer-2": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceAnnounce [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce#component]",
+        "id": 2,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-3": {
+      "parent": "layer-2",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceAnnounce/Mask [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Mask#node]",
+        "id": 3,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-4": {
+      "parent": "layer-3",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 1624,
+        "right": 750,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceAnnounce/Mask / fill [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Mask#fill]",
+        "id": 4,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-5": {
+      "parent": "layer-2",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceAnnounce/Window [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window#node]",
+        "id": 5,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-6": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 318,
+        "left": 21,
+        "bottom": 1230,
+        "right": 729,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "PopupBackground [ui:PopupBackground:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/PopupBackground#component]",
+        "id": 6,
+        "placedLayer": {
+          "id": "cbb83c69-8a36-efe1-9e43-1744791c9b07",
+          "placed": "c553e434-1660-a991-e1c1-7e15b2a84eef",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            21,
+            318,
+            729,
+            318,
+            729,
+            1230,
+            21,
+            1230
+          ],
+          "width": 708,
+          "height": 912,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 912,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 708,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 236,
+                  "y": 0
+                },
+                {
+                  "x": 472,
+                  "y": 0
+                },
+                {
+                  "x": 708,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 304
+                },
+                {
+                  "x": 236,
+                  "y": 304
+                },
+                {
+                  "x": 472,
+                  "y": 304
+                },
+                {
+                  "x": 708,
+                  "y": 304
+                },
+                {
+                  "x": 0,
+                  "y": 608
+                },
+                {
+                  "x": 236,
+                  "y": 608
+                },
+                {
+                  "x": 472,
+                  "y": 608
+                },
+                {
+                  "x": 708,
+                  "y": 608
+                },
+                {
+                  "x": 0,
+                  "y": 912
+                },
+                {
+                  "x": 236,
+                  "y": 912
+                },
+                {
+                  "x": 472,
+                  "y": 912
+                },
+                {
+                  "x": 708,
+                  "y": 912
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-9": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 336,
+        "left": 111,
+        "bottom": 394,
+        "right": 639,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "联盟公告 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:0#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            375,
+            379.8
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "联盟公告",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 40,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 40,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 89,
+                "g": 61,
+                "b": 132
+              }
+            }
+          ]
+        },
+        "id": 9,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-10": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 324,
+        "left": 642,
+        "bottom": 396,
+        "right": 714,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "CloseButton [ui:CloseButton:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/CloseButton#component]",
+        "id": 10,
+        "placedLayer": {
+          "id": "b96a3df5-b42c-d5b2-9c67-be96cd2ed47c",
+          "placed": "19821ea1-615f-ed3f-4447-1f0851c8bda3",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            642,
+            324,
+            714,
+            324,
+            714,
+            396,
+            642,
+            396
+          ],
+          "width": 72,
+          "height": 72,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 72,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 72,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 24,
+                  "y": 0
+                },
+                {
+                  "x": 48,
+                  "y": 0
+                },
+                {
+                  "x": 72,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 24
+                },
+                {
+                  "x": 24,
+                  "y": 24
+                },
+                {
+                  "x": 48,
+                  "y": 24
+                },
+                {
+                  "x": 72,
+                  "y": 24
+                },
+                {
+                  "x": 0,
+                  "y": 48
+                },
+                {
+                  "x": 24,
+                  "y": 48
+                },
+                {
+                  "x": 48,
+                  "y": 48
+                },
+                {
+                  "x": 72,
+                  "y": 48
+                },
+                {
+                  "x": 0,
+                  "y": 72
+                },
+                {
+                  "x": 24,
+                  "y": 72
+                },
+                {
+                  "x": 48,
+                  "y": 72
+                },
+                {
+                  "x": 72,
+                  "y": 72
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-13": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 13,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-14": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 417,
+        "left": 33,
+        "bottom": 1091,
+        "right": 716,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_#node]",
+        "id": 14,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-15": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 443,
+        "left": 49,
+        "bottom": 477,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "欢迎加入联盟~努力发展联盟，让我们变得更强大！ [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:1#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            463.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "欢迎加入联盟~努力发展联盟，让我们变得更强大！",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 15,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-16": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 477,
+        "left": 49,
+        "bottom": 511,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "---------------------------------------- [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:2#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            497.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "-----------------------------------------------------",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 16,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-17": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 511,
+        "left": 49,
+        "bottom": 545,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "1. 升级科技：每日捐献联盟科技，可使联盟快速发展。 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:3#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            531.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "1. 升级科技：每日捐献联盟科技，可使联盟快速发展。",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 17,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-18": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 511,
+        "left": 49,
+        "bottom": 545,
+        "right": 229,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "1. 升级科技 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:4#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            531.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "1. 升级科技",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 238.99875,
+              "g": 75.00059999999999,
+              "b": 75.00059999999999
+            }
+          }
+        },
+        "id": 18,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-19": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 545,
+        "left": 49,
+        "bottom": 613,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "2. 集结章鱼王：发起集结章鱼王可获得丰厚奖励，快速提高战\n力。 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:5#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            565.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "2. 集结章鱼王：发起集结章鱼王可获得丰厚奖励，快速提高战\n力。",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 19,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-20": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 545,
+        "left": 49,
+        "bottom": 579,
+        "right": 249,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "2. 集结章鱼王 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:6#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            565.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "2. 集结章鱼王",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 238.99875,
+              "g": 75.00059999999999,
+              "b": 75.00059999999999
+            }
+          }
+        },
+        "id": 20,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-21": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 613,
+        "left": 49,
+        "bottom": 681,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "3.参与集结：在战争界面中打开自动集结，每天有 50 次参与奖\n励。 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:7#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            633.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "3.参与集结：在战争界面中打开自动集结，每天有 50 次参与奖\n励。",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 21,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-22": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 613,
+        "left": 49,
+        "bottom": 647,
+        "right": 229,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "3.参与集结 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:8#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            633.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "3.参与集结",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 238.99875,
+              "g": 75.00059999999999,
+              "b": 75.00059999999999
+            }
+          }
+        },
+        "id": 22,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-23": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 681,
+        "left": 49,
+        "bottom": 749,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "4. 扩大领地：在领地界面可以建造联盟堡垒、联盟旗帜扩大领\n地范围。 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:9#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            701.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "4. 扩大领地：在领地界面可以建造联盟堡垒、联盟旗帜扩大领\n地范围。",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 23,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-24": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 681,
+        "left": 49,
+        "bottom": 715,
+        "right": 229,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "4. 扩大领地 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:10#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            701.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "4. 扩大领地",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 238.99875,
+              "g": 75.00059999999999,
+              "b": 75.00059999999999
+            }
+          }
+        },
+        "id": 24,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-25": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 749,
+        "left": 49,
+        "bottom": 817,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "5.联盟属性：占领港口、争夺要塞，全联盟可获得大量属性加\n成。 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:11#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            769.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "5.联盟属性：占领港口、争夺要塞，全联盟可获得大量属性加\n成。",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 25,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-26": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 749,
+        "left": 49,
+        "bottom": 783,
+        "right": 229,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "5.联盟属性 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:12#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            769.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "5.联盟属性",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 238.99875,
+              "g": 75.00059999999999,
+              "b": 75.00059999999999
+            }
+          }
+        },
+        "id": 26,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-27": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 817,
+        "left": 49,
+        "bottom": 851,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "---------------------------------------- [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:13#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            837.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "------------------------------------------------------",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 27,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-28": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 851,
+        "left": 49,
+        "bottom": 919,
+        "right": 709,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "注：R4 成员可以在领地界面，选中联盟建筑开启修建，所有联\n盟成员均可派遣部队前 [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:14#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            49,
+            871.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "注：R4 成员可以在领地界面，选中联盟建筑开启修建，所有联\n盟成员均可派遣部队前往正在修建",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 34,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 28,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-29": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group [ui:AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_#node]",
+        "id": 29,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-30": {
+      "parent": "layer-29",
+      "properties": {
+        "top": 1107,
+        "left": 248,
+        "bottom": 1209,
+        "right": 503,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ConfirmButton [ui:ConfirmButton:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_/ConfirmButton#component]",
+        "id": 30,
+        "placedLayer": {
+          "id": "4858f333-4df9-d321-de1d-47ee65cd7d82",
+          "placed": "17db515e-5943-b425-e1a6-fe0ef6912e9f",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            248,
+            1107,
+            503,
+            1107,
+            503,
+            1209,
+            248,
+            1209
+          ],
+          "width": 255,
+          "height": 102,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 102,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 255,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 85,
+                  "y": 0
+                },
+                {
+                  "x": 170,
+                  "y": 0
+                },
+                {
+                  "x": 255,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 34
+                },
+                {
+                  "x": 85,
+                  "y": 34
+                },
+                {
+                  "x": 170,
+                  "y": 34
+                },
+                {
+                  "x": 255,
+                  "y": 34
+                },
+                {
+                  "x": 0,
+                  "y": 68
+                },
+                {
+                  "x": 85,
+                  "y": 68
+                },
+                {
+                  "x": 170,
+                  "y": 68
+                },
+                {
+                  "x": 255,
+                  "y": 68
+                },
+                {
+                  "x": 0,
+                  "y": 102
+                },
+                {
+                  "x": 85,
+                  "y": 102
+                },
+                {
+                  "x": 170,
+                  "y": 102
+                },
+                {
+                  "x": 255,
+                  "y": 102
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

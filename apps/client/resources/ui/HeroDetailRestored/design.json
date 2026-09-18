@@ -1,0 +1,2013 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "HeroDetail",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root",
+        "role": "page",
+        "definitionKey": "HeroDetail"
+      },
+      "children": [
+        "layer-2",
+        "layer-4",
+        "layer-6",
+        "layer-8",
+        "layer-9",
+        "layer-12",
+        "layer-15",
+        "layer-71"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-3"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetail",
+        "resourceId": "ui/hero-detail/bg-yellow",
+        "captureHash": "abc5eba9558485a997da732a26cb04f7371e0fd3f6e7da89a96e8dbad3a3a930"
+      },
+      "asset": "asset-9af78d73ed060276a0c78e74cf5cd7121aff281cd28e8cbf735fd6d05aec7207"
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 163,
+        "y": 259,
+        "width": 469,
+        "height": 650
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-5"
+      ]
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 469,
+        "height": 650
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root/_:5",
+        "role": "node",
+        "definitionKey": "HeroDetail",
+        "resourceId": "ui/hero-detail/art",
+        "captureHash": "bf766bbe235dfe8ac1022d1876a969fa32ea7f46fcede10852c9b68539658869"
+      },
+      "asset": "asset-400232d2e6d0648de028cdf65572cd17ee84484ca2c38df75044fd90e4cc955f"
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 80,
+        "y": 789,
+        "width": 601,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-7"
+      ]
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 601,
+        "height": 186
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root/_:6",
+        "role": "node",
+        "definitionKey": "HeroDetail",
+        "resourceId": "ui/hero-detail/shadow",
+        "captureHash": "59aa263fdaa8a22e6b5764139e43203a606edfa01cdc564514984bcb0ea00bf6"
+      },
+      "asset": "asset-2dc19875d944046bde902cbd30e744d8ea7846e24526b3e2dd06677ba596bacf"
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "凯伊",
+      "kind": "text",
+      "frame": {
+        "x": 246,
+        "y": 190,
+        "width": 258,
+        "height": 116
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root/_",
+        "role": "node",
+        "definitionKey": "HeroDetail"
+      },
+      "text": {
+        "value": "凯伊",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 56,
+        "lineHeight": 56,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 25,
+        "y": 607,
+        "width": 58,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetail"
+      },
+      "children": [
+        "layer-10"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 58,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-11"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 58,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root/_:0/_",
+        "role": "node",
+        "definitionKey": "HeroDetail",
+        "resourceId": "ui/hero-detail/arrow",
+        "captureHash": "5f1d274abab1c807d25721d91823fdeb757a32a96fd99641a6331e95d3369c94"
+      },
+      "asset": "asset-3752208c9d4214209a47f808ed57beb8c1be6ac128d1440f1993672bf7532acb"
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 667,
+        "y": 607,
+        "width": 58,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetail"
+      },
+      "children": [
+        "layer-13"
+      ]
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 58,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-14"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 58,
+        "height": 80
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetail.root/_:1/_",
+        "role": "node",
+        "definitionKey": "HeroDetail",
+        "resourceId": "ui/hero-detail/arrow-right",
+        "captureHash": "b7cc66c81fd6671f3234e74903f9b5ac1353a123e4b1bfa76ca666b61132f655"
+      },
+      "asset": "asset-90a26987a9f142ef76746693934603cf43d5eba3cecce602d527bd575fbfc693"
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "HeroDetailAttributes",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes",
+        "role": "component",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "children": [
+        "layer-16",
+        "layer-18",
+        "layer-20",
+        "layer-22",
+        "layer-24",
+        "layer-32",
+        "layer-34",
+        "layer-36",
+        "layer-38",
+        "layer-40",
+        "layer-42",
+        "layer-45",
+        "layer-47",
+        "layer-49",
+        "layer-50",
+        "layer-52",
+        "layer-53",
+        "layer-55",
+        "layer-56",
+        "layer-58",
+        "layer-59",
+        "layer-61",
+        "layer-62"
+      ]
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 75,
+        "y": 199,
+        "width": 122,
+        "height": 160
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-17"
+      ]
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 122,
+        "height": 160
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/rank-s",
+        "captureHash": "11a4d1e886856f58c2f7779164a7d81cc26dd4d0e37b12faf72df1c8cfba895a"
+      },
+      "asset": "asset-b4c4e6f6495f8395a279fa75f20d77d758dd6a9cac0cbfc7bf14557c9b9d830c"
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 280,
+        "y": 263,
+        "width": 59,
+        "height": 71
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-19"
+      ]
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 59,
+        "height": 71
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/faction",
+        "captureHash": "9346cf9569060193d8027897288be21d9f6e62a9a47e5e73864a79a423d6c2ff"
+      },
+      "asset": "asset-b273e60098013be3d12121c2b71bcbe79b471bf7144671c50981433ca7dfa357"
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 352,
+        "y": 270,
+        "width": 50,
+        "height": 53
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-21"
+      ]
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 50,
+        "height": 53
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:2",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/bond-icon",
+        "captureHash": "61dcac4e0b8417e306ce939403ea20acd1d179160e77d7ec74f1cf1598975f3e"
+      },
+      "asset": "asset-dfb317a274169530025dcadae840ceca6543f4ef700e9f076f27a03a2199a866"
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 415,
+        "y": 270,
+        "width": 50,
+        "height": 53
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-23"
+      ]
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 50,
+        "height": 53
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:3",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/bond-icon",
+        "captureHash": "61dcac4e0b8417e306ce939403ea20acd1d179160e77d7ec74f1cf1598975f3e"
+      },
+      "asset": "asset-dfb317a274169530025dcadae840ceca6543f4ef700e9f076f27a03a2199a866"
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 185,
+        "y": 869,
+        "width": 381,
+        "height": 74
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "children": [
+        "layer-25",
+        "layer-27",
+        "layer-29",
+        "layer-30"
+      ]
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 381,
+        "height": 74
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-26"
+      ]
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 381,
+        "height": 74
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:0/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/power-bg",
+        "captureHash": "ea69e22b5ccaebd630f065f87add8c72196a54779f2a6f5605901df57e3dc46c"
+      },
+      "asset": "asset-380204220177db5cc9b32969d4b018d3d3460a74dcddf059ec2257e750416256"
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 24,
+        "y": 8,
+        "width": 58,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-28"
+      ]
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 58,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:0/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/power-fist",
+        "captureHash": "866fa06c3b2b6bd6611b4a2554a557d989bb7584ceb2c589dce97f2fb49bd146"
+      },
+      "asset": "asset-902f5bce3a464ab73ad6a98848596372b69f900730325d1334783b845b3bde10"
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "9,999k",
+      "kind": "text",
+      "frame": {
+        "x": 90,
+        "y": 9,
+        "width": 258,
+        "height": 108
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:0/_",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "text": {
+        "value": "9,999k",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 52,
+        "lineHeight": 52,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 333,
+        "y": 17,
+        "width": 40,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-31"
+      ]
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 40,
+        "height": 40
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:0/_:2",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/power-info",
+        "captureHash": "452b3a552cce0bebcef8a29c8f70285047b4661a0942e67dfec8866721dfb498"
+      },
+      "asset": "asset-930ea9b6157228559d513421eb4d881c91956d401f09a80ad727e4d60c31ef1b"
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 170,
+        "y": 950,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-33"
+      ]
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:4",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/star-empty",
+        "captureHash": "005b45d3c2556aaeeb3b260413dc7400b68424357a01cbcd3bc26cc654c05653"
+      },
+      "asset": "asset-635fcc6f74443b1c4b9df2f4c6e785bdda006ad9b7664078257596d890ceb766"
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 256,
+        "y": 950,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-35"
+      ]
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:6",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/star-empty",
+        "captureHash": "005b45d3c2556aaeeb3b260413dc7400b68424357a01cbcd3bc26cc654c05653"
+      },
+      "asset": "asset-635fcc6f74443b1c4b9df2f4c6e785bdda006ad9b7664078257596d890ceb766"
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 342,
+        "y": 950,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-37"
+      ]
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:8",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/star-empty",
+        "captureHash": "005b45d3c2556aaeeb3b260413dc7400b68424357a01cbcd3bc26cc654c05653"
+      },
+      "asset": "asset-635fcc6f74443b1c4b9df2f4c6e785bdda006ad9b7664078257596d890ceb766"
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 427,
+        "y": 950,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-39"
+      ]
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:10",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/star-empty",
+        "captureHash": "005b45d3c2556aaeeb3b260413dc7400b68424357a01cbcd3bc26cc654c05653"
+      },
+      "asset": "asset-635fcc6f74443b1c4b9df2f4c6e785bdda006ad9b7664078257596d890ceb766"
+    },
+    "layer-40": {
+      "id": "layer-40",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 513,
+        "y": 950,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-41"
+      ]
+    },
+    "layer-41": {
+      "id": "layer-41",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 68,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:12",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/star-empty",
+        "captureHash": "005b45d3c2556aaeeb3b260413dc7400b68424357a01cbcd3bc26cc654c05653"
+      },
+      "asset": "asset-635fcc6f74443b1c4b9df2f4c6e785bdda006ad9b7664078257596d890ceb766"
+    },
+    "layer-42": {
+      "id": "layer-42",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 603,
+        "y": 956,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "children": [
+        "layer-43"
+      ]
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-44"
+      ]
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 76,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:1/_",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/star-button",
+        "captureHash": "b8ce22d46fe967b4169eb861614336b5fcd4567543ab4348f231c35b890c438a"
+      },
+      "asset": "asset-3b106fff1d154461ed47918f70ce25053ed66361396b216149673f6a8dd5d397"
+    },
+    "layer-45": {
+      "id": "layer-45",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 1041,
+        "width": 708,
+        "height": 47
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-46"
+      ]
+    },
+    "layer-46": {
+      "id": "layer-46",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 47
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:14",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/attr-header",
+        "captureHash": "9a4d1df004d250de6bfe7dc79ef59ebf393c18c32b4a80d6919181722a367be9"
+      },
+      "asset": "asset-1e83acc752542a1663d5f336b765af40cc78cfefb5ddb5e1ecb829649ad35c8c"
+    },
+    "layer-47": {
+      "id": "layer-47",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 1088,
+        "width": 708,
+        "height": 95
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-48"
+      ]
+    },
+    "layer-48": {
+      "id": "layer-48",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 95
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:15",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/attr-body",
+        "captureHash": "528c72ca15892fb18d92ab9f2c18571d90ec5c888abc337a0ef2c3c5c212a800"
+      },
+      "asset": "asset-cc8419bb258bb62e38ea28b74df64373bc63a1261d9d280aa2d6bee3de036aa9"
+    },
+    "layer-49": {
+      "id": "layer-49",
+      "name": "Lv.99",
+      "kind": "text",
+      "frame": {
+        "x": 17,
+        "y": 1040,
+        "width": 716,
+        "height": 88
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "text": {
+        "value": "Lv.99",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 42,
+        "lineHeight": 42,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffe57b"
+      }
+    },
+    "layer-50": {
+      "id": "layer-50",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 49,
+        "y": 1098,
+        "width": 48,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-51"
+      ]
+    },
+    "layer-51": {
+      "id": "layer-51",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 48,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:16",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/attr-sword",
+        "captureHash": "e9fe6623a48e3d8b232879d040d370eda7c020b3dd214e05b2e25825f875af6a"
+      },
+      "asset": "asset-bfb29ecee2a150d1e576f8fab8f5237485720749170e2ecbfc5c11543458d2ae"
+    },
+    "layer-52": {
+      "id": "layer-52",
+      "name": "3941",
+      "kind": "text",
+      "frame": {
+        "x": 100,
+        "y": 1118,
+        "width": 114,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "text": {
+        "value": "3941",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-53": {
+      "id": "layer-53",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 222,
+        "y": 1100,
+        "width": 52,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-54"
+      ]
+    },
+    "layer-54": {
+      "id": "layer-54",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 52,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:17",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/attr-shield",
+        "captureHash": "c1cbfaef0e0edfb6bffd3e6d1d545937c4784e53e9e4ce5ae41ed2891d396436"
+      },
+      "asset": "asset-69fe9be49fffd271de68c5e79db9864aa1a928a92bd44f4e8fb357f4dda055e1"
+    },
+    "layer-55": {
+      "id": "layer-55",
+      "name": "3941",
+      "kind": "text",
+      "frame": {
+        "x": 276,
+        "y": 1118,
+        "width": 114,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:2",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "text": {
+        "value": "3941",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-56": {
+      "id": "layer-56",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 402,
+        "y": 1100,
+        "width": 56,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-57"
+      ]
+    },
+    "layer-57": {
+      "id": "layer-57",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 56,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:18",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/attr-icon4",
+        "captureHash": "c0338ed539c80e4ad7221baa4b0238c96ea437c1dd6f2a8bbf98737187a3639e"
+      },
+      "asset": "asset-ce9f2db03668f193fa5e6294888aa82ae51259c95bcd3199bb83991f6aefa3b9"
+    },
+    "layer-58": {
+      "id": "layer-58",
+      "name": "3941",
+      "kind": "text",
+      "frame": {
+        "x": 460,
+        "y": 1118,
+        "width": 114,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:3",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "text": {
+        "value": "3941",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-59": {
+      "id": "layer-59",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 575,
+        "y": 1102,
+        "width": 52,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-60"
+      ]
+    },
+    "layer-60": {
+      "id": "layer-60",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 52,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:19",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/attr-icon5",
+        "captureHash": "a2d757bfd8f5f275eb5f47edbb7e9abbf3b56549ce76e25d0e0b311e70b91562"
+      },
+      "asset": "asset-7ae0dfdcff22c853f7cc6c6c1f7546fb6d9b09b3780254599edf6ed2aaae6b13"
+    },
+    "layer-61": {
+      "id": "layer-61",
+      "name": "3941",
+      "kind": "text",
+      "frame": {
+        "x": 628,
+        "y": 1118,
+        "width": 94,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:4",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "text": {
+        "value": "3941",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-62": {
+      "id": "layer-62",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 227,
+        "y": 1220,
+        "width": 297,
+        "height": 109
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:2",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "children": [
+        "layer-63",
+        "layer-65",
+        "layer-66",
+        "layer-68",
+        "layer-70"
+      ]
+    },
+    "layer-63": {
+      "id": "layer-63",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 297,
+        "height": 109
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-64"
+      ]
+    },
+    "layer-64": {
+      "id": "layer-64",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 297,
+        "height": 109
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:2/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/upgrade-bg",
+        "captureHash": "dbd562fca2e2000b2f7b4670f7ab9c1e6d1340e79a02686d581afd80d0d62d43"
+      },
+      "asset": "asset-ef58488af5331031bf04b9ca8383ac8c6335d8ee7a550645879b0627d448e492"
+    },
+    "layer-65": {
+      "id": "layer-65",
+      "name": "升级",
+      "kind": "text",
+      "frame": {
+        "x": -4,
+        "y": 16,
+        "width": 305,
+        "height": 68
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:2/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "text": {
+        "value": "升级",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#643e14",
+        "color": "#ffffff"
+      }
+    },
+    "layer-66": {
+      "id": "layer-66",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 29,
+        "y": 57,
+        "width": 240,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-67"
+      ]
+    },
+    "layer-67": {
+      "id": "layer-67",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:2/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/hero-detail/upgrade-cost-bg",
+        "captureHash": "107b252e9a666949562c03161df56430d76afd81f2bad1c65de17695e758e144"
+      },
+      "asset": "asset-286459a0ce4182618920eb8c4a1cb2d88573003c814e05398ec804d3d0df7984"
+    },
+    "layer-68": {
+      "id": "layer-68",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 19,
+        "y": 55,
+        "width": 37,
+        "height": 31
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-69"
+      ]
+    },
+    "layer-69": {
+      "id": "layer-69",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 37,
+        "height": 31
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:2/_:2",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes",
+        "resourceId": "ui/backpack/resource-diamond",
+        "captureHash": "805da4ac4f1f7ad11ccf48778bfb8da1f1a438b4206b0f3534b8a6b5196a06bd"
+      },
+      "asset": "asset-dd4ec1df78a41470c1e8d6860763cc6c933e5a785b16ad79ece8d2313bb4753e"
+    },
+    "layer-70": {
+      "id": "layer-70",
+      "name": "999.99k/999.99k",
+      "kind": "text",
+      "frame": {
+        "x": 56,
+        "y": 59,
+        "width": 214,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailAttributes:HeroDetail/HeroDetailAttributes/_:2/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetailAttributes"
+      },
+      "text": {
+        "value": "999.99k/999.99k",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#65ee62"
+      }
+    },
+    "layer-71": {
+      "id": "layer-71",
+      "name": "HeroDetailTabs",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1369,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs",
+        "role": "component",
+        "definitionKey": "HeroDetailTabs"
+      },
+      "children": [
+        "layer-72",
+        "layer-74",
+        "layer-76",
+        "layer-79",
+        "layer-81",
+        "layer-83",
+        "layer-85"
+      ]
+    },
+    "layer-72": {
+      "id": "layer-72",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-73"
+      ]
+    },
+    "layer-73": {
+      "id": "layer-73",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 110
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs",
+        "resourceId": "ui/hero-detail/nav-base",
+        "captureHash": "167ef5322ca63d97236784fd5d461e3c2adcfb631aeb2345fe36f6ec2abb43ee"
+      },
+      "asset": "asset-f5b2f97b130eaee2767035f8f00d2dea388745643d5a3b00100327d9a9cef227"
+    },
+    "layer-74": {
+      "id": "layer-74",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 116,
+        "y": 0,
+        "width": 225,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-75"
+      ]
+    },
+    "layer-75": {
+      "id": "layer-75",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 225,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs",
+        "resourceId": "ui/hero-detail/nav-selected",
+        "captureHash": "89eb18952f5c2cd8d48f0c0fa90741b0386129cffd2f884c583f23b35b583c11"
+      },
+      "asset": "asset-656b0e25de5067086d4fbeb142f8fb7c18d5d305f45f377a6a314eb1a463dfe2"
+    },
+    "layer-76": {
+      "id": "layer-76",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 14,
+        "y": 28,
+        "width": 62,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:0",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs"
+      },
+      "children": [
+        "layer-77"
+      ]
+    },
+    "layer-77": {
+      "id": "layer-77",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 62,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-78"
+      ]
+    },
+    "layer-78": {
+      "id": "layer-78",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 62,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:0/_",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs",
+        "resourceId": "ui/hero-detail/nav-back",
+        "captureHash": "e2b07d1cea5bc4d7098603e312e47a27a24b1952bfed21a7141fa74f17a7a3dc"
+      },
+      "asset": "asset-358364ba10ceca9d96e9ce5ffc10dcb9806c476b6bb0e8b9e5f4bd22ab26987d"
+    },
+    "layer-79": {
+      "id": "layer-79",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 116,
+        "y": 0,
+        "width": 225,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:1",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs"
+      },
+      "children": [
+        "layer-80"
+      ]
+    },
+    "layer-80": {
+      "id": "layer-80",
+      "name": "属性",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 27,
+        "width": 229,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:1/_",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs"
+      },
+      "text": {
+        "value": "属性",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 36,
+        "lineHeight": 36,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-81": {
+      "id": "layer-81",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 327,
+        "y": 0,
+        "width": 225,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:2",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs"
+      },
+      "children": [
+        "layer-82"
+      ]
+    },
+    "layer-82": {
+      "id": "layer-82",
+      "name": "技能",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 27,
+        "width": 229,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:2/_",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs"
+      },
+      "text": {
+        "value": "技能",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 36,
+        "lineHeight": 36,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-83": {
+      "id": "layer-83",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 538,
+        "y": 0,
+        "width": 225,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:3",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs"
+      },
+      "children": [
+        "layer-84"
+      ]
+    },
+    "layer-84": {
+      "id": "layer-84",
+      "name": "装备",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 27,
+        "width": 229,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:3/_",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs"
+      },
+      "text": {
+        "value": "装备",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 36,
+        "lineHeight": 36,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-85": {
+      "id": "layer-85",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 298,
+        "y": 7,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-86"
+      ]
+    },
+    "layer-86": {
+      "id": "layer-86",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 24,
+        "height": 24
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroDetailTabs:HeroDetail/HeroDetailTabs/_:4",
+        "role": "node",
+        "definitionKey": "HeroDetailTabs",
+        "resourceId": "ui/mail/unread-dot",
+        "captureHash": "f9d9c5e67c02539c813c067ba845f1c2653a67d5dc3c4fa36e4430e0ccb14f26"
+      },
+      "asset": "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701"
+    }
+  },
+  "assets": {
+    "asset-9af78d73ed060276a0c78e74cf5cd7121aff281cd28e8cbf735fd6d05aec7207": {
+      "path": "assets/9af78d73ed060276a0c78e74cf5cd7121aff281cd28e8cbf735fd6d05aec7207.png",
+      "sha256": "9af78d73ed060276a0c78e74cf5cd7121aff281cd28e8cbf735fd6d05aec7207",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-400232d2e6d0648de028cdf65572cd17ee84484ca2c38df75044fd90e4cc955f": {
+      "path": "assets/400232d2e6d0648de028cdf65572cd17ee84484ca2c38df75044fd90e4cc955f.png",
+      "sha256": "400232d2e6d0648de028cdf65572cd17ee84484ca2c38df75044fd90e4cc955f",
+      "mime": "image/png",
+      "width": 469,
+      "height": 650
+    },
+    "asset-2dc19875d944046bde902cbd30e744d8ea7846e24526b3e2dd06677ba596bacf": {
+      "path": "assets/2dc19875d944046bde902cbd30e744d8ea7846e24526b3e2dd06677ba596bacf.png",
+      "sha256": "2dc19875d944046bde902cbd30e744d8ea7846e24526b3e2dd06677ba596bacf",
+      "mime": "image/png",
+      "width": 601,
+      "height": 186
+    },
+    "asset-3752208c9d4214209a47f808ed57beb8c1be6ac128d1440f1993672bf7532acb": {
+      "path": "assets/3752208c9d4214209a47f808ed57beb8c1be6ac128d1440f1993672bf7532acb.png",
+      "sha256": "3752208c9d4214209a47f808ed57beb8c1be6ac128d1440f1993672bf7532acb",
+      "mime": "image/png",
+      "width": 58,
+      "height": 80
+    },
+    "asset-90a26987a9f142ef76746693934603cf43d5eba3cecce602d527bd575fbfc693": {
+      "path": "assets/90a26987a9f142ef76746693934603cf43d5eba3cecce602d527bd575fbfc693.png",
+      "sha256": "90a26987a9f142ef76746693934603cf43d5eba3cecce602d527bd575fbfc693",
+      "mime": "image/png",
+      "width": 58,
+      "height": 80
+    },
+    "asset-b4c4e6f6495f8395a279fa75f20d77d758dd6a9cac0cbfc7bf14557c9b9d830c": {
+      "path": "assets/b4c4e6f6495f8395a279fa75f20d77d758dd6a9cac0cbfc7bf14557c9b9d830c.png",
+      "sha256": "b4c4e6f6495f8395a279fa75f20d77d758dd6a9cac0cbfc7bf14557c9b9d830c",
+      "mime": "image/png",
+      "width": 122,
+      "height": 160
+    },
+    "asset-b273e60098013be3d12121c2b71bcbe79b471bf7144671c50981433ca7dfa357": {
+      "path": "assets/b273e60098013be3d12121c2b71bcbe79b471bf7144671c50981433ca7dfa357.png",
+      "sha256": "b273e60098013be3d12121c2b71bcbe79b471bf7144671c50981433ca7dfa357",
+      "mime": "image/png",
+      "width": 59,
+      "height": 71
+    },
+    "asset-dfb317a274169530025dcadae840ceca6543f4ef700e9f076f27a03a2199a866": {
+      "path": "assets/dfb317a274169530025dcadae840ceca6543f4ef700e9f076f27a03a2199a866.png",
+      "sha256": "dfb317a274169530025dcadae840ceca6543f4ef700e9f076f27a03a2199a866",
+      "mime": "image/png",
+      "width": 50,
+      "height": 53
+    },
+    "asset-380204220177db5cc9b32969d4b018d3d3460a74dcddf059ec2257e750416256": {
+      "path": "assets/380204220177db5cc9b32969d4b018d3d3460a74dcddf059ec2257e750416256.png",
+      "sha256": "380204220177db5cc9b32969d4b018d3d3460a74dcddf059ec2257e750416256",
+      "mime": "image/png",
+      "width": 381,
+      "height": 74
+    },
+    "asset-902f5bce3a464ab73ad6a98848596372b69f900730325d1334783b845b3bde10": {
+      "path": "assets/902f5bce3a464ab73ad6a98848596372b69f900730325d1334783b845b3bde10.png",
+      "sha256": "902f5bce3a464ab73ad6a98848596372b69f900730325d1334783b845b3bde10",
+      "mime": "image/png",
+      "width": 58,
+      "height": 54
+    },
+    "asset-930ea9b6157228559d513421eb4d881c91956d401f09a80ad727e4d60c31ef1b": {
+      "path": "assets/930ea9b6157228559d513421eb4d881c91956d401f09a80ad727e4d60c31ef1b.png",
+      "sha256": "930ea9b6157228559d513421eb4d881c91956d401f09a80ad727e4d60c31ef1b",
+      "mime": "image/png",
+      "width": 40,
+      "height": 40
+    },
+    "asset-635fcc6f74443b1c4b9df2f4c6e785bdda006ad9b7664078257596d890ceb766": {
+      "path": "assets/635fcc6f74443b1c4b9df2f4c6e785bdda006ad9b7664078257596d890ceb766.png",
+      "sha256": "635fcc6f74443b1c4b9df2f4c6e785bdda006ad9b7664078257596d890ceb766",
+      "mime": "image/png",
+      "width": 68,
+      "height": 64
+    },
+    "asset-3b106fff1d154461ed47918f70ce25053ed66361396b216149673f6a8dd5d397": {
+      "path": "assets/3b106fff1d154461ed47918f70ce25053ed66361396b216149673f6a8dd5d397.png",
+      "sha256": "3b106fff1d154461ed47918f70ce25053ed66361396b216149673f6a8dd5d397",
+      "mime": "image/png",
+      "width": 76,
+      "height": 85
+    },
+    "asset-1e83acc752542a1663d5f336b765af40cc78cfefb5ddb5e1ecb829649ad35c8c": {
+      "path": "assets/1e83acc752542a1663d5f336b765af40cc78cfefb5ddb5e1ecb829649ad35c8c.png",
+      "sha256": "1e83acc752542a1663d5f336b765af40cc78cfefb5ddb5e1ecb829649ad35c8c",
+      "mime": "image/png",
+      "width": 708,
+      "height": 47
+    },
+    "asset-cc8419bb258bb62e38ea28b74df64373bc63a1261d9d280aa2d6bee3de036aa9": {
+      "path": "assets/cc8419bb258bb62e38ea28b74df64373bc63a1261d9d280aa2d6bee3de036aa9.png",
+      "sha256": "cc8419bb258bb62e38ea28b74df64373bc63a1261d9d280aa2d6bee3de036aa9",
+      "mime": "image/png",
+      "width": 708,
+      "height": 95
+    },
+    "asset-bfb29ecee2a150d1e576f8fab8f5237485720749170e2ecbfc5c11543458d2ae": {
+      "path": "assets/bfb29ecee2a150d1e576f8fab8f5237485720749170e2ecbfc5c11543458d2ae.png",
+      "sha256": "bfb29ecee2a150d1e576f8fab8f5237485720749170e2ecbfc5c11543458d2ae",
+      "mime": "image/png",
+      "width": 48,
+      "height": 72
+    },
+    "asset-69fe9be49fffd271de68c5e79db9864aa1a928a92bd44f4e8fb357f4dda055e1": {
+      "path": "assets/69fe9be49fffd271de68c5e79db9864aa1a928a92bd44f4e8fb357f4dda055e1.png",
+      "sha256": "69fe9be49fffd271de68c5e79db9864aa1a928a92bd44f4e8fb357f4dda055e1",
+      "mime": "image/png",
+      "width": 52,
+      "height": 64
+    },
+    "asset-ce9f2db03668f193fa5e6294888aa82ae51259c95bcd3199bb83991f6aefa3b9": {
+      "path": "assets/ce9f2db03668f193fa5e6294888aa82ae51259c95bcd3199bb83991f6aefa3b9.png",
+      "sha256": "ce9f2db03668f193fa5e6294888aa82ae51259c95bcd3199bb83991f6aefa3b9",
+      "mime": "image/png",
+      "width": 56,
+      "height": 52
+    },
+    "asset-7ae0dfdcff22c853f7cc6c6c1f7546fb6d9b09b3780254599edf6ed2aaae6b13": {
+      "path": "assets/7ae0dfdcff22c853f7cc6c6c1f7546fb6d9b09b3780254599edf6ed2aaae6b13.png",
+      "sha256": "7ae0dfdcff22c853f7cc6c6c1f7546fb6d9b09b3780254599edf6ed2aaae6b13",
+      "mime": "image/png",
+      "width": 52,
+      "height": 48
+    },
+    "asset-ef58488af5331031bf04b9ca8383ac8c6335d8ee7a550645879b0627d448e492": {
+      "path": "assets/ef58488af5331031bf04b9ca8383ac8c6335d8ee7a550645879b0627d448e492.png",
+      "sha256": "ef58488af5331031bf04b9ca8383ac8c6335d8ee7a550645879b0627d448e492",
+      "mime": "image/png",
+      "width": 297,
+      "height": 109
+    },
+    "asset-286459a0ce4182618920eb8c4a1cb2d88573003c814e05398ec804d3d0df7984": {
+      "path": "assets/286459a0ce4182618920eb8c4a1cb2d88573003c814e05398ec804d3d0df7984.png",
+      "sha256": "286459a0ce4182618920eb8c4a1cb2d88573003c814e05398ec804d3d0df7984",
+      "mime": "image/png",
+      "width": 240,
+      "height": 28
+    },
+    "asset-dd4ec1df78a41470c1e8d6860763cc6c933e5a785b16ad79ece8d2313bb4753e": {
+      "path": "assets/dd4ec1df78a41470c1e8d6860763cc6c933e5a785b16ad79ece8d2313bb4753e.png",
+      "sha256": "dd4ec1df78a41470c1e8d6860763cc6c933e5a785b16ad79ece8d2313bb4753e",
+      "mime": "image/png",
+      "width": 37,
+      "height": 31
+    },
+    "asset-f5b2f97b130eaee2767035f8f00d2dea388745643d5a3b00100327d9a9cef227": {
+      "path": "assets/f5b2f97b130eaee2767035f8f00d2dea388745643d5a3b00100327d9a9cef227.png",
+      "sha256": "f5b2f97b130eaee2767035f8f00d2dea388745643d5a3b00100327d9a9cef227",
+      "mime": "image/png",
+      "width": 750,
+      "height": 110
+    },
+    "asset-656b0e25de5067086d4fbeb142f8fb7c18d5d305f45f377a6a314eb1a463dfe2": {
+      "path": "assets/656b0e25de5067086d4fbeb142f8fb7c18d5d305f45f377a6a314eb1a463dfe2.png",
+      "sha256": "656b0e25de5067086d4fbeb142f8fb7c18d5d305f45f377a6a314eb1a463dfe2",
+      "mime": "image/png",
+      "width": 225,
+      "height": 90
+    },
+    "asset-358364ba10ceca9d96e9ce5ffc10dcb9806c476b6bb0e8b9e5f4bd22ab26987d": {
+      "path": "assets/358364ba10ceca9d96e9ce5ffc10dcb9806c476b6bb0e8b9e5f4bd22ab26987d.png",
+      "sha256": "358364ba10ceca9d96e9ce5ffc10dcb9806c476b6bb0e8b9e5f4bd22ab26987d",
+      "mime": "image/png",
+      "width": 62,
+      "height": 54
+    },
+    "asset-c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701": {
+      "path": "assets/c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701.png",
+      "sha256": "c241a2c7863b10f80746bf95ce539bef6b347c55b76e35ae300dc2306169f701",
+      "mime": "image/png",
+      "width": 24,
+      "height": 24
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

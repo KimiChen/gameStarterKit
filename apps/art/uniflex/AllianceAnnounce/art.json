@@ -1,0 +1,28 @@
+{
+  "screen": "alliance-announce",
+  "componentName": "AllianceAnnounce",
+  "restoredName": "AllianceAnnounceRestored",
+  "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounce/AllianceAnnounce.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "d5d8b69e8320d302754166245e2b1dcbebf41cd0c8750963cb92b8997905f50e",
+    "psdSha256": "511e76a1fdb2a53a3014d5c3d81b1c1e4eab038d3ad9def4cdc3c9924f03ae7d",
+    "at": "2026-09-18T02:40:36.162Z"
+  },
+  "import": {
+    "psdSha256": "511e76a1fdb2a53a3014d5c3d81b1c1e4eab038d3ad9def4cdc3c9924f03ae7d",
+    "at": "2026-09-18T02:40:57.009Z",
+    "target": "restored"
+  },
+  "linkedComponents": [
+    "PopupBackground",
+    "CloseButton",
+    "ActionButton",
+    "ConfirmButton",
+    "AllianceAnnouncePanel"
+  ]
+}

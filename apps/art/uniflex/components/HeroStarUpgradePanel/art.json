@@ -1,0 +1,14 @@
+{
+  "key": "HeroStarUpgradePanel",
+  "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarUpgradePanel.tsx",
+  "export": {
+    "uniflexSha256": "3f9d7277558c3917c5b81c125fc69eee9ee4b2d2a1bf02bd11d6663a8c1b00ec",
+    "psdSha256": "0c0d63d04df4400a2f023aaa299bfefcc673eafef12f37ad06e42e30b1d743c9",
+    "at": "2026-09-18T02:40:31.936Z"
+  },
+  "import": {
+    "psdSha256": "0c0d63d04df4400a2f023aaa299bfefcc673eafef12f37ad06e42e30b1d743c9",
+    "at": "2026-09-18T02:40:49.771Z",
+    "target": "restored"
+  }
+}

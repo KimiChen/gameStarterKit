@@ -8,7 +8,8 @@ Cocos 客户端开发工程（引擎、资源与编辑器壳）。**游戏代码
 - `assets/src/` —— ⚠ 生成物，禁手改：`apps/client/src` 经 `sync:client` 同步而来
   （`.meta` 由 Cocos 编辑器生成/复用，随目录提交保证 uuid 稳定，新 checkout 可直接打开工程）
 - `assets/resources/` —— FGUI 本地导出物等资源（见 [docs/CLIENT.md](../../docs/CLIENT.md)）
-- `assets/scene.scene` —— 启动场景
+- `assets/scene.scene` —— 默认启动场景（登录 / AppRuntime）
+- `assets/uniflex.scene` —— UniFlex 独立预览场景，入口是 `UniFlexPreview`，不经过 `Main`
 - `settings/` —— 工程配置（提交入库）
   - `logo-diy.png` —— Dashboard 项目列表图标（512×512 透明 PNG）；`logo-diy.svg` 保留原始矢量图。
 - `extensions/fairygui-cc/` —— fairygui-cc 扩展（外壳 + 运行库均入库；仅框架维护团队显式升级时运行
@@ -17,9 +18,22 @@ Cocos 客户端开发工程（引擎、资源与编辑器壳）。**游戏代码
 ## 打开方式
 
 Cocos Dashboard 3.8.8 打开本目录，等首次导入（生成 `temp/`、`library/`，均已 gitignore）。
-首次使用前先在仓库根目录跑 `npm install && npm run sync:shared`
+首次使用前先在仓库根目录跑 `npm install && npm run sync:shared && npm run build:uniflex-ui`
 （`sync:shared` 已级联 `sync:client`；运行时产物——colyseus UMD、fairygui-cc 运行时和锁定的
  bitECS 源码——已入库，无需 fetch。依赖抓取脚本只用于框架维护团队显式升级。）
+
+UniFlex 独立场景预览使用独立 Cocos CLI，并要求兼容的 Node.js 22 环境：
+
+```bash
+cocos preview --project "$PWD" --scene db://assets/uniflex.scene --no-open
+```
+
+项目根目录的 `npm run build:uniflex-ui` 会调用仓库内
+`vendor/uniflex/bin/<platform>-<arch>/uniflex-compiler`，不依赖 SDK 仓库缓存。
+可用 `node tools/uniflex-compiler.mjs version` 检查 compiler 制品是否已正确取到；
+如果出现 `vfs: failed to get executable path`，先检查安全软件是否拦截、隔离或替换了
+`vendor/uniflex/bin/<platform>-<arch>/uniflex-compiler`，按组织安全策略仅放行或恢复该文件，
+再校验 SHA-256；不要整体关闭安全防护。
 
 Node 无头 strict 探针（`npm run typecheck:client`）已经覆盖 `Main.ts`、全部 View、`pages.ts`、
 ViewMgr 和客户端测试，使用 `apps/client/tsconfig.test.json` 的最小引擎桩；`npm run typecheck:client:legacy`

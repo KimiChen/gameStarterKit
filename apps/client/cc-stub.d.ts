@@ -20,12 +20,15 @@ declare module "cc" {
     export class EventMouse { getUILocation(out?: Vec2): Vec2; getButton(): number; getScrollY(): number; }
 
     export class UITransform {
+        setContentSize(width: number, height: number): void;
         width: number;
         height: number;
         anchorX: number;
         anchorY: number;
         convertToNodeSpaceAR(world: Vec3, out?: Vec3): Vec3;
     }
+    export class BlockInputEvents extends Component {}
+    export class Button extends Component {}
 
     export class Graphics {
         static LineJoin: { BEVEL: number; ROUND: number; MITER: number };
@@ -132,19 +135,25 @@ declare module "cc" {
     };
 
     export class Node {
+        pauseSystemEvents(recursive?: boolean): void;
+        resumeSystemEvents(recursive?: boolean): void;
         getChildByName(name: string): Node | null;
         constructor(name?: string);
         name: string;
         layer: number;
         active: boolean;
+        activeInHierarchy: boolean;
+        dispatchEvent(event: unknown): void;
         parent: Node | null;
         children: Node[];
         isValid: boolean;
         position: Vec3;
         scale: Vec3;
         angle: number;
-        static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string };
+        static EventType: { TOUCH_START: string; TOUCH_MOVE: string; TOUCH_END: string; TOUCH_CANCEL: string; SIZE_CHANGED: string;
+          MOUSE_DOWN: string; MOUSE_MOVE: string; MOUSE_UP: string; MOUSE_WHEEL: string; MOUSE_LEAVE: string };
         addChild(child: Node): void;
+        insertChild(child: Node, index: number): void;
         removeFromParent(): void;
         destroy(): boolean;
         setSiblingIndex(index: number): void;
@@ -185,6 +194,8 @@ declare module "cc" {
       getScene(): (Node & { globals?: { postSettings?: { toneMappingType: number } } }) | null;
     };
     export const view: {
+        on(type: string, callback: () => void, target?: unknown): void;
+        off(type: string, callback: () => void, target?: unknown): void;
         setDesignResolutionSize(width: number, height: number, policy: unknown): void;
         getVisibleSize(): { width: number; height: number };
     };
@@ -261,6 +272,8 @@ declare module "db://fairygui-cc/fairygui.mjs" {
     }
 
     export class GComponent extends GObject {
+        isAncestorOf(object: GObject): boolean;
+        opaque: boolean;
         static inst: GComponent;
         numChildren: number;
         width: number;
@@ -276,7 +289,7 @@ declare module "db://fairygui-cc/fairygui.mjs" {
 
     export class GRoot extends GComponent {
         static inst: GRoot;
-        inputProcessor: { enabled: boolean };
+        inputProcessor: { enabled: boolean; getAllTouches(): number[]; cancelClick(id: number): void };
         onWinResize(): void;
     }
 
@@ -295,7 +308,11 @@ declare module "db://fairygui-cc/fairygui.mjs" {
     export class GGroup extends GObject {}
     export class GProgressBar extends GComponent { min: number; max: number; value: number; }
 
-    export const Event: { CLICK_ITEM: string; STATUS_CHANGED: string };
+    export class Event {
+        constructor(type: string, bubbles?: boolean);
+        static CLICK_ITEM: string; static STATUS_CHANGED: string; static TOUCH_END: string;
+        touchId: number; button: number; pos: { x: number; y: number }; initiator: GObject;
+    }
     export const RelationType: { Size: number };
     export const UIPackage: {
         getByName(name: string): unknown;

@@ -14,6 +14,7 @@
 - [技术总览](docs/OVERVIEW.md)
 - [项目初始化与元数据](docs/PROJECT.md)
 - [客户端开发](docs/CLIENT.md)
+- [UniFlex 界面实现](docs/UNIFLEX-UI.md)
 - [服务端开发](docs/SERVER.md)
 - [外部身份服务开发边界](docs/WEBPLATFORM.md)
 - [额外功能说明](docs/EXTRAS.md)
@@ -40,7 +41,7 @@ apps/
 docs/           当前开发架构说明
 scripts/        同步、校验、依赖抓取与协议指纹脚本，及其锁文件基线（bitecs/vendor/protocol/fgui）与保护路径规则（protected-paths.json）
 tools/          FairyGUI codegen、Excel 配表转换、性能基线与 Creator 预览证据等工具
-vendor/         精确锁定的外部身份契约 tarball（`@gono/webplatform-contract`，由 package.json 以 file: 引用）
+vendor/         精确锁定的外部身份契约、UniFlex SDK 与 web-ui-to-psd CLI tarball（由 package.json 以 file: 引用）
 ```
 
 `apps/client/src/shared/` 和 `apps/Cocos/assets/src/` 是生成镜像，不是源码入口。
@@ -53,7 +54,50 @@ WebPlatform 不属于本 monorepo；旧提交中的 `apps/WebPlatform` 仅用于
 ```bash
 npm install
 npm run sync:shared
+npm run build:uniflex-ui
 ```
+
+UniFlex 原生 `uniflex-compiler` 已按宿主平台放入 `vendor/uniflex/bin/`，默认由
+`config/uniflex.ui.json` 使用项目内 wrapper 调用；也可以用 `UNIFLEX_COMPILER` 覆盖。当前仓库包含
+`darwin-arm64` 制品，其他平台需补充对应平台制品。UI 生成物不入库，首次类型检查或预览前
+必须显式生成。双端预览与源码边界见 [客户端开发](docs/CLIENT.md#2-源码与工程壳)。
+`ui:import-psd` / `ui:export-psd` / `ui:roundtrip` 使用锁定的 `vendor/web-ui-to-psd-0.1.6.tgz`，
+`npm ci` 后即可运行，不依赖本机转换器源码目录；转换器还需要本机 Chrome 与 `uv`。导出把
+UniFlex 组件身份和布局框打到 PSD 图层（`[ui:key#role]`，与 octane-lite 相同）；导入按身份还原
+catalog 组件，并把换图/改大小/改位置叠回原结构。设计师 PSD 落在 `apps/art/uniflex/<Page>/screen.psd`，
+用 `ui:art-export` / `ui:art-import` / `ui:art-sync` / `ui:art-check` 同步；当前只写回 `*Restored`。
+可选 `WEB_UI_TO_PSD_CLI` / `WEB_UI_TO_PSD_ROOT` 仅用于覆盖锁定包。
+
+只验证 UniFlex Web 页面时，生成后运行：
+
+```bash
+npm run dev:uniflex-web
+```
+
+命令会输出本地地址。预览 Cocos 独立 UniFlex 场景时，先完成上面的安装、同步和生成，
+再使用独立 Cocos CLI（不要使用 `CocosCreator.app` 内置 CLI）：
+
+```bash
+cocos preview \
+  --project "$PWD/apps/Cocos" \
+  --scene db://assets/uniflex.scene \
+  --no-open
+```
+
+当前项目内置的原生编译器适用于 macOS Apple Silicon，Cocos CLI 预览还需使用其兼容的
+Node.js 22 环境；Intel Mac、Windows 和 Linux 需要补充对应平台的
+`vendor/uniflex/bin/<platform>-<arch>/uniflex-compiler`，或设置 `UNIFLEX_COMPILER`。
+如需确认本地使用的是仓库内 compiler，可运行：
+
+```bash
+node tools/uniflex-compiler.mjs version
+```
+
+若出现 `vfs: failed to get executable path`，先确认 compiler 文件没有被安全软件拦截、隔离或替换。
+安全软件提示风险时，按组织安全策略仅放行或恢复仓库内的
+`vendor/uniflex/bin/<platform>-<arch>/uniflex-compiler`，不要整体关闭安全防护；随后再校验
+SHA-256 并重新执行 `npm run build:uniflex-ui`。若文件已被删除或校验值不一致，再更新到当前
+`new` 分支并重新执行 `npm install`。
 
 从本 Starter 派生新项目时，先运行 `npm run init:project -- --help` 查看幂等初始化参数；项目身份、包名、
 生成区和第三方来源统一登记在 [project.metadata.json](project.metadata.json)，不要在各端复制项目名常量。
@@ -125,8 +169,25 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run test:fgui` | FGUI codegen、结构契约与 registry 专项测试 |
 | `npm run test:faults` / `npm run test:faults:int` | 运行核心 fault-matrix；前者默认不连接本地栈，后者使用本地 Redis/MySQL |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
+| `npm run build:uniflex-ui` | 用仓库内 `vendor/uniflex/bin/` 的原生编译器生成 UniFlex Confirm 与双端资源；随后运行 `sync:client` |
+| `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/pages/<Name>` 与 `apps/client/resources/ui/<Name>` |
+| `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 用锁定的 `vendor/web-ui-to-psd-*.tgz` 生成 PSD 中间文件和 UniFlex 项目包并导入项目；`npm ci` 后即可运行 |
+| `npm run ui:export-psd -- --url <url> --out <dir>` | 用锁定 CLI 把 UniFlex 预览页导出为分层 PSD；可用 `--screen` 拉起本地预览，不必先开 `dev:uniflex-web` |
+| `npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt` | 从 UniFlex snapshot 写出候选独立 FairyGUI 工程 + DOM 预览包（只写 `--out`） |
+| `npm run ui:export-fgui -- --screens prompt,small-popup,confirm --out .cache/fgui/popups` | 多页收进同一候选工程，共享 `UniFlex_Common` |
+| `npm run ui:export-fgui -- --all --out .cache/fgui/catalog` | 捕获 `screens.json` 全部预览页并导出 |
+| `npm run ui:preview-fgui -- --out .cache/fgui/prompt` | 用锁定的 `fairygui-dom@1.0.0` 预览刚导出的发布态包；多页用 `?screen=` |
+| `npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001` | UniFlex → PSD → UniFlex 项目包往返；默认不写项目源，加 `--apply` 才导入 |
+| `npm run ui:art-export` / `ui:art-import` / `ui:art-sync` / `ui:art-check` | 原稿 ↔ `apps/art/uniflex` PSD；一阶段导入只写 `*Restored`，`art-check` 是 CI 闸 |
+| `npm run ui:check-source` | 校验 UniFlex 项目包的 design/manifest 契约；传入 `--package` |
+| `npm run ui:render-source` | 渲染 UniFlex 独立源图（Golden 比对输入） |
+| `npm run ui:verify` | 按颜色阈值与区域差异比较独立源图与 Web proposal |
+| `npm run ui:approve-web` | 批准当前 Web proposal 为新的 Golden 基线 |
+| `npm run check:uniflex-ui` | 只读校验 UniFlex AOT、字体与双端生成物是否过期 |
+| `npm run typecheck:uniflex-ui` | 检查 UniFlex TSX 作者态和独立 Web 预览入口 |
+| `npm run dev:uniflex-web` | 启动独立 WebProvider 预览；默认 PreviewHome（原稿），`?ui=restored-home` 打开还原 UI 预览，`?screen=` / `?ui=` 打开已登记页面，`?psd=1` 为导出用未缩放画布 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
-| `npm run fetch:fgui` / `npm run fetch:colyseus` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
+| `npm run fetch:fgui` / `npm run fetch:colyseus` / `npm run fetch:uniflex` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
 | `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表与入库生成物；均属额外功能 |
 | `npm --workspace @game/server run test` | 服务端单元测试 |
 | `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |
@@ -154,7 +215,7 @@ FGUI 专项测试。
 
 ### 框架维护团队的依赖更新
 
-`npm run fetch:colyseus` 和 `npm run fetch:fgui` 仍保留为框架维护团队在需要显式升级锁定依赖时使用的工具，不属于首次打开或普通开发流程。这里的“维护团队手动更新”是人工决定版本、修改版本与完整性哈希、运行并审核脚本；脚本负责把下载、完整性校验和运行时镜像更新固化为可重复步骤。完成后应按维护流程复核同步结果并运行相关测试。
+`npm run fetch:colyseus`、`npm run fetch:fgui` 和 `npm run fetch:uniflex` 仍保留为框架维护团队在需要显式升级锁定依赖时使用的工具，不属于首次打开或普通开发流程。这里的“维护团队手动更新”是人工决定版本、修改版本与完整性哈希、运行并审核脚本；脚本负责把下载、完整性校验和运行时镜像更新固化为可重复步骤。完成后应按维护流程复核同步结果并运行相关测试。
 
 bitECS 没有自动抓取命令。其 `apps/client/src/lib/bitecs/` 下的 12 个锁定源文件由框架维护团队按上游版本手动更新，同时更新 `scripts/bitecs.sha256`，保留项目兼容性补丁并运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的依赖，并通过 `verify:ecs` 检查文件完整性。
 

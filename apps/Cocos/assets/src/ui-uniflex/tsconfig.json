@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.ui.json",
+  "compilerOptions": {
+    "rootDir": "../.."
+  },
+  "include": [
+    "./**/*.tsx",
+    "./**/*.ts",
+    "../../uniflex-jsx.d.ts",
+    "../../cc-stub.d.ts"
+  ]
+}

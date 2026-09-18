@@ -55,6 +55,10 @@ const TARGETS = [
  * 把其余同形脚本留在扫描面之外。
  */
 const CHECK_SCRIPT_EXEMPTIONS = {
+  "scripts/build-uniflex-ui.mjs":
+    "AOT 与字体加工产物而非直接文件镜像；写入和检查共用 expected 字节与 createOutputWriter，"
+    + "只读、缺失/漂移反例及重新生成收敛性由 scripts/uniflex-output.test.mjs 覆盖，"
+    + "作者态新鲜度另交独立编译器的 aot --check 校验",
   "scripts/sync-webplatform-contract.mjs":
     "源在 node_modules（夹具用 git ls-files 构建、不含它），该镜像无 README.md，且其 --check "
     + "与真同步共用同一个 expectedFiles()——结构上无法背离，本矩阵的立论对它不成立",

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 255,
+    "height": 102
+  },
+  "roots": [
+    "layer-19"
+  ],
+  "nodes": {
+    "layer-19": {
+      "id": "layer-19",
+      "name": "CancelButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CancelButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton",
+        "role": "component",
+        "definitionKey": "CancelButton"
+      },
+      "children": [
+        "layer-20"
+      ]
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "ActionButton",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Prompt/Content/Prompt/Actions/_/CancelButton/ActionButton",
+        "role": "component",
+        "definitionKey": "ActionButton"
+      },
+      "asset": "asset-8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96"
+    }
+  },
+  "assets": {
+    "asset-8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96": {
+      "path": "assets/8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96.png",
+      "sha256": "8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "ActionButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

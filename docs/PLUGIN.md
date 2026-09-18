@@ -604,7 +604,7 @@ id=config → dir:apps/Cocos/assets/resources/config
    实证过程暴露并补齐的框架前置（`5c6df35`）：plugin.json 可选 `module`（PluginHost 装载器由生成器渲染，
    AppRuntime 透传）、logic/sidecar 可落 `apps/client/src/plugins/<id>/`、plugin View 只豁免 cc/fairygui
    值导入、错误码顺序测试不再硬编码域清单——即「新插件不得需要改中央源码/中央测试」的判据真的成立了。
-   Creator 侧确认已于当天下午闭合（见 docs/evidence/creator-2026-09-05）。
+   Creator 侧确认已于当天下午闭合（见 docs/evidence/creator-2026-09-05，本地预览证据按 .gitignore 政策不入库）。
    **gameplay 形态**同日由第二个真实插件「点数赛」`apps/plugins/tally` 走通同一条动线（`fb903db`，
    [apps/plugins/tally/README.md](../apps/plugins/tally/README.md)）：它逼出了两处此前纯客户端形态没碰到的中央清单——
    `apps/server/test/wire-vectors/index.ts` 的手写 import 表（改为 `codegen:gameplays` 生成 `index.generated.ts`，

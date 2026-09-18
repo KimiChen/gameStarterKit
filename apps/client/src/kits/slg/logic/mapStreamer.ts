@@ -1,5 +1,5 @@
 /** Bounded chunk streaming: center-out loads, retention band, generation-fenced completions. */
-import { SLG_CHUNK_SIZE, SLG_MAP_W, SLG_MAP_H, chunkKey, chunkRectForGridRect, gridFromTileId, type ISlgChunkRect } from "../../../shared/kits/slg/api/worldmap/index";
+import { SLG_CHUNK_SIZE, chunkKey, chunkRectForGridRect, gridFromTileId, type ISlgChunkRect } from "../../../shared/kits/slg/api/worldmap/index";
 import type { MapRect } from "./mapCamera";
 
 export interface ChunkLoad { readonly key: number; readonly x: number; readonly y: number; readonly generation: number }
@@ -9,10 +9,6 @@ function keys(rect: ISlgChunkRect): number[] {
     for (let y = rect.minY; y <= rect.maxY; y++) for (let x = rect.minX; x <= rect.maxX; x++) result.push(chunkKey(x, y));
     return result;
 }
-function expanded(rect: MapRect, margin: number): MapRect {
-    return { minX: Math.max(0, rect.minX - margin), minY: Math.max(0, rect.minY - margin),
-        maxX: Math.min(SLG_MAP_W - 1, rect.maxX + margin), maxY: Math.min(SLG_MAP_H - 1, rect.maxY + margin) };
-}
 
 export class MapStreamer {
     private generation = 0;
@@ -21,14 +17,19 @@ export class MapStreamer {
     private pending = new Set<number>();
     private queue: number[] = [];
     private signature = "";
+    constructor(readonly mapWidth: number, readonly mapHeight: number) {}
+    private expanded(rect: MapRect, margin: number): MapRect {
+        return { minX: Math.max(0, rect.minX - margin), minY: Math.max(0, rect.minY - margin),
+            maxX: Math.min(this.mapWidth - 1, rect.maxX + margin), maxY: Math.min(this.mapHeight - 1, rect.maxY + margin) };
+    }
     update(viewport: MapRect): ChunkDelta {
-        const loadRect = chunkRectForGridRect(expanded(viewport, 4));
+        const loadRect = chunkRectForGridRect(this.expanded(viewport, 4), this.mapWidth, this.mapHeight);
         const signature = [loadRect.minX, loadRect.minY, loadRect.maxX, loadRect.maxY].join(":");
         if (signature === this.signature) return { added: [], removed: [] };
         this.signature = signature;
         this.generation += 1;
         const next = new Set(keys(loadRect));
-        const retain = new Set(keys(chunkRectForGridRect(expanded(viewport, SLG_CHUNK_SIZE + 4))));
+        const retain = new Set(keys(chunkRectForGridRect(this.expanded(viewport, SLG_CHUNK_SIZE + 4), this.mapWidth, this.mapHeight)));
         const removed = [...this.loaded].filter((key) => !retain.has(key));
         for (const key of removed) this.loaded.delete(key);
         const added = [...next].filter((key) => !this.desired.has(key));
@@ -47,7 +48,7 @@ export class MapStreamer {
         const key = this.queue.shift();
         if (key === undefined) return null;
         this.pending.add(key);
-        return { key, ...gridFromTileId(key), generation: this.generation };
+        return { key, x: gridFromTileId(key).x, y: gridFromTileId(key).y, generation: this.generation };
     }
     /** Pack pending neighbors into a rectangle of at most four chunks without fetching loaded chunks again. */
     takeBatch(): readonly ChunkLoad[] {
@@ -64,14 +65,14 @@ export class MapStreamer {
             { minX: first.x, minY: first.y - 1, maxX: first.x, maxY: first.y },
         );
         for (const rect of candidates) {
-            if (rect.minX < 0 || rect.minY < 0 || rect.maxX >= Math.ceil(SLG_MAP_W / SLG_CHUNK_SIZE)
-                || rect.maxY >= Math.ceil(SLG_MAP_H / SLG_CHUNK_SIZE)) continue;
+            if (rect.minX < 0 || rect.minY < 0 || rect.maxX >= Math.ceil(this.mapWidth / SLG_CHUNK_SIZE)
+                || rect.maxY >= Math.ceil(this.mapHeight / SLG_CHUNK_SIZE)) continue;
             const group = keys(rect);
             if (!group.every((key) => key === first.key || this.queue.includes(key))) continue;
             const members = new Set(group);
             this.queue = this.queue.filter((key) => !members.has(key));
             for (const key of group) this.pending.add(key);
-            return group.map((key) => ({ key, ...gridFromTileId(key), generation: this.generation }));
+            return group.map((key) => ({ key, x: gridFromTileId(key).x, y: gridFromTileId(key).y, generation: this.generation }));
         }
         return [first];
     }

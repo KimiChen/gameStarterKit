@@ -45,9 +45,9 @@ ensurePackages/挂载/分层/单例/常驻/交互输入全部由注册表元数�
 
 ## interactive 语义（引擎现实，选错必出事）
 
-fairygui 只有一个全局 InputProcessor：**启用 = 全屏捕获（页面可点击，但背后游戏触摸被挡）；
-禁用 = 整棵 FGUI 树无输入**。`meta.interactive` 是输入租约而非单页隔离；只要任一交互页打开，
-全局处理器仍启用。所以判据是「页面上有没有可点的东西」：
+fairygui 只有一个全局 InputProcessor：**启用 = 全屏捕获；禁用 = 整棵 FGUI 树无输入**。
+ViewMgr 按层级和置顶顺序把模态输入交给最高交互页，支持 FGUI/Cocos 混排；
+完整规则以 [客户端文档](../../../../docs/CLIENT.md#interactive-的含义) 为准。页面声明判据：
 - 有按钮/输入 → `interactive: true`（想“不挡游戏”是做不到的，这是引擎约束而非配置问题）；
 - 纯展示 HUD、要与战斗拖拽共存 → `interactive: false`（单独显示时页面自身也收不到点击）。
 

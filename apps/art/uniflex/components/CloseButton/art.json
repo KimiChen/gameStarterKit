@@ -1,0 +1,14 @@
+{
+  "key": "CloseButton",
+  "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx",
+  "export": {
+    "uniflexSha256": "d7b5c03661e930d6603ea8ea17591a2820c432e9b068eb2f0e93122c3f414bc1",
+    "psdSha256": "add43f423d38ae02ba16790856bcf800f601685f597f32fae895e705517bfe5c",
+    "at": "2026-09-18T01:57:21.673Z"
+  },
+  "import": {
+    "psdSha256": "add43f423d38ae02ba16790856bcf800f601685f597f32fae895e705517bfe5c",
+    "at": "2026-09-18T02:40:52.871Z",
+    "target": "restored"
+  }
+}

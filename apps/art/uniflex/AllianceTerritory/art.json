@@ -1,0 +1,21 @@
+{
+  "screen": "alliance-territory",
+  "componentName": "AllianceTerritory",
+  "restoredName": "AllianceTerritoryRestored",
+  "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritory.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "9a9eb6332b9b3ce289d3fe95529c65d7ef99a17bfdee162c4754521efdff4505",
+    "psdSha256": "eca93da7a420bc52d83fb3d2d841692366227bec46f93bac0a972e353c280af4",
+    "at": "2026-09-17T03:32:46.711Z"
+  },
+  "import": {
+    "psdSha256": "eca93da7a420bc52d83fb3d2d841692366227bec46f93bac0a972e353c280af4",
+    "at": "2026-09-17T03:58:42.080Z",
+    "target": "restored"
+  }
+}

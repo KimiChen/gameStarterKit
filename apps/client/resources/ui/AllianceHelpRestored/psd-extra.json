@@ -1,0 +1,1186 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "b44401a93ab9c7fe2f60dc73351a80fc70b49bbd41b03154801c2e963b94b4d5",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 750,
+    "height": 1624,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"9ffcbb3587c50cbf9bae9af06049bc7907cae81cdc9d0c5ffe38098f90e95d7d\" uf:baseline=\"eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJjYW52YXMiOnsid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fSwibm9kZXMiOlt7ImlkIjoxLCJwYXJlbnQiOm51bGwsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiQWxsaWFuY2VIZWxwUGFnZSIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzUwLCJoZWlnaHQiOjE2MjR9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdCIsInJvbGUiOiJwYWdlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7ImlkIjoyLCJwYXJlbnQiOjEsInBsYW5JZCI6Miwia2luZCI6InZpZXciLCJuYW1lIjoiQWxsaWFuY2VIZWxwIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3NTAsImhlaWdodCI6MTYyNH0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7ImlkIjozLCJwYXJlbnQiOjIsInBsYW5JZCI6Mywia2luZCI6InZpZXciLCJuYW1lIjoiQWxsaWFuY2VIZWxwL01hc2siLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9NYXNrIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsiaWQiOjQsInBhcmVudCI6MiwicGxhbklkIjo0LCJraW5kIjoidmlldyIsIm5hbWUiOiJBbGxpYW5jZUhlbHAvV2luZG93IiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjIxLCJ5IjozMTgsIndpZHRoIjo3MDgsImhlaWdodCI6OTkyfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3ciLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAifX0seyJpZCI6NSwicGFyZW50Ijo0LCJwbGFuSWQiOjUsImtpbmQiOiJ2aWV3IiwibmFtZSI6IlBvcHVwQmFja2dyb3VuZCIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzA4LCJoZWlnaHQiOjk5Mn0sImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L1BvcHVwQmFja2dyb3VuZCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19LHsiaWQiOjYsInBhcmVudCI6NSwicGxhbklkIjo2LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3MDgsImhlaWdodCI6OTkyfSwicmVzb3VyY2VJZCI6InVpL3BvcHVwL3Byb21wdCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L1BvcHVwQmFja2dyb3VuZC9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJQb3B1cEJhY2tncm91bmQifX0seyJpZCI6NywicGFyZW50Ijo1LCJwbGFuSWQiOjcsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJyZXNvdXJjZUlkIjoidWkvcG9wdXAvc21hbGwiLCJpZGVudGl0eSI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9Qb3B1cEJhY2tncm91bmQvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19LHsiaWQiOjgsInBhcmVudCI6NSwicGxhbklkIjo4LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjpmYWxzZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MCwiaGVpZ2h0IjowfSwicmVzb3VyY2VJZCI6InVpL3NldHRpbmdzL3BhbmVsIiwiaWRlbnRpdHkiOnsia2V5IjoiUG9wdXBCYWNrZ3JvdW5kOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvUG9wdXBCYWNrZ3JvdW5kL186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo5LCJwYXJlbnQiOjUsInBsYW5JZCI6OSwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9jaGFyYWN0ZXIvd2luZG93IiwiaWRlbnRpdHkiOnsia2V5IjoiUG9wdXBCYWNrZ3JvdW5kOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvUG9wdXBCYWNrZ3JvdW5kL186MyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjoxMCwicGFyZW50Ijo0LCJwbGFuSWQiOjEwLCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuiBlOebn+W4ruWKqSIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6OTAsInkiOjE4LCJ3aWR0aCI6NTI4LCJoZWlnaHQiOjU4fSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsiaWQiOjExLCJwYXJlbnQiOjQsInBsYW5JZCI6MTEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IkNsb3NlQnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjYyMSwieSI6Niwid2lkdGgiOjcyLCJoZWlnaHQiOjcyfSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiQ2xvc2VCdXR0b246QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9DbG9zZUJ1dHRvbiIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiQ2xvc2VCdXR0b24ifX0seyJpZCI6MTIsInBhcmVudCI6MTEsInBsYW5JZCI6MTIsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTEsInkiOjExLCJ3aWR0aCI6NTAsImhlaWdodCI6NTB9LCJyZXNvdXJjZUlkIjoidWkvcG9wdXAvY2xvc2UiLCJpZGVudGl0eSI6eyJrZXkiOiJDbG9zZUJ1dHRvbjpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L0Nsb3NlQnV0dG9uL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJDbG9zZUJ1dHRvbiJ9fSx7ImlkIjoxMywicGFyZW50Ijo0LCJwbGFuSWQiOjEzLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjY3LCJ5IjoxNDQsIndpZHRoIjoxMDAsImhlaWdodCI6Nzh9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvaGVscC1iYWRnZSIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7ImlkIjoxNCwicGFyZW50Ijo0LCJwbGFuSWQiOjE0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuS7iuaXpeW4ruWKqeenr+WIhuWlluWKsSIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTgyLCJ5IjoxMzMsIndpZHRoIjo0NTIsImhlaWdodCI6MjZ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAifX0seyJpZCI6MTUsInBhcmVudCI6NCwicGxhbklkIjoxNSwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoxODIsInkiOjE4Miwid2lkdGgiOjQ1MiwiaGVpZ2h0IjozOH0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9oZWxwLXRyYWNrIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsiaWQiOjE2LCJwYXJlbnQiOjQsInBsYW5JZCI6MTYsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiMC8zMDAwIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoxODIsInkiOjE4Miwid2lkdGgiOjQ1MiwiaGVpZ2h0IjozOH0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7ImlkIjoxNywicGFyZW50Ijo0LCJwbGFuSWQiOjE3LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjIzLCJ5IjoyODAsIndpZHRoIjo2NjMsImhlaWdodCI6NTQ0fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2lucHV0LWJnIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzoyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsiaWQiOjE4LCJwYXJlbnQiOjQsInBsYW5JZCI6MTgsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MzAxLCJ5Ijo0NTUsIndpZHRoIjoxMDgsImhlaWdodCI6MTE2fSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL2VtcHR5IiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsiaWQiOjE5LCJwYXJlbnQiOjQsInBsYW5JZCI6MTksImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoi5pqC5peg56S854mpIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyMywieSI6NjEwLCJ3aWR0aCI6NjYzLCJoZWlnaHQiOjQwfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsiaWQiOjIwLCJwYXJlbnQiOjQsInBsYW5JZCI6MjAsImtpbmQiOiJ2aWV3IiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyMjcsInkiOjg1MCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsiaWQiOjIxLCJwYXJlbnQiOjIwLCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IkNvbmZpcm1CdXR0b24iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJpZGVudGl0eSI6eyJrZXkiOiJDb25maXJtQnV0dG9uOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXy9Db25maXJtQnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJDb25maXJtQnV0dG9uIn19LHsiaWQiOjIyLCJwYXJlbnQiOjIxLCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IkFjdGlvbkJ1dHRvbiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MjU1LCJoZWlnaHQiOjEwMn0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fSx7ImlkIjoyMywicGFyZW50IjoyMiwicGxhbklkIjoyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0JhY2tncm91bmQiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJyZXNvdXJjZUlkIjoidWkvYnV0dG9uL2NvbmZpcm0iLCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uL0FjdGlvbkJ1dHRvbi9CYWNrZ3JvdW5kIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19LHsiaWQiOjI0LCJwYXJlbnQiOjIyLCJwbGFuSWQiOjMsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9MYWJlbCIsInZhbHVlIjoi5Yib5bu6IiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo4LCJ5Ijo0LCJ3aWR0aCI6MjM5LCJoZWlnaHQiOjg2fSwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vTGFiZWwiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MjUsInBhcmVudCI6MjIsInBsYW5JZCI6NCwia2luZCI6InZpZXciLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0ljb25Sb3ciLCJ2YWx1ZSI6IiIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uL0FjdGlvbkJ1dHRvbi9JY29uUm93Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19LHsiaWQiOjI2LCJwYXJlbnQiOjI1LCJwbGFuSWQiOjUsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiJBY3Rpb25CdXR0b24vSWNvbiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9idXR0b24vY29uZmlybSIsImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3cvQWN0aW9uQnV0dG9uL0ljb24iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MjcsInBhcmVudCI6MjUsInBsYW5JZCI6Niwia2luZCI6InRleHQiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0ljb25MYWJlbCIsInZhbHVlIjoi5Yib5bu6IiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sImlkZW50aXR5Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbjpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3cvQWN0aW9uQnV0dG9uL0ljb25MYWJlbCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiZGVmaW5pdGlvbnMiOlt7ImtleSI6IkFsbGlhbmNlSGVscCIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L3BhZ2VzL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAudHN4In0seyJrZXkiOiJQb3B1cEJhY2tncm91bmQiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3BvcHVwL1BvcHVwQmFja2dyb3VuZC50c3gifSx7ImtleSI6IkNsb3NlQnV0dG9uIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9wb3B1cC9DbG9zZUJ1dHRvbi50c3gifSx7ImtleSI6IkFjdGlvbkJ1dHRvbiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvYnV0dG9uL0FjdGlvbkJ1dHRvbi50c3gifSx7ImtleSI6IkNvbmZpcm1CdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2J1dHRvbi9Db25maXJtQnV0dG9uLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdCIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAiLCJyb2xlIjoicGFnZSIsInJvb3RSZWNvcmRJZCI6MX0seyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9Qb3B1cEJhY2tncm91bmQiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6NX0seyJrZXkiOiJDbG9zZUJ1dHRvbjpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L0Nsb3NlQnV0dG9uIiwiZGVmaW5pdGlvbktleSI6IkNsb3NlQnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6MTF9LHsia2V5IjoiQWN0aW9uQnV0dG9uOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbiIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoyMn0seyJrZXkiOiJDb25maXJtQnV0dG9uOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXy9Db25maXJtQnV0dG9uIiwiZGVmaW5pdGlvbktleSI6IkNvbmZpcm1CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoyMX1dfSwibGF5ZXJNYXBwaW5nIjp7InNjb3BlIjoiZXhwb3J0LWxvY2FsIiwiZW50cmllcyI6W3sicHNkTGF5ZXJJZCI6MSwiY2FwdHVyZUlkIjoiMjkiLCJuYW1lIjoiQWxsaWFuY2VIZWxwUGFnZSIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjEsImNhbmRpZGF0ZVJlY29yZElkcyI6WzFdLCJyb2xlIjoiZ3JvdXAiLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdCIsInJvbGUiOiJwYWdlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7InBzZExheWVySWQiOjIsImNhcHR1cmVJZCI6IjI4IiwibmFtZSI6IkFsbGlhbmNlSGVscCIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjIsImNhbmRpZGF0ZVJlY29yZElkcyI6WzJdLCJyb2xlIjoiZ3JvdXAiLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAifX0seyJwc2RMYXllcklkIjozLCJjYXB0dXJlSWQiOiIyIiwibmFtZSI6IkFsbGlhbmNlSGVscC9NYXNrIiwic3RhdHVzIjoibWF0Y2hlZCIsInJ1bnRpbWVSZWNvcmRJZCI6MywiY2FuZGlkYXRlUmVjb3JkSWRzIjpbM10sInJvbGUiOiJncm91cCIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvTWFzayIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7InBzZExheWVySWQiOjQsImNhcHR1cmVJZCI6IjEiLCJuYW1lIjoiQWxsaWFuY2VIZWxwL01hc2sgLyBmaWxsIiwic3RhdHVzIjoibWF0Y2hlZCIsInJ1bnRpbWVSZWNvcmRJZCI6MywiY2FuZGlkYXRlUmVjb3JkSWRzIjpbM10sInJvbGUiOiJiYWNrZ3JvdW5kIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9NYXNrIiwicm9sZSI6ImZpbGwiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsicHNkTGF5ZXJJZCI6NSwiY2FwdHVyZUlkIjoiMjciLCJuYW1lIjoiQWxsaWFuY2VIZWxwL1dpbmRvdyIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjQsImNhbmRpZGF0ZVJlY29yZElkcyI6WzRdLCJyb2xlIjoiZ3JvdXAiLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7InBzZExheWVySWQiOjYsImNhcHR1cmVJZCI6IjUiLCJuYW1lIjoiUG9wdXBCYWNrZ3JvdW5kIiwic3RhdHVzIjoibWF0Y2hlZCIsInJ1bnRpbWVSZWNvcmRJZCI6NSwiY2FuZGlkYXRlUmVjb3JkSWRzIjpbNV0sInJvbGUiOiJncm91cCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L1BvcHVwQmFja2dyb3VuZCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19LHsicHNkTGF5ZXJJZCI6NywiY2FwdHVyZUlkIjoiNCIsIm5hbWUiOiJHcm91cCIsInN0YXR1cyI6InVubWFwcGVkIiwicnVudGltZVJlY29yZElkIjpudWxsLCJjYW5kaWRhdGVSZWNvcmRJZHMiOltdLCJyb2xlIjoiZ3JvdXAifSx7InBzZExheWVySWQiOjgsImNhcHR1cmVJZCI6IjMiLCJuYW1lIjoiQ2FudmFzIiwic3RhdHVzIjoibWF0Y2hlZCIsInJ1bnRpbWVSZWNvcmRJZCI6NiwiY2FuZGlkYXRlUmVjb3JkSWRzIjpbNl0sInJvbGUiOiJyYXN0ZXIiLCJpZGVudGl0eSI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9Qb3B1cEJhY2tncm91bmQvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19LHsicHNkTGF5ZXJJZCI6OSwiY2FwdHVyZUlkIjoiNiIsIm5hbWUiOiLogZTnm5/luK7liqkiLCJzdGF0dXMiOiJtYXRjaGVkIiwicnVudGltZVJlY29yZElkIjoxMCwiY2FuZGlkYXRlUmVjb3JkSWRzIjpbMTBdLCJyb2xlIjoidGV4dCIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7InBzZExheWVySWQiOjEwLCJjYXB0dXJlSWQiOiI5IiwibmFtZSI6IkNsb3NlQnV0dG9uIiwic3RhdHVzIjoibWF0Y2hlZCIsInJ1bnRpbWVSZWNvcmRJZCI6MTEsImNhbmRpZGF0ZVJlY29yZElkcyI6WzExXSwicm9sZSI6Imdyb3VwIiwiaWRlbnRpdHkiOnsia2V5IjoiQ2xvc2VCdXR0b246QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9DbG9zZUJ1dHRvbiIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiQ2xvc2VCdXR0b24ifX0seyJwc2RMYXllcklkIjoxMSwiY2FwdHVyZUlkIjoiOCIsIm5hbWUiOiJHcm91cCIsInN0YXR1cyI6InVubWFwcGVkIiwicnVudGltZVJlY29yZElkIjpudWxsLCJjYW5kaWRhdGVSZWNvcmRJZHMiOltdLCJyb2xlIjoiZ3JvdXAifSx7InBzZExheWVySWQiOjEyLCJjYXB0dXJlSWQiOiI3IiwibmFtZSI6IkNhbnZhcyIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjEyLCJjYW5kaWRhdGVSZWNvcmRJZHMiOlsxMl0sInJvbGUiOiJyYXN0ZXIiLCJpZGVudGl0eSI6eyJrZXkiOiJDbG9zZUJ1dHRvbjpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L0Nsb3NlQnV0dG9uL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJDbG9zZUJ1dHRvbiJ9fSx7InBzZExheWVySWQiOjEzLCJjYXB0dXJlSWQiOiIxMSIsIm5hbWUiOiJHcm91cCIsInN0YXR1cyI6InVubWFwcGVkIiwicnVudGltZVJlY29yZElkIjpudWxsLCJjYW5kaWRhdGVSZWNvcmRJZHMiOltdLCJyb2xlIjoiZ3JvdXAifSx7InBzZExheWVySWQiOjE0LCJjYXB0dXJlSWQiOiIxMCIsIm5hbWUiOiJDYW52YXMiLCJzdGF0dXMiOiJtYXRjaGVkIiwicnVudGltZVJlY29yZElkIjoxMywiY2FuZGlkYXRlUmVjb3JkSWRzIjpbMTNdLCJyb2xlIjoicmFzdGVyIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsicHNkTGF5ZXJJZCI6MTUsImNhcHR1cmVJZCI6IjEyIiwibmFtZSI6IuS7iuaXpeW4ruWKqeenr+WIhuWlluWKsSIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjE0LCJjYW5kaWRhdGVSZWNvcmRJZHMiOlsxNF0sInJvbGUiOiJ0ZXh0IiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsicHNkTGF5ZXJJZCI6MTYsImNhcHR1cmVJZCI6IjE0IiwibmFtZSI6Ikdyb3VwIiwic3RhdHVzIjoidW5tYXBwZWQiLCJydW50aW1lUmVjb3JkSWQiOm51bGwsImNhbmRpZGF0ZVJlY29yZElkcyI6W10sInJvbGUiOiJncm91cCJ9LHsicHNkTGF5ZXJJZCI6MTcsImNhcHR1cmVJZCI6IjEzIiwibmFtZSI6IkNhbnZhcyIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjE1LCJjYW5kaWRhdGVSZWNvcmRJZHMiOlsxNV0sInJvbGUiOiJyYXN0ZXIiLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAifX0seyJwc2RMYXllcklkIjoxOCwiY2FwdHVyZUlkIjoiMTUiLCJuYW1lIjoiMC8zMDAwIiwic3RhdHVzIjoibWF0Y2hlZCIsInJ1bnRpbWVSZWNvcmRJZCI6MTYsImNhbmRpZGF0ZVJlY29yZElkcyI6WzE2XSwicm9sZSI6InRleHQiLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fOjIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAifX0seyJwc2RMYXllcklkIjoxOSwiY2FwdHVyZUlkIjoiMTciLCJuYW1lIjoiR3JvdXAiLCJzdGF0dXMiOiJ1bm1hcHBlZCIsInJ1bnRpbWVSZWNvcmRJZCI6bnVsbCwiY2FuZGlkYXRlUmVjb3JkSWRzIjpbXSwicm9sZSI6Imdyb3VwIn0seyJwc2RMYXllcklkIjoyMCwiY2FwdHVyZUlkIjoiMTYiLCJuYW1lIjoiQ2FudmFzIiwic3RhdHVzIjoibWF0Y2hlZCIsInJ1bnRpbWVSZWNvcmRJZCI6MTcsImNhbmRpZGF0ZVJlY29yZElkcyI6WzE3XSwicm9sZSI6InJhc3RlciIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7InBzZExheWVySWQiOjIxLCJjYXB0dXJlSWQiOiIxOSIsIm5hbWUiOiJHcm91cCIsInN0YXR1cyI6InVubWFwcGVkIiwicnVudGltZVJlY29yZElkIjpudWxsLCJjYW5kaWRhdGVSZWNvcmRJZHMiOltdLCJyb2xlIjoiZ3JvdXAifSx7InBzZExheWVySWQiOjIyLCJjYXB0dXJlSWQiOiIxOCIsIm5hbWUiOiJDYW52YXMiLCJzdGF0dXMiOiJtYXRjaGVkIiwicnVudGltZVJlY29yZElkIjoxOCwiY2FuZGlkYXRlUmVjb3JkSWRzIjpbMThdLCJyb2xlIjoicmFzdGVyIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsicHNkTGF5ZXJJZCI6MjMsImNhcHR1cmVJZCI6IjIwIiwibmFtZSI6IuaaguaXoOekvOeJqSIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjE5LCJjYW5kaWRhdGVSZWNvcmRJZHMiOlsxOV0sInJvbGUiOiJ0ZXh0IiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIn19LHsicHNkTGF5ZXJJZCI6MjQsImNhcHR1cmVJZCI6IjI2IiwibmFtZSI6Ikdyb3VwIiwic3RhdHVzIjoibWF0Y2hlZCIsInJ1bnRpbWVSZWNvcmRJZCI6MjAsImNhbmRpZGF0ZVJlY29yZElkcyI6WzIwXSwicm9sZSI6Imdyb3VwIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCJ9fSx7InBzZExheWVySWQiOjI1LCJjYXB0dXJlSWQiOiIyNSIsIm5hbWUiOiJDb25maXJtQnV0dG9uIiwic3RhdHVzIjoiYW1iaWd1b3VzIiwicnVudGltZVJlY29yZElkIjpudWxsLCJjYW5kaWRhdGVSZWNvcmRJZHMiOlsyMSwyMl0sInJvbGUiOiJncm91cCJ9LHsicHNkTGF5ZXJJZCI6MjYsImNhcHR1cmVJZCI6IjI0IiwibmFtZSI6IkFjdGlvbkJ1dHRvbiIsInN0YXR1cyI6ImFtYmlndW91cyIsInJ1bnRpbWVSZWNvcmRJZCI6bnVsbCwiY2FuZGlkYXRlUmVjb3JkSWRzIjpbMjEsMjJdLCJyb2xlIjoiZ3JvdXAifSx7InBzZExheWVySWQiOjI3LCJjYXB0dXJlSWQiOiIyMiIsIm5hbWUiOiJBY3Rpb25CdXR0b24vQmFja2dyb3VuZCIsInN0YXR1cyI6InVubWFwcGVkIiwicnVudGltZVJlY29yZElkIjpudWxsLCJjYW5kaWRhdGVSZWNvcmRJZHMiOltdLCJyb2xlIjoiZ3JvdXAifSx7InBzZExheWVySWQiOjI4LCJjYXB0dXJlSWQiOiIyMSIsIm5hbWUiOiJBY3Rpb25CdXR0b24vQmFja2dyb3VuZCIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjIzLCJjYW5kaWRhdGVSZWNvcmRJZHMiOlsyM10sInJvbGUiOiJyYXN0ZXIiLCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uL0FjdGlvbkJ1dHRvbi9CYWNrZ3JvdW5kIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19LHsicHNkTGF5ZXJJZCI6MjksImNhcHR1cmVJZCI6IjIzIiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9MYWJlbCIsInN0YXR1cyI6Im1hdGNoZWQiLCJydW50aW1lUmVjb3JkSWQiOjI0LCJjYW5kaWRhdGVSZWNvcmRJZHMiOlsyNF0sInJvbGUiOiJ0ZXh0IiwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vTGFiZWwiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX1dfSwiaWRzIjp7IjEiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QiLCJyb2xlIjoicGFnZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAiLCJjYXB0dXJlSWQiOiIyOSIsInJ1bnRpbWVSZWNvcmRJZCI6MSwiY2FwdHVyZUZyYW1lIjp7IngiOjAsInkiOjAsIndpZHRoIjo3NTAsImhlaWdodCI6MTYyNH0sImxheW91dEZyYW1lIjp7IngiOjAsInkiOjAsIndpZHRoIjo3NTAsImhlaWdodCI6MTYyNH19LCIyIjp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCIsImNhcHR1cmVJZCI6IjI4IiwicnVudGltZVJlY29yZElkIjoyLCJjYXB0dXJlRnJhbWUiOnsieCI6MCwieSI6MCwid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fSwibGF5b3V0RnJhbWUiOnsieCI6MCwieSI6MCwid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fX0sIjMiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9NYXNrIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIiwiY2FwdHVyZUlkIjoiMiIsInJ1bnRpbWVSZWNvcmRJZCI6MywiY2FwdHVyZUZyYW1lIjp7IngiOjAsInkiOjAsIndpZHRoIjo3NTAsImhlaWdodCI6MTYyNH0sImxheW91dEZyYW1lIjp7IngiOjAsInkiOjAsIndpZHRoIjo3NTAsImhlaWdodCI6MTYyNH19LCI0Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvTWFzayIsInJvbGUiOiJmaWxsIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCIsImNhcHR1cmVJZCI6IjEiLCJydW50aW1lUmVjb3JkSWQiOjMsImNhcHR1cmVGcmFtZSI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzUwLCJoZWlnaHQiOjE2MjR9LCJsYXlvdXRGcmFtZSI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzUwLCJoZWlnaHQiOjE2MjR9LCJjYXB0dXJlSGFzaCI6ImNiM2EzNjI4YTRmZjliYWM3ZDBjYzliMmFjY2VlMTUwZTgyOWViNTNiY2E1NmJiYjM4MTkxMTRkOWU0ZjRkZjQifSwiNSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCIsImNhcHR1cmVJZCI6IjI3IiwicnVudGltZVJlY29yZElkIjo0LCJjYXB0dXJlRnJhbWUiOnsieCI6MjEsInkiOjMxOCwid2lkdGgiOjcwOCwiaGVpZ2h0Ijo5OTJ9LCJsYXlvdXRGcmFtZSI6eyJ4IjoyMSwieSI6MzE4LCJ3aWR0aCI6NzA4LCJoZWlnaHQiOjk5Mn19LCI2Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L1BvcHVwQmFja2dyb3VuZCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIiwiY2FwdHVyZUlkIjoiNSIsInJ1bnRpbWVSZWNvcmRJZCI6NSwiY2FwdHVyZUZyYW1lIjp7IngiOjIxLCJ5IjozMTgsIndpZHRoIjo3MDgsImhlaWdodCI6OTkyfSwibGF5b3V0RnJhbWUiOnsieCI6MjEsInkiOjMxOCwid2lkdGgiOjcwOCwiaGVpZ2h0Ijo5OTJ9fSwiOCI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9Qb3B1cEJhY2tncm91bmQvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIiwiY2FwdHVyZUlkIjoiMyIsInJ1bnRpbWVSZWNvcmRJZCI6NiwiY2FwdHVyZUZyYW1lIjp7IngiOjIxLCJ5IjozMTgsIndpZHRoIjo3MDgsImhlaWdodCI6OTkyfSwibGF5b3V0RnJhbWUiOnsieCI6MjEsInkiOjMxOCwid2lkdGgiOjcwOCwiaGVpZ2h0Ijo5OTJ9LCJyZXNvdXJjZUlkIjoidWkvcG9wdXAvcHJvbXB0IiwiY2FwdHVyZUhhc2giOiJhYzk2Mzc4MDU0OWE5YTY0ZWYxNGIyMjlhYjc0OTU1NTgyMjA5ZTQ4OTE1NmE0M2EzMTVkNGMwM2U0ZDNiOTc3In0sIjkiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIiwiY2FwdHVyZUlkIjoiNiIsInJ1bnRpbWVSZWNvcmRJZCI6MTAsImNhcHR1cmVGcmFtZSI6eyJ4IjoxMTEsInkiOjMzNiwid2lkdGgiOjUyOCwiaGVpZ2h0Ijo1OH0sImxheW91dEZyYW1lIjp7IngiOjExMSwieSI6MzM2LCJ3aWR0aCI6NTI4LCJoZWlnaHQiOjU4fX0sIjEwIjp7ImtleSI6IkNsb3NlQnV0dG9uOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvQ2xvc2VCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkNsb3NlQnV0dG9uIiwiY2FwdHVyZUlkIjoiOSIsInJ1bnRpbWVSZWNvcmRJZCI6MTEsImNhcHR1cmVGcmFtZSI6eyJ4Ijo2NTMsInkiOjMzNSwid2lkdGgiOjUwLCJoZWlnaHQiOjUwfSwibGF5b3V0RnJhbWUiOnsieCI6NjQyLCJ5IjozMjQsIndpZHRoIjo3MiwiaGVpZ2h0Ijo3Mn19LCIxMiI6eyJrZXkiOiJDbG9zZUJ1dHRvbjpBbGxpYW5jZUhlbHBQYWdlL0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L0Nsb3NlQnV0dG9uL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJDbG9zZUJ1dHRvbiIsImNhcHR1cmVJZCI6IjciLCJydW50aW1lUmVjb3JkSWQiOjEyLCJjYXB0dXJlRnJhbWUiOnsieCI6NjUzLCJ5IjozMzUsIndpZHRoIjo1MCwiaGVpZ2h0Ijo1MH0sImxheW91dEZyYW1lIjp7IngiOjY1MywieSI6MzM1LCJ3aWR0aCI6NTAsImhlaWdodCI6NTB9LCJyZXNvdXJjZUlkIjoidWkvcG9wdXAvY2xvc2UiLCJjYXB0dXJlSGFzaCI6ImU1NGEzODgzNGVkNWNmM2FkNzZmZDUzZGZkOGE5MTFmNzMzMjk4NjQ4MGFhMzA0YzcyNTVhNDRiNTNmMTNhNGUifSwiMTQiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIiwiY2FwdHVyZUlkIjoiMTAiLCJydW50aW1lUmVjb3JkSWQiOjEzLCJjYXB0dXJlRnJhbWUiOnsieCI6ODgsInkiOjQ2Miwid2lkdGgiOjEwMCwiaGVpZ2h0Ijo3OH0sImxheW91dEZyYW1lIjp7IngiOjg4LCJ5Ijo0NjIsIndpZHRoIjoxMDAsImhlaWdodCI6Nzh9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvaGVscC1iYWRnZSIsImNhcHR1cmVIYXNoIjoiYzUwYzc0NGM4OTUxNDRlN2NkODE2ODc2NzI3MDJiYzliOGFjNjJiYTM2NWU5MDAyNTkwYjgxYjNiNGM4NTRmNiJ9LCIxNSI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAiLCJjYXB0dXJlSWQiOiIxMiIsInJ1bnRpbWVSZWNvcmRJZCI6MTQsImNhcHR1cmVGcmFtZSI6eyJ4IjoyMDMsInkiOjQ1MSwid2lkdGgiOjQ1MiwiaGVpZ2h0IjoyNn0sImxheW91dEZyYW1lIjp7IngiOjIwMywieSI6NDUxLCJ3aWR0aCI6NDUyLCJoZWlnaHQiOjI2fX0sIjE3Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCIsImNhcHR1cmVJZCI6IjEzIiwicnVudGltZVJlY29yZElkIjoxNSwiY2FwdHVyZUZyYW1lIjp7IngiOjIwMywieSI6NTAwLCJ3aWR0aCI6NDUyLCJoZWlnaHQiOjM4fSwibGF5b3V0RnJhbWUiOnsieCI6MjAzLCJ5Ijo1MDAsIndpZHRoIjo0NTIsImhlaWdodCI6Mzh9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvaGVscC10cmFjayIsImNhcHR1cmVIYXNoIjoiY2ZjYTc5NGMwN2UyN2NiNGY3NjE0ZWIxNWU3NDMyNzE0MTY3MTk3ZTA2OTI3N2I4MWFhNTRhMjZmZjM4Zjc2YSJ9LCIxOCI6eyJrZXkiOiJBbGxpYW5jZUhlbHAucm9vdC9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fOjIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAiLCJjYXB0dXJlSWQiOiIxNSIsInJ1bnRpbWVSZWNvcmRJZCI6MTYsImNhcHR1cmVGcmFtZSI6eyJ4IjoyMDMsInkiOjUwMCwid2lkdGgiOjQ1MiwiaGVpZ2h0IjozOH0sImxheW91dEZyYW1lIjp7IngiOjIwMywieSI6NTAwLCJ3aWR0aCI6NDUyLCJoZWlnaHQiOjM4fX0sIjIwIjp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCIsImNhcHR1cmVJZCI6IjE2IiwicnVudGltZVJlY29yZElkIjoxNywiY2FwdHVyZUZyYW1lIjp7IngiOjQ0LCJ5Ijo1OTgsIndpZHRoIjo2NjMsImhlaWdodCI6NTQ0fSwibGF5b3V0RnJhbWUiOnsieCI6NDQsInkiOjU5OCwid2lkdGgiOjY2MywiaGVpZ2h0Ijo1NDR9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvaW5wdXQtYmciLCJjYXB0dXJlSGFzaCI6IjU3OWY5MDVhZTljZGYzNWU0YjE4MjNiN2I1NGVjMjQxZTkyN2M1MDhiNmViMGM2NmVjMTg0MWYzOGMxNmJkOTkifSwiMjIiOnsia2V5IjoiQWxsaWFuY2VIZWxwLnJvb3QvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIZWxwIiwiY2FwdHVyZUlkIjoiMTgiLCJydW50aW1lUmVjb3JkSWQiOjE4LCJjYXB0dXJlRnJhbWUiOnsieCI6MzIyLCJ5Ijo3NzMsIndpZHRoIjoxMDgsImhlaWdodCI6MTE2fSwibGF5b3V0RnJhbWUiOnsieCI6MzIyLCJ5Ijo3NzMsIndpZHRoIjoxMDgsImhlaWdodCI6MTE2fSwicmVzb3VyY2VJZCI6InVpL2JhY2twYWNrL2VtcHR5IiwiY2FwdHVyZUhhc2giOiJiODY5ZGQ2NTcyN2EwM2UzNDkxODM3MWMyZmM3N2JmZTU4ODI2ZDZmOTViOWYzNzk5YjY1MTBmMzQyNjdkYWVlIn0sIjIzIjp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L186MyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSGVscCIsImNhcHR1cmVJZCI6IjIwIiwicnVudGltZVJlY29yZElkIjoxOSwiY2FwdHVyZUZyYW1lIjp7IngiOjQ0LCJ5Ijo5MjgsIndpZHRoIjo2NjMsImhlaWdodCI6NDB9LCJsYXlvdXRGcmFtZSI6eyJ4Ijo0NCwieSI6OTI4LCJ3aWR0aCI6NjYzLCJoZWlnaHQiOjQwfX0sIjI0Ijp7ImtleSI6IkFsbGlhbmNlSGVscC5yb290L0FsbGlhbmNlSGVscC9BbGxpYW5jZUhlbHAvV2luZG93L18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhlbHAiLCJjYXB0dXJlSWQiOiIyNiIsInJ1bnRpbWVSZWNvcmRJZCI6MjAsImNhcHR1cmVGcmFtZSI6eyJ4IjoyNDgsInkiOjExNjgsIndpZHRoIjoyNTUsImhlaWdodCI6MTAyfSwibGF5b3V0RnJhbWUiOnsieCI6MjQ4LCJ5IjoxMTY4LCJ3aWR0aCI6MjU1LCJoZWlnaHQiOjEwMn19LCIyOCI6eyJrZXkiOiJBY3Rpb25CdXR0b246QWxsaWFuY2VIZWxwUGFnZS9BbGxpYW5jZUhlbHAvQWxsaWFuY2VIZWxwL1dpbmRvdy9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uL0FjdGlvbkJ1dHRvbi9CYWNrZ3JvdW5kIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIiwiY2FwdHVyZUlkIjoiMjEiLCJydW50aW1lUmVjb3JkSWQiOjIzLCJjYXB0dXJlRnJhbWUiOnsieCI6MjQ4LCJ5IjoxMTY4LCJ3aWR0aCI6MjU1LCJoZWlnaHQiOjEwMn0sImxheW91dEZyYW1lIjp7IngiOjI0OCwieSI6MTE2OCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJyZXNvdXJjZUlkIjoidWkvYnV0dG9uL2NvbmZpcm0iLCJjYXB0dXJlSGFzaCI6IjIzNDA0N2I4ZWQ1ZjE5MTk0MDdiYzc1MTZkNzljN2NkNjEzYjViYzk1MTRlMzNiY2U2NDhhMTEwM2E5YTc5YjgifSwiMjkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOkFsbGlhbmNlSGVscFBhZ2UvQWxsaWFuY2VIZWxwL0FsbGlhbmNlSGVscC9XaW5kb3cvXy9Db25maXJtQnV0dG9uL0FjdGlvbkJ1dHRvbi9BY3Rpb25CdXR0b24vTGFiZWwiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24iLCJjYXB0dXJlSWQiOiIyMyIsInJ1bnRpbWVSZWNvcmRJZCI6MjQsImNhcHR1cmVGcmFtZSI6eyJ4IjoyNTYsInkiOjExNzIsIndpZHRoIjoyMzksImhlaWdodCI6ODZ9LCJsYXlvdXRGcmFtZSI6eyJ4IjoyNTYsInkiOjExNzIsIndpZHRoIjoyMzksImhlaWdodCI6ODZ9fX19\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-1": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceHelpPage [ui:AllianceHelp.root#page]",
+        "id": 1,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-2": {
+      "parent": "layer-1",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceHelp [ui:AllianceHelp.root/AllianceHelp#node]",
+        "id": 2,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-3": {
+      "parent": "layer-2",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceHelp/Mask [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Mask#node]",
+        "id": 3,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-4": {
+      "parent": "layer-3",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 1624,
+        "right": 750,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceHelp/Mask / fill [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Mask#fill]",
+        "id": 4,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-5": {
+      "parent": "layer-2",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceHelp/Window [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window#node]",
+        "id": 5,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-6": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "PopupBackground [ui:PopupBackground:AllianceHelpPage/AllianceHelp/AllianceHelp/Window/PopupBackground#component]",
+        "id": 6,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-7": {
+      "parent": "layer-6",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 7,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-8": {
+      "parent": "layer-7",
+      "properties": {
+        "top": 318,
+        "left": 21,
+        "bottom": 1310,
+        "right": 729,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:PopupBackground:AllianceHelpPage/AllianceHelp/AllianceHelp/Window/PopupBackground/_:0#node]",
+        "id": 8,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-9": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 336,
+        "left": 111,
+        "bottom": 394,
+        "right": 639,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "联盟帮助 [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_:0#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            375,
+            379.8
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "联盟帮助",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 40,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 40,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 89,
+                "g": 61,
+                "b": 132
+              }
+            }
+          ]
+        },
+        "id": 9,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-10": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "CloseButton [ui:CloseButton:AllianceHelpPage/AllianceHelp/AllianceHelp/Window/CloseButton#component]",
+        "id": 10,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-11": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 11,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-12": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 335,
+        "left": 653,
+        "bottom": 385,
+        "right": 703,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:CloseButton:AllianceHelpPage/AllianceHelp/AllianceHelp/Window/CloseButton/_#node]",
+        "id": 12,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-13": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 13,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-14": {
+      "parent": "layer-13",
+      "properties": {
+        "top": 462,
+        "left": 88,
+        "bottom": 540,
+        "right": 188,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_:0#node]",
+        "id": 14,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-15": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 451,
+        "left": 203,
+        "bottom": 477,
+        "right": 655,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "今日帮助积分奖励 [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_:1#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            429,
+            473.62
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "今日帮助积分奖励",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 26,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 26,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 89.0001,
+              "g": 72.99885,
+              "b": 109.99934999999999
+            }
+          }
+        },
+        "id": 15,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-16": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 16,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-17": {
+      "parent": "layer-16",
+      "properties": {
+        "top": 500,
+        "left": 203,
+        "bottom": 538,
+        "right": 655,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_:1#node]",
+        "id": 17,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-18": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 500,
+        "left": 203,
+        "bottom": 538,
+        "right": 655,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "0/3000 [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_:2#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            429,
+            528.62
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "0/3000",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 26,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 26,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 51,
+              "g": 49.0008,
+              "b": 45.999449999999996
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 246,
+                "g": 239,
+                "b": 227
+              }
+            }
+          ]
+        },
+        "id": 18,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-19": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 19,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-20": {
+      "parent": "layer-19",
+      "properties": {
+        "top": 598,
+        "left": 44,
+        "bottom": 1142,
+        "right": 707,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_:2#node]",
+        "id": 20,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-21": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 21,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-22": {
+      "parent": "layer-21",
+      "properties": {
+        "top": 773,
+        "left": 322,
+        "bottom": 889,
+        "right": 430,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_:3#node]",
+        "id": 22,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-23": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 928,
+        "left": 44,
+        "bottom": 968,
+        "right": 707,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "暂无礼物 [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_:3#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            375.5,
+            962.8
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "暂无礼物",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 40,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 40,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 23,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-24": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group [ui:AllianceHelp.root/AllianceHelp/AllianceHelp/Window/_#node]",
+        "id": 24,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-25": {
+      "parent": "layer-24",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ConfirmButton",
+        "id": 25,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-26": {
+      "parent": "layer-25",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton",
+        "id": 26,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-27": {
+      "parent": "layer-26",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/Background",
+        "id": 27,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-28": {
+      "parent": "layer-27",
+      "properties": {
+        "top": 1168,
+        "left": 248,
+        "bottom": 1270,
+        "right": 503,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/Background [ui:ActionButton:AllianceHelpPage/AllianceHelp/AllianceHelp/Window/_/ConfirmButton/ActionButton/ActionButton/Background#node]",
+        "id": 28,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-29": {
+      "parent": "layer-26",
+      "properties": {
+        "top": 1172,
+        "left": 256,
+        "bottom": 1258,
+        "right": 495,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/Label [ui:ActionButton:AllianceHelpPage/AllianceHelp/AllianceHelp/Window/_/ConfirmButton/ActionButton/ActionButton/Label#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            375.5,
+            1229.8
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "创建",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 40,
+            "fauxBold": false,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 40,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 100,
+                "g": 62,
+                "b": 20
+              }
+            }
+          ]
+        },
+        "id": 29,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "key": "PopupBackground",
+  "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx",
+  "export": {
+    "uniflexSha256": "51440d5531ecd224e934083a97dffce55984685080475a4ee812264ce4e840a7",
+    "psdSha256": "3e0c7aa4d7364d0db11a973b56d6ed74638052efa2c2c1207fff7a53445e4748",
+    "at": "2026-09-18T01:57:21.671Z"
+  },
+  "import": {
+    "psdSha256": "3e0c7aa4d7364d0db11a973b56d6ed74638052efa2c2c1207fff7a53445e4748",
+    "at": "2026-09-18T02:40:51.867Z",
+    "target": "restored"
+  }
+}

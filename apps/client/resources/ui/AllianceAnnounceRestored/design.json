@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "AllianceAnnouncePage",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnounce.root",
+        "role": "page",
+        "definitionKey": "AllianceAnnounce"
+      },
+      "children": [
+        "layer-2"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "AllianceAnnounce",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce",
+        "role": "component",
+        "definitionKey": "AllianceAnnouncePanel"
+      },
+      "asset": "asset-588a1d7b66eb9711584fa88ba761023ba65b6ce601d8e76ac5a29c14194d8960"
+    }
+  },
+  "assets": {
+    "asset-588a1d7b66eb9711584fa88ba761023ba65b6ce601d8e76ac5a29c14194d8960": {
+      "path": "assets/588a1d7b66eb9711584fa88ba761023ba65b6ce601d8e76ac5a29c14194d8960.png",
+      "sha256": "588a1d7b66eb9711584fa88ba761023ba65b6ce601d8e76ac5a29c14194d8960",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "AllianceAnnounce: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}
