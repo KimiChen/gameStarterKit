@@ -84,9 +84,7 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
     };
     resize();
     window.addEventListener("resize", resize);
-    ${font ? `fgui.UIConfig.defaultFont = "${face}";
-    await document.fonts.load("40px ${face}");
-    await document.fonts.ready;` : ""}
+    ${font ? `fgui.UIConfig.defaultFont = "${face}";` : ""}
     const pkgUrl = (screen, name) => {
       const pkg = name || screen.packageName;
       return screen.group ? "./" + screen.group + "/" + pkg : "./" + pkg;
@@ -124,15 +122,29 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
       visit(obj);
       if (obj.numChildren) for (let i = 0; i < obj.numChildren; i++) walk(obj.getChildAt(i), visit);
     };
+    const enableElementHit = (obj) => {
+      if (!obj) return;
+      obj.opaque = true;
+      obj.touchable = true;
+      const el = obj.element || obj._element;
+      if (!el) return;
+      el._touchDisabled = false;
+      el.touchable = true;
+      el.opaque = true;
+      if (typeof el.updateTouchableFlag === "function") el.updateTouchableFlag();
+      if (el.style && (el.style.pointerEvents === "none" || el.style.pointerEvents === "None")) {
+        el.style.pointerEvents = "auto";
+      }
+    };
     const bindClick = (obj, handler) => {
       if (!obj || obj.__catalogBound) return;
       obj.__catalogBound = true;
-      obj.opaque = true;
-      obj.touchable = true;
+      enableElementHit(obj);
       obj.onClick(handler, null);
     };
     const bindLabeled = (obj, handler) => {
       bindClick(obj, handler);
+      if (obj.group) bindClick(obj.group, handler);
       for (let p = obj.parent; p; p = p.parent) {
         if (typeof p.fireClick === "function") {
           bindClick(p, handler);
@@ -148,22 +160,49 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
       }
     };
     const bindCatalogClicks = (root, goScreen) => {
+      const targets = [];
       walk(root, (obj) => {
         const label = String(obj.title || obj.text || "").trim();
         const id = titles[label];
-        if (id) bindLabeled(obj, () => goScreen(id));
+        if (!id) return;
+        bindLabeled(obj, () => goScreen(id));
+        const box = obj.group && obj.group.width > 0 ? obj.group : obj;
+        const global = box.localToGlobal ? box.localToGlobal(0, 0) : { x: box.x, y: box.y };
+        const origin = root.localToGlobal ? root.localToGlobal(0, 0) : { x: 0, y: 0 };
+        targets.push({
+          id,
+          x: global.x - origin.x,
+          y: global.y - origin.y,
+          w: box.width,
+          h: box.height,
+        });
+      });
+      const el = root.element || root._element;
+      if (!el || el.__catalogHitsBound) return;
+      el.__catalogHitsBound = true;
+      enableElementHit(root);
+      el.addEventListener("click", (event) => {
+        const rect = el.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const x = (event.clientX - rect.left) / rect.width * root.width;
+        const y = (event.clientY - rect.top) / rect.height * root.height;
+        for (let i = targets.length - 1; i >= 0; i--) {
+          const tile = targets[i];
+          if (x >= tile.x && x <= tile.x + tile.w && y >= tile.y && y <= tile.y + tile.h) {
+            goScreen(tile.id);
+            return;
+          }
+        }
       });
     };
     const enableHits = (obj) => {
       if (!obj) return;
-      obj.opaque = true;
-      obj.touchable = true;
+      enableElementHit(obj);
       if (!obj.numChildren) return;
       for (let i = 0; i < obj.numChildren; i++) {
         const child = obj.getChildAt(i);
         if (!child) continue;
-        child.opaque = true;
-        child.touchable = true;
+        enableElementHit(child);
       }
     };
     const hit = (obj, handler) => {
@@ -319,13 +358,18 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
       document.documentElement.dataset.fguiScreen = screen.id;
       syncPicker(screen.id);
     }
+    let goingTo = null;
     function go(id) {
       if (id !== "catalog" && !screens.some((entry) => entry.id === id)) return;
+      if (id === currentId || goingTo === id) return;
+      goingTo = id;
       const query = new URLSearchParams(location.search);
       if (exportMode) query.set("psd", "1");
       query.set("screen", id);
       history.pushState(null, "", "?" + query.toString());
-      return show(id);
+      const done = show(id);
+      Promise.resolve(done).finally(() => { if (goingTo === id) goingTo = null; });
+      return done;
     }
     catalogEl?.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-screen]");
@@ -346,7 +390,19 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
       const next = new URLSearchParams(location.search).get("screen") || catalogId;
       show(next);
     });
-    await show(initial);
+    ${font ? `await Promise.race([
+      Promise.all([
+        document.fonts.load("40px ${face}").catch(() => {}),
+        document.fonts.ready,
+      ]),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]);` : ""}
+    try {
+      await show(initial);
+    } catch (error) {
+      console.error(error);
+      showHtmlCatalog();
+    }
   </script>
 </body>
 </html>
