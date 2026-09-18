@@ -122,6 +122,32 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
       visit(obj);
       if (obj.numChildren) for (let i = 0; i < obj.numChildren; i++) walk(obj.getChildAt(i), visit);
     };
+    const isFillImage = (obj) => {
+      const item = obj?.packageItem || obj?._contentItem;
+      const file = String(item?.file || item?.name || obj?._element?.src || obj?.element?.src || "");
+      return /(^|\\/)fill_[0-9a-f]+\\.png/i.test(file);
+    };
+    const clearFillNineGrid = (root) => {
+      walk(root, (obj) => {
+        if (!isFillImage(obj)) return;
+        const el = obj.element || obj._element;
+        if (!el) return;
+        el.scale9Grid = null;
+        el.scaleByTile = false;
+        if (el.textureScale) { el.textureScale.x = 1; el.textureScale.y = 1; }
+        if (el.style) {
+          el.style.borderImage = "none";
+          el.style.borderImageSlice = "0 fill";
+          el.style.boxSizing = "content-box";
+          const src = el.src || el._src;
+          if (src) {
+            el.style.backgroundImage = "url('" + src + "')";
+            el.style.backgroundSize = "100% 100%";
+            el.style.backgroundRepeat = "no-repeat";
+          }
+        }
+      });
+    };
     const enableElementHit = (obj) => {
       if (!obj) return;
       obj.opaque = true;
@@ -345,6 +371,7 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
         if (obj?.numChildren) for (let i = 0; i < obj.numChildren; i++) relayout(obj.getChildAt(i));
       };
       relayout(view);
+      clearFillNineGrid(view);
       resize();
       currentId = screen.id;
       if (screen.id === "preview-home") bindCatalogClicks(view, go);
