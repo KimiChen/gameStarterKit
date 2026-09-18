@@ -266,3 +266,37 @@ test("star upgrade and alliance announce share ConfirmButton with shop", async (
     assert.match(originalStar, /from '\.\/HeroStarUpgradePanel'/);
     assert.doesNotMatch(originalStar, /restored/);
 });
+
+test("settings and alliance share the same WideMenuButton file", async () => {
+    const buttonId = componentGuid("WideMenuButton");
+    const homeId = componentGuid("AllianceHomePanel");
+    const settings = await readArtPsd(resolve(root, "apps/art/uniflex/Settings/screen.psd"));
+    const alliance = await readArtPsd(resolve(root, "apps/art/uniflex/Alliance/screen.psd"));
+    const home = await readArtPsd(artComponentPsdPath(root, "AllianceHomePanel"));
+    assert.equal(linkedPaths(settings).get(buttonId)?.relativePath,
+        "../components/WideMenuButton/component.psd");
+    assert.equal(linkedPaths(settings).get(buttonId)?.childDocumentID, "");
+    assert.equal(collectPlaced(settings).filter((item) => item.id === buttonId).length, 10);
+    assert.equal(linkedPaths(alliance).get(homeId)?.relativePath,
+        "../components/AllianceHomePanel/component.psd");
+    assert.equal(collectPlaced(alliance).some((item) => item.id === buttonId), false);
+    assert.equal(linkedPaths(home).get(buttonId)?.relativePath, "../WideMenuButton/component.psd");
+    assert.equal(collectPlaced(home).filter((item) => item.id === buttonId).length, 7);
+    const settingsRestored = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/SettingsRestored/SettingsRestored.tsx"), "utf8");
+    const allianceRestored = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/AllianceRestored/AllianceRestored.tsx"), "utf8");
+    const homeSrc = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/restored/pages/Alliance/AllianceHomePanel.tsx"), "utf8");
+    const originalSettings = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx"), "utf8");
+    const originalAlliance = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx"), "utf8");
+    assert.match(settingsRestored, /from '\.\.\/\.\.\/restored\/components\/button\/WideMenuButton'/);
+    assert.match(allianceRestored, /from '\.\.\/\.\.\/restored\/pages\/Alliance\/AllianceHomePanel'/);
+    assert.match(homeSrc, /from '\.\.\/\.\.\/components\/button\/WideMenuButton'/);
+    assert.match(originalSettings, /from '\.\.\/\.\.\/components\/button\/WideMenuButton'/);
+    assert.match(originalAlliance, /from '\.\/AllianceHomePanel'/);
+    assert.doesNotMatch(originalSettings, /restored/);
+    assert.doesNotMatch(originalAlliance, /restored/);
+});

@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "5a508dba323802774a7e5cd1646400b74d50eb8b5ce64a0478fe9d2c2ee0dab1",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 34,
+    "height": 34,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"26ca1bb73720a60e8dcea9ce3104311dc5de0bfb76bf7f5519779ab66624594f\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjM0LCJoZWlnaHQiOjM0fSwibm9kZXMiOlt7ImlkIjoxNDcsInBhcmVudCI6bnVsbCwicGxhbklkIjoxMywia2luZCI6InZpZXciLCJuYW1lIjoiTm90aWZpY2F0aW9uQmFkZ2UiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjM0LCJoZWlnaHQiOjM0fSwiaWRlbnRpdHkiOnsia2V5IjoiTm90aWZpY2F0aW9uQmFkZ2U6QWxsaWFuY2UvTm90aWZpY2F0aW9uQmFkZ2U6MCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiTm90aWZpY2F0aW9uQmFkZ2UifX0seyJpZCI6MTQ4LCJwYXJlbnQiOjE0NywicGxhbklkIjoxNCwia2luZCI6ImltYWdlIiwibmFtZSI6Ik5vdGlmaWNhdGlvbkJhZGdlL0JhY2tncm91bmQiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjM0LCJoZWlnaHQiOjM0fSwicmVzb3VyY2VJZCI6InVpL21haWwvbnVtYmVyLWJhZGdlIiwiaWRlbnRpdHkiOnsia2V5IjoiTm90aWZpY2F0aW9uQmFkZ2U6QWxsaWFuY2UvTm90aWZpY2F0aW9uQmFkZ2U6MC9Ob3RpZmljYXRpb25CYWRnZS9CYWNrZ3JvdW5kIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiTm90aWZpY2F0aW9uQmFkZ2UifX0seyJpZCI6MTQ5LCJwYXJlbnQiOjE0NywicGxhbklkIjoxNSwia2luZCI6InRleHQiLCJuYW1lIjoiTm90aWZpY2F0aW9uQmFkZ2UvQ291bnQiLCJ2YWx1ZSI6IjMiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjIsInkiOjAsIndpZHRoIjozMCwiaGVpZ2h0IjozNH0sImlkZW50aXR5Ijp7ImtleSI6Ik5vdGlmaWNhdGlvbkJhZGdlOkFsbGlhbmNlL05vdGlmaWNhdGlvbkJhZGdlOjAvTm90aWZpY2F0aW9uQmFkZ2UvQ291bnQiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJOb3RpZmljYXRpb25CYWRnZSJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiTm90aWZpY2F0aW9uQmFkZ2UiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2JhZGdlL05vdGlmaWNhdGlvbkJhZGdlLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiTm90aWZpY2F0aW9uQmFkZ2UiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2JhZGdlL05vdGlmaWNhdGlvbkJhZGdlLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJOb3RpZmljYXRpb25CYWRnZTpBbGxpYW5jZS9Ob3RpZmljYXRpb25CYWRnZTowIiwiZGVmaW5pdGlvbktleSI6Ik5vdGlmaWNhdGlvbkJhZGdlIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6MTQ3fV19LCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJOb3RpZmljYXRpb25CYWRnZSIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvYmFkZ2UvTm90aWZpY2F0aW9uQmFkZ2UudHN4In19\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-105": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "NotificationBadge [ui:NotificationBadge:Alliance/NotificationBadge:0#component]",
+        "id": 105,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-106": {
+      "parent": "layer-105",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "NotificationBadge/Background",
+        "id": 106,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-107": {
+      "parent": "layer-106",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 34,
+        "right": 34,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "NotificationBadge/Background [ui:NotificationBadge:Alliance/NotificationBadge:0/NotificationBadge/Background#node]",
+        "id": 107,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-108": {
+      "parent": "layer-105",
+      "properties": {
+        "top": 0,
+        "left": 2,
+        "bottom": 34,
+        "right": 32,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "NotificationBadge/Count [ui:NotificationBadge:Alliance/NotificationBadge:0/NotificationBadge/Count#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            17,
+            25.879999999999995
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "3",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0
+              }
+            }
+          ]
+        },
+        "id": 108,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

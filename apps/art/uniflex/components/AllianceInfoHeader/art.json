@@ -1,0 +1,14 @@
+{
+  "key": "AllianceInfoHeader",
+  "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceInfoHeader.tsx",
+  "export": {
+    "uniflexSha256": "a45eee9c01a80238a2056ea2e4e74c9d694b34169d90d386d56b353f2994a56e",
+    "psdSha256": "1503f9cb500029a830b063525adbe62160d15d7a6145b2a1337bd6d49e86658e",
+    "at": "2026-09-18T06:19:26.868Z"
+  },
+  "import": {
+    "psdSha256": "1503f9cb500029a830b063525adbe62160d15d7a6145b2a1337bd6d49e86658e",
+    "at": "2026-09-18T06:19:56.217Z",
+    "target": "restored"
+  }
+}

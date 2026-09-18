@@ -1,0 +1,14 @@
+{
+  "key": "AllianceHomePanel",
+  "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceHomePanel.tsx",
+  "export": {
+    "uniflexSha256": "b17f3649f11e98dbff286eb668cac6f1f26277616ee574423707a037ff5f0b8b",
+    "psdSha256": "8c4defc6f3f87bc99c65a104fd4ddd5328bcc781be59a5999077924617a8b331",
+    "at": "2026-09-18T06:19:26.873Z"
+  },
+  "import": {
+    "psdSha256": "8c4defc6f3f87bc99c65a104fd4ddd5328bcc781be59a5999077924617a8b331",
+    "at": "2026-09-18T06:19:58.864Z",
+    "target": "restored"
+  }
+}

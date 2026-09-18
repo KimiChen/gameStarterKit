@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "4fd5e410c4b8158d7509720c346b3df8acdb75b40715f389406c7d92936bbb28",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 326,
+    "height": 114,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"e4f5f9a4b50a07a76b631c256b1f5aa2608ea51b2dda85cbbc97857b26c4a984\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjMyNiwiaGVpZ2h0IjoxMTR9LCJub2RlcyI6W3siaWQiOjE0LCJwYXJlbnQiOm51bGwsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiV2lkZU1lbnVCdXR0b24iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjMyNiwiaGVpZ2h0IjoxMTR9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpTZXR0aW5nc1BhZ2UvU2V0dGluZ3MvQ29udGVudC9fL1dpZGVNZW51QnV0dG9uOjAiLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19LHsiaWQiOjE1LCJwYXJlbnQiOjE0LCJwbGFuSWQiOjIsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjMyNiwiaGVpZ2h0IjoxMTR9LCJyZXNvdXJjZUlkIjoidWkvc2V0dGluZ3MvYnV0dG9uIiwiaWRlbnRpdHkiOnsia2V5IjoiV2lkZU1lbnVCdXR0b246U2V0dGluZ3NQYWdlL1NldHRpbmdzL0NvbnRlbnQvXy9XaWRlTWVudUJ1dHRvbjowL186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19LHsiaWQiOjE2LCJwYXJlbnQiOjE0LCJwbGFuSWQiOjMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MzMsInkiOjMwLCJ3aWR0aCI6NTQsImhlaWdodCI6NTR9LCJyZXNvdXJjZUlkIjoidWkvc2V0dGluZ3MvZ2VhciIsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOlNldHRpbmdzUGFnZS9TZXR0aW5ncy9Db250ZW50L18vV2lkZU1lbnVCdXR0b246MC9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjoxNywicGFyZW50IjoxNCwicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IumAmueUqOiuvue9riIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTI4LCJ5IjozMCwid2lkdGgiOjE4NCwiaGVpZ2h0Ijo1NH0sImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOlNldHRpbmdzUGFnZS9TZXR0aW5ncy9Db250ZW50L18vV2lkZU1lbnVCdXR0b246MC9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiV2lkZU1lbnVCdXR0b24ifX1dLCJjb21wb25lbnREZWNsYXJhdGlvbnMiOnsic2NoZW1hVmVyc2lvbiI6MSwia2luZCI6InVuaWZsZXgtY29tcG9uZW50LWRlY2xhcmF0aW9ucyIsImNvbXBvbmVudERvY3VtZW50Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9idXR0b24vV2lkZU1lbnVCdXR0b24udHN4In0sImRlZmluaXRpb25zIjpbeyJrZXkiOiJXaWRlTWVudUJ1dHRvbiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvYnV0dG9uL1dpZGVNZW51QnV0dG9uLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpTZXR0aW5nc1BhZ2UvU2V0dGluZ3MvQ29udGVudC9fL1dpZGVNZW51QnV0dG9uOjAiLCJkZWZpbml0aW9uS2V5IjoiV2lkZU1lbnVCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoxNH1dfSwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiV2lkZU1lbnVCdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2J1dHRvbi9XaWRlTWVudUJ1dHRvbi50c3gifX0=\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-14": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "WideMenuButton [ui:WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0#component]",
+        "id": 14,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-15": {
+      "parent": "layer-14",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 15,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-16": {
+      "parent": "layer-15",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 114,
+        "right": 326,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0/_:0#node]",
+        "id": 16,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-17": {
+      "parent": "layer-14",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 17,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-18": {
+      "parent": "layer-17",
+      "properties": {
+        "top": 30,
+        "left": 33,
+        "bottom": 84,
+        "right": 87,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0/_:1#node]",
+        "id": 18,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-19": {
+      "parent": "layer-14",
+      "properties": {
+        "top": 30,
+        "left": 128,
+        "bottom": 84,
+        "right": 312,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "通用设置 [ui:WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0/_#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            220,
+            67.36000000000001
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "通用设置",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 28,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 28,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 19,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

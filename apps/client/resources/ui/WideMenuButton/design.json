@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 326,
+    "height": 114
+  },
+  "roots": [
+    "layer-14"
+  ],
+  "nodes": {
+    "layer-14": {
+      "id": "layer-14",
+      "name": "WideMenuButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
+      },
+      "children": [
+        "layer-15",
+        "layer-17",
+        "layer-19"
+      ]
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-16"
+      ]
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0/_:0",
+        "role": "node"
+      },
+      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 30,
+        "width": 54,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-18"
+      ]
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 54,
+        "height": 54
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0/_:1",
+        "role": "node"
+      },
+      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "通用设置",
+      "kind": "text",
+      "frame": {
+        "x": 126,
+        "y": 43,
+        "width": 188,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0/_",
+        "role": "node"
+      },
+      "text": {
+        "value": "通用设置",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    }
+  },
+  "assets": {
+    "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1": {
+      "path": "assets/4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1.png",
+      "sha256": "4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2": {
+      "path": "assets/902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2.png",
+      "sha256": "902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2",
+      "mime": "image/png",
+      "width": 54,
+      "height": 54
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

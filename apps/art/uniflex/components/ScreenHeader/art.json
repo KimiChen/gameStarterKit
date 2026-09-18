@@ -1,0 +1,14 @@
+{
+  "key": "ScreenHeader",
+  "source": "apps/client/src/ui-uniflex/components/chrome/ScreenHeader.tsx",
+  "export": {
+    "uniflexSha256": "68760638c6933f209d3258e418883b46729fbf450e8165f7390ce4a3bbae7027",
+    "psdSha256": "52aa7d1957fd74cc37ed282f5155941ed5bae4fb8c9108a82fbb7fa73954e028",
+    "at": "2026-09-18T06:19:26.875Z"
+  },
+  "import": {
+    "psdSha256": "52aa7d1957fd74cc37ed282f5155941ed5bae4fb8c9108a82fbb7fa73954e028",
+    "at": "2026-09-18T06:20:00.387Z",
+    "target": "restored"
+  }
+}

@@ -1,0 +1,632 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1369
+  },
+  "roots": [
+    "layer-10"
+  ],
+  "nodes": {
+    "layer-10": {
+      "id": "layer-10",
+      "name": "AllianceHome",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1338
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome",
+        "role": "component",
+        "definitionKey": "AllianceHomePanel"
+      },
+      "children": [
+        "layer-11",
+        "layer-32",
+        "layer-34",
+        "layer-36",
+        "layer-37",
+        "layer-40",
+        "layer-43",
+        "layer-44",
+        "layer-45",
+        "layer-46",
+        "layer-47",
+        "layer-53",
+        "layer-59",
+        "layer-65",
+        "layer-71",
+        "layer-77",
+        "layer-83"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "AllianceInfoHeader",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 541
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader",
+        "role": "component",
+        "definitionKey": "AllianceInfoHeader"
+      },
+      "asset": "asset-0b989b49a42739a2fd2d1b04b082a3c4b4cb3a2d5e2930c4054f293e7f9b58af"
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 30,
+        "y": 547,
+        "width": 690,
+        "height": 211
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-33"
+      ]
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 690,
+        "height": 211
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:0",
+        "role": "node"
+      },
+      "asset": "asset-50e233d1f927e774d6b579c3c667ed92ecffd570cb26dabd1f624d6652a6aebc"
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 33,
+        "y": 550,
+        "width": 684,
+        "height": 41
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-35"
+      ]
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 684,
+        "height": 41
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:1",
+        "role": "node"
+      },
+      "asset": "asset-61bc8d99d5bc59a7c5ac53b3cb9a88ad8273232bb98710051ed3d5f4822f726a"
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "斧头帮公告板",
+      "kind": "text",
+      "frame": {
+        "x": 48,
+        "y": 557.5,
+        "width": 544,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:0",
+        "role": "node"
+      },
+      "text": {
+        "value": "斧头帮公告板",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 26,
+        "lineHeight": 26,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 613,
+        "y": 551,
+        "width": 38,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:0",
+        "role": "node"
+      },
+      "children": [
+        "layer-38"
+      ]
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 38,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-39"
+      ]
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 38,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:0/_",
+        "role": "node"
+      },
+      "asset": "asset-cd69d856a7c314735a2df7b91f8028594c25bc3a5a88f4afc538232ff88f978d"
+    },
+    "layer-40": {
+      "id": "layer-40",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 669,
+        "y": 551,
+        "width": 38,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:1",
+        "role": "node"
+      },
+      "children": [
+        "layer-41"
+      ]
+    },
+    "layer-41": {
+      "id": "layer-41",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 38,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-42"
+      ]
+    },
+    "layer-42": {
+      "id": "layer-42",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 38,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:1/_",
+        "role": "node"
+      },
+      "asset": "asset-fb2bb64e4c69dc140c545d2bbb1d8f232cd912b190c541276c9397cb8280529f"
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "欢迎加入联盟 - 努力发展联盟，让我们变得更强大！",
+      "kind": "text",
+      "frame": {
+        "x": 48,
+        "y": 603,
+        "width": 658,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:1",
+        "role": "node"
+      },
+      "text": {
+        "value": "欢迎加入联盟 - 努力发展联盟，让我们变得更强大！",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "1. 升级科技：每日捐献联盟科技，可使联盟快速发展。",
+      "kind": "text",
+      "frame": {
+        "x": 48,
+        "y": 637,
+        "width": 658,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:2",
+        "role": "node"
+      },
+      "text": {
+        "value": "1. 升级科技：每日捐献联盟科技，可使联盟快速发展。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-45": {
+      "id": "layer-45",
+      "name": "2. 集结章鱼王：发起集结章鱼王可获得丰厚奖励，快速提高战力。",
+      "kind": "text",
+      "frame": {
+        "x": 48,
+        "y": 669,
+        "width": 658,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:3",
+        "role": "node"
+      },
+      "text": {
+        "value": "2. 集结章鱼王：发起集结章鱼王可获得丰厚奖励，快速提高战力。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-46": {
+      "id": "layer-46",
+      "name": "3. 参与集结：在战争界面中打开自动集结，每天有 50 次参与奖励。",
+      "kind": "text",
+      "frame": {
+        "x": 48,
+        "y": 701,
+        "width": 658,
+        "height": 44
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceHomePanel:Alliance/AllianceHome/_:4",
+        "role": "node"
+      },
+      "text": {
+        "value": "3. 参与集结：在战争界面中打开自动集结，每天有 50 次参与奖励。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 22,
+        "lineHeight": 22,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-47": {
+      "id": "layer-47",
+      "name": "WideMenuButton",
+      "kind": "image",
+      "frame": {
+        "x": 32,
+        "y": 776,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:Alliance/AllianceHome/WideMenuButton:0",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
+      },
+      "asset": "asset-a79807f6c4d8db8bfced89b85e73e423e998512e2c45d7b7fd9b64f258cd3a5a"
+    },
+    "layer-53": {
+      "id": "layer-53",
+      "name": "WideMenuButton",
+      "kind": "image",
+      "frame": {
+        "x": 392,
+        "y": 776,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:Alliance/AllianceHome/WideMenuButton:1",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
+      },
+      "asset": "asset-aff3282a171dea9632ea4ebb612badb8184c9ce29451f6e8697c5f75230084c3"
+    },
+    "layer-59": {
+      "id": "layer-59",
+      "name": "WideMenuButton",
+      "kind": "image",
+      "frame": {
+        "x": 32,
+        "y": 925,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:Alliance/AllianceHome/WideMenuButton:2",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
+      },
+      "asset": "asset-4b4957e4d62aa679f1c857f54a57c5840db7eef064ba606dc42a6ba65ef6c722"
+    },
+    "layer-65": {
+      "id": "layer-65",
+      "name": "WideMenuButton",
+      "kind": "image",
+      "frame": {
+        "x": 392,
+        "y": 925,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:Alliance/AllianceHome/WideMenuButton:3",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
+      },
+      "asset": "asset-3422416d52604f51f6d8d5adebef0ff690402784d2fe4deefac130427397c7c6"
+    },
+    "layer-71": {
+      "id": "layer-71",
+      "name": "WideMenuButton",
+      "kind": "image",
+      "frame": {
+        "x": 32,
+        "y": 1075,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:Alliance/AllianceHome/WideMenuButton:4",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
+      },
+      "asset": "asset-65c647a388a490772844289a17ef627dbdfd4740396aacbe13cace97d277c5b7"
+    },
+    "layer-77": {
+      "id": "layer-77",
+      "name": "WideMenuButton",
+      "kind": "image",
+      "frame": {
+        "x": 392,
+        "y": 1075,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:Alliance/AllianceHome/WideMenuButton:5",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
+      },
+      "asset": "asset-13e0a4abd2b5951e54e1e6b76ded4b0210b65bb6856a020f10f93a2775de6d2d"
+    },
+    "layer-83": {
+      "id": "layer-83",
+      "name": "WideMenuButton",
+      "kind": "image",
+      "frame": {
+        "x": 32,
+        "y": 1224,
+        "width": 326,
+        "height": 114
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "WideMenuButton:Alliance/AllianceHome/WideMenuButton:6",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
+      },
+      "asset": "asset-ac0cae4ba2cc6355ccaf6faaa6a9a69772ed726d3816439db8324c98b2405990"
+    }
+  },
+  "assets": {
+    "asset-0b989b49a42739a2fd2d1b04b082a3c4b4cb3a2d5e2930c4054f293e7f9b58af": {
+      "path": "assets/0b989b49a42739a2fd2d1b04b082a3c4b4cb3a2d5e2930c4054f293e7f9b58af.png",
+      "sha256": "0b989b49a42739a2fd2d1b04b082a3c4b4cb3a2d5e2930c4054f293e7f9b58af",
+      "mime": "image/png",
+      "width": 750,
+      "height": 541
+    },
+    "asset-50e233d1f927e774d6b579c3c667ed92ecffd570cb26dabd1f624d6652a6aebc": {
+      "path": "assets/50e233d1f927e774d6b579c3c667ed92ecffd570cb26dabd1f624d6652a6aebc.png",
+      "sha256": "50e233d1f927e774d6b579c3c667ed92ecffd570cb26dabd1f624d6652a6aebc",
+      "mime": "image/png",
+      "width": 690,
+      "height": 211
+    },
+    "asset-61bc8d99d5bc59a7c5ac53b3cb9a88ad8273232bb98710051ed3d5f4822f726a": {
+      "path": "assets/61bc8d99d5bc59a7c5ac53b3cb9a88ad8273232bb98710051ed3d5f4822f726a.png",
+      "sha256": "61bc8d99d5bc59a7c5ac53b3cb9a88ad8273232bb98710051ed3d5f4822f726a",
+      "mime": "image/png",
+      "width": 684,
+      "height": 41
+    },
+    "asset-cd69d856a7c314735a2df7b91f8028594c25bc3a5a88f4afc538232ff88f978d": {
+      "path": "assets/cd69d856a7c314735a2df7b91f8028594c25bc3a5a88f4afc538232ff88f978d.png",
+      "sha256": "cd69d856a7c314735a2df7b91f8028594c25bc3a5a88f4afc538232ff88f978d",
+      "mime": "image/png",
+      "width": 38,
+      "height": 38
+    },
+    "asset-fb2bb64e4c69dc140c545d2bbb1d8f232cd912b190c541276c9397cb8280529f": {
+      "path": "assets/fb2bb64e4c69dc140c545d2bbb1d8f232cd912b190c541276c9397cb8280529f.png",
+      "sha256": "fb2bb64e4c69dc140c545d2bbb1d8f232cd912b190c541276c9397cb8280529f",
+      "mime": "image/png",
+      "width": 38,
+      "height": 38
+    },
+    "asset-a79807f6c4d8db8bfced89b85e73e423e998512e2c45d7b7fd9b64f258cd3a5a": {
+      "path": "assets/a79807f6c4d8db8bfced89b85e73e423e998512e2c45d7b7fd9b64f258cd3a5a.png",
+      "sha256": "a79807f6c4d8db8bfced89b85e73e423e998512e2c45d7b7fd9b64f258cd3a5a",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-aff3282a171dea9632ea4ebb612badb8184c9ce29451f6e8697c5f75230084c3": {
+      "path": "assets/aff3282a171dea9632ea4ebb612badb8184c9ce29451f6e8697c5f75230084c3.png",
+      "sha256": "aff3282a171dea9632ea4ebb612badb8184c9ce29451f6e8697c5f75230084c3",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-4b4957e4d62aa679f1c857f54a57c5840db7eef064ba606dc42a6ba65ef6c722": {
+      "path": "assets/4b4957e4d62aa679f1c857f54a57c5840db7eef064ba606dc42a6ba65ef6c722.png",
+      "sha256": "4b4957e4d62aa679f1c857f54a57c5840db7eef064ba606dc42a6ba65ef6c722",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-3422416d52604f51f6d8d5adebef0ff690402784d2fe4deefac130427397c7c6": {
+      "path": "assets/3422416d52604f51f6d8d5adebef0ff690402784d2fe4deefac130427397c7c6.png",
+      "sha256": "3422416d52604f51f6d8d5adebef0ff690402784d2fe4deefac130427397c7c6",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-65c647a388a490772844289a17ef627dbdfd4740396aacbe13cace97d277c5b7": {
+      "path": "assets/65c647a388a490772844289a17ef627dbdfd4740396aacbe13cace97d277c5b7.png",
+      "sha256": "65c647a388a490772844289a17ef627dbdfd4740396aacbe13cace97d277c5b7",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-13e0a4abd2b5951e54e1e6b76ded4b0210b65bb6856a020f10f93a2775de6d2d": {
+      "path": "assets/13e0a4abd2b5951e54e1e6b76ded4b0210b65bb6856a020f10f93a2775de6d2d.png",
+      "sha256": "13e0a4abd2b5951e54e1e6b76ded4b0210b65bb6856a020f10f93a2775de6d2d",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-ac0cae4ba2cc6355ccaf6faaa6a9a69772ed726d3816439db8324c98b2405990": {
+      "path": "assets/ac0cae4ba2cc6355ccaf6faaa6a9a69772ed726d3816439db8324c98b2405990.png",
+      "sha256": "ac0cae4ba2cc6355ccaf6faaa6a9a69772ed726d3816439db8324c98b2405990",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "AllianceInfoHeader: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

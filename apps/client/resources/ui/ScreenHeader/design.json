@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 90
+  },
+  "roots": [
+    "layer-89"
+  ],
+  "nodes": {
+    "layer-89": {
+      "id": "layer-89",
+      "name": "ScreenHeader",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ScreenHeader:Alliance/ScreenHeader",
+        "role": "component",
+        "definitionKey": "ScreenHeader"
+      },
+      "children": [
+        "layer-90",
+        "layer-92"
+      ]
+    },
+    "layer-90": {
+      "id": "layer-90",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-91"
+      ]
+    },
+    "layer-91": {
+      "id": "layer-91",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ScreenHeader:Alliance/ScreenHeader/_",
+        "role": "node"
+      },
+      "asset": "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db"
+    },
+    "layer-92": {
+      "id": "layer-92",
+      "name": "联盟",
+      "kind": "text",
+      "frame": {
+        "x": 20,
+        "y": 23,
+        "width": 208,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ScreenHeader:Alliance/ScreenHeader/_",
+        "role": "node"
+      },
+      "text": {
+        "value": "联盟",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db": {
+      "path": "assets/c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db.png",
+      "sha256": "c8dfc19617d39cdc30614d09290551c47a7b50152624a68614cb057b86e678db",
+      "mime": "image/png",
+      "width": 750,
+      "height": 90
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

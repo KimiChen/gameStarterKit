@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-linked-components",
+  "components": [
+    {
+      "key": "AllianceInfoHeader",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceInfoHeader.tsx",
+      "psd": "components/AllianceInfoHeader/component.psd",
+      "guid": "8cc7e67d-a058-14ad-f5ae-2e44094f2c06",
+      "width": 750,
+      "height": 541,
+      "relativeFromPage": "../components/AllianceInfoHeader/component.psd"
+    },
+    {
+      "key": "WideMenuButton",
+      "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx",
+      "psd": "components/WideMenuButton/component.psd",
+      "guid": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+      "width": 326,
+      "height": 114,
+      "relativeFromPage": "../components/WideMenuButton/component.psd"
+    },
+    {
+      "key": "AllianceHomePanel",
+      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceHomePanel.tsx",
+      "psd": "components/AllianceHomePanel/component.psd",
+      "guid": "f8066ee6-b442-fab4-79f0-63cd541715a7",
+      "width": 750,
+      "height": 1369,
+      "relativeFromPage": "../components/AllianceHomePanel/component.psd"
+    },
+    {
+      "key": "ScreenHeader",
+      "source": "apps/client/src/ui-uniflex/components/chrome/ScreenHeader.tsx",
+      "psd": "components/ScreenHeader/component.psd",
+      "guid": "fbf852d6-b96f-4648-8fae-ee09aca684bd",
+      "width": 750,
+      "height": 90,
+      "relativeFromPage": "../components/ScreenHeader/component.psd"
+    },
+    {
+      "key": "PanelTab",
+      "source": "apps/client/src/ui-uniflex/components/tab/PanelTab.tsx",
+      "psd": "components/PanelTab/component.psd",
+      "guid": "d3a66a5e-06c8-9fce-bd38-a6ef38a4c979",
+      "width": 200,
+      "height": 52,
+      "relativeFromPage": "../components/PanelTab/component.psd"
+    },
+    {
+      "key": "NotificationBadge",
+      "source": "apps/client/src/ui-uniflex/components/badge/NotificationBadge.tsx",
+      "psd": "components/NotificationBadge/component.psd",
+      "guid": "92ead4b9-0797-97d5-3c43-66dec7fcbe98",
+      "width": 34,
+      "height": 34,
+      "relativeFromPage": "../components/NotificationBadge/component.psd"
+    },
+    {
+      "key": "MainNav",
+      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx",
+      "psd": "components/MainNav/component.psd",
+      "guid": "3ada9bd1-d9dd-d339-7e81-85a3355c40b6",
+      "width": 750,
+      "height": 125,
+      "relativeFromPage": "../components/MainNav/component.psd"
+    }
+  ]
+}

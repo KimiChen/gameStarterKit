@@ -1,0 +1,546 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 541
+  },
+  "roots": [
+    "layer-11"
+  ],
+  "nodes": {
+    "layer-11": {
+      "id": "layer-11",
+      "name": "AllianceInfoHeader",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 339,
+        "width": 750,
+        "height": 202
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader",
+        "role": "component",
+        "definitionKey": "AllianceInfoHeader"
+      },
+      "children": [
+        "layer-12",
+        "layer-14",
+        "layer-16",
+        "layer-17",
+        "layer-18",
+        "layer-20",
+        "layer-22",
+        "layer-24",
+        "layer-25",
+        "layer-26",
+        "layer-27",
+        "layer-28",
+        "layer-29",
+        "layer-30"
+      ]
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 35,
+        "y": 0,
+        "width": 198,
+        "height": 178
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-13"
+      ]
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 198,
+        "height": 178
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:0",
+        "role": "node"
+      },
+      "asset": "asset-fe32a9a59a211053d45471b12dcd3aa5f8bbb45b5eeecb98d73aadb7111a9c09"
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 242,
+        "y": 49,
+        "width": 476,
+        "height": 131
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-15"
+      ]
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 476,
+        "height": 131
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:1",
+        "role": "node"
+      },
+      "asset": "asset-ca88dcc2aef20b6fae82e70ddc140cee9cf27df0286f65ee3fd11848d4c4a5dc"
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "[LFS]",
+      "kind": "text",
+      "frame": {
+        "x": 257,
+        "y": 14,
+        "width": 204,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:0",
+        "role": "node"
+      },
+      "text": {
+        "value": "[LFS]",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffc400"
+      }
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "斧头帮",
+      "kind": "text",
+      "frame": {
+        "x": 492,
+        "y": 13,
+        "width": 198,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:1",
+        "role": "node"
+      },
+      "text": {
+        "value": "斧头帮",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 256,
+        "y": 62,
+        "width": 33,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-19"
+      ]
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 33,
+        "height": 28
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:2",
+        "role": "node"
+      },
+      "asset": "asset-d5337952b5effc1422f972d16bd62d766370abc040844d241c3d44939bc12838"
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 258,
+        "y": 102,
+        "width": 29,
+        "height": 29
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-21"
+      ]
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 29,
+        "height": 29
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:3",
+        "role": "node"
+      },
+      "asset": "asset-e173f8655e0582c6f7b7177477ab5752070397980c0eaad95d3757ceda29242f"
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 254,
+        "y": 142,
+        "width": 36,
+        "height": 30
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-23"
+      ]
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 36,
+        "height": 30
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:4",
+        "role": "node"
+      },
+      "asset": "asset-58ed95156a38f0efdfbee6417621cd7e2f2981f078ff9bd4c304b64e097257dc"
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "盟主",
+      "kind": "text",
+      "frame": {
+        "x": 296,
+        "y": 63,
+        "width": 164,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:2",
+        "role": "node"
+      },
+      "text": {
+        "value": "盟主",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "联盟战力",
+      "kind": "text",
+      "frame": {
+        "x": 296,
+        "y": 103,
+        "width": 164,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:3",
+        "role": "node"
+      },
+      "text": {
+        "value": "联盟战力",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "联盟成员人数",
+      "kind": "text",
+      "frame": {
+        "x": 296,
+        "y": 143,
+        "width": 184,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:4",
+        "role": "node"
+      },
+      "text": {
+        "value": "联盟成员人数",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "80",
+      "kind": "text",
+      "frame": {
+        "x": 556,
+        "y": 63,
+        "width": 144,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:5",
+        "role": "node"
+      },
+      "text": {
+        "value": "80",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "154万",
+      "kind": "text",
+      "frame": {
+        "x": 556,
+        "y": 103,
+        "width": 144,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:6",
+        "role": "node"
+      },
+      "text": {
+        "value": "154万",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "25/50",
+      "kind": "text",
+      "frame": {
+        "x": 556,
+        "y": 143,
+        "width": 144,
+        "height": 48
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:7",
+        "role": "node"
+      },
+      "text": {
+        "value": "25/50",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "right",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 199,
+        "width": 750,
+        "height": 3
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_",
+        "role": "node"
+      },
+      "children": [
+        "layer-31"
+      ]
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 3
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_",
+        "role": "fill"
+      },
+      "asset": "asset-1055188cd10bce012cdb6d7211c28f810ef0b13446ef863efe792c920c6d471e"
+    }
+  },
+  "assets": {
+    "asset-fe32a9a59a211053d45471b12dcd3aa5f8bbb45b5eeecb98d73aadb7111a9c09": {
+      "path": "assets/fe32a9a59a211053d45471b12dcd3aa5f8bbb45b5eeecb98d73aadb7111a9c09.png",
+      "sha256": "fe32a9a59a211053d45471b12dcd3aa5f8bbb45b5eeecb98d73aadb7111a9c09",
+      "mime": "image/png",
+      "width": 198,
+      "height": 178
+    },
+    "asset-ca88dcc2aef20b6fae82e70ddc140cee9cf27df0286f65ee3fd11848d4c4a5dc": {
+      "path": "assets/ca88dcc2aef20b6fae82e70ddc140cee9cf27df0286f65ee3fd11848d4c4a5dc.png",
+      "sha256": "ca88dcc2aef20b6fae82e70ddc140cee9cf27df0286f65ee3fd11848d4c4a5dc",
+      "mime": "image/png",
+      "width": 476,
+      "height": 131
+    },
+    "asset-d5337952b5effc1422f972d16bd62d766370abc040844d241c3d44939bc12838": {
+      "path": "assets/d5337952b5effc1422f972d16bd62d766370abc040844d241c3d44939bc12838.png",
+      "sha256": "d5337952b5effc1422f972d16bd62d766370abc040844d241c3d44939bc12838",
+      "mime": "image/png",
+      "width": 33,
+      "height": 28
+    },
+    "asset-e173f8655e0582c6f7b7177477ab5752070397980c0eaad95d3757ceda29242f": {
+      "path": "assets/e173f8655e0582c6f7b7177477ab5752070397980c0eaad95d3757ceda29242f.png",
+      "sha256": "e173f8655e0582c6f7b7177477ab5752070397980c0eaad95d3757ceda29242f",
+      "mime": "image/png",
+      "width": 29,
+      "height": 29
+    },
+    "asset-58ed95156a38f0efdfbee6417621cd7e2f2981f078ff9bd4c304b64e097257dc": {
+      "path": "assets/58ed95156a38f0efdfbee6417621cd7e2f2981f078ff9bd4c304b64e097257dc.png",
+      "sha256": "58ed95156a38f0efdfbee6417621cd7e2f2981f078ff9bd4c304b64e097257dc",
+      "mime": "image/png",
+      "width": 36,
+      "height": 30
+    },
+    "asset-1055188cd10bce012cdb6d7211c28f810ef0b13446ef863efe792c920c6d471e": {
+      "path": "assets/1055188cd10bce012cdb6d7211c28f810ef0b13446ef863efe792c920c6d471e.png",
+      "sha256": "1055188cd10bce012cdb6d7211c28f810ef0b13446ef863efe792c920c6d471e",
+      "mime": "image/png",
+      "width": 750,
+      "height": 3
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}
