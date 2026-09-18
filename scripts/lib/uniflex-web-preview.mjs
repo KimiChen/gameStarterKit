@@ -1,9 +1,10 @@
 import { access, cp, mkdir } from "node:fs/promises";
+import { networkInterfaces } from "node:os";
 import { resolve } from "node:path";
 import { context } from "esbuild";
 
 export async function startUniflexWebPreview({
-    root, host = "127.0.0.1", port, watch = false,
+    root, host = "127.0.0.1", port = 8000, watch = false,
 } = {}) {
     const output = resolve(root, "apps/client/.cache/uniflex");
     await access(resolve(output, "uniflex/catalog.json")).catch(() => {
@@ -46,10 +47,23 @@ export async function startUniflexWebPreview({
             host: address,
             port: result.port,
             url: `http://${address}:${result.port}/`,
+            lanUrls: lanPreviewUrls(host, result.port),
             dispose: () => build.dispose(),
         };
     } catch (error) {
         await build.dispose();
         throw error;
     }
+}
+
+function lanPreviewUrls(host, port) {
+    if (host !== "0.0.0.0" && host !== "::") return [];
+    const urls = [];
+    for (const list of Object.values(networkInterfaces())) {
+        for (const info of list ?? []) {
+            if (info.internal || (info.family !== "IPv4" && info.family !== 4)) continue;
+            urls.push(`http://${info.address}:${port}/`);
+        }
+    }
+    return [...new Set(urls)];
 }
