@@ -3,6 +3,9 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { BackpackItemCard, type BackpackItem, type BackpackQuality } from './components/BackpackItemCard';
 import { BackpackQuantityControl } from './components/BackpackQuantityControl';
 import { BackpackResourceCounter } from './components/BackpackResourceCounter';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
+import { EmptyState } from '../../components/empty/EmptyState';
 import { PanelTab } from '../../components/tab/PanelTab';
 
 export type BackpackAction = {
@@ -94,13 +97,11 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
         emit('quantity', 'select', value);
     };
     const hasItems = items.length > 0;
+    const emptyIcon = imageRef('ui/backpack/empty');
     return (
         <view name="Backpack" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
-            <image source={imageRef('ui/mail/header')} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={params.title ?? '背包'} style={{ position: 'absolute', left: 38, top: 16, width: 118, height: 60,
-                font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true,
-                outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={params.title ?? '背包'} titleWidth={118} titleHeight={60} />
             <BackpackResourceCounter id="resource-1" value={resources[0]} left={159} onClick={() => emit('resource-1', 'primary')} />
             <BackpackResourceCounter id="resource-2" value={resources[1]} left={303} onClick={() => emit('resource-2', 'primary')} />
             <BackpackResourceCounter id="resource-3" value={resources[2]} left={447} onClick={() => emit('resource-3', 'primary')} />
@@ -126,10 +127,8 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
             <image source={imageRef('ui/settings/divider')} style={{ position: 'absolute', left: 26, top: 928, width: 698, height: 3, sizeMode: 'sliced' }} />
 
             <view visible={!hasItems} name="Backpack/Empty" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
-                <image source={imageRef('ui/backpack/empty')} style={{ position: 'absolute', left: 321, top: 977, width: 108, height: 116 }} />
-                <text value="背包里没有任何道具" style={{ position: 'absolute', left: 150, top: 1117, width: 450, height: 64,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#837A91', bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+                <EmptyState icon={emptyIcon} left={321} top={977} label="背包里没有任何道具"
+                    labelLeft={150} labelTop={1117} labelWidth={450} labelHeight={64} />
             </view>
 
             <view visible={hasItems} name="Backpack/Details" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
@@ -144,11 +143,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
                     onChange={setSafeQuantity} />
             </view>
 
-            <image source={imageRef('ui/mail/footer')} style={{ position: 'absolute', left: 0, top: 1225, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="Backpack/Back" interaction="press" accessibilityLabel="返回" onClick={() => emit('back', 'back')}
-                style={{ position: 'absolute', left: 13, top: 1252, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <ScreenFooter top={1225} onBack={() => emit('back', 'back')} />
         </view>
     );
 });

@@ -88,11 +88,6 @@
       "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceMembersPanel.tsx"
     },
     {
-      "key": "AllianceMenuButton",
-      "rootName": "AllianceMenuButton",
-      "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceMenuButton.tsx"
-    },
-    {
       "key": "AllianceRankGroup",
       "rootName": "AllianceRankGroup",
       "source": "apps/client/src/ui-uniflex/pages/Alliance/AllianceRankGroup.tsx"
@@ -163,6 +158,11 @@
       "source": "apps/client/src/ui-uniflex/pages/AllianceWar/AllianceWarPanel.tsx"
     },
     {
+      "key": "BackButton",
+      "rootName": "BackButton",
+      "source": "apps/client/src/ui-uniflex/components/chrome/BackButton.tsx"
+    },
+    {
       "key": "BackpackItemCard",
       "rootName": "BackpackItemCard",
       "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"
@@ -211,6 +211,11 @@
       "key": "ConfirmButton",
       "rootName": "ConfirmButton",
       "source": "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx"
+    },
+    {
+      "key": "EmptyState",
+      "rootName": "EmptyState",
+      "source": "apps/client/src/ui-uniflex/components/empty/EmptyState.tsx"
     },
     {
       "key": "HeroBondItem",
@@ -278,6 +283,11 @@
       "source": "apps/client/src/ui-uniflex/components/button/IconCaptionButton.tsx"
     },
     {
+      "key": "InputText",
+      "rootName": "InputText",
+      "source": "apps/client/src/ui-uniflex/components/input/InputText.tsx"
+    },
+    {
       "key": "ItemSlot",
       "rootName": "ItemSlot",
       "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx"
@@ -313,19 +323,49 @@
       "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"
     },
     {
+      "key": "ProgressBar",
+      "rootName": "ProgressBar",
+      "source": "apps/client/src/ui-uniflex/components/progress/ProgressBar.tsx"
+    },
+    {
       "key": "QuantityControl",
       "rootName": "QuantityControl",
       "source": "apps/client/src/ui-uniflex/components/quantity/QuantityControl.tsx"
     },
     {
-      "key": "SettingsMenuButton",
-      "rootName": "SettingsMenuButton",
-      "source": "apps/client/src/ui-uniflex/pages/Settings/SettingsMenuButton.tsx"
+      "key": "ScreenFooter",
+      "rootName": "ScreenFooter",
+      "source": "apps/client/src/ui-uniflex/components/chrome/ScreenFooter.tsx"
+    },
+    {
+      "key": "ScreenHeader",
+      "rootName": "ScreenHeader",
+      "source": "apps/client/src/ui-uniflex/components/chrome/ScreenHeader.tsx"
+    },
+    {
+      "key": "ShopCard",
+      "rootName": "ShopCard",
+      "source": "apps/client/src/ui-uniflex/pages/Shop/ShopCard.tsx"
     },
     {
       "key": "ShopGetItemPanel",
       "rootName": "ShopGetItem",
       "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItemPanel.tsx"
+    },
+    {
+      "key": "ShopPanel",
+      "rootName": "Shop",
+      "source": "apps/client/src/ui-uniflex/pages/Shop/ShopPanel.tsx"
+    },
+    {
+      "key": "StarRow",
+      "rootName": "StarRow",
+      "source": "apps/client/src/ui-uniflex/components/star/StarRow.tsx"
+    },
+    {
+      "key": "WideMenuButton",
+      "rootName": "WideMenuButton",
+      "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx"
     }
   ]
 }

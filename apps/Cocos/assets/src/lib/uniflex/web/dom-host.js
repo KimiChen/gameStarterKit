@@ -5,6 +5,13 @@ import { layoutText, inspectRecord } from '../core/provider.js';
 import { HostFrameScheduler, normalizeRangeValue, placeFloating } from '../core/host-plan.js';
 import { NestedScrollCoordinator } from '../core/nested-scroll.js';
 import { ScrollMotion } from './scroll-motion.js';
+function namedRotation(name) {
+    const text = String(name ?? '');
+    if (!text.startsWith('rot:'))
+        return 0;
+    const value = Number(text.slice(4));
+    return Number.isFinite(value) ? value : 0;
+}
 export class DOMHostDriver {
     constructor(container, assets, width, height, anchorsChanged = () => { }, scrollChanged = undefined) {
         this.container = container;
@@ -579,6 +586,8 @@ export class DOMHostDriver {
         const translateY = Number((_b = h.props.translateY) !== null && _b !== void 0 ? _b : 0);
         h.element.style.translate = `${translateX + ((_c = effect === null || effect === void 0 ? void 0 : effect.x) !== null && _c !== void 0 ? _c : 0)}px ${translateY + ((_d = effect === null || effect === void 0 ? void 0 : effect.y) !== null && _d !== void 0 ? _d : 0)}px`;
         h.element.style.scale = String(Number((_e = h.props.scale) !== null && _e !== void 0 ? _e : 1));
+        const rotation = namedRotation(h.props.name);
+        h.element.style.rotate = rotation === 0 ? '' : `${rotation}deg`;
         const duration = Math.max(0, Number((_f = h.props.transformDurationMs) !== null && _f !== void 0 ? _f : 0));
         h.element.style.transition = duration
             ? `translate ${duration}ms linear, scale ${duration}ms linear`

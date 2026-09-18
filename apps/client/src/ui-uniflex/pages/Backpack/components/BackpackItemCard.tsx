@@ -22,11 +22,13 @@ export const BackpackItemCard = defineComponent<{
 }>((p) => {
     const left = 25 + p.slot % 4 * 182;
     const top = p.slot < 4 ? 216 : 407;
+    const quality = p.item.quality;
+    const count = String(p.item.count);
+    const icon = imageRef('ui/backpack/diamond');
     return (
     <view name="BackpackItemCard" interaction="press" accessibilityLabel={`${p.item.name} 数量${p.item.count}`}
         onClick={p.onClick} style={{ position: 'absolute', left: left, top: top, width: 154, height: 159 }}>
-        <ItemSlot left={0} top={0} quality={p.item.quality} icon={imageRef('ui/backpack/diamond')}
-            count={String(p.item.count)} />
+        <ItemSlot left={0} top={0} quality={quality} icon={icon} count={count} />
         <image visible={p.selected} source={imageRef('ui/backpack/detail-count-bg')}
             style={{ position: 'absolute', left: 8, top: 8, width: 138, height: 40, sizeMode: 'sliced' }} />
         <text visible={p.selected} value={String(p.item.detailCount)}

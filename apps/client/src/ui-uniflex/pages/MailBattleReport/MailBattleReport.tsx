@@ -2,6 +2,8 @@ import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../components/badge/NotificationBadge';
 import { ActionButton } from '../../components/button/ActionButton';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { MailBattleRow, type MailBattleRowProps } from './MailBattleRow';
 
@@ -103,8 +105,7 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
     return (
         <view name="MailBattleReport" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
-            <image source={imageRef('ui/mail/header')} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={params.title ?? '邮件'} style={{ position: 'absolute', left: 38, top: 16, width: 300, height: 60, font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true, outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={params.title ?? '邮件'} titleWidth={300} titleHeight={60} />
             <PanelTab label={tabGroups[0].label} active={activeTab === 0} left={tabs[0]} top={118} width={170}
                 onClick={() => setActiveTab(0)} />
             <PanelTab label={tabGroups[1].label} active={activeTab === 1} left={tabs[1]} top={118} width={170}
@@ -126,10 +127,7 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
             <image source={imageRef('ui/mail/count-bg')} style={{ position: 'absolute', left: 266, top: 1166, width: 218, height: 40, sizeMode: 'sliced' }} />
             <image source={imageRef('ui/mail/count-icon')} style={{ position: 'absolute', left: 273, top: 1171, width: 30, height: 32 }} />
             <text value={`邮件数:${params.countText ?? `${items.length}/200`}`} style={{ position: 'absolute', left: 300, top: 1166, width: 184, height: 40, font: fontRef('fonts/regular', 700), fontSize: 24, color: '#584871', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
-            <image source={imageRef('ui/mail/footer')} style={{ position: 'absolute', left: 0, top: 1225, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view interaction="press" onClick={() => params.onBack?.()} style={{ position: 'absolute', left: 13, top: 1252, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <ScreenFooter top={1225} onBack={() => params.onBack?.()} />
             <view style={{ position: 'absolute', left: 111.125, top: 1229.25, width: 255, height: 102, scale: 0.75 }}>
                 <ActionButton label="删除已读" source={redButton} outlineColor="#6A2A28" onClick={deleteRead} />
             </view>

@@ -1,5 +1,8 @@
 import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../kits/uniflex/api/core/index';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
+import { InputText } from '../../components/input/InputText';
 import { AllianceCreatePanel } from '../AllianceCreate/AllianceCreatePanel';
 import { AllianceJoinRow } from './AllianceJoinRow';
 
@@ -22,7 +25,6 @@ export interface AllianceJoinParams {
     readonly onAction?: (id: string) => void;
 }
 
-const FIELD = '#6F6555';
 const ROW_SIZE = 135;
 const ROW_GAP = 8;
 
@@ -56,6 +58,7 @@ export const AllianceJoin = defineView<AllianceJoinParams | void>({ zIndex: 'scr
         setCreateOpen(true);
         params.onAction?.('open_create_alliance');
     };
+    const inputBg = imageRef('ui/alliance/input-bg');
     return (
         <view name="AllianceJoin" style={{ width: 750, height: 1624 }}>
             <image source={imageRef('ui/hero/bond-bg')}
@@ -67,15 +70,8 @@ export const AllianceJoin = defineView<AllianceJoinParams | void>({ zIndex: 'scr
             <image source={imageRef('ui/alliance/join-banner')}
                 style={{ position: 'absolute', left: 14, top: 251, width: 723, height: 200 }} />
 
-            <image source={imageRef('ui/alliance/input-bg')}
-                style={{ position: 'absolute', left: 15, top: 455, width: 501, height: 64, sizeMode: 'sliced' }} />
-            <input value={query} placeholder="" onInput={setQuery}
-                style={{ position: 'absolute', left: 15, top: 455, width: 501, height: 64,
-                    fontSize: 26, color: FIELD, textAlign: 'center' }} />
-            <text visible={query === ''} value="点击此处输入想要搜索的联盟"
-                style={{ position: 'absolute', left: 15, top: 455, width: 501, height: 64,
-                    font: fontRef('fonts/regular', 700), fontSize: 26, color: FIELD, bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+            <InputText background={inputBg} left={15} top={455} width={501} height={64}
+                value={query} onInput={setQuery} placeholder="点击此处输入想要搜索的联盟" />
             <view name="AllianceJoin/Search" interaction="press" onClick={search}
                 style={{ position: 'absolute', left: 521, top: 452, width: 72, height: 70 }}>
                 <image source={imageRef('ui/alliance/join-search')} style={{ width: 72, height: 70 }} />
@@ -99,19 +95,9 @@ export const AllianceJoin = defineView<AllianceJoinParams | void>({ zIndex: 'scr
                     onClick={() => params.onJoin?.(item.id)} />}
             </VirtualList>
 
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={params.title ?? '加入一个联盟'}
-                style={{ position: 'absolute', left: 38, top: 160, width: 400, height: 58,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={params.title ?? '加入一个联盟'} top={144} titleWidth={400} />
 
-            <image source={imageRef('ui/mail/footer')}
-                style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="AllianceJoin/Back" interaction="press" onClick={() => params.onBack?.()}
-                style={{ position: 'absolute', left: 13, top: 1396, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <ScreenFooter top={1369} onBack={() => params.onBack?.()} />
 
             <AllianceCreatePanel visible={createOpen}
                 onClose={() => setCreateOpen(false)}

@@ -1,8 +1,8 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
-import { CloseButton } from '../../components/popup/CloseButton';
-import { PopupBackground } from '../../components/popup/PopupBackground';
+import { EmptyState } from '../../components/empty/EmptyState';
+import { PopupFrame } from '../../components/popup/PopupFrame';
 
 export interface AllianceHelpPanelProps {
     readonly visible?: boolean;
@@ -18,7 +18,6 @@ export interface AllianceHelpPanelProps {
 
 const LABEL = '#59496E';
 const VALUE = '#33312E';
-const GRAY = '#837A91';
 const BUTTON_WIDTH = 255;
 const BUTTON_HEIGHT = 102;
 
@@ -33,21 +32,14 @@ export const AllianceHelpPanel = defineComponent<AllianceHelpPanelProps>((p) => 
         p.onCreate?.();
         p.onAction?.('create');
     };
+    const emptyIcon = imageRef('ui/backpack/empty');
+    const emptyText = p.emptyText ?? '暂无礼物';
     return (
         <view name="AllianceHelp" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <view name="AllianceHelp/Mask" interaction="press"
-                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
-            <view name="AllianceHelp/Window"
-                style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
-                <PopupBackground kind="prompt" />
-                <text value={p.title ?? '联盟帮助'}
-                    style={{ position: 'absolute', left: 90, top: 18, width: 528, height: 58,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                        outlineColor: '#593D84', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-                <CloseButton onClick={close} />
-
+            <PopupFrame title={p.title ?? '联盟帮助'} kind="prompt" left={21} top={318} width={708} height={992}
+                onClose={close} />
+            <view style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
                 <image source={imageRef('ui/alliance/help-badge')}
                     style={{ position: 'absolute', left: 67, top: 144, width: 100, height: 78 }} />
                 <text value={p.pointsLabel ?? '今日帮助积分奖励'}
@@ -64,12 +56,8 @@ export const AllianceHelpPanel = defineComponent<AllianceHelpPanelProps>((p) => 
 
                 <image source={imageRef('ui/alliance/input-bg')}
                     style={{ position: 'absolute', left: 23, top: 280, width: 663, height: 544, sizeMode: 'sliced' }} />
-                <image source={imageRef('ui/backpack/empty')}
-                    style={{ position: 'absolute', left: 301, top: 455, width: 108, height: 116 }} />
-                <text value={p.emptyText ?? '暂无礼物'}
-                    style={{ position: 'absolute', left: 23, top: 610, width: 663, height: 40,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: GRAY, bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+                <EmptyState icon={emptyIcon} left={301} top={455} label={emptyText}
+                    labelLeft={23} labelTop={610} labelWidth={663} />
 
                 <view style={{ position: 'absolute', left: 227, top: 850, width: buttonWidth, height: buttonHeight }}>
                     <ConfirmButton label={p.actionLabel ?? '创建'} width={buttonWidth} height={buttonHeight}

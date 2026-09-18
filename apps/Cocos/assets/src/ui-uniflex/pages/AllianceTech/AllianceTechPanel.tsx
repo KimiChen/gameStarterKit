@@ -1,6 +1,8 @@
 import { defineComponent, For, useMemo } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../kits/uniflex/api/core/index';
 import { IconCaptionButton } from '../../components/button/IconCaptionButton';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { AllianceTechLink, type AllianceTechLinkData } from './AllianceTechLink';
 import { AllianceTechNode, allianceTechNodeSize, type AllianceTechNodeData } from './AllianceTechNode';
 
@@ -137,19 +139,9 @@ export const AllianceTechPanel = defineComponent<AllianceTechPanelProps>((p) => 
             <image source={imageRef('ui/alliance/tech-fade-bot')}
                 style={{ position: 'absolute', left: 0, top: 1357, width: 750, height: 20 }} />
 
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={p.title ?? '科技'}
-                style={{ position: 'absolute', left: 38, top: 169, width: 200, height: 50,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={p.title ?? '科技'} top={144} titleTop={169} titleHeight={50} />
 
-            <image source={imageRef('ui/mail/footer')}
-                style={{ position: 'absolute', left: 0, top: FOOTER_TOP, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="AllianceTech/Back" interaction="press" onClick={back}
-                style={{ position: 'absolute', left: 13, top: 1396, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <ScreenFooter top={FOOTER_TOP} onBack={back} />
             <IconCaptionButton icon={rankIcon} label={rankLabel} left={646} top={1376}
                 iconWidth={82} iconHeight={78} labelTop={71} labelHeight={26}
                 onClick={() => p.onAction?.('open_tech_rank')} />

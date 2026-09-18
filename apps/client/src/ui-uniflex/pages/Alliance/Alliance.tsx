@@ -1,6 +1,7 @@
 import { defineView, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../components/badge/NotificationBadge';
+import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
@@ -84,12 +85,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
                 leader={params.leader} power={params.power} memberCount={params.memberCount}
                 onAction={onAction} />
 
-            <image source={imageRef('ui/mail/header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
-            <text value={params.title ?? '联盟'}
-                style={{ position: 'absolute', left: 20, top: 160, width: 200, height: 58,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593d84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={params.title ?? '联盟'} top={144} titleLeft={20} />
 
             <PanelTab label="联盟" active={tab === 'home'} left={13} top={262} width={200}
                 onClick={() => selectTab('home')} />

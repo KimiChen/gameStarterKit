@@ -1,5 +1,6 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { AllianceTerritoryFortPanel } from './AllianceTerritoryFortPanel';
 import { AllianceTerritoryLandPanel } from './AllianceTerritoryLandPanel';
@@ -26,6 +27,7 @@ export const AllianceTerritoryPanel = defineComponent<AllianceTerritoryPanelProp
         p.onBack?.();
         p.onAction?.('back');
     };
+    const flagBottom = imageRef('ui/alliance/flag-bottom');
     return (
         <view name="AllianceTerritory" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -54,12 +56,7 @@ export const AllianceTerritoryPanel = defineComponent<AllianceTerritoryPanelProp
             <PanelTab kind="flag" label="要塞" active={tab === 'fort'} left={382} top={262} width={170}
                 onClick={() => selectTab('fort')} />
 
-            <image source={imageRef('ui/alliance/flag-bottom')}
-                style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110, sizeMode: 'sliced' }} />
-            <view name="AllianceTerritory/Back" interaction="press" onClick={back}
-                style={{ position: 'absolute', left: 16, top: 1399, width: 64, height: 56 }}>
-                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
-            </view>
+            <ScreenFooter top={1369} source={flagBottom} backLeft={16} backTop={1399} onBack={back} />
         </view>
     );
 });

@@ -29,19 +29,21 @@ export interface HeroDetailParams {
 export const HeroDetail = defineView<HeroDetailParams | void>({ zIndex: 'window' }, (context) => {
     const params = context.params ?? {};
     const quality = params.quality ?? 'yellow';
+    const bgYellow = imageRef('ui/hero-detail/bg-yellow');
+    const bgPurple = imageRef('ui/hero-detail/bg-purple');
+    const bgRed = imageRef('ui/hero-detail/bg-red');
+    const bgBlue = imageRef('ui/hero-detail/bg-blue');
+    const bgGreen = imageRef('ui/hero-detail/bg-green');
+    const background = quality === 'purple' ? bgPurple
+        : quality === 'red' ? bgRed
+        : quality === 'blue' ? bgBlue
+        : quality === 'green' ? bgGreen
+        : bgYellow;
     const [tab, setTab] = useState<HeroDetailTab>('attributes');
     const [popup, setPopup] = useState<'none' | 'power' | 'star'>('none');
     return (
         <view name="HeroDetail" style={{ width: 750, height: 1624 }}>
-            <image visible={quality === 'yellow'} source={imageRef('ui/hero-detail/bg-yellow')}
-                style={{ position: 'absolute', width: 750, height: 1624 }} />
-            <image visible={quality === 'purple'} source={imageRef('ui/hero-detail/bg-purple')}
-                style={{ position: 'absolute', width: 750, height: 1624 }} />
-            <image visible={quality === 'red'} source={imageRef('ui/hero-detail/bg-red')}
-                style={{ position: 'absolute', width: 750, height: 1624 }} />
-            <image visible={quality === 'blue'} source={imageRef('ui/hero-detail/bg-blue')}
-                style={{ position: 'absolute', width: 750, height: 1624 }} />
-            <image visible={quality === 'green'} source={imageRef('ui/hero-detail/bg-green')}
+            <image source={background}
                 style={{ position: 'absolute', width: 750, height: 1624 }} />
             <image source={imageRef('ui/hero-detail/art')}
                 style={{ position: 'absolute', left: 163, top: 259, width: 469, height: 650 }} />

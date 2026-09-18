@@ -1,5 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { StarRow } from '../../components/star/StarRow';
 
 export interface HeroDetailAttributesProps {
     readonly visible?: boolean;
@@ -13,9 +14,14 @@ export interface HeroDetailAttributesProps {
     readonly onUpgrade?: () => void;
 }
 
+const STAR_LEFTS = [170, 256, 342, 427, 513] as const;
+
 export const HeroDetailAttributes = defineComponent<HeroDetailAttributesProps>((p) => {
     const stars = p.stars ?? 0;
     const stats = p.stats ?? ['3941', '3941', '3941', '3941'];
+    const starEmpty = imageRef('ui/hero-detail/star-empty');
+    const starFilled = imageRef('ui/hero-detail/star-filled');
+    const starLefts = STAR_LEFTS;
     return (
         <view name="HeroDetailAttributes" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -39,26 +45,9 @@ export const HeroDetailAttributes = defineComponent<HeroDetailAttributesProps>((
                 <image source={imageRef('ui/hero-detail/power-info')}
                     style={{ position: 'absolute', left: 333, top: 17, width: 40, height: 40 }} />
             </view>
-            <image visible={stars < 1} source={imageRef('ui/hero-detail/star-empty')}
-                style={{ position: 'absolute', left: 170, top: 950, width: 68, height: 64 }} />
-            <image visible={stars >= 1} source={imageRef('ui/hero-detail/star-filled')}
-                style={{ position: 'absolute', left: 173, top: 953, width: 61, height: 58 }} />
-            <image visible={stars < 2} source={imageRef('ui/hero-detail/star-empty')}
-                style={{ position: 'absolute', left: 256, top: 950, width: 68, height: 64 }} />
-            <image visible={stars >= 2} source={imageRef('ui/hero-detail/star-filled')}
-                style={{ position: 'absolute', left: 259, top: 953, width: 61, height: 58 }} />
-            <image visible={stars < 3} source={imageRef('ui/hero-detail/star-empty')}
-                style={{ position: 'absolute', left: 342, top: 950, width: 68, height: 64 }} />
-            <image visible={stars >= 3} source={imageRef('ui/hero-detail/star-filled')}
-                style={{ position: 'absolute', left: 345, top: 953, width: 61, height: 58 }} />
-            <image visible={stars < 4} source={imageRef('ui/hero-detail/star-empty')}
-                style={{ position: 'absolute', left: 427, top: 950, width: 68, height: 64 }} />
-            <image visible={stars >= 4} source={imageRef('ui/hero-detail/star-filled')}
-                style={{ position: 'absolute', left: 430, top: 953, width: 61, height: 58 }} />
-            <image visible={stars < 5} source={imageRef('ui/hero-detail/star-empty')}
-                style={{ position: 'absolute', left: 513, top: 950, width: 68, height: 64 }} />
-            <image visible={stars >= 5} source={imageRef('ui/hero-detail/star-filled')}
-                style={{ position: 'absolute', left: 516, top: 953, width: 61, height: 58 }} />
+            <StarRow filled={starFilled} empty={starEmpty} value={stars}
+                lefts={starLefts} top={950} width={68} height={64}
+                filledWidth={61} filledHeight={58} />
             <view interaction="press" onClick={() => p.onStarUp?.()}
                 style={{ position: 'absolute', left: 603, top: 956, width: 76, height: 85 }}>
                 <image source={imageRef('ui/hero-detail/star-button')} style={{ width: 76, height: 85 }} />

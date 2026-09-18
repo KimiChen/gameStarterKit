@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, Shop, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -54,6 +54,11 @@ function backToPreview() {
 }
 function backToRestored() {
     location.href = "?ui=restored-home";
+}
+/** Preview-only: MainNav has no ScreenFooter; wheel temporarily returns to the catalog. */
+function onPreviewMainNav(slot: string, label: string, back: () => void = backToPreview): void {
+    console.info(label, slot);
+    if (slot === "wheel") back();
 }
 window.addEventListener("pagehide", dispose, { once: true });
 
@@ -156,7 +161,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onSelectCard: () => { location.href = "?ui=hero-detail"; },
                 onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
                 onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
-                onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
+                onNav: (slot) => onPreviewMainNav(slot, "[UniFlex HeroScreen] nav"),
             });
             return;
         case "hero-detail":
@@ -183,7 +188,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         case "alliance":
             await runtime.start(Alliance, {
                 onAction: (id) => console.info("[UniFlex Alliance] action", id),
-                onNav: (slot) => console.info("[UniFlex Alliance] nav", slot),
+                onNav: (slot) => onPreviewMainNav(slot, "[UniFlex Alliance] nav"),
                 onSelectTab: (tab) => console.info("[UniFlex Alliance] tab", tab),
             });
             return;
@@ -280,6 +285,12 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onBuy: (quantity) => console.info("[UniFlex ShopGetItem] buy", quantity),
             });
             return;
+        case "shop":
+            await runtime.start(Shop, {
+                onBack: backToPreview,
+                onAction: (id) => console.info("[UniFlex Shop] action", id),
+            });
+            return;
         case "prompt-restored":
             await runtime.start(PromptRestored, {
                 theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" },
@@ -326,7 +337,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onSelectCard: (_id) => { location.href = "?ui=hero-detail-restored"; },
                 onSelectBond: (id) => console.info("[UniFlex HeroScreenRestored] bond", id),
                 onBondDetail: (id) => console.info("[UniFlex HeroScreenRestored] bond-detail", id),
-                onNav: (slot) => console.info("[UniFlex HeroScreenRestored] nav", slot),
+                onNav: (slot) => onPreviewMainNav(slot, "[UniFlex HeroScreenRestored] nav", backToRestored),
             });
             return;
         case "hero-detail-restored":

@@ -33,30 +33,30 @@ export const AllianceTechNode = defineComponent<AllianceTechNodeProps>((p) => {
     const size = allianceTechNodeSize(kind);
     const width = size.width;
     const height = size.height;
-    const isShield = kind === 'shield';
     const isHeart = kind === 'heart';
     const isSwords = kind === 'swords';
     const isCrate = kind === 'crate';
-    const showHeartHex = locked !== true && isHeart;
-    const showUnlockedHex = locked !== true && isHeart !== true;
+    const hexUnlocked = imageRef('ui/alliance/tech-hex-unlocked');
+    const hexHeart = imageRef('ui/alliance/tech-hex-heart');
+    const hexLocked = imageRef('ui/alliance/tech-hex-locked');
+    const hex = locked ? hexLocked : isHeart ? hexHeart : hexUnlocked;
+    const iconShield = imageRef('ui/alliance/tech-icon-shield');
+    const iconHeart = imageRef('ui/alliance/tech-icon-heart');
+    const iconSwords = imageRef('ui/alliance/tech-icon-swords');
+    const iconCrate = imageRef('ui/alliance/tech-icon-crate');
+    const icon = isHeart ? iconHeart : isSwords ? iconSwords : isCrate ? iconCrate : iconShield;
+    const iconLeft = isHeart ? 19 : isSwords ? 16 : isCrate ? 18 : 7;
+    const iconTop = isHeart ? 47 : isSwords ? 24 : isCrate ? 33 : 24;
+    const iconWidth = isHeart ? 125 : isSwords ? 136 : isCrate ? 132 : 155;
+    const iconHeight = isHeart ? 108 : isSwords ? 122 : isCrate ? 121 : 146;
     const level = `${node.level}/${node.maxLevel}`;
     return (
         <view name="AllianceTechNode" interaction="press" onClick={() => p.onClick?.()}
             style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
-            <image visible={showUnlockedHex} source={imageRef('ui/alliance/tech-hex-unlocked')}
+            <image source={hex}
                 style={{ width: width, height: height }} />
-            <image visible={showHeartHex} source={imageRef('ui/alliance/tech-hex-heart')}
-                style={{ width: width, height: height }} />
-            <image visible={locked} source={imageRef('ui/alliance/tech-hex-locked')}
-                style={{ width: width, height: height }} />
-            <image visible={isShield} source={imageRef('ui/alliance/tech-icon-shield')}
-                style={{ position: 'absolute', left: 7, top: 24, width: 155, height: 146 }} />
-            <image visible={isHeart} source={imageRef('ui/alliance/tech-icon-heart')}
-                style={{ position: 'absolute', left: 19, top: 47, width: 125, height: 108 }} />
-            <image visible={isSwords} source={imageRef('ui/alliance/tech-icon-swords')}
-                style={{ position: 'absolute', left: 16, top: 24, width: 136, height: 122 }} />
-            <image visible={isCrate} source={imageRef('ui/alliance/tech-icon-crate')}
-                style={{ position: 'absolute', left: 18, top: 33, width: 132, height: 121 }} />
+            <image source={icon}
+                style={{ position: 'absolute', left: iconLeft, top: iconTop, width: iconWidth, height: iconHeight }} />
             <image visible={locked} source={imageRef('ui/alliance/tech-lock')}
                 style={{ position: 'absolute', left: 3, top: 3, width: 159, height: 186 }} />
             <image source={imageRef('ui/alliance/tech-badge')}

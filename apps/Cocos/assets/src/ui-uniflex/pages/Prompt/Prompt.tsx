@@ -21,22 +21,32 @@ export interface PromptParams {
     readonly onClose?: () => void;
 }
 
+const PANEL_LEFT = 21;
+const PANEL_TOP = 624;
+const PANEL_WIDTH = 708;
+const PANEL_HEIGHT = 375;
+
 export const Prompt = defineView<PromptParams, void>({ zIndex: 'window' }, (context) => {
     const p = context.params;
-    return <PopupFrame title={p.title ?? '提示'} kind="prompt" height={375}
-        titleColor={p.theme?.titleColor} titleOutline={p.theme?.titleOutline} onClose={p.onClose}>
-        <view name="Prompt/Content" style={{ width: '100%', height: '100%' }}>
-            <text name="Prompt/Message" value={p.message}
-                style={{ width: '100%', height: 104, font: theme.font, fontSize: 28,
-                    color: p.theme?.messageColor ?? theme.text,
-                    horizontalAlign: 'center', verticalAlign: 'center', wrap: true, overflow: 'shrink' }} />
-            <view name="Prompt/Actions" style={{ position: 'absolute', bottom: 0, width: '100%',
-                flexDirection: 'row', justifyContent: 'center', gap: 87 }}>
-                <ConfirmButton label={p.confirmText} onClick={p.onConfirm} />
-                <view visible={p.cancelText !== null}>
-                    <CancelButton label={p.cancelText ?? '取消'} onClick={p.onCancel} />
+    return (
+        <view name="PromptPage" style={{ width: 750, height: 1624 }}>
+            <PopupFrame title={p.title ?? '提示'} kind="prompt" left={PANEL_LEFT} top={PANEL_TOP}
+                width={PANEL_WIDTH} height={PANEL_HEIGHT}
+                titleColor={p.theme?.titleColor} titleOutline={p.theme?.titleOutline} onClose={p.onClose} />
+            <view name="Prompt/Content"
+                style={{ position: 'absolute', left: PANEL_LEFT + 40, top: PANEL_TOP + 108, width: 628, height: 229 }}>
+                <text name="Prompt/Message" value={p.message}
+                    style={{ width: '100%', height: 104, font: theme.font, fontSize: 28,
+                        color: p.theme?.messageColor ?? theme.text,
+                        horizontalAlign: 'center', verticalAlign: 'center', wrap: true, overflow: 'shrink' }} />
+                <view name="Prompt/Actions" style={{ position: 'absolute', bottom: 0, width: '100%',
+                    flexDirection: 'row', justifyContent: 'center', gap: 87 }}>
+                    <ConfirmButton label={p.confirmText} onClick={p.onConfirm} />
+                    <view visible={p.cancelText !== null}>
+                        <CancelButton label={p.cancelText ?? '取消'} onClick={p.onCancel} />
+                    </view>
                 </view>
             </view>
         </view>
-    </PopupFrame>;
+    );
 });

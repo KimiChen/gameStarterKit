@@ -6,8 +6,19 @@ export interface SmallPopupParams {
     readonly onClose?: () => void;
 }
 
+const PANEL_LEFT = 21;
+const PANEL_TOP = 557;
+const PANEL_WIDTH = 708;
+const PANEL_HEIGHT = 510;
+
 export const SmallPopup = defineView<SmallPopupParams, void>({ zIndex: 'window' }, (context) => {
-    return <PopupFrame title={context.params.title ?? '标题'} kind="small" height={510} onClose={context.params.onClose}>
-        <view name="SmallPopup/Content" style={{ width: '100%', height: '100%' }} />
-    </PopupFrame>;
+    return (
+        <view name="SmallPopupPage" style={{ width: 750, height: 1624 }}>
+            <PopupFrame title={context.params.title ?? '标题'} kind="small" left={PANEL_LEFT} top={PANEL_TOP}
+                width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={context.params.onClose} />
+            <view name="SmallPopup/Content"
+                style={{ position: 'absolute', left: PANEL_LEFT, top: PANEL_TOP, width: PANEL_WIDTH, height: PANEL_HEIGHT }} />
+        </view>
+    );
 });
+

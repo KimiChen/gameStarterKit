@@ -6,6 +6,13 @@ import { layoutText, inspectRecord } from '../core/provider.js';
 import { NestedScrollCoordinator } from '../core/nested-scroll.js';
 import { createFlexNode } from '../core/flex-types.js';
 import { layoutFlexTree, layoutFlexTreeIntrinsic, layoutScrollContent, measureScrollContent, } from '../core/flex-layout.js';
+function namedRotation(name) {
+    const text = String(name ?? '');
+    if (!text.startsWith('rot:'))
+        return 0;
+    const value = Number(text.slice(4));
+    return Number.isFinite(value) ? value : 0;
+}
 /**
  * Keeps Cocos ScrollView as both the viewport adapter and physics owner. The
  * nested coordinator only locks the axis and routes deltas to the right native
@@ -571,6 +578,7 @@ export class CocosHostDriver {
                 handle.node.setPosition(position);
                 handle.node.setScale(scale, scale, 1);
             }
+            handle.node.angle = -namedRotation(props.name);
             if (((_a = handle.inputDisplay) === null || _a === void 0 ? void 0 : _a.node.isValid) &&
                 handle.inputDisplay.node.parent === handle.node.parent)
                 handle.inputDisplay.node.setPosition(handle.node.position);

@@ -1012,6 +1012,8 @@ test("preview server catalog page lists merged screens", async () => {
         writeFileSync(join(a, "preview/fairygui.js"), "window.fgui={};");
         const server = await servePreview({ root, out: a, merge: [b], port: 0 });
         try {
+            assert.equal(server.host, "127.0.0.1");
+            assert.deepEqual(server.lanUrls, []);
             const html = await (await fetch(server.url)).text();
             assert.match(html, /FairyGUI 预览/);
             assert.match(html, /"id":"prompt"/);

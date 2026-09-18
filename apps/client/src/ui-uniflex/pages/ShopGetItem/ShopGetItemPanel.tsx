@@ -3,8 +3,7 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
 import { ItemSlot } from '../../components/item/ItemSlot';
 import { QuantityControl } from '../../components/quantity/QuantityControl';
-import { CloseButton } from '../../components/popup/CloseButton';
-import { PopupBackground } from '../../components/popup/PopupBackground';
+import { PopupFrame } from '../../components/popup/PopupFrame';
 
 export interface ShopGetItemPanelProps {
     readonly visible?: boolean;
@@ -32,6 +31,7 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
     const price = String((p.unitPrice ?? 125) * quantity);
     const owned = String(p.owned ?? 99);
     const payGem = imageRef('ui/shop/getitem-pay-gem');
+    const itemIcon = imageRef('ui/shop/getitem-icon');
     const qtyTrack = imageRef('ui/star-upgrade/progress-track');
     const qtyFill = imageRef('ui/star-upgrade/progress-fill');
     const qtyThumb = imageRef('ui/shop/getitem-thumb');
@@ -47,21 +47,11 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
     };
     return (
         <view name="ShopGetItem" visible={p.visible !== false}
-            style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624,
-                justifyContent: 'center', alignItems: 'center' }}>
-            <view name="ShopGetItem/Mask" interaction="press"
-                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
-            <view name="ShopGetItem/Panel" style={{ width: 708, height: 620 }}>
-                <PopupBackground kind="prompt" />
-                <text value={p.title ?? '获取道具'}
-                    style={{ position: 'absolute', left: 90, top: 18, width: 528, height: 58,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                        outlineColor: '#593D84', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-                <CloseButton onClick={p.onClose} />
-
-                <ItemSlot left={18} top={119} quality="orange" icon={imageRef('ui/shop/getitem-icon')}
-                    count={owned} />
+            style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
+            <PopupFrame title={p.title ?? '获取道具'} kind="prompt" left={21} top={502} width={708} height={620}
+                onClose={p.onClose} />
+            <view style={{ position: 'absolute', left: 21, top: 502, width: 708, height: 620 }}>
+                <ItemSlot left={18} top={119} quality="orange" icon={itemIcon} count={owned} />
                 <text value={p.name ?? '高级钻石'}
                     style={{ position: 'absolute', left: 191, top: 132, width: 470, height: 36,
                         font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,
