@@ -1,0 +1,712 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-2"
+  ],
+  "nodes": {
+    "layer-2": {
+      "id": "layer-2",
+      "name": "AllianceAnnounce",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce",
+        "role": "component",
+        "definitionKey": "AllianceAnnouncePanel"
+      },
+      "children": [
+        "layer-3",
+        "layer-5"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "AllianceAnnounce/Mask",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Mask",
+        "role": "node"
+      },
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "AllianceAnnounce/Mask / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Mask",
+        "role": "fill"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "AllianceAnnounce/Window",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 318,
+        "width": 708,
+        "height": 912
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window",
+        "role": "node"
+      },
+      "children": [
+        "layer-6",
+        "layer-9",
+        "layer-10",
+        "layer-13",
+        "layer-15",
+        "layer-16",
+        "layer-17",
+        "layer-18",
+        "layer-19",
+        "layer-20",
+        "layer-21",
+        "layer-22",
+        "layer-23",
+        "layer-24",
+        "layer-25",
+        "layer-26",
+        "layer-27",
+        "layer-28",
+        "layer-29"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "PopupBackground",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 912
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/PopupBackground",
+        "role": "component",
+        "definitionKey": "PopupBackground"
+      },
+      "asset": "asset-06aebd7aa10e75d73a49695bfcac900d79f7bf758a630d412a496f19605297de"
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "联盟公告",
+      "kind": "text",
+      "frame": {
+        "x": 86,
+        "y": 25,
+        "width": 536,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:0",
+        "role": "node"
+      },
+      "text": {
+        "value": "联盟公告",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "CloseButton",
+      "kind": "image",
+      "frame": {
+        "x": 621,
+        "y": 6,
+        "width": 72,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
+      },
+      "asset": "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c"
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 12,
+        "y": 99,
+        "width": 683,
+        "height": 674
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-14"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 683,
+        "height": 674
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_",
+        "role": "node"
+      },
+      "asset": "asset-9dea7bb260518eef702206c819d6b1652e7ad709bdb0e07acd30643e2fac0a39"
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "欢迎加入联盟~努力发展联盟，让我们变得更强大！",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 125,
+        "width": 664,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:1",
+        "role": "node"
+      },
+      "text": {
+        "value": "欢迎加入联盟~努力发展联盟，让我们变得更强大！",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "----------------------------------------",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 159,
+        "width": 664,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:2",
+        "role": "node"
+      },
+      "text": {
+        "value": "-----------------------------------------------------",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "1. 升级科技：每日捐献联盟科技，可使联盟快速发展。",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 193,
+        "width": 664,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:3",
+        "role": "node"
+      },
+      "text": {
+        "value": "1. 升级科技：每日捐献联盟科技，可使联盟快速发展。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "1. 升级科技",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 193,
+        "width": 184,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:4",
+        "role": "node"
+      },
+      "text": {
+        "value": "1. 升级科技",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ef4b4b"
+      }
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "2. 集结章鱼王：发起集结章鱼王可获得丰厚奖励，快速提高战\n力。",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 227,
+        "width": 664,
+        "height": 92
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:5",
+        "role": "node"
+      },
+      "text": {
+        "value": "2. 集结章鱼王：发起集结章鱼王可获得丰厚奖励，快速提高战\n力。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "2. 集结章鱼王",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 227,
+        "width": 204,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:6",
+        "role": "node"
+      },
+      "text": {
+        "value": "2. 集结章鱼王",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ef4b4b"
+      }
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "3.参与集结：在战争界面中打开自动集结，每天有 50 次参与奖\n励。",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 295,
+        "width": 664,
+        "height": 92
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:7",
+        "role": "node"
+      },
+      "text": {
+        "value": "3.参与集结：在战争界面中打开自动集结，每天有 50 次参与奖\n励。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "3.参与集结",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 295,
+        "width": 184,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:8",
+        "role": "node"
+      },
+      "text": {
+        "value": "3.参与集结",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ef4b4b"
+      }
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "4. 扩大领地：在领地界面可以建造联盟堡垒、联盟旗帜扩大领\n地范围。",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 363,
+        "width": 664,
+        "height": 92
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:9",
+        "role": "node"
+      },
+      "text": {
+        "value": "4. 扩大领地：在领地界面可以建造联盟堡垒、联盟旗帜扩大领\n地范围。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "4. 扩大领地",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 363,
+        "width": 184,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:10",
+        "role": "node"
+      },
+      "text": {
+        "value": "4. 扩大领地",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ef4b4b"
+      }
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "5.联盟属性：占领港口、争夺要塞，全联盟可获得大量属性加\n成。",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 431,
+        "width": 664,
+        "height": 92
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:11",
+        "role": "node"
+      },
+      "text": {
+        "value": "5.联盟属性：占领港口、争夺要塞，全联盟可获得大量属性加\n成。",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "5.联盟属性",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 431,
+        "width": 184,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:12",
+        "role": "node"
+      },
+      "text": {
+        "value": "5.联盟属性",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ef4b4b"
+      }
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "----------------------------------------",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 499,
+        "width": 664,
+        "height": 58
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:13",
+        "role": "node"
+      },
+      "text": {
+        "value": "------------------------------------------------------",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "注：R4 成员可以在领地界面，选中联盟建筑开启修建，所有联\n盟成员均可派遣部队前",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 533,
+        "width": 664,
+        "height": 92
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_:14",
+        "role": "node"
+      },
+      "text": {
+        "value": "注：R4 成员可以在领地界面，选中联盟建筑开启修建，所有联\n盟成员均可派遣部队前往正在修建",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 34,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 227,
+        "y": 789,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "AllianceAnnouncePanel:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_",
+        "role": "node"
+      },
+      "children": [
+        "layer-30"
+      ]
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "ConfirmButton",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ConfirmButton:AllianceAnnouncePage/AllianceAnnounce/AllianceAnnounce/Window/_/ConfirmButton",
+        "role": "component",
+        "definitionKey": "ConfirmButton"
+      },
+      "asset": "asset-fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe"
+    }
+  },
+  "assets": {
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-06aebd7aa10e75d73a49695bfcac900d79f7bf758a630d412a496f19605297de": {
+      "path": "assets/06aebd7aa10e75d73a49695bfcac900d79f7bf758a630d412a496f19605297de.png",
+      "sha256": "06aebd7aa10e75d73a49695bfcac900d79f7bf758a630d412a496f19605297de",
+      "mime": "image/png",
+      "width": 708,
+      "height": 912
+    },
+    "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c": {
+      "path": "assets/d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c.png",
+      "sha256": "d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c",
+      "mime": "image/png",
+      "width": 72,
+      "height": 72
+    },
+    "asset-9dea7bb260518eef702206c819d6b1652e7ad709bdb0e07acd30643e2fac0a39": {
+      "path": "assets/9dea7bb260518eef702206c819d6b1652e7ad709bdb0e07acd30643e2fac0a39.png",
+      "sha256": "9dea7bb260518eef702206c819d6b1652e7ad709bdb0e07acd30643e2fac0a39",
+      "mime": "image/png",
+      "width": 683,
+      "height": 674
+    },
+    "asset-fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe": {
+      "path": "assets/fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe.png",
+      "sha256": "fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "PopupBackground: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "CloseButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "ConfirmButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

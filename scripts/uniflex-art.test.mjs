@@ -228,3 +228,41 @@ test("prompt, confirm, and shop share the same ConfirmButton file", async () => 
     assert.doesNotMatch(originalPrompt, /restored/);
     assert.doesNotMatch(originalConfirm, /restored/);
 });
+
+test("star upgrade and alliance announce share ConfirmButton with shop", async () => {
+    const confirmId = componentGuid("ConfirmButton");
+    const closeId = componentGuid("CloseButton");
+    const starPage = await readArtPsd(resolve(root, "apps/art/uniflex/HeroStarUpgrade/screen.psd"));
+    const announcePage = await readArtPsd(resolve(root, "apps/art/uniflex/AllianceAnnounce/screen.psd"));
+    const starPanel = await readArtPsd(artComponentPsdPath(root, "HeroStarUpgradePanel"));
+    const announcePanel = await readArtPsd(artComponentPsdPath(root, "AllianceAnnouncePanel"));
+    assert.equal(linkedPaths(starPage).get(componentGuid("HeroStarUpgradePanel"))?.relativePath,
+        "../components/HeroStarUpgradePanel/component.psd");
+    assert.equal(collectPlaced(starPage).some((item) => item.id === confirmId), false);
+    assert.equal(linkedPaths(announcePage).get(componentGuid("AllianceAnnouncePanel"))?.relativePath,
+        "../components/AllianceAnnouncePanel/component.psd");
+    assert.equal(linkedPaths(starPanel).get(confirmId)?.relativePath, "../ConfirmButton/component.psd");
+    assert.equal(linkedPaths(starPanel).get(closeId)?.relativePath, "../CloseButton/component.psd");
+    assert.equal(linkedPaths(announcePanel).get(confirmId)?.relativePath, "../ConfirmButton/component.psd");
+    assert.equal(linkedPaths(announcePanel).get(closeId)?.relativePath, "../CloseButton/component.psd");
+    const starRestored = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/HeroStarUpgradeRestored/HeroStarUpgradeRestored.tsx"),
+        "utf8");
+    const starPanelSrc = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/restored/pages/HeroStarUpgrade/HeroStarUpgradePanel.tsx"),
+        "utf8");
+    const announceRestored = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/AllianceAnnounceRestored/AllianceAnnounceRestored.tsx"),
+        "utf8");
+    const announcePanelSrc = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/restored/pages/AllianceAnnounce/AllianceAnnouncePanel.tsx"),
+        "utf8");
+    const originalStar = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarUpgrade.tsx"), "utf8");
+    assert.match(starRestored, /from '\.\.\/\.\.\/restored\/pages\/HeroStarUpgrade\/HeroStarUpgradePanel'/);
+    assert.match(starPanelSrc, /from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+    assert.match(announceRestored, /from '\.\.\/\.\.\/restored\/pages\/AllianceAnnounce\/AllianceAnnouncePanel'/);
+    assert.match(announcePanelSrc, /from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+    assert.match(originalStar, /from '\.\/HeroStarUpgradePanel'/);
+    assert.doesNotMatch(originalStar, /restored/);
+});
