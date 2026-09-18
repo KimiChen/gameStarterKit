@@ -1,5 +1,5 @@
 import { defineView } from '@uniflex/compiler';
-import { ShopGetItemPanel, type ShopGetItemPanelProps } from '../ShopGetItem/ShopGetItemPanel';
+import { ShopGetItemPanel, type ShopGetItemPanelProps } from '../../restored/pages/ShopGetItem/ShopGetItemPanel';
 
 export type ShopGetItemRestoredParams = Omit<ShopGetItemPanelProps, 'visible'>;
 

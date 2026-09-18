@@ -1,8 +1,8 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
-import { MainNav, type MainNavSlot } from '../../components/navigation/MainNav';
-import { HeroBondsPanel, type HeroBond, type HeroBondMember } from '../HeroScreen/HeroBondsPanel';
-import { HeroListPanel, type HeroCardItem } from '../HeroScreen/HeroListPanel';
+import { MainNav, type MainNavSlot } from '../../restored/components/navigation/MainNav';
+import { HeroBondsPanel, type HeroBond, type HeroBondMember } from '../../restored/pages/HeroScreen/HeroBondsPanel';
+import { HeroListPanel, type HeroCardItem } from '../../restored/pages/HeroScreen/HeroListPanel';
 
 export type HeroScreenTab = 'hero' | 'team' | 'bonds';
 

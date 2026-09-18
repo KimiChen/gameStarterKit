@@ -1,0 +1,585 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "roots": [
+    "layer-9"
+  ],
+  "nodes": {
+    "layer-9": {
+      "id": "layer-9",
+      "name": "HeroListPanel",
+      "kind": "group",
+      "frame": {
+        "x": 15,
+        "y": 98,
+        "width": 722,
+        "height": 1099
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroListPanel:HeroScreen/HeroListPanel",
+        "role": "component",
+        "definitionKey": "HeroListPanel"
+      },
+      "children": [
+        "layer-10",
+        "layer-12",
+        "layer-293"
+      ]
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 59,
+        "width": 720,
+        "height": 948
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-11"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 720,
+        "height": 948
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroListPanel:HeroScreen/HeroListPanel/_",
+        "role": "node"
+      },
+      "asset": "asset-e218b3a431bf8bce4837e4c9dfd8aeec40f4dd9764ef4b77d89b9d508179d1f0"
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 10,
+        "y": 71,
+        "width": 696,
+        "height": 923
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-13",
+        "layer-37",
+        "layer-61",
+        "layer-85",
+        "layer-109",
+        "layer-129",
+        "layer-153",
+        "layer-167",
+        "layer-181",
+        "layer-195",
+        "layer-209",
+        "layer-223",
+        "layer-237",
+        "layer-251",
+        "layer-265",
+        "layer-279"
+      ],
+      "clip": true
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:0",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-0f18859d0704871d985b69fd6d884bb842935bf0c3ea49ab97b6b08b95df8449"
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 175,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:1",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-259500419adeaa37a817bab0617247a8794cb73382aa680b9f1b5e2269af8989"
+    },
+    "layer-61": {
+      "id": "layer-61",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 351,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:2",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-524b401a52532aa950a3ac1c5a203d375bfbca21d3e79bdee47910560bc37d08"
+    },
+    "layer-85": {
+      "id": "layer-85",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 526,
+        "y": 0,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:3",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-839f03edbfe13f9bde607dbf7e88bf8f669ded25ff5cdd0281b8c49184ca9f90"
+    },
+    "layer-109": {
+      "id": "layer-109",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 260,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:4",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-ad31e646a646bf725a3b1ce5e5c87d63b1fe9ed71c451a115e52c649898b90bd"
+    },
+    "layer-129": {
+      "id": "layer-129",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 175,
+        "y": 260,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:5",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-97ef16cc2c4d86325bcce83dc6dafef52199cdaeb02026e3d7fa06726d61eabf"
+    },
+    "layer-153": {
+      "id": "layer-153",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 351,
+        "y": 260,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:6",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-4970951f37a56e1572d1f980591a1736dbff0638cb1c7334a3d2b27428af5d41"
+    },
+    "layer-167": {
+      "id": "layer-167",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 526,
+        "y": 260,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:7",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-0c3505d9fd599cd505fb81333d0a4226995d1372a726b37fc23096097f1cab80"
+    },
+    "layer-181": {
+      "id": "layer-181",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 520,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:8",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-8a9c493b925314134fca0a0c876ff504a111bd1d146392027e416e276ec71798"
+    },
+    "layer-195": {
+      "id": "layer-195",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 175,
+        "y": 520,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:9",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-4d20da38635589a25fc7bb6b908e9e54867dd6fec5dd651f7d742a2ef6625f6c"
+    },
+    "layer-209": {
+      "id": "layer-209",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 351,
+        "y": 520,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:10",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-8ef19db9fd2700fa36ccaf0be7794087c08c5ed9626fc7e375729dbd230b992d"
+    },
+    "layer-223": {
+      "id": "layer-223",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 526,
+        "y": 520,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:11",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-dd5a49b3022b67e0ed81f5b31ec6c71dd15563460eaefd9ff1c55e748b6f96c7"
+    },
+    "layer-237": {
+      "id": "layer-237",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 780,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:12",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-917680cdb8303751917206d9bbf4bd5f075bf8ee76214f408197bfc69f3b7884"
+    },
+    "layer-251": {
+      "id": "layer-251",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 175,
+        "y": 780,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:13",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-43fcbe799e5d132f01a530c3ab133176edada67a20421f18a78ac326a4eb8ff6"
+    },
+    "layer-265": {
+      "id": "layer-265",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 351,
+        "y": 780,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:14",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-1acb3ba859d0501e88df14a400d8232aae5999d04c578e517b605a2f24e831e4"
+    },
+    "layer-279": {
+      "id": "layer-279",
+      "name": "HeroCard",
+      "kind": "image",
+      "frame": {
+        "x": 526,
+        "y": 780,
+        "width": 170,
+        "height": 248
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroCard:HeroScreen/HeroListPanel/_/HeroCard:15",
+        "role": "component",
+        "definitionKey": "HeroCard"
+      },
+      "asset": "asset-8ffefc77c65418fd516a118bfa27c1e829a1c21a5b87e0d02af85838468ceec1"
+    },
+    "layer-293": {
+      "id": "layer-293",
+      "name": "HeroFilterBar",
+      "kind": "image",
+      "frame": {
+        "x": 441,
+        "y": 0,
+        "width": 281,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroFilterBar:HeroScreen/HeroListPanel/HeroFilterBar",
+        "role": "component",
+        "definitionKey": "HeroFilterBar"
+      },
+      "asset": "asset-66111a5b8696e0dcd4c7a0781b925c1c83eb991d42d8acf11500c68d2e6ccf90"
+    }
+  },
+  "assets": {
+    "asset-e218b3a431bf8bce4837e4c9dfd8aeec40f4dd9764ef4b77d89b9d508179d1f0": {
+      "path": "assets/e218b3a431bf8bce4837e4c9dfd8aeec40f4dd9764ef4b77d89b9d508179d1f0.png",
+      "sha256": "e218b3a431bf8bce4837e4c9dfd8aeec40f4dd9764ef4b77d89b9d508179d1f0",
+      "mime": "image/png",
+      "width": 720,
+      "height": 948
+    },
+    "asset-bec1db5e6c80dfdab306f2f308afaf307b08a4c83618de6dfd15b5d58d99ef5a": {
+      "path": "assets/bec1db5e6c80dfdab306f2f308afaf307b08a4c83618de6dfd15b5d58d99ef5a.png",
+      "sha256": "bec1db5e6c80dfdab306f2f308afaf307b08a4c83618de6dfd15b5d58d99ef5a",
+      "mime": "image/png",
+      "width": 696,
+      "height": 923
+    },
+    "asset-0f18859d0704871d985b69fd6d884bb842935bf0c3ea49ab97b6b08b95df8449": {
+      "path": "assets/0f18859d0704871d985b69fd6d884bb842935bf0c3ea49ab97b6b08b95df8449.png",
+      "sha256": "0f18859d0704871d985b69fd6d884bb842935bf0c3ea49ab97b6b08b95df8449",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-259500419adeaa37a817bab0617247a8794cb73382aa680b9f1b5e2269af8989": {
+      "path": "assets/259500419adeaa37a817bab0617247a8794cb73382aa680b9f1b5e2269af8989.png",
+      "sha256": "259500419adeaa37a817bab0617247a8794cb73382aa680b9f1b5e2269af8989",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-524b401a52532aa950a3ac1c5a203d375bfbca21d3e79bdee47910560bc37d08": {
+      "path": "assets/524b401a52532aa950a3ac1c5a203d375bfbca21d3e79bdee47910560bc37d08.png",
+      "sha256": "524b401a52532aa950a3ac1c5a203d375bfbca21d3e79bdee47910560bc37d08",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-839f03edbfe13f9bde607dbf7e88bf8f669ded25ff5cdd0281b8c49184ca9f90": {
+      "path": "assets/839f03edbfe13f9bde607dbf7e88bf8f669ded25ff5cdd0281b8c49184ca9f90.png",
+      "sha256": "839f03edbfe13f9bde607dbf7e88bf8f669ded25ff5cdd0281b8c49184ca9f90",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-ad31e646a646bf725a3b1ce5e5c87d63b1fe9ed71c451a115e52c649898b90bd": {
+      "path": "assets/ad31e646a646bf725a3b1ce5e5c87d63b1fe9ed71c451a115e52c649898b90bd.png",
+      "sha256": "ad31e646a646bf725a3b1ce5e5c87d63b1fe9ed71c451a115e52c649898b90bd",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-97ef16cc2c4d86325bcce83dc6dafef52199cdaeb02026e3d7fa06726d61eabf": {
+      "path": "assets/97ef16cc2c4d86325bcce83dc6dafef52199cdaeb02026e3d7fa06726d61eabf.png",
+      "sha256": "97ef16cc2c4d86325bcce83dc6dafef52199cdaeb02026e3d7fa06726d61eabf",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-4970951f37a56e1572d1f980591a1736dbff0638cb1c7334a3d2b27428af5d41": {
+      "path": "assets/4970951f37a56e1572d1f980591a1736dbff0638cb1c7334a3d2b27428af5d41.png",
+      "sha256": "4970951f37a56e1572d1f980591a1736dbff0638cb1c7334a3d2b27428af5d41",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-0c3505d9fd599cd505fb81333d0a4226995d1372a726b37fc23096097f1cab80": {
+      "path": "assets/0c3505d9fd599cd505fb81333d0a4226995d1372a726b37fc23096097f1cab80.png",
+      "sha256": "0c3505d9fd599cd505fb81333d0a4226995d1372a726b37fc23096097f1cab80",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-8a9c493b925314134fca0a0c876ff504a111bd1d146392027e416e276ec71798": {
+      "path": "assets/8a9c493b925314134fca0a0c876ff504a111bd1d146392027e416e276ec71798.png",
+      "sha256": "8a9c493b925314134fca0a0c876ff504a111bd1d146392027e416e276ec71798",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-4d20da38635589a25fc7bb6b908e9e54867dd6fec5dd651f7d742a2ef6625f6c": {
+      "path": "assets/4d20da38635589a25fc7bb6b908e9e54867dd6fec5dd651f7d742a2ef6625f6c.png",
+      "sha256": "4d20da38635589a25fc7bb6b908e9e54867dd6fec5dd651f7d742a2ef6625f6c",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-8ef19db9fd2700fa36ccaf0be7794087c08c5ed9626fc7e375729dbd230b992d": {
+      "path": "assets/8ef19db9fd2700fa36ccaf0be7794087c08c5ed9626fc7e375729dbd230b992d.png",
+      "sha256": "8ef19db9fd2700fa36ccaf0be7794087c08c5ed9626fc7e375729dbd230b992d",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-dd5a49b3022b67e0ed81f5b31ec6c71dd15563460eaefd9ff1c55e748b6f96c7": {
+      "path": "assets/dd5a49b3022b67e0ed81f5b31ec6c71dd15563460eaefd9ff1c55e748b6f96c7.png",
+      "sha256": "dd5a49b3022b67e0ed81f5b31ec6c71dd15563460eaefd9ff1c55e748b6f96c7",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-917680cdb8303751917206d9bbf4bd5f075bf8ee76214f408197bfc69f3b7884": {
+      "path": "assets/917680cdb8303751917206d9bbf4bd5f075bf8ee76214f408197bfc69f3b7884.png",
+      "sha256": "917680cdb8303751917206d9bbf4bd5f075bf8ee76214f408197bfc69f3b7884",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-43fcbe799e5d132f01a530c3ab133176edada67a20421f18a78ac326a4eb8ff6": {
+      "path": "assets/43fcbe799e5d132f01a530c3ab133176edada67a20421f18a78ac326a4eb8ff6.png",
+      "sha256": "43fcbe799e5d132f01a530c3ab133176edada67a20421f18a78ac326a4eb8ff6",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-1acb3ba859d0501e88df14a400d8232aae5999d04c578e517b605a2f24e831e4": {
+      "path": "assets/1acb3ba859d0501e88df14a400d8232aae5999d04c578e517b605a2f24e831e4.png",
+      "sha256": "1acb3ba859d0501e88df14a400d8232aae5999d04c578e517b605a2f24e831e4",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-8ffefc77c65418fd516a118bfa27c1e829a1c21a5b87e0d02af85838468ceec1": {
+      "path": "assets/8ffefc77c65418fd516a118bfa27c1e829a1c21a5b87e0d02af85838468ceec1.png",
+      "sha256": "8ffefc77c65418fd516a118bfa27c1e829a1c21a5b87e0d02af85838468ceec1",
+      "mime": "image/png",
+      "width": 170,
+      "height": 248
+    },
+    "asset-66111a5b8696e0dcd4c7a0781b925c1c83eb991d42d8acf11500c68d2e6ccf90": {
+      "path": "assets/66111a5b8696e0dcd4c7a0781b925c1c83eb991d42d8acf11500c68d2e6ccf90.png",
+      "sha256": "66111a5b8696e0dcd4c7a0781b925c1c83eb991d42d8acf11500c68d2e6ccf90",
+      "mime": "image/png",
+      "width": 281,
+      "height": 52
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Group (layer-12): overflow mask kept as clip viewport",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroCard: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "HeroFilterBar: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

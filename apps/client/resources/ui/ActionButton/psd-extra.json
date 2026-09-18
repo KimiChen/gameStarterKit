@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "414e5adfbc3445a723a8184b2c44ed022a86d33ef3e5f3192c78cf18706c5f5b",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 255,
+    "height": 102,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"d74aecec4677708ed3e169422081833fac421be33a9279439262a0fc3d41792a\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJub2RlcyI6W3siaWQiOjM1LCJwYXJlbnQiOm51bGwsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiQWN0aW9uQnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjoyNTUsImhlaWdodCI6MTAyfSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MzYsInBhcmVudCI6MzUsInBsYW5JZCI6Miwia2luZCI6ImltYWdlIiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9CYWNrZ3JvdW5kIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjoyNTUsImhlaWdodCI6MTAyfSwicmVzb3VyY2VJZCI6InVpL2J1dHRvbi9jb25maXJtIiwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uL0FjdGlvbkJ1dHRvbi9CYWNrZ3JvdW5kIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19LHsiaWQiOjM3LCJwYXJlbnQiOjM1LCJwbGFuSWQiOjMsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9MYWJlbCIsInZhbHVlIjoiMTAwMCIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0xhYmVsIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19LHsiaWQiOjM4LCJwYXJlbnQiOjM1LCJwbGFuSWQiOjQsImtpbmQiOiJ2aWV3IiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9JY29uUm93IiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjgsInkiOjQsIndpZHRoIjoyMzksImhlaWdodCI6ODZ9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3ciLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MzksInBhcmVudCI6MzgsInBsYW5JZCI6NSwia2luZCI6ImltYWdlIiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9JY29uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI3LjUsInkiOjE2LCJ3aWR0aCI6NjQsImhlaWdodCI6NTR9LCJyZXNvdXJjZUlkIjoidWkvc2hvcC9nZXRpdGVtLXBheS1nZW0iLCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3cvQWN0aW9uQnV0dG9uL0ljb24iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6NDAsInBhcmVudCI6MzgsInBsYW5JZCI6Niwia2luZCI6InRleHQiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0ljb25MYWJlbCIsInZhbHVlIjoiMTAwMCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTA3LjUsInkiOjAsIndpZHRoIjoxMDQsImhlaWdodCI6ODZ9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3cvQWN0aW9uQnV0dG9uL0ljb25MYWJlbCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQWN0aW9uQnV0dG9uIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9idXR0b24vQWN0aW9uQnV0dG9uLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiQWN0aW9uQnV0dG9uIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9idXR0b24vQWN0aW9uQnV0dG9uLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24iLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6MzV9XX0sImNvbXBvbmVudERvY3VtZW50Ijp7ImtleSI6IkFjdGlvbkJ1dHRvbiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvYnV0dG9uL0FjdGlvbkJ1dHRvbi50c3gifX0=\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-45": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton [ui:ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton#component]",
+        "id": 45,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-46": {
+      "parent": "layer-45",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/Background",
+        "id": 46,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-47": {
+      "parent": "layer-46",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 102,
+        "right": 255,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/Background [ui:ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton/ActionButton/Background#node]",
+        "id": 47,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-48": {
+      "parent": "layer-45",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/IconRow [ui:ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton/ActionButton/IconRow#node]",
+        "id": 48,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-49": {
+      "parent": "layer-48",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/Icon",
+        "id": 49,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-50": {
+      "parent": "layer-49",
+      "properties": {
+        "top": 20,
+        "left": 36,
+        "bottom": 74,
+        "right": 100,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/Icon [ui:ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton/ActionButton/IconRow/ActionButton/Icon#node]",
+        "id": 50,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-51": {
+      "parent": "layer-48",
+      "properties": {
+        "top": 4,
+        "left": 116,
+        "bottom": 90,
+        "right": 220,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ActionButton/IconLabel [ui:ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton/ActionButton/IconRow/ActionButton/IconLabel#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            117.5,
+            61.799999999999955
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "1000",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 40,
+            "fauxBold": false,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 40,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 100,
+                "g": 62,
+                "b": 20
+              }
+            }
+          ]
+        },
+        "id": 51,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

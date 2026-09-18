@@ -1,0 +1,14 @@
+{
+  "key": "MainNav",
+  "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx",
+  "export": {
+    "uniflexSha256": "2cc91f3dce6f17fb988fcb65a2015d6b166b83dca3d5fb16eba9aa6cbbb07c29",
+    "psdSha256": "5e119346e734a6c3c9b2561b007d9bbd9211833d99b4cad5f02387813bc7111c",
+    "at": "2026-09-18T01:57:27.272Z"
+  },
+  "import": {
+    "psdSha256": "5e119346e734a6c3c9b2561b007d9bbd9211833d99b4cad5f02387813bc7111c",
+    "at": "2026-09-18T02:01:24.295Z",
+    "target": "restored"
+  }
+}

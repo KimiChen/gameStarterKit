@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 255,
+    "height": 102
+  },
+  "roots": [
+    "layer-44"
+  ],
+  "nodes": {
+    "layer-44": {
+      "id": "layer-44",
+      "name": "ConfirmButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ConfirmButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton",
+        "role": "component",
+        "definitionKey": "ConfirmButton"
+      },
+      "children": [
+        "layer-45"
+      ]
+    },
+    "layer-45": {
+      "id": "layer-45",
+      "name": "ActionButton",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton/ActionButton",
+        "role": "component",
+        "definitionKey": "ActionButton"
+      },
+      "asset": "asset-1819f70f4327e9838c5eb780efda3e272159f01004687198e5d735b188d7a551"
+    }
+  },
+  "assets": {
+    "asset-1819f70f4327e9838c5eb780efda3e272159f01004687198e5d735b188d7a551": {
+      "path": "assets/1819f70f4327e9838c5eb780efda3e272159f01004687198e5d735b188d7a551.png",
+      "sha256": "1819f70f4327e9838c5eb780efda3e272159f01004687198e5d735b188d7a551",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "ActionButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}
