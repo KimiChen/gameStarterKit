@@ -48,7 +48,7 @@ export const AllianceBoardPanel = defineComponent<AllianceBoardPanelProps>((p) =
             <PanelTab label="申请列表" active={tab === 'apply'} left={227} top={262} width={200}
                 onClick={() => selectTab('apply')} />
 
-            <ScreenFooter top={1369} onBack={back} />
+            <ScreenFooter onBack={back} />
             <AllianceBoardMessagePanel visible={tab === 'board'} placeholder={p.placeholder}
                 onSend={p.onSend} onAction={p.onAction} />
         </view>

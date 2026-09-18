@@ -165,7 +165,7 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
         <view name="Shop" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624, backgroundColor: '#000000' }}>
             <view style={{ position: 'absolute', left: 0, top: 140, width: 750, height: 209, backgroundColor: '#553E78' }} />
-            <view style={{ position: 'absolute', left: 0, top: 199, width: 750, height: 1281, backgroundColor: '#413360' }} />
+            <view style={{ position: 'absolute', left: 0, top: 199, width: 750, height: 1425, backgroundColor: '#413360' }} />
             <image source={imageRef('ui/shop/awning')}
                 style={{ position: 'absolute', left: 0, top: 145, width: 750, height: 128 }} />
             <text value={p.title ?? '商店'}
@@ -188,11 +188,11 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
             </view>
 
             <image source={imageRef('ui/shop/panel')}
-                style={{ position: 'absolute', left: 8, top: 354, width: 734, height: 1032, sizeMode: 'sliced' }} />
+                style={{ position: 'absolute', left: 8, top: 354, width: 734, height: 1160, sizeMode: 'sliced' }} />
             <VirtualList source={source} key="id" layout="grid" lanes={3}
                 direction="vertical" itemSize={cardHeight} gap={gap} crossGap={crossGap} overscan={1}
                 controller={list} inertia elastic
-                style={{ position: 'absolute', left: listLeft, top: listTop, width: listWidth, height: 1000 }}>
+                style={{ position: 'absolute', left: listLeft, top: listTop, width: listWidth, height: 1141 }}>
                 {(item) => <ShopCard goods={item} onClick={() => clickCard(item)} />}
             </VirtualList>
 
@@ -203,24 +203,24 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
             <PanelTab label="宝石商店" active={isGem} left={447} top={302} width={200} kind="alliance"
                 onClick={() => selectTab('gem')} />
 
-            <ScreenFooter top={1369} onBack={back} />
+            <ScreenFooter onBack={back} />
             <text visible={showRestock} value={p.restockLabel ?? '每周一补货'}
-                style={{ position: 'absolute', left: 300, top: 1389, width: 149, height: 30,
+                style={{ position: 'absolute', left: 300, bottom: 60, width: 149, height: 30,
                     font: fontRef('fonts/regular', 700), fontSize: 26, color: '#ffffff', bold: true,
                     horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
             <image visible={showRestock} source={imageRef('ui/shop/clock')}
-                style={{ position: 'absolute', left: 248, top: 1423, width: 35, height: 42 }} />
+                style={{ position: 'absolute', left: 248, bottom: 14, width: 35, height: 42 }} />
             <text visible={showRestock} value={p.restockTime ?? '4天17:35:26'}
-                style={{ position: 'absolute', left: 289, top: 1433, width: 173, height: 27,
+                style={{ position: 'absolute', left: 289, bottom: 19, width: 173, height: 27,
                     font: fontRef('fonts/regular', 700), fontSize: 24, color: '#ffffff', bold: true,
                     verticalAlign: 'center', overflow: 'shrink' }} />
             <view visible={isGem} interaction="press" onClick={() => p.onAction?.('open_emoji')}
-                style={{ position: 'absolute', left: 521, top: 1390, width: 59, height: 60 }}>
+                style={{ position: 'absolute', left: 521, bottom: 29, width: 59, height: 60 }}>
                 <image source={imageRef('ui/alliance/board-emoji')}
                     style={{ width: 59, height: 60 }} />
             </view>
             <view visible={isGem} interaction="press" onClick={() => p.onAction?.('send_message')}
-                style={{ position: 'absolute', left: 589, top: 1383, width: 154, height: 77 }}>
+                style={{ position: 'absolute', left: 589, bottom: 19, width: 154, height: 77 }}>
                 <image source={imageRef('ui/alliance/board-send')}
                     style={{ width: 154, height: 77 }} />
             </view>

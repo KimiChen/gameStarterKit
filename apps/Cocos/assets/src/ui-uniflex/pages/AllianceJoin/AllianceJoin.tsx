@@ -86,10 +86,10 @@ export const AllianceJoin = defineView<AllianceJoinParams | void>({ zIndex: 'scr
             </view>
 
             <image source={imageRef('ui/alliance/input-bg')}
-                style={{ position: 'absolute', left: 17, top: 524, width: 719, height: 816, sizeMode: 'sliced' }} />
+                style={{ position: 'absolute', left: 17, top: 524, width: 719, height: 961, sizeMode: 'sliced' }} />
             <VirtualList source={source} key="id" direction="vertical" itemSize={ROW_SIZE} gap={ROW_GAP}
                 overscan={2} controller={list} inertia elastic
-                style={{ position: 'absolute', left: 22, top: 533, width: 709, height: 807 }}>
+                style={{ position: 'absolute', left: 22, top: 533, width: 709, height: 952 }}>
                 {(item) => <AllianceJoinRow name={item.name} members={item.members} minLevel={item.minLevel}
                     power={item.power} joinType={item.joinType}
                     onClick={() => params.onJoin?.(item.id)} />}
@@ -97,7 +97,7 @@ export const AllianceJoin = defineView<AllianceJoinParams | void>({ zIndex: 'scr
 
             <ScreenHeader title={params.title ?? '加入一个联盟'} top={144} titleWidth={400} />
 
-            <ScreenFooter top={1369} onBack={() => params.onBack?.()} />
+            <ScreenFooter onBack={() => params.onBack?.()} />
 
             <AllianceCreatePanel visible={createOpen}
                 onClose={() => setCreateOpen(false)}

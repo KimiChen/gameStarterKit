@@ -20,7 +20,7 @@ export const AllianceBoardMessagePanel = defineComponent<AllianceBoardMessagePan
     };
     return (
         <view name="AllianceBoardMessage" visible={p.visible !== false}
-            style={{ position: 'absolute', left: 0, top: 1369, width: 750, height: 110 }}>
+            style={{ position: 'absolute', left: 0, bottom: 0, width: 750, height: 110 }}>
             <image source={imageRef('ui/alliance/board-input')}
                 style={{ position: 'absolute', left: 102, top: 20, width: 483, height: 62, sizeMode: 'sliced' }} />
             <input value={draft} placeholder="" onInput={setDraft}

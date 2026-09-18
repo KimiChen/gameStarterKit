@@ -45,11 +45,11 @@ export const AllianceWarPanel = defineComponent<AllianceWarPanelProps>((p) => {
             <PanelTab label="活动" active={tab === 'event'} left={440} top={262} width={200}
                 onClick={() => selectTab('event')} />
 
-            <ScreenFooter top={1369} onBack={back} />
-            <view style={{ position: 'absolute', left: 111.125, top: 1373.25, width: 255, height: 102, scale: 0.75 }}>
+            <ScreenFooter onBack={back} />
+            <view style={{ position: 'absolute', left: 111.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
                 <CyanButton label="自动集结" onClick={() => p.onAction?.('auto_rally')} />
             </view>
-            <view style={{ position: 'absolute', left: 384.125, top: 1373.25, width: 255, height: 102, scale: 0.75 }}>
+            <view style={{ position: 'absolute', left: 384.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
                 <ConfirmButton label="发起集结" onClick={() => p.onAction?.('start_rally')} />
             </view>
         </view>
