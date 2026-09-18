@@ -26,6 +26,7 @@ const help = `Usage:
   npm run ui:export-fgui -- --snapshot path/to/snapshot.json --out .cache/fgui/prompt
   npm run ui:preview-fgui -- --out .cache/fgui/prompt
   npm run ui:preview-fgui -- --catalog --port 8771
+  npm run ui:preview-fgui -- --catalog --port 8771 --host 0.0.0.0
 
 CLI resolution (first match):
   WEB_UI_TO_PSD_CLI    Optional override: executable path or JS entry; not a shell command.
@@ -49,6 +50,8 @@ FairyGUI-dom preview package under --out. It never writes apps/art/fairygui.
 One snapshot becomes UniFlex_<Page>; several share UniFlex_Common and get a
 preview catalog (FairyGUI PreviewHome clicks, or an HTML directory). ui:preview-fgui
 serves <out>/preview. --catalog merges the grouped exports under .cache/fgui.
+Default bind is 127.0.0.1 (this machine only). Pass --host 0.0.0.0 to listen on
+all interfaces so other machines can open http://<lan-ip>:<port>/.
 `;
 
 const commands = ["import-psd", "export-psd", "roundtrip", "check-source", "export-fgui", "preview-fgui"];
@@ -265,10 +268,12 @@ async function runFguiCommand(command, args, { root, env, startPreview, readText
     if (command === "preview-fgui") {
         if (!catalogMode && !out?.trim() && merge.length === 0) throw new Error("Missing --out.");
         const port = flagValue(args, "port");
+        const host = flagValue(args, "host") || "127.0.0.1";
         const server = await servePreview({
-            root, out, merge, catalog: catalogMode, host: "127.0.0.1", port: port ? Number(port) : 0,
+            root, out, merge, catalog: catalogMode, host, port: port ? Number(port) : 0,
         });
         console.log(`FairyGUI-dom preview: ${server.url}`);
+        for (const lan of server.lanUrls ?? []) console.log(`LAN: ${lan}`);
         if (args.includes("--once")) {
             await server.close();
             return;
