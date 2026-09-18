@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ItemSlot, type ItemQuality } from '../../../components/item/ItemSlot';
+import { ItemSlot, type ItemQuality } from '../../../gamecomponents/item/ItemSlot';
 import type { HeroCardQuality } from './HeroCard';
 
 export interface HeroRequiredHeroProps {

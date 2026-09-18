@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { StarRow } from '../../../components/star/StarRow';
+import { StarRow } from '../../../gamecomponents/star/StarRow';
 
 export interface HeroDetailAttributesProps {
     readonly visible?: boolean;

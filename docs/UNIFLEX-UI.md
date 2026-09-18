@@ -20,7 +20,7 @@ Web 预览：`npm run dev:uniflex-web` → `http://127.0.0.1:8001/`。已有 `80
 | 写 | 不写 |
 |---|---|
 | `apps/client/src/ui-uniflex/modules/<module>/<Page>/*.tsx` | `apps/Cocos/assets/src/`（`sync:client` 镜像，禁手改；新文件 `.meta` 除外） |
-| `apps/client/src/ui-uniflex/components/` | `apps/client/src/ui-uniflex/generated/`（禁手改、不入库） |
+| `apps/client/src/ui-uniflex/components/`、`gamecomponents/` | `apps/client/src/ui-uniflex/generated/`（禁手改、不入库） |
 | `apps/client/resources/ui/<Package>/` | `*Restored` 页、`RestoredPreviewHome`（PSD 回写线，见 §6） |
 | 预览登记（§5） | server / shared / protocol（除非用户明确要接） |
 
@@ -50,7 +50,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 - 没有富文本。长文尽量一个 `<text wrap>`；局部变色只能叠字。
 - 底图高度以源图为准。不要发明「跟着内容收缩的底图」，除非用户明确要且源图如此。领地要塞 list-bg 是固定 `719×776 @ 15,544`。
 
-先搜再造，组件在 `apps/client/src/ui-uniflex/components/`：
+先搜再造，通用控件在 `apps/client/src/ui-uniflex/components/`，玩法控件在 `gamecomponents/`：
 
 | 用途 | 组件 |
 |---|---|

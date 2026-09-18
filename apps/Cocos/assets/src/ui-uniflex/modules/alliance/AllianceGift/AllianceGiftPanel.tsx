@@ -3,7 +3,7 @@ import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { EmptyState } from '../../../components/empty/EmptyState';
+import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { PanelTab } from '../../../components/tab/PanelTab';
 
 export type AllianceGiftTab = 'normal' | 'rare';

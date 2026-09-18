@@ -1,7 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { EmptyState } from '../../../components/empty/EmptyState';
+import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { InputText } from '../../../components/input/InputText';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 

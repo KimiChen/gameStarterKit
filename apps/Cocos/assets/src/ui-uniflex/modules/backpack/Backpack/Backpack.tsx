@@ -4,8 +4,8 @@ import { BackpackItemCard, type BackpackItem, type BackpackQuality } from './com
 import { BackpackQuantityControl } from './components/BackpackQuantityControl';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { EmptyState } from '../../../components/empty/EmptyState';
-import { ResourceCounter } from '../../../components/resource/ResourceCounter';
+import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
+import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
 import { PanelTab } from '../../../components/tab/PanelTab';
 
 export type BackpackAction = {

@@ -31,7 +31,7 @@
     },
     {
       "key": "MainNav",
-      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx",
       "psd": "components/MainNav/component.psd",
       "guid": "3ada9bd1-d9dd-d339-7e81-85a3355c40b6",
       "width": 750,

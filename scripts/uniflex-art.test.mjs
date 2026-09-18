@@ -134,15 +134,15 @@ test("restored backpack shares copies while originals keep original imports", as
         resolve(root, "apps/client/src/ui-uniflex/restored/modules/backpack/Backpack/components/BackpackItemCard.tsx"),
         "utf8");
     const restoredSlot = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/components/item/ItemSlot.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/restored/gamecomponents/item/ItemSlot.tsx"), "utf8");
     assert.match(originalPage, /from '\.\/components\/BackpackItemCard'/);
     assert.doesNotMatch(originalPage, /restored/);
-    assert.match(originalCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
+    assert.match(originalCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/gamecomponents\/item\/ItemSlot'/);
     assert.doesNotMatch(originalCard, /Restored/);
     assert.match(restoredPage,
         /from '\.\.\/\.\.\/\.\.\/restored\/modules\/backpack\/Backpack\/components\/BackpackItemCard'/);
     assert.match(restoredPage, /from '\.\.\/\.\.\/\.\.\/restored\/components\/tab\/PanelTab'/);
-    assert.match(restoredCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
+    assert.match(restoredCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/gamecomponents\/item\/ItemSlot'/);
     assert.match(restoredCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/kits\/uniflex\/api\/core\/index'/);
     assert.match(restoredSlot, /from '\.\.\/\.\.\/\.\.\/\.\.\/kits\/uniflex\/api\/core\/index'/);
     assert.match(originalCard, /<ItemSlot left=\{0\}/);

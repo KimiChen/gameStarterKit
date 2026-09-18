@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ItemSlot } from '../../../components/item/ItemSlot';
+import { ItemSlot } from '../../../gamecomponents/item/ItemSlot';
 
 export type ShopQuality = 'red' | 'blue' | 'purple' | 'orange';
 export type ShopIcon = 'egg' | 'meat' | 'book' | 'scroll' | 'gem';

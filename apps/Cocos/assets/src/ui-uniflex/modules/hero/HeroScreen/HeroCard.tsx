@@ -1,7 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
-import { StarRow } from '../../../components/star/StarRow';
+import { StarRow } from '../../../gamecomponents/star/StarRow';
 
 export type HeroCardQuality = 'purple' | 'green' | 'red' | 'yellow' | 'blue';
 export type HeroCardClass = 'shield' | 'sword' | 'anchor';

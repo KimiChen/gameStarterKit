@@ -1,8 +1,8 @@
 {
   "key": "MainNav",
-  "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx",
+  "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx",
   "export": {
-    "uniflexSha256": "2cc91f3dce6f17fb988fcb65a2015d6b166b83dca3d5fb16eba9aa6cbbb07c29",
+    "uniflexSha256": "3323d2d263f6fe945842d252b1929ef35a6dbf3df6b57e6bbdf4c92b3c0563cf",
     "psdSha256": "5e119346e734a6c3c9b2561b007d9bbd9211833d99b4cad5f02387813bc7111c",
     "at": "2026-09-18T01:57:27.272Z"
   },
