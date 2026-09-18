@@ -55,6 +55,11 @@ function backToPreview() {
 function backToRestored() {
     location.href = "?ui=restored-home";
 }
+/** Preview-only: MainNav has no ScreenFooter; wheel temporarily returns to the catalog. */
+function onPreviewMainNav(slot: string, label: string, back: () => void = backToPreview): void {
+    console.info(label, slot);
+    if (slot === "wheel") back();
+}
 window.addEventListener("pagehide", dispose, { once: true });
 
 async function startScreen(entry: ScreenEntry): Promise<void> {
@@ -156,7 +161,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onSelectCard: () => { location.href = "?ui=hero-detail"; },
                 onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
                 onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
-                onNav: (slot) => console.info("[UniFlex HeroScreen] nav", slot),
+                onNav: (slot) => onPreviewMainNav(slot, "[UniFlex HeroScreen] nav"),
             });
             return;
         case "hero-detail":
@@ -183,7 +188,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         case "alliance":
             await runtime.start(Alliance, {
                 onAction: (id) => console.info("[UniFlex Alliance] action", id),
-                onNav: (slot) => console.info("[UniFlex Alliance] nav", slot),
+                onNav: (slot) => onPreviewMainNav(slot, "[UniFlex Alliance] nav"),
                 onSelectTab: (tab) => console.info("[UniFlex Alliance] tab", tab),
             });
             return;
@@ -332,7 +337,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                 onSelectCard: (_id) => { location.href = "?ui=hero-detail-restored"; },
                 onSelectBond: (id) => console.info("[UniFlex HeroScreenRestored] bond", id),
                 onBondDetail: (id) => console.info("[UniFlex HeroScreenRestored] bond-detail", id),
-                onNav: (slot) => console.info("[UniFlex HeroScreenRestored] nav", slot),
+                onNav: (slot) => onPreviewMainNav(slot, "[UniFlex HeroScreenRestored] nav", backToRestored),
             });
             return;
         case "hero-detail-restored":
