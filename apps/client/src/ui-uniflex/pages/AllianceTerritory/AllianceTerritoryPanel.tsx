@@ -56,7 +56,7 @@ export const AllianceTerritoryPanel = defineComponent<AllianceTerritoryPanelProp
             <PanelTab kind="flag" label="要塞" active={tab === 'fort'} left={382} top={262} width={170}
                 onClick={() => selectTab('fort')} />
 
-            <ScreenFooter top={1369} source={flagBottom} backLeft={16} backTop={1399} onBack={back} />
+            <ScreenFooter source={flagBottom} backLeft={16} onBack={back} />
         </view>
     );
 });

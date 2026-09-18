@@ -59,9 +59,9 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
                 labelLeft={200} labelTop={960} labelWidth={350} />
 
             <image source={imageRef('ui/alliance/gift-cap')}
-                style={{ position: 'absolute', left: 245, top: 1315, width: 261, height: 39, sizeMode: 'sliced' }} />
+                style={{ position: 'absolute', left: 245, bottom: 125, width: 261, height: 39, sizeMode: 'sliced' }} />
             <text value={p.capText ?? '今日奖励上限：'}
-                style={{ position: 'absolute', left: 245, top: 1315, width: 261, height: 39,
+                style={{ position: 'absolute', left: 245, bottom: 125, width: 261, height: 39,
                     font: fontRef('fonts/regular', 700), fontSize: 24, color: CAP, bold: true,
                     horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
 
@@ -72,8 +72,8 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
             <PanelTab label="稀有礼物" active={tab === 'rare'} left={227} top={492} width={200}
                 onClick={() => selectTab('rare')} />
 
-            <ScreenFooter top={1369} onBack={back} />
-            <view style={{ position: 'absolute', left: 280, top: 1386, width: claimWidth, height: claimHeight }}>
+            <ScreenFooter onBack={back} />
+            <view style={{ position: 'absolute', left: 280, bottom: 16, width: claimWidth, height: claimHeight }}>
                 <ConfirmButton label={p.claimLabel ?? '一键领取'} width={claimWidth} height={claimHeight}
                     onClick={claim} />
             </view>

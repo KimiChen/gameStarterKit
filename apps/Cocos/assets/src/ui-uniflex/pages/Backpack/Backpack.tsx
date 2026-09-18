@@ -143,7 +143,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
                     onChange={setSafeQuantity} />
             </view>
 
-            <ScreenFooter top={1225} onBack={() => emit('back', 'back')} />
+            <ScreenFooter onBack={() => emit('back', 'back')} />
         </view>
     );
 });

@@ -1,7 +1,7 @@
 import { defineComponent, For, useMemo } from '@uniflex/compiler';
 import { imageRef } from '../../../kits/uniflex/api/core/index';
 import { IconCaptionButton } from '../../components/button/IconCaptionButton';
-import { ScreenFooter } from '../../components/chrome/ScreenFooter';
+import { SCREEN_FOOTER_HEIGHT, ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { AllianceTechLink, type AllianceTechLinkData } from './AllianceTechLink';
 import { AllianceTechNode, allianceTechNodeSize, type AllianceTechNodeData } from './AllianceTechNode';
@@ -16,9 +16,9 @@ export interface AllianceTechPanelProps {
 }
 
 const TREE_BG_H = 1399;
+const CANVAS_HEIGHT = 1624;
 const SCROLL_TOP = 112;
-const FOOTER_TOP = 1369;
-const SCROLL_HEIGHT = FOOTER_TOP - SCROLL_TOP;
+const SCROLL_HEIGHT = CANVAS_HEIGHT - SCREEN_FOOTER_HEIGHT - SCROLL_TOP;
 const LINE_THICK = 12;
 const LINE_GOLD = '#F0B429';
 const LINE_GRAY = '#5E5E5E';
@@ -137,12 +137,12 @@ export const AllianceTechPanel = defineComponent<AllianceTechPanelProps>((p) => 
             <image source={imageRef('ui/alliance/tech-fade-top')}
                 style={{ position: 'absolute', left: 0, top: 225, width: 750, height: 21 }} />
             <image source={imageRef('ui/alliance/tech-fade-bot')}
-                style={{ position: 'absolute', left: 0, top: 1357, width: 750, height: 20 }} />
+                style={{ position: 'absolute', left: 0, bottom: 102, width: 750, height: 20 }} />
 
             <ScreenHeader title={p.title ?? '科技'} top={144} titleTop={169} titleHeight={50} />
 
-            <ScreenFooter top={FOOTER_TOP} onBack={back} />
-            <IconCaptionButton icon={rankIcon} label={rankLabel} left={646} top={1376}
+            <ScreenFooter onBack={back} />
+            <IconCaptionButton icon={rankIcon} label={rankLabel} left={646} top={1521}
                 iconWidth={82} iconHeight={78} labelTop={71} labelHeight={26}
                 onClick={() => p.onAction?.('open_tech_rank')} />
         </view>
