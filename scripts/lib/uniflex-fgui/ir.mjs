@@ -250,7 +250,6 @@ function internFillImage(commonPkg) {
             path: "/images/",
             width: 4,
             height: 4,
-            scale9grid: { x: 1, y: 1, width: 2, height: 2, attr: "1,1,2,2" },
             bytes: solidPng(r, g, b, a, 4),
             resourceId: `fill:${hex}`,
             exported: true,
