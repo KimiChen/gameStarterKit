@@ -1,7 +1,7 @@
 import { defineView } from '@uniflex/compiler';
-import { PopupFrame } from '../../components/popup/PopupFrame';
-import { ConfirmButton } from '../../components/button/ConfirmButton';
-import { CancelButton } from '../../components/button/CancelButton';
+import { PopupFrame } from '../../restored/components/popup/PopupFrame';
+import { ConfirmButton } from '../../restored/components/button/ConfirmButton';
+import { CancelButton } from '../../restored/components/button/CancelButton';
 import { theme } from '../../themes/active';
 
 /** Optional presentation overrides; normal pages use the shared active theme. */
