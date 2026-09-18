@@ -532,7 +532,7 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
     }
 });
 
-test("SettingsMenuButton instances override labels and keep plan color", async () => {
+test("WideMenuButton instances override labels and keep plan color", async () => {
     const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-settings-"));
     try {
         const catalog = await loadScreenCatalog(root);
@@ -551,14 +551,14 @@ test("SettingsMenuButton instances override labels and keep plan color", async (
                 node(6, 3, "PopupFrame/Title", "text", rect(141, 182, 468, 64), { value: "设置" }),
                 node(7, 3, "PopupFrame/Content", "view", rect(21, 171, 708, 992)),
                 node(8, 7, "Settings/Content", "view", rect(21, 171, 708, 992)),
-                node(9, 8, "SettingsMenuButton", "view", rect(42, 284, 326, 114)),
-                node(10, 9, "SettingsMenuButton/Background", "image", rect(42, 284, 326, 114), { resourceId: "ui/settings/button" }),
-                node(11, 9, "SettingsMenuButton/Icon", "image", rect(75, 315, 54, 54), { resourceId: "ui/settings/gear" }),
-                node(12, 9, "SettingsMenuButton/Label", "text", rect(170, 314, 184, 54), { value: "通用设置" }),
-                node(13, 8, "SettingsMenuButton", "view", rect(383, 284, 326, 114)),
-                node(14, 13, "SettingsMenuButton/Background", "image", rect(383, 284, 326, 114), { resourceId: "ui/settings/button" }),
-                node(15, 13, "SettingsMenuButton/Icon", "image", rect(416, 315, 54, 54), { resourceId: "ui/settings/gear" }),
-                node(16, 13, "SettingsMenuButton/Label", "text", rect(511, 314, 184, 54), { value: "声音设置" }),
+                node(9, 8, "WideMenuButton", "view", rect(42, 284, 326, 114)),
+                node(10, 9, "WideMenuButton/Background", "image", rect(42, 284, 326, 114), { resourceId: "ui/settings/button" }),
+                node(11, 9, "WideMenuButton/Icon", "image", rect(75, 315, 54, 54), { resourceId: "ui/settings/gear" }),
+                node(12, 9, "WideMenuButton/Label", "text", rect(170, 314, 184, 54), { value: "通用设置" }),
+                node(13, 8, "WideMenuButton", "view", rect(383, 284, 326, 114)),
+                node(14, 13, "WideMenuButton/Background", "image", rect(383, 284, 326, 114), { resourceId: "ui/settings/button" }),
+                node(15, 13, "WideMenuButton/Icon", "image", rect(416, 315, 54, 54), { resourceId: "ui/settings/gear" }),
+                node(16, 13, "WideMenuButton/Label", "text", rect(511, 314, 184, 54), { value: "声音设置" }),
             ],
         };
         await exportFgui({
@@ -570,11 +570,11 @@ test("SettingsMenuButton instances override labels and keep plan color", async (
             images,
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_Settings/Settings.xml"), "utf8");
-        const buttonXml = readFileSync(join(out, "assets/UniFlex_Common/SettingsMenuButton.xml"), "utf8");
+        const buttonXml = readFileSync(join(out, "assets/UniFlex_Common/WideMenuButton.xml"), "utf8");
         assert.match(buttonXml, /text="通用设置"/);
         assert.match(buttonXml, /color="#3f3254"/);
         assert.match(pageXml, /propertyId="0" value="声音设置"/);
-        assert.match(pageXml, /fileName="SettingsMenuButton.xml"/);
+        assert.match(pageXml, /fileName="WideMenuButton.xml"/);
     } finally {
         rmSync(out, { recursive: true, force: true });
     }
@@ -845,7 +845,7 @@ test("nested component planIds do not reuse the page title style", async () => {
                 node(3, 1, "AllianceHome", "view", rect(0, 0, 750, 1369), { planId: 40 }),
                 node(4, 3, "AllianceInfoHeader", "view", rect(0, 0, 750, 541)),
                 node(5, 4, "", "text", rect(296, 398, 160, 32), { value: "盟主", planId: 10 }),
-                node(6, 3, "AllianceMenuButton", "view", rect(32, 776, 326, 114)),
+                node(6, 3, "WideMenuButton", "view", rect(32, 776, 326, 114)),
                 node(7, 6, "", "text", rect(150, 804, 190, 58), { value: "战争", planId: 31 }),
             ],
         };
@@ -889,7 +889,7 @@ test("nested component planIds do not reuse the page title style", async () => {
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_Alliance/Alliance.xml"), "utf8");
         const headerXml = readFileSync(join(out, "assets/UniFlex_Common/AllianceInfoHeader.xml"), "utf8");
-        const menuXml = readFileSync(join(out, "assets/UniFlex_Common/AllianceMenuButton.xml"), "utf8");
+        const menuXml = readFileSync(join(out, "assets/UniFlex_Common/WideMenuButton.xml"), "utf8");
         assert.match(pageXml, /fontSize="40"[^>]*text="联盟"/);
         assert.match(pageXml, /fileName="AllianceHomePanel.xml"/);
         assert.doesNotMatch(pageXml, /text="盟主"/);

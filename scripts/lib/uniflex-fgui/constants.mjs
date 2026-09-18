@@ -143,7 +143,7 @@ export const DEFAULT_STYLES = Object.freeze({
         fontSize: 40, color: "#ffffff", outlineWidth: 2, overflow: "shrink",
         horizontalAlign: "left", verticalAlign: "center",
     }),
-    "SettingsMenuButton/Label": Object.freeze({
+    "WideMenuButton/Label": Object.freeze({
         fontSize: 28, color: "#3F3254", bold: true, overflow: "shrink",
         horizontalAlign: "center", verticalAlign: "center",
     }),
