@@ -146,7 +146,7 @@ alliance 是三个 api 面」）。⇒ `lvr` 必须自建 worldmap/march，**照
 | i18n（X2） | FGUI 原生 `UIPackage.setStringsSource` / `TranslationHelper.loadFromXML`（`fairygui.mjs:5222`，零调用方但可用）+ 每语言 FGUI 包 + view sidecar `sharedPkgs` + `ErrorMessage`/`errorMessageOf` 码表 + kit 自带 JSON 资源表（slg `terrain.json` 先例） | **kit 自建 `api/text` 面**（key → JSON 表）。⚠ 必须在**第一个 View 之前**定契约，否则 ~200 页全返工。宿主 chrome 的多语言化是独立框架 PR，不在 kit 可达范围 |
 | loading 界面（X3） | `view/layers.ts` top 层 + `ViewMgr.ts:409` async open + AbortSignal + `packageLoader.ts` 的 deadline/三态错误码/retryable + `uiPlate.ts`。**slg 已有一份可直接抄**（`SlgMapView.ts` 加载态 + 失败重试、`SlgArtResources.ts` 批量加载 + addRef/decRef） | kit 自建，计 0.5 人月 |
 | 首页入口列表（U1/U2） | `view/EntryGroupView.ts` + `logic/page/EntryGroupLogic.ts` 已渲染任意条数入口并通过真引擎验收；`host.json` groups + `PluginRegistry.entryGroups()` | 无需 PR；主城 20+ 功能入口自己画在主城页里 |
-| kit 后台 worker（MF7） | `withKitTx` 放行自有表的 INSERT/UPDATE ⇒ **kit 可自建租约表**；`withKitUserFence`（离线用户锁 + 冷档自愈）、`applyKitEffect`（显式 zoneCtx，不依赖在线会话）、`readKitUserFieldInZone`、`retryKitTransaction`、`kitOpId` 全部可达；`relayer.ts` / `freezeWorker.ts` 是完整参考实现 | ⚠ **进程入口在 `apps/server/package.json`（框架 PR）**。⛔ **绝不用模块级 `setInterval` 绕**——`docs/KIT.md` §2 硬排除「导入期副作用」。**⏳ 落法待定，见 §4.3** |
+| kit 后台 worker（MF7） | `withKitTx` 放行自有表的 INSERT/UPDATE ⇒ **kit 可自建租约表**；`withKitUserFence`（离线用户锁 + 冷档自愈）、`applyKitEffect`（显式 zoneCtx，不依赖在线会话）、`readKitUserFieldInZone`、`retryKitTransaction`、`kitOpId` 全部可达；`relayer.ts` / `freezeWorker.ts` 是完整参考实现 | ⚠ **进程入口在 `apps/server/package.json`（框架 PR）**。⛔ **绝不用模块级 `setInterval` 绕**——`docs/KIT.md` §2 硬排除「导入期副作用」。**已拍板 P4：等 MF7，⛔ 不提 PR**，MF7 前全走 lazy，见 §4.3 |
 | 跨用户推送（MF6） | `websocket/push.ts` 的 `pushToUser(uid,…)` + `defineLobbyPush` + 客户端 `onPush` + guild 的 `GetEvents(sinceSeq)` 自愈拉取形态 + 两条现成跨节点流总线 | 联盟/聊天/援助可做；**名册与事件落 kit 自有表** |
 | 逐视口同步（MF5） | slg 阶段 1/2a 已证明「SQL 权威 + 无房 + 客户端 chunk streamer 轮询」能把大地图与行军整条链跑完并通过真引擎验收 | 首版轮询，实时视图房登记为等 MF5。⚠ 这是**体验降级**不是功能缺失 |
 | 3D 场景管线 | `SlgChunkRenderer` / `SlgFarLayerRenderer` 等已用 Material / EffectAsset / 动态 Mesh / 材质销毁 / LOD / 后处理；`kind:"cocos"` View 给全屏 root Node；`SlgArtResources.ts` 是资源生命周期范本；`tools/slg-maps/verify-redraw.py` 是美术往返自检 | Cocos 3.8 本就是 3D 引擎，**不是能力缺口而是零先例 + 全部成本落在 kit**。**已拍板走自建 3D 管线**，需求拆到 [lvr-3d.md](lvr-3d.md)，见 §9.1 |
@@ -193,7 +193,27 @@ alliance 是三个 api 面」）。⇒ `lvr` 必须自建 worldmap/march，**照
 ⛔ **无论选哪条，都不允许用模块级 `setInterval` 绕**——`docs/KIT.md` §2 硬排除「导入期副作用」，
 `slg.md` §5 也已把「不绕过框架租约表」写成冻结取舍。
 
-> **⏳ 本节待拍板。** 拍板后在此登记结论，并同步 §7 的 M0-F 行与 kit README 的冻结规则。
+**✅ 已拍板：P4 —— 等 `docs/MMO.md` 的 MF7 完整实施。**
+
+⇒ **本案 ⛔ 不提任何框架 PR**（首屏、邮件、worker 三条全部走 kit 侧或等框架阶段），M0-F 归零。
+
+⇒ **M1–M4 期间的实际形态等同 P2**（全 lazy + 读时判定），但**性质不同**：这是
+**等待框架阶段的临时降级**，不是永久取舍。kit README 的冻结规则要写成
+「⛔ 在 MF7 落地前不承诺无人在线时按时结算/发奖」，⛔ 不要写成无条件的「不提供」。
+
+⇒ `lvr` kit 与 `slg` kit 一样**登记为 MF7 的消费方**（`slg.md` §0.1 已登记 `kit.json.workers[]` 依赖）。
+MF7 落地后在 `docs/MMO.md` §12 回写一行。
+
+**逐条的临时形态**（MF7 落地前）：
+
+| 语义 | MF7 前怎么做 | 是否真的受损 |
+| --- | --- | --- |
+| 行军到达打到别人 | 攻击方事务里一并写被攻击方的表 | 功能不受损，**被攻击方无即时通知** |
+| 活动开/关、阶段推进 | `f(now)` 读时判定（配置写起止时刻） | ⛔ 不受损，本来就不需要 worker |
+| 日 / 周重置 | `last_reset_at` 与 `now` 的周期边界读时结算 | ⛔ 不受损 |
+| 排行榜 / 赛季定格 | 结算时刻后第一个访问者触发 + 租约防并发 | **定格时刻取决于谁先来**，低峰期可能漂移数小时 |
+| 保留期清理 | 写路径里摊还批量 DELETE | 无人在线时段不清理，**表会长得比预期快** |
+| 低峰期整体 | 一切静止 | **这是 P4 的核心代价** |
 
 ---
 
@@ -282,17 +302,16 @@ alliance 是三个 api 面」）。⇒ `lvr` 必须自建 worldmap/march，**照
 
 | 里程碑 | 目标 | 前置 | 估 |
 | --- | --- | --- | --- |
-| **M0** | 两个 spike + 三条管线 + **协议域切分与错误码收敛规则** + i18n `api/text` 契约 + 热改边界划线 | — | 4–6 |
-| **M0-F** | 框架 PR（并行）：**仅 kit worker 进程入口一条，落法待定见 §4.3**。首屏与邮件已拍板走 kit 侧，⛔ 不提 PR | — | 0–1 |
+| **M0** | 两个 spike + 三条管线 + **协议域切分与错误码收敛规则** + i18n `api/text` 契约 + 热改边界划线。⚠ **本案全程 ⛔ 不提框架 PR**（§4.3 P4 拍板）：首屏与邮件走 kit 侧，定时推进等 MF7 | — | 4–6 |
 | **M1** | **主城可玩闭环**：kit 骨架（照 arena 走通 pack→install→codegen→db:bootstrap→check→test）+ `content`/`asset`/`city`/`build`/`queue` 五面 + **三个横切件**（§5.2）+ 建筑四态与升级 + 双队列 + 加速 + 资源懒结算与上限。⛔ **不含登录/选服/重连**（`builtin` 已提供） | M0 | 3–5 |
 | **M2** | **经济与背包**：`inventory` 面（⚠ 道具扣减必须走 kit 表，见 §4.2）+ 缺资源漏斗 + 货币消耗网关 + 仓库/挂机 + `islander`/`idle` | M1 | 3–4 |
 | **M3** | **英雄与部队**：`hero`/`heroEquip`/`artifact`/`troop`/`tech`/`lineup` 六面 + 抽卡双轨保底 + 科技树 ×3 + 兵营/医院/演武场 | M2 | 5–8 |
 | **M4** | **战斗**：`combat`/`battlelog` 两面 + 回合模拟器下沉 `core/compute` + 战报落库与分页回放 + 伤兵四态 + kit mailbox。⚠ 需 `lvrDebug.mockEncounter` 作为独立验收入口 | M3 | 5–8 |
 | **M5** | **大地图与行军**：`worldmap`/`march`/`rally`/`radar` 四面（照抄 slg **约 3.5k 行，其中客户端 2.8k**）+ 13 种行军指令 + 采集/侦察/野战 + 集结全生命周期 + 领地要塞 | M4 | 5–8 |
 | **M6** | **任务引导与成长**：`quest` 八域全量 + `guide` DSL 运行时 + 成长分/段位 + 红点体系 + `leaderboard` | M1、M4 | 4–6 |
-| **M7** | **活动框架与商业化**：`activity` 面（实例四段生命周期 + 五个通用模板件）+ `lvrGiftPack`/`lvrVip` 插件 + 首批活动内容插件。⚠ 外部依赖：**运营后台（仓外另立项）**，期间降级为 `lvrAdmin.upsertActvCfg` + 独立鉴权 + 审计表 | M2、M6 | 5–8 |
+| **M7** | **活动框架与商业化**：`activity` 面（实例四段生命周期 + 五个通用模板件）+ `lvrGiftPack`/`lvrVip` 插件 + 首批活动内容插件。⚠ 两条外部依赖：**运营后台（仓外另立项）**，期间降级为 `lvrAdmin.upsertActvCfg` + 独立鉴权 + 审计表；**活动定时精度等 MF7**（§4.3），MF7 前活动开关走 `f(now)` 读时判定、发奖等第一个访问者触发 | M2、M6 | 5–8 |
 | **M8** | **副玩法**：合成岛（FTUE 入口）· 贸易船 · 海上探索 · 未知海域 + 海战房 · 试炼塔 · 竞技场（先异步积分赛）· 城防 | M4 | 6–10 |
-| **M9** | **长尾**：剩余 ~100 活动 · 跨服（GVG/ZVZ/王城战，等 MF8）· 赛季 | M7 | 20–40+ |
+| **M9** | **长尾**：剩余 ~100 活动 · 跨服（GVG/ZVZ/王城战，等 MF8）· **赛季（定格精度等 MF7）** | M7、MF7、MF8 | 20–40+ |
 | **协议层** | **独立泳道**：~870 route × (域描述符 + endpoint + 向量 + handler + 错误码 + contractVersion bump + 指纹重钉) ≈ 0.5 人日/route。**生成器代替不了的人工语义**（约束、错误码、向量、联调） | 贯穿 | **15–25** |
 | **UI 重建** | **独立泳道**：~790 屏 × 0.5–2 人日（FGUI 布局 + 绑定 + `.view.json` + 无头测试） | 贯穿 | **20–80** |
 
@@ -399,6 +418,7 @@ Unity ParticleSystem ⛔ 不能转（265 个 vfxbaseres bundle 要逐个重建�
 
 | 风险 | 说明 |
 | --- | --- |
+| **MF7 未排期，定时语义长期悬空** | §4.3 拍板 P4 ⇒ 排行榜/赛季定格精度、保留期清理、低峰期推进全部等 `docs/MMO.md` MF7，而 MMO.md §12 自陈「⛔ 未实施任何 MMO 能力」且 **MF7 今天没有排期**。⚠ M7/M9 的验收条件里要显式写「MF7 未落地时的降级形态」，⛔ 不要把 MF7 的时间点写进 M7/M9 的承诺 |
 | **协议层是最大低估项** | ~870 route 的域描述符/端点/向量/错误码/版本闸是人工语义，生成器代替不了。已在 §7 独立计工 |
 | **无热更 ⇒ 包体 JSON 也不能热改** | 客户端那份配表在包体里。M0 必须划清「哪些进 SQL 可热改」 |
 | **FGUI 只有加载没有卸载路径** | 现仓 12 个包，LVR 要 ~200 个。`resident:false` 的 releaseIfIdle 与切换策略缺失，内存策略要单独设计 |
