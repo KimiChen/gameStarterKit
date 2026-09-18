@@ -2,10 +2,10 @@ import { defineView, For, useMemo, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { BackpackItemCard, type BackpackItem, type BackpackQuality } from './components/BackpackItemCard';
 import { BackpackQuantityControl } from './components/BackpackQuantityControl';
-import { BackpackResourceCounter } from './components/BackpackResourceCounter';
 import { ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
 import { EmptyState } from '../../components/empty/EmptyState';
+import { ResourceCounter } from '../../components/resource/ResourceCounter';
 import { PanelTab } from '../../components/tab/PanelTab';
 
 export type BackpackAction = {
@@ -98,14 +98,19 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
     };
     const hasItems = items.length > 0;
     const emptyIcon = imageRef('ui/backpack/empty');
+    const resourceIcon = imageRef('ui/backpack/resource-diamond');
     return (
         <view name="Backpack" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
             <ScreenHeader title={params.title ?? '背包'} titleWidth={118} titleHeight={60} />
-            <BackpackResourceCounter id="resource-1" value={resources[0]} left={159} onClick={() => emit('resource-1', 'primary')} />
-            <BackpackResourceCounter id="resource-2" value={resources[1]} left={303} onClick={() => emit('resource-2', 'primary')} />
-            <BackpackResourceCounter id="resource-3" value={resources[2]} left={447} onClick={() => emit('resource-3', 'primary')} />
-            <BackpackResourceCounter id="resource-4" value={resources[3]} left={591} onClick={() => emit('resource-4', 'primary')} />
+            <ResourceCounter icon={resourceIcon} left={159} top={22} value={resources[0]}
+                id="resource-1" onClick={() => emit('resource-1', 'primary')} />
+            <ResourceCounter icon={resourceIcon} left={303} top={22} value={resources[1]}
+                id="resource-2" onClick={() => emit('resource-2', 'primary')} />
+            <ResourceCounter icon={resourceIcon} left={447} top={22} value={resources[2]}
+                id="resource-3" onClick={() => emit('resource-3', 'primary')} />
+            <ResourceCounter icon={resourceIcon} left={591} top={22} value={resources[3]}
+                id="resource-4" onClick={() => emit('resource-4', 'primary')} />
 
             <PanelTab label={tabs[0].label} active={activeTab === 0} left={14} top={118} width={134}
                 onClick={() => selectTab(0)} />

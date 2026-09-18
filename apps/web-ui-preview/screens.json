@@ -488,9 +488,9 @@
       "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"
     },
     {
-      "key": "BackpackResourceCounter",
-      "rootName": "BackpackResourceCounter",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackResourceCounter.tsx"
+      "key": "ResourceCounter",
+      "rootName": "ResourceCounter",
+      "source": "apps/client/src/ui-uniflex/components/resource/ResourceCounter.tsx"
     },
     {
       "key": "BackpackQuantityControl",
