@@ -9,13 +9,18 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "6df477c054dd6adc680393315c4dcfe7f8eba93e898e4ffd8a47707f6f8ca219",
-    "psdSha256": "224f4bf0ec41bda40b8256669e18f5d995a47c15eefc60230528ac4b85cec380",
-    "at": "2026-09-17T03:34:09.978Z"
+    "uniflexSha256": "6508f987e9c2601db858bcd90d7f7bd4dfc7bdc09bee0885f2eb1bad7b2218bc",
+    "psdSha256": "d02ba8817683e11b5d0a11285ea1dcc54ced29b7b9e3f74aad0694711e50c93c",
+    "at": "2026-09-18T06:19:11.857Z"
   },
   "import": {
-    "psdSha256": "224f4bf0ec41bda40b8256669e18f5d995a47c15eefc60230528ac4b85cec380",
-    "at": "2026-09-17T03:58:25.892Z",
+    "psdSha256": "d02ba8817683e11b5d0a11285ea1dcc54ced29b7b9e3f74aad0694711e50c93c",
+    "at": "2026-09-18T06:19:53.508Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "PopupBackground",
+    "CloseButton",
+    "WideMenuButton"
+  ]
 }

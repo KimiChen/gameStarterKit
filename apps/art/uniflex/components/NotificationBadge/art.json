@@ -1,0 +1,14 @@
+{
+  "key": "NotificationBadge",
+  "source": "apps/client/src/ui-uniflex/components/badge/NotificationBadge.tsx",
+  "export": {
+    "uniflexSha256": "fca29d4609826ba7cc597514a162e10ca7c625ea728a5761d23127ed7c3b10db",
+    "psdSha256": "5a508dba323802774a7e5cd1646400b74d50eb8b5ce64a0478fe9d2c2ee0dab1",
+    "at": "2026-09-18T06:19:26.877Z"
+  },
+  "import": {
+    "psdSha256": "5a508dba323802774a7e5cd1646400b74d50eb8b5ce64a0478fe9d2c2ee0dab1",
+    "at": "2026-09-18T06:20:03.321Z",
+    "target": "restored"
+  }
+}

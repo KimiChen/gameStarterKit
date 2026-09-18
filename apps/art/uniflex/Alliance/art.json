@@ -9,13 +9,22 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "81d922c93797d33f5cf3c3f8963202c53c1b43df837f4b01fa99b0861880cc52",
-    "psdSha256": "28c705886c934c46bc0871d85c352288760fbb2fee3d06c8236125fd511e162d",
-    "at": "2026-09-17T03:35:57.745Z"
+    "uniflexSha256": "3e58f04ddfbf88c608ec5842be0308012352616c32e18eb9383d18da6f755784",
+    "psdSha256": "682877ad904ec0a8fb722e33c9549bca0be102d8c8e51ec99992a2f7c61efe4f",
+    "at": "2026-09-18T06:19:26.881Z"
   },
   "import": {
-    "psdSha256": "28c705886c934c46bc0871d85c352288760fbb2fee3d06c8236125fd511e162d",
-    "at": "2026-09-17T06:41:17.173Z",
+    "psdSha256": "682877ad904ec0a8fb722e33c9549bca0be102d8c8e51ec99992a2f7c61efe4f",
+    "at": "2026-09-18T06:20:04.339Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "AllianceInfoHeader",
+    "WideMenuButton",
+    "AllianceHomePanel",
+    "ScreenHeader",
+    "PanelTab",
+    "NotificationBadge",
+    "MainNav"
+  ]
 }
