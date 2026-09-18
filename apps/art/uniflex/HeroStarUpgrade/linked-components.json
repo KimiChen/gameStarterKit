@@ -3,15 +3,6 @@
   "kind": "uniflex-linked-components",
   "components": [
     {
-      "key": "PopupBackground",
-      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx",
-      "psd": "components/PopupBackground/component.psd",
-      "guid": "cbb83c69-8a36-efe1-9e43-1744791c9b07",
-      "width": 708,
-      "height": 870,
-      "relativeFromPage": "../components/PopupBackground/component.psd"
-    },
-    {
       "key": "CloseButton",
       "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx",
       "psd": "components/CloseButton/component.psd",

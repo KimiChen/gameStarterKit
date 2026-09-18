@@ -1,8 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { CloseButton } from '../../../components/popup/CloseButton';
-import { PopupBackground } from '../../../components/popup/PopupBackground';
+import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { HeroStarAttributeRow, type HeroStarAttributeRowProps } from './HeroStarAttributeRow';
 
 export interface HeroStarAttribute extends Omit<HeroStarAttributeRowProps, 'striped'> {
@@ -48,18 +47,10 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
     const rows = [334, 389, 444, 499] as const;
     return (
         <view name="HeroStarUpgrade" visible={p.visible !== false}
-            style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624,
-                justifyContent: 'center', alignItems: 'center' }}>
-            <view name="HeroStarUpgrade/Mask" interaction="press"
-                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
-            <view name="HeroStarUpgrade/Panel" style={{ width: 708, height: 870 }}>
-                <PopupBackground kind="prompt" />
-                <text name="HeroStarUpgrade/Title" value={p.title ?? '升星'}
-                    style={{ position: 'absolute', left: 90, top: 18, width: 528, height: 58,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                        outlineColor: '#593D84', outlineWidth: 2,
-                        horizontalAlign: 'center', verticalAlign: 'center' }} />
-                <CloseButton onClick={p.onClose} />
+            style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
+            <PopupFrame title={p.title ?? '升星'} kind="prompt" left={21} top={377} width={708} height={870}
+                onClose={p.onClose} />
+            <view style={{ position: 'absolute', left: 21, top: 377, width: 708, height: 870 }}>
                 <image visible={stars < 1} source={imageRef('ui/star-upgrade/star-empty')}
                     style={{ position: 'absolute', left: starSlots[0], top: 123, width: 68, height: 64 }} />
                 <image visible={stars >= 1} source={imageRef('ui/star-upgrade/star-full')}

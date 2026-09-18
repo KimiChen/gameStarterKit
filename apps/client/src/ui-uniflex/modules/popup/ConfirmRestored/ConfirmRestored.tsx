@@ -1,7 +1,8 @@
 import { defineView } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { fontRef } from '../../../../kits/uniflex/api/core/index';
 import { CancelButton } from '../../../restored/components/button/CancelButton';
 import { ConfirmButton } from '../../../restored/components/button/ConfirmButton';
+import { PopupFrame } from '../../../restored/components/popup/PopupFrame';
 import type { ConfirmLogic } from '../../../../logic/page/ConfirmLogic';
 
 export interface ConfirmRestoredParams {
@@ -9,69 +10,52 @@ export interface ConfirmRestoredParams {
     readonly isActive: () => boolean;
 }
 
+const PANEL_LEFT = 21;
+const PANEL_TOP = 624;
+const PANEL_WIDTH = 708;
+const PANEL_HEIGHT = 375;
+
 export const ConfirmRestored = defineView<ConfirmRestoredParams, boolean>(
     { zIndex: 'window' },
     (context) => {
         const params = context.params.logic;
         const hasCancel = params.noText !== null;
+        const close = () => {
+            if (context.params.isActive()) params.no();
+        };
+        const yes = () => {
+            if (context.params.isActive()) params.yes();
+        };
+        const no = () => {
+            if (context.params.isActive()) params.no();
+        };
+        const font = fontRef('fonts/regular', 700);
+        const contentTop = PANEL_TOP + 96;
+        const contentHeight = PANEL_HEIGHT - 96;
         return (
-            <view
-                name="ConfirmRestored"
-                style={{
-                    width: 750,
-                    height: '100%',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                }}
-            >
-                <view
-                    name="ConfirmRestored/Backdrop"
-                    style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: '#00000088',
-                    }}
-                />
-                <view name="ConfirmRestored/Panel" style={{ width: 708, height: 375, position: 'relative' }}>
-                    <image
-                        name="ConfirmRestored/Background"
-                        style={{ position: 'absolute', left: 0, top: 0, width: 708, height: 375, sizeMode: 'sliced' }}
-                        source={imageRef('ui/popup/prompt')}
-                    />
-                    <text
-                        name="ConfirmRestored/Title"
-                        value={params.title ?? '提示'}
-                        style={{ position: 'absolute', left: 90, top: 18, width: 528, height: 58, font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }}
-                    />
-                    <text
-                        name="ConfirmRestored/Message"
-                        value={params.content}
+            <view name="ConfirmRestored" style={{ width: 750, height: 1624 }}>
+                <PopupFrame title={params.title ?? '提示'} kind="prompt" left={PANEL_LEFT} top={PANEL_TOP}
+                    width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={close} />
+                <view name="ConfirmRestored/Content"
+                    style={{ position: 'absolute', left: PANEL_LEFT, top: contentTop, width: PANEL_WIDTH, height: contentHeight }}>
+                    <text name="ConfirmRestored/Message" value={params.content}
                         style={{
                             position: 'absolute',
                             left: 40,
-                            top: 132,
+                            top: 36,
                             width: 628,
                             height: 48,
-                            font: fontRef('fonts/regular', 700),
+                            font: font,
                             fontSize: 28,
                             color: '#3f3254',
                             horizontalAlign: 'center',
                             verticalAlign: 'center',
-                        }}
-                    />
-                    <view visible={hasCancel} style={{ position: 'absolute', left: 397, top: 233 }}>
-                        <CancelButton label={params.noText ?? '取消'} onClick={() => {
-                            if (context.params.isActive()) params.no();
                         }} />
+                    <view visible={hasCancel} style={{ position: 'absolute', left: 397, top: 137 }}>
+                        <CancelButton label={params.noText ?? '取消'} onClick={no} />
                     </view>
-                    <view style={{ position: 'absolute', left: 55, top: 233 }}>
-                        <ConfirmButton label={params.yesText ?? '确定'} onClick={() => {
-                            if (context.params.isActive()) params.yes();
-                        }} />
+                    <view style={{ position: 'absolute', left: 55, top: 137 }}>
+                        <ConfirmButton label={params.yesText ?? '确定'} onClick={yes} />
                     </view>
                 </view>
             </view>

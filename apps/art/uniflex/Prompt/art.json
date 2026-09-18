@@ -19,7 +19,6 @@
     "target": "restored"
   },
   "linkedComponents": [
-    "PopupBackground",
     "ActionButton",
     "ConfirmButton",
     "CancelButton",
