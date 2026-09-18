@@ -32,13 +32,13 @@ function rect(x, y, width, height) {
 
 function promptSnapshot() {
     const nodes = [
-        node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
-        node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
-        node(3, 1, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
-        node(4, 3, "PopupFrame/Background", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/prompt" }),
-        node(5, 3, "PopupFrame/Title", "text", rect(111, 643, 528, 58), { value: "创建角色" }),
-        node(6, 3, "PopupFrame/Content", "view", rect(61, 733, 628, 229)),
-        node(7, 6, "Prompt/Content", "view", rect(61, 733, 628, 229)),
+        node(1, null, "PromptPage", "view", rect(0, 0, 750, 1624)),
+        node(2, 1, "PopupFrame", "view", rect(0, 0, 750, 1624)),
+        node(3, 2, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
+        node(4, 2, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
+        node(5, 4, "PopupFrame/Background", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/prompt" }),
+        node(6, 4, "PopupFrame/Title", "text", rect(111, 643, 528, 58), { value: "创建角色" }),
+        node(7, 1, "Prompt/Content", "view", rect(61, 733, 628, 229)),
         node(8, 7, "Prompt/Message", "text", rect(61, 733, 628, 104), { value: "在该服务器创建1名新角色?" }),
         node(9, 7, "Prompt/Actions", "view", rect(61, 860, 628, 102)),
         node(10, 9, "ConfirmButton", "view", rect(77, 860, 255, 102)),
@@ -56,7 +56,7 @@ function promptSnapshot() {
         node(22, 19, "ActionButton/IconRow", "view", rect(427, 864, 239, 86), { visible: false }),
         node(23, 22, "ActionButton/Icon", "image", rect(427, 864, 48, 48), { resourceId: "ui/button/cancel" }),
         node(24, 22, "ActionButton/IconLabel", "text", rect(491, 864, 80, 86), { value: "取消" }),
-        node(25, 3, "CloseButton", "view", rect(642, 631, 72, 72), { interaction: "press" }),
+        node(25, 4, "CloseButton", "view", rect(642, 631, 72, 72), { interaction: "press" }),
         node(26, 25, "", "image", rect(653, 642, 50, 50), { resourceId: "ui/popup/close" }),
     ];
     return {
@@ -145,7 +145,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(previewHtml, /bindPageInteractions/);
         assert.match(previewHtml, /currentId, go/);
         assert.ok(existsSync(join(out, "preview/regular.ttf")));
-        assert.match(frameXml, /name="PopupFrame\/Content"/);
+        assert.doesNotMatch(frameXml, /name="PopupFrame\/Content"/);
         assert.doesNotMatch(frameXml, /Prompt\/Message/);
         assert.match(commonXml, /scale="9grid" scale9grid="26,32,4,4"/);
 
@@ -228,14 +228,14 @@ test("parent-local inspect rects become FairyGUI component-space xy", async () =
             screenId: "prompt",
             canvas: { width: 750, height: 1624 },
             nodes: [
-                node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
-                node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
-                node(3, 1, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
-                node(4, 3, "PopupFrame/Background", "image", rect(0, 0, 708, 375), { resourceId: "ui/popup/prompt" }),
-                node(5, 3, "PopupFrame/Title", "text", rect(90, 18, 528, 58), { value: "创建角色" }),
-                node(7, 3, "PopupFrame/Content", "view", rect(40, 108, 628, 229)),
-                node(8, 7, "Prompt/Content", "view", rect(0, 0, 628, 229)),
-                node(9, 8, "Prompt/Message", "text", rect(0, 0, 628, 104), { value: "在该服务器创建1名新角色?" }),
+                node(1, null, "PromptPage", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "PopupFrame", "view", rect(0, 0, 750, 1624)),
+                node(3, 2, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
+                node(4, 2, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
+                node(5, 4, "PopupFrame/Background", "image", rect(0, 0, 708, 375), { resourceId: "ui/popup/prompt" }),
+                node(6, 4, "PopupFrame/Title", "text", rect(90, 18, 528, 58), { value: "创建角色" }),
+                node(7, 1, "Prompt/Content", "view", rect(61, 733, 628, 229)),
+                node(8, 7, "Prompt/Message", "text", rect(0, 0, 628, 104), { value: "在该服务器创建1名新角色?" }),
             ],
         };
         const { ir } = await exportFgui({
@@ -256,14 +256,14 @@ test("parent-local inspect rects become FairyGUI component-space xy", async () =
 
 function smallPopupSnapshot() {
     const nodes = [
-        node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
-        node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
-        node(3, 1, "PopupFrame/Panel", "view", rect(21, 557, 708, 510)),
-        node(4, 3, "PopupFrame/Background", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/prompt" }),
-        node(5, 3, "PopupFrame/Title", "text", rect(111, 575, 528, 58), { value: "标题" }),
-        node(6, 3, "PopupFrame/Content", "view", rect(61, 665, 628, 364)),
-        node(7, 6, "SmallPopup/Content", "view", rect(61, 665, 628, 364)),
-        node(8, 3, "CloseButton", "view", rect(642, 563, 72, 72), { interaction: "press" }),
+        node(1, null, "SmallPopupPage", "view", rect(0, 0, 750, 1624)),
+        node(2, 1, "PopupFrame", "view", rect(0, 0, 750, 1624)),
+        node(3, 2, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
+        node(4, 2, "PopupFrame/Panel", "view", rect(21, 557, 708, 510)),
+        node(5, 4, "PopupFrame/Background", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/prompt" }),
+        node(6, 4, "PopupFrame/Title", "text", rect(111, 575, 528, 58), { value: "标题" }),
+        node(7, 1, "SmallPopup/Content", "view", rect(61, 665, 628, 364)),
+        node(8, 4, "CloseButton", "view", rect(642, 563, 72, 72), { interaction: "press" }),
         node(9, 8, "", "image", rect(653, 574, 50, 50), { resourceId: "ui/popup/close" }),
     ];
     return {
@@ -535,13 +535,13 @@ test("WideMenuButton instances override labels and keep plan color", async () =>
             screenId: "settings",
             canvas: { width: 750, height: 1334 },
             nodes: [
-                node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1334)),
-                node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1334)),
-                node(3, 1, "PopupFrame/Panel", "view", rect(21, 171, 708, 992)),
-                node(4, 3, "PopupFrame/Background", "image", rect(21, 171, 708, 992), { resourceId: "ui/popup/prompt" }),
-                node(5, 3, "PopupFrame/Title", "text", rect(111, 189, 528, 58), { value: "设置" }),
-                node(7, 3, "PopupFrame/Content", "view", rect(21, 171, 708, 992)),
-                node(8, 7, "Settings/Content", "view", rect(21, 171, 708, 992)),
+                node(1, null, "SettingsPage", "view", rect(0, 0, 750, 1334)),
+                node(2, 1, "PopupFrame", "view", rect(0, 0, 750, 1334)),
+                node(3, 2, "PopupFrame/Mask", "view", rect(0, 0, 750, 1334)),
+                node(4, 2, "PopupFrame/Panel", "view", rect(21, 171, 708, 992)),
+                node(5, 4, "PopupFrame/Background", "image", rect(21, 171, 708, 992), { resourceId: "ui/popup/prompt" }),
+                node(6, 4, "PopupFrame/Title", "text", rect(111, 189, 528, 58), { value: "设置" }),
+                node(8, 1, "Settings/Content", "view", rect(21, 171, 708, 992)),
                 node(9, 8, "WideMenuButton", "view", rect(42, 284, 326, 114)),
                 node(10, 9, "WideMenuButton/Background", "image", rect(42, 284, 326, 114), { resourceId: "ui/settings/button" }),
                 node(11, 9, "WideMenuButton/Icon", "image", rect(75, 315, 54, 54), { resourceId: "ui/settings/gear" }),
