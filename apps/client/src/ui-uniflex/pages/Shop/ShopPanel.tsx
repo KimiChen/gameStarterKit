@@ -1,6 +1,7 @@
 import { defineComponent, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../components/chrome/ScreenFooter';
+import { ResourceCounter } from '../../components/resource/ResourceCounter';
 import { PanelTab } from '../../components/tab/PanelTab';
 import { ShopGetItemPanel } from '../ShopGetItem/ShopGetItemPanel';
 import { ShopCard, type ShopGoods } from './ShopCard';
@@ -134,6 +135,8 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
     const currencyLeft = showMedal ? 6 : 8;
     const currencyTop = showMedal ? 9 : 6;
     const currencyWidth = showMedal ? 40 : 37;
+    const currencyValue = p.currency ?? '999.99k';
+    const addCurrency = () => p.onAction?.('add_currency');
     const source = useMemo(() => new ArrayVirtualListDataSource(cards), [cards]);
     const list = useRef<VirtualCollectionController | null>(null);
     useEffect(() => () => source.dispose(), [source]);
@@ -173,19 +176,11 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
                     font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
                     outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
 
-            <view interaction="press" onClick={() => p.onAction?.('add_currency')}
-                style={{ position: 'absolute', left: 597, top: 180, width: 153, height: 45 }}>
-                <image source={imageRef('ui/backpack/resource-bg')}
-                    style={{ position: 'absolute', left: 11, top: 7, width: 138, height: 32, sizeMode: 'sliced' }} />
-                <image source={currencyIcon}
-                    style={{ position: 'absolute', left: currencyLeft, top: currencyTop, width: currencyWidth, height: 31 }} />
-                <image source={imageRef('ui/shop/res-plus')}
-                    style={{ position: 'absolute', left: 27, top: 19, width: 20, height: 21 }} />
-                <text value={p.currency ?? '999.99k'}
-                    style={{ position: 'absolute', left: 50, top: 7, width: 99, height: 32,
-                        font: fontRef('fonts/regular', 700), fontSize: 22, color: '#ffffff', bold: true,
-                        outlineColor: '#000000', outlineWidth: 2, verticalAlign: 'center', overflow: 'shrink' }} />
-            </view>
+            <ResourceCounter icon={currencyIcon} left={597} top={180} value={currencyValue}
+                backgroundLeft={11} backgroundTop={7}
+                iconLeft={currencyLeft} iconTop={currencyTop} iconWidth={currencyWidth}
+                valueLeft={50} valueTop={7} valueWidth={99}
+                onClick={addCurrency} />
 
             <image source={imageRef('ui/shop/panel')}
                 style={{ position: 'absolute', left: 8, top: 354, width: 734, height: 1160, sizeMode: 'sliced' }} />
