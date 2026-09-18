@@ -2,14 +2,14 @@
   "screen": "hero-star-upgrade",
   "componentName": "HeroStarUpgrade",
   "restoredName": "HeroStarUpgradeRestored",
-  "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarUpgrade.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgrade/HeroStarUpgrade.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "b201971b1eaf60c0c15e05e354739e7b715a1c9fb173f567bd85babd5eda0636",
+    "uniflexSha256": "0b2109726f4f544f465f3f76646e3c5605705001bba17388201b85b1992fb4dd",
     "psdSha256": "377a078610056c0513361111052c148ea59c17b671d3f02e79a2803e94adb608",
     "at": "2026-09-18T02:40:31.937Z"
   },

@@ -1,5 +1,8 @@
 import { access, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, extname, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
+import {
+    authoringDirFromCatalog, loadPreviewScreens, moduleForPageName,
+} from "./lib/uniflex-page-modules.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const update = process.argv.includes("--update");
@@ -19,7 +22,11 @@ if (resourcesManifest.version !== 1 || !Array.isArray(resourcesManifest.assets))
     throw new Error("Invalid UniFlex resource manifest.");
 const name = String(nameArg || project.name || "ImportedUI").replace(/[^a-zA-Z0-9_-]+/g, "_");
 const projectRoot = outputArg ? resolve(root, outputArg) : root;
-const pageTarget = resolve(projectRoot, "apps/client/src/ui-uniflex/pages", name);
+const screens = await loadPreviewScreens(projectRoot);
+const authoringRel = authoringDirFromCatalog(screens, name);
+const pageTarget = authoringRel
+    ? resolve(projectRoot, authoringRel)
+    : resolve(projectRoot, "apps/client/src/ui-uniflex/modules", name);
 const resourceTarget = resolve(projectRoot, "apps/client/resources/ui", name);
 const exists = await access(resourceTarget).then(() => true).catch((error) => {
     if (error.code === "ENOENT") return false;
@@ -42,6 +49,18 @@ for (const entry of await readdir(packageDir, { withFileTypes: true })) {
         const restoredTarget = resolve(projectRoot, "apps/client/src/ui-uniflex/restored");
         await mkdir(restoredTarget, { recursive: true });
         for (const child of await readdir(restoredSource, { withFileTypes: true })) {
+            if (child.name === "pages" && child.isDirectory() && screens) {
+                const pagesSource = resolve(restoredSource, child.name);
+                for (const page of await readdir(pagesSource, { withFileTypes: true })) {
+                    const module = moduleForPageName(page.name);
+                    const dest = module
+                        ? join(restoredTarget, "modules", module, page.name)
+                        : join(restoredTarget, "modules", page.name);
+                    await mkdir(dirname(dest), { recursive: true });
+                    await cp(resolve(pagesSource, page.name), dest, { recursive: true, force: true });
+                }
+                continue;
+            }
             await cp(resolve(restoredSource, child.name), resolve(restoredTarget, child.name),
                 { recursive: true, force: true });
         }

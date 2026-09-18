@@ -82,7 +82,7 @@ apps/Cocos/
 - UniFlex 通用 UI 核心在 `src/kits/uniflex/`，由独立的 `api/cocos/index.ts`、
   `api/web/index.ts` 提供宿主入口，共用资源与导航生命周期；业务侧不得导入 kit 内部实现。
   清单与 API 规则见 [UniFlex kit](../apps/kits/uniflex/README.md)，不将业务作者态、Logic 或路由放入 kit。
-- UniFlex 增量迁移的作者态在 `src/ui-uniflex/pages/<Page>/*.tsx`，共享组件在
+- UniFlex 增量迁移的作者态在 `src/ui-uniflex/modules/<module>/<Page>/*.tsx`，共享组件在
   `src/ui-uniflex/components/`。按切图实现新页时先读 [UNIFLEX-UI.md](UNIFLEX-UI.md)。`generated/` 子目录及
   `apps/Cocos/assets/resources/uniflex/` 由 `npm run build:uniflex-ui` 生成，不手改、不入库。
   编译器默认使用项目内 `tools/uniflex-compiler.mjs` 调用

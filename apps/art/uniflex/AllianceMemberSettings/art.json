@@ -2,14 +2,14 @@
   "screen": "alliance-member-settings",
   "componentName": "AllianceMemberSettings",
   "restoredName": "AllianceMemberSettingsRestored",
-  "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettings/AllianceMemberSettings.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceMemberSettings/AllianceMemberSettings.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "7a8ff8c9f95e224fcda46c1c6357ef4de1177d1f45805827a6e7e6fbde119263",
+    "uniflexSha256": "40b7bf7957306dd6e24d62bd05ff15167a3929fba4b58fee228b0358a8672051",
     "psdSha256": "3acb13fc1bd1ca5228835d74da278eb02f176aca95870b943d3e00aed8fb70e3",
     "at": "2026-09-17T03:32:34.879Z"
   },

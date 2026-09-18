@@ -2,14 +2,14 @@
   "screen": "alliance-create",
   "componentName": "AllianceCreate",
   "restoredName": "AllianceCreateRestored",
-  "source": "apps/client/src/ui-uniflex/pages/AllianceCreate/AllianceCreate.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceCreate/AllianceCreate.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "fcfceba4eac484a2cb50291e4ea4f05b86805ea31ad23c5a7a3483ad7ff00226",
+    "uniflexSha256": "9564b8c663c01b086774de7e7176ac43c9229268a0cfa99d3b7de04ba4350d16",
     "psdSha256": "61b4ec536bc32f3d93c74171f07a233b366c2359000c33682dfdd2f67cd6b842",
     "at": "2026-09-17T03:32:23.214Z"
   },

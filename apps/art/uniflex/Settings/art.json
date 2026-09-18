@@ -2,7 +2,7 @@
   "screen": "settings",
   "componentName": "Settings",
   "restoredName": "SettingsRestored",
-  "source": "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/settings/Settings/Settings.tsx",
   "canvas": {
     "width": 750,
     "height": 1334

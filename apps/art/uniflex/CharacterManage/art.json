@@ -2,14 +2,14 @@
   "screen": "character",
   "componentName": "CharacterManage",
   "restoredName": "CharacterManageRestored",
-  "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManage.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/character/CharacterManage/CharacterManage.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "8efe3310d0594f6776345fe6ee3c3714a38c2c55721dbf77273ebbd296f4272e",
+    "uniflexSha256": "c692d03ea6c802de25812fa33785d24d4a5de3958c40bd355384babba0e4d4f9",
     "psdSha256": "4a5b716d60d0e8d897bf8819896c044e20c3602f1bb2f9ea32643d2a8ea019f1",
     "at": "2026-09-16T03:32:33.305Z"
   },

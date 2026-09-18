@@ -1,8 +1,8 @@
 {
   "key": "BackpackItemCard",
-  "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx",
   "export": {
-    "uniflexSha256": "7940131d9ac6c30c62a42e028d7563f5512bcf3a62a18b1e41a19d87f25431c5",
+    "uniflexSha256": "d9a4a11f74c170bfe01dc28ca0ae1bb1b4cd2a2d224d2610dde1a6d8f94e2d93",
     "psdSha256": "1c0a64346dc95f7e82a1bf9e1b634c86b1765dd94562d94c6363ea791907cfdd",
     "at": "2026-09-17T17:33:35.176Z"
   },
