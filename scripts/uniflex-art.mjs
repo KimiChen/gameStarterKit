@@ -10,6 +10,7 @@ import {
     readArtJson, readComponentArtJson, sharedArtFontDir,
 } from "./lib/uniflex-art.mjs";
 import { runCli } from "./uniflex-ui-cli.mjs";
+import { restoredSourceFromPage } from "./lib/uniflex-page-modules.mjs";
 
 const root = resolve(fileURLToPath(import.meta.url), "..", "..");
 const help = `Usage:
@@ -262,8 +263,11 @@ async function checkPages(catalog) {
     for (const page of catalog.pages) {
         if (!await pathExists(resolve(root, page.source)))
             problems.push(`${page.screen}: missing source ${page.source}`);
-        const restored = resolve(root, "apps/client/src/ui-uniflex/pages",
-            page.restoredName, `${page.restoredName}.tsx`);
+        const restoredRel = restoredSourceFromPage(page);
+        const restored = restoredRel
+            ? resolve(root, restoredRel)
+            : resolve(root, "apps/client/src/ui-uniflex/modules",
+                page.restoredName, `${page.restoredName}.tsx`);
         const art = await readArtJson(root, page);
         if ((page.applyTarget || catalog.applyTarget) === "restored"
             && art?.import && !await pathExists(restored))

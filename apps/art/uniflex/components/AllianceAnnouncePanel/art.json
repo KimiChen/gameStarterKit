@@ -1,8 +1,8 @@
 {
   "key": "AllianceAnnouncePanel",
-  "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounce/AllianceAnnouncePanel.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceAnnounce/AllianceAnnouncePanel.tsx",
   "export": {
-    "uniflexSha256": "2a8b4923d0a7d0125dd801f334e39ba46a359fd124812b91a6c3761f4654b14b",
+    "uniflexSha256": "11f2847b3cbc35feb440afd8d04192a6f5097ee3567c072490cda024c4420f0a",
     "psdSha256": "0318379994c8fe6f5735aa5d2c4b7e5fa459aa7af411a157695e706af7984e25",
     "at": "2026-09-18T02:40:36.160Z"
   },

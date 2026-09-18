@@ -1,8 +1,8 @@
 {
   "key": "ShopGetItemPanel",
-  "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItemPanel.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/shop/ShopGetItem/ShopGetItemPanel.tsx",
   "export": {
-    "uniflexSha256": "edfc8a86e976090078697bf03e85adbe614f4ce62674fbfe399b50775186c327",
+    "uniflexSha256": "f48175c7d4a13f26350879e9b051702cd33541ecdcfef023a6090454b0885a63",
     "psdSha256": "ef15774eed2972494d9487ee9c31422e89b61f812492ff75b346513fbe61dd92",
     "at": "2026-09-18T01:57:21.681Z"
   },

@@ -2,14 +2,14 @@
   "screen": "settings",
   "componentName": "Settings",
   "restoredName": "SettingsRestored",
-  "source": "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/settings/Settings/Settings.tsx",
   "canvas": {
     "width": 750,
     "height": 1334
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "6df477c054dd6adc680393315c4dcfe7f8eba93e898e4ffd8a47707f6f8ca219",
+    "uniflexSha256": "fd085e44b67fc01ac117e85ca1c0f419e574c3778ac298f8de632f79b55962de",
     "psdSha256": "224f4bf0ec41bda40b8256669e18f5d995a47c15eefc60230528ac4b85cec380",
     "at": "2026-09-17T03:34:09.978Z"
   },

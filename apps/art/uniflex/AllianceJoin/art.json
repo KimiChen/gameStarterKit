@@ -2,14 +2,14 @@
   "screen": "alliance-join",
   "componentName": "AllianceJoin",
   "restoredName": "AllianceJoinRestored",
-  "source": "apps/client/src/ui-uniflex/pages/AllianceJoin/AllianceJoin.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceJoin/AllianceJoin.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "738fd12a9ec87f85c14be4d0678f00d8cd3939c24adc346baa6d43b5e9c4d1e1",
+    "uniflexSha256": "8044dbebdec7d1aad340a6a2648a3b7d60c772ebcbaa19f43d3a81d88c585a91",
     "psdSha256": "e762bf63186a3e8b94c7f92b2ec524fc889e2ed4fa22bbbb1a4393fce649dd64",
     "at": "2026-09-17T03:32:29.986Z"
   },

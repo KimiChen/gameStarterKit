@@ -1,8 +1,8 @@
 {
   "key": "HeroFilterBar",
-  "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroFilterBar.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroFilterBar.tsx",
   "export": {
-    "uniflexSha256": "04408ae7b59573c8843b52f90f7ec2fa2820d0ce1e6dc2ac236d04a6fe5c23cf",
+    "uniflexSha256": "1138b589bf17beab59cb7f5a4d3815fd267c92856123f0ab3c81772f9c08586d",
     "psdSha256": "316a878b4d470d2835e68cc94099d67603dba08d7384e6194b333cb0c8d4b9cc",
     "at": "2026-09-18T01:57:27.261Z"
   },

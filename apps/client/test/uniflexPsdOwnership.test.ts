@@ -28,7 +28,7 @@ test('ambiguous or missing author paths and duplicate IDs fail closed', () => {
 
 const page = {
     key: 'Prompt',
-    source: 'apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx',
+    source: 'apps/client/src/ui-uniflex/modules/popup/Prompt/Prompt.tsx',
     rootName: 'Prompt/Content',
 };
 const registered = [
@@ -52,7 +52,7 @@ test('duplicate sibling component roots stay unique without inferred group names
         { id: 3, parent: 1, name: 'WideMenuButton', kind: 'view' },
     ];
     const contract = declarePsdOwnership(nodes, {
-        key: 'Settings', source: 'apps/client/src/ui-uniflex/pages/Settings/Settings.tsx',
+        key: 'Settings', source: 'apps/client/src/ui-uniflex/modules/settings/Settings/Settings.tsx',
         rootName: 'Settings/Content',
     }, registered);
     assert.deepEqual(contract.instances.filter((instance) => instance.definitionKey === 'WideMenuButton')
@@ -76,12 +76,12 @@ test('full-canvas nested panel stamps as a component when it is registered', () 
     ];
     const contract = declarePsdOwnership(nodes, {
         key: 'AllianceTech',
-        source: 'apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTech.tsx',
+        source: 'apps/client/src/ui-uniflex/modules/alliance/AllianceTech/AllianceTech.tsx',
         rootName: 'AllianceTechPage',
     }, [{
         key: 'AllianceTechPanel',
         rootName: 'AllianceTech',
-        source: 'apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechPanel.tsx',
+        source: 'apps/client/src/ui-uniflex/modules/alliance/AllianceTech/AllianceTechPanel.tsx',
     }]);
     assert.deepEqual(contract.instances.map((instance) =>
         [instance.role, instance.definitionKey, instance.rootRecordId]), [

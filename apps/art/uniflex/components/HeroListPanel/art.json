@@ -1,8 +1,8 @@
 {
   "key": "HeroListPanel",
-  "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroListPanel.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroListPanel.tsx",
   "export": {
-    "uniflexSha256": "cae2f7f510ad0dd9ab5bd1fae1ac65734a8d5ae96b1c8c02db9fbe9e78dd8793",
+    "uniflexSha256": "93561642767f8d1639d0d829eba354e1f5404439dd23b0f75bc4090f04e03099",
     "psdSha256": "967fde1741d4b22f7a5cf494646baded2cc0c6dadafbf0a16b56d803382510ba",
     "at": "2026-09-18T01:57:27.270Z"
   },

@@ -170,7 +170,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run test:faults` / `npm run test:faults:int` | 运行核心 fault-matrix；前者默认不连接本地栈，后者使用本地 Redis/MySQL |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
 | `npm run build:uniflex-ui` | 用仓库内 `vendor/uniflex/bin/` 的原生编译器生成 UniFlex Confirm 与双端资源；随后运行 `sync:client` |
-| `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/pages/<Name>` 与 `apps/client/resources/ui/<Name>` |
+| `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/modules/<module>/<Name>` 与 `apps/client/resources/ui/<Name>` |
 | `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 用锁定的 `vendor/web-ui-to-psd-*.tgz` 生成 PSD 中间文件和 UniFlex 项目包并导入项目；`npm ci` 后即可运行 |
 | `npm run ui:export-psd -- --url <url> --out <dir>` | 用锁定 CLI 把 UniFlex 预览页导出为分层 PSD；可用 `--screen` 拉起本地预览，不必先开 `dev:uniflex-web` |
 | `npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt` | 从 UniFlex snapshot 写出候选独立 FairyGUI 工程 + DOM 预览包（只写 `--out`） |

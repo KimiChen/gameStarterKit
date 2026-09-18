@@ -2,14 +2,14 @@
   "screen": "alliance",
   "componentName": "Alliance",
   "restoredName": "AllianceRestored",
-  "source": "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/Alliance/Alliance.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "81d922c93797d33f5cf3c3f8963202c53c1b43df837f4b01fa99b0861880cc52",
+    "uniflexSha256": "c46b321ec3346b8d346a5c9e0eaf26e7d3247dd22981d60ed66fe88870b6312b",
     "psdSha256": "28c705886c934c46bc0871d85c352288760fbb2fee3d06c8236125fd511e162d",
     "at": "2026-09-17T03:35:57.745Z"
   },

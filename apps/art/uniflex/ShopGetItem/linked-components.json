@@ -58,7 +58,7 @@
     },
     {
       "key": "ShopGetItemPanel",
-      "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItemPanel.tsx",
+      "source": "apps/client/src/ui-uniflex/modules/shop/ShopGetItem/ShopGetItemPanel.tsx",
       "psd": "components/ShopGetItemPanel/component.psd",
       "guid": "198cf650-5bad-9f72-7a01-56929a1a9c33",
       "width": 750,

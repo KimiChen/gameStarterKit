@@ -1,8 +1,8 @@
 {
   "key": "HeroStarAttributeRow",
-  "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarAttributeRow.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgrade/HeroStarAttributeRow.tsx",
   "export": {
-    "uniflexSha256": "aaa20a223c51acc0e41318620815a38f0ea43875595738e3ec9138fc223cb755",
+    "uniflexSha256": "f1001b32de4660e16ae1ac0837a553a4d651c3c956ff3dac7beefddd0be22d7d",
     "psdSha256": "7071873dd4c929d94d048a8e41927164f73cabc721ab73c376ce57b6f0288370",
     "at": "2026-09-18T02:40:31.929Z"
   },
