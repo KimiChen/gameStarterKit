@@ -216,10 +216,10 @@
     "layer-10": {
       "id": "layer-10",
       "name": "CancelButton",
-      "kind": "group",
+      "kind": "image",
       "frame": {
         "x": 0,
-        "y": 0,
+        "y": 0.5,
         "width": 255,
         "height": 102
       },
@@ -230,97 +230,7 @@
         "role": "component",
         "definitionKey": "CancelButton"
       },
-      "children": [
-        "layer-11"
-      ]
-    },
-    "layer-11": {
-      "id": "layer-11",
-      "name": "ActionButton",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 255,
-        "height": 102
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "ActionButton:Confirm/Confirm/Panel/_:0/CancelButton/ActionButton",
-        "role": "component",
-        "definitionKey": "ActionButton"
-      },
-      "children": [
-        "layer-12",
-        "layer-14"
-      ]
-    },
-    "layer-12": {
-      "id": "layer-12",
-      "name": "ActionButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0.5,
-        "width": 255,
-        "height": 102
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-13"
-      ]
-    },
-    "layer-13": {
-      "id": "layer-13",
-      "name": "ActionButton/Background",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 255,
-        "height": 102
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "ActionButton:Confirm/Confirm/Panel/_:0/CancelButton/ActionButton/ActionButton/Background",
-        "role": "node",
-        "definitionKey": "ActionButton",
-        "resourceId": "ui/button/cancel",
-        "captureHash": "0df4757e82425bc408e9af1f662cded9150cea9a871014b4427306b7e542a5ea"
-      },
-      "asset": "asset-f4e0a76476268b9d13d9a086a7a1f22ca9c9d06d987a4ec15d1db6bb6e99ae6b"
-    },
-    "layer-14": {
-      "id": "layer-14",
-      "name": "ActionButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 4,
-        "y": 25,
-        "width": 247,
-        "height": 86
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "ActionButton:Confirm/Confirm/Panel/_:0/CancelButton/ActionButton/ActionButton/Label",
-        "role": "node",
-        "definitionKey": "ActionButton"
-      },
-      "text": {
-        "value": "取消",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 40,
-        "lineHeight": 40,
-        "align": "center",
-        "wrap": false,
-        "outlineWidth": 2,
-        "outlineColor": "#4e783b",
-        "color": "#ffffff"
-      }
+      "asset": "asset-8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96"
     },
     "layer-15": {
       "id": "layer-15",
@@ -346,10 +256,10 @@
     "layer-16": {
       "id": "layer-16",
       "name": "ConfirmButton",
-      "kind": "group",
+      "kind": "image",
       "frame": {
         "x": 0,
-        "y": 0,
+        "y": 0.5,
         "width": 255,
         "height": 102
       },
@@ -360,97 +270,7 @@
         "role": "component",
         "definitionKey": "ConfirmButton"
       },
-      "children": [
-        "layer-17"
-      ]
-    },
-    "layer-17": {
-      "id": "layer-17",
-      "name": "ActionButton",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 255,
-        "height": 102
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "ActionButton:Confirm/Confirm/Panel/_:1/ConfirmButton/ActionButton",
-        "role": "component",
-        "definitionKey": "ActionButton"
-      },
-      "children": [
-        "layer-18",
-        "layer-20"
-      ]
-    },
-    "layer-18": {
-      "id": "layer-18",
-      "name": "ActionButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0.5,
-        "width": 255,
-        "height": 102
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-19"
-      ]
-    },
-    "layer-19": {
-      "id": "layer-19",
-      "name": "ActionButton/Background",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 255,
-        "height": 102
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "ActionButton:Confirm/Confirm/Panel/_:1/ConfirmButton/ActionButton/ActionButton/Background",
-        "role": "node",
-        "definitionKey": "ActionButton",
-        "resourceId": "ui/button/confirm",
-        "captureHash": "234047b8ed5f1919407bc7516d79c7cd613b5bc9514e33bce648a1103a9a79b8"
-      },
-      "asset": "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6"
-    },
-    "layer-20": {
-      "id": "layer-20",
-      "name": "ActionButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 4,
-        "y": 25,
-        "width": 247,
-        "height": 86
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "ActionButton:Confirm/Confirm/Panel/_:1/ConfirmButton/ActionButton/ActionButton/Label",
-        "role": "node",
-        "definitionKey": "ActionButton"
-      },
-      "text": {
-        "value": "确定",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 40,
-        "lineHeight": 40,
-        "align": "center",
-        "wrap": false,
-        "outlineWidth": 2,
-        "outlineColor": "#643e14",
-        "color": "#ffffff"
-      }
+      "asset": "asset-fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe"
     }
   },
   "assets": {
@@ -468,16 +288,16 @@
       "width": 708,
       "height": 375
     },
-    "asset-f4e0a76476268b9d13d9a086a7a1f22ca9c9d06d987a4ec15d1db6bb6e99ae6b": {
-      "path": "assets/f4e0a76476268b9d13d9a086a7a1f22ca9c9d06d987a4ec15d1db6bb6e99ae6b.png",
-      "sha256": "f4e0a76476268b9d13d9a086a7a1f22ca9c9d06d987a4ec15d1db6bb6e99ae6b",
+    "asset-8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96": {
+      "path": "assets/8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96.png",
+      "sha256": "8fb037ef67e4d7c35b333654a9451b4e93e9a40650eba3f86f4ba023b3d63b96",
       "mime": "image/png",
       "width": 255,
       "height": 102
     },
-    "asset-4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6": {
-      "path": "assets/4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6.png",
-      "sha256": "4790efcf8aa9e822fb8f48a8662d2464ce24d258c80af53a63bf5bf1a91e81c6",
+    "asset-fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe": {
+      "path": "assets/fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe.png",
+      "sha256": "fe9a24c2565dc85e9bc64e1d278152c48c7b53b574e223b03dbcc741a658f2fe",
       "mime": "image/png",
       "width": 255,
       "height": 102
@@ -494,6 +314,8 @@
   },
   "warnings": [
     "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "CancelButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "ConfirmButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
     "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
     "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
     "Install and license the original fonts; browser and Photoshop text rendering may differ."

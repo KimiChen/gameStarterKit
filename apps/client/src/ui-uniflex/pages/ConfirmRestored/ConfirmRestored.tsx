@@ -1,7 +1,7 @@
 import { defineView } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
-import { CancelButton } from '../../components/button/CancelButton';
-import { ConfirmButton } from '../../components/button/ConfirmButton';
+import { CancelButton } from '../../restored/components/button/CancelButton';
+import { ConfirmButton } from '../../restored/components/button/ConfirmButton';
 import type { ConfirmLogic } from '../../../logic/page/ConfirmLogic';
 
 export interface ConfirmRestoredParams {
