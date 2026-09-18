@@ -5,6 +5,7 @@ import { BackpackQuantityControl } from './components/BackpackQuantityControl';
 import { BackpackResourceCounter } from './components/BackpackResourceCounter';
 import { ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
+import { EmptyState } from '../../components/empty/EmptyState';
 import { PanelTab } from '../../components/tab/PanelTab';
 
 export type BackpackAction = {
@@ -96,6 +97,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
         emit('quantity', 'select', value);
     };
     const hasItems = items.length > 0;
+    const emptyIcon = imageRef('ui/backpack/empty');
     return (
         <view name="Backpack" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
@@ -125,10 +127,8 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
             <image source={imageRef('ui/settings/divider')} style={{ position: 'absolute', left: 26, top: 928, width: 698, height: 3, sizeMode: 'sliced' }} />
 
             <view visible={!hasItems} name="Backpack/Empty" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
-                <image source={imageRef('ui/backpack/empty')} style={{ position: 'absolute', left: 321, top: 977, width: 108, height: 116 }} />
-                <text value="背包里没有任何道具" style={{ position: 'absolute', left: 150, top: 1117, width: 450, height: 64,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#837A91', bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+                <EmptyState icon={emptyIcon} left={321} top={977} label="背包里没有任何道具"
+                    labelLeft={150} labelTop={1117} labelWidth={450} labelHeight={64} />
             </view>
 
             <view visible={hasItems} name="Backpack/Details" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>

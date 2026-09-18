@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
+import { EmptyState } from '../../components/empty/EmptyState';
 import { InputText } from '../../components/input/InputText';
 import { PopupFrame } from '../../components/popup/PopupFrame';
 
@@ -17,15 +18,15 @@ export interface AllianceInvitePanelProps {
     readonly onPublicInvite?: () => void;
 }
 
-const GRAY = '#837A91';
-
 export const AllianceInvitePanel = defineComponent<AllianceInvitePanelProps>((p) => {
     const [query, setQuery] = useState('');
     const search = () => {
         p.onSearch?.(query);
     };
     const inputBg = imageRef('ui/alliance/input-bg');
+    const emptyIcon = imageRef('ui/backpack/empty');
     const placeholder = p.placeholder ?? '点击此处输入想要搜索的玩家';
+    const emptyText = p.emptyText ?? '找不到符合条件的玩家';
     return (
         <view name="AllianceInvite" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -39,12 +40,8 @@ export const AllianceInvitePanel = defineComponent<AllianceInvitePanelProps>((p)
                     <image source={imageRef('ui/alliance/invite-search')} style={{ width: 69, height: 76 }} />
                 </view>
 
-                <image source={imageRef('ui/backpack/empty')}
-                    style={{ position: 'absolute', left: 300, top: 428, width: 108, height: 116 }} />
-                <text value={p.emptyText ?? '找不到符合条件的玩家'}
-                    style={{ position: 'absolute', left: 12, top: 583, width: 684, height: 40,
-                        font: fontRef('fonts/regular', 700), fontSize: 40, color: GRAY, bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+                <EmptyState icon={emptyIcon} left={300} top={428} label={emptyText}
+                    labelLeft={12} labelTop={583} labelWidth={684} />
 
                 <view style={{ position: 'absolute', left: 56, top: 850, width: 255, height: 102 }}>
                     <ConfirmButton label={p.inviteLabel ?? '邀请'} onClick={p.onInvite} />
