@@ -435,7 +435,7 @@
     {
       "key": "CloseButton",
       "rootName": "CloseButton",
-      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx"
+      "source": "apps/client/src/ui-uniflex/components/button/CloseButton.tsx"
     },
     {
       "key": "ItemSlot",
