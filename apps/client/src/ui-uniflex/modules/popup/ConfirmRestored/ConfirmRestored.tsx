@@ -34,7 +34,7 @@ export const ConfirmRestored = defineView<ConfirmRestoredParams, boolean>(
         const contentHeight = PANEL_HEIGHT - 96;
         return (
             <view name="ConfirmRestored" style={{ width: 750, height: 1624 }}>
-                <PopupFrame title={params.title ?? '提示'} kind="prompt" left={PANEL_LEFT} top={PANEL_TOP}
+                <PopupFrame title={params.title ?? '提示'} left={PANEL_LEFT} top={PANEL_TOP}
                     width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={close} />
                 <view name="ConfirmRestored/Content"
                     style={{ position: 'absolute', left: PANEL_LEFT, top: contentTop, width: PANEL_WIDTH, height: contentHeight }}>

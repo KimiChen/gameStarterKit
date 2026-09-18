@@ -48,7 +48,7 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
     return (
         <view name="ShopGetItem" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <PopupFrame title={p.title ?? '获取道具'} kind="prompt" left={21} top={502} width={708} height={620}
+            <PopupFrame title={p.title ?? '获取道具'} left={21} top={502} width={708} height={620}
                 onClose={p.onClose} />
             <view style={{ position: 'absolute', left: 21, top: 502, width: 708, height: 620 }}>
                 <ItemSlot left={18} top={119} quality="orange" icon={itemIcon} count={owned} />

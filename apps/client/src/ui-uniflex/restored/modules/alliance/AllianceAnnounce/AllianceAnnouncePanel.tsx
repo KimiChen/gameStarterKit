@@ -20,7 +20,7 @@ const BODY_WIDTH = 660;
 export const AllianceAnnouncePanel = defineComponent<AllianceAnnouncePanelProps>((p) => (
     <view name="AllianceAnnounce" visible={p.visible !== false}
         style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-        <PopupFrame title={p.title ?? '联盟公告'} kind="prompt" left={21} top={318} width={708} height={912}
+        <PopupFrame title={p.title ?? '联盟公告'} left={21} top={318} width={708} height={912}
             onClose={p.onClose} />
         <view style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 912 }}>
             <image source={imageRef('ui/alliance/announce-panel')}

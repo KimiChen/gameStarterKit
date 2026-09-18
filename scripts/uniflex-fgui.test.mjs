@@ -555,7 +555,7 @@ test("WideMenuButton instances override labels and keep plan color", async () =>
                 node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1334)),
                 node(3, 1, "PopupFrame/Panel", "view", rect(21, 171, 708, 992)),
                 node(4, 3, "PopupFrame/Background", "image", rect(21, 171, 708, 992), { resourceId: "ui/popup/prompt" }),
-                node(5, 3, "PopupFrame/Title", "text", rect(141, 182, 468, 64), { value: "设置" }),
+                node(5, 3, "PopupFrame/Title", "text", rect(111, 189, 528, 58), { value: "设置" }),
                 node(7, 3, "PopupFrame/Content", "view", rect(21, 171, 708, 992)),
                 node(8, 7, "Settings/Content", "view", rect(21, 171, 708, 992)),
                 node(9, 8, "WideMenuButton", "view", rect(42, 284, 326, 114)),

@@ -48,7 +48,7 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
     return (
         <view name="HeroStarUpgrade" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <PopupFrame title={p.title ?? '升星'} kind="prompt" left={21} top={377} width={708} height={870}
+            <PopupFrame title={p.title ?? '升星'} left={21} top={377} width={708} height={870}
                 onClose={p.onClose} />
             <view style={{ position: 'absolute', left: 21, top: 377, width: 708, height: 870 }}>
                 <image visible={stars < 1} source={imageRef('ui/star-upgrade/star-empty')}

@@ -42,7 +42,7 @@ export const Settings = defineView<SettingsParams | void>({ zIndex: 'window' }, 
     const gear = imageRef('ui/settings/gear');
     return (
         <view name="SettingsPage" style={{ width: 750, height: 1334 }}>
-            <PopupFrame title={params.title ?? '设置'} kind="settings" left={PANEL_LEFT} top={PANEL_TOP}
+            <PopupFrame title={params.title ?? '设置'} left={PANEL_LEFT} top={PANEL_TOP}
                 width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={params.onClose} />
             <view name="Settings/Content"
                 style={{ position: 'absolute', left: PANEL_LEFT, top: PANEL_TOP, width: PANEL_WIDTH, height: PANEL_HEIGHT }}>
