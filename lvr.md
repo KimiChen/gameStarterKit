@@ -27,6 +27,11 @@ Unity 2022.3.62f3 + IL2CPP + HybridCLR 热更 + xLua，无加固，全静态逆�
 | 版权口径 | **按已选做（素材与配表复用），同时建与 snake 同规格的素材授权台账** |
 | 框架前置 | **两条线并行**：框架 PR 与 `lvr` kit 阶段 1 同时开工 |
 | M1 起点 | **主城 + 队列 + 资源** |
+| 3D 路线 | **B：自建 3D 管线，用 Cocos 的 3D 能力**；单独出需求文档 [lvr-3d.md](lvr-3d.md)，由单独排期实现 |
+| 主键预留 | **都不预留**：persona 与合服均显式列为「不提供」 |
+| 首屏 | **不做框架适配**：按 kit 标准，主城从设置面板入口进入 |
+| 邮件 | **kit 自建 `k_lvr_mail`**，⛔ 不提 mailer 门面 re-export PR |
+| 团队口径 | 8–10 人 / 1.5–2.5 年，三条泳道（主线 / 协议层 / UI 重建）并行 |
 
 ---
 
@@ -141,10 +146,10 @@ alliance 是三个 api 面」）。⇒ `lvr` 必须自建 worldmap/march，**照
 | i18n（X2） | FGUI 原生 `UIPackage.setStringsSource` / `TranslationHelper.loadFromXML`（`fairygui.mjs:5222`，零调用方但可用）+ 每语言 FGUI 包 + view sidecar `sharedPkgs` + `ErrorMessage`/`errorMessageOf` 码表 + kit 自带 JSON 资源表（slg `terrain.json` 先例） | **kit 自建 `api/text` 面**（key → JSON 表）。⚠ 必须在**第一个 View 之前**定契约，否则 ~200 页全返工。宿主 chrome 的多语言化是独立框架 PR，不在 kit 可达范围 |
 | loading 界面（X3） | `view/layers.ts` top 层 + `ViewMgr.ts:409` async open + AbortSignal + `packageLoader.ts` 的 deadline/三态错误码/retryable + `uiPlate.ts`。**slg 已有一份可直接抄**（`SlgMapView.ts` 加载态 + 失败重试、`SlgArtResources.ts` 批量加载 + addRef/decRef） | kit 自建，计 0.5 人月 |
 | 首页入口列表（U1/U2） | `view/EntryGroupView.ts` + `logic/page/EntryGroupLogic.ts` 已渲染任意条数入口并通过真引擎验收；`host.json` groups + `PluginRegistry.entryGroups()` | 无需 PR；主城 20+ 功能入口自己画在主城页里 |
-| kit 后台 worker（MF7） | `withKitTx` 放行自有表的 INSERT/UPDATE ⇒ **kit 可自建租约表**；`withKitUserFence`（离线用户锁 + 冷档自愈）、`applyKitEffect`（显式 zoneCtx，不依赖在线会话）、`readKitUserFieldInZone`、`retryKitTransaction`、`kitOpId` 全部可达；`relayer.ts` / `freezeWorker.ts` 是完整参考实现 | ⚠ **进程入口在 `apps/server/package.json`（框架 PR）**。⛔ **绝不用模块级 `setInterval` 绕**——`docs/KIT.md` §2 硬排除「导入期副作用」。要么提这个小 PR，要么在 kit README 冻结「⛔ 不承诺无人在线时按时结算/发奖」 |
+| kit 后台 worker（MF7） | `withKitTx` 放行自有表的 INSERT/UPDATE ⇒ **kit 可自建租约表**；`withKitUserFence`（离线用户锁 + 冷档自愈）、`applyKitEffect`（显式 zoneCtx，不依赖在线会话）、`readKitUserFieldInZone`、`retryKitTransaction`、`kitOpId` 全部可达；`relayer.ts` / `freezeWorker.ts` 是完整参考实现 | ⚠ **进程入口在 `apps/server/package.json`（框架 PR）**。⛔ **绝不用模块级 `setInterval` 绕**——`docs/KIT.md` §2 硬排除「导入期副作用」。**⏳ 落法待定，见 §4.3** |
 | 跨用户推送（MF6） | `websocket/push.ts` 的 `pushToUser(uid,…)` + `defineLobbyPush` + 客户端 `onPush` + guild 的 `GetEvents(sinceSeq)` 自愈拉取形态 + 两条现成跨节点流总线 | 联盟/聊天/援助可做；**名册与事件落 kit 自有表** |
 | 逐视口同步（MF5） | slg 阶段 1/2a 已证明「SQL 权威 + 无房 + 客户端 chunk streamer 轮询」能把大地图与行军整条链跑完并通过真引擎验收 | 首版轮询，实时视图房登记为等 MF5。⚠ 这是**体验降级**不是功能缺失 |
-| 3D 场景管线 | `SlgChunkRenderer` / `SlgFarLayerRenderer` 等已用 Material / EffectAsset / 动态 Mesh / 材质销毁 / LOD / 后处理；`kind:"cocos"` View 给全屏 root Node；`SlgArtResources.ts` 是资源生命周期范本；`tools/slg-maps/verify-redraw.py` 是美术往返自检 | Cocos 3.8 本就是 3D 引擎，**不是能力缺口而是零先例 + 全部成本落在 kit**。见 §9.1 |
+| 3D 场景管线 | `SlgChunkRenderer` / `SlgFarLayerRenderer` 等已用 Material / EffectAsset / 动态 Mesh / 材质销毁 / LOD / 后处理；`kind:"cocos"` View 给全屏 root Node；`SlgArtResources.ts` 是资源生命周期范本；`tools/slg-maps/verify-redraw.py` 是美术往返自检 | Cocos 3.8 本就是 3D 引擎，**不是能力缺口而是零先例 + 全部成本落在 kit**。**已拍板走自建 3D 管线**，需求拆到 [lvr-3d.md](lvr-3d.md)，见 §9.1 |
 | 多资源货币 | `user_currency` 主键含 `currency SMALLINT`（65535 个码位）；`kitApi.ts:117/119` 的 `tx.debit/credit(uid, currency, …)` 是自由入参 | 无代价。⛔ 不需要第二套账本 |
 | 资源连续产出 | 懒结算：kit 表存 `(rate, cap, settled_at)`，任何触碰时算 `accrued = f(now − settled_at)` 封顶，同事务一次 `tx.credit` | **一次结算一条流水，不是一 tick 一条** |
 | 余额只读 | 三条路：kit 自有 SQL 纯读事务（`ALLOWED_LEADING` 含 SELECT）、`readKitUserField(InZone)`、`shop.queryOp` 这条 query 路由本就下发 `balance` | 无代价。⛔ 不需要「扣 0 元」 |
@@ -153,10 +158,42 @@ alliance 是三个 api 面」）。⇒ `lvr` 必须自建 worldmap/march，**照
 
 | 限制 | 证据 | 影响与对策 |
 | --- | --- | --- |
-| **kit 发不了邮件** | `core/infra/kitApi.ts` 的 export 清单里没有 mailer/sendMail；kit 只许 import `kitApi` | SLG 的战报、联盟通知、活动发奖全走邮件。**对策**：kit 自建 `k_lvr_mail`（多个子系统测绘独立提出同一方案），代价是框架 `mail` 表与域闲置、两套邮箱并存。或提一条 re-export 小 PR |
+| **kit 发不了邮件** | `core/infra/kitApi.ts` 的 export 清单里没有 mailer/sendMail；kit 只许 import `kitApi` | SLG 的战报、联盟通知、活动发奖全走邮件。**已拍板：kit 自建 `k_lvr_mail`**，⛔ 不提 re-export PR。代价（写进 kit README 冻结规则）：框架 `mail` 表与域闲置、两套邮箱并存、框架侧的 mail 唤醒流用不上 |
 | **effect 通道只能加不能减** | `apps/shared/src/protocol/lobbyRpc/economy.ts:19` 明写「只加不减：kit 世界状态的扣减走 kit 自己的 SQL」；`redisScripts.ts:396/443` 的 `APPLY_EFFECT` 在 `nextValue < 0` 时钳零塞进 `under`，全仓无消费方 | **道具/材料/招募券的扣减必须落 kit 自有表**，⛔ 不能走框架 bag。⚠ 这在 **M2 就撞**（地块清理投料、加速道具、时之沙），不是 M6 |
 | **kit 定义不了 HTTP endpoint** | 所有权推导给 kit 的是 `websocket/<domain>`，`apps/server/src/http/` 不在推导集 | 渠道/IAP 回调无 kit 合法路径。⇒ 真钱链路整体出范围（§9.3 已列不做） |
-| **kit 设不了登录后首屏** | `NavigationPort`（`ports.ts:43`）只暴露 `open/replace/close/closeGroup`；`setAuthenticatedBase` 只在 `loginFlow.ts:750/882` 调用，而 `apps/client/src/app/` 在所有权硬排除清单里 | 原作登录后直落主城。**对策**：一条小框架 PR 把 authenticated base 做成 `host.json` 可声明；PR 前先在 `promoHome` 之上盖全屏 route（重连恢复会回落，属已知降级） |
+| **kit 设不了登录后首屏** | `NavigationPort`（`ports.ts:43`）只暴露 `open/replace/close/closeGroup`；`setAuthenticatedBase` 只在 `loginFlow.ts:750/882` 调用，而 `apps/client/src/app/` 在所有权硬排除清单里 | 原作登录后直落主城。**已拍板：不做框架适配**——按 kit 标准，`lvrCity` 是一条普通 route，从设置面板的入口进入（`builtin` 的 `settings` 已承载真实入口列表）。⛔ 不提首屏 PR。代价：与原作的「登录即主城」不同，写进 kit README 冻结规则 |
+
+---
+
+### 4.3 ⏳ 待拍板：定时推进（kit worker）的落法
+
+**问题**：SLG 本质是定时驱动的，而框架今天没有 kit 可用的后台 worker 通道。
+
+**lazy 结算能覆盖的**（只影响本人、且本人下次操作时才需要正确）：资源产出、自己的建造/训练/研究/治疗队列。
+**lazy 覆盖不了的**：
+
+| 语义 | 为什么 lazy 不够 |
+| --- | --- |
+| 行军到达打到**别人** | 被攻击方不操作就不会触发结算；但攻击方自己会回来看结果，可在攻击方的事务里一并写被攻击方的表 ⇒ **实际可绕，代价是被攻击方收不到即时通知** |
+| 活动开/关、阶段推进 | 可做成 `f(now)` 读时判定（配置里写起止时刻）⇒ **可绕** |
+| 日重置 / 周重置 | 可按 `last_reset_at` 与 `now` 的周期边界读时结算 ⇒ **可绕** |
+| **排行榜 / 赛季定格** | 必须在固定时刻定格。可退化为「结算时刻之后第一个访问者触发 + 租约防并发」⇒ 可绕，但**定格时刻取决于谁先来** |
+| **保留期清理**（回执表、变更日志、邮件） | 可在写路径里摊还批量 DELETE ⇒ 可绕，但无人在线时段不清理 |
+| **全服无人在线时段** | 上述全部绕法都依赖「有人来触发」。跨夜低峰期一切静止 |
+
+**四条候选路线**：
+
+| 路线 | 做法 | 代价 |
+| --- | --- | --- |
+| **P1 提 MF7 最小实现** | 框架加一个 `kit-worker` 进程入口 + 读 `kit.json.workers[]` 装载，照 `core/economy/relayer.ts` / `core/archive/freezeWorker.ts` 的现成形态（两者都已有独立 npm 入口） | 一条不大的框架 PR；`slg.md` 也登记了同一依赖，做了是两个 kit 共同受益 |
+| **P2 全 lazy + 读时判定** | 按上表逐条绕；在 kit README 冻结「⛔ 不承诺无人在线时按时结算/发奖」 | 零框架改动；代价是通知缺失、定格时刻漂移、低峰期静止 |
+| **P3 外部触发过渡** | 用系统 cron / 独立脚本，以一个机器人账号定时调 `lvrOps.tick` 这条普通 Lobby RPC | 零框架改动、定时精确；但引入一个仓外调度依赖与一个特权账号，鉴权模型要另设计 |
+| **P4 等 MF7 完整实施** | 按 `docs/MMO.md` 的设计做全套（租约保护的受限 KitTx + `kit.json.workers[]` + 世界检查点） | 最正规；但那是独立的框架阶段排期，M1–M4 期间用不上 |
+
+⛔ **无论选哪条，都不允许用模块级 `setInterval` 绕**——`docs/KIT.md` §2 硬排除「导入期副作用」，
+`slg.md` §5 也已把「不绕过框架租约表」写成冻结取舍。
+
+> **⏳ 本节待拍板。** 拍板后在此登记结论，并同步 §7 的 M0-F 行与 kit README 的冻结规则。
 
 ---
 
@@ -246,7 +283,7 @@ alliance 是三个 api 面」）。⇒ `lvr` 必须自建 worldmap/march，**照
 | 里程碑 | 目标 | 前置 | 估 |
 | --- | --- | --- | --- |
 | **M0** | 两个 spike + 三条管线 + **协议域切分与错误码收敛规则** + i18n `api/text` 契约 + 热改边界划线 | — | 4–6 |
-| **M0-F** | 框架 PR（并行）：首屏可配、kit worker 进程入口、（可选）mailer 门面 re-export | — | 1–2 |
+| **M0-F** | 框架 PR（并行）：**仅 kit worker 进程入口一条，落法待定见 §4.3**。首屏与邮件已拍板走 kit 侧，⛔ 不提 PR | — | 0–1 |
 | **M1** | **主城可玩闭环**：kit 骨架（照 arena 走通 pack→install→codegen→db:bootstrap→check→test）+ `content`/`asset`/`city`/`build`/`queue` 五面 + **三个横切件**（§5.2）+ 建筑四态与升级 + 双队列 + 加速 + 资源懒结算与上限。⛔ **不含登录/选服/重连**（`builtin` 已提供） | M0 | 3–5 |
 | **M2** | **经济与背包**：`inventory` 面（⚠ 道具扣减必须走 kit 表，见 §4.2）+ 缺资源漏斗 + 货币消耗网关 + 仓库/挂机 + `islander`/`idle` | M1 | 3–4 |
 | **M3** | **英雄与部队**：`hero`/`heroEquip`/`artifact`/`troop`/`tech`/`lineup` 六面 + 抽卡双轨保底 + 科技树 ×3 + 兵营/医院/演武场 | M2 | 5–8 |
@@ -336,26 +373,27 @@ kit 迁移**已发布只能追加、改一字节 sha256 fail-closed**，下面�
 
 | 决策 | 内容 |
 | --- | --- |
-| **persona（MF2）** | v0 = 一区一角色，全部表以 `uid` 为主体键。⛔ 不承诺 persona 化；或现在就在主键里预留 `owner_id` 列 |
-| **合服** | 框架的区隔离是三层硬约束（`user_currency` 主键含 `server_id`、kit per-zone 表 `server_id` 进主键与每个 UNIQUE、Redis 按区前缀）。合服 = 跨 sId 全量迁移 + uid 冲突消解 + 联盟/排行重算，**框架零支持**。⇒ 要么现在显式列为「不提供」，要么表设计阶段就预留（实体 id 全局唯一而非 per-zone 自增、联盟/排行 id 不复用）。⛔ 不能默认它会自然出现 |
+| **persona（MF2）** | **已拍板：不预留。** v0 = 一区一角色，全部表以 `(uid, server_id)` 为主体键，⛔ 不预留 `owner_id`。persona 化显式列为「不提供」（§9.3）。⚠ 将来若要做，是一次百表主键迁移且账本改不动 |
+| **合服** | 框架的区隔离是三层硬约束（`user_currency` 主键含 `server_id`、kit per-zone 表 `server_id` 进主键与每个 UNIQUE、Redis 按区前缀）。合服 = 跨 sId 全量迁移 + uid 冲突消解 + 联盟/排行重算，**框架零支持**。**已拍板：不预留**，显式列为「不提供」（§9.3）。⚠ 这意味着实体 id 可以 per-zone 自增、联盟/排行 id 可复用；将来若要合服，是一次跨 sId 全量迁移 + uid 冲突消解 + 联盟/排行重算的独立项目 |
 | **冷档 freeze/thaw** | 冷档快照只覆盖框架键与 `kit.json.userKeys` 声明的 `kt:` 键。⇒ 逐个插件标注持久态落点；凡需跨冷档存活的一律进 kit 表并由 kit api 面代写 |
 
 ---
 
 ## 9. 风险与不做的事
 
-### 9.1 一号风险：3D → 2D
+### 9.1 3D 管线：已拍板走自建，需求拆到 [lvr-3d.md](lvr-3d.md)
 
-原作是 3D（GPU skinning / `FastShadowReceiver` / `DynamicShadowProjector` / 海面 shader / LOD / Spine / Timeline）。
-框架客户端全 2D（UI 空间正交相机），`slg.md` 的勘察原话是「无 3D/自由相机/手势缩放先例」，
-`apps/Cocos/assets/resources/kits/` 下只有 png/json，**仓内零 3D 资产先例**。
-Cocos 3.8 本身是 3D 引擎 ⇒ 这不是能力缺口，是**零先例 + 全部踩坑成本落在 kit**。
+原作是 3D（GPU skinning 19 个类 / 三套阴影方案 / 海面多贴图混合 / 两级 LOD 的 19 种地图实体 /
+主城三档细节状态机 / Spine / Timeline）。框架客户端全 2D，`apps/Cocos/assets/resources/kits/` 下只有 png/json，
+**仓内零 3D 资产先例**。Cocos 3.8 本身是 3D 引擎 ⇒ 不是能力缺口，是**零先例 + 全部踩坑成本落在 kit**。
 
-- **A（推荐）**：照 `tools/slg-maps/` 已验证的路做 **2D 化改编**——Unity Tilemap/模型渲染成 2D 瓦片与图集，
-  主城与地图用 2.5D 伪透视贴图。视觉不是像素级 1:1，玩法是。
-- **B**：在 Cocos 里自建 3D 场景 + 骨骼动画 + 特效管线。首次踩坑成本未单列，⛔ 不在 §7 的估算内。
+**已拍板：走自建 3D 管线（用 Cocos 的 3D 能力），拆成独立需求文档 [lvr-3d.md](lvr-3d.md) 由单独排期实现。**
+⚠ 因此 **§7 的 100–200 人月 ⛔ 不含 3D 管线**——它是一条独立预算。
 
-**这条需要你单独拍板**——两条路成本差一个数量级。
+lvr-3d.md 里已登记的三条主要风险：shader ⛔ 不能自动转（海面 / GPU skinning 采样 / 阴影三处要手工重写）、
+Unity ParticleSystem ⛔ 不能转（265 个 vfxbaseres bundle 要逐个重建或替代）、
+任何第三方库（如 glTF loader）都是框架 PR（kit 加不了 npm 依赖）。
+其 A0 阶段是一个**可行性 spike**（取 1 个模型 + 1 套动画 + 1 张海面贴图渲出来），走不通就要重估整条管线。
 
 ### 9.2 其余风险
 
@@ -376,7 +414,8 @@ Cocos 3.8 本身是 3D 引擎 ⇒ 这不是能力缺口，是**零先例 + 全�
 
 生产部署/CD/扩容/监控/备份；**真钱 IAP 订单、退款、对账**（kit 定义不了 HTTP endpoint，且 EXTRAS §4 不提供）；
 微信/抖音渠道账号、登录、支付、广告、分享 SDK；渠道打包、审核、灰度；**热更新**；合规与商店发布；
-原作的埋点 BI、AIHelp 客服、ilivedata 翻译服务；**合服**（除非按 §8 预留）。
+原作的埋点 BI、AIHelp 客服、ilivedata 翻译服务；
+**合服**与 **persona（同区多角色）**——§8 已拍板不预留主键，两者都是「不提供」。
 （主体出自 `docs/EXTRAS.md` §4「明确不提供」，⛔ 不是待办。）
 
 ---
