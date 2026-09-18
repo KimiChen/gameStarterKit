@@ -4,7 +4,6 @@ import { CloseButton } from './CloseButton';
 
 export interface PopupFrameProps {
     readonly title: string;
-    readonly kind?: 'prompt' | 'small' | 'settings' | 'profile';
     readonly width?: number;
     readonly height?: number;
     readonly left?: number;
@@ -17,17 +16,13 @@ export interface PopupFrameProps {
 
 const DEFAULT_WIDTH = 708;
 const DEFAULT_HEIGHT = 510;
-const WIDE_TITLE_PAD = 120;
 const TITLE_PAD = 90;
-const WIDE_TITLE_TOP = 11;
 const TITLE_TOP = 18;
-const WIDE_TITLE_HEIGHT = 64;
 const TITLE_HEIGHT = 58;
 
 /** Mask + chrome + close. `left`/`top` are page-absolute so assembled window values paste through. */
 export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
     const title = p.title;
-    const kind = p.kind;
     const width = p.width ?? DEFAULT_WIDTH;
     const height = p.height ?? DEFAULT_HEIGHT;
     const pinLeft = p.left;
@@ -39,10 +34,6 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
     const titleColor = p.titleColor ?? '#ffffff';
     const titleOutline = p.titleOutline ?? '#593d84';
     const onClose = p.onClose;
-    const wide = kind === 'settings' || kind === 'profile';
-    const titlePad = wide ? WIDE_TITLE_PAD : TITLE_PAD;
-    const titleTop = wide ? WIDE_TITLE_TOP : TITLE_TOP;
-    const titleHeight = wide ? WIDE_TITLE_HEIGHT : TITLE_HEIGHT;
     const font = fontRef('fonts/regular', 400);
     const background = imageRef('ui/popup/prompt');
     const rootStyle = pinned
@@ -59,7 +50,7 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
                 <image name="PopupFrame/Background" source={background}
                     style={{ position: 'absolute', width: '100%', height: '100%', sizeMode: 'sliced' }} />
                 <text name="PopupFrame/Title" value={title}
-                    style={{ position: 'absolute', left: titlePad, right: titlePad, top: titleTop, height: titleHeight,
+                    style={{ position: 'absolute', left: TITLE_PAD, right: TITLE_PAD, top: TITLE_TOP, height: TITLE_HEIGHT,
                         font: font, fontSize: 40, bold: true,
                         color: titleColor, outlineColor: titleOutline,
                         outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />

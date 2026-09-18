@@ -30,7 +30,7 @@ export const Prompt = defineView<PromptParams, void>({ zIndex: 'window' }, (cont
     const p = context.params;
     return (
         <view name="PromptPage" style={{ width: 750, height: 1624 }}>
-            <PopupFrame title={p.title ?? '提示'} kind="prompt" left={PANEL_LEFT} top={PANEL_TOP}
+            <PopupFrame title={p.title ?? '提示'} left={PANEL_LEFT} top={PANEL_TOP}
                 width={PANEL_WIDTH} height={PANEL_HEIGHT}
                 titleColor={p.theme?.titleColor} titleOutline={p.theme?.titleOutline} onClose={p.onClose} />
             <view name="Prompt/Content"

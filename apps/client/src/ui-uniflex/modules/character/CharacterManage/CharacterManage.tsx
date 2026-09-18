@@ -116,7 +116,7 @@ export const CharacterManage = defineView<CharacterManageParams | void>({ zIndex
     const panelTop = 316;
     return (
         <view name="CharacterManagePage" style={{ width: 750, height: 1624 }}>
-            <PopupFrame title={params.title ?? '角色管理'} kind="profile" left={panelLeft} top={panelTop}
+            <PopupFrame title={params.title ?? '角色管理'} left={panelLeft} top={panelTop}
                 width={708} height={992} onClose={params.onClose} />
             <view name="CharacterManage/Content"
                 style={{ position: 'absolute', left: panelLeft, top: panelTop, width: 708, height: 992 }}>

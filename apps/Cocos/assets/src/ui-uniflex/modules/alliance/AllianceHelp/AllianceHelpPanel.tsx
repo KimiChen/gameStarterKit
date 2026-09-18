@@ -37,7 +37,7 @@ export const AllianceHelpPanel = defineComponent<AllianceHelpPanelProps>((p) => 
     return (
         <view name="AllianceHelp" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <PopupFrame title={p.title ?? '联盟帮助'} kind="prompt" left={21} top={318} width={708} height={992}
+            <PopupFrame title={p.title ?? '联盟帮助'} left={21} top={318} width={708} height={992}
                 onClose={close} />
             <view style={{ position: 'absolute', left: 21, top: 318, width: 708, height: 992 }}>
                 <image source={imageRef('ui/alliance/help-badge')}
