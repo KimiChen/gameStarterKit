@@ -1,0 +1,14 @@
+{
+  "key": "ConfirmButton",
+  "source": "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx",
+  "export": {
+    "uniflexSha256": "8776a4806daa470bbd1a8b0326fe5c97ce461da37b11ff9050e41c50ad330597",
+    "psdSha256": "df3123f43f6742f50bdc0f680d3589422f1577a3cdc65694abeb2b5688d7f021",
+    "at": "2026-09-18T01:57:21.678Z"
+  },
+  "import": {
+    "psdSha256": "df3123f43f6742f50bdc0f680d3589422f1577a3cdc65694abeb2b5688d7f021",
+    "at": "2026-09-18T02:01:16.797Z",
+    "target": "restored"
+  }
+}

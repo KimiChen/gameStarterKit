@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 72,
+    "height": 72
+  },
+  "roots": [
+    "layer-10"
+  ],
+  "nodes": {
+    "layer-10": {
+      "id": "layer-10",
+      "name": "CloseButton",
+      "kind": "group",
+      "frame": {
+        "x": 11,
+        "y": 11,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
+      },
+      "children": [
+        "layer-11"
+      ]
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-12"
+      ]
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 50,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton/_",
+        "role": "node"
+      },
+      "asset": "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534"
+    }
+  },
+  "assets": {
+    "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534": {
+      "path": "assets/08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534.png",
+      "sha256": "08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534",
+      "mime": "image/png",
+      "width": 50,
+      "height": 50
+    }
+  },
+  "fonts": {},
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-linked-components",
+  "components": [
+    {
+      "key": "PopupBackground",
+      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx",
+      "psd": "components/PopupBackground/component.psd",
+      "guid": "cbb83c69-8a36-efe1-9e43-1744791c9b07",
+      "width": 708,
+      "height": 620,
+      "relativeFromPage": "../components/PopupBackground/component.psd"
+    },
+    {
+      "key": "CloseButton",
+      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx",
+      "psd": "components/CloseButton/component.psd",
+      "guid": "b96a3df5-b42c-d5b2-9c67-be96cd2ed47c",
+      "width": 72,
+      "height": 72,
+      "relativeFromPage": "../components/CloseButton/component.psd"
+    },
+    {
+      "key": "ItemSlot",
+      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx",
+      "psd": "components/ItemSlot/component.psd",
+      "guid": "ba339399-203f-e702-865b-e40f02a8b375",
+      "width": 154,
+      "height": 159,
+      "relativeFromPage": "../components/ItemSlot/component.psd"
+    },
+    {
+      "key": "QuantityControl",
+      "source": "apps/client/src/ui-uniflex/components/quantity/QuantityControl.tsx",
+      "psd": "components/QuantityControl/component.psd",
+      "guid": "8db7b07c-1556-f5e4-0c9e-823e81c8a797",
+      "width": 669,
+      "height": 85,
+      "relativeFromPage": "../components/QuantityControl/component.psd"
+    },
+    {
+      "key": "ActionButton",
+      "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx",
+      "psd": "components/ActionButton/component.psd",
+      "guid": "195a7234-83bd-2ff4-90ec-819667f5c218",
+      "width": 255,
+      "height": 102,
+      "relativeFromPage": "../components/ActionButton/component.psd"
+    },
+    {
+      "key": "ConfirmButton",
+      "source": "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx",
+      "psd": "components/ConfirmButton/component.psd",
+      "guid": "4858f333-4df9-d321-de1d-47ee65cd7d82",
+      "width": 255,
+      "height": 102,
+      "relativeFromPage": "../components/ConfirmButton/component.psd"
+    },
+    {
+      "key": "ShopGetItemPanel",
+      "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItemPanel.tsx",
+      "psd": "components/ShopGetItemPanel/component.psd",
+      "guid": "198cf650-5bad-9f72-7a01-56929a1a9c33",
+      "width": 750,
+      "height": 1624,
+      "relativeFromPage": "../components/ShopGetItemPanel/component.psd"
+    }
+  ]
+}

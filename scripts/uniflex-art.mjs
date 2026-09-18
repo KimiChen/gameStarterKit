@@ -103,16 +103,22 @@ async function publishLinkedComponents(cache, page, { force = false } = {}) {
         const previous = await readComponentArtJson(root, item.key);
         const destSha = await fileSha256(dest);
         const exportedPsd = previous?.export?.psdSha256;
+        const exportedUni = previous?.export?.uniflexSha256;
+        const uniflexSha = item.source ? await hashUniflexFile(root, item.source) : null;
         const designerEdited = destSha && exportedPsd && destSha !== exportedPsd;
         if (designerEdited && !force) {
             console.log(`keep ${item.key}: designer-edited component PSD`);
             keys.push(item.key);
             continue;
         }
+        if (destSha && !designerEdited && exportedUni && uniflexSha === exportedUni) {
+            console.log(`keep ${item.key}: shared component already exported`);
+            keys.push(item.key);
+            continue;
+        }
         await mkdir(artComponentDir(root, item.key), { recursive: true });
         await cp(src, dest);
         const psdSha = await fileSha256(dest);
-        const uniflexSha = item.source ? await hashUniflexFile(root, item.source) : null;
         await writeComponentArtJson(root, item, {
             export: { uniflexSha256: uniflexSha, psdSha256: psdSha, at: nowIso() },
         });

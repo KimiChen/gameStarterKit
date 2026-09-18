@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "roots": [
+    "layer-2"
+  ],
+  "nodes": {
+    "layer-2": {
+      "id": "layer-2",
+      "name": "ShopGetItem",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem",
+        "role": "component",
+        "definitionKey": "ShopGetItemPanel"
+      },
+      "children": [
+        "layer-3",
+        "layer-5"
+      ]
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "ShopGetItem/Mask",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Mask",
+        "role": "node"
+      },
+      "children": [
+        "layer-4"
+      ]
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "ShopGetItem/Mask / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1624
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Mask",
+        "role": "fill"
+      },
+      "asset": "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb"
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "ShopGetItem/Panel",
+      "kind": "group",
+      "frame": {
+        "x": 21,
+        "y": 502,
+        "width": 708,
+        "height": 620
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel",
+        "role": "node"
+      },
+      "children": [
+        "layer-6",
+        "layer-9",
+        "layer-10",
+        "layer-13",
+        "layer-19",
+        "layer-20",
+        "layer-21",
+        "layer-23",
+        "layer-43"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "PopupBackground",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 708,
+        "height": 620
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupBackground:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/PopupBackground",
+        "role": "component",
+        "definitionKey": "PopupBackground"
+      },
+      "asset": "asset-fc1b0f22ff4dab7e0df4a8df7457e0079374983ade27a33c85284700c71fc9e6"
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "获取道具",
+      "kind": "text",
+      "frame": {
+        "x": 86,
+        "y": 25,
+        "width": 536,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_:0",
+        "role": "node"
+      },
+      "text": {
+        "value": "获取道具",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#593d84",
+        "color": "#ffffff"
+      }
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "CloseButton",
+      "kind": "image",
+      "frame": {
+        "x": 621,
+        "y": 6,
+        "width": 72,
+        "height": 72
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
+      },
+      "asset": "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c"
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "ItemSlot",
+      "kind": "image",
+      "frame": {
+        "x": 18,
+        "y": 119,
+        "width": 154,
+        "height": 159
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ItemSlot:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/ItemSlot",
+        "role": "component",
+        "definitionKey": "ItemSlot"
+      },
+      "asset": "asset-9afe19a7902fb9a36c1a9952cfb404b1e0a5c10772019c98896897f813932952"
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "高级钻石",
+      "kind": "text",
+      "frame": {
+        "x": 191,
+        "y": 134,
+        "width": 474,
+        "height": 64
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_:1",
+        "role": "node"
+      },
+      "text": {
+        "value": "高级钻石",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 32,
+        "lineHeight": 32,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#3f3254"
+      }
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "可以购买好多东西",
+      "kind": "text",
+      "frame": {
+        "x": 191,
+        "y": 181,
+        "width": 474,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_:2",
+        "role": "node"
+      },
+      "text": {
+        "value": "可以购买好多东西",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 13,
+        "y": 318,
+        "width": 683,
+        "height": 118
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-22"
+      ]
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 683,
+        "height": 118
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_",
+        "role": "node"
+      },
+      "asset": "asset-0453519e7c9ca7fe6d9b67ff3afe463a780258a3ad81cd54c9895d8ed83893fd"
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "QuantityControl",
+      "kind": "image",
+      "frame": {
+        "x": 18,
+        "y": 339,
+        "width": 669,
+        "height": 85
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "QuantityControl:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/QuantityControl",
+        "role": "component",
+        "definitionKey": "QuantityControl"
+      },
+      "asset": "asset-d1be56c91184127eb2e052931542a0c8c9febfb7a41e11875daf5b712516dd30"
+    },
+    "layer-43": {
+      "id": "layer-43",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 226,
+        "y": 477,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_",
+        "role": "node"
+      },
+      "children": [
+        "layer-44"
+      ]
+    },
+    "layer-44": {
+      "id": "layer-44",
+      "name": "ConfirmButton",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 255,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ConfirmButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton",
+        "role": "component",
+        "definitionKey": "ConfirmButton"
+      },
+      "asset": "asset-1819f70f4327e9838c5eb780efda3e272159f01004687198e5d735b188d7a551"
+    }
+  },
+  "assets": {
+    "asset-6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb": {
+      "path": "assets/6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb.png",
+      "sha256": "6b898d100678ad9b7bbbf32cefb49514689f2a99ee698275f14269235cb7b3eb",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1624
+    },
+    "asset-fc1b0f22ff4dab7e0df4a8df7457e0079374983ade27a33c85284700c71fc9e6": {
+      "path": "assets/fc1b0f22ff4dab7e0df4a8df7457e0079374983ade27a33c85284700c71fc9e6.png",
+      "sha256": "fc1b0f22ff4dab7e0df4a8df7457e0079374983ade27a33c85284700c71fc9e6",
+      "mime": "image/png",
+      "width": 708,
+      "height": 620
+    },
+    "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c": {
+      "path": "assets/d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c.png",
+      "sha256": "d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c",
+      "mime": "image/png",
+      "width": 72,
+      "height": 72
+    },
+    "asset-9afe19a7902fb9a36c1a9952cfb404b1e0a5c10772019c98896897f813932952": {
+      "path": "assets/9afe19a7902fb9a36c1a9952cfb404b1e0a5c10772019c98896897f813932952.png",
+      "sha256": "9afe19a7902fb9a36c1a9952cfb404b1e0a5c10772019c98896897f813932952",
+      "mime": "image/png",
+      "width": 154,
+      "height": 159
+    },
+    "asset-0453519e7c9ca7fe6d9b67ff3afe463a780258a3ad81cd54c9895d8ed83893fd": {
+      "path": "assets/0453519e7c9ca7fe6d9b67ff3afe463a780258a3ad81cd54c9895d8ed83893fd.png",
+      "sha256": "0453519e7c9ca7fe6d9b67ff3afe463a780258a3ad81cd54c9895d8ed83893fd",
+      "mime": "image/png",
+      "width": 683,
+      "height": 118
+    },
+    "asset-d1be56c91184127eb2e052931542a0c8c9febfb7a41e11875daf5b712516dd30": {
+      "path": "assets/d1be56c91184127eb2e052931542a0c8c9febfb7a41e11875daf5b712516dd30.png",
+      "sha256": "d1be56c91184127eb2e052931542a0c8c9febfb7a41e11875daf5b712516dd30",
+      "mime": "image/png",
+      "width": 669,
+      "height": 85
+    },
+    "asset-1819f70f4327e9838c5eb780efda3e272159f01004687198e5d735b188d7a551": {
+      "path": "assets/1819f70f4327e9838c5eb780efda3e272159f01004687198e5d735b188d7a551.png",
+      "sha256": "1819f70f4327e9838c5eb780efda3e272159f01004687198e5d735b188d7a551",
+      "mime": "image/png",
+      "width": 255,
+      "height": 102
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "PopupBackground: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "CloseButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "ItemSlot: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "QuantityControl: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "ConfirmButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

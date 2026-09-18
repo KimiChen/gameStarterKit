@@ -148,3 +148,38 @@ test("restored backpack shares copies while originals keep original imports", as
     assert.match(originalCard, /<ItemSlot left=\{0\}/);
     assert.match(restoredCard, /<ItemSlot left=\{0\}/);
 });
+
+test("shop and backpack component PSDs share the same ItemSlot file", async () => {
+    const slotId = componentGuid("ItemSlot");
+    const card = await readArtPsd(artComponentPsdPath(root, "BackpackItemCard"));
+    const panel = await readArtPsd(artComponentPsdPath(root, "ShopGetItemPanel"));
+    const shopPage = await readArtPsd(resolve(root, "apps/art/uniflex/ShopGetItem/screen.psd"));
+    assert.equal(linkedPaths(card).get(slotId)?.relativePath, "../ItemSlot/component.psd");
+    assert.equal(linkedPaths(panel).get(slotId)?.relativePath, "../ItemSlot/component.psd");
+    assert.equal(linkedPaths(card).get(slotId)?.childDocumentID, "");
+    assert.equal(collectPlaced(shopPage).some((item) => item.id === slotId), false);
+    assert.equal(
+        linkedPaths(shopPage).get(componentGuid("ShopGetItemPanel"))?.relativePath,
+        "../components/ShopGetItemPanel/component.psd",
+    );
+    const shopRestored = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/ShopGetItemRestored/ShopGetItemRestored.tsx"),
+        "utf8");
+    const shopPanel = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/restored/pages/ShopGetItem/ShopGetItemPanel.tsx"),
+        "utf8");
+    const heroRestored = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/HeroScreenRestored/HeroScreenRestored.tsx"),
+        "utf8");
+    const heroRequired = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/restored/pages/HeroScreen/HeroRequiredHero.tsx"),
+        "utf8");
+    const originalShop = await readFile(
+        resolve(root, "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItem.tsx"), "utf8");
+    assert.match(shopRestored, /from '\.\.\/\.\.\/restored\/pages\/ShopGetItem\/ShopGetItemPanel'/);
+    assert.match(shopPanel, /from '\.\.\/\.\.\/components\/item\/ItemSlot'/);
+    assert.match(heroRestored, /from '\.\.\/\.\.\/restored\/pages\/HeroScreen\/HeroBondsPanel'/);
+    assert.match(heroRequired, /from '\.\.\/\.\.\/components\/item\/ItemSlot'/);
+    assert.match(originalShop, /from '\.\/ShopGetItemPanel'/);
+    assert.doesNotMatch(originalShop, /restored/);
+});

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "3e0c7aa4d7364d0db11a973b56d6ed74638052efa2c2c1207fff7a53445e4748",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 708,
+    "height": 620,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"66145a442604a33a9022df5043b09b1aea8fee5da53fe658930f5cc9e207a556\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjcwOCwiaGVpZ2h0Ijo2MjB9LCJub2RlcyI6W3siaWQiOjUsInBhcmVudCI6bnVsbCwicGxhbklkIjo0LCJraW5kIjoidmlldyIsIm5hbWUiOiJQb3B1cEJhY2tncm91bmQiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjcwOCwiaGVpZ2h0Ijo2MjB9LCJpZGVudGl0eSI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL1BvcHVwQmFja2dyb3VuZCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19LHsiaWQiOjYsInBhcmVudCI6NSwicGxhbklkIjo1LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3MDgsImhlaWdodCI6NjIwfSwicmVzb3VyY2VJZCI6InVpL3BvcHVwL3Byb21wdCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUG9wdXBCYWNrZ3JvdW5kL186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo3LCJwYXJlbnQiOjUsInBsYW5JZCI6Niwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9wb3B1cC9zbWFsbCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUG9wdXBCYWNrZ3JvdW5kL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo4LCJwYXJlbnQiOjUsInBsYW5JZCI6Nywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9zZXR0aW5ncy9wYW5lbCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUG9wdXBCYWNrZ3JvdW5kL186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo5LCJwYXJlbnQiOjUsInBsYW5JZCI6OCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9jaGFyYWN0ZXIvd2luZG93IiwiaWRlbnRpdHkiOnsia2V5IjoiUG9wdXBCYWNrZ3JvdW5kOlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9Qb3B1cEJhY2tncm91bmQvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19XSwiY29tcG9uZW50RGVjbGFyYXRpb25zIjp7InNjaGVtYVZlcnNpb24iOjEsImtpbmQiOiJ1bmlmbGV4LWNvbXBvbmVudC1kZWNsYXJhdGlvbnMiLCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3BvcHVwL1BvcHVwQmFja2dyb3VuZC50c3gifSwiZGVmaW5pdGlvbnMiOlt7ImtleSI6IlBvcHVwQmFja2dyb3VuZCIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvcG9wdXAvUG9wdXBCYWNrZ3JvdW5kLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL1BvcHVwQmFja2dyb3VuZCIsImRlZmluaXRpb25LZXkiOiJQb3B1cEJhY2tncm91bmQiLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjo1fV19LCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3BvcHVwL1BvcHVwQmFja2dyb3VuZC50c3gifX0=\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-6": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "PopupBackground [ui:PopupBackground:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/PopupBackground#component]",
+        "id": 6,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-7": {
+      "parent": "layer-6",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 7,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-8": {
+      "parent": "layer-7",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 620,
+        "right": 708,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:PopupBackground:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/PopupBackground/_:0#node]",
+        "id": 8,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

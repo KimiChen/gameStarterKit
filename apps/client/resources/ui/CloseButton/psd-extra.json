@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "add43f423d38ae02ba16790856bcf800f601685f597f32fae895e705517bfe5c",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 72,
+    "height": 72,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"ecc4512a240a71c162afaad38389841f34ff8106f9cd4f60691710ad889614e9\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjcyLCJoZWlnaHQiOjcyfSwibm9kZXMiOlt7ImlkIjoxMSwicGFyZW50IjpudWxsLCJwbGFuSWQiOjEwLCJraW5kIjoidmlldyIsIm5hbWUiOiJDbG9zZUJ1dHRvbiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzIsImhlaWdodCI6NzJ9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJDbG9zZUJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvQ2xvc2VCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkNsb3NlQnV0dG9uIn19LHsiaWQiOjEyLCJwYXJlbnQiOjExLCJwbGFuSWQiOjExLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjExLCJ5IjoxMSwid2lkdGgiOjUwLCJoZWlnaHQiOjUwfSwicmVzb3VyY2VJZCI6InVpL3BvcHVwL2Nsb3NlIiwiaWRlbnRpdHkiOnsia2V5IjoiQ2xvc2VCdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL0Nsb3NlQnV0dG9uL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJDbG9zZUJ1dHRvbiJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQ2xvc2VCdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3BvcHVwL0Nsb3NlQnV0dG9uLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiQ2xvc2VCdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3BvcHVwL0Nsb3NlQnV0dG9uLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJDbG9zZUJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvQ2xvc2VCdXR0b24iLCJkZWZpbml0aW9uS2V5IjoiQ2xvc2VCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoxMX1dfSwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQ2xvc2VCdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3BvcHVwL0Nsb3NlQnV0dG9uLnRzeCJ9fQ==\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-10": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "CloseButton [ui:CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton#component]",
+        "id": 10,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-11": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 11,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-12": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 11,
+        "left": 11,
+        "bottom": 61,
+        "right": 61,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton/_#node]",
+        "id": 12,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

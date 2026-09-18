@@ -1,0 +1,1346 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "ef15774eed2972494d9487ee9c31422e89b61f812492ff75b346513fbe61dd92",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 750,
+    "height": 1624,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"149b2406f9eed024146af8b155779944efc42449ace74cc4fb1ec55f259a09c9\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fSwibm9kZXMiOlt7ImlkIjoyLCJwYXJlbnQiOm51bGwsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiU2hvcEdldEl0ZW0iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fSwiaWRlbnRpdHkiOnsia2V5IjoiU2hvcEdldEl0ZW1QYW5lbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IlNob3BHZXRJdGVtUGFuZWwifX0seyJpZCI6MywicGFyZW50IjoyLCJwbGFuSWQiOjIsImtpbmQiOiJ2aWV3IiwibmFtZSI6IlNob3BHZXRJdGVtL01hc2siLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc1MCwiaGVpZ2h0IjoxNjI0fSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiU2hvcEdldEl0ZW1QYW5lbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vTWFzayIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlNob3BHZXRJdGVtUGFuZWwifX0seyJpZCI6NCwicGFyZW50IjoyLCJwbGFuSWQiOjMsImtpbmQiOiJ2aWV3IiwibmFtZSI6IlNob3BHZXRJdGVtL1BhbmVsIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjIxLCJ5Ijo1MDIsIndpZHRoIjo3MDgsImhlaWdodCI6NjIwfSwiaWRlbnRpdHkiOnsia2V5IjoiU2hvcEdldEl0ZW1QYW5lbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJTaG9wR2V0SXRlbVBhbmVsIn19LHsiaWQiOjUsInBhcmVudCI6NCwicGxhbklkIjo0LCJraW5kIjoidmlldyIsIm5hbWUiOiJQb3B1cEJhY2tncm91bmQiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjcwOCwiaGVpZ2h0Ijo2MjB9LCJpZGVudGl0eSI6eyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL1BvcHVwQmFja2dyb3VuZCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19LHsiaWQiOjYsInBhcmVudCI6NSwicGxhbklkIjo1LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3MDgsImhlaWdodCI6NjIwfSwicmVzb3VyY2VJZCI6InVpL3BvcHVwL3Byb21wdCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUG9wdXBCYWNrZ3JvdW5kL186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo3LCJwYXJlbnQiOjUsInBsYW5JZCI6Niwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9wb3B1cC9zbWFsbCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUG9wdXBCYWNrZ3JvdW5kL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo4LCJwYXJlbnQiOjUsInBsYW5JZCI6Nywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9zZXR0aW5ncy9wYW5lbCIsImlkZW50aXR5Ijp7ImtleSI6IlBvcHVwQmFja2dyb3VuZDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUG9wdXBCYWNrZ3JvdW5kL186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlBvcHVwQmFja2dyb3VuZCJ9fSx7ImlkIjo5LCJwYXJlbnQiOjUsInBsYW5JZCI6OCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6ZmFsc2UsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjAsImhlaWdodCI6MH0sInJlc291cmNlSWQiOiJ1aS9jaGFyYWN0ZXIvd2luZG93IiwiaWRlbnRpdHkiOnsia2V5IjoiUG9wdXBCYWNrZ3JvdW5kOlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9Qb3B1cEJhY2tncm91bmQvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUG9wdXBCYWNrZ3JvdW5kIn19LHsiaWQiOjEwLCJwYXJlbnQiOjQsInBsYW5JZCI6OSwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiLojrflj5bpgZPlhbciLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjkwLCJ5IjoxOCwid2lkdGgiOjUyOCwiaGVpZ2h0Ijo1OH0sImlkZW50aXR5Ijp7ImtleSI6IlNob3BHZXRJdGVtUGFuZWw6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlNob3BHZXRJdGVtUGFuZWwifX0seyJpZCI6MTEsInBhcmVudCI6NCwicGxhbklkIjoxMCwia2luZCI6InZpZXciLCJuYW1lIjoiQ2xvc2VCdXR0b24iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NjIxLCJ5Ijo2LCJ3aWR0aCI6NzIsImhlaWdodCI6NzJ9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJDbG9zZUJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvQ2xvc2VCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkNsb3NlQnV0dG9uIn19LHsiaWQiOjEyLCJwYXJlbnQiOjExLCJwbGFuSWQiOjExLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjExLCJ5IjoxMSwid2lkdGgiOjUwLCJoZWlnaHQiOjUwfSwicmVzb3VyY2VJZCI6InVpL3BvcHVwL2Nsb3NlIiwiaWRlbnRpdHkiOnsia2V5IjoiQ2xvc2VCdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL0Nsb3NlQnV0dG9uL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJDbG9zZUJ1dHRvbiJ9fSx7ImlkIjoxMywicGFyZW50Ijo0LCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6Ikl0ZW1TbG90IiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjE4LCJ5IjoxMTksIndpZHRoIjoxNTQsImhlaWdodCI6MTU5fSwiaWRlbnRpdHkiOnsia2V5IjoiSXRlbVNsb3Q6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL0l0ZW1TbG90Iiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJJdGVtU2xvdCJ9fSx7ImlkIjoxNCwicGFyZW50IjoxMywicGxhbklkIjoyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiSXRlbVNsb3QvRnJhbWUiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjE1NCwiaGVpZ2h0IjoxNTl9LCJyZXNvdXJjZUlkIjoidWkvYmFja3BhY2svaXRlbS1vcmFuZ2UiLCJpZGVudGl0eSI6eyJrZXkiOiJJdGVtU2xvdDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvSXRlbVNsb3QvSXRlbVNsb3QvRnJhbWUiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJJdGVtU2xvdCJ9fSx7ImlkIjoxNSwicGFyZW50IjoxMywicGxhbklkIjozLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiSXRlbVNsb3QvSWNvbiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoxMywieSI6MjQsIndpZHRoIjoxMjksImhlaWdodCI6MTA3fSwicmVzb3VyY2VJZCI6InVpL3Nob3AvZ2V0aXRlbS1pY29uIiwiaWRlbnRpdHkiOnsia2V5IjoiSXRlbVNsb3Q6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL0l0ZW1TbG90L0l0ZW1TbG90L0ljb24iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJJdGVtU2xvdCJ9fSx7ImlkIjoxNiwicGFyZW50IjoxMywicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiJJdGVtU2xvdC9Db3VudCIsInZhbHVlIjoiOTkiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjg3LCJ5IjoxMDcsIndpZHRoIjo1NywiaGVpZ2h0Ijo0Mn0sImlkZW50aXR5Ijp7ImtleSI6Ikl0ZW1TbG90OlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9JdGVtU2xvdC9JdGVtU2xvdC9Db3VudCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6Ikl0ZW1TbG90In19LHsiaWQiOjE3LCJwYXJlbnQiOjQsInBsYW5JZCI6MTMsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoi6auY57qn6ZK755+zIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoxOTEsInkiOjEzMiwid2lkdGgiOjQ3MCwiaGVpZ2h0IjozNn0sImlkZW50aXR5Ijp7ImtleSI6IlNob3BHZXRJdGVtUGFuZWw6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlNob3BHZXRJdGVtUGFuZWwifX0seyJpZCI6MTgsInBhcmVudCI6NCwicGxhbklkIjoxNCwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiLlj6/ku6XotK3kubDlpb3lpJrkuJzopb8iLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjE5MSwieSI6MTc5LCJ3aWR0aCI6NDcwLCJoZWlnaHQiOjMyfSwiaWRlbnRpdHkiOnsia2V5IjoiU2hvcEdldEl0ZW1QYW5lbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvXzoyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiU2hvcEdldEl0ZW1QYW5lbCJ9fSx7ImlkIjoxOSwicGFyZW50Ijo0LCJwbGFuSWQiOjE1LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjEzLCJ5IjozMTgsIndpZHRoIjo2ODMsImhlaWdodCI6MTE4fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2Fubm91bmNlLXBhbmVsIiwiaWRlbnRpdHkiOnsia2V5IjoiU2hvcEdldEl0ZW1QYW5lbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlNob3BHZXRJdGVtUGFuZWwifX0seyJpZCI6MjAsInBhcmVudCI6NCwicGxhbklkIjoxLCJraW5kIjoidmlldyIsIm5hbWUiOiJRdWFudGl0eUNvbnRyb2wiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTgsInkiOjMzOSwid2lkdGgiOjY2OSwiaGVpZ2h0Ijo4NX0sImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6MjEsInBhcmVudCI6MjAsInBsYW5JZCI6Miwia2luZCI6InZpZXciLCJuYW1lIjoiUXVhbnRpdHlDb250cm9sL0RlY3JlYXNlIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3NiwiaGVpZ2h0Ijo4NX0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9EZWNyZWFzZSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjoyMiwicGFyZW50IjoyMSwicGxhbklkIjozLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3NiwiaGVpZ2h0Ijo4NX0sInJlc291cmNlSWQiOiJ1aS9iYWNrcGFjay9idXR0b24tbWludXMiLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvRGVjcmVhc2UvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjoyMywicGFyZW50IjoyMCwicGxhbklkIjo0LCJraW5kIjoidmlldyIsIm5hbWUiOiJRdWFudGl0eUNvbnRyb2wvU2xpZGVyIiwidmFsdWUiOiI4IiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo4NSwieSI6OSwid2lkdGgiOjMyMSwiaGVpZ2h0Ijo1OX0sImludGVyYWN0aW9uIjoicmFuZ2UiLCJpbnRlcmFjdGFibGUiOnRydWUsInJhbmdlIjp7Im1pbiI6MCwibWF4IjoxMCwic3RlcCI6MX0sImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9TbGlkZXIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6MjQsInBhcmVudCI6MjMsInBsYW5JZCI6NSwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5Ijo5LCJ3aWR0aCI6MzIxLCJoZWlnaHQiOjQ0fSwicmVzb3VyY2VJZCI6InVpL3N0YXItdXBncmFkZS9wcm9ncmVzcy10cmFjayIsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9TbGlkZXIvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjI1LCJwYXJlbnQiOjIzLCJwbGFuSWQiOjYsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MywieSI6MTEsIndpZHRoIjoyNDYuNjAwMDAwMDAwMDAwMDIsImhlaWdodCI6NDB9LCJyZXNvdXJjZUlkIjoidWkvc3Rhci11cGdyYWRlL3Byb2dyZXNzLWZpbGwiLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvU2xpZGVyL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjoyNiwicGFyZW50IjoyMywicGxhbklkIjo3LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjIyOS42MDAwMDAwMDAwMDAwMiwieSI6MCwid2lkdGgiOjM0LCJoZWlnaHQiOjU5fSwicmVzb3VyY2VJZCI6InVpL3Nob3AvZ2V0aXRlbS10aHVtYiIsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9TbGlkZXIvXzoyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjI3LCJwYXJlbnQiOjIwLCJwbGFuSWQiOjgsImtpbmQiOiJ2aWV3IiwibmFtZSI6IlF1YW50aXR5Q29udHJvbC9JbmNyZWFzZSIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo0MTQsInkiOjAsIndpZHRoIjo3NiwiaGVpZ2h0Ijo4NX0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9JbmNyZWFzZSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjoyOCwicGFyZW50IjoyNywicGxhbklkIjo5LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3NiwiaGVpZ2h0Ijo4NX0sInJlc291cmNlSWQiOiJ1aS9iYWNrcGFjay9idXR0b24tcGx1cyIsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9JbmNyZWFzZS9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiUXVhbnRpdHlDb250cm9sIn19LHsiaWQiOjI5LCJwYXJlbnQiOjIwLCJwbGFuSWQiOjEwLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjQ5NCwieSI6MTEsIndpZHRoIjo5NCwiaGVpZ2h0Ijo2NH0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9pbnB1dC1iZyIsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6MzAsInBhcmVudCI6MjAsInBsYW5JZCI6MTEsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiOCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NDk0LCJ5IjoxMSwid2lkdGgiOjk0LCJoZWlnaHQiOjY0fSwiaWRlbnRpdHkiOnsia2V5IjoiUXVhbnRpdHlDb250cm9sOlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9RdWFudGl0eUNvbnRyb2wvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCJ9fSx7ImlkIjozMSwicGFyZW50IjoyMCwicGxhbklkIjoxMiwia2luZCI6InZpZXciLCJuYW1lIjoiUXVhbnRpdHlDb250cm9sL01heCIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1OTMsInkiOjAsIndpZHRoIjo3NiwiaGVpZ2h0Ijo4NX0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sL1F1YW50aXR5Q29udHJvbC9NYXgiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6MzIsInBhcmVudCI6MzEsInBsYW5JZCI6MTMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc2LCJoZWlnaHQiOjg1fSwicmVzb3VyY2VJZCI6InVpL3Nob3AvZ2V0aXRlbS1tYXgiLCJpZGVudGl0eSI6eyJrZXkiOiJRdWFudGl0eUNvbnRyb2w6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL1F1YW50aXR5Q29udHJvbC9RdWFudGl0eUNvbnRyb2wvTWF4L18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJRdWFudGl0eUNvbnRyb2wifX0seyJpZCI6MzMsInBhcmVudCI6NCwicGxhbklkIjoxNywia2luZCI6InZpZXciLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjIyNiwieSI6NDc3LCJ3aWR0aCI6MjU1LCJoZWlnaHQiOjEwMn0sImlkZW50aXR5Ijp7ImtleSI6IlNob3BHZXRJdGVtUGFuZWw6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJTaG9wR2V0SXRlbVBhbmVsIn19LHsiaWQiOjM0LCJwYXJlbnQiOjMzLCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IkNvbmZpcm1CdXR0b24iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjI1NSwiaGVpZ2h0IjoxMDJ9LCJpZGVudGl0eSI6eyJrZXkiOiJDb25maXJtQnV0dG9uOlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9fL0NvbmZpcm1CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IkNvbmZpcm1CdXR0b24ifX0seyJpZCI6MzUsInBhcmVudCI6MzQsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiQWN0aW9uQnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjoyNTUsImhlaWdodCI6MTAyfSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MzYsInBhcmVudCI6MzUsInBsYW5JZCI6Miwia2luZCI6ImltYWdlIiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9CYWNrZ3JvdW5kIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjoyNTUsImhlaWdodCI6MTAyfSwicmVzb3VyY2VJZCI6InVpL2J1dHRvbi9jb25maXJtIiwiaWRlbnRpdHkiOnsia2V5IjoiQWN0aW9uQnV0dG9uOlNob3BHZXRJdGVtUGFnZS9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbS9QYW5lbC9fL0NvbmZpcm1CdXR0b24vQWN0aW9uQnV0dG9uL0FjdGlvbkJ1dHRvbi9CYWNrZ3JvdW5kIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19LHsiaWQiOjM3LCJwYXJlbnQiOjM1LCJwbGFuSWQiOjMsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9MYWJlbCIsInZhbHVlIjoiMTAwMCIsInZpc2libGUiOmZhbHNlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjowLCJoZWlnaHQiOjB9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0xhYmVsIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIn19LHsiaWQiOjM4LCJwYXJlbnQiOjM1LCJwbGFuSWQiOjQsImtpbmQiOiJ2aWV3IiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9JY29uUm93IiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjgsInkiOjQsIndpZHRoIjoyMzksImhlaWdodCI6ODZ9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3ciLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6MzksInBhcmVudCI6MzgsInBsYW5JZCI6NSwia2luZCI6ImltYWdlIiwibmFtZSI6IkFjdGlvbkJ1dHRvbi9JY29uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI3LjUsInkiOjE2LCJ3aWR0aCI6NjQsImhlaWdodCI6NTR9LCJyZXNvdXJjZUlkIjoidWkvc2hvcC9nZXRpdGVtLXBheS1nZW0iLCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3cvQWN0aW9uQnV0dG9uL0ljb24iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBY3Rpb25CdXR0b24ifX0seyJpZCI6NDAsInBhcmVudCI6MzgsInBsYW5JZCI6Niwia2luZCI6InRleHQiLCJuYW1lIjoiQWN0aW9uQnV0dG9uL0ljb25MYWJlbCIsInZhbHVlIjoiMTAwMCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTA3LjUsInkiOjAsIndpZHRoIjoxMDQsImhlaWdodCI6ODZ9LCJpZGVudGl0eSI6eyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24vQWN0aW9uQnV0dG9uL0ljb25Sb3cvQWN0aW9uQnV0dG9uL0ljb25MYWJlbCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFjdGlvbkJ1dHRvbiJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiU2hvcEdldEl0ZW1QYW5lbCIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L3BhZ2VzL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtUGFuZWwudHN4In0sImRlZmluaXRpb25zIjpbeyJrZXkiOiJBY3Rpb25CdXR0b24iLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL2J1dHRvbi9BY3Rpb25CdXR0b24udHN4In0seyJrZXkiOiJDbG9zZUJ1dHRvbiIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L2NvbXBvbmVudHMvcG9wdXAvQ2xvc2VCdXR0b24udHN4In0seyJrZXkiOiJDb25maXJtQnV0dG9uIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9idXR0b24vQ29uZmlybUJ1dHRvbi50c3gifSx7ImtleSI6Ikl0ZW1TbG90Iiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9pdGVtL0l0ZW1TbG90LnRzeCJ9LHsia2V5IjoiUG9wdXBCYWNrZ3JvdW5kIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9wb3B1cC9Qb3B1cEJhY2tncm91bmQudHN4In0seyJrZXkiOiJRdWFudGl0eUNvbnRyb2wiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9jb21wb25lbnRzL3F1YW50aXR5L1F1YW50aXR5Q29udHJvbC50c3gifSx7ImtleSI6IlNob3BHZXRJdGVtUGFuZWwiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9TaG9wR2V0SXRlbS9TaG9wR2V0SXRlbVBhbmVsLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJBY3Rpb25CdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL18vQ29uZmlybUJ1dHRvbi9BY3Rpb25CdXR0b24iLCJkZWZpbml0aW9uS2V5IjoiQWN0aW9uQnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6MzV9LHsia2V5IjoiQ2xvc2VCdXR0b246U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL0Nsb3NlQnV0dG9uIiwiZGVmaW5pdGlvbktleSI6IkNsb3NlQnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6MTF9LHsia2V5IjoiQ29uZmlybUJ1dHRvbjpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvXy9Db25maXJtQnV0dG9uIiwiZGVmaW5pdGlvbktleSI6IkNvbmZpcm1CdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjozNH0seyJrZXkiOiJJdGVtU2xvdDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvSXRlbVNsb3QiLCJkZWZpbml0aW9uS2V5IjoiSXRlbVNsb3QiLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoxM30seyJrZXkiOiJQb3B1cEJhY2tncm91bmQ6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtL1Nob3BHZXRJdGVtL1BhbmVsL1BvcHVwQmFja2dyb3VuZCIsImRlZmluaXRpb25LZXkiOiJQb3B1cEJhY2tncm91bmQiLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjo1fSx7ImtleSI6IlF1YW50aXR5Q29udHJvbDpTaG9wR2V0SXRlbVBhZ2UvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW0vUGFuZWwvUXVhbnRpdHlDb250cm9sIiwiZGVmaW5pdGlvbktleSI6IlF1YW50aXR5Q29udHJvbCIsInJvbGUiOiJjb21wb25lbnQiLCJyb290UmVjb3JkSWQiOjIwfSx7ImtleSI6IlNob3BHZXRJdGVtUGFuZWw6U2hvcEdldEl0ZW1QYWdlL1Nob3BHZXRJdGVtIiwiZGVmaW5pdGlvbktleSI6IlNob3BHZXRJdGVtUGFuZWwiLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjoyfV19LCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJTaG9wR2V0SXRlbVBhbmVsIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvcGFnZXMvU2hvcEdldEl0ZW0vU2hvcEdldEl0ZW1QYW5lbC50c3gifX0=\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    },
+    "linkedFiles": [
+      {
+        "id": "cbb83c69-8a36-efe1-9e43-1744791c9b07",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T01:57:19.076Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 97318,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../PopupBackground/component.psd"
+        }
+      },
+      {
+        "id": "b96a3df5-b42c-d5b2-9c67-be96cd2ed47c",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T01:57:19.082Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 23102,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../CloseButton/component.psd"
+        }
+      },
+      {
+        "id": "ba339399-203f-e702-865b-e40f02a8b375",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T01:57:19.091Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 113856,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../ItemSlot/component.psd"
+        }
+      },
+      {
+        "id": "8db7b07c-1556-f5e4-0c9e-823e81c8a797",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T01:57:19.097Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 98563,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../QuantityControl/component.psd"
+        }
+      },
+      {
+        "id": "4858f333-4df9-d321-de1d-47ee65cd7d82",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T01:57:19.103Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 63897,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../ConfirmButton/component.psd"
+        }
+      }
+    ]
+  },
+  "layers": {
+    "layer-2": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ShopGetItem [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem#component]",
+        "id": 2,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-3": {
+      "parent": "layer-2",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ShopGetItem/Mask [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Mask#node]",
+        "id": 3,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-4": {
+      "parent": "layer-3",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 1624,
+        "right": 750,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ShopGetItem/Mask / fill [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Mask#fill]",
+        "id": 4,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-5": {
+      "parent": "layer-2",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ShopGetItem/Panel [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel#node]",
+        "id": 5,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-6": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 502,
+        "left": 21,
+        "bottom": 1122,
+        "right": 729,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "PopupBackground [ui:PopupBackground:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/PopupBackground#component]",
+        "id": 6,
+        "placedLayer": {
+          "id": "cbb83c69-8a36-efe1-9e43-1744791c9b07",
+          "placed": "c553e434-1660-a991-e1c1-7e15b2a84eef",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            21,
+            502,
+            729,
+            502,
+            729,
+            1122,
+            21,
+            1122
+          ],
+          "width": 708,
+          "height": 620,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 620,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 708,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 236,
+                  "y": 0
+                },
+                {
+                  "x": 472,
+                  "y": 0
+                },
+                {
+                  "x": 708,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 206.66666666666666
+                },
+                {
+                  "x": 236,
+                  "y": 206.66666666666666
+                },
+                {
+                  "x": 472,
+                  "y": 206.66666666666666
+                },
+                {
+                  "x": 708,
+                  "y": 206.66666666666666
+                },
+                {
+                  "x": 0,
+                  "y": 413.3333333333333
+                },
+                {
+                  "x": 236,
+                  "y": 413.3333333333333
+                },
+                {
+                  "x": 472,
+                  "y": 413.3333333333333
+                },
+                {
+                  "x": 708,
+                  "y": 413.3333333333333
+                },
+                {
+                  "x": 0,
+                  "y": 620
+                },
+                {
+                  "x": 236,
+                  "y": 620
+                },
+                {
+                  "x": 472,
+                  "y": 620
+                },
+                {
+                  "x": 708,
+                  "y": 620
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-9": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 520,
+        "left": 111,
+        "bottom": 578,
+        "right": 639,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "获取道具 [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_:0#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            375,
+            563.8
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "获取道具",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "center",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 40,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 40,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 89,
+                "g": 61,
+                "b": 132
+              }
+            }
+          ]
+        },
+        "id": 9,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-10": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 508,
+        "left": 642,
+        "bottom": 580,
+        "right": 714,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "CloseButton [ui:CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton#component]",
+        "id": 10,
+        "placedLayer": {
+          "id": "b96a3df5-b42c-d5b2-9c67-be96cd2ed47c",
+          "placed": "19821ea1-615f-ed3f-4447-1f0851c8bda3",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            642,
+            508,
+            714,
+            508,
+            714,
+            580,
+            642,
+            580
+          ],
+          "width": 72,
+          "height": 72,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 72,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 72,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 24,
+                  "y": 0
+                },
+                {
+                  "x": 48,
+                  "y": 0
+                },
+                {
+                  "x": 72,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 24
+                },
+                {
+                  "x": 24,
+                  "y": 24
+                },
+                {
+                  "x": 48,
+                  "y": 24
+                },
+                {
+                  "x": 72,
+                  "y": 24
+                },
+                {
+                  "x": 0,
+                  "y": 48
+                },
+                {
+                  "x": 24,
+                  "y": 48
+                },
+                {
+                  "x": 48,
+                  "y": 48
+                },
+                {
+                  "x": 72,
+                  "y": 48
+                },
+                {
+                  "x": 0,
+                  "y": 72
+                },
+                {
+                  "x": 24,
+                  "y": 72
+                },
+                {
+                  "x": 48,
+                  "y": 72
+                },
+                {
+                  "x": 72,
+                  "y": 72
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-13": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 621,
+        "left": 39,
+        "bottom": 780,
+        "right": 193,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ItemSlot [ui:ItemSlot:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/ItemSlot#component]",
+        "id": 13,
+        "placedLayer": {
+          "id": "ba339399-203f-e702-865b-e40f02a8b375",
+          "placed": "5b33ef3c-e0c7-ea38-f752-894f5b162096",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            39,
+            621,
+            193,
+            621,
+            193,
+            780,
+            39,
+            780
+          ],
+          "width": 154,
+          "height": 159,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 159,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 154,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 51.333333333333336,
+                  "y": 0
+                },
+                {
+                  "x": 102.66666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 154,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 53
+                },
+                {
+                  "x": 51.333333333333336,
+                  "y": 53
+                },
+                {
+                  "x": 102.66666666666667,
+                  "y": 53
+                },
+                {
+                  "x": 154,
+                  "y": 53
+                },
+                {
+                  "x": 0,
+                  "y": 106
+                },
+                {
+                  "x": 51.333333333333336,
+                  "y": 106
+                },
+                {
+                  "x": 102.66666666666667,
+                  "y": 106
+                },
+                {
+                  "x": 154,
+                  "y": 106
+                },
+                {
+                  "x": 0,
+                  "y": 159
+                },
+                {
+                  "x": 51.333333333333336,
+                  "y": 159
+                },
+                {
+                  "x": 102.66666666666667,
+                  "y": 159
+                },
+                {
+                  "x": 154,
+                  "y": 159
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-19": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 634,
+        "left": 212,
+        "bottom": 670,
+        "right": 682,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "高级钻石 [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_:1#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            212,
+            663.84
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "高级钻石",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 32,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 32,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 19,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-20": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 681,
+        "left": 212,
+        "bottom": 713,
+        "right": 682,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "可以购买好多东西 [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_:2#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            212,
+            707.36
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "可以购买好多东西",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 28,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 28,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 20,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-21": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 21,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-22": {
+      "parent": "layer-21",
+      "properties": {
+        "top": 820,
+        "left": 34,
+        "bottom": 938,
+        "right": 717,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_#node]",
+        "id": 22,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-23": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 841,
+        "left": 39,
+        "bottom": 926,
+        "right": 708,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "QuantityControl [ui:QuantityControl:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/QuantityControl#component]",
+        "id": 23,
+        "placedLayer": {
+          "id": "8db7b07c-1556-f5e4-0c9e-823e81c8a797",
+          "placed": "dbd46940-a639-6c10-4074-b8ac09d42494",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            39,
+            841,
+            708,
+            841,
+            708,
+            926,
+            39,
+            926
+          ],
+          "width": 669,
+          "height": 85,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 85,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 669,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 223,
+                  "y": 0
+                },
+                {
+                  "x": 446,
+                  "y": 0
+                },
+                {
+                  "x": 669,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 28.333333333333332
+                },
+                {
+                  "x": 223,
+                  "y": 28.333333333333332
+                },
+                {
+                  "x": 446,
+                  "y": 28.333333333333332
+                },
+                {
+                  "x": 669,
+                  "y": 28.333333333333332
+                },
+                {
+                  "x": 0,
+                  "y": 56.666666666666664
+                },
+                {
+                  "x": 223,
+                  "y": 56.666666666666664
+                },
+                {
+                  "x": 446,
+                  "y": 56.666666666666664
+                },
+                {
+                  "x": 669,
+                  "y": 56.666666666666664
+                },
+                {
+                  "x": 0,
+                  "y": 85
+                },
+                {
+                  "x": 223,
+                  "y": 85
+                },
+                {
+                  "x": 446,
+                  "y": 85
+                },
+                {
+                  "x": 669,
+                  "y": 85
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-43": {
+      "parent": "layer-5",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group [ui:ShopGetItemPanel:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_#node]",
+        "id": 43,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-44": {
+      "parent": "layer-43",
+      "properties": {
+        "top": 979,
+        "left": 247,
+        "bottom": 1081,
+        "right": 502,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "ConfirmButton [ui:ConfirmButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/_/ConfirmButton#component]",
+        "id": 44,
+        "placedLayer": {
+          "id": "4858f333-4df9-d321-de1d-47ee65cd7d82",
+          "placed": "f6b42bf4-5991-fa9f-9bb2-58c80d5db5a5",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            247,
+            979,
+            502,
+            979,
+            502,
+            1081,
+            247,
+            1081
+          ],
+          "width": 255,
+          "height": 102,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 102,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 255,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 85,
+                  "y": 0
+                },
+                {
+                  "x": 170,
+                  "y": 0
+                },
+                {
+                  "x": 255,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 34
+                },
+                {
+                  "x": 85,
+                  "y": 34
+                },
+                {
+                  "x": 170,
+                  "y": 34
+                },
+                {
+                  "x": 255,
+                  "y": 34
+                },
+                {
+                  "x": 0,
+                  "y": 68
+                },
+                {
+                  "x": 85,
+                  "y": 68
+                },
+                {
+                  "x": 170,
+                  "y": 68
+                },
+                {
+                  "x": 255,
+                  "y": 68
+                },
+                {
+                  "x": 0,
+                  "y": 102
+                },
+                {
+                  "x": 85,
+                  "y": 102
+                },
+                {
+                  "x": 170,
+                  "y": 102
+                },
+                {
+                  "x": 255,
+                  "y": 102
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

@@ -9,13 +9,22 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "f22c09ef8896cba6e0e5b2ff5d3a376a79419fa8ca4bc663b473bd41aba2e6de",
-    "psdSha256": "f733313793f51fffacf113358534fcf484367604e6629c3723a1699788d237ac",
-    "at": "2026-09-17T03:36:10.987Z"
+    "uniflexSha256": "db9b2ae9e791cbd068cc0a975cd86cc03ef0deaa83f09e91fb87b7b9815902a7",
+    "psdSha256": "eeef484c66dccf4b2a5a791197b8b620378a858f956aeb1dd49bb716081fec2b",
+    "at": "2026-09-18T01:57:21.682Z"
   },
   "import": {
-    "psdSha256": "f733313793f51fffacf113358534fcf484367604e6629c3723a1699788d237ac",
-    "at": "2026-09-17T03:58:51.786Z",
+    "psdSha256": "eeef484c66dccf4b2a5a791197b8b620378a858f956aeb1dd49bb716081fec2b",
+    "at": "2026-09-18T02:01:18.148Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "PopupBackground",
+    "CloseButton",
+    "ItemSlot",
+    "QuantityControl",
+    "ActionButton",
+    "ConfirmButton",
+    "ShopGetItemPanel"
+  ]
 }
