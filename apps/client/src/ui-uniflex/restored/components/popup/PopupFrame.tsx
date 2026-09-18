@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { CloseButton } from './CloseButton';
+import { CloseButton } from '../button/CloseButton';
 
 export interface PopupFrameProps {
     readonly title: string;

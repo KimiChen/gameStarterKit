@@ -160,7 +160,7 @@
     {
       "key": "BackButton",
       "rootName": "BackButton",
-      "source": "apps/client/src/ui-uniflex/components/chrome/BackButton.tsx"
+      "source": "apps/client/src/ui-uniflex/components/button/BackButton.tsx"
     },
     {
       "key": "BackpackItemCard",
@@ -200,7 +200,7 @@
     {
       "key": "CloseButton",
       "rootName": "CloseButton",
-      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx"
+      "source": "apps/client/src/ui-uniflex/components/button/CloseButton.tsx"
     },
     {
       "key": "ConfirmButton",

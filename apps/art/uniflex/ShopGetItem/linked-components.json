@@ -4,7 +4,7 @@
   "components": [
     {
       "key": "CloseButton",
-      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx",
+      "source": "apps/client/src/ui-uniflex/components/button/CloseButton.tsx",
       "psd": "components/CloseButton/component.psd",
       "guid": "b96a3df5-b42c-d5b2-9c67-be96cd2ed47c",
       "width": 72,

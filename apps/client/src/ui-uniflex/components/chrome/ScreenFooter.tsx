@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { imageRef, type ImageRef } from '../../../kits/uniflex/api/core/index';
-import { BackButton } from './BackButton';
+import { BackButton } from '../button/BackButton';
 
 export interface ScreenFooterProps {
     readonly source?: ImageRef;
