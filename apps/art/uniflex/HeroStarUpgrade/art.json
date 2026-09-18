@@ -10,12 +10,20 @@
   "applyTarget": "restored",
   "export": {
     "uniflexSha256": "b201971b1eaf60c0c15e05e354739e7b715a1c9fb173f567bd85babd5eda0636",
-    "psdSha256": "5da51ed5cceb0800b6fe420a6b104ca6443aa87372b73eaddec8110f9abb772d",
-    "at": "2026-09-17T03:32:03.860Z"
+    "psdSha256": "377a078610056c0513361111052c148ea59c17b671d3f02e79a2803e94adb608",
+    "at": "2026-09-18T02:40:31.937Z"
   },
   "import": {
-    "psdSha256": "5da51ed5cceb0800b6fe420a6b104ca6443aa87372b73eaddec8110f9abb772d",
-    "at": "2026-09-17T03:58:31.837Z",
+    "psdSha256": "377a078610056c0513361111052c148ea59c17b671d3f02e79a2803e94adb608",
+    "at": "2026-09-18T02:40:49.772Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "PopupBackground",
+    "CloseButton",
+    "HeroStarAttributeRow",
+    "ActionButton",
+    "ConfirmButton",
+    "HeroStarUpgradePanel"
+  ]
 }

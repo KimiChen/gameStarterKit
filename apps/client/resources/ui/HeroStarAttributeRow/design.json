@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 683,
+    "height": 55
+  },
+  "roots": [
+    "layer-32"
+  ],
+  "nodes": {
+    "layer-32": {
+      "id": "layer-32",
+      "name": "HeroStarAttributeRow",
+      "kind": "group",
+      "frame": {
+        "x": 29,
+        "y": 9,
+        "width": 633,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow",
+        "role": "component",
+        "definitionKey": "HeroStarAttributeRow"
+      },
+      "children": [
+        "layer-33",
+        "layer-35",
+        "layer-36",
+        "layer-37",
+        "layer-39"
+      ]
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 3,
+        "width": 25,
+        "height": 32
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-34"
+      ]
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 25,
+        "height": 32
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:1",
+        "role": "node"
+      },
+      "asset": "asset-cee4fdfd6ed5cc5b8971f1c1d90109d28aa6645516eb9794bccc5db3289be3d6"
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "攻击力",
+      "kind": "text",
+      "frame": {
+        "x": 28,
+        "y": 5,
+        "width": 164,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:0",
+        "role": "node"
+      },
+      "text": {
+        "value": "攻击力",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#837a91"
+      }
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "44444",
+      "kind": "text",
+      "frame": {
+        "x": 208,
+        "y": 5,
+        "width": 144,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:1",
+        "role": "node"
+      },
+      "text": {
+        "value": "44444",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#59496e"
+      }
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 368,
+        "y": 0,
+        "width": 41,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-38"
+      ]
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "Canvas",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 41,
+        "height": 38
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:2",
+        "role": "node"
+      },
+      "asset": "asset-b0d159c8f18fa64a9cc2f7762b4125be16b70aa571a6f69cc2ec7a4dd039faa1"
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "44444",
+      "kind": "text",
+      "frame": {
+        "x": 493,
+        "y": 5,
+        "width": 144,
+        "height": 56
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "HeroStarAttributeRow:HeroStarUpgradePage/HeroStarUpgrade/HeroStarUpgrade/Panel/_:1/HeroStarAttributeRow/_:2",
+        "role": "node"
+      },
+      "text": {
+        "value": "44444",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 28,
+        "lineHeight": 28,
+        "align": "left",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#368934"
+      }
+    }
+  },
+  "assets": {
+    "asset-cee4fdfd6ed5cc5b8971f1c1d90109d28aa6645516eb9794bccc5db3289be3d6": {
+      "path": "assets/cee4fdfd6ed5cc5b8971f1c1d90109d28aa6645516eb9794bccc5db3289be3d6.png",
+      "sha256": "cee4fdfd6ed5cc5b8971f1c1d90109d28aa6645516eb9794bccc5db3289be3d6",
+      "mime": "image/png",
+      "width": 25,
+      "height": 32
+    },
+    "asset-b0d159c8f18fa64a9cc2f7762b4125be16b70aa571a6f69cc2ec7a4dd039faa1": {
+      "path": "assets/b0d159c8f18fa64a9cc2f7762b4125be16b70aa571a6f69cc2ec7a4dd039faa1.png",
+      "sha256": "b0d159c8f18fa64a9cc2f7762b4125be16b70aa571a6f69cc2ec7a4dd039faa1",
+      "mime": "image/png",
+      "width": 41,
+      "height": 38
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

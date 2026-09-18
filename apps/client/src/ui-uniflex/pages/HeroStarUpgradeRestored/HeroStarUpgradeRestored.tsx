@@ -1,5 +1,5 @@
 import { defineView } from '@uniflex/compiler';
-import { HeroStarUpgradePanel, type HeroStarUpgradePanelProps } from '../HeroStarUpgrade/HeroStarUpgradePanel';
+import { HeroStarUpgradePanel, type HeroStarUpgradePanelProps } from '../../restored/pages/HeroStarUpgrade/HeroStarUpgradePanel';
 
 export type HeroStarUpgradeRestoredParams = Omit<HeroStarUpgradePanelProps, 'visible'>;
 

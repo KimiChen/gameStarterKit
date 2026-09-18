@@ -1,5 +1,5 @@
 import { defineView } from '@uniflex/compiler';
-import { AllianceAnnouncePanel, type AllianceAnnouncePanelProps } from '../AllianceAnnounce/AllianceAnnouncePanel';
+import { AllianceAnnouncePanel, type AllianceAnnouncePanelProps } from '../../restored/pages/AllianceAnnounce/AllianceAnnouncePanel';
 
 export type AllianceAnnounceRestoredParams = Omit<AllianceAnnouncePanelProps, 'visible'>;
 
