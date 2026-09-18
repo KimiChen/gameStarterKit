@@ -13,6 +13,10 @@ export interface InputTextProps {
     readonly maxLength?: number;
     readonly fontSize?: number;
     readonly color?: string;
+    readonly placeholderColor?: string;
+    readonly textAlign?: 'left' | 'center';
+    readonly textLeft?: number;
+    readonly textWidth?: number;
 }
 
 const DEFAULT_COLOR = '#6F6555';
@@ -30,6 +34,10 @@ export const InputText = defineComponent<InputTextProps>((p) => {
     const maxLength = p.maxLength;
     const fontSize = p.fontSize ?? 26;
     const color = p.color ?? DEFAULT_COLOR;
+    const placeholderColor = p.placeholderColor ?? color;
+    const textAlign = p.textAlign ?? 'center';
+    const textLeft = p.textLeft ?? 0;
+    const textWidth = p.textWidth ?? width;
     const empty = value === '';
     const showPlaceholder = empty && placeholder !== '';
     const font = fontRef('fonts/regular', 700);
@@ -38,12 +46,12 @@ export const InputText = defineComponent<InputTextProps>((p) => {
             <image source={background}
                 style={{ position: 'absolute', left: 0, top: 0, width: width, height: height, sizeMode: 'sliced' }} />
             <input value={value} placeholder="" maxLength={maxLength} onInput={onInput}
-                style={{ position: 'absolute', left: 0, top: 0, width: width, height: height,
-                    fontSize: fontSize, color: color, textAlign: 'center' }} />
+                style={{ position: 'absolute', left: textLeft, top: 0, width: textWidth, height: height,
+                    fontSize: fontSize, color: color, textAlign: textAlign }} />
             <text visible={showPlaceholder} value={placeholder}
-                style={{ position: 'absolute', left: 0, top: 0, width: width, height: height,
-                    font: font, fontSize: fontSize, color: color, bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+                style={{ position: 'absolute', left: textLeft, top: 0, width: textWidth, height: height,
+                    font: font, fontSize: fontSize, color: placeholderColor, bold: true,
+                    horizontalAlign: textAlign, verticalAlign: 'center' }} />
         </view>
     );
 });
