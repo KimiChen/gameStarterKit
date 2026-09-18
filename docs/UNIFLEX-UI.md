@@ -63,6 +63,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uni
 | 星级 | `StarRow` |
 | 输入框 | `InputText` |
 | 宽菜单 | `WideMenuButton` |
+| 空态 | `EmptyState` |
 | 道具格 | `ItemSlot` |
 | 全屏标题栏 | `ScreenHeader` |
 | 全屏底栏 | `ScreenFooter` |

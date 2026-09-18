@@ -3,6 +3,7 @@ import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../components/button/ConfirmButton';
 import { ScreenFooter } from '../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../components/chrome/ScreenHeader';
+import { EmptyState } from '../../components/empty/EmptyState';
 import { PanelTab } from '../../components/tab/PanelTab';
 
 export type AllianceGiftTab = 'normal' | 'rare';
@@ -20,7 +21,6 @@ export interface AllianceGiftPanelProps {
     readonly onSelectTab?: (tab: AllianceGiftTab) => void;
 }
 
-const GRAY = '#837A91';
 const CAP = '#857C93';
 const CLAIM_WIDTH = 191;
 const CLAIM_HEIGHT = 77;
@@ -41,6 +41,8 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
         p.onClaimAll?.();
         p.onAction?.('claim_all');
     };
+    const emptyIcon = imageRef('ui/backpack/empty');
+    const emptyText = p.emptyText ?? '暂无礼物';
     return (
         <view name="AllianceGift" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -53,12 +55,8 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
                 style={{ position: 'absolute', left: 0, top: 208, width: 750, height: 370 }} />
             <view style={{ position: 'absolute', left: 0, top: 544, width: 750, height: 1080, backgroundColor: '#F3EFE9' }} />
 
-            <image source={imageRef('ui/backpack/empty')}
-                style={{ position: 'absolute', left: 321, top: 805, width: 108, height: 116 }} />
-            <text value={p.emptyText ?? '暂无礼物'}
-                style={{ position: 'absolute', left: 200, top: 960, width: 350, height: 40,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: GRAY, bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+            <EmptyState icon={emptyIcon} left={321} top={805} label={emptyText}
+                labelLeft={200} labelTop={960} labelWidth={350} />
 
             <image source={imageRef('ui/alliance/gift-cap')}
                 style={{ position: 'absolute', left: 245, top: 1315, width: 261, height: 39, sizeMode: 'sliced' }} />
