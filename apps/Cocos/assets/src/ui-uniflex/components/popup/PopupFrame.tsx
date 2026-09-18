@@ -1,6 +1,5 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef } from '../../../kits/uniflex/api/core/index';
-import { PopupBackground } from './PopupBackground';
+import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
 import { CloseButton } from './CloseButton';
 
 export interface PopupFrameProps {
@@ -45,6 +44,7 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
     const titleTop = wide ? WIDE_TITLE_TOP : TITLE_TOP;
     const titleHeight = wide ? WIDE_TITLE_HEIGHT : TITLE_HEIGHT;
     const font = fontRef('fonts/regular', 400);
+    const background = imageRef('ui/popup/prompt');
     const rootStyle = pinned
         ? { position: 'absolute' as const, left: 0, top: 0, width: '100%' as const, height: '100%' as const }
         : { width: '100%' as const, height: '100%' as const, justifyContent: 'center' as const, alignItems: 'center' as const };
@@ -56,7 +56,8 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
             <view name="PopupFrame/Mask" interaction="press"
                 style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
             <view name="PopupFrame/Panel" style={panelStyle}>
-                <PopupBackground kind={kind} />
+                <image name="PopupFrame/Background" source={background}
+                    style={{ position: 'absolute', width: '100%', height: '100%', sizeMode: 'sliced' }} />
                 <text name="PopupFrame/Title" value={title}
                     style={{ position: 'absolute', left: titlePad, right: titlePad, top: titleTop, height: titleHeight,
                         font: font, fontSize: 40, bold: true,

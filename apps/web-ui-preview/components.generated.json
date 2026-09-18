@@ -308,11 +308,6 @@
       "source": "apps/client/src/ui-uniflex/components/tab/PanelTab.tsx"
     },
     {
-      "key": "PopupBackground",
-      "rootName": "PopupBackground",
-      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx"
-    },
-    {
       "key": "PopupFrame",
       "rootName": "PopupFrame",
       "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"

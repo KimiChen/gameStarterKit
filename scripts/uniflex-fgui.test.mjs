@@ -35,31 +35,29 @@ function promptSnapshot() {
         node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
         node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
         node(3, 1, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
-        node(4, 3, "PopupBackground", "view", rect(21, 625, 708, 375)),
-        node(5, 4, "", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/prompt" }),
-        node(6, 4, "", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/small", visible: false }),
-        node(7, 3, "PopupFrame/Title", "text", rect(111, 643, 528, 58), { value: "创建角色" }),
-        node(8, 3, "PopupFrame/Content", "view", rect(61, 733, 628, 229)),
-        node(9, 8, "Prompt/Content", "view", rect(61, 733, 628, 229)),
-        node(10, 9, "Prompt/Message", "text", rect(61, 733, 628, 104), { value: "在该服务器创建1名新角色?" }),
-        node(11, 9, "Prompt/Actions", "view", rect(61, 860, 628, 102)),
-        node(12, 11, "ConfirmButton", "view", rect(77, 860, 255, 102)),
-        node(13, 12, "ActionButton", "view", rect(77, 860, 255, 102), { interaction: "press" }),
-        node(14, 13, "ActionButton/Background", "image", rect(77, 860, 255, 102), { resourceId: "ui/button/confirm" }),
-        node(15, 13, "ActionButton/Label", "text", rect(85, 864, 239, 86), { value: "确定" }),
-        node(16, 13, "ActionButton/IconRow", "view", rect(85, 864, 239, 86), { visible: false }),
-        node(17, 16, "ActionButton/Icon", "image", rect(85, 864, 48, 48), { resourceId: "ui/button/confirm" }),
-        node(18, 16, "ActionButton/IconLabel", "text", rect(149, 864, 80, 86), { value: "确定" }),
-        node(19, 11, "", "view", rect(419, 860, 255, 102)),
-        node(20, 19, "CancelButton", "view", rect(419, 860, 255, 102)),
-        node(21, 20, "ActionButton", "view", rect(419, 860, 255, 102), { interaction: "press" }),
-        node(22, 21, "ActionButton/Background", "image", rect(419, 860, 255, 102), { resourceId: "ui/button/cancel" }),
-        node(23, 21, "ActionButton/Label", "text", rect(427, 864, 239, 86), { value: "取消" }),
-        node(24, 21, "ActionButton/IconRow", "view", rect(427, 864, 239, 86), { visible: false }),
-        node(25, 24, "ActionButton/Icon", "image", rect(427, 864, 48, 48), { resourceId: "ui/button/cancel" }),
-        node(26, 24, "ActionButton/IconLabel", "text", rect(491, 864, 80, 86), { value: "取消" }),
-        node(27, 3, "CloseButton", "view", rect(642, 631, 72, 72), { interaction: "press" }),
-        node(28, 27, "", "image", rect(653, 642, 50, 50), { resourceId: "ui/popup/close" }),
+        node(4, 3, "PopupFrame/Background", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/prompt" }),
+        node(5, 3, "PopupFrame/Title", "text", rect(111, 643, 528, 58), { value: "创建角色" }),
+        node(6, 3, "PopupFrame/Content", "view", rect(61, 733, 628, 229)),
+        node(7, 6, "Prompt/Content", "view", rect(61, 733, 628, 229)),
+        node(8, 7, "Prompt/Message", "text", rect(61, 733, 628, 104), { value: "在该服务器创建1名新角色?" }),
+        node(9, 7, "Prompt/Actions", "view", rect(61, 860, 628, 102)),
+        node(10, 9, "ConfirmButton", "view", rect(77, 860, 255, 102)),
+        node(11, 10, "ActionButton", "view", rect(77, 860, 255, 102), { interaction: "press" }),
+        node(12, 11, "ActionButton/Background", "image", rect(77, 860, 255, 102), { resourceId: "ui/button/confirm" }),
+        node(13, 11, "ActionButton/Label", "text", rect(85, 864, 239, 86), { value: "确定" }),
+        node(14, 11, "ActionButton/IconRow", "view", rect(85, 864, 239, 86), { visible: false }),
+        node(15, 14, "ActionButton/Icon", "image", rect(85, 864, 48, 48), { resourceId: "ui/button/confirm" }),
+        node(16, 14, "ActionButton/IconLabel", "text", rect(149, 864, 80, 86), { value: "确定" }),
+        node(17, 9, "", "view", rect(419, 860, 255, 102)),
+        node(18, 17, "CancelButton", "view", rect(419, 860, 255, 102)),
+        node(19, 18, "ActionButton", "view", rect(419, 860, 255, 102), { interaction: "press" }),
+        node(20, 19, "ActionButton/Background", "image", rect(419, 860, 255, 102), { resourceId: "ui/button/cancel" }),
+        node(21, 19, "ActionButton/Label", "text", rect(427, 864, 239, 86), { value: "取消" }),
+        node(22, 19, "ActionButton/IconRow", "view", rect(427, 864, 239, 86), { visible: false }),
+        node(23, 22, "ActionButton/Icon", "image", rect(427, 864, 48, 48), { resourceId: "ui/button/cancel" }),
+        node(24, 22, "ActionButton/IconLabel", "text", rect(491, 864, 80, 86), { value: "取消" }),
+        node(25, 3, "CloseButton", "view", rect(642, 631, 72, 72), { interaction: "press" }),
+        node(26, 25, "", "image", rect(653, 642, 50, 50), { resourceId: "ui/popup/close" }),
     ];
     return {
         schemaVersion: 1,
@@ -111,12 +109,11 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         const frameXml = readFileSync(join(out, "assets/UniFlex_Common/PopupFrame.xml"), "utf8");
         const names = ir.packages[0].components.map((item) => item.name).sort();
         assert.deepEqual(names, [
-            "ActionButton", "CancelButton", "CloseButton", "ConfirmButton", "PopupBackground", "PopupFrame",
+            "ActionButton", "CancelButton", "CloseButton", "ConfirmButton", "PopupFrame",
         ]);
         assert.match(promptXml, /name="ConfirmButton"/);
         assert.match(promptXml, /name="CancelButton"/);
         assert.match(promptXml, /name="CloseButton"/);
-        assert.match(promptXml, /name="PopupBackground"/);
         assert.match(promptXml, /name="Prompt\/Message"/);
         assert.doesNotMatch(promptXml, /<graph/);
         assert.doesNotMatch(promptXml, /ui\/button\/confirm/);
@@ -130,8 +127,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         const cancelXml = readFileSync(join(out, "assets/UniFlex_Common/CancelButton.xml"), "utf8");
         assert.match(cancelXml, /title="取消"/);
         assert.match(cancelXml, /propertyId="3"/);
-        const backgroundXml = readFileSync(join(out, "assets/UniFlex_Common/PopupBackground.xml"), "utf8");
-        assert.doesNotMatch(backgroundXml, /small\.png/);
+        assert.match(frameXml, /fileName="images\/prompt.png"/);
         const previewHtml = readFileSync(join(out, "preview/index.html"), "utf8");
         assert.match(previewHtml, /id="ui"/);
         assert.match(previewHtml, /#101318/);
@@ -158,7 +154,6 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
             "assets/UniFlex_Common/ConfirmButton.xml",
             "assets/UniFlex_Common/CancelButton.xml",
             "assets/UniFlex_Common/CloseButton.xml",
-            "assets/UniFlex_Common/PopupBackground.xml",
             "assets/UniFlex_Common/PopupFrame.xml",
             "assets/UniFlex_Prompt/Prompt.xml",
         ]) {
@@ -236,9 +231,8 @@ test("parent-local inspect rects become FairyGUI component-space xy", async () =
                 node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
                 node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
                 node(3, 1, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
-                node(4, 3, "PopupBackground", "view", rect(0, 0, 708, 375)),
-                node(5, 4, "", "image", rect(0, 0, 708, 375), { resourceId: "ui/popup/prompt" }),
-                node(6, 3, "PopupFrame/Title", "text", rect(90, 18, 528, 58), { value: "创建角色" }),
+                node(4, 3, "PopupFrame/Background", "image", rect(0, 0, 708, 375), { resourceId: "ui/popup/prompt" }),
+                node(5, 3, "PopupFrame/Title", "text", rect(90, 18, 528, 58), { value: "创建角色" }),
                 node(7, 3, "PopupFrame/Content", "view", rect(40, 108, 628, 229)),
                 node(8, 7, "Prompt/Content", "view", rect(0, 0, 628, 229)),
                 node(9, 8, "Prompt/Message", "text", rect(0, 0, 628, 104), { value: "在该服务器创建1名新角色?" }),
@@ -251,7 +245,7 @@ test("parent-local inspect rects become FairyGUI component-space xy", async () =
         });
         const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
         assert.match(promptXml, /name="PopupFrame\/Panel" xy="21,625"/);
-        assert.match(promptXml, /name="PopupBackground" xy="21,625"/);
+        assert.match(promptXml, /name="PopupFrame\/Background" xy="21,625"/);
         assert.match(promptXml, /name="PopupFrame\/Title" xy="111,643"/);
         assert.match(promptXml, /name="Prompt\/Message" xy="61,733"/);
         assert.equal(ir.screen.componentName, "Prompt");
@@ -265,14 +259,12 @@ function smallPopupSnapshot() {
         node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
         node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
         node(3, 1, "PopupFrame/Panel", "view", rect(21, 557, 708, 510)),
-        node(4, 3, "PopupBackground", "view", rect(21, 557, 708, 510)),
-        node(5, 4, "", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/prompt", visible: false }),
-        node(6, 4, "", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/small" }),
-        node(7, 3, "PopupFrame/Title", "text", rect(111, 575, 528, 58), { value: "标题" }),
-        node(8, 3, "PopupFrame/Content", "view", rect(61, 665, 628, 364)),
-        node(9, 8, "SmallPopup/Content", "view", rect(61, 665, 628, 364)),
-        node(10, 3, "CloseButton", "view", rect(642, 563, 72, 72), { interaction: "press" }),
-        node(11, 10, "", "image", rect(653, 574, 50, 50), { resourceId: "ui/popup/close" }),
+        node(4, 3, "PopupFrame/Background", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/prompt" }),
+        node(5, 3, "PopupFrame/Title", "text", rect(111, 575, 528, 58), { value: "标题" }),
+        node(6, 3, "PopupFrame/Content", "view", rect(61, 665, 628, 364)),
+        node(7, 6, "SmallPopup/Content", "view", rect(61, 665, 628, 364)),
+        node(8, 3, "CloseButton", "view", rect(642, 563, 72, 72), { interaction: "press" }),
+        node(9, 8, "", "image", rect(653, 574, 50, 50), { resourceId: "ui/popup/close" }),
     ];
     return {
         schemaVersion: 1,
@@ -342,7 +334,7 @@ test("SmallPopup and Confirm compile as their own page packages", async () => {
     }
 });
 
-test("multi-page export shares Common and inlines PopupBackground kind variants", async () => {
+test("multi-page export shares Common PopupFrame", async () => {
     const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-catalog-"));
     try {
         const catalog = await loadScreenCatalog(root);
@@ -371,9 +363,9 @@ test("multi-page export shares Common and inlines PopupBackground kind variants"
         const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
         const smallXml = readFileSync(join(out, "assets/UniFlex_SmallPopup/SmallPopup.xml"), "utf8");
         const preview = readFileSync(join(out, "preview/index.html"), "utf8");
-        assert.match(promptXml, /name="PopupBackground"/);
-        assert.match(smallXml, /small\.png/);
-        assert.match(smallXml, / pkg="/);
+        assert.match(promptXml, /name="PopupFrame"/);
+        assert.match(smallXml, /prompt\.png/);
+        assert.doesNotMatch(smallXml, /small\.png/);
         assert.match(preview, /id="picker"/);
         assert.match(preview, /query\.set\("screen"/);
         assert.match(preview, /"id":"small-popup"/);
@@ -546,9 +538,8 @@ test("WideMenuButton instances override labels and keep plan color", async () =>
                 node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1334)),
                 node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1334)),
                 node(3, 1, "PopupFrame/Panel", "view", rect(21, 171, 708, 992)),
-                node(4, 3, "PopupBackground", "view", rect(21, 171, 708, 992)),
-                node(5, 4, "", "image", rect(21, 171, 708, 992), { resourceId: "ui/settings/panel" }),
-                node(6, 3, "PopupFrame/Title", "text", rect(141, 182, 468, 64), { value: "设置" }),
+                node(4, 3, "PopupFrame/Background", "image", rect(21, 171, 708, 992), { resourceId: "ui/popup/prompt" }),
+                node(5, 3, "PopupFrame/Title", "text", rect(141, 182, 468, 64), { value: "设置" }),
                 node(7, 3, "PopupFrame/Content", "view", rect(21, 171, 708, 992)),
                 node(8, 7, "Settings/Content", "view", rect(21, 171, 708, 992)),
                 node(9, 8, "WideMenuButton", "view", rect(42, 284, 326, 114)),

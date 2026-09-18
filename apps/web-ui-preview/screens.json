@@ -433,11 +433,6 @@
       "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"
     },
     {
-      "key": "PopupBackground",
-      "rootName": "PopupBackground",
-      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx"
-    },
-    {
       "key": "CloseButton",
       "rootName": "CloseButton",
       "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx"

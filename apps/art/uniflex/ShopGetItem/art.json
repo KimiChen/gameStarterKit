@@ -19,7 +19,6 @@
     "target": "restored"
   },
   "linkedComponents": [
-    "PopupBackground",
     "CloseButton",
     "ItemSlot",
     "QuantityControl",

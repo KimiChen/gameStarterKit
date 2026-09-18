@@ -56,7 +56,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 |---|---|
 | 黄确定 / 绿取消 / 青前往 | `ConfirmButton` / `CancelButton` / `CyanButton` |
 | 页签 | `PanelTab`；邮件/背包/联盟主页省略 `kind`；领地旗帜 `kind="flag"` |
-| 弹窗 | `PopupBackground` / `PopupFrame` / `CloseButton` |
+| 弹窗 | `PopupFrame` / `CloseButton` |
 | 勾选 | `CheckBox` |
 | 数量加减 / 滑条 | `QuantityControl` |
 | 进度条 | `ProgressBar` |
