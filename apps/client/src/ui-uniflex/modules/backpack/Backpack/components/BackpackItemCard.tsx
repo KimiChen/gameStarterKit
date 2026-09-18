@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../../kits/uniflex/api/core/index';
-import { ItemSlot, type ItemQuality } from '../../../../components/item/ItemSlot';
+import { ItemSlot, type ItemQuality } from '../../../../gamecomponents/item/ItemSlot';
 
 export type BackpackQuality = ItemQuality;
 export interface BackpackItem {

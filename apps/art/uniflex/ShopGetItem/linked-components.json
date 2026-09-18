@@ -13,7 +13,7 @@
     },
     {
       "key": "ItemSlot",
-      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/item/ItemSlot.tsx",
       "psd": "components/ItemSlot/component.psd",
       "guid": "ba339399-203f-e702-865b-e40f02a8b375",
       "width": 154,

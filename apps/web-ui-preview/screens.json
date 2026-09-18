@@ -440,7 +440,7 @@
     {
       "key": "ItemSlot",
       "rootName": "ItemSlot",
-      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/item/ItemSlot.tsx"
     },
     {
       "key": "ActionButton",
@@ -485,7 +485,7 @@
     {
       "key": "ResourceCounter",
       "rootName": "ResourceCounter",
-      "source": "apps/client/src/ui-uniflex/components/resource/ResourceCounter.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/resource/ResourceCounter.tsx"
     },
     {
       "key": "BackpackQuantityControl",
@@ -515,7 +515,7 @@
     {
       "key": "MainNav",
       "rootName": "MainNav",
-      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx"
     },
     {
       "key": "HeroListPanel",

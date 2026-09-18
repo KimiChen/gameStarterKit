@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
-import { EmptyState } from '../../../components/empty/EmptyState';
+import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 
 export interface AllianceBoardApplyPanelProps {
     readonly visible?: boolean;

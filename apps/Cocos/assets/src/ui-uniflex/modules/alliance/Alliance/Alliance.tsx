@@ -2,7 +2,7 @@ import { defineView, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { MainNav, type MainNavSlot } from '../../../components/navigation/MainNav';
+import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
 import { PanelTab } from '../../../components/tab/PanelTab';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
 import { AllianceBoardPanel } from '../AllianceBoard/AllianceBoardPanel';

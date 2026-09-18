@@ -3,7 +3,7 @@ import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
-import { StarRow } from '../../../components/star/StarRow';
+import { StarRow } from '../../../gamecomponents/star/StarRow';
 import { HeroStarAttributeRow, type HeroStarAttributeRowProps } from './HeroStarAttributeRow';
 
 export interface HeroStarAttribute extends Omit<HeroStarAttributeRowProps, 'striped'> {

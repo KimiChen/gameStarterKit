@@ -1,6 +1,6 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { MainNav, type MainNavSlot } from '../../../restored/components/navigation/MainNav';
+import { MainNav, type MainNavSlot } from '../../../restored/gamecomponents/navigation/MainNav';
 import { HeroBondsPanel, type HeroBond, type HeroBondMember } from '../../../restored/modules/hero/HeroScreen/HeroBondsPanel';
 import { HeroListPanel, type HeroCardItem } from '../../../restored/modules/hero/HeroScreen/HeroListPanel';
 

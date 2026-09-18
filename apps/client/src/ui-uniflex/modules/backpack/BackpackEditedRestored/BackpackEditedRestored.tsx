@@ -2,7 +2,7 @@ import { defineView, For, useMemo, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { BackpackItemCard, type BackpackItem, type BackpackQuality } from '../Backpack/components/BackpackItemCard';
 import { BackpackQuantityControl } from '../Backpack/components/BackpackQuantityControl';
-import { ResourceCounter } from '../../../components/resource/ResourceCounter';
+import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
 import { PanelTab } from '../../../components/tab/PanelTab';
 
 export type BackpackEditedRestoredAction = {

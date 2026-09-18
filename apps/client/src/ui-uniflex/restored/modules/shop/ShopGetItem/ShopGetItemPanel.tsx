@@ -1,7 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { ItemSlot } from '../../../components/item/ItemSlot';
+import { ItemSlot } from '../../../gamecomponents/item/ItemSlot';
 import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 

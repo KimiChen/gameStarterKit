@@ -1,7 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { EmptyState } from '../../../components/empty/EmptyState';
+import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 
 export interface AllianceHelpPanelProps {

@@ -1,7 +1,7 @@
 import { defineComponent, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
-import { ResourceCounter } from '../../../components/resource/ResourceCounter';
+import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
 import { PanelTab } from '../../../components/tab/PanelTab';
 import { ShopGetItemPanel } from '../ShopGetItem/ShopGetItemPanel';
 import { ShopCard, type ShopGoods } from './ShopCard';

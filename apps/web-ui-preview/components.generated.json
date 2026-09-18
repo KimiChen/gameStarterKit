@@ -210,7 +210,7 @@
     {
       "key": "EmptyState",
       "rootName": "EmptyState",
-      "source": "apps/client/src/ui-uniflex/components/empty/EmptyState.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/empty/EmptyState.tsx"
     },
     {
       "key": "HeroBondItem",
@@ -285,7 +285,7 @@
     {
       "key": "ItemSlot",
       "rootName": "ItemSlot",
-      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/item/ItemSlot.tsx"
     },
     {
       "key": "MailBattleRow",
@@ -295,7 +295,7 @@
     {
       "key": "MainNav",
       "rootName": "MainNav",
-      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx"
     },
     {
       "key": "NotificationBadge",
@@ -325,7 +325,7 @@
     {
       "key": "ResourceCounter",
       "rootName": "ResourceCounter",
-      "source": "apps/client/src/ui-uniflex/components/resource/ResourceCounter.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/resource/ResourceCounter.tsx"
     },
     {
       "key": "ScreenFooter",
@@ -355,7 +355,7 @@
     {
       "key": "StarRow",
       "rootName": "StarRow",
-      "source": "apps/client/src/ui-uniflex/components/star/StarRow.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/star/StarRow.tsx"
     },
     {
       "key": "WideMenuButton",
