@@ -142,6 +142,10 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(previewHtml, /提示弹窗/);
         assert.match(previewHtml, />目录</);
         assert.match(previewHtml, /bindLabeled/);
+        assert.match(previewHtml, /enableElementHit/);
+        assert.match(previewHtml, /_touchDisabled/);
+        assert.match(previewHtml, /__catalogHitsBound/);
+        assert.match(previewHtml, /Promise\.race/);
         assert.match(previewHtml, /bindPageInteractions/);
         assert.match(previewHtml, /currentId, go/);
         assert.ok(existsSync(join(out, "preview/regular.ttf")));
@@ -1014,6 +1018,9 @@ test("preview server catalog page lists merged screens", async () => {
             assert.match(html, /"id":"preview-home"/);
             assert.match(html, /bindCatalogClicks/);
             assert.match(html, /bindLabeled/);
+            assert.match(html, /enableElementHit/);
+            assert.match(html, /_touchDisabled/);
+            assert.match(html, /__catalogHitsBound/);
             assert.match(html, /bindPageInteractions/);
             assert.match(html, /currentId, go/);
             const pkg = await fetch(`${server.url}${basename(a)}/UniFlex_Prompt/package.xml`);
