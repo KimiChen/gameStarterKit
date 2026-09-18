@@ -15,6 +15,7 @@
 > - [docs/PLUGIN-REGISTRY.md](docs/PLUGIN-REGISTRY.md)：插件分享平台 plugin.gono.games 设计提案（2026-09-05；§1 机制余留问题清单与七条前置修复、§2-4 制品布局/自建服务/CLI/锁 source/plugin-api 门面；实施状态只在其 §7 回写，⛔ 不进 plan-v5）
 > - [docs/KIT.md](docs/KIT.md)：kit（地基层）设计提案（2026-09-06；可分发但须 gono 团队审核；§2 划线、§3 kit.json、§4 kit-api 与 requires.kits、§6 审核线；实施状态只在其 §9 回写，⛔ 不进 plan-v5）
 > - [docs/MMO.md](docs/MMO.md)：MMO 整合设计基线（2026-09-09；Nakama 定形、AzerothCore 定实；框架阶段 MF0–MF11 → `mmo` kit MK0–MK4 → 内容插件 MG0–MG2；四份 docs/mmo-*.md 与 docs/mmo1.md 为讨论材料；实施状态只在其 §12 回写，⛔ 不进 plan-v5）
+> - [docs/MMO-REVIEW.md](docs/MMO-REVIEW.md)：MMO.md 的开门审阅记录（2026-09-19；M01–M20 问题清单 + 阶段重排建议，是 MF1「对抗审阅消化」的输入；⛔ 审阅记录不是设计真源，结论以 MMO.md 采纳为准）
 > - [tools/creator-preview/README.md](tools/creator-preview/README.md)：Creator 预览证据生成器（CDP 驱动真实引擎预览重放登录 → 首屏 → 设置 → 插件入口，落盘截图 + report.json；⛔ 不进 verify:core）
 > - [apps/plugins/snake/README.md](apps/plugins/snake/README.md)：Snake 玩法唯一文档（素材授权台账、冻结数值、拍板记录、真引擎缺陷台账）
 > - [apps/kits/README.md](apps/kits/README.md)：kit 目录说明；首个样本 kit `arena` 见 [apps/kits/arena/README.md](apps/kits/arena/README.md)，建在其上的样本插件见 [apps/plugins/arenaShop/README.md](apps/plugins/arenaShop/README.md)
