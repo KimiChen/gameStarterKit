@@ -13,18 +13,25 @@ export interface ItemSlotProps {
 
 /** Shared 154×159 item frame (backpack / shop / hero bond). Icon and count are optional. */
 export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
+    const left = p.left;
+    const top = p.top;
     const quality = p.quality;
-    const frame = quality === 'red' ? imageRef('ui/backpack/item-red')
-        : quality === 'orange' ? imageRef('ui/backpack/item-orange')
-        : quality === 'purple' ? imageRef('ui/backpack/item-purple')
-        : quality === 'blue' ? imageRef('ui/backpack/item-blue')
-        : imageRef('ui/backpack/item-green');
+    const frameGreen = imageRef('ui/backpack/item-green');
+    const frameBlue = imageRef('ui/backpack/item-blue');
+    const framePurple = imageRef('ui/backpack/item-purple');
+    const frameOrange = imageRef('ui/backpack/item-orange');
+    const frameRed = imageRef('ui/backpack/item-red');
+    const frame = quality === 'red' ? frameRed
+        : quality === 'orange' ? frameOrange
+        : quality === 'purple' ? framePurple
+        : quality === 'blue' ? frameBlue
+        : frameGreen;
     const count = p.count ?? '';
     const showCount = count !== '';
     const showIcon = Boolean(p.icon);
     const icon = p.icon ?? imageRef('ui/backpack/diamond');
     return (
-        <view name="ItemSlot" style={{ position: 'absolute', left: p.left, top: p.top, width: 154, height: 159 }}>
+        <view name="ItemSlot" style={{ position: 'absolute', left: left, top: top, width: 154, height: 159 }}>
             <image name="ItemSlot/Frame" source={frame}
                 style={{ position: 'absolute', left: 0, top: 0, width: 154, height: 159, sizeMode: 'sliced' }} />
             <image name="ItemSlot/Icon" visible={showIcon} source={icon}

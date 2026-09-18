@@ -1,5 +1,6 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
+import { networkInterfaces } from "node:os";
 import { extname, join, resolve } from "node:path";
 import { loadScreenCatalog } from "../uniflex-screens.mjs";
 import { loadMergedScreens, resolvePreviewGroups } from "./catalog.mjs";
@@ -55,12 +56,25 @@ export async function servePreview({
         host,
         port: actualPort,
         url: `http://${host}:${actualPort}/`,
+        lanUrls: lanPreviewUrls(host, actualPort),
         screens,
         groups,
         close: () => new Promise((resolvePromise, reject) => {
             server.close((error) => (error ? reject(error) : resolvePromise()));
         }),
     };
+}
+
+function lanPreviewUrls(host, port) {
+    if (host !== "0.0.0.0" && host !== "::") return [];
+    const urls = [];
+    for (const list of Object.values(networkInterfaces())) {
+        for (const info of list ?? []) {
+            if (info.internal || (info.family !== "IPv4" && info.family !== 4)) continue;
+            urls.push(`http://${info.address}:${port}/`);
+        }
+    }
+    return [...new Set(urls)];
 }
 
 export function resolvePreviewFile(relative, { multi, assets, byName }) {

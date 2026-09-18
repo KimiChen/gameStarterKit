@@ -13,8 +13,6 @@ export interface PopupFrameProps {
     readonly visible?: boolean;
     readonly titleColor?: string;
     readonly titleOutline?: string;
-    readonly titleOutlineWidth?: number;
-    readonly titleFontSize?: number;
     readonly onClose?: () => void;
 }
 
@@ -41,8 +39,6 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
     const visible = p.visible !== false;
     const titleColor = p.titleColor ?? '#ffffff';
     const titleOutline = p.titleOutline ?? '#593d84';
-    const titleOutlineWidth = p.titleOutlineWidth ?? 2;
-    const titleFontSize = p.titleFontSize ?? 40;
     const onClose = p.onClose;
     const wide = kind === 'settings' || kind === 'profile';
     const titlePad = wide ? WIDE_TITLE_PAD : TITLE_PAD;
@@ -63,9 +59,9 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
                 <PopupBackground kind={kind} />
                 <text name="PopupFrame/Title" value={title}
                     style={{ position: 'absolute', left: titlePad, right: titlePad, top: titleTop, height: titleHeight,
-                        font: font, fontSize: titleFontSize, bold: true,
+                        font: font, fontSize: 40, bold: true,
                         color: titleColor, outlineColor: titleOutline,
-                        outlineWidth: titleOutlineWidth, horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+                        outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
                 <view name="PopupFrame/Content"
                     style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }} />
                 <CloseButton onClick={onClose} />
