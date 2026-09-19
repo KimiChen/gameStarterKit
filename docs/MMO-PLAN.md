@@ -1,12 +1,11 @@
 # MMO 实施施工单：MF0–MF11 → MK0–MK4 → MG0–MG2 逐批次
 
-> - 日期：2026-09-19。依据 [MMO.md](MMO.md) **v1.1**（2026-09-19，按 MMO-REVIEW M01–M20 修订）。基线 `7bf2b8a4`。
+> - 日期：2026-09-19。依据 [MMO.md](MMO.md) **v1.2**（2026-09-19；v1.1 按 MMO-REVIEW M01–M20 修订，v1.2 按本文 §7 细化与 D27 回写）。基线 `7bf2b8a4`。
 > - 定位：**施工单**——把 MMO.md §5–§9 的每个阶段拆成可独立提交、可独立验收的批次（`MFx-Bn` / `MKx-Bn` / `MGx-Bn`），
 >   写清每批的文件落点、机检退出条件与要跑的命令。⛔ 本文不是设计真源：任何与 MMO.md 冲突处以 MMO.md 为准；
 >   本文若发现设计缺口，只登记在 §7「施工细化」并回写 MMO.md，⛔ 不在本文另立口径。
 > - 状态回写：阶段级完成仍只回写 MMO.md §12；**批次级勾选只在本文 §9**。⛔ 不进 plan-v5。
-> - 进程拆分（lobby / game / world 三进程，2026-09-19 用户意向，四项拍板未定）不在 MMO.md 内，作为独立轨道 **PS** 列在 §5，
->   与 MF4 / MF10 的交点单独标出；未拍板前 MF4 按 MMO.md 原文（登记在 `app.config.ts`）施工，拍板后只改一处登记。
+> - 进程拆分（lobby / game / world 三进程）作为独立轨道 **PS** 列在 §5；PS0 四项已于 2026-09-19 拍板（MMO.md D27），MF4-B6 / MF8-B4 / MF10-B2 的交点已按拍板写定；本文 §7 的 P1–P7 已回写 MMO.md v1.2。
 
 ## 0. 总览：波次与并行
 
@@ -62,7 +61,7 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 
 | 批次 | 内容 | 机检退出 | 命令 |
 | --- | --- | --- | --- |
-| MF1-B1 `world-bench` 基准台 | 新 `apps/server/tools/world-bench/{run.ts,report.ts,scenarios/snake-baseline.ts}`：`@colyseus/testing` 起房 + `@colyseus/sdk` 机器人 N 个（Node 端，`test/smoke.ts` 先例）+ 脚本实体 M 个固定剧本（种子固定）；记录 tick p95 / p99、每会话出站字节、baseline 体积、进程 RSS；输出 `docs/perf/world-bench/<date>-<scenario>.json`；⛔ 不进 `verify:core`（同 `tools/m0/`）。⚠ 先确认 `scripts/verify-perf-baseline.mjs` 不 glob `docs/perf/**`，否则输出改 `docs/evidence/world-bench/`（inventory 已豁免 evidence 前缀） | 同剧本两次主要指标偏差 < 10%；种子改一位 → 结果 diff 非空（变异） | `npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario snake-baseline` |
+| MF1-B1 `world-bench` 基准台 | 新 `apps/server/tools/world-bench/{run.ts,report.ts,scenarios/snake-baseline.ts}`：`@colyseus/testing` 起房 + `@colyseus/sdk` 机器人 N 个（Node 端，`test/smoke.ts` 先例）+ 脚本实体 M 个固定剧本（种子固定）；记录 tick p95 / p99、每会话出站字节、baseline 体积、进程 RSS；输出 `docs/perf/world-bench/<date>-<scenario>.json`；⛔ 不进 `verify:core`（同 `tools/m0/`）。已核：`scripts/verify-perf-baseline.mjs` 只读 `docs/perf/client-ballMove-baseline.json`，不 glob，输出目录安全 | 同剧本两次主要指标偏差 < 10%；种子改一位 → 结果 diff 非空（变异） | `npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario snake-baseline` |
 | MF1-B2 AOI 载体实验 | 夹具 `aoiProbeFixture`（`apps/shared/schema/gameplays/aoiProbeFixture/{manifest,state}.json` `wireExposed:false` + `apps/shared/src/gameplays/aoiProbeFixture/wire.ts` + `rooms/modes/aoiProbeFixture/`）：变体 A = `client.view` / StateView（服务端 schema 4.0.27；客户端 bundle 4.0.13 含类无 `.d.ts`，实验期本地增补 `.d.ts` ⛔ 不入库），变体 B = 每会话 `sendS2C` 消息级 delta；剧本：100 实体、视野 20 / 80、重连 baseline 重建；比较编码 CPU、字节、重连成本、生成器改动面 | 两变体各有数字；私有字段塞进公共块 → 零泄露断言转红（变异）；结果 `docs/perf/world-bench/aoi-<date>.json` | 同上 `--scenario aoi-a` / `aoi-b` |
 | MF1-B3 冻结 | 引用锁：MMO.md §2.3 每个上游文件写 blob（`<仓>/<路径>@<blob-sha>`）；§7.3 回退窗口表与 §4.5 空实例策略表由「候选」改「冻结」；§11.2 冻结数字表逐行填冻结值（AOI 载体、kill criterion、`maxPlayers`、`emptyAfterMs`、`checkpointMs`、`WORLD_LEASE_TTL_MS`、`ORCH_TICK_BUDGET_MS`、`ORCH_SAY_WORLD_PER_MIN`、`PERSONA_MAX_SLOTS_HARD`、两个协议 bump 决策、`persona` 命名、主体模型口径）；框架待修改路径清单落本文 §7 | §11.2 无「候选」字样；MMO.md §12 登记 MF1 退出 | 文档提交 |
 
@@ -150,7 +149,7 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 | MF4-B3 MySQL 侧：`world_instance` + 控制权 | `schema.sql` 新表 `world_instance`（per-zone：`(server_id,instance_id) PK`、`map_id`、`line`、`authority_epoch`、`holder`、`state`、`checkpoint_rev`、**`write_seq`**（施工细化，供 MF7b 首句 CAS，避免二次迁移）、`updated_at`；`UNIQUE(server_id,map_id,line)`）+ `zoneTables.ts`；`rooms/core/control.ts`：`acquireAuthority(instance) → epoch`（CAS `authority_epoch+1`）、`acquireControl(persona, worldAddress) → controlEpoch`、`releaseControl`、`assertControl` | `test:int/world-control.test.ts`：同 persona 两处 join 只一个控制权；变异：删 CAS 谓词 → 双登转红 | `db:bootstrap`；`test:int` |
 | MF4-B4 Redis 权威租约 | `rooms/core/WorldLease.ts` + `core/infra/{keys,redisScripts,config}.ts`：`kWorldFence(sId,instanceId)` INCR 发号、`kWorldLease` `SET NX PX WORLD_LEASE_TTL_MS`、续租 `CAS_RENEW` Lua、加载期断言 `renew*3 ≤ ttl`；丢租回调 | `test:int/world-lease.test.ts`：丢租 → Draining；同实例两房争抢只一个 Active；变异：续租永不过期 → 转红 | `test:int` |
 | MF4-B5 契约 + 无头运行时 | `rooms/WorldMode.ts`（§4.5 十个钩子，⛔ 不继承 GameMode）；`rooms/core/WorldRuntime.ts`（注入时钟；固定步累积 + catch-up 上限自 `GameRoom.stepFixed / update` 抽出；命令队列；`Recovering → Active → Draining → Offline` 状态机；⛔ 不 import `colyseus`） | `world-runtime.test.ts`（假时钟、catch-up、Draining 拒新命令）；`rooms-core-headless-import.test.ts`；变异：加 `import "colyseus"` → 转红 | `test` |
-| MF4-B6 传输壳 + profile + 目录 + 登记 | `rooms/WorldRoom.ts`（`autoDispose=false`；onAuth → RoomAuth 比 `WORLD_ROOM_PROTOCOL_VERSION`；准入：ticket 占位 → 控制 CAS → `onAdmit`；会话表；喂 C2S / 按 tick 排空；丢租 → Draining；空实例三策略）；`rooms/core/WorldProfile.ts`（profile `"world"`：AccessPolicy `world-ticket`，无 StartPolicy；`assertRoomProfilesConfigured` 跳过 `kind:"world"`；与 evidence / invite-code 互斥）；`rooms/core/WorldDirectory.ts`（`(sId,mapId,line) → instance`，v1 进程内 + MySQL 行）；登记：**PS 未拍板 ⇒ `app.config.ts` `[RoomName.World]: defineRoom(WorldRoom).filterBy([...])`；PS 拍板 ⇒ 改登记在 `world.config.ts`（见 §5）** | `world-room.test.ts`、`world-empty-policy.test.ts`（三策略各一例）；变异：`emptyAfterMs` 被忽略 → unload 转红 | `test` |
+| MF4-B6 传输壳 + profile + 目录 + 登记 | `rooms/WorldRoom.ts`（`autoDispose=false`；onAuth → RoomAuth 比 `WORLD_ROOM_PROTOCOL_VERSION`；准入：ticket 占位 → 控制 CAS → `onAdmit`；会话表；喂 C2S / 按 tick 排空；丢租 → Draining；空实例三策略）；`rooms/core/WorldProfile.ts`（profile `"world"`：AccessPolicy `world-ticket`，无 StartPolicy；`assertRoomProfilesConfigured` 跳过 `kind:"world"`；与 evidence / invite-code 互斥）；`rooms/core/WorldDirectory.ts`（`(sId,mapId,line) → instance`，v1 进程内 + MySQL 行）；登记在 `world.config.ts`（PS4 占位入口，D27）：`[RoomName.World]: defineRoom(WorldRoom).filterBy([...])`；合体入口 `index.ts` 合并时带上 | `world-room.test.ts`、`world-empty-policy.test.ts`（三策略各一例）；变异：`emptyAfterMs` 被忽略 → unload 转红 | `test` |
 | MF4-B7 客户端世界传输 | 新 `apps/client/src/net/rooms/WorldRoomTransport.ts`；`matchmaking.ts` strategy `{kind:"world", mapId, line?}`；`RoomClient.ts` / `GameRoomTransport.ts` 零改动 | `apps/client/test/worldRoomTransport.test.ts` | `test:client` |
 | MF4-B8 worldFixture | `apps/shared/schema/gameplays/worldFixture/{manifest(kind:"world", profiles:["world"], wireExposed:false),state}.json` + `apps/shared/src/gameplays/worldFixture/wire.ts`（`c2s.worldFixture.move {dirX,dirY,seq}`）+ `rooms/modes/worldFixture/` + `apps/client/src/gameplay/modes/worldFixture/`；两类实体（移动体 / 静态体） | 干净树只新增文件即建房 / 准入 / 推进 / Draining；`WORLD_ROOM_PROTOCOL_VERSION=1` 进矩阵；`GAME_ROOM_PROTOCOL_VERSION` / `LOBBY_PROTOCOL_VERSION` 不变 | `verify:all`；`test:int` |
 
@@ -193,7 +192,7 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 | MF8-B1 表 | `schema.sql` 新表 `world_transfer`（per-zone；列见 MMO.md MF8；`UNIQUE(server_id, persona_id, active_key)` 终态置 NULL）+ `zoneTables.ts` | bootstrap 两遍零变 | `db:bootstrap` |
 | MF8-B2 状态机 + 凭据 | `rooms/core/transfer.ts`（每步持久 CAS；`transferId` 幂等重放同一结果；Committed 前可取消并释放预留；超时查持久状态）；`rooms/core/WorldTicket.ts` + `keys.ts`（复用 `kRoomTicket` 形态：一次性、短时、绑定 `(uid, personaId, worldAddress, controlEpoch)`，claim 为 Lua CAS） | `world-ticket.test.ts`：二次使用被拒；`world-transfer.test.ts` 状态机 | `test` |
 | MF8-B3 准入固定时序 | `rooms/WorldRoom.ts`：同步公共拒绝 → 同步占位 → 异步 claim → 同步重验 → `acquireControl` → `onAdmit`（SERVER.md §5 邀请码同形）；源房 Committed 后冻结该 persona 意图并回收实体 | 用例 | `test` |
-| MF8-B4 框架域 `world` | shared `domains/world.ts`：`world.enter {personaId, mapId} → {worldAddress, ticket}`（PS 拍板后 `worldAddress` 附 endpoint）、`world.resolveTransfer {transferId}`；端点 `websocket/world/`；向量；codegen + 指纹 | 向量测试；`LOBBY_PROTOCOL_VERSION` 不 bump | 动线 |
+| MF8-B4 框架域 `world` | shared `domains/world.ts`：`world.enter {personaId, mapId} → {worldAddress, endpoint, ticket}`（D27）、`world.resolveTransfer {transferId} → {worldAddress, endpoint, ticket}`；端点 `websocket/world/`；向量；codegen + 指纹 | 向量测试；`LOBBY_PROTOCOL_VERSION` 不 bump | 动线 |
 | MF8-B5 客户端 | `matchmaking.ts` strategy `{kind:"transfer", roomId?, ticket}`；`WorldRoomTransport.ts`：退源房 → 带凭据 join → 收 baseline → 恢复输入 | 客户端单测 | `test:client` |
 | MF8-B6 跨房唤醒 | MF6a-B2 的 `signalRoom(instanceId)` 从占位改真：`K_STREAM_PUSH kind=room` → 本进程 WorldRoom 登记表 → `onSignal`（best-effort，权威仍是表） | 用例 | `test` |
 | MF8-B7 夹具 + 故障矩阵 + 卸载闸 | worldFixture 两实例（map A / B）+ `c2s.worldFixture.portal`；注入点 `transfer-source-crash / -target-crash / -reply-lost / -client-drop` 进 `scripts/fault-matrix.config.json`；`test:int/world-transfer.test.ts`；`tools/plugin/uninstall.ts` 加「`world_transfer` 有该 kit 在途行 → 拒」 | 四注入下只激活一次、只扣一次费；预留到期释放；重连凭 `transferId` 解析目标；变异见 MMO.md MF8 | `test:faults:int`；`test:int` |
@@ -205,7 +204,7 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 | 批次 | 内容 | 机检退出 | 命令 |
 | --- | --- | --- | --- |
 | MF10-B1 分线分配 | `WorldDirectory.ts`：`(sId,mapId)` 满员开新 `line`；指定 `line`；`WORLD_MAX_LINES_PER_MAP` | 上限用例；变异：忽略上限 → 转红 | `test` |
-| MF10-B2 多进程启用路径 | `WORLD_MULTI_PROCESS=1` 启用 RedisDriver / Presence（**PS 拍板后只在 world 进程之间需要**）；`REDIS_COLYSEUS_URL` 必须 ≠ durable / coord（加载期断言）；`selectProcessIdToCreateRoom` 放置钩子（`@colyseus/core` `Server.d.ts:35` 已确认存在） | 断言红 / 绿用例 | `test` |
+| MF10-B2 多进程启用路径 | `WORLD_MULTI_PROCESS=1` 启用 RedisDriver / Presence（只在多个 world 进程之间需要，D27）；`REDIS_COLYSEUS_URL` 必须 ≠ durable / coord（加载期断言）；`selectProcessIdToCreateRoom` 放置钩子（`@colyseus/core` `Server.d.ts:35` 已确认存在） | 断言红 / 绿用例 | `test` |
 | MF10-B3 运维只读面 | 非生产挂载 HTTP：世界房 / 分线 / 在途交接 / 事件积压（shared `protocol/http.ts` 契约表 + `http/admin/world*.ts` + `codegen:http`） | 读出积压 | `codegen:http` |
 | MF10-B4 多进程实验报告 | `tools/world-bench/multi-process.ts`（`colyseus-redis-probe.ts` 形态）：节点退出 → 租约过期 → 新节点 Recovering 接管；输出报告到 `docs/perf/world-bench/`（⛔ 非首版闸） | 报告存在并登记偏差 | `exec tsx -- tools/world-bench/multi-process.ts` |
 
@@ -269,11 +268,11 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 
 | 批次 | 内容 | 与 MMO 的交点 |
 | --- | --- | --- |
-| PS0 拍板 | ① 本地 `dev` 缺省合体还是三进程；② 端点发现走游戏 HTTP `/version` 字段还是反代路径；③ `room.resolve` 的房间快照删掉还是写进 Redis lease；④ world 进程是否现在占位 | 未拍板前 MF4-B6 按 `app.config.ts` 登记 |
-| PS1 入口拆分 | `apps/server/src/entries/{lobby,game}.ts` + `{lobby,game}.config.ts`；共用 `bootstrapProcess()`（lifecycle 登记、后台循环按进程装配：mailwake / kick / 角色修复 → lobby，结算流深度告警 → game，监控与 shutdown 聚合器每进程一份）；`index.ts` / `app.config.ts` 改为合并三份 config 的合体入口；`LOBBY_PORT` / `GAME_PORT`（缺省 = `PORT`）；`package.json` 加 `start:lobby` / `start:game`；`docs/inventory.json` 登记新入口；int helpers / `protocol-version-matrix` / `test/smoke.ts`（两个 URL）改 boot 对应 config | MF3 的 rooms/core 抽取与本批无冲突；建议 PS1 在 MF3 之后、MF4 之前落地 |
+| PS0 拍板（✅ 2026-09-19，MMO.md D27） | ① 本地 `dev` 缺省合体，`dev:split` 另给；② 端点发现走游戏 HTTP `/version` 字段，反代路径为部署选项；③ 删 `room.resolve` 的 matchmaker 房间快照；④ world 入口先占位（入口 + `WORLD_PORT` + 空 config），房间等 MF4 | MF4-B6 登记在 `world.config.ts` |
+| PS1 入口拆分 | `apps/server/src/entries/{lobby,game}.ts` + `{lobby,game}.config.ts`；共用 `bootstrapProcess()`（lifecycle 登记、后台循环按进程装配：mailwake / kick / 角色修复 → lobby，结算流深度告警 → game，监控与 shutdown 聚合器每进程一份）；`index.ts` / `app.config.ts` 改为合并三份 config 的合体入口；`LOBBY_PORT` / `GAME_PORT`（缺省 = `PORT`）；`package.json` 加 `start:lobby` / `start:game` 与 `dev:split`（并发起三进程；`dev` 缺省仍合体）；`docs/inventory.json` 登记新入口；int helpers / `protocol-version-matrix` / `test/smoke.ts`（两个 URL）改 boot 对应 config | MF3 的 rooms/core 抽取与本批无冲突；建议 PS1 在 MF3 之后、MF4 之前落地 |
 | PS2 端点发现 | 游戏 HTTP `/version` 加 `lobbyWs / gameWs / worldWs`（shared `protocol/http.ts` + `codegen:http`）；客户端 `serverSession.getCurrentLobbyWsUrl()` / `getCurrentWorldWsUrl()`（缺省回落 `gameWsUrl`）；`loginFlow.ts` / `LoginLogic.ts` 改用 lobby 端点 | MF8-B4 `world.enter` 返回 `worldAddress` 时附 world 端点 |
-| PS3 解耦 `room.resolve` | 按 ③：删 `matchMaker.driver.findOne` 快照，或 GameRoom 把 `{clients,maxClients,locked}` 写进邀请码 lease | — |
-| PS4 world 入口 | `entries/world.ts` + `world.config.ts` + `WORLD_PORT`；MF4-B6 改登记于此；MF10-B2 的 RedisDriver 只在多个 world 进程之间；`WorldDirectory` 记录实例所在节点 publicAddress | MMO.md MF4 / MF10 两行回写口径（v1.2） |
+| PS3 解耦 `room.resolve` | 删 `matchMaker.driver.findOne` 快照（③ 已拍板）：`room.resolve` 只做 lease 读取 + 凭据签发，`ROOM_FULL` / `ROOM_START_IN_PROGRESS` 改由 GameRoom admission 给出；`private-room.test.ts` 相关期望同批改 | `core/rooms/privateRoomRpc.ts` |
+| PS4 world 入口占位（④ 已拍板） | `entries/world.ts` + `world.config.ts`（空 rooms）+ `WORLD_PORT`，与 PS1 同批先占位；MF4-B6 登记于此；MF10-B2 的 RedisDriver 只在多个 world 进程之间；`WorldDirectory` 记录实例所在节点 publicAddress | MMO.md v1.2 已回写（§4.2、MF4 / MF8 / MF10 行） |
 | PS5 snake 皮肤缓存 | `rooms/modes/snake/cosmeticProfile.ts` 的进程内 Map 在拆进程后跨进程失效：snake 房每次 join 从 Redis 重新水合，或 Map 只做请求内缓存 | 与 MMO 无关，PS1 的必做项 |
 
 ## 6. 命令速查
@@ -307,13 +306,13 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 
 | # | 细化 | 回写 |
 | --- | --- | --- |
-| P1 | `world_instance` 在 MF4-B3 就带 `write_seq` 列（MF7b 首句 CAS 用），避免二次迁移 | MMO.md MF4 表行 |
-| P2 | `world_transfer` 在途闸从 MF7b 挪到 MF8-B7（表在 MF8 才建） | MMO.md MF7b `tools/plugin/uninstall.ts` 行 |
-| P3 | `ServerNotice` 的 `/admin/notice` 是新 HTTP 端点，需改 shared `protocol/http.ts` 契约表（手写）+ `codegen:http` | MMO.md §6.7 投递总线行注明 |
-| P4 | MF6b 的 core 世界 token 落在 `apps/shared/src/protocol/messages.ts` 的 core 表（codegen 从这里读 CORE_C2S / CORE_S2C）+ `test/wire-vectors/core.ts` | MMO.md §6.5.1 |
-| P5 | `renewLeaseGuard`（`core/infra/lease.ts` 既有）即 `withKitWorkerTx` 的首句实现，⛔ 不另写 SQL | MMO.md MF7a 行可注明 |
-| P6 | `world-bench` 输出目录以 `scripts/verify-perf-baseline.mjs` 是否 glob 为准，必要时改 `docs/evidence/world-bench/` | MMO.md MF1 行 |
-| P7 | PS 拍板后：MF4-B6 登记点、MF8-B4 `world.enter` 返回端点、MF10-B2 RedisDriver 范围三处改口径 | MMO.md v1.2 |
+| P1 | `world_instance` 在 MF4-B3 就带 `write_seq` 列（MF7b 首句 CAS 用），避免二次迁移 | ✅ v1.2 MF4 `schema.sql` 行 |
+| P2 | `world_transfer` 在途闸从 MF7b 挪到 MF8-B7（表在 MF8 才建） | ✅ v1.2 MF7b / MF8 行 |
+| P3 | `ServerNotice` 的 `/admin/notice` 是新 HTTP 端点，需改 shared `protocol/http.ts` 契约表（手写）+ `codegen:http` | ✅ v1.2 §6.7 |
+| P4 | MF6b 的 core 世界 token 落在 `apps/shared/src/protocol/messages.ts` 的 core 表（codegen 从这里读 CORE_C2S / CORE_S2C）+ `test/wire-vectors/core.ts` | ✅ v1.2 §6.5.1 |
+| P5 | `renewLeaseGuard`（`core/infra/lease.ts` 既有）即 `withKitWorkerTx` 的首句实现，⛔ 不另写 SQL | ✅ v1.2 MF7a 行 |
+| P6 | `world-bench` 输出目录 `docs/perf/world-bench/` 已核安全（`verify-perf-baseline.mjs` 只读 `client-ballMove-baseline.json`） | ✅ v1.2 MF1 行 |
+| P7 | PS 拍板后：MF4-B6 登记点、MF8-B4 `world.enter` 返回端点、MF10-B2 RedisDriver 范围三处改口径 | ✅ v1.2 §4.2 新段 + D27 + MF4 / MF8 / MF10 行 + §6.3 注入点 |
 
 ## 8. 风险与看护点
 
@@ -321,7 +320,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - **MF2 门①**：主账主键迁移不可逆；发布前 drain outbox 的 SOP 必须先写（MF2-B6）再执行。
 - **MF5a-B4 `roster` 开关**触碰生成物 `GameRoomState.ts`（受保护生成物，只经 `codegen:gameplays` 重生成）；「既有 mode 生成物字节不变」是硬闸。
 - **上游许可**：AzerothCore AGPL——只对照结构，零行代码 / SQL；提交信息写对照。
-- **PS 与 MF4 的时序**：若 PS 在 MF4 之后才拍板，`WorldRoom` 登记从 `app.config.ts` 挪到 `world.config.ts` 只是一处改动，但 `docs/inventory.json` 与 int helpers 要同批。
+- **PS 与 MF4 的时序**：PS1 + PS4（入口拆分与 world 占位）在 MF3 之后、MF4 之前落地，MF4-B6 直接登记进 `world.config.ts`；`docs/inventory.json` 与 int helpers 随 PS1 同批。
 - **数字冻结**：MF1-B3 之前任何批次不得把 §11.2 候选值写进代码常量（用 config 项 + 缺省，冻结后再钉）。
 
 ## 9. 批次状态（只在本文回写；阶段级完成回写 MMO.md §12）
@@ -343,4 +342,4 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [ ] MF11-B1 [ ] MF11-B2 [ ] MF11-B3 [ ] MF11-B4 [ ] MF11-B5
 - [ ] MK0-B1…B6 [ ] MK1-B1…B6 [ ] MK2-B1…B3 [ ] MK3-B1…B3 [ ] MK4-B1…B6
 - [ ] MG0-B1…B3 [ ] MG1-B1…B2 [ ] MG2-B1…B3
-- [ ] PS0 [ ] PS1 [ ] PS2 [ ] PS3 [ ] PS4 [ ] PS5
+- [x] PS0（2026-09-19 拍板 → MMO.md D27） [ ] PS1 [ ] PS2 [ ] PS3 [ ] PS4 [ ] PS5
