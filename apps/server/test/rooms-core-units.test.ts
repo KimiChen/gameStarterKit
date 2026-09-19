@@ -14,6 +14,7 @@ import { test } from "node:test";
 import {
     C2S,
     CORE_S2C_TOKENS,
+    defineS2C,
     ErrorCode,
     GAME_ROOM_PROTOCOL_VERSION,
     GAMEPLAY_CATALOG,
@@ -30,7 +31,7 @@ import { MessageBudget } from "../src/rooms/core/MessageBudget";
 import { WireDispatcher, defaultWireRateCost, type WireDispatcherHost } from "../src/rooms/core/WireDispatcher";
 import { ReconnectGrace, RECONNECT_GRACE_S } from "../src/rooms/core/ReconnectGrace";
 import { RoomAuth, createRoomAuth, type RoomAuthDeps } from "../src/rooms/core/RoomAuth";
-import { S2CPorts } from "../src/rooms/core/S2CPorts";
+import { S2CPorts, assertPerSessionCatalogConsistent, isPerSessionToken } from "../src/rooms/core/S2CPorts";
 
 const rejectsWithCode = (code: number) => (error: unknown): boolean =>
     error instanceof Error && error.message.includes(String(code));
@@ -213,4 +214,31 @@ test("S2CPorts：disposed 短路、validator 先于 transport、token 闸按注�
     assert.equal(sent.length, 3);
     assert.equal(broadcasts.length, 1);
     const _type: C2SType = C2S.Ping; void _type;
+});
+
+// ── MMO MF5a-B3：perSession token 的广播闸（docs/MMO.md §5.4 MF5a；变异：删 broadcastToken 的 perSession 判定 → 本例转红）──
+
+test("S2CPorts：perSession token 广播 fail-closed（发送期，先于 owner 闸）；按会话 sendToken 照常；生成表 ⇄ 运行时 token 启动期一致", () => {
+    const broadcasts: Array<[string, unknown]> = [];
+    const ports = new S2CPorts({ isDisposed: () => false, modeId: () => GameplayModeId.BallMove, broadcast: (t, w) => { broadcasts.push([t, w]); } });
+    const identity = (input: unknown): Record<string, unknown> => input as Record<string, unknown>;
+    const enter = defineS2C("s2c.fx.enter", identity, { perSession: true });
+    assert.equal(isPerSessionToken(enter as GameplayS2CToken<unknown>), true);
+    assert.throws(() => ports.broadcastToken(enter, { id: "a" }), /perSession token，⛔ 不得广播/u);
+    assert.deepEqual(broadcasts, [], "被拒的广播 ⛔ 不进扇出");
+    // 全房 token 不受影响（owner 闸照旧）
+    const own = gameplayS2CTokens.ballMove["s2c.skillResult"];
+    assert.equal(isPerSessionToken(own as unknown as GameplayS2CToken<unknown>), false);
+    ports.broadcastToken(own, { casterId: "a", skillId: 1, damage: 1 });
+    assert.equal(broadcasts.length, 1);
+
+    // 启动期断言：生成表与运行时 token 逐条一致才放行
+    assert.doesNotThrow(() => assertPerSessionCatalogConsistent());
+    const plain = defineS2C("s2c.fx.plain", identity) as unknown as GameplayS2CToken<unknown>;
+    const update = defineS2C("s2c.fx.update", identity, { perSession: true, coalesceKey: "id" }) as unknown as GameplayS2CToken<unknown>;
+    assert.doesNotThrow(() => assertPerSessionCatalogConsistent({ "s2c.fx.update": "id" }, { fx: { "s2c.fx.plain": plain, "s2c.fx.update": update } }));
+    assert.throws(() => assertPerSessionCatalogConsistent({}, { fx: { "s2c.fx.update": update } }), /s2c\.fx\.update 不一致/u, "token 声明 perSession 但表缺席");
+    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.plain": null }, { fx: { "s2c.fx.plain": plain } }), /不一致/u, "表列了、token 没声明");
+    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.update": null }, { fx: { "s2c.fx.update": update } }), /不一致/u, "coalesceKey 不同");
+    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.ghost": null }, { fx: {} }), /运行时不存在的 token/u);
 });

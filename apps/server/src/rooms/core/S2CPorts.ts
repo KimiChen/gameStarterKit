@@ -4,20 +4,61 @@
  * dir / owner 闸 + `token.validate`。⛔ 任何绕过本文件直接 `client.send` / `room.broadcast` 的路径都是暗道。
  *
  * host 是传输壳（GameRoom / MF4 WorldRoom）注入的最小接缝：disposed 短路、当前 mode id（owner 闸）、
- * 真正的房间广播落点。MF5a 在这里给 `broadcast` 加 perSession token 的 fail-closed 闸。
+ * 真正的房间广播落点。
+ *
+ * **perSession 闸（MMO MF5a-B3）**：`defineS2C(..., { perSession: true })` 的 token 只能按会话 `sendToken`（GameRoom 经
+ * OutboundQueue 每 tick 排空），`broadcastToken` 对它 fail-closed——发送期按 token 自身 `perSession` 与生成表
+ * `GAME_WIRE_PER_SESSION` 双判（任一命中即拒）；启动期（本模块加载时）断言生成表与运行时 token 逐条一致，
+ * 陈旧的生成物（改了 wire.ts 没跑 codegen）在进程起来那一刻就炸，⛔ 不等到第一条广播。
  */
 import type { Client } from "colyseus";
 import {
     ErrorCode,
     ErrorMessage,
     GAME_WIRE_OWNERS,
+    GAME_WIRE_PER_SESSION,
     S2C,
+    gameplayS2CTokens,
     validateS2CPayload,
     type ErrorCodeType,
     type GameplayS2CToken,
     type IErrorRes,
     type S2CType,
 } from "@game/shared";
+
+type PerSessionCatalog = Readonly<Partial<Record<string, string | null>>>;
+type S2CTokenTable = Readonly<Record<string, Readonly<Record<string, GameplayS2CToken<unknown>>>>>;
+
+/**
+ * 启动期断言：生成表 `GAME_WIRE_PER_SESSION` 必须与运行时 token 的 `perSession` / `coalesceKey` 逐条一致
+ * （两者同源于 wire.ts，只会因生成物陈旧而分叉）。不一致 ⇒ throw，模块加载即失败。
+ */
+export function assertPerSessionCatalogConsistent(
+    catalog: PerSessionCatalog = GAME_WIRE_PER_SESSION,
+    tokens: S2CTokenTable = gameplayS2CTokens as unknown as S2CTokenTable,
+): void {
+    const seen = new Set<string>();
+    for (const [modeId, table] of Object.entries(tokens)) {
+        for (const token of Object.values(table)) {
+            const listed = Object.prototype.hasOwnProperty.call(catalog, token.type);
+            const key = listed ? (catalog[token.type] ?? null) : null;
+            if (token.perSession !== listed || token.coalesceKey !== key) {
+                throw new Error(`[S2CPorts] perSession 生成表与 ${modeId} 的 ${token.type} 不一致（表: ${listed ? String(key) : "缺席"}；`
+                    + `token: perSession=${String(token.perSession)} coalesceKey=${String(token.coalesceKey)}）——跑 codegen:gameplays`);
+            }
+            seen.add(token.type);
+        }
+    }
+    for (const type of Object.keys(catalog)) {
+        if (!seen.has(type)) throw new Error(`[S2CPorts] perSession 生成表含运行时不存在的 token ${type}——跑 codegen:gameplays`);
+    }
+}
+assertPerSessionCatalogConsistent();
+
+/** 发送期判据：token 自身声明或生成表命中，任一为真即是 perSession（双判 fail-closed）。 */
+export function isPerSessionToken(token: GameplayS2CToken<unknown>): boolean {
+    return token.perSession === true || Object.prototype.hasOwnProperty.call(GAME_WIRE_PER_SESSION, token.type);
+}
 
 export interface S2CPortsHost {
     isDisposed(): boolean;
@@ -75,8 +116,15 @@ export class S2CPorts {
         this.deliver(client, token.type, wire);
     }
 
+    /**
+     * 全房广播；perSession token 在这里 fail-closed（先于 owner 闸——这是 token 的结构属性，与谁发无关）。
+     * 视野内 / 本人私有流只能按会话走 `sendToken`（GameRoom 经 OutboundQueue 排空）。
+     */
     broadcastToken<TPayload>(token: GameplayS2CToken<TPayload>, payload: TPayload): void {
         if (this.host.isDisposed()) return;
+        if (token && typeof token === "object" && isPerSessionToken(token as GameplayS2CToken<unknown>)) {
+            throw new TypeError(`[GameRoom] ${String(token.type)} 是 perSession token，⛔ 不得广播——按会话 sendS2C（OutboundQueue）`);
+        }
         this.assertModeToken(token);
         const wire = token.validate(payload);
         this.host.broadcast(token.type, wire);
