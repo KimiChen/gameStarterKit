@@ -1,6 +1,6 @@
 /**
  * 错误码 —— 双端共享。
- * 0 为成功；1xxx 通用；2xxx 登录/账号；3xxx 房间/对局。
+ * 0 为成功；1xxx 通用；2xxx 登录/账号；3xxx 房间/对局；4xxx persona / 资产主体 / 世界控制权（MMO MF2 起）。
  */
 export const ErrorCode = {
     Ok: 0,
@@ -29,6 +29,13 @@ export const ErrorCode = {
     CharCreateFailed: 3006,
     /** 同一账号已在本对局房（禁占双座：证据里同 userId 出现两个名次会污染战绩） */
     AlreadyInRoom: 3007,
+
+    /** 该账号在该 kit 的这个槽位已有 persona（框架 `persona` 表 UNIQUE(server_id, user_id, kit_id, slot)；MMO MF2） */
+    PersonaSlotTaken: 4001,
+    /** persona 不存在 / 不属于该账号 / 不在本区（MMO MF2） */
+    PersonaNotFound: 4002,
+    /** 控制权冲突：该 persona 的 control_epoch 已被别处抬高（MMO MF4 `assertControl` CAS 0 行；MF2-B1 先登记） */
+    ControlConflict: 4003,
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -48,6 +55,9 @@ export const ErrorMessage: { [K in ErrorCodeType]: string } = {
     [ErrorCode.WrongServer]: "该区服不可进入，请重新选服",
     [ErrorCode.CharCreateFailed]: "进入失败，请重试",
     [ErrorCode.AlreadyInRoom]: "该账号已在本对局中",
+    [ErrorCode.PersonaSlotTaken]: "该角色槽位已被占用",
+    [ErrorCode.PersonaNotFound]: "角色不存在",
+    [ErrorCode.ControlConflict]: "角色已在别处登录",
 };
 
 export const ERROR_CODE_VALUES: readonly ErrorCodeType[] = Object.values(ErrorCode);
