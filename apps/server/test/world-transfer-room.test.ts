@@ -11,8 +11,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { CloseCode } from "colyseus";
-import { C2S, ErrorCode, S2C, WorldPhase, type IErrorRes, type IWorldFixtureTransfer } from "@game/shared";
+import { C2S, ErrorCode, LobbyPush, S2C, WorldPhase, type IErrorRes, type IWorldFixtureTransfer } from "@game/shared";
 import { MemoryCheckpointPort, buildCheckpointEnvelope } from "../src/rooms/core/CheckpointPort";
+import { deliverPushEntry, encodePushEntries, parsePushFields, registerRoomSignal, type PublishPushInput } from "../src/core/push/pushBus";
 import { WorldCheckpointer } from "../src/rooms/core/WorldCheckpoint";
 import { MemoryWorldTicketPort, worldTicketHash } from "../src/rooms/core/WorldTicket";
 import { WORLD_FIXTURE_CHECKPOINT_SCHEMA, type WorldFixturePersonaSnapshot } from "./fixtures/worldFixtureMode";
@@ -38,20 +39,29 @@ function cluster() {
     const transfers = new FakeTransfers(tickets);
     let eventCounter = 0;
     control.seedPersona(P_A, U_A);
+    /** MF8-B6：跨房唤醒记录（发布 + 本进程登记表） */
+    const published: PublishPushInput[] = [];
+    const signals = new Map<string, (type: string, data: unknown) => void>();
+    const registrations: string[] = [];
     const room = async (mapId: string): Promise<Harness> => {
         const checkpointer = new WorldCheckpointer(capability, 0, {
             withWorldTx: fakeWorldTxRunner(control, control.log, events) as never, sql: fakeSql, eventId: () => `wev_${String(++eventCounter).padStart(12, "0")}`,
         });
         const h = harness({
             control, leases, tickets, transfers, world: { emptyPolicy: "run", emptyAfterMs: 100_000, checkpointMs: 100_000 },
-            modeOptions: { staticCount: 0, checkpoint: capability }, room: { checkpointer },
+            modeOptions: { staticCount: 0, checkpoint: capability },
+            room: {
+                checkpointer,
+                publish: async (input) => { published.push(input); return 1; },
+                registerSignal: (instanceId, _sId, onSignal) => { signals.set(instanceId, onSignal); registrations.push(`on:${instanceId}`); return () => { signals.delete(instanceId); registrations.push(`off:${instanceId}`); }; },
+            },
         });
         await h.room.onCreate(joinOptions({ mapId }));
         return h;
     };
     /** world.enter 同形：首次进世界凭据（绑定当前 controlEpoch）。 */
     const enterTicket = (mapId: string, controlEpoch: number) => tickets.issue({ sId: 0, uid: U_A, personaId: P_A, worldAddress: `s0/${mapId}/0`, controlEpoch, transferId: null, nowMs: 0 });
-    return { control, leases, port, tickets, transfers, room, enterTicket };
+    return { control, leases, port, tickets, transfers, room, enterTicket, published, signals, registrations };
 }
 
 test("准入固定时序：claim 绑定与一次性、claim 后失败 release 同凭据可重试、seat 后重放拒、控制权 CAS 输后凭据随 epoch 作废", async () => {
@@ -182,4 +192,40 @@ test("Committed 前失败 ⇒ cancelled + 解冻 + mode 收到失败；在途中
     assert.equal(a.room.seatedCount, 1);
     assert.equal(a.room.phase, WorldPhase.Active);
     await a.room.onDispose();
+});
+
+test("跨房唤醒（MF8-B6）：Committed 后向目标分线发 kind=room 的 world.transfer（best-effort）；目标房 Active 起登记本进程 signal 表 → mode.onSignal；Offline / dispose 注销；总线条目经 registerRoomSignal 落地", async () => {
+    const c = cluster();
+    const a = await c.room("m1");
+    const b = await c.room("m2");
+    assert.deepEqual(c.registrations, ["on:wi_m1_0", "on:wi_m2_0"], "Active 起登记");
+    const t1 = c.enterTicket("m1", 0);
+    const alice = fakeClient("sa", P_A, U_A, { ticketSha256: t1.ticketSha256 });
+    await join(a.room, alice);
+    dispatch(a.room, C2S.WorldFixturePortal, alice, { toMap: "m2" });
+    a.room.advance(50);
+    await settle();
+    const row = [...c.transfers.rows.values()][0]!;
+    assert.deepEqual(c.published, [{ kind: "room", sId: 0, instanceId: "wi_m2_0", type: LobbyPush.WorldTransfer, data: { transferId: row.transferId, personaId: P_A } }], "唤醒目标分线（⛔ 带凭据）");
+    // 模拟总线到达目标进程：登记表 → runtime.signal → mode.onSignal
+    c.signals.get("wi_m2_0")!(LobbyPush.WorldTransfer, { transferId: row.transferId, personaId: P_A });
+    assert.ok(b.mode.__probe.log.includes(`signal:${LobbyPush.WorldTransfer}`), "目标房 mode 收到唤醒信号");
+    // 真总线路径：encode → parse → deliverPushEntry → registerRoomSignal（data 先过 validator）
+    const seen: unknown[] = [];
+    const off = registerRoomSignal("wi_bus_0", 0, (type, data) => { seen.push([type, data]); });
+    const fields = encodePushEntries({ kind: "room", sId: 0, instanceId: "wi_bus_0", type: LobbyPush.WorldTransfer, data: { transferId: row.transferId, personaId: P_A } }, 1_700_000_000_000)[0]!;
+    const entry = parsePushFields(fields);
+    assert.ok(entry);
+    assert.deepEqual(await deliverPushEntry(entry, null, 1_700_000_000_000), { outcome: "delivered", delivered: 1 });
+    assert.deepEqual(seen, [[LobbyPush.WorldTransfer, { transferId: row.transferId, personaId: P_A }]]);
+    off();
+    // 发布失败只记日志（best-effort），交接照常 Committed
+    assert.equal(row.state, "committed");
+    // Offline / dispose 注销
+    await b.room.onDispose();
+    assert.equal(c.signals.has("wi_m2_0"), false);
+    assert.ok(c.registrations.includes("off:wi_m2_0"));
+    a.timers.fire();
+    await a.room.onDispose();
+    assert.ok(c.registrations.includes("off:wi_m1_0"));
 });

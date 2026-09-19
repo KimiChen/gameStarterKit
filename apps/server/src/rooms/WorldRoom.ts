@@ -34,6 +34,7 @@ import {
     GAMEPLAY_CATALOG,
     GamePhase,
     KICK_CLOSE_CODE,
+    LobbyPush,
     S2C,
     TICK_MS,
     WORLD_ROOM_PROTOCOL_VERSION,
@@ -54,6 +55,7 @@ import {
 import { NODE_ID, WORLD_TRANSFER_RESERVE_MS, normalizeSId } from "../core/infra/config";
 import { ControlConflictError, PersonaNotFoundError, WorldNotAuthoritativeError, joinRefused } from "../core/errors";
 import { trackTask } from "../core/infra/lifecycle";
+import { publishPush, registerRoomSignal, type PublishPushInput } from "../core/push/pushBus";
 import { getChatPolicy, type ChatPolicyContext } from "../core/chat/policy";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
 import { catalogModeVersion, createRoomAuth, type RoomAuthResult } from "./core/RoomAuth";
@@ -156,6 +158,10 @@ export interface WorldRoomRuntimeOptions {
     readonly tickets?: WorldTicketClaimPort;
     /** 交接持久面（MF8-B3）：状态机 + 凭据签发；缺省 SQL + Redis。 */
     readonly transfers?: WorldTransferPort;
+    /** 跨房唤醒（MF8-B6）：Committed 后向目标分线发 `K_STREAM_PUSH kind=room`（best-effort）；缺省 publishPush。 */
+    readonly publish?: (input: PublishPushInput) => Promise<number>;
+    /** 本进程 room signal 登记表（MF8-B6）：Active 起登记、Offline / dispose 注销；缺省 registerRoomSignal。 */
+    readonly registerSignal?: (instanceId: string, sId: number, onSignal: (type: string, data: unknown) => void) => () => void;
     /** 租约 / 权威持有者标识（缺省 `<roomId>@<NODE_ID>`）。 */
     readonly holder?: string;
     readonly drainGraceMs?: number;
@@ -259,6 +265,8 @@ export class WorldRoom extends Room {
         readonly directory: WorldDirectoryPort;
         readonly tickets: WorldTicketClaimPort;
         readonly transfers: WorldTransferPort;
+        readonly publish: (input: PublishPushInput) => Promise<number>;
+        readonly registerSignal: (instanceId: string, sId: number, onSignal: (type: string, data: unknown) => void) => () => void;
         readonly holder: string | null;
         readonly drainGraceMs: number;
         readonly timers: WorldRoomTimers;
@@ -269,6 +277,8 @@ export class WorldRoom extends Room {
     private checkpointer: WorldCheckpointer | null = null;
     /** 落盘串行链（批次按 rev 顺序落库；失败回滚不影响后续批次）。 */
     private checkpointChain: Promise<void> = Promise.resolve();
+    /** MF8-B6：本进程 room signal 登记的注销句柄（Active 起登记；Offline / dispose 注销）。 */
+    private unregisterSignal: (() => void) | null = null;
     /** MF3 共享层：dispatcher（含每会话预算）/ 出站口 / 重连宽限；壳只消费。 */
     private readonly dispatcher: WireDispatcher;
     private readonly ports: S2CPorts;
@@ -309,6 +319,8 @@ export class WorldRoom extends Room {
             directory: options.directory ?? worldDirectory,
             tickets: options.tickets ?? redisWorldTicketPort(),
             transfers: options.transfers ?? sqlWorldTransferPort,
+            publish: options.publish ?? ((input) => publishPush(input)),
+            registerSignal: options.registerSignal ?? ((instanceId, sId, onSignal) => registerRoomSignal(instanceId, sId, onSignal as never)),
             holder: options.holder ?? null,
             drainGraceMs: options.drainGraceMs ?? WORLD_DRAIN_GRACE_MS,
             timers: options.timers ?? defaultTimers,
@@ -458,6 +470,11 @@ export class WorldRoom extends Room {
             throw error;
         }
         lease.start((reason) => this.drain(`lease-${reason}`));
+        // MF8-B6：跨房唤醒落地——总线 kind=room 条目经本进程登记表进 mode.onSignal（best-effort 提示，权威仍在 world_transfer 表）
+        this.unregisterSignal = this.deps.registerSignal(this.instanceId, sId, (type, data) => {
+            if (this.disposed || !this.runtime) return;
+            this.runtime.signal(type, data);
+        });
         this.creationConfigured = true;
         if (!this.deps.manualTick) this.setSimulationInterval((dt) => { this.advance(dt); }, this.fixedStepMs);
         console.log(`[WorldRoom ${this.roomId}] 创建 ${worldAddressOf(sId, this.mapId, this.line)} instance=${this.instanceId} epoch=${this.authorityEpoch} holder=${holder}`);
@@ -627,6 +644,9 @@ export class WorldRoom extends Room {
             });
             await this.deps.transfers.commit(this.sId, transferId, { controlEpoch: info.controlEpoch, ticketSha256: issued.ticketSha256 });
             console.log(`[WorldRoom ${this.roomId}] 交接 ${transferId} Committed：${session} persona=${info.personaId} → ${worldAddress}`);
+            // MF8-B6 跨房唤醒（best-effort：XADD 失败只记日志，权威仍在表）
+            void this.deps.publish({ kind: "room", sId: this.sId, instanceId: targetRow.instanceId, type: LobbyPush.WorldTransfer, data: { transferId, personaId: info.personaId } })
+                .catch((error: unknown) => { console.warn(`[WorldRoom ${this.roomId}] 交接 ${transferId} 唤醒目标失败（best-effort）`, error); });
             return { transferId, worldAddress, toMap, toLine, toInstance: targetRow.instanceId, ticket: issued.ticket, expiresAt: issued.expiresAt };
         } catch (error) {
             runtime.setFrozen(session, false);
@@ -682,6 +702,8 @@ export class WorldRoom extends Room {
         // 固定步 interval：Colyseus 的 dispose 会清，直构 / 回放房（未经 __init）也必须清——否则 zombie 房的 interval 把进程钉住
         if (!this.deps.manualTick) { try { this.setSimulationInterval(undefined as never); } catch { /* 未起 interval */ } }
         const runtime = this.runtime;
+        this.unregisterSignal?.();
+        this.unregisterSignal = null;
         this.disposePromise = (async () => {
             try {
                 if (runtime && runtime.phase !== WorldPhase.Offline) {
@@ -858,6 +880,8 @@ export class WorldRoom extends Room {
         if (this.finalizing) return;
         this.finalizing = true;
         this.clearDrainTimer();
+        this.unregisterSignal?.();
+        this.unregisterSignal = null;
         const runtime = this.runtime;
         const seated = runtime ? runtime.sessions() : [];
         if (runtime && runtime.phase !== WorldPhase.Offline) {
