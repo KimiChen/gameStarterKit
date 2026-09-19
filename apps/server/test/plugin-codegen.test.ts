@@ -2001,3 +2001,17 @@ test("MF9 贡献点闸：越界路径（别的插件目录 / 生成物形态）�
   }
 });
 
+test("MF9 kit fragments：kit.json.fragments 声明的每个 fragment 必须有 apps/kits/<id>/fragments/<name>.state.json（缺文件拒）", () => {
+  const fixtures = fixtureCollector();
+  try {
+    const { root } = fixtures.create();
+    addFixtureKit(root, { ...KFIX_KIT_JSON, fragments: ["spot"] });
+    assert.throws(() => readViewCatalog(root), /apps\/kits\/kfix\/fragments\/spot\.state\.json/u);
+    writeJson(root, "apps/kits/kfix/fragments/spot.state.json", { schemaVersion: 1, root: [] });
+    assert.doesNotThrow(() => readViewCatalog(root));
+    assert.match(fs.readFileSync(path.join(root, "apps/kits/kfix/kit.json"), "utf8"), /"fragments"/u);
+  } finally {
+    fixtures.dispose();
+  }
+});
+

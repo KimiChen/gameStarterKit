@@ -1593,3 +1593,87 @@ test("CLI 沿用惯例：--check、--root <dir>/--root=<dir>、--allow-delete；
   // --check 是只读契约，⛔ 不接受删除授权
   assert.throws(() => parseCli(["--check", "--allow-delete", "idle"]), /read-only/);
 });
+
+// ── MF9-B3：kit state fragment（docs/MMO.md MF9 / docs/MMO-PLAN.md MF9-B3） ──────────────────────────
+// 变异验证：stateRenderer.withInjectedFragments 跳过 kit fragment 的注入 → 「字段注入 root / player 各恰一次」转红。
+
+const SPOT_FRAGMENT = {
+  schemaVersion: 1,
+  root: [{ name: "spotOwner", kind: "string", default: "", minLength: 0, maxLength: 64, description: "Owner of the contested spot" }],
+  player: [{ name: "spotScore", kind: "integer", default: 0, min: 0, description: "Points earned from the spot" }],
+};
+
+test("MF9 kit fragment：mode 以 <kit>:<name> 引用 kit 的 fragment 文件，字段注入 root / player 各恰一次并进 stateFragments 与 digest；未声明 / 缺文件 / 撞名 / 形态非法 / 无发现根一律拒", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const kitJsonFile = "apps/kits/arena/kit.json";
+    const kitJson = readJson<Record<string, unknown>>(path.join(fixture.root, kitJsonFile));
+    const stateFile = "apps/kits/arena/gameplays/arenaDuel/state.json";
+    const manifestFile = "apps/kits/arena/gameplays/arenaDuel/manifest.json";
+    const state = readJson<MutableState>(path.join(fixture.root, stateFile));
+    const manifest = readJson<MutableManifest>(path.join(fixture.root, manifestFile));
+    const digestBefore = readGameplayDescriptors(fixture.options).find((gameplay) => gameplay.id === "arenaDuel")?.contractDigest;
+    assert.ok(digestBefore);
+
+    writeFixtureJson(fixture.root, kitJsonFile, { ...kitJson, fragments: ["spot"] });
+    fs.mkdirSync(path.join(fixture.root, "apps/kits/arena/fragments"), { recursive: true });
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", SPOT_FRAGMENT);
+    writeFixtureJson(fixture.root, stateFile, { ...state, fragments: ["arena:spot"] });
+    // digest 变了 ⇒ 同批 bump modeVersion（digest 闸另有用例钉）
+    writeFixtureJson(fixture.root, manifestFile, { ...manifest, modeVersion: Number(manifest.modeVersion) + 1 });
+
+    const duel = readGameplayDescriptors(fixture.options).find((gameplay) => gameplay.id === "arenaDuel");
+    assert.ok(duel);
+    assert.deepEqual(duel.state.fragments, ["arena:spot"]);
+    assert.notEqual(duel.contractDigest, digestBefore, "fragment 文件字节并入 contractDigest");
+    const rootType = duel.state.types.find((type) => type.name === "ArenaDuelRoomState");
+    const playerType = duel.state.types.find((type) => type.name === "ArenaDuelPlayerState");
+    assert.equal(rootType?.fields.filter((field) => field.name === "spotOwner").length, 1, "root 注入恰一次");
+    assert.equal(playerType?.fields.filter((field) => field.name === "spotScore").length, 1, "player 注入恰一次");
+    assert.equal(rootType?.fields.some((field) => field.name === "spotScore"), false);
+    assert.equal(playerType?.fields.some((field) => field.name === "spotOwner"), false);
+    // 其他 mode 的 digest 逐字节不变（不引用就不并入）
+    const others = readGameplayDescriptors(fixture.options).filter((gameplay) => gameplay.id !== "arenaDuel");
+    assert.ok(others.length > 0);
+
+    writeGameplayArtifacts(fixture.options);
+    const sharedState = readFixtureText(fixture.root, `${SHARED_STATE_DIR}/arenaDuel.ts`);
+    assert.equal((sharedState.match(/^\s+spotOwner: string;$/gmu) ?? []).length, 1, "shared 接口里 spotOwner 恰一次");
+    assert.equal((sharedState.match(/^\s+spotScore: number;$/gmu) ?? []).length, 1, "shared 接口里 spotScore 恰一次");
+    const serverSchema = readFixtureText(fixture.root, `${SERVER_SCHEMA_DIR}/arenaDuel.ts`);
+    assert.equal((serverSchema.match(/spotOwner/gu) ?? []).length, 1, "服务端 Schema 里 spotOwner 恰一次");
+    assert.equal((serverSchema.match(/spotScore/gu) ?? []).length, 1, "服务端 Schema 里 spotScore 恰一次");
+    assert.match(readFixtureText(fixture.root, SERVER_AGGREGATE), /"arenaDuel": \["arena:spot"\]/u);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /stateFragments: \["arena:spot"\]/u);
+    assertGameplayArtifactsFresh(fixture.options);
+
+    // 拒绝矩阵
+    const parseAll = (): void => { readGameplayDescriptors(fixture.options); };
+    writeFixtureJson(fixture.root, kitJsonFile, { ...kitJson, fragments: [] });
+    assert.throws(parseAll, /kit "arena" 的 kit\.json\.fragments 未声明 "spot"/u);
+    writeFixtureJson(fixture.root, kitJsonFile, { ...kitJson, fragments: ["spot"] });
+    fs.rmSync(path.join(fixture.root, "apps/kits/arena/fragments/spot.state.json"));
+    assert.throws(parseAll, /fragments\/spot\.state\.json/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", { ...SPOT_FRAGMENT, root: [{ ...SPOT_FRAGMENT.root[0], name: "tick" }] });
+    assert.throws(parseAll, /fragment-injected field collides with a declared field: tick/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", { schemaVersion: 1 });
+    assert.throws(parseAll, /must inject at least one root or player field/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", { schemaVersion: 1, root: [], extra: 1 });
+    assert.throws(parseAll, /unknown key\(s\): extra/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", { ...SPOT_FRAGMENT, player: [SPOT_FRAGMENT.player[0], SPOT_FRAGMENT.player[0]] });
+    assert.throws(parseAll, /duplicate field name: spotScore/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", SPOT_FRAGMENT);
+    writeFixtureJson(fixture.root, stateFile, { ...state, fragments: ["Arena:spot"] });
+    assert.throws(parseAll, /unknown fragment: Arena:spot/u);
+    writeFixtureJson(fixture.root, stateFile, { ...state, fragments: ["ghost:spot"] });
+    assert.throws(parseAll, /kit "ghost" 不存在/u);
+    writeFixtureJson(fixture.root, stateFile, { ...state, fragments: ["arena:spot", "arena:spot"] });
+    assert.throws(parseAll, /duplicate fragment: arena:spot/u);
+    // 无发现根的直接解析（单元测试 / 别的工具）对 kit 引用 fail-closed
+    assert.throws(() => parseGameplayStateDescriptor({ ...state, fragments: ["arena:spot"] }), /需要发现根/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+

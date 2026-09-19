@@ -95,10 +95,30 @@ export type StateTypeDescriptor = {
   readonly serverOnly: readonly ServerOnlyField[];
 };
 
-/** §4.6 公共 state fragment id。声明后由生成器把字段注入 root/player 类型（⛔ 不手写进 state.json）。 */
-export type GameplayStateFragment = "ownerReady" | "inviteRoom";
+/** §4.6 内置公共 state fragment id。声明后由生成器把字段注入 root/player 类型（⛔ 不手写进 state.json）。 */
+export type BuiltinStateFragment = "ownerReady" | "inviteRoom";
 
-export const GAMEPLAY_STATE_FRAGMENTS: readonly GameplayStateFragment[] = ["ownerReady", "inviteRoom"];
+/**
+ * state.json `fragments[]` 的一项：内置名，或 kit 提供的 `<kitId>:<name>`（MMO MF9-B3：文件
+ * `apps/kits/<kitId>/fragments/<name>.state.json`，kit.json.fragments 须声明该名；只能经 codegen 的发现根解析）。
+ */
+export type GameplayStateFragment = BuiltinStateFragment | `${string}:${string}`;
+
+export const GAMEPLAY_STATE_FRAGMENTS: readonly BuiltinStateFragment[] = ["ownerReady", "inviteRoom"];
+export const KIT_FRAGMENT_REF = /^([a-z][A-Za-z0-9]{0,63}):([a-z][A-Za-z0-9]{0,63})$/u;
+
+/** kit fragment 文件的解析结果：注入 root 与 players value 类型的字段（与内置 fragment 同一注入通道）。 */
+export type KitFragmentDefinition = {
+  readonly root: readonly WireField[];
+  readonly player: readonly WireField[];
+};
+
+export type KitFragmentResolver = (kitId: string, name: string) => KitFragmentDefinition;
+
+export type ParseStateOptions = {
+  /** codegen 注入的发现根：解析 `<kitId>:<name>` 引用；缺省 = 只认内置 fragment（kit 引用 fail-closed）。 */
+  readonly resolveKitFragment?: KitFragmentResolver;
+};
 
 export type GameplayStateDescriptor = {
   readonly schemaVersion: 1;
@@ -450,28 +470,66 @@ const INVITE_ROOM_ROOT_FIELDS: readonly WireField[] = [
   { name: "waitingDeadlineAt", kind: "integer", default: 0, min: 0, description: "Absolute waiting deadline (ms timestamp, display only)" },
 ];
 
-function parseFragments(value: unknown): readonly GameplayStateFragment[] {
-  if (value === undefined) return [];
-  if (!Array.isArray(value) || value.length === 0) fail("state.fragments", "must be a non-empty array when present");
-  const fragments: GameplayStateFragment[] = [];
-  for (const [index, entry] of value.entries()) {
-    if (typeof entry !== "string"
-      || !(GAMEPLAY_STATE_FRAGMENTS as readonly string[]).includes(entry)) {
-      fail(`state.fragments[${index}]`, `unknown fragment: ${String(entry)} (supported: ${GAMEPLAY_STATE_FRAGMENTS.join(", ")})`);
+/**
+ * kit fragment 文件（`apps/kits/<kitId>/fragments/<name>.state.json`）：`{ schemaVersion: 1, root?: WireField[], player?: WireField[] }`，
+ * 字段形态与 state.json 的 fields 完全一致（同一个 parseWireField）；至少注入一个字段；同一份内不得重名。
+ */
+export function parseKitFragmentFile(input: unknown, pathLabel: string): KitFragmentDefinition {
+  const value = record(input, pathLabel);
+  exactKeys(value, ["schemaVersion"], ["root", "player"], pathLabel);
+  if (value.schemaVersion !== 1) fail(`${pathLabel}.schemaVersion`, "only schemaVersion 1 is supported");
+  const parseList = (key: "root" | "player"): readonly WireField[] => {
+    const list = value[key];
+    if (list === undefined) return [];
+    if (!Array.isArray(list)) fail(`${pathLabel}.${key}`, "must be an array");
+    const fields = list.map((field, index) => parseWireField(field, `${pathLabel}.${key}[${index}]`));
+    const seen = new Set<string>();
+    for (const field of fields) {
+      if (seen.has(field.name)) fail(`${pathLabel}.${key}`, `duplicate field name: ${field.name}`);
+      seen.add(field.name);
     }
-    if (fragments.includes(entry as GameplayStateFragment)) {
-      fail(`state.fragments[${index}]`, `duplicate fragment: ${entry}`);
-    }
-    fragments.push(entry as GameplayStateFragment);
-  }
-  return fragments;
+    return fields;
+  };
+  const root = parseList("root");
+  const player = parseList("player");
+  if (root.length === 0 && player.length === 0) fail(pathLabel, "must inject at least one root or player field");
+  return { root, player };
 }
 
-/** 把声明的 fragment 字段注入 root（与 root 的 players value 类型）。与手写字段重名即 fail。 */
+function parseFragments(value: unknown, resolver: KitFragmentResolver | undefined): {
+  readonly fragments: readonly GameplayStateFragment[];
+  readonly kitFragments: ReadonlyMap<string, KitFragmentDefinition>;
+} {
+  if (value === undefined) return { fragments: [], kitFragments: new Map() };
+  if (!Array.isArray(value) || value.length === 0) fail("state.fragments", "must be a non-empty array when present");
+  const fragments: GameplayStateFragment[] = [];
+  const kitFragments = new Map<string, KitFragmentDefinition>();
+  for (const [index, entry] of value.entries()) {
+    const label = `state.fragments[${index}]`;
+    if (typeof entry !== "string") fail(label, `unknown fragment: ${String(entry)} (supported: ${GAMEPLAY_STATE_FRAGMENTS.join(", ")}, or <kitId>:<name>)`);
+    if (fragments.includes(entry as GameplayStateFragment)) fail(label, `duplicate fragment: ${entry}`);
+    if ((GAMEPLAY_STATE_FRAGMENTS as readonly string[]).includes(entry)) {
+      fragments.push(entry as BuiltinStateFragment);
+      continue;
+    }
+    const ref = KIT_FRAGMENT_REF.exec(entry);
+    if (ref === null) fail(label, `unknown fragment: ${entry} (supported: ${GAMEPLAY_STATE_FRAGMENTS.join(", ")}, or <kitId>:<name>)`);
+    if (resolver === undefined) fail(label, `kit fragment "${entry}" 需要发现根（只能由 codegen:gameplays 解析 apps/kits/<kitId>/fragments/）`);
+    kitFragments.set(entry, resolver(ref[1] as string, ref[2] as string));
+    fragments.push(entry as GameplayStateFragment);
+  }
+  return { fragments, kitFragments };
+}
+
+/**
+ * 把声明的 fragment 字段注入 root（与 root 的 players value 类型）。与手写字段重名即 fail；两个 fragment 互相重名同样 fail。
+ * 变异验证：跳过 kit fragment 的注入 → gameplay-codegen.test「字段注入各恰一次」转红。
+ */
 function withInjectedFragments(
   types: readonly StateTypeDescriptor[],
   root: string,
   fragments: readonly GameplayStateFragment[],
+  kitFragments: ReadonlyMap<string, KitFragmentDefinition>,
 ): readonly StateTypeDescriptor[] {
   if (fragments.length === 0) return types;
   const rootType = types.find((type) => type.name === root);
@@ -488,8 +546,21 @@ function withInjectedFragments(
   if (fragments.includes("inviteRoom")) {
     rootExtras.push(...INVITE_ROOM_ROOT_FIELDS);
   }
+  for (const fragment of fragments) {
+    const kitFragment = kitFragments.get(fragment);
+    if (kitFragment === undefined) continue;
+    rootExtras.push(...kitFragment.root);
+    playerExtras.push(...kitFragment.player);
+  }
+  for (const [what, extras] of [["root", rootExtras], ["player", playerExtras]] as const) {
+    const seen = new Set<string>();
+    for (const extra of extras) {
+      if (seen.has(extra.name)) fail("state.fragments", `two fragments inject the same ${what} field: ${extra.name}`);
+      seen.add(extra.name);
+    }
+  }
   if (playerExtras.length > 0 && playerTypeName === null) {
-    fail("state.fragments", "ownerReady fragment requires a root \"players\" map field");
+    fail("state.fragments", "fragment(s) injecting player fields require a root \"players\" map field");
   }
   return types.map((type) => {
     const extras = type.name === root ? rootExtras : type.name === playerTypeName ? playerExtras : [];
@@ -504,12 +575,12 @@ function withInjectedFragments(
   });
 }
 
-export function parseGameplayStateDescriptor(input: unknown): GameplayStateDescriptor {
+export function parseGameplayStateDescriptor(input: unknown, options: ParseStateOptions = {}): GameplayStateDescriptor {
   const value = record(input, "state");
   exactKeys(value, ["schemaVersion", "root", "types"], ["fragments"], "state");
   if (value.schemaVersion !== 1) fail("state.schemaVersion", "only schemaVersion 1 is supported");
   const root = identifier(value.root, "state.root");
-  const fragments = parseFragments(value.fragments);
+  const { fragments, kitFragments } = parseFragments(value.fragments, options.resolveKitFragment);
   if (!Array.isArray(value.types) || value.types.length === 0) fail("state.types", "must be a non-empty array");
   const declaredTypes = value.types.map((type, index) => parseStateType(type, `state.types[${index}]`));
   const names = new Set<string>();
@@ -527,7 +598,7 @@ export function parseGameplayStateDescriptor(input: unknown): GameplayStateDescr
     paths.add(type.defaultPath);
   }
   if (!names.has(root)) fail("state.root", `missing root type: ${root}`);
-  const types = withInjectedFragments(declaredTypes, root, fragments);
+  const types = withInjectedFragments(declaredTypes, root, fragments, kitFragments);
   const descriptor: GameplayStateDescriptor = { schemaVersion: 1, root, types, fragments };
   validateReferences(descriptor);
   assertRootLifecycle(descriptor);
