@@ -645,19 +645,21 @@ export async function withKitTx<T>(
 
 // ── kit worker 的租约守卫受限事务（文件头第 6 条；docs/MMO.md MF7a-B3）─────────────────
 
-/** worker 事务句柄：与 KitTx 同形但**没有** `conn`（运行时访问也抛），另带 worker 身份与本次守卫通过的 fence。 */
-export interface KitWorkerTx extends Omit<KitTx, "conn"> {
+/** worker 事务句柄：与 KitTx 同形但**没有** `conn`（运行时访问也抛），另带 worker 身份、本次守卫通过的 fence 与世界事件消费口（MF7b-B3）。 */
+export interface KitWorkerTx extends Omit<KitTx, "conn">, KitWorldEventOps {
   readonly workerId: string;
   /** 守卫首句比对通过的 fence_token（写需要 fence 的行时用；⛔ 不是可信的「当前 fence」——事务提交后可能已被顶替）。 */
   readonly fenceToken: number;
 }
 
-/** `withKitWorkerTx` 的可注入依赖：KitTxDeps + 守卫（单测用假连接答 Rows matched；生产缺省 core/infra/lease.ts）。 */
+/** `withKitWorkerTx` 的可注入依赖：KitTxDeps + 守卫（单测用假连接答 Rows matched；生产缺省 core/infra/lease.ts）+ 事件表声明集。 */
 export interface KitWorkerTxDeps extends KitTxDeps {
   readonly renewLeaseGuard: typeof renewLeaseGuard;
+  /** 本 kit 声明为 role:"world-event" 的表名（生产从 SERVER_KIT_CATALOG 读；夹具注入）。 */
+  readonly worldEventTables?: (kitId: string) => readonly string[];
 }
 
-const DEFAULT_WORKER_DEPS: KitWorkerTxDeps = { ...DEFAULT_DEPS, renewLeaseGuard };
+const DEFAULT_WORKER_DEPS: KitWorkerTxDeps = { ...DEFAULT_DEPS, renewLeaseGuard, worldEventTables: (kitId) => worldEventTablesOfKit(kitId) };
 
 /**
  * kit worker 的租约守卫受限事务：`withRcTx` 内**首句** `renewLeaseGuard(conn, lease)`（同连接同事务；`UPDATE singleton_lease …
@@ -680,8 +682,9 @@ export async function withKitWorkerTx<T>(
   const result = await deps.withRcTx(async (conn) => {
     // 首句：续租守卫。0 行 = 已被顶替（或手上是旧 fence 的残留 lease 对象）⇒ 抛出，withRcTx ROLLBACK，业务表零写入。
     if (!await deps.renewLeaseGuard(conn, lease)) { throw new LeaseLostError(leaseName); }
+    const eventTables = (deps.worldEventTables ?? DEFAULT_WORKER_DEPS.worldEventTables ?? (() => []))(kitId);
     const tx: KitWorkerTx = Object.defineProperty(
-      { ...buildKitTx(conn, kitId, sId, touched, deps), workerId, fenceToken: lease.fenceToken },
+      { ...buildKitTx(conn, kitId, sId, touched, deps), ...buildWorldEventOps(conn, kitId, sId, eventTables), workerId, fenceToken: lease.fenceToken },
       "conn", { enumerable: false, get(): never { throw new Error(`kit worker 事务（${leaseName}）⛔ 取原始连接 .conn`); } },
     );
     return workerTxScope.run(leaseName, () => fn(Object.freeze(tx)));
@@ -713,8 +716,95 @@ export interface KitWorldEventInput {
   readonly instanceId?: string;
 }
 
-/** 世界事务句柄：与 KitTx 同形但**没有** `conn`，另带分线身份、首句 CAS 后的 write_seq 与事件追加口。 */
-export interface KitWorldTx extends Omit<KitTx, "conn"> {
+/**
+ * 世界事件消费口（MF7b-B3；docs/MMO.md §7.3 事件批与分线检查点的原子规则）：worker 事务与世界事务共用。
+ *  - `claimWorldEvents`：只认领 `checkpoint_rev ≤ world_instance.checkpoint_rev`（该事件所属状态的分线检查点已落库）且 `attempts < 上限`
+ *    的 pending 行——status 0 → 1、attempts + 1（认领与效果同一事务：整轮提交即 done；整轮抛出 = 回滚重放，效果以 eventId 作 opId 幂等）；
+ *  - `releaseWorldEvent`：单个事件本轮失败但别拖累整轮——放回 pending（attempts 已在认领时 +1；达上限 ⇒ dead 2）；
+ *  - `deadLetterWorldEvent`：不可重试错误直接死信（2）。superseded（3）由 Recovering 标（rooms/core/WorldEventPort.ts）。
+ */
+export interface KitWorldEventRow {
+  readonly eventId: string;
+  readonly instanceId: string;
+  readonly seq: number;
+  readonly kind: string;
+  readonly payload: unknown;
+  /** 含本次认领的 +1。 */
+  readonly attempts: number;
+  readonly checkpointRev: number;
+}
+
+export interface KitWorldEventClaimOptions {
+  readonly instanceId?: string;
+  /** 缺省 32，上限 256。 */
+  readonly limit?: number;
+}
+
+export interface KitWorldEventOps {
+  claimWorldEvents(table: string, options?: KitWorldEventClaimOptions): Promise<readonly KitWorldEventRow[]>;
+  releaseWorldEvent(table: string, eventId: string): Promise<"pending" | "dead">;
+  deadLetterWorldEvent(table: string, eventId: string): Promise<void>;
+}
+
+export const WORLD_EVENT_CLAIM_LIMIT_DEFAULT = 32;
+export const WORLD_EVENT_CLAIM_LIMIT_MAX = 256;
+/** 认领次数上限（含）：达到即不再认领、release 时转 dead（§7.3 死信同 outbox 口径）。 */
+export const WORLD_EVENT_MAX_ATTEMPTS = 5;
+
+/** 认领 SELECT（FOR UPDATE）：门 = `e.checkpoint_rev <= w.checkpoint_rev`（变异：删掉它 → int「检查点未落库的事件被执行」转红）。 */
+export function claimWorldEventsSql(table: string, withInstance: boolean, limit: number): string {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > WORLD_EVENT_CLAIM_LIMIT_MAX) { throw new RangeError(`claimWorldEvents：limit ${limit} 非法（1..${WORLD_EVENT_CLAIM_LIMIT_MAX}）`); }
+  return "SELECT e.event_id, e.instance_id, e.seq, e.kind, e.payload, e.attempts, e.checkpoint_rev "
+    + `FROM \`${table}\` e JOIN world_instance w ON w.server_id = e.server_id AND w.instance_id = e.instance_id `
+    + `WHERE e.server_id = ?${withInstance ? " AND e.instance_id = ?" : ""} AND e.status = 0 AND e.attempts < ? AND e.checkpoint_rev <= w.checkpoint_rev `
+    + `ORDER BY e.seq LIMIT ${limit} FOR UPDATE`;
+}
+
+function buildWorldEventOps(conn: PoolConnection, kitId: string, sId: number, eventTables: readonly string[]): KitWorldEventOps {
+  const parsePayload = (value: unknown): unknown => {
+    if (typeof value !== "string") { return value; }
+    try { return JSON.parse(value) as unknown; } catch { return value; }
+  };
+  return {
+    async claimWorldEvents(table, options = {}) {
+      const target = assertWorldEventTable(kitId, table, eventTables);
+      const limit = options.limit ?? WORLD_EVENT_CLAIM_LIMIT_DEFAULT;
+      const withInstance = options.instanceId !== undefined;
+      if (withInstance && (typeof options.instanceId !== "string" || options.instanceId.length === 0 || options.instanceId.length > 64)) { throw new TypeError("claimWorldEvents：instanceId 非法"); }
+      const params: (string | number)[] = withInstance ? [sId, options.instanceId as string, WORLD_EVENT_MAX_ATTEMPTS] : [sId, WORLD_EVENT_MAX_ATTEMPTS];
+      const [rows] = await conn.execute<RowDataPacket[]>(claimWorldEventsSql(target, withInstance, limit), params);
+      const claimed: KitWorldEventRow[] = [];
+      for (const row of rows) {
+        const eventId = String(row.event_id);
+        const [result] = await conn.execute<ResultSetHeader>(
+          `UPDATE \`${target}\` SET status = 1, attempts = attempts + 1 WHERE server_id = ? AND event_id = ? AND status = 0`, [sId, eventId]);
+        if (rowsMatched(result) !== 1) { continue; } // 并发已被别的事务认领（同表多 worker）：跳过
+        claimed.push({
+          eventId, instanceId: String(row.instance_id), seq: Number(row.seq), kind: String(row.kind), payload: parsePayload(row.payload),
+          attempts: Number(row.attempts) + 1, checkpointRev: Number(row.checkpoint_rev),
+        });
+      }
+      return claimed;
+    },
+    async releaseWorldEvent(table, eventId) {
+      const target = assertWorldEventTable(kitId, table, eventTables);
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE \`${target}\` SET status = IF(attempts >= ?, 2, 0) WHERE server_id = ? AND event_id = ? AND status = 1`, [WORLD_EVENT_MAX_ATTEMPTS, sId, eventId]);
+      if (rowsMatched(result) !== 1) { throw new Error(`releaseWorldEvent：事件 ${eventId} 不在本事务认领态（status 1）`); }
+      const [rows] = await conn.query<RowDataPacket[]>(`SELECT status FROM \`${target}\` WHERE server_id = ? AND event_id = ?`, [sId, eventId]);
+      return Number(rows[0]?.status) === 2 ? "dead" : "pending";
+    },
+    async deadLetterWorldEvent(table, eventId) {
+      const target = assertWorldEventTable(kitId, table, eventTables);
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE \`${target}\` SET status = 2 WHERE server_id = ? AND event_id = ? AND status IN (0, 1)`, [sId, eventId]);
+      if (rowsMatched(result) !== 1) { throw new Error(`deadLetterWorldEvent：事件 ${eventId} 不是 pending / 认领态`); }
+    },
+  };
+}
+
+/** 世界事务句柄：与 KitTx 同形但**没有** `conn`，另带分线身份、首句 CAS 后的 write_seq、事件追加口与消费口。 */
+export interface KitWorldTx extends Omit<KitTx, "conn">, KitWorldEventOps {
   readonly instanceId: string;
   readonly authorityEpoch: number;
   /** 首句 CAS 后本事务在该权威代内的写序号（单调；MF7b 检查点 / 事件批的排序依据）。 */
@@ -792,6 +882,7 @@ export async function withKitWorldTx<T>(
     const tx: KitWorldTx = Object.defineProperty(
       {
         ...base,
+        ...buildWorldEventOps(conn, kitId, sId, eventTables),
         instanceId: scope.instanceId,
         authorityEpoch: scope.authorityEpoch,
         writeSeq,
