@@ -8,6 +8,7 @@ import { CORE_S2C_TOKENS, SeededRandom, WorldPhase, type GameplayS2CToken, type 
 import type { WorldManifestConfig } from "../../../tools/gameplay-codegen/manifestSchema";
 import type {
     WorldAdmitRequest, WorldCheckpoint, WorldCommand, WorldEventDraft, WorldLeaveReason, WorldMode, WorldModeContext, WorldModeObserverPorts,
+    WorldTransferReady, WorldTransferTarget,
     WorldSessionInfo, WorldStateLifecycle,
 } from "../WorldMode";
 import type { CheckpointEnvelope } from "./CheckpointPort";
@@ -30,6 +31,8 @@ export interface WorldRuntimePorts {
      * `commitCheckpoint(rev)`；失败 `rollbackCheckpoint(batch)` 把事件放回缓冲）。缺省不取检查点。
      */
     onCheckpoint?(batch: WorldCheckpointBatch, reason: "periodic" | "forced"): void;
+    /** 交接端口（MF8-B3：WorldRoom 编排持久状态机；缺省 = 宿主不支持交接 ⇒ reject）。 */
+    requestTransfer?(session: string, target: WorldTransferTarget): Promise<WorldTransferReady>;
 }
 
 /** 一次检查点的完整批次：分线快照 + persona 快照 + 自上个检查点以来的事件批（checkpoint_rev = rev，§7.3 ①）。 */
@@ -78,6 +81,8 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     private readonly maxCatchUpSteps: number;
     private readonly rng: SeededRandom;
     private readonly sessionTable = new Map<string, WorldSessionInfo>();
+    /** 交接在途的会话（MF8）：命令一律拒（Committed 前失败即解冻，离座即清）。 */
+    private readonly frozen = new Set<string>();
     private readonly commandQueue: WorldCommand[] = [];
     private accumulatorMs = 0;
     private sleeping = false;
@@ -189,7 +194,23 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
                 if (!this.mode.checkpoint) throw new Error(`[WorldRuntime] mode ${this.mode.id} 未声明 checkpoint 能力，⛔ 不能 requestCheckpoint`);
                 this.checkpointRequested = reason;
             },
+            transfer: {
+                request: (session, target) => {
+                    if (!this.ports.requestTransfer) return Promise.reject(new Error(`[WorldRuntime] mode ${this.mode.id} 的宿主未提供交接端口`));
+                    return this.ports.requestTransfer(session, target);
+                },
+            },
         };
+    }
+
+    /** 交接冻结（MF8）：发起即冻结该会话的命令；Committed 前失败解冻；离座自动清。 */
+    setFrozen(session: string, frozen: boolean): void {
+        if (frozen) this.frozen.add(session);
+        else this.frozen.delete(session);
+    }
+
+    isFrozen(session: string): boolean {
+        return this.frozen.has(session);
     }
 
     /**
@@ -249,6 +270,7 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
         const info = this.sessionTable.get(session);
         if (!info) return false;
         this.sessionTable.delete(session);
+        this.frozen.delete(session);
         for (let index = this.commandQueue.length - 1; index >= 0; index -= 1) {
             if (this.commandQueue[index]?.session === session) this.commandQueue.splice(index, 1);
         }
@@ -262,6 +284,7 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     enqueue(session: string, type: string, payload: unknown): "queued" | "rejected" {
         if (this.state.phase !== WorldPhase.Active) return "rejected";
         if (!this.sessionTable.has(session)) return "rejected";
+        if (this.frozen.has(session)) return "rejected";
         if (!this.mode.commands.includes(type)) return "rejected";
         this.commandQueue.push({ session, type, payload });
         return "queued";

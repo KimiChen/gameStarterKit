@@ -78,7 +78,30 @@ export interface WorldModeCheckpointCapability {
     readonly eventTable?: string;
 }
 
-export type WorldLeaveReason = "left" | "kicked" | "drained" | "lost-control";
+export type WorldLeaveReason = "left" | "kicked" | "drained" | "lost-control" | "transferred";
+
+/** 交接目标（MF8）：mode 只给地图 / 分线 / kit 载荷，实例解析、预留、凭据、状态机全在框架。 */
+export interface WorldTransferTarget {
+    readonly toMap: string;
+    /** 缺省 DEFAULT_WORLD_LINE（分线分配归 MF10）。 */
+    readonly toLine?: number;
+    /** kit 交接载荷（落 world_transfer.payload，框架不解释）。 */
+    readonly payload?: unknown;
+}
+
+/**
+ * 交接就绪（MF8，Committed 后交回 mode）：mode 用自己的 token 把 transferId（与可选的 ticket）告诉客户端；客户端也可经 Lobby
+ * `world.resolveTransfer { transferId }` 取凭据（回复丢失 / 重连）。⚠ ticket 原文只给客户端，⛔ 不落日志 / 不进快照。
+ */
+export interface WorldTransferReady {
+    readonly transferId: string;
+    readonly worldAddress: string;
+    readonly toMap: string;
+    readonly toLine: number;
+    readonly toInstance: string;
+    readonly ticket: string;
+    readonly expiresAt: number;
+}
 
 /**
  * 观察者同步端口（MMO MF5b，与 GameMode 的 GameModeObserverPorts 同形）：perSession token 专用，全房 token 仍走 `broadcastS2C`。
@@ -142,6 +165,12 @@ export interface WorldModeContext<TState extends WorldStateLifecycle = WorldStat
     readonly events: { append(kind: string, payload: unknown): number };
     /** 强制点（§4.5 / §7.3：checkpointOnDeath / setVar durable / 交接）：本固定步末尾立即取检查点（含事件批）。 */
     requestCheckpoint(reason: string): void;
+    /**
+     * 交接端口（MF8）：为在座会话发起跨分线交接。壳异步走持久状态机（request → prepare → 强制点 → 凭据 → commit），Committed 后
+     * resolve（mode 在 then 里发自己的「交接就绪」token），随后壳排空出站并以 "transferred" 离座（回收实体、归还控制权）；
+     * 发起即冻结该会话的命令（Committed 前失败 ⇒ 取消 + 解冻 + reject：在途 / 目标不可解析 / 会话已变 / 权威已失）。
+     */
+    readonly transfer: { request(session: string, target: WorldTransferTarget): Promise<WorldTransferReady> };
 }
 
 /**

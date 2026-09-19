@@ -1,4 +1,4 @@
-/** worldFixture wire owner 的向量 sidecar（MMO MF4 世界夹具：move 意图；MF5b：resync）。 */
+/** worldFixture wire owner 的向量 sidecar（MMO MF4 世界夹具：move 意图；MF5b：resync；MF8：portal 交接）。 */
 import { C2S } from "@game/shared";
 import { symbolExtra, type WireVectorFile } from "./vectorTypes";
 
@@ -20,9 +20,23 @@ export default {
       { label: "extra key", value: { afterSeq: 1 }, accepted: false },
       { label: "array", value: [], accepted: false },
     ],
+    // MF8：传送门——toMap 必填（id 形状）、toLine 可选 0..65535；⛔ 不带 ticket / persona（凭据由框架签发）
+    [C2S.WorldFixturePortal]: [
+      { label: "map only", value: { toMap: "m2" }, accepted: true },
+      { label: "map + line", value: { toMap: "m2", toLine: 3 }, accepted: true },
+      { label: "line max", value: { toMap: "m2", toLine: 65535 }, accepted: true },
+      { label: "empty map", value: { toMap: "" }, accepted: false },
+      { label: "map bad shape", value: { toMap: "m 2" }, accepted: false },
+      { label: "line negative", value: { toMap: "m2", toLine: -1 }, accepted: false },
+      { label: "line overflow", value: { toMap: "m2", toLine: 65536 }, accepted: false },
+      { label: "line fraction", value: { toMap: "m2", toLine: 1.5 }, accepted: false },
+      { label: "extra key ticket", value: { toMap: "m2", ticket: "x".repeat(32) }, accepted: false },
+      { label: "symbol key", value: symbolExtra({ toMap: "m2" }), accepted: false },
+    ],
   },
   admission: {
     [C2S.WorldFixtureMove]: { dirX: 1, dirY: 0, seq: 1 },
     [C2S.WorldFixtureResync]: {},
+    [C2S.WorldFixturePortal]: { toMap: "m2" },
   },
 } satisfies WireVectorFile;

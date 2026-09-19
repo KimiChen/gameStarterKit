@@ -58,5 +58,5 @@ test("真仓：只有 viewFixture（MF5a-B5）与 worldFixture（MF5b-B3）两�
   assert.deepEqual({ ...GAME_WIRE_PER_SESSION }, expected);
   assert.equal(GAME_WIRE_PER_SESSION["s2c.viewFixture.update"], "id", "位置类按 id 合并");
   assert.equal(GAME_WIRE_PER_SESSION["s2c.worldFixture.update"], "id", "世界夹具位置类同样按 id 合并");
-  assert.equal(Object.keys(GAME_WIRE_PER_SESSION).filter((type) => type.startsWith("s2c.worldFixture.")).length, 7, "worldFixture 七个观察者 token");
+  assert.equal(Object.keys(GAME_WIRE_PER_SESSION).filter((type) => type.startsWith("s2c.worldFixture.")).length, 8, "worldFixture 七个观察者 token + MF8 transfer");
 });

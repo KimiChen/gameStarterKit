@@ -15,7 +15,7 @@ import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
 import { SnakeBaselineBegin, SnakeBaselineChunk, SnakeBaselineEnd, SnakeBaselineRequest, SnakeDelta, SnakeEndRun, SnakeInput, SnakeReliveDecision, SnakeReliveDecisionResult, SnakeReliveOffered, SnakeReliveResolved, SnakeRunFinalizing, SnakeRunResult, type ISnakeBaselineBegin, type ISnakeBaselineChunk, type ISnakeBaselineEnd, type ISnakeBaselineRequestReq, type ISnakeEndRunReq, type ISnakeInputReq, type ISnakeReliveDecisionReq, type ISnakeReliveDecisionResult, type ISnakeReliveOffered, type ISnakeReliveResolved, type ISnakeRunFinalizing, type ISnakeRunResultV2, type ISnakeWorldDelta } from "../snake/wire";
 import { TallyTap, type ITallyTapReq } from "../tally/wire";
 import { ViewFixtureBaselineBegin, ViewFixtureBaselineChunk, ViewFixtureBaselineEnd, ViewFixtureEnter, ViewFixtureLeave, ViewFixtureLook, ViewFixturePrivate, ViewFixtureResync, ViewFixtureUpdate, type IViewFixtureBaselineBegin, type IViewFixtureBaselineChunk, type IViewFixtureBaselineEnd, type IViewFixtureEnter, type IViewFixtureLeave, type IViewFixtureLookReq, type IViewFixturePrivate, type IViewFixtureResyncReq, type IViewFixtureUpdate } from "../viewFixture/wire";
-import { WorldFixtureBaselineBegin, WorldFixtureBaselineChunk, WorldFixtureBaselineEnd, WorldFixtureEnter, WorldFixtureLeave, WorldFixtureMove, WorldFixturePos, WorldFixturePrivate, WorldFixtureResync, WorldFixtureUpdate, type IWorldFixtureBaselineBegin, type IWorldFixtureBaselineChunk, type IWorldFixtureBaselineEnd, type IWorldFixtureEnter, type IWorldFixtureLeave, type IWorldFixtureMoveReq, type IWorldFixturePos, type IWorldFixturePrivate, type IWorldFixtureResyncReq, type IWorldFixtureUpdate } from "../worldFixture/wire";
+import { WorldFixtureBaselineBegin, WorldFixtureBaselineChunk, WorldFixtureBaselineEnd, WorldFixtureEnter, WorldFixtureLeave, WorldFixtureMove, WorldFixturePortal, WorldFixturePos, WorldFixturePrivate, WorldFixtureResync, WorldFixtureTransfer, WorldFixtureUpdate, type IWorldFixtureBaselineBegin, type IWorldFixtureBaselineChunk, type IWorldFixtureBaselineEnd, type IWorldFixtureEnter, type IWorldFixtureLeave, type IWorldFixtureMoveReq, type IWorldFixturePortalReq, type IWorldFixturePos, type IWorldFixturePrivate, type IWorldFixtureResyncReq, type IWorldFixtureTransfer, type IWorldFixtureUpdate } from "../worldFixture/wire";
 
 /** 客户端 → 服务端 消息名（core + 各玩法 wire token 的显式字面量聚合） */
 export const C2S = {
@@ -37,6 +37,7 @@ export const C2S = {
     ViewFixtureLook: "c2s.viewFixture.look",
     ViewFixtureResync: "c2s.viewFixture.resync",
     WorldFixtureMove: "c2s.worldFixture.move",
+    WorldFixturePortal: "c2s.worldFixture.portal",
     WorldFixtureResync: "c2s.worldFixture.resync",
 } as const;
 
@@ -74,6 +75,7 @@ export const S2C = {
     WorldFixtureBaselineBegin: "s2c.worldFixture.baselineBegin",
     WorldFixtureBaselineChunk: "s2c.worldFixture.baselineChunk",
     WorldFixtureBaselineEnd: "s2c.worldFixture.baselineEnd",
+    WorldFixtureTransfer: "s2c.worldFixture.transfer",
 } as const;
 
 export type C2SType = (typeof C2S)[keyof typeof C2S];
@@ -99,6 +101,7 @@ export interface C2SPayloadMap {
     "c2s.viewFixture.look": IViewFixtureLookReq;
     "c2s.viewFixture.resync": IViewFixtureResyncReq;
     "c2s.worldFixture.move": IWorldFixtureMoveReq;
+    "c2s.worldFixture.portal": IWorldFixturePortalReq;
     "c2s.worldFixture.resync": IWorldFixtureResyncReq;
 }
 
@@ -135,6 +138,7 @@ export interface S2CPayloadMap {
     "s2c.worldFixture.baselineBegin": IWorldFixtureBaselineBegin;
     "s2c.worldFixture.baselineChunk": IWorldFixtureBaselineChunk;
     "s2c.worldFixture.baselineEnd": IWorldFixtureBaselineEnd;
+    "s2c.worldFixture.transfer": IWorldFixtureTransfer;
 }
 
 export type C2SPayload<T extends C2SType> = C2SPayloadMap[T];
@@ -160,6 +164,7 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.viewFixture.look": ViewFixtureLook.validate,
     "c2s.viewFixture.resync": ViewFixtureResync.validate,
     "c2s.worldFixture.move": WorldFixtureMove.validate,
+    "c2s.worldFixture.portal": WorldFixturePortal.validate,
     "c2s.worldFixture.resync": WorldFixtureResync.validate,
 };
 
@@ -197,6 +202,7 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.worldFixture.baselineBegin": WorldFixtureBaselineBegin.validate,
     "s2c.worldFixture.baselineChunk": WorldFixtureBaselineChunk.validate,
     "s2c.worldFixture.baselineEnd": WorldFixtureBaselineEnd.validate,
+    "s2c.worldFixture.transfer": WorldFixtureTransfer.validate,
 };
 
 export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {
@@ -235,6 +241,7 @@ export const GAME_WIRE_OWNERS = {
     "c2s.viewFixture.look": "viewFixture",
     "c2s.viewFixture.resync": "viewFixture",
     "c2s.worldFixture.move": "worldFixture",
+    "c2s.worldFixture.portal": "worldFixture",
     "c2s.worldFixture.resync": "worldFixture",
     "s2c.pong": "core",
     "s2c.welcome": "core",
@@ -268,6 +275,7 @@ export const GAME_WIRE_OWNERS = {
     "s2c.worldFixture.baselineBegin": "worldFixture",
     "s2c.worldFixture.baselineChunk": "worldFixture",
     "s2c.worldFixture.baselineEnd": "worldFixture",
+    "s2c.worldFixture.transfer": "worldFixture",
 } as const;
 
 export type GameWireType = keyof typeof GAME_WIRE_OWNERS;
@@ -287,6 +295,7 @@ export const GAME_WIRE_PHASES = {
     "c2s.viewFixture.look": [GamePhase.Playing],
     "c2s.viewFixture.resync": [GamePhase.Playing],
     "c2s.worldFixture.move": [GamePhase.Playing],
+    "c2s.worldFixture.portal": [GamePhase.Playing],
     "c2s.worldFixture.resync": [GamePhase.Playing],
 } as const satisfies { readonly [type: string]: readonly GamePhaseType[] };
 
@@ -305,6 +314,7 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.viewFixture.look": 1,
     "c2s.viewFixture.resync": 4,
     "c2s.worldFixture.move": 1,
+    "c2s.worldFixture.portal": 4,
     "c2s.worldFixture.resync": 4,
     "c2s.world.chat": 2,
 } as const satisfies { readonly [type: string]: number };
@@ -325,6 +335,7 @@ export const GAME_WIRE_PER_SESSION = {
     "s2c.worldFixture.baselineBegin": null,
     "s2c.worldFixture.baselineChunk": null,
     "s2c.worldFixture.baselineEnd": null,
+    "s2c.worldFixture.transfer": null,
     "s2c.world.chat": null,
 } as const satisfies { readonly [type: string]: string | null };
 
@@ -362,6 +373,7 @@ export const gameplayC2STokens = {
     },
     "worldFixture": {
         "c2s.worldFixture.move": WorldFixtureMove,
+        "c2s.worldFixture.portal": WorldFixturePortal,
         "c2s.worldFixture.resync": WorldFixtureResync,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };
@@ -412,6 +424,7 @@ export const gameplayS2CTokens = {
         "s2c.worldFixture.baselineBegin": WorldFixtureBaselineBegin,
         "s2c.worldFixture.baselineChunk": WorldFixtureBaselineChunk,
         "s2c.worldFixture.baselineEnd": WorldFixtureBaselineEnd,
+        "s2c.worldFixture.transfer": WorldFixtureTransfer,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };
 
