@@ -42,3 +42,29 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --compare docs
 - 机器人与服务端同进程：适合比较（同机同配置两次跑、改动前后），⛔ 不代表线上绝对容量；多进程接管实验是 MF10 的 `multi-process.ts`。
 - 服务端 AI 与撮合不受种子控制，tick 分位数有自然抖动；比对用 `--threshold`，主要指标默认 10%。
 - 会话签发复用 `test/int/helpers.ts` 的内存 WebPlatform 替身（与 int 测试同口径），uid 带运行期前缀，跑完 UNLINK 清理。
+
+## AOI 载体实验（`aoi-probe.ts`，MF1-B2）
+
+两间**裸 Colyseus 房**共用同一份确定性模拟（同种子 ⇒ 同兴趣集），只换同步层：A = `@view()` + `client.view`（StateView），
+B = 每会话一条 `d` 消息 `{ seq, tick, enter[], update[], leave[] }`。⚠ 都不走 GameRoom 壳：StateView 落到生成的 GameRoomState
+需要 codegen 支持 `@view()`，这本身就是「生成器改动面」这一比较项的结论。
+
+```bash
+npm --workspace @game/server exec tsx -- tools/world-bench/aoi-probe.ts --variant delta --bots 50 --entities 300 --seconds 15 --seed 7
+npm --workspace @game/server exec tsx -- tools/world-bench/aoi-probe.ts --variant view  --bots 50 --entities 300 --seconds 15 --seed 7
+```
+
+2026-09-19 实测（50 观察者 / 300 实体 / 半径 300 / 世界 2000² / 20 Hz / 15 s；兴趣集 p50 24 / max 41 可见实体；同机同进程）：
+
+| 指标 | A StateView | B 消息级 delta |
+| --- | --- | --- |
+| sync ms / tick p50 / p95 | 3.94 / 4.69 | 2.52 / 3.12 |
+| sim ms / tick p50（含 Schema 字段写） | 0.75 | 0.014 |
+| 进程 CPU ms/s | 170 | 103 |
+| 每会话出站 B/s p50 / p95 | 6134 / 8061 | 10107 / 13078 |
+| join 首 500 ms 字节 p50 / 重连 | 4379 / 2010 | 5816 / 2507 |
+
+结论（已写回 docs/MMO.md §11.2）：StateView 少约 40% 字节，但多约 65% CPU、sync 多约 55%；delta 的字节差可由位置量化（int16）收回大半；
+StateView 还要 codegen 支持 `@view()`、客户端 bundle 4.0.13 无 `.d.ts`、并丢掉消息级 checksum / cursor 治理 ⇒ **冻结为消息级 delta**。
+报告：`docs/perf/world-bench/2026-09-19T113148-aoi-delta.json`、`2026-09-19T113207-aoi-view.json`。
+
