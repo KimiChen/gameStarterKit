@@ -5,6 +5,7 @@
  * `cache:currency:{uid}`（cache 实例、只读、TTL 5m、miss 回源本文件 getBalance）。
  * 写路径全部主键等值定位 + RC 会话（09·DB5）。
  */
+import { accountOwner, assetOwnerColumns, type AssetOwnerRef } from "@game/shared";
 import { CUR_GOLD } from "../infra/config";
 import { kCacheCurrency, zoneCtx } from "../infra/keys";
 import { cacheClient } from "../infra/redisRoute";
@@ -15,19 +16,29 @@ import { storedInt } from "../infra/numbers";
 
 const CACHE_TTL_S = 300; // 5m（模块私有常量；key 分类真源见 core/infra/keys.ts）
 
-/** 读余额：cache 命中直接回；miss 回源 MySQL 并回填（09·A2）。 */
-export async function getBalance(uid: string, sId: number, currency = CUR_GOLD): Promise<number> {
+/**
+ * 资产主体（MMO MF2-B3，docs/MMO.md §3）：钱包 / 流水行以 (user_id, server_id, owner_kind, owner_id) 定位；
+ * `owner` 缺省 = account(uid)（0 / ''，与 MF2 之前的全部存量行同一形态，旧调用方零变）；persona 主体 = (1, personaId)。
+ * 同 uid 的 account 与各 persona 钱包互不可见、流水各自幂等。
+ */
+const ownerOf = (uid: string, owner: AssetOwnerRef | undefined): AssetOwnerRef => owner ?? accountOwner(uid);
+
+/** 读余额：cache 命中直接回；miss 回源 MySQL 并回填（09·A2）。`owner` 缺省 account。 */
+export async function getBalance(uid: string, sId: number, currency = CUR_GOLD, owner?: AssetOwnerRef): Promise<number> {
+  const subject = ownerOf(uid, owner);
+  const { ownerKind, ownerId } = assetOwnerColumns(subject);
   // 自包 zoneCtx：sId 参数同时驱动缓存键（kCacheCurrency per-zone）与 MySQL 谓词，
   // 防「param 与 ambient ALS 不一致 → 读/写错区缓存」（§3.7 C3 同理）。
   return zoneCtx.run({ sId }, async () => {
     const cache = cacheClient();
-    const key = kCacheCurrency(uid);
+    const key = kCacheCurrency(uid, subject);
     const hit = await cache.hget(key, String(currency));
     if (hit !== null) {
       return storedInt(hit, "currency cache balance", { min: 0, max: Number.MAX_SAFE_INTEGER });
     }
     const [rows] = await getPool().query<RowDataPacket[]>(
-      "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?", [uid, sId, currency]);
+      "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND owner_kind = ? AND owner_id = ? AND currency = ?",
+      [uid, sId, ownerKind, ownerId, currency]);
     const balance = rows.length > 0
       ? storedInt(rows[0].balance, "user_currency.balance", { min: 0, max: Number.MAX_SAFE_INTEGER })
       : 0;
@@ -39,8 +50,8 @@ export async function getBalance(uid: string, sId: number, currency = CUR_GOLD):
 /** 写路径提交后失效缓存（⛔ 不写穿——并发提交的回填顺序无法保证，删了让 miss 回源）。
  *  ⚠ 诚实边界：miss 回源（读旧值）与「提交后失效」之间存在交错窗口——回源在失效之后才
  *  回填的话，旧余额可在 cache 存活至 TTL。只影响展示读：写路径全走 MySQL 守卫，无超支风险。 */
-export async function invalidateBalanceCache(uid: string, sId: number): Promise<void> {
-  await zoneCtx.run({ sId }, () => cacheClient().unlink(kCacheCurrency(uid))); // sId 驱动缓存键（§3.7 C3）
+export async function invalidateBalanceCache(uid: string, sId: number, owner?: AssetOwnerRef): Promise<void> {
+  await zoneCtx.run({ sId }, () => cacheClient().unlink(kCacheCurrency(uid, ownerOf(uid, owner)))); // sId 驱动缓存键（§3.7 C3）
 }
 
 /**
@@ -53,24 +64,28 @@ export async function invalidateBalanceCache(uid: string, sId: number): Promise<
 export async function debitInTx(
   conn: PoolConnection,
   uid: string, sId: number, currency: number, amount: number, fence: number, opId: string, reason: string,
+  owner?: AssetOwnerRef,
 ): Promise<"DUP" | number> {
   if (amount <= 0) { throw new Error(`扣款金额必须为正: ${amount}`); }
-  // ⚠ 每区独立经济（DUAL_MODE §3.3 B1）：谓词/INSERT 必须带 server_id，否则跨区命中/扣错区钱包。
+  const { ownerKind, ownerId } = assetOwnerColumns(ownerOf(uid, owner));
+  // ⚠ 每区独立经济（DUAL_MODE §3.3 B1）：谓词/INSERT 必须带 server_id，否则跨区命中/扣错区钱包；
+  // ⚠ 资产主体（MF2）：谓词/INSERT 同样必须带 owner_kind / owner_id，否则 persona 的扣款会打到账号钱包。
   const [led] = await conn.execute<ResultSetHeader>(
-    `INSERT INTO currency_ledger (user_id, server_id, currency, delta, balance_after, idem_key, reason)
-     VALUES (?,?,?,?,?,?,?)
+    `INSERT INTO currency_ledger (user_id, server_id, owner_kind, owner_id, currency, delta, balance_after, idem_key, reason)
+     VALUES (?,?,?,?,?,?,?,?,?)
      ON DUPLICATE KEY UPDATE id = id`,      // ⛔ 绝不 INSERT IGNORE（09·DB1）
-    [uid, sId, currency, -amount, 0, opId, reason]);
+    [uid, sId, ownerKind, ownerId, currency, -amount, 0, opId, reason]);
   if (led.affectedRows === 0) { return "DUP"; }
 
   const [upd] = await conn.execute<ResultSetHeader>(
     `UPDATE user_currency
         SET balance = balance - ?, version = version + 1, last_fence = ?
-      WHERE user_id = ? AND server_id = ? AND currency = ? AND balance >= ? AND last_fence <= ?`,
-    [amount, fence, uid, sId, currency, amount, fence]);
+      WHERE user_id = ? AND server_id = ? AND owner_kind = ? AND owner_id = ? AND currency = ? AND balance >= ? AND last_fence <= ?`,
+    [amount, fence, uid, sId, ownerKind, ownerId, currency, amount, fence]);
   if (upd.affectedRows === 0) {
     const [rows] = await conn.query<RowDataPacket[]>(
-      "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?", [uid, sId, currency]);
+      "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND owner_kind = ? AND owner_id = ? AND currency = ?",
+      [uid, sId, ownerKind, ownerId, currency]);
     const bal = rows.length > 0
       ? storedInt(rows[0].balance, "user_currency.balance", { min: 0, max: Number.MAX_SAFE_INTEGER })
       : 0;
@@ -79,12 +94,13 @@ export async function debitInTx(
   }
 
   const [after] = await conn.query<RowDataPacket[]>(
-    "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?", [uid, sId, currency]);
+    "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND owner_kind = ? AND owner_id = ? AND currency = ?",
+    [uid, sId, ownerKind, ownerId, currency]);
   if (after.length === 0) { throw new Error("user_currency 更新后余额缺失"); }
   const newBalance = storedInt(after[0].balance, "user_currency.balance", { min: 0, max: Number.MAX_SAFE_INTEGER });
   await conn.execute<ResultSetHeader>(
-    "UPDATE currency_ledger SET balance_after = ? WHERE user_id = ? AND server_id = ? AND idem_key = ?",
-    [newBalance, uid, sId, opId]);
+    "UPDATE currency_ledger SET balance_after = ? WHERE user_id = ? AND server_id = ? AND owner_kind = ? AND owner_id = ? AND idem_key = ?",
+    [newBalance, uid, sId, ownerKind, ownerId, opId]);
   return newBalance;
 }
 
@@ -96,26 +112,30 @@ export async function debitInTx(
 export async function creditInTx(
   conn: PoolConnection,
   uid: string, sId: number, currency: number, amount: number, opId: string, reason: string,
+  owner?: AssetOwnerRef,
 ): Promise<"DUP" | number> {
   if (amount <= 0) { throw new Error(`入账金额必须为正: ${amount}`); }
-  // ⚠ 每区独立经济（§3.3 B1）：INSERT 列表与 ODKU 匹配键必须含 server_id，否则充值落 s0 影子钱包、玩家不到账。
+  const { ownerKind, ownerId } = assetOwnerColumns(ownerOf(uid, owner));
+  // ⚠ 每区独立经济（§3.3 B1）：INSERT 列表与 ODKU 匹配键必须含 server_id，否则充值落 s0 影子钱包、玩家不到账；
+  // ⚠ 资产主体（MF2）：owner_kind / owner_id 同进 INSERT 列表与谓词（PK / uk_idem 都含它们）。
   const [led] = await conn.execute<ResultSetHeader>(
-    `INSERT INTO currency_ledger (user_id, server_id, currency, delta, balance_after, idem_key, reason)
-     VALUES (?,?,?,?,?,?,?)
+    `INSERT INTO currency_ledger (user_id, server_id, owner_kind, owner_id, currency, delta, balance_after, idem_key, reason)
+     VALUES (?,?,?,?,?,?,?,?,?)
      ON DUPLICATE KEY UPDATE id = id`,
-    [uid, sId, currency, amount, 0, opId, reason]);
+    [uid, sId, ownerKind, ownerId, currency, amount, 0, opId, reason]);
   if (led.affectedRows === 0) { return "DUP"; }
 
   await conn.execute<ResultSetHeader>(
-    `INSERT INTO user_currency (user_id, server_id, currency, balance) VALUES (?,?,?,?) AS new
+    `INSERT INTO user_currency (user_id, server_id, owner_kind, owner_id, currency, balance) VALUES (?,?,?,?,?,?) AS new
      ON DUPLICATE KEY UPDATE balance = user_currency.balance + new.balance, version = version + 1`,
-    [uid, sId, currency, amount]); // 行别名 AS new 需 8.0.19+（05；VALUES() 已弃用）
+    [uid, sId, ownerKind, ownerId, currency, amount]); // 行别名 AS new 需 8.0.19+（05；VALUES() 已弃用）
   const [after] = await conn.query<RowDataPacket[]>(
-    "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND currency = ?", [uid, sId, currency]);
+    "SELECT balance FROM user_currency WHERE user_id = ? AND server_id = ? AND owner_kind = ? AND owner_id = ? AND currency = ?",
+    [uid, sId, ownerKind, ownerId, currency]);
   if (after.length === 0) { throw new Error("user_currency 入账后余额缺失"); }
   const newBalance = storedInt(after[0].balance, "user_currency.balance", { min: 0, max: Number.MAX_SAFE_INTEGER });
   await conn.execute<ResultSetHeader>(
-    "UPDATE currency_ledger SET balance_after = ? WHERE user_id = ? AND server_id = ? AND idem_key = ?",
-    [newBalance, uid, sId, opId]);
+    "UPDATE currency_ledger SET balance_after = ? WHERE user_id = ? AND server_id = ? AND owner_kind = ? AND owner_id = ? AND idem_key = ?",
+    [newBalance, uid, sId, ownerKind, ownerId, opId]);
   return newBalance;
 }

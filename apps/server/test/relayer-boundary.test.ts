@@ -10,13 +10,14 @@ import { OUTBOX_DEAD, OUTBOX_MAX_ATTEMPTS, OUTBOX_PENDING } from "../src/core/in
 import type { PoolConnection } from "../src/core/infra/mysql";
 
 test("relayer outbox metadata normalizes mysql numeric strings before routing/arithmetic", () => {
+  // MMO MF2-B3：metadata 带资产主体（owner 列缺席 = account）
   assert.deepEqual(
     normalizeOutboxMetadata({ server_id: "9", attempts: "2" }),
-    { serverId: 9, attempts: 2 },
+    { serverId: 9, attempts: 2, ownerKind: 0, ownerId: "" },
   );
   assert.deepEqual(
     normalizeOutboxMetadata({ server_id: 0, attempts: 0 }),
-    { serverId: 0, attempts: 0 },
+    { serverId: 0, attempts: 0, ownerKind: 0, ownerId: "" },
   );
 });
 
@@ -311,3 +312,46 @@ test("relayer lost failure guard and zero-row finalization produce no stale repo
   assert.equal(await relayerTick(lease("zero-finalize"), successDependencies), 1);
   assert.equal(trimCalls, 0, "zero-row finalization must not trim idempotency evidence");
 });
+
+// ── MMO MF2-B3：资产主体——persona 主体的 intent 只落状态（⛔ 不 apply 到账号 Redis 背包、不 thaw、不 trim） ─────────
+// 变异验证：relayerTick 删 ownerKind === 0 分支判定（persona 也 apply）→ 「persona 行不 apply」转红。
+
+const PERSONA_ID = "p_0123456789abcdefXYZ";
+
+test("relayer outbox metadata：owner 列缺席 = account；kind ∈ {0,1}，account 不得带 id、persona 的 id 必须合法", () => {
+  assert.deepEqual(normalizeOutboxMetadata({ server_id: "9", attempts: "2" }).ownerKind, 0);
+  assert.deepEqual(normalizeOutboxMetadata({ server_id: 9, attempts: 2, owner_kind: "0", owner_id: "" }), { serverId: 9, attempts: 2, ownerKind: 0, ownerId: "" });
+  assert.deepEqual(normalizeOutboxMetadata({ server_id: 9, attempts: 2, owner_kind: 1, owner_id: PERSONA_ID }), { serverId: 9, attempts: 2, ownerKind: 1, ownerId: PERSONA_ID });
+  assert.throws(() => normalizeOutboxMetadata({ server_id: 9, attempts: 0, owner_kind: 0, owner_id: PERSONA_ID }), /account 主体不得带 owner_id/u);
+  assert.throws(() => normalizeOutboxMetadata({ server_id: 9, attempts: 0, owner_kind: 1, owner_id: "" }), /persona 主体的 owner_id 非法/u);
+  assert.throws(() => normalizeOutboxMetadata({ server_id: 9, attempts: 0, owner_kind: 2, owner_id: "" }), /outbox\.owner_kind/u);
+});
+
+test("relayer：persona 主体的 pending 行不 apply / 不 thaw / 不 trim，直接守卫落 done；account 行照旧 apply", async () => {
+  const personaRow = { ...pendingRow, op_id: "op-persona", owner_kind: "1", owner_id: PERSONA_ID };
+  const finalized: unknown[][] = [];
+  const connection = {
+    query: async () => [[personaRow, pendingRow]],
+    execute: async (_sql: string, params: unknown[]) => { finalized.push(params); return [{ affectedRows: 1 }]; },
+  } as unknown as PoolConnection;
+  let applied = 0;
+  let thawed = 0;
+  let trimmed = 0;
+  const dependencies: RelayerDependencies = {
+    withLeaseTx: async <T>(_lease: SingletonLease, fn: (conn: PoolConnection) => Promise<T>): Promise<T> => fn(connection),
+    redisApply: async (_uid, opId) => { assert.notEqual(opId, "op-persona", "persona 行 ⛔ 不 apply 到账号背包"); applied++; return "ok"; },
+    ensureLive: async () => { thawed++; },
+    trimApplied: async () => { trimmed++; return 0; },
+    random: () => 0,
+    reportFailure: () => assert.fail("不该有失败"),
+  };
+  assert.equal(await relayerTick(lease("leader"), dependencies), 2);
+  assert.equal(applied, 1, "只有 account 行 apply 了一次");
+  assert.equal(thawed, 1, "只有 account 行 thaw 了一次");
+  assert.equal(trimmed, 1, "只有 account 行 trim（random 0）");
+  assert.deepEqual(finalized, [
+    [1, "op-persona", 9, 0],
+    [1, "op-boundary", 9, 0],
+  ], "两行都经守卫短事务落 done（status 1，谓词 pending 0）");
+});
+

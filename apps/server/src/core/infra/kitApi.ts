@@ -51,8 +51,8 @@ import { retryOnContention, withRcTx } from "./mysql";
 import { LeaseLostError, renewLeaseGuard, type SingletonLease } from "./lease";
 import { kitWorkerLeaseName } from "../../kits/workerLease";
 import { withUser } from "../uow";
-import type { IEffect, KitEffectKinds } from "@game/shared";
-import { lookupKitEffectKind } from "@game/shared";
+import type { AssetOwnerRef, IEffect, KitEffectKinds } from "@game/shared";
+import { assetOwnerKey, lookupKitEffectKind } from "@game/shared";
 import { KIT_EFFECT_KINDS } from "@game/shared/kits/catalog.generated";
 import { creditInTx, debitInTx, invalidateBalanceCache } from "../economy/currency";
 import {
@@ -67,7 +67,7 @@ import { clientFor } from "./redisRoute";
 import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
 
 export { CUR_GOLD, EffectConflictError, InsufficientBalanceError, InvalidEffectError, LeaseLostError, RpcFault, StaleFenceError, currentZoneId, kKitUser };
-export type { IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket, SingletonLease };
+export type { AssetOwnerRef, IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket, SingletonLease };
 
 export interface KitUserFence { readonly fence: number }
 export interface KitUserFenceDeps {
@@ -122,15 +122,15 @@ export interface KitTx {
   readonly sId: number;
   /** 只能碰 `k_<kitId 小写>_*` 表（运行时闸，见文件头）；走预处理语句，params 只允许原始值 / Date / Buffer。 */
   query<T = RowDataPacket[] | ResultSetHeader>(sql: string, params?: unknown[]): Promise<T>;
-  /** 扣款：ledger 幂等 → 余额 + fence 守卫；"DUP" = 同 opId 已扣过（事务内零写入）。 */
-  debit(uid: string, currency: number, amount: number, fence: number, opId: string, reason: string): Promise<"DUP" | number>;
-  /** 入账：ledger 幂等 → upsert 余额；"DUP" = 同 opId 已入过。 */
-  credit(uid: string, currency: number, amount: number, opId: string, reason: string): Promise<"DUP" | number>;
+  /** 扣款：ledger 幂等 → 余额 + fence 守卫；"DUP" = 同 opId 已扣过（事务内零写入）。`owner` 缺省 account(uid)（MF2 资产主体）。 */
+  debit(uid: string, currency: number, amount: number, fence: number, opId: string, reason: string, owner?: AssetOwnerRef): Promise<"DUP" | number>;
+  /** 入账：ledger 幂等 → upsert 余额；"DUP" = 同 opId 已入过。`owner` 缺省 account(uid)。 */
+  credit(uid: string, currency: number, amount: number, opId: string, reason: string, owner?: AssetOwnerRef): Promise<"DUP" | number>;
   /**
    * durable intent（阶段 1 的 outbox 半边）；"DUP" = 同 opId 已有**同载荷** intent（ODKU no-op 后回读比对），
    * 同 opId 不同载荷 ⇒ EffectConflictError；effect 里的 kit kind 必须是 `kit:<本 kitId>:*` ⇒ 否则 KitEffectScopeError。
    */
-  enqueueEffect(uid: string, opId: string, effect: IEffect): Promise<"INSERTED" | "DUP">;
+  enqueueEffect(uid: string, opId: string, effect: IEffect, owner?: AssetOwnerRef): Promise<"INSERTED" | "DUP">;
 }
 
 /** 可注入的框架依赖（单测用假 pool / 假账本 / 自己的 kit kind 表；生产缺省即真实实现与生成物）。 */
@@ -454,8 +454,12 @@ export function assertKitEffectScope(kitId: string, effect: IEffect, kinds: KitE
   }
 }
 
+/** 提交后要失效余额缓存的主体集合：按 (uid, owner) 去重（缓存键随主体，MF2-B3）。 */
+type TouchedOwners = Map<string, { readonly uid: string; readonly owner: AssetOwnerRef | undefined }>;
+const touchKey = (uid: string, owner: AssetOwnerRef | undefined): string => `${uid}|${owner === undefined ? "account" : assetOwnerKey(owner)}`;
+
 /** `withKitTx` / `withKitWorkerTx` 共用的受限句柄（不含 `conn`：普通 kit 事务补上原始连接，worker 事务补上抛错 getter）。 */
-function buildKitTx(conn: PoolConnection, kitId: string, sId: number, touched: Set<string>, deps: KitTxDeps): Omit<KitTx, "conn"> {
+function buildKitTx(conn: PoolConnection, kitId: string, sId: number, touched: TouchedOwners, deps: KitTxDeps): Omit<KitTx, "conn"> {
   return {
     kitId, sId,
     async query<R = RowDataPacket[] | ResultSetHeader>(sql: string, params: unknown[] = []): Promise<R> {
@@ -464,21 +468,21 @@ function buildKitTx(conn: PoolConnection, kitId: string, sId: number, touched: S
       const [rows] = await conn.execute<RowDataPacket[] | ResultSetHeader>(sql, params);
       return rows as R;
     },
-    async debit(uid, currency, amount, fence, opId, reason) {
-      const r = await deps.debitInTx(conn, uid, sId, currency, amount, fence, opId, reason);
-      if (r !== "DUP") { touched.add(uid); }
+    async debit(uid, currency, amount, fence, opId, reason, owner) {
+      const r = await deps.debitInTx(conn, uid, sId, currency, amount, fence, opId, reason, ...(owner === undefined ? [] : [owner] as const));
+      if (r !== "DUP") { touched.set(touchKey(uid, owner), { uid, owner }); }
       return r;
     },
-    async credit(uid, currency, amount, opId, reason) {
-      const r = await deps.creditInTx(conn, uid, sId, currency, amount, opId, reason);
-      if (r !== "DUP") { touched.add(uid); }
+    async credit(uid, currency, amount, opId, reason, owner) {
+      const r = await deps.creditInTx(conn, uid, sId, currency, amount, opId, reason, ...(owner === undefined ? [] : [owner] as const));
+      if (r !== "DUP") { touched.set(touchKey(uid, owner), { uid, owner }); }
       return r;
     },
-    async enqueueEffect(uid, opId, effect) {
+    async enqueueEffect(uid, opId, effect, owner) {
       const canonical = canonicalizeEffect(effect, deps.kinds);
       assertKitEffectScope(kitId, canonical, deps.kinds);
-      const r = await deps.insertOutboxIntent(conn, { opId, uid, sId, effect: canonical, onDuplicate: "ignore" }, deps.kinds);
-      if (r === "DUP") { await deps.assertOutboxIntentMatches(conn, { opId, uid, sId, effect: canonical }, deps.kinds); }
+      const r = await deps.insertOutboxIntent(conn, { opId, uid, sId, effect: canonical, onDuplicate: "ignore", ...(owner === undefined ? {} : { owner }) }, deps.kinds);
+      if (r === "DUP") { await deps.assertOutboxIntentMatches(conn, { opId, uid, sId, effect: canonical, ...(owner === undefined ? {} : { owner }) }, deps.kinds); }
       return r;
     },
   };
@@ -502,9 +506,9 @@ export async function withKitTx<T>(
   kitTablePrefix(kitId); // kitId 形态闸先于任何 SQL
   if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
   assertNotInsideWorkerTx("withKitTx");
-  const touched = new Set<string>();
+  const touched: TouchedOwners = new Map();
   const result = await deps.withRcTx((conn) => fn({ conn, ...buildKitTx(conn, kitId, sId, touched, deps) }));
-  for (const uid of touched) { await deps.invalidateBalanceCache(uid, sId); }
+  for (const { uid, owner } of touched.values()) { await deps.invalidateBalanceCache(uid, sId, ...(owner === undefined ? [] : [owner] as const)); }
   return result;
 }
 
@@ -541,7 +545,7 @@ export async function withKitWorkerTx<T>(
   if (!Number.isInteger(lease.fenceToken) || lease.fenceToken < 1) { throw new TypeError(`租约 fence_token ${lease.fenceToken} 非法（抢占后 ≥ 1）`); }
   if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
   assertNotInsideWorkerTx("withKitWorkerTx");
-  const touched = new Set<string>();
+  const touched: TouchedOwners = new Map();
   const result = await deps.withRcTx(async (conn) => {
     // 首句：续租守卫。0 行 = 已被顶替（或手上是旧 fence 的残留 lease 对象）⇒ 抛出，withRcTx ROLLBACK，业务表零写入。
     if (!await deps.renewLeaseGuard(conn, lease)) { throw new LeaseLostError(leaseName); }
@@ -551,7 +555,7 @@ export async function withKitWorkerTx<T>(
     );
     return workerTxScope.run(leaseName, () => fn(Object.freeze(tx)));
   });
-  for (const uid of touched) { await deps.invalidateBalanceCache(uid, sId); }
+  for (const { uid, owner } of touched.values()) { await deps.invalidateBalanceCache(uid, sId, ...(owner === undefined ? [] : [owner] as const)); }
   return result;
 }
 

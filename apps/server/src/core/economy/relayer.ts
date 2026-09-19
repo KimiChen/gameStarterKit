@@ -28,6 +28,8 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 
 interface OutboxRow extends RowDataPacket {
   op_id: string; user_id: string; server_id: unknown; effect: Effect; attempts: unknown;
+  /** 资产主体（MMO MF2-B3）：0 account / 1 persona；旧投影缺席时按 account 归一。 */
+  owner_kind?: unknown; owner_id?: unknown;
 }
 
 type LeaseTxRunner = <T>(
@@ -61,6 +63,9 @@ const CORRUPT_ROW_ATTEMPTS = Math.min(OUTBOX_MAX_ATTEMPTS + 1, MAX_OUTBOX_ATTEMP
 export interface NormalizedOutboxMetadata {
   readonly serverId: number;
   readonly attempts: number;
+  /** 0 = account（apply 到账号 Redis 背包）；1 = persona（只落账本 / 状态，⛔ 不 apply 到账号背包——persona 资产在 SQL / kit 表）。 */
+  readonly ownerKind: 0 | 1;
+  readonly ownerId: string;
 }
 
 /**
@@ -69,14 +74,21 @@ export interface NormalizedOutboxMetadata {
  * 不能拿一个猜出来的区号或 attempts 去写 Redis/重试计数。
  */
 export function normalizeOutboxMetadata(
-  row: Pick<OutboxRow, "server_id" | "attempts">,
+  row: Pick<OutboxRow, "server_id" | "attempts" | "owner_kind" | "owner_id">,
 ): NormalizedOutboxMetadata {
+  // owner 列缺席（旧投影 / 单测行）= account；出现即必须合法：kind ∈ {0, 1}，account 的 id 为空、persona 的 id 非空 ASCII。
+  const ownerKind = row.owner_kind === undefined ? 0 : storedInt(row.owner_kind, "outbox.owner_kind", { min: 0, max: 1 });
+  const ownerId = row.owner_id === undefined || row.owner_id === null ? "" : String(row.owner_id);
+  if (ownerKind === 0 && ownerId !== "") { throw new RangeError("outbox.owner_id: account 主体不得带 owner_id"); }
+  if (ownerKind === 1 && !/^[A-Za-z0-9_-]{16,64}$/u.test(ownerId)) { throw new RangeError("outbox.owner_id: persona 主体的 owner_id 非法"); }
   return {
     serverId: storedInt(row.server_id, "outbox.server_id", { min: 0, max: MAX_SERVER_ID_FIELD }),
     attempts: storedInt(row.attempts, "outbox.attempts", {
       min: 0,
       max: MAX_OUTBOX_ATTEMPTS_FIELD - 1,
     }),
+    ownerKind: ownerKind as 0 | 1,
+    ownerId,
   };
 }
 
@@ -128,7 +140,7 @@ export async function relayerTick(
 ): Promise<number> {
   const rows = await dependencies.withLeaseTx(lease, async (conn) => {
     const [rows] = await conn.query<OutboxRow[]>(
-      `SELECT op_id, user_id, server_id, effect, attempts FROM gameplay_outbox
+      `SELECT op_id, user_id, server_id, owner_kind, owner_id, effect, attempts FROM gameplay_outbox
         WHERE status = ? AND created_at < NOW(3) - INTERVAL ? SECOND
         ORDER BY created_at, op_id
         LIMIT ${BATCH}`,
@@ -137,33 +149,41 @@ export async function relayerTick(
   });
 
   for (const row of rows) {
-    let metadata: NormalizedOutboxMetadata | undefined;
+    // mysql2 may expose integer columns as strings. Normalize before routing
+    // or arithmetic; malformed durable metadata follows the row failure path.
+    let metadata: NormalizedOutboxMetadata;
     try {
-      // mysql2 may expose integer columns as strings. Normalize before routing
-      // or arithmetic; malformed durable metadata follows the row failure path.
       metadata = normalizeOutboxMetadata(row);
-      const { serverId } = metadata;
-      await zoneCtx.run({ sId: serverId }, async () => {
-        // A Redis PITR can leave an older live hash beside a newer MySQL archive.
-        // Resolve that authority pair before any no-fence effect mutates the hash.
-        await dependencies.ensureLive(row.user_id, serverId);
-        let r = await dependencies.redisApply(row.user_id, row.op_id, row.effect);
-        if (r === "cold") {
-          await dependencies.ensureLive(row.user_id, serverId);
-          r = await dependencies.redisApply(row.user_id, row.op_id, row.effect);
-        }
-        if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }
-      });
     } catch (e) {
-      // Failure accounting is also a guarded business write. A leader that lost
-      // its lease while waiting on external I/O cannot mutate the durable row.
-      const failureMessage = await dependencies.withLeaseTx(lease, (conn) =>
-        recordRelayerFailure(conn, row, e, metadata));
+      const failureMessage = await dependencies.withLeaseTx(lease, (conn) => recordRelayerFailure(conn, row, e, undefined));
       if (failureMessage !== null) dependencies.reportFailure(failureMessage);
       continue;
     }
-
     const { serverId } = metadata;
+    // persona 主体（MMO MF2-B3）：账本行已在同一事务落好，Redis 背包属于账号主体 ⇒ ⛔ 不 apply、不 thaw、不 trim，直接守卫落 done。
+    if (metadata.ownerKind === 0) {
+      try {
+        await zoneCtx.run({ sId: serverId }, async () => {
+          // A Redis PITR can leave an older live hash beside a newer MySQL archive.
+          // Resolve that authority pair before any no-fence effect mutates the hash.
+          await dependencies.ensureLive(row.user_id, serverId);
+          let r = await dependencies.redisApply(row.user_id, row.op_id, row.effect);
+          if (r === "cold") {
+            await dependencies.ensureLive(row.user_id, serverId);
+            r = await dependencies.redisApply(row.user_id, row.op_id, row.effect);
+          }
+          if (r !== "ok" && r !== "dup") { throw new Error(`apply=${r}`); }
+        });
+      } catch (e) {
+        // Failure accounting is also a guarded business write. A leader that lost
+        // its lease while waiting on external I/O cannot mutate the durable row.
+        const failureMessage = await dependencies.withLeaseTx(lease, (conn) =>
+          recordRelayerFailure(conn, row, e, metadata));
+        if (failureMessage !== null) dependencies.reportFailure(failureMessage);
+        continue;
+      }
+    }
+
     const finalized = await dependencies.withLeaseTx(lease, async (conn) => {
       const [result] = await conn.execute<ResultSetHeader>(
         `UPDATE gameplay_outbox SET status = ?, last_error = NULL
@@ -174,7 +194,7 @@ export async function relayerTick(
 
     // trimApplied reads MySQL and Redis; it is best-effort maintenance and runs
     // only after guarded finalization has committed.
-    if (finalized && dependencies.random() < 0.01) {
+    if (finalized && metadata.ownerKind === 0 && dependencies.random() < 0.01) {
       await dependencies.trimApplied(row.user_id, serverId).catch(() => {});
     }
   }
