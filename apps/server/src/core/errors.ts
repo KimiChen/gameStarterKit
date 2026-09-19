@@ -143,6 +143,32 @@ export class ControlConflictError extends Error {
   }
 }
 
+/** 交接状态机 CAS 0 行（MF8-B2 rooms/core/transfer.ts）：当前持久状态不是本步骤的前置态（也不是可幂等视为已完成的后继态）。 */
+export class TransferStateError extends Error {
+  readonly transferId: string;
+  readonly expected: string;
+  readonly actual: string | null;
+  constructor(transferId: string, expected: string, actual: string | null) {
+    super(`transfer state: ${transferId} expected ${expected}, actual ${actual ?? "<missing>"}`);
+    this.name = "TransferStateError";
+    this.transferId = transferId;
+    this.expected = expected;
+    this.actual = actual;
+  }
+}
+
+/** 同一 persona 已有在途交接（world_transfer UNIQUE(server_id, persona_id, active_key)）：新交接必须等它终态。 */
+export class TransferInFlightError extends Error {
+  readonly personaId: string;
+  readonly transferId: string | null;
+  constructor(personaId: string, transferId: string | null) {
+    super(`transfer in flight: persona=${personaId} transfer=${transferId ?? "?"}`);
+    this.name = "TransferInFlightError";
+    this.personaId = personaId;
+    this.transferId = transferId;
+  }
+}
+
 /** 同一 kit 事务内的 persona 锁序被打破（account 作用域 → persona id 升序）：fail-closed，⛔ 不等 InnoDB 死锁裁决。 */
 export class PersonaLockOrderError extends Error {
   constructor(msg: string) { super(`persona lock order: ${msg}`); this.name = "PersonaLockOrderError"; }

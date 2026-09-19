@@ -364,6 +364,13 @@ export const WORLD_LEASE_RENEW_MS = envInt("WORLD_LEASE_RENEW_MS", 5_000);
 if (WORLD_LEASE_RENEW_MS < 1 || WORLD_LEASE_TTL_MS < 1 || WORLD_LEASE_RENEW_MS * 3 > WORLD_LEASE_TTL_MS) {
   throw new Error(`WORLD_LEASE_RENEW_MS(${WORLD_LEASE_RENEW_MS}) * 3 必须 ≤ WORLD_LEASE_TTL_MS(${WORLD_LEASE_TTL_MS})（MMO.md §11.2）`);
 }
+/** 世界房一次性准入凭据 TTL（MMO MF8-B2，候选数字；ROOM_TICKET_TTL_MS 同量级）。 */
+export const WORLD_TICKET_TTL_MS = envInt("WORLD_TICKET_TTL_MS", 30_000);
+/** 交接目标预留有效期（MMO MF8-B2，候选数字）：Committed 前到期 ⇒ 释放预留（cancelled）。 */
+export const WORLD_TRANSFER_RESERVE_MS = envInt("WORLD_TRANSFER_RESERVE_MS", 30_000);
+if (WORLD_TICKET_TTL_MS < 1_000 || WORLD_TRANSFER_RESERVE_MS < 1_000) {
+  throw new Error(`WORLD_TICKET_TTL_MS(${WORLD_TICKET_TTL_MS}) / WORLD_TRANSFER_RESERVE_MS(${WORLD_TRANSFER_RESERVE_MS}) 必须 ≥ 1000 ms`);
+}
 /** 跨实例抢锁有界重试次数（09·L5：禁止无限递归）。 */
 export const LOCK_RETRY_MAX = 3;
 /** 幂等 pending 哨兵短租约；必须显著覆盖 handler 的最大执行窗口，避免迟到写与立即重试并发。 */
