@@ -37,6 +37,12 @@ export const ApiPath = {
     AdminNotice: "/admin/notice",
     /** 微信支付回调参考端点（POST，默认关闭） */
     PayWxNotify: "/pay/wx-notify",
+    /** 运维只读面（MMO MF10-B3，POST + 密钥）：某区的世界房 / 分线实例 + 实时登记（seated / 节点地址） */
+    AdminWorldInstances: "/admin/world/instances",
+    /** 运维只读面（MMO MF10-B3，POST + 密钥）：某区的交接（缺省只列在途） */
+    AdminWorldTransfers: "/admin/world/transfers",
+    /** 运维只读面（MMO MF10-B3，POST + 密钥）：各 kit role:"world-event" 表的事件积压（pending / done / dead / superseded / 门内可执行） */
+    AdminWorldEvents: "/admin/world/events",
 } as const;
 
 export type ApiPathType = (typeof ApiPath)[keyof typeof ApiPath];
@@ -373,6 +379,70 @@ export interface IAdminNoticeRes {
     published: boolean;
 }
 
+/** `/admin/world/instances`（MMO MF10-B3；密钥保护、只读）：某区（可选某图）的分线实例行 + WorldRegistry 实时登记（无登记的字段为 null）。 */
+export interface IAdminWorldInstancesReq {
+    sId: number;
+    mapId?: string;
+}
+export interface IAdminWorldInstanceRow {
+    instanceId: string;
+    mapId: string;
+    line: number;
+    state: string;
+    authorityEpoch: number;
+    holder: string;
+    checkpointRev: number;
+    writeSeq: number;
+    seated: number | null;
+    capacity: number | null;
+    publicAddress: string | null;
+    updatedAt: number | null;
+}
+export interface IAdminWorldInstancesRes {
+    instances: IAdminWorldInstanceRow[];
+}
+
+/** `/admin/world/transfers`（MMO MF10-B3）：某区的交接行；缺省只列在途（active_key 非 NULL），`includeFinal` 连终态一起（上限 500 行）。 */
+export interface IAdminWorldTransfersReq {
+    sId: number;
+    personaId?: string;
+    includeFinal?: boolean;
+}
+export interface IAdminWorldTransferRow {
+    transferId: string;
+    personaId: string;
+    fromInstance: string;
+    toMap: string;
+    toLine: number;
+    toInstance: string;
+    state: string;
+    controlEpoch: number;
+    reserveExpiresAt: number | null;
+    active: boolean;
+}
+export interface IAdminWorldTransfersRes {
+    transfers: IAdminWorldTransferRow[];
+}
+
+/** `/admin/world/events`（MMO MF10-B3）：各 kit role:"world-event" 表的积压（可按 kit / 实例收窄）；executable = 门内（checkpoint_rev ≤ 已落库）的 pending。 */
+export interface IAdminWorldEventsReq {
+    sId: number;
+    kitId?: string;
+    instanceId?: string;
+}
+export interface IAdminWorldEventTableRow {
+    kitId: string;
+    table: string;
+    pending: number;
+    done: number;
+    dead: number;
+    superseded: number;
+    executable: number;
+}
+export interface IAdminWorldEventsRes {
+    tables: IAdminWorldEventTableRow[];
+}
+
 /** `/pay/wx-notify` 参考端点的请求/响应。 */
 export interface IPayWxNotifyReq {
     orderId: string;
@@ -478,6 +548,111 @@ function validateAdminNoticeResponse(input: unknown): IAdminNoticeRes {
     assertExactKeys(value, ["published"], [], "response");
     if (typeof value.published !== "boolean") fail("HTTP_BOOLEAN", "response.published");
     return { published: value.published as boolean };
+}
+
+const ADMIN_WORLD_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/u;
+function adminWorldId(value: unknown, path: string): string {
+    const id = boundedString(value, path, 1, 64);
+    if (!ADMIN_WORLD_ID_RE.test(id)) fail("HTTP_STRING", path);
+    return id;
+}
+function nullableInt(value: unknown, path: string): number | null {
+    return value === null ? null : finiteInteger(value, path, 0, Number.MAX_SAFE_INTEGER);
+}
+
+function validateAdminWorldInstancesRequest(input: unknown): IAdminWorldInstancesReq {
+    const value = objectAt(input, "request");
+    assertExactKeys(value, ["sId"], ["mapId"], "request");
+    const out: IAdminWorldInstancesReq = { sId: finiteInteger(value.sId, "request.sId", 0, 65535) };
+    if (value.mapId !== undefined) out.mapId = adminWorldId(value.mapId, "request.mapId");
+    return out;
+}
+
+function validateAdminWorldInstanceRow(input: unknown, path: string): IAdminWorldInstanceRow {
+    const value = objectAt(input, path);
+    assertExactKeys(value, ["instanceId", "mapId", "line", "state", "authorityEpoch", "holder", "checkpointRev", "writeSeq", "seated", "capacity", "publicAddress", "updatedAt"], [], path);
+    return {
+        instanceId: adminWorldId(value.instanceId, `${path}.instanceId`),
+        mapId: adminWorldId(value.mapId, `${path}.mapId`),
+        line: finiteInteger(value.line, `${path}.line`, 0, 65535),
+        state: boundedString(value.state, `${path}.state`, 1, 16),
+        authorityEpoch: finiteInteger(value.authorityEpoch, `${path}.authorityEpoch`, 0, Number.MAX_SAFE_INTEGER),
+        holder: boundedString(value.holder, `${path}.holder`, 0, 64),
+        checkpointRev: finiteInteger(value.checkpointRev, `${path}.checkpointRev`, 0, Number.MAX_SAFE_INTEGER),
+        writeSeq: finiteInteger(value.writeSeq, `${path}.writeSeq`, 0, Number.MAX_SAFE_INTEGER),
+        seated: nullableInt(value.seated, `${path}.seated`),
+        capacity: nullableInt(value.capacity, `${path}.capacity`),
+        publicAddress: value.publicAddress === null ? null : boundedString(value.publicAddress, `${path}.publicAddress`, 0, 256),
+        updatedAt: nullableInt(value.updatedAt, `${path}.updatedAt`),
+    };
+}
+
+function validateAdminWorldInstancesResponse(input: unknown): IAdminWorldInstancesRes {
+    const value = objectAt(input, "response");
+    assertExactKeys(value, ["instances"], [], "response");
+    return { instances: arrayAt(value.instances, "response.instances", 4096).map((row, index) => validateAdminWorldInstanceRow(row, `response.instances[${index}]`)) };
+}
+
+function validateAdminWorldTransfersRequest(input: unknown): IAdminWorldTransfersReq {
+    const value = objectAt(input, "request");
+    assertExactKeys(value, ["sId"], ["personaId", "includeFinal"], "request");
+    const out: IAdminWorldTransfersReq = { sId: finiteInteger(value.sId, "request.sId", 0, 65535) };
+    if (value.personaId !== undefined) out.personaId = adminWorldId(value.personaId, "request.personaId");
+    if (value.includeFinal !== undefined) {
+        if (typeof value.includeFinal !== "boolean") fail("HTTP_BOOLEAN", "request.includeFinal");
+        out.includeFinal = value.includeFinal as boolean;
+    }
+    return out;
+}
+
+function validateAdminWorldTransferRow(input: unknown, path: string): IAdminWorldTransferRow {
+    const value = objectAt(input, path);
+    assertExactKeys(value, ["transferId", "personaId", "fromInstance", "toMap", "toLine", "toInstance", "state", "controlEpoch", "reserveExpiresAt", "active"], [], path);
+    if (typeof value.active !== "boolean") fail("HTTP_BOOLEAN", `${path}.active`);
+    return {
+        transferId: adminWorldId(value.transferId, `${path}.transferId`),
+        personaId: adminWorldId(value.personaId, `${path}.personaId`),
+        fromInstance: adminWorldId(value.fromInstance, `${path}.fromInstance`),
+        toMap: adminWorldId(value.toMap, `${path}.toMap`),
+        toLine: finiteInteger(value.toLine, `${path}.toLine`, 0, 65535),
+        toInstance: boundedString(value.toInstance, `${path}.toInstance`, 0, 64),
+        state: boundedString(value.state, `${path}.state`, 1, 16),
+        controlEpoch: finiteInteger(value.controlEpoch, `${path}.controlEpoch`, 0, Number.MAX_SAFE_INTEGER),
+        reserveExpiresAt: nullableInt(value.reserveExpiresAt, `${path}.reserveExpiresAt`),
+        active: value.active as boolean,
+    };
+}
+
+function validateAdminWorldTransfersResponse(input: unknown): IAdminWorldTransfersRes {
+    const value = objectAt(input, "response");
+    assertExactKeys(value, ["transfers"], [], "response");
+    return { transfers: arrayAt(value.transfers, "response.transfers", 500).map((row, index) => validateAdminWorldTransferRow(row, `response.transfers[${index}]`)) };
+}
+
+function validateAdminWorldEventsRequest(input: unknown): IAdminWorldEventsReq {
+    const value = objectAt(input, "request");
+    assertExactKeys(value, ["sId"], ["kitId", "instanceId"], "request");
+    const out: IAdminWorldEventsReq = { sId: finiteInteger(value.sId, "request.sId", 0, 65535) };
+    if (value.kitId !== undefined) out.kitId = adminWorldId(value.kitId, "request.kitId");
+    if (value.instanceId !== undefined) out.instanceId = adminWorldId(value.instanceId, "request.instanceId");
+    return out;
+}
+
+function validateAdminWorldEventTableRow(input: unknown, path: string): IAdminWorldEventTableRow {
+    const value = objectAt(input, path);
+    assertExactKeys(value, ["kitId", "table", "pending", "done", "dead", "superseded", "executable"], [], path);
+    const count = (key: "pending" | "done" | "dead" | "superseded" | "executable"): number => finiteInteger(value[key], `${path}.${key}`, 0, Number.MAX_SAFE_INTEGER);
+    return {
+        kitId: adminWorldId(value.kitId, `${path}.kitId`),
+        table: boundedString(value.table, `${path}.table`, 1, 128),
+        pending: count("pending"), done: count("done"), dead: count("dead"), superseded: count("superseded"), executable: count("executable"),
+    };
+}
+
+function validateAdminWorldEventsResponse(input: unknown): IAdminWorldEventsRes {
+    const value = objectAt(input, "response");
+    assertExactKeys(value, ["tables"], [], "response");
+    return { tables: arrayAt(value.tables, "response.tables", 256).map((row, index) => validateAdminWorldEventTableRow(row, `response.tables[${index}]`)) };
 }
 
 function validatePayWxNotifyRequest(input: unknown): IPayWxNotifyReq {
@@ -739,6 +914,9 @@ export const GameHttpContractMap = {
     AdminKick: defineGameHttpContract({ method: "POST", path: ApiPath.AdminKick, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminKickRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminKickResponse(input)) }),
     AdminNotice: defineGameHttpContract({ method: "POST", path: ApiPath.AdminNotice, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminNoticeRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminNoticeResponse(input)) }),
     PayWxNotify: defineGameHttpContract({ method: "POST", path: ApiPath.PayWxNotify, auth: "internal", request: (input: unknown) => guardWire("request", () => validatePayWxNotifyRequest(input)), response: (input: unknown) => guardWire("response", () => validatePayWxNotifyResponse(input)) }),
+    AdminWorldInstances: defineGameHttpContract({ method: "POST", path: ApiPath.AdminWorldInstances, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminWorldInstancesRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminWorldInstancesResponse(input)) }),
+    AdminWorldTransfers: defineGameHttpContract({ method: "POST", path: ApiPath.AdminWorldTransfers, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminWorldTransfersRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminWorldTransfersResponse(input)) }),
+    AdminWorldEvents: defineGameHttpContract({ method: "POST", path: ApiPath.AdminWorldEvents, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminWorldEventsRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminWorldEventsResponse(input)) }),
 } as const satisfies Record<string, GameHttpContractDefinition>;
 
 export type GameHttpContractKey = keyof typeof GameHttpContractMap;
