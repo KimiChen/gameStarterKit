@@ -25,8 +25,9 @@ import {
 } from "@game/shared";
 import { server } from "../../src/app.config";
 
-import { GROUP_ZONES } from "../../src/core/infra/config";
-import { activeLruBucketOf, kActiveLru, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
+import { GROUP_ZONES, NODE_ID } from "../../src/core/infra/config";
+import { activeLruBucketOf, kActiveLru, kPresence, kSess, kUser, zoneCtx } from "../../src/core/infra/keys";
+import { createPresence, isOnline, readPresence } from "../../src/core/presence/presence";
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql } from "../../src/core/infra/mysql";
 import { LobbyRoom } from "../../src/websocket/LobbyRoom";
@@ -113,7 +114,7 @@ after(async () => {
   await colyseus?.shutdown();
   for (const u of uids) {
     for (const s of [0, 1]) { await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); }
-    await clientFor(u).unlink(kSess(u, 0), kSess(u, 1), kSess(u, 2));
+    await clientFor(u).unlink(kSess(u, 0), kSess(u, 1), kSess(u, 2), kPresence(u, 0), kPresence(u, 1), kPresence(u, 2));
     const b = activeLruBucketOf(u);
     await indexClientFor(b).zrem(kActiveLru(b), u);
   }
@@ -299,3 +300,37 @@ test("fault matrix：character ready 超时在 onJoin 边界拒绝并注销在�
     assert.equal(unregistered, 1, "ready 失败必须注销本次在线登记");
   });
 });
+
+// ── MMO MF6a-B1 presence（docs/MMO.md §6.2）：真实 Redis 上的 onJoin 写 / final onLeave 清 ───────────
+test("presence：入大厅后 isOnline 真且 lobby=NODE_ID（seat 公开前已写）；最终离开后假", async () => {
+  const { uid, token } = await makeAcct("presence", 1);
+  const room = await joinLobby(token, 1);
+  try {
+    // joinOrCreate 已 resolve = onJoin 已完成 = presence 已写（⛔ 不轮询：seat 公开前就必须可见）
+    assert.equal(await isOnline(uid, 1), true, "入大厅即在线");
+    assert.equal((await readPresence(uid, 1))?.lobby, NODE_ID, "lobby 字段 = 本节点身份");
+    assert.equal(await isOnline(uid, 2), false, "presence 按 (uid, sId) 分键");
+  } finally {
+    await room.leave();
+  }
+  await waitFor(async () => !(await isOnline(uid, 1)), "final onLeave 后 presence 清除");
+});
+
+// Lua 语义只能在真实 Redis 上钉（单测的假 Redis 自己实现了等价逻辑，改 Lua 不会让它转红）。
+// 变异验证：PRESENCE_CLEAR_IF_OWNER 删 `owner ~= ARGV[2]` 比较 → 本用例转红。
+test("presence：顶号跨节点——节点 b 已改写 lobby 后，节点 a 的迟到清除 ⛔ 不抹新连接（真实 Lua）", async () => {
+  const uid = testUid("presence-owner").slice(0, 32);
+  uids.push(uid);
+  const node = (nodeId: string) => createPresence({
+    client: (u) => clientFor(u), nodeId: () => nodeId, now: () => Date.now(), ttlSeconds: () => 90,
+  });
+  const a = node("node-a-int");
+  const b = node("node-b-int");
+  await a.touchLobby(uid, 2);
+  await b.touchLobby(uid, 2);
+  assert.equal(await a.clearLobbyIfOwner(uid, 2), false, "owner 是 node-b ⇒ node-a 不得清");
+  assert.equal((await readPresence(uid, 2))?.lobby, "node-b-int");
+  assert.equal(await b.clearLobbyIfOwner(uid, 2), true);
+  assert.equal(await isOnline(uid, 2), false);
+});
+
