@@ -334,7 +334,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [x] MF9-B1（f6fad19f） [x] MF9-B2（745f5ca6） [x] MF9-B3（2c528c69） [x] MF9-B4（944be274，显式框架侵入） [x] MF9-B5（本行所在提交，文档）— MF9 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑥ 登记在该行）；tag `mf9-exit`
 - [x] MF2-B1（4008c6f2） [x] MF2-B2（2c4027ba） [x] MF2-B3（d8c1a6e9） [x] MF2-B4（d1bbaa89；arena 1.0.0 → 1.0.1 锁 `--reinstall-from-tree` 重写） [x] MF2-B5（9369e654；`schema.sql` 加 `idx_persona_uid`，受保护文件显式重钉） [x] MF2-B6（本行所在提交，回归 + 门① SOP SERVER.md §8.2 + 文档；勾选行曾随 3D 轨道提交 7dc98304 先行入库）— MF2 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑥）；tag `mf2-exit`
 - [x] MF5a-B1（9db63ceb） [x] MF5a-B2（fc5dfd9f，显式框架侵入 rooms/core） [x] MF5a-B3（369cadb7） [x] MF5a-B4（88391af8，显式框架侵入 GameRoom） [x] MF5a-B5（9968cc6f，显式框架侵入 GameRoom / GameMode / GameRoomTransport） [x] MF5a-B6（本行所在提交，world-bench `view-r100 / view-r300` + 文档）— MF5a 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑧）；tag `mf5a-exit`；`GAME_ROOM_PROTOCOL_VERSION` 不 bump（§11.2）
-- [ ] MF4-B1 [ ] MF4-B2 [ ] MF4-B3 [ ] MF4-B4 [ ] MF4-B5 [ ] MF4-B6 [ ] MF4-B7 [ ] MF4-B8
+- [x] MF4-B1（c61dde16） [x] MF4-B2（ce5b21aa） [x] MF4-B3（39c19209） [x] MF4-B4（9705ba6f） [x] MF4-B5（ccde4349） [x] MF4-B6（05e9933a，显式框架侵入 RoomAuth / RoomProfile / GameRoom / app.config + protected-paths 新增 WorldRoom / WorldMode / world.config；B8 的 shared / 夹具 mode 半边随本批） [x] MF4-B7（2c455fed） [x] MF4-B8（9fe7118a，真栈 int；本行所在提交 = 文档回写）— MF4 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑩）；tag `mf4-exit`；`WORLD_ROOM_PROTOCOL_VERSION=1` 一次定型
 - [ ] MF5b-B1 [ ] MF5b-B2 [ ] MF5b-B3
 - [ ] MF6b-B1 [ ] MF6b-B2
 - [ ] MF7b-B1 [ ] MF7b-B2 [ ] MF7b-B3 [ ] MF7b-B4 [ ] MF7b-B5 [ ] MF7b-B6

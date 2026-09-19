@@ -33,6 +33,18 @@
   再跑 `onFinish`；未声明该能力的 mode（如 idle）settle 时明确不产出任何证据。registry 会在创建 mode 时
   校验必填能力，漏配即 fail-closed；root 只来自 manifest 生成映射，不由 mode factory 手写。
   ⚠ 本文件不注册任何具体玩法：登记发生在组合根 `modes/catalog.ts`。
+- `WorldRoom.ts` / `WorldMode.ts`（MMO MF4，docs/MMO.md §4.5）：世界形态玩法（manifest `kind:"world"`）的传输壳与契约。`WorldMode` ⛔ 不继承
+  `GameMode`：十个钩子（onWorldInit / onRestore / onBeforeAdmit / onAdmit / onEnter / onLeave / onStep / onCheckpoint / onDrain / onSignal
+  + primaryEntityOf），只见会话 id / persona / 有序命令；登记表 `worldModeRegistry`（codegen `registerGeneratedWorldModes` 分表，
+  ⛔ 不混进 gameModeRegistry）。`WorldRoom`：`autoDispose=false`；`worldRoomAuth`（RoomAuth 注入 `WORLD_ROOM_PROTOCOL_VERSION` +
+  `validateWorldRoomJoinOptions`）；建房 = `core/WorldDirectory` (sId, mapId, line) → `core/WorldLease` 取租 → `core/control.acquireAuthority`
+  CAS → 生成 root（`ROOM_STATE_KIND` 必须 world）→ `core/WorldRuntime.recover` → state=active；准入固定时序 ①–⑩（persona 归属存储真源 →
+  ticket 端口（`core/WorldProfile.placeholderWorldTicketPort`，MF8 换 WorldTicket）→ onBeforeAdmit → `acquireControl` CAS → 本房同 persona
+  旧会话 lost-control → `runtime.admit`）；C2S 经同一 `WireDispatcher` 喂 `runtime.enqueue`（Active ⇒ playing，其余 ⇒ settle 只放 Ping）；
+  出站有序 outbox 每 tick 经 `S2CPorts` 排空；租约 onLost / GM / mode.requestDrain ⇒ Draining（停收准入与命令，仍推进 graceMs）⇒ 强制检查点 →
+  Offline（WITH_ERROR 关闭、归还控制权、释放租约、state offline、dispose）；空实例 sleep / run / unload 由 `WorldRuntime.evaluateEmpty` 判定。
+  登记在 `../world.config.ts`（world 进程 rooms 表；合体入口 `app.config.ts` 合并）。夹具 `worldFixture`（`test/fixtures/worldFixtureMode.ts`，
+  ⛔ 不进生产 registry）；真栈用例 `test/int/world-room.test.ts`。
 - `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：
   - `rules.ts`：纯函数化的模拟规则（运动锚点、施法、复位），live 与 replay 共用同一组表达式；
   - `harness.ts`：测试/回放注入边界（`GameRoomInput` 形状与敌意输入快照），⛔ 不是通用玩法契约；
@@ -53,7 +65,9 @@
   `MessageBudget`）、`MessageBudget.ts`（1 s 滚动窗口，`GAME_ROOM_MAX_MESSAGES_PER_SECOND` 真源）、`ReconnectGrace.ts`
   （reconnected / expired / stale 三态，dispose 或代际前移 ⇒ stale）、`S2CPorts.ts`（core validator 出站口 + mode token 的
   dir / owner / validate 闸；MF5a 在此加 perSession 广播闸）。契约见 `test/rooms-core-units.test.ts`，行为快照见
-  `test/rooms-core-behavior-snapshot.test.ts`。
+  `test/rooms-core-behavior-snapshot.test.ts`。**MF4 世界侧**：`WorldRuntime.ts`（无头模拟宿主，⛔ import colyseus，
+  `test/rooms-core-headless-import.test.ts` 机检）、`WorldLease.ts`（Redis 权威租约三条 Lua）、`control.ts`（MySQL 权威 / 控制权 CAS）、
+  `WorldProfile.ts`（profile "world" / world-ticket 端口）、`WorldDirectory.ts`（(sId, mapId, line) → 实例）。
   **阶段 8a policy 层**（Non-intrusive §6.2）——`StartPolicy.ts`（auto / owner-ready /
   drop-in 判别联合，⛔ 不重复声明任何人数：min/max/autoStart 唯一真源仍是 roster/manifest）、`AccessPolicy.ts`
   （matchmaking / invite-code，四个时间/配额参数取自 config，不等式在加载期断言）、`RoomProfile.ts`
