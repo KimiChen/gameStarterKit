@@ -27,6 +27,7 @@ import {
   generatedHeader,
   hasGameplaySourcedEnum,
   parseGameplayStateDescriptor,
+  parseKitFragmentFile,
   posixPath,
   renderSharedStateModule,
   renderServerSchemaModule,
@@ -318,7 +319,28 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
     if (manifest.id !== entry.name) {
       fail(`${entryLabel}/manifest.json`, `manifest.id "${manifest.id}" must equal its directory name "${entry.name}"`);
     }
-    const state = parseGameplayStateDescriptor(stateRaw.value);
+    // MF9-B3 kit fragment：`<kitId>:<name>` → apps/kits/<kitId>/fragments/<name>.state.json（kit.json.fragments 须声明）；
+    // 文件字节按引用顺序并入 contractDigest（fragment 变 = 该 mode 的 state 契约变，走 modeVersion 闸）。
+    const fragmentBytes: Buffer[] = [];
+    const state = parseGameplayStateDescriptor(stateRaw.value, {
+      resolveKitFragment: (kitId, name) => {
+        const stateLabel = `${entryLabel}/state.json`;
+        const kitJsonLabel = `${KITS_DIR_RELATIVE}/${kitId}/kit.json`;
+        const kitJsonFile = path.join(root, kitJsonLabel);
+        if (!fs.existsSync(kitJsonFile)) fail(stateLabel, `fragment "${kitId}:${name}" 引用的 kit "${kitId}" 不存在（${kitJsonLabel}）`);
+        const kitJson = readJsonFile(kitJsonFile, kitJsonLabel).value as { readonly fragments?: unknown };
+        const declared = Array.isArray(kitJson.fragments) ? (kitJson.fragments as unknown[]) : [];
+        if (!declared.includes(name)) {
+          fail(stateLabel, `fragment "${kitId}:${name}"：kit "${kitId}" 的 kit.json.fragments 未声明 "${name}"（已声明：${declared.map(String).join(", ") || "-"}）`);
+        }
+        const fragmentLabel = `${KITS_DIR_RELATIVE}/${kitId}/fragments/${name}.state.json`;
+        const fragmentFile = path.join(root, fragmentLabel);
+        assertRegularFile(fragmentFile, fragmentLabel);
+        const fragmentRaw = readJsonFile(fragmentFile, fragmentLabel);
+        fragmentBytes.push(fragmentRaw.bytes);
+        return parseKitFragmentFile(fragmentRaw.value, fragmentLabel);
+      },
+    });
 
     // wire.ts（手写，可缺省 = 该 mode 无 wire 消息）：语法读取 + 字节并入 digest。
     const wireLabel = `${SHARED_GAMEPLAYS_DIR_RELATIVE}/${entry.name}/wire.ts`;
@@ -368,13 +390,15 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
     // digest 是 wire/state 契约身份，玩法自有模块的内容变化不该逼 modeVersion bump。
     const sharedModules = readGameplaySharedModules(root, entry.name);
 
-    const contractDigest = crypto.createHash("sha256")
+    const digestHash = crypto.createHash("sha256")
       .update(manifestRaw.bytes)
       .update("\0")
       .update(stateRaw.bytes)
       .update("\0")
-      .update(wireBytes)
-      .digest("hex");
+      .update(wireBytes);
+    // kit fragment 字节只在引用时并入：不引用的 mode digest 与此前逐字节相同。
+    for (const bytes of fragmentBytes) digestHash.update("\0").update(bytes);
+    const contractDigest = digestHash.digest("hex");
     gameplays.push({
       id: manifest.id,
       manifest,

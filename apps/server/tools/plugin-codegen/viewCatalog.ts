@@ -785,6 +785,13 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     }
   }
   detectDependencyCycle(plugins);
+  // MF9-B3：kit.json.fragments 声明的每个 fragment 都必须有文件（内容由 codegen:gameplays 按引用解析）。
+  for (const kit of kitsById.values()) {
+    for (const name of kit.fragments) {
+      const relative = `${KITS_DIR_RELATIVE}/${kit.id}/fragments/${name}.state.json`;
+      assertRegularFile(path.join(root, relative), `${manifestLabelById.get(kit.id) as string} → ${relative}`);
+    }
+  }
   // MF9 贡献点：登记 / 所有权 / 内容三道闸都在这里（codegen 是第一道闸）。
   const contributions = resolveContributions(root, kitsById, parsedPlugins.map((plugin) => ({
     registration: plugin, raw: rawById.get(plugin.id), label: manifestLabelById.get(plugin.id) as string,
