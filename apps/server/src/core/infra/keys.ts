@@ -33,6 +33,7 @@
  * 跨用户流 ⛔ 不与 per-user key 进同一条 Lua。区前缀不含 hash-tag，`{...}` 语义不受影响。
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { AssetOwnerRef } from "@game/shared";
 import { crc32 } from "node:zlib";
 import { ACTIVE_LRU_BUCKETS, BAG_SHARDS, GROUP_ZONES, REDIS_KEY_PREFIX } from "./config";
 
@@ -334,7 +335,14 @@ export const activeLruBucketOf = (uid: string): number =>
 
 // ── cache 实例（物理独立，09·R4） · per-zone ─────────────────────────────
 
-/** 货币只读缓存 HASH，TTL 5m，真源在 MySQL。⛔ 不混进 user:{uid}（09·A2）。每区独立经济 → per-zone。 */
-export const kCacheCurrency = (uid: string) => `${P()}cache:currency:{${uid}}`;
+/**
+ * 货币只读缓存 HASH，TTL 5m，真源在 MySQL。⛔ 不混进 user:{uid}（09·A2）。每区独立经济 → per-zone。
+ * 资产主体（MMO MF2-B3）：account 主体沿用原键（存量缓存无损）；persona 主体带 `:persona:<personaId>` 段——`{uid}` 仍是唯一
+ * hash-tag（同槽），同账号各 persona 钱包互不可见。
+ */
+export const kCacheCurrency = (uid: string, owner?: AssetOwnerRef) =>
+  owner === undefined || owner.kind === "account"
+    ? `${P()}cache:currency:{${uid}}`
+    : `${P()}cache:currency:{${uid}}:persona:${owner.personaId}`;
 /** 不存在用户的负缓存 STRING，TTL 10s。读点必须在 EXISTS user 之后（09·F4）。per-zone（本区有无角色）。 */
 export const kNegcacheUser = (uid: string) => `${P()}negcache:user:{${uid}}`;
