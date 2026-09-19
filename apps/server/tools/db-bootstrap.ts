@@ -10,6 +10,7 @@ import mysql from "mysql2/promise";
 import { MYSQL_URL } from "../src/core/infra/config";
 import { SERVER_KIT_CATALOG } from "../src/kits/catalog.generated";
 import { applyKitMigrations } from "./kit-migrations";
+import { orphanKitWorkerLeases, presetKitWorkerLeases } from "./kit-workers";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -664,6 +665,12 @@ async function main(): Promise<void> {
       `✅ kit 迁移：${SERVER_KIT_CATALOG.length} 个 kit，新应用 ${report.applied.length} 个文件，跳过 ${report.skipped} 个`
       + (report.orphanLedgerKits.length > 0 ? `，账本孤儿 kit：${report.orphanLedgerKits.join(", ")}` : ""),
     );
+    // kit worker 租约行预置（docs/MMO.md MF7a-B2）：每个 kit.json.workers[] 一行 singleton_lease('kit:<id>:<worker>')，ODKU no-op。
+    const leases = await presetKitWorkerLeases(kitConn, SERVER_KIT_CATALOG);
+    console.log(`✅ kit worker 租约行：新增 ${leases.inserted.length}，已有 ${leases.existing.length}`);
+    for (const orphan of await orphanKitWorkerLeases(kitConn, SERVER_KIT_CATALOG)) {
+      console.log(`  ⚠ singleton_lease 有 kit worker 租约行 '${orphan}' 而目录无该 worker（行已保留；确认弃用后可手工 DELETE）`);
+    }
   } finally {
     await kitConn.end();
   }
