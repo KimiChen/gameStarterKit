@@ -350,7 +350,9 @@ reconcile；idle 没有该 hook，join/reconnect 都不会构造 Move。
 token / sId 取会话，本地先过 `validateWorldRoomJoinOptions` 再 `client.joinOrCreate(RoomName.World, options)`；一个 transport 同时
 只持一个世界房；出站只放行 core 与本 mode 的 C2S 且掉线期间拒发（⛔ 不重放旧意图）；入站先过 `validateS2CPayload`；离开分类
 `consented / drained（WITH_ERROR：须经 world.enter 重进）/ replaced（同 persona 别处取得控制权）/ dropped（SDK 自动重连）`。
-端点在 PS2 前用 `getCurrentGameWsUrl()`。视野流 / baseline 的 reconcile 端口随 MF5b-B2 接入。
+端点在 PS2 前用 `getCurrentGameWsUrl()`。视野流 / baseline 的 reconcile 端口 = `WorldRoomHandle.bindObserverStream(types, sink)`（MMO MF5b-B2，
+与 `GameRoomTransport.bindObserverStream` 同形：六个 perSession S2C 经 wire 校验绑到 `logic/rooms/observer/ObserverReconciler`；本人私有流走
+`onMessage` 且要喂给 reconciler 的 cursor——它与视野流共用单 seq 流）。
 
 ### RoomClient
 
