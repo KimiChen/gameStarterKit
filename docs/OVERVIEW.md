@@ -254,6 +254,7 @@ FairyGUI 编辑设计源
 6. FairyGUI 只通过动态 import 进入页面打开链。
 7. 服务端写路径遵守 lock/fence/idempotency/outbox 约束。
 8. 外部身份服务只通过 HTTP 契约消费，不导入业务源码。
+9. MMO 世界房内核（`apps/server/src/rooms/core/**`：WorldRuntime / 租约与控制权 / 兴趣集 / 检查点 / 交接 / 登记）与 kit-api 门面只经 `WorldMode` 钩子、`withKitWorldTx` / `CheckpointPort` / kit worker 事务消费；kit / 插件 ⛔ 直接 import 内核（[Non-intrusive.md §12.2](Non-intrusive.md)、[MMO.md](MMO.md)）。
 
 ## 7. 当前状态
 
@@ -263,6 +264,7 @@ FairyGUI 编辑设计源
   `privateFixture` 驱动测试；生产玩法当前未声明 `"private"`（`snake` 为 `"dropIn"` 自由加入，其余为 `"default"` auto + matchmaking），
   `PrivateRoomLobby` 页面视觉属 FGUI 编辑器待办（登记在 [EXTRAS.md §5.2](EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并) U3）。
 - 本地开发账号通过外部服务的 dev session 契约创建。
+- MMO 框架段 MF0–MF11（[MMO.md §12](MMO.md)，2026-09-19 / 20）已落地：persona 与资产主体、常驻 `WorldRoom` / `WorldRuntime`（权威租约 + 控制权 CAS）、按会话裁剪的兴趣集同步、presence / party / 附近与世界聊天、kit 检查点与世界事件 outbox + kit worker、两房交接与一次性凭据、分线分配 / 多进程 / 运维只读面；夹具 `worldFixture` / `kitfix` 驱动测试，⛔ 尚无 `mmo` kit（MK0 起）与任何内容。
 - Unity 目录只是研究占位。
 - 所有演示 endpoint、配置和页面只用于开发与验证。
 - `apps/shared/src/logic` 的体力（stamina）当前只有单测覆盖，没有服务端或客户端调用点；自然日（time）

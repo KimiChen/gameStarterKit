@@ -2999,6 +2999,7 @@ RoomAuth / WireDispatcher / MessageBudget / ReconnectGrace / S2CPorts 是 GameRo
 GameplayDispatcher 之名预留的职责由 WireDispatcher 落地），与既有 RoomProfile / StartPolicy / AccessPolicy
 同批登进 gameplayFlow（关 PLUGIN-REVIEW F03）。`apps/server/src/rooms/{WorldRoom,WorldMode}.ts` 与 `apps/server/src/world.config.ts`
 自 MMO MF4-B6（2026-09-19）登记：世界形态的传输壳 / 契约 / world 进程 rooms 表，新增 world 玩法只经 codegen 分表登记，⛔ 不改它们。
+随 MMO MF4–MF10（2026-09-19 / 20）目录内新增世界房内核：WorldRuntime / WorldLease / control / WorldDirectory / WorldProfile（MF4）、InterestSet / ObserverSync / Baseline / OutboundQueue（MF5a）、CheckpointPort / WorldTx / WorldEventPort / WorldCheckpoint（MF7b）、transfer / WorldTicket / WorldTransfer（MF8）、WorldRegistry（MF10）——同一条 glob 覆盖，kit / 插件只经 `WorldMode` 钩子与 kit-api 门面（`withKitWorldTx` / `CheckpointPort` / worker 事务）消费，⛔ 直接 import 内核。
 
 
 两条边界要一起记住：**本清单约束的是「新增普通玩法 / plugin」的动线**，§9 的框架改造阶段本身属于**显式框架侵入**，

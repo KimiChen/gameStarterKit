@@ -288,6 +288,7 @@ publicAddress 写 coord HASH `kWorldInfo`，TTL = 租约、按续租节拍刷新
 `WORLD_MULTI_PROCESS=1` 时 `world.config.ts worldServerOptions()` 装 RedisDriver / RedisPresence（REDIS_COLYSEUS_URL 必须是与 durable / coord 不同的 Redis **实例**，
 config.ts 加载期断言）+ WORLD_PUBLIC_ADDRESS + 可注入放置钩子；lobby / game 进程不需要（D27）。运维只读面：`POST /admin/world/{instances,transfers,events}`
 （密钥头保护；分线实例 ⊕ 登记 / 在途交接 / 事件积压）。多进程接管实验：`tools/world-bench/multi-process.ts`（报告 `docs/perf/world-bench/*-multi-process.json`）。
+MMO MF11（2026-09-20，审阅 [MMO-REVIEW-2.md](MMO-REVIEW-2.md)）：**陈旧交接懒清**（R2-01）——源房在 Committed 前崩溃遗留的 requested / prepared 行不再永久占住 persona：`world.enter` 与源房 `context.transfer.request` 遇在途行先 `transfer.cancelIfStale`（prepared 预留到期、或 requested 建行超过 WORLD_TRANSFER_RESERVE_MS ⇒ cancelled；Committed 及之后 ⛔ 动），源房另对「已在本房 activated 但 finalize 丢失」的行先 finalize，收敛后重试一次；仍在途 ⇒ 照旧拒（WORLD_TRANSFER_INVALID / TransferInFlightError）。`expireReservations` 仍只是运维扫帚，⛔ 常驻 sweeper。**分线分配是提示**（R2-03）：阈值 WORLD_LINE_CAPACITY 与登记 `seated` 最多滞后一个续租节拍，硬上限仍是房内 `mode.capacity`（`RoomFull`；凭据未消费可原票重试），按图定制阈值与自动重试归 kit（MK1）。**准入失败即作废同 persona 旧凭据**（R2-04）：凭据绑定签发时的 control_epoch，`acquireControl` 之后的失败会推进 epoch，客户端须重新 `world.enter`（幂等无副作用）。**周期检查点每在座 persona 一条 INSERT**（同一世界事务，R2-06）：100 人 / 30 s 档可接受，MK1 场景 B 实测后只许收紧（分批 / 只写脏 persona）。**附近聊天首帧前不收**（R2-07）：受众只算已进入兴趣集的会话，刚入座在首个 baseline 之前的会话收不到同 tick 气泡。
 生产 catalog 已登记 6 个 mode：默认玩法
 `snake`、演示 `ballMove`、最小 `idle`、`tally` 与 arena kit 的 `arenaCapture`/`arenaDuel`（fixture 玩法不在表）。
 `ballMove` 使用 `GameRoomState` 运行移动/技能 Demo，`idle` 使用独立 `IdleRoomState` 和 pulse 胜利条件；

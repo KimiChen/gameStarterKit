@@ -60,6 +60,7 @@
   `core/WorldDirectory.allocate`（满员开新线到 WORLD_MAX_LINES_PER_MAP，全满拒；指定 line 越界拒）供 `world.enter` 未指定 line 时分配；多 world 进程
   经 `world.config.ts worldServerOptions()`（WORLD_MULTI_PROCESS=1 ⇒ RedisDriver / Presence 构造于独立实例 REDIS_COLYSEUS_URL，加载期断言）；
   运维只读面 `http/admin/world{Instances,Transfers,Events}.ts`；多进程接管实验 `tools/world-bench/multi-process.ts`。
+  **MF11 收口**（审阅 `docs/MMO-REVIEW-2.md`）：陈旧交接自愈——源房 `requestTransfer` 与 Lobby `world.enter` 遇在途 `world_transfer` 行先 `core/transfer.ts cancelIfStale`（Committed 前且超过预留窗口 ⇒ cancelled；本房已 activated 未 finalize ⇒ finalize）再重试 / 放行，Committed 及之后 ⛔ 动；单测 harness 规矩：新增缺省会连 Redis 的 deps（如 `WorldRegistry`）必须同批给 harness 内存实现（`MemoryWorldRegistry`），否则单测进程不退出。
   登记在 `../world.config.ts`（world 进程 rooms 表；合体入口 `app.config.ts` 合并）。夹具 `worldFixture`（`test/fixtures/worldFixtureMode.ts`，
   ⛔ 不进生产 registry）；真栈用例 `test/int/world-room.test.ts`。
 - `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：

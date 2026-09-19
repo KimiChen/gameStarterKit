@@ -23,6 +23,8 @@
   `userSchema`/`liveSchema`（玩家档 schema 契约与热档原子只读/锁内迁移适配层）。
 - `infra/`：配置、key、Redis 路由/Lua、MySQL、lease、stream consumer 与本地 loop monitor。
 - `auth/`：游戏组 session cache 和 best-effort kick 接缝；账号权威仍在外部 WebPlatform。
+- `presence/`、`party/`、`chat/`、`push/`：MMO MF6a 社交原语——在线 / 组队 / 频道（Redis 权威，presence / party 走 Lua CAS）与统一推送总线 `pushBus.ts`（users / realm / guild / room 四种 kind；kind=room 供跨房唤醒，如交接 Committed 后唤醒目标分线）。
+- `world/`：MMO MF8 / MF10——`enterRpc.ts`（`world.enter` / `world.resolveTransfer` 的领域逻辑：分线分配、在途交接解析与陈旧行懒清、一次性凭据签发）与 `adminRead.ts`（运维只读面：分线实例 ⊕ 登记 / 在途交接 / 事件积压）。
 - `economy/`：软货币、ledger、shop/outbox 与显式 relayer 样例。
 - `guild/`：Demo 目录与事件近窗。
 - `redeem/`：redeem 插件的兑换码、核销与插件钱包存储（键经 `kPluginUser`）。
