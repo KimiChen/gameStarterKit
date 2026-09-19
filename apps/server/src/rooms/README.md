@@ -45,6 +45,9 @@
   Offline（WITH_ERROR 关闭、归还控制权、释放租约、state offline、dispose）；空实例 sleep / run / unload 由 `WorldRuntime.evaluateEmpty` 判定。
   **MF5b 观察者同步**：`WorldMode.observer`（与 GameMode 同形）由 `core/WorldRuntime.ts` 消费——每会话 OutboundQueue、prepareObservers（首发 / 归位 / 超限 /
   请求 ⇒ 只含兴趣集的 baseline）→ onStep → flushObservers（差分），壳只 `drainOutbound` 在线会话（宽限中 `markAway`，⛔ 不排空、归位先 baseline）。
+  **MF7b 检查点 / 世界事件**：`WorldMode.checkpoint`（kit 的 `CheckpointPort` + schema 窗口 + 事件表）由 `core/WorldCheckpoint.ts` 编排——runtime 取批
+  （rev = 已落库 + 1，事件批移出）→ 同一 `withWorldTx` 落分线快照 + persona 快照 + 事件行 + `world_instance.checkpoint_rev` → commit；失败 rollback 放回、
+  权威已失 ⇒ Draining；Recovering `loadInstance` + superseded，准入 `loadPersona` 进 `session.checkpoint`；强制点 = drain / 离座 / `requestCheckpoint`。
   登记在 `../world.config.ts`（world 进程 rooms 表；合体入口 `app.config.ts` 合并）。夹具 `worldFixture`（`test/fixtures/worldFixtureMode.ts`，
   ⛔ 不进生产 registry）；真栈用例 `test/int/world-room.test.ts`。
 - `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：
@@ -70,6 +73,8 @@
   `test/rooms-core-behavior-snapshot.test.ts`。**MF4 世界侧**：`WorldRuntime.ts`（无头模拟宿主，⛔ import colyseus，
   `test/rooms-core-headless-import.test.ts` 机检）、`WorldLease.ts`（Redis 权威租约三条 Lua）、`control.ts`（MySQL 权威 / 控制权 CAS）、
   `WorldProfile.ts`（profile "world" / world-ticket 端口）、`WorldDirectory.ts`（(sId, mapId, line) → 实例）。
+  **MF7b**：`CheckpointPort.ts`（信封 + 端口 + 内存实现）、`WorldTx.ts`（kit-api `withKitWorldTx` 再导出）、`WorldEventPort.ts`（状态 / superseded / stats）、
+  `WorldCheckpoint.ts`（编排）。
   **阶段 8a policy 层**（Non-intrusive §6.2）——`StartPolicy.ts`（auto / owner-ready /
   drop-in 判别联合，⛔ 不重复声明任何人数：min/max/autoStart 唯一真源仍是 roster/manifest）、`AccessPolicy.ts`
   （matchmaking / invite-code，四个时间/配额参数取自 config，不等式在加载期断言）、`RoomProfile.ts`

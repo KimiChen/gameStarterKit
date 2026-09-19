@@ -337,7 +337,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [x] MF4-B1（c61dde16） [x] MF4-B2（ce5b21aa） [x] MF4-B3（39c19209） [x] MF4-B4（9705ba6f） [x] MF4-B5（ccde4349） [x] MF4-B6（05e9933a，显式框架侵入 RoomAuth / RoomProfile / GameRoom / app.config + protected-paths 新增 WorldRoom / WorldMode / world.config；B8 的 shared / 夹具 mode 半边随本批） [x] MF4-B7（2c455fed） [x] MF4-B8（9fe7118a，真栈 int；本行所在提交 = 文档回写）— MF4 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑩）；tag `mf4-exit`；`WORLD_ROOM_PROTOCOL_VERSION=1` 一次定型
 - [x] MF5b-B1（43b0c827；观察者运行时住 WorldRuntime + WorldRoom 每 tick 排空 + worldFixture 七个 perSession token（B3 的夹具半边与 `gameplay-wire-per-session` 扩表随本批，modeVersion 1 → 2）+ `world-visibility-leak.test.ts`） [x] MF5b-B2（0d7e2adc；客户端 `bindObserverStream`） [x] MF5b-B3（本行所在提交：矩阵 / verify 各阶段全绿 + 文档）— MF5b 退出 2026-09-20，见 MMO.md §12（偏差 ①–④）；tag `mf5b-exit`；⚠ 不作 slg 2b 证据
 - [ ] MF6b-B1 [ ] MF6b-B2
-- [ ] MF7b-B1 [ ] MF7b-B2 [ ] MF7b-B3 [ ] MF7b-B4 [ ] MF7b-B5 [ ] MF7b-B6
+- [x] MF7b-B1（be50abf0） [x] MF7b-B2（8f1da3cd） [x] MF7b-B3（2bb60051；实现选项取 ④「事件批只随分线检查点同事务落库」，①–③ 门 / superseded 保留作纵深） [x] MF7b-B4（32da36de） [x] MF7b-B5（0bd33abf；夹具 mode 住 test/fixtures，kitfix 两表在 int 内物化） [x] MF7b-B6（本行所在提交：§7.3 逐行用例 `world-rollback-windows.test.ts` + SERVER.md §8.3 + 文档）— MF7b 退出 2026-09-20，见 MMO.md §12（偏差 ①–⑥）；tag `mf7b-exit`
 - [ ] MF8-B1 [ ] MF8-B2 [ ] MF8-B3 [ ] MF8-B4 [ ] MF8-B5 [ ] MF8-B6 [ ] MF8-B7
 - [ ] MF10-B1 [ ] MF10-B2 [ ] MF10-B3 [ ] MF10-B4
 - [ ] MF11-B1 [ ] MF11-B2 [ ] MF11-B3 [ ] MF11-B4 [ ] MF11-B5

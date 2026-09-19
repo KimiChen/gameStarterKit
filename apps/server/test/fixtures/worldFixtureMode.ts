@@ -62,6 +62,9 @@ export interface WorldFixtureMode extends WorldMode<WorldFixtureState> {
         place(id: string, x: number, y: number): void;
         readonly log: string[];
         checkpoints: number;
+        /** 脚本 timers（id → dueTick）：§7.3「timer 存 dueTick，恢复后按 tick 差重排」的夹具。 */
+        timers(): ReadonlyMap<string, number>;
+        setTimer(id: string, dueTick: number): void;
     };
 }
 
@@ -78,6 +81,8 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
     const staminaSent = new Map<string, number>();
     const range = options.range ?? WORLD_FIXTURE_RANGE;
     const log: string[] = [];
+    /** 脚本 timers：dueTick 按分线 tick 计；分线快照落 { id: dueTick }，恢复后按「快照 tick → 恢复时 tick」的差重排（§7.3）。 */
+    const timers = new Map<string, number>();
     const probe = {
         entities: (): ReadonlyMap<string, WorldFixtureEntity> => entities,
         moverOf: (session: string): WorldFixtureEntity | null => {
@@ -93,6 +98,8 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
         },
         log,
         checkpoints: 0,
+        timers: (): ReadonlyMap<string, number> => timers,
+        setTimer: (id: string, dueTick: number): void => { timers.set(id, dueTick); },
     };
     const syncCount = (context: WorldModeContext<WorldFixtureState>): void => {
         context.state.entityCount = entities.size;
@@ -149,8 +156,14 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
             log.push(`init:${context.mapId}#${context.line}:${info.recovered}`);
         },
         onRestore(context, snapshot) {
-            const instance = snapshot.instance as { readonly entities?: readonly WorldFixtureEntity[] } | null;
+            const instance = snapshot.instance as { readonly tick?: number; readonly entities?: readonly WorldFixtureEntity[]; readonly timers?: Record<string, number> } | null;
             for (const entity of instance?.entities ?? []) entities.set(entity.id, { ...entity, session: null });
+            // timer 重排：dueTick 相对快照 tick 的剩余步数，接到当前分线 tick 之后（⛔ 直接沿用旧绝对 tick）
+            const snapshotTick = typeof instance?.tick === "number" ? instance.tick : 0;
+            timers.clear();
+            for (const [id, dueTick] of Object.entries(instance?.timers ?? {})) {
+                timers.set(id, context.state.tick + Math.max(0, dueTick - snapshotTick));
+            }
             syncCount(context);
             log.push(`restore:${entities.size}`);
         },
@@ -225,7 +238,11 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
             });
             return {
                 persona,
-                instance: { tick: context.state.tick, entities: [...entities.values()].filter((entity) => entity.kind === "static").map(({ session: _s, ...rest }) => rest) },
+                instance: {
+                    tick: context.state.tick,
+                    entities: [...entities.values()].filter((entity) => entity.kind === "static").map(({ session: _s, ...rest }) => rest),
+                    timers: Object.fromEntries(timers),
+                },
             };
         },
         onDrain(_context, info) {
