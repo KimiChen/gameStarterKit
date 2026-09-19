@@ -1056,7 +1056,7 @@ apps/client/test/mmodemo-logic.test.ts
 
 > 未立项。每阶段完成在此登记一行（阶段 / 日期 / commit / 实际交付与基准结果 / 偏差）。⛔ 不向 plan-v5 回写。
 
-- MMO 框架阶段：暂无完成记录。
+- **MF0 KIT K1 前置**（2026-09-19，提交 6582d4ac / 1ce10d01 / 107f8e5a）：三批按 MMO-PLAN MF0-B1–B3 交付并各自变异验证——客户端边界夹具点名 8 处越界、服务端 / shared / `.conn` 夹具点名 6 + 6 + 3 处、outbox 闸假连接 7 例 + 真库 1 例；`plugin -- test arena` 33/33、`arenaShop` 9/9；服务端单测 769、客户端单测 592、`test:int` 186 全绿；typecheck 三端绿。偏差：`verify:all` 未整体绿，红项全部是本阶段之外的基线问题——UniFlex 作者态提交（2026-09-18）未同步 Cocos 镜像（`verify:sync` 168 处漂移 / 缺 .meta，需开 Creator 生成）、`test:uniflex-ui-contract` 4 例、`test:inventory` 的 docs/evidence 跟踪文件与 .gitignore 政策冲突；另提 4 个基线修复提交（vendor 锁重钉 eed92084、typecheck 断言类型 0bcda3aa、int 账本孤儿 107f8e5a 同批、根命令登记 d4794205）。KIT.md §9 K1 行已改 ✅。
 - SLG 消费方准备阶段 1 / 2a（2026-09-09）：已完成并验收；10000×10000 SQL 稀疏地图、worldmap/march v1、七张表与桌面地图页；verify:all 通过、Creator 17 步/13 图/console 空、干净安装与独立空库包测试 35/35、重复 bootstrap 零新应用。证据见 [SLG 验收记录](evidence/creator-2026-09-09/slg/README.md)。这不构成 MF5 第二消费方接线完成，SLG 2b 仍待 MF5a。（本行是 2026-09-09 时点记录：地图尺寸随后于 2026-09-10 改为 1500×1500 并扩为五图，见 slg.md §9 / §10。）
 
 2026-09-09 设计同步：已将 SLG 已采纳的两种世界形态、MF5 GameRoom 消费/名册验收、MF7 受租约保护 KitTx 契约补入正文。SLG 阶段 1 / 2a 的本轮实施与验收已完成；MF5、MF7 与 SLG 2b 尚未实施/验收，本次同步及 SLG 交付不登记为框架阶段完成。
