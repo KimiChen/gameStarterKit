@@ -11,6 +11,8 @@
  *     只有 WebPlatform 的 valid:false 才是玩家身份失败；超时 / 5xx / 服务密钥错误保持 INTERNAL，⛔ 不谎报成 token 过期。
  *
  * `assertEnvelope`（① + ②）同时供 onAuth 与 onCreate 使用——两处必须同口径（protocol-version-matrix 钉）。
+ * 信封形状按房型注入（MMO MF4-B6）：`validateJoinOptions` 缺省 = GameRoom 的 `validateGameRoomJoinOptions`，WorldRoom 注入
+ * `validateWorldRoomJoinOptions`；六步只读公共字段（v / sId / token / mode / modeVersion / profile），世界专属字段由 WorldRoom 自己消费。
  */
 import {
     ErrorCode,
@@ -19,6 +21,7 @@ import {
     validateGameRoomJoinOptions,
     WireValidationError,
     type IGameRoomJoinOptions,
+    type IRoomJoinOptions,
 } from "@game/shared";
 import { groupAdmitsZone, normalizeSId } from "../../core/infra/config";
 import { safeSecretEqual } from "../../core/auth/session";
@@ -37,9 +40,18 @@ export interface RoomAuthResult {
     profile: string;
 }
 
-export interface RoomAuthDeps {
+/** 两种房型 join 信封的公共形状（六步只读这几个字段；校验器返回各房型的完整 options）。 */
+export interface RoomJoinEnvelope extends IRoomJoinOptions {
+    mode: string;
+    modeVersion: number;
+    profile: string;
+}
+
+export interface RoomAuthDeps<TOptions extends RoomJoinEnvelope = IGameRoomJoinOptions> {
     /** 本房型的协议整数（注入，⛔ 不在本类里写死任何一个房型的常量）。 */
     readonly protocolVersion: number;
+    /** 本房型的 exact 校验器（缺省 GameRoom 的 validateGameRoomJoinOptions；WorldRoom 注入 validateWorldRoomJoinOptions）。 */
+    readonly validateJoinOptions?: (input: unknown) => TOptions;
     modeRegistered(mode: string): boolean;
     /** null = mode 不在 catalog（生产 registry mode 必在 catalog；仅注入式测试 mode 例外）。 */
     catalogModeVersion(mode: string): number | null;
@@ -60,8 +72,12 @@ export function catalogModeVersion(mode: string): number | null {
 /** 凭据 / ticket 的恒时逐字比较（creation ticket 落座核对用；实现见 core/auth/session）。 */
 export const credentialMatches = safeSecretEqual;
 
-export class RoomAuth {
-    constructor(private readonly deps: RoomAuthDeps) {}
+export class RoomAuth<TOptions extends RoomJoinEnvelope = IGameRoomJoinOptions> {
+    private readonly validate: (input: unknown) => TOptions;
+
+    constructor(private readonly deps: RoomAuthDeps<TOptions>) {
+        this.validate = deps.validateJoinOptions ?? (validateGameRoomJoinOptions as unknown as (input: unknown) => TOptions);
+    }
 
     /**
      * 版本预检：在完整 validator 之前保留旧客户端的版本判定结果（v5 新增必填字段缺失时仍给出
@@ -89,10 +105,10 @@ export class RoomAuth {
     }
 
     /** ①：完整 exact 校验（Colyseus 交来的是不可信 JSON；多余键不得静默改变准入语义）。 */
-    validatedJoinOptions(options: IGameRoomJoinOptions | undefined): IGameRoomJoinOptions {
+    validatedJoinOptions(options: TOptions | undefined): TOptions {
         this.assertCompatibleProtocolVersion(options);
         try {
-            return validateGameRoomJoinOptions(options);
+            return this.validate(options);
         } catch (error) {
             if (!(error instanceof WireValidationError)) throw error;
             if (error.path === "options.sId") {
@@ -109,7 +125,7 @@ export class RoomAuth {
     }
 
     /** ① + ②：join 信封 = exact 校验 + 协议整数硬闸（缺省按 1 兼容首版客户端）；onAuth 与 onCreate 同口径。 */
-    assertEnvelope(options: IGameRoomJoinOptions | undefined): IGameRoomJoinOptions {
+    assertEnvelope(options: TOptions | undefined): TOptions {
         const joinOptions = this.validatedJoinOptions(options);
         // 服务端升协议后旧包 join 即拒——给出可识别错误码，而不是让旧客户端在 Schema 对不上的畸形状态里挂死。
         if ((joinOptions.v ?? 1) !== this.deps.protocolVersion) {
@@ -119,7 +135,7 @@ export class RoomAuth {
     }
 
     /** ①–⑥ 全序。`token` 是 Colyseus 转交的标准 auth token（不可信）。 */
-    async authenticate(token: unknown, options: IGameRoomJoinOptions | undefined): Promise<RoomAuthResult> {
+    async authenticate(token: unknown, options: TOptions | undefined): Promise<RoomAuthResult> {
         const joinOptions = this.assertEnvelope(options);
         const requestedMode = joinOptions.mode;
         if (!this.deps.modeRegistered(requestedMode)) {
@@ -160,8 +176,8 @@ export class RoomAuth {
     }
 }
 
-export function createRoomAuth(deps: RoomAuthDeps): RoomAuth {
-    return new RoomAuth(deps);
+export function createRoomAuth<TOptions extends RoomJoinEnvelope = IGameRoomJoinOptions>(deps: RoomAuthDeps<TOptions>): RoomAuth<TOptions> {
+    return new RoomAuth<TOptions>(deps);
 }
 
 /** GameRoom 房型：协议整数 = GAME_ROOM_PROTOCOL_VERSION（protocol-version-matrix 钉此绑定）。 */

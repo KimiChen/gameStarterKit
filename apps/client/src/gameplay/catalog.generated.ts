@@ -118,6 +118,18 @@ export const GAMEPLAY_CATALOG = {
         stateFragments: [],
         contractDigest: "14ea5e8a263303a47181669dab9fbaf2769c63ffe9de1d4712ac2f887ec3bf3f",
     },
+    "worldFixture": {
+        id: "worldFixture",
+        constantName: "WorldFixture",
+        modeVersion: 1,
+        maxPlayers: 8,
+        roster: "hidden",
+        kind: "world",
+        world: {"emptyPolicy":"sleep","emptyAfterMs":120000,"checkpointMs":30000},
+        profiles: ["world"],
+        stateFragments: [],
+        contractDigest: "e0299c8a26971f7bdf5b83b6d13475c9b995493a123200f8c54d148ff27a2e09",
+    },
 } as const;
 
 export type GameplayCatalogId = keyof typeof GAMEPLAY_CATALOG;

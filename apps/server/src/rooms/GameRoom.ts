@@ -33,6 +33,7 @@ import {
     GameRoomState,
     PlayerState,
     ROOM_STATE_FRAGMENTS,
+    ROOM_STATE_KIND,
     ROOM_STATE_ROSTER,
     type RoomStateLifecycle,
     type RoomStateInviteRoom,
@@ -1012,6 +1013,9 @@ export class GameRoom extends Room {
         }
         const mode = this.requireMode();
         this.modeId = mode.id;
+        // MMO MF4-B6：world 形态玩法（manifest kind:"world"）⛔ 不进 GameRoom——registry 分表已挡住生产路径
+        //（world mode 只登进 worldModeRegistry），注入路径按生成表再闸一次（走 RoomName.World / WorldRoom）。
+        if ((ROOM_STATE_KIND as Readonly<Partial<Record<string, string>>>)[this.modeId] === "world") throw joinRefused(ErrorCode.BadRequest);
         // per-mode 契约版本闸（§4.8 第三层，与 onAuth 同口径）：catalog 缺席仅注入式测试
         // mode 放行（生产 registry mode 必在 catalog）。⛔ 不参与 core 信封闸。
         const expectedModeVersion = catalogModeVersion(this.modeId);

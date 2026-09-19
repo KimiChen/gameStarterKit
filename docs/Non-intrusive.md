@@ -2977,6 +2977,8 @@ apps/client/src/app/**
 apps/shared/src/protocol/messages.ts
 apps/server/src/rooms/GameRoom.ts
 apps/server/src/rooms/GameMode.ts
+apps/server/src/rooms/WorldRoom.ts
+apps/server/src/rooms/WorldMode.ts
 apps/server/src/rooms/core/**
 apps/client/src/net/RoomClient.ts
 apps/client/src/net/rooms/GameRoomTransport.ts
@@ -2985,6 +2987,7 @@ apps/client/src/gameplay/services.ts
 apps/client/src/logic/gameplay/**
 apps/server/src/rooms/modes/catalog.ts
 apps/server/src/app.config.ts
+apps/server/src/world.config.ts
 apps/server/sql/schema.sql
 ```
 
@@ -2994,7 +2997,8 @@ deepEqual**——任一侧单方面增删即红（⛔ 堵住「先从规则文�
 此处不重复。`apps/server/src/rooms/core/**` 自 MMO MF3-B2（2026-09-19）整目录受保护：
 RoomAuth / WireDispatcher / MessageBudget / ReconnectGrace / S2CPorts 是 GameRoom 抽出的共享层（§8.4 曾以
 GameplayDispatcher 之名预留的职责由 WireDispatcher 落地），与既有 RoomProfile / StartPolicy / AccessPolicy
-同批登进 gameplayFlow（关 PLUGIN-REVIEW F03）。
+同批登进 gameplayFlow（关 PLUGIN-REVIEW F03）。`apps/server/src/rooms/{WorldRoom,WorldMode}.ts` 与 `apps/server/src/world.config.ts`
+自 MMO MF4-B6（2026-09-19）登记：世界形态的传输壳 / 契约 / world 进程 rooms 表，新增 world 玩法只经 codegen 分表登记，⛔ 不改它们。
 
 
 两条边界要一起记住：**本清单约束的是「新增普通玩法 / plugin」的动线**，§9 的框架改造阶段本身属于**显式框架侵入**，

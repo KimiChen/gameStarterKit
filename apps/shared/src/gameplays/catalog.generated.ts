@@ -9,6 +9,7 @@ import { validatePrivateFixtureState, type IPrivateFixtureState } from "./genera
 import { validateSnakeRoomState, type ISnakeRoomState } from "./generated/state/snake";
 import { validateTallyRoomState, type ITallyRoomState } from "./generated/state/tally";
 import { validateViewFixtureState, type IViewFixtureState } from "./generated/state/viewFixture";
+import { validateWorldFixtureState, type IWorldFixtureState } from "./generated/state/worldFixture";
 
 /** Wire root interfaces keyed by canonical gameplay mode id. */
 export interface RoomStateByMode {
@@ -21,6 +22,7 @@ export interface RoomStateByMode {
     "snake": ISnakeRoomState;
     "tally": ITallyRoomState;
     "viewFixture": IViewFixtureState;
+    "worldFixture": IWorldFixtureState;
 }
 
 export type RoomStateMode = keyof RoomStateByMode;
@@ -37,6 +39,7 @@ export const ROOM_STATE_VALIDATORS = Object.freeze({
     "snake": validateSnakeRoomState,
     "tally": validateTallyRoomState,
     "viewFixture": validateViewFixtureState,
+    "worldFixture": validateWorldFixtureState,
 } as const satisfies { readonly [M in RoomStateMode]: RoomStateValidator<M> });
 
 export function validateRoomStateForMode<M extends RoomStateMode>(mode: M, input: unknown): RoomStateByMode[M];
@@ -156,6 +159,18 @@ export const GAMEPLAY_CATALOG = {
         profiles: ["dropIn"],
         stateFragments: [],
         contractDigest: "14ea5e8a263303a47181669dab9fbaf2769c63ffe9de1d4712ac2f887ec3bf3f",
+    },
+    "worldFixture": {
+        id: "worldFixture",
+        constantName: "WorldFixture",
+        modeVersion: 1,
+        maxPlayers: 8,
+        roster: "hidden",
+        kind: "world",
+        world: {"emptyPolicy":"sleep","emptyAfterMs":120000,"checkpointMs":30000},
+        profiles: ["world"],
+        stateFragments: [],
+        contractDigest: "e0299c8a26971f7bdf5b83b6d13475c9b995493a123200f8c54d148ff27a2e09",
     },
 } as const;
 

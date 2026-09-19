@@ -18,6 +18,8 @@ export interface WorldRuntimePorts {
     broadcastS2C(token: GameplayS2CToken<unknown>, payload: unknown): void;
     /** mode 经 context.requestDrain 请求 Draining 时回调（壳据此走同一状态机；缺省直接 drain）。 */
     onDrainRequested?(reason: string): void;
+    /** 检查点落点（MF7b CheckpointPort）：advance 末尾按 checkpointMs 节拍 `periodic`；unload / Draining 收尾 `forced`。缺省不取检查点。 */
+    onCheckpoint?(checkpoint: WorldCheckpoint, reason: "periodic" | "forced"): void;
 }
 
 export interface WorldRuntimeOptions<TState extends WorldStateLifecycle> {
@@ -207,7 +209,25 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
         if (steps === this.maxCatchUpSteps && this.accumulatorMs >= this.fixedStepMs) {
             this.accumulatorMs %= this.fixedStepMs;
         }
+        this.emitCheckpoint(false);
         return steps;
+    }
+
+    /** 强制检查点（§4.5 unload / Draining 收尾）：有落点才取；返回是否取到。 */
+    forceCheckpoint(): boolean {
+        return this.emitCheckpoint(true);
+    }
+
+    private emitCheckpoint(force: boolean): boolean {
+        if (!this.ports.onCheckpoint) return false;
+        const checkpoint = this.takeCheckpoint(force);
+        if (!checkpoint) return false;
+        try {
+            this.ports.onCheckpoint(checkpoint, force ? "forced" : "periodic");
+        } catch (error) {
+            console.error(`[WorldRuntime ${this.state.instanceId}] 检查点落点失败`, error);
+        }
+        return true;
     }
 
     /** 推进一步：tick++ → onStep（本步排空的有序命令）。mode 抛错只记错，⛔ 不杀世界循环。 */
@@ -223,7 +243,7 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     }
 
     /**
-     * 空实例策略（§4.5 表）：最后一个会话离开 emptyAfterMs 后——sleep ⇒ 停固定步（有人准入即续跑，⛔ 不重放）；unload ⇒ Draining → Offline；
+     * 空实例策略（§4.5 表）：最后一个会话离开 emptyAfterMs 后——sleep ⇒ 停固定步（有人准入即续跑，⛔ 不重放）；unload ⇒ 强制检查点 → Draining → Offline；
      * run ⇒ 照常推进。壳每 tick 调；返回本次采取的动作。
      */
     evaluateEmpty(): WorldEmptyAction {
@@ -237,6 +257,7 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
         }
         if (this.world.emptyPolicy === "unload") {
             this.drain("empty-unload", 0);
+            this.forceCheckpoint(); // §4.5：unload = 强制检查点 → Draining → Offline
             this.offline();
             return "unloaded";
         }
