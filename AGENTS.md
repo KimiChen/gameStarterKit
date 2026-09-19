@@ -14,7 +14,7 @@
 > - [docs/PLUGIN-REVIEW.md](docs/PLUGIN-REVIEW.md)：PLUGIN.md 的审阅记录（2026-09-05；经验证的问题清单与推荐实现方案，实施状态登记在 EXTRAS §5.2）
 > - [docs/PLUGIN-REGISTRY.md](docs/PLUGIN-REGISTRY.md)：插件分享平台 plugin.gono.games 设计提案（2026-09-05；§1 机制余留问题清单与七条前置修复、§2-4 制品布局/自建服务/CLI/锁 source/plugin-api 门面；实施状态只在其 §7 回写，⛔ 不进 plan-v5）
 > - [docs/KIT.md](docs/KIT.md)：kit（地基层）设计提案（2026-09-06；可分发但须 gono 团队审核；§2 划线、§3 kit.json、§4 kit-api 与 requires.kits、§6 审核线；实施状态只在其 §9 回写，⛔ 不进 plan-v5）
-> - [docs/MMO.md](docs/MMO.md)：MMO 整合设计基线（2026-09-09；v1.1 / v1.2 2026-09-19：按 MMO-REVIEW M01–M20 修订、按 MMO-PLAN §7 细化与 D27 进程形态拍板（lobby / game / world 三进程，dev 缺省合体）；Nakama 定形、AzerothCore 定实；框架阶段 MF0–MF11（MF5 / MF7 各分 a / b：a = GameRoom 路径 / kit worker 通用半边，slg 2b 与 lvr 只等 a 半边）→ `mmo` kit MK0–MK4 → 内容插件 MG0–MG2；MF0 / MF1 已于 2026-09-19 退出、§11.2 数字已冻结；实施状态只在其 §12 回写，⛔ 不进 plan-v5）
+> - [docs/MMO.md](docs/MMO.md)：MMO 整合设计基线（2026-09-09；v1.1 / v1.2 2026-09-19：按 MMO-REVIEW M01–M20 修订、按 MMO-PLAN §7 细化与 D27 进程形态拍板（lobby / game / world 三进程，dev 缺省合体）；Nakama 定形、AzerothCore 定实；框架阶段 MF0–MF11（MF5 / MF7 各分 a / b：a = GameRoom 路径 / kit worker 通用半边，slg 2b 与 lvr 只等 a 半边）→ `mmo` kit MK0–MK4 → 内容插件 MG0–MG2；MF0 / MF1 / MF3 / MF6a 已于 2026-09-19 退出、§11.2 数字已冻结；实施状态只在其 §12 回写，⛔ 不进 plan-v5）
 > - [docs/MMO-REVIEW.md](docs/MMO-REVIEW.md)：MMO.md 的开门审阅记录（2026-09-19；M01–M20 问题清单 + 阶段重排建议，已于同日全部采纳进 MMO.md v1.1，M01 取「草案不入库、正文自包含」；⛔ 审阅记录不是设计真源，结论以 MMO.md 为准）
 > - [docs/MMO-PLAN.md](docs/MMO-PLAN.md)：MMO 实施施工单（2026-09-19；按 MMO.md v1.1 把 MF0–MF11 / MK0–MK4 / MG0–MG2 拆成 `MFx-Bn` 批次：文件落点、机检退出、命令；进程拆分为独立轨道 PS（PS0 四项已拍板 = MMO.md D27）；批次勾选只在其 §9，阶段级完成仍回写 MMO.md §12；⛔ 不是设计真源、不进 plan-v5）
 > - [tools/creator-preview/README.md](tools/creator-preview/README.md)：Creator 预览证据生成器（CDP 驱动真实引擎预览重放登录 → 首屏 → 设置 → 插件入口，落盘截图 + report.json；⛔ 不进 verify:core）
