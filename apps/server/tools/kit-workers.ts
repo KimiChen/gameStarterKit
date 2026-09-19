@@ -29,7 +29,8 @@ export function expectedKitWorkerLeases(catalog: readonly ServerKitCatalogEntry[
 
 /** 与 schema.sql 预置行同形：幂等 ODKU no-op（⛔ 绝不 INSERT IGNORE / REPLACE，09·DB1），已有行的 holder / fence_token / expires_at 零触碰。 */
 export const PRESET_KIT_WORKER_LEASE_SQL =
-  "INSERT INTO singleton_lease (lease_name, holder, fence_token, expires_at) VALUES (?, '', 0, NOW(3)) ON DUPLICATE KEY UPDATE lease_name = lease_name";
+  // 预置行必须**已过期**（NOW(3) - 1s）：tryAcquireLease 的谓词是严格 `expires_at < NOW(3)`，写 NOW(3) 会与同毫秒内的首次抢租竞态（MF7b-B6 回归发现）
+  "INSERT INTO singleton_lease (lease_name, holder, fence_token, expires_at) VALUES (?, '', 0, NOW(3) - INTERVAL 1 SECOND) ON DUPLICATE KEY UPDATE lease_name = lease_name";
 const LIST_KIT_WORKER_LEASE_SQL = "SELECT lease_name FROM singleton_lease WHERE lease_name LIKE ? ORDER BY lease_name";
 
 export interface PresetKitWorkerLeasesReport {

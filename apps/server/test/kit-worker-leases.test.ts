@@ -60,7 +60,7 @@ test("presetKitWorkerLeases：首遍插入、第二遍零新行（分类不依�
 });
 
 test("预置语句形态钉住：ODKU no-op（⛔ INSERT IGNORE / REPLACE / 重置 holder-fence-expires）", () => {
-  assert.match(PRESET_KIT_WORKER_LEASE_SQL, /^INSERT INTO singleton_lease \(lease_name, holder, fence_token, expires_at\) VALUES \(\?, '', 0, NOW\(3\)\) ON DUPLICATE KEY UPDATE lease_name = lease_name$/u);
+  assert.match(PRESET_KIT_WORKER_LEASE_SQL, /^INSERT INTO singleton_lease \(lease_name, holder, fence_token, expires_at\) VALUES \(\?, '', 0, NOW\(3\) - INTERVAL 1 SECOND\) ON DUPLICATE KEY UPDATE lease_name = lease_name$/u, "预置行已过期（严格 < NOW(3) 的抢租谓词立即可抢）");
   assert.doesNotMatch(PRESET_KIT_WORKER_LEASE_SQL, /IGNORE|REPLACE/u);
 });
 
