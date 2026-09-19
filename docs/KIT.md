@@ -104,6 +104,17 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
   事务句柄）、`debitInTx` / `creditInTx`（经济主账本的事务内调用）、outbox 写入；以及构建期登记命名空间化 effect kind
   （`kit:<id>:<name>` + 零依赖 validator，随 codegen 汇入 effect 表与 Lua 镜像）。没有这三样，「世界状态在 SQL、经济在框架」
   之间没有原子路径。
+- **persona 与资产主体（MMO MF2，2026-09-19 已交付）**：`tx.debit / tx.credit / tx.enqueueEffect` 末位可选 `owner: AssetOwnerRef`
+  （缺省 account；persona 主体的钱包 / 流水按 `(owner_kind, owner_id)` 分键、同 uid 各主体互不可见，`kCacheCurrency` 随主体分键，relayer
+  对 persona 主体只落状态不 redisApply——Redis 背包属于账号主体）；persona 门面（框架写 `persona` 行，kit ⛔ 直接 SQL 碰它、表闸照拒）：
+  `tx.createPersona(uid, slot, meta?) → personaId`（`UNIQUE(server_id,user_id,kit_id,slot)` 冲突 `PersonaSlotTakenError`、
+  `slot ≥ PERSONA_MAX_SLOTS_HARD(16)` 拒、meta ≤ 4 KB；槽位上限的产品值归 kit）、`tx.assertControl(personaId, controlEpoch)`
+  （`UPDATE … WHERE control_epoch = ?` 的 Rows matched CAS；0 行 ⇒ `PersonaNotFoundError` / `ControlConflictError` 带实际 epoch）、
+  `tx.deactivatePersona(personaId)`（在世界房拒）/ `tx.deletePersona(personaId)`（仅 inactive 且 `world_address IS NULL`）、事务外只读
+  `listPersonas(kitId, uid, sId)`；**固定锁序 fail-closed**：同一事务内 createPersona（account 作用域 `FOR UPDATE`）先于任何 persona 行锁、
+  persona 行锁按 id 升序，乱序 ⇒ `PersonaLockOrderError` 触库前拒。kit 表的 `persona_id` ⛔ 无外键（§2），孤儿 persona 由 kit 只读对账后
+  `deletePersona`。会话撤销 / 踢下线由框架抬高 `session_generation`（顶号按区、封号 / 撤销全部区；`core/auth`，EXTRAS §3.2）。真库夹具
+  `apps/server/test/int/{kit-persona,persona-session}.test.ts`；发布 SOP（门①）见 docs/SERVER.md §8.2。
 - **kit worker（MMO MF7a，2026-09-19 已交付）**：`kit.json.workers[]` 登记的后台进程，`KIT_WORKER_ZONES=1,2 npm --workspace
   @game/server run worker -- <kit>:<worker>` 启动（区清单显式非空，⛔ 不从 GROUP_ZONES 推）：只认生成目录里登记的 worker（未登记
   即拒、⛔ 不 import）、争租 `singleton_lease('kit:<kit>:<worker>')`（同名 worker 全局单例）、逐区串行一条**租约守卫受限事务**
@@ -224,6 +235,7 @@ packages/<id>/<version>/reviews/NNN.json    仅 kit，追加式：{ action: "app
 | K1（门面与边界） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF0** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF0-B1–B3）：客户端 kit-api 路径级导入边界 `apps/client/test/kitImportBoundary.test.ts`（6582d4ac）；服务端 / shared 侧边界 + `.conn` AST 禁令 `apps/server/test/kit-import-boundary.test.ts`（1ce10d01）；uninstall 对 pending `kit:<id>:*` outbox 行的闸 `tools/plugin/outboxGate.ts` + CLI `--allow-pending-outbox`（107f8e5a，`plugin -- check` 只告警）。样本发现的框架小面 `applyKitEffect` / `readKitUserField` / `currentZoneId` 已进 kit-api |
 | kit worker（MMO MF7a） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF7a** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF7a-B1–B6，tag `mf7a-exit`）：kit-schema 增量字段 `workers[]` / `sql.tables[].role`（979a980d）、bootstrap 预置租约行（fe18d127）、`withKitWorkerTx`（3f978152）、`src/workers/kitWorker.ts` 入口 + `defineKitWorker`（bb2b0728）、uninstall / check 闸（ab11e6a0）、真库争租夹具 + 本文 §3 / §4 / §5 |
 | 贡献点 / fragment / 带参 launch（MMO MF9） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF9** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF9-B1–B5，tag `mf9-exit`）：schema 增量字段 `contributions` / `fragments` / `contributes` / `launch.payload|profile`（f6fad19f）、codegen 收录 + 三道闸（745f5ca6）、kit fragment（2c528c69）、带参 launch（944be274，显式框架侵入）、本文 §3 / §4 + PLUGIN.md §5 + EXTRAS X1 |
+| persona 与资产主体（MMO MF2） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF2** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF2-B1–B6，tag `mf2-exit`）：shared `protocol/identity.ts`、`persona` 表 + 经济三表 owner 列（`ensureAssetOwnerShape` 迁移，门① SOP SERVER.md §8.2）、经济 / KitTx 主体化、persona 门面（§4）、会话撤销覆盖 persona；样本 kit `arena` 随之 1.0.0 → 1.0.1（已安装 kit 的测试假实现补门面桩，锁 `--reinstall-from-tree` 重写） |
 | K2（注册表） | 未开始 |
 | `slg` 样本阶段 1 / 2a | ✅ 2026-09-09 完成并验收：SQL 权威地块与行军，worldmap/march v1，原创 10000×10000 地图页，耐久回执/变更日志；七张 per-zone 表、无 mode。verify:all 通过；Creator 17 步/13 图/console 空；干净制品安装、独立空库 4+3 语句、包测试 35/35、重复 bootstrap 零新应用，见 [验收证据](evidence/creator-2026-09-09/slg/README.md)。规则与边界见 [apps/kits/slg/README.md](../apps/kits/slg/README.md)；SLG 2b 等 MMO MF5，离线 worker 等 MF7，不表示 K1/K2 或 MMO 原语已完成 |
 
