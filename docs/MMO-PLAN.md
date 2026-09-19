@@ -338,7 +338,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [x] MF5b-B1（43b0c827；观察者运行时住 WorldRuntime + WorldRoom 每 tick 排空 + worldFixture 七个 perSession token（B3 的夹具半边与 `gameplay-wire-per-session` 扩表随本批，modeVersion 1 → 2）+ `world-visibility-leak.test.ts`） [x] MF5b-B2（0d7e2adc；客户端 `bindObserverStream`） [x] MF5b-B3（本行所在提交：矩阵 / verify 各阶段全绿 + 文档）— MF5b 退出 2026-09-20，见 MMO.md §12（偏差 ①–④）；tag `mf5b-exit`；⚠ 不作 slg 2b 证据
 - [x] MF6b-B1（74ef0369） [x] MF6b-B2（本行所在提交：worldFixture 用例随 B1 的 `world-chat.test.ts`、SERVER.md §5 / §13 + KIT.md §4 + rooms/README）— MF6b 退出 2026-09-20，见 MMO.md §12；tag `mf6b-exit`
 - [x] MF7b-B1（be50abf0） [x] MF7b-B2（8f1da3cd） [x] MF7b-B3（2bb60051；实现选项取 ④「事件批只随分线检查点同事务落库」，①–③ 门 / superseded 保留作纵深） [x] MF7b-B4（32da36de） [x] MF7b-B5（0bd33abf；夹具 mode 住 test/fixtures，kitfix 两表在 int 内物化） [x] MF7b-B6（本行所在提交：§7.3 逐行用例 `world-rollback-windows.test.ts` + SERVER.md §8.3 + 文档）— MF7b 退出 2026-09-20，见 MMO.md §12（偏差 ①–⑥）；tag `mf7b-exit`
-- [ ] MF8-B1 [ ] MF8-B2 [ ] MF8-B3 [ ] MF8-B4 [ ] MF8-B5 [ ] MF8-B6 [ ] MF8-B7
+- [x] MF8-B1（056096a3） [x] MF8-B2（162334f9；状态机 / 凭据用例落 test/int：world-transfer / world-ticket） [x] MF8-B3（2bb25a8c） [x] MF8-B4（73716dac） [x] MF8-B5（0c6c596f） [x] MF8-B6（356f003e） [x] MF8-B7（本行所在提交：`test/int/world-transfer-flow.test.ts` 四注入 + fault-matrix `world-transfer` 组 + `tools/plugin/transferGate.ts` 卸载闸 + 文档）— MF8 退出 2026-09-20，见 MMO.md §12；tag `mf8-exit`
 - [ ] MF10-B1 [ ] MF10-B2 [ ] MF10-B3 [ ] MF10-B4
 - [ ] MF11-B1 [ ] MF11-B2 [ ] MF11-B3 [ ] MF11-B4 [ ] MF11-B5
 - [ ] MK0-B1…B6 [ ] MK1-B1…B6 [ ] MK2-B1…B3 [ ] MK3-B1…B3 [ ] MK4-B1…B6

@@ -24,6 +24,7 @@ import { packPlugin } from "./pack";
 import { runPackageTests } from "./test";
 import { uninstallPlugin } from "./uninstall";
 import { assertKitWorkersQuiescent, describeKitWorkerBacklog, worldEventTablesOf } from "./workerGate";
+import { assertKitTransfersDrained } from "./transferGate";
 import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
@@ -222,6 +223,8 @@ export async function runCli(args: PluginCliArguments): Promise<number> {
       if (kitEntry === undefined) console.log(`[plugin]   ⚠ kit "${args.id}" 不在生成目录（codegen:plugins 未刷新？）：world-event 表未核，只核租约行`);
       await assertKitWorkersQuiescent({ kitId: args.id, worldEventTables, log: (line) => console.log(`[plugin]   ${line}`) });
       console.log(`[plugin]   kit worker：world-event 表 ${worldEventTables.length} 张无 pending 事件行、租约 kit:${args.id}:* 无在役 ✔`);
+      // kit 卸载前的交接闸（docs/MMO.md MF8-B7；tools/plugin/transferGate.ts）：该 kit persona 还有在途 world_transfer 行 ⇒ 拒（⛔ 无 bypass）。
+      await assertKitTransfersDrained({ kitId: args.id, log: (line) => console.log(`[plugin]   ${line}`) });
     }
     const report = uninstallPlugin({ root: args.root, id: args.id, force: args.force, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.class} ${report.id}@${report.version} [${report.source}]: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
