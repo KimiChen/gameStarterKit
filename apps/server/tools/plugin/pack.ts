@@ -75,6 +75,16 @@ export function collectPluginFiles(root: string, manifest: PackageManifest): {
 } {
   const rules = deriveOwnership(treeIdentityOf(root, manifest));
   const protectedPaths = readProtectedPaths(root);
+  // MF9：contributes 指向的每条路径必须在本插件的所有权推导集内且存在——越界贡献整包拒绝（⛔ 不是静默跳过）。
+  if (manifest.class === "plugin") {
+    for (const [kitId, byId] of Object.entries(manifest.contributes)) {
+      for (const [id, file] of Object.entries(byId)) {
+        const verdict = classifyPath(file, rules, protectedPaths);
+        if (!verdict.allowed) fail(`插件 "${manifest.id}" 的 contributes.${kitId}.${id} 路径 "${file}" 不在所有权推导集内（${verdict.reason}），拒绝打包（越界贡献）`);
+        if (!fs.existsSync(path.join(root, file))) fail(`插件 "${manifest.id}" 的 contributes.${kitId}.${id} 路径 "${file}" 不存在，拒绝打包`);
+      }
+    }
+  }
   const candidates = new Set<string>();
   for (const rule of rules) {
     if (rule.kind === "dir") for (const file of listFiles(root, rule.path)) candidates.add(file);

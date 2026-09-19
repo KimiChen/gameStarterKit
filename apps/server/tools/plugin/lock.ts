@@ -434,6 +434,17 @@ export function dependentsOfKit(root: string, kitId: string): ReadonlyMap<string
   return out;
 }
 
+/** 向一个 kit 填充过贡献点的已安装插件：pluginId → contributes[kitId]（MF9 反向闸与 check 反查的依据）。 */
+export function contributorsOfKit(root: string, kitId: string): ReadonlyMap<string, Readonly<Record<string, string>>> {
+  const out = new Map<string, Readonly<Record<string, string>>>();
+  for (const lock of listInstalledLocks(root)) {
+    if (lock.manifest.class !== "plugin") continue;
+    const contributes = lock.manifest.contributes ?? {};
+    if (Object.prototype.hasOwnProperty.call(contributes, kitId)) out.set(lock.manifest.id, contributes[kitId] as Readonly<Record<string, string>>);
+  }
+  return out;
+}
+
 /** 插件对一个 kit 的 api 声明 ⟷ kit 实际提供的 api 面：返回不兼容清单（空 = 兼容）。 */
 export function kitApiViolations(declared: Readonly<Record<string, number>>, api: Readonly<Record<string, KitApiSurface>>): readonly string[] {
   const problems: string[] = [];

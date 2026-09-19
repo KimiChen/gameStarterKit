@@ -13,7 +13,7 @@ import path from "node:path";
 import { classifyPath, deriveOwnership, packageManifestPath, readProtectedPaths, type PackageClass } from "./ownership";
 import { identityDifferences, identityFromSummary, readTreePackageManifest, treeIdentityOf } from "./manifest";
 import { filesLockSha256Of, kitApiViolations, listInstalledLocks, verifyLockAgainstTree } from "./lock";
-import { resolveKitApi } from "./install";
+import { resolveKitApi, resolveKitContributions } from "./install";
 import { pluginDeclarations } from "./package";
 
 export interface PluginCheckEntry {
@@ -109,6 +109,21 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
             continue;
           }
           for (const violation of kitApiViolations(declared, provided.api)) problems.push(`依赖的 kit "${kitId}" api 不兼容：${violation}`);
+        } catch (error) {
+          problems.push(error instanceof Error ? error.message : String(error));
+        }
+      }
+      // MF9：填充的贡献点仍由该 kit 声明（kit 升级删掉贡献点时反向闸会点名；这里是安装后的持续核对）。
+      for (const [kitId, byId] of Object.entries(lock.manifest.contributes ?? {})) {
+        try {
+          const provided = resolveKitContributions(root, kitId);
+          if (provided === null) {
+            problems.push(`贡献的 kit "${kitId}" 未安装（contributes 填充了它）`);
+            continue;
+          }
+          for (const id of Object.keys(byId)) {
+            if (!Object.prototype.hasOwnProperty.call(provided, id)) problems.push(`贡献的 kit "${kitId}" 没有贡献点 "${id}"（contributes 填充了它；先升级插件或恢复 kit 的声明）`);
+          }
         } catch (error) {
           problems.push(error instanceof Error ? error.message : String(error));
         }

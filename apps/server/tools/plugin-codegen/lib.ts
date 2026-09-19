@@ -61,6 +61,8 @@ import {
   readViewCatalog,
   renderViewCatalogArtifacts,
 } from "./viewCatalog";
+import { CONTRIBUTIONS_BASENAME, CONTRIBUTIONS_FILE_RE } from "./contributions";
+import { CONTRIBUTION_ENDS } from "./pluginManifestSchema";
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const LOBBY_RPC_DIR_RELATIVE = "apps/shared/src/protocol/lobbyRpc";
@@ -103,6 +105,8 @@ export type PluginDescriptors = {
 export type PluginWriteResult = {
   readonly changed: readonly string[];
   readonly deleted: readonly string[];
+  /** 被删除的孤儿生成物（MF9：kit 撤销某端贡献点声明后的 contributions.generated.ts）。 */
+  readonly removedFiles: readonly string[];
 };
 
 function fail(pathLabel: string, message: string): never {
@@ -764,6 +768,16 @@ function collectOwnedFiles(root: string): readonly string[] {
   for (const relative of [PLUGIN_INDEX_RELATIVE, KIT_CATALOG_SHARED_RELATIVE, KIT_CATALOG_SERVER_RELATIVE]) {
     if (fs.existsSync(path.join(root, relative))) out.push(relative);
   }
+  // MF9：每 kit 一份的贡献收录文件（只认 kits/<id>/ 一层下的固定文件名，⛔ 不递归 kit 目录）。
+  for (const end of CONTRIBUTION_ENDS) {
+    const kitsDir = path.join(root, `apps/${end}/src/kits`);
+    if (!fs.existsSync(kitsDir) || !fs.statSync(kitsDir).isDirectory()) continue;
+    for (const entry of fs.readdirSync(kitsDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const file = path.join(kitsDir, entry.name, CONTRIBUTIONS_BASENAME);
+      if (fs.existsSync(file)) out.push(posixPath(path.relative(root, file)));
+    }
+  }
   return [...new Set(out)].sort();
 }
 
@@ -780,6 +794,7 @@ const WRITER_OUTPUT_ALLOWED = [
   /^apps\/server\/test\/lobbyRpcVectors\/index\.generated\.ts$/u,
   /^apps\/shared\/src\/kits\/catalog\.generated\.ts$/u,
   /^apps\/server\/src\/kits\/catalog\.generated\.ts$/u,
+  CONTRIBUTIONS_FILE_RE,
 ] as const;
 
 /**
@@ -794,7 +809,7 @@ export function assertWriterOutputSetSafe(outputs: readonly string[]): void {
       fail(normalized, "当前计划文件（plan-*.md）不得进入生成器允许输出集合——验收与实跑证据由人工维护（§5.7）");
     }
     if (!WRITER_OUTPUT_ALLOWED.some((pattern) => pattern.test(normalized))) {
-      fail(normalized, "不在生成器允许输出集合内（lobbyRpc/客户端 generated 的 *.generated.ts + docs/plugins.generated.md + lobbyRpcVectors/index.generated.ts + {shared,server}/src/kits/catalog.generated.ts）");
+      fail(normalized, "不在生成器允许输出集合内（lobbyRpc/客户端 generated 的 *.generated.ts + docs/plugins.generated.md + lobbyRpcVectors/index.generated.ts + {shared,server}/src/kits/catalog.generated.ts + apps/{shared,server,client}/src/kits/<id>/contributions.generated.ts）");
     }
   }
 }
@@ -886,7 +901,16 @@ export function writePluginArtifacts(options: PluginCodegenOptions = {}): Plugin
   const expected = renderPluginArtifacts(descriptors, catalog);
   assertWriterOutputSetSafe([...expected.keys()]);
   const orphans = collectOwnedFiles(root).filter((relative) => !expected.has(relative));
+  const removedFiles: string[] = [];
   for (const relative of orphans) {
+    // MF9：kit 撤销了某端的贡献点声明（或 kit 本身已 --allow-delete）⇒ 该端 contributions.generated.ts 是可自动收回的孤儿。
+    const contribution = CONTRIBUTIONS_FILE_RE.exec(relative);
+    const kitId = contribution?.[2];
+    if (kitId !== undefined && (currentKitIds.has(kitId) || allowDelete.has(kitId))) {
+      fs.rmSync(path.join(root, relative));
+      removedFiles.push(relative);
+      continue;
+    }
     fail(relative, `unexpected generated file in an owned generated directory. ${RUN_HINT}`);
   }
 
@@ -900,6 +924,7 @@ export function writePluginArtifacts(options: PluginCodegenOptions = {}): Plugin
   return {
     changed,
     deleted: [...new Set([...removed, ...removedPlugins, ...removedViews])].filter((id) => allowDelete.has(id)),
+    removedFiles,
   };
 }
 

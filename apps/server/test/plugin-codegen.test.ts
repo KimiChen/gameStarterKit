@@ -1885,3 +1885,119 @@ test("K0 kit：删除保护——kit 真源消失必须显式 --allow-delete，�
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+// ── MF9-B2：kit 贡献点收录 + codegen 三道闸（docs/MMO.md MF9 / docs/MMO-PLAN.md MF9-B2） ─────────────────
+// 变异验证：tools/plugin-codegen/contributions.ts resolveContributions 跳过所有权判定 → 「越界贡献被拒」转红。
+
+const KFIX_CONTENT_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["title"],
+  properties: { title: { type: "string", pattern: "^.{1,32}$" }, weight: { type: "integer", minimum: 0 } },
+};
+const KFIX_KIT_WITH_CONTRIBUTIONS = {
+  ...KFIX_KIT_JSON,
+  contributions: {
+    content: { kind: "data", ends: ["shared", "client"], schema: KFIX_CONTENT_SCHEMA },
+    hook: { kind: "module", ends: ["server"], export: "hook" },
+  },
+};
+const CONTRIBUTIONS_SHARED = "apps/shared/src/kits/kfix/contributions.generated.ts";
+const CONTRIBUTIONS_CLIENT = "apps/client/src/kits/kfix/contributions.generated.ts";
+const CONTRIBUTIONS_SERVER = "apps/server/src/kits/kfix/contributions.generated.ts";
+const KFIX_SHOP_CONTRIBUTING = {
+  ...KFIX_SHOP_PLUGIN_JSON,
+  contributes: { kfix: { content: "apps/plugins/kfixShop/contributions/kfix/content.json", hook: "apps/server/src/core/kfixShop/hook.ts" } },
+};
+
+test("MF9 贡献点收录：kit 声明即每端恒生成（空列表）；插件只加文件 + 声明即被收录且既有手写源零 diff；撤销声明后孤儿生成物自动收回", () => {
+  const fixtures = fixtureCollector();
+  try {
+    const { root, options } = fixtures.create();
+    addFixtureKit(root, KFIX_KIT_WITH_CONTRIBUTIONS);
+    addFixtureKitShop(root);
+    const read = (relative: string): string => fs.readFileSync(path.join(root, relative), "utf8");
+    const first = writePluginArtifacts(options);
+    for (const relative of [CONTRIBUTIONS_SHARED, CONTRIBUTIONS_CLIENT, CONTRIBUTIONS_SERVER]) assert.ok(first.changed.includes(relative), `${relative} 应恒生成`);
+    assert.match(read(CONTRIBUTIONS_SHARED), /^\/\*\* AUTO-GENERATED [^\n]* Do not edit\. \*\/\n/u);
+    assert.match(read(CONTRIBUTIONS_SHARED), /export const KIT_CONTRIBUTIONS = \{\n {4}\/\*\* 贡献点 "content"：0 个插件填充[^\n]*\*\/\n {4}content: \[\],\n\} as const;\n$/u);
+    assert.ok(!read(CONTRIBUTIONS_SERVER).includes("content:") && read(CONTRIBUTIONS_SERVER).includes("hook: [],"), "server 端只有 hook（content 未声明 server 端）");
+    assertPluginArtifactsFresh(options);
+
+    // 插件填充：一份 JSON + 一个模块 + plugin.json 声明（都是作者手写；快照在其后、生成之前取——证明生成器不改手写源）
+    writeJson(root, "apps/plugins/kfixShop/plugin.json", KFIX_SHOP_CONTRIBUTING);
+    writeJson(root, "apps/plugins/kfixShop/contributions/kfix/content.json", { title: "shop", weight: 3 });
+    writeText(root, "apps/server/src/core/kfixShop/hook.ts", "export const hook = { id: \"kfixShop\" };\n");
+    const before = snapshotHandwritten(root);
+    assert.throws(() => assertPluginArtifactsFresh(options), /stale: [^\n]*kfix\/contributions\.generated\.ts/u);
+    const second = writePluginArtifacts(options);
+    assert.deepEqual([...second.changed].sort(), [CONTRIBUTIONS_CLIENT, CONTRIBUTIONS_SERVER, CONTRIBUTIONS_SHARED].sort(), "只有贡献收录文件变化");
+    const dataBlock = /content: \[\n {8}\{ pluginId: "kfixShop", value: \{\n {12}"title": "shop",\n {12}"weight": 3\n {8}\} \},\n {4}\],/u;
+    assert.match(read(CONTRIBUTIONS_SHARED), dataBlock);
+    assert.match(read(CONTRIBUTIONS_CLIENT), dataBlock, "data 贡献同源渲染到每个声明的端");
+    const server = read(CONTRIBUTIONS_SERVER);
+    assert.match(server, /^import \{ hook as kfixShop_hook \} from "\.\.\/\.\.\/core\/kfixShop\/hook";$/mu, "module 贡献 = 静态字面量 import（相对路径、无扩展名）");
+    assert.match(server, /hook: \[\n {8}\{ pluginId: "kfixShop", value: kfixShop_hook \},\n {4}\],/u);
+    assertPluginArtifactsFresh(options);
+    // snapshotHandwritten 的生成物集合只登记固定产物，贡献收录文件按 basename 剔除后比对
+    const after = snapshotHandwritten(root);
+    const handwritten = [...before].filter(([relative]) => !relative.endsWith(".generated.ts"));
+    assert.ok(handwritten.length > 0);
+    for (const [relative, text] of handwritten) assert.equal(after.get(relative), text, `手写文件被生成器改动：${relative}`);
+    assert.deepEqual([...after.keys()].filter((relative) => !before.has(relative)), [], "生成器没有新增任何快照面之外的文件");
+
+    // 撤销 hook 声明（kit 与插件同批）⇒ server 端文件成孤儿：--check 报 extra，写盘自动收回
+    writeJson(root, "apps/kits/kfix/kit.json", { ...KFIX_KIT_WITH_CONTRIBUTIONS, contributions: { content: KFIX_KIT_WITH_CONTRIBUTIONS.contributions.content } });
+    writeJson(root, "apps/plugins/kfixShop/plugin.json", { ...KFIX_SHOP_CONTRIBUTING, contributes: { kfix: { content: KFIX_SHOP_CONTRIBUTING.contributes.kfix.content } } });
+    assert.throws(() => assertPluginArtifactsFresh(options), /extra: apps\/server\/src\/kits\/kfix\/contributions\.generated\.ts/u);
+    const third = writePluginArtifacts(options);
+    assert.deepEqual(third.removedFiles, [CONTRIBUTIONS_SERVER]);
+    assert.ok(!fs.existsSync(path.join(root, CONTRIBUTIONS_SERVER)));
+    assertPluginArtifactsFresh(options);
+  } finally {
+    fixtures.dispose();
+  }
+});
+
+test("MF9 贡献点闸：越界路径（别的插件目录 / 生成物形态）、未登记贡献点、未登记 kit、schema 不合、缺 export、module 端不符、data 非 .json 一律在 codegen 拒", () => {
+  const fixtures = fixtureCollector();
+  try {
+    const { root } = fixtures.create();
+    addFixtureKit(root, KFIX_KIT_WITH_CONTRIBUTIONS);
+    addFixtureKitShop(root, KFIX_SHOP_CONTRIBUTING);
+    writeJson(root, "apps/plugins/kfixShop/contributions/kfix/content.json", { title: "shop", weight: 3 });
+    writeText(root, "apps/server/src/core/kfixShop/hook.ts", "export const hook = 1;\n");
+    assert.doesNotThrow(() => readViewCatalog(root));
+    const contributes = (value: unknown, prepare?: () => void): (() => void) => () => {
+      mutateJson(root, "apps/plugins/kfixShop/plugin.json", (m) => { m.contributes = value; });
+      prepare?.();
+      readViewCatalog(root);
+    };
+    writeText(root, "apps/server/src/core/redeem/hook.ts", "export const hook = 1;\n");
+    assert.throws(contributes({ kfix: { hook: "apps/server/src/core/redeem/hook.ts" } }), /不在插件 "kfixShop" 的所有权推导集内[^\n]*越界贡献/u);
+    writeText(root, "apps/server/src/core/kfixShop/x.generated.ts", "export const hook = 1;\n");
+    assert.throws(contributes({ kfix: { hook: "apps/server/src/core/kfixShop/x.generated.ts" } }), /不在插件 "kfixShop" 的所有权推导集内/u);
+    assert.throws(contributes({ kfix: { nope: "apps/plugins/kfixShop/contributions/kfix/content.json" } }), /kit "kfix" 没有贡献点 "nope"（已声明：content, hook）/u);
+    assert.throws(() => {
+      mutateJson(root, "apps/plugins/kfixShop/plugin.json", (m) => {
+        m.requires = { kits: { kfix: { board: 1 }, ghost: { x: 1 } } };
+        m.contributes = { ghost: { a: "apps/plugins/kfixShop/contributions/kfix/content.json" } };
+      });
+      readViewCatalog(root);
+    }, /ghost/u);
+    mutateJson(root, "apps/plugins/kfixShop/plugin.json", (m) => { m.requires = { kits: { kfix: { board: 1 } } }; });
+    const content = { kfix: { content: "apps/plugins/kfixShop/contributions/kfix/content.json" } };
+    assert.throws(contributes(content, () => writeJson(root, "apps/plugins/kfixShop/contributions/kfix/content.json", { title: "" })), /content\.json/u);
+    assert.throws(contributes(content, () => writeJson(root, "apps/plugins/kfixShop/contributions/kfix/content.json", { title: "ok", extra: 1 })), /content\.json/u);
+    assert.throws(contributes(content, () => writeText(root, "apps/plugins/kfixShop/contributions/kfix/content.json", "{ not json")), /不是合法 JSON/u);
+    writeJson(root, "apps/plugins/kfixShop/contributions/kfix/content.json", { title: "ok" });
+    assert.doesNotThrow(contributes(content));
+    assert.throws(contributes({ kfix: { hook: "apps/server/src/core/kfixShop/hook.ts" } }, () => writeText(root, "apps/server/src/core/kfixShop/hook.ts", "export const other = 1;\n")), /没有导出贡献点要求的符号 "hook"/u);
+    writeText(root, "apps/server/src/core/kfixShop/hook.ts", "export const hook = 1;\n");
+    writeText(root, "apps/plugins/kfixShop/hook.ts", "export const hook = 1;\n");
+    assert.throws(contributes({ kfix: { hook: "apps/plugins/kfixShop/hook.ts" } }), /必须落在 apps\/server\/src\//u);
+    assert.throws(contributes({ kfix: { content: "apps/plugins/kfixShop/hook.ts" } }), /data 贡献必须是 \.json/u);
+    assert.throws(contributes({ kfix: { hook: "apps/server/src/core/kfixShop/missing.ts" } }), /文件不存在/u);
+  } finally {
+    fixtures.dispose();
+  }
+});
+

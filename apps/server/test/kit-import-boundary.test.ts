@@ -41,12 +41,13 @@ const SHARED_BARE = "@game/shared/";
 const SHARED_DOMAINS_DIR = "apps/shared/src/protocol/lobbyRpc/domains/";
 const SHARED_GAMEPLAYS_DIR = "apps/shared/src/gameplays/";
 
+/** 递归收集 .ts；`*.generated.ts` 由 writer 拥有（MF9 的 kits/<id>/contributions.generated.ts 会静态 import 插件模块），⛔ 不进扫描面。 */
 function walk(dir: string): string[] {
   const out: string[] = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) out.push(...walk(full));
-    else if (entry.isFile() && entry.name.endsWith(".ts")) out.push(full);
+    else if (entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".generated.ts")) out.push(full);
   }
   return out;
 }
@@ -447,6 +448,8 @@ test("K1 夹具反例：临时检出里越界的服务端 / shared 文件与 `.c
     ].join("\n"));
     // kit 目录（规则 ① 由既有用例覆盖；K1 只看 kit-on-kit）
     write("apps/server/src/kits/kfix/host.ts", 'import { z } from "../other/host";\nexport const host = z;\n');
+    // MF9 生成物：kits/<id>/contributions.generated.ts 由 codegen:plugins 拥有，静态 import 插件模块——⛔ 不进扫描面
+    write("apps/server/src/kits/kfix/contributions.generated.ts", 'import { a } from "../../core/badplug/a";\nexport const KIT_CONTRIBUTIONS = { hook: [a] } as const;\n');
     // 宿主自有插件目录不进扫描面
     write("apps/server/src/core/hostish/x.ts", 'import { s } from "../../kits/kfix/service";\nexport const hx = s;\n');
     // shared 侧
@@ -468,6 +471,7 @@ test("K1 夹具反例：临时检出里越界的服务端 / shared 文件与 `.c
     const strip = (violation: BoundaryViolation): string => `${violation.file} :: ${violation.reason.replace(/：.*$/u, "")}`;
 
     const server = scanServerKitBoundary(root, packages);
+    assert.ok(!server.files.some((file) => file.endsWith(".generated.ts")), "生成物不进服务端扫描面（MF9 contributions.generated.ts）");
     assert.deepEqual(server.files, [
       "apps/server/src/core/badplug/a.ts",
       "apps/server/src/kits/kfix/host.ts",
