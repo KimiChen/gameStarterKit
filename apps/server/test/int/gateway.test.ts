@@ -21,7 +21,8 @@ import { stopMailWakeLoop } from "../../src/websocket/push";
 import { activeLruBucketOf, kActiveLru, kFence, kLock, kSess, kUser } from "../../src/core/infra/keys";
 import { clientFor, closeRedis, indexClientFor } from "../../src/core/infra/redisRoute";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
-import type { ResultSetHeader } from "../../src/core/infra/mysql";
+import type { ResultSetHeader, RowDataPacket } from "../../src/core/infra/mysql";
+import { withKitTx } from "../../src/core/infra/kitApi";
 import { assertRedisUp, cleanupUser, sleep, testUid, issueSession } from "./helpers";
 
 let colyseus: ColyseusTestServer;
@@ -73,6 +74,7 @@ after(async () => {
   const pool = getPool();
   for (const u of uids) {
     await pool.execute("DELETE FROM mail WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM persona WHERE user_id = ?", [u]);
     await cleanupUser(u);
     await clientFor(u).unlink(kSess(u, 0));
     const b = activeLruBucketOf(u);
@@ -209,6 +211,15 @@ test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLea
   const secret = "test-admin-secret";
   process.env.ADMIN_API_SECRET = secret; // 端点每请求现读；未配置即关闭（fail-closed）
   const u = await makeUser("gmkick");
+  // MF2-B5 撤销覆盖 persona：踢之前该 uid 在两个区各有 persona（会话代 0）
+  await withKitTx("arena", 0, async (tx) => { await tx.createPersona(u.uid, 0); });
+  await withKitTx("arena", 1, async (tx) => { await tx.createPersona(u.uid, 0); });
+  const personaGenerations = async (): Promise<number[]> => {
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      "SELECT session_generation FROM persona WHERE user_id = ? ORDER BY server_id", [u.uid]);
+    return rows.map((r) => Number(r.session_generation));
+  };
+  assert.deepEqual(await personaGenerations(), [0, 0]);
   const room = await joinLobby(u.token);
   await sleep(100); // 待 onJoin/registerOnline 注册 kick 句柄
   setKickHandler(kickUser); // boot 不跑 index.ts，显式挂（生产在 index.ts 启动期挂）
@@ -223,6 +234,7 @@ test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLea
   const res = await kickReq({ "x-admin-secret": secret });
   assert.equal(res.status, 200);
   assert.equal((await res.json() as { kicked: boolean }).kicked, true, "ack：本节点命中并踢掉（GM 据此确认送达）");
+  assert.deepEqual(await personaGenerations(), [1, 1], "账号级踢：该 uid **全部区** persona 的 session_generation 先抬高再踢（MF2-B5）");
   assert.equal(await Promise.race([left, sleep(5000).then(() => -1)]), KICK_CLOSE_CODE.banned, "连接被强制下线（语义化关闭码）");
 
   // reason 参数：revoked → 关闭码/文案随之变（GM 强制下线与封号可区分）

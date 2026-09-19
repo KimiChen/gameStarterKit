@@ -392,7 +392,7 @@ session verify）、`WireDispatcher`（C2S 固定序）、`MessageBudget`（每�
 | `GET /version` | 服务名与协议版本 | `GameHttpContractMap.Version` 派生 path/method，并验证响应 shape |
 | `GET /clock/now` | Demo 对时 | `GameHttpContractMap.ClockNow` 派生 path/method，并验证响应 shape |
 | `GET /notice/list` | 静态公告 Demo | `GameHttpContractMap.NoticeList` 派生 path/method，并验证响应及公告项 shape |
-| `POST /admin/kick` | 可选强制下线参考 | 见 [EXTRAS](EXTRAS.md#32-gm账号管理与强制下线参考) |
+| `POST /admin/kick` | 可选强制下线参考 | 见 [EXTRAS](EXTRAS.md#32-gm账号管理与强制下线参考)；MMO MF2-B5 起先抬高该 uid 全部区 persona 的 `session_generation` 再踢（抬代失败 500、不踢，GM 重试） |
 | `POST /admin/notice` | GM 全区公告（MMO MF6a-B5） | `GameHttpContractMap.AdminNotice`；`server.notice{text}` 经 core/push 投递总线 realm 寻址到达该区**全部节点**的在线连接（GM 调任一节点即可，与 kick 的逐节点不同）；`ADMIN_API_SECRET` 未配置即关闭 |
 | `POST /pay/wx-notify` | 默认关闭的可选参考 | 见 [EXTRAS](EXTRAS.md#34-真实货币支付参考) |
 

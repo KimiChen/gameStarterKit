@@ -306,6 +306,7 @@ async function assertAssetOwnerShape(dbName: string): Promise<void> {
     assert.deepEqual(await indexOf("currency_ledger", "uk_idem"), ["user_id", "server_id", "owner_kind", "owner_id", "idem_key"]);
     assert.deepEqual(await indexOf("persona", "PRIMARY"), ["server_id", "persona_id"]);
     assert.deepEqual(await indexOf("persona", "uk_persona_slot"), ["server_id", "user_id", "kit_id", "slot"]);
+    assert.deepEqual(await indexOf("persona", "idx_persona_uid"), ["user_id"], "MF2-B5 账号级撤销的 user_id 前导索引");
   } finally {
     await conn.end();
   }
@@ -466,6 +467,27 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
       await legacy.query("INSERT INTO user_currency (user_id, server_id, currency, balance) VALUES ('legacy_user', 0, 1, 123), ('legacy_user', 2, 1, 7)");
       await legacy.query("INSERT INTO currency_ledger (user_id, server_id, currency, delta, balance_after, idem_key, reason) VALUES ('legacy_user', 0, 1, 123, 123, 'op_legacy', 'seed')");
       await legacy.query("INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status) VALUES ('op_legacy_outbox', 'legacy_user', 0, JSON_OBJECT('schemaVersion', 1, 'grants', JSON_ARRAY()), 1)");
+      // MF2-B2 形态的存量 persona（无 idx_persona_uid）：B5 的账号级撤销靠它走索引，bootstrap 必须补建且行原样保留
+      await legacy.query(
+        `CREATE TABLE persona (
+           server_id          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+           persona_id         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           user_id            VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           kit_id             VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           slot               TINYINT UNSIGNED NOT NULL,
+           status             TINYINT UNSIGNED NOT NULL DEFAULT 0,
+           control_epoch      BIGINT UNSIGNED NOT NULL DEFAULT 0,
+           world_address      VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NULL,
+           session_generation BIGINT UNSIGNED NOT NULL DEFAULT 0,
+           meta               JSON NULL,
+           created_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+           updated_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+           PRIMARY KEY (server_id, persona_id),
+           UNIQUE KEY uk_persona_slot (server_id, user_id, kit_id, slot),
+           KEY idx_persona_user (server_id, user_id, kit_id)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`,
+      );
+      await legacy.query("INSERT INTO persona (server_id, persona_id, user_id, kit_id, slot, session_generation) VALUES (2, 'legacy_persona_00000000', 'legacy_user', 'arena', 0, 7)");
     } finally {
       await legacy.end();
     }
@@ -517,6 +539,10 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
           "SELECT owner_kind, owner_id, status FROM gameplay_outbox WHERE op_id = 'op_legacy_outbox'",
         );
         assert.deepEqual(outbox.map((row) => [Number(row.owner_kind), row.owner_id, Number(row.status)]), [[0, "", 1]]);
+        const [personas] = await conn.query<mysql.RowDataPacket[]>(
+          "SELECT server_id, slot, session_generation FROM persona WHERE user_id = 'legacy_user'",
+        );
+        assert.deepEqual(personas.map((row) => [Number(row.server_id), Number(row.slot), Number(row.session_generation)]), [[2, 0, 7]], "存量 persona 行原样保留（只补索引）");
       } finally {
         await conn.end();
       }

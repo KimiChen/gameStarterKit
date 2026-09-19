@@ -99,6 +99,12 @@ package、构建/预览/部署脚本或构建产物，也不把它恢复为 gitl
 命中 Lobby 在线表后，节点会先尽力推送 `auth.forceLogout{reason}`，再使用对应语义关闭码断开该连接；
 关闭码只作为推送未送达时的兜底，不扩大在线表覆盖范围。
 
+MMO MF2-B5 起（[MMO.md](MMO.md) §5 MF2），踢之前先**抬高该 uid 全部区 persona 的 `session_generation`**
+（`core/auth/kickBus.ts` 的 `revokePersonaSessions`，账号级形态走 `persona.idx_persona_uid`）：`/admin/kick` 抬代失败返回 500 且
+不踢，GM 重试本节点即同时补抬 + 补踢（每节点各抬一次，+N 与 +1 等价）；组内 `stream:kick` 的账号级事件在消费侧抬代后照踢
+（失败只记错）；同区顶号由 `writeGroupSess` 只抬该区、踢完再抛。会话代是世界长连接的第三层闸（MF4 消费），⛔ 不替代组 sess
+hash 与踢，也不改变本节的能力边界。
+
 参考顺序是先写账号权威，再处理已建立连接；反序会留下被踢后立即重新登录的窗口。外部响应
 `{accountExists, status}` 中，`status` 只在 `banned | revoked | not_found` 范围内。账号不存在应作为明确
 业务结果展示。`operationId` 应由调用方持久生成；在超时或 5xx 造成结果不确定时，只有确认外部服务的
