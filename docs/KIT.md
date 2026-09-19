@@ -75,6 +75,11 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
   gameplay 规则（`gameplays/<modeId>/`、`apps/shared/src/gameplays/<modeId>/`、`rooms/modes/<modeId>/`、`<Constant>Room.ts`、
   `wire-vectors/<modeId>.ts`、`<modeId>-*.test.ts`）。
 - `sql.files`：迁移文件顺序；`sql.tables`：每张表的 `zone`（§5）。
+- **MMO MF7a 增量可选字段（2026-09-19 交付，⛔ 不 bump schemaVersion，K0-2 `requires` 先例；进锁抬头与身份摘要）**：
+  `sql.tables[].role: "world-event"` = 该表按框架固定的世界事件表形态（必备列 `event_id / instance_id / seq / kind / payload /
+  status / attempts / checkpoint_rev`，`db:bootstrap` 的形状机检缺列 fail-closed）；`workers: [{ id, entry }]` = 后台 worker
+  清单，`entry` 固定形态 `apps/server/src/kits/<id>/workers/<worker>.ts`（默认导出 `defineKitWorker({ pass })`，§4），每个
+  worker 对应一行 `singleton_lease('kit:<id>:<worker>')`（bootstrap 预置，§5）。
 - `userKeys`：kit 的 per-user Redis 键名清单——冷档 freeze/thaw 按它快照与 UNLINK（框架 PR：freeze/thaw 读该清单）。
 - 没有 `version` = 宿主自有 kit（与插件同规则：不可打包、不进锁）。
 - 派生形态：`client`（有登记）/ `gameplay`（modes 非空）/ `server`（有 sql 或 `apps/server/src/kits/<id>/`）——纯 SQL + 服务的
@@ -93,6 +98,14 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
   事务句柄）、`debitInTx` / `creditInTx`（经济主账本的事务内调用）、outbox 写入；以及构建期登记命名空间化 effect kind
   （`kit:<id>:<name>` + 零依赖 validator，随 codegen 汇入 effect 表与 Lua 镜像）。没有这三样，「世界状态在 SQL、经济在框架」
   之间没有原子路径。
+- **kit worker（MMO MF7a，2026-09-19 已交付）**：`kit.json.workers[]` 登记的后台进程，`KIT_WORKER_ZONES=1,2 npm --workspace
+  @game/server run worker -- <kit>:<worker>` 启动（区清单显式非空，⛔ 不从 GROUP_ZONES 推）：只认生成目录里登记的 worker（未登记
+  即拒、⛔ 不 import）、争租 `singleton_lease('kit:<kit>:<worker>')`（同名 worker 全局单例）、逐区串行一条**租约守卫受限事务**
+  `withKitWorkerTx(kitId, workerId, sId, lease, fn)`（kit-api：同连接同事务首句 `renewLeaseGuard`，被顶替 / 旧 fence ⇒
+  `LeaseLostError` 自动回滚、业务表零写入；句柄同 `withKitTx` 但没有 `.conn`，回调内 ⛔ 另开事务），失租即退出进程（僵尸 leader
+  自杀）；entry 默认导出 `defineKitWorker({ pass(tx, ctx), idleMs? })`，`pass` 一轮一条事务、返回 `{ more: true }` 表示同区还有
+  积压（有界批次由 pass 自己的 LIMIT 决定）；⛔ 模块级 `setInterval` / 导入期副作用（§2）。真库夹具见
+  `apps/server/test/int/kit-worker-lease.test.ts`。
 - 插件声明依赖：`plugin.json` 加 `requires: { kits: { "slg": { "worldmap": 1 } } }`（plugin schema **v2 增量可选字段**，
   K0-2 拍板 ⛔ 不 bump schemaVersion，`requires` 进锁抬头、身份摘要、注册表索引；PLUGIN.md §5.3 与 PLUGIN-REGISTRY §2.1 / §5 同步改口径：依赖解析只做 plugin → kit 单向）。
   判定：`kit.api.<surface>.minSupported ≤ 声明 ≤ version`；`install` / `check` / 注册表 `validate` 都查；宿主未装该 kit 即拒绝。
@@ -114,7 +127,8 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
 | 账本（框架 PR） | `schema.sql` 增加 `kit_migration(kit_id, file, sha256, statement_count, applied_statements, applied_at)`；`db:bootstrap` 在 `singleton_lease('db_bootstrap')` 下、按 kit id + 文件序，只应用账本里没有（或没跑完）的文件，逐条语句执行（`multipleStatements:false`）并按语句推进进度——中途失败留下续跑点，下次从失败那条继续而不是重跑已提交的 DDL；失败点名到 kit / 文件 / 语句序号；已应用文件 sha256 变化即 fail-closed（这就是「⛔ 不改已发布迁移」的机检形态）；语句级白名单 lint（只放行 CREATE TABLE / ALTER TABLE ADD\|MODIFY COLUMN、ADD [UNIQUE] INDEX\|KEY / CREATE [UNIQUE] INDEX / INSERT [IGNORE] INTO，表名须已声明且带前缀，其余一律拒）在执行前跑完；实现 `apps/server/tools/kit-migrations.ts` |
 | 幂等 | 有账本后 `.sql` 不必自身幂等：`CREATE TABLE`、`ALTER TABLE ADD COLUMN` 都只跑一次。审核清单里的「应用两遍」改为「重跑 bootstrap 零 DDL」 |
 | 区 | `sql.tables[].zone` 无缺省：`per-zone` 表必须有 `server_id SMALLINT UNSIGNED NOT NULL` 且进主键与每个 UNIQUE；`global` 表不得有；框架维护「按区表登记」（框架 PR），关单区 / 统计 / 冷档遍历时自动汇入 kit 表 |
-| 卸载 | `uninstall` 删文件、收缩生成物，表**保留**；`uninstall --drop-data` 的 drop 清单来自 `INFORMATION_SCHEMA` 的 `k_<id 小写>_` 前缀（⛔ 不读已删的文件；FOREIGN_KEY_CHECKS=0 成批 drop）并删账本行，同时 SCAN 粗匹配后按 `<前缀>(s<sId>_)?kt:<id>:` 精确过滤再有界 UNLINK Redis；`check`（或 bootstrap）对「账本有 kit X 而树无 kit X」告警。⚠ 卸载前 `gameplay_outbox` 里仍 pending 的 `kit:<id>:*` effect 会在 kit 的 effect kind 离开 `KIT_EFFECT_KINDS` 后成为 relayer 的永久 EFFECT_UNKNOWN_KIND 死信——先等 outbox 排空（K1 待做：uninstall 对 pending 行拒绝或告警） |
+| worker 租约行（MF7a） | `db:bootstrap` 在 kit 迁移之后按目录对每个 `workers[]` 预置 `singleton_lease('kit:<id>:<worker>')`（`tools/kit-workers.ts`：与 schema.sql 预置行同形的幂等 ODKU no-op，已有行的 holder / fence / expires_at 零触碰；⛔ INSERT IGNORE / REPLACE），worker 进程只抢占已有的行（缺行 = 未 bootstrap）；删 kit 后行保留，`check` / bootstrap 点名孤儿行 |
+| 卸载 | `uninstall` 删文件、收缩生成物，表**保留**；`uninstall --drop-data` 的 drop 清单来自 `INFORMATION_SCHEMA` 的 `k_<id 小写>_` 前缀（⛔ 不读已删的文件；FOREIGN_KEY_CHECKS=0 成批 drop）并删账本行，同时 SCAN 粗匹配后按 `<前缀>(s<sId>_)?kt:<id>:` 精确过滤再有界 UNLINK Redis；`check`（或 bootstrap）对「账本有 kit X 而树无 kit X」告警。⚠ 卸载前 `gameplay_outbox` 里仍 pending 的 `kit:<id>:*` effect 会在 kit 的 effect kind 离开 `KIT_EFFECT_KINDS` 后成为 relayer 的永久 EFFECT_UNKNOWN_KIND 死信——先等 outbox 排空（K1 已做，MF0：uninstall 对 pending 行拒绝、`check` 告警）。**kit worker 闸（MF7a）**：`role:"world-event"` 表还有 `status = 0` 的行、或该 kit 的 worker 租约在役（holder 非空且未过期）⇒ `uninstall` 拒（`tools/plugin/workerGate.ts`，⛔ 无 bypass flag：先让 worker 消费完 / SIGTERM 停 worker 并等租约到期），`check` 只告警并点名孤儿 `kit:%` 租约行 |
 | 冷档 | kit 的 per-user 键按 `kit.json.userKeys` 进 freeze 快照与 thaw 恢复（框架 PR）；共享键不冻结。**写侧硬契约**：对 `userKeys` 的每次写必须在 `withUserLock(uid)` 内，或在同一条 Lua 里先确认 `user:{uid}` 存在（缺席返回 'cold'）并 `HINCRBY user.ver 1`——`FREEZE_COMMIT` 只以 `user.ver` 加各 kit 键的字段数比对为判据，绕过它的直写会被冻结丢掉（`APPLY_EFFECT` 的 kit 分支满足该契约；kit 服务端代码 ⛔ 不得裸 HSET `kt:` per-user 键）。**已接受的缺口**：已卸载（未 `--drop-data`）kit 的残留 `kt:` 键在 overwrite 恢复时不被清理，只由 `--drop-data` 的 SCAN 清 |
 | 升级 | 新增迁移只追加文件；表结构演进用 `ALTER … ADD COLUMN`（账本保证只跑一次），需要守卫的复杂变更写成 TS 迁移步（沿用 db-bootstrap 的 INFORMATION_SCHEMA 先例） |
 
@@ -186,6 +200,7 @@ packages/<id>/<version>/reviews/NNN.json    仅 kit，追加式：{ action: "app
 | K0-4 框架 PR（账本 + 租约 + 逐语句、按区表登记、freeze/thaw 读 userKeys、`kKit*`、`kit-api/server`、effect kind 通道、域名前缀规则对插件生效）与四处发现根（codegen:plugins / codegen:gameplays / verify-inventory / homeMenu.test.ts） | ✅ 2026-09-06（14ef9e5 三区集成、c92a5c3 租约修复、4783122 第四区 + 三区对抗审阅修复：39 条发现全部消化）；`scripts/kits/allowed_signers` 随 K2 签名链一起做 |
 | K0-5 样本 `arena` kit + `arenaShop` 插件走通 pack → install → codegen → bootstrap → 插件建在其上 → uninstall | ✅ 2026-09-06（7c37d56：主树真跑 pack 93 + 26 → 干净安装（首次 postinstall 因残留空目录失败并精确回滚，重装成功）→ arenaShop 过正向闸 → db:bootstrap 两遍（应用 2 条语句 / 第二遍跳过 1）→ check 四包 ✔ → test arena 33 / arenaShop 9 → uninstall arena 被依赖反查拒绝；对抗审阅 16 条：11 修复、5 按约束驳回；两包保持已安装，样本文档见 [apps/kits/arena/README.md](../apps/kits/arena/README.md) / [apps/plugins/arenaShop/README.md](../apps/plugins/arenaShop/README.md)） |
 | K1（门面与边界） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF0** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF0-B1–B3）：客户端 kit-api 路径级导入边界 `apps/client/test/kitImportBoundary.test.ts`（6582d4ac）；服务端 / shared 侧边界 + `.conn` AST 禁令 `apps/server/test/kit-import-boundary.test.ts`（1ce10d01）；uninstall 对 pending `kit:<id>:*` outbox 行的闸 `tools/plugin/outboxGate.ts` + CLI `--allow-pending-outbox`（107f8e5a，`plugin -- check` 只告警）。样本发现的框架小面 `applyKitEffect` / `readKitUserField` / `currentZoneId` 已进 kit-api |
+| kit worker（MMO MF7a） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF7a** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF7a-B1–B6，tag `mf7a-exit`）：kit-schema 增量字段 `workers[]` / `sql.tables[].role`（979a980d）、bootstrap 预置租约行（fe18d127）、`withKitWorkerTx`（3f978152）、`src/workers/kitWorker.ts` 入口 + `defineKitWorker`（bb2b0728）、uninstall / check 闸（ab11e6a0）、真库争租夹具 + 本文 §3 / §4 / §5 |
 | K2（注册表） | 未开始 |
 | `slg` 样本阶段 1 / 2a | ✅ 2026-09-09 完成并验收：SQL 权威地块与行军，worldmap/march v1，原创 10000×10000 地图页，耐久回执/变更日志；七张 per-zone 表、无 mode。verify:all 通过；Creator 17 步/13 图/console 空；干净制品安装、独立空库 4+3 语句、包测试 35/35、重复 bootstrap 零新应用，见 [验收证据](evidence/creator-2026-09-09/slg/README.md)。规则与边界见 [apps/kits/slg/README.md](../apps/kits/slg/README.md)；SLG 2b 等 MMO MF5，离线 worker 等 MF7，不表示 K1/K2 或 MMO 原语已完成 |
 

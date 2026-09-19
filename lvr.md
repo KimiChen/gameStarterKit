@@ -202,7 +202,7 @@ alliance 是三个 api 面」）。⇒ `lvr` 必须自建 worldmap/march，**照
 「⛔ 在 MF7 落地前不承诺无人在线时按时结算/发奖」，⛔ 不要写成无条件的「不提供」。
 
 ⇒ `lvr` kit 与 `slg` kit 一样**登记为 MF7 的消费方**（`slg.md` §0.1 已登记 `kit.json.workers[]` 依赖）。
-MF7 落地后在 `docs/MMO.md` §12 回写一行。
+MF7 落地后在 `docs/MMO.md` §12 回写一行。（**MF7a 已于 2026-09-19 退出**，§12 已回写：`kit.json.workers[]` + `withKitWorkerTx` + `npm run worker -- lvr:<worker>` 入口 + 卸载闸可用，lvr 的定时推进 / 排行定格 / 保留期清理可按此开工；MF7b 检查点 / 世界事件仍未做。）
 
 **逐条的临时形态**（MF7 落地前）：
 
