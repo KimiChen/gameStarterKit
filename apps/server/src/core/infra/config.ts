@@ -364,6 +364,14 @@ export const WORLD_LEASE_RENEW_MS = envInt("WORLD_LEASE_RENEW_MS", 5_000);
 if (WORLD_LEASE_RENEW_MS < 1 || WORLD_LEASE_TTL_MS < 1 || WORLD_LEASE_RENEW_MS * 3 > WORLD_LEASE_TTL_MS) {
   throw new Error(`WORLD_LEASE_RENEW_MS(${WORLD_LEASE_RENEW_MS}) * 3 必须 ≤ WORLD_LEASE_TTL_MS(${WORLD_LEASE_TTL_MS})（MMO.md §11.2）`);
 }
+/**
+ * world 进程公开 ws 地址（MMO MF8-B4 / D27）：`world.enter` 回给客户端的 endpoint；空串 = 与当前区 gameWsUrl 相同
+ * （world 进程拆分（PS4）前的缺省；拆分后由部署方设置 wss origin）。非空必须是 ws/wss origin。
+ */
+export const WORLD_PUBLIC_WS_URL = (process.env.WORLD_PUBLIC_WS_URL ?? "").trim();
+if (WORLD_PUBLIC_WS_URL !== "" && !/^wss?:\/\/[A-Za-z0-9.-]+(:\d{1,5})?$/u.test(WORLD_PUBLIC_WS_URL)) {
+  throw new Error(`WORLD_PUBLIC_WS_URL(${WORLD_PUBLIC_WS_URL}) 必须是 ws:// 或 wss:// origin（无路径）`);
+}
 /** 世界房一次性准入凭据 TTL（MMO MF8-B2，候选数字；ROOM_TICKET_TTL_MS 同量级）。 */
 export const WORLD_TICKET_TTL_MS = envInt("WORLD_TICKET_TTL_MS", 30_000);
 /** 交接目标预留有效期（MMO MF8-B2，候选数字）：Committed 前到期 ⇒ 释放预留（cancelled）。 */

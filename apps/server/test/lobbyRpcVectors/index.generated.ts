@@ -11,6 +11,7 @@ import shopVectors from "./shop";
 import slgVectors from "./slg";
 import snakeCosmeticVectors from "./snakeCosmetic";
 import userVectors from "./user";
+import worldVectors from "./world";
 import type { LobbyRpcVectorFile } from "./vectorTypes";
 
 /** 域 → sidecar default（= LOBBY_RPC_DOMAINS；新增域只新增 lobbyRpcVectors/<域>.ts 并重跑 codegen:plugins）。 */
@@ -27,4 +28,5 @@ export const LOBBY_RPC_VECTOR_FILES: Readonly<Record<string, LobbyRpcVectorFile>
     slg: slgVectors,
     snakeCosmetic: snakeCosmeticVectors,
     user: userVectors,
+    world: worldVectors,
 };

@@ -16,6 +16,7 @@ import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, 
 import { validateSlgMapTilesReq, validateSlgMapTilesRes, validateSlgMarchDispatchReq, validateSlgMarchDispatchRes, validateSlgMarchRecallReq, validateSlgMarchRecallRes, validateSlgTileCaptureReq, validateSlgTileCaptureRes, type ISlgMapTilesReq, type ISlgMapTilesRes, type ISlgMarchDispatchReq, type ISlgMarchDispatchRes, type ISlgMarchRecallReq, type ISlgMarchRecallRes, type ISlgTileCaptureReq, type ISlgTileCaptureRes } from "./domains/slg";
 import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, validateSnakeCosmeticSnapshotRes, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq, type ISnakeCosmeticSnapshotRes } from "./domains/snakeCosmetic";
 import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validateGetUserIdReq, validateGetUserIdRes, validateProfileRes, validateUpdateProfileReq, validateUpdateRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
+import { validateWorldEnterReq, validateWorldEnterRes, validateWorldResolveTransferReq, validateWorldResolveTransferRes, validateWorldTransferPush, type IWorldEnterReq, type IWorldEnterRes, type IWorldResolveTransferReq, type IWorldResolveTransferRes, type IWorldTransferPush } from "./domains/world";
 
 /** 领域全集（生成器删除保护锚 + 向量 sidecar 的域集合闸）。 */
 export const LOBBY_RPC_DOMAINS: readonly string[] = [
@@ -31,6 +32,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "slg",
     "snakeCosmetic",
     "user",
+    "world",
 ];
 
 /** 全量路由契约（服务端 defineRpc 与客户端 WebSocketClient.rpc 的公共类型域） */
@@ -70,6 +72,8 @@ export interface LobbyRpcMap {
     "user.getInfo": { req: IGetInfoReq; res: IGetInfoRes };
     "user.getProfile": { req: IGetProfileReq; res: IGetProfileRes };
     "user.updateProfile": { req: IUpdateProfileReq; res: IUpdateProfileRes };
+    "world.enter": { req: IWorldEnterReq; res: IWorldEnterRes };
+    "world.resolveTransfer": { req: IWorldResolveTransferReq; res: IWorldResolveTransferRes };
 }
 
 export type LobbyRpcType = keyof LobbyRpcMap;
@@ -143,6 +147,8 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "user.getInfo": "query",
     "user.getProfile": "query",
     "user.updateProfile": "idempotent-write",
+    "world.enter": "query",
+    "world.resolveTransfer": "query",
 };
 
 /** 运行时全集：服务端 loader 启动校验 + 契约测试用。新增路由若漏在此处，服务端拒绝启动。 */
@@ -182,6 +188,8 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "user.getInfo",
     "user.getProfile",
     "user.updateProfile",
+    "world.enter",
+    "world.resolveTransfer",
 ];
 
 /** 路由 → 契约版本（§6.11：随 validator 语义变更人工 bump；幂等 v2 记录持久化并 fail-closed 比对，
@@ -222,6 +230,8 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "user.getInfo": 1,
     "user.getProfile": 1,
     "user.updateProfile": 1,
+    "world.enter": 1,
+    "world.resolveTransfer": 1,
 };
 
 /** 域契约身份（codegen 闸：domains/<域>.ts 的 sha256 变化必须伴随 contractVersion 递增；⛔ 不进 wire）。 */
@@ -238,6 +248,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     slg: { contractVersion: 2, digest: "077ecba95687aa0a4130f51eba2cda7d4a2548e6e347154d3f153fdcc641bca5" },
     snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },
     user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
+    world: { contractVersion: 1, digest: "5361cd9de93163a679085546de5f887f46e0f8bbfb67fcf8cae5c7e684e5e0ad" },
 };
 
 /** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */
@@ -289,6 +300,8 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "user.getInfo": guardRpcValidator("payload", validateGetInfoReq),
     "user.getProfile": guardRpcValidator("payload", validateGetProfileReq),
     "user.updateProfile": guardRpcValidator("payload", validateUpdateProfileReq),
+    "world.enter": guardRpcValidator("payload", validateWorldEnterReq),
+    "world.resolveTransfer": guardRpcValidator("payload", validateWorldResolveTransferReq),
 };
 
 /** Route response validators. */
@@ -328,6 +341,8 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "user.getInfo": guardRpcValidator("response", validateGetInfoRes),
     "user.getProfile": guardRpcValidator("response", validateProfileRes),
     "user.updateProfile": guardRpcValidator("response", validateUpdateRes),
+    "world.enter": guardRpcValidator("response", validateWorldEnterRes),
+    "world.resolveTransfer": guardRpcValidator("response", validateWorldResolveTransferRes),
 };
 
 export function validateLobbyRpcRequest<T extends LobbyRpcType>(type: T, input: unknown): RpcReq<T> {
@@ -395,6 +410,9 @@ export const RPC_ERR_CODES = [
     "SNAKE_SKIN_NOT_CRAFTABLE",
     "SNAKE_SKIN_FRAGMENTS_INSUFFICIENT",
     "SNAKE_COSMETIC_WRITES_DISABLED",
+    "WORLD_PERSONA_INVALID",
+    "WORLD_TRANSFER_INVALID",
+    "WORLD_SERVICE_UNAVAILABLE",
 ] as const;
 
 export type RpcErrCode = (typeof RPC_ERR_CODES)[number];
@@ -412,6 +430,7 @@ export const LobbyPush = {
     MailNew: "mail.new",
     PartyEvent: "party.event",
     PartyInvited: "party.invited",
+    WorldTransfer: "world.transfer",
 } as const;
 
 /** 推送类型名 → data 形状（客户端 WebSocketClient.onPush 的类型域） */
@@ -423,6 +442,7 @@ export interface LobbyPushMap {
     "mail.new": IMailNewPush;
     "party.event": IPartyEventPush;
     "party.invited": IPartyInvitedPush;
+    "world.transfer": IWorldTransferPush;
 }
 
 export type LobbyPushType = keyof LobbyPushMap;
@@ -436,6 +456,7 @@ export const PUSH_RUNTIME_VALIDATORS: { readonly [K in LobbyPushType]: RuntimeVa
     "mail.new": validateMailNewPush,
     "party.event": validatePartyEventPush,
     "party.invited": validatePartyInvitedPush,
+    "world.transfer": validateWorldTransferPush,
 };
 
 export function validatePushData<K extends LobbyPushType>(type: K, input: unknown): LobbyPushMap[K] {
@@ -463,7 +484,8 @@ export function validateLobbyPush(input: unknown): LobbyPushEnvelope {
             && type !== "guild.event"
             && type !== "mail.new"
             && type !== "party.event"
-            && type !== "party.invited") {
+            && type !== "party.invited"
+            && type !== "world.transfer") {
             throw new WireValidationError("PUSH_TYPE", "push.type");
         }
         return { type, data: validatePushData(type, value.data) } as LobbyPushEnvelope;
