@@ -14,11 +14,14 @@
 > - [docs/PLUGIN-REVIEW.md](docs/PLUGIN-REVIEW.md)：PLUGIN.md 的审阅记录（2026-09-05；经验证的问题清单与推荐实现方案，实施状态登记在 EXTRAS §5.2）
 > - [docs/PLUGIN-REGISTRY.md](docs/PLUGIN-REGISTRY.md)：插件分享平台 plugin.gono.games 设计提案（2026-09-05；§1 机制余留问题清单与七条前置修复、§2-4 制品布局/自建服务/CLI/锁 source/plugin-api 门面；实施状态只在其 §7 回写，⛔ 不进 plan-v5）
 > - [docs/KIT.md](docs/KIT.md)：kit（地基层）设计提案（2026-09-06；可分发但须 gono 团队审核；§2 划线、§3 kit.json、§4 kit-api 与 requires.kits、§6 审核线；实施状态只在其 §9 回写，⛔ 不进 plan-v5）
-> - [docs/MMO.md](docs/MMO.md)：MMO 整合设计基线（2026-09-09；Nakama 定形、AzerothCore 定实；框架阶段 MF0–MF11 → `mmo` kit MK0–MK4 → 内容插件 MG0–MG2；四份 docs/mmo-*.md 与 docs/mmo1.md 为讨论材料；实施状态只在其 §12 回写，⛔ 不进 plan-v5）
+> - [docs/MMO.md](docs/MMO.md)：MMO 整合设计基线（2026-09-09，v1.1 2026-09-19 按 MMO-REVIEW M01–M20 修订；Nakama 定形、AzerothCore 定实；框架阶段 MF0–MF11（MF5 / MF7 各分 a / b：a = GameRoom 路径 / kit worker 通用半边，slg 2b 与 lvr 只等 a 半边）→ `mmo` kit MK0–MK4 → 内容插件 MG0–MG2；实施状态只在其 §12 回写，⛔ 不进 plan-v5）
+> - [docs/MMO-REVIEW.md](docs/MMO-REVIEW.md)：MMO.md 的开门审阅记录（2026-09-19；M01–M20 问题清单 + 阶段重排建议，已于同日全部采纳进 MMO.md v1.1，M01 取「草案不入库、正文自包含」；⛔ 审阅记录不是设计真源，结论以 MMO.md 为准）
 > - [tools/creator-preview/README.md](tools/creator-preview/README.md)：Creator 预览证据生成器（CDP 驱动真实引擎预览重放登录 → 首屏 → 设置 → 插件入口，落盘截图 + report.json；⛔ 不进 verify:core）
 > - [apps/plugins/snake/README.md](apps/plugins/snake/README.md)：Snake 玩法唯一文档（素材授权台账、冻结数值、拍板记录、真引擎缺陷台账）
 > - [apps/kits/README.md](apps/kits/README.md)：kit 目录说明；首个样本 kit `arena` 见 [apps/kits/arena/README.md](apps/kits/arena/README.md)，建在其上的样本插件见 [apps/plugins/arenaShop/README.md](apps/plugins/arenaShop/README.md)
-> - [apps/kits/slg/README.md](apps/kits/slg/README.md)：SLG 大地图机制样例（阶段 1 / 2a 已验收：worldmap/march 面、SQL 地块/行军与原创 10000×10000 地图页；2b 等 MMO MF5，离线 worker 等 MF7）；冻结规则与审阅见 [slg.md](slg.md)
+> - [apps/kits/slg/README.md](apps/kits/slg/README.md)：SLG 大地图机制样例（阶段 1 / 2a 已验收：worldmap/march 面、SQL 地块/行军与原创 1500×1500 地图页（三战标准图格数，225 万格）；2b 等 MMO MF5，离线 worker 等 MF7）；冻结规则与审阅见 [slg.md](slg.md)
+> - [lvr.md](lvr.md)：用本框架 1:1 复刻 Last Voyage: Rising（4X SLG）的实施规划（2026-09-18；规划 v1 未开工，⛔ 未实施任何 LVR 能力。独立 `lvr` kit、SQL 权威 + 视图房、M0 两个 spike 是排期的门；实施状态只在其 §11 回写，⛔ 不进 plan-v5）
+> - [lvr-3d.md](lvr-3d.md)：`lvr` kit 的 3D 场景管线需求（2026-09-18；需求 v1 未开工。拍板走自建 3D 管线，由单独排期实现，⛔ 不占 lvr.md 的核心工程估算；A0 可行性 spike 是门。实施状态只在其 §8 回写）
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
 > - [docs/plan-v5.md](docs/plan-v5.md)：当前实施状态、验收基线与开放项去向的唯一真相（未实现开放项登记在 EXTRAS §5.2，有意保留边界在 §5.3）
 >
