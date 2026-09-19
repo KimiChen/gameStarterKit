@@ -41,3 +41,17 @@ export const GamePhase = {
 } as const;
 
 export type GamePhaseType = (typeof GamePhase)[keyof typeof GamePhase];
+
+/**
+ * 世界房（WorldRoom，MMO MF4）生命周期（docs/MMO.md §4.5）：Recovering（取权威租约 → 装载 → 检查点回灌 → 开放准入）→
+ * Active（固定步推进、准入校验控制权 + 凭据、周期检查点）→ Draining（停收准入、在途交接完成、强制检查点）→ Offline（释放租约、销毁）。
+ * 落在 core 常量：world 形态的生成 state 模块从这里 import（与 GamePhase 同一来源），⛔ 不与 GamePhase 混用。
+ */
+export const WorldPhase = {
+    Recovering: "recovering",
+    Active: "active",
+    Draining: "draining",
+    Offline: "offline",
+} as const;
+
+export type WorldPhaseType = (typeof WorldPhase)[keyof typeof WorldPhase];

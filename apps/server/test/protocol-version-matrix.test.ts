@@ -26,6 +26,8 @@ import {
     GAMEPLAY_CATALOG,
     GameplayModeId,
     LOBBY_PROTOCOL_VERSION,
+    WORLD_ROOM_PROTOCOL_VERSION,
+    validateWorldRoomJoinOptions,
 } from "@game/shared";
 import { GameRoom } from "../src/rooms/GameRoom";
 import { registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
@@ -174,4 +176,19 @@ test("版本矩阵源码钉：两房间各只比较自己的整数，另一个�
     assert.doesNotMatch(lobbySource, /\bPROTOCOL_VERSION\b/u, "旧名 PROTOCOL_VERSION 已移除");
     assert.doesNotMatch(gameSource, /\bPROTOCOL_VERSION\b/u, "旧名 PROTOCOL_VERSION 已移除");
     assert.doesNotMatch(roomAuthSource, /\bPROTOCOL_VERSION\b/u, "旧名 PROTOCOL_VERSION 已移除");
+});
+
+// ── MMO MF4-B1：第三个兼容整数 WORLD_ROOM_PROTOCOL_VERSION（World join 的比较位点随 MF4-B6 的 WorldRoom 落地，届时补行为行）──
+test("版本矩阵 World（MF4-B1）：WORLD_ROOM_PROTOCOL_VERSION=1 独立于 GAME_ROOM / LOBBY；既有两房源码零出现；世界 join 信封只认 v 为整数", () => {
+    assert.equal(WORLD_ROOM_PROTOCOL_VERSION, 1, "一次定型：首个客户端发版前保持 1");
+    assert.notEqual(WORLD_ROOM_PROTOCOL_VERSION, GAME_ROOM_PROTOCOL_VERSION);
+    assert.notEqual(WORLD_ROOM_PROTOCOL_VERSION, LOBBY_PROTOCOL_VERSION);
+    // 只看代码，不看注释（RoomAuth 的文档注释按设计提到世界整数的注入形态）
+    const stripComments = (source: string): string => source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/^\s*\/\/.*$/gmu, "");
+    for (const file of ["websocket/LobbyRoom.ts", "rooms/GameRoom.ts", "rooms/core/RoomAuth.ts"]) {
+        assert.doesNotMatch(stripComments(readFileSync(joinPath(SRC_ROOT, file), "utf8")), /WORLD_ROOM_PROTOCOL_VERSION/u, `${file} 代码 ⛔ 不得参与世界整数（WorldRoom 的绑定随 MF4-B6 另钉）`);
+    }
+    const envelope = { v: WORLD_ROOM_PROTOCOL_VERSION, sId: 0, mode: "worldFixture", modeVersion: 1, profile: "world", mapId: "m1", personaId: "p_0123456789abcdefXYZ", ticket: "t".repeat(24) };
+    assert.equal(validateWorldRoomJoinOptions(envelope).v, 1);
+    assert.throws(() => validateWorldRoomJoinOptions({ ...envelope, v: "1" }), "v 必须是整数（形状闸；数值比较在 WorldRoom.onAuth）");
 });

@@ -36,6 +36,13 @@ export const ErrorCode = {
     PersonaNotFound: 4002,
     /** 控制权冲突：该 persona 的 control_epoch 已被别处抬高（MMO MF4 `assertControl` CAS 0 行；MF2-B1 先登记） */
     ControlConflict: 4003,
+
+    /** 世界房不持有该实例的权威租约（Recovering 未完成 / 丢租 / 被更高 epoch 顶替；MMO MF4） */
+    WorldNotAuthoritative: 4101,
+    /** 世界准入凭据无效 / 过期 / 与 persona 不符（MMO MF4 `world-ticket` AccessPolicy） */
+    WorldTicketInvalid: 4102,
+    /** 世界房正在 Draining：停收准入、拒新命令（MMO MF4） */
+    WorldDraining: 4103,
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -58,6 +65,9 @@ export const ErrorMessage: { [K in ErrorCodeType]: string } = {
     [ErrorCode.PersonaSlotTaken]: "该角色槽位已被占用",
     [ErrorCode.PersonaNotFound]: "角色不存在",
     [ErrorCode.ControlConflict]: "角色已在别处登录",
+    [ErrorCode.WorldNotAuthoritative]: "世界正在切换权威，请稍后重试",
+    [ErrorCode.WorldTicketInvalid]: "世界准入凭据无效，请重新进入",
+    [ErrorCode.WorldDraining]: "世界正在维护中，请稍后重试",
 };
 
 export const ERROR_CODE_VALUES: readonly ErrorCodeType[] = Object.values(ErrorCode);
