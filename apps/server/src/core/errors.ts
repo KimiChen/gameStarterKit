@@ -77,6 +77,51 @@ export class EffectConflictError extends InvalidPayloadError {
   }
 }
 
+// ── persona / 资产主体（MMO MF2-B4，docs/MMO.md §5 MF2 / M03）──────────────────────────────
+// 双端数字码在 shared constants/errors.ts 的 4xxx 段（PersonaSlotTaken / PersonaNotFound / ControlConflict）；这些异常由 kit 在自己的
+// 域错误码里映射后下发，⛔ 不进 ERR_MAP（框架不替 kit 决定 RPC 面的码）。
+
+/** `UNIQUE(server_id, user_id, kit_id, slot)` 冲突：该账号在该 kit 的这个槽位已有 persona。 */
+export class PersonaSlotTakenError extends Error {
+  readonly slot: number;
+  constructor(uid: string, kitId: string, slot: number) {
+    super(`persona slot taken: uid=${uid} kit=${kitId} slot=${slot}`);
+    this.name = "PersonaSlotTakenError";
+    this.slot = slot;
+  }
+}
+
+/** persona 不存在 / 不属于本 kit / 不在本区。 */
+export class PersonaNotFoundError extends Error {
+  readonly personaId: string;
+  constructor(personaId: string) { super(`persona not found: ${personaId}`); this.name = "PersonaNotFoundError"; this.personaId = personaId; }
+}
+
+/** persona 仍 active 或仍在世界房（world_address 非 NULL）：deactivate / delete 的前置未满足。 */
+export class PersonaBusyError extends Error {
+  readonly personaId: string;
+  constructor(personaId: string, reason: string) { super(`persona busy: ${personaId} (${reason})`); this.name = "PersonaBusyError"; this.personaId = personaId; }
+}
+
+/** 控制权 CAS 0 行：手上的 control_epoch 已被别处抬高（MF4 双登 / 交接），本次写必须整体回滚。 */
+export class ControlConflictError extends Error {
+  readonly personaId: string;
+  readonly expectedEpoch: number;
+  readonly actualEpoch: number;
+  constructor(personaId: string, expectedEpoch: number, actualEpoch: number) {
+    super(`control conflict: persona=${personaId} epoch ${expectedEpoch} → actual ${actualEpoch}`);
+    this.name = "ControlConflictError";
+    this.personaId = personaId;
+    this.expectedEpoch = expectedEpoch;
+    this.actualEpoch = actualEpoch;
+  }
+}
+
+/** 同一 kit 事务内的 persona 锁序被打破（account 作用域 → persona id 升序）：fail-closed，⛔ 不等 InnoDB 死锁裁决。 */
+export class PersonaLockOrderError extends Error {
+  constructor(msg: string) { super(`persona lock order: ${msg}`); this.name = "PersonaLockOrderError"; }
+}
+
 /** 路由表无此 type（⛔ 不计 flood 不封禁，09·G6）。 */
 export class UnknownTypeError extends Error {
   constructor(msg = "unknown rpc type") { super(msg); this.name = "UnknownTypeError"; }

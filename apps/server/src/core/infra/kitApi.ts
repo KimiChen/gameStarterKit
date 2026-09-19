@@ -46,13 +46,14 @@
  * 原始值 / Date / Buffer，⛔ `toSqlString` 一类对象在客户端拼接 SQL 绕过闸）。
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import { randomUUID } from "node:crypto";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "./mysql";
-import { retryOnContention, withRcTx } from "./mysql";
+import { getPool, retryOnContention, withRcTx } from "./mysql";
 import { LeaseLostError, renewLeaseGuard, type SingletonLease } from "./lease";
 import { kitWorkerLeaseName } from "../../kits/workerLease";
 import { withUser } from "../uow";
 import type { AssetOwnerRef, IEffect, KitEffectKinds } from "@game/shared";
-import { assetOwnerKey, lookupKitEffectKind } from "@game/shared";
+import { PERSONA_MAX_SLOTS_HARD, assetOwnerKey, lookupKitEffectKind, validatePersonaId } from "@game/shared";
 import { KIT_EFFECT_KINDS } from "@game/shared/kits/catalog.generated";
 import { creditInTx, debitInTx, invalidateBalanceCache } from "../economy/currency";
 import {
@@ -60,13 +61,17 @@ import {
 } from "../economy/outbox";
 import { CUR_GOLD } from "./config";
 import {
-  EffectConflictError, InsufficientBalanceError, InvalidEffectError, RpcFault, StaleFenceError,
+  ControlConflictError, EffectConflictError, InsufficientBalanceError, InvalidEffectError, PersonaBusyError, PersonaLockOrderError,
+  PersonaNotFoundError, PersonaSlotTakenError, RpcFault, StaleFenceError,
 } from "../errors";
 import { type KitKeyScope, currentZoneId, kKitUser, zoneCtx } from "./keys";
 import { clientFor } from "./redisRoute";
 import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
 
-export { CUR_GOLD, EffectConflictError, InsufficientBalanceError, InvalidEffectError, LeaseLostError, RpcFault, StaleFenceError, currentZoneId, kKitUser };
+export {
+  CUR_GOLD, ControlConflictError, EffectConflictError, InsufficientBalanceError, InvalidEffectError, LeaseLostError, PERSONA_MAX_SLOTS_HARD,
+  PersonaBusyError, PersonaLockOrderError, PersonaNotFoundError, PersonaSlotTakenError, RpcFault, StaleFenceError, currentZoneId, kKitUser,
+};
 export type { AssetOwnerRef, IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket, SingletonLease };
 
 export interface KitUserFence { readonly fence: number }
@@ -131,6 +136,52 @@ export interface KitTx {
    * 同 opId 不同载荷 ⇒ EffectConflictError；effect 里的 kit kind 必须是 `kit:<本 kitId>:*` ⇒ 否则 KitEffectScopeError。
    */
   enqueueEffect(uid: string, opId: string, effect: IEffect, owner?: AssetOwnerRef): Promise<"INSERTED" | "DUP">;
+  /**
+   * persona 门面（MMO MF2-B4，docs/MMO.md §5 MF2 / M03）：框架写 `persona` 表——kit ⛔ 不能直接 SQL 触碰它（表闸照拒），
+   * kit 的角色行经返回的 personaId 关联（⛔ 无外键，KIT.md §2）。同一事务内锁序固定：先 account 作用域（createPersona 锁该
+   * (server_id, user_id, kit_id) 的 persona 行集与间隙），再 persona id **升序**——乱序一律 PersonaLockOrderError（fail-closed，
+   * ⛔ 不等 InnoDB 死锁裁决）。slot ∈ [0, PERSONA_MAX_SLOTS_HARD)；同槽再建 ⇒ PersonaSlotTakenError（UNIQUE 冲突，⛔ 不吞）。
+   */
+  createPersona(uid: string, slot: number, meta?: Readonly<Record<string, unknown>>): Promise<string>;
+  /** 控制权 CAS：`UPDATE persona … WHERE control_epoch = ?`，Rows matched 0 ⇒ ControlConflictError（不存在 ⇒ PersonaNotFoundError）。 */
+  assertControl(personaId: string, controlEpoch: number): Promise<void>;
+  /** status → inactive（幂等）；仍在世界房（world_address 非 NULL）⇒ PersonaBusyError。 */
+  deactivatePersona(personaId: string): Promise<void>;
+  /** 只删 status = inactive 且 world_address IS NULL 的行；否则 PersonaBusyError。 */
+  deletePersona(personaId: string): Promise<void>;
+}
+
+/** 事务外只读的 persona 视图（listPersonas）。 */
+export interface PersonaRow {
+  readonly personaId: string;
+  readonly slot: number;
+  readonly status: 0 | 1;
+  readonly controlEpoch: number;
+  readonly worldAddress: string | null;
+  readonly meta: unknown;
+}
+
+const PERSONA_ID_KIT_RE = /^[a-z][A-Za-z0-9]{0,63}$/u;
+
+/** 事务外只读：该账号在本 kit / 本区的全部 persona（按 slot 升序）。`query` 可注入（单测）；生产缺省进程池。 */
+export async function listPersonas(
+  kitId: string, uid: string, sId: number,
+  query: (sql: string, params: unknown[]) => Promise<RowDataPacket[]> = async (sql, params) => (await getPool().query<RowDataPacket[]>(sql, params))[0],
+): Promise<readonly PersonaRow[]> {
+  if (!PERSONA_ID_KIT_RE.test(kitId)) { throw new TypeError(`kitId "${kitId}" 非法`); }
+  if (!uid || uid.length > 32) { throw new TypeError("kit uid invalid"); }
+  if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
+  const rows = await query(
+    "SELECT persona_id, slot, status, control_epoch, world_address, meta FROM persona WHERE server_id = ? AND user_id = ? AND kit_id = ? ORDER BY slot",
+    [sId, uid, kitId]);
+  return rows.map((row) => ({
+    personaId: String(row.persona_id),
+    slot: Number(row.slot),
+    status: Number(row.status) === 1 ? 1 : 0,
+    controlEpoch: Number(row.control_epoch),
+    worldAddress: row.world_address === null || row.world_address === undefined ? null : String(row.world_address),
+    meta: row.meta ?? null,
+  }));
 }
 
 /** 可注入的框架依赖（单测用假 pool / 假账本 / 自己的 kit kind 表；生产缺省即真实实现与生成物）。 */
@@ -458,10 +509,82 @@ export function assertKitEffectScope(kitId: string, effect: IEffect, kinds: KitE
 type TouchedOwners = Map<string, { readonly uid: string; readonly owner: AssetOwnerRef | undefined }>;
 const touchKey = (uid: string, owner: AssetOwnerRef | undefined): string => `${uid}|${owner === undefined ? "account" : assetOwnerKey(owner)}`;
 
+const ROWS_MATCHED = /Rows matched:\s*(\d+)/u;
+const rowsMatched = (result: ResultSetHeader): number => {
+  const match = ROWS_MATCHED.exec(result.info ?? "");
+  return match === null ? result.affectedRows : Number(match[1]);
+};
+
 /** `withKitTx` / `withKitWorkerTx` 共用的受限句柄（不含 `conn`：普通 kit 事务补上原始连接，worker 事务补上抛错 getter）。 */
 function buildKitTx(conn: PoolConnection, kitId: string, sId: number, touched: TouchedOwners, deps: KitTxDeps): Omit<KitTx, "conn"> {
+  // persona 锁序（MF2-B4）：account 作用域必须先于任何 persona 行锁；persona 行锁按 id 升序。变异验证：删升序判定 → 单测「乱序锁」转红。
+  const lockOrder: { lastPersonaId: string | null } = { lastPersonaId: null };
+  const takePersonaLock = (personaId: string, what: string): void => {
+    validatePersonaId(personaId, `${what}.personaId`);
+    if (lockOrder.lastPersonaId !== null && personaId < lockOrder.lastPersonaId) {
+      throw new PersonaLockOrderError(`${what}(${personaId}) 在 ${lockOrder.lastPersonaId} 之后——同一事务内 persona 锁序必须升序（先小后大）`);
+    }
+    lockOrder.lastPersonaId = personaId;
+  };
+  const PERSONA_ROW = "server_id = ? AND persona_id = ? AND kit_id = ?";
+  const personaExists = async (personaId: string): Promise<RowDataPacket | undefined> => {
+    const [rows] = await conn.query<RowDataPacket[]>(`SELECT control_epoch, status, world_address FROM persona WHERE ${PERSONA_ROW}`, [sId, personaId, kitId]);
+    return rows[0];
+  };
   return {
     kitId, sId,
+    async createPersona(uid, slot, meta) {
+      if (!uid || uid.length > 32) { throw new TypeError("kit uid invalid"); }
+      if (!Number.isInteger(slot) || slot < 0) { throw new TypeError(`persona slot ${slot} 非法`); }
+      if (slot >= PERSONA_MAX_SLOTS_HARD) { throw new RangeError(`persona slot ${slot} ≥ 硬上限 PERSONA_MAX_SLOTS_HARD=${PERSONA_MAX_SLOTS_HARD}（产品上限归 kit，须更小）`); }
+      if (lockOrder.lastPersonaId !== null) {
+        throw new PersonaLockOrderError(`createPersona（account 作用域）必须先于本事务内任何 persona 行锁（已锁 ${lockOrder.lastPersonaId}）`);
+      }
+      const metaJson = meta === undefined ? null : JSON.stringify(meta);
+      if (metaJson !== null && metaJson.length > 4096) { throw new RangeError("persona meta 超过 4 KB"); }
+      // account 作用域锁：该账号在本 kit / 本区的 persona 行集 + 间隙（同账号并发建角串行化），⛔ 先于 persona 行锁
+      await conn.execute("SELECT persona_id FROM persona WHERE server_id = ? AND user_id = ? AND kit_id = ? FOR UPDATE", [sId, uid, kitId]);
+      const personaId = randomUUID();
+      try {
+        await conn.execute<ResultSetHeader>(
+          "INSERT INTO persona (server_id, persona_id, user_id, kit_id, slot, meta) VALUES (?,?,?,?,?,CAST(? AS JSON))",
+          [sId, personaId, uid, kitId, slot, metaJson]);
+      } catch (error) {
+        if ((error as { errno?: unknown }).errno === 1062) { throw new PersonaSlotTakenError(uid, kitId, slot); } // ⛔ 不吞：同槽二建就是冲突
+        throw error;
+      }
+      return personaId;
+    },
+    async assertControl(personaId, controlEpoch) {
+      if (!Number.isInteger(controlEpoch) || controlEpoch < 0) { throw new TypeError(`controlEpoch ${controlEpoch} 非法`); }
+      takePersonaLock(personaId, "assertControl");
+      // Rows matched（⛔ 不是 affectedRows：池已关 CLIENT_FOUND_ROWS，同毫秒重复 CAS 会报 Changed 0）；谓词里的 control_epoch 就是存储边界
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE persona SET updated_at = NOW(3) WHERE ${PERSONA_ROW} AND control_epoch = ?`,
+        [sId, personaId, kitId, controlEpoch]);
+      if (rowsMatched(result) === 1) { return; }
+      const row = await personaExists(personaId);
+      if (row === undefined) { throw new PersonaNotFoundError(personaId); }
+      throw new ControlConflictError(personaId, controlEpoch, Number(row.control_epoch));
+    },
+    async deactivatePersona(personaId) {
+      takePersonaLock(personaId, "deactivatePersona");
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE persona SET status = 1 WHERE ${PERSONA_ROW} AND world_address IS NULL`, [sId, personaId, kitId]);
+      if (rowsMatched(result) === 1) { return; }
+      const row = await personaExists(personaId);
+      if (row === undefined) { throw new PersonaNotFoundError(personaId); }
+      throw new PersonaBusyError(personaId, `仍在世界房 ${String(row.world_address)}`);
+    },
+    async deletePersona(personaId) {
+      takePersonaLock(personaId, "deletePersona");
+      const [result] = await conn.execute<ResultSetHeader>(
+        `DELETE FROM persona WHERE ${PERSONA_ROW} AND status = 1 AND world_address IS NULL`, [sId, personaId, kitId]);
+      if (result.affectedRows === 1) { return; }
+      const row = await personaExists(personaId);
+      if (row === undefined) { throw new PersonaNotFoundError(personaId); }
+      throw new PersonaBusyError(personaId, Number(row.status) === 1 ? `仍在世界房 ${String(row.world_address)}` : "仍 active（先 deactivatePersona）");
+    },
     async query<R = RowDataPacket[] | ResultSetHeader>(sql: string, params: unknown[] = []): Promise<R> {
       assertKitTableAccess(sql, kitId);
       assertQueryParams(params, kitId);
