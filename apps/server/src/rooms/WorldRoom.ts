@@ -556,6 +556,8 @@ export class WorldRoom extends Room {
         this.disposed = true;
         this.lifecycleGeneration += 1;
         this.clearDrainTimer();
+        // 固定步 interval：Colyseus 的 dispose 会清，直构 / 回放房（未经 __init）也必须清——否则 zombie 房的 interval 把进程钉住
+        if (!this.deps.manualTick) { try { this.setSimulationInterval(undefined as never); } catch { /* 未起 interval */ } }
         const runtime = this.runtime;
         this.disposePromise = (async () => {
             try {
