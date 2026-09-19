@@ -317,6 +317,14 @@ export const K_CHARACTER_REPAIR_ATTEMPTS = `${G}repair:character:attempts:{chara
 //    ⚠ 这些键只存在于 coordClient（组内单实例）；INVITE_CODE_ALLOCATE 的 code/gen 同
 //    hash-tag，TICKET_ISSUE_CREATION 刻意跨 tag（quota + ticket），⛔ 不得搬去 cluster。 ──
 
+/**
+ * 世界权威租约（MMO MF4-B4，docs/MMO.md §5.4 MF4）：coord Redis（组内单实例，⛔ 不搬 cluster）；显式 sId 入键（WorldRoom 是房级区常量，
+ * ⛔ 不读 ALS）。lease STRING = `<holder>:<fence>`（SET NX PX WORLD_LEASE_TTL_MS）；fence 是 per-(sId, instanceId) 单调 INCR 发号器，
+ * 永不重置——续租 / 释放都按 value 逐字比（Lua 侧 CAS），旧持有者拿旧 fence 续不了新租约。两键同 hash-tag。
+ */
+export const kWorldLease = (sId: number, instanceId: string) => `${G}world:lease:{s${sId}:${instanceId}}`;
+export const kWorldFence = (sId: number, instanceId: string) => `${G}world:fence:{s${sId}:${instanceId}}`;
+
 /** 邀请码 lease/tombstone STRING（JSON value；active 带 PX=leaseTtl，tombstone 带 PX=cooldown，⛔ 非 DEL）。 */
 export const kInviteCode = (sId: number, code: string) => `${G}room:code:{s${sId}:${code}}`;
 /** per-(sId, code) 单调分配代号 INCR 计数器。永不重置、永不随 lease 释放而删除（§6.7）。 */
