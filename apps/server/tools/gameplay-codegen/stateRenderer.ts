@@ -117,9 +117,13 @@ export type KitFragmentResolver = (kitId: string, name: string) => KitFragmentDe
 
 export type RosterVisibility = "public" | "hidden";
 
+export type GameplayKind = "match" | "world";
+
 export type ParseStateOptions = {
   /** manifest.roster（MMO MF5a-B4）：hidden ⇒ root ⛔ 声明 players、⛔ ownerReady fragment；缺省 public。 */
   readonly roster?: RosterVisibility;
+  /** manifest.kind（MMO MF4-B2）：world ⇒ root 必填集 {tick, phase: WorldPhase, instanceId, mapId, line, authorityEpoch}、⛔ players、⛔ 内置 fragment；缺省 match。 */
+  readonly kind?: GameplayKind;
   /** codegen 注入的发现根：解析 `<kitId>:<name>` 引用；缺省 = 只认内置 fragment（kit 引用 fail-closed）。 */
   readonly resolveKitFragment?: KitFragmentResolver;
 };
@@ -127,6 +131,8 @@ export type ParseStateOptions = {
 export type GameplayStateDescriptor = {
   /** 名册可见性（来自 manifest.roster；聚合产物据此决定 players map / player Schema 类是否存在）。 */
   readonly roster: RosterVisibility;
+  /** 玩法形态（来自 manifest.kind）：match = GameRoom 对局根；world = WorldRoom 分线元数据根（MMO MF4-B2）。 */
+  readonly kind: GameplayKind;
   readonly schemaVersion: 1;
   readonly root: string;
   readonly types: readonly StateTypeDescriptor[];
@@ -604,12 +610,16 @@ export function parseGameplayStateDescriptor(input: unknown, options: ParseState
     paths.add(type.defaultPath);
   }
   if (!names.has(root)) fail("state.root", `missing root type: ${root}`);
-  const roster: RosterVisibility = options.roster ?? "public";
+  const kind: GameplayKind = options.kind ?? "match";
+  const roster: RosterVisibility = kind === "world" ? "hidden" : (options.roster ?? "public");
   if (roster === "hidden" && fragments.includes("ownerReady")) {
     fail("state.fragments", "roster:\"hidden\" mode cannot declare the ownerReady fragment (it injects player fields into the roster map that a hidden roster does not have)");
   }
+  if (kind === "world" && fragments.some((fragment) => fragment === "ownerReady" || fragment === "inviteRoom")) {
+    fail("state.fragments", "kind:\"world\" mode cannot declare the ownerReady / inviteRoom fragments (private-room profiles are GameRoom-only; WorldRoom has no StartPolicy)");
+  }
   const types = withInjectedFragments(declaredTypes, root, fragments, kitFragments);
-  const descriptor: GameplayStateDescriptor = { roster, schemaVersion: 1, root, types, fragments };
+  const descriptor: GameplayStateDescriptor = { roster, kind, schemaVersion: 1, root, types, fragments };
   validateReferences(descriptor);
   assertRootLifecycle(descriptor);
   return descriptor;
@@ -650,6 +660,22 @@ const ROOT_PHASE_ENUM_TYPE = "GamePhaseType";
 const ROOT_PHASE_REQUIRED_MEMBERS = ["Waiting", "Playing", "Settle"] as const;
 
 /**
+ * world 形态（MMO MF4-B2，docs/MMO.md §5.4 MF4）的 root 必填集：WorldRoom 壳读写这组分线元数据（全图公开档，§4.3），
+ * 名册 ⛔ 进 Schema（roster 恒 hidden ⇒ 没有 players），也没有 matchId（世界身份是 instanceId / authorityEpoch）。
+ */
+export const WORLD_ROOT_LIFECYCLE_FIELDS = [
+  { name: "tick", kind: "integer" },
+  { name: "phase", kind: "enum" },
+  { name: "instanceId", kind: "string" },
+  { name: "mapId", kind: "string" },
+  { name: "line", kind: "integer" },
+  { name: "authorityEpoch", kind: "integer" },
+] as const;
+const WORLD_PHASE_ENUM_OBJECT = "WorldPhase";
+const WORLD_PHASE_ENUM_TYPE = "WorldPhaseType";
+const WORLD_PHASE_REQUIRED_MEMBERS = ["Recovering", "Active", "Draining", "Offline"] as const;
+
+/**
  * 该玩法是否声明了 `enumSource: "gameplay"` 的字段。
  * 为真时 `apps/shared/src/gameplays/<id>/ruleset.ts` 必须存在（shared 侧产物 import 它），
  * 且聚合桶必须导出它（服务端侧产物走 `@game/shared` 解析同名符号）。
@@ -670,6 +696,10 @@ function assertRootLifecycle(descriptor: GameplayStateDescriptor): void {
   const byName = new Map(descriptor.types.map((type) => [type.name, type]));
   const type = byName.get(descriptor.root);
   if (!type) return; // 缺失 root 类型已由上面的 root 校验报过，⛔ 不重复报
+  if (descriptor.kind === "world") {
+    assertWorldRootLifecycle(type);
+    return;
+  }
   for (const required of ROOT_LIFECYCLE_FIELDS) {
     const field = type.fields.find((candidate) => candidate.name === required.name);
     // MMO MF5a-B4（M07 / D4）：roster:"hidden" 的 root ⛔ 不得声明 players——名册只在服务端会话 / 座位表，
@@ -742,6 +772,33 @@ function assertRootLifecycle(descriptor: GameplayStateDescriptor): void {
         `lifecycle field must be kind "${required.kind}", got "${field.kind}"`,
       );
     }
+  }
+}
+
+/** world 根：必填集逐项、phase 必须是 core 的 WorldPhase 四态、⛔ players（D4）。 */
+function assertWorldRootLifecycle(type: StateTypeDescriptor): void {
+  for (const required of WORLD_ROOT_LIFECYCLE_FIELDS) {
+    const field = type.fields.find((candidate) => candidate.name === required.name);
+    if (!field) {
+      fail(`state.types.${type.name}`, `kind:"world" root type must declare lifecycle field "${required.name}" (WorldRoom shell reads it)`);
+    }
+    if (field.kind !== required.kind) {
+      fail(`state.types.${type.name}.${required.name}`, `lifecycle field must be kind "${required.kind}", got "${field.kind}"`);
+    }
+    if (required.name === "phase" && field.kind === "enum") {
+      if (field.enumObject !== WORLD_PHASE_ENUM_OBJECT || field.enumType !== WORLD_PHASE_ENUM_TYPE || field.enumSource !== "core") {
+        fail(`state.types.${type.name}.phase`,
+          `kind:"world" root phase must use core ${WORLD_PHASE_ENUM_OBJECT}/${WORLD_PHASE_ENUM_TYPE}, got ${field.enumObject}/${field.enumType} (${field.enumSource})`);
+      }
+      for (const member of WORLD_PHASE_REQUIRED_MEMBERS) {
+        if (!field.members.includes(member)) {
+          fail(`state.types.${type.name}.phase`, `kind:"world" root phase must declare member "${member}" (the WorldRoom shell writes it)`);
+        }
+      }
+    }
+  }
+  if (type.fields.some((field) => field.name === "players")) {
+    fail(`state.types.${type.name}.players`, "kind:\"world\" root must not declare a \"players\" map (D4: the roster stays in the server-side session table)");
   }
 }
 

@@ -324,6 +324,7 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
     const fragmentBytes: Buffer[] = [];
     const state = parseGameplayStateDescriptor(stateRaw.value, {
       roster: manifest.roster,
+      kind: manifest.kind,
       resolveKitFragment: (kitId, name) => {
         const stateLabel = `${entryLabel}/state.json`;
         const kitJsonLabel = `${KITS_DIR_RELATIVE}/${kitId}/kit.json`;
@@ -502,8 +503,9 @@ export function readClientGameplayModules(
 export type ServerGameplayModule = {
   readonly id: string;
   readonly constantName: string;
-  /** 约定导出符号：`register<ConstantName>GameMode`。 */
+  /** 约定导出符号：match ⇒ `register<ConstantName>GameMode`；world ⇒ `register<ConstantName>WorldMode`（MMO MF4-B2）。 */
   readonly registerSymbol: string;
+  readonly kind: "match" | "world";
 };
 
 /**
@@ -523,12 +525,13 @@ export function readServerGameplayModules(
   const modules: ServerGameplayModule[] = [];
   for (const gameplay of [...canonical].sort((left, right) => (left.id < right.id ? -1 : 1))) {
     const id = gameplay.id;
-    const registerSymbol = `register${gameplay.manifest.constantName}GameMode`;
+    const kind = gameplay.manifest.kind;
+    const registerSymbol = `register${gameplay.manifest.constantName}${kind === "world" ? "WorldMode" : "GameMode"}`;
     const label = `${SERVER_MODES_DIR_RELATIVE}/${id}/index.ts`;
     const file = path.join(root, SERVER_MODES_DIR_RELATIVE, id, "index.ts");
     assertRegularFile(file, label);
     assertServerGameModeModuleSource(fs.readFileSync(file, "utf8"), label, registerSymbol);
-    modules.push({ id, constantName: gameplay.manifest.constantName, registerSymbol });
+    modules.push({ id, constantName: gameplay.manifest.constantName, registerSymbol, kind });
   }
   return modules;
 }
@@ -606,6 +609,8 @@ function renderCatalogEntries(gameplays: readonly GameplayDescriptor[]): string[
       `        modeVersion: ${gameplay.manifest.modeVersion},`,
       `        maxPlayers: ${gameplay.manifest.maxPlayers},`,
       `        roster: ${JSON.stringify(gameplay.manifest.roster)},`,
+      `        kind: ${JSON.stringify(gameplay.manifest.kind)},`,
+      `        world: ${gameplay.manifest.world === null ? "null" : JSON.stringify(gameplay.manifest.world)},`,
       `        profiles: [${gameplay.manifest.profiles.map((profile) => JSON.stringify(profile)).join(", ")}],`,
       `        stateFragments: [${gameplay.state.fragments.map((fragment) => JSON.stringify(fragment)).join(", ")}],`,
       `        contractDigest: ${JSON.stringify(gameplay.contractDigest)},`,
@@ -941,6 +946,11 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     ...gameplays.map((gameplay) => `    ${JSON.stringify(gameplay.id)}: ${JSON.stringify(gameplay.state.roster)},`),
     "} as const satisfies Record<RoomStateMode, \"public\" | \"hidden\">);",
     "",
+    "/** Gameplay kind per mode (manifest.kind, MMO MF4-B2): world roots are WorldRoom-only and never enter GameRoom. */",
+    "export const ROOM_STATE_KIND = Object.freeze({",
+    ...gameplays.map((gameplay) => `    ${JSON.stringify(gameplay.id)}: ${JSON.stringify(gameplay.state.kind)},`),
+    "} as const satisfies Record<RoomStateMode, \"match\" | \"world\">);",
+    "",
     "export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({",
   );
   for (const gameplay of gameplays) {
@@ -1070,28 +1080,23 @@ const SERVER_SOURCE_LABEL =
  * 静态 import；⛔ 无副作用式自注册、⛔ 无运行时目录扫描）。`modes/catalog.ts` 是它的稳定 façade。
  */
 function renderServerCatalog(serverModules: readonly ServerGameplayModule[]): string {
+  const matchModules = serverModules.filter((module) => module.kind === "match");
+  const worldModules = serverModules.filter((module) => module.kind === "world");
   const lines = [
     generatedHeader(SERVER_SOURCE_LABEL),
     "import type { GameModeRegistry } from \"../GameMode\";",
+    "import type { WorldModeRegistry } from \"../WorldMode\";",
   ];
   for (const module of serverModules) {
     lines.push(`import { ${module.registerSymbol} } from "./${module.id}/index";`);
   }
-  lines.push(
-    "",
-    "/** 已装配服务端 GameMode 的玩法 id（= canonical GameplayModeId；fixture 玩法不在此表）。 */",
-    "export const GENERATED_GAME_MODE_IDS: readonly string[] = [",
-    ...serverModules.map((module) => `    ${JSON.stringify(module.id)},`),
-    "];",
-    "",
-    "/**",
-    " * 在进程组合根登记全部 generated 服务端 GameMode（缺省登记进生产 gameModeRegistry；",
-    " * 测试可注入自己的 registry）：后续登记失败回滚本次已登记项（逆序），⛔ 不影响调用前已有登记。",
-    " */",
-    "export function registerGeneratedGameModes(registry?: GameModeRegistry): () => void {",
+  const renderRegister = (name: string, registryType: string, modules: readonly ServerGameplayModule[]): string[] => [
+    `export function ${name}(registry?: ${registryType}): () => void {`,
+    // 该形态暂无 canonical mode 时仍保持签名稳定（组合根 / façade 不随 mode 有无而变）
+    ...(modules.length === 0 ? ["    void registry;"] : []),
     "    const disposers: Array<() => void> = [];",
     "    try {",
-    ...serverModules.map((module) => `        disposers.push(${module.registerSymbol}(registry));`),
+    ...modules.map((module) => `        disposers.push(${module.registerSymbol}(registry));`),
     "    } catch (error) {",
     "        for (const dispose of disposers.splice(0).reverse()) dispose();",
     "        throw error;",
@@ -1100,6 +1105,27 @@ function renderServerCatalog(serverModules: readonly ServerGameplayModule[]): st
     "        for (const dispose of disposers.splice(0).reverse()) dispose();",
     "    };",
     "}",
+  ];
+  lines.push(
+    "",
+    "/** 已装配服务端 GameMode 的玩法 id（= canonical GameplayModeId 中 kind:\"match\" 者；fixture 玩法不在此表）。 */",
+    "export const GENERATED_GAME_MODE_IDS: readonly string[] = [",
+    ...matchModules.map((module) => `    ${JSON.stringify(module.id)},`),
+    "];",
+    "",
+    "/** 已装配服务端 WorldMode 的玩法 id（= canonical GameplayModeId 中 kind:\"world\" 者，MMO MF4-B2）。 */",
+    "export const GENERATED_WORLD_MODE_IDS: readonly string[] = [",
+    ...worldModules.map((module) => `    ${JSON.stringify(module.id)},`),
+    "];",
+    "",
+    "/**",
+    " * 在进程组合根登记全部 generated 服务端 GameMode（缺省登记进生产 gameModeRegistry；",
+    " * 测试可注入自己的 registry）：后续登记失败回滚本次已登记项（逆序），⛔ 不影响调用前已有登记。",
+    " */",
+    ...renderRegister("registerGeneratedGameModes", "GameModeRegistry", matchModules),
+    "",
+    "/** 同上，world 形态登进 worldModeRegistry（WorldRoom 的组合根；⛔ 不混进 GameRoom 的 registry）。 */",
+    ...renderRegister("registerGeneratedWorldModes", "WorldModeRegistry", worldModules),
     "",
   );
   return `${lines.join("\n").trimEnd()}\n`;
@@ -1166,6 +1192,11 @@ function renderSharedModeIds(gameplays: readonly GameplayDescriptor[]): string {
     "} as const;",
     "",
     "export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayModeId];",
+    "",
+    "/** 其中 manifest `kind: \"world\"` 的成员（MMO MF4-B2）：world 形态走 RoomName.World / WorldRoom，⛔ 不进 GameRoom 撮合。 */",
+    "export const WORLD_MODE_IDS: readonly GameplayModeIdType[] = [",
+    ...gameplays.filter((gameplay) => gameplay.manifest.kind === "world").map((gameplay) => `    ${JSON.stringify(gameplay.id)},`),
+    "];",
     "",
   ];
   return `${lines.join("\n").trimEnd()}\n`;
@@ -1291,7 +1322,7 @@ export function previousCatalogRecords(options: GameplayCodegenOptions = {}): Re
   const text = fs.readFileSync(file, "utf8");
   // profiles/stateFragments 两行可缺省匹配：既容纳阶段 8 之前的旧 catalog 格式（首次带
   // fragment 的迁移仍能读到历史 digest/modeVersion），也容纳当前格式。
-  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n(?: {8}roster: "(?:public|hidden)",\n)?(?: {8}(?:profiles|stateFragments): \[[^\]\n]*\],\n)* {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
+  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n(?: {8}roster: "(?:public|hidden)",\n)?(?: {8}kind: "(?:match|world)",\n)?(?: {8}world: (?:null|\{[^\n]*\}),\n)?(?: {8}(?:profiles|stateFragments): \[[^\]\n]*\],\n)* {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
   for (const match of text.matchAll(entry)) {
     records.set(match[1], {
       modeVersion: Number(match[2]),

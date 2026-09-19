@@ -12,6 +12,17 @@
     "maxPlayers": { "type": "integer", "minimum": 1, "maximum": 1024 },
     "wireExposed": { "type": "boolean" },
     "roster": { "type": "string", "pattern": "^(public|hidden)$" },
+    "kind": { "type": "string", "pattern": "^(match|world)$" },
+    "world": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["emptyPolicy", "emptyAfterMs", "checkpointMs"],
+      "properties": {
+        "emptyPolicy": { "type": "string", "pattern": "^(sleep|run|unload)$" },
+        "emptyAfterMs": { "type": "integer", "minimum": 0, "maximum": 86400000 },
+        "checkpointMs": { "type": "integer", "minimum": 1000, "maximum": 3600000 }
+      }
+    },
     "profiles": {
       "type": "array",
       "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }

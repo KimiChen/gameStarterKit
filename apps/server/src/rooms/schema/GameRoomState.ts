@@ -89,6 +89,19 @@ export const ROOM_STATE_ROSTER = Object.freeze({
     "viewFixture": "hidden",
 } as const satisfies Record<RoomStateMode, "public" | "hidden">);
 
+/** Gameplay kind per mode (manifest.kind, MMO MF4-B2): world roots are WorldRoom-only and never enter GameRoom. */
+export const ROOM_STATE_KIND = Object.freeze({
+    "arenaCapture": "match",
+    "arenaDuel": "match",
+    "ballMove": "match",
+    "dropInFixture": "match",
+    "idle": "match",
+    "privateFixture": "match",
+    "snake": "match",
+    "tally": "match",
+    "viewFixture": "match",
+} as const satisfies Record<RoomStateMode, "match" | "world">);
+
 export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "arenaCapture": ArenaCaptureRoomState,
     "arenaDuel": ArenaDuelRoomState,
