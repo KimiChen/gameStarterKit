@@ -331,6 +331,8 @@ export const kInviteCode = (sId: number, code: string) => `${G}room:code:{s${sId
 export const kInviteCodeGen = (sId: number, code: string) => `${G}room:code:gen:{s${sId}:${code}}`;
 /** creation/join ticket 记录 STRING（JSON，PX=exp）。键名只含 ticket 的 sha256，⛔ 不含原文。 */
 export const kRoomTicket = (sId: number, ticketSha256: string) => `${G}room:ticket:s${sId}:${ticketSha256}`;
+/** 世界房一次性准入凭据记录 STRING（MMO MF8-B2；JSON，PX=exp）：kRoomTicket 同形，键名只含 ticket 的 sha256，⛔ 不含原文。 */
+export const kWorldTicket = (sId: number, ticketSha256: string) => `${G}world:ticket:s${sId}:${ticketSha256}`;
 /** 单 uid 私房配额 ZSET：member=`t:<jti>`（未消费 creation ticket）/`r:<roomId>`（活跃私房），score=过期时刻 ms。 */
 export const kRoomTicketQuota = (sId: number, uid: string) => `${G}room:quota:s${sId}:{${uid}}`;
 
