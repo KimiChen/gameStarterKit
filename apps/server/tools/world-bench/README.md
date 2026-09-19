@@ -74,3 +74,16 @@ npm --workspace @game/server exec tsx -- tools/world-bench/aoi-probe.ts --varian
 StateView 还要 codegen 支持 `@view()`、客户端 bundle 4.0.13 无 `.d.ts`、并丢掉消息级 checksum / cursor 治理 ⇒ **冻结为消息级 delta**。
 报告：`docs/perf/world-bench/2026-09-19T113148-aoi-delta.json`、`2026-09-19T113207-aoi-view.json`。
 
+## 多进程接管实验（MMO MF10-B4，`multi-process.ts`，⛔ 非首版闸）
+
+编排进程 spawn 两个 world 节点子进程（A / B，各自独立 Colyseus server；真 Redis coord 租约 / 凭据 / 登记 + 真 MySQL 状态机 + kitfix 检查点表；
+**不启用 RedisDriver / Presence**——D27 形态：客户端由 `world.enter`（目录分配 + WorldRegistry 登记端点）直连节点），客户端进 A 走路 → `kill -9` A →
+等租约 / 登记过期 → 再 `world.enter`（端点回落）→ 进 B（Recovering 从检查点回灌，权威 epoch +1）；报告落 `docs/perf/world-bench/<时间戳>-multi-process.json`。
+
+```bash
+npm --workspace @game/server exec tsx -- tools/world-bench/multi-process.ts --lease-ttl 3000 --checkpoint-ms 2000   # 参数化租约 / 检查点周期
+```
+
+2026-09-20 实测（`2026-09-20T040342-multi-process.json`，租约 3 s / 续租 1 s / 检查点 2 s）：kill 后租约 2.44 s 过期、登记同期过期、接管 2.56 s（含客户端重进），权威 epoch 1 → 2、
+holder = B、检查点 rev 2 回灌、位置回退 20（≤ 1 周期上限 80）、`world.enter` 端点：A 在线时 = A 的地址、A 死后回落空串。偏差：登记 TTL 由「两倍租约」改为
+「= 租约」（否则 A 死后一个租约周期内客户端仍被指向死节点）；生产 15 s 租约下的接管时延 ≈ 租约 ttl + 重进握手，非首版闸。

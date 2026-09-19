@@ -56,6 +56,10 @@
   acquireControl → activate（唯一一次）→ onAdmit → seat → finalize；claim 后失败 release。源房 `context.transfer.request` ⇒ 冻结 →
   Requested → Prepared（预留）→ 交接强制点 → 凭据 → Committed ⇒ 唤醒目标（kind=room）⇒ mode 就绪 token ⇒ 排空后 "transferred" 离座；
   Committed 前失败 cancel + 解冻。状态机 `core/transfer.ts`（`world_transfer` 持久 CAS），Lobby 入口 `websocket/world/`（enter / resolveTransfer）。
+  **MF10 容量 / 多进程 / 运维**：`core/WorldRegistry.ts` 分线实时登记（seated / capacity / publicAddress，TTL = 租约，权威房按续租节拍刷新，Offline 撤销）；
+  `core/WorldDirectory.allocate`（满员开新线到 WORLD_MAX_LINES_PER_MAP，全满拒；指定 line 越界拒）供 `world.enter` 未指定 line 时分配；多 world 进程
+  经 `world.config.ts worldServerOptions()`（WORLD_MULTI_PROCESS=1 ⇒ RedisDriver / Presence 构造于独立实例 REDIS_COLYSEUS_URL，加载期断言）；
+  运维只读面 `http/admin/world{Instances,Transfers,Events}.ts`；多进程接管实验 `tools/world-bench/multi-process.ts`。
   登记在 `../world.config.ts`（world 进程 rooms 表；合体入口 `app.config.ts` 合并）。夹具 `worldFixture`（`test/fixtures/worldFixtureMode.ts`，
   ⛔ 不进生产 registry）；真栈用例 `test/int/world-room.test.ts`。
 - `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：
