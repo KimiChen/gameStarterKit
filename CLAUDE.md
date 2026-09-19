@@ -72,6 +72,7 @@ npm run test:client
 npm run test:changed
 npm run test:fgui
 npm run test:vendor
+npm run test:uniflex-ui-contract
 npm run test:faults
 npm run test:faults:int
 npm run codegen:fgui -- <Pkg> <Comp>
@@ -88,6 +89,7 @@ npm run ui:art-export -- --screen backpack
 npm run ui:art-import -- --changed
 npm run ui:art-sync
 npm run ui:art-check
+npm run ui:capture-cocos-golden
 npm run ui:check-source
 npm run ui:render-source
 npm run ui:verify
@@ -114,6 +116,7 @@ npm run verify:all
 npm run fetch:fgui
 npm run fetch:colyseus
 npm run fetch:uniflex
+npm run fetch:fairygui-dom
 npm run config:excel-to-json
 npm run config:excel-to-json:check
 npm --workspace @game/server run test
