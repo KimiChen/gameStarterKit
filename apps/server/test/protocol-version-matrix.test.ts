@@ -10,6 +10,10 @@
  * import 绑定**——让另一个整数参与拒绝（例如把 LobbyRoom 的闸改成同时比较
  * GAME_ROOM_PROTOCOL_VERSION，或 GameRoom 反之）时，源码钉先转红；两整数将来取值分叉后，
  * 行为矩阵也会独立转红。
+ *
+ * MF3-B2 起 Game join 的比较位点在 `rooms/core/RoomAuth.ts`（比较注入的 `protocolVersion`，
+ * GameRoom 房型经 `gameRoomAuth` 绑定为 GAME_ROOM_PROTOCOL_VERSION）；`GameRoom.ts` 本身 0 次出现该常量
+ * （MF3 退出条件之一），源码钉随之分成「RoomAuth 比较 + 绑定」与「GameRoom 零出现」两半。
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -132,12 +136,18 @@ test("版本矩阵：modeVersion 对 catalog 单玩法判定（不匹配拒绝�
 test("版本矩阵源码钉：两房间各只比较自己的整数，另一个整数不得参与拒绝（变异即红）", () => {
     const lobbySource = readFileSync(joinPath(SRC_ROOT, "websocket/LobbyRoom.ts"), "utf8");
     const gameSource = readFileSync(joinPath(SRC_ROOT, "rooms/GameRoom.ts"), "utf8");
+    const roomAuthSource = readFileSync(joinPath(SRC_ROOT, "rooms/core/RoomAuth.ts"), "utf8");
 
     // 比较位点：各自的闸只引用自己的常量。
     assert.match(lobbySource, /\(joinOptions\.v \?\? 1\) !== LOBBY_PROTOCOL_VERSION/u);
-    assert.match(gameSource, /\(joinOptions\.v \?\? 1\) !== GAME_ROOM_PROTOCOL_VERSION/u);
-    assert.match(gameSource, /&& version !== GAME_ROOM_PROTOCOL_VERSION\)/u,
-        "legacy preflight 也必须比较 GAME_ROOM_PROTOCOL_VERSION");
+    // Game join：RoomAuth 比较注入的协议整数，gameRoomAuth 把它绑定为 GAME_ROOM_PROTOCOL_VERSION（MF3-B2）。
+    assert.match(roomAuthSource, /\(joinOptions\.v \?\? 1\) !== this\.deps\.protocolVersion/u);
+    assert.match(roomAuthSource, /&& version !== this\.deps\.protocolVersion\)/u,
+        "legacy preflight 也必须比较注入的协议整数");
+    assert.match(roomAuthSource, /protocolVersion: GAME_ROOM_PROTOCOL_VERSION,/u,
+        "gameRoomAuth 必须把协议整数绑定为 GAME_ROOM_PROTOCOL_VERSION");
+    assert.doesNotMatch(gameSource, /GAME_ROOM_PROTOCOL_VERSION/u,
+        "MF3 退出条件：GameRoom.ts 不再出现 GAME_ROOM_PROTOCOL_VERSION（由 RoomAuth 注入）");
 
     // 「另一个整数参与拒绝」的变异守门：对方常量不得出现在任何比较表达式里。
     const comparesWith = (source: string, name: string): boolean =>
@@ -146,6 +156,8 @@ test("版本矩阵源码钉：两房间各只比较自己的整数，另一个�
         "LobbyRoom 不得把 GAME_ROOM_PROTOCOL_VERSION 用于比较（§4.8：Lobby join 只比较 LOBBY）");
     assert.equal(comparesWith(gameSource, "LOBBY_PROTOCOL_VERSION"), false,
         "GameRoom 不得把 LOBBY_PROTOCOL_VERSION 用于比较（§4.8：Game join 只比较 GAME_ROOM）");
+    assert.equal(comparesWith(roomAuthSource, "LOBBY_PROTOCOL_VERSION"), false,
+        "RoomAuth 不得把 LOBBY_PROTOCOL_VERSION 用于比较（§4.8）");
 
     // import 绑定：对方常量连 import 都不允许（注释提及不受限）。旧名必须绝迹。
     const sharedImportOf = (source: string): string => {
@@ -155,9 +167,11 @@ test("版本矩阵源码钉：两房间各只比较自己的整数，另一个�
     };
     assert.match(sharedImportOf(lobbySource), /\bLOBBY_PROTOCOL_VERSION\b/u);
     assert.doesNotMatch(sharedImportOf(lobbySource), /\bGAME_ROOM_PROTOCOL_VERSION\b/u);
-    assert.match(sharedImportOf(gameSource), /\bGAME_ROOM_PROTOCOL_VERSION\b/u);
+    assert.match(sharedImportOf(roomAuthSource), /\bGAME_ROOM_PROTOCOL_VERSION\b/u);
+    assert.doesNotMatch(sharedImportOf(roomAuthSource), /\bLOBBY_PROTOCOL_VERSION\b/u);
     assert.doesNotMatch(sharedImportOf(gameSource), /\bLOBBY_PROTOCOL_VERSION\b/u);
     // \b 在 `_P` 之间不成立，因此该断言不会误伤两个新常量名，只抓裸旧名。
     assert.doesNotMatch(lobbySource, /\bPROTOCOL_VERSION\b/u, "旧名 PROTOCOL_VERSION 已移除");
     assert.doesNotMatch(gameSource, /\bPROTOCOL_VERSION\b/u, "旧名 PROTOCOL_VERSION 已移除");
+    assert.doesNotMatch(roomAuthSource, /\bPROTOCOL_VERSION\b/u, "旧名 PROTOCOL_VERSION 已移除");
 });

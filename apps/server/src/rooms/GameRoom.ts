@@ -4,25 +4,16 @@ import { Schema } from "@colyseus/schema";
 import {
     C2S,
     S2C,
-    GAME_WIRE_OWNERS,
-    GAME_WIRE_PHASES,
-    GAME_WIRE_RATE_COST,
-    GAMEPLAY_CATALOG,
     GamePhase,
     ErrorCode,
-    ErrorMessage,
     RoomControlError,
     TICK_MS,
     MAX_PLAYERS,
     SeededRandom,
-    GAME_ROOM_PROTOCOL_VERSION,
     PROJECT_DISPLAY_NAME,
     DEMO_BRAND,
-    validateGameRoomJoinOptions,
-    validateC2SPayload,
-    validateS2CPayload,
-    WireValidationError,
     type GameplayS2CToken,
+    type GamePhaseType,
     type IGameRoomJoinOptions,
     type IGameRoomAccess,
     type C2SType,
@@ -33,7 +24,6 @@ import {
     type IWelcomeRes,
     type IPongRes,
     type IChatRes,
-    type IErrorRes,
     type IRoomErrorRes,
     type ErrorCodeType,
     type RoomControlErrorType,
@@ -50,15 +40,18 @@ import {
 import {
     GAME_ROOM_START_LOCK_TIMEOUT_MS,
     GAME_ROOM_START_RETRY_FENCE_MAX_MS,
-    groupAdmitsZone,
     normalizeSId,
 } from "../core/infra/config";
-import { safeSecretEqual } from "../core/auth/session";
 import { DEFAULT_ROOM_PROFILE_ID, modeDeclaresProfile, resolveRoomProfile, type RoomProfile } from "./core/RoomProfile";
+// MF3-B2 共享层（docs/MMO.md §5.4 MF3）：auth / dispatcher / 预算 / 重连宽限 / 出站口的实现全部在 rooms/core，本壳只消费。
+import { catalogModeVersion, credentialMatches, gameRoomAuth, type RoomAuthResult } from "./core/RoomAuth";
+import { GAME_ROOM_MAX_MESSAGES_PER_SECOND, type MessageBudget } from "./core/MessageBudget";
+import { defaultWireRateCost, WireDispatcher } from "./core/WireDispatcher";
+import { S2CPorts } from "./core/S2CPorts";
+import { ReconnectGrace } from "./core/ReconnectGrace";
 import { inviteCodeService, type InviteCodeService, type InviteLease } from "../core/rooms/invite/InviteCodeReservation";
 import { accessTicketService, type AccessTicketService } from "../core/rooms/invite/AccessTicket";
-import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
-import { joinRefused, joinRefusedAuth, toErrCode } from "../core/errors";
+import { joinRefused } from "../core/errors";
 import {
     emitMatchEvidence, type EmitEvidenceResult,
     newMatchId,
@@ -81,68 +74,8 @@ const NICK_PREFIX = ["快乐", "无敌", "神秘", "暴走", "咸鱼", "低调",
 const NICK_SUFFIX = ["小汉字", "词王", "笔画侠", "拼音怪", "部首君", "成语精"];
 const randomNickname = (rng: SeededRandom): string => `${rng.pick(NICK_PREFIX)}${rng.pick(NICK_SUFFIX)}`;
 
-type GameRoomAuth = {
-    userId: string;
-    /** 已由 onAuth 规范化并用对应区会话验证过，onJoin 只信该值。 */
-    sId: number;
-    mode: string;
-    /** onAuth 已验证 ∈ catalog[mode].profiles；onJoin 用它对房间实际 profile 双查（关 joinById 串 profile 洞）。 */
-    profile: string;
-};
-
-/**
- * per-mode 契约版本闸（§4.8 三层分工的第三层）：join 携带的 modeVersion 必须与本进程
- * catalog 一致，否则单玩法拒绝。⛔ 这不是 core 信封闸——GAME_ROOM_PROTOCOL_VERSION 的
- * 比较在 assertCompatibleProtocolVersion / onAuth，本函数不读 `v`。
- * 返回 null = mode 不在 catalog（生产 registry mode 必在 catalog；仅注入式测试 mode 例外）。
- */
-function catalogModeVersion(mode: string): number | null {
-    const entry = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number }>>>)[mode];
-    return entry ? entry.modeVersion : null;
-}
-
-function assertCompatibleProtocolVersion(options: unknown): void {
-    let version: unknown = 1;
-    try {
-        if (options !== undefined) {
-            if (options === null || typeof options !== "object" || Array.isArray(options)) return;
-            const record = options as Record<string, unknown>;
-            version = Object.prototype.hasOwnProperty.call(record, "v") ? record.v : 1;
-            if (version === undefined) version = 1;
-        }
-    } catch {
-        // The complete hostile-input validator below maps Proxy/getter failures
-        // to BadRequest. This preflight exists only to preserve the legacy
-        // version result when v5's newly required fields are absent.
-        return;
-    }
-    if (typeof version === "number"
-        && Number.isSafeInteger(version)
-        && version >= 1
-        && version <= 0xffff
-        && version !== GAME_ROOM_PROTOCOL_VERSION) {
-        throw joinRefused(ErrorCode.ProtocolMismatch);
-    }
-}
-
-function validatedJoinOptions(options: IGameRoomJoinOptions | undefined): IGameRoomJoinOptions {
-    assertCompatibleProtocolVersion(options);
-    try {
-        return validateGameRoomJoinOptions(options);
-    } catch (error) {
-        if (!(error instanceof WireValidationError)) throw error;
-        if (error.path === "options.sId") {
-            throw joinRefused(ErrorCode.WrongServer);
-        }
-        if (error.path === "options.v") {
-            throw joinRefused(ErrorCode.ProtocolMismatch);
-        }
-        if (error.path === "options.token") {
-            throw joinRefused(ErrorCode.TokenExpired, "auth");
-        }
-        throw joinRefused(ErrorCode.BadRequest);
-    }
-}
+/** onAuth 产出、只有 onJoin 才信的权威身份四元组（形状与六步校验在 rooms/core/RoomAuth.ts）。 */
+type GameRoomAuth = RoomAuthResult;
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
     return (typeof value === "object" && value !== null) || typeof value === "function"
@@ -150,16 +83,8 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
         : false;
 }
 
-/** 非主动断线的重连宽限（秒）。微信小游戏切后台必断 socket，实机常态不是异常——
- *  没有宽限就等于「切个后台 = 弃赛」。回流自 Arthur 三房间标配。 */
-const RECONNECT_GRACE_S = 10;
-
-/**
- * 房间消息的应用层预算。Colyseus 也会在 transport 层按这个值做一次计数，
- * 这里保留一份房内计数是为了让直接调用 handler（以及未来的非 websocket transport）
- * 也拥有相同的边界。输入频率不是玩法契约，故只在本文件登记。
- */
-export const GAME_ROOM_MAX_MESSAGES_PER_SECOND = 60;
+/** 房间消息的应用层预算上限：真源在 rooms/core/MessageBudget.ts（MF3-B2），这里保留 re-export 兼容既有 import。 */
+export { GAME_ROOM_MAX_MESSAGES_PER_SECOND };
 const MAX_CATCH_UP_STEPS = 120;
 /** Keep the advertised rate inside shared S2C.Welcome's runtime contract. */
 const MAX_WELCOME_TICK_RATE = 240;
@@ -317,7 +242,10 @@ export class GameRoom extends Room {
     private roomEpochId: string | null = null;
     /** Sessions for which the mode admission hook has acquired ownership. */
     private readonly modeAdmissions = new Set<string>();
-    private readonly messageBudget = new Map<string, { windowStart: number; count: number }>();
+    /** MF3-B2 共享层（rooms/core）：dispatcher（含每会话预算）/ 出站口 / 重连宽限；壳只消费。 */
+    private readonly dispatcher: WireDispatcher;
+    private readonly ports: S2CPorts;
+    private readonly reconnectGrace: ReconnectGrace;
     private startPromise: Promise<boolean> | null = null;
     private startAbort: { generation: number; reject: (reason: unknown) => void } | null = null;
     /** A timed-out lock may still complete later; block a retry until it is released. */
@@ -369,6 +297,26 @@ export class GameRoom extends Room {
         this.fixedStepMs = normalizeFixedStep(options.fixedStepMs);
         this.startLockTimeoutMs = normalizeStartLockTimeout(options.startLockTimeoutMs);
         this.runtimeClock = this.makeClock(options.clock);
+        this.ports = new S2CPorts({
+            isDisposed: () => this.disposed,
+            modeId: () => this.modeId,
+            broadcast: (type, wire) => this.broadcast(type, wire),
+        });
+        this.dispatcher = new WireDispatcher({
+            isDisposed: () => this.disposed,
+            requireModeId: () => this.requireMode().id,
+            rateCostOf: (type) => this.wireRateCost(type),
+            currentPhase: () => this.state.phase,
+            corePhaseAllows: (type, phase) => this.corePhaseAllows(type, phase),
+            sendError: (client, code) => this.sendError(client, code),
+            handleCore: (client, type, payload) => this.handleCoreMessage(client, type, payload),
+            handleMode: (client, type, payload) => this.handleModeCommand(client, type, payload),
+        }, { limitPerSecond: GAME_ROOM_MAX_MESSAGES_PER_SECOND, now: () => this.now() });
+        this.reconnectGrace = new ReconnectGrace({
+            allowReconnection: (client, seconds) => this.allowReconnection(client, seconds),
+            generation: () => this.lifecycleGeneration,
+            isDisposed: () => this.disposed,
+        });
         this.matchIdFactory = options.matchId ?? newMatchId;
         this.evidenceEmitter = options.evidenceEmitter ?? emitMatchEvidence;
         this.profile = options.profile ?? null;
@@ -394,6 +342,11 @@ export class GameRoom extends Room {
             if (this.profile) this.assertDropInModeCompatible(this.injectedMode);
             this.selectModeState(this.injectedMode);
         }
+    }
+
+    /** 每会话预算（真源在 dispatcher）；开局 / 回滚 / 离场 / dispose 在此清理，测试直接读写窗口。 */
+    private get messageBudget(): MessageBudget {
+        return this.dispatcher.budget;
     }
 
     private makeClock(clock: GameRoomClock | undefined): () => number {
@@ -617,66 +570,10 @@ export class GameRoom extends Room {
      * 账号绑定（M8a）：WebPlatform 签发的不透明 token 反查 uid 存入 client.auth（09·G1
      * ⛔ 不信客户端单独传的 userId）。token 缺失/伪造/过期一律拒连（去 mock 后无游客模式）。
      */
-    static async onAuth(token: string, options: IGameRoomJoinOptions | undefined, _context: AuthContext) {
-        // Colyseus forwards untrusted JSON here; validate the complete object before
-        // any field-level checks so extra keys cannot silently alter admission semantics.
-        const joinOptions = validatedJoinOptions(options);
-        // 协议版本硬闸（缺省按 1 兼容首版客户端）：服务端升协议后旧包 join 即拒——
-        // 给出可识别错误码，而不是让旧客户端在 Schema 对不上的畸形状态里挂死。
-        // §4.8：Game join 只比较 GAME_ROOM_PROTOCOL_VERSION，⛔ LOBBY_PROTOCOL_VERSION 不参与本闸。
-        if ((joinOptions.v ?? 1) !== GAME_ROOM_PROTOCOL_VERSION) {
-            throw joinRefused(ErrorCode.ProtocolMismatch); // ⚠ 业务码走 message（status 必须 200–599）
-        }
-        const requestedMode = joinOptions.mode;
-        if (!gameModeRegistry.has(requestedMode)) {
-            throw joinRefused(ErrorCode.BadRequest);
-        }
-        // per-mode 契约版本（§4.8 第三层）：与 catalog 不一致 = 该玩法的旧客户端，单玩法拒绝。
-        // ⛔ 独立于上面的 GAME_ROOM_PROTOCOL_VERSION 信封闸（modeVersion 不参与 core 信封判定）。
-        if (joinOptions.modeVersion !== catalogModeVersion(requestedMode)) {
-            throw joinRefused(ErrorCode.ProtocolMismatch);
-        }
-        // profile 硬闸（§4.4）：matchmaker filterBy 只影响撮合选择，admission 必须再次拒绝
-        // 未知或不属该 mode 的 profile（缺失已由 validator 拒）。
-        if (!modeDeclaresProfile(requestedMode, joinOptions.profile)) {
-            throw joinRefused(ErrorCode.BadRequest);
-        }
-        const sId = normalizeSId(joinOptions.sId);
-        if (sId === null) {
-            throw joinRefused(ErrorCode.WrongServer);
-        }
-        // 进服区归属硬闸（docs/DUAL_MODE.md §4.3 / M11）：sId ∉ 本组 GROUP_ZONES 即拒（防串服）；
-        // sId 缺省 / GROUP_ZONES 空（单形态/大混服）放行，向后兼容（客户端软判定只改善 UX）。
-        // ⚠ groupAdmitsZone 必须看到原始 undefined：真区服组下缺 sId 仍应拒绝，不能被规范化的 0 绕过。
-        if (!groupAdmitsZone(joinOptions.sId === undefined ? undefined : sId)) {
-            throw joinRefused(ErrorCode.WrongServer);
-        }
-        // Colyseus 的标准 auth token 参数是连接凭证的唯一权威来源。
-        // `options.token` 只为旧客户端保留兼容占位，若存在必须与标准凭证逐字相等；
-        // 不能让 join options 覆盖/替换 HTTP Authorization 解析出的 token。
-        // token 是 WebPlatform 的不透明句柄：本进程只做空值/契约长度防护，
-        // ⛔ 不解析 uid、随机串长度或任何内部格式。
-        const standardToken = typeof token === "string" ? token : "";
-        if (standardToken.length < 1 || standardToken.length > 256
-            || (joinOptions.token !== undefined && joinOptions.token !== standardToken)) {
-            throw joinRefused(ErrorCode.TokenExpired, "auth");
-        }
-        try {
-            // strict：建连点 HTTP 回权威——⛔ 快路径只比对组缓存，被封账号能一直开新战斗房
-            // 打无限局（SOP①「新建连接即拒」正是靠这条）。成本 = 每次进房一次远程 verify，
-            // 不在 per-message 路径上。⚠ 已在房内的对局不受影响（打完为止，§2.3 已知边界 + U6 发奖 recheck）。
-            // ⚠ 带区：token 只对签发它的那个区有效（M12e）
-            return {
-                userId: await verifyAndCacheWebPlatformSession(standardToken, sId),
-                sId,
-                mode: requestedMode,
-                profile: joinOptions.profile,
-            } satisfies GameRoomAuth;
-        } catch (e) {
-            // 只有 WebPlatform 的 valid:false 才是玩家身份失败；超时、5xx、服务密钥错误等
-            // 必须保持 INTERNAL，⛔ 不能谎报成 token 过期。
-            throw joinRefusedAuth(toErrCode(e));
-        }
+    static async onAuth(token: string, options: IGameRoomJoinOptions | undefined, _context: AuthContext): Promise<GameRoomAuth> {
+        // 六步固定序（信封 → 协议整数 → mode / modeVersion / profile → 区号 → token → session verify）全在
+        // rooms/core/RoomAuth.ts；协议整数由 RoomAuth 注入，本文件不再出现房型常量。
+        return gameRoomAuth.authenticate(token, options);
     }
 
     /**
@@ -693,51 +590,12 @@ export class GameRoom extends Room {
      */
     messages = {
         "_": (client: Client, type: unknown, message: unknown) =>
-            this.dispatchGameMessage(client, type, message),
+            this.dispatcher.dispatch(client, type, message),
     };
 
-    /**
-     * 通用 dispatcher 固定序（docs/Non-intrusive.md §4.5）：
-     *  1. disposed 短路；先消耗基础预算（未知/畸形 type 也计费，flood 不因拼错消息名而免费）；
-     *  2. type 非 string / 不在 wire catalog / owner 既非 core 也非当前 mode → BadRequest；
-     *  3. exact validate（shared validator；二进制帧 fallback 会把 Uint8Array 原样交入，
-     *     isPlainRecord 的原型检查负责拒绝）；
-     *  4. rateCost > 1 时追加预算消耗（在昂贵后续处理之前）；
-     *  5. phase：core 消息用 shell 规则（Ping→W/P/S；Chat→W/P），玩法消息用 token 声明；
-     *  6. core 消息交 core handler，玩法消息交当前 mode 的 `commands[type]`；无对应
-     *     command → BadRequest。
-     */
-    private dispatchGameMessage(client: Client, type: unknown, message: unknown): void {
-        if (this.disposed) return;
+    /** 玩法消息（已过 dispatcher 固定序闸）交当前 mode 的 `commands[type]`；无对应 command → BadRequest。 */
+    private handleModeCommand(client: Client, messageType: C2SType, payload: unknown): void {
         const mode = this.requireMode();
-        if (!this.consumeMessageBudget(client)) return;
-        const owner = typeof type === "string"
-            ? (GAME_WIRE_OWNERS as Readonly<Partial<Record<string, string>>>)[type]
-            : undefined;
-        if (owner === undefined || (owner !== "core" && owner !== this.modeId)) {
-            this.sendError(client, ErrorCode.BadRequest);
-            return;
-        }
-        const messageType = type as C2SType;
-        let payload: unknown;
-        try {
-            payload = validateC2SPayload(messageType, message);
-        } catch {
-            // 含 S2C 消息名与未登记 C2S validator 的兜底（MESSAGE_TYPE 同样落到这里）。
-            this.sendError(client, ErrorCode.BadRequest);
-            return;
-        }
-        for (let extra = this.wireRateCost(messageType) - 1; extra > 0; extra--) {
-            if (!this.consumeMessageBudget(client)) return;
-        }
-        if (!this.wirePhaseAllows(messageType, owner)) {
-            this.sendError(client, ErrorCode.BadRequest);
-            return;
-        }
-        if (owner === "core") {
-            this.handleCoreMessage(client, messageType, payload);
-            return;
-        }
         const handler = (mode.commands as
             | Readonly<Record<string, (context: GameModeCommandContext<unknown>, payload: unknown) => unknown>>
             | undefined)?.[messageType];
@@ -761,33 +619,25 @@ export class GameRoom extends Room {
 
     /** 玩法 C2S 的预算成本（生成的 wire catalog；未登记按 1）。测试可替换观察机制。 */
     private wireRateCost(messageType: string): number {
-        return (GAME_WIRE_RATE_COST as Readonly<Partial<Record<string, number>>>)[messageType] ?? 1;
+        return defaultWireRateCost(messageType);
     }
 
-    /**
-     * phase 闸：core 消息的 phase 规则由 shell 拥有（⛔ 不进玩法 wire catalog）；
-     * 玩法消息用其 wire token 声明的 phases。
-     */
-    private wirePhaseAllows(messageType: C2SType, owner: string): boolean {
-        const phase = this.state.phase;
-        if (owner === "core") {
-            switch (messageType) {
-                case C2S.Ping:
-                    // 心跳在结算阶段也必须活着，否则客户端会在看结算界面时被判掉线。
-                    return phase === GamePhase.Waiting || phase === GamePhase.Playing || phase === GamePhase.Settle;
-                case C2S.Chat:
-                    return phase === GamePhase.Waiting || phase === GamePhase.Playing;
-                case C2S.RoomReady:
-                case C2S.RoomStart:
-                    // Ready/Start 只在 Waiting 合法（§6.2）；starting 期间的拒绝在 handler
-                    // 里用 RoomControlError.StartInProgress 表达（phase 仍是 Waiting）。
-                    return phase === GamePhase.Waiting;
-                default:
-                    return false;
-            }
+    /** core 消息的 phase 规则由 shell 拥有（⛔ 不进玩法 wire catalog）；玩法消息的 phases 由 dispatcher 按 token 声明判定。 */
+    private corePhaseAllows(messageType: C2SType, phase: GamePhaseType): boolean {
+        switch (messageType) {
+            case C2S.Ping:
+                // 心跳在结算阶段也必须活着，否则客户端会在看结算界面时被判掉线。
+                return phase === GamePhase.Waiting || phase === GamePhase.Playing || phase === GamePhase.Settle;
+            case C2S.Chat:
+                return phase === GamePhase.Waiting || phase === GamePhase.Playing;
+            case C2S.RoomReady:
+            case C2S.RoomStart:
+                // Ready/Start 只在 Waiting 合法（§6.2）；starting 期间的拒绝在 handler
+                // 里用 RoomControlError.StartInProgress 表达（phase 仍是 Waiting）。
+                return phase === GamePhase.Waiting;
+            default:
+                return false;
         }
-        const phases = (GAME_WIRE_PHASES as Readonly<Partial<Record<string, readonly string[]>>>)[messageType];
-        return phases !== undefined && phases.includes(phase);
     }
 
     /** core 消息的 shell 实现（原具名 handler 逻辑内联；payload 已过 exact validate）。 */
@@ -917,73 +767,30 @@ export class GameRoom extends Room {
         return false;
     }
 
-    private consumeMessageBudget(client: Client): boolean {
-        const now = this.now();
-        const previous = this.messageBudget.get(client.sessionId);
-        const windowStart = previous && now >= previous.windowStart && now - previous.windowStart < 1000
-            ? previous.windowStart
-            : now;
-        const count = previous && windowStart === previous.windowStart ? previous.count + 1 : 1;
-        this.messageBudget.set(client.sessionId, { windowStart, count });
-        if (count <= GAME_ROOM_MAX_MESSAGES_PER_SECOND) return true;
-        this.sendError(client, ErrorCode.BadRequest);
-        return false;
-    }
-
     private sendError(client: Client, code: ErrorCodeType): void {
-        const error: IErrorRes = { code, message: ErrorMessage[code] ?? ErrorMessage[ErrorCode.Unknown] };
-        this.sendS2C(client, S2C.Error, error);
+        this.ports.sendError(client, code);
     }
 
-    /** Validate every server-to-client payload before handing it to Colyseus transport. */
+    /** core S2C 出站口（validator 先于 transport）：实现在 rooms/core/S2CPorts.ts，本壳与测试都经这两个方法。 */
     private sendS2C(client: Client | undefined, type: S2CType, payload: unknown): void {
-        if (this.disposed) return;
-        const wire = validateS2CPayload(type, payload);
-        // Fake clients used by deterministic tests may not implement send; a malformed
-        // packet must still be a no-op rather than throw into the room loop.
-        try { client?.send?.(type, wire); } catch { /* connection may be closing */ }
+        this.ports.send(client, type, payload);
     }
 
-    /** Validate before broadcast so no malformed payload enters the room fan-out queue. */
     private broadcastS2C(type: S2CType, payload: unknown): void {
-        if (this.disposed) return;
-        const wire = validateS2CPayload(type, payload);
-        this.broadcast(type, wire);
+        this.ports.broadcast(type, payload);
     }
 
-    /**
-     * mode 出站的 token 闸：dir 必须是 s2c，owner ∈ {core, 当前 mode}；payload 过
-     * token.validate（与 shared S2C validator 同一实现）。坏 token/越权 token 是 mode
-     * 的实现缺陷，直接 throw 交由调用 hook 的既有兜底记录。
-     */
-    private assertModeS2CToken(token: GameplayS2CToken<unknown>): void {
-        if (!token || typeof token !== "object" || token.dir !== "s2c" || typeof token.type !== "string") {
-            throw new TypeError(`[GameRoom] mode ${this.modeId} 出站消息必须携带 s2c wire token`);
-        }
-        const owner = (GAME_WIRE_OWNERS as Readonly<Partial<Record<string, string>>>)[token.type];
-        if (owner !== "core" && owner !== this.modeId) {
-            throw new TypeError(
-                `[GameRoom] mode ${this.modeId} 不得发送 ${token.type}（owner=${String(owner)}）`,
-            );
-        }
-    }
-
+    /** mode 出站走 wire token 闸（dir / owner / validate，见 S2CPorts.assertModeToken）。 */
     private sendModeS2C<TPayload>(
         client: Client | undefined,
         token: GameplayS2CToken<TPayload>,
         payload: TPayload,
     ): void {
-        if (this.disposed) return;
-        this.assertModeS2CToken(token);
-        const wire = token.validate(payload);
-        try { client?.send?.(token.type, wire); } catch { /* connection may be closing */ }
+        this.ports.sendToken(client, token, payload);
     }
 
     private broadcastModeS2C<TPayload>(token: GameplayS2CToken<TPayload>, payload: TPayload): void {
-        if (this.disposed) return;
-        this.assertModeS2CToken(token);
-        const wire = token.validate(payload);
-        this.broadcast(token.type, wire);
+        this.ports.broadcastToken(token, payload);
     }
 
     /**
@@ -1001,10 +808,8 @@ export class GameRoom extends Room {
     onCreate(options: IGameRoomJoinOptions | undefined): void | Promise<void> {
         if (this.disposed) return;
         if (this.creationConfigured) throw joinRefused(ErrorCode.BadRequest);
-        const joinOptions = validatedJoinOptions(options);
-        if ((joinOptions.v ?? 1) !== GAME_ROOM_PROTOCOL_VERSION) {
-            throw joinRefused(ErrorCode.ProtocolMismatch);
-        }
+        // join 信封 + 协议整数硬闸与 onAuth 同口径（RoomAuth.assertEnvelope）。
+        const joinOptions = gameRoomAuth.assertEnvelope(options);
         const sId = normalizeSId(joinOptions.sId);
         if (sId === null) {
             throw joinRefused(ErrorCode.WrongServer);
@@ -1383,7 +1188,7 @@ export class GameRoom extends Room {
         // 静态 envelope/onAuth 只校验身份与 ticket 形状；绑定重验在目标 room instance（§6.8）。
         let access: IGameRoomAccess | undefined;
         try {
-            access = validatedJoinOptions(options as IGameRoomJoinOptions | undefined).access;
+            access = gameRoomAuth.validatedJoinOptions(options as IGameRoomJoinOptions | undefined).access;
         } catch {
             throw joinRefused(ErrorCode.BadRequest);
         }
@@ -1407,7 +1212,7 @@ export class GameRoom extends Room {
             // 房主：creation claim 已在 onCreate 原子占有并固定 expectedOwnerUid；这里做
             // uid 与 ticket 的逐字一致校验（恒定时间比较），落座后再 CAS 到 seated。
             if (this.expectedOwnerUid === null || auth.userId !== this.expectedOwnerUid
-                || this.creationTicket === null || !safeSecretEqual(ticket, this.creationTicket)) {
+                || this.creationTicket === null || !credentialMatches(ticket, this.creationTicket)) {
                 fail(ErrorCode.BadRequest, false);
             }
             return { kind: "create", ticket };
@@ -1670,13 +1475,15 @@ export class GameRoom extends Room {
                     view.connectionRevision++;
                 }
             }
-            try {
-                // 非主动断线（微信切后台必断 socket / 网络抖动）：保留座位等重连，
-                // 宽限期内玩家仍在 state 里照常被模拟、不阻塞他人；客户端用 SDK 的
-                // reconnect(reconnectionToken) 归位。M8a 簿记必须推迟到重连失败——
-                // 在这里先记会把重连成功者也算成阵亡，污染名次与证据。
-                // ⚠ 重连使用 Colyseus reconnection token，⛔ 不重复消费 access ticket（§6.8）。
-                await this.allowReconnection(client, RECONNECT_GRACE_S);
+            // 非主动断线（微信切后台必断 socket / 网络抖动）：保留座位等重连，
+            // 宽限期内玩家仍在 state 里照常被模拟、不阻塞他人；客户端用 SDK 的
+            // reconnect(reconnectionToken) 归位。M8a 簿记必须推迟到重连失败——
+            // 在这里先记会把重连成功者也算成阵亡，污染名次与证据。
+            // ⚠ 重连使用 Colyseus reconnection token，⛔ 不重复消费 access ticket（§6.8）。
+            const outcome = await this.reconnectGrace.await(client);
+            // generation fence（rooms/core/ReconnectGrace）：宽限期间房间已 dispose ⇒ 迟到的重连 / 到期都不再簿记。
+            if (outcome === "stale") return;
+            if (outcome === "reconnected") {
                 if (this.modeHasFragment("ownerReady")) {
                     const view = this.ownerReadyView();
                     const restored = view.players.get(client.sessionId);
@@ -1691,9 +1498,8 @@ export class GameRoom extends Room {
                 }
                 console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 断线后重连成功`);
                 return; // seat/owner/Ready 原样保留，无其余簿记
-            } catch {
-                // 宽限到期未归 → 按真离开走下方清理
             }
+            // 宽限到期未归 → 按真离开走下方清理
         }
         if (this.disposed) return;
         const player = this.state.players.get(client.sessionId);

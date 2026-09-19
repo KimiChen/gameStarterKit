@@ -332,3 +332,27 @@ test("S2C token 闸：payload 过 token.validate；合法 core / 本 mode token 
         (error: unknown) => error instanceof WireValidationError);
     assert.equal(broadcasted.length, 1, "非法 payload 不得进入 room.broadcast");
 });
+
+// ── MF3-B2 补钉：重连成功分支的 generation fence（抽取前只有到期分支短路 disposed）────
+// 变异验证：ReconnectGrace 删 generation / disposed 比较 → 本用例转红。
+test("重连宽限：dispose 后迟到的**重连成功** ⛔ 不跑 connection-changed(true)、不动 state", async () => {
+    const hooks: string[] = [];
+    const base = createBallMoveGameMode();
+    const mode: GameMode<any, any> = {
+        ...base,
+        onConnectionChanged(context) { hooks.push(`conn:${context.client.sessionId}:${context.connected}`); },
+    } as GameMode<any, any>;
+    const room = new GameRoom({ seed: 9, clock: () => 0, mode });
+    installLock(room);
+    const a = fakeClient("a");
+    await room.onJoin(a as never, joinOptions());
+    let release!: () => void;
+    (room as unknown as { allowReconnection: () => Promise<void> }).allowReconnection = () =>
+        new Promise<void>((resolve) => { release = resolve; });
+    const pending = room.onLeave(a as never, 4001);
+    await Promise.resolve();
+    await room.onDispose();
+    release();
+    await pending;
+    assert.deepEqual(hooks, ["conn:a:false"], "dispose 后迟到的重连成功不得再通知 mode");
+});

@@ -2977,6 +2977,7 @@ apps/client/src/app/**
 apps/shared/src/protocol/messages.ts
 apps/server/src/rooms/GameRoom.ts
 apps/server/src/rooms/GameMode.ts
+apps/server/src/rooms/core/**
 apps/client/src/net/RoomClient.ts
 apps/client/src/net/rooms/GameRoomTransport.ts
 apps/client/src/gameplay/catalog.ts
@@ -2990,7 +2991,10 @@ apps/server/sql/schema.sql
 ⚠ 本块是 `scripts/protected-paths.json` 的 `gameplayFlow.paths` 的散文视图，由无侵入矩阵做**双向
 deepEqual**——任一侧单方面增删即红（⛔ 堵住「先从规则文件删条目、再重钉 `protected-paths.lock`」
 这条绕过路径）。§12.2 点名的 `Main.ts` / `pages.ts` / Home 属 plugin 动线，列在 §11.3 的清单里，
-此处不重复。
+此处不重复。`apps/server/src/rooms/core/**` 自 MMO MF3-B2（2026-09-19）整目录受保护：
+RoomAuth / WireDispatcher / MessageBudget / ReconnectGrace / S2CPorts 是 GameRoom 抽出的共享层（§8.4 曾以
+GameplayDispatcher 之名预留的职责由 WireDispatcher 落地），与既有 RoomProfile / StartPolicy / AccessPolicy
+同批登进 gameplayFlow（关 PLUGIN-REVIEW F03）。
 
 
 两条边界要一起记住：**本清单约束的是「新增普通玩法 / plugin」的动线**，§9 的框架改造阶段本身属于**显式框架侵入**，
