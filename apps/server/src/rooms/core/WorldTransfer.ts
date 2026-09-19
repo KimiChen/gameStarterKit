@@ -5,7 +5,7 @@
  */
 import { issueWorldTicket, type IssueWorldTicketArgs, type IssuedWorldTicket } from "./WorldTicket";
 import {
-    activateTransfer, cancelTransfer, commitTransfer, finalizeTransfer, prepareTransfer, readTransfer, requestTransfer,
+    activateTransfer, activeTransferOf, cancelIfStale, cancelTransfer, commitTransfer, finalizeTransfer, prepareTransfer, readTransfer, requestTransfer,
     type RequestTransferInput, type TransferStep, type WorldTransferRow,
 } from "./transfer";
 
@@ -17,6 +17,10 @@ export interface WorldTransferPort {
     finalize(sId: number, transferId: string): Promise<TransferStep>;
     cancel(sId: number, transferId: string): Promise<TransferStep>;
     read(sId: number, transferId: string): Promise<WorldTransferRow | null>;
+    /** MF11 R2-01：陈旧的 Committed 前行（源房崩溃遗留）⇒ cancelled；true = 已取消。 */
+    cancelIfStale(sId: number, row: WorldTransferRow, nowMs: number, staleAfterMs: number): Promise<boolean>;
+    /** 该 persona 的在途行（无 ⇒ null）。 */
+    activeOf(sId: number, personaId: string): Promise<WorldTransferRow | null>;
     issueTicket(args: IssueWorldTicketArgs): Promise<IssuedWorldTicket>;
 }
 
@@ -29,5 +33,7 @@ export const sqlWorldTransferPort: WorldTransferPort = {
     finalize: (sId, transferId) => finalizeTransfer(sId, transferId),
     cancel: (sId, transferId) => cancelTransfer(sId, transferId),
     read: (sId, transferId) => readTransfer(sId, transferId),
+    cancelIfStale: (sId, row, nowMs, staleAfterMs) => cancelIfStale(sId, row, nowMs, staleAfterMs),
+    activeOf: (sId, personaId) => activeTransferOf(sId, personaId),
     issueTicket: (args) => issueWorldTicket(args),
 };

@@ -53,7 +53,7 @@ import {
     type WorldPhaseType,
 } from "@game/shared";
 import { NODE_ID, WORLD_INFO_REFRESH_MS, WORLD_PUBLIC_WS_URL, WORLD_TRANSFER_RESERVE_MS, normalizeSId } from "../core/infra/config";
-import { ControlConflictError, PersonaNotFoundError, WorldNotAuthoritativeError, joinRefused } from "../core/errors";
+import { ControlConflictError, PersonaNotFoundError, TransferInFlightError, WorldNotAuthoritativeError, joinRefused } from "../core/errors";
 import { trackTask } from "../core/infra/lifecycle";
 import { publishPush, registerRoomSignal, type PublishPushInput } from "../core/push/pushBus";
 import { getChatPolicy, type ChatPolicyContext } from "../core/chat/policy";
@@ -638,7 +638,26 @@ export class WorldRoom extends Room {
         const generation = this.lifecycleGeneration;
         runtime.setFrozen(session, true);
         try {
-            await this.deps.transfers.request(this.sId, { transferId, personaId: info.personaId, fromInstance: this.instanceId, toMap, toLine, payload: target.payload ?? null });
+            const input = { transferId, personaId: info.personaId, fromInstance: this.instanceId, toMap, toLine, payload: target.payload ?? null };
+            try {
+                await this.deps.transfers.request(this.sId, input);
+            } catch (error) {
+                // MF11 R2-01 自愈：persona 的在途行若是 ① 本房已接住但 finalize 丢失的 activated 行 ⇒ finalize；② 源房崩溃遗留的陈旧 Committed 前行 ⇒ cancel；
+                // 然后重试一次；其它在途（真在交接）照拒。
+                if (!(error instanceof TransferInFlightError)) throw error;
+                const stale = await this.deps.transfers.activeOf(this.sId, info.personaId);
+                if (!stale) throw error;
+                let healed = false;
+                if (stale.state === "activated" && stale.toInstance === this.instanceId) {
+                    await this.deps.transfers.finalize(this.sId, stale.transferId);
+                    healed = true;
+                } else if (stale.state === "requested" || stale.state === "prepared") {
+                    healed = await this.deps.transfers.cancelIfStale(this.sId, stale, this.now(), WORLD_TRANSFER_RESERVE_MS);
+                }
+                if (!healed) throw error;
+                console.warn(`[WorldRoom ${this.roomId}] 交接：persona ${info.personaId} 的遗留在途行 ${stale.transferId}（${stale.state}）已收敛，重试`);
+                await this.deps.transfers.request(this.sId, input);
+            }
             const targetRow = await this.deps.directory.resolve(this.sId, toMap, toLine);
             const now = this.now();
             await this.deps.transfers.prepare(this.sId, transferId, { toInstance: targetRow.instanceId, reserveExpiresAt: now + WORLD_TRANSFER_RESERVE_MS });

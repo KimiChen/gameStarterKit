@@ -65,7 +65,15 @@ export interface WorldTransferRequest {
     };
 }
 
+/** 交接退源房的有界等待（MF11 R2-02；超过即不等 LEAVE 回执，服务端 Committed 后会自行离座）。 */
+export const WORLD_TRANSFER_LEAVE_TIMEOUT_MS = 3_000;
+
 export type WorldLeaveKind = "consented" | "drained" | "replaced" | "dropped";
+
+/** 传输内部：LEAVE 无回执时的本地收尾（⛔ 对外公开；只在 transfer 的有界等待超时后用）。 */
+interface WorldRoomHandleInternal extends WorldRoomHandle {
+    abandon(): void;
+}
 
 /** Colyseus 关闭码 → 世界房离开语义（服务端 WorldRoom：Offline ⇒ WITH_ERROR；顶号 ⇒ KICK_CLOSE_CODE[Replaced]）。 */
 export function worldLeaveKindOf(code: unknown): WorldLeaveKind {
@@ -112,6 +120,8 @@ export interface WorldRoomTransportDeps {
     readonly sId: () => number;
     /** 交接到别的 world 进程（endpoint 非空）时的 SDK client 工厂（MF8-B5 / D27）；缺省沿用 client()。 */
     readonly clientFor?: (endpoint: string) => WorldRoomSdkClient;
+    /** 退源房的有界等待（MF11 R2-02；缺省 WORLD_TRANSFER_LEAVE_TIMEOUT_MS；单测注入）。 */
+    readonly leaveTimeoutMs?: number;
 }
 
 const warnInvalidWire = (scope: string, error: unknown): void => sharedWarnInvalidWire("[WorldRoom]", scope, error);
@@ -192,7 +202,11 @@ export class WorldRoomTransport {
     async transfer(request: WorldTransferRequest, control: { readonly signal?: AbortSignal } = {}): Promise<WorldRoomHandle> {
         if (this.joining) throw new Error("[WorldRoom] 正在进入世界房，⛔ 交接");
         const source = this.activeHandle;
-        if (source && !source.left) await source.leave();
+        if (source && !source.left) {
+            // MF11 R2-02：退源房有界等待——半开连接上 LEAVE 可能永不回执；服务端 Committed 后本就会离座，超时即本地收尾（abandon）继续
+            await Promise.race([source.leave(), new Promise<void>((resolve) => setTimeout(resolve, this.deps.leaveTimeoutMs ?? WORLD_TRANSFER_LEAVE_TIMEOUT_MS))]);
+            if (!source.left) (source as WorldRoomHandleInternal).abandon();
+        }
         const ready = request.ready;
         const client = ready.endpoint !== "" && this.deps.clientFor ? this.deps.clientFor(ready.endpoint) : this.deps.client();
         const strategy: WorldRoomStrategy = ready.transferId === null
@@ -362,7 +376,8 @@ export class WorldRoomTransport {
                     finish("consented", SDK_CLOSE_CODE.CONSENTED);
                 }
             },
-        };
+            abandon: () => { finish("consented", SDK_CLOSE_CODE.CONSENTED); },
+        } as WorldRoomHandleInternal;
         return handle;
     }
 }

@@ -36,7 +36,7 @@ function cluster() {
     const events: Array<{ table: string; eventId: string; seq: number; kind: string; payload: unknown; checkpointRev: number }> = [];
     const fakeSql = () => ({ execute: async () => [{ info: "Rows matched: 0", affectedRows: 0 }], query: async () => [[]] }) as never;
     const tickets = new MemoryWorldTicketPort(() => 0); // 单测不测过期（int/world-ticket 测）
-    const transfers = new FakeTransfers(tickets);
+    const transfers = new FakeTransfers(tickets, () => 1_000);
     let eventCounter = 0;
     control.seedPersona(P_A, U_A);
     /** MF8-B6：跨房唤醒记录（发布 + 本进程登记表） */
@@ -228,4 +228,48 @@ test("跨房唤醒（MF8-B6）：Committed 后向目标分线发 kind=room 的 w
     a.timers.fire();
     await a.room.onDispose();
     assert.ok(c.registrations.includes("off:wi_m1_0"));
+});
+
+test("MF11 R2-01 自愈：persona 遗留的陈旧 requested 行 / 本房已接住的 activated 行 ⇒ portal 收敛后照常交接；真在途照拒", async () => {
+    const c = cluster();
+    const a = await c.room("m1");
+    const t1 = c.enterTicket("m1", 0);
+    const alice = fakeClient("sa", P_A, U_A, { ticketSha256: t1.ticketSha256 });
+    await join(a.room, alice);
+    // ① 源房崩溃遗留的 requested 行（建行远早于预留窗口）
+    c.transfers.rows.set("wt_stale", { transferId: "wt_stale", personaId: P_A, fromInstance: "wi_old", toMap: "m2", toLine: 0, toInstance: "", state: "requested", controlEpoch: 0, ticketSha256: "", reserveExpiresAt: null, payload: null, active: true, createdAt: -1_000_000 });
+    dispatch(a.room, C2S.WorldFixturePortal, alice, { toMap: "m2" });
+    a.room.advance(50);
+    await settle();
+    assert.equal(c.transfers.rows.get("wt_stale")?.state, "cancelled", "陈旧行被收敛");
+    const committed = [...c.transfers.rows.values()].find((row) => row.state === "committed");
+    assert.ok(committed && committed.personaId === P_A, "重试后正常 Committed");
+    a.timers.fire();
+    // ② 本房已接住但 finalize 丢失的 activated 行：再次 portal 前先 finalize
+    const b = await c.room("m2");
+    const ready = transferMessages(alice)[0]!;
+    const alice2 = fakeClient("sb", P_A, U_A, { ticketSha256: worldTicketHash(ready.ticket), mapId: "m2" });
+    await join(b.room, alice2);
+    await settle();
+    c.transfers.rows.get(committed!.transferId)!.state = "activated";
+    c.transfers.rows.get(committed!.transferId)!.active = true;
+    dispatch(b.room, C2S.WorldFixturePortal, alice2, { toMap: "m1" });
+    b.room.advance(50);
+    await settle();
+    assert.equal(c.transfers.rows.get(committed!.transferId)?.state, "finalized", "activated（本房）⇒ finalize 后重试");
+    assert.ok([...c.transfers.rows.values()].some((row) => row.state === "committed" && row.toMap === "m1"), "回 m1 的交接 Committed");
+    b.timers.fire();
+    // ③ 真在途（另一实例的 committed 行）⇒ 拒
+    const c2 = cluster();
+    const a2 = await c2.room("m1");
+    const t2 = c2.enterTicket("m1", 0);
+    const bob = fakeClient("sa", P_A, U_A, { ticketSha256: t2.ticketSha256 });
+    await join(a2.room, bob);
+    c2.transfers.rows.set("wt_live", { transferId: "wt_live", personaId: P_A, fromInstance: "wi_x", toMap: "m3", toLine: 0, toInstance: "wi_m3_0", state: "committed", controlEpoch: 0, ticketSha256: "a".repeat(64), reserveExpiresAt: null, payload: null, active: true, createdAt: 1_000 });
+    dispatch(a2.room, C2S.WorldFixturePortal, bob, { toMap: "m2" });
+    a2.room.advance(50);
+    await settle();
+    assert.ok(a2.mode.__probe.log.some((line) => line.startsWith("transfer:sa:failed:") && line.includes("in flight")), "真在途 ⇒ 拒");
+    assert.equal(c2.transfers.rows.size, 1, "未新增行");
+    await a.room.onDispose(); await b.room.onDispose(); await a2.room.onDispose();
 });

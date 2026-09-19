@@ -40,6 +40,8 @@ export interface WorldTransferRow {
     readonly payload: unknown;
     /** 在途（active_key 非 NULL）。 */
     readonly active: boolean;
+    /** 建行时刻（ms 时间戳；MF11 R2：requested 行无预留，按建行时刻判陈旧）。 */
+    readonly createdAt: number;
 }
 
 export type TransferStepOutcome = "advanced" | "already";
@@ -64,9 +66,10 @@ function assertId(value: string, label: string, max = 64): void {
 interface TransferSqlRow extends RowDataPacket {
     transfer_id: string; persona_id: string; from_instance: string; to_map: string; to_line: number | string; to_instance: string; state: string;
     control_epoch: number | string; ticket_sha256: string; reserve_expires_ms: number | string | null; payload: unknown; active_key: string | null;
+    created_ms: number | string;
 }
 const SELECT = "SELECT transfer_id, persona_id, from_instance, to_map, to_line, to_instance, state, control_epoch, ticket_sha256, "
-    + "ROUND(UNIX_TIMESTAMP(reserve_expires_at) * 1000) AS reserve_expires_ms, payload, active_key FROM world_transfer";
+    + "ROUND(UNIX_TIMESTAMP(reserve_expires_at) * 1000) AS reserve_expires_ms, payload, active_key, ROUND(UNIX_TIMESTAMP(created_at) * 1000) AS created_ms FROM world_transfer";
 
 function rowOf(row: TransferSqlRow): WorldTransferRow {
     const state = WORLD_TRANSFER_STATES.includes(row.state as WorldTransferState) ? (row.state as WorldTransferState) : "cancelled";
@@ -85,7 +88,23 @@ function rowOf(row: TransferSqlRow): WorldTransferRow {
         reserveExpiresAt: row.reserve_expires_ms === null || row.reserve_expires_ms === undefined ? null : Number(row.reserve_expires_ms),
         payload: payload ?? null,
         active: row.active_key !== null,
+        createdAt: Number(row.created_ms),
     };
+}
+
+/**
+ * 陈旧的 Committed 前交接（MF11 R2-01）：源房在 request → prepare → commit 之间崩溃会留下 requested / prepared 行，persona 从此「在途」
+ * 被拒再交接 / 再进入。判据：prepared 且预留已到期，或 requested 且建行超过 staleAfterMs（= 预留窗口）。返回 true = 已 cancelled（或本就 cancelled）。
+ * 无副作用于 committed 及之后（⛔ 回源）。
+ */
+export async function cancelIfStale(sId: number, row: WorldTransferRow, nowMs: number, staleAfterMs: number, pool: TransferSqlPool = getPool()): Promise<boolean> {
+    if (row.state === "cancelled") return true;
+    const stale = row.state === "prepared"
+        ? row.reserveExpiresAt !== null && row.reserveExpiresAt < nowMs
+        : row.state === "requested" && row.createdAt + staleAfterMs < nowMs;
+    if (!stale) return false;
+    const step = await cancelTransfer(sId, row.transferId, pool);
+    return step.row.state === "cancelled";
 }
 
 /** 读一行（不存在 ⇒ null）。 */
