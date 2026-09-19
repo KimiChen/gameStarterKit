@@ -47,6 +47,7 @@ import {
   type GameplayCodegenOptions,
 } from "../tools/gameplay-codegen/lib";
 import { parseGameplayManifest } from "../tools/gameplay-codegen/manifestSchema";
+import { parseGameplayWireModule } from "../tools/gameplay-codegen/wireParser";
 import { parseGameplayStateDescriptor, renderSharedStateModule } from "../tools/gameplay-codegen/stateRenderer";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -1677,3 +1678,73 @@ test("MF9 kit fragment：mode 以 <kit>:<name> 引用 kit 的 fragment 文件，
   }
 });
 
+
+// ── MMO MF5a-B1：defineS2C 第三参 { perSession, coalesceKey } → GAME_WIRE_PER_SESSION（docs/MMO.md §5.4 MF5a）──
+// 变异验证：读取器删「coalesceKey 须与 perSession 同现」→ 反例矩阵转红；渲染器不按 perSession 过滤 → 字节钉转红。
+
+const PER_SESSION_WIRE_PRELUDE = [
+  'import { defineC2S, defineS2C } from "../defineGameplayWire";',
+  "export interface IFxSeen { readonly entityId: string; }",
+  "function validateFxSeen(input: unknown): IFxSeen { return input as IFxSeen; }",
+  "",
+].join("\n");
+
+test("MF5a-B1 wire 读取：defineS2C 第三参只认 perSession: true 与 coalesceKey 字面量；两参形态 = 全房消息", () => {
+  const parsed = parseGameplayWireModule(`${PER_SESSION_WIRE_PRELUDE}`
+    + 'export const FxEnter = defineS2C("s2c.fx.enter", validateFxSeen, { perSession: true });\n'
+    + 'export const FxUpdate = defineS2C("s2c.fx.update", validateFxSeen, { perSession: true, coalesceKey: "entityId" });\n'
+    + 'export const FxAll = defineS2C("s2c.fx.all", validateFxSeen);\n', "fx");
+  assert.deepEqual(parsed.s2c.map((token) => [token.type, token.perSession, token.coalesceKey]), [
+    ["s2c.fx.enter", true, null],
+    ["s2c.fx.update", true, "entityId"],
+    ["s2c.fx.all", false, null],
+  ]);
+  const rejected: readonly (readonly [string, RegExp])[] = [
+    ["{ perSession: false }", /perSession 只能是字面量 true/u],
+    ["{ perSession: isPerSession }", /perSession 只能是字面量 true/u],
+    ['{ coalesceKey: "entityId" }', /coalesceKey 只对 perSession: true 有意义/u],
+    ['{ perSession: true, coalesceKey: "bad-key!" }', /coalesceKey 必须是字段名/u],
+    ['{ perSession: true, coalesceKey: keyName }', /coalesceKey 必须是字段名/u],
+    ["{ perSession: true, other: 1 }", /含未知键：other/u],
+    ["{ ...opts }", /不允许 spread/u],
+    ["true", /第三参必须是对象字面量/u],
+    ["{ perSession: true }, 1", /形态/u],
+  ];
+  for (const [options, pattern] of rejected) {
+    assert.throws(
+      () => parseGameplayWireModule(`${PER_SESSION_WIRE_PRELUDE}export const FxX = defineS2C("s2c.fx.x", validateFxSeen, ${options});\n`, "fx"),
+      pattern,
+      `应拒：defineS2C(..., ${options})`,
+    );
+  }
+});
+
+test("MF5a-B1 生成：真仓无 perSession token 时空表恒生成；既有 token 加 { perSession, coalesceKey } 只多出一条表项、wire catalog 其余字节不变", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const before = readFixtureText(fixture.root, SHARED_WIRE_CATALOG);
+    const emptyTable = "export const GAME_WIRE_PER_SESSION = {\n} as const satisfies { readonly [type: string]: string | null };";
+    assert.ok(before.includes(emptyTable), "空表恒生成：S2CPorts 的 import 面不随 token 有无而消失");
+    assert.equal(readFixtureText(fixture.root, SHARED_WIRE_CATALOG), fs.readFileSync(path.join(REPOSITORY_ROOT, SHARED_WIRE_CATALOG), "utf8"), "夹具渲染 == 入库产物");
+
+    // 既有两参 token 改成 perSession（契约 digest 变了，按闸同时 bump modeVersion）
+    const wireFile = path.join(fixture.root, "apps/shared/src/gameplays/snake/wire.ts");
+    const declaration = 'export const SnakeDelta = defineS2C("s2c.snake.delta", validateDelta);';
+    const wire = fs.readFileSync(wireFile, "utf8");
+    assert.ok(wire.includes(declaration), "夹具前提：SnakeDelta 是两参形态");
+    fs.writeFileSync(wireFile, wire.replace(declaration,
+      'export const SnakeDelta = defineS2C("s2c.snake.delta", validateDelta, { perSession: true, coalesceKey: "roomEpochId" });'), "utf8");
+    const manifestFile = path.join(fixture.root, GAMEPLAY_SOURCES.get("snake") ?? "", "manifest.json");
+    const manifest = readJson<MutableManifest>(manifestFile);
+    writeFixtureJson(fixture.root, path.relative(fixture.root, manifestFile), { ...manifest, modeVersion: (manifest.modeVersion as number) + 1 });
+    writeGameplayArtifacts(fixture.options);
+    const after = readFixtureText(fixture.root, SHARED_WIRE_CATALOG);
+    const expected = before.replace(emptyTable,
+      'export const GAME_WIRE_PER_SESSION = {\n    "s2c.snake.delta": "roomEpochId",\n} as const satisfies { readonly [type: string]: string | null };');
+    assert.notEqual(expected, before);
+    assert.equal(after, expected, "只多出一条 GAME_WIRE_PER_SESSION 表项，S2C / OWNERS / validators / tokens 表字节不变");
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
