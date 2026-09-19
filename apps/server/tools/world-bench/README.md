@@ -87,3 +87,14 @@ npm --workspace @game/server exec tsx -- tools/world-bench/multi-process.ts --le
 2026-09-20 实测（`2026-09-20T040342-multi-process.json`，租约 3 s / 续租 1 s / 检查点 2 s）：kill 后租约 2.44 s 过期、登记同期过期、接管 2.56 s（含客户端重进），权威 epoch 1 → 2、
 holder = B、检查点 rev 2 回灌、位置回退 20（≤ 1 周期上限 80）、`world.enter` 端点：A 在线时 = A 的地址、A 死后回落空串。偏差：登记 TTL 由「两倍租约」改为
 「= 租约」（否则 A 死后一个租约周期内客户端仍被指向死节点）；生产 15 s 租约下的接管时延 ≈ 租约 ttl + 重进握手，非首版闸。
+
+## `aoi-probe.ts` 去留（MMO MF11-B3 拍板：**留**）
+
+`aoi-probe.ts` 是 MF1 的对照实验（两间裸 Colyseus 房共用同种子确定性模拟：`@view()` StateView vs 每会话消息级 delta），是 MMO.md §11.2「AOI 载体 =
+消息级 delta」与 `ORCH_TICK_BUDGET_MS` 两条冻结数字的证据来源（报告 `docs/perf/world-bench/2026-09-19T113148-aoi-delta.json` / `...-aoi-view.json`）。
+它**不是** gameplay 夹具（无 manifest / 生成物 / 客户端模块；原计划的 `aoiProbeFixture` 从未入库），只是本目录下的一个证据生成器，与 `run.ts` 剧本
+并列：留在 `tools/world-bench/`，⛔ 进 `verify:core`，⛔ 迁成 gameplay 夹具（StateView 需 codegen 支持 `@view()`，MF5 已决定不用）。重跑：
+
+```bash
+npm --workspace @game/server exec tsx -- tools/world-bench/aoi-probe.ts
+```
