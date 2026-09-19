@@ -498,7 +498,7 @@ MF10 容量 / 多进程 / 运维（依赖 MF4–MF8）→ MF11 收口审阅与�
 
 | 夹具 | 落点 | 引入 | 入库？ |
 | --- | --- | --- | --- |
-| `aoi-probe` | `apps/server/tools/world-bench/aoi-probe.ts`（裸 Colyseus 房，无 gameplay 生成物；原计划的 `aoiProbeFixture` 从未入库） | MF1 | 已入库（f1c19cde），MF11 决定去留 |
+| `aoi-probe` | `apps/server/tools/world-bench/aoi-probe.ts`（裸 Colyseus 房，无 gameplay 生成物；原计划的 `aoiProbeFixture` 从未入库） | MF1 | 已入库（f1c19cde）；**MF11 拍板：留**——world-bench 证据生成器（§11.2 AOI 载体 / `ORCH_TICK_BUDGET_MS` 的数据来源），⛔ 进 verify:core、⛔ 迁成 gameplay 夹具（README 有段） |
 | `worldFixture` | `apps/shared/schema/gameplays/worldFixture/` + `apps/shared/src/gameplays/worldFixture/wire.ts` + `rooms/modes/worldFixture/` + `apps/client/src/gameplay/modes/worldFixture/` | MF4（MF5b / 6b / 7b / 8 逐步加 token） | 入库（同 privateFixture） |
 | `kitfix` | 临时根 `apps/kits/kitfix/`（sql / workers / contributions / fragments） | MF0、MF7a、MF7b、MF9 | 测试物化 |
 | `kitfixContent` | 临时根 `apps/plugins/kitfixContent/` | MF0、MF9、MF11 | 测试物化 |
