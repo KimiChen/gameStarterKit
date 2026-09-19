@@ -39,7 +39,7 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 1. **一批 = 一个提交**（提交信息以批次号开头：`MF3-B2：…`），批内 `verify:all` 绿才提交；涉 Redis / MySQL 的批再跑 `test:int`；故障类批把注入点登记进 `scripts/fault-matrix.config.json` 并跑 `test:faults` / `test:faults:int`。
 2. **动线**（MMO.md §5.1）：改 shared 真源 → `npm --workspace @game/server run codegen:gameplays` / `codegen:plugins` / `codegen:http`（按改动面）→ `npm run sync:shared` → 改了 `apps/shared/src/protocol/**` 时 `node scripts/protocol-fingerprint.mjs --write` → 改了 `scripts/protected-paths.json` 时 `node scripts/protected-paths-lock.mjs --write` → `npm run sync:client` → `npm run verify:all`。
 3. **变异验证**是退出条件的一部分：每批在测试文件头注释或提交信息里写「改哪一行 → 哪条用例转红」，并至少手工执行一次。
-4. **夹具纪律**：框架段（MF0–MF11）任何提交 ⛔ 不得出现 `apps/kits/mmo/`、`k_mmo_*`、`mmo` 域名；只用 `worldFixture` / `kitfix` / `kitfixContent` / `aoiProbeFixture` / `world-bench` 剧本。`kitfix` / `kitfixContent` 只在测试临时根物化（`scripts/lib/fixture-checkout.mjs` 先例），⛔ 不入库。
+4. **夹具纪律**：框架段（MF0–MF11）任何提交 ⛔ 不得出现 `apps/kits/mmo/`、`k_mmo_*`、`mmo` 域名；只用 `worldFixture` / `kitfix` / `kitfixContent` / `aoi-probe`（`tools/world-bench/aoi-probe.ts`）/ `world-bench` 剧本。`kitfix` / `kitfixContent` 只在测试临时根物化（`scripts/lib/fixture-checkout.mjs` 先例），⛔ 不入库。
 5. **协议整数**：新增 Lobby RPC 域缺省 ⛔ 不 bump `LOBBY_PROTOCOL_VERSION`（EXTRAS X4 口径）；`GAME_ROOM_PROTOCOL_VERSION` 只在 MMO.md §11.2 人工决策后 bump；`WORLD_ROOM_PROTOCOL_VERSION = 1` 由 MF4 一次定型。任何 bump 写进提交信息。
 6. **上游对照**：提交信息写「设计对照：<仓>/<路径>@<commit>」（MMO.md §2.3）；⛔ AzerothCore 代码零行、SQL 零条。
 7. **回写**：阶段退出时一行进 MMO.md §12（阶段 / 日期 / commit / 实测数字 / 偏差）；本文 §9 勾批次；MF0 另回写 KIT.md §9 K1 行；MF5a / MF7a 退出时通知 slg.md §10.8 / lvr.md §4.3。
@@ -61,11 +61,11 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 
 | 批次 | 内容 | 机检退出 | 命令 |
 | --- | --- | --- | --- |
-| MF1-B1 `world-bench` 基准台 | 新 `apps/server/tools/world-bench/{run.ts,report.ts,scenarios/snake-baseline.ts}`：`@colyseus/testing` 起房 + `@colyseus/sdk` 机器人 N 个（Node 端，`test/smoke.ts` 先例）+ 脚本实体 M 个固定剧本（种子固定）；记录 tick p95 / p99、每会话出站字节、baseline 体积、进程 RSS；输出 `docs/perf/world-bench/<date>-<scenario>.json`；⛔ 不进 `verify:core`（同 `tools/m0/`）。已核：`scripts/verify-perf-baseline.mjs` 只读 `docs/perf/client-ballMove-baseline.json`，不 glob，输出目录安全 | 同剧本两次主要指标偏差 < 10%；种子改一位 → 结果 diff 非空（变异） | `npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario snake-baseline` |
-| MF1-B2 AOI 载体实验 | 夹具 `aoiProbeFixture`（`apps/shared/schema/gameplays/aoiProbeFixture/{manifest,state}.json` `wireExposed:false` + `apps/shared/src/gameplays/aoiProbeFixture/wire.ts` + `rooms/modes/aoiProbeFixture/`）：变体 A = `client.view` / StateView（服务端 schema 4.0.27；客户端 bundle 4.0.13 含类无 `.d.ts`，实验期本地增补 `.d.ts` ⛔ 不入库），变体 B = 每会话 `sendS2C` 消息级 delta；剧本：100 实体、视野 20 / 80、重连 baseline 重建；比较编码 CPU、字节、重连成本、生成器改动面 | 两变体各有数字；私有字段塞进公共块 → 零泄露断言转红（变异）；结果 `docs/perf/world-bench/aoi-<date>.json` | 同上 `--scenario aoi-a` / `aoi-b` |
-| MF1-B3 冻结 | 引用锁：MMO.md §2.3 每个上游文件写 blob（`<仓>/<路径>@<blob-sha>`）；§7.3 回退窗口表与 §4.5 空实例策略表由「候选」改「冻结」；§11.2 冻结数字表逐行填冻结值（AOI 载体、kill criterion、`maxPlayers`、`emptyAfterMs`、`checkpointMs`、`WORLD_LEASE_TTL_MS`、`ORCH_TICK_BUDGET_MS`、`ORCH_SAY_WORLD_PER_MIN`、`PERSONA_MAX_SLOTS_HARD`、两个协议 bump 决策、`persona` 命名、主体模型口径）；框架待修改路径清单落本文 §7 | §11.2 无「候选」字样；MMO.md §12 登记 MF1 退出 | 文档提交 |
+| MF1-B1 `world-bench` 基准台 | ✅ 3da785c7（实际：进程内 `Server` + 真实 WebSocket 传输而非 `@colyseus/testing`，为采样真实出站字节；`scenario.ts` 剧本接口 + `--compare`；两次偏差最大 3.9%）。原计划：新 `apps/server/tools/world-bench/{run.ts,report.ts,scenarios/snake-baseline.ts}`：`@colyseus/testing` 起房 + `@colyseus/sdk` 机器人 N 个（Node 端，`test/smoke.ts` 先例）+ 脚本实体 M 个固定剧本（种子固定）；记录 tick p95 / p99、每会话出站字节、baseline 体积、进程 RSS；输出 `docs/perf/world-bench/<date>-<scenario>.json`；⛔ 不进 `verify:core`（同 `tools/m0/`）。已核：`scripts/verify-perf-baseline.mjs` 只读 `docs/perf/client-ballMove-baseline.json`，不 glob，输出目录安全 | 同剧本两次主要指标偏差 < 10%；种子改一位 → 结果 diff 非空（变异） | `npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario snake-baseline` |
+| MF1-B2 AOI 载体实验 | ✅ f1c19cde（实际：`tools/world-bench/aoi-probe.ts` 裸 Colyseus 双房同种子对照，50 观察者 / 300 实体 / 半径 300 / 20 Hz，⛔ 未做 gameplay 夹具、零泄露变异归 MF5a，偏差登记在 MMO.md §12 MF1 行）。原计划：夹具 `aoiProbeFixture`（`apps/shared/schema/gameplays/aoiProbeFixture/{manifest,state}.json` `wireExposed:false` + `apps/shared/src/gameplays/aoiProbeFixture/wire.ts` + `rooms/modes/aoiProbeFixture/`）：变体 A = `client.view` / StateView（服务端 schema 4.0.27；客户端 bundle 4.0.13 含类无 `.d.ts`，实验期本地增补 `.d.ts` ⛔ 不入库），变体 B = 每会话 `sendS2C` 消息级 delta；剧本：100 实体、视野 20 / 80、重连 baseline 重建；比较编码 CPU、字节、重连成本、生成器改动面 | 两变体各有数字；私有字段塞进公共块 → 零泄露断言转红（变异）；结果 `docs/perf/world-bench/aoi-<date>.json` | 同上 `--scenario aoi-a` / `aoi-b` |
+| MF1-B3 冻结 | ✅ 见 §9 与 MMO.md §12 MF1 行。内容：引用锁：MMO.md §2.3 每个上游文件写 blob（`<仓>/<路径>@<blob-sha>`）；§7.3 回退窗口表与 §4.5 空实例策略表由「候选」改「冻结」；§11.2 冻结数字表逐行填冻结值（AOI 载体、kill criterion、`maxPlayers`、`emptyAfterMs`、`checkpointMs`、`WORLD_LEASE_TTL_MS`、`ORCH_TICK_BUDGET_MS`、`ORCH_SAY_WORLD_PER_MIN`、`PERSONA_MAX_SLOTS_HARD`、两个协议 bump 决策、`persona` 命名、主体模型口径）；框架待修改路径清单落本文 §7 | §11.2 无「候选」字样；MMO.md §12 登记 MF1 退出 | 文档提交 |
 
-退出：B1–B3 全部；`aoiProbeFixture` 入库并在 MF11 处置。回滚：可回退。
+退出：B1–B3 全部（✅ 2026-09-19）；`aoi-probe.ts` 已入库为 world-bench 工具，MF11 决定去留。回滚：可回退。
 
 ### MF3 · 共享层抽取（门②，波 1，← MF1）
 
@@ -216,7 +216,7 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 | --- | --- | --- | --- |
 | MF11-B1 三视角对抗审阅 | 接缝 / 数据 / 负载三视角，记录 `docs/MMO-REVIEW-2.md`（同 MMO-REVIEW 形态），发现逐条消化进代码或 MMO.md | 发现清零 | — |
 | MF11-B2 真相对齐 | `protocol-fingerprint --write` 重钉；`docs/inventory.json`（新入口 / 能力：world-room-runtime、kit-worker）；OVERVIEW / SERVER / CLIENT / KIT / PLUGIN；`protected-paths.json` 与 Non-intrusive §11.3 / §12.2 散文视图同批 | `verify:inventory`、`verify:protected-paths` 绿 | `verify:all` |
-| MF11-B3 夹具处置 | `aoiProbeFixture` 删除或转 `world-bench` 基准夹具 | 生成物 `--check` 绿 | `codegen:gameplays` |
+| MF11-B3 夹具处置 | `aoi-probe.ts` 去留（已是 `world-bench` 工具，无 gameplay 生成物；`aoiProbeFixture` 从未入库） | README 与 MMO.md §5.5 一致 | — |
 | MF11-B4 「框架侧完成」矩阵 | `scripts/lib/fixture-checkout.mjs` 先例：临时根记录保护文件 hash → 加入 worldFixture + kitfix + kitfixContent → 先证全部 `--check` 红 → writer / sync → 全绿 → 分类器断言人工文件只出现夹具自有 `A`、既有 `M` 只命中 provenance 白名单 → 第二次 writer 字节不变；变异：向 `GameRoom.ts` 注入一行手改 → 分类器转红 | 矩阵脚本入 `test:int` 末项或独立 `verify:mmo-fixture-matrix` | — |
 | MF11-B5 登记 | MMO.md §12 逐段登记；tag `mmo-framework-v1` | — | — |
 
@@ -313,6 +313,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 | P5 | `renewLeaseGuard`（`core/infra/lease.ts` 既有）即 `withKitWorkerTx` 的首句实现，⛔ 不另写 SQL | ✅ v1.2 MF7a 行 |
 | P6 | `world-bench` 输出目录 `docs/perf/world-bench/` 已核安全（`verify-perf-baseline.mjs` 只读 `client-ballMove-baseline.json`） | ✅ v1.2 MF1 行 |
 | P7 | PS 拍板后：MF4-B6 登记点、MF8-B4 `world.enter` 返回端点、MF10-B2 RedisDriver 范围三处改口径 | ✅ v1.2 §4.2 新段 + D27 + MF4 / MF8 / MF10 行 + §6.3 注入点 |
+| P8 | 框架待修改路径清单（MF1-B3）= 本文 §2 各批次的落点列，与 MMO.md §6 各阶段落点表逐批对齐；MF1 实际落点变更一处：AOI 对照由 `aoiProbeFixture` 改为 `tools/world-bench/aoi-probe.ts`（MMO.md §5.5 已改） | ✅ MF1-B3 |
 
 ## 8. 风险与看护点
 
@@ -321,12 +322,12 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - **MF5a-B4 `roster` 开关**触碰生成物 `GameRoomState.ts`（受保护生成物，只经 `codegen:gameplays` 重生成）；「既有 mode 生成物字节不变」是硬闸。
 - **上游许可**：AzerothCore AGPL——只对照结构，零行代码 / SQL；提交信息写对照。
 - **PS 与 MF4 的时序**：PS1 + PS4（入口拆分与 world 占位）在 MF3 之后、MF4 之前落地，MF4-B6 直接登记进 `world.config.ts`；`docs/inventory.json` 与 int helpers 随 PS1 同批。
-- **数字冻结**：MF1-B3 之前任何批次不得把 §11.2 候选值写进代码常量（用 config 项 + 缺省，冻结后再钉）。
+- **数字冻结**：§11.2 已于 2026-09-19（MF1-B3）冻结；之后批次把数字钉进代码常量时注释引用 §11.2 的行名，改数 = 新拍板 + MMO.md §12 登记。
 
 ## 9. 批次状态（只在本文回写；阶段级完成回写 MMO.md §12）
 
 - [x] MF0-B1（6582d4ac） [x] MF0-B2（1ce10d01） [x] MF0-B3（107f8e5a）— MF0 退出 2026-09-19，见 MMO.md §12
-- [ ] MF1-B1 [ ] MF1-B2 [ ] MF1-B3
+- [x] MF1-B1（3da785c7） [x] MF1-B2（f1c19cde） [x] MF1-B3（本行所在提交，文档）— MF1 退出 2026-09-19，见 MMO.md §12（偏差 ①–④ 登记在该行）
 - [ ] MF3-B1 [ ] MF3-B2 [ ] MF3-B3
 - [ ] MF6a-B1 [ ] MF6a-B2 [ ] MF6a-B3 [ ] MF6a-B4 [ ] MF6a-B5
 - [ ] MF7a-B1 [ ] MF7a-B2 [ ] MF7a-B3 [ ] MF7a-B4 [ ] MF7a-B5 [ ] MF7a-B6

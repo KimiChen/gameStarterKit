@@ -1,6 +1,6 @@
 # MMO 整合设计基线：Nakama 定形、AzerothCore 定实、gameStarterKit 定则
 
-> - 日期：2026-09-09（v1）；2026-09-19 按 [MMO-REVIEW.md](MMO-REVIEW.md) M01–M20 修订为 **v1.1**（用户逐条拍板），同日按 [MMO-PLAN.md](MMO-PLAN.md) §7 施工细化 P1–P7 与 PS0 进程形态拍板（D27）升 **v1.2**。本仓基线 `26da7e5`。状态：**整合设计基线 v1.2，开门审阅已消化、施工单已出**（MF1 剩基准台 + AOI 载体实验 + §11.2 冻结数字表）；⛔ 未实施任何 MMO 能力，不改变既有承诺。
+> - 日期：2026-09-09（v1）；2026-09-19 按 [MMO-REVIEW.md](MMO-REVIEW.md) M01–M20 修订为 **v1.1**（用户逐条拍板），同日按 [MMO-PLAN.md](MMO-PLAN.md) §7 施工细化 P1–P7 与 PS0 进程形态拍板（D27）升 **v1.2**。本仓基线 `26da7e5`。状态：**整合设计基线 v1.2；MF0 / MF1 已退出（§12），§11.2 数字已冻结，MF3 / MF6a / MF7a / MF9 / MF2 可并行开工（§5.2）**；⛔ 尚未实施任何 MMO 运行时能力，不改变既有承诺。
 > - 来历：2026-09-08 四份并行草案经一轮对比合成本文；⚠ 五份材料**未入库**（工作树与 git 历史均无），自 v1.1 起正文不再引用它们的编号，全部结论自包含。审阅记录以 [MMO-REVIEW.md](MMO-REVIEW.md) 的 M 编号引用；2026-09-09 的 R 系列审阅原文同样未入库（见 §12）。
 > - 定位：MMO 能力域的技术基线，与 [Non-intrusive.md](Non-intrusive.md) 之于 plugin / gameplay module 同一地位。
 > - 治理：⛔ 不进 plan-v5；实施状态只在本文 §12 回写；开放项如被立项，去向登记遵循 EXTRAS §5.2。
@@ -94,9 +94,17 @@
 - **授权登记**：实施期每次「参考了上游某文件」在提交信息写「设计对照：<仓>/<路径>@<commit>」（snake 素材台账同一纪律）。Knight Online 内容若做，是第三个内容插件，法律边界另立项，⛔ 不绑进框架与 kit 验收。
 
 引用锚点（MF1 复核）：Nakama 官方文档 Authoritative Multiplayer / Streams / Storage / Parties / Chat / Server Framework（2026-09-08 访问）；
-AzerothCore 固定 `a5e0e6b8f2bf878cb45cb1dc2251eb1448b9bbc3`：`src/server/game/Maps/{Map,MapInstanced}.cpp`、`Grids/Notifiers/GridNotifiers.cpp`、
-`Entities/Player/PlayerStorage.cpp`、`Handlers/MovementHandler.cpp`、`Entities/Creature/Creature.cpp`、`common/Utilities/EventMap.cpp`。
-⚠ 该 commit 只是 2026-09-08 的 master HEAD 快照（内容为一条 Ulduar 脚本修复，与所引文件无关）；MF1 的引用锁按文件写 blob 或「路径 + commit」，⛔ 不以此 commit 暗示所引文件在该提交有改动（M19）。
+AzerothCore 固定 `a5e0e6b8f2bf878cb45cb1dc2251eb1448b9bbc3`（2026-09-08 master HEAD 快照，内容与所引文件无关）；**引用锁按文件 blob**（MF1，2026-09-19 经 GitHub contents API 复核，M19）：
+
+| 文件 | blob |
+| --- | --- |
+| `src/server/game/Maps/Map.cpp` | `5a832625e93263a2f2e210c261b099dc508331fa` |
+| `src/server/game/Maps/MapInstanced.cpp` | `cbe0a3a17ed46aa0748a246539e9a4d513b99547` |
+| `src/server/game/Grids/Notifiers/GridNotifiers.cpp` | `e38c8030c9a40dc5f05da543ca1ba1181b205ba6` |
+| `src/server/game/Entities/Player/PlayerStorage.cpp` | `39928eb6fa7fd086b3812cd0736b46a95fad3783` |
+| `src/server/game/Handlers/MovementHandler.cpp` | `f21b8464de6f362c21cc2bdf0f4f30c1df483f33` |
+| `src/server/game/Entities/Creature/Creature.cpp` | `8e0b7b11a3b5a340320d4a73e6fd21572650afc9` |
+| `src/common/Utilities/EventMap.cpp` | `1b175a47ef1ae8763cff3ec05170905a344af39e` |
 
 ## 3. 本仓基线核对（2026-09-09 只读核验）
 
@@ -204,6 +212,14 @@ SLG 正式名册不广播全房 id/name，只随视野内地块 / 军队提供�
 | Draining | 停收准入；在途交接完成；强制检查点；会话按规则离线 |
 | Offline | 释放租约、销毁 |
 
+空实例策略（manifest `world.emptyPolicy` / `emptyAfterMs`，MF1 冻结 2026-09-19）：
+
+| 策略 | 语义 | 用途 |
+| --- | --- | --- |
+| `sleep`（缺省） | 最后一个会话离开 `emptyAfterMs`（冻结 120 s）后停固定步，保留内存与租约并继续续租；有人准入即续跑，⛔ 不重放 | 普通野外图：省 CPU、秒回 |
+| `run` | 空实例照常推进（AI / 脚本 / 复活继续），周期检查点照写 | 有定时脚本或跨玩家世界事件的图（boss 刷新表） |
+| `unload` | `emptyAfterMs` 后强制检查点 → Draining → Offline，释放租约；下次准入走 Recovering 从检查点重建 | 副本 / 活动图 |
+
 ```text
 onWorldInit(ctx, { mapId, line, instanceId, recovered })   ← matchInit / Map 装载
 onRestore(ctx, snapshot)                                    ← 分线级检查点回灌
@@ -239,7 +255,7 @@ primaryEntityOf(sessionId) → entityId | null                ← 附近聊天 /
 | 单向门 ③ | MF4：世界协议身份 `WORLD_ROOM_PROTOCOL_VERSION = 1`（Non-intrusive §4.8 拆分先例；⛔ 不 bump `GAME_ROOM_PROTOCOL_VERSION`）；世界 join 信封字段（`personaId` / `ticket` / `line` / `resumeSeq`）**一次定型** |
 | 部署门 | MF10 生产启用 RedisDriver / Presence 后回退需 drain 全部世界房 |
 | 门的互斥 | 门① 与门② **互不依赖、可并行**（M05）；③ 需要 ① 与 ② 都完成：① 完成并 drain pending outbox、② 回归绿。⛔ 不再要求 ① 先于 ② |
-| 夹具 | 框架段只用中性夹具：`worldFixture`（入库的框架 world mode，`wireExposed:false`，同 `privateFixture` 先例）、`kitfix`（临时根物化的夹具 kit）、`kitfixContent`（临时根物化的夹具插件）、`aoiProbeFixture`（MF1 对照实验）、`world-bench` 剧本。⛔ 框架段任何提交不得出现 `apps/kits/mmo/`、`k_mmo_*`、`mmo` 域名 |
+| 夹具 | 框架段只用中性夹具：`worldFixture`（入库的框架 world mode，`wireExposed:false`，同 `privateFixture` 先例）、`kitfix`（临时根物化的夹具 kit）、`kitfixContent`（临时根物化的夹具插件）、`aoi-probe`（`tools/world-bench/aoi-probe.ts`，MF1 对照实验，裸 Colyseus 房，⛔ 不是 gameplay 夹具）、`world-bench` 剧本。⛔ 框架段任何提交不得出现 `apps/kits/mmo/`、`k_mmo_*`、`mmo` 域名 |
 | 共同动线 | codegen `--write` / `--check` 分离 → `sync:shared` → 协议真源变动时 `node scripts/protocol-fingerprint.mjs --write` → `scripts/protected-paths.json` 同批登记 → `verify:all` → 涉 Redis / MySQL 的段跑 `test:int`、故障段进 `scripts/fault-matrix.config.json` → 状态只向本文 §12 回写 |
 | 验收纪律 | 机检项必须给变异验证（改哪一行 → 哪条用例转红）；给不出的移入人工证据（Non-intrusive §10）；`test:changed` ⛔ 不作无侵入证明 |
 
@@ -303,10 +319,10 @@ MF10 容量 / 多进程 / 运维（依赖 MF4–MF8）→ MF11 收口审阅与�
 | --- | --- |
 | 本文 | 开门审阅已消化（[MMO-REVIEW.md](MMO-REVIEW.md) M01–M20 逐条落在正文，§12 有登记）；MF1 内再做：引用锁（按文件 blob）；**回退窗口表**（§7.3）与**空实例策略表**（`run` / `sleep(afterMs)` / `unload(afterMs)`）冻结；§11.2 冻结数字表由候选变冻结值；框架待修改路径清单 |
 | `apps/server/tools/world-bench/`（新） | 证据生成器（⛔ 不进 `verify:core`，同 `tools/m0/`）：N 机器人 × M 脚本实体固定剧本，记录 tick p95 / p99、每会话出站字节、baseline 体积、内存；先对 snake 房出「当前基线」；输出 `docs/perf/world-bench/<date>-<scenario>.json`（已核：`scripts/verify-perf-baseline.mjs` 只读 `docs/perf/client-ballMove-baseline.json`，不 glob 该目录，v1.2 P6） |
-| `apps/shared/schema/gameplays/aoiProbeFixture/` + wire + `rooms/modes/aoiProbeFixture/` | GameRoom 上的对照夹具（`wireExposed:false`）：变体 A = StateView（⚠ 客户端 bundle schema 4.0.13 ↔ 服务端 4.0.27 先验兼容；两份手写 `.d.ts` 实验期本地增补，⛔ 不入库）；变体 B = perSession 消息 delta。比较编码 CPU、字节、重连基线重建、生成器改动面 |
+| `apps/server/tools/world-bench/aoi-probe.ts`（新；**实际落点，偏离原计划的 GameRoom 夹具 `aoiProbeFixture`**） | 对照实验：两间裸 Colyseus 房共用同种子确定性模拟，变体 A = `@view()` + `client.view`（StateView），变体 B = 每会话消息级 delta；比较 sync / sim 耗时、进程 CPU、每会话真实出站字节、join / 重连首 500 ms 字节（结果见 §11.2 与 §12）。⛔ 未做成 gameplay 夹具：StateView 落到生成的 GameRoomState 需 codegen 支持 `@view()`，这本身就是「生成器改动面」的结论；客户端 `.d.ts` 缺口因此也无需本地增补 |
 
-退出条件：基准同剧本两次主要指标偏差 <10%；AOI 载体有实验数字与决定（缺省消息级）；回退窗口与空实例策略冻结；§11.2 冻结数字表全部写成冻结值（kill criterion 候选见该表：单房 100 机器人 + 300 脚本实体，tick p99 < 25 ms，每会话出站 < snake 现值；先测再定）。
-变异验证：基准剧本种子改一位 → 结果文件 diff 非空；aoiProbeFixture 把「私有字段」放进公共块 → 零泄露断言转红。回滚：可回退。
+退出条件：基准同剧本两次主要指标偏差 <10%；AOI 载体有实验数字与决定（缺省消息级）；回退窗口与空实例策略冻结；§11.2 冻结数字表全部写成冻结值（2026-09-19 已全部冻结，kill criterion 见该表）。
+变异验证：基准剧本种子改一位 → 结果文件 diff 非空（已验）；「私有字段塞进公共块 → 零泄露断言转红」⛔ 未随 aoi-probe 交付（它只比传输成本），归 MF5a 的 `InterestSet` / `ObserverSync` 单测。回滚：可回退。
 
 #### MF2 · persona 与资产主体（门①）
 
@@ -474,7 +490,7 @@ MF10 容量 / 多进程 / 运维（依赖 MF4–MF8）→ MF11 收口审阅与�
 
 #### MF11 · 收口审阅与冻结
 
-交付：三视角对抗审阅并消化；`protocol-fingerprint --write` 重钉；`docs/inventory.json`、OVERVIEW / SERVER / CLIENT / KIT / PLUGIN、`protected-paths.json` 与 Non-intrusive §11.3 / §12.2 散文视图同批；`aoiProbeFixture` 删除或转基准夹具；本文 §12 逐段登记。
+交付：三视角对抗审阅并消化；`protocol-fingerprint --write` 重钉；`docs/inventory.json`、OVERVIEW / SERVER / CLIENT / KIT / PLUGIN、`protected-paths.json` 与 Non-intrusive §11.3 / §12.2 散文视图同批；`aoi-probe.ts` 去留（已在 `tools/world-bench/`，无生成物）；本文 §12 逐段登记。
 「框架侧完成」矩阵（临时根，`scripts/lib/fixture-checkout.mjs` 先例）：记录保护文件 hash → 加入 worldFixture + kitfix + kitfixContent → 先证全部 `--check` 红 → writer / sync → 全绿 → 分类器断言人工文件只出现夹具自有 `A`、既有 `M` 只命中 provenance 白名单 → 第二次 writer 字节不变。
 变异验证：向 `GameRoom.ts` 注入一行手改 → 矩阵分类器转红。回滚：可回退。
 
@@ -482,7 +498,7 @@ MF10 容量 / 多进程 / 运维（依赖 MF4–MF8）→ MF11 收口审阅与�
 
 | 夹具 | 落点 | 引入 | 入库？ |
 | --- | --- | --- | --- |
-| `aoiProbeFixture` | `apps/shared/schema/gameplays/aoiProbeFixture/` + wire + `rooms/modes/aoiProbeFixture/` | MF1 | 入库，MF11 处置 |
+| `aoi-probe` | `apps/server/tools/world-bench/aoi-probe.ts`（裸 Colyseus 房，无 gameplay 生成物；原计划的 `aoiProbeFixture` 从未入库） | MF1 | 已入库（f1c19cde），MF11 决定去留 |
 | `worldFixture` | `apps/shared/schema/gameplays/worldFixture/` + `apps/shared/src/gameplays/worldFixture/wire.ts` + `rooms/modes/worldFixture/` + `apps/client/src/gameplay/modes/worldFixture/` | MF4（MF5b / 6b / 7b / 8 逐步加 token） | 入库（同 privateFixture） |
 | `kitfix` | 临时根 `apps/kits/kitfix/`（sql / workers / contributions / fragments） | MF0、MF7a、MF7b、MF9 | 测试物化 |
 | `kitfixContent` | 临时根 `apps/plugins/kitfixContent/` | MF0、MF9、MF11 | 测试物化 |
@@ -677,13 +693,13 @@ id 用服务端 uuid 字符串（⛔ 不用 64 位整数：shared 锁 ES2017）�
 
 **事件批与分线检查点的原子规则（M09）**：脚本 durable 命令（`grantItem` / `grantCurrency` / `lootClaimed` 派生的 `k_mmo_world_event` 行）⛔ 不能独立于产生它们的分线状态生效——否则「事件已落库、对应状态的检查点未落」的窗口内崩溃，恢复后的重放会用新的 `eventSeq` 再产生一份命令（op_id 不同）而双发。规则：① 每行带 `checkpoint_rev` = 产生它时**下一个将落盘**的分线检查点 rev；② worker 只执行 `checkpoint_rev ≤ k_mmo_instance_checkpoint` 已落库最大 rev 的行，其余保持 pending；③ Recovering 时把 `status=0 AND checkpoint_rev > 恢复点 rev` 的行标 `superseded`（它们属于已丢失的未来，重放会重新产生）；④ MF7b 可改选等价实现「事件批只随分线检查点同事务落库」，二选一。代价是奖励最多延迟到下一个分线检查点，`checkpointOnDeath` / `setVar durable` 等强制点让 boss 奖励即时可执行。
 
-回退窗口（逐类冻结；MF1 复核数字）：
+回退窗口（逐类冻结；MF1 2026-09-19 复核并冻结：角色检查点 60 s、分线检查点 30 s）：
 
 | 状态 | 恢复来源 | 允许回退 |
 | --- | --- | --- |
 | 已确认资产（物品 / 货币 / 掉落认领） | 主账本 + `k_mmo_item_instance` + `k_mmo_receipt` | **0**；重投由 `event_id` / `op_id` 去重 |
-| 角色位置 / HP / MP / 冷却 | `k_mmo_character_checkpoint` | ≤ 1 个角色检查点周期（候选 60 s）；登出 / 交接强制点 |
-| NPC 存活 / 复活计时 / 未认领掉落 | `k_mmo_instance_checkpoint` | ≤ 1 个分线检查点周期（候选 30 s）；boss 死亡强制点（`checkpointOnDeath`） |
+| 角色位置 / HP / MP / 冷却 | `k_mmo_character_checkpoint` | ≤ 1 个角色检查点周期（冻结 60 s）；登出 / 交接强制点 |
+| NPC 存活 / 复活计时 / 未认领掉落 | `k_mmo_instance_checkpoint` | ≤ 1 个分线检查点周期（冻结 30 s）；boss 死亡强制点（`checkpointOnDeath`） |
 | 脚本 vars / timers / 区域开关 | 同上 | 同上；timer 存 `dueTick`，恢复后按 tick 差重排 |
 | 战斗热状态（aura / 仇恨 / 施法中） | 无 | 全丢：恢复后清零，战斗视为中断 |
 | 世界事件 offset | 检查点原子关联 `event_seq` | 0；seq > 检查点的事件已 durable，只消费不重放进内存 |
@@ -760,7 +776,7 @@ codegen 期与启动期校验：引用完整性（spawn → template、loot → 
 | 规则 | 形态 | 违反时 |
 | --- | --- | --- |
 | 确定性 | handler 同步纯函数；随机只经 `api.rng`（种子 = instanceId + tick + eventSeq）；时间只经 `api.tick`；⛔ `Math.random` / `Date` / `setTimeout` / import 非门面模块（`mmo-orchestration-boundary.test.ts` 扫描 `contributions.generated` 收录模块：import 集 ⊆ {kit shared api、自身目录} 且无禁用标识符） | 启动期断言失败 → 进程拒启 |
-| 预算 | 每 tick 每 pack：wall ≤ `ORCH_TICK_BUDGET_MS`（候选 2 ms）、命令 ≤ 64、事件队列 ≤ 256、存活脚本 spawn ≤ `limits.maxSpawnsAlive`、vars ≤ 4 KB | **fail-closed**：本 tick 命令整批丢弃，该 pack 在该分线 `suspended`（timers 保留、不再收事件），写 `k_mmo_world_event kind=packSuspended`；`mmoAdmin.resumePack` 或分线重启恢复 |
+| 预算 | 每 tick 每 pack：wall ≤ `ORCH_TICK_BUDGET_MS`（冻结 2 ms，§11.2）、命令 ≤ 64、事件队列 ≤ 256、存活脚本 spawn ≤ `limits.maxSpawnsAlive`、vars ≤ 4 KB | **fail-closed**：本 tick 命令整批丢弃，该 pack 在该分线 `suspended`（timers 保留、不再收事件），写 `k_mmo_world_event kind=packSuspended`；`mmoAdmin.resumePack` 或分线重启恢复 |
 | 可重放 | 只读 API 是事件时刻的一致快照；kit 记录 `(eventSeq, eventDigest, commandDigest)` 环形日志并随分线检查点落 `state_hash`；`createOrchestrationHarness()` 重放并断言命令逐条相等 | 重放不等 = 插件测试红 |
 | 版本化 | 模块声明 `orchestrationVersion` 与 `subscribes[]`；未订阅 / 未知事件不投递；未知 `op` → validator 拒 → 整批丢弃 + suspend | 新事件 / 新命令 = kit 升级（bump `version`；破坏性抬 `minSupported`，反向闸点名插件） |
 
@@ -974,7 +990,7 @@ apps/client/test/mmodemo-logic.test.ts
 | B 热点 | 单图逐级到 100 玩家 + 500 实体，聚集施法 / 拾取 / 附近聊天 | AOI 编码 CPU、队列积压、GC、推送流深度 | MK1（kill criterion） |
 | C 多图多进程 | 逐级到 1000 在线分布多进程多图 | 分配均衡、租约正确性、交接成功率、节点退出恢复 | MF10（实验报告） |
 
-数字在 MF1 由基准台实测冻结（候选值集中在 §11.2 冻结数字表；场景 B 的「100 玩家 + 500 实体」是压力爬升上限，⛔ 不是 kill criterion 的通过阈值——阈值候选是 100 机器人 + 300 脚本实体）；⛔ 不用空连接数、`maxClients` 配置或 C++ 参考项目规模替代实测。带宽量级只作说明（80 可见实体 × 40 B × 10 次/秒 ≈ 32 KB/s/客户端，未含协议 / 事件 / 重发）。
+数字已在 MF1 由基准台实测冻结（2026-09-19，全部在 §11.2 冻结数字表；场景 B 的「100 玩家 + 500 实体」是压力爬升上限，⛔ 不是 kill criterion 的通过阈值——阈值是 100 机器人 + 300 脚本实体，MK1 实测后只许收紧）；⛔ 不用空连接数、`maxClients` 配置或 C++ 参考项目规模替代实测。带宽量级只作说明（80 可见实体 × 40 B × 10 次/秒 ≈ 32 KB/s/客户端，未含协议 / 事件 / 重发）。
 
 ### 10.2 故障矩阵（全部进 `test:int` / `test:faults:int`）
 
@@ -1032,24 +1048,24 @@ apps/client/test/mmodemo-logic.test.ts
 | D26 | kit-schema 新字段形态（M11） | `sql.tables[].role`、`workers[]`（MF7a）、`contributions` / `fragments`（MF9）均为 v1 增量可选字段，⛔ 不 bump schemaVersion |
 | D27 | 进程形态（PS0，MMO-PLAN §5） | lobby / game / world 三进程，各自入口 + config + 端口；本地 dev 缺省合体入口，`dev:split` 另给；端点发现走游戏 HTTP `/version` 字段（反代路径为部署选项，⛔ 不动外部契约）；`room.resolve` 删 matchmaker 房间快照；world 入口先占位（入口 + `WORLD_PORT` + 空 config），房间等 MF4 |
 
-### 11.2 待 MF1 决定（冻结数字表 + 人工决策项；M15）
+### 11.2 冻结数字表（MF1 已于 2026-09-19 冻结；M15）
 
-全部待冻结数字只登记在这一张表，正文其他地方只引用本表；MF1 退出 = 每行「候选」变成「冻结值」。
+全部数字只登记在这一张表，正文其他地方只引用本表。MF1 冻结的依据是 `tools/world-bench/` 的四份实测报告（`docs/perf/world-bench/2026-09-19T*`）；再改 = 新一轮拍板并在 §12 登记。
 
-| 项 | 候选 | 来源 / 冻结方式 |
+| 项 | 冻结值 | 依据 |
 | --- | --- | --- |
-| AOI 载体 | 消息级 delta（缺省） | MF1 `aoiProbeFixture` 实验数据；StateView 只在明显占优且版本差 / `.d.ts` 解决时改选 |
-| kill criterion | 单房 100 机器人 + 300 脚本实体，tick p99 < 25 ms，每会话出站 < snake 现值 | MF1 `world-bench` 实测；§10.1 场景 B 的 500 实体是压力上限不是阈值 |
-| `maxPlayers`（`mmoWorld` manifest） | 待基准 | MF1 基准台 |
-| 空实例策略缺省 | `sleep(emptyAfterMs)`；`emptyAfterMs` 候选 120 s | MF1 拍板；三策略各一用例（MF4） |
-| `checkpointMs` | 角色 60 s / 分线 30 s | §7.3 回退窗口表；MF1 复核 |
-| `WORLD_LEASE_TTL_MS` / 续租间隔 | 15 s / 5 s（`renew*3 ≤ ttl` 加载期断言） | MF4 |
-| `ORCH_TICK_BUDGET_MS` | 2 ms | §8.1；MK4 实测 |
-| `ORCH_SAY_WORLD_PER_MIN` | 6 | §8.3；MK4 |
+| AOI 载体 | **消息级 delta**（`perSession` token + baseline / checksum / cursor） | `aoi-probe`（50 观察者 / 300 实体 / 20 Hz，同种子）：StateView 字节 −40%（6.1 vs 10.1 KB/s/会话）但 CPU +65%（170 vs 103 ms/s）、sync +55%（3.9 vs 2.5 ms/tick）；delta 的字节差可由位置量化收回大半；StateView 还需 codegen 支持 `@view()`、客户端 bundle 4.0.13 无 `.d.ts`、失去消息级 checksum / cursor 治理。⛔ MF5 不再考虑 StateView |
+| kill criterion | 单房 100 机器人 + 300 脚本实体：tick p99 < 25 ms（20 Hz）；每会话出站 p50 ≤ 100 KB/s（snake 现值） | `snake-baseline` 现值：40 机器人 / 5 房 tick p95 ≈ 13 ms、p99 ≈ 14 ms、出站 ≈ 100 KB/s/会话、baseline ≈ 91 KB/join，两次偏差最大 3.9%；`aoi-probe` 24 可见实体 ≈ 10 KB/s/会话 ⇒ 100 KB/s 有 10× 余量。MK1 场景 B 实测后只许收紧 |
+| `maxPlayers`（`mmoWorld` manifest） | 100 | = kill criterion 的单房机器人数；MK1 实测后只许收紧 |
+| 空实例策略缺省 | `sleep`；`emptyAfterMs` = 120 s | §4.5 空实例策略表；三策略各一用例（MF4） |
+| `checkpointMs` | 角色 60 s / 分线 30 s | §7.3 回退窗口表 |
+| `WORLD_LEASE_TTL_MS` / 续租间隔 | 15 s / 5 s（`renew*3 ≤ ttl` 加载期断言） | MF4；`colyseus-redis-probe` 实测 `kill -9` 后约 4 s 惰性清理，15 s 足够 |
+| `ORCH_TICK_BUDGET_MS` | 2 ms | `aoi-probe`：50 观察者的 delta sync 本身 p50 2.5 ms，编排另计 2 ms 仍远在 50 ms 步长内；MK4 实测只许收紧 |
+| `ORCH_SAY_WORLD_PER_MIN` | 6 | §8.3；MK4 复核 |
 | `PERSONA_MAX_SLOTS_HARD` | 16 | MF2 persona 门面（M03）；产品上限归 kit |
-| `LOBBY_PROTOCOL_VERSION` 是否 bump | 缺省不 bump | 新增 party / chat / world 域缺省不 bump（arena 先例，EXTRAS X4 口径），破坏性才 bump；人工决策写入提交信息 |
-| `GAME_ROOM_PROTOCOL_VERSION` 是否因 `roster` 开关 bump | 缺省不 bump | `roster` 缺省 public 保证既有 mode Schema 不变（MF5a，M07）；人工决策写入提交信息 |
-| `persona` 命名复核 | 保持 `persona` | 与 `player/character.ts` 的关系在 MF2 文档里写清；如同事更倾向别的词在 MF1 改，之后不再改 |
+| `LOBBY_PROTOCOL_VERSION` 是否 bump | 规则：不 bump | 新增 party / chat / world 域缺省不 bump（arena 先例，EXTRAS X4 口径），破坏性才 bump；人工决策写入提交信息 |
+| `GAME_ROOM_PROTOCOL_VERSION` 是否因 `roster` 开关 bump | 规则：不 bump | `roster` 缺省 public 保证既有 mode Schema 不变（MF5a，M07）；只对新 mode 生效 |
+| `persona` 命名 | 保持 `persona` | 与 `player/character.ts` 的关系写在 MF2 文档；之后不再改 |
 | 主体模型并存的书面口径 | 见 §4.1.1 | MF2 文档写明 owner 缺省 account 与 SQL 权威 kit 零变（M10） |
 
 ## 12. 实施状态回写
@@ -1057,6 +1073,7 @@ apps/client/test/mmodemo-logic.test.ts
 > 未立项。每阶段完成在此登记一行（阶段 / 日期 / commit / 实际交付与基准结果 / 偏差）。⛔ 不向 plan-v5 回写。
 
 - **MF0 KIT K1 前置**（2026-09-19，提交 6582d4ac / 1ce10d01 / 107f8e5a）：三批按 MMO-PLAN MF0-B1–B3 交付并各自变异验证——客户端边界夹具点名 8 处越界、服务端 / shared / `.conn` 夹具点名 6 + 6 + 3 处、outbox 闸假连接 7 例 + 真库 1 例；`plugin -- test arena` 33/33、`arenaShop` 9/9；服务端单测 769、客户端单测 592、`test:int` 186 全绿；typecheck 三端绿。偏差：`verify:all` 未整体绿，红项全部是本阶段之外的基线问题——UniFlex 作者态提交（2026-09-18）未同步 Cocos 镜像（`verify:sync` 168 处漂移 / 缺 .meta，需开 Creator 生成）、`test:uniflex-ui-contract` 4 例、`test:inventory` 的 docs/evidence 跟踪文件与 .gitignore 政策冲突；另提 4 个基线修复提交（vendor 锁重钉 eed92084、typecheck 断言类型 0bcda3aa、int 账本孤儿 107f8e5a 同批、根命令登记 d4794205）。KIT.md §9 K1 行已改 ✅。
+- **MF1 基线与冻结**（2026-09-19，提交 3da785c7 / f1c19cde / 本行所在提交）：B1 `tools/world-bench/` 基准台（进程内真实 Colyseus + `@colyseus/sdk` 机器人，采样 `stepFixed` / `raw` 接缝），snake 现值 40 机器人 / 5 房：tick p95 12.9–13.1 ms、p99 13.9–14.4 ms、每会话出站 p50 ≈ 100 KB/s、baseline ≈ 91.5 KB/join、delta 10 条/s，两次主要指标最大偏差 3.9%（< 10%）；B2 `aoi-probe.ts` 同种子对照（50 观察者 / 300 实体 / 20 Hz）：StateView 字节 −40% 但 CPU +65%、sync +55% ⇒ 载体冻结为消息级 delta；B3 §2.3 引用锁按文件 blob、§4.5 空实例策略表、§7.3 回退窗口、§11.2 全表冻结。证据 `docs/perf/world-bench/2026-09-19T*.json` 四份。偏差：① AOI 实验未做成计划中的 GameRoom 夹具 `aoiProbeFixture`，改为裸 Colyseus 双房工具（StateView 落生成的 GameRoomState 需 codegen 支持 `@view()`，这正是「生成器改动面」的结论；§5.5 夹具清单已改）；② 「私有字段塞进公共块 → 零泄露断言转红」的变异验证未随 B2 交付，归 MF5a 的 `InterestSet` / `ObserverSync` 单测；③ 基准机器人与服务端同进程，数字只用于比较与阈值设定，⛔ 不代表线上绝对容量；④ 基准台用进程内 `Server` + 真实 WebSocket 传输而非 `@colyseus/testing`（要采样真实出站字节）。
 - SLG 消费方准备阶段 1 / 2a（2026-09-09）：已完成并验收；10000×10000 SQL 稀疏地图、worldmap/march v1、七张表与桌面地图页；verify:all 通过、Creator 17 步/13 图/console 空、干净安装与独立空库包测试 35/35、重复 bootstrap 零新应用。证据见 [SLG 验收记录](evidence/creator-2026-09-09/slg/README.md)。这不构成 MF5 第二消费方接线完成，SLG 2b 仍待 MF5a。（本行是 2026-09-09 时点记录：地图尺寸随后于 2026-09-10 改为 1500×1500 并扩为五图，见 slg.md §9 / §10。）
 
 2026-09-09 设计同步：已将 SLG 已采纳的两种世界形态、MF5 GameRoom 消费/名册验收、MF7 受租约保护 KitTx 契约补入正文。SLG 阶段 1 / 2a 的本轮实施与验收已完成；MF5、MF7 与 SLG 2b 尚未实施/验收，本次同步及 SLG 交付不登记为框架阶段完成。
@@ -1065,4 +1082,4 @@ apps/client/test/mmodemo-logic.test.ts
 
 2026-09-19 v1.2：按 [MMO-PLAN.md](MMO-PLAN.md) §7 施工细化回写——P1 `world_instance.write_seq` 随 MF4 建表；P2 `world_transfer` 卸载闸挪到 MF8；P3 `/admin/notice` 是新 HTTP 端点（契约表 + codegen:http）；P4 附近聊天 core token 落 `protocol/messages.ts` + `wire-vectors/core.ts`；P5 `withKitWorkerTx` 首句复用 `renewLeaseGuard`；P6 `world-bench` 输出目录已核不受 `verify:perf` 影响；P7 进程形态拍板 D27（§4.2 新段、MF4 / MF8 / MF10 三处改口径、§6.3 注入点）。⛔ 不构成阶段完成。
 
-下一动作：MF0 与 MF1 并行开工（MF1 = 基准台 + AOI 载体实验 + §11.2 冻结数字表拍板；开门审阅已消化，需要时再补一轮对抗审阅）→ MF1 退出后 MF3 / MF6a / MF7a / MF9 / MF2 并行（§5.2）→ MF5a 退出即 slg 2b 可开工、MF7a 退出即 slg / lvr 无人在线结算可开工，各自落地后在此回写一行。
+下一动作：MF0 / MF1 已退出 → MF3 / MF6a / MF7a / MF9 / MF2 可并行开工（§5.2；PS1 + PS4 入口拆分在 MF3 之后、MF4 之前落地）→ MF5a 退出即 slg 2b 可开工、MF7a 退出即 slg / lvr 无人在线结算可开工，各自落地后在此回写一行。MF0 行登记的基线红项（Creator 镜像 `.meta` 同步、`docs/evidence` 跟踪文件政策）仍待处置，⛔ 不算 MMO 阶段偏差。
