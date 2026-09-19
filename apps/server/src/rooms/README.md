@@ -48,6 +48,9 @@
   **MF7b 检查点 / 世界事件**：`WorldMode.checkpoint`（kit 的 `CheckpointPort` + schema 窗口 + 事件表）由 `core/WorldCheckpoint.ts` 编排——runtime 取批
   （rev = 已落库 + 1，事件批移出）→ 同一 `withWorldTx` 落分线快照 + persona 快照 + 事件行 + `world_instance.checkpoint_rev` → commit；失败 rollback 放回、
   权威已失 ⇒ Draining；Recovering `loadInstance` + superseded，准入 `loadPersona` 进 `session.checkpoint`；强制点 = drain / 离座 / `requestCheckpoint`。
+  **MF6b 附近聊天**：core 世界 token `c2s.world.chat`（rateCost 2，只在 Active）/ `s2c.world.chat`（perSession）；壳固定序 = 在座 → `chatPolicy.canSend` →
+  `transform`（结果再过 wire validator）→ `runtime.sayNearby`（受众 = 兴趣集含 `primaryEntityOf(sender)` 的在座会话 ∪ 发送者，进观察者队列与
+  enter / leave 同序；⛔ 广播、⛔ Redis）；任一步拒 ⇒ BadRequest。match 形态 GameRoom 对该 token 直接 BadRequest。
   登记在 `../world.config.ts`（world 进程 rooms 表；合体入口 `app.config.ts` 合并）。夹具 `worldFixture`（`test/fixtures/worldFixtureMode.ts`，
   ⛔ 不进生产 registry）；真栈用例 `test/int/world-room.test.ts`。
 - `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：
