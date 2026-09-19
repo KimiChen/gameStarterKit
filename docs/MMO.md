@@ -744,7 +744,7 @@ id 用服务端 uuid 字符串（⛔ 不用 64 位整数：shared 锁 ES2017）�
 | `ISpawnDef` | `spawnId`、`mapId`、`templateId`、`pos`、`count`、`waypoints[]`、`managed:"kit" \| "orchestration"` |
 | `ISpellTemplate` | 类型（直伤 / 治疗 / 增益 / 减益；⛔ v1 无召唤）、施法时间、冷却、耗蓝、射程、效果参数 |
 | `IItemTemplate` / `ILootTable` / `INpcDef` | 槽位、堆叠、属性、职业限制、价格 / 掉落权重 / 商人与交互表 |
-| `IPresentationMap`（client 模块） | `presentationId → { prefab, atlas, anim, icon, sfx }` |
+| `IPresentationMap`（client 模块） | `presentationId → { prefab, atlas, anim, icon, sfx, model? }`（`model` = 3D 预制，可选预留；世界视图首版 2D 公告板、接口 3D-ready，见 [3d.md](3d.md) SD9） |
 
 codegen 期与启动期校验：引用完整性（spawn → template、loot → item、portal → map、region → map、`interactId` ↔ 编排模块声明）、可达性（出生点到每个传送点有 nav 路径）、数值域、包大小上限；任一失败 codegen 拒绝 / WorldRoom 拒启。原始数据 id 与 `presentationId` 分离。
 
@@ -752,7 +752,7 @@ codegen 期与启动期校验：引用完整性（spawn → template、loot → 
 
 - server：`apps/server/src/kits/mmo/{world,aoi,movement,combat,ai,inventory,content,social,orchestration,persistence,workers}/**` + `api/<surface>/index.ts`；`rooms/modes/mmoWorld/index.ts`（登进 `worldModeRegistry`）；`websocket/{mmo,mmoSocial,mmoAdmin}/`；`core/compute/tasks/kits/mmo/pathfind.ts`。只 import `../../core/infra/kitApi`、框架 world 契约与自身。
 - shared：`apps/shared/src/kits/mmo/api/<surface>/index.ts`；`apps/shared/src/gameplays/mmoWorld/wire.ts`；`domains/{mmo,mmoSocial,mmoAdmin}.ts`。
-- client：`apps/client/src/kits/mmo/{index.ts,api/**,logic/**,view/MmoCharacterSelectView}`；mode 四件 `gameplay/modes/mmoWorld/`、`net/rooms/MmoWorldRoom.ts`、`logic/rooms/mmoWorld/`、`view/rooms/mmoWorld/MmoWorldView`（默认 HUD：摇杆 / 目标 / 技能轮盘 / 附近聊天 / 队伍；bitECS 实体池 + 插值 + 相机）。竖屏基线 750×1624 不变。
+- client：`apps/client/src/kits/mmo/{index.ts,api/**,logic/**,view/MmoCharacterSelectView}`；mode 四件 `gameplay/modes/mmoWorld/`、`net/rooms/MmoWorldRoom.ts`、`logic/rooms/mmoWorld/`、`view/rooms/mmoWorld/MmoWorldView`（默认 HUD：摇杆 / 目标 / 技能轮盘 / 附近聊天 / 队伍；bitECS 实体池 + 插值 + 相机）。竖屏基线 750×1624 不变。世界视图形态按 [3d.md](3d.md) **SD9 = C**：首版 2D 公告板（`UIMeshRenderer` / Sprite），经 `WorldPresentation` 适配器接内容（`EntityPool` 键 = presentationId、相机数学投影无关、`IPresentationMap.model` 预留），MK1 前按 3D 轨道 SC3 / SC4 实测决定是否切 3D 实现；⛔ MK0 不等 3D 轨道。
 - kit v1 自带灰盒内容包 `apps/kits/mmo/content/greybox/*.json`（一图一怪一技能），MK4 前可内置 import，MK4 改为经贡献点装载以证明通道。
 
 | 阶段 | 交付 | 前置 | 验收（能力，非内容） |
@@ -1085,5 +1085,7 @@ apps/client/test/mmodemo-logic.test.ts
 2026-09-19 v1.1 修订：按 [MMO-REVIEW.md](MMO-REVIEW.md) M01–M20 修订正文（用户逐条拍板，M01 取「不入库草案、正文自包含」）——阶段重排 M02 / M05 / M06（MF5 / MF7 拆 a / b、MF3 / MF6a 前置 MF1、门①②解耦）、persona 门面 M03、kit 开工门统一 M04、`roster` 开关 M07、角色热状态唯一真源 M08、事件批与检查点原子规则 M09、lvr 登记与 MF8 边界 M10、kit-schema 增量字段 M11、其余 M12–M20 措辞与数字口径。⛔ 不构成任何阶段完成。**R 系列**：2026-09-09 曾有一轮对本文的审阅（slg.md §6 S4 / S6 引用的 R1 / R2 / R4），原文未入库；其结论已被 §4.1.1 两种世界形态、MF5a 的 GameRoom 消费路径 + D4 名册分离（R1 / R2）与 MF7a 的租约守卫受限 KitTx（R4）吸收，后续引用一律用 M 编号。
 
 2026-09-19 v1.2：按 [MMO-PLAN.md](MMO-PLAN.md) §7 施工细化回写——P1 `world_instance.write_seq` 随 MF4 建表；P2 `world_transfer` 卸载闸挪到 MF8；P3 `/admin/notice` 是新 HTTP 端点（契约表 + codegen:http）；P4 附近聊天 core token 落 `protocol/messages.ts` + `wire-vectors/core.ts`；P5 `withKitWorkerTx` 首句复用 `renewLeaseGuard`；P6 `world-bench` 输出目录已核不受 `verify:perf` 影响；P7 进程形态拍板 D27（§4.2 新段、MF4 / MF8 / MF10 三处改口径、§6.3 注入点）。⛔ 不构成阶段完成。
+
+2026-09-19 3D 轨道同步（[3d.md](3d.md) SD9–SD12 拍板）：mmo 世界视图首版 2D 公告板 + 接口 3D-ready（§7.5 `IPresentationMap.model?`、§7.6）；小游戏 / WebGL1 为首版目标；3D 资产每包一个 bundle。⛔ 不构成任何 MMO 阶段完成，不改 MF / MK 前置。
 
 下一动作：MF0 / MF1 / MF3 / MF6a / MF7a / MF9 已退出 → MF2 可开工，MF5a（← MF1 + MF3，已满足）可开工，MF11 的前置 MF9 已满足，PS1 + PS4 入口拆分可随时落地（§5.2）；MF6b 等 MF4→ MF5a 退出即 slg 2b 可开工；MF7a 已退出 ⇒ slg / lvr 无人在线结算可开工（已通知 slg.md §0.1 / lvr.md §4.3），各自落地后在此回写一行。MF0 行登记的基线红项（Creator 镜像 `.meta` 同步、`docs/evidence` 跟踪文件政策）仍待处置，⛔ 不算 MMO 阶段偏差。
