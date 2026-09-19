@@ -137,7 +137,7 @@ test("跨格：enter / leave 各恰一次、update 按 rev、无变化不投递�
 test("重连与客户端 resync ⇒ 只含兴趣集的 baseline（checksum / chunk 计数），之后差分续接；宽限中 ⛔ 不排空、⛔ 不重放 enter", async () => {
     const h = await worldRoom({ staticCount: 4 });
     const a = await seat(h, "sa", P_A);
-    const b = await seat(h, "sb", P_B);
+    await seat(h, "sb", P_B);
     for (const [index, id] of ["static-0", "static-1", "static-2", "static-3"].entries()) h.mode.__probe.place(id, 520 + index, 520);
     step(h.room);
     assert.equal(messages<IWorldFixtureBaselineBegin>(a, S2C.WorldFixtureBaselineBegin).length, 1);
@@ -180,7 +180,7 @@ test("慢会话：一 tick 超上界 ⇒ 可合并类被丢、回执不丢、下
     // 上界 8：baseline = Begin + 5 块 + End = 7 条不超限；一 tick 内 9 条 update 必超限
     const h = await worldRoom({ staticCount: 8, limits: { outboundQueueMaxMessages: 8 } });
     const a = await seat(h, "sa", P_A);
-    const b = await seat(h, "sb", P_B);
+    await seat(h, "sb", P_B);
     for (let index = 0; index < 8; index += 1) h.mode.__probe.place(`static-${index}`, 520 + index, 520);
     h.mode.__probe.place(moverOf(P_B), 530, 530);
     step(h.room);

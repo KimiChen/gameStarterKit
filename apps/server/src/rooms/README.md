@@ -43,6 +43,8 @@
   旧会话 lost-control → `runtime.admit`）；C2S 经同一 `WireDispatcher` 喂 `runtime.enqueue`（Active ⇒ playing，其余 ⇒ settle 只放 Ping）；
   出站有序 outbox 每 tick 经 `S2CPorts` 排空；租约 onLost / GM / mode.requestDrain ⇒ Draining（停收准入与命令，仍推进 graceMs）⇒ 强制检查点 →
   Offline（WITH_ERROR 关闭、归还控制权、释放租约、state offline、dispose）；空实例 sleep / run / unload 由 `WorldRuntime.evaluateEmpty` 判定。
+  **MF5b 观察者同步**：`WorldMode.observer`（与 GameMode 同形）由 `core/WorldRuntime.ts` 消费——每会话 OutboundQueue、prepareObservers（首发 / 归位 / 超限 /
+  请求 ⇒ 只含兴趣集的 baseline）→ onStep → flushObservers（差分），壳只 `drainOutbound` 在线会话（宽限中 `markAway`，⛔ 不排空、归位先 baseline）。
   登记在 `../world.config.ts`（world 进程 rooms 表；合体入口 `app.config.ts` 合并）。夹具 `worldFixture`（`test/fixtures/worldFixtureMode.ts`，
   ⛔ 不进生产 registry）；真栈用例 `test/int/world-room.test.ts`。
 - `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：
