@@ -121,14 +121,14 @@ export const GAMEPLAY_CATALOG = {
     "worldFixture": {
         id: "worldFixture",
         constantName: "WorldFixture",
-        modeVersion: 1,
+        modeVersion: 2,
         maxPlayers: 8,
         roster: "hidden",
         kind: "world",
         world: {"emptyPolicy":"sleep","emptyAfterMs":120000,"checkpointMs":30000},
         profiles: ["world"],
         stateFragments: [],
-        contractDigest: "e0299c8a26971f7bdf5b83b6d13475c9b995493a123200f8c54d148ff27a2e09",
+        contractDigest: "423554ed6dca3baa8470dbf12a281b990b4b7e0c055947a135799fc681460ed8",
     },
 } as const;
 

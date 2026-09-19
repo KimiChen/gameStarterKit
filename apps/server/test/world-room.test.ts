@@ -379,12 +379,14 @@ test("C2S：catch-all → dispatcher → enqueue → 下一固定步 onStep 收�
     assert.equal(h.room.pendingCommands, 2, "入队等下一固定步");
     assert.deepEqual(h.alice.sent, [], "⛔ 不在收到命令时直接出站");
     assert.equal(h.room.advance(50), 1);
-    assert.deepEqual(h.alice.sent, [[S2C.WorldFixturePos, { entityId: `mover-${P_ALICE}`, x: 502, y: 500, seq: 1, tick: 1 }]], "服务端常量速度积分后按会话回执");
-    assert.deepEqual(bob.sent, [[S2C.WorldFixturePos, { entityId: `mover-${P_BOB}`, x: 500, y: 498, seq: 5, tick: 1 }]]);
+    // 观察者流（MF5b：baseline / private / update）与直发回执分开断言：这里只看 pos
+    const posOf = (who: FakeClient) => who.sent.filter(([type]) => type === S2C.WorldFixturePos).map(([, payload]) => payload);
+    assert.deepEqual(posOf(h.alice), [{ entityId: `mover-${P_ALICE}`, x: 502, y: 500, seq: 1, tick: 1 }], "服务端常量速度积分后按会话回执");
+    assert.deepEqual(posOf(bob), [{ entityId: `mover-${P_BOB}`, x: 500, y: 498, seq: 5, tick: 1 }]);
     assert.equal(h.room.pendingCommands, 0);
     h.room.advance(50);
-    assert.equal(h.alice.sent.length, 2, "持续移动每步回执");
-    assert.deepEqual(h.alice.sent[1]![1], { entityId: `mover-${P_ALICE}`, x: 504, y: 500, seq: 1, tick: 2 });
+    assert.equal(posOf(h.alice).length, 2, "持续移动每步回执");
+    assert.deepEqual(posOf(h.alice)[1], { entityId: `mover-${P_ALICE}`, x: 504, y: 500, seq: 1, tick: 2 });
     // core 心跳
     dispatch(h.room, C2S.Ping, h.alice, { clientTime: 5 });
     assert.deepEqual(h.alice.sent.at(-1), [S2C.Pong, { clientTime: 5, serverTime: 1_000 }]);
