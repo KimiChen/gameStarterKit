@@ -250,12 +250,17 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 
 ## 5. GameRoom
 
-`GameRoom` 是共享 transport/admission/lifecycle 的实时房间 shell。生产 catalog 已登记 6 个 mode：默认玩法
+`GameRoom` 是共享 transport/admission/lifecycle 的实时房间 shell；自 MMO MF3-B2（2026-09-19，docs/MMO.md §5.4）起壳**只消费**
+`rooms/core/` 共享层——`RoomAuth`（建连六步：信封 exact 校验 → 协议整数（注入常量）→ mode / modeVersion / profile → 区号 → token →
+session verify）、`WireDispatcher`（C2S 固定序）、`MessageBudget`（每会话 1 s 窗口）、`ReconnectGrace`（重连宽限 + generation fence）、
+`S2CPorts`（core validator 出站口 + mode token 闸）——auth / dispatcher / 预算实现全仓各一处；壳保留准入时序、开局事务、
+结算与证据等对局语义。MF4 的 WorldRoom 复用同一层（`createRoomAuth` 另绑 `WORLD_ROOM_PROTOCOL_VERSION`）。生产 catalog 已登记 6 个 mode：默认玩法
 `snake`、演示 `ballMove`、最小 `idle`、`tally` 与 arena kit 的 `arenaCapture`/`arenaDuel`（fixture 玩法不在表）。
 `ballMove` 使用 `GameRoomState` 运行移动/技能 Demo，`idle` 使用独立 `IdleRoomState` 和 pulse 胜利条件；
 全部 root 都由 state manifest 生成的 mode 映射选择。当前展示：
 
-- WebPlatform strict session verify、协议版本与区号复核。
+- WebPlatform strict session verify、协议版本与区号复核（`rooms/core/RoomAuth.ts` 的 `gameRoomAuth`；onAuth 与 onCreate 经
+  `assertEnvelope` 同口径，`GameRoom.ts` 本身不再出现 `GAME_ROOM_PROTOCOL_VERSION`）。
 - `filterBy(["sId", "mode", "profile"])` 的撮合隔离及房内再次校验；Game join 信封（v8，阶段 8b）
   的 `mode`/`modeVersion`/`profile` 必填且由 shared 校验（`modeVersion` 对 `GAMEPLAY_CATALOG`
   另有独立比较位点，不参与 core 信封闸）；admission 在 filter 外双重拒绝缺失/未知/不属 mode 的
@@ -363,7 +368,8 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
    按其精确 root 类型读写。
 3. **新增玩法消息不再修改通用 `rooms/GameRoom.ts`**：`GameRoom.messages` 只注册一个 catch-all
    （键是 `"_"`，实例字段初始化器，⚠ `Room.__init()` 会 delete 该键，⛔ 不得共享模块级常量），
-   dispatcher 按生成的 wire catalog 固定序执行：基础预算（未知/畸形 type 也计费）→ owner 闸
+   dispatcher（`rooms/core/WireDispatcher.ts`，MF3-B2 抽出；壳只注入 core 消息的 phase 谓词与两个 handler 入口）
+   按生成的 wire catalog 固定序执行：基础预算（未知/畸形 type 也计费）→ owner 闸
    （core 或当前 mode）→ exact validate（非普通对象含 Uint8Array 一律拒）→ rateCost 追加消耗 →
    phase 闸 → core handler / mode `commands[type]`。中央 C2S schema 表、具名 handler 表与
    phase switch / mode inputs 声明均已删除，⛔ 不得再注册任何具名 handler（Colyseus 分派具名优先，
