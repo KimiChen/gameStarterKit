@@ -23,6 +23,7 @@ export const C2S = {
     Chat: "c2s.chat",
     RoomReady: "c2s.room.ready",
     RoomStart: "c2s.room.start",
+    WorldChat: "c2s.world.chat",
     ArenaCaptureCapture: "c2s.arenaCapture.capture",
     ArenaDuelStrike: "c2s.arenaDuel.strike",
     Move: "c2s.move",
@@ -47,6 +48,7 @@ export const S2C = {
     Error: "s2c.error",
     RoomError: "s2c.room.error",
     RoomCodeInvalidated: "s2c.room.codeInvalidated",
+    WorldChat: "s2c.world.chat",
     SkillResult: "s2c.skillResult",
     SnakeBaselineBegin: "s2c.snake.baselineBegin",
     SnakeBaselineChunk: "s2c.snake.baselineChunk",
@@ -83,6 +85,7 @@ export interface C2SPayloadMap {
     "c2s.chat": CoreC2SPayloadMap["c2s.chat"];
     "c2s.room.ready": CoreC2SPayloadMap["c2s.room.ready"];
     "c2s.room.start": CoreC2SPayloadMap["c2s.room.start"];
+    "c2s.world.chat": CoreC2SPayloadMap["c2s.world.chat"];
     "c2s.arenaCapture.capture": IArenaCaptureCaptureReq;
     "c2s.arenaDuel.strike": IArenaDuelStrikeReq;
     "c2s.move": IMoveReq;
@@ -106,6 +109,7 @@ export interface S2CPayloadMap {
     "s2c.error": CoreS2CPayloadMap["s2c.error"];
     "s2c.room.error": CoreS2CPayloadMap["s2c.room.error"];
     "s2c.room.codeInvalidated": CoreS2CPayloadMap["s2c.room.codeInvalidated"];
+    "s2c.world.chat": CoreS2CPayloadMap["s2c.world.chat"];
     "s2c.skillResult": ISkillResultRes;
     "s2c.snake.baselineBegin": ISnakeBaselineBegin;
     "s2c.snake.baselineChunk": ISnakeBaselineChunk;
@@ -142,6 +146,7 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.chat": CORE_C2S_WIRE["c2s.chat"],
     "c2s.room.ready": CORE_C2S_WIRE["c2s.room.ready"],
     "c2s.room.start": CORE_C2S_WIRE["c2s.room.start"],
+    "c2s.world.chat": CORE_C2S_WIRE["c2s.world.chat"],
     "c2s.arenaCapture.capture": ArenaCaptureCapture.validate,
     "c2s.arenaDuel.strike": ArenaDuelStrike.validate,
     "c2s.move": Move.validate,
@@ -166,6 +171,7 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.error": CORE_S2C_WIRE["s2c.error"],
     "s2c.room.error": CORE_S2C_WIRE["s2c.room.error"],
     "s2c.room.codeInvalidated": CORE_S2C_WIRE["s2c.room.codeInvalidated"],
+    "s2c.world.chat": CORE_S2C_WIRE["s2c.world.chat"],
     "s2c.skillResult": SkillResult.validate,
     "s2c.snake.baselineBegin": SnakeBaselineBegin.validate,
     "s2c.snake.baselineChunk": SnakeBaselineChunk.validate,
@@ -215,6 +221,7 @@ export const GAME_WIRE_OWNERS = {
     "c2s.chat": "core",
     "c2s.room.ready": "core",
     "c2s.room.start": "core",
+    "c2s.world.chat": "core",
     "c2s.arenaCapture.capture": "arenaCapture",
     "c2s.arenaDuel.strike": "arenaDuel",
     "c2s.move": "ballMove",
@@ -235,6 +242,7 @@ export const GAME_WIRE_OWNERS = {
     "s2c.error": "core",
     "s2c.room.error": "core",
     "s2c.room.codeInvalidated": "core",
+    "s2c.world.chat": "core",
     "s2c.skillResult": "ballMove",
     "s2c.snake.baselineBegin": "snake",
     "s2c.snake.baselineChunk": "snake",
@@ -298,6 +306,7 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.viewFixture.resync": 4,
     "c2s.worldFixture.move": 1,
     "c2s.worldFixture.resync": 4,
+    "c2s.world.chat": 2,
 } as const satisfies { readonly [type: string]: number };
 
 /** 每会话 S2C token（MMO MF5a）：只经 sendS2C 发给单个会话，broadcastS2C 对它 fail-closed；值 = coalesceKey（payload 字段名）或 null（不合并、不可丢）。 */
@@ -316,6 +325,7 @@ export const GAME_WIRE_PER_SESSION = {
     "s2c.worldFixture.baselineBegin": null,
     "s2c.worldFixture.baselineChunk": null,
     "s2c.worldFixture.baselineEnd": null,
+    "s2c.world.chat": null,
 } as const satisfies { readonly [type: string]: string | null };
 
 /** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */
@@ -413,4 +423,5 @@ export const CORE_S2C_TOKENS = {
     Error: defineS2C("s2c.error", CORE_S2C_WIRE["s2c.error"]),
     RoomError: defineS2C("s2c.room.error", CORE_S2C_WIRE["s2c.room.error"]),
     RoomCodeInvalidated: defineS2C("s2c.room.codeInvalidated", CORE_S2C_WIRE["s2c.room.codeInvalidated"]),
+    WorldChat: defineS2C("s2c.world.chat", CORE_S2C_WIRE["s2c.world.chat"], { perSession: true }),
 } as const;

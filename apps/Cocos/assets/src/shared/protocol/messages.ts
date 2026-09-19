@@ -41,6 +41,8 @@ export const CORE_C2S = {
     RoomReady: "c2s.room.ready",
     /** 房主开局（owner-ready profile；仅 Waiting，§6.3） */
     RoomStart: "c2s.room.start",
+    /** 附近聊天（MMO MF6b，docs/MMO.md §6.5.1）：只在 kind:"world" 房、只在 Active；rateCost 见 CORE_C2S_OPTIONS */
+    WorldChat: "c2s.world.chat",
 } as const;
 
 /** 服务端 → 客户端 core 消息名 */
@@ -57,6 +59,22 @@ export const CORE_S2C = {
     RoomError: "s2c.room.error",
     /** 邀请码已失效（renew lost；旧码禁止继续展示，§6.7 第 5 条） */
     RoomCodeInvalidated: "s2c.room.codeInvalidated",
+    /** 附近聊天气泡（MMO MF6b）：perSession（见 CORE_S2C_OPTIONS），只按会话经视野流投递，broadcast 对它 fail-closed */
+    WorldChat: "s2c.world.chat",
+} as const;
+
+/**
+ * core token 选项表（MMO MF6b，docs/MMO.md §6.5.1；gameplay-codegen 与 CORE_C2S / CORE_S2C 一样按**字面量**读取）：
+ * 键 = 上面两张表里的消息名字符串字面量；c2s 只认 `rateCost`（≥1 整数，进 GAME_WIRE_RATE_COST），
+ * s2c 只认 `perSession: true`（+ 可选 `coalesceKey`，进 GAME_WIRE_PER_SESSION 与 CORE_S2C_TOKENS 的 defineS2C 第三参）。
+ * 未列出的 core token 保持缺省（rateCost 1 / 全房消息）；phase 规则仍归各 shell（⛔ 不在此声明 phases）。
+ */
+export const CORE_C2S_OPTIONS = {
+    "c2s.world.chat": { rateCost: 2 },
+} as const;
+
+export const CORE_S2C_OPTIONS = {
+    "s2c.world.chat": { perSession: true },
 } as const;
 
 export type CoreC2SType = (typeof CORE_C2S)[keyof typeof CORE_C2S];
@@ -68,6 +86,7 @@ export interface CoreC2SPayloadMap {
     [CORE_C2S.Chat]: IChatReq;
     [CORE_C2S.RoomReady]: IRoomReadyReq;
     [CORE_C2S.RoomStart]: IRoomStartReq;
+    [CORE_C2S.WorldChat]: IWorldChatReq;
 }
 
 export interface CoreS2CPayloadMap {
@@ -77,6 +96,7 @@ export interface CoreS2CPayloadMap {
     [CORE_S2C.Error]: IErrorRes;
     [CORE_S2C.RoomError]: IRoomErrorRes;
     [CORE_S2C.RoomCodeInvalidated]: IRoomCodeInvalidatedRes;
+    [CORE_S2C.WorldChat]: IWorldChatRes;
 }
 
 const MAX_MESSAGE_ID = 64;
@@ -95,6 +115,15 @@ function validatePing(input: unknown): IPingReq {
 }
 
 function validateChat(input: unknown): IChatReq {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["text"], [], "payload");
+    const text = boundedString(value.text, "payload.text", 1, MAX_CHAT_TEXT);
+    if (text.trim().length === 0) throw new WireValidationError("MESSAGE_TEXT", "payload.text");
+    return { text };
+}
+
+/** 附近聊天请求：与 Chat 同界（1..MAX_CHAT_TEXT、trim 非空）；受众与盖章全在世界房（MMO MF6b）。 */
+function validateWorldChat(input: unknown): IWorldChatReq {
     const value = messageRecord(input, "payload");
     assertExactKeys(value, ["text"], [], "payload");
     const text = boundedString(value.text, "payload.text", 1, MAX_CHAT_TEXT);
@@ -145,6 +174,19 @@ function validateChatResult(input: unknown): IChatRes {
     };
 }
 
+/** 附近聊天气泡：fromEntityId = 发送者主实体（kit 映射成角色名）、at = 服务端时间戳；⛔ 无 uid / 昵称（可见性 = 权限，§6.5.1）。 */
+function validateWorldChatPush(input: unknown): IWorldChatRes {
+    const value = messageRecord(input, "payload");
+    assertExactKeys(value, ["fromEntityId", "text", "at"], [], "payload");
+    const text = boundedString(value.text, "payload.text", 1, MAX_CHAT_TEXT);
+    if (text.trim().length === 0) throw new WireValidationError("MESSAGE_TEXT", "payload.text");
+    return {
+        fromEntityId: boundedString(value.fromEntityId, "payload.fromEntityId", 1, MAX_MESSAGE_ID),
+        text,
+        at: finiteInteger(value.at, "payload.at", 0),
+    };
+}
+
 function validateError(input: unknown): IErrorRes {
     const value = messageRecord(input, "payload");
     assertExactKeys(value, ["code", "message"], [], "payload");
@@ -181,6 +223,7 @@ export const CORE_C2S_WIRE: { [K in CoreC2SType]: RuntimeValidator<CoreC2SPayloa
     [CORE_C2S.Chat]: guardMessageValidator(validateChat),
     [CORE_C2S.RoomReady]: guardMessageValidator(validateRoomReady),
     [CORE_C2S.RoomStart]: guardMessageValidator(validateRoomStart),
+    [CORE_C2S.WorldChat]: guardMessageValidator(validateWorldChat),
 };
 
 export const CORE_S2C_WIRE: { [K in CoreS2CType]: RuntimeValidator<CoreS2CPayloadMap[K]> } = {
@@ -190,6 +233,7 @@ export const CORE_S2C_WIRE: { [K in CoreS2CType]: RuntimeValidator<CoreS2CPayloa
     [CORE_S2C.Error]: guardMessageValidator(validateError),
     [CORE_S2C.RoomError]: guardMessageValidator(validateRoomError),
     [CORE_S2C.RoomCodeInvalidated]: guardMessageValidator(validateRoomCodeInvalidated),
+    [CORE_S2C.WorldChat]: guardMessageValidator(validateWorldChatPush),
 };
 
 // ---------------- 网关大厅房（服务端框架 M5，docs/SERVER.md §4 Lobby RPC） ----------------
@@ -218,6 +262,11 @@ export interface IRoomReadyReq {
 /** 空 payload（房主开局请求；owner/phase/人数/allReady 全部由服务端权威判定）。 */
 export interface IRoomStartReq {}
 
+/** 附近聊天请求（MMO MF6b）：只有文本；受众由世界房按兴趣集算，发送者由会话决定。 */
+export interface IWorldChatReq {
+    text: string;
+}
+
 // ---------------- S2C payload ----------------
 
 export interface IPongRes {
@@ -242,6 +291,15 @@ export interface IChatRes {
     text: string;
     /** 服务端时间戳（ms） */
     time: number;
+}
+
+/** 附近聊天气泡（MMO MF6b，perSession 视野流）：kit 把 fromEntityId 映射成角色名。 */
+export interface IWorldChatRes {
+    /** 发送者主实体 id（WorldMode.primaryEntityOf） */
+    fromEntityId: string;
+    text: string;
+    /** 服务端时间戳（ms） */
+    at: number;
 }
 
 export interface IErrorRes {

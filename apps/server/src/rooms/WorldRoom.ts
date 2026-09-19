@@ -44,6 +44,8 @@ import {
     type GamePhaseType,
     type GameplayS2CToken,
     type IPingReq,
+    type IWorldChatReq,
+    validateC2SPayload,
     type IPongRes,
     type IWorldRoomJoinOptions,
     type WorldPhaseType,
@@ -51,6 +53,7 @@ import {
 import { NODE_ID, normalizeSId } from "../core/infra/config";
 import { ControlConflictError, PersonaNotFoundError, WorldNotAuthoritativeError, joinRefused } from "../core/errors";
 import { trackTask } from "../core/infra/lifecycle";
+import { getChatPolicy, type ChatPolicyContext } from "../core/chat/policy";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
 import { catalogModeVersion, createRoomAuth, type RoomAuthResult } from "./core/RoomAuth";
 import { modeDeclaresProfile } from "./core/RoomProfile";
@@ -650,9 +653,9 @@ export class WorldRoom extends Room {
         return this.runtime?.phase === WorldPhase.Active ? GamePhase.Playing : GamePhase.Settle;
     }
 
-    private corePhaseAllows(type: C2SType, _phase: GamePhaseType): boolean {
-        // 世界房的 core 消息只有心跳（Draining 期间也要活着）；Chat / Ready / Start 属 match 形态（附近聊天是 MF6b 的世界 token）。
-        return type === C2S.Ping;
+    private corePhaseAllows(type: C2SType, phase: GamePhaseType): boolean {
+        // 世界房的 core 消息：心跳（Draining 期间也要活着）+ 附近聊天（MF6b 世界 token，只在 Active）；Chat / Ready / Start 属 match 形态。
+        return type === C2S.Ping || (type === C2S.WorldChat && phase === GamePhase.Playing);
     }
 
     private handleCoreMessage(client: Client, type: C2SType, payload: unknown): void {
@@ -660,7 +663,38 @@ export class WorldRoom extends Room {
             const msg = payload as IPingReq;
             const res: IPongRes = { clientTime: msg.clientTime, serverTime: this.now() };
             this.ports.send(client, S2C.Pong, res);
+        } else if (type === C2S.WorldChat) {
+            void this.handleWorldChat(client, payload as IWorldChatReq);
         }
+    }
+
+    /**
+     * MF6b 附近聊天固定序（docs/MMO.md §6.5.1）：在座 → chatPolicy.canSend → chatPolicy.transform（结果再过 wire validator）→
+     * runtime.sayNearby（兴趣集受众，含发送者，进 perSession 视野流）。限流已由 dispatcher 的 rateCost 预算完成（⛔ 不碰 Redis）；
+     * 任一步拒 ⇒ 发送者 BadRequest、无人收到（⛔ 无新增房间错误码）。
+     */
+    private async handleWorldChat(client: Client, msg: IWorldChatReq): Promise<void> {
+        const runtime = this.runtime;
+        const info = runtime?.sessionOf(client.sessionId) ?? null;
+        if (!runtime || !info) {
+            this.ports.sendError(client, ErrorCode.BadRequest);
+            return;
+        }
+        const policy = getChatPolicy();
+        const ctx: ChatPolicyContext = { uid: info.userId, sId: this.sId, channel: `nearby:${worldAddressOf(this.sId, this.mapId, this.line)}` };
+        let text = msg.text;
+        try {
+            if (policy.canSend && !(await policy.canSend(ctx, text))) {
+                this.ports.sendError(client, ErrorCode.BadRequest);
+                return;
+            }
+            if (policy.transform) text = validateC2SPayload(C2S.WorldChat, { text: (await policy.transform(text, ctx)).trim() }).text;
+        } catch (error) {
+            console.warn(`[WorldRoom ${this.roomId}] 附近聊天被策略拒绝（${client.sessionId}）`, error);
+            this.ports.sendError(client, ErrorCode.BadRequest);
+            return;
+        }
+        if (runtime.sayNearby(client.sessionId, text, this.now()) !== "sent") this.ports.sendError(client, ErrorCode.BadRequest);
     }
 
     /** 玩法命令（已过 dispatcher 固定序闸）入队；非 Active / 未在座 / 陌生命令 ⇒ 拒。 */

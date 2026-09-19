@@ -48,7 +48,7 @@ import {
   type GameplayCodegenOptions,
 } from "../tools/gameplay-codegen/lib";
 import { parseGameplayManifest } from "../tools/gameplay-codegen/manifestSchema";
-import { parseGameplayWireModule } from "../tools/gameplay-codegen/wireParser";
+import { parseCoreWireNames, parseGameplayWireModule } from "../tools/gameplay-codegen/wireParser";
 import { parseGameplayStateDescriptor, renderSharedStateModule } from "../tools/gameplay-codegen/stateRenderer";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -1944,5 +1944,43 @@ test("MF4-B2 生成：world 夹具三端产物（WorldPhase 自 core、无 playe
     assert.throws(() => writeGameplayArtifacts(fixture.options), /registerPuzzleWorldMode/u);
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+// ── MMO MF6b-B1：core 选项表 CORE_C2S_OPTIONS / CORE_S2C_OPTIONS（docs/MMO.md §6.5.1）──────────────────────────────
+
+const CORE_MESSAGES_FIXTURE = `
+export const CORE_C2S = { Ping: "c2s.ping", WorldChat: "c2s.world.chat" } as const;
+export const CORE_S2C = { Pong: "s2c.pong", WorldChat: "s2c.world.chat" } as const;
+`;
+
+test("MF6b-B1 parseCoreWireNames：选项表缺席 = 全缺省；c2s 只认 rateCost、s2c 只认 perSession / coalesceKey；未知键 / 未知消息名 / 非字面量 fail-fast", () => {
+  const plain = parseCoreWireNames(CORE_MESSAGES_FIXTURE, "fixture");
+  assert.deepEqual(plain.c2s, [{ key: "Ping", type: "c2s.ping", rateCost: 1 }, { key: "WorldChat", type: "c2s.world.chat", rateCost: 1 }]);
+  assert.deepEqual(plain.s2c, [
+    { key: "Pong", type: "s2c.pong", perSession: false, coalesceKey: null },
+    { key: "WorldChat", type: "s2c.world.chat", perSession: false, coalesceKey: null },
+  ]);
+  const withOptions = parseCoreWireNames(`${CORE_MESSAGES_FIXTURE}
+export const CORE_C2S_OPTIONS = { "c2s.world.chat": { rateCost: 2 } } as const;
+export const CORE_S2C_OPTIONS = { "s2c.world.chat": { perSession: true, coalesceKey: "fromEntityId" } } as const;
+`, "fixture");
+  assert.deepEqual(withOptions.c2s.map((entry) => [entry.type, entry.rateCost]), [["c2s.ping", 1], ["c2s.world.chat", 2]]);
+  assert.deepEqual(withOptions.s2c.map((entry) => [entry.type, entry.perSession, entry.coalesceKey]), [["s2c.pong", false, null], ["s2c.world.chat", true, "fromEntityId"]]);
+  const bad: Array<[string, RegExp]> = [
+    ['export const CORE_C2S_OPTIONS = { "c2s.world.chat": { phases: ["Playing"] } } as const;', /未知键：phases/u],
+    ['export const CORE_C2S_OPTIONS = { "c2s.world.chat": { rateCost: 0 } } as const;', /≥1 的整数/u],
+    ['export const CORE_C2S_OPTIONS = { "c2s.world.chat": { rateCost: "2" } } as const;', /数字字面量/u],
+    ['export const CORE_C2S_OPTIONS = { "c2s.nope": { rateCost: 2 } } as const;', /CORE_C2S 之外的消息名：c2s\.nope/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.nope": { perSession: true } } as const;', /CORE_S2C 之外的消息名：s2c\.nope/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.world.chat": { perSession: false } } as const;', /只能是字面量 true/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.world.chat": { coalesceKey: "id" } } as const;', /只对 perSession: true 有意义/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.world.chat": { perSession: true, extra: 1 } } as const;', /未知键：extra/u],
+    ['export const CORE_S2C_OPTIONS = { [CORE_S2C.WorldChat]: { perSession: true } } as const;', /消息名字符串字面量键/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.world.chat": { perSession: true }, "s2c.world.chat": { perSession: true } } as const;', /重复声明/u],
+    ["export const CORE_S2C_OPTIONS = someTable;", /对象字面量/u],
+  ];
+  for (const [snippet, pattern] of bad) {
+    assert.throws(() => parseCoreWireNames(`${CORE_MESSAGES_FIXTURE}\n${snippet}\n`, "fixture"), pattern, snippet);
   }
 });

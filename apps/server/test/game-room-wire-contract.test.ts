@@ -172,9 +172,10 @@ test("GameRoom C2S boundary is sourced from the generated wire catalog", () => {
                         `${type} chat normalization drift: ${vector.label}`,
                     );
                     assert.deepEqual(handled.sent, [], `${type} valid payload emitted an error: ${vector.label}`);
-                } else if (type === C2S.RoomReady || type === C2S.RoomStart) {
+                } else if (type === C2S.RoomReady || type === C2S.RoomStart || type === C2S.WorldChat) {
                     // core 私房控制消息：auto/default profile 的房间收到即回 BadRequest（§6.2；
-                    // owner-ready profile 的行为矩阵在 private-room.test.ts）。
+                    // owner-ready profile 的行为矩阵在 private-room.test.ts）；
+                    // MMO MF6b 世界 token WorldChat 只属 kind:"world" 房，match 形态同样 BadRequest（行为矩阵在 world-chat.test.ts）。
                     assert.deepEqual(handled.captured, [], `${type} core message reached gameplay: ${vector.label}`);
                     assert.equal(handled.sent.length, 1, `${type} auto-profile refusal count: ${vector.label}`);
                     assert.equal(handled.sent[0][0], S2C.Error, `${type} auto-profile refusal type: ${vector.label}`);

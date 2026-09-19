@@ -1010,7 +1010,8 @@ test("wire catalog 穷尽矩阵：owner 独占 + token phases 决定玩法输入
     const coreC2S = Object.entries(GAME_WIRE_OWNERS)
         .filter(([type, owner]) => owner === "core" && type.startsWith("c2s."))
         .map(([type]) => type);
-    assert.deepEqual(coreC2S.sort(), [C2S.Chat, C2S.Ping, C2S.RoomReady, C2S.RoomStart].sort());
+    // MMO MF6b：core 增 WorldChat（世界房附近聊天；match 形态 GameRoom 对它 BadRequest，行为矩阵在 world-chat.test.ts）
+    assert.deepEqual(coreC2S.sort(), [C2S.Chat, C2S.Ping, C2S.RoomReady, C2S.RoomStart, C2S.WorldChat].sort());
 
     // 归属闸：每份 sidecar 的 admission 只装自己 owner 的消息。
     for (const [type, entry] of MATRIX_ADMISSION) {
