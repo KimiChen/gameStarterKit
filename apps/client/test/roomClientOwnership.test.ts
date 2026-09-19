@@ -1062,7 +1062,8 @@ test("AppRuntime：只装配 registry/controller/catalog，不再内联 RoomClie
   // 阶段 9：装配点切到 generated catalog 的 registerGeneratedGameplays（services 注入）。
   assert.match(source, /registerGeneratedGameplays\(registry, services\)/);
   assert.match(source, /presentationHost/);
-  assert.match(source, /controller\.startRegistered\(registry, requestedId, signal\)/);
+  // MF9-B4：launch 输入（{ ...payload, profile? }）经第四参透传，⛔ 不再是裸三参调用
+  assert.match(source, /controller\.startRegistered\(registry, requestedId, signal, launchInput\)/);
   assert.match(source, /controller\.tick\(dt\)/);
   assert.match(source, /roomController\?\.stop\(\{ kind \}\)/);
   assert.doesNotMatch(source, /createIdleRoomJoiner|registerIdleGameplay|createBallMoveRoomJoiner|ballMoveJoiner|idleJoiner/,

@@ -464,11 +464,11 @@ export class AppRuntime {
         await this.navigation.open(routeId);
     }
 
-    private launchGameplay(target: { readonly kind: "gameplay"; readonly gameplayId: string } | null): Promise<void> {
+    private launchGameplay(target: Extract<PluginLaunchTarget, { readonly kind: "gameplay" }> | null): Promise<void> {
         if (this.disposed) return Promise.resolve();
         if (this.battleTransition) return this.battleTransition;
         const abort = new AbortController();
-        const transition = this.startGameplay(abort.signal, target?.gameplayId);
+        const transition = this.startGameplay(abort.signal, target ?? undefined);
         this.battleAbort = abort;
         this.battleTransition = transition;
         const settle = (): void => {
@@ -482,7 +482,7 @@ export class AppRuntime {
         return transition;
     }
 
-    private async startGameplay(signal: AbortSignal, targetGameplayId?: string): Promise<void> {
+    private async startGameplay(signal: AbortSignal, target?: Extract<PluginLaunchTarget, { readonly kind: "gameplay" }>): Promise<void> {
         const controller = this.roomController;
         const registry = this.gameplayRegistry;
         if (!controller || !registry || signal.aborted || controller.status === "running") return;
@@ -502,13 +502,21 @@ export class AppRuntime {
         // launch target（generated contribution）优先；Main 的 gameplayId @property 仍是
         // 默认 launch target 的兜底（开发调试快捷入口）。两级都走 resolveLaunchGameplayId：
         // 未填/空白最终回落到宿主 apps/plugins/host.json 的 defaultLaunch，⛔ 此处不再硬编码玩法名。
+        const targetGameplayId = target?.gameplayId;
         const requestedId = resolveLaunchGameplayId(
             typeof targetGameplayId === "string" && targetGameplayId.trim().length > 0
                 ? targetGameplayId
                 : this.gameplayId,
         );
+        // MF9-B4 带参 launch：generated menu contribution 的 payload / profile 原样透传到 RoomController.startRegistered，
+        // 由该玩法 GameplayModule.validateLaunch 做 exact 校验（未知字段 / 非法 profile 在启动时刻被拒）；
+        // enterBattle / 无 target ⇒ `{}`。`profile` 是 launch 输入的保留键（joiner 据此选房型）。
+        const launchInput: Record<string, unknown> = {
+            ...(target?.payload ?? {}),
+            ...(target?.profile === undefined ? {} : { profile: target.profile }),
+        };
         const result = await reconcileGameplayStartResult(
-            controller.startRegistered(registry, requestedId, signal),
+            controller.startRegistered(registry, requestedId, signal, launchInput),
             {
                 stop: (reason) => controller.stop(reason).catch((error) => {
                     console.error("[AppRuntime] 迟到 gameplay transition 清理失败：", error);

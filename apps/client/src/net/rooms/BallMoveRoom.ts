@@ -70,8 +70,10 @@ export function createBallMoveRoomJoiner(
     client: RoomClient = RoomClient.inst,
 ): GameplayRoomJoiner<BallMoveRoom> {
     return {
-        join(signal) {
-            const ownership = joinGameRoom(client, adapter, signal);
+        join(signal, launch) {
+            // launch 是 module.validateLaunch 的产物（BallMoveLaunch：{ profile? }）；缺省走 transport 的 "default"。
+            const profile = (launch as { readonly profile?: string } | undefined)?.profile;
+            const ownership = joinGameRoom(client, adapter, signal, profile === undefined ? {} : { profile });
             return {
                 ready: ownership.ready.then((room) => createBallMoveRoom(room, adapter)),
                 leave: () => ownership.leave(),
