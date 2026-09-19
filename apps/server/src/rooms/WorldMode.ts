@@ -7,6 +7,10 @@
  * 登记表：`registerGeneratedWorldModes`（codegen 按 manifest kind:"world" 分表）登进 `worldModeRegistry`，⛔ 不混进 gameModeRegistry。
  */
 import type { GameplayS2CToken, WorldPhaseType } from "@game/shared";
+import type { BaselineBuilders, BaselineTokens } from "./core/Baseline";
+import type { InterestView } from "./core/InterestSet";
+import type { ObservedEntity, ObserverSyncBuilders, ObserverSyncTokens } from "./core/ObserverSync";
+import type { OutboundPushResult } from "./core/OutboundQueue";
 
 /** world 根必填集（codegen 强制，MF4-B2）：WorldRoom 壳只碰这组分线元数据，⛔ 没有 players / matchId。 */
 export interface WorldStateLifecycle {
@@ -49,6 +53,40 @@ export interface WorldCheckpoint {
 
 export type WorldLeaveReason = "left" | "kicked" | "drained" | "lost-control";
 
+/**
+ * 观察者同步端口（MMO MF5b，与 GameMode 的 GameModeObserverPorts 同形）：perSession token 专用，全房 token 仍走 `broadcastS2C`。
+ * 投递不直接出网——进每会话 OutboundQueue（住在 WorldRuntime，无头可重放），WorldRoom 每 tick 排空在线会话
+ * （宽限中不排空；慢会话超限 ⇒ 丢可合并类、留不可丢类、下一 tick 重发 baseline）。
+ */
+export interface WorldModeObserverPorts {
+    interest(session: string): { readonly version: number; readonly view: InterestView };
+    emitPerSession<TPayload>(session: string, token: GameplayS2CToken<TPayload>, payload: TPayload): OutboundPushResult;
+    requestBaseline(session: string): void;
+    seq(session: string): number;
+    nextSeq(session: string): number;
+}
+
+/**
+ * world mode 的可选观察者能力（MF5b）：候选与投影归 mode（网格 / 视距 / 可见性 / 私有字段过滤），差分、编号、baseline、投递归框架。
+ * 六个 token 必须 perSession（建 runtime 时 fail-closed）；`visibleEntities` 每 tick 每会话调一次，返回**公开投影**
+ * （⛔ 私有字段不得进 entity——它经 `observers.emitPerSession` 的 private token 单独发给本人）。
+ */
+export interface WorldModeObserverCapability<TState extends WorldStateLifecycle = WorldStateLifecycle, TEntity extends ObservedEntity = ObservedEntity, TItem = TEntity> {
+    readonly tokens: ObserverSyncTokens<unknown, unknown, unknown>;
+    readonly builders: ObserverSyncBuilders<TEntity, unknown, unknown, unknown>;
+    readonly baseline: {
+        readonly tokens: BaselineTokens<unknown, unknown, unknown>;
+        readonly builders: BaselineBuilders<TItem, unknown, unknown, unknown>;
+        readonly chunkItems?: number;
+    };
+    visibleEntities(session: string, context: WorldModeContext<TState>): ReadonlyMap<string, TEntity>;
+    baselineItems?(session: string, entities: ReadonlyMap<string, TEntity>, context: WorldModeContext<TState>): readonly TItem[];
+    readonly limits?: {
+        readonly interestMaxEntities?: number;
+        readonly outboundQueueMaxMessages?: number;
+    };
+}
+
 export interface WorldModeContext<TState extends WorldStateLifecycle = WorldStateLifecycle> {
     readonly state: TState;
     readonly sId: number;
@@ -71,6 +109,8 @@ export interface WorldModeContext<TState extends WorldStateLifecycle = WorldStat
     broadcastS2C<TPayload>(token: GameplayS2CToken<TPayload>, payload: TPayload): void;
     /** mode 请求 Draining（GM 关图 / 内容包热切等）；壳走同一状态机。 */
     requestDrain(reason: string): void;
+    /** 观察者同步端口（MF5b）：视野流 / 本人私有流 / baseline 请求；无 observer 能力时 requestBaseline / nextSeq 抛。 */
+    readonly observers: WorldModeObserverPorts;
 }
 
 /**
@@ -97,6 +137,8 @@ export interface WorldMode<TState extends WorldStateLifecycle = WorldStateLifecy
     onDrain?(context: WorldModeContext<TState>, info: { readonly reason: string; readonly graceMs: number }): void;
     onSignal?(context: WorldModeContext<TState>, signal: { readonly kind: string; readonly payload: unknown }): void;
     primaryEntityOf?(session: string): string | null;
+    /** 可选观察者能力（MF5b）：声明即由 WorldRuntime 做差分 / baseline / 有界投递。 */
+    readonly observer?: WorldModeObserverCapability<TState, ObservedEntity, unknown>;
 }
 
 /** 世界玩法的最小身份（registry 只按 id 登记 factory）。 */

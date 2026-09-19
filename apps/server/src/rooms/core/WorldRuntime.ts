@@ -7,8 +7,13 @@
 import { SeededRandom, WorldPhase, type GameplayS2CToken, type WorldPhaseType } from "@game/shared";
 import type { WorldManifestConfig } from "../../../tools/gameplay-codegen/manifestSchema";
 import type {
-    WorldAdmitRequest, WorldCheckpoint, WorldCommand, WorldLeaveReason, WorldMode, WorldModeContext, WorldSessionInfo, WorldStateLifecycle,
+    WorldAdmitRequest, WorldCheckpoint, WorldCommand, WorldLeaveReason, WorldMode, WorldModeContext, WorldModeObserverPorts, WorldSessionInfo,
+    WorldStateLifecycle,
 } from "../WorldMode";
+import { Baseline } from "./Baseline";
+import { InterestSet } from "./InterestSet";
+import { ObserverSync, type ObservedEntity } from "./ObserverSync";
+import { OutboundQueue, type OutboundMessage } from "./OutboundQueue";
 
 /** 与 GameRoom 同值：极端停顿最多补 120 步，超出丢弃 backlog（⛔ 不让一次 wall-clock gap 卡死循环）。 */
 export const WORLD_MAX_CATCH_UP_STEPS = 120;
@@ -60,6 +65,16 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     private emptySince: number | null = null;
     private lastCheckpointAt: number;
     private drainReason: string | null = null;
+    /**
+     * 观察者同步运行时（MF5b）：每会话出站队列对所有 mode 存在（emitPerSession）；差分 / baseline 只在 mode 声明 `observer` 时构造。
+     * 排空点 = 传输壳每 tick `drainOutbound`（在线会话）；宽限中（away）不差分、不 baseline、不排空——回来先收 baseline。
+     */
+    private readonly observerQueue: OutboundQueue;
+    private observerSync: ObserverSync<ObservedEntity> | null = null;
+    private observerBaseline: Baseline<unknown> | null = null;
+    private readonly observerBaselineRequests = new Set<string>();
+    private readonly observerBaselined = new Set<string>();
+    private readonly awaySessions = new Set<string>();
     readonly sId: number;
     readonly fixedStepMs: number;
 
@@ -78,6 +93,16 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
         this.lastCheckpointAt = this.now();
         this.state.phase = WorldPhase.Recovering;
         this.emptySince = this.now();
+        this.observerQueue = new OutboundQueue(options.mode.observer?.limits?.outboundQueueMaxMessages);
+        const capability = options.mode.observer;
+        if (capability) {
+            const queue = this.observerQueue;
+            const sink = { emit: (session: string, token: GameplayS2CToken<unknown>, payload: unknown): void => { queue.push(session, token, payload); } };
+            this.observerSync = new ObserverSync<ObservedEntity>(
+                capability.tokens, capability.builders, sink, new InterestSet(capability.limits?.interestMaxEntities));
+            this.observerBaseline = new Baseline<unknown>(capability.baseline.tokens, capability.baseline.builders, sink,
+                capability.baseline.chunkItems === undefined ? {} : { chunkItems: capability.baseline.chunkItems });
+        }
     }
 
     get phase(): WorldPhaseType {
@@ -123,6 +148,7 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
                 if (this.ports.onDrainRequested) this.ports.onDrainRequested(reason);
                 else this.drain(reason, 0);
             },
+            observers: this.observerPorts(),
         };
     }
 
@@ -179,6 +205,7 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
             if (this.commandQueue[index]?.session === session) this.commandQueue.splice(index, 1);
         }
         this.mode.onLeave?.(this.context(), info, reason);
+        this.forgetObserver(session);
         if (this.sessionTable.size === 0) this.emptySince = this.now();
         return true;
     }
@@ -234,12 +261,120 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     stepOnce(): void {
         if (!this.canStep()) return;
         this.state.tick += 1;
+        // MF5b：需要 baseline 的在线会话先于本 tick 的私有流 / 差分收到 baseline（单 seq 流有序）。
+        this.prepareObservers();
         const commands = this.commandQueue.splice(0, this.commandQueue.length);
         try {
             this.mode.onStep(this.context(), { tick: this.state.tick, dtMs: this.fixedStepMs, commands });
         } catch (error) {
             console.error(`[WorldRuntime ${this.state.instanceId}] mode ${this.mode.id} step 失败`, error);
         }
+        // MF5b：本 tick 的观察者差分（enter / update / leave）进每会话队列；排空由传输壳 drainOutbound。
+        this.flushObservers();
+    }
+
+    // ── 观察者同步（MF5b；与 GameRoom 的 prepare / flush 同规则，但住在无头 runtime）─────────────────────
+
+    private observerPorts(): WorldModeObserverPorts {
+        return {
+            interest: (session) => {
+                const interest = this.observerSync?.interest;
+                return { version: interest?.version(session) ?? 0, view: interest?.view(session) ?? new Map() };
+            },
+            emitPerSession: <TPayload>(session: string, token: GameplayS2CToken<TPayload>, payload: TPayload) =>
+                this.observerQueue.push(session, token, payload),
+            requestBaseline: (session) => {
+                if (!this.observerSync) throw new Error(`[WorldRuntime] mode ${this.mode.id} 未声明 observer 能力，⛔ 不能 requestBaseline`);
+                this.observerBaselineRequests.add(session);
+            },
+            seq: (session) => this.observerSync?.seq(session) ?? 0,
+            nextSeq: (session) => {
+                if (!this.observerSync) throw new Error(`[WorldRuntime] mode ${this.mode.id} 未声明 observer 能力，⛔ 不能 nextSeq`);
+                return this.observerSync.nextSeq(session);
+            },
+        };
+    }
+
+    /** tick 开头：首发（刚入座 / 重连归位）、超限重同步、玩法请求 ⇒ 先发只含兴趣集的 baseline 并 rebase（⛔ 不靠 seq===0 判首发）。 */
+    private prepareObservers(): void {
+        const capability = this.mode.observer;
+        const sync = this.observerSync;
+        const baseline = this.observerBaseline;
+        if (!capability || !sync || !baseline) return;
+        const context = this.context();
+        for (const session of this.sessionTable.keys()) {
+            if (this.awaySessions.has(session)) continue;
+            const needsBaseline = !this.observerBaselined.has(session) || this.observerQueue.needsResync(session) || this.observerBaselineRequests.has(session);
+            if (!needsBaseline) continue;
+            try {
+                const entities = capability.visibleEntities(session, context);
+                const items = capability.baselineItems
+                    ? capability.baselineItems(session, entities, context)
+                    : [...entities.keys()].sort().map((id) => entities.get(id) as ObservedEntity);
+                baseline.send(session, items, { epochId: `${this.state.instanceId}#${this.state.authorityEpoch}`, seq: sync.nextSeq(session), tick: this.state.tick });
+                sync.rebase(session, entities);
+                this.observerQueue.clearResync(session);
+                this.observerBaselineRequests.delete(session);
+                this.observerBaselined.add(session);
+            } catch (error) {
+                console.error(`[WorldRuntime ${this.state.instanceId}] mode ${this.mode.id} observer baseline 失败 session=${session}`, error);
+            }
+        }
+    }
+
+    /** tick 末尾：对在座、在线、已 baseline 且未打重同步标记的会话算本 tick 差分进队列。 */
+    private flushObservers(): void {
+        const capability = this.mode.observer;
+        const sync = this.observerSync;
+        if (!capability || !sync) return;
+        const context = this.context();
+        for (const session of this.sessionTable.keys()) {
+            if (this.awaySessions.has(session) || !this.observerBaselined.has(session) || this.observerQueue.needsResync(session)) continue;
+            try {
+                sync.diffAndEmit(session, capability.visibleEntities(session, context), this.state.tick);
+            } catch (error) {
+                console.error(`[WorldRuntime ${this.state.instanceId}] mode ${this.mode.id} observer 投影失败 session=${session}`, error);
+            }
+        }
+    }
+
+    private forgetObserver(session: string): void {
+        this.observerSync?.forget(session);
+        this.observerQueue.remove(session);
+        this.observerBaselineRequests.delete(session);
+        this.observerBaselined.delete(session);
+        this.awaySessions.delete(session);
+    }
+
+    /** 传输壳：会话进入 / 离开重连宽限。归位 ⇒ 下一 tick 先收只含兴趣集的 baseline（宽限期间的积压可能已超限 / 已过时）。 */
+    markAway(session: string, away: boolean): void {
+        if (!this.sessionTable.has(session)) return;
+        if (away) {
+            this.awaySessions.add(session);
+            return;
+        }
+        if (this.awaySessions.delete(session) && this.observerSync) this.observerBaselineRequests.add(session);
+    }
+
+    isAway(session: string): boolean {
+        return this.awaySessions.has(session);
+    }
+
+    /** 传输壳每 tick 取走该会话的 perSession 积压（保持入队顺序）；不在线的会话 ⛔ 不排空。 */
+    drainOutbound(session: string): readonly OutboundMessage[] {
+        return this.observerQueue.drain(session);
+    }
+
+    outboundSize(session: string): number {
+        return this.observerQueue.size(session);
+    }
+
+    needsResync(session: string): boolean {
+        return this.observerQueue.needsResync(session);
+    }
+
+    get hasObserver(): boolean {
+        return this.observerSync !== null;
     }
 
     /**

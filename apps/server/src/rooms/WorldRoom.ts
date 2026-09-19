@@ -504,12 +504,15 @@ export class WorldRoom extends Room {
         if (!runtime || !runtime.sessionOf(client.sessionId)) return;
         const consented = code === CloseCode.CONSENTED;
         if (!consented) {
-            // 非主动断线：座位保留等重连（出站暂停），⛔ 不重复消费 ticket / 控制权。
+            // 非主动断线：座位保留等重连（出站暂停、观察者积压不排空），⛔ 不重复消费 ticket / 控制权。
             this.awayClients.add(client.sessionId);
+            runtime.markAway(client.sessionId, true);
             const outcome = await this.reconnectGrace.await(client);
             if (outcome === "stale") return;
             if (outcome === "reconnected") {
                 this.awayClients.delete(client.sessionId);
+                // 归位：runtime 标记下一 tick 先发只含兴趣集的 baseline（MF5b；⛔ 不重放宽限期间的 enter）
+                runtime.markAway(client.sessionId, false);
                 this.clientOf.set(client.sessionId, client);
                 console.log(`[WorldRoom ${this.roomId}] ${client.sessionId} 断线后重连成功`);
                 return;
@@ -561,6 +564,30 @@ export class WorldRoom extends Room {
     }
 
     private flushOutbox(): void {
+        this.flushDirectOutbox();
+        this.drainObserverQueues();
+    }
+
+    /** MF5b：每 tick 把 runtime 里每会话的 perSession 积压（视野流 / 私有流 / baseline）按序 sendToken；宽限中的会话 ⛔ 不排空。 */
+    private drainObserverQueues(): void {
+        const runtime = this.runtime;
+        if (!runtime) return;
+        for (const info of runtime.sessions()) {
+            if (runtime.isAway(info.session)) continue;
+            const client = this.clientOf.get(info.session);
+            if (!client) continue;
+            for (const message of runtime.drainOutbound(info.session)) {
+                try {
+                    this.ports.sendToken(client, message.token, message.payload);
+                } catch (error) {
+                    // token owner / validator 拒是 mode 的实现缺陷：记错、丢这一条，⛔ 不让世界循环死掉
+                    console.error(`[WorldRoom ${this.roomId}] mode ${this.modeId} perSession 出站被拒 ${message.token.type}`, error);
+                }
+            }
+        }
+    }
+
+    private flushDirectOutbox(): void {
         if (this.outbox.length === 0) return;
         const batch = this.outbox.splice(0, this.outbox.length);
         for (const entry of batch) {
