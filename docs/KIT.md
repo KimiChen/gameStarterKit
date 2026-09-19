@@ -147,6 +147,7 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
   名册只在服务端座位表；D4）。客户端消费 `logic/rooms/observer/ObserverReconciler` + `net/rooms/GameRoomTransport.bindObserverStream`。
   参考接线 `apps/server/test/fixtures/viewFixtureMode.ts`（视口 / 视距 / 私有字段过滤都在 mode；内存或 SQL 真源轮询）；
   slg 2b / lvr 视图房据此开工（slg.md §10.8），端口不要求 WorldAddress / personaId / authorityEpoch。
+- **世界形态玩法（MMO MF4，2026-09-19 已交付）**：kit 的 `kind:"world"` 玩法（manifest `world {emptyPolicy, emptyAfterMs, checkpointMs}`，根必填集 `{tick, phase:WorldPhase, instanceId, mapId, line, authorityEpoch}`、⛔ players）由 codegen 分表登进 `worldModeRegistry`、跑在 `RoomName.World` / `WorldRoom`（profile 恒 `"world"` = AccessPolicy world-ticket、无 StartPolicy）；mode 实现 `rooms/WorldMode.ts` 的十个钩子（⛔ 不继承 GameMode），只见会话 id / persona / 有序命令，⛔ 不持 client、⛔ 不 import colyseus——全部规则在无头 `WorldRuntime` 可重放；权威（`world_instance.authority_epoch`）与控制权（`persona.control_epoch`）由框架 CAS，kit 只在 `WorldMode` 钩子里读 `context.authorityEpoch` / 会话的 `controlEpoch`（MF7b 的 `withWorldTx` 首句 CAS 用它们）。参考接线 `apps/server/test/fixtures/worldFixtureMode.ts`；客户端经 `net/rooms/WorldRoomTransport.ts` 进入（凭据来自 MF8 的 `world.enter`，MF4 用占位端口）。
 - 插件声明依赖：`plugin.json` 加 `requires: { kits: { "slg": { "worldmap": 1 } } }`（plugin schema **v2 增量可选字段**，
   K0-2 拍板 ⛔ 不 bump schemaVersion，`requires` 进锁抬头、身份摘要、注册表索引；PLUGIN.md §5.3 与 PLUGIN-REGISTRY §2.1 / §5 同步改口径：依赖解析只做 plugin → kit 单向）。
   判定：`kit.api.<surface>.minSupported ≤ 声明 ≤ version`；`install` / `check` / 注册表 `validate` 都查；宿主未装该 kit 即拒绝。
