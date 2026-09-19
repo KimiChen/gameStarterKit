@@ -92,7 +92,7 @@ test('full-canvas nested panel stamps as a component when it is registered', () 
 
 test('snapshot identities use instance keys without # so PSD layer tags can round-trip', () => {
     const contract = declarePsdOwnership(fixture(), page, registered);
-    const stamped = stampPsdIdentities(fixture(), contract) as Array<{ identity: { key: string, role: string } }>;
+    const stamped = stampPsdIdentities(fixture(), contract) as Array<{ identity: { key: string, role: string, definitionKey?: string } }>;
     assert.equal(stamped[0]!.identity.role, 'component');
     assert.equal(stamped[3]!.identity.role, 'page');
     assert.equal(stamped[5]!.identity.definitionKey, 'ActionButton');
