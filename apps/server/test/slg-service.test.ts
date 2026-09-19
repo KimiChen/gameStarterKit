@@ -61,6 +61,11 @@ function fixture() {
         z.effects.set(opId, { uid, effect });
         return "INSERTED";
       },
+      // MF2-B4 persona 门面：本测试不触碰
+      async createPersona() { throw new Error("unit test: persona 门面未用"); },
+      async assertControl() { throw new Error("unit test: persona 门面未用"); },
+      async deactivatePersona() { throw new Error("unit test: persona 门面未用"); },
+      async deletePersona() { throw new Error("unit test: persona 门面未用"); },
     };
     try {
       const result = await fn(tx);
