@@ -18,12 +18,13 @@ named-export helper 放在显式排除的 `_support/`，不得混进 domain 目�
 | `GET /clock/now` | `misc/clockNow.ts` | Demo 对时；由 `GameHttpContractMap.ClockNow` 派生并验证 response |
 | `GET /notice/list` | `notice/list.ts` | 静态公告 Demo；由 `GameHttpContractMap.NoticeList` 派生并验证 response |
 | `POST /admin/kick` | `admin/kick.ts` | 非核心强制下线参考，见 EXTRAS |
+| `POST /admin/notice` | `admin/notice.ts` | GM 全区公告（MMO MF6a-B5）：`server.notice` 经投递总线到达该区全部节点的在线连接；同密钥头保护 |
 | `POST /pay/wx-notify` | `pay/wxNotify.ts` | 默认关闭的非核心参考，见 EXTRAS |
 
 登录与选区由外部 WebPlatform Public API 提供，游戏服不挂兼容代理。Lobby 内的一问一答玩法数据使用
 `../websocket/` RPC；HTTP 是否适合某个新功能仍应按缓存、鉴权和交互语义判断，不能只按目录惯例决定。
 
-当前六个游戏服 endpoint 均由 `GameHttpContractMap` 登记 method/path/request/response；每个 request validator
+当前七个游戏服 endpoint 均由 `GameHttpContractMap` 登记 method/path/request/response；每个 request validator
 在 shared 定义处直接生成 Standard Schema。`createGameEndpoint` 从 contract key 派生 path、校验 method，给
 带 body 的路由安装该 shared schema，并在序列化前验证 response；endpoint options 不得另带 body schema。
 当前仍没有统一的应用层 body 大小上限。新增核心 HTTP 契约时应先补齐 shared contract，再新增 endpoint 文件、

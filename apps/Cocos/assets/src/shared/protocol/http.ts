@@ -33,6 +33,8 @@ export const ApiPath = {
     NoticeList: "/notice/list",
     /** GM 强制下线参考端点（POST，默认需密钥） */
     AdminKick: "/admin/kick",
+    /** GM 全区公告端点（POST，默认需密钥；MMO MF6a-B5：ServerNotice 经投递总线到达该区全部在线连接） */
+    AdminNotice: "/admin/notice",
     /** 微信支付回调参考端点（POST，默认关闭） */
     PayWxNotify: "/pay/wx-notify",
 } as const;
@@ -360,6 +362,17 @@ export interface IAdminKickRes {
     kicked: boolean;
 }
 
+/** `/admin/notice` 的请求/响应（默认由服务端密钥保护）：向 `sId` 全区在线连接推送 `server.notice{text}`。 */
+export interface IAdminNoticeReq {
+    sId: number;
+    text: string;
+}
+
+export interface IAdminNoticeRes {
+    /** 已进入投递总线（best-effort：到达与否看各节点在线表；XADD 失败为 false） */
+    published: boolean;
+}
+
 /** `/pay/wx-notify` 参考端点的请求/响应。 */
 export interface IPayWxNotifyReq {
     orderId: string;
@@ -448,6 +461,23 @@ function validateAdminKickResponse(input: unknown): IAdminKickRes {
     assertExactKeys(value, ["kicked"], [], "response");
     if (typeof value.kicked !== "boolean") fail("HTTP_BOOLEAN", "response.kicked");
     return { kicked: value.kicked as boolean };
+}
+
+function validateAdminNoticeRequest(input: unknown): IAdminNoticeReq {
+    const value = objectAt(input, "request");
+    assertExactKeys(value, ["sId", "text"], [], "request");
+    return {
+        sId: finiteInteger(value.sId, "request.sId", 0, 65535),
+        // 与 push `server.notice` 的 text 上限同口径（coreErrors.validateServerNoticePush：1..4096）
+        text: boundedString(value.text, "request.text", 1, 4096),
+    };
+}
+
+function validateAdminNoticeResponse(input: unknown): IAdminNoticeRes {
+    const value = objectAt(input, "response");
+    assertExactKeys(value, ["published"], [], "response");
+    if (typeof value.published !== "boolean") fail("HTTP_BOOLEAN", "response.published");
+    return { published: value.published as boolean };
 }
 
 function validatePayWxNotifyRequest(input: unknown): IPayWxNotifyReq {
@@ -707,6 +737,7 @@ export const GameHttpContractMap = {
     ClockNow: defineGameHttpContract({ method: "GET", path: ApiPath.ClockNow, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateClockResponse(input)) }),
     NoticeList: defineGameHttpContract({ method: "GET", path: ApiPath.NoticeList, auth: "none", request: validateNoBody, response: (input: unknown) => guardWire("response", () => validateNoticeListResponse(input)) }),
     AdminKick: defineGameHttpContract({ method: "POST", path: ApiPath.AdminKick, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminKickRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminKickResponse(input)) }),
+    AdminNotice: defineGameHttpContract({ method: "POST", path: ApiPath.AdminNotice, auth: "internal", request: (input: unknown) => guardWire("request", () => validateAdminNoticeRequest(input)), response: (input: unknown) => guardWire("response", () => validateAdminNoticeResponse(input)) }),
     PayWxNotify: defineGameHttpContract({ method: "POST", path: ApiPath.PayWxNotify, auth: "internal", request: (input: unknown) => guardWire("request", () => validatePayWxNotifyRequest(input)), response: (input: unknown) => guardWire("response", () => validatePayWxNotifyResponse(input)) }),
 } as const satisfies Record<string, GameHttpContractDefinition>;
 

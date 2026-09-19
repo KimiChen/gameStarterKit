@@ -393,9 +393,10 @@ session verify）、`WireDispatcher`（C2S 固定序）、`MessageBudget`（每�
 | `GET /clock/now` | Demo 对时 | `GameHttpContractMap.ClockNow` 派生 path/method，并验证响应 shape |
 | `GET /notice/list` | 静态公告 Demo | `GameHttpContractMap.NoticeList` 派生 path/method，并验证响应及公告项 shape |
 | `POST /admin/kick` | 可选强制下线参考 | 见 [EXTRAS](EXTRAS.md#32-gm账号管理与强制下线参考) |
+| `POST /admin/notice` | GM 全区公告（MMO MF6a-B5） | `GameHttpContractMap.AdminNotice`；`server.notice{text}` 经 core/push 投递总线 realm 寻址到达该区**全部节点**的在线连接（GM 调任一节点即可，与 kick 的逐节点不同）；`ADMIN_API_SECRET` 未配置即关闭 |
 | `POST /pay/wx-notify` | 默认关闭的可选参考 | 见 [EXTRAS](EXTRAS.md#34-真实货币支付参考) |
 
-`GameHttpContractMap` 现在登记全部六个游戏服 endpoint；每个 request validator 在 shared 定义处直接生成
+`GameHttpContractMap` 现在登记全部七个游戏服 endpoint；每个 request validator 在 shared 定义处直接生成
 Standard Schema。`createGameEndpoint` 从 contract key 派生 path、校验 method，给带 body 的路由安装该 schema，
 禁止 endpoint options 另带本地 body schema，并在 handler 返回值序列化前运行 shared response validator。
 新增核心 endpoint 时先补齐 shared request/response/path，再新增 `<domain>/<method>.ts` 并运行
