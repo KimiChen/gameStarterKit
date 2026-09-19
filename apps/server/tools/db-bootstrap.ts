@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import mysql from "mysql2/promise";
 import { MYSQL_URL } from "../src/core/infra/config";
 import { SERVER_KIT_CATALOG } from "../src/kits/catalog.generated";
-import { applyKitMigrations } from "./kit-migrations";
+import { applyKitMigrations, withBootstrapLease } from "./kit-migrations";
 import { orphanKitWorkerLeases, presetKitWorkerLeases } from "./kit-workers";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -194,6 +194,89 @@ async function ensureMatchResultsZoneShape(conn: mysql.Connection, dbName: strin
          ALGORITHM=INPLACE, LOCK=NONE`,
     );
     await verifyMatchZoneIndex(conn, dbName);
+  }
+}
+
+// ── MMO MF2 资产主体迁移（docs/MMO.md §5 MF2-B2）：owner_kind / owner_id 列 + user_currency PK / currency_ledger uk_idem 重建 ──
+// 只接受 legacy（无 owner 列、PK (user_id, server_id, currency) / uk_idem (user_id, server_id, idem_key)）或目标形态；
+// 同名错定义 fail-closed。INSTANT 加列（不指定 AFTER）；键重建 DROP + ADD 一条 ALTER 原子完成；每步前后查真定义，中断重跑可收敛。
+
+const ASSET_OWNER_TABLES = ["user_currency", "currency_ledger", "gameplay_outbox"] as const;
+type AssetOwnerTable = typeof ASSET_OWNER_TABLES[number];
+
+async function verifyOwnerColumns(conn: mysql.Connection, dbName: string, tableName: AssetOwnerTable): Promise<boolean> {
+  const [rows] = await conn.query<(ColumnShape & { COLUMN_NAME: string; CHARACTER_SET_NAME: string | null; COLLATION_NAME: string | null })[]>(
+    `SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, CHARACTER_SET_NAME, COLLATION_NAME
+       FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME IN ('owner_kind', 'owner_id')
+      ORDER BY FIELD(COLUMN_NAME, 'owner_kind', 'owner_id')`,
+    [dbName, tableName],
+  );
+  if (rows.length === 0) { return false; }
+  if (rows.length !== 2) {
+    throw new Error(`${tableName} 的 owner_kind / owner_id 定义异常：只有一列存在（${rows.map((row) => row.COLUMN_NAME).join(", ")}）——不接受半迁移形态`);
+  }
+  const [kind, id] = rows;
+  const kindValid = kind.COLUMN_NAME === "owner_kind" && kind.DATA_TYPE.toLowerCase() === "tinyint"
+    && kind.COLUMN_TYPE.toLowerCase() === "tinyint unsigned" && kind.IS_NULLABLE === "NO" && String(kind.COLUMN_DEFAULT) === "0";
+  const idValid = id.COLUMN_NAME === "owner_id" && id.COLUMN_TYPE.toLowerCase() === "varchar(64)" && id.IS_NULLABLE === "NO"
+    && String(id.COLUMN_DEFAULT) === "" && id.CHARACTER_SET_NAME?.toLowerCase() === "ascii" && id.COLLATION_NAME?.toLowerCase() === "ascii_bin";
+  if (!kindValid || !idValid) {
+    throw new Error(
+      `${tableName} 的 owner 列定义不匹配：期望 owner_kind TINYINT UNSIGNED NOT NULL DEFAULT 0 / owner_id VARCHAR(64) ascii_bin NOT NULL DEFAULT ''，`
+      + `实际 ${rows.map((row) => `${row.COLUMN_NAME}=${row.COLUMN_TYPE} NULL=${row.IS_NULLABLE} DEFAULT=${String(row.COLUMN_DEFAULT)} CS=${String(row.CHARACTER_SET_NAME)}`).join("; ")}`,
+    );
+  }
+  return true;
+}
+
+async function indexColumns(conn: mysql.Connection, dbName: string, tableName: string, indexName: string, unique: boolean): Promise<string[]> {
+  const [rows] = await conn.query<IndexShape[]>(
+    `SELECT SEQ_IN_INDEX, COLUMN_NAME, SUB_PART, NON_UNIQUE, INDEX_TYPE, COLLATION
+       FROM information_schema.STATISTICS
+      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ?
+      ORDER BY SEQ_IN_INDEX`,
+    [dbName, tableName, indexName],
+  );
+  const structurallyValid = rows.length > 0 && rows.every((row, index) =>
+    Number(row.SEQ_IN_INDEX) === index + 1
+    && row.SUB_PART === null
+    && Number(row.NON_UNIQUE) === (unique ? 0 : 1)
+    && row.INDEX_TYPE.toUpperCase() === "BTREE"
+    && row.COLLATION === "A");
+  if (!structurallyValid) {
+    throw new Error(`${tableName}.${indexName} 定义不匹配（缺失 / 前缀索引 / 非 BTREE / 唯一性不符），拒绝迁移`);
+  }
+  return rows.map((row) => row.COLUMN_NAME);
+}
+
+const same = (left: readonly string[], right: readonly string[]): boolean => left.length === right.length && left.every((column, index) => column === right[index]);
+
+async function ensureAssetOwnerShape(conn: mysql.Connection, dbName: string): Promise<void> {
+  for (const tableName of ASSET_OWNER_TABLES) {
+    if (!(await verifyOwnerColumns(conn, dbName, tableName))) {
+      await conn.query(`ALTER TABLE ${tableName} ADD COLUMN owner_kind TINYINT UNSIGNED NOT NULL DEFAULT 0, ALGORITHM=INSTANT`);
+      await conn.query(`ALTER TABLE ${tableName} ADD COLUMN owner_id VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '', ALGORITHM=INSTANT`);
+      if (!(await verifyOwnerColumns(conn, dbName, tableName))) throw new Error(`${tableName} owner 列加列后校验失败`);
+    }
+  }
+  const LEGACY_PK = ["user_id", "server_id", "currency"];
+  const TARGET_PK = ["user_id", "server_id", "owner_kind", "owner_id", "currency"];
+  const pk = await indexColumns(conn, dbName, "user_currency", "PRIMARY", true);
+  if (same(pk, LEGACY_PK)) {
+    await conn.query("ALTER TABLE user_currency DROP PRIMARY KEY, ADD PRIMARY KEY (user_id, server_id, owner_kind, owner_id, currency)");
+    if (!same(await indexColumns(conn, dbName, "user_currency", "PRIMARY", true), TARGET_PK)) throw new Error("user_currency.PRIMARY 升级后校验失败");
+  } else if (!same(pk, TARGET_PK)) {
+    throw new Error(`user_currency.PRIMARY 定义不匹配：只接受 legacy (${LEGACY_PK.join(", ")}) 或目标 (${TARGET_PK.join(", ")})，实际 (${pk.join(", ")})`);
+  }
+  const LEGACY_UK = ["user_id", "server_id", "idem_key"];
+  const TARGET_UK = ["user_id", "server_id", "owner_kind", "owner_id", "idem_key"];
+  const uk = await indexColumns(conn, dbName, "currency_ledger", "uk_idem", true);
+  if (same(uk, LEGACY_UK)) {
+    await conn.query("ALTER TABLE currency_ledger DROP KEY uk_idem, ADD UNIQUE KEY uk_idem (user_id, server_id, owner_kind, owner_id, idem_key), ALGORITHM=INPLACE, LOCK=NONE");
+    if (!same(await indexColumns(conn, dbName, "currency_ledger", "uk_idem", true), TARGET_UK)) throw new Error("currency_ledger.uk_idem 升级后校验失败");
+  } else if (!same(uk, TARGET_UK)) {
+    throw new Error(`currency_ledger.uk_idem 定义不匹配：只接受 legacy (${LEGACY_UK.join(", ")}) 或目标 (${TARGET_UK.join(", ")})，实际 (${uk.join(", ")})`);
   }
 }
 
@@ -629,6 +712,9 @@ async function main(): Promise<void> {
       if (e.errno !== 1060) { throw e; }
     });
   }
+  // MMO MF2 资产主体（docs/MMO.md §5 MF2-B2）：db_bootstrap 租约下一次性完成，已迁即跳过（INFORMATION_SCHEMA 守卫，⛔ 不吞 1060/1061 猜）。
+  await withBootstrapLease(conn, `db-bootstrap:${process.pid}`, 120, () => ensureAssetOwnerShape(conn, dbName));
+  console.log("✅ 资产主体形态（owner_kind / owner_id + user_currency PK + currency_ledger uk_idem）已收敛");
   // 对局按区（DUAL_MODE §4.1）：fresh schema、c8 存量首次升级、任意中断后的重跑均须收敛；
   // 具体定义由 INFORMATION_SCHEMA 校验，⛔ 不靠吞 1060/1061 猜「大概已经有了」。
   await ensureMatchResultsZoneShape(conn, dbName);

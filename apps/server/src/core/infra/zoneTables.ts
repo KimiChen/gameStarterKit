@@ -19,6 +19,7 @@ export const FRAMEWORK_PER_ZONE_TABLES: readonly string[] = [
   "user_currency",
   "currency_ledger",
   "gameplay_outbox",
+  "persona",
   "purchases",
   "match_results",
   "mail",
