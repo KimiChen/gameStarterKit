@@ -169,6 +169,32 @@ export class TransferInFlightError extends Error {
   }
 }
 
+/** 分线分配（MF10-B1）：该图全部分线已满且已到 WORLD_MAX_LINES_PER_MAP，⛔ 再开新线。 */
+export class WorldLinesExhaustedError extends Error {
+  readonly mapId: string;
+  readonly maxLines: number;
+  constructor(mapId: string, maxLines: number) {
+    super(`world lines exhausted: map=${mapId} maxLines=${maxLines}`);
+    this.name = "WorldLinesExhaustedError";
+    this.mapId = mapId;
+    this.maxLines = maxLines;
+  }
+}
+
+/** 指定分线越过上限（MF10-B1）：line ≥ WORLD_MAX_LINES_PER_MAP。 */
+export class WorldLineLimitError extends Error {
+  readonly mapId: string;
+  readonly line: number;
+  readonly maxLines: number;
+  constructor(mapId: string, line: number, maxLines: number) {
+    super(`world line out of range: map=${mapId} line=${line} maxLines=${maxLines}`);
+    this.name = "WorldLineLimitError";
+    this.mapId = mapId;
+    this.line = line;
+    this.maxLines = maxLines;
+  }
+}
+
 /** 同一 kit 事务内的 persona 锁序被打破（account 作用域 → persona id 升序）：fail-closed，⛔ 不等 InnoDB 死锁裁决。 */
 export class PersonaLockOrderError extends Error {
   constructor(msg: string) { super(`persona lock order: ${msg}`); this.name = "PersonaLockOrderError"; }
