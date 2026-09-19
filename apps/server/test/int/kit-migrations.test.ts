@@ -28,6 +28,7 @@ const orphans = (...extra: string[]): string[] => [...REGISTERED_KIT_IDS, ...ext
 import { applyKitMigrations, sha256Hex, verifyKitTableShapes } from "../../tools/kit-migrations";
 import { dropKitTables } from "../../tools/plugin/dropData";
 import { assertKitOutboxDrained, countPendingKitOutbox, describeKitOutboxBacklog } from "../../tools/plugin/outboxGate";
+import { presetKitWorkerLeases } from "../../tools/kit-workers";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const serverRoot = join(here, "../..");
@@ -135,6 +136,20 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
       assert.deepEqual(ledger.map((r) => [r.kit_id, r.file, r.sha256]), [["kfix", "sql/001-init.sql", sha256Hex(INIT_SQL)]]);
       const [seed] = await conn.query<mysql.RowDataPacket[]>("SELECT name FROM k_kfix_world WHERE world_id = 1");
       assert.equal(seed[0]?.name, "seed");
+
+      // MF7a-B2：kit worker 租约行预置——两遍零新行、行的 holder 空 / fence 0 / 已过期（可被首个 worker 抢占）
+      const withWorker: ServerKitCatalogEntry = { ...KFIX, workers: [{ id: "tick", entry: "apps/server/src/kits/kfix/workers/tick.ts" }] };
+      assert.deepEqual(await presetKitWorkerLeases(conn, [withWorker]), { inserted: ["kit:kfix:tick"], existing: [] });
+      assert.deepEqual(await presetKitWorkerLeases(conn, [withWorker]), { inserted: [], existing: ["kit:kfix:tick"] }, "第二遍 ODKU 零新行");
+      const [workerLease] = await conn.query<mysql.RowDataPacket[]>(
+        "SELECT holder, fence_token, (expires_at <= NOW(3)) AS expired FROM singleton_lease WHERE lease_name = 'kit:kfix:tick'");
+      assert.deepEqual([workerLease[0]?.holder, Number(workerLease[0]?.fence_token), Number(workerLease[0]?.expired)], ["", 0, 1]);
+      // 在役租约（已被 worker 抢占：holder / fence / 未过期）不被再次预置重置——ODKU no-op，⛔ 不是 REPLACE / 重置 UPDATE
+      await conn.query("UPDATE singleton_lease SET holder = 'w1', fence_token = fence_token + 1, expires_at = NOW(3) + INTERVAL 60 SECOND WHERE lease_name = 'kit:kfix:tick'");
+      assert.deepEqual(await presetKitWorkerLeases(conn, [withWorker]), { inserted: [], existing: ["kit:kfix:tick"] });
+      const [held] = await conn.query<mysql.RowDataPacket[]>(
+        "SELECT holder, fence_token, (expires_at > NOW(3)) AS live FROM singleton_lease WHERE lease_name = 'kit:kfix:tick'");
+      assert.deepEqual([held[0]?.holder, Number(held[0]?.fence_token), Number(held[0]?.live)], ["w1", 1, 1], "预置不重置在役租约");
 
       // 租约成功路径结束后已释放
       const [lease] = await conn.query<LeaseRow[]>(
