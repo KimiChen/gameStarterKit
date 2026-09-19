@@ -478,6 +478,27 @@ export async function applyKitMigrations(options: ApplyKitMigrationsOptions): Pr
 
 // ── 表形态校验 ─────────────────────────────────────────────────────────────
 
+/**
+ * `role:"world-event"` 表的框架固定列集（docs/MMO.md §5.4 MF7b `WorldEventPort`；MF7a 随 schema 字段先机检）：
+ * 事件 id / 分线 / 序号 / 种类 / 载荷 / 状态 0-3 / 尝试次数 / 产生它的分线检查点 rev（§7.3 原子规则）。kit 选表名、⛔ 不改列集。
+ */
+export const WORLD_EVENT_TABLE_COLUMNS: readonly string[] = [
+  "event_id", "instance_id", "seq", "kind", "payload", "status", "attempts", "checkpoint_rev",
+];
+
+/** role=world-event 的表必须含 WORLD_EVENT_TABLE_COLUMNS 全部列（缺一即 fail-closed；多出的列放行）。 */
+async function verifyWorldEventShape(conn: SqlConn, dbName: string, kitId: string, table: string): Promise<void> {
+  const [rows] = await conn.query(
+    "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
+    [dbName, table],
+  );
+  const columns = new Set(rowsOf(rows).map((r) => String(r.COLUMN_NAME)));
+  const missing = WORLD_EVENT_TABLE_COLUMNS.filter((column) => !columns.has(column));
+  if (missing.length > 0) {
+    throw new Error(`kit "${kitId}" 的 role=world-event 表 ${table} 缺少框架固定列：${missing.join(", ")}（必备 ${WORLD_EVENT_TABLE_COLUMNS.join(", ")}）`);
+  }
+}
+
 export interface VerifyKitTableShapesOptions {
   readonly conn: SqlConn;
   readonly dbName: string;
@@ -540,6 +561,7 @@ export async function verifyKitTableShapes(options: VerifyKitTableShapesOptions)
         throw new Error(`kit "${kit.id}" 的表 ${table.name}.ENGINE 定义不匹配：期望 InnoDB，实际 ${engine ?? "missing"}`);
       }
       verifyZoneShape(kit.id, table.name, table.zone, serverIdByTable.get(table.name), uniqueIndexes.get(table.name));
+      if (table.role === "world-event") { await verifyWorldEventShape(conn, dbName, kit.id, table.name); }
     }
     for (const name of [...existing].sort()) {
       if (name.startsWith(prefix) && !declaredAll.has(name)) {

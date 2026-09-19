@@ -46,6 +46,8 @@ export interface PluginIdentity {
   readonly fguiPackages: readonly string[];
   /** plugin.json 声明的 viewDirs / owners[].logicDir（安装期校验必须落在本插件命名空间内）。 */
   readonly clientDirs: readonly string[];
+  /** kit 的后台 worker 清单（MF7a；进身份摘要）；插件恒为空 / 缺省。 */
+  readonly workers?: readonly { readonly id: string; readonly entry: string }[];
 }
 
 export interface OwnershipRule {

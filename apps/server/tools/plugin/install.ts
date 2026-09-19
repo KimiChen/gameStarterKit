@@ -188,6 +188,7 @@ function summaryOf(pkg: ValidatedPackage): LockManifestSummary {
     fguiPackages: manifest.fguiPackages,
     api: manifest.class === "kit" ? manifest.api : {},
     requires: manifest.class === "plugin" ? manifest.requires : EMPTY_REQUIRES,
+    workers: manifest.class === "kit" ? manifest.workers : [],
   };
 }
 

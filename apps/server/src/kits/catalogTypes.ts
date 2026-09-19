@@ -5,10 +5,20 @@
 import type { KitCatalogEntry } from "@game/shared/kits/catalogTypes";
 
 export type KitTableZone = "per-zone" | "global";
+/** 表角色（docs/MMO.md §5.4 MF7a / MF7b）：`world-event` = 框架固定形态的世界事件表（列集由 verifyKitTableShapes 机检）。 */
+export type KitTableRole = "world-event";
 
 export interface KitSqlTableSpec {
   readonly name: string;
   readonly zone: KitTableZone;
+  readonly role?: KitTableRole;
+}
+
+/** kit 后台 worker（MF7a）：`npm --workspace @game/server run worker -- <kit>:<id>` 按 entry 装载。 */
+export interface KitWorkerSpec {
+  readonly id: string;
+  /** 相对仓根：`apps/server/src/kits/<kitId>/workers/<id>.ts`，默认导出 defineKitWorker(...)。 */
+  readonly entry: string;
 }
 
 export interface ServerKitCatalogEntry extends KitCatalogEntry {
@@ -17,4 +27,6 @@ export interface ServerKitCatalogEntry extends KitCatalogEntry {
   readonly sqlTables: readonly KitSqlTableSpec[];
   /** per-user Redis 键名（kKitUser 的 name 段）；freeze/thaw 按它快照与 UNLINK。 */
   readonly userKeys: readonly string[];
+  /** 后台 worker 清单（bootstrap 预置 `singleton_lease('kit:<id>:<worker>')`）；生成物恒写出，手写 / 测试字面量缺省 = 空。 */
+  readonly workers?: readonly KitWorkerSpec[];
 }

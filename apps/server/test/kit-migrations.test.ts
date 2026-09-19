@@ -10,7 +10,7 @@ import {
   FRAMEWORK_GLOBAL_TABLES, FRAMEWORK_PER_ZONE_TABLES, allTables, assertKitTablePrefixesUnique, globalTables, kitTablePrefix, perZoneTables,
 } from "../src/core/infra/zoneTables";
 import {
-  applyKitMigrations, lintKitStatement, sha256Hex, splitSqlStatements, verifyKitTableShapes,
+  WORLD_EVENT_TABLE_COLUMNS, applyKitMigrations, lintKitStatement, sha256Hex, splitSqlStatements, verifyKitTableShapes,
   type SqlConn,
 } from "../tools/kit-migrations";
 
@@ -242,6 +242,8 @@ interface SchemaAnswers {
   engines?: Record<string, string | null>;
   serverId: Record<string, { DATA_TYPE: string; COLUMN_TYPE: string; IS_NULLABLE: string }>;
   uniques: { TABLE_NAME: string; INDEX_NAME: string; COLUMN_NAME: string }[];
+  /** 表 → 全部列名（role=world-event 的列集机检用；缺省不答）。 */
+  columns?: Record<string, string[]>;
 }
 
 const GOOD_SCHEMA: SchemaAnswers = {
@@ -306,6 +308,10 @@ function fakeConn(options: FakeConnOptions): SqlConn & { calls: Call[]; executed
         TABLE_NAME,
         ENGINE: schema.engines !== undefined && TABLE_NAME in schema.engines ? schema.engines[TABLE_NAME] : "InnoDB",
       })), []];
+    }
+    if (head.includes("COLUMN_NAME FROM information_schema.COLUMNS")) {
+      const table = String(p?.[1]);
+      return [(schema.columns?.[table] ?? []).map((COLUMN_NAME) => ({ TABLE_NAME: table, COLUMN_NAME })), []];
     }
     if (head.includes("information_schema.COLUMNS")) {
       return [Object.entries(schema.serverId).map(([TABLE_NAME, c]) => ({ TABLE_NAME, ...c })), []];
@@ -597,3 +603,32 @@ test("verifyKitTableShapes：global 表带 server_id ⇒ 抛；未声明的 k_<i
   // 别的 kit 的表不算本 kit 的孤儿；框架表更不算
   await verifyWith({ ...GOOD_SCHEMA, tables: [...GOOD_SCHEMA.tables, "k_kfixx_t", "k_other_t"] });
 });
+
+// ── MF7a：role=world-event 表的框架固定列集 ────────────────────────────────
+// 变异验证：verifyWorldEventShape 删 missing 判定 → 「缺 checkpoint_rev」转红。
+test("verifyKitTableShapes：role=world-event 表必须含框架固定列集（event_id … checkpoint_rev）；缺列点名", async () => {
+  const EVT: ServerKitCatalogEntry = {
+    ...KFIX,
+    sqlTables: [...KFIX.sqlTables, { name: "k_kfix_event", zone: "per-zone", role: "world-event" }],
+  };
+  const columns = ["server_id", ...WORLD_EVENT_TABLE_COLUMNS];
+  const schema: SchemaAnswers = {
+    ...GOOD_SCHEMA,
+    tables: [...GOOD_SCHEMA.tables, "k_kfix_event"],
+    serverId: { ...GOOD_SCHEMA.serverId, k_kfix_event: { DATA_TYPE: "smallint", COLUMN_TYPE: "smallint unsigned", IS_NULLABLE: "NO" } },
+    uniques: [
+      ...GOOD_SCHEMA.uniques,
+      { TABLE_NAME: "k_kfix_event", INDEX_NAME: "PRIMARY", COLUMN_NAME: "server_id" },
+      { TABLE_NAME: "k_kfix_event", INDEX_NAME: "PRIMARY", COLUMN_NAME: "event_id" },
+    ],
+    columns: { k_kfix_event: columns },
+  };
+  await verifyWith(schema, [EVT]);
+  await assert.rejects(
+    verifyWith({ ...schema, columns: { k_kfix_event: columns.filter((c) => c !== "checkpoint_rev" && c !== "attempts") } }, [EVT]),
+    /role=world-event 表 k_kfix_event 缺少框架固定列：attempts, checkpoint_rev/u,
+  );
+  // 无 role 的表不查列集（GOOD_SCHEMA 未答 columns 也通过）
+  await verifyWith({ ...GOOD_SCHEMA, columns: {} }, [KFIX]);
+});
+

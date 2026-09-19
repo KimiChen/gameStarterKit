@@ -25,6 +25,7 @@ import {
   type KitSqlTable,
   type PluginRegistration,
   type PluginRequires,
+  type KitWorker,
 } from "../plugin-codegen/pluginManifestSchema";
 
 const TOOL_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -74,6 +75,8 @@ export interface KitManifest {
   readonly sql: { readonly files: readonly string[]; readonly tables: readonly KitSqlTable[] };
   readonly userKeys: readonly string[];
   readonly effects: Readonly<Record<string, KitEffect>>;
+  /** 后台 worker 清单（MF7a；进锁抬头与身份摘要）。 */
+  readonly workers: readonly KitWorker[];
   readonly registration: KitRegistration;
 }
 
@@ -123,6 +126,7 @@ export function parseKitManifest(input: unknown, pathLabel = "kit.json"): KitMan
     sql: registration.sql,
     userKeys: registration.userKeys,
     effects: registration.effects,
+    workers: registration.workers,
     registration,
   };
 }
@@ -210,6 +214,7 @@ export function kitIdentityOf(manifest: KitManifest, hasServerDir: boolean): Plu
     domains: manifest.domains,
     fguiPackages: manifest.fguiPackages,
     clientDirs: clientDirsOf(manifest),
+    workers: manifest.workers,
   };
 }
 
@@ -222,8 +227,12 @@ export function identityFromSummary(summary: {
   readonly modes: readonly PackageMode[];
   readonly domains: readonly string[];
   readonly fguiPackages: readonly string[];
+  readonly workers?: readonly KitWorker[];
 }, clientDirs: readonly string[]): PluginIdentity {
-  return { class: summary.class, id: summary.id, kinds: summary.kinds, constantName: summary.constantName, modes: summary.modes, domains: summary.domains, fguiPackages: summary.fguiPackages, clientDirs };
+  return {
+    class: summary.class, id: summary.id, kinds: summary.kinds, constantName: summary.constantName, modes: summary.modes,
+    domains: summary.domains, fguiPackages: summary.fguiPackages, clientDirs, workers: summary.workers ?? [],
+  };
 }
 
 /** 树上 apps/plugins/<id>/gameplay/manifest.json（可缺省 = 无玩法）。 */
@@ -297,6 +306,8 @@ export interface IdentitySummaryInput {
   readonly modes: readonly PackageMode[];
   readonly domains: readonly string[];
   readonly fguiPackages: readonly string[];
+  /** kit 的 worker 清单（MF7a）；插件 / 旧锁缺省空。 */
+  readonly workers?: readonly KitWorker[];
 }
 
 export function identitySummary(manifest: IdentitySummaryInput): Record<string, string> {
@@ -307,6 +318,7 @@ export function identitySummary(manifest: IdentitySummaryInput): Record<string, 
     modes: manifest.modes.map((mode) => `${mode.id}:${mode.constantName}`).sort().join(",") || "-",
     domains: manifest.domains.join(",") || "-",
     fguiPackages: manifest.fguiPackages.join(",") || "-",
+    workers: (manifest.workers ?? []).map((worker) => `${worker.id}:${worker.entry}`).sort().join(",") || "-",
   };
 }
 
