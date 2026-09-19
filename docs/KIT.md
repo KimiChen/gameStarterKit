@@ -80,6 +80,12 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
   status / attempts / checkpoint_rev`，`db:bootstrap` 的形状机检缺列 fail-closed）；`workers: [{ id, entry }]` = 后台 worker
   清单，`entry` 固定形态 `apps/server/src/kits/<id>/workers/<worker>.ts`（默认导出 `defineKitWorker({ pass })`，§4），每个
   worker 对应一行 `singleton_lease('kit:<id>:<worker>')`（bootstrap 预置，§5）。
+- **MMO MF9 增量可选字段（2026-09-19 交付，同样 ⛔ 不 bump schemaVersion，进锁抬头与身份摘要）**：`contributions: { <id>: { kind:
+  "data" | "module", ends: [shared | server | client], schema? | export? } }` = kit 定义的**贡献点**（§4：module 恰好一端且带
+  `export`；data 带 `schema`（解释器支持的 draft-07 子集，加载期 fail-fast），schema 的 sha256 进锁 / 身份摘要——schema 变了就是
+  契约变了）；`fragments: [<name>]` = kit 提供的 state fragment（文件 `apps/kits/<id>/fragments/<name>.state.json`，
+  `{ schemaVersion: 1, root?: WireField[], player?: WireField[] }`，字段形态与 state.json 一致；mode 的 state.json 以
+  `"<kitId>:<name>"` 引用，字段注入 root / players value 类型，文件字节并入该 mode 的 contractDigest）。
 - `userKeys`：kit 的 per-user Redis 键名清单——冷档 freeze/thaw 按它快照与 UNLINK（框架 PR：freeze/thaw 读该清单）。
 - 没有 `version` = 宿主自有 kit（与插件同规则：不可打包、不进锁）。
 - 派生形态：`client`（有登记）/ `gameplay`（modes 非空）/ `server`（有 sql 或 `apps/server/src/kits/<id>/`）——纯 SQL + 服务的
@@ -106,6 +112,22 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
   自杀）；entry 默认导出 `defineKitWorker({ pass(tx, ctx), idleMs? })`，`pass` 一轮一条事务、返回 `{ more: true }` 表示同区还有
   积压（有界批次由 pass 自己的 LIMIT 决定）；⛔ 模块级 `setInterval` / 导入期副作用（§2）。真库夹具见
   `apps/server/test/int/kit-worker-lease.test.ts`。
+- **贡献点 / fragment / 带参 launch（MMO MF9，2026-09-19 已交付）**：
+  - 贡献点是 kit 反向接收插件内容的唯一通道（kit ⛔ import 插件；插件按 kit 定义的形状交内容）：插件 `plugin.json.contributes:
+    { <kitId>: { <id>: <仓库相对路径> } }`（**贡献 = 依赖**：该 kit 必须同时在 `requires.kits`），`codegen:plugins` 三道校验——登记
+    （kit / 贡献点 id 存在）、所有权（路径 ⊆ 插件所有权推导集，硬排除 / 受保护 / 别的包一律拒）、内容（module：.ts、落在声明端的
+    `apps/<end>/src/`、TS 语法读取确认导出符号；data：.json、按 kit schema 校验）——后渲染 `apps/<end>/src/kits/<kitId>/contributions.generated.ts`
+    （module = 静态字面量相对 import，data = 同源 JSON 字面量；kit 声明了某端贡献点即恒生成，空列表；撤销声明后孤儿文件由 writer
+    收回）。kit 代码从自己目录 `./contributions.generated` 导入 `KIT_CONTRIBUTIONS`（K1 边界扫描对 `*.generated.ts` 豁免；
+    protected-paths 以 `*` 单段通配登记这一族生成物）。闸：`pack` 越界贡献整包拒；`install` 正向闸（kit 已装且贡献点存在）；kit
+    `install --reinstall-from-tree` 反向闸（已安装插件填充的贡献点被删 / 契约（kind / ends / export / schema digest）变化 ⇒ 点名，
+    `--break-dependents` 才放行）；`check` 持续核对。
+  - kit fragment（§3 `fragments`）泛化了 ownerReady / inviteRoom 的注入通道：mode 在 state.json `fragments` 里写 `"<kitId>:<name>"`，
+    `codegen:gameplays` 按 kit.json.fragments 声明 + 文件解析并注入（撞名 / 未声明 / 缺文件 / 无发现根一律拒）。
+  - 带参 launch（EXTRAS X1）：menu `launch.payload`（对象，⛔ 生成器不解释）/ `launch.profile`（须 ∈ 该玩法 manifest.profiles，
+    codegen 校验）随 GeneratedLaunchTarget 进客户端；`AppRuntime.launch(target)` 把 `{ ...payload, profile? }` 经
+    `RoomController.startRegistered` 交给该玩法 `GameplayModule.validateLaunch`（exact 校验：未知字段 / 非法 profile 在启动时刻拒、
+    不进房）；`services.joinGameRoom(adapter, signal, { profile })` 让 joiner 按 target 选房型（ballMove 是参考接线）。
 - 插件声明依赖：`plugin.json` 加 `requires: { kits: { "slg": { "worldmap": 1 } } }`（plugin schema **v2 增量可选字段**，
   K0-2 拍板 ⛔ 不 bump schemaVersion，`requires` 进锁抬头、身份摘要、注册表索引；PLUGIN.md §5.3 与 PLUGIN-REGISTRY §2.1 / §5 同步改口径：依赖解析只做 plugin → kit 单向）。
   判定：`kit.api.<surface>.minSupported ≤ 声明 ≤ version`；`install` / `check` / 注册表 `validate` 都查；宿主未装该 kit 即拒绝。
@@ -201,6 +223,7 @@ packages/<id>/<version>/reviews/NNN.json    仅 kit，追加式：{ action: "app
 | K0-5 样本 `arena` kit + `arenaShop` 插件走通 pack → install → codegen → bootstrap → 插件建在其上 → uninstall | ✅ 2026-09-06（7c37d56：主树真跑 pack 93 + 26 → 干净安装（首次 postinstall 因残留空目录失败并精确回滚，重装成功）→ arenaShop 过正向闸 → db:bootstrap 两遍（应用 2 条语句 / 第二遍跳过 1）→ check 四包 ✔ → test arena 33 / arenaShop 9 → uninstall arena 被依赖反查拒绝；对抗审阅 16 条：11 修复、5 按约束驳回；两包保持已安装，样本文档见 [apps/kits/arena/README.md](../apps/kits/arena/README.md) / [apps/plugins/arenaShop/README.md](../apps/plugins/arenaShop/README.md)） |
 | K1（门面与边界） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF0** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF0-B1–B3）：客户端 kit-api 路径级导入边界 `apps/client/test/kitImportBoundary.test.ts`（6582d4ac）；服务端 / shared 侧边界 + `.conn` AST 禁令 `apps/server/test/kit-import-boundary.test.ts`（1ce10d01）；uninstall 对 pending `kit:<id>:*` outbox 行的闸 `tools/plugin/outboxGate.ts` + CLI `--allow-pending-outbox`（107f8e5a，`plugin -- check` 只告警）。样本发现的框架小面 `applyKitEffect` / `readKitUserField` / `currentZoneId` 已进 kit-api |
 | kit worker（MMO MF7a） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF7a** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF7a-B1–B6，tag `mf7a-exit`）：kit-schema 增量字段 `workers[]` / `sql.tables[].role`（979a980d）、bootstrap 预置租约行（fe18d127）、`withKitWorkerTx`（3f978152）、`src/workers/kitWorker.ts` 入口 + `defineKitWorker`（bb2b0728）、uninstall / check 闸（ab11e6a0）、真库争租夹具 + 本文 §3 / §4 / §5 |
+| 贡献点 / fragment / 带参 launch（MMO MF9） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF9** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF9-B1–B5，tag `mf9-exit`）：schema 增量字段 `contributions` / `fragments` / `contributes` / `launch.payload|profile`（f6fad19f）、codegen 收录 + 三道闸（745f5ca6）、kit fragment（2c528c69）、带参 launch（944be274，显式框架侵入）、本文 §3 / §4 + PLUGIN.md §5 + EXTRAS X1 |
 | K2（注册表） | 未开始 |
 | `slg` 样本阶段 1 / 2a | ✅ 2026-09-09 完成并验收：SQL 权威地块与行军，worldmap/march v1，原创 10000×10000 地图页，耐久回执/变更日志；七张 per-zone 表、无 mode。verify:all 通过；Creator 17 步/13 图/console 空；干净制品安装、独立空库 4+3 语句、包测试 35/35、重复 bootstrap 零新应用，见 [验收证据](evidence/creator-2026-09-09/slg/README.md)。规则与边界见 [apps/kits/slg/README.md](../apps/kits/slg/README.md)；SLG 2b 等 MMO MF5，离线 worker 等 MF7，不表示 K1/K2 或 MMO 原语已完成 |
 

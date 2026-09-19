@@ -222,6 +222,11 @@
       "reason": "常驻结算 consumer 进程，不随 dev 启动，属额外功能边界"
     },
     {
+      "command": { "kind": "workspace", "workspace": "@game/server", "script": "worker" },
+      "documentedIn": "docs/SERVER.md",
+      "reason": "kit 后台 worker 进程入口（MMO MF7a：npm --workspace @game/server run worker -- <kit>:<worker>），按 kit.json.workers[] 登记装载，不随 dev 启动"
+    },
+    {
       "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:http" },
       "documentedIn": "docs/SERVER.md",
       "reason": "生成物刷新命令，登记在 HTTP endpoint 章节而非日常命令表"

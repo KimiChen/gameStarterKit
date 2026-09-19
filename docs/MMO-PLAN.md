@@ -331,7 +331,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [x] MF3-B1（61a0125e） [x] MF3-B2（dd3ec2fe） [x] MF3-B3（本行所在提交，文档）— MF3 退出 2026-09-19，见 MMO.md §12（偏差 ①–③ 登记在该行）；tag `mf3-exit`
 - [x] MF6a-B1（1f86f07f） [x] MF6a-B2（0e17fcd1） [x] MF6a-B3（e4f9f692） [x] MF6a-B4（1280037e） [x] MF6a-B5（6e38095f；`ServerNotice` 已做，snake 整队入座按施工单后置 ⛔ 未做）— MF6a 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑤ 登记在该行）；tag `mf6a-exit`
 - [x] MF7a-B1（979a980d） [x] MF7a-B2（fe18d127） [x] MF7a-B3（3f978152） [x] MF7a-B4（bb2b0728） [x] MF7a-B5（ab11e6a0） [x] MF7a-B6（本行所在提交，真库争租夹具 + 文档）— MF7a 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑤ 登记在该行）；tag `mf7a-exit`
-- [ ] MF9-B1 [ ] MF9-B2 [ ] MF9-B3 [ ] MF9-B4 [ ] MF9-B5
+- [x] MF9-B1（f6fad19f） [x] MF9-B2（745f5ca6） [x] MF9-B3（2c528c69） [x] MF9-B4（944be274，显式框架侵入） [x] MF9-B5（本行所在提交，文档）— MF9 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑥ 登记在该行）；tag `mf9-exit`
 - [ ] MF2-B1 [ ] MF2-B2 [ ] MF2-B3 [ ] MF2-B4 [ ] MF2-B5 [ ] MF2-B6
 - [ ] MF5a-B1 [ ] MF5a-B2 [ ] MF5a-B3 [ ] MF5a-B4 [ ] MF5a-B5 [ ] MF5a-B6
 - [ ] MF4-B1 [ ] MF4-B2 [ ] MF4-B3 [ ] MF4-B4 [ ] MF4-B5 [ ] MF4-B6 [ ] MF4-B7 [ ] MF4-B8
