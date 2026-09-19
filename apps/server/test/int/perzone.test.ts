@@ -184,7 +184,7 @@ test("A2 公会在线索引按区分桶：同 gid 的 s1 事件 ⛔ 不得推给
   push.setOnlineGuild(a, 1, 1); // s1 的 1 号公会
   push.setOnlineGuild(b, 1, 2); // s2 的 1 号公会（同 gid，⛔ 不同区）
 
-  const n = push.pushToGuild(1, "guild.event", { seq: 1 }, 1); // 只推 s1
+  const n = push.deliverToGuild(1, "guild.event", { seq: 1 }, 1); // 只推 s1
   assert.equal(n, 1, "只应送达 s1 的那一个成员");
   assert.deepEqual(sent.map((s) => s.uid), [a], "⛔ s2 的成员不得收到 s1 的公会事件");
 
@@ -205,19 +205,19 @@ test("A2 公会在线索引以 (uid,sId) 为身份：同账号跨区在线互不
   push.setOnlineGuild(u, 11, 1);
   push.setOnlineGuild(u, 22, 2);
 
-  assert.equal(push.pushToGuild(11, "guild.s1", { seq: 1 }, 1), 1);
+  assert.equal(push.deliverToGuild(11, "guild.s1", { seq: 1 }, 1), 1);
   assert.deepEqual(sent, [{ sId: 1, type: "guild.s1" }],
     "s1 公会事件只到同 uid 的 s1 连接，⛔ 不得经 pushToUser 扇到 s2");
 
   sent.length = 0;
-  assert.equal(push.pushToGuild(22, "guild.s2", { seq: 2 }, 2), 1);
+  assert.equal(push.deliverToGuild(22, "guild.s2", { seq: 2 }, 2), 1);
   assert.deepEqual(sent, [{ sId: 2, type: "guild.s2" }], "s2 索引未被 s1 覆盖");
 
   // s1 最后一条连接离开，只清 s1；s2 仍在线、仍在 22 号公会。
   push.unregisterOnline(u, "sess_s1");
   sent.length = 0;
-  assert.equal(push.pushToGuild(11, "guild.s1.after", {}, 1), 0);
-  assert.equal(push.pushToGuild(22, "guild.s2.after", {}, 2), 1);
+  assert.equal(push.deliverToGuild(11, "guild.s1.after", {}, 1), 0);
+  assert.equal(push.deliverToGuild(22, "guild.s2.after", {}, 2), 1);
   assert.deepEqual(sent, [{ sId: 2, type: "guild.s2.after" }]);
   push.unregisterOnline(u, "sess_s2");
 });
@@ -250,10 +250,10 @@ test("A2 公会全清按 uid 定向：批量成员存在时只清目标账号各
 
     push.setOnlineGuild(target, null); // 无 sId = 只遍历该 uid 的 zone→gid 内层表并全清
     for (const sId of targetZones) {
-      assert.equal(push.pushToGuild(10_000 + sId, "target.after-clear", {}, sId), 0,
+      assert.equal(push.deliverToGuild(10_000 + sId, "target.after-clear", {}, sId), 0,
         `目标账号 s${sId} 的索引必须被全清`);
     }
-    assert.equal(push.pushToGuild(peerGuild, "peers.still-online", {}, 1), peers.length,
+    assert.equal(push.deliverToGuild(peerGuild, "peers.still-online", {}, 1), peers.length,
       "目标账号全清不得扰动其它 uid 的公会索引");
     assert.equal(
       peers.reduce((n, who) => n + (delivered.get(who) ?? 0), 0),
