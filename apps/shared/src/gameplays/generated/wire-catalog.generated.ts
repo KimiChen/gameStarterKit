@@ -15,6 +15,7 @@ import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
 import { SnakeBaselineBegin, SnakeBaselineChunk, SnakeBaselineEnd, SnakeBaselineRequest, SnakeDelta, SnakeEndRun, SnakeInput, SnakeReliveDecision, SnakeReliveDecisionResult, SnakeReliveOffered, SnakeReliveResolved, SnakeRunFinalizing, SnakeRunResult, type ISnakeBaselineBegin, type ISnakeBaselineChunk, type ISnakeBaselineEnd, type ISnakeBaselineRequestReq, type ISnakeEndRunReq, type ISnakeInputReq, type ISnakeReliveDecisionReq, type ISnakeReliveDecisionResult, type ISnakeReliveOffered, type ISnakeReliveResolved, type ISnakeRunFinalizing, type ISnakeRunResultV2, type ISnakeWorldDelta } from "../snake/wire";
 import { TallyTap, type ITallyTapReq } from "../tally/wire";
 import { ViewFixtureBaselineBegin, ViewFixtureBaselineChunk, ViewFixtureBaselineEnd, ViewFixtureEnter, ViewFixtureLeave, ViewFixtureLook, ViewFixturePrivate, ViewFixtureResync, ViewFixtureUpdate, type IViewFixtureBaselineBegin, type IViewFixtureBaselineChunk, type IViewFixtureBaselineEnd, type IViewFixtureEnter, type IViewFixtureLeave, type IViewFixtureLookReq, type IViewFixturePrivate, type IViewFixtureResyncReq, type IViewFixtureUpdate } from "../viewFixture/wire";
+import { WorldFixtureMove, WorldFixturePos, type IWorldFixtureMoveReq, type IWorldFixturePos } from "../worldFixture/wire";
 
 /** 客户端 → 服务端 消息名（core + 各玩法 wire token 的显式字面量聚合） */
 export const C2S = {
@@ -34,6 +35,7 @@ export const C2S = {
     TallyTap: "c2s.tally.tap",
     ViewFixtureLook: "c2s.viewFixture.look",
     ViewFixtureResync: "c2s.viewFixture.resync",
+    WorldFixtureMove: "c2s.worldFixture.move",
 } as const;
 
 /** 服务端 → 客户端 消息名 */
@@ -61,6 +63,7 @@ export const S2C = {
     ViewFixtureBaselineBegin: "s2c.viewFixture.baselineBegin",
     ViewFixtureBaselineChunk: "s2c.viewFixture.baselineChunk",
     ViewFixtureBaselineEnd: "s2c.viewFixture.baselineEnd",
+    WorldFixturePos: "s2c.worldFixture.pos",
 } as const;
 
 export type C2SType = (typeof C2S)[keyof typeof C2S];
@@ -84,6 +87,7 @@ export interface C2SPayloadMap {
     "c2s.tally.tap": ITallyTapReq;
     "c2s.viewFixture.look": IViewFixtureLookReq;
     "c2s.viewFixture.resync": IViewFixtureResyncReq;
+    "c2s.worldFixture.move": IWorldFixtureMoveReq;
 }
 
 export interface S2CPayloadMap {
@@ -110,6 +114,7 @@ export interface S2CPayloadMap {
     "s2c.viewFixture.baselineBegin": IViewFixtureBaselineBegin;
     "s2c.viewFixture.baselineChunk": IViewFixtureBaselineChunk;
     "s2c.viewFixture.baselineEnd": IViewFixtureBaselineEnd;
+    "s2c.worldFixture.pos": IWorldFixturePos;
 }
 
 export type C2SPayload<T extends C2SType> = C2SPayloadMap[T];
@@ -133,6 +138,7 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.tally.tap": TallyTap.validate,
     "c2s.viewFixture.look": ViewFixtureLook.validate,
     "c2s.viewFixture.resync": ViewFixtureResync.validate,
+    "c2s.worldFixture.move": WorldFixtureMove.validate,
 };
 
 /** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */
@@ -160,6 +166,7 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.viewFixture.baselineBegin": ViewFixtureBaselineBegin.validate,
     "s2c.viewFixture.baselineChunk": ViewFixtureBaselineChunk.validate,
     "s2c.viewFixture.baselineEnd": ViewFixtureBaselineEnd.validate,
+    "s2c.worldFixture.pos": WorldFixturePos.validate,
 };
 
 export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {
@@ -196,6 +203,7 @@ export const GAME_WIRE_OWNERS = {
     "c2s.tally.tap": "tally",
     "c2s.viewFixture.look": "viewFixture",
     "c2s.viewFixture.resync": "viewFixture",
+    "c2s.worldFixture.move": "worldFixture",
     "s2c.pong": "core",
     "s2c.welcome": "core",
     "s2c.chat": "core",
@@ -219,6 +227,7 @@ export const GAME_WIRE_OWNERS = {
     "s2c.viewFixture.baselineBegin": "viewFixture",
     "s2c.viewFixture.baselineChunk": "viewFixture",
     "s2c.viewFixture.baselineEnd": "viewFixture",
+    "s2c.worldFixture.pos": "worldFixture",
 } as const;
 
 export type GameWireType = keyof typeof GAME_WIRE_OWNERS;
@@ -237,6 +246,7 @@ export const GAME_WIRE_PHASES = {
     "c2s.tally.tap": [GamePhase.Playing],
     "c2s.viewFixture.look": [GamePhase.Playing],
     "c2s.viewFixture.resync": [GamePhase.Playing],
+    "c2s.worldFixture.move": [GamePhase.Playing],
 } as const satisfies { readonly [type: string]: readonly GamePhaseType[] };
 
 /** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */
@@ -253,6 +263,7 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.tally.tap": 1,
     "c2s.viewFixture.look": 1,
     "c2s.viewFixture.resync": 4,
+    "c2s.worldFixture.move": 1,
 } as const satisfies { readonly [type: string]: number };
 
 /** 每会话 S2C token（MMO MF5a）：只经 sendS2C 发给单个会话，broadcastS2C 对它 fail-closed；值 = coalesceKey（payload 字段名）或 null（不合并、不可丢）。 */
@@ -298,6 +309,9 @@ export const gameplayC2STokens = {
         "c2s.viewFixture.look": ViewFixtureLook,
         "c2s.viewFixture.resync": ViewFixtureResync,
     },
+    "worldFixture": {
+        "c2s.worldFixture.move": WorldFixtureMove,
+    },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };
 
 /** 每玩法 S2C token 表。 */
@@ -336,6 +350,9 @@ export const gameplayS2CTokens = {
         "s2c.viewFixture.baselineBegin": ViewFixtureBaselineBegin,
         "s2c.viewFixture.baselineChunk": ViewFixtureBaselineChunk,
         "s2c.viewFixture.baselineEnd": ViewFixtureBaselineEnd,
+    },
+    "worldFixture": {
+        "s2c.worldFixture.pos": WorldFixturePos,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };
 

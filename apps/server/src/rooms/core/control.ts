@@ -189,3 +189,28 @@ export async function assertControl(sId: number, personaId: string, controlEpoch
     if (current === null) throw new PersonaNotFoundError(personaId);
     throw new ControlConflictError(personaId, controlEpoch, current.controlEpoch);
 }
+
+/** persona 归属 + 控制权（WorldRoom 准入 ⑤：归属由存储真源判定，⛔ 不信 join options / client 自报）。 */
+export interface PersonaOwner {
+    readonly userId: string;
+    /** 0 = active，1 = inactive（kitApi.deactivatePersona 之后、deletePersona 之前）。 */
+    readonly status: number;
+    readonly controlEpoch: number;
+    readonly worldAddress: string | null;
+}
+
+interface PersonaOwnerRow extends RowDataPacket { user_id: string; status: number | string; control_epoch: number | string; world_address: string | null }
+
+export async function readPersonaOwner(sId: number, personaId: string, pool: ControlSqlPool = getPool()): Promise<PersonaOwner | null> {
+    assertSId(sId);
+    const [rows] = await pool.query<PersonaOwnerRow[]>(
+        "SELECT user_id, status, control_epoch, world_address FROM persona WHERE server_id = ? AND persona_id = ?", [sId, personaId]);
+    if (rows.length === 0) return null;
+    const row = rows[0] as PersonaOwnerRow;
+    return {
+        userId: String(row.user_id),
+        status: storedInt(row.status, "persona.status", { min: 0, max: 255 }),
+        controlEpoch: storedInt(row.control_epoch, "persona.control_epoch", { min: 0 }),
+        worldAddress: row.world_address === null || row.world_address === undefined ? null : String(row.world_address),
+    };
+}

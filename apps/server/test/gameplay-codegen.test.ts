@@ -1139,6 +1139,16 @@ test("真实 descriptor 必须通过生命周期断言，否则上面的反例�
   for (const gameplay of gameplays) {
     const type = gameplay.state.types.find((candidate) => candidate.name === gameplay.state.root);
     assert.ok(type, `missing root type ${gameplay.state.root}`);
+    // MF4-B2：world 根的必填集是 {tick, phase, instanceId, mapId, line, authorityEpoch}，⛔ matchId / players（真仓 worldFixture）。
+    if (gameplay.manifest.kind === "world") {
+      const worldLifecycle = ["tick", "phase", "instanceId", "mapId", "line", "authorityEpoch"];
+      assert.deepEqual(
+        [...worldLifecycle, "matchId", "players"].filter((name) => type.fields.some((field) => field.name === name)),
+        worldLifecycle,
+        `${gameplay.state.root} 必须声明 world 生命周期必填集且 ⛔ matchId / players（kind=world）`,
+      );
+      continue;
+    }
     // MF5a-B4：hidden 名册的 root 没有 players（D4），其余生命周期字段照旧必填。
     const lifecycle = gameplay.state.roster === "hidden" ? ["tick", "phase", "matchId"] : ["tick", "phase", "matchId", "players"];
     assert.deepEqual(

@@ -24,3 +24,5 @@ export * from "./tally/wire";
 export * from "./generated/state/tally";
 export * from "./viewFixture/wire";
 export * from "./generated/state/viewFixture";
+export * from "./worldFixture/wire";
+export * from "./generated/state/worldFixture";

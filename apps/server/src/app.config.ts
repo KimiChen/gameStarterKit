@@ -4,6 +4,7 @@ import { RoomName } from "@game/shared";
 import { GameRoom } from "./rooms/GameRoom";
 import { assertRoomProfilesConfigured } from "./rooms/core/RoomProfile";
 import { registerDefaultGameModes } from "./rooms/modes/catalog";
+import { registerWorldRuntime, worldRooms } from "./world.config";
 import { LobbyRoom } from "./websocket/LobbyRoom";
 import { AUTH_PROVIDER, MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
 import { routes } from "./http/index";
@@ -12,6 +13,8 @@ import { createDevAuthProvider } from "./platform/devAuthProvider";
 import { installWebPlatformClient } from "./platform/webPlatformClient";
 
 registerDefaultGameModes();
+// MMO MF4-B6：world 形态玩法登记（worldModeRegistry 分表）+ WorldProfile 断言；合体入口在此调，拆分（PS1 / PS4）后归 world 进程入口。
+registerWorldRuntime();
 // 启动期断言（Non-intrusive §6.2/§4.6）：catalog 声明的每个 (mode, profile) 都有 policy 定义、
 // owner-ready/invite profile 的 state fragment 存在；配对不等式已在 config 加载期断言。
 assertRoomProfilesConfigured();
@@ -47,6 +50,8 @@ export const server = defineServer({
         // Public API 签发的 token，strict auth 通过 Internal HTTP 回源；
         // 不需要大厅功能的联调不 join 它即可，不影响 GameRoom。
         [RoomName.Lobby]: defineRoom(LobbyRoom),
+        // 世界房（MMO MF4-B6，D27）：定义在 world.config.ts（world 进程的 rooms 表），合体入口合并；⛔ 不登记进 lobby / game 的 config。
+        ...worldRooms,
     },
 
     routes,

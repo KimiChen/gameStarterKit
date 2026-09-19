@@ -28,8 +28,11 @@ import {
     LOBBY_PROTOCOL_VERSION,
     WORLD_ROOM_PROTOCOL_VERSION,
     validateWorldRoomJoinOptions,
+    type IWorldRoomJoinOptions,
 } from "@game/shared";
 import { GameRoom } from "../src/rooms/GameRoom";
+import { WorldRoom } from "../src/rooms/WorldRoom";
+import { WORLD_FIXTURE_MODE_ID, createWorldFixtureMode } from "./fixtures/worldFixtureMode";
 import { registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { LobbyRoom } from "../src/websocket/LobbyRoom";
 
@@ -178,7 +181,7 @@ test("版本矩阵源码钉：两房间各只比较自己的整数，另一个�
     assert.doesNotMatch(roomAuthSource, /\bPROTOCOL_VERSION\b/u, "旧名 PROTOCOL_VERSION 已移除");
 });
 
-// ── MMO MF4-B1：第三个兼容整数 WORLD_ROOM_PROTOCOL_VERSION（World join 的比较位点随 MF4-B6 的 WorldRoom 落地，届时补行为行）──
+// ── MMO MF4-B1 / B6：第三个兼容整数 WORLD_ROOM_PROTOCOL_VERSION（比较位点 = RoomAuth 注入，绑定在 rooms/WorldRoom.ts 的 worldRoomAuth）──
 test("版本矩阵 World（MF4-B1）：WORLD_ROOM_PROTOCOL_VERSION=1 独立于 GAME_ROOM / LOBBY；既有两房源码零出现；世界 join 信封只认 v 为整数", () => {
     assert.equal(WORLD_ROOM_PROTOCOL_VERSION, 1, "一次定型：首个客户端发版前保持 1");
     assert.notEqual(WORLD_ROOM_PROTOCOL_VERSION, GAME_ROOM_PROTOCOL_VERSION);
@@ -186,9 +189,38 @@ test("版本矩阵 World（MF4-B1）：WORLD_ROOM_PROTOCOL_VERSION=1 独立于 G
     // 只看代码，不看注释（RoomAuth 的文档注释按设计提到世界整数的注入形态）
     const stripComments = (source: string): string => source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/^\s*\/\/.*$/gmu, "");
     for (const file of ["websocket/LobbyRoom.ts", "rooms/GameRoom.ts", "rooms/core/RoomAuth.ts"]) {
-        assert.doesNotMatch(stripComments(readFileSync(joinPath(SRC_ROOT, file), "utf8")), /WORLD_ROOM_PROTOCOL_VERSION/u, `${file} 代码 ⛔ 不得参与世界整数（WorldRoom 的绑定随 MF4-B6 另钉）`);
+        assert.doesNotMatch(stripComments(readFileSync(joinPath(SRC_ROOT, file), "utf8")), /WORLD_ROOM_PROTOCOL_VERSION/u, `${file} 代码 ⛔ 不得参与世界整数（绑定只在 rooms/WorldRoom.ts）`);
     }
     const envelope = { v: WORLD_ROOM_PROTOCOL_VERSION, sId: 0, mode: "worldFixture", modeVersion: 1, profile: "world", mapId: "m1", personaId: "p_0123456789abcdefXYZ", ticket: "t".repeat(24) };
     assert.equal(validateWorldRoomJoinOptions(envelope).v, 1);
     assert.throws(() => validateWorldRoomJoinOptions({ ...envelope, v: "1" }), "v 必须是整数（形状闸；数值比较在 WorldRoom.onAuth）");
+});
+
+test("版本矩阵 World 行为（MF4-B6）：World join 只拿 WORLD_ROOM_PROTOCOL_VERSION 判定；onAuth 与 onCreate 同口径；WorldRoom 源码只绑定世界整数", async () => {
+    const worldOptions = (): IWorldRoomJoinOptions => ({
+        v: WORLD_ROOM_PROTOCOL_VERSION, sId: 0, mode: WORLD_FIXTURE_MODE_ID, modeVersion: GAMEPLAY_CATALOG.worldFixture.modeVersion,
+        profile: "world", mapId: "m1", personaId: "p_0123456789abcdefXYZ", ticket: "t".repeat(24),
+    });
+    // 错误版本：版本闸先于 mode / token 闸 ⇒ ProtocolMismatch（缺省 v=1 恰是当前世界整数，⛔ 不能拿缺省当反例）
+    await assert.rejects(WorldRoom.onAuth("", { ...worldOptions(), v: WORLD_ROOM_PROTOCOL_VERSION + 1 }, undefined as never), assertCode(ErrorCode.ProtocolMismatch));
+    await assert.rejects(WorldRoom.onAuth("", { ...worldOptions(), v: GAME_ROOM_PROTOCOL_VERSION }, undefined as never), assertCode(ErrorCode.ProtocolMismatch),
+        "GAME_ROOM 的整数对世界 join 就是错误版本（三整数各自演进）");
+    // 正确版本穿过版本闸：worldFixture ⛔ 不在生产 worldModeRegistry ⇒ 下一闸 BadRequest（不是 ProtocolMismatch / TokenExpired）
+    await assert.rejects(WorldRoom.onAuth("", worldOptions(), undefined as never), assertCode(ErrorCode.BadRequest));
+    // onCreate 同口径（注入 mode 的房：信封闸在 mode 校验之前）
+    const room = new WorldRoom({ mode: createWorldFixtureMode(), manualTick: true });
+    await assert.rejects(room.onCreate({ ...worldOptions(), v: WORLD_ROOM_PROTOCOL_VERSION + 1 }), assertCode(ErrorCode.ProtocolMismatch));
+
+    const worldSource = readFileSync(joinPath(SRC_ROOT, "rooms/WorldRoom.ts"), "utf8");
+    assert.match(worldSource, /protocolVersion: WORLD_ROOM_PROTOCOL_VERSION,/u, "worldRoomAuth 必须把协议整数绑定为 WORLD_ROOM_PROTOCOL_VERSION");
+    assert.match(worldSource, /validateJoinOptions: validateWorldRoomJoinOptions,/u, "世界信封校验器经 RoomAuth 注入（六步固定序不复制）");
+    const comparesWith = (source: string, name: string): boolean =>
+        new RegExp(`${name}\\s*(?:===|!==|==|!=|<=|>=|<|>)|(?:===|!==|==|!=|<=|>=|<|>)\\s*${name}`, "u").test(source);
+    assert.equal(comparesWith(worldSource, "GAME_ROOM_PROTOCOL_VERSION"), false, "WorldRoom 不得把 GAME_ROOM_PROTOCOL_VERSION 用于比较");
+    assert.equal(comparesWith(worldSource, "LOBBY_PROTOCOL_VERSION"), false, "WorldRoom 不得把 LOBBY_PROTOCOL_VERSION 用于比较");
+    const sharedImport = worldSource.match(/import \{([\s\S]*?)\} from "@game\/shared";/u);
+    assert.ok(sharedImport, "缺少来自 @game/shared 的具名导入块");
+    assert.match(sharedImport![1], /\bWORLD_ROOM_PROTOCOL_VERSION\b/u);
+    assert.doesNotMatch(sharedImport![1], /\bGAME_ROOM_PROTOCOL_VERSION\b|\bLOBBY_PROTOCOL_VERSION\b/u, "对方常量连 import 都不允许");
+    assert.doesNotMatch(worldSource, /\bPROTOCOL_VERSION\b/u, "旧名 PROTOCOL_VERSION 不得出现");
 });

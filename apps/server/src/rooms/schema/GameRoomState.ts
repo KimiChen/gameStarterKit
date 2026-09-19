@@ -10,6 +10,7 @@ import { PrivateFixtureState, PrivateFixturePlayerState } from "./generated/priv
 import { SnakeRoomState, SnakePlayerState } from "./generated/snake";
 import { TallyRoomState, TallyPlayerState } from "./generated/tally";
 import { ViewFixtureState } from "./generated/viewFixture";
+import { WorldFixtureState } from "./generated/worldFixture";
 
 export { ArenaCapturePlayerState, ArenaCaptureRoomState } from "./generated/arenaCapture";
 export { ArenaDuelPlayerState, ArenaDuelRoomState } from "./generated/arenaDuel";
@@ -20,6 +21,7 @@ export { PrivateFixturePlayerState, PrivateFixtureState } from "./generated/priv
 export { SnakePlayerState, SnakeRoomState } from "./generated/snake";
 export { TallyPlayerState, TallyRoomState } from "./generated/tally";
 export { ViewFixtureState } from "./generated/viewFixture";
+export { WorldFixtureState } from "./generated/worldFixture";
 
 /** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */
 export interface RoomStatePlayerLifecycle {
@@ -74,6 +76,7 @@ export const ROOM_STATE_FRAGMENTS = Object.freeze({
     "snake": [],
     "tally": [],
     "viewFixture": [],
+    "worldFixture": [],
 } as const satisfies Record<RoomStateMode, readonly string[]>);
 
 /** Roster visibility per mode (manifest.roster, MMO MF5a-B4 / M07): hidden roots carry no players map. */
@@ -87,6 +90,7 @@ export const ROOM_STATE_ROSTER = Object.freeze({
     "snake": "public",
     "tally": "public",
     "viewFixture": "hidden",
+    "worldFixture": "hidden",
 } as const satisfies Record<RoomStateMode, "public" | "hidden">);
 
 /** Gameplay kind per mode (manifest.kind, MMO MF4-B2): world roots are WorldRoom-only and never enter GameRoom. */
@@ -100,6 +104,7 @@ export const ROOM_STATE_KIND = Object.freeze({
     "snake": "match",
     "tally": "match",
     "viewFixture": "match",
+    "worldFixture": "world",
 } as const satisfies Record<RoomStateMode, "match" | "world">);
 
 export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
@@ -112,6 +117,7 @@ export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "snake": SnakeRoomState,
     "tally": TallyRoomState,
     "viewFixture": ViewFixtureState,
+    "worldFixture": WorldFixtureState,
 } as const satisfies Record<RoomStateMode, new () => Schema>);
 
 export type RoomStateRootForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_ROOT_CONSTRUCTORS)[M]>;
