@@ -23,10 +23,11 @@ import type { ServerKitCatalogEntry } from "../../src/kits/catalogTypes";
 import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
 
 /** 生成目录登记的 kit id：throwaway 库的 bootstrap 会把它们的迁移入账，fixture 目录里没有它们 ⇒ 账本孤儿（按 id 排序）。 */
-const REGISTERED_KIT_IDS = SERVER_KIT_CATALOG.map((kit) => kit.id).sort();
+const REGISTERED_KIT_IDS = SERVER_KIT_CATALOG.filter((kit) => kit.sqlFiles.length > 0).map((kit) => kit.id).sort(); // 无 SQL 的 kit（uniflex）不进账本，⛔ 不是孤儿
 const orphans = (...extra: string[]): string[] => [...REGISTERED_KIT_IDS, ...extra].sort();
 import { applyKitMigrations, sha256Hex, verifyKitTableShapes } from "../../tools/kit-migrations";
 import { dropKitTables } from "../../tools/plugin/dropData";
+import { assertKitOutboxDrained, countPendingKitOutbox, describeKitOutboxBacklog } from "../../tools/plugin/outboxGate";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const serverRoot = join(here, "../..");
@@ -287,6 +288,48 @@ test("kit 迁移账本：应用两遍第二遍零 DDL、改文件 fail-closed、
       // kfix 的表 / 账本不受影响
       const [kfixLedger] = await conn.query<CountRow[]>("SELECT COUNT(*) AS n FROM kit_migration WHERE kit_id = 'kfix'");
       assert.equal(Number(kfixLedger[0]?.n), 3);
+    } finally {
+      await conn.end();
+    }
+  } finally {
+    await admin.query(`DROP DATABASE IF EXISTS ${quoteDatabase(dbName)}`);
+    await admin.end();
+  }
+});
+
+test("卸载 kit 的 outbox 闸（tools/plugin/outboxGate.ts，K1）：只数 status=0 的 kit:<id>:* intent，冒号是边界；带 pending 拒、排空后放行", { timeout: 120_000 }, async () => {
+  const suffix = `${process.pid}_${Date.now().toString(36)}`;
+  const dbName = `game_outbox_${suffix}`;
+  const admin = await mysql.createConnection(connectionOptions());
+  try {
+    const bootstrap = runBootstrap(dbName);
+    assert.equal(bootstrap.status, 0, `bootstrap 应成功\n${bootstrap.stdout}\n${bootstrap.stderr}`);
+    const conn = await mysql.createConnection(connectionOptions(dbName));
+    try {
+      const effect = (kind: string): string => JSON.stringify({ schemaVersion: 1, grants: [{ kind, delta: 1 }] });
+      await conn.query(
+        "INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status) VALUES (?, ?, 1, ?, ?), (?, ?, 1, ?, ?), (?, ?, 1, ?, ?), (?, ?, 1, ?, ?)",
+        [
+          "op_kfix_pending", "u1", effect("kit:kfix:trophy"), 0,
+          "op_kfix_done", "u1", effect("kit:kfix:trophy"), 1,
+          "op_kfi_pending", "u2", effect("kit:kfi:score"), 0,
+          "op_item_pending", "u3", effect("item"), 0,
+        ],
+      );
+      assert.equal(await countPendingKitOutbox(conn, "kfix"), 1, "status=1 的不算");
+      assert.equal(await countPendingKitOutbox(conn, "kfi"), 1, "kit:kfi:% 不吃 kit:kfix:*（冒号是边界）");
+      assert.equal(await countPendingKitOutbox(conn, "other"), 0, "框架 kind（item）不算任何 kit 的");
+      const connect = async (): Promise<mysql.Connection> => mysql.createConnection(connectionOptions(dbName));
+      await assert.rejects(
+        assertKitOutboxDrained({ kitId: "kfix", nodeEnv: "development", connect }),
+        /拒绝卸载 kit "kfix"：gameplay_outbox 里还有 1 条 status=0 的 kit:kfix:\* intent/u,
+      );
+      assert.deepEqual(await describeKitOutboxBacklog(["kfix", "other"], connect), [
+        "⚠ kit \"kfix\" 仍有 1 条 pending outbox intent（kind kit:kfix:*）：uninstall 会拒绝，先让 relayer 排空",
+      ]);
+      // 排空（relayer 会把它标成 done）后放行
+      await conn.query("UPDATE gameplay_outbox SET status = 1 WHERE op_id = 'op_kfix_pending'");
+      assert.deepEqual(await assertKitOutboxDrained({ kitId: "kfix", nodeEnv: "development", connect }), { pending: 0, bypassed: false });
     } finally {
       await conn.end();
     }
