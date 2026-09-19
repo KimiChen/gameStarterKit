@@ -61,26 +61,32 @@ export function registerOnline(
   registrationByConn.set(conn, registration);
   return registration;
 }
+/**
+ * 注销一条在线连接。返回 **该 (uid, sId) 在本节点是否已无任何连接**（MMO MF6a-B1：LobbyRoom 据此决定
+ * 是否清 presence 的 `lobby` 字段——同 uid 同区还有别的连接时 ⛔ 不清；不命中 / 非本次登记返回 false）。
+ */
 export function unregisterOnline(
   uid: string,
   sessionId: string,
   expected?: OnlineRegistration,
-): void {
+): boolean {
   const m = online.get(uid);
   const removed = m?.get(sessionId);
-  if (!m || !removed) { return; }
-  if (expected !== undefined && registrationByConn.get(removed) !== expected) { return; }
-  if (!m.delete(sessionId)) { return; }
+  if (!m || !removed) { return false; }
+  if (expected !== undefined && registrationByConn.get(removed) !== expected) { return false; }
+  if (!m.delete(sessionId)) { return false; }
   registrationByConn.delete(removed);
   // 同 uid 可跨区同时在线：本区最后一条连接离开时只清本区公会索引，⛔ 不能等 uid 全下线，
   // 更不能把其它区仍在线角色的索引一起清掉。
-  if (![...m.values()].some((conn) => conn.sId === removed.sId)) {
+  const zoneOffline = ![...m.values()].some((conn) => conn.sId === removed.sId);
+  if (zoneOffline) {
     setOnlineGuild(uid, null, removed.sId);
   }
   if (m.size === 0) {
     online.delete(uid);
     setOnlineGuild(uid, null); // 防御性清掉该 uid 的全部残留区索引
   }
+  return zoneOffline;
 }
 
 /**

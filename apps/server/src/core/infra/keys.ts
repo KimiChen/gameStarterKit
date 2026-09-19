@@ -239,6 +239,13 @@ export const kGuildEvtLog = (gid: number) => `${P()}guild:evt:log:{g${gid}}`;
  * ⚠ 仍挂在**全局**前缀 `G` 下：uid 与 sId 都已在键名里，⛔ 别再叠一层区前缀（会变成 s1_...:s1）。
  */
 export const kSess = (uid: string, sId: number) => `${G}sess:{${uid}}:s${sId}`;
+/**
+ * presence HASH（MMO.md §6.2；MF6a）：`{lobby, lobbyAt, world, mapId, instanceId, characterId, worldAt}`，
+ * PRESENCE_TTL_S 心跳续命。与 `kSess` 同形（全局前缀 + `sId` 显式）：读者（party.get 标记 / kit 队友标记 /
+ * freezeWorker 在线判定）不在 `zoneCtx` 内，⛔ 不走 `P()`。durable 实例（`clientFor(uid)`），TTL 提示语义、
+ * ⛔ 非投递权威（投递看各节点本地在线表）。
+ */
+export const kPresence = (uid: string, sId: number) => `${G}presence:{${uid}}:s${sId}`;
 /** 幂等占位 · 通用作用域（非 uid，07 `idem:{scope}:{key}`）。全局。 */
 export const kIdem = (scope: string, key: string) => `${G}idem:${scope}:${key}`;
 /** 限流令牌桶（07 Lua 清单 `rl:{scope}`）。⚠ **全局**：含登录 by-IP（`login:{ip}`）前置区、匿名走 sessionId/IP（09·G5）。 */
@@ -270,6 +277,12 @@ export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
  *  `issuedAt` + `sId` 是顶号事件的单调栅栏。缺 `sId` 的封号/撤销事件保持账号级踢人语义。
  *  **best-effort、无 ack**（权威撤销在 WebPlatform；⛔ 漏踢无自动收敛，送达保证走 GM `/admin/kick`）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
 export const K_STREAM_KICK = `${G}stream:kick`;
+/**
+ * 跨进程投递总线 STREAM（MMO.md §6.3；MF6a）：**coord** 实例（同 `stream:kick`：控制 / 扇出语义、组内独占 ⇒
+ * 扇出半径 = 能持有该区连接的节点集）。条目 `{kind, sId, uids|gid|instanceId, type, data, issuedAt, origin}`；
+ * 每节点独立 `$` 游标、⛔ 无 group；发布方 ⛔ 不本地直投（单一路径）；`XTRIM MINID` 按 PUSH_STREAM_TRIM_MS 裁。
+ */
+export const K_STREAM_PUSH = `${G}stream:push`;
 /**
  * WebPlatform 角色登记修复 intent（GAME-6）：两个 durable key 用固定 hash-tag 同槽，才能用
  * MULTI 原子维护调度项与失败次数。member 是 `JSON [userId,serverId]`，score 是 nextAttemptMs。

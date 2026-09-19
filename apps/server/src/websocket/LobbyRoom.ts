@@ -14,7 +14,8 @@ import {
   type IRpcEnvelope, type RpcErrCode,
   type ILobbyRoomJoinOptions,
 } from "@game/shared";
-import { groupAdmitsZone, normalizeSId } from "../core/infra/config";
+import { PRESENCE_HEARTBEAT_S, groupAdmitsZone, normalizeSId } from "../core/infra/config";
+import { presence as defaultPresence } from "../core/presence/presence";
 import { zoneCtx } from "../core/infra/keys";
 import { verifyAndCacheWebPlatformSession } from "../platform/webPlatformClient";
 import { joinRefused, joinRefusedAuth, toErrCode, toRpcFaultCode } from "../core/errors";
@@ -59,15 +60,23 @@ type LobbyClient = Client<{
  * can be exercised deterministically.  Production uses the module functions
  * below; no alternate runtime implementation is needed.
  */
+/** presence 写口（MMO.md §6.2；MF6a-B1）：生产 = core/presence 单例，单测注入假实现。 */
+export interface LobbyPresenceDeps {
+  touchLobby(uid: string, sId: number): Promise<void>;
+  clearLobbyIfOwner(uid: string, sId: number): Promise<boolean>;
+}
+
 export interface LobbyJoinDependencies {
   ensureCharacterReady: typeof ensureCharacterReady;
   verifySession: typeof verifySession;
   registerOnline: typeof registerOnline;
-  unregisterOnline: typeof unregisterOnline;
+  /** 返回该 (uid, sId) 在本节点是否已无连接（生产 push.unregisterOnline）；假实现可返回 void（视为未知，不清 presence）。 */
+  unregisterOnline: (...args: Parameters<typeof unregisterOnline>) => boolean | void;
   tokenHashOf: typeof tokenHashOf;
   loadFields: typeof loadFields;
   setOnlineGuild: typeof setOnlineGuild;
   isOnlineRegistrationCurrent?: typeof isOnlineRegistrationCurrent;
+  presence?: LobbyPresenceDeps;
 }
 
 const defaultLobbyJoinDependencies: LobbyJoinDependencies = {
@@ -79,6 +88,7 @@ const defaultLobbyJoinDependencies: LobbyJoinDependencies = {
   loadFields,
   setOnlineGuild,
   isOnlineRegistrationCurrent,
+  presence: defaultPresence,
 };
 
 interface LobbyRegistrationState {
@@ -203,6 +213,8 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
   private readonly onlineRegistrations = new WeakMap<LobbyClient, LobbyRegistrationState>();
   /** Published before allowReconnection awaits the replacement transport. */
   private readonly reconnectingRegistrations = new Map<string, LobbyRegistrationState>();
+  /** 本房当前有效登记（presence 心跳遍历用；与 onlineRegistrations 同生同灭）。 */
+  private readonly activeRegistrations = new Set<LobbyRegistrationState>();
 
   constructor(private readonly joinDeps: LobbyJoinDependencies = defaultLobbyJoinDependencies) {
     super();
@@ -227,7 +239,39 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     const client = state.transport.client;
     if (this.onlineRegistrations.get(client)?.registration !== state.registration) { return; }
     this.onlineRegistrations.delete(client);
-    this.joinDeps.unregisterOnline(state.uid, state.sessionId, state.registration);
+    this.activeRegistrations.delete(state);
+    const zoneOffline = this.joinDeps.unregisterOnline(state.uid, state.sessionId, state.registration);
+    this.releasePresence(state.uid, state.sId, zoneOffline);
+  }
+
+  /**
+   * final onLeave（MMO.md §6.2）：本节点该 (uid, sId) 已无连接时才清 presence 的 `lobby`，且只清自己写的
+   * （PRESENCE_CLEAR_IF_OWNER：顶号跨节点时旧节点 ⛔ 不抹新连接）。best-effort，失败只记日志。
+   */
+  private releasePresence(uid: string, sId: number, zoneOffline: boolean | void): void {
+    if (zoneOffline !== true) { return; }
+    const presence = this.joinDeps.presence;
+    if (!presence) { return; }
+    void trackTask(
+      `lobby:presence-clear:${uid}:${sId}`,
+      presence.clearLobbyIfOwner(uid, sId).then(() => undefined, (e) => {
+        console.warn(`[lobby] presence 清除失败 uid=${uid} sId=${sId}`, safeErrorText(e));
+      }),
+    );
+  }
+
+  /** presence 心跳（PRESENCE_HEARTBEAT_S）：给本房全部有效登记续 TTL；public 供 deterministic 测试直调。 */
+  heartbeatPresence(): void {
+    const presence = this.joinDeps.presence;
+    if (!presence) { return; }
+    for (const state of this.activeRegistrations) {
+      void trackTask(
+        `lobby:presence-heartbeat:${state.uid}:${state.sId}`,
+        presence.touchLobby(state.uid, state.sId).catch((e) => {
+          console.warn(`[lobby] presence 心跳失败 uid=${state.uid} sId=${state.sId}`, safeErrorText(e));
+        }),
+      );
+    }
   }
 
   /** token 反查 uid + 严格校验（连接级）。⛔ 不接受客户端单独传 userId（09·G1）。 */
@@ -296,6 +340,10 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     await registerAllRoutes(); // 扫描 websocket/<域>/<接口>.ts 注册（异步就绪前房间不接客，无竞态窗口）
     if (!isAdmissionOpen()) { return; }
     startMailWakeLoop(); // 邮件唤醒流消费（本节点）
+    // presence 心跳（MMO.md §6.2）：TTL 提示语义靠它续命；崩溃后 ≤ PRESENCE_TTL_S 自愈。
+    try {
+      this.clock.setInterval(() => this.heartbeatPresence(), PRESENCE_HEARTBEAT_S * 1000);
+    } catch { /* 无 clock 的注入式房（单测）不心跳 */ }
   }
 
   messages = {
@@ -399,6 +447,7 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     });
     const state: LobbyRegistrationState = { uid, sessionId, token, sId, registration, transport };
     this.onlineRegistrations.set(client, state);
+    this.activeRegistrations.add(state);
 
     let registrationUnregistered = false;
     const unregisterRegistration = (): void => {
@@ -407,13 +456,15 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       const ownsLocal = this.onlineRegistrations.get(transport.client)?.registration === registration;
       if (ownsLocal) {
         this.onlineRegistrations.delete(transport.client);
+        this.activeRegistrations.delete(state);
       }
       // onLeave may already have removed this local state while an await was
       // pending. In that case its exact unregister call is the sole cleanup;
       // do not invoke the injected/production hook a second time.
       if (registrationUnregistered || !ownsLocal) { return; }
       registrationUnregistered = true;
-      this.joinDeps.unregisterOnline(uid, sessionId, registration);
+      const zoneOffline = this.joinDeps.unregisterOnline(uid, sessionId, registration);
+      this.releasePresence(uid, sId, zoneOffline);
     };
 
     // Colyseus may deliver onLeave while the awaited ready/session boundary is
@@ -478,6 +529,16 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
       // remove exactly this registration before refusing the join.
       unregisterRegistration();
       throw joinRefused(SharedErrorCode.CharCreateFailed);
+    }
+    // presence（MMO.md §6.2）：registerOnline 之后、seat 公开（onJoin resolve）之前写 `lobby=NODE_ID`；
+    // 提示语义 ⇒ best-effort（Redis 抖动不拒绝入房），心跳会补写。
+    if (this.joinDeps.presence) {
+      try {
+        await this.joinDeps.presence.touchLobby(uid, sId);
+      } catch (e) {
+        console.warn(`[lobby] presence 写入失败 uid=${uid} sId=${sId}`, safeErrorText(e));
+      }
+      assertRegistrationCurrent();
     }
     void trackTask(
       `lobby:guild-load:${uid}:${sessionId}`,

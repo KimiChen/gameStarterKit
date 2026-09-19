@@ -7,6 +7,7 @@
 // ───────────────────────── 环境变量 ─────────────────────────
 
 import { readFileSync } from "node:fs";
+import { hostname } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -389,6 +390,38 @@ export const SESS_TTL_S = 259_200;
 export const ADMIN_API_SECRET = () => process.env.ADMIN_API_SECRET ?? "";
 /** 踢人流 MINID 兜底裁剪窗毫秒（踢是即时动作，老事件无价值；权威撤销在 WebPlatform）。 */
 export const KICK_STREAM_TRIM_MS = envInt("KICK_STREAM_TRIM_MS", 24 * 3600 * 1000);
+
+// ── 社交原语（docs/MMO.md §6；MF6a）：presence / 投递总线 ────────────────────────────
+
+/**
+ * 本进程的节点身份（MMO.md §6.2）：presence 的 `lobby` / `world` 字段写它，final onLeave 只清「自己写的」
+ * （PRESENCE_CLEAR_IF_OWNER：顶号跨节点时旧节点 ⛔ 不抹新连接）。缺省 `${hostname}:${PORT}`；多进程同机
+ * （D27 三进程或多 world 进程）必须显式配置 NODE_ID 区分。⛔ 不复用 kSess.gwNode（会话 ≠ 连接）。
+ */
+export const NODE_ID = (() => {
+  const v = process.env.NODE_ID;
+  if (v !== undefined && v !== "") {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(v)) {
+      throw new Error(`NODE_ID 非法：「${v}」——只允许 [A-Za-z0-9._:-]（首字符字母数字），≤128 字符`);
+    }
+    return v;
+  }
+  return `${hostname()}:${PORT}`;
+})();
+/** presence 键 TTL（秒）：崩溃后 ≤ 90 s 自愈；presence 是提示语义，每个 presence 键必带 TTL。 */
+export const PRESENCE_TTL_S = 90;
+/** presence 心跳周期（秒）；⚠ 必须 < PRESENCE_TTL_S / 2，否则一次心跳抖动就会被判离线（加载期断言）。 */
+export const PRESENCE_HEARTBEAT_S = 30;
+if (PRESENCE_HEARTBEAT_S * 2 >= PRESENCE_TTL_S) {
+  throw new Error(`PRESENCE_HEARTBEAT_S=${PRESENCE_HEARTBEAT_S} 必须 < PRESENCE_TTL_S/2（${PRESENCE_TTL_S / 2}）`);
+}
+/** 投递总线 stream:push 的 MINID 兜底裁剪窗（10 min；消费侧另有 30 s 时间栅栏，MMO.md §6.3）。 */
+export const PUSH_STREAM_TRIM_MS = envInt("PUSH_STREAM_TRIM_MS", 10 * 60 * 1000);
+/** 投递总线单条 `uids` 上限（超出自动切片）与 `data` JSON 字节上限。 */
+export const PUSH_BUS_MAX_UIDS = 64;
+export const PUSH_BUS_MAX_DATA_BYTES = 2048;
+/** 投递总线时间栅栏：`issuedAt` 早于此毫秒数的条目丢弃（积压不投递）。 */
+export const PUSH_BUS_MAX_AGE_MS = 30_000;
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */
 export const OUTBOX_RETENTION_MS = 86_400_000;
 /** ⚠ 必须 ≥ 2 × OUTBOX_RETENTION_MS（09·I5），否则 relayer 重放老 intent 二次发货。 */
