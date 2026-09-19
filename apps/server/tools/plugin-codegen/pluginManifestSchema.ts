@@ -109,7 +109,9 @@ export type UnitClass = "plugin" | "kit";
 /** kit.json 相对 plugin.json 多出来的身份面（docs/KIT.md §3）。 */
 export type KitApiSurface = { readonly version: number; readonly minSupported: number };
 export type KitMode = { readonly id: string; readonly constantName: string };
-export type KitSqlTable = { readonly name: string; readonly zone: "per-zone" | "global" };
+export type KitSqlTable = { readonly name: string; readonly zone: "per-zone" | "global"; readonly role?: "world-event" };
+/** kit 后台 worker（docs/MMO.md §5.4 MF7a；v1 增量可选字段）：entry 必须落在本 kit 的 `apps/server/src/kits/<id>/workers/`。 */
+export type KitWorker = { readonly id: string; readonly entry: string };
 export type KitEffect = { readonly userKey: string; readonly field: string; readonly max: number };
 
 export type KitRegistration = Omit<PluginRegistration, "schemaVersion" | "requires"> & {
@@ -119,6 +121,7 @@ export type KitRegistration = Omit<PluginRegistration, "schemaVersion" | "requir
   readonly sql: { readonly files: readonly string[]; readonly tables: readonly KitSqlTable[] };
   readonly userKeys: readonly string[];
   readonly effects: Readonly<Record<string, KitEffect>>;
+  readonly workers: readonly KitWorker[];
 };
 
 export type PluginRegistration = {
@@ -483,7 +486,11 @@ export function parseKitRegistration(input: unknown, pathLabel: string): KitRegi
   assertUniqueStrings(files, `${pathLabel}.sql.files`, "迁移文件");
   const tablePrefix = `k_${common.id.toLowerCase()}_`;
   const tables: KitSqlTable[] = (Array.isArray(sqlRecord.tables) ? (sqlRecord.tables as JsonRecord[]) : [])
-    .map((table) => ({ name: table.name as string, zone: table.zone as "per-zone" | "global" }));
+    .map((table) => ({
+      name: table.name as string,
+      zone: table.zone as "per-zone" | "global",
+      ...(table.role === undefined ? {} : { role: table.role as "world-event" }),
+    }));
   for (const table of tables) {
     if (!table.name.startsWith(tablePrefix)) fail(`${pathLabel}.sql.tables`, `表名 "${table.name}" 必须以 "${tablePrefix}" 开头（KIT.md §2）`);
   }
@@ -498,5 +505,12 @@ export function parseKitRegistration(input: unknown, pathLabel: string): KitRegi
     if (!userKeys.includes(userKey)) fail(`${pathLabel}.effects.${name}`, `userKey "${userKey}" 不在 userKeys 内`);
     effects[name] = { userKey, field: record.field as string, max: record.max as number };
   }
-  return { schemaVersion: 1, ...common, api, modes, sql: { files, tables }, userKeys, effects };
+  const workerPrefix = `apps/server/src/kits/${common.id}/workers/`;
+  const workers: KitWorker[] = (Array.isArray(value.workers) ? (value.workers as JsonRecord[]) : [])
+    .map((worker) => ({ id: worker.id as string, entry: worker.entry as string }));
+  assertUniqueStrings(workers.map((worker) => worker.id), `${pathLabel}.workers`, "worker id");
+  for (const worker of workers) {
+    if (!worker.entry.startsWith(workerPrefix)) fail(`${pathLabel}.workers`, `worker "${worker.id}" 的 entry "${worker.entry}" 必须落在 ${workerPrefix}`);
+  }
+  return { schemaVersion: 1, ...common, api, modes, sql: { files, tables }, userKeys, effects, workers };
 }

@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { PackageClass, PackageMode, PluginKind } from "./ownership";
-import { EMPTY_REQUIRES, type KitApiSurface, type PluginRequires } from "../plugin-codegen/pluginManifestSchema";
+import { EMPTY_REQUIRES, type KitApiSurface, type PluginRequires, type KitWorker } from "../plugin-codegen/pluginManifestSchema";
 
 export const INSTALLED_LOCK_DIR = "scripts/packages";
 export const PACKAGE_FILES_LOCK = "files.lock";
@@ -56,6 +56,8 @@ export interface LockManifestSummary {
   readonly fguiPackages: readonly string[];
   readonly api: Readonly<Record<string, KitApiSurface>>;
   readonly requires: PluginRequires;
+  /** kit 的后台 worker 清单（MF7a）；插件锁恒为空；解析 / install 恒写出，手写字面量缺省 = 空。 */
+  readonly workers?: readonly KitWorker[];
 }
 
 export interface InstalledLock {
@@ -130,6 +132,7 @@ export function renderInstalledLock(lock: InstalledLock): string {
     kinds: manifest.kinds,
     constantName: manifest.constantName,
     ...(manifest.class === "kit" ? { modes: manifest.modes, api: manifest.api } : {}),
+    ...(manifest.class === "kit" && (manifest.workers ?? []).length > 0 ? { workers: manifest.workers } : {}),
     domains: manifest.domains,
     fguiPackages: manifest.fguiPackages,
     ...(hasRequires ? { requires: manifest.requires } : {}),
@@ -212,6 +215,22 @@ function parseLockApi(value: unknown, label: string): Readonly<Record<string, Ki
   return api;
 }
 
+const LOCK_WORKER_ENTRY = /^apps\/server\/src\/kits\/[a-z][A-Za-z0-9]{0,63}\/workers\/[a-z][A-Za-z0-9]{0,63}\.ts$/u;
+
+function parseLockWorkers(value: unknown, label: string): readonly KitWorker[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 workers 不是数组`);
+  const workers = value.map((worker) => {
+    const record = worker as { readonly id?: unknown; readonly entry?: unknown };
+    if (typeof record.id !== "string" || !LOCK_ID.test(record.id) || typeof record.entry !== "string" || !LOCK_WORKER_ENTRY.test(record.entry)) {
+      throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 workers 条目非法：${JSON.stringify(worker)}`);
+    }
+    return { id: record.id, entry: record.entry };
+  });
+  if (new Set(workers.map((worker) => worker.id)).size !== workers.length) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 workers id 重复`);
+  return workers;
+}
+
 function parseLockRequires(value: unknown, label: string): PluginRequires {
   if (value === undefined) return EMPTY_REQUIRES;
   if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 requires 不是对象`);
@@ -258,6 +277,7 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     readonly domains: readonly string[];
     readonly fguiPackages: readonly string[];
     readonly requires?: unknown;
+    readonly workers?: unknown;
   };
   if (typeof summary.id !== "string" || typeof summary.version !== "string") throw new Error(`[plugin] ${label} 的 "# manifest" 抬头缺 id / version`);
   if (summary.class !== undefined && summary.class !== "plugin" && summary.class !== "kit") throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 class 非法：${String(summary.class)}`);
@@ -274,6 +294,8 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
   if (cls === "plugin" && (modes.length > 0 || Object.keys(api).length > 0)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头：插件锁不该有 modes / api`);
   const requires = parseLockRequires(summary.requires, label);
   if (cls === "kit" && (requires.pluginApiVersion !== null || Object.keys(requires.kits).length > 0)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头：kit 锁不该有 requires（kit 不依赖 kit）`);
+  const workers = parseLockWorkers(summary.workers, label);
+  if (cls === "plugin" && workers.length > 0) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头：插件锁不该有 workers`);
   const manifest: LockManifestSummary = {
     class: cls,
     id: summary.id,
@@ -285,6 +307,7 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     fguiPackages: summary.fguiPackages ?? [],
     api,
     requires,
+    workers,
   };
   return { manifest, entries: parseEntries(lines, label), source: parseLockSource(lines, label) };
 }
