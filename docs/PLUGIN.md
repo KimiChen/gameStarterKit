@@ -162,6 +162,9 @@ zip（或已解开的目录，两者等价）根部两件元数据 + 仓库相�
 plugin.json      一个文件两面（schema v2，单源 apps/server/tools/plugin/plugin-schema-v2.json）：
                  身份 { schemaVersion:2, id, version?(semver；宿主自有插件省略), domains?, fguiPackages?, description? }
                  + 客户端登记 { entry?, viewDirs?, views?, owners?, routes?, menu?, dependencies?, resident?, category?, docs?, capabilities? }
+                 + 对 kit 的依赖与贡献 { requires?: { kits: { <kitId>: { <surface>: version } } }, contributes?: { <kitId>: { <id>: <仓库相对路径> } } }
+                   （MMO MF9：贡献 = 依赖，被贡献的 kit 必须同时在 requires.kits；menu[].launch 可带 payload（对象）/ profile（∈ 该玩法 manifest.profiles），
+                   见 docs/KIT.md §4）
 files.lock       清单：每行 <仓库相对路径> <sha256>（与 protected-paths.lock 同形态）
 <仓库相对路径>…  文件本体（含客户端镜像与 Creator 产出的 .meta）
 ```
@@ -194,7 +197,7 @@ npm --workspace @game/server run plugin -- changed [--base <ref>] [--dry-run]   
 包根清单文件名（`plugin.json` / `kit.json`）就是类别，同一 id 只能是其一（树上并存、或装着 kit 来一个同 id 插件包，
 都拒绝）。kit 相对插件多出来的闸：`kit.json.modes` ≡ `gameplays/<modeId>/` 单源（id / constantName 逐个比对）、`sql.files`
 随包非空且 `sql/` 下没有清单外文件、插件 `requires.kits` 的正向闸（所需 kit 已安装或宿主自有，每个 api 面
-`minSupported ≤ 声明 ≤ version`）、kit 升级的反向闸（已安装插件的声明落到新区间外即拒绝，`--break-dependents` 放行并让
+`minSupported ≤ 声明 ≤ version`；MMO MF9 起 `contributes` 同闸：kit 已装且贡献点 id 存在，`pack` 对越界贡献路径整包拒）、kit 升级的反向闸（已安装插件的声明落到新区间外即拒绝、已安装插件填充的贡献点被删 / 契约变化同样点名，`--break-dependents` 放行并让
 `check` 对那些插件红）、`uninstall` 的依赖反查（还有插件锁声明依赖即拒绝，⛔ 无 flag 可绕）、`--drop-data`（仅 kit：
 卸载默认保留表与账本行）。`test <id>` 按已安装锁枚举包自带的 `apps/server/test/*.test.ts` 与 `apps/client/test/*.test.ts`
 单跑（`--int` 再加 `test/int/`），是审核清单里「测试通过」的机检形态。
