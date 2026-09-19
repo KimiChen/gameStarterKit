@@ -238,3 +238,54 @@ test("bindObserverStream（MF5b-B2）：worldFixture 六个 perSession S2C 经 w
   fake.emit(S2C.WorldFixtureEnter, { seq: 6, tick: 7, entity: { id: "mover-c", kind: "mover", x: 1, y: 1, rev: 0 } });
   assert.equal(log.length, 6, "解绑后不再投递");
 });
+
+// ── MMO MF8-B5：交接 strategy + transport.transfer（退源房 → 带凭据 join 目标 → 可换 endpoint）────────────────────────────
+
+test("交接（MF8-B5）：transfer strategy 归一与信封（transferId 不上路）；transfer() 先退源房再带凭据 join 目标；endpoint 非空换 client；在途拒", async () => {
+  assert.deepEqual(normalizeWorldRoomStrategy({ kind: "transfer", transferId: "wt_1", mapId: "m2", line: 1 }), { kind: "transfer", transferId: "wt_1", mapId: "m2", line: 1 });
+  assert.deepEqual(normalizeWorldRoomStrategy({ kind: "transfer", transferId: "wt_1", mapId: "m2" }), { kind: "transfer", transferId: "wt_1", mapId: "m2" });
+  assert.throws(() => normalizeWorldRoomStrategy({ kind: "transfer", mapId: "m2" }), /transferId/u);
+  assert.throws(() => normalizeWorldRoomStrategy({ kind: "transfer", transferId: "bad id", mapId: "m2" }), /transferId/u);
+  const options = buildWorldJoinOptions(request({ strategy: { kind: "transfer", transferId: "wt_1", mapId: "m2" }, ticket: "u".repeat(32) }), deps);
+  assert.deepEqual([options.mapId, "line" in options, options.ticket, "transferId" in options], ["m2", false, "u".repeat(32), false], "信封只带目标分线 + 凭据");
+
+  const src = makeFakeRoom("src");
+  const dst = makeFakeRoom("dst");
+  const far = makeFakeRoom("far");
+  const main = makeClient([src, dst]);
+  const remote = makeClient([far]);
+  const endpoints: string[] = [];
+  const transport = new WorldRoomTransport({ client: () => main.client, clientFor: (endpoint) => { endpoints.push(endpoint); return remote.client; }, ...deps });
+  const source = await transport.join(request());
+  assert.equal(source.transferId, null);
+  const handle = await transport.transfer({ mode: "worldFixture", personaId: PERSONA, ready: { transferId: "wt_1", mapId: "m2", line: 0, endpoint: "", ticket: "u".repeat(32) } });
+  assert.equal(src.leaveCalls, 1, "先退源房");
+  assert.equal(source.left, true);
+  assert.equal(main.calls.length, 2, "同 endpoint 沿用当前 client");
+  const target = main.calls[1]!.options as { mapId: string; line: number; ticket: string; personaId: string };
+  assert.deepEqual([target.mapId, target.line, target.ticket, target.personaId], ["m2", 0, "u".repeat(32), PERSONA]);
+  assert.deepEqual([handle.mapId, handle.line, handle.transferId, handle.current, handle.roomId], ["m2", 0, "wt_1", true, "dst"]);
+  assert.equal(transport.active, handle);
+  assert.deepEqual(endpoints, [], "endpoint 空串 ⇒ 不换 client");
+  // 跨 world 进程：endpoint 非空 ⇒ clientFor；上一句柄退出
+  const handle2 = await transport.transfer({ mode: "worldFixture", personaId: PERSONA, ready: { transferId: "wt_2", mapId: "m3", line: 2, endpoint: "wss://world.example.com", ticket: "v".repeat(32) } });
+  assert.deepEqual(endpoints, ["wss://world.example.com"]);
+  assert.equal(remote.calls.length, 1);
+  assert.equal((remote.calls[0]!.options as { mapId: string }).mapId, "m3");
+  assert.deepEqual([handle.left, handle2.transferId, handle2.line, transport.active === handle2], [true, "wt_2", 2, true]);
+  // enter 未解析到交接（transferId null）⇒ 普通进入信封
+  await handle2.leave();
+  const plain = makeFakeRoom("plain");
+  main.client.joinOrCreate = async (roomName, opts) => { main.calls.push({ roomName, options: opts }); return plain.room as never; };
+  const handle3 = await transport.transfer({ mode: "worldFixture", personaId: PERSONA, ready: { transferId: null, mapId: "m1", line: 0, endpoint: "", ticket: "w".repeat(32) } });
+  assert.deepEqual([handle3.transferId, handle3.mapId], [null, "m1"]);
+  // 在途拒：joinOrCreate 挂起时 transfer 抛
+  let release: ((room: unknown) => void) | null = null;
+  const pending = makeFakeRoom("pending");
+  await handle3.leave();
+  main.client.joinOrCreate = () => new Promise((resolve) => { release = resolve as (room: unknown) => void; });
+  const joining = transport.join(request());
+  await assert.rejects(transport.transfer({ mode: "worldFixture", personaId: PERSONA, ready: { transferId: "wt_3", mapId: "m2", line: 0, endpoint: "", ticket: "x".repeat(32) } }), /正在进入/u);
+  release!(pending.room);
+  await joining;
+});

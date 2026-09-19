@@ -87,32 +87,56 @@ export type WorldRoomMatchmakingStrategy = {
     readonly line?: number;
 };
 
+/**
+ * 交接撮合 strategy（MMO MF8-B5）：目标分线来自 `world.enter` / `world.resolveTransfer` 的结果，transferId 只作本地簿记
+ * （重连时凭它 resolveTransfer）；凭据仍在 WorldJoinRequest.ticket，⛔ 不进 strategy / 不进日志。
+ */
+export type WorldTransferMatchmakingStrategy = {
+    readonly kind: "transfer";
+    readonly transferId: string;
+    readonly mapId: string;
+    readonly line?: number;
+};
+
+export type WorldRoomStrategy = WorldRoomMatchmakingStrategy | WorldTransferMatchmakingStrategy;
+const TRANSFER_ID_RE = /^[A-Za-z0-9_.:-]{1,64}$/u;
+
 /** 世界房唯一 profile（服务端 WorldProfile：AccessPolicy world-ticket、无 StartPolicy）。 */
 export const WORLD_ROOM_PROFILE = "world";
 
-export function normalizeWorldRoomStrategy(input: unknown): WorldRoomMatchmakingStrategy {
+export function normalizeWorldRoomStrategy(input: unknown): WorldRoomStrategy {
     let kind: unknown;
     let mapId: unknown;
     let line: unknown;
+    let transferId: unknown;
     try {
         const value = input as Record<string, unknown>;
         kind = value.kind;
         mapId = value.mapId;
         line = value.line;
+        transferId = value.transferId;
     } catch {
         throw new TypeError("[matchmaking] world strategy 无法读取");
     }
-    if (kind !== "world") throw new TypeError("[matchmaking] 世界房 strategy kind 必须是 \"world\"");
+    if (kind !== "world" && kind !== "transfer") throw new TypeError("[matchmaking] 世界房 strategy kind 必须是 \"world\" 或 \"transfer\"");
+    if (kind === "transfer" && (typeof transferId !== "string" || !TRANSFER_ID_RE.test(transferId))) {
+        throw new TypeError("[matchmaking] transfer strategy 的 transferId 必须是 1..64 的 [A-Za-z0-9_.:-] 串");
+    }
     let normalizedMapId: string;
     try {
         normalizedMapId = validateWorldMapId(mapId, "strategy.mapId");
     } catch {
         throw new TypeError("[matchmaking] strategy.mapId 必须是 1..64 的 [A-Za-z0-9._-] 串");
     }
-    if (line === undefined) return Object.freeze({ kind: "world", mapId: normalizedMapId });
-    if (typeof line !== "number" || !Number.isSafeInteger(line) || line < 0 || line > 0xffff) {
+    if (line !== undefined && (typeof line !== "number" || !Number.isSafeInteger(line) || line < 0 || line > 0xffff)) {
         throw new TypeError("[matchmaking] strategy.line 必须是 0..65535 的整数");
     }
+    if (kind === "transfer") {
+        return Object.freeze(line === undefined
+            ? { kind: "transfer", transferId: transferId as string, mapId: normalizedMapId }
+            : { kind: "transfer", transferId: transferId as string, mapId: normalizedMapId, line });
+    }
+    if (line === undefined) return Object.freeze({ kind: "world", mapId: normalizedMapId });
     return Object.freeze({ kind: "world", mapId: normalizedMapId, line });
 }
 
