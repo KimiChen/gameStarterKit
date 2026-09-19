@@ -51,6 +51,11 @@
   **MF6b 附近聊天**：core 世界 token `c2s.world.chat`（rateCost 2，只在 Active）/ `s2c.world.chat`（perSession）；壳固定序 = 在座 → `chatPolicy.canSend` →
   `transform`（结果再过 wire validator）→ `runtime.sayNearby`（受众 = 兴趣集含 `primaryEntityOf(sender)` 的在座会话 ∪ 发送者，进观察者队列与
   enter / leave 同序；⛔ 广播、⛔ Redis）；任一步拒 ⇒ BadRequest。match 形态 GameRoom 对该 token 直接 BadRequest。
+  **MF8 交接与一次性凭据**：准入固定时序 = 同步公共拒绝 → 同步占位 → 异步 claim（`core/WorldTicket.ts`：Lua CAS 绑定 uid / persona /
+  worldAddress / controlEpoch，一次性）→ 同步重验 → 交接凭据先读持久状态（非 committed = 已消费，取控制权前拒）→ persona 检查点回读 →
+  acquireControl → activate（唯一一次）→ onAdmit → seat → finalize；claim 后失败 release。源房 `context.transfer.request` ⇒ 冻结 →
+  Requested → Prepared（预留）→ 交接强制点 → 凭据 → Committed ⇒ 唤醒目标（kind=room）⇒ mode 就绪 token ⇒ 排空后 "transferred" 离座；
+  Committed 前失败 cancel + 解冻。状态机 `core/transfer.ts`（`world_transfer` 持久 CAS），Lobby 入口 `websocket/world/`（enter / resolveTransfer）。
   登记在 `../world.config.ts`（world 进程 rooms 表；合体入口 `app.config.ts` 合并）。夹具 `worldFixture`（`test/fixtures/worldFixtureMode.ts`，
   ⛔ 不进生产 registry）；真栈用例 `test/int/world-room.test.ts`。
 - `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：
@@ -78,6 +83,7 @@
   `WorldProfile.ts`（profile "world" / world-ticket 端口）、`WorldDirectory.ts`（(sId, mapId, line) → 实例）。
   **MF7b**：`CheckpointPort.ts`（信封 + 端口 + 内存实现）、`WorldTx.ts`（kit-api `withKitWorldTx` 再导出）、`WorldEventPort.ts`（状态 / superseded / stats）、
   `WorldCheckpoint.ts`（编排）。
+  **MF8**：`transfer.ts`（world_transfer 状态机）、`WorldTicket.ts`（一次性凭据 Redis Lua + 内存端口）、`WorldTransfer.ts`（交接持久面门面）。
   **阶段 8a policy 层**（Non-intrusive §6.2）——`StartPolicy.ts`（auto / owner-ready /
   drop-in 判别联合，⛔ 不重复声明任何人数：min/max/autoStart 唯一真源仍是 roster/manifest）、`AccessPolicy.ts`
   （matchmaking / invite-code，四个时间/配额参数取自 config，不等式在加载期断言）、`RoomProfile.ts`
