@@ -21,6 +21,12 @@ export interface KitWorkerSpec {
   readonly entry: string;
 }
 
+export type KitContributionEnd = "shared" | "server" | "client";
+/** kit 贡献点（MF9）：module = 插件交 TS 模块（生成器静态 import 其 export）；data = 插件交 JSON（按 schema 校验后同源渲染）。 */
+export type KitContributionSpec =
+  | { readonly kind: "data"; readonly ends: readonly KitContributionEnd[]; readonly schema: Readonly<Record<string, unknown>> }
+  | { readonly kind: "module"; readonly ends: readonly KitContributionEnd[]; readonly export: string };
+
 export interface ServerKitCatalogEntry extends KitCatalogEntry {
   /** 相对 `apps/kits/<id>/` 的迁移文件（顺序即应用顺序）。 */
   readonly sqlFiles: readonly string[];
@@ -29,4 +35,8 @@ export interface ServerKitCatalogEntry extends KitCatalogEntry {
   readonly userKeys: readonly string[];
   /** 后台 worker 清单（bootstrap 预置 `singleton_lease('kit:<id>:<worker>')`）；生成物恒写出，手写 / 测试字面量缺省 = 空。 */
   readonly workers?: readonly KitWorkerSpec[];
+  /** 贡献点声明（MF9）；生成物恒写出，手写 / 测试字面量缺省 = 空。 */
+  readonly contributions?: Readonly<Record<string, KitContributionSpec>>;
+  /** state fragment 清单（MF9；文件 `apps/kits/<id>/fragments/<name>.state.json`）。 */
+  readonly fragments?: readonly string[];
 }

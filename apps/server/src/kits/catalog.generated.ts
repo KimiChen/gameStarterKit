@@ -31,6 +31,8 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
             "stats",
         ],
         workers: [],
+        contributions: {},
+        fragments: [],
     },
     {
         id: "slg",
@@ -63,6 +65,8 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
             "stats",
         ],
         workers: [],
+        contributions: {},
+        fragments: [],
     },
     {
         id: "uniflex",
@@ -81,5 +85,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         sqlTables: [],
         userKeys: [],
         workers: [],
+        contributions: {},
+        fragments: [],
     },
 ];

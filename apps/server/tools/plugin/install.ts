@@ -16,8 +16,9 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { compareVersions, identityDifferences, readTreePackageManifest, type PackageManifest } from "./manifest";
-import { EMPTY_REQUIRES, type KitApiSurface } from "../plugin-codegen/pluginManifestSchema";
+import {
+  contributionSummariesOf, compareVersions, identityDifferences, readTreePackageManifest, type PackageManifest } from "./manifest";
+import { EMPTY_CONTRIBUTES, EMPTY_REQUIRES, type KitApiSurface } from "../plugin-codegen/pluginManifestSchema";
 import { INSTALLED_LOCK_DIR, dependentsOfKit, filesLockSha256Of, foreignLockOwners, kitApiViolations, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockManifestSummary, type LockSource, type LockSourceRegistry } from "./lock";
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, packageMetaUuids, pluginDeclarations, readPackage, validatePackage, type ValidatedPackage } from "./package";
@@ -189,6 +190,9 @@ function summaryOf(pkg: ValidatedPackage): LockManifestSummary {
     api: manifest.class === "kit" ? manifest.api : {},
     requires: manifest.class === "plugin" ? manifest.requires : EMPTY_REQUIRES,
     workers: manifest.class === "kit" ? manifest.workers : [],
+    contributions: manifest.class === "kit" ? contributionSummariesOf(manifest.contributions) : {},
+    fragments: manifest.class === "kit" ? manifest.fragments : [],
+    contributes: manifest.class === "plugin" ? manifest.contributes : EMPTY_CONTRIBUTES,
   };
 }
 

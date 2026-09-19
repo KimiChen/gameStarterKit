@@ -16,6 +16,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { INSTALLED_LOCK_DIR } from "./lock";
+import type { KitContributionSummary, PluginContributes } from "../plugin-codegen/pluginManifestSchema";
 
 /**
  * 派生的包形态：client = 有客户端登记（entry / views / routes / menu），gameplay = 有玩法单源，server = 只有 kit 会有——
@@ -48,6 +49,10 @@ export interface PluginIdentity {
   readonly clientDirs: readonly string[];
   /** kit 的后台 worker 清单（MF7a；进身份摘要）；插件恒为空 / 缺省。 */
   readonly workers?: readonly { readonly id: string; readonly entry: string }[];
+  /** kit 的贡献点摘要 / fragment 清单与插件的贡献填充（MF9）：只进锁抬头与身份摘要，⛔ 不参与所有权推导。 */
+  readonly contributions?: Readonly<Record<string, KitContributionSummary>>;
+  readonly fragments?: readonly string[];
+  readonly contributes?: PluginContributes;
 }
 
 export interface OwnershipRule {

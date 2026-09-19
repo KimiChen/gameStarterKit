@@ -1124,6 +1124,10 @@ export function renderKitCatalogServer(catalog: ViewCatalog): string {
     sqlTables: kit.sql.tables.map((table) => ({ name: table.name, zone: table.zone, ...(table.role === undefined ? {} : { role: table.role }) })),
     userKeys: [...kit.userKeys],
     workers: kit.workers.map((worker) => ({ id: worker.id, entry: worker.entry })),
+    contributions: Object.fromEntries(Object.entries(kit.contributions).map(([id, contribution]) => [id, contribution.kind === "data"
+      ? { kind: "data", ends: [...contribution.ends], schema: contribution.schema }
+      : { kind: "module", ends: [...contribution.ends], export: contribution.export }])),
+    fragments: [...kit.fragments],
   }));
   lines.push(`export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = ${tsLiteral(entries, 0)};`);
   return `${lines.join("\n")}\n`;
