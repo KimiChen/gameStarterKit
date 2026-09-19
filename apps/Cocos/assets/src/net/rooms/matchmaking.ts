@@ -8,7 +8,7 @@
  * endpoint、strategy、roomName/roomId 与完整 join options 共同进入 RoomClient 的
  * connection ownership key；token/ticket 只参与内存比较，⛔ 不打印（§4.4）。
  */
-import { GAMEPLAY_CATALOG, RoomName } from "../../shared/index";
+import { GAMEPLAY_CATALOG, RoomName, validateWorldMapId } from "../../shared/index";
 
 export type GameRoomMatchmakingStrategy =
     | { readonly kind: "join-or-create"; readonly roomName: string }
@@ -72,4 +72,58 @@ export function normalizeGameRoomStrategy(input: unknown): GameRoomMatchmakingSt
         default:
             throw new TypeError("[matchmaking] 未知 strategy kind");
     }
+}
+
+// ── 世界房（MMO MF4-B7，docs/MMO.md §4.2 / §5.4 MF4）────────────────────────────────────────
+
+/**
+ * 世界房撮合 strategy：`{ kind: "world", mapId, line? }` → `client.joinOrCreate(RoomName.World, worldOptions)`
+ * （服务端 filterBy sId / mode / profile / mapId / line；缺 line = 服务端分配）。与 GameRoomMatchmakingStrategy **分表**：
+ * RoomClient（match 形态）⛔ 不认识它，只有 net/rooms/WorldRoomTransport.ts 消费；ticket / personaId 不属 strategy（进 join options）。
+ */
+export type WorldRoomMatchmakingStrategy = {
+    readonly kind: "world";
+    readonly mapId: string;
+    readonly line?: number;
+};
+
+/** 世界房唯一 profile（服务端 WorldProfile：AccessPolicy world-ticket、无 StartPolicy）。 */
+export const WORLD_ROOM_PROFILE = "world";
+
+export function normalizeWorldRoomStrategy(input: unknown): WorldRoomMatchmakingStrategy {
+    let kind: unknown;
+    let mapId: unknown;
+    let line: unknown;
+    try {
+        const value = input as Record<string, unknown>;
+        kind = value.kind;
+        mapId = value.mapId;
+        line = value.line;
+    } catch {
+        throw new TypeError("[matchmaking] world strategy 无法读取");
+    }
+    if (kind !== "world") throw new TypeError("[matchmaking] 世界房 strategy kind 必须是 \"world\"");
+    let normalizedMapId: string;
+    try {
+        normalizedMapId = validateWorldMapId(mapId, "strategy.mapId");
+    } catch {
+        throw new TypeError("[matchmaking] strategy.mapId 必须是 1..64 的 [A-Za-z0-9._-] 串");
+    }
+    if (line === undefined) return Object.freeze({ kind: "world", mapId: normalizedMapId });
+    if (typeof line !== "number" || !Number.isSafeInteger(line) || line < 0 || line > 0xffff) {
+        throw new TypeError("[matchmaking] strategy.line 必须是 0..65535 的整数");
+    }
+    return Object.freeze({ kind: "world", mapId: normalizedMapId, line });
+}
+
+/** world 形态玩法的契约版本（client catalog 单源）；非 world 形态（manifest kind ≠ "world"）即拒，⛔ 不能进世界房。 */
+export function worldRoomModeVersion(mode: string): number {
+    const entry = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly modeVersion: number; readonly kind?: string }>>>)[mode];
+    if (!entry) {
+        throw new TypeError(`[matchmaking] mode ${mode} 不在 client catalog——modeVersion 无从取得`);
+    }
+    if (entry.kind !== "world") {
+        throw new TypeError(`[matchmaking] mode ${mode} 不是 world 形态（manifest kind:"${entry.kind ?? "match"}"），⛔ 不能进世界房`);
+    }
+    return entry.modeVersion;
 }

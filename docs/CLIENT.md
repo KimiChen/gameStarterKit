@@ -344,6 +344,14 @@ Game join 信封（v8）必填 `mode/modeVersion/profile`——默认撮合由 `
 ticket）配合 `net/rooms/matchmaking.ts` 的 strategy 判别联合注入。ballMove adapter 独占 Move
 reconcile；idle 没有该 hook，join/reconnect 都不会构造 Move。
 
+世界房（MMO MF4-B7，`RoomName.World`）走独立的 `net/rooms/WorldRoomTransport.ts`（⛔ RoomClient / GameRoomTransport 零改动）：
+`world.enter`（MF8）签发的 `{ personaId, ticket }` + `matchmaking.ts` 的 `WorldRoomMatchmakingStrategy { kind:"world", mapId, line? }`
+→ 信封 `v = WORLD_ROOM_PROTOCOL_VERSION`、`modeVersion` 取 client catalog（mode 必须是 `kind:"world"`）、`profile` 恒 `"world"`、
+token / sId 取会话，本地先过 `validateWorldRoomJoinOptions` 再 `client.joinOrCreate(RoomName.World, options)`；一个 transport 同时
+只持一个世界房；出站只放行 core 与本 mode 的 C2S 且掉线期间拒发（⛔ 不重放旧意图）；入站先过 `validateS2CPayload`；离开分类
+`consented / drained（WITH_ERROR：须经 world.enter 重进）/ replaced（同 persona 别处取得控制权）/ dropped（SDK 自动重连）`。
+端点在 PS2 前用 `getCurrentGameWsUrl()`。视野流 / baseline 的 reconcile 端口随 MF5b-B2 接入。
+
 ### RoomClient
 
 负责有状态房间：
