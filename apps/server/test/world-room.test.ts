@@ -23,7 +23,11 @@ import type { PersonaOwner, WorldInstanceRow, WorldInstanceState } from "../src/
 import { assertRoomProfilesConfigured, resolveRoomProfile } from "../src/rooms/core/RoomProfile";
 import type { WorldDirectoryPort } from "../src/rooms/core/WorldDirectory";
 import { WORLD_PROFILE_ID, assertWorldProfilesConfigured, resolveWorldProfile, type WorldTicketClaim, type WorldTicketPort } from "../src/rooms/core/WorldProfile";
-import type { WorldCheckpoint } from "../src/rooms/WorldMode";
+import type { WorldCheckpointBatch } from "../src/rooms/core/WorldRuntime";
+import { MemoryCheckpointPort, buildCheckpointEnvelope, CheckpointIncompatibleError } from "../src/rooms/core/CheckpointPort";
+import { WorldCheckpointer } from "../src/rooms/core/WorldCheckpoint";
+import { AuthorityLostError, type WorldTx, type WorldTxScope } from "../src/rooms/core/WorldTx";
+import { WORLD_FIXTURE_CHECKPOINT_SCHEMA } from "./fixtures/worldFixtureMode";
 import {
     WORLD_DRAINED_CLOSE_CODE, WORLD_LOST_CONTROL_CLOSE_CODE, WorldRoom,
     type WorldControlPort, type WorldLeaseHandle, type WorldLeasePort, type WorldRoomAuth, type WorldRoomRuntimeOptions, type WorldRoomTimers,
@@ -33,7 +37,7 @@ import { WORLD_FIXTURE_MODE_ID, createWorldFixtureMode, type WorldFixtureMode, t
 
 // ── 假控制面（MySQL CAS 语义）──────────────────────────────────────────────────
 
-interface FakeInstance { authorityEpoch: number; holder: string; state: WorldInstanceState }
+interface FakeInstance { authorityEpoch: number; holder: string; state: WorldInstanceState; checkpointRev: number }
 interface FakePersona { userId: string; status: number; controlEpoch: number; worldAddress: string | null }
 
 export class FakeControl implements WorldControlPort {
@@ -50,7 +54,7 @@ export class FakeControl implements WorldControlPort {
     }
     instance(instanceId: string): FakeInstance {
         let row = this.instances.get(instanceId);
-        if (!row) { row = { authorityEpoch: 0, holder: "", state: "offline" }; this.instances.set(instanceId, row); }
+        if (!row) { row = { authorityEpoch: 0, holder: "", state: "offline", checkpointRev: 0 }; this.instances.set(instanceId, row); }
         return row;
     }
     async acquireAuthority(_sId: number, instanceId: string, holder: string, expectedEpoch: number): Promise<number> {
@@ -181,6 +185,43 @@ export function fakeClient(sessionId: string, personaId: string, userId = `u-${p
 
 export const okTickets: WorldTicketPort = { verify: async () => "ok" };
 
+/** 假世界事务（MF7b-B4 编排用例）：权威 CAS / 控制权 CAS 按 FakeControl 裁决；appendWorldEvent 记录；beforeCommit 推进 FakeInstance.checkpointRev（CAS）。 */
+export function fakeWorldTxRunner(control: FakeControl, log: string[], events: Array<{ table: string; eventId: string; seq: number; kind: string; payload: unknown; checkpointRev: number }>) {
+    let writeSeq = 0;
+    return async <T>(kitId: string, sId: number, scope: WorldTxScope, fn: (tx: WorldTx) => Promise<T>, deps?: { beforeCommit?: (conn: never, scope: WorldTxScope) => Promise<void> }): Promise<T> => {
+        const row = control.instance(scope.instanceId);
+        if (row.authorityEpoch !== scope.authorityEpoch) throw new AuthorityLostError(scope.instanceId, scope.authorityEpoch);
+        for (const persona of scope.personas ?? []) {
+            const seated = control.personas.get(persona.id);
+            if (!seated) throw new PersonaNotFoundError(persona.id);
+            if (seated.controlEpoch !== persona.controlEpoch) throw new ControlConflictError(persona.id, persona.controlEpoch, seated.controlEpoch);
+        }
+        writeSeq += 1;
+        const tx = {
+            kitId, sId, instanceId: scope.instanceId, authorityEpoch: scope.authorityEpoch, writeSeq,
+            appendWorldEvent: async (table: string, event: { eventId: string; seq: number; kind: string; payload: unknown; checkpointRev: number }) => {
+                events.push({ table, ...event });
+                return "INSERTED" as const;
+            },
+        } as unknown as WorldTx;
+        const result = await fn(tx);
+        if (deps?.beforeCommit) {
+            const conn = {
+                execute: async (_sql: string, params: unknown[]) => {
+                    const [rev, , instanceId, epoch] = params as [number, number, string, number, number];
+                    const current = control.instance(instanceId);
+                    const ok = current.authorityEpoch === epoch && current.checkpointRev < rev;
+                    if (ok) current.checkpointRev = rev;
+                    log.push(`checkpoint_rev:${instanceId}:${ok ? rev : "0行"}`);
+                    return [{ info: `Rows matched: ${ok ? 1 : 0}`, affectedRows: ok ? 1 : 0 }];
+                },
+            };
+            await deps.beforeCommit(conn as never, scope);
+        }
+        return result;
+    };
+}
+
 export interface Harness {
     readonly room: WorldRoom;
     readonly mode: WorldFixtureMode;
@@ -188,7 +229,7 @@ export interface Harness {
     readonly leases: FakeLeases;
     readonly directory: FakeDirectory;
     readonly timers: FakeTimers;
-    readonly checkpoints: Array<{ checkpoint: WorldCheckpoint; reason: string }>;
+    readonly checkpoints: Array<{ batch: WorldCheckpointBatch; reason: string }>;
     readonly clock: { now: number };
 }
 
@@ -200,7 +241,7 @@ export function harness(options: {
     const leases = options.leases ?? new FakeLeases(control.log);
     const directory = new FakeDirectory(control);
     const timers = new FakeTimers();
-    const checkpoints: Array<{ checkpoint: WorldCheckpoint; reason: string }> = [];
+    const checkpoints: Array<{ batch: WorldCheckpointBatch; reason: string }> = [];
     const clock = { now: 1_000 };
     const mode = createWorldFixtureMode({ capacity: options.capacity ?? 2, ...(options.modeOptions ?? {}) });
     const room = new WorldRoom({
@@ -209,7 +250,7 @@ export function harness(options: {
         seed: 7, fixedStepMs: 50, clock: () => clock.now,
         control, lease: leases, directory, tickets: options.tickets ?? okTickets,
         holder: options.holder ?? "node-a", drainGraceMs: options.drainGraceMs ?? 100, timers,
-        checkpointSink: (checkpoint, reason) => { checkpoints.push({ checkpoint, reason }); },
+        checkpointSink: (batch, reason) => { checkpoints.push({ batch, reason }); },
         manualTick: true,
         ...(options.room ?? {}),
     });
@@ -254,7 +295,7 @@ test("建房：目录 → 租约 → 权威 CAS → recover → active；租约�
     assert.deepEqual([h.room.state.phase, h.room.state.instanceId, h.room.state.mapId, h.room.state.line, h.room.state.authorityEpoch],
         [WorldPhase.Active, "wi_m1_0", "m1", 0, 1], "生成 root 的生命周期字段由 runtime 写");
     assert.equal((h.room.state as { entityCount?: number }).entityCount, 4, "静态体已撒");
-    assert.deepEqual(h.control.instance("wi_m1_0"), { authorityEpoch: 1, holder: "node-a", state: "active" });
+    assert.deepEqual(h.control.instance("wi_m1_0"), { authorityEpoch: 1, holder: "node-a", state: "active", checkpointRev: 0 });
     assert.equal(h.leases.held.get("wi_m1_0")?.started, true, "续租循环已起");
     assert.equal(h.room.maxClients, 2, "容量按会话表 = mode.capacity");
     assert.deepEqual(h.room.worldProfile, { id: "world", mode: WORLD_FIXTURE_MODE_ID, accessPolicy: { kind: "world-ticket" } });
@@ -494,4 +535,99 @@ test("WorldProfile：world 形态只有 profile \"world\"（AccessPolicy world-t
     assert.throws(() => assertWorldProfilesConfigured({ c: { kind: "world", profiles: ["default"] } }), /必须恰为 \["world"\]/u);
     assert.throws(() => resolveRoomProfile(WORLD_FIXTURE_MODE_ID, "world"), /world 形态/u, "GameRoom 的 profile 表拒绝 world 形态");
     assert.doesNotThrow(() => assertRoomProfilesConfigured(), "全量断言跳过 world 形态");
+});
+
+test("MF7b-B4 检查点编排：周期批同一世界事务落分线快照 + persona 快照 + 事件行 + checkpoint_rev；离座强制点；重启从检查点恢复（Recovering 回灌 + 准入 persona 回灌）；不兼容 fail-closed；权威已失 ⇒ Draining", async () => {
+    const port = new MemoryCheckpointPort();
+    const control = new FakeControl();
+    const leases = new FakeLeases(control.log);
+    const events: Array<{ table: string; eventId: string; seq: number; kind: string; payload: unknown; checkpointRev: number }> = [];
+    const capability = { kitId: "kfix", port, schema: WORLD_FIXTURE_CHECKPOINT_SCHEMA, eventTable: "k_kfix_event" };
+    let eventCounter = 0;
+    /** Recovering 的 supersede 走框架连接：假连接答 0 行（同事务落库规则下正常路径就是 0） */
+    const fakeSql = () => ({ execute: async () => [{ info: "Rows matched: 0", affectedRows: 0 }], query: async () => [[]] }) as never;
+    const checkpointer = new WorldCheckpointer(capability, 0, { withWorldTx: fakeWorldTxRunner(control, control.log, events) as never, sql: fakeSql, eventId: () => `wev_${String(++eventCounter).padStart(12, "0")}` });
+    const build = (extra: Partial<Parameters<typeof harness>[0]> = {}) => harness({
+        control, leases, world: { emptyPolicy: "run", emptyAfterMs: 100_000, checkpointMs: 500 }, modeOptions: { staticCount: 1, checkpoint: capability },
+        room: { checkpointer }, ...extra,
+    });
+    const h = build();
+    h.control.seedPersona(P_ALICE, "u-alice");
+    await h.room.onCreate(joinOptions());
+    assert.equal(h.room.checkpointRevision, 0, "空世界起步");
+    const alice = fakeClient("sa", P_ALICE, "u-alice");
+    await join(h.room, alice);
+    dispatch(h.room, C2S.WorldFixtureMove, alice, { dirX: 1, dirY: 0, seq: 1 });
+    h.room.advance(100); // x 504
+    h.room.signal("loot", { session: "sa", amount: 3 });
+    h.clock.now += 500;
+    h.room.advance(50); // 到节拍 ⇒ periodic 批 rev 1
+    await h.room.flushCheckpoints();
+    assert.equal(h.room.checkpointRevision, 1, "落盘后 commit 推进");
+    assert.equal(h.control.instance("wi_m1_0").checkpointRev, 1, "world_instance.checkpoint_rev 同事务推进");
+    const instanceEnvelope = port.instances.get("0:wi_m1_0");
+    assert.ok(instanceEnvelope && instanceEnvelope.rev === 1 && instanceEnvelope.authorityEpoch === 1 && instanceEnvelope.eventOffset === 1);
+    assert.deepEqual((instanceEnvelope!.snapshot as { tick: number }).tick, 3);
+    const personaEnvelope = port.personas.get(`0:${P_ALICE}`);
+    assert.ok(personaEnvelope && personaEnvelope.rev === 1 && personaEnvelope.controlEpoch === 1);
+    assert.deepEqual(personaEnvelope!.snapshot, { x: 506, y: 500, stamina: 97 }, "persona 快照 = 落盘时的位置 / stamina");
+    assert.deepEqual(events.map((event) => [event.table, event.eventId, event.seq, event.kind, event.checkpointRev]), [["k_kfix_event", "wev_000000000001", 1, "grantCurrency", 1]], "事件行随本批、checkpoint_rev = rev");
+    assert.deepEqual(events[0]!.payload, { personaId: P_ALICE, amount: 3 });
+    assert.deepEqual(port.log, ["instance:wi_m1_0:1@1", `persona:${P_ALICE}:1@1`], "分线 + persona 同一世界事务（同 writeSeq）");
+    // 离座强制点：persona 仍在座时取批（rev 2），随后离座归还控制权
+    dispatch(h.room, C2S.WorldFixtureMove, alice, { dirX: 0, dirY: 1, seq: 2 });
+    h.room.advance(50);
+    await h.room.onLeave(alice as never, CloseCode.CONSENTED);
+    await h.room.flushCheckpoints();
+    assert.equal(h.room.checkpointRevision, 2);
+    assert.deepEqual(port.personas.get(`0:${P_ALICE}`)?.snapshot, { x: 506, y: 502, stamina: 96 }, "离座强制点：最后位置已落盘");
+    assert.ok(h.control.log.includes(`release:${P_ALICE}:1`));
+    // 「重启」：同一持久层，新房取权威（epoch 2）→ loadInstance rev 2 → onRestore；alice 再入 ⇒ persona 检查点回灌到 onEnter
+    await h.room.onDispose();
+    leases.held.clear();
+    const restarted = build();
+    await restarted.room.onCreate(joinOptions());
+    assert.equal(restarted.room.address.authorityEpoch, 2);
+    assert.equal(restarted.room.checkpointRevision, 2, "Recovering 从检查点续 rev");
+    assert.ok(restarted.mode.__probe.log.some((line) => line.startsWith("restore:")), "onRestore 回灌分线快照");
+    assert.equal((restarted.room.state as { entityCount?: number }).entityCount, 1, "静态体从快照恢复");
+    const alice2 = fakeClient("sa2", P_ALICE, "u-alice");
+    await join(restarted.room, alice2);
+    assert.ok(restarted.mode.__probe.log.includes("enter:sa2:restored"), "准入 loadPersona ⇒ session.checkpoint ⇒ onEnter 回灌");
+    assert.deepEqual([restarted.mode.__probe.moverOf("sa2")?.x, restarted.mode.__probe.moverOf("sa2")?.y, restarted.mode.__probe.moverOf("sa2")?.stamina], [506, 502, 96], "位置回退 ≤ 1 个角色检查点周期（离座强制点 ⇒ 0）");
+    restarted.clock.now += 500;
+    restarted.room.advance(50);
+    await restarted.room.flushCheckpoints();
+    assert.equal(restarted.room.checkpointRevision, 3, "新权威接着编号");
+    assert.equal(port.instances.get("0:wi_m1_0")?.authorityEpoch, 2);
+    // 权威已失（别的节点接管 epoch 3）⇒ 下一批落盘 0 行 ⇒ AuthorityLostError ⇒ Draining，事件放回缓冲、rev 不推进
+    control.instance("wi_m1_0").authorityEpoch = 3;
+    restarted.room.signal("loot", { session: "sa2", amount: 1 });
+    restarted.room.signal("checkpoint", {});
+    restarted.room.advance(50);
+    await restarted.room.flushCheckpoints();
+    assert.equal(restarted.room.phase, WorldPhase.Draining, "权威已失 ⇒ Draining");
+    assert.equal(restarted.room.checkpointRevision, 3, "落盘失败不推进");
+    await restarted.room.onDispose();
+    // 不兼容 fail-closed：schema 窗口不含存储的 schemaVersion ⇒ 建房拒、租约释放
+    leases.held.clear();
+    control.instance("wi_m1_0").authorityEpoch = 3;
+    const incompatible = harness({
+        control, leases, world: { emptyPolicy: "run", emptyAfterMs: 100_000, checkpointMs: 500 },
+        modeOptions: { staticCount: 1, checkpoint: { ...capability, schema: { version: 2, minSupported: 2 } } },
+        room: { checkpointer: new WorldCheckpointer({ ...capability, schema: { version: 2, minSupported: 2 } }, 0, { withWorldTx: fakeWorldTxRunner(control, control.log, events) as never, sql: fakeSql }) },
+    });
+    await assert.rejects(incompatible.room.onCreate(joinOptions()), CheckpointIncompatibleError, "存储 schemaVersion 1 ∉ [2, 2] ⇒ 拒启");
+    assert.equal(leases.held.size, 0, "拒启后租约释放");
+    // 损坏 persona 检查点 ⇒ 准入拒（BadRequest）
+    const ok = build();
+    leases.held.clear();
+    control.instance("wi_m1_0").authorityEpoch = 4;
+    await ok.room.onCreate(joinOptions());
+    port.personas.set(`0:${P_ALICE}`, { ...port.personas.get(`0:${P_ALICE}`)!, stateHash: "deadbeef" });
+    await assert.rejects(join(ok.room, fakeClient("sa3", P_ALICE, "u-alice")), assertCode(ErrorCode.BadRequest), "persona 检查点损坏 ⇒ 拒入");
+    port.personas.set(`0:${P_ALICE}`, buildCheckpointEnvelope({ rev: 9, eventOffset: 0, authorityEpoch: 4, controlEpoch: 0, schemaVersion: 1, snapshot: { x: 1, y: 2, stamina: 5 } }));
+    await join(ok.room, fakeClient("sa4", P_ALICE, "u-alice"));
+    assert.deepEqual([ok.mode.__probe.moverOf("sa4")?.x, ok.mode.__probe.moverOf("sa4")?.stamina], [1, 5]);
+    await ok.room.onDispose();
 });

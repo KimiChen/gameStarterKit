@@ -816,6 +816,11 @@ export interface KitWorldTx extends Omit<KitTx, "conn">, KitWorldEventOps {
 export interface KitWorldTxDeps extends KitTxDeps {
   /** 本 kit 声明为 role:"world-event" 的表名（生产从 SERVER_KIT_CATALOG 读；夹具注入）。 */
   readonly worldEventTables: (kitId: string) => readonly string[];
+  /**
+   * 框架检查点编排（rooms/core/WorldCheckpoint.ts）专用：回调返回后、COMMIT 前在同一连接上跑（推进 world_instance.checkpoint_rev）。
+   * ⛔ kit 不得注入（K1 审核线；kit 只拿缺省 deps）。
+   */
+  readonly beforeCommit?: (conn: PoolConnection, scope: KitWorldTxScope) => Promise<void>;
 }
 
 export function worldEventTablesOfKit(kitId: string, catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG): readonly string[] {
@@ -851,8 +856,9 @@ export function assertWorldEventTable(kitId: string, table: string, tables: read
  * 提交后对扣过款 / 入过账的 uid 失效余额缓存。变异验证：删首句谓词 `authority_epoch = ?` → int「旧 owner 迟到写 0 行」转红。
  */
 export async function withKitWorldTx<T>(
-  kitId: string, sId: number, scope: KitWorldTxScope, fn: (tx: KitWorldTx) => Promise<T>, deps: KitWorldTxDeps = DEFAULT_WORLD_DEPS,
+  kitId: string, sId: number, scope: KitWorldTxScope, fn: (tx: KitWorldTx) => Promise<T>, partialDeps: Partial<KitWorldTxDeps> = {},
 ): Promise<T> {
+  const deps: KitWorldTxDeps = { ...DEFAULT_WORLD_DEPS, ...partialDeps };
   kitTablePrefix(kitId); // kitId 形态闸先于任何 SQL
   if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
   if (typeof scope.instanceId !== "string" || scope.instanceId.length === 0 || scope.instanceId.length > 64) { throw new TypeError("world tx：instanceId 非法"); }
@@ -908,7 +914,9 @@ export async function withKitWorldTx<T>(
       },
       "conn", { enumerable: false, get(): never { throw new Error(`world 事务（${scopeName}）⛔ 取原始连接 .conn`); } },
     );
-    return workerTxScope.run(scopeName, () => fn(Object.freeze(tx)));
+    const value = await workerTxScope.run(scopeName, () => fn(Object.freeze(tx)));
+    if (deps.beforeCommit) { await deps.beforeCommit(conn, scope); }
+    return value;
   });
   for (const { uid, owner } of touched.values()) { await deps.invalidateBalanceCache(uid, sId, ...(owner === undefined ? [] : [owner] as const)); }
   return result;

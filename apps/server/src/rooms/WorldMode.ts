@@ -7,6 +7,7 @@
  * 登记表：`registerGeneratedWorldModes`（codegen 按 manifest kind:"world" 分表）登进 `worldModeRegistry`，⛔ 不混进 gameModeRegistry。
  */
 import type { GameplayS2CToken, WorldPhaseType } from "@game/shared";
+import type { CheckpointEnvelope, CheckpointPort, CheckpointSchema } from "./core/CheckpointPort";
 import type { BaselineBuilders, BaselineTokens } from "./core/Baseline";
 import type { InterestView } from "./core/InterestSet";
 import type { ObservedEntity, ObserverSyncBuilders, ObserverSyncTokens } from "./core/ObserverSync";
@@ -29,6 +30,8 @@ export interface WorldSessionInfo {
     readonly personaId: string;
     /** 准入时 CAS 得到的控制权代号；旧 epoch 的延迟提交被存储边界拒（§4.6-1）。 */
     readonly controlEpoch: number;
+    /** persona 级检查点（框架在准入时 load + 校验；无 checkpoint 能力 / 首次进入 ⇒ null）。mode 在 onEnter 回灌。 */
+    readonly checkpoint: CheckpointEnvelope | null;
 }
 
 /** 准入请求（onBeforeAdmit / onAdmit）：ticket 只以 sha256 出现，⛔ 原文不进 mode。 */
@@ -45,10 +48,34 @@ export interface WorldCommand {
     readonly payload: unknown;
 }
 
-/** 检查点（MF7b 落库；MF4 只定形状）：persona 级条目 + 分线级快照，内容归 mode。 */
+/** persona 级检查点条目（MF7b）：按 personaId 落 kit 的 persona 检查点表。 */
+export interface WorldPersonaCheckpoint {
+    readonly personaId: string;
+    readonly snapshot: unknown;
+}
+
+/** 检查点（MF7b-B4 落库）：persona 级条目 + 分线级快照，内容归 mode；信封（rev / eventOffset / epoch / schemaVersion / stateHash）归框架。 */
 export interface WorldCheckpoint {
-    readonly persona: readonly unknown[];
+    readonly persona: readonly WorldPersonaCheckpoint[];
     readonly instance: unknown;
+}
+
+/** mode 在 tick 内产生的 durable 命令（§7.3：grant* / lootClaim 派生的世界事件行），随下一个分线检查点同事务落库。 */
+export interface WorldEventDraft {
+    readonly seq: number;
+    readonly kind: string;
+    readonly payload: unknown;
+}
+
+/**
+ * 检查点能力（MF7b）：kit 作用域的持久层——`kitId`（persona / 表前缀 / 事件表都在这个 kit 下）、`port`（kit 实现的存储端口）、
+ * `schema`（快照 schema 版本窗口，加载不兼容 fail-closed）、`eventTable`（role:"world-event" 表；缺省无 durable 事件）。
+ */
+export interface WorldModeCheckpointCapability {
+    readonly kitId: string;
+    readonly port: CheckpointPort;
+    readonly schema: CheckpointSchema;
+    readonly eventTable?: string;
 }
 
 export type WorldLeaveReason = "left" | "kicked" | "drained" | "lost-control";
@@ -111,6 +138,10 @@ export interface WorldModeContext<TState extends WorldStateLifecycle = WorldStat
     requestDrain(reason: string): void;
     /** 观察者同步端口（MF5b）：视野流 / 本人私有流 / baseline 请求；无 observer 能力时 requestBaseline / nextSeq 抛。 */
     readonly observers: WorldModeObserverPorts;
+    /** durable 命令（MF7b）：追加到本分线的事件缓冲（返回分线内单调 seq），随下一个分线检查点同一事务落库；无 eventTable ⇒ 抛。 */
+    readonly events: { append(kind: string, payload: unknown): number };
+    /** 强制点（§4.5 / §7.3：checkpointOnDeath / setVar durable / 交接）：本固定步末尾立即取检查点（含事件批）。 */
+    requestCheckpoint(reason: string): void;
 }
 
 /**
@@ -139,6 +170,8 @@ export interface WorldMode<TState extends WorldStateLifecycle = WorldStateLifecy
     primaryEntityOf?(session: string): string | null;
     /** 可选观察者能力（MF5b）：声明即由 WorldRuntime 做差分 / baseline / 有界投递。 */
     readonly observer?: WorldModeObserverCapability<TState, ObservedEntity, unknown>;
+    /** 可选检查点能力（MF7b）：声明即由 WorldRoom 周期 / 强制落盘、Recovering 回灌、准入 load persona 检查点。 */
+    readonly checkpoint?: WorldModeCheckpointCapability;
 }
 
 /** 世界玩法的最小身份（registry 只按 id 登记 factory）。 */

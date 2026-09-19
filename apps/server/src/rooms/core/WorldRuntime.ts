@@ -7,9 +7,10 @@
 import { SeededRandom, WorldPhase, type GameplayS2CToken, type WorldPhaseType } from "@game/shared";
 import type { WorldManifestConfig } from "../../../tools/gameplay-codegen/manifestSchema";
 import type {
-    WorldAdmitRequest, WorldCheckpoint, WorldCommand, WorldLeaveReason, WorldMode, WorldModeContext, WorldModeObserverPorts, WorldSessionInfo,
-    WorldStateLifecycle,
+    WorldAdmitRequest, WorldCheckpoint, WorldCommand, WorldEventDraft, WorldLeaveReason, WorldMode, WorldModeContext, WorldModeObserverPorts,
+    WorldSessionInfo, WorldStateLifecycle,
 } from "../WorldMode";
+import type { CheckpointEnvelope } from "./CheckpointPort";
 import { Baseline } from "./Baseline";
 import { InterestSet } from "./InterestSet";
 import { ObserverSync, type ObservedEntity } from "./ObserverSync";
@@ -23,8 +24,25 @@ export interface WorldRuntimePorts {
     broadcastS2C(token: GameplayS2CToken<unknown>, payload: unknown): void;
     /** mode 经 context.requestDrain 请求 Draining 时回调（壳据此走同一状态机；缺省直接 drain）。 */
     onDrainRequested?(reason: string): void;
-    /** 检查点落点（MF7b CheckpointPort）：advance 末尾按 checkpointMs 节拍 `periodic`；unload / Draining 收尾 `forced`。缺省不取检查点。 */
-    onCheckpoint?(checkpoint: WorldCheckpoint, reason: "periodic" | "forced"): void;
+    /**
+     * 检查点落点（MF7b-B4：WorldRoom 交 WorldCheckpointer 同一世界事务落盘；单测接记录器）：advance 末尾按 checkpointMs 节拍 `periodic`，
+     * 强制点（drain / 离座 / mode.requestCheckpoint / unload 收尾）`forced`。批次含 rev（= 已落库 rev + 1，⛔ runtime 不先推进，落盘后
+     * `commitCheckpoint(rev)`；失败 `rollbackCheckpoint(batch)` 把事件放回缓冲）。缺省不取检查点。
+     */
+    onCheckpoint?(batch: WorldCheckpointBatch, reason: "periodic" | "forced"): void;
+}
+
+/** 一次检查点的完整批次：分线快照 + persona 快照 + 自上个检查点以来的事件批（checkpoint_rev = rev，§7.3 ①）。 */
+export interface WorldCheckpointBatch {
+    readonly rev: number;
+    /** 本批覆盖到的世界事件 seq（含）。 */
+    readonly eventOffset: number;
+    readonly authorityEpoch: number;
+    readonly reason: string;
+    readonly checkpoint: WorldCheckpoint;
+    readonly events: readonly WorldEventDraft[];
+    /** 落盘时在座的 persona（controlEpoch 进 persona 信封；world tx 逐个 assertControl）。 */
+    readonly personas: readonly { readonly personaId: string; readonly controlEpoch: number }[];
 }
 
 export interface WorldRuntimeOptions<TState extends WorldStateLifecycle> {
@@ -45,7 +63,8 @@ export interface WorldRecoverInfo {
     readonly mapId: string;
     readonly line: number;
     readonly authorityEpoch: number;
-    readonly snapshot: WorldCheckpoint | null;
+    /** 分线级检查点（框架已校验的信封）；null = 空世界起步。rev / eventOffset 成为本 runtime 的 checkpointRev / eventSeq 起点。 */
+    readonly checkpoint: CheckpointEnvelope | null;
 }
 
 export type WorldEmptyAction = "none" | "slept" | "unloaded";
@@ -75,6 +94,14 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     private readonly observerBaselineRequests = new Set<string>();
     private readonly observerBaselined = new Set<string>();
     private readonly awaySessions = new Set<string>();
+    /** 已落库的分线检查点 rev（Recovering 回灌；commitCheckpoint 推进）。 */
+    private checkpointRev = 0;
+    /** 已发出但尚未 commit / rollback 的最大 rev（并发批次不撞 rev）。 */
+    private issuedRev = 0;
+    /** 最后分配的世界事件 seq（分线内单调；Recovering 从 eventOffset 续）。 */
+    private eventSeq = 0;
+    private pendingEvents: WorldEventDraft[] = [];
+    private checkpointRequested: string | null = null;
     readonly sId: number;
     readonly fixedStepMs: number;
 
@@ -149,6 +176,19 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
                 else this.drain(reason, 0);
             },
             observers: this.observerPorts(),
+            events: {
+                append: (kind, payload) => {
+                    if (!this.mode.checkpoint?.eventTable) throw new Error(`[WorldRuntime] mode ${this.mode.id} 未声明 checkpoint.eventTable，⛔ 不能追加 durable 事件`);
+                    if (typeof kind !== "string" || !/^[A-Za-z][A-Za-z0-9._:-]{0,31}$/u.test(kind)) throw new TypeError(`[WorldRuntime] 事件 kind "${String(kind)}" 非法`);
+                    this.eventSeq += 1;
+                    this.pendingEvents.push({ seq: this.eventSeq, kind, payload });
+                    return this.eventSeq;
+                },
+            },
+            requestCheckpoint: (reason) => {
+                if (!this.mode.checkpoint) throw new Error(`[WorldRuntime] mode ${this.mode.id} 未声明 checkpoint 能力，⛔ 不能 requestCheckpoint`);
+                this.checkpointRequested = reason;
+            },
         };
     }
 
@@ -163,8 +203,14 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
         this.state.mapId = info.mapId;
         this.state.line = info.line;
         this.state.authorityEpoch = info.authorityEpoch;
-        await this.mode.onWorldInit(this.context(), { recovered: info.snapshot !== null });
-        if (info.snapshot !== null) this.mode.onRestore?.(this.context(), info.snapshot);
+        if (info.checkpoint !== null) {
+            this.checkpointRev = info.checkpoint.rev;
+            this.issuedRev = info.checkpoint.rev;
+            this.eventSeq = info.checkpoint.eventOffset;
+        }
+        await this.mode.onWorldInit(this.context(), { recovered: info.checkpoint !== null });
+        // §4.5 Recovering 顺序：装载 → loadInstance 检查点回灌（persona 级在准入时各自回灌）→ 开放准入
+        if (info.checkpoint !== null) this.mode.onRestore?.(this.context(), { persona: [], instance: info.checkpoint.snapshot });
         this.state.phase = WorldPhase.Active;
         this.lastCheckpointAt = this.now();
         this.emptySince = this.now();
@@ -188,7 +234,9 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
             if (seated.personaId === request.personaId) return "duplicate";
         }
         if (this.mode.onAdmit && this.mode.onAdmit(this.context(), request) === false) return "refused";
-        const info: WorldSessionInfo = { session: request.session, userId: request.userId, personaId: request.personaId, controlEpoch: request.controlEpoch };
+        const info: WorldSessionInfo = {
+            session: request.session, userId: request.userId, personaId: request.personaId, controlEpoch: request.controlEpoch, checkpoint: request.checkpoint,
+        };
         this.sessionTable.set(request.session, info);
         this.emptySince = null;
         this.sleeping = false;
@@ -236,25 +284,71 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
         if (steps === this.maxCatchUpSteps && this.accumulatorMs >= this.fixedStepMs) {
             this.accumulatorMs %= this.fixedStepMs;
         }
-        this.emitCheckpoint(false);
+        if (this.checkpointRequested !== null) {
+            const reason = this.checkpointRequested;
+            this.checkpointRequested = null;
+            this.emitCheckpoint(true, reason);
+        } else {
+            this.emitCheckpoint(false, "periodic");
+        }
         return steps;
     }
 
-    /** 强制检查点（§4.5 unload / Draining 收尾）：有落点才取；返回是否取到。 */
-    forceCheckpoint(): boolean {
-        return this.emitCheckpoint(true);
+    /** 强制检查点（§4.5 unload / Draining 收尾 / 离座）：有落点才取；返回是否取到。 */
+    forceCheckpoint(reason = "forced"): boolean {
+        return this.emitCheckpoint(true, reason);
     }
 
-    private emitCheckpoint(force: boolean): boolean {
+    private emitCheckpoint(force: boolean, reason: string): boolean {
         if (!this.ports.onCheckpoint) return false;
-        const checkpoint = this.takeCheckpoint(force);
-        if (!checkpoint) return false;
+        const batch = this.takeCheckpointBatch(force, reason);
+        if (!batch) return false;
         try {
-            this.ports.onCheckpoint(checkpoint, force ? "forced" : "periodic");
+            this.ports.onCheckpoint(batch, force ? "forced" : "periodic");
         } catch (error) {
             console.error(`[WorldRuntime ${this.state.instanceId}] 检查点落点失败`, error);
+            this.rollbackCheckpoint(batch);
         }
         return true;
+    }
+
+    /**
+     * 取一批（节拍或强制）：rev = max(已落库, 已发出) + 1、eventOffset = 最后分配的 seq、事件批从缓冲**移出**（落盘失败由 rollbackCheckpoint 放回）。
+     * ⛔ 不在这里推进 checkpointRev：只有落盘提交后 commitCheckpoint 才推进（§7.3 ①：事件行的 checkpoint_rev 指向「下一个将落盘」的 rev）。
+     */
+    takeCheckpointBatch(force = false, reason = "periodic"): WorldCheckpointBatch | null {
+        const checkpoint = this.takeCheckpoint(force);
+        if (!checkpoint) return null;
+        const rev = Math.max(this.checkpointRev, this.issuedRev) + 1;
+        this.issuedRev = rev;
+        const events = this.pendingEvents.splice(0, this.pendingEvents.length);
+        return {
+            rev, eventOffset: this.eventSeq, authorityEpoch: this.state.authorityEpoch, reason, checkpoint, events,
+            personas: [...this.sessionTable.values()].map((info) => ({ personaId: info.personaId, controlEpoch: info.controlEpoch })),
+        };
+    }
+
+    /** 落盘提交后由壳调：推进已落库 rev（只许前进）。 */
+    commitCheckpoint(rev: number): void {
+        if (!Number.isSafeInteger(rev) || rev <= this.checkpointRev) return;
+        this.checkpointRev = rev;
+    }
+
+    /** 落盘失败：事件批放回缓冲最前（保持 seq 序），rev 作废（下一批取更大的号）。 */
+    rollbackCheckpoint(batch: WorldCheckpointBatch): void {
+        if (batch.events.length > 0) this.pendingEvents = [...batch.events, ...this.pendingEvents];
+    }
+
+    get checkpointRevision(): number {
+        return this.checkpointRev;
+    }
+
+    get lastEventSeq(): number {
+        return this.eventSeq;
+    }
+
+    get pendingEventCount(): number {
+        return this.pendingEvents.length;
     }
 
     /** 推进一步：tick++ → onStep（本步排空的有序命令）。mode 抛错只记错，⛔ 不杀世界循环。 */
@@ -392,7 +486,7 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
         }
         if (this.world.emptyPolicy === "unload") {
             this.drain("empty-unload", 0);
-            this.forceCheckpoint(); // §4.5：unload = 强制检查点 → Draining → Offline
+            this.forceCheckpoint("empty-unload"); // §4.5：unload = 强制检查点 → Draining → Offline
             this.offline();
             return "unloaded";
         }

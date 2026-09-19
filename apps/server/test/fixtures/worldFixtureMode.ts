@@ -13,7 +13,9 @@ import {
     WorldFixturePos, WorldFixturePrivate, WorldFixtureResync, WorldFixtureUpdate,
     type IObserverEnvelope, type IWorldFixtureEntityWire, type IWorldFixtureMoveReq, type WorldFixtureEntityKind,
 } from "@game/shared";
-import type { WorldAdmitRequest, WorldCheckpoint, WorldMode, WorldModeContext, WorldModeObserverCapability } from "../../src/rooms/WorldMode";
+import type {
+    WorldAdmitRequest, WorldCheckpoint, WorldMode, WorldModeCheckpointCapability, WorldModeContext, WorldModeObserverCapability,
+} from "../../src/rooms/WorldMode";
 import type { WorldFixtureState } from "../../src/rooms/schema/GameRoomState";
 
 export const WORLD_FIXTURE_MODE_ID = "worldFixture";
@@ -44,7 +46,13 @@ export interface WorldFixtureModeOptions {
     readonly range?: number;
     /** 有界原语上限（只许收紧，§11.2）。 */
     readonly limits?: WorldModeObserverCapability<WorldFixtureState>["limits"];
+    /** 检查点能力（MF7b）：kit 作用域的持久层（单测 MemoryCheckpointPort；int 走 kitfix 表）。 */
+    readonly checkpoint?: WorldModeCheckpointCapability;
 }
+
+/** persona 级快照（位置 / stamina）；分线级快照 = 静态体 + tick。schema 版本 1。 */
+export interface WorldFixturePersonaSnapshot { readonly x: number; readonly y: number; readonly stamina: number }
+export const WORLD_FIXTURE_CHECKPOINT_SCHEMA = { version: 1, minSupported: 1 } as const;
 
 export interface WorldFixtureMode extends WorldMode<WorldFixtureState> {
     readonly __probe: {
@@ -123,6 +131,7 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
         capacity: options.capacity ?? 8,
         commands: [WorldFixtureMove.type, WorldFixtureResync.type],
         observer,
+        ...(options.checkpoint ? { checkpoint: options.checkpoint } : {}),
         onWorldInit(context, info) {
             entities.clear();
             movers.clear();
@@ -151,10 +160,15 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
         },
         onEnter(context, session) {
             const id = `mover-${session.personaId}`;
-            entities.set(id, { id, kind: "mover", session: session.session, x: 500, y: 500, rev: 0, dirX: 0, dirY: 0, seq: 0, stamina: WORLD_FIXTURE_STAMINA });
+            // persona 级检查点回灌（框架已校验信封；快照内容归本 mode）：位置 / stamina 回到最近一次落盘（≤ 1 个角色检查点周期）
+            const restored = session.checkpoint?.snapshot as Partial<WorldFixturePersonaSnapshot> | null | undefined;
+            const x = typeof restored?.x === "number" ? clamp(restored.x) : 500;
+            const y = typeof restored?.y === "number" ? clamp(restored.y) : 500;
+            const stamina = typeof restored?.stamina === "number" ? restored.stamina : WORLD_FIXTURE_STAMINA;
+            entities.set(id, { id, kind: "mover", session: session.session, x, y, rev: 0, dirX: 0, dirY: 0, seq: 0, stamina });
             movers.set(session.session, id);
             syncCount(context);
-            log.push(`enter:${session.session}`);
+            log.push(`enter:${session.session}${restored ? ":restored" : ""}`);
         },
         onLeave(context, session, reason) {
             const id = movers.get(session.session);
@@ -205,9 +219,13 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
         },
         onCheckpoint(context): WorldCheckpoint {
             probe.checkpoints += 1;
+            const persona = [...movers.values()].flatMap((id) => {
+                const mover = entities.get(id);
+                return mover ? [{ personaId: id.slice("mover-".length), snapshot: { x: mover.x, y: mover.y, stamina: mover.stamina } satisfies WorldFixturePersonaSnapshot }] : [];
+            });
             return {
-                persona: [...movers.entries()].map(([session, id]) => ({ session, id })),
-                instance: { tick: context.state.tick, entities: [...entities.values()].filter((entity) => entity.kind === "static") },
+                persona,
+                instance: { tick: context.state.tick, entities: [...entities.values()].filter((entity) => entity.kind === "static").map(({ session: _s, ...rest }) => rest) },
             };
         },
         onDrain(_context, info) {
@@ -216,6 +234,13 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
         onSignal(context, signal) {
             log.push(`signal:${signal.kind}`);
             if (signal.kind === "drain") context.requestDrain("signal");
+            // durable 命令（§7.3 脚本 durable 命令行）：loot ⇒ 追加 grantCurrency 事件；checkpoint ⇒ 强制点（checkpointOnDeath / setVar durable 同形）
+            if (signal.kind === "loot") {
+                const { session, amount } = signal.payload as { session: string; amount: number };
+                const mover = probe.moverOf(session);
+                if (mover) context.events.append("grantCurrency", { personaId: mover.id.slice("mover-".length), amount });
+            }
+            if (signal.kind === "checkpoint") context.requestCheckpoint("signal");
             // 反例：perSession token 全房广播必须被框架拒（S2CPorts fail-closed）
             if (signal.kind === "broadcast-leak") {
                 context.broadcastS2C(WorldFixtureEnter, { seq: 1, tick: context.state.tick, entity: { id: "leak", kind: "static", x: 0, y: 0, rev: 0 } });

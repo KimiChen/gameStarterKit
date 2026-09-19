@@ -58,7 +58,8 @@ test("run：空实例照常推进，周期检查点照写", async () => {
     assert.equal(h.room.isSleeping, false);
     assert.equal(h.room.phase, WorldPhase.Active);
     assert.deepEqual(h.checkpoints.map((entry) => entry.reason), ["periodic"], "到节拍即写周期检查点");
-    assert.deepEqual(h.checkpoints[0]!.checkpoint.persona, [], "空实例：无 persona 条目");
+    assert.deepEqual(h.checkpoints[0]!.batch.checkpoint.persona, [], "空实例：无 persona 条目");
+    assert.equal(h.checkpoints[0]!.batch.rev, 1, "首批 rev 1（已落库 0 + 1）");
     h.clock.now += 499;
     h.room.advance(50);
     assert.equal(h.checkpoints.length, 1, "未到节拍不重复写");

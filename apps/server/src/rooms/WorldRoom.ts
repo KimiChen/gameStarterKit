@@ -59,7 +59,9 @@ import { ReconnectGrace } from "./core/ReconnectGrace";
 import { S2CPorts } from "./core/S2CPorts";
 import { defaultWireRateCost, WireDispatcher } from "./core/WireDispatcher";
 import { WorldLease } from "./core/WorldLease";
-import { WorldRuntime } from "./core/WorldRuntime";
+import { WorldRuntime, type WorldCheckpointBatch } from "./core/WorldRuntime";
+import { WorldCheckpointer } from "./core/WorldCheckpoint";
+import { AuthorityLostError } from "./core/WorldTx";
 import { DEFAULT_WORLD_LINE, worldAddressOf, worldDirectory, type WorldDirectoryPort } from "./core/WorldDirectory";
 import {
     WORLD_PROFILE_ID, placeholderWorldTicketPort, resolveWorldProfile, type WorldProfile, type WorldTicketPort,
@@ -69,9 +71,9 @@ import {
 } from "./core/control";
 import { createRoomStateForMode, ROOM_STATE_KIND } from "./schema/GameRoomState";
 import {
-    assertWorldModeContract, worldModeRegistry, type WorldAdmitRequest, type WorldCheckpoint, type WorldLeaveReason, type WorldMode,
-    type WorldStateLifecycle,
+    assertWorldModeContract, worldModeRegistry, type WorldAdmitRequest, type WorldLeaveReason, type WorldMode, type WorldStateLifecycle,
 } from "./WorldMode";
+import type { CheckpointEnvelope } from "./core/CheckpointPort";
 import type { WorldManifestConfig } from "../../tools/gameplay-codegen/manifestSchema";
 
 /** 生产 root 由 codegen 生成（Schema，`kind:"world"` 根必填集）；注入路径（单测 / 回放）由调用方保证形状。 */
@@ -148,8 +150,10 @@ export interface WorldRoomRuntimeOptions {
     readonly holder?: string;
     readonly drainGraceMs?: number;
     readonly timers?: WorldRoomTimers;
-    /** 检查点落点（MF7b 换 CheckpointPort）；缺省无（不取检查点）。 */
-    readonly checkpointSink?: (checkpoint: WorldCheckpoint, reason: "periodic" | "forced") => void;
+    /** 检查点记录器（单测 / 回放）：mode 未声明 checkpoint 能力时的落点；声明了则走 WorldCheckpointer（同一世界事务落盘）。 */
+    readonly checkpointSink?: (batch: WorldCheckpointBatch, reason: "periodic" | "forced") => void;
+    /** 注入检查点编排（单测：假世界事务 + MemoryCheckpointPort）；生产按 mode.checkpoint 自建。 */
+    readonly checkpointer?: WorldCheckpointer;
     /** 测试 / 回放：不起 setSimulationInterval，由调用方直接 advance(dt)。 */
     readonly manualTick?: boolean;
 }
@@ -245,9 +249,13 @@ export class WorldRoom extends Room {
         readonly holder: string | null;
         readonly drainGraceMs: number;
         readonly timers: WorldRoomTimers;
-        readonly checkpointSink: ((checkpoint: WorldCheckpoint, reason: "periodic" | "forced") => void) | null;
+        readonly checkpointSink: ((batch: WorldCheckpointBatch, reason: "periodic" | "forced") => void) | null;
+        readonly checkpointer: WorldCheckpointer | null;
         readonly manualTick: boolean;
     };
+    private checkpointer: WorldCheckpointer | null = null;
+    /** 落盘串行链（批次按 rev 顺序落库；失败回滚不影响后续批次）。 */
+    private checkpointChain: Promise<void> = Promise.resolve();
     /** MF3 共享层：dispatcher（含每会话预算）/ 出站口 / 重连宽限；壳只消费。 */
     private readonly dispatcher: WireDispatcher;
     private readonly ports: S2CPorts;
@@ -291,6 +299,7 @@ export class WorldRoom extends Room {
             drainGraceMs: options.drainGraceMs ?? WORLD_DRAIN_GRACE_MS,
             timers: options.timers ?? defaultTimers,
             checkpointSink: options.checkpointSink ?? null,
+            checkpointer: options.checkpointer ?? null,
             manualTick: options.manualTick === true,
         };
         this.ports = new S2CPorts({
@@ -392,6 +401,8 @@ export class WorldRoom extends Room {
             if (error instanceof WorldNotAuthoritativeError) throw joinRefused(ErrorCode.WorldNotAuthoritative);
             throw error;
         }
+        // MF7b：检查点编排（注入优先；mode 声明 checkpoint 能力即自建）
+        this.checkpointer = this.deps.checkpointer ?? (mode.checkpoint ? new WorldCheckpointer(mode.checkpoint, sId) : null);
         const state = this.selectState(mode);
         const runtime = new WorldRuntime<WorldRoomState>({
             mode,
@@ -405,13 +416,21 @@ export class WorldRoom extends Room {
                 sendS2C: (session, token, payload) => { this.outbox.push({ session, token, payload }); },
                 broadcastS2C: (token, payload) => { this.outbox.push({ session: null, token, payload }); },
                 onDrainRequested: (reason) => this.drain(`mode:${reason}`),
-                ...(this.deps.checkpointSink ? { onCheckpoint: this.deps.checkpointSink } : {}),
+                ...(this.checkpointer
+                    ? { onCheckpoint: (batch: WorldCheckpointBatch) => { this.persistCheckpoint(batch); } }
+                    : this.deps.checkpointSink ? { onCheckpoint: this.deps.checkpointSink } : {}),
             },
         });
         this.runtime = runtime;
         try {
-            // MF7b 起：snapshot = CheckpointPort.loadInstance(...)；MF4 从空世界起步。
-            await runtime.recover({ instanceId: this.instanceId, mapId: this.mapId, line: this.line, authorityEpoch: this.authorityEpoch, snapshot: null });
+            // §4.5 Recovering：loadInstance 检查点（校验版本窗口 / stateHash，不兼容 fail-closed）→ superseded 事件行 → onRestore → Active
+            let restored: CheckpointEnvelope | null = null;
+            if (this.checkpointer) {
+                restored = await this.checkpointer.loadInstance(this.instanceId);
+                const superseded = await this.checkpointer.supersede(this.instanceId, restored?.rev ?? 0);
+                if (superseded > 0) console.warn(`[WorldRoom ${this.roomId}] Recovering：${superseded} 条事件属已丢失的未来，标 superseded`);
+            }
+            await runtime.recover({ instanceId: this.instanceId, mapId: this.mapId, line: this.line, authorityEpoch: this.authorityEpoch, checkpoint: restored });
             await this.deps.control.setInstanceState(sId, this.instanceId, this.authorityEpoch, "active");
         } catch (error) {
             await this.releaseLease();
@@ -460,10 +479,19 @@ export class WorldRoom extends Room {
                 sId: this.sId, userId: auth.userId, personaId: auth.personaId, mapId: this.mapId, line: this.line, ticketSha256: auth.ticketSha256,
             });
             if (verdict !== "ok") throw joinRefused(ErrorCode.WorldTicketInvalid);
-            // ⑦ 异步预热（⛔ 分配资源）
+            // ⑦ persona 级检查点回读（MF7b：框架校验，损坏 / 不兼容 fail-closed 拒入）+ 异步预热（⛔ 分配资源）
+            let checkpoint: CheckpointEnvelope | null = null;
+            if (this.checkpointer) {
+                try {
+                    checkpoint = await this.checkpointer.loadPersona(auth.personaId);
+                } catch (error) {
+                    console.error(`[WorldRoom ${this.roomId}] persona ${auth.personaId} 检查点回读失败`, error);
+                    throw joinRefused(ErrorCode.BadRequest);
+                }
+            }
             const request: WorldAdmitRequest = {
                 session: client.sessionId, userId: auth.userId, personaId: auth.personaId, controlEpoch: owner.controlEpoch,
-                ticketSha256: auth.ticketSha256, resumeSeq: auth.resumeSeq,
+                ticketSha256: auth.ticketSha256, resumeSeq: auth.resumeSeq, checkpoint,
             };
             try {
                 await runtime.beforeAdmit(request);
@@ -678,7 +706,7 @@ export class WorldRoom extends Room {
         const seated = runtime ? runtime.sessions() : [];
         if (runtime && runtime.phase !== WorldPhase.Offline) {
             if (runtime.phase !== WorldPhase.Draining) runtime.drain(reason, 0);
-            runtime.forceCheckpoint(); // §4.5 Draining：强制检查点（MF7b 落库）
+            runtime.forceCheckpoint(`offline:${reason}`); // §4.5 Draining：强制检查点（MF7b 同一世界事务落盘）
             runtime.offline();
         }
         for (const info of seated) {
@@ -691,6 +719,7 @@ export class WorldRoom extends Room {
         this.pendingAdmissions.clear();
         this.dispatcher.budget.clear();
         this.outbox.length = 0;
+        await this.checkpointChain; // 最后一批（强制点）落盘完成后才释放租约 / 标 offline
         await this.releaseLease();
         await this.markInstance("offline");
         console.log(`[WorldRoom ${this.roomId}] Offline（${reason}）`);
@@ -750,11 +779,13 @@ export class WorldRoom extends Room {
         if (client) { try { client.leave(closeCode); } catch { /* connection may be closing */ } }
     }
 
-    /** 最终离座的唯一落点：会话表 → 连接表 / 预算 → 归还控制权（lost-control 的旧 epoch 已被抬高，⛔ 不归还）。 */
+    /** 最终离座的唯一落点：强制点（persona 快照仍在座时落盘）→ 会话表 → 连接表 / 预算 → 归还控制权（lost-control 的旧 epoch 已被抬高，⛔ 不归还）。 */
     private finalLeave(session: string, reason: WorldLeaveReason): boolean {
         const runtime = this.runtime;
         if (!runtime) return false;
         const info = runtime.sessionOf(session);
+        // §7.3 角色检查点「登出 / 交接强制点」：离座前取一批（含该 persona 的快照与事件批），落盘异步串行
+        if (info && this.checkpointer && (runtime.phase === WorldPhase.Active || runtime.phase === WorldPhase.Draining)) runtime.forceCheckpoint(`leave:${reason}`);
         const left = runtime.leave(session, reason);
         this.clientOf.delete(session);
         this.awayClients.delete(session);
@@ -768,6 +799,34 @@ export class WorldRoom extends Room {
             console.error(`[WorldRoom ${this.roomId}] 归还控制权失败 persona=${personaId} epoch=${controlEpoch}`, error);
             return false;
         }));
+    }
+
+    /** 检查点落盘（串行）：成功 ⇒ runtime.commitCheckpoint；失败 ⇒ rollbackCheckpoint（事件放回）；权威已失 ⇒ Draining。 */
+    private persistCheckpoint(batch: WorldCheckpointBatch): void {
+        const checkpointer = this.checkpointer;
+        const runtime = this.runtime;
+        if (!checkpointer || !runtime) return;
+        const instanceId = this.instanceId;
+        this.checkpointChain = this.checkpointChain.then(async () => {
+            try {
+                await checkpointer.save(instanceId, batch);
+                runtime.commitCheckpoint(batch.rev);
+            } catch (error) {
+                runtime.rollbackCheckpoint(batch);
+                console.error(`[WorldRoom ${this.roomId}] 检查点 rev=${batch.rev}（${batch.reason}）落盘失败`, error);
+                if (error instanceof AuthorityLostError) this.drain("authority-lost");
+            }
+        });
+        void trackTask("world:checkpoint", this.checkpointChain);
+    }
+
+    get checkpointRevision(): number {
+        return this.runtime?.checkpointRevision ?? 0;
+    }
+
+    /** 测试 / 收尾：等待在途的检查点批次落盘。 */
+    flushCheckpoints(): Promise<void> {
+        return this.checkpointChain;
     }
 
     private async releaseLease(): Promise<void> {
