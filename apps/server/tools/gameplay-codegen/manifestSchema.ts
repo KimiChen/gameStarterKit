@@ -34,7 +34,25 @@ export type GameplayManifest = {
    * （SQL 视图房 / MF4 world 形态用）。只对新 mode 生效，⛔ 不 bump GAME_ROOM_PROTOCOL_VERSION（§11.2）。
    */
   readonly roster: "public" | "hidden";
+  /**
+   * 玩法形态（MMO MF4-B2，docs/MMO.md §4.5 / §5.4 MF4）：`match`（缺省，GameRoom 对局）| `world`（WorldRoom 常驻世界：
+   * root 必填集 {tick, phase: WorldPhase, instanceId, mapId, line, authorityEpoch}、⛔ players、roster 恒 hidden、⛔ ownerReady / inviteRoom）。
+   */
+  readonly kind: "match" | "world";
+  /** 世界形态的空实例策略（§4.5 表；缺省 sleep / 120 s / 30 s = §11.2 冻结值）；match 形态恒 null（声明即拒）。 */
+  readonly world: WorldManifestConfig | null;
 };
+
+export type WorldEmptyPolicy = "sleep" | "run" | "unload";
+
+export type WorldManifestConfig = {
+  readonly emptyPolicy: WorldEmptyPolicy;
+  readonly emptyAfterMs: number;
+  readonly checkpointMs: number;
+};
+
+/** §11.2 冻结：空实例策略缺省 `sleep`、`emptyAfterMs` 120 s；`checkpointMs` 分线 30 s。 */
+export const WORLD_MANIFEST_DEFAULTS: WorldManifestConfig = Object.freeze({ emptyPolicy: "sleep", emptyAfterMs: 120_000, checkpointMs: 30_000 });
 
 function fail(pathLabel: string, message: string): never {
   throw new Error(`[gameplay-codegen] ${pathLabel}: ${message}`);
@@ -136,6 +154,21 @@ export function parseGameplayManifest(input: unknown, pathLabel = "manifest"): G
   const schema = loadGameplayManifestSchema();
   validateNode(schema, input, pathLabel);
   const value = input as JsonRecord;
+  const kind: "match" | "world" = value.kind === "world" ? "world" : "match";
+  if (kind === "match" && value.world !== undefined) {
+    fail(`${pathLabel}.world`, "only allowed with kind \"world\"");
+  }
+  if (kind === "world" && value.roster === "public") {
+    fail(`${pathLabel}.roster`, "kind \"world\" is always roster \"hidden\" (D4: the roster never enters Schema)");
+  }
+  const worldRaw = value.world as JsonRecord | undefined;
+  const world: WorldManifestConfig | null = kind === "world"
+    ? {
+      emptyPolicy: (worldRaw?.emptyPolicy as WorldEmptyPolicy | undefined) ?? WORLD_MANIFEST_DEFAULTS.emptyPolicy,
+      emptyAfterMs: (worldRaw?.emptyAfterMs as number | undefined) ?? WORLD_MANIFEST_DEFAULTS.emptyAfterMs,
+      checkpointMs: (worldRaw?.checkpointMs as number | undefined) ?? WORLD_MANIFEST_DEFAULTS.checkpointMs,
+    }
+    : null;
   return {
     schemaVersion: 1,
     id: value.id as string,
@@ -144,6 +177,8 @@ export function parseGameplayManifest(input: unknown, pathLabel = "manifest"): G
     maxPlayers: value.maxPlayers as number,
     profiles: Array.isArray(value.profiles) ? [...(value.profiles as string[])] : [],
     wireExposed: value.wireExposed !== false,
-    roster: value.roster === "hidden" ? "hidden" : "public",
+    roster: kind === "world" || value.roster === "hidden" ? "hidden" : "public",
+    kind,
+    world,
   };
 }

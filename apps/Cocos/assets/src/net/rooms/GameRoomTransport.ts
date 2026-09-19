@@ -6,6 +6,7 @@ import {
     validateRoomStateForMode,
     type C2SPayloadMap,
     type IMoveReq,
+    type S2CPayloadMap,
 } from "../../shared/index";
 import {
     RoomClient,
@@ -121,6 +122,44 @@ export function createIdleRoomAdapter(): IdleRoomAdapter {
         validateState: (input) => validateRoomStateForMode(GameplayModeId.Idle, input),
         // Deliberately no reconcile hook: idle never constructs or replays Move.
     };
+}
+
+/**
+ * 观察者同步的传输端口（MMO MF5a-B5）：把一个玩法的 perSession 视野流 / baseline 六个 S2C 绑到 sink（通常是
+ * logic/rooms/observer/ObserverReconciler）。payload 已过该玩法 wire validator（RoomClient.onMessage 统一校验）。
+ * 返回一次性解绑；玩法 adapter 在 `reconcile(room, reason)` 里绑定并在离房时解绑。
+ */
+export interface ObserverStreamTypes {
+    readonly enter: keyof S2CPayloadMap;
+    readonly update: keyof S2CPayloadMap;
+    readonly leave: keyof S2CPayloadMap;
+    readonly baselineBegin: keyof S2CPayloadMap;
+    readonly baselineChunk: keyof S2CPayloadMap;
+    readonly baselineEnd: keyof S2CPayloadMap;
+}
+
+export interface ObserverStreamSink {
+    enter(payload: unknown): unknown;
+    update(payload: unknown): unknown;
+    leave(payload: unknown): unknown;
+    baselineBegin(payload: unknown): unknown;
+    baselineChunk(payload: unknown): unknown;
+    baselineEnd(payload: unknown): unknown;
+}
+
+export function bindObserverStream<
+    TMode extends SupportedGameRoomMode,
+    TOutbound extends keyof C2SPayloadMap,
+>(room: TypedGameRoom<TMode, TOutbound>, types: ObserverStreamTypes, sink: ObserverStreamSink): () => void {
+    const offs = [
+        room.onMessage(types.enter, (payload) => sink.enter(payload)),
+        room.onMessage(types.update, (payload) => sink.update(payload)),
+        room.onMessage(types.leave, (payload) => sink.leave(payload)),
+        room.onMessage(types.baselineBegin, (payload) => sink.baselineBegin(payload)),
+        room.onMessage(types.baselineChunk, (payload) => sink.baselineChunk(payload)),
+        room.onMessage(types.baselineEnd, (payload) => sink.baselineEnd(payload)),
+    ];
+    return () => { for (const off of offs) off(); };
 }
 
 /** Join one raw GameRoom with an explicit matchmaking mode. `options.profile` 覆盖缺省房型（MF9-B4 / EXTRAS X1，取值已由 codegen 与 module 校验）。 */
