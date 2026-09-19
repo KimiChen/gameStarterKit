@@ -1,6 +1,6 @@
 # 3D 素材使用方式、规范与原则（框架级）
 
-> - 日期：2026-09-19。状态：**规范 v1.2**（同日审阅修订），与 [3d.md](3d.md) 对齐；⛔ 未实施任何 3D 能力，本文先于素材存在。
+> - 日期：2026-09-19。状态：**规范 v1.3**（同日两轮审阅修订），与 [3d.md](3d.md) v1.3 对齐；⛔ 未实施任何 3D 能力，本文先于素材存在。
 > - 来历：对照 Cocos 官方 3D 演示项目 **Cocos Cyberpunk**（本机 `/Volumes/KimData/work/CocosCyberpunk`，仓外只读；Creator 3.8.4 工程，806 MB 资产，1,374 个模型、685 张图、259 个材质、262 个粒子系统）逐项实测，取其**做法**、⛔ 不取其**素材**（§14）；再对照本仓现状（`apps/Cocos` 3.8.8 工程、`resources/kits/<id>/` 所有权、`verify:sync` 的 `.meta` 闸、`tools/slg-maps/` 管线先例）落成本仓规则。
 > - 定位：素材侧唯一规范；机制侧（Stage3D / AssetLease / 纯数学 / 机械件）在 [3d.md](3d.md)，施工批次在 [3D-PLAN.md](3D-PLAN.md)，lvr 内容需求在 [lvr-3d.md](../lvr-3d.md)。三者冲突以本文为素材口径、以 3d.md 为机制口径。
 > - 治理：⛔ 不进 plan-v5；数字候选在 §15，SC0 后冻结；实施状态不在本文回写（在 3d.md §10）。修订登记见 §16。
@@ -52,7 +52,7 @@
 | 插件 | `apps/plugins/<id>/art/3d/` | `apps/Cocos/assets/bundles/plugin-<id>/3d/…` + `resources/plugins/<id>/3d/data/`（同形） |
 
 - 运行时目录 ⛔ 不是源目录的逐字节镜像（含 Creator 子资产与 `.meta`）；源目录只放可再生成的输入。
-- **bundle 策略（3d.md SD12，2026-09-19 拍板）**：`resources/` 仍是小数据与框架灰盒的 bundle；kit / 插件 3D 重资产**每包一个 bundle** `apps/Cocos/assets/bundles/<kit|plugin>-<id>/`（目录 `.meta` `isBundle:true`；开发期 `isRemote:false`，发布按平台在 `builder.json` bundleConfig 覆写为 `isRemote:true`，压缩类型候选 `merge_dep`），可按地图 / 场景细分为 `bundles/<class>-<id>-<map>/`；目录名须精确归属一个包，⛔ 用 `<class>-<id>*` 裸前缀推导所有权，细分 bundle 归属按包身份推导，只有精确 `<class>-<id>` 或非空 `<class>-<id>-<map>` 后缀可归属；根目录 `.meta` 同规，详见 3D-PLAN SC1-B7；Asset Bundle ⛔ 嵌套在 `resources/` 内 ⇒ ⛔ 把 3D 重资产放 `resources/{kits,plugins}/<id>/`；所有权 / 锁 / 安装 / `verify:assets3d` 在 SC1-B7 扩到 `bundles/`；`AssetLease` 以「bundle 名 + 路径」寻址，kit 代码不感知来源。
+- **bundle 策略（3d.md SD12，2026-09-19 拍板）**：`resources/` 仍是小数据与框架灰盒的 bundle；kit / 插件 3D 重资产**每包一个 bundle** `apps/Cocos/assets/bundles/<kit|plugin>-<id>/`（目录 `.meta` `isBundle:true`；开发期 `isRemote:false`，发布按平台在 `builder.json` bundleConfig 覆写为 `isRemote:true`，压缩类型候选 `merge_dep`），可按地图 / 场景细分为 `bundles/<class>-<id>-<map>/`；目录名须精确归属一个包，⛔ 用 `<class>-<id>*` 裸前缀推导所有权，细分 bundle 归属按包身份推导，只有精确 `<class>-<id>` 或非空 `<class>-<id>-<map>`（`<map>` 匹配 `^[a-z][A-Za-z0-9]*$`，`<class>` ∈ {kit, plugin}，3D-40）后缀可归属；根目录 `.meta` 同规，详见 3D-PLAN SC1-B7；Asset Bundle ⛔ 嵌套在 `resources/` 内 ⇒ ⛔ 把 3D 重资产放 `resources/{kits,plugins}/<id>/`；所有权 / 锁 / 安装 / `verify:assets3d` 在 SC1-B7 扩到 `bundles/`；`AssetLease` 以「bundle 名 + 路径」寻址，kit 代码不感知来源。
 - 每个模型一目录：`models/<SM_Asset>/{SM_Asset.glb, lod_1.glb, lod_2.glb}`（Cyberpunk `res/meshes/<SM_x>/lod_{0,1,2}.gltf` 同法，主文件即 lod_0）。
 
 ### 2.2 命名
@@ -76,7 +76,7 @@
 | 项 | 规则 |
 | --- | --- |
 | 格式 | 交换格式 **glTF 2.0 二进制 `.glb`**（Creator 作者态导入为 Mesh / Material / AnimationClip / Skeleton / Prefab 子资产）；**FBX 只作例外**（DCC 直出角色蒙皮 / 动画在 glb 有损时），须在 `art3d.config.json` `exceptions[]` 登记文件与理由；⛔ 不入库 `.blend / .max / .ma` 源文件 |
-| GLB 图片与依赖 | ⛔ `images[].bufferView` 内嵌图片或 `data:` URI；`tools/art3d` 在入库前把图片外提 / 转换成同包独立 PNG，`images[].uri` 只允许相对引用本包资产根内的图片（框架样本限 `resources/stage3d/`）。规范化 URI 并解析实际路径后不得跨包、越界、指向远程 URL 或缺失文件；图片逐份走 §5、预算与授权检查。几何 buffer 使用 GLB BIN chunk，⛔ 外部 `buffers[].uri`。Creator 导入后的图片 / texture 子 `.meta` 同样受检，不能只查 GLB 顶层 `.meta` |
+| GLB 图片与依赖 | ⛔ `images[].bufferView` 内嵌图片或 `data:` URI；`tools/art3d` 在入库前把图片外提 / 转换成同包独立 PNG，`images[].uri` 只允许相对引用本包资产根内的图片（框架样本限 `resources/stage3d/`）。规范化 URI 并解析实际路径后不得跨包、越界、指向远程 URL 或缺失文件；图片逐份走 §5、预算与授权检查。几何 buffer 使用 GLB BIN chunk，⛔ 外部 `buffers[].uri`。Creator 导入后的图片 / texture 子 `.meta` 同样受检，不能只查 GLB 顶层 `.meta`。⚠ Creator 3.8.8 对「二进制 glb + 外部图片 uri」的导入行为在 SC0-B2 实证（3D-38）；未通过则退路为 `.gltf + .bin` 或允许内嵌，并同步改本行与 §13 |
 | 坐标 | 米制、Y 上、右手系；静态物件枢轴在底部中心，角色枢轴在脚底；正面朝 `-Z`（Cocos `Node.forward`）；导入不缩放（`scale = 1`） |
 | 网格 | 三角化；单网格 ≤ 65k 顶点（16 位索引）；静态世界网格带 **UV2**（烘焙用，Cyberpunk 359 个材质 `HAS_SECOND_UV`），UV2 在 DCC 做（`generateLightmapUVNode:false`）；法线 / 切线随文件带（法线贴图需要切线） |
 | LOD 变体 | 主文件 = lod_0；`lod_1.glb`（≈ 1/4 面）/ `lod_2.glb`（≈ 1/10 面）由 `tools/art3d`（meshopt simplify）离线生成或美术手做；同目录、同材质槽；工具必须报告各档面数、包围盒和材质槽并验证贴图引用。蒙皮变体还须保留骨架 / joints / weights / 动画轨并校验骨骼数与动画时长；不能保真的输入显式失败，改走登记的手工作品，⛔ 静默丢弃动画。SC5-B1 必须产出并导入两份 LOD，运行时由 `EntityPool` 按档选择（3d.md §4） |
@@ -234,3 +234,4 @@ SC5-B1 工具验收还须执行离线简化：主模型 → `lod_1.glb / lod_2.g
 - 2026-09-19 规范 v1：对照 Cocos Cyberpunk 实测（§1）成文；与 3d.md v1.1、3D-PLAN.md、lvr-3d.md v1.1 同批。
 - 2026-09-19 v1.1：SD9–SD12 拍板回写（§1 管线 / 目录行、§2.1 bundle 目录、§4 shader 落点与管线、§11 low 档 = 首版目标、§12 bundle 策略、§13 流程）。
 - 2026-09-19 v1.2：审阅修订：统一 SD11 开关与 SD12 资产目录 / 所有权口径；GLB 图片必须外提、跨包与外部 buffer 依赖拒绝；§13 对齐完整资产闸、子 `.meta` / 压缩 / 授权覆盖 / 预算及反例；补 SC0 烘焙 apply → 独立预制动态加载证据与 SC5 离线 LOD 退出。⛔ 仅修订规范，未实施能力、未冻结 §15 数字。
+- 2026-09-19 v1.3：3D-38 glb 外部图片导入验证项（§3）、3D-40 细分 bundle 后缀正则（§2.1）。
