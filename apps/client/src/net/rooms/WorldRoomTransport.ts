@@ -33,19 +33,36 @@ import {
 } from "../../shared/index";
 import { getCurrentGameWsUrl, getCurrentServer } from "../serverSession";
 import { cloneJson, disableSdkOutboundReplay, safeError, warnInvalidWire as sharedWarnInvalidWire } from "../wireCommon";
-import { WORLD_ROOM_PROFILE, normalizeWorldRoomStrategy, worldRoomModeVersion, type WorldRoomMatchmakingStrategy } from "./matchmaking";
+import { WORLD_ROOM_PROFILE, normalizeWorldRoomStrategy, worldRoomModeVersion, type WorldRoomStrategy } from "./matchmaking";
 import type { ObserverStreamSink, ObserverStreamTypes } from "./GameRoomTransport";
 
 export interface WorldJoinRequest {
     /** world 形态玩法 id（client catalog `kind:"world"`）。 */
     readonly mode: string;
-    /** 撮合目标（mapId / line?）；kind 缺省补 "world"。 */
-    readonly strategy: WorldRoomMatchmakingStrategy | { readonly mapId: string; readonly line?: number };
+    /** 撮合目标（mapId / line?）；kind 缺省补 "world"；交接用 { kind: "transfer", transferId, mapId, line? }（MF8）。 */
+    readonly strategy: WorldRoomStrategy | { readonly mapId: string; readonly line?: number };
     /** world.enter 签发的一次性凭据（MF8）；⛔ 不落日志。 */
     readonly personaId: string;
     readonly ticket: string;
     /** 重连：已收到的最后 seq（缺省从 baseline 重来；MF5b）。 */
     readonly resumeSeq?: number;
+}
+
+/**
+ * 交接请求（MMO MF8-B5）：`ready` 直接取 `world.enter` / `world.resolveTransfer` 的结果（或 mode 的「交接就绪」token 载荷）。
+ * transferId 为 null 时按普通进入（enter 未解析到交接）。⚠ ticket 原文只在此处流转，⛔ 不落日志。
+ */
+export interface WorldTransferRequest {
+    readonly mode: string;
+    readonly personaId: string;
+    readonly ready: {
+        readonly transferId: string | null;
+        readonly mapId: string;
+        readonly line: number;
+        /** 空串 = 沿用当前 SDK client（同当前区 gameWsUrl）；非空 ⇒ deps.clientFor(endpoint)（未注入则沿用当前 client）。 */
+        readonly endpoint: string;
+        readonly ticket: string;
+    };
 }
 
 export type WorldLeaveKind = "consented" | "drained" | "replaced" | "dropped";
@@ -66,6 +83,8 @@ export interface WorldRoomHandle {
     readonly line: number | null;
     readonly roomId: string;
     readonly sessionId: string;
+    /** 经交接进入时的 transferId（重连凭它 resolveTransfer）；普通进入为 null。 */
+    readonly transferId: string | null;
     /** 未离开且未掉线（掉线 / 重连握手期间为 false：send 拒发）。 */
     readonly current: boolean;
     readonly dropping: boolean;
@@ -91,6 +110,8 @@ export interface WorldRoomTransportDeps {
     readonly client: () => WorldRoomSdkClient;
     readonly token: () => string;
     readonly sId: () => number;
+    /** 交接到别的 world 进程（endpoint 非空）时的 SDK client 工厂（MF8-B5 / D27）；缺省沿用 client()。 */
+    readonly clientFor?: (endpoint: string) => WorldRoomSdkClient;
 }
 
 const warnInvalidWire = (scope: string, error: unknown): void => sharedWarnInvalidWire("[WorldRoom]", scope, error);
@@ -137,7 +158,19 @@ export class WorldRoomTransport {
         if (!server) throw new Error("[WorldRoom] 尚未选择区服，不能进入世界");
         const endpoint = validateOrigin(getCurrentGameWsUrl(), ["http", "https", "ws", "wss"], "endpoint");
         const client = new Colyseus.Client(endpoint) as unknown as WorldRoomSdkClient;
-        return new WorldRoomTransport({ client: () => client, token: () => getToken(), sId: () => server.serverId });
+        const clients = new Map<string, WorldRoomSdkClient>([[endpoint, client]]);
+        return new WorldRoomTransport({
+            client: () => client, token: () => getToken(), sId: () => server.serverId,
+            clientFor: (target) => {
+                const origin = validateOrigin(target, ["http", "https", "ws", "wss"], "endpoint");
+                let existing = clients.get(origin);
+                if (!existing) {
+                    existing = new Colyseus.Client(origin) as unknown as WorldRoomSdkClient;
+                    clients.set(origin, existing);
+                }
+                return existing;
+            },
+        });
     }
 
     get active(): WorldRoomHandle | null {
@@ -149,11 +182,32 @@ export class WorldRoomTransport {
      * `signal` 只取消本地等待：SDK 握手不可中断，迟到的 room 会被立即释放。
      */
     async join(request: WorldJoinRequest, control: { readonly signal?: AbortSignal } = {}): Promise<WorldRoomHandle> {
+        return this.joinWith(this.deps.client(), request, control);
+    }
+
+    /**
+     * 交接（MMO MF8-B5，AC TeleportTo 三段式的客户端半边）：退源房（若仍持有）→ 带凭据 join 目标分线（endpoint 非空 ⇒ clientFor）
+     * → 返回新句柄；baseline 由目标房观察者流照常首发（bindObserverStream），输入在 handle.current 后恢复。在途 join 时拒。
+     */
+    async transfer(request: WorldTransferRequest, control: { readonly signal?: AbortSignal } = {}): Promise<WorldRoomHandle> {
+        if (this.joining) throw new Error("[WorldRoom] 正在进入世界房，⛔ 交接");
+        const source = this.activeHandle;
+        if (source && !source.left) await source.leave();
+        const ready = request.ready;
+        const client = ready.endpoint !== "" && this.deps.clientFor ? this.deps.clientFor(ready.endpoint) : this.deps.client();
+        const strategy: WorldRoomStrategy = ready.transferId === null
+            ? { kind: "world", mapId: ready.mapId, line: ready.line }
+            : { kind: "transfer", transferId: ready.transferId, mapId: ready.mapId, line: ready.line };
+        return this.joinWith(client, { mode: request.mode, personaId: request.personaId, ticket: ready.ticket, strategy }, control);
+    }
+
+    private async joinWith(client: WorldRoomSdkClient, request: WorldJoinRequest, control: { readonly signal?: AbortSignal }): Promise<WorldRoomHandle> {
         if (this.joining || (this.activeHandle && !this.activeHandle.left)) {
             throw new Error("[WorldRoom] 已持有 / 正在进入世界房，请先 leave 再进入另一条分线");
         }
         const joinOptions = buildWorldJoinOptions(request, this.deps);
-        const client = this.deps.client();
+        const strategy = normalizeWorldRoomStrategy({ kind: "world", ...request.strategy });
+        const transferId = strategy.kind === "transfer" ? strategy.transferId : null;
         if (control.signal?.aborted) throw new Error("[WorldRoom] join 已取消");
         this.joining = true;
         let room: Colyseus.Room<unknown>;
@@ -174,12 +228,12 @@ export class WorldRoomTransport {
             try { await Promise.resolve(room.leave()); } catch { /* 释放失败由服务端宽限兜底 */ }
             throw new Error("[WorldRoom] 无法禁用 SDK 离线消息队列");
         }
-        const handle = this.bind(room, request.mode, joinOptions.mapId, joinOptions.line ?? null);
+        const handle = this.bind(room, request.mode, joinOptions.mapId, joinOptions.line ?? null, transferId);
         this.activeHandle = handle;
         return handle;
     }
 
-    private bind(room: Colyseus.Room<unknown>, mode: string, mapId: string, line: number | null): WorldRoomHandle {
+    private bind(room: Colyseus.Room<unknown>, mode: string, mapId: string, line: number | null, transferId: string | null): WorldRoomHandle {
         let dropping = false;
         let left = false;
         const dropListeners = new Set<(code?: number) => void>();
@@ -238,6 +292,7 @@ export class WorldRoomTransport {
             kind: "world-room",
             mode,
             mapId,
+            transferId,
             line,
             get roomId() { return room.roomId; },
             get sessionId() { return room.sessionId; },
