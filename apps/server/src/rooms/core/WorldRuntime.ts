@@ -4,7 +4,7 @@
  * ⛔ 不 import `colyseus` / `@colyseus/*`（机检 rooms-core-headless-import.test.ts）；⛔ 不持 client 引用；全部规则可在无 Colyseus 进程内重放。
  * 传输壳（MF4-B6 WorldRoom）只做：喂 `enqueue`、按 tick 调 `advance`、用 `ports` 把出站落到真实连接、把租约失效映射成 `drain`。
  */
-import { SeededRandom, WorldPhase, type GameplayS2CToken, type WorldPhaseType } from "@game/shared";
+import { CORE_S2C_TOKENS, SeededRandom, WorldPhase, type GameplayS2CToken, type IWorldChatRes, type WorldPhaseType } from "@game/shared";
 import type { WorldManifestConfig } from "../../../tools/gameplay-codegen/manifestSchema";
 import type {
     WorldAdmitRequest, WorldCheckpoint, WorldCommand, WorldEventDraft, WorldLeaveReason, WorldMode, WorldModeContext, WorldModeObserverPorts,
@@ -531,6 +531,30 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
 
     primaryEntityOf(session: string): string | null {
         return this.mode.primaryEntityOf?.(session) ?? null;
+    }
+
+    /**
+     * 附近聊天（MMO MF6b，docs/MMO.md §6.5.1）：受众 = 兴趣集含 `primaryEntityOf(sender)` 的在座会话 ∪ {发送者}，逐会话进观察者
+     * 队列（perSession 单 seq 流，气泡与实体 enter / leave 同序；壳每 tick 排空）；⛔ 不广播、⛔ 不碰 Redis。
+     * 未在座 / mode 无主实体 ⇒ 拒（壳回 BadRequest）；无 observer 能力的 mode 只有发送者自己收到。
+     */
+    sayNearby(session: string, text: string, at: number): "sent" | "not-seated" | "no-entity" {
+        if (!this.sessionTable.has(session)) return "not-seated";
+        const fromEntityId = this.primaryEntityOf(session);
+        if (fromEntityId === null) return "no-entity";
+        const audience = new Set<string>([session]);
+        const interest = this.observerSync?.interest;
+        if (interest) {
+            for (const other of interest.sessions()) {
+                if (other !== session && interest.view(other).has(fromEntityId)) audience.add(other);
+            }
+        }
+        const payload: IWorldChatRes = { fromEntityId, text, at };
+        for (const target of audience) {
+            if (!this.sessionTable.has(target)) continue;
+            this.observerQueue.push(target, CORE_S2C_TOKENS.WorldChat, payload);
+        }
+        return "sent";
     }
 
     private canStep(): boolean {

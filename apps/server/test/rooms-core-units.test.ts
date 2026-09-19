@@ -26,6 +26,7 @@ import {
     type C2SType,
     type GameplayS2CToken,
     type IGameRoomJoinOptions,
+    GAME_WIRE_PER_SESSION,
 } from "@game/shared";
 import { MessageBudget } from "../src/rooms/core/MessageBudget";
 import { WireDispatcher, defaultWireRateCost, type WireDispatcherHost } from "../src/rooms/core/WireDispatcher";
@@ -236,9 +237,13 @@ test("S2CPorts：perSession token 广播 fail-closed（发送期，先于 owner 
     assert.doesNotThrow(() => assertPerSessionCatalogConsistent());
     const plain = defineS2C("s2c.fx.plain", identity) as unknown as GameplayS2CToken<unknown>;
     const update = defineS2C("s2c.fx.update", identity, { perSession: true, coalesceKey: "id" }) as unknown as GameplayS2CToken<unknown>;
-    assert.doesNotThrow(() => assertPerSessionCatalogConsistent({ "s2c.fx.update": "id" }, { fx: { "s2c.fx.plain": plain, "s2c.fx.update": update } }));
-    assert.throws(() => assertPerSessionCatalogConsistent({}, { fx: { "s2c.fx.update": update } }), /s2c\.fx\.update 不一致/u, "token 声明 perSession 但表缺席");
-    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.plain": null }, { fx: { "s2c.fx.plain": plain } }), /不一致/u, "表列了、token 没声明");
-    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.update": null }, { fx: { "s2c.fx.update": update } }), /不一致/u, "coalesceKey 不同");
-    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.ghost": null }, { fx: {} }), /运行时不存在的 token/u);
+    // 合成表：第三参给空 core 表（真仓的 core 表在上面的缺省断言里）
+    assert.doesNotThrow(() => assertPerSessionCatalogConsistent({ "s2c.fx.update": "id" }, { fx: { "s2c.fx.plain": plain, "s2c.fx.update": update } }, {}));
+    assert.throws(() => assertPerSessionCatalogConsistent({}, { fx: { "s2c.fx.update": update } }, {}), /s2c\.fx\.update 不一致/u, "token 声明 perSession 但表缺席");
+    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.plain": null }, { fx: { "s2c.fx.plain": plain } }, {}), /不一致/u, "表列了、token 没声明");
+    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.update": null }, { fx: { "s2c.fx.update": update } }, {}), /不一致/u, "coalesceKey 不同");
+    assert.throws(() => assertPerSessionCatalogConsistent({ "s2c.fx.ghost": null }, { fx: {} }, {}), /运行时不存在的 token/u);
+    // MMO MF6b：core 表的 perSession token（s2c.world.chat）同受本断言——表里漏掉它 ⇒ 启动期红
+    const withoutCore = Object.fromEntries(Object.entries(GAME_WIRE_PER_SESSION).filter(([type]) => type !== "s2c.world.chat"));
+    assert.throws(() => assertPerSessionCatalogConsistent(withoutCore), /core 的 s2c\.world\.chat 不一致/u, "core perSession token 缺席生成表");
 });

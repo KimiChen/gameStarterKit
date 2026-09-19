@@ -38,8 +38,9 @@ test("defineS2C：非法选项在声明期拒", () => {
   }
 });
 
-test("真仓：只有 viewFixture（MF5a-B5）与 worldFixture（MF5b-B3）两个夹具声明 perSession token，GAME_WIRE_PER_SESSION 与运行时 token 逐条一致", () => {
-  const expected: Record<string, string | null> = {};
+test("真仓：只有 viewFixture（MF5a-B5）与 worldFixture（MF5b-B3）两个夹具 + core 附近聊天（MF6b）声明 perSession token，GAME_WIRE_PER_SESSION 与运行时 token 逐条一致", () => {
+  // MMO MF6b：core 表经 CORE_S2C_OPTIONS 声明的 perSession token（s2c.world.chat，不合并）
+  const expected: Record<string, string | null> = { "s2c.world.chat": null };
   // worldFixture 的 pos 是 MF4 的直发回执（刻意非 perSession），其余七个观察者 token perSession
   const WORLD_FIXTURE_DIRECT = new Set(["s2c.worldFixture.pos"]);
   for (const [modeId, tokens] of Object.entries(gameplayS2CTokens)) {

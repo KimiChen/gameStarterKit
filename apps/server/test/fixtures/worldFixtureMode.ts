@@ -8,6 +8,7 @@
  * owner 会话；差分 / 编号 / baseline / 有界投递归框架（WorldRuntime + WorldRoom 每 tick 排空）。出站另有本人 `pos` 直发回执（MF4）。
  */
 import {
+    CORE_S2C_TOKENS,
     WORLD_FIXTURE_MAP_SIZE, WORLD_FIXTURE_RANGE, WORLD_FIXTURE_SPEED,
     WorldFixtureBaselineBegin, WorldFixtureBaselineChunk, WorldFixtureBaselineEnd, WorldFixtureEnter, WorldFixtureLeave, WorldFixtureMove,
     WorldFixturePos, WorldFixturePrivate, WorldFixtureResync, WorldFixtureUpdate,
@@ -261,6 +262,10 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
             // 反例：perSession token 全房广播必须被框架拒（S2CPorts fail-closed）
             if (signal.kind === "broadcast-leak") {
                 context.broadcastS2C(WorldFixtureEnter, { seq: 1, tick: context.state.tick, entity: { id: "leak", kind: "static", x: 0, y: 0, rev: 0 } });
+            }
+            if (signal.kind === "chat-broadcast-leak") {
+                // MF6b：core 世界 token s2c.world.chat 是 perSession，全房广播必须被 S2CPorts 拒（⛔ 任何人收到）
+                context.broadcastS2C(CORE_S2C_TOKENS.WorldChat, { fromEntityId: "leak", text: "leak", at: 0 });
             }
         },
         primaryEntityOf: (session) => movers.get(session) ?? null,

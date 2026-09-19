@@ -13,6 +13,7 @@
  */
 import type { Client } from "colyseus";
 import {
+    CORE_S2C_TOKENS,
     ErrorCode,
     ErrorMessage,
     GAME_WIRE_OWNERS,
@@ -36,9 +37,11 @@ type S2CTokenTable = Readonly<Record<string, Readonly<Record<string, GameplayS2C
 export function assertPerSessionCatalogConsistent(
     catalog: PerSessionCatalog = GAME_WIRE_PER_SESSION,
     tokens: S2CTokenTable = gameplayS2CTokens as unknown as S2CTokenTable,
+    coreTokens: Readonly<Record<string, GameplayS2CToken<unknown>>> = CORE_S2C_TOKENS as unknown as Readonly<Record<string, GameplayS2CToken<unknown>>>,
 ): void {
     const seen = new Set<string>();
-    for (const [modeId, table] of Object.entries(tokens)) {
+    // MMO MF6b：core 表也能声明 perSession（CORE_S2C_OPTIONS ⇒ CORE_S2C_TOKENS 的 defineS2C 第三参），与玩法 token 同一条断言。
+    for (const [modeId, table] of [["core", coreTokens] as const, ...Object.entries(tokens)]) {
         for (const token of Object.values(table)) {
             const listed = Object.prototype.hasOwnProperty.call(catalog, token.type);
             const key = listed ? (catalog[token.type] ?? null) : null;

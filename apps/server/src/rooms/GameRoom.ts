@@ -812,6 +812,9 @@ export class GameRoom extends Room {
     /** core 消息的 phase 规则由 shell 拥有（⛔ 不进玩法 wire catalog）；玩法消息的 phases 由 dispatcher 按 token 声明判定。 */
     private corePhaseAllows(messageType: C2SType, phase: GamePhaseType): boolean {
         switch (messageType) {
+            case C2S.WorldChat:
+                // MMO MF6b：世界 core token（附近聊天）只属 kind:"world" 房；match 形态收到即由 dispatcher 回 BadRequest。
+                return false;
             case C2S.Ping:
                 // 心跳在结算阶段也必须活着，否则客户端会在看结算界面时被判掉线。
                 return phase === GamePhase.Waiting || phase === GamePhase.Playing || phase === GamePhase.Settle;

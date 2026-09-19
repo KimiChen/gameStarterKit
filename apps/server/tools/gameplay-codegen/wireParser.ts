@@ -35,8 +35,10 @@ export type GameplayWireDeclarations = {
 };
 
 export type CoreWireNames = {
-  readonly c2s: readonly { readonly key: string; readonly type: string }[];
-  readonly s2c: readonly { readonly key: string; readonly type: string }[];
+  /** MMO MF6b：rateCost 来自 `CORE_C2S_OPTIONS`（缺席 = 1）。 */
+  readonly c2s: readonly { readonly key: string; readonly type: string; readonly rateCost: number }[];
+  /** MMO MF6b：perSession / coalesceKey 来自 `CORE_S2C_OPTIONS`（缺席 = 全房消息）。 */
+  readonly s2c: readonly { readonly key: string; readonly type: string; readonly perSession: boolean; readonly coalesceKey: string | null }[];
 };
 
 const GAME_PHASE_MEMBERS = new Set(["Waiting", "Playing", "Settle"]);
@@ -204,6 +206,15 @@ function parseS2COptions(
   if (!ts.isObjectLiteralExpression(optionsArg)) {
     fail(label, `${wireType} 的 defineS2C 第三参必须是对象字面量 { perSession: true, coalesceKey? }`);
   }
+  return parseS2COptionsLiteral(optionsArg, label, wireType);
+}
+
+/** `{ perSession: true, coalesceKey? }` 对象字面量本体（defineS2C 第三参与 core 表 CORE_S2C_OPTIONS 共用）。 */
+function parseS2COptionsLiteral(
+  optionsArg: ts.ObjectLiteralExpression,
+  label: string,
+  wireType: string,
+): { readonly perSession: boolean; readonly coalesceKey: string | null } {
   let perSession = false;
   let coalesceKey: string | null = null;
   for (const property of optionsArg.properties) {
@@ -338,13 +349,76 @@ function parseCoreNameTable(
   fail(label, `找不到导出的 ${constantName} 常量表`);
 }
 
-/** 从 protocol/messages.ts 语法读取 core 消息名表（CORE_C2S/CORE_S2C）。 */
+/**
+ * core token 选项表（MMO MF6b，docs/MMO.md §6.5.1）：`export const CORE_*_OPTIONS = { "<type>": { … } } as const`——
+ * 键必须是消息名字符串字面量、值必须是对象字面量；表缺席 = 空表（旧 messages.ts 照常生成）。⛔ 只语法读取。
+ */
+function parseCoreOptionsTable(
+  sourceFile: ts.SourceFile,
+  constantName: string,
+  label: string,
+): ReadonlyMap<string, ts.ObjectLiteralExpression> {
+  const entries = new Map<string, ts.ObjectLiteralExpression>();
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement) || !isExported(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || declaration.name.text !== constantName) continue;
+      let initializer = declaration.initializer;
+      if (initializer && ts.isAsExpression(initializer)) initializer = initializer.expression;
+      if (!initializer || !ts.isObjectLiteralExpression(initializer)) {
+        fail(label, `${constantName} 必须是对象字面量（as const）`);
+      }
+      for (const property of initializer.properties) {
+        if (!ts.isPropertyAssignment(property)
+          || !ts.isStringLiteral(property.name)
+          || !ts.isObjectLiteralExpression(property.initializer)) {
+          fail(label, `${constantName} 的成员必须是「消息名字符串字面量键: 对象字面量」`);
+        }
+        if (entries.has(property.name.text)) fail(label, `${constantName} 重复声明 ${property.name.text}`);
+        entries.set(property.name.text, property.initializer);
+      }
+      return entries;
+    }
+  }
+  return entries;
+}
+
+/** core c2s 选项只认 `rateCost`（≥1 整数）；phase 规则归 shell，⛔ 不许 phases。 */
+function parseCoreC2SOptions(options: ts.ObjectLiteralExpression | undefined, label: string, wireType: string): number {
+  if (options === undefined) return 1;
+  let rateCost = 1;
+  for (const property of options.properties) {
+    if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
+      fail(label, `${wireType} 的 CORE_C2S_OPTIONS 不允许 spread/computed property`);
+    }
+    if (property.name.text !== "rateCost") fail(label, `${wireType} 的 CORE_C2S_OPTIONS 含未知键：${property.name.text}（core 只认 rateCost）`);
+    if (!ts.isNumericLiteral(property.initializer)) fail(label, `${wireType} 的 rateCost 必须是数字字面量`);
+    rateCost = Number(property.initializer.text);
+    if (!Number.isSafeInteger(rateCost) || rateCost < 1) fail(label, `${wireType} 的 rateCost 必须是 ≥1 的整数`);
+  }
+  return rateCost;
+}
+
+/** 从 protocol/messages.ts 语法读取 core 消息名表（CORE_C2S/CORE_S2C）+ 选项表（CORE_C2S_OPTIONS / CORE_S2C_OPTIONS，MMO MF6b）。 */
 export function parseCoreWireNames(source: string, label: string): CoreWireNames {
   const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  return {
-    c2s: parseCoreNameTable(sourceFile, "CORE_C2S", label),
-    s2c: parseCoreNameTable(sourceFile, "CORE_S2C", label),
-  };
+  const c2sOptions = parseCoreOptionsTable(sourceFile, "CORE_C2S_OPTIONS", label);
+  const s2cOptions = parseCoreOptionsTable(sourceFile, "CORE_S2C_OPTIONS", label);
+  const c2s = parseCoreNameTable(sourceFile, "CORE_C2S", label).map((entry) => ({
+    ...entry, rateCost: parseCoreC2SOptions(c2sOptions.get(entry.type), label, entry.type),
+  }));
+  const s2c = parseCoreNameTable(sourceFile, "CORE_S2C", label).map((entry) => {
+    const options = s2cOptions.get(entry.type);
+    const parsed = options === undefined ? { perSession: false, coalesceKey: null } : parseS2COptionsLiteral(options, label, entry.type);
+    return { ...entry, perSession: parsed.perSession, coalesceKey: parsed.coalesceKey };
+  });
+  for (const type of c2sOptions.keys()) {
+    if (!c2s.some((entry) => entry.type === type)) fail(label, `CORE_C2S_OPTIONS 含 CORE_C2S 之外的消息名：${type}`);
+  }
+  for (const type of s2cOptions.keys()) {
+    if (!s2c.some((entry) => entry.type === type)) fail(label, `CORE_S2C_OPTIONS 含 CORE_S2C 之外的消息名：${type}`);
+  }
+  return { c2s, s2c };
 }
 
 /**

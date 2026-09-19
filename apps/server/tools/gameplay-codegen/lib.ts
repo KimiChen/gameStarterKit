@@ -737,6 +737,9 @@ function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreW
   const hasGameplayC2S = gameplayC2S.length > 0;
   // MMO MF5a：perSession S2C token 表（值 = coalesceKey 或 null）；无选项的 token 不进表、其余产物字节不受影响。
   const perSessionS2C = gameplays.flatMap((gameplay) => gameplay.wire.s2c.filter((token) => token.perSession));
+  // MMO MF6b：core 表的显式选项（CORE_C2S_OPTIONS / CORE_S2C_OPTIONS）——只有声明了的 core token 进 rateCost / perSession 表。
+  const coreRateCost = core.c2s.filter((entry) => entry.rateCost !== 1);
+  const corePerSession = core.s2c.filter((entry) => entry.perSession);
 
   const lines = [generatedHeader(WIRE_SOURCE_LABEL)];
   if (hasGameplayC2S) {
@@ -838,11 +841,13 @@ function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreW
     "/** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */",
     "export const GAME_WIRE_RATE_COST = {",
     ...gameplayC2S.map(({ token }) => `    ${JSON.stringify(token.type)}: ${token.rateCost},`),
+    ...coreRateCost.map((entry) => `    ${JSON.stringify(entry.type)}: ${entry.rateCost},`),
     "} as const satisfies { readonly [type: string]: number };",
     "",
     "/** 每会话 S2C token（MMO MF5a）：只经 sendS2C 发给单个会话，broadcastS2C 对它 fail-closed；值 = coalesceKey（payload 字段名）或 null（不合并、不可丢）。 */",
     "export const GAME_WIRE_PER_SESSION = {",
     ...perSessionS2C.map((token) => `    ${JSON.stringify(token.type)}: ${JSON.stringify(token.coalesceKey)},`),
+    ...corePerSession.map((entry) => `    ${JSON.stringify(entry.type)}: ${JSON.stringify(entry.coalesceKey)},`),
     "} as const satisfies { readonly [type: string]: string | null };",
     "",
     "/** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */",
@@ -865,8 +870,12 @@ function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreW
     "",
     "/** core S2C token（mode 经 context 发送 core Error/Chat 等时使用）。 */",
     "export const CORE_S2C_TOKENS = {",
-    ...core.s2c.map((entry) =>
-      `    ${entry.key}: defineS2C(${JSON.stringify(entry.type)}, CORE_S2C_WIRE[${JSON.stringify(entry.type)}]),`),
+    ...core.s2c.map((entry) => {
+      const options = entry.perSession
+        ? `, { perSession: true${entry.coalesceKey === null ? "" : `, coalesceKey: ${JSON.stringify(entry.coalesceKey)}`} }`
+        : "";
+      return `    ${entry.key}: defineS2C(${JSON.stringify(entry.type)}, CORE_S2C_WIRE[${JSON.stringify(entry.type)}]${options}),`;
+    }),
     "} as const;",
     "",
   );
