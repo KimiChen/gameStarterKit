@@ -394,8 +394,11 @@ export const WORLD_LINE_CAPACITY = envInt("WORLD_LINE_CAPACITY", 100);
 if (WORLD_MAX_LINES_PER_MAP < 1 || WORLD_MAX_LINES_PER_MAP > 0x10000 || WORLD_LINE_CAPACITY < 1) {
   throw new Error(`WORLD_MAX_LINES_PER_MAP(${WORLD_MAX_LINES_PER_MAP}) 必须在 1..65536、WORLD_LINE_CAPACITY(${WORLD_LINE_CAPACITY}) 必须 ≥ 1`);
 }
-/** 分线实时登记的 TTL / 刷新间隔（MMO MF10-B1）：与权威租约同节拍——ttl 取租约 ttl 的两倍、刷新 = 续租间隔；⛔ 不另开 env。 */
-export const WORLD_INFO_TTL_MS = WORLD_LEASE_TTL_MS * 2;
+/**
+ * 分线实时登记的 TTL / 刷新间隔（MMO MF10-B1 / B4）：与权威租约**同 TTL、同刷新节拍**——节点被 kill -9 后登记与租约一起到期，
+ * world.enter 的端点随之回落（⛔ 两倍租约：会把客户端多指向死节点一个租约周期，MF10-B4 实验结论）；⛔ 不另开 env。
+ */
+export const WORLD_INFO_TTL_MS = WORLD_LEASE_TTL_MS;
 export const WORLD_INFO_REFRESH_MS = WORLD_LEASE_RENEW_MS;
 /** 世界房一次性准入凭据 TTL（MMO MF8-B2，候选数字；ROOM_TICKET_TTL_MS 同量级）。 */
 export const WORLD_TICKET_TTL_MS = envInt("WORLD_TICKET_TTL_MS", 30_000);
