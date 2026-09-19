@@ -47,7 +47,7 @@
 
 ### 1.2 lvr-3d.md（需求 v1 + 2026-09-19 提升指针）——L01–L09
 
-lvr-3d.md 抬头已指向 3d.md，但正文仍是「全部落在 kit」的旧口径；作为 lvr 消费方需求 v1.1 需要下面这些对齐（⛔ 本轮未改正文，列为 SC0-B0 文档批，等用户确认后执行）：
+lvr-3d.md 抬头已指向 3d.md，但正文当时仍是「全部落在 kit」的旧口径；下面九条已于 2026-09-19 随 Cocos Cyberpunk 校正一并落实（lvr-3d.md v1.1，提交 eef7c1a2），本表保留为审阅记录：
 
 | 编号 | 章节 | 问题 | 对齐后口径 |
 | --- | --- | --- | --- |
@@ -78,7 +78,7 @@ lvr-3d.md 抬头已指向 3d.md，但正文仍是「全部落在 kit」的旧口
 
 | 批次 | 内容 | 机检退出 / 证据 | 命令 |
 | --- | --- | --- | --- |
-| SC0-B0 文档对齐（待用户确认） | lvr-3d.md 按 §1.2 L01–L09 改为消费方需求 v1.1；3d.md 按 §1.1 3D-13–3D-22 出 v1.1（§3.2 加 `acquireGlobals`、§3.3 改 `AppPorts.stage3d`、§4 lodBands 落 shared、§4 / §5 加 `resources/stage3d/`、§6.2 加灰盒生成器、§7 钉计数器、§9 加 SD9 待定） | 两文档 diff 只含上述条目；表格列数机检 | 文档提交 |
+| SC0-B0 文档对齐 ✅（eef7c1a2） | lvr-3d.md 按 §1.2 L01–L09 改为消费方需求 v1.1；3d.md 按 §1.1 3D-13–3D-22 出 v1.1，并对照 Cocos Cyberpunk 实测校正；素材规范拆到 [3D-ASSETS.md](3D-ASSETS.md) | 表格列数 / 链接机检通过 | 已提交 |
 | SC0-B1 引擎面清单 | 打开 `apps/Cocos` 记录 Creator 3.8.8 功能裁剪面板的勾选（3d / skeletal-animation / particle / spine 版本 / meshopt / light-probe / physics-*）、`engine.json` 缺省含义、UI 相机参数（`scene.scene:172-200`）；Spine 切 4.2 并确认无既有用法；写进 `apps/Cocos/README.md` 新段「引擎模块与相机」 | README 段落存在；`verify:inventory` 绿（AGENTS / CLAUDE 不变） | 人工 Creator；文档提交 |
 | SC0-B2 灰盒资产生成器 | `tools/art3d/greybox.py`（pygltflib + numpy，venv 照 `tools/slg-maps/README.md`）：`greybox-cube.glb`（静态）、`greybox-plane.glb`（地面 64×64）、`greybox-biped.glb`（两骨 skin + 一段 1 s 摆动动画）；输出到 `apps/Cocos/assets/resources/stage3d/`；Creator 导入一次生成 `.meta`（`importer: "gltf"`）并随目录提交 | `.glb` 头魔数 + 三个 `.meta` 存在；`verify:sync` 绿（uuid 唯一）；`node tools/art3d/greybox.py --check` 重生成字节一致 | `python3 tools/art3d/greybox.py --out apps/Cocos/assets/resources/stage3d` |
 | SC0-B3 CDP 探针实测 | `tools/creator-preview/probe-stage3d.mjs`（同 `probe-model.mjs` 形态，⛔ 不改仓内客户端代码）：在预览页运行时 `new Node` + `addComponent(Camera)`（透视、priority 0、visibility DEFAULT、clear SOLID_COLOR）+ `DirectionalLight`；`resources.load("stage3d/greybox-biped", Prefab)` → `instantiate` ×100（`SkeletalAnimation.useBakedAnimation = true`、同材质 instancing）+ `greybox-cube` ×500 + `ParticleSystem` ×1；采样 240 帧 `director.root.frameTime`、`director.root.device.{numDrawCalls,numTris,numInstances,memoryStatus}`；开关 20 次读 `memoryStatus` 回基线；截图证明 UI 仍在上层、HUD 按钮可点 | 五项接缝判据（3d.md 3D-12）逐项 PASS / FAIL；数字 JSON 落 `docs/perf/stage3d/<date>-spike.json`；桌面 100 蒙皮单位帧时 p95 有数字；类型桩缺面清单（写进 SC1-B1 的测试头注释） | `node tools/creator-preview/probe-stage3d.mjs`（前置同 creator-preview README） |
@@ -215,7 +215,7 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC1-B4 起
 
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
-- [ ] SC0-B0（待用户确认后执行） [ ] SC0-B1 [ ] SC0-B2 [ ] SC0-B3 [ ] SC0-B4
+- [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [ ] SC0-B1 [ ] SC0-B2 [ ] SC0-B3 [ ] SC0-B4
 - [ ] SC1-B1 [ ] SC1-B2 [ ] SC1-B3 [ ] SC1-B4 [ ] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
