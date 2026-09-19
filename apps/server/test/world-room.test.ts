@@ -24,6 +24,7 @@ import { assertRoomProfilesConfigured, resolveRoomProfile } from "../src/rooms/c
 import type { WorldDirectoryPort } from "../src/rooms/core/WorldDirectory";
 import { WORLD_PROFILE_ID, assertWorldProfilesConfigured, resolveWorldProfile } from "../src/rooms/core/WorldProfile";
 import { MemoryWorldTicketPort, type WorldTicketClaimPort, type WorldTicketClaimRequest } from "../src/rooms/core/WorldTicket";
+import { MemoryWorldRegistry } from "../src/rooms/core/WorldRegistry";
 import type { WorldTransferPort } from "../src/rooms/core/WorldTransfer";
 import type { RequestTransferInput, TransferStep, WorldTransferRow, WorldTransferState } from "../src/rooms/core/transfer";
 import { TransferInFlightError, TransferStateError } from "../src/core/errors";
@@ -146,6 +147,7 @@ export class FakeDirectory implements WorldDirectoryPort {
         void sId;
         return { instanceId, mapId, line, authorityEpoch, holder: row.holder, state: row.state, checkpointRev: 0, writeSeq: 0 };
     }
+    async allocate(sId: number, mapId: string): Promise<WorldInstanceRow> { return this.resolve(sId, mapId, 0); }
     forget(): void { /* 无缓存 */ }
 }
 
@@ -330,6 +332,8 @@ export function harness(options: {
         world: { emptyPolicy: "sleep", emptyAfterMs: 1_000, checkpointMs: 500, ...(options.world ?? {}) },
         seed: 7, fixedStepMs: 50, clock: () => clock.now,
         control, lease: leases, directory, tickets: options.tickets ?? okTickets, transfers: options.transfers ?? new FakeTransfers(new MemoryWorldTicketPort(() => clock.now)),
+        // MF10-B1：分线登记缺省用内存实现（缺省 Redis 端口会真连 coord ⇒ 单测进程不退出）
+        registry: new MemoryWorldRegistry(() => clock.now),
         holder: options.holder ?? "node-a", drainGraceMs: options.drainGraceMs ?? 100, timers,
         checkpointSink: (batch, reason) => { checkpoints.push({ batch, reason }); },
         manualTick: true,

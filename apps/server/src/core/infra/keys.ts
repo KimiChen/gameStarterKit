@@ -324,6 +324,8 @@ export const K_CHARACTER_REPAIR_ATTEMPTS = `${G}repair:character:attempts:{chara
  */
 export const kWorldLease = (sId: number, instanceId: string) => `${G}world:lease:{s${sId}:${instanceId}}`;
 export const kWorldFence = (sId: number, instanceId: string) => `${G}world:fence:{s${sId}:${instanceId}}`;
+/** 分线实时登记 HASH（MMO MF10-B1；seated / capacity / publicAddress / holder / updatedAt，PX=WORLD_INFO_TTL_MS，权威房周期刷新；崩溃自愈）。 */
+export const kWorldInfo = (sId: number, instanceId: string) => `${G}world:info:{s${sId}:${instanceId}}`;
 
 /** 邀请码 lease/tombstone STRING（JSON value；active 带 PX=leaseTtl，tombstone 带 PX=cooldown，⛔ 非 DEL）。 */
 export const kInviteCode = (sId: number, code: string) => `${G}room:code:{s${sId}:${code}}`;

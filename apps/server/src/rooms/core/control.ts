@@ -72,6 +72,16 @@ export async function readInstance(sId: number, instanceId: string, pool: Contro
     return rows.length === 0 ? null : instanceOf(rows[0] as InstanceSqlRow);
 }
 
+/** 某图已有的全部分线行（按 line 升序；MF10-B1 分线分配用）。 */
+export async function listInstances(sId: number, mapId: string, pool: ControlSqlPool = getPool()): Promise<WorldInstanceRow[]> {
+    assertSId(sId);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(mapId)) throw new RangeError(`[control] mapId 非法：${mapId}`);
+    const [rows] = await pool.query<InstanceSqlRow[]>(
+        "SELECT instance_id, map_id, line, authority_epoch, holder, state, checkpoint_rev, write_seq FROM world_instance WHERE server_id = ? AND map_id = ? ORDER BY line",
+        [sId, mapId]);
+    return rows.map((row) => instanceOf(row as InstanceSqlRow));
+}
+
 /**
  * 按 (sId, mapId, line) 找或建实例行（WorldDirectory 的 MySQL 半边；幂等：UNIQUE 撞车即回读既有行）。
  * 新行 authority_epoch 0 / state offline；⛔ 不在这里取权威。

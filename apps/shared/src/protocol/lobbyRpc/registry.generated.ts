@@ -248,7 +248,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     slg: { contractVersion: 2, digest: "077ecba95687aa0a4130f51eba2cda7d4a2548e6e347154d3f153fdcc641bca5" },
     snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },
     user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
-    world: { contractVersion: 1, digest: "5361cd9de93163a679085546de5f887f46e0f8bbfb67fcf8cae5c7e684e5e0ad" },
+    world: { contractVersion: 2, digest: "7c4ff662fa6d14043befc590e30741ceb7d514b2ac1ebc27da309c418701af21" },
 };
 
 /** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */
@@ -412,6 +412,7 @@ export const RPC_ERR_CODES = [
     "SNAKE_COSMETIC_WRITES_DISABLED",
     "WORLD_PERSONA_INVALID",
     "WORLD_TRANSFER_INVALID",
+    "WORLD_LINE_UNAVAILABLE",
     "WORLD_SERVICE_UNAVAILABLE",
 ] as const;
 

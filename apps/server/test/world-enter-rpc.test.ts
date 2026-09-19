@@ -1,5 +1,5 @@
 /**
- * MMO MF8-B4 world.enter / world.resolveTransfer 领域逻辑（假依赖）：归属真源、在途交接分支（Committed ⇒ 解析 + 凭据轮换；activated ⇒ 懒 finalize；
+ * MMO MF8-B4 / MF10-B1 world.enter / world.resolveTransfer 领域逻辑（假依赖）：未指定 line 走分配、指定 line 走 resolve、上限 / 全满 ⇒ WORLD_LINE_UNAVAILABLE；归属真源、在途交接分支（Committed ⇒ 解析 + 凭据轮换；activated ⇒ 懒 finalize；
  * requested / prepared ⇒ 拒）、常规签发绑定 (uid, persona, worldAddress, 当前 controlEpoch)、resolveTransfer 不泄露归属、基础设施失败 fail-closed、
  * 表登记失败 ⇒ 新凭据作废。生成物：registry 含 world 域两条 query 路由 + 三个错误码 + push world.transfer。
  * 变异验证：enter 删 owner.userId 比较 →「非本账号」转红；resolveCommitted 删 rotate 失败分支 →「登记失败作废」转红；
@@ -8,7 +8,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { LOBBY_RPC_DOMAINS, LOBBY_RPC_ROUTE_MODES, LobbyPush, PUSH_RUNTIME_VALIDATORS, validateLobbyRpcRequest } from "@game/shared";
-import { RpcFault } from "../src/core/errors";
+import { RpcFault, WorldLineLimitError, WorldLinesExhaustedError } from "../src/core/errors";
 import { handleWorldEnter, handleWorldResolveTransfer, type WorldEnterDeps } from "../src/core/world/enterRpc";
 import type { WorldTransferRow } from "../src/rooms/core/transfer";
 
@@ -31,7 +31,8 @@ function fakeDeps(over: Partial<WorldEnterDeps> & { rows?: WorldTransferRow[]; e
         finalizeTransfer: async (_sId, transferId) => { finalized.push(transferId); const row = rows.get(transferId); if (row) rows.set(transferId, { ...row, state: "finalized", active: false }); },
         issueTicket: async (args) => { issued.push(args); counter += 1; return { ticket: `ticket-${counter}-${"x".repeat(40)}`, ticketSha256: SHA(String(counter % 10)), expiresAt: args.nowMs + 30_000 }; },
         revokeTicket: async (_sId, sha) => { revoked.push(sha); return true; },
-        endpoint: () => "wss://world.example.com",
+        allocateInstance: async (_sId, mapId) => ({ instanceId: `wi_${mapId}_alloc`, mapId, line: 7 }),
+        endpoint: async () => "wss://world.example.com",
         now: () => 1_000,
         ...over,
     };
@@ -66,8 +67,16 @@ test("enter：归属真源（不存在 / 非本账号 / 非 active ⇒ WORLD_PER
     assert.deepEqual([res.worldAddress, res.mapId, res.line, res.endpoint, res.transferId, res.expiresAt], ["s0/m1/2", "m1", 2, "wss://world.example.com", null, 31_000]);
     assert.deepEqual(f.issued, [{ sId: 0, uid: "u-alice", personaId: P_A, worldAddress: "s0/m1/2", controlEpoch: 3, transferId: null, nowMs: 1_000 }]);
     assert.ok(res.ticket.startsWith("ticket-1-"));
-    const defaultLine = await handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1" }, f.deps);
-    assert.equal(defaultLine.line, 0, "缺省 DEFAULT_WORLD_LINE");
+    const allocated = await handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1" }, f.deps);
+    assert.deepEqual([allocated.line, allocated.worldAddress], [7, "s0/m1/7"], "未指定 line ⇒ MF10-B1 分配（满员开新线）");
+    // MF10-B1：指定 line 越界 / 全满到上限 ⇒ WORLD_LINE_UNAVAILABLE（⛔ 混进 SERVICE_UNAVAILABLE）
+    const limited = fakeDeps({
+        resolveInstance: async (_sId, mapId, line) => { throw new WorldLineLimitError(mapId, line, 8); },
+        allocateInstance: async (_sId, mapId) => { throw new WorldLinesExhaustedError(mapId, 8); },
+    });
+    await assert.rejects(handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1", line: 9 }, limited.deps), faultCode("WORLD_LINE_UNAVAILABLE"), "指定 line 越界");
+    await assert.rejects(handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1" }, limited.deps), faultCode("WORLD_LINE_UNAVAILABLE"), "全满且到上限");
+    assert.equal(limited.issued.length, 0, "分线拒绝在签发之前");
 });
 
 test("enter：Committed 交接 ⇒ 解析交接（目标 = 交接目标、凭据轮换、旧凭据作废）；activated ⇒ 懒 finalize 后照常；requested ⇒ 拒；登记失败 ⇒ 新凭据作废", async () => {

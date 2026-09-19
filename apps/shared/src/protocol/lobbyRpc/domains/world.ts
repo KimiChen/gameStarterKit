@@ -7,7 +7,8 @@
  *  - `world.resolveTransfer { transferId }` → 同形：回复丢失 / 重连时按 transferId 重取凭据（凭据轮换：旧凭据作废）；
  *  - push `world.transfer { transferId, personaId }`：跨房唤醒（K_STREAM_PUSH kind=room，MF8-B6，best-effort，权威仍在 world_transfer 表）。
  * 错误码：WORLD_PERSONA_INVALID（persona 不存在 / 非本账号 / 非 active）；WORLD_TRANSFER_INVALID（交接不存在 / 非本账号 / 未 Committed 或已终态）；
- * WORLD_SERVICE_UNAVAILABLE（基础设施抖动，可重试，⛔ 不降级为确定性结论）。`endpoint` 为空串 = 与当前区 gameWsUrl 相同（world 进程拆分前，PS4）。
+ * WORLD_LINE_UNAVAILABLE（MF10-B1：指定分线越过 WORLD_MAX_LINES_PER_MAP，或全部分线已满且到上限）；WORLD_SERVICE_UNAVAILABLE（基础设施抖动，可重试）。
+ * `line` 缺省由服务端分配（满员开新线）。`endpoint` 为空串 = 与当前区 gameWsUrl 相同（world 进程拆分前，PS4）。
  */
 import { assertExactKeys, boundedString, finiteInteger, validateWebSocketOrigin, type RuntimeValidator, WireValidationError } from "../../http";
 import { defineLobbyPush, defineLobbyRpcDomain, defineRpcQuery } from "../defineDomain";
@@ -121,7 +122,9 @@ export const validateWorldTransferPush: RuntimeValidator<IWorldTransferPush> = (
 
 export default defineLobbyRpcDomain({
     domain: "world",
-    errorCodes: ["WORLD_PERSONA_INVALID", "WORLD_TRANSFER_INVALID", "WORLD_SERVICE_UNAVAILABLE"],
+    // contractVersion 2（MMO MF10-B1）：加 WORLD_LINE_UNAVAILABLE（指定分线越过上限 / 全部分线已满且到上限）。
+    contractVersion: 2,
+    errorCodes: ["WORLD_PERSONA_INVALID", "WORLD_TRANSFER_INVALID", "WORLD_LINE_UNAVAILABLE", "WORLD_SERVICE_UNAVAILABLE"],
     pushes: [defineLobbyPush("WorldTransfer", "world.transfer", validateWorldTransferPush)],
     routes: [
         defineRpcQuery(WorldRpc.Enter, { request: validateWorldEnterReq, response: validateWorldEnterRes }),

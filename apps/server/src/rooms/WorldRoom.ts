@@ -52,7 +52,7 @@ import {
     type IWorldRoomJoinOptions,
     type WorldPhaseType,
 } from "@game/shared";
-import { NODE_ID, WORLD_TRANSFER_RESERVE_MS, normalizeSId } from "../core/infra/config";
+import { NODE_ID, WORLD_INFO_REFRESH_MS, WORLD_PUBLIC_WS_URL, WORLD_TRANSFER_RESERVE_MS, normalizeSId } from "../core/infra/config";
 import { ControlConflictError, PersonaNotFoundError, WorldNotAuthoritativeError, joinRefused } from "../core/errors";
 import { trackTask } from "../core/infra/lifecycle";
 import { publishPush, registerRoomSignal, type PublishPushInput } from "../core/push/pushBus";
@@ -70,6 +70,7 @@ import { WorldCheckpointer } from "./core/WorldCheckpoint";
 import { AuthorityLostError } from "./core/WorldTx";
 import { redisWorldTicketPort, type WorldTicketClaimPort } from "./core/WorldTicket";
 import { sqlWorldTransferPort, type WorldTransferPort } from "./core/WorldTransfer";
+import { redisWorldRegistry, type WorldRegistryPort } from "./core/WorldRegistry";
 import { newTransferId } from "./core/transfer";
 import { DEFAULT_WORLD_LINE, worldAddressOf, worldDirectory, type WorldDirectoryPort } from "./core/WorldDirectory";
 import {
@@ -162,6 +163,10 @@ export interface WorldRoomRuntimeOptions {
     readonly publish?: (input: PublishPushInput) => Promise<number>;
     /** 本进程 room signal 登记表（MF8-B6）：Active 起登记、Offline / dispose 注销；缺省 registerRoomSignal。 */
     readonly registerSignal?: (instanceId: string, sId: number, onSignal: (type: string, data: unknown) => void) => () => void;
+    /** 分线实时登记（MF10-B1）：seated / capacity / publicAddress，Active 起发布、入座 / 离座 / 续租节拍刷新、Offline 撤销；缺省 Redis。 */
+    readonly registry?: WorldRegistryPort;
+    /** 本节点承载世界房的公开 ws 地址（D27；缺省 WORLD_PUBLIC_WS_URL，空串 = 同当前区 gameWsUrl）。 */
+    readonly publicAddress?: string;
     /** 租约 / 权威持有者标识（缺省 `<roomId>@<NODE_ID>`）。 */
     readonly holder?: string;
     readonly drainGraceMs?: number;
@@ -267,6 +272,8 @@ export class WorldRoom extends Room {
         readonly transfers: WorldTransferPort;
         readonly publish: (input: PublishPushInput) => Promise<number>;
         readonly registerSignal: (instanceId: string, sId: number, onSignal: (type: string, data: unknown) => void) => () => void;
+        readonly registry: WorldRegistryPort;
+        readonly publicAddress: string;
         readonly holder: string | null;
         readonly drainGraceMs: number;
         readonly timers: WorldRoomTimers;
@@ -279,6 +286,8 @@ export class WorldRoom extends Room {
     private checkpointChain: Promise<void> = Promise.resolve();
     /** MF8-B6：本进程 room signal 登记的注销句柄（Active 起登记；Offline / dispose 注销）。 */
     private unregisterSignal: (() => void) | null = null;
+    /** MF10-B1：上次发布分线登记的时刻（按 WORLD_INFO_REFRESH_MS 节拍刷新，TTL 两倍租约）。 */
+    private registryPublishedAt = Number.NEGATIVE_INFINITY;
     /** MF3 共享层：dispatcher（含每会话预算）/ 出站口 / 重连宽限；壳只消费。 */
     private readonly dispatcher: WireDispatcher;
     private readonly ports: S2CPorts;
@@ -321,6 +330,8 @@ export class WorldRoom extends Room {
             transfers: options.transfers ?? sqlWorldTransferPort,
             publish: options.publish ?? ((input) => publishPush(input)),
             registerSignal: options.registerSignal ?? ((instanceId, sId, onSignal) => registerRoomSignal(instanceId, sId, onSignal as never)),
+            registry: options.registry ?? redisWorldRegistry,
+            publicAddress: options.publicAddress ?? WORLD_PUBLIC_WS_URL,
             holder: options.holder ?? null,
             drainGraceMs: options.drainGraceMs ?? WORLD_DRAIN_GRACE_MS,
             timers: options.timers ?? defaultTimers,
@@ -476,6 +487,7 @@ export class WorldRoom extends Room {
             this.runtime.signal(type, data);
         });
         this.creationConfigured = true;
+        this.publishRegistry(true);
         if (!this.deps.manualTick) this.setSimulationInterval((dt) => { this.advance(dt); }, this.fixedStepMs);
         console.log(`[WorldRoom ${this.roomId}] 创建 ${worldAddressOf(sId, this.mapId, this.line)} instance=${this.instanceId} epoch=${this.authorityEpoch} holder=${holder}`);
     }
@@ -588,6 +600,7 @@ export class WorldRoom extends Room {
                 throw joinRefused(ErrorCode.WorldTicketInvalid);
             }
             claimed = false;
+            this.publishRegistry(true);
             if (transferId !== null) {
                 void trackTask("world:transfer-finalize", this.deps.transfers.finalize(this.sId, transferId).catch((error: unknown) => {
                     console.error(`[WorldRoom ${this.roomId}] 交接 ${transferId} finalize 失败（状态机仍可由下次 enter 收敛）`, error);
@@ -710,6 +723,7 @@ export class WorldRoom extends Room {
                     runtime.drain("dispose", 0);
                     runtime.offline();
                 }
+                if (this.instanceId) await this.deps.registry.forget(this.sId, this.instanceId).catch(() => undefined);
                 await this.releaseLease();
                 await this.markInstance("offline");
             } finally {
@@ -732,6 +746,7 @@ export class WorldRoom extends Room {
         if (!runtime || this.disposed || this.finalizing) return 0;
         const steps = runtime.advance(dtMs);
         this.flushOutbox();
+        this.publishRegistry(false);
         const action = runtime.evaluateEmpty();
         if (action === "slept") console.log(`[WorldRoom ${this.roomId}] 空实例休眠（sleep）：停固定步，保留租约`);
         else if (action === "unloaded") void this.finalizeOffline("empty-unload");
@@ -900,6 +915,7 @@ export class WorldRoom extends Room {
         this.dispatcher.budget.clear();
         this.outbox.length = 0;
         await this.checkpointChain; // 最后一批（强制点）落盘完成后才释放租约 / 标 offline
+        await this.deps.registry.forget(this.sId, this.instanceId).catch(() => undefined);
         await this.releaseLease();
         await this.markInstance("offline");
         console.log(`[WorldRoom ${this.roomId}] Offline（${reason}）`);
@@ -971,7 +987,24 @@ export class WorldRoom extends Room {
         this.awayClients.delete(session);
         this.dispatcher.budget.delete(session);
         if (info && reason !== "lost-control") this.releaseControlLater(info.personaId, info.controlEpoch);
+        if (left) this.publishRegistry(true);
         return left;
+    }
+
+    /**
+     * MF10-B1 分线实时登记：seated / capacity / publicAddress（WorldDirectory.allocate 与 world.enter endpoint 的提示源；权威仍在表）。
+     * 入座 / 离座立即发布，其余按 WORLD_INFO_REFRESH_MS 节拍刷新（TTL = 两倍租约，权威房崩溃即到期自愈）；best-effort。
+     */
+    private publishRegistry(force: boolean): void {
+        const runtime = this.runtime;
+        if (!runtime || this.disposed || this.finalizing || runtime.phase !== WorldPhase.Active) return;
+        const now = this.now();
+        if (!force && now - this.registryPublishedAt < WORLD_INFO_REFRESH_MS) return;
+        this.registryPublishedAt = now;
+        const mode = this.requireMode();
+        void this.deps.registry.publish(this.sId, this.instanceId, {
+            seated: runtime.sessions().length, capacity: mode.capacity, publicAddress: this.deps.publicAddress, holder: this.holderId(), updatedAt: now,
+        }).catch((error: unknown) => { console.warn(`[WorldRoom ${this.roomId}] 分线登记发布失败（best-effort）`, error); });
     }
 
     private releaseControlLater(personaId: string, controlEpoch: number): void {
