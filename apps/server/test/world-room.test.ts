@@ -22,7 +22,11 @@ import { ControlConflictError, PersonaNotFoundError, WorldNotAuthoritativeError 
 import type { PersonaOwner, WorldInstanceRow, WorldInstanceState } from "../src/rooms/core/control";
 import { assertRoomProfilesConfigured, resolveRoomProfile } from "../src/rooms/core/RoomProfile";
 import type { WorldDirectoryPort } from "../src/rooms/core/WorldDirectory";
-import { WORLD_PROFILE_ID, assertWorldProfilesConfigured, resolveWorldProfile, type WorldTicketClaim, type WorldTicketPort } from "../src/rooms/core/WorldProfile";
+import { WORLD_PROFILE_ID, assertWorldProfilesConfigured, resolveWorldProfile } from "../src/rooms/core/WorldProfile";
+import { MemoryWorldTicketPort, type WorldTicketClaimPort, type WorldTicketClaimRequest } from "../src/rooms/core/WorldTicket";
+import type { WorldTransferPort } from "../src/rooms/core/WorldTransfer";
+import type { RequestTransferInput, TransferStep, WorldTransferRow, WorldTransferState } from "../src/rooms/core/transfer";
+import { TransferInFlightError, TransferStateError } from "../src/core/errors";
 import type { WorldCheckpointBatch } from "../src/rooms/core/WorldRuntime";
 import { MemoryCheckpointPort, buildCheckpointEnvelope, CheckpointIncompatibleError } from "../src/rooms/core/CheckpointPort";
 import { WorldCheckpointer } from "../src/rooms/core/WorldCheckpoint";
@@ -183,7 +187,84 @@ export function fakeClient(sessionId: string, personaId: string, userId = `u-${p
     };
 }
 
-export const okTickets: WorldTicketPort = { verify: async () => "ok" };
+/** 任何 sha 都放行的凭据端口（不测凭据的用例用；凭据矩阵见 world-transfer-room.test.ts / int/world-ticket.test.ts）。 */
+export const okTickets: WorldTicketClaimPort = { claim: async () => ({ kind: "ok", transferId: null }), release: async () => undefined, seat: async () => undefined };
+
+type MutableTransferRow = { -readonly [K in keyof WorldTransferRow]: WorldTransferRow[K] };
+const TRANSFER_ORDER: Readonly<Record<WorldTransferState, number>> = { requested: 0, prepared: 1, committed: 2, activated: 3, finalized: 4, cancelled: -1 };
+
+/** 交接持久面的内存假件（与 rooms/core/transfer.ts 同语义：一 persona 只一在途、CAS 0 行 ⇒ already / TransferStateError、Committed 后不可取消）。 */
+export class FakeTransfers implements WorldTransferPort {
+    readonly rows = new Map<string, MutableTransferRow>();
+    readonly log: string[] = [];
+    /** 注入点：某一步抛错 / 挂起（故障矩阵）。 */
+    failAt: Partial<Record<"request" | "prepare" | "commit" | "activate" | "finalize" | "issueTicket", () => Promise<never>>> = {};
+
+    constructor(readonly tickets: MemoryWorldTicketPort) {}
+
+    private step(transferId: string, from: readonly WorldTransferState[], to: WorldTransferState, patch: Partial<MutableTransferRow>): TransferStep {
+        const row = this.rows.get(transferId);
+        if (!row) throw new TransferStateError(transferId, from.join("|"), null);
+        if (from.includes(row.state)) {
+            Object.assign(row, patch, { state: to });
+            if (to === "finalized" || to === "cancelled") row.active = false;
+            this.log.push(`${to}:${transferId}`);
+            return { outcome: "advanced", row: { ...row } };
+        }
+        if (row.state !== "cancelled" && TRANSFER_ORDER[row.state] >= TRANSFER_ORDER[to]) return { outcome: "already", row: { ...row } };
+        throw new TransferStateError(transferId, from.join("|"), row.state);
+    }
+
+    async request(_sId: number, input: RequestTransferInput): Promise<TransferStep> {
+        if (this.failAt.request) await this.failAt.request();
+        const existing = this.rows.get(input.transferId);
+        if (existing) return { outcome: "already", row: { ...existing } };
+        for (const row of this.rows.values()) {
+            if (row.personaId === input.personaId && row.active) throw new TransferInFlightError(input.personaId, row.transferId);
+        }
+        const row: MutableTransferRow = {
+            transferId: input.transferId, personaId: input.personaId, fromInstance: input.fromInstance, toMap: input.toMap, toLine: input.toLine, toInstance: "",
+            state: "requested", controlEpoch: 0, ticketSha256: "", reserveExpiresAt: null, payload: input.payload ?? null, active: true,
+        };
+        this.rows.set(input.transferId, row);
+        this.log.push(`requested:${input.transferId}`);
+        return { outcome: "advanced", row: { ...row } };
+    }
+    async prepare(_sId: number, transferId: string, input: { readonly toInstance: string; readonly reserveExpiresAt: number }): Promise<TransferStep> {
+        if (this.failAt.prepare) await this.failAt.prepare();
+        return this.step(transferId, ["requested"], "prepared", { toInstance: input.toInstance, reserveExpiresAt: input.reserveExpiresAt });
+    }
+    async commit(_sId: number, transferId: string, input: { readonly controlEpoch: number; readonly ticketSha256: string }): Promise<TransferStep> {
+        if (this.failAt.commit) await this.failAt.commit();
+        return this.step(transferId, ["prepared"], "committed", { controlEpoch: input.controlEpoch, ticketSha256: input.ticketSha256 });
+    }
+    async activate(_sId: number, transferId: string, input: { readonly controlEpoch: number }): Promise<TransferStep> {
+        if (this.failAt.activate) await this.failAt.activate();
+        return this.step(transferId, ["committed"], "activated", { controlEpoch: input.controlEpoch });
+    }
+    async finalize(_sId: number, transferId: string): Promise<TransferStep> {
+        if (this.failAt.finalize) await this.failAt.finalize();
+        return this.step(transferId, ["activated"], "finalized", {});
+    }
+    async cancel(_sId: number, transferId: string): Promise<TransferStep> {
+        const row = this.rows.get(transferId);
+        if (!row) throw new TransferStateError(transferId, "requested|prepared", null);
+        if (row.state === "requested" || row.state === "prepared") {
+            row.state = "cancelled"; row.active = false; this.log.push(`cancelled:${transferId}`);
+            return { outcome: "advanced", row: { ...row } };
+        }
+        if (row.state === "cancelled") return { outcome: "already", row: { ...row } };
+        throw new TransferStateError(transferId, "requested|prepared", row.state);
+    }
+    async read(_sId: number, transferId: string): Promise<WorldTransferRow | null> {
+        const row = this.rows.get(transferId);
+        return row ? { ...row } : null;
+    }
+    async issueTicket(args: Parameters<MemoryWorldTicketPort["issue"]>[0]) {
+        if (this.failAt.issueTicket) await this.failAt.issueTicket();
+        return this.tickets.issue(args);
+    }
+}
 
 /** 假世界事务（MF7b-B4 编排用例）：权威 CAS / 控制权 CAS 按 FakeControl 裁决；appendWorldEvent 记录；beforeCommit 推进 FakeInstance.checkpointRev（CAS）。 */
 export function fakeWorldTxRunner(control: FakeControl, log: string[], events: Array<{ table: string; eventId: string; seq: number; kind: string; payload: unknown; checkpointRev: number }>) {
@@ -234,7 +315,7 @@ export interface Harness {
 }
 
 export function harness(options: {
-    world?: Partial<WorldManifestConfig>; capacity?: number; control?: FakeControl; leases?: FakeLeases; tickets?: WorldTicketPort;
+    world?: Partial<WorldManifestConfig>; capacity?: number; control?: FakeControl; leases?: FakeLeases; tickets?: WorldTicketClaimPort; transfers?: WorldTransferPort;
     holder?: string; drainGraceMs?: number; modeOptions?: WorldFixtureModeOptions; room?: Partial<WorldRoomRuntimeOptions>;
 } = {}): Harness {
     const control = options.control ?? new FakeControl();
@@ -248,7 +329,7 @@ export function harness(options: {
         mode,
         world: { emptyPolicy: "sleep", emptyAfterMs: 1_000, checkpointMs: 500, ...(options.world ?? {}) },
         seed: 7, fixedStepMs: 50, clock: () => clock.now,
-        control, lease: leases, directory, tickets: options.tickets ?? okTickets,
+        control, lease: leases, directory, tickets: options.tickets ?? okTickets, transfers: options.transfers ?? new FakeTransfers(new MemoryWorldTicketPort(() => clock.now)),
         holder: options.holder ?? "node-a", drainGraceMs: options.drainGraceMs ?? 100, timers,
         checkpointSink: (batch, reason) => { checkpoints.push({ batch, reason }); },
         manualTick: true,
@@ -345,13 +426,16 @@ test("准入固定时序：权威值 / 容量 / persona 归属 / ticket / 控制
     await assert.rejects(join(h.room, fakeClient("s2", P_ALICE, "u-mallory")), assertCode(ErrorCode.BadRequest), "非本账号 persona");
     await assert.rejects(join(h.room, fakeClient("s3", "p_inactive_000000001", "u-inactive")), assertCode(ErrorCode.BadRequest), "inactive persona");
     assert.equal(h.control.log.filter((entry) => entry.startsWith("control:")).length, 0, "⑤ 拒绝发生在控制权 CAS 之前");
-    // ⑥ ticket 端口（拿到的是 sha256 + 分线声明）
-    const claims: WorldTicketClaim[] = [];
-    const strict = harness({ tickets: { verify: async (claim) => { claims.push(claim); return claim.ticketSha256 === "b".repeat(64) ? "ok" : "invalid"; } } });
+    // ⑥ 凭据端口（MF8 claim：拿到的是 sha256 + 会话 + 绑定四元组，⛔ 原文）
+    const claims: WorldTicketClaimRequest[] = [];
+    const strict = harness({ tickets: {
+        claim: async (request) => { claims.push(request); return request.ticketSha256 === "b".repeat(64) ? { kind: "ok", transferId: null } : { kind: "refused", reason: "missing" }; },
+        release: async () => undefined, seat: async () => undefined,
+    } });
     strict.control.seedPersona(P_ALICE, "u-alice");
     await strict.room.onCreate(joinOptions());
     await assert.rejects(join(strict.room, fakeClient("s4", P_ALICE, "u-alice")), assertCode(ErrorCode.WorldTicketInvalid));
-    assert.deepEqual(claims, [{ sId: 0, userId: "u-alice", personaId: P_ALICE, mapId: "m1", line: 0, ticketSha256: TICKET_SHA }]);
+    assert.deepEqual(claims, [{ sId: 0, session: "s4", uid: "u-alice", personaId: P_ALICE, worldAddress: "s0/m1/0", controlEpoch: 0, ticketSha256: TICKET_SHA }]);
     assert.equal(strict.control.log.filter((entry) => entry.startsWith("control:")).length, 0, "⑥ 拒绝发生在控制权 CAS 之前");
     await join(strict.room, fakeClient("s5", P_ALICE, "u-alice", { ticketSha256: "b".repeat(64) }));
     assert.equal(strict.room.seatedCount, 1);

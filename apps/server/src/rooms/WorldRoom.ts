@@ -38,6 +38,7 @@ import {
     TICK_MS,
     WORLD_ROOM_PROTOCOL_VERSION,
     WorldPhase,
+    validateWorldMapId,
     validateWorldRoomJoinOptions,
     type C2SType,
     type ErrorCodeType,
@@ -50,7 +51,7 @@ import {
     type IWorldRoomJoinOptions,
     type WorldPhaseType,
 } from "@game/shared";
-import { NODE_ID, normalizeSId } from "../core/infra/config";
+import { NODE_ID, WORLD_TRANSFER_RESERVE_MS, normalizeSId } from "../core/infra/config";
 import { ControlConflictError, PersonaNotFoundError, WorldNotAuthoritativeError, joinRefused } from "../core/errors";
 import { trackTask } from "../core/infra/lifecycle";
 import { getChatPolicy, type ChatPolicyContext } from "../core/chat/policy";
@@ -65,9 +66,12 @@ import { WorldLease } from "./core/WorldLease";
 import { WorldRuntime, type WorldCheckpointBatch } from "./core/WorldRuntime";
 import { WorldCheckpointer } from "./core/WorldCheckpoint";
 import { AuthorityLostError } from "./core/WorldTx";
+import { redisWorldTicketPort, type WorldTicketClaimPort } from "./core/WorldTicket";
+import { sqlWorldTransferPort, type WorldTransferPort } from "./core/WorldTransfer";
+import { newTransferId } from "./core/transfer";
 import { DEFAULT_WORLD_LINE, worldAddressOf, worldDirectory, type WorldDirectoryPort } from "./core/WorldDirectory";
 import {
-    WORLD_PROFILE_ID, placeholderWorldTicketPort, resolveWorldProfile, type WorldProfile, type WorldTicketPort,
+    WORLD_PROFILE_ID, resolveWorldProfile, type WorldProfile,
 } from "./core/WorldProfile";
 import {
     acquireAuthority, acquireControl, readPersonaOwner, releaseControl, setInstanceState, type PersonaOwner, type WorldInstanceState,
@@ -75,6 +79,7 @@ import {
 import { createRoomStateForMode, ROOM_STATE_KIND } from "./schema/GameRoomState";
 import {
     assertWorldModeContract, worldModeRegistry, type WorldAdmitRequest, type WorldLeaveReason, type WorldMode, type WorldStateLifecycle,
+    type WorldTransferReady, type WorldTransferTarget,
 } from "./WorldMode";
 import type { CheckpointEnvelope } from "./core/CheckpointPort";
 import type { WorldManifestConfig } from "../../tools/gameplay-codegen/manifestSchema";
@@ -148,7 +153,9 @@ export interface WorldRoomRuntimeOptions {
     readonly control?: WorldControlPort;
     readonly lease?: WorldLeasePort;
     readonly directory?: WorldDirectoryPort;
-    readonly tickets?: WorldTicketPort;
+    readonly tickets?: WorldTicketClaimPort;
+    /** 交接持久面（MF8-B3）：状态机 + 凭据签发；缺省 SQL + Redis。 */
+    readonly transfers?: WorldTransferPort;
     /** 租约 / 权威持有者标识（缺省 `<roomId>@<NODE_ID>`）。 */
     readonly holder?: string;
     readonly drainGraceMs?: number;
@@ -167,6 +174,8 @@ export const WORLD_DRAIN_GRACE_MS = 5_000;
 export const WORLD_DRAINED_CLOSE_CODE: number = CloseCode.WITH_ERROR;
 /** 同 persona 在别处取得控制权 ⇒ 本会话失控制权：与大厅顶号同一关闭码。 */
 export const WORLD_LOST_CONTROL_CLOSE_CODE: number = KICK_CLOSE_CODE[ForceLogoutReason.Replaced];
+/** 交接离座（MF8）：客户端本就要退源房去目标房，按主动离开关闭（客户端据「交接就绪」消息区分）。 */
+export const WORLD_TRANSFERRED_CLOSE_CODE: number = CloseCode.CONSENTED;
 
 const SHA256_HEX = /^[0-9a-f]{64}$/u;
 const MAX_TICK_RATE = 240;
@@ -248,7 +257,8 @@ export class WorldRoom extends Room {
         readonly control: WorldControlPort;
         readonly lease: WorldLeasePort;
         readonly directory: WorldDirectoryPort;
-        readonly tickets: WorldTicketPort;
+        readonly tickets: WorldTicketClaimPort;
+        readonly transfers: WorldTransferPort;
         readonly holder: string | null;
         readonly drainGraceMs: number;
         readonly timers: WorldRoomTimers;
@@ -297,7 +307,8 @@ export class WorldRoom extends Room {
             control: options.control ?? defaultWorldControlPort,
             lease: options.lease ?? defaultWorldLeasePort,
             directory: options.directory ?? worldDirectory,
-            tickets: options.tickets ?? placeholderWorldTicketPort,
+            tickets: options.tickets ?? redisWorldTicketPort(),
+            transfers: options.transfers ?? sqlWorldTransferPort,
             holder: options.holder ?? null,
             drainGraceMs: options.drainGraceMs ?? WORLD_DRAIN_GRACE_MS,
             timers: options.timers ?? defaultTimers,
@@ -419,6 +430,12 @@ export class WorldRoom extends Room {
                 sendS2C: (session, token, payload) => { this.outbox.push({ session, token, payload }); },
                 broadcastS2C: (token, payload) => { this.outbox.push({ session: null, token, payload }); },
                 onDrainRequested: (reason) => this.drain(`mode:${reason}`),
+                requestTransfer: async (session, target) => {
+                    const ready = await this.requestTransfer(session, target);
+                    // Committed：先让 mode 的 then 跑（发「交接就绪」token），下一轮排空出站并以 "transferred" 离座
+                    this.deps.timers.set(() => this.completeTransfer(session, ready.transferId), 0);
+                    return ready;
+                },
                 ...(this.checkpointer
                     ? { onCheckpoint: (batch: WorldCheckpointBatch) => { this.persistCheckpoint(batch); } }
                     : this.deps.checkpointSink ? { onCheckpoint: this.deps.checkpointSink } : {}),
@@ -472,16 +489,35 @@ export class WorldRoom extends Room {
         this.pendingAdmissions.set(client.sessionId, { userId: auth.userId, personaId: auth.personaId });
         const generation = this.lifecycleGeneration;
         let heldControl: number | null = null;
+        let claimed = false;
         try {
             // ⑤ persona 归属（存储真源；⛔ 不信 options / auth 自报的归属）
             const owner = await this.deps.control.readPersonaOwner(this.sId, auth.personaId);
             if (!owner) throw joinRefused(ErrorCode.PersonaNotFound);
             if (owner.userId !== auth.userId || owner.status !== 0) throw joinRefused(ErrorCode.BadRequest);
-            // ⑥ ticket 端口（占位 → MF8 WorldTicket）
-            const verdict = await this.deps.tickets.verify({
-                sId: this.sId, userId: auth.userId, personaId: auth.personaId, mapId: this.mapId, line: this.line, ticketSha256: auth.ticketSha256,
+            // ⑥ 异步 claim（MF8 WorldTicket：Lua CAS issued → pending(session)，同原子段校验 uid / persona / worldAddress / controlEpoch 绑定）
+            const claim = await this.deps.tickets.claim({
+                sId: this.sId, session: client.sessionId, uid: auth.userId, personaId: auth.personaId,
+                worldAddress: worldAddressOf(this.sId, this.mapId, this.line), controlEpoch: owner.controlEpoch, ticketSha256: auth.ticketSha256,
             });
-            if (verdict !== "ok") throw joinRefused(ErrorCode.WorldTicketInvalid);
+            if (claim.kind !== "ok") {
+                console.warn(`[WorldRoom ${this.roomId}] ${client.sessionId} 凭据被拒（${claim.reason}）`);
+                throw joinRefused(ErrorCode.WorldTicketInvalid);
+            }
+            claimed = true;
+            const transferId = claim.transferId;
+            // 同步重验（claim 是 await）
+            if (this.disposed || this.lifecycleGeneration !== generation || runtime.phase !== WorldPhase.Active) throw joinRefused(ErrorCode.WorldDraining);
+            // 交接凭据：先读持久状态——已激活 / 已终态的交接是「已消费」，在取控制权**之前**拒（⛔ 顶掉已入座者），只激活一次
+            if (transferId !== null) {
+                const pending = await this.deps.transfers.read(this.sId, transferId);
+                if (!pending || pending.personaId !== auth.personaId) throw joinRefused(ErrorCode.BadRequest);
+                if (pending.state !== "committed") {
+                    console.warn(`[WorldRoom ${this.roomId}] ${client.sessionId} 交接 ${transferId} 已是 ${pending.state}，⛔ 二次激活`);
+                    throw joinRefused(ErrorCode.ControlConflict);
+                }
+                if (this.disposed || this.lifecycleGeneration !== generation || runtime.phase !== WorldPhase.Active) throw joinRefused(ErrorCode.WorldDraining);
+            }
             // ⑦ persona 级检查点回读（MF7b：框架校验，损坏 / 不兼容 fail-closed 拒入）+ 异步预热（⛔ 分配资源）
             let checkpoint: CheckpointEnvelope | null = null;
             if (this.checkpointer) {
@@ -514,18 +550,102 @@ export class WorldRoom extends Room {
             if (this.disposed || this.lifecycleGeneration !== generation || runtime.phase !== WorldPhase.Active) throw joinRefused(ErrorCode.WorldDraining);
             const stale = runtime.sessions().find((seated) => seated.personaId === auth.personaId);
             if (stale) this.evict(stale.session, "lost-control", WORLD_LOST_CONTROL_CLOSE_CODE);
-            // ⑩ 同步准入 → 落座
+            // ⑩ 交接激活（MF8：committed → activated 持久 CAS，**唯一一次**；并发赢家已由 ⑧ 的控制权 CAS 裁决，already 且不是自己的 epoch 只剩纵深）
+            if (transferId !== null) {
+                const step = await this.deps.transfers.activate(this.sId, transferId, { controlEpoch: heldControl });
+                if (step.row.personaId !== auth.personaId) throw joinRefused(ErrorCode.BadRequest);
+                if (step.outcome === "already" && step.row.controlEpoch !== heldControl) throw joinRefused(ErrorCode.ControlConflict);
+                if (this.disposed || this.lifecycleGeneration !== generation || runtime.phase !== WorldPhase.Active) throw joinRefused(ErrorCode.WorldDraining);
+            }
+            // ⑪ 同步准入 → 落座
             const outcome = runtime.admit({ ...request, controlEpoch: heldControl });
             if (outcome !== "admitted") throw joinRefused(ADMIT_REFUSAL[outcome]);
             heldControl = null; // 已落座：控制权随会话表，最终离开时归还
             this.clientOf.set(client.sessionId, client);
-            console.log(`[WorldRoom ${this.roomId}] ${client.sessionId} 入座 persona=${auth.personaId}（${runtime.sessions().length}/${mode.capacity}）`);
+            // ⑫ 凭据落座 CAS（pending → seated；之后重放一律被拒）。失败 fail-closed：离座（归还控制权）并拒。
+            try {
+                await this.deps.tickets.seat(this.sId, auth.ticketSha256, client.sessionId);
+            } catch (error) {
+                console.error(`[WorldRoom ${this.roomId}] ${client.sessionId} 凭据落座失败`, error);
+                this.finalLeave(client.sessionId, "kicked");
+                throw joinRefused(ErrorCode.WorldTicketInvalid);
+            }
+            claimed = false;
+            if (transferId !== null) {
+                void trackTask("world:transfer-finalize", this.deps.transfers.finalize(this.sId, transferId).catch((error: unknown) => {
+                    console.error(`[WorldRoom ${this.roomId}] 交接 ${transferId} finalize 失败（状态机仍可由下次 enter 收敛）`, error);
+                    return null;
+                }));
+            }
+            console.log(`[WorldRoom ${this.roomId}] ${client.sessionId} 入座 persona=${auth.personaId}（${runtime.sessions().length}/${mode.capacity}）${transferId ? ` 交接=${transferId}` : ""}`);
         } catch (error) {
             if (heldControl !== null) this.releaseControlLater(auth.personaId, heldControl);
+            if (claimed) void this.deps.tickets.release(this.sId, auth.ticketSha256, client.sessionId).catch(() => undefined);
             throw error;
         } finally {
             this.pendingAdmissions.delete(client.sessionId);
         }
+    }
+
+    // ── 交接（MF8-B3）────────────────────────────────────────────────────────────
+
+    /**
+     * 源房侧编排（docs/MMO.md §5.4 MF8；AC TeleportTo 三段式）：冻结 → Requested（一 persona 只一在途）→ 目标实例解析 → Prepared（预留）
+     * → 交接强制点（persona 快照先落盘）→ 重验（仍在座、同 epoch、同代、Active）→ 签发凭据（绑定目标地址 + 当前 controlEpoch）→ Committed。
+     * Committed 前任一步失败 ⇒ cancel + 解冻 + reject；Committed 后 ⛔ 回源（completeTransfer 离座）。
+     */
+    private async requestTransfer(session: string, target: WorldTransferTarget): Promise<WorldTransferReady> {
+        const runtime = this.requireRuntime();
+        const info = runtime.sessionOf(session);
+        if (!info) throw new Error(`[WorldRoom] 交接：会话 ${session} 不在座`);
+        if (runtime.phase !== WorldPhase.Active) throw new Error(`[WorldRoom] 交接：分线不是 Active（${String(runtime.phase)}）`);
+        if (runtime.isFrozen(session)) throw new Error(`[WorldRoom] 交接：会话 ${session} 已有在途交接`);
+        const toMap = validateWorldMapId(target.toMap, "transfer.toMap");
+        const toLine = target.toLine ?? DEFAULT_WORLD_LINE;
+        if (!Number.isSafeInteger(toLine) || toLine < 0 || toLine > 0xffff) throw new RangeError("[WorldRoom] 交接：toLine 必须是 0..65535 的整数");
+        if (toMap === this.mapId && toLine === this.line) throw new Error("[WorldRoom] 交接：目标就是本分线");
+        const transferId = newTransferId();
+        const generation = this.lifecycleGeneration;
+        runtime.setFrozen(session, true);
+        try {
+            await this.deps.transfers.request(this.sId, { transferId, personaId: info.personaId, fromInstance: this.instanceId, toMap, toLine, payload: target.payload ?? null });
+            const targetRow = await this.deps.directory.resolve(this.sId, toMap, toLine);
+            const now = this.now();
+            await this.deps.transfers.prepare(this.sId, transferId, { toInstance: targetRow.instanceId, reserveExpiresAt: now + WORLD_TRANSFER_RESERVE_MS });
+            // §4.5 / §7.3 交接强制点：persona 快照先落盘（目标房准入 loadPersona 读到的就是它）
+            if (this.checkpointer) {
+                runtime.forceCheckpoint(`transfer:${transferId}`);
+                await this.flushCheckpoints();
+            }
+            const still = runtime.sessionOf(session);
+            if (!still || still.controlEpoch !== info.controlEpoch || this.disposed || this.lifecycleGeneration !== generation || runtime.phase !== WorldPhase.Active) {
+                throw new Error(`[WorldRoom] 交接：会话 ${session} 在准备期间已变（离座 / 顶号 / Draining）`);
+            }
+            const worldAddress = worldAddressOf(this.sId, toMap, toLine);
+            const issued = await this.deps.transfers.issueTicket({
+                sId: this.sId, uid: info.userId, personaId: info.personaId, worldAddress, controlEpoch: info.controlEpoch, transferId, nowMs: now,
+            });
+            await this.deps.transfers.commit(this.sId, transferId, { controlEpoch: info.controlEpoch, ticketSha256: issued.ticketSha256 });
+            console.log(`[WorldRoom ${this.roomId}] 交接 ${transferId} Committed：${session} persona=${info.personaId} → ${worldAddress}`);
+            return { transferId, worldAddress, toMap, toLine, toInstance: targetRow.instanceId, ticket: issued.ticket, expiresAt: issued.expiresAt };
+        } catch (error) {
+            runtime.setFrozen(session, false);
+            try {
+                await this.deps.transfers.cancel(this.sId, transferId);
+            } catch {
+                // 不存在（request 未成功）/ 已 Committed（不可取消，由持久状态机收敛）
+            }
+            throw error;
+        }
+    }
+
+    /** Committed 之后：排空出站（mode 的「交接就绪」token 已入 outbox）→ 源房离座 "transferred"（回收实体、归还旧控制权）。 */
+    private completeTransfer(session: string, transferId: string): void {
+        const runtime = this.runtime;
+        if (!runtime || this.disposed || !runtime.sessionOf(session)) return;
+        this.flushOutbox();
+        console.log(`[WorldRoom ${this.roomId}] 交接 ${transferId}：${session} 离座`);
+        this.evict(session, "transferred", WORLD_TRANSFERRED_CLOSE_CODE);
     }
 
     async onLeave(client: Client, code: number): Promise<void> {

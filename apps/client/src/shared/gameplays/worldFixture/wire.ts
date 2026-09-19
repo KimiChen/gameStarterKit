@@ -93,6 +93,20 @@ export interface IWorldFixtureBaselineChunk {
     readonly items: readonly IWorldFixtureEntityWire[];
 }
 
+/** 传送门（MMO MF8）：请求把本会话交接到 toMap / toLine（框架 context.transfer.request）。 */
+export interface IWorldFixturePortalReq {
+    toMap: string;
+    toLine?: number;
+}
+
+/** 交接就绪（MMO MF8，perSession）：Committed 后由夹具发给发起会话；ticket 原文只此一处出网。 */
+export interface IWorldFixtureTransfer {
+    transferId: string;
+    worldAddress: string;
+    ticket: string;
+    expiresAt: number;
+}
+
 export interface IWorldFixtureBaselineEnd {
     readonly baselineId: string;
     readonly seq: number;
@@ -225,7 +239,29 @@ function validateBaselineEnd(input: unknown): IWorldFixtureBaselineEnd {
     };
 }
 
+function validatePortal(input: unknown): IWorldFixturePortalReq {
+    const value = recordOf(input, "payload");
+    assertExactKeys(value, ["toMap"], ["toLine"], "payload");
+    const toMap = boundedString(value.toMap, "payload.toMap", 1, 64);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(toMap)) throw new WireValidationError("MESSAGE_FIELD_RANGE", "payload.toMap");
+    const out: IWorldFixturePortalReq = { toMap };
+    if (value.toLine !== undefined) out.toLine = finiteInteger(value.toLine, "payload.toLine", 0, 0xffff);
+    return out;
+}
+
+function validateTransfer(input: unknown): IWorldFixtureTransfer {
+    const value = recordOf(input, "payload");
+    assertExactKeys(value, ["transferId", "worldAddress", "ticket", "expiresAt"], [], "payload");
+    return {
+        transferId: boundedString(value.transferId, "payload.transferId", 1, 64),
+        worldAddress: boundedString(value.worldAddress, "payload.worldAddress", 1, 128),
+        ticket: boundedString(value.ticket, "payload.ticket", 16, 128),
+        expiresAt: finiteInteger(value.expiresAt, "payload.expiresAt", 0, Number.MAX_SAFE_INTEGER),
+    };
+}
+
 export const WorldFixtureMove = defineC2S("c2s.worldFixture.move", validateMove, { phases: [GamePhase.Playing], rateCost: 1 });
+export const WorldFixturePortal = defineC2S("c2s.worldFixture.portal", validatePortal, { phases: [GamePhase.Playing], rateCost: 4 });
 export const WorldFixtureResync = defineC2S("c2s.worldFixture.resync", validateResync, { phases: [GamePhase.Playing], rateCost: 4 });
 export const WorldFixturePos = defineS2C("s2c.worldFixture.pos", validatePos);
 export const WorldFixtureEnter = defineS2C("s2c.worldFixture.enter", validateEnter, { perSession: true });
@@ -235,3 +271,4 @@ export const WorldFixturePrivate = defineS2C("s2c.worldFixture.private", validat
 export const WorldFixtureBaselineBegin = defineS2C("s2c.worldFixture.baselineBegin", validateBaselineBegin, { perSession: true });
 export const WorldFixtureBaselineChunk = defineS2C("s2c.worldFixture.baselineChunk", validateBaselineChunk, { perSession: true });
 export const WorldFixtureBaselineEnd = defineS2C("s2c.worldFixture.baselineEnd", validateBaselineEnd, { perSession: true });
+export const WorldFixtureTransfer = defineS2C("s2c.worldFixture.transfer", validateTransfer, { perSession: true });

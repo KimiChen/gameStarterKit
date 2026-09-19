@@ -28,7 +28,8 @@ import { closeRedis, coordClient } from "../../src/core/infra/redisRoute";
 import { readControl, readInstance } from "../../src/rooms/core/control";
 import { WorldCheckpointer } from "../../src/rooms/core/WorldCheckpoint";
 import { WorldLease, defaultWorldLeaseDeps } from "../../src/rooms/core/WorldLease";
-import { worldDirectory } from "../../src/rooms/core/WorldDirectory";
+import { worldAddressOf, worldDirectory } from "../../src/rooms/core/WorldDirectory";
+import { issueWorldTicket, worldTicketHash } from "../../src/rooms/core/WorldTicket";
 import { worldModeRegistry } from "../../src/rooms/WorldMode";
 import { WorldRoom, type WorldRoomAuth } from "../../src/rooms/WorldRoom";
 import {
@@ -145,15 +146,20 @@ test("崩溃重启：强制点同事务落盘 → worker 发奖恰一次 → 硬
         const address = server.transport.server?.address();
         assert.ok(address && typeof address === "object");
         const endpoint = `http://127.0.0.1:${address.port}`;
-        const options = (): IWorldRoomJoinOptions => ({
+        // MF8：真凭据（绑定当前 control_epoch；A′ 准入前再签一张，因为 A 的准入已把 epoch 抬到 1）
+        const ticketFor = async (): Promise<string> => (await issueWorldTicket({
+            sId: SID, uid: uidA, personaId: personaA, worldAddress: worldAddressOf(SID, MAP_ID, 0),
+            controlEpoch: (await readControl(SID, personaA))?.controlEpoch ?? 0, transferId: null, nowMs: Date.now(),
+        })).ticket;
+        const options = (ticket: string = "t".repeat(24)): IWorldRoomJoinOptions => ({
             v: WORLD_ROOM_PROTOCOL_VERSION, sId: SID, mode: WORLD_FIXTURE_MODE_ID, modeVersion: GAMEPLAY_CATALOG.worldFixture.modeVersion,
-            profile: "world", mapId: MAP_ID, personaId: personaA, ticket: "t".repeat(24),
+            profile: "world", mapId: MAP_ID, personaId: personaA, ticket,
         });
         // ① 房 A：SDK 真连接
         const { token } = await issueSession(uidA, null, "", SID);
         const sdk = new SDKClient(endpoint);
         sdk.auth.token = token;
-        const a = await sdk.joinOrCreate(RoomName.World, options());
+        const a = await sdk.joinOrCreate(RoomName.World, options(await ticketFor()));
         rooms.push(a);
         const local = matchMaker.getLocalRoomById(a.roomId) as unknown as TestWorldRoom;
         assert.ok(local instanceof WorldRoom);
@@ -201,9 +207,10 @@ test("崩溃重启：强制点同事务落盘 → worker 发奖恰一次 → 硬
         const modeAPrime = modes[modes.length - 1]!;
         assert.ok(modeAPrime !== modeA && modeAPrime.__probe.log.some((line) => line.startsWith("restore:")), "onRestore 回灌分线快照");
         assert.equal((aPrime.state as { entityCount?: number }).entityCount, 2, "静态体从快照恢复");
+        const alice2Ticket = await ticketFor();
         const alice2 = {
             sessionId: "sa2", sent: [] as unknown[], closed: null as number | null,
-            auth: { userId: uidA, sId: SID, mode: WORLD_FIXTURE_MODE_ID, profile: "world", mapId: MAP_ID, line: null, personaId: personaA, ticketSha256: "a".repeat(64), resumeSeq: null } satisfies WorldRoomAuth,
+            auth: { userId: uidA, sId: SID, mode: WORLD_FIXTURE_MODE_ID, profile: "world", mapId: MAP_ID, line: null, personaId: personaA, ticketSha256: worldTicketHash(alice2Ticket), resumeSeq: null } satisfies WorldRoomAuth,
             send(type: string, payload: unknown) { this.sent.push([type, payload]); },
             leave(code?: number) { this.closed = code ?? -1; },
         };

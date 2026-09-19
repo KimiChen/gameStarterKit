@@ -24,6 +24,7 @@ import { kWorldFence, kWorldLease } from "../../src/core/infra/keys";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import { closeRedis, coordClient } from "../../src/core/infra/redisRoute";
 import { readControl, readInstance } from "../../src/rooms/core/control";
+import { issueWorldTicket } from "../../src/rooms/core/WorldTicket";
 import { WorldLease, defaultWorldLeaseDeps } from "../../src/rooms/core/WorldLease";
 import { worldAddressOf, worldDirectory } from "../../src/rooms/core/WorldDirectory";
 import { worldModeRegistry } from "../../src/rooms/WorldMode";
@@ -97,7 +98,13 @@ test("worldFixture 真栈：建房 / 准入 / 推进；双登只一个控制权�
             const { token } = await issueSession(user, null, "", SID);
             const sdk = new SDKClient(endpoint);
             sdk.auth.token = token;
-            const room = await sdk.joinOrCreate(RoomName.World, options(personaId, overrides));
+            // MF8：真凭据（world.enter 同形）：绑定 (uid, persona, 目标分线地址, 当前 control_epoch)
+            const control = await readControl(SID, personaId);
+            const issued = await issueWorldTicket({
+                sId: SID, uid: user, personaId, worldAddress: worldAddressOf(SID, overrides.mapId ?? MAP_ID, overrides.line ?? 0),
+                controlEpoch: control?.controlEpoch ?? 0, transferId: null, nowMs: Date.now(),
+            });
+            const room = await sdk.joinOrCreate(RoomName.World, options(personaId, { ticket: issued.ticket, ...overrides }));
             rooms.push(room);
             return room;
         };

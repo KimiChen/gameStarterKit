@@ -11,8 +11,8 @@ import {
     CORE_S2C_TOKENS,
     WORLD_FIXTURE_MAP_SIZE, WORLD_FIXTURE_RANGE, WORLD_FIXTURE_SPEED,
     WorldFixtureBaselineBegin, WorldFixtureBaselineChunk, WorldFixtureBaselineEnd, WorldFixtureEnter, WorldFixtureLeave, WorldFixtureMove,
-    WorldFixturePos, WorldFixturePrivate, WorldFixtureResync, WorldFixtureUpdate,
-    type IObserverEnvelope, type IWorldFixtureEntityWire, type IWorldFixtureMoveReq, type WorldFixtureEntityKind,
+    WorldFixturePortal, WorldFixturePos, WorldFixturePrivate, WorldFixtureResync, WorldFixtureTransfer, WorldFixtureUpdate,
+    type IObserverEnvelope, type IWorldFixtureEntityWire, type IWorldFixtureMoveReq, type IWorldFixturePortalReq, type WorldFixtureEntityKind,
 } from "@game/shared";
 import type {
     WorldAdmitRequest, WorldCheckpoint, WorldMode, WorldModeCheckpointCapability, WorldModeContext, WorldModeObserverCapability,
@@ -137,7 +137,7 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
     const mode: WorldFixtureMode = {
         id: WORLD_FIXTURE_MODE_ID,
         capacity: options.capacity ?? 8,
-        commands: [WorldFixtureMove.type, WorldFixtureResync.type],
+        commands: [WorldFixtureMove.type, WorldFixtureResync.type, WorldFixturePortal.type],
         observer,
         ...(options.checkpoint ? { checkpoint: options.checkpoint } : {}),
         onWorldInit(context, info) {
@@ -199,6 +199,18 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
             for (const command of step.commands) {
                 if (command.type === WorldFixtureResync.type) {
                     context.observers.requestBaseline(command.session);
+                    continue;
+                }
+                if (command.type === WorldFixturePortal.type) {
+                    // MF8：传送门 ⇒ 框架交接；Committed 后（then）用本 mode 的 perSession token 把凭据交给发起会话，随后壳以 "transferred" 离座
+                    const request = command.payload as IWorldFixturePortalReq;
+                    const session = command.session;
+                    context.transfer.request(session, { toMap: request.toMap, ...(request.toLine === undefined ? {} : { toLine: request.toLine }), payload: { via: "portal" } })
+                        .then((ready) => {
+                            log.push(`transfer:${session}:ready:${ready.toMap}`);
+                            context.sendS2C(session, WorldFixtureTransfer, { transferId: ready.transferId, worldAddress: ready.worldAddress, ticket: ready.ticket, expiresAt: ready.expiresAt });
+                        })
+                        .catch((error: unknown) => { log.push(`transfer:${session}:failed:${error instanceof Error ? error.message : String(error)}`); });
                     continue;
                 }
                 if (command.type !== WorldFixtureMove.type) continue;

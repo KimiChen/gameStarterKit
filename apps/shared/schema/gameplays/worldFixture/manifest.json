@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "worldFixture",
   "constantName": "WorldFixture",
-  "modeVersion": 2,
+  "modeVersion": 3,
   "wireExposed": false,
   "maxPlayers": 8,
   "profiles": [
