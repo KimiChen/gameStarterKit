@@ -63,6 +63,8 @@ export interface ViewFixtureModeOptions {
     readonly limits?: GameModeObserverCapability["limits"];
     /** 每多少 tick 重拉真源；缺省 1（单测逐 tick 可见）。 */
     readonly pollTicks?: number;
+    /** 视距（切比雪夫）；缺省 wire 的 VIEW_FIXTURE_RANGE，world-bench 用不同视距比较每会话字节。 */
+    readonly range?: number;
 }
 
 export interface ViewFixtureMode extends GameMode<ViewFixtureState, { id: string; name: string }> {
@@ -73,10 +75,11 @@ export interface ViewFixtureMode extends GameMode<ViewFixtureState, { id: string
     };
 }
 
-const within = (viewport: { readonly x: number; readonly y: number }, row: ViewRow): boolean =>
-    Math.abs(row.x - viewport.x) <= VIEW_FIXTURE_RANGE && Math.abs(row.y - viewport.y) <= VIEW_FIXTURE_RANGE;
+const within = (viewport: { readonly x: number; readonly y: number }, row: ViewRow, range: number): boolean =>
+    Math.abs(row.x - viewport.x) <= range && Math.abs(row.y - viewport.y) <= range;
 
 export function createViewFixtureMode(options: ViewFixtureModeOptions): ViewFixtureMode {
+    const range = options.range ?? VIEW_FIXTURE_RANGE;
     const rows = new Map<string, ViewRow>();
     const viewports = new Map<string, { x: number; y: number }>();
     const sessions = new Set<string>();
@@ -120,7 +123,7 @@ export function createViewFixtureMode(options: ViewFixtureModeOptions): ViewFixt
             const viewport = viewports.get(session) ?? { x: 0, y: 0 };
             const visible = new Map<string, ViewEntity>();
             for (const row of rows.values()) {
-                if (within(viewport, row)) visible.set(row.id, projectionOf(row));
+                if (within(viewport, row, range)) visible.set(row.id, projectionOf(row));
             }
             return visible;
         },
@@ -137,7 +140,7 @@ export function createViewFixtureMode(options: ViewFixtureModeOptions): ViewFixt
                 const previous = viewports.get(context.client.sessionId) ?? { x: 0, y: 0 };
                 viewports.set(context.client.sessionId, { x: payload.x, y: payload.y });
                 // 兴趣集突变（跳出整个视野）⇒ 让框架重发只含兴趣集的 baseline，而不是一长串 leave / enter
-                if (Math.abs(payload.x - previous.x) > VIEW_FIXTURE_RANGE * 2 || Math.abs(payload.y - previous.y) > VIEW_FIXTURE_RANGE * 2) {
+                if (Math.abs(payload.x - previous.x) > range * 2 || Math.abs(payload.y - previous.y) > range * 2) {
                     context.observers.requestBaseline(context.client.sessionId);
                 }
             },

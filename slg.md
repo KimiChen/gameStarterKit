@@ -447,6 +447,11 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 
 ### 10.8 MF5 依赖面盘点（2026-09-13，2b 接框架准备）
 
+> **2026-09-19 更新**：MF5a 已退出（docs/MMO.md §12，tag `mf5a-exit`）——下表「框架缺口」全部关闭：`rooms/core/{InterestSet,ObserverSync,Baseline,OutboundQueue}.ts`、
+> S2CPorts 的 perSession 广播闸、`defineS2C(..., { perSession, coalesceKey? })` + `GAME_WIRE_PER_SESSION`、GameMode `observer` 能力 + `context.observers`
+> 端口、manifest `roster: "hidden"`（D4 名册分离）均已落地；接法见 docs/KIT.md §4「观察者同步 / 名册分离」与 docs/SERVER.md §5，参考接线
+> `apps/server/test/fixtures/viewFixtureMode.ts`（视口 / 视距 / 私有字段过滤在 mode，差分 / baseline / 有界投递归框架）。**2b 可开工**；下文保留为 2026-09-13 的盘点原文。
+
 按 docs/MMO.md §5 MF5 规格逐项核对框架现状（`apps/server/src/rooms/core/` 实列目录 + 全文检索），结论：**MF5 尚未实施，2b 全部 14/15/20–24 条被阻塞**；2a 与 shared 数学已就绪，MF5 的泛化源（snake）质量良好。
 
 **已具备（2b 不需要重做）**：
