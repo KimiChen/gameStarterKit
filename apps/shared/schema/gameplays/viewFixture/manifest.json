@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "viewFixture",
   "constantName": "ViewFixture",
-  "modeVersion": 1,
+  "modeVersion": 2,
   "wireExposed": false,
   "maxPlayers": 8,
   "profiles": [

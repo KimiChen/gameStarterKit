@@ -14,6 +14,7 @@ import { CastSkill, Move, SkillResult, type ICastSkillReq, type IMoveReq, type I
 import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
 import { SnakeBaselineBegin, SnakeBaselineChunk, SnakeBaselineEnd, SnakeBaselineRequest, SnakeDelta, SnakeEndRun, SnakeInput, SnakeReliveDecision, SnakeReliveDecisionResult, SnakeReliveOffered, SnakeReliveResolved, SnakeRunFinalizing, SnakeRunResult, type ISnakeBaselineBegin, type ISnakeBaselineChunk, type ISnakeBaselineEnd, type ISnakeBaselineRequestReq, type ISnakeEndRunReq, type ISnakeInputReq, type ISnakeReliveDecisionReq, type ISnakeReliveDecisionResult, type ISnakeReliveOffered, type ISnakeReliveResolved, type ISnakeRunFinalizing, type ISnakeRunResultV2, type ISnakeWorldDelta } from "../snake/wire";
 import { TallyTap, type ITallyTapReq } from "../tally/wire";
+import { ViewFixtureBaselineBegin, ViewFixtureBaselineChunk, ViewFixtureBaselineEnd, ViewFixtureEnter, ViewFixtureLeave, ViewFixtureLook, ViewFixturePrivate, ViewFixtureResync, ViewFixtureUpdate, type IViewFixtureBaselineBegin, type IViewFixtureBaselineChunk, type IViewFixtureBaselineEnd, type IViewFixtureEnter, type IViewFixtureLeave, type IViewFixtureLookReq, type IViewFixturePrivate, type IViewFixtureResyncReq, type IViewFixtureUpdate } from "../viewFixture/wire";
 
 /** 客户端 → 服务端 消息名（core + 各玩法 wire token 的显式字面量聚合） */
 export const C2S = {
@@ -31,6 +32,8 @@ export const C2S = {
     SnakeEndRun: "c2s.snake.endRun",
     SnakeBaselineRequest: "c2s.snake.baselineRequest",
     TallyTap: "c2s.tally.tap",
+    ViewFixtureLook: "c2s.viewFixture.look",
+    ViewFixtureResync: "c2s.viewFixture.resync",
 } as const;
 
 /** 服务端 → 客户端 消息名 */
@@ -51,6 +54,13 @@ export const S2C = {
     SnakeReliveResolved: "s2c.snake.reliveResolved",
     SnakeRunFinalizing: "s2c.snake.runFinalizing",
     SnakeRunResult: "s2c.snake.runResult",
+    ViewFixtureEnter: "s2c.viewFixture.enter",
+    ViewFixtureUpdate: "s2c.viewFixture.update",
+    ViewFixtureLeave: "s2c.viewFixture.leave",
+    ViewFixturePrivate: "s2c.viewFixture.private",
+    ViewFixtureBaselineBegin: "s2c.viewFixture.baselineBegin",
+    ViewFixtureBaselineChunk: "s2c.viewFixture.baselineChunk",
+    ViewFixtureBaselineEnd: "s2c.viewFixture.baselineEnd",
 } as const;
 
 export type C2SType = (typeof C2S)[keyof typeof C2S];
@@ -72,6 +82,8 @@ export interface C2SPayloadMap {
     "c2s.snake.endRun": ISnakeEndRunReq;
     "c2s.snake.baselineRequest": ISnakeBaselineRequestReq;
     "c2s.tally.tap": ITallyTapReq;
+    "c2s.viewFixture.look": IViewFixtureLookReq;
+    "c2s.viewFixture.resync": IViewFixtureResyncReq;
 }
 
 export interface S2CPayloadMap {
@@ -91,6 +103,13 @@ export interface S2CPayloadMap {
     "s2c.snake.reliveResolved": ISnakeReliveResolved;
     "s2c.snake.runFinalizing": ISnakeRunFinalizing;
     "s2c.snake.runResult": ISnakeRunResultV2;
+    "s2c.viewFixture.enter": IViewFixtureEnter;
+    "s2c.viewFixture.update": IViewFixtureUpdate;
+    "s2c.viewFixture.leave": IViewFixtureLeave;
+    "s2c.viewFixture.private": IViewFixturePrivate;
+    "s2c.viewFixture.baselineBegin": IViewFixtureBaselineBegin;
+    "s2c.viewFixture.baselineChunk": IViewFixtureBaselineChunk;
+    "s2c.viewFixture.baselineEnd": IViewFixtureBaselineEnd;
 }
 
 export type C2SPayload<T extends C2SType> = C2SPayloadMap[T];
@@ -112,6 +131,8 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.snake.endRun": SnakeEndRun.validate,
     "c2s.snake.baselineRequest": SnakeBaselineRequest.validate,
     "c2s.tally.tap": TallyTap.validate,
+    "c2s.viewFixture.look": ViewFixtureLook.validate,
+    "c2s.viewFixture.resync": ViewFixtureResync.validate,
 };
 
 /** S2C runtime validators. Client state/message adapters must validate before dispatching callbacks. */
@@ -132,6 +153,13 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.snake.reliveResolved": SnakeReliveResolved.validate,
     "s2c.snake.runFinalizing": SnakeRunFinalizing.validate,
     "s2c.snake.runResult": SnakeRunResult.validate,
+    "s2c.viewFixture.enter": ViewFixtureEnter.validate,
+    "s2c.viewFixture.update": ViewFixtureUpdate.validate,
+    "s2c.viewFixture.leave": ViewFixtureLeave.validate,
+    "s2c.viewFixture.private": ViewFixturePrivate.validate,
+    "s2c.viewFixture.baselineBegin": ViewFixtureBaselineBegin.validate,
+    "s2c.viewFixture.baselineChunk": ViewFixtureBaselineChunk.validate,
+    "s2c.viewFixture.baselineEnd": ViewFixtureBaselineEnd.validate,
 };
 
 export function validateC2SPayload<T extends C2SType>(type: T, input: unknown): C2SPayload<T> {
@@ -166,6 +194,8 @@ export const GAME_WIRE_OWNERS = {
     "c2s.snake.endRun": "snake",
     "c2s.snake.baselineRequest": "snake",
     "c2s.tally.tap": "tally",
+    "c2s.viewFixture.look": "viewFixture",
+    "c2s.viewFixture.resync": "viewFixture",
     "s2c.pong": "core",
     "s2c.welcome": "core",
     "s2c.chat": "core",
@@ -182,6 +212,13 @@ export const GAME_WIRE_OWNERS = {
     "s2c.snake.reliveResolved": "snake",
     "s2c.snake.runFinalizing": "snake",
     "s2c.snake.runResult": "snake",
+    "s2c.viewFixture.enter": "viewFixture",
+    "s2c.viewFixture.update": "viewFixture",
+    "s2c.viewFixture.leave": "viewFixture",
+    "s2c.viewFixture.private": "viewFixture",
+    "s2c.viewFixture.baselineBegin": "viewFixture",
+    "s2c.viewFixture.baselineChunk": "viewFixture",
+    "s2c.viewFixture.baselineEnd": "viewFixture",
 } as const;
 
 export type GameWireType = keyof typeof GAME_WIRE_OWNERS;
@@ -198,6 +235,8 @@ export const GAME_WIRE_PHASES = {
     "c2s.snake.endRun": [GamePhase.Playing],
     "c2s.snake.baselineRequest": [GamePhase.Playing],
     "c2s.tally.tap": [GamePhase.Playing],
+    "c2s.viewFixture.look": [GamePhase.Playing],
+    "c2s.viewFixture.resync": [GamePhase.Playing],
 } as const satisfies { readonly [type: string]: readonly GamePhaseType[] };
 
 /** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */
@@ -212,10 +251,19 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.snake.endRun": 2,
     "c2s.snake.baselineRequest": 4,
     "c2s.tally.tap": 1,
+    "c2s.viewFixture.look": 1,
+    "c2s.viewFixture.resync": 4,
 } as const satisfies { readonly [type: string]: number };
 
 /** 每会话 S2C token（MMO MF5a）：只经 sendS2C 发给单个会话，broadcastS2C 对它 fail-closed；值 = coalesceKey（payload 字段名）或 null（不合并、不可丢）。 */
 export const GAME_WIRE_PER_SESSION = {
+    "s2c.viewFixture.enter": null,
+    "s2c.viewFixture.update": "id",
+    "s2c.viewFixture.leave": null,
+    "s2c.viewFixture.private": null,
+    "s2c.viewFixture.baselineBegin": null,
+    "s2c.viewFixture.baselineChunk": null,
+    "s2c.viewFixture.baselineEnd": null,
 } as const satisfies { readonly [type: string]: string | null };
 
 /** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */
@@ -247,6 +295,8 @@ export const gameplayC2STokens = {
         "c2s.tally.tap": TallyTap,
     },
     "viewFixture": {
+        "c2s.viewFixture.look": ViewFixtureLook,
+        "c2s.viewFixture.resync": ViewFixtureResync,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };
 
@@ -279,6 +329,13 @@ export const gameplayS2CTokens = {
     "tally": {
     },
     "viewFixture": {
+        "s2c.viewFixture.enter": ViewFixtureEnter,
+        "s2c.viewFixture.update": ViewFixtureUpdate,
+        "s2c.viewFixture.leave": ViewFixtureLeave,
+        "s2c.viewFixture.private": ViewFixturePrivate,
+        "s2c.viewFixture.baselineBegin": ViewFixtureBaselineBegin,
+        "s2c.viewFixture.baselineChunk": ViewFixtureBaselineChunk,
+        "s2c.viewFixture.baselineEnd": ViewFixtureBaselineEnd,
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };
 

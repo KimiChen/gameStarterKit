@@ -6,6 +6,7 @@ import coreVectors from "./core";
 import idleVectors from "./idle";
 import snakeVectors from "./snake";
 import tallyVectors from "./tally";
+import viewFixtureVectors from "./viewFixture";
 import type { WireVectorFile } from "./vectorTypes";
 
 /** owner → sidecar default（core + 声明了 C2S wire 的玩法；新增玩法只新增 wire-vectors/<id>.ts 并重跑 codegen:gameplays）。 */
@@ -17,4 +18,5 @@ export const WIRE_VECTOR_FILES: Readonly<Record<string, WireVectorFile>> = {
     idle: idleVectors,
     snake: snakeVectors,
     tally: tallyVectors,
+    viewFixture: viewFixtureVectors,
 };

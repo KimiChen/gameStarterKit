@@ -12,6 +12,53 @@ import {
 // evidence capability 的 build() 返回值需要它。本文件不 import 任何 ballMove 实现。
 import type { MatchEvidenceV3 } from "../core/match/matchEvidence";
 import { GameRoomState, PlayerState } from "./schema/GameRoomState";
+import type { BaselineBuilders, BaselineTokens } from "./core/Baseline";
+import type { InterestView } from "./core/InterestSet";
+import type { ObservedEntity, ObserverSyncBuilders, ObserverSyncTokens } from "./core/ObserverSync";
+import type { OutboundPushResult } from "./core/OutboundQueue";
+
+/**
+ * 观察者同步端口（MMO MF5a-B5，docs/MMO.md §4.3 / §5.4 MF5a）：perSession token 专用，全房 token 仍走 `broadcastS2C`。
+ * 投递不直接出网——进每会话 OutboundQueue，GameRoom 每 tick 排空（慢会话超限 ⇒ 丢可合并类、留不可丢类、下一 tick 重发 baseline）。
+ * 端口不要求 WorldAddress / personaId / authorityEpoch：SQL 视图房与 MF5b 的 WorldRoom 消费同一组。
+ */
+export interface GameModeObserverPorts {
+    /** 该会话当前兴趣集（实体 id → rev）与版本；未知会话版本 0、视图空。 */
+    interest(session: string): { readonly version: number; readonly view: InterestView };
+    /** 按会话投递 perSession token（本人私有流 / 回执；非 perSession token 抛）。 */
+    emitPerSession<TPayload>(session: string, token: GameplayS2CToken<TPayload>, payload: TPayload): OutboundPushResult;
+    /** 标记该会话需要 baseline（兴趣集突变 / 客户端请求重同步）；框架在本 tick 排空前重发只含兴趣集的 baseline 并 rebase。 */
+    requestBaseline(session: string): void;
+    /** 该会话已发出的最后一个 seq（0 = 尚未发过任何 perSession 消息）。 */
+    seq(session: string): number;
+    /** 领取该会话单 seq 流的下一个号（本人私有流 / 回执与 enter / update / leave / baseline 共用一条流）；无 observer 能力抛。 */
+    nextSeq(session: string): number;
+}
+
+/**
+ * mode 的可选观察者能力：候选与投影归 mode（网格 / 视距 / 可见性规则 / 私有字段过滤），差分、编号、baseline、投递归框架。
+ * 六个 token 必须 perSession（建房时 fail-closed）；`visibleEntities` 每 tick 每会话调一次，返回该会话视野内的**公开投影**
+ * （⛔ 私有字段不得进 entity——它经 `observers.emitPerSession` 的 private token 单独发给本人）。
+ */
+export interface GameModeObserverCapability<TState = GameRoomState, TEntity extends ObservedEntity = ObservedEntity, TItem = TEntity> {
+    readonly tokens: ObserverSyncTokens<unknown, unknown, unknown>;
+    readonly builders: ObserverSyncBuilders<TEntity, unknown, unknown, unknown>;
+    readonly baseline: {
+        readonly tokens: BaselineTokens<unknown, unknown, unknown>;
+        readonly builders: BaselineBuilders<TItem, unknown, unknown, unknown>;
+        /** 只许收紧（OBSERVER_SYNC_LIMITS.baselineChunkItems）。 */
+        readonly chunkItems?: number;
+    };
+    /** 这一 tick 该会话视野内的可见投影（键 = entity.id）。 */
+    visibleEntities(session: string, context: GameModeContext<TState>): ReadonlyMap<string, TEntity>;
+    /** baseline 条目（只含兴趣集）；缺省 = visibleEntities 的值按 id 升序。 */
+    baselineItems?(session: string, entities: ReadonlyMap<string, TEntity>, context: GameModeContext<TState>): readonly TItem[];
+    /** 有界原语的上限（只许收紧，§11.2）。 */
+    readonly limits?: {
+        readonly interestMaxEntities?: number;
+        readonly outboundQueueMaxMessages?: number;
+    };
+}
 
 /**
  * Server-side gameplay extension point.  GameRoom keeps ownership of the
@@ -52,6 +99,8 @@ export interface GameModeContext<TState = GameRoomState> {
     findClientBySession(sessionId: string): Client | undefined;
     /** 当前对局参与者的框架账号 uid（participantUserId 快照）；无记录时 null。 */
     userIdOf(sessionId: string): string | null;
+    /** 观察者同步端口（MF5a-B5）；未声明 `observer` 能力的 mode 也可用 emitPerSession / seq，requestBaseline 会抛。 */
+    readonly observers: GameModeObserverPorts;
 }
 
 export interface GameModePlayerFactoryContext {
@@ -169,6 +218,8 @@ export interface GameMode<TState = GameRoomState, TPlayer = PlayerState> {
     /** 可选证据能力；未声明的 mode settle 时不产出证据。 */
     readonly evidence?: GameModeEvidenceCapability;
     readonly roomLifecycle?: GameModeRoomLifecycleCapability<TState>;
+    /** 可选观察者同步能力（MMO MF5a-B5）：视野内 enter / update / leave + 只含兴趣集的 baseline 由框架投递。 */
+    readonly observer?: GameModeObserverCapability<TState, ObservedEntity, unknown>;
     /**
      * 准入前的**异步**预热点，是 join 路径上唯一允许 await 的玩法钩子。
      *

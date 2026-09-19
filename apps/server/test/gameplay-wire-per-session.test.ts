@@ -38,12 +38,19 @@ test("defineS2C：非法选项在声明期拒", () => {
   }
 });
 
-test("真仓既有 S2C token 全部是全房消息，GAME_WIRE_PER_SESSION 当前为空表", () => {
-  for (const tokens of Object.values(gameplayS2CTokens)) {
-    for (const token of Object.values(tokens as Record<string, { perSession: boolean; coalesceKey: string | null }>)) {
-      assert.equal(token.perSession, false);
-      assert.equal(token.coalesceKey, null);
+test("真仓：只有 viewFixture（MF5a-B5 夹具）声明 perSession token，GAME_WIRE_PER_SESSION 与运行时 token 逐条一致", () => {
+  const expected: Record<string, string | null> = {};
+  for (const [modeId, tokens] of Object.entries(gameplayS2CTokens)) {
+    for (const token of Object.values(tokens as Record<string, { type: string; perSession: boolean; coalesceKey: string | null }>)) {
+      if (modeId !== "viewFixture") {
+        assert.equal(token.perSession, false, `${token.type} 既有 mode 仍是全房消息`);
+        assert.equal(token.coalesceKey, null);
+      } else {
+        assert.equal(token.perSession, true, `${token.type} 夹具全部 perSession`);
+        expected[token.type] = token.coalesceKey;
+      }
     }
   }
-  assert.deepEqual(Object.keys(GAME_WIRE_PER_SESSION), []);
+  assert.deepEqual({ ...GAME_WIRE_PER_SESSION }, expected);
+  assert.equal(GAME_WIRE_PER_SESSION["s2c.viewFixture.update"], "id", "位置类按 id 合并");
 });

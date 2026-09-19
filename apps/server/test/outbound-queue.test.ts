@@ -45,6 +45,11 @@ test("超限：丢全部可合并类、留全部不可丢类、打重同步标�
     assert.equal(queue.needsResync("s1"), false);
     assert.equal(queue.push("s1", Receipt, { n: 2 }), "overflow");
     assert.equal(queue.needsResync("s1"), true);
+    assert.equal(queue.push("s1", Update, { id: "z" }), "overflow", "标记未清：再来的可合并类照丢");
+    assert.equal(queue.push("s1", Receipt, { n: 3 }), "queued", "标记未清：不可丢类照收");
+    assert.deepEqual(queue.drain("s1").map((message) => message.payload), [{ n: 1 }, { n: 2 }, { n: 3 }], "回执不丢、位置类被丢");
+    queue.push("s1", Receipt, { n: 1 });
+    queue.push("s1", Receipt, { n: 2 });
     assert.deepEqual(queue.drain("s1").map((message) => message.payload), [{ n: 1 }, { n: 2 }], "回执不丢、位置类被丢");
     assert.equal(queue.needsResync("s1"), true, "drain 不清标记（要等 baseline 重发完）");
     queue.clearResync("s1");
