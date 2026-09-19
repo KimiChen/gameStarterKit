@@ -115,12 +115,18 @@ export type KitFragmentDefinition = {
 
 export type KitFragmentResolver = (kitId: string, name: string) => KitFragmentDefinition;
 
+export type RosterVisibility = "public" | "hidden";
+
 export type ParseStateOptions = {
+  /** manifest.roster（MMO MF5a-B4）：hidden ⇒ root ⛔ 声明 players、⛔ ownerReady fragment；缺省 public。 */
+  readonly roster?: RosterVisibility;
   /** codegen 注入的发现根：解析 `<kitId>:<name>` 引用；缺省 = 只认内置 fragment（kit 引用 fail-closed）。 */
   readonly resolveKitFragment?: KitFragmentResolver;
 };
 
 export type GameplayStateDescriptor = {
+  /** 名册可见性（来自 manifest.roster；聚合产物据此决定 players map / player Schema 类是否存在）。 */
+  readonly roster: RosterVisibility;
   readonly schemaVersion: 1;
   readonly root: string;
   readonly types: readonly StateTypeDescriptor[];
@@ -598,8 +604,12 @@ export function parseGameplayStateDescriptor(input: unknown, options: ParseState
     paths.add(type.defaultPath);
   }
   if (!names.has(root)) fail("state.root", `missing root type: ${root}`);
+  const roster: RosterVisibility = options.roster ?? "public";
+  if (roster === "hidden" && fragments.includes("ownerReady")) {
+    fail("state.fragments", "roster:\"hidden\" mode cannot declare the ownerReady fragment (it injects player fields into the roster map that a hidden roster does not have)");
+  }
   const types = withInjectedFragments(declaredTypes, root, fragments, kitFragments);
-  const descriptor: GameplayStateDescriptor = { schemaVersion: 1, root, types, fragments };
+  const descriptor: GameplayStateDescriptor = { roster, schemaVersion: 1, root, types, fragments };
   validateReferences(descriptor);
   assertRootLifecycle(descriptor);
   return descriptor;
@@ -662,6 +672,17 @@ function assertRootLifecycle(descriptor: GameplayStateDescriptor): void {
   if (!type) return; // 缺失 root 类型已由上面的 root 校验报过，⛔ 不重复报
   for (const required of ROOT_LIFECYCLE_FIELDS) {
     const field = type.fields.find((candidate) => candidate.name === required.name);
+    // MMO MF5a-B4（M07 / D4）：roster:"hidden" 的 root ⛔ 不得声明 players——名册只在服务端会话 / 座位表，
+    // 客户端不能枚举视野外玩家身份；public（缺省）沿用「必须声明」的既有闸，生成物字节不变。
+    if (required.name === "players" && descriptor.roster === "hidden") {
+      if (field) {
+        fail(
+          `state.types.${type.name}.players`,
+          "roster:\"hidden\" root must not declare a \"players\" map (D4: the roster stays in the server-side session table, never in Schema)",
+        );
+      }
+      continue;
+    }
     if (!field) {
       fail(
         `state.types.${type.name}`,

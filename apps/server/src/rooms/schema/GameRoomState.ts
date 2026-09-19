@@ -9,6 +9,7 @@ import { IdleRoomState, IdlePlayerState } from "./generated/idle";
 import { PrivateFixtureState, PrivateFixturePlayerState } from "./generated/privateFixture";
 import { SnakeRoomState, SnakePlayerState } from "./generated/snake";
 import { TallyRoomState, TallyPlayerState } from "./generated/tally";
+import { ViewFixtureState } from "./generated/viewFixture";
 
 export { ArenaCapturePlayerState, ArenaCaptureRoomState } from "./generated/arenaCapture";
 export { ArenaDuelPlayerState, ArenaDuelRoomState } from "./generated/arenaDuel";
@@ -18,6 +19,7 @@ export { IdlePlayerState, IdleRoomState } from "./generated/idle";
 export { PrivateFixturePlayerState, PrivateFixtureState } from "./generated/privateFixture";
 export { SnakePlayerState, SnakeRoomState } from "./generated/snake";
 export { TallyPlayerState, TallyRoomState } from "./generated/tally";
+export { ViewFixtureState } from "./generated/viewFixture";
 
 /** Fields every root declares; the gameplay-agnostic GameRoom shell may only touch these. */
 export interface RoomStatePlayerLifecycle {
@@ -30,7 +32,8 @@ export interface RoomStateLifecycle {
     tick: number;
     phase: GamePhaseType;
     matchId: string;
-    players: MapSchema<RoomStatePlayerLifecycle>;
+    /** Present only for roster:"public" modes (ROOM_STATE_ROSTER); hidden rosters live in the server-side seat table (MMO MF5a-B4). */
+    players?: MapSchema<RoomStatePlayerLifecycle>;
 }
 
 /** OwnerReady fragment view (§4.6): only roots whose state.json declares "ownerReady" carry these fields. */
@@ -70,7 +73,21 @@ export const ROOM_STATE_FRAGMENTS = Object.freeze({
     "privateFixture": ["ownerReady", "inviteRoom"],
     "snake": [],
     "tally": [],
+    "viewFixture": [],
 } as const satisfies Record<RoomStateMode, readonly string[]>);
+
+/** Roster visibility per mode (manifest.roster, MMO MF5a-B4 / M07): hidden roots carry no players map. */
+export const ROOM_STATE_ROSTER = Object.freeze({
+    "arenaCapture": "public",
+    "arenaDuel": "public",
+    "ballMove": "public",
+    "dropInFixture": "public",
+    "idle": "public",
+    "privateFixture": "public",
+    "snake": "public",
+    "tally": "public",
+    "viewFixture": "hidden",
+} as const satisfies Record<RoomStateMode, "public" | "hidden">);
 
 export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "arenaCapture": ArenaCaptureRoomState,
@@ -81,6 +98,7 @@ export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "privateFixture": PrivateFixtureState,
     "snake": SnakeRoomState,
     "tally": TallyRoomState,
+    "viewFixture": ViewFixtureState,
 } as const satisfies Record<RoomStateMode, new () => Schema>);
 
 export type RoomStateRootForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_ROOT_CONSTRUCTORS)[M]>;
@@ -95,7 +113,7 @@ export function createRoomStateForMode(mode: string): RoomStateRoot {
     return new Root();
 }
 
-/** mode → player Schema 类；与 ROOM_STATE_ROOT_CONSTRUCTORS 同源于 state.json。 */
+/** mode → player Schema 类；与 ROOM_STATE_ROOT_CONSTRUCTORS 同源于 state.json（roster:"hidden" 的 mode 没有 player 类，不在此表）。 */
 export const ROOM_STATE_PLAYER_CONSTRUCTORS = Object.freeze({
     "arenaCapture": ArenaCapturePlayerState,
     "arenaDuel": ArenaDuelPlayerState,
@@ -105,16 +123,21 @@ export const ROOM_STATE_PLAYER_CONSTRUCTORS = Object.freeze({
     "privateFixture": PrivateFixturePlayerState,
     "snake": SnakePlayerState,
     "tally": TallyPlayerState,
-} as const satisfies Record<RoomStateMode, new () => Schema>);
+} as const satisfies { readonly [M in RoomStateMode]?: new () => Schema });
 
-export type RoomStatePlayerForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[M]>;
-export type RoomStatePlayer = RoomStatePlayerForMode<RoomStateMode>;
-type RoomStatePlayerConstructor = (typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[RoomStateMode];
+/** Modes whose roster is public (they have a player Schema class). */
+export type RoomStatePlayerMode = keyof typeof ROOM_STATE_PLAYER_CONSTRUCTORS;
+export type RoomStatePlayerForMode<M extends RoomStatePlayerMode> = InstanceType<(typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[M]>;
+export type RoomStatePlayer = RoomStatePlayerForMode<RoomStatePlayerMode>;
+type RoomStatePlayerConstructor = (typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[RoomStatePlayerMode];
 
-export function createRoomPlayerForMode<M extends RoomStateMode>(mode: M): RoomStatePlayerForMode<M>;
+export function createRoomPlayerForMode<M extends RoomStatePlayerMode>(mode: M): RoomStatePlayerForMode<M>;
 export function createRoomPlayerForMode(mode: string): RoomStatePlayer;
 export function createRoomPlayerForMode(mode: string): RoomStatePlayer {
     const Player = (ROOM_STATE_PLAYER_CONSTRUCTORS as Readonly<Partial<Record<string, RoomStatePlayerConstructor>>>)[mode];
-    if (!Player) throw new TypeError(`[room-state] unsupported gameplay mode: ${mode}`);
+    if (!Player) {
+        const known = Object.prototype.hasOwnProperty.call(ROOM_STATE_ROSTER, mode);
+        throw new TypeError(known ? `[room-state] hidden roster has no player Schema: ${mode}` : `[room-state] unsupported gameplay mode: ${mode}`);
+    }
     return new Player();
 }

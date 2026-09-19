@@ -32,6 +32,7 @@ import {
   PlayerState,
   ROOM_STATE_PLAYER_CONSTRUCTORS,
   ROOM_STATE_ROOT_CONSTRUCTORS,
+  ROOM_STATE_ROSTER,
 } from "../src/rooms/schema/GameRoomState";
 import {
   assertGameplayArtifactsFresh,
@@ -855,7 +856,12 @@ test("generated root maps are frozen, type-safe and reject unknown modes", () =>
   assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), EXPECTED_GAMEPLAY_IDS);
   // player 侧与 root 侧必须同集：任何「有 root 无 player」的玩法都会让按 mode 造 player
   // 的通用代码退回手写具名类。
-  assert.deepEqual(Object.keys(ROOM_STATE_PLAYER_CONSTRUCTORS), Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS));
+  // MF5a-B4：roster:"hidden" 的 mode 没有 player Schema 类（名册不进 Schema），其余仍必须同集。
+  assert.deepEqual(
+    Object.keys(ROOM_STATE_PLAYER_CONSTRUCTORS),
+    Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).filter((id) => (ROOM_STATE_ROSTER as Readonly<Record<string, string>>)[id] !== "hidden"),
+  );
+  assert.ok(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).some((id) => (ROOM_STATE_ROSTER as Readonly<Record<string, string>>)[id] === "hidden"), "真仓至少一个 hidden 夹具（viewFixture）");
   assert.deepEqual(Object.keys(GAMEPLAY_CATALOG), EXPECTED_GAMEPLAY_IDS);
   assert.equal(Object.isFrozen(ROOM_STATE_VALIDATORS), true);
   assert.equal(Object.isFrozen(ROOM_STATE_ROOT_CONSTRUCTORS), true);
@@ -1133,11 +1139,13 @@ test("真实 descriptor 必须通过生命周期断言，否则上面的反例�
   for (const gameplay of gameplays) {
     const type = gameplay.state.types.find((candidate) => candidate.name === gameplay.state.root);
     assert.ok(type, `missing root type ${gameplay.state.root}`);
+    // MF5a-B4：hidden 名册的 root 没有 players（D4），其余生命周期字段照旧必填。
+    const lifecycle = gameplay.state.roster === "hidden" ? ["tick", "phase", "matchId"] : ["tick", "phase", "matchId", "players"];
     assert.deepEqual(
       ["tick", "phase", "matchId", "players"].filter((name) =>
         type.fields.some((field) => field.name === name)),
-      ["tick", "phase", "matchId", "players"],
-      `${gameplay.state.root} 必须声明全部生命周期字段`,
+      lifecycle,
+      `${gameplay.state.root} 必须声明全部生命周期字段（roster=${gameplay.state.roster}）`,
     );
   }
 });
@@ -1156,7 +1164,7 @@ test("生成的 RoomStateLifecycle 是独立接口，⛔ 不得是某个具体 r
   assert.match(aggregate, /export interface RoomStatePlayerLifecycle \{/u);
   // 别名形态（= GameRoomState）会让 shell 重新拥有 ballMove 的全部字段
   assert.doesNotMatch(aggregate, /RoomStateLifecycle\s*=\s*GameRoomState/u);
-  assert.match(aggregate, /players: MapSchema<RoomStatePlayerLifecycle>;/u);
+  assert.match(aggregate, /players\?: MapSchema<RoomStatePlayerLifecycle>;/u, "MF5a-B4：players 对 hidden 名册可缺席");
   // 生命周期接口不属于 wire 契约，⛔ 不得泄进任何 shared 生成物（协议指纹与镜像耦合）
   for (const [relative, content] of artifacts) {
     if (!relative.startsWith("apps/shared/") && !relative.startsWith("apps/client/")) continue;
@@ -1744,6 +1752,74 @@ test("MF5a-B1 生成：真仓无 perSession token 时空表恒生成；既有 to
       'export const GAME_WIRE_PER_SESSION = {\n    "s2c.snake.delta": "roomEpochId",\n} as const satisfies { readonly [type: string]: string | null };');
     assert.notEqual(expected, before);
     assert.equal(after, expected, "只多出一条 GAME_WIRE_PER_SESSION 表项，S2C / OWNERS / validators / tokens 表字节不变");
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+// ── MMO MF5a-B4：manifest `roster` 开关（docs/MMO.md §5.4 MF5a，M07 / D4）──
+// 变异验证：stateRenderer 删「hidden root ⛔ players」拒绝 → 「hidden + players 拒」转红；渲染器对 hidden 仍写 player 构造表 → 聚合钉转红。
+
+test("MF5a-B4 roster：schema 只认 public / hidden，缺省 public；hidden + players / hidden + ownerReady 一律拒", () => {
+  assert.equal(parseGameplayManifest(puzzleManifest()).roster, "public");
+  assert.equal(parseGameplayManifest({ ...puzzleManifest(), roster: "hidden" }).roster, "hidden");
+  assert.throws(() => parseGameplayManifest({ ...puzzleManifest(), roster: "secret" }), /roster/u);
+  assert.throws(() => parseGameplayManifest({ ...puzzleManifest(), roster: 1 }), /roster/u);
+  // public（缺省）：root 必须声明 players（既有闸）；hidden：root ⛔ 声明 players、⛔ ownerReady
+  const state = puzzleState();
+  assert.doesNotThrow(() => parseGameplayStateDescriptor(state, { roster: "public" }));
+  assert.throws(() => parseGameplayStateDescriptor(state, { roster: "hidden" }), /roster:"hidden" root must not declare a "players" map/u);
+  const hiddenState = puzzleState();
+  const root = stateType(hiddenState, hiddenState.root);
+  root.fields = root.fields.filter((field) => field.name !== "players");
+  hiddenState.types = hiddenState.types.filter((type) => type.name === hiddenState.root);
+  assert.equal(parseGameplayStateDescriptor(hiddenState, { roster: "hidden" }).roster, "hidden");
+  assert.throws(() => parseGameplayStateDescriptor(hiddenState), /root type must declare lifecycle field "players"/u, "同一份 state 缺省 public 仍要 players");
+  assert.throws(() => parseGameplayStateDescriptor({ ...hiddenState, fragments: ["ownerReady"] }, { roster: "hidden" }), /cannot declare the ownerReady fragment/u);
+});
+
+test("MF5a-B4 roster：显式 public 与缺省逐字节相同；hidden 夹具的三端产物无 players、聚合表登记 hidden、既有 mode 产物字节不动", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const modeArtifacts = EXPECTED_GAMEPLAY_IDS.flatMap((id) => [`${SHARED_STATE_DIR}/${id}.ts`, `${SERVER_SCHEMA_DIR}/${id}.ts`]);
+    const snapshot = new Map(modeArtifacts.map((relative) => [relative, readFixtureText(fixture.root, relative)]));
+    const aggregateBefore = readFixtureText(fixture.root, SERVER_AGGREGATE);
+    const catalogBefore = readFixtureText(fixture.root, SHARED_CATALOG);
+
+    // 显式 roster:"public" == 缺省（digest 变了要 bump modeVersion，产物字节不变）
+    const idleManifest = path.join(fixture.root, GAMEPLAY_SOURCES.get("idle") ?? "", "manifest.json");
+    const idle = readJson<MutableManifest>(idleManifest);
+    writeFixtureJson(fixture.root, path.relative(fixture.root, idleManifest), { ...idle, roster: "public", modeVersion: (idle.modeVersion as number) + 1 });
+    writeGameplayArtifacts(fixture.options);
+    for (const relative of modeArtifacts) assert.equal(readFixtureText(fixture.root, relative), snapshot.get(relative), `${relative} 显式 public 必须字节不动`);
+    assert.equal(readFixtureText(fixture.root, SERVER_AGGREGATE), aggregateBefore, "聚合产物不随显式 public 变化");
+    assert.equal(readFixtureText(fixture.root, SHARED_CATALOG).replace(/modeVersion: \d+,/gu, "").replace(/contractDigest: "[0-9a-f]{64}",/gu, ""),
+      catalogBefore.replace(/modeVersion: \d+,/gu, "").replace(/contractDigest: "[0-9a-f]{64}",/gu, ""), "catalog 除 modeVersion / digest 外字节不动");
+
+    // hidden 夹具：root 无 players、无 player 类
+    const hidden = puzzleState();
+    const root = stateType(hidden, hidden.root);
+    root.fields = root.fields.filter((field) => field.name !== "players");
+    hidden.types = hidden.types.filter((type) => type.name === hidden.root);
+    addFixtureMode(fixture.root, "puzzle", { ...puzzleManifest(), roster: "hidden" }, hidden);
+    writeGameplayArtifacts(fixture.options);
+    const shared = readFixtureText(fixture.root, `${SHARED_STATE_DIR}/puzzle.ts`);
+    assert.doesNotMatch(shared, /players/u, "shared 产物无名册字段");
+    assert.doesNotMatch(shared, /MAX_PLAYERS/u);
+    const server = readFixtureText(fixture.root, `${SERVER_SCHEMA_DIR}/puzzle.ts`);
+    assert.doesNotMatch(server, /MapSchema|players/u, "server Schema 无 players map");
+    const aggregate = readFixtureText(fixture.root, SERVER_AGGREGATE);
+    assert.match(aggregate, /"puzzle": "hidden",/u);
+    assert.match(aggregate, /"idle": "public",/u);
+    assert.doesNotMatch(aggregate, /"puzzle": PuzzlePlayerState,/u, "player 构造表 ⛔ 收录 hidden mode");
+    assert.match(aggregate, /"puzzle": PuzzleRoomState,/u);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /"puzzle": \{\n {8}id: "puzzle",\n {8}constantName: "Puzzle",\n {8}modeVersion: 1,\n {8}maxPlayers: 6,\n {8}roster: "hidden",/u);
+    for (const relative of modeArtifacts) assert.equal(readFixtureText(fixture.root, relative), snapshot.get(relative), `${relative} 新增 hidden mode 后既有产物字节不动`);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+    // hidden + players 在 writer 也拒
+    addFixtureMode(fixture.root, "puzzle", { ...puzzleManifest(), roster: "hidden" }, puzzleState());
+    assert.throws(() => writeGameplayArtifacts(fixture.options), /roster:"hidden" root must not declare a "players" map/u);
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
   }

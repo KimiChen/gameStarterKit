@@ -262,7 +262,7 @@ test("重连宽限：dispose 后迟到到期 ⛔ 不跑 onPlayerLeaving / onLeav
     expire(new Error("grace expired"));
     await pending;
     assert.deepEqual(hooks, ["conn:a:false"], "dispose 后迟到的到期不得再跑离场钩子");
-    assert.equal(room.state.players.has("a"), true);
+    assert.equal(room.state.players!.has("a"), true);
 });
 
 test("重连宽限：主动离开（CONSENTED）不进宽限，直接最终离场", async () => {
@@ -277,7 +277,7 @@ test("重连宽限：主动离开（CONSENTED）不进宽限，直接最终离�
     await room.onJoin(a as never, joinOptions());
     await room.onLeave(a as never, 4000);
     assert.equal(reconnectAsked, 0, "CONSENTED 关闭码不得进入 allowReconnection");
-    assert.equal(room.state.players.has("a"), false);
+    assert.equal(room.state.players!.has("a"), false);
 });
 
 // ── S2C 出站 token 闸 ────────────────────────────────────────────────────────

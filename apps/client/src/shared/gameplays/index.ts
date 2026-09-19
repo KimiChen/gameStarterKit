@@ -22,3 +22,4 @@ export * from "./snake/snakeSkinCatalogData";
 export * from "./generated/state/snake";
 export * from "./tally/wire";
 export * from "./generated/state/tally";
+export * from "./generated/state/viewFixture";

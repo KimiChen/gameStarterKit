@@ -246,6 +246,8 @@ export const gameplayC2STokens = {
     "tally": {
         "c2s.tally.tap": TallyTap,
     },
+    "viewFixture": {
+    },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayC2SToken<unknown> } };
 
 /** 每玩法 S2C token 表。 */
@@ -275,6 +277,8 @@ export const gameplayS2CTokens = {
         "s2c.snake.runResult": SnakeRunResult,
     },
     "tally": {
+    },
+    "viewFixture": {
     },
 } as const satisfies { readonly [mode: string]: { readonly [type: string]: GameplayS2CToken<unknown> } };
 
