@@ -1,11 +1,12 @@
 # `lvr` kit 的 3D 场景管线 —— 需求文档
 
-> - 日期：2026-09-18。状态：**需求 v1，未开工**；⛔ 未实施任何 3D 能力。
+> - 日期：2026-09-18。状态：**需求 v1.3（2026-09-19），未开工**；⛔ 未实施任何 3D 能力。
 > - 归属：本文是 [lvr.md](lvr.md) §9.1 拍板「走 B：自建 3D 管线，用 Cocos 的 3D 能力」之后拆出的独立需求，
 >   **由单独的人/单独的排期实现**，⛔ 不占 lvr.md §7 的 100–200 人月核心工程估算。
 > - 逆向源：`../sourceVersion/lvr-1.0.0/`（仓外，只读）。本文引用的类名与目录均为实测。
 > - **2026-09-19 v1.1（对照 Cocos Cyberpunk 校正）**：R1–R8 与 §4–§7 按 [docs/3d.md](docs/3d.md) v1.1 与 [docs/3D-ASSETS.md](docs/3D-ASSETS.md) 改为**消费方口径**（框架给舞台 / 租约 / 纯数学 / 机械件 / 画质分档 / 工具骨架，本文只留内容、shader、特效、数值与授权）。三份预算边界：框架 SC0–SC5（[docs/3D-PLAN.md](docs/3D-PLAN.md)）、lvr 3D 内容（本文）、lvr 核心工程（lvr.md §7）。
 > - **2026-09-19 v1.2**：随 3d.md SD12 / v1.3 对齐——运行时落点改 `apps/Cocos/assets/bundles/kit-lvr[-<map>]/3d/`（小数据表留 `resources/kits/lvr/3d/data/`）；主城 / 世界的 FGUI HUD 走框架 overlay 输入接缝（3d.md §3.3，SC1-B9），⛔ 自建输入仲裁。
+> - **2026-09-19 v1.3**：docs/3d.md **SD10 拍板 lvr 为首发小游戏 / WebGL1 消费方**——新增 §3 R0 平台目标：框架画质 low 档为 lvr 必达档，A1–A5 每阶段附 WebGL1 证据、A3 加微信开发者工具证据；渠道 SDK / 打包 / 审核仍按 lvr.md §9.3 不做。
 > - 治理：实施状态只在本文 §8 回写；⛔ 不进 plan-v5。
 > - **2026-09-19 提升**：本文的框架侧内容已提升为框架级设计 [docs/3d.md](docs/3d.md)（Stage3D 舞台 / AssetLease / `logic/scene3d` 纯数学 / 机械件 / 资产闸 / `tools/art3d`，阶段 SC0–SC5）；本文降为 **lvr 消费方需求**：§3 R1–R8 的框架侧落点见 docs/3d.md §1.2，§4 表中的框架约束以 docs/3d.md §2 为准，§5 A0 并入 SC0。实施状态：框架段在 docs/3d.md §10，lvr 接入仍在本文 §8。
 
@@ -102,6 +103,13 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 > 每条给出**必须**（M）与**可延后**（D）。验收方式统一见 §7。
 
+### R0 平台目标（SD10 首发消费方）
+
+- **M** 首发目标平台 = **微信小游戏 / WebGL1**（docs/3d.md SD10，2026-09-19 拍板 lvr 为首发消费方）：lvr 3D 内容以框架画质 **low 档**为必达档（docs/3D-ASSETS.md §11：只 base 层、无实时阴影、特效并发与同屏单位按 low 行上限，数字 SC0-B4 后冻结）；medium / high 是增益，⛔ 任何 M 需求不得只在 WebGL2 下成立。
+- **M** 每阶段证据：A1–A5 除 Creator 预览证据外，各附一份 Chrome `--disable-webgl2` 的 `creator-preview --perf` 报告（标注 WebGL 版本与画质档）；A3 加微信开发者工具一次人工证据（截图 + 远程 bundle 下载 / 缓存 + 体积），口径同框架 SC4-B3（门，A3 等其退出）。
+- **M** 体积：3D 资产全部走远程 bundle（SD12：`bundles/kit-lvr[-<map>]/`），首屏必需集合单独一个小 bundle；主包 / 分包硬上限按 docs/3D-ASSETS.md §15 冻结值。
+- 边界：渠道账号 / 登录 / 支付 / 广告 / 分享 SDK、渠道打包 / 审核 / 灰度仍按 lvr.md §9.3 ⛔ 不做；本条只要求「小游戏构建可跑、WebGL1 下 low 档达标」的技术证据。小游戏构建平台配置（构建面板 / 引擎模块 / 压缩预设）归框架 settings（SC0-B4 回填内置管线在小游戏构建的可用性与体积），lvr 提需求走 docs/3d.md。
+
 ### R1 场景与相机
 
 - **M** 一个 3D 场景根：页面 `onOpen` 里 `ports.stage3d.acquire(...)` 取框架 Stage3D 租约（透视相机 + 方向光 + 内容根由框架给，docs/3d.md §3），海面 / 天空内容挂租约 `root` 下；⛔ 不自建相机、⛔ 不改场景全局（用 `lease.setGlobals`）。
@@ -113,7 +121,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 ### R2 模型与动画
 
 - **M** 静态模型渲染：建筑、地标、装饰。glTF/FBX → Cocos mesh + material。
-- **M** 大批量单位动画：消费框架 `SkinnedUnits`（引擎预烘焙 `useBakedAnimation` + instancing，SC4；docs/3d.md SD3）。Cyberpunk 校正：官方演示的角色走 Marionette 动画图 + 实时蒙皮，但同屏只有 ≤ 4 个敌人；lvr 世界地图同屏几十~上百行军单位必须走预烘焙 + instancing，近景英雄（数量少、需混合）走 Marionette 动画图（docs/3D-ASSETS.md §8）。远档退化为离线简模 `lod_1` 或公告板。**需求仍只规定「同屏 100 单位 60fps」**，达不到时由框架立项自写采样 shader，⛔ 不在 kit 内自写。
+- **M** 大批量单位动画：消费框架 `SkinnedUnits`（引擎预烘焙 `useBakedAnimation` + instancing，SC4；docs/3d.md SD3）。Cyberpunk 校正：官方演示的角色走 Marionette 动画图 + 实时蒙皮，但同屏只有 ≤ 4 个敌人；lvr 世界地图同屏几十~上百行军单位必须走预烘焙 + instancing，近景英雄（数量少、需混合）走 Marionette 动画图（docs/3D-ASSETS.md §8）。远档退化为离线简模 `lod_1` 或公告板。**需求仍只规定「同屏 100 单位 60fps」**（WebGL2 / medium 档；low 档按 docs/3D-ASSETS.md §11 的同屏单位上限并走退化路径，R0），达不到时由框架立项自写采样 shader，⛔ 不在 kit 内自写。
 - **M** 2D 骨骼：英雄立绘与战斗表演。工程级 Spine 运行时选 **4.2**（docs/3d.md SD5；Cyberpunk 同样在工程里选定单一版本），原作 3.8 导出需重导出。
 - **D** Timeline 式演出编排（首版用 Cocos `tween` + 动画图事件替代；Cyberpunk 用 Marionette 动画图承担状态机与事件）。
 
@@ -173,6 +181,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 | 约束 | 出处 |
 | --- | --- |
+| 首发平台 = 微信小游戏 / WebGL1，画质 low 档必达、每阶段附 WebGL1 证据（R0） | docs/3d.md §9.1 SD10（2026-09-19 拍板 lvr 为首发消费方） |
 | lvr 自有代码落在 `apps/client/src/kits/lvr/**`；3D 重资产落在 `apps/Cocos/assets/bundles/kit-lvr[-<map>]/3d/**`、小数据表 `resources/kits/lvr/3d/data/`（SD12）；舞台 / 租约 / 纯数学 / 机械件 / 画质分档**消费框架**（docs/3d.md §2），⛔ 不自建 | 所有权推导集（`apps/server/tools/plugin/ownership.ts`）+ docs/3d.md §2 划线 |
 | `logic/` ⛔ 不 import `cc` / `fairygui-cc`，依赖注入、Node 无头可测 | 铁律 9 + `apps/client/test/logic-purity.test.ts` |
 | `view/` 只做绑定与渲染，⛔ 不做业务判断 | `docs/CLIENT.md` §3 |
@@ -190,11 +199,11 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 | 阶段 | 内容 | 判据 |
 | --- | --- | --- |
 | **A0 可行性 spike**（并入框架 SC0） | 用 UnityPy 从原作 bundle 取 **1 个建筑模型 + 1 套单位动画 + 1 张海面贴图**，在框架 SC0 的 CDP 探针里作第二份证据渲出来 | ⚠ **这是门**：Unity 材质/shader 不能自动转，若此步走不通需重估整条管线；框架接缝五项判据归 SC0 |
-| **A1 场景骨架**（← SC1–SC3） | 取 Stage3D 租约 + 海面 EffectAsset + 静态地表 + `cameraRig` / `lodBands` 常量 | 能在 `kind:"cocos"` 页里平移缩放，60fps（`creator-preview --perf`） |
-| **A2 实体层**（← SC3） | `EntityPool` 两级档 + `chunkStreamer` + `assetPlan` + 19 种实体预制 / 离线 `lod_1` | 同屏 100 实体 60fps，进出视口引用归零 |
-| **A3 单位动画**（← SC4） | `SkinnedUnits`（预烘焙 + instancing）+ 行军线简模 | 同屏 100 个动画单位 60fps |
-| **A4 主城**（← SC3、SC4） | 三档细节状态机（kit `logic/`）+ 建筑四态 + 建筑特效挂点表 + 细节层按画质档 | 主城三档切换无卡顿 |
-| **A5 特效与表演**（← SC4） | `Vfx` 池 + 20–30 个高频特效（每特效一目录）+ Spine 4.2 立绘 | 战斗表演可看 |
+| **A1 场景骨架**（← SC1–SC3） | 取 Stage3D 租约 + 海面 EffectAsset + 静态地表 + `cameraRig` / `lodBands` 常量 | 能在 `kind:"cocos"` 页里平移缩放，60fps（`creator-preview --perf`）；WebGL1 证据一份（R0） |
+| **A2 实体层**（← SC3） | `EntityPool` 两级档 + `chunkStreamer` + `assetPlan` + 19 种实体预制 / 离线 `lod_1` | 同屏 100 实体 60fps，进出视口引用归零；WebGL1 low 档按 3D-ASSETS §11 上限达标（R0） |
+| **A3 单位动画**（← SC4） | `SkinnedUnits`（预烘焙 + instancing）+ 行军线简模 | 同屏 100 个动画单位 60fps；WebGL1 退化路径（预烘焙不可用 → 实时蒙皮上限 + 公告板远档）+ 微信开发者工具证据（R0；等 SC4-B3 门） |
+| **A4 主城**（← SC3、SC4） | 三档细节状态机（kit `logic/`）+ 建筑四态 + 建筑特效挂点表 + 细节层按画质档 | 主城三档切换无卡顿；low 档 details 层不加载（R3）且 WebGL1 证据一份（R0） |
+| **A5 特效与表演**（← SC4） | `Vfx` 池 + 20–30 个高频特效（每特效一目录）+ Spine 4.2 立绘 | 战斗表演可看；low 档特效并发上限内（R0） |
 
 ---
 
@@ -209,6 +218,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 | **~~第三方库 = 框架 PR~~** | 已消解：作者态导入，运行时无 loader（docs/3d.md SD4） |
 | **烘焙工作流** | 静态光 / 反射探针在 Creator 内人工烘焙（Cyberpunk LightFX 做法），产物体积进预算；谁烘、烘完怎么 apply 回预制并入库，在 A1 前定（docs/3D-ASSETS.md §6） |
 | **仓内零 3D 先例** | 框架 SC1 的 `stage3dFixture` 与 `stage3d-dev.scene` 是先例；做法对照 Cocos Cyberpunk（docs/3D-ASSETS.md §1） |
+| **WebGL1 首发（SD10）** | 预烘焙蒙皮 / instancing / ASTC 在 WebGL1 不保证可用（docs/3d.md §8）；框架 SC4-B3 是门，A3 等其退出；若 low 档退化后同屏单位达不到 3D-ASSETS §11 上限，重估 R2 数字或改公告板远档，⛔ 不为 lvr 单独放宽档位 |
 | **素材授权** | 与 lvr.md §6.2 同一口径：走复用，但需在 `apps/kits/lvr/README.md` 建与 snake 同规格的素材授权台账 |
 
 ---
@@ -222,6 +232,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 - **Creator 真引擎预览证据**：截图 + `report.json` 落 `docs/evidence/creator-<date>/lvr-3d/`，console 为空
 - **性能实证**：同屏实体数 × 帧率，用 `node tools/creator-preview/run.mjs <lvr 剧本> --perf`（帧时 / draw call / 三角数 / GFX 内存，标注画质档与设备；⛔ `perf:client` 是 Node 无头探针，不测 GPU）
 - **资源泄漏实证**：反复进出视口/切换场景 N 次后显存回到基线
+- **WebGL1 证据**（R0，SD10 首发消费方）：每阶段一份 `--disable-webgl2` 的 `--perf` 报告；A3 加微信开发者工具人工证据
 
 ---
 

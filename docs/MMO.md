@@ -1087,6 +1087,6 @@ apps/client/test/mmodemo-logic.test.ts
 
 2026-09-19 v1.2：按 [MMO-PLAN.md](MMO-PLAN.md) §7 施工细化回写——P1 `world_instance.write_seq` 随 MF4 建表；P2 `world_transfer` 卸载闸挪到 MF8；P3 `/admin/notice` 是新 HTTP 端点（契约表 + codegen:http）；P4 附近聊天 core token 落 `protocol/messages.ts` + `wire-vectors/core.ts`；P5 `withKitWorkerTx` 首句复用 `renewLeaseGuard`；P6 `world-bench` 输出目录已核不受 `verify:perf` 影响；P7 进程形态拍板 D27（§4.2 新段、MF4 / MF8 / MF10 三处改口径、§6.3 注入点）。⛔ 不构成阶段完成。
 
-2026-09-19 3D 轨道同步（[3d.md](3d.md) SD9–SD12 拍板）：mmo 世界视图首版 2D 公告板 + 接口 3D-ready（§7.5 `IPresentationMap.model?`、§7.6）；小游戏 / WebGL1 为首版目标；3D 资产每包一个 bundle。⛔ 不构成任何 MMO 阶段完成，不改 MF / MK 前置。3D-33（同日）：mmo FGUI HUD 与世界的输入归属依赖 3d.md SC1-B9（gameplay 载体闸）或退路（HUD 画在世界节点内），MK1 接 HUD 前须满足其一（§7.6）。
+2026-09-19 3D 轨道同步（[3d.md](3d.md) SD9–SD12 拍板）：mmo 世界视图首版 2D 公告板 + 接口 3D-ready（§7.5 `IPresentationMap.model?`、§7.6）；小游戏 / WebGL1 为首版目标（首发消费方 = lvr，mmo 不承担 SD10 门）；3D 资产每包一个 bundle。⛔ 不构成任何 MMO 阶段完成，不改 MF / MK 前置。3D-33（同日）：mmo FGUI HUD 与世界的输入归属依赖 3d.md SC1-B9（gameplay 载体闸）或退路（HUD 画在世界节点内），MK1 接 HUD 前须满足其一（§7.6）。
 
 下一动作：MF0 / MF1 / MF3 / MF6a / MF7a / MF9 / MF2 已退出（波 1 全部退出）→ MF5a（← MF1 + MF3）可开工，MF4（门③，← MF2 + MF3；③ 需 ① 完成并 drain pending outbox、② 回归绿，均已满足）可开工，MF11 的前置 MF9 已满足，PS1 + PS4 入口拆分可随时落地（§5.2）；MF6b 等 MF4 → MF5a 退出即 slg 2b 可开工；门① 已过，线上部署方按 SERVER.md §8.2 SOP 执行迁移；MF7a 已退出 ⇒ slg / lvr 无人在线结算可开工（已通知 slg.md §0.1 / lvr.md §4.3），各自落地后在此回写一行。MF0 行登记的基线红项（Creator 镜像 `.meta` 同步——现连带 `test:sync-mirror-matrix` 8 例、`docs/evidence` 跟踪文件政策）仍待处置，⛔ 不算 MMO 阶段偏差。
