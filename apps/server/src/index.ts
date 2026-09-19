@@ -20,6 +20,7 @@ import {
 import { clearCharacterReadyFlights, drainCharacterReadyFlights } from "./player/character";
 import { closeWebPlatformClient } from "./platform/webPlatformClient";
 import { stopMailWakeLoop } from "./websocket/push";
+import { startPushConsumer, stopPushConsumer } from "./core/push/pushBus";
 import {
   createOrderedProducerStopper,
   installShutdownAggregator,
@@ -39,6 +40,7 @@ const stopBackgroundProducers = createOrderedProducerStopper([
   { name: "kick-consumer", stop: stopKickConsumer },
   { name: "character-repair", stop: stopCharacterRepairWorker },
   { name: "mailwake", stop: stopMailWakeLoop },
+  { name: "push-bus", stop: stopPushConsumer },
 ]);
 
 async function finishShutdown(): Promise<void> {
@@ -78,6 +80,10 @@ try {
   // 控制总线踢人（DUAL_MODE §2.3 / M12d）：本节点独立游标消费 stream:kick → 自筛踢在线连接
   setKickHandler(kickUser);
   startKickConsumer();
+
+  // 投递总线（MMO.md §6.3 / MF6a-B2）：本节点独立游标消费 stream:push → 本地在线表落地
+  //（本地落地端由 websocket/push.ts 加载时注入；world 进程只挂 room signal，D27）。
+  startPushConsumer();
 
   // 角色档已创建但 WebPlatform PUT 登记失败的 durable 修复：网关多实例可重复处理，远端 PUT 幂等；
   // worker 只在成功后清 intent，故崩溃不丢。registry 会等待当前有界 pass。

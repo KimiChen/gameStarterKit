@@ -340,6 +340,8 @@ export class LobbyRoom extends Room<{ client: LobbyClient }> {
     await registerAllRoutes(); // 扫描 websocket/<域>/<接口>.ts 注册（异步就绪前房间不接客，无竞态窗口）
     if (!isAdmissionOpen()) { return; }
     startMailWakeLoop(); // 邮件唤醒流消费（本节点）
+    // 投递总线消费（MMO.md §6.3）⛔ 不在这里起：进程入口按形态显式起（index.ts / D27 各 entry），
+    // 与 kick 消费同口径——测试进程按需 startPushConsumer()。
     // presence 心跳（MMO.md §6.2）：TTL 提示语义靠它续命；崩溃后 ≤ PRESENCE_TTL_S 自愈。
     try {
       this.clock.setInterval(() => this.heartbeatPresence(), PRESENCE_HEARTBEAT_S * 1000);
