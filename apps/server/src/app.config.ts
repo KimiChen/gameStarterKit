@@ -4,7 +4,7 @@ import { RoomName } from "@game/shared";
 import { GameRoom } from "./rooms/GameRoom";
 import { assertRoomProfilesConfigured } from "./rooms/core/RoomProfile";
 import { registerDefaultGameModes } from "./rooms/modes/catalog";
-import { registerWorldRuntime, worldRooms } from "./world.config";
+import { registerWorldRuntime, worldRooms, worldServerOptions } from "./world.config";
 import { LobbyRoom } from "./websocket/LobbyRoom";
 import { AUTH_PROVIDER, MAX_WS_PAYLOAD_BYTES } from "./core/infra/config";
 import { routes } from "./http/index";
@@ -74,7 +74,9 @@ export const server = defineServer({
         }
     },
 
-    // 横向扩展时改这里即可，房间代码不动：
+    // 横向扩展：MMO MF10-B2——`WORLD_MULTI_PROCESS=1` 时 world.config.ts 装 RedisDriver / RedisPresence / publicAddress（REDIS_COLYSEUS_URL
+    // 必须是独立 Redis 实例，config.ts 加载期断言），未启用时此处为空（单进程缺省）；拆分后只有 world 进程需要它（D27）。
+    ...worldServerOptions(),
     // presence: new RedisPresence(), driver: new RedisDriver(), publicAddress: "...",
     // ⚠ 多项目共用 Redis 的 PROJECT_ID 前缀只覆盖业务键（keys.ts）：RedisDriver/RedisPresence
     //   用固定键名 roomcaches/roomcount，不可加前缀（tools/m0/colyseus-redis-probe.ts 实测）。

@@ -6,6 +6,7 @@
 
 // ───────────────────────── 环境变量 ─────────────────────────
 
+import { assertWorldMultiProcessRedis } from "./worldMultiProcess";
 import { readFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { dirname, join } from "node:path";
@@ -372,6 +373,20 @@ export const WORLD_PUBLIC_WS_URL = (process.env.WORLD_PUBLIC_WS_URL ?? "").trim(
 if (WORLD_PUBLIC_WS_URL !== "" && !/^wss?:\/\/[A-Za-z0-9.-]+(:\d{1,5})?$/u.test(WORLD_PUBLIC_WS_URL)) {
   throw new Error(`WORLD_PUBLIC_WS_URL(${WORLD_PUBLIC_WS_URL}) 必须是 ws:// 或 wss:// origin（无路径）`);
 }
+/**
+ * 多 world 进程（MMO MF10-B2 / D27）：`WORLD_MULTI_PROCESS=1` 时 world 进程装 RedisDriver / RedisPresence（多个 world 进程共享房间列表 / IPC），
+ * 承载它们的 `REDIS_COLYSEUS_URL` 必须是与 durable / coord 不同的 Redis **实例**（加载期断言，错配即拒启；独立 db 不算）。
+ * `WORLD_PUBLIC_ADDRESS`（host[:port]，无 scheme）= Colyseus seat reservation 回给客户端的本节点地址；缺省空 = 单节点。生产启用是部署门。
+ */
+export const WORLD_MULTI_PROCESS = envInt("WORLD_MULTI_PROCESS", 0);
+export const REDIS_COLYSEUS_URL = (process.env.REDIS_COLYSEUS_URL ?? "").trim();
+export const WORLD_PUBLIC_ADDRESS = (process.env.WORLD_PUBLIC_ADDRESS ?? "").trim();
+if (WORLD_PUBLIC_ADDRESS !== "" && !/^[A-Za-z0-9.-]+(:\d{1,5})?$/u.test(WORLD_PUBLIC_ADDRESS)) {
+  throw new Error(`WORLD_PUBLIC_ADDRESS(${WORLD_PUBLIC_ADDRESS}) 必须是 host[:port]（无 scheme / 路径）`);
+}
+export const WORLD_MULTI_PROCESS_VERDICT = assertWorldMultiProcessRedis({
+  multiProcess: WORLD_MULTI_PROCESS, colyseusUrl: REDIS_COLYSEUS_URL, durableUrl: REDIS_DURABLE_URL(), coordUrl: REDIS_COORD_URL(),
+});
 /** 每图分线上限（MMO MF10-B1；`WorldDirectory.allocate` 满员开新线到此为止，指定 line ≥ 上限即拒；候选数字）。 */
 export const WORLD_MAX_LINES_PER_MAP = envInt("WORLD_MAX_LINES_PER_MAP", 8);
 /** 分线分配的满员阈值（MMO MF10-B1；缺省 = §11.2 冻结的 mmoWorld maxPlayers 100；房内硬上限仍是 mode.capacity）。 */
