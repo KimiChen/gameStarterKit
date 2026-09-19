@@ -10,6 +10,7 @@
 - `rpc.ts`：`defineRpc` 类型胶水与本地同步阻塞预算探针。
 - `dispatcher.ts`：路由查找 → 令牌桶 → Zod parse → 可选幂等占位 → handler timeout/error mapping。
 - `push.ts`：只登记 Lobby 在线连接，提供 user/guild/all push 与 mailwake consumer。
+- MMO 域（`docs/MMO.md`）：`party/`、`chat/`（MF6a 社交原语 RPC）与 `world/`（`enter` / `resolveTransfer`，MF8 / MF10：分线分配 + 一次性凭据 + 交接解析）；领域逻辑在 `../core/{party,chat,world}/`，handler 只做校验与装配。
 
 新增 RPC：先在 shared `protocol/lobbyRpc/domains/<域>.ts` 声明路由、类型、validator 与领域错误码（改既有域须
 同批递增 `contractVersion`），运行 `npm --workspace @game/server run codegen:plugins` 刷新 `registry.generated.ts`

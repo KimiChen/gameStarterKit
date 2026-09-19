@@ -8,8 +8,20 @@
       "defaultEntry": "apps/shared/src/index.ts",
       "sourceOfTruth": "apps/shared/src",
       "wireBoundary": "apps/shared/src/protocol",
-      "verification": [{ "kind": "root", "script": "typecheck" }, { "kind": "root", "script": "verify:sync" }],
-      "docs": ["docs/OVERVIEW.md", "AGENTS.md"]
+      "verification": [
+        {
+          "kind": "root",
+          "script": "typecheck"
+        },
+        {
+          "kind": "root",
+          "script": "verify:sync"
+        }
+      ],
+      "docs": [
+        "docs/OVERVIEW.md",
+        "AGENTS.md"
+      ]
     },
     {
       "id": "client-session-and-navigation",
@@ -17,8 +29,16 @@
       "defaultEntry": "apps/client/src/Main.ts",
       "sourceOfTruth": "apps/client/src/net/session.ts",
       "wireBoundary": "apps/client/src/net",
-      "verification": [{ "kind": "root", "script": "test:client" }],
-      "docs": ["docs/plan-v5.md", "docs/CLIENT.md"]
+      "verification": [
+        {
+          "kind": "root",
+          "script": "test:client"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/CLIENT.md"
+      ]
     },
     {
       "id": "game-room-runtime",
@@ -26,8 +46,18 @@
       "defaultEntry": "apps/server/src/rooms/GameRoom.ts",
       "sourceOfTruth": "apps/server/src/rooms/GameRoom.ts",
       "wireBoundary": "apps/shared/src/protocol/rooms.ts",
-      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }],
-      "docs": ["docs/plan-v5.md", "docs/SERVER.md", "apps/server/src/rooms/README.md"]
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/SERVER.md",
+        "apps/server/src/rooms/README.md"
+      ]
     },
     {
       "id": "asset-effect-and-zone-isolation",
@@ -35,8 +65,18 @@
       "defaultEntry": "apps/server/src/websocket/shop/purchase.ts",
       "sourceOfTruth": "apps/server/src/core/infra/redisScripts.ts",
       "wireBoundary": "apps/shared/src/protocol/lobbyRpc/economy.ts",
-      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
-      "docs": ["docs/plan-v5.md", "docs/SERVER.md", "docs/DUAL_MODE.md"]
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/SERVER.md",
+        "docs/DUAL_MODE.md"
+      ]
     },
     {
       "id": "outbox-relayer",
@@ -44,9 +84,22 @@
       "defaultEntry": "apps/server/src/core/economy/relayer.ts",
       "sourceOfTruth": "apps/server/src/core/economy/relayer.ts",
       "wireBoundary": "apps/server/src/core/economy/outbox.ts",
-      "launch": { "kind": "workspace", "workspace": "@game/server", "script": "relayer" },
-      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
-      "docs": ["docs/EXTRAS.md", "docs/SERVER.md"]
+      "launch": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "relayer"
+      },
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/EXTRAS.md",
+        "docs/SERVER.md"
+      ]
     },
     {
       "id": "character-ready",
@@ -54,8 +107,17 @@
       "defaultEntry": "apps/server/src/websocket/LobbyRoom.ts",
       "sourceOfTruth": "apps/server/src/player/character.ts",
       "wireBoundary": "apps/shared/src/protocol/lobbyRpc/user.ts",
-      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test:int" }],
-      "docs": ["docs/plan-v5.md", "docs/SERVER.md"]
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/SERVER.md"
+      ]
     },
     {
       "id": "process-lifecycle",
@@ -63,8 +125,17 @@
       "defaultEntry": "apps/server/src/index.ts",
       "sourceOfTruth": "apps/server/src/core/infra/lifecycle.ts",
       "wireBoundary": "apps/server/src/index.ts",
-      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }],
-      "docs": ["docs/plan-v5.md", "docs/SERVER.md"]
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/SERVER.md"
+      ]
     },
     {
       "id": "gameplay-boundary",
@@ -72,8 +143,16 @@
       "defaultEntry": "apps/client/src/gameplay/catalog.ts",
       "sourceOfTruth": "apps/client/src/logic/gameplay",
       "wireBoundary": "apps/client/src/net/RoomClient.ts",
-      "verification": [{ "kind": "root", "script": "test:client" }],
-      "docs": ["docs/plan-v5.md", "docs/CLIENT.md"]
+      "verification": [
+        {
+          "kind": "root",
+          "script": "test:client"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/CLIENT.md"
+      ]
     },
     {
       "id": "view-logic-lifecycle",
@@ -81,8 +160,20 @@
       "defaultEntry": "apps/client/src/view/ViewMgr.ts",
       "sourceOfTruth": "apps/client/src/view",
       "wireBoundary": "apps/client/src/view/pages.ts",
-      "verification": [{ "kind": "root", "script": "test:fgui" }, { "kind": "root", "script": "typecheck:client" }],
-      "docs": ["docs/plan-v5.md", "docs/CLIENT.md"]
+      "verification": [
+        {
+          "kind": "root",
+          "script": "test:fgui"
+        },
+        {
+          "kind": "root",
+          "script": "typecheck:client"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/CLIENT.md"
+      ]
     },
     {
       "id": "wire-runtime-contract",
@@ -90,8 +181,22 @@
       "defaultEntry": "apps/client/src/net/WebSocketClient.ts",
       "sourceOfTruth": "apps/shared/src/protocol",
       "wireBoundary": "apps/shared/src/protocol/http.ts",
-      "verification": [{ "kind": "root", "script": "test:client" }, { "kind": "workspace", "workspace": "@game/server", "script": "test" }],
-      "docs": ["docs/plan-v5.md", "docs/SERVER.md", "docs/CLIENT.md"]
+      "verification": [
+        {
+          "kind": "root",
+          "script": "test:client"
+        },
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/SERVER.md",
+        "docs/CLIENT.md"
+      ]
     },
     {
       "id": "fgui-resource-contract",
@@ -99,8 +204,21 @@
       "defaultEntry": "tools/fgui-codegen/cli.ts",
       "sourceOfTruth": "apps/art/fairygui",
       "wireBoundary": "apps/client/src/view",
-      "verification": [{ "kind": "root", "script": "test:fgui" }, { "kind": "root", "script": "verify:fgui" }],
-      "docs": ["docs/plan-v5.md", "tools/fgui-codegen/README.md", "apps/art/fairygui/README.md"]
+      "verification": [
+        {
+          "kind": "root",
+          "script": "test:fgui"
+        },
+        {
+          "kind": "root",
+          "script": "verify:fgui"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "tools/fgui-codegen/README.md",
+        "apps/art/fairygui/README.md"
+      ]
     },
     {
       "id": "server-infrastructure-boundaries",
@@ -108,8 +226,22 @@
       "defaultEntry": "apps/server/src/core/infra/config.ts",
       "sourceOfTruth": "apps/server/src/core/infra",
       "wireBoundary": "apps/server/src/core/infra/redisRoute.ts",
-      "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }, { "kind": "workspace", "workspace": "@game/server", "script": "smoke:framework" }],
-      "docs": ["docs/plan-v5.md", "docs/SERVER.md"]
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        },
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "smoke:framework"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/SERVER.md"
+      ]
     },
     {
       "id": "area-directory-determinism",
@@ -117,8 +249,17 @@
       "defaultEntry": "apps/client/src/net/serverSession.ts",
       "sourceOfTruth": "apps/client/src/net/serverSession.ts",
       "wireBoundary": "apps/shared/src/protocol/http.ts",
-      "verification": [{ "kind": "root", "script": "test:client" }],
-      "docs": ["docs/plan-v5.md", "docs/CLIENT.md", "docs/WEBPLATFORM.md"]
+      "verification": [
+        {
+          "kind": "root",
+          "script": "test:client"
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "docs/CLIENT.md",
+        "docs/WEBPLATFORM.md"
+      ]
     },
     {
       "id": "verification-and-locks",
@@ -126,47 +267,179 @@
       "defaultEntry": "scripts/verify-ecs.mjs",
       "sourceOfTruth": "scripts",
       "wireBoundary": "scripts/protocol.fingerprint",
-      "verification": [{
-        "kind": "root",
-        "script": "verify:core",
-        "requires": [
-          { "kind": "root", "script": "verify:vendor" },
-          { "kind": "root", "script": "verify:protected-paths" },
-          { "kind": "root", "script": "verify:inventory" },
-          { "kind": "root", "script": "test:inventory" },
-          { "kind": "root", "script": "test:client" },
-          { "kind": "root", "script": "check:uniflex-ui" },
-          { "kind": "root", "script": "typecheck:uniflex-ui" }
-        ]
-      }],
-      "docs": ["docs/plan-v5.md", "README.md"]
+      "verification": [
+        {
+          "kind": "root",
+          "script": "verify:core",
+          "requires": [
+            {
+              "kind": "root",
+              "script": "verify:vendor"
+            },
+            {
+              "kind": "root",
+              "script": "verify:protected-paths"
+            },
+            {
+              "kind": "root",
+              "script": "verify:inventory"
+            },
+            {
+              "kind": "root",
+              "script": "test:inventory"
+            },
+            {
+              "kind": "root",
+              "script": "test:client"
+            },
+            {
+              "kind": "root",
+              "script": "check:uniflex-ui"
+            },
+            {
+              "kind": "root",
+              "script": "typecheck:uniflex-ui"
+            }
+          ]
+        }
+      ],
+      "docs": [
+        "docs/plan-v5.md",
+        "README.md"
+      ]
+    },
+    {
+      "id": "world-room-runtime",
+      "category": "core",
+      "defaultEntry": "apps/server/src/rooms/WorldRoom.ts",
+      "sourceOfTruth": "apps/server/src/rooms/core/WorldRuntime.ts",
+      "wireBoundary": "apps/shared/src/protocol/rooms.ts",
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        },
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/MMO.md",
+        "docs/SERVER.md",
+        "apps/server/src/rooms/README.md"
+      ]
+    },
+    {
+      "id": "kit-worker",
+      "category": "core",
+      "defaultEntry": "apps/server/src/workers/kitWorker.ts",
+      "sourceOfTruth": "apps/server/src/core/infra/kitApi.ts",
+      "wireBoundary": "apps/server/src/rooms/core/WorldEventPort.ts",
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        },
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/MMO.md",
+        "docs/KIT.md",
+        "docs/SERVER.md"
+      ]
+    },
+    {
+      "id": "social-primitives",
+      "category": "core",
+      "defaultEntry": "apps/server/src/websocket/party/create.ts",
+      "sourceOfTruth": "apps/server/src/core/party/party.ts",
+      "wireBoundary": "apps/shared/src/protocol/lobbyRpc/domains/party.ts",
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        },
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/MMO.md",
+        "docs/SERVER.md"
+      ]
     }
   ],
   "defaultModules": [
     {
       "entry": "apps/server/src/index.ts",
-      "capabilities": ["process-lifecycle", "game-room-runtime", "asset-effect-and-zone-isolation", "character-ready", "server-infrastructure-boundaries"],
-      "docs": ["docs/SERVER.md", "docs/OVERVIEW.md"]
+      "capabilities": [
+        "process-lifecycle",
+        "game-room-runtime",
+        "asset-effect-and-zone-isolation",
+        "character-ready",
+        "server-infrastructure-boundaries"
+      ],
+      "docs": [
+        "docs/SERVER.md",
+        "docs/OVERVIEW.md"
+      ]
     },
     {
       "entry": "apps/server/src/app.config.ts",
-      "capabilities": ["game-room-runtime", "character-ready", "wire-runtime-contract", "server-infrastructure-boundaries"],
-      "docs": ["docs/SERVER.md", "docs/OVERVIEW.md"]
+      "capabilities": [
+        "game-room-runtime",
+        "character-ready",
+        "wire-runtime-contract",
+        "server-infrastructure-boundaries"
+      ],
+      "docs": [
+        "docs/SERVER.md",
+        "docs/OVERVIEW.md"
+      ]
     },
     {
       "entry": "apps/client/src/Main.ts",
-      "capabilities": ["client-session-and-navigation", "gameplay-boundary", "view-logic-lifecycle", "wire-runtime-contract", "area-directory-determinism"],
-      "docs": ["docs/CLIENT.md", "docs/OVERVIEW.md"]
+      "capabilities": [
+        "client-session-and-navigation",
+        "gameplay-boundary",
+        "view-logic-lifecycle",
+        "wire-runtime-contract",
+        "area-directory-determinism"
+      ],
+      "docs": [
+        "docs/CLIENT.md",
+        "docs/OVERVIEW.md"
+      ]
     },
     {
       "entry": "apps/shared/src/index.ts",
-      "capabilities": ["shared-contract"],
-      "docs": ["docs/OVERVIEW.md"]
+      "capabilities": [
+        "shared-contract"
+      ],
+      "docs": [
+        "docs/OVERVIEW.md"
+      ]
     },
     {
       "entry": "apps/Cocos/assets/scene.scene",
-      "capabilities": ["client-session-and-navigation", "gameplay-boundary"],
-      "docs": ["docs/CLIENT.md"]
+      "capabilities": [
+        "client-session-and-navigation",
+        "gameplay-boundary"
+      ],
+      "docs": [
+        "docs/CLIENT.md"
+      ]
     }
   ],
   "defaultScene": "apps/Cocos/assets/scene.scene",
@@ -174,80 +447,158 @@
     "corePlan": "docs/plan-v5.md",
     "extraCapabilities": "docs/EXTRAS.md"
   },
-  "referenceDocs": ["todo-godogen.md", "docs/Non-intrusive.md"],
+  "referenceDocs": [
+    "todo-godogen.md",
+    "docs/Non-intrusive.md"
+  ],
   "workspaceCommandScope": [
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "dev" },
-      "supersededBy": { "kind": "root", "script": "dev" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "dev"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "dev"
+      },
       "reason": "根 dev 直接转调该脚本，助手命令表登记根入口即可"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "dev:server-only" },
-      "supersededBy": { "kind": "root", "script": "dev:server-only" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "dev:server-only"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "dev:server-only"
+      },
       "reason": "dev 串链（stack+bootstrap+smoke:framework）之外的单进程 watch 逃生口；根 dev:server-only 直接转调"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "start" },
-      "supersededBy": { "kind": "root", "script": "start:server" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "start"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "start:server"
+      },
       "reason": "根 start:server 直接转调该脚本，助手命令表登记根入口即可"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "typecheck" },
-      "supersededBy": { "kind": "root", "script": "typecheck" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "typecheck"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "typecheck"
+      },
       "reason": "根 typecheck 聚合调用，单独登记会与聚合入口重复"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/shared", "script": "typecheck" },
-      "supersededBy": { "kind": "root", "script": "typecheck" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/shared",
+        "script": "typecheck"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "typecheck"
+      },
       "reason": "根 typecheck 聚合调用，单独登记会与聚合入口重复"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "stack:stop" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "stack:stop"
+      },
       "documentedIn": "docs/SERVER.md",
       "reason": "stack 的配对停止命令，随本地依赖栈说明一并登记"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "relayer" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "relayer"
+      },
       "documentedIn": "docs/EXTRAS.md",
       "reason": "常驻 outbox relayer 进程，不随 dev 启动，属额外功能边界"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "freeze-worker" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "freeze-worker"
+      },
       "documentedIn": "docs/EXTRAS.md",
       "reason": "默认关闭的归档 worker，属额外功能边界"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "settle" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "settle"
+      },
       "documentedIn": "docs/EXTRAS.md",
       "reason": "常驻结算 consumer 进程，不随 dev 启动，属额外功能边界"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "worker" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "worker"
+      },
       "documentedIn": "docs/SERVER.md",
       "reason": "kit 后台 worker 进程入口（MMO MF7a：npm --workspace @game/server run worker -- <kit>:<worker>），按 kit.json.workers[] 登记装载，不随 dev 启动"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:http" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "codegen:http"
+      },
       "documentedIn": "docs/SERVER.md",
       "reason": "生成物刷新命令，登记在 HTTP endpoint 章节而非日常命令表"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:gameplays" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "codegen:gameplays"
+      },
       "documentedIn": "docs/OVERVIEW.md",
       "reason": "生成物刷新命令，登记在标准开发动线而非日常命令表"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "codegen:plugins" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "codegen:plugins"
+      },
       "documentedIn": "docs/SERVER.md",
       "reason": "生成物刷新命令，登记在 Lobby RPC 章节而非日常命令表"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "loadtest" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "loadtest"
+      },
       "documentedIn": "docs/EXTRAS.md",
       "reason": "当前入房参数已失效，登记为不可用工具而非开发动线命令"
     },
     {
-      "command": { "kind": "workspace", "workspace": "@game/server", "script": "plugin" },
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "plugin"
+      },
       "documentedIn": "docs/PLUGIN.md",
       "reason": "插件 pack/install/uninstall/check 命令，登记在插件机制设计基线的包格式与安装流程章节而非日常命令表"
     }

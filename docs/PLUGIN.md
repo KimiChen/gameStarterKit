@@ -198,7 +198,7 @@ npm --workspace @game/server run plugin -- changed [--base <ref>] [--dry-run]   
 都拒绝）。kit 相对插件多出来的闸：`kit.json.modes` ≡ `gameplays/<modeId>/` 单源（id / constantName 逐个比对）、`sql.files`
 随包非空且 `sql/` 下没有清单外文件、插件 `requires.kits` 的正向闸（所需 kit 已安装或宿主自有，每个 api 面
 `minSupported ≤ 声明 ≤ version`；MMO MF9 起 `contributes` 同闸：kit 已装且贡献点 id 存在，`pack` 对越界贡献路径整包拒）、kit 升级的反向闸（已安装插件的声明落到新区间外即拒绝、已安装插件填充的贡献点被删 / 契约变化同样点名，`--break-dependents` 放行并让
-`check` 对那些插件红）、`uninstall` 的依赖反查（还有插件锁声明依赖即拒绝，⛔ 无 flag 可绕）、`--drop-data`（仅 kit：
+`check` 对那些插件红）、`uninstall` 的依赖反查（还有插件锁声明依赖即拒绝，⛔ 无 flag 可绕）、MMO 起的两道卸载闸（kit worker 闸：role:"world-event" 表有 pending 行 / worker 租约在役即拒，MF7a；交接闸：kit persona 有在途 `world_transfer` 行即拒，MF8；均 ⛔ bypass，见 KIT.md §5 / SERVER.md §5）、`--drop-data`（仅 kit：
 卸载默认保留表与账本行）。`test <id>` 按已安装锁枚举包自带的 `apps/server/test/*.test.ts` 与 `apps/client/test/*.test.ts`
 单跑（`--int` 再加 `test/int/`），是审核清单里「测试通过」的机检形态。
 
