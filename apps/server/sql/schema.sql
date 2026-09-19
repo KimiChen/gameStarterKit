@@ -86,6 +86,25 @@ CREATE TABLE IF NOT EXISTS persona (
   KEY idx_persona_uid (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- world_instance（MMO MF4-B3，docs/MMO.md §4.4 / §5.4 MF4，per-zone）：分线（WorldAddress = sId + mapId + line）的权威登记行。
+-- authority_epoch：权威租约代号（acquireAuthority CAS +1，单主不变量 §4.6-1）；holder：当前权威节点标识；state：WorldPhase 字符串；
+-- checkpoint_rev：分线检查点修订（MF7b）；write_seq：MF7b `withWorldTx` 首句 CAS 用（v1.2 P1：建表就带上，避免二次迁移）。
+-- ⛔ 无外键指向 kit 表（KIT.md §2）；实例 id 是随机 uuid，(server_id, map_id, line) 唯一。
+CREATE TABLE IF NOT EXISTS world_instance (
+  server_id       SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  instance_id     VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  map_id          VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  line            SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  authority_epoch BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  holder          VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
+  state           VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'offline',
+  checkpoint_rev  BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  write_seq       BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  updated_at      DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (server_id, instance_id),
+  UNIQUE KEY uk_world_instance_line (server_id, map_id, line)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- 单例任务领导权 + fencing。⛔ 别用 GET_LOCK（连接作用域，连接池下泄漏）（09·X7）
 CREATE TABLE IF NOT EXISTS singleton_lease (
   lease_name   VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,

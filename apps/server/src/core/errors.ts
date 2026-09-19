@@ -103,6 +103,20 @@ export class PersonaBusyError extends Error {
   constructor(personaId: string, reason: string) { super(`persona busy: ${personaId} (${reason})`); this.name = "PersonaBusyError"; this.personaId = personaId; }
 }
 
+/** 权威 CAS 0 行（MF4-B3）：world_instance.authority_epoch 已被别的持有者抬高，本节点不是（或已不是）该分线的权威。 */
+export class WorldNotAuthoritativeError extends Error {
+  readonly instanceId: string;
+  readonly expectedEpoch: number;
+  readonly actualEpoch: number;
+  constructor(instanceId: string, expectedEpoch: number, actualEpoch: number) {
+    super(`world not authoritative: instance=${instanceId} epoch ${expectedEpoch} → actual ${actualEpoch}`);
+    this.name = "WorldNotAuthoritativeError";
+    this.instanceId = instanceId;
+    this.expectedEpoch = expectedEpoch;
+    this.actualEpoch = actualEpoch;
+  }
+}
+
 /** 控制权 CAS 0 行：手上的 control_epoch 已被别处抬高（MF4 双登 / 交接），本次写必须整体回滚。 */
 export class ControlConflictError extends Error {
   readonly personaId: string;
