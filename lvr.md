@@ -29,6 +29,7 @@ Unity 2022.3.62f3 + IL2CPP + HybridCLR 热更 + xLua，无加固，全静态逆�
 | M1 起点 | **主城 + 队列 + 资源** |
 | 3D 路线 | **B：自建 3D 管线，用 Cocos 的 3D 能力**；单独出需求文档 [lvr-3d.md](lvr-3d.md)，由单独排期实现 |
 | 主键预留 | **都不预留**：persona 与合服均显式列为「不提供」 |
+| 首发平台（2026-09-19） | **微信小游戏 / WebGL1**：docs/3d.md SD10 拍板 lvr 为 3D 轨道首发小游戏消费方 ⇒ 3D 内容画质 low 档必达、每阶段附 WebGL1 证据（[lvr-3d.md](lvr-3d.md) R0）；渠道 SDK / 打包 / 审核仍按 §9.3 不做 |
 | 首屏 | **不做框架适配**：按 kit 标准，主城从设置面板入口进入 |
 | 邮件 | **kit 自建 `k_lvr_mail`**，⛔ 不提 mailer 门面 re-export PR |
 | 团队口径 | 8–10 人 / 1.5–2.5 年，三条泳道（主线 / 协议层 / UI 重建）并行 |
@@ -409,9 +410,11 @@ kit 迁移**已发布只能追加、改一字节 sha256 fail-closed**，下面�
 **已拍板：走自建 3D 管线（用 Cocos 的 3D 能力），拆成独立需求文档 [lvr-3d.md](lvr-3d.md) 由单独排期实现。**
 ⚠ 因此 **§7 的 100–200 人月 ⛔ 不含 3D 管线**——它是一条独立预算。
 
+**2026-09-19 补拍（docs/3d.md SD10）**：lvr 是 3D 轨道的**首发小游戏 / WebGL1 消费方**——lvr 3D 内容以框架画质 low 档为必达档，A1–A5 每阶段附 WebGL1 证据、A3 加微信开发者工具证据（lvr-3d.md R0）；框架 SC4-B3（WebGL1 退化）是门，A3 等其退出。
+
 lvr-3d.md 里已登记的三条主要风险：shader ⛔ 不能自动转（海面 / GPU skinning 采样 / 阴影三处要手工重写）、
 Unity ParticleSystem ⛔ 不能转（265 个 vfxbaseres bundle 要逐个重建或替代）、
-任何第三方库（如 glTF loader）都是框架 PR（kit 加不了 npm 依赖）。
+~~任何第三方库（如 glTF loader）都是框架 PR（kit 加不了 npm 依赖）~~（已消解：docs/3d.md SD4 作者态导入，运行时无 loader）。
 其 A0 阶段是一个**可行性 spike**（取 1 个模型 + 1 套动画 + 1 张海面贴图渲出来），走不通就要重估整条管线。
 
 ### 9.2 其余风险
@@ -433,7 +436,7 @@ Unity ParticleSystem ⛔ 不能转（265 个 vfxbaseres bundle 要逐个重建�
 ### 9.3 明确不做
 
 生产部署/CD/扩容/监控/备份；**真钱 IAP 订单、退款、对账**（kit 定义不了 HTTP endpoint，且 EXTRAS §4 不提供）；
-微信/抖音渠道账号、登录、支付、广告、分享 SDK；渠道打包、审核、灰度；**热更新**；合规与商店发布；
+微信/抖音渠道账号、登录、支付、广告、分享 SDK；渠道打包、审核、灰度（⚠ 与 docs/3d.md SD10 不冲突：SD10 只要求 3D 内容在小游戏 / WebGL1 构建下可跑、low 档达标的技术证据，lvr-3d.md R0）；**热更新**；合规与商店发布；
 原作的埋点 BI、AIHelp 客服、ilivedata 翻译服务；
 **合服**与 **persona（同区多角色）**——§8 已拍板不预留主键，两者都是「不提供」。
 （主体出自 `docs/EXTRAS.md` §4「明确不提供」，⛔ 不是待办。）

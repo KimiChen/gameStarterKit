@@ -13,7 +13,7 @@
 波 2   SC2 纯数学（lodBands → shared/logic；cameraRig / chunkStreamer / pickMath → client logic/scene3d；slg 改消费）  ‖  SC3 AssetLease + assetPlan + EntityPool + 全局设置租约 + creator-preview --perf（slg 改消费）
 波 3   SC4 SkinnedUnits + Vfx + WebGL1 退化实证（← SC2 + SC3）
 波 4   SC5 tools/art3d 骨架 / 图片外提 / 离线 LOD + 文档回写 + 冻结 tag stage3d-v1-frozen（← SC1–SC4）
-消费方 lvr A1 ← SC1–SC3；lvr A3 ← SC4；lvr A0 并入 SC0（用 lvr 样本资产做第二份证据）
+消费方 lvr A1 ← SC1–SC3；lvr A3 ← SC4；lvr A0 并入 SC0（用 lvr 样本资产做第二份证据）；**lvr = SD10 首发小游戏 / WebGL1 消费方**（lvr-3d.md R0：A1–A5 每阶段附 WebGL1 证据、A3 加微信开发者工具证据、等 SC4-B3 门）
        mmo：SD9 = C（已拍板）：首版 2D 公告板 + 接口 3D-ready；MK0-B4 骨架不等本轨道，FGUI HUD 接入等 SC1-B9（gameplay 载体闸；退路 = HUD 画在世界节点内）；MK1 前按 SC3 / SC4 数字（含 WebGL1）决定是否切 3D
        slg 2b：SC2 退出即可消费 lodBands / cameraRig / chunkStreamer；SC3 退出迁 AssetLease + 全局设置租约
 ```
@@ -166,7 +166,7 @@ lvr-3d.md 抬头已指向 3d.md，但正文当时仍是「全部落在 kit」的
 | --- | --- | --- | --- |
 | SC4-B1 `SkinnedUnits` | `apps/client/src/view/scene3d/SkinnedUnits.ts`：以 `EntityPool` 为底，prefab 含 `SkeletalAnimation`（`useBakedAnimation = true`）+ `SkinnedMeshRenderer`；同键共享材质 instancing；`play(entity, clip)` / `socket(entity, name)`；需要运行时混合的实体走非烘焙路径（显式 opt-in） | `skinnedUnits.test.ts`（FakeComponent：烘焙开关、clip 切换、socket 解析）；夹具页「100 biped」开关 + `--perf` 数字（桌面 p95 帧时、instances 数）；变异：忘设 `useBakedAnimation` → 用例红 | `npm run test:client`；`node tools/creator-preview/run.mjs stage3d --perf` |
 | SC4-B2 `Vfx` | `apps/client/src/view/scene3d/Vfx.ts`：`ParticleSystem` prefab 池；`play(key, at 或 follow)`；按 LOD 档禁用；定时销毁；同键并发上限；随租约 release 全部回收 | `vfx.test.ts`（池复用 / LOD 门 / 定时 / 上限 / 释放）；夹具页「50 特效」开关 + `--perf`；变异：删 LOD 门 → 「远档仍播」红 | `npm run test:client` |
-| SC4-B3 WebGL1 / 微信退化（**门**，SD10） | Chrome `--disable-webgl2` 跑 `stage3d --perf`：预烘焙蒙皮（浮点关节贴图）与 instancing 在 WebGL1 的可用性；low 档退化路径实现并有用例（预烘焙不可用 → 实时蒙皮上限 + 公告板远档；instancing 不可用 → 合批数降；ASTC 不可用 → png 回落）；微信开发者工具跑一次 `stage3dFixture`（人工，截图 + 远程 bundle 下载 / 缓存行为 + 体积）；结论写进 3d.md §8 与 3D-ASSETS.md §11 | 报告 `docs/perf/stage3d/<date>-webgl1.json` + 微信证据摘要；退化用例绿；变异：删退化分支 → 「WebGL1 下蒙皮单位不可见」转红 | Creator + Chrome 标志；微信开发者工具 |
+| SC4-B3 WebGL1 / 微信退化（**门**，SD10） | Chrome `--disable-webgl2` 跑 `stage3d --perf`：预烘焙蒙皮（浮点关节贴图）与 instancing 在 WebGL1 的可用性；low 档退化路径实现并有用例（预烘焙不可用 → 实时蒙皮上限 + 公告板远档；instancing 不可用 → 合批数降；ASTC 不可用 → png 回落）；微信开发者工具跑一次 `stage3dFixture`（人工，截图 + 远程 bundle 下载 / 缓存行为 + 体积）；结论写进 3d.md §8 与 3D-ASSETS.md §11；首发消费方 lvr 的 A3 等本批退出（lvr-3d.md R0） | 报告 `docs/perf/stage3d/<date>-webgl1.json` + 微信证据摘要；退化用例绿；变异：删退化分支 → 「WebGL1 下蒙皮单位不可见」转红 | Creator + Chrome 标志；微信开发者工具 |
 | SC4-B4 文档 + 退出 | 3d.md §10 登记 SC4；lvr-3d.md §8 通知「A3 可开工」；若按 SD9 后续评估决定切 3D，MMO-PLAN MK1 行加「← SC4」注记（只加注记，⛔ 不改其批次） | — | 文档提交；tag `sc4-exit` |
 
 退出：B1–B4；tag `sc4-exit`。回滚：可回退。
@@ -186,6 +186,7 @@ lvr-3d.md 抬头已指向 3d.md，但正文当时仍是「全部落在 kit」的
 
 | lvr 阶段 | 前置 | 接什么 | kit 自带 |
 | --- | --- | --- | --- |
+| R0 平台目标（SD10） | — | lvr 为首发小游戏 / WebGL1 消费方：画质 low 档必达，A1–A5 每阶段附 `--disable-webgl2` 证据、A3 加微信开发者工具证据（同 SC4-B3 口径）；小游戏构建平台配置归框架 settings（SC0-B4 回填） | R0 登记（lvr-3d.md v1.3）；渠道 SDK / 打包 / 审核仍按 lvr.md §9.3 不做 |
 | A0 可行性（并入 SC0） | SC0-B3 | 用 lvr 样本资产（1 建筑 + 1 单位动画 + 1 海面贴图，经 `tools/art3d` 骨架前身手工 glb）在 `probe-stage3d.mjs` 里跑第二份证据 | 样本资产授权台账起草 |
 | A1 场景骨架 | SC1、SC2、SC3 | `ports.stage3d.acquire` + `cameraRig`（俯视角、手感常量进 `apps/shared/src/kits/lvr/api/…`）+ `lodBands`（阈值表 shared 单源）+ `AssetLease` | 海面 EffectAsset、静态地表内容、`art3d.config.json` |
 | A2 实体层 | SC3 | `EntityPool` 两级档 + `chunkStreamer` + `assetPlan` | 19 种地图实体的 prefab / LOD 组 / `hideAtLod` 表 |
@@ -193,7 +194,7 @@ lvr-3d.md 抬头已指向 3d.md，但正文当时仍是「全部落在 kit」的
 | A4 主城 | SC3、SC4 | `EntityPool` + `Vfx`；三档细节状态机是 kit logic（吃纯度门） | 建筑四态、特效挂点表 |
 | A5 特效与表演 | SC4 | `Vfx` 池；Spine 4.2（Creator 原生） | 20–30 个高频特效重建、英雄立绘 |
 
-lvr 侧验收：每阶段 `verify:all` + `test:client`（logic 无头覆盖相机数学 / LOD / 流式差分）+ `tools/creator-preview --perf` 证据落 `docs/evidence/creator-<date>/lvr-3d/`；状态只回写 lvr-3d.md §8。
+lvr 侧验收：每阶段 `verify:all` + `test:client`（logic 无头覆盖相机数学 / LOD / 流式差分）+ `tools/creator-preview --perf` 证据落 `docs/evidence/creator-<date>/lvr-3d/`+ 每阶段一份 WebGL1 证据（SD10 首发消费方，lvr-3d.md R0）；状态只回写 lvr-3d.md §8。
 
 ### 4.2 `mmo` kit（SD9 = C，2026-09-19 拍板）
 
@@ -236,10 +237,11 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 | P4 | `Stage3DPort.acquireGlobals(owner, patch)` 与舞台共用 token 覆盖表，乱序删除后重算（3D-17 / 3D-23） | ✅ 3d.md §3.2；实现 SC1-B2 |
 | P5 | 性能计数器钉到 `gfx.Device.numDrawCalls / numTris / numInstances / memoryStatus` 与 `director.root.frameTime`（3D-18） | 3d.md §7 |
 | P6 | 灰盒资产由 `tools/art3d/greybox.py` 合成，框架夹具零外部素材（3D-19）；框架资产目录 `apps/Cocos/assets/resources/stage3d/`（3D-22） | 3d.md §4 / §5 / §6.2 |
-| P7 | `AppPorts.stage3d` 是端口接缝，`gameplay/services.ts` 不变（3D-13） | 3d.md §3.3 |
+| P7 | `AppPorts.stage3d` 是端口接缝（3D-13）；3D-34 起 `GameplayServicesContext.stage3d` 为同一实例的第二入口（部分修正） | 3d.md §3.3 |
 | P8 | SD9 / SD10 已拍板；SC0-B4 只做实测冻结与回填（3D-21、SC4-B3） | ✅ 3d.md §9.1 |
 | P9 | lvr-3d.md L01–L09 对齐为消费方需求 v1.1（SC0-B0） | ✅ eef7c1a2 |
 | P10 | SD9–SD12 于 2026-09-19 拍板（C / 门 / 引擎内置新管线 / 每包一 bundle）：新增 SC1-B7 bundle 目录与所有权框架 PR；SC4-B3 改为门；SC0-B4 改为冻结与回填；SC0-B1 / B3、SC1-B4 / B5、SC3-B1 / B5 加 WebGL1 与 bundle 口径 | ✅ 3d.md §9.1、3D-ASSETS.md v1.1、本文 §0 / §1 / §3 / §4.2 / §7 / §8 |
+| P11 | SD10 首发消费方 = `lvr`（2026-09-19 拍板）：lvr-3d.md v1.3 新增 R0 + §4 / §5 / §6 / §7 补 WebGL1 判据；lvr.md 前提表加「首发平台」行、§9.1 / §9.3 注记 | ✅ 3d.md §0 / §6.3 / §8 / §9.1、本文 §0 / §4.1 / §7 |
 
 ## 7. 风险与看护点
 
@@ -247,7 +249,7 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 - **两轨道并行**：框架实现按本表文件落点推进；SC1-B9 显式授权输入 / sidecar / codegen 接缝改造，SC1-B7 是包所有权改造，SC1-B8 是画质 / settings / 验收场景；不得以旧的「只改 app 一个字段」约束漏掉这些批次。MF9 已退出，后续仍须检查其他轨道对同一保护面 / 锁的变更，B3/B9 各自按实际 diff 重钉。
 - **slg 零改动闸**：SC2-B2 / B3 / SC3-B4 都以「slg 既有测试零改动全绿」为退出条件；一旦要改 slg 测试断言，说明抽取改了语义，回退重做。
 - **桩漂移**：类型桩只补用到的成员；Creator 侧真类型仍由预览把关（桩文件头注释既有约定）。
-- **显存与机型**：桌面数字不等于手机；`--perf` 报告标注设备与 WebGL 版本；SD10 已拍板小游戏为首版目标 ⇒ 每阶段 WebGL1 证据是退出条件，SC4-B3 是门。
+- **显存与机型**：桌面数字不等于手机；`--perf` 报告标注设备与 WebGL 版本；SD10 已拍板小游戏为首版目标 ⇒ 每阶段 WebGL1 证据是退出条件，SC4-B3 是门；首发消费方 = lvr（lvr-3d.md R0，A 阶段同样逐级附证据）。
 - **资产体积**：`verify:assets3d` 上限在 SC0-B4 冻结后不得静默放大；改数 = 新拍板 + 3d.md §10 登记。
 - **Spine 版本切换**：工程级单选，切 4.2 后任何后续 3.8 导出都要重导；今天零用法是切换的最佳时机（SC0-B1）。
 
@@ -263,3 +265,4 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 
 - 2026-09-19 文档 v1.2：采纳 §1.3 的 3D-23–3D-32；新增 SC0-B5、SC1-B8/B9，补齐全局租约、输入、画质、资产闸与离线 LOD 的施工及退出条件。仅文档修订，以上未勾选项仍未实施。
 - 2026-09-19 文档 v1.3：采纳 §1.4 的 3D-33–3D-40；SC0-B2 / B3、SC1-B2 / B3 / B7 / B9、§0 / §4.2 更新。仍未实施。
+- 2026-09-19 SD10 补拍：首发小游戏 / WebGL1 消费方 = lvr（§0 / §4.1 R0 行 / SC4-B3 / §7 / P11；P7 按 3D-34 修正）。仍未实施。
