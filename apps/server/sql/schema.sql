@@ -64,7 +64,9 @@ CREATE TABLE IF NOT EXISTS gameplay_outbox (
 -- persona（MMO MF2，docs/MMO.md §3 / §5 MF2，per-zone）：账号在某 kit 下的角色级资产主体。框架只保证唯一（UNIQUE(server_id,
 -- user_id, kit_id, slot)）与硬上限（PERSONA_MAX_SLOTS_HARD）；kit 的角色行经 persona_id 关联但 ⛔ 无外键（KIT.md §2）。
 -- status TINYINT：0 active / 1 inactive；control_epoch 供 MF4 控制权 CAS；world_address NULL = 不在任何世界房；
--- session_generation 随会话撤销 / 踢下线抬高（MF2-B5）；meta 由 kit 的 createPersona 交来、框架不解释。
+-- session_generation 随会话撤销 / 踢下线抬高（MF2-B5：顶号按区、封号 / 撤销全部区）；meta 由 kit 的 createPersona 交来、框架不解释。
+-- idx_persona_uid (user_id)：账号级撤销 `WHERE user_id = ?` 抬全部区会话代走索引（其余索引都以 server_id 前导，B2 形态的存量表由
+-- db-bootstrap 的 ensureAssetOwnerShape 补建）。
 CREATE TABLE IF NOT EXISTS persona (
   server_id          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   persona_id         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -80,7 +82,8 @@ CREATE TABLE IF NOT EXISTS persona (
   updated_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (server_id, persona_id),
   UNIQUE KEY uk_persona_slot (server_id, user_id, kit_id, slot),
-  KEY idx_persona_user (server_id, user_id, kit_id)
+  KEY idx_persona_user (server_id, user_id, kit_id),
+  KEY idx_persona_uid (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 单例任务领导权 + fencing。⛔ 别用 GET_LOCK（连接作用域，连接池下泄漏）（09·X7）

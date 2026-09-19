@@ -250,6 +250,14 @@ async function indexColumns(conn: mysql.Connection, dbName: string, tableName: s
   return rows.map((row) => row.COLUMN_NAME);
 }
 
+async function indexExists(conn: mysql.Connection, dbName: string, tableName: string, indexName: string): Promise<boolean> {
+  const [rows] = await conn.query<mysql.RowDataPacket[]>(
+    "SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1",
+    [dbName, tableName, indexName],
+  );
+  return rows.length > 0;
+}
+
 const same = (left: readonly string[], right: readonly string[]): boolean => left.length === right.length && left.every((column, index) => column === right[index]);
 
 async function ensureAssetOwnerShape(conn: mysql.Connection, dbName: string): Promise<void> {
@@ -277,6 +285,15 @@ async function ensureAssetOwnerShape(conn: mysql.Connection, dbName: string): Pr
     if (!same(await indexColumns(conn, dbName, "currency_ledger", "uk_idem", true), TARGET_UK)) throw new Error("currency_ledger.uk_idem 升级后校验失败");
   } else if (!same(uk, TARGET_UK)) {
     throw new Error(`currency_ledger.uk_idem 定义不匹配：只接受 legacy (${LEGACY_UK.join(", ")}) 或目标 (${TARGET_UK.join(", ")})，实际 (${uk.join(", ")})`);
+  }
+  // MF2-B5：账号级撤销按 `WHERE user_id = ?` 抬全部区 persona 的会话代——B2 形态的存量 persona 表没有 user_id 前导索引
+  // （其余索引都以 server_id 前导，会全表扫），补 idx_persona_uid；已有则只校验定义（同名错定义 fail-closed）。
+  if (!(await indexExists(conn, dbName, "persona", "idx_persona_uid"))) {
+    await conn.query("ALTER TABLE persona ADD KEY idx_persona_uid (user_id), ALGORITHM=INPLACE, LOCK=NONE");
+  }
+  const personaUid = await indexColumns(conn, dbName, "persona", "idx_persona_uid", false);
+  if (!same(personaUid, ["user_id"])) {
+    throw new Error(`persona.idx_persona_uid 定义不匹配：期望 (user_id)，实际 (${personaUid.join(", ")})`);
   }
 }
 
@@ -714,7 +731,7 @@ async function main(): Promise<void> {
   }
   // MMO MF2 资产主体（docs/MMO.md §5 MF2-B2）：db_bootstrap 租约下一次性完成，已迁即跳过（INFORMATION_SCHEMA 守卫，⛔ 不吞 1060/1061 猜）。
   await withBootstrapLease(conn, `db-bootstrap:${process.pid}`, 120, () => ensureAssetOwnerShape(conn, dbName));
-  console.log("✅ 资产主体形态（owner_kind / owner_id + user_currency PK + currency_ledger uk_idem）已收敛");
+  console.log("✅ 资产主体形态（owner_kind / owner_id + user_currency PK + currency_ledger uk_idem + persona idx_persona_uid）已收敛");
   // 对局按区（DUAL_MODE §4.1）：fresh schema、c8 存量首次升级、任意中断后的重跑均须收敛；
   // 具体定义由 INFORMATION_SCHEMA 校验，⛔ 不靠吞 1060/1061 猜「大概已经有了」。
   await ensureMatchResultsZoneShape(conn, dbName);
