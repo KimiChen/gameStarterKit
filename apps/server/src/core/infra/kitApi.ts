@@ -29,6 +29,12 @@
  *      句柄与 withKitTx 同形（表闸 / debit / credit / enqueueEffect），另带 `workerId` / `fenceToken`；`.conn` 运行时抛错
  *      （worker 没有原始连接）；回调内再开 withKitTx / withKitWorkerTx 一律拒（事务套事务 = 第二条连接绕过守卫首句）；
  *      租约名必须恰是 `kit:<kitId>:<workerId>`（⛔ 借别的 worker 的租约写）。worker 进程入口见 src/workers/kitWorker.ts。
+ *   7. `withKitWorldTx(kitId, sId, { instanceId, authorityEpoch, personas? }, fn)`（docs/MMO.md MF7b-B2）：世界形态的**权威守卫受限事务**——
+ *      同连接同事务**首句** `UPDATE world_instance SET write_seq = write_seq + 1 WHERE server_id = ? AND instance_id = ? AND authority_epoch = ?`
+ *      （Rows matched 0 ⇒ AuthorityLostError，自动 ROLLBACK：旧 owner 的迟到写被存储边界拒——「存储边界拒旧 epoch」的唯一实现点；
+ *      ⛔ 不碰 `checkpoint_rev`，它只在检查点落盘时推进，M18），再逐 persona `assertControl`（id 升序，锁序同 MF2），然后交出
+ *      与 withKitTx 同形的受限句柄 + `writeSeq` + `appendWorldEvent(table, event)`（只许写本 kit 的 `role:"world-event"` 表，
+ *      框架固定列 event_id / instance_id / seq / kind / payload / status / attempts / checkpoint_rev）；`.conn` 运行时抛错。
  * effect kind 登记通道（`kit:<id>:<name>`）在 shared economy.ts + KIT_EFFECT_KINDS + Lua 镜像，不在本文件。
  *
  * kit 从 `apps/server/src/kits/<id>/**` 以相对路径 `../../core/infra/kitApi` 导入本文件；kit 需要的错误类型、
@@ -61,16 +67,18 @@ import {
 } from "../economy/outbox";
 import { CUR_GOLD } from "./config";
 import {
-  ControlConflictError, EffectConflictError, InsufficientBalanceError, InvalidEffectError, PersonaBusyError, PersonaLockOrderError,
-  PersonaNotFoundError, PersonaSlotTakenError, RpcFault, StaleFenceError,
+  AuthorityLostError, ControlConflictError, EffectConflictError, InsufficientBalanceError, InvalidEffectError, PersonaBusyError,
+  PersonaLockOrderError, PersonaNotFoundError, PersonaSlotTakenError, RpcFault, StaleFenceError,
 } from "../errors";
 import { type KitKeyScope, currentZoneId, kKitUser, zoneCtx } from "./keys";
 import { clientFor } from "./redisRoute";
 import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
+import type { ServerKitCatalogEntry } from "../../kits/catalogTypes";
 
 export {
-  CUR_GOLD, ControlConflictError, EffectConflictError, InsufficientBalanceError, InvalidEffectError, LeaseLostError, PERSONA_MAX_SLOTS_HARD,
-  PersonaBusyError, PersonaLockOrderError, PersonaNotFoundError, PersonaSlotTakenError, RpcFault, StaleFenceError, currentZoneId, kKitUser,
+  AuthorityLostError, CUR_GOLD, ControlConflictError, EffectConflictError, InsufficientBalanceError, InvalidEffectError, LeaseLostError,
+  PERSONA_MAX_SLOTS_HARD, PersonaBusyError, PersonaLockOrderError, PersonaNotFoundError, PersonaSlotTakenError, RpcFault, StaleFenceError,
+  currentZoneId, kKitUser,
 };
 export type { AssetOwnerRef, IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket, SingletonLease };
 
@@ -677,6 +685,139 @@ export async function withKitWorkerTx<T>(
       "conn", { enumerable: false, get(): never { throw new Error(`kit worker 事务（${leaseName}）⛔ 取原始连接 .conn`); } },
     );
     return workerTxScope.run(leaseName, () => fn(Object.freeze(tx)));
+  });
+  for (const { uid, owner } of touched.values()) { await deps.invalidateBalanceCache(uid, sId, ...(owner === undefined ? [] : [owner] as const)); }
+  return result;
+}
+
+// ── 世界形态的权威守卫受限事务（文件头第 7 条；docs/MMO.md MF7b-B2 / §4.6 不变量 1）───────────────
+
+/** 世界事务作用域：权威代是首句 CAS 的谓词；personas（可选）逐个 assertControl（框架按 id 升序取锁）。 */
+export interface KitWorldTxScope {
+  readonly instanceId: string;
+  readonly authorityEpoch: number;
+  readonly personas?: readonly { readonly id: string; readonly controlEpoch: number }[];
+}
+
+/** 世界事件行（框架固定列；表由 kit 选、以 role:"world-event" 声明）。 */
+export interface KitWorldEventInput {
+  /** 服务端 uuid 字符串（与 op_id 同源：worker 执行时的幂等键）。 */
+  readonly eventId: string;
+  /** 分线内单调序号（WorldRuntime 分配）。 */
+  readonly seq: number;
+  readonly kind: string;
+  readonly payload: unknown;
+  /** 产生它的分线状态所对应的**下一个将落盘**的分线检查点 rev（§7.3 原子规则 ①）。 */
+  readonly checkpointRev: number;
+  /** 缺省 = 作用域的 instanceId。 */
+  readonly instanceId?: string;
+}
+
+/** 世界事务句柄：与 KitTx 同形但**没有** `conn`，另带分线身份、首句 CAS 后的 write_seq 与事件追加口。 */
+export interface KitWorldTx extends Omit<KitTx, "conn"> {
+  readonly instanceId: string;
+  readonly authorityEpoch: number;
+  /** 首句 CAS 后本事务在该权威代内的写序号（单调；MF7b 检查点 / 事件批的排序依据）。 */
+  readonly writeSeq: number;
+  /** 追加世界事件行（只许本 kit 的 role:"world-event" 表）；UNIQUE(event_id) 撞车 ⇒ "DUP"（重放同一事件零副作用）。 */
+  appendWorldEvent(table: string, event: KitWorldEventInput): Promise<"INSERTED" | "DUP">;
+}
+
+export interface KitWorldTxDeps extends KitTxDeps {
+  /** 本 kit 声明为 role:"world-event" 的表名（生产从 SERVER_KIT_CATALOG 读；夹具注入）。 */
+  readonly worldEventTables: (kitId: string) => readonly string[];
+}
+
+export function worldEventTablesOfKit(kitId: string, catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG): readonly string[] {
+  const kit = catalog.find((entry) => entry.id === kitId);
+  return kit === undefined ? [] : kit.sqlTables.filter((table) => table.role === "world-event").map((table) => table.name);
+}
+
+const DEFAULT_WORLD_DEPS: KitWorldTxDeps = { ...DEFAULT_DEPS, worldEventTables: (kitId) => worldEventTablesOfKit(kitId) };
+
+const WORLD_EVENT_KIND_RE = /^[A-Za-z][A-Za-z0-9._:-]{0,31}$/u;
+/** world-event 表名形态：`k_<kit>_<name>`（与 tools/plugin/workerGate.ts 的 KIT_TABLE_RE 同形）。 */
+const WORLD_EVENT_TABLE_RE = /^k_[a-z0-9]{1,64}_[A-Za-z0-9_]{1,64}$/u;
+const WORLD_EVENT_ID_RE = /^[A-Za-z0-9_-]{8,64}$/u;
+
+/** 世界事件表名闸：必须是本 kit 前缀 + 在 role:"world-event" 声明集内（⛔ 普通 kit 表、⛔ 别的 kit、⛔ 框架表）。 */
+export function assertWorldEventTable(kitId: string, table: string, tables: readonly string[]): string {
+  const prefix = kitTablePrefix(kitId);
+  if (typeof table !== "string" || !table.startsWith(prefix) || !WORLD_EVENT_TABLE_RE.test(table)) {
+    throw new KitTableAccessError(kitId, table, `world-event 表名必须带前缀 ${prefix} 且为合法标识符`);
+  }
+  if (!tables.includes(table)) {
+    throw new KitTableAccessError(kitId, table, "不是本 kit 以 role:\"world-event\" 声明的表");
+  }
+  return table;
+}
+
+/**
+ * 世界形态的权威守卫受限事务（docs/MMO.md MF7b-B2；§4.6 不变量 1「旧 epoch 的延迟提交被存储边界拒」的唯一实现点）：
+ * `withRcTx` 内**首句** `UPDATE world_instance SET write_seq = write_seq + 1 WHERE server_id = ? AND instance_id = ? AND authority_epoch = ?`
+ * （Rows matched 0 ⇒ AuthorityLostError，自动 ROLLBACK，回调零执行；⛔ 不碰 checkpoint_rev），读回 write_seq，再按 id 升序对
+ * `scope.personas` 逐个 `assertControl`（0 行 ⇒ ControlConflictError 同样整体回滚），然后交出受限句柄（表闸 / debit / credit /
+ * enqueueEffect / persona 门面同 withKitTx）+ `appendWorldEvent`。回调内 ⛔ 另开 withKitTx / withKitWorkerTx / withKitWorldTx、⛔ 取 `.conn`。
+ * 提交后对扣过款 / 入过账的 uid 失效余额缓存。变异验证：删首句谓词 `authority_epoch = ?` → int「旧 owner 迟到写 0 行」转红。
+ */
+export async function withKitWorldTx<T>(
+  kitId: string, sId: number, scope: KitWorldTxScope, fn: (tx: KitWorldTx) => Promise<T>, deps: KitWorldTxDeps = DEFAULT_WORLD_DEPS,
+): Promise<T> {
+  kitTablePrefix(kitId); // kitId 形态闸先于任何 SQL
+  if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
+  if (typeof scope.instanceId !== "string" || scope.instanceId.length === 0 || scope.instanceId.length > 64) { throw new TypeError("world tx：instanceId 非法"); }
+  if (!Number.isInteger(scope.authorityEpoch) || scope.authorityEpoch < 1) { throw new TypeError(`world tx：authorityEpoch ${scope.authorityEpoch} 非法（须 ≥ 1，先取权威）`); }
+  const personas = [...(scope.personas ?? [])].sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+  for (const persona of personas) {
+    validatePersonaId(persona.id, "world tx personas[].id");
+    if (!Number.isInteger(persona.controlEpoch) || persona.controlEpoch < 0) { throw new TypeError(`world tx：persona ${persona.id} controlEpoch 非法`); }
+  }
+  assertNotInsideWorkerTx("withKitWorldTx");
+  const eventTables = deps.worldEventTables(kitId);
+  const touched: TouchedOwners = new Map();
+  const scopeName = `world:${kitId}:${scope.instanceId}@${scope.authorityEpoch}`;
+  const result = await deps.withRcTx(async (conn) => {
+    // 首句：权威 CAS（谓词里的 authority_epoch 就是存储边界）。0 行 = 权威已被接管 ⇒ 抛出，withRcTx ROLLBACK，业务表零写入。
+    const [cas] = await conn.execute<ResultSetHeader>(
+      "UPDATE world_instance SET write_seq = write_seq + 1 WHERE server_id = ? AND instance_id = ? AND authority_epoch = ?",
+      [sId, scope.instanceId, scope.authorityEpoch]);
+    if (rowsMatched(cas) !== 1) { throw new AuthorityLostError(scope.instanceId, scope.authorityEpoch); }
+    const [seqRows] = await conn.query<RowDataPacket[]>(
+      "SELECT write_seq FROM world_instance WHERE server_id = ? AND instance_id = ?", [sId, scope.instanceId]);
+    const writeSeq = Number(seqRows[0]?.write_seq);
+    if (!Number.isSafeInteger(writeSeq) || writeSeq < 1) { throw new Error(`world tx：write_seq 回读非法：${String(seqRows[0]?.write_seq)}`); }
+    const base = buildKitTx(conn, kitId, sId, touched, deps);
+    // 控制权：逐 persona CAS（升序取锁；0 行 ⇒ ControlConflictError 整体回滚）
+    for (const persona of personas) { await base.assertControl(persona.id, persona.controlEpoch); }
+    const tx: KitWorldTx = Object.defineProperty(
+      {
+        ...base,
+        instanceId: scope.instanceId,
+        authorityEpoch: scope.authorityEpoch,
+        writeSeq,
+        async appendWorldEvent(table: string, event: KitWorldEventInput): Promise<"INSERTED" | "DUP"> {
+          const target = assertWorldEventTable(kitId, table, eventTables);
+          if (!WORLD_EVENT_ID_RE.test(event.eventId)) { throw new TypeError(`world event：eventId "${event.eventId}" 非法`); }
+          if (!Number.isSafeInteger(event.seq) || event.seq < 1) { throw new TypeError(`world event：seq ${event.seq} 非法（≥ 1）`); }
+          if (!WORLD_EVENT_KIND_RE.test(event.kind)) { throw new TypeError(`world event：kind "${event.kind}" 非法`); }
+          if (!Number.isSafeInteger(event.checkpointRev) || event.checkpointRev < 1) { throw new TypeError(`world event：checkpointRev ${event.checkpointRev} 非法（≥ 1）`); }
+          const instanceId = event.instanceId ?? scope.instanceId;
+          const payloadJson = JSON.stringify(event.payload ?? null);
+          if (payloadJson.length > 16_384) { throw new RangeError("world event：payload 超过 16 KB"); }
+          try {
+            await conn.execute<ResultSetHeader>(
+              `INSERT INTO \`${target}\` (server_id, event_id, instance_id, seq, kind, payload, status, attempts, checkpoint_rev) VALUES (?, ?, ?, ?, ?, CAST(? AS JSON), 0, 0, ?)`,
+              [sId, event.eventId, instanceId, event.seq, event.kind, payloadJson, event.checkpointRev]);
+          } catch (error) {
+            if ((error as { errno?: unknown }).errno === 1062) { return "DUP"; } // 同 event_id 再插 = 重放，零副作用
+            throw error;
+          }
+          return "INSERTED";
+        },
+      },
+      "conn", { enumerable: false, get(): never { throw new Error(`world 事务（${scopeName}）⛔ 取原始连接 .conn`); } },
+    );
+    return workerTxScope.run(scopeName, () => fn(Object.freeze(tx)));
   });
   for (const { uid, owner } of touched.values()) { await deps.invalidateBalanceCache(uid, sId, ...(owner === undefined ? [] : [owner] as const)); }
   return result;

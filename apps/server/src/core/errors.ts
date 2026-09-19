@@ -117,6 +117,18 @@ export class WorldNotAuthoritativeError extends Error {
   }
 }
 
+/** 世界事务首句 CAS 0 行（MF7b-B2 `withKitWorldTx`）：world_instance.authority_epoch 已不是本次事务声明的代——旧 owner 的迟到写整体 ROLLBACK。 */
+export class AuthorityLostError extends Error {
+  readonly instanceId: string;
+  readonly authorityEpoch: number;
+  constructor(instanceId: string, authorityEpoch: number) {
+    super(`world authority lost: instance=${instanceId} epoch ${authorityEpoch}`);
+    this.name = "AuthorityLostError";
+    this.instanceId = instanceId;
+    this.authorityEpoch = authorityEpoch;
+  }
+}
+
 /** 控制权 CAS 0 行：手上的 control_epoch 已被别处抬高（MF4 双登 / 交接），本次写必须整体回滚。 */
 export class ControlConflictError extends Error {
   readonly personaId: string;
