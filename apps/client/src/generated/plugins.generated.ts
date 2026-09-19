@@ -11,7 +11,14 @@ export interface GeneratedPluginRoute {
 
 /** 入口启动目标（LaunchPort.launch 的载荷；§7.4 点击唯一出口）：进入玩法，或打开一个 plugin route。 */
 export type GeneratedLaunchTarget =
-    | { readonly kind: "gameplay"; readonly gameplayId: string }
+    | {
+        readonly kind: "gameplay";
+        readonly gameplayId: string;
+        /** 带参 launch（MF9-B4）：原样交给该玩法 GameplayModule.validateLaunch 做 exact 校验。 */
+        readonly payload?: Readonly<Record<string, unknown>>;
+        /** 一个玩法多房型入口：覆盖 joiner 的缺省 profile（codegen 已校验 ∈ manifest.profiles）。 */
+        readonly profile?: string;
+    }
     | { readonly kind: "route"; readonly routeId: string };
 
 /** 菜单入口贡献（§7.4：菜单唯一数据源）；只有身份与元数据，⛔ 无位置字段（位置见 GENERATED_HOST）。 */

@@ -123,7 +123,7 @@ export function createIdleRoomAdapter(): IdleRoomAdapter {
     };
 }
 
-/** Join one raw GameRoom with an explicit matchmaking mode. */
+/** Join one raw GameRoom with an explicit matchmaking mode. `options.profile` 覆盖缺省房型（MF9-B4 / EXTRAS X1，取值已由 codegen 与 module 校验）。 */
 export function joinGameRoom<
     TMode extends SupportedGameRoomMode,
     TOutbound extends keyof C2SPayloadMap,
@@ -131,6 +131,7 @@ export function joinGameRoom<
     client: RoomClient,
     adapter: GameplayRoomAdapter<TMode, TOutbound>,
     signal: AbortSignal,
+    options: { readonly profile?: string } = {},
 ): GameRoomOwnership<TMode, TOutbound> {
     const server = getCurrentServer();
     if (!server) throw new Error("[GameRoom] 尚未选择区服，不能进入玩法");
@@ -139,8 +140,8 @@ export function joinGameRoom<
         token: getToken(),
         sId: server.serverId,
         mode: adapter.mode,
-        // v8 必填信封（§4.4）：默认撮合注入 "default" profile；modeVersion 取 client catalog。
+        // v8 必填信封（§4.4）：缺省撮合注入 "default" profile，launch.profile 可覆盖（joiner 按 target 选房型）；modeVersion 取 client catalog。
         modeVersion: gameRoomModeVersion(adapter.mode),
-        profile: DEFAULT_GAME_ROOM_PROFILE,
+        profile: options.profile ?? DEFAULT_GAME_ROOM_PROFILE,
     }, signal);
 }

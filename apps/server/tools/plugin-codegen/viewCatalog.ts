@@ -477,7 +477,12 @@ export type ViewCatalog = {
 };
 
 /** 玩法 id 集合：canonical（wireExposed !== false，可作入口）与 fixture（wireExposed:false，⛔ 不得作入口）。 */
-type GameplayIdSets = { readonly canonical: ReadonlySet<string>; readonly fixture: ReadonlySet<string> };
+type GameplayIdSets = {
+  readonly canonical: ReadonlySet<string>;
+  readonly fixture: ReadonlySet<string>;
+  /** 每玩法 manifest.profiles（缺省 ["default"]）：menu launch.profile 的取值闸（MF9-B4 / EXTRAS X1）。 */
+  readonly profiles: ReadonlyMap<string, readonly string[]>;
+};
 
 /**
  * 只读每玩法 manifest 的 id/wireExposed（launch.gameplayId 与 host.defaultLaunch 的存在性/可入口性闸）：
@@ -489,6 +494,7 @@ function readGameplayIdSets(root: string): GameplayIdSets {
   if (!fs.existsSync(schemaDir)) fail("apps/shared/schema/gameplays", "gameplay schema directory is missing（plugin 入口校验需要玩法 manifest）");
   const canonical = new Set<string>();
   const fixture = new Set<string>();
+  const profiles = new Map<string, readonly string[]>();
   // 与 gameplay-codegen 同一对发现根：schema 目录 ∪ apps/plugins/<id>/gameplay/（PLUGIN.md §5.5 阶段 1）。
   const manifests: { readonly file: string; readonly label: string }[] = [];
   for (const entry of fs.readdirSync(schemaDir, { withFileTypes: true })) {
@@ -517,16 +523,19 @@ function readGameplayIdSets(root: string): GameplayIdSets {
   }
   for (const { file, label } of manifests) {
     if (!fs.existsSync(file)) continue;
-    let parsed: { readonly id?: unknown; readonly wireExposed?: unknown };
+    let parsed: { readonly id?: unknown; readonly wireExposed?: unknown; readonly profiles?: unknown };
     try {
-      parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { readonly id?: unknown; readonly wireExposed?: unknown };
+      parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { readonly id?: unknown; readonly wireExposed?: unknown; readonly profiles?: unknown };
     } catch (error) {
       fail(label, `cannot read valid JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
     if (typeof parsed.id !== "string") continue;
     (parsed.wireExposed === false ? fixture : canonical).add(parsed.id);
+    profiles.set(parsed.id, Array.isArray(parsed.profiles) && parsed.profiles.length > 0
+      ? parsed.profiles.filter((profile): profile is string => typeof profile === "string")
+      : ["default"]);
   }
-  return { canonical, fixture };
+  return { canonical, fixture, profiles };
 }
 
 function assertLaunchableGameplay(label: string, gameplayId: string, sets: GameplayIdSets, context: string): void {
@@ -1012,6 +1021,14 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
       menuEntryIds.set(item.entryId, plugin.id);
       if (item.launch.kind === "gameplay") {
         assertLaunchableGameplay(label, item.launch.gameplayId, gameplayIds, `menu entryId "${item.entryId}" 的 launch`);
+        // MF9-B4 / EXTRAS X1：launch.profile 必须是该玩法 manifest.profiles 的成员（joiner 按 target 选房型）；payload 不解释，
+        // 由该玩法 GameplayModule.validateLaunch 在启动时刻 exact 校验。
+        if (item.launch.profile !== undefined) {
+          const allowed = gameplayIds.profiles.get(item.launch.gameplayId) ?? [];
+          if (!allowed.includes(item.launch.profile)) {
+            fail(label, `menu entryId "${item.entryId}" 的 launch.profile "${item.launch.profile}" 不在玩法 "${item.launch.gameplayId}" 的 manifest.profiles 内（${allowed.join(", ") || "-"}）`);
+          }
+        }
         // 一 gameplayId 一贡献者（F17）：launch→plugin 映射不能靠排序裁决。
         const owner = gameplayContributors.get(item.launch.gameplayId);
         if (owner && owner !== plugin.id) {
@@ -1280,9 +1297,12 @@ function compareContributions(
 }
 
 function renderLaunch(launch: PluginManifestLaunch): string {
-  return launch.kind === "gameplay"
-    ? `launch: { kind: "gameplay", gameplayId: ${JSON.stringify(launch.gameplayId)} }`
-    : `launch: { kind: "route", routeId: ${JSON.stringify(launch.routeId)} }`;
+  if (launch.kind === "route") return `launch: { kind: "route", routeId: ${JSON.stringify(launch.routeId)} }`;
+  const extras = [
+    ...(launch.payload === undefined ? [] : [`payload: ${JSON.stringify(launch.payload)}`]),
+    ...(launch.profile === undefined ? [] : [`profile: ${JSON.stringify(launch.profile)}`]),
+  ];
+  return `launch: { kind: "gameplay", gameplayId: ${JSON.stringify(launch.gameplayId)}${extras.map((extra) => `, ${extra}`).join("")} }`;
 }
 
 /** PluginHost 单元：插件一律进入；kit 只有声明了 entry / route / menu 才进入 plugins.generated。 */
@@ -1310,7 +1330,14 @@ export function renderPlugins(catalog: ViewCatalog): string {
   lines.push("");
   lines.push("/** 入口启动目标（LaunchPort.launch 的载荷；§7.4 点击唯一出口）：进入玩法，或打开一个 plugin route。 */");
   lines.push("export type GeneratedLaunchTarget =");
-  lines.push(`    | { readonly kind: "gameplay"; readonly gameplayId: string }`);
+  lines.push("    | {");
+  lines.push(`        readonly kind: "gameplay";`);
+  lines.push("        readonly gameplayId: string;");
+  lines.push("        /** 带参 launch（MF9-B4）：原样交给该玩法 GameplayModule.validateLaunch 做 exact 校验。 */");
+  lines.push("        readonly payload?: Readonly<Record<string, unknown>>;");
+  lines.push("        /** 一个玩法多房型入口：覆盖 joiner 的缺省 profile（codegen 已校验 ∈ manifest.profiles）。 */");
+  lines.push("        readonly profile?: string;");
+  lines.push("    }");
   lines.push(`    | { readonly kind: "route"; readonly routeId: string };`);
   lines.push("");
   lines.push("/** 菜单入口贡献（§7.4：菜单唯一数据源）；只有身份与元数据，⛔ 无位置字段（位置见 GENERATED_HOST）。 */");

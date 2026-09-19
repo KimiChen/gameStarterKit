@@ -54,10 +54,9 @@ export function createGameplayModule(
         id: BALL_MOVE_GAMEPLAY_ID,
         validateLaunch: validateBallMoveLaunch,
         joiner: {
-            // launch.profile 目前只允许 catalog 缺省（ballMove 仅声明 "default"，
-            // 与 joinGameRoom 注入的 DEFAULT_GAME_ROOM_PROFILE 同值）；带差异 profile
-            // 的玩法在此把 launch 织入 join options，transport 文件保持不动。
-            join: (_launch, signal) => roomJoiner.join(signal),
+            // launch.profile（validateBallMoveLaunch 已限定在 catalog profiles 内）织入 join options：
+            // ballMove 只声明 "default"，与 joinGameRoom 的缺省同值；多房型玩法照此把 profile 传给 roomJoiner。
+            join: (launch, signal) => roomJoiner.join(signal, launch),
         },
         createPlugin: (host) => createBallMoveGameplay({
             host,

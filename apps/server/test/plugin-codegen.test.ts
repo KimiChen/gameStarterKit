@@ -2015,3 +2015,32 @@ test("MF9 kit fragments：kit.json.fragments 声明的每个 fragment 必须有 
   }
 });
 
+// ── MF9-B4：带参 launch（EXTRAS X1）——menu launch.payload / launch.profile 渲染进 plugins.generated，profile 取值闸 ─────
+// 变异验证：viewCatalog 删 launch.profile ∈ manifest.profiles 判定 → 「非法 profile 拒」转红。
+
+test("MF9 带参 launch：payload / profile 渲染进 GeneratedLaunchTarget；profile 必须是该玩法 manifest.profiles 成员", () => {
+  const fixtures = fixtureCollector();
+  try {
+    const { root } = fixtures.create();
+    const setLaunch = (extra: Record<string, unknown>): void => {
+      mutateJson(root, "apps/plugins/builtin/plugin.json", (m) => {
+        const items = m.menu as { launch: Record<string, unknown> }[];
+        const item = items.find((entry) => entry.launch.gameplayId === "ballMove");
+        assert.ok(item, "builtin 贡献 ballMove 入口");
+        item.launch = { kind: "gameplay", gameplayId: "ballMove", ...extra };
+      });
+    };
+    setLaunch({ payload: { arena: "north", size: 3 }, profile: "default" });
+    const rendered = renderViewCatalogArtifacts(readViewCatalog(root)).get(PLUGINS_RELATIVE) ?? "";
+    assert.match(rendered, /launch: \{ kind: "gameplay", gameplayId: "ballMove", payload: \{"arena":"north","size":3\}, profile: "default" \}/u);
+    assert.match(rendered, /readonly payload\?: Readonly<Record<string, unknown>>;/u);
+    assert.match(rendered, /readonly profile\?: string;/u);
+    setLaunch({ profile: "ghost" });
+    assert.throws(() => readViewCatalog(root), /launch\.profile "ghost" 不在玩法 "ballMove" 的 manifest\.profiles 内（default）/u);
+    setLaunch({});
+    assert.match(renderViewCatalogArtifacts(readViewCatalog(root)).get(PLUGINS_RELATIVE) ?? "", /launch: \{ kind: "gameplay", gameplayId: "ballMove" \}/u, "不带参时渲染形态不变");
+  } finally {
+    fixtures.dispose();
+  }
+});
+
