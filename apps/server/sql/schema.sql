@@ -105,6 +105,32 @@ CREATE TABLE IF NOT EXISTS world_instance (
   UNIQUE KEY uk_world_instance_line (server_id, map_id, line)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- world_transfer（MMO MF8-B1，docs/MMO.md §5.4 MF8 / §10.2，per-zone）：persona 跨分线交接的持久状态机（框架自有表，⛔ 不依赖 kit 表）。
+-- state：requested / prepared / committed / activated / finalized / cancelled，每步 CAS 推进（rooms/core/transfer.ts，transfer_id 幂等重放同一结果）；
+-- active_key：在途 = '1'、终态（finalized / cancelled）置 NULL ⇒ UNIQUE(server_id, persona_id, active_key) 保证一 persona 同时只一在途；
+-- control_epoch：交接持有的控制权代号（Committed 后旧房的迟到写被 MF7b 存储边界拒）；ticket_sha256：目标房一次性凭据的 sha256（原文只给客户端）；
+-- reserve_expires_at：目标预留到期（Committed 前可取消并释放）；payload：kit 交接载荷（JSON，框架不解释）。
+CREATE TABLE IF NOT EXISTS world_transfer (
+  server_id          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  transfer_id        VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  persona_id         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  from_instance      VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  to_map             VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  to_line            SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  to_instance        VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
+  state              VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'requested',
+  control_epoch      BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  ticket_sha256      CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
+  reserve_expires_at DATETIME(3) NULL,
+  payload            JSON NULL,
+  active_key         VARCHAR(8) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT '1',
+  created_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (server_id, transfer_id),
+  UNIQUE KEY uk_world_transfer_active (server_id, persona_id, active_key),
+  KEY idx_world_transfer_state (server_id, state, reserve_expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- 单例任务领导权 + fencing。⛔ 别用 GET_LOCK（连接作用域，连接池下泄漏）（09·X7）
 CREATE TABLE IF NOT EXISTS singleton_lease (
   lease_name   VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,

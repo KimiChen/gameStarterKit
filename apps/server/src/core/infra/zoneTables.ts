@@ -21,6 +21,7 @@ export const FRAMEWORK_PER_ZONE_TABLES: readonly string[] = [
   "gameplay_outbox",
   "persona",
   "world_instance",
+  "world_transfer",
   "purchases",
   "match_results",
   "mail",
