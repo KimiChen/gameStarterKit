@@ -4,24 +4,31 @@
 
 -- 货币余额【权威】。复合 PK 走主键等值锁；CHECK 只是兜底，SQL 内必须 WHERE balance >= ?
 -- 每区独立经济（docs/DUAL_MODE.md §3.3）：server_id 进 PK；⚠ 写路径谓词必须带 server_id。
+-- 资产主体（MMO MF2，docs/MMO.md §3）：owner_kind 0 = account（存量全部）/ 1 = persona（owner_id = persona_id）进 PK；
+-- 存量升级由 tools/db-bootstrap.ts ensureAssetOwnerShape 一次性完成（列缺省 0 / '' 让旧行无损并入）。
 CREATE TABLE IF NOT EXISTS user_currency (
   user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   server_id  SMALLINT UNSIGNED NOT NULL DEFAULT 0,   -- 0=大混服/单形态；区服取 1..N
+  owner_kind TINYINT UNSIGNED NOT NULL DEFAULT 0,    -- 0 account / 1 persona（shared protocol/identity.ts）
+  owner_id   VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
   currency   SMALLINT UNSIGNED NOT NULL,
   balance    BIGINT NOT NULL DEFAULT 0,
   version    BIGINT UNSIGNED NOT NULL DEFAULT 0,
   last_fence BIGINT UNSIGNED NOT NULL DEFAULT 0,
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (user_id, server_id, currency),
+  PRIMARY KEY (user_id, server_id, owner_kind, owner_id, currency),
   CONSTRAINT chk_balance CHECK (balance >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 货币流水 + 幂等键。幂等必须 UNIQUE(user_id, server_id, idem_key)，⛔ 不是全局 UNIQUE(idem_key)（09·I4）
+-- 货币流水 + 幂等键。幂等必须 UNIQUE(user_id, server_id, owner_kind, owner_id, idem_key)，⛔ 不是全局 UNIQUE(idem_key)（09·I4）
 -- 每区独立经济（§3.2/§3.4）：op_id 已编码 sId（deriveOpId），server_id 进唯一键让跨区同 idem_key 并存。
+-- 资产主体（MMO MF2）：owner_kind / owner_id 进唯一键，同 uid 下 account 与各 persona 的流水互不可见。
 CREATE TABLE IF NOT EXISTS currency_ledger (
   id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id       VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   server_id     SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  owner_kind    TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  owner_id      VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
   currency      SMALLINT UNSIGNED NOT NULL,
   delta         BIGINT NOT NULL,
   balance_after BIGINT NOT NULL,
@@ -29,17 +36,20 @@ CREATE TABLE IF NOT EXISTS currency_ledger (
   reason        VARCHAR(64) NOT NULL,
   created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uk_idem (user_id, server_id, idem_key),
+  UNIQUE KEY uk_idem (user_id, server_id, owner_kind, owner_id, idem_key),
   KEY idx_user_time (user_id, server_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 跨存储 intent（04）。status TINYINT：0 pending / 1 done / 2 dead，⛔ 全代码数字常量（09·X4）
 -- 每区独立经济（§3.2/§3.6）：op_id 仍全局 PK（编码 sId 已全局唯一，刻意不分区，D3）；
 -- server_id 补列供后台 worker（relayer/replayDead）重建区上下文 + apply 到对区 Redis 前缀。
+-- 资产主体（MMO MF2）：intent 带 owner_kind / owner_id（0 / '' = account 存量）；relayer 对 persona 主体只落账本、⛔ 不 apply 到账号 Redis 背包。
 CREATE TABLE IF NOT EXISTS gameplay_outbox (
   op_id       VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   user_id     VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   server_id   SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  owner_kind  TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  owner_id    VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
   effect      JSON NOT NULL,
   status      TINYINT UNSIGNED NOT NULL DEFAULT 0,
   attempts    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -49,6 +59,28 @@ CREATE TABLE IF NOT EXISTS gameplay_outbox (
   PRIMARY KEY (op_id),
   KEY idx_pending (status, created_at),
   KEY idx_pending_srv (status, server_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- persona（MMO MF2，docs/MMO.md §3 / §5 MF2，per-zone）：账号在某 kit 下的角色级资产主体。框架只保证唯一（UNIQUE(server_id,
+-- user_id, kit_id, slot)）与硬上限（PERSONA_MAX_SLOTS_HARD）；kit 的角色行经 persona_id 关联但 ⛔ 无外键（KIT.md §2）。
+-- status TINYINT：0 active / 1 inactive；control_epoch 供 MF4 控制权 CAS；world_address NULL = 不在任何世界房；
+-- session_generation 随会话撤销 / 踢下线抬高（MF2-B5）；meta 由 kit 的 createPersona 交来、框架不解释。
+CREATE TABLE IF NOT EXISTS persona (
+  server_id          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  persona_id         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  user_id            VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  kit_id             VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  slot               TINYINT UNSIGNED NOT NULL,
+  status             TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  control_epoch      BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  world_address      VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  session_generation BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  meta               JSON NULL,
+  created_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (server_id, persona_id),
+  UNIQUE KEY uk_persona_slot (server_id, user_id, kit_id, slot),
+  KEY idx_persona_user (server_id, user_id, kit_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 单例任务领导权 + fencing。⛔ 别用 GET_LOCK（连接作用域，连接池下泄漏）（09·X7）

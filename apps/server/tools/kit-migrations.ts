@@ -380,6 +380,16 @@ function ledgerRowOf(row: Row): LedgerRow {
  * 账本按语句粒度记进度：文件先以 applied_statements=0 入账，每条语句成功即 +1；
  * 上次中途失败的文件（sha 相同、进度未满）从失败那条续跑；任何一步抛错都会释放租约再上抛。
  */
+/** 在 `singleton_lease('db_bootstrap')` 下跑一段一次性迁移（MMO MF2 资产主体迁移与 kit 迁移共用同一把锁，先后各持一次）。 */
+export async function withBootstrapLease<T>(conn: SqlConn, holder: string, leaseSeconds: number, fn: () => Promise<T>): Promise<T> {
+  await acquireBootstrapLease(conn, holder, leaseSeconds);
+  try {
+    return await fn();
+  } finally {
+    await releaseBootstrapLease(conn, holder);
+  }
+}
+
 export async function applyKitMigrations(options: ApplyKitMigrationsOptions): Promise<ApplyKitMigrationsReport> {
   const { conn, dbName, catalog, readSqlFile } = options;
   const log = options.log ?? ((): void => undefined);

@@ -28,6 +28,8 @@ after(async () => {
     await pool.execute("DELETE FROM currency_ledger WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM user_currency WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM gameplay_outbox WHERE user_id = ?", [u]);
+    // persona 表随 MMO MF2 db:bootstrap 出现；旧本地库没跑 bootstrap 时这里不能抛（after 抛出 ⇒ closeRedis/closeMysql 不执行 ⇒ 进程挂住）
+    await pool.execute("DELETE FROM persona WHERE user_id = ?", [u]).catch(() => {});
     for (const s of [0, 1, 2, 5, 7, 8]) {
       await invalidateBalanceCache(u, s).catch(() => {});
       await zoneCtx.run({ sId: s }, () => cleanupUser(u)).catch(() => {}); // 清各区 user/bag/applied 键
@@ -265,3 +267,19 @@ test("A2 公会全清按 uid 定向：批量成员存在时只清目标账号各
     for (let i = 0; i < peers.length; i++) { push.unregisterOnline(peers[i], `peer_${i}`); }
   }
 });
+
+// ── MMO MF2-B2：persona 表按区隔离 ─────────────────────────────────────────
+test("per-zone: persona 按区隔离——同 (user, kit, slot) 在两个区各一行，同区同槽 UNIQUE 拒（PersonaSlotTaken 的存储边界）", async () => {
+  const u = uid("pz-persona");
+  const pool = getPool();
+  await pool.execute("INSERT INTO persona (server_id, persona_id, user_id, kit_id, slot) VALUES (?, ?, ?, 'kfix', 0)", [1, `pz_${u}_s1`.slice(0, 64), u]);
+  await pool.execute("INSERT INTO persona (server_id, persona_id, user_id, kit_id, slot) VALUES (?, ?, ?, 'kfix', 0)", [2, `pz_${u}_s2`.slice(0, 64), u]);
+  await assert.rejects(
+    pool.execute("INSERT INTO persona (server_id, persona_id, user_id, kit_id, slot) VALUES (?, ?, ?, 'kfix', 0)", [1, `pz_${u}_dup`.slice(0, 64), u]),
+    (error: unknown) => (error as { errno?: number }).errno === 1062,
+    "同区同槽第二行被 uk_persona_slot 拒",
+  );
+  const [rows] = await pool.query<RowDataPacket[]>("SELECT server_id, slot, control_epoch, session_generation, status FROM persona WHERE user_id = ? ORDER BY server_id", [u]);
+  assert.deepEqual(rows.map((r) => [Number(r.server_id), Number(r.slot), Number(r.control_epoch), Number(r.session_generation), Number(r.status)]), [[1, 0, 0, 0, 0], [2, 0, 0, 0, 0]]);
+});
+
