@@ -410,12 +410,24 @@ export function readGeneratedWriterPaths(root: string): readonly string[] {
   return (rules.generatedWriterOwned?.entries ?? []).map((entry) => entry.path).filter((entry) => !entry.startsWith(`${INSTALLED_LOCK_DIR}/`));
 }
 
-function matchesProtected(relative: string, protectedPath: string): boolean {
+/**
+ * protected-paths.json 条目匹配：精确路径、`dir/**`（整目录）或含 `*` 单段通配（每 kit 一份的生成物家族，
+ * 如 `apps/shared/src/kits/*\/contributions.generated.ts`，MF9；家族可为空）。
+ */
+export function protectedPathMatches(relative: string, protectedPath: string): boolean {
   if (protectedPath.endsWith("/**")) {
     const dir = protectedPath.slice(0, -3);
     return relative === dir || relative.startsWith(`${dir}/`);
   }
+  if (protectedPath.includes("*")) {
+    const pattern = protectedPath.split("*").map((part) => part.replace(/[.+?^${}()|[\]\\]/gu, "\\$&")).join("[^/]+");
+    return new RegExp(`^${pattern}$`, "u").test(relative);
+  }
   return relative === protectedPath;
+}
+
+function matchesProtected(relative: string, protectedPath: string): boolean {
+  return protectedPathMatches(relative, protectedPath);
 }
 
 /** 镜像/`.meta` 路径 → 真源路径（供 allowlist 复用）；非镜像/非 .meta 原样返回。 */

@@ -48,6 +48,17 @@ function fsTarget(path: string): { target: string; isGlob: boolean } {
   return { target: join(ROOT, isGlob ? path.slice(0, -3) : path), isGlob };
 }
 
+/** `*` 单段通配条目（每 kit 一份的生成物家族，MF9）：展开为现有的匹配文件；家族可为空。 */
+function expandWildcard(pattern: string): string[] {
+  const [head, tail] = pattern.split("*") as [string, string];
+  const base = join(ROOT, head);
+  if (!existsSync(base)) return [];
+  return readdirSync(base, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => join(base, entry.name + tail))
+    .filter((file) => existsSync(file));
+}
+
 function walkFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name);
@@ -151,6 +162,15 @@ test("generatedWriterOwned：生成物存在、Do not edit 抬头在位、与保
     assert.ok(!seen.has(entry.path), `generatedWriterOwned 重复条目：${entry.path}`);
     seen.add(entry.path);
     assert.ok(!manual.has(entry.path), `条目同时出现在手写保护组与生成物组：${entry.path}`);
+    if (entry.path.includes("*") && !entry.path.endsWith("/**")) {
+      assert.equal(entry.path.split("*").length, 2, `通配条目只允许一个 *：${entry.path}`);
+      if (!entry.autoHeader) continue;
+      for (const file of expandWildcard(entry.path)) {
+        const head = readFileSync(file, "utf8").split(/\r?\n/u, 3).join("\n");
+        assert.ok(head.includes("Do not edit"), `${file} 首三行缺少 Do not edit 生成标记`);
+      }
+      continue;
+    }
     const { target, isGlob } = fsTarget(entry.path);
     assert.ok(existsSync(target), `生成物/锁/镜像不存在：${entry.path}`);
     if (!entry.autoHeader) continue;

@@ -54,6 +54,7 @@ import {
   type HostManifest,
   type UnitClass,
 } from "./pluginManifestSchema";
+import { contributionsFileRelative, renderContributionsModule, resolveContributions, type KitContributionsPlan } from "./contributions";
 
 /** 插件根（PLUGIN.md §5.5）：宿主自有插件与安装进来的插件都在 `apps/plugins/<id>/plugin.json`，目录名 = id。 */
 export const PLUGINS_DIR_RELATIVE = "apps/plugins";
@@ -471,6 +472,8 @@ export type ViewCatalog = {
   readonly root: string;
   /** 宿主 placement（apps/plugins/host.json）：默认玩法 + 首屏入口顺序，⛔ 插件 manifest 无权声明位置。 */
   readonly host: HostManifest;
+  /** kit 贡献点渲染计划（MF9）：每个「kit × 端」一份 contributions.generated.ts。 */
+  readonly contributions: readonly KitContributionsPlan[];
 };
 
 /** 玩法 id 集合：canonical（wireExposed !== false，可作入口）与 fixture（wireExposed:false，⛔ 不得作入口）。 */
@@ -733,6 +736,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   /** 单元 id → 其登记目录标签（apps/plugins/<id> 或 apps/kits/<id>），错误信息据此点名真源。 */
   const dirLabelById = new Map<string, string>();
   const manifestLabelById = new Map<string, string>();
+  const rawById = new Map<string, unknown>();
   for (const source of discoverPluginSources(root)) {
     const { label, dirName } = source;
     const noun = source.class === "kit" ? "kit" : "插件";
@@ -754,6 +758,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     seenPluginIds.set(normalized, manifest.id);
     dirLabelById.set(manifest.id, source.dirLabel);
     manifestLabelById.set(manifest.id, label);
+    rawById.set(manifest.id, parsed);
     if (manifest.schemaVersion === 1) {
       assertKitModesMatchGameplays(root, manifest, label);
       kitsById.set(manifest.id, manifest);
@@ -780,6 +785,10 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     }
   }
   detectDependencyCycle(plugins);
+  // MF9 贡献点：登记 / 所有权 / 内容三道闸都在这里（codegen 是第一道闸）。
+  const contributions = resolveContributions(root, kitsById, parsedPlugins.map((plugin) => ({
+    registration: plugin, raw: rawById.get(plugin.id), label: manifestLabelById.get(plugin.id) as string,
+  })));
 
   const artDir = path.join(root, ART_DIR_RELATIVE);
   const id2name = buildPkgIdMap(artDir);
@@ -1038,7 +1047,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     }
   }
 
-  return { plugins, entries, viewDirs: allViewDirs, root, host };
+  return { plugins, entries, viewDirs: allViewDirs, root, host, contributions };
 }
 
 // ── 渲染 ────────────────────────────────────────────────────────────────────
@@ -1476,7 +1485,7 @@ export function renderPluginIndex(catalog: ViewCatalog): string {
 }
 
 export function renderViewCatalogArtifacts(catalog: ViewCatalog): ReadonlyMap<string, string> {
-  return new Map([
+  const artifacts = new Map<string, string>([
     [FGUI_CONTRACTS_RELATIVE, renderFguiContracts(catalog)],
     [VIEWS_RELATIVE, renderViews(catalog)],
     [PLUGINS_RELATIVE, renderPlugins(catalog)],
@@ -1484,6 +1493,9 @@ export function renderViewCatalogArtifacts(catalog: ViewCatalog): ReadonlyMap<st
     [KIT_CATALOG_SHARED_RELATIVE, renderKitCatalogShared(catalog)],
     [KIT_CATALOG_SERVER_RELATIVE, renderKitCatalogServer(catalog)],
   ]);
+  // MF9：每个「kit × 端」一份贡献收录文件（kit 声明了该端的贡献点即恒生成）。
+  for (const plan of catalog.contributions) artifacts.set(contributionsFileRelative(plan.end, plan.kitId), renderContributionsModule(plan));
+  return artifacts;
 }
 
 // ── 删除保护锚（从既有生成物恢复集合；生成物格式由本生成器唯一拥有） ────────

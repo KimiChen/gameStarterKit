@@ -157,7 +157,7 @@ function walkTs(dir: string): string[] {
     if (statSync(dir).isFile()) return dir.endsWith(".ts") ? [dir] : [];
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
         entry.isDirectory() ? walkTs(join(dir, entry.name))
-            : entry.name.endsWith(".ts") ? [join(dir, entry.name)] : []);
+            : entry.name.endsWith(".ts") && !entry.name.endsWith(".generated.ts") ? [join(dir, entry.name)] : []); // 生成物由 writer 拥有（MF9 contributions.generated.ts），⛔ 不进扫描面
 }
 
 /** 扫描整棵检出：文件按最长匹配的登记目录归属到包，再逐条 import 过 judgeClientImport。 */
@@ -237,6 +237,8 @@ test("夹具反例：临时检出里越界的插件 / kit 文件被逐条点名�
         write("apps/client/src/kits/kfix/logic/x.ts", 'import { q } from "../../arena/api/board/index";\nimport { p } from "../../../plugins/badplug/ok";\nimport { own } from "../../../shared/kits/kfix/api/board/index";\nexport const x = [q, p, own];\n');
         write("apps/client/src/gameplay/modes/kfixDuel/index.ts", 'import { r } from "../../../kits/kfix/internal";\nexport const mode = r;\n');
         write("apps/client/src/net/rooms/KfixDuelRoom.ts", 'import { s } from "../../kits/slg/internal";\nexport const room = s;\n');
+        // MF9 生成物：kits/<id>/contributions.generated.ts 由 codegen:plugins 拥有并静态 import 插件模块——⛔ 不进扫描面
+        write("apps/client/src/kits/kfix/contributions.generated.ts", 'import { ok } from "../../plugins/badplug/ok";\nexport const KIT_CONTRIBUTIONS = { content: [ok] } as const;\n');
 
         const packages = loadClientPackages(root);
         assert.deepEqual(packages.map((pkg) => `${pkg.cls}:${pkg.id}`), ["plugin:badplug", "kit:kfix"], "无 version 的 hostish 是宿主自有包，不进扫描面");
@@ -256,6 +258,7 @@ test("夹具反例：临时检出里越界的插件 / kit 文件被逐条点名�
         assert.ok(!scan.violations.some((violation) => violation.file.endsWith("badplug/ok.ts")), "合法导入零误伤");
         assert.ok(!scan.violations.some((violation) => violation.file.includes("kfixDuel/index.ts")), "kit 模式四件 import 本 kit 内部模块是合法的");
         assert.ok(!scan.violations.some((violation) => violation.file.endsWith("HomeView.ts")), "宿主自有目录不进扫描面");
+        assert.ok(!scan.violations.some((violation) => violation.file.endsWith(".generated.ts")), "生成物不进客户端扫描面（MF9 contributions.generated.ts）");
     } finally {
         rmSync(root, { recursive: true, force: true });
     }
