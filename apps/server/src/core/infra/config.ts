@@ -355,6 +355,15 @@ export const REDIS_COORD_URL = () => env("REDIS_COORD_URL", REDIS_DURABLE_URL())
 
 /** 锁 TTL。必须 > 货币事务 p99（M0 压测定数，见 apps/server/tools/m0/currency-txn-bench.ts）。 */
 export const LOCK_TTL_MS = 5000;
+/**
+ * 世界权威租约（MMO MF4-B4，docs/MMO.md §11.2 冻结：TTL 15 s / 续租 5 s）：coord Redis `kWorldLease` SET NX PX；
+ * 加载期断言 `renew * 3 ≤ ttl`（连丢两次续租仍在 TTL 内，第三次丢 ⇒ 视为失租 → Draining）。int 测试可注入更短的值。
+ */
+export const WORLD_LEASE_TTL_MS = envInt("WORLD_LEASE_TTL_MS", 15_000);
+export const WORLD_LEASE_RENEW_MS = envInt("WORLD_LEASE_RENEW_MS", 5_000);
+if (WORLD_LEASE_RENEW_MS < 1 || WORLD_LEASE_TTL_MS < 1 || WORLD_LEASE_RENEW_MS * 3 > WORLD_LEASE_TTL_MS) {
+  throw new Error(`WORLD_LEASE_RENEW_MS(${WORLD_LEASE_RENEW_MS}) * 3 必须 ≤ WORLD_LEASE_TTL_MS(${WORLD_LEASE_TTL_MS})（MMO.md §11.2）`);
+}
 /** 跨实例抢锁有界重试次数（09·L5：禁止无限递归）。 */
 export const LOCK_RETRY_MAX = 3;
 /** 幂等 pending 哨兵短租约；必须显著覆盖 handler 的最大执行窗口，避免迟到写与立即重试并发。 */
