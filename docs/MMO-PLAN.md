@@ -220,6 +220,8 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 | MF11-B4 「框架侧完成」矩阵 | `scripts/lib/fixture-checkout.mjs` 先例：临时根记录保护文件 hash → 加入 worldFixture + kitfix + kitfixContent → 先证全部 `--check` 红 → writer / sync → 全绿 → 分类器断言人工文件只出现夹具自有 `A`、既有 `M` 只命中 provenance 白名单 → 第二次 writer 字节不变；变异：向 `GameRoom.ts` 注入一行手改 → 分类器转红 | 矩阵脚本入 `test:int` 末项或独立 `verify:mmo-fixture-matrix` | — |
 | MF11-B5 登记 | MMO.md §12 逐段登记；tag `mmo-framework-v1` | — | — |
 
+退出：B1–B5 全部（✅ 2026-09-20）；矩阵落为独立命令 `npm run verify:mmo-fixture-matrix`（⛔ 进 test:int / verify:core：一次性检出 + 两端 typecheck 约 4 分钟），发现登记 MMO.md §12 MF11 偏差 ①–⑪。回滚：可回退。
+
 ## 3. `mmo` kit 施工单（MK0–MK4）
 
 前置以 MMO.md §7.6 表为唯一口径。kit 段动线 = KIT.md §5 + PLUGIN.md §5：`plugin -- pack mmo` → 干净树 `plugin -- install mmo.zip` → `codegen:plugins` / `codegen:gameplays` → `db:bootstrap`（两遍，第二遍零 DDL）→ `plugin -- check` → `plugin -- test mmo` → `verify:all`。
@@ -340,7 +342,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [x] MF7b-B1（be50abf0） [x] MF7b-B2（8f1da3cd） [x] MF7b-B3（2bb60051；实现选项取 ④「事件批只随分线检查点同事务落库」，①–③ 门 / superseded 保留作纵深） [x] MF7b-B4（32da36de） [x] MF7b-B5（0bd33abf；夹具 mode 住 test/fixtures，kitfix 两表在 int 内物化） [x] MF7b-B6（本行所在提交：§7.3 逐行用例 `world-rollback-windows.test.ts` + SERVER.md §8.3 + 文档）— MF7b 退出 2026-09-20，见 MMO.md §12（偏差 ①–⑥）；tag `mf7b-exit`
 - [x] MF8-B1（056096a3） [x] MF8-B2（162334f9；状态机 / 凭据用例落 test/int：world-transfer / world-ticket） [x] MF8-B3（2bb25a8c） [x] MF8-B4（73716dac） [x] MF8-B5（0c6c596f） [x] MF8-B6（356f003e） [x] MF8-B7（本行所在提交：`test/int/world-transfer-flow.test.ts` 四注入 + fault-matrix `world-transfer` 组 + `tools/plugin/transferGate.ts` 卸载闸 + 文档）— MF8 退出 2026-09-20，见 MMO.md §12；tag `mf8-exit`
 - [x] MF10-B1（76ae49ff） [x] MF10-B2（a8211ff7） [x] MF10-B3（b1898b14） [x] MF10-B4（本行所在提交：`tools/world-bench/multi-process.ts` + 报告 `docs/perf/world-bench/2026-09-20T040342-multi-process.json` + 文档）— MF10 退出 2026-09-20，见 MMO.md §12；tag `mf10-exit`
-- [ ] MF11-B1 [ ] MF11-B2 [ ] MF11-B3 [ ] MF11-B4 [ ] MF11-B5
+- [x] MF11-B1（80234284；MMO-REVIEW-2 R2-01 / R2-02 改代码） [x] MF11-B2（f6eeb83b） [x] MF11-B3（52db09d2） [x] MF11-B4（b11bda7b；独立命令 `verify:mmo-fixture-matrix`，34 步） [x] MF11-B5（本行所在提交）— MF11 退出 2026-09-20，见 MMO.md §12；tag `mmo-framework-v1`（框架段 MF0–MF11 完成）
 - [ ] MK0-B1…B6 [ ] MK1-B1…B6 [ ] MK2-B1…B3 [ ] MK3-B1…B3 [ ] MK4-B1…B6
 - [ ] MG0-B1…B3 [ ] MG1-B1…B2 [ ] MG2-B1…B3
 - [x] PS0（2026-09-19 拍板 → MMO.md D27） [ ] PS1 [ ] PS2 [ ] PS3 [ ] PS4 [ ] PS5

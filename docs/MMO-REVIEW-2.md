@@ -70,3 +70,13 @@ worker 失租、双登顶号都有真栈证据；多进程接管有实验报告�
 ## 附录 B：处置顺序
 
 R2-01 / R2-02 随本轮 MF11-B1 提交；R2-03–R2-08 的口径随 MF11-B2 真相对齐写进 MMO.md §12 / SERVER.md / KIT.md / rooms README；其余不处置。
+
+## 附录 C：MF11-B4 夹具矩阵带出的发现（2026-09-20；处置见 MMO.md §12 MF11 偏差 ②–⑪）
+
+| 编号 | 发现 | 处置 |
+| --- | --- | --- |
+| R2-15 | `gameplay-codegen.test` 的 MF4-B2 / MF5a-B1 两条用例以「真仓无 canonical world mode」为前提（字节快照） | 矩阵跳过；mmo kit 落地时改成夹具根内断言 |
+| R2-16 | canonical world mode 仍要求客户端 GameplayModule，但世界形态不经 GameRoom joiner 进入 | 夹具用占位 module；kit 客户端入口流程归 MK1 |
+| R2-17 | 纯内容插件（只 contributes）仍须客户端登记（entry），否则被「两者皆无」拒 | 夹具给空 install module；放宽与否归 PLUGIN-REGISTRY |
+| R2-18 | kit-api 未再导出 CheckpointPort / CheckpointEnvelope，kit 目录（K1 规则 ①）无法直接实现端口 | 夹具把端口放 `rooms/modes/<id>/`；建议 MK0 前在 kit-api 再导出 |
+| R2-19 | pack 要求 Cocos 镜像 + Creator `.meta` 随包、首装要求推导集内无既有文件、已安装锁不在 writer 路径表 | 矩阵按序：sync → 合成 .meta → pack → git reset → install；锁记作安装器 provenance |
