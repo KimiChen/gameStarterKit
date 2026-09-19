@@ -18,7 +18,13 @@ import {
   RoomName,
   S2C,
   WORLD_ROOM_PROTOCOL_VERSION,
+  wireChecksum,
+  type IWorldFixtureEnter,
+  type IWorldFixtureEntityWire,
+  type IWorldFixtureLeave,
+  type IWorldFixtureUpdate,
 } from "../src/shared/index";
+import { ObserverReconciler } from "../src/logic/rooms/observer/ObserverReconciler";
 import { normalizeWorldRoomStrategy, worldRoomModeVersion } from "../src/net/rooms/matchmaking";
 import {
   SDK_CLOSE_CODE,
@@ -186,4 +192,49 @@ test("离开分类：consented / drained（WITH_ERROR）/ replaced（顶号关�
   await handle.leave();
   assert.equal(fake.leaveCalls, 0, "已离开的 handle 不再调 SDK leave");
   assert.equal(seen.length, 1, "onLeave 恰一次");
+});
+
+test("bindObserverStream（MF5b-B2）：worldFixture 六个 perSession S2C 经 wire 校验绑到 ObserverReconciler；私有流走 onMessage；解绑后不再投递；非法帧丢弃", async () => {
+  const fake = makeFakeRoom("we");
+  const { client } = makeClient([fake]);
+  const transport = new WorldRoomTransport({ client: () => client, ...deps });
+  const handle = await transport.join(request());
+  const reconciler = new ObserverReconciler<IWorldFixtureEntityWire, IWorldFixtureEnter, IWorldFixtureUpdate, IWorldFixtureLeave>({
+    entityOfItem: (item) => item as IWorldFixtureEntityWire,
+    entityOfEnter: (payload) => payload.entity,
+    entityOfUpdate: (previous, payload) => ({ id: payload.id, kind: previous?.kind ?? "static", x: payload.x, y: payload.y, rev: payload.rev }),
+    idOfLeave: (payload) => payload.id,
+  });
+  const log: string[] = [];
+  const off = handle.bindObserverStream({
+    enter: S2C.WorldFixtureEnter, update: S2C.WorldFixtureUpdate, leave: S2C.WorldFixtureLeave,
+    baselineBegin: S2C.WorldFixtureBaselineBegin, baselineChunk: S2C.WorldFixtureBaselineChunk, baselineEnd: S2C.WorldFixtureBaselineEnd,
+  }, {
+    enter: (p) => log.push(`enter:${reconciler.acceptEnter(p as IWorldFixtureEnter)}`),
+    update: (p) => log.push(`update:${reconciler.acceptUpdate(p as IWorldFixtureUpdate)}`),
+    leave: (p) => log.push(`leave:${reconciler.acceptLeave(p as IWorldFixtureLeave)}`),
+    baselineBegin: (p) => log.push(`begin:${reconciler.acceptBaselineBegin(p as never)}`),
+    baselineChunk: (p) => log.push(`chunk:${reconciler.acceptBaselineChunk(p as never)}`),
+    baselineEnd: (p) => log.push(`end:${reconciler.acceptBaselineEnd(p as never)}`),
+  });
+  const privates: unknown[] = [];
+  // 私有流与视野流共用单 seq 流：私有流也要喂给 reconciler 的 cursor（否则 enter 看到 seq 空洞 ⇒ resync）
+  const offPrivate = handle.onMessage(S2C.WorldFixturePrivate, (payload) => { privates.push(payload); reconciler.acceptPrivate(payload); });
+  const items: IWorldFixtureEntityWire[] = [{ id: "mover-a", kind: "mover", x: 500, y: 500, rev: 0 }, { id: "static-0", kind: "static", x: 520, y: 520, rev: 0 }];
+  fake.emit(S2C.WorldFixtureBaselineBegin, { baselineId: "wi_1#1:baseline:s:1", seq: 1, tick: 3, chunkCount: 1, itemCount: 2 });
+  fake.emit(S2C.WorldFixtureBaselineChunk, { baselineId: "wi_1#1:baseline:s:1", seq: 1, index: 0, items });
+  fake.emit(S2C.WorldFixtureBaselineEnd, { baselineId: "wi_1#1:baseline:s:1", seq: 1, checksum: wireChecksum(items) });
+  fake.emit(S2C.WorldFixturePrivate, { seq: 2, tick: 3, id: "mover-a", stamina: 100 });
+  fake.emit(S2C.WorldFixtureEnter, { seq: 3, tick: 4, entity: { id: "mover-b", kind: "mover", x: 560, y: 560, rev: 2 } });
+  fake.emit(S2C.WorldFixtureUpdate, { seq: 4, tick: 5, id: "mover-b", x: 562, y: 560, rev: 3 });
+  fake.emit(S2C.WorldFixtureUpdate, { seq: 5, tick: 5, id: "mover-b", x: -1, y: 560, rev: 3 }); // 非法帧：丢弃
+  fake.emit(S2C.WorldFixtureLeave, { seq: 5, tick: 6, id: "static-0" });
+  assert.deepEqual(log, ["begin:applied", "chunk:applied", "end:applied", "enter:applied", "update:applied", "leave:applied"]);
+  assert.deepEqual([...reconciler.snapshot().keys()].sort(), ["mover-a", "mover-b"]);
+  assert.equal(reconciler.snapshot().get("mover-b")?.x, 562);
+  assert.deepEqual(privates, [{ seq: 2, tick: 3, id: "mover-a", stamina: 100 }], "私有流走 onMessage");
+  off();
+  offPrivate();
+  fake.emit(S2C.WorldFixtureEnter, { seq: 6, tick: 7, entity: { id: "mover-c", kind: "mover", x: 1, y: 1, rev: 0 } });
+  assert.equal(log.length, 6, "解绑后不再投递");
 });

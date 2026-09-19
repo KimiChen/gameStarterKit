@@ -12,6 +12,8 @@
  *  - 入站：onMessage 先过 validateS2CPayload，非法帧丢弃并告警（不打印报文）；
  *  - 离开分类：CONSENTED = 自己离开；WITH_ERROR = 世界 Draining / Offline（⛔ 不能重连同房，须经 world.enter 重新进入）；
  *    KICK_CLOSE_CODE[Replaced] = 同 persona 在别处取得控制权；其余 = 掉线（SDK 自动重连，onReconnect 归位）。
+ *  - 观察者流（MF5b-B2）：`bindObserverStream(types, sink)` 把该玩法 perSession 的 enter / update / leave / baseline 六个 S2C 绑到 sink
+ *    （通常是 logic/rooms/observer/ObserverReconciler），本人私有流仍走 `onMessage`；与 GameRoomTransport.bindObserverStream 同形。
  *  端点：PS2 落地前用 getCurrentGameWsUrl()（D27：/version 的 worldWs 缺省回落 gameWs）。
  */
 import { getToken } from "../../core/http";
@@ -32,6 +34,7 @@ import {
 import { getCurrentGameWsUrl, getCurrentServer } from "../serverSession";
 import { cloneJson, disableSdkOutboundReplay, safeError, warnInvalidWire as sharedWarnInvalidWire } from "../wireCommon";
 import { WORLD_ROOM_PROFILE, normalizeWorldRoomStrategy, worldRoomModeVersion, type WorldRoomMatchmakingStrategy } from "./matchmaking";
+import type { ObserverStreamSink, ObserverStreamTypes } from "./GameRoomTransport";
 
 export interface WorldJoinRequest {
     /** world 形态玩法 id（client catalog `kind:"world"`）。 */
@@ -73,6 +76,8 @@ export interface WorldRoomHandle {
     onLeave(callback: (kind: WorldLeaveKind, code: number | undefined) => void): () => void;
     /** 只放行 core 与本 mode 的 C2S；payload 先 exact 校验；掉线 / 已离开拒发。返回是否已交给 SDK。 */
     send<K extends keyof C2SPayloadMap>(type: K, payload: C2SPayloadMap[K]): boolean;
+    /** 观察者流端口（MF5b-B2）：六个 perSession S2C → sink（payload 已过 wire validator）；返回一次性解绑。 */
+    bindObserverStream(types: ObserverStreamTypes, sink: ObserverStreamSink): () => void;
     leave(): Promise<void>;
 }
 
@@ -257,6 +262,17 @@ export class WorldRoomTransport {
                     console.error(`[WorldRoom] ${String(type)} callback exception`);
                 }
             }),
+            bindObserverStream: (types, sink) => {
+                const offs = [
+                    handle.onMessage(types.enter, (payload) => sink.enter(payload)),
+                    handle.onMessage(types.update, (payload) => sink.update(payload)),
+                    handle.onMessage(types.leave, (payload) => sink.leave(payload)),
+                    handle.onMessage(types.baselineBegin, (payload) => sink.baselineBegin(payload)),
+                    handle.onMessage(types.baselineChunk, (payload) => sink.baselineChunk(payload)),
+                    handle.onMessage(types.baselineEnd, (payload) => sink.baselineEnd(payload)),
+                ];
+                return () => { for (const off of offs) off(); };
+            },
             onDrop: (callback) => { dropListeners.add(callback); return () => { dropListeners.delete(callback); }; },
             onReconnect: (callback) => { reconnectListeners.add(callback); return () => { reconnectListeners.delete(callback); }; },
             onLeave: (callback) => { leaveListeners.add(callback); return () => { leaveListeners.delete(callback); }; },
