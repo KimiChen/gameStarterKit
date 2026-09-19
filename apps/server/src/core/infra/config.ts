@@ -422,6 +422,17 @@ export const PUSH_BUS_MAX_UIDS = 64;
 export const PUSH_BUS_MAX_DATA_BYTES = 2048;
 /** 投递总线时间栅栏：`issuedAt` 早于此毫秒数的条目丢弃（积压不投递）。 */
 export const PUSH_BUS_MAX_AGE_MS = 30_000;
+
+// ── party（docs/MMO.md §6.4；MF6a-B3）──────────────────────────────────────────
+
+/** 队伍人数上限（第 6 人 accept 得 PARTY_FULL）；产品上限归 kit / 插件，这里是框架硬上限。 */
+export const PARTY_MAX_SIZE = 5;
+/** party 键族 idle TTL（秒）：每次变更 PEXPIRE 全族；最后一人离开 DEL 全族。 */
+export const PARTY_IDLE_TTL_S = 86_400;
+/** 邀请有效期（秒）：过期 accept 得 PARTY_INVITE_INVALID。 */
+export const PARTY_INVITE_TTL_S = envInt("PARTY_INVITE_TTL_S", 120);
+/** party 事件近窗长度（同 GUILD_EVT_LOG_MAX 形态；窗口外客户端全量刷新）。 */
+export const PARTY_EVT_LOG_MAX = envInt("PARTY_EVT_LOG_MAX", 100);
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */
 export const OUTBOX_RETENTION_MS = 86_400_000;
 /** ⚠ 必须 ≥ 2 × OUTBOX_RETENTION_MS（09·I5），否则 relayer 重放老 intent 二次发货。 */

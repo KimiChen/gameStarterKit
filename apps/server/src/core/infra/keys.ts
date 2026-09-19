@@ -225,6 +225,22 @@ export const kIdemPending = (uid: string) => `${P()}idem:pending:{${uid}}`;
 export const kGuildEvtSeq = (gid: number) => `${P()}guild:evt:seq:{g${gid}}`;
 /** 工会事件近窗 LIST（LPUSH + LTRIM 上限 GUILD_EVT_LOG_MAX）。 */
 export const kGuildEvtLog = (gid: number) => `${P()}guild:evt:log:{g${gid}}`;
+/**
+ * party 键族（docs/MMO.md §6.4；MF6a-B3）：per-zone `P()`，hash-tag `{p<pid>}` 五键同槽（一条 Lua 校验 → 变更 → ver → 事件 → PEXPIRE）；
+ * TTL = PARTY_IDLE_TTL_S（每次变更续），最后一人离开 DEL 全族。⛔ 与任何 `{uid}` 槽不进同一条 Lua——档字段 `partyId` 在 Lua 之后经 withUser 写。
+ */
+/** party 主 HASH：`leader, maxSize, ver, createdAt, updatedAt`。 */
+export const kParty = (pid: number) => `${P()}party:{p${pid}}`;
+/** 成员 ZSET：member = uid，score = joinedAt（ms）；队长离开由最早成员接任（确定性）。 */
+export const kPartyMembers = (pid: number) => `${P()}party:members:{p${pid}}`;
+/** 邀请 HASH：invitee → JSON `{by, at, expAt}`。 */
+export const kPartyInvites = (pid: number) => `${P()}party:invites:{p${pid}}`;
+/** party 事件 seq STRING（Lua 内 INCR）。 */
+export const kPartyEvtSeq = (pid: number) => `${P()}party:evt:seq:{p${pid}}`;
+/** party 事件近窗 LIST（LPUSH + LTRIM PARTY_EVT_LOG_MAX）。 */
+export const kPartyEvtLog = (pid: number) => `${P()}party:evt:log:{p${pid}}`;
+/** 区内 party id 发号 STRING（INCR；无 TTL，无 hash-tag：与队伍键族不同槽，⛔ 不进同一条 Lua）。 */
+export const kPartyIdSeq = () => `${P()}party:idseq`;
 
 // ── durable 实例 · 全局键（G：不带区前缀，见文件头分类） ────────────────────────
 
