@@ -24,6 +24,7 @@
 > - [lvr.md](lvr.md)：用本框架 1:1 复刻 Last Voyage: Rising（4X SLG）的实施规划（2026-09-18；规划 v1 未开工，⛔ 未实施任何 LVR 能力。独立 `lvr` kit、SQL 权威 + 视图房、M0 两个 spike 是排期的门；实施状态只在其 §11 回写，⛔ 不进 plan-v5）
 > - [lvr-3d.md](lvr-3d.md)：`lvr` kit 的 3D 场景管线需求（2026-09-18；需求 v1 未开工。2026-09-19 框架侧内容已提升为 docs/3d.md，本文降为 lvr 消费方需求（内容 / shader / 特效 / 授权台账）；lvr 接入状态只在其 §8 回写）
 > - [docs/3d.md](docs/3d.md)：框架级 3D 舞台与资产管线设计提案（2026-09-19；由 lvr-3d.md 审阅提升，发现 3D-01–3D-12：Stage3D 相机 / 层位 / 场景全局租约、AssetLease、`logic/scene3d` 纯数学、EntityPool / SkinnedUnits / Vfx、cc 类型桩 3D 面、`verify:assets3d` 与 `tools/art3d`；阶段 SC0–SC5，消费方 lvr / mmo kit / slg 2b；实施状态只在其 §10 回写，⛔ 不进 plan-v5）
+> - [docs/3D-PLAN.md](docs/3D-PLAN.md)：3D 实施施工单（2026-09-19；含对 3d.md / lvr-3d.md 的第二轮审阅 3D-13–3D-22、L01–L09；SC0–SC5 拆成 `SCx-Bn` 批次：文件落点、机检退出、命令；消费方 lvr A0–A5 / mmo（SD9）/ slg 接法；批次勾选只在其 §8，阶段级完成仍回写 3d.md §10；⛔ 不是设计真源、不进 plan-v5）
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
 > - [docs/plan-v5.md](docs/plan-v5.md)：当前实施状态、验收基线与开放项去向的唯一真相（未实现开放项登记在 EXTRAS §5.2，有意保留边界在 §5.3）
 >
