@@ -4,6 +4,7 @@
 > - 归属：本文是 [lvr.md](lvr.md) §9.1 拍板「走 B：自建 3D 管线，用 Cocos 的 3D 能力」之后拆出的独立需求，
 >   **由单独的人/单独的排期实现**，⛔ 不占 lvr.md §7 的 100–200 人月核心工程估算。
 > - 逆向源：`../sourceVersion/lvr-1.0.0/`（仓外，只读）。本文引用的类名与目录均为实测。
+> - **2026-09-19 v1.1（对照 Cocos Cyberpunk 校正）**：R1–R8 与 §4–§7 按 [docs/3d.md](docs/3d.md) v1.1 与 [docs/3D-ASSETS.md](docs/3D-ASSETS.md) 改为**消费方口径**（框架给舞台 / 租约 / 纯数学 / 机械件 / 画质分档 / 工具骨架，本文只留内容、shader、特效、数值与授权）。三份预算边界：框架 SC0–SC5（[docs/3D-PLAN.md](docs/3D-PLAN.md)）、lvr 3D 内容（本文）、lvr 核心工程（lvr.md §7）。
 > - 治理：实施状态只在本文 §8 回写；⛔ 不进 plan-v5。
 > - **2026-09-19 提升**：本文的框架侧内容已提升为框架级设计 [docs/3d.md](docs/3d.md)（Stage3D 舞台 / AssetLease / `logic/scene3d` 纯数学 / 机械件 / 资产闸 / `tools/art3d`，阶段 SC0–SC5）；本文降为 **lvr 消费方需求**：§3 R1–R8 的框架侧落点见 docs/3d.md §1.2，§4 表中的框架约束以 docs/3d.md §2 为准，§5 A0 并入 SC0。实施状态：框架段在 docs/3d.md §10，lvr 接入仍在本文 §8。
 
@@ -24,6 +25,7 @@ Cocos Creator 3.8 本身是完整 3D 引擎（`MeshRenderer` / `Material` / `Eff
 （`SlgChunkRenderer` / `SlgTilemapRenderer` / `SlgDecorationRenderer` / `SlgFarLayerRenderer`）——
 它们已经在用 `Material` / `EffectAsset` / 动态 Mesh / 材质销毁 / LOD / 后处理开关回滚，
 但都是**2D 平面四边形批合并**，不是 3D 场景图。可以抄它们的**资源生命周期与批合并纪律**，⛔ 抄不到 3D 场景组织。
+2026-09-19 起框架先例改为 docs/3d.md 的 `stage3dFixture` 与 `stage3d-dev.scene`（SC1）；场景组织 / LOD / 烘焙 / 画质分档的做法参照 Cocos 官方 Cyberpunk 演示（docs/3D-ASSETS.md §1 对照表），⚠ 其素材许可仅限学习研究，⛔ 不得复用任何文件。
 
 ---
 
@@ -101,44 +103,40 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 ### R1 场景与相机
 
-- **M** 一个 3D 场景根：透视相机 + 方向光 + 天空/海面背景，挂在 `kind:"cocos"` View 给的全屏 root Node 下。
-- **M** 相机控制：平移（拖拽 + 惯性）、缩放（滚轮 / 双指 pinch，锚点保持）、边界钳制。
-  纯数学部分放 `apps/client/src/kits/lvr/logic/`（吃纯度门，Node 无头可测），⛔ 不 import `cc`。
-- **M** 缩放分档 → LOD 档事件（带滞回带，避免档位抖动）。参考 `slg` 的 `mapCamera.ts` + 四档 LOD + ±8% 滞回。
+- **M** 一个 3D 场景根：页面 `onOpen` 里 `ports.stage3d.acquire(...)` 取框架 Stage3D 租约（透视相机 + 方向光 + 内容根由框架给，docs/3d.md §3），海面 / 天空内容挂租约 `root` 下；⛔ 不自建相机、⛔ 不改场景全局（用 `lease.setGlobals`）。
+- **M** 相机控制：消费框架 `logic/scene3d/cameraRig.ts`（pan / pinch 锚点保持 / 惯性 / 钳制，SC2）；lvr 只带手感常量（`apps/shared/src/kits/lvr/api/…` 单源）与俯视角 / 倾角策略（kit `logic/`，吃纯度门），⛔ 不写第二套相机数学。
+- **M** 缩放分档 → LOD 档事件：消费 `apps/shared/src/logic/lodBands.ts`（滞回带，SC2）；阈值表 lvr 单源。
 - **D** 倾角可调 / 旋转（原作 `DynamicPerspectiveCamera` 有，但首版可固定俯视角）。
 
 ### R2 模型与动画
 
 - **M** 静态模型渲染：建筑、地标、装饰。glTF/FBX → Cocos mesh + material。
-- **M** 大批量单位动画：**GPU skinning 或等价方案**。原作在世界地图上同屏几十~上百个行军单位，
-  ⛔ 逐个 `SkeletalAnimation` 组件不可行。可选方案：
-  (a) 复刻烘骨骼到贴图 + 自写 EffectAsset 采样（与原作同构）；
-  (b) 顶点动画烘到 mesh（morph）；
-  (c) 远档退化为公告板 Sprite（原作 Lod1 实际就接近这个）。
-  **需求只规定「同屏 100 单位 60fps」，方案由实现方选。**
-- **M** 2D 骨骼：英雄立绘与战斗表演。Cocos 原生支持 Spine，但**需确认 Spine 版本与导出格式**（见 §6 风险）。
-- **D** Timeline 式演出编排（首版用代码 + DOTween 等价物替代）。
+- **M** 大批量单位动画：消费框架 `SkinnedUnits`（引擎预烘焙 `useBakedAnimation` + instancing，SC4；docs/3d.md SD3）。Cyberpunk 校正：官方演示的角色走 Marionette 动画图 + 实时蒙皮，但同屏只有 ≤ 4 个敌人；lvr 世界地图同屏几十~上百行军单位必须走预烘焙 + instancing，近景英雄（数量少、需混合）走 Marionette 动画图（docs/3D-ASSETS.md §8）。远档退化为离线简模 `lod_1` 或公告板。**需求仍只规定「同屏 100 单位 60fps」**，达不到时由框架立项自写采样 shader，⛔ 不在 kit 内自写。
+- **M** 2D 骨骼：英雄立绘与战斗表演。工程级 Spine 运行时选 **4.2**（docs/3d.md SD5；Cyberpunk 同样在工程里选定单一版本），原作 3.8 导出需重导出。
+- **D** Timeline 式演出编排（首版用 Cocos `tween` + 动画图事件替代；Cyberpunk 用 Marionette 动画图承担状态机与事件）。
 
 ### R3 LOD 与剔除
 
-- **M** 两级实体 LOD（对齐原作 `Lod0`/`Lod1`）：近档真模型 + 动画 + 特效，远档简化/公告板/合批。
-- **M** 视口剔除 + 分块流式加载（照 `slg` 的 `mapStreamer.ts`：可见矩形 → 外扩 margin → 滞回带 → 环形扩张 → chunk 集 added/removed 差分）。
-- **M** 逐层 LOD 显隐开关表（每层声明 `hideAtLod`，LOD 事件驱动）。
-- **D** 遮挡剔除（原作 `WorldObscaleManager`）。
+- **M** 两级实体 LOD（对齐原作 `Lod0`/`Lod1`）：近档主文件 + 动画 + 特效，远档**离线简模** `lod_1.glb`（`tools/art3d` 生成，Cyberpunk 的 `lod_{0,1,2}.gltf` 同法）或公告板；运行时只按档**选择**资产（框架 `EntityPool`），⛔ 逐物体 `LODGroup`（Cyberpunk 1,374 个模型 0 处使用），⛔ 运行时合并网格。
+- **M** 视口剔除 + 分块流式加载：消费框架 `logic/scene3d/chunkStreamer.ts`（自 slg `mapStreamer.ts` 泛化，SC2）+ `assetPlan.ts`（进档加载 / 出档延迟释放，SC3）。
+- **M** 逐层 LOD 显隐开关表（每层声明 `hideAtLod`，框架 `EntityPool` 执行，lvr 只给表）；**细节层按画质档门控**（Cyberpunk `mesh-details` 做法）：装饰 / 小件 / 氛围灯归 details，low 档不加载（`data/detail-layers.json`）。
+- **D** 遮挡剔除（原作 `WorldObscaleManager`；Cyberpunk 用离线烘焙的静态遮挡块 + render-id 层，属高级项）。
 
 ### R4 材质与 shader
 
 - **M** 海面：可见的流动/波纹 + 按相机高度的多贴图混合（原作 `BigWorldSeaMultiTexCameraHeightBlend` 的等价物）。
-- **M** 阴影：⚠ **不要照抄原作的三套阴影方案**。先用 Cocos 内置阴影或平面投影阴影（`PlanarShadow` 等价物）评估性能，够用即止。
+- **M** 阴影：⚠ **不要照抄原作的三套阴影方案**。缺省**运行时阴影关**、静态光烘焙进 lightmap（Cyberpunk 全城 3,593 个 MeshRenderer 运行时不投影，靠 LightFX 烘焙 + 静态光）；只给主角 / 少量动态单位开平面阴影或 ShadowMap（`lease.light.setShadows`，按画质档），SC0 实测后定（docs/3D-ASSETS.md §6）。
+- **M** 材质：PBR 标准贴图集（`_BC / _N / _ORM / _E`，docs/3D-ASSETS.md §4）；静态世界材质开 `USE_INSTANCING`；自写 EffectAsset 用 surface shader 形态落 `resources/kits/lvr/3d/effects/lvr-*.effect`。
 - **M** 领地着色：地块归属色块叠加在地表上（`slg` 的 ownership 层已有 2D 版可参考）。
 - **D** 云层、轮廓描边、地形体积装饰。
 
 ### R5 特效（VFX）
 
-- **M** 一个特效管理器：池化、按 LOD 档禁用、延迟销毁、跟随目标。对齐原作 `EffectManager` + `DelayDestoryTrigger`。
+- **M** 特效播放：消费框架 `Vfx` 池（池化、按 LOD 档禁用、延迟销毁、跟随目标，SC4；对齐原作 `EffectManager` + `DelayDestoryTrigger`），lvr 只给特效目录与池容量表 `data/pool.json`。
 - **M** 建筑特效挂点（原作 `BuildingEffect` + `BuildingEffectMgr`）。
 - ⚠ **资产转换是本条的主成本**：Unity ParticleSystem ⛔ 不能直接转 Cocos，
   需逐个重建或用序列帧/Spine 替代。**首版建议只做 20–30 个高频特效，其余走占位。**
+  重建形态照 Cyberpunk：**每个特效一个目录**（`vfx/FX_<name>/`：prefab + 自有 mtl + png），池容量走数据表（Cyberpunk `data-pool.json` 同法）。
 
 ### R6 后处理
 
@@ -147,26 +145,24 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 ### R7 资产管线（本文档的第二大块）
 
-新建 `tools/lvr-art3d/`，形态照 `tools/slg-maps/`（venv + `*.config.json` + 分步脚本 + 往返自检）：
+消费框架 `tools/art3d/`（骨架 + 通用步骤，SC5；docs/3d.md §4），lvr 只带 `apps/kits/lvr/art/3d/art3d.config.json`、材质映射表与策展（⛔ 不再建 `tools/lvr-art3d/`）；步骤对照：
 
 | 步骤 | 输入 | 输出 |
 | --- | --- | --- |
 | 解包 | `assets/AssetBundles/*.ab`（2,587 个） | UnityPy 抽出 Mesh / Texture2D / Material / AnimationClip / Shader |
-| 网格转换 | Unity Mesh | glTF 或 Cocos mesh asset |
-| 贴图转换 | Texture2D（含 ASTC/ETC 压缩） | png，按平台再压 |
+| 网格转换 | Unity Mesh | glTF 2.0 `.glb`（Creator 作者态导入，⛔ 无运行时 loader）+ 离线 `lod_1 / lod_2.glb` |
+| 贴图转换 | Texture2D（含 ASTC/ETC 压缩） | png（POT、命名 `T_<Asset>_BC/_N/_ORM/_E`），平台压缩交 Creator 预设 `3d-default`（astc_8x8 + png 回落，docs/3D-ASSETS.md §5） |
 | 动画转换 | AnimationClip / GPUSkinning 烘焙贴图 | Cocos 动画或自定义采样贴图 |
-| 材质映射 | Unity Material + shader 参数 | 手工映射到自写 EffectAsset（⛔ shader 不能自动转） |
+| 材质映射 | Unity Material + shader 参数 | 手工映射表：缺省 `builtin-standard` PBR 贴图集，特殊（海面 / 领地 / 描边）映射到自写 surface shader（⛔ shader 不能自动转） |
 | 图集与去重 | 上述全部 | 按场景打包，产出引用表 JSON |
 | 往返自检 | 转换前后 | 照 `tools/slg-maps/verify-redraw.py` 做逐像素/逐顶点比对 |
 
-**落点必须在 kit 所有权推导集内**：`apps/kits/lvr/art/`（源）与
-`apps/Cocos/assets/resources/kits/lvr/`（运行时，逐字节镜像）。
+**落点必须在 kit 所有权推导集内**：`apps/kits/lvr/art/3d/`（源：glb / png / `art3d.config.json` / `LICENSES.md` 授权台账）与 `apps/Cocos/assets/resources/kits/lvr/3d/{models,textures,materials,effects,vfx,anims,spine,data}/`（运行时目录含 Creator 导入产物与 `.meta`，⛔ 不是源的逐字节镜像；是否拆独立远程 bundle 见 docs/3d.md SD12）。
 
 ### R8 资源生命周期与内存
 
-- **M** 引用计数 + fail-closed 形状闸 + 失败整包 release，**照抄 `apps/client/src/kits/lvr/...` 的模板来源
-  `apps/client/src/kits/slg/view/SlgArtResources.ts`**（addRef/decRef、批量加载、失败回滚）。
-- **M** 按 LOD 档与视口的资源装卸策略（进档加载、出档延迟释放）。
+- **M** 资源持有：消费框架 `AssetLease`（一路一租约、失败 / 超时 / 取消整包释放、迟到完成仍 decRef，SC3）；⛔ 不照抄 `SlgArtResources`——slg 自己也在 SC3 改为消费。
+- **M** 按 LOD 档与视口的资源装卸：消费 `assetPlan.ts`；预加载清单走数据表 `data/preload.json`（Cyberpunk `data-res-cache.json` 同法），⛔ 不像 Cyberpunk 那样全量预载后永不释放——lvr 资产体量大，必须随页面租约释放。
 - ⚠ 与 lvr.md §9.2 的「FGUI 只有加载没有卸载路径」是同一类问题，3D 资产体量更大，**必须在第一版就有释放路径**。
 
 ---
@@ -175,12 +171,13 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 | 约束 | 出处 |
 | --- | --- |
-| 全部代码落在 `apps/client/src/kits/lvr/**` 与 `apps/Cocos/assets/resources/kits/lvr/**` | 所有权推导集（`apps/server/tools/plugin/ownership.ts`） |
+| lvr 自有代码落在 `apps/client/src/kits/lvr/**`、资产落在 `apps/Cocos/assets/resources/kits/lvr/3d/**`；舞台 / 租约 / 纯数学 / 机械件 / 画质分档**消费框架**（docs/3d.md §2），⛔ 不自建 | 所有权推导集（`apps/server/tools/plugin/ownership.ts`）+ docs/3d.md §2 划线 |
 | `logic/` ⛔ 不 import `cc` / `fairygui-cc`，依赖注入、Node 无头可测 | 铁律 9 + `apps/client/test/logic-purity.test.ts` |
 | `view/` 只做绑定与渲染，⛔ 不做业务判断 | `docs/CLIENT.md` §3 |
 | 页面经 `<Name>View.view.json` sidecar + `kit.json` 登记 + `codegen:plugins`，⛔ 不手改 `views.generated.ts` | 铁律 2 |
 | 实心矩形用 `view/uiPlate.ts` 的 `createSolidPlate()`，⛔ 不要一矩形一 `Graphics`（实测 112.6MB → 0.1MB） | `docs/CLIENT.md` §3 |
-| ⛔ 不加 npm 依赖（需框架 PR）——**若 3D 管线需要第三方库（如 glTF loader），这是一条必须提前提出的框架 PR** | `docs/KIT.md` §2 |
+| ⛔ 不加 npm 依赖；glTF / FBX 由 Creator 作者态导入，**运行时不需要任何 loader**（docs/3d.md SD4），第三方库不再是前置 | `docs/KIT.md` §2；docs/3d.md SD4 |
+| ⛔ 不改 `apps/Cocos/settings/**`（引擎模块 / 层位 / 物理分组 / 纹理压缩预设归框架，提需求走 docs/3d.md） | docs/3d.md §2 |
 | `.meta` 随 `apps/Cocos/assets/` 提交，uuid 全树唯一；多人并行铸 meta 会撞 | `scripts/sync-client.mjs` 的 `checkMetaContents` |
 | 相对导入 ⛔ 不带扩展名 | 铁律 3 |
 
@@ -190,12 +187,12 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 | 阶段 | 内容 | 判据 |
 | --- | --- | --- |
-| **A0 可行性 spike** | 用 UnityPy 从原作 bundle 取 **1 个建筑模型 + 1 套单位动画 + 1 张海面贴图**，在 Cocos 里渲出来 | ⚠ **这是门**：Unity 材质/shader 不能自动转，若此步走不通需重估整条管线 |
-| **A1 场景骨架** | 3D 相机 + 海面 + 静态地表 + 相机控制与 LOD 分档 | 能在 `kind:"cocos"` View 里平移缩放，60fps |
-| **A2 实体层** | 两级 LOD 实体渲染 + 分块流式加载 + 资源生命周期 | 同屏 100 实体 60fps，进出视口不泄漏 |
-| **A3 单位动画** | GPU skinning 或等价方案 + 行军线 | 同屏 100 个动画单位 60fps |
-| **A4 主城** | 三档细节状态机 + 建筑四态 + 建筑特效挂点 | 主城三档切换无卡顿 |
-| **A5 特效与表演** | 特效管理器 + 20–30 个高频特效 + Spine 立绘 | 战斗表演可看 |
+| **A0 可行性 spike**（并入框架 SC0） | 用 UnityPy 从原作 bundle 取 **1 个建筑模型 + 1 套单位动画 + 1 张海面贴图**，在框架 SC0 的 CDP 探针里作第二份证据渲出来 | ⚠ **这是门**：Unity 材质/shader 不能自动转，若此步走不通需重估整条管线；框架接缝五项判据归 SC0 |
+| **A1 场景骨架**（← SC1–SC3） | 取 Stage3D 租约 + 海面 EffectAsset + 静态地表 + `cameraRig` / `lodBands` 常量 | 能在 `kind:"cocos"` 页里平移缩放，60fps（`creator-preview --perf`） |
+| **A2 实体层**（← SC3） | `EntityPool` 两级档 + `chunkStreamer` + `assetPlan` + 19 种实体预制 / 离线 `lod_1` | 同屏 100 实体 60fps，进出视口引用归零 |
+| **A3 单位动画**（← SC4） | `SkinnedUnits`（预烘焙 + instancing）+ 行军线简模 | 同屏 100 个动画单位 60fps |
+| **A4 主城**（← SC3、SC4） | 三档细节状态机（kit `logic/`）+ 建筑四态 + 建筑特效挂点表 + 细节层按画质档 | 主城三档切换无卡顿 |
+| **A5 特效与表演**（← SC4） | `Vfx` 池 + 20–30 个高频特效（每特效一目录）+ Spine 4.2 立绘 | 战斗表演可看 |
 
 ---
 
@@ -206,9 +203,10 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 | **shader ⛔ 不能自动转** | Unity shader → Cocos EffectAsset 全部要手工重写。海面、GPU skinning 采样、阴影三处是硬骨头。A0 spike 必须覆盖至少一个 |
 | **Unity ParticleSystem ⛔ 不能转** | 265 个 vfxbaseres bundle 的特效要逐个重建或替代。这可能是整条管线最大的隐藏工作量 |
 | **压缩贴图格式** | 原作 bundle 里可能是 ASTC/ETC2，解出后要重新按 Cocos 的平台策略压 |
-| **Spine 版本** | 需确认原作 Spine 运行时版本与 Cocos 内置版本是否兼容，不兼容则要重导出 |
-| **第三方库 = 框架 PR** | 任何新 npm 依赖都需框架 PR，⛔ kit 加不了。A0 就要确定是否需要 |
-| **仓内零 3D 先例** | `.meta`、资源目录、构建配置、Creator 场景序列化都没有 3D 的踩坑记录，预留调试余量 |
+| **Spine 版本** | 工程级选 4.2（docs/3d.md SD5）；原作 3.8 导出需重导出 |
+| **~~第三方库 = 框架 PR~~** | 已消解：作者态导入，运行时无 loader（docs/3d.md SD4） |
+| **烘焙工作流** | 静态光 / 反射探针在 Creator 内人工烘焙（Cyberpunk LightFX 做法），产物体积进预算；谁烘、烘完怎么 apply 回预制并入库，在 A1 前定（docs/3D-ASSETS.md §6） |
+| **仓内零 3D 先例** | 框架 SC1 的 `stage3dFixture` 与 `stage3d-dev.scene` 是先例；做法对照 Cocos Cyberpunk（docs/3D-ASSETS.md §1） |
 | **素材授权** | 与 lvr.md §6.2 同一口径：走复用，但需在 `apps/kits/lvr/README.md` 建与 snake 同规格的素材授权台账 |
 
 ---
@@ -220,7 +218,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 - `npm run typecheck` / `test:client`（logic 层无头测试必须覆盖相机数学、LOD 分档、流式器差分）
 - `npm run verify:all` exit 0
 - **Creator 真引擎预览证据**：截图 + `report.json` 落 `docs/evidence/creator-<date>/lvr-3d/`，console 为空
-- **性能实证**：同屏实体数 × 帧率，用 `npm run perf:client` 或自建基准；DrawCall 与显存要记录
+- **性能实证**：同屏实体数 × 帧率，用 `node tools/creator-preview/run.mjs <lvr 剧本> --perf`（帧时 / draw call / 三角数 / GFX 内存，标注画质档与设备；⛔ `perf:client` 是 Node 无头探针，不测 GPU）
 - **资源泄漏实证**：反复进出视口/切换场景 N 次后显存回到基线
 
 ---
