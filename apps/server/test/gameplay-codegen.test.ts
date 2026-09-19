@@ -1727,13 +1727,14 @@ test("MF5a-B1 wire 读取：defineS2C 第三参只认 perSession: true 与 coale
   }
 });
 
-test("MF5a-B1 生成：真仓无 perSession token 时空表恒生成；既有 token 加 { perSession, coalesceKey } 只多出一条表项、wire catalog 其余字节不变", () => {
+test("MF5a-B1 生成：GAME_WIRE_PER_SESSION 恒生成（键 = perSession token）；既有 token 加 { perSession, coalesceKey } 只多出一条表项、wire catalog 其余字节不变", () => {
   const fixture = createFixture();
   try {
     writeGameplayArtifacts(fixture.options);
     const before = readFixtureText(fixture.root, SHARED_WIRE_CATALOG);
-    const emptyTable = "export const GAME_WIRE_PER_SESSION = {\n} as const satisfies { readonly [type: string]: string | null };";
-    assert.ok(before.includes(emptyTable), "空表恒生成：S2CPorts 的 import 面不随 token 有无而消失");
+    const tableHead = "export const GAME_WIRE_PER_SESSION = {\n";
+    assert.ok(before.includes(tableHead), "表恒生成：S2CPorts 的 import 面不随 token 有无而消失");
+    assert.match(before, /"s2c\.viewFixture\.update": "id",/u, "真仓的 viewFixture 夹具（MF5a-B5）声明了 perSession token");
     assert.equal(readFixtureText(fixture.root, SHARED_WIRE_CATALOG), fs.readFileSync(path.join(REPOSITORY_ROOT, SHARED_WIRE_CATALOG), "utf8"), "夹具渲染 == 入库产物");
 
     // 既有两参 token 改成 perSession（契约 digest 变了，按闸同时 bump modeVersion）
@@ -1748,8 +1749,8 @@ test("MF5a-B1 生成：真仓无 perSession token 时空表恒生成；既有 to
     writeFixtureJson(fixture.root, path.relative(fixture.root, manifestFile), { ...manifest, modeVersion: (manifest.modeVersion as number) + 1 });
     writeGameplayArtifacts(fixture.options);
     const after = readFixtureText(fixture.root, SHARED_WIRE_CATALOG);
-    const expected = before.replace(emptyTable,
-      'export const GAME_WIRE_PER_SESSION = {\n    "s2c.snake.delta": "roomEpochId",\n} as const satisfies { readonly [type: string]: string | null };');
+    // 表按玩法 id 序再按 token 声明序：snake < viewFixture ⇒ 新条目插在表头
+    const expected = before.replace(tableHead, `${tableHead}    "s2c.snake.delta": "roomEpochId",\n`);
     assert.notEqual(expected, before);
     assert.equal(after, expected, "只多出一条 GAME_WIRE_PER_SESSION 表项，S2C / OWNERS / validators / tokens 表字节不变");
   } finally {

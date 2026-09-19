@@ -93,12 +93,12 @@ export const GAMEPLAY_CATALOG = {
     "viewFixture": {
         id: "viewFixture",
         constantName: "ViewFixture",
-        modeVersion: 1,
+        modeVersion: 2,
         maxPlayers: 8,
         roster: "hidden",
         profiles: ["dropIn"],
         stateFragments: [],
-        contractDigest: "8f3ed0064eea44a160d558199a66f4633f5bc71b3f5083451659a96716b4e66b",
+        contractDigest: "14ea5e8a263303a47181669dab9fbaf2769c63ffe9de1d4712ac2f887ec3bf3f",
     },
 } as const;
 

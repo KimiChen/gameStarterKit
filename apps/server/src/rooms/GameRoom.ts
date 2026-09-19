@@ -45,6 +45,11 @@ import {
     normalizeSId,
 } from "../core/infra/config";
 import { DEFAULT_ROOM_PROFILE_ID, modeDeclaresProfile, resolveRoomProfile, type RoomProfile } from "./core/RoomProfile";
+import { Baseline } from "./core/Baseline";
+import { InterestSet } from "./core/InterestSet";
+import { ObserverSync, type ObservedEntity } from "./core/ObserverSync";
+import { OutboundQueue, type OutboundPushResult } from "./core/OutboundQueue";
+import type { GameModeObserverPorts } from "./GameMode";
 // MF3-B2 共享层（docs/MMO.md §5.4 MF3）：auth / dispatcher / 预算 / 重连宽限 / 出站口的实现全部在 rooms/core，本壳只消费。
 import { catalogModeVersion, credentialMatches, gameRoomAuth, type RoomAuthResult } from "./core/RoomAuth";
 import { GAME_ROOM_MAX_MESSAGES_PER_SECOND, type MessageBudget } from "./core/MessageBudget";
@@ -218,6 +223,19 @@ export class GameRoom extends Room {
      * 名册只在这里——客户端不能枚举视野外玩家身份。shell 的人数 / 成员判定一律读这张表，⛔ 不再读 Schema。
      */
     private readonly seats = new Map<string, RuntimeModePlayer>();
+
+    /**
+     * 观察者同步运行时（MMO MF5a-B5）：每会话出站队列对所有 mode 存在（emitPerSession），差分 / baseline 只在 mode 声明
+     * `observer` 能力时构造（selectModeState 一次绑定）。排空点 = 每个 stepFixed 末尾（先本 tick 差分 / baseline，再按会话
+     * sendToken）；会话不在线（宽限中）⇒ 不排空、积压受上界（超限即重同步标记，回来先收 baseline）。
+     */
+    private observerQueue: OutboundQueue | null = null;
+    private observerSync: ObserverSync<ObservedEntity> | null = null;
+    private observerBaseline: Baseline<unknown> | null = null;
+    /** 显式请求 baseline 的会话（重连 / 玩法请求 / 超限重同步）。 */
+    private readonly observerBaselineRequests = new Set<string>();
+    /** 已收到过首发 baseline 的会话（进房首发 ⛔ 不能靠 seq===0 判：mode 可能在同 tick 先发了私有流）。 */
+    private readonly observerBaselined = new Set<string>();
 
     /** 状态快照下发间隔（ms），默认 50ms/20fps */
     patchRate = 50;
@@ -410,7 +428,123 @@ export class GameRoom extends Room {
             findClientBySession: (sessionId) =>
                 this.clients.find((candidate) => candidate.sessionId === sessionId),
             userIdOf: (sessionId) => this.participantUserId.get(sessionId) ?? null,
+            observers: this.observerPorts(),
         };
+    }
+
+    // ── 观察者同步（MF5a-B5）────────────────────────────────────────────────────
+
+    private observerPorts(): GameModeObserverPorts {
+        return {
+            interest: (session) => {
+                const interest = this.observerSync?.interest;
+                return { version: interest?.version(session) ?? 0, view: interest?.view(session) ?? new Map() };
+            },
+            emitPerSession: <TPayload>(session: string, token: GameplayS2CToken<TPayload>, payload: TPayload): OutboundPushResult => {
+                this.ports.assertModeToken(token);
+                return this.requireObserverQueue().push(session, token, payload);
+            },
+            requestBaseline: (session) => {
+                if (!this.observerSync) throw new Error(`[GameRoom] mode ${this.modeId} 未声明 observer 能力，⛔ 不能 requestBaseline`);
+                this.observerBaselineRequests.add(session);
+            },
+            seq: (session) => this.observerSync?.seq(session) ?? 0,
+            nextSeq: (session) => {
+                if (!this.observerSync) throw new Error(`[GameRoom] mode ${this.modeId} 未声明 observer 能力，⛔ 不能 nextSeq`);
+                return this.observerSync.nextSeq(session);
+            },
+        };
+    }
+
+    private requireObserverQueue(): OutboundQueue {
+        if (!this.observerQueue) {
+            this.observerQueue = new OutboundQueue(this.mode?.observer?.limits?.outboundQueueMaxMessages);
+        }
+        return this.observerQueue;
+    }
+
+    /** selectModeState 一次绑定：mode 声明 observer 能力才构造差分 / baseline（token 在此 fail-closed）。 */
+    private bindObserverRuntime(mode: RuntimeGameMode): void {
+        const capability = mode.observer;
+        if (!capability || this.observerSync) return;
+        const queue = this.requireObserverQueue();
+        const sink = { emit: (session: string, token: GameplayS2CToken<unknown>, payload: unknown): void => { queue.push(session, token, payload); } };
+        this.observerSync = new ObserverSync<ObservedEntity>(
+            capability.tokens, capability.builders, sink, new InterestSet(capability.limits?.interestMaxEntities));
+        this.observerBaseline = new Baseline<unknown>(capability.baseline.tokens, capability.baseline.builders, sink,
+            capability.baseline.chunkItems === undefined ? {} : { chunkItems: capability.baseline.chunkItems });
+    }
+
+    /**
+     * tick 开头（mode.onStep 之前）：需要 baseline 的在线会话——首发（刚入座 / 重连）、超限重同步、玩法请求——先收到只含
+     * 兴趣集的 baseline 并 rebase。放在 onStep 之前是为了单 seq 流的顺序：baseline → 本 tick 私有流 → 本 tick 差分，
+     * 客户端永远先有 baseline 再收差分（⛔ 不靠 seq===0 判首发）。
+     */
+    private prepareObservers(): void {
+        const queue = this.observerQueue;
+        const capability = this.mode?.observer;
+        const sync = this.observerSync;
+        const baseline = this.observerBaseline;
+        if (!queue || !capability || !sync || !baseline) return;
+        const context = this.modeContext();
+        for (const session of this.seats.keys()) {
+            if (!this.clients.some((candidate) => candidate.sessionId === session)) continue;
+            const needsBaseline = !this.observerBaselined.has(session) || queue.needsResync(session) || this.observerBaselineRequests.has(session);
+            if (!needsBaseline) continue;
+            try {
+                const entities = capability.visibleEntities(session, context);
+                const items = capability.baselineItems
+                    ? capability.baselineItems(session, entities, context)
+                    : [...entities.keys()].sort().map((id) => entities.get(id) as ObservedEntity);
+                const epochId = this.roomEpochId ?? (this.state.matchId || this.roomId);
+                baseline.send(session, items, { epochId, seq: sync.nextSeq(session), tick: this.state.tick });
+                sync.rebase(session, entities);
+                queue.clearResync(session);
+                this.observerBaselineRequests.delete(session);
+                this.observerBaselined.add(session);
+            } catch (error) {
+                console.error(`[GameRoom ${this.roomId}] mode ${this.modeId} observer baseline 失败 session=${session}`, error);
+            }
+        }
+    }
+
+    /**
+     * tick 末尾（mode.onStep 之后）：对每个在座且在线、已 baseline 的会话算本 tick 差分（enter / update / leave），再把该会话
+     * 队列按序 sendToken。不在线（宽限中）的会话不排空、不差分；超限打了重同步标记的会话下一 tick 由 prepareObservers 重发 baseline。
+     */
+    private flushObservers(): void {
+        const queue = this.observerQueue;
+        if (!queue) return;
+        const capability = this.mode?.observer;
+        const sync = this.observerSync;
+        const context = capability ? this.modeContext() : null;
+        for (const session of this.seats.keys()) {
+            const client = this.clients.find((candidate) => candidate.sessionId === session);
+            if (!client) continue;
+            if (capability && sync && context && this.observerBaselined.has(session) && !queue.needsResync(session)) {
+                try {
+                    sync.diffAndEmit(session, capability.visibleEntities(session, context), this.state.tick);
+                } catch (error) {
+                    console.error(`[GameRoom ${this.roomId}] mode ${this.modeId} observer 投影失败 session=${session}`, error);
+                }
+            }
+            for (const message of queue.drain(session)) {
+                try {
+                    this.ports.sendToken(client, message.token, message.payload);
+                } catch (error) {
+                    // token owner / validator 拒是 mode 的实现缺陷：记错、丢这一条，⛔ 不让房间循环死掉
+                    console.error(`[GameRoom ${this.roomId}] mode ${this.modeId} perSession 出站被拒 ${message.token.type}`, error);
+                }
+            }
+        }
+    }
+
+    /** 会话最终离开：观察者视图 / seq / 队列一起忘掉（宽限内 ⛔ 不调）。 */
+    private forgetObserver(session: string): void {
+        this.observerSync?.forget(session);
+        this.observerQueue?.remove(session);
+        this.observerBaselineRequests.delete(session);
+        this.observerBaselined.delete(session);
     }
 
     private selectModeState(mode: RuntimeGameMode): void {
@@ -444,6 +578,7 @@ export class GameRoom extends Room {
         }
         this.selectedStateModeId = mode.id;
         this.stateSelected = true;
+        this.bindObserverRuntime(mode);
     }
 
     private rootReplacementError(): Error {
@@ -1547,6 +1682,8 @@ export class GameRoom extends Room {
                 if (reconnectedPlayer) {
                     this.runModeConnectionChanged(mode, client, reconnectedPlayer, true);
                 }
+                // 重连：宽限期间未排空的积压可能已超限，下一 tick 先发只含兴趣集的 baseline（MF5a-B5）。
+                if (this.observerSync) this.observerBaselineRequests.add(client.sessionId);
                 console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 断线后重连成功`);
                 return; // seat/owner/Ready 原样保留，无其余簿记
             }
@@ -1941,6 +2078,8 @@ export class GameRoom extends Room {
         // ⚠ onBeforeStep（如 ballMove 的注入输入应用）可能同步 settle；复查后才推进 tick。
         if (this.state.phase !== GamePhase.Playing) return;
         this.state.tick++;
+        // MF5a-B5：需要 baseline 的会话先于本 tick 的私有流 / 差分收到 baseline（单 seq 流有序）。
+        this.prepareObservers();
         try {
             const result = mode.onStep?.({ ...this.modeContext(), dtMs: this.fixedStepMs });
             if (isPromiseLike(result)) this.observeModePromise(result, "step");
@@ -1949,6 +2088,8 @@ export class GameRoom extends Room {
             // into Colyseus' interval callback and kill the room loop.
             console.error(`[GameRoom ${this.roomId}] mode ${mode.id} step hook failed`, error);
         }
+        // MF5a-B5：本 tick 的观察者差分 / baseline 与每会话出站排空（settle 后不再推进）。
+        if (this.state.phase === GamePhase.Playing) this.flushObservers();
     }
 
     /** 逻辑帧：dt 只进入 fixed-step 累加器；Waiting/Settle 完全不推进。 */
@@ -1980,6 +2121,7 @@ export class GameRoom extends Room {
     /** 活动 session/uid 双向索引的唯一删除点；玩法自有状态（如运动锚点）由 mode 在 onPlayerLeaving 清理。 */
     private removePlayer(sessionId: string, removeParticipant: boolean): void {
         const wasSeated = this.unseatPlayer(sessionId);
+        this.forgetObserver(sessionId);
         // §6.4 推进点表：最终 leave rosterRevision+1（seat 变化经唯一删除点统一推进）。
         if (wasSeated && this.modeHasFragment("ownerReady")) {
             this.ownerReadyView().rosterRevision++;
