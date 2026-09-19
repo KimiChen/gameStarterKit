@@ -112,6 +112,7 @@ npm run test:aggregate-chain-matrix
 npm run test:sync-mirror-matrix
 npm run test:toolchain-runtime-matrix
 npm run verify:perf
+npm run verify:mmo-fixture-matrix
 npm run verify:project
 npm run verify:core
 npm run verify:all
