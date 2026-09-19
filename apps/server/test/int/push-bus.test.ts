@@ -122,3 +122,34 @@ test("真双消费者：同进程第二个消费者挂假落地端，同一条�
     await roomC.leave().catch(() => {});
   }
 });
+
+test("POST /admin/notice（MF6a-B5）：正确密钥 ⇒ 同区两个在线连接都收到 server.notice；错密钥 401；s2 不收", async () => {
+  const a = await makeUser("pna", 1);
+  const b = await makeUser("pnb", 1);
+  const c = await makeUser("pnc", 2);
+  const roomA = await joinLobby(a.token, 1);
+  const roomB = await joinLobby(b.token, 1);
+  const roomC = await joinLobby(c.token, 2);
+  const secret = `notice_${Date.now()}`;
+  process.env.ADMIN_API_SECRET = secret;
+  try {
+    const gotA = collect(roomA, LobbyPush.ServerNotice);
+    const gotB = collect(roomB, LobbyPush.ServerNotice);
+    const gotC = collect(roomC, LobbyPush.ServerNotice);
+    const post = (hdr: Record<string, string>, body: unknown) => fetch("http://127.0.0.1:2568/admin/notice", {
+      method: "POST", headers: { "content-type": "application/json", ...hdr }, body: JSON.stringify(body),
+    });
+    assert.equal((await post({ "x-admin-secret": "wrong" }, { sId: 1, text: "x" })).status, 401, "错密钥拒绝");
+    const res = await post({ "x-admin-secret": secret }, { sId: 1, text: "全区维护公告" });
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { published: true });
+    await waitFor(() => gotA.length === 1 && gotB.length === 1, "同区两人收到公告");
+    await sleep(300);
+    assert.deepEqual(gotA, [JSON.stringify({ text: "全区维护公告" })]);
+    assert.deepEqual(gotC, [], "s2 不收 s1 的公告");
+  } finally {
+    delete process.env.ADMIN_API_SECRET;
+    await Promise.all([roomA, roomB, roomC].map((r) => r.leave().catch(() => {})));
+  }
+});
+

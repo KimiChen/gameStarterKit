@@ -2,17 +2,19 @@
 import type { Endpoint } from "@colyseus/core";
 import type { GameHttpContractKey } from "@game/shared";
 import endpoint0 from "./admin/kick";
-import endpoint1 from "./misc/clockNow";
-import endpoint2 from "./misc/healthz";
-import endpoint3 from "./notice/list";
-import endpoint4 from "./pay/wxNotify";
-import endpoint5 from "./misc/version";
+import endpoint1 from "./admin/notice";
+import endpoint2 from "./misc/clockNow";
+import endpoint3 from "./misc/healthz";
+import endpoint4 from "./notice/list";
+import endpoint5 from "./pay/wxNotify";
+import endpoint6 from "./misc/version";
 
 export const gameRouteDefinitions = Object.freeze({
   "AdminKick": endpoint0,
-  "ClockNow": endpoint1,
-  "Health": endpoint2,
-  "NoticeList": endpoint3,
-  "PayWxNotify": endpoint4,
-  "Version": endpoint5,
+  "AdminNotice": endpoint1,
+  "ClockNow": endpoint2,
+  "Health": endpoint3,
+  "NoticeList": endpoint4,
+  "PayWxNotify": endpoint5,
+  "Version": endpoint6,
 } satisfies Record<GameHttpContractKey, Endpoint>);
