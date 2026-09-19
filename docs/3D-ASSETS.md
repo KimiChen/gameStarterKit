@@ -1,6 +1,6 @@
 # 3D 素材使用方式、规范与原则（框架级）
 
-> - 日期：2026-09-19。状态：**规范 v1**，与 [3d.md](3d.md) v1.1 同日成文；⛔ 未实施任何 3D 能力，本文先于素材存在。
+> - 日期：2026-09-19。状态：**规范 v1.2**（同日审阅修订），与 [3d.md](3d.md) 对齐；⛔ 未实施任何 3D 能力，本文先于素材存在。
 > - 来历：对照 Cocos 官方 3D 演示项目 **Cocos Cyberpunk**（本机 `/Volumes/KimData/work/CocosCyberpunk`，仓外只读；Creator 3.8.4 工程，806 MB 资产，1,374 个模型、685 张图、259 个材质、262 个粒子系统）逐项实测，取其**做法**、⛔ 不取其**素材**（§14）；再对照本仓现状（`apps/Cocos` 3.8.8 工程、`resources/kits/<id>/` 所有权、`verify:sync` 的 `.meta` 闸、`tools/slg-maps/` 管线先例）落成本仓规则。
 > - 定位：素材侧唯一规范；机制侧（Stage3D / AssetLease / 纯数学 / 机械件）在 [3d.md](3d.md)，施工批次在 [3D-PLAN.md](3D-PLAN.md)，lvr 内容需求在 [lvr-3d.md](../lvr-3d.md)。三者冲突以本文为素材口径、以 3d.md 为机制口径。
 > - 治理：⛔ 不进 plan-v5；数字候选在 §15，SC0 后冻结；实施状态不在本文回写（在 3d.md §10）。修订登记见 §16。
@@ -11,20 +11,20 @@
 
 1. **作者态导入，运行时不解析**：模型 / 贴图 / 材质 / 动画都在 Creator 里导入成引擎资产（`.meta` + 子资产），运行时只 `resources.load` / bundle 加载；⛔ 运行时不需要 glTF / FBX loader（3d.md SD4）。
 2. **静态先离线，运行时只做选择**：LOD 变体、静态合批、光照与反射探针、遮挡数据一律离线产出为资产；运行时只按**画质档 × 视口**选择加载哪些资产（Cyberpunk 校正：1,374 个模型 `lods.enable:false`、`LODGroup` 0 处、运行时阴影全关）。
-3. **每份资源一个持有者**：加载 / 释放只经框架 `AssetLease`（3d.md §4）；⛔ kit 内裸调 `addRef` / `decRef` / `resources.load`；页面关闭 = 租约释放 = 引用归零。Cyberpunk 全量预载后永不释放（0 处 `decRef`）是**演示项目的取巧**，⛔ 不学。
+3. **每次持有都有租约**：加载 / 释放只经框架 `AssetLease`（3d.md §4）；⛔ kit 内裸调 `addRef` / `decRef` / `resources.load`；页面关闭归还本页引用，其他页面 / 全局 token / 对象池的有效持有继续保留；全部持有结束才归零。Cyberpunk 全量预载后永不释放（0 处 `decRef`）是**演示项目的取巧**，⛔ 不学。
 4. **画质档决定加载什么**：`low / medium / high` 由平台 + GPU 查表得出（Cyberpunk `href-setting.ts` + `gpu.ts` 形态），细节层、特效并发、同屏单位上限、阴影都按档给；dev 可 URL 参数覆盖。
 5. **贴图 POT + 平台压缩预设 + 体积预算**：3D 贴图一律 2 的幂、走框架压缩预设（astc_8x8 + png 回落，Cyberpunk 同款）、进 `art3d.config.json` 体积预算；UI / VFX / lightmap / 天空图不压或单独预设。
-6. **命名即元数据**：前缀说类型（`SM_ / SK_ / T_ / M_ / FX_ / ANIM_ / ANIG_`），后缀说通道（`_BC / _N / _ORM / _E / _M`），目录说归属（`resources/{stage3d,kits/<id>/3d,plugins/<id>/3d}`）；机检读名字不读脑子。
+6. **命名即元数据**：前缀说类型（`SM_ / SK_ / T_ / M_ / FX_ / ANIM_ / ANIG_`），后缀说通道（`_BC / _N / _ORM / _E / _M`），目录说归属（框架 `resources/stage3d/`；包重资产 `bundles/<class>-<id>/3d/`、小数据 `resources/{kits,plugins}/<id>/3d/data/`）；机检读名字不读脑子。
 7. **每个 3D 特性一个可目检的场景**：框架 `apps/Cocos/assets/stage3d-dev.scene` 与 kit 自己的验收场景（Cyberpunk `scene-development/` 十个特性场景同法），素材入库前先在场景里过一遍（§13）。
 8. **数据表驱动**：预加载清单、对象池容量、画质档表、细节层归属都是 JSON（Cyberpunk `data-res-cache / data-pool / data-quality.json` 同法），⛔ 不写死在代码里。
-9. **机检优先**：`verify:assets3d` 守格式 / `.meta` / 体积 / 命名 / 导入选项 / 授权台账；Creator 目检与 `--perf` 是证据不是门。
+9. **机检优先**：`verify:assets3d` 守格式 / `.meta` / 体积 / 命名 / 导入选项 / 授权台账；Creator 目检与 `--perf` 不进自动聚合门禁，但所列证据是阶段人工退出条件。
 10. **授权可追溯**：每个 kit / 插件的 3D 目录带素材授权台账（snake 先例）；合成灰盒零授权；**Cocos Cyberpunk 的任何文件 ⛔ 不得进仓**（其许可仅限学习研究，§14）。
 
 ## 1. Cocos Cyberpunk 实测对照表
 
 | 项 | Cyberpunk 做法（实测） | 本仓采纳 | 差异 / 理由 |
 | --- | --- | --- | --- |
-| 引擎版本 / 模块 | Creator 3.8.4；`engine.json` **逐项显式**勾选（ON：3d、skeletal-animation、particle、marionette、spine、light-probe、custom-pipeline、physics-physx…；OFF：terrain、tiled-map、dragon-bones、xr、legacy-pipeline…） | 采纳「显式清单」：SC0 把本仓 `engine.json`（今只有版本号 = 编辑器缺省）改为显式勾选并写进 `apps/Cocos/README.md` | 微信小游戏包体敏感，缺省全量模块是浪费；本仓首版 ⛔ 不开 custom-pipeline / physics（3d.md SD11） |
+| 引擎版本 / 模块 | Creator 3.8.4；`engine.json` **逐项显式**勾选（ON：3d、skeletal-animation、particle、marionette、spine、light-probe、custom-pipeline、physics-physx…；OFF：terrain、tiled-map、dragon-bones、xr、legacy-pipeline…） | 采纳「显式清单」：SC0 把本仓 `engine.json`（今只有版本号 = 编辑器缺省）改为显式勾选并写进 `apps/Cocos/README.md` | 微信小游戏包体敏感；首版按 SD11 开启 `custom-pipeline` + `custom-pipeline-builtin-scripts` + `custom-pipeline-post-process`，关闭 `legacy-pipeline` 与 physics；⛔ 自研 pass |
 | 渲染管线 | `custom-pipeline` 扩展（GBuffer / 延迟光照 / TAA / FSR / bloom / 雾），`project.json` 指向自定义管线资产 | **引擎内置新管线**（`custom-pipeline` + `custom-pipeline-builtin-scripts` + `custom-pipeline-post-process`，引擎维护；3d.md SD11）；后处理只用其自带开关；⛔ 自研 pass | 演示项目的重点是自研管线，本仓的重点是 kit 能消费；WebGL1 / 小游戏下可用性 SC0 实测 |
 | 目录 | `assets/res`（静态引用，545 MB）vs `assets/resources`（动态加载，179 MB）；`scene-development/` 十个特性场景；`test/`；`LightFX/` 烘焙产物 | 本仓一切动态加载：小数据与框架灰盒在 `resources/`，3D 重资产**每包一个 bundle**（`apps/Cocos/assets/bundles/<class>-<id>/`，3d.md SD12），按包分命名空间（§2）；框架 `stage3d-dev.scene` + kit 验收场景 | 本仓没有「静态引用整场景」的形态，页面即入口 |
 | 场景组织 | `scene.scene` 是 8 节点骨架；城市全在 `resources/prefabs/scene-root.prefab`（2,881 个 MeshRenderer，分 `lights / mesh-root / meshes-no-culling`）+ `mesh-details.prefab`（336 个，`fullScene` 画质门控才加载）；`DelayActive` 分帧激活 | 采纳：Stage3D 租约 `root` 下挂 kit 的内容 prefab，分 **base / details** 两层，details 按画质档加载；`EntityPool` 每帧激活预算（§7） | 同构 |
@@ -52,7 +52,7 @@
 | 插件 | `apps/plugins/<id>/art/3d/` | `apps/Cocos/assets/bundles/plugin-<id>/3d/…` + `resources/plugins/<id>/3d/data/`（同形） |
 
 - 运行时目录 ⛔ 不是源目录的逐字节镜像（含 Creator 子资产与 `.meta`）；源目录只放可再生成的输入。
-- **bundle 策略（3d.md SD12，2026-09-19 拍板）**：`resources/` 仍是小数据与框架灰盒的 bundle；kit / 插件 3D 重资产**每包一个 bundle** `apps/Cocos/assets/bundles/<kit|plugin>-<id>/`（目录 `.meta` `isBundle:true`；开发期 `isRemote:false`，发布按平台在 `builder.json` bundleConfig 覆写为 `isRemote:true`，压缩类型候选 `merge_dep`），可按地图 / 场景细分为 `bundles/<class>-<id>-<map>/`；Asset Bundle ⛔ 嵌套在 `resources/` 内 ⇒ ⛔ 把 3D 重资产放 `resources/kits/<id>/`；所有权 / 锁 / 安装 / `verify:assets3d` 在 3D-PLAN SC1-B7 扩到 `bundles/`；`AssetLease` 以「bundle 名 + 路径」寻址，kit 代码不感知来源。
+- **bundle 策略（3d.md SD12，2026-09-19 拍板）**：`resources/` 仍是小数据与框架灰盒的 bundle；kit / 插件 3D 重资产**每包一个 bundle** `apps/Cocos/assets/bundles/<kit|plugin>-<id>/`（目录 `.meta` `isBundle:true`；开发期 `isRemote:false`，发布按平台在 `builder.json` bundleConfig 覆写为 `isRemote:true`，压缩类型候选 `merge_dep`），可按地图 / 场景细分为 `bundles/<class>-<id>-<map>/`；目录名须精确归属一个包，⛔ 用 `<class>-<id>*` 裸前缀推导所有权，细分 bundle 归属按包身份推导，只有精确 `<class>-<id>` 或非空 `<class>-<id>-<map>` 后缀可归属；根目录 `.meta` 同规，详见 3D-PLAN SC1-B7；Asset Bundle ⛔ 嵌套在 `resources/` 内 ⇒ ⛔ 把 3D 重资产放 `resources/{kits,plugins}/<id>/`；所有权 / 锁 / 安装 / `verify:assets3d` 在 SC1-B7 扩到 `bundles/`；`AssetLease` 以「bundle 名 + 路径」寻址，kit 代码不感知来源。
 - 每个模型一目录：`models/<SM_Asset>/{SM_Asset.glb, lod_1.glb, lod_2.glb}`（Cyberpunk `res/meshes/<SM_x>/lod_{0,1,2}.gltf` 同法，主文件即 lod_0）。
 
 ### 2.2 命名
@@ -75,10 +75,11 @@
 
 | 项 | 规则 |
 | --- | --- |
-| 格式 | 交换格式 **glTF 2.0 二进制 `.glb`**（Creator 作者态导入为 `.mesh / .material / .animation / .skeleton / .prefab` 子资产）；**FBX 只作例外**（DCC 直出角色蒙皮 / 动画在 glb 有损时），须在 `art3d.config.json` `exceptions[]` 登记文件与理由；⛔ 不入库 `.blend / .max / .ma` 源文件 |
+| 格式 | 交换格式 **glTF 2.0 二进制 `.glb`**（Creator 作者态导入为 Mesh / Material / AnimationClip / Skeleton / Prefab 子资产）；**FBX 只作例外**（DCC 直出角色蒙皮 / 动画在 glb 有损时），须在 `art3d.config.json` `exceptions[]` 登记文件与理由；⛔ 不入库 `.blend / .max / .ma` 源文件 |
+| GLB 图片与依赖 | ⛔ `images[].bufferView` 内嵌图片或 `data:` URI；`tools/art3d` 在入库前把图片外提 / 转换成同包独立 PNG，`images[].uri` 只允许相对引用本包资产根内的图片（框架样本限 `resources/stage3d/`）。规范化 URI 并解析实际路径后不得跨包、越界、指向远程 URL 或缺失文件；图片逐份走 §5、预算与授权检查。几何 buffer 使用 GLB BIN chunk，⛔ 外部 `buffers[].uri`。Creator 导入后的图片 / texture 子 `.meta` 同样受检，不能只查 GLB 顶层 `.meta` |
 | 坐标 | 米制、Y 上、右手系；静态物件枢轴在底部中心，角色枢轴在脚底；正面朝 `-Z`（Cocos `Node.forward`）；导入不缩放（`scale = 1`） |
 | 网格 | 三角化；单网格 ≤ 65k 顶点（16 位索引）；静态世界网格带 **UV2**（烘焙用，Cyberpunk 359 个材质 `HAS_SECOND_UV`），UV2 在 DCC 做（`generateLightmapUVNode:false`）；法线 / 切线随文件带（法线贴图需要切线） |
-| LOD 变体 | 主文件 = lod_0；`lod_1.glb`（≈ 1/4 面）/ `lod_2.glb`（≈ 1/10 面）由 `tools/art3d`（meshopt simplify）离线生成或美术手做；同目录、同材质槽；运行时由 `EntityPool` 按档选择（3d.md §4） |
+| LOD 变体 | 主文件 = lod_0；`lod_1.glb`（≈ 1/4 面）/ `lod_2.glb`（≈ 1/10 面）由 `tools/art3d`（meshopt simplify）离线生成或美术手做；同目录、同材质槽；工具必须报告各档面数、包围盒和材质槽并验证贴图引用。蒙皮变体还须保留骨架 / joints / weights / 动画轨并校验骨骼数与动画时长；不能保真的输入显式失败，改走登记的手工作品，⛔ 静默丢弃动画。SC5-B1 必须产出并导入两份 LOD，运行时由 `EntityPool` 按档选择（3d.md §4） |
 | 导入选项（`.meta` `userData`，机检项） | `mountAllAnimationsOnPrefab: true`；`lods.enable: false`（LOD 由变体 + 档位管，⛔ 不用 Creator 内置 LOD）；`allowMeshDataAccess: false`（只有工具场景需要 CPU 读网格才开）；FBX：`legacyFbxImporter: false`、`smartMaterialEnabled: true`；`meshOptimizer / meshSimplify` 关（离线做）；`addVertexColor: false`（顶点色仅 slg 2D 地表那类显式需要时开） |
 | 面数预算（候选，§15 冻结） | 世界地图实体近档 ≤ 3k 三角、远档 ≤ 300；建筑 / 地标 ≤ 10k；主角 ≤ 20k；同屏总量 ≤ 500k（移动 medium 档） |
 | 碰撞 | 渲染网格 ⛔ 不当碰撞体；需要物理时用盒 / 胶囊（Cyberpunk 0 个网格碰撞体），见 §10 |
@@ -109,10 +110,10 @@
 
 | 项 | 规则 |
 | --- | --- |
-| 静态光 | 方向光 + 点光 / 聚光标 **static**（`StaticLightSettings`），在 Creator 光照烘焙（LightFX）里烘进 lightmap；lightmap 产物随内容预制的 `ModelBakeSettings` 引用入库（烘焙在 kit 验收场景内完成后 apply 回预制——SC0 验证此工作流；Cyberpunk 的城市预制正是这样带着烘焙结果被运行时加载） |
+| 静态光 | 方向光 + 点光 / 聚光标 **static**（`StaticLightSettings`），在 Creator 光照烘焙（LightFX）里烘进 lightmap；lightmap 产物随内容预制的 `ModelBakeSettings` 引用入库。SC0-B5 用框架灰盒在验收场景烘一次 → apply 回**独立 `.prefab`** → 关闭 / 卸载烘焙场景 → 预览从已登记路径动态加载该预制，验证烘焙纹理 / UV2 引用及实际照明仍成立，证据含前后截图与引用检查；只在烘焙场景内看见光照不算通过。kit 后续沿用此工作流，产物与预制放同包 bundle |
 | 运行时阴影 | 缺省 **关**（`shadows.enabled:false`）；只给主角 / 少量动态单位开 `ShadowMap` 或平面阴影，且由画质档控制；⛔ 静态建筑运行时投影 |
 | 环境光 / IBL | 天空 HDR（`.hdr`）+ Creator 卷积产物（Cyberpunk `sky-cubemap/0.hdr` + `0_convolution`）；`ambient` 取自天空；经 `lease.setGlobals({ skybox, ambient })` 设置 |
-| 反射探针 | 按需烘焙（Cyberpunk 3 个），产物 png 进预算，`.meta` 可压缩 |
+| 反射探针 | 按需烘焙（Cyberpunk 3 个），产物 png 进预算，`.meta` 按 §5 不压缩 |
 | 雾 / 后处理 | 只用引擎 `fog` / `postSettings`（toneMapping）经全局设置租约；⛔ 自定义管线后处理（3d.md SD11） |
 | 产物体积 | lightmap 单张 ≤ 2048²、总量进预算（Cyberpunk 全城 11 张共 1.8 MB） |
 
@@ -172,7 +173,7 @@ Stage3D 租约 root
 
 | 项 | 规则 |
 | --- | --- |
-| 持有 | 只经 `AssetLease.acquire(requests, { deadlineMs, signal })`；页面 / 租约关闭即整包 release；迟到完成仍 decRef |
+| 持有 | 只经 `AssetLease.acquire(requests, { deadlineMs, signal })`；页面关闭先解除场景 / 全局 token 引用，再释放本页租约；池内 inactive 节点持有资产直到淘汰销毁，其他有效 token 不受影响；迟到完成仍 decRef |
 | 预载 | `data/preload.json` 目录清单（Cyberpunk `data-res-cache.json` 同法），在页面 `onOpen` 里一次 `acquire`，⛔ 全局常驻（Cyberpunk 的永不释放 ⛔ 不学） |
 | 分块 | 世界内容按 `chunkStreamer` 差分 + `assetPlan` 计划加载 / 延迟释放；进档只加载该档变体 |
 | bundle | **每包一个 bundle**（3d.md SD12）：`bundles/<class>-<id>/`，可按地图 / 场景细分；开发期本地、发布远程（小游戏主包 / 分包硬上限，SD10）；`AssetLease` 以「bundle 名 + 路径」寻址，`data/preload.json` 按 bundle 分组，首屏必需集合单独一个小 bundle；kit 代码零改动 |
@@ -182,15 +183,30 @@ Stage3D 租约 root
 
 ```text
 作者 / 工具 → apps/kits/<id>/art/3d/（glb / png / config / 授权台账）
-  → 按 §2.2 命名、§3 / §5 规则整理（tools/art3d：extract → to-gltf → textures → material-map → verify-roundtrip）
+  → 按 §2.2 命名、§3 / §5 规则整理（tools/art3d：extract → textures（外提图片为独立 PNG）→ to-gltf → lod（产出 lod_1 / lod_2）→ material-map → verify-roundtrip）
   → Creator 导入到 bundles/<class>-<id>/3d/**（小数据表到 resources/<class>s/<id>/3d/data/；生成 .meta 与子资产；导入选项按 §3 / §5 缺省，压缩预设按 §5）
-  → kit 验收场景（Creator）目检：拖入预制、三档 LOD、材质、烘焙结果、透明排序
+  → kit 验收场景（Creator）目检：拖入预制、三档 LOD、材质、透明排序；烘焙 apply 回独立预制后，卸载烘焙场景并动态加载验证照明（SC0 灰盒证据先行）
   → npm run verify:assets3d（机检，进 verify:all）
   → node tools/creator-preview/run.mjs <剧本> --perf（证据：帧时 / draw call / 三角数 / GFX 内存，落 docs/evidence，不入库）
   → 提交（含 .meta；verify:sync 守 uuid 唯一）
 ```
 
-`verify:assets3d` 机检项（`scripts/verify-assets3d.mjs`，3D-PLAN SC1-B5）：扩展名白名单；每文件有 `.meta` 且 `importer` 匹配；`.glb` 魔数 / chunk 长度；3D 贴图 POT 与尺寸档、`type: texture`、`mipfilter`、压缩预设引用；模型 `.meta` 导入选项等于 §3 缺省（`lods.enable:false` / `allowMeshDataAccess:false` / `mountAllAnimationsOnPrefab:true`）或在 `art3d.config.json` `exceptions[]` 登记；命名前后缀；体积 ≤ 配置；kit 3D 目录必须有 `art3d.config.json` 与 `LICENSES.md`。变异：png 改名 `.jpg` → 红；删 `.meta` → 红；`mipfilter: none` 未登记例外 → 红；上限调小 → 红。
+`verify:assets3d` 机检契约（`scripts/verify-assets3d.mjs`，3D-PLAN SC1-B5；SC1-B7 接入 bundle 所有权 / 打包安装）：
+
+| 检查面 | 必须覆盖 |
+| --- | --- |
+| 扫描与归属 | 扫框架 `resources/stage3d/**` 与包 `resources/{kits,plugins}/*/3d/**`（后者只允许 `data/` 小数据）；枚举 `assets/bundles/` 并按包身份核对精确目录边界，再扫包 bundle 及细分 bundle 的全部资产（必须位于 `3d/**`，目录 `.meta` 除外）。拒绝包重资产遗留在 `resources/`、无主 bundle 或多包归属；源侧 `apps/{kits,plugins}/<id>/art/3d/` 的配置 / 授权与运行时文件逐项映射 |
+| 格式白名单 | `glb / fbx / png / hdr / effect / mtl / prefab / anim / animgraph / animask / json / atlas / skel`；FBX 须有 `exceptions[]` 文件与理由。`.meta` 是受检伴随文件，不要求再配 `.meta.meta`；作者态 `art3d.config.json` / `LICENSES.md` 是配置与授权输入，⛔ 因 Markdown 不在运行时资产白名单而拒绝合法台账 |
+| Creator 导入 | 运行时每个资产及 bundle 根的 `.meta` 存在，`importer` 与真实格式匹配；按 Creator 3.8.8 导入样本校验顶层与 `subMetas` 的实际字段，uuid 唯一继续交 `verify:sync`。GLB / FBX 的 texture 子资产也必须接受图片规则检查，⛔ 只按独立文件扩展名筛选 |
+| GLB 结构与依赖 | 校验 glTF 2.0 头、声明长度、JSON / BIN chunk 长度与边界；解析 JSON 并拒绝内嵌图片（`images[].bufferView` / `data:`）、外部 buffer URI；图片相对 URI 经规范化与实际路径解析后必须落入本包资产根并存在，跨包 / 路径越界 / 远程 URI 均失败；独立图片全部进入后续检查 |
+| 贴图与压缩 | 校验实际图片格式、POT 与尺寸档（UI 例外须登记）；独立图片及导入 texture 子 `.meta` 的 `type`、wrap、min / mag、mipfilter、anisotropy、通道色彩空间均按 §5；`3d-default / 3d-alpha` 引用须在 `builder.json` 有对应平台与回落配置；lightmap / 天空 / 反射探针及获准不压的 VFX 须在配置标明用途并验证其不压设置，⛔ 目录改名即绕过压缩规则 |
+| 模型与命名 | §3 所列模型导入选项（含 FBX 专有项）逐项等于缺省或有精确文件级例外；按 §2.2 检查目录、类型前缀、贴图通道后缀、LOD 文件名；灰盒固定文件名在框架配置显式声明，不以放宽所有命名规避 |
+| 预算 | 读取包 `art3d.config.json`（框架用 `scripts/assets3d.config.json`）：单 GLB / PNG、全部贴图、lightmap 与包总量均须在配置限额内；外提图片和细分 bundle 必须计入同一包总量，重复引用只按实体文件计一次；运行时性能预算另由 `--perf` 提供证据。数字仍为 §15 候选，SC0 后冻结，本轮文档修订不冻结数字 |
+| 授权覆盖 | kit / 插件必须存在 `art3d.config.json` 与 `art/3d/LICENSES.md`；授权台账覆盖每份源素材、转换产物、外提贴图与 LOD 的来源映射，引用不能悬空；只查存在 / 覆盖，许可是否允许用途仍归人工（§14） |
+
+正例：合法 `.mtl / .hdr / .animgraph / .animask` 应通过白名单。反例必须逐项转红：PNG 改名 `.jpg`、删除 `.meta`、删掉必需 texture 子 `.meta`、`mipfilter: none` 未登记、压缩预设引用不存在、模型 `lods.enable:true` 未登记、GLB 内嵌 PNG / JPEG、图片 URI 指向另一包或远程地址、GLB 外部 buffer、授权漏一张外提贴图、下调预算到实际体积以下均失败。另验证相邻包 `foo` / `foobar` 不互认所有权，细分 bundle 的命名冲突必须拒绝；这些反例随 SC1-B5 / B7 落地，当前文档不代表机检已实现。
+
+SC5-B1 工具验收还须执行离线简化：主模型 → `lod_1.glb / lod_2.glb` → 三档 Creator 导入与夹具显示，往返报告列出每档面数 / 包围盒 / 材质槽 / 贴图依赖；蒙皮样例另外校验骨架、权重与动画时长。面数未下降、材质槽错位或适用动画数据丢失应失败，⛔ 只跑主模型往返即可冻结 SC5。
 
 ## 14. 授权
 
@@ -209,7 +225,7 @@ Stage3D 租约 root
 | 压缩预设 | `astc_8x8 medium` + `png 80` | Cyberpunk `builder.json` |
 | 骨骼 / 权重 | 单位 30 骨、主角 80 骨、每顶点 4 权 | 本文 §8 |
 | 特效并发（low / medium / high） | 8 / 24 / 48 | 本文 §9 |
-| 同屏单位（low / medium / high） | 50 / 100 / 100+ | 3d.md §11.2 kill criterion（100 机器人 + 300 实体） |
+| 同屏单位（low / medium / high） | 50 / 100 / 100+ | MMO.md §11.2 kill criterion（100 机器人 + 300 实体；仅参考，3D 另测） |
 | 出档延迟释放 | 5 s | 本文 §7 |
 | 基线设备 | 麒麟 970 / 骁龙 835 / A10（Cyberpunk 基线）作下限候选 | SC0 实测 |
 
@@ -217,3 +233,4 @@ Stage3D 租约 root
 
 - 2026-09-19 规范 v1：对照 Cocos Cyberpunk 实测（§1）成文；与 3d.md v1.1、3D-PLAN.md、lvr-3d.md v1.1 同批。
 - 2026-09-19 v1.1：SD9–SD12 拍板回写（§1 管线 / 目录行、§2.1 bundle 目录、§4 shader 落点与管线、§11 low 档 = 首版目标、§12 bundle 策略、§13 流程）。
+- 2026-09-19 v1.2：审阅修订：统一 SD11 开关与 SD12 资产目录 / 所有权口径；GLB 图片必须外提、跨包与外部 buffer 依赖拒绝；§13 对齐完整资产闸、子 `.meta` / 压缩 / 授权覆盖 / 预算及反例；补 SC0 烘焙 apply → 独立预制动态加载证据与 SC5 离线 LOD 退出。⛔ 仅修订规范，未实施能力、未冻结 §15 数字。
