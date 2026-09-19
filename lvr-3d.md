@@ -5,6 +5,7 @@
 >   **由单独的人/单独的排期实现**，⛔ 不占 lvr.md §7 的 100–200 人月核心工程估算。
 > - 逆向源：`../sourceVersion/lvr-1.0.0/`（仓外，只读）。本文引用的类名与目录均为实测。
 > - **2026-09-19 v1.1（对照 Cocos Cyberpunk 校正）**：R1–R8 与 §4–§7 按 [docs/3d.md](docs/3d.md) v1.1 与 [docs/3D-ASSETS.md](docs/3D-ASSETS.md) 改为**消费方口径**（框架给舞台 / 租约 / 纯数学 / 机械件 / 画质分档 / 工具骨架，本文只留内容、shader、特效、数值与授权）。三份预算边界：框架 SC0–SC5（[docs/3D-PLAN.md](docs/3D-PLAN.md)）、lvr 3D 内容（本文）、lvr 核心工程（lvr.md §7）。
+> - **2026-09-19 v1.2**：随 3d.md SD12 / v1.3 对齐——运行时落点改 `apps/Cocos/assets/bundles/kit-lvr[-<map>]/3d/`（小数据表留 `resources/kits/lvr/3d/data/`）；主城 / 世界的 FGUI HUD 走框架 overlay 输入接缝（3d.md §3.3，SC1-B9），⛔ 自建输入仲裁。
 > - 治理：实施状态只在本文 §8 回写；⛔ 不进 plan-v5。
 > - **2026-09-19 提升**：本文的框架侧内容已提升为框架级设计 [docs/3d.md](docs/3d.md)（Stage3D 舞台 / AssetLease / `logic/scene3d` 纯数学 / 机械件 / 资产闸 / `tools/art3d`，阶段 SC0–SC5）；本文降为 **lvr 消费方需求**：§3 R1–R8 的框架侧落点见 docs/3d.md §1.2，§4 表中的框架约束以 docs/3d.md §2 为准，§5 A0 并入 SC0。实施状态：框架段在 docs/3d.md §10，lvr 接入仍在本文 §8。
 
@@ -104,6 +105,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 ### R1 场景与相机
 
 - **M** 一个 3D 场景根：页面 `onOpen` 里 `ports.stage3d.acquire(...)` 取框架 Stage3D 租约（透视相机 + 方向光 + 内容根由框架给，docs/3d.md §3），海面 / 天空内容挂租约 `root` 下；⛔ 不自建相机、⛔ 不改场景全局（用 `lease.setGlobals`）。
+- **M** HUD 输入：主城 / 世界的 FGUI HUD 声明 `inputMode:"overlay"` 走框架接缝（3d.md §3.3，SC1-B9；lvr 世界页是 ViewMgr `kind:"cocos"` 页载体），⛔ 自建输入仲裁；SC1-B9 前只能把 HUD 画在世界页内（slg 形态）。
 - **M** 相机控制：消费框架 `logic/scene3d/cameraRig.ts`（pan / pinch 锚点保持 / 惯性 / 钳制，SC2）；lvr 只带手感常量（`apps/shared/src/kits/lvr/api/…` 单源）与俯视角 / 倾角策略（kit `logic/`，吃纯度门），⛔ 不写第二套相机数学。
 - **M** 缩放分档 → LOD 档事件：消费 `apps/shared/src/logic/lodBands.ts`（滞回带，SC2）；阈值表 lvr 单源。
 - **D** 倾角可调 / 旋转（原作 `DynamicPerspectiveCamera` 有，但首版可固定俯视角）。
@@ -126,7 +128,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 - **M** 海面：可见的流动/波纹 + 按相机高度的多贴图混合（原作 `BigWorldSeaMultiTexCameraHeightBlend` 的等价物）。
 - **M** 阴影：⚠ **不要照抄原作的三套阴影方案**。缺省**运行时阴影关**、静态光烘焙进 lightmap（Cyberpunk 全城 3,593 个 MeshRenderer 运行时不投影，靠 LightFX 烘焙 + 静态光）；只给主角 / 少量动态单位开平面阴影或 ShadowMap（`lease.light.setShadows`，按画质档），SC0 实测后定（docs/3D-ASSETS.md §6）。
-- **M** 材质：PBR 标准贴图集（`_BC / _N / _ORM / _E`，docs/3D-ASSETS.md §4）；静态世界材质开 `USE_INSTANCING`；自写 EffectAsset 用 surface shader 形态落 `resources/kits/lvr/3d/effects/lvr-*.effect`。
+- **M** 材质：PBR 标准贴图集（`_BC / _N / _ORM / _E`，docs/3D-ASSETS.md §4）；静态世界材质开 `USE_INSTANCING`；自写 EffectAsset 用 surface shader 形态落 `bundles/kit-lvr/3d/effects/lvr-*.effect`（SD12）。
 - **M** 领地着色：地块归属色块叠加在地表上（`slg` 的 ownership 层已有 2D 版可参考）。
 - **D** 云层、轮廓描边、地形体积装饰。
 
@@ -157,7 +159,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 | 图集与去重 | 上述全部 | 按场景打包，产出引用表 JSON |
 | 往返自检 | 转换前后 | 照 `tools/slg-maps/verify-redraw.py` 做逐像素/逐顶点比对 |
 
-**落点必须在 kit 所有权推导集内**：`apps/kits/lvr/art/3d/`（源：glb / png / `art3d.config.json` / `LICENSES.md` 授权台账）与 `apps/Cocos/assets/resources/kits/lvr/3d/{models,textures,materials,effects,vfx,anims,spine,data}/`（运行时目录含 Creator 导入产物与 `.meta`，⛔ 不是源的逐字节镜像；是否拆独立远程 bundle 见 docs/3d.md SD12）。
+**落点必须在 kit 所有权推导集内**：`apps/kits/lvr/art/3d/`（源：glb / png / `art3d.config.json` / `LICENSES.md` 授权台账）与运行时 `apps/Cocos/assets/bundles/kit-lvr/3d/{models,textures,materials,effects,vfx,anims,spine}/`（每包一个 bundle，可按地图细分 `bundles/kit-lvr-<map>/`，docs/3d.md SD12）+ 小数据表 `apps/Cocos/assets/resources/kits/lvr/3d/data/`（运行时目录含 Creator 导入产物与 `.meta`，⛔ 不是源的逐字节镜像）。
 
 ### R8 资源生命周期与内存
 
@@ -171,7 +173,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 | 约束 | 出处 |
 | --- | --- |
-| lvr 自有代码落在 `apps/client/src/kits/lvr/**`、资产落在 `apps/Cocos/assets/resources/kits/lvr/3d/**`；舞台 / 租约 / 纯数学 / 机械件 / 画质分档**消费框架**（docs/3d.md §2），⛔ 不自建 | 所有权推导集（`apps/server/tools/plugin/ownership.ts`）+ docs/3d.md §2 划线 |
+| lvr 自有代码落在 `apps/client/src/kits/lvr/**`；3D 重资产落在 `apps/Cocos/assets/bundles/kit-lvr[-<map>]/3d/**`、小数据表 `resources/kits/lvr/3d/data/`（SD12）；舞台 / 租约 / 纯数学 / 机械件 / 画质分档**消费框架**（docs/3d.md §2），⛔ 不自建 | 所有权推导集（`apps/server/tools/plugin/ownership.ts`）+ docs/3d.md §2 划线 |
 | `logic/` ⛔ 不 import `cc` / `fairygui-cc`，依赖注入、Node 无头可测 | 铁律 9 + `apps/client/test/logic-purity.test.ts` |
 | `view/` 只做绑定与渲染，⛔ 不做业务判断 | `docs/CLIENT.md` §3 |
 | 页面经 `<Name>View.view.json` sidecar + `kit.json` 登记 + `codegen:plugins`，⛔ 不手改 `views.generated.ts` | 铁律 2 |

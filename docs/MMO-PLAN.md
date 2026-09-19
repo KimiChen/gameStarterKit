@@ -229,7 +229,7 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 | MK0-B1 骨架 | `apps/kits/mmo/{kit.json（MMO.md §7.1 草案 + ⭐ role / workers 字段）,README.md,sql/001-characters.sql,002-items.sql,003-world.sql}`；`gameplays/mmoWorld/{manifest(kind:"world", roster hidden 隐含),state}.json`；`scripts/packages/mmo.lock` 经 pack → install 产生 | `plugin -- check` ✔；`db:bootstrap` 两遍 |
 | MK0-B2 shared 三面 | `apps/shared/src/kits/mmo/api/{characters,world,content}/index.ts` 类型 + 零依赖 validator；`apps/shared/src/gameplays/mmoWorld/wire.ts`（§7.4 全部 token，perSession 由 `defineS2C(..., {perSession:true})`）；`domains/{mmo,mmoSocial,mmoAdmin}.ts` | `codegen:gameplays` / `codegen:plugins` 绿；指纹重钉 |
 | MK0-B3 server 三面 + WorldMode | `apps/server/src/kits/mmo/{world,content,persistence}/**`、`api/{characters,world,content}/index.ts`（`createCharacter` 走 MF2 persona 门面同事务）、`rooms/modes/mmoWorld/index.ts` 实现 `WorldMode`（灰盒：出生点、一怪、常量速度积分）、`websocket/{mmo,mmoSocial,mmoAdmin}/`、`workers/worldEvents.ts`（MF7a 入口） | `plugin -- test mmo`：建角、进图、走路、看到怪（无头） |
-| MK0-B4 client | `apps/client/src/kits/mmo/{index.ts,api/**,logic/**,view/MmoCharacterSelectView}`；mode 四件 `gameplay/modes/mmoWorld/`、`net/rooms/MmoWorldRoom.ts`、`logic/rooms/mmoWorld/`、`view/rooms/mmoWorld/MmoWorldView`（最小 HUD；世界视图按 3d.md SD9 = C：2D 公告板 + `WorldPresentation` 适配器，⛔ 不等 3D 轨道） | `test:client`；Creator 预览证据一次 |
+| MK0-B4 client | `apps/client/src/kits/mmo/{index.ts,api/**,logic/**,view/MmoCharacterSelectView}`；mode 四件 `gameplay/modes/mmoWorld/`、`net/rooms/MmoWorldRoom.ts`、`logic/rooms/mmoWorld/`、`view/rooms/mmoWorld/MmoWorldView`（最小 HUD；世界视图按 3d.md SD9 = C：2D 公告板 + `WorldPresentation` 适配器；骨架 ⛔ 不等 3D 轨道，FGUI HUD 与世界的输入归属等 3d.md SC1-B9 或退路 = HUD 画在世界节点内） | `test:client`；Creator 预览证据一次 |
 | MK0-B5 灰盒内容包 | `apps/kits/mmo/content/greybox/*.json`（一图一怪一技能）内置 import（MK4 改经贡献点） | content validator 绿 |
 | MK0-B6 验收链 | 干净树全链闭环；`world-bench` 场景 A 首次数字 | 记录进 MMO.md §12 |
 | MK1-B1 movement 面 | `integrate / clampToMap` 双端同源纯函数；权威积分器 + `collision` 网格候选；客户端摇杆 → dir 意图、点地 → target、本地预测 + 按 seq 和解 | 无头回放一致 |
@@ -332,7 +332,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [x] MF6a-B1（1f86f07f） [x] MF6a-B2（0e17fcd1） [x] MF6a-B3（e4f9f692） [x] MF6a-B4（1280037e） [x] MF6a-B5（6e38095f；`ServerNotice` 已做，snake 整队入座按施工单后置 ⛔ 未做）— MF6a 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑤ 登记在该行）；tag `mf6a-exit`
 - [x] MF7a-B1（979a980d） [x] MF7a-B2（fe18d127） [x] MF7a-B3（3f978152） [x] MF7a-B4（bb2b0728） [x] MF7a-B5（ab11e6a0） [x] MF7a-B6（本行所在提交，真库争租夹具 + 文档）— MF7a 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑤ 登记在该行）；tag `mf7a-exit`
 - [x] MF9-B1（f6fad19f） [x] MF9-B2（745f5ca6） [x] MF9-B3（2c528c69） [x] MF9-B4（944be274，显式框架侵入） [x] MF9-B5（本行所在提交，文档）— MF9 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑥ 登记在该行）；tag `mf9-exit`
-- [ ] MF2-B1 [ ] MF2-B2 [ ] MF2-B3 [ ] MF2-B4 [ ] MF2-B5 [ ] MF2-B6
+- [x] MF2-B1（4008c6f2） [x] MF2-B2（2c4027ba） [x] MF2-B3（d8c1a6e9） [x] MF2-B4（d1bbaa89；arena 1.0.0 → 1.0.1 锁 `--reinstall-from-tree` 重写） [x] MF2-B5（9369e654；`schema.sql` 加 `idx_persona_uid`，受保护文件显式重钉） [x] MF2-B6（本行所在提交，回归 + 门① SOP SERVER.md §8.2 + 文档）— MF2 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑥）；tag `mf2-exit`
 - [ ] MF5a-B1 [ ] MF5a-B2 [ ] MF5a-B3 [ ] MF5a-B4 [ ] MF5a-B5 [ ] MF5a-B6
 - [ ] MF4-B1 [ ] MF4-B2 [ ] MF4-B3 [ ] MF4-B4 [ ] MF4-B5 [ ] MF4-B6 [ ] MF4-B7 [ ] MF4-B8
 - [ ] MF5b-B1 [ ] MF5b-B2 [ ] MF5b-B3
