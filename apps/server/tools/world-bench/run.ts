@@ -31,9 +31,14 @@ import { assertRedisUp, cleanupUser, issueSession, sleep, testUid } from "../../
 import { compareReports, formatDeviations, gitCommit, round, stamp, summarize, writeReport, type Summary } from "./report";
 import { emptyBotStats, seededRng, type BotStats, type Scenario } from "./scenario";
 import { snakeBaseline } from "./scenarios/snake-baseline";
+import { viewRange100, viewRange300 } from "./scenarios/view-range";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
-const SCENARIOS: Readonly<Record<string, Scenario>> = { [snakeBaseline.id]: snakeBaseline };
+const SCENARIOS: Readonly<Record<string, Scenario>> = {
+  [snakeBaseline.id]: snakeBaseline,
+  [viewRange100.id]: viewRange100,
+  [viewRange300.id]: viewRange300,
+};
 
 const { values: args, positionals } = parseArgs({
   allowPositionals: true,

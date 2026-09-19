@@ -139,6 +139,14 @@ pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`�
     codegen 校验）随 GeneratedLaunchTarget 进客户端；`AppRuntime.launch(target)` 把 `{ ...payload, profile? }` 经
     `RoomController.startRegistered` 交给该玩法 `GameplayModule.validateLaunch`（exact 校验：未知字段 / 非法 profile 在启动时刻拒、
     不进房）；`services.joinGameRoom(adapter, signal, { profile })` 让 joiner 按 target 选房型（ballMove 是参考接线）。
+- **观察者同步 / 名册分离（MMO MF5a，2026-09-19 已交付）**：kit 的 mode ⛔ 自建 AOI 差分 / 投递内核——声明 `GameMode.observer`
+  （六个 `defineS2C(..., { perSession: true, coalesceKey? })` token + payload 构造器 + `visibleEntities(session)` 返回该会话视野内的
+  **公开投影**），框架做差分 / 编号 / 只含兴趣集的 baseline / 有界投递（每 tick 排空、超限重同步、重连自动 baseline）；本人私有流 /
+  回执经 `context.observers.emitPerSession`（与视野流共用单 seq 流，`nextSeq` 领号，`requestBaseline` 请求重发）；`broadcastS2C`
+  对 perSession token fail-closed。名册：SQL 视图房 / 世界形态的 mode 在 manifest 写 `roster: "hidden"`（root ⛔ 声明 `players`，
+  名册只在服务端座位表；D4）。客户端消费 `logic/rooms/observer/ObserverReconciler` + `net/rooms/GameRoomTransport.bindObserverStream`。
+  参考接线 `apps/server/test/fixtures/viewFixtureMode.ts`（视口 / 视距 / 私有字段过滤都在 mode；内存或 SQL 真源轮询）；
+  slg 2b / lvr 视图房据此开工（slg.md §10.8），端口不要求 WorldAddress / personaId / authorityEpoch。
 - 插件声明依赖：`plugin.json` 加 `requires: { kits: { "slg": { "worldmap": 1 } } }`（plugin schema **v2 增量可选字段**，
   K0-2 拍板 ⛔ 不 bump schemaVersion，`requires` 进锁抬头、身份摘要、注册表索引；PLUGIN.md §5.3 与 PLUGIN-REGISTRY §2.1 / §5 同步改口径：依赖解析只做 plugin → kit 单向）。
   判定：`kit.api.<surface>.minSupported ≤ 声明 ≤ version`；`install` / `check` / 注册表 `validate` 都查；宿主未装该 kit 即拒绝。
@@ -236,6 +244,7 @@ packages/<id>/<version>/reviews/NNN.json    仅 kit，追加式：{ action: "app
 | kit worker（MMO MF7a） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF7a** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF7a-B1–B6，tag `mf7a-exit`）：kit-schema 增量字段 `workers[]` / `sql.tables[].role`（979a980d）、bootstrap 预置租约行（fe18d127）、`withKitWorkerTx`（3f978152）、`src/workers/kitWorker.ts` 入口 + `defineKitWorker`（bb2b0728）、uninstall / check 闸（ab11e6a0）、真库争租夹具 + 本文 §3 / §4 / §5 |
 | 贡献点 / fragment / 带参 launch（MMO MF9） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF9** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF9-B1–B5，tag `mf9-exit`）：schema 增量字段 `contributions` / `fragments` / `contributes` / `launch.payload|profile`（f6fad19f）、codegen 收录 + 三道闸（745f5ca6）、kit fragment（2c528c69）、带参 launch（944be274，显式框架侵入）、本文 §3 / §4 + PLUGIN.md §5 + EXTRAS X1 |
 | persona 与资产主体（MMO MF2） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF2** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF2-B1–B6，tag `mf2-exit`）：shared `protocol/identity.ts`、`persona` 表 + 经济三表 owner 列（`ensureAssetOwnerShape` 迁移，门① SOP SERVER.md §8.2）、经济 / KitTx 主体化、persona 门面（§4）、会话撤销覆盖 persona；样本 kit `arena` 随之 1.0.0 → 1.0.1（已安装 kit 的测试假实现补门面桩，锁 `--reinstall-from-tree` 重写） |
+| 观察者同步 / 名册分离（MMO MF5a） | ✅ 2026-09-19 作为 MMO 框架阶段 **MF5a** 交付（docs/MMO.md §12、docs/MMO-PLAN.md MF5a-B1–B6，tag `mf5a-exit`）：perSession wire 声明与生成、rooms/core 四件原语、S2CPorts 闸、manifest `roster` 开关、GameMode `observer` 能力 + 上下文端口、客户端 reconcile、viewFixture 内存 / SQL 真栈、world-bench `view-r100 / view-r300`（视距 300 → 100 每会话出站 −83%） |
 | K2（注册表） | 未开始 |
 | `slg` 样本阶段 1 / 2a | ✅ 2026-09-09 完成并验收：SQL 权威地块与行军，worldmap/march v1，原创 10000×10000 地图页，耐久回执/变更日志；七张 per-zone 表、无 mode。verify:all 通过；Creator 17 步/13 图/console 空；干净制品安装、独立空库 4+3 语句、包测试 35/35、重复 bootstrap 零新应用，见 [验收证据](evidence/creator-2026-09-09/slg/README.md)。规则与边界见 [apps/kits/slg/README.md](../apps/kits/slg/README.md)；SLG 2b 等 MMO MF5，离线 worker 等 MF7，不表示 K1/K2 或 MMO 原语已完成 |
 

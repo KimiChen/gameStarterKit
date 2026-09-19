@@ -333,7 +333,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [x] MF7a-B1（979a980d） [x] MF7a-B2（fe18d127） [x] MF7a-B3（3f978152） [x] MF7a-B4（bb2b0728） [x] MF7a-B5（ab11e6a0） [x] MF7a-B6（本行所在提交，真库争租夹具 + 文档）— MF7a 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑤ 登记在该行）；tag `mf7a-exit`
 - [x] MF9-B1（f6fad19f） [x] MF9-B2（745f5ca6） [x] MF9-B3（2c528c69） [x] MF9-B4（944be274，显式框架侵入） [x] MF9-B5（本行所在提交，文档）— MF9 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑥ 登记在该行）；tag `mf9-exit`
 - [x] MF2-B1（4008c6f2） [x] MF2-B2（2c4027ba） [x] MF2-B3（d8c1a6e9） [x] MF2-B4（d1bbaa89；arena 1.0.0 → 1.0.1 锁 `--reinstall-from-tree` 重写） [x] MF2-B5（9369e654；`schema.sql` 加 `idx_persona_uid`，受保护文件显式重钉） [x] MF2-B6（本行所在提交，回归 + 门① SOP SERVER.md §8.2 + 文档；勾选行曾随 3D 轨道提交 7dc98304 先行入库）— MF2 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑥）；tag `mf2-exit`
-- [ ] MF5a-B1 [ ] MF5a-B2 [ ] MF5a-B3 [ ] MF5a-B4 [ ] MF5a-B5 [ ] MF5a-B6
+- [x] MF5a-B1（9db63ceb） [x] MF5a-B2（fc5dfd9f，显式框架侵入 rooms/core） [x] MF5a-B3（369cadb7） [x] MF5a-B4（88391af8，显式框架侵入 GameRoom） [x] MF5a-B5（9968cc6f，显式框架侵入 GameRoom / GameMode / GameRoomTransport） [x] MF5a-B6（本行所在提交，world-bench `view-r100 / view-r300` + 文档）— MF5a 退出 2026-09-19，见 MMO.md §12（偏差 ①–⑧）；tag `mf5a-exit`；`GAME_ROOM_PROTOCOL_VERSION` 不 bump（§11.2）
 - [ ] MF4-B1 [ ] MF4-B2 [ ] MF4-B3 [ ] MF4-B4 [ ] MF4-B5 [ ] MF4-B6 [ ] MF4-B7 [ ] MF4-B8
 - [ ] MF5b-B1 [ ] MF5b-B2 [ ] MF5b-B3
 - [ ] MF6b-B1 [ ] MF6b-B2
