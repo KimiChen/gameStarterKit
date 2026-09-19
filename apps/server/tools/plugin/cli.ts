@@ -23,6 +23,8 @@ import { assertKitOutboxDrained, describeKitOutboxBacklog } from "./outboxGate";
 import { packPlugin } from "./pack";
 import { runPackageTests } from "./test";
 import { uninstallPlugin } from "./uninstall";
+import { assertKitWorkersQuiescent, describeKitWorkerBacklog, worldEventTablesOf } from "./workerGate";
+import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 
@@ -213,6 +215,13 @@ export async function runCli(args: PluginCliArguments): Promise<number> {
     if (lock?.manifest.class === "kit") {
       const gate = await assertKitOutboxDrained({ kitId: args.id, allowPendingOutbox: args.allowPendingOutbox, log: (line) => console.log(`[plugin]   ${line}`) });
       if (!gate.bypassed) console.log(`[plugin]   gameplay_outbox：kit:${args.id}:* 无 pending intent ✔`);
+      // kit 卸载前的 worker 闸（docs/MMO.md MF7a-B5；tools/plugin/workerGate.ts）：role=world-event 表还有 status=0 的行、或该 kit 的
+      // worker 租约在役 ⇒ 拒（⛔ 无 bypass flag）；连不上库同样拒。表名只认生成目录里的 role 声明。
+      const kitEntry = SERVER_KIT_CATALOG.find((kit) => kit.id === args.id);
+      const worldEventTables = worldEventTablesOf(kitEntry);
+      if (kitEntry === undefined) console.log(`[plugin]   ⚠ kit "${args.id}" 不在生成目录（codegen:plugins 未刷新？）：world-event 表未核，只核租约行`);
+      await assertKitWorkersQuiescent({ kitId: args.id, worldEventTables, log: (line) => console.log(`[plugin]   ${line}`) });
+      console.log(`[plugin]   kit worker：world-event 表 ${worldEventTables.length} 张无 pending 事件行、租约 kit:${args.id}:* 无在役 ✔`);
     }
     const report = uninstallPlugin({ root: args.root, id: args.id, force: args.force, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.class} ${report.id}@${report.version} [${report.source}]: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
@@ -244,7 +253,10 @@ export async function runCli(args: PluginCliArguments): Promise<number> {
     for (const problem of plugin.problems) console.log(`[plugin]   - ${problem}`);
   }
   // 数据面只告警不失败（check 是只读核对）：kit 的 pending outbox 积压会让 uninstall 拒绝，这里提前说。
-  for (const line of await describeKitOutboxBacklog(report.plugins.filter((plugin) => plugin.class === "kit").map((plugin) => plugin.id))) console.log(`[plugin] ${line}`);
+  const kitIds = report.plugins.filter((plugin) => plugin.class === "kit").map((plugin) => plugin.id);
+  for (const line of await describeKitOutboxBacklog(kitIds)) console.log(`[plugin] ${line}`);
+  // kit worker 面同样只告警（docs/MMO.md MF7a-B5）：pending 事件行 / 在役租约会让 uninstall 拒绝；孤儿租约行（删 kit 后保留）点名。
+  for (const line of await describeKitWorkerBacklog(kitIds, SERVER_KIT_CATALOG)) console.log(`[plugin] ${line}`);
   return report.ok ? 0 : 1;
 }
 
