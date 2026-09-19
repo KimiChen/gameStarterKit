@@ -30,6 +30,16 @@ export interface GameplayC2SToken<TPayload, TType extends string = string> {
 export interface GameplayS2CToken<TPayload, TType extends string = string> {
     readonly dir: "s2c";
     readonly type: TType;
+    /**
+     * 每会话消息（MMO MF5a 观察者同步）：只经 `sendS2C` 发给单个会话（视野内 enter / update / leave、本人私有流、
+     * baseline 分块），`broadcastS2C` 对它 fail-closed（rooms/core/S2CPorts 启动期 + 发送期）。缺省 false = 全房消息。
+     */
+    readonly perSession: boolean;
+    /**
+     * OutboundQueue 合并键（只对 perSession 有意义）：payload 里作为合并键的**字段名**——同 token、同键值的未发送消息
+     * 后者覆盖前者（位置类）；null = 不合并、不可丢（回执 / enter / leave 类），超限时整会话标记重同步而不是丢消息。
+     */
+    readonly coalesceKey: string | null;
     validate(input: unknown, path?: string): TPayload;
 }
 
@@ -37,6 +47,14 @@ export interface GameplayC2SOptions {
     readonly phases: readonly GamePhaseType[];
     readonly rateCost?: number;
 }
+
+/** `defineS2C` 第三参（可省略 = 全房消息）；生成器按字面量读取，`coalesceKey` 只能与 `perSession: true` 同现。 */
+export interface GameplayS2COptions {
+    readonly perSession?: true;
+    readonly coalesceKey?: string;
+}
+
+const COALESCE_KEY_RE = /^[A-Za-z_][A-Za-z0-9_]{0,31}$/;
 
 function assertWireType(type: string, prefix: "c2s." | "s2c."): void {
     if (typeof type !== "string" || type.length <= prefix.length || !type.startsWith(prefix)) {
@@ -84,11 +102,41 @@ export function defineC2S<TPayload, TType extends string>(
 export function defineS2C<TPayload, TType extends string>(
     type: TType,
     validate: (input: unknown) => TPayload,
+    options?: GameplayS2COptions,
 ): GameplayS2CToken<TPayload, TType> {
     assertWireType(type, "s2c.");
+    let perSession = false;
+    let coalesceKey: string | null = null;
+    if (options !== undefined) {
+        if (options === null || typeof options !== "object" || Array.isArray(options)) {
+            throw new TypeError(`[gameplay-wire] ${type} 的 defineS2C 第三参必须是对象 { perSession?, coalesceKey? }`);
+        }
+        for (const key of Object.keys(options)) {
+            if (key !== "perSession" && key !== "coalesceKey") {
+                throw new TypeError(`[gameplay-wire] ${type} 的 defineS2C 选项含未知键：${key}`);
+            }
+        }
+        if (options.perSession !== undefined) {
+            if (options.perSession !== true) {
+                throw new TypeError(`[gameplay-wire] ${type} 的 perSession 只能是 true（省略即全房消息）`);
+            }
+            perSession = true;
+        }
+        if (options.coalesceKey !== undefined) {
+            if (!perSession) {
+                throw new TypeError(`[gameplay-wire] ${type} 的 coalesceKey 只对 perSession: true 有意义`);
+            }
+            if (typeof options.coalesceKey !== "string" || !COALESCE_KEY_RE.test(options.coalesceKey)) {
+                throw new TypeError(`[gameplay-wire] ${type} 的 coalesceKey 必须是 payload 字段名（${String(COALESCE_KEY_RE)}）`);
+            }
+            coalesceKey = options.coalesceKey;
+        }
+    }
     return Object.freeze({
         dir: "s2c" as const,
         type,
+        perSession,
+        coalesceKey,
         validate: guardedValidator(type, validate),
     });
 }

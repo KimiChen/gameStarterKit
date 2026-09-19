@@ -723,6 +723,8 @@ function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreW
   const gameplayC2S = gameplays.flatMap((gameplay) =>
     gameplay.wire.c2s.map((token) => ({ id: gameplay.id, token })));
   const hasGameplayC2S = gameplayC2S.length > 0;
+  // MMO MF5a：perSession S2C token 表（值 = coalesceKey 或 null）；无选项的 token 不进表、其余产物字节不受影响。
+  const perSessionS2C = gameplays.flatMap((gameplay) => gameplay.wire.s2c.filter((token) => token.perSession));
 
   const lines = [generatedHeader(WIRE_SOURCE_LABEL)];
   if (hasGameplayC2S) {
@@ -825,6 +827,11 @@ function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreW
     "export const GAME_WIRE_RATE_COST = {",
     ...gameplayC2S.map(({ token }) => `    ${JSON.stringify(token.type)}: ${token.rateCost},`),
     "} as const satisfies { readonly [type: string]: number };",
+    "",
+    "/** 每会话 S2C token（MMO MF5a）：只经 sendS2C 发给单个会话，broadcastS2C 对它 fail-closed；值 = coalesceKey（payload 字段名）或 null（不合并、不可丢）。 */",
+    "export const GAME_WIRE_PER_SESSION = {",
+    ...perSessionS2C.map((token) => `    ${JSON.stringify(token.type)}: ${JSON.stringify(token.coalesceKey)},`),
+    "} as const satisfies { readonly [type: string]: string | null };",
     "",
     "/** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */",
     "export const gameplayC2STokens = {",

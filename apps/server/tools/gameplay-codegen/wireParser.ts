@@ -23,6 +23,10 @@ export type WireS2CDeclaration = {
   readonly exportName: string;
   readonly type: string;
   readonly payloadType: string;
+  /** MMO MF5a：每会话消息（`defineS2C(type, validator, { perSession: true, coalesceKey? })`）。 */
+  readonly perSession: boolean;
+  /** 合并键 = payload 字段名；null = 不合并（也是非 perSession token 的恒值）。 */
+  readonly coalesceKey: string | null;
 };
 
 export type GameplayWireDeclarations = {
@@ -187,6 +191,45 @@ function parseC2SOptions(
   return { phases, rateCost };
 }
 
+const COALESCE_KEY_RE = /^[A-Za-z_][A-Za-z0-9_]{0,31}$/u;
+
+/** defineS2C 可选第三参：只认 `perSession: true` 与 `coalesceKey: "<字面量>"`（后者须与前者同现）。 */
+function parseS2COptions(
+  call: ts.CallExpression,
+  label: string,
+  wireType: string,
+): { readonly perSession: boolean; readonly coalesceKey: string | null } {
+  const optionsArg = call.arguments[2];
+  if (optionsArg === undefined) return { perSession: false, coalesceKey: null };
+  if (!ts.isObjectLiteralExpression(optionsArg)) {
+    fail(label, `${wireType} 的 defineS2C 第三参必须是对象字面量 { perSession: true, coalesceKey? }`);
+  }
+  let perSession = false;
+  let coalesceKey: string | null = null;
+  for (const property of optionsArg.properties) {
+    if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
+      fail(label, `${wireType} 的 defineS2C 选项不允许 spread/computed property`);
+    }
+    if (property.name.text === "perSession") {
+      if (property.initializer.kind !== ts.SyntaxKind.TrueKeyword) {
+        fail(label, `${wireType} 的 perSession 只能是字面量 true（省略即全房消息）`);
+      }
+      perSession = true;
+    } else if (property.name.text === "coalesceKey") {
+      if (!ts.isStringLiteral(property.initializer) || !COALESCE_KEY_RE.test(property.initializer.text)) {
+        fail(label, `${wireType} 的 coalesceKey 必须是字段名字符串字面量（${String(COALESCE_KEY_RE)}）`);
+      }
+      coalesceKey = property.initializer.text;
+    } else {
+      fail(label, `${wireType} 的 defineS2C 选项含未知键：${property.name.text}`);
+    }
+  }
+  if (coalesceKey !== null && !perSession) {
+    fail(label, `${wireType} 的 coalesceKey 只对 perSession: true 有意义`);
+  }
+  return { perSession, coalesceKey };
+}
+
 /** 解析一份玩法 wire.ts；违反顶层语法约束即 fail-fast。 */
 export function parseGameplayWireModule(source: string, label: string): GameplayWireDeclarations {
   const sourceFile = ts.createSourceFile(label, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
@@ -253,11 +296,12 @@ export function parseGameplayWireModule(source: string, label: string): Gameplay
         if (!wireType.startsWith("s2c.") || wireType.length <= "s2c.".length) {
           fail(label, `defineS2C 的消息名必须以 "s2c." 开头：${wireType}`);
         }
-        if (initializer.arguments.length !== 2) {
-          fail(label, `${wireType} 的 defineS2C 必须是 (type, validator) 两参形态`);
+        if (initializer.arguments.length !== 2 && initializer.arguments.length !== 3) {
+          fail(label, `${wireType} 的 defineS2C 必须是 (type, validator) 或 (type, validator, { perSession: true, coalesceKey? }) 形态`);
         }
         const payloadType = parsePayloadType(initializer, index, label, wireType);
-        s2c.push({ exportName, type: wireType, payloadType });
+        const options = parseS2COptions(initializer, label, wireType);
+        s2c.push({ exportName, type: wireType, payloadType, perSession: options.perSession, coalesceKey: options.coalesceKey });
       }
     }
   }

@@ -214,6 +214,10 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.tally.tap": 1,
 } as const satisfies { readonly [type: string]: number };
 
+/** 每会话 S2C token（MMO MF5a）：只经 sendS2C 发给单个会话，broadcastS2C 对它 fail-closed；值 = coalesceKey（payload 字段名）或 null（不合并、不可丢）。 */
+export const GAME_WIRE_PER_SESSION = {
+} as const satisfies { readonly [type: string]: string | null };
+
 /** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */
 export const gameplayC2STokens = {
     "arenaCapture": {
