@@ -328,7 +328,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 
 - [x] MF0-B1（6582d4ac） [x] MF0-B2（1ce10d01） [x] MF0-B3（107f8e5a）— MF0 退出 2026-09-19，见 MMO.md §12
 - [x] MF1-B1（3da785c7） [x] MF1-B2（f1c19cde） [x] MF1-B3（本行所在提交，文档）— MF1 退出 2026-09-19，见 MMO.md §12（偏差 ①–④ 登记在该行）
-- [ ] MF3-B1 [ ] MF3-B2 [ ] MF3-B3
+- [x] MF3-B1（61a0125e） [x] MF3-B2（dd3ec2fe） [x] MF3-B3（本行所在提交，文档）— MF3 退出 2026-09-19，见 MMO.md §12（偏差 ①–③ 登记在该行）；tag `mf3-exit`
 - [ ] MF6a-B1 [ ] MF6a-B2 [ ] MF6a-B3 [ ] MF6a-B4 [ ] MF6a-B5
 - [ ] MF7a-B1 [ ] MF7a-B2 [ ] MF7a-B3 [ ] MF7a-B4 [ ] MF7a-B5 [ ] MF7a-B6
 - [ ] MF9-B1 [ ] MF9-B2 [ ] MF9-B3 [ ] MF9-B4 [ ] MF9-B5

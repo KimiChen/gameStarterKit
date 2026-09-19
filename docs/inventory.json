@@ -27,7 +27,7 @@
       "sourceOfTruth": "apps/server/src/rooms/GameRoom.ts",
       "wireBoundary": "apps/shared/src/protocol/rooms.ts",
       "verification": [{ "kind": "workspace", "workspace": "@game/server", "script": "test" }],
-      "docs": ["docs/plan-v5.md", "docs/SERVER.md"]
+      "docs": ["docs/plan-v5.md", "docs/SERVER.md", "apps/server/src/rooms/README.md"]
     },
     {
       "id": "asset-effect-and-zone-isolation",

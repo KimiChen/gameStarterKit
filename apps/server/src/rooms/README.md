@@ -5,8 +5,9 @@
 
 - `GameRoom.ts`：通用 transport/admission/lifecycle shell。它在 `onCreate` 按生成映射选择一次 mode root，
   之后禁止替换；shell 自身不含任何玩法规则，也没有默认玩法——未登记/未注入 mode 的房间在
-  `requireMode()` 直接 fail-fast（⛔ 不回退 ballMove）。Schema patch rate 为 50ms，fixed-step 时钟、
-  出站 S2C 校验、消息预算与开局事务都归 shell。
+  `requireMode()` 直接 fail-fast（⛔ 不回退 ballMove）。Schema patch rate 为 50ms，fixed-step 时钟与开局事务归 shell；
+  建连鉴权、C2S dispatcher、消息预算、重连宽限与出站 S2C 校验自 MMO MF3-B2 起由 `core/` 共享层实现，shell 只消费
+  （`gameRoomAuth.authenticate` / `WireDispatcher.dispatch` / `S2CPorts` / `ReconnectGrace`，见下方 `core/` 条）。
 - `GameMode.ts`：服务端玩法契约与 registry。`GameRoom` 继续拥有 transport、auth、房间锁和生命周期；玩法通过
   `createPlayer` 提供精确 player Schema，用 `roster{min,max,autoStart}` 声明人数事实——⛔ shell 里没有人数字面量，
   `maxClients`、满员闸、自动开局阈值、开局下限与开局边界重验五处全部读它。`roster.max` 不得超过 shared 的
@@ -45,7 +46,15 @@
   不进生产 registry）与其稳定 façade `modes/catalog.ts`（⛔ 不再逐玩法手写 import）；`modes/idle/index.ts` 是最小
   第二玩法。Idle 使用独立 `IdleRoomState`、strict `IdlePulse` 和 pulse/真实离场结算，不声明 evidence
   capability，也不写任何收局证据。
-- `core/`（阶段 8a，Non-intrusive §6.2）：房间组合 policy 层——`StartPolicy.ts`（auto / owner-ready /
+- `core/`：房间共享层（整目录受 `scripts/protected-paths.json` gameplayFlow 保护，⛔ 不 import `modes/` 与 `websocket/`，
+  `test/rooms-core-import-ban.test.ts` 机检）。**MF3-B2 抽出物**（docs/MMO.md §5.4）：`RoomAuth.ts`（建连六步，协议整数由
+  `createRoomAuth` 注入；`gameRoomAuth` 绑 GAME_ROOM_PROTOCOL_VERSION，`assertEnvelope` 供 onAuth / onCreate 同口径）、
+  `WireDispatcher.ts`（C2S 固定序 预算 → owner → exact validate → rateCost → phase（core 谓词注入）→ handler，持有每会话
+  `MessageBudget`）、`MessageBudget.ts`（1 s 滚动窗口，`GAME_ROOM_MAX_MESSAGES_PER_SECOND` 真源）、`ReconnectGrace.ts`
+  （reconnected / expired / stale 三态，dispose 或代际前移 ⇒ stale）、`S2CPorts.ts`（core validator 出站口 + mode token 的
+  dir / owner / validate 闸；MF5a 在此加 perSession 广播闸）。契约见 `test/rooms-core-units.test.ts`，行为快照见
+  `test/rooms-core-behavior-snapshot.test.ts`。
+  **阶段 8a policy 层**（Non-intrusive §6.2）——`StartPolicy.ts`（auto / owner-ready /
   drop-in 判别联合，⛔ 不重复声明任何人数：min/max/autoStart 唯一真源仍是 roster/manifest）、`AccessPolicy.ts`
   （matchmaking / invite-code，四个时间/配额参数取自 config，不等式在加载期断言）、`RoomProfile.ts`
   （`(mode, profileId) → policy` 注册表：校验 id ∈ generated catalog.profiles、owner-ready/invite
