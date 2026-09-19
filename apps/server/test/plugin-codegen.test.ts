@@ -1754,7 +1754,7 @@ test("K0 kit：域名前缀规则 (i) 一域一主 (ii) 边界前缀 + 最长前
   }
   // 纯函数视角：(ii) 最长前缀按大小写归一比较；(iii) 边界前缀匹配（slgAdmin ∈ slg，slgx ∉ slg）。
   const unit = (id: string, version: string | null, domains: readonly string[]): ReturnType<typeof readViewCatalog>["plugins"][number] => ({
-    class: "plugin", schemaVersion: 2, id, version, domains, requires: { pluginApiVersion: null, kits: {} }, category: "extra", docs: [],
+    class: "plugin", schemaVersion: 2, id, version, domains, requires: { pluginApiVersion: null, kits: {} }, contributes: {}, category: "extra", docs: [],
     capabilities: [], resident: false, entry: null, dependencies: [], viewDirs: [], views: [], owners: [], routes: [], menu: [],
   });
   assert.throws(() => assertDomainOwnership(["slg", "slgAdmin"], [unit("slg", "1.0.0", ["slg"])]), /域 "slgAdmin" 未被任何单元声明，却等于或以带版本的 plugin "slg" 为前缀/u);

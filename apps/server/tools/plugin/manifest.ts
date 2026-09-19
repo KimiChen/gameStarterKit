@@ -26,6 +26,10 @@ import {
   type PluginRegistration,
   type PluginRequires,
   type KitWorker,
+  type KitContribution,
+  type KitContributionSummary,
+  type PluginContributes,
+  summarizeContribution,
 } from "../plugin-codegen/pluginManifestSchema";
 
 const TOOL_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -57,6 +61,8 @@ export interface PluginManifest {
   readonly description: string;
   /** 对 kit / 框架门面的依赖（docs/KIT.md §4）；来自登记面，缺省空。 */
   readonly requires: PluginRequires;
+  /** 对 kit 贡献点的填充（MF9；进锁抬头与身份摘要）。 */
+  readonly contributes: PluginContributes;
   readonly registration: PluginRegistration;
 }
 
@@ -77,6 +83,10 @@ export interface KitManifest {
   readonly effects: Readonly<Record<string, KitEffect>>;
   /** 后台 worker 清单（MF7a；进锁抬头与身份摘要）。 */
   readonly workers: readonly KitWorker[];
+  /** 贡献点声明（MF9；摘要进锁抬头与身份摘要）。 */
+  readonly contributions: Readonly<Record<string, KitContribution>>;
+  /** state fragment 清单（MF9；进锁抬头与身份摘要）。 */
+  readonly fragments: readonly string[];
   readonly registration: KitRegistration;
 }
 
@@ -105,6 +115,7 @@ export function parsePluginManifest(input: unknown, pathLabel = "plugin.json"): 
     fguiPackages: Array.isArray(value.fguiPackages) ? [...(value.fguiPackages as string[])] : [],
     description: typeof value.description === "string" ? value.description : "",
     requires: registration.requires,
+    contributes: registration.contributes,
     registration,
   };
 }
@@ -127,6 +138,8 @@ export function parseKitManifest(input: unknown, pathLabel = "kit.json"): KitMan
     userKeys: registration.userKeys,
     effects: registration.effects,
     workers: registration.workers,
+    contributions: registration.contributions,
+    fragments: registration.fragments,
     registration,
   };
 }
@@ -187,7 +200,13 @@ export function identityOf(manifest: PluginManifest, gameplay: GameplaySourceSum
     domains: manifest.domains,
     fguiPackages: manifest.fguiPackages,
     clientDirs: clientDirsOf(manifest),
+    contributes: manifest.contributes,
   };
+}
+
+/** kit.json 的贡献点声明 → 锁 / 身份摘要形态。 */
+export function contributionSummariesOf(contributions: Readonly<Record<string, KitContribution>>): Readonly<Record<string, KitContributionSummary>> {
+  return Object.fromEntries(Object.entries(contributions).map(([id, contribution]) => [id, summarizeContribution(contribution)]));
 }
 
 /**
@@ -215,6 +234,8 @@ export function kitIdentityOf(manifest: KitManifest, hasServerDir: boolean): Plu
     fguiPackages: manifest.fguiPackages,
     clientDirs: clientDirsOf(manifest),
     workers: manifest.workers,
+    contributions: contributionSummariesOf(manifest.contributions),
+    fragments: manifest.fragments,
   };
 }
 
@@ -228,10 +249,14 @@ export function identityFromSummary(summary: {
   readonly domains: readonly string[];
   readonly fguiPackages: readonly string[];
   readonly workers?: readonly KitWorker[];
+  readonly contributions?: Readonly<Record<string, KitContributionSummary>>;
+  readonly fragments?: readonly string[];
+  readonly contributes?: PluginContributes;
 }, clientDirs: readonly string[]): PluginIdentity {
   return {
     class: summary.class, id: summary.id, kinds: summary.kinds, constantName: summary.constantName, modes: summary.modes,
     domains: summary.domains, fguiPackages: summary.fguiPackages, clientDirs, workers: summary.workers ?? [],
+    contributions: summary.contributions ?? {}, fragments: summary.fragments ?? [], contributes: summary.contributes ?? {},
   };
 }
 
@@ -308,6 +333,12 @@ export interface IdentitySummaryInput {
   readonly fguiPackages: readonly string[];
   /** kit 的 worker 清单（MF7a）；插件 / 旧锁缺省空。 */
   readonly workers?: readonly KitWorker[];
+  /** kit 的贡献点摘要（MF9）；插件 / 旧锁缺省空。 */
+  readonly contributions?: Readonly<Record<string, KitContributionSummary>>;
+  /** kit 的 fragment 清单（MF9）；插件 / 旧锁缺省空。 */
+  readonly fragments?: readonly string[];
+  /** 插件的贡献填充（MF9）；kit / 旧锁缺省空。 */
+  readonly contributes?: PluginContributes;
 }
 
 export function identitySummary(manifest: IdentitySummaryInput): Record<string, string> {
@@ -319,6 +350,13 @@ export function identitySummary(manifest: IdentitySummaryInput): Record<string, 
     domains: manifest.domains.join(",") || "-",
     fguiPackages: manifest.fguiPackages.join(",") || "-",
     workers: (manifest.workers ?? []).map((worker) => `${worker.id}:${worker.entry}`).sort().join(",") || "-",
+    contributions: Object.entries(manifest.contributions ?? {})
+      .map(([id, c]) => `${id}:${c.kind}:${[...c.ends].sort().join("+")}:${c.kind === "module" ? c.export ?? "-" : c.schemaDigest ?? "-"}`)
+      .sort().join(",") || "-",
+    fragments: [...(manifest.fragments ?? [])].sort().join(",") || "-",
+    contributes: Object.entries(manifest.contributes ?? {})
+      .flatMap(([kitId, entries]) => Object.entries(entries).map(([id, file]) => `${kitId}/${id}=${file}`))
+      .sort().join(",") || "-",
   };
 }
 
