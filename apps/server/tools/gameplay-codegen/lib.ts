@@ -323,6 +323,7 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
     // 文件字节按引用顺序并入 contractDigest（fragment 变 = 该 mode 的 state 契约变，走 modeVersion 闸）。
     const fragmentBytes: Buffer[] = [];
     const state = parseGameplayStateDescriptor(stateRaw.value, {
+      roster: manifest.roster,
       resolveKitFragment: (kitId, name) => {
         const stateLabel = `${entryLabel}/state.json`;
         const kitJsonLabel = `${KITS_DIR_RELATIVE}/${kitId}/kit.json`;
@@ -575,13 +576,18 @@ function rootType(gameplay: GameplayDescriptor): { readonly sharedName: string; 
 
 /**
  * root 的 `players` map value 类型 = 该玩法的 player Schema 类。
- * 存在性由 stateRenderer 的 ROOT_LIFECYCLE_FIELDS / PLAYER_LIFECYCLE_FIELDS 断言保证
- * （每个 root 必须有 `players` map，其 value 类型必须声明 id/name），这里只做渲染期兜底。
+ * public 名册：存在性由 stateRenderer 的 ROOT_LIFECYCLE_FIELDS / PLAYER_LIFECYCLE_FIELDS 断言保证
+ * （root 必须有 `players` map，其 value 类型必须声明 id/name），这里只做渲染期兜底；
+ * hidden 名册（MMO MF5a-B4）：root 没有 players map，也就没有 player Schema 类 ⇒ null。
  */
-function playerType(gameplay: GameplayDescriptor): { readonly name: string } {
+function playerType(gameplay: GameplayDescriptor): { readonly name: string } | null {
   const root = rootType(gameplay);
   const rootDescriptor = gameplay.state.types.find((candidate) => candidate.name === root.name);
   const players = rootDescriptor?.fields.find((field) => field.name === "players");
+  if (gameplay.state.roster === "hidden") {
+    if (players !== undefined) fail(`gameplays.${gameplay.id}`, `roster:"hidden" root ${root.name} must not declare "players" while rendering`);
+    return null;
+  }
   if (players?.kind !== "map") {
     fail(`gameplays.${gameplay.id}`, `root ${root.name} must declare a "players" map while rendering`);
   }
@@ -599,6 +605,7 @@ function renderCatalogEntries(gameplays: readonly GameplayDescriptor[]): string[
       `        constantName: ${JSON.stringify(gameplay.manifest.constantName)},`,
       `        modeVersion: ${gameplay.manifest.modeVersion},`,
       `        maxPlayers: ${gameplay.manifest.maxPlayers},`,
+      `        roster: ${JSON.stringify(gameplay.manifest.roster)},`,
       `        profiles: [${gameplay.manifest.profiles.map((profile) => JSON.stringify(profile)).join(", ")}],`,
       `        stateFragments: [${gameplay.state.fragments.map((fragment) => JSON.stringify(fragment)).join(", ")}],`,
       `        contractDigest: ${JSON.stringify(gameplay.contractDigest)},`,
@@ -868,7 +875,8 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     "import { type GamePhaseType, type RoomStateMode } from \"@game/shared\";",
   ];
   for (const gameplay of gameplays) {
-    lines.push(`import { ${rootType(gameplay).name}, ${playerType(gameplay).name} } from "./generated/${gameplay.id}";`);
+    const player = playerType(gameplay);
+    lines.push(`import { ${rootType(gameplay).name}${player ? `, ${player.name}` : ""} } from "./generated/${gameplay.id}";`);
   }
   lines.push("");
   for (const gameplay of gameplays) {
@@ -891,7 +899,8 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     "    tick: number;",
     "    phase: GamePhaseType;",
     "    matchId: string;",
-    "    players: MapSchema<RoomStatePlayerLifecycle>;",
+    "    /** Present only for roster:\"public\" modes (ROOM_STATE_ROSTER); hidden rosters live in the server-side seat table (MMO MF5a-B4). */",
+    "    players?: MapSchema<RoomStatePlayerLifecycle>;",
     "}",
     "",
     "/** OwnerReady fragment view (§4.6): only roots whose state.json declares \"ownerReady\" carry these fields. */",
@@ -927,6 +936,11 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
       `    ${JSON.stringify(gameplay.id)}: [${gameplay.state.fragments.map((fragment) => JSON.stringify(fragment)).join(", ")}],`),
     "} as const satisfies Record<RoomStateMode, readonly string[]>);",
     "",
+    "/** Roster visibility per mode (manifest.roster, MMO MF5a-B4 / M07): hidden roots carry no players map. */",
+    "export const ROOM_STATE_ROSTER = Object.freeze({",
+    ...gameplays.map((gameplay) => `    ${JSON.stringify(gameplay.id)}: ${JSON.stringify(gameplay.state.roster)},`),
+    "} as const satisfies Record<RoomStateMode, \"public\" | \"hidden\">);",
+    "",
     "export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({",
   );
   for (const gameplay of gameplays) {
@@ -951,24 +965,30 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     // ⛔ 没有这张表时，任何需要「按 mode 造一个 player」的通用代码（GameRoom shell 之外，
     // 尤其是玩法无关的测试探针）只能手写 `new SnakePlayerState()`——那正是中央测试长出
     // 具名玩法分支的根因。
-    "/** mode → player Schema 类；与 ROOM_STATE_ROOT_CONSTRUCTORS 同源于 state.json。 */",
+    "/** mode → player Schema 类；与 ROOM_STATE_ROOT_CONSTRUCTORS 同源于 state.json（roster:\"hidden\" 的 mode 没有 player 类，不在此表）。 */",
     "export const ROOM_STATE_PLAYER_CONSTRUCTORS = Object.freeze({",
   );
   for (const gameplay of gameplays) {
-    lines.push(`    ${JSON.stringify(gameplay.id)}: ${playerType(gameplay).name},`);
+    const player = playerType(gameplay);
+    if (player) lines.push(`    ${JSON.stringify(gameplay.id)}: ${player.name},`);
   }
   lines.push(
-    "} as const satisfies Record<RoomStateMode, new () => Schema>);",
+    "} as const satisfies { readonly [M in RoomStateMode]?: new () => Schema });",
     "",
-    "export type RoomStatePlayerForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[M]>;",
-    "export type RoomStatePlayer = RoomStatePlayerForMode<RoomStateMode>;",
-    "type RoomStatePlayerConstructor = (typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[RoomStateMode];",
+    "/** Modes whose roster is public (they have a player Schema class). */",
+    "export type RoomStatePlayerMode = keyof typeof ROOM_STATE_PLAYER_CONSTRUCTORS;",
+    "export type RoomStatePlayerForMode<M extends RoomStatePlayerMode> = InstanceType<(typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[M]>;",
+    "export type RoomStatePlayer = RoomStatePlayerForMode<RoomStatePlayerMode>;",
+    "type RoomStatePlayerConstructor = (typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[RoomStatePlayerMode];",
     "",
-    "export function createRoomPlayerForMode<M extends RoomStateMode>(mode: M): RoomStatePlayerForMode<M>;",
+    "export function createRoomPlayerForMode<M extends RoomStatePlayerMode>(mode: M): RoomStatePlayerForMode<M>;",
     "export function createRoomPlayerForMode(mode: string): RoomStatePlayer;",
     "export function createRoomPlayerForMode(mode: string): RoomStatePlayer {",
     "    const Player = (ROOM_STATE_PLAYER_CONSTRUCTORS as Readonly<Partial<Record<string, RoomStatePlayerConstructor>>>)[mode];",
-    "    if (!Player) throw new TypeError(`[room-state] unsupported gameplay mode: ${mode}`);",
+    "    if (!Player) {",
+    "        const known = Object.prototype.hasOwnProperty.call(ROOM_STATE_ROSTER, mode);",
+    "        throw new TypeError(known ? `[room-state] hidden roster has no player Schema: ${mode}` : `[room-state] unsupported gameplay mode: ${mode}`);",
+    "    }",
     "    return new Player();",
     "}",
     "",
@@ -1271,7 +1291,7 @@ export function previousCatalogRecords(options: GameplayCodegenOptions = {}): Re
   const text = fs.readFileSync(file, "utf8");
   // profiles/stateFragments 两行可缺省匹配：既容纳阶段 8 之前的旧 catalog 格式（首次带
   // fragment 的迁移仍能读到历史 digest/modeVersion），也容纳当前格式。
-  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n(?: {8}(?:profiles|stateFragments): \[[^\]\n]*\],\n)* {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
+  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n(?: {8}roster: "(?:public|hidden)",\n)?(?: {8}(?:profiles|stateFragments): \[[^\]\n]*\],\n)* {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
   for (const match of text.matchAll(entry)) {
     records.set(match[1], {
       modeVersion: Number(match[2]),

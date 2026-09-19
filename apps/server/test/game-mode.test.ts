@@ -34,10 +34,15 @@ import {
     createRoomPlayerForMode,
     GameRoomState,
     IdlePlayerState,
-    IdleRoomState,
     ROOM_STATE_ROOT_CONSTRUCTORS,
 } from "../src/rooms/schema/GameRoomState";
 import { discoverAdmissionPayloads } from "./wire-vectors/index";
+
+/** MF5a-B4：预置座位必须走 shell 的座位表（名册真源），Schema `players` 只是 public 名册的镜像。 */
+function seat(room: GameRoom, sessionId: string, player: unknown): void {
+    (room as unknown as { seatPlayer(id: string, p: unknown): void }).seatPlayer(sessionId, player);
+}
+
 
 type FakeClient = {
     sessionId: string;
@@ -352,7 +357,7 @@ test("GameRoom：onBeforeAdmission 抛错 = 拒绝入房（fail-closed），且�
         (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.BadRequest)),
     );
     assert.deepEqual(order, ["before"], "⛔ 不得继续走到 onAdmission");
-    assert.equal(room.state.players.has(joining.sessionId), false);
+    assert.equal(room.state.players!.has(joining.sessionId), false);
 });
 
 test("GameRoom：开局失败会归还本次 mode admission 且迟到 leave 不重复释放", async () => {
@@ -373,7 +378,7 @@ test("GameRoom：开局失败会归还本次 mode admission 且迟到 leave 不�
     await join(room, first);
     await assert.rejects(join(room, second));
     assert.deepEqual(events, ["admit:rollback-a", "admit:rollback-b", "leave:rollback-b"]);
-    assert.equal(room.state.players.has(second.sessionId), false);
+    assert.equal(room.state.players!.has(second.sessionId), false);
 
     await room.onLeave(second as never, CloseCode.CONSENTED);
     assert.equal(events.filter((event) => event === "leave:rollback-b").length, 1);
@@ -471,7 +476,7 @@ test("GameRoom：每个可等待开局 hook 后重验 roster/generation，不发
         release.resolve();
         await rejectedJoin;
         assert.equal(room.state.phase, GamePhase.Waiting);
-        assert.equal(room.state.players.size, 0, "失败 join 与 Waiting leave 必须都完成清理");
+        assert.equal(room.state.players!.size, 0, "失败 join 与 Waiting leave 必须都完成清理");
         assert.equal(startCalls, blockedHook === "start" ? 1 : 0,
             "initialize 后 roster 已变时不得继续调用 start hook");
         await room.onDispose();
@@ -545,12 +550,11 @@ test("GameRoom：dispose 等待进行中的 initialize/start/rollback hook 后�
             },
         });
         installLock(room);
-        const state = room.state as unknown as IdleRoomState;
         for (const sessionId of [`${blockedHook}-a`, `${blockedHook}-b`]) {
             const player = new IdlePlayerState();
             player.id = sessionId;
             player.name = sessionId;
-            state.players.set(sessionId, player);
+            seat(room, sessionId, player);
         }
         const internals = room as unknown as {
             messageBudget: Map<string, { windowStart: number; count: number }>;
@@ -613,12 +617,11 @@ test("GameRoom：开局致命 disconnect 不与等待中的 dispose 自锁", { t
         return disposal;
     };
 
-    const state = room.state as unknown as IdleRoomState;
     for (const sessionId of ["disconnect-a", "disconnect-b"]) {
         const player = new IdlePlayerState();
         player.id = sessionId;
         player.name = sessionId;
-        state.players.set(sessionId, player);
+        seat(room, sessionId, player);
     }
 
     await assert.rejects(room.startMatch(), /injected start failure/);
@@ -824,7 +827,7 @@ test("满员闸的上限来自 mode.roster.max——这是防御性闸，用预�
     installLock(room);
     void room.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID));
     for (const sessionId of ["seat-a", "seat-b"]) {
-        room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
+        seat(room, sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
     }
     assert.equal(room.state.phase, GamePhase.Waiting, "预置座位不触发开局，房间必须仍在 Waiting");
     await assert.rejects(
@@ -845,7 +848,7 @@ test("开局边界重验的人数下限同样来自 mode.roster.min", () => {
         stubSimulation(room);
         void room.onCreate(wireOptions(BALL_MOVE_GAME_MODE_ID));
         for (const sessionId of ["seat-a", "seat-b"]) {
-            room.state.players.set(sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
+            seat(room, sessionId, mode.createPlayer({ sessionId, name: sessionId, randomInt: () => 0 }));
         }
         // 阶段 8（§6.3）：边界重验的入参从裸 session 集合升级为完整 fence 元组；
         // ballMove 无 ownerReady fragment，元组退化为 session 集合语义。

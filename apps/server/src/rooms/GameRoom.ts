@@ -1,6 +1,6 @@
 import { Room, Client, CloseCode, type AuthContext, type Serializer } from "colyseus";
 import { ServerError } from "@colyseus/core";
-import { Schema } from "@colyseus/schema";
+import { Schema, type MapSchema } from "@colyseus/schema";
 import {
     C2S,
     S2C,
@@ -33,9 +33,11 @@ import {
     GameRoomState,
     PlayerState,
     ROOM_STATE_FRAGMENTS,
+    ROOM_STATE_ROSTER,
     type RoomStateLifecycle,
     type RoomStateInviteRoom,
     type RoomStateOwnerReady,
+    type RoomStatePlayerLifecycle,
 } from "./schema/GameRoomState";
 import {
     GAME_ROOM_START_LOCK_TIMEOUT_MS,
@@ -209,6 +211,13 @@ export class GameRoom extends Room {
      * 玩法专属字段只在 mode 自己的 hook 里按其精确 root 类型读写。
      */
     declare readonly state: RoomStateLifecycle;
+
+    /**
+     * 服务端会话 / 座位表（MMO MF5a-B4，D4 名册分离）：**名册的唯一真源**，插入序 = 入座序。
+     * roster:"public" 的 mode 同步镜像到 Schema `players`（既有客户端投影零变）；roster:"hidden" 的 root 没有 `players`，
+     * 名册只在这里——客户端不能枚举视野外玩家身份。shell 的人数 / 成员判定一律读这张表，⛔ 不再读 Schema。
+     */
+    private readonly seats = new Map<string, RuntimeModePlayer>();
 
     /** 状态快照下发间隔（ms），默认 50ms/20fps */
     patchRate = 50;
@@ -441,6 +450,44 @@ export class GameRoom extends Room {
         return new Error("[GameRoom] root state 只能由 mode selection 选择一次，禁止外部替换");
     }
 
+    // ── 名册（座位表）与 Schema 镜像（MF5a-B4）──────────────────────────────────
+
+    /** manifest.roster（生成表）：缺席 / public ⇒ 镜像到 Schema players；hidden ⇒ 只在座位表。 */
+    private rosterPublic(): boolean {
+        return (ROOM_STATE_ROSTER as Readonly<Partial<Record<string, "public" | "hidden">>>)[this.modeId] !== "hidden";
+    }
+
+    /** public 名册的 Schema 镜像；hidden 名册返回 null（⛔ 任何路径不得对 hidden root 写 players）。 */
+    private publicPlayers(): MapSchema<RoomStatePlayerLifecycle> | null {
+        if (!this.rosterPublic()) return null;
+        const players = this.state.players;
+        if (!players) throw new Error(`[GameRoom] mode ${this.modeId} roster public 但 root 缺 players map`);
+        return players;
+    }
+
+    /** 落座：座位表 + public 镜像（镜像 set 可能被 @colyseus/schema 拒，调用方按既有 refuse 路径回滚）。 */
+    private seatPlayer(sessionId: string, player: RuntimeModePlayer): void {
+        this.seats.set(sessionId, player);
+        this.publicPlayers()?.set(sessionId, player as PlayerState);
+    }
+
+    /** 离座：返回此前是否在座；public 镜像同步删除。 */
+    private unseatPlayer(sessionId: string): boolean {
+        const wasSeated = this.seats.delete(sessionId);
+        this.publicPlayers()?.delete(sessionId);
+        return wasSeated;
+    }
+
+    /** 当前在座人数（名册真源；⛔ 不读 Schema players.size）。 */
+    get seatedCount(): number {
+        return this.seats.size;
+    }
+
+    /** 在座会话 id（入座序）；hidden 名册也只在服务端可见。 */
+    seatedSessionIds(): readonly string[] {
+        return [...this.seats.keys()];
+    }
+
     /** Colyseus 0.17's current `.state =` API resets through this virtual call. */
     override setSerializer(serializer: Serializer<any>): void {
         if (this.stateSelected && this.stateSerializerConfigured) throw this.rootReplacementError();
@@ -473,8 +520,12 @@ export class GameRoom extends Room {
             name,
             randomInt: (min, max) => this.admissionRng.nextInt(min, max),
         }) as unknown;
-        if (!(player instanceof Schema)) {
+        // public 名册：player 进 Schema players map，必须是 Schema；hidden 名册：只进座位表，普通对象即可（无 player 类）。
+        if (this.rosterPublic() && !(player instanceof Schema)) {
             throw new TypeError(`[GameRoom] mode ${mode.id} createPlayer 必须返回 Schema player`);
+        }
+        if ((typeof player !== "object" && typeof player !== "function") || player === null) {
+            throw new TypeError(`[GameRoom] mode ${mode.id} createPlayer 必须返回 player 对象`);
         }
         const candidate = player as Partial<RuntimeModePlayer>;
         if (candidate.id !== sessionId || candidate.name !== name) {
@@ -650,7 +701,7 @@ export class GameRoom extends Room {
         }
         if (messageType === C2S.Chat) {
             const msg = payload as IChatReq;
-            const player = this.state.players.get(client.sessionId);
+            const player = this.seats.get(client.sessionId);
             if (!player) return;
             const text = msg.text.trim();
             const res: IChatRes = {
@@ -1162,7 +1213,7 @@ export class GameRoom extends Room {
         reason: string,
         error: unknown,
     ): Promise<ServerError> {
-        this.state.players.delete(client.sessionId);
+        this.unseatPlayer(client.sessionId);
         await this.releaseModeAdmission(client);
         console.error(
             `[GameRoom ${this.roomId}] mode ${mode.id} player admission failed reason=${reason}`,
@@ -1248,10 +1299,10 @@ export class GameRoom extends Room {
         if (this.disposed || this.state.phase !== GamePhase.Waiting || this.starting || this.lateLockPending) {
             fail(ErrorCode.GameAlreadyStarted, true);
         }
-        if (this.state.players.size + this.pendingAdmissions.size > mode.roster.max) {
+        if (this.seats.size + this.pendingAdmissions.size > mode.roster.max) {
             fail(ErrorCode.RoomFull, true);
         }
-        if (this.userSessionId.has(auth.userId) || this.state.players.has(client.sessionId)) {
+        if (this.userSessionId.has(auth.userId) || this.seats.has(client.sessionId)) {
             fail(ErrorCode.AlreadyInRoom, true);
         }
         return { kind: "join", ticket };
@@ -1292,7 +1343,7 @@ export class GameRoom extends Room {
         }
         // 第五人由 admission 与 maxClients 双重拒绝（§6.2）；容量计算包含 pending 占位
         // （异步 ticket 检查期间的座位也占容量，失败无泄漏——§6.8 时序第 2 步）。
-        if (this.state.players.size + this.pendingAdmissions.size >= mode.roster.max) {
+        if (this.seats.size + this.pendingAdmissions.size >= mode.roster.max) {
             throw joinRefused(ErrorCode.RoomFull);
         }
         // 同一框架账号禁止占双座（对齐 Arthur VersusRoom）：证据里同一 userId 出现两个名次会污染战绩。
@@ -1303,7 +1354,7 @@ export class GameRoom extends Room {
         for (const pending of this.pendingAdmissions.values()) {
             if (pending.uid === auth.userId) throw joinRefused(ErrorCode.AlreadyInRoom);
         }
-        if (this.state.players.has(client.sessionId) || this.sessionUserId.has(client.sessionId)
+        if (this.seats.has(client.sessionId) || this.sessionUserId.has(client.sessionId)
             || this.pendingAdmissions.has(client.sessionId)) {
             throw joinRefused(ErrorCode.AlreadyInRoom);
         }
@@ -1379,7 +1430,7 @@ export class GameRoom extends Room {
             throw await this.refuseModePlayer(client, mode, MODE_PLAYER_FACTORY_REASON, error);
         }
         try {
-            this.state.players.set(client.sessionId, player as PlayerState);
+            this.seatPlayer(client.sessionId, player);
         } catch (error) {
             releaseClaim();
             throw await this.refuseModePlayer(client, mode, MODE_PLAYER_REGISTER_REASON, error);
@@ -1427,7 +1478,7 @@ export class GameRoom extends Room {
         // 回滚触发者的 roster 槽位并以 join 拒绝回给触发者。
         const startKind = this.startPolicyKind();
         if ((startKind === "auto" || startKind === "drop-in")
-            && this.state.phase === GamePhase.Waiting && this.state.players.size >= mode.roster.autoStart) {
+            && this.state.phase === GamePhase.Waiting && this.seats.size >= mode.roster.autoStart) {
             try {
                 // startMatch 先 await lock（drop-in 除外——不锁房，见 performStartMatch），
                 // 再把 phase 切到 Playing；锁失败时不会公开一个仍可被撮合/直连塞人的 Playing 房。
@@ -1452,7 +1503,7 @@ export class GameRoom extends Room {
         // 延迟一拍（曾误诊为竞态；int 日志里的 's2c.welcome' 告警实为 settlement 测试
         // 未注册 Welcome 处理器所致，延迟也消不掉）。
         this.sendS2C(client, S2C.Welcome, welcome);
-        console.log(`[GameRoom ${this.roomId}] ${player.name}(${client.sessionId}) 加入，当前 ${this.state.players.size} 人`);
+        console.log(`[GameRoom ${this.roomId}] ${player.name}(${client.sessionId}) 加入，当前 ${this.seats.size} 人`);
     }
 
     async onLeave(client: Client, code: number) {
@@ -1460,7 +1511,7 @@ export class GameRoom extends Room {
         const mode = this.requireMode();
         const consented = code === CloseCode.CONSENTED;
         if (!consented) {
-            const disconnectedPlayer = this.state.players.get(client.sessionId) as RuntimeModePlayer | undefined;
+            const disconnectedPlayer = this.seats.get(client.sessionId);
             if (disconnectedPlayer) {
                 this.runModeConnectionChanged(mode, client, disconnectedPlayer, false);
             }
@@ -1492,7 +1543,7 @@ export class GameRoom extends Room {
                         view.connectionRevision++; // reconnect 再次推进（§6.4 推进点表）
                     }
                 }
-                const reconnectedPlayer = this.state.players.get(client.sessionId) as RuntimeModePlayer | undefined;
+                const reconnectedPlayer = this.seats.get(client.sessionId);
                 if (reconnectedPlayer) {
                     this.runModeConnectionChanged(mode, client, reconnectedPlayer, true);
                 }
@@ -1502,7 +1553,7 @@ export class GameRoom extends Room {
             // 宽限到期未归 → 按真离开走下方清理
         }
         if (this.disposed) return;
-        const player = this.state.players.get(client.sessionId);
+        const player = this.seats.get(client.sessionId);
         const leftDuringMatch = player !== undefined && this.state.phase === GamePhase.Playing;
         const acceptedTick = this.state.tick;
         if (player) {
@@ -1521,7 +1572,7 @@ export class GameRoom extends Room {
         // or inputs after the authoritative leave event.
         this.maybeSettle();
         await this.releaseModeAdmission(client);
-        console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 离开（${consented ? "主动" : `code=${code}，宽限已过`}），剩余 ${this.state.players.size} 人`);
+        console.log(`[GameRoom ${this.roomId}] ${client.sessionId} 离开（${consented ? "主动" : `code=${code}，宽限已过`}），剩余 ${this.seats.size} 人`);
     }
 
     onDispose(): Promise<void> {
@@ -1588,7 +1639,7 @@ export class GameRoom extends Room {
         if (this.disposed) return false;
         const mode = this.requireMode();
         if (this.state.phase === GamePhase.Playing) return true;
-        if (this.state.phase !== GamePhase.Waiting || this.state.players.size < mode.roster.min) return false;
+        if (this.state.phase !== GamePhase.Waiting || this.seats.size < mode.roster.min) return false;
         if (this.startPromise) return this.startPromise;
         // A previous timed-out Room.lock() can still mutate the listing.  Do
         // not start another match until its late completion has been observed
@@ -1685,8 +1736,7 @@ export class GameRoom extends Room {
      * 元组退化为既有的 session 集合语义。
      */
     private snapshotStartFence(): StartFenceSnapshot {
-        const sessions = new Set<string>();
-        this.state.players.forEach((_player, sessionId) => sessions.add(sessionId));
+        const sessions = new Set<string>(this.seats.keys());
         if (!this.modeHasFragment("ownerReady")) {
             return Object.freeze({
                 sessions,
@@ -1736,11 +1786,11 @@ export class GameRoom extends Room {
             return;
         }
         if (this.state.phase !== GamePhase.Waiting || fence.sessions.size < this.requireMode().roster.min
-            || this.state.players.size !== fence.sessions.size) {
+            || this.seats.size !== fence.sessions.size) {
             throw new Error(`match participants or phase changed during ${stage}`);
         }
         for (const sessionId of fence.sessions) {
-            if (!this.state.players.has(sessionId)) {
+            if (!this.seats.has(sessionId)) {
                 throw new Error(`match participants changed during ${stage}`);
             }
         }
@@ -1852,7 +1902,7 @@ export class GameRoom extends Room {
         // 只保留本次正式参与者的 uid 快照；活动双向索引由 onJoin/onLeave 维护，
         // 这里再做一次收口可避免测试或恢复流程注入孤儿 session。
         for (const sessionId of this.participantUserId.keys()) {
-            if (!this.state.players.has(sessionId)) this.participantUserId.delete(sessionId);
+            if (!this.seats.has(sessionId)) this.participantUserId.delete(sessionId);
         }
 
         await mode.onMatchInitialize?.(this.modeContext());
@@ -1929,7 +1979,7 @@ export class GameRoom extends Room {
 
     /** 活动 session/uid 双向索引的唯一删除点；玩法自有状态（如运动锚点）由 mode 在 onPlayerLeaving 清理。 */
     private removePlayer(sessionId: string, removeParticipant: boolean): void {
-        const wasSeated = this.state.players.delete(sessionId);
+        const wasSeated = this.unseatPlayer(sessionId);
         // §6.4 推进点表：最终 leave rosterRevision+1（seat 变化经唯一删除点统一推进）。
         if (wasSeated && this.modeHasFragment("ownerReady")) {
             this.ownerReadyView().rosterRevision++;

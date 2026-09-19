@@ -95,7 +95,8 @@ function handledByGameRoom(type: C2SType, value: unknown): {
         const player = createRoomPlayerForMode(hostOwner);
         player.id = "wire-client";
         player.name = "契约探针";
-        room.state.players.set(player.id, player as PlayerState);
+        // MF5a-B4：座位表是名册真源（public 名册同步镜像到 Schema players）
+        (room as unknown as { seatPlayer(id: string, p: unknown): void }).seatPlayer(player.id, player);
     }
     // 广播在未 boot 的房间没有可观察的 client；这里在既有校验路径外记录归一化结果。
     const internals = room as unknown as { broadcastS2C(type: S2CType, payload: unknown): void };

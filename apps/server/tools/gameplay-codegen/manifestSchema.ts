@@ -28,6 +28,12 @@ export type GameplayManifest = {
    * 从「散在中央文件里的手写事实」搬回玩法自己的 manifest。
    */
   readonly wireExposed: boolean;
+  /**
+   * 名册可见性（MMO MF5a-B4，M07 / D4）：`public`（缺省）= root 声明 `players` map、名册进 Schema（既有 mode 零变）；
+   * `hidden` = root ⛔ 不得声明 `players`，名册只在服务端会话 / 座位表，客户端不能枚举视野外玩家身份
+   * （SQL 视图房 / MF4 world 形态用）。只对新 mode 生效，⛔ 不 bump GAME_ROOM_PROTOCOL_VERSION（§11.2）。
+   */
+  readonly roster: "public" | "hidden";
 };
 
 function fail(pathLabel: string, message: string): never {
@@ -138,5 +144,6 @@ export function parseGameplayManifest(input: unknown, pathLabel = "manifest"): G
     maxPlayers: value.maxPlayers as number,
     profiles: Array.isArray(value.profiles) ? [...(value.profiles as string[])] : [],
     wireExposed: value.wireExposed !== false,
+    roster: value.roster === "hidden" ? "hidden" : "public",
   };
 }
