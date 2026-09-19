@@ -555,6 +555,51 @@ export async function withKitWorkerTx<T>(
   return result;
 }
 
+// ── kit worker 定义（docs/MMO.md MF7a-B4）：entry 默认导出 `defineKitWorker({ pass })`，进程入口 src/workers/kitWorker.ts ──
+
+export interface KitWorkerPassContext {
+  readonly kitId: string;
+  readonly workerId: string;
+  /** 本轮所在区（入口按 KIT_WORKER_ZONES 逐区串行）。 */
+  readonly sId: number;
+  /** 本轮开始时刻（入口注入时钟）。 */
+  readonly now: number;
+  /** 进程要停（SIGTERM / SIGINT）时 aborted：长循环里看一眼即可，⛔ 不用来跨事务续命。 */
+  readonly signal: AbortSignal;
+}
+
+export interface KitWorkerPassResult {
+  /** true = 本区还有积压：入口立刻在同一区再跑一轮（有界批次由 pass 自己的 LIMIT 决定）；否则轮到下一区 / 空闲。 */
+  readonly more?: boolean;
+}
+
+export interface KitWorkerDefinition {
+  readonly kind: "kit-worker";
+  /** 一轮 = 一条租约守卫事务（withKitWorkerTx）：抛出即整体回滚、本轮作废；LeaseLostError 由入口捕获后退出进程。 */
+  readonly pass: (tx: KitWorkerTx, ctx: KitWorkerPassContext) => Promise<KitWorkerPassResult | undefined | void>;
+  /** 全部区都无积压后的空闲等待（ms，缺省 1000，范围 100–60000；入口再按租约 TTL/3 封顶，空闲期每轮事务照样续租）。 */
+  readonly idleMs: number;
+}
+
+const KIT_WORKER_IDLE_MIN_MS = 100;
+const KIT_WORKER_IDLE_MAX_MS = 60_000;
+
+/** kit worker entry 的默认导出构造器：`export default defineKitWorker({ async pass(tx, ctx) { … } })`。 */
+export function defineKitWorker(def: { readonly pass: KitWorkerDefinition["pass"]; readonly idleMs?: number }): KitWorkerDefinition {
+  if (typeof def?.pass !== "function") { throw new TypeError("defineKitWorker：pass 必须是函数"); }
+  const idleMs = def.idleMs ?? 1000;
+  if (!Number.isInteger(idleMs) || idleMs < KIT_WORKER_IDLE_MIN_MS || idleMs > KIT_WORKER_IDLE_MAX_MS) {
+    throw new TypeError(`defineKitWorker：idleMs ${idleMs} 非法（${KIT_WORKER_IDLE_MIN_MS}–${KIT_WORKER_IDLE_MAX_MS}）`);
+  }
+  return Object.freeze({ kind: "kit-worker" as const, pass: def.pass, idleMs });
+}
+
+export function isKitWorkerDefinition(value: unknown): value is KitWorkerDefinition {
+  if (typeof value !== "object" || value === null) { return false; }
+  const v = value as { kind?: unknown; pass?: unknown; idleMs?: unknown };
+  return v.kind === "kit-worker" && typeof v.pass === "function" && Number.isInteger(v.idleMs);
+}
+
 // ── 事务之外的两样门面（文件头第 4 / 5 条）─────────────────────────────────────
 
 export type KitEffectApplyResult = "ok" | "dup" | "cold" | "failed";
