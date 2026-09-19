@@ -144,9 +144,11 @@ ledger `archive_zone_usage` 属默认关闭的实验模块；`user_snapshot_read
 
 按区数据必须显式传播区上下文：
 
-- `user_currency`、`currency_ledger`、`mail`、`match_results`、`gameplay_outbox` 的按区查询与写入均携带
+- `user_currency`、`currency_ledger`、`mail`、`match_results`、`gameplay_outbox`、`persona` 的按区查询与写入均携带
   `server_id`；`readBack`、relayer/replayDead 和邮件领取会把区谓词一路带到状态回读与标记更新。
-  仅 `outboxStats` 与保留期清理是有意的全局聚合/清理操作。
+  仅 `outboxStats`、保留期清理与账号级会话撤销（`revokePersonaSessions(uid)` 抬全部区 persona 会话代，MMO MF2-B5）是有意的
+  全局聚合/清理操作。MMO MF2 起 `user_currency` / `currency_ledger` / `gameplay_outbox` 还带资产主体 `(owner_kind, owner_id)`
+  （0/'' = account，1/personaId = persona；shared `protocol/identity.ts`），旧写路径缺省 account、存量行无损。
 - per-zone Redis key 只由 `core/infra/keys.ts` 构造，并在 `zoneCtx.run` 中解析区前缀。
 - 派生幂等 ID 编入区号；GameRoom/LobbyRoom 同时核对 `sId`、本组配置与认证结果。
 - `user_archive` 与 `user_snapshot_readonly` 的身份键是 `(user_id,server_id)`；归档查询、恢复、清理和
@@ -464,6 +466,29 @@ relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（
 `replayDead(opId)` 实现，没有调用它的命令、HTTP endpoint 或后台任务，因此死信处置需要采用方自行接入
 入口。
 
+### 8.2 门①发布 SOP（MMO MF2 资产主体迁移，2026-09-19）
+
+MMO MF2（[MMO.md](MMO.md) §5 / §12）把经济三表切到 `(owner_kind, owner_id)` 资产主体：`user_currency` 主键、`currency_ledger.uk_idem`
+与 `gameplay_outbox` 都多了两列，并新建 `persona` 表。**主账主键迁移不可逆**（这就是 [MMO-PLAN.md](MMO-PLAN.md) §8 的「门①」），
+发布只能按下面顺序，⛔ 不得跳步：
+
+1. **停写 + drain 全部 pending outbox**：先关网关写入（维护窗口），再跑显式 relayer（`npm --workspace @game/server run relayer`）直到
+   日志 `pending=0`（`outboxStats().pending === 0`）；`dead>0` 须先处置（`replayDead(opId)` 或人工判定），因为 dead 行也是旧形态 intent，
+   迁移后不再有旧节点能按旧语义重放。
+2. **迁移**：`npm --workspace @game/server run db:bootstrap`——`tools/db-bootstrap.ts` 的 `ensureAssetOwnerShape` 在
+   `singleton_lease('db_bootstrap')` 租约下一次性完成：owner 两列 `ALGORITHM=INSTANT` 加列 → `user_currency`
+   `DROP PRIMARY KEY, ADD PRIMARY KEY (user_id, server_id, owner_kind, owner_id, currency)`（重建聚簇索引，按表大小估时，期间该表写阻塞）→
+   `currency_ledger.uk_idem` `INPLACE, LOCK=NONE` 重建 → `persona` 表与 `idx_persona_uid`。INFORMATION_SCHEMA 守卫只接受 legacy 或目标形态，
+   已迁即跳过，同名错定义 fail-closed（⛔ 不吞 1060 / 1061 猜）。`test/int/db-bootstrap.test.ts` 的存量夹具证明存量行无损并入 account 主体
+   （`owner_kind 0 / owner_id ''`），重跑零变。
+3. **上线新版本节点，⛔ 不得新旧混跑**：旧节点的 `UPDATE user_currency … WHERE user_id / server_id / currency` 不带 owner 谓词，会同时命中
+   account 与 persona 行（写错钱包）；旧 INSERT 靠列缺省能跑，但流水 / intent 的主体信息缺失。
+4. **回退**：⛔ 无自动回退。若必须回到旧版本节点，需再做一次人工迁移——先按第 1 步 drain（新形态 intent 同样不能被旧节点重放），清空
+   `persona` 行与全部 persona 主体的钱包 / 流水（`owner_kind = 1`；旧版本无法表达这些数据，回退即放弃），再 `DROP` owner 两列并重建旧
+   PK / uk_idem；回退后再次前进要重新走第 1–2 步。
+5. **发布后核对**：`db:bootstrap` 重跑零变（幂等）、`plugin -- check`、`test:int` 的 economy / effect-atomic / relayer / kit-persona /
+   persona-session 单文件串行绿。
+
 ### 8.1 通用幂等 v2（Non-intrusive §6.11/§6.12，阶段 4）
 
 网关级通用幂等（`core/idem.ts` + dispatcher）自阶段 4 起使用带版本的 JSON 记录，键仍是
@@ -728,6 +753,7 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `core/idem.ts`，私房邀请码/ticket 七条（INVITE_CODE_ALLOCATE / INVITE_CODE_RENEW / INVITE_CODE_TOMBSTONE / TICKET_ISSUE_CREATION / TICKET_CLAIM_CREATION / TICKET_CLAIM_JOIN / TICKET_TRANSITION）在 `core/rooms/invite/redisScripts.ts`（跑在 coordination Redis 单实例上，TICKET_ISSUE_CREATION 刻意跨 hash-tag——⛔ 不得搬到 cluster 化的 durable 实例），都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行；MMO MF6a：presence `PRESENCE_CLEAR_IF_OWNER` 在 `core/presence/presence.ts`、party 七条在 `core/party/partyScripts.ts` |
 | kit-api/server 门面 | `apps/server/src/core/infra/kitApi.ts`（docs/KIT.md §4）：`withKitTx(kitId, sId, fn)` = READ COMMITTED 事务 + 只能碰 `k_<kitId 小写>_*` 表的 `tx.query()`（运行时表引用列表闸 `assertKitTableAccess`——从 FROM / JOIN / STRAIGHT_JOIN / INTO / UPDATE / USING 起把整段 table_references 走完，含逗号 / JOIN 接续、`JOIN … ON cond, tbl`、表名后的 `PARTITION (…)` 与索引提示组；fail-closed：框架表 / 别的 kit / schema 限定 / 括号表引用 `(tbl)` / `/*!` 可执行注释与 `/*+` 提示 / DDL / 多语句一律拒；走 `conn.execute` 预处理语句，params 只允许原始值 / Date / Buffer，⛔ `toSqlString` 对象；`tx.conn` 是契约保留的原始连接、⛔ 不过闸，kit 代码触碰 `.conn` 由 K1 路径级边界机检拒绝）、`tx.debit` / `tx.credit`（currency.ts `debitInTx` / `creditInTx`，sId 已绑定）、`tx.enqueueEffect`（先按注入 `kinds` 规范化，effect 里的 kit kind 必须是 `kit:<本 kitId>:*` ⇒ 否则 `KitEffectScopeError`；outbox `insertOutboxIntent` ODKU no-op ⇒ "DUP" 后 `assertOutboxIntentMatches` 回读比对，同 opId 不同载荷 ⇒ `EffectConflictError`，与 purchaseTx 同一判定），提交后逐 uid `invalidateBalanceCache`；`kitOpId(kitId, uid, sId, op, clientReqId)` = `deriveOpId` 的 `kit:<kitId>:<op>` 命名空间；kit 需要的错误类型 / `CUR_GOLD` / `kKitUser` 从此文件再导出（kit 从 `apps/server/src/kits/<id>/**` 相对导入 `../../core/infra/kitApi`，⛔ 不直接 import 其他 core/infra 模块）。新增 `withKitUserFence(uid,sId,fn)` 在显式区先取用户锁/冷档自愈，只向 kit 暴露只读 fence；`retryKitTransaction(fn)` 仅对完整幂等事务重试 MySQL 1213/1205（最多三次）；`readKitUserFieldInZone` 显式按区读取 kit 字段。用户锁必须在世界 SQL 锁之前获取，effect apply 只能提交后执行。契约测试 `apps/server/test/kit-api.test.ts` 与 `kit-api-user-port.test.ts`。MMO MF7a（2026-09-19）：`withKitWorkerTx(kitId, workerId, sId, lease, fn)` = 同一句柄形态的**租约守卫受限事务**（`withRcTx` 内首句 `renewLeaseGuard`，Rows matched 0 ⇒ `LeaseLostError` 自动回滚、回调零执行；没有 `.conn`（运行时取也抛）；AsyncLocalStorage 作用域拒回调内另开 withKitTx / withKitWorkerTx；租约名必须恰是 `kit:<kitId>:<workerId>`）与 `defineKitWorker({ pass, idleMs? })`；契约测试 `kit-worker-tx.test.ts` |
 | kit worker（MMO MF7a） | `apps/kits/<id>/kit.json.workers[]`（`{ id, entry }`，entry 固定 `apps/server/src/kits/<id>/workers/<worker>.ts`；与 `sql.tables[].role:"world-event"` 同为 kit-schema v1 增量可选字段）→ `codegen:plugins` 生成 `apps/server/src/kits/catalog.generated.ts` 的 `workers`（锁抬头 / 身份摘要同步纳入）→ 进程入口 `apps/server/src/workers/kitWorker.ts`（`npm --workspace @game/server run worker -- <kit>:<worker>`，区清单 `KIT_WORKER_ZONES` 显式非空，未登记即拒，失租退出 1，SIGTERM 跑完当前事务停）；租约行 `singleton_lease('kit:<id>:<worker>')` 由 `tools/db-bootstrap.ts` 经 `tools/kit-workers.ts` 预置（ODKU no-op），命名唯一真源 `apps/server/src/kits/workerLease.ts`；卸载 / check 闸 `tools/plugin/workerGate.ts`（pending `role:"world-event"` 行 / 在役租约 ⇒ uninstall 拒、check 告警）；role 表的固定列集 `WORLD_EVENT_TABLE_COLUMNS` 在 `tools/kit-migrations.ts`（bootstrap 形状机检）。真库夹具 `test/int/kit-worker-lease.test.ts` |
+| persona 与资产主体（MMO MF2） | shared `apps/shared/src/protocol/identity.ts`（`AssetOwnerRef` account / persona、`PersonaRef`、`PERSONA_MAX_SLOTS_HARD`、零依赖校验器与 `(owner_kind, owner_id)` 列映射）+ `constants/errors.ts` 4001–4003；`apps/server/sql/schema.sql` `persona` 表（per-zone，`idx_persona_uid`）与经济三表 owner 两列（`tools/db-bootstrap.ts` `ensureAssetOwnerShape` 迁移，发布 SOP 见 §8.2）；`core/economy/{currency,outbox,relayer}.ts` 末位可选 `owner`（缺省 account；relayer 对 persona 主体只落状态）；`core/infra/kitApi.ts` persona 门面 `createPersona / assertControl / deactivatePersona / deletePersona` + 事务外 `listPersonas`（docs/KIT.md §4；固定锁序 fail-closed，表闸对 `persona` 照拒）；`core/auth/kickBus.ts` `revokePersonaSessions` + `consumeKickEntry`、`core/auth/session.ts` 顶号先抬后踢、`http/admin/kick.ts` 抬代失败 500（EXTRAS §3.2） |
 | kit 贡献点 / fragment / 带参 launch（MMO MF9） | `apps/kits/<id>/kit.json.contributions`（贡献点声明：kind / ends / export \| schema）与 `apps/plugins/<id>/plugin.json.contributes`（填充路径；贡献 = 依赖，须同时 `requires.kits`）→ `codegen:plugins`（`tools/plugin-codegen/contributions.ts`：登记 / 所有权 / 内容三道校验）生成每 kit × 端一份 `apps/{shared,server,client}/src/kits/<kitId>/contributions.generated.ts`（`KIT_CONTRIBUTIONS`；protected-paths `*` 单段通配登记；K1 边界扫描对 `*.generated.ts` 豁免）；闸在 `tools/plugin/{pack,install,check}.ts`（`resolveKitContributions` / `contributorsOfKit`）。kit fragment：`apps/kits/<id>/kit.json.fragments` + `apps/kits/<id>/fragments/<name>.state.json`（`{ schemaVersion, root?, player? }`），mode 的 state.json `fragments: ["<kitId>:<name>"]` 由 `codegen:gameplays`（`stateRenderer.parseKitFragmentFile` + lib.ts 发现根）注入并并入 contractDigest。带参 launch：menu `launch.payload` / `launch.profile`（codegen 校验 ∈ manifest.profiles）→ `GeneratedLaunchTarget` → 客户端 `AppRuntime.launch` → `RoomController.startRegistered(…, launch)` → `GameplayModule.validateLaunch`；`services.joinGameRoom(adapter, signal, { profile })` 覆盖缺省房型 |
 | MySQL DDL | `apps/server/sql/schema.sql`（含 kit 迁移账本 `kit_migration` 与 `singleton_lease('db_bootstrap')` 预置行；kit worker 租约行 `singleton_lease('kit:<id>:<worker>')` 由 bootstrap 按目录预置，MF7a）；兼容升级逻辑在 `tools/db-bootstrap.ts`；kit 表来自 `apps/kits/<id>/sql/NNN-<name>.sql`，由 `tools/kit-migrations.ts` 在 `db_bootstrap` 租约下按账本逐条语句应用（白名单 lint、已应用文件 sha256 变化 fail-closed、账本记语句粒度进度 `statement_count`/`applied_statements` 供中途失败后续跑），按区表登记在 `core/infra/zoneTables.ts` |
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
