@@ -289,3 +289,17 @@ test("交接（MF8-B5）：transfer strategy 归一与信封（transferId 不上
   release!(pending.room);
   await joining;
 });
+
+test("MF11 R2-02：退源房 LEAVE 无回执（半开连接）⇒ 有界等待后照常进目标房", async () => {
+  const stuck = makeFakeRoom("stuck");
+  stuck.room.leave = () => new Promise<boolean>(() => { /* 永不回执 */ });
+  const dst = makeFakeRoom("dst");
+  const main = makeClient([stuck, dst]);
+  const transport = new WorldRoomTransport({ client: () => main.client, leaveTimeoutMs: 50, ...deps });
+  const source = await transport.join(request());
+  const started = Date.now();
+  const handle = await transport.transfer({ mode: "worldFixture", personaId: PERSONA, ready: { transferId: "wt_9", mapId: "m2", line: 0, endpoint: "", ticket: "u".repeat(32) } });
+  assert.ok(Date.now() - started < 2_000, "不被卡死");
+  assert.deepEqual([handle.mapId, handle.transferId, transport.active === handle], ["m2", "wt_9", true]);
+  assert.equal(source.left, true, "本地收尾（finish）不等回执");
+});

@@ -9,12 +9,12 @@
  */
 import { type IWorldEnterReq, type IWorldEnterRes, type IWorldResolveTransferReq } from "@game/shared/protocol/lobbyRpc/domains/world";
 import { RpcFault, WorldLineLimitError, WorldLinesExhaustedError } from "../errors";
-import { WORLD_LINE_CAPACITY, WORLD_PUBLIC_WS_URL } from "../infra/config";
+import { WORLD_LINE_CAPACITY, WORLD_PUBLIC_WS_URL, WORLD_TRANSFER_RESERVE_MS } from "../infra/config";
 import { readPersonaOwner, type PersonaOwner } from "../../rooms/core/control";
 import { worldAddressOf, worldDirectory } from "../../rooms/core/WorldDirectory";
 import { redisWorldRegistry } from "../../rooms/core/WorldRegistry";
 import { issueWorldTicket, revokeWorldTicket, type IssueWorldTicketArgs, type IssuedWorldTicket } from "../../rooms/core/WorldTicket";
-import { activeTransferOf, finalizeTransfer, readTransfer, rotateTransferTicket, type WorldTransferRow } from "../../rooms/core/transfer";
+import { activeTransferOf, cancelIfStale, finalizeTransfer, readTransfer, rotateTransferTicket, type WorldTransferRow } from "../../rooms/core/transfer";
 
 export interface WorldEnterDeps {
     readPersonaOwner(sId: number, personaId: string): Promise<PersonaOwner | null>;
@@ -26,6 +26,8 @@ export interface WorldEnterDeps {
     readTransfer(sId: number, transferId: string): Promise<WorldTransferRow | null>;
     rotateTransferTicket(sId: number, transferId: string, ticketSha256: string): Promise<boolean>;
     finalizeTransfer(sId: number, transferId: string): Promise<unknown>;
+    /** MF11 R2-01：源房崩溃遗留的陈旧 Committed 前行 ⇒ cancelled（true）；否则 false。 */
+    cancelStaleTransfer(sId: number, row: WorldTransferRow, nowMs: number): Promise<boolean>;
     issueTicket(args: IssueWorldTicketArgs): Promise<IssuedWorldTicket>;
     revokeTicket(sId: number, ticketSha256: string): Promise<boolean>;
     /** 承载分线的 world 进程公开地址（MF10：权威房经 WorldRegistry 登记，无登记回落 WORLD_PUBLIC_WS_URL）；空串 = 同当前区 gameWsUrl。 */
@@ -41,6 +43,7 @@ export const productionWorldEnterDeps: WorldEnterDeps = {
     readTransfer: (sId, transferId) => readTransfer(sId, transferId),
     rotateTransferTicket: (sId, transferId, ticketSha256) => rotateTransferTicket(sId, transferId, ticketSha256),
     finalizeTransfer: (sId, transferId) => finalizeTransfer(sId, transferId),
+    cancelStaleTransfer: (sId, row, nowMs) => cancelIfStale(sId, row, nowMs, WORLD_TRANSFER_RESERVE_MS),
     issueTicket: (args) => issueWorldTicket(args),
     revokeTicket: (sId, ticketSha256) => revokeWorldTicket(sId, ticketSha256),
     endpoint: async (sId, instanceId) => (await redisWorldRegistry.read(sId, instanceId).catch(() => null))?.publicAddress || WORLD_PUBLIC_WS_URL,
@@ -115,7 +118,9 @@ export async function handleWorldEnter(uid: string, sId: number, req: IWorldEnte
             // 目标房已接住却未收尾（目标房崩溃 / finalize 丢失）：懒收敛后照常进入
             await guard("transfer", () => deps.finalizeTransfer(sId, active.transferId));
         } else {
-            throw new RpcFault("WORLD_TRANSFER_INVALID", "交接进行中，请稍后重试");
+            // requested / prepared：源房还在编排（真在途 ⇒ 拒）；源房崩溃遗留的陈旧行按预留窗口懒清（MF11 R2-01）后照常进入
+            const healed = await guard("transfer", () => deps.cancelStaleTransfer(sId, active, deps.now()));
+            if (!healed) throw new RpcFault("WORLD_TRANSFER_INVALID", "交接进行中，请稍后重试");
         }
     }
     return issueEntry(uid, sId, req.personaId, owner, req.mapId, req.line, deps);

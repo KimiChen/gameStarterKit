@@ -29,6 +29,11 @@ function fakeDeps(over: Partial<WorldEnterDeps> & { rows?: WorldTransferRow[]; e
         readTransfer: async (_sId, transferId) => rows.get(transferId) ?? null,
         rotateTransferTicket: async (_sId, transferId, sha) => { rotated.push([transferId, sha]); const row = rows.get(transferId); if (row && row.state === "committed") { rows.set(transferId, { ...row, ticketSha256: sha }); return true; } return false; },
         finalizeTransfer: async (_sId, transferId) => { finalized.push(transferId); const row = rows.get(transferId); if (row) rows.set(transferId, { ...row, state: "finalized", active: false }); },
+        cancelStaleTransfer: async (_sId, row, nowMs) => {
+            const stale = row.state === "prepared" ? row.reserveExpiresAt !== null && row.reserveExpiresAt < nowMs : row.state === "requested" && row.createdAt + 30_000 < nowMs;
+            if (stale) rows.set(row.transferId, { ...row, state: "cancelled", active: false });
+            return stale;
+        },
         issueTicket: async (args) => { issued.push(args); counter += 1; return { ticket: `ticket-${counter}-${"x".repeat(40)}`, ticketSha256: SHA(String(counter % 10)), expiresAt: args.nowMs + 30_000 }; },
         revokeTicket: async (_sId, sha) => { revoked.push(sha); return true; },
         allocateInstance: async (_sId, mapId) => ({ instanceId: `wi_${mapId}_alloc`, mapId, line: 7 }),
@@ -40,7 +45,7 @@ function fakeDeps(over: Partial<WorldEnterDeps> & { rows?: WorldTransferRow[]; e
 }
 const row = (over: Partial<WorldTransferRow> = {}): WorldTransferRow => ({
     transferId: "wt_1", personaId: P_A, fromInstance: "wi_m1_0", toMap: "m2", toLine: 0, toInstance: "wi_m2_0", state: "committed", controlEpoch: 3,
-    ticketSha256: SHA("a"), reserveExpiresAt: null, payload: null, active: true, ...over,
+    ticketSha256: SHA("a"), reserveExpiresAt: null, payload: null, active: true, createdAt: 0, ...over,
 });
 const faultCode = (code: string) => (error: unknown): boolean => error instanceof RpcFault && error.rpcCode === code;
 
@@ -89,8 +94,14 @@ test("enter：Committed 交接 ⇒ 解析交接（目标 = 交接目标、凭据
     const activated = fakeDeps({ rows: [row({ state: "activated" })] });
     const res2 = await handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1" }, activated.deps);
     assert.deepEqual([activated.finalized, res2.mapId, res2.transferId], [["wt_1"], "m1", null], "懒收敛后照常进入");
-    const requested = fakeDeps({ rows: [row({ state: "requested" })] });
-    await assert.rejects(handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1" }, requested.deps), faultCode("WORLD_TRANSFER_INVALID"));
+    const requested = fakeDeps({ rows: [row({ state: "requested", createdAt: 1_000 })] });
+    await assert.rejects(handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1" }, requested.deps), faultCode("WORLD_TRANSFER_INVALID"), "真在途（未陈旧）⇒ 拒");
+    // MF11 R2-01：源房崩溃遗留的陈旧 Committed 前行 ⇒ 懒清后照常进入
+    const staleRequested = fakeDeps({ rows: [row({ state: "requested", createdAt: -100_000 })] });
+    const healed = await handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1" }, staleRequested.deps);
+    assert.deepEqual([healed.transferId, staleRequested.rows.get("wt_1")?.state], [null, "cancelled"], "陈旧 requested ⇒ cancelled 后普通进入");
+    const stalePrepared = fakeDeps({ rows: [row({ state: "prepared", reserveExpiresAt: 500 })] });
+    assert.equal((await handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m1" }, stalePrepared.deps)).transferId, null, "预留到期 prepared ⇒ 懒清");
     const raced = fakeDeps({ rows: [row()], rotateTransferTicket: async () => false });
     await assert.rejects(handleWorldEnter("u-alice", 0, { personaId: P_A, mapId: "m2" }, raced.deps), faultCode("WORLD_TRANSFER_INVALID"));
     assert.deepEqual(raced.revoked, [SHA("1")], "登记失败 ⇒ 刚签的凭据作废");

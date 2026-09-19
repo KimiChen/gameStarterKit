@@ -14,7 +14,7 @@ import { TransferInFlightError, TransferStateError } from "../../src/core/errors
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import { closeRedis } from "../../src/core/infra/redisRoute";
 import {
-    activateTransfer, activeTransferOf, cancelTransfer, commitTransfer, expireReservations, finalizeTransfer, newTransferId, prepareTransfer,
+    activateTransfer, activeTransferOf, cancelIfStale, cancelTransfer, commitTransfer, expireReservations, finalizeTransfer, newTransferId, prepareTransfer,
     readTransfer, requestTransfer, rotateTransferTicket,
 } from "../../src/rooms/core/transfer";
 import { testUid } from "./helpers";
@@ -104,4 +104,31 @@ test("预留到期释放：只清 Committed 前且 reserve_expires_at 已过的�
     assert.deepEqual([(await readTransfer(S_ID, stale))?.state, (await readTransfer(S_ID, fresh))?.state, (await readTransfer(S_ID, committedStale))?.state], ["cancelled", "prepared", "committed"]);
     assert.equal(await activeTransferOf(S_ID, bob), null, "释放后 persona 可再交接");
     assert.equal(await expireReservations(S_ID, now), 0, "幂等");
+});
+
+test("MF11 R2-01 cancelIfStale：陈旧 requested（建行超过窗口）/ 预留到期 prepared ⇒ cancelled；新鲜行 / committed 不动", async () => {
+    const eve = personaOf("eve");
+    const now = Date.now();
+    const fresh = tid();
+    const freshRow = (await requestTransfer(S_ID, { transferId: fresh, personaId: eve, fromInstance: "wi_a", toMap: "mapB", toLine: 2 })).row;
+    assert.ok(Math.abs(freshRow.createdAt - now) < 5_000, "createdAt 落库（ms）");
+    assert.equal(await cancelIfStale(S_ID, freshRow, now, 30_000), false, "新鲜 requested 不动");
+    await getPool().execute("UPDATE world_transfer SET created_at = NOW(3) - INTERVAL 5 MINUTE WHERE server_id = ? AND transfer_id = ?", [S_ID, fresh]);
+    const aged = (await readTransfer(S_ID, fresh))!;
+    assert.equal(await cancelIfStale(S_ID, aged, now, 30_000), true, "建行超过窗口 ⇒ cancelled");
+    assert.equal((await readTransfer(S_ID, fresh))?.state, "cancelled");
+    const prepared = tid();
+    await requestTransfer(S_ID, { transferId: prepared, personaId: eve, fromInstance: "wi_a", toMap: "mapB", toLine: 2 });
+    const live = (await prepareTransfer(S_ID, prepared, { toInstance: "wi_b", reserveExpiresAt: now + 60_000 })).row;
+    assert.equal(await cancelIfStale(S_ID, live, now, 30_000), false, "预留未到期不动");
+    const expiredRow = (await prepareTransfer(S_ID, prepared, { toInstance: "wi_b", reserveExpiresAt: now })).row; // already ⇒ 原行
+    assert.equal(expiredRow.state, "prepared");
+    await getPool().execute("UPDATE world_transfer SET reserve_expires_at = NOW(3) - INTERVAL 1 SECOND WHERE server_id = ? AND transfer_id = ?", [S_ID, prepared]);
+    assert.equal(await cancelIfStale(S_ID, (await readTransfer(S_ID, prepared))!, now, 30_000), true, "预留到期 ⇒ cancelled");
+    const committed = tid();
+    await requestTransfer(S_ID, { transferId: committed, personaId: eve, fromInstance: "wi_a", toMap: "mapB", toLine: 2 });
+    await prepareTransfer(S_ID, committed, { toInstance: "wi_b", reserveExpiresAt: now - 5_000 });
+    await commitTransfer(S_ID, committed, { controlEpoch: 1, ticketSha256: SHA_A });
+    assert.equal(await cancelIfStale(S_ID, (await readTransfer(S_ID, committed))!, now + 1_000_000, 30_000), false, "Committed 及之后 ⛔ 动");
+    assert.equal((await readTransfer(S_ID, committed))?.state, "committed");
 });

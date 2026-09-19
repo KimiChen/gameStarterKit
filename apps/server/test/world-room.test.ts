@@ -202,7 +202,7 @@ export class FakeTransfers implements WorldTransferPort {
     /** 注入点：某一步抛错 / 挂起（故障矩阵）。 */
     failAt: Partial<Record<"request" | "prepare" | "commit" | "activate" | "finalize" | "issueTicket", () => Promise<never>>> = {};
 
-    constructor(readonly tickets: MemoryWorldTicketPort) {}
+    constructor(readonly tickets: MemoryWorldTicketPort, private readonly now: () => number = () => 0) {}
 
     private step(transferId: string, from: readonly WorldTransferState[], to: WorldTransferState, patch: Partial<MutableTransferRow>): TransferStep {
         const row = this.rows.get(transferId);
@@ -226,7 +226,7 @@ export class FakeTransfers implements WorldTransferPort {
         }
         const row: MutableTransferRow = {
             transferId: input.transferId, personaId: input.personaId, fromInstance: input.fromInstance, toMap: input.toMap, toLine: input.toLine, toInstance: "",
-            state: "requested", controlEpoch: 0, ticketSha256: "", reserveExpiresAt: null, payload: input.payload ?? null, active: true,
+            state: "requested", controlEpoch: 0, ticketSha256: "", reserveExpiresAt: null, payload: input.payload ?? null, active: true, createdAt: this.now(),
         };
         this.rows.set(input.transferId, row);
         this.log.push(`requested:${input.transferId}`);
@@ -261,6 +261,17 @@ export class FakeTransfers implements WorldTransferPort {
     async read(_sId: number, transferId: string): Promise<WorldTransferRow | null> {
         const row = this.rows.get(transferId);
         return row ? { ...row } : null;
+    }
+    async activeOf(_sId: number, personaId: string): Promise<WorldTransferRow | null> {
+        const row = [...this.rows.values()].find((entry) => entry.personaId === personaId && entry.active);
+        return row ? { ...row } : null;
+    }
+    /** 与 rooms/core/transfer.cancelIfStale 同判据（prepared 预留到期 / requested 建行超过 staleAfterMs）。 */
+    async cancelIfStale(sId: number, row: WorldTransferRow, nowMs: number, staleAfterMs: number): Promise<boolean> {
+        if (row.state === "cancelled") return true;
+        const stale = row.state === "prepared" ? row.reserveExpiresAt !== null && row.reserveExpiresAt < nowMs : row.state === "requested" && row.createdAt + staleAfterMs < nowMs;
+        if (!stale) return false;
+        return (await this.cancel(sId, row.transferId)).row.state === "cancelled";
     }
     async issueTicket(args: Parameters<MemoryWorldTicketPort["issue"]>[0]) {
         if (this.failAt.issueTicket) await this.failAt.issueTicket();
@@ -331,7 +342,7 @@ export function harness(options: {
         mode,
         world: { emptyPolicy: "sleep", emptyAfterMs: 1_000, checkpointMs: 500, ...(options.world ?? {}) },
         seed: 7, fixedStepMs: 50, clock: () => clock.now,
-        control, lease: leases, directory, tickets: options.tickets ?? okTickets, transfers: options.transfers ?? new FakeTransfers(new MemoryWorldTicketPort(() => clock.now)),
+        control, lease: leases, directory, tickets: options.tickets ?? okTickets, transfers: options.transfers ?? new FakeTransfers(new MemoryWorldTicketPort(() => clock.now), () => clock.now),
         // MF10-B1：分线登记缺省用内存实现（缺省 Redis 端口会真连 coord ⇒ 单测进程不退出）
         registry: new MemoryWorldRegistry(() => clock.now),
         holder: options.holder ?? "node-a", drainGraceMs: options.drainGraceMs ?? 100, timers,
