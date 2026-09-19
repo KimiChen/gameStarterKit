@@ -6,6 +6,7 @@ import { validateForceLogoutPush, validateServerNoticePush, type IForceLogoutPus
 import type { IPurchaseResult } from "./economy";
 import { validateArenaBoardReq, validateArenaBoardRes, validateArenaCaptureReq, validateArenaCaptureRes, type IArenaBoardReq, type IArenaBoardRes, type IArenaCaptureReq, type IArenaCaptureRes } from "./domains/arena";
 import { validateArenaShopBuyBoostReq, validateArenaShopBuyBoostRes, type IArenaShopBuyBoostReq, type IArenaShopBuyBoostRes } from "./domains/arenaShop";
+import { validateChatMessagePush, validateChatSendReq, validateChatSendRes, type IChatMessagePush, type IChatSendReq, type IChatSendRes } from "./domains/chat";
 import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, validateGuildJoinReq, validateGuildLeaveReq, validateGuildLeaveRes, validateJoinRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
 import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
 import { validatePartyAcceptReq, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyLeaveReq, validatePartyLeaveRes, validatePartySeqRes, validatePartyTransferLeaderReq, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
@@ -20,6 +21,7 @@ import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validate
 export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "arena",
     "arenaShop",
+    "chat",
     "guild",
     "mail",
     "party",
@@ -36,6 +38,7 @@ export interface LobbyRpcMap {
     "arena.board": { req: IArenaBoardReq; res: IArenaBoardRes };
     "arena.capture": { req: IArenaCaptureReq; res: IArenaCaptureRes };
     "arenaShop.buyBoost": { req: IArenaShopBuyBoostReq; res: IArenaShopBuyBoostRes };
+    "chat.send": { req: IChatSendReq; res: IChatSendRes };
     "guild.join": { req: IGuildJoinReq; res: IGuildJoinRes };
     "guild.leave": { req: IGuildLeaveReq; res: IGuildLeaveRes };
     "guild.getEvents": { req: IGuildGetEventsReq; res: IGuildGetEventsRes };
@@ -97,6 +100,7 @@ export type LobbyRpcIdemType =
 
 /** natural-write 路由子集（写入天然可安全重复；不进通用幂等层） */
 export type LobbyRpcNaturalWriteType =
+    | "chat.send"
     | "mail.markRead"
     | "slg.mapTiles"
     | "snakeCosmetic.equip"
@@ -107,6 +111,7 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "arena.board": "query",
     "arena.capture": "idempotent-write",
     "arenaShop.buyBoost": "idempotent-write",
+    "chat.send": "natural-write",
     "guild.join": "idempotent-write",
     "guild.leave": "idempotent-write",
     "guild.getEvents": "query",
@@ -145,6 +150,7 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "arena.board",
     "arena.capture",
     "arenaShop.buyBoost",
+    "chat.send",
     "guild.join",
     "guild.leave",
     "guild.getEvents",
@@ -184,6 +190,7 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "arena.board": 1,
     "arena.capture": 1,
     "arenaShop.buyBoost": 1,
+    "chat.send": 1,
     "guild.join": 1,
     "guild.leave": 1,
     "guild.getEvents": 1,
@@ -221,6 +228,7 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
 export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {
     arena: { contractVersion: 1, digest: "b0df3a7d9b48719d53c095f3b1e89347416133dc2c3ae57aff6603f1cbe54a09" },
     arenaShop: { contractVersion: 2, digest: "2cb9597e5558094b464d70a16a03a8a63c95c86fa2fbd523cc96d5b93c63dd73" },
+    chat: { contractVersion: 1, digest: "3e34b7840131614c0c9c05c6858ffaf76187e14dc71df1e5703ddad63b4dbc96" },
     guild: { contractVersion: 1, digest: "4a996a135ffd900eb39c0b83697ee03d4d4587829da88ce537f363d56ceb4bde" },
     mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
     party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
@@ -249,6 +257,7 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "arena.board": guardRpcValidator("payload", validateArenaBoardReq),
     "arena.capture": guardRpcValidator("payload", validateArenaCaptureReq),
     "arenaShop.buyBoost": guardRpcValidator("payload", validateArenaShopBuyBoostReq),
+    "chat.send": guardRpcValidator("payload", validateChatSendReq),
     "guild.join": guardRpcValidator("payload", validateGuildJoinReq),
     "guild.leave": guardRpcValidator("payload", validateGuildLeaveReq),
     "guild.getEvents": guardRpcValidator("payload", validateGuildEventsReq),
@@ -287,6 +296,7 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "arena.board": guardRpcValidator("response", validateArenaBoardRes),
     "arena.capture": guardRpcValidator("response", validateArenaCaptureRes),
     "arenaShop.buyBoost": guardRpcValidator("response", validateArenaShopBuyBoostRes),
+    "chat.send": guardRpcValidator("response", validateChatSendRes),
     "guild.join": guardRpcValidator("response", validateJoinRes),
     "guild.leave": guardRpcValidator("response", validateGuildLeaveRes),
     "guild.getEvents": guardRpcValidator("response", validateEventsRes),
@@ -358,6 +368,8 @@ export const RPC_ERR_CODES = [
     "OPERATION_RESULT_EXPIRED",
     "ARENA_TILE_TAKEN",
     "ARENA_SHOP_TILE_NOT_OWNED",
+    "CHAT_CHANNEL_FORBIDDEN",
+    "CHAT_UNAVAILABLE",
     "PARTY_NOT_FOUND",
     "PARTY_FULL",
     "PARTY_NOT_MEMBER",
@@ -395,6 +407,7 @@ export function isRpcErrCode(value: unknown): value is RpcErrCode {
 export const LobbyPush = {
     ServerNotice: "server.notice",
     ForceLogout: "auth.forceLogout",
+    ChatMessage: "chat.message",
     GuildEvent: "guild.event",
     MailNew: "mail.new",
     PartyEvent: "party.event",
@@ -405,6 +418,7 @@ export const LobbyPush = {
 export interface LobbyPushMap {
     "server.notice": IServerNoticePush;
     "auth.forceLogout": IForceLogoutPush;
+    "chat.message": IChatMessagePush;
     "guild.event": IGuildEventPush;
     "mail.new": IMailNewPush;
     "party.event": IPartyEventPush;
@@ -417,6 +431,7 @@ export type LobbyPushType = keyof LobbyPushMap;
 export const PUSH_RUNTIME_VALIDATORS: { readonly [K in LobbyPushType]: RuntimeValidator<LobbyPushMap[K]> } = {
     "server.notice": validateServerNoticePush,
     "auth.forceLogout": validateForceLogoutPush,
+    "chat.message": validateChatMessagePush,
     "guild.event": validateGuildEventPush,
     "mail.new": validateMailNewPush,
     "party.event": validatePartyEventPush,
@@ -444,6 +459,7 @@ export function validateLobbyPush(input: unknown): LobbyPushEnvelope {
         const type = value.type;
         if (type !== "server.notice"
             && type !== "auth.forceLogout"
+            && type !== "chat.message"
             && type !== "guild.event"
             && type !== "mail.new"
             && type !== "party.event"

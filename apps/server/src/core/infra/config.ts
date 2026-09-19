@@ -433,6 +433,15 @@ export const PARTY_IDLE_TTL_S = 86_400;
 export const PARTY_INVITE_TTL_S = envInt("PARTY_INVITE_TTL_S", 120);
 /** party 事件近窗长度（同 GUILD_EVT_LOG_MAX 形态；窗口外客户端全量刷新）。 */
 export const PARTY_EVT_LOG_MAX = envInt("PARTY_EVT_LOG_MAX", 100);
+
+// ── chat（docs/MMO.md §6.5；MF6a-B4）：handler 内 TOKEN_BUCKET，桶失败 fail-closed（CHAT_UNAVAILABLE） ──
+
+/** 每用户发言桶：容量 3、每秒回填 0.5（第 4 条连发 RATE_LIMITED）。 */
+export const CHAT_SEND_CAPACITY = envInt("CHAT_SEND_CAPACITY", 3);
+export const CHAT_SEND_REFILL_PER_S = envFloat("CHAT_SEND_REFILL_PER_S", 0.5);
+/** 全区频道总桶：容量 100、每秒回填 30（防单区刷屏拖垮 realm 单流）。 */
+export const CHAT_REALM_CAPACITY = envInt("CHAT_REALM_CAPACITY", 100);
+export const CHAT_REALM_REFILL_PER_S = envFloat("CHAT_REALM_REFILL_PER_S", 30);
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */
 export const OUTBOX_RETENTION_MS = 86_400_000;
 /** ⚠ 必须 ≥ 2 × OUTBOX_RETENTION_MS（09·I5），否则 relayer 重放老 intent 二次发货。 */

@@ -67,6 +67,9 @@ async function isMember(pid: number, uid: string): Promise<boolean> {
   return (await partyClient(pid).zscore(kPartyMembers(pid), uid)) !== null;
 }
 
+/** 名册成员判定（ZSCORE）；chat 的 party 频道授权用。 */
+export const isPartyMember = isMember;
+
 /** 已在**有效**队伍（档指针 + 名册双证）⇒ true；指针陈旧则顺手清字段（读侧自愈）。 */
 async function assertNotInParty(uid: string, except = 0): Promise<void> {
   const pid = await currentPartyId(uid);
