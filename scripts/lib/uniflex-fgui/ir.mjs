@@ -638,6 +638,10 @@ function flattenWalk(ctx, node, groupIndex, displayList) {
             flattenWalk(ctx, child, index, displayList);
             continue;
         }
+        if (child.kind === "virtual-list" || child.kind === "scroll-view") {
+            displayList.push(scrollListChild(ctx, child, groupIndex));
+            continue;
+        }
         if (isContainer(child)) {
             const nested = ctx.childrenOf.get(child.id) ?? [];
             const color = styleOf(child, ctx).backgroundColor;
@@ -665,6 +669,36 @@ function flattenWalk(ctx, node, groupIndex, displayList) {
 function isContainer(node) {
     return node.kind === "view" || node.kind === "virtual-list" || node.kind === "scroll-view"
         || node.kind === "component";
+}
+
+/** A virtual-list/scroll-view becomes a real scroll component; rows live inside it. */
+function scrollListChild(ctx, node, groupIndex) {
+    const xy = rel(node.rect, ctx.origin);
+    ctx.scrollSeq = (ctx.scrollSeq ?? 0) + 1;
+    const base = String(node.name || "List").replace(/[^A-Za-z0-9_]/g, "_") || "List";
+    const compName = `${ctx.pkg.name}_${base}_${ctx.scrollSeq}`;
+    const rows = flatten({ ...ctx, root: node, origin: node.rect });
+    ctx.pkg.components.push({
+        id: fairyId(`comp:${ctx.pkg.name}:${compName}`),
+        name: compName,
+        exported: false,
+        size: roundSize(node.rect),
+        extension: null,
+        objectType: ObjectType.Component,
+        scroll: "vertical",
+        children: rows,
+    });
+    return {
+        kind: "component",
+        name: node.name || base,
+        srcName: compName,
+        ...xy,
+        width: Math.round(node.rect?.width ?? 0),
+        height: Math.round(node.rect?.height ?? 0),
+        group: groupIndex,
+        visible: node.visible !== false,
+        touchable: true,
+    };
 }
 
 function nameUnnamedTexts(displayList) {

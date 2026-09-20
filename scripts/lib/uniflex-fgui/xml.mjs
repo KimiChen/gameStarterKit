@@ -59,9 +59,13 @@ export function componentXml(component, pkg, packages) {
     const size = `${component.size.width},${component.size.height}`;
     const ext = component.extension ? ` extention="${escapeXml(component.extension)}"` : "";
     const remark = component.remark ? ` remark="${escapeXml(component.remark)}"` : "";
+    const overflow = component.scroll
+        ? ` overflow="scroll" scroll="${escapeXml(component.scroll)}" scrollBarDisplay="hidden"`
+            + ` bouncebackEffect="true" touchScrollEffect="true"`
+        : "";
     const lines = [
         `<?xml version="1.0" encoding="utf-8"?>`,
-        `<component size="${size}"${ext}${remark}>`,
+        `<component size="${size}"${ext}${remark}${overflow}>`,
     ];
     if (component.extension === "Button") {
         const pages = BUTTON_CONTROLLER_PAGES.flat().join(",");
