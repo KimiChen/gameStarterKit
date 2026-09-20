@@ -19,6 +19,25 @@ function findTextLayer(layer, namePrefix) {
     return null;
 }
 
+function findLayer(layer, predicate) {
+    if (predicate(layer)) return layer;
+    for (const child of layer.children || []) {
+        const found = findLayer(child, predicate);
+        if (found) return found;
+    }
+    return null;
+}
+
+function repaintLayer(layer, createCanvas, paint) {
+    const width = layer.right - layer.left;
+    const height = layer.bottom - layer.top;
+    const canvas = createCanvas(width, height);
+    const context = canvas.getContext("2d");
+    paint(context, width, height);
+    layer.canvas = canvas;
+    layer.imageData = context.getImageData(0, 0, width, height);
+}
+
 const execFileAsync = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
 const env = { ...process.env };
@@ -551,7 +570,7 @@ export const Confirm = defineView((context) => {
         assert.ok(!restored.includes("本地运行预览"),
             "pure binding without a ?? fallback must not be rewritten");
         const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
-        assert.match(report, /Text value write-back/);
+        assert.match(report, /Text and style write-back/);
         assert.match(report, /fallback: .*ConfirmRestored\/Title\.value/);
         assert.match(report, /bound: .*ConfirmRestored\/Message\.value/);
         assert.match(await readFile(stagedSource, "utf8"), /params\.title \?\? '提示'/);
@@ -732,6 +751,246 @@ export const Rows = defineView(() => (
         assert.match(report, /item-field: .*Row:1\.title/);
         const original = await readFile(join(pageDir, "RowsPanel.tsx"), "utf8");
         assert.match(original, /title: '旧标题零'/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("PSD typography, opacity and fill color write back component props and style", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "MailBattleReport" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-style-edit-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const tab0 = findLayer(psd, (layer) => layer.children
+            && String(layer.name || "").includes("PanelTab:MailBattleReport/PanelTab:0"));
+        assert.ok(tab0, "MailBattleReport.psd should expand PanelTab:0");
+        const label = findLayer(tab0, (layer) => layer.text);
+        assert.ok(label?.text, "PanelTab:0 should keep an editable label layer");
+        label.text.paragraphStyle.justification = "right";
+        label.text.style.leading = 36;
+        label.text.style.fauxBold = false;
+        tab0.opacity = 0.6;
+        const pageFill = findLayer(psd, (layer) => !layer.children
+            && String(layer.name || "").startsWith("MailBattleReport / fill"));
+        assert.ok(pageFill, "page root fill layer should exist");
+        repaintLayer(pageFill, createCanvas, (g, w, h) => {
+            g.fillStyle = "#112233";
+            g.fillRect(0, 0, w, h);
+        });
+        const anonFill = findLayer(psd, (layer) => !layer.children
+            && String(layer.name || "").startsWith("Background / fill"));
+        assert.ok(anonFill, "anonymous fill layer should exist");
+        repaintLayer(anonFill, createCanvas, (g, w, h) => {
+            g.fillStyle = "#AABBCC";
+            g.fillRect(0, 0, w, h);
+        });
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const designDir = join(tempRoot, "design");
+        await execFileAsync(converter.command, [
+            ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+            "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
+        ], { cwd: root, env });
+
+        // Baseline declares pages/ paths from export time; stage fixtures there.
+        const pageSource = `import { defineView } from '@uniflex/compiler';
+export const MailBattleReport = defineView(() => (
+    <view name="MailBattleReport" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
+        <PanelTab label="系统" />
+    </view>
+));
+`;
+        const panelTabSource = (declared) => `import { defineComponent } from '@uniflex/compiler';
+export interface PanelTabProps {
+    readonly label: string;${declared ? `
+    readonly labelAlign?: string;
+    readonly labelLineHeight?: number;
+    readonly labelBold?: boolean;
+    readonly opacity?: number;` : ""}
+}
+export const PanelTab = defineComponent<PanelTabProps>((p) => (
+    <view name="PanelTab" style={{ position: 'relative' }}>
+        <text name="PanelTab/Label" value={p.label} style={{ position: 'absolute', left: 0, top: 0, width: 170, height: 52, fontSize: 28, color: '#3f3254', horizontalAlign: 'center', lineHeight: 28, bold: true }} />
+    </view>
+));
+`;
+        const stageSource = async (declared) => {
+            const sourceRoot = join(tempRoot, declared ? "src-full" : "src-min");
+            const base = join(sourceRoot, "apps/client/src/ui-uniflex");
+            await mkdir(join(base, "pages/MailBattleReport"), { recursive: true });
+            await mkdir(join(base, "components/tab"), { recursive: true });
+            await writeFile(join(base, "pages/MailBattleReport/MailBattleReport.tsx"), pageSource);
+            await writeFile(join(base, "components/tab/PanelTab.tsx"), panelTabSource(declared));
+            return sourceRoot;
+        };
+        const runPackage = async (sourceRoot, outDir) => {
+            await execFileAsync(converter.command, [
+                ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+                "--name", "MailBattleReportRestored", "--source-root", sourceRoot,
+                "--out", outDir,
+            ], { cwd: root, env });
+            return {
+                authoring: await readFile(join(outDir, "MailBattleReportRestored.authoring.tsx"), "utf8"),
+                report: await readFile(join(outDir, "IMPORT.md"), "utf8"),
+            };
+        };
+
+        const full = await runPackage(await stageSource(true), join(tempRoot, "pkg-full"));
+        assert.match(full.authoring, /backgroundColor: "#112233"/);
+        assert.match(full.authoring, /opacity=\{0\.6\}/);
+        assert.match(full.authoring, /labelAlign=\{"right"\}/);
+        assert.match(full.authoring, /labelLineHeight=\{36\}/);
+        assert.match(full.authoring, /labelBold=\{false\}/);
+        assert.match(full.report, /style: .*MailBattleReportRestored\.backgroundColor/);
+        assert.match(full.report, /applied: .*PanelTab\.opacity/);
+        assert.match(full.report, /applied: .*PanelTab\.labelAlign/);
+        assert.match(full.report, /applied: .*PanelTab\.labelLineHeight/);
+        assert.match(full.report, /applied: .*PanelTab\.labelBold/);
+        assert.match(full.report,
+            /not-found: .*MailBattleReport\.root\/_:0\.backgroundColor/);
+
+        const min = await runPackage(await stageSource(false), join(tempRoot, "pkg-min"));
+        assert.doesNotMatch(min.authoring, /labelAlign=|labelLineHeight=|labelBold=|opacity=\{0\.6\}/);
+        assert.match(min.authoring, /backgroundColor: "#112233"/,
+            "native style write-back is not whitelist gated");
+        assert.match(min.report, /undeclared: .*PanelTab\.labelAlign/);
+        assert.match(min.report, /undeclared: .*PanelTab\.labelLineHeight/);
+        assert.match(min.report, /undeclared: .*PanelTab\.labelBold/);
+        assert.match(min.report, /undeclared: .*PanelTab\.opacity/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("repainting a fill non-uniformly keeps the bitmap swap path", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "MailBattleReport" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-fill-split-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const pageFill = findLayer(psd, (layer) => !layer.children
+            && String(layer.name || "").startsWith("MailBattleReport / fill"));
+        assert.ok(pageFill, "page root fill layer should exist");
+        repaintLayer(pageFill, createCanvas, (g, w, h) => {
+            g.fillStyle = "#112233";
+            g.fillRect(0, 0, w / 2, h);
+            g.fillStyle = "#445566";
+            g.fillRect(w / 2, 0, w - w / 2, h);
+        });
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const designDir = join(tempRoot, "design");
+        await execFileAsync(converter.command, [
+            ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+            "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
+        ], { cwd: root, env });
+        const design = JSON.parse(await readFile(join(designDir, "design.json"), "utf8"));
+        const fill = Object.values(design.nodes).find((node) =>
+            node.identity?.role === "fill" && node.identity.key === "MailBattleReport.root");
+        assert.ok(fill, "fill node should exist in the design");
+        assert.equal(fill.identity.imageChanged, true, "non-uniform fill stays a bitmap swap");
+        assert.equal(fill.identity.fillColor, undefined);
+        const sourceRoot = join(tempRoot, "src");
+        const base = join(sourceRoot, "apps/client/src/ui-uniflex/pages/MailBattleReport");
+        await mkdir(base, { recursive: true });
+        await writeFile(join(base, "MailBattleReport.tsx"), `import { defineView } from '@uniflex/compiler';
+export const MailBattleReport = defineView(() => (
+    <view name="MailBattleReport" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }} />
+));
+`);
+        const packageDir = join(tempRoot, "package");
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "MailBattleReportRestored", "--source-root", sourceRoot, "--out", packageDir,
+        ], { cwd: root, env });
+        const authoring = await readFile(
+            join(packageDir, "MailBattleReportRestored.authoring.tsx"), "utf8");
+        assert.doesNotMatch(authoring, /#112233|#445566/i);
+        const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
+        assert.doesNotMatch(report, /backgroundColor/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("native named node opacity writes into the style object", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-native-opacity-"));
+    try {
+        const pageDir = join(tempRoot, "apps/client/src/ui-uniflex/pages/Cards");
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        await mkdir(pageDir, { recursive: true });
+        await mkdir(designDir, { recursive: true });
+        await writeFile(join(pageDir, "Cards.tsx"), `import { defineView } from '@uniflex/compiler';
+export const Cards = defineView(() => (
+    <view name="Cards" style={{ width: 750, height: 1624 }}>
+        <view name="Cards/Card" style={{ position: 'absolute', left: 0, top: 0, width: 100, height: 100 }} />
+    </view>
+));
+`);
+        const frame = { x: 0, y: 0, width: 750, height: 1624 };
+        await writeFile(join(designDir, "design.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-design", canvas: { width: 750, height: 1624 },
+            roots: ["page"], assets: {}, fonts: {},
+            nodes: {
+                page: {
+                    id: "page", name: "Cards", kind: "group", frame,
+                    opacity: 1, visible: true, children: ["card"],
+                    identity: { key: "Cards.root", role: "page", definitionKey: "Cards" },
+                },
+                card: {
+                    id: "card", name: "Cards/Card", kind: "group",
+                    frame: { x: 0, y: 0, width: 100, height: 100 },
+                    opacity: 0.5, visible: true, children: [],
+                    identity: { key: "Cards.root/Cards/Card", role: "node", definitionKey: "Cards" },
+                },
+            },
+        }));
+        await writeFile(join(designDir, "component-declarations.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-component-declarations",
+            definitions: [
+                { key: "Cards", source: "apps/client/src/ui-uniflex/pages/Cards/Cards.tsx" },
+            ],
+            instances: [
+                { key: "Cards.root", definitionKey: "Cards", role: "page", rootRecordId: 1 },
+            ],
+        }));
+        await writeFile(join(designDir, "uniflex-export-baseline.json"), JSON.stringify({
+            kind: "uniflex-design-snapshot", schemaVersion: 1,
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                {
+                    id: 1, kind: "view", name: "Cards/Card",
+                    identity: { key: "Cards.root/Cards/Card", role: "node" },
+                },
+            ],
+        }));
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "CardsRestored", "--source-root", tempRoot, "--out", packageDir,
+        ], { cwd: root, env });
+        const restored = await readFile(join(packageDir, "CardsRestored.authoring.tsx"), "utf8");
+        assert.match(restored,
+            /<view name="CardsRestored\/Card" style=\{\{ position: 'absolute', left: 0, top: 0, width: 100, height: 100, opacity: 0\.5 \}\} \/>/);
+        const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
+        assert.match(report, /style: .*CardsRestored\/Card\.opacity/);
+        assert.match(await readFile(join(pageDir, "Cards.tsx"), "utf8"),
+            /width: 100, height: 100 \}\}/);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }

@@ -106,7 +106,12 @@ apps/Cocos/
   按这些身份还原 `PopupFrame` / `ConfirmButton` 等 catalog 组件，而不是摊成 view；
   PSD 里换图、改大小、位置或文本内容只覆盖视觉，不改组件结构。文本回写只落在
   纯字面量、`expr ?? '兜底'` 的兜底字面量或组件已声明 prop 的新增插入；无兜底纯绑定
-  （如 `label={p.confirmText}`）跳过并记入导入包 IMPORT.md 的 Text value write-back 段。
+  （如 `label={p.confirmText}`）跳过并记入导入包 IMPORT.md 的 Text and style write-back 段。
+  排版属性（对齐 / 行高 / 粗体 / 字体，沿用 `${base}FontSize` 同款 `${base}Align` /
+  `${base}LineHeight` / `${base}Bold` / `${base}Font` 命名）按组件已声明 prop 回写，
+  未声明被白名单过滤并记报告；图层不透明度回写组件 `opacity` prop 或具名原生节点的
+  `style` 对象；`role === 'fill'` 的色块被重涂成均匀纯色（±8/通道容差）时回写
+  `backgroundColor` 而不再换图，非均匀则维持换图。
   设计师可编辑 PSD 的落点是 `apps/art/uniflex/<Page>/screen.psd`（建议 Git LFS；本机未装则按二进制入库）。
   `ui:art-export` 从原稿功能页导出；`ui:art-import` / `ui:art-sync` 按身份 overlay 回去。
   当前 catalog `applyTarget` 为 `restored`，只写 `*Restored`，不覆盖原稿；`ui:art-check` 是只读新鲜度闸。
