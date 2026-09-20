@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile, readdir } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import {
     artComponentPsdPath, classifyArtPage, findArtPage, isArtScreen, loadArtCatalog,
 } from "./lib/uniflex-art.mjs";
@@ -299,4 +299,15 @@ test("settings and alliance share the same WideMenuButton file", async () => {
     assert.match(originalAlliance, /from '\.\/AllianceHomePanel'/);
     assert.doesNotMatch(originalSettings, /restored/);
     assert.doesNotMatch(originalAlliance, /restored/);
+});
+
+test("page-side linked-components.json manifests stay out of the committed art tree", async () => {
+    const artRoot = resolve(root, "apps/art/uniflex");
+    const offenders = [];
+    for (const entry of await readdir(artRoot, { withFileTypes: true })) {
+        if (!entry.isDirectory() || entry.name === "components") continue;
+        if ((await readdir(join(artRoot, entry.name))).includes("linked-components.json"))
+            offenders.push(entry.name);
+    }
+    assert.deepEqual(offenders, []);
 });
