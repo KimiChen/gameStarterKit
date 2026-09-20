@@ -84,6 +84,8 @@ export class MmoWorldView implements MmoWorldPresentation {
         const line = Math.round(this.width * 0.04);
         this.label(panel, `${model.mapId}  HP ${model.hp}/${model.hpMax}  MP ${model.mp}/${model.mpMax}  实体 ${model.entities.length}${model.synced ? "" : "  同步中…"}`, line, TEXT, 0, line * 0.5);
         this.label(panel, model.dropping ? "连接中断，重连中…" : model.notice, Math.round(line * 0.85), model.dropping ? WARN : DIM, 0, -line * 0.7);
+        // 附近聊天最近两行（MK1-B5；完整聊天 UI 归内容插件 / FGUI HUD）
+        if (model.chat.length > 0) this.label(panel, model.chat.slice(-2).map((entry) => `${entry.from}: ${entry.text}`).join("   "), Math.round(line * 0.75), DIM, 0, -line * 1.6);
     }
 
     unmount(): void {

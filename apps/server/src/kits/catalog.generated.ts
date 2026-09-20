@@ -36,11 +36,12 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
     },
     {
         id: "mmo",
-        version: "0.1.4",
+        version: "0.1.5",
         api: {
             characters: { version: 1, minSupported: 1 },
             content: { version: 2, minSupported: 2 },
             movement: { version: 1, minSupported: 1 },
+            social: { version: 1, minSupported: 1 },
             world: { version: 2, minSupported: 1 },
         },
         modes: [
@@ -48,6 +49,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         ],
         domains: [
             "mmo",
+            "mmoSocial",
         ],
         effects: [],
         sqlFiles: [

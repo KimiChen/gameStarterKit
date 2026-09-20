@@ -10,7 +10,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
 | MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
-| MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | 施工中：B1 movement 面 ✅、B2 AOI 接入 ✅、B3 两图交接 ✅、B4 检查点 ✅ 2026-09-20（kit 0.1.4；B5–B6 未开工） |
+| MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | 施工中：B1 movement 面 ✅、B2 AOI 接入 ✅、B3 两图交接 ✅、B4 检查点 ✅、B5 社交包装 ✅ 2026-09-20（kit 0.1.5；B6 未开工） |
 | MK2 模拟闭环 | combat + ai 面、掉落 | 未开工 |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 未开工 |
 | MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 未开工 |
@@ -24,6 +24,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | SQL | `sql/001-characters.sql`（`k_mmo_character` / `k_mmo_character_checkpoint`）、`002-items.sql`（`k_mmo_item_instance` / `k_mmo_receipt`）、`003-world.sql`（`k_mmo_instance` / `k_mmo_instance_checkpoint` / `k_mmo_world_event` role:"world-event"）、`004-character-checkpoint-instance-rev.sql`（MK1-B4：角色检查点表加 `instance_rev` 列 + 索引，只追加）；全部 per-zone；检查点表整份落框架信封（`envelope JSON`，snapshot 在其内） |
 | worker | `workers/worldEvents.ts`：认领门内 `k_mmo_world_event`，`grantCurrency` ⇒ 主账 credit（persona 主体，opId = eventId），其余 MK0 死信 |
 | 域 `mmo` | `mmo.characters`（query：角色 + 孤儿 persona + 槽位上限）、`mmo.createCharacter`（idempotent-write：同一 withKitTx 内 createPersona + 角色行 + 回执；errorCodes MMO_NAME_TAKEN / MMO_SLOT_TAKEN / MMO_SLOTS_FULL）；进世界走框架 `world.enter` |
+| 域 `mmoSocial`（MK1-B5） | `mmoSocial.partyLocate { characterId }`（query）→ `{ party: IMmoPartyLocate \| null }`：框架 party 成员 → 本 kit 角色 + worldAddress / mapId；errorCodes MMO_SOCIAL_CHARACTER_FORBIDDEN；世界 / 附近聊天 ⛔ 不在本域 |
 | 服务端 api 面 | `characters`（listCharacters / createCharacter / characterOfPersona）、`world`（readInstanceMeta）、`content`（contentIndex / packForMap / mapDefOf / creatureOf / spellOf / itemOf；内置灰盒包启动期 validateContentPack fail-closed）、`movement`（MK1-B1：resolveMove / applyIntent / parseCollisionGrid 再导出 + teleportWithin） |
 | WorldMode | `rooms/modes/mmoWorld/index.ts`：撒怪 / 准入预热（职业模板不在内容包 ⇒ 拒）/ 检查点回灌 / 权威积分（movement 面 `resolveMove` + 内容包碰撞网格）/ 本人 `s2c.mmoWorld.pos` 直发回执 / 视野流（AOI 网格候选 + 规则 + 上限）/ 私有流 / 检查点（全批 `onCheckpoint` + persona 级 `onPersonaCheckpoint`）；检查点端口住 kit 目录 `kits/mmo/persistence/checkpoint.ts`（MK1-B4 迁回：kit-api 再导出 CheckpointPort / CheckpointEnvelope / CheckpointSchema） |
 
@@ -64,6 +65,15 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 服务端 mode | `c2s.mmoWorld.transfer { portalId, clientReqId }`：portal 不存在 / 不在半径内 / 在途 ⇒ opResult rejected；否则**落点先写进实体**（`arrival = { toMapId, toSpawnPointId }`，停下）⇒ `context.transfer.request(session, { toMap, payload: { portalId, toSpawnPointId } })`（框架 MF8：prepare → 强制点 → 凭据 → commit）⇒ Committed ⇒ perSession `s2c.mmoWorld.transferReady { transferId, worldAddress, ticket, expiresAt }`（凭据只此一处出网，不可丢类）⇒ 壳以 "transferred" 离座；端口失败 ⇒ rejected + 落点清 + 可重试。落点经 persona 快照 `arrival`（框架 prepare 后强制点落库）传到目标图：onEnter 同图检查点优先，否则 `arrival.mapId` 等于本图 ⇒ 该出生点，否则首个出生点；HP / MP 随快照随身 |
 | 客户端 | HUD「传送」⇒ `{ type: "transfer" }` ⇒ 本人（预测位置）在某个传送门半径内才发 `room.transfer(portalId)`（clientReqId `t<n>`）；`transferReady` ⇒ 记下凭据 + 请求退出，本局 stop 时交给 `onTransfer` ⇒ mode 模块下一拍 `runtime.launchWorld(characterId, 目标 mapId, 凭据)`（launch `{ characterId, mapId, transfer? }` exact 校验，凭据 worldAddress 必须与 mapId 一致）⇒ joiner 凭据在手 ⇒ 跳过 world.enter、`{ kind: "transfer" }` strategy 直进；无凭据（重连 / 回复丢失）⇒ world.enter 由框架解析在途交接 ⇒ transferId 非 null 时同样 transfer strategy |
 | 验收 | 无头 `mmoWorld-mode.test.ts`（拒绝三态 / 端口目标 + 载荷 / 在途快照带落点 / 失败清落点 / Committed perSession 出网；目标图落位 / 异图 / 未知落点 / 同图优先）；真栈 `test/int/mmo-transfer.test.ts`（门外拒 → 门内交接 → 源房 CONSENTED → **reply-lost 注入**走 resolveTransfer 轮换 → 东郊落点 + 2 slime + 职业 HP / MP → finalized + 载荷落库 → 离座检查点 mapId 东郊 → 再进从检查点起）；其余三个注入（client-drop / source-crash / target-crash）是框架状态机性质，由 MF8-B7 `world-transfer-flow` 覆盖，kit ⛔ 复制 |
+
+## 社交包装（MK1-B5）
+
+| 层 | 内容 |
+| --- | --- |
+| shared `api/social` | `worldChannelId(sId)` = `realm:<sId>`（框架 channel 原语，世界聊天 = Lobby push）；`IMmoPartyLocate / IMmoPartyMember` + `validatePartyLocate`（exact keys、worldAddress 形态、mapId 与 worldAddress 一致、恰一个队长）；附近聊天 `nearbyChatLineOf`（`s2c.world.chat { fromEntityId, text, at }` → 只映射 fromEntityId → 名字）+ `appendChatLine`（上限 50） |
+| 服务端 | kit-api 新增只读门面 `readPartyView(uid)`（动态 import 框架 party 原语，⛔ kit 目录 import core/party）；`api/social`：`partyOf(uid, sId, characterId)`——角色不属本账号 ⇒ MmoSocialForbiddenError，不在队 ⇒ null，成员映射：在世界里的 persona（`listPersonas.worldAddress`）优先、没进世界取首个角色、没角色全 null，队长 / 在线透传；端点 `websocket/mmoSocial/partyLocate.ts`；附近聊天受众仍只由框架按 `primaryEntityOf` + 兴趣集算（§6.5.1，M13） |
+| 客户端 | `api/social`：`sayWorld(chat, sId, text)` 直接用框架 chat 门面（ChatLogic.send 同形）投 realm 频道；`partyLocate(lobbyRpc, characterId)`；`partyPanelRows(view, selfCharacterId)`（队长首位、位置 = mapId / 未进世界 / 无角色、本人标记）——队伍面板消费框架 `PartyLogic` 的名册 / 事件 + 本面的定位；世界房：`room.say(text)` ⇒ `c2s.world.chat`，`chat` 观察者回调 ⇒ gameplay 日志（名字来自视野实体表，最新 50 行），HUD 面板画最近两行（完整聊天 UI 归内容插件） |
+| 用例 | 服务端 `mmo-social.test.ts`（partyOf 假依赖 / validator / 频道 / 行映射）、向量 `lobbyRpcVectors/mmoSocial.ts`、真栈 `test/int/mmo-social.test.ts`（真 party：建队 → 邀请 → 接受，A 进图后 B 的 partyLocate 看到 A 的 worldAddress / mapId；别人的角色 ⇒ 拒）；客户端 `mmo-social.test.ts` + `mmoWorld-gameplay` 附近聊天用例 |
 
 ## 检查点（MK1-B4）
 

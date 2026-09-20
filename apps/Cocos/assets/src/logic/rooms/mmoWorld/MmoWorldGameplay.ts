@@ -2,6 +2,7 @@
  * mmoWorld 客户端玩法插件（kits/mmo 的世界形态玩法；纯 TS，无头单测）：观察世界房句柄维护本地实体表 / 本人私有态 → 视图模型；
  * 输入：方向意图 / 点地 / 停 / 传送（最近的传送门，MK1-B3）/ 离开（⛔ 客户端不上报坐标；本人位置取 movement 面本地预测）。
  * 两图交接：`transferReady` 回执（凭据只此一处）⇒ 记下并请求退出，stop 时把凭据交给 `onTransfer`（mode 模块带参重进目标图）。
+ * 附近聊天（MK1-B5）：`say` 输入 ⇒ 框架 core 世界 token；收到的 `chat` 只把 fromEntityId 映射成视野实体名（受众由服务端按兴趣集算）。
  * 渲染归 ../../../view/rooms/mmoWorld/MmoWorldView.ts；⛔ 不 import cc（铁律 9）。
  */
 import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
@@ -10,6 +11,8 @@ import type { IMmoEntityWire, IMmoWorldOpResult, IMmoWorldPos, IMmoWorldTransfer
 import { withinRadius, type MmoPrivateState } from "../../../kits/mmo/api/world/index";
 import { MovementPredictor, normalizeDir, parseCollisionGrid } from "../../../kits/mmo/api/movement/index";
 import { classOf, mapDefOf, presentationOf, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
+import { appendChatLine, nearbyChatLineOf, type INearbyChatLine } from "../../../kits/mmo/api/social/index";
+import type { IWorldChatRes } from "../../../shared/protocol/messages";
 
 export const MMO_WORLD_GAMEPLAY_ID = "mmoWorld";
 
@@ -19,6 +22,8 @@ export type MmoWorldInput =
     | { readonly type: "stop" }
     /** 走最近的传送门（本人在其半径内才发） */
     | { readonly type: "transfer" }
+    /** 附近聊天 */
+    | { readonly type: "say"; readonly text: string }
     | { readonly type: "leave" };
 
 /** 世界房句柄观察者：net 层把观察者流 / 私有流 / 回执 / 连接事件翻译成这几个回调，逻辑层不认识 Colyseus。 */
@@ -30,6 +35,8 @@ export interface MmoWorldRoomObserver {
     pos(payload: IMmoWorldPos): void;
     /** 交接就绪（MK1-B3）：目标分线凭据，只此一处出网 */
     transferReady(payload: IMmoWorldTransferReady): void;
+    /** 附近聊天（框架 core 世界 token；MK1-B5） */
+    chat(payload: IWorldChatRes): void;
     resync(reason: string | null): void;
     dropped(): void;
     reconnected(): void;
@@ -48,6 +55,8 @@ export interface MmoWorldRoom {
     stop(): number | null;
     /** 发起交接（portalId）；返回 clientReqId（拒发 ⇒ null） */
     transfer(portalId: string): string | null;
+    /** 附近聊天（拒发 ⇒ false） */
+    say(text: string): boolean;
     requestBaseline(afterSeq: number): boolean;
     observe(observer: MmoWorldRoomObserver): () => void;
     leave(): Promise<void>;
@@ -81,6 +90,8 @@ export interface MmoWorldViewModel {
     readonly synced: boolean;
     readonly dropping: boolean;
     readonly notice: string;
+    /** 附近聊天日志（最新在后，上限 NEARBY_CHAT_LOG_MAX） */
+    readonly chat: readonly INearbyChatLine[];
 }
 
 export interface MmoWorldPresentation {
@@ -121,6 +132,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     private predictor: MovementPredictor | null = null;
     private privateState: MmoPrivateState = { hp: 0, hpMax: 1, mp: 0, mpMax: 0 };
     private notice = "";
+    private chatLog: readonly INearbyChatLine[] = [];
 
     constructor(options: MmoWorldGameplayOptions = {}) {
         this.host = options.host ?? null;
@@ -149,6 +161,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                     if (this.predictor === null) this.predictor = this.createPredictor(snapshot, context.room.mapId);
                 },
                 pos: (payload) => { if (active()) this.predictor?.reconcile(payload); },
+                chat: (payload) => { if (active()) this.chatLog = appendChatLine(this.chatLog, nearbyChatLineOf(payload, (id) => this.entities.get(id)?.name ?? null)); },
                 transferReady: (payload) => {
                     if (!active()) return;
                     // 凭据只此一处：记下 → 退出本局 → stop 时交给 onTransfer 带参重进目标图（源房随后被服务端以 transferred 离座）
@@ -175,6 +188,12 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         if (input.type === "leave") { this.requestExit("user-exit"); return; }
         if (context.room.dropping || !context.room.current) return;
         if (input.type === "transfer") { this.requestTransfer(context); return; }
+        if (input.type === "say") {
+            const text = input.text.trim();
+            if (text.length === 0) return;
+            if (!context.room.say(text)) this.notice = "聊天未发出";
+            return;
+        }
         if (input.type === "move") {
             const dir = normalizeDir(input.dir);
             const seq = context.room.move(dir);
@@ -247,6 +266,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             synced: this.synced,
             dropping: this.context?.room.dropping ?? false,
             notice: this.notice,
+            chat: this.chatLog,
         };
     }
 
@@ -285,6 +305,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         this.entities = new Map();
         this.synced = false;
         this.predictor = null;
+        this.chatLog = [];
     }
 }
 

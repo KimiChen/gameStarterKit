@@ -72,6 +72,7 @@ import {
 } from "../errors";
 import { type KitKeyScope, currentZoneId, kKitUser, zoneCtx } from "./keys";
 import { clientFor } from "./redisRoute";
+import type { IPartyView } from "@game/shared/protocol/lobbyRpc/domains/party";
 import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
 import type { ServerKitCatalogEntry } from "../../kits/catalogTypes";
 
@@ -83,6 +84,15 @@ export {
 export type { AssetOwnerRef, IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket, SingletonLease };
 /** 世界检查点端口契约（MMO MF7b；MK1-B4 起由 kit-api 再导出——kit 目录（K1 规则 ①）可直接实现 CheckpointPort，⛔ 再经 rooms/modes 取型；MF11 偏差 ⑤ 收口）。 */
 export type { CheckpointEnvelope, CheckpointPort, CheckpointSchema } from "../../rooms/core/CheckpointPort";
+
+/**
+ * 只读队伍视图（框架 party 原语 getParty；MMO MK1-B5 social 面 `partyOf` 用，⛔ 让 kit 目录 import core/party）。
+ * 动态 import：party 原语依赖 uow / presence / userRecord，⛔ 让 kit-api 模块初始化时反向拉起它们。
+ */
+export async function readPartyView(uid: string): Promise<IPartyView | null> {
+  const { getParty } = await import("../party/party");
+  return getParty(uid);
+}
 
 export interface KitUserFence { readonly fence: number }
 export interface KitUserFenceDeps {

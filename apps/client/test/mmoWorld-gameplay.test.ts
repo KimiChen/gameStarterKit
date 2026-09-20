@@ -29,6 +29,7 @@ function fakeRoom() {
         moveTo: (target) => { calls.push(["moveTo", target]); return calls.length; },
         stop: () => { calls.push(["stop"]); return calls.length; },
         transfer: (portalId) => { calls.push(["transfer", portalId]); return `t${calls.length}`; },
+        say: (text) => { calls.push(["say", text]); return true; },
         requestBaseline: (afterSeq) => { calls.push(["baseline", afterSeq]); return true; },
         observe: (next) => { observer = next; return () => { observer = null; }; },
         leave: async () => { calls.push(["leave"]); },
@@ -135,11 +136,13 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     const lefts: string[] = [];
     const positions: [number, number][] = [];
     const readies: string[] = [];
+    const chats: string[] = [];
     room.observe({
         entities: (snapshot, synced) => { snapshots.push([snapshot.size, synced]); },
         privateState: (state) => { privates.push(state.hp); },
         pos: (payload) => { positions.push([payload.seq, payload.x]); },
         transferReady: (payload) => { readies.push(payload.transferId); },
+        chat: (payload) => { chats.push(payload.fromEntityId); },
         opResult: () => undefined, resync: (reason) => { resyncs.push(reason); }, dropped: () => undefined, reconnected: () => undefined, left: (kind) => { lefts.push(kind); },
     });
     assert.deepEqual([room.move({ x: 1, y: 0 }), room.stop(), room.moveTo({ x: 10, y: 20 })], [1, 2, 3], "意图返回自己的 seq");
@@ -159,6 +162,10 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.transfer", { portalId: "gate-east", clientReqId: "t4" }]);
     emit(S2C.MmoWorldTransferReady, { transferId: "wt_1", worldAddress: "s0/greybox-east/0", ticket: "x".repeat(24), expiresAt: 9 });
     assert.deepEqual(readies, ["wt_1"]);
+    assert.equal(room.say("hi"), true);
+    assert.deepEqual(sent.at(-1), ["c2s.world.chat", { text: "hi" }], "附近聊天走框架 core 世界 token");
+    emit(S2C.WorldChat, { fromEntityId: "char:c1", text: "hi", at: 5 });
+    assert.deepEqual(chats, ["char:c1"]);
     emit(S2C.MmoWorldLeave, { seq: 4, tick: 12, id: "slime-camp:0" });
     assert.deepEqual(snapshots.at(-1), [1, true]);
     emit(S2C.MmoWorldUpdate, { seq: 9, tick: 13, id: "char:c1", x: 1012, y: 1000, rev: 2, hp: 100 });
@@ -230,4 +237,25 @@ test("两图交接（gameplay）：传送输入只在传送门半径内发（预
     gameplay.stop({ kind: "manual" });
     gameplay.stop({ kind: "manual" });
     assert.deepEqual(handed, ["wt_1"], "凭据交出恰一次");
+});
+
+test("附近聊天（gameplay）：say 输入 ⇒ room.say（空白不发）；收到 chat 只映射 fromEntityId → 视野实体名（不在表 ⇒ ?），日志保留最新 50 行", async () => {
+    const { room, calls, observer } = fakeRoom();
+    const { presentation, renders } = fakePresentation();
+    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
+    const context = contextOf(room);
+    await gameplay.start(context);
+    observer().entities(new Map([[self.id, self], ["slime-camp:0", slime("slime-camp:0", 1200)]]), true);
+    gameplay.handleInput({ type: "say", text: "  hello  " }, context);
+    gameplay.handleInput({ type: "say", text: "   " }, context);
+    assert.deepEqual(calls.filter((call) => call[0] === "say"), [["say", "hello"]], "trim 后发；空白不发");
+    observer().chat({ fromEntityId: "char:c1", text: "hello", at: 1 });
+    observer().chat({ fromEntityId: "char:ghost", text: "boo", at: 2 });
+    gameplay.tick(0.016, context);
+    assert.deepEqual(renders.at(-1)!.chat.map((line) => [line.from, line.text]), [["Rook", "hello"], ["?", "boo"]]);
+    for (let index = 0; index < 60; index += 1) observer().chat({ fromEntityId: "slime-camp:0", text: `s${index}`, at: 10 + index });
+    gameplay.tick(0.016, context);
+    assert.deepEqual([renders.at(-1)!.chat.length, renders.at(-1)!.chat.at(-1)!.text, renders.at(-1)!.chat[0]!.from], [50, "s59", "史莱姆"]);
+    gameplay.stop({ kind: "manual" });
 });

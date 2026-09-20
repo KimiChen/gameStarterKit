@@ -15,6 +15,7 @@ import {
     type IMmoWorldTransferReady, type IMmoWorldUpdate,
 } from "../../shared/index";
 import { parseWorldAddress } from "../../shared/kits/mmo/api/world/index";
+import type { IWorldChatRes } from "../../shared/protocol/messages";
 import { WorldRoomTransport, type WorldRoomHandle } from "./WorldRoomTransport";
 
 export interface MmoWorldJoinDeps {
@@ -39,6 +40,8 @@ export function createMmoWorldRoom(handle: WorldRoomHandle): MmoWorldRoom {
         moveTo(target) { const seq = nextSeq(); return handle.send(C2S.MmoWorldMove, { seq, target }) ? seq : null; },
         stop() { const seq = nextSeq(); return handle.send(C2S.MmoWorldMove, { seq, dir: { x: 0, y: 0 } }) ? seq : null; },
         transfer(portalId) { const clientReqId = `t${nextSeq()}`; return handle.send(C2S.MmoWorldTransfer, { portalId, clientReqId }) ? clientReqId : null; },
+        // 附近聊天：框架 core 世界 token（受众由服务端按兴趣集算，kit 只映射名字，MK1-B5）
+        say(text) { return handle.send(C2S.WorldChat, { text }); },
         requestBaseline(afterSeq) { return handle.send(C2S.MmoWorldBaselineRequest, { authorityEpoch: 1, afterSeq }); },
         observe(observer) { return observeMmoWorld(handle, observer); },
         leave: () => handle.leave(),
@@ -75,13 +78,14 @@ function observeMmoWorld(handle: WorldRoomHandle, observer: MmoWorldRoomObserver
     const offPos = handle.onMessage(S2C.MmoWorldPos, (payload: IMmoWorldPos) => { if (active) observer.pos(payload); });
     // 交接就绪（perSession 不可丢类；凭据只此一处出网，⛔ 落日志）
     const offTransfer = handle.onMessage(S2C.MmoWorldTransferReady, (payload: IMmoWorldTransferReady) => { if (active) observer.transferReady(payload); });
+    const offChat = handle.onMessage(S2C.WorldChat, (payload: IWorldChatRes) => { if (active) observer.chat(payload); });
     const offDrop = handle.onDrop(() => { if (active) observer.dropped(); });
     const offReconnect = handle.onReconnect(() => { if (active) observer.reconnected(); });
     const offLeave = handle.onLeave((kind) => { if (active) observer.left(kind); });
     return () => {
         if (!active) return;
         active = false;
-        for (const off of [offStream, offPrivate, offResult, offPos, offTransfer, offDrop, offReconnect, offLeave]) {
+        for (const off of [offStream, offPrivate, offResult, offPos, offTransfer, offChat, offDrop, offReconnect, offLeave]) {
             try { off(); } catch (error) { console.error("[MmoWorldRoom] 解绑异常", error); }
         }
     };
