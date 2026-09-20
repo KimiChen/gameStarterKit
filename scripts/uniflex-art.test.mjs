@@ -283,19 +283,19 @@ test("settings and alliance share the same WideMenuButton file", async () => {
     assert.equal(linkedPaths(home).get(buttonId)?.relativePath, "../WideMenuButton/component.psd");
     assert.equal(collectPlaced(home).filter((item) => item.id === buttonId).length, 7);
     const settingsRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/SettingsRestored/SettingsRestored.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/settings/SettingsRestored/SettingsRestored.tsx"), "utf8");
     const allianceRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/AllianceRestored/AllianceRestored.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/alliance/AllianceRestored/AllianceRestored.tsx"), "utf8");
     const homeSrc = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/pages/Alliance/AllianceHomePanel.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/alliance/Alliance/AllianceHomePanel.tsx"), "utf8");
     const originalSettings = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/settings/Settings/Settings.tsx"), "utf8");
     const originalAlliance = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx"), "utf8");
-    assert.match(settingsRestored, /from '\.\.\/\.\.\/restored\/components\/button\/WideMenuButton'/);
-    assert.match(allianceRestored, /from '\.\.\/\.\.\/restored\/pages\/Alliance\/AllianceHomePanel'/);
-    assert.match(homeSrc, /from '\.\.\/\.\.\/components\/button\/WideMenuButton'/);
-    assert.match(originalSettings, /from '\.\.\/\.\.\/components\/button\/WideMenuButton'/);
+        resolve(root, "apps/client/src/ui-uniflex/modules/alliance/Alliance/Alliance.tsx"), "utf8");
+    assert.match(settingsRestored, /from '\.\.\/\.\.\/\.\.\/components\/button\/WideMenuButton'/);
+    assert.match(allianceRestored, /from '\.\.\/Alliance\/AllianceHomePanel'/);
+    assert.match(homeSrc, /from '\.\.\/\.\.\/\.\.\/components\/button\/WideMenuButton'/);
+    assert.match(originalSettings, /from '\.\.\/\.\.\/\.\.\/components\/button\/WideMenuButton'/);
     assert.match(originalAlliance, /from '\.\/AllianceHomePanel'/);
     assert.doesNotMatch(originalSettings, /restored/);
     assert.doesNotMatch(originalAlliance, /restored/);
