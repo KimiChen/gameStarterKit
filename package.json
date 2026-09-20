@@ -28,6 +28,7 @@
     "ui:check-source": "node scripts/uniflex-ui-cli.mjs check-source",
     "ui:export-fgui": "node scripts/uniflex-ui-cli.mjs export-fgui",
     "ui:preview-fgui": "node scripts/uniflex-ui-cli.mjs preview-fgui",
+    "ui:verify-fgui-dom": "node scripts/verify-uniflex-fgui-dom.mjs",
     "fetch:fairygui-dom": "node scripts/fetch-fairygui-dom.mjs",
     "ui:verify": "node scripts/verify-uniflex-ui.mjs",
     "ui:approve-web": "node scripts/verify-uniflex-ui.mjs --approve-web",

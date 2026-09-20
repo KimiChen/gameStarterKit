@@ -1196,6 +1196,55 @@ test("ItemSlot is a shared loader component; backpack, shop, and hero instance i
     }
 });
 
+test("scroll direction follows row overflow: horizontal, vertical, both", () => {
+    const make = (rows) => ({
+        schemaVersion: 1,
+        kind: "uniflex-design-snapshot",
+        screenId: "hscroll",
+        canvas: { width: 750, height: 1334 },
+        nodes: [
+            node(1, null, "HScrollPage", "view", rect(0, 0, 750, 1334)),
+            node(2, 1, "", "virtual-list", rect(10, 100, 730, 200)),
+            ...rows,
+        ],
+    });
+    const row = (id, x, y, w, h, label) => [
+        node(id, 2, "Row", "view", rect(x, y, w, h)),
+        node(id + 100, id, "", "text", rect(x, y, w, 40), { value: label }),
+    ];
+    const screen = { id: "hscroll", componentName: "HScroll" };
+    const scrollOf = (rows) => {
+        const ir = buildProjectIR(make(rows), { screen });
+        const page = ir.packages.find((pkg) => pkg.name === "UniFlex_HScroll");
+        const list = page.components.find((component) => component.scroll);
+        assert.ok(list, "virtual-list becomes a scroll component");
+        assert.deepEqual(list.size, { width: 730, height: 200 });
+        return list;
+    };
+    const horizontal = scrollOf([
+        ...row(3, 10, 100, 300, 200, "A"),
+        ...row(5, 320, 100, 300, 200, "B"),
+        ...row(7, 630, 100, 300, 200, "C"),
+    ]);
+    assert.equal(horizontal.scroll, "horizontal");
+    assert.equal(horizontal.children[0].x, 0, "rows are VL-relative");
+    assert.equal(horizontal.children[4].x, 620);
+    const vertical = scrollOf([
+        ...row(3, 10, 100, 730, 200),
+        ...row(5, 10, 320, 730, 200),
+    ]);
+    assert.equal(vertical.scroll, "vertical");
+    const both = scrollOf([
+        ...row(3, 10, 100, 900, 200),
+        ...row(5, 10, 320, 900, 200),
+    ]);
+    assert.equal(both.scroll, "both");
+    const fits = scrollOf([
+        ...row(3, 10, 100, 300, 200),
+    ]);
+    assert.equal(fits.scroll, "vertical", "content that fits defaults to vertical");
+});
+
 function writeFakeExport(dir, _name, mapping, screens) {
     mkdirSync(join(dir, "preview"), { recursive: true });
     writeFileSync(join(dir, "preview", "index.html"), "<html></html>");
