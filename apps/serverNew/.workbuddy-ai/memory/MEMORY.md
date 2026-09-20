@@ -9,11 +9,22 @@
 ## 命令纪律
 
 - 根目录无 `package.json`：`check:*` / `test:*` / `typecheck` 先 `cd server`。
-- `apps/serverNew` 未被 git 跟踪 → 变异回滚只能 Edit 逐字改回 + `grep -c` 核对，⛔ 不用 `git checkout|diff` 作证据。
+- 2026-09-20 18:4x 起 `apps/serverNew` **已入库**（提交 `4dcb3779` + 合并 `a2f3368d`，已推 `origin/serverNew`）⇒ 变异回滚现在**可以**用 `git checkout|diff`；此前「未跟踪」的旧纪律作废。
 - `mocha.config.cjs` 有 `bail: true`；看全部失败：先 `pnpm test:file`，再 `pnpm exec mocha --config test/mocha.config.cjs --no-bail build/test-compiled/all-tests/<路径>`。
 - `check:quick` 不含 runtime/http/modules → 改 runtime 必须另跑 `pnpm test:suite -- runtime`。新增 `.cjs`/`.md` 也要过 prettier。
 - ⚠ 管道吃退出码：`... | tail` 后 `$?` 是 tail 的 → 重定向到文件再取。
 - ⚠ `check:generated` 在临时工作区大量删除，会撞 WorkBuddy 注入的删除兜底闸（50 次/会话，不随回合重置）→ 用 `cd server && env -u NODE_OPTIONS pnpm check`。
+
+## 提交与推送（仓库 = `gameKit` 根，`apps/serverNew` 只是子目录）
+
+- 分支现状：`main` / `new` / `server_kxz` / `serverNew`（后者 2026-09-20 新建，基线 `b88069ce`）。
+- **推之前必须先 `git fetch`**：远程 `new` 会被人推进，本地缺那个 tip 时 push 协商**排除不掉公共对象**，会把整段历史重发（实测 2798 对象 → 20627 对象 / 10 MiB → 60 MiB+），而本机 git 走 fake-IP 代理（约 300 KiB/s）⇒ 60 MiB 级传输直接 `Broken pipe`。fetch 后重推 18 秒完成。
+- `git push` **不带 `--progress` 时管道下完全不显示进度** ⇒ 排障一律 `--progress` + 重定向文件；否则只能看到「进程活着、CPU 0%」，会误判卡死（本次白等 17 分钟并误杀了一次正常推送）。
+- 上传量先量再推：`git rev-list --objects HEAD --not origin/new | wc -l`。
+- ⚠ 合 `origin/new` 会撞生成镜像重构：`apps/Cocos/assets/src/ui-uniflex/` 的 `pages/` 被上游改成 `modules/` ⇒ 冲突 **131 项**。正解 = **整棵镜像子树取上游**（`git rm -r --cached <dir>` → `git checkout origin/new -- <dir>` → `git clean -fdq -- <dir>`），因为 `apps/Cocos/assets/src` 是 `apps/client/src` 的逐字节镜像（禁止手改）。
+- ⚠ 预判冲突**不能只看精确路径交集**（本次只算出 18 项，真实 131 项）：rename 检测出的冲突要靠 `git status --porcelain` 的 `AA/AU/UU` 状态码识别。
+- 锁文件冲突**一律交给 writer**：`node scripts/protocol-fingerprint.mjs --write`、`node scripts/protected-paths-lock.mjs --write`（各自带 `--check`）；⛔ 不手改。
+- 提交前可用 `npm run verify:sync` 判漂移：`sync-shared --check` 应 ✔；`sync-client --check` 的「缺 .meta」项属上游既有基线（见下），用 `grep` 自己新增的文件名验证是否被卷入。
 
 ## 多进程（alloy-core）硬约束 —— 踩得最贵
 
@@ -51,7 +62,7 @@
 
 - 计数基线（2026-09-20 重取）：`routes:172 / protocolMessages:298 / protocolFields:587 / beans:94 / beanFields:623 / mods:30 / errorCodes:312 / redisKeys:40 / databaseTables:32 / databaseFields:346 / classListEntries:28`。
 - ⚠ 重取基线两坑：① `pnpm update:compatibility-baseline` 的输出不过 prettier，必须紧跟 `pnpm exec prettier --write test/structure-baseline/compatibility-baseline.json`；② 重取前先 `pnpm test:compatibility` 拿漂移清单**逐项审计**。
-- 根 `test:client` 592/598（6 项既有红：vendor 锁 2、uniflex 缺包 1、`loginFlow.ts` 源码 pin 3）；`typecheck:client` 55 项全在 `ui-uniflex`；`sync-client --check` 62 项缺 Creator `.meta`。
+- 根 `test:client` 592/598（6 项既有红：vendor 锁 2、uniflex 缺包 1、`loginFlow.ts` 源码 pin 3）；`typecheck:client` 55 项全在 `ui-uniflex`；`sync-client --check` **162 → 合入 `origin/new` 后 161 项**缺 Creator `.meta`（全部落在上游新增文件上，需开一次 Creator 生成），属既有基线。
 - 改 `apps/client/src/app/**` 或 `Main.ts` 属 §12.3 显式框架侵入，须声明后 `node scripts/protected-paths-lock.mjs --write`。
 
 ## P6 旧协议链清理（2026-09-20 已清完，含第二轮续扫）
