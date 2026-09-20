@@ -1,7 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
-import { TabBar } from '../../../components/tab/TabBar';
+import { flagTab, TabBar } from '../../../components/tab/TabBar';
 import { AllianceTerritoryFortPanel } from './AllianceTerritoryFortPanel';
 import { AllianceTerritoryLandPanel } from './AllianceTerritoryLandPanel';
 import { AllianceTerritoryPortPanel } from './AllianceTerritoryPortPanel';
@@ -49,7 +49,7 @@ export const AllianceTerritoryPanel = defineComponent<AllianceTerritoryPanelProp
             <AllianceTerritoryPortPanel visible={tab === 'port'} onAction={p.onAction} />
             <AllianceTerritoryFortPanel visible={tab === 'fort'} onAction={p.onAction} />
 
-            <TabBar kind="flag" left={14} top={262} itemWidth={170} selected={tab}
+            <TabBar skin={flagTab} left={14} top={262} itemWidth={170} selected={tab}
                 items={[{ id: 'land', label: '联盟领地' }, { id: 'port', label: '港口' }, { id: 'fort', label: '要塞' }]}
                 onSelect={(id) => { if (id === 'land' || id === 'port' || id === 'fort') selectTab(id); }} />
 

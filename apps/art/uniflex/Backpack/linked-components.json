@@ -13,7 +13,7 @@
     },
     {
       "key": "PanelTab",
-      "source": "apps/client/src/ui-uniflex/components/tab/PanelTab.tsx",
+      "source": "apps/client/src/ui-uniflex/components/tab/Tab.tsx",
       "psd": "components/PanelTab/component.psd",
       "guid": "d3a66a5e-06c8-9fce-bd38-a6ef38a4c979",
       "width": 134,

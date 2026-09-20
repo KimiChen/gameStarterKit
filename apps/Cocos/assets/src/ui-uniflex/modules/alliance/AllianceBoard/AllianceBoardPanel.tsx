@@ -2,7 +2,7 @@ import { defineComponent, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { TabBar } from '../../../components/tab/TabBar';
+import { mailTab, TabBar } from '../../../components/tab/TabBar';
 import { AllianceBoardApplyPanel } from './AllianceBoardApplyPanel';
 import { AllianceBoardMessagePanel } from './AllianceBoardMessagePanel';
 
@@ -43,7 +43,7 @@ export const AllianceBoardPanel = defineComponent<AllianceBoardPanelProps>((p) =
 
             <ScreenHeader title={p.title ?? '联盟'} top={144} />
 
-            <TabBar left={13} top={262} itemWidth={200} selected={tab}
+            <TabBar skin={mailTab} left={13} top={262} itemWidth={200} selected={tab}
                 items={[{ id: 'board', label: '留言板' }, { id: 'apply', label: '申请列表' }]}
                 onSelect={(id) => { if (id === 'board' || id === 'apply') selectTab(id); }} />
 

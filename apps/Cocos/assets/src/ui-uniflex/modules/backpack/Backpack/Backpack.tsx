@@ -6,7 +6,7 @@ import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
-import { TabBar } from '../../../components/tab/TabBar';
+import { mailTab, TabBar } from '../../../components/tab/TabBar';
 
 export type BackpackAction = {
     readonly id: string;
@@ -112,7 +112,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
             <ResourceCounter icon={resourceIcon} left={591} top={22} value={resources[3]}
                 id="resource-4" onClick={() => emit('resource-4', 'primary')} />
 
-            <TabBar left={14} top={118} itemWidth={134} gap={13} selected={tabs[activeTab].id}
+            <TabBar skin={mailTab} left={14} top={118} itemWidth={134} gap={13} selected={tabs[activeTab].id}
                 items={tabs} onSelect={(_id, index) => selectTab(index)} />
 
             <view visible={hasItems} name="Backpack/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>
