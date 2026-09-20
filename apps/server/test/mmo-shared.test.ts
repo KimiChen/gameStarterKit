@@ -41,12 +41,12 @@ test("world：地址 s<sId>/<mapId>/<line> 往返、坏形态 null；常量速�
   assert.equal(withinRadius({ x: 0, y: 0 }, { x: 3, y: 4 }, 4.99), false);
 });
 
-test("content：灰盒包过闸并可索引（一图一怪一技能，三只 slime 一处刷新点）", () => {
+test("content：灰盒包过闸并可索引（灰盒 v5：主图三只 slime + 野猪 + 田鼠三处刷新点，共 5 只）", () => {
   const pack = validateContentPack(clone(GREYBOX_PACK));
   assert.deepEqual(pack, GREYBOX_PACK, "规范化副本 = 字面量（无隐式字段）");
   const index = indexContentPack(pack);
   assert.equal(index.mapById.get(GREYBOX_MAP_ID)?.aoi.viewRadius, 400);
-  assert.equal(index.spawnsByMap.get(GREYBOX_MAP_ID)?.reduce((sum, spawn) => sum + spawn.count, 0), 3);
+  assert.equal(index.spawnsByMap.get(GREYBOX_MAP_ID)?.reduce((sum, spawn) => sum + spawn.count, 0), 5, "三只 slime + 野猪 + 田鼠");
   assert.equal(index.creatureById.get("slime")?.hpMax, 30);
   assert.equal(index.spellById.get("strike")?.kind, "damage");
 });

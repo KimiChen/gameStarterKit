@@ -1,6 +1,6 @@
 /**
  * mmoWorld 服务端 WorldMode（MK0-B3，无头：WorldRuntime 直驱，⛔ Colyseus / DB）：
- *  - onWorldInit 按内容包为本图撒怪（三只 slime，确定性抖动在 spawn 附近）；图不在包内 ⇒ recover 拒；
+ *  - onWorldInit 按内容包为本图撒怪（灰盒 v5：三只 slime + 野猪 + 田鼠，确定性抖动在 spawn 附近）；图不在包内 ⇒ recover 拒；
  *  - onBeforeAdmit 预热角色行 → onAdmit：有角色放行、无角色拒；onEnter 落出生点或 persona 检查点位置（同图才回灌）；
  *  - move dir ⇒ 常量速度积分（120 × 0.05 = 6 / 步）并钳图；target ⇒ 直奔并到达停下；停下不再前进；
  *  - 视野流：首个 baseline = 本人 + 三只 slime；update 只在位置变时；本人私有流 hp / mp 一次；pickup / transfer ⇒ opResult rejected；
@@ -15,7 +15,9 @@
  *    （loot / scriptVars / timers / regions）往返、timers 按 tick 差重排、regions 覆盖内容包缺省；v1 快照（无新字段）照常回灌；
  *  - MK1-B6 生产节拍（MMO_WORLD_TUNING）：角色位置每 2 步进观察者流、停下那步补 bump（终点必到）、本人 pos 回执仍每步；兴趣集每 4 步重算（enter 最多晚 3 步）、离座清缓存；
  *  - MK2-B1 combat：瞬发 strike 扣怪血 + 记仇恨 + 冷却进 private（集合变化才发）；拒绝原因经 opResult（cast:<seq>）；读条 fireball 到点结算 / 移动打断；治疗 / buff aura 到期消失；
- *    怪死 ⇒ 离开视野、按 respawnSec 复活回出生位；角色死 ⇒ 不能动不能施、5 s 后回复活点满血；同一命令序 + 同一种子 ⇒ 同一 hp 轨迹（无头重放）。
+ *    怪死 ⇒ 离开视野、按 respawnSec 复活回出生位；角色死 ⇒ 不能动不能施、5 s 后回复活点满血；同一命令序 + 同一种子 ⇒ 同一 hp 轨迹（无头重放）；
+ *  - MK2-B2 ai：野猪 aggro 150 内主动追击、射程内 strike、玩家跑出拴绳 400 ⇒ evade（清仇恨回满血回家）；slime leash 0 只在射程内还手不追；田鼠三点巡逻；分桶每 4 步思考一次、
+ *    假时钟下超预算顺延且下一 tick 优先；绕墙追击不进阻挡格；找路回执按 instanceEpoch / entityVersion 迟到即丢。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
@@ -24,14 +26,16 @@ import {
     C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate,
     type IMmoWorldTransferReady, type IMmoWorldUpdate,
 } from "@game/shared";
-import { GREYBOX_SPELLS } from "@game/shared/kits/mmo/content/greybox";
+import { GREYBOX_BOAR_ID, GREYBOX_RAT_ID, GREYBOX_SPELLS } from "@game/shared/kits/mmo/content/greybox";
 import { indexContentPack, validateContentPack, type IContentPack, type IContentPackIndex } from "@game/shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
 import type { MmoClassId, MmoFactionId } from "@game/shared/kits/mmo/api/characters/index";
 import type { MmoCharacterRow } from "../src/kits/mmo/api/characters/index";
 import { buildCheckpointEnvelope } from "../src/rooms/core/CheckpointPort";
 import { WorldRuntime, type WorldCheckpointBatch } from "../src/rooms/core/WorldRuntime";
-import { MMO_INTEREST_MAX_ENTITIES, createMmoWorldMode, type MmoWorldMode } from "../src/rooms/modes/mmoWorld/index";
+import { MMO_INTEREST_MAX_ENTITIES, createMmoWorldMode, type MmoWorldMode, type MmoWorldModeOptions } from "../src/rooms/modes/mmoWorld/index";
+import { parseCollisionGrid } from "@game/shared/kits/mmo/api/movement/index";
+import type { PathResult, PathfinderPort } from "../src/kits/mmo/api/ai/index";
 import { createRoomStateForMode, type MmoWorldRoomState } from "../src/rooms/schema/GameRoomState";
 import type { WorldTransferReady, WorldTransferTarget } from "../src/rooms/WorldMode";
 import type { MmoInstanceSnapshot, MmoPersonaSnapshot } from "../src/kits/mmo/persistence/checkpoint";
@@ -55,7 +59,7 @@ interface Harness {
 
 type TransferPort = (session: string, target: WorldTransferTarget) => Promise<WorldTransferReady>;
 
-function harness(content: IContentPackIndex = CONTENT, transfer: TransferPort | null = null, tuning: { characterUpdateEveryTicks?: number; interestEveryTicks?: number } = {}): Harness {
+function harness(content: IContentPackIndex = CONTENT, transfer: TransferPort | null = null, tuning: Partial<MmoWorldModeOptions> = {}): Harness {
     const characters = new Map<string, MmoCharacterRow>();
     const mode = createMmoWorldMode({ content, loadCharacter: async (_sId, personaId) => characters.get(personaId) ?? null, checkpoint: null, ...tuning });
     const state = createRoomStateForMode("mmoWorld") as MmoWorldRoomState;
@@ -98,16 +102,19 @@ const drain = (h: Harness, session: string) => h.runtime.drainOutbound(session).
 const baselineItems = (messages: readonly { type: string; payload: unknown }[]): IMmoEntityWire[] =>
     messages.filter((message) => message.type === S2C.MmoWorldBaselineChunk).flatMap((message) => (message.payload as IMmoWorldBaselineChunk).items);
 
-test("撒怪：本图三只 slime 落在 spawn 附近（确定性）；图不在包内 ⇒ recover 拒；无角色的 persona 准入拒", async () => {
+test("撒怪：本图五只怪（三只 slime + 野猪 + 田鼠）落在 spawn 附近（确定性）；图不在包内 ⇒ recover 拒；无角色的 persona 准入拒", async () => {
     const h = harness();
     await activeWorld(h);
     const creatures = [...h.mode.__probe.entities().values()].filter((entity) => entity.kind === "creature");
-    assert.equal(creatures.length, 3);
+    assert.equal(creatures.length, 5, "三只 slime + 野猪 + 田鼠（灰盒 v5）");
     for (const creature of creatures) {
-        assert.ok(Math.abs(creature.x - 1200) <= 40 && Math.abs(creature.y - 1000) <= 40, `${creature.id} 在 spawn 抖动半径内 (${creature.x}, ${creature.y})`);
-        assert.deepEqual([creature.templateId, creature.hp, creature.hpMax], ["slime", 30, 30]);
+        const spawn = GREYBOX_PACK.spawns.find((candidate) => creature.id.startsWith(`${candidate.spawnId}:`))!;
+        const template = GREYBOX_PACK.creatures.find((candidate) => candidate.templateId === creature.templateId)!;
+        assert.ok(Math.abs(creature.x - spawn.pos.x) <= 40 && Math.abs(creature.y - spawn.pos.y) <= 40, `${creature.id} 在 spawn 抖动半径内 (${creature.x}, ${creature.y})`);
+        assert.deepEqual([creature.templateId, creature.hp, creature.hpMax], [spawn.templateId, template.hpMax, template.hpMax]);
     }
-    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 4, 0]);
+    assert.deepEqual(creatures.map((creature) => creature.templateId).sort(), ["boar", "rat", "slime", "slime", "slime"]);
+    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 5, 0]);
     const other = harness();
     await assert.rejects(other.runtime.recover({ instanceId: "i2", mapId: "nowhere", line: 0, authorityEpoch: 1, checkpoint: null }), /不在内容包/u);
     const req = request("s0", "p-nobody");
@@ -157,7 +164,7 @@ test("检查点：persona 快照 {mapId,x,y,hp,mp} + 分线 creatures；onRestor
     const persona = checkpoint.persona[0]!.snapshot as MmoPersonaSnapshot;
     assert.deepEqual(persona, { mapId: "greybox", x: 1000, y: 988, hp: 100, mp: 50 });
     const instance = checkpoint.instance as MmoInstanceSnapshot;
-    assert.deepEqual([instance.mapId, instance.packId, instance.creatures.length], ["greybox", "greybox", 3]);
+    assert.deepEqual([instance.mapId, instance.packId, instance.creatures.length], ["greybox", "greybox", 5]);
 
     // 恢复：怪物按快照位置回灌（挪一只到 (1300, 900)）
     const moved = { ...instance, creatures: instance.creatures.map((creature, index) => (index === 0 ? { ...creature, x: 1300, y: 900, hp: 5 } : creature)) };
@@ -165,7 +172,7 @@ test("检查点：persona 快照 {mapId,x,y,hp,mp} + 分线 creatures；onRestor
     await activeWorld(recovered, "greybox", moved);
     const restored = recovered.mode.__probe.entities().get(instance.creatures[0]!.id)!;
     assert.deepEqual([restored.x, restored.y, restored.hp], [1300, 900, 5]);
-    assert.ok(recovered.mode.__probe.log.includes("restore:3"));
+    assert.ok(recovered.mode.__probe.log.includes("restore:5"));
 
     // 同图 persona 检查点回灌；异图 ⇒ 出生点
     const sameMap = buildCheckpointEnvelope({ rev: 3, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 1, snapshot: { mapId: "greybox", x: 1500, y: 700, hp: 40, mp: 10 } satisfies MmoPersonaSnapshot });
@@ -443,10 +450,16 @@ test("生产节拍（MMO_WORLD_TUNING 2 / 4）：位置每 2 步进流一次（�
 
 const resultsOf = (h: Harness, session: string): IMmoWorldOpResult[] => h.direct.filter((m) => m.session === session && m.type === S2C.MmoWorldOpResult).map((m) => m.payload as IMmoWorldOpResult);
 const privatesOf = (messages: readonly { type: string; payload: unknown }[]): IMmoWorldPrivate[] => messages.filter((m) => m.type === S2C.MmoWorldPrivate).map((m) => m.payload as IMmoWorldPrivate);
-const nearestSlime = (h: Harness): { id: string; x: number; y: number } => [...h.mode.__probe.entities().values()].filter((e) => e.kind === "creature").sort((a, b) => a.id < b.id ? -1 : 1)[0]!;
+const nearestSlime = (h: Harness): { id: string; x: number; y: number } => [...h.mode.__probe.entities().values()].filter((e) => e.kind === "creature" && e.templateId === "slime").sort((a, b) => a.id < b.id ? -1 : 1)[0]!;
+/** MK2-B1 战斗用例的内容：slime 不带技能（木桩），把玩家侧施法管线与 MK2-B2 的怪物还手分开验（还手见 ai 用例）。 */
+const DUMMY_CONTENT: IContentPackIndex = (() => {
+    const pack = clone(GREYBOX_PACK) as unknown as MutablePack;
+    pack.creatures = pack.creatures.map((creature) => (creature.templateId === "slime" ? { ...creature, spells: [] } : creature));
+    return indexContentPack(validateContentPack(pack));
+})();
 
 test("combat（MK2-B1）：瞬发 strike 扣怪血 / 记仇恨 / 冷却进 private（集合变化才发）；拒绝：未知技能 / 未学 / 冷却 / 射程 / 无目标；读条 fireball 移动打断与到点结算 + 扣蓝；治疗 / buff aura 到期", async () => {
-    const h = harness();
+    const h = harness(DUMMY_CONTENT);
     await activeWorld(h);
     const slime = nearestSlime(h);
     await seat(h, "a", "p-a", personaAt(slime.x - 30, slime.y)); // 战士，距怪 30（strike 射程 60）
@@ -520,7 +533,7 @@ test("combat（MK2-B1）：瞬发 strike 扣怪血 / 记仇恨 / 冷却进 priva
 });
 
 test("combat（MK2-B1）：怪死 ⇒ 离开视野 + 按 respawnSec 复活回出生位；角色死 ⇒ 不能动 / 不能施，5 s 后回复活点满血；同一命令序 + 同一种子 ⇒ 同一 hp 轨迹（无头重放）", async () => {
-    const h = harness();
+    const h = harness(DUMMY_CONTENT);
     await activeWorld(h);
     const slime = nearestSlime(h);
     await seat(h, "a", "p-a", personaAt(slime.x - 30, slime.y));
@@ -550,7 +563,7 @@ test("combat（MK2-B1）：怪死 ⇒ 离开视野 + 按 respawnSec 复活回出
     assert.deepEqual([fighter.alive, fighter.hp, fighter.x, fighter.y], [true, 100, 1000, 1000], "回复活点满血");
     // 无头重放：同种子同命令序 ⇒ 同轨迹
     const trajectory = async (): Promise<number[]> => {
-        const r = harness();
+        const r = harness(DUMMY_CONTENT);
         await activeWorld(r);
         const target = nearestSlime(r);
         await seat(r, "a", "p-a", personaAt(target.x - 30, target.y));
@@ -565,4 +578,121 @@ test("combat（MK2-B1）：怪死 ⇒ 离开视野 + 按 respawnSec 复活回出
     const first = await trajectory();
     assert.deepEqual(await trajectory(), first, `重放一致：${first.join(",")}`);
     assert.ok(first[0]! > first[1]! && first[1]! >= first[2]!, "每轮都在掉血");
+});
+
+const creatureOf = (h: Harness, templateId: string) => [...h.mode.__probe.entities().values()].find((e) => e.kind === "creature" && e.templateId === templateId)!;
+const dist = (a: { x: number; y: number }, b: { x: number; y: number }): number => Math.hypot(a.x - b.x, a.y - b.y);
+
+test("ai（MK2-B2）：野猪 aggro 内主动追击 → 射程内 strike 扣血；玩家跑出拴绳 ⇒ evade（清仇恨、回满血、回家转 idle）；slime leash 0 只在射程内还手不追", async () => {
+    const h = harness();
+    await activeWorld(h);
+    const boar = creatureOf(h, GREYBOX_BOAR_ID);
+    await seat(h, "a", "p-a", personaAt(boar.origin.x, boar.origin.y - 100)); // aggro 150 内
+    step(h);
+    drain(h, "a");
+    const fighter = h.mode.__probe.moverOf("a")!;
+    step(h, 6);
+    assert.deepEqual([h.mode.__probe.brainOf(boar.id)?.state, h.mode.__probe.brainOf(boar.id)?.targetId], ["chase", fighter.id], "分桶思考后进入追击");
+    const before = dist(boar, fighter);
+    step(h, 10);
+    assert.ok(dist(boar, fighter) < before, "在靠近");
+    step(h, 40);
+    assert.ok(dist(boar, fighter) <= 60 + 8, `追到射程附近 ${dist(boar, fighter).toFixed(1)}`);
+    assert.ok(fighter.hp < 100, `射程内 strike 扣血：${fighter.hp}`);
+    assert.ok(h.mode.__probe.log.some((line) => line.startsWith(`hit:${boar.id}>`)), "怪物走同一施法管线");
+    // 玩家向北跑出拴绳（野猪 90/s 追不上 120/s）
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 1, target: { x: fighter.x, y: boar.origin.y - 700 } });
+    step(h, 200);
+    assert.deepEqual([boar.threat.size, boar.targetId, boar.hp], [0, null, boar.hpMax], "evade：清仇恨 / 清目标 / 回满血");
+    step(h, 200);
+    assert.ok(dist(boar, boar.origin) <= 8, `回到出生位 ${dist(boar, boar.origin).toFixed(1)}`);
+    assert.equal(h.mode.__probe.brainOf(boar.id)?.state, "idle");
+    // slime：leash 0 ⇒ 被打只还手不追
+    const slime = nearestSlime(h);
+    const slimeHome = { x: slime.x, y: slime.y };
+    await seat(h, "b", "p-b", personaAt(slime.x - 30, slime.y));
+    step(h);
+    const b = h.mode.__probe.moverOf("b")!;
+    h.runtime.enqueue("b", C2S.MmoWorldCast, { seq: 1, spellId: GREYBOX_SPELLS.strike, targetId: slime.id });
+    step(h, 6);
+    assert.ok(b.hp < 100, `slime 还手：${b.hp}`);
+    const slimeEntity = h.mode.__probe.entities().get(slime.id)!;
+    h.runtime.enqueue("b", C2S.MmoWorldMove, { seq: 1, target: { x: slime.x - 150, y: slime.y } });
+    step(h, 40);
+    const hpAfterRetreat = b.hp;
+    step(h, 60);
+    assert.deepEqual([slimeEntity.x, slimeEntity.y, b.hp], [slimeHome.x, slimeHome.y, hpAfterRetreat], "leash 0：不离开出生位，射程外不再挨打");
+});
+
+test("ai（MK2-B2）：田鼠三点巡逻；分桶每 4 步思考一次；假时钟超预算顺延且下一 tick 优先（不饿死）", async () => {
+    const h = harness();
+    await activeWorld(h);
+    const rat = creatureOf(h, GREYBOX_RAT_ID);
+    const visited = { b: false, c: false, home: false };
+    for (let index = 0; index < 400; index += 1) {
+        step(h);
+        if (dist(rat, { x: 700, y: 500 }) <= 10) visited.b = true;
+        if (visited.b && dist(rat, { x: 700, y: 700 }) <= 10) visited.c = true;
+        if (visited.c && dist(rat, { x: 500, y: 500 }) <= 10) visited.home = true;
+    }
+    assert.deepEqual(visited, { b: true, c: true, home: true }, "三点巡逻转了一圈");
+    const ticks: number[] = [];
+    for (let index = 0; index < 12; index += 1) { step(h); const at = h.mode.__probe.brainOf(rat.id)!.thinkTick; if (ticks.at(-1) !== at) ticks.push(at); }
+    assert.ok(ticks.length >= 3 && ticks.slice(1).every((at, i) => at - ticks[i]! === 4), `每 4 步思考一次：${ticks.join(",")}`);
+    // 预算：300 只挤一桶 + 假时钟每读一次走 1.5 ms、预算 2 ms ⇒ 每 tick 只思考 2 只，其余顺延且轮转（160 步后人人都思考过 = 不饿死）
+    const crowded = clone(GREYBOX_PACK) as unknown as MutablePack;
+    crowded.spawns = Array.from({ length: 6 }, (_u, i) => ({ spawnId: `camp-${i}`, mapId: "greybox", templateId: "slime", pos: { x: 1000 + i * 10, y: 1000 }, count: 50, waypoints: [], managed: "kit" as const }));
+    let clock = 0;
+    const budgeted = harness(indexContentPack(validateContentPack(crowded)), null, { aiBuckets: 1, aiBudgetMs: 2, aiClock: () => { clock += 1.5; return clock; } });
+    await activeWorld(budgeted);
+    step(budgeted);
+    const stats = { ...budgeted.mode.__probe.aiStats() };
+    assert.deepEqual([stats.thought, stats.deferred], [2, 298], "预算 2 ms：每 tick 思考 2 只、298 只顺延（crowded 包只有 300 只 slime）");
+    step(budgeted, 159);
+    const brains = [...budgeted.mode.__probe.entities().values()].filter((e) => e.brain).map((e) => e.brain!.thinkTick);
+    assert.deepEqual([brains.length, brains.every((at) => at >= 0), Math.max(...brains) - Math.min(...brains) <= 149], [300, true, true], "160 步后 300 只都思考过且轮转公平（最早与最晚相差 ≤ 149 步）");
+});
+
+test("ai（MK2-B2）：绕墙追击不进阻挡格；找路回执按 entityVersion / instanceEpoch 迟到即丢", async () => {
+    // 野猪出生在墙西侧、aggro 500 拴绳 900；玩家在墙东侧 ⇒ A* 绕墙
+    const pack = clone(GREYBOX_PACK) as unknown as MutablePack;
+    pack.creatures = pack.creatures.map((c) => (c.templateId === GREYBOX_BOAR_ID ? { ...c, aggroRadius: 500, leashRadius: 900 } : c));
+    pack.spawns = pack.spawns.map((s) => (s.spawnId === "boar-den" ? { ...s, pos: { x: 1400, y: 1000 } } : s));
+    const content = indexContentPack(validateContentPack(pack));
+    const grid = parseCollisionGrid(content.mapById.get("greybox")!.collision, content.mapById.get("greybox")!.size)!;
+    const h = harness(content);
+    await activeWorld(h);
+    const boar = creatureOf(h, GREYBOX_BOAR_ID);
+    await seat(h, "a", "p-a", personaAt(1800, 1000));
+    step(h);
+    const player = h.mode.__probe.moverOf("a")!;
+    let closest = Number.POSITIVE_INFINITY;
+    for (let index = 0; index < 400; index += 1) {
+        step(h);
+        assert.equal(grid.blocked(boar.x, boar.y), false, `第 ${index} 步野猪不在墙里 (${boar.x.toFixed(0)}, ${boar.y.toFixed(0)})`);
+        closest = Math.min(closest, dist(boar, player));
+    }
+    assert.ok(closest <= 70, `绕墙后追到射程附近：${closest.toFixed(1)}`);
+    // 迟到回执：可控找路端口
+    const requests: { input: Parameters<PathfinderPort["request"]>[0]; resolve: (r: PathResult) => void }[] = [];
+    const port: PathfinderPort = { request: (input) => new Promise((resolve) => { requests.push({ input, resolve }); }) };
+    const l = harness(CONTENT, null, { pathfinder: port });
+    await activeWorld(l);
+    const boar2 = creatureOf(l, GREYBOX_BOAR_ID);
+    await seat(l, "a", "p-a", personaAt(boar2.origin.x, boar2.origin.y - 100));
+    step(l, 6);
+    const boarRequests = requests.filter((request) => request.input.entityId === boar2.id);
+    assert.equal(boarRequests.length, 1, "acquire 发一次找路（田鼠巡逻的请求另算）");
+    const first = boarRequests[0]!;
+    assert.deepEqual([l.mode.__probe.brainOf(boar2.id)?.pathPending, l.mode.__probe.brainOf(boar2.id)?.pathVersion], [true, 1]);
+    first.resolve({ instanceEpoch: 99, entityId: boar2.id, entityVersion: 1, path: [{ x: 1, y: 1 }] });
+    await new Promise((resolve) => setImmediate(resolve));
+    step(l);
+    assert.deepEqual([l.mode.__probe.brainOf(boar2.id)?.pathPending, l.mode.__probe.brainOf(boar2.id)?.path], [true, null], "权威换代的回执丢弃");
+    l.mode.__probe.damage(boar2.id, 40); // 死亡 ⇒ pathVersion +1
+    step(l);
+    first.resolve({ instanceEpoch: 1, entityId: boar2.id, entityVersion: 1, path: [{ x: 2, y: 2 }] });
+    await new Promise((resolve) => setImmediate(resolve));
+    step(l);
+    assert.deepEqual([l.mode.__probe.brainOf(boar2.id)?.pathVersion, l.mode.__probe.brainOf(boar2.id)?.path], [2, null], "版本变了的回执丢弃");
 });

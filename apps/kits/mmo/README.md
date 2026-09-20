@@ -11,7 +11,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | --- | --- | --- |
 | MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | B1–B6 ✅ 2026-09-20 交付（kit 0.1.6）；**退出待拍板**：场景 B 热点 100 人未达 kill criterion（50 人贴线达标），见 MMO.md §12 MK1 行 |
-| MK2 模拟闭环 | combat + ai 面、掉落 | 施工中：B1 combat 面 ✅ 2026-09-20（kit 0.1.7；B2–B3 未开工） |
+| MK2 模拟闭环 | combat + ai 面、掉落 | 施工中：B1 combat 面 ✅、B2 ai 面 ✅ 2026-09-20（kit 0.1.8；B3 未开工） |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 未开工 |
 | MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 未开工 |
 
@@ -75,6 +75,16 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 服务端 mode | 实体加 attack / defense / spells / auras / threat / casting / targetId / alive / respawnDueTick / origin；`c2s.mmoWorld.target` 选目标；`c2s.mmoWorld.cast` ⇒ checkCast ⇒ 读条（castMs > 0，移动即打断 ⇒ rejected moved）或瞬发 ⇒ 到点二次校验 ⇒ 扣蓝 / 记冷却 / 施效（直伤按公式 + 分线随机流浮动、记仇恨；治疗；aura）⇒ opResult ok；hp ≤ 0 ⇒ 死亡（清热状态、怪物离开视野、按 respawnSec / `MMO_PLAYER_RESPAWN_MS` 5 s 复活、`checkpointOnDeath` ⇒ 强制点）；private 流加 `cooldowns`（spellId → 剩余 ms，只在集合变化时发 ⛔ 每 tick 倒计时）与 `casting` ⇒ modeVersion 5；战斗步在移动之后、出站之前按实体插入序结算（同命令序 + 同种子 ⇒ 同轨迹） |
 | 客户端 | `api/combat`：`CooldownModel`（private 集合 → 本地倒计时）、`pickHostileTarget`（最近存活怪）；`room.target / cast`；gameplay `target` / `cast` 输入（无目标自动选最近怪并同步目标；本地冷却中只提示不发）；模型加 targetId / spells（职业技能栏）/ cooldowns / casting；HUD「技1 / 技2」+ 目标与冷却文案 |
 | 用例 | 服务端 `mmo-combat.test.ts`（公式 / aura / checkCast 顺序）、`mmoWorld-mode.test.ts` 新增 2（瞬发 / 拒绝 / 读条打断与到点 / 治疗 / buff 到期；怪死复活 / 角色死复活 / 无头重放一致）；客户端 `mmo-combat.test.ts` + `mmoWorld-gameplay` 战斗用例 |
+
+## ai 面（MK2-B2）
+
+| 层 | 内容 |
+| --- | --- |
+| shared `api/ai` | 行为词汇（内容包 `behavior` idle / patrol / aggro）；脑状态 idle / patrol / chase / attack / return；纯决策 `decide(perception)`：有活目标 ⇒ 出拴绳 evade / 射程内 cast / leash 0 只还手 / 否则 chase；无目标 ⇒ aggro 内候选 acquire / return 回家・到家 evade / patrol 换点 / 离家回家 / idle；`bucketOf` / `shouldThink`；`./nav` 网格 A*（直线直达短路、八邻域不穿角、确定性、展开上限 fail-closed、共线去点） |
+| 服务端 | `api/ai`：`PathfinderPort`（请求带 instanceEpoch + entityVersion）+ 缺省进程内实现 `createInProcessPathfinder` + `isStalePathResult`；组合根可注入 compute 池实现（`core/compute/tasks/kits/mmo/pathfind.ts` = 同一 A* 的 structured-clone 任务，含 admission）；kit 内部 `ai/scheduler.ts` AiScheduler：每 tick 只 tick % buckets 那桶 + wall 预算内思考，超预算顺延、下一 tick 优先（不饿死）；mode：怪物脑（状态 / 巡逻点序 / 路径 / 找路版本），感知 = 仇恨最高的活目标 / aggroRadius 内最近可见角色（位面 / 隐身规则）/ 可用技能射程 / 距出生位；动作 acquire / chase（沿路径点地，目标离路径终点超一格重找）/ cast（同一施法管线）/ evade（清仇恨、回满血、回家）/ patrol；怪物移动每 tick 走同一 resolveMove（撞墙且无路 ⇒ 重找）；死亡 / 复活脑复位；`MMO_AI_BUCKETS = 4`、`MMO_AI_TICK_BUDGET_MS = 2`（候选，§11.2） |
+| 内容 | 灰盒 v5：野猪 boar（aggro 150 / 拴绳 400 / 90 速 / strike）在 (1000,1500)、田鼠 rat（patrol 三点）在 (500,500)；slime 仍 idle（leash 0 只还手） |
+| 用例 | 服务端 `mmo-ai.test.ts`（decide 十三条 / 分桶 / A* 绕墙・终点阻挡・展开上限 / 调度器预算顺延 / compute 任务 / 迟到判定）、`mmoWorld-mode.test.ts` 新增 3（野猪追击 → 射程内扣血 → 出拴绳 evade 回家；slime 还手不追；田鼠巡逻一圈 / 每 4 步思考 / 假时钟顺延；绕墙不进阻挡格 / 权威换代・版本变更的回执丢弃） |
+| 偏差 | 找路端口回执可同步（缺省进程内：同 tick 生效 ⇒ 无头重放确定性）或 Promise（compute 池：下一步消费）；compute 池接线留给组合根（kit ⛔ import compute）；仇恨 = 直伤值，治疗 / 增益不计；怪物无阵营，感知用位面 / 隐身规则；MK2-B1 战斗用例改用 slime 无技能的木桩内容（还手归 ai 用例） |
 
 ## 社交包装（MK1-B5）
 

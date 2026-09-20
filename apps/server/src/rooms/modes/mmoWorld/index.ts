@@ -11,6 +11,9 @@
  *  - combat（MK2-B1，`combat` 面纯函数 + 本 mode 的施法管线）：target 选目标；cast ⇒ checkCast（技能 / 已学 / 存活 / 施法中 / 冷却 / 耗蓝 / 目标 / 射程）⇒ 读条（castMs > 0）
  *    或瞬发；读条期间移动即打断；到点二次校验后扣蓝 / 记冷却 / 施效（直伤按 combat 面公式 + 分线随机流浮动、治疗、buff / debuff aura）；hp ≤ 0 ⇒ 死亡
  *    （清热状态、怪物离开视野、按 respawnSec / MMO_PLAYER_RESPAWN_MS 复活、checkpointOnDeath ⇒ 强制点）；回执经 opResult（clientReqId = cast:<seq>）；同一命令序 + 同一种子 ⇒ 同一结果（无头重放）；
+ *  - ai（MK2-B2，`ai` 面 + kit 内部 ai/scheduler）：怪物分桶思考（每 tick 只 tick % buckets 那桶，再受 wall 预算，超预算顺延不饿死）：感知（仇恨最高的活目标 / aggroRadius 内最近可见角色 /
+ *    可用技能射程 / 距出生位）→ 纯决策 decide → 动作（acquire / chase（走 nav A* 路径，找路经 PathfinderPort，回执带 instanceEpoch + entityVersion 迟到即丢）/ cast（同一施法管线）/
+ *    evade（出拴绳：清仇恨、回满血、回家）/ patrol 巡逻点）；怪物移动每 tick 走同一 resolveMove；leash 0 的怪只在射程内还手不追；
  *  - observer（MK1-B2 AOI 接入）：候选来自 kit 网格（`aoi/grid.ts`，格长 = 图的 aoi.cellSize）→ 精确视距（aoi.viewRadius 欧氏）→ 可见性规则
  *    （`aoi/visibility.ts`：位面 / 隐身 / 阵营；本人永远可见）→ 最近优先截到 MMO_INTEREST_MAX_ENTITIES（框架 InterestSet 超限即抛，kit 先收敛）；
  *    公开投影 = IMmoEntityWire（名片含 factionId，⛔ mp 等私有字段）；差分 / baseline / 投递归框架；
@@ -30,8 +33,11 @@ import {
     MMO_PLAYER_RESPAWN_MS, auraOf, castReqIdOf, checkCast, cooldownReadyTick, damageOf, effectiveStats, healOf, needsHostileTarget, threatOf, ticksOf, type IAura,
 } from "@game/shared/kits/mmo/api/combat/index";
 import { applyIntent, parseCollisionGrid, resolveMove, type CollisionGrid } from "../../../kits/mmo/api/movement/index";
+import { AI_ARRIVE_RADIUS, decide, type AiPerception, type AiState, type INavPoint } from "@game/shared/kits/mmo/api/ai/index";
 import { AoiGrid } from "../../../kits/mmo/aoi/grid";
-import { pickInterest } from "../../../kits/mmo/aoi/visibility";
+import { canSee, pickInterest } from "../../../kits/mmo/aoi/visibility";
+import { AiScheduler } from "../../../kits/mmo/ai/scheduler";
+import { createInProcessPathfinder, isDeferredPathResult, isStalePathResult, type PathResult, type PathfinderPort } from "../../../kits/mmo/api/ai/index";
 import { characterOfPersona, type MmoCharacterRow } from "../../../kits/mmo/api/characters/index";
 import { contentIndex } from "../../../kits/mmo/api/content/index";
 import { MMO_WORLD_MODE_ID } from "../../../kits/mmo/host";
@@ -55,6 +61,9 @@ export const MMO_INTEREST_MAX_ENTITIES = 256;
  * 按会话重算（enter / leave 最多晚 150 ms）。`registerMmoWorldWorldMode` 与基准剧本都用它；单测直构 mode 缺省 1 / 1（逐步语义）。
  */
 export const MMO_WORLD_TUNING = Object.freeze({ characterUpdateEveryTicks: 2, interestEveryTicks: 4 });
+/** AI 分桶数（每只怪每 4 步 = 200 ms 思考一次）与每 tick 思考的 wall 预算（§11.2 候选，MK2-B2；超预算顺延）。 */
+export const MMO_AI_BUCKETS = 4;
+export const MMO_AI_TICK_BUDGET_MS = 2;
 
 export interface MmoEntity {
     readonly id: string;
@@ -92,8 +101,10 @@ export interface MmoEntity {
     alive: boolean;
     /** 复活到期 tick（死亡时设；null = 存活） */
     respawnDueTick: number | null;
-    /** 怪物出生位置（复活落点） */
+    /** 怪物出生位置（复活落点 / 拴绳中心） */
     readonly origin: { readonly x: number; readonly y: number };
+    /** 怪物脑（角色 null）：状态 / 巡逻点序 / 当前路径 / 找路版本（目标变了 +1，迟到回执丢）/ 上次思考 tick */
+    readonly brain: { state: AiState; waypointIndex: number; path: INavPoint[] | null; pathPending: boolean; pathVersion: number; pathGoal: INavPoint | null; thinkTick: number } | null;
     x: number;
     y: number;
     /** 公开投影修订号（位置 / hp 变即 +1） */
@@ -118,6 +129,12 @@ export interface MmoWorldModeOptions {
     readonly characterUpdateEveryTicks?: number;
     /** 兴趣集重算节拍（每 N 固定步按会话重算候选 + 规则；其间沿用上次集合、投影仍取当前状态）；缺省 1 = 每步 */
     readonly interestEveryTicks?: number;
+    /** 找路端口（缺省 = 进程内 A*；组合根可注入 compute 池实现）。 */
+    readonly pathfinder?: PathfinderPort;
+    /** AI 分桶数 / 每 tick 思考 wall 预算（ms）/ 时钟（单测注入假时钟钉预算语义）。 */
+    readonly aiBuckets?: number;
+    readonly aiBudgetMs?: number;
+    readonly aiClock?: () => number;
 }
 
 export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
@@ -130,6 +147,9 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         transfersInFlight(): readonly string[];
         /** 战斗接缝（测试）：直接扣血（走同一死亡路径） */
         damage(id: string, amount: number): void;
+        /** AI 接缝（测试）：脑快照 / 调度统计 */
+        brainOf(id: string): { readonly state: AiState; readonly targetId: string | null; readonly path: readonly INavPoint[] | null; readonly pathPending: boolean; readonly pathVersion: number; readonly thinkTick: number } | null;
+        aiStats(): { readonly thought: number; readonly deferred: number };
         /** 检查点接缝（MK2–MK4 接入前的直接写口）：冷却 / timer / 区域开关 / 脚本 var */
         setCooldown(id: string, spellId: string, readyAtTick: number): void;
         setTimer(id: string, dueTick: number): void;
@@ -196,8 +216,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         for (let index = 0; index < key.length; index += 1) hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
         return hash % everyTicks;
     };
-    /** 位置已变但尚未 bump rev 的角色（节拍到 / 停下时补 bump） */
+    /** 位置已变但尚未 bump rev 的实体（节拍到 / 停下时补 bump） */
     const revPending = new Set<string>();
+    /** AI：分桶调度器 + 找路端口 + 找路回执信箱（Promise 回来先入箱，下一步开头按版本消费） */
+    const ai = new AiScheduler({ buckets: options.aiBuckets ?? MMO_AI_BUCKETS, budgetMs: options.aiBudgetMs ?? MMO_AI_TICK_BUDGET_MS, ...(options.aiClock ? { now: options.aiClock } : {}) });
+    let pathfinder: PathfinderPort | null = options.pathfinder ?? null;
+    const pathInbox: PathResult[] = [];
 
     const mapOf = (context: WorldModeContext<MmoWorldRoomState>): IMapDef => {
         if (map === null) {
@@ -205,6 +229,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             if (map === null) throw new Error(`[mmoWorld] 地图 ${context.mapId} 不在内容包 ${content.pack.packId}@${content.pack.version} 内`);
             grid = parseCollisionGrid(map.collision ?? null, map.size);
             aoi = new AoiGrid(map.aoi.cellSize, map.size);
+            if (!pathfinder) {
+                // 缺省进程内找路：nav 网格 = 碰撞网格（无碰撞 ⇒ 全图直线可达，永远走直线）
+                const navCell = map.nav?.cellSize ?? map.collision?.cellSize ?? map.aoi.cellSize;
+                const nav = grid ?? { cellSize: navCell, cols: Math.max(1, Math.ceil(map.size.w / navCell)), rows: Math.max(1, Math.ceil(map.size.h / navCell)), blocked: () => false };
+                pathfinder = createInProcessPathfinder(nav);
+            }
         }
         return map;
     };
@@ -267,10 +297,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
 
     const distanceOf = (a: { readonly x: number; readonly y: number }, b: { readonly x: number; readonly y: number }): number => Math.hypot(a.x - b.x, a.y - b.y);
     const statsOf = (entity: MmoEntity, tick: number) => effectiveStats({ level: entity.level, attack: entity.attack, defense: entity.defense }, entity.auras.values(), tick);
-    /** 施法请求（MK2-B1）：checkCast ⇒ 读条 / 瞬发；回执 clientReqId = cast:<seq>。 */
-    const requestCast = (context: WorldModeContext<MmoWorldRoomState>, session: string, request: IMmoWorldCastReq, tick: number): void => {
-        const caster = moverOf(session);
-        if (!caster) return;
+    /** 施法（角色与怪物共用）：checkCast ⇒ 读条 / 瞬发；有会话的回执 clientReqId = cast:<seq>。返回是否开始施法。 */
+    const castBy = (context: WorldModeContext<MmoWorldRoomState>, caster: MmoEntity, request: { readonly seq: number; readonly spellId: string; readonly targetId?: string }, tick: number): boolean => {
         const reqId = castReqIdOf(request.seq);
         const spell = content.spellById.get(request.spellId);
         const targetId = request.targetId ?? caster.targetId ?? (spell && !needsHostileTarget(spell) ? caster.id : null);
@@ -280,11 +308,19 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             readyTick: caster.cooldowns.get(request.spellId), tick, mp: caster.mp,
             target: target ? { alive: target.alive, distance: distanceOf(caster, target), isSelf: target.id === caster.id } : (targetId !== null ? { alive: false, distance: 0, isSelf: false } : null),
         });
-        if (rejection !== null || !spell) { reject(context, session, reqId, rejection ?? "unknown-spell"); return; }
+        if (rejection !== null || !spell) {
+            if (caster.session) reject(context, caster.session, reqId, rejection ?? "unknown-spell");
+            return false;
+        }
         const castTicks = ticksOf(spell.castMs, context.fixedStepMs);
         caster.casting = { spellId: spell.spellId, targetId: target?.id ?? null, readyTick: tick + castTicks, seq: request.seq };
         if (castTicks === 0) resolveCast(context, caster, tick);
-        else privateDirty.add(session);
+        else if (caster.session) privateDirty.add(caster.session);
+        return true;
+    };
+    const requestCast = (context: WorldModeContext<MmoWorldRoomState>, session: string, request: IMmoWorldCastReq, tick: number): void => {
+        const caster = moverOf(session);
+        if (caster) castBy(context, caster, request, tick);
     };
     /** 施法完成：二次校验（目标存活 / 射程 / 耗蓝）⇒ 扣蓝 / 记冷却 / 施效；随机只经分线随机流。 */
     const resolveCast = (context: WorldModeContext<MmoWorldRoomState>, caster: MmoEntity, tick: number): void => {
@@ -334,6 +370,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         entity.dirX = 0;
         entity.dirY = 0;
         entity.target = null;
+        entity.targetId = null;
+        if (entity.brain) { entity.brain.state = "idle"; entity.brain.path = null; entity.brain.pathPending = false; entity.brain.pathGoal = null; entity.brain.pathVersion += 1; ai.forget(entity.id); }
         revPending.delete(entity.id);
         const template = entity.kind === "creature" ? content.creatureById.get(entity.templateId) : undefined;
         entity.respawnDueTick = tick + ticksOf(template ? template.respawnSec * 1000 : MMO_PLAYER_RESPAWN_MS, context.fixedStepMs);
@@ -356,6 +394,153 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         entity.rev += 1;
         if (entity.session) privateDirty.add(entity.session);
         log.push(`respawn:${entity.id}`);
+    };
+    /** 怪物的"可见" = 位面 / 隐身规则（用 aoi/visibility 的 canSee，怪物无阵营）。 */
+    const creatureCanSee = (creature: MmoEntity, target: MmoEntity): boolean => canSee(creature, target);
+    /** 沿路径走：下一路点作点地目标（到点即换下一个）；没路 ⇒ 直线点地；找路在途 ⇒ 原地等。 */
+    const steer = (entity: MmoEntity, fallback: INavPoint): void => {
+        const brain = entity.brain!;
+        while (brain.path && brain.path.length > 0 && distanceOf(entity, brain.path[0]!) <= AI_ARRIVE_RADIUS) brain.path.shift();
+        const next = brain.path && brain.path.length > 0 ? brain.path[0]! : brain.pathPending ? null : fallback;
+        entity.target = next ? { x: next.x, y: next.y } : null;
+        entity.dirX = 0;
+        entity.dirY = 0;
+    };
+    /** 消费一份找路回执：权威换代 / 版本变了 ⇒ 丢；不可达 ⇒ 停下（下次思考再决定）；有路 ⇒ 立刻沿路走。 */
+    const acceptPathResult = (context: WorldModeContext<MmoWorldRoomState>, result: PathResult): void => {
+        const entity = entities.get(result.entityId);
+        const brain = entity?.brain;
+        if (!entity || !brain || isStalePathResult(result, { instanceEpoch: context.authorityEpoch, entityVersion: brain.pathVersion })) return;
+        brain.pathPending = false;
+        brain.path = result.path ? [...result.path] : null;
+        if (result.path === null || !brain.pathGoal) { brain.pathGoal = null; entity.target = null; return; }
+        if (entity.alive) steer(entity, brain.pathGoal);
+    };
+    /** 找路请求：目标变了 pathVersion + 1；同步回执当场消费，Promise 回执进收件箱、下一步按版本消费（迟到即丢）。 */
+    const requestPath = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity, goal: INavPoint): void => {
+        const brain = entity.brain;
+        if (!brain || !pathfinder) return;
+        brain.pathVersion += 1;
+        brain.pathPending = true;
+        brain.pathGoal = { x: goal.x, y: goal.y };
+        brain.path = null;
+        const version = brain.pathVersion;
+        const failed = (): PathResult => ({ instanceEpoch: context.authorityEpoch, entityId: entity.id, entityVersion: version, path: null });
+        let outcome: PathResult | Promise<PathResult>;
+        try { outcome = pathfinder.request({ instanceEpoch: context.authorityEpoch, entityId: entity.id, entityVersion: version, from: { x: entity.x, y: entity.y }, to: goal }); } catch { outcome = failed(); }
+        if (isDeferredPathResult(outcome)) outcome.then((result) => { pathInbox.push(result); }, () => { pathInbox.push(failed()); });
+        else acceptPathResult(context, outcome);
+    };
+    /** 一只怪思考一次：感知 → decide → 动作。 */
+    const think = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity, tick: number, def: IMapDef): void => {
+        const brain = entity.brain;
+        const template = content.creatureById.get(entity.templateId);
+        if (!brain || !template || !entity.alive) return;
+        brain.thinkTick = tick;
+        // 目标：仇恨最高的活角色；锁定目标死了 / 不在 ⇒ 清
+        let target: MmoEntity | null = entity.targetId === null ? null : entities.get(entity.targetId) ?? null;
+        let best = target && target.alive ? entity.threat.get(target.id) ?? 0 : -1;
+        for (const [id, threat] of entity.threat) {
+            const candidate = entities.get(id);
+            if (candidate && candidate.alive && threat > best) { target = candidate; best = threat; }
+        }
+        if (target && !target.alive) target = null;
+        // 候选：aggroRadius 内最近的可见活角色（无目标时才用）
+        let candidate: MmoEntity | null = null;
+        if (!target && template.aggroRadius > 0) {
+            for (const id of aoiOf(context).candidates(entity, template.aggroRadius, candidates)) {
+                const other = entities.get(id);
+                if (!other || other.kind !== "character" || !other.alive || !creatureCanSee(entity, other)) continue;
+                if (!withinRadius(entity, other, template.aggroRadius)) continue;
+                if (!candidate || distanceOf(entity, other) < distanceOf(entity, candidate) || (distanceOf(entity, other) === distanceOf(entity, candidate) && other.id < candidate.id)) candidate = other;
+            }
+        }
+        const readySpell = entity.spells.map((spellId) => content.spellById.get(spellId)).find((spell) => spell && (entity.cooldowns.get(spell.spellId) ?? 0) <= tick) ?? null;
+        const waypoints = content.spawnsByMap.get(def.mapId)?.find((spawn) => entity.id.startsWith(`${spawn.spawnId}:`))?.waypoints ?? [];
+        const currentWaypoint = waypoints.length > 0 ? waypoints[brain.waypointIndex % waypoints.length]! : null;
+        const arrived = brain.state === "patrol" && currentWaypoint ? distanceOf(entity, currentWaypoint) <= AI_ARRIVE_RADIUS : distanceOf(entity, entity.origin) <= AI_ARRIVE_RADIUS;
+        const perception: AiPerception = {
+            behavior: template.behavior, state: brain.state, distanceToOrigin: distanceOf(entity, entity.origin), aggroRadius: template.aggroRadius, leashRadius: template.leashRadius,
+            target: target ? { distance: distanceOf(entity, target), alive: target.alive } : null,
+            candidate: candidate ? { distance: distanceOf(entity, candidate) } : null,
+            spellRange: readySpell ? readySpell.range : null, waypointCount: waypoints.length, arrived,
+        };
+        const decision = decide(perception);
+        brain.state = decision.state;
+        switch (decision.action.kind) {
+            case "acquire": {
+                entity.targetId = candidate!.id;
+                entity.threat.set(candidate!.id, Math.max(1, entity.threat.get(candidate!.id) ?? 0));
+                requestPath(context, entity, candidate!);
+                steer(entity, candidate!);
+                break;
+            }
+            case "chase": {
+                entity.targetId = target!.id;
+                // 目标离上次找路终点超过一格 ⇒ 重新找路
+                if (!brain.pathPending && (!brain.pathGoal || distanceOf(brain.pathGoal, target!) > (grid?.cellSize ?? def.aoi.cellSize))) requestPath(context, entity, target!);
+                steer(entity, target!);
+                break;
+            }
+            case "cast": {
+                entity.target = null;
+                entity.targetId = target!.id;
+                if (readySpell) castBy(context, entity, { seq: tick, spellId: readySpell.spellId, targetId: target!.id }, tick);
+                break;
+            }
+            case "evade": {
+                entity.threat.clear();
+                entity.targetId = null;
+                entity.casting = null;
+                if (entity.hp !== entity.hpMax) { entity.hp = entity.hpMax; entity.rev += 1; }
+                if (brain.state === "return") { requestPath(context, entity, entity.origin); steer(entity, entity.origin); } else { entity.target = null; brain.path = null; }
+                break;
+            }
+            case "returnHome":
+            case "goHome": {
+                if (!brain.pathPending && (!brain.pathGoal || distanceOf(brain.pathGoal, entity.origin) > 1)) requestPath(context, entity, entity.origin);
+                steer(entity, entity.origin);
+                break;
+            }
+            case "nextWaypoint": {
+                brain.waypointIndex = (brain.waypointIndex + 1) % Math.max(1, waypoints.length);
+                const next = waypoints[brain.waypointIndex]!;
+                requestPath(context, entity, next);
+                steer(entity, next);
+                break;
+            }
+            default: {
+                if (brain.state === "patrol" && currentWaypoint) steer(entity, currentWaypoint);
+                else entity.target = null;
+            }
+        }
+    };
+    /** AI 步（角色移动之后、战斗步之前）：消费找路回执（迟到即丢）→ 分桶 + 预算思考 → 全部活怪按点地目标积分。 */
+    const aiStep = (context: WorldModeContext<MmoWorldRoomState>, tick: number, dtMs: number, def: IMapDef): void => {
+        for (const result of pathInbox.splice(0, pathInbox.length)) acceptPathResult(context, result);
+        const creatureIds: string[] = [];
+        for (const entity of entities.values()) if (entity.brain && entity.alive) creatureIds.push(entity.id);
+        ai.run(ai.due(creatureIds, tick), (id) => { const entity = entities.get(id); if (entity) think(context, entity, tick, def); });
+        for (const entity of entities.values()) {
+            if (!entity.brain || !entity.alive) continue;
+            const result = resolveMove(entity, entity.speedPerSec, dtMs, def.size, grid);
+            if (result.moved) {
+                entity.x = result.x;
+                entity.y = result.y;
+                aoiOf(context).move(entity.id, entity.x, entity.y);
+                if (characterUpdateEveryTicks === 1 || (tick + phaseOf(entity.id, characterUpdateEveryTicks)) % characterUpdateEveryTicks === 0) {
+                    entity.rev += 1;
+                    revPending.delete(entity.id);
+                } else revPending.add(entity.id);
+            } else if (revPending.has(entity.id)) {
+                entity.rev += 1;
+                revPending.delete(entity.id);
+            }
+            entity.target = result.target;
+            if (result.blocked && entity.brain.path === null && !entity.brain.pathPending && entity.brain.pathGoal) requestPath(context, entity, entity.brain.pathGoal);
+            // 到了路点立刻换下一个（⛔ 等下次思考才动）
+            else if (result.arrived && entity.brain.path && entity.brain.path.length > 0 && entity.brain.pathGoal) steer(entity, entity.brain.pathGoal);
+        }
     };
     /** 战斗步（移动之后）：到点的读条施法（按实体插入序，确定性）→ 过期 aura → 死亡判定 → 到期复活。 */
     const combatStep = (context: WorldModeContext<MmoWorldRoomState>, tick: number): void => {
@@ -432,6 +617,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             inFlight.clear();
             interestCache.clear();
             revPending.clear();
+            ai.reset();
+            pathInbox.length = 0;
             timers.clear();
             regions.clear();
             scriptVars = {};
@@ -455,6 +642,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                         speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, factionId: null, plane: 0, stealth: false, arrival: null, cooldowns: new Map(),
                         attack: template.attack, defense: template.defense, spells: template.spells, auras: new Map(), threat: new Map(), casting: null, targetId: null, alive: true, respawnDueTick: null,
                         origin: { x: pos.x, y: pos.y },
+                        brain: { state: "idle", waypointIndex: 0, path: null, pathPending: false, pathVersion: 0, pathGoal: null, thinkTick: -1 },
                         x: pos.x, y: pos.y, rev: 0, hp: template.hpMax, mp: template.mpMax, dirX: 0, dirY: 0, target: null, seq: 0,
                     });
                     aoiOf(context).insert(id, pos.x, pos.y);
@@ -528,6 +716,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 // 带着 0 hp 进图（死亡时离座）⇒ 立即按角色复活等待重生
                 alive: hp > 0, respawnDueTick: hp > 0 ? null : context.state.tick + ticksOf(MMO_PLAYER_RESPAWN_MS, context.fixedStepMs),
                 origin: { x: pos.x, y: pos.y },
+                brain: null,
                 x: pos.x, y: pos.y, rev: 0,
                 hp,
                 mp: typeof restored?.mp === "number" ? Math.max(0, Math.min(mpMax, restored.mp)) : mpMax,
@@ -624,7 +813,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     context.sendS2C(entity.session, MmoWorldPos, { seq: entity.seq, tick: step.tick, x: entity.x, y: entity.y });
                 }
             }
-            // 战斗步（移动之后、出站之前；确定性：按实体插入序）
+            // AI 步（角色移动之后）：怪物思考 + 移动；再战斗步（读条到点 / 死亡 / 复活）；确定性：按实体插入序
+            aiStep(context, step.tick, step.dtMs, def);
             combatStep(context, step.tick);
             for (const entity of entities.values()) {
                 if (entity.kind !== "character" || entity.session === null) continue;
@@ -687,6 +877,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (facts.stealth !== undefined) entity.stealth = facts.stealth;
             },
             transfersInFlight: () => [...inFlight],
+            brainOf: (id) => {
+                const entity = entities.get(id);
+                return entity?.brain ? { state: entity.brain.state, targetId: entity.targetId, path: entity.brain.path, pathPending: entity.brain.pathPending, pathVersion: entity.brain.pathVersion, thinkTick: entity.brain.thinkTick } : null;
+            },
+            aiStats: () => ({ thought: ai.stats.thought, deferred: ai.stats.deferred }),
             damage: (id, amount) => {
                 const entity = entities.get(id);
                 if (!entity) throw new Error(`[mmoWorld] damage：${id} 不存在`);

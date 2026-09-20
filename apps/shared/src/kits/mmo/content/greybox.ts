@@ -1,6 +1,6 @@
 /**
  * mmo kit · 灰盒内容包（docs/MMO.md §7.6「kit v1 自带灰盒内容包」；MK0-B5，MK1-B1 加职业模板与碰撞位图，MK1-B3 加第二图与一对传送门）：
- * 主图 greybox（2000×2000，视距 400，一堵 200×200 的墙，slime ×3）+ 东郊 greybox-east（1000×1000，slime ×2），gate-east ↔ gate-west 互通，
+ * 主图 greybox（2000×2000，视距 400，一堵 200×200 的墙，slime ×3 + 野猪 ×1（aggro）+ 田鼠 ×1（patrol，MK2-B2））+ 东郊 greybox-east（1000×1000，slime ×2），gate-east ↔ gate-west 互通，
  * 落点各自的 "gate" 出生点在门外（半径外）；两职业（fighter / caster）五技能（MK2-B1：strike / guard / fireball / mend / weaken）。只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点
  * （data 贡献 = JSON）装载，届时本 TS 字面量退役——MK0 以 TS 字面量作单源（kit 服务端代码 ⛔ node:fs、tsconfig 未开 resolveJsonModule，
  * 见 MMO.md §12 MK0 偏差 ①）。启动期与用例都经 `validateContentPack` 过闸。
@@ -11,6 +11,11 @@ export const GREYBOX_PACK_ID = "greybox";
 export const GREYBOX_MAP_ID = "greybox";
 export const GREYBOX_SPAWN_POINT_ID = "start";
 export const GREYBOX_CREATURE_ID = "slime";
+/** MK2-B2：boar（aggro：拴绳 400、仇恨半径 150）、rat（patrol：三点巡逻）。 */
+export const GREYBOX_BOAR_ID = "boar";
+export const GREYBOX_RAT_ID = "rat";
+export const GREYBOX_BOAR_SPAWN = Object.freeze({ x: 1000, y: 1500 });
+export const GREYBOX_RAT_WAYPOINTS: readonly { readonly x: number; readonly y: number }[] = Object.freeze([{ x: 500, y: 500 }, { x: 700, y: 500 }, { x: 700, y: 700 }]);
 export const GREYBOX_SPELL_ID = "strike";
 /** MK2-B1 技能族：战士 strike（瞬发直伤）/ guard（自增防御）；法师 fireball（读条直伤）/ mend（读条治疗）/ weaken（减防）。 */
 export const GREYBOX_SPELLS = Object.freeze({ strike: "strike", guard: "guard", fireball: "fireball", mend: "mend", weaken: "weaken" });
@@ -41,7 +46,7 @@ function greyboxBitmap(): string {
 export const GREYBOX_PACK: IContentPack = {
     schemaVersion: 1,
     packId: GREYBOX_PACK_ID,
-    version: 4,
+    version: 5,
     maps: [{
         mapId: GREYBOX_MAP_ID,
         name: "灰盒草原",
@@ -89,10 +94,18 @@ export const GREYBOX_PACK: IContentPack = {
         tier: "normal",
         checkpointOnDeath: false,
         interacts: [],
+    }, {
+        templateId: GREYBOX_BOAR_ID, name: "野猪", presentationId: "boar", level: 2, hpMax: 40, mpMax: 0, attack: 6, defense: 1, speedPerSec: 90,
+        behavior: "aggro", aggroRadius: 150, leashRadius: 400, spells: [GREYBOX_SPELLS.strike], respawnSec: 15, tier: "normal", checkpointOnDeath: false, interacts: [],
+    }, {
+        templateId: GREYBOX_RAT_ID, name: "田鼠", presentationId: "rat", level: 1, hpMax: 10, mpMax: 0, attack: 1, defense: 0, speedPerSec: 80,
+        behavior: "patrol", aggroRadius: 0, leashRadius: 0, spells: [], respawnSec: 10, tier: "normal", checkpointOnDeath: false, interacts: [],
     }],
     spawns: [
         { spawnId: "slime-camp", mapId: GREYBOX_MAP_ID, templateId: GREYBOX_CREATURE_ID, pos: { x: 1200, y: 1000 }, count: 3, waypoints: [], managed: "kit" },
         { spawnId: "east-camp", mapId: GREYBOX_EAST_MAP_ID, templateId: GREYBOX_CREATURE_ID, pos: { x: 700, y: 500 }, count: 2, waypoints: [], managed: "kit" },
+        { spawnId: "boar-den", mapId: GREYBOX_MAP_ID, templateId: GREYBOX_BOAR_ID, pos: { x: GREYBOX_BOAR_SPAWN.x, y: GREYBOX_BOAR_SPAWN.y }, count: 1, waypoints: [], managed: "kit" },
+        { spawnId: "rat-run", mapId: GREYBOX_MAP_ID, templateId: GREYBOX_RAT_ID, pos: { x: 500, y: 500 }, count: 1, waypoints: [...GREYBOX_RAT_WAYPOINTS], managed: "kit" },
     ],
     spells: [
         { spellId: GREYBOX_SPELLS.strike, name: "挥击", kind: "damage", castMs: 0, cooldownMs: 1500, mpCost: 0, range: 60, power: 8 },

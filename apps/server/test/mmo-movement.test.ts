@@ -82,7 +82,7 @@ test("content v2：灰盒包两职业 + 墙过闸并可索引；classes 缺 / �
         [index.classById.get("fighter")?.speedPerSec, index.classById.get("caster")?.speedPerSec, index.classById.get("caster")?.hpMax, index.classById.get("caster")?.mpMax],
         [120, 110, 80, 100],
     );
-    assert.deepEqual([pack.version, pack.maps[0]!.collision?.bitmap.length], [4, 400]);
+    assert.deepEqual([pack.version, pack.maps[0]!.collision?.bitmap.length], [5, 400]);
     type MutablePack = { -readonly [K in keyof IContentPack]: IContentPack[K] };
     type MutableMap = { -readonly [K in keyof IMapDef]: IMapDef[K] };
     const mutate = (edit: (pack: MutablePack, map: MutableMap) => void): unknown => {
