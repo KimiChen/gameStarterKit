@@ -1,7 +1,7 @@
 import { defineView, For } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
-import { WideMenuButton } from '../../../restored/components/button/WideMenuButton';
-import { PopupFrame } from '../../../restored/components/popup/PopupFrame';
+import { WideMenuButton } from '../../../components/button/WideMenuButton';
+import { PopupFrame } from '../../../components/popup/PopupFrame';
 
 export interface SettingsMenuItem {
     readonly id: string;
@@ -41,9 +41,9 @@ export const SettingsRestored = defineView<SettingsRestoredParams | void>({ zInd
     const buttonBg = imageRef('ui/settings/button');
     const gear = imageRef('ui/settings/gear');
     return (
-        <view name="SettingsPage" style={{ width: 750, height: 1334 }}>
+        <view name="SettingsRestoredPage" style={{ width: 750, height: 1334 }}>
             <PopupFrame title={params.title ?? '设置'} left={PANEL_LEFT} top={PANEL_TOP}
-                width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={params.onClose} titleColor={"#ffffff"} titleOutline={"#593d84"}/>
+                width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={params.onClose} />
             <view name="SettingsRestored/Content"
                 style={{ position: 'absolute', left: PANEL_LEFT, top: PANEL_TOP, width: PANEL_WIDTH, height: PANEL_HEIGHT }}>
                 <For each={items} key="id">

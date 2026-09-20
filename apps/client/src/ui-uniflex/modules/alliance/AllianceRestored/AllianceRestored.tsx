@@ -1,21 +1,20 @@
 import { defineView, useState } from '@uniflex/compiler';
-import { imageRef } from '../../../../kits/uniflex/api/core/index';
-import { NotificationBadge } from '../../../restored/components/badge/NotificationBadge';
-import { ScreenHeader } from '../../../restored/components/chrome/ScreenHeader';
-import { MainNav, type MainNavSlot } from '../../../restored/gamecomponents/navigation/MainNav';
-import { PanelTab } from '../../../restored/components/tab/PanelTab';
-import { AllianceAnnouncePanel } from '../../../restored/modules/alliance/AllianceAnnounce/AllianceAnnouncePanel';
-import { AllianceBoardPanel } from '../../../restored/pages/AllianceBoard/AllianceBoardPanel';
-import { AllianceGiftPanel } from '../../../restored/pages/AllianceGift/AllianceGiftPanel';
-import { AllianceTechPanel } from '../../../restored/pages/AllianceTech/AllianceTechPanel';
-import { AllianceHelpPanel } from '../../../restored/pages/AllianceHelp/AllianceHelpPanel';
-import { AllianceInvitePanel } from '../../../restored/pages/AllianceInvite/AllianceInvitePanel';
-import { AllianceMemberSettingsPanel } from '../../../restored/pages/AllianceMemberSettings/AllianceMemberSettingsPanel';
-import { AllianceWarPanel } from '../../../restored/pages/AllianceWar/AllianceWarPanel';
-import { AllianceTerritoryPanel } from '../../../restored/pages/AllianceTerritory/AllianceTerritoryPanel';
-import { AllianceHomePanel } from '../../../restored/pages/Alliance/AllianceHomePanel';
-import { AllianceMembersPanel } from '../../../restored/pages/Alliance/AllianceMembersPanel';
-import { AllianceSettingsPanel } from '../../../restored/pages/Alliance/AllianceSettingsPanel';
+import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { NotificationBadge } from '../../../components/badge/NotificationBadge';
+import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
+import { PanelTab } from '../../../components/tab/PanelTab';
+import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
+import { AllianceBoardPanel } from '../AllianceBoard/AllianceBoardPanel';
+import { AllianceGiftPanel } from '../AllianceGift/AllianceGiftPanel';
+import { AllianceTechPanel } from '../AllianceTech/AllianceTechPanel';
+import { AllianceHelpPanel } from '../AllianceHelp/AllianceHelpPanel';
+import { AllianceInvitePanel } from '../AllianceInvite/AllianceInvitePanel';
+import { AllianceMemberSettingsPanel } from '../AllianceMemberSettings/AllianceMemberSettingsPanel';
+import { AllianceWarPanel } from '../AllianceWar/AllianceWarPanel';
+import { AllianceTerritoryPanel } from '../AllianceTerritory/AllianceTerritoryPanel';
+import { AllianceHomePanel } from '../Alliance/AllianceHomePanel';
+import { AllianceMembersPanel } from '../Alliance/AllianceMembersPanel';
+import { AllianceSettingsPanel } from '../Alliance/AllianceSettingsPanel';
 
 export type AllianceTab = 'home' | 'members' | 'settings';
 
@@ -85,7 +84,12 @@ export const AllianceRestored = defineView<AllianceRestoredParams | void>({ zInd
                 leader={params.leader} power={params.power} memberCount={params.memberCount}
                 onAction={onAction} />
 
-            <ScreenHeader title={params.title ?? '联盟'} top={144} titleLeft={20} />
+            <image source={imageRef('ui/mail/header')}
+                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90, sizeMode: 'sliced' }} />
+            <text value={params.title ?? '联盟'}
+                style={{ position: 'absolute', left: 20, top: 160, width: 200, height: 58,
+                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
+                    outlineColor: '#593d84', outlineWidth: 2, verticalAlign: 'center' }} />
 
             <PanelTab label="联盟" active={tab === 'home'} left={13} top={262} width={200}
                 onClick={() => selectTab('home')} />

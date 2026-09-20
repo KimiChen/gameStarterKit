@@ -2,7 +2,7 @@
   "screen": "alliance",
   "componentName": "Alliance",
   "restoredName": "AllianceRestored",
-  "source": "apps/client/src/ui-uniflex/modules/alliance/Alliance/Alliance.tsx",
+  "source": "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
