@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "world-bench",
+  "scenario": "snake-baseline",
+  "description": "snake dropIn 房：真人机器人 + AI 补位，随机方向输入，复活即接受",
+  "startedAt": "2026-09-19T03:26:00.840Z",
+  "commit": "c0a2a695",
+  "node": "v26.5.0",
+  "config": {
+    "bots": 40,
+    "seconds": 20,
+    "seed": 7,
+    "sId": 0
+  },
+  "rooms": {
+    "count": 5,
+    "clientsPerRoom": [
+      8,
+      8,
+      8,
+      8,
+      8
+    ]
+  },
+  "tick": {
+    "count": 1998,
+    "mean": 5.707,
+    "p50": 2.297,
+    "p95": 13.137,
+    "p99": 14.44,
+    "max": 25.322,
+    "fixedStepMs": 50
+  },
+  "outbound": {
+    "bytesTotal": 81103988,
+    "bytesPerSessionPerSec": {
+      "count": 40,
+      "mean": 101249.925,
+      "p50": 101145,
+      "p95": 106318,
+      "p99": 106452,
+      "max": 106452
+    }
+  },
+  "clientSide": {
+    "deltaMessagesPerSec": {
+      "count": 40,
+      "mean": 9.969,
+      "p50": 9.99,
+      "p95": 9.99,
+      "p99": 9.99,
+      "max": 9.99
+    },
+    "deltaBytesPerSec": {
+      "count": 40,
+      "mean": 115407.975,
+      "p50": 115344,
+      "p95": 121728,
+      "p99": 121863,
+      "max": 121863
+    },
+    "inputsSent": 5198,
+    "relives": 35,
+    "runResults": 0,
+    "errors": 0
+  },
+  "baseline": {
+    "bytesPerJoin": {
+      "count": 40,
+      "mean": 91565.725,
+      "p50": 91743,
+      "p95": 92071,
+      "p99": 92071,
+      "max": 92071
+    },
+    "begins": 40
+  },
+  "eventLoop": {
+    "p50": 12.173,
+    "p99": 30.654,
+    "max": 48.234
+  },
+  "memory": {
+    "rssStartMB": 125.2,
+    "rssEndMB": 444.3
+  }
+}

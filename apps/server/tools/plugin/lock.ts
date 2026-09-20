@@ -9,7 +9,10 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { PackageClass, PackageMode, PluginKind } from "./ownership";
-import { EMPTY_REQUIRES, type KitApiSurface, type PluginRequires } from "../plugin-codegen/pluginManifestSchema";
+import {
+  CONTRIBUTION_ENDS, EMPTY_CONTRIBUTES, EMPTY_REQUIRES,
+  type ContributionEnd, type KitApiSurface, type KitContributionSummary, type PluginContributes, type PluginRequires, type KitWorker,
+} from "../plugin-codegen/pluginManifestSchema";
 
 export const INSTALLED_LOCK_DIR = "scripts/packages";
 export const PACKAGE_FILES_LOCK = "files.lock";
@@ -56,6 +59,14 @@ export interface LockManifestSummary {
   readonly fguiPackages: readonly string[];
   readonly api: Readonly<Record<string, KitApiSurface>>;
   readonly requires: PluginRequires;
+  /** kit 的后台 worker 清单（MF7a）；插件锁恒为空；解析 / install 恒写出，手写字面量缺省 = 空。 */
+  readonly workers?: readonly KitWorker[];
+  /** kit 的贡献点摘要（MF9：kind / ends / export | schemaDigest）；插件锁恒为空。 */
+  readonly contributions?: Readonly<Record<string, KitContributionSummary>>;
+  /** kit 的 state fragment 清单（MF9）；插件锁恒为空。 */
+  readonly fragments?: readonly string[];
+  /** 插件对 kit 贡献点的填充（MF9）；kit 锁恒为空。 */
+  readonly contributes?: PluginContributes;
 }
 
 export interface InstalledLock {
@@ -130,6 +141,10 @@ export function renderInstalledLock(lock: InstalledLock): string {
     kinds: manifest.kinds,
     constantName: manifest.constantName,
     ...(manifest.class === "kit" ? { modes: manifest.modes, api: manifest.api } : {}),
+    ...(manifest.class === "kit" && (manifest.workers ?? []).length > 0 ? { workers: manifest.workers } : {}),
+    ...(manifest.class === "kit" && Object.keys(manifest.contributions ?? {}).length > 0 ? { contributions: manifest.contributions } : {}),
+    ...(manifest.class === "kit" && (manifest.fragments ?? []).length > 0 ? { fragments: manifest.fragments } : {}),
+    ...(manifest.class === "plugin" && Object.keys(manifest.contributes ?? {}).length > 0 ? { contributes: manifest.contributes } : {}),
     domains: manifest.domains,
     fguiPackages: manifest.fguiPackages,
     ...(hasRequires ? { requires: manifest.requires } : {}),
@@ -212,6 +227,76 @@ function parseLockApi(value: unknown, label: string): Readonly<Record<string, Ki
   return api;
 }
 
+const LOCK_WORKER_ENTRY = /^apps\/server\/src\/kits\/[a-z][A-Za-z0-9]{0,63}\/workers\/[a-z][A-Za-z0-9]{0,63}\.ts$/u;
+
+function parseLockWorkers(value: unknown, label: string): readonly KitWorker[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 workers 不是数组`);
+  const workers = value.map((worker) => {
+    const record = worker as { readonly id?: unknown; readonly entry?: unknown };
+    if (typeof record.id !== "string" || !LOCK_ID.test(record.id) || typeof record.entry !== "string" || !LOCK_WORKER_ENTRY.test(record.entry)) {
+      throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 workers 条目非法：${JSON.stringify(worker)}`);
+    }
+    return { id: record.id, entry: record.entry };
+  });
+  if (new Set(workers.map((worker) => worker.id)).size !== workers.length) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 workers id 重复`);
+  return workers;
+}
+
+const LOCK_EXPORT = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/u;
+const LOCK_DIGEST = /^[0-9a-f]{64}$/u;
+const LOCK_CONTRIBUTION_PATH = /^apps\/(plugins|client\/src|server\/src|shared\/src)\/[A-Za-z0-9][A-Za-z0-9_/.-]*\.(ts|json)$/u;
+
+function parseLockContributions(value: unknown, label: string): Readonly<Record<string, KitContributionSummary>> {
+  if (value === undefined) return {};
+  if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 contributions 不是对象`);
+  const out: Record<string, KitContributionSummary> = {};
+  for (const [id, spec] of Object.entries(value as Record<string, unknown>)) {
+    const record = spec as { readonly kind?: unknown; readonly ends?: unknown; readonly export?: unknown; readonly schemaDigest?: unknown };
+    const bad = (): never => { throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 contributions.${id} 非法：${JSON.stringify(spec)}`); };
+    if (!LOCK_ID.test(id) || typeof record !== "object" || record === null) bad();
+    if (!Array.isArray(record.ends) || record.ends.length === 0 || record.ends.some((end) => !(CONTRIBUTION_ENDS as readonly string[]).includes(end as string))) bad();
+    if (new Set(record.ends as string[]).size !== (record.ends as string[]).length) bad();
+    const ends = [...(record.ends as ContributionEnd[])];
+    const exported = record.export;
+    const schemaDigest = record.schemaDigest;
+    if (record.kind === "module") {
+      if (typeof exported !== "string" || !LOCK_EXPORT.test(exported) || schemaDigest !== undefined || ends.length !== 1) bad();
+      out[id] = { kind: "module", ends, export: exported as string };
+    } else if (record.kind === "data") {
+      if (typeof schemaDigest !== "string" || !LOCK_DIGEST.test(schemaDigest) || exported !== undefined) bad();
+      out[id] = { kind: "data", ends, schemaDigest: schemaDigest as string };
+    } else {
+      bad();
+    }
+  }
+  return out;
+}
+
+function parseLockFragments(value: unknown, label: string): readonly string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some((name) => typeof name !== "string" || !LOCK_ID.test(name))) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 fragments 非法`);
+  if (new Set(value as string[]).size !== value.length) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 fragments 重复`);
+  return [...(value as string[])];
+}
+
+function parseLockContributes(value: unknown, label: string): PluginContributes {
+  if (value === undefined) return EMPTY_CONTRIBUTES;
+  if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 contributes 不是对象`);
+  const out: Record<string, Record<string, string>> = {};
+  for (const [kitId, entries] of Object.entries(value as Record<string, unknown>)) {
+    if (!LOCK_ID.test(kitId) || typeof entries !== "object" || entries === null || Array.isArray(entries)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 contributes.${kitId} 非法`);
+    const parsed: Record<string, string> = {};
+    for (const [id, file] of Object.entries(entries as Record<string, unknown>)) {
+      if (!LOCK_ID.test(id) || typeof file !== "string" || !LOCK_CONTRIBUTION_PATH.test(file)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 contributes.${kitId}.${id} 非法`);
+      parsed[id] = file;
+    }
+    if (Object.keys(parsed).length === 0) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 contributes.${kitId} 为空`);
+    out[kitId] = parsed;
+  }
+  return out;
+}
+
 function parseLockRequires(value: unknown, label: string): PluginRequires {
   if (value === undefined) return EMPTY_REQUIRES;
   if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 requires 不是对象`);
@@ -258,6 +343,10 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     readonly domains: readonly string[];
     readonly fguiPackages: readonly string[];
     readonly requires?: unknown;
+    readonly workers?: unknown;
+    readonly contributions?: unknown;
+    readonly fragments?: unknown;
+    readonly contributes?: unknown;
   };
   if (typeof summary.id !== "string" || typeof summary.version !== "string") throw new Error(`[plugin] ${label} 的 "# manifest" 抬头缺 id / version`);
   if (summary.class !== undefined && summary.class !== "plugin" && summary.class !== "kit") throw new Error(`[plugin] ${label} 的 "# manifest" 抬头 class 非法：${String(summary.class)}`);
@@ -274,6 +363,13 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
   if (cls === "plugin" && (modes.length > 0 || Object.keys(api).length > 0)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头：插件锁不该有 modes / api`);
   const requires = parseLockRequires(summary.requires, label);
   if (cls === "kit" && (requires.pluginApiVersion !== null || Object.keys(requires.kits).length > 0)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头：kit 锁不该有 requires（kit 不依赖 kit）`);
+  const workers = parseLockWorkers(summary.workers, label);
+  if (cls === "plugin" && workers.length > 0) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头：插件锁不该有 workers`);
+  const contributions = parseLockContributions(summary.contributions, label);
+  const fragments = parseLockFragments(summary.fragments, label);
+  if (cls === "plugin" && (Object.keys(contributions).length > 0 || fragments.length > 0)) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头：插件锁不该有 contributions / fragments（贡献点与 fragment 只由 kit 定义）`);
+  const contributes = parseLockContributes(summary.contributes, label);
+  if (cls === "kit" && Object.keys(contributes).length > 0) throw new Error(`[plugin] ${label} 的 "# manifest" 抬头：kit 锁不该有 contributes（kit 不向别的 kit 贡献）`);
   const manifest: LockManifestSummary = {
     class: cls,
     id: summary.id,
@@ -285,6 +381,10 @@ export function parseInstalledLock(text: string, label: string): InstalledLock {
     fguiPackages: summary.fguiPackages ?? [],
     api,
     requires,
+    workers,
+    contributions,
+    fragments,
+    contributes,
   };
   return { manifest, entries: parseEntries(lines, label), source: parseLockSource(lines, label) };
 }
@@ -330,6 +430,17 @@ export function dependentsOfKit(root: string, kitId: string): ReadonlyMap<string
     if (lock.manifest.class !== "plugin") continue;
     const declared = lock.manifest.requires.kits[kitId];
     if (declared) out.set(lock.manifest.id, declared);
+  }
+  return out;
+}
+
+/** 向一个 kit 填充过贡献点的已安装插件：pluginId → contributes[kitId]（MF9 反向闸与 check 反查的依据）。 */
+export function contributorsOfKit(root: string, kitId: string): ReadonlyMap<string, Readonly<Record<string, string>>> {
+  const out = new Map<string, Readonly<Record<string, string>>>();
+  for (const lock of listInstalledLocks(root)) {
+    if (lock.manifest.class !== "plugin") continue;
+    const contributes = lock.manifest.contributes ?? {};
+    if (Object.prototype.hasOwnProperty.call(contributes, kitId)) out.set(lock.manifest.id, contributes[kitId] as Readonly<Record<string, string>>);
   }
   return out;
 }

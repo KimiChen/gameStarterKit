@@ -230,6 +230,11 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
       export function startKickConsumer(): void { record("start-kick"); }
       export async function stopKickConsumer(): Promise<void> { record("stop-kick"); }
     `);
+    writeSandboxFile(sandbox, "src/core/push/pushBus.ts", `
+      import { record } from "../../probe";
+      export function startPushConsumer(): void { record("start-push"); }
+      export async function stopPushConsumer(): Promise<void> { record("stop-push"); }
+    `);
     writeSandboxFile(sandbox, "src/player/characterRepair.ts", `
       import { record } from "../probe";
       export function startCharacterRepairWorker(): void { record("start-repair"); }
@@ -310,6 +315,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
       "start-depth",
       "set-kick",
       "start-kick",
+      "start-push",
       "start-repair",
       "clear-ready",
       "stop-infra",
@@ -317,6 +323,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
       "stop-kick",
       "stop-repair",
       "stop-mailwake",
+      "stop-push",
       "drain-ready",
       "task-settled",
       "close-webplatform",
@@ -324,7 +331,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
       "close-redis",
       "marker",
     ], `事件序列异常；stderr=${stderr.slice(-4_000)} lines=${JSON.stringify(lines)}`);
-    for (const line of lines.slice(7)) {
+    for (const line of lines.slice(8)) { // 8 条启动事件（含 MF6a-B2 的 start-push）之后全是停服阶段
       assert.match(line, /admission=false$/, `停服阶段必须已关闭 admission：${line}`);
     }
   } finally {
@@ -346,6 +353,7 @@ test("index 默认入口：真实依赖装配、停服列表与 listen(app, PORT
     'startStreamDepthAlert()',
     'setKickHandler(kickUser)',
     'startKickConsumer()',
+    'startPushConsumer()',
     'startCharacterRepairWorker()',
   ]) {
     assert.ok(source.includes(registration), `默认入口缺少真实依赖装配：${registration}`);
@@ -360,6 +368,7 @@ test("index 默认入口：真实依赖装配、停服列表与 listen(app, PORT
     "kick-consumer",
     "character-repair",
     "mailwake",
+    "push-bus",
   ]);
 
   const cleanupBlock = source.match(/await runShutdownCleanup\(stopBackgroundProducers, \[([\s\S]*?)\]\);/)?.[1];

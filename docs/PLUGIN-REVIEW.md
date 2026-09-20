@@ -18,7 +18,7 @@ PLUGIN.md 的判据本身（插件只能消费、不能定义；只做构建期�
 
 | 编号 | 章节 | 问题 | 证据 | 修法 |
 |---|---|---|---|---|
-| F03 | §1/§2 | 「下四行全部落在受保护路径上」不实：RoomProfile.ts 与 stateRenderer 不在名单 | `scripts/protected-paths.json:20-39,48-57` 仅含 messages.ts/GameMode.ts；`RoomProfile.ts:31-52` PROFILE_POLICIES；`gameplay-codegen/stateRenderer.ts:99-101,455-467`；`protected-paths-lock.mjs:74` 锁面同集 | 改为「不在任何 allowlist 内」，闸门改 allowlist（见第 3 节） |
+| F03 | §1/§2 | 「下四行全部落在受保护路径上」不实：RoomProfile.ts 与 stateRenderer 不在名单（RoomProfile 一半已于 2026-09-19 MMO MF3-B2 关闭：`apps/server/src/rooms/core/**` 整目录登进 gameplayFlow；stateRenderer 仍开放） | `scripts/protected-paths.json:20-39,48-57` 仅含 messages.ts/GameMode.ts；`RoomProfile.ts:31-52` PROFILE_POLICIES；`gameplay-codegen/stateRenderer.ts:99-101,455-467`；`protected-paths-lock.mjs:74` 锁面同集 | 改为「不在任何 allowlist 内」，闸门改 allowlist（见第 3 节） |
 | F12 | §5 | 流程漏 `protocol-fingerprint --write`、`fgui-manifest --write`，verify:all 必红 | `protected-paths.json:68` registry.generated.ts 在 protocol/ 内；`protocol-fingerprint.mjs:24-26,128-146`；`plugin-codegen/cli.ts:36-38` 只打印不重钉；`fgui-manifest.mjs:634,648`；`package.json:30,50` | 按 writer 表固定顺序；指纹重钉停下让人决策（是否 bump LOBBY_PROTOCOL_VERSION）；HTTP 端点契约表 `protocol/http.ts:704` 手写，§6.1「日志上报=一个 endpoint」应改判定义型 |
 | F13 | §5/§8 | plugin 插件 FGUI 资源在包格式与流程中缺席；同名包目录解压即覆盖 | `plugin-codegen/viewCatalog.ts:208` sidecar 必填 package；`fgui-manifest.mjs:132-147,205-227,559-560`；`FguiView.ts:246-248` 固定 resources bundle；PLUGIN.md:88-90「覆盖同目录」 | 包内携带 ART 源 + .bin/atlas + .meta；解包前用 fgui-manifest 读取函数做内存冲突预检；安装后 `--write`；包名前缀按 Non-intrusive.md:210-212 既有约定机检化 |
 

@@ -77,6 +77,129 @@ export class EffectConflictError extends InvalidPayloadError {
   }
 }
 
+// ── persona / 资产主体（MMO MF2-B4，docs/MMO.md §5 MF2 / M03）──────────────────────────────
+// 双端数字码在 shared constants/errors.ts 的 4xxx 段（PersonaSlotTaken / PersonaNotFound / ControlConflict）；这些异常由 kit 在自己的
+// 域错误码里映射后下发，⛔ 不进 ERR_MAP（框架不替 kit 决定 RPC 面的码）。
+
+/** `UNIQUE(server_id, user_id, kit_id, slot)` 冲突：该账号在该 kit 的这个槽位已有 persona。 */
+export class PersonaSlotTakenError extends Error {
+  readonly slot: number;
+  constructor(uid: string, kitId: string, slot: number) {
+    super(`persona slot taken: uid=${uid} kit=${kitId} slot=${slot}`);
+    this.name = "PersonaSlotTakenError";
+    this.slot = slot;
+  }
+}
+
+/** persona 不存在 / 不属于本 kit / 不在本区。 */
+export class PersonaNotFoundError extends Error {
+  readonly personaId: string;
+  constructor(personaId: string) { super(`persona not found: ${personaId}`); this.name = "PersonaNotFoundError"; this.personaId = personaId; }
+}
+
+/** persona 仍 active 或仍在世界房（world_address 非 NULL）：deactivate / delete 的前置未满足。 */
+export class PersonaBusyError extends Error {
+  readonly personaId: string;
+  constructor(personaId: string, reason: string) { super(`persona busy: ${personaId} (${reason})`); this.name = "PersonaBusyError"; this.personaId = personaId; }
+}
+
+/** 权威 CAS 0 行（MF4-B3）：world_instance.authority_epoch 已被别的持有者抬高，本节点不是（或已不是）该分线的权威。 */
+export class WorldNotAuthoritativeError extends Error {
+  readonly instanceId: string;
+  readonly expectedEpoch: number;
+  readonly actualEpoch: number;
+  constructor(instanceId: string, expectedEpoch: number, actualEpoch: number) {
+    super(`world not authoritative: instance=${instanceId} epoch ${expectedEpoch} → actual ${actualEpoch}`);
+    this.name = "WorldNotAuthoritativeError";
+    this.instanceId = instanceId;
+    this.expectedEpoch = expectedEpoch;
+    this.actualEpoch = actualEpoch;
+  }
+}
+
+/** 世界事务首句 CAS 0 行（MF7b-B2 `withKitWorldTx`）：world_instance.authority_epoch 已不是本次事务声明的代——旧 owner 的迟到写整体 ROLLBACK。 */
+export class AuthorityLostError extends Error {
+  readonly instanceId: string;
+  readonly authorityEpoch: number;
+  constructor(instanceId: string, authorityEpoch: number) {
+    super(`world authority lost: instance=${instanceId} epoch ${authorityEpoch}`);
+    this.name = "AuthorityLostError";
+    this.instanceId = instanceId;
+    this.authorityEpoch = authorityEpoch;
+  }
+}
+
+/** 控制权 CAS 0 行：手上的 control_epoch 已被别处抬高（MF4 双登 / 交接），本次写必须整体回滚。 */
+export class ControlConflictError extends Error {
+  readonly personaId: string;
+  readonly expectedEpoch: number;
+  readonly actualEpoch: number;
+  constructor(personaId: string, expectedEpoch: number, actualEpoch: number) {
+    super(`control conflict: persona=${personaId} epoch ${expectedEpoch} → actual ${actualEpoch}`);
+    this.name = "ControlConflictError";
+    this.personaId = personaId;
+    this.expectedEpoch = expectedEpoch;
+    this.actualEpoch = actualEpoch;
+  }
+}
+
+/** 交接状态机 CAS 0 行（MF8-B2 rooms/core/transfer.ts）：当前持久状态不是本步骤的前置态（也不是可幂等视为已完成的后继态）。 */
+export class TransferStateError extends Error {
+  readonly transferId: string;
+  readonly expected: string;
+  readonly actual: string | null;
+  constructor(transferId: string, expected: string, actual: string | null) {
+    super(`transfer state: ${transferId} expected ${expected}, actual ${actual ?? "<missing>"}`);
+    this.name = "TransferStateError";
+    this.transferId = transferId;
+    this.expected = expected;
+    this.actual = actual;
+  }
+}
+
+/** 同一 persona 已有在途交接（world_transfer UNIQUE(server_id, persona_id, active_key)）：新交接必须等它终态。 */
+export class TransferInFlightError extends Error {
+  readonly personaId: string;
+  readonly transferId: string | null;
+  constructor(personaId: string, transferId: string | null) {
+    super(`transfer in flight: persona=${personaId} transfer=${transferId ?? "?"}`);
+    this.name = "TransferInFlightError";
+    this.personaId = personaId;
+    this.transferId = transferId;
+  }
+}
+
+/** 分线分配（MF10-B1）：该图全部分线已满且已到 WORLD_MAX_LINES_PER_MAP，⛔ 再开新线。 */
+export class WorldLinesExhaustedError extends Error {
+  readonly mapId: string;
+  readonly maxLines: number;
+  constructor(mapId: string, maxLines: number) {
+    super(`world lines exhausted: map=${mapId} maxLines=${maxLines}`);
+    this.name = "WorldLinesExhaustedError";
+    this.mapId = mapId;
+    this.maxLines = maxLines;
+  }
+}
+
+/** 指定分线越过上限（MF10-B1）：line ≥ WORLD_MAX_LINES_PER_MAP。 */
+export class WorldLineLimitError extends Error {
+  readonly mapId: string;
+  readonly line: number;
+  readonly maxLines: number;
+  constructor(mapId: string, line: number, maxLines: number) {
+    super(`world line out of range: map=${mapId} line=${line} maxLines=${maxLines}`);
+    this.name = "WorldLineLimitError";
+    this.mapId = mapId;
+    this.line = line;
+    this.maxLines = maxLines;
+  }
+}
+
+/** 同一 kit 事务内的 persona 锁序被打破（account 作用域 → persona id 升序）：fail-closed，⛔ 不等 InnoDB 死锁裁决。 */
+export class PersonaLockOrderError extends Error {
+  constructor(msg: string) { super(`persona lock order: ${msg}`); this.name = "PersonaLockOrderError"; }
+}
+
 /** 路由表无此 type（⛔ 不计 flood 不封禁，09·G6）。 */
 export class UnknownTypeError extends Error {
   constructor(msg = "unknown rpc type") { super(msg); this.name = "UnknownTypeError"; }

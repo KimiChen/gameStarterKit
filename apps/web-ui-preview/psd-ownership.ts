@@ -75,7 +75,7 @@ export function promptPsdOwnership(values: readonly unknown[]) {
         schemaVersion: 1,
         kind: 'uniflex-component-declarations',
         definitions: [
-            { key: 'Prompt', source: 'apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx' },
+            { key: 'Prompt', source: 'apps/client/src/ui-uniflex/modules/popup/Prompt/Prompt.tsx' },
             { key: 'ActionButton', source: 'apps/client/src/ui-uniflex/components/button/ActionButton.tsx' },
         ],
         instances: [

@@ -19,8 +19,8 @@ Web 预览：`npm run dev:uniflex-web` → `http://127.0.0.1:8001/`。已有 `80
 
 | 写 | 不写 |
 |---|---|
-| `apps/client/src/ui-uniflex/pages/<Page>/*.tsx` | `apps/Cocos/assets/src/`（`sync:client` 镜像，禁手改；新文件 `.meta` 除外） |
-| `apps/client/src/ui-uniflex/components/` | `apps/client/src/ui-uniflex/generated/`（禁手改、不入库） |
+| `apps/client/src/ui-uniflex/modules/<module>/<Page>/*.tsx` | `apps/Cocos/assets/src/`（`sync:client` 镜像，禁手改；新文件 `.meta` 除外） |
+| `apps/client/src/ui-uniflex/components/`、`gamecomponents/` | `apps/client/src/ui-uniflex/generated/`（禁手改、不入库） |
 | `apps/client/resources/ui/<Package>/` | `*Restored` 页、`RestoredPreviewHome`（PSD 回写线，见 §6） |
 | 预览登记（§5） | server / shared / protocol（除非用户明确要接） |
 
@@ -30,14 +30,14 @@ Web 预览：`npm run dev:uniflex-web` → `http://127.0.0.1:8001/`。已有 `80
 
 ## 2. 页面骨架
 
-1. `pages/<Page>/<Page>.tsx`：`defineView`。联盟全屏常见 `750×1624`，背包/设置常见 `750×1334`，以切图高度为准。全屏 `zIndex: 'screen'`，弹窗 `zIndex: 'window'`。
-2. `pages/<Page>/<Page>Panel.tsx`：真正排版。可被别的页 overlay（如 Alliance 里 `visible={territoryOpen}` 打开领地）。
+1. `modules/<module>/<Page>/<Page>.tsx`：`defineView`。联盟全屏常见 `750×1624`，背包/设置常见 `750×1334`，以切图高度为准。全屏 `zIndex: 'screen'`，弹窗 `zIndex: 'window'`。
+2. `modules/<module>/<Page>/<Page>Panel.tsx`：真正排版。可被别的页 overlay（如 Alliance 里 `visible={territoryOpen}` 打开领地）。
 3. 页签 / 列表 / 卡片拆成同目录组件，不要把多个页签画在同一个巨大 JSX 里。
 4. 后声明的兄弟节点在上层：页签画在内容面板之后。可点元素必须 `interaction="press"`（不要只挂在 `<image>` 上）。
 
 ```tsx
 import { defineView, defineComponent, useState, useMemo, useRef, useEffect, VirtualList } from '@uniflex/compiler';
-import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uniflex/api/core/index';
+import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/uniflex/api/core/index';
 ```
 
 ## 3. 布局与视觉
@@ -50,13 +50,13 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uni
 - 没有富文本。长文尽量一个 `<text wrap>`；局部变色只能叠字。
 - 底图高度以源图为准。不要发明「跟着内容收缩的底图」，除非用户明确要且源图如此。领地要塞 list-bg 是固定 `719×776 @ 15,544`。
 
-先搜再造，组件在 `apps/client/src/ui-uniflex/components/`：
+先搜再造，通用控件在 `apps/client/src/ui-uniflex/components/`，玩法控件在 `gamecomponents/`：
 
 | 用途 | 组件 |
 |---|---|
-| 黄确定 / 绿取消 / 青前往 | `ConfirmButton` / `CancelButton` / `CyanButton` |
+| 黄确定 / 绿取消 / 青前往 / 关闭 / 返回 | `ConfirmButton` / `CancelButton` / `CyanButton` / `CloseButton` / `BackButton` |
 | 页签 | `PanelTab`；邮件/背包/联盟主页省略 `kind`；领地旗帜 `kind="flag"` |
-| 弹窗 | `PopupBackground` / `PopupFrame` / `CloseButton` |
+| 弹窗 | `PopupFrame` |
 | 勾选 | `CheckBox` |
 | 数量加减 / 滑条 | `QuantityControl` |
 | 进度条 | `ProgressBar` |
@@ -64,6 +64,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uni
 | 输入框 | `InputText` |
 | 宽菜单 | `WideMenuButton` |
 | 空态 | `EmptyState` |
+| 资源条 | `ResourceCounter` |
 | 道具格 | `ItemSlot` |
 | 全屏标题栏 | `ScreenHeader` |
 | 全屏底栏 | `ScreenFooter` |
@@ -94,7 +95,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../kits/uni
 
 新页 id 例如 `alliance-foo`，必须同时改：
 
-1. `pages/<Page>/<Page>.tsx` 的 `defineView` 导出名 = 组件名
+1. `modules/<module>/<Page>/<Page>.tsx` 的 `defineView` 导出名 = 组件名
 2. `PreviewHome.tsx`：union 增加 target + 两列里一颗按钮（首页已 `flexWrap` 两列）
 3. `apps/web-ui-preview/screens.json`：id / aliases / canvas / componentName / rootName / source
 4. `apps/web-ui-preview/main.ts`：generated import + `case`
@@ -142,10 +143,10 @@ npm run typecheck:uniflex-ui
 
 ## 9. 参考
 
-- 全屏壳 + 三页签 + VL：`apps/client/src/ui-uniflex/pages/AllianceTerritory/`
-- 折叠 flatten VL：`pages/Alliance/AllianceMembersPanel.tsx`
-- 弹窗 + 通用按钮：`pages/AllianceAnnounce/`、`pages/AllianceCreate/`
-- CheckBox：`pages/AllianceMemberSettings/`
-- 预览路由：`pages/PreviewHome/PreviewHome.tsx`、`apps/web-ui-preview/main.ts`、`screens.json`
+- 全屏壳 + 三页签 + VL：`apps/client/src/ui-uniflex/modules/alliance/AllianceTerritory/`
+- 折叠 flatten VL：`modules/alliance/Alliance/AllianceMembersPanel.tsx`
+- 弹窗 + 通用按钮：`modules/alliance/AllianceAnnounce/`、`modules/alliance/AllianceCreate/`
+- CheckBox：`modules/alliance/AllianceMemberSettings/`
+- 预览路由：`modules/preview/PreviewHome/PreviewHome.tsx`、`apps/web-ui-preview/main.ts`、`screens.json`
 - 资源：`apps/client/resources/ui/Alliance/manifest.json`
 - kit：`apps/kits/uniflex/README.md`

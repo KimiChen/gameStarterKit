@@ -24,7 +24,9 @@ import {
 } from "../../src/core/infra/config";
 import { kApplied, kAppliedPayload, kBag, kCacheCurrency, kUser } from "../../src/core/infra/keys";
 import { cacheClient, clientFor, closeRedis } from "../../src/core/infra/redisRoute";
-import { closeMysql, getPool } from "../../src/core/infra/mysql";
+import { closeMysql, getPool, withRcTx } from "../../src/core/infra/mysql";
+import { creditInTx, debitInTx } from "../../src/core/economy/currency";
+import { personaOwner } from "@game/shared";
 import type { RowDataPacket } from "../../src/core/infra/mysql";
 import { assertRedisUp, cleanupUser, testUid } from "./helpers";
 
@@ -240,3 +242,44 @@ test("applied trim payload WRONGTYPE：完整 preflight 保留 marker/payload/us
   assert.equal(await c.hget(kUser(u), "ver"), verBefore, "失败不得 bump user.ver");
   assert.equal(await c.hget(kBag(u, 10 % 4), "10"), "1", "既有发货结果不受影响");
 });
+
+// ── MMO MF2-B3：资产主体 ───────────────────────────────────────────────────
+test("资产主体：同账号两 persona 钱包 / 流水互不可见、各自幂等；account 旧路径写出的 ledger 行 owner_kind=0", async () => {
+  const u = await seedUser("owner", 300);
+  const sId = 0;
+  const A = personaOwner("p_aaaaaaaaaaaaaaaa01");
+  const B = personaOwner("p_bbbbbbbbbbbbbbbb02");
+  await withRcTx(async (conn) => {
+    assert.equal(await creditInTx(conn, u, sId, CUR_GOLD, 100, "op-owner-a1", "seed", A), 100);
+    assert.equal(await creditInTx(conn, u, sId, CUR_GOLD, 50, "op-owner-b1", "seed", B), 50);
+    assert.equal(await creditInTx(conn, u, sId, CUR_GOLD, 100, "op-owner-a1", "seed", A), "DUP", "同主体同 opId 幂等");
+    assert.equal(await creditInTx(conn, u, sId, CUR_GOLD, 5, "op-owner-a1", "seed", B), 55, "同 opId 在别的主体上是另一笔（uk_idem 含主体；返回 B 的新余额）");
+  });
+  assert.equal(await getBalance(u, sId, CUR_GOLD, A), 100);
+  assert.equal(await getBalance(u, sId, CUR_GOLD, B), 55);
+  assert.equal(await getBalance(u, sId), 300, "account 钱包不受 persona 影响");
+  await withRcTx(async (conn) => {
+    assert.equal(await debitInTx(conn, u, sId, CUR_GOLD, 30, 0, "op-owner-a2", "spend", A), 70);
+  });
+  // 余额不足在独立事务里验证（同一事务内抛出会连带回滚上面成功的扣款）
+  await assert.rejects(
+    withRcTx((conn) => debitInTx(conn, u, sId, CUR_GOLD, 80, 0, "op-owner-a3", "spend", A)),
+    InsufficientBalanceError, "A 只有 70：B 的钱不能替 A 花");
+  await invalidateBalanceCache(u, sId, A);
+  assert.equal(await getBalance(u, sId, CUR_GOLD, A), 70);
+  assert.equal(await getBalance(u, sId, CUR_GOLD, B), 55);
+  const [ledger] = await getPool().query<RowDataPacket[]>(
+    "SELECT owner_kind, owner_id, delta FROM currency_ledger WHERE user_id = ? ORDER BY id", [u]);
+  assert.deepEqual(ledger.map((r) => [Number(r.owner_kind), r.owner_id, Number(r.delta)]),
+    [[1, A.kind === "persona" ? A.personaId : "", 100], [1, B.kind === "persona" ? B.personaId : "", 50], [1, B.kind === "persona" ? B.personaId : "", 5], [1, A.kind === "persona" ? A.personaId : "", -30]]);
+  // 旧路径（shop.purchase）写出的行 owner_kind=0
+  const sku = getShopSku("shop.frag29x10")!;
+  await purchase(u, sku, "req-owner");
+  const [account] = await getPool().query<RowDataPacket[]>(
+    "SELECT owner_kind, owner_id FROM currency_ledger WHERE user_id = ? AND reason = 'shop.purchase'", [u]);
+  assert.deepEqual(account.map((r) => [Number(r.owner_kind), r.owner_id]), [[0, ""]]);
+  const [intent] = await getPool().query<RowDataPacket[]>("SELECT owner_kind, owner_id FROM gameplay_outbox WHERE user_id = ?", [u]);
+  assert.deepEqual(intent.map((r) => [Number(r.owner_kind), r.owner_id]), [[0, ""]]);
+  await cacheClient().unlink(kCacheCurrency(u, A), kCacheCurrency(u, B));
+});
+

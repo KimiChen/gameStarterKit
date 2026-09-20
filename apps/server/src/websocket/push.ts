@@ -11,14 +11,15 @@
  */
 import {
   ForceLogoutReason, KICK_CLOSE_CODE, LobbyPush,
-  type ForceLogoutReasonType, type IForceLogoutPush,
+  type ForceLogoutReasonType, type IForceLogoutPush, type LobbyPushType,
 } from "@game/shared";
 import { PUSH_ALL_CHUNK } from "../core/infra/config";
 import { K_STREAM_MAILWAKE } from "../core/infra/keys";
 import { clientForKey } from "../core/infra/redisRoute";
 import { fieldOf, startStreamConsumer, type StreamConsumer } from "../core/infra/streamConsumer";
-import { defaultLifecycle, isAdmissionOpen } from "../core/infra/lifecycle";
+import { defaultLifecycle, isAdmissionOpen, trackTask } from "../core/infra/lifecycle";
 import { storedInt } from "../core/infra/numbers";
+import { publishPush, setPushLocalHandlers, type PushLocalHandlers } from "../core/push/pushBus";
 
 export interface PushSink { (type: string, data: unknown): void }
 
@@ -48,6 +49,8 @@ const registrationByConn = new WeakMap<OnlineConn, OnlineRegistration>();
  * 而 `/admin/kick` 会回 `kicked:false`，让 GM 的 ack（09·G7b）产生**假阴性**（以为踢干净了，其实还在线）。
  */
 const online = new Map<string, Map<string, OnlineConn>>();
+/** 本节点按区的在线 uid 集合（MMO.md §6.3 `realmOnline`）：pushToRealm 的本地落地端；与 guildOnline 同在 register / unregister 维护。 */
+const realmOnline = new Map<number, Set<string>>();
 
 export function registerOnline(
   uid: string,
@@ -59,28 +62,40 @@ export function registerOnline(
   m.set(sessionId, conn);
   const registration: OnlineRegistration = Object.freeze({ token: Symbol("online-registration") });
   registrationByConn.set(conn, registration);
+  let realm = realmOnline.get(conn.sId);
+  if (!realm) { realm = new Set(); realmOnline.set(conn.sId, realm); }
+  realm.add(uid);
   return registration;
 }
+/**
+ * 注销一条在线连接。返回 **该 (uid, sId) 在本节点是否已无任何连接**（MMO MF6a-B1：LobbyRoom 据此决定
+ * 是否清 presence 的 `lobby` 字段——同 uid 同区还有别的连接时 ⛔ 不清；不命中 / 非本次登记返回 false）。
+ */
 export function unregisterOnline(
   uid: string,
   sessionId: string,
   expected?: OnlineRegistration,
-): void {
+): boolean {
   const m = online.get(uid);
   const removed = m?.get(sessionId);
-  if (!m || !removed) { return; }
-  if (expected !== undefined && registrationByConn.get(removed) !== expected) { return; }
-  if (!m.delete(sessionId)) { return; }
+  if (!m || !removed) { return false; }
+  if (expected !== undefined && registrationByConn.get(removed) !== expected) { return false; }
+  if (!m.delete(sessionId)) { return false; }
   registrationByConn.delete(removed);
   // 同 uid 可跨区同时在线：本区最后一条连接离开时只清本区公会索引，⛔ 不能等 uid 全下线，
   // 更不能把其它区仍在线角色的索引一起清掉。
-  if (![...m.values()].some((conn) => conn.sId === removed.sId)) {
+  const zoneOffline = ![...m.values()].some((conn) => conn.sId === removed.sId);
+  if (zoneOffline) {
     setOnlineGuild(uid, null, removed.sId);
+    const realm = realmOnline.get(removed.sId);
+    realm?.delete(uid);
+    if (realm !== undefined && realm.size === 0) { realmOnline.delete(removed.sId); }
   }
   if (m.size === 0) {
     online.delete(uid);
     setOnlineGuild(uid, null); // 防御性清掉该 uid 的全部残留区索引
   }
+  return zoneOffline;
 }
 
 /**
@@ -206,10 +221,12 @@ export function setOnlineGuild(uid: string, guildId: number | null, sId?: number
   }
 }
 
-/** 工会广播（在线成员量级几十，直推不分片）。返回实际送达连接数；失败即放弃（尽力通道，
+// ── 本地落地端（投递总线消费侧的终点，MMO.md §6.3；⛔ 业务代码不直接调用——发布走下方 pushTo*） ─────
+
+/** 工会本地落地（在线成员量级几十，直推不分片）。返回实际送达连接数；失败即放弃（尽力通道，
  *  可靠性由「唤醒 + seq 自愈拉取」语义承担，见 shared lobbyRpc/guild.ts）。
  *  @param sId 公会所在区——⛔ 必填，缺了就会推给同 gid 的**所有区**（A2）。 */
-export function pushToGuild(guildId: number, type: string, data: unknown, sId: number): number {
+export function deliverToGuild(guildId: number, type: string, data: unknown, sId: number): number {
   let n = 0;
   for (const uid of guildOnline.get(zKey(sId, guildId)) ?? []) {
     const conns = online.get(uid);
@@ -220,6 +237,68 @@ export function pushToGuild(guildId: number, type: string, data: unknown, sId: n
     }
   }
   return n;
+}
+
+/** 定向本地落地：只投该区（`conn.sId === sId`，⛔ 同 uid 在别区的连接不收）。 */
+export function deliverToUsers(uids: readonly string[], type: string, data: unknown, sId: number): number {
+  let n = 0;
+  for (const uid of uids) {
+    const conns = online.get(uid);
+    if (!conns) { continue; }
+    for (const conn of [...conns.values()]) {
+      if (conn.sId !== sId) { continue; }
+      try { conn.sink(type, data); n++; } catch { /* 将死连接，放弃 */ }
+    }
+  }
+  return n;
+}
+
+/** 全区本地落地：按 realmOnline 索引，每 PUSH_ALL_CHUNK 个 uid setImmediate 让出一次事件循环。 */
+export async function deliverToRealm(sId: number, type: string, data: unknown): Promise<number> {
+  let n = 0;
+  let i = 0;
+  for (const uid of [...(realmOnline.get(sId) ?? [])]) {
+    const conns = online.get(uid);
+    if (!conns) { continue; }
+    for (const conn of [...conns.values()]) {
+      if (conn.sId !== sId) { continue; }
+      try { conn.sink(type, data); n++; } catch { /* 尽力通道 */ }
+    }
+    if (++i % PUSH_ALL_CHUNK === 0) { await new Promise<void>((r) => setImmediate(r)); }
+  }
+  return n;
+}
+
+/** 本地落地端全集（进程入口 / 本模块加载时注入 core/push；world 进程另注入只含 room signal 的形态，D27）。 */
+export const pushLocalHandlers: PushLocalHandlers = {
+  pushToUsers: deliverToUsers,
+  pushToRealm: deliverToRealm,
+  pushToGuild: deliverToGuild,
+};
+setPushLocalHandlers(pushLocalHandlers);
+
+// ── 发布 API（经总线，单一路径：⛔ 不本地直投，本节点命中也经流回读） ────────────────────
+
+function publishDetached(label: string, input: Parameters<typeof publishPush>[0]): void {
+  void trackTask(`push:${label}`, publishPush(input).then(() => undefined, (e) => {
+    console.error(`[push] 发布失败 ${label}`, e);
+  }));
+}
+
+/** 定向投递（≤ PUSH_BUS_MAX_UIDS 自动切片）；只到该区连接。best-effort。 */
+export function pushToUsers(uids: readonly string[], type: LobbyPushType, data: unknown, sId: number): void {
+  publishDetached(`users:${type}`, { kind: "users", sId, uids, type, data });
+}
+
+/** 全区投递（ServerNotice / realm 聊天）。best-effort。 */
+export function pushToRealm(sId: number, type: LobbyPushType, data: unknown): void {
+  publishDetached(`realm:${type}`, { kind: "realm", sId, type, data });
+}
+
+/** 工会广播改走总线（MMO.md §6.7 第二消费方：修复「只投本节点」）。
+ *  @param sId 公会所在区——⛔ 必填（A2）。best-effort。 */
+export function pushToGuild(guildId: number, type: LobbyPushType, data: unknown, sId: number): void {
+  publishDetached(`guild:${type}`, { kind: "guild", sId, gid: guildId, type, data });
 }
 
 /** 全服广播：每 PUSH_ALL_CHUNK 个**在线 uid** setImmediate 让出一次事件循环（单线程版「丢给 task 进程」）；

@@ -1,0 +1,9 @@
+
+> @game/server@0.1.0 db:bootstrap
+> tsx tools/db-bootstrap.ts
+
+  kit arena: 已应用 sql/001-init.sql（2 条语句）
+  kit slg: 已应用 sql/001-init.sql（4 条语句）
+  kit slg: 已应用 sql/002-march.sql（3 条语句）
+✅ kit 迁移：2 个 kit，新应用 3 个文件，跳过 0 个
+✅ game_slgacc_ae91691eabb9 就绪，共 21 张表: archive_zone_usage, currency_ledger, gameplay_outbox, k_arena_attempt, k_arena_board, k_slg_capture, k_slg_march, k_slg_march_log, k_slg_march_receipt, k_slg_revision, k_slg_tile, k_slg_tile_log, kit_migration, mail, match_index, match_results, purchases, singleton_lease, user_archive, user_currency, user_snapshot_readonly

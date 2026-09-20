@@ -33,6 +33,7 @@
  * 跨用户流 ⛔ 不与 per-user key 进同一条 Lua。区前缀不含 hash-tag，`{...}` 语义不受影响。
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { AssetOwnerRef } from "@game/shared";
 import { crc32 } from "node:zlib";
 import { ACTIVE_LRU_BUCKETS, BAG_SHARDS, GROUP_ZONES, REDIS_KEY_PREFIX } from "./config";
 
@@ -225,6 +226,22 @@ export const kIdemPending = (uid: string) => `${P()}idem:pending:{${uid}}`;
 export const kGuildEvtSeq = (gid: number) => `${P()}guild:evt:seq:{g${gid}}`;
 /** 工会事件近窗 LIST（LPUSH + LTRIM 上限 GUILD_EVT_LOG_MAX）。 */
 export const kGuildEvtLog = (gid: number) => `${P()}guild:evt:log:{g${gid}}`;
+/**
+ * party 键族（docs/MMO.md §6.4；MF6a-B3）：per-zone `P()`，hash-tag `{p<pid>}` 五键同槽（一条 Lua 校验 → 变更 → ver → 事件 → PEXPIRE）；
+ * TTL = PARTY_IDLE_TTL_S（每次变更续），最后一人离开 DEL 全族。⛔ 与任何 `{uid}` 槽不进同一条 Lua——档字段 `partyId` 在 Lua 之后经 withUser 写。
+ */
+/** party 主 HASH：`leader, maxSize, ver, createdAt, updatedAt`。 */
+export const kParty = (pid: number) => `${P()}party:{p${pid}}`;
+/** 成员 ZSET：member = uid，score = joinedAt（ms）；队长离开由最早成员接任（确定性）。 */
+export const kPartyMembers = (pid: number) => `${P()}party:members:{p${pid}}`;
+/** 邀请 HASH：invitee → JSON `{by, at, expAt}`。 */
+export const kPartyInvites = (pid: number) => `${P()}party:invites:{p${pid}}`;
+/** party 事件 seq STRING（Lua 内 INCR）。 */
+export const kPartyEvtSeq = (pid: number) => `${P()}party:evt:seq:{p${pid}}`;
+/** party 事件近窗 LIST（LPUSH + LTRIM PARTY_EVT_LOG_MAX）。 */
+export const kPartyEvtLog = (pid: number) => `${P()}party:evt:log:{p${pid}}`;
+/** 区内 party id 发号 STRING（INCR；无 TTL，无 hash-tag：与队伍键族不同槽，⛔ 不进同一条 Lua）。 */
+export const kPartyIdSeq = () => `${P()}party:idseq`;
 
 // ── durable 实例 · 全局键（G：不带区前缀，见文件头分类） ────────────────────────
 
@@ -239,6 +256,13 @@ export const kGuildEvtLog = (gid: number) => `${P()}guild:evt:log:{g${gid}}`;
  * ⚠ 仍挂在**全局**前缀 `G` 下：uid 与 sId 都已在键名里，⛔ 别再叠一层区前缀（会变成 s1_...:s1）。
  */
 export const kSess = (uid: string, sId: number) => `${G}sess:{${uid}}:s${sId}`;
+/**
+ * presence HASH（MMO.md §6.2；MF6a）：`{lobby, lobbyAt, world, mapId, instanceId, characterId, worldAt}`，
+ * PRESENCE_TTL_S 心跳续命。与 `kSess` 同形（全局前缀 + `sId` 显式）：读者（party.get 标记 / kit 队友标记 /
+ * freezeWorker 在线判定）不在 `zoneCtx` 内，⛔ 不走 `P()`。durable 实例（`clientFor(uid)`），TTL 提示语义、
+ * ⛔ 非投递权威（投递看各节点本地在线表）。
+ */
+export const kPresence = (uid: string, sId: number) => `${G}presence:{${uid}}:s${sId}`;
 /** 幂等占位 · 通用作用域（非 uid，07 `idem:{scope}:{key}`）。全局。 */
 export const kIdem = (scope: string, key: string) => `${G}idem:${scope}:${key}`;
 /** 限流令牌桶（07 Lua 清单 `rl:{scope}`）。⚠ **全局**：含登录 by-IP（`login:{ip}`）前置区、匿名走 sessionId/IP（09·G5）。 */
@@ -271,6 +295,12 @@ export const K_STREAM_MAILWAKE = `${G}stream:mailwake`;
  *  **best-effort、无 ack**（权威撤销在 WebPlatform；⛔ 漏踢无自动收敛，送达保证走 GM `/admin/kick`）。⛔ 禁 MAXLEN，走 XTRIM MINID。 */
 export const K_STREAM_KICK = `${G}stream:kick`;
 /**
+ * 跨进程投递总线 STREAM（MMO.md §6.3；MF6a）：**coord** 实例（同 `stream:kick`：控制 / 扇出语义、组内独占 ⇒
+ * 扇出半径 = 能持有该区连接的节点集）。条目 `{kind, sId, uids|gid|instanceId, type, data, issuedAt, origin}`；
+ * 每节点独立 `$` 游标、⛔ 无 group；发布方 ⛔ 不本地直投（单一路径）；`XTRIM MINID` 按 PUSH_STREAM_TRIM_MS 裁。
+ */
+export const K_STREAM_PUSH = `${G}stream:push`;
+/**
  * WebPlatform 角色登记修复 intent（GAME-6）：两个 durable key 用固定 hash-tag 同槽，才能用
  * MULTI 原子维护调度项与失败次数。member 是 `JSON [userId,serverId]`，score 是 nextAttemptMs。
  *
@@ -287,12 +317,24 @@ export const K_CHARACTER_REPAIR_ATTEMPTS = `${G}repair:character:attempts:{chara
 //    ⚠ 这些键只存在于 coordClient（组内单实例）；INVITE_CODE_ALLOCATE 的 code/gen 同
 //    hash-tag，TICKET_ISSUE_CREATION 刻意跨 tag（quota + ticket），⛔ 不得搬去 cluster。 ──
 
+/**
+ * 世界权威租约（MMO MF4-B4，docs/MMO.md §5.4 MF4）：coord Redis（组内单实例，⛔ 不搬 cluster）；显式 sId 入键（WorldRoom 是房级区常量，
+ * ⛔ 不读 ALS）。lease STRING = `<holder>:<fence>`（SET NX PX WORLD_LEASE_TTL_MS）；fence 是 per-(sId, instanceId) 单调 INCR 发号器，
+ * 永不重置——续租 / 释放都按 value 逐字比（Lua 侧 CAS），旧持有者拿旧 fence 续不了新租约。两键同 hash-tag。
+ */
+export const kWorldLease = (sId: number, instanceId: string) => `${G}world:lease:{s${sId}:${instanceId}}`;
+export const kWorldFence = (sId: number, instanceId: string) => `${G}world:fence:{s${sId}:${instanceId}}`;
+/** 分线实时登记 HASH（MMO MF10-B1；seated / capacity / publicAddress / holder / updatedAt，PX=WORLD_INFO_TTL_MS，权威房周期刷新；崩溃自愈）。 */
+export const kWorldInfo = (sId: number, instanceId: string) => `${G}world:info:{s${sId}:${instanceId}}`;
+
 /** 邀请码 lease/tombstone STRING（JSON value；active 带 PX=leaseTtl，tombstone 带 PX=cooldown，⛔ 非 DEL）。 */
 export const kInviteCode = (sId: number, code: string) => `${G}room:code:{s${sId}:${code}}`;
 /** per-(sId, code) 单调分配代号 INCR 计数器。永不重置、永不随 lease 释放而删除（§6.7）。 */
 export const kInviteCodeGen = (sId: number, code: string) => `${G}room:code:gen:{s${sId}:${code}}`;
 /** creation/join ticket 记录 STRING（JSON，PX=exp）。键名只含 ticket 的 sha256，⛔ 不含原文。 */
 export const kRoomTicket = (sId: number, ticketSha256: string) => `${G}room:ticket:s${sId}:${ticketSha256}`;
+/** 世界房一次性准入凭据记录 STRING（MMO MF8-B2；JSON，PX=exp）：kRoomTicket 同形，键名只含 ticket 的 sha256，⛔ 不含原文。 */
+export const kWorldTicket = (sId: number, ticketSha256: string) => `${G}world:ticket:s${sId}:${ticketSha256}`;
 /** 单 uid 私房配额 ZSET：member=`t:<jti>`（未消费 creation ticket）/`r:<roomId>`（活跃私房），score=过期时刻 ms。 */
 export const kRoomTicketQuota = (sId: number, uid: string) => `${G}room:quota:s${sId}:{${uid}}`;
 
@@ -305,7 +347,14 @@ export const activeLruBucketOf = (uid: string): number =>
 
 // ── cache 实例（物理独立，09·R4） · per-zone ─────────────────────────────
 
-/** 货币只读缓存 HASH，TTL 5m，真源在 MySQL。⛔ 不混进 user:{uid}（09·A2）。每区独立经济 → per-zone。 */
-export const kCacheCurrency = (uid: string) => `${P()}cache:currency:{${uid}}`;
+/**
+ * 货币只读缓存 HASH，TTL 5m，真源在 MySQL。⛔ 不混进 user:{uid}（09·A2）。每区独立经济 → per-zone。
+ * 资产主体（MMO MF2-B3）：account 主体沿用原键（存量缓存无损）；persona 主体带 `:persona:<personaId>` 段——`{uid}` 仍是唯一
+ * hash-tag（同槽），同账号各 persona 钱包互不可见。
+ */
+export const kCacheCurrency = (uid: string, owner?: AssetOwnerRef) =>
+  owner === undefined || owner.kind === "account"
+    ? `${P()}cache:currency:{${uid}}`
+    : `${P()}cache:currency:{${uid}}:persona:${owner.personaId}`;
 /** 不存在用户的负缓存 STRING，TTL 10s。读点必须在 EXISTS user 之后（09·F4）。per-zone（本区有无角色）。 */
 export const kNegcacheUser = (uid: string) => `${P()}negcache:user:{${uid}}`;

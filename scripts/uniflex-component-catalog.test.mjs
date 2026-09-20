@@ -28,21 +28,21 @@ test("discoverPsdComponents skips Restored dumps and fails closed on duplicate r
     const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-psd-catalog-"));
     const ui = join(tempRoot, "apps/client/src/ui-uniflex");
     try {
-        await mkdir(join(ui, "pages/Demo"), { recursive: true });
-        await mkdir(join(ui, "pages/DemoRestored/components"), { recursive: true });
-        await mkdir(join(ui, "restored/pages/Demo/components"), { recursive: true });
+        await mkdir(join(ui, "modules/Demo"), { recursive: true });
+        await mkdir(join(ui, "modules/DemoRestored/components"), { recursive: true });
+        await mkdir(join(ui, "restored/modules/Demo/components"), { recursive: true });
         await mkdir(join(ui, "generated"), { recursive: true });
-        await writeFile(join(ui, "pages/Demo/DemoPanel.tsx"), `
+        await writeFile(join(ui, "modules/Demo/DemoPanel.tsx"), `
 export const DemoPanel = defineComponent(() => (
     <view name="Demo" />
 ));
 `);
-        await writeFile(join(ui, "pages/DemoRestored/components/Dump.tsx"), `
+        await writeFile(join(ui, "modules/DemoRestored/components/Dump.tsx"), `
 export const Dump = defineComponent(() => (
     <view name="DumpRoot" />
 ));
 `);
-        await writeFile(join(ui, "restored/pages/Demo/components/Shared.tsx"), `
+        await writeFile(join(ui, "restored/modules/Demo/components/Shared.tsx"), `
 export const Shared = defineComponent(() => (
     <view name="SharedRoot" />
 ));
@@ -54,7 +54,7 @@ export const Skip = defineComponent(() => (
 `);
         const catalog = await discoverPsdComponents(tempRoot);
         assert.deepEqual(catalog.components.map((entry) => entry.key), ["DemoPanel"]);
-        await writeFile(join(ui, "pages/Demo/Other.tsx"), `
+        await writeFile(join(ui, "modules/Demo/Other.tsx"), `
 export const Other = defineComponent(() => (
     <view name="Demo" />
 ));

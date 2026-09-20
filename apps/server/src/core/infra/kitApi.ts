@@ -23,6 +23,18 @@
  *   5. `readKitUserField(kitId, name, uid, field, scope)`：只读 HGET 本 kit 的 per-user 键（`kKitUser`）一个字段；
  *      `name` 必须在本 kit 的 `kit.json.userKeys` 里（SERVER_KIT_CATALOG）。写侧仍只有 effect 通道（KIT.md §5）。
  *   同时再导出 `currentZoneId`（RPC 端点把请求所在区交给 withKitTx 用）。
+ *   6. `withKitWorkerTx(kitId, workerId, sId, lease, fn)`（docs/MMO.md MF7a-B3）：kit worker 的**租约守卫受限事务**——
+ *      同连接同事务**首句** `renewLeaseGuard`（`UPDATE singleton_lease … WHERE lease_name = ? AND holder = ? AND fence_token = ?`，
+ *      Rows matched 0 ⇒ LeaseLostError，withRcTx 自动 ROLLBACK，⛔ 业务表零写入——旧持有者 / 旧 fence 的写被存储边界拒）；
+ *      句柄与 withKitTx 同形（表闸 / debit / credit / enqueueEffect），另带 `workerId` / `fenceToken`；`.conn` 运行时抛错
+ *      （worker 没有原始连接）；回调内再开 withKitTx / withKitWorkerTx 一律拒（事务套事务 = 第二条连接绕过守卫首句）；
+ *      租约名必须恰是 `kit:<kitId>:<workerId>`（⛔ 借别的 worker 的租约写）。worker 进程入口见 src/workers/kitWorker.ts。
+ *   7. `withKitWorldTx(kitId, sId, { instanceId, authorityEpoch, personas? }, fn)`（docs/MMO.md MF7b-B2）：世界形态的**权威守卫受限事务**——
+ *      同连接同事务**首句** `UPDATE world_instance SET write_seq = write_seq + 1 WHERE server_id = ? AND instance_id = ? AND authority_epoch = ?`
+ *      （Rows matched 0 ⇒ AuthorityLostError，自动 ROLLBACK：旧 owner 的迟到写被存储边界拒——「存储边界拒旧 epoch」的唯一实现点；
+ *      ⛔ 不碰 `checkpoint_rev`，它只在检查点落盘时推进，M18），再逐 persona `assertControl`（id 升序，锁序同 MF2），然后交出
+ *      与 withKitTx 同形的受限句柄 + `writeSeq` + `appendWorldEvent(table, event)`（只许写本 kit 的 `role:"world-event"` 表，
+ *      框架固定列 event_id / instance_id / seq / kind / payload / status / attempts / checkpoint_rev）；`.conn` 运行时抛错。
  * effect kind 登记通道（`kit:<id>:<name>`）在 shared economy.ts + KIT_EFFECT_KINDS + Lua 镜像，不在本文件。
  *
  * kit 从 `apps/server/src/kits/<id>/**` 以相对路径 `../../core/infra/kitApi` 导入本文件；kit 需要的错误类型、
@@ -39,11 +51,15 @@
  * db:bootstrap 账本应用），⛔ 不给 kit 事务内跑。`tx.query()` 走 `conn.execute`（服务端预处理语句，参数只允许
  * 原始值 / Date / Buffer，⛔ `toSqlString` 一类对象在客户端拼接 SQL 绕过闸）。
  */
+import { AsyncLocalStorage } from "node:async_hooks";
+import { randomUUID } from "node:crypto";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "./mysql";
-import { retryOnContention, withRcTx } from "./mysql";
+import { getPool, retryOnContention, withRcTx } from "./mysql";
+import { LeaseLostError, renewLeaseGuard, type SingletonLease } from "./lease";
+import { kitWorkerLeaseName } from "../../kits/workerLease";
 import { withUser } from "../uow";
-import type { IEffect, KitEffectKinds } from "@game/shared";
-import { lookupKitEffectKind } from "@game/shared";
+import type { AssetOwnerRef, IEffect, KitEffectKinds } from "@game/shared";
+import { PERSONA_MAX_SLOTS_HARD, assetOwnerKey, lookupKitEffectKind, validatePersonaId } from "@game/shared";
 import { KIT_EFFECT_KINDS } from "@game/shared/kits/catalog.generated";
 import { creditInTx, debitInTx, invalidateBalanceCache } from "../economy/currency";
 import {
@@ -51,14 +67,20 @@ import {
 } from "../economy/outbox";
 import { CUR_GOLD } from "./config";
 import {
-  EffectConflictError, InsufficientBalanceError, InvalidEffectError, RpcFault, StaleFenceError,
+  AuthorityLostError, ControlConflictError, EffectConflictError, InsufficientBalanceError, InvalidEffectError, PersonaBusyError,
+  PersonaLockOrderError, PersonaNotFoundError, PersonaSlotTakenError, RpcFault, StaleFenceError,
 } from "../errors";
 import { type KitKeyScope, currentZoneId, kKitUser, zoneCtx } from "./keys";
 import { clientFor } from "./redisRoute";
 import { SERVER_KIT_CATALOG } from "../../kits/catalog.generated";
+import type { ServerKitCatalogEntry } from "../../kits/catalogTypes";
 
-export { CUR_GOLD, EffectConflictError, InsufficientBalanceError, InvalidEffectError, RpcFault, StaleFenceError, currentZoneId, kKitUser };
-export type { IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket };
+export {
+  AuthorityLostError, CUR_GOLD, ControlConflictError, EffectConflictError, InsufficientBalanceError, InvalidEffectError, LeaseLostError,
+  PERSONA_MAX_SLOTS_HARD, PersonaBusyError, PersonaLockOrderError, PersonaNotFoundError, PersonaSlotTakenError, RpcFault, StaleFenceError,
+  currentZoneId, kKitUser,
+};
+export type { AssetOwnerRef, IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket, SingletonLease };
 
 export interface KitUserFence { readonly fence: number }
 export interface KitUserFenceDeps {
@@ -113,15 +135,61 @@ export interface KitTx {
   readonly sId: number;
   /** 只能碰 `k_<kitId 小写>_*` 表（运行时闸，见文件头）；走预处理语句，params 只允许原始值 / Date / Buffer。 */
   query<T = RowDataPacket[] | ResultSetHeader>(sql: string, params?: unknown[]): Promise<T>;
-  /** 扣款：ledger 幂等 → 余额 + fence 守卫；"DUP" = 同 opId 已扣过（事务内零写入）。 */
-  debit(uid: string, currency: number, amount: number, fence: number, opId: string, reason: string): Promise<"DUP" | number>;
-  /** 入账：ledger 幂等 → upsert 余额；"DUP" = 同 opId 已入过。 */
-  credit(uid: string, currency: number, amount: number, opId: string, reason: string): Promise<"DUP" | number>;
+  /** 扣款：ledger 幂等 → 余额 + fence 守卫；"DUP" = 同 opId 已扣过（事务内零写入）。`owner` 缺省 account(uid)（MF2 资产主体）。 */
+  debit(uid: string, currency: number, amount: number, fence: number, opId: string, reason: string, owner?: AssetOwnerRef): Promise<"DUP" | number>;
+  /** 入账：ledger 幂等 → upsert 余额；"DUP" = 同 opId 已入过。`owner` 缺省 account(uid)。 */
+  credit(uid: string, currency: number, amount: number, opId: string, reason: string, owner?: AssetOwnerRef): Promise<"DUP" | number>;
   /**
    * durable intent（阶段 1 的 outbox 半边）；"DUP" = 同 opId 已有**同载荷** intent（ODKU no-op 后回读比对），
    * 同 opId 不同载荷 ⇒ EffectConflictError；effect 里的 kit kind 必须是 `kit:<本 kitId>:*` ⇒ 否则 KitEffectScopeError。
    */
-  enqueueEffect(uid: string, opId: string, effect: IEffect): Promise<"INSERTED" | "DUP">;
+  enqueueEffect(uid: string, opId: string, effect: IEffect, owner?: AssetOwnerRef): Promise<"INSERTED" | "DUP">;
+  /**
+   * persona 门面（MMO MF2-B4，docs/MMO.md §5 MF2 / M03）：框架写 `persona` 表——kit ⛔ 不能直接 SQL 触碰它（表闸照拒），
+   * kit 的角色行经返回的 personaId 关联（⛔ 无外键，KIT.md §2）。同一事务内锁序固定：先 account 作用域（createPersona 锁该
+   * (server_id, user_id, kit_id) 的 persona 行集与间隙），再 persona id **升序**——乱序一律 PersonaLockOrderError（fail-closed，
+   * ⛔ 不等 InnoDB 死锁裁决）。slot ∈ [0, PERSONA_MAX_SLOTS_HARD)；同槽再建 ⇒ PersonaSlotTakenError（UNIQUE 冲突，⛔ 不吞）。
+   */
+  createPersona(uid: string, slot: number, meta?: Readonly<Record<string, unknown>>): Promise<string>;
+  /** 控制权 CAS：`UPDATE persona … WHERE control_epoch = ?`，Rows matched 0 ⇒ ControlConflictError（不存在 ⇒ PersonaNotFoundError）。 */
+  assertControl(personaId: string, controlEpoch: number): Promise<void>;
+  /** status → inactive（幂等）；仍在世界房（world_address 非 NULL）⇒ PersonaBusyError。 */
+  deactivatePersona(personaId: string): Promise<void>;
+  /** 只删 status = inactive 且 world_address IS NULL 的行；否则 PersonaBusyError。 */
+  deletePersona(personaId: string): Promise<void>;
+}
+
+/** 事务外只读的 persona 视图（listPersonas）。 */
+export interface PersonaRow {
+  readonly personaId: string;
+  readonly slot: number;
+  readonly status: 0 | 1;
+  readonly controlEpoch: number;
+  readonly worldAddress: string | null;
+  readonly meta: unknown;
+}
+
+const PERSONA_ID_KIT_RE = /^[a-z][A-Za-z0-9]{0,63}$/u;
+
+/** 事务外只读：该账号在本 kit / 本区的全部 persona（按 slot 升序）。`query` 可注入（单测）；生产缺省进程池。 */
+export async function listPersonas(
+  kitId: string, uid: string, sId: number,
+  query: (sql: string, params: unknown[]) => Promise<RowDataPacket[]> = async (sql, params) => (await getPool().query<RowDataPacket[]>(sql, params))[0],
+): Promise<readonly PersonaRow[]> {
+  if (!PERSONA_ID_KIT_RE.test(kitId)) { throw new TypeError(`kitId "${kitId}" 非法`); }
+  if (!uid || uid.length > 32) { throw new TypeError("kit uid invalid"); }
+  if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
+  const rows = await query(
+    "SELECT persona_id, slot, status, control_epoch, world_address, meta FROM persona WHERE server_id = ? AND user_id = ? AND kit_id = ? ORDER BY slot",
+    [sId, uid, kitId]);
+  return rows.map((row) => ({
+    personaId: String(row.persona_id),
+    slot: Number(row.slot),
+    status: Number(row.status) === 1 ? 1 : 0,
+    controlEpoch: Number(row.control_epoch),
+    worldAddress: row.world_address === null || row.world_address === undefined ? null : String(row.world_address),
+    meta: row.meta ?? null,
+  }));
 }
 
 /** 可注入的框架依赖（单测用假 pool / 假账本 / 自己的 kit kind 表；生产缺省即真实实现与生成物）。 */
@@ -445,6 +513,120 @@ export function assertKitEffectScope(kitId: string, effect: IEffect, kinds: KitE
   }
 }
 
+/** 提交后要失效余额缓存的主体集合：按 (uid, owner) 去重（缓存键随主体，MF2-B3）。 */
+type TouchedOwners = Map<string, { readonly uid: string; readonly owner: AssetOwnerRef | undefined }>;
+const touchKey = (uid: string, owner: AssetOwnerRef | undefined): string => `${uid}|${owner === undefined ? "account" : assetOwnerKey(owner)}`;
+
+const ROWS_MATCHED = /Rows matched:\s*(\d+)/u;
+const rowsMatched = (result: ResultSetHeader): number => {
+  const match = ROWS_MATCHED.exec(result.info ?? "");
+  return match === null ? result.affectedRows : Number(match[1]);
+};
+
+/** `withKitTx` / `withKitWorkerTx` 共用的受限句柄（不含 `conn`：普通 kit 事务补上原始连接，worker 事务补上抛错 getter）。 */
+function buildKitTx(conn: PoolConnection, kitId: string, sId: number, touched: TouchedOwners, deps: KitTxDeps): Omit<KitTx, "conn"> {
+  // persona 锁序（MF2-B4）：account 作用域必须先于任何 persona 行锁；persona 行锁按 id 升序。变异验证：删升序判定 → 单测「乱序锁」转红。
+  const lockOrder: { lastPersonaId: string | null } = { lastPersonaId: null };
+  const takePersonaLock = (personaId: string, what: string): void => {
+    validatePersonaId(personaId, `${what}.personaId`);
+    if (lockOrder.lastPersonaId !== null && personaId < lockOrder.lastPersonaId) {
+      throw new PersonaLockOrderError(`${what}(${personaId}) 在 ${lockOrder.lastPersonaId} 之后——同一事务内 persona 锁序必须升序（先小后大）`);
+    }
+    lockOrder.lastPersonaId = personaId;
+  };
+  const PERSONA_ROW = "server_id = ? AND persona_id = ? AND kit_id = ?";
+  const personaExists = async (personaId: string): Promise<RowDataPacket | undefined> => {
+    const [rows] = await conn.query<RowDataPacket[]>(`SELECT control_epoch, status, world_address FROM persona WHERE ${PERSONA_ROW}`, [sId, personaId, kitId]);
+    return rows[0];
+  };
+  return {
+    kitId, sId,
+    async createPersona(uid, slot, meta) {
+      if (!uid || uid.length > 32) { throw new TypeError("kit uid invalid"); }
+      if (!Number.isInteger(slot) || slot < 0) { throw new TypeError(`persona slot ${slot} 非法`); }
+      if (slot >= PERSONA_MAX_SLOTS_HARD) { throw new RangeError(`persona slot ${slot} ≥ 硬上限 PERSONA_MAX_SLOTS_HARD=${PERSONA_MAX_SLOTS_HARD}（产品上限归 kit，须更小）`); }
+      if (lockOrder.lastPersonaId !== null) {
+        throw new PersonaLockOrderError(`createPersona（account 作用域）必须先于本事务内任何 persona 行锁（已锁 ${lockOrder.lastPersonaId}）`);
+      }
+      const metaJson = meta === undefined ? null : JSON.stringify(meta);
+      if (metaJson !== null && metaJson.length > 4096) { throw new RangeError("persona meta 超过 4 KB"); }
+      // account 作用域锁：该账号在本 kit / 本区的 persona 行集 + 间隙（同账号并发建角串行化），⛔ 先于 persona 行锁
+      await conn.execute("SELECT persona_id FROM persona WHERE server_id = ? AND user_id = ? AND kit_id = ? FOR UPDATE", [sId, uid, kitId]);
+      const personaId = randomUUID();
+      try {
+        await conn.execute<ResultSetHeader>(
+          "INSERT INTO persona (server_id, persona_id, user_id, kit_id, slot, meta) VALUES (?,?,?,?,?,CAST(? AS JSON))",
+          [sId, personaId, uid, kitId, slot, metaJson]);
+      } catch (error) {
+        if ((error as { errno?: unknown }).errno === 1062) { throw new PersonaSlotTakenError(uid, kitId, slot); } // ⛔ 不吞：同槽二建就是冲突
+        throw error;
+      }
+      return personaId;
+    },
+    async assertControl(personaId, controlEpoch) {
+      if (!Number.isInteger(controlEpoch) || controlEpoch < 0) { throw new TypeError(`controlEpoch ${controlEpoch} 非法`); }
+      takePersonaLock(personaId, "assertControl");
+      // Rows matched（⛔ 不是 affectedRows：池已关 CLIENT_FOUND_ROWS，同毫秒重复 CAS 会报 Changed 0）；谓词里的 control_epoch 就是存储边界
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE persona SET updated_at = NOW(3) WHERE ${PERSONA_ROW} AND control_epoch = ?`,
+        [sId, personaId, kitId, controlEpoch]);
+      if (rowsMatched(result) === 1) { return; }
+      const row = await personaExists(personaId);
+      if (row === undefined) { throw new PersonaNotFoundError(personaId); }
+      throw new ControlConflictError(personaId, controlEpoch, Number(row.control_epoch));
+    },
+    async deactivatePersona(personaId) {
+      takePersonaLock(personaId, "deactivatePersona");
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE persona SET status = 1 WHERE ${PERSONA_ROW} AND world_address IS NULL`, [sId, personaId, kitId]);
+      if (rowsMatched(result) === 1) { return; }
+      const row = await personaExists(personaId);
+      if (row === undefined) { throw new PersonaNotFoundError(personaId); }
+      throw new PersonaBusyError(personaId, `仍在世界房 ${String(row.world_address)}`);
+    },
+    async deletePersona(personaId) {
+      takePersonaLock(personaId, "deletePersona");
+      const [result] = await conn.execute<ResultSetHeader>(
+        `DELETE FROM persona WHERE ${PERSONA_ROW} AND status = 1 AND world_address IS NULL`, [sId, personaId, kitId]);
+      if (result.affectedRows === 1) { return; }
+      const row = await personaExists(personaId);
+      if (row === undefined) { throw new PersonaNotFoundError(personaId); }
+      throw new PersonaBusyError(personaId, Number(row.status) === 1 ? `仍在世界房 ${String(row.world_address)}` : "仍 active（先 deactivatePersona）");
+    },
+    async query<R = RowDataPacket[] | ResultSetHeader>(sql: string, params: unknown[] = []): Promise<R> {
+      assertKitTableAccess(sql, kitId);
+      assertQueryParams(params, kitId);
+      const [rows] = await conn.execute<RowDataPacket[] | ResultSetHeader>(sql, params);
+      return rows as R;
+    },
+    async debit(uid, currency, amount, fence, opId, reason, owner) {
+      const r = await deps.debitInTx(conn, uid, sId, currency, amount, fence, opId, reason, ...(owner === undefined ? [] : [owner] as const));
+      if (r !== "DUP") { touched.set(touchKey(uid, owner), { uid, owner }); }
+      return r;
+    },
+    async credit(uid, currency, amount, opId, reason, owner) {
+      const r = await deps.creditInTx(conn, uid, sId, currency, amount, opId, reason, ...(owner === undefined ? [] : [owner] as const));
+      if (r !== "DUP") { touched.set(touchKey(uid, owner), { uid, owner }); }
+      return r;
+    },
+    async enqueueEffect(uid, opId, effect, owner) {
+      const canonical = canonicalizeEffect(effect, deps.kinds);
+      assertKitEffectScope(kitId, canonical, deps.kinds);
+      const r = await deps.insertOutboxIntent(conn, { opId, uid, sId, effect: canonical, onDuplicate: "ignore", ...(owner === undefined ? {} : { owner }) }, deps.kinds);
+      if (r === "DUP") { await deps.assertOutboxIntentMatches(conn, { opId, uid, sId, effect: canonical, ...(owner === undefined ? {} : { owner }) }, deps.kinds); }
+      return r;
+    },
+  };
+}
+
+/** worker 事务作用域（租约名）：回调内再开 kit 事务一律拒——事务套事务 = 第二条连接绕过守卫首句。 */
+const workerTxScope = new AsyncLocalStorage<string>();
+
+function assertNotInsideWorkerTx(what: string): void {
+  const inside = workerTxScope.getStore();
+  if (inside !== undefined) { throw new Error(`kit worker 事务（${inside}）内 ⛔ 另开 ${what}`); }
+}
+
 /**
  * kit 事务（READ COMMITTED，与货币 / outbox 写路径同级，09·DB5）。`fn` 抛出即整体回滚；提交后对每个
  * 扣过款 / 入过账的 uid 失效余额缓存（同 purchaseTx 的收尾）。`deps` 只给单测注入。
@@ -454,38 +636,335 @@ export async function withKitTx<T>(
 ): Promise<T> {
   kitTablePrefix(kitId); // kitId 形态闸先于任何 SQL
   if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
-  const touched = new Set<string>();
-  const result = await deps.withRcTx(async (conn) => {
-    const tx: KitTx = {
-      conn, kitId, sId,
-      async query<R = RowDataPacket[] | ResultSetHeader>(sql: string, params: unknown[] = []): Promise<R> {
-        assertKitTableAccess(sql, kitId);
-        assertQueryParams(params, kitId);
-        const [rows] = await conn.execute<RowDataPacket[] | ResultSetHeader>(sql, params);
-        return rows as R;
-      },
-      async debit(uid, currency, amount, fence, opId, reason) {
-        const r = await deps.debitInTx(conn, uid, sId, currency, amount, fence, opId, reason);
-        if (r !== "DUP") { touched.add(uid); }
-        return r;
-      },
-      async credit(uid, currency, amount, opId, reason) {
-        const r = await deps.creditInTx(conn, uid, sId, currency, amount, opId, reason);
-        if (r !== "DUP") { touched.add(uid); }
-        return r;
-      },
-      async enqueueEffect(uid, opId, effect) {
-        const canonical = canonicalizeEffect(effect, deps.kinds);
-        assertKitEffectScope(kitId, canonical, deps.kinds);
-        const r = await deps.insertOutboxIntent(conn, { opId, uid, sId, effect: canonical, onDuplicate: "ignore" }, deps.kinds);
-        if (r === "DUP") { await deps.assertOutboxIntentMatches(conn, { opId, uid, sId, effect: canonical }, deps.kinds); }
-        return r;
-      },
-    };
-    return fn(tx);
-  });
-  for (const uid of touched) { await deps.invalidateBalanceCache(uid, sId); }
+  assertNotInsideWorkerTx("withKitTx");
+  const touched: TouchedOwners = new Map();
+  const result = await deps.withRcTx((conn) => fn({ conn, ...buildKitTx(conn, kitId, sId, touched, deps) }));
+  for (const { uid, owner } of touched.values()) { await deps.invalidateBalanceCache(uid, sId, ...(owner === undefined ? [] : [owner] as const)); }
   return result;
+}
+
+// ── kit worker 的租约守卫受限事务（文件头第 6 条；docs/MMO.md MF7a-B3）─────────────────
+
+/** worker 事务句柄：与 KitTx 同形但**没有** `conn`（运行时访问也抛），另带 worker 身份、本次守卫通过的 fence 与世界事件消费口（MF7b-B3）。 */
+export interface KitWorkerTx extends Omit<KitTx, "conn">, KitWorldEventOps {
+  readonly workerId: string;
+  /** 守卫首句比对通过的 fence_token（写需要 fence 的行时用；⛔ 不是可信的「当前 fence」——事务提交后可能已被顶替）。 */
+  readonly fenceToken: number;
+}
+
+/** `withKitWorkerTx` 的可注入依赖：KitTxDeps + 守卫（单测用假连接答 Rows matched；生产缺省 core/infra/lease.ts）+ 事件表声明集。 */
+export interface KitWorkerTxDeps extends KitTxDeps {
+  readonly renewLeaseGuard: typeof renewLeaseGuard;
+  /** 本 kit 声明为 role:"world-event" 的表名（生产从 SERVER_KIT_CATALOG 读；夹具注入）。 */
+  readonly worldEventTables?: (kitId: string) => readonly string[];
+}
+
+const DEFAULT_WORKER_DEPS: KitWorkerTxDeps = { ...DEFAULT_DEPS, renewLeaseGuard, worldEventTables: (kitId) => worldEventTablesOfKit(kitId) };
+
+/**
+ * kit worker 的租约守卫受限事务：`withRcTx` 内**首句** `renewLeaseGuard(conn, lease)`（同连接同事务；`UPDATE singleton_lease …
+ * WHERE lease_name = ? AND holder = ? AND fence_token = ?`，Rows matched 0 ⇒ 抛 LeaseLostError，自动 ROLLBACK，回调零执行），
+ * 再交出受限句柄（表闸 / debit / credit / enqueueEffect 同 withKitTx）。租约名必须恰是 `kit:<kitId>:<workerId>`；
+ * 回调内 ⛔ 另开 withKitTx / withKitWorkerTx、⛔ 取 `.conn`。提交后对扣过款 / 入过账的 uid 失效余额缓存。
+ * worker 主循环捕获 LeaseLostError 后必须退出进程（僵尸 leader，09·X7），⛔ 不重试。
+ */
+export async function withKitWorkerTx<T>(
+  kitId: string, workerId: string, sId: number, lease: SingletonLease,
+  fn: (tx: KitWorkerTx) => Promise<T>, deps: KitWorkerTxDeps = DEFAULT_WORKER_DEPS,
+): Promise<T> {
+  kitTablePrefix(kitId); // kitId 形态闸先于任何 SQL
+  const leaseName = kitWorkerLeaseName(kitId, workerId);
+  if (lease.leaseName !== leaseName) { throw new TypeError(`租约 "${lease.leaseName}" 不属于 worker ${leaseName}（⛔ 借别的 worker 的租约写）`); }
+  if (!Number.isInteger(lease.fenceToken) || lease.fenceToken < 1) { throw new TypeError(`租约 fence_token ${lease.fenceToken} 非法（抢占后 ≥ 1）`); }
+  if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
+  assertNotInsideWorkerTx("withKitWorkerTx");
+  const touched: TouchedOwners = new Map();
+  const result = await deps.withRcTx(async (conn) => {
+    // 首句：续租守卫。0 行 = 已被顶替（或手上是旧 fence 的残留 lease 对象）⇒ 抛出，withRcTx ROLLBACK，业务表零写入。
+    if (!await deps.renewLeaseGuard(conn, lease)) { throw new LeaseLostError(leaseName); }
+    const eventTables = (deps.worldEventTables ?? DEFAULT_WORKER_DEPS.worldEventTables ?? (() => []))(kitId);
+    const tx: KitWorkerTx = Object.defineProperty(
+      { ...buildKitTx(conn, kitId, sId, touched, deps), ...buildWorldEventOps(conn, kitId, sId, eventTables), workerId, fenceToken: lease.fenceToken },
+      "conn", { enumerable: false, get(): never { throw new Error(`kit worker 事务（${leaseName}）⛔ 取原始连接 .conn`); } },
+    );
+    return workerTxScope.run(leaseName, () => fn(Object.freeze(tx)));
+  });
+  for (const { uid, owner } of touched.values()) { await deps.invalidateBalanceCache(uid, sId, ...(owner === undefined ? [] : [owner] as const)); }
+  return result;
+}
+
+// ── 世界形态的权威守卫受限事务（文件头第 7 条；docs/MMO.md MF7b-B2 / §4.6 不变量 1）───────────────
+
+/** 世界事务作用域：权威代是首句 CAS 的谓词；personas（可选）逐个 assertControl（框架按 id 升序取锁）。 */
+export interface KitWorldTxScope {
+  readonly instanceId: string;
+  readonly authorityEpoch: number;
+  readonly personas?: readonly { readonly id: string; readonly controlEpoch: number }[];
+}
+
+/** 世界事件行（框架固定列；表由 kit 选、以 role:"world-event" 声明）。 */
+export interface KitWorldEventInput {
+  /** 服务端 uuid 字符串（与 op_id 同源：worker 执行时的幂等键）。 */
+  readonly eventId: string;
+  /** 分线内单调序号（WorldRuntime 分配）。 */
+  readonly seq: number;
+  readonly kind: string;
+  readonly payload: unknown;
+  /** 产生它的分线状态所对应的**下一个将落盘**的分线检查点 rev（§7.3 原子规则 ①）。 */
+  readonly checkpointRev: number;
+  /** 缺省 = 作用域的 instanceId。 */
+  readonly instanceId?: string;
+}
+
+/**
+ * 世界事件消费口（MF7b-B3；docs/MMO.md §7.3 事件批与分线检查点的原子规则）：worker 事务与世界事务共用。
+ *  - `claimWorldEvents`：只认领 `checkpoint_rev ≤ world_instance.checkpoint_rev`（该事件所属状态的分线检查点已落库）且 `attempts < 上限`
+ *    的 pending 行——status 0 → 1、attempts + 1（认领与效果同一事务：整轮提交即 done；整轮抛出 = 回滚重放，效果以 eventId 作 opId 幂等）；
+ *  - `releaseWorldEvent`：单个事件本轮失败但别拖累整轮——放回 pending（attempts 已在认领时 +1；达上限 ⇒ dead 2）；
+ *  - `deadLetterWorldEvent`：不可重试错误直接死信（2）。superseded（3）由 Recovering 标（rooms/core/WorldEventPort.ts）。
+ */
+export interface KitWorldEventRow {
+  readonly eventId: string;
+  readonly instanceId: string;
+  readonly seq: number;
+  readonly kind: string;
+  readonly payload: unknown;
+  /** 含本次认领的 +1。 */
+  readonly attempts: number;
+  readonly checkpointRev: number;
+}
+
+export interface KitWorldEventClaimOptions {
+  readonly instanceId?: string;
+  /** 缺省 32，上限 256。 */
+  readonly limit?: number;
+}
+
+export interface KitWorldEventOps {
+  claimWorldEvents(table: string, options?: KitWorldEventClaimOptions): Promise<readonly KitWorldEventRow[]>;
+  releaseWorldEvent(table: string, eventId: string): Promise<"pending" | "dead">;
+  deadLetterWorldEvent(table: string, eventId: string): Promise<void>;
+}
+
+export const WORLD_EVENT_CLAIM_LIMIT_DEFAULT = 32;
+export const WORLD_EVENT_CLAIM_LIMIT_MAX = 256;
+/** 认领次数上限（含）：达到即不再认领、release 时转 dead（§7.3 死信同 outbox 口径）。 */
+export const WORLD_EVENT_MAX_ATTEMPTS = 5;
+
+/** 认领 SELECT（FOR UPDATE）：门 = `e.checkpoint_rev <= w.checkpoint_rev`（变异：删掉它 → int「检查点未落库的事件被执行」转红）。 */
+export function claimWorldEventsSql(table: string, withInstance: boolean, limit: number): string {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > WORLD_EVENT_CLAIM_LIMIT_MAX) { throw new RangeError(`claimWorldEvents：limit ${limit} 非法（1..${WORLD_EVENT_CLAIM_LIMIT_MAX}）`); }
+  return "SELECT e.event_id, e.instance_id, e.seq, e.kind, e.payload, e.attempts, e.checkpoint_rev "
+    + `FROM \`${table}\` e JOIN world_instance w ON w.server_id = e.server_id AND w.instance_id = e.instance_id `
+    + `WHERE e.server_id = ?${withInstance ? " AND e.instance_id = ?" : ""} AND e.status = 0 AND e.attempts < ? AND e.checkpoint_rev <= w.checkpoint_rev `
+    + `ORDER BY e.seq LIMIT ${limit} FOR UPDATE`;
+}
+
+function buildWorldEventOps(conn: PoolConnection, kitId: string, sId: number, eventTables: readonly string[]): KitWorldEventOps {
+  const parsePayload = (value: unknown): unknown => {
+    if (typeof value !== "string") { return value; }
+    try { return JSON.parse(value) as unknown; } catch { return value; }
+  };
+  return {
+    async claimWorldEvents(table, options = {}) {
+      const target = assertWorldEventTable(kitId, table, eventTables);
+      const limit = options.limit ?? WORLD_EVENT_CLAIM_LIMIT_DEFAULT;
+      const withInstance = options.instanceId !== undefined;
+      if (withInstance && (typeof options.instanceId !== "string" || options.instanceId.length === 0 || options.instanceId.length > 64)) { throw new TypeError("claimWorldEvents：instanceId 非法"); }
+      const params: (string | number)[] = withInstance ? [sId, options.instanceId as string, WORLD_EVENT_MAX_ATTEMPTS] : [sId, WORLD_EVENT_MAX_ATTEMPTS];
+      const [rows] = await conn.execute<RowDataPacket[]>(claimWorldEventsSql(target, withInstance, limit), params);
+      const claimed: KitWorldEventRow[] = [];
+      for (const row of rows) {
+        const eventId = String(row.event_id);
+        const [result] = await conn.execute<ResultSetHeader>(
+          `UPDATE \`${target}\` SET status = 1, attempts = attempts + 1 WHERE server_id = ? AND event_id = ? AND status = 0`, [sId, eventId]);
+        if (rowsMatched(result) !== 1) { continue; } // 并发已被别的事务认领（同表多 worker）：跳过
+        claimed.push({
+          eventId, instanceId: String(row.instance_id), seq: Number(row.seq), kind: String(row.kind), payload: parsePayload(row.payload),
+          attempts: Number(row.attempts) + 1, checkpointRev: Number(row.checkpoint_rev),
+        });
+      }
+      return claimed;
+    },
+    async releaseWorldEvent(table, eventId) {
+      const target = assertWorldEventTable(kitId, table, eventTables);
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE \`${target}\` SET status = IF(attempts >= ?, 2, 0) WHERE server_id = ? AND event_id = ? AND status = 1`, [WORLD_EVENT_MAX_ATTEMPTS, sId, eventId]);
+      if (rowsMatched(result) !== 1) { throw new Error(`releaseWorldEvent：事件 ${eventId} 不在本事务认领态（status 1）`); }
+      const [rows] = await conn.query<RowDataPacket[]>(`SELECT status FROM \`${target}\` WHERE server_id = ? AND event_id = ?`, [sId, eventId]);
+      return Number(rows[0]?.status) === 2 ? "dead" : "pending";
+    },
+    async deadLetterWorldEvent(table, eventId) {
+      const target = assertWorldEventTable(kitId, table, eventTables);
+      const [result] = await conn.execute<ResultSetHeader>(
+        `UPDATE \`${target}\` SET status = 2 WHERE server_id = ? AND event_id = ? AND status IN (0, 1)`, [sId, eventId]);
+      if (rowsMatched(result) !== 1) { throw new Error(`deadLetterWorldEvent：事件 ${eventId} 不是 pending / 认领态`); }
+    },
+  };
+}
+
+/** 世界事务句柄：与 KitTx 同形但**没有** `conn`，另带分线身份、首句 CAS 后的 write_seq、事件追加口与消费口。 */
+export interface KitWorldTx extends Omit<KitTx, "conn">, KitWorldEventOps {
+  readonly instanceId: string;
+  readonly authorityEpoch: number;
+  /** 首句 CAS 后本事务在该权威代内的写序号（单调；MF7b 检查点 / 事件批的排序依据）。 */
+  readonly writeSeq: number;
+  /** 追加世界事件行（只许本 kit 的 role:"world-event" 表）；UNIQUE(event_id) 撞车 ⇒ "DUP"（重放同一事件零副作用）。 */
+  appendWorldEvent(table: string, event: KitWorldEventInput): Promise<"INSERTED" | "DUP">;
+}
+
+export interface KitWorldTxDeps extends KitTxDeps {
+  /** 本 kit 声明为 role:"world-event" 的表名（生产从 SERVER_KIT_CATALOG 读；夹具注入）。 */
+  readonly worldEventTables: (kitId: string) => readonly string[];
+  /**
+   * 框架检查点编排（rooms/core/WorldCheckpoint.ts）专用：回调返回后、COMMIT 前在同一连接上跑（推进 world_instance.checkpoint_rev）。
+   * ⛔ kit 不得注入（K1 审核线；kit 只拿缺省 deps）。
+   */
+  readonly beforeCommit?: (conn: PoolConnection, scope: KitWorldTxScope) => Promise<void>;
+}
+
+export function worldEventTablesOfKit(kitId: string, catalog: readonly ServerKitCatalogEntry[] = SERVER_KIT_CATALOG): readonly string[] {
+  const kit = catalog.find((entry) => entry.id === kitId);
+  return kit === undefined ? [] : kit.sqlTables.filter((table) => table.role === "world-event").map((table) => table.name);
+}
+
+const DEFAULT_WORLD_DEPS: KitWorldTxDeps = { ...DEFAULT_DEPS, worldEventTables: (kitId) => worldEventTablesOfKit(kitId) };
+
+const WORLD_EVENT_KIND_RE = /^[A-Za-z][A-Za-z0-9._:-]{0,31}$/u;
+/** world-event 表名形态：`k_<kit>_<name>`（与 tools/plugin/workerGate.ts 的 KIT_TABLE_RE 同形）。 */
+const WORLD_EVENT_TABLE_RE = /^k_[a-z0-9]{1,64}_[A-Za-z0-9_]{1,64}$/u;
+const WORLD_EVENT_ID_RE = /^[A-Za-z0-9_-]{8,64}$/u;
+
+/** 世界事件表名闸：必须是本 kit 前缀 + 在 role:"world-event" 声明集内（⛔ 普通 kit 表、⛔ 别的 kit、⛔ 框架表）。 */
+export function assertWorldEventTable(kitId: string, table: string, tables: readonly string[]): string {
+  const prefix = kitTablePrefix(kitId);
+  if (typeof table !== "string" || !table.startsWith(prefix) || !WORLD_EVENT_TABLE_RE.test(table)) {
+    throw new KitTableAccessError(kitId, table, `world-event 表名必须带前缀 ${prefix} 且为合法标识符`);
+  }
+  if (!tables.includes(table)) {
+    throw new KitTableAccessError(kitId, table, "不是本 kit 以 role:\"world-event\" 声明的表");
+  }
+  return table;
+}
+
+/**
+ * 世界形态的权威守卫受限事务（docs/MMO.md MF7b-B2；§4.6 不变量 1「旧 epoch 的延迟提交被存储边界拒」的唯一实现点）：
+ * `withRcTx` 内**首句** `UPDATE world_instance SET write_seq = write_seq + 1 WHERE server_id = ? AND instance_id = ? AND authority_epoch = ?`
+ * （Rows matched 0 ⇒ AuthorityLostError，自动 ROLLBACK，回调零执行；⛔ 不碰 checkpoint_rev），读回 write_seq，再按 id 升序对
+ * `scope.personas` 逐个 `assertControl`（0 行 ⇒ ControlConflictError 同样整体回滚），然后交出受限句柄（表闸 / debit / credit /
+ * enqueueEffect / persona 门面同 withKitTx）+ `appendWorldEvent`。回调内 ⛔ 另开 withKitTx / withKitWorkerTx / withKitWorldTx、⛔ 取 `.conn`。
+ * 提交后对扣过款 / 入过账的 uid 失效余额缓存。变异验证：删首句谓词 `authority_epoch = ?` → int「旧 owner 迟到写 0 行」转红。
+ */
+export async function withKitWorldTx<T>(
+  kitId: string, sId: number, scope: KitWorldTxScope, fn: (tx: KitWorldTx) => Promise<T>, partialDeps: Partial<KitWorldTxDeps> = {},
+): Promise<T> {
+  const deps: KitWorldTxDeps = { ...DEFAULT_WORLD_DEPS, ...partialDeps };
+  kitTablePrefix(kitId); // kitId 形态闸先于任何 SQL
+  if (!Number.isInteger(sId) || sId < 0 || sId > 65535) { throw new TypeError(`sId ${sId} 非法`); }
+  if (typeof scope.instanceId !== "string" || scope.instanceId.length === 0 || scope.instanceId.length > 64) { throw new TypeError("world tx：instanceId 非法"); }
+  if (!Number.isInteger(scope.authorityEpoch) || scope.authorityEpoch < 1) { throw new TypeError(`world tx：authorityEpoch ${scope.authorityEpoch} 非法（须 ≥ 1，先取权威）`); }
+  const personas = [...(scope.personas ?? [])].sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+  for (const persona of personas) {
+    validatePersonaId(persona.id, "world tx personas[].id");
+    if (!Number.isInteger(persona.controlEpoch) || persona.controlEpoch < 0) { throw new TypeError(`world tx：persona ${persona.id} controlEpoch 非法`); }
+  }
+  assertNotInsideWorkerTx("withKitWorldTx");
+  const eventTables = deps.worldEventTables(kitId);
+  const touched: TouchedOwners = new Map();
+  const scopeName = `world:${kitId}:${scope.instanceId}@${scope.authorityEpoch}`;
+  const result = await deps.withRcTx(async (conn) => {
+    // 首句：权威 CAS（谓词里的 authority_epoch 就是存储边界）。0 行 = 权威已被接管 ⇒ 抛出，withRcTx ROLLBACK，业务表零写入。
+    const [cas] = await conn.execute<ResultSetHeader>(
+      "UPDATE world_instance SET write_seq = write_seq + 1 WHERE server_id = ? AND instance_id = ? AND authority_epoch = ?",
+      [sId, scope.instanceId, scope.authorityEpoch]);
+    if (rowsMatched(cas) !== 1) { throw new AuthorityLostError(scope.instanceId, scope.authorityEpoch); }
+    const [seqRows] = await conn.query<RowDataPacket[]>(
+      "SELECT write_seq FROM world_instance WHERE server_id = ? AND instance_id = ?", [sId, scope.instanceId]);
+    const writeSeq = Number(seqRows[0]?.write_seq);
+    if (!Number.isSafeInteger(writeSeq) || writeSeq < 1) { throw new Error(`world tx：write_seq 回读非法：${String(seqRows[0]?.write_seq)}`); }
+    const base = buildKitTx(conn, kitId, sId, touched, deps);
+    // 控制权：逐 persona CAS（升序取锁；0 行 ⇒ ControlConflictError 整体回滚）
+    for (const persona of personas) { await base.assertControl(persona.id, persona.controlEpoch); }
+    const tx: KitWorldTx = Object.defineProperty(
+      {
+        ...base,
+        ...buildWorldEventOps(conn, kitId, sId, eventTables),
+        instanceId: scope.instanceId,
+        authorityEpoch: scope.authorityEpoch,
+        writeSeq,
+        async appendWorldEvent(table: string, event: KitWorldEventInput): Promise<"INSERTED" | "DUP"> {
+          const target = assertWorldEventTable(kitId, table, eventTables);
+          if (!WORLD_EVENT_ID_RE.test(event.eventId)) { throw new TypeError(`world event：eventId "${event.eventId}" 非法`); }
+          if (!Number.isSafeInteger(event.seq) || event.seq < 1) { throw new TypeError(`world event：seq ${event.seq} 非法（≥ 1）`); }
+          if (!WORLD_EVENT_KIND_RE.test(event.kind)) { throw new TypeError(`world event：kind "${event.kind}" 非法`); }
+          if (!Number.isSafeInteger(event.checkpointRev) || event.checkpointRev < 1) { throw new TypeError(`world event：checkpointRev ${event.checkpointRev} 非法（≥ 1）`); }
+          const instanceId = event.instanceId ?? scope.instanceId;
+          const payloadJson = JSON.stringify(event.payload ?? null);
+          if (payloadJson.length > 16_384) { throw new RangeError("world event：payload 超过 16 KB"); }
+          try {
+            await conn.execute<ResultSetHeader>(
+              `INSERT INTO \`${target}\` (server_id, event_id, instance_id, seq, kind, payload, status, attempts, checkpoint_rev) VALUES (?, ?, ?, ?, ?, CAST(? AS JSON), 0, 0, ?)`,
+              [sId, event.eventId, instanceId, event.seq, event.kind, payloadJson, event.checkpointRev]);
+          } catch (error) {
+            if ((error as { errno?: unknown }).errno === 1062) { return "DUP"; } // 同 event_id 再插 = 重放，零副作用
+            throw error;
+          }
+          return "INSERTED";
+        },
+      },
+      "conn", { enumerable: false, get(): never { throw new Error(`world 事务（${scopeName}）⛔ 取原始连接 .conn`); } },
+    );
+    const value = await workerTxScope.run(scopeName, () => fn(Object.freeze(tx)));
+    if (deps.beforeCommit) { await deps.beforeCommit(conn, scope); }
+    return value;
+  });
+  for (const { uid, owner } of touched.values()) { await deps.invalidateBalanceCache(uid, sId, ...(owner === undefined ? [] : [owner] as const)); }
+  return result;
+}
+
+// ── kit worker 定义（docs/MMO.md MF7a-B4）：entry 默认导出 `defineKitWorker({ pass })`，进程入口 src/workers/kitWorker.ts ──
+
+export interface KitWorkerPassContext {
+  readonly kitId: string;
+  readonly workerId: string;
+  /** 本轮所在区（入口按 KIT_WORKER_ZONES 逐区串行）。 */
+  readonly sId: number;
+  /** 本轮开始时刻（入口注入时钟）。 */
+  readonly now: number;
+  /** 进程要停（SIGTERM / SIGINT）时 aborted：长循环里看一眼即可，⛔ 不用来跨事务续命。 */
+  readonly signal: AbortSignal;
+}
+
+export interface KitWorkerPassResult {
+  /** true = 本区还有积压：入口立刻在同一区再跑一轮（有界批次由 pass 自己的 LIMIT 决定）；否则轮到下一区 / 空闲。 */
+  readonly more?: boolean;
+}
+
+export interface KitWorkerDefinition {
+  readonly kind: "kit-worker";
+  /** 一轮 = 一条租约守卫事务（withKitWorkerTx）：抛出即整体回滚、本轮作废；LeaseLostError 由入口捕获后退出进程。 */
+  readonly pass: (tx: KitWorkerTx, ctx: KitWorkerPassContext) => Promise<KitWorkerPassResult | undefined | void>;
+  /** 全部区都无积压后的空闲等待（ms，缺省 1000，范围 100–60000；入口再按租约 TTL/3 封顶，空闲期每轮事务照样续租）。 */
+  readonly idleMs: number;
+}
+
+const KIT_WORKER_IDLE_MIN_MS = 100;
+const KIT_WORKER_IDLE_MAX_MS = 60_000;
+
+/** kit worker entry 的默认导出构造器：`export default defineKitWorker({ async pass(tx, ctx) { … } })`。 */
+export function defineKitWorker(def: { readonly pass: KitWorkerDefinition["pass"]; readonly idleMs?: number }): KitWorkerDefinition {
+  if (typeof def?.pass !== "function") { throw new TypeError("defineKitWorker：pass 必须是函数"); }
+  const idleMs = def.idleMs ?? 1000;
+  if (!Number.isInteger(idleMs) || idleMs < KIT_WORKER_IDLE_MIN_MS || idleMs > KIT_WORKER_IDLE_MAX_MS) {
+    throw new TypeError(`defineKitWorker：idleMs ${idleMs} 非法（${KIT_WORKER_IDLE_MIN_MS}–${KIT_WORKER_IDLE_MAX_MS}）`);
+  }
+  return Object.freeze({ kind: "kit-worker" as const, pass: def.pass, idleMs });
+}
+
+export function isKitWorkerDefinition(value: unknown): value is KitWorkerDefinition {
+  if (typeof value !== "object" || value === null) { return false; }
+  const v = value as { kind?: unknown; pass?: unknown; idleMs?: unknown };
+  return v.kind === "kit-worker" && typeof v.pass === "function" && Number.isInteger(v.idleMs);
 }
 
 // ── 事务之外的两样门面（文件头第 4 / 5 条）─────────────────────────────────────

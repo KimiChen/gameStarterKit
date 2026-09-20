@@ -4,7 +4,7 @@ fbdda2c55b2c0d1d17238e8c338e3dba560e2daa4605539e7d9dd85be00a6c85  apps/client/sr
 cbec8a9707e64874c67e8d9722b25bdb924c0e2965fb7ec336437a6a43dea93b  apps/client/src/lib/uniflex/cocos/cancellation.d.ts
 0a5e9e375b8345faafb7f06025eac9bae7b84c7feeedb90203eb36959df76bcb  apps/client/src/lib/uniflex/cocos/cancellation.js
 a5e3671c2fe11a2c69d94db5edec6327701f23336dba4c763dd01ca5e11a7ab3  apps/client/src/lib/uniflex/cocos/cocos-host.d.ts
-1793a0191e7fa01b137692b59e4a8e8bd23f4d161b34a0d13126dea7a746e43a  apps/client/src/lib/uniflex/cocos/cocos-host.js
+688b9f8b5d7d93636b6860257e2ab48b69861307c706b5e38a594c58657a3468  apps/client/src/lib/uniflex/cocos/cocos-host.js
 7a98e3156cd82e15f779ef5c2584869ea0e6d1d9d6d78c82b82a2c618b6e1283  apps/client/src/lib/uniflex/cocos/cocos-performance.d.ts
 7919c361516df19d4f3a38156fbf459f89b32d4ca4287e769ade71ae5615528f  apps/client/src/lib/uniflex/cocos/cocos-performance.js
 9f19f6f2b56d79d09dd7b30ff2948f6ee1d2c9c43037575c3ac3000d0b056c57  apps/client/src/lib/uniflex/cocos/cocos-provider.d.ts
@@ -117,7 +117,7 @@ ec5a9f7e31777ad70b5b3f8154e3b38150abe2f45921408304af7f7f1f89ab31  apps/client/sr
 5d5088fe35b23910e80b076ab657adc78e7eb7352004af83fe1aa2024a0c4877  apps/client/src/lib/uniflex/mod/web/web-provider.ts
 4987ecfe0f89a575631a734ce8c3240b2ee0163d6cb7ec49ccbe693922a6df3e  apps/client/src/lib/uniflex/package.json
 30e1e713ee4ff2960b9767c4e693a87feb2f8ff7e40b4c4126adb4716765d03c  apps/client/src/lib/uniflex/web/dom-host.d.ts
-a7622872aefdb78f855717579c056a700cb13a86e68d8df3be1c96f52a331ba9  apps/client/src/lib/uniflex/web/dom-host.js
+ade5bc3bd6bff402becb4985ac371dd5708bdb658749e66c610a2f8e6659bf33  apps/client/src/lib/uniflex/web/dom-host.js
 40d474c59129217557f9305ab71ae5bbf21086e51d933c8b9a4fb506526ec488  apps/client/src/lib/uniflex/web/frozen-snapshot.d.ts
 1c22a5e432652a4d1dd9a7d8e02bc2eac05bf8ca5c095e06dab5798b588cd3a2  apps/client/src/lib/uniflex/web/frozen-snapshot.js
 5835a4dea47d01d11cb7e515100176445ccd56db439b7e81bbe139cce36720c6  apps/client/src/lib/uniflex/web/index.d.ts

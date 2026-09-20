@@ -21,7 +21,7 @@
 | --- | --- |
 | 世界形态 | **SQL 权威 + 视图房**：世界状态在 `k_slg_*`，`slgWorld` 房只是 dropIn GameRoom 上的实时视图（arena 放大）。与 MMO.md 的 WorldRoom（内存权威 + 租约 + 控制权 + 检查点 + 交接）是两种形态，MMO.md §4.1.1 已登记 |
 | 不需要的框架阶段 | MF2（persona / 资产主体：本 kit 用 uid 主体，`tx.debit` 旧 API 默认 account 语义，MF2 迁移时零变）、MF4（权威租约 / 控制权）、MF8（交接）、MF7 的检查点（行军位置是 `f(now)` 的确定函数，重启从 SQL 重放） |
-| 依赖的框架阶段 | **MF5**（按会话裁剪同步：`InterestSet` / `diffAndEmit` / `perSession` token / 有界出站队列）——阶段 2b 的前置；**MF7 的 `kit.json.workers[]`**——无人在线时的行军到达结算 |
+| 依赖的框架阶段 | **MF5**（按会话裁剪同步：`InterestSet` / `diffAndEmit` / `perSession` token / 有界出站队列）——阶段 2b 的前置；**MF7 的 `kit.json.workers[]`**——无人在线时的行军到达结算（**MF7a 已于 2026-09-19 退出**：`workers[]` / `withKitWorkerTx` / `npm run worker -- slg:<worker>` 入口 / 卸载闸已交付，见 docs/MMO.md §12；S6 要求的「租约保护的受限 KitTx」= `withKitWorkerTx`，无人在线到达结算可开工） |
 | 可见性 | 正式名册不广播全房 id/name，只随视野内地块/军队提供必要归属；视口只在服务端会话表。MF5 负责把 GameRoom 内部名册与客户端 Schema 投影拆开，见第四轮拍板 |
 | 登记 | MMO.md §6.7 把本 kit 登记为 MF5 原语的第二消费方（tile / army 兴趣集与 mmo 的 entity 兴趣集共用同一原语）；本 kit 落地后在 MMO.md §12 回写一行 |
 | 与 mmo kit | 两个独立 kit（KIT.md v0 不做 kit-on-kit）；共用的只有框架原语 |
@@ -446,6 +446,11 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 验收：typecheck 0；test:client 563/563（新增 fording 曲线/校验闸/入库 layout 含标记 3 项）；服务端 757/757；verify:core 全项；Creator 预览 23 步全过（/tmp/slg-fording-preview2）。
 
 ### 10.8 MF5 依赖面盘点（2026-09-13，2b 接框架准备）
+
+> **2026-09-19 更新**：MF5a 已退出（docs/MMO.md §12，tag `mf5a-exit`）——下表「框架缺口」全部关闭：`rooms/core/{InterestSet,ObserverSync,Baseline,OutboundQueue}.ts`、
+> S2CPorts 的 perSession 广播闸、`defineS2C(..., { perSession, coalesceKey? })` + `GAME_WIRE_PER_SESSION`、GameMode `observer` 能力 + `context.observers`
+> 端口、manifest `roster: "hidden"`（D4 名册分离）均已落地；接法见 docs/KIT.md §4「观察者同步 / 名册分离」与 docs/SERVER.md §5，参考接线
+> `apps/server/test/fixtures/viewFixtureMode.ts`（视口 / 视距 / 私有字段过滤在 mode，差分 / baseline / 有界投递归框架）。**2b 可开工**；下文保留为 2026-09-13 的盘点原文。
 
 按 docs/MMO.md §5 MF5 规格逐项核对框架现状（`apps/server/src/rooms/core/` 实列目录 + 全文检索），结论：**MF5 尚未实施，2b 全部 14/15/20–24 条被阻塞**；2a 与 shared 数学已就绪，MF5 的泛化源（snake）质量良好。
 

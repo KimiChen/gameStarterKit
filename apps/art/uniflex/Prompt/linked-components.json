@@ -3,15 +3,6 @@
   "kind": "uniflex-linked-components",
   "components": [
     {
-      "key": "PopupBackground",
-      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx",
-      "psd": "components/PopupBackground/component.psd",
-      "guid": "cbb83c69-8a36-efe1-9e43-1744791c9b07",
-      "width": 708,
-      "height": 375,
-      "relativeFromPage": "../components/PopupBackground/component.psd"
-    },
-    {
       "key": "ActionButton",
       "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx",
       "psd": "components/ActionButton/component.psd",
@@ -40,7 +31,7 @@
     },
     {
       "key": "CloseButton",
-      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx",
+      "source": "apps/client/src/ui-uniflex/components/button/CloseButton.tsx",
       "psd": "components/CloseButton/component.psd",
       "guid": "b96a3df5-b42c-d5b2-9c67-be96cd2ed47c",
       "width": 72,

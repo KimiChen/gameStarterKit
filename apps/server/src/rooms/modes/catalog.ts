@@ -8,5 +8,7 @@
  */
 export {
     GENERATED_GAME_MODE_IDS,
+    GENERATED_WORLD_MODE_IDS,
     registerGeneratedGameModes as registerDefaultGameModes,
+    registerGeneratedWorldModes as registerDefaultWorldModes,
 } from "./catalog.generated";

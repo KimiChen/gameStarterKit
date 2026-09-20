@@ -163,14 +163,16 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run test:sync-mirror-matrix` | 比对 sync --check 判定与真实同步对镜像树的效果 |
 | `npm run test:toolchain-runtime-matrix` | 比对工具链声明与真实运行时 / 实际安装的依赖版本 |
 | `npm run verify:perf` | 校验固定输入下的客户端性能基线结构和 checksum |
+| `npm run verify:mmo-fixture-matrix` | MMO 框架侧完成夹具矩阵：一次性检出里物化 kitfix / kitfixContent（只新增文件）跑 pack / install / codegen / sync / check / typecheck 与所有权分类；⛔ 不进 verify:core |
 | `npm run test:client` | 客户端全部无头行为测试（Node/tsx） |
 | `npm run test:changed` | 内循环收窄：改动整个落在包内才只跑那些包，否则退回 `verify:all` |
 | `npm run test:vendor` | 运行第三方运行时内容锁专项反例测试 |
+| `npm run test:uniflex-ui-contract` | UniFlex 导入 / 美术往返 / 组件目录 / FGUI 导出契约测试（`verify:all` 的一环） |
 | `npm run test:fgui` | FGUI codegen、结构契约与 registry 专项测试 |
 | `npm run test:faults` / `npm run test:faults:int` | 运行核心 fault-matrix；前者默认不连接本地栈，后者使用本地 Redis/MySQL |
 | `npm run codegen:fgui -- <Pkg> <Comp>` | 生成或更新 View 的 AUTO 区块 |
 | `npm run build:uniflex-ui` | 用仓库内 `vendor/uniflex/bin/` 的原生编译器生成 UniFlex Confirm 与双端资源；随后运行 `sync:client` |
-| `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/pages/<Name>` 与 `apps/client/resources/ui/<Name>` |
+| `npm run import:uniflex-ui -- /path/to/project-package` | 导入 UniFlex 设计包到 `apps/client/src/ui-uniflex/modules/<module>/<Name>` 与 `apps/client/resources/ui/<Name>` |
 | `npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001` | 用锁定的 `vendor/web-ui-to-psd-*.tgz` 生成 PSD 中间文件和 UniFlex 项目包并导入项目；`npm ci` 后即可运行 |
 | `npm run ui:export-psd -- --url <url> --out <dir>` | 用锁定 CLI 把 UniFlex 预览页导出为分层 PSD；可用 `--screen` 拉起本地预览，不必先开 `dev:uniflex-web` |
 | `npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt` | 从 UniFlex snapshot 写出候选独立 FairyGUI 工程 + DOM 预览包（只写 `--out`） |
@@ -178,7 +180,8 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run ui:export-fgui -- --all --out .cache/fgui/catalog` | 捕获 `screens.json` 全部预览页并导出 |
 | `npm run ui:preview-fgui -- --out .cache/fgui/prompt` | 用锁定的 `fairygui-dom@1.0.0` 预览刚导出的发布态包；多页用 `?screen=` |
 | `npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001` | UniFlex → PSD → UniFlex 项目包往返；默认不写项目源，加 `--apply` 才导入 |
-| `npm run ui:art-export` / `ui:art-import` / `ui:art-sync` / `ui:art-check` | 原稿 ↔ `apps/art/uniflex` PSD；一阶段导入只写 `*Restored`，`art-check` 是 CI 闸 |
+| `npm run ui:art-export` / `npm run ui:art-import` / `npm run ui:art-sync` / `npm run ui:art-check` | 原稿 ↔ `apps/art/uniflex` PSD；一阶段导入只写 `*Restored`，`art-check` 是 CI 闸 |
+| `npm run ui:capture-cocos-golden` | 用 Creator 预览抓 UniFlex 页面的 golden 截图（tools/creator-preview） |
 | `npm run ui:check-source` | 校验 UniFlex 项目包的 design/manifest 契约；传入 `--package` |
 | `npm run ui:render-source` | 渲染 UniFlex 独立源图（Golden 比对输入） |
 | `npm run ui:verify` | 按颜色阈值与区域差异比较独立源图与 Web proposal |
@@ -188,6 +191,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run dev:uniflex-web` | 启动独立 WebProvider 预览；默认 PreviewHome（原稿），`?ui=restored-home` 打开还原 UI 预览，`?screen=` / `?ui=` 打开已登记页面，`?psd=1` 为导出用未缩放画布 |
 | `npm run verify:ecs` | 校验锁定的 bitECS 文件 |
 | `npm run fetch:fgui` / `npm run fetch:colyseus` / `npm run fetch:uniflex` | 维护团队显式升级锁定客户端依赖并重钉内容锁；普通开发不运行 |
+| `npm run fetch:fairygui-dom` | 维护团队显式升级锁定的 fairygui-dom 运行时并重钉内容锁；普通开发不运行 |
 | `npm run config:excel-to-json` / `npm run config:excel-to-json:check` | 写出 Excel 示例配表双端 JSON，或只读校验源表与入库生成物；均属额外功能 |
 | `npm --workspace @game/server run test` | 服务端单元测试 |
 | `npm --workspace @game/server run smoke:framework` | 已启动并初始化的本地 Redis/MySQL 连通性检查 |

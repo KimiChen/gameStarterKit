@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "aoi-probe",
+  "variant": "view",
+  "startedAt": "2026-09-19T03:32:07.073Z",
+  "commit": "3da785c7",
+  "node": "v26.5.0",
+  "config": {
+    "bots": 50,
+    "entities": 300,
+    "radius": 300,
+    "world": 2000,
+    "tickMs": 50,
+    "seconds": 15,
+    "seed": 7
+  },
+  "interest": {
+    "visiblePerObserver": {
+      "count": 14650,
+      "mean": 23.311,
+      "p50": 24,
+      "p95": 33,
+      "p99": 36,
+      "max": 41
+    }
+  },
+  "sim": {
+    "count": 293,
+    "mean": 0.751,
+    "p50": 0.751,
+    "p95": 0.895,
+    "p99": 1.002,
+    "max": 1.101
+  },
+  "sync": {
+    "count": 293,
+    "mean": 3.831,
+    "p50": 3.941,
+    "p95": 4.694,
+    "p99": 5.121,
+    "max": 5.562
+  },
+  "cpu": {
+    "msPerSec": 170
+  },
+  "outbound": {
+    "bytesTotal": 4518505,
+    "bytesPerSessionPerSec": {
+      "count": 50,
+      "mean": 6024.64,
+      "p50": 6134,
+      "p95": 8061,
+      "p99": 8370,
+      "max": 8370
+    }
+  },
+  "join": {
+    "bytesFirst500ms": {
+      "count": 50,
+      "mean": 4234.16,
+      "p50": 4379,
+      "p95": 5736,
+      "p99": 5917,
+      "max": 5917
+    },
+    "rejoinBytesFirst500ms": 2010
+  },
+  "clientSide": {
+    "deltaMessagesPerSec": {
+      "count": 50,
+      "mean": 0,
+      "p50": 0,
+      "p95": 0,
+      "p99": 0,
+      "max": 0
+    },
+    "errors": 0
+  },
+  "eventLoop": {
+    "p50": 12.026,
+    "p99": 16.171,
+    "max": 19.743
+  },
+  "memory": {
+    "rssStartMB": 99.5,
+    "rssEndMB": 175
+  }
+}

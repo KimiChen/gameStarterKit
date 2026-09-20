@@ -3,7 +3,7 @@
  *   npm --workspace @game/server run plugin -- pack <id> (--out <zip> | --out-dir <dir>)
  *   npm --workspace @game/server run plugin -- install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]
- *   npm --workspace @game/server run plugin -- uninstall <id> [--force] [--drop-data] [--no-git] [--no-postinstall] [--dry-run]
+ *   npm --workspace @game/server run plugin -- uninstall <id> [--force] [--drop-data] [--allow-pending-outbox] [--no-git] [--no-postinstall] [--dry-run]
  *   npm --workspace @game/server run plugin -- check
  *   npm --workspace @game/server run plugin -- test <id> [--int]
  *   npm --workspace @game/server run plugin -- changed [--base <ref>] [--dry-run]（根别名 npm run test:changed）
@@ -18,9 +18,14 @@ import { runChanged } from "./changed";
 import { checkInstalledPlugins } from "./check";
 import { dropKitData } from "./dropData";
 import { installPlugin, reinstallFromTree, type InstallReport } from "./install";
+import { readInstalledLock } from "./lock";
+import { assertKitOutboxDrained, describeKitOutboxBacklog } from "./outboxGate";
 import { packPlugin } from "./pack";
 import { runPackageTests } from "./test";
 import { uninstallPlugin } from "./uninstall";
+import { assertKitWorkersQuiescent, describeKitWorkerBacklog, worldEventTablesOf } from "./workerGate";
+import { assertKitTransfersDrained } from "./transferGate";
+import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 
@@ -28,7 +33,7 @@ export type PluginCliArguments =
   | { readonly command: "pack"; readonly root: string; readonly id: string; readonly outFile?: string; readonly outDir?: string }
   | { readonly command: "install"; readonly root: string; readonly source: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly replaceLocalFork: boolean; readonly breakDependents: boolean }
   | { readonly command: "reinstall-from-tree"; readonly root: string; readonly id: string; readonly allowDowngrade: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly allowIdentityChange: boolean; readonly adoptTracked: boolean; readonly breakDependents: boolean }
-  | { readonly command: "uninstall"; readonly root: string; readonly id: string; readonly force: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly dropData: boolean }
+  | { readonly command: "uninstall"; readonly root: string; readonly id: string; readonly force: boolean; readonly git: boolean; readonly postinstall: boolean; readonly dryRun: boolean; readonly dropData: boolean; readonly allowPendingOutbox: boolean }
   | { readonly command: "check"; readonly root: string }
   | { readonly command: "test"; readonly root: string; readonly id: string; readonly int: boolean }
   | { readonly command: "changed"; readonly root: string; readonly base?: string; readonly dryRun: boolean };
@@ -38,7 +43,7 @@ const USAGE = [
   "  pack <id> (--out <zip> | --out-dir <dir>)",
   "  install <zip|dir> [--allow-downgrade] [--replace-local-fork] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]",
   "  install --reinstall-from-tree <id> [--allow-identity-change] [--adopt-tracked] [--allow-downgrade] [--break-dependents] [--no-git] [--no-postinstall] [--dry-run]（同仓作者迭代：以工作树重写已安装锁）",
-  "  uninstall <id> [--force] [--drop-data] [--no-git] [--no-postinstall] [--dry-run]（--drop-data 仅 kit：按账本 + 表前缀 drop 表并清理 kt: 键）",
+  "  uninstall <id> [--force] [--drop-data] [--allow-pending-outbox] [--no-git] [--no-postinstall] [--dry-run]（--drop-data 仅 kit：按账本 + 表前缀 drop 表并清理 kt: 键；kit 有 pending outbox intent 即拒，--allow-pending-outbox 仅非生产放行）",
   "  check",
   "  test <id> [--int]（按锁枚举包自带测试单跑）",
   "  changed [--base <ref>] [--dry-run]（内循环收窄：改动整个落在包内才只跑那些包，否则退回 verify:all）",
@@ -120,7 +125,7 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
     };
   }
   if (command === "uninstall") {
-    known(["--force", "--no-git", "--no-postinstall", "--dry-run", "--drop-data"]);
+    known(["--force", "--no-git", "--no-postinstall", "--dry-run", "--drop-data", "--allow-pending-outbox"]);
     if (positional.length !== 1) throw new Error(`uninstall 需要且只需要一个 <id>\n${USAGE}`);
     return {
       command: "uninstall",
@@ -131,6 +136,7 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
       postinstall: !flags.has("--no-postinstall"),
       dryRun: flags.has("--dry-run"),
       dropData: flags.has("--drop-data"),
+      allowPendingOutbox: flags.has("--allow-pending-outbox"),
     };
   }
   if (command === "check") {
@@ -204,6 +210,22 @@ export async function runCli(args: PluginCliArguments): Promise<number> {
     return 0;
   }
   if (args.command === "uninstall") {
+    // kit 卸载前的 outbox 闸（docs/KIT.md §5 K1；tools/plugin/outboxGate.ts）：pending 的 kit:<id>:* intent 会在卸载后变成永久死信，
+    // 连不上库同样拒（fail-closed）；dry-run 也跑闸——「会不会被拒」正是 dry-run 要回答的。
+    const lock = readInstalledLock(args.root, args.id);
+    if (lock?.manifest.class === "kit") {
+      const gate = await assertKitOutboxDrained({ kitId: args.id, allowPendingOutbox: args.allowPendingOutbox, log: (line) => console.log(`[plugin]   ${line}`) });
+      if (!gate.bypassed) console.log(`[plugin]   gameplay_outbox：kit:${args.id}:* 无 pending intent ✔`);
+      // kit 卸载前的 worker 闸（docs/MMO.md MF7a-B5；tools/plugin/workerGate.ts）：role=world-event 表还有 status=0 的行、或该 kit 的
+      // worker 租约在役 ⇒ 拒（⛔ 无 bypass flag）；连不上库同样拒。表名只认生成目录里的 role 声明。
+      const kitEntry = SERVER_KIT_CATALOG.find((kit) => kit.id === args.id);
+      const worldEventTables = worldEventTablesOf(kitEntry);
+      if (kitEntry === undefined) console.log(`[plugin]   ⚠ kit "${args.id}" 不在生成目录（codegen:plugins 未刷新？）：world-event 表未核，只核租约行`);
+      await assertKitWorkersQuiescent({ kitId: args.id, worldEventTables, log: (line) => console.log(`[plugin]   ${line}`) });
+      console.log(`[plugin]   kit worker：world-event 表 ${worldEventTables.length} 张无 pending 事件行、租约 kit:${args.id}:* 无在役 ✔`);
+      // kit 卸载前的交接闸（docs/MMO.md MF8-B7；tools/plugin/transferGate.ts）：该 kit persona 还有在途 world_transfer 行 ⇒ 拒（⛔ 无 bypass）。
+      await assertKitTransfersDrained({ kitId: args.id, log: (line) => console.log(`[plugin]   ${line}`) });
+    }
     const report = uninstallPlugin({ root: args.root, id: args.id, force: args.force, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.class} ${report.id}@${report.version} [${report.source}]: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
     if (report.source !== "package") console.log(`[plugin]   ⚠ 锁来源是 ${report.source}：被删的是宿主本地内容（分叉 / 来源未知），⛔ 无法从任何包恢复——确认无误再提交`);
@@ -233,6 +255,11 @@ export async function runCli(args: PluginCliArguments): Promise<number> {
     console.log(`[plugin] ${plugin.class} ${plugin.id}@${plugin.version} [${plugin.source}]: ${plugin.problems.length === 0 ? "✔ 一致" : "✖ 有问题"}`);
     for (const problem of plugin.problems) console.log(`[plugin]   - ${problem}`);
   }
+  // 数据面只告警不失败（check 是只读核对）：kit 的 pending outbox 积压会让 uninstall 拒绝，这里提前说。
+  const kitIds = report.plugins.filter((plugin) => plugin.class === "kit").map((plugin) => plugin.id);
+  for (const line of await describeKitOutboxBacklog(kitIds)) console.log(`[plugin] ${line}`);
+  // kit worker 面同样只告警（docs/MMO.md MF7a-B5）：pending 事件行 / 在役租约会让 uninstall 拒绝；孤儿租约行（删 kit 后保留）点名。
+  for (const line of await describeKitWorkerBacklog(kitIds, SERVER_KIT_CATALOG)) console.log(`[plugin] ${line}`);
   return report.ok ? 0 : 1;
 }
 

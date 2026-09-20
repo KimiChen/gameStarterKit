@@ -1,0 +1,60 @@
+{
+  "scenario": "multi-process",
+  "generatedAt": "2026-09-19T20:03:34.780Z",
+  "commit": "b1898b14",
+  "params": {
+    "leaseTtlMs": 3000,
+    "renewMs": 1000,
+    "checkpointMs": 2000,
+    "mapId": "bench-c_41519_mp",
+    "ports": [
+      3801,
+      3802
+    ]
+  },
+  "notes": [
+    "D27 形态：不启用 RedisDriver / Presence，客户端由 world.enter（目录分配 + 登记端点）直连节点；节点之间不共享房间列表。",
+    "登记（kWorldInfo）与租约同 TTL：节点被 kill -9 后两者一起到期，world.enter 的端点回落到空串（= 由部署层选任一节点，本实验选 B）。",
+    "位置回退 ≤ 1 个 checkpointMs（周期检查点）；A 崩溃后没有强制点。"
+  ],
+  "enter1": {
+    "line": 0,
+    "endpoint": ""
+  },
+  "endpointWhileA": "ws://127.0.0.1:3801",
+  "enter2": {
+    "line": 0,
+    "endpoint": "",
+    "transferId": null
+  },
+  "result": {
+    "leaseExpiredAfterKillMs": 2441,
+    "registryExpiredAfterKillMs": 1,
+    "takeoverMs": 2559,
+    "authorityEpoch": {
+      "before": 1,
+      "after": 2
+    },
+    "holderAfter": "bench-node-3802",
+    "checkpointRev": {
+      "before": 2,
+      "after": 2
+    },
+    "position": {
+      "xAtKill": 680,
+      "xAfterTakeover": 660,
+      "rollback": 20
+    },
+    "controlEpochAfter": 2,
+    "controlWorldAddress": "s0/bench-c_41519_mp/0",
+    "registryAfter": {
+      "publicAddress": "ws://127.0.0.1:3802",
+      "seated": "1"
+    }
+  },
+  "verdict": {
+    "takeover": "ok",
+    "rollbackWithinOnePeriod": "ok",
+    "endpointFallback": "ok"
+  }
+}

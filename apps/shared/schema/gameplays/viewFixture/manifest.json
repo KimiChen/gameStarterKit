@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "viewFixture",
+  "constantName": "ViewFixture",
+  "modeVersion": 2,
+  "wireExposed": false,
+  "maxPlayers": 8,
+  "profiles": [
+    "dropIn"
+  ],
+  "roster": "hidden"
+}

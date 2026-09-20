@@ -565,7 +565,7 @@ test("startMatch waits for lock before publishing Playing and rolls back on lock
     await assert.rejects(join(failed, fakeClient("b", "ub")));
     assert.equal(failed.state.phase, GamePhase.Waiting);
     assert.equal(failed.state.matchId, "");
-    assert.equal(failed.state.players.size, 1, "失败的第二次入房回滚新增座位");
+    assert.equal(failed.state.players!.size, 1, "失败的第二次入房回滚新增座位");
 });
 
 test("startMatch resets every gameplay field changed while waiting", async () => {
@@ -609,7 +609,7 @@ test("a leave during lock aborts the start instead of publishing a one-player ma
     release();
     await assert.rejects(pendingJoin);
     assert.equal(room.state.phase, GamePhase.Waiting);
-    assert.equal(room.state.players.size, 0);
+    assert.equal(room.state.players!.size, 0);
 });
 
 test("Waiting leave clears both identity indexes so the same account can rejoin", async () => {
@@ -619,7 +619,7 @@ test("Waiting leave clears both identity indexes so the same account can rejoin"
     await join(room, first);
     await room.onLeave(first as never, 4000);
     await join(room, fakeClient("second", "same-user"));
-    assert.equal(room.state.players.size, 1);
+    assert.equal(room.state.players!.size, 1);
 });
 
 test("same seed + fixed steps + injected inputs produce identical state", async () => {
@@ -921,7 +921,7 @@ test("disposed rooms ignore late leave callbacks, messages, ticks, and injected 
         before,
         "销毁后的房间不得继续推进、处理消息或发送回包",
     );
-    assert.equal(room.state.players.has("a"), true, "迟到 onLeave 不得二次清理已销毁状态");
+    assert.equal(room.state.players!.has("a"), true, "迟到 onLeave 不得二次清理已销毁状态");
 });
 
 test("onLeave does not mutate a room after reconnection await resolves post-dispose", async () => {
@@ -937,7 +937,7 @@ test("onLeave does not mutate a room after reconnection await resolves post-disp
     await room.onDispose();
     release();
     await pendingLeave;
-    assert.equal(room.state.players.has("a"), true);
+    assert.equal(room.state.players!.has("a"), true);
 });
 
 test("match start lock has a bounded deadline and rolls back without hanging the join", async () => {
@@ -947,7 +947,7 @@ test("match start lock has a bounded deadline and rolls back without hanging the
     await assert.rejects(join(room, fakeClient("b", "ub")));
     assert.equal(room.state.phase, GamePhase.Waiting);
     assert.equal(room.state.matchId, "");
-    assert.equal(room.state.players.size, 1);
+    assert.equal(room.state.players!.size, 1);
 });
 
 test("startMatch returning false is treated as a failed join and does not send welcome", async () => {
@@ -958,7 +958,7 @@ test("startMatch returning false is treated as a failed join and does not send w
     (room as unknown as { startMatch: () => Promise<boolean> }).startMatch = async () => false;
     const second = fakeClient("b", "ub");
     await assert.rejects(join(room, second));
-    assert.equal(room.state.players.size, 1);
+    assert.equal(room.state.players!.size, 1);
     assert.equal(second.sent.length, 0, "未进入 Playing 不得发送 welcome");
 });
 
@@ -1128,7 +1128,7 @@ test("mode 在 onPlayerLeaving 里删掉条目时，收局证据仍必须完整�
             onPlayerLeaving: (context) => {
                 // 合法用法：钩子先把条目摘掉，再走 ballMove 自己的离场簿记。
                 // ⛔ 簿记必须仍用 context.player 的捕获引用，不得因条目已删而漏记阵亡。
-                context.state.players.delete(context.client.sessionId);
+                context.state.players!.delete(context.client.sessionId);
                 base.onPlayerLeaving?.(context);
             },
         },

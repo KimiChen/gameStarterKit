@@ -8,6 +8,8 @@ import { validateIdleRoomState, type IIdleRoomState } from "./generated/state/id
 import { validatePrivateFixtureState, type IPrivateFixtureState } from "./generated/state/privateFixture";
 import { validateSnakeRoomState, type ISnakeRoomState } from "./generated/state/snake";
 import { validateTallyRoomState, type ITallyRoomState } from "./generated/state/tally";
+import { validateViewFixtureState, type IViewFixtureState } from "./generated/state/viewFixture";
+import { validateWorldFixtureState, type IWorldFixtureState } from "./generated/state/worldFixture";
 
 /** Wire root interfaces keyed by canonical gameplay mode id. */
 export interface RoomStateByMode {
@@ -19,6 +21,8 @@ export interface RoomStateByMode {
     "privateFixture": IPrivateFixtureState;
     "snake": ISnakeRoomState;
     "tally": ITallyRoomState;
+    "viewFixture": IViewFixtureState;
+    "worldFixture": IWorldFixtureState;
 }
 
 export type RoomStateMode = keyof RoomStateByMode;
@@ -34,6 +38,8 @@ export const ROOM_STATE_VALIDATORS = Object.freeze({
     "privateFixture": validatePrivateFixtureState,
     "snake": validateSnakeRoomState,
     "tally": validateTallyRoomState,
+    "viewFixture": validateViewFixtureState,
+    "worldFixture": validateWorldFixtureState,
 } as const satisfies { readonly [M in RoomStateMode]: RoomStateValidator<M> });
 
 export function validateRoomStateForMode<M extends RoomStateMode>(mode: M, input: unknown): RoomStateByMode[M];
@@ -51,6 +57,9 @@ export const GAMEPLAY_CATALOG = {
         constantName: "ArenaCapture",
         modeVersion: 1,
         maxPlayers: 4,
+        roster: "public",
+        kind: "match",
+        world: null,
         profiles: ["default"],
         stateFragments: [],
         contractDigest: "25e5743ce57bb9476c010fd9f16f294e824d965723b1474b0c2c4ef905594073",
@@ -60,6 +69,9 @@ export const GAMEPLAY_CATALOG = {
         constantName: "ArenaDuel",
         modeVersion: 1,
         maxPlayers: 2,
+        roster: "public",
+        kind: "match",
+        world: null,
         profiles: ["default"],
         stateFragments: [],
         contractDigest: "3215ad969e1b6aeab48af2ddc26f0db2b51ab793b6db244c15b1390746a8e203",
@@ -69,6 +81,9 @@ export const GAMEPLAY_CATALOG = {
         constantName: "BallMove",
         modeVersion: 3,
         maxPlayers: 4,
+        roster: "public",
+        kind: "match",
+        world: null,
         profiles: ["default"],
         stateFragments: [],
         contractDigest: "c8fca655408e3bae34c9b3072681536e03b9258bdc97d827015ccf19feea677e",
@@ -78,6 +93,9 @@ export const GAMEPLAY_CATALOG = {
         constantName: "DropInFixture",
         modeVersion: 2,
         maxPlayers: 8,
+        roster: "public",
+        kind: "match",
+        world: null,
         profiles: ["dropIn"],
         stateFragments: [],
         contractDigest: "af9fcc0be748fbed155af39397601af6a6364a5994eb9ac90dbb1d0d02dbb2fb",
@@ -87,6 +105,9 @@ export const GAMEPLAY_CATALOG = {
         constantName: "Idle",
         modeVersion: 3,
         maxPlayers: 4,
+        roster: "public",
+        kind: "match",
+        world: null,
         profiles: ["default"],
         stateFragments: [],
         contractDigest: "0ecdaaa95a97d83b73df2a3f3d5535f0e4bf113fb50fa64c52a79477f0749ef7",
@@ -96,6 +117,9 @@ export const GAMEPLAY_CATALOG = {
         constantName: "PrivateFixture",
         modeVersion: 2,
         maxPlayers: 4,
+        roster: "public",
+        kind: "match",
+        world: null,
         profiles: ["default", "private"],
         stateFragments: ["ownerReady", "inviteRoom"],
         contractDigest: "d1df12c9dcfdbecd1ff5f6363876335efae1bb4a75c2123d037a4319d6130c8d",
@@ -105,6 +129,9 @@ export const GAMEPLAY_CATALOG = {
         constantName: "Snake",
         modeVersion: 5,
         maxPlayers: 8,
+        roster: "public",
+        kind: "match",
+        world: null,
         profiles: ["dropIn"],
         stateFragments: [],
         contractDigest: "0da0f2bcef6b3e344d5e3feff358f08755a80280364ae57ef5126e9d6ec25e33",
@@ -114,9 +141,36 @@ export const GAMEPLAY_CATALOG = {
         constantName: "Tally",
         modeVersion: 1,
         maxPlayers: 4,
+        roster: "public",
+        kind: "match",
+        world: null,
         profiles: ["default"],
         stateFragments: [],
         contractDigest: "7ad4475966b16783bd73ab6dff8925d5b6e3c010236ff2ceba8c08792f66bc1b",
+    },
+    "viewFixture": {
+        id: "viewFixture",
+        constantName: "ViewFixture",
+        modeVersion: 2,
+        maxPlayers: 8,
+        roster: "hidden",
+        kind: "match",
+        world: null,
+        profiles: ["dropIn"],
+        stateFragments: [],
+        contractDigest: "14ea5e8a263303a47181669dab9fbaf2769c63ffe9de1d4712ac2f887ec3bf3f",
+    },
+    "worldFixture": {
+        id: "worldFixture",
+        constantName: "WorldFixture",
+        modeVersion: 3,
+        maxPlayers: 8,
+        roster: "hidden",
+        kind: "world",
+        world: {"emptyPolicy":"sleep","emptyAfterMs":120000,"checkpointMs":30000},
+        profiles: ["world"],
+        stateFragments: [],
+        contractDigest: "d23b50c9735af39cc58ac7e9db9bbf9e23a1317b2a6a02382a4e1814324f81c1",
     },
 } as const;
 

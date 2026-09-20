@@ -1,0 +1,1221 @@
+{
+  "tool": "tools/creator-preview/run.mjs",
+  "scenario": "slg",
+  "startedAt": "2026-09-09T17:11:48.072Z",
+  "options": {
+    "scenario": "slg",
+    "out": "docs/evidence/creator-2026-09-10/slg-art",
+    "code": "WELCOME2026",
+    "format": "png",
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://localhost:7456",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 20000,
+    "reuse": false
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "ok": true,
+  "steps": [
+    {
+      "name": "加载预览场景（Fetch 改写 settings.js?scene=）",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:48.185Z",
+      "detail": {
+        "frames": 69,
+        "canvas": {
+          "x": 658,
+          "y": 47.8828125,
+          "width": 375,
+          "height": 771.1171875
+        },
+        "visible": {
+          "width": 750,
+          "height": 1542
+        },
+        "topLevel": [
+          "Canvas",
+          "PROFILER_NODE"
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-09T17:11:50.222Z"
+    },
+    {
+      "name": "登录页可见（FGUI btn_login）",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:50.231Z",
+      "detail": {
+        "via": "fgui:btn_login",
+        "shot": "01-login.png"
+      },
+      "screenshots": [
+        "01-login.png"
+      ],
+      "finishedAt": "2026-09-09T17:11:50.943Z"
+    },
+    {
+      "name": "点「开始游戏」",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:50.943Z",
+      "detail": {
+        "tapped": "btn_login",
+        "at": [
+          845,
+          668
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-09T17:11:51.025Z"
+    },
+    {
+      "name": "首屏 PromoHomeView 挂载",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:51.025Z",
+      "detail": {
+        "card": [
+          "gono",
+          "Cocos Creator + Colyseus 实时游戏脚手架",
+          "协议 game v8 · lobby v7 · 已登记玩法 8",
+          "本地开发服 · dev-63bfdde39b49cc16 · 体力 30 · 0胜0负"
+        ],
+        "protocolLine": "协议 game v8 · lobby v7 · 已登记玩法 8",
+        "shot": "02-home.png"
+      },
+      "screenshots": [
+        "02-home.png"
+      ],
+      "finishedAt": "2026-09-09T17:11:51.795Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:51.797Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          973,
+          88
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-09T17:11:51.877Z"
+    },
+    {
+      "name": "设置面板与插件入口",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:51.877Z",
+      "detail": {
+        "entries": [
+          {
+            "label": "竞技场",
+            "pluginId": "arenaHub"
+          },
+          {
+            "label": "进入战斗",
+            "pluginId": "builtin"
+          },
+          {
+            "label": "兑换码",
+            "pluginId": "redeem"
+          },
+          {
+            "label": "大地图",
+            "pluginId": "slg"
+          },
+          {
+            "label": "贪吃蛇大作战",
+            "pluginId": "snake"
+          },
+          {
+            "label": "点数赛",
+            "pluginId": "tally"
+          }
+        ],
+        "shot": "03-settings.png"
+      },
+      "screenshots": [
+        "03-settings.png"
+      ],
+      "finishedAt": "2026-09-09T17:11:52.257Z"
+    },
+    {
+      "name": "进入「大地图 · slg」（设置菜单的正式 route）",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:52.257Z",
+      "detail": {
+        "tapped": "进入 @ /^大地图\\s+·\\s+slg$/u",
+        "at": [
+          947,
+          619
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-09T17:11:52.343Z"
+    },
+    {
+      "name": "SlgMapView 加载地表贴图与独立装饰层",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:52.343Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 1 · 奖杯 3",
+        "lod": 1,
+        "trophies": 3,
+        "chunks": [
+          "slg-chunk-311-311",
+          "slg-chunk-311-312",
+          "slg-chunk-311-313",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-313-311",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-311-312",
+          "slg-decorations-312-311",
+          "slg-decorations-312-312",
+          "slg-decorations-312-313",
+          "slg-decorations-313-312",
+          "slg-decorations-313-313"
+        ],
+        "tile": null,
+        "notice": null,
+        "worldCenter": {
+          "x": -101154.5,
+          "y": 102418.94025109436,
+          "width": 0,
+          "height": 0
+        },
+        "settling": {
+          "elapsedMs": 2435,
+          "stableMs": 2029,
+          "chunkCount": 9
+        },
+        "assets": {
+          "terrainCount": 9,
+          "decorationCount": 6,
+          "samples": [
+            {
+              "name": "slg-chunk-312-312",
+              "kind": "mesh",
+              "textured": true,
+              "width": 1536,
+              "height": 1024
+            },
+            {
+              "name": "slg-decorations-312-312",
+              "kind": "mesh",
+              "textured": true,
+              "width": 1536,
+              "height": 1024
+            }
+          ]
+        },
+        "shot": "04-slg-opened.png"
+      },
+      "screenshots": [
+        "04-slg-opened.png"
+      ],
+      "finishedAt": "2026-09-09T17:11:55.754Z"
+    },
+    {
+      "name": "点选可见无主格（不直接调用 Logic 或 RPC）",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:55.754Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 1 · 奖杯 3",
+        "lod": 1,
+        "trophies": 3,
+        "chunks": [
+          "slg-chunk-311-311",
+          "slg-chunk-311-312",
+          "slg-chunk-311-313",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-313-311",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-311-312",
+          "slg-decorations-312-311",
+          "slg-decorations-312-312",
+          "slg-decorations-312-313",
+          "slg-decorations-313-312",
+          "slg-decorations-313-313"
+        ],
+        "tile": {
+          "x": 5003,
+          "y": 4999,
+          "terrain": 0,
+          "owner": "无主",
+          "guard": 0,
+          "text": "(5003, 4999) · 地形 0 · 无主 · 守备 0"
+        },
+        "notice": null,
+        "worldCenter": {
+          "x": -101154.5,
+          "y": 102418.94025109436,
+          "width": 0,
+          "height": 0
+        },
+        "tried": [
+          {
+            "at": {
+              "x": 845.5,
+              "y": 406.96238220452335
+            },
+            "tile": {
+              "x": 4999,
+              "y": 4999,
+              "terrain": 0,
+              "owner": "我方",
+              "guard": 1,
+              "text": "(4999, 4999) · 地形 0 · 我方 · 守备 1"
+            }
+          },
+          {
+            "at": {
+              "x": 779.875,
+              "y": 406.96238220452335
+            },
+            "tile": {
+              "x": 4996,
+              "y": 4999,
+              "terrain": 0,
+              "owner": "我方",
+              "guard": 1,
+              "text": "(4996, 4999) · 地形 0 · 我方 · 守备 1"
+            }
+          },
+          {
+            "at": {
+              "x": 911.125,
+              "y": 406.96238220452335
+            },
+            "tile": {
+              "x": 5003,
+              "y": 4999,
+              "terrain": 0,
+              "owner": "无主",
+              "guard": 0,
+              "text": "(5003, 4999) · 地形 0 · 无主 · 守备 0"
+            }
+          }
+        ],
+        "shot": "05-slg-selected.png"
+      },
+      "screenshots": [
+        "05-slg-selected.png"
+      ],
+      "finishedAt": "2026-09-09T17:11:57.317Z"
+    },
+    {
+      "name": "免费占领并观察 SQL 结果与奖杯回流",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:57.317Z",
+      "detail": {
+        "before": {
+          "x": 5003,
+          "y": 4999,
+          "terrain": 0,
+          "owner": "无主",
+          "guard": 0,
+          "text": "(5003, 4999) · 地形 0 · 无主 · 守备 0"
+        },
+        "loaded": true,
+        "title": "青原仙洲 · LOD 1 · 奖杯 4",
+        "lod": 1,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-311-311",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-312-311",
+          "slg-decorations-312-312",
+          "slg-decorations-312-313",
+          "slg-decorations-313-312",
+          "slg-decorations-313-313"
+        ],
+        "tile": {
+          "x": 5003,
+          "y": 4999,
+          "terrain": 0,
+          "owner": "我方",
+          "guard": 1,
+          "text": "(5003, 4999) · 地形 0 · 我方 · 守备 1"
+        },
+        "notice": "已占领 · 奖杯 +1",
+        "worldCenter": {
+          "x": -101154.5,
+          "y": 102418.94025109436,
+          "width": 0,
+          "height": 0
+        },
+        "shot": "06-slg-captured.png"
+      },
+      "screenshots": [
+        "06-slg-captured.png"
+      ],
+      "finishedAt": "2026-09-09T17:11:58.359Z"
+    },
+    {
+      "name": "刷新后同一格仍归我方（权威查询重读）",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:58.359Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 1 · 奖杯 4",
+        "lod": 1,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-311-311",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-312-311",
+          "slg-decorations-312-312",
+          "slg-decorations-312-313",
+          "slg-decorations-313-312",
+          "slg-decorations-313-313"
+        ],
+        "tile": {
+          "x": 5003,
+          "y": 4999,
+          "terrain": 0,
+          "owner": "我方",
+          "guard": 1,
+          "text": "(5003, 4999) · 地形 0 · 我方 · 守备 1"
+        },
+        "notice": "已占领 · 奖杯 +1",
+        "worldCenter": {
+          "x": -101154.5,
+          "y": 102418.94025109436,
+          "width": 0,
+          "height": 0
+        },
+        "shot": "07-slg-refreshed.png"
+      },
+      "screenshots": [
+        "07-slg-refreshed.png"
+      ],
+      "finishedAt": "2026-09-09T17:11:59.397Z"
+    },
+    {
+      "name": "鼠标拖动平移（地图节点位置实际改变）",
+      "ok": true,
+      "startedAt": "2026-09-09T17:11:59.397Z",
+      "detail": {
+        "from": {
+          "x": 806.125,
+          "y": 406.96238220452335
+        },
+        "to": {
+          "x": 884.875,
+          "y": 443.1208772495136
+        },
+        "before": {
+          "x": -101154.5,
+          "y": 102418.94025109436,
+          "width": 0,
+          "height": 0
+        },
+        "after": {
+          "x": -101076.50000000006,
+          "y": 102455.94587487841,
+          "width": 0,
+          "height": 0
+        },
+        "shot": "08-slg-panned.png"
+      },
+      "screenshots": [
+        "08-slg-panned.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:00.373Z"
+    },
+    {
+      "name": "记录 LOD 1 近景（网格稳定后）",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:00.378Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 1 · 奖杯 4",
+        "lod": 1,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-311-311",
+          "slg-chunk-311-312",
+          "slg-chunk-311-313",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-313-311",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-311-312",
+          "slg-decorations-312-311",
+          "slg-decorations-312-312",
+          "slg-decorations-312-313",
+          "slg-decorations-313-312",
+          "slg-decorations-313-313"
+        ],
+        "tile": {
+          "x": 5003,
+          "y": 4999,
+          "terrain": 0,
+          "owner": "我方",
+          "guard": 1,
+          "text": "(5003, 4999) · 地形 0 · 我方 · 守备 1"
+        },
+        "notice": "已占领 · 奖杯 +1",
+        "worldCenter": {
+          "x": -101052.66283324649,
+          "y": 102469.19075813607,
+          "width": 0,
+          "height": 0
+        },
+        "settling": {
+          "elapsedMs": 2445,
+          "stableMs": 2041,
+          "chunkCount": 9
+        },
+        "shot": "09-slg-lod-1.png"
+      },
+      "screenshots": [
+        "09-slg-lod-1.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:03.362Z"
+    },
+    {
+      "name": "滚轮缩放到 LOD 2",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:03.362Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 2 · 奖杯 4",
+        "lod": 2,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-311-311",
+          "slg-chunk-311-312",
+          "slg-chunk-311-313",
+          "slg-chunk-311-314",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-312-314",
+          "slg-chunk-313-311",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313",
+          "slg-chunk-313-314"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-311-312",
+          "slg-decorations-311-314",
+          "slg-decorations-312-311",
+          "slg-decorations-312-312",
+          "slg-decorations-312-313",
+          "slg-decorations-313-312",
+          "slg-decorations-313-313",
+          "slg-decorations-313-314"
+        ],
+        "tile": {
+          "x": 5003,
+          "y": 4999,
+          "terrain": 0,
+          "owner": "我方",
+          "guard": 1,
+          "text": "(5003, 4999) · 地形 0 · 我方 · 守备 1"
+        },
+        "notice": "已占领 · 奖杯 +1",
+        "worldCenter": {
+          "x": -74642.64527175127,
+          "y": 76016.25510477049,
+          "width": 0,
+          "height": 0
+        },
+        "settling": {
+          "elapsedMs": 2438,
+          "stableMs": 2031,
+          "chunkCount": 12
+        },
+        "deltas": [
+          60
+        ],
+        "shot": "10-slg-lod-2.png"
+      },
+      "screenshots": [
+        "10-slg-lod-2.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:06.592Z"
+    },
+    {
+      "name": "滚轮缩放到 LOD 3",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:06.592Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 3 · 奖杯 4",
+        "lod": 3,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-310-310",
+          "slg-chunk-310-311",
+          "slg-chunk-310-312",
+          "slg-chunk-310-313",
+          "slg-chunk-310-314",
+          "slg-chunk-311-310",
+          "slg-chunk-311-311",
+          "slg-chunk-311-312",
+          "slg-chunk-311-313",
+          "slg-chunk-311-314",
+          "slg-chunk-312-310",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-312-314",
+          "slg-chunk-313-310",
+          "slg-chunk-313-311",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313",
+          "slg-chunk-313-314"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-310-310",
+          "slg-decorations-310-312",
+          "slg-decorations-311-310",
+          "slg-decorations-311-312",
+          "slg-decorations-311-314",
+          "slg-decorations-312-311",
+          "slg-decorations-312-312",
+          "slg-decorations-312-313",
+          "slg-decorations-313-310",
+          "slg-decorations-313-312",
+          "slg-decorations-313-313",
+          "slg-decorations-313-314"
+        ],
+        "tile": {
+          "x": 5003,
+          "y": 4999,
+          "terrain": 0,
+          "owner": "我方",
+          "guard": 1,
+          "text": "(5003, 4999) · 地形 0 · 我方 · 守备 1"
+        },
+        "notice": "已占领 · 奖杯 +1",
+        "worldCenter": {
+          "x": -55077.62305367148,
+          "y": 56419.43838223625,
+          "width": 0,
+          "height": 0
+        },
+        "settling": {
+          "elapsedMs": 2441,
+          "stableMs": 1627,
+          "chunkCount": 20
+        },
+        "deltas": [
+          60
+        ],
+        "shot": "11-slg-lod-3.png"
+      },
+      "screenshots": [
+        "11-slg-lod-3.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:09.808Z"
+    },
+    {
+      "name": "滚轮缩放到 LOD 4",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:09.808Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 4 · 奖杯 4",
+        "lod": 4,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-310-309",
+          "slg-chunk-310-310",
+          "slg-chunk-310-311",
+          "slg-chunk-310-312",
+          "slg-chunk-310-313",
+          "slg-chunk-310-314",
+          "slg-chunk-310-315",
+          "slg-chunk-311-309",
+          "slg-chunk-311-310",
+          "slg-chunk-311-311",
+          "slg-chunk-311-312",
+          "slg-chunk-311-313",
+          "slg-chunk-311-314",
+          "slg-chunk-311-315",
+          "slg-chunk-312-309",
+          "slg-chunk-312-310",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-312-314",
+          "slg-chunk-312-315",
+          "slg-chunk-313-309",
+          "slg-chunk-313-310",
+          "slg-chunk-313-311",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313",
+          "slg-chunk-313-314",
+          "slg-chunk-313-315",
+          "slg-chunk-314-309",
+          "slg-chunk-314-310",
+          "slg-chunk-314-311",
+          "slg-chunk-314-312",
+          "slg-chunk-314-313",
+          "slg-chunk-314-314",
+          "slg-chunk-314-315"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-312-312"
+        ],
+        "tile": {
+          "x": 5003,
+          "y": 4999,
+          "terrain": 0,
+          "owner": "我方",
+          "guard": 1,
+          "text": "(5003, 4999) · 地形 0 · 我方 · 守备 1"
+        },
+        "notice": "已占领 · 奖杯 +1",
+        "worldCenter": {
+          "x": -29845.986252754963,
+          "y": 31146.79843909387,
+          "width": 0,
+          "height": 0
+        },
+        "settling": {
+          "elapsedMs": 2438,
+          "stableMs": 1218,
+          "chunkCount": 35
+        },
+        "deltas": [
+          60,
+          60
+        ],
+        "shot": "12-slg-lod-4.png"
+      },
+      "screenshots": [
+        "12-slg-lod-4.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:13.176Z"
+    },
+    {
+      "name": "打开世界总览，读取实地图、当前位置框与地标",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:13.176Z",
+      "detail": {
+        "title": "青原仙洲 · 世界总览",
+        "mode": "navigation",
+        "bounds": {
+          "x": 668,
+          "y": 240.91214737354085,
+          "width": 355,
+          "height": 355.0539579280155
+        },
+        "viewportEdges": [
+          {
+            "x": 845.3225,
+            "y": 416.6993619437014,
+            "width": 4.402000000000044,
+            "height": 1.5
+          },
+          {
+            "x": 845.3225,
+            "y": 419.9658583566391,
+            "width": 4.402000000000044,
+            "height": 1.5
+          },
+          {
+            "x": 844.222,
+            "y": 418.33261015017024,
+            "width": 1.5,
+            "height": 6.531999999999982
+          },
+          {
+            "x": 846.423,
+            "y": 418.33261015017024,
+            "width": 1.5,
+            "height": 6.531999999999982
+          }
+        ],
+        "position": {
+          "x": 4995,
+          "y": 5003
+        },
+        "landmarks": [
+          {
+            "name": "青云宗",
+            "path": "scene/Canvas/GRoot/Container/layer_popup/SlgMapView/slg-world-overview/slg-overview-navigation/slg-overview-site-qingyun-sect",
+            "center": {
+              "x": 845.6775,
+              "y": 418.26159935858465,
+              "width": 46,
+              "height": 46
+            },
+            "expected": {
+              "x": 5005,
+              "y": 5005
+            }
+          },
+          {
+            "name": "赤岩遗迹",
+            "path": "scene/Canvas/GRoot/Container/layer_popup/SlgMapView/slg-world-overview/slg-overview-navigation/slg-overview-site-chiyan-ruin",
+            "center": {
+              "x": 727.924,
+              "y": 394.01141403210113,
+              "width": 46,
+              "height": 46
+            },
+            "expected": {
+              "x": 1688,
+              "y": 5688
+            }
+          },
+          {
+            "name": "南竹洞天",
+            "path": "scene/Canvas/GRoot/Container/layer_popup/SlgMapView/slg-world-overview/slg-overview-navigation/slg-overview-site-nanzhu-sect",
+            "center": {
+              "x": 783.588,
+              "y": 524.6712705496109,
+              "width": 46,
+              "height": 46
+            },
+            "expected": {
+              "x": 3256,
+              "y": 2008
+            }
+          },
+          {
+            "name": "北岭遗迹",
+            "path": "scene/Canvas/GRoot/Container/layer_popup/SlgMapView/slg-world-overview/slg-overview-navigation/slg-overview-site-beiling-ruin",
+            "center": {
+              "x": 862.54,
+              "y": 291.1877878161479,
+              "width": 46,
+              "height": 46
+            },
+            "expected": {
+              "x": 5480,
+              "y": 8584
+            }
+          },
+          {
+            "name": "临湖灵晶",
+            "path": "scene/Canvas/GRoot/Container/layer_popup/SlgMapView/slg-world-overview/slg-overview-navigation/slg-overview-site-linhu-crystal",
+            "center": {
+              "x": 921.6120000000001,
+              "y": 417.87104000486386,
+              "width": 46,
+              "height": 46
+            },
+            "expected": {
+              "x": 7144,
+              "y": 5016
+            }
+          }
+        ],
+        "artVisible": false,
+        "localBefore": {
+          "worldCenter": {
+            "x": -29845.986252754963,
+            "y": 31146.79843909387,
+            "width": 0,
+            "height": 0
+          },
+          "tile": {
+            "x": 5003,
+            "y": 4999,
+            "terrain": 0,
+            "owner": "我方",
+            "guard": 1,
+            "text": "(5003, 4999) · 地形 0 · 我方 · 守备 1"
+          },
+          "lod": 4
+        },
+        "shot": "13-slg-world-navigation.png"
+      },
+      "screenshots": [
+        "13-slg-world-navigation.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:13.661Z"
+    },
+    {
+      "name": "山河绘卷可欣赏，点击画面保持位置与总览",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:13.661Z",
+      "detail": {
+        "title": "青原仙洲 · 世界总览",
+        "mode": "scroll",
+        "bounds": {
+          "x": 668,
+          "y": 240.91214737354085,
+          "width": 355,
+          "height": 355.0539579280155
+        },
+        "viewportEdges": [],
+        "position": null,
+        "landmarks": [],
+        "artVisible": true,
+        "art": {
+          "name": "slg-overview-art",
+          "kind": "sprite",
+          "textured": true,
+          "width": 1254,
+          "height": 1254
+        },
+        "positionUnchanged": true,
+        "restoredWorldCenter": {
+          "x": -29845.986252754963,
+          "y": 31146.79843909387,
+          "width": 0,
+          "height": 0
+        },
+        "overviewPosition": {
+          "x": 4995,
+          "y": 5003
+        },
+        "shot": "14-slg-world-scroll.png"
+      },
+      "screenshots": [
+        "14-slg-world-scroll.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:15.351Z"
+    },
+    {
+      "name": "实地图点选命名地标，回到对应局部格并稳定显示",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:15.351Z",
+      "detail": {
+        "landmark": {
+          "name": "北岭遗迹",
+          "path": "scene/Canvas/GRoot/Container/layer_popup/SlgMapView/slg-world-overview/slg-overview-navigation/slg-overview-site-beiling-ruin",
+          "center": {
+            "x": 862.54,
+            "y": 291.1877878161479,
+            "width": 46,
+            "height": 46
+          },
+          "expected": {
+            "x": 5480,
+            "y": 8584
+          }
+        },
+        "loaded": true,
+        "title": "青原仙洲 · LOD 4 · 奖杯 4",
+        "lod": 4,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-340-533",
+          "slg-chunk-340-534",
+          "slg-chunk-340-535",
+          "slg-chunk-340-536",
+          "slg-chunk-340-537",
+          "slg-chunk-340-538",
+          "slg-chunk-340-539",
+          "slg-chunk-341-533",
+          "slg-chunk-341-534",
+          "slg-chunk-341-535",
+          "slg-chunk-341-536",
+          "slg-chunk-341-537",
+          "slg-chunk-341-538",
+          "slg-chunk-341-539",
+          "slg-chunk-342-533",
+          "slg-chunk-342-534",
+          "slg-chunk-342-535",
+          "slg-chunk-342-536",
+          "slg-chunk-342-537",
+          "slg-chunk-342-538",
+          "slg-chunk-342-539",
+          "slg-chunk-343-533",
+          "slg-chunk-343-534",
+          "slg-chunk-343-535",
+          "slg-chunk-343-536",
+          "slg-chunk-343-537",
+          "slg-chunk-343-538",
+          "slg-chunk-343-539",
+          "slg-chunk-344-533",
+          "slg-chunk-344-534",
+          "slg-chunk-344-535",
+          "slg-chunk-344-536",
+          "slg-chunk-344-537",
+          "slg-chunk-344-538",
+          "slg-chunk-344-539"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-342-536"
+        ],
+        "tile": {
+          "x": 5480,
+          "y": 8584,
+          "terrain": 5,
+          "owner": "无主",
+          "guard": 0,
+          "text": "(5480, 8584) · 地形 5 · 无主 · 守备 0"
+        },
+        "notice": null,
+        "worldCenter": {
+          "x": -32825.6033380889,
+          "y": 53154.65625251154,
+          "width": 0,
+          "height": 0
+        },
+        "settling": {
+          "elapsedMs": 3249,
+          "stableMs": 1219,
+          "chunkCount": 35
+        },
+        "assets": {
+          "terrainCount": 35,
+          "decorationCount": 1,
+          "samples": [
+            {
+              "name": "slg-chunk-342-536",
+              "kind": "mesh",
+              "textured": true,
+              "width": 1536,
+              "height": 1024
+            },
+            {
+              "name": "slg-decorations-342-536",
+              "kind": "mesh",
+              "textured": true,
+              "width": 1536,
+              "height": 1024
+            }
+          ]
+        },
+        "shot": "15-slg-world-located.png"
+      },
+      "screenshots": [
+        "15-slg-world-located.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:19.856Z"
+    },
+    {
+      "name": "总览返回只关闭面板，保留当前位置与选格",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:19.856Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 4 · 奖杯 4",
+        "lod": 4,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-340-533",
+          "slg-chunk-340-534",
+          "slg-chunk-340-535",
+          "slg-chunk-340-536",
+          "slg-chunk-340-537",
+          "slg-chunk-340-538",
+          "slg-chunk-340-539",
+          "slg-chunk-341-533",
+          "slg-chunk-341-534",
+          "slg-chunk-341-535",
+          "slg-chunk-341-536",
+          "slg-chunk-341-537",
+          "slg-chunk-341-538",
+          "slg-chunk-341-539",
+          "slg-chunk-342-533",
+          "slg-chunk-342-534",
+          "slg-chunk-342-535",
+          "slg-chunk-342-536",
+          "slg-chunk-342-537",
+          "slg-chunk-342-538",
+          "slg-chunk-342-539",
+          "slg-chunk-343-533",
+          "slg-chunk-343-534",
+          "slg-chunk-343-535",
+          "slg-chunk-343-536",
+          "slg-chunk-343-537",
+          "slg-chunk-343-538",
+          "slg-chunk-343-539",
+          "slg-chunk-344-533",
+          "slg-chunk-344-534",
+          "slg-chunk-344-535",
+          "slg-chunk-344-536",
+          "slg-chunk-344-537",
+          "slg-chunk-344-538",
+          "slg-chunk-344-539"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-342-536"
+        ],
+        "tile": {
+          "x": 5480,
+          "y": 8584,
+          "terrain": 5,
+          "owner": "无主",
+          "guard": 0,
+          "text": "(5480, 8584) · 地形 5 · 无主 · 守备 0"
+        },
+        "notice": null,
+        "worldCenter": {
+          "x": -32825.6033380889,
+          "y": 53154.65625251154,
+          "width": 0,
+          "height": 0
+        },
+        "positionUnchanged": true,
+        "shot": "16-slg-world-returned.png"
+      },
+      "screenshots": [
+        "16-slg-world-returned.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:20.664Z"
+    },
+    {
+      "name": "关闭地图回设置面板",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:20.664Z",
+      "detail": {
+        "lods": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "shot": "17-slg-closed.png"
+      },
+      "screenshots": [
+        "17-slg-closed.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:21.135Z"
+    },
+    {
+      "name": "重新进入地图，地表和装饰重新加载",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:21.135Z",
+      "detail": {
+        "loaded": true,
+        "title": "青原仙洲 · LOD 1 · 奖杯 4",
+        "lod": 1,
+        "trophies": 4,
+        "chunks": [
+          "slg-chunk-311-311",
+          "slg-chunk-311-312",
+          "slg-chunk-311-313",
+          "slg-chunk-312-311",
+          "slg-chunk-312-312",
+          "slg-chunk-312-313",
+          "slg-chunk-313-311",
+          "slg-chunk-313-312",
+          "slg-chunk-313-313"
+        ],
+        "terrainLayer": true,
+        "decorationLayer": true,
+        "decorationChunks": [
+          "slg-decorations-311-312",
+          "slg-decorations-312-311",
+          "slg-decorations-312-312",
+          "slg-decorations-312-313",
+          "slg-decorations-313-312",
+          "slg-decorations-313-313"
+        ],
+        "tile": null,
+        "notice": null,
+        "worldCenter": {
+          "x": -101154.5,
+          "y": 102418.94025109436,
+          "width": 0,
+          "height": 0
+        },
+        "settling": {
+          "elapsedMs": 2432,
+          "stableMs": 2026,
+          "chunkCount": 9
+        },
+        "assets": {
+          "terrainCount": 9,
+          "decorationCount": 6,
+          "samples": [
+            {
+              "name": "slg-chunk-312-312",
+              "kind": "mesh",
+              "textured": true,
+              "width": 1536,
+              "height": 1024
+            },
+            {
+              "name": "slg-decorations-312-312",
+              "kind": "mesh",
+              "textured": true,
+              "width": 1536,
+              "height": 1024
+            }
+          ]
+        },
+        "shot": "18-slg-reopened.png"
+      },
+      "screenshots": [
+        "18-slg-reopened.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:24.612Z"
+    },
+    {
+      "name": "完成验收并再次关闭地图",
+      "ok": true,
+      "startedAt": "2026-09-09T17:12:24.612Z",
+      "detail": {
+        "lods": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "reopened": true,
+        "shot": "19-slg-reopened-closed.png"
+      },
+      "screenshots": [
+        "19-slg-reopened-closed.png"
+      ],
+      "finishedAt": "2026-09-09T17:12:25.078Z"
+    }
+  ],
+  "console": [],
+  "tab": {
+    "id": "CADBE79FDBB60C0214ACB6800053716F",
+    "created": true
+  },
+  "finishedAt": "2026-09-09T17:12:25.080Z"
+}

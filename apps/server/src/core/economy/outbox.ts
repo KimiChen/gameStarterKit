@@ -8,6 +8,7 @@
  * 只改 Redis 不碰钱的请求⛔不要引入 outbox（09·X2）——直接 withUser + casHset。
  */
 import { v5 as uuidv5 } from "uuid";
+import { accountOwner, assetOwnerColumns, type AssetOwnerRef } from "@game/shared";
 import {
   APPLIED_RETENTION_MS, BAG_SHARDS, LOCK_RENEW_MS, OP_ID_NAMESPACE, OUTBOX_DONE, OUTBOX_PENDING,
   OUTBOX_RETENTION_MS,
@@ -134,15 +135,17 @@ export type PurchaseResult = IPurchaseResult;
  */
 export async function insertOutboxIntent(
   conn: PoolConnection,
-  row: { opId: string; uid: string; sId: number; effect: IEffect; onDuplicate?: "error" | "ignore" },
+  row: { opId: string; uid: string; sId: number; effect: IEffect; onDuplicate?: "error" | "ignore"; owner?: AssetOwnerRef },
   kinds: KitEffectKinds = KIT_EFFECT_KINDS,
 ): Promise<"INSERTED" | "DUP"> {
   const canonical = canonicalEffect(row.effect, kinds);
+  // 资产主体（MMO MF2-B3）：缺省 account(uid)（0 / ''）；persona 主体的 intent 由 relayer 只落状态、⛔ 不 apply 到账号 Redis 背包。
+  const { ownerKind, ownerId } = assetOwnerColumns(row.owner ?? accountOwner(row.uid));
   const odku = row.onDuplicate === "ignore" ? "\n       ON DUPLICATE KEY UPDATE op_id = op_id" : "";
   const [r] = await conn.execute<ResultSetHeader>(
-    `INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status)
-       VALUES (?,?,?,CAST(? AS JSON),?)${odku}`,
-    [row.opId, row.uid, row.sId, JSON.stringify(canonical), OUTBOX_PENDING]);
+    `INSERT INTO gameplay_outbox (op_id, user_id, server_id, owner_kind, owner_id, effect, status)
+       VALUES (?,?,?,?,?,CAST(? AS JSON),?)${odku}`,
+    [row.opId, row.uid, row.sId, ownerKind, ownerId, JSON.stringify(canonical), OUTBOX_PENDING]);
   return r.affectedRows === 0 ? "DUP" : "INSERTED";
 }
 
@@ -154,13 +157,15 @@ export async function insertOutboxIntent(
  */
 export async function assertOutboxIntentMatches(
   conn: PoolConnection,
-  row: { opId: string; uid: string; sId: number; effect: IEffect },
+  row: { opId: string; uid: string; sId: number; effect: IEffect; owner?: AssetOwnerRef },
   kinds: KitEffectKinds = KIT_EFFECT_KINDS,
 ): Promise<void> {
   const canonical = canonicalEffect(row.effect, kinds);
+  // 主体也是身份的一部分：同 opId 落在别的主体上 ⇒ 冲突（⛔ 不把 persona 的重试当成账号的既有 intent）。
+  const { ownerKind, ownerId } = assetOwnerColumns(row.owner ?? accountOwner(row.uid));
   const [rows] = await conn.query<RowDataPacket[]>(
-    "SELECT effect FROM gameplay_outbox WHERE op_id = ? AND user_id = ? AND server_id = ? FOR UPDATE",
-    [row.opId, row.uid, row.sId]);
+    "SELECT effect FROM gameplay_outbox WHERE op_id = ? AND user_id = ? AND server_id = ? AND owner_kind = ? AND owner_id = ? FOR UPDATE",
+    [row.opId, row.uid, row.sId, ownerKind, ownerId]);
   if (rows.length === 0) { throw new EffectConflictError(); }
   const existing = canonicalEffect(rows[0].effect, kinds);
   if (JSON.stringify(existing) !== JSON.stringify(canonical)) { throw new EffectConflictError(); }

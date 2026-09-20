@@ -76,7 +76,7 @@ test("PSD UniFlex package contract uses manifest.json without page sidecars", {
     const packageDir = join(tempRoot, "package");
     const importRoot = join(tempRoot, "import");
     const resourceDir = join(importRoot, "apps/client/resources/ui/Backpack");
-    const pageDir = join(importRoot, "apps/client/src/ui-uniflex/pages/Backpack");
+    const pageDir = join(importRoot, "apps/client/src/ui-uniflex/modules/Backpack");
     try {
         const design = await writeConverterDesign(designDir);
         await execFileAsync(converter.command, [
@@ -118,7 +118,7 @@ test("authoring import replaces leftover dump components instead of merging", {
     const designDir = join(tempRoot, "design");
     const packageDir = join(tempRoot, "package");
     const importRoot = join(tempRoot, "import");
-    const pageDir = join(importRoot, "apps/client/src/ui-uniflex/pages/Backpack");
+    const pageDir = join(importRoot, "apps/client/src/ui-uniflex/modules/Backpack");
     try {
         const design = await writeConverterDesign(designDir);
         await execFileAsync(converter.command, [
@@ -185,7 +185,7 @@ test("pinned converter restores catalog ConfirmButton from layer identity", {
         await writeFile(join(designDir, "component-declarations.json"), JSON.stringify({
             schemaVersion: 1, kind: "uniflex-component-declarations",
             definitions: [
-                { key: "Confirm", source: "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx" },
+                { key: "Confirm", source: "apps/client/src/ui-uniflex/modules/Confirm/Confirm.tsx" },
                 { key: "ConfirmButton", source: "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx" },
             ],
             instances: [
@@ -246,8 +246,8 @@ test("pinned converter restores MailBattleRow and BackpackTab from layer identit
         await writeFile(join(designDir, "component-declarations.json"), JSON.stringify({
             schemaVersion: 1, kind: "uniflex-component-declarations",
             definitions: [
-                { key: "MailBattleReport", source: "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleReport.tsx" },
-                { key: "MailBattleRow", source: "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx" },
+                { key: "MailBattleReport", source: "apps/client/src/ui-uniflex/modules/MailBattleReport/MailBattleReport.tsx" },
+                { key: "MailBattleRow", source: "apps/client/src/ui-uniflex/modules/MailBattleReport/MailBattleRow.tsx" },
             ],
             instances: [
                 { key: "MailBattleReport.root", definitionKey: "MailBattleReport", role: "page", rootRecordId: 1 },
@@ -275,7 +275,7 @@ test("pinned converter copies unique page-local panels and overlays For defaultI
 }, async () => {
     const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-nested-overlay-"));
     try {
-        const pageDir = join(tempRoot, "apps/client/src/ui-uniflex/pages/AllianceTech");
+        const pageDir = join(tempRoot, "apps/client/src/ui-uniflex/modules/AllianceTech");
         const packageDir = join(tempRoot, "package");
         const designDir = join(tempRoot, "design");
         await mkdir(pageDir, { recursive: true });
@@ -346,9 +346,9 @@ export const AllianceTech = defineView(() => (
         await writeFile(join(designDir, "component-declarations.json"), JSON.stringify({
             schemaVersion: 1, kind: "uniflex-component-declarations",
             definitions: [
-                { key: "AllianceTech", source: "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTech.tsx" },
-                { key: "AllianceTechPanel", source: "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechPanel.tsx" },
-                { key: "AllianceTechNode", source: "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTechNode.tsx" },
+                { key: "AllianceTech", source: "apps/client/src/ui-uniflex/modules/AllianceTech/AllianceTech.tsx" },
+                { key: "AllianceTechPanel", source: "apps/client/src/ui-uniflex/modules/AllianceTech/AllianceTechPanel.tsx" },
+                { key: "AllianceTechNode", source: "apps/client/src/ui-uniflex/modules/AllianceTech/AllianceTechNode.tsx" },
             ],
             instances: [
                 { key: "AllianceTech.root", definitionKey: "AllianceTech", role: "page", rootRecordId: 1 },
@@ -411,7 +411,7 @@ test("import merges restored/ copies without wiping other restored files", async
             "export const BackpackItemCard = 1;\n");
         assert.equal(await readFile(join(restored, "components/button/ActionButton.tsx"), "utf8"),
             "export const ActionButton = 1;\n");
-        assert.equal(await access(join(importRoot, "apps/client/src/ui-uniflex/pages/BackpackItemCard"))
+        assert.equal(await access(join(importRoot, "apps/client/src/ui-uniflex/modules/BackpackItemCard"))
             .then(() => true).catch(() => false), false);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
@@ -462,7 +462,7 @@ test("editing BackpackItemCard PSD overlays the shared restored copy and leaves 
         assert.match(overlayed, /<ItemSlot left=\{8\} top=\{0\}/);
         assert.match(overlayed, /from '\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
         const original = await readFile(
-            resolve(root, "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"),
+            resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"),
             "utf8");
         assert.match(original, /<ItemSlot left=\{0\} top=\{0\}/);
         await execFileAsync(process.execPath, [
@@ -473,13 +473,13 @@ test("editing BackpackItemCard PSD overlays the shared restored copy and leaves 
             "apps/client/src/ui-uniflex/restored/pages/Backpack/components/BackpackItemCard.tsx"),
         "utf8"), overlayed);
         assert.equal(await access(join(importRoot,
-            "apps/client/src/ui-uniflex/pages/BackpackItemCard")).then(() => true).catch(() => false),
+            "apps/client/src/ui-uniflex/modules/BackpackItemCard")).then(() => true).catch(() => false),
             false);
         assert.match(await readFile(
-            resolve(root, "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"),
+            resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"),
             "utf8"), /<ItemSlot left=\{0\} top=\{0\}/);
         assert.match(await readFile(
-            resolve(root, "apps/client/src/ui-uniflex/pages/Backpack/Backpack.tsx"), "utf8"),
+            resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"), "utf8"),
             /from '\.\/components\/BackpackItemCard'/);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });

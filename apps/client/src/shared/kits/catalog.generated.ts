@@ -5,7 +5,7 @@ import { type KitCatalogEntry, type KitEffectSpec } from "./catalogTypes";
 export const KIT_CATALOG: readonly KitCatalogEntry[] = [
     {
         id: "arena",
-        version: "1.0.0",
+        version: "1.0.1",
         api: {
             board: { version: 1, minSupported: 1 },
             ranking: { version: 1, minSupported: 1 },

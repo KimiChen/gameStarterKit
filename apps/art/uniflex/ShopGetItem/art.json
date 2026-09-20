@@ -2,14 +2,14 @@
   "screen": "shop-getitem",
   "componentName": "ShopGetItem",
   "restoredName": "ShopGetItemRestored",
-  "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItem.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/shop/ShopGetItem/ShopGetItem.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "db9b2ae9e791cbd068cc0a975cd86cc03ef0deaa83f09e91fb87b7b9815902a7",
+    "uniflexSha256": "04d737f70cbdbb7b432b88c072ea28903eb9fbad88f9edcefdd42c2a50dc5511",
     "psdSha256": "eeef484c66dccf4b2a5a791197b8b620378a858f956aeb1dd49bb716081fec2b",
     "at": "2026-09-18T01:57:21.682Z"
   },
@@ -19,7 +19,6 @@
     "target": "restored"
   },
   "linkedComponents": [
-    "PopupBackground",
     "CloseButton",
     "ItemSlot",
     "QuantityControl",

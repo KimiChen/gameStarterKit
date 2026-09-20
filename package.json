@@ -38,6 +38,7 @@
     "init:project": "node scripts/init-project.mjs",
     "perf:client": "node --import tsx tools/client-perf-baseline.ts",
     "verify:perf": "node scripts/verify-perf-baseline.mjs",
+    "verify:mmo-fixture-matrix": "node --import tsx apps/server/tools/mmo-fixture-matrix/run.ts",
     "sync:shared:watch": "node scripts/sync-shared.mjs --watch",
     "dev:client": "node scripts/dev-client.mjs",
     "dev": "npm --workspace @game/server run dev",

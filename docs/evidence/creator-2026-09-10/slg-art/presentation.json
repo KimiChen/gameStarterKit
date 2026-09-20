@@ -1,0 +1,9 @@
+{
+  "method": "Same Creator preview tab, public UI clicks and cc.profiler.hideStats(); no image processing or code changes.",
+  "images": [
+    "preview-local.png",
+    "preview-navigation.png",
+    "preview-scroll.png"
+  ],
+  "restoredProfiler": true
+}

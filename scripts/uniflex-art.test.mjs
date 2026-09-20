@@ -125,25 +125,25 @@ test("nested restorables are independent PSDs linked from their parent component
 
 test("restored backpack shares copies while originals keep original imports", async () => {
     const originalPage = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/Backpack/Backpack.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"), "utf8");
     const originalCard = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"), "utf8");
     const restoredPage = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/BackpackRestored/BackpackRestored.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/backpack/BackpackRestored/BackpackRestored.tsx"), "utf8");
     const restoredCard = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/pages/Backpack/components/BackpackItemCard.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/restored/modules/backpack/Backpack/components/BackpackItemCard.tsx"),
         "utf8");
     const restoredSlot = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/components/item/ItemSlot.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/restored/gamecomponents/item/ItemSlot.tsx"), "utf8");
     assert.match(originalPage, /from '\.\/components\/BackpackItemCard'/);
     assert.doesNotMatch(originalPage, /restored/);
-    assert.match(originalCard, /from '\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
+    assert.match(originalCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/gamecomponents\/item\/ItemSlot'/);
     assert.doesNotMatch(originalCard, /Restored/);
     assert.match(restoredPage,
-        /from '\.\.\/\.\.\/restored\/pages\/Backpack\/components\/BackpackItemCard'/);
-    assert.match(restoredPage, /from '\.\.\/\.\.\/restored\/components\/tab\/PanelTab'/);
-    assert.match(restoredCard, /from '\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
-    assert.match(restoredCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/kits\/uniflex\/api\/core\/index'/);
+        /from '\.\.\/\.\.\/\.\.\/restored\/modules\/backpack\/Backpack\/components\/BackpackItemCard'/);
+    assert.match(restoredPage, /from '\.\.\/\.\.\/\.\.\/restored\/components\/tab\/PanelTab'/);
+    assert.match(restoredCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/gamecomponents\/item\/ItemSlot'/);
+    assert.match(restoredCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/kits\/uniflex\/api\/core\/index'/);
     assert.match(restoredSlot, /from '\.\.\/\.\.\/\.\.\/\.\.\/kits\/uniflex\/api\/core\/index'/);
     assert.match(originalCard, /<ItemSlot left=\{0\}/);
     assert.match(restoredCard, /<ItemSlot left=\{0\}/);
@@ -163,23 +163,23 @@ test("shop and backpack component PSDs share the same ItemSlot file", async () =
         "../components/ShopGetItemPanel/component.psd",
     );
     const shopRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/ShopGetItemRestored/ShopGetItemRestored.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/modules/shop/ShopGetItemRestored/ShopGetItemRestored.tsx"),
         "utf8");
     const shopPanel = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/pages/ShopGetItem/ShopGetItemPanel.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/restored/modules/shop/ShopGetItem/ShopGetItemPanel.tsx"),
         "utf8");
     const heroRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/HeroScreenRestored/HeroScreenRestored.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/modules/hero/HeroScreenRestored/HeroScreenRestored.tsx"),
         "utf8");
     const heroRequired = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/pages/HeroScreen/HeroRequiredHero.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/restored/modules/hero/HeroScreen/HeroRequiredHero.tsx"),
         "utf8");
     const originalShop = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItem.tsx"), "utf8");
-    assert.match(shopRestored, /from '\.\.\/\.\.\/restored\/pages\/ShopGetItem\/ShopGetItemPanel'/);
-    assert.match(shopPanel, /from '\.\.\/\.\.\/components\/item\/ItemSlot'/);
-    assert.match(heroRestored, /from '\.\.\/\.\.\/restored\/pages\/HeroScreen\/HeroBondsPanel'/);
-    assert.match(heroRequired, /from '\.\.\/\.\.\/components\/item\/ItemSlot'/);
+        resolve(root, "apps/client/src/ui-uniflex/modules/shop/ShopGetItem/ShopGetItem.tsx"), "utf8");
+    assert.match(shopRestored, /from '\.\.\/\.\.\/\.\.\/restored\/modules\/shop\/ShopGetItem\/ShopGetItemPanel'/);
+    assert.match(shopPanel, /from '\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
+    assert.match(heroRestored, /from '\.\.\/\.\.\/\.\.\/restored\/modules\/hero\/HeroScreen\/HeroBondsPanel'/);
+    assert.match(heroRequired, /from '\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
     assert.match(originalShop, /from '\.\/ShopGetItemPanel'/);
     assert.doesNotMatch(originalShop, /restored/);
 });
@@ -210,21 +210,21 @@ test("prompt, confirm, and shop share the same ConfirmButton file", async () => 
     assert.equal(linkedPaths(confirmBtn).get(actionId)?.relativePath, "../ActionButton/component.psd");
     assert.equal(linkedPaths(cancelBtn).get(actionId)?.relativePath, "../ActionButton/component.psd");
     const promptRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/PromptRestored/PromptRestored.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/popup/PromptRestored/PromptRestored.tsx"), "utf8");
     const confirmRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/ConfirmRestored/ConfirmRestored.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/popup/ConfirmRestored/ConfirmRestored.tsx"), "utf8");
     const shopPanelSrc = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/pages/ShopGetItem/ShopGetItemPanel.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/restored/modules/shop/ShopGetItem/ShopGetItemPanel.tsx"), "utf8");
     const originalPrompt = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx"), "utf8");
+        resolve(root, "apps/client/src/ui-uniflex/modules/popup/Prompt/Prompt.tsx"), "utf8");
     const originalConfirm = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx"), "utf8");
-    assert.match(promptRestored, /from '\.\.\/\.\.\/restored\/components\/button\/ConfirmButton'/);
-    assert.match(promptRestored, /from '\.\.\/\.\.\/restored\/components\/popup\/PopupFrame'/);
-    assert.match(confirmRestored, /from '\.\.\/\.\.\/restored\/components\/button\/ConfirmButton'/);
-    assert.match(shopPanelSrc, /from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
-    assert.match(originalPrompt, /from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
-    assert.match(originalConfirm, /from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+        resolve(root, "apps/client/src/ui-uniflex/modules/popup/Confirm/Confirm.tsx"), "utf8");
+    assert.match(promptRestored, /from '\.\.\/\.\.\/\.\.\/restored\/components\/button\/ConfirmButton'/);
+    assert.match(promptRestored, /from '\.\.\/\.\.\/\.\.\/restored\/components\/popup\/PopupFrame'/);
+    assert.match(confirmRestored, /from '\.\.\/\.\.\/\.\.\/restored\/components\/button\/ConfirmButton'/);
+    assert.match(shopPanelSrc, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+    assert.match(originalPrompt, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+    assert.match(originalConfirm, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
     assert.doesNotMatch(originalPrompt, /restored/);
     assert.doesNotMatch(originalConfirm, /restored/);
 });
@@ -246,23 +246,23 @@ test("star upgrade and alliance announce share ConfirmButton with shop", async (
     assert.equal(linkedPaths(announcePanel).get(confirmId)?.relativePath, "../ConfirmButton/component.psd");
     assert.equal(linkedPaths(announcePanel).get(closeId)?.relativePath, "../CloseButton/component.psd");
     const starRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/HeroStarUpgradeRestored/HeroStarUpgradeRestored.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgradeRestored/HeroStarUpgradeRestored.tsx"),
         "utf8");
     const starPanelSrc = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/pages/HeroStarUpgrade/HeroStarUpgradePanel.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/restored/modules/hero/HeroStarUpgrade/HeroStarUpgradePanel.tsx"),
         "utf8");
     const announceRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/AllianceAnnounceRestored/AllianceAnnounceRestored.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/modules/alliance/AllianceAnnounceRestored/AllianceAnnounceRestored.tsx"),
         "utf8");
     const announcePanelSrc = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/restored/pages/AllianceAnnounce/AllianceAnnouncePanel.tsx"),
+        resolve(root, "apps/client/src/ui-uniflex/restored/modules/alliance/AllianceAnnounce/AllianceAnnouncePanel.tsx"),
         "utf8");
     const originalStar = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarUpgrade.tsx"), "utf8");
-    assert.match(starRestored, /from '\.\.\/\.\.\/restored\/pages\/HeroStarUpgrade\/HeroStarUpgradePanel'/);
-    assert.match(starPanelSrc, /from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
-    assert.match(announceRestored, /from '\.\.\/\.\.\/restored\/pages\/AllianceAnnounce\/AllianceAnnouncePanel'/);
-    assert.match(announcePanelSrc, /from '\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+        resolve(root, "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgrade/HeroStarUpgrade.tsx"), "utf8");
+    assert.match(starRestored, /from '\.\.\/\.\.\/\.\.\/restored\/modules\/hero\/HeroStarUpgrade\/HeroStarUpgradePanel'/);
+    assert.match(starPanelSrc, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+    assert.match(announceRestored, /from '\.\.\/\.\.\/\.\.\/restored\/modules\/alliance\/AllianceAnnounce\/AllianceAnnouncePanel'/);
+    assert.match(announcePanelSrc, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
     assert.match(originalStar, /from '\.\/HeroStarUpgradePanel'/);
     assert.doesNotMatch(originalStar, /restored/);
 });

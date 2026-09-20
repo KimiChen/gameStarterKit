@@ -54,6 +54,7 @@ import {
   type HostManifest,
   type UnitClass,
 } from "./pluginManifestSchema";
+import { contributionsFileRelative, renderContributionsModule, resolveContributions, type KitContributionsPlan } from "./contributions";
 
 /** 插件根（PLUGIN.md §5.5）：宿主自有插件与安装进来的插件都在 `apps/plugins/<id>/plugin.json`，目录名 = id。 */
 export const PLUGINS_DIR_RELATIVE = "apps/plugins";
@@ -471,10 +472,17 @@ export type ViewCatalog = {
   readonly root: string;
   /** 宿主 placement（apps/plugins/host.json）：默认玩法 + 首屏入口顺序，⛔ 插件 manifest 无权声明位置。 */
   readonly host: HostManifest;
+  /** kit 贡献点渲染计划（MF9）：每个「kit × 端」一份 contributions.generated.ts。 */
+  readonly contributions: readonly KitContributionsPlan[];
 };
 
 /** 玩法 id 集合：canonical（wireExposed !== false，可作入口）与 fixture（wireExposed:false，⛔ 不得作入口）。 */
-type GameplayIdSets = { readonly canonical: ReadonlySet<string>; readonly fixture: ReadonlySet<string> };
+type GameplayIdSets = {
+  readonly canonical: ReadonlySet<string>;
+  readonly fixture: ReadonlySet<string>;
+  /** 每玩法 manifest.profiles（缺省 ["default"]）：menu launch.profile 的取值闸（MF9-B4 / EXTRAS X1）。 */
+  readonly profiles: ReadonlyMap<string, readonly string[]>;
+};
 
 /**
  * 只读每玩法 manifest 的 id/wireExposed（launch.gameplayId 与 host.defaultLaunch 的存在性/可入口性闸）：
@@ -486,6 +494,7 @@ function readGameplayIdSets(root: string): GameplayIdSets {
   if (!fs.existsSync(schemaDir)) fail("apps/shared/schema/gameplays", "gameplay schema directory is missing（plugin 入口校验需要玩法 manifest）");
   const canonical = new Set<string>();
   const fixture = new Set<string>();
+  const profiles = new Map<string, readonly string[]>();
   // 与 gameplay-codegen 同一对发现根：schema 目录 ∪ apps/plugins/<id>/gameplay/（PLUGIN.md §5.5 阶段 1）。
   const manifests: { readonly file: string; readonly label: string }[] = [];
   for (const entry of fs.readdirSync(schemaDir, { withFileTypes: true })) {
@@ -514,16 +523,19 @@ function readGameplayIdSets(root: string): GameplayIdSets {
   }
   for (const { file, label } of manifests) {
     if (!fs.existsSync(file)) continue;
-    let parsed: { readonly id?: unknown; readonly wireExposed?: unknown };
+    let parsed: { readonly id?: unknown; readonly wireExposed?: unknown; readonly profiles?: unknown };
     try {
-      parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { readonly id?: unknown; readonly wireExposed?: unknown };
+      parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { readonly id?: unknown; readonly wireExposed?: unknown; readonly profiles?: unknown };
     } catch (error) {
       fail(label, `cannot read valid JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
     if (typeof parsed.id !== "string") continue;
     (parsed.wireExposed === false ? fixture : canonical).add(parsed.id);
+    profiles.set(parsed.id, Array.isArray(parsed.profiles) && parsed.profiles.length > 0
+      ? parsed.profiles.filter((profile): profile is string => typeof profile === "string")
+      : ["default"]);
   }
-  return { canonical, fixture };
+  return { canonical, fixture, profiles };
 }
 
 function assertLaunchableGameplay(label: string, gameplayId: string, sets: GameplayIdSets, context: string): void {
@@ -733,6 +745,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
   /** 单元 id → 其登记目录标签（apps/plugins/<id> 或 apps/kits/<id>），错误信息据此点名真源。 */
   const dirLabelById = new Map<string, string>();
   const manifestLabelById = new Map<string, string>();
+  const rawById = new Map<string, unknown>();
   for (const source of discoverPluginSources(root)) {
     const { label, dirName } = source;
     const noun = source.class === "kit" ? "kit" : "插件";
@@ -754,6 +767,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     seenPluginIds.set(normalized, manifest.id);
     dirLabelById.set(manifest.id, source.dirLabel);
     manifestLabelById.set(manifest.id, label);
+    rawById.set(manifest.id, parsed);
     if (manifest.schemaVersion === 1) {
       assertKitModesMatchGameplays(root, manifest, label);
       kitsById.set(manifest.id, manifest);
@@ -780,6 +794,17 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     }
   }
   detectDependencyCycle(plugins);
+  // MF9-B3：kit.json.fragments 声明的每个 fragment 都必须有文件（内容由 codegen:gameplays 按引用解析）。
+  for (const kit of kitsById.values()) {
+    for (const name of kit.fragments) {
+      const relative = `${KITS_DIR_RELATIVE}/${kit.id}/fragments/${name}.state.json`;
+      assertRegularFile(path.join(root, relative), `${manifestLabelById.get(kit.id) as string} → ${relative}`);
+    }
+  }
+  // MF9 贡献点：登记 / 所有权 / 内容三道闸都在这里（codegen 是第一道闸）。
+  const contributions = resolveContributions(root, kitsById, parsedPlugins.map((plugin) => ({
+    registration: plugin, raw: rawById.get(plugin.id), label: manifestLabelById.get(plugin.id) as string,
+  })));
 
   const artDir = path.join(root, ART_DIR_RELATIVE);
   const id2name = buildPkgIdMap(artDir);
@@ -996,6 +1021,14 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
       menuEntryIds.set(item.entryId, plugin.id);
       if (item.launch.kind === "gameplay") {
         assertLaunchableGameplay(label, item.launch.gameplayId, gameplayIds, `menu entryId "${item.entryId}" 的 launch`);
+        // MF9-B4 / EXTRAS X1：launch.profile 必须是该玩法 manifest.profiles 的成员（joiner 按 target 选房型）；payload 不解释，
+        // 由该玩法 GameplayModule.validateLaunch 在启动时刻 exact 校验。
+        if (item.launch.profile !== undefined) {
+          const allowed = gameplayIds.profiles.get(item.launch.gameplayId) ?? [];
+          if (!allowed.includes(item.launch.profile)) {
+            fail(label, `menu entryId "${item.entryId}" 的 launch.profile "${item.launch.profile}" 不在玩法 "${item.launch.gameplayId}" 的 manifest.profiles 内（${allowed.join(", ") || "-"}）`);
+          }
+        }
         // 一 gameplayId 一贡献者（F17）：launch→plugin 映射不能靠排序裁决。
         const owner = gameplayContributors.get(item.launch.gameplayId);
         if (owner && owner !== plugin.id) {
@@ -1038,7 +1071,7 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
     }
   }
 
-  return { plugins, entries, viewDirs: allViewDirs, root, host };
+  return { plugins, entries, viewDirs: allViewDirs, root, host, contributions };
 }
 
 // ── 渲染 ────────────────────────────────────────────────────────────────────
@@ -1121,8 +1154,13 @@ export function renderKitCatalogServer(catalog: ViewCatalog): string {
   const entries = kits.map((kit) => ({
     ...sharedKitEntry(kit),
     sqlFiles: [...kit.sql.files],
-    sqlTables: kit.sql.tables.map((table) => ({ name: table.name, zone: table.zone })),
+    sqlTables: kit.sql.tables.map((table) => ({ name: table.name, zone: table.zone, ...(table.role === undefined ? {} : { role: table.role }) })),
     userKeys: [...kit.userKeys],
+    workers: kit.workers.map((worker) => ({ id: worker.id, entry: worker.entry })),
+    contributions: Object.fromEntries(Object.entries(kit.contributions).map(([id, contribution]) => [id, contribution.kind === "data"
+      ? { kind: "data", ends: [...contribution.ends], schema: contribution.schema }
+      : { kind: "module", ends: [...contribution.ends], export: contribution.export }])),
+    fragments: [...kit.fragments],
   }));
   lines.push(`export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = ${tsLiteral(entries, 0)};`);
   return `${lines.join("\n")}\n`;
@@ -1259,9 +1297,12 @@ function compareContributions(
 }
 
 function renderLaunch(launch: PluginManifestLaunch): string {
-  return launch.kind === "gameplay"
-    ? `launch: { kind: "gameplay", gameplayId: ${JSON.stringify(launch.gameplayId)} }`
-    : `launch: { kind: "route", routeId: ${JSON.stringify(launch.routeId)} }`;
+  if (launch.kind === "route") return `launch: { kind: "route", routeId: ${JSON.stringify(launch.routeId)} }`;
+  const extras = [
+    ...(launch.payload === undefined ? [] : [`payload: ${JSON.stringify(launch.payload)}`]),
+    ...(launch.profile === undefined ? [] : [`profile: ${JSON.stringify(launch.profile)}`]),
+  ];
+  return `launch: { kind: "gameplay", gameplayId: ${JSON.stringify(launch.gameplayId)}${extras.map((extra) => `, ${extra}`).join("")} }`;
 }
 
 /** PluginHost 单元：插件一律进入；kit 只有声明了 entry / route / menu 才进入 plugins.generated。 */
@@ -1289,7 +1330,14 @@ export function renderPlugins(catalog: ViewCatalog): string {
   lines.push("");
   lines.push("/** 入口启动目标（LaunchPort.launch 的载荷；§7.4 点击唯一出口）：进入玩法，或打开一个 plugin route。 */");
   lines.push("export type GeneratedLaunchTarget =");
-  lines.push(`    | { readonly kind: "gameplay"; readonly gameplayId: string }`);
+  lines.push("    | {");
+  lines.push(`        readonly kind: "gameplay";`);
+  lines.push("        readonly gameplayId: string;");
+  lines.push("        /** 带参 launch（MF9-B4）：原样交给该玩法 GameplayModule.validateLaunch 做 exact 校验。 */");
+  lines.push("        readonly payload?: Readonly<Record<string, unknown>>;");
+  lines.push("        /** 一个玩法多房型入口：覆盖 joiner 的缺省 profile（codegen 已校验 ∈ manifest.profiles）。 */");
+  lines.push("        readonly profile?: string;");
+  lines.push("    }");
   lines.push(`    | { readonly kind: "route"; readonly routeId: string };`);
   lines.push("");
   lines.push("/** 菜单入口贡献（§7.4：菜单唯一数据源）；只有身份与元数据，⛔ 无位置字段（位置见 GENERATED_HOST）。 */");
@@ -1471,7 +1519,7 @@ export function renderPluginIndex(catalog: ViewCatalog): string {
 }
 
 export function renderViewCatalogArtifacts(catalog: ViewCatalog): ReadonlyMap<string, string> {
-  return new Map([
+  const artifacts = new Map<string, string>([
     [FGUI_CONTRACTS_RELATIVE, renderFguiContracts(catalog)],
     [VIEWS_RELATIVE, renderViews(catalog)],
     [PLUGINS_RELATIVE, renderPlugins(catalog)],
@@ -1479,6 +1527,9 @@ export function renderViewCatalogArtifacts(catalog: ViewCatalog): ReadonlyMap<st
     [KIT_CATALOG_SHARED_RELATIVE, renderKitCatalogShared(catalog)],
     [KIT_CATALOG_SERVER_RELATIVE, renderKitCatalogServer(catalog)],
   ]);
+  // MF9：每个「kit × 端」一份贡献收录文件（kit 声明了该端的贡献点即恒生成）。
+  for (const plan of catalog.contributions) artifacts.set(contributionsFileRelative(plan.end, plan.kitId), renderContributionsModule(plan));
+  return artifacts;
 }
 
 // ── 删除保护锚（从既有生成物恢复集合；生成物格式由本生成器唯一拥有） ────────

@@ -32,6 +32,7 @@ import {
   PlayerState,
   ROOM_STATE_PLAYER_CONSTRUCTORS,
   ROOM_STATE_ROOT_CONSTRUCTORS,
+  ROOM_STATE_ROSTER,
 } from "../src/rooms/schema/GameRoomState";
 import {
   assertGameplayArtifactsFresh,
@@ -47,6 +48,7 @@ import {
   type GameplayCodegenOptions,
 } from "../tools/gameplay-codegen/lib";
 import { parseGameplayManifest } from "../tools/gameplay-codegen/manifestSchema";
+import { parseCoreWireNames, parseGameplayWireModule } from "../tools/gameplay-codegen/wireParser";
 import { parseGameplayStateDescriptor, renderSharedStateModule } from "../tools/gameplay-codegen/stateRenderer";
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -854,7 +856,12 @@ test("generated root maps are frozen, type-safe and reject unknown modes", () =>
   assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS), EXPECTED_GAMEPLAY_IDS);
   // player 侧与 root 侧必须同集：任何「有 root 无 player」的玩法都会让按 mode 造 player
   // 的通用代码退回手写具名类。
-  assert.deepEqual(Object.keys(ROOM_STATE_PLAYER_CONSTRUCTORS), Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS));
+  // MF5a-B4：roster:"hidden" 的 mode 没有 player Schema 类（名册不进 Schema），其余仍必须同集。
+  assert.deepEqual(
+    Object.keys(ROOM_STATE_PLAYER_CONSTRUCTORS),
+    Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).filter((id) => (ROOM_STATE_ROSTER as Readonly<Record<string, string>>)[id] !== "hidden"),
+  );
+  assert.ok(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).some((id) => (ROOM_STATE_ROSTER as Readonly<Record<string, string>>)[id] === "hidden"), "真仓至少一个 hidden 夹具（viewFixture）");
   assert.deepEqual(Object.keys(GAMEPLAY_CATALOG), EXPECTED_GAMEPLAY_IDS);
   assert.equal(Object.isFrozen(ROOM_STATE_VALIDATORS), true);
   assert.equal(Object.isFrozen(ROOM_STATE_ROOT_CONSTRUCTORS), true);
@@ -1132,11 +1139,23 @@ test("真实 descriptor 必须通过生命周期断言，否则上面的反例�
   for (const gameplay of gameplays) {
     const type = gameplay.state.types.find((candidate) => candidate.name === gameplay.state.root);
     assert.ok(type, `missing root type ${gameplay.state.root}`);
+    // MF4-B2：world 根的必填集是 {tick, phase, instanceId, mapId, line, authorityEpoch}，⛔ matchId / players（真仓 worldFixture）。
+    if (gameplay.manifest.kind === "world") {
+      const worldLifecycle = ["tick", "phase", "instanceId", "mapId", "line", "authorityEpoch"];
+      assert.deepEqual(
+        [...worldLifecycle, "matchId", "players"].filter((name) => type.fields.some((field) => field.name === name)),
+        worldLifecycle,
+        `${gameplay.state.root} 必须声明 world 生命周期必填集且 ⛔ matchId / players（kind=world）`,
+      );
+      continue;
+    }
+    // MF5a-B4：hidden 名册的 root 没有 players（D4），其余生命周期字段照旧必填。
+    const lifecycle = gameplay.state.roster === "hidden" ? ["tick", "phase", "matchId"] : ["tick", "phase", "matchId", "players"];
     assert.deepEqual(
       ["tick", "phase", "matchId", "players"].filter((name) =>
         type.fields.some((field) => field.name === name)),
-      ["tick", "phase", "matchId", "players"],
-      `${gameplay.state.root} 必须声明全部生命周期字段`,
+      lifecycle,
+      `${gameplay.state.root} 必须声明全部生命周期字段（roster=${gameplay.state.roster}）`,
     );
   }
 });
@@ -1155,7 +1174,7 @@ test("生成的 RoomStateLifecycle 是独立接口，⛔ 不得是某个具体 r
   assert.match(aggregate, /export interface RoomStatePlayerLifecycle \{/u);
   // 别名形态（= GameRoomState）会让 shell 重新拥有 ballMove 的全部字段
   assert.doesNotMatch(aggregate, /RoomStateLifecycle\s*=\s*GameRoomState/u);
-  assert.match(aggregate, /players: MapSchema<RoomStatePlayerLifecycle>;/u);
+  assert.match(aggregate, /players\?: MapSchema<RoomStatePlayerLifecycle>;/u, "MF5a-B4：players 对 hidden 名册可缺席");
   // 生命周期接口不属于 wire 契约，⛔ 不得泄进任何 shared 生成物（协议指纹与镜像耦合）
   for (const [relative, content] of artifacts) {
     if (!relative.startsWith("apps/shared/") && !relative.startsWith("apps/client/")) continue;
@@ -1592,4 +1611,376 @@ test("CLI 沿用惯例：--check、--root <dir>/--root=<dir>、--allow-delete；
   assert.throws(() => parseCli(["--frobnicate"]), /unknown argument: --frobnicate/);
   // --check 是只读契约，⛔ 不接受删除授权
   assert.throws(() => parseCli(["--check", "--allow-delete", "idle"]), /read-only/);
+});
+
+// ── MF9-B3：kit state fragment（docs/MMO.md MF9 / docs/MMO-PLAN.md MF9-B3） ──────────────────────────
+// 变异验证：stateRenderer.withInjectedFragments 跳过 kit fragment 的注入 → 「字段注入 root / player 各恰一次」转红。
+
+const SPOT_FRAGMENT = {
+  schemaVersion: 1,
+  root: [{ name: "spotOwner", kind: "string", default: "", minLength: 0, maxLength: 64, description: "Owner of the contested spot" }],
+  player: [{ name: "spotScore", kind: "integer", default: 0, min: 0, description: "Points earned from the spot" }],
+};
+
+test("MF9 kit fragment：mode 以 <kit>:<name> 引用 kit 的 fragment 文件，字段注入 root / player 各恰一次并进 stateFragments 与 digest；未声明 / 缺文件 / 撞名 / 形态非法 / 无发现根一律拒", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const kitJsonFile = "apps/kits/arena/kit.json";
+    const kitJson = readJson<Record<string, unknown>>(path.join(fixture.root, kitJsonFile));
+    const stateFile = "apps/kits/arena/gameplays/arenaDuel/state.json";
+    const manifestFile = "apps/kits/arena/gameplays/arenaDuel/manifest.json";
+    const state = readJson<MutableState>(path.join(fixture.root, stateFile));
+    const manifest = readJson<MutableManifest>(path.join(fixture.root, manifestFile));
+    const digestBefore = readGameplayDescriptors(fixture.options).find((gameplay) => gameplay.id === "arenaDuel")?.contractDigest;
+    assert.ok(digestBefore);
+
+    writeFixtureJson(fixture.root, kitJsonFile, { ...kitJson, fragments: ["spot"] });
+    fs.mkdirSync(path.join(fixture.root, "apps/kits/arena/fragments"), { recursive: true });
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", SPOT_FRAGMENT);
+    writeFixtureJson(fixture.root, stateFile, { ...state, fragments: ["arena:spot"] });
+    // digest 变了 ⇒ 同批 bump modeVersion（digest 闸另有用例钉）
+    writeFixtureJson(fixture.root, manifestFile, { ...manifest, modeVersion: Number(manifest.modeVersion) + 1 });
+
+    const duel = readGameplayDescriptors(fixture.options).find((gameplay) => gameplay.id === "arenaDuel");
+    assert.ok(duel);
+    assert.deepEqual(duel.state.fragments, ["arena:spot"]);
+    assert.notEqual(duel.contractDigest, digestBefore, "fragment 文件字节并入 contractDigest");
+    const rootType = duel.state.types.find((type) => type.name === "ArenaDuelRoomState");
+    const playerType = duel.state.types.find((type) => type.name === "ArenaDuelPlayerState");
+    assert.equal(rootType?.fields.filter((field) => field.name === "spotOwner").length, 1, "root 注入恰一次");
+    assert.equal(playerType?.fields.filter((field) => field.name === "spotScore").length, 1, "player 注入恰一次");
+    assert.equal(rootType?.fields.some((field) => field.name === "spotScore"), false);
+    assert.equal(playerType?.fields.some((field) => field.name === "spotOwner"), false);
+    // 其他 mode 的 digest 逐字节不变（不引用就不并入）
+    const others = readGameplayDescriptors(fixture.options).filter((gameplay) => gameplay.id !== "arenaDuel");
+    assert.ok(others.length > 0);
+
+    writeGameplayArtifacts(fixture.options);
+    const sharedState = readFixtureText(fixture.root, `${SHARED_STATE_DIR}/arenaDuel.ts`);
+    assert.equal((sharedState.match(/^\s+spotOwner: string;$/gmu) ?? []).length, 1, "shared 接口里 spotOwner 恰一次");
+    assert.equal((sharedState.match(/^\s+spotScore: number;$/gmu) ?? []).length, 1, "shared 接口里 spotScore 恰一次");
+    const serverSchema = readFixtureText(fixture.root, `${SERVER_SCHEMA_DIR}/arenaDuel.ts`);
+    assert.equal((serverSchema.match(/spotOwner/gu) ?? []).length, 1, "服务端 Schema 里 spotOwner 恰一次");
+    assert.equal((serverSchema.match(/spotScore/gu) ?? []).length, 1, "服务端 Schema 里 spotScore 恰一次");
+    assert.match(readFixtureText(fixture.root, SERVER_AGGREGATE), /"arenaDuel": \["arena:spot"\]/u);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /stateFragments: \["arena:spot"\]/u);
+    assertGameplayArtifactsFresh(fixture.options);
+
+    // 拒绝矩阵
+    const parseAll = (): void => { readGameplayDescriptors(fixture.options); };
+    writeFixtureJson(fixture.root, kitJsonFile, { ...kitJson, fragments: [] });
+    assert.throws(parseAll, /kit "arena" 的 kit\.json\.fragments 未声明 "spot"/u);
+    writeFixtureJson(fixture.root, kitJsonFile, { ...kitJson, fragments: ["spot"] });
+    fs.rmSync(path.join(fixture.root, "apps/kits/arena/fragments/spot.state.json"));
+    assert.throws(parseAll, /fragments\/spot\.state\.json/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", { ...SPOT_FRAGMENT, root: [{ ...SPOT_FRAGMENT.root[0], name: "tick" }] });
+    assert.throws(parseAll, /fragment-injected field collides with a declared field: tick/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", { schemaVersion: 1 });
+    assert.throws(parseAll, /must inject at least one root or player field/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", { schemaVersion: 1, root: [], extra: 1 });
+    assert.throws(parseAll, /unknown key\(s\): extra/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", { ...SPOT_FRAGMENT, player: [SPOT_FRAGMENT.player[0], SPOT_FRAGMENT.player[0]] });
+    assert.throws(parseAll, /duplicate field name: spotScore/u);
+    writeFixtureJson(fixture.root, "apps/kits/arena/fragments/spot.state.json", SPOT_FRAGMENT);
+    writeFixtureJson(fixture.root, stateFile, { ...state, fragments: ["Arena:spot"] });
+    assert.throws(parseAll, /unknown fragment: Arena:spot/u);
+    writeFixtureJson(fixture.root, stateFile, { ...state, fragments: ["ghost:spot"] });
+    assert.throws(parseAll, /kit "ghost" 不存在/u);
+    writeFixtureJson(fixture.root, stateFile, { ...state, fragments: ["arena:spot", "arena:spot"] });
+    assert.throws(parseAll, /duplicate fragment: arena:spot/u);
+    // 无发现根的直接解析（单元测试 / 别的工具）对 kit 引用 fail-closed
+    assert.throws(() => parseGameplayStateDescriptor({ ...state, fragments: ["arena:spot"] }), /需要发现根/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+
+// ── MMO MF5a-B1：defineS2C 第三参 { perSession, coalesceKey } → GAME_WIRE_PER_SESSION（docs/MMO.md §5.4 MF5a）──
+// 变异验证：读取器删「coalesceKey 须与 perSession 同现」→ 反例矩阵转红；渲染器不按 perSession 过滤 → 字节钉转红。
+
+const PER_SESSION_WIRE_PRELUDE = [
+  'import { defineC2S, defineS2C } from "../defineGameplayWire";',
+  "export interface IFxSeen { readonly entityId: string; }",
+  "function validateFxSeen(input: unknown): IFxSeen { return input as IFxSeen; }",
+  "",
+].join("\n");
+
+test("MF5a-B1 wire 读取：defineS2C 第三参只认 perSession: true 与 coalesceKey 字面量；两参形态 = 全房消息", () => {
+  const parsed = parseGameplayWireModule(`${PER_SESSION_WIRE_PRELUDE}`
+    + 'export const FxEnter = defineS2C("s2c.fx.enter", validateFxSeen, { perSession: true });\n'
+    + 'export const FxUpdate = defineS2C("s2c.fx.update", validateFxSeen, { perSession: true, coalesceKey: "entityId" });\n'
+    + 'export const FxAll = defineS2C("s2c.fx.all", validateFxSeen);\n', "fx");
+  assert.deepEqual(parsed.s2c.map((token) => [token.type, token.perSession, token.coalesceKey]), [
+    ["s2c.fx.enter", true, null],
+    ["s2c.fx.update", true, "entityId"],
+    ["s2c.fx.all", false, null],
+  ]);
+  const rejected: readonly (readonly [string, RegExp])[] = [
+    ["{ perSession: false }", /perSession 只能是字面量 true/u],
+    ["{ perSession: isPerSession }", /perSession 只能是字面量 true/u],
+    ['{ coalesceKey: "entityId" }', /coalesceKey 只对 perSession: true 有意义/u],
+    ['{ perSession: true, coalesceKey: "bad-key!" }', /coalesceKey 必须是字段名/u],
+    ['{ perSession: true, coalesceKey: keyName }', /coalesceKey 必须是字段名/u],
+    ["{ perSession: true, other: 1 }", /含未知键：other/u],
+    ["{ ...opts }", /不允许 spread/u],
+    ["true", /第三参必须是对象字面量/u],
+    ["{ perSession: true }, 1", /形态/u],
+  ];
+  for (const [options, pattern] of rejected) {
+    assert.throws(
+      () => parseGameplayWireModule(`${PER_SESSION_WIRE_PRELUDE}export const FxX = defineS2C("s2c.fx.x", validateFxSeen, ${options});\n`, "fx"),
+      pattern,
+      `应拒：defineS2C(..., ${options})`,
+    );
+  }
+});
+
+test("MF5a-B1 生成：GAME_WIRE_PER_SESSION 恒生成（键 = perSession token）；既有 token 加 { perSession, coalesceKey } 只多出一条表项、wire catalog 其余字节不变", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const before = readFixtureText(fixture.root, SHARED_WIRE_CATALOG);
+    const tableHead = "export const GAME_WIRE_PER_SESSION = {\n";
+    assert.ok(before.includes(tableHead), "表恒生成：S2CPorts 的 import 面不随 token 有无而消失");
+    assert.match(before, /"s2c\.viewFixture\.update": "id",/u, "真仓的 viewFixture 夹具（MF5a-B5）声明了 perSession token");
+    assert.equal(readFixtureText(fixture.root, SHARED_WIRE_CATALOG), fs.readFileSync(path.join(REPOSITORY_ROOT, SHARED_WIRE_CATALOG), "utf8"), "夹具渲染 == 入库产物");
+
+    // 既有两参 token 改成 perSession（契约 digest 变了，按闸同时 bump modeVersion）
+    const wireFile = path.join(fixture.root, "apps/shared/src/gameplays/snake/wire.ts");
+    const declaration = 'export const SnakeDelta = defineS2C("s2c.snake.delta", validateDelta);';
+    const wire = fs.readFileSync(wireFile, "utf8");
+    assert.ok(wire.includes(declaration), "夹具前提：SnakeDelta 是两参形态");
+    fs.writeFileSync(wireFile, wire.replace(declaration,
+      'export const SnakeDelta = defineS2C("s2c.snake.delta", validateDelta, { perSession: true, coalesceKey: "roomEpochId" });'), "utf8");
+    const manifestFile = path.join(fixture.root, GAMEPLAY_SOURCES.get("snake") ?? "", "manifest.json");
+    const manifest = readJson<MutableManifest>(manifestFile);
+    writeFixtureJson(fixture.root, path.relative(fixture.root, manifestFile), { ...manifest, modeVersion: (manifest.modeVersion as number) + 1 });
+    writeGameplayArtifacts(fixture.options);
+    const after = readFixtureText(fixture.root, SHARED_WIRE_CATALOG);
+    // 表按玩法 id 序再按 token 声明序：snake < viewFixture ⇒ 新条目插在表头
+    const expected = before.replace(tableHead, `${tableHead}    "s2c.snake.delta": "roomEpochId",\n`);
+    assert.notEqual(expected, before);
+    assert.equal(after, expected, "只多出一条 GAME_WIRE_PER_SESSION 表项，S2C / OWNERS / validators / tokens 表字节不变");
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+// ── MMO MF5a-B4：manifest `roster` 开关（docs/MMO.md §5.4 MF5a，M07 / D4）──
+// 变异验证：stateRenderer 删「hidden root ⛔ players」拒绝 → 「hidden + players 拒」转红；渲染器对 hidden 仍写 player 构造表 → 聚合钉转红。
+
+test("MF5a-B4 roster：schema 只认 public / hidden，缺省 public；hidden + players / hidden + ownerReady 一律拒", () => {
+  assert.equal(parseGameplayManifest(puzzleManifest()).roster, "public");
+  assert.equal(parseGameplayManifest({ ...puzzleManifest(), roster: "hidden" }).roster, "hidden");
+  assert.throws(() => parseGameplayManifest({ ...puzzleManifest(), roster: "secret" }), /roster/u);
+  assert.throws(() => parseGameplayManifest({ ...puzzleManifest(), roster: 1 }), /roster/u);
+  // public（缺省）：root 必须声明 players（既有闸）；hidden：root ⛔ 声明 players、⛔ ownerReady
+  const state = puzzleState();
+  assert.doesNotThrow(() => parseGameplayStateDescriptor(state, { roster: "public" }));
+  assert.throws(() => parseGameplayStateDescriptor(state, { roster: "hidden" }), /roster:"hidden" root must not declare a "players" map/u);
+  const hiddenState = puzzleState();
+  const root = stateType(hiddenState, hiddenState.root);
+  root.fields = root.fields.filter((field) => field.name !== "players");
+  hiddenState.types = hiddenState.types.filter((type) => type.name === hiddenState.root);
+  assert.equal(parseGameplayStateDescriptor(hiddenState, { roster: "hidden" }).roster, "hidden");
+  assert.throws(() => parseGameplayStateDescriptor(hiddenState), /root type must declare lifecycle field "players"/u, "同一份 state 缺省 public 仍要 players");
+  assert.throws(() => parseGameplayStateDescriptor({ ...hiddenState, fragments: ["ownerReady"] }, { roster: "hidden" }), /cannot declare the ownerReady fragment/u);
+});
+
+test("MF5a-B4 roster：显式 public 与缺省逐字节相同；hidden 夹具的三端产物无 players、聚合表登记 hidden、既有 mode 产物字节不动", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const modeArtifacts = EXPECTED_GAMEPLAY_IDS.flatMap((id) => [`${SHARED_STATE_DIR}/${id}.ts`, `${SERVER_SCHEMA_DIR}/${id}.ts`]);
+    const snapshot = new Map(modeArtifacts.map((relative) => [relative, readFixtureText(fixture.root, relative)]));
+    const aggregateBefore = readFixtureText(fixture.root, SERVER_AGGREGATE);
+    const catalogBefore = readFixtureText(fixture.root, SHARED_CATALOG);
+
+    // 显式 roster:"public" == 缺省（digest 变了要 bump modeVersion，产物字节不变）
+    const idleManifest = path.join(fixture.root, GAMEPLAY_SOURCES.get("idle") ?? "", "manifest.json");
+    const idle = readJson<MutableManifest>(idleManifest);
+    writeFixtureJson(fixture.root, path.relative(fixture.root, idleManifest), { ...idle, roster: "public", modeVersion: (idle.modeVersion as number) + 1 });
+    writeGameplayArtifacts(fixture.options);
+    for (const relative of modeArtifacts) assert.equal(readFixtureText(fixture.root, relative), snapshot.get(relative), `${relative} 显式 public 必须字节不动`);
+    assert.equal(readFixtureText(fixture.root, SERVER_AGGREGATE), aggregateBefore, "聚合产物不随显式 public 变化");
+    assert.equal(readFixtureText(fixture.root, SHARED_CATALOG).replace(/modeVersion: \d+,/gu, "").replace(/contractDigest: "[0-9a-f]{64}",/gu, ""),
+      catalogBefore.replace(/modeVersion: \d+,/gu, "").replace(/contractDigest: "[0-9a-f]{64}",/gu, ""), "catalog 除 modeVersion / digest 外字节不动");
+
+    // hidden 夹具：root 无 players、无 player 类
+    const hidden = puzzleState();
+    const root = stateType(hidden, hidden.root);
+    root.fields = root.fields.filter((field) => field.name !== "players");
+    hidden.types = hidden.types.filter((type) => type.name === hidden.root);
+    addFixtureMode(fixture.root, "puzzle", { ...puzzleManifest(), roster: "hidden" }, hidden);
+    writeGameplayArtifacts(fixture.options);
+    const shared = readFixtureText(fixture.root, `${SHARED_STATE_DIR}/puzzle.ts`);
+    assert.doesNotMatch(shared, /players/u, "shared 产物无名册字段");
+    assert.doesNotMatch(shared, /MAX_PLAYERS/u);
+    const server = readFixtureText(fixture.root, `${SERVER_SCHEMA_DIR}/puzzle.ts`);
+    assert.doesNotMatch(server, /MapSchema|players/u, "server Schema 无 players map");
+    const aggregate = readFixtureText(fixture.root, SERVER_AGGREGATE);
+    assert.match(aggregate, /"puzzle": "hidden",/u);
+    assert.match(aggregate, /"idle": "public",/u);
+    assert.doesNotMatch(aggregate, /"puzzle": PuzzlePlayerState,/u, "player 构造表 ⛔ 收录 hidden mode");
+    assert.match(aggregate, /"puzzle": PuzzleRoomState,/u);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /"puzzle": \{\n {8}id: "puzzle",\n {8}constantName: "Puzzle",\n {8}modeVersion: 1,\n {8}maxPlayers: 6,\n {8}roster: "hidden",/u);
+    for (const relative of modeArtifacts) assert.equal(readFixtureText(fixture.root, relative), snapshot.get(relative), `${relative} 新增 hidden mode 后既有产物字节不动`);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+    // hidden + players 在 writer 也拒
+    addFixtureMode(fixture.root, "puzzle", { ...puzzleManifest(), roster: "hidden" }, puzzleState());
+    assert.throws(() => writeGameplayArtifacts(fixture.options), /roster:"hidden" root must not declare a "players" map/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+// ── MMO MF4-B2：manifest `kind: "match" | "world"` + `world` 策略块 + world 根必填集（docs/MMO.md §5.4 MF4）──
+// 变异验证：stateRenderer 删 world 根「⛔ players」拒绝 → 反例转红；manifestSchema 删「kind world 恒 hidden」→ 「roster public 拒」转红。
+
+function worldState(): MutableState {
+  const state = puzzleState();
+  const root = stateType(state, state.root);
+  root.fields = [
+    ...root.fields.filter((field) => field.name !== "players" && field.name !== "matchId" && field.name !== "phase"),
+    { name: "phase", kind: "enum", enumObject: "WorldPhase", enumType: "WorldPhaseType", members: ["Recovering", "Active", "Draining", "Offline"], default: "Recovering", errorCode: "STATE_PHASE" },
+    { name: "instanceId", kind: "string", default: "", minLength: 0, maxLength: 128 },
+    { name: "mapId", kind: "string", default: "", minLength: 0, maxLength: 64 },
+    { name: "line", kind: "integer", default: 0, min: 0, max: 65535 },
+    { name: "authorityEpoch", kind: "integer", default: 0, min: 0, max: "MAX_SAFE_INTEGER" },
+  ];
+  state.types = state.types.filter((type) => type.name === state.root);
+  return state;
+}
+const worldManifest = (): MutableManifest => ({ ...puzzleManifest(), kind: "world", profiles: ["world"] });
+
+test("MF4-B2 manifest：kind 缺省 match；world 块只允许 kind world 且校验取值；kind world 恒 roster hidden（显式 public 拒）；缺省策略 = §11.2 冻结值", () => {
+  const match = parseGameplayManifest(puzzleManifest());
+  assert.equal(match.kind, "match");
+  assert.equal(match.world, null);
+  const world = parseGameplayManifest(worldManifest());
+  assert.equal(world.kind, "world");
+  assert.equal(world.roster, "hidden");
+  assert.deepEqual(world.world, { emptyPolicy: "sleep", emptyAfterMs: 120_000, checkpointMs: 30_000 });
+  assert.deepEqual(parseGameplayManifest({ ...worldManifest(), world: { emptyPolicy: "unload", emptyAfterMs: 5_000, checkpointMs: 60_000 } }).world,
+    { emptyPolicy: "unload", emptyAfterMs: 5_000, checkpointMs: 60_000 });
+  assert.throws(() => parseGameplayManifest({ ...puzzleManifest(), world: { emptyPolicy: "sleep", emptyAfterMs: 1, checkpointMs: 1000 } }), /manifest\.world: only allowed with kind "world"/u);
+  assert.throws(() => parseGameplayManifest({ ...worldManifest(), roster: "public" }), /kind "world" is always roster "hidden"/u);
+  assert.throws(() => parseGameplayManifest({ ...puzzleManifest(), kind: "arena" }), /manifest\.kind: does not match pattern/u);
+  assert.throws(() => parseGameplayManifest({ ...worldManifest(), world: { emptyPolicy: "forever", emptyAfterMs: 1, checkpointMs: 1000 } }), /emptyPolicy: does not match pattern/u);
+  assert.throws(() => parseGameplayManifest({ ...worldManifest(), world: { emptyPolicy: "sleep", emptyAfterMs: -1, checkpointMs: 1000 } }), /emptyAfterMs: must be >= 0/u);
+  assert.throws(() => parseGameplayManifest({ ...worldManifest(), world: { emptyPolicy: "sleep", emptyAfterMs: 1 } }), /manifest\.world: missing key\(s\): checkpointMs/u);
+  assert.throws(() => parseGameplayManifest({ ...worldManifest(), world: { emptyPolicy: "sleep", emptyAfterMs: 1, checkpointMs: 1000, extra: 1 } }), /manifest\.world: unknown key\(s\): extra/u);
+});
+
+test("MF4-B2 state：world 根必填集 {tick, phase:WorldPhase, instanceId, mapId, line, authorityEpoch}、⛔ players、⛔ GamePhase、⛔ 内置 fragment；match 根不变", () => {
+  const descriptor = parseGameplayStateDescriptor(worldState(), { kind: "world" });
+  assert.equal(descriptor.kind, "world");
+  assert.equal(descriptor.roster, "hidden", "kind world ⇒ roster 恒 hidden，不看 roster 选项");
+  assert.throws(() => parseGameplayStateDescriptor(worldState()), /root phase must use GamePhase\/GamePhaseType/u, "同一份 state 按 match 解释：phase 枚举先撞 GamePhase 闸（matchId 也缺）");
+  const missing = worldState();
+  stateType(missing, missing.root).fields = stateType(missing, missing.root).fields.filter((field) => field.name !== "authorityEpoch");
+  assert.throws(() => parseGameplayStateDescriptor(missing, { kind: "world" }), /kind:"world" root type must declare lifecycle field "authorityEpoch"/u);
+  const withPlayers = worldState();
+  stateType(withPlayers, withPlayers.root).fields.push({ name: "players", kind: "map", valueType: "PuzzlePlayerState", errorCode: "STATE_PLAYERS", key: { field: "id", errorCode: "STATE_PLAYER_ID" } });
+  withPlayers.types.push(stateType(puzzleState(), "PuzzlePlayerState"));
+  assert.throws(() => parseGameplayStateDescriptor(withPlayers, { kind: "world" }), /kind:"world" root must not declare a "players" map/u);
+  const gamePhase = worldState();
+  const phase = typeField(stateType(gamePhase, gamePhase.root), "phase");
+  phase.enumObject = "GamePhase"; phase.enumType = "GamePhaseType"; phase.members = ["Waiting", "Playing", "Settle"]; phase.default = "Waiting";
+  assert.throws(() => parseGameplayStateDescriptor(gamePhase, { kind: "world" }), /root phase must use core WorldPhase\/WorldPhaseType/u);
+  const subset = worldState();
+  const subsetPhase = typeField(stateType(subset, subset.root), "phase");
+  subsetPhase.members = ["Recovering", "Active"];
+  assert.throws(() => parseGameplayStateDescriptor(subset, { kind: "world" }), /must declare member "Draining"/u);
+  assert.throws(() => parseGameplayStateDescriptor({ ...worldState(), fragments: ["inviteRoom"] }, { kind: "world" }), /cannot declare the ownerReady \/ inviteRoom fragments/u);
+});
+
+test("MF4-B2 生成：world 夹具三端产物（WorldPhase 自 core、无 players）、catalog kind / world、聚合 ROOM_STATE_KIND；canonical world mode 分进 WORLD_MODE_IDS / registerGeneratedWorldModes；既有 mode 产物字节不动", () => {
+  const fixture = createFixture();
+  try {
+    writeGameplayArtifacts(fixture.options);
+    const modeArtifacts = EXPECTED_GAMEPLAY_IDS.flatMap((id) => [`${SHARED_STATE_DIR}/${id}.ts`, `${SERVER_SCHEMA_DIR}/${id}.ts`]);
+    const snapshot = new Map(modeArtifacts.map((relative) => [relative, readFixtureText(fixture.root, relative)]));
+    const serverCatalogBefore = readFixtureText(fixture.root, SERVER_CATALOG);
+    assert.match(serverCatalogBefore, /export const GENERATED_WORLD_MODE_IDS: readonly string\[\] = \[\n\];/u, "真仓当前没有 canonical world mode：空表 + 稳定签名");
+    assert.match(serverCatalogBefore, /export function registerGeneratedWorldModes\(registry\?: WorldModeRegistry\)/u);
+    assert.match(readFixtureText(fixture.root, SHARED_MODE_IDS), /export const WORLD_MODE_IDS: readonly GameplayModeIdType\[\] = \[\n\];/u);
+
+    // 非 canonical 的 world 夹具（wireExposed:false）：进 catalog / state / schema，⛔ 不进 GameplayModeId / 登记表
+    addFixtureMode(fixture.root, "puzzle", worldManifest(), worldState());
+    writeGameplayArtifacts(fixture.options);
+    const shared = readFixtureText(fixture.root, `${SHARED_STATE_DIR}/puzzle.ts`);
+    assert.match(shared, /import \{ WorldPhase, type WorldPhaseType \} from "\.\.\/\.\.\/\.\.\/constants\/game";/u, "phase 枚举自 core 常量");
+    assert.doesNotMatch(shared, /players|GamePhase/u);
+    assert.match(shared, /authorityEpoch/u);
+    const server = readFixtureText(fixture.root, `${SERVER_SCHEMA_DIR}/puzzle.ts`);
+    assert.doesNotMatch(server, /MapSchema|players/u);
+    assert.match(server, /WorldPhase\.Recovering/u);
+    assert.match(readFixtureText(fixture.root, SHARED_CATALOG), /"puzzle": \{\n {8}id: "puzzle",\n {8}constantName: "Puzzle",\n {8}modeVersion: 1,\n {8}maxPlayers: 6,\n {8}roster: "hidden",\n {8}kind: "world",\n {8}world: \{"emptyPolicy":"sleep","emptyAfterMs":120000,"checkpointMs":30000\},/u);
+    const aggregate = readFixtureText(fixture.root, SERVER_AGGREGATE);
+    assert.match(aggregate, /ROOM_STATE_KIND = Object\.freeze\(\{[^}]*"puzzle": "world",/su);
+    assert.match(aggregate, /"idle": "match",/u);
+    assert.doesNotMatch(readFixtureText(fixture.root, SHARED_MODE_IDS), /puzzle/u, "wireExposed:false ⇒ 不进 GameplayModeId / WORLD_MODE_IDS");
+    for (const relative of modeArtifacts) assert.equal(readFixtureText(fixture.root, relative), snapshot.get(relative), `${relative} 既有 mode 产物字节不动`);
+    assert.doesNotThrow(() => assertGameplayArtifactsFresh(fixture.options));
+
+    // canonical（wireExposed:true）world mode：两端装配件按 world 符号发现 → WORLD_MODE_IDS + registerGeneratedWorldModes
+    addFixtureMode(fixture.root, "puzzle", { ...worldManifest(), wireExposed: true, modeVersion: 2 }, worldState());
+    fs.mkdirSync(path.join(fixture.root, CLIENT_MODES_DIR, "puzzle"), { recursive: true });
+    fs.copyFileSync(path.join(REPOSITORY_ROOT, CLIENT_MODES_DIR, "idle", "index.ts"), path.join(fixture.root, CLIENT_MODES_DIR, "puzzle", "index.ts"));
+    fs.mkdirSync(path.join(fixture.root, SERVER_MODES_DIR, "puzzle"), { recursive: true });
+    fs.writeFileSync(path.join(fixture.root, SERVER_MODES_DIR, "puzzle", "index.ts"), "export function registerPuzzleWorldMode(): () => void { return () => undefined; }\n", "utf8");
+    writeGameplayArtifacts(fixture.options);
+    assert.match(readFixtureText(fixture.root, SHARED_MODE_IDS), /export const WORLD_MODE_IDS: readonly GameplayModeIdType\[\] = \[\n {4}"puzzle",\n\];/u);
+    const serverCatalog = readFixtureText(fixture.root, SERVER_CATALOG);
+    assert.match(serverCatalog, /import \{ registerPuzzleWorldMode \} from "\.\/puzzle\/index";/u);
+    assert.match(serverCatalog, /GENERATED_WORLD_MODE_IDS: readonly string\[\] = \[\n {4}"puzzle",\n\];/u);
+    assert.match(serverCatalog, /registerGeneratedWorldModes\(registry\?: WorldModeRegistry\): \(\) => void \{\n {4}const disposers[^]*registerPuzzleWorldMode\(registry\)/u);
+    assert.doesNotMatch(serverCatalog, /GENERATED_GAME_MODE_IDS: readonly string\[\] = \[[^\]]*"puzzle"/u, "world mode ⛔ 进 GameMode 表");
+    // 服务端装配件若按 match 符号命名 ⇒ 发现即拒
+    fs.writeFileSync(path.join(fixture.root, SERVER_MODES_DIR, "puzzle", "index.ts"), "export function registerPuzzleGameMode(): () => void { return () => undefined; }\n", "utf8");
+    assert.throws(() => writeGameplayArtifacts(fixture.options), /registerPuzzleWorldMode/u);
+  } finally {
+    fs.rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+// ── MMO MF6b-B1：core 选项表 CORE_C2S_OPTIONS / CORE_S2C_OPTIONS（docs/MMO.md §6.5.1）──────────────────────────────
+
+const CORE_MESSAGES_FIXTURE = `
+export const CORE_C2S = { Ping: "c2s.ping", WorldChat: "c2s.world.chat" } as const;
+export const CORE_S2C = { Pong: "s2c.pong", WorldChat: "s2c.world.chat" } as const;
+`;
+
+test("MF6b-B1 parseCoreWireNames：选项表缺席 = 全缺省；c2s 只认 rateCost、s2c 只认 perSession / coalesceKey；未知键 / 未知消息名 / 非字面量 fail-fast", () => {
+  const plain = parseCoreWireNames(CORE_MESSAGES_FIXTURE, "fixture");
+  assert.deepEqual(plain.c2s, [{ key: "Ping", type: "c2s.ping", rateCost: 1 }, { key: "WorldChat", type: "c2s.world.chat", rateCost: 1 }]);
+  assert.deepEqual(plain.s2c, [
+    { key: "Pong", type: "s2c.pong", perSession: false, coalesceKey: null },
+    { key: "WorldChat", type: "s2c.world.chat", perSession: false, coalesceKey: null },
+  ]);
+  const withOptions = parseCoreWireNames(`${CORE_MESSAGES_FIXTURE}
+export const CORE_C2S_OPTIONS = { "c2s.world.chat": { rateCost: 2 } } as const;
+export const CORE_S2C_OPTIONS = { "s2c.world.chat": { perSession: true, coalesceKey: "fromEntityId" } } as const;
+`, "fixture");
+  assert.deepEqual(withOptions.c2s.map((entry) => [entry.type, entry.rateCost]), [["c2s.ping", 1], ["c2s.world.chat", 2]]);
+  assert.deepEqual(withOptions.s2c.map((entry) => [entry.type, entry.perSession, entry.coalesceKey]), [["s2c.pong", false, null], ["s2c.world.chat", true, "fromEntityId"]]);
+  const bad: Array<[string, RegExp]> = [
+    ['export const CORE_C2S_OPTIONS = { "c2s.world.chat": { phases: ["Playing"] } } as const;', /未知键：phases/u],
+    ['export const CORE_C2S_OPTIONS = { "c2s.world.chat": { rateCost: 0 } } as const;', /≥1 的整数/u],
+    ['export const CORE_C2S_OPTIONS = { "c2s.world.chat": { rateCost: "2" } } as const;', /数字字面量/u],
+    ['export const CORE_C2S_OPTIONS = { "c2s.nope": { rateCost: 2 } } as const;', /CORE_C2S 之外的消息名：c2s\.nope/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.nope": { perSession: true } } as const;', /CORE_S2C 之外的消息名：s2c\.nope/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.world.chat": { perSession: false } } as const;', /只能是字面量 true/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.world.chat": { coalesceKey: "id" } } as const;', /只对 perSession: true 有意义/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.world.chat": { perSession: true, extra: 1 } } as const;', /未知键：extra/u],
+    ['export const CORE_S2C_OPTIONS = { [CORE_S2C.WorldChat]: { perSession: true } } as const;', /消息名字符串字面量键/u],
+    ['export const CORE_S2C_OPTIONS = { "s2c.world.chat": { perSession: true }, "s2c.world.chat": { perSession: true } } as const;', /重复声明/u],
+    ["export const CORE_S2C_OPTIONS = someTable;", /对象字面量/u],
+  ];
+  for (const [snippet, pattern] of bad) {
+    assert.throws(() => parseCoreWireNames(`${CORE_MESSAGES_FIXTURE}\n${snippet}\n`, "fixture"), pattern, snippet);
+  }
 });

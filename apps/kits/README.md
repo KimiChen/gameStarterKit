@@ -6,7 +6,7 @@
 
 | 文件 | 作用 |
 | --- | --- |
-| `kit.json` | 一个文件多面：**身份**（id / version / domains / description）+ **api 面**（`api.<surface>.{version,minSupported}`）+ **玩法清单**（`modes[]` ≡ `gameplays/` 子目录）+ **SQL 账本声明**（`sql.files` / `sql.tables[].zone`）+ **冷档键清单**（`userKeys`）+ **effect kind**（`effects`）+ 客户端登记（entry / viewDirs / views / owners / routes / menu …，命名空间是 `kits/`）。schema 单源 `apps/server/tools/plugin/kit-schema-v1.json` |
+| `kit.json` | 一个文件多面：**身份**（id / version / domains / description）+ **api 面**（`api.<surface>.{version,minSupported}`）+ **玩法清单**（`modes[]` ≡ `gameplays/` 子目录）+ **SQL 账本声明**（`sql.files` / `sql.tables[].zone`，`sql.tables[].role:"world-event"` 声明框架固定形态的事件表）+ **冷档键清单**（`userKeys`）+ **effect kind**（`effects`）+ **后台 worker**（`workers[]`，entry 落 `apps/server/src/kits/<id>/workers/<worker>.ts`，`npm --workspace @game/server run worker -- <id>:<worker>` 起进程；MMO MF7a，KIT.md §3 / §4）+ **贡献点 / fragment**（`contributions` / `fragments`；插件经 `plugin.json.contributes` 填充，codegen 生成每端一份 `apps/<end>/src/kits/<id>/contributions.generated.ts`；MMO MF9，KIT.md §3 / §4）+ 客户端登记（entry / viewDirs / views / owners / routes / menu …，命名空间是 `kits/`）。schema 单源 `apps/server/tools/plugin/kit-schema-v1.json` |
 | `README.md` | kit 自述（`docs` 指向它）：定义了什么、插件该怎么用 api 面——审核清单里的人工项 |
 | `gameplays/<modeId>/{manifest.json,state.json}` | 每个 mode 的玩法单源，与 `apps/shared/schema/gameplays/<id>/`、`apps/plugins/<id>/gameplay/` 同等被 `codegen:gameplays` 发现 |
 | `sql/NNN-<name>.sql` | 迁移文件（表名 `k_<id 小写>_*`）：只由 `db:bootstrap` 按账本应用，`install` ⛔ 不碰数据库，⛔ 不改已发布迁移 |

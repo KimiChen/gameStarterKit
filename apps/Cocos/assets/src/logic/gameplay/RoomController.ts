@@ -24,7 +24,11 @@ export type GameplayStartResult =
     | { readonly status: "disposed"; readonly generation: number; readonly pluginId: string };
 
 export interface GameplayRoomJoiner<TRoom = unknown> {
-    join(signal: AbortSignal): RoomCapability<TRoom>;
+    /**
+     * `launch` = 本次启动的 launch 输入（MF9-B4：LaunchPort target 的 `{ ...payload, profile? }`，
+     * 缺省 `{}`）；登记态 joiner（registerGameplayModule）先交给 module.validateLaunch 做 exact 校验再 join。
+     */
+    join(signal: AbortSignal, launch?: unknown): RoomCapability<TRoom>;
 }
 
 export interface GameplayStartFailureRecovery {
@@ -130,6 +134,7 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
         plugin: GameplayPlugin<TRoom, TInput>,
         signal?: AbortSignal,
         joinerOverride?: GameplayRoomJoiner<TRoom>,
+        launch?: unknown,
     ): Promise<GameplayStartResult> {
         if (!plugin || typeof plugin !== "object" || typeof plugin.start !== "function") {
             const result: GameplayStartResult = {
@@ -221,7 +226,7 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
         }
         let lease: RoomCapability<TRoom>;
         try {
-            const candidate = joiner.join(controller.signal) as unknown;
+            const candidate = joiner.join(controller.signal, launch) as unknown;
             if (candidate && typeof candidate === "object"
                 && typeof (candidate as { leave?: unknown }).leave === "function") {
                 // Even a malformed capability may already own a physical room.
@@ -254,15 +259,16 @@ export class RoomController<TRoom = unknown, TInput = unknown> {
         return promise;
     }
 
-    /** 从登记表创建并启动玩法；登记表本身不参与 room 生命周期。 */
+    /** 从登记表创建并启动玩法；登记表本身不参与 room 生命周期。`launch` 原样交给登记的 joiner（MF9-B4）。 */
     startRegistered(
         registry: GameplayRegistry<TRoom, TInput>,
         id: string,
         signal?: AbortSignal,
+        launch?: unknown,
     ): Promise<GameplayStartResult> {
         try {
             const resolved = registry.resolveForStart(id);
-            return this.start(resolved.plugin, signal, resolved.joiner);
+            return this.start(resolved.plugin, signal, resolved.joiner, launch);
         } catch (error) {
             return Promise.resolve({
                 status: "failed",

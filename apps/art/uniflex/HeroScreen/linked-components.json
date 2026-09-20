@@ -4,7 +4,7 @@
   "components": [
     {
       "key": "HeroCard",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroCard.tsx",
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroCard.tsx",
       "psd": "components/HeroCard/component.psd",
       "guid": "e7ca9fc5-bd1c-c16b-8852-5cfac3d63c0f",
       "width": 170,
@@ -13,7 +13,7 @@
     },
     {
       "key": "HeroFilterBar",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroFilterBar.tsx",
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroFilterBar.tsx",
       "psd": "components/HeroFilterBar/component.psd",
       "guid": "ee7503f2-e223-5aa6-d252-4cd9974052d3",
       "width": 281,
@@ -22,7 +22,7 @@
     },
     {
       "key": "HeroListPanel",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroListPanel.tsx",
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroListPanel.tsx",
       "psd": "components/HeroListPanel/component.psd",
       "guid": "d5539f65-8098-061a-a569-b73f35906e53",
       "width": 750,
@@ -31,7 +31,7 @@
     },
     {
       "key": "MainNav",
-      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx",
       "psd": "components/MainNav/component.psd",
       "guid": "3ada9bd1-d9dd-d339-7e81-85a3355c40b6",
       "width": 750,

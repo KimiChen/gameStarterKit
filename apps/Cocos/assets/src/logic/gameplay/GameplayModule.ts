@@ -99,9 +99,10 @@ export function gameplayExitStopReason(reason: GameplayExitReason): GameplayStop
 /**
  * 把一个 GameplayModule 登记进既有 GameplayRegistry。
  *
- * - joiner：module joiner 适配为 registry 形状；当前 launch 通道（LaunchPort target）
- *   不携带参数载荷，登记态 join 使用 `validateLaunch({})` 的默认 launch——带参 launch
- *   （私房等）由 lobby contribution 组装后走同一 `join(launch, signal)` 接缝。
+ * - joiner：module joiner 适配为 registry 形状；launch 通道（LaunchPort target，MF9-B4）把
+ *   `{ ...payload, profile? }` 经 RoomController.startRegistered 送到这里，先过 `module.validateLaunch`
+ *   （exact 校验：未知字段 / 非法 profile 由各 module 拒），缺省 `{}`；lobby contribution 组装的带参
+ *   launch（私房等）走同一 `join(launch, signal)` 接缝。
  * - factory：每次启动创建新 plugin 实例；host 在 plugin.start 收到 context 时绑定
  *   generation（该值即 RoomController 为本局分配的 currentGeneration）。
  */
@@ -123,7 +124,7 @@ export function registerGameplayModule<TLaunch, TInput, TRoom>(
         throw new TypeError("[GameplayModule] bridge 必须提供 currentGeneration/dispatchInput/requestStop");
     }
     const joiner: GameplayRoomJoiner<TRoom> = {
-        join: (signal) => module.joiner.join(module.validateLaunch({}), signal),
+        join: (signal, launch) => module.joiner.join(module.validateLaunch(launch ?? {}), signal),
     };
     return registry.register(
         module.id,

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "worldFixture",
+  "constantName": "WorldFixture",
+  "modeVersion": 3,
+  "wireExposed": false,
+  "maxPlayers": 8,
+  "profiles": [
+    "world"
+  ],
+  "kind": "world",
+  "world": {
+    "emptyPolicy": "sleep",
+    "emptyAfterMs": 120000,
+    "checkpointMs": 30000
+  }
+}

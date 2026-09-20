@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "root": "ViewFixtureState",
+  "types": [
+    {
+      "name": "ViewFixtureState",
+      "sharedName": "IViewFixtureState",
+      "validatorName": "validateViewFixtureState",
+      "defaultPath": "viewFixtureState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "GamePhase",
+          "enumType": "GamePhaseType",
+          "members": [
+            "Waiting",
+            "Playing",
+            "Settle"
+          ],
+          "default": "Waiting",
+          "errorCode": "STATE_PHASE",
+          "description": "Room phase"
+        },
+        {
+          "name": "matchId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "Stable match id; empty while waiting"
+        },
+        {
+          "name": "revision",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "全图公开的投影修订号（名册 ⛔ 不进 Schema：roster hidden，MMO MF5a-B4）"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}

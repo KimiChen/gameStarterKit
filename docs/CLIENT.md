@@ -82,8 +82,8 @@ apps/Cocos/
 - UniFlex 通用 UI 核心在 `src/kits/uniflex/`，由独立的 `api/cocos/index.ts`、
   `api/web/index.ts` 提供宿主入口，共用资源与导航生命周期；业务侧不得导入 kit 内部实现。
   清单与 API 规则见 [UniFlex kit](../apps/kits/uniflex/README.md)，不将业务作者态、Logic 或路由放入 kit。
-- UniFlex 增量迁移的作者态在 `src/ui-uniflex/pages/<Page>/*.tsx`，共享组件在
-  `src/ui-uniflex/components/`。按切图实现新页时先读 [UNIFLEX-UI.md](UNIFLEX-UI.md)。`generated/` 子目录及
+- UniFlex 增量迁移的作者态在 `src/ui-uniflex/modules/<module>/<Page>/*.tsx`，共享组件在
+  `src/ui-uniflex/components/` 与 `gamecomponents/`。按切图实现新页时先读 [UNIFLEX-UI.md](UNIFLEX-UI.md)。`generated/` 子目录及
   `apps/Cocos/assets/resources/uniflex/` 由 `npm run build:uniflex-ui` 生成，不手改、不入库。
   编译器默认使用项目内 `tools/uniflex-compiler.mjs` 调用
   `vendor/uniflex/bin/<platform>-<arch>/`；显式设置 `UNIFLEX_COMPILER` 可覆盖项目内制品。
@@ -343,6 +343,18 @@ Game join 信封（v8）必填 `mode/modeVersion/profile`——默认撮合由 `
 私房由 `net/rooms/PrivateRoomService.ts`（prepareCreate→create / resolve→joinById，携带 access
 ticket）配合 `net/rooms/matchmaking.ts` 的 strategy 判别联合注入。ballMove adapter 独占 Move
 reconcile；idle 没有该 hook，join/reconnect 都不会构造 Move。
+
+世界房（MMO MF4-B7，`RoomName.World`）走独立的 `net/rooms/WorldRoomTransport.ts`（⛔ RoomClient / GameRoomTransport 零改动）：
+`world.enter`（MF8）签发的 `{ personaId, ticket }` + `matchmaking.ts` 的 `WorldRoomMatchmakingStrategy { kind:"world", mapId, line? }`
+→ 信封 `v = WORLD_ROOM_PROTOCOL_VERSION`、`modeVersion` 取 client catalog（mode 必须是 `kind:"world"`）、`profile` 恒 `"world"`、
+token / sId 取会话，本地先过 `validateWorldRoomJoinOptions` 再 `client.joinOrCreate(RoomName.World, options)`；一个 transport 同时
+只持一个世界房；出站只放行 core 与本 mode 的 C2S 且掉线期间拒发（⛔ 不重放旧意图）；入站先过 `validateS2CPayload`；离开分类
+`consented / drained（WITH_ERROR：须经 world.enter 重进）/ replaced（同 persona 别处取得控制权）/ dropped（SDK 自动重连）`。
+端点在 PS2 前用 `getCurrentGameWsUrl()`。交接（MMO MF8-B5）：收到 mode 的「交接就绪」token（或 Lobby `world.resolveTransfer { transferId }` 的结果）后调
+`transport.transfer({ mode, personaId, ready })`——退源房（有界等待 `WORLD_TRANSFER_LEAVE_TIMEOUT_MS` = 3 s，`leaveTimeoutMs` 可注入：LEAVE 无回执 ⇒ 本地收尾继续，服务端 Committed 后本就离座；MMO MF11 R2-02） → 带凭据 join 目标分线（`ready.endpoint` 非空且注入 `clientFor` 时换 world 进程的 SDK client）→ 新句柄
+`transferId`（重连凭它 resolveTransfer）；strategy 形态 `{ kind:"transfer", transferId, mapId, line? }`（凭据仍在请求的 `ticket`，⛔ 进 strategy / 日志）。视野流 / baseline 的 reconcile 端口 = `WorldRoomHandle.bindObserverStream(types, sink)`（MMO MF5b-B2，
+与 `GameRoomTransport.bindObserverStream` 同形：六个 perSession S2C 经 wire 校验绑到 `logic/rooms/observer/ObserverReconciler`；本人私有流走
+`onMessage` 且要喂给 reconciler 的 cursor——它与视野流共用单 seq 流）。
 
 ### RoomClient
 

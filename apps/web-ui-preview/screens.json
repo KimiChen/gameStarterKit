@@ -7,7 +7,7 @@
       "canvas": { "width": 750, "height": 1424 },
       "componentName": "PreviewHome",
       "rootName": "PreviewHome",
-      "source": "apps/client/src/ui-uniflex/pages/PreviewHome/PreviewHome.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/preview/PreviewHome/PreviewHome.tsx"
     },
     {
       "id": "restored-home",
@@ -15,7 +15,7 @@
       "canvas": { "width": 750, "height": 1424 },
       "componentName": "RestoredPreviewHome",
       "rootName": "RestoredPreviewHome",
-      "source": "apps/client/src/ui-uniflex/pages/RestoredPreviewHome/RestoredPreviewHome.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/preview/RestoredPreviewHome/RestoredPreviewHome.tsx"
     },
     {
       "id": "prompt",
@@ -23,7 +23,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "Prompt",
       "rootName": "Prompt/Content",
-      "source": "apps/client/src/ui-uniflex/pages/Prompt/Prompt.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/popup/Prompt/Prompt.tsx"
     },
     {
       "id": "small-popup",
@@ -31,7 +31,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "SmallPopup",
       "rootName": "SmallPopup/Content",
-      "source": "apps/client/src/ui-uniflex/pages/SmallPopup/SmallPopup.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/popup/SmallPopup/SmallPopup.tsx"
     },
     {
       "id": "confirm",
@@ -39,7 +39,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "Confirm",
       "rootName": "Confirm",
-      "source": "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/popup/Confirm/Confirm.tsx"
     },
     {
       "id": "backpack",
@@ -47,7 +47,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "Backpack",
       "rootName": "Backpack",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/Backpack.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"
     },
     {
       "id": "mail",
@@ -55,7 +55,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "MailBattleReport",
       "rootName": "MailBattleReport",
-      "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleReport.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleReport/MailBattleReport.tsx"
     },
     {
       "id": "mail-restored",
@@ -63,7 +63,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "MailBattleReportRestored",
       "rootName": "MailBattleReportRestored",
-      "source": "apps/client/src/ui-uniflex/pages/MailBattleReportRestored/MailBattleReportRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleReportRestored/MailBattleReportRestored.tsx"
     },
     {
       "id": "backpack-restored",
@@ -71,7 +71,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "BackpackRestored",
       "rootName": "BackpackRestored",
-      "source": "apps/client/src/ui-uniflex/pages/BackpackRestored/BackpackRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/backpack/BackpackRestored/BackpackRestored.tsx"
     },
     {
       "id": "settings",
@@ -79,7 +79,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "Settings",
       "rootName": "Settings/Content",
-      "source": "apps/client/src/ui-uniflex/pages/Settings/Settings.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/settings/Settings/Settings.tsx"
     },
     {
       "id": "character",
@@ -87,7 +87,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "CharacterManage",
       "rootName": "CharacterManage/Content",
-      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManage.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/character/CharacterManage/CharacterManage.tsx"
     },
     {
       "id": "hero",
@@ -95,7 +95,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "HeroScreen",
       "rootName": "HeroScreen",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroScreen.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroScreen.tsx"
     },
     {
       "id": "hero-detail",
@@ -103,7 +103,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "HeroDetail",
       "rootName": "HeroDetail",
-      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetail.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetail.tsx"
     },
     {
       "id": "hero-star-upgrade",
@@ -111,7 +111,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "HeroStarUpgrade",
       "rootName": "HeroStarUpgradePage",
-      "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgrade/HeroStarUpgrade.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgrade/HeroStarUpgrade.tsx"
     },
     {
       "id": "alliance",
@@ -119,7 +119,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "Alliance",
       "rootName": "Alliance",
-      "source": "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/Alliance/Alliance.tsx"
     },
     {
       "id": "alliance-announce",
@@ -127,7 +127,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceAnnounce",
       "rootName": "AllianceAnnouncePage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounce/AllianceAnnounce.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceAnnounce/AllianceAnnounce.tsx"
     },
     {
       "id": "alliance-create",
@@ -135,7 +135,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceCreate",
       "rootName": "AllianceCreatePage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceCreate/AllianceCreate.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceCreate/AllianceCreate.tsx"
     },
     {
       "id": "alliance-join",
@@ -143,7 +143,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceJoin",
       "rootName": "AllianceJoin",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceJoin/AllianceJoin.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceJoin/AllianceJoin.tsx"
     },
     {
       "id": "alliance-member-settings",
@@ -151,7 +151,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceMemberSettings",
       "rootName": "AllianceMemberSettingsPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettings/AllianceMemberSettings.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceMemberSettings/AllianceMemberSettings.tsx"
     },
     {
       "id": "alliance-war",
@@ -159,7 +159,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceWar",
       "rootName": "AllianceWarPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceWar/AllianceWar.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceWar/AllianceWar.tsx"
     },
     {
       "id": "alliance-territory",
@@ -167,7 +167,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceTerritory",
       "rootName": "AllianceTerritoryPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritory/AllianceTerritory.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTerritory/AllianceTerritory.tsx"
     },
     {
       "id": "alliance-march-boost",
@@ -175,7 +175,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceMarchBoost",
       "rootName": "AllianceMarchBoostPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoost/AllianceMarchBoost.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceMarchBoost/AllianceMarchBoost.tsx"
     },
     {
       "id": "alliance-invite",
@@ -183,7 +183,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceInvite",
       "rootName": "AllianceInvitePage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceInvite/AllianceInvite.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceInvite/AllianceInvite.tsx"
     },
     {
       "id": "alliance-gift",
@@ -191,7 +191,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceGift",
       "rootName": "AllianceGiftPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceGift/AllianceGift.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceGift/AllianceGift.tsx"
     },
     {
       "id": "alliance-help",
@@ -199,7 +199,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceHelp",
       "rootName": "AllianceHelpPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceHelp/AllianceHelp.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceHelp/AllianceHelp.tsx"
     },
     {
       "id": "alliance-board",
@@ -207,7 +207,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceBoard",
       "rootName": "AllianceBoardPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceBoard/AllianceBoard.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceBoard/AllianceBoard.tsx"
     },
     {
       "id": "alliance-tech",
@@ -215,7 +215,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceTech",
       "rootName": "AllianceTechPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceTech/AllianceTech.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTech/AllianceTech.tsx"
     },
     {
       "id": "shop-getitem",
@@ -223,7 +223,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "ShopGetItem",
       "rootName": "ShopGetItemPage",
-      "source": "apps/client/src/ui-uniflex/pages/ShopGetItem/ShopGetItem.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/shop/ShopGetItem/ShopGetItem.tsx"
     },
     {
       "id": "shop",
@@ -231,7 +231,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "Shop",
       "rootName": "ShopPage",
-      "source": "apps/client/src/ui-uniflex/pages/Shop/Shop.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/shop/Shop/Shop.tsx"
     },
     {
       "id": "prompt-restored",
@@ -239,7 +239,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "PromptRestored",
       "rootName": "PromptRestored/Content",
-      "source": "apps/client/src/ui-uniflex/pages/PromptRestored/PromptRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/popup/PromptRestored/PromptRestored.tsx"
     },
     {
       "id": "confirm-restored",
@@ -247,7 +247,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "ConfirmRestored",
       "rootName": "ConfirmRestored",
-      "source": "apps/client/src/ui-uniflex/pages/ConfirmRestored/ConfirmRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/popup/ConfirmRestored/ConfirmRestored.tsx"
     },
     {
       "id": "small-popup-restored",
@@ -255,7 +255,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "SmallPopupRestored",
       "rootName": "SmallPopupRestored/Content",
-      "source": "apps/client/src/ui-uniflex/pages/SmallPopupRestored/SmallPopupRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/popup/SmallPopupRestored/SmallPopupRestored.tsx"
     },
     {
       "id": "settings-restored",
@@ -263,7 +263,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "SettingsRestored",
       "rootName": "SettingsRestored/Content",
-      "source": "apps/client/src/ui-uniflex/pages/SettingsRestored/SettingsRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/settings/SettingsRestored/SettingsRestored.tsx"
     },
     {
       "id": "character-restored",
@@ -271,7 +271,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "CharacterManageRestored",
       "rootName": "CharacterManageRestored/Content",
-      "source": "apps/client/src/ui-uniflex/pages/CharacterManageRestored/CharacterManageRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/character/CharacterManageRestored/CharacterManageRestored.tsx"
     },
     {
       "id": "hero-restored",
@@ -279,7 +279,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "HeroScreenRestored",
       "rootName": "HeroScreenRestored",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreenRestored/HeroScreenRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreenRestored/HeroScreenRestored.tsx"
     },
     {
       "id": "hero-detail-restored",
@@ -287,7 +287,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "HeroDetailRestored",
       "rootName": "HeroDetailRestored",
-      "source": "apps/client/src/ui-uniflex/pages/HeroDetailRestored/HeroDetailRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetailRestored/HeroDetailRestored.tsx"
     },
     {
       "id": "hero-star-upgrade-restored",
@@ -295,7 +295,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "HeroStarUpgradeRestored",
       "rootName": "HeroStarUpgradePage",
-      "source": "apps/client/src/ui-uniflex/pages/HeroStarUpgradeRestored/HeroStarUpgradeRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgradeRestored/HeroStarUpgradeRestored.tsx"
     },
     {
       "id": "alliance-restored",
@@ -303,7 +303,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceRestored",
       "rootName": "AllianceRestored",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceRestored/AllianceRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceRestored/AllianceRestored.tsx"
     },
     {
       "id": "alliance-announce-restored",
@@ -311,7 +311,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceAnnounceRestored",
       "rootName": "AllianceAnnouncePage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceAnnounceRestored/AllianceAnnounceRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceAnnounceRestored/AllianceAnnounceRestored.tsx"
     },
     {
       "id": "alliance-create-restored",
@@ -319,7 +319,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceCreateRestored",
       "rootName": "AllianceCreatePage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceCreateRestored/AllianceCreateRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceCreateRestored/AllianceCreateRestored.tsx"
     },
     {
       "id": "alliance-join-restored",
@@ -327,7 +327,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceJoinRestored",
       "rootName": "AllianceJoinRestored",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceJoinRestored/AllianceJoinRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceJoinRestored/AllianceJoinRestored.tsx"
     },
     {
       "id": "alliance-member-settings-restored",
@@ -335,7 +335,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceMemberSettingsRestored",
       "rootName": "AllianceMemberSettingsPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceMemberSettingsRestored/AllianceMemberSettingsRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceMemberSettingsRestored/AllianceMemberSettingsRestored.tsx"
     },
     {
       "id": "alliance-war-restored",
@@ -343,7 +343,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceWarRestored",
       "rootName": "AllianceWarPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceWarRestored/AllianceWarRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceWarRestored/AllianceWarRestored.tsx"
     },
     {
       "id": "alliance-territory-restored",
@@ -351,7 +351,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceTerritoryRestored",
       "rootName": "AllianceTerritoryPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceTerritoryRestored/AllianceTerritoryRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTerritoryRestored/AllianceTerritoryRestored.tsx"
     },
     {
       "id": "alliance-march-boost-restored",
@@ -359,7 +359,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceMarchBoostRestored",
       "rootName": "AllianceMarchBoostPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceMarchBoostRestored/AllianceMarchBoostRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceMarchBoostRestored/AllianceMarchBoostRestored.tsx"
     },
     {
       "id": "alliance-invite-restored",
@@ -367,7 +367,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceInviteRestored",
       "rootName": "AllianceInvitePage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceInviteRestored/AllianceInviteRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceInviteRestored/AllianceInviteRestored.tsx"
     },
     {
       "id": "alliance-gift-restored",
@@ -375,7 +375,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceGiftRestored",
       "rootName": "AllianceGiftPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceGiftRestored/AllianceGiftRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceGiftRestored/AllianceGiftRestored.tsx"
     },
     {
       "id": "alliance-help-restored",
@@ -383,7 +383,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceHelpRestored",
       "rootName": "AllianceHelpPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceHelpRestored/AllianceHelpRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceHelpRestored/AllianceHelpRestored.tsx"
     },
     {
       "id": "alliance-board-restored",
@@ -391,7 +391,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceBoardRestored",
       "rootName": "AllianceBoardPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceBoardRestored/AllianceBoardRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceBoardRestored/AllianceBoardRestored.tsx"
     },
     {
       "id": "alliance-tech-restored",
@@ -399,7 +399,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "AllianceTechRestored",
       "rootName": "AllianceTechPage",
-      "source": "apps/client/src/ui-uniflex/pages/AllianceTechRestored/AllianceTechRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTechRestored/AllianceTechRestored.tsx"
     },
     {
       "id": "shop-getitem-restored",
@@ -407,7 +407,7 @@
       "canvas": { "width": 750, "height": 1624 },
       "componentName": "ShopGetItemRestored",
       "rootName": "ShopGetItemPage",
-      "source": "apps/client/src/ui-uniflex/pages/ShopGetItemRestored/ShopGetItemRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/shop/ShopGetItemRestored/ShopGetItemRestored.tsx"
     },
     {
       "id": "preview-home-restored",
@@ -415,7 +415,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "PreviewHomeRestored",
       "rootName": "PreviewHomeRestored",
-      "source": "apps/client/src/ui-uniflex/pages/PreviewHomeRestored/PreviewHomeRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/preview/PreviewHomeRestored/PreviewHomeRestored.tsx"
     },
     {
       "id": "backpack-edited",
@@ -423,7 +423,7 @@
       "canvas": { "width": 750, "height": 1334 },
       "componentName": "BackpackEditedRestored",
       "rootName": "BackpackEditedRestored",
-      "source": "apps/client/src/ui-uniflex/pages/BackpackEditedRestored/BackpackEditedRestored.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/backpack/BackpackEditedRestored/BackpackEditedRestored.tsx"
     }
   ],
   "components": [
@@ -433,19 +433,14 @@
       "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"
     },
     {
-      "key": "PopupBackground",
-      "rootName": "PopupBackground",
-      "source": "apps/client/src/ui-uniflex/components/popup/PopupBackground.tsx"
-    },
-    {
       "key": "CloseButton",
       "rootName": "CloseButton",
-      "source": "apps/client/src/ui-uniflex/components/popup/CloseButton.tsx"
+      "source": "apps/client/src/ui-uniflex/components/button/CloseButton.tsx"
     },
     {
       "key": "ItemSlot",
       "rootName": "ItemSlot",
-      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/item/ItemSlot.tsx"
     },
     {
       "key": "ActionButton",
@@ -475,7 +470,7 @@
     {
       "key": "MailBattleRow",
       "rootName": "MailBattleRow",
-      "source": "apps/client/src/ui-uniflex/pages/MailBattleReport/MailBattleRow.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleReport/MailBattleRow.tsx"
     },
     {
       "key": "PanelTab",
@@ -485,17 +480,17 @@
     {
       "key": "BackpackItemCard",
       "rootName": "BackpackItemCard",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"
     },
     {
-      "key": "BackpackResourceCounter",
-      "rootName": "BackpackResourceCounter",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackResourceCounter.tsx"
+      "key": "ResourceCounter",
+      "rootName": "ResourceCounter",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/resource/ResourceCounter.tsx"
     },
     {
       "key": "BackpackQuantityControl",
       "rootName": "BackpackQuantityControl",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackQuantityControl.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackQuantityControl.tsx"
     },
     {
       "key": "CheckBox",
@@ -505,72 +500,72 @@
     {
       "key": "CharacterManageTab",
       "rootName": "CharacterManageTab",
-      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterManageTab.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/character/CharacterManage/CharacterManageTab.tsx"
     },
     {
       "key": "CharacterPlayerRow",
       "rootName": "CharacterPlayerRow",
-      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterPlayerRow.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/character/CharacterManage/CharacterPlayerRow.tsx"
     },
     {
       "key": "CharacterServerItem",
       "rootName": "CharacterServerItem",
-      "source": "apps/client/src/ui-uniflex/pages/CharacterManage/CharacterServerItem.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/character/CharacterManage/CharacterServerItem.tsx"
     },
     {
       "key": "MainNav",
       "rootName": "MainNav",
-      "source": "apps/client/src/ui-uniflex/components/navigation/MainNav.tsx"
+      "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx"
     },
     {
       "key": "HeroListPanel",
       "rootName": "HeroListPanel",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroListPanel.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroListPanel.tsx"
     },
     {
       "key": "HeroBondsPanel",
       "rootName": "HeroBondsPanel",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroBondsPanel.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroBondsPanel.tsx"
     },
     {
       "key": "HeroCard",
       "rootName": "HeroCard",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroCard.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroCard.tsx"
     },
     {
       "key": "HeroFilterBar",
       "rootName": "HeroFilterBar",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroFilterBar.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroFilterBar.tsx"
     },
     {
       "key": "HeroBondItem",
       "rootName": "HeroBondItem",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroBondItem.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroBondItem.tsx"
     },
     {
       "key": "HeroRequiredHero",
       "rootName": "HeroRequiredHero",
-      "source": "apps/client/src/ui-uniflex/pages/HeroScreen/HeroRequiredHero.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroRequiredHero.tsx"
     },
     {
       "key": "HeroDetailTabs",
       "rootName": "HeroDetailTabs",
-      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailTabs.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailTabs.tsx"
     },
     {
       "key": "HeroDetailAttributes",
       "rootName": "HeroDetailAttributes",
-      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailAttributes.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailAttributes.tsx"
     },
     {
       "key": "HeroDetailSkills",
       "rootName": "HeroDetailSkills",
-      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroDetailSkills.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailSkills.tsx"
     },
     {
       "key": "HeroSkillSlot",
       "rootName": "HeroSkillSlot",
-      "source": "apps/client/src/ui-uniflex/pages/HeroDetail/HeroSkillSlot.tsx"
+      "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroSkillSlot.tsx"
     }
   ]
 }

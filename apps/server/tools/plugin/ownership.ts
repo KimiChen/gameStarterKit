@@ -16,6 +16,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { INSTALLED_LOCK_DIR } from "./lock";
+import type { KitContributionSummary, PluginContributes } from "../plugin-codegen/pluginManifestSchema";
 
 /**
  * 派生的包形态：client = 有客户端登记（entry / views / routes / menu），gameplay = 有玩法单源，server = 只有 kit 会有——
@@ -46,6 +47,12 @@ export interface PluginIdentity {
   readonly fguiPackages: readonly string[];
   /** plugin.json 声明的 viewDirs / owners[].logicDir（安装期校验必须落在本插件命名空间内）。 */
   readonly clientDirs: readonly string[];
+  /** kit 的后台 worker 清单（MF7a；进身份摘要）；插件恒为空 / 缺省。 */
+  readonly workers?: readonly { readonly id: string; readonly entry: string }[];
+  /** kit 的贡献点摘要 / fragment 清单与插件的贡献填充（MF9）：只进锁抬头与身份摘要，⛔ 不参与所有权推导。 */
+  readonly contributions?: Readonly<Record<string, KitContributionSummary>>;
+  readonly fragments?: readonly string[];
+  readonly contributes?: PluginContributes;
 }
 
 export interface OwnershipRule {
@@ -403,12 +410,24 @@ export function readGeneratedWriterPaths(root: string): readonly string[] {
   return (rules.generatedWriterOwned?.entries ?? []).map((entry) => entry.path).filter((entry) => !entry.startsWith(`${INSTALLED_LOCK_DIR}/`));
 }
 
-function matchesProtected(relative: string, protectedPath: string): boolean {
+/**
+ * protected-paths.json 条目匹配：精确路径、`dir/**`（整目录）或含 `*` 单段通配（每 kit 一份的生成物家族，
+ * 如 `apps/shared/src/kits/*\/contributions.generated.ts`，MF9；家族可为空）。
+ */
+export function protectedPathMatches(relative: string, protectedPath: string): boolean {
   if (protectedPath.endsWith("/**")) {
     const dir = protectedPath.slice(0, -3);
     return relative === dir || relative.startsWith(`${dir}/`);
   }
+  if (protectedPath.includes("*")) {
+    const pattern = protectedPath.split("*").map((part) => part.replace(/[.+?^${}()|[\]\\]/gu, "\\$&")).join("[^/]+");
+    return new RegExp(`^${pattern}$`, "u").test(relative);
+  }
   return relative === protectedPath;
+}
+
+function matchesProtected(relative: string, protectedPath: string): boolean {
+  return protectedPathMatches(relative, protectedPath);
 }
 
 /** 镜像/`.meta` 路径 → 真源路径（供 allowlist 复用）；非镜像/非 .meta 原样返回。 */

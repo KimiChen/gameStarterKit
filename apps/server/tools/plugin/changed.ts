@@ -32,6 +32,7 @@ import {
   classifyPath,
   deriveOwnership,
   matchesPrefixRule,
+  protectedPathMatches,
   readGeneratedWriterPaths,
   readProtectedPaths,
   type OwnershipRule,
@@ -168,9 +169,7 @@ function makeIsDerived(root: string, knownIds: ReadonlySet<string>): (relative: 
   return (relative) => {
     const lock = /^scripts\/packages\/([^/]+)\.lock$/u.exec(relative);
     if (lock) return knownIds.has(lock[1]);
-    return entries.some((entry) => (entry.endsWith("/**")
-      ? relative === entry.slice(0, -3) || relative.startsWith(`${entry.slice(0, -3)}/`)
-      : relative === entry));
+    return entries.some((entry) => protectedPathMatches(relative, entry));
   };
 }
 

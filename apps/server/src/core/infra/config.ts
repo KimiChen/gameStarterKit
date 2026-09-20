@@ -6,7 +6,9 @@
 
 // ───────────────────────── 环境变量 ─────────────────────────
 
+import { assertWorldMultiProcessRedis } from "./worldMultiProcess";
 import { readFileSync } from "node:fs";
+import { hostname } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -354,6 +356,57 @@ export const REDIS_COORD_URL = () => env("REDIS_COORD_URL", REDIS_DURABLE_URL())
 
 /** 锁 TTL。必须 > 货币事务 p99（M0 压测定数，见 apps/server/tools/m0/currency-txn-bench.ts）。 */
 export const LOCK_TTL_MS = 5000;
+/**
+ * 世界权威租约（MMO MF4-B4，docs/MMO.md §11.2 冻结：TTL 15 s / 续租 5 s）：coord Redis `kWorldLease` SET NX PX；
+ * 加载期断言 `renew * 3 ≤ ttl`（连丢两次续租仍在 TTL 内，第三次丢 ⇒ 视为失租 → Draining）。int 测试可注入更短的值。
+ */
+export const WORLD_LEASE_TTL_MS = envInt("WORLD_LEASE_TTL_MS", 15_000);
+export const WORLD_LEASE_RENEW_MS = envInt("WORLD_LEASE_RENEW_MS", 5_000);
+if (WORLD_LEASE_RENEW_MS < 1 || WORLD_LEASE_TTL_MS < 1 || WORLD_LEASE_RENEW_MS * 3 > WORLD_LEASE_TTL_MS) {
+  throw new Error(`WORLD_LEASE_RENEW_MS(${WORLD_LEASE_RENEW_MS}) * 3 必须 ≤ WORLD_LEASE_TTL_MS(${WORLD_LEASE_TTL_MS})（MMO.md §11.2）`);
+}
+/**
+ * world 进程公开 ws 地址（MMO MF8-B4 / D27）：`world.enter` 回给客户端的 endpoint；空串 = 与当前区 gameWsUrl 相同
+ * （world 进程拆分（PS4）前的缺省；拆分后由部署方设置 wss origin）。非空必须是 ws/wss origin。
+ */
+export const WORLD_PUBLIC_WS_URL = (process.env.WORLD_PUBLIC_WS_URL ?? "").trim();
+if (WORLD_PUBLIC_WS_URL !== "" && !/^wss?:\/\/[A-Za-z0-9.-]+(:\d{1,5})?$/u.test(WORLD_PUBLIC_WS_URL)) {
+  throw new Error(`WORLD_PUBLIC_WS_URL(${WORLD_PUBLIC_WS_URL}) 必须是 ws:// 或 wss:// origin（无路径）`);
+}
+/**
+ * 多 world 进程（MMO MF10-B2 / D27）：`WORLD_MULTI_PROCESS=1` 时 world 进程装 RedisDriver / RedisPresence（多个 world 进程共享房间列表 / IPC），
+ * 承载它们的 `REDIS_COLYSEUS_URL` 必须是与 durable / coord 不同的 Redis **实例**（加载期断言，错配即拒启；独立 db 不算）。
+ * `WORLD_PUBLIC_ADDRESS`（host[:port]，无 scheme）= Colyseus seat reservation 回给客户端的本节点地址；缺省空 = 单节点。生产启用是部署门。
+ */
+export const WORLD_MULTI_PROCESS = envInt("WORLD_MULTI_PROCESS", 0);
+export const REDIS_COLYSEUS_URL = (process.env.REDIS_COLYSEUS_URL ?? "").trim();
+export const WORLD_PUBLIC_ADDRESS = (process.env.WORLD_PUBLIC_ADDRESS ?? "").trim();
+if (WORLD_PUBLIC_ADDRESS !== "" && !/^[A-Za-z0-9.-]+(:\d{1,5})?$/u.test(WORLD_PUBLIC_ADDRESS)) {
+  throw new Error(`WORLD_PUBLIC_ADDRESS(${WORLD_PUBLIC_ADDRESS}) 必须是 host[:port]（无 scheme / 路径）`);
+}
+export const WORLD_MULTI_PROCESS_VERDICT = assertWorldMultiProcessRedis({
+  multiProcess: WORLD_MULTI_PROCESS, colyseusUrl: REDIS_COLYSEUS_URL, durableUrl: REDIS_DURABLE_URL(), coordUrl: REDIS_COORD_URL(),
+});
+/** 每图分线上限（MMO MF10-B1；`WorldDirectory.allocate` 满员开新线到此为止，指定 line ≥ 上限即拒；候选数字）。 */
+export const WORLD_MAX_LINES_PER_MAP = envInt("WORLD_MAX_LINES_PER_MAP", 8);
+/** 分线分配的满员阈值（MMO MF10-B1；缺省 = §11.2 冻结的 mmoWorld maxPlayers 100；房内硬上限仍是 mode.capacity）。 */
+export const WORLD_LINE_CAPACITY = envInt("WORLD_LINE_CAPACITY", 100);
+if (WORLD_MAX_LINES_PER_MAP < 1 || WORLD_MAX_LINES_PER_MAP > 0x10000 || WORLD_LINE_CAPACITY < 1) {
+  throw new Error(`WORLD_MAX_LINES_PER_MAP(${WORLD_MAX_LINES_PER_MAP}) 必须在 1..65536、WORLD_LINE_CAPACITY(${WORLD_LINE_CAPACITY}) 必须 ≥ 1`);
+}
+/**
+ * 分线实时登记的 TTL / 刷新间隔（MMO MF10-B1 / B4）：与权威租约**同 TTL、同刷新节拍**——节点被 kill -9 后登记与租约一起到期，
+ * world.enter 的端点随之回落（⛔ 两倍租约：会把客户端多指向死节点一个租约周期，MF10-B4 实验结论）；⛔ 不另开 env。
+ */
+export const WORLD_INFO_TTL_MS = WORLD_LEASE_TTL_MS;
+export const WORLD_INFO_REFRESH_MS = WORLD_LEASE_RENEW_MS;
+/** 世界房一次性准入凭据 TTL（MMO MF8-B2，候选数字；ROOM_TICKET_TTL_MS 同量级）。 */
+export const WORLD_TICKET_TTL_MS = envInt("WORLD_TICKET_TTL_MS", 30_000);
+/** 交接目标预留有效期（MMO MF8-B2，候选数字）：Committed 前到期 ⇒ 释放预留（cancelled）。 */
+export const WORLD_TRANSFER_RESERVE_MS = envInt("WORLD_TRANSFER_RESERVE_MS", 30_000);
+if (WORLD_TICKET_TTL_MS < 1_000 || WORLD_TRANSFER_RESERVE_MS < 1_000) {
+  throw new Error(`WORLD_TICKET_TTL_MS(${WORLD_TICKET_TTL_MS}) / WORLD_TRANSFER_RESERVE_MS(${WORLD_TRANSFER_RESERVE_MS}) 必须 ≥ 1000 ms`);
+}
 /** 跨实例抢锁有界重试次数（09·L5：禁止无限递归）。 */
 export const LOCK_RETRY_MAX = 3;
 /** 幂等 pending 哨兵短租约；必须显著覆盖 handler 的最大执行窗口，避免迟到写与立即重试并发。 */
@@ -389,6 +442,58 @@ export const SESS_TTL_S = 259_200;
 export const ADMIN_API_SECRET = () => process.env.ADMIN_API_SECRET ?? "";
 /** 踢人流 MINID 兜底裁剪窗毫秒（踢是即时动作，老事件无价值；权威撤销在 WebPlatform）。 */
 export const KICK_STREAM_TRIM_MS = envInt("KICK_STREAM_TRIM_MS", 24 * 3600 * 1000);
+
+// ── 社交原语（docs/MMO.md §6；MF6a）：presence / 投递总线 ────────────────────────────
+
+/**
+ * 本进程的节点身份（MMO.md §6.2）：presence 的 `lobby` / `world` 字段写它，final onLeave 只清「自己写的」
+ * （PRESENCE_CLEAR_IF_OWNER：顶号跨节点时旧节点 ⛔ 不抹新连接）。缺省 `${hostname}:${PORT}`；多进程同机
+ * （D27 三进程或多 world 进程）必须显式配置 NODE_ID 区分。⛔ 不复用 kSess.gwNode（会话 ≠ 连接）。
+ */
+export const NODE_ID = (() => {
+  const v = process.env.NODE_ID;
+  if (v !== undefined && v !== "") {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(v)) {
+      throw new Error(`NODE_ID 非法：「${v}」——只允许 [A-Za-z0-9._:-]（首字符字母数字），≤128 字符`);
+    }
+    return v;
+  }
+  return `${hostname()}:${PORT}`;
+})();
+/** presence 键 TTL（秒）：崩溃后 ≤ 90 s 自愈；presence 是提示语义，每个 presence 键必带 TTL。 */
+export const PRESENCE_TTL_S = 90;
+/** presence 心跳周期（秒）；⚠ 必须 < PRESENCE_TTL_S / 2，否则一次心跳抖动就会被判离线（加载期断言）。 */
+export const PRESENCE_HEARTBEAT_S = 30;
+if (PRESENCE_HEARTBEAT_S * 2 >= PRESENCE_TTL_S) {
+  throw new Error(`PRESENCE_HEARTBEAT_S=${PRESENCE_HEARTBEAT_S} 必须 < PRESENCE_TTL_S/2（${PRESENCE_TTL_S / 2}）`);
+}
+/** 投递总线 stream:push 的 MINID 兜底裁剪窗（10 min；消费侧另有 30 s 时间栅栏，MMO.md §6.3）。 */
+export const PUSH_STREAM_TRIM_MS = envInt("PUSH_STREAM_TRIM_MS", 10 * 60 * 1000);
+/** 投递总线单条 `uids` 上限（超出自动切片）与 `data` JSON 字节上限。 */
+export const PUSH_BUS_MAX_UIDS = 64;
+export const PUSH_BUS_MAX_DATA_BYTES = 2048;
+/** 投递总线时间栅栏：`issuedAt` 早于此毫秒数的条目丢弃（积压不投递）。 */
+export const PUSH_BUS_MAX_AGE_MS = 30_000;
+
+// ── party（docs/MMO.md §6.4；MF6a-B3）──────────────────────────────────────────
+
+/** 队伍人数上限（第 6 人 accept 得 PARTY_FULL）；产品上限归 kit / 插件，这里是框架硬上限。 */
+export const PARTY_MAX_SIZE = 5;
+/** party 键族 idle TTL（秒）：每次变更 PEXPIRE 全族；最后一人离开 DEL 全族。 */
+export const PARTY_IDLE_TTL_S = 86_400;
+/** 邀请有效期（秒）：过期 accept 得 PARTY_INVITE_INVALID。 */
+export const PARTY_INVITE_TTL_S = envInt("PARTY_INVITE_TTL_S", 120);
+/** party 事件近窗长度（同 GUILD_EVT_LOG_MAX 形态；窗口外客户端全量刷新）。 */
+export const PARTY_EVT_LOG_MAX = envInt("PARTY_EVT_LOG_MAX", 100);
+
+// ── chat（docs/MMO.md §6.5；MF6a-B4）：handler 内 TOKEN_BUCKET，桶失败 fail-closed（CHAT_UNAVAILABLE） ──
+
+/** 每用户发言桶：容量 3、每秒回填 0.5（第 4 条连发 RATE_LIMITED）。 */
+export const CHAT_SEND_CAPACITY = envInt("CHAT_SEND_CAPACITY", 3);
+export const CHAT_SEND_REFILL_PER_S = envFloat("CHAT_SEND_REFILL_PER_S", 0.5);
+/** 全区频道总桶：容量 100、每秒回填 30（防单区刷屏拖垮 realm 单流）。 */
+export const CHAT_REALM_CAPACITY = envInt("CHAT_REALM_CAPACITY", 100);
+export const CHAT_REALM_REFILL_PER_S = envFloat("CHAT_REALM_REFILL_PER_S", 30);
 /** outbox done 行保留窗（relayer 周期清理；pending/dead ⛔ 不删）。09·I5 窗口不等式的前提。 */
 export const OUTBOX_RETENTION_MS = 86_400_000;
 /** ⚠ 必须 ≥ 2 × OUTBOX_RETENTION_MS（09·I5），否则 relayer 重放老 intent 二次发货。 */

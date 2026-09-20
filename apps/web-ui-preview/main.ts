@@ -76,7 +76,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
             return;
         case "prompt":
             await runtime.start(Prompt, {
-                theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" },
+                theme: { messageColor: "#3f3254" },
                 title: "创建角色",
                 message: "在该服务器创建1名新角色?",
                 confirmText: "确定",
@@ -293,7 +293,7 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
             return;
         case "prompt-restored":
             await runtime.start(PromptRestored, {
-                theme: { titleColor: "#ffffff", titleOutline: "#593d84", messageColor: "#3f3254" },
+                theme: { messageColor: "#3f3254" },
                 title: "创建角色",
                 message: "在该服务器创建1名新角色?",
                 confirmText: "确定",

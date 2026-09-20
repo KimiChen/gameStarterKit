@@ -4,7 +4,7 @@
   "components": [
     {
       "key": "BackpackResourceCounter",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackResourceCounter.tsx",
+      "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackResourceCounter.tsx",
       "psd": "components/BackpackResourceCounter/component.psd",
       "guid": "9a60e4b1-6e89-9e12-fd6e-477791cd8fd3",
       "width": 153,
@@ -22,7 +22,7 @@
     },
     {
       "key": "ItemSlot",
-      "source": "apps/client/src/ui-uniflex/components/item/ItemSlot.tsx",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/item/ItemSlot.tsx",
       "psd": "components/ItemSlot/component.psd",
       "guid": "ba339399-203f-e702-865b-e40f02a8b375",
       "width": 154,
@@ -31,7 +31,7 @@
     },
     {
       "key": "BackpackItemCard",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackItemCard.tsx",
+      "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx",
       "psd": "components/BackpackItemCard/component.psd",
       "guid": "c55635f8-3eab-78e3-bf53-12428d929713",
       "width": 154,
@@ -49,7 +49,7 @@
     },
     {
       "key": "BackpackQuantityControl",
-      "source": "apps/client/src/ui-uniflex/pages/Backpack/components/BackpackQuantityControl.tsx",
+      "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackQuantityControl.tsx",
       "psd": "components/BackpackQuantityControl/component.psd",
       "guid": "f5f5dcdc-c9a3-c565-ecbb-f13bd63ecc9c",
       "width": 750,

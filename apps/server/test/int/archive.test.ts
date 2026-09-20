@@ -37,6 +37,7 @@ import { makeHolderId, tryAcquireLease, type SingletonLease } from "../../src/co
 import { acquireLease, withUserLock } from "../../src/core/locks";
 import { ArchiveAuthorityConflictError, BusyError, ThawingError } from "../../src/core/errors";
 import { withUser } from "../../src/core/uow";
+import { withKitTx } from "../../src/core/infra/kitApi";
 import { createUser } from "../../src/core/userRecord";
 import { writeGroupSess } from "../../src/core/auth/session";
 import { deriveOpId, redisApply } from "../../src/core/economy/outbox";
@@ -203,6 +204,7 @@ after(async () => {
       });
     }
     await pool.execute("DELETE FROM user_archive WHERE user_id = ?", [u]);
+    await pool.execute("DELETE FROM persona WHERE user_id = ?", [u]);
     await pool.execute("DELETE FROM gameplay_outbox WHERE user_id = ?", [u]);
   }
   for (const sId of [0, 1, 2]) { await rebuildUsage(sId); }
@@ -234,6 +236,16 @@ test("同 uid 跨区：archive/LRU/freeze/thaw 物理隔离，一区恢复不触
   await seedFullUserInZone(u, 2, "二区");
   await makeCold(u, 1);
   await makeCold(u, 2);
+  // MMO MF2：persona 表不参与冷档——freeze / thaw 前后两区 persona 行逐字段不变（源码钉在 test/kit-persona.test.ts，这里是真库证明）
+  await withKitTx("arena", 1, async (tx) => { await tx.createPersona(u, 0, { zone: 1 }); });
+  await withKitTx("arena", 2, async (tx) => { await tx.createPersona(u, 0, { zone: 2 }); });
+  const personaRows = async (): Promise<unknown[]> => {
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      "SELECT server_id, slot, status, control_epoch, session_generation, world_address, meta FROM persona WHERE user_id = ? ORDER BY server_id", [u]);
+    return rows.map((r) => [Number(r.server_id), Number(r.slot), Number(r.status), Number(r.control_epoch), Number(r.session_generation), r.world_address, r.meta]);
+  };
+  const personaBefore = await personaRows();
+  assert.deepEqual(personaBefore, [[1, 0, 0, 0, 0, null, { zone: 1 }], [2, 0, 0, 0, 0, null, { zone: 2 }]]);
   const bucket = activeLruBucketOf(u);
   const key1 = await zoneCtx.run({ sId: 1 }, async () => kActiveLru(bucket));
   const key2 = await zoneCtx.run({ sId: 2 }, async () => kActiveLru(bucket));
@@ -254,6 +266,7 @@ test("同 uid 跨区：archive/LRU/freeze/thaw 物理隔离，一区恢复不触
     "SELECT server_id FROM user_archive WHERE user_id = ? ORDER BY server_id", [u],
   );
   assert.deepEqual(rows.map((row) => Number(row.server_id)), [1, 2]);
+  assert.deepEqual(await personaRows(), personaBefore, "两区都冻结后 persona 行原样（冷档 ⛔ 不碰 persona）");
 
   await ensureLive(u, 1);
   assert.equal((await dumpAll(u, 1)).user.nickname, "一区");
@@ -262,6 +275,7 @@ test("同 uid 跨区：archive/LRU/freeze/thaw 物理隔离，一区恢复不触
   assert.equal(await zoneCtx.run({ sId: 2 }, () => clientFor(u).exists(kUser(u))), 0);
   await ensureLive(u, 2);
   assert.equal((await dumpAll(u, 2)).user.nickname, "二区");
+  assert.deepEqual(await personaRows(), personaBefore, "两区都解冻后 persona 行仍原样（thaw ⛔ 不碰 persona）");
 });
 
 test("真实 Redis maxmemory=0：worker 水位 fail-closed，候选保持热档", async () => {
