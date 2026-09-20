@@ -12,7 +12,8 @@
  *  - MK1-B3 两图交接：portal 不存在 / 不在半径 / 在途 ⇒ rejected；门内 ⇒ 框架交接端口（目标图 + kit 载荷）且落点先进 persona 快照；端口失败 ⇒ rejected + 落点清；
  *    Committed ⇒ perSession transferReady；目标图（东郊 2 只 slime）按 arrival 落位、HP / MP 随身，异图 / 未知落点 ⇒ 首个出生点；
  *  - MK1-B4 检查点定稿（schema v2）：onPersonaCheckpoint 只给该会话的 persona 快照；冷却按 tick 差折算剩余 ms 并在进图时按 fixedStep 回灌；分线快照 v2 槽位
- *    （loot / scriptVars / timers / regions）往返、timers 按 tick 差重排、regions 覆盖内容包缺省；v1 快照（无新字段）照常回灌。
+ *    （loot / scriptVars / timers / regions）往返、timers 按 tick 差重排、regions 覆盖内容包缺省；v1 快照（无新字段）照常回灌；
+ *  - MK1-B6 生产节拍（MMO_WORLD_TUNING）：角色位置每 2 步进观察者流、停下那步补 bump（终点必到）、本人 pos 回执仍每步；兴趣集每 4 步重算（enter 最多晚 3 步）、离座清缓存。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
@@ -51,9 +52,9 @@ interface Harness {
 
 type TransferPort = (session: string, target: WorldTransferTarget) => Promise<WorldTransferReady>;
 
-function harness(content: IContentPackIndex = CONTENT, transfer: TransferPort | null = null): Harness {
+function harness(content: IContentPackIndex = CONTENT, transfer: TransferPort | null = null, tuning: { characterUpdateEveryTicks?: number; interestEveryTicks?: number } = {}): Harness {
     const characters = new Map<string, MmoCharacterRow>();
-    const mode = createMmoWorldMode({ content, loadCharacter: async (_sId, personaId) => characters.get(personaId) ?? null, checkpoint: null });
+    const mode = createMmoWorldMode({ content, loadCharacter: async (_sId, personaId) => characters.get(personaId) ?? null, checkpoint: null, ...tuning });
     const state = createRoomStateForMode("mmoWorld") as MmoWorldRoomState;
     const direct: Harness["direct"] = [];
     const batches: WorldCheckpointBatch[] = [];
@@ -403,4 +404,35 @@ test("检查点 v2：onPersonaCheckpoint 只给该会话；冷却剩余 ms 往�
     assert.deepEqual([legacy.mode.__probe.entities().get(instance.creatures[0]!.id)!.x, legacy.mode.__probe.timers().size, legacy.mode.__probe.regions().size, legacy.mode.__probe.vars()], [1300, 0, 0, {}]);
     await seat(legacy, "a", "p-a", buildCheckpointEnvelope({ rev: 1, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 1, snapshot: { mapId: "greybox", x: 1100, y: 1000, hp: 40, mp: 10 } satisfies MmoPersonaSnapshot }));
     assert.deepEqual([legacy.mode.__probe.moverOf("a")!.x, legacy.mode.__probe.moverOf("a")!.cooldowns.size], [1100, 0]);
+});
+
+test("生产节拍（MMO_WORLD_TUNING 2 / 4）：位置每 2 步进流一次（相位按实体错开）、停下后流里的终点 = 权威位置、pos 回执仍每步；兴趣集每 4 步重算（走进视距 enter 最多晚 3 步、恰一次）、零泄露不变", async () => {
+    const h = harness(CONTENT, null, { characterUpdateEveryTicks: 2, interestEveryTicks: 4 });
+    await activeWorld(h);
+    await seat(h, "a", "p-a");
+    await seat(h, "b", "p-b", personaAt(1000, 1900), "dusk");
+    step(h);
+    drain(h, "a");
+    drain(h, "b");
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 1, dir: { x: 1, y: 0 } });
+    step(h, 4); // tick 2..5（各 6 单位 ⇒ 1024）：任意 4 个连续 tick 里恰 2 个是本实体的节拍 tick ⇒ rev 2
+    const moving = drain(h, "a").filter((m) => m.type === S2C.MmoWorldUpdate).map((m) => m.payload as IMmoWorldUpdate);
+    assert.deepEqual(moving.map((u) => u.rev), [2], "四步只进流两次（合并后一条，rev 2）");
+    assert.ok(moving[0]!.x === 1018 || moving[0]!.x === 1024, `流里是节拍 tick 的位置（1018 或 1024，视相位）：${moving[0]!.x}`);
+    assert.equal(h.direct.filter((m) => m.session === "a" && m.type === S2C.MmoWorldPos).length, 4, "本人 pos 回执仍每步");
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 2, dir: { x: 0, y: 0 } });
+    step(h, 2);
+    const mover = h.mode.__probe.moverOf("a")!;
+    const stopped = drain(h, "a").filter((m) => m.type === S2C.MmoWorldUpdate).map((m) => m.payload as IMmoWorldUpdate);
+    const lastX = stopped.length > 0 ? stopped.at(-1)!.x : moving.at(-1)!.x;
+    assert.equal(lastX, mover.x, "停下后流里的终点 = 权威位置（相位落在奇数 tick 时由停下那步补 bump）");
+    assert.equal(mover.x, 1024);
+    // 兴趣集节拍：B 从 900 单位外向南走进视距（第 84 步进 400），enter 最多晚 3 步
+    h.runtime.enqueue("b", C2S.MmoWorldMove, { seq: 1, dir: { x: 0, y: -1 } });
+    step(h, 83);
+    assert.equal(mentions(drain(h, "a"), "char:c-p-b"), 0, "零泄露：进视距前 A 的出站不含 B");
+    step(h, 4);
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldEnter), ["char:c-p-b"], "enter 恰一次（≤ 4 步内）");
+    step(h, 8);
+    assert.equal(idsOf(drain(h, "a"), S2C.MmoWorldEnter).length, 0, "⛔ 重复 enter");
 });

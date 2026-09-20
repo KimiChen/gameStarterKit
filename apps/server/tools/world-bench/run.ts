@@ -35,6 +35,7 @@ import { emptyBotStats, seededRng, type BotStats, type Scenario } from "./scenar
 import { snakeBaseline } from "./scenarios/snake-baseline";
 import { viewRange100, viewRange300 } from "./scenarios/view-range";
 import { mmoGreybox } from "./scenarios/mmo-greybox";
+import { mmoHotspot } from "./scenarios/mmo-hotspot";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const SCENARIOS: Readonly<Record<string, Scenario>> = {
@@ -42,6 +43,7 @@ const SCENARIOS: Readonly<Record<string, Scenario>> = {
   [viewRange100.id]: viewRange100,
   [viewRange300.id]: viewRange300,
   [mmoGreybox.id]: mmoGreybox,
+  [mmoHotspot.id]: mmoHotspot,
 };
 
 const { values: args, positionals } = parseArgs({

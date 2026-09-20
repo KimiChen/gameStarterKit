@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "world-bench",
+  "scenario": "mmo-greybox",
+  "description": "MMO MK0 场景 A：mmoWorld 单分线（greybox），192 只 idle slime，机器人各一角色（建角 + 凭据），每 300 ms 按种子随机方向 move（10% 停）；周期检查点照常落库",
+  "startedAt": "2026-09-20T06:09:02.696Z",
+  "commit": "3a0e8c29",
+  "node": "v26.5.0",
+  "config": {
+    "bots": 40,
+    "seconds": 20,
+    "seed": 7,
+    "sId": 0
+  },
+  "rooms": {
+    "count": 1,
+    "clientsPerRoom": [
+      40
+    ]
+  },
+  "tick": {
+    "count": 393,
+    "mean": 9.788,
+    "p50": 10.329,
+    "p95": 20.477,
+    "p99": 21.845,
+    "max": 22.56,
+    "fixedStepMs": 50
+  },
+  "outbound": {
+    "bytesTotal": 31597796,
+    "bytesPerSessionPerSec": {
+      "count": 40,
+      "mean": 39466.475,
+      "p50": 40722,
+      "p95": 42703,
+      "p99": 42817,
+      "max": 42817
+    }
+  },
+  "clientSide": {
+    "deltaMessagesPerSec": {
+      "count": 40,
+      "mean": 333.972,
+      "p50": 344.13,
+      "p95": 362.27,
+      "p99": 363.27,
+      "max": 363.27
+    },
+    "deltaBytesPerSec": {
+      "count": 40,
+      "mean": 44693.65,
+      "p50": 46140,
+      "p95": 48509,
+      "p99": 48575,
+      "max": 48575
+    },
+    "inputsSent": 2654,
+    "relives": 0,
+    "runResults": 0,
+    "errors": 0
+  },
+  "baseline": {
+    "bytesPerJoin": {
+      "count": 40,
+      "mean": 9348.425,
+      "p50": 9555,
+      "p95": 12777,
+      "p99": 12777,
+      "max": 12777
+    },
+    "begins": 40
+  },
+  "eventLoop": {
+    "p50": 11.493,
+    "p99": 32.915,
+    "max": 38.535
+  },
+  "memory": {
+    "rssStartMB": 149,
+    "rssEndMB": 228.2
+  }
+}

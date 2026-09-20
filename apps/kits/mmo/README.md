@@ -10,7 +10,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
 | MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
-| MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | 施工中：B1 movement 面 ✅、B2 AOI 接入 ✅、B3 两图交接 ✅、B4 检查点 ✅、B5 社交包装 ✅ 2026-09-20（kit 0.1.5；B6 未开工） |
+| MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | B1–B6 ✅ 2026-09-20 交付（kit 0.1.6）；**退出待拍板**：场景 B 热点 100 人未达 kill criterion（50 人贴线达标），见 MMO.md §12 MK1 行 |
 | MK2 模拟闭环 | combat + ai 面、掉落 | 未开工 |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 未开工 |
 | MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 未开工 |
@@ -91,9 +91,9 @@ greybox-east（1000×1000，slime ×2）经 gate-east / gate-west 互通，两�
 `content` 面 `validateContentPack` 过闸（结构 / 数值域 / 引用完整性 / 几何在图内 / 碰撞位图形态 / 出生・复活・刷新点不落墙；可达性随 MK2 nav）。⛔ 不是 JSON 文件：kit 服务端代码不能读文件、
 tsconfig 未开 resolveJsonModule；MK4 改经贡献点 `content`（data 贡献本就是 JSON → `contributions.generated.ts`）装载，届时字面量退役。
 
-## 基准（MK0-B6，`tools/world-bench` 剧本 `mmo-greybox`）
+## 基准（MK0-B6 `mmo-greybox` 场景 A；MK1-B6 `mmo-hotspot` 场景 B）
 
-场景 A 首次数字见 MMO.md §12 MK0 行与 `docs/perf/world-bench/*-mmo-greybox-*.json`；⚠ 机器人与服务端同进程，只用于比较与阈值设定。
+场景 A 首次数字见 MMO.md §12 MK0 行；MK1-B6 起两剧本都用生产节拍 `MMO_WORLD_TUNING`（`rooms/modes/mmoWorld/index.ts`：角色位置每 2 步 = 10 Hz 进观察者流、相位按实体错开、停下那步补 bump、本人 pos 回执仍 20 Hz；兴趣集每 4 步 = 200 ms 按会话相位重算；单测直构 mode 缺省 1 / 1）。MK1 数字（20 s / 种子 7）：A 40 人 192 只 tick p99 16.2 ms、出站 p50 40.2 KB/s/会话（逐步节拍 75.2 → −47%）；B 热点 500 只 slime：25 人 p99 15.9 ms / 40.5 KB/s ✅、50 人 p99 24.9 ms / 68.5 KB/s ✅（贴线）、100 人 p99 55.2 ms / 125.8 KB/s ❌——热点上限的本质是互见人数 × 更新率的 O(N²) 扇出，且同进程机器人把 SDK 解码算进事件循环；详见 MMO.md §12 MK1 行偏差 ⑧。报告 `docs/perf/world-bench/2026-09-20T14*-mmo-{greybox-mk1-exit,hotspot-hot25|50|100-exit}.json`；⚠ 只用于比较与阈值判定。
 
 ## 回退窗口（§7.3，MF1 冻结）
 

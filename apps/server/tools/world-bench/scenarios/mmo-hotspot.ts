@@ -1,8 +1,9 @@
 /**
- * 剧本 mmo-greybox（MMO MK0-B6，docs/MMO.md §10.1 场景 A「灰盒」首次数字）：机器人各一角色（characters 面建角 + world.enter 同形凭据）进 mmoWorld
- * 单分线（greybox 图；灰盒包扩成 SPAWN_GRID² 处刷新点 × SPAWN_COUNT 只 idle slime = 脚本实体），每 MOVE_INTERVAL_MS 按种子随机方向发 `c2s.mmoWorld.move`
- * （STOP_RATIO 停），视野流 enter / update / leave / private 记作 delta、baseline 三件记作 baseline（JSON 长度作代理）；周期检查点（30 s）照常落库
- * （DB 写耗时归 tick 采样）。跑完删角色 / persona / 分线行。⚠ 机器人与服务端同进程，数字只用于比较与阈值设定（§11.2）。
+ * 剧本 mmo-hotspot（MMO MK1-B6，docs/MMO.md §10.1 场景 B「热点」+ §11.2 kill criterion）：mmoWorld 单分线（greybox），HOTSPOT_GRID² 处刷新点 × SPAWN_COUNT 只
+ * idle slime 全挤在出生点周围 ±HOTSPOT_RADIUS（10² × 5 = 500 只脚本实体），机器人各一角色从出生点起、每 MOVE_INTERVAL_MS 点地到热点内随机一点
+ * （⛔ 离开热点 ⇒ 每人视野常驻 ≈ 兴趣集上限 256）、每 CHAT_INTERVAL_MS 发一句附近聊天（框架 core 世界 token，受众 = 兴趣集含本人的会话 ⇒ 100 人热点里
+ * 每句扇出 ≤ 100 份，单 seq 流不可丢类）；视野流 + 私有流 + 附近聊天记作 delta。逐级用 `--bots 25 / 50 / 100` 跑三次（§10.1「逐级」）。
+ * ⚠ 施法 / 拾取归 MK2 / MK3，本剧本以聊天 + 点地代替「聚集施法 / 拾取」的推送流深度压力；机器人与服务端同进程，数字只用于比较与阈值判定。
  */
 import type { Room as SDKRoom } from "@colyseus/sdk";
 import { C2S, GAMEPLAY_CATALOG, S2C, WORLD_ROOM_PROTOCOL_VERSION, WorldPhase, type IWorldRoomJoinOptions } from "@game/shared";
@@ -20,42 +21,46 @@ import { worldModeRegistry } from "../../../src/rooms/WorldMode";
 import { MMO_WORLD_TUNING, createMmoWorldMode } from "../../../src/rooms/modes/mmoWorld/index";
 import type { BotStats, Rng, Scenario } from "../scenario";
 
-/** 刷新点网格边长（SPAWN_GRID² 处）与每处只数：8² × 3 = 192 只脚本实体（§10.1 场景 A：100–200）。 */
-const SPAWN_GRID = 8;
-const SPAWN_COUNT = 3;
+/** 热点中心 = 出生点 (1000, 1000)；刷新点网格 10² × 5 = 500 只全在 ±HOTSPOT_RADIUS 内。 */
+const HOTSPOT_CENTER = { x: 1000, y: 1000 };
+const HOTSPOT_RADIUS = 300;
+const HOTSPOT_GRID = 10;
+const SPAWN_COUNT = 5;
 const MOVE_INTERVAL_MS = 300;
-const STOP_RATIO = 0.1;
+const CHAT_INTERVAL_MS = 4_000;
 const MODE_ID = "mmoWorld";
 
-/** 灰盒包扩容：同一张图，刷新点铺满全图（确定性）。 */
-function benchPack(): IContentPack {
-  const map = GREYBOX_PACK.maps[0]!;
+function hotspotPack(): IContentPack {
   const spawns: ISpawnDef[] = [];
-  for (let row = 0; row < SPAWN_GRID; row += 1) {
-    for (let col = 0; col < SPAWN_GRID; col += 1) {
+  for (let row = 0; row < HOTSPOT_GRID; row += 1) {
+    for (let col = 0; col < HOTSPOT_GRID; col += 1) {
       spawns.push({
-        spawnId: `bench-${row}-${col}`, mapId: GREYBOX_MAP_ID, templateId: GREYBOX_CREATURE_ID,
-        pos: { x: Math.round((map.size.w / (SPAWN_GRID + 1)) * (col + 1)), y: Math.round((map.size.h / (SPAWN_GRID + 1)) * (row + 1)) },
+        spawnId: `hot-${row}-${col}`, mapId: GREYBOX_MAP_ID, templateId: GREYBOX_CREATURE_ID,
+        pos: {
+          x: Math.round(HOTSPOT_CENTER.x - HOTSPOT_RADIUS + ((2 * HOTSPOT_RADIUS) / (HOTSPOT_GRID - 1)) * col),
+          y: Math.round(HOTSPOT_CENTER.y - HOTSPOT_RADIUS + ((2 * HOTSPOT_RADIUS) / (HOTSPOT_GRID - 1)) * row),
+        },
         count: SPAWN_COUNT, waypoints: [], managed: "kit",
       });
     }
   }
-  return { ...GREYBOX_PACK, packId: "greybox-bench", spawns };
+  // 灰盒 v3 有两张图：热点只在 greybox；东郊刷新点去掉（不进本分线）
+  return { ...GREYBOX_PACK, packId: "greybox-hotspot", spawns };
 }
 
-const nameOf = (uid: string, index: number): string => `b${index}${uid.replace(/[^A-Za-z0-9]/gu, "").slice(-8)}`.slice(0, 16);
+const nameOf = (uid: string, index: number): string => `h${index}${uid.replace(/[^A-Za-z0-9]/gu, "").slice(-8)}`.slice(0, 16);
 
-export const mmoGreybox: Scenario = {
-  id: "mmo-greybox",
-  description: `MMO MK0 场景 A：mmoWorld 单分线（greybox），${SPAWN_GRID * SPAWN_GRID * SPAWN_COUNT} 只 idle slime，机器人各一角色（建角 + 凭据），每 ${MOVE_INTERVAL_MS} ms 按种子随机方向 move（${STOP_RATIO * 100}% 停）；周期检查点照常落库`,
+export const mmoHotspot: Scenario = {
+  id: "mmo-hotspot",
+  description: `MMO MK1 场景 B「热点」：mmoWorld 单分线（greybox），${HOTSPOT_GRID * HOTSPOT_GRID * SPAWN_COUNT} 只 idle slime 挤在出生点 ±${HOTSPOT_RADIUS}，机器人各一角色、每 ${MOVE_INTERVAL_MS} ms 点地到热点内随机点、每 ${CHAT_INTERVAL_MS} ms 一句附近聊天；逐级 --bots 25 / 50 / 100`,
   register() {
-    const content = indexContentPack(validateContentPack(benchPack()));
-    // MK1-B6 起用生产节拍（MMO_WORLD_TUNING）；MK0 首次数字是逐步节拍（1 / 1）
+    const content = indexContentPack(validateContentPack(hotspotPack()));
+    // 生产节拍（MMO_WORLD_TUNING：角色位置 10 Hz 进观察者流、本人 pos 回执 20 Hz、兴趣集每 200 ms 重算）——量的是要上线的配置
     return worldModeRegistry.register(MODE_ID, () => createMmoWorldMode({ content, ...MMO_WORLD_TUNING }) as never);
   },
   world: {
     async prepare(uid, sId, index) {
-      const created = await createCharacter(uid, sId, { slot: 0, name: nameOf(uid, index), classId: "fighter", factionId: "dawn" }, mmoOpId(uid, sId, "createCharacter", "bench"));
+      const created = await createCharacter(uid, sId, { slot: 0, name: nameOf(uid, index), classId: index % 2 === 0 ? "fighter" : "caster", factionId: index % 2 === 0 ? "dawn" : "dusk" }, mmoOpId(uid, sId, "createCharacter", "bench"));
       const personaId = created.character.personaId;
       const control = await readControl(sId, personaId);
       const issued = await issueWorldTicket({ sId, uid, personaId, worldAddress: worldAddressOf(sId, GREYBOX_MAP_ID, 0), controlEpoch: control?.controlEpoch ?? 0, transferId: null, nowMs: Date.now() });
@@ -115,7 +120,7 @@ export const mmoGreybox: Scenario = {
         stats.firstBaselineAtMs = Date.now();
       }
     });
-    for (const type of [S2C.MmoWorldEnter, S2C.MmoWorldUpdate, S2C.MmoWorldLeave, S2C.MmoWorldPrivate]) {
+    for (const type of [S2C.MmoWorldEnter, S2C.MmoWorldUpdate, S2C.MmoWorldLeave, S2C.MmoWorldPrivate, S2C.MmoWorldPos, S2C.WorldChat]) {
       room.onMessage(type, (value: unknown) => {
         stats.deltaMessages += 1;
         stats.deltaBytes += JSON.stringify(value).length;
@@ -123,14 +128,21 @@ export const mmoGreybox: Scenario = {
     }
     room.onMessage("*", () => undefined);
     let seq = 0;
-    const timer = setInterval(() => {
+    const mover = setInterval(() => {
       if (!room.connection?.isOpen) return;
       seq += 1;
-      const stop = rng() < STOP_RATIO;
       const angle = rng() * Math.PI * 2;
-      room.send(C2S.MmoWorldMove, { seq, dir: stop ? { x: 0, y: 0 } : { x: Math.cos(angle), y: Math.sin(angle) } });
+      const radius = rng() * HOTSPOT_RADIUS;
+      room.send(C2S.MmoWorldMove, { seq, target: { x: Math.round(HOTSPOT_CENTER.x + Math.cos(angle) * radius), y: Math.round(HOTSPOT_CENTER.y + Math.sin(angle) * radius) } });
       stats.inputsSent += 1;
     }, MOVE_INTERVAL_MS);
-    return () => clearInterval(timer);
+    let line = 0;
+    const talker = setInterval(() => {
+      if (!room.connection?.isOpen) return;
+      line += 1;
+      room.send(C2S.WorldChat, { text: `hot ${line} ${Math.floor(rng() * 1000)}` });
+      stats.inputsSent += 1;
+    }, CHAT_INTERVAL_MS + Math.floor(rng() * 500));
+    return () => { clearInterval(mover); clearInterval(talker); };
   },
 };

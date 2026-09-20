@@ -44,6 +44,11 @@ export const MMO_SPAWN_JITTER = 40;
 export const MMO_BASELINE_CHUNK_ITEMS = 32;
 /** 一个会话兴趣集上限（最近优先截断；只许比框架 OBSERVER_SYNC_LIMITS.interestMaxEntities 小，§11.2）。 */
 export const MMO_INTEREST_MAX_ENTITIES = 256;
+/**
+ * 生产节拍（MK1-B6 场景 B 热点实测后定：§11.2「只许收紧」）：角色位置每 2 步（10 Hz）进观察者流、本人 pos 回执仍每步（20 Hz）；兴趣集每 4 步（200 ms）
+ * 按会话重算（enter / leave 最多晚 150 ms）。`registerMmoWorldWorldMode` 与基准剧本都用它；单测直构 mode 缺省 1 / 1（逐步语义）。
+ */
+export const MMO_WORLD_TUNING = Object.freeze({ characterUpdateEveryTicks: 2, interestEveryTicks: 4 });
 
 export interface MmoEntity {
     readonly id: string;
@@ -88,6 +93,10 @@ export interface MmoWorldModeOptions {
     /** 检查点能力（缺省 = SQL 端口；null = 无能力（纯内存单测）；可注入 MemoryCheckpointPort 形态）。 */
     readonly checkpoint?: WorldModeCheckpointCapability | null;
     readonly capacity?: number;
+    /** 角色位置进观察者流的节拍（每 N 固定步 bump 一次 rev；停下那步必 bump）；缺省 1 = 每步。热点调优（MK1-B6），⛔ 影响本人 pos 回执 */
+    readonly characterUpdateEveryTicks?: number;
+    /** 兴趣集重算节拍（每 N 固定步按会话重算候选 + 规则；其间沿用上次集合、投影仍取当前状态）；缺省 1 = 每步 */
+    readonly interestEveryTicks?: number;
 }
 
 export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
@@ -141,6 +150,18 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     /** AOI 空间网格（格长 = 图的 aoi.cellSize；只产生候选） */
     let aoi: AoiGrid | null = null;
     const candidates: string[] = [];
+    const characterUpdateEveryTicks = Math.max(1, Math.floor(options.characterUpdateEveryTicks ?? 1));
+    const interestEveryTicks = Math.max(1, Math.floor(options.interestEveryTicks ?? 1));
+    /** 兴趣集缓存（interestEveryTicks > 1 时）：session → 上次选中的实体 id 列表 + 本会话的重算相位（按会话错开，⛔ 全房同一 tick 重算造成尖峰） */
+    const interestCache = new Map<string, { readonly ids: readonly string[]; readonly phase: number }>();
+    /** 节拍相位（按 key 哈希错开，⛔ 全房同一 tick 同时发 / 同时重算造成 tick 尖峰）。 */
+    const phaseOf = (key: string, everyTicks: number): number => {
+        let hash = 0;
+        for (let index = 0; index < key.length; index += 1) hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
+        return hash % everyTicks;
+    };
+    /** 位置已变但尚未 bump rev 的角色（节拍到 / 停下时补 bump） */
+    const revPending = new Set<string>();
 
     const mapOf = (context: WorldModeContext<MmoWorldRoomState>): IMapDef => {
         if (map === null) {
@@ -229,6 +250,15 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const center = moverOf(session);
             if (!center) return visible;
             const def = mapOf(context);
+            // 兴趣集节拍：只在本会话的相位 tick 重算，其间沿用上次集合（投影取当前状态；已消失的实体自然掉出）
+            const cached = interestEveryTicks > 1 ? interestCache.get(session) : undefined;
+            if (cached && (context.state.tick + cached.phase) % interestEveryTicks !== 0) {
+                for (const id of cached.ids) {
+                    const entity = entities.get(id);
+                    if (entity) visible.set(id, projectionOf(entity));
+                }
+                return visible;
+            }
             // 候选：网格（视距圆外接矩形覆盖的格子）→ 兴趣集：精确视距 + 规则 + 最近优先截断
             const ids = aoiOf(context).candidates(center, def.aoi.viewRadius, candidates);
             const pool: MmoEntity[] = [];
@@ -236,7 +266,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 const entity = entities.get(id);
                 if (entity) pool.push(entity);
             }
-            for (const pick of pickInterest(center, pool, def.aoi.viewRadius, MMO_INTEREST_MAX_ENTITIES)) visible.set(pick.entity.id, projectionOf(pick.entity));
+            const picked: string[] = [];
+            for (const pick of pickInterest(center, pool, def.aoi.viewRadius, MMO_INTEREST_MAX_ENTITIES)) {
+                visible.set(pick.entity.id, projectionOf(pick.entity));
+                picked.push(pick.entity.id);
+            }
+            if (interestEveryTicks > 1) interestCache.set(session, { ids: picked, phase: cached?.phase ?? phaseOf(session, interestEveryTicks) });
             return visible;
         },
         limits: { interestMaxEntities: MMO_INTEREST_MAX_ENTITIES },
@@ -254,6 +289,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             aoiOf(context).clear();
             movers.clear();
             inFlight.clear();
+            interestCache.clear();
+            revPending.clear();
             timers.clear();
             regions.clear();
             scriptVars = {};
@@ -359,6 +396,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             privateDirty.delete(session.session);
             privateSent.delete(session.session);
             inFlight.delete(session.session);
+            interestCache.delete(session.session);
+            if (id !== undefined) revPending.delete(id);
             syncPopulation(context);
             log.push(`leave:${session.session}:${reason}`);
         },
@@ -397,8 +436,18 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (result.moved) {
                     entity.x = result.x;
                     entity.y = result.y;
-                    entity.rev += 1;
                     aoiOf(context).move(entity.id, entity.x, entity.y);
+                    // 观察者流节拍：每 characterUpdateEveryTicks 步 bump 一次 rev（相位按实体错开；本人 pos 回执仍每步）
+                    if (characterUpdateEveryTicks === 1 || (step.tick + phaseOf(entity.id, characterUpdateEveryTicks)) % characterUpdateEveryTicks === 0) {
+                        entity.rev += 1;
+                        revPending.delete(entity.id);
+                    } else {
+                        revPending.add(entity.id);
+                    }
+                } else if (revPending.has(entity.id)) {
+                    // 停下那步：把节拍间攒的位置变化补进流（终点必到）
+                    entity.rev += 1;
+                    revPending.delete(entity.id);
                 }
                 entity.target = result.target;
                 if (result.moved || touched.has(entity.id)) {
@@ -479,5 +528,5 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
 /** 约定导出符号 `register<Constant>WorldMode`（codegen `registerGeneratedWorldModes` 静态 import）：登记前先取内容索引——包不合法即抛，组合根拒启。 */
 export function registerMmoWorldWorldMode(registry: WorldModeRegistry = worldModeRegistry): () => void {
     const content = contentIndex();
-    return registry.register(MMO_WORLD_MODE_ID, () => createMmoWorldMode({ content }));
+    return registry.register(MMO_WORLD_MODE_ID, () => createMmoWorldMode({ content, ...MMO_WORLD_TUNING }));
 }
