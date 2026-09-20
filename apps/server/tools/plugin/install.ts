@@ -16,9 +16,10 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { compareVersions, identityDifferences, readTreePackageManifest, type PackageManifest } from "./manifest";
-import { EMPTY_REQUIRES, type KitApiSurface } from "../plugin-codegen/pluginManifestSchema";
-import { INSTALLED_LOCK_DIR, dependentsOfKit, filesLockSha256Of, foreignLockOwners, kitApiViolations, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockManifestSummary, type LockSource, type LockSourceRegistry } from "./lock";
+import {
+  contributionSummariesOf, compareVersions, identityDifferences, readTreePackageManifest, type PackageManifest } from "./manifest";
+import { EMPTY_CONTRIBUTES, EMPTY_REQUIRES, type KitContributionSummary, type KitApiSurface } from "../plugin-codegen/pluginManifestSchema";
+import { INSTALLED_LOCK_DIR, contributorsOfKit, dependentsOfKit, filesLockSha256Of, foreignLockOwners, kitApiViolations, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockManifestSummary, type LockSource, type LockSourceRegistry } from "./lock";
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, packageMetaUuids, pluginDeclarations, readPackage, validatePackage, type ValidatedPackage } from "./package";
 import { hostMetaUuids, parseMeta } from "./meta";
@@ -188,6 +189,10 @@ function summaryOf(pkg: ValidatedPackage): LockManifestSummary {
     fguiPackages: manifest.fguiPackages,
     api: manifest.class === "kit" ? manifest.api : {},
     requires: manifest.class === "plugin" ? manifest.requires : EMPTY_REQUIRES,
+    workers: manifest.class === "kit" ? manifest.workers : [],
+    contributions: manifest.class === "kit" ? contributionSummariesOf(manifest.contributions) : {},
+    fragments: manifest.class === "kit" ? manifest.fragments : [],
+    contributes: manifest.class === "plugin" ? manifest.contributes : EMPTY_CONTRIBUTES,
   };
 }
 
@@ -206,7 +211,19 @@ export function resolveKitApi(root: string, kitId: string): { readonly api: Read
   return null;
 }
 
-/** 插件正向闸（docs/KIT.md §4）：声明依赖的每个 kit 都在宿主上，且每个 api 面 `minSupported ≤ 声明 ≤ version`。 */
+/** 宿主上一个 kit 声明的贡献点摘要（MF9）：已安装锁抬头优先；宿主自有 kit 读树；未安装 = null。 */
+export function resolveKitContributions(root: string, kitId: string): Readonly<Record<string, KitContributionSummary>> | null {
+  const lock = readInstalledLock(root, kitId);
+  if (lock) return lock.manifest.class === "kit" ? (lock.manifest.contributions ?? {}) : null;
+  const tree = readTreePackageManifest(root, kitId);
+  if (tree?.class === "kit" && tree.version === null) return contributionSummariesOf(tree.contributions);
+  return null;
+}
+
+/**
+ * 插件正向闸（docs/KIT.md §4）：声明依赖的每个 kit 都在宿主上，且每个 api 面 `minSupported ≤ 声明 ≤ version`；
+ * MF9：填充的每个贡献点都真的由该 kit 声明（contributes ⇒ requires 已在解析器耦合，这里判 id 存在性）。
+ */
 export function assertKitRequirements(root: string, manifest: PackageManifest): void {
   if (manifest.class !== "plugin") return;
   const problems: string[] = [];
@@ -218,7 +235,21 @@ export function assertKitRequirements(root: string, manifest: PackageManifest): 
     }
     for (const violation of kitApiViolations(declared, provided.api)) problems.push(`kit "${kitId}"：${violation}`);
   }
+  for (const [kitId, byId] of Object.entries(manifest.contributes)) {
+    const provided = resolveKitContributions(root, kitId);
+    if (provided === null) {
+      problems.push(`kit "${kitId}" 未安装，无法接收贡献（contributes 填充了它）`);
+      continue;
+    }
+    for (const id of Object.keys(byId)) {
+      if (!Object.prototype.hasOwnProperty.call(provided, id)) problems.push(`kit "${kitId}" 没有贡献点 "${id}"（提供：${Object.keys(provided).join(", ") || "-"}）`);
+    }
+  }
   if (problems.length > 0) fail(`拒绝：插件 "${manifest.id}" 声明的 kit 依赖无法满足（先安装 / 升级对应 kit）：\n  ${problems.join("\n  ")}`);
+}
+
+function contributionContract(summary: KitContributionSummary): string {
+  return `${summary.kind}:${[...summary.ends].sort().join("+")}:${summary.kind === "module" ? summary.export ?? "-" : summary.schemaDigest ?? "-"}`;
 }
 
 /**
@@ -230,6 +261,22 @@ export function assertKitDependentsCompatible(root: string, manifest: PackageMan
   const broken: string[] = [];
   for (const [pluginId, declared] of dependentsOfKit(root, manifest.id)) {
     for (const violation of kitApiViolations(declared, manifest.api)) broken.push(`插件 "${pluginId}"：${violation}`);
+  }
+  // MF9 反向闸：已安装插件填充过的贡献点被删、或契约（kind / ends / export / schema digest）变化 ⇒ 点名插件。
+  const previousContributions = readInstalledLock(root, manifest.id)?.manifest.contributions ?? {};
+  const nextContributions = contributionSummariesOf(manifest.contributions);
+  for (const [pluginId, byId] of contributorsOfKit(root, manifest.id)) {
+    for (const id of Object.keys(byId)) {
+      const next = Object.prototype.hasOwnProperty.call(nextContributions, id) ? nextContributions[id] : undefined;
+      if (next === undefined) {
+        broken.push(`插件 "${pluginId}"：贡献点 "${id}" 已从 kit 删除（插件仍在 contributes 里填充它）`);
+        continue;
+      }
+      const previous = Object.prototype.hasOwnProperty.call(previousContributions, id) ? previousContributions[id] : undefined;
+      if (previous !== undefined && contributionContract(previous) !== contributionContract(next)) {
+        broken.push(`插件 "${pluginId}"：贡献点 "${id}" 的契约已变化（${contributionContract(previous)} → ${contributionContract(next)}）`);
+      }
+    }
   }
   if (broken.length > 0 && !breakDependents) {
     fail(`拒绝：kit "${manifest.id}" 的新 api 面会破坏已安装插件的依赖声明（显式 --break-dependents 才放行，之后这些插件在 plugin -- check 里红，需各自升级）：\n  ${broken.join("\n  ")}`);
@@ -314,7 +361,10 @@ function gitIndexRestore(root: string, before: ReadonlyMap<string, IndexEntry>, 
 }
 
 function generatedRootsOf(root: string): readonly string[] {
-  return readGeneratedWriterPaths(root).map((entry) => (entry.endsWith("/**") ? entry.slice(0, -3) : entry));
+  // `*` 单段通配条目（每 kit 一份的生成物家族，MF9）没有稳定根：它们由 codegen 自己收回孤儿，⛔ 不作回滚根。
+  return readGeneratedWriterPaths(root)
+    .filter((entry) => entry.endsWith("/**") || !entry.includes("*"))
+    .map((entry) => (entry.endsWith("/**") ? entry.slice(0, -3) : entry));
 }
 
 /**

@@ -272,6 +272,46 @@ async function assertArchiveZoneShape(dbName: string): Promise<void> {
   }
 }
 
+/** MMO MF2-B2：资产主体形态——三张经济表的 owner 列、user_currency PK / currency_ledger uk_idem 含 owner、persona 表在位。 */
+async function assertAssetOwnerShape(dbName: string): Promise<void> {
+  const conn = await mysql.createConnection(connectionOptions(dbName));
+  try {
+    for (const tableName of ["user_currency", "currency_ledger", "gameplay_outbox"]) {
+      const [columns] = await conn.query<(ColumnRow & { COLUMN_NAME: string; CHARACTER_SET_NAME: string | null })[]>(
+        `SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, CHARACTER_SET_NAME
+           FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME IN ('owner_kind', 'owner_id')
+          ORDER BY FIELD(COLUMN_NAME, 'owner_kind', 'owner_id')`,
+        [dbName, tableName],
+      );
+      assert.deepEqual(columns.map((column) => ({
+        name: column.COLUMN_NAME, type: String(column.COLUMN_TYPE).toLowerCase(), nullable: column.IS_NULLABLE,
+        defaultValue: String(column.COLUMN_DEFAULT), charset: column.CHARACTER_SET_NAME?.toLowerCase() ?? null,
+      })), [
+        { name: "owner_kind", type: "tinyint unsigned", nullable: "NO", defaultValue: "0", charset: null },
+        { name: "owner_id", type: "varchar(64)", nullable: "NO", defaultValue: "", charset: "ascii" },
+      ], `${tableName} owner 列`);
+    }
+    const indexOf = async (tableName: string, indexName: string): Promise<string[]> => {
+      const [rows] = await conn.query<IndexRow[]>(
+        `SELECT SEQ_IN_INDEX, COLUMN_NAME, SUB_PART, NON_UNIQUE, INDEX_TYPE, COLLATION
+           FROM information_schema.STATISTICS
+          WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ?
+          ORDER BY SEQ_IN_INDEX`,
+        [dbName, tableName, indexName],
+      );
+      return rows.map((row) => row.COLUMN_NAME);
+    };
+    assert.deepEqual(await indexOf("user_currency", "PRIMARY"), ["user_id", "server_id", "owner_kind", "owner_id", "currency"]);
+    assert.deepEqual(await indexOf("currency_ledger", "uk_idem"), ["user_id", "server_id", "owner_kind", "owner_id", "idem_key"]);
+    assert.deepEqual(await indexOf("persona", "PRIMARY"), ["server_id", "persona_id"]);
+    assert.deepEqual(await indexOf("persona", "uk_persona_slot"), ["server_id", "user_id", "kit_id", "slot"]);
+    assert.deepEqual(await indexOf("persona", "idx_persona_uid"), ["user_id"], "MF2-B5 账号级撤销的 user_id 前导索引");
+  } finally {
+    await conn.end();
+  }
+}
+
 async function assertAccountTablesAbsent(dbName: string): Promise<void> {
   const conn = await mysql.createConnection(connectionOptions(dbName));
   try {
@@ -322,10 +362,12 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
     assertBootstrapOk(freshDb, "fresh 首次 bootstrap");
     await assertZoneShape(freshDb);
     await assertArchiveZoneShape(freshDb);
+    await assertAssetOwnerShape(freshDb);
     await assertAccountTablesAbsent(freshDb);
     assertBootstrapOk(freshDb, "fresh 重复 bootstrap");
     await assertZoneShape(freshDb);
     await assertArchiveZoneShape(freshDb);
+    await assertAssetOwnerShape(freshDb);
     await assertAccountTablesAbsent(freshDb);
 
     // c8 旧表：没有 server_id / idx_zone_time，且已有历史行。
@@ -376,6 +418,76 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
       await legacy.query(
         "INSERT INTO user_snapshot_readonly(user_id,snapshot,ver) VALUES ('legacy_user',JSON_OBJECT('v',1),1)",
       );
+      // MMO MF2 之前的经济三表（无 owner 列；PK / uk_idem 不含 owner）+ 存量行
+      await legacy.query(
+        `CREATE TABLE user_currency (
+           user_id    VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           server_id  SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+           currency   SMALLINT UNSIGNED NOT NULL,
+           balance    BIGINT NOT NULL DEFAULT 0,
+           version    BIGINT UNSIGNED NOT NULL DEFAULT 0,
+           last_fence BIGINT UNSIGNED NOT NULL DEFAULT 0,
+           updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+           PRIMARY KEY (user_id, server_id, currency),
+           CONSTRAINT chk_balance CHECK (balance >= 0)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`,
+      );
+      await legacy.query(
+        `CREATE TABLE currency_ledger (
+           id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+           user_id       VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           server_id     SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+           currency      SMALLINT UNSIGNED NOT NULL,
+           delta         BIGINT NOT NULL,
+           balance_after BIGINT NOT NULL,
+           idem_key      VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           reason        VARCHAR(64) NOT NULL,
+           created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+           PRIMARY KEY (id),
+           UNIQUE KEY uk_idem (user_id, server_id, idem_key),
+           KEY idx_user_time (user_id, server_id, created_at)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`,
+      );
+      await legacy.query(
+        `CREATE TABLE gameplay_outbox (
+           op_id       VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           user_id     VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           server_id   SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+           effect      JSON NOT NULL,
+           status      TINYINT UNSIGNED NOT NULL DEFAULT 0,
+           attempts    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+           last_error  VARCHAR(255) NULL,
+           created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+           updated_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+           PRIMARY KEY (op_id),
+           KEY idx_pending (status, created_at),
+           KEY idx_pending_srv (status, server_id, created_at)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`,
+      );
+      await legacy.query("INSERT INTO user_currency (user_id, server_id, currency, balance) VALUES ('legacy_user', 0, 1, 123), ('legacy_user', 2, 1, 7)");
+      await legacy.query("INSERT INTO currency_ledger (user_id, server_id, currency, delta, balance_after, idem_key, reason) VALUES ('legacy_user', 0, 1, 123, 123, 'op_legacy', 'seed')");
+      await legacy.query("INSERT INTO gameplay_outbox (op_id, user_id, server_id, effect, status) VALUES ('op_legacy_outbox', 'legacy_user', 0, JSON_OBJECT('schemaVersion', 1, 'grants', JSON_ARRAY()), 1)");
+      // MF2-B2 形态的存量 persona（无 idx_persona_uid）：B5 的账号级撤销靠它走索引，bootstrap 必须补建且行原样保留
+      await legacy.query(
+        `CREATE TABLE persona (
+           server_id          SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+           persona_id         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           user_id            VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           kit_id             VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+           slot               TINYINT UNSIGNED NOT NULL,
+           status             TINYINT UNSIGNED NOT NULL DEFAULT 0,
+           control_epoch      BIGINT UNSIGNED NOT NULL DEFAULT 0,
+           world_address      VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NULL,
+           session_generation BIGINT UNSIGNED NOT NULL DEFAULT 0,
+           meta               JSON NULL,
+           created_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+           updated_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+           PRIMARY KEY (server_id, persona_id),
+           UNIQUE KEY uk_persona_slot (server_id, user_id, kit_id, slot),
+           KEY idx_persona_user (server_id, user_id, kit_id)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci`,
+      );
+      await legacy.query("INSERT INTO persona (server_id, persona_id, user_id, kit_id, slot, session_generation) VALUES (2, 'legacy_persona_00000000', 'legacy_user', 'arena', 0, 7)");
     } finally {
       await legacy.end();
     }
@@ -383,6 +495,7 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
     assertBootstrapOk(legacyDb, "c8 存量首次升级");
     await assertZoneShape(legacyDb);
     await assertArchiveZoneShape(legacyDb);
+    await assertAssetOwnerShape(legacyDb);
     {
       const conn = await mysql.createConnection(connectionOptions(legacyDb));
       try {
@@ -413,6 +526,23 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
         assert.equal(usageRows.length, 1, "legacy archive 必须回填 s0 容量 ledger");
         assert.equal(Number(usageRows[0].row_count), 1);
         assert.ok(Number(usageRows[0].byte_count) > 0, "ledger 必须按 JSON_STORAGE_SIZE 记录正字节数");
+        // MMO MF2：存量经济行无损并入 account 主体（owner_kind 0 / owner_id ''），余额与幂等键原样保留
+        const [wallets] = await conn.query<mysql.RowDataPacket[]>(
+          "SELECT server_id, owner_kind, owner_id, balance FROM user_currency WHERE user_id = 'legacy_user' ORDER BY server_id",
+        );
+        assert.deepEqual(wallets.map((row) => [Number(row.server_id), Number(row.owner_kind), row.owner_id, Number(row.balance)]), [[0, 0, "", 123], [2, 0, "", 7]]);
+        const [ledger] = await conn.query<mysql.RowDataPacket[]>(
+          "SELECT owner_kind, owner_id, idem_key FROM currency_ledger WHERE user_id = 'legacy_user'",
+        );
+        assert.deepEqual(ledger.map((row) => [Number(row.owner_kind), row.owner_id, row.idem_key]), [[0, "", "op_legacy"]]);
+        const [outbox] = await conn.query<mysql.RowDataPacket[]>(
+          "SELECT owner_kind, owner_id, status FROM gameplay_outbox WHERE op_id = 'op_legacy_outbox'",
+        );
+        assert.deepEqual(outbox.map((row) => [Number(row.owner_kind), row.owner_id, Number(row.status)]), [[0, "", 1]]);
+        const [personas] = await conn.query<mysql.RowDataPacket[]>(
+          "SELECT server_id, slot, session_generation FROM persona WHERE user_id = 'legacy_user'",
+        );
+        assert.deepEqual(personas.map((row) => [Number(row.server_id), Number(row.slot), Number(row.session_generation)]), [[2, 0, 7]], "存量 persona 行原样保留（只补索引）");
       } finally {
         await conn.end();
       }
@@ -420,6 +550,7 @@ test("db:bootstrap 对 fresh/c8 存量均幂等，并拒绝同名错定义索引
     assertBootstrapOk(legacyDb, "c8 存量重复升级");
     await assertZoneShape(legacyDb);
     await assertArchiveZoneShape(legacyDb);
+    await assertAssetOwnerShape(legacyDb);
 
     // 同名索引不是“已经迁移”的充分条件：列顺序错误必须直接失败并说明定义不匹配。
     await admin.query(`CREATE DATABASE ${quoteDatabase(badIndexDb)} DEFAULT CHARSET utf8mb4`);

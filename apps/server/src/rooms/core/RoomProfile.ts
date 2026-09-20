@@ -9,7 +9,9 @@
  *   任何 mode 以后声明同名 profile 即获得同一组合（不复制 mode，§6.2）；
  * - 启用 owner-ready / invite profile 的 mode 必须在 state.json 声明对应 fragment
  *   （ownerReady / inviteRoom）——启动期断言（§6.2/§4.6），`assertRoomProfilesConfigured`
- *   在组合根与测试里对整个 catalog 跑一遍。
+ *   在组合根与测试里对整个 catalog 跑一遍；
+ * - `kind:"world"` 的 mode（MMO MF4-B6）⛔ 不在本表：其唯一 profile "world" 由 rooms/core/WorldProfile.ts 解析
+ *   （AccessPolicy world-ticket、无 StartPolicy），本文件的 resolve 对它拒绝、全量断言跳过它。
  */
 import { GAMEPLAY_CATALOG } from "@game/shared";
 import { ROOM_STATE_FRAGMENTS } from "../schema/GameRoomState";
@@ -53,6 +55,7 @@ const PROFILE_POLICIES: Readonly<Record<string, {
 
 type CatalogEntry = {
     readonly profiles: readonly string[];
+    readonly kind?: "match" | "world";
 };
 
 function catalogEntry(mode: string): CatalogEntry | null {
@@ -110,6 +113,9 @@ export function resolveRoomProfile(mode: string, profileId: string): RoomProfile
     if (!entry) {
         throw new Error(`[RoomProfile] 未知 mode：${mode}（不在 GAMEPLAY_CATALOG）`);
     }
+    if (entry.kind === "world") {
+        throw new Error(`[RoomProfile] mode ${mode} 是 world 形态（manifest kind:"world"）：只在 WorldRoom 经 rooms/core/WorldProfile.ts 解析，⛔ 不进 GameRoom profile 表`);
+    }
     if (!entry.profiles.includes(profileId)) {
         throw new Error(`[RoomProfile] mode ${mode} 未声明 profile "${profileId}"（manifest.profiles=${JSON.stringify(entry.profiles)}）`);
     }
@@ -144,6 +150,7 @@ export function modeDeclaresProfile(mode: string, profileId: string): boolean {
 export function assertRoomProfilesConfigured(): void {
     const declared = new Set<string>();
     for (const [mode, entry] of Object.entries(GAMEPLAY_CATALOG as Readonly<Record<string, CatalogEntry>>)) {
+        if (entry.kind === "world") continue; // world 形态由 assertWorldProfilesConfigured（rooms/core/WorldProfile.ts）断言
         for (const profileId of entry.profiles) {
             declared.add(profileId);
             resolveRoomProfile(mode, profileId);

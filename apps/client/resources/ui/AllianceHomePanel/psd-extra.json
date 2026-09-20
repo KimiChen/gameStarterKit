@@ -1,0 +1,2021 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "8c4defc6f3f87bc99c65a104fd4ddd5328bcc781be59a5999077924617a8b331",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 750,
+    "height": 1369,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"076a351f064921c5d4bac008af62882fe2d8e53cfcb518cd9f5f2c0ee2ec4824\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjc1MCwiaGVpZ2h0IjoxMzY5fSwibm9kZXMiOlt7ImlkIjo2LCJwYXJlbnQiOm51bGwsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiQWxsaWFuY2VIb21lIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjo3NTAsImhlaWdodCI6MTM2OX0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSG9tZVBhbmVsOkFsbGlhbmNlL0FsbGlhbmNlSG9tZSIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIb21lUGFuZWwifX0seyJpZCI6NywicGFyZW50Ijo2LCJwbGFuSWQiOjIsImtpbmQiOiJ2aWV3IiwibmFtZSI6IkFsbGlhbmNlSW5mb0hlYWRlciIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6NzUwLCJoZWlnaHQiOjU0MX0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIifX0seyJpZCI6OCwicGFyZW50Ijo3LCJwbGFuSWQiOjMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MzUsInkiOjMzOSwid2lkdGgiOjE5OCwiaGVpZ2h0IjoxNzh9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvZmxhZyIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjo5LCJwYXJlbnQiOjcsInBsYW5JZCI6NCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyNDIsInkiOjM4OCwid2lkdGgiOjQ3NiwiaGVpZ2h0IjoxMzF9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvaW5mby1wYW5lbCIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoxMCwicGFyZW50Ijo3LCJwbGFuSWQiOjUsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiW0xGU10iLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI1NywieSI6MzUwLCJ3aWR0aCI6MjAwLCJoZWlnaHQiOjMwfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjExLCJwYXJlbnQiOjcsInBsYW5JZCI6Niwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiLmlqflpLTluK4iLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjUwMCwieSI6MzUwLCJ3aWR0aCI6MTkwLCJoZWlnaHQiOjMyfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjEyLCJwYXJlbnQiOjcsInBsYW5JZCI6Nywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyNTYsInkiOjQwMSwid2lkdGgiOjMzLCJoZWlnaHQiOjI4fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2ljb24tbGVhZGVyIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXzoyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjEzLCJwYXJlbnQiOjcsInBsYW5JZCI6OCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyNTgsInkiOjQ0MSwid2lkdGgiOjI5LCJoZWlnaHQiOjI5fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2ljb24tcG93ZXIiLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlci9fOjMiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIifX0seyJpZCI6MTQsInBhcmVudCI6NywicGxhbklkIjo5LCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI1NCwieSI6NDgxLCJ3aWR0aCI6MzYsImhlaWdodCI6MzB9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvaWNvbi1tZW1iZXJzIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXzo0Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjE1LCJwYXJlbnQiOjcsInBsYW5JZCI6MTAsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoi55uf5Li7IiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyOTYsInkiOjM5OCwid2lkdGgiOjE2MCwiaGVpZ2h0IjozMn0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoxNiwicGFyZW50Ijo3LCJwbGFuSWQiOjExLCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuiBlOebn+aImOWKmyIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6Mjk2LCJ5Ijo0MzgsIndpZHRoIjoxNjAsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlci9fOjMiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIifX0seyJpZCI6MTcsInBhcmVudCI6NywicGxhbklkIjoxMiwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiLogZTnm5/miJDlkZjkurrmlbAiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI5NiwieSI6NDc4LCJ3aWR0aCI6MTgwLCJoZWlnaHQiOjMyfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXzo0Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjE4LCJwYXJlbnQiOjcsInBsYW5JZCI6MTMsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiODAiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjU2MCwieSI6Mzk4LCJ3aWR0aCI6MTQwLCJoZWlnaHQiOjMyfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXzo1Iiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjE5LCJwYXJlbnQiOjcsInBsYW5JZCI6MTQsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoiMTU05LiHIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1NjAsInkiOjQzOCwid2lkdGgiOjE0MCwiaGVpZ2h0IjozMn0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186NiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoyMCwicGFyZW50Ijo3LCJwbGFuSWQiOjE1LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IjI1LzUwIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1NjAsInkiOjQ3OCwid2lkdGgiOjE0MCwiaGVpZ2h0IjozMn0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186NyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoyMSwicGFyZW50Ijo3LCJwbGFuSWQiOjE2LCJraW5kIjoidmlldyIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6NTM4LCJ3aWR0aCI6NzUwLCJoZWlnaHQiOjN9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlci9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjIyLCJwYXJlbnQiOjYsInBsYW5JZCI6MTcsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MzAsInkiOjU0Nywid2lkdGgiOjY5MCwiaGVpZ2h0IjoyMTF9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvYW5ub3VuY2UtYmciLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhvbWVQYW5lbDpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIb21lUGFuZWwifX0seyJpZCI6MjMsInBhcmVudCI6NiwicGxhbklkIjoxOCwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjozMywieSI6NTUwLCJ3aWR0aCI6Njg0LCJoZWlnaHQiOjQxfSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2Fubm91bmNlLWhlYWRlciIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSG9tZVBhbmVsOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhvbWVQYW5lbCJ9fSx7ImlkIjoyNCwicGFyZW50Ijo2LCJwbGFuSWQiOjE5LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuaWp+WktOW4ruWFrOWRiuadvyIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NDgsInkiOjU1MCwid2lkdGgiOjU0MCwiaGVpZ2h0Ijo0MX0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSG9tZVBhbmVsOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhvbWVQYW5lbCJ9fSx7ImlkIjoyNSwicGFyZW50Ijo2LCJwbGFuSWQiOjIwLCJraW5kIjoidmlldyIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NjEzLCJ5Ijo1NTEsIndpZHRoIjozOCwiaGVpZ2h0IjozOH0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSG9tZVBhbmVsOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhvbWVQYW5lbCJ9fSx7ImlkIjoyNiwicGFyZW50IjoyNSwicGxhbklkIjoyMSwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MzgsImhlaWdodCI6Mzh9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvYW5ub3VuY2UtZWRpdCIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSG9tZVBhbmVsOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9fOjAvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSG9tZVBhbmVsIn19LHsiaWQiOjI3LCJwYXJlbnQiOjYsInBsYW5JZCI6MjIsImtpbmQiOiJ2aWV3IiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo2NjksInkiOjU1MSwid2lkdGgiOjM4LCJoZWlnaHQiOjM4fSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIb21lUGFuZWw6QWxsaWFuY2UvQWxsaWFuY2VIb21lL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSG9tZVBhbmVsIn19LHsiaWQiOjI4LCJwYXJlbnQiOjI3LCJwbGFuSWQiOjIzLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjozOCwiaGVpZ2h0IjozOH0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9hbm5vdW5jZS1jb3B5IiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIb21lUGFuZWw6QWxsaWFuY2UvQWxsaWFuY2VIb21lL186MS9fIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIb21lUGFuZWwifX0seyJpZCI6MjksInBhcmVudCI6NiwicGxhbklkIjoyNCwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiLmrKLov47liqDlhaXogZTnm58gLSDliqrlipvlj5HlsZXogZTnm5/vvIzorqnmiJHku6zlj5jlvpfmm7TlvLrlpKfvvIEiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjQ4LCJ5Ijo1OTgsIndpZHRoIjo2NTQsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhvbWVQYW5lbDpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvXzoxIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIb21lUGFuZWwifX0seyJpZCI6MzAsInBhcmVudCI6NiwicGxhbklkIjoyNSwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiIxLiDljYfnuqfnp5HmioDvvJrmr4/ml6XmjZDnjK7ogZTnm5/np5HmioDvvIzlj6/kvb/ogZTnm5/lv6vpgJ/lj5HlsZXjgIIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjQ4LCJ5Ijo2MzIsIndpZHRoIjo2NTQsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhvbWVQYW5lbDpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvXzoyIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIb21lUGFuZWwifX0seyJpZCI6MzEsInBhcmVudCI6NiwicGxhbklkIjoyNiwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiIyLiDpm4bnu5Pnq6DpsbznjovvvJrlj5Hotbfpm4bnu5Pnq6Dpsbznjovlj6/ojrflvpfkuLDljprlpZblirHvvIzlv6vpgJ/mj5Dpq5jmiJjlipvjgIIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjQ4LCJ5Ijo2NjQsIndpZHRoIjo2NTQsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUhvbWVQYW5lbDpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VIb21lUGFuZWwifX0seyJpZCI6MzIsInBhcmVudCI6NiwicGxhbklkIjoyNywia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiIzLiDlj4LkuI7pm4bnu5PvvJrlnKjmiJjkuonnlYzpnaLkuK3miZPlvIDoh6rliqjpm4bnu5PvvIzmr4/lpKnmnIkgNTAg5qyh5Y+C5LiO5aWW5Yqx44CCIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo0OCwieSI6Njk2LCJ3aWR0aCI6NjU0LCJoZWlnaHQiOjMyfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VIb21lUGFuZWw6QWxsaWFuY2UvQWxsaWFuY2VIb21lL186NCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSG9tZVBhbmVsIn19LHsiaWQiOjMzLCJwYXJlbnQiOjYsInBsYW5JZCI6MSwia2luZCI6InZpZXciLCJuYW1lIjoiV2lkZU1lbnVCdXR0b24iLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MzIsInkiOjc3Niwid2lkdGgiOjMyNiwiaGVpZ2h0IjoxMTR9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246MCIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiV2lkZU1lbnVCdXR0b24ifX0seyJpZCI6MzQsInBhcmVudCI6MzMsInBsYW5JZCI6Miwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MzI2LCJoZWlnaHQiOjExNH0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9idXR0b24iLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246MC9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjozNSwicGFyZW50IjozMywicGxhbklkIjozLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjMyLjUsInkiOjMwLCJ3aWR0aCI6NTUsImhlaWdodCI6NTR9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvaWNvbi13YXIiLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246MC9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjozNiwicGFyZW50IjozMywicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuaImOS6iSIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTE4LCJ5IjoyOCwid2lkdGgiOjE5MCwiaGVpZ2h0Ijo1OH0sImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjowL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjozNywicGFyZW50Ijo2LCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IldpZGVNZW51QnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjM5MiwieSI6Nzc2LCJ3aWR0aCI6MzI2LCJoZWlnaHQiOjExNH0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjoxIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjozOCwicGFyZW50IjozNywicGxhbklkIjoyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjozMjYsImhlaWdodCI6MTE0fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2J1dHRvbiIsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjoxL186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19LHsiaWQiOjM5LCJwYXJlbnQiOjM3LCJwbGFuSWQiOjMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjUuNSwieSI6MjksIndpZHRoIjo2OSwiaGVpZ2h0Ijo1Nn0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9pY29uLWhlbHAiLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246MS9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo0MCwicGFyZW50IjozNywicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuiBlOebn+W4ruWKqSIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTE4LCJ5IjoyOCwid2lkdGgiOjE5MCwiaGVpZ2h0Ijo1OH0sImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjoxL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo0MSwicGFyZW50Ijo2LCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IldpZGVNZW51QnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjMyLCJ5Ijo5MjUsIndpZHRoIjozMjYsImhlaWdodCI6MTE0fSwiaW50ZXJhY3Rpb24iOiJwcmVzcyIsImludGVyYWN0YWJsZSI6dHJ1ZSwiaWRlbnRpdHkiOnsia2V5IjoiV2lkZU1lbnVCdXR0b246QWxsaWFuY2UvQWxsaWFuY2VIb21lL1dpZGVNZW51QnV0dG9uOjIiLCJyb2xlIjoiY29tcG9uZW50IiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19LHsiaWQiOjQyLCJwYXJlbnQiOjQxLCJwbGFuSWQiOjIsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjMyNiwiaGVpZ2h0IjoxMTR9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvYnV0dG9uIiwiaWRlbnRpdHkiOnsia2V5IjoiV2lkZU1lbnVCdXR0b246QWxsaWFuY2UvQWxsaWFuY2VIb21lL1dpZGVNZW51QnV0dG9uOjIvXzowIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiV2lkZU1lbnVCdXR0b24ifX0seyJpZCI6NDMsInBhcmVudCI6NDEsInBsYW5JZCI6Mywia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjozNCwieSI6MjksIndpZHRoIjo1MiwiaGVpZ2h0Ijo1Nn0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9pY29uLWdpZnQiLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246Mi9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo0NCwicGFyZW50Ijo0MSwicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuekvOeJqSIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTE4LCJ5IjoyOCwid2lkdGgiOjE5MCwiaGVpZ2h0Ijo1OH0sImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjoyL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo0NSwicGFyZW50Ijo2LCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IldpZGVNZW51QnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjM5MiwieSI6OTI1LCJ3aWR0aCI6MzI2LCJoZWlnaHQiOjExNH0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjozIiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo0NiwicGFyZW50Ijo0NSwicGxhbklkIjoyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjozMjYsImhlaWdodCI6MTE0fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2J1dHRvbiIsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjozL186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19LHsiaWQiOjQ3LCJwYXJlbnQiOjQ1LCJwbGFuSWQiOjMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MzAuNSwieSI6MjgsIndpZHRoIjo1OSwiaGVpZ2h0Ijo1OH0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9pY29uLXRlY2giLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246My9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo0OCwicGFyZW50Ijo0NSwicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuenkeaKgCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTE4LCJ5IjoyOCwid2lkdGgiOjE5MCwiaGVpZ2h0Ijo1OH0sImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjozL18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo0OSwicGFyZW50Ijo2LCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IldpZGVNZW51QnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjMyLCJ5IjoxMDc1LCJ3aWR0aCI6MzI2LCJoZWlnaHQiOjExNH0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjo0Iiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo1MCwicGFyZW50Ijo0OSwicGxhbklkIjoyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjozMjYsImhlaWdodCI6MTE0fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2J1dHRvbiIsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjo0L186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19LHsiaWQiOjUxLCJwYXJlbnQiOjQ5LCJwbGFuSWQiOjMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MzEsInkiOjI4LCJ3aWR0aCI6NTgsImhlaWdodCI6NTh9LCJyZXNvdXJjZUlkIjoidWkvYWxsaWFuY2UvaWNvbi10ZXJyaXRvcnkiLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246NC9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo1MiwicGFyZW50Ijo0OSwicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IumihuWcsCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTE4LCJ5IjoyOCwid2lkdGgiOjE5MCwiaGVpZ2h0Ijo1OH0sImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjo0L18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo1MywicGFyZW50Ijo2LCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IldpZGVNZW51QnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjM5MiwieSI6MTA3NSwid2lkdGgiOjMyNiwiaGVpZ2h0IjoxMTR9LCJpbnRlcmFjdGlvbiI6InByZXNzIiwiaW50ZXJhY3RhYmxlIjp0cnVlLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246NSIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiV2lkZU1lbnVCdXR0b24ifX0seyJpZCI6NTQsInBhcmVudCI6NTMsInBsYW5JZCI6Miwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjowLCJ5IjowLCJ3aWR0aCI6MzI2LCJoZWlnaHQiOjExNH0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9idXR0b24iLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246NS9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo1NSwicGFyZW50Ijo1MywicGxhbklkIjozLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI3LjUsInkiOjI3LjUsIndpZHRoIjo2NSwiaGVpZ2h0Ijo1OX0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9pY29uLXNob3AiLCJpZGVudGl0eSI6eyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246NS9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo1NiwicGFyZW50Ijo1MywicGxhbklkIjo0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IuWVhuW6lyIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MTE4LCJ5IjoyOCwid2lkdGgiOjE5MCwiaGVpZ2h0Ijo1OH0sImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjo1L18iLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo1NywicGFyZW50Ijo2LCJwbGFuSWQiOjEsImtpbmQiOiJ2aWV3IiwibmFtZSI6IldpZGVNZW51QnV0dG9uIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjMyLCJ5IjoxMjI0LCJ3aWR0aCI6MzI2LCJoZWlnaHQiOjExNH0sImludGVyYWN0aW9uIjoicHJlc3MiLCJpbnRlcmFjdGFibGUiOnRydWUsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjo2Iiwicm9sZSI6ImNvbXBvbmVudCIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiJ9fSx7ImlkIjo1OCwicGFyZW50Ijo1NywicGxhbklkIjoyLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjAsIndpZHRoIjozMjYsImhlaWdodCI6MTE0fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2J1dHRvbiIsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjo2L186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19LHsiaWQiOjU5LCJwYXJlbnQiOjU3LCJwbGFuSWQiOjMsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjQuNSwieSI6MzAsIndpZHRoIjo3MSwiaGVpZ2h0Ijo1NH0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9pY29uLWdhdGhlciIsImlkZW50aXR5Ijp7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjo2L186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19LHsiaWQiOjYwLCJwYXJlbnQiOjU3LCJwbGFuSWQiOjQsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoi5Y+s6ZuGIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoxMTgsInkiOjI4LCJ3aWR0aCI6MTkwLCJoZWlnaHQiOjU4fSwiaWRlbnRpdHkiOnsia2V5IjoiV2lkZU1lbnVCdXR0b246QWxsaWFuY2UvQWxsaWFuY2VIb21lL1dpZGVNZW51QnV0dG9uOjYvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIn19XSwiY29tcG9uZW50RGVjbGFyYXRpb25zIjp7InNjaGVtYVZlcnNpb24iOjEsImtpbmQiOiJ1bmlmbGV4LWNvbXBvbmVudC1kZWNsYXJhdGlvbnMiLCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJBbGxpYW5jZUhvbWVQYW5lbCIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L3BhZ2VzL0FsbGlhbmNlL0FsbGlhbmNlSG9tZVBhbmVsLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiQWxsaWFuY2VIb21lUGFuZWwiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9BbGxpYW5jZS9BbGxpYW5jZUhvbWVQYW5lbC50c3gifSx7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlciIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L3BhZ2VzL0FsbGlhbmNlL0FsbGlhbmNlSW5mb0hlYWRlci50c3gifSx7ImtleSI6IldpZGVNZW51QnV0dG9uIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvY29tcG9uZW50cy9idXR0b24vV2lkZU1lbnVCdXR0b24udHN4In1dLCJpbnN0YW5jZXMiOlt7ImtleSI6IkFsbGlhbmNlSG9tZVBhbmVsOkFsbGlhbmNlL0FsbGlhbmNlSG9tZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUhvbWVQYW5lbCIsInJvbGUiOiJjb21wb25lbnQiLCJyb290UmVjb3JkSWQiOjZ9LHsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6N30seyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246MCIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiIsInJvbGUiOiJjb21wb25lbnQiLCJyb290UmVjb3JkSWQiOjMzfSx7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjoxIiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6Mzd9LHsia2V5IjoiV2lkZU1lbnVCdXR0b246QWxsaWFuY2UvQWxsaWFuY2VIb21lL1dpZGVNZW51QnV0dG9uOjIiLCJkZWZpbml0aW9uS2V5IjoiV2lkZU1lbnVCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjo0MX0seyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246MyIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiIsInJvbGUiOiJjb21wb25lbnQiLCJyb290UmVjb3JkSWQiOjQ1fSx7ImtleSI6IldpZGVNZW51QnV0dG9uOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9XaWRlTWVudUJ1dHRvbjo0IiwiZGVmaW5pdGlvbktleSI6IldpZGVNZW51QnV0dG9uIiwicm9sZSI6ImNvbXBvbmVudCIsInJvb3RSZWNvcmRJZCI6NDl9LHsia2V5IjoiV2lkZU1lbnVCdXR0b246QWxsaWFuY2UvQWxsaWFuY2VIb21lL1dpZGVNZW51QnV0dG9uOjUiLCJkZWZpbml0aW9uS2V5IjoiV2lkZU1lbnVCdXR0b24iLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjo1M30seyJrZXkiOiJXaWRlTWVudUJ1dHRvbjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvV2lkZU1lbnVCdXR0b246NiIsImRlZmluaXRpb25LZXkiOiJXaWRlTWVudUJ1dHRvbiIsInJvbGUiOiJjb21wb25lbnQiLCJyb290UmVjb3JkSWQiOjU3fV19LCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJBbGxpYW5jZUhvbWVQYW5lbCIsInNvdXJjZSI6ImFwcHMvY2xpZW50L3NyYy91aS11bmlmbGV4L3BhZ2VzL0FsbGlhbmNlL0FsbGlhbmNlSG9tZVBhbmVsLnRzeCJ9fQ==\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    },
+    "linkedFiles": [
+      {
+        "id": "8cc7e67d-a058-14ad-f5ae-2e44094f2c06",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T06:19:24.344Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 351870,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../AllianceInfoHeader/component.psd"
+        }
+      },
+      {
+        "id": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+        "name": "component.psd",
+        "type": "8BPS",
+        "creator": "\u0000\u0000\u0000\u0000",
+        "time": "2026-09-18T06:19:24.350Z",
+        "childDocumentID": "",
+        "linkedFile": {
+          "fileSize": 55578,
+          "name": "component.psd",
+          "fullPath": "",
+          "originalPath": "",
+          "relativePath": "../WideMenuButton/component.psd"
+        }
+      }
+    ]
+  },
+  "layers": {
+    "layer-10": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceHome [ui:AllianceHomePanel:Alliance/AllianceHome#component]",
+        "id": 10,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-11": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 541,
+        "right": 750,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceInfoHeader [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader#component]",
+        "id": 11,
+        "placedLayer": {
+          "id": "8cc7e67d-a058-14ad-f5ae-2e44094f2c06",
+          "placed": "e9d40944-71cb-413f-81f8-e266df970252",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            0,
+            0,
+            750,
+            0,
+            750,
+            541,
+            0,
+            541
+          ],
+          "width": 750,
+          "height": 541,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 541,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 750,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 250,
+                  "y": 0
+                },
+                {
+                  "x": 500,
+                  "y": 0
+                },
+                {
+                  "x": 750,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 180.33333333333334
+                },
+                {
+                  "x": 250,
+                  "y": 180.33333333333334
+                },
+                {
+                  "x": 500,
+                  "y": 180.33333333333334
+                },
+                {
+                  "x": 750,
+                  "y": 180.33333333333334
+                },
+                {
+                  "x": 0,
+                  "y": 360.6666666666667
+                },
+                {
+                  "x": 250,
+                  "y": 360.6666666666667
+                },
+                {
+                  "x": 500,
+                  "y": 360.6666666666667
+                },
+                {
+                  "x": 750,
+                  "y": 360.6666666666667
+                },
+                {
+                  "x": 0,
+                  "y": 541
+                },
+                {
+                  "x": 250,
+                  "y": 541
+                },
+                {
+                  "x": 500,
+                  "y": 541
+                },
+                {
+                  "x": 750,
+                  "y": 541
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-32": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 32,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-33": {
+      "parent": "layer-32",
+      "properties": {
+        "top": 547,
+        "left": 30,
+        "bottom": 758,
+        "right": 720,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceHomePanel:Alliance/AllianceHome/_:0#node]",
+        "id": 33,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-34": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 34,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-35": {
+      "parent": "layer-34",
+      "properties": {
+        "top": 550,
+        "left": 33,
+        "bottom": 591,
+        "right": 717,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceHomePanel:Alliance/AllianceHome/_:1#node]",
+        "id": 35,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-36": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 550,
+        "left": 48,
+        "bottom": 591,
+        "right": 588,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "斧头帮公告板 [ui:AllianceHomePanel:Alliance/AllianceHome/_:0#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            48,
+            580.12
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "斧头帮公告板",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 26,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 26,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 36,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-37": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group [ui:AllianceHomePanel:Alliance/AllianceHome/_:0#node]",
+        "id": 37,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-38": {
+      "parent": "layer-37",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 38,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-39": {
+      "parent": "layer-38",
+      "properties": {
+        "top": 551,
+        "left": 613,
+        "bottom": 589,
+        "right": 651,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceHomePanel:Alliance/AllianceHome/_:0/_#node]",
+        "id": 39,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-40": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group [ui:AllianceHomePanel:Alliance/AllianceHome/_:1#node]",
+        "id": 40,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-41": {
+      "parent": "layer-40",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 41,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-42": {
+      "parent": "layer-41",
+      "properties": {
+        "top": 551,
+        "left": 669,
+        "bottom": 589,
+        "right": 707,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceHomePanel:Alliance/AllianceHome/_:1/_#node]",
+        "id": 42,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-43": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 598,
+        "left": 48,
+        "bottom": 630,
+        "right": 702,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "欢迎加入联盟 - 努力发展联盟，让我们变得更强大！ [ui:AllianceHomePanel:Alliance/AllianceHome/_:1#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            48,
+            622.14
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "欢迎加入联盟 - 努力发展联盟，让我们变得更强大！",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 22,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 22,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 43,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-44": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 632,
+        "left": 48,
+        "bottom": 664,
+        "right": 702,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "1. 升级科技：每日捐献联盟科技，可使联盟快速发展。 [ui:AllianceHomePanel:Alliance/AllianceHome/_:2#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            48,
+            656.14
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "1. 升级科技：每日捐献联盟科技，可使联盟快速发展。",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 22,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 22,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 44,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-45": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 664,
+        "left": 48,
+        "bottom": 696,
+        "right": 702,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "2. 集结章鱼王：发起集结章鱼王可获得丰厚奖励，快速提高战力。 [ui:AllianceHomePanel:Alliance/AllianceHome/_:3#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            48,
+            688.14
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "2. 集结章鱼王：发起集结章鱼王可获得丰厚奖励，快速提高战力。",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 22,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 22,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 45,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-46": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 696,
+        "left": 48,
+        "bottom": 728,
+        "right": 702,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "3. 参与集结：在战争界面中打开自动集结，每天有 50 次参与奖励。 [ui:AllianceHomePanel:Alliance/AllianceHome/_:4#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            48,
+            720.14
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "3. 参与集结：在战争界面中打开自动集结，每天有 50 次参与奖励。",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 22,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 22,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 131.00115,
+              "g": 121.99965,
+              "b": 145.00064999999998
+            }
+          }
+        },
+        "id": 46,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-47": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 776,
+        "left": 32,
+        "bottom": 890,
+        "right": 358,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "WideMenuButton [ui:WideMenuButton:Alliance/AllianceHome/WideMenuButton:0#component]",
+        "id": 47,
+        "placedLayer": {
+          "id": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+          "placed": "f9a15929-2a51-c638-796b-ef144685aba8",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            32,
+            776,
+            358,
+            776,
+            358,
+            890,
+            32,
+            890
+          ],
+          "width": 326,
+          "height": 114,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 114,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 326,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 0
+                },
+                {
+                  "x": 326,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 38
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 38
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 38
+                },
+                {
+                  "x": 326,
+                  "y": 38
+                },
+                {
+                  "x": 0,
+                  "y": 76
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 76
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 76
+                },
+                {
+                  "x": 326,
+                  "y": 76
+                },
+                {
+                  "x": 0,
+                  "y": 114
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 114
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 114
+                },
+                {
+                  "x": 326,
+                  "y": 114
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-53": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 776,
+        "left": 392,
+        "bottom": 890,
+        "right": 718,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "WideMenuButton [ui:WideMenuButton:Alliance/AllianceHome/WideMenuButton:1#component]",
+        "id": 53,
+        "placedLayer": {
+          "id": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+          "placed": "36ac521b-a80c-509f-3e03-8e5d85826b49",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            392,
+            776,
+            718,
+            776,
+            718,
+            890,
+            392,
+            890
+          ],
+          "width": 326,
+          "height": 114,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 114,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 326,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 0
+                },
+                {
+                  "x": 326,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 38
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 38
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 38
+                },
+                {
+                  "x": 326,
+                  "y": 38
+                },
+                {
+                  "x": 0,
+                  "y": 76
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 76
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 76
+                },
+                {
+                  "x": 326,
+                  "y": 76
+                },
+                {
+                  "x": 0,
+                  "y": 114
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 114
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 114
+                },
+                {
+                  "x": 326,
+                  "y": 114
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-59": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 925,
+        "left": 32,
+        "bottom": 1039,
+        "right": 358,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "WideMenuButton [ui:WideMenuButton:Alliance/AllianceHome/WideMenuButton:2#component]",
+        "id": 59,
+        "placedLayer": {
+          "id": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+          "placed": "bf253b4a-9132-f3da-4a6f-961d31f46325",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            32,
+            925,
+            358,
+            925,
+            358,
+            1039,
+            32,
+            1039
+          ],
+          "width": 326,
+          "height": 114,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 114,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 326,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 0
+                },
+                {
+                  "x": 326,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 38
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 38
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 38
+                },
+                {
+                  "x": 326,
+                  "y": 38
+                },
+                {
+                  "x": 0,
+                  "y": 76
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 76
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 76
+                },
+                {
+                  "x": 326,
+                  "y": 76
+                },
+                {
+                  "x": 0,
+                  "y": 114
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 114
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 114
+                },
+                {
+                  "x": 326,
+                  "y": 114
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-65": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 925,
+        "left": 392,
+        "bottom": 1039,
+        "right": 718,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "WideMenuButton [ui:WideMenuButton:Alliance/AllianceHome/WideMenuButton:3#component]",
+        "id": 65,
+        "placedLayer": {
+          "id": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+          "placed": "71c2a4af-3163-e896-bdda-e3001470577b",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            392,
+            925,
+            718,
+            925,
+            718,
+            1039,
+            392,
+            1039
+          ],
+          "width": 326,
+          "height": 114,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 114,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 326,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 0
+                },
+                {
+                  "x": 326,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 38
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 38
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 38
+                },
+                {
+                  "x": 326,
+                  "y": 38
+                },
+                {
+                  "x": 0,
+                  "y": 76
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 76
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 76
+                },
+                {
+                  "x": 326,
+                  "y": 76
+                },
+                {
+                  "x": 0,
+                  "y": 114
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 114
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 114
+                },
+                {
+                  "x": 326,
+                  "y": 114
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-71": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 1075,
+        "left": 32,
+        "bottom": 1189,
+        "right": 358,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "WideMenuButton [ui:WideMenuButton:Alliance/AllianceHome/WideMenuButton:4#component]",
+        "id": 71,
+        "placedLayer": {
+          "id": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+          "placed": "ae4edcf9-14a9-73ab-48ea-0476ec327571",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            32,
+            1075,
+            358,
+            1075,
+            358,
+            1189,
+            32,
+            1189
+          ],
+          "width": 326,
+          "height": 114,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 114,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 326,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 0
+                },
+                {
+                  "x": 326,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 38
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 38
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 38
+                },
+                {
+                  "x": 326,
+                  "y": 38
+                },
+                {
+                  "x": 0,
+                  "y": 76
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 76
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 76
+                },
+                {
+                  "x": 326,
+                  "y": 76
+                },
+                {
+                  "x": 0,
+                  "y": 114
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 114
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 114
+                },
+                {
+                  "x": 326,
+                  "y": 114
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-77": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 1075,
+        "left": 392,
+        "bottom": 1189,
+        "right": 718,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "WideMenuButton [ui:WideMenuButton:Alliance/AllianceHome/WideMenuButton:5#component]",
+        "id": 77,
+        "placedLayer": {
+          "id": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+          "placed": "61efab33-c2b7-3d3e-ac0e-15cd5272ce1d",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            392,
+            1075,
+            718,
+            1075,
+            718,
+            1189,
+            392,
+            1189
+          ],
+          "width": 326,
+          "height": 114,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 114,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 326,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 0
+                },
+                {
+                  "x": 326,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 38
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 38
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 38
+                },
+                {
+                  "x": 326,
+                  "y": 38
+                },
+                {
+                  "x": 0,
+                  "y": 76
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 76
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 76
+                },
+                {
+                  "x": 326,
+                  "y": 76
+                },
+                {
+                  "x": 0,
+                  "y": 114
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 114
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 114
+                },
+                {
+                  "x": 326,
+                  "y": 114
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-83": {
+      "parent": "layer-10",
+      "properties": {
+        "top": 1224,
+        "left": 32,
+        "bottom": 1338,
+        "right": 358,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "WideMenuButton [ui:WideMenuButton:Alliance/AllianceHome/WideMenuButton:6#component]",
+        "id": 83,
+        "placedLayer": {
+          "id": "a74bf78d-5f0e-248e-c941-6f7f0ab0d098",
+          "placed": "efb41280-fc88-7391-0376-4971fc3a6238",
+          "type": "raster",
+          "pageNumber": 1,
+          "totalPages": 1,
+          "frameStep": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "duration": {
+            "numerator": 0,
+            "denominator": 600
+          },
+          "frameCount": 0,
+          "transform": [
+            32,
+            1224,
+            358,
+            1224,
+            358,
+            1338,
+            32,
+            1338
+          ],
+          "width": 326,
+          "height": 114,
+          "resolution": {
+            "value": 72,
+            "units": "Density"
+          },
+          "warp": {
+            "style": "custom",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal",
+            "bounds": {
+              "top": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "left": {
+                "value": 0,
+                "units": "Pixels"
+              },
+              "bottom": {
+                "value": 114,
+                "units": "Pixels"
+              },
+              "right": {
+                "value": 326,
+                "units": "Pixels"
+              }
+            },
+            "uOrder": 4,
+            "vOrder": 4,
+            "customEnvelopeWarp": {
+              "meshPoints": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 0
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 0
+                },
+                {
+                  "x": 326,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 38
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 38
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 38
+                },
+                {
+                  "x": 326,
+                  "y": 38
+                },
+                {
+                  "x": 0,
+                  "y": 76
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 76
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 76
+                },
+                {
+                  "x": 326,
+                  "y": 76
+                },
+                {
+                  "x": 0,
+                  "y": 114
+                },
+                {
+                  "x": 108.66666666666667,
+                  "y": 114
+                },
+                {
+                  "x": 217.33333333333334,
+                  "y": 114
+                },
+                {
+                  "x": 326,
+                  "y": 114
+                }
+              ]
+            }
+          }
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

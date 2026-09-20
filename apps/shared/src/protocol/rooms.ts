@@ -1,4 +1,5 @@
 import { assertExactKeys, boundedString, finiteInteger, guardWire, isPlainRecord, type PlainRecord, WireValidationError } from "./http";
+import { validatePersonaId } from "./identity";
 
 /**
  * 房间名定义 —— 双端共享。
@@ -10,6 +11,8 @@ export const RoomName = {
     Game: "game",
     /** 网关大厅房（服务端框架 M5）：取数/排位/邮件走单一 rpc 消息通道（docs/SERVER.md §4 Lobby RPC） */
     Lobby: "lobby",
+    /** 世界房（MMO MF4）：常驻、租约权威、按 persona 控制权准入；⛔ 不是 GameRoom 的 profile，另立房型（D13） */
+    World: "world",
 } as const;
 
 export type RoomNameType = (typeof RoomName)[keyof typeof RoomName];
@@ -60,6 +63,11 @@ export { GameplayModeId, type GameplayModeIdType } from "../gameplays/generated/
  */
 export const GAME_ROOM_PROTOCOL_VERSION = 8;
 export const LOBBY_PROTOCOL_VERSION = 7;
+/**
+ * 世界房 join 信封与 core 世界 wire 的兼容整数（MMO MF4-B1 一次定型；docs/MMO.md §5.4 MF4）。WorldRoom.onAuth 只比较它，
+ * ⛔ 不与 GAME_ROOM / LOBBY 两个整数互相参与判定；三者各自演进（版本矩阵测试钉住比较位点）。
+ */
+export const WORLD_ROOM_PROTOCOL_VERSION = 1;
 
 /** 两类房间共享的 join options 字段。 */
 export interface IRoomJoinOptions {
@@ -105,6 +113,23 @@ export interface IGameRoomJoinOptions extends IRoomJoinOptions {
     access?: IGameRoomAccess;
     /** 玩法自有参数（§4.4）：core 只透传，由对应玩法 exact-validate；⛔ 不再向顶层加玩法专用字段。 */
     modeData?: unknown;
+}
+
+/**
+ * 世界房 join options（MMO MF4-B1 一次定型，docs/MMO.md §4.2 / §5.4 MF4）：`v` 携带 WORLD_ROOM_PROTOCOL_VERSION；
+ * `mode` 是 world 形态玩法（manifest `kind: "world"`），`profile` 恒为 `"world"`（撮合 filterBy 需要它在 options 里）；
+ * `mapId` / `line`（分线，缺省由服务端分配）定位 WorldAddress；`personaId` + `ticket` 是 `world.enter`（MF8）签发的一次性准入凭据
+ * （ticket 只存 sha256 记录，⛔ 不写 state / 日志）；`resumeSeq` 是重连时客户端已收到的最后 seq（缺省从 baseline 重来）。
+ */
+export interface IWorldRoomJoinOptions extends IRoomJoinOptions {
+    mode: string;
+    modeVersion: number;
+    profile: string;
+    mapId: string;
+    line?: number;
+    personaId: string;
+    ticket: string;
+    resumeSeq?: number;
 }
 
 /**
@@ -196,6 +221,44 @@ export function validateGameRoomJoinOptions(input: unknown): IGameRoomJoinOption
         // modeData 是玩法自有参数：core 只透传（形状/字段由对应玩法 exact-validate，§4.4）。
         if (Object.prototype.hasOwnProperty.call(value, "modeData") && value.modeData !== undefined) {
             out.modeData = value.modeData;
+        }
+        return out;
+    });
+}
+
+/** mapId 与 mode / profile id 同一形状约束。 */
+export function validateWorldMapId(value: unknown, path = "options.mapId"): string {
+    const mapId = boundedString(value, path, 1, 64);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(mapId)) {
+        throw new WireValidationError("WORLD_MAP_ID", path);
+    }
+    return mapId;
+}
+
+/** 世界房 join options 的运行时校验（exact keys；personaId 用 identity.ts 的形状；ticket 与私房 ticket 同字符集）。 */
+export function validateWorldRoomJoinOptions(input: unknown): IWorldRoomJoinOptions {
+    return guardWire("options", () => {
+        const value = roomOptionsRecord(input);
+        assertExactKeys(value, ["mode", "modeVersion", "profile", "mapId", "personaId", "ticket"], ["v", "token", "sId", "line", "resumeSeq"], "options");
+        const ticket = boundedString(value.ticket, "options.ticket", 16, 128);
+        if (!ACCESS_TICKET_SHAPE.test(ticket)) {
+            throw new WireValidationError("WORLD_TICKET", "options.ticket");
+        }
+        const out: IWorldRoomJoinOptions = {
+            ...validateRoomJoinBase(value),
+            mode: validateGameplayModeId(value.mode),
+            modeVersion: finiteInteger(value.modeVersion, "options.modeVersion", 1, 1_000_000),
+            profile: validateRoomProfileId(value.profile),
+            mapId: validateWorldMapId(value.mapId),
+            personaId: validatePersonaId(value.personaId, "options.personaId"),
+            ticket,
+        };
+        // exactOptionalPropertyTypes：可选字段条件展开，⛔ 不得赋 undefined
+        if (Object.prototype.hasOwnProperty.call(value, "line") && value.line !== undefined) {
+            out.line = finiteInteger(value.line, "options.line", 0, 0xffff);
+        }
+        if (Object.prototype.hasOwnProperty.call(value, "resumeSeq") && value.resumeSeq !== undefined) {
+            out.resumeSeq = finiteInteger(value.resumeSeq, "options.resumeSeq", 0, Number.MAX_SAFE_INTEGER);
         }
         return out;
     });

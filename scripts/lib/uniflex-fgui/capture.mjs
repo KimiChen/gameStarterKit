@@ -100,7 +100,7 @@ async function connectDevtools(pageUrl, env) {
                 });
                 const snapshot = result.result?.value;
                 if (!snapshot || snapshot.kind !== "uniflex-design-snapshot") return null;
-                return snapshot;
+                return mergeScrolledRows(ws, snapshot);
             }, 30_000);
         },
         close() {
@@ -244,4 +244,97 @@ async function waitFor(probe, timeoutMs) {
         await new Promise((resolvePromise) => setTimeout(resolvePromise, 200));
     }
     throw last ?? new Error("Timed out waiting for UniFlex preview snapshot");
+}
+
+/**
+ * VirtualList 快照只含可视行：逐屏滚到底，每滚一屏用 `__UNIFLEX_RESNAPSHOT__` 重拍，
+ * 把新挂载的行按 rect 去重合并进基础快照。老预览缺钩子或合并失败时原样返回。
+ */
+const SCROLLABLE_LISTS = '[data-kind="virtual-list"], [data-kind="scroll-view"]';
+
+async function evaluateValue(ws, expression) {
+    const result = await cdp(ws, "Runtime.evaluate", { expression, returnByValue: true });
+    return result.result?.value;
+}
+
+async function mergeScrolledRows(ws, base) {
+    try {
+        if (!base || !Array.isArray(base.nodes)) return base;
+        if (!base.nodes.some((node) => node.kind === "virtual-list" || node.kind === "scroll-view")) return base;
+        const hasHook = await evaluateValue(ws, "typeof window.__UNIFLEX_RESNAPSHOT__ === 'function'");
+        if (!hasHook) return base;
+        let merged = base;
+        for (let round = 0; round < 40; round += 1) {
+            const moved = await evaluateValue(ws, `(() => {
+                let any = false;
+                for (const el of document.querySelectorAll('${SCROLLABLE_LISTS}')) {
+                    const maxTop = el.scrollHeight - el.clientHeight;
+                    if (maxTop <= 4) continue;
+                    const next = Math.min(maxTop, el.scrollTop + el.clientHeight);
+                    if (next > el.scrollTop) {
+                        el.scrollTop = next;
+                        el.dispatchEvent(new Event("scroll", { bubbles: true }));
+                        any = true;
+                    }
+                }
+                return any;
+            })()`);
+            if (!moved) break;
+            await sleep(350);
+            await evaluateValue(ws, "window.__UNIFLEX_DESIGN_SNAPSHOT__ = window.__UNIFLEX_RESNAPSHOT__()");
+            const stamped = await cdp(ws, "Runtime.evaluate", {
+                expression: STAMP_INSPECT_TEXT_STYLES,
+                returnByValue: true,
+            });
+            const extra = stamped.result?.value;
+            if (!extra?.nodes) break;
+            merged = mergeListRows(merged, extra);
+        }
+        await evaluateValue(ws, `for (const el of document.querySelectorAll('${SCROLLABLE_LISTS}')) {
+            el.scrollTop = 0;
+            el.dispatchEvent(new Event("scroll", { bubbles: true }));
+        }`);
+        return merged;
+    } catch {
+        return base;
+    }
+}
+
+function rectKey(node) {
+    if (!node.rect) return null;
+    const { x, y, width, height } = node.rect;
+    return `${Math.round(x)},${Math.round(y)},${Math.round(width)},${Math.round(height)}`;
+}
+
+export function mergeListRows(base, extra) {
+    if (!Array.isArray(extra?.nodes)) return base;
+    const baseLists = base.nodes.filter((node) => node.kind === "virtual-list" || node.kind === "scroll-view");
+    if (!baseLists.length) return base;
+    const extraListByKey = new Map();
+    for (const node of extra.nodes) {
+        if (node.kind === "virtual-list" || node.kind === "scroll-view") extraListByKey.set(rectKey(node), node);
+    }
+    let nextId = Math.max(0, ...base.nodes.map((node) => Number(node.id) || 0)) + 1;
+    const added = [];
+    for (const vl of baseLists) {
+        const counter = extraListByKey.get(rectKey(vl));
+        if (!counter) continue;
+        const existing = new Set(base.nodes.filter((node) => node.parent === vl.id).map(rectKey));
+        for (const row of extra.nodes.filter((node) => node.parent === counter.id)) {
+            const key = rectKey(row);
+            if (!key || existing.has(key)) continue;
+            existing.add(key);
+            const idMap = new Map();
+            const cloneSubtree = (src) => {
+                const nid = nextId;
+                nextId += 1;
+                idMap.set(src.id, nid);
+                added.push({ ...src, id: nid, parent: src.parent === counter.id ? vl.id : idMap.get(src.parent) });
+                for (const child of extra.nodes.filter((node) => node.parent === src.id)) cloneSubtree(child);
+            };
+            cloneSubtree(row);
+        }
+    }
+    if (!added.length) return base;
+    return { ...base, nodes: [...base.nodes, ...added] };
 }

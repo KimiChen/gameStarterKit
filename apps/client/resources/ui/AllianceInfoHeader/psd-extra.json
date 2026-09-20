@@ -1,0 +1,1224 @@
+{
+  "schemaVersion": 1,
+  "kind": "psd-supplement",
+  "sourceSha256": "1503f9cb500029a830b063525adbe62160d15d7a6145b2a1337bd6d49e86658e",
+  "preservation": "parsed-fields-only",
+  "document": {
+    "width": 750,
+    "height": 541,
+    "channels": 4,
+    "bitsPerChannel": 8,
+    "colorMode": 3,
+    "imageResources": {
+      "xmpMetadata": "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description xmlns:uf=\"urn:web-ui-to-psd:uniflex:1\" uf:sha256=\"2afe48e5e89d188b1e63e6c266b07f3435ad77e50252f70bdb064973d5697225\" uf:baseline=\"eyJraW5kIjoidW5pZmxleC1kZXNpZ24tc25hcHNob3QiLCJzY2hlbWFWZXJzaW9uIjoxLCJjYW52YXMiOnsid2lkdGgiOjc1MCwiaGVpZ2h0Ijo1NDF9LCJub2RlcyI6W3siaWQiOjcsInBhcmVudCI6bnVsbCwicGxhbklkIjoyLCJraW5kIjoidmlldyIsIm5hbWUiOiJBbGxpYW5jZUluZm9IZWFkZXIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MCwieSI6MCwid2lkdGgiOjc1MCwiaGVpZ2h0Ijo1NDF9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlciIsInJvbGUiOiJjb21wb25lbnQiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjgsInBhcmVudCI6NywicGxhbklkIjozLCJraW5kIjoiaW1hZ2UiLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjM1LCJ5IjozMzksIndpZHRoIjoxOTgsImhlaWdodCI6MTc4fSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2ZsYWciLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlci9fOjAiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIifX0seyJpZCI6OSwicGFyZW50Ijo3LCJwbGFuSWQiOjQsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjQyLCJ5IjozODgsIndpZHRoIjo0NzYsImhlaWdodCI6MTMxfSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2luZm8tcGFuZWwiLCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlci9fOjEiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIifX0seyJpZCI6MTAsInBhcmVudCI6NywicGxhbklkIjo1LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IltMRlNdIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyNTcsInkiOjM1MCwid2lkdGgiOjIwMCwiaGVpZ2h0IjozMH0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186MCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoxMSwicGFyZW50Ijo3LCJwbGFuSWQiOjYsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoi5pan5aS05biuIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1MDAsInkiOjM1MCwid2lkdGgiOjE5MCwiaGVpZ2h0IjozMn0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186MSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoxMiwicGFyZW50Ijo3LCJwbGFuSWQiOjcsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjU2LCJ5Ijo0MDEsIndpZHRoIjozMywiaGVpZ2h0IjoyOH0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9pY29uLWxlYWRlciIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186MiIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoxMywicGFyZW50Ijo3LCJwbGFuSWQiOjgsImtpbmQiOiJpbWFnZSIsIm5hbWUiOiIiLCJ2YWx1ZSI6IiIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6MjU4LCJ5Ijo0NDEsIndpZHRoIjoyOSwiaGVpZ2h0IjoyOX0sInJlc291cmNlSWQiOiJ1aS9hbGxpYW5jZS9pY29uLXBvd2VyIiwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjE0LCJwYXJlbnQiOjcsInBsYW5JZCI6OSwia2luZCI6ImltYWdlIiwibmFtZSI6IiIsInZhbHVlIjoiIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyNTQsInkiOjQ4MSwid2lkdGgiOjM2LCJoZWlnaHQiOjMwfSwicmVzb3VyY2VJZCI6InVpL2FsbGlhbmNlL2ljb24tbWVtYmVycyIsImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186NCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoxNSwicGFyZW50Ijo3LCJwbGFuSWQiOjEwLCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6Iuebn+S4uyIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6Mjk2LCJ5IjozOTgsIndpZHRoIjoxNjAsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlci9fOjIiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIifX0seyJpZCI6MTYsInBhcmVudCI6NywicGxhbklkIjoxMSwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiLogZTnm5/miJjlipsiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjI5NiwieSI6NDM4LCJ3aWR0aCI6MTYwLCJoZWlnaHQiOjMyfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXzozIiwicm9sZSI6Im5vZGUiLCJkZWZpbml0aW9uS2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIn19LHsiaWQiOjE3LCJwYXJlbnQiOjcsInBsYW5JZCI6MTIsImtpbmQiOiJ0ZXh0IiwibmFtZSI6IiIsInZhbHVlIjoi6IGU55uf5oiQ5ZGY5Lq65pWwIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4IjoyOTYsInkiOjQ3OCwid2lkdGgiOjE4MCwiaGVpZ2h0IjozMn0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186NCIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoxOCwicGFyZW50Ijo3LCJwbGFuSWQiOjEzLCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IjgwIiwidmlzaWJsZSI6dHJ1ZSwicmVjdCI6eyJ4Ijo1NjAsInkiOjM5OCwid2lkdGgiOjE0MCwiaGVpZ2h0IjozMn0sImlkZW50aXR5Ijp7ImtleSI6IkFsbGlhbmNlSW5mb0hlYWRlcjpBbGxpYW5jZS9BbGxpYW5jZUhvbWUvQWxsaWFuY2VJbmZvSGVhZGVyL186NSIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fSx7ImlkIjoxOSwicGFyZW50Ijo3LCJwbGFuSWQiOjE0LCJraW5kIjoidGV4dCIsIm5hbWUiOiIiLCJ2YWx1ZSI6IjE1NOS4hyIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NTYwLCJ5Ijo0MzgsIndpZHRoIjoxNDAsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlci9fOjYiLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIifX0seyJpZCI6MjAsInBhcmVudCI6NywicGxhbklkIjoxNSwia2luZCI6InRleHQiLCJuYW1lIjoiIiwidmFsdWUiOiIyNS81MCIsInZpc2libGUiOnRydWUsInJlY3QiOnsieCI6NTYwLCJ5Ijo0NzgsIndpZHRoIjoxNDAsImhlaWdodCI6MzJ9LCJpZGVudGl0eSI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlci9fOjciLCJyb2xlIjoibm9kZSIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIifX0seyJpZCI6MjEsInBhcmVudCI6NywicGxhbklkIjoxNiwia2luZCI6InZpZXciLCJuYW1lIjoiIiwidmFsdWUiOiIiLCJ2aXNpYmxlIjp0cnVlLCJyZWN0Ijp7IngiOjAsInkiOjUzOCwid2lkdGgiOjc1MCwiaGVpZ2h0IjozfSwiaWRlbnRpdHkiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyOkFsbGlhbmNlL0FsbGlhbmNlSG9tZS9BbGxpYW5jZUluZm9IZWFkZXIvXyIsInJvbGUiOiJub2RlIiwiZGVmaW5pdGlvbktleSI6IkFsbGlhbmNlSW5mb0hlYWRlciJ9fV0sImNvbXBvbmVudERlY2xhcmF0aW9ucyI6eyJzY2hlbWFWZXJzaW9uIjoxLCJraW5kIjoidW5pZmxleC1jb21wb25lbnQtZGVjbGFyYXRpb25zIiwiY29tcG9uZW50RG9jdW1lbnQiOnsia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvcGFnZXMvQWxsaWFuY2UvQWxsaWFuY2VJbmZvSGVhZGVyLnRzeCJ9LCJkZWZpbml0aW9ucyI6W3sia2V5IjoiQWxsaWFuY2VJbmZvSGVhZGVyIiwic291cmNlIjoiYXBwcy9jbGllbnQvc3JjL3VpLXVuaWZsZXgvcGFnZXMvQWxsaWFuY2UvQWxsaWFuY2VJbmZvSGVhZGVyLnRzeCJ9XSwiaW5zdGFuY2VzIjpbeyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXI6QWxsaWFuY2UvQWxsaWFuY2VIb21lL0FsbGlhbmNlSW5mb0hlYWRlciIsImRlZmluaXRpb25LZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIiLCJyb2xlIjoiY29tcG9uZW50Iiwicm9vdFJlY29yZElkIjo3fV19LCJjb21wb25lbnREb2N1bWVudCI6eyJrZXkiOiJBbGxpYW5jZUluZm9IZWFkZXIiLCJzb3VyY2UiOiJhcHBzL2NsaWVudC9zcmMvdWktdW5pZmxleC9wYWdlcy9BbGxpYW5jZS9BbGxpYW5jZUluZm9IZWFkZXIudHN4In19\"/></rdf:RDF></x:xmpmeta>",
+      "resolutionInfo": {
+        "horizontalResolution": 72,
+        "horizontalResolutionUnit": "PPI",
+        "widthUnit": "Inches",
+        "verticalResolution": 72,
+        "verticalResolutionUnit": "PPI",
+        "heightUnit": "Inches"
+      }
+    }
+  },
+  "layers": {
+    "layer-11": {
+      "parent": null,
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "AllianceInfoHeader [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader#component]",
+        "id": 11,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-12": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 12,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-13": {
+      "parent": "layer-12",
+      "properties": {
+        "top": 339,
+        "left": 35,
+        "bottom": 517,
+        "right": 233,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:0#node]",
+        "id": 13,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-14": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 14,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-15": {
+      "parent": "layer-14",
+      "properties": {
+        "top": 388,
+        "left": 242,
+        "bottom": 519,
+        "right": 718,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:1#node]",
+        "id": 15,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-16": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 350,
+        "left": 257,
+        "bottom": 380,
+        "right": 457,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "[LFS] [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:0#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            257,
+            373.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "[LFS]",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 196.00065,
+              "b": 0
+            }
+          }
+        },
+        "id": 16,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-17": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 350,
+        "left": 500,
+        "bottom": 382,
+        "right": 690,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "斧头帮 [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:1#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            688,
+            374.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "斧头帮",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "right",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        "effects": {
+          "scale": 1,
+          "stroke": [
+            {
+              "enabled": true,
+              "position": "outside",
+              "fillType": "color",
+              "blendMode": "normal",
+              "opacity": 1,
+              "size": {
+                "value": 2,
+                "units": "Pixels"
+              },
+              "present": true,
+              "showInDialog": true,
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0
+              }
+            }
+          ]
+        },
+        "id": 17,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-18": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 18,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-19": {
+      "parent": "layer-18",
+      "properties": {
+        "top": 401,
+        "left": 256,
+        "bottom": 429,
+        "right": 289,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:2#node]",
+        "id": 19,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-20": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 20,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-21": {
+      "parent": "layer-20",
+      "properties": {
+        "top": 441,
+        "left": 258,
+        "bottom": 470,
+        "right": 287,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:3#node]",
+        "id": 21,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-22": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group",
+        "id": 22,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-23": {
+      "parent": "layer-22",
+      "properties": {
+        "top": 481,
+        "left": 254,
+        "bottom": 511,
+        "right": 290,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Canvas [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:4#node]",
+        "id": 23,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-24": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 398,
+        "left": 296,
+        "bottom": 430,
+        "right": 456,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "盟主 [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:2#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            296,
+            422.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "盟主",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 24,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-25": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 438,
+        "left": 296,
+        "bottom": 470,
+        "right": 456,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "联盟战力 [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:3#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            296,
+            462.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "联盟战力",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 25,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-26": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 478,
+        "left": 296,
+        "bottom": 510,
+        "right": 476,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "联盟成员人数 [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:4#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            296,
+            502.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "联盟成员人数",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "left",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 26,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-27": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 398,
+        "left": 560,
+        "bottom": 430,
+        "right": 700,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "80 [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:5#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            700,
+            422.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "80",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "right",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 27,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-28": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 438,
+        "left": 560,
+        "bottom": 470,
+        "right": 700,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "154万 [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:6#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            700,
+            462.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "154万",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "right",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 28,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-29": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 478,
+        "left": 560,
+        "bottom": 510,
+        "right": 700,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "25/50 [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_:7#node]",
+        "text": {
+          "transform": [
+            1,
+            0,
+            0,
+            1,
+            700,
+            502.88
+          ],
+          "left": null,
+          "top": null,
+          "right": null,
+          "bottom": null,
+          "text": "25/50",
+          "index": 0,
+          "gridding": "none",
+          "antiAlias": "smooth",
+          "orientation": "horizontal",
+          "warp": {
+            "style": "none",
+            "value": 0,
+            "perspective": 0,
+            "perspectiveOther": 0,
+            "rotate": "horizontal"
+          },
+          "useFractionalGlyphWidths": true,
+          "superscriptSize": 0.583,
+          "superscriptPosition": 0.333,
+          "subscriptSize": 0.583,
+          "subscriptPosition": 0.333,
+          "smallCapSize": 0.7,
+          "shapeType": "point",
+          "pointBase": [
+            0,
+            0
+          ],
+          "paragraphStyle": {
+            "justification": "right",
+            "firstLineIndent": 0,
+            "startIndent": 0,
+            "endIndent": 0,
+            "spaceBefore": 0,
+            "spaceAfter": 0,
+            "autoHyphenate": true,
+            "hyphenatedWordSize": 6,
+            "preHyphen": 2,
+            "postHyphen": 2,
+            "consecutiveHyphens": 8,
+            "zone": 36,
+            "wordSpacing": [
+              0.8,
+              1,
+              1.33
+            ],
+            "letterSpacing": [
+              0,
+              0,
+              0
+            ],
+            "glyphSpacing": [
+              1,
+              1,
+              1
+            ],
+            "autoLeading": 1.2,
+            "leadingType": 0,
+            "hanging": false,
+            "burasagari": false,
+            "kinsokuOrder": 0,
+            "everyLineComposer": false
+          },
+          "style": {
+            "font": {
+              "name": "WebPSD-18463539-0-Regular",
+              "script": 0,
+              "type": 0,
+              "synthetic": 0
+            },
+            "fontSize": 24,
+            "fauxBold": true,
+            "fauxItalic": false,
+            "autoLeading": false,
+            "leading": 24,
+            "tracking": 0,
+            "autoKerning": false,
+            "kerning": 0,
+            "ligatures": false,
+            "fillColor": {
+              "r": 63.0003,
+              "g": 50.0004,
+              "b": 83.99955
+            }
+          }
+        },
+        "id": 29,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    },
+    "layer-30": {
+      "parent": "layer-11",
+      "properties": {
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "blendMode": "pass through",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Group [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_#node]",
+        "id": 30,
+        "sectionDivider": {
+          "type": 2,
+          "key": "pass",
+          "subType": 0
+        },
+        "linkGroup": 0,
+        "linkGroupEnabled": true,
+        "opened": false
+      }
+    },
+    "layer-31": {
+      "parent": "layer-30",
+      "properties": {
+        "top": 538,
+        "left": 0,
+        "bottom": 541,
+        "right": 750,
+        "blendMode": "normal",
+        "opacity": 1,
+        "clipping": false,
+        "transparencyProtected": false,
+        "hidden": false,
+        "name": "Background / fill [ui:AllianceInfoHeader:Alliance/AllianceHome/AllianceInfoHeader/_#fill]",
+        "id": 31,
+        "linkGroup": 0,
+        "linkGroupEnabled": true
+      }
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state."
+  ]
+}

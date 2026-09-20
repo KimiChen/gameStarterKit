@@ -5,8 +5,9 @@
 
 - `GameRoom.ts`：通用 transport/admission/lifecycle shell。它在 `onCreate` 按生成映射选择一次 mode root，
   之后禁止替换；shell 自身不含任何玩法规则，也没有默认玩法——未登记/未注入 mode 的房间在
-  `requireMode()` 直接 fail-fast（⛔ 不回退 ballMove）。Schema patch rate 为 50ms，fixed-step 时钟、
-  出站 S2C 校验、消息预算与开局事务都归 shell。
+  `requireMode()` 直接 fail-fast（⛔ 不回退 ballMove）。Schema patch rate 为 50ms，fixed-step 时钟与开局事务归 shell；
+  建连鉴权、C2S dispatcher、消息预算、重连宽限与出站 S2C 校验自 MMO MF3-B2 起由 `core/` 共享层实现，shell 只消费
+  （`gameRoomAuth.authenticate` / `WireDispatcher.dispatch` / `S2CPorts` / `ReconnectGrace`，见下方 `core/` 条）。
 - `GameMode.ts`：服务端玩法契约与 registry。`GameRoom` 继续拥有 transport、auth、房间锁和生命周期；玩法通过
   `createPlayer` 提供精确 player Schema，用 `roster{min,max,autoStart}` 声明人数事实——⛔ shell 里没有人数字面量，
   `maxClients`、满员闸、自动开局阈值、开局下限与开局边界重验五处全部读它。`roster.max` 不得超过 shared 的
@@ -32,6 +33,36 @@
   再跑 `onFinish`；未声明该能力的 mode（如 idle）settle 时明确不产出任何证据。registry 会在创建 mode 时
   校验必填能力，漏配即 fail-closed；root 只来自 manifest 生成映射，不由 mode factory 手写。
   ⚠ 本文件不注册任何具体玩法：登记发生在组合根 `modes/catalog.ts`。
+- `WorldRoom.ts` / `WorldMode.ts`（MMO MF4，docs/MMO.md §4.5）：世界形态玩法（manifest `kind:"world"`）的传输壳与契约。`WorldMode` ⛔ 不继承
+  `GameMode`：十个钩子（onWorldInit / onRestore / onBeforeAdmit / onAdmit / onEnter / onLeave / onStep / onCheckpoint / onDrain / onSignal
+  + primaryEntityOf），只见会话 id / persona / 有序命令；登记表 `worldModeRegistry`（codegen `registerGeneratedWorldModes` 分表，
+  ⛔ 不混进 gameModeRegistry）。`WorldRoom`：`autoDispose=false`；`worldRoomAuth`（RoomAuth 注入 `WORLD_ROOM_PROTOCOL_VERSION` +
+  `validateWorldRoomJoinOptions`）；建房 = `core/WorldDirectory` (sId, mapId, line) → `core/WorldLease` 取租 → `core/control.acquireAuthority`
+  CAS → 生成 root（`ROOM_STATE_KIND` 必须 world）→ `core/WorldRuntime.recover` → state=active；准入固定时序 ①–⑩（persona 归属存储真源 →
+  ticket 端口（`core/WorldProfile.placeholderWorldTicketPort`，MF8 换 WorldTicket）→ onBeforeAdmit → `acquireControl` CAS → 本房同 persona
+  旧会话 lost-control → `runtime.admit`）；C2S 经同一 `WireDispatcher` 喂 `runtime.enqueue`（Active ⇒ playing，其余 ⇒ settle 只放 Ping）；
+  出站有序 outbox 每 tick 经 `S2CPorts` 排空；租约 onLost / GM / mode.requestDrain ⇒ Draining（停收准入与命令，仍推进 graceMs）⇒ 强制检查点 →
+  Offline（WITH_ERROR 关闭、归还控制权、释放租约、state offline、dispose）；空实例 sleep / run / unload 由 `WorldRuntime.evaluateEmpty` 判定。
+  **MF5b 观察者同步**：`WorldMode.observer`（与 GameMode 同形）由 `core/WorldRuntime.ts` 消费——每会话 OutboundQueue、prepareObservers（首发 / 归位 / 超限 /
+  请求 ⇒ 只含兴趣集的 baseline）→ onStep → flushObservers（差分），壳只 `drainOutbound` 在线会话（宽限中 `markAway`，⛔ 不排空、归位先 baseline）。
+  **MF7b 检查点 / 世界事件**：`WorldMode.checkpoint`（kit 的 `CheckpointPort` + schema 窗口 + 事件表）由 `core/WorldCheckpoint.ts` 编排——runtime 取批
+  （rev = 已落库 + 1，事件批移出）→ 同一 `withWorldTx` 落分线快照 + persona 快照 + 事件行 + `world_instance.checkpoint_rev` → commit；失败 rollback 放回、
+  权威已失 ⇒ Draining；Recovering `loadInstance` + superseded，准入 `loadPersona` 进 `session.checkpoint`；强制点 = drain / 离座 / `requestCheckpoint`。
+  **MF6b 附近聊天**：core 世界 token `c2s.world.chat`（rateCost 2，只在 Active）/ `s2c.world.chat`（perSession）；壳固定序 = 在座 → `chatPolicy.canSend` →
+  `transform`（结果再过 wire validator）→ `runtime.sayNearby`（受众 = 兴趣集含 `primaryEntityOf(sender)` 的在座会话 ∪ 发送者，进观察者队列与
+  enter / leave 同序；⛔ 广播、⛔ Redis）；任一步拒 ⇒ BadRequest。match 形态 GameRoom 对该 token 直接 BadRequest。
+  **MF8 交接与一次性凭据**：准入固定时序 = 同步公共拒绝 → 同步占位 → 异步 claim（`core/WorldTicket.ts`：Lua CAS 绑定 uid / persona /
+  worldAddress / controlEpoch，一次性）→ 同步重验 → 交接凭据先读持久状态（非 committed = 已消费，取控制权前拒）→ persona 检查点回读 →
+  acquireControl → activate（唯一一次）→ onAdmit → seat → finalize；claim 后失败 release。源房 `context.transfer.request` ⇒ 冻结 →
+  Requested → Prepared（预留）→ 交接强制点 → 凭据 → Committed ⇒ 唤醒目标（kind=room）⇒ mode 就绪 token ⇒ 排空后 "transferred" 离座；
+  Committed 前失败 cancel + 解冻。状态机 `core/transfer.ts`（`world_transfer` 持久 CAS），Lobby 入口 `websocket/world/`（enter / resolveTransfer）。
+  **MF10 容量 / 多进程 / 运维**：`core/WorldRegistry.ts` 分线实时登记（seated / capacity / publicAddress，TTL = 租约，权威房按续租节拍刷新，Offline 撤销）；
+  `core/WorldDirectory.allocate`（满员开新线到 WORLD_MAX_LINES_PER_MAP，全满拒；指定 line 越界拒）供 `world.enter` 未指定 line 时分配；多 world 进程
+  经 `world.config.ts worldServerOptions()`（WORLD_MULTI_PROCESS=1 ⇒ RedisDriver / Presence 构造于独立实例 REDIS_COLYSEUS_URL，加载期断言）；
+  运维只读面 `http/admin/world{Instances,Transfers,Events}.ts`；多进程接管实验 `tools/world-bench/multi-process.ts`。
+  **MF11 收口**（审阅 `docs/MMO-REVIEW-2.md`）：陈旧交接自愈——源房 `requestTransfer` 与 Lobby `world.enter` 遇在途 `world_transfer` 行先 `core/transfer.ts cancelIfStale`（Committed 前且超过预留窗口 ⇒ cancelled；本房已 activated 未 finalize ⇒ finalize）再重试 / 放行，Committed 及之后 ⛔ 动；单测 harness 规矩：新增缺省会连 Redis 的 deps（如 `WorldRegistry`）必须同批给 harness 内存实现（`MemoryWorldRegistry`），否则单测进程不退出。
+  登记在 `../world.config.ts`（world 进程 rooms 表；合体入口 `app.config.ts` 合并）。夹具 `worldFixture`（`test/fixtures/worldFixtureMode.ts`，
+  ⛔ 不进生产 registry）；真栈用例 `test/int/world-room.test.ts`。
 - `modes/ballMove/`：默认演示玩法的完整实现（阶段 1 从 GameRoom 壳中行为等价拆出）：
   - `rules.ts`：纯函数化的模拟规则（运动锚点、施法、复位），live 与 replay 共用同一组表达式；
   - `harness.ts`：测试/回放注入边界（`GameRoomInput` 形状与敌意输入快照），⛔ 不是通用玩法契约；
@@ -45,7 +76,20 @@
   不进生产 registry）与其稳定 façade `modes/catalog.ts`（⛔ 不再逐玩法手写 import）；`modes/idle/index.ts` 是最小
   第二玩法。Idle 使用独立 `IdleRoomState`、strict `IdlePulse` 和 pulse/真实离场结算，不声明 evidence
   capability，也不写任何收局证据。
-- `core/`（阶段 8a，Non-intrusive §6.2）：房间组合 policy 层——`StartPolicy.ts`（auto / owner-ready /
+- `core/`：房间共享层（整目录受 `scripts/protected-paths.json` gameplayFlow 保护，⛔ 不 import `modes/` 与 `websocket/`，
+  `test/rooms-core-import-ban.test.ts` 机检）。**MF3-B2 抽出物**（docs/MMO.md §5.4）：`RoomAuth.ts`（建连六步，协议整数由
+  `createRoomAuth` 注入；`gameRoomAuth` 绑 GAME_ROOM_PROTOCOL_VERSION，`assertEnvelope` 供 onAuth / onCreate 同口径）、
+  `WireDispatcher.ts`（C2S 固定序 预算 → owner → exact validate → rateCost → phase（core 谓词注入）→ handler，持有每会话
+  `MessageBudget`）、`MessageBudget.ts`（1 s 滚动窗口，`GAME_ROOM_MAX_MESSAGES_PER_SECOND` 真源）、`ReconnectGrace.ts`
+  （reconnected / expired / stale 三态，dispose 或代际前移 ⇒ stale）、`S2CPorts.ts`（core validator 出站口 + mode token 的
+  dir / owner / validate 闸；MF5a 在此加 perSession 广播闸）。契约见 `test/rooms-core-units.test.ts`，行为快照见
+  `test/rooms-core-behavior-snapshot.test.ts`。**MF4 世界侧**：`WorldRuntime.ts`（无头模拟宿主，⛔ import colyseus，
+  `test/rooms-core-headless-import.test.ts` 机检）、`WorldLease.ts`（Redis 权威租约三条 Lua）、`control.ts`（MySQL 权威 / 控制权 CAS）、
+  `WorldProfile.ts`（profile "world" / world-ticket 端口）、`WorldDirectory.ts`（(sId, mapId, line) → 实例）。
+  **MF7b**：`CheckpointPort.ts`（信封 + 端口 + 内存实现）、`WorldTx.ts`（kit-api `withKitWorldTx` 再导出）、`WorldEventPort.ts`（状态 / superseded / stats）、
+  `WorldCheckpoint.ts`（编排）。
+  **MF8**：`transfer.ts`（world_transfer 状态机）、`WorldTicket.ts`（一次性凭据 Redis Lua + 内存端口）、`WorldTransfer.ts`（交接持久面门面）。
+  **阶段 8a policy 层**（Non-intrusive §6.2）——`StartPolicy.ts`（auto / owner-ready /
   drop-in 判别联合，⛔ 不重复声明任何人数：min/max/autoStart 唯一真源仍是 roster/manifest）、`AccessPolicy.ts`
   （matchmaking / invite-code，四个时间/配额参数取自 config，不等式在加载期断言）、`RoomProfile.ts`
   （`(mode, profileId) → policy` 注册表：校验 id ∈ generated catalog.profiles、owner-ready/invite

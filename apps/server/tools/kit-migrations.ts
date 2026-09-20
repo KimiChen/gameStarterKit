@@ -380,6 +380,16 @@ function ledgerRowOf(row: Row): LedgerRow {
  * 账本按语句粒度记进度：文件先以 applied_statements=0 入账，每条语句成功即 +1；
  * 上次中途失败的文件（sha 相同、进度未满）从失败那条续跑；任何一步抛错都会释放租约再上抛。
  */
+/** 在 `singleton_lease('db_bootstrap')` 下跑一段一次性迁移（MMO MF2 资产主体迁移与 kit 迁移共用同一把锁，先后各持一次）。 */
+export async function withBootstrapLease<T>(conn: SqlConn, holder: string, leaseSeconds: number, fn: () => Promise<T>): Promise<T> {
+  await acquireBootstrapLease(conn, holder, leaseSeconds);
+  try {
+    return await fn();
+  } finally {
+    await releaseBootstrapLease(conn, holder);
+  }
+}
+
 export async function applyKitMigrations(options: ApplyKitMigrationsOptions): Promise<ApplyKitMigrationsReport> {
   const { conn, dbName, catalog, readSqlFile } = options;
   const log = options.log ?? ((): void => undefined);
@@ -478,6 +488,27 @@ export async function applyKitMigrations(options: ApplyKitMigrationsOptions): Pr
 
 // ── 表形态校验 ─────────────────────────────────────────────────────────────
 
+/**
+ * `role:"world-event"` 表的框架固定列集（docs/MMO.md §5.4 MF7b `WorldEventPort`；MF7a 随 schema 字段先机检）：
+ * 事件 id / 分线 / 序号 / 种类 / 载荷 / 状态 0-3 / 尝试次数 / 产生它的分线检查点 rev（§7.3 原子规则）。kit 选表名、⛔ 不改列集。
+ */
+export const WORLD_EVENT_TABLE_COLUMNS: readonly string[] = [
+  "event_id", "instance_id", "seq", "kind", "payload", "status", "attempts", "checkpoint_rev",
+];
+
+/** role=world-event 的表必须含 WORLD_EVENT_TABLE_COLUMNS 全部列（缺一即 fail-closed；多出的列放行）。 */
+async function verifyWorldEventShape(conn: SqlConn, dbName: string, kitId: string, table: string): Promise<void> {
+  const [rows] = await conn.query(
+    "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
+    [dbName, table],
+  );
+  const columns = new Set(rowsOf(rows).map((r) => String(r.COLUMN_NAME)));
+  const missing = WORLD_EVENT_TABLE_COLUMNS.filter((column) => !columns.has(column));
+  if (missing.length > 0) {
+    throw new Error(`kit "${kitId}" 的 role=world-event 表 ${table} 缺少框架固定列：${missing.join(", ")}（必备 ${WORLD_EVENT_TABLE_COLUMNS.join(", ")}）`);
+  }
+}
+
 export interface VerifyKitTableShapesOptions {
   readonly conn: SqlConn;
   readonly dbName: string;
@@ -540,6 +571,7 @@ export async function verifyKitTableShapes(options: VerifyKitTableShapesOptions)
         throw new Error(`kit "${kit.id}" 的表 ${table.name}.ENGINE 定义不匹配：期望 InnoDB，实际 ${engine ?? "missing"}`);
       }
       verifyZoneShape(kit.id, table.name, table.zone, serverIdByTable.get(table.name), uniqueIndexes.get(table.name));
+      if (table.role === "world-event") { await verifyWorldEventShape(conn, dbName, kit.id, table.name); }
     }
     for (const name of [...existing].sort()) {
       if (name.startsWith(prefix) && !declaredAll.has(name)) {

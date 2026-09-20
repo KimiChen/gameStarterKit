@@ -6,27 +6,33 @@ import { validateForceLogoutPush, validateServerNoticePush, type IForceLogoutPus
 import type { IPurchaseResult } from "./economy";
 import { validateArenaBoardReq, validateArenaBoardRes, validateArenaCaptureReq, validateArenaCaptureRes, type IArenaBoardReq, type IArenaBoardRes, type IArenaCaptureReq, type IArenaCaptureRes } from "./domains/arena";
 import { validateArenaShopBuyBoostReq, validateArenaShopBuyBoostRes, type IArenaShopBuyBoostReq, type IArenaShopBuyBoostRes } from "./domains/arenaShop";
+import { validateChatMessagePush, validateChatSendReq, validateChatSendRes, type IChatMessagePush, type IChatSendReq, type IChatSendRes } from "./domains/chat";
 import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, validateGuildJoinReq, validateGuildLeaveReq, validateGuildLeaveRes, validateJoinRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
 import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
+import { validatePartyAcceptReq, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyLeaveReq, validatePartyLeaveRes, validatePartySeqRes, validatePartyTransferLeaderReq, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
 import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
 import { validateSlgMapTilesReq, validateSlgMapTilesRes, validateSlgMarchDispatchReq, validateSlgMarchDispatchRes, validateSlgMarchRecallReq, validateSlgMarchRecallRes, validateSlgTileCaptureReq, validateSlgTileCaptureRes, type ISlgMapTilesReq, type ISlgMapTilesRes, type ISlgMarchDispatchReq, type ISlgMarchDispatchRes, type ISlgMarchRecallReq, type ISlgMarchRecallRes, type ISlgTileCaptureReq, type ISlgTileCaptureRes } from "./domains/slg";
 import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, validateSnakeCosmeticSnapshotRes, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq, type ISnakeCosmeticSnapshotRes } from "./domains/snakeCosmetic";
 import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validateGetUserIdReq, validateGetUserIdRes, validateProfileRes, validateUpdateProfileReq, validateUpdateRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
+import { validateWorldEnterReq, validateWorldEnterRes, validateWorldResolveTransferReq, validateWorldResolveTransferRes, validateWorldTransferPush, type IWorldEnterReq, type IWorldEnterRes, type IWorldResolveTransferReq, type IWorldResolveTransferRes, type IWorldTransferPush } from "./domains/world";
 
 /** 领域全集（生成器删除保护锚 + 向量 sidecar 的域集合闸）。 */
 export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "arena",
     "arenaShop",
+    "chat",
     "guild",
     "mail",
+    "party",
     "redeem",
     "room",
     "shop",
     "slg",
     "snakeCosmetic",
     "user",
+    "world",
 ];
 
 /** 全量路由契约（服务端 defineRpc 与客户端 WebSocketClient.rpc 的公共类型域） */
@@ -34,12 +40,22 @@ export interface LobbyRpcMap {
     "arena.board": { req: IArenaBoardReq; res: IArenaBoardRes };
     "arena.capture": { req: IArenaCaptureReq; res: IArenaCaptureRes };
     "arenaShop.buyBoost": { req: IArenaShopBuyBoostReq; res: IArenaShopBuyBoostRes };
+    "chat.send": { req: IChatSendReq; res: IChatSendRes };
     "guild.join": { req: IGuildJoinReq; res: IGuildJoinRes };
     "guild.leave": { req: IGuildLeaveReq; res: IGuildLeaveRes };
     "guild.getEvents": { req: IGuildGetEventsReq; res: IGuildGetEventsRes };
     "mail.list": { req: IMailListReq; res: IMailListRes };
     "mail.claimAttach": { req: IMailClaimAttachReq; res: IPurchaseResult };
     "mail.markRead": { req: IMailMarkReadReq; res: IMailMarkReadRes };
+    "party.create": { req: IPartyCreateReq; res: IPartyCreateRes };
+    "party.invite": { req: IPartyInviteReq; res: IPartyInviteRes };
+    "party.accept": { req: IPartyAcceptReq; res: IPartyAcceptRes };
+    "party.decline": { req: IPartyDeclineReq; res: IPartyDeclineRes };
+    "party.leave": { req: IPartyLeaveReq; res: IPartyLeaveRes };
+    "party.kick": { req: IPartyKickReq; res: IPartyAcceptRes };
+    "party.transferLeader": { req: IPartyTransferLeaderReq; res: IPartyAcceptRes };
+    "party.get": { req: IPartyGetReq; res: IPartyGetRes };
+    "party.getEvents": { req: IPartyGetEventsReq; res: IPartyGetEventsRes };
     "redeem.claim": { req: IRedeemClaimReq; res: IRedeemClaimRes };
     "room.prepareCreate": { req: IRoomPrepareCreateReq; res: IRoomPrepareCreateRes };
     "room.resolve": { req: IRoomResolveReq; res: IRoomResolveRes };
@@ -56,6 +72,8 @@ export interface LobbyRpcMap {
     "user.getInfo": { req: IGetInfoReq; res: IGetInfoRes };
     "user.getProfile": { req: IGetProfileReq; res: IGetProfileRes };
     "user.updateProfile": { req: IUpdateProfileReq; res: IUpdateProfileRes };
+    "world.enter": { req: IWorldEnterReq; res: IWorldEnterRes };
+    "world.resolveTransfer": { req: IWorldResolveTransferReq; res: IWorldResolveTransferRes };
 }
 
 export type LobbyRpcType = keyof LobbyRpcMap;
@@ -69,6 +87,13 @@ export type LobbyRpcIdemType =
     | "guild.join"
     | "guild.leave"
     | "mail.claimAttach"
+    | "party.create"
+    | "party.invite"
+    | "party.accept"
+    | "party.decline"
+    | "party.leave"
+    | "party.kick"
+    | "party.transferLeader"
     | "redeem.claim"
     | "room.prepareCreate"
     | "shop.purchase"
@@ -79,6 +104,7 @@ export type LobbyRpcIdemType =
 
 /** natural-write 路由子集（写入天然可安全重复；不进通用幂等层） */
 export type LobbyRpcNaturalWriteType =
+    | "chat.send"
     | "mail.markRead"
     | "slg.mapTiles"
     | "snakeCosmetic.equip"
@@ -89,12 +115,22 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "arena.board": "query",
     "arena.capture": "idempotent-write",
     "arenaShop.buyBoost": "idempotent-write",
+    "chat.send": "natural-write",
     "guild.join": "idempotent-write",
     "guild.leave": "idempotent-write",
     "guild.getEvents": "query",
     "mail.list": "query",
     "mail.claimAttach": "idempotent-write",
     "mail.markRead": "natural-write",
+    "party.create": "idempotent-write",
+    "party.invite": "idempotent-write",
+    "party.accept": "idempotent-write",
+    "party.decline": "idempotent-write",
+    "party.leave": "idempotent-write",
+    "party.kick": "idempotent-write",
+    "party.transferLeader": "idempotent-write",
+    "party.get": "query",
+    "party.getEvents": "query",
     "redeem.claim": "idempotent-write",
     "room.prepareCreate": "idempotent-write",
     "room.resolve": "query",
@@ -111,6 +147,8 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "user.getInfo": "query",
     "user.getProfile": "query",
     "user.updateProfile": "idempotent-write",
+    "world.enter": "query",
+    "world.resolveTransfer": "query",
 };
 
 /** 运行时全集：服务端 loader 启动校验 + 契约测试用。新增路由若漏在此处，服务端拒绝启动。 */
@@ -118,12 +156,22 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "arena.board",
     "arena.capture",
     "arenaShop.buyBoost",
+    "chat.send",
     "guild.join",
     "guild.leave",
     "guild.getEvents",
     "mail.list",
     "mail.claimAttach",
     "mail.markRead",
+    "party.create",
+    "party.invite",
+    "party.accept",
+    "party.decline",
+    "party.leave",
+    "party.kick",
+    "party.transferLeader",
+    "party.get",
+    "party.getEvents",
     "redeem.claim",
     "room.prepareCreate",
     "room.resolve",
@@ -140,6 +188,8 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "user.getInfo",
     "user.getProfile",
     "user.updateProfile",
+    "world.enter",
+    "world.resolveTransfer",
 ];
 
 /** 路由 → 契约版本（§6.11：随 validator 语义变更人工 bump；幂等 v2 记录持久化并 fail-closed 比对，
@@ -148,12 +198,22 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "arena.board": 1,
     "arena.capture": 1,
     "arenaShop.buyBoost": 1,
+    "chat.send": 1,
     "guild.join": 1,
     "guild.leave": 1,
     "guild.getEvents": 1,
     "mail.list": 1,
     "mail.claimAttach": 1,
     "mail.markRead": 1,
+    "party.create": 1,
+    "party.invite": 1,
+    "party.accept": 1,
+    "party.decline": 1,
+    "party.leave": 1,
+    "party.kick": 1,
+    "party.transferLeader": 1,
+    "party.get": 1,
+    "party.getEvents": 1,
     "redeem.claim": 1,
     "room.prepareCreate": 1,
     "room.resolve": 1,
@@ -170,20 +230,25 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "user.getInfo": 1,
     "user.getProfile": 1,
     "user.updateProfile": 1,
+    "world.enter": 1,
+    "world.resolveTransfer": 1,
 };
 
 /** 域契约身份（codegen 闸：domains/<域>.ts 的 sha256 变化必须伴随 contractVersion 递增；⛔ 不进 wire）。 */
 export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {
     arena: { contractVersion: 1, digest: "b0df3a7d9b48719d53c095f3b1e89347416133dc2c3ae57aff6603f1cbe54a09" },
     arenaShop: { contractVersion: 2, digest: "2cb9597e5558094b464d70a16a03a8a63c95c86fa2fbd523cc96d5b93c63dd73" },
+    chat: { contractVersion: 1, digest: "3e34b7840131614c0c9c05c6858ffaf76187e14dc71df1e5703ddad63b4dbc96" },
     guild: { contractVersion: 1, digest: "4a996a135ffd900eb39c0b83697ee03d4d4587829da88ce537f363d56ceb4bde" },
     mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
+    party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
     slg: { contractVersion: 2, digest: "077ecba95687aa0a4130f51eba2cda7d4a2548e6e347154d3f153fdcc641bca5" },
     snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },
     user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
+    world: { contractVersion: 2, digest: "7c4ff662fa6d14043befc590e30741ceb7d514b2ac1ebc27da309c418701af21" },
 };
 
 /** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */
@@ -203,12 +268,22 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "arena.board": guardRpcValidator("payload", validateArenaBoardReq),
     "arena.capture": guardRpcValidator("payload", validateArenaCaptureReq),
     "arenaShop.buyBoost": guardRpcValidator("payload", validateArenaShopBuyBoostReq),
+    "chat.send": guardRpcValidator("payload", validateChatSendReq),
     "guild.join": guardRpcValidator("payload", validateGuildJoinReq),
     "guild.leave": guardRpcValidator("payload", validateGuildLeaveReq),
     "guild.getEvents": guardRpcValidator("payload", validateGuildEventsReq),
     "mail.list": guardRpcValidator("payload", validateMailListReq),
     "mail.claimAttach": guardRpcValidator("payload", validateMailClaimReq),
     "mail.markRead": guardRpcValidator("payload", validateMailMarkReq),
+    "party.create": guardRpcValidator("payload", validatePartyCreateReq),
+    "party.invite": guardRpcValidator("payload", validatePartyInviteReq),
+    "party.accept": guardRpcValidator("payload", validatePartyAcceptReq),
+    "party.decline": guardRpcValidator("payload", validatePartyDeclineReq),
+    "party.leave": guardRpcValidator("payload", validatePartyLeaveReq),
+    "party.kick": guardRpcValidator("payload", validatePartyKickReq),
+    "party.transferLeader": guardRpcValidator("payload", validatePartyTransferLeaderReq),
+    "party.get": guardRpcValidator("payload", validatePartyGetReq),
+    "party.getEvents": guardRpcValidator("payload", validatePartyGetEventsReq),
     "redeem.claim": guardRpcValidator("payload", validateRedeemClaimReq),
     "room.prepareCreate": guardRpcValidator("payload", validatePrepareCreateReq),
     "room.resolve": guardRpcValidator("payload", validateResolveReq),
@@ -225,6 +300,8 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "user.getInfo": guardRpcValidator("payload", validateGetInfoReq),
     "user.getProfile": guardRpcValidator("payload", validateGetProfileReq),
     "user.updateProfile": guardRpcValidator("payload", validateUpdateProfileReq),
+    "world.enter": guardRpcValidator("payload", validateWorldEnterReq),
+    "world.resolveTransfer": guardRpcValidator("payload", validateWorldResolveTransferReq),
 };
 
 /** Route response validators. */
@@ -232,12 +309,22 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "arena.board": guardRpcValidator("response", validateArenaBoardRes),
     "arena.capture": guardRpcValidator("response", validateArenaCaptureRes),
     "arenaShop.buyBoost": guardRpcValidator("response", validateArenaShopBuyBoostRes),
+    "chat.send": guardRpcValidator("response", validateChatSendRes),
     "guild.join": guardRpcValidator("response", validateJoinRes),
     "guild.leave": guardRpcValidator("response", validateGuildLeaveRes),
     "guild.getEvents": guardRpcValidator("response", validateEventsRes),
     "mail.list": guardRpcValidator("response", validateMailListRes),
     "mail.claimAttach": guardRpcValidator("response", validateMailClaimAttachRes),
     "mail.markRead": guardRpcValidator("response", validateMailMarkReadRes),
+    "party.create": guardRpcValidator("response", validatePartyCreateRes),
+    "party.invite": guardRpcValidator("response", validatePartyInviteRes),
+    "party.accept": guardRpcValidator("response", validatePartySeqRes),
+    "party.decline": guardRpcValidator("response", validatePartyDeclineRes),
+    "party.leave": guardRpcValidator("response", validatePartyLeaveRes),
+    "party.kick": guardRpcValidator("response", validatePartySeqRes),
+    "party.transferLeader": guardRpcValidator("response", validatePartySeqRes),
+    "party.get": guardRpcValidator("response", validatePartyGetRes),
+    "party.getEvents": guardRpcValidator("response", validatePartyGetEventsRes),
     "redeem.claim": guardRpcValidator("response", validateRedeemClaimRes),
     "room.prepareCreate": guardRpcValidator("response", validatePrepareCreateRes),
     "room.resolve": guardRpcValidator("response", validateResolveRes),
@@ -254,6 +341,8 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "user.getInfo": guardRpcValidator("response", validateGetInfoRes),
     "user.getProfile": guardRpcValidator("response", validateProfileRes),
     "user.updateProfile": guardRpcValidator("response", validateUpdateRes),
+    "world.enter": guardRpcValidator("response", validateWorldEnterRes),
+    "world.resolveTransfer": guardRpcValidator("response", validateWorldResolveTransferRes),
 };
 
 export function validateLobbyRpcRequest<T extends LobbyRpcType>(type: T, input: unknown): RpcReq<T> {
@@ -294,6 +383,15 @@ export const RPC_ERR_CODES = [
     "OPERATION_RESULT_EXPIRED",
     "ARENA_TILE_TAKEN",
     "ARENA_SHOP_TILE_NOT_OWNED",
+    "CHAT_CHANNEL_FORBIDDEN",
+    "CHAT_UNAVAILABLE",
+    "PARTY_NOT_FOUND",
+    "PARTY_FULL",
+    "PARTY_NOT_MEMBER",
+    "PARTY_NOT_LEADER",
+    "PARTY_ALREADY_IN_PARTY",
+    "PARTY_INVITE_INVALID",
+    "PARTY_TARGET_OFFLINE",
     "REDEEM_CODE_INVALID",
     "REDEEM_CODE_USED",
     "ROOM_CODE_UNAVAILABLE",
@@ -312,6 +410,10 @@ export const RPC_ERR_CODES = [
     "SNAKE_SKIN_NOT_CRAFTABLE",
     "SNAKE_SKIN_FRAGMENTS_INSUFFICIENT",
     "SNAKE_COSMETIC_WRITES_DISABLED",
+    "WORLD_PERSONA_INVALID",
+    "WORLD_TRANSFER_INVALID",
+    "WORLD_LINE_UNAVAILABLE",
+    "WORLD_SERVICE_UNAVAILABLE",
 ] as const;
 
 export type RpcErrCode = (typeof RPC_ERR_CODES)[number];
@@ -324,16 +426,24 @@ export function isRpcErrCode(value: unknown): value is RpcErrCode {
 export const LobbyPush = {
     ServerNotice: "server.notice",
     ForceLogout: "auth.forceLogout",
+    ChatMessage: "chat.message",
     GuildEvent: "guild.event",
     MailNew: "mail.new",
+    PartyEvent: "party.event",
+    PartyInvited: "party.invited",
+    WorldTransfer: "world.transfer",
 } as const;
 
 /** 推送类型名 → data 形状（客户端 WebSocketClient.onPush 的类型域） */
 export interface LobbyPushMap {
     "server.notice": IServerNoticePush;
     "auth.forceLogout": IForceLogoutPush;
+    "chat.message": IChatMessagePush;
     "guild.event": IGuildEventPush;
     "mail.new": IMailNewPush;
+    "party.event": IPartyEventPush;
+    "party.invited": IPartyInvitedPush;
+    "world.transfer": IWorldTransferPush;
 }
 
 export type LobbyPushType = keyof LobbyPushMap;
@@ -342,8 +452,12 @@ export type LobbyPushType = keyof LobbyPushMap;
 export const PUSH_RUNTIME_VALIDATORS: { readonly [K in LobbyPushType]: RuntimeValidator<LobbyPushMap[K]> } = {
     "server.notice": validateServerNoticePush,
     "auth.forceLogout": validateForceLogoutPush,
+    "chat.message": validateChatMessagePush,
     "guild.event": validateGuildEventPush,
     "mail.new": validateMailNewPush,
+    "party.event": validatePartyEventPush,
+    "party.invited": validatePartyInvitedPush,
+    "world.transfer": validateWorldTransferPush,
 };
 
 export function validatePushData<K extends LobbyPushType>(type: K, input: unknown): LobbyPushMap[K] {
@@ -367,8 +481,12 @@ export function validateLobbyPush(input: unknown): LobbyPushEnvelope {
         const type = value.type;
         if (type !== "server.notice"
             && type !== "auth.forceLogout"
+            && type !== "chat.message"
             && type !== "guild.event"
-            && type !== "mail.new") {
+            && type !== "mail.new"
+            && type !== "party.event"
+            && type !== "party.invited"
+            && type !== "world.transfer") {
             throw new WireValidationError("PUSH_TYPE", "push.type");
         }
         return { type, data: validatePushData(type, value.data) } as LobbyPushEnvelope;

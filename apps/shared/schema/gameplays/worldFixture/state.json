@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "root": "WorldFixtureState",
+  "types": [
+    {
+      "name": "WorldFixtureState",
+      "sharedName": "IWorldFixtureState",
+      "validatorName": "validateWorldFixtureState",
+      "defaultPath": "worldFixtureState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "WorldPhase",
+          "enumType": "WorldPhaseType",
+          "members": [
+            "Recovering",
+            "Active",
+            "Draining",
+            "Offline"
+          ],
+          "default": "Recovering",
+          "errorCode": "STATE_PHASE",
+          "description": "世界生命周期（core WorldPhase，MMO MF4）"
+        },
+        {
+          "name": "instanceId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "分线实例 id（world_instance.instance_id）"
+        },
+        {
+          "name": "mapId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 64,
+          "description": "地图 id（WorldAddress 的一段）"
+        },
+        {
+          "name": "line",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": 65535,
+          "description": "分线号（WorldAddress 的一段）"
+        },
+        {
+          "name": "authorityEpoch",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "权威代号（world_instance.authority_epoch，单主不变量）"
+        },
+        {
+          "name": "entityCount",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": 65535,
+          "description": "分线内实体总数（移动体 + 静态体）；名册与实体表 ⛔ 不进 Schema（D4 / 观察者同步 MF5b）"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}

@@ -34,6 +34,7 @@ if (invokedFile === fileURLToPath(import.meta.url)) {
       const summary: string[] = [];
       if (result.changed.length > 0) summary.push(`updated ${result.changed.join(", ")}`);
       if (result.deleted.length > 0) summary.push(`deleted domain(s) ${result.deleted.join(", ")}`);
+      if (result.removedFiles.length > 0) summary.push(`removed orphan file(s) ${result.removedFiles.join(", ")}`);
       console.log(`[plugin-codegen] ${summary.length === 0 ? "no changes" : summary.join("; ")}`);
       if (result.changed.some((relative) => relative.startsWith("apps/shared/src/protocol/"))) {
         console.log("[plugin-codegen] ⚠ protocol/ 字节已变化：运行 node scripts/protocol-fingerprint.mjs --write 重钉指纹");

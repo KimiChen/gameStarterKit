@@ -1,4 +1,4 @@
-/** core wire owner 的向量 sidecar（Ping/Chat/RoomReady/RoomStart；逐字迁自 game-room-wire-contract.test.ts）。 */
+/** core wire owner 的向量 sidecar（Ping/Chat/RoomReady/RoomStart；逐字迁自 game-room-wire-contract.test.ts；WorldChat 随 MMO MF6b 加入）。 */
 import { C2S } from "@game/shared";
 import { symbolExtra, type WireVectorFile } from "./vectorTypes";
 
@@ -38,6 +38,19 @@ export default {
       { label: "overlong", value: { text: "x".repeat(101) }, accepted: false },
       { label: "wrong type", value: { text: 1 }, accepted: false },
       { label: "extra key", value: { text: "x", channel: "global" }, accepted: false },
+      { label: "symbol key", value: symbolExtra({ text: "x" }), accepted: false },
+    ],
+    // MMO MF6b：附近聊天与 Chat 同界（1..100、trim 非空、exact keys；受众 / 盖章归世界房，请求 ⛔ 无 from / channel 键）。
+    [C2S.WorldChat]: [
+      { label: "one character", value: { text: "x" }, accepted: true },
+      { label: "max length", value: { text: "x".repeat(100) }, accepted: true },
+      { label: "trimmed content", value: { text: " x " }, accepted: true },
+      { label: "empty", value: { text: "" }, accepted: false },
+      { label: "only spaces", value: { text: " ".repeat(100) }, accepted: false },
+      { label: "overlong", value: { text: "x".repeat(101) }, accepted: false },
+      { label: "wrong type", value: { text: 1 }, accepted: false },
+      { label: "extra key channel", value: { text: "x", channel: "nearby" }, accepted: false },
+      { label: "extra key from", value: { text: "x", fromEntityId: "e1" }, accepted: false },
       { label: "symbol key", value: symbolExtra({ text: "x" }), accepted: false },
     ],
     // §10.1：Ready/Start payload 均 exact（去掉任一 exact-keys 断言 → 本矩阵转红）。

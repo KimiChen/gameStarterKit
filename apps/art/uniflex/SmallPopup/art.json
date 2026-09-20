@@ -2,14 +2,14 @@
   "screen": "small-popup",
   "componentName": "SmallPopup",
   "restoredName": "SmallPopupRestored",
-  "source": "apps/client/src/ui-uniflex/pages/SmallPopup/SmallPopup.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/popup/SmallPopup/SmallPopup.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "b9419762db1da22f64f6a70da1d24a52bf7e908e1bd752049bbfb41ecb125f05",
+    "uniflexSha256": "d4d6b30eb06141df798a6b6e8902e4fda922423c3f767128180fd15a01b19b1f",
     "psdSha256": "32ca2adccb1002923c1e9c7080427deceb54e8739eebe63d2493351a3337a539",
     "at": "2026-09-16T03:31:51.237Z"
   },

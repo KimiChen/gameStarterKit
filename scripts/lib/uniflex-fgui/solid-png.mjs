@@ -1,6 +1,6 @@
 import { crc32, deflateSync } from "node:zlib";
 
-/** 4×4 RGBA PNG used as a 9-grid fill instead of FairyGUI Graph. */
+/** 4×4 RGBA PNG stretched as a solid fill instead of FairyGUI Graph / 9-grid. */
 export function solidPng(r, g, b, a = 255, size = 4) {
     const width = size;
     const height = size;

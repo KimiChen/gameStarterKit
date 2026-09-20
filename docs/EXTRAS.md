@@ -99,6 +99,12 @@ package、构建/预览/部署脚本或构建产物，也不把它恢复为 gitl
 命中 Lobby 在线表后，节点会先尽力推送 `auth.forceLogout{reason}`，再使用对应语义关闭码断开该连接；
 关闭码只作为推送未送达时的兜底，不扩大在线表覆盖范围。
 
+MMO MF2-B5 起（[MMO.md](MMO.md) §5 MF2），踢之前先**抬高该 uid 全部区 persona 的 `session_generation`**
+（`core/auth/kickBus.ts` 的 `revokePersonaSessions`，账号级形态走 `persona.idx_persona_uid`）：`/admin/kick` 抬代失败返回 500 且
+不踢，GM 重试本节点即同时补抬 + 补踢（每节点各抬一次，+N 与 +1 等价）；组内 `stream:kick` 的账号级事件在消费侧抬代后照踢
+（失败只记错）；同区顶号由 `writeGroupSess` 只抬该区、踢完再抛。会话代是世界长连接的第三层闸（MF4 消费），⛔ 不替代组 sess
+hash 与踢，也不改变本节的能力边界。
+
 参考顺序是先写账号权威，再处理已建立连接；反序会留下被踢后立即重新登录的窗口。外部响应
 `{accountExists, status}` 中，`status` 只在 `banned | revoked | not_found` 范围内。账号不存在应作为明确
 业务结果展示。`operationId` 应由调用方持久生成；在超时或 5xx 造成结果不确定时，只有确认外部服务的
@@ -403,7 +409,7 @@ B 最初只解析 `ui://`，于是「被引用但未导出」的资源同时逃�
 | R1 | 两玩法的联调 | 核心·验收 | Creator 3.8.8 桌面预览（Chrome + CDP）联调已验证 |
 | P1 | 《Underground Idle》玩法实现 | 额外·玩法 | 纯策划案 + 美术规格，业务代码零实现。见 §3.9 |
 | P2 | Snake S5 Demo 验收 | 额外·玩法 | S0～S4 已完成，S5 进行中。阶段状态以 [Snake 玩法文档](../apps/plugins/snake/README.md) 为唯一真相，本表不复制 |
-| X1 | 插件 `launch.profile`：一个玩法多房型入口 | 核心·插件 | `plugin-schema-v2.json` 的 `launch` 只有 kind/gameplayId/routeId；各玩法 joiner 仍写死 profile。三处补丁点（schema 可选字段 → AppRuntime 透传 → joiner 按 target 选）一处都没做。PLUGIN-REVIEW F19 判定当前分层是**有意接缝**，非断点 |
+| X1 | 插件 `launch.profile`：一个玩法多房型入口 | 核心·插件 | ✅ 2026-09-19 随 MMO **MF9-B4** 实施（944be274）：`plugin-schema-v2.json` / `kit-schema-v1.json` 的 menu `launch` 加 `payload`（对象）/ `profile`（codegen 校验 ∈ 该玩法 manifest.profiles）→ `AppRuntime.launch(target)` 把 `{ ...payload, profile? }` 经 `RoomController.startRegistered` 透传到 `GameplayModule.validateLaunch`（exact 校验）→ `services.joinGameRoom(adapter, signal, { profile })` 让 joiner 按 target 选房型（ballMove 参考接线；其余玩法仍只声明 "default"）。此前 PLUGIN-REVIEW F19 判定的「有意接缝」已接通 |
 | X2 | i18n / LocalizePort 契约 | 核心·插件 | `labelKey` 必填且透传到生成物，渲染仍用硬编码 `label`；全仓无 LocalizePort 与 locales 载体。缺口本身已被 `SettingsLogic` 的语言项 reason 与 `settings.test.ts` 钉成断言。**须先于第一个第三方插件落地**，否则每个插件硬编码一种语言 |
 | X3 | 框架默认加载页 | 核心·插件 | 未开工：`builtin` 的 routes 里没有 loading，`view/` 下无 LoadingView。与 FGUI 包预热策略绑定（本仓 FGUI 包只有加载路径无卸载路径） |
 | X4 | join 信封侧的域契约比对 | 有意接缝 | 构建期闸已落地（`LOBBY_RPC_DOMAIN_CONTRACTS`）；Lobby join 仍只比对 `LOBBY_PROTOCOL_VERSION`。⛔ 这是既定边界不是待办：Non-intrusive §4.8 明确「不各自新增版本闸」，域契约变化是否 bump 那个整数是人工决策 |

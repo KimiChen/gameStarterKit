@@ -10,6 +10,7 @@ import { hostname } from "node:os";
 import { randomBytes } from "node:crypto";
 import { LEASE_TTL_S } from "./config";
 import { getPool, withRcTx } from "./mysql";
+import type { Pool } from "mysql2/promise";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "./mysql";
 import { storedInt } from "./numbers";
 
@@ -23,9 +24,13 @@ export interface SingletonLease {
   readonly fenceToken: number;
 }
 
+/** 抢占用的连接面（缺省进程池；int 测试注入临时库的池，MMO MF7a-B6）。 */
+export type LeaseSqlPool = Pick<Pool, "execute" | "query">;
+
 /** 尝试抢占（过期才能抢）。抢到返回 lease（含回读的 fence_token），否则 null。 */
-export async function tryAcquireLease(leaseName: string, holder: string, ttlS = LEASE_TTL_S): Promise<SingletonLease | null> {
-  const pool = getPool();
+export async function tryAcquireLease(
+  leaseName: string, holder: string, ttlS = LEASE_TTL_S, pool: LeaseSqlPool = getPool(),
+): Promise<SingletonLease | null> {
   const [r] = await pool.execute<ResultSetHeader>(
     `UPDATE singleton_lease
         SET holder = ?, fence_token = fence_token + 1,

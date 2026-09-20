@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "arena",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "竞技场地基：一张 16 格的 per-zone 世界棋盘（SQL）+ 占领赛 / 决斗两个玩法 + board / ranking 两个 api 面——docs/KIT.md §8 K0-5 样本",
   "api": {
     "board": { "version": 1, "minSupported": 1 },

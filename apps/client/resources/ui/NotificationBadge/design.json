@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 34,
+    "height": 34
+  },
+  "roots": [
+    "layer-105"
+  ],
+  "nodes": {
+    "layer-105": {
+      "id": "layer-105",
+      "name": "NotificationBadge",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:Alliance/NotificationBadge:0",
+        "role": "component",
+        "definitionKey": "NotificationBadge"
+      },
+      "children": [
+        "layer-106",
+        "layer-108"
+      ]
+    },
+    "layer-106": {
+      "id": "layer-106",
+      "name": "NotificationBadge/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-107"
+      ]
+    },
+    "layer-107": {
+      "id": "layer-107",
+      "name": "NotificationBadge/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 34,
+        "height": 34
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:Alliance/NotificationBadge:0/NotificationBadge/Background",
+        "role": "node"
+      },
+      "asset": "asset-2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a"
+    },
+    "layer-108": {
+      "id": "layer-108",
+      "name": "NotificationBadge/Count",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 3,
+        "width": 38,
+        "height": 52
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "NotificationBadge:Alliance/NotificationBadge:0/NotificationBadge/Count",
+        "role": "node"
+      },
+      "text": {
+        "value": "3",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "center",
+        "fauxBold": true,
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a": {
+      "path": "assets/2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a.png",
+      "sha256": "2878441b6cfbb6e04ede355e3895e6fa412bd31601ad2042f7f72d698f6b9e8a",
+      "mime": "image/png",
+      "width": 34,
+      "height": 34
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/7b42614f70107b0e-0-400.ttf",
+      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

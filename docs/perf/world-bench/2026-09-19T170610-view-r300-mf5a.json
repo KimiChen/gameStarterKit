@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "world-bench",
+  "scenario": "view-r300",
+  "description": "viewFixture dropIn 房：400 个随机游走实体、视距 300、机器人视口随机漂移（MF5a-B5 观察者同步）",
+  "startedAt": "2026-09-19T09:06:10.527Z",
+  "commit": "9968cc6f",
+  "node": "v26.5.0",
+  "config": {
+    "bots": 24,
+    "seconds": 10,
+    "seed": 7,
+    "sId": 0
+  },
+  "rooms": {
+    "count": 3,
+    "clientsPerRoom": [
+      8,
+      8,
+      8
+    ]
+  },
+  "tick": {
+    "count": 599,
+    "mean": 3.287,
+    "p50": 0.9,
+    "p95": 8.913,
+    "p99": 10.139,
+    "max": 10.676,
+    "fixedStepMs": 50
+  },
+  "outbound": {
+    "bytesTotal": 14495612,
+    "bytesPerSessionPerSec": {
+      "count": 24,
+      "mean": 60400.208,
+      "p50": 55331,
+      "p95": 98524,
+      "p99": 98726,
+      "max": 98726
+    }
+  },
+  "clientSide": {
+    "deltaMessagesPerSec": {
+      "count": 24,
+      "mean": 966.278,
+      "p50": 886.53,
+      "p95": 1563.05,
+      "p99": 1567.75,
+      "max": 1567.75
+    },
+    "deltaBytesPerSec": {
+      "count": 24,
+      "mean": 56841.667,
+      "p50": 52011,
+      "p95": 92609,
+      "p99": 92812,
+      "max": 92812
+    },
+    "inputsSent": 504,
+    "relives": 0,
+    "runResults": 0,
+    "errors": 0
+  },
+  "baseline": {
+    "bytesPerJoin": {
+      "count": 24,
+      "mean": 8267.958,
+      "p50": 7928,
+      "p95": 12792,
+      "p99": 12999,
+      "max": 12999
+    },
+    "begins": 24
+  },
+  "eventLoop": {
+    "p50": 10.813,
+    "p99": 19.3,
+    "max": 25.772
+  },
+  "memory": {
+    "rssStartMB": 143.1,
+    "rssEndMB": 215.3
+  }
+}

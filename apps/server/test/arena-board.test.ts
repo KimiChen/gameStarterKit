@@ -38,6 +38,11 @@ function fakeKit(options: { debit?: "DUP" | number | Error; effect?: "INSERTED" 
       conn: {} as never,
       kitId: "arena",
       sId,
+      // MF2-B4 persona 门面：本测试不触碰
+      async createPersona() { throw new Error("unit test: persona 门面未用"); },
+      async assertControl() { throw new Error("unit test: persona 门面未用"); },
+      async deactivatePersona() { throw new Error("unit test: persona 门面未用"); },
+      async deletePersona() { throw new Error("unit test: persona 门面未用"); },
       async query<T>(sql: string, params: unknown[] = []): Promise<T> {
         sqls.push(sql);
         if (sql.startsWith("SELECT tile, owner_uid, power FROM k_arena_board WHERE server_id = ? ORDER BY tile")) {

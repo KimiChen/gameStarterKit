@@ -45,6 +45,11 @@ export interface GameplayLaunchDefaults {
     readonly profile: string;
 }
 
+/** joinGameRoom 的可选覆盖（MF9-B4 / EXTRAS X1）：`profile` 来自 launch 输入（menu contribution 的 launch.profile），缺省 "default"。 */
+export interface GameplayJoinOptions {
+    readonly profile?: string;
+}
+
 export interface GameplayServicesContext {
     /** 通用战斗房客户端（生产注入 RoomClient.inst）。 */
     readonly roomClient: RoomClient;
@@ -54,10 +59,11 @@ export interface GameplayServicesContext {
     readonly presentationHost?: GameplayPresentationHost;
     /** RoomController 的面向引擎投影（GameplayInstanceHost 的转发目标）。 */
     readonly controllerBridge: GameplayControllerBridge;
-    /** joinGameRoom 辅助：按当前区服/凭证进入一间 GameRoom（v8 必填信封已注入）。 */
+    /** joinGameRoom 辅助：按当前区服/凭证进入一间 GameRoom（v8 必填信封已注入；`options.profile` 覆盖缺省房型）。 */
     joinGameRoom<TMode extends SupportedGameRoomMode, TOutbound extends keyof C2SPayloadMap>(
         adapter: GameplayRoomAdapter<TMode, TOutbound>,
         signal: AbortSignal,
+        options?: GameplayJoinOptions,
     ): GameRoomOwnership<TMode, TOutbound>;
     /** launch 缺省（client catalog 单源）：该玩法的 modeVersion 与缺省 profile。 */
     launchDefaults(mode: string): GameplayLaunchDefaults;
@@ -83,7 +89,7 @@ export function createGameplayServices(deps: GameplayServicesDeps): GameplayServ
         },
         ...(deps.presentationHost ? { presentationHost: deps.presentationHost } : {}),
         controllerBridge: deps.controllerBridge,
-        joinGameRoom: (adapter, signal) => joinGameRoom(roomClient, adapter, signal),
+        joinGameRoom: (adapter, signal, options) => joinGameRoom(roomClient, adapter, signal, options),
         launchDefaults: (mode) => ({
             modeVersion: gameRoomModeVersion(mode),
             profile: DEFAULT_GAME_ROOM_PROFILE,

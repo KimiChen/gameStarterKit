@@ -144,9 +144,11 @@ ledger `archive_zone_usage` 属默认关闭的实验模块；`user_snapshot_read
 
 按区数据必须显式传播区上下文：
 
-- `user_currency`、`currency_ledger`、`mail`、`match_results`、`gameplay_outbox` 的按区查询与写入均携带
+- `user_currency`、`currency_ledger`、`mail`、`match_results`、`gameplay_outbox`、`persona` 的按区查询与写入均携带
   `server_id`；`readBack`、relayer/replayDead 和邮件领取会把区谓词一路带到状态回读与标记更新。
-  仅 `outboxStats` 与保留期清理是有意的全局聚合/清理操作。
+  仅 `outboxStats`、保留期清理与账号级会话撤销（`revokePersonaSessions(uid)` 抬全部区 persona 会话代，MMO MF2-B5）是有意的
+  全局聚合/清理操作。MMO MF2 起 `user_currency` / `currency_ledger` / `gameplay_outbox` 还带资产主体 `(owner_kind, owner_id)`
+  （0/'' = account，1/personaId = persona；shared `protocol/identity.ts`），旧写路径缺省 account、存量行无损。
 - per-zone Redis key 只由 `core/infra/keys.ts` 构造，并在 `zoneCtx.run` 中解析区前缀。
 - 派生幂等 ID 编入区号；GameRoom/LobbyRoom 同时核对 `sId`、本组配置与认证结果。
 - `user_archive` 与 `user_snapshot_readonly` 的身份键是 `(user_id,server_id)`；归档查询、恢复、清理和
@@ -250,12 +252,50 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 
 ## 5. GameRoom
 
-`GameRoom` 是共享 transport/admission/lifecycle 的实时房间 shell。生产 catalog 已登记 6 个 mode：默认玩法
+`GameRoom` 是共享 transport/admission/lifecycle 的实时房间 shell；自 MMO MF3-B2（2026-09-19，docs/MMO.md §5.4）起壳**只消费**
+`rooms/core/` 共享层——`RoomAuth`（建连六步：信封 exact 校验 → 协议整数（注入常量）→ mode / modeVersion / profile → 区号 → token →
+session verify）、`WireDispatcher`（C2S 固定序）、`MessageBudget`（每会话 1 s 窗口）、`ReconnectGrace`（重连宽限 + generation fence）、
+`S2CPorts`（core validator 出站口 + mode token 闸）——auth / dispatcher / 预算实现全仓各一处；壳保留准入时序、开局事务、
+结算与证据等对局语义。MF4 的 WorldRoom 复用同一层（`createRoomAuth` 另绑 `WORLD_ROOM_PROTOCOL_VERSION`）。
+MMO MF5a（2026-09-19）起壳还承担**观察者同步**（docs/MMO.md §4.3）：mode 声明 `observer` 能力（六个 perSession token + payload 构造器 +
+`visibleEntities(session)` 公开投影）后，`stepFixed` = tick++ → `prepareObservers`（首发 / 重连 / 超限 / 玩法请求 ⇒ 只含兴趣集的 baseline 并 rebase）
+→ `mode.onStep` → `flushObservers`（`rooms/core/ObserverSync` 差分 enter / update / leave、`OutboundQueue` 按会话排空经 `S2CPorts.sendToken`；
+不在线 / 宽限中的会话不排空）；上下文端口 `context.observers`（`interest` / `emitPerSession` / `requestBaseline` / `seq` / `nextSeq`）给本人
+私有流 / 回执用（与视野流共用单 seq 流），`broadcastS2C` 对 perSession token fail-closed（发送期 + 生成表 ⇄ token 启动期断言）。名册（M07 / D4）：
+manifest `roster: "hidden"` 的 root 不生成 `players`，壳的人数 / 成员判定一律读服务端座位表（public 名册同步镜像到 Schema `players`，既有 mode 零变）。
+客户端对应端 `logic/rooms/observer/ObserverReconciler`（baseline 拼块 + 共享 `wireChecksum` 复算、失步即拒到新 baseline）+
+`net/rooms/GameRoomTransport.bindObserverStream`。参考接线 = 夹具 `viewFixture`（`test/fixtures/viewFixtureMode.ts`、`test/visibility-leak.test.ts`、
+`test/int/view-room.test.ts` 的 `k_kitfix_view` 真栈）；三个有界原语的缺省上限见 MMO.md §11.2。
+MMO MF6b（2026-09-20）起世界房（`WorldRoom`，MF4）还承担**附近聊天**（docs/MMO.md §6.5.1）：core 世界 token `c2s.world.chat`（rateCost 2、只在 Active）/
+`s2c.world.chat`（perSession；两者的选项声明在 `protocol/messages.ts` 的 `CORE_C2S_OPTIONS` / `CORE_S2C_OPTIONS` 字面量表，gameplay-codegen 语法读取后进
+`GAME_WIRE_RATE_COST` / `GAME_WIRE_PER_SESSION` / `CORE_S2C_TOKENS`）；壳固定序 = 在座 → `chatPolicy.canSend` → `transform`（结果再过 wire validator）→
+`WorldRuntime.sayNearby`（受众 = 兴趣集含 `primaryEntityOf(sender)` 的在座会话 ∪ 发送者，逐会话进观察者队列、与 enter / leave 同序；⛔ 广播、⛔ Redis，限流即
+dispatcher 的 rateCost 预算），任一步拒 ⇒ BadRequest；match 形态 GameRoom 对该 token 直接 BadRequest；禁言 / 过滤仍是唯一注入点 `setChatPolicy`
+（ctx.channel = `nearby:<worldAddress>`）；用例 `test/world-chat.test.ts`。
+MMO MF8（2026-09-20）起世界房的准入是**固定时序**（与私房邀请码同形）：同步公共拒绝 → 同步占位 → 异步 claim（`rooms/core/WorldTicket.ts`：`world.enter` /
+交接签发的一次性凭据，Redis Lua CAS issued → pending(session)，同原子段校验 uid / persona / worldAddress / controlEpoch 绑定）→ 同步重验 → 交接凭据先读
+`world_transfer` 持久状态（非 committed = 已消费，在取控制权**之前**拒 ⇒ ⛔ 顶掉已入座者、只激活一次）→ persona 检查点回读 → `acquireControl` → activate
+（committed → activated 持久 CAS）→ onAdmit → seat（pending → seated，之后重放一律拒）→ finalize；claim 后任一步失败 release。交接由 mode 经
+`context.transfer.request(session, { toMap, toLine?, payload? })` 发起，壳走 `rooms/core/transfer.ts` 状态机（requested → prepared（预留 WORLD_TRANSFER_RESERVE_MS）
+→ 交接强制点 → Committed；Committed 前失败 cancel + 解冻，Committed 后 ⛔ 回源），Committed 后向目标分线发 `K_STREAM_PUSH kind=room` 唤醒（best-effort），
+让 mode 用自己的 token 把就绪交给客户端，再以 "transferred" 离座（回收实体、归还旧控制权）。Lobby 入口 `websocket/world/`：`world.enter { personaId, mapId, line? }`
+（有 Committed 交接时改为解析交接）、`world.resolveTransfer { transferId }`（回复丢失 / 重连：凭据轮换）；端点来自 `WORLD_PUBLIC_WS_URL`（空 = 同当前区 gameWsUrl）。
+卸载闸：kit persona 有在途 `world_transfer` 行 ⇒ `plugin uninstall` 拒（`tools/plugin/transferGate.ts`，⛔ bypass）。故障矩阵 `world-transfer` 组四注入见
+`test/int/world-transfer-flow.test.ts`。
+MMO MF10（2026-09-20）：分线分配——`world.enter` 未指定 line 时 `WorldDirectory.allocate`（按 line 升序取第一条 seated < WORLD_LINE_CAPACITY 的分线，无登记 = 空实例；
+全满开新线到 WORLD_MAX_LINES_PER_MAP，再满 / 指定 line 越界 ⇒ WORLD_LINE_UNAVAILABLE）；分线实时登记 `rooms/core/WorldRegistry.ts`（权威房把 seated / capacity /
+publicAddress 写 coord HASH `kWorldInfo`，TTL = 租约、按续租节拍刷新，Offline 撤销）同时是 `world.enter` endpoint 的来源（无登记回落 WORLD_PUBLIC_WS_URL）。多 world 进程：
+`WORLD_MULTI_PROCESS=1` 时 `world.config.ts worldServerOptions()` 装 RedisDriver / RedisPresence（REDIS_COLYSEUS_URL 必须是与 durable / coord 不同的 Redis **实例**，
+config.ts 加载期断言）+ WORLD_PUBLIC_ADDRESS + 可注入放置钩子；lobby / game 进程不需要（D27）。运维只读面：`POST /admin/world/{instances,transfers,events}`
+（密钥头保护；分线实例 ⊕ 登记 / 在途交接 / 事件积压）。多进程接管实验：`tools/world-bench/multi-process.ts`（报告 `docs/perf/world-bench/*-multi-process.json`）。
+MMO MF11（2026-09-20，审阅 [MMO-REVIEW-2.md](MMO-REVIEW-2.md)）：**陈旧交接懒清**（R2-01）——源房在 Committed 前崩溃遗留的 requested / prepared 行不再永久占住 persona：`world.enter` 与源房 `context.transfer.request` 遇在途行先 `transfer.cancelIfStale`（prepared 预留到期、或 requested 建行超过 WORLD_TRANSFER_RESERVE_MS ⇒ cancelled；Committed 及之后 ⛔ 动），源房另对「已在本房 activated 但 finalize 丢失」的行先 finalize，收敛后重试一次；仍在途 ⇒ 照旧拒（WORLD_TRANSFER_INVALID / TransferInFlightError）。`expireReservations` 仍只是运维扫帚，⛔ 常驻 sweeper。**分线分配是提示**（R2-03）：阈值 WORLD_LINE_CAPACITY 与登记 `seated` 最多滞后一个续租节拍，硬上限仍是房内 `mode.capacity`（`RoomFull`；凭据未消费可原票重试），按图定制阈值与自动重试归 kit（MK1）。**准入失败即作废同 persona 旧凭据**（R2-04）：凭据绑定签发时的 control_epoch，`acquireControl` 之后的失败会推进 epoch，客户端须重新 `world.enter`（幂等无副作用）。**周期检查点每在座 persona 一条 INSERT**（同一世界事务，R2-06）：100 人 / 30 s 档可接受，MK1 场景 B 实测后只许收紧（分批 / 只写脏 persona）。**附近聊天首帧前不收**（R2-07）：受众只算已进入兴趣集的会话，刚入座在首个 baseline 之前的会话收不到同 tick 气泡。
+生产 catalog 已登记 6 个 mode：默认玩法
 `snake`、演示 `ballMove`、最小 `idle`、`tally` 与 arena kit 的 `arenaCapture`/`arenaDuel`（fixture 玩法不在表）。
 `ballMove` 使用 `GameRoomState` 运行移动/技能 Demo，`idle` 使用独立 `IdleRoomState` 和 pulse 胜利条件；
 全部 root 都由 state manifest 生成的 mode 映射选择。当前展示：
 
-- WebPlatform strict session verify、协议版本与区号复核。
+- WebPlatform strict session verify、协议版本与区号复核（`rooms/core/RoomAuth.ts` 的 `gameRoomAuth`；onAuth 与 onCreate 经
+  `assertEnvelope` 同口径，`GameRoom.ts` 本身不再出现 `GAME_ROOM_PROTOCOL_VERSION`）。
 - `filterBy(["sId", "mode", "profile"])` 的撮合隔离及房内再次校验；Game join 信封（v8，阶段 8b）
   的 `mode`/`modeVersion`/`profile` 必填且由 shared 校验（`modeVersion` 对 `GAMEPLAY_CATALOG`
   另有独立比较位点，不参与 core 信封闸）；admission 在 filter 外双重拒绝缺失/未知/不属 mode 的
@@ -363,7 +403,8 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
    按其精确 root 类型读写。
 3. **新增玩法消息不再修改通用 `rooms/GameRoom.ts`**：`GameRoom.messages` 只注册一个 catch-all
    （键是 `"_"`，实例字段初始化器，⚠ `Room.__init()` 会 delete 该键，⛔ 不得共享模块级常量），
-   dispatcher 按生成的 wire catalog 固定序执行：基础预算（未知/畸形 type 也计费）→ owner 闸
+   dispatcher（`rooms/core/WireDispatcher.ts`，MF3-B2 抽出；壳只注入 core 消息的 phase 谓词与两个 handler 入口）
+   按生成的 wire catalog 固定序执行：基础预算（未知/畸形 type 也计费）→ owner 闸
    （core 或当前 mode）→ exact validate（非普通对象含 Uint8Array 一律拒）→ rateCost 追加消耗 →
    phase 闸 → core handler / mode `commands[type]`。中央 C2S schema 表、具名 handler 表与
    phase switch / mode inputs 声明均已删除，⛔ 不得再注册任何具名 handler（Colyseus 分派具名优先，
@@ -386,10 +427,11 @@ MySQL 权威写使用领域事务。`core/compute` 只适合请求触发、可�
 | `GET /version` | 服务名与协议版本 | `GameHttpContractMap.Version` 派生 path/method，并验证响应 shape |
 | `GET /clock/now` | Demo 对时 | `GameHttpContractMap.ClockNow` 派生 path/method，并验证响应 shape |
 | `GET /notice/list` | 静态公告 Demo | `GameHttpContractMap.NoticeList` 派生 path/method，并验证响应及公告项 shape |
-| `POST /admin/kick` | 可选强制下线参考 | 见 [EXTRAS](EXTRAS.md#32-gm账号管理与强制下线参考) |
+| `POST /admin/kick` | 可选强制下线参考 | 见 [EXTRAS](EXTRAS.md#32-gm账号管理与强制下线参考)；MMO MF2-B5 起先抬高该 uid 全部区 persona 的 `session_generation` 再踢（抬代失败 500、不踢，GM 重试） |
+| `POST /admin/notice` | GM 全区公告（MMO MF6a-B5） | `GameHttpContractMap.AdminNotice`；`server.notice{text}` 经 core/push 投递总线 realm 寻址到达该区**全部节点**的在线连接（GM 调任一节点即可，与 kick 的逐节点不同）；`ADMIN_API_SECRET` 未配置即关闭 |
 | `POST /pay/wx-notify` | 默认关闭的可选参考 | 见 [EXTRAS](EXTRAS.md#34-真实货币支付参考) |
 
-`GameHttpContractMap` 现在登记全部六个游戏服 endpoint；每个 request validator 在 shared 定义处直接生成
+`GameHttpContractMap` 现在登记全部七个游戏服 endpoint；每个 request validator 在 shared 定义处直接生成
 Standard Schema。`createGameEndpoint` 从 contract key 派生 path、校验 method，给带 body 的路由安装该 schema，
 禁止 endpoint options 另带本地 body schema，并在 handler 返回值序列化前运行 shared response validator。
 新增核心 endpoint 时先补齐 shared request/response/path，再新增 `<domain>/<method>.ts` 并运行
@@ -456,6 +498,33 @@ relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（
 清理删除，也会让对应 `applied` 标记永远跳过裁剪。当前仓库只提供 `core/economy/outbox.ts` 的
 `replayDead(opId)` 实现，没有调用它的命令、HTTP endpoint 或后台任务，因此死信处置需要采用方自行接入
 入口。
+
+### 8.3 世界事件 outbox 与检查点（MMO MF7b，2026-09-20）
+
+世界形态玩法（`kind:"world"`）的 durable 命令（grant* / lootClaim 一类）⛔ 不直接写主账本：mode 在固定步里 `context.events.append(kind, payload)`（分线内单调 seq），框架把事件批与它所属状态的**分线检查点同一世界事务**落库（`rooms/core/WorldCheckpoint.ts`：`withKitWorldTx` 首句权威 CAS → kit `CheckpointPort.saveInstance / savePersona` → `tx.appendWorldEvent(role:"world-event" 表, { eventId, seq, kind, payload, checkpointRev: rev })` → `world_instance.checkpoint_rev = rev`），即 docs/MMO.md §7.3 原子规则的选项 ④——「事件已落库、检查点未落」的窗口不存在，崩溃丢掉的只是未落盘缓冲，恢复后重放重新产生（新 event_id），⛔ 双发；代价 = 奖励最多延迟到下一个分线检查点（强制点即时：drain / 离座 / `requestCheckpoint`）。消费侧是 kit worker（MF7a 的 `withKitWorkerTx`）：`tx.claimWorldEvents(table)` 只认领 `checkpoint_rev ≤ world_instance.checkpoint_rev` 且 `attempts < 5` 的 pending 行（status 0 → 1 与效果同事务；效果以 eventId 作 opId ⇒ 重放 `credit` 得 "DUP"），单事件失败 `releaseWorldEvent`（达上限 ⇒ dead 2）或 `deadLetterWorldEvent`；Recovering 把 pending 且 checkpoint_rev > 恢复点的行标 superseded（3，正常 0 行）。状态 0 pending / 1 done / 2 dead / 3 superseded；运维读 `worldEventStats`；uninstall 闸（MF7a）对 pending 行照拒。回退窗口逐行用例：`test/world-rollback-windows.test.ts` + `test/int/{world-event-dedup,world-crash-restart}.test.ts`。
+
+### 8.2 门①发布 SOP（MMO MF2 资产主体迁移，2026-09-19）
+
+MMO MF2（[MMO.md](MMO.md) §5 / §12）把经济三表切到 `(owner_kind, owner_id)` 资产主体：`user_currency` 主键、`currency_ledger.uk_idem`
+与 `gameplay_outbox` 都多了两列，并新建 `persona` 表。**主账主键迁移不可逆**（这就是 [MMO-PLAN.md](MMO-PLAN.md) §8 的「门①」），
+发布只能按下面顺序，⛔ 不得跳步：
+
+1. **停写 + drain 全部 pending outbox**：先关网关写入（维护窗口），再跑显式 relayer（`npm --workspace @game/server run relayer`）直到
+   日志 `pending=0`（`outboxStats().pending === 0`）；`dead>0` 须先处置（`replayDead(opId)` 或人工判定），因为 dead 行也是旧形态 intent，
+   迁移后不再有旧节点能按旧语义重放。
+2. **迁移**：`npm --workspace @game/server run db:bootstrap`——`tools/db-bootstrap.ts` 的 `ensureAssetOwnerShape` 在
+   `singleton_lease('db_bootstrap')` 租约下一次性完成：owner 两列 `ALGORITHM=INSTANT` 加列 → `user_currency`
+   `DROP PRIMARY KEY, ADD PRIMARY KEY (user_id, server_id, owner_kind, owner_id, currency)`（重建聚簇索引，按表大小估时，期间该表写阻塞）→
+   `currency_ledger.uk_idem` `INPLACE, LOCK=NONE` 重建 → `persona` 表与 `idx_persona_uid`。INFORMATION_SCHEMA 守卫只接受 legacy 或目标形态，
+   已迁即跳过，同名错定义 fail-closed（⛔ 不吞 1060 / 1061 猜）。`test/int/db-bootstrap.test.ts` 的存量夹具证明存量行无损并入 account 主体
+   （`owner_kind 0 / owner_id ''`），重跑零变。
+3. **上线新版本节点，⛔ 不得新旧混跑**：旧节点的 `UPDATE user_currency … WHERE user_id / server_id / currency` 不带 owner 谓词，会同时命中
+   account 与 persona 行（写错钱包）；旧 INSERT 靠列缺省能跑，但流水 / intent 的主体信息缺失。
+4. **回退**：⛔ 无自动回退。若必须回到旧版本节点，需再做一次人工迁移——先按第 1 步 drain（新形态 intent 同样不能被旧节点重放），清空
+   `persona` 行与全部 persona 主体的钱包 / 流水（`owner_kind = 1`；旧版本无法表达这些数据，回退即放弃），再 `DROP` owner 两列并重建旧
+   PK / uk_idem；回退后再次前进要重新走第 1–2 步。
+5. **发布后核对**：`db:bootstrap` 重跑零变（幂等）、`plugin -- check`、`test:int` 的 economy / effect-atomic / relayer / kit-persona /
+   persona-session 单文件串行绿。
 
 ### 8.1 通用幂等 v2（Non-intrusive §6.11/§6.12，阶段 4）
 
@@ -556,7 +625,21 @@ bump ver 的直写若改变键存在性 / 字段数则 'changed' 放弃，只改
   两者之间存在交错窗口：已发号但尚未入表的事件会以 `latestSeq` 形式返回，客户端按 `latestSeq` 抬水位后
   不会再拉到该条，跳号刷新也不会触发。事件流只作尽力通知，权威状态必须能靠全量刷新自愈，⛔ 不能当作
   不丢的增量通道。
-- 在线表只登记 Lobby 连接，并按区维护 guild 索引。
+- 在线表只登记 Lobby 连接，并按区维护 guild 索引与 `realmOnline`（按区在线 uid 集合）。
+- **MMO MF6a（2026-09-19，docs/MMO.md §6）社交原语**：
+  - presence（`core/presence/presence.ts`）：`kPresence(uid, sId)` HASH（`lobby` = NODE_ID / `lobbyAt` / world 字段），
+    PRESENCE_TTL_S=90 心跳 30 s；LobbyRoom onJoin 在 seat 公开前写、final onLeave 本节点该 (uid,sId) 无连接才用
+    Lua PRESENCE_CLEAR_IF_OWNER 清（顶号跨节点旧节点 ⛔ 不抹新连接）。提示语义，⛔ 非投递权威。
+  - 投递总线（`core/push/pushBus.ts`）：coord `stream:push`，条目 kind users / realm / guild / room，`uids` ≤ 64 发布侧切片、
+    `data` ≤ 2 KB 双侧过 validator、`issuedAt` 30 s 时间栅栏；每节点独立 `$` 游标（同 kick），进程入口 `startPushConsumer()`；
+    **发布方 ⛔ 不本地直投**（本节点命中也经流回读，单进程测试即覆盖跨进程路径）。`pushToUsers / pushToRealm / pushToGuild`
+    是发布 API，`deliverTo*` 是本地落地端（`setPushLocalHandlers` 注入，world 进程只挂 `registerRoomSignal`）。
+  - party（`core/party/`）：per-zone 键族 `party:*:{p<pid>}` 五键同槽，Lua ×7（`partyScripts.ts`：校验 → 变更 → ver → 事件 → PEXPIRE；
+    最后一人离开 DEL 全族），档字段 `partyId` 先 Lua 后档、读侧自愈；域 `party`（idempotent-write 七写 + get / getEvents）；
+    推送 `party.event{seq,partyId}` 只唤醒、`party.invited` 带内容。
+  - chat（`core/chat/`）：`chat.send` natural-write，频道 `realm:<sId>` / `party:<pid>`，授权先于限流（user 桶 3 / 0.5、realm 桶 100 / 30，
+    桶失败 CHAT_UNAVAILABLE fail-closed），`setChatPolicy({canSend, transform})` 单一注入点，无 history；`POST /admin/notice` 是
+    ServerNotice 的 realm 寻址消费方。
 - mailwake/kick 的通用 consumer 使用每节点独立 XREAD 游标；match settle 使用 consumer group，不能把
   两种消费语义混写成同一种。
 - match evidence 处于 legacy/v2 排空、v3 持续生产的三流迁移期：v2/v3 key 都把完整 legacy key 编入
@@ -704,9 +787,19 @@ Game HTTP request schema 已由 shared validator 同源生成并直接注入带 
 | Redis key | 框架键在 `apps/server/src/core/infra/keys.ts`；**玩法自有键不在该文件登记**，由中央工厂 `kGameplay(modeId, name, uid, { zone })` 构造、各玩法在 `apps/server/src/rooms/modes/<id>/keys.ts` 定义；**plugin 自有键同样不在该文件登记**，由对称的中央工厂 `kPluginUser(pluginId, name, uid, { zone })`（逻辑形态 `pl:<pluginId>:<name>:{uid}`，`{uid}` 末段同槽）与 `kPluginShared(pluginId, name, { zone }, key?)`（逻辑形态 `pl:<pluginId>:<name>:{<pluginId>}[:key]`，hash-tag 取 pluginId 使同 plugin 共享键同槽）构造、各 plugin 在各自 `apps/server/src/core/<pluginId>/` 目录内定义（当前实例：`core/redeem/store.ts`）；`pl:` 与 `gp:` 命名空间互不可达，`zone` 同样必须显式（契约测试 `apps/server/test/plugin-keys.test.ts`）。**kit 自有键同样不在该文件登记**（docs/KIT.md §2「Redis 键」行），由中央工厂 `kKitUser(kitId, name, uid, { zone })`（逻辑形态 `kt:<kitId>:<name>:{uid}`，`{uid}` 末段同槽；`name ∈ kit.json.userKeys` 且 per-zone 的键由冷档 freeze 快照 + UNLINK、thaw 恢复，见 §9；**写侧硬契约**：每次写须在 `withUserLock(uid)` 内，或同条 Lua 内确认 `user:{uid}` 存在（缺席 'cold'）并 `HINCRBY ver`，否则窗口内的写会被 `FREEZE_COMMIT` 一并 UNLINK；分段判据 `isKitKeySegment` 是 keys.ts 唯一真源，冷档快照校验器复用）与 `kKitShared(kitId, name, shard, { zone })`（per-zone `kt:<kitId>:<name>:{<kitId>:s<sId>:<shard>}`、global `kt:<kitId>:<name>:{<kitId>:<shard>}`；`shard` 必填非空、过同一分段闸，hash-tag 恒带分片键，⛔ 整 kit 单 tag 在构造上不可能）构造（`kKitUser` 由 `core/infra/kitApi.ts` 再导出，kit 经该门面使用）；`kt:` 与 `pl:` / `gp:` 三个命名空间互不可达（契约测试 `apps/server/test/kit-keys.test.ts`）。逻辑形态 `gp:<modeId>:<name>:{uid}`：`gp:` 命名空间段隔开框架键族，`modeId` 是按玩法前缀 scan/清理的唯一依据，`{uid}` hash-tag 必须是末段（09·R3 同槽），⛔ 分段顺序不可改。`zone` **必须显式**、⛔ 无缺省：`"per-zone"` 走 `P()`（每区独立经济，同 `kUser`/`kBag`），`"global"` 走项目前缀（跨区共享单份）——两者在 `sId=0` 的单形态下前缀相等，缺省值会让分类错误静默通过。Snake demo：`kSnakeUser(uid)` = `kGameplay("snake", "user", uid, { zone: "global" })` → `gp:snake:user:{uid}`，**选 global 是因为 demo 钱包是跨区共享的单份余额**（同一 uid 在任何区读到同一个数），全局 uid 口径、不含 `sId`；当前 snake@5 结算一条 `HSET` 写全六字段 `coinBalance/equippedSkinId/ownedSkinIds/fragmentBalances/snakeXp/achievementProgress`（`rooms/modes/snake/runRewards.ts`）。幂等 v2 键族（阶段 4）：记录键沿用 `kIdemUser`（值升级为 §8.1 的 StoredIdem JSON），新增同 `{uid}` 槽计数键 `kIdemPending`（`idem:pending:{uid}`，per-uid pending 上限护栏）。私房键族（阶段 8，全部 **coordination Redis** + **`sId` 显式参数**，⛔ 不走 `zoneCtx`——GameRoom 不在 `zoneCtx.run` 内而 Lobby RPC 在，ambient 读取会打到不同 key）：`kInviteCode(sId, code)`（`room:code:{s<sId>:<code>}`，lease/tombstone JSON，PX=lease TTL 或 cooldown）、`kInviteCodeGen(sId, code)`（`room:code:gen:{s<sId>:<code>}`，per-(sId,code) 分配代号 INCR，永不重置/删除）、`kRoomTicket(sId, ticketSha256)`（`room:ticket:s<sId>:<sha256hex>`，creation/join ticket 记录 JSON，PX=exp；键名只含 ticket 的 sha256，⛔ 不含 ticket 原文）、`kRoomTicketQuota(sId, uid)`（`room:quota:s<sId>:{<uid>}` ZSET，member=`t:<jti>`/`r:<roomId>`、score=过期时刻，§6.8 配额原子检查）。resolve 专用限流桶复用 `kRl`，scope=`room:resolve:fail:<uid>`/`room:resolve:ok:<uid>`/`room:resolve:zonefail:s<sId>`（⛔ 与通用 `rpc:<uid>` 桶分离） |
 | Asset effect schema/validator | `apps/shared/src/protocol/lobbyRpc/economy.ts`；Lua 镜像在 `apps/server/src/core/infra/redisScripts.ts`。kit effect kind `kit:<kitId>:<name>`（docs/KIT.md §4 登记通道）的规格真源是 `codegen:plugins` 从 `apps/kits/<id>/kit.json.effects` 生成的 `apps/shared/src/kits/catalog.generated.ts` `KIT_EFFECT_KINDS`（validator 与 Lua 共同真源；validator 的 `kinds` 参数可注入、缺省即该表），语义 = 对 `kKitUser(kitId, spec.userKey, uid, { zone: "per-zone" })` 的 `spec.field` 整数累加，`delta ∈ [1, spec.max]`；Lua 侧由 `outbox.kitEffectKeysFor` 把出现的 kind 投影成追加在 bag 分片之后的 KEYS + ARGV[4] `{kind:{k,f,m}}`，键数校验 = 基础键数 + 投影去重键数 |
 | 跨模块服务端配置 | `apps/server/src/core/infra/config.ts`；少量模块私有常量仍在实现文件内 |
-| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `core/idem.ts`，私房邀请码/ticket 七条（INVITE_CODE_ALLOCATE / INVITE_CODE_RENEW / INVITE_CODE_TOMBSTONE / TICKET_ISSUE_CREATION / TICKET_CLAIM_CREATION / TICKET_CLAIM_JOIN / TICKET_TRANSITION）在 `core/rooms/invite/redisScripts.ts`（跑在 coordination Redis 单实例上，TICKET_ISSUE_CREATION 刻意跨 hash-tag——⛔ 不得搬到 cluster 化的 durable 实例），都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行 |
-| kit-api/server 门面 | `apps/server/src/core/infra/kitApi.ts`（docs/KIT.md §4）：`withKitTx(kitId, sId, fn)` = READ COMMITTED 事务 + 只能碰 `k_<kitId 小写>_*` 表的 `tx.query()`（运行时表引用列表闸 `assertKitTableAccess`——从 FROM / JOIN / STRAIGHT_JOIN / INTO / UPDATE / USING 起把整段 table_references 走完，含逗号 / JOIN 接续、`JOIN … ON cond, tbl`、表名后的 `PARTITION (…)` 与索引提示组；fail-closed：框架表 / 别的 kit / schema 限定 / 括号表引用 `(tbl)` / `/*!` 可执行注释与 `/*+` 提示 / DDL / 多语句一律拒；走 `conn.execute` 预处理语句，params 只允许原始值 / Date / Buffer，⛔ `toSqlString` 对象；`tx.conn` 是契约保留的原始连接、⛔ 不过闸，kit 代码触碰 `.conn` 由 K1 路径级边界机检拒绝）、`tx.debit` / `tx.credit`（currency.ts `debitInTx` / `creditInTx`，sId 已绑定）、`tx.enqueueEffect`（先按注入 `kinds` 规范化，effect 里的 kit kind 必须是 `kit:<本 kitId>:*` ⇒ 否则 `KitEffectScopeError`；outbox `insertOutboxIntent` ODKU no-op ⇒ "DUP" 后 `assertOutboxIntentMatches` 回读比对，同 opId 不同载荷 ⇒ `EffectConflictError`，与 purchaseTx 同一判定），提交后逐 uid `invalidateBalanceCache`；`kitOpId(kitId, uid, sId, op, clientReqId)` = `deriveOpId` 的 `kit:<kitId>:<op>` 命名空间；kit 需要的错误类型 / `CUR_GOLD` / `kKitUser` 从此文件再导出（kit 从 `apps/server/src/kits/<id>/**` 相对导入 `../../core/infra/kitApi`，⛔ 不直接 import 其他 core/infra 模块）。新增 `withKitUserFence(uid,sId,fn)` 在显式区先取用户锁/冷档自愈，只向 kit 暴露只读 fence；`retryKitTransaction(fn)` 仅对完整幂等事务重试 MySQL 1213/1205（最多三次）；`readKitUserFieldInZone` 显式按区读取 kit 字段。用户锁必须在世界 SQL 锁之前获取，effect apply 只能提交后执行。契约测试 `apps/server/test/kit-api.test.ts` 与 `kit-api-user-port.test.ts` |
-| MySQL DDL | `apps/server/sql/schema.sql`（含 kit 迁移账本 `kit_migration` 与 `singleton_lease('db_bootstrap')` 预置行）；兼容升级逻辑在 `tools/db-bootstrap.ts`；kit 表来自 `apps/kits/<id>/sql/NNN-<name>.sql`，由 `tools/kit-migrations.ts` 在 `db_bootstrap` 租约下按账本逐条语句应用（白名单 lint、已应用文件 sha256 变化 fail-closed、账本记语句粒度进度 `statement_count`/`applied_statements` 供中途失败后续跑），按区表登记在 `core/infra/zoneTables.ts` |
+| Lua | `apps/server/src/core/infra/redisScripts.ts` 与模块专属 script 文件；认证组 sess fence 在 `core/auth/session.ts`、幂等 v2 三条（IDEM_V2_ACQUIRE/COMPLETE/RELEASE）在 `core/idem.ts`，私房邀请码/ticket 七条（INVITE_CODE_ALLOCATE / INVITE_CODE_RENEW / INVITE_CODE_TOMBSTONE / TICKET_ISSUE_CREATION / TICKET_CLAIM_CREATION / TICKET_CLAIM_JOIN / TICKET_TRANSITION）在 `core/rooms/invite/redisScripts.ts`（跑在 coordination Redis 单实例上，TICKET_ISSUE_CREATION 刻意跨 hash-tag——⛔ 不得搬到 cluster 化的 durable 实例），都以 `defineScript` 登记并统一经 `evalshaWithReload` 执行；MMO MF6a：presence `PRESENCE_CLEAR_IF_OWNER` 在 `core/presence/presence.ts`、party 七条在 `core/party/partyScripts.ts`；MMO MF4：世界权威租约三条 `worldLeaseAcquire` / `worldLeaseRenew` / `worldLeaseRelease` 在 `rooms/core/WorldLease.ts`（coord Redis） |
+| kit-api/server 门面 | `apps/server/src/core/infra/kitApi.ts`（docs/KIT.md §4）：`withKitTx(kitId, sId, fn)` = READ COMMITTED 事务 + 只能碰 `k_<kitId 小写>_*` 表的 `tx.query()`（运行时表引用列表闸 `assertKitTableAccess`——从 FROM / JOIN / STRAIGHT_JOIN / INTO / UPDATE / USING 起把整段 table_references 走完，含逗号 / JOIN 接续、`JOIN … ON cond, tbl`、表名后的 `PARTITION (…)` 与索引提示组；fail-closed：框架表 / 别的 kit / schema 限定 / 括号表引用 `(tbl)` / `/*!` 可执行注释与 `/*+` 提示 / DDL / 多语句一律拒；走 `conn.execute` 预处理语句，params 只允许原始值 / Date / Buffer，⛔ `toSqlString` 对象；`tx.conn` 是契约保留的原始连接、⛔ 不过闸，kit 代码触碰 `.conn` 由 K1 路径级边界机检拒绝）、`tx.debit` / `tx.credit`（currency.ts `debitInTx` / `creditInTx`，sId 已绑定）、`tx.enqueueEffect`（先按注入 `kinds` 规范化，effect 里的 kit kind 必须是 `kit:<本 kitId>:*` ⇒ 否则 `KitEffectScopeError`；outbox `insertOutboxIntent` ODKU no-op ⇒ "DUP" 后 `assertOutboxIntentMatches` 回读比对，同 opId 不同载荷 ⇒ `EffectConflictError`，与 purchaseTx 同一判定），提交后逐 uid `invalidateBalanceCache`；`kitOpId(kitId, uid, sId, op, clientReqId)` = `deriveOpId` 的 `kit:<kitId>:<op>` 命名空间；kit 需要的错误类型 / `CUR_GOLD` / `kKitUser` 从此文件再导出（kit 从 `apps/server/src/kits/<id>/**` 相对导入 `../../core/infra/kitApi`，⛔ 不直接 import 其他 core/infra 模块）。新增 `withKitUserFence(uid,sId,fn)` 在显式区先取用户锁/冷档自愈，只向 kit 暴露只读 fence；`retryKitTransaction(fn)` 仅对完整幂等事务重试 MySQL 1213/1205（最多三次）；`readKitUserFieldInZone` 显式按区读取 kit 字段。用户锁必须在世界 SQL 锁之前获取，effect apply 只能提交后执行。契约测试 `apps/server/test/kit-api.test.ts` 与 `kit-api-user-port.test.ts`。MMO MF7a（2026-09-19）：`withKitWorkerTx(kitId, workerId, sId, lease, fn)` = 同一句柄形态的**租约守卫受限事务**（`withRcTx` 内首句 `renewLeaseGuard`，Rows matched 0 ⇒ `LeaseLostError` 自动回滚、回调零执行；没有 `.conn`（运行时取也抛）；AsyncLocalStorage 作用域拒回调内另开 withKitTx / withKitWorkerTx；租约名必须恰是 `kit:<kitId>:<workerId>`）与 `defineKitWorker({ pass, idleMs? })`；契约测试 `kit-worker-tx.test.ts` |
+| kit worker（MMO MF7a） | `apps/kits/<id>/kit.json.workers[]`（`{ id, entry }`，entry 固定 `apps/server/src/kits/<id>/workers/<worker>.ts`；与 `sql.tables[].role:"world-event"` 同为 kit-schema v1 增量可选字段）→ `codegen:plugins` 生成 `apps/server/src/kits/catalog.generated.ts` 的 `workers`（锁抬头 / 身份摘要同步纳入）→ 进程入口 `apps/server/src/workers/kitWorker.ts`（`npm --workspace @game/server run worker -- <kit>:<worker>`，区清单 `KIT_WORKER_ZONES` 显式非空，未登记即拒，失租退出 1，SIGTERM 跑完当前事务停）；租约行 `singleton_lease('kit:<id>:<worker>')` 由 `tools/db-bootstrap.ts` 经 `tools/kit-workers.ts` 预置（ODKU no-op），命名唯一真源 `apps/server/src/kits/workerLease.ts`；卸载 / check 闸 `tools/plugin/workerGate.ts`（pending `role:"world-event"` 行 / 在役租约 ⇒ uninstall 拒、check 告警）；role 表的固定列集 `WORLD_EVENT_TABLE_COLUMNS` 在 `tools/kit-migrations.ts`（bootstrap 形状机检）。真库夹具 `test/int/kit-worker-lease.test.ts` |
+| persona 与资产主体（MMO MF2） | shared `apps/shared/src/protocol/identity.ts`（`AssetOwnerRef` account / persona、`PersonaRef`、`PERSONA_MAX_SLOTS_HARD`、零依赖校验器与 `(owner_kind, owner_id)` 列映射）+ `constants/errors.ts` 4001–4003；`apps/server/sql/schema.sql` `persona` 表（per-zone，`idx_persona_uid`）与经济三表 owner 两列（`tools/db-bootstrap.ts` `ensureAssetOwnerShape` 迁移，发布 SOP 见 §8.2）；`core/economy/{currency,outbox,relayer}.ts` 末位可选 `owner`（缺省 account；relayer 对 persona 主体只落状态）；`core/infra/kitApi.ts` persona 门面 `createPersona / assertControl / deactivatePersona / deletePersona` + 事务外 `listPersonas`（docs/KIT.md §4；固定锁序 fail-closed，表闸对 `persona` 照拒）；`core/auth/kickBus.ts` `revokePersonaSessions` + `consumeKickEntry`、`core/auth/session.ts` 顶号先抬后踢、`http/admin/kick.ts` 抬代失败 500（EXTRAS §3.2） |
+| 观察者同步 / 名册分离（MMO MF5a） | shared `protocol/observerSync.ts`（`wireChecksum` / `OBSERVER_SYNC_LIMITS` / `IObserverEnvelope`）与 `gameplays/defineGameplayWire.ts` 的 `defineS2C(type, validator, { perSession: true, coalesceKey? })` → wire catalog `GAME_WIRE_PER_SESSION`（`tools/gameplay-codegen/{wireParser,lib}.ts`）；`rooms/core/{InterestSet,ObserverSync,Baseline,OutboundQueue}.ts`；`rooms/core/S2CPorts.ts` perSession 广播闸 + 启动期一致性断言；`rooms/GameMode.ts` `observer` 能力 + `context.observers`；`rooms/GameRoom.ts` 座位表 + prepare / flush；manifest `roster`（`tools/gameplay-codegen/{manifestSchema,stateRenderer,lib}.ts` → 聚合产物 `ROOM_STATE_ROSTER`、catalog `roster`）；客户端 `logic/rooms/observer/ObserverReconciler.ts` + `net/rooms/GameRoomTransport.ts` `bindObserverStream`；world-bench 剧本 `view-r100 / view-r300` |
+| 世界房 / 权威租约 / 控制权（MMO MF4） | shared `protocol/rooms.ts`（`RoomName.World`、`WORLD_ROOM_PROTOCOL_VERSION=1`、`IWorldRoomJoinOptions` + `validateWorldRoomJoinOptions`）、`constants/game.ts` `WorldPhase`、错误码 4101–4103；manifest `kind:"world"` + `world {emptyPolicy, emptyAfterMs, checkpointMs}`（`tools/gameplay-codegen/{manifestSchema,stateRenderer,lib}.ts` → world 根必填集、`WORLD_MODE_IDS`、`ROOM_STATE_KIND`、`registerGeneratedWorldModes`）；`sql/schema.sql` `world_instance` + `rooms/core/control.ts`（权威 / 控制权 CAS）；`rooms/core/WorldLease.ts`（Redis 租约三条 Lua：`worldLeaseAcquire` / `worldLeaseRenew` / `worldLeaseRelease`，键 `kWorldLease` / `kWorldFence`，`config.ts` `WORLD_LEASE_TTL_MS` / `WORLD_LEASE_RENEW_MS`）；`rooms/WorldMode.ts`（契约 + `worldModeRegistry`）、`rooms/core/WorldRuntime.ts`（无头模拟宿主）、`rooms/WorldRoom.ts`（传输壳）、`rooms/core/WorldProfile.ts`（profile "world" / world-ticket 端口占位）、`rooms/core/WorldDirectory.ts`、`world.config.ts`（world 进程 rooms 表，合体入口合并）；客户端 `net/rooms/WorldRoomTransport.ts` + `net/rooms/matchmaking.ts` `WorldRoomMatchmakingStrategy`；夹具 `worldFixture`（`apps/shared/schema/gameplays/worldFixture/` + `test/fixtures/worldFixtureMode.ts`）；真栈用例 `test/int/world-room.test.ts` |
+| 观察者同步·WorldRoom 接入（MMO MF5b） | `rooms/WorldMode.ts` `WorldModeObserverCapability` / `WorldModeObserverPorts`（与 GameMode 同形）；`rooms/core/WorldRuntime.ts` 持每会话 OutboundQueue + ObserverSync / Baseline（prepare → onStep → flush，`markAway` / `drainOutbound`）；`rooms/WorldRoom.ts` 每 tick 排空在线会话；夹具 worldFixture 的七个 perSession token + `resync`（`apps/shared/src/gameplays/worldFixture/wire.ts`）；矩阵 `test/world-visibility-leak.test.ts`；客户端 `WorldRoomHandle.bindObserverStream` |
+| 检查点 / 世界事件 outbox（MMO MF7b） | `rooms/core/CheckpointPort.ts`（信封 {rev, eventOffset, authorityEpoch, controlEpoch?, schemaVersion, stateHash, snapshot}、版本窗口 / stateHash 校验、MemoryCheckpointPort）；`core/infra/kitApi.ts` 第 7 条 `withKitWorldTx`（首句 `UPDATE world_instance SET write_seq = write_seq + 1 WHERE … AND authority_epoch = ?`，0 行 AuthorityLostError；appendWorldEvent / claimWorldEvents / releaseWorldEvent / deadLetterWorldEvent；`beforeCommit` 框架钩子）与 `rooms/core/WorldTx.ts` 再导出；`rooms/core/WorldEventPort.ts`（状态常量、supersedeWorldEvents、worldEventStats）；`rooms/core/WorldCheckpoint.ts`（WorldCheckpointer.save / loadInstance / loadPersona / supersede）；`rooms/WorldMode.ts` `checkpoint` 能力 + `context.events.append` / `requestCheckpoint`；`rooms/core/WorldRuntime.ts` 事件缓冲 / 检查点批 / commit-rollback；`rooms/WorldRoom.ts` Recovering 回灌 / 准入 persona 回灌 / 强制点；夹具 `test/fixtures/kitfixWorld.ts`（k_kitfix_checkpoint / k_kitfix_world_event、SqlCheckpointPort、grant worker）；口径见 §8.3 |
+| 附近聊天·core 世界 token（MMO MF6b） | shared `protocol/messages.ts` core 表 `c2s.world.chat` / `s2c.world.chat` + 选项表 `CORE_C2S_OPTIONS`（rateCost 2）/ `CORE_S2C_OPTIONS`（perSession）；`tools/gameplay-codegen/wireParser.ts` `parseCoreWireNames` 读选项 ⇒ 生成物 GAME_WIRE_RATE_COST / GAME_WIRE_PER_SESSION / CORE_S2C_TOKENS.WorldChat；`rooms/core/S2CPorts.ts` 启动期断言含 core token；`rooms/core/WorldRuntime.ts` `sayNearby`（受众 = 兴趣集含 primaryEntityOf(sender) 的在座会话 ∪ 发送者，进观察者队列）；`rooms/WorldRoom.ts` core phase 闸 + 固定序（在座 → chatPolicy.canSend → transform → sayNearby）；`rooms/GameRoom.ts` 对 WorldChat BadRequest；向量 `test/wire-vectors/core.ts`；用例 `test/world-chat.test.ts`；口径见 §5 |
+| 交接与一次性凭据（MMO MF8） | `sql/schema.sql` `world_transfer`（per-zone，UNIQUE(server_id, persona_id, active_key) 一 persona 只一在途）+ `zoneTables.ts`；`rooms/core/transfer.ts`（每步持久 CAS、transferId 幂等 already、Committed 后不取消、预留到期释放）；`rooms/core/WorldTicket.ts`（kWorldTicket、issue / WORLD_TICKET_CLAIM Lua / release / seat / revoke、MemoryWorldTicketPort）；`rooms/core/WorldTransfer.ts`（持久面门面）；`rooms/WorldRoom.ts` 准入固定时序 + 交接编排 + 跨房唤醒登记；`rooms/WorldMode.ts` `context.transfer` / `WorldTransferReady` / leave reason transferred；shared `protocol/lobbyRpc/domains/world.ts` + `core/world/enterRpc.ts` + `websocket/world/{enter,resolveTransfer}.ts`；config WORLD_TICKET_TTL_MS / WORLD_TRANSFER_RESERVE_MS / WORLD_PUBLIC_WS_URL；`tools/plugin/transferGate.ts` 卸载闸；客户端 `net/rooms/{matchmaking,WorldRoomTransport}.ts` transfer strategy / `transfer()`；用例 `test/world-transfer-room.test.ts`、`test/world-enter-rpc.test.ts`、`test/int/{world-transfer,world-ticket,world-transfer-flow}.test.ts`；口径见 §5 |
+| 容量 / 多进程 / 运维（MMO MF10） | `rooms/core/WorldRegistry.ts`（kWorldInfo 登记：Redis / Memory）；`rooms/core/WorldDirectory.ts` allocate + maxLines、`control.listInstances`；config WORLD_MAX_LINES_PER_MAP / WORLD_LINE_CAPACITY / WORLD_INFO_TTL_MS（= 租约）/ WORLD_MULTI_PROCESS / REDIS_COLYSEUS_URL / WORLD_PUBLIC_ADDRESS；`core/infra/worldMultiProcess.ts` 独立实例断言 + `world.config.ts worldServerOptions()`（app.config.ts spread）；shared `protocol/http.ts` 三条 admin world 契约 + `core/world/adminRead.ts` + `http/admin/world*.ts`；`tools/world-bench/multi-process.ts` 实验；用例 `test/world-directory.test.ts`、`test/world-multi-process.test.ts`、`test/admin-world-read.test.ts`；口径见 §5 |
+| kit 贡献点 / fragment / 带参 launch（MMO MF9） | `apps/kits/<id>/kit.json.contributions`（贡献点声明：kind / ends / export \| schema）与 `apps/plugins/<id>/plugin.json.contributes`（填充路径；贡献 = 依赖，须同时 `requires.kits`）→ `codegen:plugins`（`tools/plugin-codegen/contributions.ts`：登记 / 所有权 / 内容三道校验）生成每 kit × 端一份 `apps/{shared,server,client}/src/kits/<kitId>/contributions.generated.ts`（`KIT_CONTRIBUTIONS`；protected-paths `*` 单段通配登记；K1 边界扫描对 `*.generated.ts` 豁免）；闸在 `tools/plugin/{pack,install,check}.ts`（`resolveKitContributions` / `contributorsOfKit`）。kit fragment：`apps/kits/<id>/kit.json.fragments` + `apps/kits/<id>/fragments/<name>.state.json`（`{ schemaVersion, root?, player? }`），mode 的 state.json `fragments: ["<kitId>:<name>"]` 由 `codegen:gameplays`（`stateRenderer.parseKitFragmentFile` + lib.ts 发现根）注入并并入 contractDigest。带参 launch：menu `launch.payload` / `launch.profile`（codegen 校验 ∈ manifest.profiles）→ `GeneratedLaunchTarget` → 客户端 `AppRuntime.launch` → `RoomController.startRegistered(…, launch)` → `GameplayModule.validateLaunch`；`services.joinGameRoom(adapter, signal, { profile })` 覆盖缺省房型 |
+| MySQL DDL | `apps/server/sql/schema.sql`（含 kit 迁移账本 `kit_migration` 与 `singleton_lease('db_bootstrap')` 预置行；kit worker 租约行 `singleton_lease('kit:<id>:<worker>')` 由 bootstrap 按目录预置，MF7a）；兼容升级逻辑在 `tools/db-bootstrap.ts`；kit 表来自 `apps/kits/<id>/sql/NNN-<name>.sql`，由 `tools/kit-migrations.ts` 在 `db_bootstrap` 租约下按账本逐条语句应用（白名单 lint、已应用文件 sha256 变化 fail-closed、账本记语句粒度进度 `statement_count`/`applied_statements` 供中途失败后续跑），按区表登记在 `core/infra/zoneTables.ts` |
 | RPC endpoint | `apps/server/src/websocket/<domain>/<method>.ts`；装载规则在 `loader.ts` |
 | HTTP endpoint | `apps/server/src/http/<domain>/<method>.ts`；装配表是生成物 `apps/server/src/http/manifest.generated.ts`（禁手改），新增后运行 `npm --workspace @game/server run codegen:http`，`http/index.ts` 只消费该 manifest |
 | 外部身份契约 | 锁定的 `@gono/webplatform-contract` 与 `apps/shared/src/generated/webplatform` |

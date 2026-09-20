@@ -28,6 +28,7 @@
     "ui:check-source": "node scripts/uniflex-ui-cli.mjs check-source",
     "ui:export-fgui": "node scripts/uniflex-ui-cli.mjs export-fgui",
     "ui:preview-fgui": "node scripts/uniflex-ui-cli.mjs preview-fgui",
+    "ui:verify-fgui-dom": "node scripts/verify-uniflex-fgui-dom.mjs",
     "fetch:fairygui-dom": "node scripts/fetch-fairygui-dom.mjs",
     "ui:verify": "node scripts/verify-uniflex-ui.mjs",
     "ui:approve-web": "node scripts/verify-uniflex-ui.mjs --approve-web",
@@ -38,6 +39,7 @@
     "init:project": "node scripts/init-project.mjs",
     "perf:client": "node --import tsx tools/client-perf-baseline.ts",
     "verify:perf": "node scripts/verify-perf-baseline.mjs",
+    "verify:mmo-fixture-matrix": "node --import tsx apps/server/tools/mmo-fixture-matrix/run.ts",
     "sync:shared:watch": "node scripts/sync-shared.mjs --watch",
     "dev:client": "node scripts/dev-client.mjs",
     "dev": "npm --workspace @game/server run dev",
@@ -88,7 +90,7 @@
     "fontkit": "2.0.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "web-ui-to-psd": "file:vendor/web-ui-to-psd-0.1.6.tgz",
+    "web-ui-to-psd": "file:vendor/web-ui-to-psd-0.1.7.tgz",
     "xlsx": "^0.18.5"
   },
   "dependencies": {

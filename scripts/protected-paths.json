@@ -49,6 +49,9 @@
       "apps/shared/src/protocol/messages.ts",
       "apps/server/src/rooms/GameRoom.ts",
       "apps/server/src/rooms/GameMode.ts",
+      "apps/server/src/rooms/WorldRoom.ts",
+      "apps/server/src/rooms/WorldMode.ts",
+      "apps/server/src/rooms/core/**",
       "apps/client/src/net/RoomClient.ts",
       "apps/client/src/net/rooms/GameRoomTransport.ts",
       "apps/client/src/gameplay/catalog.ts",
@@ -56,11 +59,12 @@
       "apps/client/src/logic/gameplay/**",
       "apps/server/src/rooms/modes/catalog.ts",
       "apps/server/src/app.config.ts",
+      "apps/server/src/world.config.ts",
       "apps/server/sql/schema.sql"
     ]
   },
   "generatedWriterOwned": {
-    "note": "生成物 / 锁 / 镜像：普通动线里禁手改，只能由登记的 writer 命令刷新（铁律 2 与 §5.5 provenance 表的机读投影）。autoHeader=true 的条目其文件首三行必须含 Do not edit 标记（目录条目递归到每个 .ts）。",
+    "note": "生成物 / 锁 / 镜像：普通动线里禁手改，只能由登记的 writer 命令刷新（铁律 2 与 §5.5 provenance 表的机读投影）。autoHeader=true 的条目其文件首三行必须含 Do not edit 标记（目录条目递归到每个 .ts）。含 `*` 的条目是单段通配（每 kit 一份的生成物家族，MMO MF9），家族可为空，逐个现有文件检查抬头。",
     "entries": [
       { "path": "apps/shared/src/gameplays/index.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/shared/src/gameplays/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
@@ -84,6 +88,9 @@
       { "path": "scripts/fgui.manifest.json", "writer": "node scripts/fgui-manifest.mjs --write", "autoHeader": false },
       { "path": "apps/shared/src/kits/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
       { "path": "apps/server/src/kits/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
+      { "path": "apps/shared/src/kits/*/contributions.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
+      { "path": "apps/server/src/kits/*/contributions.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
+      { "path": "apps/client/src/kits/*/contributions.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
       { "path": "scripts/packages/**", "writer": "npm --workspace @game/server run plugin", "autoHeader": false }
     ]
   },
@@ -100,12 +107,16 @@
     "apps/shared/src/protocol/messages.ts": "阶段 2b 起只承载 core wire（Ping/Chat/Pong/Welcome/Error）；玩法消息在各玩法 wire.ts",
     "apps/server/src/rooms/GameRoom.ts": "通用房间壳（catch-all dispatcher）；玩法消息经 wire token + mode commands 接入",
     "apps/server/src/rooms/GameMode.ts": "服务端玩法契约与 registry；登记发生在 modes/catalog.ts 组合根",
+    "apps/server/src/rooms/WorldRoom.ts": "世界形态传输壳（MMO MF4-B6，docs/MMO.md §4.5）：建房 = 目录 → 权威租约 → 权威 CAS → WorldRuntime.recover；准入固定时序 ①–⑩；C2S 经 WireDispatcher 喂 runtime.enqueue、出站按 tick 经 S2CPorts；租约失效 / GM / mode 请求 ⇒ Draining → Offline。新增 world 玩法只经 codegen 分表登记进 worldModeRegistry，⛔ 不改本壳",
+    "apps/server/src/rooms/WorldMode.ts": "世界形态玩法契约（§4.5 十个钩子，⛔ 不继承 GameMode）与 worldModeRegistry；登记发生在 modes/catalog.ts 的 registerDefaultWorldModes 分表",
+    "apps/server/src/rooms/core/**": "房间共享层（MF3-B2，docs/MMO.md §5.4）：RoomAuth（建连六步）/ WireDispatcher（C2S 固定序）/ MessageBudget / ReconnectGrace / S2CPorts（出站 token 闸）+ 既有 RoomProfile / StartPolicy / AccessPolicy；玩法只经 wire token + mode commands 与 profile 注册表接入，⛔ 不改共享层（关 PLUGIN-REVIEW F03：tools/plugin/ownership.ts 的硬排除早已含本目录，protected-paths 此前缺这一条）；MMO MF4–MF10 起还含世界房内核：WorldRuntime / WorldLease / control / WorldDirectory / WorldProfile（MF4）、InterestSet / ObserverSync / Baseline / OutboundQueue（MF5）、CheckpointPort / WorldTx / WorldEventPort / WorldCheckpoint（MF7b）、transfer / WorldTicket / WorldTransfer（MF8）、WorldRegistry（MF10）——kit / 插件只经 WorldMode 钩子与 kit-api 门面消费，⛔ 直接 import 内核",
     "apps/client/src/net/RoomClient.ts": "通用房间连接所有权；玩法能力经 adapter/module 注入",
     "apps/client/src/net/rooms/GameRoomTransport.ts": "通用 join/leave ownership 与 mode adapter 契约；新玩法只新增 net/rooms/<Mode>Room.ts",
     "apps/client/src/gameplay/catalog.ts": "阶段 9 起为废弃零状态 façade（登记走 catalog.generated.ts 的 registerGeneratedGameplays）",
     "apps/client/src/gameplay/services.ts": "GameplayServicesContext 稳定服务注入面；⛔ 不得出现逐玩法字段",
     "apps/client/src/logic/gameplay/**": "GameplayModule/GameplayRegistry/RoomController 中央契约；新玩法只新增 gameplay/modes/<id>/ 模块文件",
     "apps/server/src/rooms/modes/catalog.ts": "阶段 9 收敛后为生成物 modes/catalog.generated.ts 的稳定 façade（登记全集按 manifest.wireExposed 发现 modes/<id>/index.ts 的 register<Constant>GameMode）；新增玩法只新增 modes/<id>/index.ts 并重跑 codegen:gameplays",
-    "apps/server/src/app.config.ts": "进程组合根（registerDefaultGameModes + assertRoomProfilesConfigured + 单一 RoomName.Game 定义）；玩法经 generated catalog 进入，⛔ 不因玩法名修改"
+    "apps/server/src/app.config.ts": "进程组合根（registerDefaultGameModes + assertRoomProfilesConfigured + 单一 RoomName.Game 定义）；玩法经 generated catalog 进入，⛔ 不因玩法名修改",
+    "apps/server/src/world.config.ts": "world 进程 rooms 表（MMO MF4-B6 / D27 PS4）：registerWorldRuntime（registerDefaultWorldModes + assertWorldProfilesConfigured）+ 单一 RoomName.World 定义（filterBy sId/mode/profile/mapId/line）；合体入口 app.config.ts 合并它，拆分后原样归 world 进程；⛔ 不登记进 lobby / game 的 config"
   }
 }

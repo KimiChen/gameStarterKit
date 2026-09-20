@@ -5,7 +5,7 @@ import type { ServerKitCatalogEntry } from "./catalogTypes";
 export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
     {
         id: "arena",
-        version: "1.0.0",
+        version: "1.0.1",
         api: {
             board: { version: 1, minSupported: 1 },
             ranking: { version: 1, minSupported: 1 },
@@ -30,6 +30,9 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         userKeys: [
             "stats",
         ],
+        workers: [],
+        contributions: {},
+        fragments: [],
     },
     {
         id: "slg",
@@ -61,6 +64,9 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         userKeys: [
             "stats",
         ],
+        workers: [],
+        contributions: {},
+        fragments: [],
     },
     {
         id: "uniflex",
@@ -78,5 +84,8 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         sqlFiles: [],
         sqlTables: [],
         userKeys: [],
+        workers: [],
+        contributions: {},
+        fragments: [],
     },
 ];

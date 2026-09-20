@@ -27,6 +27,7 @@ import {
   generatedHeader,
   hasGameplaySourcedEnum,
   parseGameplayStateDescriptor,
+  parseKitFragmentFile,
   posixPath,
   renderSharedStateModule,
   renderServerSchemaModule,
@@ -318,7 +319,30 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
     if (manifest.id !== entry.name) {
       fail(`${entryLabel}/manifest.json`, `manifest.id "${manifest.id}" must equal its directory name "${entry.name}"`);
     }
-    const state = parseGameplayStateDescriptor(stateRaw.value);
+    // MF9-B3 kit fragment：`<kitId>:<name>` → apps/kits/<kitId>/fragments/<name>.state.json（kit.json.fragments 须声明）；
+    // 文件字节按引用顺序并入 contractDigest（fragment 变 = 该 mode 的 state 契约变，走 modeVersion 闸）。
+    const fragmentBytes: Buffer[] = [];
+    const state = parseGameplayStateDescriptor(stateRaw.value, {
+      roster: manifest.roster,
+      kind: manifest.kind,
+      resolveKitFragment: (kitId, name) => {
+        const stateLabel = `${entryLabel}/state.json`;
+        const kitJsonLabel = `${KITS_DIR_RELATIVE}/${kitId}/kit.json`;
+        const kitJsonFile = path.join(root, kitJsonLabel);
+        if (!fs.existsSync(kitJsonFile)) fail(stateLabel, `fragment "${kitId}:${name}" 引用的 kit "${kitId}" 不存在（${kitJsonLabel}）`);
+        const kitJson = readJsonFile(kitJsonFile, kitJsonLabel).value as { readonly fragments?: unknown };
+        const declared = Array.isArray(kitJson.fragments) ? (kitJson.fragments as unknown[]) : [];
+        if (!declared.includes(name)) {
+          fail(stateLabel, `fragment "${kitId}:${name}"：kit "${kitId}" 的 kit.json.fragments 未声明 "${name}"（已声明：${declared.map(String).join(", ") || "-"}）`);
+        }
+        const fragmentLabel = `${KITS_DIR_RELATIVE}/${kitId}/fragments/${name}.state.json`;
+        const fragmentFile = path.join(root, fragmentLabel);
+        assertRegularFile(fragmentFile, fragmentLabel);
+        const fragmentRaw = readJsonFile(fragmentFile, fragmentLabel);
+        fragmentBytes.push(fragmentRaw.bytes);
+        return parseKitFragmentFile(fragmentRaw.value, fragmentLabel);
+      },
+    });
 
     // wire.ts（手写，可缺省 = 该 mode 无 wire 消息）：语法读取 + 字节并入 digest。
     const wireLabel = `${SHARED_GAMEPLAYS_DIR_RELATIVE}/${entry.name}/wire.ts`;
@@ -368,13 +392,15 @@ export function readGameplayDescriptors(options: GameplayCodegenOptions = {}): r
     // digest 是 wire/state 契约身份，玩法自有模块的内容变化不该逼 modeVersion bump。
     const sharedModules = readGameplaySharedModules(root, entry.name);
 
-    const contractDigest = crypto.createHash("sha256")
+    const digestHash = crypto.createHash("sha256")
       .update(manifestRaw.bytes)
       .update("\0")
       .update(stateRaw.bytes)
       .update("\0")
-      .update(wireBytes)
-      .digest("hex");
+      .update(wireBytes);
+    // kit fragment 字节只在引用时并入：不引用的 mode digest 与此前逐字节相同。
+    for (const bytes of fragmentBytes) digestHash.update("\0").update(bytes);
+    const contractDigest = digestHash.digest("hex");
     gameplays.push({
       id: manifest.id,
       manifest,
@@ -477,8 +503,9 @@ export function readClientGameplayModules(
 export type ServerGameplayModule = {
   readonly id: string;
   readonly constantName: string;
-  /** 约定导出符号：`register<ConstantName>GameMode`。 */
+  /** 约定导出符号：match ⇒ `register<ConstantName>GameMode`；world ⇒ `register<ConstantName>WorldMode`（MMO MF4-B2）。 */
   readonly registerSymbol: string;
+  readonly kind: "match" | "world";
 };
 
 /**
@@ -498,12 +525,13 @@ export function readServerGameplayModules(
   const modules: ServerGameplayModule[] = [];
   for (const gameplay of [...canonical].sort((left, right) => (left.id < right.id ? -1 : 1))) {
     const id = gameplay.id;
-    const registerSymbol = `register${gameplay.manifest.constantName}GameMode`;
+    const kind = gameplay.manifest.kind;
+    const registerSymbol = `register${gameplay.manifest.constantName}${kind === "world" ? "WorldMode" : "GameMode"}`;
     const label = `${SERVER_MODES_DIR_RELATIVE}/${id}/index.ts`;
     const file = path.join(root, SERVER_MODES_DIR_RELATIVE, id, "index.ts");
     assertRegularFile(file, label);
     assertServerGameModeModuleSource(fs.readFileSync(file, "utf8"), label, registerSymbol);
-    modules.push({ id, constantName: gameplay.manifest.constantName, registerSymbol });
+    modules.push({ id, constantName: gameplay.manifest.constantName, registerSymbol, kind });
   }
   return modules;
 }
@@ -551,13 +579,18 @@ function rootType(gameplay: GameplayDescriptor): { readonly sharedName: string; 
 
 /**
  * root 的 `players` map value 类型 = 该玩法的 player Schema 类。
- * 存在性由 stateRenderer 的 ROOT_LIFECYCLE_FIELDS / PLAYER_LIFECYCLE_FIELDS 断言保证
- * （每个 root 必须有 `players` map，其 value 类型必须声明 id/name），这里只做渲染期兜底。
+ * public 名册：存在性由 stateRenderer 的 ROOT_LIFECYCLE_FIELDS / PLAYER_LIFECYCLE_FIELDS 断言保证
+ * （root 必须有 `players` map，其 value 类型必须声明 id/name），这里只做渲染期兜底；
+ * hidden 名册（MMO MF5a-B4）：root 没有 players map，也就没有 player Schema 类 ⇒ null。
  */
-function playerType(gameplay: GameplayDescriptor): { readonly name: string } {
+function playerType(gameplay: GameplayDescriptor): { readonly name: string } | null {
   const root = rootType(gameplay);
   const rootDescriptor = gameplay.state.types.find((candidate) => candidate.name === root.name);
   const players = rootDescriptor?.fields.find((field) => field.name === "players");
+  if (gameplay.state.roster === "hidden") {
+    if (players !== undefined) fail(`gameplays.${gameplay.id}`, `roster:"hidden" root ${root.name} must not declare "players" while rendering`);
+    return null;
+  }
   if (players?.kind !== "map") {
     fail(`gameplays.${gameplay.id}`, `root ${root.name} must declare a "players" map while rendering`);
   }
@@ -575,6 +608,9 @@ function renderCatalogEntries(gameplays: readonly GameplayDescriptor[]): string[
       `        constantName: ${JSON.stringify(gameplay.manifest.constantName)},`,
       `        modeVersion: ${gameplay.manifest.modeVersion},`,
       `        maxPlayers: ${gameplay.manifest.maxPlayers},`,
+      `        roster: ${JSON.stringify(gameplay.manifest.roster)},`,
+      `        kind: ${JSON.stringify(gameplay.manifest.kind)},`,
+      `        world: ${gameplay.manifest.world === null ? "null" : JSON.stringify(gameplay.manifest.world)},`,
       `        profiles: [${gameplay.manifest.profiles.map((profile) => JSON.stringify(profile)).join(", ")}],`,
       `        stateFragments: [${gameplay.state.fragments.map((fragment) => JSON.stringify(fragment)).join(", ")}],`,
       `        contractDigest: ${JSON.stringify(gameplay.contractDigest)},`,
@@ -699,6 +735,11 @@ function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreW
   const gameplayC2S = gameplays.flatMap((gameplay) =>
     gameplay.wire.c2s.map((token) => ({ id: gameplay.id, token })));
   const hasGameplayC2S = gameplayC2S.length > 0;
+  // MMO MF5a：perSession S2C token 表（值 = coalesceKey 或 null）；无选项的 token 不进表、其余产物字节不受影响。
+  const perSessionS2C = gameplays.flatMap((gameplay) => gameplay.wire.s2c.filter((token) => token.perSession));
+  // MMO MF6b：core 表的显式选项（CORE_C2S_OPTIONS / CORE_S2C_OPTIONS）——只有声明了的 core token 进 rateCost / perSession 表。
+  const coreRateCost = core.c2s.filter((entry) => entry.rateCost !== 1);
+  const corePerSession = core.s2c.filter((entry) => entry.perSession);
 
   const lines = [generatedHeader(WIRE_SOURCE_LABEL)];
   if (hasGameplayC2S) {
@@ -800,7 +841,14 @@ function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreW
     "/** 玩法 C2S 的预算成本（rateCost；机制为高频输入留位）。 */",
     "export const GAME_WIRE_RATE_COST = {",
     ...gameplayC2S.map(({ token }) => `    ${JSON.stringify(token.type)}: ${token.rateCost},`),
+    ...coreRateCost.map((entry) => `    ${JSON.stringify(entry.type)}: ${entry.rateCost},`),
     "} as const satisfies { readonly [type: string]: number };",
+    "",
+    "/** 每会话 S2C token（MMO MF5a）：只经 sendS2C 发给单个会话，broadcastS2C 对它 fail-closed；值 = coalesceKey（payload 字段名）或 null（不合并、不可丢）。 */",
+    "export const GAME_WIRE_PER_SESSION = {",
+    ...perSessionS2C.map((token) => `    ${JSON.stringify(token.type)}: ${JSON.stringify(token.coalesceKey)},`),
+    ...corePerSession.map((entry) => `    ${JSON.stringify(entry.type)}: ${JSON.stringify(entry.coalesceKey)},`),
+    "} as const satisfies { readonly [type: string]: string | null };",
     "",
     "/** 每玩法 C2S token 表（GameMode.commands 键派生与校验用）。 */",
     "export const gameplayC2STokens = {",
@@ -822,8 +870,12 @@ function renderWireCatalog(gameplays: readonly GameplayDescriptor[], core: CoreW
     "",
     "/** core S2C token（mode 经 context 发送 core Error/Chat 等时使用）。 */",
     "export const CORE_S2C_TOKENS = {",
-    ...core.s2c.map((entry) =>
-      `    ${entry.key}: defineS2C(${JSON.stringify(entry.type)}, CORE_S2C_WIRE[${JSON.stringify(entry.type)}]),`),
+    ...core.s2c.map((entry) => {
+      const options = entry.perSession
+        ? `, { perSession: true${entry.coalesceKey === null ? "" : `, coalesceKey: ${JSON.stringify(entry.coalesceKey)}`} }`
+        : "";
+      return `    ${entry.key}: defineS2C(${JSON.stringify(entry.type)}, CORE_S2C_WIRE[${JSON.stringify(entry.type)}]${options}),`;
+    }),
     "} as const;",
     "",
   );
@@ -837,7 +889,8 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     "import { type GamePhaseType, type RoomStateMode } from \"@game/shared\";",
   ];
   for (const gameplay of gameplays) {
-    lines.push(`import { ${rootType(gameplay).name}, ${playerType(gameplay).name} } from "./generated/${gameplay.id}";`);
+    const player = playerType(gameplay);
+    lines.push(`import { ${rootType(gameplay).name}${player ? `, ${player.name}` : ""} } from "./generated/${gameplay.id}";`);
   }
   lines.push("");
   for (const gameplay of gameplays) {
@@ -860,7 +913,8 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     "    tick: number;",
     "    phase: GamePhaseType;",
     "    matchId: string;",
-    "    players: MapSchema<RoomStatePlayerLifecycle>;",
+    "    /** Present only for roster:\"public\" modes (ROOM_STATE_ROSTER); hidden rosters live in the server-side seat table (MMO MF5a-B4). */",
+    "    players?: MapSchema<RoomStatePlayerLifecycle>;",
     "}",
     "",
     "/** OwnerReady fragment view (§4.6): only roots whose state.json declares \"ownerReady\" carry these fields. */",
@@ -896,6 +950,16 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
       `    ${JSON.stringify(gameplay.id)}: [${gameplay.state.fragments.map((fragment) => JSON.stringify(fragment)).join(", ")}],`),
     "} as const satisfies Record<RoomStateMode, readonly string[]>);",
     "",
+    "/** Roster visibility per mode (manifest.roster, MMO MF5a-B4 / M07): hidden roots carry no players map. */",
+    "export const ROOM_STATE_ROSTER = Object.freeze({",
+    ...gameplays.map((gameplay) => `    ${JSON.stringify(gameplay.id)}: ${JSON.stringify(gameplay.state.roster)},`),
+    "} as const satisfies Record<RoomStateMode, \"public\" | \"hidden\">);",
+    "",
+    "/** Gameplay kind per mode (manifest.kind, MMO MF4-B2): world roots are WorldRoom-only and never enter GameRoom. */",
+    "export const ROOM_STATE_KIND = Object.freeze({",
+    ...gameplays.map((gameplay) => `    ${JSON.stringify(gameplay.id)}: ${JSON.stringify(gameplay.state.kind)},`),
+    "} as const satisfies Record<RoomStateMode, \"match\" | \"world\">);",
+    "",
     "export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({",
   );
   for (const gameplay of gameplays) {
@@ -920,24 +984,30 @@ function renderServerAggregate(gameplays: readonly GameplayDescriptor[]): string
     // ⛔ 没有这张表时，任何需要「按 mode 造一个 player」的通用代码（GameRoom shell 之外，
     // 尤其是玩法无关的测试探针）只能手写 `new SnakePlayerState()`——那正是中央测试长出
     // 具名玩法分支的根因。
-    "/** mode → player Schema 类；与 ROOM_STATE_ROOT_CONSTRUCTORS 同源于 state.json。 */",
+    "/** mode → player Schema 类；与 ROOM_STATE_ROOT_CONSTRUCTORS 同源于 state.json（roster:\"hidden\" 的 mode 没有 player 类，不在此表）。 */",
     "export const ROOM_STATE_PLAYER_CONSTRUCTORS = Object.freeze({",
   );
   for (const gameplay of gameplays) {
-    lines.push(`    ${JSON.stringify(gameplay.id)}: ${playerType(gameplay).name},`);
+    const player = playerType(gameplay);
+    if (player) lines.push(`    ${JSON.stringify(gameplay.id)}: ${player.name},`);
   }
   lines.push(
-    "} as const satisfies Record<RoomStateMode, new () => Schema>);",
+    "} as const satisfies { readonly [M in RoomStateMode]?: new () => Schema });",
     "",
-    "export type RoomStatePlayerForMode<M extends RoomStateMode> = InstanceType<(typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[M]>;",
-    "export type RoomStatePlayer = RoomStatePlayerForMode<RoomStateMode>;",
-    "type RoomStatePlayerConstructor = (typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[RoomStateMode];",
+    "/** Modes whose roster is public (they have a player Schema class). */",
+    "export type RoomStatePlayerMode = keyof typeof ROOM_STATE_PLAYER_CONSTRUCTORS;",
+    "export type RoomStatePlayerForMode<M extends RoomStatePlayerMode> = InstanceType<(typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[M]>;",
+    "export type RoomStatePlayer = RoomStatePlayerForMode<RoomStatePlayerMode>;",
+    "type RoomStatePlayerConstructor = (typeof ROOM_STATE_PLAYER_CONSTRUCTORS)[RoomStatePlayerMode];",
     "",
-    "export function createRoomPlayerForMode<M extends RoomStateMode>(mode: M): RoomStatePlayerForMode<M>;",
+    "export function createRoomPlayerForMode<M extends RoomStatePlayerMode>(mode: M): RoomStatePlayerForMode<M>;",
     "export function createRoomPlayerForMode(mode: string): RoomStatePlayer;",
     "export function createRoomPlayerForMode(mode: string): RoomStatePlayer {",
     "    const Player = (ROOM_STATE_PLAYER_CONSTRUCTORS as Readonly<Partial<Record<string, RoomStatePlayerConstructor>>>)[mode];",
-    "    if (!Player) throw new TypeError(`[room-state] unsupported gameplay mode: ${mode}`);",
+    "    if (!Player) {",
+    "        const known = Object.prototype.hasOwnProperty.call(ROOM_STATE_ROSTER, mode);",
+    "        throw new TypeError(known ? `[room-state] hidden roster has no player Schema: ${mode}` : `[room-state] unsupported gameplay mode: ${mode}`);",
+    "    }",
     "    return new Player();",
     "}",
     "",
@@ -1019,28 +1089,23 @@ const SERVER_SOURCE_LABEL =
  * 静态 import；⛔ 无副作用式自注册、⛔ 无运行时目录扫描）。`modes/catalog.ts` 是它的稳定 façade。
  */
 function renderServerCatalog(serverModules: readonly ServerGameplayModule[]): string {
+  const matchModules = serverModules.filter((module) => module.kind === "match");
+  const worldModules = serverModules.filter((module) => module.kind === "world");
   const lines = [
     generatedHeader(SERVER_SOURCE_LABEL),
     "import type { GameModeRegistry } from \"../GameMode\";",
+    "import type { WorldModeRegistry } from \"../WorldMode\";",
   ];
   for (const module of serverModules) {
     lines.push(`import { ${module.registerSymbol} } from "./${module.id}/index";`);
   }
-  lines.push(
-    "",
-    "/** 已装配服务端 GameMode 的玩法 id（= canonical GameplayModeId；fixture 玩法不在此表）。 */",
-    "export const GENERATED_GAME_MODE_IDS: readonly string[] = [",
-    ...serverModules.map((module) => `    ${JSON.stringify(module.id)},`),
-    "];",
-    "",
-    "/**",
-    " * 在进程组合根登记全部 generated 服务端 GameMode（缺省登记进生产 gameModeRegistry；",
-    " * 测试可注入自己的 registry）：后续登记失败回滚本次已登记项（逆序），⛔ 不影响调用前已有登记。",
-    " */",
-    "export function registerGeneratedGameModes(registry?: GameModeRegistry): () => void {",
+  const renderRegister = (name: string, registryType: string, modules: readonly ServerGameplayModule[]): string[] => [
+    `export function ${name}(registry?: ${registryType}): () => void {`,
+    // 该形态暂无 canonical mode 时仍保持签名稳定（组合根 / façade 不随 mode 有无而变）
+    ...(modules.length === 0 ? ["    void registry;"] : []),
     "    const disposers: Array<() => void> = [];",
     "    try {",
-    ...serverModules.map((module) => `        disposers.push(${module.registerSymbol}(registry));`),
+    ...modules.map((module) => `        disposers.push(${module.registerSymbol}(registry));`),
     "    } catch (error) {",
     "        for (const dispose of disposers.splice(0).reverse()) dispose();",
     "        throw error;",
@@ -1049,6 +1114,27 @@ function renderServerCatalog(serverModules: readonly ServerGameplayModule[]): st
     "        for (const dispose of disposers.splice(0).reverse()) dispose();",
     "    };",
     "}",
+  ];
+  lines.push(
+    "",
+    "/** 已装配服务端 GameMode 的玩法 id（= canonical GameplayModeId 中 kind:\"match\" 者；fixture 玩法不在此表）。 */",
+    "export const GENERATED_GAME_MODE_IDS: readonly string[] = [",
+    ...matchModules.map((module) => `    ${JSON.stringify(module.id)},`),
+    "];",
+    "",
+    "/** 已装配服务端 WorldMode 的玩法 id（= canonical GameplayModeId 中 kind:\"world\" 者，MMO MF4-B2）。 */",
+    "export const GENERATED_WORLD_MODE_IDS: readonly string[] = [",
+    ...worldModules.map((module) => `    ${JSON.stringify(module.id)},`),
+    "];",
+    "",
+    "/**",
+    " * 在进程组合根登记全部 generated 服务端 GameMode（缺省登记进生产 gameModeRegistry；",
+    " * 测试可注入自己的 registry）：后续登记失败回滚本次已登记项（逆序），⛔ 不影响调用前已有登记。",
+    " */",
+    ...renderRegister("registerGeneratedGameModes", "GameModeRegistry", matchModules),
+    "",
+    "/** 同上，world 形态登进 worldModeRegistry（WorldRoom 的组合根；⛔ 不混进 GameRoom 的 registry）。 */",
+    ...renderRegister("registerGeneratedWorldModes", "WorldModeRegistry", worldModules),
     "",
   );
   return `${lines.join("\n").trimEnd()}\n`;
@@ -1115,6 +1201,11 @@ function renderSharedModeIds(gameplays: readonly GameplayDescriptor[]): string {
     "} as const;",
     "",
     "export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayModeId];",
+    "",
+    "/** 其中 manifest `kind: \"world\"` 的成员（MMO MF4-B2）：world 形态走 RoomName.World / WorldRoom，⛔ 不进 GameRoom 撮合。 */",
+    "export const WORLD_MODE_IDS: readonly GameplayModeIdType[] = [",
+    ...gameplays.filter((gameplay) => gameplay.manifest.kind === "world").map((gameplay) => `    ${JSON.stringify(gameplay.id)},`),
+    "];",
     "",
   ];
   return `${lines.join("\n").trimEnd()}\n`;
@@ -1240,7 +1331,7 @@ export function previousCatalogRecords(options: GameplayCodegenOptions = {}): Re
   const text = fs.readFileSync(file, "utf8");
   // profiles/stateFragments 两行可缺省匹配：既容纳阶段 8 之前的旧 catalog 格式（首次带
   // fragment 的迁移仍能读到历史 digest/modeVersion），也容纳当前格式。
-  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n(?: {8}(?:profiles|stateFragments): \[[^\]\n]*\],\n)* {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
+  const entry = /"([A-Za-z0-9._-]{1,64})": \{\n {8}id: "[^"\n]+",\n {8}constantName: "[^"\n]+",\n {8}modeVersion: (\d+),\n {8}maxPlayers: \d+,\n(?: {8}roster: "(?:public|hidden)",\n)?(?: {8}kind: "(?:match|world)",\n)?(?: {8}world: (?:null|\{[^\n]*\}),\n)?(?: {8}(?:profiles|stateFragments): \[[^\]\n]*\],\n)* {8}contractDigest: "([0-9a-f]{64})",\n {4}\},/gu;
   for (const match of text.matchAll(entry)) {
     records.set(match[1], {
       modeVersion: Number(match[2]),

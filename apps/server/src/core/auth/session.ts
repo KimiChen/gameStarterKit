@@ -24,7 +24,7 @@ import { storedInt } from "../infra/numbers";
 import { defineScript, evalshaWithReload } from "../infra/redisScripts";
 import { withUserLock } from "../locks";
 // 踢人通道（§2.3）：同区顶号时主动踢旧连接；账号封禁/撤销由 WebPlatform 管理面负责。
-import { broadcastKick, kickLocal } from "./kickBus";
+import { broadcastKick, kickLocal, revokePersonaSessions } from "./kickBus";
 import { ForceLogoutReason } from "@game/shared";
 
 const sha256 = (s: string): string => createHash("sha256").update(s).digest("hex");
@@ -114,12 +114,15 @@ export interface GroupSessWriteDependencies {
   readonly touchActive: typeof touchActive;
   readonly kickLocal: typeof kickLocal;
   readonly broadcastKick: typeof broadcastKick;
+  /** 顶号时抬高该 uid 在本区全部 persona 的 session_generation（MMO MF2-B5）。 */
+  readonly revokePersonaSessions: typeof revokePersonaSessions;
 }
 
 const defaultGroupSessWriteDependencies: GroupSessWriteDependencies = {
   touchActive,
   kickLocal,
   broadcastKick,
+  revokePersonaSessions,
 };
 
 /**
@@ -134,6 +137,7 @@ export async function writeGroupSess(
     touchActive: overrides.touchActive ?? defaultGroupSessWriteDependencies.touchActive,
     kickLocal: overrides.kickLocal ?? defaultGroupSessWriteDependencies.kickLocal,
     broadcastKick: overrides.broadcastKick ?? defaultGroupSessWriteDependencies.broadcastKick,
+    revokePersonaSessions: overrides.revokePersonaSessions ?? defaultGroupSessWriteDependencies.revokePersonaSessions,
   };
   const key = kSess(uid, sId);
   const newHash = sha256(token);
@@ -181,7 +185,17 @@ export async function writeGroupSess(
     if (touchError !== undefined) { throw touchError; }
     return "unchanged";
   }
+  let revokeError: unknown;
   if (oldHash !== null && oldHash !== newHash) {
+    // 撤销覆盖 persona（MMO MF2-B5）：**先抬**该 uid 在本区全部 persona 的 session_generation（权威写，MySQL），
+    // **再踢**（送达 best-effort）——与「先写账号权威、再处理在连」同序（EXTRAS §3.2）。抬代失败照踢、踢完再抛
+    // （与 touchError 同款：⛔ 不能因派生状态失败漏踢）。⚠ 重试走 unchanged 不会补抬：旧登录态的 persona 票据只活到
+    // 其自身过期，且世界侧 join 仍复核组 sess（旧 token 的 hash 已被覆盖）——会话代是第三层闸，⛔ 不是唯一闸。
+    try {
+      await dependencies.revokePersonaSessions(uid, sId);
+    } catch (error) {
+      revokeError = error;
+    }
     // 顶号：踢旧连接（本节点即时 + 跨节点广播）。⚠ 此刻**新连接尚未注册**——
     // Internal verify 后的 onAuth 懒填早于 onJoin.registerOnline，故 ⛔ 不会自踢。
     // ⚠ 带 newHash 判别位：本节点消费者会把这条广播读回来（流无发布者过滤），迟到投递时新连接
@@ -191,6 +205,7 @@ export async function writeGroupSess(
     await dependencies.broadcastKick(uid, ForceLogoutReason.Replaced, newHash, issuedAtMs, sId);
   }
   if (touchError !== undefined) { throw touchError; }
+  if (revokeError !== undefined) { throw revokeError; }
   return "written";
 }
 

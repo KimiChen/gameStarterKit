@@ -17,6 +17,7 @@ import { server } from "../../src/app.config";
 import { GUILD_CATALOG } from "../../src/core/guild/catalog";
 import { createUser } from "../../src/core/userRecord";
 import { stopMailWakeLoop } from "../../src/websocket/push";
+import { startPushConsumer, stopPushConsumer } from "../../src/core/push/pushBus";
 import {
   activeLruBucketOf, kActiveLru, kGuildEvtLog, kGuildEvtSeq, kSess, kUser,
 } from "../../src/core/infra/keys";
@@ -80,9 +81,11 @@ before(async () => {
     await clientForKey(kGuildEvtSeq(gid)).unlink(kGuildEvtSeq(gid), kGuildEvtLog(gid));
   }
   colyseus = await boot(server);
+  startPushConsumer(); // MF6a-B2：工会唤醒经投递总线扇出（发布方不本地直投），测试进程显式起消费者
 });
 
 after(async () => {
+  await stopPushConsumer();
   await stopMailWakeLoop();
   await colyseus?.shutdown();
   for (const u of uids) {

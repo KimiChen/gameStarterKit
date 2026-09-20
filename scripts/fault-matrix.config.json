@@ -60,6 +60,19 @@
         "webplatform-register",
         "character-ready-timeout"
       ]
+    },
+    {
+      "id": "world-transfer",
+      "cwd": "apps/server",
+      "files": [
+        "apps/server/test/int/world-transfer-flow.test.ts"
+      ],
+      "faultPoints": [
+        "transfer-source-crash",
+        "transfer-target-crash",
+        "transfer-reply-lost",
+        "transfer-client-drop"
+      ]
     }
   ]
 }

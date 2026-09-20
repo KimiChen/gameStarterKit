@@ -250,7 +250,6 @@ function internFillImage(commonPkg) {
             path: "/images/",
             width: 4,
             height: 4,
-            scale9grid: { x: 1, y: 1, width: 2, height: 2, attr: "1,1,2,2" },
             bytes: solidPng(r, g, b, a, 4),
             resourceId: `fill:${hex}`,
             exported: true,
@@ -639,6 +638,10 @@ function flattenWalk(ctx, node, groupIndex, displayList) {
             flattenWalk(ctx, child, index, displayList);
             continue;
         }
+        if (child.kind === "virtual-list" || child.kind === "scroll-view") {
+            displayList.push(scrollListChild(ctx, child, groupIndex));
+            continue;
+        }
         if (isContainer(child)) {
             const nested = ctx.childrenOf.get(child.id) ?? [];
             const color = styleOf(child, ctx).backgroundColor;
@@ -666,6 +669,53 @@ function flattenWalk(ctx, node, groupIndex, displayList) {
 function isContainer(node) {
     return node.kind === "view" || node.kind === "virtual-list" || node.kind === "scroll-view"
         || node.kind === "component";
+}
+
+/** Direction from row overflow: beyond width only → horizontal, both → both, else vertical. */
+function scrollDirection(node, rows) {
+    const viewW = node.rect?.width ?? 0;
+    const viewH = node.rect?.height ?? 0;
+    let right = 0;
+    let bottom = 0;
+    for (const row of rows) {
+        right = Math.max(right, (row.x ?? 0) + (row.width ?? 0));
+        bottom = Math.max(bottom, (row.y ?? 0) + (row.height ?? 0));
+    }
+    const overX = right > viewW + 1;
+    const overY = bottom > viewH + 1;
+    if (overX && overY) return "both";
+    if (overX) return "horizontal";
+    return "vertical";
+}
+
+/** A virtual-list/scroll-view becomes a real scroll component; rows live inside it. */
+function scrollListChild(ctx, node, groupIndex) {
+    const xy = rel(node.rect, ctx.origin);
+    ctx.scrollSeq = (ctx.scrollSeq ?? 0) + 1;
+    const base = String(node.name || "List").replace(/[^A-Za-z0-9_]/g, "_") || "List";
+    const compName = `${ctx.pkg.name}_${base}_${ctx.scrollSeq}`;
+    const rows = flatten({ ...ctx, root: node, origin: node.rect });
+    ctx.pkg.components.push({
+        id: fairyId(`comp:${ctx.pkg.name}:${compName}`),
+        name: compName,
+        exported: false,
+        size: roundSize(node.rect),
+        extension: null,
+        objectType: ObjectType.Component,
+        scroll: scrollDirection(node, rows),
+        children: rows,
+    });
+    return {
+        kind: "component",
+        name: node.name || base,
+        srcName: compName,
+        ...xy,
+        width: Math.round(node.rect?.width ?? 0),
+        height: Math.round(node.rect?.height ?? 0),
+        group: groupIndex,
+        visible: node.visible !== false,
+        touchable: true,
+    };
 }
 
 function nameUnnamedTexts(displayList) {
@@ -1078,7 +1128,7 @@ function parentTextStyle(node, ctx) {
     if (node.kind !== "text") return null;
     const parent = ctx.byId?.get(node.parent);
     const name = parent?.name;
-    if (name === "PanelTab") {
+    if (name === "Tab" || name === "PanelTab") {
         const active = (parent.rect?.height ?? 0) >= 60;
         return {
             fontSize: active ? 32 : 28,

@@ -59,6 +59,19 @@
         }
       }
     },
+    "contributes": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][A-Za-z0-9]{0,63}$": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[a-z][A-Za-z0-9]{0,63}$": { "type": "string", "pattern": "^apps/(plugins|client/src|server/src|shared/src)/[A-Za-z0-9][A-Za-z0-9_/.-]*\\.(ts|json)$" }
+          }
+        }
+      }
+    },
     "entry": { "type": "string", "pattern": "^apps/client/src/plugins/[a-z][A-Za-z0-9]{0,63}/index\\.ts$" },
     "dependencies": {
       "type": "array",
@@ -114,7 +127,9 @@
             "properties": {
               "kind": { "type": "string", "pattern": "^(gameplay|route)$" },
               "gameplayId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" },
-              "routeId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" }
+              "routeId": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]{0,63}$" },
+              "payload": { "type": "object" },
+              "profile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }
             }
           }
         }

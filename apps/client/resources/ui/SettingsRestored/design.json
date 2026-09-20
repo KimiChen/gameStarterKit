@@ -11,6 +11,27 @@
   "nodes": {
     "layer-1": {
       "id": "layer-1",
+      "name": "SettingsPage",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "SettingsPage",
+        "role": "node"
+      },
+      "children": [
+        "layer-2",
+        "layer-13"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
       "name": "PopupFrame",
       "kind": "group",
       "frame": {
@@ -22,17 +43,17 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "PopupFrame:PopupFrame",
+        "key": "PopupFrame:SettingsPage/PopupFrame",
         "role": "component",
         "definitionKey": "PopupFrame"
       },
       "children": [
-        "layer-2",
-        "layer-4"
+        "layer-3",
+        "layer-5"
       ]
     },
-    "layer-2": {
-      "id": "layer-2",
+    "layer-3": {
+      "id": "layer-3",
       "name": "PopupFrame/Mask",
       "kind": "group",
       "frame": {
@@ -44,16 +65,16 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "PopupFrame:PopupFrame/PopupFrame/Mask",
+        "key": "PopupFrame:SettingsPage/PopupFrame/PopupFrame/Mask",
         "role": "node",
         "definitionKey": "PopupFrame"
       },
       "children": [
-        "layer-3"
+        "layer-4"
       ]
     },
-    "layer-3": {
-      "id": "layer-3",
+    "layer-4": {
+      "id": "layer-4",
       "name": "PopupFrame/Mask / fill",
       "kind": "image",
       "frame": {
@@ -65,15 +86,15 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "PopupFrame:PopupFrame/PopupFrame/Mask",
+        "key": "PopupFrame:SettingsPage/PopupFrame/PopupFrame/Mask",
         "role": "fill",
         "definitionKey": "PopupFrame",
         "captureHash": "e62cc94aa273088ba11c3f257a2ce4852aa72c5a1c5e1dd6ab4fc7c6b1ccaa76"
       },
       "asset": "asset-b99cba497a3a4dba934bb4f7337f80cf2ad427d56059d0692dca90f449522fb6"
     },
-    "layer-4": {
-      "id": "layer-4",
+    "layer-5": {
+      "id": "layer-5",
       "name": "PopupFrame/Panel",
       "kind": "group",
       "frame": {
@@ -85,57 +106,19 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "PopupFrame:PopupFrame/PopupFrame/Panel",
+        "key": "PopupFrame:SettingsPage/PopupFrame/PopupFrame/Panel",
         "role": "node",
         "definitionKey": "PopupFrame"
       },
       "children": [
-        "layer-5",
-        "layer-8",
+        "layer-6",
         "layer-9",
-        "layer-73"
-      ]
-    },
-    "layer-5": {
-      "id": "layer-5",
-      "name": "PopupBackground",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 708,
-        "height": 992
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "PopupBackground:PopupFrame/PopupFrame/Panel/PopupBackground",
-        "role": "component",
-        "definitionKey": "PopupBackground"
-      },
-      "children": [
-        "layer-6"
+        "layer-10"
       ]
     },
     "layer-6": {
       "id": "layer-6",
-      "name": "Group",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 708,
-        "height": 992
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-7"
-      ]
-    },
-    "layer-7": {
-      "id": "layer-7",
-      "name": "Canvas",
+      "name": "PopupBackground",
       "kind": "image",
       "frame": {
         "x": 0,
@@ -146,16 +129,14 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "PopupBackground:PopupFrame/PopupFrame/Panel/PopupBackground/_:2",
-        "role": "node",
-        "definitionKey": "PopupBackground",
-        "resourceId": "ui/settings/panel",
-        "captureHash": "28df1a46572eb46a9b8cbad6b5ba322324f1e58ab2ad35863e66367960787fdd"
+        "key": "PopupBackground:SettingsPage/PopupFrame/PopupFrame/Panel/PopupBackground",
+        "role": "component",
+        "definitionKey": "PopupBackground"
       },
       "asset": "asset-30b3bd65fab9847ea1208c43bb41a96c2db2f3ab6097202f798149a940fe9c47"
     },
-    "layer-8": {
-      "id": "layer-8",
+    "layer-9": {
+      "id": "layer-9",
       "name": "PopupFrame/Title",
       "kind": "text",
       "frame": {
@@ -167,7 +148,7 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "PopupFrame:PopupFrame/PopupFrame/Panel/PopupFrame/Title",
+        "key": "PopupFrame:SettingsPage/PopupFrame/PopupFrame/Panel/PopupFrame/Title",
         "role": "node",
         "definitionKey": "PopupFrame"
       },
@@ -184,34 +165,32 @@
         "color": "#ffffff"
       }
     },
-    "layer-9": {
-      "id": "layer-9",
-      "name": "PopupFrame/Content",
-      "kind": "group",
+    "layer-10": {
+      "id": "layer-10",
+      "name": "CloseButton",
+      "kind": "image",
       "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 708,
-        "height": 992
+        "x": 621,
+        "y": 6,
+        "width": 72,
+        "height": 72
       },
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "PopupFrame:PopupFrame/PopupFrame/Panel/PopupFrame/Content",
-        "role": "node",
-        "definitionKey": "PopupFrame"
+        "key": "CloseButton:SettingsPage/PopupFrame/PopupFrame/Panel/CloseButton",
+        "role": "component",
+        "definitionKey": "CloseButton"
       },
-      "children": [
-        "layer-10"
-      ]
+      "asset": "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c"
     },
-    "layer-10": {
-      "id": "layer-10",
+    "layer-13": {
+      "id": "layer-13",
       "name": "Settings/Content",
       "kind": "group",
       "frame": {
-        "x": 0,
-        "y": 0,
+        "x": 21,
+        "y": 171,
         "width": 708,
         "height": 992
       },
@@ -223,150 +202,42 @@
         "definitionKey": "Settings"
       },
       "children": [
-        "layer-11",
-        "layer-17",
-        "layer-23",
-        "layer-29",
-        "layer-35",
-        "layer-41",
-        "layer-47",
-        "layer-53",
-        "layer-59",
-        "layer-65",
-        "layer-71"
-      ]
-    },
-    "layer-11": {
-      "id": "layer-11",
-      "name": "SettingsMenuButton",
-      "kind": "group",
-      "frame": {
-        "x": 21,
-        "y": 113,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:0",
-        "role": "component",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "children": [
-        "layer-12",
         "layer-14",
-        "layer-16"
+        "layer-20",
+        "layer-26",
+        "layer-32",
+        "layer-38",
+        "layer-44",
+        "layer-50",
+        "layer-56",
+        "layer-62",
+        "layer-68",
+        "layer-74"
       ]
-    },
-    "layer-12": {
-      "id": "layer-12",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-13"
-      ]
-    },
-    "layer-13": {
-      "id": "layer-13",
-      "name": "SettingsMenuButton/Background",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:0/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
     },
     "layer-14": {
       "id": "layer-14",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-15"
-      ]
-    },
-    "layer-15": {
-      "id": "layer-15",
-      "name": "SettingsMenuButton/Icon",
+      "name": "WideMenuButton",
       "kind": "image",
       "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
+        "x": 21,
+        "y": 113,
+        "width": 326,
+        "height": 114
       },
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:0/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:0",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
+      "asset": "asset-99c4ca2d30910f2af74a0e04df49fea16332d41d38655f30f83f7c82782dd65c"
     },
-    "layer-16": {
-      "id": "layer-16",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:0/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "通用设置",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-17": {
-      "id": "layer-17",
-      "name": "SettingsMenuButton",
-      "kind": "group",
+    "layer-20": {
+      "id": "layer-20",
+      "name": "WideMenuButton",
+      "kind": "image",
       "frame": {
         "x": 362,
         "y": 113,
@@ -376,124 +247,16 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:1",
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:1",
         "role": "component",
-        "definitionKey": "SettingsMenuButton"
+        "definitionKey": "WideMenuButton"
       },
-      "children": [
-        "layer-18",
-        "layer-20",
-        "layer-22"
-      ]
+      "asset": "asset-da34b0ce1b0c6e2637eabcb335412d20996e9cc9abbeb092725dae666a359632"
     },
-    "layer-18": {
-      "id": "layer-18",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-19"
-      ]
-    },
-    "layer-19": {
-      "id": "layer-19",
-      "name": "SettingsMenuButton/Background",
+    "layer-26": {
+      "id": "layer-26",
+      "name": "WideMenuButton",
       "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:1/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
-    },
-    "layer-20": {
-      "id": "layer-20",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-21"
-      ]
-    },
-    "layer-21": {
-      "id": "layer-21",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:1/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
-      },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
-    },
-    "layer-22": {
-      "id": "layer-22",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:1/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "声音设置",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-23": {
-      "id": "layer-23",
-      "name": "SettingsMenuButton",
-      "kind": "group",
       "frame": {
         "x": 21,
         "y": 254,
@@ -503,124 +266,16 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:2",
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:2",
         "role": "component",
-        "definitionKey": "SettingsMenuButton"
+        "definitionKey": "WideMenuButton"
       },
-      "children": [
-        "layer-24",
-        "layer-26",
-        "layer-28"
-      ]
+      "asset": "asset-a1eba252fa88b454a9b475834e9d786434c3d013b84c3e6cc46bbd635b20ecca"
     },
-    "layer-24": {
-      "id": "layer-24",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-25"
-      ]
-    },
-    "layer-25": {
-      "id": "layer-25",
-      "name": "SettingsMenuButton/Background",
+    "layer-32": {
+      "id": "layer-32",
+      "name": "WideMenuButton",
       "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:2/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
-    },
-    "layer-26": {
-      "id": "layer-26",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-27"
-      ]
-    },
-    "layer-27": {
-      "id": "layer-27",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:2/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
-      },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
-    },
-    "layer-28": {
-      "id": "layer-28",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:2/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "语言设置",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-29": {
-      "id": "layer-29",
-      "name": "SettingsMenuButton",
-      "kind": "group",
       "frame": {
         "x": 362,
         "y": 254,
@@ -630,124 +285,16 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:3",
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:3",
         "role": "component",
-        "definitionKey": "SettingsMenuButton"
+        "definitionKey": "WideMenuButton"
       },
-      "children": [
-        "layer-30",
-        "layer-32",
-        "layer-34"
-      ]
+      "asset": "asset-43d30d8cb45faabfd4ebb137eb5b9f386cbd77d17591eb7cf43f9e553a1e648b"
     },
-    "layer-30": {
-      "id": "layer-30",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-31"
-      ]
-    },
-    "layer-31": {
-      "id": "layer-31",
-      "name": "SettingsMenuButton/Background",
+    "layer-38": {
+      "id": "layer-38",
+      "name": "WideMenuButton",
       "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:3/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
-    },
-    "layer-32": {
-      "id": "layer-32",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-33"
-      ]
-    },
-    "layer-33": {
-      "id": "layer-33",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:3/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
-      },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
-    },
-    "layer-34": {
-      "id": "layer-34",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:3/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "推送通知",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-35": {
-      "id": "layer-35",
-      "name": "SettingsMenuButton",
-      "kind": "group",
       "frame": {
         "x": 21,
         "y": 395,
@@ -757,251 +304,35 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:4",
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:4",
         "role": "component",
-        "definitionKey": "SettingsMenuButton"
+        "definitionKey": "WideMenuButton"
       },
-      "children": [
-        "layer-36",
-        "layer-38",
-        "layer-40"
-      ]
-    },
-    "layer-36": {
-      "id": "layer-36",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-37"
-      ]
-    },
-    "layer-37": {
-      "id": "layer-37",
-      "name": "SettingsMenuButton/Background",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:4/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
-    },
-    "layer-38": {
-      "id": "layer-38",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-39"
-      ]
-    },
-    "layer-39": {
-      "id": "layer-39",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:4/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
-      },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
-    },
-    "layer-40": {
-      "id": "layer-40",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:4/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "隐私设置",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-41": {
-      "id": "layer-41",
-      "name": "SettingsMenuButton",
-      "kind": "group",
-      "frame": {
-        "x": 21,
-        "y": 567,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:5",
-        "role": "component",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "children": [
-        "layer-42",
-        "layer-44",
-        "layer-46"
-      ]
-    },
-    "layer-42": {
-      "id": "layer-42",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-43"
-      ]
-    },
-    "layer-43": {
-      "id": "layer-43",
-      "name": "SettingsMenuButton/Background",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:5/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
+      "asset": "asset-27d8ece9a591a8cfdcc836d79cebe3a34bcea1b9340f15c0ec8de225ed9c4287"
     },
     "layer-44": {
       "id": "layer-44",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-45"
-      ]
-    },
-    "layer-45": {
-      "id": "layer-45",
-      "name": "SettingsMenuButton/Icon",
+      "name": "WideMenuButton",
       "kind": "image",
       "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
+        "x": 21,
+        "y": 567,
+        "width": 326,
+        "height": 114
       },
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:5/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:5",
+        "role": "component",
+        "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
+      "asset": "asset-b191f2c1bf53a144819a0c945873974e3896eac450151d510007dce6f19c3011"
     },
-    "layer-46": {
-      "id": "layer-46",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:5/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "用户中心",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-47": {
-      "id": "layer-47",
-      "name": "SettingsMenuButton",
-      "kind": "group",
+    "layer-50": {
+      "id": "layer-50",
+      "name": "WideMenuButton",
+      "kind": "image",
       "frame": {
         "x": 362,
         "y": 567,
@@ -1011,124 +342,16 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:6",
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:6",
         "role": "component",
-        "definitionKey": "SettingsMenuButton"
+        "definitionKey": "WideMenuButton"
       },
-      "children": [
-        "layer-48",
-        "layer-50",
-        "layer-52"
-      ]
+      "asset": "asset-0d21af0793e6c1581a398c2039a686b27438044a299a49b878845014261a3cf5"
     },
-    "layer-48": {
-      "id": "layer-48",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-49"
-      ]
-    },
-    "layer-49": {
-      "id": "layer-49",
-      "name": "SettingsMenuButton/Background",
+    "layer-56": {
+      "id": "layer-56",
+      "name": "WideMenuButton",
       "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:6/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
-    },
-    "layer-50": {
-      "id": "layer-50",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-51"
-      ]
-    },
-    "layer-51": {
-      "id": "layer-51",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:6/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
-      },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
-    },
-    "layer-52": {
-      "id": "layer-52",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:6/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "客服帮助",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-53": {
-      "id": "layer-53",
-      "name": "SettingsMenuButton",
-      "kind": "group",
       "frame": {
         "x": 21,
         "y": 708,
@@ -1138,124 +361,16 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:7",
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:7",
         "role": "component",
-        "definitionKey": "SettingsMenuButton"
+        "definitionKey": "WideMenuButton"
       },
-      "children": [
-        "layer-54",
-        "layer-56",
-        "layer-58"
-      ]
+      "asset": "asset-1fa536081a3b189f0471692e386bf8f14268ee7e957bb256b3b36b05e29dfb6b"
     },
-    "layer-54": {
-      "id": "layer-54",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-55"
-      ]
-    },
-    "layer-55": {
-      "id": "layer-55",
-      "name": "SettingsMenuButton/Background",
+    "layer-62": {
+      "id": "layer-62",
+      "name": "WideMenuButton",
       "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:7/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
-    },
-    "layer-56": {
-      "id": "layer-56",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-57"
-      ]
-    },
-    "layer-57": {
-      "id": "layer-57",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:7/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
-      },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
-    },
-    "layer-58": {
-      "id": "layer-58",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:7/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "服务条款",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-59": {
-      "id": "layer-59",
-      "name": "SettingsMenuButton",
-      "kind": "group",
       "frame": {
         "x": 362,
         "y": 708,
@@ -1265,124 +380,16 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:8",
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:8",
         "role": "component",
-        "definitionKey": "SettingsMenuButton"
+        "definitionKey": "WideMenuButton"
       },
-      "children": [
-        "layer-60",
-        "layer-62",
-        "layer-64"
-      ]
+      "asset": "asset-2caafd0bb4d6d2adabfa1bf53a14ae574920fc7a782075fd59862b0edb3088a0"
     },
-    "layer-60": {
-      "id": "layer-60",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-61"
-      ]
-    },
-    "layer-61": {
-      "id": "layer-61",
-      "name": "SettingsMenuButton/Background",
+    "layer-68": {
+      "id": "layer-68",
+      "name": "WideMenuButton",
       "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:8/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
-    },
-    "layer-62": {
-      "id": "layer-62",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-63"
-      ]
-    },
-    "layer-63": {
-      "id": "layer-63",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:8/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
-      },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
-    },
-    "layer-64": {
-      "id": "layer-64",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:8/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "切换账号",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-65": {
-      "id": "layer-65",
-      "name": "SettingsMenuButton",
-      "kind": "group",
       "frame": {
         "x": 21,
         "y": 849,
@@ -1392,122 +399,14 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:9",
+        "key": "WideMenuButton:SettingsPage/Settings/Content/_/WideMenuButton:9",
         "role": "component",
-        "definitionKey": "SettingsMenuButton"
+        "definitionKey": "WideMenuButton"
       },
-      "children": [
-        "layer-66",
-        "layer-68",
-        "layer-70"
-      ]
+      "asset": "asset-f586cc27267820a9138f1bdaf9c79a5fea9364f7468c52ca260ad24105c91f4f"
     },
-    "layer-66": {
-      "id": "layer-66",
-      "name": "SettingsMenuButton/Background",
-      "kind": "group",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-67"
-      ]
-    },
-    "layer-67": {
-      "id": "layer-67",
-      "name": "SettingsMenuButton/Background",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 326,
-        "height": 114
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:9/SettingsMenuButton/Background",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/button",
-        "captureHash": "f923508c5ca08b34c877c518ed5f0c602a30c9487e87fc94cf184b75e82a35a0"
-      },
-      "asset": "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1"
-    },
-    "layer-68": {
-      "id": "layer-68",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "group",
-      "frame": {
-        "x": 33,
-        "y": 31,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-69"
-      ]
-    },
-    "layer-69": {
-      "id": "layer-69",
-      "name": "SettingsMenuButton/Icon",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 54,
-        "height": 54
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:9/SettingsMenuButton/Icon",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton",
-        "resourceId": "ui/settings/gear",
-        "captureHash": "bb56bcc8241355b577433fd9f078d6b360deccb23af962806570bc5da288a8ac"
-      },
-      "asset": "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2"
-    },
-    "layer-70": {
-      "id": "layer-70",
-      "name": "SettingsMenuButton/Label",
-      "kind": "text",
-      "frame": {
-        "x": 126,
-        "y": 43,
-        "width": 188,
-        "height": 56
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "SettingsMenuButton:PopupFrame/PopupFrame/Panel/PopupFrame/Content/Settings/Content/_/SettingsMenuButton:9/SettingsMenuButton/Label",
-        "role": "node",
-        "definitionKey": "SettingsMenuButton"
-      },
-      "text": {
-        "value": "退出游戏",
-        "fontId": "font-72180cb66b9fc5df",
-        "size": 28,
-        "lineHeight": 28,
-        "align": "center",
-        "fauxBold": true,
-        "wrap": false,
-        "outlineWidth": 0,
-        "outlineColor": "#000000",
-        "color": "#3f3254"
-      }
-    },
-    "layer-71": {
-      "id": "layer-71",
+    "layer-74": {
+      "id": "layer-74",
       "name": "Group",
       "kind": "group",
       "frame": {
@@ -1519,11 +418,11 @@
       "opacity": 1,
       "visible": true,
       "children": [
-        "layer-72"
+        "layer-75"
       ]
     },
-    "layer-72": {
-      "id": "layer-72",
+    "layer-75": {
+      "id": "layer-75",
       "name": "Canvas",
       "kind": "image",
       "frame": {
@@ -1542,64 +441,6 @@
         "captureHash": "a6dbb7621f645e2ac7b20b56d04732da2746dbfdaf845b7310f195513a5f20c2"
       },
       "asset": "asset-864af9cd5beda040fa6228bbc1801d280faf50eff64c5751975e823f6f720156"
-    },
-    "layer-73": {
-      "id": "layer-73",
-      "name": "CloseButton",
-      "kind": "group",
-      "frame": {
-        "x": 621,
-        "y": 6,
-        "width": 72,
-        "height": 72
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "CloseButton:PopupFrame/PopupFrame/Panel/CloseButton",
-        "role": "component",
-        "definitionKey": "CloseButton"
-      },
-      "children": [
-        "layer-74"
-      ]
-    },
-    "layer-74": {
-      "id": "layer-74",
-      "name": "Group",
-      "kind": "group",
-      "frame": {
-        "x": 11,
-        "y": 11,
-        "width": 50,
-        "height": 50
-      },
-      "opacity": 1,
-      "visible": true,
-      "children": [
-        "layer-75"
-      ]
-    },
-    "layer-75": {
-      "id": "layer-75",
-      "name": "Canvas",
-      "kind": "image",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 50,
-        "height": 50
-      },
-      "opacity": 1,
-      "visible": true,
-      "identity": {
-        "key": "CloseButton:PopupFrame/PopupFrame/Panel/CloseButton/_",
-        "role": "node",
-        "definitionKey": "CloseButton",
-        "resourceId": "ui/popup/close",
-        "captureHash": "e54a38834ed5cf3ad76fd53dfd8a911f7332986480aa304c7255a44b53f13a4e"
-      },
-      "asset": "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534"
     }
   },
   "assets": {
@@ -1617,19 +458,82 @@
       "width": 708,
       "height": 992
     },
-    "asset-4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1": {
-      "path": "assets/4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1.png",
-      "sha256": "4c0163b27d918f2bef1f51dcad2e3beacd57cc4481f380f17c5d96f5ff3b16e1",
+    "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c": {
+      "path": "assets/d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c.png",
+      "sha256": "d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c",
+      "mime": "image/png",
+      "width": 72,
+      "height": 72
+    },
+    "asset-99c4ca2d30910f2af74a0e04df49fea16332d41d38655f30f83f7c82782dd65c": {
+      "path": "assets/99c4ca2d30910f2af74a0e04df49fea16332d41d38655f30f83f7c82782dd65c.png",
+      "sha256": "99c4ca2d30910f2af74a0e04df49fea16332d41d38655f30f83f7c82782dd65c",
       "mime": "image/png",
       "width": 326,
       "height": 114
     },
-    "asset-902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2": {
-      "path": "assets/902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2.png",
-      "sha256": "902e4c95f757852abbf3ef0eb5d15aa771c6f68ce78b2538c34334d2811f32a2",
+    "asset-da34b0ce1b0c6e2637eabcb335412d20996e9cc9abbeb092725dae666a359632": {
+      "path": "assets/da34b0ce1b0c6e2637eabcb335412d20996e9cc9abbeb092725dae666a359632.png",
+      "sha256": "da34b0ce1b0c6e2637eabcb335412d20996e9cc9abbeb092725dae666a359632",
       "mime": "image/png",
-      "width": 54,
-      "height": 54
+      "width": 326,
+      "height": 114
+    },
+    "asset-a1eba252fa88b454a9b475834e9d786434c3d013b84c3e6cc46bbd635b20ecca": {
+      "path": "assets/a1eba252fa88b454a9b475834e9d786434c3d013b84c3e6cc46bbd635b20ecca.png",
+      "sha256": "a1eba252fa88b454a9b475834e9d786434c3d013b84c3e6cc46bbd635b20ecca",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-43d30d8cb45faabfd4ebb137eb5b9f386cbd77d17591eb7cf43f9e553a1e648b": {
+      "path": "assets/43d30d8cb45faabfd4ebb137eb5b9f386cbd77d17591eb7cf43f9e553a1e648b.png",
+      "sha256": "43d30d8cb45faabfd4ebb137eb5b9f386cbd77d17591eb7cf43f9e553a1e648b",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-27d8ece9a591a8cfdcc836d79cebe3a34bcea1b9340f15c0ec8de225ed9c4287": {
+      "path": "assets/27d8ece9a591a8cfdcc836d79cebe3a34bcea1b9340f15c0ec8de225ed9c4287.png",
+      "sha256": "27d8ece9a591a8cfdcc836d79cebe3a34bcea1b9340f15c0ec8de225ed9c4287",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-b191f2c1bf53a144819a0c945873974e3896eac450151d510007dce6f19c3011": {
+      "path": "assets/b191f2c1bf53a144819a0c945873974e3896eac450151d510007dce6f19c3011.png",
+      "sha256": "b191f2c1bf53a144819a0c945873974e3896eac450151d510007dce6f19c3011",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-0d21af0793e6c1581a398c2039a686b27438044a299a49b878845014261a3cf5": {
+      "path": "assets/0d21af0793e6c1581a398c2039a686b27438044a299a49b878845014261a3cf5.png",
+      "sha256": "0d21af0793e6c1581a398c2039a686b27438044a299a49b878845014261a3cf5",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-1fa536081a3b189f0471692e386bf8f14268ee7e957bb256b3b36b05e29dfb6b": {
+      "path": "assets/1fa536081a3b189f0471692e386bf8f14268ee7e957bb256b3b36b05e29dfb6b.png",
+      "sha256": "1fa536081a3b189f0471692e386bf8f14268ee7e957bb256b3b36b05e29dfb6b",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-2caafd0bb4d6d2adabfa1bf53a14ae574920fc7a782075fd59862b0edb3088a0": {
+      "path": "assets/2caafd0bb4d6d2adabfa1bf53a14ae574920fc7a782075fd59862b0edb3088a0.png",
+      "sha256": "2caafd0bb4d6d2adabfa1bf53a14ae574920fc7a782075fd59862b0edb3088a0",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
+    },
+    "asset-f586cc27267820a9138f1bdaf9c79a5fea9364f7468c52ca260ad24105c91f4f": {
+      "path": "assets/f586cc27267820a9138f1bdaf9c79a5fea9364f7468c52ca260ad24105c91f4f.png",
+      "sha256": "f586cc27267820a9138f1bdaf9c79a5fea9364f7468c52ca260ad24105c91f4f",
+      "mime": "image/png",
+      "width": 326,
+      "height": 114
     },
     "asset-864af9cd5beda040fa6228bbc1801d280faf50eff64c5751975e823f6f720156": {
       "path": "assets/864af9cd5beda040fa6228bbc1801d280faf50eff64c5751975e823f6f720156.png",
@@ -1637,13 +541,6 @@
       "mime": "image/png",
       "width": 662,
       "height": 3
-    },
-    "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534": {
-      "path": "assets/08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534.png",
-      "sha256": "08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534",
-      "mime": "image/png",
-      "width": 50,
-      "height": 50
     }
   },
   "fonts": {
@@ -1657,6 +554,18 @@
   },
   "warnings": [
     "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "PopupBackground: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "CloseButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
+    "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
     "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
     "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
     "Install and license the original fonts; browser and Photoshop text rendering may differ."

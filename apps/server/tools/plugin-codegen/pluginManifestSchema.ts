@@ -7,11 +7,12 @@
  * 对未知关键字 fail-fast——schema 文件演进出解释器认不得的关键字时先炸加载，
  * ⛔ 不允许静默跳过一条约束（形态沿用 gameplay-codegen/manifestSchema.ts）。
  */
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-type JsonRecord = Record<string, unknown>;
+export type JsonRecord = Record<string, unknown>;
 
 const TOOL_DIR = path.dirname(fileURLToPath(import.meta.url));
 /** plugin.json v2 的唯一 schema 文件（打包工具与生成器共用）。 */
@@ -38,7 +39,14 @@ export type PluginManifestRoute = {
  * route = 打开一个 plugin route（纯 plugin 插件——兑换码/聊天面板一类——的唯一入口形态）。
  */
 export type PluginManifestLaunch =
-  | { readonly kind: "gameplay"; readonly gameplayId: string }
+  | {
+    readonly kind: "gameplay";
+    readonly gameplayId: string;
+    /** 带参 launch（MMO MF9 / EXTRAS X1）：原样交给该玩法 GameplayModule.validateLaunch 做 exact 校验；⛔ 生成器不解释。 */
+    readonly payload?: JsonRecord;
+    /** 一个玩法多房型入口：覆盖 joiner 的缺省 profile（须是该玩法 manifest.profiles 成员，codegen 校验）。 */
+    readonly profile?: string;
+  }
   | { readonly kind: "route"; readonly routeId: string };
 
 /**
@@ -103,22 +111,77 @@ export type PluginRequires = {
 
 export const EMPTY_REQUIRES: PluginRequires = Object.freeze({ pluginApiVersion: null, kits: Object.freeze({}) });
 
+/**
+ * 插件对 kit 贡献点的填充（docs/MMO.md MF9；plugin.json v2 增量可选字段，⛔ 不 bump schemaVersion）：
+ * `contributes[kitId][contributionId] = 仓库相对路径`（module = 本插件所有权集内的 .ts，data = 本插件目录内的 .json）。
+ * 贡献 = 依赖：每个被贡献的 kit 必须同时在 `requires.kits` 声明（依赖边只写一处，PluginHost 装载顺序由它派生）。
+ */
+export type PluginContributes = Readonly<Record<string, Readonly<Record<string, string>>>>;
+export const EMPTY_CONTRIBUTES: PluginContributes = Object.freeze({});
+
+/** 贡献点落在哪一端的源码树（`apps/<end>/src/`）。 */
+export type ContributionEnd = "shared" | "server" | "client";
+export const CONTRIBUTION_ENDS: readonly ContributionEnd[] = ["shared", "server", "client"];
+
+/**
+ * kit 声明的贡献点（docs/KIT.md §3 / docs/MMO.md MF9）：
+ *  - `module`：插件交一个 TS 模块，生成器按静态字面量 import 其 `export` 汇入 `apps/<end>/src/kits/<kitId>/contributions.generated.ts`；
+ *    恰好一端（一条路径只能落在一棵源码树里）；
+ *  - `data`：插件交一份 JSON，生成器按 kit 给的 `schema`（本解释器支持的 draft-07 子集）校验后同源渲染到每个声明的端。
+ * `schemaDigest` = 规范化 schema 的 sha256（进锁抬头 / 身份摘要：schema 变了就是契约变了）。
+ */
+export type KitContribution =
+  | { readonly kind: "data"; readonly ends: readonly ContributionEnd[]; readonly schema: JsonRecord; readonly schemaDigest: string }
+  | { readonly kind: "module"; readonly ends: readonly ContributionEnd[]; readonly export: string };
+
+/** 锁抬头 / 身份摘要用的贡献点摘要（data 只带 schema 的 sha256，⛔ 不把整份 schema 塞进锁）。 */
+export type KitContributionSummary = {
+  readonly kind: "data" | "module";
+  readonly ends: readonly ContributionEnd[];
+  readonly export?: string;
+  readonly schemaDigest?: string;
+};
+
+export function summarizeContribution(contribution: KitContribution): KitContributionSummary {
+  return contribution.kind === "module"
+    ? { kind: "module", ends: [...contribution.ends], export: contribution.export }
+    : { kind: "data", ends: [...contribution.ends], schemaDigest: contribution.schemaDigest };
+}
+
+/** 键排序后的 JSON（digest 用；数组保序）。 */
+export function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (isRecord(value)) return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+export function schemaDigestOf(schema: JsonRecord): string {
+  return createHash("sha256").update(canonicalJson(schema)).digest("hex");
+}
+
 /** 登记单元的类别（docs/KIT.md §1 三层模型的后两层）：plugin.json ⇒ "plugin"，kit.json ⇒ "kit"。 */
 export type UnitClass = "plugin" | "kit";
 
 /** kit.json 相对 plugin.json 多出来的身份面（docs/KIT.md §3）。 */
 export type KitApiSurface = { readonly version: number; readonly minSupported: number };
 export type KitMode = { readonly id: string; readonly constantName: string };
-export type KitSqlTable = { readonly name: string; readonly zone: "per-zone" | "global" };
+export type KitSqlTable = { readonly name: string; readonly zone: "per-zone" | "global"; readonly role?: "world-event" };
+/** kit 后台 worker（docs/MMO.md §5.4 MF7a；v1 增量可选字段）：entry 必须落在本 kit 的 `apps/server/src/kits/<id>/workers/`。 */
+export type KitWorker = { readonly id: string; readonly entry: string };
 export type KitEffect = { readonly userKey: string; readonly field: string; readonly max: number };
 
-export type KitRegistration = Omit<PluginRegistration, "schemaVersion" | "requires"> & {
+export type KitRegistration = Omit<PluginRegistration, "schemaVersion" | "requires" | "contributes"> & {
   readonly schemaVersion: 1;
+  /** 贡献点声明（MF9；缺省空）。 */
+  readonly contributions: Readonly<Record<string, KitContribution>>;
+  /** kit 提供的 state fragment 名（MF9；文件在 `apps/kits/<id>/fragments/<name>.state.json`，mode 以 `<kitId>:<name>` 引用）。 */
+  readonly fragments: readonly string[];
   readonly api: Readonly<Record<string, KitApiSurface>>;
   readonly modes: readonly KitMode[];
   readonly sql: { readonly files: readonly string[]; readonly tables: readonly KitSqlTable[] };
   readonly userKeys: readonly string[];
   readonly effects: Readonly<Record<string, KitEffect>>;
+  readonly workers: readonly KitWorker[];
 };
 
 export type PluginRegistration = {
@@ -130,6 +193,8 @@ export type PluginRegistration = {
   readonly domains: readonly string[];
   /** 对 kit / 框架门面的依赖；缺省空。 */
   readonly requires: PluginRequires;
+  /** 对 kit 贡献点的填充（MF9）；缺省空；每个 kit 须同时出现在 requires.kits。 */
+  readonly contributes: PluginContributes;
   /**
    * 能力索引用的结构分类；缺省 extra（core 身份必须显式声明）。
    *
@@ -303,11 +368,18 @@ function parseLaunch(launch: JsonRecord, pathLabel: string): PluginManifestLaunc
   if (launch.kind === "gameplay") {
     if (typeof launch.gameplayId !== "string") fail(pathLabel, `kind:"gameplay" 必须声明 gameplayId`);
     if (launch.routeId !== undefined) fail(pathLabel, `kind:"gameplay" 不得同时声明 routeId`);
-    return { kind: "gameplay", gameplayId: launch.gameplayId };
+    if (launch.payload !== undefined && !isRecord(launch.payload)) fail(pathLabel, "payload 必须是对象");
+    return {
+      kind: "gameplay",
+      gameplayId: launch.gameplayId,
+      ...(launch.payload === undefined ? {} : { payload: launch.payload }),
+      ...(launch.profile === undefined ? {} : { profile: launch.profile as string }),
+    };
   }
   if (launch.kind === "route") {
     if (typeof launch.routeId !== "string") fail(pathLabel, `kind:"route" 必须声明 routeId`);
     if (launch.gameplayId !== undefined) fail(pathLabel, `kind:"route" 不得同时声明 gameplayId`);
+    if (launch.payload !== undefined || launch.profile !== undefined) fail(pathLabel, `kind:"route" 不得声明 payload / profile（带参 launch 只对玩法入口有意义）`);
     return { kind: "route", routeId: launch.routeId };
   }
   fail(pathLabel, `未知 launch.kind：${String(launch.kind)}`);
@@ -392,7 +464,22 @@ function parseRequires(value: unknown, pathLabel: string): PluginRequires {
   };
 }
 
-type RegistrationCommon = Omit<PluginRegistration, "schemaVersion" | "requires">;
+/** `contributes`（MF9）：每个 kit 至少一条；被贡献的 kit 必须同时在 requires.kits 声明（依赖边只写一处）。 */
+function parseContributes(value: unknown, pathLabel: string, requires: PluginRequires): PluginContributes {
+  if (value === undefined) return EMPTY_CONTRIBUTES;
+  const contributes: Record<string, Record<string, string>> = {};
+  for (const [kitId, entries] of Object.entries(value as JsonRecord)) {
+    const record = Object.entries(entries as JsonRecord);
+    if (record.length === 0) fail(`${pathLabel}.${kitId}`, "至少填充一个贡献点");
+    if (!Object.prototype.hasOwnProperty.call(requires.kits, kitId)) {
+      fail(`${pathLabel}.${kitId}`, `向 kit "${kitId}" 贡献必须同时在 requires.kits 声明该 kit（贡献 = 依赖，依赖边只写一处）`);
+    }
+    contributes[kitId] = Object.fromEntries(record.map(([id, file]) => [id, file as string]));
+  }
+  return contributes;
+}
+
+type RegistrationCommon = Omit<PluginRegistration, "schemaVersion" | "requires" | "contributes">;
 
 function parseRegistrationCommon(value: JsonRecord, pathLabel: string): RegistrationCommon {
   const list = (key: string): JsonRecord[] => (Array.isArray(value[key]) ? (value[key] as JsonRecord[]) : []);
@@ -442,7 +529,45 @@ function parseRegistrationCommon(value: JsonRecord, pathLabel: string): Registra
 export function parsePluginRegistration(input: unknown, pathLabel: string): PluginRegistration {
   validateNode(loadPluginRegistrationSchema(), input, pathLabel);
   const value = input as JsonRecord;
-  return { schemaVersion: 2, ...parseRegistrationCommon(value, pathLabel), requires: parseRequires(value.requires, `${pathLabel}.requires`) };
+  const requires = parseRequires(value.requires, `${pathLabel}.requires`);
+  return {
+    schemaVersion: 2,
+    ...parseRegistrationCommon(value, pathLabel),
+    requires,
+    contributes: parseContributes(value.contributes, `${pathLabel}.contributes`, requires),
+  };
+}
+
+/**
+ * 贡献点声明（MF9）：module ⇒ 有 export、无 schema、恰好一端；data ⇒ 有 schema（本解释器支持的关键字子集，
+ * 加载期 fail-fast）、无 export；ends 非空且唯一。
+ */
+function parseContributions(value: unknown, pathLabel: string): Readonly<Record<string, KitContribution>> {
+  const contributions: Record<string, KitContribution> = {};
+  for (const [id, spec] of Object.entries(isRecord(value) ? value : {})) {
+    const record = spec as JsonRecord;
+    const label = `${pathLabel}.${id}`;
+    const ends = assertUniqueStrings(Array.isArray(record.ends) ? [...(record.ends as ContributionEnd[])] : [], `${label}.ends`, "端") as readonly ContributionEnd[];
+    if (ends.length === 0) fail(`${label}.ends`, "至少声明一端（shared / server / client）");
+    if (record.kind === "module") {
+      if (typeof record.export !== "string") fail(label, `kind:"module" 必须声明 export（插件模块须导出的符号名）`);
+      if (record.schema !== undefined) fail(label, `kind:"module" 不得声明 schema`);
+      if (ends.length !== 1) fail(`${label}.ends`, `kind:"module" 恰好一端（一条模块路径只能落在一棵源码树里，读到 ${ends.join(", ")}）`);
+      contributions[id] = { kind: "module", ends, export: record.export };
+      continue;
+    }
+    if (!isRecord(record.schema)) fail(label, `kind:"data" 必须声明 schema（对象）`);
+    if (record.export !== undefined) fail(label, `kind:"data" 不得声明 export`);
+    assertSupportedSchema(record.schema, `${label}.schema`);
+    contributions[id] = { kind: "data", ends, schema: record.schema, schemaDigest: schemaDigestOf(record.schema) };
+  }
+  return contributions;
+}
+
+/** 用一份 kit 声明的 data schema 校验插件交来的 JSON（codegen 用；schema 已在 parseKitRegistration 通过关键字自检）。 */
+export function validateAgainstSchema(schema: JsonRecord, input: unknown, pathLabel: string): void {
+  assertSupportedSchema(schema, pathLabel);
+  validateNode(schema, input, pathLabel);
 }
 
 function assertUniqueStrings(values: readonly string[], pathLabel: string, what: string): readonly string[] {
@@ -483,7 +608,11 @@ export function parseKitRegistration(input: unknown, pathLabel: string): KitRegi
   assertUniqueStrings(files, `${pathLabel}.sql.files`, "迁移文件");
   const tablePrefix = `k_${common.id.toLowerCase()}_`;
   const tables: KitSqlTable[] = (Array.isArray(sqlRecord.tables) ? (sqlRecord.tables as JsonRecord[]) : [])
-    .map((table) => ({ name: table.name as string, zone: table.zone as "per-zone" | "global" }));
+    .map((table) => ({
+      name: table.name as string,
+      zone: table.zone as "per-zone" | "global",
+      ...(table.role === undefined ? {} : { role: table.role as "world-event" }),
+    }));
   for (const table of tables) {
     if (!table.name.startsWith(tablePrefix)) fail(`${pathLabel}.sql.tables`, `表名 "${table.name}" 必须以 "${tablePrefix}" 开头（KIT.md §2）`);
   }
@@ -498,5 +627,14 @@ export function parseKitRegistration(input: unknown, pathLabel: string): KitRegi
     if (!userKeys.includes(userKey)) fail(`${pathLabel}.effects.${name}`, `userKey "${userKey}" 不在 userKeys 内`);
     effects[name] = { userKey, field: record.field as string, max: record.max as number };
   }
-  return { schemaVersion: 1, ...common, api, modes, sql: { files, tables }, userKeys, effects };
+  const workerPrefix = `apps/server/src/kits/${common.id}/workers/`;
+  const workers: KitWorker[] = (Array.isArray(value.workers) ? (value.workers as JsonRecord[]) : [])
+    .map((worker) => ({ id: worker.id as string, entry: worker.entry as string }));
+  assertUniqueStrings(workers.map((worker) => worker.id), `${pathLabel}.workers`, "worker id");
+  for (const worker of workers) {
+    if (!worker.entry.startsWith(workerPrefix)) fail(`${pathLabel}.workers`, `worker "${worker.id}" 的 entry "${worker.entry}" 必须落在 ${workerPrefix}`);
+  }
+  const contributions = parseContributions(value.contributions, `${pathLabel}.contributions`);
+  const fragments = assertUniqueStrings(Array.isArray(value.fragments) ? [...(value.fragments as string[])] : [], `${pathLabel}.fragments`, "fragment");
+  return { schemaVersion: 1, ...common, api, modes, sql: { files, tables }, userKeys, effects, workers, contributions, fragments };
 }

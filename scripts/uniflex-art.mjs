@@ -10,6 +10,7 @@ import {
     readArtJson, readComponentArtJson, sharedArtFontDir,
 } from "./lib/uniflex-art.mjs";
 import { runCli } from "./uniflex-ui-cli.mjs";
+import { restoredSourceFromPage } from "./lib/uniflex-page-modules.mjs";
 
 const root = resolve(fileURLToPath(import.meta.url), "..", "..");
 const help = `Usage:
@@ -73,11 +74,12 @@ async function writeComponentArtJson(rootDir, item, patch) {
 }
 
 async function linkedManifestForPage(rootDir, page, cache) {
-    const nextToPage = join(artPageDir(rootDir, page), "linked-components.json");
-    const fromCache = cache ? join(cache, "linked-components.json") : null;
-    for (const file of [fromCache, nextToPage].filter(Boolean)) {
-        if (await pathExists(file)) return JSON.parse(await readFile(file, "utf8"));
-    }
+    // The manifest is an export-time plan consumed from the cache only. The
+    // committed copy next to the page PSD was dropped: import/check read the
+    // key list from the page art.json `linkedComponents` instead.
+    if (!cache) return null;
+    const fromCache = join(cache, "linked-components.json");
+    if (await pathExists(fromCache)) return JSON.parse(await readFile(fromCache, "utf8"));
     return null;
 }
 
@@ -92,9 +94,6 @@ async function linkedKeysForPage(rootDir, page, cache) {
 async function publishLinkedComponents(cache, page, { force = false } = {}) {
     const manifest = await linkedManifestForPage(root, page, cache);
     if (!manifest?.components?.length) return [];
-    await mkdir(artPageDir(root, page), { recursive: true });
-    await cp(join(cache, "linked-components.json"),
-        join(artPageDir(root, page), "linked-components.json"));
     const keys = [];
     for (const item of manifest.components) {
         const src = join(cache, item.psd);
@@ -103,7 +102,6 @@ async function publishLinkedComponents(cache, page, { force = false } = {}) {
         const previous = await readComponentArtJson(root, item.key);
         const destSha = await fileSha256(dest);
         const exportedPsd = previous?.export?.psdSha256;
-        const exportedUni = previous?.export?.uniflexSha256;
         const uniflexSha = item.source ? await hashUniflexFile(root, item.source) : null;
         const designerEdited = destSha && exportedPsd && destSha !== exportedPsd;
         if (designerEdited && !force) {
@@ -111,7 +109,10 @@ async function publishLinkedComponents(cache, page, { force = false } = {}) {
             keys.push(item.key);
             continue;
         }
-        if (destSha && !designerEdited && exportedUni && uniflexSha === exportedUni) {
+        // Keep an existing shared PSD even if UniFlex source hash moved. A later
+        // page (settings PopupBackground, alliance PanelTab) must not replace
+        // the canonical file with a different kind or size.
+        if (destSha && !designerEdited) {
             console.log(`keep ${item.key}: shared component already exported`);
             keys.push(item.key);
             continue;
@@ -262,8 +263,11 @@ async function checkPages(catalog) {
     for (const page of catalog.pages) {
         if (!await pathExists(resolve(root, page.source)))
             problems.push(`${page.screen}: missing source ${page.source}`);
-        const restored = resolve(root, "apps/client/src/ui-uniflex/pages",
-            page.restoredName, `${page.restoredName}.tsx`);
+        const restoredRel = restoredSourceFromPage(page);
+        const restored = restoredRel
+            ? resolve(root, restoredRel)
+            : resolve(root, "apps/client/src/ui-uniflex/modules",
+                page.restoredName, `${page.restoredName}.tsx`);
         const art = await readArtJson(root, page);
         if ((page.applyTarget || catalog.applyTarget) === "restored"
             && art?.import && !await pathExists(restored))

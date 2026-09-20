@@ -20,6 +20,9 @@ import { clientFor, coordClient } from "../infra/redisRoute";
 import { startStreamConsumer, type StreamConsumer } from "../infra/streamConsumer";
 import { defaultLifecycle } from "../infra/lifecycle";
 import { storedInt } from "../infra/numbers";
+import { getPool } from "../infra/mysql";
+import type { Pool } from "mysql2/promise";
+import type { ResultSetHeader } from "../infra/mysql";
 
 // 自筛踢句柄：websocket 层（online 表）在启动期注入 kickUser（core/auth ⛔ 不反向依赖 websocket 层）。
 let kickHandler: ((uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number) => void) | null = null;
@@ -49,6 +52,38 @@ export function setKickHandler(fn: (uid: string, reason: ForceLogoutReasonType, 
 /** @param sId 只踢该区的连接（顶号，M12e）；**省略 = 踢该 uid 在本节点的全部区**（封号/撤销：账号级）。 */
 export function kickLocal(uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number): void {
   kickHandler?.(uid, reason, exceptTokenHash, sId);
+}
+
+// ── 撤销覆盖 persona（MMO MF2-B5，docs/MMO.md §5 MF2）───────────────────────────────────────────
+/** persona 会话代抬高的连接面（缺省进程池；单测注入假池记录 SQL）。 */
+export type PersonaSessionSqlPool = Pick<Pool, "execute">;
+
+/**
+ * 撤销 / 踢下线 ⇒ 抬高该 uid **全部** persona 的 `session_generation`。MF4 世界侧按 persona 签发的票据 / 长连接绑定
+ * 发票时刻的会话代，代一变旧登录态的 persona 会话即作废——这是组 sess hash（每消息快路径）与踢（送达 best-effort）
+ * 之外的**第三层**，专门覆盖「不逐消息回源的世界长连接」；⛔ 不替代前两层。
+ * - `sId` 给定 = **顶号**（Replaced，M12e 单端语义作用域 = (账号, 区)）：只抬该区；
+ * - 省略 = **账号级**（封号 / 撤销）：抬全部区（"这个人不能玩"，⛔ 不是"不能玩这个区"）；走 `idx_persona_uid (user_id)`。
+ * - 返回抬高的行数（0 = 该 uid 没有 persona——非 MMO 宿主的常态）。
+ * ⚠ 权威写（MySQL），失败**抛出**，由调用点定策：`writeGroupSess` 踢完再抛（⛔ 不因它漏踢）；踢人流消费侧记错照踢；
+ *   `/admin/kick` 500 让 GM 按 SOP 重试本节点。每节点各抬一次也无妨：消费方只认「变了」，+N 与 +1 等价。
+ * ⛔ 不在每次 `written` 都抬：非 MMO 宿主的登录不该多一次 MySQL 写；sess 过期后的重登由世界侧 join 复核组 sess 兜。
+ */
+export async function revokePersonaSessions(
+  uid: string, sId?: number, pool: PersonaSessionSqlPool = getPool(),
+): Promise<number> {
+  if (typeof uid !== "string" || uid.length === 0 || uid.length > 128) {
+    throw new TypeError("revokePersonaSessions: uid 必须是 1–128 字符的字符串");
+  }
+  if (sId !== undefined && !(Number.isSafeInteger(sId) && sId >= 0 && sId <= 65535)) {
+    throw new RangeError("revokePersonaSessions: sId 必须是 0–65535 的整数，或省略（账号级）");
+  }
+  const [r] = sId === undefined
+    ? await pool.execute<ResultSetHeader>(
+      "UPDATE persona SET session_generation = session_generation + 1 WHERE user_id = ?", [uid])
+    : await pool.execute<ResultSetHeader>(
+      "UPDATE persona SET session_generation = session_generation + 1 WHERE user_id = ? AND server_id = ?", [uid, sId]);
+  return r.affectedRows;
 }
 
 /** 广播踢人到控制总线（best-effort：Redis 抖动只是漏踢；权威撤销已落 MySQL，送达保证走 GM `/admin/kick`）。 */
@@ -189,44 +224,75 @@ export function normalizeKickStoredIssuedAt(raw: unknown): number | null {
   }
 }
 
+/** 踢人流消费侧的依赖（单测注入；缺省 = 真 Redis 回读栅栏 + 真库抬 persona 会话代 + 本节点自筛踢）。 */
+export interface KickConsumerDependencies {
+  /** 回读组 sess 的 issuedAt（顶号事件的单调栅栏，A6）。 */
+  readonly readStoredIssuedAt: (uid: string, sId: number) => Promise<unknown>;
+  readonly revokePersonaSessions: (uid: string, sId?: number) => Promise<number>;
+  readonly kickLocal: typeof kickLocal;
+}
+const defaultKickConsumerDependencies: KickConsumerDependencies = {
+  readStoredIssuedAt: (uid, sId) => clientFor(uid).hget(kSess(uid, sId), "issuedAt"),
+  revokePersonaSessions,
+  kickLocal,
+};
+
+/**
+ * 消费一条踢人流条目（`startKickConsumer` 逐条 await；导出供单测钉决策，⛔ 不起真消费循环）。
+ * 账号级事件（封号 / 撤销，无 sId）**先抬**该 uid 全部区 persona 的会话代**再踢**（MF2-B5）；顶号事件 ⛔ 不在这里抬——
+ * 发起方 `writeGroupSess` 已按区抬过（权威点唯一，每个节点的消费者都读得到这条事件）。
+ */
+export async function consumeKickEntry(
+  fields: readonly string[], dependencies: KickConsumerDependencies = defaultKickConsumerDependencies,
+): Promise<void> {
+  const entry = parseKickFields(fields);
+  if (!entry) {
+    console.warn("[kick] 丢弃非法踢人流条目");
+    return;
+  }
+  const { uid, reason, sId, issuedAt, exceptHash } = entry;
+  // ⚠ **单调栅栏（A6）：陈旧的顶号事件整条丢弃**。回读组 sess 的 `issuedAt`（A1 落地的单调量）：
+  // 事件比它旧 ⇒ 说明这条广播发出之后**又发生过更晚的登录**，而那次登录已经发过自己的踢人事件
+  // ⇒ 本条已无事可做，继续处理只会拿过期的 exceptHash 去踢掉赢家。
+  // ⛔ **只对带 issuedAt 的事件做这个判断**：封号/撤销（GM 侧）不绑定任何一次登录，必须无条件踢。
+  if (issuedAt !== undefined && sId !== undefined) {
+    let stored: unknown;
+    try {
+      stored = await dependencies.readStoredIssuedAt(uid, sId);
+    } catch {
+      // A scoped kick is best-effort. If freshness cannot be proven, dropping
+      // it is safer than letting an old exceptHash evict the current winner.
+      console.warn(`[kick] 无法验证顶号事件栅栏，已丢弃 uid=${uid} sId=${sId}`);
+      return;
+    }
+    const storedAt = normalizeKickStoredIssuedAt(stored);
+    if (storedAt === null) {
+      console.warn(`[kick] 组 sess 栅栏缺失或损坏，已丢弃顶号事件 uid=${uid} sId=${sId}`);
+      return;
+    }
+    if (storedAt > issuedAt) {
+      console.warn(`[kick] 丢弃陈旧顶号事件 uid=${uid}（事件 issuedAt=${issuedAt} < 组 sess ${String(stored)}）`);
+      return;
+    }
+  }
+  if (sId === undefined) {
+    // 账号级：撤销覆盖 persona（MF2-B5）。失败只记错、**照踢**——踢是 best-effort 送达通道，⛔ 不因库故障漏踢；
+    // 权威撤销已在 WebPlatform，会话代由 GM 逐节点 `/admin/kick`（那条抬代失败 500 可重试）兜底补抬。
+    try {
+      await dependencies.revokePersonaSessions(uid);
+    } catch (e) {
+      console.error(`[kick] 抬高 persona 会话代失败 uid=${uid}（照踢；/admin/kick 重试可补抬）`, e);
+    }
+  }
+  dependencies.kickLocal(uid, reason, exceptHash, sId);
+}
+
 let consumer: StreamConsumer | null = null;
 let consumerUnregister: (() => void) | null = null;
 /** 控制总线消费（每节点一个，独立游标）：读 stream:kick → 本节点在线即踢。 */
 export function startKickConsumer(): void {
   if (consumer) { return; }
-  consumer = startStreamConsumer("kick", coordClient, K_STREAM_KICK, async (fields) => {
-    const entry = parseKickFields(fields);
-    if (!entry) {
-      console.warn("[kick] 丢弃非法踢人流条目");
-      return;
-    }
-    const { uid, reason, sId, issuedAt, exceptHash } = entry;
-    // ⚠ **单调栅栏（A6）：陈旧的顶号事件整条丢弃**。回读组 sess 的 `issuedAt`（A1 落地的单调量）：
-    // 事件比它旧 ⇒ 说明这条广播发出之后**又发生过更晚的登录**，而那次登录已经发过自己的踢人事件
-    // ⇒ 本条已无事可做，继续处理只会拿过期的 exceptHash 去踢掉赢家。
-    // ⛔ **只对带 issuedAt 的事件做这个判断**：封号/撤销（GM 侧）不绑定任何一次登录，必须无条件踢。
-    if (issuedAt !== undefined && sId !== undefined) {
-      let stored: string | null;
-      try {
-        stored = await clientFor(uid).hget(kSess(uid, sId), "issuedAt");
-      } catch {
-        // A scoped kick is best-effort. If freshness cannot be proven, dropping
-        // it is safer than letting an old exceptHash evict the current winner.
-        console.warn(`[kick] 无法验证顶号事件栅栏，已丢弃 uid=${uid} sId=${sId}`);
-        return;
-      }
-      const storedAt = normalizeKickStoredIssuedAt(stored);
-      if (storedAt === null) {
-        console.warn(`[kick] 组 sess 栅栏缺失或损坏，已丢弃顶号事件 uid=${uid} sId=${sId}`);
-        return;
-      }
-      if (storedAt > issuedAt) {
-        console.warn(`[kick] 丢弃陈旧顶号事件 uid=${uid}（事件 issuedAt=${issuedAt} < 组 sess ${stored}）`);
-        return;
-      }
-    }
-    kickLocal(uid, reason, exceptHash, sId);
-  }, { trimMs: KICK_STREAM_TRIM_MS });
+  consumer = startStreamConsumer("kick", coordClient, K_STREAM_KICK, (fields) => consumeKickEntry(fields), { trimMs: KICK_STREAM_TRIM_MS });
   consumerUnregister = defaultLifecycle.register("kick", () => stopKickConsumer());
 }
 export async function stopKickConsumer(): Promise<void> {

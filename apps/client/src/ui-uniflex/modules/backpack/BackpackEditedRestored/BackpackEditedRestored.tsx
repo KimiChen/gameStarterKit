@@ -1,0 +1,159 @@
+import { defineView, For, useMemo, useState } from '@uniflex/compiler';
+import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { BackpackItemCard, type BackpackItem, type BackpackQuality } from '../Backpack/components/BackpackItemCard';
+import { BackpackQuantityControl } from '../Backpack/components/BackpackQuantityControl';
+import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
+import { Tab } from '../../../components/tab/Tab';
+
+export type BackpackEditedRestoredAction = {
+    readonly id: string;
+    readonly action: 'back' | 'close' | 'tab' | 'primary' | 'select';
+    readonly value?: string | number;
+};
+export interface BackpackTabData {
+    readonly id: string;
+    readonly label: string;
+    readonly items: readonly BackpackItem[];
+}
+export type BackpackTabs = readonly [BackpackTabData, BackpackTabData, BackpackTabData, BackpackTabData, BackpackTabData];
+export interface BackpackEditedRestoredParams {
+    readonly title?: string;
+    readonly tabs?: BackpackTabs;
+    readonly resources?: readonly [string, string, string, string];
+    readonly onAction?: (action: BackpackEditedRestoredAction) => void;
+}
+
+const item = (
+    slot: number,
+    id: string,
+    name: string,
+    description: string,
+    quality: BackpackQuality,
+    count: number,
+    maxUseCount: number,
+): BackpackItem => ({ id, slot, name, description, quality, count, detailCount: count * 5, maxUseCount });
+
+const defaultTabs: BackpackTabs = [
+    { id: 'equipment', label: '装备', items: [
+        item(0, 'equipment-hammer', '锻造锤', '用于装备锻造，可显著提升锻造成功率。', 'orange', 6, 3),
+        item(1, 'equipment-core', '秘银核心', '稀有装备突破材料，蕴含稳定的魔力。', 'purple', 18, 5),
+        item(2, 'equipment-crystal', '龙晶碎片', '传说装备升阶所需的珍贵结晶。', 'red', 2, 1),
+    ] },
+    { id: 'resource', label: '资源', items: [
+        item(0, 'resource-diamond-1', '强化扳手', '有效的提高陷阱等级，增加联盟成员对【巨蛇】造成的伤害。', 'green', 99, 1),
+        item(1, 'resource-diamond-2', '精炼晶石', '用于精炼装备属性，提升基础战斗能力。', 'green', 64, 5),
+        item(2, 'resource-diamond-3', '联盟勋章', '可在联盟商店兑换稀有道具。', 'green', 37, 5),
+        item(3, 'resource-diamond-4', '建筑图纸', '升级高级建筑时使用的通用材料。', 'green', 82, 5),
+        item(4, 'resource-diamond-5', '秘境粉尘', '蕴含微弱魔力的基础合成材料。', 'green', 48, 5),
+        item(5, 'resource-diamond-6', '星辉矿石', '来自深层矿脉的稀有强化材料。', 'green', 23, 3),
+        item(6, 'resource-diamond-7', '远古齿轮', '修复遗迹机关所需的精密零件。', 'green', 16, 4),
+        item(7, 'resource-diamond-8', '英雄徽记', '用于提升英雄星级和技能上限。', 'green', 11, 2),
+    ] },
+    { id: 'speedup', label: '加速', items: [
+        item(0, 'speedup-build', '建筑加速', '立即减少建筑队列 60 分钟。', 'blue', 12, 5),
+        item(1, 'speedup-research', '研究加速', '立即减少科技研究 30 分钟。', 'blue', 27, 5),
+        item(2, 'speedup-train', '训练加速', '立即减少部队训练 15 分钟。', 'purple', 8, 4),
+        item(3, 'speedup-heal', '治疗加速', '立即减少伤兵治疗 10 分钟。', 'green', 45, 5),
+    ] },
+    { id: 'boost', label: '增益', items: [
+        item(0, 'boost-attack', '攻击增益', '部队攻击力提高 10%，持续 8 小时。', 'red', 3, 1),
+        item(1, 'boost-defense', '防御增益', '部队防御力提高 10%，持续 8 小时。', 'orange', 5, 2),
+        item(2, 'boost-gather', '采集增益', '资源采集速度提高 25%，持续 12 小时。', 'purple', 9, 3),
+        item(3, 'boost-shield', '和平护盾', '保护城池免受侦察和攻击，持续 8 小时。', 'blue', 7, 1),
+        item(4, 'boost-energy', '体力药剂', '立即恢复 50 点行动体力。', 'green', 21, 5),
+    ] },
+    { id: 'other', label: '其他', items: [] },
+];
+
+export const BackpackEditedRestored = defineView<BackpackEditedRestoredParams | void>({ zIndex: 'window' }, (context) => {
+    const params = context.params ?? {};
+    const tabs = params.tabs ?? defaultTabs;
+    const resources = params.resources ?? ['999.99k', '999.99k', '999.99k', '999.99k'];
+    const [activeTab, setActiveTab] = useState(1);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [quantity, setQuantity] = useState(0);
+    const items = tabs[activeTab].items;
+    const detailItem = useMemo(() => items.find((entry) => entry.id === selectedId) ?? items[0], [items, selectedId]);
+    const emit = (id: string, action: BackpackEditedRestoredAction['action'], value?: string | number) =>
+        params.onAction?.({ id, action, value });
+    const selectTab = (index: number) => {
+        setActiveTab(index);
+        setSelectedId(null);
+        setQuantity(0);
+        emit(`tab-${tabs[index].id}`, 'tab', tabs[index].id);
+    };
+    const selectItem = (entry: BackpackItem) => {
+        setSelectedId(entry.id);
+        setQuantity(1);
+        emit(`item-${entry.id}`, 'select', entry.id);
+    };
+    const setSafeQuantity = (next: number) => {
+        if (!detailItem) return;
+        const value = Math.max(0, Math.min(detailItem.maxUseCount, Math.round(next)));
+        setQuantity(value);
+        emit('quantity', 'select', value);
+    };
+    const hasItems = items.length > 0;
+    const resourceIcon = imageRef('ui/backpack/resource-diamond');
+    return (
+        <view name="BackpackEditedRestored" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
+            <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
+            <image source={imageRef("BackpackEditedRestored-asset-84419f3f805363f9d4ad0643ebe6c9557dbebf2b7ccad880ff2b7f8a5210d012")} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
+            <text value={params.title ?? '背包'} style={{ position: 'absolute', left: 38, top: 16, width: 118, height: 60,
+                font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true,
+                outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ResourceCounter icon={resourceIcon} left={183} top={22} value={resources[0]}
+                id="resource-1" onClick={() => emit('resource-1', 'primary')} />
+            <ResourceCounter icon={resourceIcon} left={303} top={22} value={resources[1]}
+                id="resource-2" onClick={() => emit('resource-2', 'primary')} />
+            <ResourceCounter icon={resourceIcon} left={447} top={22} value={resources[2]}
+                id="resource-3" onClick={() => emit('resource-3', 'primary')} />
+            <ResourceCounter icon={resourceIcon} left={591} top={22} value={resources[3]}
+                id="resource-4" onClick={() => emit('resource-4', 'primary')} />
+
+            <Tab label={tabs[0].label} active={activeTab === 0} left={14} top={118} width={134}
+                onClick={() => selectTab(0)} />
+            <Tab label={tabs[1].label} active={activeTab === 1} left={161} top={118} width={134}
+                onClick={() => selectTab(1)} />
+            <Tab label={tabs[2].label} active={activeTab === 2} left={308} top={118} width={134}
+                onClick={() => selectTab(2)} />
+            <Tab label={tabs[3].label} active={activeTab === 3} left={455} top={118} width={134}
+                onClick={() => selectTab(3)} />
+            <Tab label={tabs[4].label} active={activeTab === 4} left={602} top={118} width={134}
+                onClick={() => selectTab(4)} />
+
+            <view visible={hasItems} name="BackpackEditedRestored/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>
+                <For each={items} key="id">
+                    {(entry) => <BackpackItemCard item={entry} selected={selectedId === entry.id}
+                        slot={entry.slot} onClick={() => selectItem(entry)} />}
+                </For>
+            </view>
+            <image source={imageRef('ui/settings/divider')} style={{ position: 'absolute', left: 26, top: 928, width: 698, height: 3, sizeMode: 'sliced' }} />
+
+            <view visible={!hasItems} name="BackpackEditedRestored/Empty" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
+                <image source={imageRef('ui/backpack/empty')} style={{ position: 'absolute', left: 321, top: 977, width: 108, height: 116 }} />
+                <text value="背包里没有任何道具" style={{ position: 'absolute', left: 150, top: 1117, width: 450, height: 64,
+                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#837A91', bold: true,
+                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+
+            <view visible={hasItems} name="BackpackEditedRestored/Details" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
+                <text value={detailItem?.name ?? ''} style={{ position: 'absolute', left: 23, top: 946, width: 704, height: 48,
+                    font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,
+                    verticalAlign: 'center', overflow: 'shrink' }} />
+                <text value={detailItem?.description ?? ''} style={{ position: 'absolute', left: 23, top: 998, width: 704, height: 58,
+                    font: fontRef('fonts/regular', 700), fontSize: 26, color: '#837A91', bold: true,
+                    verticalAlign: 'center', overflow: 'shrink' }} />
+                <BackpackQuantityControl value={quantity} max={detailItem?.maxUseCount ?? 1}
+                    onDecrease={() => setSafeQuantity(quantity - 1)} onIncrease={() => setSafeQuantity(quantity + 1)}
+                    onChange={setSafeQuantity} />
+            </view>
+
+            <image source={imageRef('ui/mail/footer')} style={{ position: 'absolute', left: 0, top: 1225, width: 750, height: 110, sizeMode: 'sliced' }} />
+            <view name="BackpackEditedRestored/Back" interaction="press" accessibilityLabel="返回" onClick={() => emit('back', 'back')}
+                style={{ position: 'absolute', left: 13, top: 1252, width: 64, height: 56 }}>
+                <image source={imageRef('ui/mail/back')} style={{ width: 64, height: 56 }} />
+            </view>
+        </view>
+    );
+});

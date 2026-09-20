@@ -18,6 +18,7 @@ import { loadScreenCatalog } from "./lib/uniflex-screens.mjs";
 import { parsePackageBin } from "./fgui-roundtrip.mjs";
 import { parseFguiComponent } from "../tools/fgui-codegen/parseFgui.ts";
 import { runCli } from "./uniflex-ui-cli.mjs";
+import { mergeListRows } from "./lib/uniflex-fgui/capture.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const art = resolve(root, "apps/art/fairygui");
@@ -32,34 +33,32 @@ function rect(x, y, width, height) {
 
 function promptSnapshot() {
     const nodes = [
-        node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
-        node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
-        node(3, 1, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
-        node(4, 3, "PopupBackground", "view", rect(21, 625, 708, 375)),
-        node(5, 4, "", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/prompt" }),
-        node(6, 4, "", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/small", visible: false }),
-        node(7, 3, "PopupFrame/Title", "text", rect(111, 643, 528, 58), { value: "创建角色" }),
-        node(8, 3, "PopupFrame/Content", "view", rect(61, 733, 628, 229)),
-        node(9, 8, "Prompt/Content", "view", rect(61, 733, 628, 229)),
-        node(10, 9, "Prompt/Message", "text", rect(61, 733, 628, 104), { value: "在该服务器创建1名新角色?" }),
-        node(11, 9, "Prompt/Actions", "view", rect(61, 860, 628, 102)),
-        node(12, 11, "ConfirmButton", "view", rect(77, 860, 255, 102)),
-        node(13, 12, "ActionButton", "view", rect(77, 860, 255, 102), { interaction: "press" }),
-        node(14, 13, "ActionButton/Background", "image", rect(77, 860, 255, 102), { resourceId: "ui/button/confirm" }),
-        node(15, 13, "ActionButton/Label", "text", rect(85, 864, 239, 86), { value: "确定" }),
-        node(16, 13, "ActionButton/IconRow", "view", rect(85, 864, 239, 86), { visible: false }),
-        node(17, 16, "ActionButton/Icon", "image", rect(85, 864, 48, 48), { resourceId: "ui/button/confirm" }),
-        node(18, 16, "ActionButton/IconLabel", "text", rect(149, 864, 80, 86), { value: "确定" }),
-        node(19, 11, "", "view", rect(419, 860, 255, 102)),
-        node(20, 19, "CancelButton", "view", rect(419, 860, 255, 102)),
-        node(21, 20, "ActionButton", "view", rect(419, 860, 255, 102), { interaction: "press" }),
-        node(22, 21, "ActionButton/Background", "image", rect(419, 860, 255, 102), { resourceId: "ui/button/cancel" }),
-        node(23, 21, "ActionButton/Label", "text", rect(427, 864, 239, 86), { value: "取消" }),
-        node(24, 21, "ActionButton/IconRow", "view", rect(427, 864, 239, 86), { visible: false }),
-        node(25, 24, "ActionButton/Icon", "image", rect(427, 864, 48, 48), { resourceId: "ui/button/cancel" }),
-        node(26, 24, "ActionButton/IconLabel", "text", rect(491, 864, 80, 86), { value: "取消" }),
-        node(27, 3, "CloseButton", "view", rect(642, 631, 72, 72), { interaction: "press" }),
-        node(28, 27, "", "image", rect(653, 642, 50, 50), { resourceId: "ui/popup/close" }),
+        node(1, null, "PromptPage", "view", rect(0, 0, 750, 1624)),
+        node(2, 1, "PopupFrame", "view", rect(0, 0, 750, 1624)),
+        node(3, 2, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
+        node(4, 2, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
+        node(5, 4, "PopupFrame/Background", "image", rect(21, 625, 708, 375), { resourceId: "ui/popup/prompt" }),
+        node(6, 4, "PopupFrame/Title", "text", rect(111, 643, 528, 58), { value: "创建角色" }),
+        node(7, 1, "Prompt/Content", "view", rect(61, 733, 628, 229)),
+        node(8, 7, "Prompt/Message", "text", rect(61, 733, 628, 104), { value: "在该服务器创建1名新角色?" }),
+        node(9, 7, "Prompt/Actions", "view", rect(61, 860, 628, 102)),
+        node(10, 9, "ConfirmButton", "view", rect(77, 860, 255, 102)),
+        node(11, 10, "ActionButton", "view", rect(77, 860, 255, 102), { interaction: "press" }),
+        node(12, 11, "ActionButton/Background", "image", rect(77, 860, 255, 102), { resourceId: "ui/button/confirm" }),
+        node(13, 11, "ActionButton/Label", "text", rect(85, 864, 239, 86), { value: "确定" }),
+        node(14, 11, "ActionButton/IconRow", "view", rect(85, 864, 239, 86), { visible: false }),
+        node(15, 14, "ActionButton/Icon", "image", rect(85, 864, 48, 48), { resourceId: "ui/button/confirm" }),
+        node(16, 14, "ActionButton/IconLabel", "text", rect(149, 864, 80, 86), { value: "确定" }),
+        node(17, 9, "", "view", rect(419, 860, 255, 102)),
+        node(18, 17, "CancelButton", "view", rect(419, 860, 255, 102)),
+        node(19, 18, "ActionButton", "view", rect(419, 860, 255, 102), { interaction: "press" }),
+        node(20, 19, "ActionButton/Background", "image", rect(419, 860, 255, 102), { resourceId: "ui/button/cancel" }),
+        node(21, 19, "ActionButton/Label", "text", rect(427, 864, 239, 86), { value: "取消" }),
+        node(22, 19, "ActionButton/IconRow", "view", rect(427, 864, 239, 86), { visible: false }),
+        node(23, 22, "ActionButton/Icon", "image", rect(427, 864, 48, 48), { resourceId: "ui/button/cancel" }),
+        node(24, 22, "ActionButton/IconLabel", "text", rect(491, 864, 80, 86), { value: "取消" }),
+        node(25, 4, "CloseButton", "view", rect(642, 631, 72, 72), { interaction: "press" }),
+        node(26, 25, "", "image", rect(653, 642, 50, 50), { resourceId: "ui/popup/close" }),
     ];
     return {
         schemaVersion: 1,
@@ -111,12 +110,11 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         const frameXml = readFileSync(join(out, "assets/UniFlex_Common/PopupFrame.xml"), "utf8");
         const names = ir.packages[0].components.map((item) => item.name).sort();
         assert.deepEqual(names, [
-            "ActionButton", "CancelButton", "CloseButton", "ConfirmButton", "PopupBackground", "PopupFrame",
+            "ActionButton", "CancelButton", "CloseButton", "ConfirmButton", "PopupFrame",
         ]);
         assert.match(promptXml, /name="ConfirmButton"/);
         assert.match(promptXml, /name="CancelButton"/);
         assert.match(promptXml, /name="CloseButton"/);
-        assert.match(promptXml, /name="PopupBackground"/);
         assert.match(promptXml, /name="Prompt\/Message"/);
         assert.doesNotMatch(promptXml, /<graph/);
         assert.doesNotMatch(promptXml, /ui\/button\/confirm/);
@@ -130,8 +128,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         const cancelXml = readFileSync(join(out, "assets/UniFlex_Common/CancelButton.xml"), "utf8");
         assert.match(cancelXml, /title="取消"/);
         assert.match(cancelXml, /propertyId="3"/);
-        const backgroundXml = readFileSync(join(out, "assets/UniFlex_Common/PopupBackground.xml"), "utf8");
-        assert.doesNotMatch(backgroundXml, /small\.png/);
+        assert.match(frameXml, /fileName="images\/prompt.png"/);
         const previewHtml = readFileSync(join(out, "preview/index.html"), "utf8");
         assert.match(previewHtml, /id="ui"/);
         assert.match(previewHtml, /#101318/);
@@ -149,16 +146,19 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(previewHtml, /bindPageInteractions/);
         assert.match(previewHtml, /currentId, go/);
         assert.ok(existsSync(join(out, "preview/regular.ttf")));
-        assert.match(frameXml, /name="PopupFrame\/Content"/);
+        assert.doesNotMatch(frameXml, /name="PopupFrame\/Content"/);
         assert.doesNotMatch(frameXml, /Prompt\/Message/);
         assert.match(commonXml, /scale="9grid" scale9grid="26,32,4,4"/);
+        assert.doesNotMatch(commonXml, /fill_[0-9a-f]+\.png"[^>]*scale="9grid"/);
+        assert.match(previewHtml, /clearFillNineGrid/);
+        assert.match(previewHtml, /patchNineSlice/);
+        assert.match(previewHtml, /borderImageWidth/);
 
         for (const file of [
             "assets/UniFlex_Common/ActionButton.xml",
             "assets/UniFlex_Common/ConfirmButton.xml",
             "assets/UniFlex_Common/CancelButton.xml",
             "assets/UniFlex_Common/CloseButton.xml",
-            "assets/UniFlex_Common/PopupBackground.xml",
             "assets/UniFlex_Common/PopupFrame.xml",
             "assets/UniFlex_Prompt/Prompt.xml",
         ]) {
@@ -233,15 +233,14 @@ test("parent-local inspect rects become FairyGUI component-space xy", async () =
             screenId: "prompt",
             canvas: { width: 750, height: 1624 },
             nodes: [
-                node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
-                node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
-                node(3, 1, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
-                node(4, 3, "PopupBackground", "view", rect(0, 0, 708, 375)),
-                node(5, 4, "", "image", rect(0, 0, 708, 375), { resourceId: "ui/popup/prompt" }),
-                node(6, 3, "PopupFrame/Title", "text", rect(90, 18, 528, 58), { value: "创建角色" }),
-                node(7, 3, "PopupFrame/Content", "view", rect(40, 108, 628, 229)),
-                node(8, 7, "Prompt/Content", "view", rect(0, 0, 628, 229)),
-                node(9, 8, "Prompt/Message", "text", rect(0, 0, 628, 104), { value: "在该服务器创建1名新角色?" }),
+                node(1, null, "PromptPage", "view", rect(0, 0, 750, 1624)),
+                node(2, 1, "PopupFrame", "view", rect(0, 0, 750, 1624)),
+                node(3, 2, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
+                node(4, 2, "PopupFrame/Panel", "view", rect(21, 625, 708, 375)),
+                node(5, 4, "PopupFrame/Background", "image", rect(0, 0, 708, 375), { resourceId: "ui/popup/prompt" }),
+                node(6, 4, "PopupFrame/Title", "text", rect(90, 18, 528, 58), { value: "创建角色" }),
+                node(7, 1, "Prompt/Content", "view", rect(61, 733, 628, 229)),
+                node(8, 7, "Prompt/Message", "text", rect(0, 0, 628, 104), { value: "在该服务器创建1名新角色?" }),
             ],
         };
         const { ir } = await exportFgui({
@@ -251,7 +250,7 @@ test("parent-local inspect rects become FairyGUI component-space xy", async () =
         });
         const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
         assert.match(promptXml, /name="PopupFrame\/Panel" xy="21,625"/);
-        assert.match(promptXml, /name="PopupBackground" xy="21,625"/);
+        assert.match(promptXml, /name="PopupFrame\/Background" xy="21,625"/);
         assert.match(promptXml, /name="PopupFrame\/Title" xy="111,643"/);
         assert.match(promptXml, /name="Prompt\/Message" xy="61,733"/);
         assert.equal(ir.screen.componentName, "Prompt");
@@ -262,17 +261,15 @@ test("parent-local inspect rects become FairyGUI component-space xy", async () =
 
 function smallPopupSnapshot() {
     const nodes = [
-        node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1624)),
-        node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
-        node(3, 1, "PopupFrame/Panel", "view", rect(21, 557, 708, 510)),
-        node(4, 3, "PopupBackground", "view", rect(21, 557, 708, 510)),
-        node(5, 4, "", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/prompt", visible: false }),
-        node(6, 4, "", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/small" }),
-        node(7, 3, "PopupFrame/Title", "text", rect(111, 575, 528, 58), { value: "标题" }),
-        node(8, 3, "PopupFrame/Content", "view", rect(61, 665, 628, 364)),
-        node(9, 8, "SmallPopup/Content", "view", rect(61, 665, 628, 364)),
-        node(10, 3, "CloseButton", "view", rect(642, 563, 72, 72), { interaction: "press" }),
-        node(11, 10, "", "image", rect(653, 574, 50, 50), { resourceId: "ui/popup/close" }),
+        node(1, null, "SmallPopupPage", "view", rect(0, 0, 750, 1624)),
+        node(2, 1, "PopupFrame", "view", rect(0, 0, 750, 1624)),
+        node(3, 2, "PopupFrame/Mask", "view", rect(0, 0, 750, 1624), { interaction: "press" }),
+        node(4, 2, "PopupFrame/Panel", "view", rect(21, 557, 708, 510)),
+        node(5, 4, "PopupFrame/Background", "image", rect(21, 557, 708, 510), { resourceId: "ui/popup/prompt" }),
+        node(6, 4, "PopupFrame/Title", "text", rect(111, 575, 528, 58), { value: "标题" }),
+        node(7, 1, "SmallPopup/Content", "view", rect(61, 665, 628, 364)),
+        node(8, 4, "CloseButton", "view", rect(642, 563, 72, 72), { interaction: "press" }),
+        node(9, 8, "", "image", rect(653, 574, 50, 50), { resourceId: "ui/popup/close" }),
     ];
     return {
         schemaVersion: 1,
@@ -342,7 +339,7 @@ test("SmallPopup and Confirm compile as their own page packages", async () => {
     }
 });
 
-test("multi-page export shares Common and inlines PopupBackground kind variants", async () => {
+test("multi-page export shares Common PopupFrame", async () => {
     const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-catalog-"));
     try {
         const catalog = await loadScreenCatalog(root);
@@ -371,9 +368,9 @@ test("multi-page export shares Common and inlines PopupBackground kind variants"
         const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
         const smallXml = readFileSync(join(out, "assets/UniFlex_SmallPopup/SmallPopup.xml"), "utf8");
         const preview = readFileSync(join(out, "preview/index.html"), "utf8");
-        assert.match(promptXml, /name="PopupBackground"/);
-        assert.match(smallXml, /small\.png/);
-        assert.match(smallXml, / pkg="/);
+        assert.match(promptXml, /name="PopupFrame"/);
+        assert.match(smallXml, /prompt\.png/);
+        assert.doesNotMatch(smallXml, /small\.png/);
         assert.match(preview, /id="picker"/);
         assert.match(preview, /query\.set\("screen"/);
         assert.match(preview, /"id":"small-popup"/);
@@ -443,10 +440,10 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
             nodes: [
                 node(1, null, "MailBattleReport", "view", rect(0, 0, 750, 1334), { planId: 1 }),
                 node(2, 1, "", "view", rect(0, 0, 750, 170), { planId: 2 }),
-                node(3, 1, "PanelTab", "view", rect(14, 118, 170, 52), { planId: 5 }),
+                node(3, 1, "Tab", "view", rect(14, 118, 170, 52), { planId: 5 }),
                 node(4, 3, "", "image", rect(14, 118, 170, 52), { resourceId: "ui/mail/tab-inactive" }),
                 node(5, 3, "", "text", rect(14, 118, 170, 52), { value: "系统", planId: 10 }),
-                node(6, 1, "PanelTab", "view", rect(192, 118, 170, 52)),
+                node(6, 1, "Tab", "view", rect(192, 118, 170, 52)),
                 node(7, 6, "", "image", rect(192, 118, 170, 52), { resourceId: "ui/mail/tab-inactive" }),
                 node(8, 6, "", "text", rect(192, 118, 170, 52), { value: "战报" }),
                 node(9, 1, "", "virtual-list", rect(10, 236, 730, 905)),
@@ -478,7 +475,7 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
                 children: [
                     { planId: 2, kind: "view", props: { backgroundColor: "#553E78" } },
                     {
-                        planId: 5, kind: "view", props: { name: "PanelTab" },
+                        planId: 5, kind: "view", props: { name: "Tab" },
                         children: [{
                             planId: 10, kind: "text",
                             props: { bold: true, color: "#3F3254", fontSize: 28, horizontalAlign: "center" },
@@ -511,22 +508,34 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
             hostPlan,
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_MailBattleReport/MailBattleReport.xml"), "utf8");
-        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
+        const listXml = readFileSync(join(out, "assets/UniFlex_MailBattleReport/UniFlex_MailBattleReport_List_1.xml"), "utf8");
+        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/Tab.xml"), "utf8");
         const rowXml = readFileSync(join(out, "assets/UniFlex_Common/MailBattleRow.xml"), "utf8");
         const badgeXml = readFileSync(join(out, "assets/UniFlex_Common/NotificationBadge.xml"), "utf8");
         assert.doesNotMatch(pageXml, /<graph/);
         assert.match(pageXml, /fill_fff3efe9\.png/);
         assert.match(pageXml, /fill_ff553e78\.png/);
-        assert.match(pageXml, /fileName="MailBattleRow.xml"/);
         assert.match(pageXml, /propertyId="0" value="战报"/);
-        assert.match(pageXml, /propertyId="0" value="资源点侦察报告"/);
         assert.match(pageXml, /propertyId="0" value="4"/);
+        // virtual-list becomes its own scroll component; rows move inside it, VL-relative
+        assert.match(pageXml, /fileName="UniFlex_MailBattleReport_List_1\.xml"/);
+        assert.match(pageXml, /xy="10,236" size="730,905"/);
+        assert.doesNotMatch(pageXml, /MailBattleRow\.xml/);
+        assert.match(listXml, /overflow="scroll" scroll="vertical" scrollBarDisplay="hidden"/);
+        assert.match(listXml, /fileName="MailBattleRow.xml"/);
+        assert.match(listXml, /xy="0,188"/);
+        assert.match(listXml, /propertyId="0" value="资源点侦察报告"/);
+        assert.equal((listXml.match(/fileName="MailBattleRow.xml"/g) ?? []).length, 2);
         assert.match(tabXml, /color="#3f3254"/);
         assert.match(tabXml, /text="系统"/);
         assert.match(rowXml, /color="#3f3254"/);
         assert.match(rowXml, /text="野怪讨伐胜利"/);
         assert.match(badgeXml, /text="2"/);
-        assert.equal((pageXml.match(/fileName="MailBattleRow.xml"/g) ?? []).length, 2);
+        // binary preview marks the list component overflow=Scroll with a scroll pane segment
+        const bin = readFileSync(join(out, "preview/UniFlex_MailBattleReport/package.xml"));
+        assert.equal(bin.readUInt32BE(0), 0x46475549, "FGUI magic");
+        assert.ok(bin.includes(Buffer.from("UniFlex_MailBattleReport_List_1", "utf8")),
+            "scroll component is in the published package");
     } finally {
         rmSync(out, { recursive: true, force: true });
     }
@@ -543,14 +552,13 @@ test("WideMenuButton instances override labels and keep plan color", async () =>
             screenId: "settings",
             canvas: { width: 750, height: 1334 },
             nodes: [
-                node(1, null, "PopupFrame", "view", rect(0, 0, 750, 1334)),
-                node(2, 1, "PopupFrame/Mask", "view", rect(0, 0, 750, 1334)),
-                node(3, 1, "PopupFrame/Panel", "view", rect(21, 171, 708, 992)),
-                node(4, 3, "PopupBackground", "view", rect(21, 171, 708, 992)),
-                node(5, 4, "", "image", rect(21, 171, 708, 992), { resourceId: "ui/settings/panel" }),
-                node(6, 3, "PopupFrame/Title", "text", rect(141, 182, 468, 64), { value: "设置" }),
-                node(7, 3, "PopupFrame/Content", "view", rect(21, 171, 708, 992)),
-                node(8, 7, "Settings/Content", "view", rect(21, 171, 708, 992)),
+                node(1, null, "SettingsPage", "view", rect(0, 0, 750, 1334)),
+                node(2, 1, "PopupFrame", "view", rect(0, 0, 750, 1334)),
+                node(3, 2, "PopupFrame/Mask", "view", rect(0, 0, 750, 1334)),
+                node(4, 2, "PopupFrame/Panel", "view", rect(21, 171, 708, 992)),
+                node(5, 4, "PopupFrame/Background", "image", rect(21, 171, 708, 992), { resourceId: "ui/popup/prompt" }),
+                node(6, 4, "PopupFrame/Title", "text", rect(111, 189, 528, 58), { value: "设置" }),
+                node(8, 1, "Settings/Content", "view", rect(21, 171, 708, 992)),
                 node(9, 8, "WideMenuButton", "view", rect(42, 284, 326, 114)),
                 node(10, 9, "WideMenuButton/Background", "image", rect(42, 284, 326, 114), { resourceId: "ui/settings/button" }),
                 node(11, 9, "WideMenuButton/Icon", "image", rect(75, 315, 54, 54), { resourceId: "ui/settings/gear" }),
@@ -1058,7 +1066,7 @@ test("UniFlex components export as FairyGUI components; fills are images not gra
                 node(8, 5, "QuantityControl/Increase", "view", rect(511, 1118, 76, 85), { interaction: "press" }),
                 node(9, 8, "", "image", rect(511, 1118, 76, 85), { resourceId: "ui/backpack/button-plus" }),
                 node(10, 5, "", "text", rect(604, 1132, 121, 54), { value: "0" }),
-                node(11, 1, "PanelTab", "view", rect(14, 118, 134, 52), { interaction: "press" }),
+                node(11, 1, "Tab", "view", rect(14, 118, 134, 52), { interaction: "press" }),
                 node(12, 11, "", "image", rect(14, 118, 134, 52), { resourceId: "ui/mail/tab-inactive" }),
                 node(13, 11, "", "text", rect(14, 118, 134, 52), { value: "装备" }),
             ],
@@ -1069,11 +1077,11 @@ test("UniFlex components export as FairyGUI components; fills are images not gra
             catalog, images,
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_Backpack/Backpack.xml"), "utf8");
-        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
+        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/Tab.xml"), "utf8");
         const qtyXml = readFileSync(join(out, "assets/UniFlex_Common/QuantityControl.xml"), "utf8");
         assert.match(tabXml, /extention="Button"/);
         assert.match(pageXml, /fileName="QuantityControl.xml"/);
-        assert.match(pageXml, /fileName="PanelTab.xml"/);
+        assert.match(pageXml, /fileName="Tab.xml"/);
         assert.match(pageXml, /name="Backpack\/Back"/);
         assert.doesNotMatch(pageXml, /fileName="Backpack_Back.xml"/);
         assert.doesNotMatch(pageXml, /fileName="QuantityControl_Decrease.xml"/);
@@ -1189,6 +1197,55 @@ test("ItemSlot is a shared loader component; backpack, shop, and hero instance i
     }
 });
 
+test("scroll direction follows row overflow: horizontal, vertical, both", () => {
+    const make = (rows) => ({
+        schemaVersion: 1,
+        kind: "uniflex-design-snapshot",
+        screenId: "hscroll",
+        canvas: { width: 750, height: 1334 },
+        nodes: [
+            node(1, null, "HScrollPage", "view", rect(0, 0, 750, 1334)),
+            node(2, 1, "", "virtual-list", rect(10, 100, 730, 200)),
+            ...rows,
+        ],
+    });
+    const row = (id, x, y, w, h, label) => [
+        node(id, 2, "Row", "view", rect(x, y, w, h)),
+        node(id + 100, id, "", "text", rect(x, y, w, 40), { value: label }),
+    ];
+    const screen = { id: "hscroll", componentName: "HScroll" };
+    const scrollOf = (rows) => {
+        const ir = buildProjectIR(make(rows), { screen });
+        const page = ir.packages.find((pkg) => pkg.name === "UniFlex_HScroll");
+        const list = page.components.find((component) => component.scroll);
+        assert.ok(list, "virtual-list becomes a scroll component");
+        assert.deepEqual(list.size, { width: 730, height: 200 });
+        return list;
+    };
+    const horizontal = scrollOf([
+        ...row(3, 10, 100, 300, 200, "A"),
+        ...row(5, 320, 100, 300, 200, "B"),
+        ...row(7, 630, 100, 300, 200, "C"),
+    ]);
+    assert.equal(horizontal.scroll, "horizontal");
+    assert.equal(horizontal.children[0].x, 0, "rows are VL-relative");
+    assert.equal(horizontal.children[4].x, 620);
+    const vertical = scrollOf([
+        ...row(3, 10, 100, 730, 200),
+        ...row(5, 10, 320, 730, 200),
+    ]);
+    assert.equal(vertical.scroll, "vertical");
+    const both = scrollOf([
+        ...row(3, 10, 100, 900, 200),
+        ...row(5, 10, 320, 900, 200),
+    ]);
+    assert.equal(both.scroll, "both");
+    const fits = scrollOf([
+        ...row(3, 10, 100, 300, 200),
+    ]);
+    assert.equal(fits.scroll, "vertical", "content that fits defaults to vertical");
+});
+
 function writeFakeExport(dir, _name, mapping, screens) {
     mkdirSync(join(dir, "preview"), { recursive: true });
     writeFileSync(join(dir, "preview", "index.html"), "<html></html>");
@@ -1203,6 +1260,41 @@ function writeFakeExport(dir, _name, mapping, screens) {
         writeFileSync(join(pkg, "package.xml"), `<packageDescription name="${entry.package}"/>`);
     }
 }
+
+test("scroll-merge unions newly mounted virtual-list rows by rect", () => {
+    const base = {
+        kind: "uniflex-design-snapshot",
+        nodes: [
+            node(1, null, "Page", "view", rect(0, 0, 750, 1334)),
+            node(2, 1, "", "virtual-list", rect(10, 236, 730, 905)),
+            node(3, 2, "Row", "view", rect(10, 236, 730, 163)),
+            node(4, 3, "", "text", rect(20, 240, 100, 40), { value: "A" }),
+            node(5, 2, "Row", "view", rect(10, 424, 730, 163)),
+        ],
+    };
+    const extra = {
+        kind: "uniflex-design-snapshot",
+        nodes: [
+            node(1, null, "Page", "view", rect(0, 0, 750, 1334)),
+            node(2, 1, "", "virtual-list", rect(10, 236, 730, 905)),
+            node(3, 2, "Row", "view", rect(10, 424, 730, 163)),
+            node(4, 2, "Row", "view", rect(10, 612, 730, 163)),
+            node(5, 4, "", "text", rect(20, 616, 100, 40), { value: "B" }),
+        ],
+    };
+    const merged = mergeListRows(base, extra);
+    const rows = merged.nodes.filter((entry) => entry.parent === 2);
+    assert.equal(rows.length, 3, "existing two rows + one new row");
+    const texts = merged.nodes.filter((entry) => entry.kind === "text");
+    assert.equal(texts.length, 2);
+    const newRow = merged.nodes.find((entry) => entry.kind === "view" && entry.rect?.y === 612);
+    const newText = merged.nodes.find((entry) => entry.value === "B");
+    assert.ok(newRow && newText);
+    assert.equal(newText.parent, newRow.id, "cloned subtree re-parented with fresh ids");
+    assert.ok(newRow.id > 5 && newText.id > 5, "cloned ids do not collide");
+    assert.equal(mergeListRows(base, extra).nodes.length, merged.nodes.length, "idempotent");
+    assert.equal(mergeListRows(base, base), base, "no new rows returns base");
+});
 
 function snapshotDir(dir) {
     if (!existsSync(dir)) return [];
