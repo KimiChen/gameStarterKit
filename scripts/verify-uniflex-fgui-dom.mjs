@@ -150,10 +150,13 @@ async function checkScreen(ws, base, id) {
         let scrollable = 0;
         if (p.view) {
             ${WALK}(p.view, (o) => {
-                if (o._scrollPane) {
+                const sp = o._scrollPane;
+                if (sp) {
                     panes += 1;
-                    if (o._scrollPane.contentHeight > o._scrollPane.viewHeight
-                        || o._scrollPane.contentWidth > o._scrollPane.viewWidth) scrollable += 1;
+                    // ScrollType: 0=horizontal 1=vertical 2=both —只认该轴允许的溢出
+                    const v = (sp._scrollType === 1 || sp._scrollType === 2) && sp.contentHeight > sp.viewHeight;
+                    const h = (sp._scrollType === 0 || sp._scrollType === 2) && sp.contentWidth > sp.viewWidth;
+                    if (v || h) scrollable += 1;
                 }
             });
         }
@@ -174,16 +177,18 @@ async function checkScrollDrag(ws, base, id) {
         const p = window.__FGUI_PREVIEW__;
         if (!p?.view) return null;
         ${WALK}(p.view, (o) => {
-            if (!found && o._scrollPane
-                && (o._scrollPane.contentHeight > o._scrollPane.viewHeight
-                    || o._scrollPane.contentWidth > o._scrollPane.viewWidth)) found = o;
+            const sp = o._scrollPane;
+            if (!sp) return;
+            const v = (sp._scrollType === 1 || sp._scrollType === 2) && sp.contentHeight > sp.viewHeight;
+            const h = (sp._scrollType === 0 || sp._scrollType === 2) && sp.contentWidth > sp.viewWidth;
+            if (!found && (v || h)) found = { o, vertical: v };
         });
         if (!found) return null;
-        window.__verifyPane = found;
-        const el = found.element || found._element;
+        const { o, vertical } = found;
+        window.__verifyPane = o;
+        const el = o.element || o._element;
         const r = el.getBoundingClientRect();
-        return { posY: found._scrollPane.posY, posX: found._scrollPane.posX,
-            vertical: found._scrollPane.contentHeight > found._scrollPane.viewHeight,
+        return { posY: o._scrollPane.posY, posX: o._scrollPane.posX, vertical,
             cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
     })()`);
     if (!pane) return null;

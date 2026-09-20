@@ -18,6 +18,7 @@ import { loadScreenCatalog } from "./lib/uniflex-screens.mjs";
 import { parsePackageBin } from "./fgui-roundtrip.mjs";
 import { parseFguiComponent } from "../tools/fgui-codegen/parseFgui.ts";
 import { runCli } from "./uniflex-ui-cli.mjs";
+import { mergeListRows } from "./lib/uniflex-fgui/capture.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const art = resolve(root, "apps/art/fairygui");
@@ -1259,6 +1260,41 @@ function writeFakeExport(dir, _name, mapping, screens) {
         writeFileSync(join(pkg, "package.xml"), `<packageDescription name="${entry.package}"/>`);
     }
 }
+
+test("scroll-merge unions newly mounted virtual-list rows by rect", () => {
+    const base = {
+        kind: "uniflex-design-snapshot",
+        nodes: [
+            node(1, null, "Page", "view", rect(0, 0, 750, 1334)),
+            node(2, 1, "", "virtual-list", rect(10, 236, 730, 905)),
+            node(3, 2, "Row", "view", rect(10, 236, 730, 163)),
+            node(4, 3, "", "text", rect(20, 240, 100, 40), { value: "A" }),
+            node(5, 2, "Row", "view", rect(10, 424, 730, 163)),
+        ],
+    };
+    const extra = {
+        kind: "uniflex-design-snapshot",
+        nodes: [
+            node(1, null, "Page", "view", rect(0, 0, 750, 1334)),
+            node(2, 1, "", "virtual-list", rect(10, 236, 730, 905)),
+            node(3, 2, "Row", "view", rect(10, 424, 730, 163)),
+            node(4, 2, "Row", "view", rect(10, 612, 730, 163)),
+            node(5, 4, "", "text", rect(20, 616, 100, 40), { value: "B" }),
+        ],
+    };
+    const merged = mergeListRows(base, extra);
+    const rows = merged.nodes.filter((entry) => entry.parent === 2);
+    assert.equal(rows.length, 3, "existing two rows + one new row");
+    const texts = merged.nodes.filter((entry) => entry.kind === "text");
+    assert.equal(texts.length, 2);
+    const newRow = merged.nodes.find((entry) => entry.kind === "view" && entry.rect?.y === 612);
+    const newText = merged.nodes.find((entry) => entry.value === "B");
+    assert.ok(newRow && newText);
+    assert.equal(newText.parent, newRow.id, "cloned subtree re-parented with fresh ids");
+    assert.ok(newRow.id > 5 && newText.id > 5, "cloned ids do not collide");
+    assert.equal(mergeListRows(base, extra).nodes.length, merged.nodes.length, "idempotent");
+    assert.equal(mergeListRows(base, base), base, "no new rows returns base");
+});
 
 function snapshotDir(dir) {
     if (!existsSync(dir)) return [];

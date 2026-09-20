@@ -468,17 +468,22 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
 
 try {
     await startScreen(active);
-    const snapshot = runtime.snapshot(active.canvas.width, active.canvas.height);
-    const componentDeclarations = declarePsdOwnership(snapshot.nodes, {
+    const componentDeclarations = declarePsdOwnership(runtime.snapshot(active.canvas.width, active.canvas.height).nodes, {
         key: active.componentName,
         source: active.source,
         rootName: active.rootName,
     }, psdComponents);
-    (window as typeof window & { __UNIFLEX_DESIGN_SNAPSHOT__?: unknown }).__UNIFLEX_DESIGN_SNAPSHOT__ = {
-        ...snapshot,
-        nodes: stampPsdIdentities(snapshot.nodes, componentDeclarations),
-        componentDeclarations,
+    const takeSnapshot = () => {
+        const snapshot = runtime.snapshot(active.canvas.width, active.canvas.height);
+        return {
+            ...snapshot,
+            nodes: stampPsdIdentities(snapshot.nodes, componentDeclarations),
+            componentDeclarations,
+        };
     };
+    (window as typeof window & { __UNIFLEX_DESIGN_SNAPSHOT__?: unknown }).__UNIFLEX_DESIGN_SNAPSHOT__ = takeSnapshot();
+    // 捕获端滚动 VirtualList 后用它重拍快照（只含新挂载行），由 capture 侧合并。
+    (window as typeof window & { __UNIFLEX_RESNAPSHOT__?: unknown }).__UNIFLEX_RESNAPSHOT__ = takeSnapshot;
     document.documentElement.dataset.uniflexReady = "true";
 } catch (error) {
     if (!stopped) console.error("[UniFlex Web] 预览启动失败：", error);
