@@ -43,7 +43,7 @@ export const AllianceBoardPanel = defineComponent<AllianceBoardPanelProps>((p) =
 
             <ScreenHeader title={p.title ?? '联盟'} top={144} />
 
-            <TabBar skin={mailTab} left={13} top={262} itemWidth={200} selected={tab}
+            <TabBar skin={mailTab} left={13} top={262} itemWidth={200} width={737} selected={tab}
                 items={[{ id: 'board', label: '留言板' }, { id: 'apply', label: '申请列表' }]}
                 onSelect={(id) => { if (id === 'board' || id === 'apply') selectTab(id); }} />
 

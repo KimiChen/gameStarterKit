@@ -112,7 +112,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
             <ResourceCounter icon={resourceIcon} left={591} top={22} value={resources[3]}
                 id="resource-4" onClick={() => emit('resource-4', 'primary')} />
 
-            <TabBar skin={mailTab} left={14} top={118} itemWidth={134} gap={13} selected={tabs[activeTab].id}
+            <TabBar skin={mailTab} left={14} top={118} itemWidth={134} gap={13} width={736} selected={tabs[activeTab].id}
                 items={tabs} onSelect={(_id, index) => selectTab(index)} />
 
             <view visible={hasItems} name="Backpack/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>
