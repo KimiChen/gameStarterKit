@@ -50,6 +50,7 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
         api: {
             alliance: { version: 1, minSupported: 1 },
             hexmap: { version: 1, minSupported: 1 },
+            march: { version: 1, minSupported: 1 },
             territory: { version: 1, minSupported: 1 },
         },
         modes: [],

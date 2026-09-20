@@ -7,9 +7,10 @@ import {
     sgzzEmptyTile, type ISgzzTile,
 } from "@game/shared/kits/sgzzmap/api/territory/index";
 import type { ISgzzAlliance, ISgzzMembership, SgzzAllianceRoleValue } from "@game/shared/kits/sgzzmap/api/alliance/index";
+import { validateSgzzMarch, type ISgzzMarch } from "@game/shared/kits/sgzzmap/api/march/index";
 import type { KitTx, RowDataPacket } from "../../core/infra/kitApi";
 
-export type SgzzReceiptKind = "occupy" | "abandon" | "alliance";
+export type SgzzReceiptKind = "occupy" | "abandon" | "alliance" | "dispatch" | "recall";
 
 export interface SgzzReceipt {
     readonly opId: string;
@@ -40,6 +41,8 @@ export interface SgzzRepository {
     upsertHolding(holding: SgzzHolding): Promise<void>;
     readReceipt(kind: SgzzReceiptKind, opId: string): Promise<SgzzReceipt | null>;
     insertReceipt(receipt: SgzzReceipt): Promise<void>;
+    /** 只更新已在本事务里锁住的回执行（经济写在回执之后，见 service.mutate 的 post 钩子）。 */
+    updateReceipt(kind: SgzzReceiptKind, opId: string, response: unknown): Promise<void>;
     appendLog(entity: string, operation: string, payload: unknown, tombstone: boolean): Promise<number>;
     readMembershipForUpdate(uid: string): Promise<ISgzzMembership | null>;
     readAllianceForUpdate(allianceId: string): Promise<ISgzzAlliance | null>;
@@ -50,6 +53,12 @@ export interface SgzzRepository {
     deleteMembership(uid: string): Promise<void>;
     /** 同盟变更后刷新该玩家名下地块的 owner_aid。⚠ 受 SGZZ_MAX_TILES_PER_PLAYER 封顶。 */
     retagTiles(uid: string, allianceId: string): Promise<void>;
+    insertMarch(march: ISgzzMarch): Promise<void>;
+    readMarchForUpdate(marchId: string): Promise<ISgzzMarch | null>;
+    updateMarchStatus(marchId: string, status: ISgzzMarch["status"]): Promise<void>;
+    /** 到期队列，按 (arrive_at, march_id) 全区总序；⚠ 必须 FOR UPDATE，否则两个结算者会重复落地。 */
+    readDueMarches(now: number, limit: number): Promise<ISgzzMarch[]>;
+    countActiveMarches(uid: string): Promise<number>;
 }
 
 function integer(value: unknown, label: string, max = Number.MAX_SAFE_INTEGER): number {
@@ -63,6 +72,17 @@ function text(value: unknown, label: string, max: number): string {
 }
 function json(value: unknown): unknown {
     return typeof value === "string" ? JSON.parse(value) : value;
+}
+function marchOf(row: RowDataPacket): ISgzzMarch {
+    // ⚠ 过 shared 校验器：到达时刻由路径重算，库里被人手改过也会在这里红
+    return validateSgzzMarch({
+        marchId: text(row.march_id, "march_id", 64),
+        uid: text(row.uid, "uid", SGZZ_MAX_UID),
+        path: json(row.path_json),
+        departAt: integer(row.depart_at, "depart_at"),
+        arriveAt: integer(row.arrive_at, "arrive_at"),
+        status: row.status,
+    }, "march");
 }
 function tileOf(row: RowDataPacket): ISgzzTile {
     return {
@@ -192,6 +212,45 @@ export function createSqlSgzzRepository(tx: KitTx, sId: number): SgzzRepository 
                  JSON.stringify(receipt.response)]);
         },
 
+        async insertMarch(march: ISgzzMarch): Promise<void> {
+            await tx.query(
+                "INSERT INTO k_sgzzmap_march (server_id, march_id, uid, path_json, depart_at, arrive_at, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [sId, march.marchId, march.uid, JSON.stringify(march.path),
+                 march.departAt, march.arriveAt, march.status]);
+        },
+
+        async readMarchForUpdate(marchId: string): Promise<ISgzzMarch | null> {
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT march_id, uid, path_json, depart_at, arrive_at, status FROM k_sgzzmap_march "
+                + "WHERE server_id = ? AND march_id = ? FOR UPDATE", [sId, marchId]);
+            return rows[0] ? marchOf(rows[0]) : null;
+        },
+
+        async updateMarchStatus(marchId: string, status: ISgzzMarch["status"]): Promise<void> {
+            await tx.query("UPDATE k_sgzzmap_march SET status = ? WHERE server_id = ? AND march_id = ?",
+                [status, sId, marchId]);
+        },
+
+        async readDueMarches(now: number, limit: number): Promise<ISgzzMarch[]> {
+            // ⚠ MySQL 预处理语句不接受 `LIMIT ?`（实测 "Incorrect arguments to mysqld_stmt_execute"）。
+            // limit 是 kit 内部常量、非用户输入；这里仍先钳成有界整数再内联，⛔ 不直接拼外来值。
+            const bounded = Math.max(1, Math.min(1000, Math.trunc(Number(limit) || 1)));
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT march_id, uid, path_json, depart_at, arrive_at, status FROM k_sgzzmap_march "
+                + "WHERE server_id = ? AND status = 'marching' AND arrive_at <= ? "
+                + `ORDER BY arrive_at, march_id LIMIT ${bounded} FOR UPDATE`,
+                [sId, now]);
+            return rows.map(marchOf);
+        },
+
+        async countActiveMarches(uid: string): Promise<number> {
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT COUNT(*) AS n FROM k_sgzzmap_march "
+                + "WHERE server_id = ? AND uid = ? AND status = 'marching'", [sId, uid]);
+            return integer(rows[0]?.n, "active marches");
+        },
+
         async readMembershipForUpdate(uid: string): Promise<ISgzzMembership | null> {
             const rows = await tx.query<RowDataPacket[]>(
                 "SELECT uid, alliance_id, role FROM k_sgzzmap_alliance_member "
@@ -250,6 +309,12 @@ export function createSqlSgzzRepository(tx: KitTx, sId: number): SgzzRepository 
         async retagTiles(uid: string, allianceId: string): Promise<void> {
             await tx.query("UPDATE k_sgzzmap_tile SET owner_aid = ? WHERE server_id = ? AND owner_uid = ?",
                 [allianceId, sId, uid]);
+        },
+
+        async updateReceipt(kind: SgzzReceiptKind, opId: string, response: unknown): Promise<void> {
+            await tx.query(
+                "UPDATE k_sgzzmap_receipt SET response_json = ? WHERE server_id = ? AND kind = ? AND op_id = ?",
+                [JSON.stringify(response), sId, kind, opId]);
         },
 
         async appendLog(entity: string, operation: string, payload: unknown, tombstone: boolean): Promise<number> {

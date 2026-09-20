@@ -14,6 +14,10 @@
     "alliance": {
       "version": 1,
       "minSupported": 1
+    },
+    "march": {
+      "version": 1,
+      "minSupported": 1
     }
   },
   "domains": [
@@ -22,7 +26,8 @@
   "sql": {
     "files": [
       "sql/001-grid.sql",
-      "sql/002-alliance.sql"
+      "sql/002-alliance.sql",
+      "sql/003-march.sql"
     ],
     "tables": [
       {
@@ -52,9 +57,19 @@
       {
         "name": "k_sgzzmap_alliance_member",
         "zone": "per-zone"
+      },
+      {
+        "name": "k_sgzzmap_march",
+        "zone": "per-zone"
       }
     ]
   },
+  "workers": [
+    {
+      "id": "marchSettle",
+      "entry": "apps/server/src/kits/sgzzmap/workers/marchSettle.ts"
+    }
+  ],
   "category": "extra",
   "docs": [
     "apps/kits/sgzzmap/README.md"

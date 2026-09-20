@@ -24,7 +24,7 @@
 |---|---|---|---|
 | `hexmap` | 1/1 | cell key、六邻与环序、cube 距离、等距投影、6 档 LOD + 滞回、chunk 矩形、地形内容与解码器、长程邻接校验 | ✅ P1 |
 | `territory` | 1/1 | 19 态 GRID_STATE、关系态推导、连地判定、占领 / 弃地结算 | ✅ P2 |
-| `march` | — | 转折点路径、插值、结算 | ⏳ P4 |
+| `march` | 1/1 | 转折点路径与逐格展开、确定性插值、到达结算 | ✅ P4 |
 | `chunk` | — | 鸟瞰分块摘要 | ⏳ P5 |
 | `alliance` | 1/1 | 最小同盟（建盟 / 加入 / 退出，⛔ 无外交、无职位、无仓库） | ✅ P3 |
 
@@ -87,6 +87,8 @@
 | `sgzzmap.occupy` | idempotent-write | 连地闸 + 稀疏插入竞争重读 |
 | `sgzzmap.abandon` | idempotent-write | 只有地主能弃 |
 | `sgzzmap.alliance` | idempotent-write | 单路由 `{act: create/join/leave}`——三者锁同一组表 |
+| `sgzzmap.marchDispatch` | idempotent-write | 出发格须自有、在途上限 3、扣框架货币 |
+| `sgzzmap.marchRecall` | idempotent-write | 只能撤自己的、还在途的 |
 
 响应体积：框架硬上限 64 KB、幂等写结果上限 32 KB。`view` 把 uid / 同盟折叠进
 `owners` / `alliances` 字典，地块行只带下标 ⇒ 400 格也稳在 28 KB 以内。
@@ -113,7 +115,34 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
   `db:bootstrap` 连跑两遍，第二遍新应用 0 个文件。
 - ✅ **P3** 最小同盟：`alliance` 面 + 路由（contractVersion → 2）+ 两张表；
   UNION / GANG_MASTER 两态由此可达，真栈 int 用例证明「入盟后同一格立刻可连地」。
-- ⏳ P4 行军 + worker ／ P5 鸟瞰 + 缩略图 ／ P6 客户端页。
+- ✅ **P4** 行军 + 结算 worker：`march` 面（转折点路径、共线硬校验、确定性插值）、
+  `k_sgzzmap_march`、dispatch/recall 路由（contractVersion → 3）、`marchSettle` worker。
+- ⏳ P5 鸟瞰 + 缩略图 ／ P6 客户端页。
+
+### 行军的四条硬规矩
+
+1. **服务端只存转折点**（`path_json`），逐格路径两端用同一个 `sgzzExpandPath` 展开。
+2. **每段必须共线**：从 src 朝 `dirIndex` 走 `steps` 步要**恰好**落在 dest 上。
+   ⚠ 六边形里「看着像直线」不等于是直线——把拐点抹掉当一段下发会被拒。校验在**域入口**就做，
+   ⛔ 不让伪造路径进到事务里。
+3. **到达时刻由路径重算**（`validateSgzzMarch`），⛔ 不信任线上传来的数字；仓储读出来也过同一道闸。
+4. **结算⛔不走连地闸**：路径合法性在派遣时已闸过，到达是既成事实。
+
+### worker 与懒结算
+
+`marchSettle` worker 是主路径，懒结算（`view` 每次推进一批，积压超批次返回
+`SGZZMAP_SETTLEMENT_PENDING`）是兜底。**必须有 worker**：行军到达会改**别人**的地块，
+只靠懒结算的话，攻击方下线后防守方的地块状态会无限期停在过去。
+一条用例钉住两条路径对同一 fixture 产出**逐字段相同**的世界状态。
+
+```bash
+KIT_WORKER_ZONES=0 npm --workspace @game/server run worker -- sgzzmap:marchSettle
+```
+
+⚠ 框架已经把 worker 的 `pass` 包在 `withKitWorkerTx` 里：⛔ 里面再开 `withKitTx` 会被直接拒。
+worker 必须把自己的 tx 递给 `settleOnTx`，⛔ 不走自开事务的 `settleDueMarches`。
+⚠ MySQL 预处理语句不接受 `LIMIT ?`（实测 `Incorrect arguments to mysqld_stmt_execute`），
+`readDueMarches` 把 limit 钳成有界整数后内联。
 
 ### 同盟的三条硬规矩
 

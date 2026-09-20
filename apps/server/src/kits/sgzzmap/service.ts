@@ -15,7 +15,17 @@ import {
     type ISgzzAbandonRes, type ISgzzOccupyRes, type ISgzzOwnerRef, type ISgzzTileRef,
     type ISgzzTileRes, type ISgzzViewerWire, type ISgzzViewRes,
 } from "@game/shared/protocol/lobbyRpc/domains/sgzzmap";
-import { RpcFault, kitOpId, retryKitTransaction, withKitTx, type KitTx } from "../../core/infra/kitApi";
+import {
+    SGZZ_MARCH_COST, SGZZ_MAX_ACTIVE_MARCHES, SGZZ_SETTLEMENT_BATCH_SIZE, SgzzMarchStatus,
+    sgzzMarchDurationMs, sgzzMarchOrigin, sgzzMarchTarget, type ISgzzMarch,
+} from "@game/shared/kits/sgzzmap/api/march/index";
+import {
+    validateSgzzMarchDispatchRes, validateSgzzMarchRecallRes,
+    type ISgzzMarchDispatchRes, type ISgzzMarchRecallRes,
+} from "@game/shared/protocol/lobbyRpc/domains/sgzzmap";
+import {
+    CUR_GOLD, RpcFault, kitOpId, retryKitTransaction, withKitTx, withKitUserFence, type KitTx,
+} from "../../core/infra/kitApi";
 import { linksOf } from "./content/links";
 import { terrainOf, SGZZMAP_DEFAULT_MAP_ID } from "./content/terrain";
 import { createSqlSgzzRepository, type SgzzHolding, type SgzzReceiptKind, type SgzzRepository } from "./repository";
@@ -34,6 +44,8 @@ export interface SgzzApiDeps {
     readonly repository: (tx: KitTx, sId: number) => SgzzRepository;
     readonly now: () => number;
     readonly mapId: string;
+    readonly withUserFence: <T>(uid: string, sId: number,
+                                fn: (user: { readonly fence: number }) => Promise<T>) => Promise<T>;
 }
 interface WorldTx { readonly tx: KitTx; readonly repo: SgzzRepository; readonly now: number }
 
@@ -42,10 +54,11 @@ const DEFAULT_DEPS: SgzzApiDeps = {
     repository: createSqlSgzzRepository,
     now: Date.now,
     mapId: SGZZMAP_DEFAULT_MAP_ID,
+    withUserFence: withKitUserFence,
 };
 
 export function sgzzOperation(
-    uid: string, sId: number, operation: "occupy" | "abandon" | "alliance", clientReqId: string,
+    uid: string, sId: number, operation: "occupy" | "abandon" | "alliance" | "dispatch" | "recall", clientReqId: string,
     binding: { readonly hash: string; readonly contractVersion: number } | undefined,
 ): SgzzOperation {
     if (!binding) throw new Error("SGZZMAP 幂等写缺少框架 operation binding");
@@ -122,7 +135,8 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
 
     async function mutate<T>(uid: string, sId: number, kind: SgzzReceiptKind, op: SgzzOperation,
                              validate: (raw: unknown) => T,
-                             run: (ctx: WorldTx, holding: SgzzHolding) => Promise<T>): Promise<T> {
+                             run: (ctx: WorldTx, holding: SgzzHolding) => Promise<T>,
+                             post?: (ctx: WorldTx, response: T) => Promise<T>): Promise<T> {
         assertIdentity(uid, op);
         return world(sId, async (ctx) => {
             const replay = await ctx.repo.readReceipt(kind, op.opId);
@@ -139,14 +153,76 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             const holding = await ctx.repo.readHoldingForUpdate(uid);
             const response = await run(ctx, holding);
             await ctx.repo.insertReceipt({ ...op, uid, kind, response });
-            return response;
+            if (!post) return response;
+            // ⚠ 锁序：领域行与回执先写，经济/effect 最后。回执行已在本事务锁住，只更新。
+            const settled = await post(ctx, response);
+            await ctx.repo.updateReceipt(kind, op.opId, settled);
+            return settled;
         });
+    }
+
+    /**
+     * 到期行军结算：按全区总序 (arrive_at, march_id) 一次最多 SGZZ_SETTLEMENT_BATCH_SIZE 条。
+     * 到达即在终点格执行一次占领动作（与手动占领同一套纯函数结算）。
+     * 返回 `more`：本批打满就说明还有积压，调用方（worker / 懒结算）据此决定继续还是让位。
+     * ⚠ 结算**不走连地闸**：路径合法性在派遣时已闸过，到达是既成事实。
+     */
+    async function settleBatch(ctx: WorldTx): Promise<{ settled: number; more: boolean }> {
+        const due = await ctx.repo.readDueMarches(ctx.now, SGZZ_SETTLEMENT_BATCH_SIZE);
+        for (const m of due) {
+            const target = sgzzMarchTarget(m);
+            const holding = await ctx.repo.readHoldingForUpdate(m.uid);
+            const { viewer } = await readViewer(ctx, holding);
+            const locked = await ctx.repo.readTilesForUpdate([target]);
+            const before = locked.get(target) ?? sgzzEmptyTile(target);
+            let result = applySgzzTileAction(before, viewer);
+            if (before.ownerUid === "") {
+                if (!await ctx.repo.insertTile(result.tile)) {
+                    result = applySgzzTileAction(await ctx.repo.readTile(target), viewer);
+                    await ctx.repo.updateTile(result.tile);
+                }
+            } else {
+                await ctx.repo.updateTile(result.tile);
+            }
+            if (result.outcome === "captured") {
+                await ctx.repo.upsertHolding({ ...holding, tiles: holding.tiles + 1 });
+            }
+            await ctx.repo.updateMarchStatus(m.marchId, SgzzMarchStatus.ARRIVED);
+            await ctx.repo.appendLog("march", "arrive", { marchId: m.marchId, cell: target }, false);
+            await ctx.repo.appendLog("tile", result.outcome, result.tile, false);
+        }
+        return { settled: due.length, more: due.length === SGZZ_SETTLEMENT_BATCH_SIZE };
+    }
+
+    /** 懒结算兜底：任何自然写入口先推进一批；积压超预算就让客户端稍后重试。 */
+    async function advanceDue(ctx: WorldTx): Promise<void> {
+        const { more } = await settleBatch(ctx);
+        if (more) throw new RpcFault("SGZZMAP_SETTLEMENT_PENDING", "正在补算到达事件，请稍后重试");
+    }
+
+    /** 自开事务的一批结算（懒结算路径 / 单测直调）。 */
+    async function settleDueMarches(sId: number): Promise<{ settled: number; more: boolean }> {
+        return world(sId, (ctx) => settleBatch(ctx));
+    }
+
+    /**
+     * 在**调用方已开好的**事务里结算一批（worker 路径）。
+     * ⚠ 框架已经把 worker 的 pass 包在 withKitWorkerTx 里了，⛔ 里面再开 withKitTx 会被直接拒
+     * （「kit worker 事务内 ⛔ 另开 withKitTx」）。所以 worker 必须把自己的 tx 递进来。
+     */
+    async function settleOnTx(tx: KitTx, sId: number): Promise<{ settled: number; more: boolean }> {
+        const repo = deps.repository(tx, sId);
+        await repo.lockRevision();
+        const now = deps.now();
+        if (!Number.isSafeInteger(now) || now < 0) throw new RangeError("SGZZMAP server clock 非法");
+        return settleBatch({ tx, repo, now });
     }
 
     /** 近景视窗：稀疏地块 + 折叠过的 owners/alliances 字典。 */
     async function view(uid: string, sId: number, rect: ISgzzRect): Promise<ISgzzViewRes> {
         assertIdentity(uid);
         return world(sId, async (ctx) => {
+            await advanceDue(ctx);
             const holding = await ctx.repo.readHoldingForUpdate(uid);
             const { viewer } = await readViewer(ctx, holding);
             const tiles = await ctx.repo.readTilesInRect(rect);
@@ -321,7 +397,57 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
         });
     }
 
-    return { view, tile, occupy, abandon, alliance, neighbourCells };
+    /**
+     * 派遣行军。出发格必须是自己的地；在途上限 SGZZ_MAX_ACTIVE_MARCHES；扣框架货币。
+     * ⚠ marchId 与 alliance_id 同源——取当前 revision，⛔ 不用随机数（kit 代码没有 node:crypto）。
+     */
+    async function marchDispatch(uid: string, sId: number, path: readonly number[],
+                                 op: SgzzOperation): Promise<ISgzzMarchDispatchRes> {
+        return deps.withUserFence(uid, sId, ({ fence }) =>
+            mutate(uid, sId, "dispatch", op, validateSgzzMarchDispatchRes, async (ctx, holding) => {
+            const origin = path[0];
+            const locked = await ctx.repo.readTilesForUpdate([origin]);
+            const from = locked.get(origin) ?? sgzzEmptyTile(origin);
+            if (from.ownerUid !== uid) throw new RpcFault("SGZZMAP_NOT_OWNED", "只能从自己的领地派遣");
+            if (await ctx.repo.countActiveMarches(uid) >= SGZZ_MAX_ACTIVE_MARCHES) {
+                throw new RpcFault("SGZZMAP_MARCH_LIMIT", `最多同时派遣 ${SGZZ_MAX_ACTIVE_MARCHES} 支行军`);
+            }
+            const seq = await ctx.repo.appendLog("march", "dispatch", { uid, path }, false);
+            const created: ISgzzMarch = {
+                marchId: `m${seq}`, uid, path: [...path],
+                departAt: ctx.now, arriveAt: ctx.now + sgzzMarchDurationMs(path),
+                status: SgzzMarchStatus.MARCHING,
+            };
+            await ctx.repo.insertMarch(created);
+            void holding;
+            return validateSgzzMarchDispatchRes({ march: created, balance: 0 });
+        }, async (ctx, response) => {
+            const balance = await ctx.tx.debit(uid, CUR_GOLD, SGZZ_MARCH_COST, fence, op.opId,
+                                               "sgzzmap.march.dispatch");
+            if (balance === "DUP") throw new Error("SGZZMAP 无派遣回执却已有扣款账本");
+            return validateSgzzMarchDispatchRes({ ...response, balance });
+        }));
+    }
+
+    /** 撤回：只能撤自己的、还在途的。⛔ 已到达/已撤回都不给撤（到达是既成事实）。 */
+    async function marchRecall(uid: string, sId: number, marchId: string,
+                               op: SgzzOperation): Promise<ISgzzMarchRecallRes> {
+        return mutate(uid, sId, "recall", op, validateSgzzMarchRecallRes, async (ctx) => {
+            const m = await ctx.repo.readMarchForUpdate(marchId);
+            if (!m || m.uid !== uid) throw new RpcFault("SGZZMAP_MARCH_NOT_FOUND", "没有这支行军");
+            if (m.status !== SgzzMarchStatus.MARCHING || m.arriveAt <= ctx.now) {
+                throw new RpcFault("SGZZMAP_MARCH_FINISHED", "行军已经结束，不能撤回");
+            }
+            await ctx.repo.updateMarchStatus(marchId, SgzzMarchStatus.RECALLED);
+            await ctx.repo.appendLog("march", "recall", { marchId, cell: sgzzMarchOrigin(m) }, false);
+            return validateSgzzMarchRecallRes({ march: { ...m, status: SgzzMarchStatus.RECALLED } });
+        });
+    }
+
+    return {
+        view, tile, occupy, abandon, alliance, marchDispatch, marchRecall,
+        settleDueMarches, settleOnTx, neighbourCells,
+    };
 }
 
 export const defaultSgzzApi = createSgzzApi();

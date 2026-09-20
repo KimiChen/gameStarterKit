@@ -14,7 +14,7 @@ import { validateMmoSocialPartyLocateReq, validateMmoSocialPartyLocateRes, type 
 import { validatePartyAcceptReq, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyLeaveReq, validatePartyLeaveRes, validatePartySeqRes, validatePartyTransferLeaderReq, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
-import { validateSgzzAbandonReq, validateSgzzAbandonRes, validateSgzzAllianceReq, validateSgzzAllianceRes, validateSgzzOccupyReq, validateSgzzOccupyRes, validateSgzzTileReq, validateSgzzTileRes, validateSgzzViewReq, validateSgzzViewRes, type ISgzzAbandonReq, type ISgzzAbandonRes, type ISgzzAllianceReq, type ISgzzAllianceRes, type ISgzzOccupyReq, type ISgzzOccupyRes, type ISgzzTileReq, type ISgzzTileRes, type ISgzzViewReq, type ISgzzViewRes } from "./domains/sgzzmap";
+import { validateSgzzAbandonReq, validateSgzzAbandonRes, validateSgzzAllianceReq, validateSgzzAllianceRes, validateSgzzMarchDispatchReq, validateSgzzMarchDispatchRes, validateSgzzMarchRecallReq, validateSgzzMarchRecallRes, validateSgzzOccupyReq, validateSgzzOccupyRes, validateSgzzTileReq, validateSgzzTileRes, validateSgzzViewReq, validateSgzzViewRes, type ISgzzAbandonReq, type ISgzzAbandonRes, type ISgzzAllianceReq, type ISgzzAllianceRes, type ISgzzMarchDispatchReq, type ISgzzMarchDispatchRes, type ISgzzMarchRecallReq, type ISgzzMarchRecallRes, type ISgzzOccupyReq, type ISgzzOccupyRes, type ISgzzTileReq, type ISgzzTileRes, type ISgzzViewReq, type ISgzzViewRes } from "./domains/sgzzmap";
 import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
 import { validateSlgMapTilesReq, validateSlgMapTilesRes, validateSlgMarchDispatchReq, validateSlgMarchDispatchRes, validateSlgMarchRecallReq, validateSlgMarchRecallRes, validateSlgTileCaptureReq, validateSlgTileCaptureRes, type ISlgMapTilesReq, type ISlgMapTilesRes, type ISlgMarchDispatchReq, type ISlgMarchDispatchRes, type ISlgMarchRecallReq, type ISlgMarchRecallRes, type ISlgTileCaptureReq, type ISlgTileCaptureRes } from "./domains/slg";
 import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, validateSnakeCosmeticSnapshotRes, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq, type ISnakeCosmeticSnapshotRes } from "./domains/snakeCosmetic";
@@ -75,6 +75,8 @@ export interface LobbyRpcMap {
     "sgzzmap.occupy": { req: ISgzzOccupyReq; res: ISgzzOccupyRes };
     "sgzzmap.abandon": { req: ISgzzAbandonReq; res: ISgzzAbandonRes };
     "sgzzmap.alliance": { req: ISgzzAllianceReq; res: ISgzzAllianceRes };
+    "sgzzmap.marchDispatch": { req: ISgzzMarchDispatchReq; res: ISgzzMarchDispatchRes };
+    "sgzzmap.marchRecall": { req: ISgzzMarchRecallReq; res: ISgzzMarchRecallRes };
     "shop.purchase": { req: IShopPurchaseReq; res: IPurchaseResult };
     "shop.queryOp": { req: IShopQueryOpReq; res: IPurchaseResult };
     "slg.mapTiles": { req: ISlgMapTilesReq; res: ISlgMapTilesRes };
@@ -117,6 +119,8 @@ export type LobbyRpcIdemType =
     | "sgzzmap.occupy"
     | "sgzzmap.abandon"
     | "sgzzmap.alliance"
+    | "sgzzmap.marchDispatch"
+    | "sgzzmap.marchRecall"
     | "shop.purchase"
     | "slg.tileCapture"
     | "slg.marchDispatch"
@@ -166,6 +170,8 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "sgzzmap.occupy": "idempotent-write",
     "sgzzmap.abandon": "idempotent-write",
     "sgzzmap.alliance": "idempotent-write",
+    "sgzzmap.marchDispatch": "idempotent-write",
+    "sgzzmap.marchRecall": "idempotent-write",
     "shop.purchase": "idempotent-write",
     "shop.queryOp": "query",
     "slg.mapTiles": "natural-write",
@@ -217,6 +223,8 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "sgzzmap.occupy",
     "sgzzmap.abandon",
     "sgzzmap.alliance",
+    "sgzzmap.marchDispatch",
+    "sgzzmap.marchRecall",
     "shop.purchase",
     "shop.queryOp",
     "slg.mapTiles",
@@ -269,6 +277,8 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "sgzzmap.occupy": 1,
     "sgzzmap.abandon": 1,
     "sgzzmap.alliance": 1,
+    "sgzzmap.marchDispatch": 1,
+    "sgzzmap.marchRecall": 1,
     "shop.purchase": 1,
     "shop.queryOp": 1,
     "slg.mapTiles": 1,
@@ -298,7 +308,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
-    sgzzmap: { contractVersion: 2, digest: "8d8543556137aecb5536b07eda436d21c4f0af8a3b8b2dd7574b06f154f88177" },
+    sgzzmap: { contractVersion: 3, digest: "5c0da6ec9efc226d268e30942d413a1758236dbdea14eeaebc6d045c57db7ac2" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
     slg: { contractVersion: 2, digest: "077ecba95687aa0a4130f51eba2cda7d4a2548e6e347154d3f153fdcc641bca5" },
     snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },
@@ -352,6 +362,8 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "sgzzmap.occupy": guardRpcValidator("payload", validateSgzzOccupyReq),
     "sgzzmap.abandon": guardRpcValidator("payload", validateSgzzAbandonReq),
     "sgzzmap.alliance": guardRpcValidator("payload", validateSgzzAllianceReq),
+    "sgzzmap.marchDispatch": guardRpcValidator("payload", validateSgzzMarchDispatchReq),
+    "sgzzmap.marchRecall": guardRpcValidator("payload", validateSgzzMarchRecallReq),
     "shop.purchase": guardRpcValidator("payload", validateShopPurchaseReq),
     "shop.queryOp": guardRpcValidator("payload", validateShopQueryReq),
     "slg.mapTiles": guardRpcValidator("payload", validateSlgMapTilesReq),
@@ -403,6 +415,8 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "sgzzmap.occupy": guardRpcValidator("response", validateSgzzOccupyRes),
     "sgzzmap.abandon": guardRpcValidator("response", validateSgzzAbandonRes),
     "sgzzmap.alliance": guardRpcValidator("response", validateSgzzAllianceRes),
+    "sgzzmap.marchDispatch": guardRpcValidator("response", validateSgzzMarchDispatchRes),
+    "sgzzmap.marchRecall": guardRpcValidator("response", validateSgzzMarchRecallRes),
     "shop.purchase": guardRpcValidator("response", validatePurchaseResult),
     "shop.queryOp": guardRpcValidator("response", validatePurchaseResult),
     "slg.mapTiles": guardRpcValidator("response", validateSlgMapTilesRes),
@@ -492,6 +506,9 @@ export const RPC_ERR_CODES = [
     "SGZZMAP_ALLIANCE_NOT_MEMBER",
     "SGZZMAP_ALLIANCE_LEADER_BUSY",
     "SGZZMAP_ALLIANCE_TAG_TAKEN",
+    "SGZZMAP_MARCH_LIMIT",
+    "SGZZMAP_MARCH_NOT_FOUND",
+    "SGZZMAP_MARCH_FINISHED",
     "SLG_TILE_NOT_OWNED",
     "SLG_MARCH_LIMIT",
     "SLG_MARCH_NOT_FOUND",

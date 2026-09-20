@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    sgzzCellOf, sgzzIsPassable, sgzzNeighbours,
+    sgzzCellOf, sgzzChunkRectForGridRect, sgzzDecodeCell, sgzzGridRectForChunkRect,
+    sgzzInBounds, sgzzIsPassable, sgzzNeighbours, sgzzNextPos,
 } from "@game/shared/kits/sgzzmap/api/hexmap/index";
+import {
+    SGZZ_MARCH_MS_PER_TILE, SGZZ_SETTLEMENT_BATCH_SIZE,
+} from "@game/shared/kits/sgzzmap/api/march/index";
 import { sgzzEmptyTile, type ISgzzTile } from "@game/shared/kits/sgzzmap/api/territory/index";
 import { createSgzzApi, sgzzInSpawnRegion, type SgzzOperation } from "../src/kits/sgzzmap/service";
 import type { SgzzHolding, SgzzReceipt, SgzzRepository } from "../src/kits/sgzzmap/repository";
 import type { ISgzzAlliance, ISgzzMembership } from "@game/shared/kits/sgzzmap/api/alliance/index";
+import type { ISgzzMarch } from "@game/shared/kits/sgzzmap/api/march/index";
 import { terrainOf } from "../src/kits/sgzzmap/content/terrain";
 import { RpcFault } from "../src/core/errors";
 import type { ISgzzRect } from "@game/shared/kits/sgzzmap/api/hexmap/index";
@@ -27,6 +32,8 @@ function fakeRepo() {
     const alliances = new Map<string, ISgzzAlliance>();
     const members = new Map<string, ISgzzMembership>();
     const retags: { uid: string; aid: string }[] = [];
+    const marches = new Map<string, ISgzzMarch>();
+    const debits: { uid: string; amount: number; opId: string }[] = [];
     const lockOrders: number[][] = [];
     let revision = 0;
     let failNextInsert = false;
@@ -41,8 +48,15 @@ function fakeRepo() {
             return out;
         },
         async readTile(cell) { return tiles.get(cell) ?? sgzzEmptyTile(cell); },
-        async readTilesInRect(_rect: ISgzzRect) {
-            return [...tiles.values()].sort((a, b) => a.cell - b.cell);
+        async readTilesInRect(rect: ISgzzRect) {
+            // ⚠ 必须真按窗过滤：回了窗外的格，validateSgzzViewRes 会（正确地）拒掉整个响应
+            const g = sgzzGridRectForChunkRect(rect);
+            return [...tiles.values()]
+                .filter((t) => {
+                    const { row, col } = sgzzDecodeCell(t.cell);
+                    return row >= g.minRow && row <= g.maxRow && col >= g.minCol && col <= g.maxCol;
+                })
+                .sort((a, b) => a.cell - b.cell);
         },
         async insertTile(tile) {
             if (failNextInsert) {
@@ -81,9 +95,27 @@ function fakeRepo() {
             retags.push({ uid, aid });
             for (const [cell, t] of tiles) if (t.ownerUid === uid) tiles.set(cell, { ...t, ownerAid: aid });
         },
+        async updateReceipt(kind, opId, response) {
+            const hit = receipts.get(`${kind}:${opId}`);
+            if (hit) receipts.set(`${kind}:${opId}`, { ...hit, response });
+        },
+        async insertMarch(m) { marches.set(m.marchId, m); },
+        async readMarchForUpdate(id) { return marches.get(id) ?? null; },
+        async updateMarchStatus(id, status) {
+            const m = marches.get(id); if (m) marches.set(id, { ...m, status });
+        },
+        async readDueMarches(now, limit) {
+            return [...marches.values()]
+                .filter((m) => m.status === "marching" && m.arriveAt <= now)
+                .sort((a, b) => (a.arriveAt - b.arriveAt) || a.marchId.localeCompare(b.marchId))
+                .slice(0, limit);
+        },
+        async countActiveMarches(uid) {
+            return [...marches.values()].filter((m) => m.uid === uid && m.status === "marching").length;
+        },
     };
     return {
-        repo, tiles, holdings, receipts, log, lockOrders, alliances, members, retags,
+        repo, tiles, holdings, receipts, log, lockOrders, alliances, members, retags, marches, debits,
         seed(cell: number, over: Partial<ISgzzTile>) {
             tiles.set(cell, { ...sgzzEmptyTile(cell), durability: 1, ...over });
         },
@@ -97,8 +129,19 @@ function fakeRepo() {
         },
     };
 }
-function apiOn(f: ReturnType<typeof fakeRepo>) {
-    return createSgzzApi({ run: (_sId, fn) => fn({} as never), repository: () => f.repo, now: () => 1_000_000 });
+/** 假 KitTx：只提供 debit（经济主账本由框架测试覆盖，这里只要证明「扣一次」）。 */
+function apiOn(f: ReturnType<typeof fakeRepo>, now: () => number = () => 1_000_000) {
+    const tx = {
+        debit: async (uid: string, _cur: number, amount: number, _fence: number, opId: string) => {
+            if (f.debits.some((d) => d.opId === opId)) return "DUP" as const;
+            f.debits.push({ uid, amount, opId });
+            return 100 - amount;
+        },
+    };
+    return createSgzzApi({
+        run: (_sId, fn) => fn(tx as never), repository: () => f.repo, now,
+        withUserFence: (_uid, _sId, fn) => fn({ fence: 1 }),
+    });
 }
 
 /** 在出生区里找一格可通行的真实地形，并要求它有一个同样可通行的邻居。 */
@@ -315,4 +358,169 @@ test("sgzzmap service: 一人一盟 —— 已有盟再建/再入都拒", async 
         faultCode("SGZZMAP_ALLIANCE_NOT_FOUND"));
     await assert.rejects(() => api.alliance("u9", 1, { clientReqId: "c5", act: "leave" }, op("al5")),
         faultCode("SGZZMAP_ALLIANCE_NOT_MEMBER"));
+});
+
+/** 从 cell 出发朝 dir 走 n 步的终点（用于造合法行军路径）。 */
+function marchTo(cell: number, dir: number, n: number): number {
+    let cur = sgzzDecodeCell(cell);
+    for (let i = 0; i < n; i += 1) cur = sgzzNextPos(cur.row, cur.col, dir);
+    return sgzzCellOf(cur.row, cur.col);
+}
+/** 找一条从 cell 出发、全程可通行的 n 步直线。 */
+function passableRay(cell: number, steps: number): number | null {
+    const t = terrainOf();
+    for (let dir = 1; dir <= 6; dir += 1) {
+        let cur = sgzzDecodeCell(cell); let ok = true;
+        for (let i = 0; i < steps; i += 1) {
+            cur = sgzzNextPos(cur.row, cur.col, dir);
+            if (!sgzzInBounds(cur.row, cur.col) || !sgzzIsPassable(t, cur.row, cur.col)) { ok = false; break; }
+        }
+        if (ok) return marchTo(cell, dir, steps);
+    }
+    return null;
+}
+
+test("sgzzmap service: 派遣要从自己的地出发、受在途上限、扣一次钱", async () => {
+    const { cell } = spawnPair();
+    const dest = passableRay(cell, 3);
+    assert.ok(dest !== null, "找不到可通行的三步直线");
+    const f = fakeRepo(); const api = apiOn(f);
+
+    // 还没占地就派遣 → 拒
+    await assert.rejects(() => api.marchDispatch("u1", 1, [cell, dest!], op("d0")),
+        faultCode("SGZZMAP_NOT_OWNED"));
+
+    await api.occupy("u1", 1, cell, op("o1"));
+    const res = await api.marchDispatch("u1", 1, [cell, dest!], op("d1"));
+    assert.equal(res.march.uid, "u1");
+    assert.equal(res.march.status, "marching");
+    assert.equal(res.march.arriveAt - res.march.departAt, 3 * SGZZ_MARCH_MS_PER_TILE);
+    assert.match(res.march.marchId, /^m\d+$/u, "marchId 由 revision 序列派生");
+    assert.equal(f.debits.length, 1, "派遣扣一次钱");
+
+    // 重放同一 opId：不再扣第二次
+    const again = await api.marchDispatch("u1", 1, [cell, dest!], op("d1"));
+    assert.deepEqual(again, res, "同一 opId 必须原样重放");
+    assert.equal(f.debits.length, 1, "⛔ 重放不得再扣一次");
+
+    // 在途上限
+    await api.marchDispatch("u1", 1, [cell, dest!], op("d2"));
+    await api.marchDispatch("u1", 1, [cell, dest!], op("d3"));
+    await assert.rejects(() => api.marchDispatch("u1", 1, [cell, dest!], op("d4")),
+        faultCode("SGZZMAP_MARCH_LIMIT"));
+});
+
+test("sgzzmap service: 撤回只对在途的自己人生效", async () => {
+    const { cell } = spawnPair();
+    const dest = passableRay(cell, 3)!;
+    const f = fakeRepo(); const api = apiOn(f);
+    await api.occupy("u1", 1, cell, op("o1"));
+    const sent = await api.marchDispatch("u1", 1, [cell, dest], op("d1"));
+
+    await assert.rejects(() => api.marchRecall("u2", 1, sent.march.marchId, op("r0")),
+        faultCode("SGZZMAP_MARCH_NOT_FOUND"), "别人的行军撤不了");
+    await assert.rejects(() => api.marchRecall("u1", 1, "m-nope", op("r1")),
+        faultCode("SGZZMAP_MARCH_NOT_FOUND"));
+
+    const recalled = await api.marchRecall("u1", 1, sent.march.marchId, op("r2"));
+    assert.equal(recalled.march.status, "recalled");
+    assert.equal(f.marches.get(sent.march.marchId)?.status, "recalled");
+    await assert.rejects(() => api.marchRecall("u1", 1, sent.march.marchId, op("r3")),
+        faultCode("SGZZMAP_MARCH_FINISHED"), "已撤回的不能再撤");
+});
+
+test("sgzzmap service: 到达结算在终点落地，⛔ 不走连地闸（路径在派遣时已闸过）", async () => {
+    const { cell } = spawnPair();
+    const dest = passableRay(cell, 3)!;
+    const f = fakeRepo();
+    let clock = 1_000_000;
+    const api = apiOn(f, () => clock);
+
+    await api.occupy("u1", 1, cell, op("o1"));
+    const sent = await api.marchDispatch("u1", 1, [cell, dest], op("d1"));
+    assert.equal(f.tiles.has(dest), false, "出发时终点还没落地");
+
+    // 还没到点：结算不动它
+    clock = sent.march.arriveAt - 1;
+    assert.deepEqual(await api.settleDueMarches(1), { settled: 0, more: false });
+    assert.equal(f.marches.get(sent.march.marchId)?.status, "marching");
+
+    // 到点：终点被占下，行军转 arrived
+    clock = sent.march.arriveAt;
+    const settled = await api.settleDueMarches(1);
+    assert.equal(settled.settled, 1);
+    assert.equal(settled.more, false);
+    assert.equal(f.marches.get(sent.march.marchId)?.status, "arrived");
+    assert.equal(f.tiles.get(dest)?.ownerUid, "u1", "终点必须落地（⚠ 它与出发地并不相邻）");
+    assert.equal(f.holdings.get("u1")?.tiles, 2, "占下新地要加持地计数");
+
+    // 幂等：再结算一次不会重复落地
+    const twice = await api.settleDueMarches(1);
+    assert.equal(twice.settled, 0);
+    assert.equal(f.tiles.get(dest)?.durability, 1, "⛔ 不得重复加固");
+});
+
+test("sgzzmap service: 积压超批次时 view 抛 SETTLEMENT_PENDING（懒结算兜底）", async () => {
+    const { cell } = spawnPair();
+    const dest = passableRay(cell, 1)!;
+    const f = fakeRepo();
+    let clock = 1_000_000;
+    const api = apiOn(f, () => clock);
+    await api.occupy("u1", 1, cell, op("o1"));
+
+    // 直接灌满一整批 + 1 条到期行军
+    for (let i = 0; i <= SGZZ_SETTLEMENT_BATCH_SIZE; i += 1) {
+        f.marches.set(`m-bulk-${i}`, {
+            marchId: `m-bulk-${i}`, uid: "u1", path: [cell, dest],
+            departAt: clock - 5000, arriveAt: clock - 5000 + SGZZ_MARCH_MS_PER_TILE, status: "marching",
+        });
+    }
+    const here = sgzzDecodeCell(cell);
+    const rect = sgzzChunkRectForGridRect({
+        minRow: here.row, minCol: here.col, maxRow: here.row, maxCol: here.col,
+    });
+    await assert.rejects(() => api.view("u1", 1, rect),
+        faultCode("SGZZMAP_SETTLEMENT_PENDING"), "积压打满一批就让客户端稍后重试");
+    // 再推两轮把积压清掉，view 恢复正常
+    await api.settleDueMarches(1);
+    await api.settleDueMarches(1);
+    const res = await api.view("u1", 1, rect);
+    assert.ok(res.tiles.length >= 1, "出发格就在这个窗里");
+});
+
+test("sgzzmap service: ★ worker 路径与懒结算路径对同一 fixture 产出完全相同的结果", async () => {
+    // 两条驱动路径（worker 用调用方的事务、懒结算自开事务）必须不漂移，
+    // ⛔ 否则「谁先跑」会决定世界状态。
+    function build() {
+        const { cell } = spawnPair();
+        const dest = passableRay(cell, 2)!;
+        const f = fakeRepo();
+        let clock = 1_000_000;
+        const api = apiOn(f, () => clock);
+        return { f, api, cell, dest, at: (t: number) => { clock = t; } };
+    }
+    function snapshot(f: ReturnType<typeof fakeRepo>) {
+        return JSON.stringify({
+            tiles: [...f.tiles.entries()].sort((a, b) => a[0] - b[0]),
+            holdings: [...f.holdings.entries()].sort(),
+            marches: [...f.marches.entries()].sort(),
+            log: f.log,
+        });
+    }
+
+    const lazy = build();
+    await lazy.api.occupy("u1", 1, lazy.cell, op("o1"));
+    const sentA = await lazy.api.marchDispatch("u1", 1, [lazy.cell, lazy.dest], op("d1"));
+    lazy.at(sentA.march.arriveAt);
+    const viaLazy = await lazy.api.settleDueMarches(1);
+
+    const worker = build();
+    await worker.api.occupy("u1", 1, worker.cell, op("o1"));
+    const sentB = await worker.api.marchDispatch("u1", 1, [worker.cell, worker.dest], op("d1"));
+    worker.at(sentB.march.arriveAt);
+    // worker 路径：事务由调用方给（这里用同一个假 tx），⛔ 不自开
+    const viaWorker = await worker.api.settleOnTx({} as never, 1);
+
+    assert.deepEqual(viaWorker, viaLazy, "两条路径的返回值必须一致");
+    assert.equal(snapshot(worker.f), snapshot(lazy.f), "两条路径落库后的世界状态必须逐字段一致");
 });

@@ -18,6 +18,9 @@ import {
     validateSgzzTile, type ISgzzTile, type SgzzTileOutcome,
 } from "../../../kits/sgzzmap/api/territory/index";
 import {
+    SGZZ_MAX_TURNING_POINTS, sgzzExpandPath, validateSgzzMarch, type ISgzzMarch,
+} from "../../../kits/sgzzmap/api/march/index";
+import {
     isSgzzAllianceAct, validateSgzzAlliance, validateSgzzAllianceName, validateSgzzAllianceTag,
     validateSgzzMembership, type ISgzzAlliance, type ISgzzMembership, type SgzzAllianceAct,
 } from "../../../kits/sgzzmap/api/alliance/index";
@@ -30,6 +33,8 @@ export const SgzzmapRpc = {
     Occupy: "sgzzmap.occupy",
     Abandon: "sgzzmap.abandon",
     Alliance: "sgzzmap.alliance",
+    MarchDispatch: "sgzzmap.marchDispatch",
+    MarchRecall: "sgzzmap.marchRecall",
 } as const;
 
 /** 一次 view 最多回多少个非默认地块。 */
@@ -64,6 +69,11 @@ export interface ISgzzAllianceReq {
 }
 /** 退盟后两者都为 null。 */
 export interface ISgzzAllianceRes { membership: ISgzzMembership | null; alliance: ISgzzAlliance | null }
+/** path 是**转折点**，⛔ 不是逐格路径；服务端与客户端用同一个 sgzzExpandPath 展开。 */
+export interface ISgzzMarchDispatchReq { clientReqId: string; path: number[] }
+export interface ISgzzMarchDispatchRes { march: ISgzzMarch; balance: number }
+export interface ISgzzMarchRecallReq { clientReqId: string; marchId: string }
+export interface ISgzzMarchRecallRes { march: ISgzzMarch }
 
 export interface SgzzmapRpcMap {
     [SgzzmapRpc.View]: { req: ISgzzViewReq; res: ISgzzViewRes };
@@ -71,6 +81,8 @@ export interface SgzzmapRpcMap {
     [SgzzmapRpc.Occupy]: { req: ISgzzOccupyReq; res: ISgzzOccupyRes };
     [SgzzmapRpc.Abandon]: { req: ISgzzAbandonReq; res: ISgzzAbandonRes };
     [SgzzmapRpc.Alliance]: { req: ISgzzAllianceReq; res: ISgzzAllianceRes };
+    [SgzzmapRpc.MarchDispatch]: { req: ISgzzMarchDispatchReq; res: ISgzzMarchDispatchRes };
+    [SgzzmapRpc.MarchRecall]: { req: ISgzzMarchRecallReq; res: ISgzzMarchRecallRes };
 }
 
 function validateViewer(value: unknown, path: string): ISgzzViewerWire {
@@ -223,18 +235,50 @@ export const validateSgzzAllianceRes: RuntimeValidator<ISgzzAllianceRes> = (inpu
     return { membership, alliance };
 };
 
+export const validateSgzzMarchDispatchReq: RuntimeValidator<ISgzzMarchDispatchReq> = (input) => {
+    const r = rpcRecord(input);
+    assertExactKeys(r, ["clientReqId", "path"], [], "payload");
+    if (!Array.isArray(r.path) || r.path.length < 2 || r.path.length > SGZZ_MAX_TURNING_POINTS) {
+        throw new WireValidationError("SGZZMAP_MARCH_PATH", "payload.path");
+    }
+    const path = r.path.map((v, i) => validateSgzzCell(v, `payload.path[${i}]`));
+    sgzzExpandPath(path);   // ★ 共线与步数上限在入口就闸掉，⛔ 不让伪造路径进到事务里
+    return { clientReqId: requiredId(r, "clientReqId"), path };
+};
+export const validateSgzzMarchDispatchRes: RuntimeValidator<ISgzzMarchDispatchRes> = (input) => {
+    const r = rpcRecord(input, "response");
+    assertExactKeys(r, ["march", "balance"], [], "response");
+    return {
+        march: validateSgzzMarch(r.march, "response.march"),
+        balance: finiteInteger(r.balance, "response.balance", 0),
+    };
+};
+export const validateSgzzMarchRecallReq: RuntimeValidator<ISgzzMarchRecallReq> = (input) => {
+    const r = rpcRecord(input);
+    assertExactKeys(r, ["clientReqId", "marchId"], [], "payload");
+    return { clientReqId: requiredId(r, "clientReqId"), marchId: boundedString(r.marchId, "payload.marchId", 1, 64) };
+};
+export const validateSgzzMarchRecallRes: RuntimeValidator<ISgzzMarchRecallRes> = (input) => {
+    const r = rpcRecord(input, "response");
+    assertExactKeys(r, ["march"], [], "response");
+    const march = validateSgzzMarch(r.march, "response.march");
+    if (march.status !== "recalled") throw new WireValidationError("SGZZMAP_MARCH_STATUS", "response.march.status");
+    return { march };
+};
+
 /** 请求窗的 chunk 数上限由 validateSgzzChunkRect 保证；这里再导出便于测试直接断言。 */
 export function sgzzViewRequestChunks(rect: ISgzzRect): number {
     return sgzzRectArea(rect);
 }
 
 export default defineLobbyRpcDomain({
-    domain: "sgzzmap", contractVersion: 2,
+    domain: "sgzzmap", contractVersion: 3,
     errorCodes: [
         "SGZZMAP_IMPASSABLE", "SGZZMAP_NOT_ADJACENT", "SGZZMAP_TILE_LIMIT",
         "SGZZMAP_NOT_OWNED", "SGZZMAP_SETTLEMENT_PENDING",
         "SGZZMAP_ALLIANCE_EXISTS", "SGZZMAP_ALLIANCE_NOT_FOUND", "SGZZMAP_ALLIANCE_FULL",
         "SGZZMAP_ALLIANCE_NOT_MEMBER", "SGZZMAP_ALLIANCE_LEADER_BUSY", "SGZZMAP_ALLIANCE_TAG_TAKEN",
+        "SGZZMAP_MARCH_LIMIT", "SGZZMAP_MARCH_NOT_FOUND", "SGZZMAP_MARCH_FINISHED",
     ],
     pushes: [],
     routes: [
@@ -243,5 +287,7 @@ export default defineLobbyRpcDomain({
         defineRpcIdempotentWrite(SgzzmapRpc.Occupy, { request: validateSgzzOccupyReq, response: validateSgzzOccupyRes }),
         defineRpcIdempotentWrite(SgzzmapRpc.Abandon, { request: validateSgzzAbandonReq, response: validateSgzzAbandonRes }),
         defineRpcIdempotentWrite(SgzzmapRpc.Alliance, { request: validateSgzzAllianceReq, response: validateSgzzAllianceRes }),
+        defineRpcIdempotentWrite(SgzzmapRpc.MarchDispatch, { request: validateSgzzMarchDispatchReq, response: validateSgzzMarchDispatchRes }),
+        defineRpcIdempotentWrite(SgzzmapRpc.MarchRecall, { request: validateSgzzMarchRecallReq, response: validateSgzzMarchRecallRes }),
     ],
 });

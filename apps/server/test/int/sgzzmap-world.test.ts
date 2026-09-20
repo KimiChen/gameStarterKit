@@ -12,7 +12,8 @@ import "./env-setup"; // 必须第一个 import
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, test } from "node:test";
-import { sgzzCellOf, sgzzCubeDistance, sgzzDecodeCell, sgzzIsPassable, sgzzNeighbours } from "@game/shared/kits/sgzzmap/api/hexmap/index";
+import { sgzzCellOf, sgzzCubeDistance, sgzzDecodeCell, sgzzIsPassable, sgzzNeighbours, sgzzNextPos } from "@game/shared/kits/sgzzmap/api/hexmap/index";
+import { SGZZ_MARCH_MS_PER_TILE, sgzzMarchDurationMs } from "@game/shared/kits/sgzzmap/api/march/index";
 import type { RowDataPacket } from "mysql2/promise";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import { closeRedis } from "../../src/core/infra/redisRoute";
@@ -69,6 +70,7 @@ after(async () => {
     await pool.execute("DELETE FROM k_sgzzmap_receipt WHERE server_id = ? AND uid IN (?, ?)", [SID, U1, U2]);
     await pool.execute("DELETE FROM k_sgzzmap_alliance_member WHERE server_id = ? AND uid IN (?, ?)", [SID, U1, U2]);
     await pool.execute("DELETE FROM k_sgzzmap_alliance WHERE server_id = ? AND leader_uid IN (?, ?)", [SID, U1, U2]);
+    await pool.execute("DELETE FROM k_sgzzmap_march WHERE server_id = ? AND uid IN (?, ?)", [SID, U1, U2]);
     await closeRedis();
     await closeMysql();
 });
@@ -206,4 +208,54 @@ test("真库：同盟成员之间可连地，非成员不可 —— UNION 态真
     await assert.rejects(() => api.alliance(U2, SID, {
         clientReqId: `ij2-${TAG}`, act: "join", allianceId: aid,
     }, op("ally-join2")), (e: unknown) => e instanceof RpcFault && e.rpcCode === "SGZZMAP_ALLIANCE_EXISTS");
+});
+
+test("真库：到期行军被结算到终点 —— 覆盖 LIMIT 绑定与 FOR UPDATE 队列", async () => {
+    const pool = getPool();
+    // 找一条从 hub 出发、两步可通行的直线
+    const t = terrainOf();
+    let dest: number | null = null;
+    for (let dir = 1; dir <= 6 && dest === null; dir += 1) {
+        let cur = sgzzDecodeCell(hub); let ok = true;
+        for (let i = 0; i < 2; i += 1) {
+            cur = sgzzNextPos(cur.row, cur.col, dir);
+            if (!sgzzIsPassable(t, cur.row, cur.col)) { ok = false; break; }
+        }
+        if (ok) dest = sgzzCellOf(cur.row, cur.col);
+    }
+    assert.ok(dest !== null, "找不到可通行的两步直线");
+
+    const marchId = `m-int-${TAG}`;
+    const path = [hub, dest!];
+    const departAt = Date.now() - 60_000;
+    const arriveAt = departAt + sgzzMarchDurationMs(path);
+    assert.equal(arriveAt - departAt, 2 * SGZZ_MARCH_MS_PER_TILE);
+
+    await pool.execute("DELETE FROM k_sgzzmap_tile WHERE server_id = ? AND cell = ?", [SID, dest]);
+    await pool.execute("DELETE FROM k_sgzzmap_march WHERE server_id = ? AND march_id = ?", [SID, marchId]);
+    await pool.execute(
+        "INSERT INTO k_sgzzmap_march (server_id, march_id, uid, path_json, depart_at, arrive_at, status) "
+        + "VALUES (?, ?, ?, ?, ?, ?, 'marching')",
+        [SID, marchId, U1, JSON.stringify(path), departAt, arriveAt]);
+
+    const res = await api.settleDueMarches(SID);
+    assert.ok(res.settled >= 1, `应至少结算一条，实得 ${res.settled}`);
+
+    const [rows] = await pool.execute<RowDataPacket[]>(
+        "SELECT status FROM k_sgzzmap_march WHERE server_id = ? AND march_id = ?", [SID, marchId]);
+    assert.equal((rows as unknown as { status: string }[])[0].status, "arrived");
+
+    const [tiles] = await pool.execute<RowDataPacket[]>(
+        "SELECT owner_uid FROM k_sgzzmap_tile WHERE server_id = ? AND cell = ?", [SID, dest]);
+    assert.equal((tiles as unknown as { owner_uid: string }[])[0]?.owner_uid, U1,
+        "到达必须在终点落地（⚠ 终点与出发地不相邻，⛔ 结算不走连地闸）");
+
+    // 幂等：再结算一次不动它
+    const settledAgain = await api.settleDueMarches(SID);
+    const [after2] = await pool.execute<RowDataPacket[]>(
+        "SELECT durability FROM k_sgzzmap_tile WHERE server_id = ? AND cell = ?", [SID, dest]);
+    assert.equal(Number((after2 as unknown as { durability: number }[])[0].durability), 1,
+        `⛔ 不得重复落地（第二轮又结算了 ${settledAgain.settled} 条）`);
+
+    await pool.execute("DELETE FROM k_sgzzmap_tile WHERE server_id = ? AND cell = ?", [SID, dest]);
 });
