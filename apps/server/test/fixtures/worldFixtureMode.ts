@@ -49,6 +49,8 @@ export interface WorldFixtureModeOptions {
     readonly limits?: WorldModeObserverCapability<WorldFixtureState>["limits"];
     /** 检查点能力（MF7b）：kit 作用域的持久层（单测 MemoryCheckpointPort；int 走 kitfix 表）。 */
     readonly checkpoint?: WorldModeCheckpointCapability;
+    /** MK1-B4：实现 onPersonaCheckpoint（离座 / 交接只落该 persona）；缺省不实现（既有用例的全批强制点语义不变）。 */
+    readonly personaCheckpoint?: boolean;
 }
 
 /** persona 级快照（位置 / stamina）；分线级快照 = 静态体 + tick。schema 版本 1。 */
@@ -63,6 +65,8 @@ export interface WorldFixtureMode extends WorldMode<WorldFixtureState> {
         place(id: string, x: number, y: number): void;
         readonly log: string[];
         checkpoints: number;
+        /** MK1-B4：persona 级强制点次数（onPersonaCheckpoint 调用数） */
+        personaCheckpoints: number;
         /** 脚本 timers（id → dueTick）：§7.3「timer 存 dueTick，恢复后按 tick 差重排」的夹具。 */
         timers(): ReadonlyMap<string, number>;
         setTimer(id: string, dueTick: number): void;
@@ -98,7 +102,7 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
             entity.rev += 1;
         },
         log,
-        checkpoints: 0,
+        checkpoints: 0, personaCheckpoints: 0,
         timers: (): ReadonlyMap<string, number> => timers,
         setTimer: (id: string, dueTick: number): void => { timers.set(id, dueTick); },
     };
@@ -243,6 +247,14 @@ export function createWorldFixtureMode(options: WorldFixtureModeOptions = {}): W
                 }
             }
         },
+        ...(options.personaCheckpoint ? {
+            onPersonaCheckpoint(_context: WorldModeContext<WorldFixtureState>, session: string): WorldFixturePersonaSnapshot | null {
+                probe.personaCheckpoints += 1;
+                const id = movers.get(session);
+                const mover = id === undefined ? undefined : entities.get(id);
+                return mover ? { x: mover.x, y: mover.y, stamina: mover.stamina } : null;
+            },
+        } : {}),
         onCheckpoint(context): WorldCheckpoint {
             probe.checkpoints += 1;
             const persona = [...movers.values()].flatMap((id) => {

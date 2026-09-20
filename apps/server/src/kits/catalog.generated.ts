@@ -36,7 +36,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
     },
     {
         id: "mmo",
-        version: "0.1.3",
+        version: "0.1.4",
         api: {
             characters: { version: 1, minSupported: 1 },
             content: { version: 2, minSupported: 2 },
@@ -54,6 +54,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
             "sql/001-characters.sql",
             "sql/002-items.sql",
             "sql/003-world.sql",
+            "sql/004-character-checkpoint-instance-rev.sql",
         ],
         sqlTables: [
             { name: "k_mmo_character", zone: "per-zone" },

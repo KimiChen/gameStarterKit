@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "mmo",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "MMO 地基（docs/MMO.md §7；MK1 施工中）：常驻分线世界 mmoWorld + characters / world / movement / content 四个 api 面；combat / ai / inventory / social / orchestration 面随 MK1–MK4 加入并各自 versioning",
   "api": {
     "characters": {
@@ -34,7 +34,8 @@
     "files": [
       "sql/001-characters.sql",
       "sql/002-items.sql",
-      "sql/003-world.sql"
+      "sql/003-world.sql",
+      "sql/004-character-checkpoint-instance-rev.sql"
     ],
     "tables": [
       {

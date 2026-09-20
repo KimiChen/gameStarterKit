@@ -81,6 +81,8 @@ export {
   currentZoneId, kKitUser,
 };
 export type { AssetOwnerRef, IEffect, KitKeyScope, PoolConnection, ResultSetHeader, RowDataPacket, SingletonLease };
+/** 世界检查点端口契约（MMO MF7b；MK1-B4 起由 kit-api 再导出——kit 目录（K1 规则 ①）可直接实现 CheckpointPort，⛔ 再经 rooms/modes 取型；MF11 偏差 ⑤ 收口）。 */
+export type { CheckpointEnvelope, CheckpointPort, CheckpointSchema } from "../../rooms/core/CheckpointPort";
 
 export interface KitUserFence { readonly fence: number }
 export interface KitUserFenceDeps {

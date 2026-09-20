@@ -65,7 +65,7 @@ import { ReconnectGrace } from "./core/ReconnectGrace";
 import { S2CPorts } from "./core/S2CPorts";
 import { defaultWireRateCost, WireDispatcher } from "./core/WireDispatcher";
 import { WorldLease } from "./core/WorldLease";
-import { WorldRuntime, type WorldCheckpointBatch } from "./core/WorldRuntime";
+import { WorldRuntime, type WorldCheckpointBatch, type WorldPersonaCheckpointBatch } from "./core/WorldRuntime";
 import { WorldCheckpointer } from "./core/WorldCheckpoint";
 import { AuthorityLostError } from "./core/WorldTx";
 import { redisWorldTicketPort, type WorldTicketClaimPort } from "./core/WorldTicket";
@@ -173,6 +173,8 @@ export interface WorldRoomRuntimeOptions {
     readonly timers?: WorldRoomTimers;
     /** 检查点记录器（单测 / 回放）：mode 未声明 checkpoint 能力时的落点；声明了则走 WorldCheckpointer（同一世界事务落盘）。 */
     readonly checkpointSink?: (batch: WorldCheckpointBatch, reason: "periodic" | "forced") => void;
+    /** persona 级强制点记录器（MK1-B4 单测）：mode 实现 onPersonaCheckpoint 时离座 / 交接只落该 persona。 */
+    readonly personaCheckpointSink?: (batch: WorldPersonaCheckpointBatch, reason: string) => void;
     /** 注入检查点编排（单测：假世界事务 + MemoryCheckpointPort）；生产按 mode.checkpoint 自建。 */
     readonly checkpointer?: WorldCheckpointer;
     /** 测试 / 回放：不起 setSimulationInterval，由调用方直接 advance(dt)。 */
@@ -278,6 +280,7 @@ export class WorldRoom extends Room {
         readonly drainGraceMs: number;
         readonly timers: WorldRoomTimers;
         readonly checkpointSink: ((batch: WorldCheckpointBatch, reason: "periodic" | "forced") => void) | null;
+        readonly personaCheckpointSink: ((batch: WorldPersonaCheckpointBatch, reason: string) => void) | null;
         readonly checkpointer: WorldCheckpointer | null;
         readonly manualTick: boolean;
     };
@@ -336,6 +339,7 @@ export class WorldRoom extends Room {
             drainGraceMs: options.drainGraceMs ?? WORLD_DRAIN_GRACE_MS,
             timers: options.timers ?? defaultTimers,
             checkpointSink: options.checkpointSink ?? null,
+            personaCheckpointSink: options.personaCheckpointSink ?? null,
             checkpointer: options.checkpointer ?? null,
             manualTick: options.manualTick === true,
         };
@@ -460,8 +464,14 @@ export class WorldRoom extends Room {
                     return ready;
                 },
                 ...(this.checkpointer
-                    ? { onCheckpoint: (batch: WorldCheckpointBatch) => { this.persistCheckpoint(batch); } }
-                    : this.deps.checkpointSink ? { onCheckpoint: this.deps.checkpointSink } : {}),
+                    ? {
+                        onCheckpoint: (batch: WorldCheckpointBatch) => { this.persistCheckpoint(batch); },
+                        onPersonaCheckpoint: (batch: WorldPersonaCheckpointBatch) => { this.persistPersonaCheckpoint(batch); },
+                    }
+                    : {
+                        ...(this.deps.checkpointSink ? { onCheckpoint: this.deps.checkpointSink } : {}),
+                        ...(this.deps.personaCheckpointSink ? { onPersonaCheckpoint: this.deps.personaCheckpointSink } : {}),
+                    }),
             },
         });
         this.runtime = runtime;
@@ -661,9 +671,9 @@ export class WorldRoom extends Room {
             const targetRow = await this.deps.directory.resolve(this.sId, toMap, toLine);
             const now = this.now();
             await this.deps.transfers.prepare(this.sId, transferId, { toInstance: targetRow.instanceId, reserveExpiresAt: now + WORLD_TRANSFER_RESERVE_MS });
-            // §4.5 / §7.3 交接强制点：persona 快照先落盘（目标房准入 loadPersona 读到的就是它）
+            // §4.5 / §7.3 交接强制点：persona 快照先落盘（目标房准入 loadPersona 读到的就是它）；MK1-B4：mode 支持时只落该 persona
             if (this.checkpointer) {
-                runtime.forceCheckpoint(`transfer:${transferId}`);
+                if (!runtime.forcePersonaCheckpoint(session, `transfer:${transferId}`)) runtime.forceCheckpoint(`transfer:${transferId}`);
                 await this.flushCheckpoints();
             }
             const still = runtime.sessionOf(session);
@@ -999,8 +1009,10 @@ export class WorldRoom extends Room {
         const runtime = this.runtime;
         if (!runtime) return false;
         const info = runtime.sessionOf(session);
-        // §7.3 角色检查点「登出 / 交接强制点」：离座前取一批（含该 persona 的快照与事件批），落盘异步串行
-        if (info && this.checkpointer && (runtime.phase === WorldPhase.Active || runtime.phase === WorldPhase.Draining)) runtime.forceCheckpoint(`leave:${reason}`);
+        // §7.3 角色检查点「登出 / 交接强制点」：离座前落盘（异步串行）；MK1-B4：mode 实现 onPersonaCheckpoint ⇒ 只落该 persona 的快照，否则退化为全批
+        if (info && this.checkpointer && (runtime.phase === WorldPhase.Active || runtime.phase === WorldPhase.Draining)) {
+            if (!runtime.forcePersonaCheckpoint(session, `leave:${reason}`)) runtime.forceCheckpoint(`leave:${reason}`);
+        }
         const left = runtime.leave(session, reason);
         this.clientOf.delete(session);
         this.awayClients.delete(session);
@@ -1046,6 +1058,22 @@ export class WorldRoom extends Room {
             } catch (error) {
                 runtime.rollbackCheckpoint(batch);
                 console.error(`[WorldRoom ${this.roomId}] 检查点 rev=${batch.rev}（${batch.reason}）落盘失败`, error);
+                if (error instanceof AuthorityLostError) this.drain("authority-lost");
+            }
+        });
+        void trackTask("world:checkpoint", this.checkpointChain);
+    }
+
+    /** persona 级强制点落盘（MK1-B4；与全批同一串行链，⛔ commit / rollback rev）：权威已失 ⇒ Draining。 */
+    private persistPersonaCheckpoint(batch: WorldPersonaCheckpointBatch): void {
+        const checkpointer = this.checkpointer;
+        if (!checkpointer || !this.runtime) return;
+        const instanceId = this.instanceId;
+        this.checkpointChain = this.checkpointChain.then(async () => {
+            try {
+                await checkpointer.savePersona(instanceId, batch);
+            } catch (error) {
+                console.error(`[WorldRoom ${this.roomId}] persona 检查点 rev=${batch.rev}（${batch.reason}）落盘失败`, error);
                 if (error instanceof AuthorityLostError) this.drain("authority-lost");
             }
         });

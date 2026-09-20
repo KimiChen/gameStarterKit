@@ -31,6 +31,8 @@ export interface WorldRuntimePorts {
      * `commitCheckpoint(rev)`；失败 `rollbackCheckpoint(batch)` 把事件放回缓冲）。缺省不取检查点。
      */
     onCheckpoint?(batch: WorldCheckpointBatch, reason: "periodic" | "forced"): void;
+    /** persona 级强制点落点（MK1-B4）：只落该 persona 的快照（WorldRoom 交 WorldCheckpointer.savePersona；单测接记录器）；缺省 = 宿主不支持 ⇒ 壳退化为全批。 */
+    onPersonaCheckpoint?(batch: WorldPersonaCheckpointBatch, reason: string): void;
     /** 交接端口（MF8-B3：WorldRoom 编排持久状态机；缺省 = 宿主不支持交接 ⇒ reject）。 */
     requestTransfer?(session: string, target: WorldTransferTarget): Promise<WorldTransferReady>;
 }
@@ -46,6 +48,17 @@ export interface WorldCheckpointBatch {
     readonly events: readonly WorldEventDraft[];
     /** 落盘时在座的 persona（controlEpoch 进 persona 信封；world tx 逐个 assertControl）。 */
     readonly personas: readonly { readonly personaId: string; readonly controlEpoch: number }[];
+}
+
+/** persona 级强制点批次（MK1-B4）：rev 是预留的分线 rev 号（只保证该 persona 信封 rev 单调；⛔ 推进 checkpoint_rev、⛔ 带事件批）。 */
+export interface WorldPersonaCheckpointBatch {
+    readonly rev: number;
+    readonly eventOffset: number;
+    readonly authorityEpoch: number;
+    readonly reason: string;
+    readonly personaId: string;
+    readonly controlEpoch: number;
+    readonly snapshot: unknown;
 }
 
 export interface WorldRuntimeOptions<TState extends WorldStateLifecycle> {
@@ -320,6 +333,27 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     /** 强制检查点（§4.5 unload / Draining 收尾 / 离座）：有落点才取；返回是否取到。 */
     forceCheckpoint(reason = "forced"): boolean {
         return this.emitCheckpoint(true, reason);
+    }
+
+    /**
+     * persona 级强制点（MK1-B4 离座 / 交接）：mode 实现 onPersonaCheckpoint 且宿主有落点、会话在座且有快照才取；rev 取 max(已落库, 已发出) + 1
+     * 并记为已发出（分线号留空洞，与落盘失败作废同义），⛔ 推进 checkpointRev、⛔ 移出事件批。返回 false ⇒ 壳退化为 forceCheckpoint。
+     */
+    forcePersonaCheckpoint(session: string, reason: string): boolean {
+        if (!this.ports.onPersonaCheckpoint || !this.mode.onPersonaCheckpoint) return false;
+        if (this.state.phase !== WorldPhase.Active && this.state.phase !== WorldPhase.Draining) return false;
+        const info = this.sessionTable.get(session);
+        if (!info) return false;
+        const snapshot = this.mode.onPersonaCheckpoint(this.context(), session);
+        if (snapshot === null || snapshot === undefined) return false;
+        const rev = Math.max(this.checkpointRev, this.issuedRev) + 1;
+        this.issuedRev = rev;
+        try {
+            this.ports.onPersonaCheckpoint({ rev, eventOffset: this.eventSeq, authorityEpoch: this.state.authorityEpoch, reason, personaId: info.personaId, controlEpoch: info.controlEpoch, snapshot }, reason);
+        } catch (error) {
+            console.error(`[WorldRuntime ${this.state.instanceId}] persona 检查点落点失败`, error);
+        }
+        return true;
     }
 
     private emitCheckpoint(force: boolean, reason: string): boolean {

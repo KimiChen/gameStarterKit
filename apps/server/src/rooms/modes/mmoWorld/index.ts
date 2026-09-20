@@ -11,7 +11,9 @@
  *  - observer（MK1-B2 AOI 接入）：候选来自 kit 网格（`aoi/grid.ts`，格长 = 图的 aoi.cellSize）→ 精确视距（aoi.viewRadius 欧氏）→ 可见性规则
  *    （`aoi/visibility.ts`：位面 / 隐身 / 阵营；本人永远可见）→ 最近优先截到 MMO_INTEREST_MAX_ENTITIES（框架 InterestSet 超限即抛，kit 先收敛）；
  *    公开投影 = IMmoEntityWire（名片含 factionId，⛔ mp 等私有字段）；差分 / baseline / 投递归框架；
- *  - onCheckpoint：persona 快照 {mapId, x, y, hp, mp}、分线快照 {tick, mapId, pack, creatures}；onRestore 回灌怪物位置 / hp。
+ *  - onCheckpoint（MK1-B4 定稿，schema v2）：persona 快照 {mapId, x, y, hp, mp, cooldowns（剩余 ms）, arrival?}、分线快照 {tick, mapId, pack, creatures, loot, scriptVars,
+ *    timers（dueTick）, regions}；onPersonaCheckpoint：离座 / 交接只落该 persona（框架 MK1-B4）；onRestore 回灌怪物位置 / hp、timers 按 tick 差重排、regions / scriptVars / loot；
+ *    v1 快照（无新字段）照常回灌。检查点端口住 kit 目录 `kits/mmo/persistence/checkpoint.ts`（kit-api 再导出契约类型后迁回）。
  * 登记：`registerMmoWorldWorldMode`（codegen 分表静态 import）——登记时先取内容索引，包不合法即抛（启动期 fail-closed）。
  */
 import {
@@ -32,7 +34,7 @@ import {
     worldModeRegistry, type WorldAdmitRequest, type WorldCheckpoint, type WorldMode, type WorldModeCheckpointCapability, type WorldModeContext,
     type WorldModeObserverCapability, type WorldModeRegistry, type WorldSessionInfo,
 } from "../../WorldMode";
-import { createMmoCheckpointCapability, type MmoInstanceSnapshot, type MmoPersonaSnapshot } from "./checkpoint";
+import { createMmoCheckpointCapability, type MmoInstanceSnapshot, type MmoPersonaSnapshot } from "../../../kits/mmo/persistence/checkpoint";
 
 export { MMO_WORLD_MODE_ID };
 
@@ -64,6 +66,8 @@ export interface MmoEntity {
     stealth: boolean;
     /** 交接落点（发起交接时写入；随 persona 快照落库；失败即清） */
     arrival: { readonly mapId: string; readonly spawnPointId: string } | null;
+    /** 冷却：spellId → 就绪 tick（MK2 combat 写入；快照按 tick 差折算成剩余 ms） */
+    readonly cooldowns: Map<string, number>;
     x: number;
     y: number;
     /** 公开投影修订号（位置 / hp 变即 +1） */
@@ -94,6 +98,14 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         setVisibility(id: string, facts: { readonly plane?: number; readonly stealth?: boolean }): void;
         /** 在途交接的会话 */
         transfersInFlight(): readonly string[];
+        /** 检查点接缝（MK2–MK4 接入前的直接写口）：冷却 / timer / 区域开关 / 脚本 var */
+        setCooldown(id: string, spellId: string, readyAtTick: number): void;
+        setTimer(id: string, dueTick: number): void;
+        setRegion(regionId: string, enabled: boolean): void;
+        setVar(key: string, value: unknown): void;
+        timers(): ReadonlyMap<string, number>;
+        regions(): ReadonlyMap<string, boolean>;
+        vars(): Readonly<Record<string, unknown>>;
         readonly log: string[];
     };
 }
@@ -117,6 +129,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     const privateSent = new Map<string, string>();
     /** 在途交接（发起 → Committed / 失败）的会话；在途期间再发 ⇒ 拒 */
     const inFlight = new Set<string>();
+    /** 分线快照 v2 的槽位（内容随 MK2–MK4 填充）：timers（id → dueTick）/ 区域开关 / 脚本 vars / 未认领掉落 */
+    const timers = new Map<string, number>();
+    const regions = new Map<string, boolean>();
+    let scriptVars: Record<string, unknown> = {};
+    let loot: readonly unknown[] = [];
     const log: string[] = [];
     let map: IMapDef | null = null;
     /** 碰撞网格（内容包 collision；无 = 全图通行） */
@@ -144,6 +161,19 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     };
     const syncPopulation = (context: WorldModeContext<MmoWorldRoomState>): void => {
         context.state.population = movers.size;
+    };
+    /** 角色快照（onCheckpoint 全批与 onPersonaCheckpoint 共用）：冷却按 tick 差折算成剩余 ms（分线 tick 不续）。 */
+    const personaSnapshotOf = (context: WorldModeContext<MmoWorldRoomState>, mover: MmoEntity): MmoPersonaSnapshot => {
+        const cooldowns: Record<string, number> = {};
+        for (const [spellId, readyAtTick] of mover.cooldowns) {
+            const remaining = (readyAtTick - context.state.tick) * context.fixedStepMs;
+            if (remaining > 0) cooldowns[spellId] = remaining;
+        }
+        return {
+            mapId: mapOf(context).mapId, x: mover.x, y: mover.y, hp: mover.hp, mp: mover.mp,
+            ...(Object.keys(cooldowns).length > 0 ? { cooldowns } : {}),
+            ...(mover.arrival ? { arrival: mover.arrival } : {}),
+        };
     };
     const reject = (context: WorldModeContext<MmoWorldRoomState>, session: string, clientReqId: string, detail: string): void => {
         context.sendS2C(session, MmoWorldOpResult, { clientReqId, result: "rejected", detail });
@@ -224,6 +254,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             aoiOf(context).clear();
             movers.clear();
             inFlight.clear();
+            timers.clear();
+            regions.clear();
+            scriptVars = {};
+            loot = [];
+            for (const region of content.regionsByMap.get(def.mapId) ?? []) regions.set(region.regionId, region.enabledByDefault);
             pending.clear();
             privateDirty.clear();
             privateSent.clear();
@@ -239,7 +274,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     const id = `${spawn.spawnId}:${index}`; // wire id 形态：[A-Za-z0-9._:-]
                     entities.set(id, {
                         id, kind: "creature", templateId: template.templateId, name: template.name, level: template.level, hpMax: template.hpMax, mpMax: template.mpMax,
-                        speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, factionId: null, plane: 0, stealth: false, arrival: null,
+                        speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, factionId: null, plane: 0, stealth: false, arrival: null, cooldowns: new Map(),
                         x: pos.x, y: pos.y, rev: 0, hp: template.hpMax, mp: template.mpMax, dirX: 0, dirY: 0, target: null, seq: 0,
                     });
                     aoiOf(context).insert(id, pos.x, pos.y);
@@ -261,6 +296,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 entity.hp = Math.max(0, Math.min(entity.hpMax, creature.hp));
                 restored += 1;
             }
+            // v2 槽位：timers 按 tick 差重排（分线 tick 从 0 起）、区域开关覆盖内容包缺省、脚本 vars / 掉落原样回灌；v1 快照没有这些字段 ⇒ 保持缺省
+            const snapshotTick = typeof instance?.tick === "number" ? instance.tick : 0;
+            for (const timer of instance?.timers ?? []) timers.set(timer.id, Math.max(0, timer.dueTick - snapshotTick) + context.state.tick);
+            for (const [regionId, enabled] of Object.entries(instance?.regions ?? {})) regions.set(regionId, enabled);
+            scriptVars = { ...(instance?.scriptVars ?? {}) };
+            loot = [...(instance?.loot ?? [])];
             log.push(`restore:${restored}`);
         },
         async onBeforeAdmit(context, request: WorldAdmitRequest) {
@@ -289,9 +330,14 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const hpMax = klass?.hpMax ?? 100;
             const mpMax = klass?.mpMax ?? 50;
             const id = `char:${row?.characterId ?? session.personaId}`;
+            // 冷却回灌：剩余 ms → 就绪 tick（相对本分线当前 tick）
+            const cooldowns = new Map<string, number>();
+            for (const [spellId, remainingMs] of Object.entries(restored?.cooldowns ?? {})) {
+                if (typeof remainingMs === "number" && remainingMs > 0) cooldowns.set(spellId, context.state.tick + Math.ceil(remainingMs / context.fixedStepMs));
+            }
             entities.set(id, {
                 id, kind: "character", templateId: row?.classId ?? "fighter", name: row?.name ?? "?", level: row?.level ?? 1, hpMax, mpMax, speedPerSec: klass?.speedPerSec ?? 120,
-                session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null, factionId: row?.factionId ?? null, plane: 0, stealth: false, arrival: null,
+                session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null, factionId: row?.factionId ?? null, plane: 0, stealth: false, arrival: null, cooldowns,
                 x: pos.x, y: pos.y, rev: 0,
                 hp: typeof restored?.hp === "number" ? Math.max(0, Math.min(hpMax, restored.hp)) : hpMax,
                 mp: typeof restored?.mp === "number" ? Math.max(0, Math.min(mpMax, restored.mp)) : mpMax,
@@ -374,17 +420,25 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const persona = [...movers.values()].flatMap((id) => {
                 const mover = entities.get(id);
                 if (!mover || mover.personaId === null) return [];
-                const snapshot: MmoPersonaSnapshot = { mapId: def.mapId, x: mover.x, y: mover.y, hp: mover.hp, mp: mover.mp, ...(mover.arrival ? { arrival: mover.arrival } : {}) };
-                return [{ personaId: mover.personaId, snapshot }];
+                return [{ personaId: mover.personaId, snapshot: personaSnapshotOf(context, mover) }];
             });
             const instance: MmoInstanceSnapshot = {
                 tick: context.state.tick,
                 mapId: def.mapId,
                 packId: content.pack.packId,
                 packVersion: content.pack.version,
-                creatures: [...entities.values()].filter((entity) => entity.kind === "creature").map((entity) => ({ id: entity.id, templateId: entity.templateId, x: entity.x, y: entity.y, hp: entity.hp })),
+                creatures: [...entities.values()].filter((entity) => entity.kind === "creature").map((entity) => ({ id: entity.id, templateId: entity.templateId, x: entity.x, y: entity.y, hp: entity.hp, alive: entity.hp > 0 })),
+                loot,
+                scriptVars: { ...scriptVars },
+                timers: [...timers].map(([id, dueTick]) => ({ id, dueTick })),
+                regions: Object.fromEntries(regions),
             };
             return { persona, instance };
+        },
+        // MK1-B4：离座 / 交接只落该 persona 的快照（框架 forcePersonaCheckpoint；⛔ 分线快照 / 事件批）
+        onPersonaCheckpoint(context, session) {
+            const mover = moverOf(session);
+            return mover && mover.personaId !== null ? personaSnapshotOf(context, mover) : null;
         },
         onDrain(_context, info) {
             log.push(`drain:${info.reason}`);
@@ -405,6 +459,17 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (facts.stealth !== undefined) entity.stealth = facts.stealth;
             },
             transfersInFlight: () => [...inFlight],
+            setCooldown: (id, spellId, readyAtTick) => {
+                const entity = entities.get(id);
+                if (!entity) throw new Error(`[mmoWorld] setCooldown：${id} 不存在`);
+                entity.cooldowns.set(spellId, readyAtTick);
+            },
+            setTimer: (id, dueTick) => { timers.set(id, dueTick); },
+            setRegion: (regionId, enabled) => { regions.set(regionId, enabled); },
+            setVar: (key, value) => { scriptVars[key] = value; },
+            timers: () => timers,
+            regions: () => regions,
+            vars: () => scriptVars,
             log,
         },
     };

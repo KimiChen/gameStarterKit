@@ -19,7 +19,7 @@ import { getPool, type PoolConnection, type ResultSetHeader } from "../../core/i
 import type { WorldModeCheckpointCapability } from "../WorldMode";
 import { buildCheckpointEnvelope, validateCheckpointEnvelope, validateCheckpointSchema, type CheckpointEnvelope } from "./CheckpointPort";
 import { supersedeWorldEvents, type WorldEventSql } from "./WorldEventPort";
-import type { WorldCheckpointBatch } from "./WorldRuntime";
+import type { WorldCheckpointBatch, WorldPersonaCheckpointBatch } from "./WorldRuntime";
 
 export interface WorldCheckpointerDeps {
     /** 世界事务入口（生产 = kit-api withKitWorldTx；单测注入假事务）。 */
@@ -82,6 +82,17 @@ export class WorldCheckpointer {
                 await tx.appendWorldEvent(eventTable as string, { eventId: this.deps.eventId(), seq: event.seq, kind: event.kind, payload: event.payload, checkpointRev: batch.rev });
             }
         }, { beforeCommit: (conn, scope) => commitCheckpointRev(conn, this.sId, scope.instanceId, scope.authorityEpoch, batch.rev) });
+    }
+
+    /** persona 级强制点（MK1-B4）：世界事务里只落该 persona 的快照（首句权威 CAS + 该 persona assertControl）；⛔ 分线快照 / 事件行 / checkpoint_rev。 */
+    async savePersona(instanceId: string, batch: WorldPersonaCheckpointBatch): Promise<void> {
+        const { kitId, port, schema } = this.capability;
+        const envelope = buildCheckpointEnvelope({
+            rev: batch.rev, eventOffset: batch.eventOffset, authorityEpoch: batch.authorityEpoch, controlEpoch: batch.controlEpoch, schemaVersion: schema.version, snapshot: batch.snapshot ?? null,
+        });
+        await this.deps.withWorldTx(kitId, this.sId, { instanceId, authorityEpoch: batch.authorityEpoch, personas: [{ id: batch.personaId, controlEpoch: batch.controlEpoch }] }, async (tx) => {
+            await port.savePersona(tx, batch.personaId, envelope);
+        });
     }
 
     /** Recovering：读回并校验分线检查点（null = 空世界起步；不兼容 / 损坏 ⇒ 抛，壳拒绝建房）。 */

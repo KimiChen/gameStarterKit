@@ -10,7 +10,9 @@
  *  - MK1-B2 AOI 接入：候选来自 kit 网格、精确视距 + 规则（位面 / 隐身 × 阵营）、最近优先截到 MMO_INTEREST_MAX_ENTITIES；超视野零泄露（远处角色的 id 不出现在任何出站）、
  *    走进视距 enter 恰一次、隐身只对同阵营可见、位面隔离、300 只挤在出生点也不触发框架 InterestSet 上限；
  *  - MK1-B3 两图交接：portal 不存在 / 不在半径 / 在途 ⇒ rejected；门内 ⇒ 框架交接端口（目标图 + kit 载荷）且落点先进 persona 快照；端口失败 ⇒ rejected + 落点清；
- *    Committed ⇒ perSession transferReady；目标图（东郊 2 只 slime）按 arrival 落位、HP / MP 随身，异图 / 未知落点 ⇒ 首个出生点。
+ *    Committed ⇒ perSession transferReady；目标图（东郊 2 只 slime）按 arrival 落位、HP / MP 随身，异图 / 未知落点 ⇒ 首个出生点；
+ *  - MK1-B4 检查点定稿（schema v2）：onPersonaCheckpoint 只给该会话的 persona 快照；冷却按 tick 差折算剩余 ms 并在进图时按 fixedStep 回灌；分线快照 v2 槽位
+ *    （loot / scriptVars / timers / regions）往返、timers 按 tick 差重排、regions 覆盖内容包缺省；v1 快照（无新字段）照常回灌。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
@@ -28,7 +30,7 @@ import { WorldRuntime, type WorldCheckpointBatch } from "../src/rooms/core/World
 import { MMO_INTEREST_MAX_ENTITIES, createMmoWorldMode, type MmoWorldMode } from "../src/rooms/modes/mmoWorld/index";
 import { createRoomStateForMode, type MmoWorldRoomState } from "../src/rooms/schema/GameRoomState";
 import type { WorldTransferReady, WorldTransferTarget } from "../src/rooms/WorldMode";
-import type { MmoInstanceSnapshot, MmoPersonaSnapshot } from "../src/rooms/modes/mmoWorld/checkpoint";
+import type { MmoInstanceSnapshot, MmoPersonaSnapshot } from "../src/kits/mmo/persistence/checkpoint";
 
 const CONTENT = indexContentPack(validateContentPack(GREYBOX_PACK));
 const rowOf = (personaId: string, name = "Rook", classId: MmoClassId = "fighter", factionId: MmoFactionId = "dawn"): MmoCharacterRow => ({
@@ -367,4 +369,38 @@ test("交接落点：目标图（东郊 2 只 slime）按 persona 快照 arrival
     assert.deepEqual([east.mode.__probe.moverOf("c")!.x, east.mode.__probe.moverOf("c")!.y], [500, 500], "未知落点 ⇒ 首个出生点");
     await seat(east, "d", "p-d", envelope({ mapId: "greybox-east", x: 600, y: 600, hp: 60, mp: 20, arrival: { mapId: "greybox-east", spawnPointId: "gate" } }));
     assert.deepEqual([east.mode.__probe.moverOf("d")!.x, east.mode.__probe.moverOf("d")!.y], [600, 600], "同图检查点优先于落点");
+});
+
+test("检查点 v2：onPersonaCheckpoint 只给该会话；冷却剩余 ms 往返（tick 差 × fixedStep）；分线 v2 槽位往返、timers 重排、regions 覆盖；v1 快照照常回灌", async () => {
+    const h = harness();
+    await activeWorld(h);
+    await seat(h, "a", "p-a");
+    await seat(h, "b", "p-b", personaAt(1500, 300));
+    step(h, 4); // tick 4
+    h.mode.__probe.setCooldown("char:c-p-a", "strike", 14); // 就绪 tick 14 ⇒ 剩余 10 步 × 50 ms = 500 ms
+    h.mode.__probe.setCooldown("char:c-p-a", "stale", 2); // 已过期 ⇒ 不进快照
+    h.mode.__probe.setTimer("respawn:slime-camp:0", 104);
+    h.mode.__probe.setRegion("gate-zone", true);
+    h.mode.__probe.setVar("bossPhase", 2);
+    const own = h.mode.onPersonaCheckpoint!(h.runtime.context(), "a") as MmoPersonaSnapshot;
+    assert.deepEqual(own, { mapId: "greybox", x: 1000, y: 1000, hp: 100, mp: 50, cooldowns: { strike: 500 } }, "只有本人快照 + 剩余冷却（过期的不进）");
+    assert.equal(h.mode.onPersonaCheckpoint!(h.runtime.context(), "nobody"), null);
+    const checkpoint = h.runtime.takeCheckpoint(true)!;
+    assert.deepEqual(checkpoint.persona.map((entry) => entry.personaId).sort(), ["p-a", "p-b"], "全批含两人");
+    const instance = checkpoint.instance as MmoInstanceSnapshot;
+    assert.deepEqual([instance.tick, instance.timers, instance.regions, instance.scriptVars, instance.loot, instance.creatures[0]!.alive], [4, [{ id: "respawn:slime-camp:0", dueTick: 104 }], { "gate-zone": true }, { bossPhase: 2 }, [], true]);
+    // 恢复：新分线 tick 从 0 起 ⇒ timer 重排到 100；regions / vars / loot 回灌；冷却回灌 = 当前 tick + ceil(500 / 50)
+    const recovered = harness();
+    await activeWorld(recovered, "greybox", instance);
+    assert.deepEqual([[...recovered.mode.__probe.timers()], [...recovered.mode.__probe.regions()], recovered.mode.__probe.vars()], [[["respawn:slime-camp:0", 100]], [["gate-zone", true]], { bossPhase: 2 }]);
+    step(recovered, 3); // tick 3
+    await seat(recovered, "a", "p-a", buildCheckpointEnvelope({ rev: 9, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 2, snapshot: own }));
+    assert.deepEqual([...recovered.mode.__probe.moverOf("a")!.cooldowns], [["strike", 13]], "剩余 500 ms ⇒ 就绪 tick = 3 + 10");
+    // v1 快照（无 v2 字段）照常回灌：creatures 落位、槽位保持缺省
+    const legacy = harness();
+    const v1 = { tick: 7, mapId: "greybox", packId: "greybox", packVersion: 3, creatures: instance.creatures.map((c) => ({ id: c.id, templateId: c.templateId, x: 1300, y: 900, hp: 5 })) };
+    await activeWorld(legacy, "greybox", v1 as unknown as MmoInstanceSnapshot);
+    assert.deepEqual([legacy.mode.__probe.entities().get(instance.creatures[0]!.id)!.x, legacy.mode.__probe.timers().size, legacy.mode.__probe.regions().size, legacy.mode.__probe.vars()], [1300, 0, 0, {}]);
+    await seat(legacy, "a", "p-a", buildCheckpointEnvelope({ rev: 1, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 1, snapshot: { mapId: "greybox", x: 1100, y: 1000, hp: 40, mp: 10 } satisfies MmoPersonaSnapshot }));
+    assert.deepEqual([legacy.mode.__probe.moverOf("a")!.x, legacy.mode.__probe.moverOf("a")!.cooldowns.size], [1100, 0]);
 });

@@ -194,6 +194,11 @@ export interface WorldMode<TState extends WorldStateLifecycle = WorldStateLifecy
     onLeave?(context: WorldModeContext<TState>, session: WorldSessionInfo, reason: WorldLeaveReason): void;
     onStep(context: WorldModeContext<TState>, step: { readonly tick: number; readonly dtMs: number; readonly commands: readonly WorldCommand[] }): void;
     onCheckpoint?(context: WorldModeContext<TState>): WorldCheckpoint;
+    /**
+     * persona 级强制点（MMO MK1-B4：离座 / 交接只落该会话 persona 的快照，⛔ 分线快照 / 事件批 / checkpoint_rev）：返回该 persona 的快照
+     * （null = 无快照）；未实现 ⇒ 壳退化为全批 forceCheckpoint（MK0 偏差 ⑩：N 人同时离座 = N 次全表落盘）。
+     */
+    onPersonaCheckpoint?(context: WorldModeContext<TState>, session: string): unknown | null;
     onDrain?(context: WorldModeContext<TState>, info: { readonly reason: string; readonly graceMs: number }): void;
     onSignal?(context: WorldModeContext<TState>, signal: { readonly kind: string; readonly payload: unknown }): void;
     primaryEntityOf?(session: string): string | null;

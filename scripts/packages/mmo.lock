@@ -1,7 +1,7 @@
-# scripts/packages/mmo.lock —— 已安装 kit mmo@0.1.3 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/mmo.lock —— 已安装 kit mmo@0.1.4 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"class":"kit","id":"mmo","version":"0.1.3","kinds":["client","gameplay","server"],"constantName":null,"modes":[{"id":"mmoWorld","constantName":"MmoWorld"}],"api":{"characters":{"version":1,"minSupported":1},"world":{"version":2,"minSupported":1},"movement":{"version":1,"minSupported":1},"content":{"version":2,"minSupported":2}},"workers":[{"id":"worldEvents","entry":"apps/server/src/kits/mmo/workers/worldEvents.ts"}],"domains":["mmo"],"fguiPackages":[]}
-# source {"kind":"tree","filesLockSha256":"70b66c8b16e4be3bdc42c7a867d97e42a34169d31a1c161282043e7b877d3e11","forkedFrom":{"kind":"package","filesLockSha256":"7b401c862f3d3ca0de09d8bed80cc781ec15d44bd38f05bcb300682384e7a2f1"}}
+# manifest {"class":"kit","id":"mmo","version":"0.1.4","kinds":["client","gameplay","server"],"constantName":null,"modes":[{"id":"mmoWorld","constantName":"MmoWorld"}],"api":{"characters":{"version":1,"minSupported":1},"world":{"version":2,"minSupported":1},"movement":{"version":1,"minSupported":1},"content":{"version":2,"minSupported":2}},"workers":[{"id":"worldEvents","entry":"apps/server/src/kits/mmo/workers/worldEvents.ts"}],"domains":["mmo"],"fguiPackages":[]}
+# source {"kind":"tree","filesLockSha256":"8e1569050c135358649a285e7fbf98f0ce22545f0995ad9981c14dac39d21fd0","forkedFrom":{"kind":"package","filesLockSha256":"7b401c862f3d3ca0de09d8bed80cc781ec15d44bd38f05bcb300682384e7a2f1"}}
 apps/Cocos/assets/src/gameplay/modes/mmoWorld.meta f5b88a690d0698fb3a843d13752ded440adfb5af1803ff67e0350b7eba5c0f0d
 apps/Cocos/assets/src/gameplay/modes/mmoWorld/index.ts b48d9db4b1ea8eb17c4dd24908cfc17a52a00e3653a69db0756d823d47a2f611
 apps/Cocos/assets/src/gameplay/modes/mmoWorld/index.ts.meta 1bf10761ba8dcf62468c911ab433c9fffdf455b2952cb4729554668059a91b02
@@ -58,13 +58,14 @@ apps/client/src/view/rooms/mmoWorld/MmoWorldView.view.json 3083677b6995e5514e4f6
 apps/client/test/mmo-character-select-logic.test.ts db505c2196722d112ff7cfa808761cfdd0847cfee50da75bcc40931bcf7eb370
 apps/client/test/mmo-movement-predictor.test.ts 5ffcd6a7c91be213aa2f6ec4aaae6c5c5e373e9df074bd70b4d9cf1e2770e3dd
 apps/client/test/mmoWorld-gameplay.test.ts 5e695d791110b3c70b2bde2f452eae8f084079ed2e3e66db63e5930291fe43b4
-apps/kits/mmo/README.md 719153b2b72289621e40005e88d8d00c78ccdd818e2c188a635296656261cb16
+apps/kits/mmo/README.md fd92636d1eb818d445ba88766402856b74094b77095d8c1b20a1a40ef0b0ef24
 apps/kits/mmo/gameplays/mmoWorld/manifest.json c2ca64dca3ad4b74c57e0bcae0d812d537a48c7dc39615665c757af0c24ea60d
 apps/kits/mmo/gameplays/mmoWorld/state.json c7b72a80382a84b266a9139f4b32011e507b0a750d14fc621887ae4fd5373379
-apps/kits/mmo/kit.json 3096558ee5ce1cf60225d78bb13bcfb3ccd68fc309fb5c391fbc04e8a302f6ac
+apps/kits/mmo/kit.json bc6b3a7c5f2b50b684803d4e845cd95cefa16abc79ded0bdbd38dee4918f7b71
 apps/kits/mmo/sql/001-characters.sql f6330ffe72e3ff2feeb999150be84ced34f337ab7896188e9ae9558b791665a5
 apps/kits/mmo/sql/002-items.sql 9199d268295d03c61ef0c2099b7929f3843d109cbfe02c7d217f8761c801e17a
 apps/kits/mmo/sql/003-world.sql 694a4c2279d1fa348087c6d3e55b31eddb77015d73645c3fa9ee8eb1f7315f03
+apps/kits/mmo/sql/004-character-checkpoint-instance-rev.sql 3dc49c8499b3fbb6ded7951ec140be8337d9ee988bdb2d85fe1f628890c3be55
 apps/server/src/kits/mmo/aoi/grid.ts b96628388ef7676e811e39265153961810bc4484621c42769d378829caf49ad5
 apps/server/src/kits/mmo/aoi/visibility.ts 00852004c5bfc631a92824a0ff4a46de3a32d8e1e1a09c52fa1ff556f254d159
 apps/server/src/kits/mmo/api/characters/index.ts fc566b9b9f7a03a98494413ca2467a5e736f530ec476061ba78644401f01bd5a
@@ -74,12 +75,13 @@ apps/server/src/kits/mmo/api/world/index.ts e2da9ad1e62b1009824521f1462af726f4f7
 apps/server/src/kits/mmo/content/registry.ts c7ce71f3c532e7efc7d3b6076292160dd822712b2b9f09234f0cfb9a9f83bd75
 apps/server/src/kits/mmo/host.ts 0806e76b43312dbc357eeab1fbd6109e813ec6afa3a511387f2cff0c21d66f3c
 apps/server/src/kits/mmo/persistence/characters.ts a31726bf8c1813c820e4751fcb8e27098e1d4280f3eb5e47514878a83ba86935
+apps/server/src/kits/mmo/persistence/checkpoint.ts 4b931c80409831a967a43da41b27ee1754cd055be05bc1c8e5f63bc19f260920
 apps/server/src/kits/mmo/persistence/instances.ts b6236efbfe5dc974e39dab3bf44c574e68a363ed348c4eb5bf397a2d85291e30
 apps/server/src/kits/mmo/workers/worldEvents.ts f53ec2c7e899676b57cedc9366ee04937d0f7758f378ac87dce094fd33f5c4cc
-apps/server/src/rooms/modes/mmoWorld/checkpoint.ts b961b460b5874b84ef74412ba73e093cbc68eb64732604f29b87558ca0c118c3
-apps/server/src/rooms/modes/mmoWorld/index.ts aaf3a0b88a4f403a6166b4624d1f227811cc03359e8565b58a395e665892d738
+apps/server/src/rooms/modes/mmoWorld/index.ts 0a1e765028cee4881e941a45cf8e57be47f8f5d17ff40906e0530b79f0dfea5e
 apps/server/src/websocket/mmo/characters.ts cef2ff9683b8425f961ce094630cac5c8fcaf06df75991553466c7598fc39f59
 apps/server/src/websocket/mmo/createCharacter.ts eb592cca272be0bdd7e1feae4e89a8214f6bee15dbb5b9f829a1e8b395e51e95
+apps/server/test/int/mmo-checkpoint.test.ts 05985ef2c283c8780987849041c54f8a34b129dd135b5ad9c06943b6a6f36649
 apps/server/test/int/mmo-transfer.test.ts 242917eac4e966fa9895407a1a53f5507daa4deba01fda4ed95db9a36b8a1636
 apps/server/test/int/mmo-world.test.ts 4d09483afedb2dfa35590aa4ef50429bf21c87251e4e446fb21e9668e4dc1eff
 apps/server/test/lobbyRpcVectors/mmo.ts bdb2bfa77729bf224a3c3d72b53f767e20b36865ab4caf66db51476c7ea9b83f
@@ -87,9 +89,9 @@ apps/server/test/mmo-aoi.test.ts 463a20302fa8a1b6d53bfe61bc2c76dbcd64c8d933dc367
 apps/server/test/mmo-characters.test.ts 2a6efd0741f9b51564cb2dbfb53384614d96103928a63ea9bb39f475fef14e9b
 apps/server/test/mmo-movement.test.ts 20907f9f6d8a97af373fdb6cfdc0898c7a4df8e64b32fbfba544049bc28f48e8
 apps/server/test/mmo-shared.test.ts 1e47f48a7783c14f08dc8ea7272806659c5fd7fc40c34b29eda419666cc4a9ad
-apps/server/test/mmo-sql.test.ts 988087a55d3e540d826534d502a1230aa8643bfc9124a5103c73b305d7a25e5a
+apps/server/test/mmo-sql.test.ts 16aed51f57158ed2d20db6c4a332ba8d8ad877ec32d3e2756541a2e183989cef
 apps/server/test/mmo-worker.test.ts 5ed8866cf8127fbb55add4afc64d809c99eed30865b32b9679876428af31fa7d
-apps/server/test/mmoWorld-mode.test.ts 6ac49681079af4cfaba0ec32915cd8b937e49291e3ad412a3f3e071754a9f66b
+apps/server/test/mmoWorld-mode.test.ts b877cfa4af978ff1a3792e359adb23914b631873256215c9568eae70b84f194f
 apps/server/test/wire-vectors/mmoWorld.ts cf2779bb550c152ee400cfa4aa7d69ba773dba67aa9a4e3def6531364df15a2f
 apps/shared/src/gameplays/mmoWorld/wire.ts 10e0fb28ae52d2799300d1be9590ce506edb8fdebbc7f0079fe83ddee4f23ce4
 apps/shared/src/kits/mmo/api/characters/index.ts 8028fc20ba666d360cc8557ff512ecac3fb10429dfe34a27a8b0d7bddca3832f

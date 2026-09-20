@@ -25,18 +25,24 @@ function statementsOf(manifest: KitJson): Map<string, string> {
   const byTable = new Map<string, string>();
   for (const file of manifest.sql.files) {
     for (const statement of splitSqlStatements(fs.readFileSync(path.join(KIT_DIR, file), "utf8"))) {
+      const alter = /^ALTER TABLE (k_mmo_[a-z_]+) ADD (COLUMN|INDEX|UNIQUE INDEX|KEY) /u.exec(statement);
+      if (alter) {
+        // 追加式演进（KIT.md §5「新增迁移只追加文件；表结构演进用 ALTER … ADD」）：只许给已建的 k_mmo_* 表加列 / 索引
+        assert.ok(byTable.has(alter[1]!), `${file} 的 ALTER 必须针对前序文件已建的表：${alter[1]}`);
+        continue;
+      }
       const match = /^CREATE TABLE IF NOT EXISTS (k_mmo_[a-z_]+) \(/u.exec(statement);
-      assert.ok(match, `${file} 只允许 CREATE TABLE IF NOT EXISTS k_mmo_*：${statement.slice(0, 60)}`);
+      assert.ok(match, `${file} 只允许 CREATE TABLE IF NOT EXISTS k_mmo_* 或 ALTER TABLE k_mmo_* ADD COLUMN / INDEX：${statement.slice(0, 60)}`);
       byTable.set(match[1]!, statement);
     }
   }
   return byTable;
 }
 
-test("mmo sql：三份迁移共七张表，每条语句过 lintKitStatement，表名 = kit.json.sql.tables（顺序一致）", () => {
+test("mmo sql：四份迁移共七张表（004 只追加列 / 索引），每条语句过 lintKitStatement，表名 = kit.json.sql.tables（顺序一致）", () => {
   const manifest = kitJson();
   const declared = manifest.sql.tables.map((table) => table.name);
-  assert.deepEqual(manifest.sql.files, ["sql/001-characters.sql", "sql/002-items.sql", "sql/003-world.sql"]);
+  assert.deepEqual(manifest.sql.files, ["sql/001-characters.sql", "sql/002-items.sql", "sql/003-world.sql", "sql/004-character-checkpoint-instance-rev.sql"]);
   assert.deepEqual(declared, EXPECTED_TABLES);
   const byTable = statementsOf(manifest);
   assert.deepEqual([...byTable.keys()], EXPECTED_TABLES, "建表顺序 = 声明顺序");
