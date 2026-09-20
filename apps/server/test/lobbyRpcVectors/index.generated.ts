@@ -9,6 +9,7 @@ import mmoSocialVectors from "./mmoSocial";
 import partyVectors from "./party";
 import redeemVectors from "./redeem";
 import roomVectors from "./room";
+import sgzzmapVectors from "./sgzzmap";
 import shopVectors from "./shop";
 import slgVectors from "./slg";
 import snakeCosmeticVectors from "./snakeCosmetic";
@@ -28,6 +29,7 @@ export const LOBBY_RPC_VECTOR_FILES: Readonly<Record<string, LobbyRpcVectorFile>
     party: partyVectors,
     redeem: redeemVectors,
     room: roomVectors,
+    sgzzmap: sgzzmapVectors,
     shop: shopVectors,
     slg: slgVectors,
     snakeCosmetic: snakeCosmeticVectors,

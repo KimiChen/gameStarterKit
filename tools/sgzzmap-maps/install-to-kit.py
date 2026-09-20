@@ -16,7 +16,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import config  # noqa: E402
 
-# out/ 里的名字 → 出品名
+# out/ 里的名字 → 出品名。KIT_ONLY 的不进 Cocos 运行时镜像。
+# ⚠ 地形不进 Cocos：kit 服务端 ⛔ 不得读盘（kit-import-boundary 规则 ①），所以地形以
+#   shared TS 模块（varint-RLE+base64，emit-shared-terrain.py 产出）进两端；
+#   terrain.bytes 仍是权威产物、留在 kit 数据目录供机检比对，⛔ 不再多存一份二进制到 Cocos。
+KIT_ONLY = {"terrain.bytes", "terrain.info.json"}
 FILES = {
     "terrain.bytes": "terrain.bytes",
     "terrain.meta.json": "terrain.info.json",
@@ -102,13 +106,14 @@ def run(map_id: str, check_only: bool) -> int:
         if not s.is_file():
             print(f"  ❌ 缺产物 {s}"); bad += 1; continue
         data = s.read_bytes()
-        for dest in (kit / ship_name, coc / ship_name):
+        targets = [kit / ship_name] if ship_name in KIT_ONLY else [kit / ship_name, coc / ship_name]
+        for dest in targets:
             if check_only:
                 if not dest.is_file() or dest.read_bytes() != data:
                     print(f"  ❌ 不一致/缺失 {dest.relative_to(config.REPO)}"); bad += 1
             else:
                 dest.write_bytes(data)
-        if check_only:
+        if check_only or ship_name in KIT_ONLY:
             continue
         rel = str((coc / ship_name).relative_to(config.REPO / "apps/Cocos/assets"))
         meta_path = coc / (ship_name + ".meta")

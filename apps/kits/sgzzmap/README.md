@@ -22,8 +22,8 @@
 
 | 面 | 版本 | 内容 | 状态 |
 |---|---|---|---|
-| `hexmap` | 1/1 | cell key、六邻与环序、cube 距离、等距投影、6 档 LOD + 滞回、地形内容、长程邻接校验 | ✅ P1 |
-| `territory` | — | 19 态 GRID_STATE、连地判定、占领结算 | ⏳ P2 |
+| `hexmap` | 1/1 | cell key、六邻与环序、cube 距离、等距投影、6 档 LOD + 滞回、chunk 矩形、地形内容与解码器、长程邻接校验 | ✅ P1 |
+| `territory` | 1/1 | 19 态 GRID_STATE、关系态推导、连地判定、占领 / 弃地结算 | ✅ P2 |
 | `march` | — | 转折点路径、插值、结算 | ⏳ P4 |
 | `chunk` | — | 鸟瞰分块摘要 | ⏳ P5 |
 | `alliance` | — | 最小同盟 | ⏳ P3 |
@@ -53,7 +53,7 @@
 | `plate-lod4/5.png` + `.info.json` | 远档世界底图（已 warp 进等距世界空间）+ 世界包围盒元数据 |
 | `atlas-lod0..3.png` + `.info.json` | 近档地块贴片图集（2:1 格，菱形四边中点取 UV）+ 逐格来源 |
 | `minimap.png` / `minimap-mask.png` | 缩略图与菱形蒙版 |
-| `links.json` | 长程邻接（关隘/渡口）。**可以不存在** = 本图没有长程链接，⛔ 不是错误 |
+| （长程邻接） | 关隘/渡口表。v1 为空 = 本图没有长程链接，⛔ 不是错误 |
 
 当前内容包 `zhongyuan`（中原）：陆 68.9% / 海 9.7% / 图外 21.4%，**可玩陆地 1,549,931 格**。
 陆内 平原 55.9%、森林 14.9%、丘陵 12.1%、山地 8.0%、水域 6.1%、湿地 2.9%。
@@ -63,22 +63,56 @@
 区域特写。因此世界轮廓与郡分区只能取自 Z09，陆内地形按 seed 程序化铺设。详见
 `tools/sgzzmap-maps/README.md`。
 
-## 四、加载约定
+## 四、加载约定（⚠ 这里有一条硬边界）
 
-- 服务端 `content/terrain.ts` / `content/links.ts`：**⛔ 无导入期副作用**，首次调用才读盘校验；
-  地形与区无关，缓存按**进程**一份（约 2.25 MB RSS 常量）。
-- `sha256` 闸在服务端（shared 零依赖、没有 crypto）；**形状**闸在 shared 的 `loadSgzzTerrain`，
-  两端跑同一个校验器。
+**kit 服务端代码 ⛔ 不得 import `node:*`**（`apps/server/test/kit-import-boundary.test.ts` 规则 ①：
+裸说明符只允许 `@game/shared*`）。mmo 的灰盒内容包因同一条规则用 TS 字面量，我们沿用：
+
+- 地形以 **shared TS 模块** `apps/shared/src/kits/sgzzmap/content/terrain.data.ts` 进两端
+  （varint-RLE + base64，约 254 KB；由 `tools/sgzzmap-maps/emit-shared-terrain.py` 生成，⛔ 勿手改）。
+  shared 零依赖 ⇒ 没有 `atob`/`Buffer`/`zlib`，解码器 `sgzzDecodeBase64` / `sgzzDecodeRle` 自带。
+- `data/maps/<id>/terrain.bytes` 仍是**权威产物**，只留在 kit 数据目录（⛔ 不再多存一份二进制到
+  Cocos 运行时）；一致性由 `sgzzmap-content.test.ts` 用 `sgzzTerrainToBytes` 逐字节 + sha256 钉住。
+- `content/terrain.ts` / `content/links.ts`：**⛔ 无导入期副作用**，首次调用才解码；地形与区无关，
+  缓存按**进程**一份（约 2.25 MB RSS 常量）。
 - 取地形用展平 `Uint8Array` 的 O(1) 读。⛔ 不要照抄 slg 的 `terrainAt`（逐格线扫矩形表），
   1500² 格上跑不动。
 
-## 五、进度
+## 五、RPC 域 `sgzzmap`（contractVersion 1）
+
+| 路由 | 模式 | 说明 |
+|---|---|---|
+| `sgzzmap.view` | natural-write | 近景视窗；一次最多 4 chunk = 400 格 |
+| `sgzzmap.tile` | query | 单格详情 |
+| `sgzzmap.occupy` | idempotent-write | 连地闸 + 稀疏插入竞争重读 |
+| `sgzzmap.abandon` | idempotent-write | 只有地主能弃 |
+
+响应体积：框架硬上限 64 KB、幂等写结果上限 32 KB。`view` 把 uid / 同盟折叠进
+`owners` / `alliances` 字典，地块行只带下标 ⇒ 400 格也稳在 28 KB 以内。
+⚠ 改 `domains/sgzzmap.ts` 的字节必须**同 commit** 抬 `contractVersion`，否则 codegen 拒绝生成。
+
+### 占领闸
+
+```
+A. 地形不可通行 → SGZZMAP_IMPASSABLE（先于一切）
+B. 邻居集 = 六邻 ∪ 长程邻接，裁边界、去重、按 cell 升序（= 锁序，⛔ 否则并发必死锁）
+C. 目标 + 邻居一次 FOR UPDATE；再锁 holding
+D. 零地块 + 出生区 + 目标无主 → 放行；⛔ 其余一律要 SGZZ_COMMON_CONNECT_STATE 里的邻居
+E. tile 写 + holding ± + log(revision++) + receipt，同一事务
+```
+
+⚠ **友盟已落定的地⛔不连地，只有它正在攻占的才连** —— 这条不对称照搬原作，有专门用例。
+
+## 六、进度
 
 - ✅ **P0** 素材管线（`tools/sgzzmap-maps/`）：机检闸 `verify-redraw.py` 全绿，人工 `--overlay` 已目检。
-- ✅ **P1** kit 骨架 + `hexmap` 面 + 冻结内容：16 条用例绿。
-- ⏳ P2 SQL + 占领 + `territory` 面 + RPC 域 ／ P3 同盟 ／ P4 行军 + worker ／ P5 鸟瞰 + 缩略图 ／ P6 客户端页。
+- ✅ **P1** kit 骨架 + `hexmap` 面 + 冻结内容。
+- ✅ **P2** SQL + 占领 / 弃地 + `territory` 面 + RPC 域：共 31 条 sgzzmap 用例绿
+  （hex 11 / content 7 / territory 8 / service 8 + 向量闸 6 条全绿）。
+  ⏳ 真 SQL 的 int 用例（并发占同一邻环）待本地起 MySQL 后补。
+- ⏳ P3 同盟 ／ P4 行军 + worker ／ P5 鸟瞰 + 缩略图 ／ P6 客户端页。
 
-## 六、运维
+## 七、运维
 
 重跑内容包：见 `tools/sgzzmap-maps/README.md`，末步 `install-to-kit.py <mapId>` 装入双份并铸 `.meta`；
 `install-to-kit.py <mapId> --check` 只校验不写。

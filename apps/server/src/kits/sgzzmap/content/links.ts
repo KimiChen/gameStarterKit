@@ -1,33 +1,23 @@
 /**
- * 长程邻接（关隘 / 渡口）的服务端加载器。同样 ⛔ 无导入期副作用。
- * 内容文件可以不存在——那就是「本图没有长程链接」，⛔ 不是错误。
+ * 长程邻接（关隘 / 渡口）。同样 ⛔ 无 node:*、无导入期副作用。
+ * v1 内容包没有长程链接 —— 这是「本图没有」，⛔ 不是错误。
+ * 将来要加就往 shared 的 links.data.ts 里加一张 TS 字面量表，走 validateSgzzLinks 过闸。
  */
-import { existsSync, readFileSync } from "node:fs";
-
-import {
-    sgzzLinksIndex, validateSgzzLinks, type ISgzzLinkTable,
-} from "@game/shared/kits/sgzzmap/api/hexmap/index";
+import { sgzzLinksIndex, validateSgzzLinks, type ISgzzLinkTable } from "@game/shared/kits/sgzzmap/api/hexmap/index";
 
 import { SGZZMAP_DEFAULT_MAP_ID } from "./terrain";
 
-const EMPTY: ReadonlyMap<number, readonly number[]> = new Map();
+const EMPTY_TABLE: ISgzzLinkTable = { schemaVersion: 1, mapId: SGZZMAP_DEFAULT_MAP_ID, links: [] };
 
-let cache: Map<string, ReadonlyMap<number, readonly number[]>> | null = null;
+let cache: ReadonlyMap<number, readonly number[]> | null = null;
 
 export function linksOf(mapId: string = SGZZMAP_DEFAULT_MAP_ID): ReadonlyMap<number, readonly number[]> {
-    cache ??= new Map();
-    const hit = cache.get(mapId);
-    if (hit) return hit;
-
-    const file = new URL(`../../../../../kits/sgzzmap/data/maps/${mapId}/links.json`, import.meta.url);
-    let index = EMPTY;
-    if (existsSync(file)) {
-        const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
-        if (!validateSgzzLinks(parsed)) throw new Error(`SGZZMAP links.json 不合法：${mapId}`);
-        index = sgzzLinksIndex(parsed as ISgzzLinkTable);
+    if (mapId !== SGZZMAP_DEFAULT_MAP_ID) throw new Error(`SGZZMAP 没有这张图：${mapId}`);
+    if (!cache) {
+        if (!validateSgzzLinks(EMPTY_TABLE)) throw new Error("SGZZMAP links 表不合法");
+        cache = sgzzLinksIndex(EMPTY_TABLE);
     }
-    cache.set(mapId, index);
-    return index;
+    return cache;
 }
 
 export function resetSgzzLinksCache(): void {

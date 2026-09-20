@@ -3,9 +3,48 @@
   "id": "sgzzmap",
   "description": "三战式大世界地基：1500×1500 odd-q 六边形稀疏地块、邻接占领、转折点行军、两档 AOI 与最小同盟",
   "api": {
-    "hexmap": { "version": 1, "minSupported": 1 }
+    "hexmap": {
+      "version": 1,
+      "minSupported": 1
+    },
+    "territory": {
+      "version": 1,
+      "minSupported": 1
+    }
+  },
+  "domains": [
+    "sgzzmap"
+  ],
+  "sql": {
+    "files": [
+      "sql/001-grid.sql"
+    ],
+    "tables": [
+      {
+        "name": "k_sgzzmap_revision",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_sgzzmap_tile",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_sgzzmap_holding",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_sgzzmap_receipt",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_sgzzmap_log",
+        "zone": "per-zone"
+      }
+    ]
   },
   "category": "extra",
-  "docs": ["apps/kits/sgzzmap/README.md"],
+  "docs": [
+    "apps/kits/sgzzmap/README.md"
+  ],
   "resident": false
 }

@@ -14,6 +14,7 @@ import { validateMmoSocialPartyLocateReq, validateMmoSocialPartyLocateRes, type 
 import { validatePartyAcceptReq, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyLeaveReq, validatePartyLeaveRes, validatePartySeqRes, validatePartyTransferLeaderReq, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
+import { validateSgzzAbandonReq, validateSgzzAbandonRes, validateSgzzOccupyReq, validateSgzzOccupyRes, validateSgzzTileReq, validateSgzzTileRes, validateSgzzViewReq, validateSgzzViewRes, type ISgzzAbandonReq, type ISgzzAbandonRes, type ISgzzOccupyReq, type ISgzzOccupyRes, type ISgzzTileReq, type ISgzzTileRes, type ISgzzViewReq, type ISgzzViewRes } from "./domains/sgzzmap";
 import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
 import { validateSlgMapTilesReq, validateSlgMapTilesRes, validateSlgMarchDispatchReq, validateSlgMarchDispatchRes, validateSlgMarchRecallReq, validateSlgMarchRecallRes, validateSlgTileCaptureReq, validateSlgTileCaptureRes, type ISlgMapTilesReq, type ISlgMapTilesRes, type ISlgMarchDispatchReq, type ISlgMarchDispatchRes, type ISlgMarchRecallReq, type ISlgMarchRecallRes, type ISlgTileCaptureReq, type ISlgTileCaptureRes } from "./domains/slg";
 import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, validateSnakeCosmeticSnapshotRes, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq, type ISnakeCosmeticSnapshotRes } from "./domains/snakeCosmetic";
@@ -32,6 +33,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "party",
     "redeem",
     "room",
+    "sgzzmap",
     "shop",
     "slg",
     "snakeCosmetic",
@@ -68,6 +70,10 @@ export interface LobbyRpcMap {
     "redeem.claim": { req: IRedeemClaimReq; res: IRedeemClaimRes };
     "room.prepareCreate": { req: IRoomPrepareCreateReq; res: IRoomPrepareCreateRes };
     "room.resolve": { req: IRoomResolveReq; res: IRoomResolveRes };
+    "sgzzmap.view": { req: ISgzzViewReq; res: ISgzzViewRes };
+    "sgzzmap.tile": { req: ISgzzTileReq; res: ISgzzTileRes };
+    "sgzzmap.occupy": { req: ISgzzOccupyReq; res: ISgzzOccupyRes };
+    "sgzzmap.abandon": { req: ISgzzAbandonReq; res: ISgzzAbandonRes };
     "shop.purchase": { req: IShopPurchaseReq; res: IPurchaseResult };
     "shop.queryOp": { req: IShopQueryOpReq; res: IPurchaseResult };
     "slg.mapTiles": { req: ISlgMapTilesReq; res: ISlgMapTilesRes };
@@ -107,6 +113,8 @@ export type LobbyRpcIdemType =
     | "party.transferLeader"
     | "redeem.claim"
     | "room.prepareCreate"
+    | "sgzzmap.occupy"
+    | "sgzzmap.abandon"
     | "shop.purchase"
     | "slg.tileCapture"
     | "slg.marchDispatch"
@@ -117,6 +125,7 @@ export type LobbyRpcIdemType =
 export type LobbyRpcNaturalWriteType =
     | "chat.send"
     | "mail.markRead"
+    | "sgzzmap.view"
     | "slg.mapTiles"
     | "snakeCosmetic.equip"
     | "snakeCosmetic.unlock";
@@ -150,6 +159,10 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "redeem.claim": "idempotent-write",
     "room.prepareCreate": "idempotent-write",
     "room.resolve": "query",
+    "sgzzmap.view": "natural-write",
+    "sgzzmap.tile": "query",
+    "sgzzmap.occupy": "idempotent-write",
+    "sgzzmap.abandon": "idempotent-write",
     "shop.purchase": "idempotent-write",
     "shop.queryOp": "query",
     "slg.mapTiles": "natural-write",
@@ -196,6 +209,10 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "redeem.claim",
     "room.prepareCreate",
     "room.resolve",
+    "sgzzmap.view",
+    "sgzzmap.tile",
+    "sgzzmap.occupy",
+    "sgzzmap.abandon",
     "shop.purchase",
     "shop.queryOp",
     "slg.mapTiles",
@@ -243,6 +260,10 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "redeem.claim": 1,
     "room.prepareCreate": 1,
     "room.resolve": 1,
+    "sgzzmap.view": 1,
+    "sgzzmap.tile": 1,
+    "sgzzmap.occupy": 1,
+    "sgzzmap.abandon": 1,
     "shop.purchase": 1,
     "shop.queryOp": 1,
     "slg.mapTiles": 1,
@@ -272,6 +293,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
+    sgzzmap: { contractVersion: 1, digest: "69a7d6c0f3a4c62505fe222b4cf6633263d6e0d96b769aff5447cc1cc0352eee" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
     slg: { contractVersion: 2, digest: "077ecba95687aa0a4130f51eba2cda7d4a2548e6e347154d3f153fdcc641bca5" },
     snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },
@@ -320,6 +342,10 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "redeem.claim": guardRpcValidator("payload", validateRedeemClaimReq),
     "room.prepareCreate": guardRpcValidator("payload", validatePrepareCreateReq),
     "room.resolve": guardRpcValidator("payload", validateResolveReq),
+    "sgzzmap.view": guardRpcValidator("payload", validateSgzzViewReq),
+    "sgzzmap.tile": guardRpcValidator("payload", validateSgzzTileReq),
+    "sgzzmap.occupy": guardRpcValidator("payload", validateSgzzOccupyReq),
+    "sgzzmap.abandon": guardRpcValidator("payload", validateSgzzAbandonReq),
     "shop.purchase": guardRpcValidator("payload", validateShopPurchaseReq),
     "shop.queryOp": guardRpcValidator("payload", validateShopQueryReq),
     "slg.mapTiles": guardRpcValidator("payload", validateSlgMapTilesReq),
@@ -366,6 +392,10 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "redeem.claim": guardRpcValidator("response", validateRedeemClaimRes),
     "room.prepareCreate": guardRpcValidator("response", validatePrepareCreateRes),
     "room.resolve": guardRpcValidator("response", validateResolveRes),
+    "sgzzmap.view": guardRpcValidator("response", validateSgzzViewRes),
+    "sgzzmap.tile": guardRpcValidator("response", validateSgzzTileRes),
+    "sgzzmap.occupy": guardRpcValidator("response", validateSgzzOccupyRes),
+    "sgzzmap.abandon": guardRpcValidator("response", validateSgzzAbandonRes),
     "shop.purchase": guardRpcValidator("response", validatePurchaseResult),
     "shop.queryOp": guardRpcValidator("response", validatePurchaseResult),
     "slg.mapTiles": guardRpcValidator("response", validateSlgMapTilesRes),
@@ -444,6 +474,11 @@ export const RPC_ERR_CODES = [
     "ROOM_QUOTA_EXCEEDED",
     "ROOM_SERVICE_UNAVAILABLE",
     "ROOM_RESULT_UNKNOWN",
+    "SGZZMAP_IMPASSABLE",
+    "SGZZMAP_NOT_ADJACENT",
+    "SGZZMAP_TILE_LIMIT",
+    "SGZZMAP_NOT_OWNED",
+    "SGZZMAP_SETTLEMENT_PENDING",
     "SLG_TILE_NOT_OWNED",
     "SLG_MARCH_LIMIT",
     "SLG_MARCH_NOT_FOUND",

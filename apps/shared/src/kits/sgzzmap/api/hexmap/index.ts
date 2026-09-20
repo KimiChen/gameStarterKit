@@ -436,3 +436,175 @@ export function sgzzLinksIndex(table: ISgzzLinkTable,
     }
     return map;
 }
+
+// ── 近景视窗矩形（chunk 单位） ────────────────────────────────────────────────
+
+/** 单次 view 请求最多几个 chunk。10×10 一块 ⇒ 上限 4 块 = 400 格，够一次视窗且压得住响应体积。 */
+export const SGZZ_MAX_QUERY_CHUNKS = 4;
+export const SGZZ_CHUNK_ROWS = Math.ceil(SGZZ_MAP_ROWS / SGZZ_CHUNK_TILES);
+export const SGZZ_CHUNK_COLS = Math.ceil(SGZZ_MAP_COLS / SGZZ_CHUNK_TILES);
+
+/** 两轴均含端点。chunk 与 grid 共用形状，靠 API 名字区分单位。 */
+export interface ISgzzRect {
+    readonly minRow: number; readonly minCol: number;
+    readonly maxRow: number; readonly maxCol: number;
+}
+
+export function sgzzChunkKey(chunkRow: number, chunkCol: number): number {
+    if (!Number.isInteger(chunkRow) || !Number.isInteger(chunkCol)
+        || chunkRow < 0 || chunkCol < 0 || chunkRow >= SGZZ_CHUNK_ROWS || chunkCol >= SGZZ_CHUNK_COLS) {
+        throw new RangeError("SGZZ chunk outside map");
+    }
+    return chunkRow * SGZZ_CHUNK_COLS + chunkCol;
+}
+export function sgzzRectArea(rect: ISgzzRect): number {
+    return (rect.maxRow - rect.minRow + 1) * (rect.maxCol - rect.minCol + 1);
+}
+export function validateSgzzChunkRect(value: unknown, path = "payload.rect",
+                                      maxChunks = SGZZ_MAX_QUERY_CHUNKS): ISgzzRect {
+    const r = requireRecord(value, path);
+    assertExactKeys(r, ["minRow", "minCol", "maxRow", "maxCol"], [], path);
+    const rect: ISgzzRect = {
+        minRow: finiteInteger(r.minRow, `${path}.minRow`, 0, SGZZ_CHUNK_ROWS - 1),
+        minCol: finiteInteger(r.minCol, `${path}.minCol`, 0, SGZZ_CHUNK_COLS - 1),
+        maxRow: finiteInteger(r.maxRow, `${path}.maxRow`, 0, SGZZ_CHUNK_ROWS - 1),
+        maxCol: finiteInteger(r.maxCol, `${path}.maxCol`, 0, SGZZ_CHUNK_COLS - 1),
+    };
+    if (rect.minRow > rect.maxRow || rect.minCol > rect.maxCol || sgzzRectArea(rect) > maxChunks) {
+        throw new WireValidationError("SGZZMAP_CHUNK_RECT", path);
+    }
+    return rect;
+}
+/** chunk 矩形 → 格矩形（含端点，已按地图边界收口）。 */
+export function sgzzGridRectForChunkRect(rect: ISgzzRect,
+                                         rows = SGZZ_MAP_ROWS, cols = SGZZ_MAP_COLS): ISgzzRect {
+    return {
+        minRow: rect.minRow * SGZZ_CHUNK_TILES,
+        minCol: rect.minCol * SGZZ_CHUNK_TILES,
+        maxRow: Math.min(rows - 1, (rect.maxRow + 1) * SGZZ_CHUNK_TILES - 1),
+        maxCol: Math.min(cols - 1, (rect.maxCol + 1) * SGZZ_CHUNK_TILES - 1),
+    };
+}
+/** 格矩形 → 覆盖它的 chunk 矩形。 */
+export function sgzzChunkRectForGridRect(rect: ISgzzRect,
+                                         rows = SGZZ_MAP_ROWS, cols = SGZZ_MAP_COLS): ISgzzRect {
+    const clamp = (v: number, hi: number) => Math.floor(Math.max(0, Math.min(hi - 1, v)) / SGZZ_CHUNK_TILES);
+    return {
+        minRow: clamp(rect.minRow, rows), minCol: clamp(rect.minCol, cols),
+        maxRow: clamp(rect.maxRow, rows), maxCol: clamp(rect.maxCol, cols),
+    };
+}
+
+// ── 冻结内容的零依赖解码（base64 + varint-RLE） ──────────────────────────────
+//
+// ⚠ 为什么要自己写：kit 服务端代码 ⛔ 不得 import node:*（kit-import-boundary 规则 ①），
+// 所以地形只能以 shared TS 模块的形态进来；而 shared 又零依赖，没有 atob / Buffer / zlib。
+
+const SGZZ_B64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+let sgzzB64Lookup: Int16Array | null = null;
+function b64Table(): Int16Array {
+    if (sgzzB64Lookup) return sgzzB64Lookup;
+    const table = new Int16Array(128).fill(-1);
+    for (let i = 0; i < SGZZ_B64_ALPHABET.length; i += 1) {
+        table[SGZZ_B64_ALPHABET.charCodeAt(i)] = i;
+    }
+    sgzzB64Lookup = table;
+    return table;
+}
+
+/** base64 → 字节。fail-closed：出现字母表外的字符直接抛。 */
+export function sgzzDecodeBase64(text: string): Uint8Array {
+    const table = b64Table();
+    let end = text.length;
+    while (end > 0 && text.charCodeAt(end - 1) === 61) end -= 1;   // 61 = '='
+    const out = new Uint8Array(Math.floor((end * 3) / 4));
+    let acc = 0, bits = 0, o = 0;
+    for (let i = 0; i < end; i += 1) {
+        const code = text.charCodeAt(i);
+        const v = code < 128 ? table[code] : -1;
+        if (v < 0) throw new WireValidationError("SGZZMAP_TERRAIN_B64", `terrain.rle[${i}]`);
+        acc = (acc << 6) | v;
+        bits += 6;
+        if (bits >= 8) {
+            bits -= 8;
+            out[o] = (acc >> bits) & 0xff;
+            o += 1;
+        }
+    }
+    return out.subarray(0, o);
+}
+
+/** varint-RLE → 稠密字节。长度必须恰好填满 rows×cols，多一格少一格都抛。 */
+export function sgzzDecodeRle(payload: Uint8Array, rows: number, cols: number): Uint8Array {
+    const total = rows * cols;
+    const out = new Uint8Array(total);
+    let i = 0, o = 0;
+    while (i < payload.length) {
+        const value = payload[i];
+        i += 1;
+        let count = 0, shift = 0;
+        for (;;) {
+            if (i >= payload.length || shift > 28) {
+                throw new WireValidationError("SGZZMAP_TERRAIN_RLE", `terrain.rle[${i}]`);
+            }
+            const b = payload[i];
+            i += 1;
+            count |= (b & 0x7f) << shift;
+            if ((b & 0x80) === 0) break;
+            shift += 7;
+        }
+        if (count <= 0 || o + count > total) {
+            throw new WireValidationError("SGZZMAP_TERRAIN_RLE", `terrain.rle[${i}]`);
+        }
+        out.fill(value, o, o + count);
+        o += count;
+    }
+    if (o !== total) throw new WireValidationError("SGZZMAP_TERRAIN_RLE", "terrain.rle");
+    return out;
+}
+
+export interface ISgzzTerrainSource {
+    readonly mapId: string;
+    readonly rows: number;
+    readonly cols: number;
+    readonly palette: readonly ISgzzTerrainClass[];
+    readonly rle: string;
+}
+
+/** shared 内容模块 → ISgzzTerrain。与 loadSgzzTerrain 共用同一套 palette / passable 语义。 */
+export function decodeSgzzTerrainRle(source: ISgzzTerrainSource): ISgzzTerrain {
+    const { mapId, rows, cols, palette } = source;
+    if (!mapId || rows < 1 || cols < 1 || rows > SGZZ_MAP_ROWS || cols > SGZZ_MAP_COLS
+        || palette.length === 0 || palette.length > SGZZ_TERRAIN_MAX_CLASSES) {
+        throw new WireValidationError("SGZZMAP_TERRAIN_SOURCE", "terrain.source");
+    }
+    const cells = sgzzDecodeRle(sgzzDecodeBase64(source.rle), rows, cols);
+    const passable = new Uint8Array(SGZZ_TERRAIN_MAX_CLASSES);
+    const known = new Uint8Array(SGZZ_TERRAIN_MAX_CLASSES);
+    const seen = new Set<number>();
+    for (const cls of palette) {
+        if (cls.id < 0 || cls.id >= SGZZ_TERRAIN_MAX_CLASSES || seen.has(cls.id)) {
+            throw new WireValidationError("SGZZMAP_TERRAIN_PALETTE", "terrain.source.palette");
+        }
+        seen.add(cls.id);
+        known[cls.id] = 1;
+        passable[cls.id] = cls.passable ? 1 : 0;
+    }
+    for (let i = 0; i < cells.length; i += 1) {
+        if (known[cells[i]] === 0) {
+            throw new WireValidationError("SGZZMAP_TERRAIN_ID", `terrain.cells[${i}]`);
+        }
+    }
+    return { mapId, maxRow: rows, maxCol: cols, cells, palette, passable };
+}
+
+/** 把 ISgzzTerrain 还原回权威 terrain.bytes 的字节形态（含 8 字节大端头）。用例据此逐字节比对。 */
+export function sgzzTerrainToBytes(t: ISgzzTerrain): Uint8Array {
+    const out = new Uint8Array(SGZZ_TERRAIN_HEADER_BYTES + t.cells.length);
+    out[0] = (t.maxRow >>> 24) & 0xff; out[1] = (t.maxRow >>> 16) & 0xff;
+    out[2] = (t.maxRow >>> 8) & 0xff; out[3] = t.maxRow & 0xff;
+    out[4] = (t.maxCol >>> 24) & 0xff; out[5] = (t.maxCol >>> 16) & 0xff;
+    out[6] = (t.maxCol >>> 8) & 0xff; out[7] = t.maxCol & 0xff;
+    out.set(t.cells, SGZZ_TERRAIN_HEADER_BYTES);
+    return out;
+}

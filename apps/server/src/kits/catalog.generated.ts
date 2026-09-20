@@ -136,12 +136,23 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         version: null,
         api: {
             hexmap: { version: 1, minSupported: 1 },
+            territory: { version: 1, minSupported: 1 },
         },
         modes: [],
-        domains: [],
+        domains: [
+            "sgzzmap",
+        ],
         effects: [],
-        sqlFiles: [],
-        sqlTables: [],
+        sqlFiles: [
+            "sql/001-grid.sql",
+        ],
+        sqlTables: [
+            { name: "k_sgzzmap_revision", zone: "per-zone" },
+            { name: "k_sgzzmap_tile", zone: "per-zone" },
+            { name: "k_sgzzmap_holding", zone: "per-zone" },
+            { name: "k_sgzzmap_receipt", zone: "per-zone" },
+            { name: "k_sgzzmap_log", zone: "per-zone" },
+        ],
         userKeys: [],
         workers: [],
         contributions: {},
