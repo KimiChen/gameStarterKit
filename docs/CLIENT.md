@@ -104,7 +104,9 @@ apps/Cocos/
   预览快照会给每个节点打上组件身份；导出写成 PSD 原生 layer ID + 图层名
   `label [ui:key#role]`（octane-lite 同款），并带上 UniFlex 布局框。`uniflex-package`
   按这些身份还原 `PopupFrame` / `ConfirmButton` 等 catalog 组件，而不是摊成 view；
-  PSD 里换图、改大小或位置只覆盖视觉，不改组件结构。
+  PSD 里换图、改大小、位置或文本内容只覆盖视觉，不改组件结构。文本回写只落在
+  纯字面量、`expr ?? '兜底'` 的兜底字面量或组件已声明 prop 的新增插入；无兜底纯绑定
+  （如 `label={p.confirmText}`）跳过并记入导入包 IMPORT.md 的 Text value write-back 段。
   设计师可编辑 PSD 的落点是 `apps/art/uniflex/<Page>/screen.psd`（建议 Git LFS；本机未装则按二进制入库）。
   `ui:art-export` 从原稿功能页导出；`ui:art-import` / `ui:art-sync` 按身份 overlay 回去。
   当前 catalog `applyTarget` 为 `restored`，只写 `*Restored`，不覆盖原稿；`ui:art-check` 是只读新鲜度闸。
