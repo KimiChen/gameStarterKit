@@ -100,8 +100,8 @@ test("backpack page PSD links shared UniFlex components instead of inlining them
     assert.equal(linked.get(cardId)?.childDocumentID, "");
     assert.equal(linked.has(slotId), false);
     assert.equal(placed.some((item) => item.id === slotId), false);
-    assert.equal(linked.get(componentGuid("PanelTab"))?.relativePath,
-        "../components/PanelTab/component.psd");
+    assert.equal(linked.get(componentGuid("Tab"))?.relativePath,
+        "../components/Tab/component.psd");
     assert.equal(linked.get(componentGuid("BackpackQuantityControl"))?.relativePath,
         "../components/BackpackQuantityControl/component.psd");
     assert.equal(linked.has(componentGuid("QuantityControl")), false);
@@ -177,9 +177,9 @@ test("shop and backpack component PSDs share the same ItemSlot file", async () =
     const originalShop = await readFile(
         resolve(root, "apps/client/src/ui-uniflex/modules/shop/ShopGetItem/ShopGetItem.tsx"), "utf8");
     assert.match(shopRestored, /from '\.\.\/\.\.\/\.\.\/restored\/modules\/shop\/ShopGetItem\/ShopGetItemPanel'/);
-    assert.match(shopPanel, /from '\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
+    assert.match(shopPanel, /from '\.\.\/\.\.\/\.\.\/gamecomponents\/item\/ItemSlot'/);
     assert.match(heroRestored, /from '\.\.\/\.\.\/\.\.\/restored\/modules\/hero\/HeroScreen\/HeroBondsPanel'/);
-    assert.match(heroRequired, /from '\.\.\/\.\.\/\.\.\/components\/item\/ItemSlot'/);
+    assert.match(heroRequired, /from '\.\.\/\.\.\/\.\.\/gamecomponents\/item\/ItemSlot'/);
     assert.match(originalShop, /from '\.\/ShopGetItemPanel'/);
     assert.doesNotMatch(originalShop, /restored/);
 });
