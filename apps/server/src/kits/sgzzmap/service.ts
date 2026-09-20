@@ -7,7 +7,11 @@ import {
     type ISgzzTile, type ISgzzViewer,
 } from "@game/shared/kits/sgzzmap/api/territory/index";
 import {
-    validateSgzzAbandonRes, validateSgzzOccupyRes, validateSgzzTileRes, validateSgzzViewRes,
+    SgzzAllianceRole, sgzzAllianceRefusal, type ISgzzAlliance, type ISgzzMembership,
+} from "@game/shared/kits/sgzzmap/api/alliance/index";
+import {
+    validateSgzzAbandonRes, validateSgzzAllianceRes, validateSgzzOccupyRes, validateSgzzTileRes,
+    validateSgzzViewRes, type ISgzzAllianceReq, type ISgzzAllianceRes,
     type ISgzzAbandonRes, type ISgzzOccupyRes, type ISgzzOwnerRef, type ISgzzTileRef,
     type ISgzzTileRes, type ISgzzViewerWire, type ISgzzViewRes,
 } from "@game/shared/protocol/lobbyRpc/domains/sgzzmap";
@@ -41,7 +45,7 @@ const DEFAULT_DEPS: SgzzApiDeps = {
 };
 
 export function sgzzOperation(
-    uid: string, sId: number, operation: "occupy" | "abandon", clientReqId: string,
+    uid: string, sId: number, operation: "occupy" | "abandon" | "alliance", clientReqId: string,
     binding: { readonly hash: string; readonly contractVersion: number } | undefined,
 ): SgzzOperation {
     if (!binding) throw new Error("SGZZMAP 幂等写缺少框架 operation binding");
@@ -78,9 +82,23 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
         }));
     }
 
-    function viewerOf(holding: SgzzHolding): ISgzzViewer {
-        // P3 接同盟后 leaderUid / friendAids 由同盟表填；v1 无外交 ⇒ friendAids 恒空。
-        return { uid: holding.uid, aid: holding.allianceId, leaderUid: "", friendAids: [] };
+    /**
+     * 观察者上下文。membership 是同盟归属的**权威**，holding.alliance_id 只是缓存。
+     * ⚠ friendAids 恒空：v1 没有外交系统，⛔ 不要在这里凭空造友盟。
+     */
+    async function readViewer(ctx: WorldTx, holding: SgzzHolding):
+        Promise<{ viewer: ISgzzViewer; membership: ISgzzMembership | null; alliance: ISgzzAlliance | null }> {
+        const membership = await ctx.repo.readMembershipForUpdate(holding.uid);
+        const alliance = membership ? await ctx.repo.readAllianceForUpdate(membership.allianceId) : null;
+        return {
+            viewer: {
+                uid: holding.uid,
+                aid: membership?.allianceId ?? "",
+                leaderUid: alliance?.leaderUid ?? "",
+                friendAids: [],
+            },
+            membership, alliance,
+        };
     }
     function viewerWire(v: ISgzzViewer): ISgzzViewerWire {
         return { uid: v.uid, aid: v.aid, leaderUid: v.leaderUid, friendAids: [...v.friendAids] };
@@ -130,7 +148,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
         assertIdentity(uid);
         return world(sId, async (ctx) => {
             const holding = await ctx.repo.readHoldingForUpdate(uid);
-            const viewer = viewerOf(holding);
+            const { viewer } = await readViewer(ctx, holding);
             const tiles = await ctx.repo.readTilesInRect(rect);
 
             const alliances: string[] = [];
@@ -171,16 +189,14 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
         assertIdentity(uid);
         return world(sId, async (ctx) => {
             const holding = await ctx.repo.readHoldingForUpdate(uid);
-            return validateSgzzTileRes({
-                tile: await ctx.repo.readTile(cell),
-                viewer: viewerWire(viewerOf(holding)),
-            });
+            const { viewer } = await readViewer(ctx, holding);
+            return validateSgzzTileRes({ tile: await ctx.repo.readTile(cell), viewer: viewerWire(viewer) });
         });
     }
 
     async function occupy(uid: string, sId: number, cell: number, op: SgzzOperation): Promise<ISgzzOccupyRes> {
         return mutate(uid, sId, "occupy", op, validateSgzzOccupyRes, async (ctx, holding) => {
-            const viewer = viewerOf(holding);
+            const { viewer } = await readViewer(ctx, holding);
             const { row, col } = sgzzDecodeCell(cell);
             const terrain = terrainOf(deps.mapId);
             const neighbours = neighbourCells(cell);
@@ -219,7 +235,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
 
     async function abandon(uid: string, sId: number, cell: number, op: SgzzOperation): Promise<ISgzzAbandonRes> {
         return mutate(uid, sId, "abandon", op, validateSgzzAbandonRes, async (ctx, holding) => {
-            const viewer = viewerOf(holding);
+            const { viewer } = await readViewer(ctx, holding);
             const locked = await ctx.repo.readTilesForUpdate([cell]);
             const target = locked.get(cell) ?? sgzzEmptyTile(cell);
             if (target.ownerUid !== uid) throw new RpcFault("SGZZMAP_NOT_OWNED", "只能放弃自己的领地");
@@ -232,7 +248,80 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
         });
     }
 
-    return { view, tile, occupy, abandon, neighbourCells };
+    /**
+     * 建盟 / 加入 / 退出。三个动作锁的是同一组表（member → alliance → tile → holding），
+     * 走同一条路由、同一种回执。
+     * ⚠ alliance_id 取「建盟那一刻的 revision」：revision 行已被锁住、每区唯一且单调，
+     * ⛔ 不用随机数（kit 代码没有 node:crypto）也⛔不用 AUTO_INCREMENT（复合 PK 放不下）。
+     */
+    async function alliance(uid: string, sId: number, req: ISgzzAllianceReq,
+                            op: SgzzOperation): Promise<ISgzzAllianceRes> {
+        return mutate(uid, sId, "alliance", op, validateSgzzAllianceRes, async (ctx, holding) => {
+            const { membership, alliance: current } = await readViewer(ctx, holding);
+            const target = req.act === "join"
+                ? await ctx.repo.readAllianceForUpdate(req.allianceId ?? "")
+                : current;
+
+            const refusal = sgzzAllianceRefusal({
+                act: req.act,
+                currentAid: membership?.allianceId ?? "",
+                currentRole: membership?.role ?? SgzzAllianceRole.MEMBER,
+                target,
+            });
+            if (refusal === "SGZZMAP_ALLIANCE_EXISTS") throw new RpcFault(refusal, "已经在同盟里了");
+            if (refusal === "SGZZMAP_ALLIANCE_NOT_FOUND") throw new RpcFault(refusal, "没有这个同盟");
+            if (refusal === "SGZZMAP_ALLIANCE_FULL") throw new RpcFault(refusal, "同盟人数已满");
+            if (refusal === "SGZZMAP_ALLIANCE_NOT_MEMBER") throw new RpcFault(refusal, "不在任何同盟里");
+            if (refusal === "SGZZMAP_ALLIANCE_LEADER_BUSY") {
+                throw new RpcFault(refusal, "盟主要等盟里只剩自己才能退");
+            }
+
+            if (req.act === "create") {
+                const seq = await ctx.repo.appendLog("alliance", "create", { uid, tag: req.tag }, false);
+                const created: ISgzzAlliance = {
+                    allianceId: `a${seq}`, name: req.name ?? "", tag: req.tag ?? "",
+                    leaderUid: uid, members: 1,
+                };
+                // tag 唯一键：撞了就是标签被占，⛔ 不先查再插（TOCTOU）
+                if (!await ctx.repo.insertAlliance(created)) {
+                    throw new RpcFault("SGZZMAP_ALLIANCE_TAG_TAKEN", "这个盟标已被占用");
+                }
+                const m: ISgzzMembership = { uid, allianceId: created.allianceId, role: SgzzAllianceRole.LEADER };
+                await ctx.repo.insertMembership(m);
+                await ctx.repo.retagTiles(uid, created.allianceId);
+                await ctx.repo.upsertHolding({ ...holding, allianceId: created.allianceId });
+                return validateSgzzAllianceRes({ membership: m, alliance: created });
+            }
+
+            if (req.act === "join") {
+                if (!target) throw new RpcFault("SGZZMAP_ALLIANCE_NOT_FOUND", "没有这个同盟");
+                const joined: ISgzzAlliance = { ...target, members: target.members + 1 };
+                const m: ISgzzMembership = { uid, allianceId: target.allianceId, role: SgzzAllianceRole.MEMBER };
+                await ctx.repo.insertMembership(m);
+                await ctx.repo.updateAllianceMembers(target.allianceId, joined.members);
+                await ctx.repo.retagTiles(uid, target.allianceId);
+                await ctx.repo.upsertHolding({ ...holding, allianceId: target.allianceId });
+                await ctx.repo.appendLog("alliance", "join", { uid, allianceId: target.allianceId }, false);
+                return validateSgzzAllianceRes({ membership: m, alliance: joined });
+            }
+
+            // leave：盟主只有在只剩自己时才走到这里 ⇒ 该同盟随之解散
+            const aid = membership!.allianceId;
+            await ctx.repo.deleteMembership(uid);
+            await ctx.repo.retagTiles(uid, "");
+            await ctx.repo.upsertHolding({ ...holding, allianceId: "" });
+            if (current && current.members <= 1) {
+                await ctx.repo.deleteAlliance(aid);
+                await ctx.repo.appendLog("alliance", "disband", { allianceId: aid }, true);
+            } else if (current) {
+                await ctx.repo.updateAllianceMembers(aid, current.members - 1);
+                await ctx.repo.appendLog("alliance", "leave", { uid, allianceId: aid }, false);
+            }
+            return validateSgzzAllianceRes({ membership: null, alliance: null });
+        });
+    }
+
+    return { view, tile, occupy, abandon, alliance, neighbourCells };
 }
 
 export const defaultSgzzApi = createSgzzApi();

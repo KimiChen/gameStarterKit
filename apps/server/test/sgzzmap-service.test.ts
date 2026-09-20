@@ -6,6 +6,7 @@ import {
 import { sgzzEmptyTile, type ISgzzTile } from "@game/shared/kits/sgzzmap/api/territory/index";
 import { createSgzzApi, sgzzInSpawnRegion, type SgzzOperation } from "../src/kits/sgzzmap/service";
 import type { SgzzHolding, SgzzReceipt, SgzzRepository } from "../src/kits/sgzzmap/repository";
+import type { ISgzzAlliance, ISgzzMembership } from "@game/shared/kits/sgzzmap/api/alliance/index";
 import { terrainOf } from "../src/kits/sgzzmap/content/terrain";
 import { RpcFault } from "../src/core/errors";
 import type { ISgzzRect } from "@game/shared/kits/sgzzmap/api/hexmap/index";
@@ -23,6 +24,9 @@ function fakeRepo() {
     const holdings = new Map<string, SgzzHolding>();
     const receipts = new Map<string, SgzzReceipt>();
     const log: { entity: string; operation: string; tombstone: boolean }[] = [];
+    const alliances = new Map<string, ISgzzAlliance>();
+    const members = new Map<string, ISgzzMembership>();
+    const retags: { uid: string; aid: string }[] = [];
     const lockOrders: number[][] = [];
     let revision = 0;
     let failNextInsert = false;
@@ -61,9 +65,25 @@ function fakeRepo() {
         async appendLog(entity, operation, _payload, tombstone) {
             revision += 1; log.push({ entity, operation, tombstone }); return revision;
         },
+        async readMembershipForUpdate(uid) { return members.get(uid) ?? null; },
+        async readAllianceForUpdate(aid) { return alliances.get(aid) ?? null; },
+        async insertAlliance(a) {
+            if ([...alliances.values()].some((x) => x.tag === a.tag)) return false;   // uk_tag
+            alliances.set(a.allianceId, a); return true;
+        },
+        async updateAllianceMembers(aid, n) {
+            const a = alliances.get(aid); if (a) alliances.set(aid, { ...a, members: n });
+        },
+        async deleteAlliance(aid) { alliances.delete(aid); },
+        async insertMembership(m) { members.set(m.uid, m); },
+        async deleteMembership(uid) { members.delete(uid); },
+        async retagTiles(uid, aid) {
+            retags.push({ uid, aid });
+            for (const [cell, t] of tiles) if (t.ownerUid === uid) tiles.set(cell, { ...t, ownerAid: aid });
+        },
     };
     return {
-        repo, tiles, holdings, receipts, log, lockOrders,
+        repo, tiles, holdings, receipts, log, lockOrders, alliances, members, retags,
         seed(cell: number, over: Partial<ISgzzTile>) {
             tiles.set(cell, { ...sgzzEmptyTile(cell), durability: 1, ...over });
         },
@@ -234,4 +254,65 @@ test("sgzzmap service: view 折叠 owners/alliances，只回非默认格且按 c
     assert.equal(res.owners[res.tiles[1].owner].alliance, -1, "无盟地主的 alliance 下标是 -1");
     assert.equal(res.viewer.uid, "u1");
     for (const t of res.tiles) assert.ok(t.owner >= 0 || t.capturing >= 0, "⛔ 不得回默认格");
+});
+
+test("sgzzmap service: 建盟 → 入盟 → 退盟，地块 owner_aid 随之改写", async () => {
+    const { cell, neighbour } = spawnPair();
+    const f = fakeRepo(); const api = apiOn(f);
+
+    await api.occupy("u1", 1, cell, op("o1"));
+    const created = await api.alliance("u1", 1,
+        { clientReqId: "c1", act: "create", name: "青州军", tag: "青" }, op("al1"));
+    assert.equal(created.membership?.role, "leader");
+    assert.equal(created.alliance?.members, 1);
+    const aid = created.alliance!.allianceId;
+    assert.match(aid, /^a\d+$/u, "盟 id 由 revision 序列派生");
+    assert.equal(f.tiles.get(cell)?.ownerAid, aid, "建盟后名下地块要改挂盟旗");
+    assert.equal(f.holdings.get("u1")?.allianceId, aid);
+
+    // 第二人入盟后，他占的地对 u1 就是 UNION ⇒ 可连地
+    const joined = await api.alliance("u2", 1, { clientReqId: "c2", act: "join", allianceId: aid }, op("al2"));
+    assert.equal(joined.membership?.role, "member");
+    assert.equal(joined.alliance?.members, 2);
+    await api.occupy("u2", 1, neighbour, op("o2"));
+    assert.equal(f.tiles.get(neighbour)?.ownerAid, aid, "入盟成员新占的地直接带盟旗");
+
+    // 盟主不能先退
+    await assert.rejects(() => api.alliance("u1", 1, { clientReqId: "c3", act: "leave" }, op("al3")),
+        faultCode("SGZZMAP_ALLIANCE_LEADER_BUSY"));
+    // 成员先退：地块摘旗、人数减
+    const left = await api.alliance("u2", 1, { clientReqId: "c4", act: "leave" }, op("al4"));
+    assert.equal(left.membership, null);
+    assert.equal(left.alliance, null);
+    assert.equal(f.tiles.get(neighbour)?.ownerAid, "", "退盟要摘掉地块上的盟旗");
+    assert.equal(f.alliances.get(aid)?.members, 1);
+    // 只剩盟主 ⇒ 可退，同盟解散
+    await api.alliance("u1", 1, { clientReqId: "c5", act: "leave" }, op("al5"));
+    assert.equal(f.alliances.has(aid), false, "最后一人退出后同盟解散");
+    assert.equal(f.log.at(-1)?.tombstone, true, "解散日志必须带 tombstone");
+});
+
+test("sgzzmap service: 盟标唯一 —— 撞 uk_tag 拿 TAG_TAKEN，⛔ 不先查再插", async () => {
+    const f = fakeRepo(); const api = apiOn(f);
+    await api.alliance("u1", 1, { clientReqId: "c1", act: "create", name: "青州军", tag: "青" }, op("al1"));
+    await assert.rejects(
+        () => api.alliance("u2", 1, { clientReqId: "c2", act: "create", name: "另一军", tag: "青" }, op("al2")),
+        faultCode("SGZZMAP_ALLIANCE_TAG_TAKEN"));
+    assert.equal(f.alliances.size, 1);
+});
+
+test("sgzzmap service: 一人一盟 —— 已有盟再建/再入都拒", async () => {
+    const f = fakeRepo(); const api = apiOn(f);
+    const a = await api.alliance("u1", 1, { clientReqId: "c1", act: "create", name: "青州军", tag: "青" }, op("al1"));
+    await assert.rejects(
+        () => api.alliance("u1", 1, { clientReqId: "c2", act: "create", name: "徐州军", tag: "徐" }, op("al2")),
+        faultCode("SGZZMAP_ALLIANCE_EXISTS"));
+    await assert.rejects(
+        () => api.alliance("u1", 1, { clientReqId: "c3", act: "join", allianceId: a.alliance!.allianceId }, op("al3")),
+        faultCode("SGZZMAP_ALLIANCE_EXISTS"));
+    await assert.rejects(
+        () => api.alliance("u9", 1, { clientReqId: "c4", act: "join", allianceId: "a-nope" }, op("al4")),
+        faultCode("SGZZMAP_ALLIANCE_NOT_FOUND"));
+    await assert.rejects(() => api.alliance("u9", 1, { clientReqId: "c5", act: "leave" }, op("al5")),
+        faultCode("SGZZMAP_ALLIANCE_NOT_MEMBER"));
 });

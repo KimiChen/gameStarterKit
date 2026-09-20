@@ -24,4 +24,11 @@ export default {
         request: { clientReqId: "a1", cell },
         response: { cell, heldTiles: 0 },
     },
+    [SgzzmapRpc.Alliance]: {
+        request: { clientReqId: "al1", act: "create", name: "青州军", tag: "青" },
+        response: {
+            membership: { uid: "u1", allianceId: "a1", role: "leader" },
+            alliance: { allianceId: "a1", name: "青州军", tag: "青", leaderUid: "u1", members: 1 },
+        },
+    },
 } satisfies LobbyRpcVectorFile;

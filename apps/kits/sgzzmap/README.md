@@ -26,7 +26,7 @@
 | `territory` | 1/1 | 19 态 GRID_STATE、关系态推导、连地判定、占领 / 弃地结算 | ✅ P2 |
 | `march` | — | 转折点路径、插值、结算 | ⏳ P4 |
 | `chunk` | — | 鸟瞰分块摘要 | ⏳ P5 |
-| `alliance` | — | 最小同盟 | ⏳ P3 |
+| `alliance` | 1/1 | 最小同盟（建盟 / 加入 / 退出，⛔ 无外交、无职位、无仓库） | ✅ P3 |
 
 ### `hexmap` 的三条易错点（都有专门用例钉住）
 
@@ -86,6 +86,7 @@
 | `sgzzmap.tile` | query | 单格详情 |
 | `sgzzmap.occupy` | idempotent-write | 连地闸 + 稀疏插入竞争重读 |
 | `sgzzmap.abandon` | idempotent-write | 只有地主能弃 |
+| `sgzzmap.alliance` | idempotent-write | 单路由 `{act: create/join/leave}`——三者锁同一组表 |
 
 响应体积：框架硬上限 64 KB、幂等写结果上限 32 KB。`view` 把 uid / 同盟折叠进
 `owners` / `alliances` 字典，地块行只带下标 ⇒ 400 格也稳在 28 KB 以内。
@@ -110,7 +111,20 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
 - ✅ **P2** SQL + 占领 / 弃地 + `territory` 面 + RPC 域：35 条 sgzzmap 用例绿
   （hex 11 / content 7 / territory 8 / service 8 + 真栈 int 4）+ 向量闸 6 条全绿；
   `db:bootstrap` 连跑两遍，第二遍新应用 0 个文件。
-- ⏳ P3 同盟 ／ P4 行军 + worker ／ P5 鸟瞰 + 缩略图 ／ P6 客户端页。
+- ✅ **P3** 最小同盟：`alliance` 面 + 路由（contractVersion → 2）+ 两张表；
+  UNION / GANG_MASTER 两态由此可达，真栈 int 用例证明「入盟后同一格立刻可连地」。
+- ⏳ P4 行军 + worker ／ P5 鸟瞰 + 缩略图 ／ P6 客户端页。
+
+### 同盟的三条硬规矩
+
+1. **一人一盟**靠 `PRIMARY KEY (server_id, uid)`，⛔ 不靠应用层查重。
+2. **盟标唯一**靠 `uk_tag`，`INSERT IGNORE` 撞键即 `SGZZMAP_ALLIANCE_TAG_TAKEN`，⛔ 不先查再插（TOCTOU）。
+3. **盟主只有在盟里只剩自己时才能退**（退出即解散）——否则同盟会没有盟主、`GANG_MASTER` 态悬空。
+   ⛔ v1 不做转让也不做踢人。
+
+`alliance_id` 取「建盟那一刻的 revision」：该行已被锁住、每区唯一且单调。
+⛔ 不用随机数（kit 代码没有 `node:crypto`），⛔ 也不用 AUTO_INCREMENT（per-zone 复合 PK 放不下自增列）。
+同盟变更会把该玩家名下地块的 `owner_aid` 一次性改写（受 `SGZZ_MAX_TILES_PER_PLAYER` 封顶）。
 
 ## 七、运维
 

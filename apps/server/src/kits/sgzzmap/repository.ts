@@ -6,9 +6,10 @@ import {
     SGZZ_MAX_AID, SGZZ_MAX_DURABILITY, SGZZ_MAX_UID,
     sgzzEmptyTile, type ISgzzTile,
 } from "@game/shared/kits/sgzzmap/api/territory/index";
+import type { ISgzzAlliance, ISgzzMembership, SgzzAllianceRoleValue } from "@game/shared/kits/sgzzmap/api/alliance/index";
 import type { KitTx, RowDataPacket } from "../../core/infra/kitApi";
 
-export type SgzzReceiptKind = "occupy" | "abandon";
+export type SgzzReceiptKind = "occupy" | "abandon" | "alliance";
 
 export interface SgzzReceipt {
     readonly opId: string;
@@ -40,6 +41,15 @@ export interface SgzzRepository {
     readReceipt(kind: SgzzReceiptKind, opId: string): Promise<SgzzReceipt | null>;
     insertReceipt(receipt: SgzzReceipt): Promise<void>;
     appendLog(entity: string, operation: string, payload: unknown, tombstone: boolean): Promise<number>;
+    readMembershipForUpdate(uid: string): Promise<ISgzzMembership | null>;
+    readAllianceForUpdate(allianceId: string): Promise<ISgzzAlliance | null>;
+    insertAlliance(alliance: ISgzzAlliance): Promise<boolean>;
+    updateAllianceMembers(allianceId: string, members: number): Promise<void>;
+    deleteAlliance(allianceId: string): Promise<void>;
+    insertMembership(m: ISgzzMembership): Promise<void>;
+    deleteMembership(uid: string): Promise<void>;
+    /** 同盟变更后刷新该玩家名下地块的 owner_aid。⚠ 受 SGZZ_MAX_TILES_PER_PLAYER 封顶。 */
+    retagTiles(uid: string, allianceId: string): Promise<void>;
 }
 
 function integer(value: unknown, label: string, max = Number.MAX_SAFE_INTEGER): number {
@@ -180,6 +190,66 @@ export function createSqlSgzzRepository(tx: KitTx, sId: number): SgzzRepository 
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 [sId, receipt.kind, receipt.opId, receipt.uid, receipt.hash, receipt.contractVersion,
                  JSON.stringify(receipt.response)]);
+        },
+
+        async readMembershipForUpdate(uid: string): Promise<ISgzzMembership | null> {
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT uid, alliance_id, role FROM k_sgzzmap_alliance_member "
+                + "WHERE server_id = ? AND uid = ? FOR UPDATE", [sId, uid]);
+            const row = rows[0];
+            if (!row) return null;
+            return {
+                uid: text(row.uid, "uid", SGZZ_MAX_UID),
+                allianceId: text(row.alliance_id, "alliance_id", SGZZ_MAX_AID),
+                role: text(row.role, "role", 8) as SgzzAllianceRoleValue,
+            };
+        },
+
+        async readAllianceForUpdate(allianceId: string): Promise<ISgzzAlliance | null> {
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT alliance_id, name, tag, leader_uid, members FROM k_sgzzmap_alliance "
+                + "WHERE server_id = ? AND alliance_id = ? FOR UPDATE", [sId, allianceId]);
+            const row = rows[0];
+            if (!row) return null;
+            return {
+                allianceId: text(row.alliance_id, "alliance_id", SGZZ_MAX_AID),
+                name: text(row.name, "name", 48), tag: text(row.tag, "tag", 16),
+                leaderUid: text(row.leader_uid, "leader_uid", SGZZ_MAX_UID),
+                members: integer(row.members, "members"),
+            };
+        },
+
+        async insertAlliance(a: ISgzzAlliance): Promise<boolean> {
+            // tag 有唯一键：撞了说明这个标签已被占用，⛔ 不要先查再插（TOCTOU）
+            const res = await tx.query(
+                "INSERT IGNORE INTO k_sgzzmap_alliance (server_id, alliance_id, name, tag, leader_uid, members) "
+                + "VALUES (?, ?, ?, ?, ?, ?)",
+                [sId, a.allianceId, a.name, a.tag, a.leaderUid, a.members]);
+            return Number((res as { affectedRows?: number }).affectedRows ?? 0) === 1;
+        },
+
+        async updateAllianceMembers(allianceId: string, members: number): Promise<void> {
+            await tx.query("UPDATE k_sgzzmap_alliance SET members = ? WHERE server_id = ? AND alliance_id = ?",
+                [members, sId, allianceId]);
+        },
+
+        async deleteAlliance(allianceId: string): Promise<void> {
+            await tx.query("DELETE FROM k_sgzzmap_alliance WHERE server_id = ? AND alliance_id = ?", [sId, allianceId]);
+        },
+
+        async insertMembership(m: ISgzzMembership): Promise<void> {
+            await tx.query(
+                "INSERT INTO k_sgzzmap_alliance_member (server_id, uid, alliance_id, role) VALUES (?, ?, ?, ?)",
+                [sId, m.uid, m.allianceId, m.role]);
+        },
+
+        async deleteMembership(uid: string): Promise<void> {
+            await tx.query("DELETE FROM k_sgzzmap_alliance_member WHERE server_id = ? AND uid = ?", [sId, uid]);
+        },
+
+        async retagTiles(uid: string, allianceId: string): Promise<void> {
+            await tx.query("UPDATE k_sgzzmap_tile SET owner_aid = ? WHERE server_id = ? AND owner_uid = ?",
+                [allianceId, sId, uid]);
         },
 
         async appendLog(entity: string, operation: string, payload: unknown, tombstone: boolean): Promise<number> {

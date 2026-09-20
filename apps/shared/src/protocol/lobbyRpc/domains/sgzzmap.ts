@@ -17,6 +17,10 @@ import {
     SGZZ_MAX_AID, SGZZ_MAX_DURABILITY, SGZZ_MAX_UID,
     validateSgzzTile, type ISgzzTile, type SgzzTileOutcome,
 } from "../../../kits/sgzzmap/api/territory/index";
+import {
+    isSgzzAllianceAct, validateSgzzAlliance, validateSgzzAllianceName, validateSgzzAllianceTag,
+    validateSgzzMembership, type ISgzzAlliance, type ISgzzMembership, type SgzzAllianceAct,
+} from "../../../kits/sgzzmap/api/alliance/index";
 import { defineLobbyRpcDomain, defineRpcIdempotentWrite, defineRpcNaturalWrite, defineRpcQuery } from "../defineDomain";
 import { requiredId, rpcRecord } from "../primitives";
 
@@ -25,6 +29,7 @@ export const SgzzmapRpc = {
     Tile: "sgzzmap.tile",
     Occupy: "sgzzmap.occupy",
     Abandon: "sgzzmap.abandon",
+    Alliance: "sgzzmap.alliance",
 } as const;
 
 /** 一次 view 最多回多少个非默认地块。 */
@@ -52,12 +57,20 @@ export interface ISgzzOccupyReq { clientReqId: string; cell: number }
 export interface ISgzzOccupyRes { tile: ISgzzTile; outcome: SgzzTileOutcome; heldTiles: number }
 export interface ISgzzAbandonReq { clientReqId: string; cell: number }
 export interface ISgzzAbandonRes { cell: number; heldTiles: number }
+/** 三个动作共用一条路由：它们锁的是同一组表，拆三条零契约收益。 */
+export interface ISgzzAllianceReq {
+    clientReqId: string; act: SgzzAllianceAct;
+    name?: string; tag?: string; allianceId?: string;
+}
+/** 退盟后两者都为 null。 */
+export interface ISgzzAllianceRes { membership: ISgzzMembership | null; alliance: ISgzzAlliance | null }
 
 export interface SgzzmapRpcMap {
     [SgzzmapRpc.View]: { req: ISgzzViewReq; res: ISgzzViewRes };
     [SgzzmapRpc.Tile]: { req: ISgzzTileReq; res: ISgzzTileRes };
     [SgzzmapRpc.Occupy]: { req: ISgzzOccupyReq; res: ISgzzOccupyRes };
     [SgzzmapRpc.Abandon]: { req: ISgzzAbandonReq; res: ISgzzAbandonRes };
+    [SgzzmapRpc.Alliance]: { req: ISgzzAllianceReq; res: ISgzzAllianceRes };
 }
 
 function validateViewer(value: unknown, path: string): ISgzzViewerWire {
@@ -174,16 +187,54 @@ export const validateSgzzAbandonRes: RuntimeValidator<ISgzzAbandonRes> = (input)
     };
 };
 
+export const validateSgzzAllianceReq: RuntimeValidator<ISgzzAllianceReq> = (input) => {
+    const r = rpcRecord(input);
+    assertExactKeys(r, ["clientReqId", "act"], ["name", "tag", "allianceId"], "payload");
+    if (!isSgzzAllianceAct(r.act)) throw new WireValidationError("SGZZMAP_ALLIANCE_ACT", "payload.act");
+    const out: ISgzzAllianceReq = { clientReqId: requiredId(r, "clientReqId"), act: r.act };
+    // 每个动作只允许带自己需要的字段，⛔ 多余字段一律拒（fail-closed）
+    if (r.act === "create") {
+        if (r.allianceId !== undefined) throw new WireValidationError("SGZZMAP_ALLIANCE_ACT", "payload.allianceId");
+        return { ...out, name: validateSgzzAllianceName(r.name), tag: validateSgzzAllianceTag(r.tag) };
+    }
+    if (r.act === "join") {
+        if (r.name !== undefined || r.tag !== undefined) {
+            throw new WireValidationError("SGZZMAP_ALLIANCE_ACT", "payload.name");
+        }
+        return { ...out, allianceId: boundedString(r.allianceId, "payload.allianceId", 1, SGZZ_MAX_AID) };
+    }
+    if (r.name !== undefined || r.tag !== undefined || r.allianceId !== undefined) {
+        throw new WireValidationError("SGZZMAP_ALLIANCE_ACT", "payload");
+    }
+    return out;
+};
+export const validateSgzzAllianceRes: RuntimeValidator<ISgzzAllianceRes> = (input) => {
+    const r = rpcRecord(input, "response");
+    assertExactKeys(r, ["membership", "alliance"], [], "response");
+    const membership = r.membership === null ? null : validateSgzzMembership(r.membership, "response.membership");
+    const alliance = r.alliance === null ? null : validateSgzzAlliance(r.alliance, "response.alliance");
+    // 要么都在（入盟/建盟），要么都不在（退盟）；⛔ 不允许半截状态
+    if ((membership === null) !== (alliance === null)) {
+        throw new WireValidationError("SGZZMAP_ALLIANCE_SHAPE", "response");
+    }
+    if (membership && alliance && membership.allianceId !== alliance.allianceId) {
+        throw new WireValidationError("SGZZMAP_ALLIANCE_SHAPE", "response.membership.allianceId");
+    }
+    return { membership, alliance };
+};
+
 /** 请求窗的 chunk 数上限由 validateSgzzChunkRect 保证；这里再导出便于测试直接断言。 */
 export function sgzzViewRequestChunks(rect: ISgzzRect): number {
     return sgzzRectArea(rect);
 }
 
 export default defineLobbyRpcDomain({
-    domain: "sgzzmap", contractVersion: 1,
+    domain: "sgzzmap", contractVersion: 2,
     errorCodes: [
         "SGZZMAP_IMPASSABLE", "SGZZMAP_NOT_ADJACENT", "SGZZMAP_TILE_LIMIT",
         "SGZZMAP_NOT_OWNED", "SGZZMAP_SETTLEMENT_PENDING",
+        "SGZZMAP_ALLIANCE_EXISTS", "SGZZMAP_ALLIANCE_NOT_FOUND", "SGZZMAP_ALLIANCE_FULL",
+        "SGZZMAP_ALLIANCE_NOT_MEMBER", "SGZZMAP_ALLIANCE_LEADER_BUSY", "SGZZMAP_ALLIANCE_TAG_TAKEN",
     ],
     pushes: [],
     routes: [
@@ -191,5 +242,6 @@ export default defineLobbyRpcDomain({
         defineRpcQuery(SgzzmapRpc.Tile, { request: validateSgzzTileReq, response: validateSgzzTileRes }),
         defineRpcIdempotentWrite(SgzzmapRpc.Occupy, { request: validateSgzzOccupyReq, response: validateSgzzOccupyRes }),
         defineRpcIdempotentWrite(SgzzmapRpc.Abandon, { request: validateSgzzAbandonReq, response: validateSgzzAbandonRes }),
+        defineRpcIdempotentWrite(SgzzmapRpc.Alliance, { request: validateSgzzAllianceReq, response: validateSgzzAllianceRes }),
     ],
 });

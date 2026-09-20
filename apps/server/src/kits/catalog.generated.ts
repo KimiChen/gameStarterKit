@@ -135,6 +135,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         id: "sgzzmap",
         version: null,
         api: {
+            alliance: { version: 1, minSupported: 1 },
             hexmap: { version: 1, minSupported: 1 },
             territory: { version: 1, minSupported: 1 },
         },
@@ -145,6 +146,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         effects: [],
         sqlFiles: [
             "sql/001-grid.sql",
+            "sql/002-alliance.sql",
         ],
         sqlTables: [
             { name: "k_sgzzmap_revision", zone: "per-zone" },
@@ -152,6 +154,8 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
             { name: "k_sgzzmap_holding", zone: "per-zone" },
             { name: "k_sgzzmap_receipt", zone: "per-zone" },
             { name: "k_sgzzmap_log", zone: "per-zone" },
+            { name: "k_sgzzmap_alliance", zone: "per-zone" },
+            { name: "k_sgzzmap_alliance_member", zone: "per-zone" },
         ],
         userKeys: [],
         workers: [],

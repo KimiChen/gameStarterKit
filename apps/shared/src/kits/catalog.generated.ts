@@ -48,6 +48,7 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
         id: "sgzzmap",
         version: null,
         api: {
+            alliance: { version: 1, minSupported: 1 },
             hexmap: { version: 1, minSupported: 1 },
             territory: { version: 1, minSupported: 1 },
         },
