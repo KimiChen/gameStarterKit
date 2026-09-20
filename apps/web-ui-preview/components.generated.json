@@ -358,6 +358,11 @@
       "source": "apps/client/src/ui-uniflex/gamecomponents/star/StarRow.tsx"
     },
     {
+      "key": "TabBar",
+      "rootName": "TabBar",
+      "source": "apps/client/src/ui-uniflex/components/tab/TabBar.tsx"
+    },
+    {
       "key": "WideMenuButton",
       "rootName": "WideMenuButton",
       "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx"
