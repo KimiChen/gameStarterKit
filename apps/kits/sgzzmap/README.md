@@ -107,9 +107,9 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
 
 - ✅ **P0** 素材管线（`tools/sgzzmap-maps/`）：机检闸 `verify-redraw.py` 全绿，人工 `--overlay` 已目检。
 - ✅ **P1** kit 骨架 + `hexmap` 面 + 冻结内容。
-- ✅ **P2** SQL + 占领 / 弃地 + `territory` 面 + RPC 域：共 31 条 sgzzmap 用例绿
-  （hex 11 / content 7 / territory 8 / service 8 + 向量闸 6 条全绿）。
-  ⏳ 真 SQL 的 int 用例（并发占同一邻环）待本地起 MySQL 后补。
+- ✅ **P2** SQL + 占领 / 弃地 + `territory` 面 + RPC 域：35 条 sgzzmap 用例绿
+  （hex 11 / content 7 / territory 8 / service 8 + 真栈 int 4）+ 向量闸 6 条全绿；
+  `db:bootstrap` 连跑两遍，第二遍新应用 0 个文件。
 - ⏳ P3 同盟 ／ P4 行军 + worker ／ P5 鸟瞰 + 缩略图 ／ P6 客户端页。
 
 ## 七、运维
