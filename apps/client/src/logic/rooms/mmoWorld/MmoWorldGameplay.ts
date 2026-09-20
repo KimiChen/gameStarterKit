@@ -55,6 +55,8 @@ export interface MmoWorldEntityView {
     readonly hp: number;
     readonly hpMax: number;
     readonly level: number;
+    /** 阵营（名片；无阵营实体 null） */
+    readonly factionId: string | null;
     readonly isSelf: boolean;
     readonly presentation: IPresentationEntry;
 }
@@ -195,7 +197,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                 const pos = isSelf && predicted ? predicted : entity;
                 return {
                     id: entity.id, kind: entity.kind, name: entity.name, x: pos.x, y: pos.y, hp: entity.hp, hpMax: entity.hpMax, level: entity.level,
-                    isSelf, presentation: presentationOf(entity.templateId),
+                    factionId: entity.factionId ?? null, isSelf, presentation: presentationOf(entity.templateId),
                 };
             });
         return {

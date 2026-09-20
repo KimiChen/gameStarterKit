@@ -45,6 +45,8 @@ export interface IMmoEntityWire {
     readonly hp: number;
     readonly hpMax: number;
     readonly level: number;
+    /** 阵营（名片，MK1-B2；怪物 / 无阵营实体省略） */
+    readonly factionId?: string;
 }
 
 /** 移动意图：dir（摇杆方向，分量 ∈ [-1, 1]）与 target（点地）二选一（validator 强制恰好一个）。 */
@@ -100,7 +102,7 @@ function vec2Of(input: unknown, path: string, min: number, max: number): IMmoVec
 
 function entityOf(input: unknown, path: string): IMmoEntityWire {
     const value = recordOf(input, path);
-    assertExactKeys(value, ["id", "kind", "templateId", "name", "x", "y", "rev", "hp", "hpMax", "level"], [], path);
+    assertExactKeys(value, ["id", "kind", "templateId", "name", "x", "y", "rev", "hp", "hpMax", "level"], ["factionId"], path);
     return {
         id: idOf(value.id, `${path}.id`),
         kind: kindOf(value.kind, `${path}.kind`),
@@ -112,6 +114,7 @@ function entityOf(input: unknown, path: string): IMmoEntityWire {
         hp: finiteInteger(value.hp, `${path}.hp`, 0, MMO_WORLD_STAT_MAX),
         hpMax: finiteInteger(value.hpMax, `${path}.hpMax`, 1, MMO_WORLD_STAT_MAX),
         level: finiteInteger(value.level, `${path}.level`, 1, 65535),
+        ...(value.factionId === undefined ? {} : { factionId: idOf(value.factionId, `${path}.factionId`) }),
     };
 }
 

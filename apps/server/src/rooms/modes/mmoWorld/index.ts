@@ -6,7 +6,9 @@
  *  - onEnter：角色实体落在最新角色检查点的位置（persona 信封回灌，M08）或出生点；onLeave 回收；
  *  - onStep：move 意图（dir / target）→ 常量速度积分 + 钳图（`world` 面双端同源纯函数）；baselineRequest → 框架 baseline；pickup / transfer 回 opResult
  *    rejected（MK1 / MK3 接入）；target / cast / interact / choose 暂忽略（MK2 / MK4）；本人私有流 hp / mp 变了才发；
- *  - observer：视距 = 图的 aoi.viewRadius（欧氏），公开投影 = IMmoEntityWire（⛔ mp 等私有字段）；差分 / baseline / 投递归框架；
+ *  - observer（MK1-B2 AOI 接入）：候选来自 kit 网格（`aoi/grid.ts`，格长 = 图的 aoi.cellSize）→ 精确视距（aoi.viewRadius 欧氏）→ 可见性规则
+ *    （`aoi/visibility.ts`：位面 / 隐身 / 阵营；本人永远可见）→ 最近优先截到 MMO_INTEREST_MAX_ENTITIES（框架 InterestSet 超限即抛，kit 先收敛）；
+ *    公开投影 = IMmoEntityWire（名片含 factionId，⛔ mp 等私有字段）；差分 / baseline / 投递归框架；
  *  - onCheckpoint：persona 快照 {mapId, x, y, hp, mp}、分线快照 {tick, mapId, pack, creatures}；onRestore 回灌怪物位置 / hp。
  * 登记：`registerMmoWorldWorldMode`（codegen 分表静态 import）——登记时先取内容索引，包不合法即抛（启动期 fail-closed）。
  */
@@ -16,8 +18,10 @@ import {
     type IMmoEntityWire, type IMmoWorldMoveReq, type IMmoWorldPickupReq, type IMmoWorldTransferReq, type IObserverEnvelope,
 } from "@game/shared";
 import type { IContentPackIndex, IMapDef } from "@game/shared/kits/mmo/api/content/index";
-import { clampToMap, withinRadius } from "@game/shared/kits/mmo/api/world/index";
+import { clampToMap } from "@game/shared/kits/mmo/api/world/index";
 import { applyIntent, parseCollisionGrid, resolveMove, type CollisionGrid } from "../../../kits/mmo/api/movement/index";
+import { AoiGrid } from "../../../kits/mmo/aoi/grid";
+import { pickInterest } from "../../../kits/mmo/aoi/visibility";
 import { characterOfPersona, type MmoCharacterRow } from "../../../kits/mmo/api/characters/index";
 import { contentIndex } from "../../../kits/mmo/api/content/index";
 import { MMO_WORLD_MODE_ID } from "../../../kits/mmo/host";
@@ -34,6 +38,8 @@ export { MMO_WORLD_MODE_ID };
 export const MMO_SPAWN_JITTER = 40;
 /** baseline 每块条目数。 */
 export const MMO_BASELINE_CHUNK_ITEMS = 32;
+/** 一个会话兴趣集上限（最近优先截断；只许比框架 OBSERVER_SYNC_LIMITS.interestMaxEntities 小，§11.2）。 */
+export const MMO_INTEREST_MAX_ENTITIES = 256;
 
 export interface MmoEntity {
     readonly id: string;
@@ -48,6 +54,12 @@ export interface MmoEntity {
     readonly session: string | null;
     readonly personaId: string | null;
     readonly characterId: string | null;
+    /** 阵营（角色 = 建角时选的；怪物 null = 无阵营）；名片公开，也是隐身规则的输入 */
+    readonly factionId: string | null;
+    /** 位面（缺省 0；不同位面互不可见） */
+    plane: number;
+    /** 隐身（只对自己与同阵营可见） */
+    stealth: boolean;
     x: number;
     y: number;
     /** 公开投影修订号（位置 / hp 变即 +1） */
@@ -74,12 +86,15 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
     readonly __probe: {
         entities(): ReadonlyMap<string, MmoEntity>;
         moverOf(session: string): MmoEntity | null;
+        /** 测试 / 编排接缝：改位面 / 隐身（MK2 aura、MK4 编排接入前的直接写口） */
+        setVisibility(id: string, facts: { readonly plane?: number; readonly stealth?: boolean }): void;
         readonly log: string[];
     };
 }
 
 const projectionOf = (entity: MmoEntity): IMmoEntityWire => ({
     id: entity.id, kind: entity.kind, templateId: entity.templateId, name: entity.name, x: entity.x, y: entity.y, rev: entity.rev, hp: entity.hp, hpMax: entity.hpMax, level: entity.level,
+    ...(entity.factionId === null ? {} : { factionId: entity.factionId }),
 });
 
 export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldMode {
@@ -98,14 +113,22 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     let map: IMapDef | null = null;
     /** 碰撞网格（内容包 collision；无 = 全图通行） */
     let grid: CollisionGrid | null = null;
+    /** AOI 空间网格（格长 = 图的 aoi.cellSize；只产生候选） */
+    let aoi: AoiGrid | null = null;
+    const candidates: string[] = [];
 
     const mapOf = (context: WorldModeContext<MmoWorldRoomState>): IMapDef => {
         if (map === null) {
             map = content.mapById.get(context.mapId) ?? null;
             if (map === null) throw new Error(`[mmoWorld] 地图 ${context.mapId} 不在内容包 ${content.pack.packId}@${content.pack.version} 内`);
             grid = parseCollisionGrid(map.collision ?? null, map.size);
+            aoi = new AoiGrid(map.aoi.cellSize, map.size);
         }
         return map;
+    };
+    const aoiOf = (context: WorldModeContext<MmoWorldRoomState>): AoiGrid => {
+        mapOf(context);
+        return aoi!;
     };
     const moverOf = (session: string): MmoEntity | null => {
         const id = movers.get(session);
@@ -135,12 +158,18 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const visible = new Map<string, IMmoEntityWire>();
             const center = moverOf(session);
             if (!center) return visible;
-            const radius = mapOf(context).aoi.viewRadius;
-            for (const entity of entities.values()) {
-                if (withinRadius(center, entity, radius)) visible.set(entity.id, projectionOf(entity));
+            const def = mapOf(context);
+            // 候选：网格（视距圆外接矩形覆盖的格子）→ 兴趣集：精确视距 + 规则 + 最近优先截断
+            const ids = aoiOf(context).candidates(center, def.aoi.viewRadius, candidates);
+            const pool: MmoEntity[] = [];
+            for (const id of ids) {
+                const entity = entities.get(id);
+                if (entity) pool.push(entity);
             }
+            for (const pick of pickInterest(center, pool, def.aoi.viewRadius, MMO_INTEREST_MAX_ENTITIES)) visible.set(pick.entity.id, projectionOf(pick.entity));
             return visible;
         },
+        limits: { interestMaxEntities: MMO_INTEREST_MAX_ENTITIES },
     };
 
     const mode: MmoWorldMode = {
@@ -152,6 +181,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         onWorldInit(context, info) {
             const def = mapOf(context);
             entities.clear();
+            aoiOf(context).clear();
             movers.clear();
             pending.clear();
             privateDirty.clear();
@@ -168,9 +198,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     const id = `${spawn.spawnId}:${index}`; // wire id 形态：[A-Za-z0-9._:-]
                     entities.set(id, {
                         id, kind: "creature", templateId: template.templateId, name: template.name, level: template.level, hpMax: template.hpMax, mpMax: template.mpMax,
-                        speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null,
+                        speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, factionId: null, plane: 0, stealth: false,
                         x: pos.x, y: pos.y, rev: 0, hp: template.hpMax, mp: template.mpMax, dirX: 0, dirY: 0, target: null, seq: 0,
                     });
+                    aoiOf(context).insert(id, pos.x, pos.y);
                 }
             }
             syncPopulation(context);
@@ -185,6 +216,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 const pos = clampToMap({ x: creature.x, y: creature.y }, mapOf(context).size);
                 entity.x = pos.x;
                 entity.y = pos.y;
+                aoiOf(context).move(entity.id, pos.x, pos.y);
                 entity.hp = Math.max(0, Math.min(entity.hpMax, creature.hp));
                 restored += 1;
             }
@@ -214,12 +246,13 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const id = `char:${row?.characterId ?? session.personaId}`;
             entities.set(id, {
                 id, kind: "character", templateId: row?.classId ?? "fighter", name: row?.name ?? "?", level: row?.level ?? 1, hpMax, mpMax, speedPerSec: klass?.speedPerSec ?? 120,
-                session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null,
+                session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null, factionId: row?.factionId ?? null, plane: 0, stealth: false,
                 x: pos.x, y: pos.y, rev: 0,
                 hp: typeof restored?.hp === "number" ? Math.max(0, Math.min(hpMax, restored.hp)) : hpMax,
                 mp: typeof restored?.mp === "number" ? Math.max(0, Math.min(mpMax, restored.mp)) : mpMax,
                 dirX: 0, dirY: 0, target: null, seq: 0,
             });
+            aoiOf(context).insert(id, pos.x, pos.y);
             movers.set(session.session, id);
             privateDirty.add(session.session);
             syncPopulation(context);
@@ -229,6 +262,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const id = movers.get(session.session);
             if (id !== undefined) {
                 entities.delete(id);
+                aoiOf(context).remove(id);
                 movers.delete(session.session);
             }
             privateDirty.delete(session.session);
@@ -269,6 +303,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     entity.x = result.x;
                     entity.y = result.y;
                     entity.rev += 1;
+                    aoiOf(context).move(entity.id, entity.x, entity.y);
                 }
                 entity.target = result.target;
                 if (result.moved || touched.has(entity.id)) {
@@ -311,7 +346,17 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             if (signal.kind === "checkpoint") context.requestCheckpoint("signal");
         },
         primaryEntityOf: (session) => movers.get(session) ?? null,
-        __probe: { entities: () => entities, moverOf, log },
+        __probe: {
+            entities: () => entities,
+            moverOf,
+            setVisibility: (id, facts) => {
+                const entity = entities.get(id);
+                if (!entity) throw new Error(`[mmoWorld] setVisibility：${id} 不存在`);
+                if (facts.plane !== undefined) entity.plane = facts.plane;
+                if (facts.stealth !== undefined) entity.stealth = facts.stealth;
+            },
+            log,
+        },
     };
     return mode;
 }

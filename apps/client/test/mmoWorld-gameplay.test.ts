@@ -15,7 +15,7 @@ import type { WorldRoomHandle, WorldRoomTransport } from "../src/net/rooms/World
 import { S2C, wireChecksum, type IMmoEntityWire } from "../src/shared/index";
 
 const slime = (id: string, x: number): IMmoEntityWire => ({ id, kind: "creature", templateId: "slime", name: "史莱姆", x, y: 1000, rev: 0, hp: 30, hpMax: 30, level: 1 });
-const self: IMmoEntityWire = { id: "char:c1", kind: "character", templateId: "fighter", name: "Rook", x: 1000, y: 1000, rev: 0, hp: 100, hpMax: 100, level: 1 };
+const self: IMmoEntityWire = { id: "char:c1", kind: "character", templateId: "fighter", name: "Rook", x: 1000, y: 1000, rev: 0, hp: 100, hpMax: 100, level: 1, factionId: "dawn" };
 
 function fakeRoom() {
     const calls: unknown[][] = [];
@@ -89,6 +89,7 @@ test("MmoWorldGameplay：本人位置取本地预测（fighter 120 / 步 6）；
     gameplay.tick(0.1, context);
     const predicted = renders.at(-1)!;
     assert.deepEqual([predicted.self?.x, predicted.self?.y, predicted.entities.find((entity) => entity.id === "slime-camp:0")?.x], [1012, 1000, 1200], "两步 × 6：视野流仍在 1000，本人显示预测位置；他人取视野流");
+    assert.deepEqual([predicted.self?.factionId, predicted.entities.find((entity) => entity.id === "slime-camp:0")?.factionId], ["dawn", null], "名片阵营；无阵营实体 null");
     observer().pos({ seq: 1, tick: 5, x: 1006, y: 1000 });
     gameplay.tick(0.01, context);
     assert.equal(renders.at(-1)!.self?.x, 1006, "回执为准");

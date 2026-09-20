@@ -6,26 +6,32 @@
  *  - 视野流：首个 baseline = 本人 + 三只 slime；update 只在位置变时；本人私有流 hp / mp 一次；pickup / transfer ⇒ opResult rejected；
  *  - onCheckpoint：persona 快照 {mapId, x, y, hp, mp}、分线快照 creatures；onRestore 回灌怪物位置；
  *  - MK1-B1 movement 面：速度 / HP / MP 取内容包职业模板（caster 110 / 80 / 100）；本人每步收直发 `s2c.mmoWorld.pos`（seq = 最新意图；停下那步回执一次，之后不动不回）；
- *    撞灰盒墙停下并清目标；职业不在内容包 ⇒ 准入拒。
+ *    撞灰盒墙停下并清目标；职业不在内容包 ⇒ 准入拒；
+ *  - MK1-B2 AOI 接入：候选来自 kit 网格、精确视距 + 规则（位面 / 隐身 × 阵营）、最近优先截到 MMO_INTEREST_MAX_ENTITIES；超视野零泄露（远处角色的 id 不出现在任何出站）、
+ *    走进视距 enter 恰一次、隐身只对同阵营可见、位面隔离、300 只挤在出生点也不触发框架 InterestSet 上限。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate, type IMmoWorldUpdate } from "@game/shared";
-import { indexContentPack, validateContentPack } from "@game/shared/kits/mmo/api/content/index";
+import {
+    C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate, type IMmoWorldUpdate,
+} from "@game/shared";
+import { indexContentPack, validateContentPack, type IContentPack, type IContentPackIndex } from "@game/shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
-import type { MmoClassId } from "@game/shared/kits/mmo/api/characters/index";
+import type { MmoClassId, MmoFactionId } from "@game/shared/kits/mmo/api/characters/index";
 import type { MmoCharacterRow } from "../src/kits/mmo/api/characters/index";
 import { buildCheckpointEnvelope } from "../src/rooms/core/CheckpointPort";
 import { WorldRuntime, type WorldCheckpointBatch } from "../src/rooms/core/WorldRuntime";
-import { createMmoWorldMode, type MmoWorldMode } from "../src/rooms/modes/mmoWorld/index";
+import { MMO_INTEREST_MAX_ENTITIES, createMmoWorldMode, type MmoWorldMode } from "../src/rooms/modes/mmoWorld/index";
 import { createRoomStateForMode, type MmoWorldRoomState } from "../src/rooms/schema/GameRoomState";
 import type { MmoInstanceSnapshot, MmoPersonaSnapshot } from "../src/rooms/modes/mmoWorld/checkpoint";
 
 const CONTENT = indexContentPack(validateContentPack(GREYBOX_PACK));
-const rowOf = (personaId: string, name = "Rook", classId: MmoClassId = "fighter"): MmoCharacterRow => ({
-    characterId: `c-${personaId}`, personaId, userId: `u-${personaId}`, slot: 0, name, classId, factionId: "dawn", level: 1, exp: 0, checkpointRev: 0, mapId: null,
+const rowOf = (personaId: string, name = "Rook", classId: MmoClassId = "fighter", factionId: MmoFactionId = "dawn"): MmoCharacterRow => ({
+    characterId: `c-${personaId}`, personaId, userId: `u-${personaId}`, slot: 0, name, classId, factionId, level: 1, exp: 0, checkpointRev: 0, mapId: null,
 });
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+type MutablePack = { -readonly [K in keyof IContentPack]: IContentPack[K] };
 
 interface Harness {
     readonly mode: MmoWorldMode;
@@ -37,9 +43,9 @@ interface Harness {
     clock: number;
 }
 
-function harness(): Harness {
+function harness(content: IContentPackIndex = CONTENT): Harness {
     const characters = new Map<string, MmoCharacterRow>();
-    const mode = createMmoWorldMode({ content: CONTENT, loadCharacter: async (_sId, personaId) => characters.get(personaId) ?? null, checkpoint: null });
+    const mode = createMmoWorldMode({ content, loadCharacter: async (_sId, personaId) => characters.get(personaId) ?? null, checkpoint: null });
     const state = createRoomStateForMode("mmoWorld") as MmoWorldRoomState;
     const direct: Harness["direct"] = [];
     const batches: WorldCheckpointBatch[] = [];
@@ -67,8 +73,8 @@ async function activeWorld(h: Harness, mapId = "greybox", instanceSnapshot: MmoI
     assert.equal(h.runtime.phase, WorldPhase.Active);
 }
 
-async function seat(h: Harness, session: string, personaId: string, checkpoint: ReturnType<typeof buildCheckpointEnvelope> | null = null): Promise<void> {
-    h.characters.set(personaId, rowOf(personaId));
+async function seat(h: Harness, session: string, personaId: string, checkpoint: ReturnType<typeof buildCheckpointEnvelope> | null = null, factionId: MmoFactionId = "dawn"): Promise<void> {
+    h.characters.set(personaId, rowOf(personaId, "Rook", "fighter", factionId));
     const req = request(session, personaId, checkpoint);
     await h.runtime.beforeAdmit(req);
     assert.equal(h.runtime.admit(req), "admitted");
@@ -195,4 +201,91 @@ test("movement 面：caster 每步 5.5 单位（职业模板）；本人每步�
     const reqX = request("x", "p-x");
     await h.runtime.beforeAdmit(reqX);
     assert.equal(h.runtime.admit(reqX), "refused", "职业不在内容包 ⇒ 拒");
+});
+
+const personaAt = (x: number, y: number) =>
+    buildCheckpointEnvelope({ rev: 3, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 1, snapshot: { mapId: "greybox", x, y, hp: 100, mp: 50 } satisfies MmoPersonaSnapshot });
+const idsOf = (messages: readonly { type: string; payload: unknown }[], type: string): string[] =>
+    messages.filter((message) => message.type === type).map((message) => (type === S2C.MmoWorldEnter ? (message.payload as IMmoWorldEnter).entity.id : (message.payload as IMmoWorldLeave).id));
+const mentions = (messages: readonly { type: string; payload: unknown }[], id: string): number => messages.filter((message) => JSON.stringify(message.payload).includes(`"${id}"`)).length;
+
+test("AOI 接入：超视野零泄露；走进视距 enter 恰一次（第 84 步）；名片带阵营；隐身只对同阵营可见；位面隔离；本人永远看得见自己", async () => {
+    const h = harness();
+    await activeWorld(h);
+    const idA = "char:c-p-a";
+    const idB = "char:c-p-b";
+    const idC = "char:c-p-c";
+    await seat(h, "a", "p-a"); // dawn @ 出生点 (1000, 1000)
+    await seat(h, "b", "p-b", personaAt(1000, 1900), "dusk"); // 900 单位外
+    step(h);
+    const firstA = drain(h, "a");
+    const firstB = drain(h, "b");
+    assert.equal(mentions(firstA, idB), 0, "零泄露：A 的任何出站都不含 900 单位外的 B");
+    assert.equal(mentions(firstB, idA), 0, "零泄露：B 的任何出站都不含 A");
+    assert.deepEqual(baselineItems(firstB).map((item) => item.id), [idB], "B 的 baseline 只有自己（slime 在 860 单位外）");
+    assert.equal(baselineItems(firstA).find((item) => item.id === idA)?.factionId, "dawn", "名片带阵营");
+    assert.equal(baselineItems(firstA).find((item) => item.kind === "creature")?.factionId, undefined, "怪物无阵营字段（exact keys）");
+
+    // B 向南走：900 → ≤ 400 要 84 步（每步 6）
+    h.runtime.enqueue("b", C2S.MmoWorldMove, { seq: 1, dir: { x: 0, y: -1 } });
+    step(h, 83);
+    assert.equal(mentions(drain(h, "a"), idB), 0, "83 步后距离 402：仍不可见");
+    step(h, 2);
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldEnter), [idB], "进入视距 enter 恰一次");
+    assert.ok(idsOf(drain(h, "b"), S2C.MmoWorldEnter).includes(idA), "B 也看到 A");
+    h.runtime.enqueue("b", C2S.MmoWorldMove, { seq: 2, dir: { x: 0, y: 0 } });
+    step(h);
+    drain(h, "a");
+    drain(h, "b");
+
+    // 隐身：B（dusk）隐身 ⇒ A（dawn）收 leave；同阵营 C 仍看得见；B 看得见自己
+    await seat(h, "c", "p-c", personaAt(1000, 1300), "dusk");
+    step(h);
+    assert.ok(baselineItems(drain(h, "c")).some((item) => item.id === idB), "C 的 baseline 含 90 单位外的 B");
+    drain(h, "a");
+    drain(h, "b");
+    h.mode.__probe.setVisibility(idB, { stealth: true });
+    step(h);
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldLeave), [idB], "异阵营收 leave");
+    assert.deepEqual(idsOf(drain(h, "c"), S2C.MmoWorldLeave), [], "同阵营不受影响");
+    assert.deepEqual(idsOf(drain(h, "b"), S2C.MmoWorldLeave), [], "本人永远看得见自己");
+    h.mode.__probe.setVisibility(idB, { stealth: false });
+    step(h);
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldEnter), [idB], "解除隐身 ⇒ enter 恰一次");
+
+    // 位面：B 去 plane 1 ⇒ A / C 收 leave；B 看不见位面 0 的 A / C，但仍有自己
+    h.mode.__probe.setVisibility(idB, { plane: 1 });
+    step(h);
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldLeave), [idB]);
+    assert.deepEqual(idsOf(drain(h, "c"), S2C.MmoWorldLeave), [idB]);
+    const leftForB = idsOf(drain(h, "b"), S2C.MmoWorldLeave);
+    assert.ok(leftForB.includes(idA) && leftForB.includes(idC) && !leftForB.includes(idB), `B 在位面 1：${leftForB.join(",")}`);
+    h.mode.__probe.setVisibility(idB, { plane: 0 });
+    step(h);
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldEnter), [idB], "回位面 0 ⇒ enter");
+    assert.throws(() => h.mode.__probe.setVisibility("nobody", { plane: 1 }), /不存在/u);
+});
+
+test("兴趣集上限：300 只 slime 挤在出生点 ⇒ 兴趣集最近优先截到 MMO_INTEREST_MAX_ENTITIES（含本人），框架 InterestSet 不抛", async () => {
+    const crowded = clone(GREYBOX_PACK) as unknown as MutablePack;
+    crowded.spawns = Array.from({ length: 6 }, (_unused, index) => ({ spawnId: `camp-${index}`, mapId: "greybox", templateId: "slime", pos: { x: 1000 + index * 10, y: 1000 }, count: 50, waypoints: [], managed: "kit" as const }));
+    const h = harness(indexContentPack(validateContentPack(crowded)));
+    await activeWorld(h);
+    assert.equal([...h.mode.__probe.entities().values()].filter((entity) => entity.kind === "creature").length, 300);
+    await seat(h, "a", "p-a");
+    step(h);
+    const items = baselineItems(drain(h, "a"));
+    assert.equal(items.length, MMO_INTEREST_MAX_ENTITIES, "截到上限");
+    assert.ok(items.some((item) => item.id === "char:c-p-a"), "本人必在");
+    const mover = h.mode.__probe.moverOf("a")!;
+    const distance = (point: { readonly x: number; readonly y: number }): number => Math.hypot(point.x - mover.x, point.y - mover.y);
+    const farthestPicked = Math.max(...items.map(distance));
+    const picked = new Set(items.map((item) => item.id));
+    const skipped = [...h.mode.__probe.entities().values()].filter((entity) => !picked.has(entity.id));
+    assert.equal(skipped.length, 301 - MMO_INTEREST_MAX_ENTITIES);
+    assert.ok(skipped.every((entity) => distance(entity) >= farthestPicked), "最近优先：没选上的都不比选上的近");
+    // 走两步：兴趣集仍收敛（差分只有位置变化的本人 + 可能的边缘换人），不抛
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 1, dir: { x: 1, y: 0 } });
+    step(h, 2);
+    assert.ok(drain(h, "a").some((message) => message.type === S2C.MmoWorldUpdate));
 });
