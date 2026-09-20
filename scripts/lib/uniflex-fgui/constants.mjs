@@ -45,7 +45,25 @@ export const LoaderFillType = Object.freeze({
 
 export const OverflowType = Object.freeze({
     Visible: 0,
+    Hidden: 1,
+    Scroll: 2,
 });
+
+export const ScrollType = Object.freeze({
+    Horizontal: 0,
+    Vertical: 1,
+    Both: 2,
+});
+
+export const ScrollBarDisplayType = Object.freeze({
+    Default: 0,
+    Visible: 1,
+    Auto: 2,
+    Hidden: 3,
+});
+
+/** ScrollPane flags: touch drag on (16) + bounceback on (64); unset 512/2048 keep clipping on. */
+export const SCROLL_PANE_FLAGS = 16 | 64;
 
 export const RelationType = Object.freeze({
     Center_Center: 3,

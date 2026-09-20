@@ -154,6 +154,8 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(commonXml, /scale="9grid" scale9grid="26,32,4,4"/);
         assert.doesNotMatch(commonXml, /fill_[0-9a-f]+\.png"[^>]*scale="9grid"/);
         assert.match(previewHtml, /clearFillNineGrid/);
+        assert.match(previewHtml, /patchNineSlice/);
+        assert.match(previewHtml, /borderImageWidth/);
 
         for (const file of [
             "assets/UniFlex_Common/ActionButton.xml",
@@ -513,22 +515,34 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
             hostPlan,
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_MailBattleReport/MailBattleReport.xml"), "utf8");
+        const listXml = readFileSync(join(out, "assets/UniFlex_MailBattleReport/UniFlex_MailBattleReport_List_1.xml"), "utf8");
         const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
         const rowXml = readFileSync(join(out, "assets/UniFlex_Common/MailBattleRow.xml"), "utf8");
         const badgeXml = readFileSync(join(out, "assets/UniFlex_Common/NotificationBadge.xml"), "utf8");
         assert.doesNotMatch(pageXml, /<graph/);
         assert.match(pageXml, /fill_fff3efe9\.png/);
         assert.match(pageXml, /fill_ff553e78\.png/);
-        assert.match(pageXml, /fileName="MailBattleRow.xml"/);
         assert.match(pageXml, /propertyId="0" value="战报"/);
-        assert.match(pageXml, /propertyId="0" value="资源点侦察报告"/);
         assert.match(pageXml, /propertyId="0" value="4"/);
+        // virtual-list becomes its own scroll component; rows move inside it, VL-relative
+        assert.match(pageXml, /fileName="UniFlex_MailBattleReport_List_1\.xml"/);
+        assert.match(pageXml, /xy="10,236" size="730,905"/);
+        assert.doesNotMatch(pageXml, /MailBattleRow\.xml/);
+        assert.match(listXml, /overflow="scroll" scroll="vertical" scrollBarDisplay="hidden"/);
+        assert.match(listXml, /fileName="MailBattleRow.xml"/);
+        assert.match(listXml, /xy="0,188"/);
+        assert.match(listXml, /propertyId="0" value="资源点侦察报告"/);
+        assert.equal((listXml.match(/fileName="MailBattleRow.xml"/g) ?? []).length, 2);
         assert.match(tabXml, /color="#3f3254"/);
         assert.match(tabXml, /text="系统"/);
         assert.match(rowXml, /color="#3f3254"/);
         assert.match(rowXml, /text="野怪讨伐胜利"/);
         assert.match(badgeXml, /text="2"/);
-        assert.equal((pageXml.match(/fileName="MailBattleRow.xml"/g) ?? []).length, 2);
+        // binary preview marks the list component overflow=Scroll with a scroll pane segment
+        const bin = readFileSync(join(out, "preview/UniFlex_MailBattleReport/package.xml"));
+        assert.equal(bin.readUInt32BE(0), 0x46475549, "FGUI magic");
+        assert.ok(bin.includes(Buffer.from("UniFlex_MailBattleReport_List_1", "utf8")),
+            "scroll component is in the published package");
     } finally {
         rmSync(out, { recursive: true, force: true });
     }

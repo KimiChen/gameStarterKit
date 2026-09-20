@@ -2,7 +2,7 @@ import { ByteWriter, StringTable, writeSegments } from "./bytes.mjs";
 import {
     AlignType, AutoSizeType, BUTTON_CONTROLLER_PAGES, ButtonMode, DownEffect,
     FGUI_MAGIC, FGUI_VERSION, GraphType, LoaderFillType, ObjectPropID, ObjectType, OverflowType,
-    PackageItemType, RelationType, VertAlignType,
+    PackageItemType, RelationType, SCROLL_PANE_FLAGS, ScrollBarDisplayType, ScrollType, VertAlignType,
 } from "./constants.mjs";
 import { parseCssColor } from "./bytes.mjs";
 
@@ -122,7 +122,7 @@ function writeComponentRaw(component, strings, pkg, packages) {
     seg0.bool(false);
     seg0.bool(false);
     seg0.bool(false);
-    seg0.u8(OverflowType.Visible);
+    seg0.u8(component.scroll ? OverflowType.Scroll : OverflowType.Visible);
     seg0.bool(false);
 
     const seg1 = new ByteWriter(strings);
@@ -160,6 +160,7 @@ function writeComponentRaw(component, strings, pkg, packages) {
     seg5.i16(0);
 
     const segs = [seg0, seg1, seg2, seg3, seg4, seg5, null, null];
+    if (component.scroll) segs[7] = writeScrollPane(component, strings);
     if (component.extension === "Button") {
         const button = new ByteWriter(strings);
         button.u8(ButtonMode.Common);
@@ -170,6 +171,20 @@ function writeComponentRaw(component, strings, pkg, packages) {
         segs[6] = button;
     }
     return writeSegments(segs, strings);
+}
+
+function writeScrollPane(component, strings) {
+    const out = new ByteWriter(strings);
+    out.u8(component.scroll === "both" ? ScrollType.Both
+        : component.scroll === "horizontal" ? ScrollType.Horizontal : ScrollType.Vertical);
+    out.u8(ScrollBarDisplayType.Hidden);
+    out.i32(SCROLL_PANE_FLAGS);
+    out.bool(false); // no scrollBarMargin
+    out.s(null); // vtScrollBarRes
+    out.s(null); // hzScrollBarRes
+    out.s(null); // headerRes
+    out.s(null); // footerRes
+    return out;
 }
 
 function writeButtonController(strings) {
