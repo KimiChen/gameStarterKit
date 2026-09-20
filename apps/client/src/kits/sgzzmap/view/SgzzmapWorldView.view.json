@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": "sgzzmap",
+  "kind": "cocos",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": false,
+  "logic": "apps/client/src/kits/sgzzmap/logic/SgzzmapWorldLogic.ts",
+  "group": "authenticated",
+  "restore": "discard"
+}

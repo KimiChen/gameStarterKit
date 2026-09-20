@@ -68,6 +68,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
         load: () => import("../view/SettingsView").then((m) => m.SettingsView),
     }),
+    SgzzmapWorld: defineView({
+        name: "SgzzmapWorld", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../kits/sgzzmap/view/SgzzmapWorldView").then((m) => m.SgzzmapWorldView),
+    }),
     SlgMap: defineView({
         name: "SlgMap", kind: "cocos", layer: "popup",
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
@@ -111,6 +116,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "PromoHome", owner: "builtin", kind: "cocos", path: "apps/client/src/view/PromoHomeView.ts", logic: "apps/client/src/logic/page/PromoHomeLogic.ts", sidecar: "apps/client/src/view/PromoHomeView.view.json" },
     { name: "Redeem", owner: "redeem", kind: "cocos", path: "apps/client/src/plugins/redeem/view/RedeemView.ts", logic: "apps/client/src/plugins/redeem/logic/RedeemLogic.ts", sidecar: "apps/client/src/plugins/redeem/view/RedeemView.view.json" },
     { name: "Settings", owner: "builtin", kind: "cocos", path: "apps/client/src/view/SettingsView.ts", logic: "apps/client/src/logic/page/SettingsLogic.ts", sidecar: "apps/client/src/view/SettingsView.view.json" },
+    { name: "SgzzmapWorld", owner: "sgzzmap", kind: "cocos", path: "apps/client/src/kits/sgzzmap/view/SgzzmapWorldView.ts", logic: "apps/client/src/kits/sgzzmap/logic/SgzzmapWorldLogic.ts", sidecar: "apps/client/src/kits/sgzzmap/view/SgzzmapWorldView.view.json" },
     { name: "SlgMap", owner: "slg", kind: "cocos", path: "apps/client/src/kits/slg/view/SlgMapView.ts", logic: "apps/client/src/kits/slg/logic/SlgMapLogic.ts", sidecar: "apps/client/src/kits/slg/view/SlgMapView.view.json" },
     { name: "SnakeWorld", owner: "snake", kind: "cocos", path: "apps/client/src/view/rooms/snake/SnakeWorldView.ts", logic: "apps/client/src/logic/rooms/snake/SnakeGameplay.ts", sidecar: "apps/client/src/view/rooms/snake/SnakeWorldView.view.json" },
     { name: "Tally", owner: "tally", kind: "cocos", path: "apps/client/src/view/rooms/tally/TallyView.ts", logic: "apps/client/src/logic/rooms/tally/TallyGameplay.ts", sidecar: "apps/client/src/view/rooms/tally/TallyView.view.json" },
@@ -121,6 +127,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
 export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/kits/arena/view",
     "apps/client/src/kits/mmo/view",
+    "apps/client/src/kits/sgzzmap/view",
     "apps/client/src/kits/slg/view",
     "apps/client/src/plugins/arenaShop/view",
     "apps/client/src/plugins/redeem/view",

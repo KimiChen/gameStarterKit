@@ -1,0 +1,109 @@
+/**
+ * 菱形网格几何。产出的是**纯数组**（positions/uvs/colors/indices16），⛔ 不碰 cc。
+ *
+ * ⚠ 几何要点（已验算）：等距菱形以 a=(TW,TH)、b=(0.5TW,−1.5TH) 铺面，|det| = 2·TW·TH
+ * 恰等于半对角 TW,TH 的菱形面积 ⇒ **无缝无叠**。每格 4 顶点 / 6 索引，顶点取 N/E/S/W 四点。
+ * ⚠ 画家序是纯整数排序：(row+col) 升序、(row−col) 升序。⛔ 不要用浮点 y 去比。
+ */
+import {
+    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzGrid2Pos,
+} from "../../../shared/kits/sgzzmap/api/hexmap/index";
+
+export interface SgzzGeometry {
+    readonly positions: Float32Array;
+    readonly uvs: Float32Array;
+    readonly colors: Float32Array;
+    readonly indices16: Uint16Array;
+    readonly quads: number;
+    readonly minPos: readonly [number, number, number];
+    readonly maxPos: readonly [number, number, number];
+}
+export interface SgzzQuadInput {
+    readonly row: number;
+    readonly col: number;
+    /** 图集格（左上 u,v 与宽高，均为 0..1）；不贴图就传 null。 */
+    readonly uv: readonly [number, number, number, number] | null;
+    readonly rgba: readonly [number, number, number, number];
+}
+
+/** Uint16 索引上限 ⇒ 单个 mesh 的四边形数硬顶。超了必须拆 mesh。 */
+export const SGZZ_MAX_QUADS_PER_MESH = 16_383;
+/** 菱形四边中点的 UV（配合图集格的 2:1 尺寸）。 */
+const DIAMOND_UV: readonly (readonly [number, number])[] = [[0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]];
+
+/** 画家序比较：先 (row+col)，再 (row−col)。⛔ 两者都要，否则同一条斜线上的次序不稳定。 */
+export function sgzzPainterCompare(a: { row: number; col: number }, b: { row: number; col: number }): number {
+    const sa = a.row + a.col, sb = b.row + b.col;
+    if (sa !== sb) return sa - sb;
+    return (a.row - a.col) - (b.row - b.col);
+}
+
+/**
+ * 把一批格铺成一张 mesh。入参会被就地排序成画家序。
+ * 半像素内缩沿**对角**边法线收（⛔ 不是轴向），否则图集相邻格会渗色。
+ */
+export function buildSgzzDiamondMesh(quads: SgzzQuadInput[], inset = 0): SgzzGeometry {
+    if (quads.length > SGZZ_MAX_QUADS_PER_MESH) {
+        throw new RangeError(`SGZZ mesh quads ${quads.length} > ${SGZZ_MAX_QUADS_PER_MESH}`);
+    }
+    quads.sort(sgzzPainterCompare);
+    const n = quads.length;
+    const positions = new Float32Array(n * 4 * 3);
+    const uvs = new Float32Array(n * 4 * 2);
+    const colors = new Float32Array(n * 4 * 4);
+    const indices16 = new Uint16Array(n * 6);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    for (let i = 0; i < n; i += 1) {
+        const q = quads[i];
+        const c = sgzzGrid2Pos(q.row, q.col);
+        const hw = SGZZ_TILE_HALF_W, hh = SGZZ_TILE_HALF_H;
+        // N, E, S, W
+        const pts: readonly (readonly [number, number])[] = [
+            [c.x, c.y + hh], [c.x + hw, c.y], [c.x, c.y - hh], [c.x - hw, c.y],
+        ];
+        for (let v = 0; v < 4; v += 1) {
+            const px = pts[v][0], py = pts[v][1];
+            positions[(i * 4 + v) * 3] = px;
+            positions[(i * 4 + v) * 3 + 1] = py;
+            positions[(i * 4 + v) * 3 + 2] = 0;
+            if (px < minX) minX = px;
+            if (px > maxX) maxX = px;
+            if (py < minY) minY = py;
+            if (py > maxY) maxY = py;
+
+            if (q.uv) {
+                const [u0, v0, uw, vh] = q.uv;
+                // 朝格中心收 inset 比例，等价于沿四条对角边的法线内缩
+                const du = (DIAMOND_UV[v][0] - 0.5) * (1 - inset) + 0.5;
+                const dv = (DIAMOND_UV[v][1] - 0.5) * (1 - inset) + 0.5;
+                uvs[(i * 4 + v) * 2] = u0 + du * uw;
+                uvs[(i * 4 + v) * 2 + 1] = v0 + dv * vh;
+            }
+            for (let k = 0; k < 4; k += 1) colors[(i * 4 + v) * 4 + k] = q.rgba[k];
+        }
+        const base = i * 4;
+        indices16.set([base, base + 1, base + 2, base, base + 2, base + 3], i * 6);
+    }
+    if (n === 0) { minX = minY = maxX = maxY = 0; }
+    return {
+        positions, uvs, colors, indices16, quads: n,
+        minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0],
+    };
+}
+
+/** 一张整幅底图的四边形（远档用）。 */
+export function buildSgzzPlateMesh(bounds: { minX: number; minY: number; maxX: number; maxY: number },
+                                   rgba: readonly [number, number, number, number] = [1, 1, 1, 1]): SgzzGeometry {
+    const positions = new Float32Array([
+        bounds.minX, bounds.maxY, 0, bounds.maxX, bounds.maxY, 0,
+        bounds.maxX, bounds.minY, 0, bounds.minX, bounds.minY, 0,
+    ]);
+    const uvs = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
+    const colors = new Float32Array(16);
+    for (let v = 0; v < 4; v += 1) for (let k = 0; k < 4; k += 1) colors[v * 4 + k] = rgba[k];
+    return {
+        positions, uvs, colors, indices16: new Uint16Array([0, 1, 2, 0, 2, 3]), quads: 1,
+        minPos: [bounds.minX, bounds.minY, 0], maxPos: [bounds.maxX, bounds.maxY, 0],
+    };
+}

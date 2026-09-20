@@ -120,7 +120,31 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
   `k_sgzzmap_march`、dispatch/recall 路由（contractVersion → 3）、`marchSettle` worker。
 - ✅ **P5** 鸟瞰聚合：`chunk` 面（三档 20/40/60 格）、`k_sgzzmap_chunk`、`zoom` 路由
   （contractVersion → 4）；远档底图与缩略图资源在 P0 已入库。
-- ⏳ P6 客户端页。
+- ✅ **P6** 客户端地图页：路由 `sgzzmapWorld`（首屏菜单「大地图」）。
+  - 纯逻辑层（Node 可测、`logic-purity` 自动看守）：相机（拖拽/捏合锚点/惯性/钳位）、
+    可视格模板、分层门控、菱形网格与画家序、六向描边引用计数、页模型（节流 + 代际围栏）、
+    配色与 tonemapping 预补偿。
+  - View 层：`SgzzMeshBatch`（创建/上传/扩容/销毁纪律只写一遍）+ `SgzzMapRenderer`
+    （地表 / 领地 / 描边各一张合并 mesh）+ `SgzzmapWorldView`。
+  - 地形直接消费 shared 内容模块 ⇒ **首帧即可绘制**，⛔ 不等资源加载、⛔ 不需要 BufferAsset 类型桩。
+
+### 客户端的五条硬规矩
+
+1. **只有一台正交 UI 相机**（`docs/3d.md` 零实施）：一切经 `UIMeshRenderer` 走 2D UI 管线，
+   深度**只有兄弟序**，⛔ 不要指望 z。
+2. **⛔ 不写 `director.getScene().globals`**。slg 为抵消 tonemapping 去改场景全局
+   （`docs/3d.md` §0.1 已点名为待迁移侵入），两个 kit 同时在场时 restore 会互相吃掉。
+   本 kit 只**读**管线档位，由 `sgzzPalette.sgzzCompensate` 预补偿顶点色。
+3. **领地叠色必须是合并 mesh**：原作每格一个节点，那在 Cocos 上会是成千上万个节点。
+4. **平移只动父节点 transform**，⛔ 不重建网格；只有 chunk 集或数据变了才重建。
+5. **代际围栏**：每次请求带 generation，回来对不上就整批丢弃，
+   ⛔ 否则快速平移时迟到的旧响应会把新视野覆盖掉。
+
+### P6 余留（不挡用）
+
+远档（LOD ≥ 3）目前只关掉近景网格，**底图与聚合色块的绘制尚未接上**
+（服务端 `zoom` 与素材 `plate-lod4/5.png`、`minimap.png` 都已就位，缺的是 View 侧的一张
+带贴图的四边形与缩略图浮层）；行军线的客户端绘制同理（`march` 面与逐格展开已在 logic 层）。
 
 ### 鸟瞰聚合的三条硬规矩
 

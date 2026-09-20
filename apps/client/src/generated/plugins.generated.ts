@@ -48,6 +48,7 @@ export const PLUGIN_IDS: readonly string[] = [
     "builtin",
     "mmo",
     "redeem",
+    "sgzzmap",
     "slg",
     "snake",
     "tally",
@@ -123,6 +124,18 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         ],
     },
     {
+        id: "sgzzmap",
+        resident: false,
+        load: () => import("../kits/sgzzmap/index").then((m) => m.createPluginModule()),
+        dependencies: [],
+        routes: [
+            { id: "sgzzmapWorld", view: "SgzzmapWorld", group: "authenticated", restore: "discard" },
+        ],
+        menu: [
+            { entryId: "world", pluginId: "sgzzmap", label: "大地图", labelKey: "menu.sgzzmap.world", launch: { kind: "route", routeId: "sgzzmapWorld" } },
+        ],
+    },
+    {
         id: "slg",
         resident: false,
         load: () => import("../kits/slg/index").then((m) => m.createPluginModule()),
@@ -167,6 +180,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
     { entryId: "enter", pluginId: "mmo", label: "进入世界", labelKey: "menu.mmo.enter", launch: { kind: "route", routeId: "mmoCharacters" } },
     { entryId: "redeem", pluginId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
+    { entryId: "world", pluginId: "sgzzmap", label: "大地图", labelKey: "menu.sgzzmap.world", launch: { kind: "route", routeId: "sgzzmapWorld" } },
     { entryId: "map", pluginId: "slg", label: "大地图", labelKey: "menu.slg.map", launch: { kind: "route", routeId: "slgMap" } },
     { entryId: "snake", pluginId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
     { entryId: "tally", pluginId: "tally", label: "点数赛", labelKey: "menu.tally", launch: { kind: "gameplay", gameplayId: "tally" } },

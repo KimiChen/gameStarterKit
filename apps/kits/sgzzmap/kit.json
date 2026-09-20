@@ -83,5 +83,35 @@
   "docs": [
     "apps/kits/sgzzmap/README.md"
   ],
-  "resident": false
+  "resident": false,
+  "entry": "apps/client/src/kits/sgzzmap/index.ts",
+  "viewDirs": [
+    "apps/client/src/kits/sgzzmap/view"
+  ],
+  "views": [
+    "apps/client/src/kits/sgzzmap/view/SgzzmapWorldView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "sgzzmap",
+      "logicDir": "apps/client/src/kits/sgzzmap/logic"
+    }
+  ],
+  "routes": [
+    {
+      "id": "sgzzmapWorld",
+      "view": "SgzzmapWorld"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "world",
+      "label": "大地图",
+      "labelKey": "menu.sgzzmap.world",
+      "launch": {
+        "kind": "route",
+        "routeId": "sgzzmapWorld"
+      }
+    }
+  ]
 }
