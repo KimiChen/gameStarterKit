@@ -22,7 +22,7 @@
 - `git push` **不带 `--progress` 时管道下完全不显示进度** ⇒ 排障一律 `--progress` + 重定向文件；否则只能看到「进程活着、CPU 0%」，会误判卡死（本次白等 17 分钟并误杀了一次正常推送）。
 - 上传量先量再推：`git rev-list --objects HEAD --not origin/new | wc -l`。
 - ⚠ 合 `origin/new` 会撞生成镜像重构：`apps/Cocos/assets/src/ui-uniflex/` 的 `pages/` 被上游改成 `modules/` ⇒ 冲突 **131 项**。正解 = **整棵镜像子树取上游**（`git rm -r --cached <dir>` → `git checkout origin/new -- <dir>` → `git clean -fdq -- <dir>`），因为 `apps/Cocos/assets/src` 是 `apps/client/src` 的逐字节镜像（禁止手改）。
-- ⚠ 预判冲突**不能只看精确路径交集**（本次只算出 18 项，真实 131 项）：rename 检测出的冲突要靠 `git status --porcelain` 的 `AA/AU/UU` 状态码识别。
+- ⚠ 预判冲突**不能只看精确路径交集**（本次只算出 18 项，真实 131 项）：rename 检测出的冲突要靠 `git status --porcelain` 的 `AA/AU/UU` 状态码识别。判据是「上游这批提交有没有发生重命名」——**无重命名时** `comm -12 <(git diff --name-only A...B) <(git diff --name-only B...A)` 可准确预判（实测 0 项 → 实测 0 冲突），**有重命名时会严重低估**。
 - 锁文件冲突**一律交给 writer**：`node scripts/protocol-fingerprint.mjs --write`、`node scripts/protected-paths-lock.mjs --write`（各自带 `--check`）；⛔ 不手改。
 - 提交前可用 `npm run verify:sync` 判漂移：`sync-shared --check` 应 ✔；`sync-client --check` 的「缺 .meta」项属上游既有基线（见下），用 `grep` 自己新增的文件名验证是否被卷入。
 
