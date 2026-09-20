@@ -19,6 +19,8 @@ export const MMO_WORLD_COORD_MAX = 1_000_000;
 export const MMO_WORLD_STAT_MAX = 100_000_000;
 /** 编排公开状态最多键数（§7.4 scriptState ≤ 16 键标量）。 */
 export const MMO_SCRIPT_STATE_MAX_KEYS = 16;
+/** 私有流一次最多带的冷却条目（技能栏上限）。 */
+export const MMO_PRIVATE_MAX_COOLDOWNS = 16;
 /** 提示最多选项数。 */
 export const MMO_PROMPT_MAX_CHOICES = 8;
 
@@ -63,8 +65,12 @@ export interface IMmoWorldBaselineRequestReq { readonly authorityEpoch: number; 
 export interface IMmoWorldEnter { readonly seq: number; readonly tick: number; readonly entity: IMmoEntityWire }
 export interface IMmoWorldUpdate { readonly seq: number; readonly tick: number; readonly id: string; readonly x: number; readonly y: number; readonly rev: number; readonly hp: number }
 export interface IMmoWorldLeave { readonly seq: number; readonly tick: number; readonly id: string }
-/** 本人私有流（与视野流共用单 seq 流）：MK0 只有 hp / mp；bag / cooldowns / quest / vars 随 MK2–MK4 增列（可选键）。 */
-export interface IMmoWorldPrivate { readonly seq: number; readonly tick: number; readonly hp: number; readonly hpMax: number; readonly mp: number; readonly mpMax: number }
+/** 本人私有流（与视野流共用单 seq 流）：hp / mp；MK2-B1 加 cooldowns（spellId → 剩余 ms，只在集合变化时发）与 casting（施法中）；bag / quest / vars 随 MK3 / MK4 增列（可选键）。 */
+export interface IMmoWorldPrivate {
+    readonly seq: number; readonly tick: number; readonly hp: number; readonly hpMax: number; readonly mp: number; readonly mpMax: number;
+    readonly cooldowns?: Readonly<Record<string, number>>;
+    readonly casting?: { readonly spellId: string; readonly readyInMs: number };
+}
 /** 本人移动回执（movement 面，MK1-B1）：服务端权威位置 + 它反映到的意图 seq（客户端按 seq 和解本地预测）；直发回执，⛔ 不进观察者单流。 */
 export interface IMmoWorldPos { readonly seq: number; readonly tick: number; readonly x: number; readonly y: number }
 export interface IMmoWorldOpResult { readonly clientReqId: string; readonly result: MmoOpResultKind; readonly detail?: string }
@@ -210,14 +216,29 @@ function validateLeave(input: unknown): IMmoWorldLeave {
 
 function validatePrivate(input: unknown): IMmoWorldPrivate {
     const value = recordOf(input, "payload");
-    assertExactKeys(value, ["seq", "tick", "hp", "hpMax", "mp", "mpMax"], [], "payload");
-    return {
+    assertExactKeys(value, ["seq", "tick", "hp", "hpMax", "mp", "mpMax"], ["cooldowns", "casting"], "payload");
+    const out: IMmoWorldPrivate = {
         ...envelopeOf(value, "payload"),
         hp: finiteInteger(value.hp, "payload.hp", 0, MMO_WORLD_STAT_MAX),
         hpMax: finiteInteger(value.hpMax, "payload.hpMax", 1, MMO_WORLD_STAT_MAX),
         mp: finiteInteger(value.mp, "payload.mp", 0, MMO_WORLD_STAT_MAX),
         mpMax: finiteInteger(value.mpMax, "payload.mpMax", 0, MMO_WORLD_STAT_MAX),
     };
+    let result = out;
+    if (value.cooldowns !== undefined) {
+        const raw = recordOf(value.cooldowns, "payload.cooldowns");
+        const keys = Object.keys(raw);
+        if (keys.length > MMO_PRIVATE_MAX_COOLDOWNS) throw new WireValidationError("MESSAGE_FIELD_RANGE", "payload.cooldowns");
+        const cooldowns: Record<string, number> = {};
+        for (const key of keys) cooldowns[idOf(key, "payload.cooldowns")] = finiteInteger(raw[key], `payload.cooldowns.${key}`, 1, 3_600_000);
+        result = { ...result, cooldowns };
+    }
+    if (value.casting !== undefined) {
+        const raw = recordOf(value.casting, "payload.casting");
+        assertExactKeys(raw, ["spellId", "readyInMs"], [], "payload.casting");
+        result = { ...result, casting: { spellId: idOf(raw.spellId, "payload.casting.spellId"), readyInMs: finiteInteger(raw.readyInMs, "payload.casting.readyInMs", 0, 60_000) } };
+    }
+    return result;
 }
 
 function validatePos(input: unknown): IMmoWorldPos {

@@ -13,7 +13,9 @@
  *    Committed ⇒ perSession transferReady；目标图（东郊 2 只 slime）按 arrival 落位、HP / MP 随身，异图 / 未知落点 ⇒ 首个出生点；
  *  - MK1-B4 检查点定稿（schema v2）：onPersonaCheckpoint 只给该会话的 persona 快照；冷却按 tick 差折算剩余 ms 并在进图时按 fixedStep 回灌；分线快照 v2 槽位
  *    （loot / scriptVars / timers / regions）往返、timers 按 tick 差重排、regions 覆盖内容包缺省；v1 快照（无新字段）照常回灌；
- *  - MK1-B6 生产节拍（MMO_WORLD_TUNING）：角色位置每 2 步进观察者流、停下那步补 bump（终点必到）、本人 pos 回执仍每步；兴趣集每 4 步重算（enter 最多晚 3 步）、离座清缓存。
+ *  - MK1-B6 生产节拍（MMO_WORLD_TUNING）：角色位置每 2 步进观察者流、停下那步补 bump（终点必到）、本人 pos 回执仍每步；兴趣集每 4 步重算（enter 最多晚 3 步）、离座清缓存；
+ *  - MK2-B1 combat：瞬发 strike 扣怪血 + 记仇恨 + 冷却进 private（集合变化才发）；拒绝原因经 opResult（cast:<seq>）；读条 fireball 到点结算 / 移动打断；治疗 / buff aura 到期消失；
+ *    怪死 ⇒ 离开视野、按 respawnSec 复活回出生位；角色死 ⇒ 不能动不能施、5 s 后回复活点满血；同一命令序 + 同一种子 ⇒ 同一 hp 轨迹（无头重放）。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
@@ -22,6 +24,7 @@ import {
     C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate,
     type IMmoWorldTransferReady, type IMmoWorldUpdate,
 } from "@game/shared";
+import { GREYBOX_SPELLS } from "@game/shared/kits/mmo/content/greybox";
 import { indexContentPack, validateContentPack, type IContentPack, type IContentPackIndex } from "@game/shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
 import type { MmoClassId, MmoFactionId } from "@game/shared/kits/mmo/api/characters/index";
@@ -104,7 +107,7 @@ test("撒怪：本图三只 slime 落在 spawn 附近（确定性）；图不在
         assert.ok(Math.abs(creature.x - 1200) <= 40 && Math.abs(creature.y - 1000) <= 40, `${creature.id} 在 spawn 抖动半径内 (${creature.x}, ${creature.y})`);
         assert.deepEqual([creature.templateId, creature.hp, creature.hpMax], ["slime", 30, 30]);
     }
-    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 3, 0]);
+    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 4, 0]);
     const other = harness();
     await assert.rejects(other.runtime.recover({ instanceId: "i2", mapId: "nowhere", line: 0, authorityEpoch: 1, checkpoint: null }), /不在内容包/u);
     const req = request("s0", "p-nobody");
@@ -385,6 +388,7 @@ test("检查点 v2：onPersonaCheckpoint 只给该会话；冷却剩余 ms 往�
     h.mode.__probe.setVar("bossPhase", 2);
     const own = h.mode.onPersonaCheckpoint!(h.runtime.context(), "a") as MmoPersonaSnapshot;
     assert.deepEqual(own, { mapId: "greybox", x: 1000, y: 1000, hp: 100, mp: 50, cooldowns: { strike: 500 } }, "只有本人快照 + 剩余冷却（过期的不进）");
+    drain(h, "a");
     assert.equal(h.mode.onPersonaCheckpoint!(h.runtime.context(), "nobody"), null);
     const checkpoint = h.runtime.takeCheckpoint(true)!;
     assert.deepEqual(checkpoint.persona.map((entry) => entry.personaId).sort(), ["p-a", "p-b"], "全批含两人");
@@ -435,4 +439,130 @@ test("生产节拍（MMO_WORLD_TUNING 2 / 4）：位置每 2 步进流一次（�
     assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldEnter), ["char:c-p-b"], "enter 恰一次（≤ 4 步内）");
     step(h, 8);
     assert.equal(idsOf(drain(h, "a"), S2C.MmoWorldEnter).length, 0, "⛔ 重复 enter");
+});
+
+const resultsOf = (h: Harness, session: string): IMmoWorldOpResult[] => h.direct.filter((m) => m.session === session && m.type === S2C.MmoWorldOpResult).map((m) => m.payload as IMmoWorldOpResult);
+const privatesOf = (messages: readonly { type: string; payload: unknown }[]): IMmoWorldPrivate[] => messages.filter((m) => m.type === S2C.MmoWorldPrivate).map((m) => m.payload as IMmoWorldPrivate);
+const nearestSlime = (h: Harness): { id: string; x: number; y: number } => [...h.mode.__probe.entities().values()].filter((e) => e.kind === "creature").sort((a, b) => a.id < b.id ? -1 : 1)[0]!;
+
+test("combat（MK2-B1）：瞬发 strike 扣怪血 / 记仇恨 / 冷却进 private（集合变化才发）；拒绝：未知技能 / 未学 / 冷却 / 射程 / 无目标；读条 fireball 移动打断与到点结算 + 扣蓝；治疗 / buff aura 到期", async () => {
+    const h = harness();
+    await activeWorld(h);
+    const slime = nearestSlime(h);
+    await seat(h, "a", "p-a", personaAt(slime.x - 30, slime.y)); // 战士，距怪 30（strike 射程 60）
+    step(h);
+    drain(h, "a");
+    const hpBefore = h.mode.__probe.entities().get(slime.id)!.hp;
+    h.runtime.enqueue("a", C2S.MmoWorldTarget, { entityId: slime.id });
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 1, spellId: GREYBOX_SPELLS.strike });
+    step(h);
+    const after = h.mode.__probe.entities().get(slime.id)!;
+    assert.ok(after.hp < hpBefore && after.hp >= hpBefore - 15, `怪血下降 ${hpBefore} → ${after.hp}（12–14）`);
+    assert.equal(after.threat.get("char:c-p-a"), hpBefore - after.hp, "仇恨 = 伤害");
+    assert.deepEqual(resultsOf(h, "a").map((r) => [r.clientReqId, r.result]), [["cast:1", "ok"]]);
+    const out = drain(h, "a");
+    assert.ok(out.some((m) => m.type === S2C.MmoWorldUpdate && (m.payload as IMmoWorldUpdate).id === slime.id && (m.payload as IMmoWorldUpdate).hp === after.hp), "视野流 update 带新 hp");
+    const priv = privatesOf(out);
+    assert.deepEqual(priv.at(-1)?.cooldowns, { strike: 1500 }, "冷却进 private（剩余 ms）");
+    step(h, 3);
+    assert.equal(privatesOf(drain(h, "a")).length, 0, "倒计时 ⛔ 每 tick 发（集合未变）");
+    // 拒绝
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 2, spellId: GREYBOX_SPELLS.strike });
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 3, spellId: "nova" });
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 4, spellId: GREYBOX_SPELLS.fireball });
+    step(h);
+    assert.deepEqual(resultsOf(h, "a").slice(1).map((r) => [r.clientReqId, r.detail]), [["cast:2", "cooldown"], ["cast:3", "unknown-spell"], ["cast:4", "not-learned"]]);
+    step(h, 30); // 冷却过期 ⇒ private 集合变化发一次
+    assert.deepEqual(privatesOf(drain(h, "a")).map((p) => p.cooldowns), [undefined], "冷却到点 ⇒ 集合变空发一次");
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 1, target: { x: slime.x - 200, y: slime.y } });
+    step(h, 30);
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 5, spellId: GREYBOX_SPELLS.strike });
+    h.runtime.enqueue("a", C2S.MmoWorldTarget, { entityId: null });
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 6, spellId: GREYBOX_SPELLS.strike });
+    step(h);
+    assert.deepEqual(resultsOf(h, "a").slice(4).map((r) => [r.clientReqId, r.detail]), [["cast:5", "range"], ["cast:6", "no-target"]]);
+    // 读条：法师 fireball（1000 ms = 20 步），移动打断；再施到点结算 + 扣蓝 10
+    h.characters.set("p-c", rowOf("p-c", "Mage", "caster"));
+    const reqC = request("c", "p-c", personaAt(slime.x - 100, slime.y));
+    await h.runtime.beforeAdmit(reqC);
+    assert.equal(h.runtime.admit(reqC), "admitted");
+    step(h);
+    drain(h, "c");
+    const hpMid = h.mode.__probe.entities().get(slime.id)!.hp;
+    h.runtime.enqueue("c", C2S.MmoWorldCast, { seq: 1, spellId: GREYBOX_SPELLS.fireball, targetId: slime.id });
+    step(h);
+    assert.equal(privatesOf(drain(h, "c")).at(-1)?.casting?.spellId, GREYBOX_SPELLS.fireball, "读条进 private");
+    step(h, 5);
+    h.runtime.enqueue("c", C2S.MmoWorldMove, { seq: 1, dir: { x: -1, y: 0 } });
+    step(h);
+    assert.deepEqual(resultsOf(h, "c").map((r) => [r.clientReqId, r.detail]), [["cast:1", "moved"]], "移动打断读条");
+    assert.equal(h.mode.__probe.entities().get(slime.id)!.hp, hpMid, "打断 ⇒ 无伤害");
+    h.runtime.enqueue("c", C2S.MmoWorldMove, { seq: 2, dir: { x: 0, y: 0 } });
+    h.runtime.enqueue("c", C2S.MmoWorldCast, { seq: 2, spellId: GREYBOX_SPELLS.fireball, targetId: slime.id });
+    step(h, 19);
+    assert.equal(h.mode.__probe.entities().get(slime.id)!.hp, hpMid, "到点前不结算");
+    step(h, 2);
+    const mage = h.mode.__probe.moverOf("c")!;
+    assert.ok(h.mode.__probe.entities().get(slime.id)!.hp < hpMid, "到点结算");
+    assert.deepEqual([mage.mp, resultsOf(h, "c").at(-1)?.result], [40, "ok"], "扣蓝 10（personaAt 进图 mp 50）+ ok 回执");
+    // 治疗 + buff：法师受伤后 mend 自己；战士 guard ⇒ aura 到期消失
+    h.mode.__probe.damage(mage.id, 40);
+    step(h, 130); // 等 fireball 冷却（4 s = 80 步）与读条余量
+    h.runtime.enqueue("c", C2S.MmoWorldCast, { seq: 3, spellId: GREYBOX_SPELLS.mend });
+    step(h, 31);
+    assert.ok(mage.hp > 40 && mage.hp <= 80, `治疗后 ${mage.hp}`);
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 7, spellId: GREYBOX_SPELLS.guard });
+    step(h);
+    const fighter = h.mode.__probe.moverOf("a")!;
+    assert.deepEqual([...fighter.auras.keys()], [GREYBOX_SPELLS.guard], "buff aura 挂上");
+    step(h, 161); // 8 s = 160 步后过期
+    assert.equal(fighter.auras.size, 0, "aura 到期消失");
+});
+
+test("combat（MK2-B1）：怪死 ⇒ 离开视野 + 按 respawnSec 复活回出生位；角色死 ⇒ 不能动 / 不能施，5 s 后回复活点满血；同一命令序 + 同一种子 ⇒ 同一 hp 轨迹（无头重放）", async () => {
+    const h = harness();
+    await activeWorld(h);
+    const slime = nearestSlime(h);
+    await seat(h, "a", "p-a", personaAt(slime.x - 30, slime.y));
+    step(h);
+    drain(h, "a");
+    h.mode.__probe.damage(slime.id, 29); // 剩 1 血
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 1, spellId: GREYBOX_SPELLS.strike, targetId: slime.id });
+    step(h);
+    const dead = h.mode.__probe.entities().get(slime.id)!;
+    assert.deepEqual([dead.alive, dead.hp, dead.threat.size], [false, 0, 0], "死亡：热状态清");
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldLeave), [slime.id], "怪离开视野");
+    assert.ok(h.mode.__probe.log.includes(`death:${slime.id}`));
+    step(h, 401); // respawnSec 20 = 400 步
+    const back = h.mode.__probe.entities().get(slime.id)!;
+    assert.deepEqual([back.alive, back.hp, back.x, back.y], [true, 30, slime.x, slime.y], "复活回出生位满血");
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldEnter), [slime.id], "复活 ⇒ enter");
+    // 角色死亡
+    const fighter = h.mode.__probe.moverOf("a")!;
+    h.mode.__probe.damage(fighter.id, 100);
+    step(h);
+    assert.deepEqual([fighter.alive, fighter.hp], [false, 0]);
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 1, dir: { x: 1, y: 0 } });
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 2, spellId: GREYBOX_SPELLS.strike, targetId: slime.id });
+    step(h, 2);
+    assert.deepEqual([fighter.x, resultsOf(h, "a").at(-1)?.detail], [slime.x - 30, "dead"], "死者不动、不能施");
+    step(h, 100); // 5 s
+    assert.deepEqual([fighter.alive, fighter.hp, fighter.x, fighter.y], [true, 100, 1000, 1000], "回复活点满血");
+    // 无头重放：同种子同命令序 ⇒ 同轨迹
+    const trajectory = async (): Promise<number[]> => {
+        const r = harness();
+        await activeWorld(r);
+        const target = nearestSlime(r);
+        await seat(r, "a", "p-a", personaAt(target.x - 30, target.y));
+        const hps: number[] = [];
+        for (let round = 1; round <= 3; round += 1) {
+            r.runtime.enqueue("a", C2S.MmoWorldCast, { seq: round, spellId: GREYBOX_SPELLS.strike, targetId: target.id });
+            step(r, 31);
+            hps.push(r.mode.__probe.entities().get(target.id)!.hp);
+        }
+        return hps;
+    };
+    const first = await trajectory();
+    assert.deepEqual(await trajectory(), first, `重放一致：${first.join(",")}`);
+    assert.ok(first[0]! > first[1]! && first[1]! >= first[2]!, "每轮都在掉血");
 });

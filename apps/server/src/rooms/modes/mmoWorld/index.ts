@@ -7,7 +7,10 @@
  *  - onStep：move 意图（dir / target）→ 权威积分（`movement` 面）；baselineRequest → 框架 baseline；pickup 回 opResult rejected（MK3 接入）；
  *    transfer（MK1-B3 两图交接）：portal 存在 + 在半径内 + 无在途 ⇒ 落点先写进实体（框架 prepare 后强制点的 persona 快照带 arrival）⇒
  *    `context.transfer.request`（框架 MF8 状态机）⇒ Committed 后 perSession `transferReady`（凭据只此一处出网）⇒ 壳以 "transferred" 离座；
- *    失败 ⇒ opResult rejected + 落点清；目标图 onEnter 按 arrival 落位（HP / MP 随身）；target / cast / interact / choose 暂忽略（MK2 / MK4）；本人私有流 hp / mp 变了才发；
+ *    失败 ⇒ opResult rejected + 落点清；目标图 onEnter 按 arrival 落位（HP / MP 随身）；interact / choose 暂忽略（MK4）；本人私有流 hp / mp / 冷却集合 / 施法中变了才发；
+ *  - combat（MK2-B1，`combat` 面纯函数 + 本 mode 的施法管线）：target 选目标；cast ⇒ checkCast（技能 / 已学 / 存活 / 施法中 / 冷却 / 耗蓝 / 目标 / 射程）⇒ 读条（castMs > 0）
+ *    或瞬发；读条期间移动即打断；到点二次校验后扣蓝 / 记冷却 / 施效（直伤按 combat 面公式 + 分线随机流浮动、治疗、buff / debuff aura）；hp ≤ 0 ⇒ 死亡
+ *    （清热状态、怪物离开视野、按 respawnSec / MMO_PLAYER_RESPAWN_MS 复活、checkpointOnDeath ⇒ 强制点）；回执经 opResult（clientReqId = cast:<seq>）；同一命令序 + 同一种子 ⇒ 同一结果（无头重放）；
  *  - observer（MK1-B2 AOI 接入）：候选来自 kit 网格（`aoi/grid.ts`，格长 = 图的 aoi.cellSize）→ 精确视距（aoi.viewRadius 欧氏）→ 可见性规则
  *    （`aoi/visibility.ts`：位面 / 隐身 / 阵营；本人永远可见）→ 最近优先截到 MMO_INTEREST_MAX_ENTITIES（框架 InterestSet 超限即抛，kit 先收敛）；
  *    公开投影 = IMmoEntityWire（名片含 factionId，⛔ mp 等私有字段）；差分 / baseline / 投递归框架；
@@ -19,10 +22,13 @@
 import {
     GAMEPLAY_CATALOG, MmoWorldBaselineBegin, MmoWorldBaselineChunk, MmoWorldBaselineEnd, MmoWorldBaselineRequest, MmoWorldCast, MmoWorldChoose, MmoWorldEnter,
     MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldOpResult, MmoWorldPickup, MmoWorldPos, MmoWorldPrivate, MmoWorldTarget, MmoWorldTransfer, MmoWorldTransferReady, MmoWorldUpdate,
-    type IMmoEntityWire, type IMmoWorldMoveReq, type IMmoWorldPickupReq, type IMmoWorldTransferReq, type IObserverEnvelope,
+    type IMmoEntityWire, type IMmoWorldCastReq, type IMmoWorldMoveReq, type IMmoWorldPickupReq, type IMmoWorldTargetReq, type IMmoWorldTransferReq, type IObserverEnvelope,
 } from "@game/shared";
 import type { IContentPackIndex, IMapDef } from "@game/shared/kits/mmo/api/content/index";
 import { clampToMap, withinRadius } from "@game/shared/kits/mmo/api/world/index";
+import {
+    MMO_PLAYER_RESPAWN_MS, auraOf, castReqIdOf, checkCast, cooldownReadyTick, damageOf, effectiveStats, healOf, needsHostileTarget, threatOf, ticksOf, type IAura,
+} from "@game/shared/kits/mmo/api/combat/index";
 import { applyIntent, parseCollisionGrid, resolveMove, type CollisionGrid } from "../../../kits/mmo/api/movement/index";
 import { AoiGrid } from "../../../kits/mmo/aoi/grid";
 import { pickInterest } from "../../../kits/mmo/aoi/visibility";
@@ -71,8 +77,23 @@ export interface MmoEntity {
     stealth: boolean;
     /** 交接落点（发起交接时写入；随 persona 快照落库；失败即清） */
     arrival: { readonly mapId: string; readonly spawnPointId: string } | null;
-    /** 冷却：spellId → 就绪 tick（MK2 combat 写入；快照按 tick 差折算成剩余 ms） */
+    /** 冷却：spellId → 就绪 tick（快照按 tick 差折算成剩余 ms） */
     readonly cooldowns: Map<string, number>;
+    /** 基础属性（职业 / 怪物模板）；生效值 = effectiveStats(base, auras) */
+    readonly attack: number;
+    readonly defense: number;
+    /** 已学技能（角色 = 职业模板；怪物 = 模板 spells） */
+    readonly spells: readonly string[];
+    /** 战斗热状态（⛔ 进检查点，§7.3）：aura / 仇恨 / 施法中 / 选中目标 */
+    readonly auras: Map<string, IAura>;
+    readonly threat: Map<string, number>;
+    casting: { readonly spellId: string; readonly targetId: string | null; readonly readyTick: number; readonly seq: number } | null;
+    targetId: string | null;
+    alive: boolean;
+    /** 复活到期 tick（死亡时设；null = 存活） */
+    respawnDueTick: number | null;
+    /** 怪物出生位置（复活落点） */
+    readonly origin: { readonly x: number; readonly y: number };
     x: number;
     y: number;
     /** 公开投影修订号（位置 / hp 变即 +1） */
@@ -107,6 +128,8 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         setVisibility(id: string, facts: { readonly plane?: number; readonly stealth?: boolean }): void;
         /** 在途交接的会话 */
         transfersInFlight(): readonly string[];
+        /** 战斗接缝（测试）：直接扣血（走同一死亡路径） */
+        damage(id: string, amount: number): void;
         /** 检查点接缝（MK2–MK4 接入前的直接写口）：冷却 / timer / 区域开关 / 脚本 var */
         setCooldown(id: string, spellId: string, readyAtTick: number): void;
         setTimer(id: string, dueTick: number): void;
@@ -116,6 +139,19 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         regions(): ReadonlyMap<string, boolean>;
         vars(): Readonly<Record<string, unknown>>;
         readonly log: string[];
+    };
+}
+
+/** 私有流的冷却 / 施法中投影（冷却按 tick 差折算成剩余 ms，只含未就绪的）。 */
+function privateCombatOf(entity: MmoEntity, tick: number, fixedStepMs: number): { cooldowns?: Record<string, number>; casting?: { spellId: string; readyInMs: number } } {
+    const cooldowns: Record<string, number> = {};
+    for (const [spellId, readyTick] of entity.cooldowns) {
+        const remaining = (readyTick - tick) * fixedStepMs;
+        if (remaining > 0) cooldowns[spellId] = remaining;
+    }
+    return {
+        ...(Object.keys(cooldowns).length > 0 ? { cooldowns } : {}),
+        ...(entity.casting ? { casting: { spellId: entity.casting.spellId, readyInMs: Math.max(0, (entity.casting.readyTick - tick) * fixedStepMs) } } : {}),
     };
 }
 
@@ -229,6 +265,110 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             });
     };
 
+    const distanceOf = (a: { readonly x: number; readonly y: number }, b: { readonly x: number; readonly y: number }): number => Math.hypot(a.x - b.x, a.y - b.y);
+    const statsOf = (entity: MmoEntity, tick: number) => effectiveStats({ level: entity.level, attack: entity.attack, defense: entity.defense }, entity.auras.values(), tick);
+    /** 施法请求（MK2-B1）：checkCast ⇒ 读条 / 瞬发；回执 clientReqId = cast:<seq>。 */
+    const requestCast = (context: WorldModeContext<MmoWorldRoomState>, session: string, request: IMmoWorldCastReq, tick: number): void => {
+        const caster = moverOf(session);
+        if (!caster) return;
+        const reqId = castReqIdOf(request.seq);
+        const spell = content.spellById.get(request.spellId);
+        const targetId = request.targetId ?? caster.targetId ?? (spell && !needsHostileTarget(spell) ? caster.id : null);
+        const target = targetId === null ? null : entities.get(targetId) ?? null;
+        const rejection = checkCast({
+            spell, learned: caster.spells.includes(request.spellId), casterAlive: caster.alive, casting: caster.casting !== null,
+            readyTick: caster.cooldowns.get(request.spellId), tick, mp: caster.mp,
+            target: target ? { alive: target.alive, distance: distanceOf(caster, target), isSelf: target.id === caster.id } : (targetId !== null ? { alive: false, distance: 0, isSelf: false } : null),
+        });
+        if (rejection !== null || !spell) { reject(context, session, reqId, rejection ?? "unknown-spell"); return; }
+        const castTicks = ticksOf(spell.castMs, context.fixedStepMs);
+        caster.casting = { spellId: spell.spellId, targetId: target?.id ?? null, readyTick: tick + castTicks, seq: request.seq };
+        if (castTicks === 0) resolveCast(context, caster, tick);
+        else privateDirty.add(session);
+    };
+    /** 施法完成：二次校验（目标存活 / 射程 / 耗蓝）⇒ 扣蓝 / 记冷却 / 施效；随机只经分线随机流。 */
+    const resolveCast = (context: WorldModeContext<MmoWorldRoomState>, caster: MmoEntity, tick: number): void => {
+        const cast = caster.casting;
+        if (!cast) return;
+        caster.casting = null;
+        const spell = content.spellById.get(cast.spellId);
+        const reqId = castReqIdOf(cast.seq);
+        const fail = (detail: string): void => { if (caster.session) reject(context, caster.session, reqId, detail); };
+        if (!spell || !caster.alive) { fail("dead"); return; }
+        const target = cast.targetId === null ? caster : entities.get(cast.targetId) ?? null;
+        if (!target || (!target.alive && target.id !== caster.id)) { fail("target-dead"); return; }
+        if (target.id !== caster.id && distanceOf(caster, target) > spell.range) { fail("range"); return; }
+        if (caster.mp < spell.mpCost) { fail("mp"); return; }
+        caster.mp -= spell.mpCost;
+        caster.cooldowns.set(spell.spellId, cooldownReadyTick(spell, tick, context.fixedStepMs));
+        const roll = context.random.next();
+        const attackerStats = statsOf(caster, tick);
+        if (spell.kind === "damage") {
+            const amount = damageOf(spell, attackerStats, statsOf(target, tick), roll);
+            target.hp = Math.max(0, target.hp - amount);
+            target.rev += 1;
+            if (target.kind === "creature") target.threat.set(caster.id, (target.threat.get(caster.id) ?? 0) + threatOf(amount));
+            log.push(`hit:${caster.id}>${target.id}:${amount}`);
+        } else if (spell.kind === "heal") {
+            const amount = healOf(spell, attackerStats, roll);
+            target.hp = Math.min(target.hpMax, target.hp + amount);
+            target.rev += 1;
+            log.push(`heal:${caster.id}>${target.id}:${amount}`);
+        } else {
+            const aura = auraOf(spell, tick, context.fixedStepMs);
+            if (aura) target.auras.set(aura.spellId, aura);
+            log.push(`aura:${caster.id}>${target.id}:${spell.spellId}`);
+        }
+        if (caster.session) context.sendS2C(caster.session, MmoWorldOpResult, { clientReqId: reqId, result: "ok" });
+        if (caster.session) privateDirty.add(caster.session);
+        if (target.session) privateDirty.add(target.session);
+    };
+    /** 死亡：清热状态、停下；怪物按 respawnSec 复活、角色按 MMO_PLAYER_RESPAWN_MS 复活；checkpointOnDeath ⇒ 强制点（有检查点能力时）。 */
+    const die = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity, tick: number): void => {
+        entity.alive = false;
+        entity.hp = 0;
+        entity.rev += 1;
+        entity.casting = null;
+        entity.auras.clear();
+        entity.threat.clear();
+        entity.dirX = 0;
+        entity.dirY = 0;
+        entity.target = null;
+        revPending.delete(entity.id);
+        const template = entity.kind === "creature" ? content.creatureById.get(entity.templateId) : undefined;
+        entity.respawnDueTick = tick + ticksOf(template ? template.respawnSec * 1000 : MMO_PLAYER_RESPAWN_MS, context.fixedStepMs);
+        if (template?.checkpointOnDeath && checkpoint) context.requestCheckpoint(`death:${entity.id}`);
+        log.push(`death:${entity.id}`);
+    };
+    /** 复活：怪物回出生位置、角色回最近复活点；满血满蓝。 */
+    const respawn = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity): void => {
+        const def = mapOf(context);
+        const point = entity.kind === "creature"
+            ? entity.origin
+            : [...def.respawnPoints].sort((left, right) => distanceOf(entity, left) - distanceOf(entity, right))[0] ?? def.spawnPoints[0]!.pos;
+        entity.x = point.x;
+        entity.y = point.y;
+        aoiOf(context).move(entity.id, entity.x, entity.y);
+        entity.hp = entity.hpMax;
+        entity.mp = entity.mpMax;
+        entity.alive = true;
+        entity.respawnDueTick = null;
+        entity.rev += 1;
+        if (entity.session) privateDirty.add(entity.session);
+        log.push(`respawn:${entity.id}`);
+    };
+    /** 战斗步（移动之后）：到点的读条施法（按实体插入序，确定性）→ 过期 aura → 死亡判定 → 到期复活。 */
+    const combatStep = (context: WorldModeContext<MmoWorldRoomState>, tick: number): void => {
+        for (const entity of entities.values()) {
+            if (entity.casting && entity.casting.readyTick <= tick) resolveCast(context, entity, tick);
+        }
+        for (const entity of entities.values()) {
+            for (const [spellId, aura] of entity.auras) if (aura.expiresTick <= tick) entity.auras.delete(spellId);
+            if (entity.alive && entity.hp <= 0) die(context, entity, tick);
+            else if (!entity.alive && entity.respawnDueTick !== null && entity.respawnDueTick <= tick) respawn(context, entity);
+        }
+    };
+
     const observer: WorldModeObserverCapability<MmoWorldRoomState, IMmoEntityWire, IMmoEntityWire> = {
         tokens: { enter: MmoWorldEnter, update: MmoWorldUpdate, leave: MmoWorldLeave },
         builders: {
@@ -255,7 +395,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             if (cached && (context.state.tick + cached.phase) % interestEveryTicks !== 0) {
                 for (const id of cached.ids) {
                     const entity = entities.get(id);
-                    if (entity) visible.set(id, projectionOf(entity));
+                    if (entity && (entity.alive || entity.kind === "character")) visible.set(id, projectionOf(entity));
                 }
                 return visible;
             }
@@ -264,7 +404,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const pool: MmoEntity[] = [];
             for (const id of ids) {
                 const entity = entities.get(id);
-                if (entity) pool.push(entity);
+                // 死亡的怪物离开视野（复活再 enter）；死亡的角色留在视野（hp 0 的尸体）
+                if (entity && (entity.alive || entity.kind === "character")) pool.push(entity);
             }
             const picked: string[] = [];
             for (const pick of pickInterest(center, pool, def.aoi.viewRadius, MMO_INTEREST_MAX_ENTITIES)) {
@@ -312,6 +453,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     entities.set(id, {
                         id, kind: "creature", templateId: template.templateId, name: template.name, level: template.level, hpMax: template.hpMax, mpMax: template.mpMax,
                         speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, factionId: null, plane: 0, stealth: false, arrival: null, cooldowns: new Map(),
+                        attack: template.attack, defense: template.defense, spells: template.spells, auras: new Map(), threat: new Map(), casting: null, targetId: null, alive: true, respawnDueTick: null,
+                        origin: { x: pos.x, y: pos.y },
                         x: pos.x, y: pos.y, rev: 0, hp: template.hpMax, mp: template.mpMax, dirX: 0, dirY: 0, target: null, seq: 0,
                     });
                     aoiOf(context).insert(id, pos.x, pos.y);
@@ -331,6 +474,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 entity.y = pos.y;
                 aoiOf(context).move(entity.id, pos.x, pos.y);
                 entity.hp = Math.max(0, Math.min(entity.hpMax, creature.hp));
+                if (creature.alive === false || entity.hp <= 0) {
+                    entity.alive = false;
+                    entity.hp = 0;
+                    entity.respawnDueTick = typeof creature.respawnDueTick === "number" ? Math.max(0, creature.respawnDueTick - (typeof instance?.tick === "number" ? instance.tick : 0)) + context.state.tick : context.state.tick;
+                }
                 restored += 1;
             }
             // v2 槽位：timers 按 tick 差重排（分线 tick 从 0 起）、区域开关覆盖内容包缺省、脚本 vars / 掉落原样回灌；v1 快照没有这些字段 ⇒ 保持缺省
@@ -372,11 +520,16 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             for (const [spellId, remainingMs] of Object.entries(restored?.cooldowns ?? {})) {
                 if (typeof remainingMs === "number" && remainingMs > 0) cooldowns.set(spellId, context.state.tick + Math.ceil(remainingMs / context.fixedStepMs));
             }
+            const hp = typeof restored?.hp === "number" ? Math.max(0, Math.min(hpMax, restored.hp)) : hpMax;
             entities.set(id, {
                 id, kind: "character", templateId: row?.classId ?? "fighter", name: row?.name ?? "?", level: row?.level ?? 1, hpMax, mpMax, speedPerSec: klass?.speedPerSec ?? 120,
                 session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null, factionId: row?.factionId ?? null, plane: 0, stealth: false, arrival: null, cooldowns,
+                attack: klass?.attack ?? 0, defense: klass?.defense ?? 0, spells: klass?.spells ?? [], auras: new Map(), threat: new Map(), casting: null, targetId: null,
+                // 带着 0 hp 进图（死亡时离座）⇒ 立即按角色复活等待重生
+                alive: hp > 0, respawnDueTick: hp > 0 ? null : context.state.tick + ticksOf(MMO_PLAYER_RESPAWN_MS, context.fixedStepMs),
+                origin: { x: pos.x, y: pos.y },
                 x: pos.x, y: pos.y, rev: 0,
-                hp: typeof restored?.hp === "number" ? Math.max(0, Math.min(hpMax, restored.hp)) : hpMax,
+                hp,
                 mp: typeof restored?.mp === "number" ? Math.max(0, Math.min(mpMax, restored.mp)) : mpMax,
                 dirX: 0, dirY: 0, target: null, seq: 0,
             });
@@ -418,9 +571,19 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     requestTransfer(context, command.session, command.payload as IMmoWorldTransferReq, def);
                     continue;
                 }
-                if (command.type !== MmoWorldMove.type) continue; // target / cast / interact / choose：MK2 / MK4
+                if (command.type === MmoWorldTarget.type) {
+                    const mover = moverOf(command.session);
+                    const wanted = (command.payload as IMmoWorldTargetReq).entityId;
+                    if (mover) mover.targetId = wanted !== null && entities.has(wanted) ? wanted : null;
+                    continue;
+                }
+                if (command.type === MmoWorldCast.type) {
+                    requestCast(context, command.session, command.payload as IMmoWorldCastReq, step.tick);
+                    continue;
+                }
+                if (command.type !== MmoWorldMove.type) continue; // interact / choose：MK4
                 const mover = moverOf(command.session);
-                if (!mover) continue;
+                if (!mover || !mover.alive) continue; // 死者不动
                 const intent = command.payload as IMmoWorldMoveReq;
                 mover.seq = intent.seq;
                 const applied = applyIntent(mover, intent.dir ? { seq: intent.seq, dir: intent.dir } : { seq: intent.seq, target: intent.target ?? { x: mover.x, y: mover.y } }, def.size);
@@ -431,12 +594,19 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             }
             for (const entity of entities.values()) {
                 if (entity.kind !== "character" || entity.session === null) continue;
-                // 权威积分（movement 面 resolveMove：双端同源；碰撞候选来自内容包网格）
-                const result = resolveMove(entity, entity.speedPerSec, step.dtMs, def.size, grid);
+                // 权威积分（movement 面 resolveMove：双端同源；碰撞候选来自内容包网格）；死者不动
+                const result = entity.alive ? resolveMove(entity, entity.speedPerSec, step.dtMs, def.size, grid) : { x: entity.x, y: entity.y, target: null, moved: false, arrived: false, blocked: false };
                 if (result.moved) {
                     entity.x = result.x;
                     entity.y = result.y;
                     aoiOf(context).move(entity.id, entity.x, entity.y);
+                    // 读条被移动打断
+                    if (entity.casting && entity.casting.readyTick > step.tick) {
+                        const interrupted = entity.casting;
+                        entity.casting = null;
+                        reject(context, entity.session, castReqIdOf(interrupted.seq), "moved");
+                        privateDirty.add(entity.session);
+                    }
                     // 观察者流节拍：每 characterUpdateEveryTicks 步 bump 一次 rev（相位按实体错开；本人 pos 回执仍每步）
                     if (characterUpdateEveryTicks === 1 || (step.tick + phaseOf(entity.id, characterUpdateEveryTicks)) % characterUpdateEveryTicks === 0) {
                         entity.rev += 1;
@@ -453,13 +623,19 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (result.moved || touched.has(entity.id)) {
                     context.sendS2C(entity.session, MmoWorldPos, { seq: entity.seq, tick: step.tick, x: entity.x, y: entity.y });
                 }
-                // 本人私有流（不可丢类，与视野流共用单 seq 流）：hp / mp 变了才发
-                const signature = `${entity.hp}/${entity.hpMax}/${entity.mp}/${entity.mpMax}`;
+            }
+            // 战斗步（移动之后、出站之前；确定性：按实体插入序）
+            combatStep(context, step.tick);
+            for (const entity of entities.values()) {
+                if (entity.kind !== "character" || entity.session === null) continue;
+                // 本人私有流（不可丢类，与视野流共用单 seq 流）：hp / mp / 冷却集合（按就绪 tick）/ 施法中 变了才发（⛔ 每 tick 倒计时）
+                const signature = `${entity.hp}/${entity.hpMax}/${entity.mp}/${entity.mpMax}/${[...entity.cooldowns].filter(([, ready]) => ready > step.tick).map(([id, ready]) => `${id}@${ready}`).join(",")}/${entity.casting ? `${entity.casting.spellId}@${entity.casting.readyTick}` : ""}`;
                 if (privateDirty.has(entity.session) || privateSent.get(entity.session) !== signature) {
                     privateDirty.delete(entity.session);
                     privateSent.set(entity.session, signature);
                     context.observers.emitPerSession(entity.session, MmoWorldPrivate, {
                         seq: context.observers.nextSeq(entity.session), tick: step.tick, hp: entity.hp, hpMax: entity.hpMax, mp: entity.mp, mpMax: entity.mpMax,
+                        ...privateCombatOf(entity, step.tick, context.fixedStepMs),
                     });
                 }
             }
@@ -476,7 +652,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 mapId: def.mapId,
                 packId: content.pack.packId,
                 packVersion: content.pack.version,
-                creatures: [...entities.values()].filter((entity) => entity.kind === "creature").map((entity) => ({ id: entity.id, templateId: entity.templateId, x: entity.x, y: entity.y, hp: entity.hp, alive: entity.hp > 0 })),
+                creatures: [...entities.values()].filter((entity) => entity.kind === "creature").map((entity) => ({
+                    id: entity.id, templateId: entity.templateId, x: entity.x, y: entity.y, hp: entity.hp, alive: entity.alive,
+                    ...(entity.respawnDueTick === null ? {} : { respawnDueTick: entity.respawnDueTick }),
+                })),
                 loot,
                 scriptVars: { ...scriptVars },
                 timers: [...timers].map(([id, dueTick]) => ({ id, dueTick })),
@@ -508,6 +687,13 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (facts.stealth !== undefined) entity.stealth = facts.stealth;
             },
             transfersInFlight: () => [...inFlight],
+            damage: (id, amount) => {
+                const entity = entities.get(id);
+                if (!entity) throw new Error(`[mmoWorld] damage：${id} 不存在`);
+                entity.hp = Math.max(0, entity.hp - amount);
+                entity.rev += 1;
+                if (entity.session) privateDirty.add(entity.session);
+            },
             setCooldown: (id, spellId, readyAtTick) => {
                 const entity = entities.get(id);
                 if (!entity) throw new Error(`[mmoWorld] setCooldown：${id} 不存在`);

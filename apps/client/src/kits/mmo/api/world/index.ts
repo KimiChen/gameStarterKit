@@ -12,12 +12,14 @@ import { clampToMap, integrate, withinRadius } from "../../../../shared/kits/mmo
 export { clampToMap, integrate, withinRadius };
 export type { IMmoEntityWire, IMmoWorldPrivate, IWorldEnterRes };
 
-/** 本人私有态（private 流；MK0 只有 hp / mp）。 */
+/** 本人私有态（private 流）：hp / mp + MK2-B1 冷却集合（spellId → 收到时的剩余 ms）与施法中。 */
 export interface MmoPrivateState {
     readonly hp: number;
     readonly hpMax: number;
     readonly mp: number;
     readonly mpMax: number;
+    readonly cooldowns: Readonly<Record<string, number>>;
+    readonly casting: { readonly spellId: string; readonly readyInMs: number } | null;
 }
 
 /** mmoWorld 观察者六件 token（WorldRoomHandle.bindObserverStream 用）。 */

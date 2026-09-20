@@ -30,6 +30,8 @@ function fakeRoom() {
         stop: () => { calls.push(["stop"]); return calls.length; },
         transfer: (portalId) => { calls.push(["transfer", portalId]); return `t${calls.length}`; },
         say: (text) => { calls.push(["say", text]); return true; },
+        target: (entityId) => { calls.push(["target", entityId]); return true; },
+        cast: (spellId, targetId) => { calls.push(["cast", spellId, targetId]); return calls.length; },
         requestBaseline: (afterSeq) => { calls.push(["baseline", afterSeq]); return true; },
         observe: (next) => { observer = next; return () => { observer = null; }; },
         leave: async () => { calls.push(["leave"]); },
@@ -55,7 +57,7 @@ test("MmoWorldGameplay：实体表 → 模型（本人 / 视野 / hp）；输入
     await gameplay.start(context);
     assert.equal(renders[0]?.mapId, "mount");
     observer().entities(new Map([[self.id, self], ["slime-camp:0", slime("slime-camp:0", 1200)]]), true);
-    observer().privateState({ hp: 80, hpMax: 100, mp: 50, mpMax: 50 });
+    observer().privateState({ hp: 80, hpMax: 100, mp: 50, mpMax: 50, cooldowns: {}, casting: null });
     gameplay.tick(0.016, context);
     const model = renders.at(-1)!;
     assert.deepEqual([model.mapId, model.mapSize, model.self?.id, model.self?.isSelf, model.entities.length, model.hp, model.mp, model.synced], ["greybox", { w: 2000, h: 2000 }, "char:c1", true, 2, 80, 50, true]);
@@ -164,13 +166,21 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     assert.deepEqual(readies, ["wt_1"]);
     assert.equal(room.say("hi"), true);
     assert.deepEqual(sent.at(-1), ["c2s.world.chat", { text: "hi" }], "附近聊天走框架 core 世界 token");
+    assert.equal(room.target("slime-camp:0"), true);
+    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.target", { entityId: "slime-camp:0" }]);
+    assert.equal(room.cast("strike", "slime-camp:0"), 5, "cast 返回 seq（与移动共用计数）");
+    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.cast", { seq: 5, spellId: "strike", targetId: "slime-camp:0" }]);
+    assert.equal(room.cast("guard"), 6);
+    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.cast", { seq: 6, spellId: "guard" }], "无目标不带 targetId");
+    emit(S2C.MmoWorldPrivate, { seq: 4, tick: 12, hp: 90, hpMax: 100, mp: 40, mpMax: 50, cooldowns: { strike: 1500 }, casting: { spellId: "fireball", readyInMs: 800 } });
+    assert.deepEqual(privates.at(-1), 90);
     emit(S2C.WorldChat, { fromEntityId: "char:c1", text: "hi", at: 5 });
     assert.deepEqual(chats, ["char:c1"]);
-    emit(S2C.MmoWorldLeave, { seq: 4, tick: 12, id: "slime-camp:0" });
+    emit(S2C.MmoWorldLeave, { seq: 5, tick: 12, id: "slime-camp:0" });
     assert.deepEqual(snapshots.at(-1), [1, true]);
     emit(S2C.MmoWorldUpdate, { seq: 9, tick: 13, id: "char:c1", x: 1012, y: 1000, rev: 2, hp: 100 });
     assert.deepEqual(resyncs, ["seq-gap"], "seq 断裂 ⇒ 标记重同步");
-    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.baselineRequest", { authorityEpoch: 1, afterSeq: 4 }]);
+    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.baselineRequest", { authorityEpoch: 1, afterSeq: 5 }]);
     kick("replaced");
     assert.deepEqual(lefts, ["replaced"]);
 });
@@ -257,5 +267,37 @@ test("附近聊天（gameplay）：say 输入 ⇒ room.say（空白不发）；�
     for (let index = 0; index < 60; index += 1) observer().chat({ fromEntityId: "slime-camp:0", text: `s${index}`, at: 10 + index });
     gameplay.tick(0.016, context);
     assert.deepEqual([renders.at(-1)!.chat.length, renders.at(-1)!.chat.at(-1)!.text, renders.at(-1)!.chat[0]!.from], [50, "s59", "史莱姆"]);
+    gameplay.stop({ kind: "manual" });
+});
+
+test("战斗（gameplay）：target 输入选目标；cast 无目标时自动选最近存活怪并同步目标；冷却来自 private 集合本地倒计时、冷却中不发；技能栏来自职业模板", async () => {
+    const { room, calls, observer } = fakeRoom();
+    const { presentation, renders } = fakePresentation();
+    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
+    const context = contextOf(room);
+    await gameplay.start(context);
+    observer().entities(new Map([[self.id, self], ["slime-camp:0", slime("slime-camp:0", 1200)], ["slime-camp:1", slime("slime-camp:1", 1100)], ["dead", { ...slime("dead", 1010), hp: 0 }]]), true);
+    gameplay.tick(0.016, context);
+    assert.deepEqual(renders.at(-1)!.spells, ["strike", "guard"], "战士技能栏");
+    gameplay.handleInput({ type: "cast", spellId: "strike" }, context);
+    assert.deepEqual(calls.filter((call) => call[0] === "target" || call[0] === "cast"), [["target", "slime-camp:1"], ["cast", "strike", "slime-camp:1"]], "自动选最近存活怪（跳过 hp 0）并同步目标");
+    gameplay.tick(0.016, context);
+    assert.equal(renders.at(-1)!.targetId, "slime-camp:1");
+    gameplay.handleInput({ type: "target", entityId: "slime-camp:0" }, context);
+    gameplay.handleInput({ type: "cast", spellId: "strike" }, context);
+    assert.deepEqual(calls.at(-1), ["cast", "strike", "slime-camp:0"], "已选目标优先");
+    observer().privateState({ hp: 100, hpMax: 100, mp: 50, mpMax: 50, cooldowns: { strike: 1500 }, casting: null });
+    gameplay.tick(0.5, context);
+    assert.equal(renders.at(-1)!.cooldowns.strike, 1000, "本地倒计时（1500 − 500）");
+    const before = calls.length;
+    gameplay.handleInput({ type: "cast", spellId: "strike" }, context);
+    gameplay.tick(0.016, context);
+    assert.deepEqual([calls.length, renders.at(-1)!.notice], [before, "冷却中"], "冷却中不发");
+    gameplay.tick(1.2, context);
+    assert.equal(renders.at(-1)!.cooldowns.strike, undefined, "倒计时到 0 后从集合消失");
+    gameplay.handleInput({ type: "target", entityId: null }, context);
+    gameplay.tick(0.016, context);
+    assert.equal(renders.at(-1)!.targetId, null);
     gameplay.stop({ kind: "manual" });
 });

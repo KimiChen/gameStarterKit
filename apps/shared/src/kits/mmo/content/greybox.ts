@@ -1,7 +1,7 @@
 /**
  * mmo kit · 灰盒内容包（docs/MMO.md §7.6「kit v1 自带灰盒内容包」；MK0-B5，MK1-B1 加职业模板与碰撞位图，MK1-B3 加第二图与一对传送门）：
  * 主图 greybox（2000×2000，视距 400，一堵 200×200 的墙，slime ×3）+ 东郊 greybox-east（1000×1000，slime ×2），gate-east ↔ gate-west 互通，
- * 落点各自的 "gate" 出生点在门外（半径外）；两职业（fighter / caster）一技能（strike）。只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点
+ * 落点各自的 "gate" 出生点在门外（半径外）；两职业（fighter / caster）五技能（MK2-B1：strike / guard / fireball / mend / weaken）。只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点
  * （data 贡献 = JSON）装载，届时本 TS 字面量退役——MK0 以 TS 字面量作单源（kit 服务端代码 ⛔ node:fs、tsconfig 未开 resolveJsonModule，
  * 见 MMO.md §12 MK0 偏差 ①）。启动期与用例都经 `validateContentPack` 过闸。
  */
@@ -12,6 +12,8 @@ export const GREYBOX_MAP_ID = "greybox";
 export const GREYBOX_SPAWN_POINT_ID = "start";
 export const GREYBOX_CREATURE_ID = "slime";
 export const GREYBOX_SPELL_ID = "strike";
+/** MK2-B1 技能族：战士 strike（瞬发直伤）/ guard（自增防御）；法师 fireball（读条直伤）/ mend（读条治疗）/ weaken（减防）。 */
+export const GREYBOX_SPELLS = Object.freeze({ strike: "strike", guard: "guard", fireball: "fireball", mend: "mend", weaken: "weaken" });
 export const GREYBOX_MAP_SIZE = 2000;
 export const GREYBOX_EAST_MAP_ID = "greybox-east";
 export const GREYBOX_EAST_MAP_SIZE = 1000;
@@ -39,7 +41,7 @@ function greyboxBitmap(): string {
 export const GREYBOX_PACK: IContentPack = {
     schemaVersion: 1,
     packId: GREYBOX_PACK_ID,
-    version: 3,
+    version: 4,
     maps: [{
         mapId: GREYBOX_MAP_ID,
         name: "灰盒草原",
@@ -66,8 +68,8 @@ export const GREYBOX_PACK: IContentPack = {
     }],
     regions: [],
     classes: [
-        { classId: "fighter", name: "战士", presentationId: "fighter", hpMax: 100, mpMax: 50, attack: 10, defense: 2, speedPerSec: 120, spells: [GREYBOX_SPELL_ID] },
-        { classId: "caster", name: "法师", presentationId: "caster", hpMax: 80, mpMax: 100, attack: 6, defense: 1, speedPerSec: 110, spells: [GREYBOX_SPELL_ID] },
+        { classId: "fighter", name: "战士", presentationId: "fighter", hpMax: 100, mpMax: 50, attack: 10, defense: 2, speedPerSec: 120, spells: [GREYBOX_SPELLS.strike, GREYBOX_SPELLS.guard] },
+        { classId: "caster", name: "法师", presentationId: "caster", hpMax: 80, mpMax: 100, attack: 6, defense: 1, speedPerSec: 110, spells: [GREYBOX_SPELLS.fireball, GREYBOX_SPELLS.mend, GREYBOX_SPELLS.weaken] },
     ],
     creatures: [{
         templateId: GREYBOX_CREATURE_ID,
@@ -82,7 +84,7 @@ export const GREYBOX_PACK: IContentPack = {
         behavior: "idle",
         aggroRadius: 0,
         leashRadius: 0,
-        spells: [],
+        spells: [GREYBOX_SPELLS.strike],
         respawnSec: 20,
         tier: "normal",
         checkpointOnDeath: false,
@@ -92,7 +94,13 @@ export const GREYBOX_PACK: IContentPack = {
         { spawnId: "slime-camp", mapId: GREYBOX_MAP_ID, templateId: GREYBOX_CREATURE_ID, pos: { x: 1200, y: 1000 }, count: 3, waypoints: [], managed: "kit" },
         { spawnId: "east-camp", mapId: GREYBOX_EAST_MAP_ID, templateId: GREYBOX_CREATURE_ID, pos: { x: 700, y: 500 }, count: 2, waypoints: [], managed: "kit" },
     ],
-    spells: [{ spellId: GREYBOX_SPELL_ID, name: "挥击", kind: "damage", castMs: 0, cooldownMs: 1500, mpCost: 0, range: 60, power: 8 }],
+    spells: [
+        { spellId: GREYBOX_SPELLS.strike, name: "挥击", kind: "damage", castMs: 0, cooldownMs: 1500, mpCost: 0, range: 60, power: 8 },
+        { spellId: GREYBOX_SPELLS.guard, name: "戒备", kind: "buff", castMs: 0, cooldownMs: 10_000, mpCost: 5, range: 0, power: 5, durationMs: 8_000 },
+        { spellId: GREYBOX_SPELLS.fireball, name: "火球", kind: "damage", castMs: 1_000, cooldownMs: 4_000, mpCost: 10, range: 300, power: 20 },
+        { spellId: GREYBOX_SPELLS.mend, name: "缝合", kind: "heal", castMs: 1_500, cooldownMs: 6_000, mpCost: 15, range: 200, power: 25 },
+        { spellId: GREYBOX_SPELLS.weaken, name: "虚弱", kind: "debuff", castMs: 0, cooldownMs: 8_000, mpCost: 8, range: 200, power: 3, durationMs: 6_000 },
+    ],
     items: [],
     lootTables: [],
     npcs: [],

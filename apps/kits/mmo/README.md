@@ -11,7 +11,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | --- | --- | --- |
 | MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | B1–B6 ✅ 2026-09-20 交付（kit 0.1.6）；**退出待拍板**：场景 B 热点 100 人未达 kill criterion（50 人贴线达标），见 MMO.md §12 MK1 行 |
-| MK2 模拟闭环 | combat + ai 面、掉落 | 未开工 |
+| MK2 模拟闭环 | combat + ai 面、掉落 | 施工中：B1 combat 面 ✅ 2026-09-20（kit 0.1.7；B2–B3 未开工） |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 未开工 |
 | MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 未开工 |
 
@@ -65,6 +65,16 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 服务端 mode | `c2s.mmoWorld.transfer { portalId, clientReqId }`：portal 不存在 / 不在半径内 / 在途 ⇒ opResult rejected；否则**落点先写进实体**（`arrival = { toMapId, toSpawnPointId }`，停下）⇒ `context.transfer.request(session, { toMap, payload: { portalId, toSpawnPointId } })`（框架 MF8：prepare → 强制点 → 凭据 → commit）⇒ Committed ⇒ perSession `s2c.mmoWorld.transferReady { transferId, worldAddress, ticket, expiresAt }`（凭据只此一处出网，不可丢类）⇒ 壳以 "transferred" 离座；端口失败 ⇒ rejected + 落点清 + 可重试。落点经 persona 快照 `arrival`（框架 prepare 后强制点落库）传到目标图：onEnter 同图检查点优先，否则 `arrival.mapId` 等于本图 ⇒ 该出生点，否则首个出生点；HP / MP 随快照随身 |
 | 客户端 | HUD「传送」⇒ `{ type: "transfer" }` ⇒ 本人（预测位置）在某个传送门半径内才发 `room.transfer(portalId)`（clientReqId `t<n>`）；`transferReady` ⇒ 记下凭据 + 请求退出，本局 stop 时交给 `onTransfer` ⇒ mode 模块下一拍 `runtime.launchWorld(characterId, 目标 mapId, 凭据)`（launch `{ characterId, mapId, transfer? }` exact 校验，凭据 worldAddress 必须与 mapId 一致）⇒ joiner 凭据在手 ⇒ 跳过 world.enter、`{ kind: "transfer" }` strategy 直进；无凭据（重连 / 回复丢失）⇒ world.enter 由框架解析在途交接 ⇒ transferId 非 null 时同样 transfer strategy |
 | 验收 | 无头 `mmoWorld-mode.test.ts`（拒绝三态 / 端口目标 + 载荷 / 在途快照带落点 / 失败清落点 / Committed perSession 出网；目标图落位 / 异图 / 未知落点 / 同图优先）；真栈 `test/int/mmo-transfer.test.ts`（门外拒 → 门内交接 → 源房 CONSENTED → **reply-lost 注入**走 resolveTransfer 轮换 → 东郊落点 + 2 slime + 职业 HP / MP → finalized + 载荷落库 → 离座检查点 mapId 东郊 → 再进从检查点起）；其余三个注入（client-drop / source-crash / target-crash）是框架状态机性质，由 MF8-B7 `world-transfer-flow` 覆盖，kit ⛔ 复制 |
+
+## combat 面（MK2-B1）
+
+| 层 | 内容 |
+| --- | --- |
+| shared `api/combat` | 双端同源纯函数：`ticksOf` / `effectiveStats`（buff 加攻、debuff 减防 ≥ 0、过期忽略）/ `damageOf`（框架 `shared/logic/battle.ts` 新增公式族 `calcDamageWithDefense`：max(1, power + 0.5·atk − 0.3·def) × 等级成长，× ±10% 浮动，最小 1）/ `healOf` / `auraOf` / `cooldownReadyTick` / `checkCast`（拒绝顺序 unknown-spell → not-learned → dead → casting → cooldown → mp → no-target → self-target → target-dead → range；治疗 / 增益缺目标落到本人）/ `threatOf` / `castReqIdOf`（回执 `cast:<seq>`） |
+| 内容 | 灰盒 v4：技能族 strike（瞬发直伤）/ guard（自增防御 buff）/ fireball（读条直伤）/ mend（读条治疗）/ weaken（减防 debuff）；战士 [strike, guard]、法师 [fireball, mend, weaken]；slime 学 strike（AI 随 B2） |
+| 服务端 mode | 实体加 attack / defense / spells / auras / threat / casting / targetId / alive / respawnDueTick / origin；`c2s.mmoWorld.target` 选目标；`c2s.mmoWorld.cast` ⇒ checkCast ⇒ 读条（castMs > 0，移动即打断 ⇒ rejected moved）或瞬发 ⇒ 到点二次校验 ⇒ 扣蓝 / 记冷却 / 施效（直伤按公式 + 分线随机流浮动、记仇恨；治疗；aura）⇒ opResult ok；hp ≤ 0 ⇒ 死亡（清热状态、怪物离开视野、按 respawnSec / `MMO_PLAYER_RESPAWN_MS` 5 s 复活、`checkpointOnDeath` ⇒ 强制点）；private 流加 `cooldowns`（spellId → 剩余 ms，只在集合变化时发 ⛔ 每 tick 倒计时）与 `casting` ⇒ modeVersion 5；战斗步在移动之后、出站之前按实体插入序结算（同命令序 + 同种子 ⇒ 同轨迹） |
+| 客户端 | `api/combat`：`CooldownModel`（private 集合 → 本地倒计时）、`pickHostileTarget`（最近存活怪）；`room.target / cast`；gameplay `target` / `cast` 输入（无目标自动选最近怪并同步目标；本地冷却中只提示不发）；模型加 targetId / spells（职业技能栏）/ cooldowns / casting；HUD「技1 / 技2」+ 目标与冷却文案 |
+| 用例 | 服务端 `mmo-combat.test.ts`（公式 / aura / checkCast 顺序）、`mmoWorld-mode.test.ts` 新增 2（瞬发 / 拒绝 / 读条打断与到点 / 治疗 / buff 到期；怪死复活 / 角色死复活 / 无头重放一致）；客户端 `mmo-combat.test.ts` + `mmoWorld-gameplay` 战斗用例 |
 
 ## 社交包装（MK1-B5）
 

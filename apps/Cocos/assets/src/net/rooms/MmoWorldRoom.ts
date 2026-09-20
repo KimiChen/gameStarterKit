@@ -42,6 +42,9 @@ export function createMmoWorldRoom(handle: WorldRoomHandle): MmoWorldRoom {
         transfer(portalId) { const clientReqId = `t${nextSeq()}`; return handle.send(C2S.MmoWorldTransfer, { portalId, clientReqId }) ? clientReqId : null; },
         // 附近聊天：框架 core 世界 token（受众由服务端按兴趣集算，kit 只映射名字，MK1-B5）
         say(text) { return handle.send(C2S.WorldChat, { text }); },
+        // 战斗（MK2-B1）：选目标 / 施法（seq 与移动共用计数器；回执 clientReqId = cast:<seq>）
+        target(entityId) { return handle.send(C2S.MmoWorldTarget, { entityId }); },
+        cast(spellId, targetId) { const seq = nextSeq(); return handle.send(C2S.MmoWorldCast, { seq, spellId, ...(targetId === undefined ? {} : { targetId }) }) ? seq : null; },
         requestBaseline(afterSeq) { return handle.send(C2S.MmoWorldBaselineRequest, { authorityEpoch: 1, afterSeq }); },
         observe(observer) { return observeMmoWorld(handle, observer); },
         leave: () => handle.leave(),
@@ -70,7 +73,7 @@ function observeMmoWorld(handle: WorldRoomHandle, observer: MmoWorldRoomObserver
     });
     const offPrivate = handle.onMessage(S2C.MmoWorldPrivate, (payload: IMmoWorldPrivate) => {
         reconciler.acceptPrivate(payload);
-        if (active) observer.privateState({ hp: payload.hp, hpMax: payload.hpMax, mp: payload.mp, mpMax: payload.mpMax });
+        if (active) observer.privateState({ hp: payload.hp, hpMax: payload.hpMax, mp: payload.mp, mpMax: payload.mpMax, cooldowns: payload.cooldowns ?? {}, casting: payload.casting ?? null });
         publish();
     });
     const offResult = handle.onMessage(S2C.MmoWorldOpResult, (payload: IMmoWorldOpResult) => { if (active) observer.opResult(payload); });

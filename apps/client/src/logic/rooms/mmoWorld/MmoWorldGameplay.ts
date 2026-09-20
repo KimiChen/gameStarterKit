@@ -3,6 +3,7 @@
  * 输入：方向意图 / 点地 / 停 / 传送（最近的传送门，MK1-B3）/ 离开（⛔ 客户端不上报坐标；本人位置取 movement 面本地预测）。
  * 两图交接：`transferReady` 回执（凭据只此一处）⇒ 记下并请求退出，stop 时把凭据交给 `onTransfer`（mode 模块带参重进目标图）。
  * 附近聊天（MK1-B5）：`say` 输入 ⇒ 框架 core 世界 token；收到的 `chat` 只把 fromEntityId 映射成视野实体名（受众由服务端按兴趣集算）。
+ * 战斗（MK2-B1）：`target` 选目标、`cast` 施法（无目标时敌对技能自动选视野内最近存活怪）；冷却取 private 流集合本地倒计时；施法回执 `cast:<seq>` 进提示。
  * 渲染归 ../../../view/rooms/mmoWorld/MmoWorldView.ts；⛔ 不 import cc（铁律 9）。
  */
 import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
@@ -12,6 +13,7 @@ import { withinRadius, type MmoPrivateState } from "../../../kits/mmo/api/world/
 import { MovementPredictor, normalizeDir, parseCollisionGrid } from "../../../kits/mmo/api/movement/index";
 import { classOf, mapDefOf, presentationOf, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
 import { appendChatLine, nearbyChatLineOf, type INearbyChatLine } from "../../../kits/mmo/api/social/index";
+import { CooldownModel, pickHostileTarget } from "../../../kits/mmo/api/combat/index";
 import type { IWorldChatRes } from "../../../shared/protocol/messages";
 
 export const MMO_WORLD_GAMEPLAY_ID = "mmoWorld";
@@ -24,6 +26,10 @@ export type MmoWorldInput =
     | { readonly type: "transfer" }
     /** 附近聊天 */
     | { readonly type: "say"; readonly text: string }
+    /** 选目标（null 清除） */
+    | { readonly type: "target"; readonly entityId: string | null }
+    /** 施法（敌对技能无目标时自动选最近存活怪） */
+    | { readonly type: "cast"; readonly spellId: string }
     | { readonly type: "leave" };
 
 /** 世界房句柄观察者：net 层把观察者流 / 私有流 / 回执 / 连接事件翻译成这几个回调，逻辑层不认识 Colyseus。 */
@@ -57,6 +63,10 @@ export interface MmoWorldRoom {
     transfer(portalId: string): string | null;
     /** 附近聊天（拒发 ⇒ false） */
     say(text: string): boolean;
+    /** 选目标（拒发 ⇒ false） */
+    target(entityId: string | null): boolean;
+    /** 施法；返回 seq（回执 clientReqId = cast:<seq>；拒发 ⇒ null） */
+    cast(spellId: string, targetId?: string): number | null;
     requestBaseline(afterSeq: number): boolean;
     observe(observer: MmoWorldRoomObserver): () => void;
     leave(): Promise<void>;
@@ -92,6 +102,11 @@ export interface MmoWorldViewModel {
     readonly notice: string;
     /** 附近聊天日志（最新在后，上限 NEARBY_CHAT_LOG_MAX） */
     readonly chat: readonly INearbyChatLine[];
+    /** 战斗（MK2-B1）：当前目标 / 职业技能栏 / 冷却剩余 ms / 施法中 */
+    readonly targetId: string | null;
+    readonly spells: readonly string[];
+    readonly cooldowns: Readonly<Record<string, number>>;
+    readonly casting: { readonly spellId: string; readonly readyInMs: number } | null;
 }
 
 export interface MmoWorldPresentation {
@@ -130,7 +145,11 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     private synced = false;
     /** 本地预测器（本人实体首次出现在视野流时按职业模板 / 地图建） */
     private predictor: MovementPredictor | null = null;
-    private privateState: MmoPrivateState = { hp: 0, hpMax: 1, mp: 0, mpMax: 0 };
+    private privateState: MmoPrivateState = { hp: 0, hpMax: 1, mp: 0, mpMax: 0, cooldowns: {}, casting: null };
+    private readonly cooldowns = new CooldownModel();
+    /** 本地时钟（tick 累加；冷却倒计时用） */
+    private nowMs = 0;
+    private targetId: string | null = null;
     private notice = "";
     private chatLog: readonly INearbyChatLine[] = [];
 
@@ -169,7 +188,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                     this.notice = "传送中…";
                     this.requestExit("settled");
                 },
-                privateState: (state) => { if (active()) this.privateState = state; },
+                privateState: (state) => { if (active()) { this.privateState = state; this.cooldowns.accept(state.cooldowns, this.nowMs); } },
                 opResult: (result) => { if (active()) this.notice = result.result === "ok" ? "" : `${result.result}${result.detail ? `：${result.detail}` : ""}`; },
                 resync: (reason) => { if (active()) this.notice = `重同步${reason ? `（${reason}）` : ""}`; },
                 dropped: () => { if (active()) this.notice = "连接中断，重连中…"; },
@@ -194,6 +213,12 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             if (!context.room.say(text)) this.notice = "聊天未发出";
             return;
         }
+        if (input.type === "target") {
+            this.targetId = input.entityId !== null && this.entities.has(input.entityId) ? input.entityId : null;
+            context.room.target(this.targetId);
+            return;
+        }
+        if (input.type === "cast") { this.requestCast(context, input.spellId); return; }
         if (input.type === "move") {
             const dir = normalizeDir(input.dir);
             const seq = context.room.move(dir);
@@ -211,6 +236,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     tick(dt: number, context: GameplayContext<MmoWorldRoom>): void {
         if (!this.started || this.context !== context || !context.isActive()) return;
         if (!Number.isFinite(dt) || dt < 0) return;
+        this.nowMs += dt * 1000;
         this.predictor?.tick(dt * 1000);
         this.presentation?.render(this.model());
     }
@@ -222,6 +248,27 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         if (pending && this.onTransfer) {
             try { this.onTransfer(pending); } catch (error) { console.error("[mmoWorld] onTransfer 失败：", error); }
         }
+    }
+
+    /** 职业技能栏（本人实体的 templateId = classId）。 */
+    private spellBar(): readonly string[] {
+        const self = [...this.entities.values()].find((entity) => this.isSelf(entity));
+        return self ? classOf(self.templateId)?.spells ?? [] : [];
+    }
+
+    /** 施法：目标 = 已选目标，否则视野内最近存活怪（本人预测位置起、按视距）；本地冷却未就绪只提示不发。 */
+    private requestCast(context: GameplayContext<MmoWorldRoom>, spellId: string): void {
+        if (!this.cooldowns.isReady(spellId, this.nowMs)) { this.notice = "冷却中"; return; }
+        const selfEntity = [...this.entities.values()].find((entity) => this.isSelf(entity)) ?? null;
+        const self = this.predictor?.position() ?? selfEntity;
+        const map = mapDefOf(context.room.mapId);
+        let targetId = this.targetId !== null && this.entities.has(this.targetId) ? this.targetId : null;
+        if (targetId === null && self) {
+            const picked = pickHostileTarget(this.entities.values(), self, map?.aoi.viewRadius ?? 400);
+            if (picked) { targetId = picked.id; this.targetId = picked.id; context.room.target(picked.id); }
+        }
+        const seq = context.room.cast(spellId, targetId ?? undefined);
+        this.notice = seq === null ? "施法未发出" : `施法：${spellId}`;
     }
 
     /** 传送：本人（预测位置）在某个传送门半径内才发；否则提示。 */
@@ -267,6 +314,10 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             dropping: this.context?.room.dropping ?? false,
             notice: this.notice,
             chat: this.chatLog,
+            targetId: this.targetId !== null && this.entities.has(this.targetId) ? this.targetId : null,
+            spells: this.spellBar(),
+            cooldowns: this.cooldowns.snapshot(this.nowMs),
+            casting: this.privateState.casting,
         };
     }
 
@@ -306,6 +357,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         this.synced = false;
         this.predictor = null;
         this.chatLog = [];
+        this.targetId = null;
     }
 }
 

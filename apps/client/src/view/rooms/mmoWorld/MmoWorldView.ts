@@ -51,9 +51,15 @@ export class MmoWorldView implements MmoWorldPresentation {
         this.button(hud, "→", pad, pad, bx + pad, by, () => this.dispatchInput({ type: "move", dir: { x: 1, y: 0 } }));
         this.button(hud, "停", pad, pad, bx, by, () => this.dispatchInput({ type: "stop" }));
         this.button(hud, "传送", this.width * 0.24, this.height * 0.055, this.width * 0.5 - this.width * 0.16, -this.height * 0.5 + this.height * 0.13, () => this.dispatchInput({ type: "transfer" }));
+        // 战斗（MK2-B1）：技能栏第 1 / 2 格（职业技能表来自 model.spells，点击时按当前模型取）
+        this.button(hud, "技1", pad, pad, this.width * 0.5 - pad * 1.6, by, () => { const spell = this.lastSpells[0]; if (spell) this.dispatchInput({ type: "cast", spellId: spell }); });
+        this.button(hud, "技2", pad, pad, this.width * 0.5 - pad * 2.7, by, () => { const spell = this.lastSpells[1]; if (spell) this.dispatchInput({ type: "cast", spellId: spell }); });
         this.button(hud, "离开", this.width * 0.24, this.height * 0.055, this.width * 0.5 - this.width * 0.16, -this.height * 0.5 + this.height * 0.06, () => this.dispatchInput({ type: "leave" }));
         this.lastKey = "";
     }
+
+    /** 最近一次渲染的技能栏（按钮点击时读） */
+    private lastSpells: readonly string[] = [];
 
     render(model: MmoWorldViewModel): void {
         const world = this.world;
@@ -83,7 +89,10 @@ export class MmoWorldView implements MmoWorldPresentation {
         this.plate(panel, this.width * 0.96, this.height * 0.1, PANEL, 0, 0);
         const line = Math.round(this.width * 0.04);
         this.label(panel, `${model.mapId}  HP ${model.hp}/${model.hpMax}  MP ${model.mp}/${model.mpMax}  实体 ${model.entities.length}${model.synced ? "" : "  同步中…"}`, line, TEXT, 0, line * 0.5);
-        this.label(panel, model.dropping ? "连接中断，重连中…" : model.notice, Math.round(line * 0.85), model.dropping ? WARN : DIM, 0, -line * 0.7);
+        this.lastSpells = model.spells;
+        const target = model.targetId === null ? null : model.entities.find((entity) => entity.id === model.targetId) ?? null;
+        const combat = `${target ? `目标 ${target.name} ${target.hp}/${target.hpMax}` : "无目标"}  ${model.spells.map((spell) => `${spell}${model.cooldowns[spell] ? `(${Math.ceil(model.cooldowns[spell]! / 1000)}s)` : ""}`).join(" ")}${model.casting ? `  施法 ${model.casting.spellId}` : ""}`;
+        this.label(panel, model.dropping ? "连接中断，重连中…" : model.notice || combat, Math.round(line * 0.85), model.dropping ? WARN : DIM, 0, -line * 0.7);
         // 附近聊天最近两行（MK1-B5；完整聊天 UI 归内容插件 / FGUI HUD）
         if (model.chat.length > 0) this.label(panel, model.chat.slice(-2).map((entry) => `${entry.from}: ${entry.text}`).join("   "), Math.round(line * 0.75), DIM, 0, -line * 1.6);
     }

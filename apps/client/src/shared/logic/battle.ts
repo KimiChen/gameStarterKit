@@ -33,3 +33,14 @@ export function calcDamage(skill: ISkillDef, attackerLevel: number, roll: number
     const fluctuation = 0.9 + clamp(roll, 0, 1) * 0.2;
     return Math.round(skill.baseDamage * levelFactor * fluctuation);
 }
+
+/**
+ * 带防御的伤害公式族（MMO MK2-B1 combat 面用；纯函数，⛔ 随机）：
+ *   base = power + attack × 0.5 − defense × 0.3（最小 1）；× 等级成长（每级 +5%）。
+ * 浮动由调用方按自己的随机流施加（combat 面 damageOf）。
+ */
+export function calcDamageWithDefense(power: number, attack: number, defense: number, level: number): number {
+    const base = Math.max(1, power + attack * 0.5 - defense * 0.3);
+    const levelFactor = 1 + (Math.max(1, level) - 1) * 0.05;
+    return base * levelFactor;
+}

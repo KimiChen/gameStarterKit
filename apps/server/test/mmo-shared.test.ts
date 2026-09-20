@@ -68,7 +68,7 @@ test("content：未知键 / 坏枚举 / 引用断裂（spawn→template、portal
   expectError(mutate((pack) => { pack.maps = [{ ...pack.maps[0]!, portals: [{ portalId: "p", pos: { x: 1, y: 1 }, radius: 10, toMapId: "nowhere", toSpawnPointId: "start" }] }]; }), /portals\[0\]\.toMapId/u, "portal → 缺图");
   expectError(mutate((pack) => { pack.lootTables = [{ lootTableId: "lt", entries: [{ itemId: "gem", weight: 1, countMin: 1, countMax: 1 }] }]; }), /lootTables\[0\]\.entries\[0\]\.itemId/u, "loot → 缺物品");
   expectError(mutate((pack) => { pack.creatures = [pack.creatures[0]!, { ...pack.creatures[0]! }]; }), /creatures\[1\]/u, "重复 id");
-  expectError(mutate((pack) => { pack.creatures = [{ ...pack.creatures[0]!, spells: ["fireball"] }]; }), /creatures\[0\]\.spells\[0\]/u, "creature → 缺技能");
+  expectError(mutate((pack) => { pack.creatures = [{ ...pack.creatures[0]!, spells: ["nova"] }]; }), /creatures\[0\]\.spells\[0\]/u, "creature → 缺技能");
   expectError(mutate((pack) => { pack.maps = [{ ...pack.maps[0]!, spawnPoints: [] }]; }), /spawnPoints/u, "无出生点");
   expectError(mutate((pack) => { pack.spells = [{ ...pack.spells[0]!, kind: "buff" }]; }), /durationMs/u, "buff 缺 durationMs");
   expectError(mutate((pack) => { pack.schemaVersion = 2 as never; }), /schemaVersion/u, "schema 版本");
