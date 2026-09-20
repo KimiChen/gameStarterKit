@@ -25,6 +25,8 @@ import { runPackageTests } from "./test";
 import { uninstallPlugin } from "./uninstall";
 import { assertKitWorkersQuiescent, describeKitWorkerBacklog, worldEventTablesOf } from "./workerGate";
 import { assertKitTransfersDrained } from "./transferGate";
+import { assertKitInstancesStopped, describeKitInstanceBacklog, kitModeIdsOf } from "./instanceGate";
+import { modesOf } from "./ownership";
 import { SERVER_KIT_CATALOG } from "../../src/kits/catalog.generated";
 
 const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
@@ -225,6 +227,10 @@ export async function runCli(args: PluginCliArguments): Promise<number> {
       console.log(`[plugin]   kit worker：world-event 表 ${worldEventTables.length} 张无 pending 事件行、租约 kit:${args.id}:* 无在役 ✔`);
       // kit 卸载前的交接闸（docs/MMO.md MF8-B7；tools/plugin/transferGate.ts）：该 kit persona 还有在途 world_transfer 行 ⇒ 拒（⛔ 无 bypass）。
       await assertKitTransfersDrained({ kitId: args.id, log: (line) => console.log(`[plugin]   ${line}`) });
+      // kit 卸载前的分线闸（docs/MMO-PLAN.md MK4-B3；tools/plugin/instanceGate.ts）：该 kit 的 mode 还有权威租约在的分线（含 sleep 的空分线）⇒ 拒；
+      // 在租却无法归属 mode 的分线同样拒（fail-closed）；连不上 MySQL / coord Redis 也拒；⛔ 无 bypass flag。mode 清单 = 锁 manifest ∪ 生成目录。
+      const modeIds = [...new Set([...modesOf(lock.manifest).map((mode) => mode.id), ...kitModeIdsOf(kitEntry)])].sort();
+      await assertKitInstancesStopped({ kitId: args.id, modeIds, log: (line) => console.log(`[plugin]   ${line}`) });
     }
     const report = uninstallPlugin({ root: args.root, id: args.id, force: args.force, git: args.git, postinstall: args.postinstall, dryRun: args.dryRun });
     console.log(`[plugin] ${args.dryRun ? "(dry-run) " : ""}uninstalled ${report.class} ${report.id}@${report.version} [${report.source}]: ${report.deleted.length} files（--allow-delete ${report.allowDelete.join(", ") || "-"}）`);
@@ -260,6 +266,8 @@ export async function runCli(args: PluginCliArguments): Promise<number> {
   for (const line of await describeKitOutboxBacklog(kitIds)) console.log(`[plugin] ${line}`);
   // kit worker 面同样只告警（docs/MMO.md MF7a-B5）：pending 事件行 / 在役租约会让 uninstall 拒绝；孤儿租约行（删 kit 后保留）点名。
   for (const line of await describeKitWorkerBacklog(kitIds, SERVER_KIT_CATALOG)) console.log(`[plugin] ${line}`);
+  // 分线面同样只告警（docs/MMO-PLAN.md MK4-B3）：kit mode 下权威租约在的分线 / 无法归属的在租分线会让 uninstall 拒绝。
+  for (const line of await describeKitInstanceBacklog(kitIds, SERVER_KIT_CATALOG)) console.log(`[plugin] ${line}`);
   return report.ok ? 0 : 1;
 }
 

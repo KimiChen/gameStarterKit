@@ -1034,7 +1034,7 @@ export class WorldRoom extends Room {
         this.registryPublishedAt = now;
         const mode = this.requireMode();
         void this.deps.registry.publish(this.sId, this.instanceId, {
-            seated: runtime.sessions().length, capacity: mode.capacity, publicAddress: this.deps.publicAddress, holder: this.holderId(), updatedAt: now,
+            seated: runtime.sessions().length, capacity: mode.capacity, publicAddress: this.deps.publicAddress, holder: this.holderId(), mode: this.modeId, updatedAt: now,
         }).catch((error: unknown) => { console.warn(`[WorldRoom ${this.roomId}] 分线登记发布失败（best-effort）`, error); });
     }
 

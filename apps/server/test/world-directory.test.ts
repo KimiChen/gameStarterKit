@@ -76,6 +76,7 @@ test("allocate：满员开新线、无登记视为空、TTL 到期自愈、到�
 // ── MF10-B1：权威房的分线登记（seated / capacity / publicAddress）：Active 起发布、入座 / 离座立即刷新、节拍刷新、Offline 撤销 ──────────
 import { CloseCode } from "colyseus";
 import { fakeClient, harness, join, joinOptions } from "./world-room.test";
+import { WORLD_FIXTURE_MODE_ID } from "./fixtures/worldFixtureMode";
 
 test("WorldRoom 登记：Active 发布 0/capacity + 节点地址；入座 / 离座立即刷新；按 WORLD_INFO_REFRESH_MS 节拍刷新；dispose 撤销", async () => {
     const registry = new MemoryWorldRegistry(() => 0, 1_000_000);
@@ -86,6 +87,7 @@ test("WorldRoom 登记：Active 发布 0/capacity + 节点地址；入座 / 离�
     assert.deepEqual(registry.log, [`publish:${key}:0/3`], "Active 起发布");
     const info = await registry.read(0, key);
     assert.deepEqual([info?.seated, info?.capacity, info?.publicAddress, info?.holder], [0, 3, "wss://world-a.example.com", "node-a"]);
+    assert.equal(info?.mode, WORLD_FIXTURE_MODE_ID, "登记带 mode（MK4-B3 卸载分线闸按它归属 kit；变异：WorldRoom 不传 mode → 红）");
     const alice = fakeClient("sa", "p_alice_0000000001", "u-alice");
     await join(h.room, alice);
     assert.equal((await registry.read(0, key))?.seated, 1, "入座立即刷新");
