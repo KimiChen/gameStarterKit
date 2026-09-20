@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "mapId": "zhongyuan",
+  "lod": 4,
+  "source": "Z08-缩放8级.png",
+  "size": [
+    2048,
+    1024
+  ],
+  "world": {
+    "minX": -48000.0,
+    "minY": -48008.0,
+    "maxX": 47984.0,
+    "maxY": 0.0
+  },
+  "tileHalf": [
+    32.0,
+    16.0
+  ],
+  "grid": {
+    "rows": 1500,
+    "cols": 1500
+  },
+  "pxPerWorldUnit": 0.021336889481580263
+}

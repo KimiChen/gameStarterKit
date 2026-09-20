@@ -1,0 +1,42 @@
+{
+  "ver": "1.0.27",
+  "importer": "image",
+  "imported": true,
+  "uuid": "0c8ef3f8-f22c-4c62-aca6-a21f92be7de8",
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "subMetas": {
+    "66460": {
+      "importer": "texture",
+      "uuid": "0c8ef3f8-f22c-4c62-aca6-a21f92be7de8@66460",
+      "displayName": "atlas-lod3",
+      "id": "66460",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "0c8ef3f8-f22c-4c62-aca6-a21f92be7de8",
+        "visible": false
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "type": "texture",
+    "fixAlphaTransparencyArtifacts": false,
+    "hasAlpha": true,
+    "redirect": "0c8ef3f8-f22c-4c62-aca6-a21f92be7de8@66460"
+  }
+}

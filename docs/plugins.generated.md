@@ -23,6 +23,7 @@ capability fragment 的合并规则由 `npm run verify:inventory` fail-closed �
 | `builtin` | plugin | core | registered | [docs/CLIENT.md](./CLIENT.md) |
 | `mmo` | kit | extra | registered | [apps/kits/mmo/README.md](../apps/kits/mmo/README.md) |
 | `redeem` | plugin | extra | registered | [apps/plugins/redeem/README.md](../apps/plugins/redeem/README.md) |
+| `sgzzmap` | kit | extra | registered | [apps/kits/sgzzmap/README.md](../apps/kits/sgzzmap/README.md) |
 | `slg` | kit | extra | registered | [apps/kits/slg/README.md](../apps/kits/slg/README.md) |
 | `snake` | plugin | core | registered | [apps/plugins/snake/README.md](../apps/plugins/snake/README.md) |
 | `tally` | plugin | extra | registered | [apps/plugins/tally/README.md](../apps/plugins/tally/README.md) |

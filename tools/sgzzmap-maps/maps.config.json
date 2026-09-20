@@ -1,0 +1,110 @@
+{
+  "sourceRoot": "/Users/kimi/Downloads/maps",
+  "comment": [
+    "原图为仓外只读素材（用户拍板：只入派生产物）。⛔ 不要把 ~/Downloads/maps 的 PNG 拷进仓库。",
+    "世界地理权威 = Z09（10 张里唯一画全世界的一张）：海陆轮廓与郡分区从它派生。",
+    "Z00/Z04/Z06 是区域特写（一座城 / 一个郡 / 数郡），⛔ 不是全图的不同缩放——它们只作各档的地块与摆件图集来源。",
+    "Z10 与 Z09 逐字节相同（md5 722ef68e10f8aa53e9f942575bc7543a），故实际只有 10 张。"
+  ],
+  "maps": [
+    {
+      "id": "zhongyuan",
+      "name": "中原",
+      "grid": {
+        "rows": 1500,
+        "cols": 1500
+      },
+      "worldAuthority": "Z09-缩放9级.png",
+      "fit": "grid",
+      "watermark": {
+        "rect": [
+          0,
+          1080,
+          2048,
+          1152
+        ],
+        "mode": "crop"
+      },
+      "sea": {
+        "blueOverRed": 15,
+        "maxValue": 124,
+        "borderConnectedOnly": true,
+        "minComponentPx": 2000
+      },
+      "frame": {
+        "maxChromaRG": 14,
+        "minRedOverBlue": 10,
+        "maxRedOverBlue": 52,
+        "maxSat": 70
+      },
+      "landMorph": {
+        "closeIterations": 12,
+        "openIterations": 6
+      },
+      "regions": {
+        "targetCount": 48,
+        "minTiles": 900,
+        "quantizeColors": 24
+      },
+      "terrain": {
+        "seed": 20260921,
+        "density": {
+          "forest": 0.15,
+          "hill": 0.12,
+          "mountain": 0.08,
+          "water": 0.06,
+          "wetland": 0.04
+        },
+        "featureScale": 34.0,
+        "coastWetlandBand": 6,
+        "minRegionTiles": 24,
+        "ridgeScale": 3.2,
+        "ridgeWeight": 0.58,
+        "inlandWeight": 0.2
+      },
+      "bands": [
+        {
+          "lod": 0,
+          "source": "Z00-默认.png",
+          "kind": "atlas"
+        },
+        {
+          "lod": 1,
+          "source": "Z02-缩放2级.png",
+          "kind": "atlas"
+        },
+        {
+          "lod": 2,
+          "source": "Z04-缩放4级.png",
+          "kind": "atlas"
+        },
+        {
+          "lod": 3,
+          "source": "Z06-缩放6级.png",
+          "kind": "atlas"
+        },
+        {
+          "lod": 4,
+          "source": "Z08-缩放8级.png",
+          "kind": "plate",
+          "size": [
+            2048,
+            1024
+          ]
+        },
+        {
+          "lod": 5,
+          "source": "Z09-缩放9级.png",
+          "kind": "plate",
+          "size": [
+            2048,
+            1024
+          ]
+        }
+      ],
+      "minimap": {
+        "size": 512
+      }
+    }
+  ]
+}

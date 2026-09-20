@@ -132,6 +132,22 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         fragments: [],
     },
     {
+        id: "sgzzmap",
+        version: null,
+        api: {
+            hexmap: { version: 1, minSupported: 1 },
+        },
+        modes: [],
+        domains: [],
+        effects: [],
+        sqlFiles: [],
+        sqlTables: [],
+        userKeys: [],
+        workers: [],
+        contributions: {},
+        fragments: [],
+    },
+    {
         id: "slg",
         version: null,
         api: {
