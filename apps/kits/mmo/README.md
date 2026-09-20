@@ -13,7 +13,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | ✅ 2026-09-20 退出（B1–B6，kit 0.1.6；kill criterion 取 §11.2 v1 例外「热点互见 ≤ 50 人」，50 人三次重跑 ✅；MMO.md §12 MK1 行；tag `mk1-exit`） |
 | MK2 模拟闭环 | combat + ai 面、掉落 | ✅ 2026-09-20 退出（B1 combat / B2 ai / B3 掉落，kit 0.1.9；MMO.md §12 MK2 行；tag `mk2-exit`） |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | B1 inventory 面物品半边 ✅、B2 角色保存定稿 ✅、B3 长跑基准台 + 4 分钟冒烟 ✅ 2026-09-20（kit 0.1.12）；**退出待 24–72 h 正式长跑报告**（命令见基准段；需要机器连续跑一天） |
-| MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、卸载 / 升级闸、说明书、容量证据、冻结 `mmo-kit-v1-frozen` | B1 orchestration 面 ✅、B2 贡献点装载 ✅、B3 卸载 / 升级闸 ✅、B4 说明书 ✅（本 README「一、说明书」）、B5 容量证据 ✅ 2026-09-20（kit 0.1.17；MMO.md §12 MK4 行）；**B6 冻结 tag 待两项拍板**：MK3 长跑报告、场景 B 50 人整窗 p99 回归口径 |
+| MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、卸载 / 升级闸、说明书、容量证据、冻结 `mmo-kit-v1-frozen` | B1 orchestration 面 ✅、B2 贡献点装载 ✅、B3 卸载 / 升级闸 ✅、B4 说明书 ✅（本 README「一、说明书」）、B5 容量证据 ✅ 2026-09-20（kit 0.1.17；MMO.md §12 MK4 行）；**B6 冻结 tag 待 MK3 长跑报告**（场景 B 50 人整窗 p99 回归已于 2026-09-20 拍板接受为 v1 已知回归、优化留 v1.x；kit 0.1.18） |
 
 ## 一、说明书（MK4-B4；消费方视角——内容插件怎么用这个 kit）
 
@@ -162,7 +162,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 ### 9. 验证与容量证据
 
 - 机检闭环：`plugin -- test mmo`（22 文件 / 99 用例）+ `--int`（mmo-world / transfer / checkpoint / social / loot / inventory）+ `verify:kit-clean-install`；每批手工变异写进提交信息。
-- 容量数字（20 s / 同机同进程机器人；⚠ 只作比较与阈值判定；全表与故障矩阵在 MMO.md §12 MK4 行）：**MK4 最终（kit 0.1.15）**——A 40 人 192 只 tick p99 18.5 / 13.9 ms（种子 7 / 8）、出站 p50 ≈ 40 KB/s/会话 ✅；B 热点 500 只 slime：25 人 p99 23.3 ms ✅、**50 人整窗 p99 37.2 / 25.1 / 32.6 ms（种子 7 / 8 / 9）❌ vs MK1 退出 20.8 / 24.2 / 24.8**——分窗看首窗（入座 + baseline + JIT 预热）34.4、其后 14.7 / 21.4 / 23.8 ✅，回归集中在预热段（MK2–MK4 新增入座路径每人一次 DB 读 + 新代码 JIT），稳态贴线在线内 ⇒ B6 冻结前拍板（口径改稳态 `--warmup` 或先优化入座路径）；100 人 p99 66.0 ms ❌（已知上限，v1 例外互见 ≤ 50）。
+- 容量数字（20 s / 同机同进程机器人；⚠ 只作比较与阈值判定；全表与故障矩阵在 MMO.md §12 MK4 行）：**MK4 最终（kit 0.1.15）**——A 40 人 192 只 tick p99 18.5 / 13.9 ms（种子 7 / 8）、出站 p50 ≈ 40 KB/s/会话 ✅；B 热点 500 只 slime：25 人 p99 23.3 ms ✅、**50 人整窗 p99 37.2 / 25.1 / 32.6 ms（种子 7 / 8 / 9）❌ vs MK1 退出 20.8 / 24.2 / 24.8**——分窗看首窗（入座 + baseline + JIT 预热）34.4、其后 14.7 / 21.4 / 23.8 ✅，回归集中在预热段（MK2–MK4 新增入座路径每人一次 DB 读 + 新代码 JIT），稳态贴线在线内 ⇒ 2026-09-20 拍板接受为 v1 已知回归（优化留 v1.x：入座路径每人一次 DB 读合并 / 预热、基准台 `--warmup` 稳态口径）；100 人 p99 66.0 ms ❌（已知上限，v1 例外互见 ≤ 50）。
 - 故障矩阵（§10.2 十二行）：`npm run test:faults`（单元 2 组）+ `npm run test:faults:int`（集成 3 组）全绿；`world-transfer` 组首跑红 = 用例竞态（client-drop 段归还控制权是离座后的异步任务，立即断言 ⇒ 改条件等待），⛔ 产品缺陷；「同图两分线」只有间接证据（框架唯一键 / CAS + kit 按 instance_id），专门用例登记 MG 段补；「24–72 h 长跑」待 MK3 正式报告。
 
 ## 二、施工记录（按批次；每批的用例 / 变异 / 偏差原文保留，⛔ 不作说明书）

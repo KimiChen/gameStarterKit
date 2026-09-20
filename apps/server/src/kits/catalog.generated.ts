@@ -36,7 +36,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
     },
     {
         id: "mmo",
-        version: "0.1.17",
+        version: "0.1.18",
         api: {
             ai: { version: 1, minSupported: 1 },
             characters: { version: 1, minSupported: 1 },
