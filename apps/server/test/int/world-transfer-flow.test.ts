@@ -192,7 +192,8 @@ test("交接四注入：reply-lost / client-drop / source-crash / target-crash �
             const ready = await s.ready;
             await s.left;
             assert.equal((await readTransfer(SID, ready.transferId))?.state, "committed", "客户端不来 ⇒ 留在 committed");
-            assert.equal((await readControl(SID, s.persona))?.worldAddress, null, "源房已归还控制权");
+            // 归还控制权是源房离座后的异步任务（WorldRoom.releaseControlLater）：客户端先看到关闭码，落库可能晚几十毫秒——按条件等，⛔ 立即断言（MK4-B5 故障矩阵全表跑出的竞态）
+            await waitFor(async () => (await readControl(SID, s.persona))?.worldAddress === null, "源房已归还控制权");
             assert.equal(await countInFlightTransfers({ query: (sql, params) => pool.query(sql, params) as never }, KITFIX_ID), 1, "卸载闸：该 kit 有 1 条在途 ⇒ 拒卸载");
             const again = await enter(s.user, s.persona, MAP_A);
             assert.deepEqual([again.transferId, again.mapId], [ready.transferId, MAP_B], "enter 被解析到交接目标（⛔ 绕开交接回 A）");
