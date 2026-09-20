@@ -115,8 +115,14 @@ apps/Cocos/
   组件标签（For 列表则只删 items 对象字面量）或具名原生节点子树，标签带 `on*=` 事件
   绑定或非常量表达式 prop 时拒删；智能对象链接换到另一个 catalog 组件时标签换型
   （同名 prop 保留、新组件必填缺失记报告、import 同步增删），换到非 catalog 链接记
-  conflict 不动 TSX。这几类结构变更全部只写 `*Restored` 并记入 IMPORT.md 的
-  removed / blocked / swapped / conflict 条目。
+  conflict 不动 TSX。PSD 新增图层（无身份且子树不含任何既有身份的整棵新子树）按
+  父级身份链插入对应 TSX 标签内（找不到父级落到页面根 view 并记 root-fallback），
+  生成绝对定位的纯视觉 view/image/text（文本带 paint，位图像素作为新资源落包），
+  根标签带 `data-psd-add="true"` 人工审批标记；与同时被判删除的图层同尺寸同位置
+  （±4px，按导出时 captureFrame 比对）视为移动而非新增，记 conflict [possible-move]
+  双向不动 TSX；实例内部新增记 skipped（组件结构权威在组件 TSX）。这几类结构变更
+  全部只写 `*Restored` 并记入 IMPORT.md 的
+  removed / blocked / swapped / conflict / added / skipped 条目。
   设计师可编辑 PSD 的落点是 `apps/art/uniflex/<Page>/screen.psd`（建议 Git LFS；本机未装则按二进制入库）。
   `ui:art-export` 从原稿功能页导出；`ui:art-import` / `ui:art-sync` 按身份 overlay 回去。
   当前 catalog `applyTarget` 为 `restored`，只写 `*Restored`，不覆盖原稿；`ui:art-check` 是只读新鲜度闸。

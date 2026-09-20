@@ -1183,3 +1183,223 @@ test("linking a smart object to a foreign psd reports conflict and keeps the TSX
         await rm(tempRoot, { recursive: true, force: true });
     }
 });
+
+test("added PSD layers insert marked pure-visual nodes with resources", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "Confirm" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    const ts = createRequire(resolve(root, "package.json"))("typescript");
+    initializeCanvas(createCanvas);
+    function cloneTextLayer(source, name, text) {
+        const copy = JSON.parse(JSON.stringify({
+            ...source, children: undefined, canvas: undefined, imageData: undefined,
+        }));
+        delete copy.id;
+        copy.name = name;
+        copy.text.text = text;
+        return copy;
+    }
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-add-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const title = findLayer(psd, (l) => l.text && String(l.name || "").startsWith("Confirm/Title"));
+        const panel = findLayer(psd, (l) => l.children && String(l.name || "").startsWith("Confirm/Panel"));
+        assert.ok(title && panel, "Confirm.psd should keep Title/Panel layers");
+        panel.children.push(cloneTextLayer(title, "Added/Inner", "本地预览"));
+        const canvas = createCanvas(50, 50);
+        const g = canvas.getContext("2d");
+        g.fillStyle = "#224466";
+        g.fillRect(0, 0, 50, 50);
+        psd.children.push({
+            name: "Added/Badge", left: 40, top: 40, right: 90, bottom: 90,
+            canvas, imageData: g.getImageData(0, 0, 50, 50),
+        });
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const sourceRoot = join(tempRoot, "src");
+        const base = join(sourceRoot, "apps/client/src/ui-uniflex/pages/Confirm");
+        await mkdir(base, { recursive: true });
+        const fixture = `import { defineView } from '@uniflex/compiler';
+
+export const Confirm = defineView((context) => {
+    const params = context.params;
+    return (
+        <view name="Confirm" style={{ width: 750, height: 1624 }}>
+            <view name="Confirm/Panel" style={{ position: 'absolute', left: 21, top: 624, width: 708, height: 375 }}>
+                <text name="Confirm/Title" value={params.title ?? '提示'} style={{}} />
+            </view>
+        </view>
+    );
+});
+`;
+        await writeFile(join(base, "Confirm.tsx"), fixture);
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        await execFileAsync(converter.command, [
+            ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+            "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
+        ], { cwd: root, env });
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "ConfirmRestored", "--source-root", sourceRoot, "--out", packageDir,
+        ], { cwd: root, env });
+        const authoring = await readFile(join(packageDir, "ConfirmRestored.authoring.tsx"), "utf8");
+        const markers = authoring.match(/data-psd-add="true"/g) || [];
+        assert.equal(markers.length, 2, "both added subtrees carry the review marker");
+        assert.match(authoring,
+            /<text data-psd-add="true" name="Added\/Inner" value=\{"本地预览"\} style=\{\{ position: 'absolute', [^}]*fontSize: 40, [^}]*color: "#ffffff"/);
+        assert.match(authoring,
+            /<image data-psd-add="true" name="Added\/Badge" style=\{\{ position: 'absolute', left: 40, top: 40, width: 50, height: 50 \}\} source=\{imageRef\("ConfirmRestored-asset-[a-f0-9]+"\)\} \/>/);
+        const manifest = JSON.parse(await readFile(join(packageDir, "manifest.json"), "utf8"));
+        const addedAsset = manifest.assets.find((asset) => asset.id.startsWith("ConfirmRestored-asset-"));
+        assert.ok(addedAsset, "added image pixels land in the package manifest");
+        await access(join(packageDir, addedAsset.file));
+        const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
+        assert.match(report, /added: .*Confirm\/Panel\.text \[pure-visual-needs-review\]/);
+        assert.match(report, /added: .*Confirm\.image \[pure-visual-needs-review\]/);
+        assert.match(report, /root-fallback: .*Confirm\.add/);
+        assert.equal(await readFile(join(base, "Confirm.tsx"), "utf8"), fixture);
+        const transpiled = ts.transpileModule(authoring, {
+            compilerOptions: { jsx: ts.JsxEmit.Preserve, target: ts.ScriptTarget.ESNext },
+            reportDiagnostics: true,
+        });
+        assert.deepEqual((transpiled.diagnostics || []).map((d) => d.code), [],
+            "marked TSX stays compilable");
+        assert.match(transpiled.outputText, /data-psd-add="true"/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("re-adding an identical layer where one was deleted reports possible-move", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "Confirm" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-possible-move-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const panel = findLayer(psd, (l) => l.children && String(l.name || "").startsWith("Confirm/Panel"));
+        const bgGroup = findLayer(panel, (l) => l.children
+            && String(l.name || "").startsWith("Confirm/Background"));
+        const image = bgGroup.children.find((l) => !l.children);
+        assert.ok(image, "Confirm/Background image layer should exist");
+        const clone = JSON.parse(JSON.stringify({ ...image, children: undefined }));
+        delete clone.id;
+        delete clone.text;
+        clone.name = "Added/MovedBackground";
+        clone.canvas = image.canvas;
+        clone.imageData = image.imageData;
+        bgGroup.children = [clone];
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const sourceRoot = join(tempRoot, "src");
+        const base = join(sourceRoot, "apps/client/src/ui-uniflex/pages/Confirm");
+        await mkdir(base, { recursive: true });
+        const fixture = `import { defineView } from '@uniflex/compiler';
+export const Confirm = defineView(() => (
+    <view name="Confirm" style={{ width: 750, height: 1624 }}>
+        <view name="Confirm/Panel" style={{ position: 'absolute', left: 21, top: 624, width: 708, height: 375 }}>
+            <image name="Confirm/Background" style={{ position: 'absolute', left: 0, top: 0, width: 708, height: 375 }} source={imageRef('ui/popup/prompt')} />
+        </view>
+    </view>
+));
+`;
+        await writeFile(join(base, "Confirm.tsx"), fixture);
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        await execFileAsync(converter.command, [
+            ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+            "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
+        ], { cwd: root, env });
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "ConfirmRestored", "--source-root", sourceRoot, "--out", packageDir,
+        ], { cwd: root, env });
+        const authoring = await readFile(join(packageDir, "ConfirmRestored.authoring.tsx"), "utf8");
+        assert.doesNotMatch(authoring, /data-psd-add/);
+        assert.match(authoring, /name="ConfirmRestored\/Background"/,
+            "the existing tag must not be removed either");
+        const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
+        assert.match(report, /conflict: .*Confirm\/Background\.add \[possible-move\]/);
+        assert.doesNotMatch(report, /removed:/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("layers added inside a component instance are skipped", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "MailBattleReport" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-add-in-instance-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const tab0 = findLayer(psd, (l) => l.children
+            && String(l.name || "").includes("PanelTab:MailBattleReport/PanelTab:0"));
+        const label = findLayer(tab0, (l) => l.text);
+        assert.ok(tab0 && label, "PanelTab:0 should keep its label layer");
+        const copy = JSON.parse(JSON.stringify({
+            ...label, children: undefined, canvas: undefined, imageData: undefined,
+        }));
+        delete copy.id;
+        copy.name = "Added/InsideTab";
+        tab0.children.push(copy);
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const sourceRoot = join(tempRoot, "src");
+        const base = join(sourceRoot, "apps/client/src/ui-uniflex");
+        await mkdir(join(base, "pages/MailBattleReport"), { recursive: true });
+        await mkdir(join(base, "components/tab"), { recursive: true });
+        await writeFile(join(base, "pages/MailBattleReport/MailBattleReport.tsx"), `import { defineView } from '@uniflex/compiler';
+export const MailBattleReport = defineView(() => (
+    <view name="MailBattleReport" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
+        <PanelTab label="系统" />
+    </view>
+));
+`);
+        await writeFile(join(base, "components/tab/PanelTab.tsx"), `import { defineComponent } from '@uniflex/compiler';
+export interface PanelTabProps {
+    readonly label: string;
+    readonly labelAlign?: string;
+}
+export const PanelTab = defineComponent<PanelTabProps>((p) => (
+    <view name="PanelTab" style={{ position: 'relative' }}>
+        <text name="PanelTab/Label" value={p.label} style={{ position: 'absolute', left: 0, top: 0, width: 170, height: 52, fontSize: 28, color: '#3f3254', horizontalAlign: 'center', lineHeight: 28, bold: true }} />
+    </view>
+));
+`);
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        await execFileAsync(converter.command, [
+            ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+            "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
+        ], { cwd: root, env });
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "MailBattleReportRestored", "--source-root", sourceRoot, "--out", packageDir,
+        ], { cwd: root, env });
+        const authoring = await readFile(
+            join(packageDir, "MailBattleReportRestored.authoring.tsx"), "utf8");
+        assert.doesNotMatch(authoring, /data-psd-add/);
+        assert.doesNotMatch(authoring, /insideTab/i,
+            "added instance-internal texts must not leak into instance props");
+        const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
+        assert.match(report, /skipped: .*Added\/InsideTab\.add \[inside-instance\]/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
