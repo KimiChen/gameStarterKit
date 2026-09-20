@@ -11,6 +11,7 @@ export const GameplayModeId = {
     ArenaDuel: "arenaDuel",
     BallMove: "ballMove",
     Idle: "idle",
+    MmoWorld: "mmoWorld",
     Snake: "snake",
     Tally: "tally",
 } as const;
@@ -19,4 +20,5 @@ export type GameplayModeIdType = (typeof GameplayModeId)[keyof typeof GameplayMo
 
 /** 其中 manifest `kind: "world"` 的成员（MMO MF4-B2）：world 形态走 RoomName.World / WorldRoom，⛔ 不进 GameRoom 撮合。 */
 export const WORLD_MODE_IDS: readonly GameplayModeIdType[] = [
+    "mmoWorld",
 ];

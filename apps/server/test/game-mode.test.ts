@@ -27,7 +27,7 @@ import {
     type GameMode,
 } from "../src/rooms/GameMode";
 import { GameRoom, type GameRoomRuntimeOptions } from "../src/rooms/GameRoom";
-import { GENERATED_GAME_MODE_IDS, registerDefaultGameModes } from "../src/rooms/modes/catalog";
+import { GENERATED_GAME_MODE_IDS, GENERATED_WORLD_MODE_IDS, registerDefaultGameModes } from "../src/rooms/modes/catalog";
 import { createBallMoveGameMode, registerBallMoveGameMode } from "../src/rooms/modes/ballMove/index";
 import { createIdleGameMode, registerIdleGameMode } from "../src/rooms/modes/idle/index";
 import {
@@ -124,6 +124,10 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
     const unregister = registerDefaultGameModes();
     try {
         const canonicalModes = [...Object.values(GameplayModeId)].sort();
+        // world 形态（manifest kind:"world"，如 mmo kit 的 mmoWorld）只登进 worldModeRegistry 分表，⛔ 进 GameMode 表（MF4-B2）
+        const kindOf = GAMEPLAY_CATALOG as Readonly<Partial<Record<string, { readonly kind?: string }>>>;
+        const canonicalWorld = canonicalModes.filter((id) => kindOf[id]?.kind === "world");
+        const canonicalMatch = canonicalModes.filter((id) => kindOf[id]?.kind !== "world");
         // 阶段 8：privateFixture 是私房验收的 fixture gameplay（owner-ready + invite fragment，
         // §10.2/§10.3 用例驱动）。它进 catalog/生成映射走完整单源链，但 ⛔ 刻意不进生产
         // mode registry——onAuth/onCreate 的 `gameModeRegistry.has` 闸使它永远不可被撮合
@@ -146,9 +150,10 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
             .map((manifest) => manifest.id);
         assert.ok(fixtureModes.length >= 1, "至少一个 fixture 玩法（wireExposed:false）驱动本闸");
         const catalogModes = [...canonicalModes, ...fixtureModes].sort();
-        assert.deepEqual(gameModeRegistry.list(), canonicalModes);
-        assert.deepEqual([...GENERATED_GAME_MODE_IDS].sort(), canonicalModes,
-            "generated 服务端 catalog 的装配集必须 = canonical GameplayModeId");
+        assert.deepEqual(gameModeRegistry.list(), canonicalMatch);
+        assert.deepEqual([...GENERATED_GAME_MODE_IDS].sort(), canonicalMatch,
+            "generated 服务端 GameMode 装配集必须 = canonical GameplayModeId 中的 match 形态");
+        assert.deepEqual([...GENERATED_WORLD_MODE_IDS].sort(), canonicalWorld, "world 形态分表 = canonical 中 kind:\"world\" 者");
         assert.deepEqual(Object.keys(GAMEPLAY_CATALOG).sort(), catalogModes);
         assert.deepEqual(Object.keys(ROOM_STATE_VALIDATORS).sort(), catalogModes);
         assert.deepEqual(Object.keys(ROOM_STATE_ROOT_CONSTRUCTORS).sort(), catalogModes);

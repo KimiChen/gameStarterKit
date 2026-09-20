@@ -32,7 +32,9 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
         modes: [
             { id: "mmoWorld", constantName: "MmoWorld" },
         ],
-        domains: [],
+        domains: [
+            "mmo",
+        ],
         effects: [],
     },
     {

@@ -1905,6 +1905,21 @@ test("MF4-B2 state：world 根必填集 {tick, phase:WorldPhase, instanceId, map
   assert.throws(() => parseGameplayStateDescriptor({ ...worldState(), fragments: ["inviteRoom"] }, { kind: "world" }), /cannot declare the ownerReady \/ inviteRoom fragments/u);
 });
 
+/** 夹具树里 canonical（wireExposed !== false）且 kind:"world" 的玩法 id（三个发现根），排序。 */
+function canonicalWorldModeIds(root: string): string[] {
+  const subdirs = (dir: string): string[] => (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => path.join(dir, entry.name)) : []);
+  const files = [
+    ...subdirs(path.join(root, "apps/shared/schema/gameplays")).map((dir) => path.join(dir, "manifest.json")),
+    ...subdirs(path.join(root, "apps/plugins")).map((dir) => path.join(dir, "gameplay", "manifest.json")),
+    ...subdirs(path.join(root, "apps/kits")).flatMap((kitDir) => subdirs(path.join(kitDir, "gameplays")).map((dir) => path.join(dir, "manifest.json"))),
+  ].filter((file) => fs.existsSync(file));
+  return files
+    .map((file) => JSON.parse(fs.readFileSync(file, "utf8")) as { readonly id: string; readonly kind?: string; readonly wireExposed?: boolean })
+    .filter((manifest) => manifest.kind === "world" && manifest.wireExposed !== false)
+    .map((manifest) => manifest.id)
+    .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+}
+
 test("MF4-B2 生成：world 夹具三端产物（WorldPhase 自 core、无 players）、catalog kind / world、聚合 ROOM_STATE_KIND；canonical world mode 分进 WORLD_MODE_IDS / registerGeneratedWorldModes；既有 mode 产物字节不动", () => {
   const fixture = createFixture();
   try {
@@ -1912,9 +1927,12 @@ test("MF4-B2 生成：world 夹具三端产物（WorldPhase 自 core、无 playe
     const modeArtifacts = EXPECTED_GAMEPLAY_IDS.flatMap((id) => [`${SHARED_STATE_DIR}/${id}.ts`, `${SERVER_SCHEMA_DIR}/${id}.ts`]);
     const snapshot = new Map(modeArtifacts.map((relative) => [relative, readFixtureText(fixture.root, relative)]));
     const serverCatalogBefore = readFixtureText(fixture.root, SERVER_CATALOG);
-    assert.match(serverCatalogBefore, /export const GENERATED_WORLD_MODE_IDS: readonly string\[\] = \[\n\];/u, "真仓当前没有 canonical world mode：空表 + 稳定签名");
+    // 真仓可能已有 canonical world mode（mmo kit 的 mmoWorld）：期望表从夹具树的 manifest 派生，⛔ 假设空表
+    const idsLiteral = (ids: readonly string[]): string => (ids.length === 0 ? "[\n]" : `[\n${ids.map((id) => `    ${JSON.stringify(id)},`).join("\n")}\n]`);
+    const existingWorld = canonicalWorldModeIds(fixture.root);
+    assert.ok(serverCatalogBefore.includes(`export const GENERATED_WORLD_MODE_IDS: readonly string[] = ${idsLiteral(existingWorld)};`), "canonical world mode 表 = 夹具树派生 + 稳定签名");
     assert.match(serverCatalogBefore, /export function registerGeneratedWorldModes\(registry\?: WorldModeRegistry\)/u);
-    assert.match(readFixtureText(fixture.root, SHARED_MODE_IDS), /export const WORLD_MODE_IDS: readonly GameplayModeIdType\[\] = \[\n\];/u);
+    assert.ok(readFixtureText(fixture.root, SHARED_MODE_IDS).includes(`export const WORLD_MODE_IDS: readonly GameplayModeIdType[] = ${idsLiteral(existingWorld)};`));
 
     // 非 canonical 的 world 夹具（wireExposed:false）：进 catalog / state / schema，⛔ 不进 GameplayModeId / 登记表
     addFixtureMode(fixture.root, "puzzle", worldManifest(), worldState());
@@ -1941,10 +1959,11 @@ test("MF4-B2 生成：world 夹具三端产物（WorldPhase 自 core、无 playe
     fs.mkdirSync(path.join(fixture.root, SERVER_MODES_DIR, "puzzle"), { recursive: true });
     fs.writeFileSync(path.join(fixture.root, SERVER_MODES_DIR, "puzzle", "index.ts"), "export function registerPuzzleWorldMode(): () => void { return () => undefined; }\n", "utf8");
     writeGameplayArtifacts(fixture.options);
-    assert.match(readFixtureText(fixture.root, SHARED_MODE_IDS), /export const WORLD_MODE_IDS: readonly GameplayModeIdType\[\] = \[\n {4}"puzzle",\n\];/u);
+    const withPuzzle = [...existingWorld, "puzzle"].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+    assert.ok(readFixtureText(fixture.root, SHARED_MODE_IDS).includes(`export const WORLD_MODE_IDS: readonly GameplayModeIdType[] = ${idsLiteral(withPuzzle)};`));
     const serverCatalog = readFixtureText(fixture.root, SERVER_CATALOG);
     assert.match(serverCatalog, /import \{ registerPuzzleWorldMode \} from "\.\/puzzle\/index";/u);
-    assert.match(serverCatalog, /GENERATED_WORLD_MODE_IDS: readonly string\[\] = \[\n {4}"puzzle",\n\];/u);
+    assert.ok(serverCatalog.includes(`GENERATED_WORLD_MODE_IDS: readonly string[] = ${idsLiteral(withPuzzle)};`));
     assert.match(serverCatalog, /registerGeneratedWorldModes\(registry\?: WorldModeRegistry\): \(\) => void \{\n {4}const disposers[^]*registerPuzzleWorldMode\(registry\)/u);
     assert.doesNotMatch(serverCatalog, /GENERATED_GAME_MODE_IDS: readonly string\[\] = \[[^\]]*"puzzle"/u, "world mode ⛔ 进 GameMode 表");
     // 服务端装配件若按 match 符号命名 ⇒ 发现即拒

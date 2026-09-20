@@ -9,6 +9,7 @@ import { validateArenaShopBuyBoostReq, validateArenaShopBuyBoostRes, type IArena
 import { validateChatMessagePush, validateChatSendReq, validateChatSendRes, type IChatMessagePush, type IChatSendReq, type IChatSendRes } from "./domains/chat";
 import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, validateGuildJoinReq, validateGuildLeaveReq, validateGuildLeaveRes, validateJoinRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
 import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
+import { validateMmoCharactersReq, validateMmoCharactersRes, validateMmoCreateCharacterReq, validateMmoCreateCharacterRes, type IMmoCharactersReq, type IMmoCharactersRes, type IMmoCreateCharacterReq, type IMmoCreateCharacterRes } from "./domains/mmo";
 import { validatePartyAcceptReq, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyLeaveReq, validatePartyLeaveRes, validatePartySeqRes, validatePartyTransferLeaderReq, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
@@ -25,6 +26,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "chat",
     "guild",
     "mail",
+    "mmo",
     "party",
     "redeem",
     "room",
@@ -47,6 +49,8 @@ export interface LobbyRpcMap {
     "mail.list": { req: IMailListReq; res: IMailListRes };
     "mail.claimAttach": { req: IMailClaimAttachReq; res: IPurchaseResult };
     "mail.markRead": { req: IMailMarkReadReq; res: IMailMarkReadRes };
+    "mmo.characters": { req: IMmoCharactersReq; res: IMmoCharactersRes };
+    "mmo.createCharacter": { req: IMmoCreateCharacterReq; res: IMmoCreateCharacterRes };
     "party.create": { req: IPartyCreateReq; res: IPartyCreateRes };
     "party.invite": { req: IPartyInviteReq; res: IPartyInviteRes };
     "party.accept": { req: IPartyAcceptReq; res: IPartyAcceptRes };
@@ -87,6 +91,7 @@ export type LobbyRpcIdemType =
     | "guild.join"
     | "guild.leave"
     | "mail.claimAttach"
+    | "mmo.createCharacter"
     | "party.create"
     | "party.invite"
     | "party.accept"
@@ -122,6 +127,8 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "mail.list": "query",
     "mail.claimAttach": "idempotent-write",
     "mail.markRead": "natural-write",
+    "mmo.characters": "query",
+    "mmo.createCharacter": "idempotent-write",
     "party.create": "idempotent-write",
     "party.invite": "idempotent-write",
     "party.accept": "idempotent-write",
@@ -163,6 +170,8 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "mail.list",
     "mail.claimAttach",
     "mail.markRead",
+    "mmo.characters",
+    "mmo.createCharacter",
     "party.create",
     "party.invite",
     "party.accept",
@@ -205,6 +214,8 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "mail.list": 1,
     "mail.claimAttach": 1,
     "mail.markRead": 1,
+    "mmo.characters": 1,
+    "mmo.createCharacter": 1,
     "party.create": 1,
     "party.invite": 1,
     "party.accept": 1,
@@ -241,6 +252,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     chat: { contractVersion: 1, digest: "3e34b7840131614c0c9c05c6858ffaf76187e14dc71df1e5703ddad63b4dbc96" },
     guild: { contractVersion: 1, digest: "4a996a135ffd900eb39c0b83697ee03d4d4587829da88ce537f363d56ceb4bde" },
     mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
+    mmo: { contractVersion: 1, digest: "72d63843565a8bcc9feda45088102a2a6d711416c6b643e6917cef114a58a9f3" },
     party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
@@ -275,6 +287,8 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "mail.list": guardRpcValidator("payload", validateMailListReq),
     "mail.claimAttach": guardRpcValidator("payload", validateMailClaimReq),
     "mail.markRead": guardRpcValidator("payload", validateMailMarkReq),
+    "mmo.characters": guardRpcValidator("payload", validateMmoCharactersReq),
+    "mmo.createCharacter": guardRpcValidator("payload", validateMmoCreateCharacterReq),
     "party.create": guardRpcValidator("payload", validatePartyCreateReq),
     "party.invite": guardRpcValidator("payload", validatePartyInviteReq),
     "party.accept": guardRpcValidator("payload", validatePartyAcceptReq),
@@ -316,6 +330,8 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "mail.list": guardRpcValidator("response", validateMailListRes),
     "mail.claimAttach": guardRpcValidator("response", validateMailClaimAttachRes),
     "mail.markRead": guardRpcValidator("response", validateMailMarkReadRes),
+    "mmo.characters": guardRpcValidator("response", validateMmoCharactersRes),
+    "mmo.createCharacter": guardRpcValidator("response", validateMmoCreateCharacterRes),
     "party.create": guardRpcValidator("response", validatePartyCreateRes),
     "party.invite": guardRpcValidator("response", validatePartyInviteRes),
     "party.accept": guardRpcValidator("response", validatePartySeqRes),
@@ -385,6 +401,9 @@ export const RPC_ERR_CODES = [
     "ARENA_SHOP_TILE_NOT_OWNED",
     "CHAT_CHANNEL_FORBIDDEN",
     "CHAT_UNAVAILABLE",
+    "MMO_NAME_TAKEN",
+    "MMO_SLOT_TAKEN",
+    "MMO_SLOTS_FULL",
     "PARTY_NOT_FOUND",
     "PARTY_FULL",
     "PARTY_NOT_MEMBER",

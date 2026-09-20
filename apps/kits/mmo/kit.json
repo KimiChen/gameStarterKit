@@ -17,7 +17,9 @@
       "minSupported": 1
     }
   },
-  "domains": [],
+  "domains": [
+    "mmo"
+  ],
   "modes": [
     {
       "id": "mmoWorld",

@@ -45,7 +45,9 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         modes: [
             { id: "mmoWorld", constantName: "MmoWorld" },
         ],
-        domains: [],
+        domains: [
+            "mmo",
+        ],
         effects: [],
         sqlFiles: [
             "sql/001-characters.sql",

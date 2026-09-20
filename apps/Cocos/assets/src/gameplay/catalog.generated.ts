@@ -5,6 +5,7 @@ import { createGameplayModule as createArenaCaptureGameplayModule } from "./mode
 import { createGameplayModule as createArenaDuelGameplayModule } from "./modes/arenaDuel/index";
 import { createGameplayModule as createBallMoveGameplayModule } from "./modes/ballMove/index";
 import { createGameplayModule as createIdleGameplayModule } from "./modes/idle/index";
+import { createGameplayModule as createMmoWorldGameplayModule } from "./modes/mmoWorld/index";
 import { createGameplayModule as createSnakeGameplayModule } from "./modes/snake/index";
 import { createGameplayModule as createTallyGameplayModule } from "./modes/tally/index";
 
@@ -73,14 +74,14 @@ export const GAMEPLAY_CATALOG = {
     "mmoWorld": {
         id: "mmoWorld",
         constantName: "MmoWorld",
-        modeVersion: 1,
+        modeVersion: 2,
         maxPlayers: 100,
         roster: "hidden",
         kind: "world",
         world: {"emptyPolicy":"sleep","emptyAfterMs":120000,"checkpointMs":30000},
         profiles: ["world"],
         stateFragments: [],
-        contractDigest: "a60f7edd4e5f562c180f43ef48129c461bd56f12ea1d72392c0efaafa0ba94a9",
+        contractDigest: "13d7c2ba9423b6ce69d8ec88d77f299976345122d222be800707eeb7264d47dc",
     },
     "privateFixture": {
         id: "privateFixture",
@@ -152,6 +153,7 @@ export const GAMEPLAY_MODULES = {
     "arenaDuel": createArenaDuelGameplayModule,
     "ballMove": createBallMoveGameplayModule,
     "idle": createIdleGameplayModule,
+    "mmoWorld": createMmoWorldGameplayModule,
     "snake": createSnakeGameplayModule,
     "tally": createTallyGameplayModule,
 } as const;
@@ -172,6 +174,7 @@ export function registerGeneratedGameplays(
         disposers.push(registerGameplayModule(registry, createArenaDuelGameplayModule(services), services.controllerBridge));
         disposers.push(registerGameplayModule(registry, createBallMoveGameplayModule(services), services.controllerBridge));
         disposers.push(registerGameplayModule(registry, createIdleGameplayModule(services), services.controllerBridge));
+        disposers.push(registerGameplayModule(registry, createMmoWorldGameplayModule(services), services.controllerBridge));
         disposers.push(registerGameplayModule(registry, createSnakeGameplayModule(services), services.controllerBridge));
         disposers.push(registerGameplayModule(registry, createTallyGameplayModule(services), services.controllerBridge));
     } catch (error) {

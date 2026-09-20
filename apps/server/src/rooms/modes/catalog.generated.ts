@@ -5,6 +5,7 @@ import { registerArenaCaptureGameMode } from "./arenaCapture/index";
 import { registerArenaDuelGameMode } from "./arenaDuel/index";
 import { registerBallMoveGameMode } from "./ballMove/index";
 import { registerIdleGameMode } from "./idle/index";
+import { registerMmoWorldWorldMode } from "./mmoWorld/index";
 import { registerSnakeGameMode } from "./snake/index";
 import { registerTallyGameMode } from "./tally/index";
 
@@ -20,6 +21,7 @@ export const GENERATED_GAME_MODE_IDS: readonly string[] = [
 
 /** 已装配服务端 WorldMode 的玩法 id（= canonical GameplayModeId 中 kind:"world" 者，MMO MF4-B2）。 */
 export const GENERATED_WORLD_MODE_IDS: readonly string[] = [
+    "mmoWorld",
 ];
 
 /**
@@ -46,9 +48,9 @@ export function registerGeneratedGameModes(registry?: GameModeRegistry): () => v
 
 /** 同上，world 形态登进 worldModeRegistry（WorldRoom 的组合根；⛔ 不混进 GameRoom 的 registry）。 */
 export function registerGeneratedWorldModes(registry?: WorldModeRegistry): () => void {
-    void registry;
     const disposers: Array<() => void> = [];
     try {
+        disposers.push(registerMmoWorldWorldMode(registry));
     } catch (error) {
         for (const dispose of disposers.splice(0).reverse()) dispose();
         throw error;
