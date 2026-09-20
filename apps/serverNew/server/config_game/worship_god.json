@@ -1,0 +1,146 @@
+{
+	"101": {
+		"id": 101,
+		"spine": 710001,
+		"type": 1,
+		"name": "马面",
+		"quality": 2,
+		"showProb": 950
+	},
+	"102": {
+		"id": 102,
+		"spine": 710002,
+		"type": 1,
+		"name": "牛头",
+		"quality": 3,
+		"showProb": 800
+	},
+	"103": {
+		"id": 103,
+		"spine": 710003,
+		"type": 1,
+		"name": "黑无常",
+		"quality": 4,
+		"showProb": 700
+	},
+	"104": {
+		"id": 104,
+		"spine": 710004,
+		"type": 1,
+		"name": "白无常",
+		"quality": 6,
+		"showProb": 600
+	},
+	"105": {
+		"id": 105,
+		"spine": 710005,
+		"type": 1,
+		"name": "孟婆",
+		"quality": 8,
+		"showProb": 222
+	},
+	"106": {
+		"id": 106,
+		"spine": 710006,
+		"type": 1,
+		"name": "判官",
+		"quality": 10,
+		"showProb": 45
+	},
+	"201": {
+		"id": 201,
+		"spine": 720001,
+		"type": 2,
+		"name": "井神",
+		"quality": 2,
+		"showProb": 950
+	},
+	"202": {
+		"id": 202,
+		"spine": 720002,
+		"type": 2,
+		"name": "河神",
+		"quality": 3,
+		"showProb": 800
+	},
+	"203": {
+		"id": 203,
+		"spine": 720003,
+		"type": 2,
+		"name": "蚌美人",
+		"quality": 4,
+		"showProb": 700
+	},
+	"204": {
+		"id": 204,
+		"spine": 720004,
+		"type": 2,
+		"name": "蛟太子",
+		"quality": 6,
+		"showProb": 600
+	},
+	"205": {
+		"id": 205,
+		"spine": 720005,
+		"type": 2,
+		"name": "蛟母娘娘",
+		"quality": 8,
+		"showProb": 222
+	},
+	"206": {
+		"id": 206,
+		"spine": 720006,
+		"type": 2,
+		"name": "蛟王爷",
+		"quality": 10,
+		"showProb": 45
+	},
+	"301": {
+		"id": 301,
+		"spine": 730001,
+		"type": 3,
+		"name": "灰六仙",
+		"quality": 2,
+		"showProb": 999
+	},
+	"302": {
+		"id": 302,
+		"spine": 730002,
+		"type": 3,
+		"name": "白五仙",
+		"quality": 3,
+		"showProb": 800
+	},
+	"303": {
+		"id": 303,
+		"spine": 730003,
+		"type": 3,
+		"name": "黄四仙",
+		"quality": 4,
+		"showProb": 700
+	},
+	"304": {
+		"id": 304,
+		"spine": 730004,
+		"type": 3,
+		"name": "柳三仙",
+		"quality": 6,
+		"showProb": 600
+	},
+	"305": {
+		"id": 305,
+		"spine": 730005,
+		"type": 3,
+		"name": "狸二仙",
+		"quality": 8,
+		"showProb": 222
+	},
+	"306": {
+		"id": 306,
+		"spine": 730006,
+		"type": 3,
+		"name": "狐大仙",
+		"quality": 10,
+		"showProb": 45
+	}
+}

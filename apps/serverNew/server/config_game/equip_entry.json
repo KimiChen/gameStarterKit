@@ -1,0 +1,708 @@
+{
+	"1061": {
+		"id": 1061,
+		"minAttr": 12,
+		"maxAttr": 12,
+		"mAttr": [
+			{
+				"id": 1061,
+				"attrType": 25,
+				"pro": 1000
+			}
+		]
+	},
+	"1081": {
+		"id": 1081,
+		"minAttr": 16,
+		"maxAttr": 16,
+		"mAttr": [
+			{
+				"id": 1081,
+				"attrType": 25,
+				"pro": 1000
+			}
+		]
+	},
+	"1001": {
+		"id": 1001,
+		"minAttr": 2,
+		"maxAttr": 2,
+		"mAttr": [
+			{
+				"id": 1001,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1001,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1001,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1010": {
+		"id": 1010,
+		"minAttr": 2,
+		"maxAttr": 4,
+		"mAttr": [
+			{
+				"id": 1010,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1010,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1010,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1020": {
+		"id": 1020,
+		"minAttr": 4,
+		"maxAttr": 6,
+		"mAttr": [
+			{
+				"id": 1020,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1020,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1020,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1030": {
+		"id": 1030,
+		"minAttr": 6,
+		"maxAttr": 10,
+		"mAttr": [
+			{
+				"id": 1030,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1030,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1030,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1040": {
+		"id": 1040,
+		"minAttr": 8,
+		"maxAttr": 14,
+		"mAttr": [
+			{
+				"id": 1040,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1040,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1040,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1050": {
+		"id": 1050,
+		"minAttr": 10,
+		"maxAttr": 18,
+		"mAttr": [
+			{
+				"id": 1050,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1050,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1050,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1060": {
+		"id": 1060,
+		"minAttr": 12,
+		"maxAttr": 22,
+		"mAttr": [
+			{
+				"id": 1060,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1060,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1060,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1070": {
+		"id": 1070,
+		"minAttr": 14,
+		"maxAttr": 26,
+		"mAttr": [
+			{
+				"id": 1070,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1070,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1070,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1080": {
+		"id": 1080,
+		"minAttr": 16,
+		"maxAttr": 30,
+		"mAttr": [
+			{
+				"id": 1080,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1080,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1080,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1090": {
+		"id": 1090,
+		"minAttr": 18,
+		"maxAttr": 34,
+		"mAttr": [
+			{
+				"id": 1090,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1090,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1090,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1100": {
+		"id": 1100,
+		"minAttr": 20,
+		"maxAttr": 38,
+		"mAttr": [
+			{
+				"id": 1100,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1100,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1100,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1110": {
+		"id": 1110,
+		"minAttr": 22,
+		"maxAttr": 42,
+		"mAttr": [
+			{
+				"id": 1110,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1110,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1110,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1120": {
+		"id": 1120,
+		"minAttr": 24,
+		"maxAttr": 46,
+		"mAttr": [
+			{
+				"id": 1120,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1120,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1120,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1130": {
+		"id": 1130,
+		"minAttr": 26,
+		"maxAttr": 50,
+		"mAttr": [
+			{
+				"id": 1130,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1130,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1130,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1140": {
+		"id": 1140,
+		"minAttr": 28,
+		"maxAttr": 54,
+		"mAttr": [
+			{
+				"id": 1140,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1140,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1140,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1150": {
+		"id": 1150,
+		"minAttr": 30,
+		"maxAttr": 58,
+		"mAttr": [
+			{
+				"id": 1150,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1150,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1150,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1160": {
+		"id": 1160,
+		"minAttr": 32,
+		"maxAttr": 62,
+		"mAttr": [
+			{
+				"id": 1160,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1160,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1160,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1170": {
+		"id": 1170,
+		"minAttr": 34,
+		"maxAttr": 66,
+		"mAttr": [
+			{
+				"id": 1170,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1170,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1170,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1180": {
+		"id": 1180,
+		"minAttr": 36,
+		"maxAttr": 70,
+		"mAttr": [
+			{
+				"id": 1180,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1180,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1180,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1190": {
+		"id": 1190,
+		"minAttr": 38,
+		"maxAttr": 74,
+		"mAttr": [
+			{
+				"id": 1190,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1190,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1190,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1200": {
+		"id": 1200,
+		"minAttr": 40,
+		"maxAttr": 78,
+		"mAttr": [
+			{
+				"id": 1200,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1200,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1200,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1210": {
+		"id": 1210,
+		"minAttr": 42,
+		"maxAttr": 82,
+		"mAttr": [
+			{
+				"id": 1210,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1210,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1210,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1220": {
+		"id": 1220,
+		"minAttr": 44,
+		"maxAttr": 86,
+		"mAttr": [
+			{
+				"id": 1220,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1220,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1220,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1230": {
+		"id": 1230,
+		"minAttr": 46,
+		"maxAttr": 90,
+		"mAttr": [
+			{
+				"id": 1230,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1230,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1230,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1240": {
+		"id": 1240,
+		"minAttr": 48,
+		"maxAttr": 94,
+		"mAttr": [
+			{
+				"id": 1240,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1240,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1240,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1250": {
+		"id": 1250,
+		"minAttr": 50,
+		"maxAttr": 98,
+		"mAttr": [
+			{
+				"id": 1250,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1250,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1250,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1260": {
+		"id": 1260,
+		"minAttr": 52,
+		"maxAttr": 102,
+		"mAttr": [
+			{
+				"id": 1260,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1260,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1260,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1270": {
+		"id": 1270,
+		"minAttr": 54,
+		"maxAttr": 106,
+		"mAttr": [
+			{
+				"id": 1270,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1270,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1270,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1280": {
+		"id": 1280,
+		"minAttr": 56,
+		"maxAttr": 110,
+		"mAttr": [
+			{
+				"id": 1280,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1280,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1280,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1290": {
+		"id": 1290,
+		"minAttr": 58,
+		"maxAttr": 114,
+		"mAttr": [
+			{
+				"id": 1290,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1290,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1290,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	},
+	"1300": {
+		"id": 1300,
+		"minAttr": 60,
+		"maxAttr": 118,
+		"mAttr": [
+			{
+				"id": 1300,
+				"attrType": 25,
+				"pro": 1000
+			},
+			{
+				"id": 1300,
+				"attrType": 26,
+				"pro": 1000
+			},
+			{
+				"id": 1300,
+				"attrType": 27,
+				"pro": 1000
+			}
+		]
+	}
+}

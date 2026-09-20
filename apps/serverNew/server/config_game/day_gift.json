@@ -1,0 +1,1322 @@
+{
+	"1": {
+		"id": 1,
+		"name": "每日特惠礼包",
+		"content": {
+			"11001": {
+				"giftId": 11001,
+				"id": 1,
+				"desc": "福利礼包",
+				"giftIcon": 401,
+				"rechargeId": 0,
+				"type": 4,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11001,
+						"propId": 1018,
+						"num": 5
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11002": {
+				"giftId": 11002,
+				"id": 1,
+				"desc": "初级请神礼包",
+				"giftIcon": 401,
+				"rechargeId": 11002,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11002,
+						"propId": 1018,
+						"num": 10
+					},
+					{
+						"giftId": 11002,
+						"propId": 1003,
+						"num": 10
+					},
+					{
+						"giftId": 11002,
+						"propId": 200001,
+						"num": 1
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11003": {
+				"giftId": 11003,
+				"id": 1,
+				"desc": "中级请神礼包",
+				"giftIcon": 402,
+				"rechargeId": 11003,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11003,
+						"propId": 1018,
+						"num": 20
+					},
+					{
+						"giftId": 11003,
+						"propId": 1003,
+						"num": 20
+					},
+					{
+						"giftId": 11003,
+						"propId": 200001,
+						"num": 2
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11004": {
+				"giftId": 11004,
+				"id": 1,
+				"desc": "高级请神礼包",
+				"giftIcon": 402,
+				"rechargeId": 11004,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11004,
+						"propId": 1018,
+						"num": 30
+					},
+					{
+						"giftId": 11004,
+						"propId": 1003,
+						"num": 30
+					},
+					{
+						"giftId": 11004,
+						"propId": 200001,
+						"num": 3
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11005": {
+				"giftId": 11005,
+				"id": 1,
+				"desc": "特级请神礼包",
+				"giftIcon": 403,
+				"rechargeId": 11005,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11005,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11005,
+						"propId": 1003,
+						"num": 40
+					},
+					{
+						"giftId": 11005,
+						"propId": 200001,
+						"num": 6
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11006": {
+				"giftId": 11006,
+				"id": 1,
+				"desc": "元神提升礼包",
+				"giftIcon": 403,
+				"rechargeId": 11006,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11006,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11006,
+						"propId": 1003,
+						"num": 50
+					},
+					{
+						"giftId": 11006,
+						"propId": 200001,
+						"num": 8
+					},
+					{
+						"giftId": 11006,
+						"propId": 10201,
+						"num": 8000
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11007": {
+				"giftId": 11007,
+				"id": 1,
+				"desc": "元神进阶礼包",
+				"giftIcon": 404,
+				"rechargeId": 11007,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11007,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11007,
+						"propId": 1003,
+						"num": 60
+					},
+					{
+						"giftId": 11007,
+						"propId": 200001,
+						"num": 12
+					},
+					{
+						"giftId": 11007,
+						"propId": 10201,
+						"num": 12000
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11008": {
+				"giftId": 11008,
+				"id": 1,
+				"desc": "初级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11008,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11008,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11008,
+						"propId": 1003,
+						"num": 70
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 110081,
+						"giftId": 11008,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 110081,
+								"propId": 10201,
+								"num": 14000
+							},
+							"10202": {
+								"sort": 110081,
+								"propId": 10202,
+								"num": 14000
+							},
+							"10203": {
+								"sort": 110081,
+								"propId": 10203,
+								"num": 28000
+							}
+						}
+					},
+					"2": {
+						"sort": 110082,
+						"giftId": 11008,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 110082,
+								"propId": 200001,
+								"num": 14
+							},
+							"10204": {
+								"sort": 110082,
+								"propId": 10204,
+								"num": 14
+							},
+							"8015": {
+								"sort": 110082,
+								"propId": 8015,
+								"num": 14
+							}
+						}
+					}
+				}
+			},
+			"11009": {
+				"giftId": 11009,
+				"id": 1,
+				"desc": "中级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11009,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11009,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11009,
+						"propId": 1003,
+						"num": 80
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 110091,
+						"giftId": 11009,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 110091,
+								"propId": 10201,
+								"num": 30000
+							},
+							"10202": {
+								"sort": 110091,
+								"propId": 10202,
+								"num": 30000
+							},
+							"10203": {
+								"sort": 110091,
+								"propId": 10203,
+								"num": 60000
+							}
+						}
+					},
+					"2": {
+						"sort": 110092,
+						"giftId": 11009,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 110092,
+								"propId": 200001,
+								"num": 30
+							},
+							"10204": {
+								"sort": 110092,
+								"propId": 10204,
+								"num": 30
+							},
+							"8015": {
+								"sort": 110092,
+								"propId": 8015,
+								"num": 30
+							}
+						}
+					}
+				}
+			},
+			"11010": {
+				"giftId": 11010,
+				"id": 1,
+				"desc": "高级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11010,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11010,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11010,
+						"propId": 1003,
+						"num": 90
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 110101,
+						"giftId": 11010,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 110101,
+								"propId": 10201,
+								"num": 60000
+							},
+							"10202": {
+								"sort": 110101,
+								"propId": 10202,
+								"num": 60000
+							},
+							"10203": {
+								"sort": 110101,
+								"propId": 10203,
+								"num": 120000
+							}
+						}
+					},
+					"2": {
+						"sort": 110102,
+						"giftId": 11010,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 110102,
+								"propId": 200001,
+								"num": 60
+							},
+							"10204": {
+								"sort": 110102,
+								"propId": 10204,
+								"num": 60
+							},
+							"8015": {
+								"sort": 110102,
+								"propId": 8015,
+								"num": 60
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"2": {
+		"id": 2,
+		"name": "每日特惠礼包",
+		"content": {
+			"11101": {
+				"giftId": 11101,
+				"id": 2,
+				"desc": "福利礼包",
+				"giftIcon": 401,
+				"rechargeId": 0,
+				"type": 4,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11101,
+						"propId": 1018,
+						"num": 5
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11102": {
+				"giftId": 11102,
+				"id": 2,
+				"desc": "初级铭文礼包",
+				"giftIcon": 401,
+				"rechargeId": 11102,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11102,
+						"propId": 1018,
+						"num": 10
+					},
+					{
+						"giftId": 11102,
+						"propId": 1003,
+						"num": 10
+					},
+					{
+						"giftId": 11102,
+						"propId": 10204,
+						"num": 1
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11103": {
+				"giftId": 11103,
+				"id": 2,
+				"desc": "中级铭文礼包",
+				"giftIcon": 402,
+				"rechargeId": 11103,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11103,
+						"propId": 1018,
+						"num": 20
+					},
+					{
+						"giftId": 11103,
+						"propId": 1003,
+						"num": 20
+					},
+					{
+						"giftId": 11103,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11104": {
+				"giftId": 11104,
+				"id": 2,
+				"desc": "高级铭文礼包",
+				"giftIcon": 402,
+				"rechargeId": 11104,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11104,
+						"propId": 1018,
+						"num": 30
+					},
+					{
+						"giftId": 11104,
+						"propId": 1003,
+						"num": 30
+					},
+					{
+						"giftId": 11104,
+						"propId": 10204,
+						"num": 3
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11105": {
+				"giftId": 11105,
+				"id": 2,
+				"desc": "特级铭文礼包",
+				"giftIcon": 403,
+				"rechargeId": 11105,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11105,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11105,
+						"propId": 1003,
+						"num": 40
+					},
+					{
+						"giftId": 11105,
+						"propId": 10204,
+						"num": 6
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11106": {
+				"giftId": 11106,
+				"id": 2,
+				"desc": "法宝提升礼包",
+				"giftIcon": 403,
+				"rechargeId": 11106,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11106,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11106,
+						"propId": 1003,
+						"num": 50
+					},
+					{
+						"giftId": 11106,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"giftId": 11106,
+						"propId": 10202,
+						"num": 8000
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11107": {
+				"giftId": 11107,
+				"id": 2,
+				"desc": "法宝进阶礼包",
+				"giftIcon": 404,
+				"rechargeId": 11107,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11107,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11107,
+						"propId": 1003,
+						"num": 60
+					},
+					{
+						"giftId": 11107,
+						"propId": 10204,
+						"num": 12
+					},
+					{
+						"giftId": 11107,
+						"propId": 10202,
+						"num": 12000
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11108": {
+				"giftId": 11108,
+				"id": 2,
+				"desc": "初级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11108,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11108,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11108,
+						"propId": 1003,
+						"num": 70
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 111081,
+						"giftId": 11108,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 111081,
+								"propId": 10201,
+								"num": 14000
+							},
+							"10202": {
+								"sort": 111081,
+								"propId": 10202,
+								"num": 14000
+							},
+							"10203": {
+								"sort": 111081,
+								"propId": 10203,
+								"num": 28000
+							}
+						}
+					},
+					"2": {
+						"sort": 111082,
+						"giftId": 11108,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 111082,
+								"propId": 200001,
+								"num": 14
+							},
+							"10204": {
+								"sort": 111082,
+								"propId": 10204,
+								"num": 14
+							},
+							"8015": {
+								"sort": 111082,
+								"propId": 8015,
+								"num": 14
+							}
+						}
+					}
+				}
+			},
+			"11109": {
+				"giftId": 11109,
+				"id": 2,
+				"desc": "中级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11109,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11109,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11109,
+						"propId": 1003,
+						"num": 80
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 111091,
+						"giftId": 11109,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 111091,
+								"propId": 10201,
+								"num": 30000
+							},
+							"10202": {
+								"sort": 111091,
+								"propId": 10202,
+								"num": 30000
+							},
+							"10203": {
+								"sort": 111091,
+								"propId": 10203,
+								"num": 60000
+							}
+						}
+					},
+					"2": {
+						"sort": 111092,
+						"giftId": 11109,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 111092,
+								"propId": 200001,
+								"num": 30
+							},
+							"10204": {
+								"sort": 111092,
+								"propId": 10204,
+								"num": 30
+							},
+							"8015": {
+								"sort": 111092,
+								"propId": 8015,
+								"num": 30
+							}
+						}
+					}
+				}
+			},
+			"11110": {
+				"giftId": 11110,
+				"id": 2,
+				"desc": "高级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11110,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11110,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11110,
+						"propId": 1003,
+						"num": 90
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 111101,
+						"giftId": 11110,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 111101,
+								"propId": 10201,
+								"num": 60000
+							},
+							"10202": {
+								"sort": 111101,
+								"propId": 10202,
+								"num": 60000
+							},
+							"10203": {
+								"sort": 111101,
+								"propId": 10203,
+								"num": 120000
+							}
+						}
+					},
+					"2": {
+						"sort": 111102,
+						"giftId": 11110,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 111102,
+								"propId": 200001,
+								"num": 60
+							},
+							"10204": {
+								"sort": 111102,
+								"propId": 10204,
+								"num": 60
+							},
+							"8015": {
+								"sort": 111102,
+								"propId": 8015,
+								"num": 60
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"3": {
+		"id": 3,
+		"name": "每日特惠礼包",
+		"content": {
+			"11201": {
+				"giftId": 11201,
+				"id": 3,
+				"desc": "福利礼包",
+				"giftIcon": 401,
+				"rechargeId": 0,
+				"type": 4,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11201,
+						"propId": 1018,
+						"num": 5
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11202": {
+				"giftId": 11202,
+				"id": 3,
+				"desc": "初级魂石礼包",
+				"giftIcon": 401,
+				"rechargeId": 11202,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11202,
+						"propId": 1018,
+						"num": 10
+					},
+					{
+						"giftId": 11202,
+						"propId": 1003,
+						"num": 10
+					},
+					{
+						"giftId": 11202,
+						"propId": 8015,
+						"num": 1
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11203": {
+				"giftId": 11203,
+				"id": 3,
+				"desc": "中级魂石礼包",
+				"giftIcon": 402,
+				"rechargeId": 11203,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11203,
+						"propId": 1018,
+						"num": 20
+					},
+					{
+						"giftId": 11203,
+						"propId": 1003,
+						"num": 20
+					},
+					{
+						"giftId": 11203,
+						"propId": 8015,
+						"num": 2
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11204": {
+				"giftId": 11204,
+				"id": 3,
+				"desc": "高级魂石礼包",
+				"giftIcon": 402,
+				"rechargeId": 11204,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11204,
+						"propId": 1018,
+						"num": 30
+					},
+					{
+						"giftId": 11204,
+						"propId": 1003,
+						"num": 30
+					},
+					{
+						"giftId": 11204,
+						"propId": 8015,
+						"num": 3
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11205": {
+				"giftId": 11205,
+				"id": 3,
+				"desc": "特级魂石礼包",
+				"giftIcon": 403,
+				"rechargeId": 11205,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11205,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11205,
+						"propId": 1003,
+						"num": 40
+					},
+					{
+						"giftId": 11205,
+						"propId": 8015,
+						"num": 6
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11206": {
+				"giftId": 11206,
+				"id": 3,
+				"desc": "装备提升礼包",
+				"giftIcon": 403,
+				"rechargeId": 11206,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11206,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11206,
+						"propId": 1003,
+						"num": 50
+					},
+					{
+						"giftId": 11206,
+						"propId": 8015,
+						"num": 8
+					},
+					{
+						"giftId": 11206,
+						"propId": 10203,
+						"num": 16000
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11207": {
+				"giftId": 11207,
+				"id": 3,
+				"desc": "装备进阶礼包",
+				"giftIcon": 404,
+				"rechargeId": 11207,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11207,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11207,
+						"propId": 1003,
+						"num": 60
+					},
+					{
+						"giftId": 11207,
+						"propId": 8015,
+						"num": 12
+					},
+					{
+						"giftId": 11207,
+						"propId": 10203,
+						"num": 24000
+					}
+				],
+				"choose": {
+
+				}
+			},
+			"11208": {
+				"giftId": 11208,
+				"id": 3,
+				"desc": "初级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11208,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11208,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11208,
+						"propId": 1003,
+						"num": 70
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 112081,
+						"giftId": 11208,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 112081,
+								"propId": 10201,
+								"num": 14000
+							},
+							"10202": {
+								"sort": 112081,
+								"propId": 10202,
+								"num": 14000
+							},
+							"10203": {
+								"sort": 112081,
+								"propId": 10203,
+								"num": 28000
+							}
+						}
+					},
+					"2": {
+						"sort": 112082,
+						"giftId": 11208,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 112082,
+								"propId": 200001,
+								"num": 14
+							},
+							"10204": {
+								"sort": 112082,
+								"propId": 10204,
+								"num": 14
+							},
+							"8015": {
+								"sort": 112082,
+								"propId": 8015,
+								"num": 14
+							}
+						}
+					}
+				}
+			},
+			"11209": {
+				"giftId": 11209,
+				"id": 3,
+				"desc": "中级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11209,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11209,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11209,
+						"propId": 1003,
+						"num": 80
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 112091,
+						"giftId": 11209,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 112091,
+								"propId": 10201,
+								"num": 30000
+							},
+							"10202": {
+								"sort": 112091,
+								"propId": 10202,
+								"num": 30000
+							},
+							"10203": {
+								"sort": 112091,
+								"propId": 10203,
+								"num": 60000
+							}
+						}
+					},
+					"2": {
+						"sort": 112092,
+						"giftId": 11209,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 112092,
+								"propId": 200001,
+								"num": 30
+							},
+							"10204": {
+								"sort": 112092,
+								"propId": 10204,
+								"num": 30
+							},
+							"8015": {
+								"sort": 112092,
+								"propId": 8015,
+								"num": 30
+							}
+						}
+					}
+				}
+			},
+			"11210": {
+				"giftId": 11210,
+				"id": 3,
+				"desc": "高级自选礼包",
+				"giftIcon": 404,
+				"rechargeId": 11210,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 11210,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 11210,
+						"propId": 1003,
+						"num": 90
+					}
+				],
+				"choose": {
+					"1": {
+						"sort": 112101,
+						"giftId": 11210,
+						"optional": 1,
+						"awards2": {
+							"10201": {
+								"sort": 112101,
+								"propId": 10201,
+								"num": 60000
+							},
+							"10202": {
+								"sort": 112101,
+								"propId": 10202,
+								"num": 60000
+							},
+							"10203": {
+								"sort": 112101,
+								"propId": 10203,
+								"num": 120000
+							}
+						}
+					},
+					"2": {
+						"sort": 112102,
+						"giftId": 11210,
+						"optional": 2,
+						"awards2": {
+							"200001": {
+								"sort": 112102,
+								"propId": 200001,
+								"num": 60
+							},
+							"10204": {
+								"sort": 112102,
+								"propId": 10204,
+								"num": 60
+							},
+							"8015": {
+								"sort": 112102,
+								"propId": 8015,
+								"num": 60
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

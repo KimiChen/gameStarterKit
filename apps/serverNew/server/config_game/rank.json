@@ -1,0 +1,956 @@
+{
+	"Level": {
+		"name": "Level",
+		"desc": "等级榜",
+		"bannerType": 1,
+		"sort": 1,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "Level",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "Level",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			},
+			{
+				"name": "Level",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "人物等级",
+		"prob": 1000
+	},
+	"Realm": {
+		"name": "Realm",
+		"desc": "境界榜",
+		"bannerType": 1,
+		"sort": 2,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "Realm",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "Realm",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			},
+			{
+				"name": "Realm",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "境界",
+		"prob": 1000
+	},
+	"Appearance": {
+		"name": "Appearance",
+		"desc": "颜值榜",
+		"bannerType": 1,
+		"sort": 3,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "Appearance",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "Appearance",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			},
+			{
+				"name": "Appearance",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "颜值",
+		"prob": 1000
+	},
+	"Achieve": {
+		"name": "Achieve",
+		"desc": "成就榜",
+		"bannerType": 1,
+		"sort": 4,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "Achieve",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "Achieve",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			},
+			{
+				"name": "Achieve",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "成就点",
+		"prob": 1000
+	},
+	"EqHair": {
+		"name": "EqHair",
+		"desc": "头饰榜",
+		"bannerType": 2,
+		"sort": 1,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "EqHair",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "EqHair",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankEquipRank",
+				"height": 143
+			},
+			{
+				"name": "EqHair",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "头饰妖力",
+		"prob": 1000
+	},
+	"EqClothes": {
+		"name": "EqClothes",
+		"desc": "服饰榜",
+		"bannerType": 2,
+		"sort": 2,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "EqClothes",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "EqClothes",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankEquipRank",
+				"height": 143
+			},
+			{
+				"name": "EqClothes",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "服饰妖力",
+		"prob": 1000
+	},
+	"EqWristband": {
+		"name": "EqWristband",
+		"desc": "护腕榜",
+		"bannerType": 2,
+		"sort": 3,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "EqWristband",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "EqWristband",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankEquipRank",
+				"height": 143
+			},
+			{
+				"name": "EqWristband",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "护腕妖力",
+		"prob": 1000
+	},
+	"EqShoe": {
+		"name": "EqShoe",
+		"desc": "鞋子榜",
+		"bannerType": 2,
+		"sort": 4,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "EqShoe",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "EqShoe",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankEquipRank",
+				"height": 143
+			},
+			{
+				"name": "EqShoe",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "鞋子妖力",
+		"prob": 1000
+	},
+	"EqBelt": {
+		"name": "EqBelt",
+		"desc": "腰带榜",
+		"bannerType": 2,
+		"sort": 5,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "EqBelt",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "EqBelt",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankEquipRank",
+				"height": 143
+			},
+			{
+				"name": "EqBelt",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "腰带妖力",
+		"prob": 1000
+	},
+	"EqPants": {
+		"name": "EqPants",
+		"desc": "裤子榜",
+		"bannerType": 2,
+		"sort": 6,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "EqPants",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "EqPants",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankEquipRank",
+				"height": 143
+			},
+			{
+				"name": "EqPants",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "裤子妖力",
+		"prob": 1000
+	},
+	"GuildLevel": {
+		"name": "GuildLevel",
+		"desc": "山头榜",
+		"bannerType": 3,
+		"sort": 1,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankGuildTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "GuildLevel",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "GuildLevel",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankGuildRank",
+				"height": 143
+			},
+			{
+				"name": "GuildLevel",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "大王",
+		"prob": 1000
+	},
+	"ArenaTierSeason": {
+		"name": "ArenaTierSeason",
+		"desc": "赛季斗法榜",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankTopPersons",
+		"rankSelf": "rankArenaSelf",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "ArenaTierSeason",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "ArenaTierSeason",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			},
+			{
+				"name": "ArenaTierSeason",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "赛季斗法战绩",
+		"prob": 0
+	},
+	"ArenaTierDaily": {
+		"name": "ArenaTierDaily",
+		"desc": "每日斗法榜",
+		"bannerType": 4,
+		"sort": 1,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankTopPersons",
+		"rankSelf": "rankArenaSelf",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "ArenaTierDaily",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "ArenaTierDaily",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			},
+			{
+				"name": "ArenaTierDaily",
+				"formatValue": "rank2",
+				"weight": 150,
+				"prefabName": "rankLikes",
+				"height": 143
+			}
+		],
+		"isRankLike": 1,
+		"maxNum": 100,
+		"base": "昨日斗法战绩",
+		"prob": 1000
+	},
+	"RankLevel": {
+		"name": "RankLevel",
+		"desc": "角色等级冲榜",
+		"activityName": "RankLevel",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 1,
+		"systemType": 1,
+		"attribute": [
+			{
+				"name": "RankLevel",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "RankLevel",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "人物等级",
+		"prob": 0
+	},
+	"RankWeapon": {
+		"name": "RankWeapon",
+		"desc": "法宝等级冲榜",
+		"activityName": "RankWeapon",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 1,
+		"systemType": 3,
+		"attribute": [
+			{
+				"name": "RankWeapon",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "RankWeapon",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "法宝等级",
+		"prob": 0
+	},
+	"RankGong": {
+		"name": "RankGong",
+		"desc": "元神等级冲榜",
+		"activityName": "RankGong",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 1,
+		"systemType": 2,
+		"attribute": [
+			{
+				"name": "RankGong",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "RankGong",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "元神等级",
+		"prob": 0
+	},
+	"RankAbPointDraw": {
+		"name": "RankAbPointDraw",
+		"desc": "灵气掉落冲榜",
+		"activityName": "RankAbPointDraw",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 2,
+		"systemType": 2,
+		"attribute": [
+			{
+				"name": "RankAbPointDraw",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "RankAbPointDraw",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "掉落数",
+		"prob": 0
+	},
+	"RankEnergyDraw": {
+		"name": "RankEnergyDraw",
+		"desc": "妖气掉落冲榜",
+		"activityName": "RankEnergyDraw",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 2,
+		"systemType": 3,
+		"attribute": [
+			{
+				"name": "RankEnergyDraw",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "RankEnergyDraw",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "掉落数",
+		"prob": 0
+	},
+	"RankGongFp": {
+		"name": "RankGongFp",
+		"desc": "元神妖力冲榜",
+		"activityName": "RankGongFp",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 1,
+		"systemType": 2,
+		"attribute": [
+			{
+				"name": "RankGongFp",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "RankGongFp",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "元神妖力",
+		"prob": 0
+	},
+	"RankWeaponFp": {
+		"name": "RankWeaponFp",
+		"desc": "法宝妖力冲榜",
+		"activityName": "RankWeaponFp",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 1,
+		"systemType": 3,
+		"attribute": [
+			{
+				"name": "RankWeaponFp",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "RankWeaponFp",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "法宝妖力",
+		"prob": 0
+	},
+	"RankEquipFp": {
+		"name": "RankEquipFp",
+		"desc": "装备妖力冲榜",
+		"activityName": "RankEquipFp",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 0,
+		"rankType": "l",
+		"rankTop": "rankPersonTop",
+		"rankSelf": "rankSelfPerson",
+		"dataType": 1,
+		"systemType": 1,
+		"attribute": [
+			{
+				"name": "RankEquipFp",
+				"formatValue": "rank",
+				"weight": 160,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "RankEquipFp",
+				"formatValue": "rank1",
+				"weight": 440,
+				"prefabName": "rankPlayerRank",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "装备妖力",
+		"prob": 0
+	},
+	"CrossMission": {
+		"name": "CrossMission",
+		"desc": "鏖战天庸个人榜",
+		"activityName": "CrossMission",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 1,
+		"rankType": "l",
+		"rankSelf": "rankCrsooMissionCompPerson",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "CrossMission",
+				"formatValue": "rank",
+				"columnTitle": "排名",
+				"weight": 120,
+				"prefabName": "rankTextImg",
+				"height": 58
+			},
+			{
+				"name": "CrossMission",
+				"formatValue": "rank1",
+				"columnTitle": "头像",
+				"weight": 70,
+				"prefabName": "rankHead",
+				"height": 58
+			},
+			{
+				"name": "CrossMission",
+				"formatValue": "rank2",
+				"columnTitle": "名字",
+				"weight": 200,
+				"prefabName": "rankName",
+				"height": 58
+			},
+			{
+				"name": "CrossMission",
+				"formatValue": "rank3",
+				"columnTitle": "区服",
+				"weight": 124,
+				"prefabName": "rankServer",
+				"height": 58
+			},
+			{
+				"name": "CrossMission",
+				"formatValue": "rank4",
+				"columnTitle": "经验值",
+				"weight": 152,
+				"prefabName": "rankExp",
+				"height": 58
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "经验值",
+		"prob": 0
+	},
+	"CrossMissionServer": {
+		"name": "CrossMissionServer",
+		"desc": "鏖战天庸区服榜",
+		"activityName": "CrossMission",
+		"memberType": "Server",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 1,
+		"rankType": "l",
+		"rankSelf": "rankCrsooMissionCompServer",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "CrossMissionServer",
+				"formatValue": "rank",
+				"columnTitle": "排名",
+				"weight": 120,
+				"prefabName": "rankTextImg",
+				"height": 58
+			},
+			{
+				"name": "CrossMissionServer",
+				"formatValue": "rank1",
+				"columnTitle": "区服",
+				"weight": 124,
+				"prefabName": "rankServer",
+				"height": 58
+			},
+			{
+				"name": "CrossMissionServer",
+				"formatValue": "rank2",
+				"columnTitle": "经验值",
+				"weight": 152,
+				"prefabName": "rankExp",
+				"height": 58
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "经验值",
+		"prob": 0
+	},
+	"CrossMissionPop": {
+		"name": "CrossMissionPop",
+		"desc": "鏖战天庸个人榜(弹窗样式)",
+		"activityName": "CrossMission",
+		"memberType": "User",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 1,
+		"rankType": "l",
+		"rankSelf": "rankCrossMissionSelf",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "CrossMissionPop",
+				"formatValue": "rank",
+				"weight": 156,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "CrossMissionPop",
+				"formatValue": "rank1",
+				"weight": 309,
+				"prefabName": "rankUserAndScore",
+				"height": 143
+			},
+			{
+				"name": "CrossMissionPop",
+				"formatValue": "rank2",
+				"weight": 100,
+				"prefabName": "rankServerPop",
+				"height": 40
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "经验值",
+		"prob": 0
+	},
+	"CrossMissionServerPop": {
+		"name": "CrossMissionServerPop",
+		"desc": "鏖战天庸区服榜(弹窗样式)",
+		"activityName": "CrossMission",
+		"memberType": "Server",
+		"bannerType": 0,
+		"sort": 0,
+		"isCross": 1,
+		"rankType": "l",
+		"rankSelf": "rankCrossMissionServer",
+		"dataType": 0,
+		"systemType": 0,
+		"attribute": [
+			{
+				"name": "CrossMissionServerPop",
+				"formatValue": "rank",
+				"weight": 156,
+				"prefabName": "rankTextImg",
+				"height": 143
+			},
+			{
+				"name": "CrossMissionServerPop",
+				"formatValue": "rank1",
+				"weight": 308,
+				"prefabName": "rankServerAndExp",
+				"height": 143
+			}
+		],
+		"isRankLike": 0,
+		"maxNum": 100,
+		"base": "经验值",
+		"prob": 0
+	}
+}

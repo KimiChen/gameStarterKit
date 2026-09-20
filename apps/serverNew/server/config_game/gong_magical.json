@@ -1,0 +1,591 @@
+{
+	"311001": {
+		"id": 311001,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1001,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11001,
+		"desc": "对目标造成1000%伤害(受攻击影响)，自身攻击提升10%持续5回合",
+		"desc2": "造成1000%攻击伤害，提升5回合自身攻击10%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311001,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311001,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311002": {
+		"id": 311002,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1002,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11002,
+		"desc": "对目标造成1000%伤害(受攻击影响)，眩晕目标3回合",
+		"desc2": "造成1000%攻击伤害，眩晕目标，持续3回合",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311002,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311002,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311003": {
+		"id": 311003,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1003,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11003,
+		"desc": "对目标造成1000%伤害(受防御影响)，对自身和同山头成员1000%治疗(受防御影响)",
+		"desc2": "造成1000%防御伤害，恢复自身与同山成员血量",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311003,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311003,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311004": {
+		"id": 311004,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1004,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11004,
+		"desc": "对目标造成1000%伤害(受攻击影响)，诅咒目标每回合造成300%伤害，无法净化持续5回合",
+		"desc2": "造成1000%攻击伤害，诅咒目标5回合且无法净化",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311004,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311004,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311005": {
+		"id": 311005,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1005,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11005,
+		"desc": "对目标造成1000%伤害(受攻击影响)，驱散目标和同山头5名成员的1个增益状态",
+		"desc2": "造成1000%攻击伤害，驱散目标与其同山成员",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311005,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311005,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311006": {
+		"id": 311006,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1006,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11006,
+		"desc": "对目标造成1000%伤害(受防御影响)，自身防御提升20%，持续5回合",
+		"desc2": "造成1000%防御伤害，提升5回合自身防御20%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311006,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311006,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311007": {
+		"id": 311007,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1007,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11007,
+		"desc": "对目标造成1000%伤害(受攻击影响)，命中提高100%，持续5回合",
+		"desc2": "造成1000%攻击伤害，提高5回合自身命中100%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311007,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311007,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311008": {
+		"id": 311008,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1008,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11008,
+		"desc": "对目标造成1000%伤害(受攻击影响)，目标防御降低20%，持续5回合",
+		"desc2": "造成1000%攻击伤害，降低5回合目标防御20%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311008,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311008,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311009": {
+		"id": 311009,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1009,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11009,
+		"desc": "对目标造成1000%伤害(受防御影响)，净化自身和同山头5名成员的1个增益状态",
+		"desc2": "造成1000%防御伤害，净化自身与同山成员",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311009,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311009,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"311010": {
+		"id": 311010,
+		"quality": 4,
+		"tag": 1,
+		"sort": 1010,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 11010,
+		"desc": "造成1000%伤害(受攻击影响)，自身和同山头5名成员获得治愈，每回合100%治疗(受防御影响)持续5回合",
+		"desc2": "造成1000%攻击伤害，治愈5回合自身与同山成员",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 311010,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 311010,
+				"attrType": 27,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"312001": {
+		"id": 312001,
+		"quality": 6,
+		"tag": 1,
+		"sort": 2001,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 12001,
+		"desc": "造成1500%伤害(受攻击影响)，自身增伤增加20%，持续5回合",
+		"desc2": "造成1500%攻击伤害，提升5回合自身增伤20%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 312001,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 312001,
+				"attrType": 27,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"312002": {
+		"id": 312002,
+		"quality": 6,
+		"tag": 1,
+		"sort": 2002,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 12002,
+		"desc": "造成1500%伤害(受防御影响)，自身减伤增加20%，持续5回合",
+		"desc2": "造成1500%防御伤害，提升5回合自身减伤20%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 312002,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 312002,
+				"attrType": 27,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"312003": {
+		"id": 312003,
+		"quality": 6,
+		"tag": 1,
+		"sort": 2003,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 12003,
+		"desc": "造成1500%伤害(受攻击影响)，自身闪避率提高20%，持续5回合",
+		"desc2": "造成1500%攻击伤害，提升5回合自身闪避率20%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 312003,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 312003,
+				"attrType": 27,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"312004": {
+		"id": 312004,
+		"quality": 6,
+		"tag": 1,
+		"sort": 2004,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 12004,
+		"desc": "造成1500%伤害(受攻击影响)，自身暴击率提高20%，持续5回合",
+		"desc2": "造成1500%攻击伤害，提升5回合自身暴击率20%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 312004,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 312004,
+				"attrType": 27,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"312005": {
+		"id": 312005,
+		"quality": 6,
+		"tag": 1,
+		"sort": 2005,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 12005,
+		"desc": "造成1500%伤害(受攻击影响)，自身穿透率提高20%，持续5回合",
+		"desc2": "造成1500%攻击伤害，提升5回合自身穿透率20%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 312005,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 312005,
+				"attrType": 27,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"313001": {
+		"id": 313001,
+		"quality": 8,
+		"tag": 1,
+		"sort": 3001,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 13001,
+		"desc": "造成2000%伤害(受防御影响)，自身防御提升40%，持续5回合",
+		"desc2": "造成2000%防御伤害，提升5回合自身防御40%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 313001,
+				"reply": 10802
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 313001,
+				"attrType": 27,
+				"value": 5
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"durableRecovery": 10
+	},
+	"313002": {
+		"id": 313002,
+		"quality": 8,
+		"tag": 1,
+		"sort": 3002,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 13002,
+		"desc": "造成2000%伤害(受攻击影响)，驱散目标所有增益状态，并沉默对手5回合",
+		"desc2": "造成2000%攻击伤害，驱散目标并沉默5回合",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 313002,
+				"reply": 10802
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 313002,
+				"attrType": 27,
+				"value": 5
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"durableRecovery": 10
+	},
+	"313003": {
+		"id": 313003,
+		"quality": 8,
+		"tag": 1,
+		"sort": 3003,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 13003,
+		"desc": "造成2000%伤害(受攻击影响)，攻击提升20%、暴击率增加20%持续5回合",
+		"desc2": "造成2000%攻击伤害，提升5回合攻击、暴击率20%",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 313003,
+				"reply": 10802
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 313003,
+				"attrType": 27,
+				"value": 5
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"durableRecovery": 10
+	},
+	"314001": {
+		"id": 314001,
+		"quality": 10,
+		"tag": 1,
+		"sort": 4001,
+		"durable": 3000,
+		"cost": 100,
+		"type": 1,
+		"skillId": 14001,
+		"desc": "造成2500%伤害(受攻击影响)，灼烧目标每回合造成500%伤害，无法净化，持续5回合",
+		"desc2": "造成2500%攻击伤害，灼烧目标5回合且无法净化",
+		"atkStage": 1,
+		"atkSpeed": 1000,
+		"duration": 1,
+		"more": [
+			{
+				"id": 314001,
+				"reply": 10801
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 314001,
+				"attrType": 27,
+				"value": 25
+			}
+		],
+		"fp": 0,
+		"showValue": 5000,
+		"durableRecovery": 10
+	}
+}

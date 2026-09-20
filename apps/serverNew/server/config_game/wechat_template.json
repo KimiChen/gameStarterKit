@@ -1,0 +1,106 @@
+{
+	"1": {
+		"id": 1,
+		"title": "体力恢复提醒",
+		"template_id": "6ApUMElrtAmO7trg8cVD4k5yJLeUqF4ui2ysW0nWuKE",
+		"desc": "版本更新（微信小游戏）",
+		"params": [
+			{
+				"id": 1,
+				"key": "thing2",
+				"desc": "温馨提示",
+				"wxKey": "{{thing2.DATA}}"
+			},
+			{
+				"id": 1,
+				"key": "thing3",
+				"desc": "变更提示",
+				"wxKey": "{{thing3.DATA}}"
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"title": "处理日常提醒",
+		"template_id": "VZn-PKbaThZiiiHiGoI4jMea-M-kEnIr30X7Vf-Dvjs",
+		"desc": "版本更新（微信小游戏）",
+		"params": [
+			{
+				"id": 2,
+				"key": "thing1",
+				"desc": "功能名称",
+				"wxKey": "{{thing1.DATA}}"
+			},
+			{
+				"id": 2,
+				"key": "thing2",
+				"desc": "温馨提示",
+				"wxKey": "{{thing2.DATA}}"
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"title": "活动开启通知",
+		"template_id": "UZxlajYqc59Njris6EZMEyX2IWZD3Ym2J_ob_-3J2-I",
+		"desc": "版本更新（微信小游戏）",
+		"params": [
+			{
+				"id": 3,
+				"key": "thing1",
+				"desc": "活动名称",
+				"wxKey": "{{thing1.DATA}}"
+			},
+			{
+				"id": 3,
+				"key": "time8",
+				"desc": "开始时间",
+				"wxKey": "{{time8.DATA}}"
+			},
+			{
+				"id": 3,
+				"key": "time9",
+				"desc": "结束时间",
+				"wxKey": "{{time9.DATA}}"
+			},
+			{
+				"id": 3,
+				"key": "thing13",
+				"desc": "奖励礼物",
+				"wxKey": "{{thing13.DATA}}"
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"title": "活动开启通知",
+		"template_id": "UZxlajYqc59Njris6EZME_P1YbpEXwsfJDH1vwWW5X0",
+		"desc": "版本更新（微信小游戏）",
+		"params": [
+			{
+				"id": 4,
+				"key": "thing1",
+				"desc": "活动名称",
+				"wxKey": "{{thing1.DATA}}"
+			},
+			{
+				"id": 4,
+				"key": "time8",
+				"desc": "开始时间",
+				"wxKey": "{{time8.DATA}}"
+			},
+			{
+				"id": 4,
+				"key": "time9",
+				"desc": "结束时间",
+				"wxKey": "{{time9.DATA}}"
+			},
+			{
+				"id": 4,
+				"key": "thing15",
+				"desc": "奖励内容",
+				"wxKey": "{{thing15.DATA}}"
+			}
+		]
+	}
+}

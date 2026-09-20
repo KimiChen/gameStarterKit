@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "name": "triggerGift",
+  "version": "1.0.0",
+  "description": "Archived triggerGift game module",
+  "files": [
+    {
+      "target": "src/modules/triggerGift/bean/TriggerGiftGroupItem.ts",
+      "payload": "payload/src/modules/triggerGift/bean/TriggerGiftGroupItem.ts",
+      "sha256": "67dbc6d36228c0ba97e3481b153052731ca40440ba58163547837a852467420a"
+    },
+    {
+      "target": "src/modules/triggerGift/bean/TriggerGiftItem.ts",
+      "payload": "payload/src/modules/triggerGift/bean/TriggerGiftItem.ts",
+      "sha256": "3711934a0ded284a2dee040f265f4f2b8e86b8e6f690c63229d813ffd07bc0a8"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-trigger-gift-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../triggerGift/bean/TriggerGiftGroupItem",
+      "import": "import { TriggerGiftGroupItem } from '../../triggerGift/bean/TriggerGiftGroupItem'",
+      "expectedAbsent": "TriggerGiftGroupItem"
+    },
+    {
+      "id": "user-trigger-gift-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "/** 礼包信息 */\n@Mod\ntriggerGift?: DiffMap<int, TriggerGiftGroupItem>",
+      "expectedAbsent": "triggerGift?: DiffMap<int, TriggerGiftGroupItem>"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- triggerGift"
+    ],
+    "manual": []
+  }
+}

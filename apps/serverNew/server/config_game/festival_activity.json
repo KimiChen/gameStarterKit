@@ -1,0 +1,135 @@
+{
+	"SpringFestival": {
+		"activityName": "SpringFestival",
+		"name": "春节活动",
+		"openTs": "2024-01-01 10:00:00",
+		"closeTs": "2024-12-24 10:00:00",
+		"starTs": "2024-01-01 10:00:00",
+		"endTs": "2024-12-24 10:00:00",
+		"shopId": 101,
+		"itemRecoup": {
+			"3001": [
+				10203,
+				5
+			],
+			"3002": [
+				10203,
+				10
+			]
+		},
+		"fundId": "SpringFund",
+		"drawId": 1,
+		"gifts": {
+			"101": {
+				"giftId": 101,
+				"activityName": "SpringFestival",
+				"icon": 0,
+				"desc": "免费礼包",
+				"sort": 1,
+				"limitType": 2,
+				"totalLimit": 1,
+				"rechargeId": 0,
+				"payType": 4,
+				"price": 0,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 101,
+						"propId": 3002,
+						"num": 1
+					}
+				]
+			},
+			"102": {
+				"giftId": 102,
+				"activityName": "SpringFestival",
+				"icon": 0,
+				"desc": "新春福利礼包",
+				"sort": 2,
+				"limitType": 2,
+				"totalLimit": 1,
+				"rechargeId": 311401,
+				"payType": 1,
+				"price": 6,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 102,
+						"propId": 3002,
+						"num": 1
+					},
+					{
+						"giftId": 102,
+						"propId": 1001,
+						"num": 60
+					},
+					{
+						"giftId": 102,
+						"propId": 10203,
+						"num": 5000
+					}
+				]
+			},
+			"103": {
+				"giftId": 103,
+				"activityName": "SpringFestival",
+				"icon": 0,
+				"desc": "新春豪华礼包",
+				"sort": 3,
+				"limitType": 2,
+				"totalLimit": 3,
+				"rechargeId": 311402,
+				"payType": 1,
+				"price": 30,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 103,
+						"propId": 3002,
+						"num": 3
+					},
+					{
+						"giftId": 103,
+						"propId": 1001,
+						"num": 300
+					},
+					{
+						"giftId": 103,
+						"propId": 10203,
+						"num": 10000
+					}
+				]
+			},
+			"104": {
+				"giftId": 104,
+				"activityName": "SpringFestival",
+				"icon": 0,
+				"desc": "新春尊享礼包",
+				"sort": 4,
+				"limitType": 2,
+				"totalLimit": 10,
+				"rechargeId": 311403,
+				"payType": 1,
+				"price": 68,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 104,
+						"propId": 3002,
+						"num": 5
+					},
+					{
+						"giftId": 104,
+						"propId": 1001,
+						"num": 680
+					},
+					{
+						"giftId": 104,
+						"propId": 10203,
+						"num": 20000
+					}
+				]
+			}
+		}
+	}
+}

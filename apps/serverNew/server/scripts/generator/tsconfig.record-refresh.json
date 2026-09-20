@@ -1,0 +1,16 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "plugins": [],
+        "strictBuiltinIteratorReturn": false
+    },
+    "include": ["./**/*.ts", "../../src/typings/protocol.d.ts", "../../../engine/src/typings/**/*.d.ts"],
+    "exclude": ["./differ/record/ReadFromOld.ts"],
+    "ts-node": {
+        "compiler": "ts-patch/compiler",
+        "files": true,
+        "require": ["tsconfig-paths/register"]
+    }
+}

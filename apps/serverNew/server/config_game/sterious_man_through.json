@@ -1,0 +1,149 @@
+{
+	"1": {
+		"id": 1,
+		"level": 0,
+		"costPropId": 1019,
+		"costNum": 0,
+		"atk": 0,
+		"skinId": 500001,
+		"click": [
+			{
+				"id": 1,
+				"propId": 1002,
+				"num": 5
+			},
+			{
+				"id": 1,
+				"propId": 10202,
+				"num": 1
+			}
+		],
+		"iconNum": 3
+	},
+	"2": {
+		"id": 2,
+		"level": 4,
+		"costPropId": 1019,
+		"costNum": 0,
+		"atk": 0,
+		"skinId": 500001,
+		"click": [
+			{
+				"id": 2,
+				"propId": 1002,
+				"num": 5
+			},
+			{
+				"id": 2,
+				"propId": 10202,
+				"num": 2
+			}
+		],
+		"iconNum": 3
+	},
+	"3": {
+		"id": 3,
+		"level": 7,
+		"costPropId": 1019,
+		"costNum": 0,
+		"atk": 0,
+		"skinId": 500002,
+		"click": [
+			{
+				"id": 3,
+				"propId": 1002,
+				"num": 5
+			},
+			{
+				"id": 3,
+				"propId": 10202,
+				"num": 3
+			}
+		],
+		"iconNum": 3
+	},
+	"4": {
+		"id": 4,
+		"level": 10,
+		"costPropId": 1019,
+		"costNum": 0,
+		"atk": 0,
+		"skinId": 500002,
+		"click": [
+			{
+				"id": 4,
+				"propId": 1002,
+				"num": 5
+			},
+			{
+				"id": 4,
+				"propId": 10202,
+				"num": 4
+			}
+		],
+		"iconNum": 3
+	},
+	"5": {
+		"id": 5,
+		"level": 13,
+		"costPropId": 1019,
+		"costNum": 0,
+		"atk": 0,
+		"skinId": 500002,
+		"click": [
+			{
+				"id": 5,
+				"propId": 1002,
+				"num": 5
+			},
+			{
+				"id": 5,
+				"propId": 10202,
+				"num": 5
+			}
+		],
+		"iconNum": 3
+	},
+	"6": {
+		"id": 6,
+		"level": 16,
+		"costPropId": 1019,
+		"costNum": 0,
+		"atk": 0,
+		"skinId": 500003,
+		"click": [
+			{
+				"id": 6,
+				"propId": 1002,
+				"num": 5
+			},
+			{
+				"id": 6,
+				"propId": 10202,
+				"num": 6
+			}
+		],
+		"iconNum": 3
+	},
+	"7": {
+		"id": 7,
+		"level": 19,
+		"costPropId": 0,
+		"costNum": 0,
+		"atk": 0,
+		"skinId": 500003,
+		"click": [
+			{
+				"id": 7,
+				"propId": 1002,
+				"num": 5
+			},
+			{
+				"id": 7,
+				"propId": 10202,
+				"num": 7
+			}
+		],
+		"iconNum": 0
+	}
+}

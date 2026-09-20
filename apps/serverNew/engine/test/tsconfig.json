@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "declaration": true,
+        "declarationMap": true,
+        "lib": ["es2022"],
+        "rootDir": "../",
+        "sourceMap": true,
+        "strict": true,
+        "target": "es2022",
+        "moduleResolution": "node",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+    },
+    "include": ["../**/*.ts"],
+    "references": [
+        {
+            "path": "../tsconfig.json"
+        }
+    ],
+    "ts-node": {
+        "files": true
+    }
+}

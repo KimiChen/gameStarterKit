@@ -1,0 +1,25 @@
+{
+    //新项目所需的调整的配置
+    "projName": "game-config",
+    "queryParams": {
+        "project": "game-config"
+    },
+    "pwd": "",
+    //分支切换时修改
+    "branch": "master",
+    //正常不需要改动
+    "cfgUrl": "http://conf.front.paoyou.work",
+    "confCISavePath": "./config_game/",
+    "cfgExt": "json",
+    "autoGen": {
+        "system_id": {
+            "cfg": "system_id",
+            "codePath": "generated/configTypes/SystemId.ts"
+        }
+    },
+    "srcPath": "./src/",
+    "confPath": "config_game",
+    "typingsPath": "generated/configTypes",
+    "libVer": "pyts",
+    "pbMode": "static"
+}

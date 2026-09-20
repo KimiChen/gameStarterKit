@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "name": "shop",
+  "version": "1.0.0",
+  "description": "Archived shop game module",
+  "files": [
+    {
+      "target": "config_game/shop.json",
+      "payload": "payload/config_game/shop.json",
+      "sha256": "2a912b0028d8481b45d61de94c01491abfc6bd21aa60385fe97ff8fc3c427984"
+    },
+    {
+      "target": "src/modules/shop/ShopC2S.ts",
+      "payload": "payload/src/modules/shop/ShopC2S.ts",
+      "sha256": "45c1e153a7e12f55faba07f8af8c8557cc3a1a81755a2c853316600de11ab961"
+    },
+    {
+      "target": "src/modules/shop/ShopErrors.ts",
+      "payload": "payload/src/modules/shop/ShopErrors.ts",
+      "sha256": "b120724a4dd25c8a1c87b4920790afb5cb18c7420a011b263d65e34021de85d2"
+    },
+    {
+      "target": "src/modules/shop/ShopModule.ts",
+      "payload": "payload/src/modules/shop/ShopModule.ts",
+      "sha256": "834c80015f3e8efffdc431a85ae2903f37dbf5a1949e763b3ae257b3a4e2489d"
+    },
+    {
+      "target": "src/modules/shop/access/ShopAccessRules.ts",
+      "payload": "payload/src/modules/shop/access/ShopAccessRules.ts",
+      "sha256": "9436916f589959a370e4e35d803f4820567b8eeb346c8d8d067765a832297d13"
+    },
+    {
+      "target": "src/modules/shop/action/ActionShop.ts",
+      "payload": "payload/src/modules/shop/action/ActionShop.ts",
+      "sha256": "51e45e9b0156e7dd998b28588f15afeeca148fc46490e4254d5c34730c132962"
+    },
+    {
+      "target": "src/modules/shop/action/ActionShopBuy.ts",
+      "payload": "payload/src/modules/shop/action/ActionShopBuy.ts",
+      "sha256": "94da5a0d7b19bec52eeff68df09d06718bb02113eae2bdba7c9b28b95f84ea4e"
+    },
+    {
+      "target": "src/modules/shop/action/ActionShopGetList.ts",
+      "payload": "payload/src/modules/shop/action/ActionShopGetList.ts",
+      "sha256": "ac117d978ad26211bcfc2244881d975219ad96a593c923f92ebe2d9ea1551158"
+    },
+    {
+      "target": "src/modules/shop/action/ActionShopRefresh.ts",
+      "payload": "payload/src/modules/shop/action/ActionShopRefresh.ts",
+      "sha256": "30f717f882f4ce291da58a100cdc1e6f1a933b16ea4fe8e9511d79de8c7e5a36"
+    },
+    {
+      "target": "src/modules/shop/bean/Shop.ts",
+      "payload": "payload/src/modules/shop/bean/Shop.ts",
+      "sha256": "d89f00bd414b9804fecf8941e800191a1cb88574066e29ae762816dd75af6f52"
+    },
+    {
+      "target": "src/modules/shop/bean/ShopInfoBean.ts",
+      "payload": "payload/src/modules/shop/bean/ShopInfoBean.ts",
+      "sha256": "6d13017685c0810e459ba9eb7b7088488fa50addaff315fffd380693572d4045"
+    },
+    {
+      "target": "src/modules/shop/bean/ShopItemBean.ts",
+      "payload": "payload/src/modules/shop/bean/ShopItemBean.ts",
+      "sha256": "db3cfc9ba99bd5d5ad99f7437d72186b92770e1c40065119fac89cf0a943a015"
+    },
+    {
+      "target": "src/modules/shop/bean/TotalShopBean.ts",
+      "payload": "payload/src/modules/shop/bean/TotalShopBean.ts",
+      "sha256": "766d30a13bc6410b5275fc1f7c8744e709f179ddeca93ecf894db0d2df1d1a63"
+    },
+    {
+      "target": "src/modules/shop/catalog/ShopCatalog.ts",
+      "payload": "payload/src/modules/shop/catalog/ShopCatalog.ts",
+      "sha256": "12aa14e3e379f9cce4b902a1cca755033c7a923b3e9c5e72080ea8c16a41d8c2"
+    },
+    {
+      "target": "src/modules/shop/protocol/ShopProtocolFormatter.ts",
+      "payload": "payload/src/modules/shop/protocol/ShopProtocolFormatter.ts",
+      "sha256": "96acc5c9e47f9341d28d5f1f7a4da8fb69e134c6a7f176a3b4147bf66d290a79"
+    },
+    {
+      "target": "src/modules/shop/purchase/ShopPurchase.ts",
+      "payload": "payload/src/modules/shop/purchase/ShopPurchase.ts",
+      "sha256": "f8075827b33d9edf5e3d6a473dae448b8d86976fa1516be32d418f56d1ff6630"
+    },
+    {
+      "target": "src/modules/shop/refresh/ShopRefresh.ts",
+      "payload": "payload/src/modules/shop/refresh/ShopRefresh.ts",
+      "sha256": "da479329a2b44770d868405e55b0e8b6f2a63701790565ab6d17cf17021b2843"
+    },
+    {
+      "target": "src/modules/shop/registry/ShopRegistry.ts",
+      "payload": "payload/src/modules/shop/registry/ShopRegistry.ts",
+      "sha256": "3025eab91850e261d479fdbe74f9581831547166257a4534910f474655c4de63"
+    },
+    {
+      "target": "src/modules/shop/rules/ShopConst.ts",
+      "payload": "payload/src/modules/shop/rules/ShopConst.ts",
+      "sha256": "c98726ef631d5edd1a2f8677c1f828550107e64713c683101cbd0e4bf2b7914b"
+    },
+    {
+      "target": "src/modules/shop/session/ShopNormal.ts",
+      "payload": "payload/src/modules/shop/session/ShopNormal.ts",
+      "sha256": "f291634c13ca149f8094de90448a8fd1c5d6b94d90e460c0b384859df6c4664a"
+    },
+    {
+      "target": "src/modules/shop/session/ShopSession.ts",
+      "payload": "payload/src/modules/shop/session/ShopSession.ts",
+      "sha256": "9d9cebe9de9869651f04956bb36987ae7e264b05fbef8530e327960e04e71a1f"
+    },
+    {
+      "target": "src/modules/shop/state/ShopStateStore.ts",
+      "payload": "payload/src/modules/shop/state/ShopStateStore.ts",
+      "sha256": "7ac59ee532295237a6bf836484e5c73c97fbcbda6e8bcc7f8a4d0c40086be5e7"
+    },
+    {
+      "target": "test/modules/shop/action-wiring.test.js",
+      "payload": "payload/test/modules/shop/action-wiring.test.js",
+      "sha256": "d743343f82c87b3d55db1475472da90fb8a812083aa24cec64824b4b142b48af"
+    },
+    {
+      "target": "test/modules/shop/behavior-equivalence.test.js",
+      "payload": "payload/test/modules/shop/behavior-equivalence.test.js",
+      "sha256": "90c89577e970ae0b9ff9722f6dc161cd576b8d1748589cefd2fc0a992884657d"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-total-shop-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../shop/bean/TotalShopBean",
+      "import": "import { TotalShopBean } from '../../shop/bean/TotalShopBean'",
+      "expectedAbsent": "TotalShopBean"
+    },
+    {
+      "id": "user-total-shop-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "@OnlyRedis\ntotalShop?: DiffMap<string, TotalShopBean>",
+      "expectedAbsent": "totalShop?: DiffMap<string, TotalShopBean>"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- shop"
+    ],
+    "manual": []
+  }
+}

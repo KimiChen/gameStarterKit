@@ -1,0 +1,136 @@
+{
+	"1": {
+		"id": 1,
+		"costPropId": 8016,
+		"costNum": 1,
+		"costFiveNum": 5,
+		"desc": "抽取可获得[color=#e187fe]紫色[/color]~[color=#ff9a40]橙色[/color]供品",
+		"rank": [
+			{
+				"id": 1,
+				"propId": 201001,
+				"num": 1,
+				"pro": 50
+			},
+			{
+				"id": 1,
+				"propId": 201002,
+				"num": 1,
+				"pro": 50
+			},
+			{
+				"id": 1,
+				"propId": 201003,
+				"num": 1,
+				"pro": 50
+			},
+			{
+				"id": 1,
+				"propId": 202001,
+				"num": 1,
+				"pro": 40
+			},
+			{
+				"id": 1,
+				"propId": 202002,
+				"num": 1,
+				"pro": 40
+			},
+			{
+				"id": 1,
+				"propId": 202003,
+				"num": 1,
+				"pro": 40
+			},
+			{
+				"id": 1,
+				"propId": 203001,
+				"num": 1,
+				"pro": 20
+			},
+			{
+				"id": 1,
+				"propId": 203002,
+				"num": 1,
+				"pro": 20
+			},
+			{
+				"id": 1,
+				"propId": 203003,
+				"num": 1,
+				"pro": 20
+			}
+		],
+		"show": [
+			{
+				"type": 1,
+				"id": 1,
+				"showName": "橙色供品",
+				"showPro": 1900,
+				"showItem": [
+					{
+						"type": 1,
+						"propId": 203001,
+						"num": 1
+					},
+					{
+						"type": 1,
+						"propId": 203002,
+						"num": 1
+					},
+					{
+						"type": 1,
+						"propId": 203003,
+						"num": 1
+					}
+				]
+			},
+			{
+				"type": 2,
+				"id": 1,
+				"showName": "金色供品",
+				"showPro": 3600,
+				"showItem": [
+					{
+						"type": 2,
+						"propId": 202001,
+						"num": 1
+					},
+					{
+						"type": 2,
+						"propId": 202002,
+						"num": 1
+					},
+					{
+						"type": 2,
+						"propId": 202003,
+						"num": 1
+					}
+				]
+			},
+			{
+				"type": 3,
+				"id": 1,
+				"showName": "紫色供品",
+				"showPro": 4500,
+				"showItem": [
+					{
+						"type": 3,
+						"propId": 201001,
+						"num": 1
+					},
+					{
+						"type": 3,
+						"propId": 201002,
+						"num": 1
+					},
+					{
+						"type": 3,
+						"propId": 201003,
+						"num": 1
+					}
+				]
+			}
+		]
+	}
+}

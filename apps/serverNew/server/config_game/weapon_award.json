@@ -1,0 +1,288 @@
+{
+	"1": {
+		"id": 1,
+		"name": "一重",
+		"desc": "法宝等级30",
+		"quality": 1,
+		"propId": 0,
+		"num": 0,
+		"need": [
+			{
+				"sort": 1,
+				"id": 1,
+				"type": 1002,
+				"value": 30,
+				"param1": 0,
+				"param2": 0
+			},
+			{
+				"sort": 7,
+				"id": 1,
+				"type": 1003,
+				"value": 31,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"attrs": [
+			{
+				"id": 1,
+				"attrType": 20,
+				"value": 0
+			},
+			{
+				"id": 1,
+				"attrType": 21,
+				"value": 0
+			},
+			{
+				"id": 1,
+				"attrType": 22,
+				"value": 0
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"name": "二重",
+		"desc": "法宝等级60",
+		"quality": 2,
+		"propId": 0,
+		"num": 0,
+		"need": [
+			{
+				"sort": 2,
+				"id": 2,
+				"type": 1002,
+				"value": 60,
+				"param1": 0,
+				"param2": 0
+			},
+			{
+				"sort": 8,
+				"id": 2,
+				"type": 1003,
+				"value": 62,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"attrs": [
+			{
+				"id": 2,
+				"attrType": 20,
+				"value": 0
+			},
+			{
+				"id": 2,
+				"attrType": 21,
+				"value": 0
+			},
+			{
+				"id": 2,
+				"attrType": 22,
+				"value": 0
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"name": "三重",
+		"desc": "法宝等级90",
+		"quality": 3,
+		"propId": 0,
+		"num": 0,
+		"need": [
+			{
+				"sort": 3,
+				"id": 3,
+				"type": 1002,
+				"value": 90,
+				"param1": 0,
+				"param2": 0
+			},
+			{
+				"sort": 9,
+				"id": 3,
+				"type": 1003,
+				"value": 93,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"attrs": [
+			{
+				"id": 3,
+				"attrType": 20,
+				"value": 0
+			},
+			{
+				"id": 3,
+				"attrType": 21,
+				"value": 0
+			},
+			{
+				"id": 3,
+				"attrType": 22,
+				"value": 0
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"name": "四重",
+		"desc": "法宝等级120",
+		"quality": 4,
+		"propId": 0,
+		"num": 0,
+		"need": [
+			{
+				"sort": 4,
+				"id": 4,
+				"type": 1002,
+				"value": 120,
+				"param1": 0,
+				"param2": 0
+			},
+			{
+				"sort": 10,
+				"id": 4,
+				"type": 1003,
+				"value": 124,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"attrs": [
+			{
+				"id": 4,
+				"attrType": 20,
+				"value": 0
+			},
+			{
+				"id": 4,
+				"attrType": 21,
+				"value": 0
+			},
+			{
+				"id": 4,
+				"attrType": 22,
+				"value": 0
+			}
+		]
+	},
+	"5": {
+		"id": 5,
+		"name": "五重",
+		"desc": "法宝等级150",
+		"quality": 4,
+		"propId": 0,
+		"num": 0,
+		"need": [
+			{
+				"sort": 5,
+				"id": 5,
+				"type": 1002,
+				"value": 150,
+				"param1": 0,
+				"param2": 0
+			},
+			{
+				"sort": 11,
+				"id": 5,
+				"type": 1003,
+				"value": 155,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"attrs": [
+			{
+				"id": 5,
+				"attrType": 20,
+				"value": 0
+			},
+			{
+				"id": 5,
+				"attrType": 21,
+				"value": 0
+			},
+			{
+				"id": 5,
+				"attrType": 22,
+				"value": 0
+			}
+		]
+	},
+	"6": {
+		"id": 6,
+		"name": "六重",
+		"desc": "法宝等级180",
+		"quality": 6,
+		"propId": 0,
+		"num": 0,
+		"need": [
+			{
+				"sort": 6,
+				"id": 6,
+				"type": 1002,
+				"value": 180,
+				"param1": 0,
+				"param2": 0
+			},
+			{
+				"sort": 12,
+				"id": 6,
+				"type": 1003,
+				"value": 186,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"attrs": [
+			{
+				"id": 6,
+				"attrType": 20,
+				"value": 0
+			},
+			{
+				"id": 6,
+				"attrType": 21,
+				"value": 0
+			},
+			{
+				"id": 6,
+				"attrType": 22,
+				"value": 0
+			}
+		]
+	},
+	"7": {
+		"id": 7,
+		"name": "七重",
+		"desc": "法宝等级210",
+		"quality": 6,
+		"propId": 0,
+		"num": 0,
+		"need": [
+
+		],
+		"attrs": [
+			{
+				"id": 7,
+				"attrType": 20,
+				"value": 0
+			},
+			{
+				"id": 7,
+				"attrType": 21,
+				"value": 0
+			},
+			{
+				"id": 7,
+				"attrType": 22,
+				"value": 0
+			}
+		]
+	}
+}

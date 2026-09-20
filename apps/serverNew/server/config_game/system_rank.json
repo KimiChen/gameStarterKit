@@ -1,0 +1,3842 @@
+{
+	"RankEquipDraw": {
+		"activityName": "RankEquipDraw",
+		"name": "炼器冲榜",
+		"doubleDrop": -1,
+		"taskMaxStage": 3,
+		"task": {
+			"101": {
+				"taskId": 101,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 1000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 101,
+						"propId": 10203,
+						"num": 1000
+					}
+				],
+				"taskDesc": {
+					"101": {
+						"taskId": 101,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"102": {
+				"taskId": 102,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 5000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 102,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"102": {
+						"taskId": 102,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"103": {
+				"taskId": 103,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 15000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 103,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"103": {
+						"taskId": 103,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"104": {
+				"taskId": 104,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 25000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 104,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"104": {
+						"taskId": 104,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"105": {
+				"taskId": 105,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 50000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 105,
+						"propId": 10203,
+						"num": 10000
+					}
+				],
+				"taskDesc": {
+					"105": {
+						"taskId": 105,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"106": {
+				"taskId": 106,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 100000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 106,
+						"propId": 10203,
+						"num": 15000
+					}
+				],
+				"taskDesc": {
+					"106": {
+						"taskId": 106,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"107": {
+				"taskId": 107,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 200000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 107,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"107": {
+						"taskId": 107,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"108": {
+				"taskId": 108,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 300000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 108,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"108": {
+						"taskId": 108,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"109": {
+				"taskId": 109,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 400000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 109,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"109": {
+						"taskId": 109,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"110": {
+				"taskId": 110,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 500000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 110,
+						"propId": 10203,
+						"num": 25000
+					},
+					{
+						"taskId": 110,
+						"propId": 10310,
+						"num": 3
+					}
+				],
+				"taskDesc": {
+					"110": {
+						"taskId": 110,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"111": {
+				"taskId": 111,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 1000000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 111,
+						"propId": 10203,
+						"num": 125000
+					},
+					{
+						"taskId": 111,
+						"propId": 10310,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"111": {
+						"taskId": 111,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"112": {
+				"taskId": 112,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 1500000,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 112,
+						"propId": 10203,
+						"num": 125000
+					},
+					{
+						"taskId": 112,
+						"propId": 10310,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"112": {
+						"taskId": 112,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"113": {
+				"taskId": 113,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1501000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 113,
+						"propId": 10203,
+						"num": 1000
+					}
+				],
+				"taskDesc": {
+					"113": {
+						"taskId": 113,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"114": {
+				"taskId": 114,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1505000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 114,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"114": {
+						"taskId": 114,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"115": {
+				"taskId": 115,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1515000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 115,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"115": {
+						"taskId": 115,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"116": {
+				"taskId": 116,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1525000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 116,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"116": {
+						"taskId": 116,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"117": {
+				"taskId": 117,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1550000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 117,
+						"propId": 10203,
+						"num": 10000
+					}
+				],
+				"taskDesc": {
+					"117": {
+						"taskId": 117,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"118": {
+				"taskId": 118,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1600000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 118,
+						"propId": 10203,
+						"num": 15000
+					}
+				],
+				"taskDesc": {
+					"118": {
+						"taskId": 118,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"119": {
+				"taskId": 119,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1700000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 119,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"119": {
+						"taskId": 119,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"120": {
+				"taskId": 120,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1800000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 120,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"120": {
+						"taskId": 120,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"121": {
+				"taskId": 121,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 1900000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 121,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"121": {
+						"taskId": 121,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"122": {
+				"taskId": 122,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 2000000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 122,
+						"propId": 10203,
+						"num": 25000
+					},
+					{
+						"taskId": 122,
+						"propId": 10310,
+						"num": 3
+					}
+				],
+				"taskDesc": {
+					"122": {
+						"taskId": 122,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"123": {
+				"taskId": 123,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 2500000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 123,
+						"propId": 10203,
+						"num": 125000
+					},
+					{
+						"taskId": 123,
+						"propId": 10310,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"123": {
+						"taskId": 123,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"124": {
+				"taskId": 124,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 3000000,
+				"showValue": 1500000,
+				"taskAward": [
+					{
+						"taskId": 124,
+						"propId": 10203,
+						"num": 125000
+					},
+					{
+						"taskId": 124,
+						"propId": 10310,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"124": {
+						"taskId": 124,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"125": {
+				"taskId": 125,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3001000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 125,
+						"propId": 10203,
+						"num": 1000
+					}
+				],
+				"taskDesc": {
+					"125": {
+						"taskId": 125,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"126": {
+				"taskId": 126,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3005000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 126,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"126": {
+						"taskId": 126,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"127": {
+				"taskId": 127,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3015000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 127,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"127": {
+						"taskId": 127,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"128": {
+				"taskId": 128,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3025000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 128,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"128": {
+						"taskId": 128,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"129": {
+				"taskId": 129,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3050000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 129,
+						"propId": 10203,
+						"num": 10000
+					}
+				],
+				"taskDesc": {
+					"129": {
+						"taskId": 129,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"130": {
+				"taskId": 130,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3100000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 130,
+						"propId": 10203,
+						"num": 15000
+					}
+				],
+				"taskDesc": {
+					"130": {
+						"taskId": 130,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"131": {
+				"taskId": 131,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3200000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 131,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"131": {
+						"taskId": 131,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"132": {
+				"taskId": 132,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3300000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 132,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"132": {
+						"taskId": 132,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"133": {
+				"taskId": 133,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3400000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 133,
+						"propId": 10203,
+						"num": 20000
+					}
+				],
+				"taskDesc": {
+					"133": {
+						"taskId": 133,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"134": {
+				"taskId": 134,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 3500000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 134,
+						"propId": 10203,
+						"num": 25000
+					},
+					{
+						"taskId": 134,
+						"propId": 10310,
+						"num": 3
+					}
+				],
+				"taskDesc": {
+					"134": {
+						"taskId": 134,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"135": {
+				"taskId": 135,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 4000000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 135,
+						"propId": 10203,
+						"num": 125000
+					},
+					{
+						"taskId": 135,
+						"propId": 10310,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"135": {
+						"taskId": 135,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			},
+			"136": {
+				"taskId": 136,
+				"activityName": "RankEquipDraw",
+				"recordType": 0,
+				"taskType": 1074,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 4500000,
+				"showValue": 3000000,
+				"taskAward": [
+					{
+						"taskId": 136,
+						"propId": 10203,
+						"num": 125000
+					},
+					{
+						"taskId": 136,
+						"propId": 10310,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"136": {
+						"taskId": 136,
+						"lang": "zh_hans",
+						"name": "炼器",
+						"desc": "活动期间消耗{value}精铁"
+					}
+				}
+			}
+		},
+		"rank": {
+			"101": {
+				"rankId": 101,
+				"activityName": "RankEquipDraw",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 101,
+						"propId": 10203,
+						"num": 0,
+						"parts": 12
+					},
+					{
+						"rankId": 101,
+						"propId": 10307,
+						"num": 5,
+						"parts": 0
+					},
+					{
+						"rankId": 101,
+						"propId": 331009,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"102": {
+				"rankId": 102,
+				"activityName": "RankEquipDraw",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 102,
+						"propId": 10203,
+						"num": 0,
+						"parts": 8
+					},
+					{
+						"rankId": 102,
+						"propId": 10307,
+						"num": 3,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"103": {
+				"rankId": 103,
+				"activityName": "RankEquipDraw",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 103,
+						"propId": 10203,
+						"num": 0,
+						"parts": 6
+					},
+					{
+						"rankId": 103,
+						"propId": 10307,
+						"num": 2,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"104": {
+				"rankId": 104,
+				"activityName": "RankEquipDraw",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 104,
+						"propId": 10203,
+						"num": 0,
+						"parts": 5
+					},
+					{
+						"rankId": 104,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"105": {
+				"rankId": 105,
+				"activityName": "RankEquipDraw",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 105,
+						"propId": 10203,
+						"num": 0,
+						"parts": 4
+					},
+					{
+						"rankId": 105,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"106": {
+				"rankId": 106,
+				"activityName": "RankEquipDraw",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 106,
+						"propId": 10203,
+						"num": 0,
+						"parts": 3
+					},
+					{
+						"rankId": 106,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"107": {
+				"rankId": 107,
+				"activityName": "RankEquipDraw",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 107,
+						"propId": 10203,
+						"num": 0,
+						"parts": 2
+					},
+					{
+						"rankId": 107,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"108": {
+				"rankId": 108,
+				"activityName": "RankEquipDraw",
+				"rank": [
+					51,
+					"+"
+				],
+				"award1": [
+					{
+						"rankId": 108,
+						"propId": 10203,
+						"num": 0,
+						"parts": 1
+					},
+					{
+						"rankId": 108,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"101": {
+				"giftId": 101,
+				"activityName": "RankEquipDraw",
+				"icon": 0,
+				"desc": "免费礼包",
+				"sort": 1,
+				"limitType": 1,
+				"totalLimit": 1,
+				"rechargeId": 0,
+				"payType": 4,
+				"price": 0,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 101,
+						"propId": 10203,
+						"num": 5000
+					}
+				]
+			},
+			"102": {
+				"giftId": 102,
+				"activityName": "RankEquipDraw",
+				"icon": 0,
+				"desc": "炼器福利礼包",
+				"sort": 2,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311101,
+				"payType": 1,
+				"price": 6,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 102,
+						"propId": 10203,
+						"num": 5000
+					}
+				]
+			},
+			"103": {
+				"giftId": 103,
+				"activityName": "RankEquipDraw",
+				"icon": 0,
+				"desc": "炼器划算礼包",
+				"sort": 3,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311102,
+				"payType": 1,
+				"price": 18,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 103,
+						"propId": 10203,
+						"num": 10000
+					}
+				]
+			},
+			"104": {
+				"giftId": 104,
+				"activityName": "RankEquipDraw",
+				"icon": 0,
+				"desc": "炼器提升礼包",
+				"sort": 4,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311103,
+				"payType": 1,
+				"price": 30,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 104,
+						"propId": 10203,
+						"num": 15000
+					},
+					{
+						"giftId": 104,
+						"propId": 10101,
+						"num": 1
+					}
+				]
+			},
+			"105": {
+				"giftId": 105,
+				"activityName": "RankEquipDraw",
+				"icon": 0,
+				"desc": "炼器实惠礼包",
+				"sort": 5,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311104,
+				"payType": 1,
+				"price": 68,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 105,
+						"propId": 10203,
+						"num": 33000
+					},
+					{
+						"giftId": 105,
+						"propId": 10101,
+						"num": 2
+					}
+				]
+			},
+			"106": {
+				"giftId": 106,
+				"activityName": "RankEquipDraw",
+				"icon": 0,
+				"desc": "炼器进阶礼包",
+				"sort": 6,
+				"limitType": 2,
+				"totalLimit": 10,
+				"rechargeId": 311105,
+				"payType": 1,
+				"price": 128,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 106,
+						"propId": 10203,
+						"num": 62000
+					},
+					{
+						"giftId": 106,
+						"propId": 10101,
+						"num": 4
+					}
+				]
+			},
+			"107": {
+				"giftId": 107,
+				"activityName": "RankEquipDraw",
+				"icon": 0,
+				"desc": "炼器豪华礼包",
+				"sort": 7,
+				"limitType": 2,
+				"totalLimit": 10,
+				"rechargeId": 311106,
+				"payType": 1,
+				"price": 328,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 107,
+						"propId": 10203,
+						"num": 155000
+					},
+					{
+						"giftId": 107,
+						"propId": 10101,
+						"num": 10
+					}
+				]
+			},
+			"108": {
+				"giftId": 108,
+				"activityName": "RankEquipDraw",
+				"icon": 0,
+				"desc": "炼器尊享礼包",
+				"sort": 8,
+				"limitType": 2,
+				"totalLimit": 10,
+				"rechargeId": 311107,
+				"payType": 1,
+				"price": 648,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 108,
+						"propId": 10203,
+						"num": 300000
+					},
+					{
+						"giftId": 108,
+						"propId": 10101,
+						"num": 20
+					}
+				]
+			}
+		}
+	},
+	"RankWorship": {
+		"activityName": "RankWorship",
+		"name": "请神冲榜",
+		"doubleDrop": -1,
+		"taskMaxStage": 3,
+		"task": {
+			"201": {
+				"taskId": 201,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 1,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 201,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"201": {
+						"taskId": 201,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"202": {
+				"taskId": 202,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 2,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 202,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"202": {
+						"taskId": 202,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"203": {
+				"taskId": 203,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 3,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 203,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"203": {
+						"taskId": 203,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"204": {
+				"taskId": 204,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 5,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 204,
+						"propId": 200001,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"204": {
+						"taskId": 204,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"205": {
+				"taskId": 205,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 10,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 205,
+						"propId": 200001,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"205": {
+						"taskId": 205,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"206": {
+				"taskId": 206,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 20,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 206,
+						"propId": 200001,
+						"num": 20
+					}
+				],
+				"taskDesc": {
+					"206": {
+						"taskId": 206,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"207": {
+				"taskId": 207,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 30,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 207,
+						"propId": 200001,
+						"num": 30
+					},
+					{
+						"taskId": 207,
+						"propId": 10315,
+						"num": 1
+					}
+				],
+				"taskDesc": {
+					"207": {
+						"taskId": 207,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"208": {
+				"taskId": 208,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 60,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 208,
+						"propId": 200001,
+						"num": 75
+					},
+					{
+						"taskId": 208,
+						"propId": 10314,
+						"num": 1
+					}
+				],
+				"taskDesc": {
+					"208": {
+						"taskId": 208,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"209": {
+				"taskId": 209,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 100,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 209,
+						"propId": 200001,
+						"num": 100
+					},
+					{
+						"taskId": 209,
+						"propId": 10314,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"209": {
+						"taskId": 209,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"210": {
+				"taskId": 210,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 101,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 210,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"210": {
+						"taskId": 210,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"211": {
+				"taskId": 211,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 102,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 211,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"211": {
+						"taskId": 211,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"212": {
+				"taskId": 212,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 103,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 212,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"212": {
+						"taskId": 212,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"213": {
+				"taskId": 213,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 105,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 213,
+						"propId": 200001,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"213": {
+						"taskId": 213,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"214": {
+				"taskId": 214,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 110,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 214,
+						"propId": 200001,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"214": {
+						"taskId": 214,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"215": {
+				"taskId": 215,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 120,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 215,
+						"propId": 200001,
+						"num": 20
+					}
+				],
+				"taskDesc": {
+					"215": {
+						"taskId": 215,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"216": {
+				"taskId": 216,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 130,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 216,
+						"propId": 200001,
+						"num": 30
+					},
+					{
+						"taskId": 216,
+						"propId": 10315,
+						"num": 1
+					}
+				],
+				"taskDesc": {
+					"216": {
+						"taskId": 216,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"217": {
+				"taskId": 217,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 160,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 217,
+						"propId": 200001,
+						"num": 75
+					},
+					{
+						"taskId": 217,
+						"propId": 10314,
+						"num": 1
+					}
+				],
+				"taskDesc": {
+					"217": {
+						"taskId": 217,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"218": {
+				"taskId": 218,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 200,
+				"showValue": 100,
+				"taskAward": [
+					{
+						"taskId": 218,
+						"propId": 200001,
+						"num": 100
+					},
+					{
+						"taskId": 218,
+						"propId": 10314,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"218": {
+						"taskId": 218,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"219": {
+				"taskId": 219,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 201,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 219,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"219": {
+						"taskId": 219,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"220": {
+				"taskId": 220,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 202,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 220,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"220": {
+						"taskId": 220,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"221": {
+				"taskId": 221,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 203,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 221,
+						"propId": 200001,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"221": {
+						"taskId": 221,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"222": {
+				"taskId": 222,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 205,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 222,
+						"propId": 200001,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"222": {
+						"taskId": 222,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"223": {
+				"taskId": 223,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 210,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 223,
+						"propId": 200001,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"223": {
+						"taskId": 223,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"224": {
+				"taskId": 224,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 220,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 224,
+						"propId": 200001,
+						"num": 20
+					}
+				],
+				"taskDesc": {
+					"224": {
+						"taskId": 224,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"225": {
+				"taskId": 225,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 230,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 225,
+						"propId": 200001,
+						"num": 30
+					},
+					{
+						"taskId": 225,
+						"propId": 10315,
+						"num": 1
+					}
+				],
+				"taskDesc": {
+					"225": {
+						"taskId": 225,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"226": {
+				"taskId": 226,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 260,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 226,
+						"propId": 200001,
+						"num": 75
+					},
+					{
+						"taskId": 226,
+						"propId": 10314,
+						"num": 1
+					}
+				],
+				"taskDesc": {
+					"226": {
+						"taskId": 226,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			},
+			"227": {
+				"taskId": 227,
+				"activityName": "RankWorship",
+				"recordType": 0,
+				"taskType": 1024,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 300,
+				"showValue": 200,
+				"taskAward": [
+					{
+						"taskId": 227,
+						"propId": 200001,
+						"num": 100
+					},
+					{
+						"taskId": 227,
+						"propId": 10314,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"227": {
+						"taskId": 227,
+						"lang": "zh_hans",
+						"name": "请神",
+						"desc": "活动期间请神{value}次"
+					}
+				}
+			}
+		},
+		"rank": {
+			"201": {
+				"rankId": 201,
+				"activityName": "RankWorship",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 201,
+						"propId": 10201,
+						"num": 0,
+						"parts": 12
+					},
+					{
+						"rankId": 201,
+						"propId": 10307,
+						"num": 5,
+						"parts": 0
+					},
+					{
+						"rankId": 201,
+						"propId": 311009,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"202": {
+				"rankId": 202,
+				"activityName": "RankWorship",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 202,
+						"propId": 10201,
+						"num": 0,
+						"parts": 8
+					},
+					{
+						"rankId": 202,
+						"propId": 10307,
+						"num": 3,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"203": {
+				"rankId": 203,
+				"activityName": "RankWorship",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 203,
+						"propId": 10201,
+						"num": 0,
+						"parts": 6
+					},
+					{
+						"rankId": 203,
+						"propId": 10307,
+						"num": 2,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"204": {
+				"rankId": 204,
+				"activityName": "RankWorship",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 204,
+						"propId": 10201,
+						"num": 0,
+						"parts": 5
+					},
+					{
+						"rankId": 204,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"205": {
+				"rankId": 205,
+				"activityName": "RankWorship",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 205,
+						"propId": 10201,
+						"num": 0,
+						"parts": 4
+					},
+					{
+						"rankId": 205,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"206": {
+				"rankId": 206,
+				"activityName": "RankWorship",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 206,
+						"propId": 10201,
+						"num": 0,
+						"parts": 3
+					},
+					{
+						"rankId": 206,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"207": {
+				"rankId": 207,
+				"activityName": "RankWorship",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 207,
+						"propId": 10201,
+						"num": 0,
+						"parts": 2
+					},
+					{
+						"rankId": 207,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"208": {
+				"rankId": 208,
+				"activityName": "RankWorship",
+				"rank": [
+					51,
+					"+"
+				],
+				"award1": [
+					{
+						"rankId": 208,
+						"propId": 10201,
+						"num": 0,
+						"parts": 1
+					},
+					{
+						"rankId": 208,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"201": {
+				"giftId": 201,
+				"activityName": "RankWorship",
+				"icon": 0,
+				"desc": "免费礼包",
+				"sort": 1,
+				"limitType": 1,
+				"totalLimit": 1,
+				"rechargeId": 0,
+				"payType": 4,
+				"price": 0,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 201,
+						"propId": 200001,
+						"num": 2
+					}
+				]
+			},
+			"202": {
+				"giftId": 202,
+				"activityName": "RankWorship",
+				"icon": 0,
+				"desc": "请神福利礼包",
+				"sort": 2,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311201,
+				"payType": 1,
+				"price": 6,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 202,
+						"propId": 200001,
+						"num": 8
+					}
+				]
+			},
+			"203": {
+				"giftId": 203,
+				"activityName": "RankWorship",
+				"icon": 0,
+				"desc": "请神划算礼包",
+				"sort": 3,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311202,
+				"payType": 1,
+				"price": 18,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 203,
+						"propId": 200001,
+						"num": 16
+					}
+				]
+			},
+			"204": {
+				"giftId": 204,
+				"activityName": "RankWorship",
+				"icon": 0,
+				"desc": "请神提升礼包",
+				"sort": 4,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311203,
+				"payType": 1,
+				"price": 30,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 204,
+						"propId": 200001,
+						"num": 24
+					},
+					{
+						"giftId": 204,
+						"propId": 10101,
+						"num": 1
+					}
+				]
+			},
+			"205": {
+				"giftId": 205,
+				"activityName": "RankWorship",
+				"icon": 0,
+				"desc": "请神实惠礼包",
+				"sort": 5,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311204,
+				"payType": 1,
+				"price": 68,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 205,
+						"propId": 200001,
+						"num": 52
+					},
+					{
+						"giftId": 205,
+						"propId": 10101,
+						"num": 2
+					}
+				]
+			},
+			"206": {
+				"giftId": 206,
+				"activityName": "RankWorship",
+				"icon": 0,
+				"desc": "请神进阶礼包",
+				"sort": 6,
+				"limitType": 2,
+				"totalLimit": 10,
+				"rechargeId": 311205,
+				"payType": 1,
+				"price": 128,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 206,
+						"propId": 200001,
+						"num": 96
+					},
+					{
+						"giftId": 206,
+						"propId": 10101,
+						"num": 4
+					}
+				]
+			},
+			"207": {
+				"giftId": 207,
+				"activityName": "RankWorship",
+				"icon": 0,
+				"desc": "请神豪华礼包",
+				"sort": 7,
+				"limitType": 2,
+				"totalLimit": 10,
+				"rechargeId": 311206,
+				"payType": 1,
+				"price": 328,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 207,
+						"propId": 200001,
+						"num": 240
+					},
+					{
+						"giftId": 207,
+						"propId": 10101,
+						"num": 10
+					}
+				]
+			},
+			"208": {
+				"giftId": 208,
+				"activityName": "RankWorship",
+				"icon": 0,
+				"desc": "请神尊享礼包",
+				"sort": 8,
+				"limitType": 2,
+				"totalLimit": 10,
+				"rechargeId": 311207,
+				"payType": 1,
+				"price": 648,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 208,
+						"propId": 200001,
+						"num": 460
+					},
+					{
+						"giftId": 208,
+						"propId": 10101,
+						"num": 20
+					}
+				]
+			}
+		}
+	},
+	"RankWeaponSoul": {
+		"activityName": "RankWeaponSoul",
+		"name": "铭文冲榜",
+		"doubleDrop": -1,
+		"taskMaxStage": 3,
+		"task": {
+			"301": {
+				"taskId": 301,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 1,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 301,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"301": {
+						"taskId": 301,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"302": {
+				"taskId": 302,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 3,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 302,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"302": {
+						"taskId": 302,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"303": {
+				"taskId": 303,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 5,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 303,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"303": {
+						"taskId": 303,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"304": {
+				"taskId": 304,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 10,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 304,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"304": {
+						"taskId": 304,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"305": {
+				"taskId": 305,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 20,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 305,
+						"propId": 10204,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"305": {
+						"taskId": 305,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"306": {
+				"taskId": 306,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 40,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 306,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"306": {
+						"taskId": 306,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"307": {
+				"taskId": 307,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 60,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 307,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"307": {
+						"taskId": 307,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"308": {
+				"taskId": 308,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 80,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 308,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"308": {
+						"taskId": 308,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"309": {
+				"taskId": 309,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 100,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 309,
+						"propId": 10204,
+						"num": 10
+					},
+					{
+						"taskId": 309,
+						"propId": 10308,
+						"num": 3
+					}
+				],
+				"taskDesc": {
+					"309": {
+						"taskId": 309,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"310": {
+				"taskId": 310,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 200,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 310,
+						"propId": 10204,
+						"num": 40
+					},
+					{
+						"taskId": 310,
+						"propId": 10308,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"310": {
+						"taskId": 310,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"311": {
+				"taskId": 311,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 1,
+				"param1": 0,
+				"param2": 0,
+				"value": 300,
+				"showValue": 0,
+				"taskAward": [
+					{
+						"taskId": 311,
+						"propId": 10204,
+						"num": 40
+					},
+					{
+						"taskId": 311,
+						"propId": 10308,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"311": {
+						"taskId": 311,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"312": {
+				"taskId": 312,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 301,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 312,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"312": {
+						"taskId": 312,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"313": {
+				"taskId": 313,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 303,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 313,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"313": {
+						"taskId": 313,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"314": {
+				"taskId": 314,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 305,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 314,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"314": {
+						"taskId": 314,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"315": {
+				"taskId": 315,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 310,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 315,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"315": {
+						"taskId": 315,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"316": {
+				"taskId": 316,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 320,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 316,
+						"propId": 10204,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"316": {
+						"taskId": 316,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"317": {
+				"taskId": 317,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 340,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 317,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"317": {
+						"taskId": 317,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"318": {
+				"taskId": 318,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 360,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 318,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"318": {
+						"taskId": 318,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"319": {
+				"taskId": 319,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 380,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 319,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"319": {
+						"taskId": 319,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"320": {
+				"taskId": 320,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 400,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 320,
+						"propId": 10204,
+						"num": 10
+					},
+					{
+						"taskId": 320,
+						"propId": 10308,
+						"num": 3
+					}
+				],
+				"taskDesc": {
+					"320": {
+						"taskId": 320,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"321": {
+				"taskId": 321,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 500,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 321,
+						"propId": 10204,
+						"num": 40
+					},
+					{
+						"taskId": 321,
+						"propId": 10308,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"321": {
+						"taskId": 321,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"322": {
+				"taskId": 322,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 2,
+				"param1": 0,
+				"param2": 0,
+				"value": 600,
+				"showValue": 300,
+				"taskAward": [
+					{
+						"taskId": 322,
+						"propId": 10204,
+						"num": 40
+					},
+					{
+						"taskId": 322,
+						"propId": 10308,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"322": {
+						"taskId": 322,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"323": {
+				"taskId": 323,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 601,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 323,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"323": {
+						"taskId": 323,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"324": {
+				"taskId": 324,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 603,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 324,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"324": {
+						"taskId": 324,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"325": {
+				"taskId": 325,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 605,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 325,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"325": {
+						"taskId": 325,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"326": {
+				"taskId": 326,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 610,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 326,
+						"propId": 10204,
+						"num": 2
+					}
+				],
+				"taskDesc": {
+					"326": {
+						"taskId": 326,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"327": {
+				"taskId": 327,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 620,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 327,
+						"propId": 10204,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"327": {
+						"taskId": 327,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"328": {
+				"taskId": 328,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 640,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 328,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"328": {
+						"taskId": 328,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"329": {
+				"taskId": 329,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 660,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 329,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"329": {
+						"taskId": 329,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"330": {
+				"taskId": 330,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 680,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 330,
+						"propId": 10204,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"330": {
+						"taskId": 330,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"331": {
+				"taskId": 331,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 700,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 331,
+						"propId": 10204,
+						"num": 10
+					},
+					{
+						"taskId": 331,
+						"propId": 10308,
+						"num": 3
+					}
+				],
+				"taskDesc": {
+					"331": {
+						"taskId": 331,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"332": {
+				"taskId": 332,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 800,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 332,
+						"propId": 10204,
+						"num": 40
+					},
+					{
+						"taskId": 332,
+						"propId": 10308,
+						"num": 5
+					}
+				],
+				"taskDesc": {
+					"332": {
+						"taskId": 332,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			},
+			"333": {
+				"taskId": 333,
+				"activityName": "RankWeaponSoul",
+				"recordType": 0,
+				"taskType": 1022,
+				"taskStage": 3,
+				"param1": 0,
+				"param2": 0,
+				"value": 900,
+				"showValue": 600,
+				"taskAward": [
+					{
+						"taskId": 333,
+						"propId": 10204,
+						"num": 40
+					},
+					{
+						"taskId": 333,
+						"propId": 10308,
+						"num": 10
+					}
+				],
+				"taskDesc": {
+					"333": {
+						"taskId": 333,
+						"lang": "zh_hans",
+						"name": "铭文镌刻",
+						"desc": "活动期间铭文镌刻{value}次"
+					}
+				}
+			}
+		},
+		"rank": {
+			"301": {
+				"rankId": 301,
+				"activityName": "RankWeaponSoul",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 301,
+						"propId": 10202,
+						"num": 0,
+						"parts": 12
+					},
+					{
+						"rankId": 301,
+						"propId": 10307,
+						"num": 5,
+						"parts": 0
+					},
+					{
+						"rankId": 301,
+						"propId": 321009,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"302": {
+				"rankId": 302,
+				"activityName": "RankWeaponSoul",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 302,
+						"propId": 10202,
+						"num": 0,
+						"parts": 8
+					},
+					{
+						"rankId": 302,
+						"propId": 10307,
+						"num": 3,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"303": {
+				"rankId": 303,
+				"activityName": "RankWeaponSoul",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 303,
+						"propId": 10202,
+						"num": 0,
+						"parts": 6
+					},
+					{
+						"rankId": 303,
+						"propId": 10307,
+						"num": 2,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"304": {
+				"rankId": 304,
+				"activityName": "RankWeaponSoul",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 304,
+						"propId": 10202,
+						"num": 0,
+						"parts": 5
+					},
+					{
+						"rankId": 304,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"305": {
+				"rankId": 305,
+				"activityName": "RankWeaponSoul",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 305,
+						"propId": 10202,
+						"num": 0,
+						"parts": 4
+					},
+					{
+						"rankId": 305,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"306": {
+				"rankId": 306,
+				"activityName": "RankWeaponSoul",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 306,
+						"propId": 10202,
+						"num": 0,
+						"parts": 3
+					},
+					{
+						"rankId": 306,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"307": {
+				"rankId": 307,
+				"activityName": "RankWeaponSoul",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 307,
+						"propId": 10202,
+						"num": 0,
+						"parts": 2
+					},
+					{
+						"rankId": 307,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"308": {
+				"rankId": 308,
+				"activityName": "RankWeaponSoul",
+				"rank": [
+					51,
+					"+"
+				],
+				"award1": [
+					{
+						"rankId": 308,
+						"propId": 10202,
+						"num": 0,
+						"parts": 1
+					},
+					{
+						"rankId": 308,
+						"propId": 10307,
+						"num": 1,
+						"parts": 0
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"301": {
+				"giftId": 301,
+				"activityName": "RankWeaponSoul",
+				"icon": 0,
+				"desc": "免费礼包",
+				"sort": 1,
+				"limitType": 1,
+				"totalLimit": 1,
+				"rechargeId": 0,
+				"payType": 4,
+				"price": 0,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 301,
+						"propId": 10204,
+						"num": 2
+					}
+				]
+			},
+			"302": {
+				"giftId": 302,
+				"activityName": "RankWeaponSoul",
+				"icon": 0,
+				"desc": "镌刻福利礼包",
+				"sort": 2,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311301,
+				"payType": 1,
+				"price": 6,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 302,
+						"propId": 10204,
+						"num": 8
+					}
+				]
+			},
+			"303": {
+				"giftId": 303,
+				"activityName": "RankWeaponSoul",
+				"icon": 0,
+				"desc": "镌刻划算礼包",
+				"sort": 3,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311302,
+				"payType": 1,
+				"price": 18,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 303,
+						"propId": 10204,
+						"num": 16
+					}
+				]
+			},
+			"304": {
+				"giftId": 304,
+				"activityName": "RankWeaponSoul",
+				"icon": 0,
+				"desc": "镌刻提升礼包",
+				"sort": 4,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311303,
+				"payType": 1,
+				"price": 30,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 304,
+						"propId": 10204,
+						"num": 24
+					},
+					{
+						"giftId": 304,
+						"propId": 10101,
+						"num": 1
+					}
+				]
+			},
+			"305": {
+				"giftId": 305,
+				"activityName": "RankWeaponSoul",
+				"icon": 0,
+				"desc": "镌刻实惠礼包",
+				"sort": 5,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311304,
+				"payType": 1,
+				"price": 68,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 305,
+						"propId": 10204,
+						"num": 52
+					},
+					{
+						"giftId": 305,
+						"propId": 10101,
+						"num": 2
+					}
+				]
+			},
+			"306": {
+				"giftId": 306,
+				"activityName": "RankWeaponSoul",
+				"icon": 0,
+				"desc": "镌刻进阶礼包",
+				"sort": 6,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311305,
+				"payType": 1,
+				"price": 128,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 306,
+						"propId": 10204,
+						"num": 96
+					},
+					{
+						"giftId": 306,
+						"propId": 10101,
+						"num": 4
+					}
+				]
+			},
+			"307": {
+				"giftId": 307,
+				"activityName": "RankWeaponSoul",
+				"icon": 0,
+				"desc": "镌刻豪华礼包",
+				"sort": 7,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311306,
+				"payType": 1,
+				"price": 328,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 307,
+						"propId": 10204,
+						"num": 240
+					},
+					{
+						"giftId": 307,
+						"propId": 10101,
+						"num": 10
+					}
+				]
+			},
+			"308": {
+				"giftId": 308,
+				"activityName": "RankWeaponSoul",
+				"icon": 0,
+				"desc": "镌刻尊享礼包",
+				"sort": 8,
+				"limitType": 2,
+				"totalLimit": 5,
+				"rechargeId": 311307,
+				"payType": 1,
+				"price": 648,
+				"discount": 0,
+				"awards": [
+					{
+						"giftId": 308,
+						"propId": 10204,
+						"num": 460
+					},
+					{
+						"giftId": 308,
+						"propId": 10101,
+						"num": 20
+					}
+				]
+			}
+		}
+	}
+}

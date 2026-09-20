@@ -1,0 +1,62 @@
+{
+	"1": {
+		"id": 1,
+		"monsterLv": 30,
+		"needNum": 1,
+		"realmId": 1
+	},
+	"2": {
+		"id": 2,
+		"monsterLv": 60,
+		"needNum": 2,
+		"realmId": 2
+	},
+	"3": {
+		"id": 3,
+		"monsterLv": 90,
+		"needNum": 2,
+		"realmId": 3
+	},
+	"4": {
+		"id": 4,
+		"monsterLv": 120,
+		"needNum": 2,
+		"realmId": 4
+	},
+	"5": {
+		"id": 5,
+		"monsterLv": 150,
+		"needNum": 2,
+		"realmId": 5
+	},
+	"6": {
+		"id": 6,
+		"monsterLv": 180,
+		"needNum": 2,
+		"realmId": 6
+	},
+	"7": {
+		"id": 7,
+		"monsterLv": 210,
+		"needNum": 2,
+		"realmId": 7
+	},
+	"8": {
+		"id": 8,
+		"monsterLv": 240,
+		"needNum": 2,
+		"realmId": 8
+	},
+	"9": {
+		"id": 9,
+		"monsterLv": 270,
+		"needNum": 2,
+		"realmId": 9
+	},
+	"10": {
+		"id": 10,
+		"monsterLv": 300,
+		"needNum": 2,
+		"realmId": 10
+	}
+}

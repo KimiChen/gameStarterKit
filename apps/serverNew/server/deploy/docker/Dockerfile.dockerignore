@@ -1,0 +1,10 @@
+**
+!package.json
+!pnpm-lock.yaml
+!.npmrc
+!patches/
+!patches/**
+!deploy/
+!deploy/docker/
+!deploy/docker/Dockerfile
+!deploy/docker/Dockerfile.dockerignore

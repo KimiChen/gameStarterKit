@@ -1,0 +1,254 @@
+{
+	"1": {
+		"id": 1,
+		"playerLv": 100,
+		"openDays": 0,
+		"bossId": 130001,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 1,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 1,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"playerLv": 110,
+		"openDays": 1,
+		"bossId": 130002,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 2,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 2,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"playerLv": 120,
+		"openDays": 2,
+		"bossId": 130003,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 3,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 3,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"playerLv": 130,
+		"openDays": 4,
+		"bossId": 130004,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 4,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 4,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	},
+	"5": {
+		"id": 5,
+		"playerLv": 140,
+		"openDays": 14,
+		"bossId": 130005,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 5,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 5,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	},
+	"6": {
+		"id": 6,
+		"playerLv": 150,
+		"openDays": 29,
+		"bossId": 130006,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 6,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 6,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	},
+	"7": {
+		"id": 7,
+		"playerLv": 160,
+		"openDays": 49,
+		"bossId": 130007,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 7,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 7,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	},
+	"8": {
+		"id": 8,
+		"playerLv": 170,
+		"openDays": 74,
+		"bossId": 130008,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 8,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 8,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	},
+	"9": {
+		"id": 9,
+		"playerLv": 180,
+		"openDays": 104,
+		"bossId": 130009,
+		"resetTime": 1800,
+		"cd": 20,
+		"bossBuff": [
+			104
+		],
+		"playerBuff": [
+
+		],
+		"awards": [
+			{
+				"id": 9,
+				"propId": 1001,
+				"num": 200
+			}
+		],
+		"fightAwards": [
+			{
+				"id": 9,
+				"propId": 1001,
+				"num": 100
+			}
+		]
+	}
+}

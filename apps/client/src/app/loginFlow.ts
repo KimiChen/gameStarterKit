@@ -38,20 +38,25 @@ import {
   rememberGroupReturn,
   takeGroupReturn,
 } from "../logic/page/EntryGroupLogic";
-import { SettingsLogic, type SettingsProfilePatch } from "../logic/page/SettingsLogic";
+import {
+  SettingsLogic,
+  type SettingsProfilePatch,
+} from "../logic/page/SettingsLogic";
 import { reconcileSessionProfile } from "../logic/page/SessionReconcileLogic";
 import {
-  joinSelectedServerLobby,
   LoginLogic,
   runAuthenticatedLoginFlow,
 } from "../logic/page/LoginLogic";
 import { AreaListLogic } from "../logic/page/AreaListLogic";
-import { LoginNoticeLogic, noticeDateStamp } from "../logic/page/LoginNoticeLogic";
+import {
+  LoginNoticeLogic,
+  noticeDateStamp,
+} from "../logic/page/LoginNoticeLogic";
 import type { IConfirmOptions } from "../logic/page/ConfirmLogic";
 import { ConfirmLogic } from "../logic/page/ConfirmLogic";
 import { initHttp } from "../core/http";
 import { devLogin } from "../net/http/account";
-import { WebSocketClient } from "../net/WebSocketClient";
+import { lobbyTransportHub } from "../net/LobbyTransportHub";
 import {
   attachSessionNavigator,
   clearSession,
@@ -64,11 +69,7 @@ import {
   setSession,
   type SessionReconcileIdentity,
 } from "./SessionCoordinator";
-import {
-  UserRpc,
-  joinErrText,
-  type IUserView,
-} from "../shared/index";
+import { UserRpc, joinErrText, type IUserView } from "../shared/index";
 import { isServerEnterable } from "../logic/areaDirectory";
 import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
@@ -84,13 +85,41 @@ import { APP_PLUGINS, type PluginLaunchTarget } from "./builtinPlugin";
 import { PluginRegistry } from "./PluginRegistry";
 import type { HomeMenuEntryModel } from "../logic/page/HomeLogic";
 import { NavigationService, type NavRouteHandle } from "./NavigationService";
-import { RefreshCoordinator, type RefreshFlightKey } from "./RefreshCoordinator";
+import {
+  RefreshCoordinator,
+  type RefreshFlightKey,
+} from "./RefreshCoordinator";
 
 const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
 
 /** 本地开发登录身份（dev-login 的 devKey：同 key 恒同账号，换号 = 换 key）。
  *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
 const DEV_LOGIN_KEY = "dev_local";
+
+/** `?devKey=` 的格式闸：与 WebPlatform 契约的 validateDevKey 同一条规则。 */
+const DEV_LOGIN_KEY_PATTERN = /^[a-zA-Z0-9_-]{1,32}$/u;
+
+/**
+ * 预览调试：`?devKey=` 覆盖本地开发身份（同 key 恒同号，换号 = 换 key）。
+ * 与 bootstrap 的 `?server=` / `?lobby=` 同一约定：查询参数覆盖编译期缺省。
+ *
+ * ⚠ 这里**不**照抄 bootstrap 的 fail-fast。本函数的调用点在 `onEnter` 的异步 IIFE 内，
+ * 而该 IIFE 收尾的 `.then(onFulfilled, onRejected)` 只清 enterInFlight、**吞掉**拒绝，
+ * 抛错会表现为「点进入游戏毫无反应」——比回落更难排查。所以非法值改为 warn + 回落缺省；
+ * 这仍可观测（console 警告 + 登录后 `user.getUserId` 核对 uid），不是静默。
+ */
+function devLoginKeyFromQuery(): string {
+  const search = (globalThis as { location?: { search?: string } }).location?.search;
+  if (!search) return DEV_LOGIN_KEY;
+  const raw = new URLSearchParams(search).get("devKey");
+  if (raw === null) return DEV_LOGIN_KEY;
+  const value = raw.trim();
+  if (DEV_LOGIN_KEY_PATTERN.test(value)) return value;
+  console.warn(
+    `[loginFlow] 忽略非法的 ?devKey=${JSON.stringify(raw)}（需 1-32 位 [a-zA-Z0-9_-]），回落到 ${DEV_LOGIN_KEY}`,
+  );
+  return DEV_LOGIN_KEY;
+}
 
 /** 应用级不可变 plugin/route 目录（codegen:plugins 生成的 descriptor 单源）。 */
 export const appPluginRegistry = new PluginRegistry(APP_PLUGINS);
@@ -132,7 +161,9 @@ export interface ProfileWriteRuntime {
 let profileWriteRuntime: ProfileWriteRuntime | null = null;
 
 /** 注册当前宿主的档案写接线；返回身份守卫的注销器（与菜单接线同形）。 */
-export function setProfileWriteRuntime(runtime: ProfileWriteRuntime): () => void {
+export function setProfileWriteRuntime(
+  runtime: ProfileWriteRuntime,
+): () => void {
   profileWriteRuntime = runtime;
   return () => {
     if (profileWriteRuntime === runtime) profileWriteRuntime = null;
@@ -144,13 +175,16 @@ export function setProfileWriteRuntime(runtime: ProfileWriteRuntime): () => void
  * 这样重开面板不会显示回旧值。⛔ 不猜测其它字段（`ver` 由下一次 GetInfo 权威刷新）；
  * 世代已换时 commitSessionProfile 自己会拒绝。
  */
-async function writeProfilePreferences(patch: SettingsProfilePatch): Promise<void> {
+async function writeProfilePreferences(
+  patch: SettingsProfilePatch,
+): Promise<void> {
   const runtime = profileWriteRuntime;
   if (!runtime) throw new Error("[pages] 档案写路径未接线（无宿主）");
   const identity = getSessionIdentity();
   await runtime.updateProfile(patch);
   const profile = getSessionProfile();
-  if (identity && profile) commitSessionProfile(identity, { ...profile, ...patch });
+  if (identity && profile)
+    commitSessionProfile(identity, { ...profile, ...patch });
 }
 
 /** authenticated base 的刷新合流器（对账 GetInfo 与回前台刷新共用同一 key 空间）。 */
@@ -160,12 +194,14 @@ const sessionRefresh = new RefreshCoordinator();
  *  plugin route 各自用 NavRouteHandle.generation）。 */
 const AUTHENTICATED_BASE_ROUTE_SLOT = 0;
 
-function authenticatedBaseRefreshKey(identity: SessionReconcileIdentity): RefreshFlightKey {
+function authenticatedBaseRefreshKey(
+  identity: SessionReconcileIdentity,
+): RefreshFlightKey {
   return {
     appGeneration: currentAppGeneration(),
     routeGeneration: AUTHENTICATED_BASE_ROUTE_SLOT,
     sessionGeneration: identity.generation,
-    connectionEpoch: WebSocketClient.inst.getConnectionState().connGeneration,
+    connectionEpoch: lobbyTransportHub.getConnectionState().connGeneration,
   };
 }
 
@@ -178,7 +214,9 @@ export function observePageAction(action: () => unknown, label: string): void {
   try {
     const result = action();
     if (result && typeof (result as { then?: unknown }).then === "function") {
-      Promise.resolve(result).catch((e) => console.error(`[pages] ${label} rejection`, e));
+      Promise.resolve(result).catch((e) =>
+        console.error(`[pages] ${label} rejection`, e),
+      );
     }
   } catch (e) {
     console.error(`[pages] ${label} exception`, e);
@@ -187,8 +225,11 @@ export function observePageAction(action: () => unknown, label: string): void {
 
 /** ViewMgr 打开取消错误的判别（按 code 判别，⛔ 不引入对 ViewMgr 的值依赖）。 */
 function isOpenCancelled(error: unknown): boolean {
-  return !!error && typeof error === "object"
-    && (error as { code?: unknown }).code === "VIEW_OPEN_CANCELLED";
+  return (
+    !!error &&
+    typeof error === "object" &&
+    (error as { code?: unknown }).code === "VIEW_OPEN_CANCELLED"
+  );
 }
 
 type EnterBattleHandler = () => void | Promise<void>;
@@ -239,9 +280,16 @@ let nextTransitionId = 0;
 let openLoginInFlight: LoginFlight | null = null;
 let latestOnEnterBattle: EnterBattleHandler | null = null;
 
-function isPageOwnerActive(owner: PageSessionOwner, generation = owner.generation): boolean {
-  return activePageOwner === owner && !owner.disposed
-    && currentAppGeneration() === generation && !owner.controller.signal.aborted;
+function isPageOwnerActive(
+  owner: PageSessionOwner,
+  generation = owner.generation,
+): boolean {
+  return (
+    activePageOwner === owner &&
+    !owner.disposed &&
+    currentAppGeneration() === generation &&
+    !owner.controller.signal.aborted
+  );
 }
 
 /** Lobby 物理连接最终死亡后复用当前 token 重进并刷新权威自档；失败由 session 回退到登录页。 */
@@ -255,22 +303,34 @@ async function reconcilePageSession(
   const server = getCurrentServer();
   if (!server) return false;
 
-  const result = await reconcileSessionProfile<IUserView>(identity, {
-    connect: (captured, control) => {
-      WebSocketClient.inst.init(server.gameWsUrl);
-      return WebSocketClient.inst.joinOwned(captured.accessToken, { sId: server.serverId }, control);
+  const result = await reconcileSessionProfile<IUserView>(
+    identity,
+    {
+      connect: (captured, control) => {
+        return lobbyTransportHub.connectOwned(
+          server,
+          captured.accessToken,
+          control,
+        );
+      },
+      // GetInfo 对账经 RefreshCoordinator 合流（§7.2：同 key 并发只合流当前 flight）。
+      getInfo: () =>
+        sessionRefresh.request(authenticatedBaseRefreshKey(identity), () =>
+          lobbyTransportHub.current.rpc(UserRpc.GetInfo, {}),
+        ),
+      isCurrent: (captured) =>
+        isPageOwnerActive(owner, wiredAppGeneration) &&
+        isSessionIdentityCurrent(captured),
+      commitProfile: commitSessionProfile,
     },
-    // GetInfo 对账经 RefreshCoordinator 合流（§7.2：同 key 并发只合流当前 flight）。
-    getInfo: () => sessionRefresh.request(
-      authenticatedBaseRefreshKey(identity),
-      () => WebSocketClient.inst.rpc(UserRpc.GetInfo, {}),
-    ),
-    isCurrent: (captured) => isPageOwnerActive(owner, wiredAppGeneration)
-      && isSessionIdentityCurrent(captured),
-    commitProfile: commitSessionProfile,
-  }, owner.controller.signal);
+    owner.controller.signal,
+  );
   if (!isSessionIdentityCurrent(identity)) return true;
-  if (result.status === "stale" || !isPageOwnerActive(owner, wiredAppGeneration)) return false;
+  if (
+    result.status === "stale" ||
+    !isPageOwnerActive(owner, wiredAppGeneration)
+  )
+    return false;
 
   // 恢复 authenticated base 栈顶（⛔ 不再硬编码打开 Home）；从未登记 base（未完成过
   // 登录导航）时交回 CONN_LOST 回登录。
@@ -279,7 +339,10 @@ async function reconcilePageSession(
     user: result.user,
   });
   if (!home) return false;
-  if (!isPageOwnerActive(owner, wiredAppGeneration) || !isSessionIdentityCurrent(identity)) {
+  if (
+    !isPageOwnerActive(owner, wiredAppGeneration) ||
+    !isSessionIdentityCurrent(identity)
+  ) {
     home.close();
     return !isSessionIdentityCurrent(identity);
   }
@@ -299,14 +362,17 @@ export function refreshAuthenticatedBaseProfile(): Promise<void> {
   if (!appNavigation.hasAuthenticatedBase()) return Promise.resolve();
   const key = authenticatedBaseRefreshKey(identity);
   const task = async (): Promise<boolean> => {
-    const info = await WebSocketClient.inst.rpc(UserRpc.GetInfo, {});
+    const info = await lobbyTransportHub.current.rpc(UserRpc.GetInfo, {});
     if (!isSessionIdentityCurrent(identity)) return false;
     return commitSessionProfile(identity, info.user);
   };
   sessionRefresh.markDirty(key, task);
   const flight = sessionRefresh.trigger(key);
   if (!flight) return Promise.resolve();
-  return flight.then(() => undefined, () => undefined);
+  return flight.then(
+    () => undefined,
+    () => undefined,
+  );
 }
 
 /**
@@ -321,8 +387,10 @@ function reopenLoginAfterTransition(
   transitionAppGeneration: number,
   transitionOwner: PageSessionOwner,
 ): Promise<void> {
-  if (activePageOwner !== transitionOwner || transitionOwner.disposed) return Promise.resolve();
-  if (currentAppGeneration() !== transitionAppGeneration) return Promise.resolve();
+  if (activePageOwner !== transitionOwner || transitionOwner.disposed)
+    return Promise.resolve();
+  if (currentAppGeneration() !== transitionAppGeneration)
+    return Promise.resolve();
   if (getSessionGeneration() !== transitionGen) return Promise.resolve();
 
   const current = openLoginInFlight;
@@ -353,18 +421,26 @@ function reopenLoginAfterTransition(
 
   // A newer caller may already have started a flight while the confirmation was open.
   // It is safe to await/reuse it because it is not the observed flight that called us.
-  if (current && current !== observedFlight && !current.invalidated) return current.promise;
-  if (current && current !== observedFlight && current.invalidated && !current.settled) {
-    const continueReopen = (): Promise<void> => reopenLoginAfterTransition(
-      transitionId,
-      transitionGen,
-      observedFlight,
-      transitionAppGeneration,
-      transitionOwner,
-    );
+  if (current && current !== observedFlight && !current.invalidated)
+    return current.promise;
+  if (
+    current &&
+    current !== observedFlight &&
+    current.invalidated &&
+    !current.settled
+  ) {
+    const continueReopen = (): Promise<void> =>
+      reopenLoginAfterTransition(
+        transitionId,
+        transitionGen,
+        observedFlight,
+        transitionAppGeneration,
+        transitionOwner,
+      );
     return current.promise.then(continueReopen, continueReopen);
   }
-  if (current?.settled && openLoginInFlight === current) openLoginInFlight = null;
+  if (current?.settled && openLoginInFlight === current)
+    openLoginInFlight = null;
 
   const callback = latestOnEnterBattle ?? observedFlight?.onEnterBattle;
   if (!callback) return Promise.resolve();
@@ -391,8 +467,10 @@ function wireSessionEvents(owner: PageSessionOwner): void {
   wiredSessionOwner = owner;
   const wiredAppGeneration = currentAppGeneration();
   unregisterSessionEvents = attachSessionNavigator({
-    isCurrent: () => activePageOwner === owner && !owner.disposed
-      && currentAppGeneration() === wiredAppGeneration,
+    isCurrent: () =>
+      activePageOwner === owner &&
+      !owner.disposed &&
+      currentAppGeneration() === wiredAppGeneration,
     beginTransition: () => {
       // 捕获并标记触发事件时的具体 flight；它可能仍在 fetch/页面打开中，不能被处理器
       // 直接 await，否则 openLogin 与回登录 transition 会互相等待。
@@ -400,17 +478,20 @@ function wireSessionEvents(owner: PageSessionOwner): void {
       if (observedFlight) observedFlight.invalidated = true;
       return { transitionId: ++nextTransitionId, observedFlight };
     },
-    leave: () => WebSocketClient.inst.leave().catch(() => {}),
+    leave: () => lobbyTransportHub.current.leave().catch(() => {}),
     closeLobby: () => closeLobby(),
-    prompt: (title, content) => openConfirm({ title, content, noText: null }).then(() => undefined),
-    reopenLogin: (transitionId, transitionGen, observedFlight) => reopenLoginAfterTransition(
-      transitionId,
-      transitionGen,
-      observedFlight as LoginFlight | null,
-      wiredAppGeneration,
-      owner,
-    ),
-    reconcile: (identity) => reconcilePageSession(owner, wiredAppGeneration, identity),
+    prompt: (title, content) =>
+      openConfirm({ title, content, noText: null }).then(() => undefined),
+    reopenLogin: (transitionId, transitionGen, observedFlight) =>
+      reopenLoginAfterTransition(
+        transitionId,
+        transitionGen,
+        observedFlight as LoginFlight | null,
+        wiredAppGeneration,
+        owner,
+      ),
+    reconcile: (identity) =>
+      reconcilePageSession(owner, wiredAppGeneration, identity),
   });
 }
 
@@ -472,8 +553,10 @@ export function createPageSessionScope(): PageSessionScope {
   activePageOwner = owner;
   const scope: PageSessionScope = {
     generation: owner.generation,
-    isActive: () => activePageOwner === owner && !owner.disposed
-      && currentAppGeneration() === owner.generation,
+    isActive: () =>
+      activePageOwner === owner &&
+      !owner.disposed &&
+      currentAppGeneration() === owner.generation,
     dispose: () => disposePageSessionEvents(owner),
   };
   scopeOwners.set(scope, owner);
@@ -482,7 +565,10 @@ export function createPageSessionScope(): PageSessionScope {
 
 function readDontRemindToday(): boolean {
   try {
-    return sys.localStorage.getItem(NOTICE_DONT_REMIND_DATE_KEY) === noticeDateStamp(Date.now());
+    return (
+      sys.localStorage.getItem(NOTICE_DONT_REMIND_DATE_KEY) ===
+      noticeDateStamp(Date.now())
+    );
   } catch {
     return false;
   }
@@ -490,9 +576,15 @@ function readDontRemindToday(): boolean {
 
 function writeDontRemindToday(value: boolean): void {
   try {
-    if (value) sys.localStorage.setItem(NOTICE_DONT_REMIND_DATE_KEY, noticeDateStamp(Date.now()));
+    if (value)
+      sys.localStorage.setItem(
+        NOTICE_DONT_REMIND_DATE_KEY,
+        noticeDateStamp(Date.now()),
+      );
     else sys.localStorage.removeItem(NOTICE_DONT_REMIND_DATE_KEY);
-  } catch { /* 存储不可用时不影响公告浏览 */ }
+  } catch {
+    /* 存储不可用时不影响公告浏览 */
+  }
 }
 
 function ensurePageOwner(): PageSessionOwner {
@@ -510,14 +602,19 @@ function ensurePageOwner(): PageSessionOwner {
 }
 
 function isFlightActive(flight: LoginFlight): boolean {
-  return !flight.invalidated
-    && !flight.owner.disposed
-    && activePageOwner === flight.owner
-    && currentAppGeneration() === flight.owner.generation;
+  return (
+    !flight.invalidated &&
+    !flight.owner.disposed &&
+    activePageOwner === flight.owner &&
+    currentAppGeneration() === flight.owner.generation
+  );
 }
 
 /** 创建或复用登录 flight；页面已打开但 Enter continuation 尚活动时也必须复用。 */
-function ensureLoginFlight(onEnterBattle: EnterBattleHandler, owner = ensurePageOwner()): LoginFlight {
+function ensureLoginFlight(
+  onEnterBattle: EnterBattleHandler,
+  owner = ensurePageOwner(),
+): LoginFlight {
   latestOnEnterBattle = onEnterBattle;
   const current = openLoginInFlight;
   if (current && !current.invalidated && current.owner === owner) {
@@ -531,7 +628,8 @@ function ensureLoginFlight(onEnterBattle: EnterBattleHandler, owner = ensurePage
     current.reopenPromise = null;
     if (openLoginInFlight === current) openLoginInFlight = null;
   }
-  if (current?.invalidated && current.settled && openLoginInFlight === current) openLoginInFlight = null;
+  if (current?.invalidated && current.settled && openLoginInFlight === current)
+    openLoginInFlight = null;
 
   const flight: LoginFlight = {
     id: ++nextLoginFlightId,
@@ -558,14 +656,19 @@ function ensureLoginFlight(onEnterBattle: EnterBattleHandler, owner = ensurePage
 function settleLoginOpen(flight: LoginFlight, failed: boolean): void {
   flight.settled = true;
   if (failed) flight.invalidated = true;
-  if (flight.invalidated && openLoginInFlight === flight) openLoginInFlight = null;
+  if (flight.invalidated && openLoginInFlight === flight)
+    openLoginInFlight = null;
 }
 
 /** 登录页整段加载只保留一个在途事务；重复调用只更新最新宿主的战斗回调。 */
-export function openLogin(onEnterBattle: EnterBattleHandler, scope?: PageSessionScope): Promise<void> {
+export function openLogin(
+  onEnterBattle: EnterBattleHandler,
+  scope?: PageSessionScope,
+): Promise<void> {
   if (scope && !scope.isActive()) return Promise.resolve();
   const owner = scope ? scopeOwners.get(scope) : ensurePageOwner();
-  if (!owner || owner.disposed || activePageOwner !== owner) return Promise.resolve();
+  if (!owner || owner.disposed || activePageOwner !== owner)
+    return Promise.resolve();
   return ensureLoginFlight(onEnterBattle, owner).promise;
 }
 
@@ -589,14 +692,22 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
   if (!isFlightActive(flight)) return;
 
   const h = await appNavigation.open("login");
-  if (!isFlightActive(flight)) { h.close(); return; }
+  if (!isFlightActive(flight)) {
+    h.close();
+    return;
+  }
   const view = h.view as LoginView;
   // ⚠ 登录必须带**所选区**（M12e）：token 只对该区有效。setServerList 已在成功拉取后
   // 原子建立当前选区，后续用户选服也会更新它；⛔ 别图省事传 0。
-  const logic = new LoginLogic({ login: (key) => devLogin(key, getCurrentServer()?.serverId ?? 0) });
+  const logic = new LoginLogic({
+    login: (key) => devLogin(key, getCurrentServer()?.serverId ?? 0),
+  });
   let enterInFlight: Promise<void> | null = null;
   await h.run((_openedView, context) => {
-    if (!isFlightActive(flight)) { h.close(); return; }
+    if (!isFlightActive(flight)) {
+      h.close();
+      return;
+    }
     logic.onProgress = (ratio, text) => {
       if (context.isActive()) view.setProgress(ratio, text);
     };
@@ -621,7 +732,11 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
           } catch (e) {
             if (!isFlightActive(flight) || !context.isActive()) return;
             console.error("[pages] WebPlatform 区服目录重试失败：", e);
-            await openConfirm({ title: "连接失败", content: "账号服务暂不可用，请稍后重试", noText: null });
+            await openConfirm({
+              title: "连接失败",
+              content: "账号服务暂不可用，请稍后重试",
+              noText: null,
+            });
             return;
           }
         }
@@ -630,12 +745,21 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
         // 进服闸（判定单源 isServerEnterable，对齐原项目 waitLogin）：无服 / 不可进（维护 or 未开服）
         // 且非运维模式不进。isOps 是部署环境级开关（服务端 AREA_IS_OPS），豁免覆盖两种不可进态——
         // 维护服重开前与新服开服前的验证是同一运维形态。⛔ 此闸只是 UX，真闸在服务端准入层。
-        if (!cur) { await openConfirm({ title: "提示", content: "暂无可用区服", noText: null }); return; }
+        if (!cur) {
+          await openConfirm({
+            title: "提示",
+            content: "暂无可用区服",
+            noText: null,
+          });
+          return;
+        }
         if (!isServerEnterable(cur) && !(getServerList()?.isOps ?? false)) {
           const unopened = cur.openTime === 0 && cur.status !== "maintenance";
           await openConfirm({
             title: unopened ? "未开服" : "维护中",
-            content: unopened ? "该区服尚未开放，敬请期待" : "区服维护中，请稍候再试",
+            content: unopened
+              ? "该区服尚未开放，敬请期待"
+              : "区服维护中，请稍候再试",
             noText: null,
           });
           return;
@@ -646,94 +770,149 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
         let user: IUserView | null = null;
         let flowFailed = false;
         let flowSessionGen = -1;
-        const r = await logic.doLoginFlow(DEV_LOGIN_KEY, async (response) => {
-          if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
+        const r = await logic.doLoginFlow(devLoginKeyFromQuery(), async (response) => {
+          if (!isFlightActive(flight) || !context.isActive()) {
+            flowFailed = true;
+            return;
+          }
           try {
-            user = await runAuthenticatedLoginFlow(response, {
-              setSession: (next) => {
-                setSession(next);
-                flowSessionGen = getSessionGeneration();
+            user = await runAuthenticatedLoginFlow(
+              response,
+              {
+                setSession: (next) => {
+                  setSession(next);
+                  flowSessionGen = getSessionGeneration();
+                },
+                join: async (accessToken, signal) => {
+                  logic.onProgress(0.6, "正在进入大厅…");
+                  // hub 在默认 Colyseus 模式读取同一份目录快照的 gameWsUrl；native 模式只读取
+                  // 显式 endpoint。两者都把当前 serverId 作为可信区服入参，不跨 await 混用。
+                  await lobbyTransportHub.connect(cur, accessToken, signal);
+                  if (
+                    !isFlightActive(flight) ||
+                    !context.isActive() ||
+                    getSessionGeneration() !== flowSessionGen
+                  ) {
+                    throw new Error("登录事务已失效");
+                  }
+                },
+                getInfo: async () => {
+                  logic.onProgress(0.85, "正在加载角色…");
+                  const info = await lobbyTransportHub.current.rpc(
+                    UserRpc.GetInfo,
+                    {},
+                  );
+                  if (
+                    !isFlightActive(flight) ||
+                    !context.isActive() ||
+                    getSessionGeneration() !== flowSessionGen
+                  ) {
+                    throw new Error("登录事务已失效");
+                  }
+                  return info;
+                },
+                commitProfile: (next) => {
+                  const identity = getSessionIdentity();
+                  return (
+                    identity !== null &&
+                    identity.generation === flowSessionGen &&
+                    commitSessionProfile(identity, next)
+                  );
+                },
+                clearSession,
+                leave: () => lobbyTransportHub.current.leave(),
+                shouldRollback: () =>
+                  isFlightActive(flight) &&
+                  context.isActive() &&
+                  (flowSessionGen < 0 ||
+                    getSessionGeneration() === flowSessionGen),
               },
-              join: async (accessToken, signal) => {
-                logic.onProgress(0.6, "正在进入大厅…");
-                // 同一份目录快照同时提供 endpoint 与 sId，不能跨 await 混入后续选服结果。
-                await joinSelectedServerLobby(cur, accessToken, {
-                  init: (endpoint) => WebSocketClient.inst.init(endpoint),
-                  // WebPlatform 的 serverId 在 Colyseus join 边界显式转换为 sId。
-                  join: (token, options, joinSignal) =>
-                    WebSocketClient.inst.join(token, options, joinSignal),
-                }, signal);
-                if (!isFlightActive(flight) || !context.isActive()
-                  || getSessionGeneration() !== flowSessionGen) {
-                  throw new Error("登录事务已失效");
-                }
-              },
-              getInfo: async () => {
-                logic.onProgress(0.85, "正在加载角色…");
-                const info = await WebSocketClient.inst.rpc(UserRpc.GetInfo, {});
-                if (!isFlightActive(flight) || !context.isActive()
-                  || getSessionGeneration() !== flowSessionGen) {
-                  throw new Error("登录事务已失效");
-                }
-                return info;
-              },
-              commitProfile: (next) => {
-                const identity = getSessionIdentity();
-                return identity !== null && identity.generation === flowSessionGen
-                  && commitSessionProfile(identity, next);
-              },
-              clearSession,
-              leave: () => WebSocketClient.inst.leave(),
-              shouldRollback: () => isFlightActive(flight) && context.isActive()
-                && (flowSessionGen < 0 || getSessionGeneration() === flowSessionGen),
-            }, context.signal);
+              context.signal,
+            );
           } catch (e) {
-            if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
+            if (!isFlightActive(flight) || !context.isActive()) {
+              flowFailed = true;
+              return;
+            }
             // 大厅/档案失败即整体失败（严谨：不带半截会话进主界面）；清态可重试
             // 业务码走 message（服务端 joinRefused）：用 shared 单源解码器取文案，⛔ 别把 "3004" 甩给玩家
             console.error("[pages] 进入大厅失败：", e);
-            const why = joinErrText((e as Error)?.message, "进入大厅失败，请重试");
-            if (!isFlightActive(flight) || !context.isActive()) { flowFailed = true; return; }
+            const why = joinErrText(
+              (e as Error)?.message,
+              "进入大厅失败，请重试",
+            );
+            if (!isFlightActive(flight) || !context.isActive()) {
+              flowFailed = true;
+              return;
+            }
             logic.onProgress(0, why);
             flowFailed = true;
           }
         });
-        if (!isFlightActive(flight) || !context.isActive() || !r || flowFailed || getSessionGeneration() !== flowSessionGen) return;
+        if (
+          !isFlightActive(flight) ||
+          !context.isActive() ||
+          !r ||
+          flowFailed ||
+          getSessionGeneration() !== flowSessionGen
+        )
+          return;
         logic.onProgress(1, "登录成功");
         h.close();
         // Closing Login synchronously invalidates its lifecycle context.  From
         // this point the page flight and session generation own the navigation;
         // consulting the closed context would make the base page unreachable.
-        if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) return;
+        if (
+          !isFlightActive(flight) ||
+          getSessionGeneration() !== flowSessionGen
+        )
+          return;
         let baseHandle: NavRouteHandle;
         try {
           // authenticated base = 宣传首屏（PLUGIN.md §6）；旧 FGUI Home 仍是可达 route。
           baseHandle = await openPromoHome(r.userId, user);
         } catch (e) {
-          if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) return;
+          if (
+            !isFlightActive(flight) ||
+            getSessionGeneration() !== flowSessionGen
+          )
+            return;
           console.error("[pages] 首屏打开失败，回滚登录事务：", e);
           await returnToLogin({ kind: "BATTLE_JOIN_FAILED" });
           return;
         }
         // 首屏的动态加载也有 await；期间若收到失效事件，handler 会关闭大厅并重开
         // Login。这里再核对一次，避免迟到的首屏把新登录页覆盖回来。
-        if (!isFlightActive(flight) || getSessionGeneration() !== flowSessionGen) baseHandle.close();
+        if (
+          !isFlightActive(flight) ||
+          getSessionGeneration() !== flowSessionGen
+        )
+          baseHandle.close();
       })();
       enterInFlight = p;
       p.then(
-        () => { if (enterInFlight === p) enterInFlight = null; },
-        () => { if (enterInFlight === p) enterInFlight = null; },
+        () => {
+          if (enterInFlight === p) enterInFlight = null;
+        },
+        () => {
+          if (enterInFlight === p) enterInFlight = null;
+        },
       );
       return p;
     };
-    view.onNotice = () => { observePageAction(() => openNotice(), "openNotice"); };
+    view.onNotice = () => {
+      observePageAction(() => openNotice(), "openNotice");
+    };
     view.onSelectServer = () => {
-      observePageAction(() => openAreaList((s) => view.showCurrentServer(s)), "openAreaList");
+      observePageAction(
+        () => openAreaList((s) => view.showCurrentServer(s)),
+        "openAreaList",
+      );
     };
 
     view.setup();
     view.showCurrentServer(getCurrentServer());
-    });
+  });
   if (!isFlightActive(flight)) h.close();
 }
 
@@ -745,14 +924,18 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
  * restoreAuthenticatedBase 走同一入口并带回刷新后的角色快照（会话摘要行消费它）。
  */
 export async function openPromoHome(
-  userId = "", user: IUserView | null = null,
+  userId = "",
+  user: IUserView | null = null,
 ): Promise<NavRouteHandle> {
   appNavigation.setAuthenticatedBase("promoHome", async (restoreContext) => {
     const restore = (restoreContext ?? {}) as {
       readonly userId?: string;
       readonly user?: IUserView | null;
     };
-    const handle = await openPromoHome(restore.userId ?? "", restore.user ?? null);
+    const handle = await openPromoHome(
+      restore.userId ?? "",
+      restore.user ?? null,
+    );
     // 从分组页进的战斗：把玩家送回他出发的那一页，⛔ 不是大厅。连设置面板一起还原——
     // 这样关掉分组页露出的仍是设置面板，与 route 形态成员（关掉直接露出分组页）走同一条回路。
     const groupId = takeGroupReturn();
@@ -788,8 +971,12 @@ export async function openPromoHome(
  * 设置面板里整组只占**一行**，点它打到这里。⛔ 本页不认识任何具体插件——组名与成员
  * 全部来自 GENERATED_HOST.groups，launch 仍走 Home/设置那条同一个 HomeMenuRuntime 接线。
  */
-export async function openEntryGroup(groupId: string): Promise<NavRouteHandle | null> {
-  const resolved = appPluginRegistry.entryGroups().find((item) => item.group.id === groupId);
+export async function openEntryGroup(
+  groupId: string,
+): Promise<NavRouteHandle | null> {
+  const resolved = appPluginRegistry
+    .entryGroups()
+    .find((item) => item.group.id === groupId);
   if (!resolved) {
     console.error(`[loginFlow] 未登记的入口分组 ${groupId}，忽略`);
     return null;
@@ -797,21 +984,32 @@ export async function openEntryGroup(groupId: string): Promise<NavRouteHandle | 
   const h = await appNavigation.open("entryGroup");
   const view = h.view as EntryGroupView;
   await h.run((_openedView, context) => {
-    const logic = new EntryGroupLogic({
-      availabilityOf: (pluginId) =>
-        (homeMenuRuntime ? homeMenuRuntime.availabilityOf(pluginId) : "available"),
-    }, resolved.group.label);
-    logic.setItems(resolved.members.map((item) => ({
-      entryId: item.entryId,
-      pluginId: item.pluginId,
-      label: item.label,
-      launch: () => {
-        if (!context.isActive()) return;
-        // gameplay 形态会关掉整层大厅壳（含本页）：记下返回位，战斗结束后回到这一组。
-        rememberGroupReturn(item.launch.kind === "gameplay" ? resolved.group.id : null);
-        return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : undefined;
+    const logic = new EntryGroupLogic(
+      {
+        availabilityOf: (pluginId) =>
+          homeMenuRuntime
+            ? homeMenuRuntime.availabilityOf(pluginId)
+            : "available",
       },
-    })));
+      resolved.group.label,
+    );
+    logic.setItems(
+      resolved.members.map((item) => ({
+        entryId: item.entryId,
+        pluginId: item.pluginId,
+        label: item.label,
+        launch: () => {
+          if (!context.isActive()) return;
+          // gameplay 形态会关掉整层大厅壳（含本页）：记下返回位，战斗结束后回到这一组。
+          rememberGroupReturn(
+            item.launch.kind === "gameplay" ? resolved.group.id : null,
+          );
+          return homeMenuRuntime
+            ? homeMenuRuntime.launch(item.launch)
+            : undefined;
+        },
+      })),
+    );
     view.onClose = () => h.close();
     view.setup(logic);
   });
@@ -835,32 +1033,40 @@ export async function openSettings(): Promise<NavRouteHandle> {
     const logic = new SettingsLogic({
       updateProfile: (patch) => writeProfilePreferences(patch),
       availabilityOf: (pluginId) =>
-        (homeMenuRuntime ? homeMenuRuntime.availabilityOf(pluginId) : "available"),
+        homeMenuRuntime
+          ? homeMenuRuntime.availabilityOf(pluginId)
+          : "available",
     });
     logic.setProfile(getSessionProfile());
-    logic.setGroups(appPluginRegistry.entryGroups().map(({ group, members }) => ({
-      groupId: group.id,
-      label: group.label,
-      pluginIds: [...new Set(members.map((item) => item.pluginId))],
-      launch: () => {
-        if (!context.isActive()) return;
-        clearGroupReturn();
-        return openEntryGroup(group.id).then(() => undefined);
-      },
-    })));
-    logic.setEntries(appPluginRegistry.menuContributions().map((item) => ({
-      entryId: item.entryId,
-      pluginId: item.pluginId,
-      label: item.label,
-      groupId: appPluginRegistry.groupIdOf(item.pluginId, item.entryId),
-      // 无宿主（无头 pages 测试/工具路径）时是 no-op：设置面板没有 Home 那条
-      // onEnterBattle 回退通道，⛔ 也不该编一个。
-      launch: () => {
-        if (!context.isActive()) return;
-        clearGroupReturn();
-        return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : undefined;
-      },
-    })));
+    logic.setGroups(
+      appPluginRegistry.entryGroups().map(({ group, members }) => ({
+        groupId: group.id,
+        label: group.label,
+        pluginIds: [...new Set(members.map((item) => item.pluginId))],
+        launch: () => {
+          if (!context.isActive()) return;
+          clearGroupReturn();
+          return openEntryGroup(group.id).then(() => undefined);
+        },
+      })),
+    );
+    logic.setEntries(
+      appPluginRegistry.menuContributions().map((item) => ({
+        entryId: item.entryId,
+        pluginId: item.pluginId,
+        label: item.label,
+        groupId: appPluginRegistry.groupIdOf(item.pluginId, item.entryId),
+        // 无宿主（无头 pages 测试/工具路径）时是 no-op：设置面板没有 Home 那条
+        // onEnterBattle 回退通道，⛔ 也不该编一个。
+        launch: () => {
+          if (!context.isActive()) return;
+          clearGroupReturn();
+          return homeMenuRuntime
+            ? homeMenuRuntime.launch(item.launch)
+            : undefined;
+        },
+      })),
+    );
     view.onClose = () => h.close();
     view.setup(logic);
   });
@@ -875,7 +1081,9 @@ export async function openSettings(): Promise<NavRouteHandle> {
  * 快捷入口。⛔ 不删（大量测试以它钉住 Home 视觉与菜单叠加语义）。
  */
 export async function openHome(
-  onEnterBattle: () => void | Promise<void>, userId = "", user: IUserView | null = null,
+  onEnterBattle: () => void | Promise<void>,
+  userId = "",
+  user: IUserView | null = null,
 ): Promise<NavRouteHandle> {
   // authenticated base 登记先于打开：最终断线恢复经 restoreAuthenticatedBase 走同一
   // 入口（reopen 读取恢复时刻的 latestOnEnterBattle，旧回调不跨场景）。
@@ -899,27 +1107,37 @@ export async function openHome(
     // （apps/plugins/host.json → PluginRegistry.homeContributions()，docs/PLUGIN.md §6）；点击统一走
     // LaunchPort.launch(target)（经 HomeMenuRuntime 接线），无宿主回退旧回调。
     // disabled/failed 是 PluginHost 的运行时叠加层，不回写不可变 catalog。
-    const entries: HomeMenuEntryModel[] = appPluginRegistry.homeContributions().map((item) => ({
-      entryId: item.entryId,
-      pluginId: item.pluginId,
-      label: item.label,
-      enabled: homeMenuRuntime ? homeMenuRuntime.availabilityOf(item.pluginId) === "available" : true,
-      launch: () => {
-        if (!context.isActive()) return;
-        clearGroupReturn();
-        return homeMenuRuntime ? homeMenuRuntime.launch(item.launch) : onEnterBattle();
-      },
-    }));
+    const entries: HomeMenuEntryModel[] = appPluginRegistry
+      .homeContributions()
+      .map((item) => ({
+        entryId: item.entryId,
+        pluginId: item.pluginId,
+        label: item.label,
+        enabled: homeMenuRuntime
+          ? homeMenuRuntime.availabilityOf(item.pluginId) === "available"
+          : true,
+        launch: () => {
+          if (!context.isActive()) return;
+          clearGroupReturn();
+          return homeMenuRuntime
+            ? homeMenuRuntime.launch(item.launch)
+            : onEnterBattle();
+        },
+      }));
     const cur = getCurrentServer();
     const who = userId || "未登录";
-    const summary = user ? ` · 体力 ${user.stamina} · ${user.wins}胜${user.losses}负` : "";
+    const summary = user
+      ? ` · 体力 ${user.stamina} · ${user.wins}胜${user.losses}负`
+      : "";
     view.setup(`${cur ? `${cur.name} · ` : ""}${who}${summary}`, entries);
   });
   return h;
 }
 
 /** 选服列表（HTTP）：选服 → 存 currentServer + 回调刷新登录页 → 关闭。 */
-export async function openAreaList(onChosen?: (server: WebPlatformAreaServer) => void): Promise<void> {
+export async function openAreaList(
+  onChosen?: (server: WebPlatformAreaServer) => void,
+): Promise<void> {
   const h = await appNavigation.open("areaList");
   const view = h.view as AreaListView;
   // 选服页与登录页共用同一份目录快照：只有 HTTP 成功才写入，失败不抹掉旧拓扑。
@@ -934,12 +1152,16 @@ export async function openAreaList(onChosen?: (server: WebPlatformAreaServer) =>
     await h.run(async (_openedView, context) => {
       logic.onChoose = (server) => {
         if (!context.isActive()) return;
-        chooseServer(server);       // 区服=实例：记住选中服，进入游戏时连它
+        chooseServer(server); // 区服=实例：记住选中服，进入游戏时连它
         initHttp(server.gameHttpUrl);
-        try { onChosen?.(server); }  // 刷新登录页 btn_server
-        finally { h.close(); }
+        try {
+          onChosen?.(server);
+        } finally {
+          // 刷新登录页 btn_server
+          h.close();
+        }
       };
-      view.onClose = () => h.close();  // 右上角关闭：不选服直接关面板
+      view.onClose = () => h.close(); // 右上角关闭：不选服直接关面板
       view.setup(logic);
       await logic.start(context.signal);
     });
@@ -947,7 +1169,11 @@ export async function openAreaList(onChosen?: (server: WebPlatformAreaServer) =>
     if (isOpenCancelled(e)) return;
     console.error("[pages] WebPlatform 区服目录加载失败：", e);
     h.close();
-    await openConfirm({ title: "连接失败", content: "区服列表加载失败，请稍后重试", noText: null });
+    await openConfirm({
+      title: "连接失败",
+      content: "区服列表加载失败，请稍后重试",
+      noText: null,
+    });
   }
 }
 
@@ -955,7 +1181,11 @@ export async function openAreaList(onChosen?: (server: WebPlatformAreaServer) =>
 export async function openNotice(): Promise<void> {
   const h = await appNavigation.open("loginNotice");
   const view = h.view as LoginNoticeView;
-  const logic = new LoginNoticeLogic({ fetchNotices, readDontRemindToday, writeDontRemindToday });
+  const logic = new LoginNoticeLogic({
+    fetchNotices,
+    readDontRemindToday,
+    writeDontRemindToday,
+  });
   try {
     await h.run(async (_openedView, context) => {
       view.onClose = () => h.close();
@@ -966,7 +1196,11 @@ export async function openNotice(): Promise<void> {
     if (isOpenCancelled(e)) return;
     console.error("[pages] 公告加载失败：", e);
     h.close();
-    await openConfirm({ title: "连接失败", content: "公告加载失败，请稍后重试", noText: null });
+    await openConfirm({
+      title: "连接失败",
+      content: "公告加载失败，请稍后重试",
+      noText: null,
+    });
   }
 }
 
@@ -977,7 +1211,9 @@ export function closeLobby(): void {
 }
 
 /** 通用提示框（多实例，句柄自关）。返回 Promise，resolve(true=确定/false=取消)。 */
-export async function openConfirm(opts: Omit<IConfirmOptions, "onYes" | "onNo">): Promise<boolean> {
+export async function openConfirm(
+  opts: Omit<IConfirmOptions, "onYes" | "onNo">,
+): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     let handle: NavRouteHandle | null = null;
     let settled = false;
@@ -995,10 +1231,18 @@ export async function openConfirm(opts: Omit<IConfirmOptions, "onYes" | "onNo">)
       // An abort can come from a scene/root teardown before the caller sees the
       // handle.  Always close through the handle so the interactive lease is
       // returned even when no button callback ran.
-      const onAbort = () => { h.close(); finish(false); };
-      if (h.signal.aborted) { h.close(); finish(false); return; }
+      const onAbort = () => {
+        h.close();
+        finish(false);
+      };
+      if (h.signal.aborted) {
+        h.close();
+        finish(false);
+        return;
+      }
       h.signal.addEventListener("abort", onAbort, { once: true });
-      removeAbortListener = () => h.signal.removeEventListener("abort", onAbort);
+      removeAbortListener = () =>
+        h.signal.removeEventListener("abort", onAbort);
       const view = h.view as ConfirmView;
       await h.run((_openedView, _context) => {
         const logic = new ConfirmLogic({
@@ -1014,7 +1258,8 @@ export async function openConfirm(opts: Omit<IConfirmOptions, "onYes" | "onNo">)
       // ⚠ **必须兜住并 resolve**：这个 detached task 可能因 FGUI 包/组件/ setup 失败而 reject。
       //   句柄一旦已创建，先走统一 close 回滚 interactive 租约，再按取消处理，避免调用方永久悬挂。
       handle?.close();
-      if (!isOpenCancelled(e)) console.error("[pages] 提示框打开失败，按取消处理", e);
+      if (!isOpenCancelled(e))
+        console.error("[pages] 提示框打开失败，按取消处理", e);
       finish(false);
     });
   });

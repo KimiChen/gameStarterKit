@@ -1,0 +1,1624 @@
+{
+	"100000": {
+		"id": 100000,
+		"waitShowWidget": "MapScene",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 100000,
+				"key": "click",
+				"value": "btn_mapScene",
+				"gotoType": 1
+			}
+		]
+	},
+	"200000": {
+		"id": 200000,
+		"steps": [
+
+		]
+	},
+	"300000": {
+		"id": 300000,
+		"steps": [
+
+		]
+	},
+	"101": {
+		"id": 101,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 101,
+				"key": "tab",
+				"value": "tab_gong",
+				"gotoType": 0
+			}
+		]
+	},
+	"102": {
+		"id": 102,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 102,
+				"key": "tab",
+				"value": "tab_equip",
+				"gotoType": 0
+			}
+		]
+	},
+	"103": {
+		"id": 103,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 103,
+				"key": "tab",
+				"value": "tab_weapon",
+				"gotoType": 0
+			}
+		]
+	},
+	"104": {
+		"id": 104,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 104,
+				"key": "tab",
+				"value": "tab_practice",
+				"gotoType": 0
+			}
+		]
+	},
+	"105": {
+		"id": 105,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 105,
+				"key": "tab",
+				"value": "tab_mission",
+				"gotoType": 0
+			}
+		]
+	},
+	"107": {
+		"id": 107,
+		"waitShowWidget": "Practice_or_Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 107,
+				"key": "click",
+				"value": "btn_mainTask",
+				"gotoType": 0
+			}
+		]
+	},
+	"108": {
+		"id": 108,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 108,
+				"key": "click",
+				"value": "btn_practiceFightRole",
+				"gotoType": 0
+			}
+		]
+	},
+	"109": {
+		"id": 109,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 109,
+				"key": "click",
+				"value": "btn_bossFight",
+				"gotoType": 0
+			}
+		]
+	},
+	"110": {
+		"id": 110,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 110,
+				"key": "click",
+				"value": "btn_chatBar",
+				"gotoType": 0
+			}
+		]
+	},
+	"112": {
+		"id": 112,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 112,
+				"key": "click",
+				"value": "btn_switchPvp",
+				"gotoType": 0
+			}
+		]
+	},
+	"113": {
+		"id": 113,
+		"waitShowWidget": "Practice_or_Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 113,
+				"key": "click",
+				"value": "btn_funcEnterBar",
+				"gotoType": 0
+			}
+		]
+	},
+	"114": {
+		"id": 114,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 114,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 114,
+				"key": "click",
+				"value": "btn_bag",
+				"gotoType": 0
+			}
+		]
+	},
+	"115": {
+		"id": 115,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 115,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 115,
+				"key": "click",
+				"value": "btn_arena",
+				"gotoType": 0
+			}
+		]
+	},
+	"116": {
+		"id": 116,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 116,
+				"key": "click",
+				"value": "btn_recharge",
+				"gotoType": 0
+			}
+		]
+	},
+	"117": {
+		"id": 117,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 117,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 117,
+				"key": "click",
+				"value": "btn_rank",
+				"gotoType": 0
+			}
+		]
+	},
+	"118": {
+		"id": 118,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 118,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 118,
+				"key": "click",
+				"value": "btn_achieve",
+				"gotoType": 0
+			}
+		]
+	},
+	"119": {
+		"id": 119,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 119,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 119,
+				"key": "click",
+				"value": "btn_shop",
+				"gotoType": 0
+			}
+		]
+	},
+	"120": {
+		"id": 120,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 120,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 120,
+				"key": "click",
+				"value": "btn_dailyTask",
+				"gotoType": 0
+			}
+		]
+	},
+	"121": {
+		"id": 121,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 121,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 121,
+				"key": "click",
+				"value": "btn_equipDraw",
+				"gotoType": 0
+			}
+		]
+	},
+	"122": {
+		"id": 122,
+		"waitShowWidget": "Practice_or_Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 122,
+				"key": "click",
+				"value": "btn_head",
+				"gotoType": 0
+			}
+		]
+	},
+	"123": {
+		"id": 123,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 123,
+				"key": "click",
+				"value": "btn_map",
+				"gotoType": 0
+			}
+		]
+	},
+	"124": {
+		"id": 124,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 124,
+				"key": "click",
+				"value": "btn_propLabel1003",
+				"gotoType": 0
+			}
+		]
+	},
+	"125": {
+		"id": 125,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 125,
+				"key": "click",
+				"value": "btn_propLabel1001",
+				"gotoType": 0
+			}
+		]
+	},
+	"126": {
+		"id": 126,
+		"waitShowWidget": "OfflineAward",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 126,
+				"key": "click",
+				"value": "btn_awards",
+				"gotoType": 0
+			}
+		]
+	},
+	"127": {
+		"id": 127,
+		"waitShowWidget": "OfflineAward",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 127,
+				"key": "click",
+				"value": "btn_quickAward",
+				"gotoType": 0
+			}
+		]
+	},
+	"128": {
+		"id": 128,
+		"waitShowWidget": "Mission",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 128,
+				"key": "click",
+				"value": "btn_enterMission5",
+				"gotoType": 0
+			}
+		]
+	},
+	"129": {
+		"id": 129,
+		"waitShowWidget": "GuildMain",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 129,
+				"key": "click",
+				"value": "btn_practice",
+				"gotoType": 0
+			}
+		]
+	},
+	"130": {
+		"id": 130,
+		"waitShowWidget": "GuildMain",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 130,
+				"key": "click",
+				"value": "btn_donate",
+				"gotoType": 0
+			}
+		]
+	},
+	"131": {
+		"id": 131,
+		"waitShowWidget": "BuyPower",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 131,
+				"key": "click",
+				"value": "btn_buyPowerByad",
+				"gotoType": 0
+			}
+		]
+	},
+	"137": {
+		"id": 137,
+		"waitShowWidget": "BuyPower",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 137,
+				"key": "click",
+				"value": "btn_buyPowerBygc",
+				"gotoType": 0
+			}
+		]
+	},
+	"138": {
+		"id": 138,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 138,
+				"key": "click",
+				"value": "btn_fightBox",
+				"gotoType": 5
+			}
+		]
+	},
+	"139": {
+		"id": 139,
+		"waitShowWidget": "Equip",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 139,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 139,
+				"key": "click",
+				"value": "btn_equipItem0",
+				"gotoType": 0
+			}
+		]
+	},
+	"140": {
+		"id": 140,
+		"waitShowWidget": "Player",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 140,
+				"key": "click",
+				"value": "btn_addstrength",
+				"gotoType": 0
+			}
+		]
+	},
+	"141": {
+		"id": 141,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 141,
+				"key": "click",
+				"value": "btn_offlineNpc",
+				"gotoType": 0
+			}
+		]
+	},
+	"143": {
+		"id": 143,
+		"waitShowWidget": "SteriousMan",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 143,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 143,
+				"key": "click",
+				"value": "btn_sterioursManLvUp",
+				"gotoType": 0
+			}
+		]
+	},
+	"151": {
+		"id": 151,
+		"waitShowWidget": "GongMain",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 151,
+				"key": "click",
+				"value": "btn_gongUpgrade",
+				"gotoType": 0
+			}
+		]
+	},
+	"153": {
+		"id": 153,
+		"waitShowWidget": "Weapon",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 153,
+				"key": "click",
+				"value": "btn_weaponStrength",
+				"gotoType": 0
+			}
+		]
+	},
+	"155": {
+		"id": 155,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 155,
+				"key": "click",
+				"value": "btn_demonFight",
+				"gotoType": 0
+			}
+		]
+	},
+	"156": {
+		"id": 156,
+		"waitShowWidget": "Weapon",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 156,
+				"key": "click",
+				"value": "btn_soulItem0",
+				"gotoType": 0
+			}
+		]
+	},
+	"157": {
+		"id": 157,
+		"waitShowWidget": "WeaponRefining",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 157,
+				"key": "click",
+				"value": "btn_refininfg",
+				"gotoType": 0
+			}
+		]
+	},
+	"158": {
+		"id": 158,
+		"waitShowWidget": "Mission",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 158,
+				"key": "click",
+				"value": "btn_enterMission1",
+				"gotoType": 0
+			}
+		]
+	},
+	"160": {
+		"id": 160,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 160,
+				"key": "click",
+				"value": "btn_equipSlot1",
+				"gotoType": 0
+			}
+		]
+	},
+	"161": {
+		"id": 161,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 161,
+				"key": "click",
+				"value": "btn_decorateTip",
+				"gotoType": 0
+			}
+		]
+	},
+	"162": {
+		"id": 162,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 162,
+				"key": "click",
+				"value": "btn_decorate",
+				"gotoType": 0
+			}
+		]
+	},
+	"163": {
+		"id": 163,
+		"waitShowWidget": "Mission",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 163,
+				"key": "click",
+				"value": "btn_enterMission3",
+				"gotoType": 0
+			}
+		]
+	},
+	"164": {
+		"id": 164,
+		"waitShowWidget": "Mission",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 164,
+				"key": "click",
+				"value": "btn_enterMission2",
+				"gotoType": 0
+			}
+		]
+	},
+	"166": {
+		"id": 166,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 166,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 166,
+				"key": "click",
+				"value": "btn_fuli",
+				"gotoType": 0
+			}
+		]
+	},
+	"167": {
+		"id": 167,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 167,
+				"key": "custom",
+				"value": "waitShowWidget|Fight",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 167,
+				"key": "custom",
+				"value": "on|setFirstLiveMonster",
+				"gotoType": 0
+			},
+			{
+				"stepId": 3,
+				"id": 167,
+				"key": "custom",
+				"value": "findGuideName",
+				"gotoType": 0
+			},
+			{
+				"stepId": 4,
+				"id": 167,
+				"key": "custom",
+				"value": "on|setFirstLiveMonster",
+				"gotoType": 0
+			},
+			{
+				"stepId": 5,
+				"id": 167,
+				"key": "custom",
+				"value": "findGuideName",
+				"gotoType": 0
+			},
+			{
+				"stepId": 6,
+				"id": 167,
+				"key": "click",
+				"value": "btn_firstMonster",
+				"gotoType": 2
+			}
+		]
+	},
+	"168": {
+		"id": 168,
+		"waitShowWidget": "Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 168,
+				"key": "click",
+				"value": "btn_fightBack",
+				"gotoType": 0
+			}
+		]
+	},
+	"169": {
+		"id": 169,
+		"waitShowWidget": "Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 169,
+				"key": "click",
+				"value": "btn_switchPve",
+				"gotoType": 0
+			}
+		]
+	},
+	"170": {
+		"id": 170,
+		"waitShowWidget": "MapScene",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 170,
+				"key": "click",
+				"value": "btn_switchPveMap",
+				"gotoType": 0
+			}
+		]
+	},
+	"171": {
+		"id": 171,
+		"waitShowWidget": "MapScene",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 171,
+				"key": "click",
+				"value": "btn_switchPvpMap",
+				"gotoType": 0
+			}
+		]
+	},
+	"172": {
+		"id": 172,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 172,
+				"key": "click",
+				"value": "btn_bossProgressHead",
+				"gotoType": 3
+			}
+		]
+	},
+	"173": {
+		"id": 173,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 173,
+				"key": "click",
+				"value": "btn_chatBack",
+				"gotoType": 0
+			}
+		]
+	},
+	"174": {
+		"id": 174,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 174,
+				"key": "click",
+				"value": "btn_practiceClickAreaFight",
+				"gotoType": 0
+			}
+		]
+	},
+	"176": {
+		"id": 176,
+		"waitShowWidget": "Player",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 176,
+				"key": "tab",
+				"value": "tab_playerRealm",
+				"gotoType": 0
+			}
+		]
+	},
+	"177": {
+		"id": 177,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 177,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 177,
+				"key": "click",
+				"value": "btn_realmBreak",
+				"gotoType": 0
+			}
+		]
+	},
+	"178": {
+		"id": 178,
+		"waitShowWidget": "Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 178,
+				"key": "click",
+				"value": "btn_mapFight",
+				"gotoType": 0
+			}
+		]
+	},
+	"179": {
+		"id": 179,
+		"waitShowWidget": "RankPreface",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 179,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 179,
+				"key": "click",
+				"value": "btn_rankPrefaceItem1",
+				"gotoType": 0
+			}
+		]
+	},
+	"180": {
+		"id": 180,
+		"waitShowWidget": "RankPreface",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 180,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 180,
+				"key": "click",
+				"value": "btn_rankPrefaceItem2",
+				"gotoType": 0
+			}
+		]
+	},
+	"181": {
+		"id": 181,
+		"waitShowWidget": "RankPreface",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 181,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 181,
+				"key": "click",
+				"value": "btn_rankPrefaceItem3",
+				"gotoType": 0
+			}
+		]
+	},
+	"182": {
+		"id": 182,
+		"waitShowWidget": "RankPreface",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 182,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 182,
+				"key": "click",
+				"value": "btn_rankPrefaceItem4",
+				"gotoType": 0
+			}
+		]
+	},
+	"183": {
+		"id": 183,
+		"waitShowWidget": "RechargeList",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 183,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 183,
+				"key": "click",
+				"value": "btn_rechargeListItem50",
+				"gotoType": 0
+			}
+		]
+	},
+	"184": {
+		"id": 184,
+		"waitShowWidget": "RechargeList",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 184,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 184,
+				"key": "click",
+				"value": "btn_rechargeListItem51",
+				"gotoType": 0
+			}
+		]
+	},
+	"185": {
+		"id": 185,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 185,
+				"key": "click",
+				"value": "btn_firstrecharge",
+				"gotoType": 0
+			}
+		]
+	},
+	"186": {
+		"id": 186,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 186,
+				"key": "click",
+				"value": "btn_enterOps",
+				"gotoType": 0
+			}
+		]
+	},
+	"187": {
+		"id": 187,
+		"waitShowWidget": "Player",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 187,
+				"key": "tab",
+				"value": "tab_playerInfo",
+				"gotoType": 0
+			}
+		]
+	},
+	"188": {
+		"id": 188,
+		"waitShowWidget": "Player",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 188,
+				"key": "tab",
+				"value": "tab_playerDressup",
+				"gotoType": 0
+			}
+		]
+	},
+	"189": {
+		"id": 189,
+		"waitShowWidget": "SteriousMan",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 189,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 189,
+				"key": "tab",
+				"value": "tab_steriousTrainTab",
+				"gotoType": 0
+			}
+		]
+	},
+	"190": {
+		"id": 190,
+		"waitShowWidget": "SteriousMan",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 190,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 190,
+				"key": "tab",
+				"value": "tab_steriousAssistTab",
+				"gotoType": 0
+			}
+		]
+	},
+	"191": {
+		"id": 191,
+		"waitShowWidget": "SteriousMan",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 191,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 191,
+				"key": "tab",
+				"value": "tab_steriousSkinTab",
+				"gotoType": 0
+			}
+		]
+	},
+	"192": {
+		"id": 192,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 192,
+				"key": "click",
+				"value": "btn_practiceDoor",
+				"gotoType": 0
+			}
+		]
+	},
+	"193": {
+		"id": 193,
+		"waitShowWidget": "Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 193,
+				"key": "click",
+				"value": "btn_autoFight",
+				"gotoType": 4
+			}
+		]
+	},
+	"194": {
+		"id": 194,
+		"waitShowWidget": "Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 194,
+				"key": "click",
+				"value": "btn_inviteFight",
+				"gotoType": 0
+			}
+		]
+	},
+	"195": {
+		"id": 195,
+		"waitShowWidget": "Fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 195,
+				"key": "click",
+				"value": "btn_drugSwitchFight",
+				"gotoType": 0
+			}
+		]
+	},
+	"196": {
+		"id": 196,
+		"waitShowWidget": "Arena",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 196,
+				"key": "tab",
+				"value": "tab_arenaChallenge",
+				"gotoType": 0
+			}
+		]
+	},
+	"197": {
+		"id": 197,
+		"waitShowWidget": "Arena",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 197,
+				"key": "click",
+				"value": "btn_challange1",
+				"gotoType": 0
+			}
+		]
+	},
+	"198": {
+		"id": 198,
+		"waitShowWidget": "EquipSmelt",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 198,
+				"key": "click",
+				"value": "btn_smelt",
+				"gotoType": 0
+			}
+		]
+	},
+	"199": {
+		"id": 199,
+		"waitShowWidget": "GongMain",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 199,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 199,
+				"key": "click",
+				"value": "btn_sorceryItem0",
+				"gotoType": 0
+			}
+		]
+	},
+	"200": {
+		"id": 200,
+		"waitShowWidget": "GongMain",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 200,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 200,
+				"key": "click",
+				"value": "btn_sorceryItem1",
+				"gotoType": 0
+			}
+		]
+	},
+	"201": {
+		"id": 201,
+		"waitShowWidget": "GongMain",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 201,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 201,
+				"key": "click",
+				"value": "btn_sorceryItem2",
+				"gotoType": 0
+			}
+		]
+	},
+	"202": {
+		"id": 202,
+		"waitShowWidget": "SorceryUpgrade",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 202,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 202,
+				"key": "click",
+				"value": "btn_upgradeSorcery",
+				"gotoType": 0
+			}
+		]
+	},
+	"203": {
+		"id": 203,
+		"waitShowWidget": "Practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 203,
+				"key": "click",
+				"value": "btn_godsSoldierEnter",
+				"gotoType": 0
+			}
+		]
+	},
+	"204": {
+		"id": 204,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 204,
+				"key": "click",
+				"value": "btn_godsSoldierFight",
+				"gotoType": 0
+			}
+		]
+	},
+	"205": {
+		"id": 205,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 205,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 205,
+				"key": "click",
+				"value": "btn_wearEquip",
+				"gotoType": 0
+			}
+		]
+	},
+	"206": {
+		"id": 206,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 206,
+				"key": "click",
+				"value": "btn_fightBox",
+				"gotoType": 5
+			},
+			{
+				"stepId": 2,
+				"id": 206,
+				"key": "custom",
+				"value": "waitShowWidget|GetProp",
+				"gotoType": 0
+			},
+			{
+				"stepId": 3,
+				"id": 206,
+				"key": "click",
+				"value": "btn_closeEmpty",
+				"gotoType": 0
+			}
+		]
+	},
+	"207": {
+		"id": 207,
+		"waitShowWidget": "Player",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 207,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 207,
+				"key": "click",
+				"value": "btn_recommandAdd",
+				"gotoType": 0
+			}
+		]
+	},
+	"208": {
+		"id": 208,
+		"waitShowWidget": "Equip",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 208,
+				"key": "click",
+				"value": "btn_equipAnalysis",
+				"gotoType": 0
+			}
+		]
+	},
+	"209": {
+		"id": 209,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 209,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 209,
+				"key": "click",
+				"value": "btn_fightMission1",
+				"gotoType": 0
+			}
+		]
+	},
+	"210": {
+		"id": 210,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 210,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 210,
+				"key": "click",
+				"value": "btn_fightMission2",
+				"gotoType": 0
+			}
+		]
+	},
+	"211": {
+		"id": 211,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 211,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 211,
+				"key": "click",
+				"value": "btn_fightMission3",
+				"gotoType": 0
+			}
+		]
+	},
+	"212": {
+		"id": 212,
+		"waitShowWidget": "GongMain",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 212,
+				"key": "click",
+				"value": "btn_worshipSkill",
+				"gotoType": 0
+			}
+		]
+	},
+	"213": {
+		"id": 213,
+		"waitShowWidget": "GongMain",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 213,
+				"key": "click",
+				"value": "btn_magical",
+				"gotoType": 0
+			}
+		]
+	},
+	"214": {
+		"id": 214,
+		"waitShowWidget": "WorshipSkill",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 214,
+				"key": "click",
+				"value": "btn_worshipSkillSlot1",
+				"gotoType": 0
+			}
+		]
+	},
+	"215": {
+		"id": 215,
+		"waitShowWidget": "WorshipSkill",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 215,
+				"key": "click",
+				"value": "btn_worshipSkillSlot2",
+				"gotoType": 0
+			}
+		]
+	},
+	"216": {
+		"id": 216,
+		"waitShowWidget": "WorshipSkill",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 216,
+				"key": "click",
+				"value": "btn_worshipSkillSlot3",
+				"gotoType": 0
+			}
+		]
+	},
+	"217": {
+		"id": 217,
+		"waitShowWidget": "WorshipSkillLottery",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 217,
+				"key": "click",
+				"value": "btn_replaceWorshipSkill",
+				"gotoType": 0
+			}
+		]
+	},
+	"218": {
+		"id": 218,
+		"waitShowWidget": "WorshipSkillLottery",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 218,
+				"key": "click",
+				"value": "btn_upgradeWorshipSkill",
+				"gotoType": 0
+			}
+		]
+	},
+	"219": {
+		"id": 219,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 219,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 219,
+				"key": "click",
+				"value": "btn_guild",
+				"gotoType": 0
+			}
+		]
+	},
+	"220": {
+		"id": 220,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 220,
+				"key": "tab",
+				"value": "tab_bonus",
+				"gotoType": 0
+			}
+		]
+	},
+	"221": {
+		"id": 221,
+		"waitShowWidget": "QuickAward",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 221,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 221,
+				"key": "click",
+				"value": "btn_offlineQuick1",
+				"gotoType": 0
+			}
+		]
+	},
+	"222": {
+		"id": 222,
+		"waitShowWidget": "QuickAward",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 222,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 222,
+				"key": "click",
+				"value": "btn_offlineQuick2",
+				"gotoType": 0
+			}
+		]
+	},
+	"223": {
+		"id": 223,
+		"waitShowWidget": "QuickAward",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 223,
+				"key": "delay",
+				"value": "300",
+				"gotoType": 0
+			},
+			{
+				"stepId": 2,
+				"id": 223,
+				"key": "click",
+				"value": "btn_offlineQuick3",
+				"gotoType": 0
+			}
+		]
+	},
+	"224": {
+		"id": 224,
+		"waitShowWidget": "Player",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 224,
+				"key": "click",
+				"value": "btn_sure",
+				"gotoType": 0
+			}
+		]
+	}
+}

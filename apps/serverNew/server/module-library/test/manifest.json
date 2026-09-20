@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "name": "test",
+  "version": "1.0.0",
+  "description": "Archived test game module",
+  "files": [
+    {
+      "target": "config_game/hero_lv.json",
+      "payload": "payload/config_game/hero_lv.json",
+      "sha256": "f7400630f9f6f26c0496ca8bc1ec80e92d5569004b67a173dc7f24fbae68e1a4"
+    },
+    {
+      "target": "src/modules/test/TestC2S.ts",
+      "payload": "payload/src/modules/test/TestC2S.ts",
+      "sha256": "744eec17a0bad4d633a139b5e46a4c2815ac93d67412c72e5a580b398bdc300c"
+    },
+    {
+      "target": "src/modules/test/TestErrors.ts",
+      "payload": "payload/src/modules/test/TestErrors.ts",
+      "sha256": "4cf4fa3be7c674fa92fef5ae61928dae6b5f874f3ab5ccfb6422fdb257969951"
+    },
+    {
+      "target": "src/modules/test/TestModule.ts",
+      "payload": "payload/src/modules/test/TestModule.ts",
+      "sha256": "4f1d24b48e2034b5184918669d23c5668ddd9d458529301553daeec1bb7a4c6b"
+    },
+    {
+      "target": "src/modules/test/action/ActionAdd.ts",
+      "payload": "payload/src/modules/test/action/ActionAdd.ts",
+      "sha256": "f590c53c7a7f23cab5321f85bad75b6119b4cf5f1965cac53a60758120c84d6b"
+    },
+    {
+      "target": "src/modules/test/action/ActionAddProp.ts",
+      "payload": "payload/src/modules/test/action/ActionAddProp.ts",
+      "sha256": "abeb8e024fddb163144bc5c155be4cfde0604735c30065e6bc3c84abbf90fde6"
+    },
+    {
+      "target": "src/modules/test/action/ActionUpdateLv.ts",
+      "payload": "payload/src/modules/test/action/ActionUpdateLv.ts",
+      "sha256": "7e22aad394adf817f9f4eb8348cb76d1603903fd0b469413f468e637fb057de0"
+    },
+    {
+      "target": "src/modules/test/bean/HashJsonNetTestBean.ts",
+      "payload": "payload/src/modules/test/bean/HashJsonNetTestBean.ts",
+      "sha256": "35f9064662e2876b934ba2fd58a969a41454ddf59875df5468593edcc286d572"
+    },
+    {
+      "target": "src/modules/test/bean/HashMapTestBean.ts",
+      "payload": "payload/src/modules/test/bean/HashMapTestBean.ts",
+      "sha256": "e95696447f67bb92d5e8992d35025927787bae8005195bf882358c3b48ce9914"
+    },
+    {
+      "target": "src/modules/test/bean/HeroBean.ts",
+      "payload": "payload/src/modules/test/bean/HeroBean.ts",
+      "sha256": "b8ca04c598b4da42cd7c635563567beb0bee96740f8ab7b54503da440e67da8e"
+    },
+    {
+      "target": "src/modules/test/bean/SkillBean.ts",
+      "payload": "payload/src/modules/test/bean/SkillBean.ts",
+      "sha256": "9b74c7115ba50d9bdd73e9c6dc4722535c480e2fde988a16e87be9d96eda0a52"
+    },
+    {
+      "target": "src/modules/test/bean/TestBean1.ts",
+      "payload": "payload/src/modules/test/bean/TestBean1.ts",
+      "sha256": "51b8ce1e4050cca4b02357626d1893e69e90f30954c5708a90324c18ba1f7498"
+    },
+    {
+      "target": "src/modules/test/bean/UserHashTestBean.ts",
+      "payload": "payload/src/modules/test/bean/UserHashTestBean.ts",
+      "sha256": "0057563b3e8ac61607fdc5ee8b7d1cbfd95a4cf61680e28cfeaa5a45bb686123"
+    },
+    {
+      "target": "src/modules/test/bean/UserOnlyNet.ts",
+      "payload": "payload/src/modules/test/bean/UserOnlyNet.ts",
+      "sha256": "32407b77bf2ce565bc468aae20cd09f412874e99dbb8e6e8daf346d47d496e7e"
+    },
+    {
+      "target": "src/modules/user/action/ActionModifyUserData.ts",
+      "payload": "payload/src/modules/user/action/ActionModifyUserData.ts",
+      "sha256": "c3581c5542d4e68b81954c7fed7f408ecdcaa15ecab660997806befe451a4488"
+    },
+    {
+      "target": "test/bean-compile/runtime-equivalence.test.ts",
+      "payload": "payload/test/bean-compile/runtime-equivalence.test.ts",
+      "sha256": "558d65b08a0f002f5901112df81838eaa40a925dde20d5d695c4e2bd556dc0dc"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [
+      "equip"
+    ],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-hero-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../test/bean/HeroBean",
+      "import": "import { HeroBean } from '../../test/bean/HeroBean'",
+      "expectedAbsent": "HeroBean"
+    },
+    {
+      "id": "user-hero-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "hero?: HeroBean",
+      "expectedAbsent": "hero?: HeroBean"
+    },
+    {
+      "id": "login-hero-import",
+      "type": "addImport",
+      "target": "src/modules/user/action/UserLoginInitializer.ts",
+      "moduleSpecifier": "../../test/bean/HeroBean",
+      "import": "import { HeroBean } from '../../test/bean/HeroBean'",
+      "expectedAbsent": "HeroBean"
+    },
+    {
+      "id": "login-hero-init",
+      "type": "insertAfterText",
+      "target": "src/modules/user/action/UserLoginInitializer.ts",
+      "after": "            user.gc = 10000",
+      "text": "            user.hero = new HeroBean({ hId: 1001, lv: 1 })",
+      "expectedAbsent": "user.hero = new HeroBean"
+    },
+    {
+      "id": "user-test-type-import",
+      "type": "addImport",
+      "target": "src/modules/user/UserC2S.ts",
+      "moduleSpecifier": "../test/TestC2S",
+      "import": "import { TaskType } from '../test/TestC2S'",
+      "expectedAbsent": "TaskType"
+    },
+    {
+      "id": "user-test-request",
+      "type": "insertAfterText",
+      "target": "src/modules/user/UserC2S.ts",
+      "after": "export interface ResCultivate {\n    lv: int\n    exp: int\n    fp: int\n}",
+      "text": "\n\n/** 修改玩家测试数据 */\nexport interface ReqModifyUserData extends Service<'Base'> {\n    tp: TaskType\n}",
+      "expectedAbsent": "ReqModifyUserData"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- test"
+    ],
+    "manual": []
+  }
+}

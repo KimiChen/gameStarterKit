@@ -1,0 +1,1112 @@
+{
+	"RankLevel": {
+		"activityName": "RankLevel",
+		"name": "角色等级冲榜",
+		"doubleDrop": -1,
+		"task": {
+			"101": {
+				"taskId": 101,
+				"activityName": "RankLevel",
+				"recordType": 1,
+				"taskType": 1039,
+				"param1": 0,
+				"param2": 0,
+				"value": 1,
+				"taskAward": [
+					{
+						"taskId": 101,
+						"propId": 1001,
+						"num": 5000
+					}
+				],
+				"taskDesc": {
+					"101": {
+						"taskId": 101,
+						"lang": "zh_hans",
+						"name": "消耗体力",
+						"desc": "活动期间消耗{value}点体力"
+					}
+				}
+			}
+		},
+		"rank": {
+			"101": {
+				"rankId": 101,
+				"activityName": "RankLevel",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 101,
+						"propId": 1001,
+						"num": 5000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"102": {
+				"rankId": 102,
+				"activityName": "RankLevel",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 102,
+						"propId": 1001,
+						"num": 4000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"103": {
+				"rankId": 103,
+				"activityName": "RankLevel",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 103,
+						"propId": 1001,
+						"num": 3000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"104": {
+				"rankId": 104,
+				"activityName": "RankLevel",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 104,
+						"propId": 1001,
+						"num": 2500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"105": {
+				"rankId": 105,
+				"activityName": "RankLevel",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 105,
+						"propId": 1001,
+						"num": 2000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"106": {
+				"rankId": 106,
+				"activityName": "RankLevel",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 106,
+						"propId": 1001,
+						"num": 1500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"107": {
+				"rankId": 107,
+				"activityName": "RankLevel",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 107,
+						"propId": 1001,
+						"num": 1000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"108": {
+				"rankId": 108,
+				"activityName": "RankLevel",
+				"rank": [
+					51,
+					100
+				],
+				"award1": [
+					{
+						"rankId": 108,
+						"propId": 1001,
+						"num": 800
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"109": {
+				"rankId": 109,
+				"activityName": "RankLevel",
+				"rank": [
+					101,
+					200
+				],
+				"award1": [
+					{
+						"rankId": 109,
+						"propId": 1001,
+						"num": 600
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"110": {
+				"rankId": 110,
+				"activityName": "RankLevel",
+				"rank": [
+					201,
+					999
+				],
+				"award1": [
+					{
+						"rankId": 110,
+						"propId": 1001,
+						"num": 200
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"101": {
+				"giftId": 101,
+				"activityName": "RankLevel",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			}
+		}
+	},
+	"RankWeapon": {
+		"activityName": "RankWeapon",
+		"name": "法宝等级冲榜",
+		"doubleDrop": -1,
+		"task": {
+			"201": {
+				"taskId": 201,
+				"activityName": "RankWeapon",
+				"recordType": 1,
+				"taskType": 1039,
+				"param1": 0,
+				"param2": 0,
+				"value": 2,
+				"taskAward": [
+					{
+						"taskId": 201,
+						"propId": 1001,
+						"num": 4000
+					}
+				],
+				"taskDesc": {
+					"201": {
+						"taskId": 201,
+						"lang": "zh_hans",
+						"name": "消耗体力",
+						"desc": "活动期间消耗{value}点体力"
+					}
+				}
+			}
+		},
+		"rank": {
+			"201": {
+				"rankId": 201,
+				"activityName": "RankWeapon",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 201,
+						"propId": 1001,
+						"num": 5000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"202": {
+				"rankId": 202,
+				"activityName": "RankWeapon",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 202,
+						"propId": 1001,
+						"num": 4000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"203": {
+				"rankId": 203,
+				"activityName": "RankWeapon",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 203,
+						"propId": 1001,
+						"num": 3000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"204": {
+				"rankId": 204,
+				"activityName": "RankWeapon",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 204,
+						"propId": 1001,
+						"num": 2500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"205": {
+				"rankId": 205,
+				"activityName": "RankWeapon",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 205,
+						"propId": 1001,
+						"num": 2000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"206": {
+				"rankId": 206,
+				"activityName": "RankWeapon",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 206,
+						"propId": 1001,
+						"num": 1500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"207": {
+				"rankId": 207,
+				"activityName": "RankWeapon",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 207,
+						"propId": 1001,
+						"num": 1000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"208": {
+				"rankId": 208,
+				"activityName": "RankWeapon",
+				"rank": [
+					51,
+					100
+				],
+				"award1": [
+					{
+						"rankId": 208,
+						"propId": 1001,
+						"num": 800
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"209": {
+				"rankId": 209,
+				"activityName": "RankWeapon",
+				"rank": [
+					101,
+					200
+				],
+				"award1": [
+					{
+						"rankId": 209,
+						"propId": 1001,
+						"num": 600
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"210": {
+				"rankId": 210,
+				"activityName": "RankWeapon",
+				"rank": [
+					201,
+					999
+				],
+				"award1": [
+					{
+						"rankId": 210,
+						"propId": 1001,
+						"num": 200
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"201": {
+				"giftId": 201,
+				"activityName": "RankWeapon",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			}
+		}
+	},
+	"RankGong": {
+		"activityName": "RankGong",
+		"name": "功法等级冲榜",
+		"doubleDrop": -1,
+		"task": {
+			"301": {
+				"taskId": 301,
+				"activityName": "RankGong",
+				"recordType": 1,
+				"taskType": 1039,
+				"param1": 0,
+				"param2": 0,
+				"value": 3,
+				"taskAward": [
+					{
+						"taskId": 301,
+						"propId": 1001,
+						"num": 3000
+					}
+				],
+				"taskDesc": {
+					"301": {
+						"taskId": 301,
+						"lang": "zh_hans",
+						"name": "消耗体力",
+						"desc": "活动期间消耗{value}点体力"
+					}
+				}
+			}
+		},
+		"rank": {
+			"301": {
+				"rankId": 301,
+				"activityName": "RankGong",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 301,
+						"propId": 1001,
+						"num": 5000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"302": {
+				"rankId": 302,
+				"activityName": "RankGong",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 302,
+						"propId": 1001,
+						"num": 4000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"303": {
+				"rankId": 303,
+				"activityName": "RankGong",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 303,
+						"propId": 1001,
+						"num": 3000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"304": {
+				"rankId": 304,
+				"activityName": "RankGong",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 304,
+						"propId": 1001,
+						"num": 2500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"305": {
+				"rankId": 305,
+				"activityName": "RankGong",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 305,
+						"propId": 1001,
+						"num": 2000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"306": {
+				"rankId": 306,
+				"activityName": "RankGong",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 306,
+						"propId": 1001,
+						"num": 1500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"307": {
+				"rankId": 307,
+				"activityName": "RankGong",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 307,
+						"propId": 1001,
+						"num": 1000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"308": {
+				"rankId": 308,
+				"activityName": "RankGong",
+				"rank": [
+					51,
+					100
+				],
+				"award1": [
+					{
+						"rankId": 308,
+						"propId": 1001,
+						"num": 800
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"309": {
+				"rankId": 309,
+				"activityName": "RankGong",
+				"rank": [
+					101,
+					200
+				],
+				"award1": [
+					{
+						"rankId": 309,
+						"propId": 1001,
+						"num": 600
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"310": {
+				"rankId": 310,
+				"activityName": "RankGong",
+				"rank": [
+					201,
+					999
+				],
+				"award1": [
+					{
+						"rankId": 310,
+						"propId": 1001,
+						"num": 200
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"301": {
+				"giftId": 301,
+				"activityName": "RankGong",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			}
+		}
+	},
+	"RankAbPointDraw": {
+		"activityName": "RankAbPointDraw",
+		"name": "功法点掉落冲榜",
+		"doubleDrop": 10109,
+		"task": {
+			"401": {
+				"taskId": 401,
+				"activityName": "RankAbPointDraw",
+				"recordType": 1,
+				"taskType": 1039,
+				"param1": 0,
+				"param2": 0,
+				"value": 4,
+				"taskAward": [
+					{
+						"taskId": 401,
+						"propId": 1001,
+						"num": 2500
+					}
+				],
+				"taskDesc": {
+					"401": {
+						"taskId": 401,
+						"lang": "zh_hans",
+						"name": "消耗体力",
+						"desc": "活动期间消耗{value}点体力"
+					}
+				}
+			}
+		},
+		"rank": {
+			"401": {
+				"rankId": 401,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 401,
+						"propId": 1001,
+						"num": 5000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"402": {
+				"rankId": 402,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 402,
+						"propId": 1001,
+						"num": 4000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"403": {
+				"rankId": 403,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 403,
+						"propId": 1001,
+						"num": 3000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"404": {
+				"rankId": 404,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 404,
+						"propId": 1001,
+						"num": 2500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"405": {
+				"rankId": 405,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 405,
+						"propId": 1001,
+						"num": 2000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"406": {
+				"rankId": 406,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 406,
+						"propId": 1001,
+						"num": 1500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"407": {
+				"rankId": 407,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 407,
+						"propId": 1001,
+						"num": 1000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"408": {
+				"rankId": 408,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					51,
+					100
+				],
+				"award1": [
+					{
+						"rankId": 408,
+						"propId": 1001,
+						"num": 800
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"409": {
+				"rankId": 409,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					101,
+					200
+				],
+				"award1": [
+					{
+						"rankId": 409,
+						"propId": 1001,
+						"num": 600
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"410": {
+				"rankId": 410,
+				"activityName": "RankAbPointDraw",
+				"rank": [
+					201,
+					999
+				],
+				"award1": [
+					{
+						"rankId": 410,
+						"propId": 1001,
+						"num": 200
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"401": {
+				"giftId": 401,
+				"activityName": "RankAbPointDraw",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			}
+		}
+	},
+	"RankEnergyDraw": {
+		"activityName": "RankEnergyDraw",
+		"name": "灵气掉落冲榜",
+		"doubleDrop": 10108,
+		"task": {
+			"501": {
+				"taskId": 501,
+				"activityName": "RankEnergyDraw",
+				"recordType": 1,
+				"taskType": 1039,
+				"param1": 0,
+				"param2": 0,
+				"value": 5,
+				"taskAward": [
+					{
+						"taskId": 501,
+						"propId": 1001,
+						"num": 2000
+					}
+				],
+				"taskDesc": {
+					"501": {
+						"taskId": 501,
+						"lang": "zh_hans",
+						"name": "消耗体力",
+						"desc": "活动期间消耗{value}点体力"
+					}
+				}
+			}
+		},
+		"rank": {
+			"501": {
+				"rankId": 501,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 501,
+						"propId": 1001,
+						"num": 5000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"502": {
+				"rankId": 502,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 502,
+						"propId": 1001,
+						"num": 4000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"503": {
+				"rankId": 503,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 503,
+						"propId": 1001,
+						"num": 3000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"504": {
+				"rankId": 504,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 504,
+						"propId": 1001,
+						"num": 2500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"505": {
+				"rankId": 505,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 505,
+						"propId": 1001,
+						"num": 2000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"506": {
+				"rankId": 506,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 506,
+						"propId": 1001,
+						"num": 1500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"507": {
+				"rankId": 507,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 507,
+						"propId": 1001,
+						"num": 1000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"508": {
+				"rankId": 508,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					51,
+					100
+				],
+				"award1": [
+					{
+						"rankId": 508,
+						"propId": 1001,
+						"num": 800
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"509": {
+				"rankId": 509,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					101,
+					200
+				],
+				"award1": [
+					{
+						"rankId": 509,
+						"propId": 1001,
+						"num": 600
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"510": {
+				"rankId": 510,
+				"activityName": "RankEnergyDraw",
+				"rank": [
+					201,
+					999
+				],
+				"award1": [
+					{
+						"rankId": 510,
+						"propId": 1001,
+						"num": 200
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"501": {
+				"giftId": 501,
+				"activityName": "RankEnergyDraw",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			}
+		}
+	}
+}

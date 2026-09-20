@@ -1,0 +1,209 @@
+{
+  "tool": "tools/creator-preview/native-lobby.mjs",
+  "startedAt": "2026-09-20T02:36:51.633Z",
+  "options": {
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://127.0.0.1:7458",
+    "scene": null,
+    "portal": "http://127.0.0.1:2570",
+    "lobbyUrl": "ws://127.0.0.1:18091",
+    "internal": "http://127.0.0.1:28090",
+    "secret": "r7HpIaNXTMXaKw2",
+    "sid": 1,
+    "out": "/Users/kk/26/gameKit/apps/serverNew/humanDocs/evidence/p8-native-gui",
+    "format": "jpeg",
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 30000,
+    "help": false
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "expectedUserId": "dev-1954fdb6f3fefc35",
+  "ok": true,
+  "steps": [
+    {
+      "name": "加载预览并显式选择原生通道（?lobby=native&lobbyUrl=ws://127.0.0.1:18091）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:36:52.939Z",
+      "detail": {
+        "query": {
+          "server": "http://127.0.0.1:2570",
+          "lobby": "native",
+          "lobbyUrl": "ws://127.0.0.1:18091"
+        },
+        "frames": 69,
+        "canvas": {
+          "x": 225,
+          "y": 33,
+          "width": 750,
+          "height": 886
+        },
+        "topLevel": [
+          "Canvas",
+          "PROFILER_NODE"
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:36:54.971Z"
+    },
+    {
+      "name": "加载期只有预览自身的热重载通道（游戏连接尚未建立）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:36:54.971Z",
+      "detail": {
+        "all": [
+          "ws://127.0.0.1:7458/socket.io/?EIO=3&transport=websocket&sid=ROvstcd9YXX_4Hu_AAAV"
+        ],
+        "previewChannel": [
+          "ws://127.0.0.1:7458/socket.io/?EIO=3&transport=websocket&sid=ROvstcd9YXX_4Hu_AAAV"
+        ],
+        "game": []
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:36:54.971Z"
+    },
+    {
+      "name": "登录页可见（FGUI btn_login）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:36:54.971Z",
+      "detail": {
+        "via": "fgui:btn_login",
+        "shot": "01-login.jpeg",
+        "at": {
+          "x": 599,
+          "y": 618,
+          "width": 342,
+          "height": 90
+        }
+      },
+      "screenshots": [
+        "01-login.jpeg"
+      ],
+      "finishedAt": "2026-09-20T02:36:55.462Z"
+    },
+    {
+      "name": "点「开始游戏」→ Lobby ready → 首屏 PromoHomeView（GetInfo 查询）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:36:55.462Z",
+      "detail": {
+        "account": "本地开发服 · dev-1954fdb6f3fefc35 · 体力 0 · 0胜0负",
+        "userId": "dev-1954fdb6f3fefc35",
+        "protocolLine": "协议 game v8 · lobby v7 · 已登记玩法 8",
+        "shot": "02-home-native.jpeg"
+      },
+      "screenshots": [
+        "02-home-native.jpeg"
+      ],
+      "finishedAt": "2026-09-20T02:36:56.013Z"
+    },
+    {
+      "name": "游戏连接只落在原生端点（Network.webSocketCreated）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:36:56.013Z",
+      "detail": {
+        "game": [
+          "ws://127.0.0.1:18091/"
+        ],
+        "previewChannel": [
+          "ws://127.0.0.1:7458/socket.io/?EIO=3&transport=websocket&sid=ROvstcd9YXX_4Hu_AAAV"
+        ],
+        "expected": "ws://127.0.0.1:18091"
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:36:56.013Z"
+    },
+    {
+      "name": "设置面板：音乐开关幂等写（user.updateProfile）被服务端接受",
+      "ok": true,
+      "startedAt": "2026-09-20T02:36:56.013Z",
+      "detail": {
+        "before": "关",
+        "after": "开",
+        "generalTap": {
+          "name": "btn-general",
+          "scroll": {
+            "ok": true,
+            "scrolled": false,
+            "before": 0,
+            "offset": 0,
+            "max": 276.0516666666666
+          },
+          "tapped": "btn-general",
+          "at": [
+            431,
+            318
+          ]
+        },
+        "shotBefore": "03-settings-before-关.jpeg",
+        "shotAfter": "04-settings-after-开.jpeg"
+      },
+      "screenshots": [
+        "03-settings-before-关.jpeg",
+        "04-settings-after-开.jpeg"
+      ],
+      "finishedAt": "2026-09-20T02:36:58.088Z"
+    },
+    {
+      "name": "运营强制下线：内部动作入口 → 客户端提示 + 回登录页",
+      "ok": true,
+      "startedAt": "2026-09-20T02:36:58.088Z",
+      "detail": {
+        "uid": "dev-1954fdb6f3fefc35",
+        "kicked": true,
+        "prompt": "账号已被强制下线，请重新登录",
+        "confirmAt": {
+          "x": 600,
+          "y": 551,
+          "width": 220,
+          "height": 78
+        },
+        "shot": "05-kicked-prompt.jpeg",
+        "backToLogin": "06-kicked-login.jpeg"
+      },
+      "screenshots": [
+        "05-kicked-prompt.jpeg",
+        "06-kicked-login.jpeg"
+      ],
+      "finishedAt": "2026-09-20T02:36:59.502Z"
+    },
+    {
+      "name": "恢复：重新登录回到首屏，且写入的偏好被保留（证明写落了真实存储）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:36:59.502Z",
+      "detail": {
+        "userId": "dev-1954fdb6f3fefc35",
+        "musicOn": "开",
+        "generalTap": {
+          "name": "btn-general",
+          "scroll": {
+            "ok": true,
+            "scrolled": false,
+            "before": 0,
+            "offset": 0,
+            "max": 276.0516666666666
+          },
+          "tapped": "btn-general",
+          "at": [
+            431,
+            318
+          ]
+        },
+        "shot": "07-recovered-settings.jpeg"
+      },
+      "screenshots": [
+        "07-recovered-settings.jpeg"
+      ],
+      "finishedAt": "2026-09-20T02:37:01.438Z"
+    }
+  ],
+  "console": [],
+  "sockets": [
+    "ws://127.0.0.1:7458/socket.io/?EIO=3&transport=websocket&sid=ROvstcd9YXX_4Hu_AAAV",
+    "ws://127.0.0.1:18091/",
+    "ws://127.0.0.1:18091/"
+  ],
+  "tab": {
+    "id": "DFCD271C473AB32E032578C071C1B216",
+    "created": true
+  },
+  "finishedAt": "2026-09-20T02:37:01.441Z"
+}

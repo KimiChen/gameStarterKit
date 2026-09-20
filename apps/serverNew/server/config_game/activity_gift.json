@@ -1,0 +1,24 @@
+{
+	"GiftLimit": {
+		"activityName": "GiftLimit",
+		"name": "限时礼包",
+		"gifts": {
+			"101": {
+				"giftId": 101,
+				"activityName": "GiftLimit",
+				"icon": 1,
+				"sort": 1,
+				"startTime": 2,
+				"endTime": 3,
+				"limitType": 0
+			}
+		}
+	},
+	"GiftGc": {
+		"activityName": "GiftGc",
+		"name": "仙玉礼包",
+		"gifts": {
+
+		}
+	}
+}

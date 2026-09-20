@@ -1,0 +1,203 @@
+{
+	"1": {
+		"id": 1,
+		"icon": 1,
+		"title": "仙晶坊",
+		"systemId": 29,
+		"isRecommend": 0,
+		"desc": "跳转到仙玉商店主界面"
+	},
+	"2": {
+		"id": 2,
+		"icon": 1,
+		"title": "斗胜坊",
+		"systemId": 30,
+		"isRecommend": 0,
+		"desc": "跳转到夔牛商店主界面"
+	},
+	"3": {
+		"id": 3,
+		"icon": 1,
+		"title": "山头坊",
+		"systemId": 31,
+		"isRecommend": 0,
+		"desc": "跳转到山头商店主界面"
+	},
+	"4": {
+		"id": 4,
+		"icon": 1,
+		"title": "馈礼坊",
+		"systemId": 32,
+		"isRecommend": 0,
+		"desc": "跳转到积分商店主界面"
+	},
+	"5": {
+		"id": 5,
+		"icon": 2,
+		"title": "历练-夔牛",
+		"systemId": 6,
+		"isRecommend": 1,
+		"desc": "跳转到夔牛历练boss选择界面"
+	},
+	"6": {
+		"id": 6,
+		"icon": 2,
+		"title": "历练",
+		"systemId": 15,
+		"isRecommend": 1,
+		"desc": "跳转到历练主界面"
+	},
+	"7": {
+		"id": 7,
+		"icon": 2,
+		"title": "历练-昆仑山",
+		"systemId": 39,
+		"isRecommend": 1,
+		"desc": "跳转到元神历练boss选择界面"
+	},
+	"8": {
+		"id": 8,
+		"icon": 2,
+		"title": "历练-幻蛇谷",
+		"systemId": 38,
+		"isRecommend": 1,
+		"desc": "跳转到法宝历练boss选择界面"
+	},
+	"9": {
+		"id": 9,
+		"icon": 2,
+		"title": "历练-东林院",
+		"systemId": 40,
+		"isRecommend": 1,
+		"desc": "跳转到装备历练boss选择界面"
+	},
+	"10": {
+		"id": 10,
+		"icon": 2,
+		"title": "历练-护山妖兽",
+		"systemId": 18,
+		"isRecommend": 1,
+		"desc": "跳转到护山妖兽boss选择界面"
+	},
+	"11": {
+		"id": 11,
+		"icon": 3,
+		"title": "修炼-九州大陆",
+		"systemId": 1,
+		"isRecommend": 1,
+		"desc": "跳转到个人修炼主界面"
+	},
+	"12": {
+		"id": 12,
+		"icon": 4,
+		"title": "战天兵",
+		"systemId": 16,
+		"isRecommend": 0,
+		"desc": "跳转到战天兵挑战界面"
+	},
+	"13": {
+		"id": 13,
+		"icon": 5,
+		"title": "山头-山头捐献",
+		"systemId": 8,
+		"jumpTo": "2",
+		"isRecommend": 0,
+		"desc": "跳转到山头捐纳主界面"
+	},
+	"14": {
+		"id": 14,
+		"icon": 6,
+		"title": "修炼-快速挂机",
+		"systemId": 37,
+		"isRecommend": 0,
+		"desc": "跳转到挂机收益主界面"
+	},
+	"15": {
+		"id": 15,
+		"icon": 8,
+		"title": "法宝-祭炼法宝",
+		"systemId": 4,
+		"isRecommend": 0,
+		"desc": "跳转到法宝主界面"
+	},
+	"16": {
+		"id": 16,
+		"icon": 9,
+		"title": "修炼-斩心魔",
+		"systemId": 16,
+		"isRecommend": 0,
+		"desc": "跳转到斩心魔主界面(暂时废弃)"
+	},
+	"17": {
+		"id": 17,
+		"icon": 9,
+		"title": "元神-提升元神境界",
+		"systemId": 3,
+		"jumpTo": "1",
+		"isRecommend": 0,
+		"desc": "跳转到元神境界界面"
+	},
+	"18": {
+		"id": 18,
+		"icon": 10,
+		"title": "装备熔炼",
+		"systemId": 5,
+		"jumpTo": "1",
+		"isRecommend": 0,
+		"desc": "跳转到熔炼装备功能主界面"
+	},
+	"19": {
+		"id": 19,
+		"icon": 13,
+		"title": "斗法台",
+		"systemId": 17,
+		"isRecommend": 0,
+		"desc": "跳转到论道台功能主界面"
+	},
+	"20": {
+		"id": 20,
+		"icon": 14,
+		"title": "冲榜活动",
+		"systemId": 19,
+		"isRecommend": 0,
+		"desc": "跳转到冲榜功能主界面(需有正在开启的冲榜活动才可跳转)"
+	},
+	"21": {
+		"id": 21,
+		"icon": 14,
+		"title": "超值礼包",
+		"systemId": 52,
+		"isRecommend": 0,
+		"desc": "跳转到充值豪礼-超值礼包主界面"
+	},
+	"22": {
+		"id": 22,
+		"icon": 14,
+		"title": "修炼-万灵宝录",
+		"systemId": 2,
+		"isRecommend": 1,
+		"desc": "程序根据物品类型和玩家等级，自动跳转至当前掉落对应物品的、玩家可进入最大等级的多人修炼地图"
+	},
+	"23": {
+		"id": 23,
+		"icon": 14,
+		"title": "月卡",
+		"systemId": 50,
+		"isRecommend": 0,
+		"desc": "跳转到月卡界面"
+	},
+	"24": {
+		"id": 24,
+		"icon": 14,
+		"title": "高级月卡",
+		"systemId": 51,
+		"isRecommend": 0,
+		"desc": "跳转到高级月卡界面"
+	},
+	"25": {
+		"id": 25,
+		"icon": 14,
+		"title": "运营活动",
+		"isRecommend": 0
+	}
+}

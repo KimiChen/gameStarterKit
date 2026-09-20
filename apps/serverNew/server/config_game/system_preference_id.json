@@ -1,0 +1,48 @@
+{
+	"1": {
+		"id": 1,
+		"preferenceId": [
+			1
+		],
+		"defaultId": 1
+	},
+	"2": {
+		"id": 2,
+		"preferenceId": [
+			1,
+			2,
+			4
+		],
+		"defaultId": 1
+	},
+	"3": {
+		"id": 3,
+		"preferenceId": [
+			2,
+			3,
+			4
+		],
+		"defaultId": 2
+	},
+	"4": {
+		"id": 4,
+		"preferenceId": [
+			2
+		],
+		"defaultId": 2
+	},
+	"5": {
+		"id": 5,
+		"preferenceId": [
+			3
+		],
+		"defaultId": 3
+	},
+	"6": {
+		"id": 6,
+		"preferenceId": [
+			4
+		],
+		"defaultId": 4
+	}
+}

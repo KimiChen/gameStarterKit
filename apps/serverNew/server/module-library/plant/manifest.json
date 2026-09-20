@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "name": "plant",
+  "version": "1.0.0",
+  "description": "Archived plant game module",
+  "files": [
+    {
+      "target": "config_game/peach_orchard.json",
+      "payload": "payload/config_game/peach_orchard.json",
+      "sha256": "04377b8036489cce1f1be6fde1899ebb14521f6054ab0a6dc501c66fc17dbf35"
+    },
+    {
+      "target": "src/modules/plant/PlantC2S.ts",
+      "payload": "payload/src/modules/plant/PlantC2S.ts",
+      "sha256": "28149b826e403de9b212efb64aa76007b1419c5c6ad19eedea5ba6343f4808a0"
+    },
+    {
+      "target": "src/modules/plant/PlantErrors.ts",
+      "payload": "payload/src/modules/plant/PlantErrors.ts",
+      "sha256": "506e233e5db2437ec0c0706c4e57865f063afce94712d638a09f466637f8880a"
+    },
+    {
+      "target": "src/modules/plant/PlantModule.ts",
+      "payload": "payload/src/modules/plant/PlantModule.ts",
+      "sha256": "43206a621e74e3a0941e1405f62f65c715cb8ad97fa2b0dd770b9586b4da604c"
+    },
+    {
+      "target": "src/modules/plant/PlantS2S.ts",
+      "payload": "payload/src/modules/plant/PlantS2S.ts",
+      "sha256": "d02e6aabdc5a80fcf7ee1d491011de63042560fc536ef2bafdfd2c08d79675f6"
+    },
+    {
+      "target": "src/modules/plant/action/ActionPlant.ts",
+      "payload": "payload/src/modules/plant/action/ActionPlant.ts",
+      "sha256": "af31cd17bab4d41349eb949ef083cb40d0fb7e468e6dc763af65b2db27e480fd"
+    },
+    {
+      "target": "src/modules/plant/action/ActionPlantAskHelp.ts",
+      "payload": "payload/src/modules/plant/action/ActionPlantAskHelp.ts",
+      "sha256": "d016e339e9e7965ccd7a7581fc5279092b2bcc501b642528f55e19d9864b1e1e"
+    },
+    {
+      "target": "src/modules/plant/action/ActionPlantHarvest.ts",
+      "payload": "payload/src/modules/plant/action/ActionPlantHarvest.ts",
+      "sha256": "b1be8eb935cf27d0da481e07cc0deaa8955a09f3f32933e3e5391f6eb7f8fbd6"
+    },
+    {
+      "target": "src/modules/plant/action/ActionPlantHelpWater.ts",
+      "payload": "payload/src/modules/plant/action/ActionPlantHelpWater.ts",
+      "sha256": "44269b5f30409c116c89d5207b874f7a81137002cc165e06c5c7a5ac0e77fd2c"
+    },
+    {
+      "target": "src/modules/plant/action/ActionPlantLvUp.ts",
+      "payload": "payload/src/modules/plant/action/ActionPlantLvUp.ts",
+      "sha256": "8ed0297749ddf69ede2c6868477f1147c5d9b2587c546ba348da52f071e82207"
+    },
+    {
+      "target": "src/modules/plant/action/ActionPlantSetEmpRelax.ts",
+      "payload": "payload/src/modules/plant/action/ActionPlantSetEmpRelax.ts",
+      "sha256": "03bed1721ef5a47b817cc084acc3dc6f6883c92a5ede1c0f39cedfa55db18a71"
+    },
+    {
+      "target": "src/modules/plant/action/ActionPlantWake.ts",
+      "payload": "payload/src/modules/plant/action/ActionPlantWake.ts",
+      "sha256": "b6942a870387a42784af419a3ad38f0060cc960131a7e5bd1a2f52ca1e27dff3"
+    },
+    {
+      "target": "src/modules/plant/action/ActionPlantWater.ts",
+      "payload": "payload/src/modules/plant/action/ActionPlantWater.ts",
+      "sha256": "17f09559a790ebec61a2a9248eedf541672acef009e04311829cb17ccbdebc28"
+    },
+    {
+      "target": "src/modules/plant/bean/EmployeeItem.ts",
+      "payload": "payload/src/modules/plant/bean/EmployeeItem.ts",
+      "sha256": "3362ce6624ce3c7e0ee307f8e4e07d12cf56b4bac1489deb5992e1cbfd8cc911"
+    },
+    {
+      "target": "src/modules/plant/bean/PlantBean.ts",
+      "payload": "payload/src/modules/plant/bean/PlantBean.ts",
+      "sha256": "2a86f6e78fd64561d0e63057ba4c225c80015ec6724b34e4a7ead0c71cd8588b"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [
+      "love"
+    ],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-plant-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../plant/bean/PlantBean",
+      "import": "import { PlantBean } from '../../plant/bean/PlantBean'",
+      "expectedAbsent": "PlantBean"
+    },
+    {
+      "id": "user-plant-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "@Mod\nplant!: PlantBean",
+      "expectedAbsent": "plant!: PlantBean"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- plant"
+    ],
+    "manual": []
+  }
+}

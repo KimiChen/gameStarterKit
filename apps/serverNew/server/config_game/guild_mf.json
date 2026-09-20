@@ -1,0 +1,2034 @@
+{
+	"1": {
+		"id": 1,
+		"name": "增伤秘术",
+		"lv": {
+			"0": {
+				"id": 1,
+				"level": 0,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 0,
+				"fp": 0
+			},
+			"1": {
+				"id": 1,
+				"level": 1,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 20,
+				"fp": 20
+			},
+			"2": {
+				"id": 1,
+				"level": 2,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 40,
+				"fp": 40
+			},
+			"3": {
+				"id": 1,
+				"level": 3,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 60,
+				"fp": 60
+			},
+			"4": {
+				"id": 1,
+				"level": 4,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 80,
+				"fp": 80
+			},
+			"5": {
+				"id": 1,
+				"level": 5,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 100,
+				"fp": 100
+			},
+			"6": {
+				"id": 1,
+				"level": 6,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 120,
+				"fp": 120
+			},
+			"7": {
+				"id": 1,
+				"level": 7,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 140,
+				"fp": 140
+			},
+			"8": {
+				"id": 1,
+				"level": 8,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 160,
+				"fp": 160
+			},
+			"9": {
+				"id": 1,
+				"level": 9,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 12,
+				"value": 180,
+				"fp": 180
+			},
+			"10": {
+				"id": 1,
+				"level": 10,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 200,
+				"fp": 200
+			},
+			"11": {
+				"id": 1,
+				"level": 11,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 220,
+				"fp": 220
+			},
+			"12": {
+				"id": 1,
+				"level": 12,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 240,
+				"fp": 240
+			},
+			"13": {
+				"id": 1,
+				"level": 13,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 260,
+				"fp": 260
+			},
+			"14": {
+				"id": 1,
+				"level": 14,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 280,
+				"fp": 280
+			},
+			"15": {
+				"id": 1,
+				"level": 15,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 300,
+				"fp": 300
+			},
+			"16": {
+				"id": 1,
+				"level": 16,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 320,
+				"fp": 320
+			},
+			"17": {
+				"id": 1,
+				"level": 17,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 340,
+				"fp": 340
+			},
+			"18": {
+				"id": 1,
+				"level": 18,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 360,
+				"fp": 360
+			},
+			"19": {
+				"id": 1,
+				"level": 19,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 12,
+				"value": 380,
+				"fp": 380
+			},
+			"20": {
+				"id": 1,
+				"level": 20,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 400,
+				"fp": 400
+			},
+			"21": {
+				"id": 1,
+				"level": 21,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 420,
+				"fp": 420
+			},
+			"22": {
+				"id": 1,
+				"level": 22,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 440,
+				"fp": 440
+			},
+			"23": {
+				"id": 1,
+				"level": 23,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 460,
+				"fp": 460
+			},
+			"24": {
+				"id": 1,
+				"level": 24,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 480,
+				"fp": 480
+			},
+			"25": {
+				"id": 1,
+				"level": 25,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 500,
+				"fp": 500
+			},
+			"26": {
+				"id": 1,
+				"level": 26,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 520,
+				"fp": 520
+			},
+			"27": {
+				"id": 1,
+				"level": 27,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 540,
+				"fp": 540
+			},
+			"28": {
+				"id": 1,
+				"level": 28,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 560,
+				"fp": 560
+			},
+			"29": {
+				"id": 1,
+				"level": 29,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 12,
+				"value": 580,
+				"fp": 580
+			},
+			"30": {
+				"id": 1,
+				"level": 30,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 600,
+				"fp": 600
+			},
+			"31": {
+				"id": 1,
+				"level": 31,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 620,
+				"fp": 620
+			},
+			"32": {
+				"id": 1,
+				"level": 32,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 640,
+				"fp": 640
+			},
+			"33": {
+				"id": 1,
+				"level": 33,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 660,
+				"fp": 660
+			},
+			"34": {
+				"id": 1,
+				"level": 34,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 680,
+				"fp": 680
+			},
+			"35": {
+				"id": 1,
+				"level": 35,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 700,
+				"fp": 700
+			},
+			"36": {
+				"id": 1,
+				"level": 36,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 720,
+				"fp": 720
+			},
+			"37": {
+				"id": 1,
+				"level": 37,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 740,
+				"fp": 740
+			},
+			"38": {
+				"id": 1,
+				"level": 38,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 760,
+				"fp": 760
+			},
+			"39": {
+				"id": 1,
+				"level": 39,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 12,
+				"value": 780,
+				"fp": 780
+			},
+			"40": {
+				"id": 1,
+				"level": 40,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 800,
+				"fp": 800
+			},
+			"41": {
+				"id": 1,
+				"level": 41,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 820,
+				"fp": 820
+			},
+			"42": {
+				"id": 1,
+				"level": 42,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 840,
+				"fp": 840
+			},
+			"43": {
+				"id": 1,
+				"level": 43,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 860,
+				"fp": 860
+			},
+			"44": {
+				"id": 1,
+				"level": 44,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 880,
+				"fp": 880
+			},
+			"45": {
+				"id": 1,
+				"level": 45,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 900,
+				"fp": 900
+			},
+			"46": {
+				"id": 1,
+				"level": 46,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 920,
+				"fp": 920
+			},
+			"47": {
+				"id": 1,
+				"level": 47,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 940,
+				"fp": 940
+			},
+			"48": {
+				"id": 1,
+				"level": 48,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 960,
+				"fp": 960
+			},
+			"49": {
+				"id": 1,
+				"level": 49,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 12,
+				"value": 980,
+				"fp": 980
+			},
+			"50": {
+				"id": 1,
+				"level": 50,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1000,
+				"fp": 1000
+			},
+			"51": {
+				"id": 1,
+				"level": 51,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1020,
+				"fp": 1020
+			},
+			"52": {
+				"id": 1,
+				"level": 52,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1040,
+				"fp": 1040
+			},
+			"53": {
+				"id": 1,
+				"level": 53,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1060,
+				"fp": 1060
+			},
+			"54": {
+				"id": 1,
+				"level": 54,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1080,
+				"fp": 1080
+			},
+			"55": {
+				"id": 1,
+				"level": 55,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1100,
+				"fp": 1100
+			},
+			"56": {
+				"id": 1,
+				"level": 56,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1120,
+				"fp": 1120
+			},
+			"57": {
+				"id": 1,
+				"level": 57,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1140,
+				"fp": 1140
+			},
+			"58": {
+				"id": 1,
+				"level": 58,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1160,
+				"fp": 1160
+			},
+			"59": {
+				"id": 1,
+				"level": 59,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 12,
+				"value": 1180,
+				"fp": 1180
+			},
+			"60": {
+				"id": 1,
+				"level": 60,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1200,
+				"fp": 1200
+			},
+			"61": {
+				"id": 1,
+				"level": 61,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1220,
+				"fp": 1220
+			},
+			"62": {
+				"id": 1,
+				"level": 62,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1240,
+				"fp": 1240
+			},
+			"63": {
+				"id": 1,
+				"level": 63,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1260,
+				"fp": 1260
+			},
+			"64": {
+				"id": 1,
+				"level": 64,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1280,
+				"fp": 1280
+			},
+			"65": {
+				"id": 1,
+				"level": 65,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1300,
+				"fp": 1300
+			},
+			"66": {
+				"id": 1,
+				"level": 66,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1320,
+				"fp": 1320
+			},
+			"67": {
+				"id": 1,
+				"level": 67,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1340,
+				"fp": 1340
+			},
+			"68": {
+				"id": 1,
+				"level": 68,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1360,
+				"fp": 1360
+			},
+			"69": {
+				"id": 1,
+				"level": 69,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 12,
+				"value": 1380,
+				"fp": 1380
+			},
+			"70": {
+				"id": 1,
+				"level": 70,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1400,
+				"fp": 1400
+			},
+			"71": {
+				"id": 1,
+				"level": 71,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1420,
+				"fp": 1420
+			},
+			"72": {
+				"id": 1,
+				"level": 72,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1440,
+				"fp": 1440
+			},
+			"73": {
+				"id": 1,
+				"level": 73,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1460,
+				"fp": 1460
+			},
+			"74": {
+				"id": 1,
+				"level": 74,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1480,
+				"fp": 1480
+			},
+			"75": {
+				"id": 1,
+				"level": 75,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1500,
+				"fp": 1500
+			},
+			"76": {
+				"id": 1,
+				"level": 76,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1520,
+				"fp": 1520
+			},
+			"77": {
+				"id": 1,
+				"level": 77,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1540,
+				"fp": 1540
+			},
+			"78": {
+				"id": 1,
+				"level": 78,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1560,
+				"fp": 1560
+			},
+			"79": {
+				"id": 1,
+				"level": 79,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 12,
+				"value": 1580,
+				"fp": 1580
+			},
+			"80": {
+				"id": 1,
+				"level": 80,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1600,
+				"fp": 1600
+			},
+			"81": {
+				"id": 1,
+				"level": 81,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1620,
+				"fp": 1620
+			},
+			"82": {
+				"id": 1,
+				"level": 82,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1640,
+				"fp": 1640
+			},
+			"83": {
+				"id": 1,
+				"level": 83,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1660,
+				"fp": 1660
+			},
+			"84": {
+				"id": 1,
+				"level": 84,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1680,
+				"fp": 1680
+			},
+			"85": {
+				"id": 1,
+				"level": 85,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1700,
+				"fp": 1700
+			},
+			"86": {
+				"id": 1,
+				"level": 86,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1720,
+				"fp": 1720
+			},
+			"87": {
+				"id": 1,
+				"level": 87,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1740,
+				"fp": 1740
+			},
+			"88": {
+				"id": 1,
+				"level": 88,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1760,
+				"fp": 1760
+			},
+			"89": {
+				"id": 1,
+				"level": 89,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 12,
+				"value": 1780,
+				"fp": 1780
+			},
+			"90": {
+				"id": 1,
+				"level": 90,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1800,
+				"fp": 1800
+			},
+			"91": {
+				"id": 1,
+				"level": 91,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1820,
+				"fp": 1820
+			},
+			"92": {
+				"id": 1,
+				"level": 92,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1840,
+				"fp": 1840
+			},
+			"93": {
+				"id": 1,
+				"level": 93,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1860,
+				"fp": 1860
+			},
+			"94": {
+				"id": 1,
+				"level": 94,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1880,
+				"fp": 1880
+			},
+			"95": {
+				"id": 1,
+				"level": 95,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1900,
+				"fp": 1900
+			},
+			"96": {
+				"id": 1,
+				"level": 96,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1920,
+				"fp": 1920
+			},
+			"97": {
+				"id": 1,
+				"level": 97,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1940,
+				"fp": 1940
+			},
+			"98": {
+				"id": 1,
+				"level": 98,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1960,
+				"fp": 1960
+			},
+			"99": {
+				"id": 1,
+				"level": 99,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 12,
+				"value": 1980,
+				"fp": 1980
+			},
+			"100": {
+				"id": 1,
+				"level": 100,
+				"need": 10,
+				"costId": 0,
+				"costNum": 0,
+				"attrType": 12,
+				"value": 2000,
+				"fp": 2000
+			}
+		}
+	},
+	"2": {
+		"id": 2,
+		"name": "减伤秘术",
+		"lv": {
+			"0": {
+				"id": 2,
+				"level": 0,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 0,
+				"fp": 0
+			},
+			"1": {
+				"id": 2,
+				"level": 1,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 20,
+				"fp": 20
+			},
+			"2": {
+				"id": 2,
+				"level": 2,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 40,
+				"fp": 40
+			},
+			"3": {
+				"id": 2,
+				"level": 3,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 60,
+				"fp": 60
+			},
+			"4": {
+				"id": 2,
+				"level": 4,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 80,
+				"fp": 80
+			},
+			"5": {
+				"id": 2,
+				"level": 5,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 100,
+				"fp": 100
+			},
+			"6": {
+				"id": 2,
+				"level": 6,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 120,
+				"fp": 120
+			},
+			"7": {
+				"id": 2,
+				"level": 7,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 140,
+				"fp": 140
+			},
+			"8": {
+				"id": 2,
+				"level": 8,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 160,
+				"fp": 160
+			},
+			"9": {
+				"id": 2,
+				"level": 9,
+				"need": 1,
+				"costId": 1006,
+				"costNum": 5,
+				"attrType": 13,
+				"value": 180,
+				"fp": 180
+			},
+			"10": {
+				"id": 2,
+				"level": 10,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 200,
+				"fp": 200
+			},
+			"11": {
+				"id": 2,
+				"level": 11,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 220,
+				"fp": 220
+			},
+			"12": {
+				"id": 2,
+				"level": 12,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 240,
+				"fp": 240
+			},
+			"13": {
+				"id": 2,
+				"level": 13,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 260,
+				"fp": 260
+			},
+			"14": {
+				"id": 2,
+				"level": 14,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 280,
+				"fp": 280
+			},
+			"15": {
+				"id": 2,
+				"level": 15,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 300,
+				"fp": 300
+			},
+			"16": {
+				"id": 2,
+				"level": 16,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 320,
+				"fp": 320
+			},
+			"17": {
+				"id": 2,
+				"level": 17,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 340,
+				"fp": 340
+			},
+			"18": {
+				"id": 2,
+				"level": 18,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 360,
+				"fp": 360
+			},
+			"19": {
+				"id": 2,
+				"level": 19,
+				"need": 2,
+				"costId": 1006,
+				"costNum": 10,
+				"attrType": 13,
+				"value": 380,
+				"fp": 380
+			},
+			"20": {
+				"id": 2,
+				"level": 20,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 400,
+				"fp": 400
+			},
+			"21": {
+				"id": 2,
+				"level": 21,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 420,
+				"fp": 420
+			},
+			"22": {
+				"id": 2,
+				"level": 22,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 440,
+				"fp": 440
+			},
+			"23": {
+				"id": 2,
+				"level": 23,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 460,
+				"fp": 460
+			},
+			"24": {
+				"id": 2,
+				"level": 24,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 480,
+				"fp": 480
+			},
+			"25": {
+				"id": 2,
+				"level": 25,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 500,
+				"fp": 500
+			},
+			"26": {
+				"id": 2,
+				"level": 26,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 520,
+				"fp": 520
+			},
+			"27": {
+				"id": 2,
+				"level": 27,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 540,
+				"fp": 540
+			},
+			"28": {
+				"id": 2,
+				"level": 28,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 560,
+				"fp": 560
+			},
+			"29": {
+				"id": 2,
+				"level": 29,
+				"need": 3,
+				"costId": 1006,
+				"costNum": 15,
+				"attrType": 13,
+				"value": 580,
+				"fp": 580
+			},
+			"30": {
+				"id": 2,
+				"level": 30,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 600,
+				"fp": 600
+			},
+			"31": {
+				"id": 2,
+				"level": 31,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 620,
+				"fp": 620
+			},
+			"32": {
+				"id": 2,
+				"level": 32,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 640,
+				"fp": 640
+			},
+			"33": {
+				"id": 2,
+				"level": 33,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 660,
+				"fp": 660
+			},
+			"34": {
+				"id": 2,
+				"level": 34,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 680,
+				"fp": 680
+			},
+			"35": {
+				"id": 2,
+				"level": 35,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 700,
+				"fp": 700
+			},
+			"36": {
+				"id": 2,
+				"level": 36,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 720,
+				"fp": 720
+			},
+			"37": {
+				"id": 2,
+				"level": 37,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 740,
+				"fp": 740
+			},
+			"38": {
+				"id": 2,
+				"level": 38,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 760,
+				"fp": 760
+			},
+			"39": {
+				"id": 2,
+				"level": 39,
+				"need": 4,
+				"costId": 1006,
+				"costNum": 20,
+				"attrType": 13,
+				"value": 780,
+				"fp": 780
+			},
+			"40": {
+				"id": 2,
+				"level": 40,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 800,
+				"fp": 800
+			},
+			"41": {
+				"id": 2,
+				"level": 41,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 820,
+				"fp": 820
+			},
+			"42": {
+				"id": 2,
+				"level": 42,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 840,
+				"fp": 840
+			},
+			"43": {
+				"id": 2,
+				"level": 43,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 860,
+				"fp": 860
+			},
+			"44": {
+				"id": 2,
+				"level": 44,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 880,
+				"fp": 880
+			},
+			"45": {
+				"id": 2,
+				"level": 45,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 900,
+				"fp": 900
+			},
+			"46": {
+				"id": 2,
+				"level": 46,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 920,
+				"fp": 920
+			},
+			"47": {
+				"id": 2,
+				"level": 47,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 940,
+				"fp": 940
+			},
+			"48": {
+				"id": 2,
+				"level": 48,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 960,
+				"fp": 960
+			},
+			"49": {
+				"id": 2,
+				"level": 49,
+				"need": 5,
+				"costId": 1006,
+				"costNum": 25,
+				"attrType": 13,
+				"value": 980,
+				"fp": 980
+			},
+			"50": {
+				"id": 2,
+				"level": 50,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1000,
+				"fp": 1000
+			},
+			"51": {
+				"id": 2,
+				"level": 51,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1020,
+				"fp": 1020
+			},
+			"52": {
+				"id": 2,
+				"level": 52,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1040,
+				"fp": 1040
+			},
+			"53": {
+				"id": 2,
+				"level": 53,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1060,
+				"fp": 1060
+			},
+			"54": {
+				"id": 2,
+				"level": 54,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1080,
+				"fp": 1080
+			},
+			"55": {
+				"id": 2,
+				"level": 55,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1100,
+				"fp": 1100
+			},
+			"56": {
+				"id": 2,
+				"level": 56,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1120,
+				"fp": 1120
+			},
+			"57": {
+				"id": 2,
+				"level": 57,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1140,
+				"fp": 1140
+			},
+			"58": {
+				"id": 2,
+				"level": 58,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1160,
+				"fp": 1160
+			},
+			"59": {
+				"id": 2,
+				"level": 59,
+				"need": 6,
+				"costId": 1006,
+				"costNum": 30,
+				"attrType": 13,
+				"value": 1180,
+				"fp": 1180
+			},
+			"60": {
+				"id": 2,
+				"level": 60,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1200,
+				"fp": 1200
+			},
+			"61": {
+				"id": 2,
+				"level": 61,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1220,
+				"fp": 1220
+			},
+			"62": {
+				"id": 2,
+				"level": 62,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1240,
+				"fp": 1240
+			},
+			"63": {
+				"id": 2,
+				"level": 63,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1260,
+				"fp": 1260
+			},
+			"64": {
+				"id": 2,
+				"level": 64,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1280,
+				"fp": 1280
+			},
+			"65": {
+				"id": 2,
+				"level": 65,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1300,
+				"fp": 1300
+			},
+			"66": {
+				"id": 2,
+				"level": 66,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1320,
+				"fp": 1320
+			},
+			"67": {
+				"id": 2,
+				"level": 67,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1340,
+				"fp": 1340
+			},
+			"68": {
+				"id": 2,
+				"level": 68,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1360,
+				"fp": 1360
+			},
+			"69": {
+				"id": 2,
+				"level": 69,
+				"need": 7,
+				"costId": 1006,
+				"costNum": 35,
+				"attrType": 13,
+				"value": 1380,
+				"fp": 1380
+			},
+			"70": {
+				"id": 2,
+				"level": 70,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1400,
+				"fp": 1400
+			},
+			"71": {
+				"id": 2,
+				"level": 71,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1420,
+				"fp": 1420
+			},
+			"72": {
+				"id": 2,
+				"level": 72,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1440,
+				"fp": 1440
+			},
+			"73": {
+				"id": 2,
+				"level": 73,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1460,
+				"fp": 1460
+			},
+			"74": {
+				"id": 2,
+				"level": 74,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1480,
+				"fp": 1480
+			},
+			"75": {
+				"id": 2,
+				"level": 75,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1500,
+				"fp": 1500
+			},
+			"76": {
+				"id": 2,
+				"level": 76,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1520,
+				"fp": 1520
+			},
+			"77": {
+				"id": 2,
+				"level": 77,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1540,
+				"fp": 1540
+			},
+			"78": {
+				"id": 2,
+				"level": 78,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1560,
+				"fp": 1560
+			},
+			"79": {
+				"id": 2,
+				"level": 79,
+				"need": 8,
+				"costId": 1006,
+				"costNum": 40,
+				"attrType": 13,
+				"value": 1580,
+				"fp": 1580
+			},
+			"80": {
+				"id": 2,
+				"level": 80,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1600,
+				"fp": 1600
+			},
+			"81": {
+				"id": 2,
+				"level": 81,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1620,
+				"fp": 1620
+			},
+			"82": {
+				"id": 2,
+				"level": 82,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1640,
+				"fp": 1640
+			},
+			"83": {
+				"id": 2,
+				"level": 83,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1660,
+				"fp": 1660
+			},
+			"84": {
+				"id": 2,
+				"level": 84,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1680,
+				"fp": 1680
+			},
+			"85": {
+				"id": 2,
+				"level": 85,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1700,
+				"fp": 1700
+			},
+			"86": {
+				"id": 2,
+				"level": 86,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1720,
+				"fp": 1720
+			},
+			"87": {
+				"id": 2,
+				"level": 87,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1740,
+				"fp": 1740
+			},
+			"88": {
+				"id": 2,
+				"level": 88,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1760,
+				"fp": 1760
+			},
+			"89": {
+				"id": 2,
+				"level": 89,
+				"need": 9,
+				"costId": 1006,
+				"costNum": 45,
+				"attrType": 13,
+				"value": 1780,
+				"fp": 1780
+			},
+			"90": {
+				"id": 2,
+				"level": 90,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1800,
+				"fp": 1800
+			},
+			"91": {
+				"id": 2,
+				"level": 91,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1820,
+				"fp": 1820
+			},
+			"92": {
+				"id": 2,
+				"level": 92,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1840,
+				"fp": 1840
+			},
+			"93": {
+				"id": 2,
+				"level": 93,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1860,
+				"fp": 1860
+			},
+			"94": {
+				"id": 2,
+				"level": 94,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1880,
+				"fp": 1880
+			},
+			"95": {
+				"id": 2,
+				"level": 95,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1900,
+				"fp": 1900
+			},
+			"96": {
+				"id": 2,
+				"level": 96,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1920,
+				"fp": 1920
+			},
+			"97": {
+				"id": 2,
+				"level": 97,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1940,
+				"fp": 1940
+			},
+			"98": {
+				"id": 2,
+				"level": 98,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1960,
+				"fp": 1960
+			},
+			"99": {
+				"id": 2,
+				"level": 99,
+				"need": 10,
+				"costId": 1006,
+				"costNum": 50,
+				"attrType": 13,
+				"value": 1980,
+				"fp": 1980
+			},
+			"100": {
+				"id": 2,
+				"level": 100,
+				"need": 10,
+				"costId": 0,
+				"costNum": 0,
+				"attrType": 13,
+				"value": 2000,
+				"fp": 2000
+			}
+		}
+	}
+}

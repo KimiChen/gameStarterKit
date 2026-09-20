@@ -1,0 +1,983 @@
+{
+	"1": {
+		"id": 1,
+		"name": "元神",
+		"icon": 1,
+		"systemId": 3,
+		"way": [
+			{
+				"wayId": 101,
+				"id": 1,
+				"name": "元神\n等级",
+				"systemId": 3,
+				"manual": 1,
+				"jump": 1,
+				"targetType": 1,
+				"basis": [
+					{
+						"basisId": 101001,
+						"playerLv": 10,
+						"wayId": 101,
+						"targetValue": 6000
+					},
+					{
+						"basisId": 101002,
+						"playerLv": 20,
+						"wayId": 101,
+						"targetValue": 12000
+					},
+					{
+						"basisId": 101003,
+						"playerLv": 30,
+						"wayId": 101,
+						"targetValue": 18000
+					},
+					{
+						"basisId": 101004,
+						"playerLv": 40,
+						"wayId": 101,
+						"targetValue": 25000
+					},
+					{
+						"basisId": 101005,
+						"playerLv": 50,
+						"wayId": 101,
+						"targetValue": 32000
+					},
+					{
+						"basisId": 101006,
+						"playerLv": 60,
+						"wayId": 101,
+						"targetValue": 39000
+					},
+					{
+						"basisId": 101007,
+						"playerLv": 70,
+						"wayId": 101,
+						"targetValue": 47000
+					},
+					{
+						"basisId": 101008,
+						"playerLv": 80,
+						"wayId": 101,
+						"targetValue": 55000
+					},
+					{
+						"basisId": 101009,
+						"playerLv": 90,
+						"wayId": 101,
+						"targetValue": 63000
+					},
+					{
+						"basisId": 101010,
+						"playerLv": 100,
+						"wayId": 101,
+						"targetValue": 71000
+					},
+					{
+						"basisId": 101011,
+						"playerLv": 110,
+						"wayId": 101,
+						"targetValue": 79000
+					},
+					{
+						"basisId": 101012,
+						"playerLv": 120,
+						"wayId": 101,
+						"targetValue": 87000
+					},
+					{
+						"basisId": 101013,
+						"playerLv": 130,
+						"wayId": 101,
+						"targetValue": 95000
+					},
+					{
+						"basisId": 101014,
+						"playerLv": 140,
+						"wayId": 101,
+						"targetValue": 103000
+					},
+					{
+						"basisId": 101015,
+						"playerLv": 150,
+						"wayId": 101,
+						"targetValue": 111000
+					},
+					{
+						"basisId": 101016,
+						"playerLv": 160,
+						"wayId": 101,
+						"targetValue": 119000
+					},
+					{
+						"basisId": 101017,
+						"playerLv": 170,
+						"wayId": 101,
+						"targetValue": 127000
+					},
+					{
+						"basisId": 101018,
+						"playerLv": 180,
+						"wayId": 101,
+						"targetValue": 135000
+					}
+				]
+			},
+			{
+				"wayId": 102,
+				"id": 1,
+				"name": "请神\n技能",
+				"systemId": 42,
+				"manual": 1,
+				"jump": 1,
+				"targetType": 1,
+				"basis": [
+					{
+						"basisId": 102001,
+						"playerLv": 60,
+						"wayId": 102,
+						"targetValue": 500
+					},
+					{
+						"basisId": 102002,
+						"playerLv": 70,
+						"wayId": 102,
+						"targetValue": 600
+					},
+					{
+						"basisId": 102003,
+						"playerLv": 80,
+						"wayId": 102,
+						"targetValue": 700
+					},
+					{
+						"basisId": 102004,
+						"playerLv": 90,
+						"wayId": 102,
+						"targetValue": 1200
+					},
+					{
+						"basisId": 102005,
+						"playerLv": 100,
+						"wayId": 102,
+						"targetValue": 1300
+					},
+					{
+						"basisId": 102006,
+						"playerLv": 110,
+						"wayId": 102,
+						"targetValue": 1400
+					},
+					{
+						"basisId": 102007,
+						"playerLv": 120,
+						"wayId": 102,
+						"targetValue": 2000
+					},
+					{
+						"basisId": 102008,
+						"playerLv": 130,
+						"wayId": 102,
+						"targetValue": 2200
+					},
+					{
+						"basisId": 102009,
+						"playerLv": 140,
+						"wayId": 102,
+						"targetValue": 2400
+					},
+					{
+						"basisId": 102010,
+						"playerLv": 150,
+						"wayId": 102,
+						"targetValue": 2600
+					},
+					{
+						"basisId": 102011,
+						"playerLv": 160,
+						"wayId": 102,
+						"targetValue": 2800
+					},
+					{
+						"basisId": 102012,
+						"playerLv": 170,
+						"wayId": 102,
+						"targetValue": 3000
+					},
+					{
+						"basisId": 102013,
+						"playerLv": 180,
+						"wayId": 102,
+						"targetValue": 3000
+					}
+				]
+			},
+			{
+				"wayId": 103,
+				"id": 1,
+				"name": "神符\n收集",
+				"systemId": 3,
+				"manual": 0,
+				"jump": 0,
+				"tips": "可参与各种活动或购买礼包收集更多的神符",
+				"targetType": 1,
+				"basis": [
+
+				]
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"name": "法宝",
+		"icon": 2,
+		"systemId": 4,
+		"way": [
+			{
+				"wayId": 201,
+				"id": 2,
+				"name": "法宝\n等级",
+				"systemId": 4,
+				"manual": 1,
+				"jump": 1,
+				"targetType": 1,
+				"basis": [
+					{
+						"basisId": 201001,
+						"playerLv": 10,
+						"wayId": 201,
+						"targetValue": 6000
+					},
+					{
+						"basisId": 201002,
+						"playerLv": 20,
+						"wayId": 201,
+						"targetValue": 12000
+					},
+					{
+						"basisId": 201003,
+						"playerLv": 30,
+						"wayId": 201,
+						"targetValue": 18000
+					},
+					{
+						"basisId": 201004,
+						"playerLv": 40,
+						"wayId": 201,
+						"targetValue": 25000
+					},
+					{
+						"basisId": 201005,
+						"playerLv": 50,
+						"wayId": 201,
+						"targetValue": 32000
+					},
+					{
+						"basisId": 201006,
+						"playerLv": 60,
+						"wayId": 201,
+						"targetValue": 39000
+					},
+					{
+						"basisId": 201007,
+						"playerLv": 70,
+						"wayId": 201,
+						"targetValue": 47000
+					},
+					{
+						"basisId": 201008,
+						"playerLv": 80,
+						"wayId": 201,
+						"targetValue": 55000
+					},
+					{
+						"basisId": 201009,
+						"playerLv": 90,
+						"wayId": 201,
+						"targetValue": 63000
+					},
+					{
+						"basisId": 201010,
+						"playerLv": 100,
+						"wayId": 201,
+						"targetValue": 71000
+					},
+					{
+						"basisId": 201011,
+						"playerLv": 110,
+						"wayId": 201,
+						"targetValue": 79000
+					},
+					{
+						"basisId": 201012,
+						"playerLv": 120,
+						"wayId": 201,
+						"targetValue": 87000
+					},
+					{
+						"basisId": 201013,
+						"playerLv": 130,
+						"wayId": 201,
+						"targetValue": 95000
+					},
+					{
+						"basisId": 201014,
+						"playerLv": 140,
+						"wayId": 201,
+						"targetValue": 103000
+					},
+					{
+						"basisId": 201015,
+						"playerLv": 150,
+						"wayId": 201,
+						"targetValue": 111000
+					},
+					{
+						"basisId": 201016,
+						"playerLv": 160,
+						"wayId": 201,
+						"targetValue": 119000
+					},
+					{
+						"basisId": 201017,
+						"playerLv": 170,
+						"wayId": 201,
+						"targetValue": 127000
+					},
+					{
+						"basisId": 201018,
+						"playerLv": 180,
+						"wayId": 201,
+						"targetValue": 135000
+					}
+				]
+			},
+			{
+				"wayId": 202,
+				"id": 2,
+				"name": "铭文\n镌刻",
+				"systemId": 4,
+				"manual": 1,
+				"jump": 1,
+				"targetType": 1,
+				"basis": [
+					{
+						"basisId": 202001,
+						"playerLv": 10,
+						"wayId": 202,
+						"targetValue": 2500
+					},
+					{
+						"basisId": 202002,
+						"playerLv": 20,
+						"wayId": 202,
+						"targetValue": 6000
+					},
+					{
+						"basisId": 202003,
+						"playerLv": 30,
+						"wayId": 202,
+						"targetValue": 10500
+					},
+					{
+						"basisId": 202004,
+						"playerLv": 40,
+						"wayId": 202,
+						"targetValue": 16000
+					},
+					{
+						"basisId": 202005,
+						"playerLv": 50,
+						"wayId": 202,
+						"targetValue": 22500
+					},
+					{
+						"basisId": 202006,
+						"playerLv": 60,
+						"wayId": 202,
+						"targetValue": 30000
+					},
+					{
+						"basisId": 202007,
+						"playerLv": 70,
+						"wayId": 202,
+						"targetValue": 38500
+					},
+					{
+						"basisId": 202008,
+						"playerLv": 80,
+						"wayId": 202,
+						"targetValue": 48000
+					},
+					{
+						"basisId": 202009,
+						"playerLv": 90,
+						"wayId": 202,
+						"targetValue": 58500
+					},
+					{
+						"basisId": 202010,
+						"playerLv": 100,
+						"wayId": 202,
+						"targetValue": 70000
+					},
+					{
+						"basisId": 202011,
+						"playerLv": 110,
+						"wayId": 202,
+						"targetValue": 82500
+					},
+					{
+						"basisId": 202012,
+						"playerLv": 120,
+						"wayId": 202,
+						"targetValue": 96000
+					},
+					{
+						"basisId": 202013,
+						"playerLv": 130,
+						"wayId": 202,
+						"targetValue": 117000
+					},
+					{
+						"basisId": 202014,
+						"playerLv": 140,
+						"wayId": 202,
+						"targetValue": 140000
+					},
+					{
+						"basisId": 202015,
+						"playerLv": 150,
+						"wayId": 202,
+						"targetValue": 165000
+					},
+					{
+						"basisId": 202016,
+						"playerLv": 160,
+						"wayId": 202,
+						"targetValue": 192000
+					},
+					{
+						"basisId": 202017,
+						"playerLv": 170,
+						"wayId": 202,
+						"targetValue": 221000
+					},
+					{
+						"basisId": 202018,
+						"playerLv": 180,
+						"wayId": 202,
+						"targetValue": 270000
+					}
+				]
+			},
+			{
+				"wayId": 203,
+				"id": 2,
+				"name": "神器\n收集",
+				"systemId": 4,
+				"manual": 0,
+				"jump": 0,
+				"tips": "可参与各种活动或购买礼包收集更多的神器",
+				"targetType": 1,
+				"basis": [
+
+				]
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"name": "装备",
+		"icon": 3,
+		"systemId": 5,
+		"way": [
+			{
+				"wayId": 301,
+				"id": 3,
+				"name": "装备\n属性",
+				"systemId": 5,
+				"manual": 1,
+				"jump": 1,
+				"targetType": 1,
+				"basis": [
+					{
+						"basisId": 301001,
+						"playerLv": 10,
+						"wayId": 301,
+						"targetValue": 7000
+					},
+					{
+						"basisId": 301002,
+						"playerLv": 20,
+						"wayId": 301,
+						"targetValue": 16000
+					},
+					{
+						"basisId": 301003,
+						"playerLv": 30,
+						"wayId": 301,
+						"targetValue": 30000
+					},
+					{
+						"basisId": 301004,
+						"playerLv": 40,
+						"wayId": 301,
+						"targetValue": 45000
+					},
+					{
+						"basisId": 301005,
+						"playerLv": 50,
+						"wayId": 301,
+						"targetValue": 64000
+					},
+					{
+						"basisId": 301006,
+						"playerLv": 60,
+						"wayId": 301,
+						"targetValue": 98000
+					},
+					{
+						"basisId": 301007,
+						"playerLv": 70,
+						"wayId": 301,
+						"targetValue": 115000
+					},
+					{
+						"basisId": 301008,
+						"playerLv": 80,
+						"wayId": 301,
+						"targetValue": 130000
+					},
+					{
+						"basisId": 301009,
+						"playerLv": 90,
+						"wayId": 301,
+						"targetValue": 150000
+					},
+					{
+						"basisId": 301010,
+						"playerLv": 100,
+						"wayId": 301,
+						"targetValue": 165000
+					},
+					{
+						"basisId": 301011,
+						"playerLv": 110,
+						"wayId": 301,
+						"targetValue": 180000
+					},
+					{
+						"basisId": 301012,
+						"playerLv": 120,
+						"wayId": 301,
+						"targetValue": 235000
+					},
+					{
+						"basisId": 301013,
+						"playerLv": 130,
+						"wayId": 301,
+						"targetValue": 266000
+					},
+					{
+						"basisId": 301014,
+						"playerLv": 140,
+						"wayId": 301,
+						"targetValue": 300000
+					},
+					{
+						"basisId": 301015,
+						"playerLv": 150,
+						"wayId": 301,
+						"targetValue": 335000
+					},
+					{
+						"basisId": 301016,
+						"playerLv": 160,
+						"wayId": 301,
+						"targetValue": 385000
+					},
+					{
+						"basisId": 301017,
+						"playerLv": 170,
+						"wayId": 301,
+						"targetValue": 440000
+					},
+					{
+						"basisId": 301018,
+						"playerLv": 180,
+						"wayId": 301,
+						"targetValue": 500000
+					}
+				]
+			},
+			{
+				"wayId": 302,
+				"id": 3,
+				"name": "魂石\n属性",
+				"systemId": 5,
+				"manual": 1,
+				"jump": 1,
+				"targetType": 1,
+				"basis": [
+					{
+						"basisId": 302001,
+						"playerLv": 30,
+						"wayId": 302,
+						"targetValue": 700
+					},
+					{
+						"basisId": 302002,
+						"playerLv": 40,
+						"wayId": 302,
+						"targetValue": 1400
+					},
+					{
+						"basisId": 302003,
+						"playerLv": 50,
+						"wayId": 302,
+						"targetValue": 2100
+					},
+					{
+						"basisId": 302004,
+						"playerLv": 60,
+						"wayId": 302,
+						"targetValue": 5600
+					},
+					{
+						"basisId": 302005,
+						"playerLv": 70,
+						"wayId": 302,
+						"targetValue": 7000
+					},
+					{
+						"basisId": 302006,
+						"playerLv": 80,
+						"wayId": 302,
+						"targetValue": 9800
+					},
+					{
+						"basisId": 302007,
+						"playerLv": 90,
+						"wayId": 302,
+						"targetValue": 17000
+					},
+					{
+						"basisId": 302008,
+						"playerLv": 100,
+						"wayId": 302,
+						"targetValue": 19000
+					},
+					{
+						"basisId": 302009,
+						"playerLv": 110,
+						"wayId": 302,
+						"targetValue": 22000
+					},
+					{
+						"basisId": 302010,
+						"playerLv": 120,
+						"wayId": 302,
+						"targetValue": 32000
+					},
+					{
+						"basisId": 302011,
+						"playerLv": 130,
+						"wayId": 302,
+						"targetValue": 36000
+					},
+					{
+						"basisId": 302012,
+						"playerLv": 140,
+						"wayId": 302,
+						"targetValue": 45000
+					},
+					{
+						"basisId": 302013,
+						"playerLv": 150,
+						"wayId": 302,
+						"targetValue": 60000
+					},
+					{
+						"basisId": 302014,
+						"playerLv": 160,
+						"wayId": 302,
+						"targetValue": 65000
+					},
+					{
+						"basisId": 302015,
+						"playerLv": 170,
+						"wayId": 302,
+						"targetValue": 70000
+					},
+					{
+						"basisId": 302016,
+						"playerLv": 180,
+						"wayId": 302,
+						"targetValue": 90000
+					}
+				]
+			},
+			{
+				"wayId": 303,
+				"id": 3,
+				"name": "神装\n收集",
+				"systemId": 5,
+				"manual": 0,
+				"jump": 0,
+				"tips": "可参与各种活动或购买礼包收集更多的神装",
+				"targetType": 1,
+				"basis": [
+
+				]
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"name": "妖缘秘术",
+		"icon": 4,
+		"systemId": 78,
+		"way": [
+			{
+				"wayId": 401,
+				"id": 4,
+				"name": "增伤\n秘术",
+				"systemId": 78,
+				"manual": 1,
+				"jump": 1,
+				"targetType": 1,
+				"basis": [
+					{
+						"basisId": 401001,
+						"playerLv": 10,
+						"wayId": 401,
+						"targetValue": 200
+					},
+					{
+						"basisId": 401002,
+						"playerLv": 20,
+						"wayId": 401,
+						"targetValue": 200
+					},
+					{
+						"basisId": 401003,
+						"playerLv": 30,
+						"wayId": 401,
+						"targetValue": 200
+					},
+					{
+						"basisId": 401004,
+						"playerLv": 40,
+						"wayId": 401,
+						"targetValue": 200
+					},
+					{
+						"basisId": 401005,
+						"playerLv": 50,
+						"wayId": 401,
+						"targetValue": 200
+					},
+					{
+						"basisId": 401006,
+						"playerLv": 60,
+						"wayId": 401,
+						"targetValue": 200
+					},
+					{
+						"basisId": 401007,
+						"playerLv": 70,
+						"wayId": 401,
+						"targetValue": 300
+					},
+					{
+						"basisId": 401008,
+						"playerLv": 80,
+						"wayId": 401,
+						"targetValue": 400
+					},
+					{
+						"basisId": 401009,
+						"playerLv": 90,
+						"wayId": 401,
+						"targetValue": 500
+					},
+					{
+						"basisId": 401010,
+						"playerLv": 100,
+						"wayId": 401,
+						"targetValue": 600
+					},
+					{
+						"basisId": 401011,
+						"playerLv": 110,
+						"wayId": 401,
+						"targetValue": 700
+					},
+					{
+						"basisId": 401012,
+						"playerLv": 120,
+						"wayId": 401,
+						"targetValue": 800
+					},
+					{
+						"basisId": 401013,
+						"playerLv": 130,
+						"wayId": 401,
+						"targetValue": 1000
+					},
+					{
+						"basisId": 401014,
+						"playerLv": 140,
+						"wayId": 401,
+						"targetValue": 1200
+					},
+					{
+						"basisId": 401015,
+						"playerLv": 150,
+						"wayId": 401,
+						"targetValue": 1400
+					},
+					{
+						"basisId": 401016,
+						"playerLv": 160,
+						"wayId": 401,
+						"targetValue": 1600
+					},
+					{
+						"basisId": 401017,
+						"playerLv": 170,
+						"wayId": 401,
+						"targetValue": 1800
+					},
+					{
+						"basisId": 401018,
+						"playerLv": 180,
+						"wayId": 401,
+						"targetValue": 2000
+					}
+				]
+			},
+			{
+				"wayId": 402,
+				"id": 4,
+				"name": "减伤\n秘术",
+				"systemId": 78,
+				"manual": 1,
+				"jump": 1,
+				"targetType": 1,
+				"basis": [
+					{
+						"basisId": 402001,
+						"playerLv": 10,
+						"wayId": 402,
+						"targetValue": 200
+					},
+					{
+						"basisId": 402002,
+						"playerLv": 20,
+						"wayId": 402,
+						"targetValue": 200
+					},
+					{
+						"basisId": 402003,
+						"playerLv": 30,
+						"wayId": 402,
+						"targetValue": 200
+					},
+					{
+						"basisId": 402004,
+						"playerLv": 40,
+						"wayId": 402,
+						"targetValue": 200
+					},
+					{
+						"basisId": 402005,
+						"playerLv": 50,
+						"wayId": 402,
+						"targetValue": 200
+					},
+					{
+						"basisId": 402006,
+						"playerLv": 60,
+						"wayId": 402,
+						"targetValue": 200
+					},
+					{
+						"basisId": 402007,
+						"playerLv": 70,
+						"wayId": 402,
+						"targetValue": 300
+					},
+					{
+						"basisId": 402008,
+						"playerLv": 80,
+						"wayId": 402,
+						"targetValue": 400
+					},
+					{
+						"basisId": 402009,
+						"playerLv": 90,
+						"wayId": 402,
+						"targetValue": 500
+					},
+					{
+						"basisId": 402010,
+						"playerLv": 100,
+						"wayId": 402,
+						"targetValue": 600
+					},
+					{
+						"basisId": 402011,
+						"playerLv": 110,
+						"wayId": 402,
+						"targetValue": 700
+					},
+					{
+						"basisId": 402012,
+						"playerLv": 120,
+						"wayId": 402,
+						"targetValue": 800
+					},
+					{
+						"basisId": 402013,
+						"playerLv": 130,
+						"wayId": 402,
+						"targetValue": 1000
+					},
+					{
+						"basisId": 402014,
+						"playerLv": 140,
+						"wayId": 402,
+						"targetValue": 1200
+					},
+					{
+						"basisId": 402015,
+						"playerLv": 150,
+						"wayId": 402,
+						"targetValue": 1400
+					},
+					{
+						"basisId": 402016,
+						"playerLv": 160,
+						"wayId": 402,
+						"targetValue": 1600
+					},
+					{
+						"basisId": 402017,
+						"playerLv": 170,
+						"wayId": 402,
+						"targetValue": 1800
+					},
+					{
+						"basisId": 402018,
+						"playerLv": 180,
+						"wayId": 402,
+						"targetValue": 2000
+					}
+				]
+			}
+		]
+	}
+}

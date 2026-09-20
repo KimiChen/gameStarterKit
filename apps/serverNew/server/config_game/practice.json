@@ -1,0 +1,7424 @@
+{
+	"1001": {
+		"id": 1001,
+		"name": "青苗谷",
+		"mapLv": 1,
+		"audio": "massifBright",
+		"mapRes": 12001,
+		"mapTag": 1,
+		"entLv": 1,
+		"showLv": 1,
+		"more": {
+			"1": {
+				"bossId": 110101,
+				"id": 1001,
+				"order": 1,
+				"waveOrder": 1,
+				"monsterNum": 10,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110101,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110101,
+						"propId": 110991,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110101,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110102,
+				"id": 1001,
+				"order": 2,
+				"waveOrder": 1,
+				"monsterNum": 10,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110102,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110102,
+						"propId": 110992,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110102,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110103,
+				"id": 1001,
+				"order": 3,
+				"waveOrder": 1,
+				"monsterNum": 10,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110103,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110103,
+						"propId": 110993,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110103,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1001,
+				"monsterId": 100101,
+				"order": 1
+			},
+			{
+				"id": 1001,
+				"monsterId": 100102,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1001,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+
+		],
+		"npcAwards": [
+			{
+				"id": 1001,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1001,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1001,
+				"propId": 1002,
+				"num": 5
+			}
+		],
+		"newId": 0
+	},
+	"1002": {
+		"id": 1002,
+		"name": "七岩山",
+		"mapLv": 10,
+		"audio": "massifBright",
+		"mapRes": 12010,
+		"mapTag": 1,
+		"entLv": 10,
+		"showLv": 1,
+		"more": {
+			"1": {
+				"bossId": 110201,
+				"id": 1002,
+				"order": 1,
+				"waveOrder": 2,
+				"monsterNum": 15,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110201,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110201,
+						"propId": 110902,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110201,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110202,
+				"id": 1002,
+				"order": 2,
+				"waveOrder": 2,
+				"monsterNum": 15,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110202,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110202,
+						"propId": 1109022,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110202,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110203,
+				"id": 1002,
+				"order": 3,
+				"waveOrder": 2,
+				"monsterNum": 15,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110203,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110203,
+						"propId": 1109023,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110203,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 110204,
+				"id": 1002,
+				"order": 4,
+				"waveOrder": 2,
+				"monsterNum": 15,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110204,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110204,
+						"propId": 1109024,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110204,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 110205,
+				"id": 1002,
+				"order": 5,
+				"waveOrder": 3,
+				"monsterNum": 15,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110205,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110205,
+						"propId": 1109025,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110205,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 110206,
+				"id": 1002,
+				"order": 6,
+				"waveOrder": 3,
+				"monsterNum": 15,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110206,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110206,
+						"propId": 1109026,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110206,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 110206,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1002,
+				"monsterId": 100201,
+				"order": 1
+			},
+			{
+				"id": 1002,
+				"monsterId": 100202,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1002,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1002,
+				"propId": 710101,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1002,
+				"propId": 710102,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1002,
+				"propId": 710103,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1002,
+				"propId": 710104,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1002,
+				"propId": 710105,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1002,
+				"propId": 710106,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1002,
+				"propId": 720101,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1002,
+				"propId": 720102,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1002,
+				"propId": 720103,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1002,
+				"propId": 720104,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1002,
+				"propId": 720105,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1002,
+				"propId": 720106,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1002,
+				"propId": 730101,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1002,
+				"propId": 730102,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1002,
+				"propId": 730103,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1002,
+				"propId": 730104,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1002,
+				"propId": 730105,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1002,
+				"propId": 730106,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1002,
+				"propId": 740101,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1002,
+				"propId": 740102,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1002,
+				"propId": 740103,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1002,
+				"propId": 740104,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1002,
+				"propId": 740105,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1002,
+				"propId": 740106,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1002,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1002,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1002,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1002,
+				"propId": 1002,
+				"num": 10
+			},
+			{
+				"id": 1002,
+				"propId": 10201,
+				"num": 3
+			}
+		],
+		"newId": 2002
+	},
+	"1003": {
+		"id": 1003,
+		"name": "蝎子洞",
+		"mapLv": 20,
+		"audio": "massifBright",
+		"mapRes": 12020,
+		"mapTag": 1,
+		"entLv": 20,
+		"showLv": 10,
+		"more": {
+			"1": {
+				"bossId": 110301,
+				"id": 1003,
+				"order": 1,
+				"waveOrder": 3,
+				"monsterNum": 25,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110301,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110301,
+						"propId": 110903,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110301,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110302,
+				"id": 1003,
+				"order": 2,
+				"waveOrder": 3,
+				"monsterNum": 25,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110302,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110302,
+						"propId": 1109032,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110302,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110303,
+				"id": 1003,
+				"order": 3,
+				"waveOrder": 3,
+				"monsterNum": 25,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110303,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110303,
+						"propId": 1109033,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110303,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 110304,
+				"id": 1003,
+				"order": 4,
+				"waveOrder": 3,
+				"monsterNum": 25,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110304,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110304,
+						"propId": 1109034,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110304,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 110305,
+				"id": 1003,
+				"order": 5,
+				"waveOrder": 3,
+				"monsterNum": 25,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110305,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110305,
+						"propId": 1109035,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110305,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 110306,
+				"id": 1003,
+				"order": 6,
+				"waveOrder": 3,
+				"monsterNum": 25,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110306,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110306,
+						"propId": 1109036,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110306,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 110306,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1003,
+				"monsterId": 100301,
+				"order": 1
+			},
+			{
+				"id": 1003,
+				"monsterId": 100302,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1003,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1003,
+				"propId": 710111,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1003,
+				"propId": 710112,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1003,
+				"propId": 710113,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1003,
+				"propId": 710114,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1003,
+				"propId": 710115,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1003,
+				"propId": 710116,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1003,
+				"propId": 720111,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1003,
+				"propId": 720112,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1003,
+				"propId": 720113,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1003,
+				"propId": 720114,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1003,
+				"propId": 720115,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1003,
+				"propId": 720116,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1003,
+				"propId": 730111,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1003,
+				"propId": 730112,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1003,
+				"propId": 730113,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1003,
+				"propId": 730114,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1003,
+				"propId": 730115,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1003,
+				"propId": 730116,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1003,
+				"propId": 740111,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1003,
+				"propId": 740112,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1003,
+				"propId": 740113,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1003,
+				"propId": 740114,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1003,
+				"propId": 740115,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1003,
+				"propId": 740116,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1003,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1003,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1003,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1003,
+				"propId": 1002,
+				"num": 20
+			},
+			{
+				"id": 1003,
+				"propId": 10202,
+				"num": 5
+			}
+		],
+		"newId": 2003
+	},
+	"1004": {
+		"id": 1004,
+		"name": "陈塘关",
+		"mapLv": 30,
+		"audio": "waveBright",
+		"mapRes": 12030,
+		"mapTag": 2,
+		"entLv": 30,
+		"showLv": 20,
+		"more": {
+			"1": {
+				"bossId": 110401,
+				"id": 1004,
+				"order": 1,
+				"waveOrder": 3,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110401,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110401,
+						"propId": 110904,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110401,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110402,
+				"id": 1004,
+				"order": 2,
+				"waveOrder": 3,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110402,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110402,
+						"propId": 1109042,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110402,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110403,
+				"id": 1004,
+				"order": 3,
+				"waveOrder": 3,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110403,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110403,
+						"propId": 1109043,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110403,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 110404,
+				"id": 1004,
+				"order": 4,
+				"waveOrder": 3,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110404,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110404,
+						"propId": 1109044,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110404,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 110405,
+				"id": 1004,
+				"order": 5,
+				"waveOrder": 3,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110405,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110405,
+						"propId": 1109045,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110405,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 110406,
+				"id": 1004,
+				"order": 6,
+				"waveOrder": 3,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110406,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110406,
+						"propId": 1109046,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110406,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 110406,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1004,
+				"monsterId": 100401,
+				"order": 1
+			},
+			{
+				"id": 1004,
+				"monsterId": 100402,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1004,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1004,
+				"propId": 710121,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1004,
+				"propId": 710122,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1004,
+				"propId": 710123,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1004,
+				"propId": 710124,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1004,
+				"propId": 710125,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1004,
+				"propId": 710126,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1004,
+				"propId": 720121,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1004,
+				"propId": 720122,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1004,
+				"propId": 720123,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1004,
+				"propId": 720124,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1004,
+				"propId": 720125,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1004,
+				"propId": 720126,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1004,
+				"propId": 730121,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1004,
+				"propId": 730122,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1004,
+				"propId": 730123,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1004,
+				"propId": 730124,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1004,
+				"propId": 730125,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1004,
+				"propId": 730126,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1004,
+				"propId": 740121,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1004,
+				"propId": 740122,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1004,
+				"propId": 740123,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1004,
+				"propId": 740124,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1004,
+				"propId": 740125,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1004,
+				"propId": 740126,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1004,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1004,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1004,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1004,
+				"propId": 1002,
+				"num": 30
+			},
+			{
+				"id": 1004,
+				"propId": 10201,
+				"num": 7
+			}
+		],
+		"newId": 2004
+	},
+	"1005": {
+		"id": 1005,
+		"name": "南海",
+		"mapLv": 40,
+		"audio": "waveBright",
+		"mapRes": 12040,
+		"mapTag": 2,
+		"entLv": 40,
+		"showLv": 30,
+		"more": {
+			"1": {
+				"bossId": 110501,
+				"id": 1005,
+				"order": 1,
+				"waveOrder": 4,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110501,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110501,
+						"propId": 110905,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110501,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110502,
+				"id": 1005,
+				"order": 2,
+				"waveOrder": 4,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110502,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110502,
+						"propId": 110905,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110502,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110503,
+				"id": 1005,
+				"order": 3,
+				"waveOrder": 4,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110503,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110503,
+						"propId": 110905,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110503,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 110504,
+				"id": 1005,
+				"order": 4,
+				"waveOrder": 4,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110504,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110504,
+						"propId": 110905,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110504,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 110505,
+				"id": 1005,
+				"order": 5,
+				"waveOrder": 4,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110505,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110505,
+						"propId": 110905,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110505,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 110506,
+				"id": 1005,
+				"order": 6,
+				"waveOrder": 4,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110506,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110506,
+						"propId": 110905,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110506,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 110506,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1005,
+				"monsterId": 100501,
+				"order": 1
+			},
+			{
+				"id": 1005,
+				"monsterId": 100502,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1005,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1005,
+				"propId": 710131,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1005,
+				"propId": 710132,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1005,
+				"propId": 710133,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1005,
+				"propId": 710134,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1005,
+				"propId": 710135,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1005,
+				"propId": 710136,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1005,
+				"propId": 720131,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1005,
+				"propId": 720132,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1005,
+				"propId": 720133,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1005,
+				"propId": 720134,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1005,
+				"propId": 720135,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1005,
+				"propId": 720136,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1005,
+				"propId": 730131,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1005,
+				"propId": 730132,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1005,
+				"propId": 730133,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1005,
+				"propId": 730134,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1005,
+				"propId": 730135,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1005,
+				"propId": 730136,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1005,
+				"propId": 740131,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1005,
+				"propId": 740132,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1005,
+				"propId": 740133,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1005,
+				"propId": 740134,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1005,
+				"propId": 740135,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1005,
+				"propId": 740136,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1005,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1005,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1005,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1005,
+				"propId": 1002,
+				"num": 40
+			},
+			{
+				"id": 1005,
+				"propId": 10202,
+				"num": 9
+			}
+		],
+		"newId": 2005
+	},
+	"1006": {
+		"id": 1006,
+		"name": "南海龙宫",
+		"mapLv": 50,
+		"audio": "waveBright",
+		"mapRes": 12050,
+		"mapTag": 2,
+		"entLv": 50,
+		"showLv": 40,
+		"more": {
+			"1": {
+				"bossId": 110601,
+				"id": 1006,
+				"order": 1,
+				"waveOrder": 5,
+				"monsterNum": 35,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110601,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110601,
+						"propId": 110906,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110601,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110602,
+				"id": 1006,
+				"order": 2,
+				"waveOrder": 5,
+				"monsterNum": 35,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110602,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110602,
+						"propId": 110906,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110602,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110603,
+				"id": 1006,
+				"order": 3,
+				"waveOrder": 5,
+				"monsterNum": 35,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110603,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110603,
+						"propId": 110906,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110603,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 110604,
+				"id": 1006,
+				"order": 4,
+				"waveOrder": 5,
+				"monsterNum": 35,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110604,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110604,
+						"propId": 110906,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110604,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 110605,
+				"id": 1006,
+				"order": 5,
+				"waveOrder": 5,
+				"monsterNum": 35,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110605,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110605,
+						"propId": 110906,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110605,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 110606,
+				"id": 1006,
+				"order": 6,
+				"waveOrder": 5,
+				"monsterNum": 35,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110606,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110606,
+						"propId": 110906,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110606,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 110606,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1006,
+				"monsterId": 100601,
+				"order": 1
+			},
+			{
+				"id": 1006,
+				"monsterId": 100602,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1006,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1006,
+				"propId": 710141,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1006,
+				"propId": 710142,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1006,
+				"propId": 710143,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1006,
+				"propId": 710144,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1006,
+				"propId": 710145,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1006,
+				"propId": 710146,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1006,
+				"propId": 720141,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1006,
+				"propId": 720142,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1006,
+				"propId": 720143,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1006,
+				"propId": 720144,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1006,
+				"propId": 720145,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1006,
+				"propId": 720146,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1006,
+				"propId": 730141,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1006,
+				"propId": 730142,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1006,
+				"propId": 730143,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1006,
+				"propId": 730144,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1006,
+				"propId": 730145,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1006,
+				"propId": 730146,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1006,
+				"propId": 740141,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1006,
+				"propId": 740142,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1006,
+				"propId": 740143,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1006,
+				"propId": 740144,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1006,
+				"propId": 740145,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1006,
+				"propId": 740146,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1006,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1006,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1006,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1006,
+				"propId": 1002,
+				"num": 50
+			},
+			{
+				"id": 1006,
+				"propId": 10201,
+				"num": 11
+			}
+		],
+		"newId": 2006
+	},
+	"1007": {
+		"id": 1007,
+		"name": "清水河",
+		"mapLv": 60,
+		"audio": "flowBright",
+		"mapRes": 12060,
+		"mapTag": 2,
+		"entLv": 60,
+		"showLv": 50,
+		"more": {
+			"1": {
+				"bossId": 110701,
+				"id": 1007,
+				"order": 1,
+				"waveOrder": 7,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110701,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110701,
+						"propId": 110907,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110701,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110702,
+				"id": 1007,
+				"order": 2,
+				"waveOrder": 8,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110702,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110702,
+						"propId": 110907,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110702,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110703,
+				"id": 1007,
+				"order": 3,
+				"waveOrder": 9,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110703,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110703,
+						"propId": 110907,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110703,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 110704,
+				"id": 1007,
+				"order": 4,
+				"waveOrder": 10,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110704,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110704,
+						"propId": 110907,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110704,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 110705,
+				"id": 1007,
+				"order": 5,
+				"waveOrder": 11,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110705,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110705,
+						"propId": 110907,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110705,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 110706,
+				"id": 1007,
+				"order": 6,
+				"waveOrder": 12,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110706,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110706,
+						"propId": 110907,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110706,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 110706,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1007,
+				"monsterId": 100701,
+				"order": 1
+			},
+			{
+				"id": 1007,
+				"monsterId": 100702,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1007,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1007,
+				"propId": 710151,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1007,
+				"propId": 710152,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1007,
+				"propId": 710153,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1007,
+				"propId": 710154,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1007,
+				"propId": 710155,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1007,
+				"propId": 710156,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1007,
+				"propId": 720151,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1007,
+				"propId": 720152,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1007,
+				"propId": 720153,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1007,
+				"propId": 720154,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1007,
+				"propId": 720155,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1007,
+				"propId": 720156,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1007,
+				"propId": 730151,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1007,
+				"propId": 730152,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1007,
+				"propId": 730153,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1007,
+				"propId": 730154,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1007,
+				"propId": 730155,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1007,
+				"propId": 730156,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1007,
+				"propId": 740151,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1007,
+				"propId": 740152,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1007,
+				"propId": 740153,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1007,
+				"propId": 740154,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1007,
+				"propId": 740155,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1007,
+				"propId": 740156,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1007,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1007,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1007,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1007,
+				"propId": 1002,
+				"num": 60
+			},
+			{
+				"id": 1007,
+				"propId": 10202,
+				"num": 13
+			}
+		],
+		"newId": 2007
+	},
+	"1008": {
+		"id": 1008,
+		"name": "花果山",
+		"mapLv": 70,
+		"audio": "flowBright",
+		"mapRes": 12070,
+		"mapTag": 3,
+		"entLv": 70,
+		"showLv": 60,
+		"more": {
+			"1": {
+				"bossId": 110801,
+				"id": 1008,
+				"order": 1,
+				"waveOrder": 10,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110801,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110801,
+						"propId": 110908,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110801,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110802,
+				"id": 1008,
+				"order": 2,
+				"waveOrder": 20,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110802,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110802,
+						"propId": 110908,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110802,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110803,
+				"id": 1008,
+				"order": 3,
+				"waveOrder": 30,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110803,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110803,
+						"propId": 110908,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110803,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 110804,
+				"id": 1008,
+				"order": 4,
+				"waveOrder": 40,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110804,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110804,
+						"propId": 110908,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110804,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 110805,
+				"id": 1008,
+				"order": 5,
+				"waveOrder": 50,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110805,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110805,
+						"propId": 110908,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110805,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 110806,
+				"id": 1008,
+				"order": 6,
+				"waveOrder": 60,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110806,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110806,
+						"propId": 110908,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110806,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 110806,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1008,
+				"monsterId": 100801,
+				"order": 1
+			},
+			{
+				"id": 1008,
+				"monsterId": 100802,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1008,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1008,
+				"propId": 710161,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1008,
+				"propId": 710162,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1008,
+				"propId": 710163,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1008,
+				"propId": 710164,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1008,
+				"propId": 710165,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1008,
+				"propId": 710166,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1008,
+				"propId": 720161,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1008,
+				"propId": 720162,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1008,
+				"propId": 720163,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1008,
+				"propId": 720164,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1008,
+				"propId": 720165,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1008,
+				"propId": 720166,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1008,
+				"propId": 730161,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1008,
+				"propId": 730162,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1008,
+				"propId": 730163,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1008,
+				"propId": 730164,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1008,
+				"propId": 730165,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1008,
+				"propId": 730166,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1008,
+				"propId": 740161,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1008,
+				"propId": 740162,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1008,
+				"propId": 740163,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1008,
+				"propId": 740164,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1008,
+				"propId": 740165,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1008,
+				"propId": 740166,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1008,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1008,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1008,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1008,
+				"propId": 1002,
+				"num": 70
+			},
+			{
+				"id": 1008,
+				"propId": 10201,
+				"num": 15
+			}
+		],
+		"newId": 2008
+	},
+	"1009": {
+		"id": 1009,
+		"name": "水帘洞",
+		"mapLv": 80,
+		"audio": "flowBright",
+		"mapRes": 12080,
+		"mapTag": 3,
+		"entLv": 80,
+		"showLv": 70,
+		"more": {
+			"1": {
+				"bossId": 110901,
+				"id": 1009,
+				"order": 1,
+				"waveOrder": 20,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110901,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110901,
+						"propId": 110909,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110901,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 110902,
+				"id": 1009,
+				"order": 2,
+				"waveOrder": 30,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110902,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110902,
+						"propId": 110909,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110902,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 110903,
+				"id": 1009,
+				"order": 3,
+				"waveOrder": 40,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110903,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110903,
+						"propId": 110909,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110903,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 110904,
+				"id": 1009,
+				"order": 4,
+				"waveOrder": 50,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110904,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110904,
+						"propId": 110909,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110904,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 110905,
+				"id": 1009,
+				"order": 5,
+				"waveOrder": 60,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110905,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110905,
+						"propId": 110909,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110905,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 110906,
+				"id": 1009,
+				"order": 6,
+				"waveOrder": 70,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 110906,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 110906,
+						"propId": 110909,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 110906,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 110906,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1009,
+				"monsterId": 100901,
+				"order": 1
+			},
+			{
+				"id": 1009,
+				"monsterId": 100902,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1009,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1009,
+				"propId": 710171,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1009,
+				"propId": 710172,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1009,
+				"propId": 710173,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1009,
+				"propId": 710174,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1009,
+				"propId": 710175,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1009,
+				"propId": 710176,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1009,
+				"propId": 720171,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1009,
+				"propId": 720172,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1009,
+				"propId": 720173,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1009,
+				"propId": 720174,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1009,
+				"propId": 720175,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1009,
+				"propId": 720176,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1009,
+				"propId": 730171,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1009,
+				"propId": 730172,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1009,
+				"propId": 730173,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1009,
+				"propId": 730174,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1009,
+				"propId": 730175,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1009,
+				"propId": 730176,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1009,
+				"propId": 740171,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1009,
+				"propId": 740172,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1009,
+				"propId": 740173,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1009,
+				"propId": 740174,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1009,
+				"propId": 740175,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1009,
+				"propId": 740176,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1009,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1009,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1009,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1009,
+				"propId": 1002,
+				"num": 80
+			},
+			{
+				"id": 1009,
+				"propId": 10202,
+				"num": 17
+			}
+		],
+		"newId": 2009
+	},
+	"1010": {
+		"id": 1010,
+		"name": "弱水",
+		"mapLv": 90,
+		"audio": "desertBright",
+		"mapRes": 12090,
+		"mapTag": 3,
+		"entLv": 90,
+		"showLv": 80,
+		"more": {
+			"1": {
+				"bossId": 111001,
+				"id": 1010,
+				"order": 1,
+				"waveOrder": 30,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111001,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111001,
+						"propId": 110910,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111001,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111002,
+				"id": 1010,
+				"order": 2,
+				"waveOrder": 40,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111002,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111002,
+						"propId": 110910,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111002,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111003,
+				"id": 1010,
+				"order": 3,
+				"waveOrder": 50,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111003,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111003,
+						"propId": 110910,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111003,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111004,
+				"id": 1010,
+				"order": 4,
+				"waveOrder": 60,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111004,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111004,
+						"propId": 110910,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111004,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111005,
+				"id": 1010,
+				"order": 5,
+				"waveOrder": 70,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111005,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111005,
+						"propId": 110910,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111005,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111006,
+				"id": 1010,
+				"order": 6,
+				"waveOrder": 80,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111006,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111006,
+						"propId": 110910,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111006,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111006,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1010,
+				"monsterId": 101001,
+				"order": 1
+			},
+			{
+				"id": 1010,
+				"monsterId": 101002,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1010,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1010,
+				"propId": 710181,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1010,
+				"propId": 710182,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1010,
+				"propId": 710183,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1010,
+				"propId": 710184,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1010,
+				"propId": 710185,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1010,
+				"propId": 710186,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1010,
+				"propId": 720181,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1010,
+				"propId": 720182,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1010,
+				"propId": 720183,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1010,
+				"propId": 720184,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1010,
+				"propId": 720185,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1010,
+				"propId": 720186,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1010,
+				"propId": 730181,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1010,
+				"propId": 730182,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1010,
+				"propId": 730183,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1010,
+				"propId": 730184,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1010,
+				"propId": 730185,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1010,
+				"propId": 730186,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1010,
+				"propId": 740181,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1010,
+				"propId": 740182,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1010,
+				"propId": 740183,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1010,
+				"propId": 740184,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1010,
+				"propId": 740185,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1010,
+				"propId": 740186,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1010,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1010,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1010,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1010,
+				"propId": 1002,
+				"num": 90
+			},
+			{
+				"id": 1010,
+				"propId": 10201,
+				"num": 19
+			}
+		],
+		"newId": 2010
+	},
+	"1011": {
+		"id": 1011,
+		"name": "炎沙山",
+		"mapLv": 100,
+		"audio": "desertBright",
+		"mapRes": 12100,
+		"mapTag": 4,
+		"entLv": 100,
+		"showLv": 90,
+		"more": {
+			"1": {
+				"bossId": 111101,
+				"id": 1011,
+				"order": 1,
+				"waveOrder": 40,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111101,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111101,
+						"propId": 110911,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111101,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111102,
+				"id": 1011,
+				"order": 2,
+				"waveOrder": 50,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111102,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111102,
+						"propId": 110911,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111102,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111103,
+				"id": 1011,
+				"order": 3,
+				"waveOrder": 60,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111103,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111103,
+						"propId": 110911,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111103,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111104,
+				"id": 1011,
+				"order": 4,
+				"waveOrder": 70,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111104,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111104,
+						"propId": 110911,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111104,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111105,
+				"id": 1011,
+				"order": 5,
+				"waveOrder": 80,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111105,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111105,
+						"propId": 110911,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111105,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111106,
+				"id": 1011,
+				"order": 6,
+				"waveOrder": 90,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111106,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111106,
+						"propId": 110911,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111106,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111106,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1011,
+				"monsterId": 101101,
+				"order": 1
+			},
+			{
+				"id": 1011,
+				"monsterId": 101102,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1011,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1011,
+				"propId": 710191,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1011,
+				"propId": 710192,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1011,
+				"propId": 710193,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1011,
+				"propId": 710194,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1011,
+				"propId": 710195,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1011,
+				"propId": 710196,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1011,
+				"propId": 720191,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1011,
+				"propId": 720192,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1011,
+				"propId": 720193,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1011,
+				"propId": 720194,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1011,
+				"propId": 720195,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1011,
+				"propId": 720196,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1011,
+				"propId": 730191,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1011,
+				"propId": 730192,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1011,
+				"propId": 730193,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1011,
+				"propId": 730194,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1011,
+				"propId": 730195,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1011,
+				"propId": 730196,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1011,
+				"propId": 740191,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1011,
+				"propId": 740192,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1011,
+				"propId": 740193,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1011,
+				"propId": 740194,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1011,
+				"propId": 740195,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1011,
+				"propId": 740196,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1011,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1011,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1011,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1011,
+				"propId": 1002,
+				"num": 100
+			},
+			{
+				"id": 1011,
+				"propId": 10202,
+				"num": 21
+			}
+		],
+		"newId": 2011
+	},
+	"1012": {
+		"id": 1012,
+		"name": "月泉城",
+		"mapLv": 110,
+		"audio": "desertBright",
+		"mapRes": 12110,
+		"mapTag": 4,
+		"entLv": 110,
+		"showLv": 100,
+		"more": {
+			"1": {
+				"bossId": 111201,
+				"id": 1012,
+				"order": 1,
+				"waveOrder": 50,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111201,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111201,
+						"propId": 110912,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111201,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111202,
+				"id": 1012,
+				"order": 2,
+				"waveOrder": 60,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111202,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111202,
+						"propId": 110912,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111202,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111203,
+				"id": 1012,
+				"order": 3,
+				"waveOrder": 70,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111203,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111203,
+						"propId": 110912,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111203,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111204,
+				"id": 1012,
+				"order": 4,
+				"waveOrder": 80,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111204,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111204,
+						"propId": 110912,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111204,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111205,
+				"id": 1012,
+				"order": 5,
+				"waveOrder": 90,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111205,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111205,
+						"propId": 110912,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111205,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111206,
+				"id": 1012,
+				"order": 6,
+				"waveOrder": 100,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111206,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111206,
+						"propId": 110912,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111206,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111206,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1012,
+				"monsterId": 101201,
+				"order": 1
+			},
+			{
+				"id": 1012,
+				"monsterId": 101202,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1012,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1012,
+				"propId": 710201,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1012,
+				"propId": 710202,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1012,
+				"propId": 710203,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1012,
+				"propId": 710204,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1012,
+				"propId": 710205,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1012,
+				"propId": 710206,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1012,
+				"propId": 720201,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1012,
+				"propId": 720202,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1012,
+				"propId": 720203,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1012,
+				"propId": 720204,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1012,
+				"propId": 720205,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1012,
+				"propId": 720206,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1012,
+				"propId": 730201,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1012,
+				"propId": 730202,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1012,
+				"propId": 730203,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1012,
+				"propId": 730204,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1012,
+				"propId": 730205,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1012,
+				"propId": 730206,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1012,
+				"propId": 740201,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1012,
+				"propId": 740202,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1012,
+				"propId": 740203,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1012,
+				"propId": 740204,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1012,
+				"propId": 740205,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1012,
+				"propId": 740206,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1012,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1012,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1012,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1012,
+				"propId": 1002,
+				"num": 110
+			},
+			{
+				"id": 1012,
+				"propId": 10201,
+				"num": 23
+			}
+		],
+		"newId": 2012
+	},
+	"1013": {
+		"id": 1013,
+		"name": "白孟山",
+		"mapLv": 120,
+		"audio": "iceBright",
+		"mapRes": 12120,
+		"mapTag": 4,
+		"entLv": 120,
+		"showLv": 110,
+		"more": {
+			"1": {
+				"bossId": 111301,
+				"id": 1013,
+				"order": 1,
+				"waveOrder": 60,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111301,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111301,
+						"propId": 110913,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111301,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111302,
+				"id": 1013,
+				"order": 2,
+				"waveOrder": 70,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111302,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111302,
+						"propId": 110913,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111302,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111303,
+				"id": 1013,
+				"order": 3,
+				"waveOrder": 80,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111303,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111303,
+						"propId": 110913,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111303,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111304,
+				"id": 1013,
+				"order": 4,
+				"waveOrder": 90,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111304,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111304,
+						"propId": 110913,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111304,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111305,
+				"id": 1013,
+				"order": 5,
+				"waveOrder": 100,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111305,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111305,
+						"propId": 110913,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111305,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111306,
+				"id": 1013,
+				"order": 6,
+				"waveOrder": 110,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111306,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111306,
+						"propId": 110913,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111306,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111306,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1013,
+				"monsterId": 101301,
+				"order": 1
+			},
+			{
+				"id": 1013,
+				"monsterId": 101302,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1013,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1013,
+				"propId": 710211,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1013,
+				"propId": 710212,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1013,
+				"propId": 710213,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1013,
+				"propId": 710214,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1013,
+				"propId": 710215,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1013,
+				"propId": 710216,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1013,
+				"propId": 720211,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1013,
+				"propId": 720212,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1013,
+				"propId": 720213,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1013,
+				"propId": 720214,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1013,
+				"propId": 720215,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1013,
+				"propId": 720216,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1013,
+				"propId": 730211,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1013,
+				"propId": 730212,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1013,
+				"propId": 730213,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1013,
+				"propId": 730214,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1013,
+				"propId": 730215,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1013,
+				"propId": 730216,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1013,
+				"propId": 740211,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1013,
+				"propId": 740212,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1013,
+				"propId": 740213,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1013,
+				"propId": 740214,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1013,
+				"propId": 740215,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1013,
+				"propId": 740216,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1013,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1013,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1013,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1013,
+				"propId": 1002,
+				"num": 120
+			},
+			{
+				"id": 1013,
+				"propId": 10202,
+				"num": 25
+			}
+		],
+		"newId": 2013
+	},
+	"1014": {
+		"id": 1014,
+		"name": "原水河",
+		"mapLv": 130,
+		"audio": "iceBright",
+		"mapRes": 12130,
+		"mapTag": 5,
+		"entLv": 130,
+		"showLv": 120,
+		"more": {
+			"1": {
+				"bossId": 111401,
+				"id": 1014,
+				"order": 1,
+				"waveOrder": 100,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111401,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111401,
+						"propId": 110914,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111401,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111402,
+				"id": 1014,
+				"order": 2,
+				"waveOrder": 200,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111402,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111402,
+						"propId": 110914,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111402,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111403,
+				"id": 1014,
+				"order": 3,
+				"waveOrder": 300,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111403,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111403,
+						"propId": 110914,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111403,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111404,
+				"id": 1014,
+				"order": 4,
+				"waveOrder": 400,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111404,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111404,
+						"propId": 110914,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111404,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111405,
+				"id": 1014,
+				"order": 5,
+				"waveOrder": 500,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111405,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111405,
+						"propId": 110914,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111405,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111406,
+				"id": 1014,
+				"order": 6,
+				"waveOrder": 600,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111406,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111406,
+						"propId": 110914,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111406,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111406,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1014,
+				"monsterId": 101401,
+				"order": 1
+			},
+			{
+				"id": 1014,
+				"monsterId": 101402,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1014,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1014,
+				"propId": 710221,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1014,
+				"propId": 710222,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1014,
+				"propId": 710223,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1014,
+				"propId": 710224,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1014,
+				"propId": 710225,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1014,
+				"propId": 710226,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1014,
+				"propId": 720221,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1014,
+				"propId": 720222,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1014,
+				"propId": 720223,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1014,
+				"propId": 720224,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1014,
+				"propId": 720225,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1014,
+				"propId": 720226,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1014,
+				"propId": 730221,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1014,
+				"propId": 730222,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1014,
+				"propId": 730223,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1014,
+				"propId": 730224,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1014,
+				"propId": 730225,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1014,
+				"propId": 730226,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1014,
+				"propId": 740221,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1014,
+				"propId": 740222,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1014,
+				"propId": 740223,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1014,
+				"propId": 740224,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1014,
+				"propId": 740225,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1014,
+				"propId": 740226,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1014,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1014,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1014,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1014,
+				"propId": 1002,
+				"num": 130
+			},
+			{
+				"id": 1014,
+				"propId": 10201,
+				"num": 27
+			}
+		],
+		"newId": 2014
+	},
+	"1015": {
+		"id": 1015,
+		"name": "北狄国",
+		"mapLv": 140,
+		"audio": "iceBright",
+		"mapRes": 12140,
+		"mapTag": 5,
+		"entLv": 140,
+		"showLv": 130,
+		"more": {
+			"1": {
+				"bossId": 111501,
+				"id": 1015,
+				"order": 1,
+				"waveOrder": 200,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111501,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111501,
+						"propId": 110915,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111501,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111502,
+				"id": 1015,
+				"order": 2,
+				"waveOrder": 300,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111502,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111502,
+						"propId": 110915,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111502,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111503,
+				"id": 1015,
+				"order": 3,
+				"waveOrder": 400,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111503,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111503,
+						"propId": 110915,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111503,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111504,
+				"id": 1015,
+				"order": 4,
+				"waveOrder": 500,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111504,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111504,
+						"propId": 110915,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111504,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111505,
+				"id": 1015,
+				"order": 5,
+				"waveOrder": 600,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111505,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111505,
+						"propId": 110915,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111505,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111506,
+				"id": 1015,
+				"order": 6,
+				"waveOrder": 700,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111506,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111506,
+						"propId": 110915,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111506,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111506,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1015,
+				"monsterId": 101501,
+				"order": 1
+			},
+			{
+				"id": 1015,
+				"monsterId": 101502,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1015,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1015,
+				"propId": 710231,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1015,
+				"propId": 710232,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1015,
+				"propId": 710233,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1015,
+				"propId": 710234,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1015,
+				"propId": 710235,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1015,
+				"propId": 710236,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1015,
+				"propId": 720231,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1015,
+				"propId": 720232,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1015,
+				"propId": 720233,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1015,
+				"propId": 720234,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1015,
+				"propId": 720235,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1015,
+				"propId": 720236,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1015,
+				"propId": 730231,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1015,
+				"propId": 730232,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1015,
+				"propId": 730233,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1015,
+				"propId": 730234,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1015,
+				"propId": 730235,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1015,
+				"propId": 730236,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1015,
+				"propId": 740231,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1015,
+				"propId": 740232,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1015,
+				"propId": 740233,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1015,
+				"propId": 740234,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1015,
+				"propId": 740235,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1015,
+				"propId": 740236,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1015,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1015,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1015,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1015,
+				"propId": 1002,
+				"num": 140
+			},
+			{
+				"id": 1015,
+				"propId": 10202,
+				"num": 29
+			}
+		],
+		"newId": 2015
+	},
+	"1016": {
+		"id": 1016,
+		"name": "诸钩谷",
+		"mapLv": 150,
+		"audio": "graveBright",
+		"mapRes": 12150,
+		"mapTag": 5,
+		"entLv": 150,
+		"showLv": 140,
+		"more": {
+			"1": {
+				"bossId": 111601,
+				"id": 1016,
+				"order": 1,
+				"waveOrder": 300,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111601,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111601,
+						"propId": 110916,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111601,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111602,
+				"id": 1016,
+				"order": 2,
+				"waveOrder": 400,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111602,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111602,
+						"propId": 110916,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111602,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111603,
+				"id": 1016,
+				"order": 3,
+				"waveOrder": 500,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111603,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111603,
+						"propId": 110916,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111603,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111604,
+				"id": 1016,
+				"order": 4,
+				"waveOrder": 600,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111604,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111604,
+						"propId": 110916,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111604,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111605,
+				"id": 1016,
+				"order": 5,
+				"waveOrder": 700,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111605,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111605,
+						"propId": 110916,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111605,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111606,
+				"id": 1016,
+				"order": 6,
+				"waveOrder": 800,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111606,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111606,
+						"propId": 110916,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111606,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111606,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1016,
+				"monsterId": 101601,
+				"order": 1
+			},
+			{
+				"id": 1016,
+				"monsterId": 101602,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1016,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1016,
+				"propId": 710241,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1016,
+				"propId": 710242,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1016,
+				"propId": 710243,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1016,
+				"propId": 710244,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1016,
+				"propId": 710245,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1016,
+				"propId": 710246,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1016,
+				"propId": 720241,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1016,
+				"propId": 720242,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1016,
+				"propId": 720243,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1016,
+				"propId": 720244,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1016,
+				"propId": 720245,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1016,
+				"propId": 720246,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1016,
+				"propId": 730241,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1016,
+				"propId": 730242,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1016,
+				"propId": 730243,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1016,
+				"propId": 730244,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1016,
+				"propId": 730245,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1016,
+				"propId": 730246,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1016,
+				"propId": 740241,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1016,
+				"propId": 740242,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1016,
+				"propId": 740243,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1016,
+				"propId": 740244,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1016,
+				"propId": 740245,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1016,
+				"propId": 740246,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1016,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1016,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1016,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1016,
+				"propId": 1002,
+				"num": 150
+			},
+			{
+				"id": 1016,
+				"propId": 10201,
+				"num": 31
+			}
+		],
+		"newId": 2016
+	},
+	"1017": {
+		"id": 1017,
+		"name": "射姑遗址",
+		"mapLv": 160,
+		"audio": "graveBright",
+		"mapRes": 12160,
+		"mapTag": 6,
+		"entLv": 160,
+		"showLv": 150,
+		"more": {
+			"1": {
+				"bossId": 111701,
+				"id": 1017,
+				"order": 1,
+				"waveOrder": 400,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111701,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111701,
+						"propId": 110917,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111701,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111702,
+				"id": 1017,
+				"order": 2,
+				"waveOrder": 500,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111702,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111702,
+						"propId": 110917,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111702,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111703,
+				"id": 1017,
+				"order": 3,
+				"waveOrder": 600,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111703,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111703,
+						"propId": 110917,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111703,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111704,
+				"id": 1017,
+				"order": 4,
+				"waveOrder": 700,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111704,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111704,
+						"propId": 110917,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111704,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111705,
+				"id": 1017,
+				"order": 5,
+				"waveOrder": 800,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111705,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111705,
+						"propId": 110917,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111705,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111706,
+				"id": 1017,
+				"order": 6,
+				"waveOrder": 900,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111706,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111706,
+						"propId": 110917,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111706,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111706,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1017,
+				"monsterId": 101701,
+				"order": 1
+			},
+			{
+				"id": 1017,
+				"monsterId": 101702,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1017,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1017,
+				"propId": 710251,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1017,
+				"propId": 710252,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1017,
+				"propId": 710253,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1017,
+				"propId": 710254,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1017,
+				"propId": 710255,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1017,
+				"propId": 710256,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1017,
+				"propId": 720251,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1017,
+				"propId": 720252,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1017,
+				"propId": 720253,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1017,
+				"propId": 720254,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1017,
+				"propId": 720255,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1017,
+				"propId": 720256,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1017,
+				"propId": 730251,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1017,
+				"propId": 730252,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1017,
+				"propId": 730253,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1017,
+				"propId": 730254,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1017,
+				"propId": 730255,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1017,
+				"propId": 730256,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1017,
+				"propId": 740251,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1017,
+				"propId": 740252,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1017,
+				"propId": 740253,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1017,
+				"propId": 740254,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1017,
+				"propId": 740255,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1017,
+				"propId": 740256,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1017,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1017,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1017,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1017,
+				"propId": 1002,
+				"num": 160
+			},
+			{
+				"id": 1017,
+				"propId": 10202,
+				"num": 33
+			}
+		],
+		"newId": 2017
+	},
+	"1018": {
+		"id": 1018,
+		"name": "封魂山",
+		"mapLv": 170,
+		"audio": "graveBright",
+		"mapRes": 12170,
+		"mapTag": 6,
+		"entLv": 170,
+		"showLv": 160,
+		"more": {
+			"1": {
+				"bossId": 111801,
+				"id": 1018,
+				"order": 1,
+				"waveOrder": 500,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111801,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111801,
+						"propId": 110918,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111801,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111802,
+				"id": 1018,
+				"order": 2,
+				"waveOrder": 600,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111802,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111802,
+						"propId": 110918,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111802,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111803,
+				"id": 1018,
+				"order": 3,
+				"waveOrder": 700,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111803,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111803,
+						"propId": 110918,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111803,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111804,
+				"id": 1018,
+				"order": 4,
+				"waveOrder": 800,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111804,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111804,
+						"propId": 110918,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111804,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111805,
+				"id": 1018,
+				"order": 5,
+				"waveOrder": 900,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111805,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111805,
+						"propId": 110918,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111805,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111806,
+				"id": 1018,
+				"order": 6,
+				"waveOrder": 1000,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111806,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111806,
+						"propId": 110918,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111806,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111806,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1018,
+				"monsterId": 101801,
+				"order": 1
+			},
+			{
+				"id": 1018,
+				"monsterId": 101802,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1018,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1018,
+				"propId": 710261,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1018,
+				"propId": 710262,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1018,
+				"propId": 710263,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1018,
+				"propId": 710264,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1018,
+				"propId": 710265,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1018,
+				"propId": 710266,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1018,
+				"propId": 720261,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1018,
+				"propId": 720262,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1018,
+				"propId": 720263,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1018,
+				"propId": 720264,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1018,
+				"propId": 720265,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1018,
+				"propId": 720266,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1018,
+				"propId": 730261,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1018,
+				"propId": 730262,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1018,
+				"propId": 730263,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1018,
+				"propId": 730264,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1018,
+				"propId": 730265,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1018,
+				"propId": 730266,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1018,
+				"propId": 740261,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1018,
+				"propId": 740262,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1018,
+				"propId": 740263,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1018,
+				"propId": 740264,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1018,
+				"propId": 740265,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1018,
+				"propId": 740266,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1018,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1018,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1018,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1018,
+				"propId": 1002,
+				"num": 170
+			},
+			{
+				"id": 1018,
+				"propId": 10201,
+				"num": 35
+			}
+		],
+		"newId": 2018
+	},
+	"1019": {
+		"id": 1019,
+		"name": "昆仑墟",
+		"mapLv": 180,
+		"audio": "highlandBright",
+		"mapRes": 12180,
+		"mapTag": 6,
+		"entLv": 180,
+		"showLv": 170,
+		"more": {
+			"1": {
+				"bossId": 111901,
+				"id": 1019,
+				"order": 1,
+				"waveOrder": 600,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111901,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111901,
+						"propId": 110919,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111901,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"2": {
+				"bossId": 111902,
+				"id": 1019,
+				"order": 2,
+				"waveOrder": 700,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111902,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111902,
+						"propId": 110919,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111902,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"3": {
+				"bossId": 111903,
+				"id": 1019,
+				"order": 3,
+				"waveOrder": 800,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111903,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111903,
+						"propId": 110919,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111903,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"4": {
+				"bossId": 111904,
+				"id": 1019,
+				"order": 4,
+				"waveOrder": 900,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111904,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111904,
+						"propId": 110919,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111904,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"5": {
+				"bossId": 111905,
+				"id": 1019,
+				"order": 5,
+				"waveOrder": 1000,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111905,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111905,
+						"propId": 110919,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111905,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+
+				]
+			},
+			"6": {
+				"bossId": 111906,
+				"id": 1019,
+				"order": 6,
+				"waveOrder": 1100,
+				"monsterNum": 30,
+				"batchNum": 10,
+				"bossTime": 60,
+				"bossAwards1": [
+					{
+						"bossId": 111906,
+						"propId": 1004,
+						"num": 100
+					},
+					{
+						"bossId": 111906,
+						"propId": 110919,
+						"num": 1
+					}
+				],
+				"bossAwards2": [
+					{
+						"bossId": 111906,
+						"propId": 0,
+						"num": 1,
+						"pro": 100
+					}
+				],
+				"bossAwards3": [
+					{
+						"bossId": 111906,
+						"propId": 1019,
+						"num": 1
+					}
+				]
+			}
+		},
+		"littleMonster": [
+			{
+				"id": 1019,
+				"monsterId": 101901,
+				"order": 1
+			},
+			{
+				"id": 1019,
+				"monsterId": 101902,
+				"order": 2
+			}
+		],
+		"littleMonsterAward1": [
+			{
+				"id": 1019,
+				"propId": 1004,
+				"num": 1
+			}
+		],
+		"littleMonsterAward2": [
+			{
+				"id": 1019,
+				"propId": 710271,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1019,
+				"propId": 710272,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1019,
+				"propId": 710273,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1019,
+				"propId": 710274,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1019,
+				"propId": 710275,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1019,
+				"propId": 710276,
+				"num": 1,
+				"pro": 1700
+			},
+			{
+				"id": 1019,
+				"propId": 720271,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1019,
+				"propId": 720272,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1019,
+				"propId": 720273,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1019,
+				"propId": 720274,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1019,
+				"propId": 720275,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1019,
+				"propId": 720276,
+				"num": 1,
+				"pro": 350
+			},
+			{
+				"id": 1019,
+				"propId": 730271,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1019,
+				"propId": 730272,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1019,
+				"propId": 730273,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1019,
+				"propId": 730274,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1019,
+				"propId": 730275,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1019,
+				"propId": 730276,
+				"num": 1,
+				"pro": 6
+			},
+			{
+				"id": 1019,
+				"propId": 740271,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1019,
+				"propId": 740272,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1019,
+				"propId": 740273,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1019,
+				"propId": 740274,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1019,
+				"propId": 740275,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1019,
+				"propId": 740276,
+				"num": 1,
+				"pro": 1
+			},
+			{
+				"id": 1019,
+				"propId": 0,
+				"num": 1,
+				"pro": 587658
+			}
+		],
+		"npcAwards": [
+			{
+				"id": 1019,
+				"propId": 1002,
+				"num": 0
+			},
+			{
+				"id": 1019,
+				"propId": 10202,
+				"num": 0
+			}
+		],
+		"wait": [
+			{
+				"id": 1019,
+				"propId": 1002,
+				"num": 180
+			},
+			{
+				"id": 1019,
+				"propId": 10202,
+				"num": 37
+			}
+		],
+		"newId": 2019
+	}
+}

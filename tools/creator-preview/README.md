@@ -87,7 +87,13 @@ SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观�
   卡片完整可见时保持当前偏移，否则尽量居中并约束到最大偏移。滚动后重新遍历、确认点击中心在视口内，
   最后通过 CDP 发真实鼠标点击；不直接调用 SettingsLogic 或入口回调。
 - **页面必须可见**：`document.hidden` 时没有 rAF，Cocos 不启动——不要用应用内隐藏的浏览器面板，脚本会 `Page.bringToFront`。
-- **编辑器重编译**：Creator 只在应用激活时重编译脚本，改了源码先激活一次 Creator（`osascript -e 'tell application "CocosCreator" to activate'`）再跑，否则预览拿的是旧 chunk。
+- **预览视口要与竖屏设计匹配**：先看报告的 `boot.canvas` / `boot.visible`；若目标节点中心已落在可见画布外，CDP 点击会成为 no-op，不能误判为业务关闭失效。先在 Creator 预览工具栏切竖屏设备（如 iPhone 14 Pro）或改用足够高的 Chrome 窗口后重跑；`--preview` 只切服务端口，不会修正视口。
+- **编辑器重编译要重启进程，不能只 touch**：Creator 只在应用激活时重编译脚本，但 2026-09-20 实测**激活 + touch 源文件都不够**——
+  `temp/programming/packer-driver/targets/preview/chunks/` 会一直停在旧产物，预览拿的是旧 chunk（症状是新增的函数在 chunk 里零命中，
+  而业务表现是「改了代码但行为没变」）。可靠做法是 kill 掉编辑器进程再 `open -n -a CocosCreator --args --project <工程>` 起新实例，
+  然后**在预览 chunk 里 grep 一个只属于本次改动的标记**确认真的重建了，再去跑驱动。
+  ⚠ 若启动后报 `bad option: --project`，是宿主环境注入了 `ELECTRON_RUN_AS_NODE=1` / `NODE_OPTIONS`——
+  用 `env -u NODE_OPTIONS -u ELECTRON_RUN_AS_NODE -u NODE_ENV` 包一层启动；这条失败是**静默**的（进程不报错就没了）。
 - **有些路径要先有资源**：皮肤装备/合成要求账号已拥有第二件皮肤或够数的碎片（种完 `gp:snake:user` 的
   `ownedSkinIds` / `fragmentBalances` 后**必须重启游戏服**——`cosmeticProfile` 每进程按 uid 只 hydrate 一次）；
   arenaShop 的成功路径要有金币。
@@ -97,9 +103,38 @@ SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观�
   ON DUPLICATE KEY UPDATE balance = 100`，再清掉 `*cache:currency*` 键。
 - **兑换码是一次性的**：同一 dev 账号重跑 `redeem` 得到 `already-claimed`，属预期；要走成功路径换 `--code`（服务端码表见 `apps/plugins/redeem`）。
 
+## 原生通道（native）预览
+
+`run.mjs` 驱动的始终是**默认 Colyseus/GameRoom** 通道。`native-lobby.mjs` 用 `?lobby=native&lobbyUrl=<ws>` 在**同一个** Creator 预览里
+驱动**原生 Lobby** 通道（登录 → 选服 → Lobby ready → 查询/写入 → 运营强制下线 4903 → 重新登录），`native-lobby-stack.mjs` 一键把
+本地 WebPlatform 副本 + serverNew 原生 Lobby +（按需）旧 `apps/server` 起齐并在 `finally` 回收。
+
+```bash
+node tools/creator-preview/native-lobby-stack.mjs --secret <gmSecret> --out /tmp/native-gui
+```
+
+- **前置多一个「本地 WebPlatform 副本」**：原生 Lobby **每次 RPC 前都回源复验** `POST /v1/internal/sessions/verify`，而真实 WebPlatform
+  是独立服务、不在本仓。`apps/serverNew/server/scripts/verify/webplatform-local.cjs` 按契约补了 Public `:2570` + Internal `:2571`；
+  **唯一非真实件只在「账号签发」一层，属非生产件**——它给不出「对真实身份服务验证过」的结论。另需回 CORS 预检：客户端对每个请求都设
+  `Content-Type: application/json`，连 `GET /v1/areas` 也要先过 `OPTIONS`，缺了会报 `WebPlatform 区服目录加载失败 (status=0)`。
+- **同一个 devKey 恒同一个账号，换号要显式给 `?devKey=`**：预览身份取自 `?devKey=`（缺省 `dev_local`），
+  副本按 `dev-` + `sha256("<devKey>:<serverId>")[:16]` 派生 uid。所以**两个浏览器打开同一个 URL 必然是同一个号**，
+  不是缓存问题——换号就换这个参数（非法值 warn + 回落 `dev_local`，⛔ 故意不抛错）。
+  客户端不把 token 存 `localStorage`，所以同一浏览器开两个标签页、只要 `?devKey=` 不同就是两个号。
+  改了客户端源码**必须重启 Creator 进程**才会重编译（激活 + touch 都不够）。
+- **单按钮模态必须点按钮本身**：`SessionCoordinator` 阻塞在 `await navigator.prompt(...)` 上直到按钮被点，**它自己不会超时**。
+  点「提示正文那枚 label 的中心」会落在按钮上方约 116px 的空白处（`ConfirmButton` 是 255×102，`Confirm/Message` 在它上方），
+  点击成为 no-op，现象是「提示已经出现、但下一步永远等不到」的假超时。
+- **面板重开保留滚动偏移**：`SettingsView.render` 用 `Math.min(offset, …)` 夹取而**不归零**，所以「通用设置」这类首行卡片可能停在裁剪
+  视口上方——它在 walk 里依然存在、`center` 也非空，但点击坐标落在视口外，**点击不报错、只是什么都没发生**。用
+  `runner.tapSettingsCard(name)`（先 `scrollToOffset` 滚入视口，再重读坐标并断言点击中心在视口内）；⛔ 不要 `find({name})` 之后直接点。
+- **socket 断言要排除预览自身的通道**：预览页有一条 `ws://<preview>/socket.io/?EIO=…` 热重载连接，把它当成游戏连接会误判端点；
+  游戏连接的断言只在登录之后做，并显式排除预览 host。
+
 ## 文件
 
 - `lib.mjs`：纯函数（`parseArgs`、`sceneUuidFromMeta`、`rewriteSceneQuery`、`worldToPage`、`selectNodes`、`nearestByRow`）+ 最小 CDP 客户端 + `openScene`；⛔ 零 npm 依赖（Node 22+ 自带 `WebSocket`/`fetch`）。
 - `run.mjs`：场景与报告。
+- `native-lobby.mjs` / `native-lobby-stack.mjs`：原生 Lobby 通道的场景与一键编排（见上节）。
 - `slg.mjs`：SLG 地图场景与公开 UI 证据解析。只遍历渲染节点/文本、发送普通 CDP 点击/拖动/滚轮，不访问页面 Logic、RPC 端口或私有相机字段；场景只验证阶段 1，行军面板和房间 AOI 不在本轮范围。
 - 钉：`apps/server/test/creator-preview-tool.test.ts`。

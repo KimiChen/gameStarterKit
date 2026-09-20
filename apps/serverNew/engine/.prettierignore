@@ -1,0 +1,36 @@
+# ignore built files
+dist/
+build/
+config_game/
+src/share/protocols/serviceProto.ts
+
+# ignore log files
+logs/
+*.log
+npm-debug.log*
+
+# ignore dependencies
+node_modules/
+
+# ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# ignore images
+*.png
+*.jpg
+
+# ignore lock files
+package-lock.json
+yarn.lock
+
+# ignore config files
+.env
+.prettierrc
+
+# ignore test coverage
+coverage/
+
+# ignore IDE files
+.idea/
+.vscode/

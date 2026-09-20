@@ -1,0 +1,1138 @@
+{
+	"31011": {
+		"skillId": 31011,
+		"icon": 31011,
+		"fp": 500,
+		"godId": 101,
+		"pro": 131,
+		"quality": 2
+	},
+	"31012": {
+		"skillId": 31012,
+		"icon": 31012,
+		"fp": 600,
+		"godId": 102,
+		"pro": 68,
+		"quality": 3
+	},
+	"31013": {
+		"skillId": 31013,
+		"icon": 31013,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31014": {
+		"skillId": 31014,
+		"icon": 31014,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31015": {
+		"skillId": 31015,
+		"icon": 31015,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31016": {
+		"skillId": 31016,
+		"icon": 31016,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31021": {
+		"skillId": 31021,
+		"icon": 31021,
+		"fp": 500,
+		"godId": 101,
+		"pro": 131,
+		"quality": 2
+	},
+	"31022": {
+		"skillId": 31022,
+		"icon": 31022,
+		"fp": 600,
+		"godId": 102,
+		"pro": 68,
+		"quality": 3
+	},
+	"31023": {
+		"skillId": 31023,
+		"icon": 31023,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31024": {
+		"skillId": 31024,
+		"icon": 31024,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31025": {
+		"skillId": 31025,
+		"icon": 31025,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31026": {
+		"skillId": 31026,
+		"icon": 31026,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31032": {
+		"skillId": 31032,
+		"icon": 31032,
+		"fp": 600,
+		"godId": 102,
+		"pro": 68,
+		"quality": 3
+	},
+	"31033": {
+		"skillId": 31033,
+		"icon": 31033,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31034": {
+		"skillId": 31034,
+		"icon": 31034,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31035": {
+		"skillId": 31035,
+		"icon": 31035,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31036": {
+		"skillId": 31036,
+		"icon": 31036,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31042": {
+		"skillId": 31042,
+		"icon": 31042,
+		"fp": 600,
+		"godId": 102,
+		"pro": 68,
+		"quality": 3
+	},
+	"31043": {
+		"skillId": 31043,
+		"icon": 31043,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31044": {
+		"skillId": 31044,
+		"icon": 31044,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31045": {
+		"skillId": 31045,
+		"icon": 31045,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31046": {
+		"skillId": 31046,
+		"icon": 31046,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31053": {
+		"skillId": 31053,
+		"icon": 31053,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31054": {
+		"skillId": 31054,
+		"icon": 31054,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31055": {
+		"skillId": 31055,
+		"icon": 31055,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31056": {
+		"skillId": 31056,
+		"icon": 31056,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31063": {
+		"skillId": 31063,
+		"icon": 31063,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31064": {
+		"skillId": 31064,
+		"icon": 31064,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31065": {
+		"skillId": 31065,
+		"icon": 31065,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31066": {
+		"skillId": 31066,
+		"icon": 31066,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31073": {
+		"skillId": 31073,
+		"icon": 31073,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31074": {
+		"skillId": 31074,
+		"icon": 31074,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31075": {
+		"skillId": 31075,
+		"icon": 31075,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31076": {
+		"skillId": 31076,
+		"icon": 31076,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31083": {
+		"skillId": 31083,
+		"icon": 31083,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31084": {
+		"skillId": 31084,
+		"icon": 31084,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31085": {
+		"skillId": 31085,
+		"icon": 31085,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31086": {
+		"skillId": 31086,
+		"icon": 31086,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31093": {
+		"skillId": 31093,
+		"icon": 31093,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31094": {
+		"skillId": 31094,
+		"icon": 31094,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31095": {
+		"skillId": 31095,
+		"icon": 31095,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31096": {
+		"skillId": 31096,
+		"icon": 31096,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31103": {
+		"skillId": 31103,
+		"icon": 31103,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31104": {
+		"skillId": 31104,
+		"icon": 31104,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31105": {
+		"skillId": 31105,
+		"icon": 31105,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31106": {
+		"skillId": 31106,
+		"icon": 31106,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"31113": {
+		"skillId": 31113,
+		"icon": 31113,
+		"fp": 700,
+		"godId": 103,
+		"pro": 10,
+		"quality": 4
+	},
+	"31114": {
+		"skillId": 31114,
+		"icon": 31114,
+		"fp": 800,
+		"godId": 104,
+		"pro": 5,
+		"quality": 6
+	},
+	"31115": {
+		"skillId": 31115,
+		"icon": 31115,
+		"fp": 900,
+		"godId": 105,
+		"pro": 2,
+		"quality": 8
+	},
+	"31116": {
+		"skillId": 31116,
+		"icon": 31116,
+		"fp": 1000,
+		"godId": 106,
+		"pro": 1,
+		"quality": 10
+	},
+	"32011": {
+		"skillId": 32011,
+		"icon": 32011,
+		"fp": 500,
+		"godId": 201,
+		"pro": 131,
+		"quality": 2
+	},
+	"32012": {
+		"skillId": 32012,
+		"icon": 32012,
+		"fp": 600,
+		"godId": 202,
+		"pro": 68,
+		"quality": 3
+	},
+	"32013": {
+		"skillId": 32013,
+		"icon": 32013,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32014": {
+		"skillId": 32014,
+		"icon": 32014,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32015": {
+		"skillId": 32015,
+		"icon": 32015,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32016": {
+		"skillId": 32016,
+		"icon": 32016,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"32021": {
+		"skillId": 32021,
+		"icon": 32021,
+		"fp": 500,
+		"godId": 201,
+		"pro": 130,
+		"quality": 2
+	},
+	"32022": {
+		"skillId": 32022,
+		"icon": 32022,
+		"fp": 600,
+		"godId": 202,
+		"pro": 68,
+		"quality": 3
+	},
+	"32023": {
+		"skillId": 32023,
+		"icon": 32023,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32024": {
+		"skillId": 32024,
+		"icon": 32024,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32025": {
+		"skillId": 32025,
+		"icon": 32025,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32026": {
+		"skillId": 32026,
+		"icon": 32026,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"32032": {
+		"skillId": 32032,
+		"icon": 32032,
+		"fp": 600,
+		"godId": 202,
+		"pro": 68,
+		"quality": 3
+	},
+	"32033": {
+		"skillId": 32033,
+		"icon": 32033,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32034": {
+		"skillId": 32034,
+		"icon": 32034,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32035": {
+		"skillId": 32035,
+		"icon": 32035,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32036": {
+		"skillId": 32036,
+		"icon": 32036,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"32042": {
+		"skillId": 32042,
+		"icon": 32042,
+		"fp": 600,
+		"godId": 202,
+		"pro": 68,
+		"quality": 3
+	},
+	"32043": {
+		"skillId": 32043,
+		"icon": 32043,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32044": {
+		"skillId": 32044,
+		"icon": 32044,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32045": {
+		"skillId": 32045,
+		"icon": 32045,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32046": {
+		"skillId": 32046,
+		"icon": 32046,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"32053": {
+		"skillId": 32053,
+		"icon": 32053,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32054": {
+		"skillId": 32054,
+		"icon": 32054,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32055": {
+		"skillId": 32055,
+		"icon": 32055,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32056": {
+		"skillId": 32056,
+		"icon": 32056,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"32063": {
+		"skillId": 32063,
+		"icon": 32063,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32064": {
+		"skillId": 32064,
+		"icon": 32064,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32065": {
+		"skillId": 32065,
+		"icon": 32065,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32066": {
+		"skillId": 32066,
+		"icon": 32066,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"32073": {
+		"skillId": 32073,
+		"icon": 32073,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32074": {
+		"skillId": 32074,
+		"icon": 32074,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32075": {
+		"skillId": 32075,
+		"icon": 32075,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32076": {
+		"skillId": 32076,
+		"icon": 32076,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"32083": {
+		"skillId": 32083,
+		"icon": 32083,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32084": {
+		"skillId": 32084,
+		"icon": 32084,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32085": {
+		"skillId": 32085,
+		"icon": 32085,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32086": {
+		"skillId": 32086,
+		"icon": 32086,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"32093": {
+		"skillId": 32093,
+		"icon": 32093,
+		"fp": 700,
+		"godId": 203,
+		"pro": 10,
+		"quality": 4
+	},
+	"32094": {
+		"skillId": 32094,
+		"icon": 32094,
+		"fp": 800,
+		"godId": 204,
+		"pro": 5,
+		"quality": 6
+	},
+	"32095": {
+		"skillId": 32095,
+		"icon": 32095,
+		"fp": 900,
+		"godId": 205,
+		"pro": 2,
+		"quality": 8
+	},
+	"32096": {
+		"skillId": 32096,
+		"icon": 32096,
+		"fp": 1000,
+		"godId": 206,
+		"pro": 1,
+		"quality": 10
+	},
+	"33011": {
+		"skillId": 33011,
+		"icon": 33011,
+		"fp": 500,
+		"godId": 301,
+		"pro": 120,
+		"quality": 2
+	},
+	"33012": {
+		"skillId": 33012,
+		"icon": 33012,
+		"fp": 600,
+		"godId": 302,
+		"pro": 68,
+		"quality": 3
+	},
+	"33013": {
+		"skillId": 33013,
+		"icon": 33013,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33014": {
+		"skillId": 33014,
+		"icon": 33014,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33015": {
+		"skillId": 33015,
+		"icon": 33015,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33016": {
+		"skillId": 33016,
+		"icon": 33016,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	},
+	"33021": {
+		"skillId": 33021,
+		"icon": 33021,
+		"fp": 500,
+		"godId": 301,
+		"pro": 120,
+		"quality": 2
+	},
+	"33022": {
+		"skillId": 33022,
+		"icon": 33022,
+		"fp": 600,
+		"godId": 302,
+		"pro": 68,
+		"quality": 3
+	},
+	"33023": {
+		"skillId": 33023,
+		"icon": 33023,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33024": {
+		"skillId": 33024,
+		"icon": 33024,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33025": {
+		"skillId": 33025,
+		"icon": 33025,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33026": {
+		"skillId": 33026,
+		"icon": 33026,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	},
+	"33031": {
+		"skillId": 33031,
+		"icon": 33031,
+		"fp": 500,
+		"godId": 301,
+		"pro": 120,
+		"quality": 2
+	},
+	"33032": {
+		"skillId": 33032,
+		"icon": 33032,
+		"fp": 600,
+		"godId": 302,
+		"pro": 67,
+		"quality": 3
+	},
+	"33033": {
+		"skillId": 33033,
+		"icon": 33033,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33034": {
+		"skillId": 33034,
+		"icon": 33034,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33035": {
+		"skillId": 33035,
+		"icon": 33035,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33036": {
+		"skillId": 33036,
+		"icon": 33036,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	},
+	"33041": {
+		"skillId": 33041,
+		"icon": 33041,
+		"fp": 500,
+		"godId": 301,
+		"pro": 120,
+		"quality": 2
+	},
+	"33042": {
+		"skillId": 33042,
+		"icon": 33042,
+		"fp": 600,
+		"godId": 302,
+		"pro": 67,
+		"quality": 3
+	},
+	"33043": {
+		"skillId": 33043,
+		"icon": 33043,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33044": {
+		"skillId": 33044,
+		"icon": 33044,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33045": {
+		"skillId": 33045,
+		"icon": 33045,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33046": {
+		"skillId": 33046,
+		"icon": 33046,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	},
+	"33051": {
+		"skillId": 33051,
+		"icon": 33051,
+		"fp": 500,
+		"godId": 301,
+		"pro": 120,
+		"quality": 2
+	},
+	"33052": {
+		"skillId": 33052,
+		"icon": 33052,
+		"fp": 600,
+		"godId": 302,
+		"pro": 67,
+		"quality": 3
+	},
+	"33053": {
+		"skillId": 33053,
+		"icon": 33053,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33054": {
+		"skillId": 33054,
+		"icon": 33054,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33055": {
+		"skillId": 33055,
+		"icon": 33055,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33056": {
+		"skillId": 33056,
+		"icon": 33056,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	},
+	"33061": {
+		"skillId": 33061,
+		"icon": 33061,
+		"fp": 500,
+		"godId": 301,
+		"pro": 120,
+		"quality": 2
+	},
+	"33062": {
+		"skillId": 33062,
+		"icon": 33062,
+		"fp": 600,
+		"godId": 302,
+		"pro": 67,
+		"quality": 3
+	},
+	"33063": {
+		"skillId": 33063,
+		"icon": 33063,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33064": {
+		"skillId": 33064,
+		"icon": 33064,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33065": {
+		"skillId": 33065,
+		"icon": 33065,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33066": {
+		"skillId": 33066,
+		"icon": 33066,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	},
+	"33071": {
+		"skillId": 33071,
+		"icon": 33071,
+		"fp": 500,
+		"godId": 301,
+		"pro": 120,
+		"quality": 2
+	},
+	"33072": {
+		"skillId": 33072,
+		"icon": 33072,
+		"fp": 600,
+		"godId": 302,
+		"pro": 67,
+		"quality": 3
+	},
+	"33073": {
+		"skillId": 33073,
+		"icon": 33073,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33074": {
+		"skillId": 33074,
+		"icon": 33074,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33075": {
+		"skillId": 33075,
+		"icon": 33075,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33076": {
+		"skillId": 33076,
+		"icon": 33076,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	},
+	"33083": {
+		"skillId": 33083,
+		"icon": 33083,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33084": {
+		"skillId": 33084,
+		"icon": 33084,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33085": {
+		"skillId": 33085,
+		"icon": 33085,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33086": {
+		"skillId": 33086,
+		"icon": 33086,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	},
+	"33093": {
+		"skillId": 33093,
+		"icon": 33093,
+		"fp": 700,
+		"godId": 303,
+		"pro": 10,
+		"quality": 4
+	},
+	"33094": {
+		"skillId": 33094,
+		"icon": 33094,
+		"fp": 800,
+		"godId": 304,
+		"pro": 5,
+		"quality": 6
+	},
+	"33095": {
+		"skillId": 33095,
+		"icon": 33095,
+		"fp": 900,
+		"godId": 305,
+		"pro": 2,
+		"quality": 8
+	},
+	"33096": {
+		"skillId": 33096,
+		"icon": 33096,
+		"fp": 1000,
+		"godId": 306,
+		"pro": 1,
+		"quality": 10
+	}
+}

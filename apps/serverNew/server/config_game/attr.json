@@ -1,0 +1,358 @@
+{
+	"1": {
+		"id": 1,
+		"fieldName": "hp",
+		"isRate": 0,
+		"sort": 3,
+		"name": "生命",
+		"attrTips": "角色的生命值上限"
+	},
+	"2": {
+		"id": 2,
+		"fieldName": "atk",
+		"isRate": 0,
+		"sort": 1,
+		"name": "攻击",
+		"attrTips": "决定攻击伤害的基础属性"
+	},
+	"3": {
+		"id": 3,
+		"fieldName": "def",
+		"isRate": 0,
+		"sort": 2,
+		"name": "防御",
+		"attrTips": "决定伤害降低的基础属性"
+	},
+	"4": {
+		"id": 4,
+		"fieldName": "speed",
+		"isRate": 0,
+		"sort": 4,
+		"name": "攻击速度",
+		"attrTips": "角色进行攻击的速度"
+	},
+	"5": {
+		"id": 5,
+		"fieldName": "hit",
+		"isRate": 1,
+		"sort": 5,
+		"name": "命中",
+		"attrTips": "攻击命中概率"
+	},
+	"6": {
+		"id": 6,
+		"fieldName": "dodge",
+		"isRate": 1,
+		"sort": 6,
+		"name": "闪避",
+		"attrTips": "降低被攻击命中概率"
+	},
+	"7": {
+		"id": 7,
+		"fieldName": "crit",
+		"isRate": 1,
+		"sort": 7,
+		"name": "暴率",
+		"attrTips": "攻击造成暴击概率"
+	},
+	"8": {
+		"id": 8,
+		"fieldName": "lowCrit",
+		"isRate": 1,
+		"sort": 8,
+		"name": "抗暴",
+		"attrTips": "降低受到攻击时被暴击概率"
+	},
+	"9": {
+		"id": 9,
+		"fieldName": "critDamage",
+		"isRate": 1,
+		"sort": 9,
+		"name": "暴伤",
+		"attrTips": "攻击造成暴击时伤害倍率"
+	},
+	"10": {
+		"id": 10,
+		"fieldName": "penetrate",
+		"isRate": 1,
+		"sort": 10,
+		"name": "穿透",
+		"attrTips": "攻击时无视防御比例"
+	},
+	"11": {
+		"id": 11,
+		"fieldName": "lowPenetrate",
+		"isRate": 1,
+		"sort": 11,
+		"name": "坚韧",
+		"attrTips": "降低受到攻击时无视防御比例"
+	},
+	"12": {
+		"id": 12,
+		"fieldName": "hurt",
+		"isRate": 1,
+		"sort": 12,
+		"name": "增伤",
+		"attrTips": "攻击伤害增加比例"
+	},
+	"13": {
+		"id": 13,
+		"fieldName": "harmless",
+		"isRate": 1,
+		"sort": 13,
+		"name": "减伤",
+		"attrTips": "受到攻击伤害减免比例"
+	},
+	"14": {
+		"id": 14,
+		"fieldName": "vertigo",
+		"isRate": 1,
+		"sort": 14,
+		"name": "眩晕",
+		"attrTips": "攻击命中时造成眩晕概率"
+	},
+	"15": {
+		"id": 15,
+		"fieldName": "lowVertigo",
+		"isRate": 1,
+		"sort": 15,
+		"name": "抗晕",
+		"attrTips": "降低受到攻击时被眩晕概率"
+	},
+	"16": {
+		"id": 16,
+		"fieldName": "cure",
+		"isRate": 1,
+		"sort": 16,
+		"name": "治疗",
+		"attrTips": "治疗效果增强比例"
+	},
+	"17": {
+		"id": 17,
+		"fieldName": "atkPer",
+		"isRate": 1,
+		"sort": 17,
+		"name": "攻击百分比",
+		"attrTips": "攻击属性增强"
+	},
+	"18": {
+		"id": 18,
+		"fieldName": "defPer",
+		"isRate": 1,
+		"sort": 18,
+		"name": "防御百分比",
+		"attrTips": "防御属性增强"
+	},
+	"19": {
+		"id": 19,
+		"fieldName": "hpPer",
+		"isRate": 1,
+		"sort": 19,
+		"name": "生命百分比",
+		"attrTips": "生命属性增强"
+	},
+	"20": {
+		"id": 20,
+		"fieldName": "globalAtkPer",
+		"isRate": 1,
+		"sort": 20,
+		"name": "全局攻击百分比",
+		"attrTips": "攻击属性增强"
+	},
+	"21": {
+		"id": 21,
+		"fieldName": "globalDefPer",
+		"isRate": 1,
+		"sort": 21,
+		"name": "全局防御百分比",
+		"attrTips": "防御属性增强"
+	},
+	"22": {
+		"id": 22,
+		"fieldName": "globalHpPer",
+		"isRate": 1,
+		"sort": 22,
+		"name": "全局生命百分比",
+		"attrTips": "生命属性增强"
+	},
+	"23": {
+		"id": 23,
+		"fieldName": "finalHurt",
+		"isRate": 1,
+		"sort": 23,
+		"name": "最终增伤",
+		"attrTips": "最终伤害增加"
+	},
+	"24": {
+		"id": 24,
+		"fieldName": "finalHarmless",
+		"isRate": 1,
+		"sort": 24,
+		"name": "最终减伤",
+		"attrTips": "最终伤害减少"
+	},
+	"25": {
+		"id": 25,
+		"fieldName": "strength",
+		"isRate": 0,
+		"sort": 25,
+		"name": "力量",
+		"attrTips": "力量最终转化为攻击",
+		"valueTip": "力量",
+		"valueFormat": "+{value}"
+	},
+	"26": {
+		"id": 26,
+		"fieldName": "endurance",
+		"isRate": 0,
+		"sort": 26,
+		"name": "耐力",
+		"attrTips": "耐力最终转化为防御",
+		"valueTip": "耐力",
+		"valueFormat": "+{value}"
+	},
+	"27": {
+		"id": 27,
+		"fieldName": "constitution",
+		"isRate": 0,
+		"sort": 27,
+		"name": "体力",
+		"attrTips": "体力最终转化为生命",
+		"valueTip": "体力",
+		"valueFormat": "+{value}"
+	},
+	"28": {
+		"id": 28,
+		"fieldName": "skillAtkPer",
+		"isRate": 1,
+		"sort": 28,
+		"name": "大招增加攻击率",
+		"attrTips": "大招技能增加攻击比例"
+	},
+	"29": {
+		"id": 29,
+		"fieldName": "lowSkillAtkPer",
+		"isRate": 1,
+		"sort": 29,
+		"name": "抗大招增加攻击率",
+		"attrTips": "降低大招技能增加攻击比例"
+	},
+	"30": {
+		"id": 30,
+		"fieldName": "skillVertigo",
+		"isRate": 1,
+		"sort": 30,
+		"name": "大招眩晕率",
+		"attrTips": "大招技能眩晕概率"
+	},
+	"31": {
+		"id": 31,
+		"fieldName": "lowSkillVertigo",
+		"isRate": 1,
+		"sort": 31,
+		"name": "抗大招眩晕率",
+		"attrTips": "降低大招技能眩晕概率"
+	},
+	"32": {
+		"id": 32,
+		"fieldName": "lowMpCost",
+		"isRate": 0,
+		"sort": 32,
+		"name": "法力消耗",
+		"attrTips": "减少形成1个法力条需要的法力",
+		"valueTip": "主动技能消耗法力",
+		"valueFormat": "-{value}"
+	},
+	"33": {
+		"id": 33,
+		"fieldName": "mpUp",
+		"isRate": 0,
+		"sort": 33,
+		"name": "技能累积",
+		"attrTips": "角色法力条数量上限增加",
+		"valueTip": "主动技能积累次数",
+		"valueFormat": "+{value}次"
+	},
+	"34": {
+		"id": 34,
+		"fieldName": "skillDuration",
+		"isRate": 0,
+		"sort": 34,
+		"name": "持续时间",
+		"attrTips": "增加大招释放的持续时间",
+		"valueTip": "主动技能持续时间",
+		"valueFormat": "+{value}秒"
+	},
+	"35": {
+		"id": 35,
+		"fieldName": "bossRageRecoverNum",
+		"isRate": 1,
+		"sort": 35,
+		"name": "boss怒气恢复次数",
+		"attrTips": "boss回复怒气"
+	},
+	"36": {
+		"id": 36,
+		"fieldName": "baseMana",
+		"isRate": 0,
+		"sort": 36,
+		"name": "入场法力",
+		"attrTips": "进入战场基础法力值"
+	},
+	"37": {
+		"id": 37,
+		"fieldName": "skillFirstRatio",
+		"isRate": 1,
+		"sort": 37,
+		"name": "大招首次效果",
+		"attrTips": "大招首次效果提升百分比"
+	},
+	"38": {
+		"id": 38,
+		"fieldName": "skillAtkExHarm",
+		"isRate": 1,
+		"sort": 38,
+		"name": "技能额外攻击伤害",
+		"attrTips": "技能额外攻击伤害系数"
+	},
+	"39": {
+		"id": 39,
+		"fieldName": "skillDefExHarm",
+		"isRate": 1,
+		"sort": 39,
+		"name": "技能额外防御伤害",
+		"attrTips": "技能额外防御伤害系数"
+	},
+	"40": {
+		"id": 40,
+		"fieldName": "skillAtkExCure",
+		"isRate": 1,
+		"sort": 40,
+		"name": "技能额外攻击治疗（暂无）",
+		"attrTips": "技能额外攻击治疗系数"
+	},
+	"41": {
+		"id": 41,
+		"fieldName": "skillDefExCure",
+		"isRate": 1,
+		"sort": 41,
+		"name": "技能额外防御治疗（暂无）",
+		"attrTips": "技能额外防御治疗系数"
+	},
+	"42": {
+		"id": 42,
+		"fieldName": "battleAtkPer",
+		"isRate": 1,
+		"sort": 42,
+		"name": "攻击百分比",
+		"attrTips": "战场攻击属性临时增强"
+	},
+	"43": {
+		"id": 43,
+		"fieldName": "battleDefPer",
+		"isRate": 1,
+		"sort": 43,
+		"name": "防御百分比",
+		"attrTips": "战场防御属性临时增强"
+	}
+}

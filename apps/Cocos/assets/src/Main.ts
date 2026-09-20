@@ -24,46 +24,88 @@ const { ccclass, property } = _decorator;
 
 @ccclass("Main")
 export class Main extends Component {
-    @property({ tooltip: "服务端 http(s) 地址。留空 = 自动跟随根 .env.development 的 PORT；填写即覆盖。" })
-    serverUrl = "";
+  @property({
+    tooltip:
+      "服务端 http(s) 地址。留空 = 自动跟随根 .env.development 的 PORT；填写即覆盖。",
+  })
+  serverUrl = "";
 
-    @property({ tooltip: "WebPlatform Public http(s) 地址（登录 + 选服）。留空 = 跟随 PORT（dev 下即游戏服自身）；联调外部身份服务时填写。" })
-    portalUrl = "";
-    // 开发调试快捷入口（docs/PLUGIN.md §6.2 (1)）：Home 菜单已数据驱动（generated menu
-    // contribution 的 launch target 优先），本字段只剩「默认 launch target 兜底」职责——
-    // 删除 @property 属场景资产 diff（scene.scene 由 Creator 重新序列化并人工审查，
-    // 见 docs/Non-intrusive.md §8），⛔ 不在无头批次中机械删除。
-    // 缺省值 = 宿主 apps/plugins/host.json 的 defaultLaunch（经 codegen:plugins 生成，⛔ 不硬编码
-    // 玩法名）：换默认入口只改 host.json 并重跑 codegen:plugins。
-    // ⚠ 语义边界：一旦有人在 Creator 里填过这个字段，值会写进 scene.scene 并覆盖本缺省
-    // （当前 apps/Cocos/assets/scene.scene 只序列化了 serverUrl/portalUrl，未序列化本字段，
-    // 所以现在生效的就是这里的生成缺省）。要换默认入口请改 host.json，⛔ 不要改这里。
-    @property({ tooltip: "开发调试：要进入的已登记玩法 id；留空 = 跟随 apps/plugins/host.json 的 defaultLaunch。" })
-    gameplayId: string = DEFAULT_LAUNCH_GAMEPLAY_ID;
+  @property({
+    tooltip:
+      "WebPlatform Public http(s) 地址（登录 + 选服）。留空 = 跟随 PORT（dev 下即游戏服自身）；联调外部身份服务时填写。",
+  })
+  portalUrl = "";
 
-    private runtime: AppRuntime | null = null;
+  @property({
+    tooltip:
+      "Lobby transport：colyseus（默认旧链路）或 native-websocket（serverNew）。",
+  })
+  lobbyTransportKind = "colyseus";
 
-    onLoad(): void {
-        view.setDesignResolutionSize(DESIGN_WIDTH, DESIGN_HEIGHT, ResolutionPolicy.FIXED_WIDTH);
-        try {
-            this.runtime = createAppRuntime({
-                node: this.node,
-                serverUrl: this.serverUrl,
-                portalUrl: this.portalUrl,
-                gameplayId: this.gameplayId,
-            });
-        } catch (error) {
-            console.error("[Main] 应用宿主启动失败（portalUrl 是否已配置？）：", error);
-        }
+  @property({
+    tooltip:
+      "原生 Lobby wss:// 端点；仅 lobbyTransportKind=native-websocket 时使用。",
+  })
+  nativeLobbyUrl = "";
+  // 开发调试快捷入口（docs/PLUGIN.md §6.2 (1)）：Home 菜单已数据驱动（generated menu
+  // contribution 的 launch target 优先），本字段只剩「默认 launch target 兜底」职责——
+  // 删除 @property 属场景资产 diff（scene.scene 由 Creator 重新序列化并人工审查，
+  // 见 docs/Non-intrusive.md §8），⛔ 不在无头批次中机械删除。
+  // 缺省值 = 宿主 apps/plugins/host.json 的 defaultLaunch（经 codegen:plugins 生成，⛔ 不硬编码
+  // 玩法名）：换默认入口只改 host.json 并重跑 codegen:plugins。
+  // ⚠ 语义边界：一旦有人在 Creator 里填过这个字段，值会写进 scene.scene 并覆盖本缺省
+  // （当前 apps/Cocos/assets/scene.scene 只序列化了 serverUrl/portalUrl，未序列化本字段，
+  // 所以现在生效的就是这里的生成缺省）。要换默认入口请改 host.json，⛔ 不要改这里。
+  @property({
+    tooltip:
+      "开发调试：要进入的已登记玩法 id；留空 = 跟随 apps/plugins/host.json 的 defaultLaunch。",
+  })
+  gameplayId: string = DEFAULT_LAUNCH_GAMEPLAY_ID;
+
+  private runtime: AppRuntime | null = null;
+
+  onLoad(): void {
+    view.setDesignResolutionSize(
+      DESIGN_WIDTH,
+      DESIGN_HEIGHT,
+      ResolutionPolicy.FIXED_WIDTH,
+    );
+    // 场景两个字段都还是缺省时**不传** transport，把决定权留给 bootstrap：
+    // 浏览器预览的 `?lobby=native&lobbyUrl=…` 调试参数只有在这种情况下才有作用点。
+    // ⛔ 不能因为「缺省值恰好是 colyseus」就把 `{kind:'colyseus'}` 当成显式配置传下去，
+    // 那会把查询参数永久挡掉（与 `?server=` 同一约定：查询参数覆盖场景缺省）。
+    const lobbyTransport =
+      this.lobbyTransportKind === "colyseus" && this.nativeLobbyUrl === ""
+        ? undefined
+        : this.lobbyTransportKind === "colyseus"
+          ? ({ kind: "colyseus" } as const)
+          : ({
+              kind: this.lobbyTransportKind as "native-websocket",
+              endpoint: this.nativeLobbyUrl,
+            } as const);
+    try {
+      this.runtime = createAppRuntime({
+        node: this.node,
+        serverUrl: this.serverUrl,
+        portalUrl: this.portalUrl,
+        lobbyTransport,
+        gameplayId: this.gameplayId,
+      });
+    } catch (error) {
+      console.error(
+        "[Main] 应用宿主启动失败（portalUrl 是否已配置？）：",
+        error,
+      );
     }
+  }
 
-    update(dt: number): void {
-        this.runtime?.tick(dt);
-    }
+  update(dt: number): void {
+    this.runtime?.tick(dt);
+  }
 
-    onDestroy(): void {
-        const runtime = this.runtime;
-        this.runtime = null;
-        runtime?.dispose();
-    }
+  onDestroy(): void {
+    const runtime = this.runtime;
+    this.runtime = null;
+    runtime?.dispose();
+  }
 }

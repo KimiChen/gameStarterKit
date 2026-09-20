@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "name": "like",
+  "version": "1.0.0",
+  "description": "Archived like game module",
+  "files": [
+    {
+      "target": "src/modules/like/LikeErrors.ts",
+      "payload": "payload/src/modules/like/LikeErrors.ts",
+      "sha256": "c6ec7d32f6b8c7f4d514231306e3d02683774c5ba028b7e43bb4a2c8817c27b0"
+    },
+    {
+      "target": "src/modules/like/LikeModule.ts",
+      "payload": "payload/src/modules/like/LikeModule.ts",
+      "sha256": "74d112b0e050e89898069221a920cc0b35f4af7fefa87f9faa841ce83dbf34c4"
+    },
+    {
+      "target": "src/modules/like/bean/LikeRecordItem.ts",
+      "payload": "payload/src/modules/like/bean/LikeRecordItem.ts",
+      "sha256": "92daabcb402408dbaa235ba19189e111190e7ebe119211abbcb02ea5e8c41de6"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-like-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../like/bean/LikeRecordItem",
+      "import": "import { LikeRecordItem } from '../../like/bean/LikeRecordItem'",
+      "expectedAbsent": "LikeRecordItem"
+    },
+    {
+      "id": "user-like-fields",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "/** 点赞数 */\nlike: int = 0\n\n/** 今日已点赞记录 */\nlikeRecords?: DiffMap<int, LikeRecordItem>",
+      "expectedAbsent": "likeRecords?: DiffMap<int, LikeRecordItem>"
+    },
+    {
+      "id": "user-info-like",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/UserInfoOnlyNetBean.ts",
+      "className": "UserInfoOnlyNetBean",
+      "member": "like: int = 0",
+      "expectedAbsent": "like: int = 0"
+    },
+    {
+      "id": "user-ref-like",
+      "type": "addClassMember",
+      "target": "src/modules/user/ref/UserBaseRef.ts",
+      "className": "UserBaseRef",
+      "member": "@FromData(User, 'like')\nlike: int = 0",
+      "expectedAbsent": "@FromData(User, 'like')"
+    },
+    {
+      "id": "guild-ref-like",
+      "type": "addClassMember",
+      "target": "src/modules/guild/ref/GuildMemberRef.ts",
+      "className": "GuildMemberRef",
+      "member": "@FromData(User, 'like')\nlike: int = 0",
+      "expectedAbsent": "@FromData(User, 'like')"
+    },
+    {
+      "id": "user-profile-ref-like",
+      "type": "insertAfterText",
+      "target": "src/modules/user/action/UserProfileFormatter.ts",
+      "after": "                faceDecorate: query.faceDecorate,",
+      "text": "                like: query.like,",
+      "expectedAbsent": "                like: query.like,"
+    },
+    {
+      "id": "user-profile-user-like",
+      "type": "insertAfterText",
+      "target": "src/modules/user/action/UserProfileFormatter.ts",
+      "after": "            faceDecorate: query.faceDecorate,",
+      "text": "            like: query.like,",
+      "expectedAbsent": "            like: query.like,"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- like"
+    ],
+    "manual": []
+  }
+}

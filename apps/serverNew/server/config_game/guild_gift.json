@@ -1,0 +1,118 @@
+{
+	"guildGift": {
+		"activityName": "guildGift",
+		"resetTime": "05:00:00",
+		"cutTime": 61200,
+		"rebateTime": 25200,
+		"gifts": {
+			"1": {
+				"giftId": 1,
+				"activityName": "guildGift",
+				"name": "礼包1",
+				"pro": 10000,
+				"guildLv": 1,
+				"costId": 1001,
+				"costNum": 1088,
+				"awards": [
+					{
+						"giftId": 1,
+						"propId": 1003,
+						"num": 30
+					},
+					{
+						"giftId": 1,
+						"propId": 1006,
+						"num": 1
+					},
+					{
+						"giftId": 1,
+						"propId": 10501,
+						"num": 1
+					}
+				]
+			}
+		},
+		"cutRule": [
+			{
+				"id": 1,
+				"activityName": "guildGift",
+				"priceStage": [
+					50,
+					100
+				],
+				"cutPer": [
+					1200,
+					1800
+				],
+				"cutNum": [
+					0,
+					0
+				]
+			},
+			{
+				"id": 2,
+				"activityName": "guildGift",
+				"priceStage": [
+					25,
+					50
+				],
+				"cutPer": [
+					800,
+					1200
+				],
+				"cutNum": [
+					0,
+					0
+				]
+			},
+			{
+				"id": 3,
+				"activityName": "guildGift",
+				"priceStage": [
+					0,
+					25
+				],
+				"cutPer": [
+					400,
+					800
+				],
+				"cutNum": [
+					0,
+					0
+				]
+			},
+			{
+				"id": 4,
+				"activityName": "guildGift",
+				"priceStage": [
+					-9,
+					0
+				],
+				"cutPer": [
+					50,
+					100
+				],
+				"cutNum": [
+					0,
+					0
+				]
+			},
+			{
+				"id": 5,
+				"activityName": "guildGift",
+				"priceStage": [
+					-999,
+					-9
+				],
+				"cutPer": [
+					0,
+					0
+				],
+				"cutNum": [
+					1,
+					1
+				]
+			}
+		]
+	}
+}

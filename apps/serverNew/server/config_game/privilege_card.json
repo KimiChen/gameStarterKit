@@ -1,0 +1,80 @@
+{
+	"2001": {
+		"id": 2001,
+		"itemId": 800002,
+		"rechargeId": 2001,
+		"name": "高级月卡",
+		"specialGain": 2,
+		"desc": "30天特权专享\n每日可领取大量[img]{0}[/img]仙玉和[img]{1}[/img]精力\n跳过广告快速获得奖励",
+		"descIcon": [
+			1001,
+			1003
+		],
+		"equityDesc": "1.可跳过所有广告立即获得奖励\n2.购买可立即获得[img]{0}[/img][color=#21951d]仙玉*300[/color]，且每日可领取[img]{1}[/img][color=#21951d]仙玉*150[/color]\n3.每日可在素罗处额外领取[color=#21951d]1000[/color]次攻击次数\n4.每日可在素罗处额外领取[img]{2}[/img][color=#21951d]精力*20[/color]",
+		"equityDescIcon": [
+			1001,
+			1001,
+			1003
+		],
+		"discount": 2250,
+		"exEnergy": 10,
+		"npcAtkTimes": 1000,
+		"days": 30,
+		"moreDays": 60,
+		"dailyAwards": [
+			{
+				"id": 2001,
+				"propId": 1001,
+				"num": 150
+			}
+		],
+		"awards": [
+			{
+				"id": 2001,
+				"propId": 1001,
+				"num": 300
+			}
+		],
+		"dropPropId": 0,
+		"dropPropDiscount": 0
+	},
+	"2003": {
+		"id": 2003,
+		"itemId": 800001,
+		"rechargeId": 2003,
+		"name": "月卡",
+		"specialGain": 1,
+		"desc": "30天特权专享\n每日可领取[img]{0}[/img]仙玉和[img]{1}[/img]精力\n素罗可自动攻击，解放手指",
+		"descIcon": [
+			1001,
+			1003
+		],
+		"equityDesc": "1.解锁素罗自动攻击功能\n2.购买可立即获得[img]{0}[/img][color=#21951d]仙玉*180[/color]，且每日可领取[img]{1}[/img][color=#21951d]仙玉*100[/color]\n3.每日可在素罗处额外领取[color=#21951d]1000[/color]次攻击次数\n4.每日可在素罗处额外领取[img]{2}[/img][color=#21951d]精力*10[/color]",
+		"equityDescIcon": [
+			1001,
+			1001,
+			1003
+		],
+		"discount": 1933,
+		"exEnergy": 5,
+		"npcAtkTimes": 1000,
+		"days": 30,
+		"moreDays": 60,
+		"dailyAwards": [
+			{
+				"id": 2003,
+				"propId": 1001,
+				"num": 100
+			}
+		],
+		"awards": [
+			{
+				"id": 2003,
+				"propId": 1001,
+				"num": 180
+			}
+		],
+		"dropPropId": 0,
+		"dropPropDiscount": 0
+	}
+}

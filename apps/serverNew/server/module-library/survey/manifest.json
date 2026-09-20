@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "name": "survey",
+  "version": "1.0.0",
+  "description": "Archived survey game module",
+  "files": [
+    {
+      "target": "src/modules/channel/contracts/ChannelSurveyCallback.ts",
+      "payload": "payload/src/modules/channel/contracts/ChannelSurveyCallback.ts",
+      "sha256": "98bf6f9574a2f83f3fa174097d813c522f7d554100d9367dcb8c5e072b24e8e3"
+    },
+    {
+      "target": "src/modules/survey/SurveyModule.ts",
+      "payload": "payload/src/modules/survey/SurveyModule.ts",
+      "sha256": "36a4d56d59f268eb9d603879138674f9bcb6b1ee19e6d58d0efa1054b4f2101e"
+    },
+    {
+      "target": "src/modules/survey/SurveyS2S.ts",
+      "payload": "payload/src/modules/survey/SurveyS2S.ts",
+      "sha256": "beeb3777b1a18815b7a6c88bf20277a5ffe322f549611d8dc11692567b634cf6"
+    },
+    {
+      "target": "src/modules/survey/action/ActionSurveyBack.ts",
+      "payload": "payload/src/modules/survey/action/ActionSurveyBack.ts",
+      "sha256": "c38c2541b89b430c47ac14aa238df3aeb225f825204ace4f6da7092be9c1fb90"
+    },
+    {
+      "target": "src/modules/survey/bean/SurveyItem.ts",
+      "payload": "payload/src/modules/survey/bean/SurveyItem.ts",
+      "sha256": "73b11d1f233561f9d988ea75cc2becd782f567028fd6726e3dd21a59ad0d7571"
+    },
+    {
+      "target": "src/modules/survey/callbackContract/SurveyCallbackParams.ts",
+      "payload": "payload/src/modules/survey/callbackContract/SurveyCallbackParams.ts",
+      "sha256": "168810263ce8ce87d10a1eb98a7d7d729d056fc4bbf933fe9a41c3a351a608db"
+    },
+    {
+      "target": "src/modules/survey/http/SurveyCallbackResponder.ts",
+      "payload": "payload/src/modules/survey/http/SurveyCallbackResponder.ts",
+      "sha256": "42e7ac29b45466226a1ca111917457baac7a534d1a9748d725812284cefe003d"
+    },
+    {
+      "target": "src/modules/survey/http/SurveyController.ts",
+      "payload": "payload/src/modules/survey/http/SurveyController.ts",
+      "sha256": "9006b14a1e0fd0366ecbf9f17d8ec3ec77dee8feed516b5a83fa5133303288ea"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-survey-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../survey/bean/SurveyItem",
+      "import": "import { SurveyItem } from '../../survey/bean/SurveyItem'",
+      "expectedAbsent": "SurveyItem"
+    },
+    {
+      "id": "user-survey-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "/** 问卷调查 */\n@Mod\nsurvey?: DiffMap<int, SurveyItem>",
+      "expectedAbsent": "survey?: DiffMap<int, SurveyItem>"
+    },
+    {
+      "id": "user-login-survey-mod",
+      "type": "addStatement",
+      "target": "src/modules/user/action/ActionGetUserInfo.ts",
+      "functionName": "doAction",
+      "after": "    'worship',",
+      "statement": "    'survey',",
+      "expectedAbsent": "    'survey',"
+    },
+    {
+      "id": "yuechi-survey-import",
+      "type": "addImport",
+      "target": "src/modules/channel/yuechi/ChannelYueChi.ts",
+      "moduleSpecifier": "../contracts/ChannelSurveyCallback",
+      "import": "import { ChannelSurveyCallback } from '../contracts/ChannelSurveyCallback'",
+      "expectedAbsent": "ChannelSurveyCallback"
+    },
+    {
+      "id": "yuechi-survey-params-import",
+      "type": "addImport",
+      "target": "src/modules/channel/yuechi/ChannelYueChi.ts",
+      "moduleSpecifier": "../../survey/callbackContract/SurveyCallbackParams",
+      "import": "import { SurveyCallbackParams } from '../../survey/callbackContract/SurveyCallbackParams'",
+      "expectedAbsent": "SurveyCallbackParams"
+    },
+    {
+      "id": "yuechi-survey-interface",
+      "type": "addClassImplements",
+      "target": "src/modules/channel/yuechi/ChannelYueChi.ts",
+      "className": "ChannelYueChi",
+      "implements": "ChannelSurveyCallback",
+      "expectedAbsent": "ChannelSurveyCallback"
+    },
+    {
+      "id": "yuechi-survey-methods",
+      "type": "addClassMember",
+      "target": "src/modules/channel/yuechi/ChannelYueChi.ts",
+      "className": "ChannelYueChi",
+      "member": "async surveyCallbackParse(params: { [K: string]: any }, header: IncomingHttpHeaders) {\n    const sign = header['X-Sign']\n    const time = Int(header['X-Timestamp'] as string)\n    if (sign != this.genSign(params, time)) {\n        Log.error('surveyCallbackParse:签名错误', null, { 'X-Sign: ': sign, 'sign: ': this.genSign(params, time) })\n        return false\n    }\n    const data = new SurveyCallbackParams()\n    data.roleId = params.roleId\n    data.serverId = params.serverId\n    data.surveyId = params.actId\n    data.originParams = params\n    return data\n}\n\nsurveyCallbackResponse(code: int, msg: string, params?: SurveyCallbackParams) {\n    return { code: code == 0 ? '00000' : code, tips: msg, description: msg, data: code == 0 ? { userId: params?.originParams.userId, serverId: params?.originParams.serverId, roleId: params?.originParams.roleId, orderId: params?.originParams.orderId } : {} }\n}",
+      "expectedAbsent": "surveyCallbackParse"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- survey"
+    ],
+    "manual": []
+  }
+}

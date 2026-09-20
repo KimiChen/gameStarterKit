@@ -1,0 +1,80 @@
+{
+	"101": {
+		"id": 101,
+		"desc": "领取精力",
+		"times": 4,
+		"cd": 0,
+		"practiceTime": 0,
+		"awards": [
+			{
+				"id": 101,
+				"propId": 1003,
+				"num": 25
+			}
+		],
+		"required": [
+			{
+				"id": 101,
+				"type": 1065,
+				"value": 30,
+				"param1": 0,
+				"param2": 0
+			}
+		]
+	},
+	"201": {
+		"id": 201,
+		"desc": "兔子送福",
+		"times": 3,
+		"cd": 180,
+		"practiceTime": 0,
+		"awards": [
+			{
+				"id": 201,
+				"propId": 1001,
+				"num": 20
+			}
+		],
+		"required": [
+			{
+				"id": 201,
+				"type": 1065,
+				"value": 40,
+				"param1": 0,
+				"param2": 0
+			}
+		]
+	},
+	"301": {
+		"id": 301,
+		"desc": "挂机",
+		"times": 1,
+		"cd": 0,
+		"practiceTime": 7200,
+		"awards": [
+
+		],
+		"required": [
+			{
+				"id": 301,
+				"type": 1065,
+				"value": 50,
+				"param1": 0,
+				"param2": 0
+			}
+		]
+	},
+	"401": {
+		"id": 401,
+		"desc": "看广告送称号",
+		"times": 20,
+		"cd": 0,
+		"practiceTime": 0,
+		"awards": [
+
+		],
+		"required": [
+
+		]
+	}
+}

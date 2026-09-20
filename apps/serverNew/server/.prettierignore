@@ -1,0 +1,14 @@
+node_modules/
+module-library/
+dist/
+build/compiled/
+generated/
+config_game/
+config/platforms/
+log/
+coverage/
+*.png
+*.jpg
+package-lock.json
+yarn.lock
+src/http/public/

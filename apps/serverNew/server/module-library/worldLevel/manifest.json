@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "name": "worldLevel",
+  "version": "1.0.0",
+  "description": "Archived worldLevel game module",
+  "files": [
+    {
+      "target": "src/modules/worldLevel/bean/PassItem.ts",
+      "payload": "payload/src/modules/worldLevel/bean/PassItem.ts",
+      "sha256": "85f17509149c90252fc4b0ee72764b861174d63364a39bd14b430ac0ed3badaf"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "hserver-world-level-import",
+      "type": "addImport",
+      "target": "src/modules/serverProgress/bean/HServer.ts",
+      "moduleSpecifier": "../../worldLevel/bean/PassItem",
+      "import": "import { PassItem } from '../../worldLevel/bean/PassItem'",
+      "expectedAbsent": "PassItem"
+    },
+    {
+      "id": "hserver-world-level-fields",
+      "type": "addClassMember",
+      "target": "src/modules/serverProgress/bean/HServer.ts",
+      "className": "HServer",
+      "member": "/** 已完成世界等级 boss 阶段 */\nworldLevelBossIds?: DiffMap<int, PassItem>\n\n/** 已解锁的世界等级 boss */\n@OnlyRedis\nworldLevelBossUnlocks?: DiffArray<int>",
+      "expectedAbsent": "worldLevelBossIds?: DiffMap<int, PassItem>"
+    },
+    {
+      "id": "user-world-level-fields",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "/** 参与世界等级 boss 集合 */\nworldLevelIds?: DiffArray<int>\n\n/** 已领取世界等级 boss 奖励地图集合 */\nworldLevelAwardsIds?: DiffArray<int>\n\n/** 已领取世界等级 boss 个人奖励地图集合 */\nworldLevelSelfAwardsIds?: DiffArray<int>",
+      "expectedAbsent": "worldLevelIds?: DiffArray<int>"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- worldLevel"
+    ],
+    "manual": []
+  }
+}

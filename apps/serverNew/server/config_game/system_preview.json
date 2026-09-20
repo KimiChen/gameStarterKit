@@ -1,0 +1,82 @@
+{
+	"1": {
+		"id": 1,
+		"name": "装备",
+		"resId": 1,
+		"isShow": 1,
+		"viewLv": 8,
+		"desc": "纵横妖界必不可少",
+		"systemId": 5,
+		"awards": [
+			{
+				"id": 1,
+				"propId": 1001,
+				"num": 5
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"name": "功法",
+		"resId": 2,
+		"isShow": 1,
+		"viewLv": 15,
+		"desc": "学习强力功法乃妖界根基",
+		"systemId": 3,
+		"awards": [
+			{
+				"id": 2,
+				"propId": 1001,
+				"num": 5
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"name": "法宝",
+		"resId": 3,
+		"isShow": 1,
+		"viewLv": 20,
+		"desc": "法宝在手，纵横妖界无烦恼",
+		"systemId": 4,
+		"awards": [
+			{
+				"id": 3,
+				"propId": 1001,
+				"num": 5
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"name": "个人历练",
+		"resId": 4,
+		"isShow": 1,
+		"viewLv": 25,
+		"desc": "参加个人历练，磨练自身妖力",
+		"systemId": 15,
+		"awards": [
+			{
+				"id": 4,
+				"propId": 1001,
+				"num": 5
+			}
+		]
+	},
+	"5": {
+		"id": 5,
+		"name": "夔牛",
+		"resId": 5,
+		"isShow": 1,
+		"viewLv": 30,
+		"desc": "与妖盟成员共同击杀夔牛，获取奖励归属",
+		"systemId": 6,
+		"awards": [
+			{
+				"id": 5,
+				"propId": 1001,
+				"num": 5
+			}
+		]
+	}
+}

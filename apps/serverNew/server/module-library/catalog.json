@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    {
+      "name": "achieve",
+      "version": "1.0.0",
+      "description": "Archived achieve game module",
+      "dependencies": [],
+      "packagePath": "achieve/manifest.json"
+    },
+    {
+      "name": "arena",
+      "version": "1.0.0",
+      "description": "Archived arena game module",
+      "dependencies": [],
+      "packagePath": "arena/manifest.json"
+    },
+    {
+      "name": "fightLog",
+      "version": "1.0.0",
+      "description": "Archived fightLog game module",
+      "dependencies": [],
+      "packagePath": "fightLog/manifest.json"
+    },
+    {
+      "name": "like",
+      "version": "1.0.0",
+      "description": "Archived like game module",
+      "dependencies": [],
+      "packagePath": "like/manifest.json"
+    },
+    {
+      "name": "lode",
+      "version": "1.0.0",
+      "description": "Archived lode game module",
+      "dependencies": [],
+      "packagePath": "lode/manifest.json"
+    },
+    {
+      "name": "love",
+      "version": "1.0.0",
+      "description": "Archived love game module",
+      "dependencies": [],
+      "packagePath": "love/manifest.json"
+    },
+    {
+      "name": "plant",
+      "version": "1.0.0",
+      "description": "Archived plant game module",
+      "dependencies": [
+        "love"
+      ],
+      "packagePath": "plant/manifest.json"
+    },
+    {
+      "name": "shop",
+      "version": "1.0.0",
+      "description": "Archived shop game module",
+      "dependencies": [],
+      "packagePath": "shop/manifest.json"
+    },
+    {
+      "name": "subscribe",
+      "version": "1.0.0",
+      "description": "Archived subscribe game module",
+      "dependencies": [],
+      "packagePath": "subscribe/manifest.json"
+    },
+    {
+      "name": "survey",
+      "version": "1.0.0",
+      "description": "Archived survey game module",
+      "dependencies": [],
+      "packagePath": "survey/manifest.json"
+    },
+    {
+      "name": "test",
+      "version": "1.0.0",
+      "description": "Archived test game module",
+      "dependencies": [
+        "equip"
+      ],
+      "packagePath": "test/manifest.json"
+    },
+    {
+      "name": "tower",
+      "version": "1.0.0",
+      "description": "Archived tower game module",
+      "dependencies": [],
+      "packagePath": "tower/manifest.json"
+    },
+    {
+      "name": "triggerGift",
+      "version": "1.0.0",
+      "description": "Archived triggerGift game module",
+      "dependencies": [],
+      "packagePath": "triggerGift/manifest.json"
+    },
+    {
+      "name": "wife",
+      "version": "1.0.0",
+      "description": "Archived wife game module",
+      "dependencies": [],
+      "packagePath": "wife/manifest.json"
+    },
+    {
+      "name": "worldLevel",
+      "version": "1.0.0",
+      "description": "Archived worldLevel game module",
+      "dependencies": [],
+      "packagePath": "worldLevel/manifest.json"
+    },
+    {
+      "name": "worship",
+      "version": "1.0.0",
+      "description": "Archived worship game module",
+      "dependencies": [],
+      "packagePath": "worship/manifest.json"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+	"1": {
+		"id": 1,
+		"minValue": 0,
+		"maxValue": 99,
+		"exReDurable": 0
+	},
+	"2": {
+		"id": 2,
+		"minValue": 100,
+		"maxValue": -1,
+		"title": "大魔王",
+		"exReDurable": 1
+	}
+}

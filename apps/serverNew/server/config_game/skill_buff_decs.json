@@ -1,0 +1,156 @@
+{
+	"forbidHP": {
+		"effectIcon": "forbidHP",
+		"name": "禁疗",
+		"arenaDesc": "无法治疗",
+		"type": 1,
+		"isRatio": 0
+	},
+	"slient": {
+		"effectIcon": "slient",
+		"name": "沉默",
+		"arenaDesc": "无法发动手动技能及神符",
+		"type": 1,
+		"isRatio": 0
+	},
+	"poison": {
+		"effectIcon": "poison",
+		"name": "中毒",
+		"arenaDesc": "来自{0}个对手施加的{1}层中毒，每回合持续掉血",
+		"type": 2,
+		"isRatio": 0
+	},
+	"vertigo": {
+		"effectIcon": "vertigo",
+		"name": "眩晕",
+		"arenaDesc": "无法普攻和释放技能",
+		"type": 1,
+		"isRatio": 0
+	},
+	"tear": {
+		"effectIcon": "tear",
+		"name": "撕裂",
+		"arenaDesc": "防御下降{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"protect": {
+		"effectIcon": "protect",
+		"name": "庇护",
+		"arenaDesc": "减伤+{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"godcure": {
+		"effectIcon": "godcure",
+		"name": "圣疗",
+		"arenaDesc": "每回合持续回血",
+		"type": 1,
+		"isRatio": 0
+	},
+	"atkUP": {
+		"effectIcon": "atkUP",
+		"name": "攻击",
+		"arenaDesc": "攻击属性+{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"curse": {
+		"effectIcon": "curse",
+		"name": "诅咒",
+		"arenaDesc": "每回合持续掉血",
+		"type": 1,
+		"isRatio": 0
+	},
+	"defUP": {
+		"effectIcon": "defUP",
+		"name": "防御",
+		"arenaDesc": "防御+{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"hitUP": {
+		"effectIcon": "hitUP",
+		"name": "命中",
+		"arenaDesc": "命中+{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"defDown2": {
+		"effectIcon": "defDown2",
+		"name": "减防B",
+		"arenaDesc": "防御下降{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"hurtUP": {
+		"effectIcon": "hurtUP",
+		"name": "增伤",
+		"arenaDesc": "增伤+{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"harmlessUP": {
+		"effectIcon": "harmlessUP",
+		"name": "减伤",
+		"arenaDesc": "减伤+{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"burn": {
+		"effectIcon": "burn",
+		"name": "灼烧",
+		"arenaDesc": "每回合持续掉血",
+		"type": 1,
+		"isRatio": 0
+	},
+	"normalAtkUP": {
+		"effectIcon": "normalAtkUP",
+		"name": "阴甲冥胄",
+		"arenaDesc": "普通攻击+{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"heal": {
+		"effectIcon": "heal",
+		"name": "治愈",
+		"arenaDesc": "每回合持续回血",
+		"type": 1,
+		"isRatio": 0
+	},
+	"harmlessUP2": {
+		"effectIcon": "harmlessUP2",
+		"name": "减伤B",
+		"arenaDesc": "减伤+{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"defDown3": {
+		"effectIcon": "defDown3",
+		"name": "减防C",
+		"arenaDesc": "防御下降{0}%",
+		"type": 3,
+		"isRatio": 1
+	},
+	"fazhen_1": {
+		"effectIcon": "fazhen_1",
+		"name": "血杀印",
+		"arenaDesc": "山头契印，伤害+{0}%",
+		"type": 4,
+		"isRatio": 1
+	},
+	"fazhen_3": {
+		"effectIcon": "fazhen_3",
+		"name": "血御印",
+		"arenaDesc": "山头契印，减伤+{0}%",
+		"type": 4,
+		"isRatio": 1
+	},
+	"fazhen_2": {
+		"effectIcon": "fazhen_2",
+		"name": "血灵印",
+		"arenaDesc": "山头契印，抗晕+{0}%",
+		"type": 4,
+		"isRatio": 1
+	}
+}

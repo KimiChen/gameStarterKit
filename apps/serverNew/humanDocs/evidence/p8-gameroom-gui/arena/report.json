@@ -1,0 +1,283 @@
+{
+  "tool": "tools/creator-preview/run.mjs",
+  "scenario": "arena",
+  "startedAt": "2026-09-20T02:22:57.195Z",
+  "options": {
+    "scenario": "arena",
+    "out": "/Users/kk/26/gameKit/apps/serverNew/humanDocs/evidence/p8-gameroom-gui/arena",
+    "code": "WELCOME2026",
+    "format": "jpeg",
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://127.0.0.1:7458",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 20000,
+    "reuse": false
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "ok": true,
+  "steps": [
+    {
+      "name": "加载预览场景（Fetch 改写 settings.js?scene=）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:22:57.358Z",
+      "detail": {
+        "frames": 70,
+        "canvas": {
+          "x": 225,
+          "y": 33,
+          "width": 750,
+          "height": 886
+        },
+        "visible": {
+          "width": 750,
+          "height": 886
+        },
+        "topLevel": [
+          "Canvas",
+          "PROFILER_NODE"
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:22:59.406Z"
+    },
+    {
+      "name": "登录页可见（FGUI btn_login）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:22:59.421Z",
+      "detail": {
+        "via": "fgui:btn_login",
+        "shot": "01-login.jpg"
+      },
+      "screenshots": [
+        "01-login.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:22:59.747Z"
+    },
+    {
+      "name": "点「开始游戏」",
+      "ok": true,
+      "startedAt": "2026-09-20T02:22:59.747Z",
+      "detail": {
+        "tapped": "btn_login",
+        "at": [
+          599,
+          618
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:22:59.817Z"
+    },
+    {
+      "name": "首屏 PromoHomeView 挂载",
+      "ok": true,
+      "startedAt": "2026-09-20T02:22:59.817Z",
+      "detail": {
+        "card": [
+          "gono",
+          "Cocos Creator + Colyseus 实时游戏脚手架",
+          "协议 game v8 · lobby v7 · 已登记玩法 8",
+          "本地开发服 · dev-63bfdde39b49cc16 · 体力 30 · 0胜0负"
+        ],
+        "protocolLine": "协议 game v8 · lobby v7 · 已登记玩法 8",
+        "shot": "02-home.jpg"
+      },
+      "screenshots": [
+        "02-home.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:23:00.520Z"
+    },
+    {
+      "name": "点首屏「设置」",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:00.522Z",
+      "detail": {
+        "tapped": "设置",
+        "at": [
+          855,
+          98
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:23:00.670Z"
+    },
+    {
+      "name": "设置面板：上方系统设置、下方玩法入口",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:00.670Z",
+      "detail": {
+        "sections": [
+          "系统设置",
+          "玩法入口"
+        ],
+        "entries": [
+          {
+            "entryId": "arenaHub",
+            "label": "竞技场"
+          },
+          {
+            "entryId": "ballMove",
+            "label": "进入战斗"
+          },
+          {
+            "entryId": "redeem",
+            "label": "兑换码"
+          },
+          {
+            "entryId": "map",
+            "label": "大地图"
+          },
+          {
+            "entryId": "snake",
+            "label": "贪吃蛇大作战"
+          },
+          {
+            "entryId": "tally",
+            "label": "点数赛"
+          }
+        ],
+        "shot": "03-settings.jpg"
+      },
+      "screenshots": [
+        "03-settings.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:23:01.002Z"
+    },
+    {
+      "name": "设置面板点「竞技场」卡片进入分组页",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:01.005Z",
+      "detail": {
+        "rows": [
+          "竞技场  ·  arena",
+          "占领赛  ·  arena",
+          "决斗  ·  arena",
+          "竞技场商店  ·  arenaShop"
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:23:01.107Z"
+    },
+    {
+      "name": "分组页里进「竞技场 · arena」（kit route 形态：kit 的客户端 entry 由 PluginHost 装载）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:01.107Z",
+      "detail": {
+        "tapped": "进入 @ /^竞技场\\s+·\\s+arena$/u",
+        "at": [
+          803,
+          429
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:23:01.191Z"
+    },
+    {
+      "name": "ArenaBoardView 挂载并读到棋盘（16 格 + 奖杯行）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:01.191Z",
+      "detail": {
+        "tiles": [
+          "A1",
+          "A2",
+          "A3",
+          "A4",
+          "B1",
+          "B2",
+          "B3",
+          "B4",
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "D1",
+          "D2",
+          "D3",
+          "D4"
+        ],
+        "tileCount": 16,
+        "trophyLine": "奖杯 0 · 处理中…",
+        "shot": "04-arena-board.jpg"
+      },
+      "screenshots": [
+        "04-arena-board.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:23:01.519Z"
+    },
+    {
+      "name": "占一格（arena.capture：withKitTx 写 k_arena_board + kit effect 发奖杯）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:01.519Z",
+      "detail": {
+        "tile": "B1",
+        "via": "empty-tile",
+        "tapped": {
+          "tapped": "tile-B1",
+          "at": [
+            561,
+            346
+          ]
+        },
+        "outcome": "captured",
+        "notice": "B1 已占领 · 守备 1 · 奖杯 2",
+        "trophyLine": "奖杯 2",
+        "shot": "05-arena-captured.jpg"
+      },
+      "screenshots": [
+        "05-arena-captured.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:23:02.333Z"
+    },
+    {
+      "name": "点「刷新」重读棋盘（arena.board 查询面）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:02.333Z",
+      "detail": {
+        "trophyBefore": "奖杯 2",
+        "trophyAfter": "奖杯 2",
+        "ownedTilesWithPower": 2,
+        "shot": "06-arena-refreshed.jpg"
+      },
+      "screenshots": [
+        "06-arena-refreshed.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:23:03.919Z"
+    },
+    {
+      "name": "再点自己的格 = 加固（power +1、⛔ 不再发奖杯）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:03.919Z",
+      "detail": {
+        "tile": "A1",
+        "notice": "A1 已占领 · 守备 3 · 奖杯 2",
+        "powerBefore": 2,
+        "powerAfter": 3,
+        "trophyBefore": "奖杯 2",
+        "trophyAfter": "奖杯 2",
+        "trophyUnchanged": true,
+        "shot": "07-arena-reinforced.jpg"
+      },
+      "screenshots": [
+        "07-arena-reinforced.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:23:05.364Z"
+    },
+    {
+      "name": "「关闭」回到设置面板（ArenaBoardView 卸载）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:23:05.364Z",
+      "detail": {
+        "settingsStillOpen": true,
+        "viaGroup": true
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:23:05.543Z"
+    }
+  ],
+  "console": [],
+  "tab": {
+    "id": "E5FAF54A3DBB062E0C6AE4419C6295A6",
+    "created": true
+  },
+  "finishedAt": "2026-09-20T02:23:05.544Z"
+}

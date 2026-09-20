@@ -1,0 +1,20 @@
+<% data.uses.forEach(useItem => { %>
+<%- useItem %><% }) %>
+
+/**<% data.annotation.forEach(annotation => { %>
+ * <%- annotation %><% }) %>
+ */
+export class <%= data.name %> {
+  <% data.getProperties().forEach(property => { %>
+    <% if (property.staticOrConst === 2) { %>
+      <%- include("ClassPropertyConst", {property: property}) %> 
+    <% } else if (property.staticOrConst === 1) { %>
+      <%- include("ClassPropertyStatic", {property: property}) %> 
+    <% } else { %>
+      <%- include("ClassProperty", {property: property}) %> 
+    <% } %>
+  <% }) %>
+<% for(const method of data.methods) {%>
+  <%- include("ClassMethod", {method: method}) %>
+<% } %>
+}

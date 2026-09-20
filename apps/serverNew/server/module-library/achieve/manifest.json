@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "name": "achieve",
+  "version": "1.0.0",
+  "description": "Archived achieve game module",
+  "files": [
+    {
+      "target": "config_game/achievement_award.json",
+      "payload": "payload/config_game/achievement_award.json",
+      "sha256": "a21f08924c066e17968cecec3e368db304973f5ebd018ea777608405cfa064d1"
+    },
+    {
+      "target": "config_game/achievement_label.json",
+      "payload": "payload/config_game/achievement_label.json",
+      "sha256": "8c5f9e64476366f28676d066f267a79877a88fe8a460a2272b0c66e5576513e5"
+    },
+    {
+      "target": "config_game/achievement_label_open.json",
+      "payload": "payload/config_game/achievement_label_open.json",
+      "sha256": "2150cb7cef9fe6a5c42e1f7d8d5d9af450a40ddbf6008670f10c7802773ec9a6"
+    },
+    {
+      "target": "config_game/achievement_medal.json",
+      "payload": "payload/config_game/achievement_medal.json",
+      "sha256": "930a99a57ce99254fc48094b0b3a56351b6690f6dc459e4c99f3ffe03aca3f10"
+    },
+    {
+      "target": "src/modules/achieve/AchieveC2S.ts",
+      "payload": "payload/src/modules/achieve/AchieveC2S.ts",
+      "sha256": "bb4ddff716b08f335ba754314035090977c6787c2a40672f8edbdcb4b0f8ad58"
+    },
+    {
+      "target": "src/modules/achieve/AchieveErrors.ts",
+      "payload": "payload/src/modules/achieve/AchieveErrors.ts",
+      "sha256": "4c250a643041331f65fb7c96569cd7ec61713317c06d62eb9b39ed50d604e675"
+    },
+    {
+      "target": "src/modules/achieve/AchieveModule.ts",
+      "payload": "payload/src/modules/achieve/AchieveModule.ts",
+      "sha256": "c6bda909dd17cd0f9842608948952518796c6f8d80d42edca75846c22f9bfdc0"
+    },
+    {
+      "target": "src/modules/achieve/action/ActionAchieveBadgeAward.ts",
+      "payload": "payload/src/modules/achieve/action/ActionAchieveBadgeAward.ts",
+      "sha256": "c0e73af00a9f021a5bb42ce07465a9e08f103c9127719bbe7821dec316defe1c"
+    },
+    {
+      "target": "src/modules/achieve/action/ActionAchieveLabel.ts",
+      "payload": "payload/src/modules/achieve/action/ActionAchieveLabel.ts",
+      "sha256": "31a9d6b47bd406d4eb05ae8b4a2a972d0040c50e20531c76bf97552a21a48b56"
+    },
+    {
+      "target": "src/modules/achieve/action/ActionAchieveLabelDress.ts",
+      "payload": "payload/src/modules/achieve/action/ActionAchieveLabelDress.ts",
+      "sha256": "6f239cade8bac93189c223722bf3aad305121e7136ae929182b057cf93688a80"
+    },
+    {
+      "target": "src/modules/achieve/action/ActionAchieveLabelUnDress.ts",
+      "payload": "payload/src/modules/achieve/action/ActionAchieveLabelUnDress.ts",
+      "sha256": "ff99a22e1f085b83b269d041c6227ed8c0ef1e418d01178a79c65424f962bf42"
+    },
+    {
+      "target": "src/modules/achieve/bean/LabelBean.ts",
+      "payload": "payload/src/modules/achieve/bean/LabelBean.ts",
+      "sha256": "c169d74b4b35f03ccc04e904b6c688d88b6daac9ea16035e98a0b5e32abdf9e7"
+    },
+    {
+      "target": "src/modules/achieve/bean/UserAchieveBean.ts",
+      "payload": "payload/src/modules/achieve/bean/UserAchieveBean.ts",
+      "sha256": "be7648f041631bc18bc88a4a67cc67b1fd8bedd8f230fce0918c32ca0cd89c29"
+    },
+    {
+      "target": "src/modules/achieve/rules/AchieveProgressionRules.ts",
+      "payload": "payload/src/modules/achieve/rules/AchieveProgressionRules.ts",
+      "sha256": "78aa57a6bebfb2f10c74f97919070ddd2063f6dfca77c059867c28c9e0b6c630"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-achieve-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../achieve/bean/UserAchieveBean",
+      "import": "import { UserAchieveBean } from '../../achieve/bean/UserAchieveBean'",
+      "expectedAbsent": "UserAchieveBean"
+    },
+    {
+      "id": "user-achieve-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "@Mod\nachieve!: UserAchieveBean",
+      "expectedAbsent": "achieve!: UserAchieveBean"
+    },
+    {
+      "id": "user-login-achieve-mod",
+      "type": "addStatement",
+      "target": "src/modules/user/action/ActionGetUserInfo.ts",
+      "functionName": "doAction",
+      "after": "    'redDotList',",
+      "statement": "    'achieve',",
+      "expectedAbsent": "    'achieve',"
+    },
+    {
+      "id": "user-info-achieve-fields",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/UserInfoOnlyNetBean.ts",
+      "className": "UserInfoOnlyNetBean",
+      "member": "labelWears?: DiffArray<int>\nachievePoint: int = 0",
+      "expectedAbsent": "achievePoint: int = 0"
+    },
+    {
+      "id": "user-ref-achieve-labels",
+      "type": "addClassMember",
+      "target": "src/modules/user/ref/UserBaseRef.ts",
+      "className": "UserBaseRef",
+      "member": "@FromData(User, 'achieve.labelWears')\nlabelWears?: DiffArray<int>",
+      "expectedAbsent": "@FromData(User, 'achieve.labelWears')"
+    },
+    {
+      "id": "user-ref-achieve-point",
+      "type": "addClassMember",
+      "target": "src/modules/user/ref/UserBaseRef.ts",
+      "className": "UserBaseRef",
+      "member": "@FromData(User, 'achieve.achievePoint')\nachievePoint: int = 0",
+      "expectedAbsent": "@FromData(User, 'achieve.achievePoint')"
+    },
+    {
+      "id": "guild-ref-achieve-labels",
+      "type": "addClassMember",
+      "target": "src/modules/guild/ref/GuildMemberRef.ts",
+      "className": "GuildMemberRef",
+      "member": "@FromData(User, 'achieve.labelWears')\nlabelWears?: DiffArray<int>",
+      "expectedAbsent": "@FromData(User, 'achieve.labelWears')"
+    },
+    {
+      "id": "guild-ref-achieve-point",
+      "type": "addClassMember",
+      "target": "src/modules/guild/ref/GuildMemberRef.ts",
+      "className": "GuildMemberRef",
+      "member": "@FromData(User, 'achieve.achievePoint')\nachievePoint: int = 0",
+      "expectedAbsent": "@FromData(User, 'achieve.achievePoint')"
+    },
+    {
+      "id": "profile-ref-achieve",
+      "type": "insertAfterText",
+      "target": "src/modules/user/action/UserProfileFormatter.ts",
+      "after": "                race: query.race,",
+      "text": "                labelWears: query.labelWears,\n                achievePoint: query.achievePoint,",
+      "expectedAbsent": "                labelWears: query.labelWears,"
+    },
+    {
+      "id": "profile-user-achieve",
+      "type": "insertAfterText",
+      "target": "src/modules/user/action/UserProfileFormatter.ts",
+      "after": "            race: query.race,",
+      "text": "            labelWears: query.achieve.labelWears as User['achieve']['labelWears'],\n            achievePoint: query.achieve.achievePoint,",
+      "expectedAbsent": "            labelWears: query.achieve.labelWears"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- achieve"
+    ],
+    "manual": []
+  }
+}

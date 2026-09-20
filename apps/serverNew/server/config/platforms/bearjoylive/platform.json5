@@ -1,0 +1,175 @@
+{
+    // ⚠️ 本目录是「原生 Lobby 真实进程联调」专用线路（`-p bearjoy -v live`），不是发布配置。
+    // 与 base `config/platform.json5` 的差异只有三处，改动前先看这里：
+    //   1. Redis 库号错开（center 9 / user 8 / server 7），真实启动自检不写共享开发库；
+    //   2. 只绑 127.0.0.1，端口错开到 18090（内网端口派生为 28090）；
+    //   3. 单进程 + 2s 认证超时，便于在自检里真的观察一次「未认证被关闭」。
+    // 配合 `scripts/verify/native-lobby-live.cjs` 使用；该脚本会注入 NATIVE_LOBBY_* 与 WEBPLATFORM_*。
+    // 是否开启白名单设备控制
+    whiteDeviceSwitch: false,
+    // hash的加密秘钥
+    sessionSignKey: '4RTDmP$rX1WWY2sA',
+    // gm api请求的秘钥
+    gmSecret: 'r7HpIaNXTMXaKw2',
+    // 设置系统的时区
+    timeZone: 'Asia/Shanghai',
+
+    // 联调线路专用库号：与 base（0/15/1）错开，避免真实启动自检写进共享开发库。
+    centerRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 9,
+    },
+    userRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 8,
+    },
+    serverRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 7, // 未配置精确 sN.json5 时作为一区起始 DB，后续区服按 sid 递增
+    },
+    centerMysql: {
+        host: '127.0.0.1',
+        username: 'root',
+        password: '123456',
+        charset: 'utf8mb4',
+        database: 'nodedemo_center',
+        logging: false,
+    },
+
+    // 固定区服默认配置；一区使用 20001，后续区服按 sid 依次递增，可由 platforms/<platform><version>/sN.json5 独立覆盖。
+    // clientHost 同时是「监听地址」与「对外广播地址」（/adjust/getHash 返回的 ws）——
+    // 本地联调要手机/局域网可连就必须是 0.0.0.0，代价是广播出去的 ws://0.0.0.0:20001
+    // 对远端不可直接使用（真实客户端用自己配置的 host，不受影响）。
+    fixedServer: {
+        // 联调线路：只绑回环，端口与 base（20001/30001）错开，避免和常驻开发服抢端口。
+        clientHost: '127.0.0.1',
+        firstClientPort: 18090,
+        internalHost: '127.0.0.1',
+        heartbeatTimeoutMs: 60000,
+        // 认证超时压到 2s：联调要真的等一次「未认证连接被服务端关掉」，30s 不现实。
+        authTimeoutMs: 2000,
+        maxPacketSize: 102400,
+        // 多进程进程池规模。两者同时为 0 时区服走单进程启动，直接 node 运行，不加载多进程运行时。
+        workerNum: 0,
+        taskWorkerNum: 0,
+        userTaskWorkerNum: 0,
+    },
+
+    // cdn的
+    cdn: {
+        //cdn的根地址
+        baseUrl: 'http://s1.static.xmpaoyou.com/demontale/bearjoy',
+    },
+    // 访问站点api地址；host 同时是管理 HTTP 的监听地址与「自指 URL」的拼接前缀
+    // （loginUrl / 支付回调 / 客户端配置 prefix），改成 0.0.0.0 后这些自指 URL 也变成
+    // http://0.0.0.0:25001 —— 本地联调够用，真实客户端访问要用局域网 IP 时需另行拆分。
+    host: '127.0.0.1',
+    port: 25011,
+
+    // /adjust/* 与 /center/sso* 的浏览器 Origin 白名单（见 isAllowedToolOrigin）。
+    // 代码只放行「同源」「hostname 为 localhost / 127.0.0.1 / ::1」，其余一律 sendStatus(404)
+    // 伪装成路由不存在 —— 所以用局域网地址打开预览页或网页版时，登录会「莫名 404」。
+    // 这里是**精确字符串匹配**（不是通配），本机 IP 变了必须同步改；localhost/127.0.0.1
+    // 已由代码放行，不必列。7456 是 Cocos 编辑器预览，8899 是网页版（反代会改写 Host，
+    // 导致同源判定失效，同样要列）。
+    adjustOrigins: ['http://10.130.0.133:7456', 'http://10.130.0.133:8899'],
+
+    log: {
+        env: 'dev',
+        output: 'file',
+        level: 'info',
+        encoding: 'text',
+        channels: [
+            {
+                name: 'game',
+                dirname: './log/game',
+                maxFiles: '1',
+            },
+            {
+                name: 'orm',
+                filename: 'orm_redis.log',
+                dirname: './log/orm',
+                maxFiles: '1',
+            },
+            {
+                name: 'console',
+                output: 'console',
+                level: 'warn',
+            },
+            {
+                name: 'http',
+                filename: 'http.log',
+                dirname: './log/http',
+            },
+            {
+                name: 'net',
+                filename: 'net.log',
+                dirname: './log/net',
+            },
+            {
+                name: 'redis',
+                filename: 'redis.log',
+                dirname: './log/redis',
+                level: 'error',
+            },
+            {
+                name: 'monitor',
+                filename: 'monitor.log',
+                dirname: './log/monitor',
+            },
+            {
+                name: 'webadjust',
+                filename: 'webadjust.log',
+                dirname: './log/adjust',
+            },
+        ],
+    },
+
+    log_monitor: {
+        scanCachePath: './log/scanCache.txt', //扫面缓存信息保存位置
+        tasks: {
+            default: {
+                title: 'api与service', //汇报的标题
+                rootPath: './log',
+                regexp: '/.+\\.log\\..+', //正则,匹配文件绝对路径
+                cacheFile: './log/scanCache.txt', //扫描记录存放位置
+                robotUrl: '', //企业微信hook推送链接,通过创建群机器人获取
+                errorLineRegexp: '^[0-9-]+\\s[0-9-:\\.]+\\serror\\s', //正则,匹配错误行
+                newLineRegexp: '^[0-9-]+\\s[0-9-:\\.]+\\s\\w+\\s', //正则,匹配新一行
+                displayErrorNum: 5,
+                displayTraceNum: 3,
+            },
+        },
+    },
+
+    onOffs: {
+        staTaOpen: 'false',
+    },
+
+    // wstool, 下面这些wstool配置并不是都在engine里用到, 具体逻辑wstool.ts
+    project: 'nodetest',
+
+    // wstool 协议类型配置: json / protobuf
+    protocol: 'protobuf',
+
+    // wstool route Api
+    routeApi: '/adjust/downloadProto',
+
+    // wstool adjust Api
+    adjustUrl: '/adjust/index',
+
+    // wstool 新建用户 Api
+    newUserUrl: '/adjust/newUser',
+
+    // wstool 获取hash
+    hashApi: '/adjust/wstool/getHash',
+
+    // wstool uid 渠道自增长值
+    PLATFORM_BASE_NUM: 10000000000,
+
+    // wstool uId 区服自增长值
+    SID_BASE_NUM: 1000000,
+}

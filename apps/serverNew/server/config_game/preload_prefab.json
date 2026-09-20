@@ -1,0 +1,256 @@
+{
+	"Plot": {
+		"prefab": "Plot",
+		"inLogin": 1
+	},
+	"Home": {
+		"prefab": "Home",
+		"widgetVisible": "SelectRace",
+		"load": 1,
+		"inLogin": 1
+	},
+	"Overlay": {
+		"prefab": "Overlay",
+		"widgetVisible": "SelectRace",
+		"load": 1,
+		"inLogin": 1
+	},
+	"InitRolePreviewTab": {
+		"prefab": "InitRolePreviewTab",
+		"widgetVisible": "InitRole",
+		"inLogin": 1
+	},
+	"Practice": {
+		"prefab": "Practice",
+		"widgetVisible": "Home",
+		"load": 1
+	},
+	"PlayerScore": {
+		"prefab": "PlayerScore",
+		"widgetVisible": "Practice"
+	},
+	"MainTaskTip": {
+		"prefab": "MainTaskTip",
+		"widgetVisible": "Practice"
+	},
+	"AchieveTip": {
+		"prefab": "AchieveTip",
+		"widgetVisible": "Practice"
+	},
+	"SystemUnlock": {
+		"prefab": "SystemUnlock",
+		"widgetVisible": "Practice"
+	},
+	"PropGetWay": {
+		"prefab": "PropGetWay",
+		"widgetVisible": "Practice"
+	},
+	"GetProp": {
+		"prefab": "GetProp",
+		"widgetVisible": "Practice"
+	},
+	"EquipWearDetail": {
+		"prefab": "EquipWearDetail",
+		"widgetVisible": "Practice"
+	},
+	"Social": {
+		"prefab": "Social",
+		"widgetVisible": "Practice"
+	},
+	"SteriousMan": {
+		"prefab": "SteriousMan",
+		"widgetVisible": "Practice"
+	},
+	"FuncEnterBar": {
+		"prefab": "FuncEnterBar",
+		"widgetVisible": "Practice"
+	},
+	"QuickWear": {
+		"prefab": "QuickWear",
+		"widgetVisible": "Practice"
+	},
+	"MapScene": {
+		"prefab": "MapScene",
+		"widgetVisible": "Practice"
+	},
+	"TiliAward": {
+		"prefab": "TiliAward",
+		"widgetVisible": "Practice"
+	},
+	"BuyPower": {
+		"prefab": "BuyPower",
+		"widgetVisible": "Practice"
+	},
+	"SevenDaySign": {
+		"prefab": "SevenDaySign",
+		"widgetVisible": "Practice",
+		"systemId": 65
+	},
+	"FundPop": {
+		"prefab": "FundPop",
+		"widgetVisible": "Practice",
+		"systemId": 47
+	},
+	"FirstRechargeGift": {
+		"prefab": "FirstRechargeGift",
+		"widgetVisible": "Practice",
+		"systemId": 53
+	},
+	"Fight": {
+		"prefab": "Fight",
+		"widgetVisible": "Practice",
+		"systemId": 2,
+		"load": 1
+	},
+	"Equip": {
+		"prefab": "Equip",
+		"widgetVisible": "Practice",
+		"systemId": 5,
+		"load": 1
+	},
+	"GongMain": {
+		"prefab": "GongMain",
+		"widgetVisible": "Practice",
+		"systemId": 3,
+		"load": 1
+	},
+	"GongBar": {
+		"prefab": "GongBar",
+		"widgetVisible": "Practice",
+		"systemId": 3
+	},
+	"Weapon": {
+		"prefab": "Weapon",
+		"widgetVisible": "Practice",
+		"systemId": 4,
+		"load": 1
+	},
+	"WeaponComp": {
+		"prefab": "WeaponComp",
+		"widgetVisible": "Practice",
+		"systemId": 4
+	},
+	"Mission": {
+		"prefab": "Mission",
+		"widgetVisible": "Practice",
+		"systemId": 15,
+		"load": 1
+	},
+	"Bonus": {
+		"prefab": "Bonus",
+		"widgetVisible": "Practice",
+		"systemId": 45,
+		"load": 1
+	},
+	"Player": {
+		"prefab": "Player",
+		"widgetVisible": "Practice"
+	},
+	"PlayerInfo": {
+		"prefab": "PlayerInfo",
+		"widgetVisible": "Practice"
+	},
+	"DressInfo": {
+		"prefab": "DressInfo",
+		"widgetVisible": "Player"
+	},
+	"PlayerRealm": {
+		"prefab": "PlayerRealm",
+		"widgetVisible": "Player"
+	},
+	"WorshipSkillMain": {
+		"prefab": "WorshipSkillMain",
+		"widgetVisible": "GongMain",
+		"systemId": 42
+	},
+	"MagicalList": {
+		"prefab": "MagicalList",
+		"widgetVisible": "GongMain"
+	},
+	"SorceryUpgrade": {
+		"prefab": "SorceryUpgrade",
+		"widgetVisible": "GongMain",
+		"systemId": 59
+	},
+	"EquipDetailComp": {
+		"prefab": "EquipDetailComp",
+		"widgetVisible": "Equip"
+	},
+	"EquipSmelt": {
+		"prefab": "EquipSmelt",
+		"widgetVisible": "Equip"
+	},
+	"EquipSkin": {
+		"prefab": "EquipSkin",
+		"widgetVisible": "Equip"
+	},
+	"FirstRechargeTab": {
+		"prefab": "FirstRechargeTab",
+		"widgetVisible": "Bonus",
+		"systemId": 53
+	},
+	"FundComp": {
+		"prefab": "FundComp",
+		"widgetVisible": "Bonus",
+		"systemId": 47
+	},
+	"PrivilegeTab": {
+		"prefab": "PrivilegeTab",
+		"widgetVisible": "Bonus",
+		"systemId": 68
+	},
+	"QuestionTab": {
+		"prefab": "QuestionTab",
+		"widgetVisible": "Bonus",
+		"systemId": 70
+	},
+	"RechargeGiftTab": {
+		"prefab": "RechargeGiftTab",
+		"widgetVisible": "Bonus",
+		"systemId": 52
+	},
+	"RechargeTab": {
+		"prefab": "RechargeTab",
+		"widgetVisible": "Bonus",
+		"systemId": 53
+	},
+	"SevenDaySignTab": {
+		"prefab": "SevenDaySignTab",
+		"widgetVisible": "Bonus",
+		"systemId": 65
+	},
+	"TokenStoreTab": {
+		"prefab": "TokenStoreTab",
+		"widgetVisible": "Bonus",
+		"systemId": 74
+	},
+	"TriggerGiftTab": {
+		"prefab": "TriggerGiftTab",
+		"widgetVisible": "Bonus",
+		"systemId": 63
+	},
+	"MissionListComp": {
+		"prefab": "MissionListComp",
+		"widgetVisible": "Mission"
+	},
+	"MissionActivityBoss": {
+		"prefab": "MissionActivityBoss",
+		"widgetVisible": "Mission"
+	},
+	"MissionBuyChallenge": {
+		"prefab": "MissionBuyChallenge",
+		"widgetVisible": "Mission"
+	},
+	"MissionBossSetting": {
+		"prefab": "MissionBossSetting",
+		"widgetVisible": "Mission"
+	},
+	"WeaponRefining": {
+		"prefab": "WeaponRefining",
+		"widgetVisible": "Weapon"
+	},
+	"RaresList": {
+		"prefab": "RaresList",
+		"widgetVisible": "Weapon"
+	}
+}

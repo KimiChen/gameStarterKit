@@ -1,0 +1,39 @@
+# Dependencies and tool caches
+node_modules/
+.npm/
+.eslintcache
+*.tsbuildinfo
+
+# Build and test outputs
+dist/
+build/compiled/
+build/test-compiled/
+coverage/
+generated/lobby-contract/
+.nyc_output/
+
+# Module-library operation state; archive packages themselves remain tracked.
+module-library/.installed.json
+module-library/.operation-lock
+module-library/.operations/
+
+# Runtime outputs
+log/
+logs/
+*.log
+*.pid
+*.pid.lock
+npm-debug.log*
+pnpm-debug.log*
+
+# Local environment and editor state
+.env
+.env.*.local
+.DS_Store
+.idea/
+.vscode/
+
+# Local line and upload data
+bearjoydev/
+config/platforms/bearjoydev/
+public/uploadCfg/

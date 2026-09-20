@@ -1,0 +1,317 @@
+{
+	"monster_atk_start_1": {
+		"name": "monster_atk_start_1",
+		"data": [
+			{
+				"name": "monster_atk_start_1",
+				"type": 0,
+				"id": "boss_wood"
+			}
+		]
+	},
+	"monster_atk_start_2": {
+		"name": "monster_atk_start_2",
+		"data": [
+			{
+				"name": "monster_atk_start_2",
+				"type": 0,
+				"id": "boss_electricity"
+			}
+		]
+	},
+	"monster_atk_start_3": {
+		"name": "monster_atk_start_3",
+		"data": [
+			{
+				"name": "monster_atk_start_3",
+				"type": 0,
+				"id": "boss_wind"
+			}
+		]
+	},
+	"monster_atk_start_4": {
+		"name": "monster_atk_start_4",
+		"data": [
+			{
+				"name": "monster_atk_start_4",
+				"type": 0,
+				"id": "boss_water"
+			}
+		]
+	},
+	"monster_atk_start_5": {
+		"name": "monster_atk_start_5",
+		"data": [
+			{
+				"name": "monster_atk_start_5",
+				"type": 0,
+				"id": "boss_fire"
+			}
+		]
+	},
+	"monster_atk_start_6": {
+		"name": "monster_atk_start_6",
+		"data": [
+			{
+				"name": "monster_atk_start_6",
+				"type": 0,
+				"id": "boss_soil"
+			}
+		]
+	},
+	"sorcery_shoot_2_3": {
+		"name": "sorcery_shoot_2_3",
+		"data": [
+			{
+				"name": "sorcery_shoot_2_3",
+				"type": 1,
+				"id": "fox_crit"
+			},
+			{
+				"name": "sorcery_shoot_2_3",
+				"type": 2,
+				"id": "boss_critWind"
+			}
+		]
+	},
+	"sorcery_shoot_2_5": {
+		"name": "sorcery_shoot_2_5",
+		"data": [
+			{
+				"name": "sorcery_shoot_2_5",
+				"type": 2,
+				"id": "boss_critFire"
+			}
+		]
+	},
+	"sorcery_shoot_2_6": {
+		"name": "sorcery_shoot_2_6",
+		"data": [
+			{
+				"name": "sorcery_shoot_2_6",
+				"type": 2,
+				"id": "boss_critSoil"
+			}
+		]
+	},
+	"worship_atk_shoot_111": {
+		"name": "worship_atk_shoot_111",
+		"data": [
+			{
+				"name": "worship_atk_shoot_111",
+				"type": 1,
+				"id": "skill_consecrate_fightBack_woodLv1"
+			}
+		]
+	},
+	"worship_atk_shoot_113": {
+		"name": "worship_atk_shoot_113",
+		"data": [
+			{
+				"name": "worship_atk_shoot_113",
+				"type": 1,
+				"id": "skill_consecrate_fightBack_woodLv3"
+			}
+		]
+	},
+	"worship_atk_shoot_211": {
+		"name": "worship_atk_shoot_211",
+		"data": [
+			{
+				"name": "worship_atk_shoot_211",
+				"type": 1,
+				"id": "skill_consecrate_attack_electricityLv1"
+			}
+		]
+	},
+	"worship_atk_shoot_213": {
+		"name": "worship_atk_shoot_213",
+		"data": [
+			{
+				"name": "worship_atk_shoot_213",
+				"type": 1,
+				"id": "skill_consecrate_attack_electricityLv3"
+			}
+		]
+	},
+	"worship_atk_shoot_311": {
+		"name": "worship_atk_shoot_311",
+		"data": [
+			{
+				"name": "worship_atk_shoot_311",
+				"type": 1,
+				"id": "skill_consecrate_attack_windLv1"
+			}
+		]
+	},
+	"worship_atk_shoot_313": {
+		"name": "worship_atk_shoot_313",
+		"data": [
+			{
+				"name": "worship_atk_shoot_313",
+				"type": 1,
+				"id": "skill_consecrate_attack_windLv3"
+			}
+		]
+	},
+	"worship_atk_shoot_411": {
+		"name": "worship_atk_shoot_411",
+		"data": [
+			{
+				"name": "worship_atk_shoot_411",
+				"type": 1,
+				"id": "skill_consecrate_attack_waterLv1"
+			}
+		]
+	},
+	"worship_atk_shoot_413": {
+		"name": "worship_atk_shoot_413",
+		"data": [
+			{
+				"name": "worship_atk_shoot_413",
+				"type": 1,
+				"id": "skill_consecrate_attack_waterLv3"
+			}
+		]
+	},
+	"worship_atk_shoot_511": {
+		"name": "worship_atk_shoot_511",
+		"data": [
+			{
+				"name": "worship_atk_shoot_511",
+				"type": 1,
+				"id": "skill_consecrate_attack_fireLv1"
+			}
+		]
+	},
+	"worship_atk_shoot_513": {
+		"name": "worship_atk_shoot_513",
+		"data": [
+			{
+				"name": "worship_atk_shoot_513",
+				"type": 1,
+				"id": "skill_consecrate_attack_fireLv3"
+			}
+		]
+	},
+	"worship_atk_shoot_611": {
+		"name": "worship_atk_shoot_611",
+		"data": [
+			{
+				"name": "worship_atk_shoot_611",
+				"type": 1,
+				"id": "skill_consecrate_fightBack_soilLv1"
+			}
+		]
+	},
+	"worship_atk_shoot_613": {
+		"name": "worship_atk_shoot_613",
+		"data": [
+			{
+				"name": "worship_atk_shoot_613",
+				"type": 1,
+				"id": "skill_consecrate_fightBack_soilLv3"
+			}
+		]
+	},
+	"worship_atk_start_121": {
+		"name": "worship_atk_start_121",
+		"data": [
+			{
+				"name": "worship_atk_start_121",
+				"type": 1,
+				"id": "skill_consecrate_heal_wood"
+			}
+		]
+	},
+	"worship_atk_start_221": {
+		"name": "worship_atk_start_221",
+		"data": [
+			{
+				"name": "worship_atk_start_221",
+				"type": 1,
+				"id": "skill_consecrate_heal_electricity"
+			}
+		]
+	},
+	"worship_atk_start_321": {
+		"name": "worship_atk_start_321",
+		"data": [
+			{
+				"name": "worship_atk_start_321",
+				"type": 1,
+				"id": "skill_consecrate_heal_wind"
+			}
+		]
+	},
+	"worship_atk_start_421": {
+		"name": "worship_atk_start_421",
+		"data": [
+			{
+				"name": "worship_atk_start_421",
+				"type": 1,
+				"id": "skill_consecrate_heal_water"
+			}
+		]
+	},
+	"worship_atk_start_521": {
+		"name": "worship_atk_start_521",
+		"data": [
+			{
+				"name": "worship_atk_start_521",
+				"type": 1,
+				"id": "skill_consecrate_heal_fire"
+			}
+		]
+	},
+	"worship_atk_start_621": {
+		"name": "worship_atk_start_621",
+		"data": [
+			{
+				"name": "worship_atk_start_621",
+				"type": 1,
+				"id": "skill_consecrate_heal_soil"
+			}
+		]
+	},
+	"magical_shoot_311001": {
+		"name": "magical_shoot_311001",
+		"data": [
+			{
+				"name": "magical_shoot_311001",
+				"type": 1,
+				"id": "skill_Rune_311001"
+			}
+		]
+	},
+	"magical_shoot_312001": {
+		"name": "magical_shoot_312001",
+		"data": [
+			{
+				"name": "magical_shoot_312001",
+				"type": 1,
+				"id": "skill_Rune_312001"
+			}
+		]
+	},
+	"magical_shoot_313001": {
+		"name": "magical_shoot_313001",
+		"data": [
+			{
+				"name": "magical_shoot_313001",
+				"type": 1,
+				"id": "skill_Rune_313001"
+			}
+		]
+	},
+	"magical_shoot_314001": {
+		"name": "magical_shoot_314001",
+		"data": [
+			{
+				"name": "magical_shoot_314001",
+				"type": 1,
+				"id": "skill_Rune_314001"
+			}
+		]
+	}
+}

@@ -1,0 +1,326 @@
+{
+	"1": {
+		"id": 1,
+		"name": "每日礼包",
+		"enName": "shopDay",
+		"unlockType": -1,
+		"showNum": -1,
+		"content": {
+			"10001": {
+				"giftId": 10001,
+				"id": 1,
+				"desc": "馈礼券礼包",
+				"giftIcon": 401,
+				"rechargeId": 0,
+				"type": 4,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10001,
+						"propId": 1018,
+						"num": 5
+					}
+				]
+			},
+			"10002": {
+				"giftId": 10002,
+				"id": 1,
+				"desc": "初级奇珍礼包",
+				"giftIcon": 401,
+				"rechargeId": 10002,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10002,
+						"propId": 1018,
+						"num": 10
+					},
+					{
+						"giftId": 10002,
+						"propId": 1003,
+						"num": 10
+					},
+					{
+						"giftId": 10002,
+						"propId": 8016,
+						"num": 1
+					}
+				]
+			},
+			"10003": {
+				"giftId": 10003,
+				"id": 1,
+				"desc": "初级法宝礼包",
+				"giftIcon": 402,
+				"rechargeId": 10003,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10003,
+						"propId": 1018,
+						"num": 20
+					},
+					{
+						"giftId": 10003,
+						"propId": 1003,
+						"num": 20
+					},
+					{
+						"giftId": 10003,
+						"propId": 10204,
+						"num": 2
+					}
+				]
+			},
+			"10004": {
+				"giftId": 10004,
+				"id": 1,
+				"desc": "中级奇珍礼包",
+				"giftIcon": 402,
+				"rechargeId": 10004,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10004,
+						"propId": 1018,
+						"num": 30
+					},
+					{
+						"giftId": 10004,
+						"propId": 1003,
+						"num": 30
+					},
+					{
+						"giftId": 10004,
+						"propId": 8016,
+						"num": 3
+					}
+				]
+			},
+			"10005": {
+				"giftId": 10005,
+				"id": 1,
+				"desc": "中级法宝礼包",
+				"giftIcon": 403,
+				"rechargeId": 10005,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10005,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 10005,
+						"propId": 1003,
+						"num": 40
+					},
+					{
+						"giftId": 10005,
+						"propId": 10204,
+						"num": 6
+					}
+				]
+			},
+			"10006": {
+				"giftId": 10006,
+				"id": 1,
+				"desc": "高级奇珍礼包",
+				"giftIcon": 403,
+				"rechargeId": 10006,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10006,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 10006,
+						"propId": 1003,
+						"num": 50
+					},
+					{
+						"giftId": 10006,
+						"propId": 10201,
+						"num": 8000
+					},
+					{
+						"giftId": 10006,
+						"propId": 8016,
+						"num": 8
+					}
+				]
+			},
+			"10007": {
+				"giftId": 10007,
+				"id": 1,
+				"desc": "特级奇珍礼包",
+				"giftIcon": 404,
+				"rechargeId": 10007,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10007,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 10007,
+						"propId": 1003,
+						"num": 60
+					},
+					{
+						"giftId": 10007,
+						"propId": 10201,
+						"num": 12000
+					},
+					{
+						"giftId": 10007,
+						"propId": 8016,
+						"num": 12
+					}
+				]
+			},
+			"10008": {
+				"giftId": 10008,
+				"id": 1,
+				"desc": "高级法宝礼包",
+				"giftIcon": 404,
+				"rechargeId": 10008,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10008,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 10008,
+						"propId": 1003,
+						"num": 70
+					},
+					{
+						"giftId": 10008,
+						"propId": 10202,
+						"num": 14000
+					},
+					{
+						"giftId": 10008,
+						"propId": 10204,
+						"num": 14
+					}
+				]
+			},
+			"10009": {
+				"giftId": 10009,
+				"id": 1,
+				"desc": "特级法宝礼包",
+				"giftIcon": 404,
+				"rechargeId": 10009,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10009,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 10009,
+						"propId": 1003,
+						"num": 80
+					},
+					{
+						"giftId": 10009,
+						"propId": 10202,
+						"num": 30000
+					},
+					{
+						"giftId": 10009,
+						"propId": 10204,
+						"num": 30
+					}
+				]
+			},
+			"10010": {
+				"giftId": 10010,
+				"id": 1,
+				"desc": "豪华宝石礼包",
+				"giftIcon": 404,
+				"rechargeId": 10010,
+				"type": 1,
+				"costId": 0,
+				"costNum": 0,
+				"buyLimitType": 1,
+				"buyLimitNum": 1,
+				"awards": [
+					{
+						"giftId": 10010,
+						"propId": 1018,
+						"num": 40
+					},
+					{
+						"giftId": 10010,
+						"propId": 1003,
+						"num": 90
+					},
+					{
+						"giftId": 10010,
+						"propId": 10203,
+						"num": 60000
+					},
+					{
+						"giftId": 10010,
+						"propId": 8015,
+						"num": 60
+					}
+				]
+			}
+		}
+	},
+	"2": {
+		"id": 2,
+		"name": "终身礼包",
+		"enName": "shopLife",
+		"unlockType": -1,
+		"showNum": -1,
+		"content": {
+
+		}
+	}
+}

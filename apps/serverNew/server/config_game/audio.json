@@ -1,0 +1,2161 @@
+{
+	"click": {
+		"id": "click",
+		"explain": "通用点击",
+		"audios": [
+			{
+				"id": "click",
+				"route": "Res/Audio/SFX/00001_sfx_click.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"button": {
+		"id": "button",
+		"explain": "通用按钮",
+		"audios": [
+			{
+				"id": "button",
+				"route": "Res/Audio/SFX/00002_sfx_button.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"back": {
+		"id": "back",
+		"explain": "通用返回",
+		"audios": [
+			{
+				"id": "back",
+				"route": "Res/Audio/SFX/00003_sfx_back.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"switch": {
+		"id": "switch",
+		"explain": "通用切换",
+		"audios": [
+			{
+				"id": "switch",
+				"route": "Res/Audio/SFX/00004_sfx_switch.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"rollButton": {
+		"id": "rollButton",
+		"explain": "随机按钮",
+		"audios": [
+			{
+				"id": "rollButton",
+				"route": "Res/Audio/SFX/00005_sfx_rollButton.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"result": {
+		"id": "result",
+		"explain": "恭喜获得",
+		"audios": [
+			{
+				"id": "result",
+				"route": "Res/Audio/SFX/00006_sfx_result.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"gradeUp": {
+		"id": "gradeUp",
+		"explain": "等级提升",
+		"audios": [
+			{
+				"id": "gradeUp",
+				"route": "Res/Audio/SFX/00007_sfx_gradeUp.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"buttonInto": {
+		"id": "buttonInto",
+		"explain": "进入按钮",
+		"audios": [
+			{
+				"id": "buttonInto",
+				"route": "Res/Audio/SFX/00008_sfx_buttonInto.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"score": {
+		"id": "score",
+		"explain": "角色评分",
+		"audios": [
+			{
+				"id": "score",
+				"route": "Res/Audio/SFX/00009_sfx_score.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"upgradeLight": {
+		"id": "upgradeLight",
+		"explain": "升级光效",
+		"audios": [
+			{
+				"id": "upgradeLight",
+				"route": "Res/Audio/SFX/00010_sfx_upgradeLight.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"hurt": {
+		"id": "hurt",
+		"explain": "受击",
+		"audios": [
+			{
+				"id": "hurt",
+				"route": "Res/Audio/SFX/01001_sfx_hurt.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"lightBall": {
+		"id": "lightBall",
+		"explain": "光球",
+		"audios": [
+			{
+				"id": "lightBall",
+				"route": "Res/Audio/SFX/01002_sfx_lightBall.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"itemPopup": {
+		"id": "itemPopup",
+		"explain": "物品弹出",
+		"audios": [
+			{
+				"id": "itemPopup",
+				"route": "Res/Audio/SFX/01003_sfx_itemPopup.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"victory": {
+		"id": "victory",
+		"explain": "胜利",
+		"audios": [
+			{
+				"id": "victory",
+				"route": "Res/Audio/SFX/02001_sfx_victory.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"defeat": {
+		"id": "defeat",
+		"explain": "失败",
+		"audios": [
+			{
+				"id": "defeat",
+				"route": "Res/Audio/SFX/02002_sfx_defeat.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"shopInto": {
+		"id": "shopInto",
+		"explain": "进入商城",
+		"audios": [
+			{
+				"id": "shopInto",
+				"route": "Res/Audio/SFX/03001_sfx_shopInto.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"listLike": {
+		"id": "listLike",
+		"explain": "排行榜_点赞",
+		"audios": [
+			{
+				"id": "listLike",
+				"route": "Res/Audio/SFX/03002_sfx_listLike.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"battleStart": {
+		"id": "battleStart",
+		"explain": "论道台_斗法",
+		"audios": [
+			{
+				"id": "battleStart",
+				"route": "Res/Audio/SFX/03003_sfx_battleStart.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"taskBox": {
+		"id": "taskBox",
+		"explain": "任务_宝箱",
+		"audios": [
+			{
+				"id": "taskBox",
+				"route": "Res/Audio/SFX/03004_sfx_taskBox.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"soulRefresh": {
+		"id": "soulRefresh",
+		"explain": "铭文_刷新",
+		"audios": [
+			{
+				"id": "soulRefresh",
+				"route": "Res/Audio/SFX/04001_sfx_soulRefresh.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"trainInto": {
+		"id": "trainInto",
+		"explain": "历练_入口",
+		"audios": [
+			{
+				"id": "trainInto",
+				"route": "Res/Audio/SFX/05001_sfx_trainInto.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"leagueSetUp": {
+		"id": "leagueSetUp",
+		"explain": "山头_创建",
+		"audios": [
+			{
+				"id": "leagueSetUp",
+				"route": "Res/Audio/SFX/06001_sfx_leagueSetUp.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"magicActivate": {
+		"id": "magicActivate",
+		"explain": "血脉契印_激活",
+		"audios": [
+			{
+				"id": "magicActivate",
+				"route": "Res/Audio/SFX/06002_sfx_magicActivate.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"engrave": {
+		"id": "engrave",
+		"explain": "符石_镌刻",
+		"audios": [
+			{
+				"id": "engrave",
+				"route": "Res/Audio/SFX/04004_sfx_engrave.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"logIn": {
+		"id": "logIn",
+		"explain": "登录界面",
+		"audios": [
+			{
+				"id": "logIn",
+				"route": "Res/Audio/BGM/Bgm_logIn.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"create": {
+		"id": "create",
+		"explain": "创角界面",
+		"audios": [
+			{
+				"id": "create",
+				"route": "Res/Audio/BGM/Bgm_create.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"main": {
+		"id": "main",
+		"explain": "主界面",
+		"audios": [
+			{
+				"id": "main",
+				"route": "Res/Audio/BGM/Bgm_main.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"training": {
+		"id": "training",
+		"explain": "历练系统",
+		"audios": [
+			{
+				"id": "training",
+				"route": "Res/Audio/BGM/Bgm_training.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"league": {
+		"id": "league",
+		"explain": "山头系统",
+		"audios": [
+			{
+				"id": "league",
+				"route": "Res/Audio/BGM/Bgm_league.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"fight": {
+		"id": "fight",
+		"explain": "战斗系统",
+		"audios": [
+			{
+				"id": "fight",
+				"route": "Res/Audio/BGM/Bgm_fight.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"succeed": {
+		"id": "succeed",
+		"explain": "突破成功、渡劫成功",
+		"audios": [
+			{
+				"id": "succeed",
+				"route": "Res/Audio/SFX/00011_sfx_succeed.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"newFunction": {
+		"id": "newFunction",
+		"explain": "新功能开启",
+		"audios": [
+			{
+				"id": "newFunction",
+				"route": "Res/Audio/SFX/00012_sfx_newFunction.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"enemyAssault": {
+		"id": "enemyAssault",
+		"explain": "强敌来袭",
+		"audios": [
+			{
+				"id": "enemyAssault",
+				"route": "Res/Audio/SFX/01004_sfx_enemyAssault.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"switchMulti": {
+		"id": "switchMulti",
+		"explain": "切换多人",
+		"audios": [
+			{
+				"id": "switchMulti",
+				"route": "Res/Audio/SFX/01005_sfx_switchMulti.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"switchSolo": {
+		"id": "switchSolo",
+		"explain": "切换单人、遮罩缩小",
+		"audios": [
+			{
+				"id": "switchSolo",
+				"route": "Res/Audio/SFX/01006_sfx_switchSolo.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"bossShow": {
+		"id": "bossShow",
+		"explain": "boss登场",
+		"audios": [
+			{
+				"id": "bossShow",
+				"route": "Res/Audio/SFX/01007_sfx_bossShow.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"soulNew": {
+		"id": "soulNew",
+		"explain": "新铭文",
+		"audios": [
+			{
+				"id": "soulNew",
+				"route": "Res/Audio/SFX/04002_sfx_soulNew.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"cowRage": {
+		"id": "cowRage",
+		"explain": "夔牛狂暴",
+		"audios": [
+			{
+				"id": "cowRage",
+				"route": "Res/Audio/SFX/05002_sfx_cowRage.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"stateBreak": {
+		"id": "stateBreak",
+		"explain": "境界突破",
+		"audios": [
+			{
+				"id": "stateBreak",
+				"route": "Res/Audio/SFX/08001_sfx_stateBreak.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"uiGong": {
+		"id": "uiGong",
+		"explain": "底部UI_元神",
+		"audios": [
+			{
+				"id": "uiGong",
+				"route": "Res/Audio/SFX/09001_sfx_uiGong.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"uiArmour": {
+		"id": "uiArmour",
+		"explain": "底部UI_装备",
+		"audios": [
+			{
+				"id": "uiArmour",
+				"route": "Res/Audio/SFX/09002_sfx_uiArmour.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"uiWeapon": {
+		"id": "uiWeapon",
+		"explain": "底部UI_法宝",
+		"audios": [
+			{
+				"id": "uiWeapon",
+				"route": "Res/Audio/SFX/09003_sfx_uiWeapon.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"uiPractice": {
+		"id": "uiPractice",
+		"explain": "底部UI_修炼",
+		"audios": [
+			{
+				"id": "uiPractice",
+				"route": "Res/Audio/SFX/09004_sfx_uiPractice.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"uiTraining": {
+		"id": "uiTraining",
+		"explain": "底部UI_历练",
+		"audios": [
+			{
+				"id": "uiTraining",
+				"route": "Res/Audio/SFX/09005_sfx_uiTraining.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"uiLeague": {
+		"id": "uiLeague",
+		"explain": "底部UI_山头",
+		"audios": [
+			{
+				"id": "uiLeague",
+				"route": "Res/Audio/SFX/09006_sfx_uiLeague.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"uiClick": {
+		"id": "uiClick",
+		"explain": "底部UI_点击",
+		"audios": [
+			{
+				"id": "uiClick",
+				"route": "Res/Audio/SFX/09007_sfx_uiClick.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"refine": {
+		"id": "refine",
+		"explain": "炼器_抽取",
+		"audios": [
+			{
+				"id": "refine",
+				"route": "Res/Audio/SFX/03005_sfx_refine.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"bird_bigSkill": {
+		"id": "bird_bigSkill",
+		"explain": "鸟_大招",
+		"audios": [
+			{
+				"id": "bird_bigSkill",
+				"route": "Res/Audio/SFX/10001_sfx_bird_bigSkill.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"bird_crit": {
+		"id": "bird_crit",
+		"explain": "鸟_暴击",
+		"audios": [
+			{
+				"id": "bird_crit",
+				"route": "Res/Audio/SFX/10002_sfx_bird_crit.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"fox_bigSkill": {
+		"id": "fox_bigSkill",
+		"explain": "狐狸_大招",
+		"audios": [
+			{
+				"id": "fox_bigSkill",
+				"route": "Res/Audio/SFX/10003_sfx_fox_bigSkill.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"fox_crit": {
+		"id": "fox_crit",
+		"explain": "狐狸_暴击",
+		"audios": [
+			{
+				"id": "fox_crit",
+				"route": "Res/Audio/SFX/10004_sfx_fox_crit.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"snake_bigSkill": {
+		"id": "snake_bigSkill",
+		"explain": "蛇_大招",
+		"audios": [
+			{
+				"id": "snake_bigSkill",
+				"route": "Res/Audio/SFX/10005_sfx_snake_bigSkill.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"snake_crit": {
+		"id": "snake_crit",
+		"explain": "蛇_暴击",
+		"audios": [
+			{
+				"id": "snake_crit",
+				"route": "Res/Audio/SFX/10006_sfx_snake_crit.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"boss_electricity": {
+		"id": "boss_electricity",
+		"explain": "boss_电",
+		"audios": [
+			{
+				"id": "boss_electricity",
+				"route": "Res/Audio/SFX/11001_sfx_boss_electricity.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"boss_wind": {
+		"id": "boss_wind",
+		"explain": "boss_风",
+		"audios": [
+			{
+				"id": "boss_wind",
+				"route": "Res/Audio/SFX/11002_sfx_boss_wind.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"boss_fire": {
+		"id": "boss_fire",
+		"explain": "boss_火",
+		"audios": [
+			{
+				"id": "boss_fire",
+				"route": "Res/Audio/SFX/11003_sfx_boss_fire.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"boss_wood": {
+		"id": "boss_wood",
+		"explain": "boss_木",
+		"audios": [
+			{
+				"id": "boss_wood",
+				"route": "Res/Audio/SFX/11004_sfx_boss_wood.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"boss_water": {
+		"id": "boss_water",
+		"explain": "boss_水",
+		"audios": [
+			{
+				"id": "boss_water",
+				"route": "Res/Audio/SFX/11005_sfx_boss_water.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"boss_soil": {
+		"id": "boss_soil",
+		"explain": "boss_土",
+		"audios": [
+			{
+				"id": "boss_soil",
+				"route": "Res/Audio/SFX/11006_sfx_boss_soil.mp3",
+				"weight": 1000,
+				"maxCnt": 100
+			}
+		]
+	},
+	"Bgm_create": {
+		"id": "Bgm_create",
+		"explain": "重生剧情",
+		"audios": [
+			{
+				"id": "Bgm_create",
+				"route": "Res/Audio/BGM/Bgm_create.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"Bgm_meet": {
+		"id": "Bgm_meet",
+		"explain": "遇见剧情",
+		"audios": [
+			{
+				"id": "Bgm_meet",
+				"route": "Res/Audio/BGM/Bgm_meet.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"Bgm_see": {
+		"id": "Bgm_see",
+		"explain": "睁眼剧情",
+		"audios": [
+			{
+				"id": "Bgm_see",
+				"route": "Res/Audio/BGM/Bgm_see.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_01_reflesh": {
+		"id": "plot_01_reflesh",
+		"explain": "重塑肉身",
+		"audios": [
+			{
+				"id": "plot_01_reflesh",
+				"route": "Res/Audio/SFX/plot_01_reflesh.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_01_fallInPot": {
+		"id": "plot_01_fallInPot",
+		"explain": "坠落掉锅",
+		"audios": [
+			{
+				"id": "plot_01_fallInPot",
+				"route": "Res/Audio/SFX/plot_01_fallInPot.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_01_seeMom": {
+		"id": "plot_01_seeMom",
+		"explain": "睁眼",
+		"audios": [
+			{
+				"id": "plot_01_seeMom",
+				"route": "Res/Audio/SFX/plot_01_seeMom.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_01_rub": {
+		"id": "plot_01_rub",
+		"explain": "蹭蹭",
+		"audios": [
+			{
+				"id": "plot_01_rub",
+				"route": "Res/Audio/SFX/plot_01_rub.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"empty": {
+		"id": "empty",
+		"explain": "空背景音乐",
+		"audios": [
+			{
+				"id": "empty",
+				"route": "Res/Audio/BGM/Bgm_empty.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"palace": {
+		"id": "palace",
+		"explain": "天宫剧情",
+		"audios": [
+			{
+				"id": "palace",
+				"route": "Res/Audio/BGM/Bgm_palace.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_02_flyIn": {
+		"id": "plot_02_flyIn",
+		"explain": "腾云",
+		"audios": [
+			{
+				"id": "plot_02_flyIn",
+				"route": "Res/Audio/SFX/plot_02_flyIn.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_02_soldierAppear": {
+		"id": "plot_02_soldierAppear",
+		"explain": "王大壮闪现",
+		"audios": [
+			{
+				"id": "plot_02_soldierAppear",
+				"route": "Res/Audio/SFX/plot_02_soldierAppear.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_02_scrollInto": {
+		"id": "plot_02_scrollInto",
+		"explain": "进入 万灵宝录",
+		"audios": [
+			{
+				"id": "plot_02_scrollInto",
+				"route": "Res/Audio/SFX/plot_02_scrollInto.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_02_soldierDefeat": {
+		"id": "plot_02_soldierDefeat",
+		"explain": "天兵战败",
+		"audios": [
+			{
+				"id": "plot_02_soldierDefeat",
+				"route": "Res/Audio/SFX/plot_02_soldierDefeat.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_02_scrollOut": {
+		"id": "plot_02_scrollOut",
+		"explain": "退出 万灵宝录",
+		"audios": [
+			{
+				"id": "plot_02_scrollOut",
+				"route": "Res/Audio/SFX/plot_02_scrollOut.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_02_turnRadish": {
+		"id": "plot_02_turnRadish",
+		"explain": "素罗变小",
+		"audios": [
+			{
+				"id": "plot_02_turnRadish",
+				"route": "Res/Audio/SFX/plot_02_turnRadish.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"ghostMarket": {
+		"id": "ghostMarket",
+		"explain": "鬼市 剧情",
+		"audios": [
+			{
+				"id": "ghostMarket",
+				"route": "Res/Audio/BGM/Bgm_ghostMarket.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"cellar": {
+		"id": "cellar",
+		"explain": "寻找法器 剧情",
+		"audios": [
+			{
+				"id": "cellar",
+				"route": "Res/Audio/BGM/Bgm_cellar.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_03_openDoor": {
+		"id": "plot_03_openDoor",
+		"explain": "开门",
+		"audios": [
+			{
+				"id": "plot_03_openDoor",
+				"route": "Res/Audio/SFX/plot_03_openDoor.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_03_move": {
+		"id": "plot_03_move",
+		"explain": "移动",
+		"audios": [
+			{
+				"id": "plot_03_move",
+				"route": "Res/Audio/SFX/plot_03_move.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_03_smoke": {
+		"id": "plot_03_smoke",
+		"explain": "烟雾",
+		"audios": [
+			{
+				"id": "plot_03_smoke",
+				"route": "Res/Audio/SFX/plot_03_smoke.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_03_lightTips": {
+		"id": "plot_03_lightTips",
+		"explain": "亮光提示",
+		"audios": [
+			{
+				"id": "plot_03_lightTips",
+				"route": "Res/Audio/SFX/plot_03_lightTips.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_03_activate": {
+		"id": "plot_03_activate",
+		"explain": "激活亮光",
+		"audios": [
+			{
+				"id": "plot_03_activate",
+				"route": "Res/Audio/SFX/plot_03_activate.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_03_magicCircle": {
+		"id": "plot_03_magicCircle",
+		"explain": "法阵动画",
+		"audios": [
+			{
+				"id": "plot_03_magicCircle",
+				"route": "Res/Audio/SFX/plot_03_magicCircle.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"plot_03_unseal": {
+		"id": "plot_03_unseal",
+		"explain": "解除封印",
+		"audios": [
+			{
+				"id": "plot_03_unseal",
+				"route": "Res/Audio/SFX/plot_03_unseal.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss_critWood": {
+		"id": "boss_critWood",
+		"explain": "boss_暴击木",
+		"audios": [
+			{
+				"id": "boss_critWood",
+				"route": "Res/Audio/SFX/11007_sfx_boss_critWood.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss_critWind": {
+		"id": "boss_critWind",
+		"explain": "boss_暴击风",
+		"audios": [
+			{
+				"id": "boss_critWind",
+				"route": "Res/Audio/SFX/11008_sfx_boss_critWind.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss_critElectricity": {
+		"id": "boss_critElectricity",
+		"explain": "boss_暴击电",
+		"audios": [
+			{
+				"id": "boss_critElectricity",
+				"route": "Res/Audio/SFX/11009_sfx_boss_critElectricity.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss_critFire": {
+		"id": "boss_critFire",
+		"explain": "boss_暴击火",
+		"audios": [
+			{
+				"id": "boss_critFire",
+				"route": "Res/Audio/SFX/11010_sfx_boss_critFire.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss_critSoil": {
+		"id": "boss_critSoil",
+		"explain": "boss_暴击土",
+		"audios": [
+			{
+				"id": "boss_critSoil",
+				"route": "Res/Audio/SFX/11011_sfx_boss_critSoil.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss_critWater": {
+		"id": "boss_critWater",
+		"explain": "boss_暴击水",
+		"audios": [
+			{
+				"id": "boss_critWater",
+				"route": "Res/Audio/SFX/11012_sfx_boss_critWater.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"massifBright": {
+		"id": "massifBright",
+		"explain": "山丘_明亮",
+		"audios": [
+			{
+				"id": "massifBright",
+				"route": "Res/Audio/AMB/001_amb_massifBright.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"massifDark": {
+		"id": "massifDark",
+		"explain": "山丘_黑暗",
+		"audios": [
+			{
+				"id": "massifDark",
+				"route": "Res/Audio/AMB/002_amb_massifDark.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"waveBright": {
+		"id": "waveBright",
+		"explain": "海浪_明亮",
+		"audios": [
+			{
+				"id": "waveBright",
+				"route": "Res/Audio/AMB/003_amb_waveBright.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"waveDark": {
+		"id": "waveDark",
+		"explain": "海浪_黑暗",
+		"audios": [
+			{
+				"id": "waveDark",
+				"route": "Res/Audio/AMB/004_amb_waveDark.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"flowBright": {
+		"id": "flowBright",
+		"explain": "流水_明亮",
+		"audios": [
+			{
+				"id": "flowBright",
+				"route": "Res/Audio/AMB/005_amb_flowBright.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"flowDark": {
+		"id": "flowDark",
+		"explain": "流水_黑暗",
+		"audios": [
+			{
+				"id": "flowDark",
+				"route": "Res/Audio/AMB/006_amb_flowDark.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"desertBright": {
+		"id": "desertBright",
+		"explain": "沙漠_明亮",
+		"audios": [
+			{
+				"id": "desertBright",
+				"route": "Res/Audio/AMB/007_amb_desertBright.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"desertDark": {
+		"id": "desertDark",
+		"explain": "沙漠_黑暗",
+		"audios": [
+			{
+				"id": "desertDark",
+				"route": "Res/Audio/AMB/008_amb_desertDark.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"iceBright": {
+		"id": "iceBright",
+		"explain": "冰原_明亮",
+		"audios": [
+			{
+				"id": "iceBright",
+				"route": "Res/Audio/AMB/009_amb_iceBright.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"iceDark": {
+		"id": "iceDark",
+		"explain": "冰原_黑暗",
+		"audios": [
+			{
+				"id": "iceDark",
+				"route": "Res/Audio/AMB/010_amb_iceDark.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"graveBright": {
+		"id": "graveBright",
+		"explain": "剑冢_明亮",
+		"audios": [
+			{
+				"id": "graveBright",
+				"route": "Res/Audio/AMB/011_amb_graveBright.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"graveDark": {
+		"id": "graveDark",
+		"explain": "剑冢_黑暗",
+		"audios": [
+			{
+				"id": "graveDark",
+				"route": "Res/Audio/AMB/012_amb_graveDark.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"highlandBright": {
+		"id": "highlandBright",
+		"explain": "高原_明亮",
+		"audios": [
+			{
+				"id": "highlandBright",
+				"route": "Res/Audio/AMB/013_amb_highlandBright.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"highlandDark": {
+		"id": "highlandDark",
+		"explain": "高原_黑暗",
+		"audios": [
+			{
+				"id": "highlandDark",
+				"route": "Res/Audio/AMB/014_amb_highlandDark.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"male": {
+		"id": "male",
+		"explain": "主角（男）发招时播放的音效组",
+		"audios": [
+			{
+				"id": "male",
+				"route": "Res/Audio/VO/male_vo_01.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "male",
+				"route": "Res/Audio/VO/male_vo_02.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "male",
+				"route": "Res/Audio/VO/male_vo_03.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"female": {
+		"id": "female",
+		"explain": "主角（女）发招时播放的音效组",
+		"audios": [
+			{
+				"id": "female",
+				"route": "Res/Audio/VO/female_vo_01.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "female",
+				"route": "Res/Audio/VO/female_vo_02.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "female",
+				"route": "Res/Audio/VO/female_vo_03.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"monster001": {
+		"id": "monster001",
+		"explain": "monster001",
+		"audios": [
+			{
+				"id": "monster001",
+				"route": "Res/Audio/VO/monster_vo_001_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster001",
+				"route": "Res/Audio/VO/monster_vo_001_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster001",
+				"route": "Res/Audio/VO/monster_vo_001_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"monster002": {
+		"id": "monster002",
+		"explain": "monster002",
+		"audios": [
+			{
+				"id": "monster002",
+				"route": "Res/Audio/VO/monster_vo_002_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster002",
+				"route": "Res/Audio/VO/monster_vo_002_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster002",
+				"route": "Res/Audio/VO/monster_vo_002_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"monster003": {
+		"id": "monster003",
+		"explain": "monster003",
+		"audios": [
+			{
+				"id": "monster003",
+				"route": "Res/Audio/VO/monster_vo_003_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster003",
+				"route": "Res/Audio/VO/monster_vo_003_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster003",
+				"route": "Res/Audio/VO/monster_vo_003_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"monster004": {
+		"id": "monster004",
+		"explain": "monster004",
+		"audios": [
+			{
+				"id": "monster004",
+				"route": "Res/Audio/VO/monster_vo_004_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster004",
+				"route": "Res/Audio/VO/monster_vo_004_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster004",
+				"route": "Res/Audio/VO/monster_vo_004_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"monster005": {
+		"id": "monster005",
+		"explain": "monster005",
+		"audios": [
+			{
+				"id": "monster005",
+				"route": "Res/Audio/VO/monster_vo_005_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster005",
+				"route": "Res/Audio/VO/monster_vo_005_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster005",
+				"route": "Res/Audio/VO/monster_vo_005_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"monster006": {
+		"id": "monster006",
+		"explain": "monster006",
+		"audios": [
+			{
+				"id": "monster006",
+				"route": "Res/Audio/VO/monster_vo_006_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster006",
+				"route": "Res/Audio/VO/monster_vo_006_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster006",
+				"route": "Res/Audio/VO/monster_vo_006_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"monster007": {
+		"id": "monster007",
+		"explain": "monster007",
+		"audios": [
+			{
+				"id": "monster007",
+				"route": "Res/Audio/VO/monster_vo_007_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster007",
+				"route": "Res/Audio/VO/monster_vo_007_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster007",
+				"route": "Res/Audio/VO/monster_vo_007_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"monster008": {
+		"id": "monster008",
+		"explain": "monster008",
+		"audios": [
+			{
+				"id": "monster008",
+				"route": "Res/Audio/VO/monster_vo_008_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster008",
+				"route": "Res/Audio/VO/monster_vo_008_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "monster008",
+				"route": "Res/Audio/VO/monster_vo_008_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss001": {
+		"id": "boss001",
+		"explain": "boss001",
+		"audios": [
+			{
+				"id": "boss001",
+				"route": "Res/Audio/VO/boss_vo_001_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss001",
+				"route": "Res/Audio/VO/boss_vo_001_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss001",
+				"route": "Res/Audio/VO/boss_vo_001_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss002": {
+		"id": "boss002",
+		"explain": "boss002",
+		"audios": [
+			{
+				"id": "boss002",
+				"route": "Res/Audio/VO/boss_vo_002_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss002",
+				"route": "Res/Audio/VO/boss_vo_002_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss002",
+				"route": "Res/Audio/VO/boss_vo_002_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss003": {
+		"id": "boss003",
+		"explain": "boss003",
+		"audios": [
+			{
+				"id": "boss003",
+				"route": "Res/Audio/VO/boss_vo_003_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss003",
+				"route": "Res/Audio/VO/boss_vo_003_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss003",
+				"route": "Res/Audio/VO/boss_vo_003_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss004": {
+		"id": "boss004",
+		"explain": "boss004",
+		"audios": [
+			{
+				"id": "boss004",
+				"route": "Res/Audio/VO/boss_vo_004_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss004",
+				"route": "Res/Audio/VO/boss_vo_004_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss004",
+				"route": "Res/Audio/VO/boss_vo_004_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss005": {
+		"id": "boss005",
+		"explain": "boss005",
+		"audios": [
+			{
+				"id": "boss005",
+				"route": "Res/Audio/VO/boss_vo_005_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss005",
+				"route": "Res/Audio/VO/boss_vo_005_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss005",
+				"route": "Res/Audio/VO/boss_vo_005_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss006": {
+		"id": "boss006",
+		"explain": "boss006",
+		"audios": [
+			{
+				"id": "boss006",
+				"route": "Res/Audio/VO/boss_vo_006_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss006",
+				"route": "Res/Audio/VO/boss_vo_006_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss006",
+				"route": "Res/Audio/VO/boss_vo_006_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss007": {
+		"id": "boss007",
+		"explain": "boss007",
+		"audios": [
+			{
+				"id": "boss007",
+				"route": "Res/Audio/VO/boss_vo_007_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss007",
+				"route": "Res/Audio/VO/boss_vo_007_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss007",
+				"route": "Res/Audio/VO/boss_vo_007_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss008": {
+		"id": "boss008",
+		"explain": "boss008",
+		"audios": [
+			{
+				"id": "boss008",
+				"route": "Res/Audio/VO/boss_vo_008_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss008",
+				"route": "Res/Audio/VO/boss_vo_008_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss008",
+				"route": "Res/Audio/VO/boss_vo_008_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss009": {
+		"id": "boss009",
+		"explain": "boss009",
+		"audios": [
+			{
+				"id": "boss009",
+				"route": "Res/Audio/VO/boss_vo_009_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss009",
+				"route": "Res/Audio/VO/boss_vo_009_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss009",
+				"route": "Res/Audio/VO/boss_vo_009_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"boss010": {
+		"id": "boss010",
+		"explain": "boss010",
+		"audios": [
+			{
+				"id": "boss010",
+				"route": "Res/Audio/VO/boss_vo_010_1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss010",
+				"route": "Res/Audio/VO/boss_vo_010_2.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			},
+			{
+				"id": "boss010",
+				"route": "Res/Audio/VO/boss_vo_010_3.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"skill_consecrate_fightBack_woodLv1": {
+		"id": "skill_consecrate_fightBack_woodLv1",
+		"explain": "反击-木1",
+		"audios": [
+			{
+				"id": "skill_consecrate_fightBack_woodLv1",
+				"route": "Res/Audio/SFX/skill_consecrate_fightBack_woodLv1.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_fightBack_woodLv3": {
+		"id": "skill_consecrate_fightBack_woodLv3",
+		"explain": "反击-木3",
+		"audios": [
+			{
+				"id": "skill_consecrate_fightBack_woodLv3",
+				"route": "Res/Audio/SFX/skill_consecrate_fightBack_woodLv3.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_attack_electricityLv1": {
+		"id": "skill_consecrate_attack_electricityLv1",
+		"explain": "攻击-雷1",
+		"audios": [
+			{
+				"id": "skill_consecrate_attack_electricityLv1",
+				"route": "Res/Audio/SFX/skill_consecrate_attack_electricityLv1.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_attack_electricityLv3": {
+		"id": "skill_consecrate_attack_electricityLv3",
+		"explain": "攻击-雷3",
+		"audios": [
+			{
+				"id": "skill_consecrate_attack_electricityLv3",
+				"route": "Res/Audio/SFX/skill_consecrate_attack_electricityLv3.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_attack_windLv1": {
+		"id": "skill_consecrate_attack_windLv1",
+		"explain": "攻击-风1",
+		"audios": [
+			{
+				"id": "skill_consecrate_attack_windLv1",
+				"route": "Res/Audio/SFX/skill_consecrate_attack_windLv1.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_attack_windLv3": {
+		"id": "skill_consecrate_attack_windLv3",
+		"explain": "攻击-风3",
+		"audios": [
+			{
+				"id": "skill_consecrate_attack_windLv3",
+				"route": "Res/Audio/SFX/skill_consecrate_attack_windLv3.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_attack_waterLv1": {
+		"id": "skill_consecrate_attack_waterLv1",
+		"explain": "攻击-水1",
+		"audios": [
+			{
+				"id": "skill_consecrate_attack_waterLv1",
+				"route": "Res/Audio/SFX/skill_consecrate_attack_waterLv1.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_attack_waterLv3": {
+		"id": "skill_consecrate_attack_waterLv3",
+		"explain": "攻击-水3",
+		"audios": [
+			{
+				"id": "skill_consecrate_attack_waterLv3",
+				"route": "Res/Audio/SFX/skill_consecrate_attack_waterLv3.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_attack_fireLv1": {
+		"id": "skill_consecrate_attack_fireLv1",
+		"explain": "攻击-火1",
+		"audios": [
+			{
+				"id": "skill_consecrate_attack_fireLv1",
+				"route": "Res/Audio/SFX/skill_consecrate_attack_fireLv1.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_attack_fireLv3": {
+		"id": "skill_consecrate_attack_fireLv3",
+		"explain": "攻击-火3",
+		"audios": [
+			{
+				"id": "skill_consecrate_attack_fireLv3",
+				"route": "Res/Audio/SFX/skill_consecrate_attack_fireLv3.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_fightBack_soilLv1": {
+		"id": "skill_consecrate_fightBack_soilLv1",
+		"explain": "反击-土1",
+		"audios": [
+			{
+				"id": "skill_consecrate_fightBack_soilLv1",
+				"route": "Res/Audio/SFX/skill_consecrate_fightBack_soilLv1.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_fightBack_soilLv3": {
+		"id": "skill_consecrate_fightBack_soilLv3",
+		"explain": "反击-土3",
+		"audios": [
+			{
+				"id": "skill_consecrate_fightBack_soilLv3",
+				"route": "Res/Audio/SFX/skill_consecrate_fightBack_soilLv3.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_heal_wood": {
+		"id": "skill_consecrate_heal_wood",
+		"explain": "回血-木",
+		"audios": [
+			{
+				"id": "skill_consecrate_heal_wood",
+				"route": "Res/Audio/SFX/skill_consecrate_heal_wood.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_heal_electricity": {
+		"id": "skill_consecrate_heal_electricity",
+		"explain": "回血-雷",
+		"audios": [
+			{
+				"id": "skill_consecrate_heal_electricity",
+				"route": "Res/Audio/SFX/skill_consecrate_heal_electricity.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_heal_wind": {
+		"id": "skill_consecrate_heal_wind",
+		"explain": "回血-风",
+		"audios": [
+			{
+				"id": "skill_consecrate_heal_wind",
+				"route": "Res/Audio/SFX/skill_consecrate_heal_wind.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_heal_water": {
+		"id": "skill_consecrate_heal_water",
+		"explain": "回血-水",
+		"audios": [
+			{
+				"id": "skill_consecrate_heal_water",
+				"route": "Res/Audio/SFX/skill_consecrate_heal_water.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_heal_fire": {
+		"id": "skill_consecrate_heal_fire",
+		"explain": "回血-火",
+		"audios": [
+			{
+				"id": "skill_consecrate_heal_fire",
+				"route": "Res/Audio/SFX/skill_consecrate_heal_fire.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"skill_consecrate_heal_soil": {
+		"id": "skill_consecrate_heal_soil",
+		"explain": "回血-土",
+		"audios": [
+			{
+				"id": "skill_consecrate_heal_soil",
+				"route": "Res/Audio/SFX/skill_consecrate_heal_soil.mp3",
+				"weight": 1000,
+				"maxCnt": 2
+			}
+		]
+	},
+	"equip_draw_award_lightGolden": {
+		"id": "equip_draw_award_lightGolden",
+		"explain": "炼器恭喜获得-金、橙出现音效",
+		"audios": [
+			{
+				"id": "equip_draw_award_lightGolden",
+				"route": "Res/Audio/SFX/03008_sfx_lightGolden.mp3",
+				"weight": 1000,
+				"maxCnt": 5
+			}
+		]
+	},
+	"equip_draw_award_lightRed": {
+		"id": "equip_draw_award_lightRed",
+		"explain": "炼器恭喜获得-红出现音效",
+		"audios": [
+			{
+				"id": "equip_draw_award_lightRed",
+				"route": "Res/Audio/SFX/03009_sfx_lightRed.mp3",
+				"weight": 1000,
+				"maxCnt": 5
+			}
+		]
+	},
+	"equip_draw_special_one": {
+		"id": "equip_draw_special_one",
+		"explain": "特殊炼器-单抽特效配套音效",
+		"audios": [
+			{
+				"id": "equip_draw_special_one",
+				"route": "Res/Audio/SFX/03006_sfx_light1.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"equip_draw_special_five": {
+		"id": "equip_draw_special_five",
+		"explain": "特殊炼器-五连特效配套音效",
+		"audios": [
+			{
+				"id": "equip_draw_special_five",
+				"route": "Res/Audio/SFX/03007_sfx_light5.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"skill_Rune_311001": {
+		"id": "skill_Rune_311001",
+		"explain": "神符特效-天剑雷诀",
+		"audios": [
+			{
+				"id": "skill_Rune_311001",
+				"route": "Res/Audio/SFX/skill_Rune_311001.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"skill_Rune_312001": {
+		"id": "skill_Rune_312001",
+		"explain": "神符特效-三昧真火",
+		"audios": [
+			{
+				"id": "skill_Rune_312001",
+				"route": "Res/Audio/SFX/skill_Rune_312001.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"skill_Rune_313001": {
+		"id": "skill_Rune_313001",
+		"explain": "神符特效-九转玄功",
+		"audios": [
+			{
+				"id": "skill_Rune_313001",
+				"route": "Res/Audio/SFX/skill_Rune_313001.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"skill_Rune_314001": {
+		"id": "skill_Rune_314001",
+		"explain": "神符特效-焚天烈焰",
+		"audios": [
+			{
+				"id": "skill_Rune_314001",
+				"route": "Res/Audio/SFX/skill_Rune_314001.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"01009_sfx_getTips": {
+		"id": "01009_sfx_getTips",
+		"audios": [
+			{
+				"id": "01009_sfx_getTips",
+				"route": "Res/Audio/SFX/01009_sfx_getTips.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"hit_snake_sword": {
+		"id": "hit_snake_sword",
+		"explain": "受击_蛇_剑",
+		"audios": [
+			{
+				"id": "hit_snake_sword",
+				"route": "Res/Audio/SFX/hit_snake_sword.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"hit_fox_fan": {
+		"id": "hit_fox_fan",
+		"explain": "受击_狐_扇子",
+		"audios": [
+			{
+				"id": "hit_fox_fan",
+				"route": "Res/Audio/SFX/hit_fox_fan.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"hit_bird_ball": {
+		"id": "hit_bird_ball",
+		"explain": "受击_鸟_法术球",
+		"audios": [
+			{
+				"id": "hit_bird_ball",
+				"route": "Res/Audio/SFX/hit_bird_ball.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"entryHangUp": {
+		"id": "entryHangUp",
+		"explain": "01010_点击挂机入口",
+		"audios": [
+			{
+				"id": "entryHangUp",
+				"route": "Res/Audio/SFX/entryHangUp.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"01011_sfx_entryRabbit": {
+		"id": "01011_sfx_entryRabbit",
+		"explain": "01011_点击兔子入口",
+		"audios": [
+			{
+				"id": "01011_sfx_entryRabbit",
+				"route": "Res/Audio/SFX/01011_sfx_entryRabbit.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"04003_sfx_WeaponBreakThrough": {
+		"id": "04003_sfx_WeaponBreakThrough",
+		"explain": "04003_法宝突破",
+		"audios": [
+			{
+				"id": "04003_sfx_WeaponBreakThrough",
+				"route": "Res/Audio/SFX/04003_sfx_WeaponBreakThrough.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"skill_radish_attackNormal": {
+		"id": "skill_radish_attackNormal",
+		"explain": "素罗_普攻",
+		"audios": [
+			{
+				"id": "skill_radish_attackNormal",
+				"route": "Res/Audio/SFX/skill_radish_attackNormal.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"Bgm_league": {
+		"id": "Bgm_league",
+		"explain": "妖盟系统",
+		"audios": [
+			{
+				"id": "Bgm_league",
+				"route": "Res/Audio/BGM/Bgm_league.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"firstRechargePopUp": {
+		"id": "firstRechargePopUp",
+		"explain": "首充礼包主动弹出",
+		"audios": [
+			{
+				"id": "firstRechargePopUp",
+				"route": "Res/Audio/SFX/01008_sfx_moneyCome.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	},
+	"stone_refine": {
+		"id": "stone_refine",
+		"explain": "魂石_炼化",
+		"audios": [
+			{
+				"id": "stone_refine",
+				"route": "Res/Audio/SFX/07001_sfx_refine.mp3",
+				"weight": 1000,
+				"maxCnt": 1
+			}
+		]
+	}
+}

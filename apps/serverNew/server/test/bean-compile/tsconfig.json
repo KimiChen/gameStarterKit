@@ -1,0 +1,24 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "incremental": false,
+        "plugins": [
+            {
+                "transform": "../../scripts/bean-compile/transformer.ts",
+                "transformProgram": true
+            }
+        ]
+    },
+    "include": [
+        "./**/*.ts",
+        "../../scripts/bean-compile/**/*.ts",
+        "../../src/bean/**/*.ts",
+        "../../src/modules/*/bean/**/*.ts",
+        "../../generated/bean/**/*.ts",
+        "../../generated/protocol/server/C2S/mod/**/*.ts",
+        "../../generated/configTypes/**/*.d.ts",
+        "../../src/runtime/persistence/TypeOrmExtensions.ts",
+        "../../src/**/*.d.ts",
+        "../../../engine/src/**/*.d.ts"
+    ]
+}

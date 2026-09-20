@@ -1,0 +1,76 @@
+# MEMORY.md — apps/serverNew 长期约定
+
+> 真源 `humanDocs/协议模块调整.md`（§1 目标 / §6 纪律 / §7 记录表）。2026-09-20 全文存档：`archive/MEMORY-full-2026-09-20.md`（细节查那里，这里只留「不写下来就会踩坑」）。
+
+## 投入顺序（用户已定）
+
+服务端是唯一主交付物：默认只改 `engine/` `server/`；shared 仅随 wire 契约调整；客户端只做黑盒测试 + 最小 transport 适配。⛔ 不做 UI 技术栈迁移、视觉打磨、客户端架构清理。
+
+## 命令纪律
+
+- 根目录无 `package.json`：`check:*` / `test:*` / `typecheck` 先 `cd server`。
+- `apps/serverNew` 未被 git 跟踪 → 变异回滚只能 Edit 逐字改回 + `grep -c` 核对，⛔ 不用 `git checkout|diff` 作证据。
+- `mocha.config.cjs` 有 `bail: true`；看全部失败：先 `pnpm test:file`，再 `pnpm exec mocha --config test/mocha.config.cjs --no-bail build/test-compiled/all-tests/<路径>`。
+- `check:quick` 不含 runtime/http/modules → 改 runtime 必须另跑 `pnpm test:suite -- runtime`。新增 `.cjs`/`.md` 也要过 prettier。
+- ⚠ 管道吃退出码：`... | tail` 后 `$?` 是 tail 的 → 重定向到文件再取。
+- ⚠ `check:generated` 在临时工作区大量删除，会撞 WorkBuddy 注入的删除兜底闸（50 次/会话，不随回合重置）→ 用 `cd server && env -u NODE_OPTIONS pnpm check`。
+
+## 多进程（alloy-core）硬约束 —— 踩得最贵
+
+- 主控 → worker 的 `PROCESS_MESSAGE` 被 worker 侧判 `INVALID_SOURCE` 静默丢弃 → 调用方 10s 超时（HTTP 是 socket hang up）。⇒ 落到 worker 的内部动作不能从主控发起。
+- 内部 HTTP 端点（`/health` + `/internal/action`）由**监听 worker** 承载；`/livez` `/readyz` 由**主控**在 `healthPort`（缺省 `clientPort+20000`）承载。⛔ 不互换。
+- 通用幂等闸只进一次且在**持有连接的一端**：`executeForwarded` 只执行不进闸；用 `execute` 会撞上监听进程刚写的 `pending` 租约。
+- `ALLOY_PROCESS_ROUTE_TRACE=1` 打在 `requestMessage` **之前**：只证明「发起了转发」，不证明「已送达」；跨进程证据必须另有对端行为观测。
+- 自检脚本收尾：优雅退出失败时不能无条件 `stopped = true`，否则留孤儿 master 占端口 → `EADDRINUSE`。
+- worker 崩溃重拉：10s 内 5 次预算，超出判 crash loop 停整个 runtime ⇒ ⛔ 别反复杀进程。判「补齐了」要四条件同时成立（同 workerId + pid 变 + generation 恰好 +1 + READY 且新 pid 存活）。崩溃唯一可观测出口是主控 `onWorkerError`。
+
+## 测试与变异纪律
+
+- 对等性 `forward` 模式必须走整条链（监听进程进闸 → processRouter → 目标 worker），跑**真实** `installNativeLobbyProcessRouter`，⛔ 不在测试里复刻路由。
+- 「无重复副作用」常由多层保证（通用闸 `done` 短路 + 领域守卫）⇒ **单层变异为绿不等于断言不承重**，先数清层数。
+- 取余路由（`bindId % taskWorkerNum`）除数为 1 时退化成常量 ⇒ 夹具保持 `taskWorkerNum >= 2` + 脚本自检闸；断言目标从池里派生，⛔ 不写死 id。判「新断言是否只是重复旧断言」的最有效变异 = 把生产侧取余换成常量。
+- 真实库跨运行累积 → 取前后差值，别钉绝对条数。`FakeCenterRedis` 的 Lua 按脚本身份标记分派，未镜像的脚本直接抛错；收帧辅助函数不能丢弃不匹配的帧。
+- 要证明「失败后资源被释放」，失败必须发生在资源分配**之后**（真 `listen(0)` 占端口触发 `EADDRINUSE`）；「配置被拒」另留一条用例。
+- `ServiceRuntime` 的 `initialized` 在所有失败分支都要走 `rollbackServiceRuntimeStart()`；`NativeLobbyRouteServices.onReleased` 是必填成员（不在 `check:quick` 范围）。
+
+## 真实环境联调（改协议/装配后主动跑，都不在门禁里）
+
+- `cd server && pnpm verify:native-lobby-live` 19/19；`...-multiprocess-live` 27/27（夹具 `bearjoylive` / `bearjoylivemulti`，⛔ `taskWorkerNum` 不得退回 1）。前置 Redis 6379 + MySQL 3306。
+- 根 `npm run verify:dual-lobby` 9/9（前置 `cd apps/server && npm run stack` + `npm run db:bootstrap`）。
+- Creator GUI 驱动陷阱全文在 `tools/creator-preview/README.md`。
+- 同服多账号：uid = `dev-` + `sha256("<devKey>:<serverId>")[:16]`（同 devKey 恒同号，⚠ 与旧 `apps/server` 的 `devUidOf` 不同）；首选 `?devKey=`。改 `src/app/**` 必须重启 Creator 进程才重编译。⚠ 非法 devKey 故意 warn + 回落 `dev_local`，别改成 throw。
+
+## 两套通道的码表与金币账本不同（手动联调前必读）
+
+- 兑换码两份：原生 Lobby 只有 `WELCOME100`；旧 `apps/server` 是 `WELCOME2026` / `SNAKE90` / `DEVTEST`。
+- 金币账本两个：原生 = Redis `nativeLobby:shop:balance:v1`（唯一入账路径是兑换码）；旧 = MySQL `user_currency`，兑换奖励进插件私钱包不进主账本。
+- 联调数据在 Redis 6379 的 db 6；清玩法状态直接 `DEL nativeLobby:*`。
+- 自动化只覆盖一部分：`native-lobby.mjs`（原生 8 步）与 `run.mjs <场景>`（旧通道）；兑换码、竞技场、大地图、衣柜在原生通道上只能手动点。
+
+## 既有基线（别误判成本次引入）
+
+- 计数基线（2026-09-20 重取）：`routes:172 / protocolMessages:298 / protocolFields:587 / beans:94 / beanFields:623 / mods:30 / errorCodes:312 / redisKeys:40 / databaseTables:32 / databaseFields:346 / classListEntries:28`。
+- ⚠ 重取基线两坑：① `pnpm update:compatibility-baseline` 的输出不过 prettier，必须紧跟 `pnpm exec prettier --write test/structure-baseline/compatibility-baseline.json`；② 重取前先 `pnpm test:compatibility` 拿漂移清单**逐项审计**。
+- 根 `test:client` 592/598（6 项既有红：vendor 锁 2、uniflex 缺包 1、`loginFlow.ts` 源码 pin 3）；`typecheck:client` 55 项全在 `ui-uniflex`；`sync-client --check` 62 项缺 Creator `.meta`。
+- 改 `apps/client/src/app/**` 或 `Main.ts` 属 §12.3 显式框架侵入，须声明后 `node scripts/protected-paths-lock.mjs --write`。
+
+## P6 旧协议链清理（2026-09-20 已清完，含第二轮续扫）
+
+全仓（排除 `node_modules`/`humanDocs`/`server/src/http/public/`）扫旧协议关键词只剩注释与「不得复活」断言 ⇒ 干净；
+`pnpm check` exit 0（计数 172/298/587/94/623/30/312/40/32/346 未变 ⇒ 协议面未动）+ `pnpm test:suite -- runtime` 74 passing。
+**改动清单与逐项证据在 `humanDocs/协议模块调整.md` §7 末行 + `2026-09-20.md`「清理」两节**，备份 `.workbuddy-ai/backups/p6-residue-20260920-1755.tar.gz`。
+
+**两个必踩的坑**：① 改 `server/src/runtime/protocol/**` 任一字 ⇒ `record.json` 里该文件 `md5`+`mtime` 变 ⇒
+`check:generated` 红，须跑一次 `pnpm generate` 刷新指纹。② 删协议文件里的**第 2 个**导出会撞命名审计（「模块只剩
+一个导出且与文件名不符 ⇒ 违规」），豁免走 `scripts/naming-audit/audit-module-names.js` 的 `compatibilityAllowlist`
+登记 `['路径',{names,reason}]`（⛔ 不是把泛化词加白名单）；本次登记 `C2S/global.ts -> GlobalResponse`。
+
+**⛔ 别删这四类**（都像死代码）：`C2S/{base,commom,default,global,MsgError,ModInfo,message}.ts`（被 serviceProto 的
+`import {}` 空锚点引着）、`C2S/base.ts` 的 `PushChange`（proto.json5 声明的协议类型 + 兼容基线，删它=改协议面）、
+`generated/.../C2S/actions.ts`（`executeInternalAction` 驱动，GM 后台靠它）、`ModSync.autoGetModChanged`
+（注释已写明留给原生通道复用，⛔ 不许加回响应路径）。
+
+**仍含 PB 且本仓不改**：`server/src/http/public/**` 是另一仓库构建的 GM 后台产物（`build-info.json` 记 `webCommit`），
+`assets/*.js` 调已删的 `/adjust/{downloadProto,getPbJs,wstool/getHash}`，`robot-nodejs-runner-download.js`(871K)
+内含整套 protobufjs 运行时 ⇒ 需前端仓同步。⚠ 客户端 `assets/src/shared/protocol` 的 `C2S` 命中是**玩法** wire（不迁移），
+不是残留；`build/test-compiled/*` 的 `.signature` 对全部源码做 sha256 ⇒ 陈旧缓存会重建，不会拿旧代码跑测试。

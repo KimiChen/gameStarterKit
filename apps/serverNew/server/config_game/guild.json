@@ -1,0 +1,82 @@
+{
+	"1": {
+		"id": 1,
+		"exp": 79200,
+		"count": 33,
+		"deputyGuildLeader": 1,
+		"elders": 1,
+		"donateLimit": 148500
+	},
+	"2": {
+		"id": 2,
+		"exp": 129600,
+		"count": 36,
+		"deputyGuildLeader": 1,
+		"elders": 1,
+		"donateLimit": 162000
+	},
+	"3": {
+		"id": 3,
+		"exp": 702000,
+		"count": 39,
+		"deputyGuildLeader": 1,
+		"elders": 2,
+		"donateLimit": 175500
+	},
+	"4": {
+		"id": 4,
+		"exp": 4536000,
+		"count": 42,
+		"deputyGuildLeader": 2,
+		"elders": 2,
+		"donateLimit": 189000
+	},
+	"5": {
+		"id": 5,
+		"exp": 9720000,
+		"count": 45,
+		"deputyGuildLeader": 2,
+		"elders": 3,
+		"donateLimit": 202500
+	},
+	"6": {
+		"id": 6,
+		"exp": 15552000,
+		"count": 48,
+		"deputyGuildLeader": 2,
+		"elders": 3,
+		"donateLimit": 216000
+	},
+	"7": {
+		"id": 7,
+		"exp": 22032000,
+		"count": 51,
+		"deputyGuildLeader": 3,
+		"elders": 4,
+		"donateLimit": 229500
+	},
+	"8": {
+		"id": 8,
+		"exp": 29160000,
+		"count": 54,
+		"deputyGuildLeader": 3,
+		"elders": 4,
+		"donateLimit": 243000
+	},
+	"9": {
+		"id": 9,
+		"exp": 36936000,
+		"count": 57,
+		"deputyGuildLeader": 3,
+		"elders": 5,
+		"donateLimit": 256500
+	},
+	"10": {
+		"id": 10,
+		"exp": 0,
+		"count": 60,
+		"deputyGuildLeader": 3,
+		"elders": 6,
+		"donateLimit": 270000
+	}
+}

@@ -1,0 +1,100 @@
+{
+	"1": {
+		"id": 1,
+		"name": "开智灵阵",
+		"realm": 1,
+		"placeNum": 200,
+		"monster": 100003,
+		"awards": [
+			{
+				"id": 1,
+				"propId": 10201,
+				"num": 50
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"name": "妖丹灵阵",
+		"realm": 2,
+		"placeNum": 200,
+		"monster": 100004,
+		"awards": [
+			{
+				"id": 2,
+				"propId": 10201,
+				"num": 70
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"name": "化形灵阵",
+		"realm": 3,
+		"placeNum": 200,
+		"monster": 100005,
+		"awards": [
+			{
+				"id": 3,
+				"propId": 10201,
+				"num": 90
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"name": "凝魄灵阵",
+		"realm": 4,
+		"placeNum": 100,
+		"monster": 100006,
+		"awards": [
+			{
+				"id": 4,
+				"propId": 10201,
+				"num": 110
+			}
+		]
+	},
+	"5": {
+		"id": 5,
+		"name": "出窍灵阵",
+		"realm": 5,
+		"placeNum": 50,
+		"monster": 100007,
+		"awards": [
+			{
+				"id": 5,
+				"propId": 10201,
+				"num": 130
+			}
+		]
+	},
+	"6": {
+		"id": 6,
+		"name": "化神灵阵",
+		"realm": 6,
+		"placeNum": 30,
+		"monster": 100008,
+		"awards": [
+			{
+				"id": 6,
+				"propId": 10201,
+				"num": 150
+			}
+		]
+	},
+	"7": {
+		"id": 7,
+		"name": "炼虚灵阵",
+		"realm": 7,
+		"placeNum": 20,
+		"monster": 100009,
+		"awards": [
+			{
+				"id": 7,
+				"propId": 10201,
+				"num": 180
+			}
+		]
+	}
+}

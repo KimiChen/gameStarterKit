@@ -484,6 +484,117 @@ test("bootstrap：?server= 查询参数覆盖 serverUrl（LAN 调试），portal
   }
 });
 
+test("bootstrap：?lobby=native&lobbyUrl= 显式选择原生通道并真的装到选择点上", async () => {
+  // 背景：场景资产只序列化 serverUrl/portalUrl，Main.lobbyTransportKind 恒为缺省 colyseus，
+  // 于是「真实 Creator 预览」永远只能驱动旧通道。这条查询参数是预览里驱动原生通道的唯一入口，
+  // 所以断言不能只看解析结果，必须看**选择点**（lobbyTransportHub.currentConfig）真的被改了。
+  const { bootstrap, makeNode, lobbyTransportHub } = await loadAppHost();
+  const globalWithLocation = globalThis as { location?: { search?: string } };
+  const savedLocation = globalWithLocation.location;
+  const endpoint = "ws://127.0.0.1:18091";
+  try {
+    globalWithLocation.location = {
+      search: `?server=http://127.0.0.1:2570&lobby=native&lobbyUrl=${endpoint}`,
+    };
+    assert.deepEqual(
+      bootstrap.lobbyTransportFromQuery(),
+      { kind: "native-websocket", endpoint },
+      "?lobby=native 必须解析出显式端点",
+    );
+    const runtime = bootstrap.createAppRuntime({
+      node: makeNode(),
+      serverUrl: "",
+      portalUrl: "",
+    });
+    runtime.dispose();
+    assert.deepEqual(
+      lobbyTransportHub.currentConfig,
+      { kind: "native-websocket", endpoint },
+      "装配后选择点必须是原生通道（解析对了但没装配等于没生效）",
+    );
+  } finally {
+    if (savedLocation === undefined) delete globalWithLocation.location;
+    else globalWithLocation.location = savedLocation;
+    lobbyTransportHub.configure({ kind: "colyseus" });
+  }
+});
+
+test("bootstrap：?lobby= 覆盖场景显式配置（查询参数优先于场景缺省）", async () => {
+  const { bootstrap, makeNode, lobbyTransportHub } = await loadAppHost();
+  const globalWithLocation = globalThis as { location?: { search?: string } };
+  const savedLocation = globalWithLocation.location;
+  const endpoint = "ws://127.0.0.1:18092";
+  try {
+    globalWithLocation.location = {
+      search: `?lobby=native&lobbyUrl=${endpoint}`,
+    };
+    const runtime = bootstrap.createAppRuntime({
+      node: makeNode(),
+      serverUrl: "",
+      portalUrl: "",
+      lobbyTransport: { kind: "colyseus" },
+    });
+    runtime.dispose();
+    assert.deepEqual(
+      lobbyTransportHub.currentConfig,
+      { kind: "native-websocket", endpoint },
+      "查询参数必须能覆盖场景里显式写死的 colyseus，否则预览调试无从下手",
+    );
+
+    // 反向：`?lobby=colyseus` 也要能把场景的 native 配置压回去（同一优先级规则）。
+    globalWithLocation.location = { search: "?lobby=colyseus" };
+    const back = bootstrap.createAppRuntime({
+      node: makeNode(),
+      serverUrl: "",
+      portalUrl: "",
+      lobbyTransport: { kind: "native-websocket", endpoint },
+    });
+    back.dispose();
+    assert.deepEqual(
+      lobbyTransportHub.currentConfig,
+      { kind: "colyseus" },
+      "?lobby=colyseus 必须能覆盖场景的 native 配置",
+    );
+  } finally {
+    if (savedLocation === undefined) delete globalWithLocation.location;
+    else globalWithLocation.location = savedLocation;
+    lobbyTransportHub.configure({ kind: "colyseus" });
+  }
+});
+
+test("bootstrap：?lobby= 解析失败一律 fail-fast，绝不静默回落旧通道", async () => {
+  // ⛔ 静默回落会把「原生通道配错了」变成「悄悄连上旧通道」——那正是本参数要消除的假绿灯。
+  const { bootstrap, makeNode } = await loadAppHost();
+  const globalWithLocation = globalThis as { location?: { search?: string } };
+  const savedLocation = globalWithLocation.location;
+  try {
+    const cases: Array<readonly [string, RegExp, string]> = [
+      ["?lobby=native", /lobbyUrl/, "native 缺 lobbyUrl"],
+      ["?lobby=native&lobbyUrl=", /lobbyUrl/, "lobbyUrl 为空串"],
+      ["?lobby=native&lobbyUrl=http://127.0.0.1:18091", /endpoint/, "lobbyUrl 不是 ws(s) origin"],
+      ["?lobby=noSuchKind&lobbyUrl=ws://127.0.0.1:18091", /noSuchKind/, "未知 lobby 取值"],
+    ];
+    for (const [search, pattern, label] of cases) {
+      globalWithLocation.location = { search };
+      assert.throws(() => bootstrap.lobbyTransportFromQuery(), pattern, label);
+      assert.throws(
+        () => bootstrap.createAppRuntime({ node: makeNode(), serverUrl: "", portalUrl: "" }),
+        pattern,
+        `${label}：装配期也必须 fail-fast`,
+      );
+    }
+
+    // 无参数 = 不覆盖（返回 null），由调用方决定缺省；`?lobby=` 空值同样不覆盖。
+    globalWithLocation.location = { search: "?server=http://127.0.0.1:2568" };
+    assert.equal(bootstrap.lobbyTransportFromQuery(), null, "无 lobby 参数必须返回 null");
+    globalWithLocation.location = { search: "?lobby=" };
+    assert.equal(bootstrap.lobbyTransportFromQuery(), null, "lobby 空值必须返回 null");
+  } finally {
+    if (savedLocation === undefined) delete globalWithLocation.location;
+    else globalWithLocation.location = savedLocation;
+  }
+});
+
 test("玩法侧退出（controllerBridge.requestStop）后恢复 authenticated base；未登录 / 无 base / 已 dispose 不恢复", async () => {
   // 2026-09-05 Creator 预览实测：结算/离开经 host.requestExit → controller.stop 后整屏黑——closed{voluntary}
   // 不触发导航、stop 也不导航，没人把 launchGameplay 进战斗前关掉的 authenticated 组恢复回来。

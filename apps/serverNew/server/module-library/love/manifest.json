@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "name": "love",
+  "version": "1.0.0",
+  "description": "Archived love game module",
+  "files": [
+    {
+      "target": "config_game/love.json",
+      "payload": "payload/config_game/love.json",
+      "sha256": "e2a722fc4549fe37a125c047e0fc7332f8fa227c022523ac6a3989ff8dbacc83"
+    },
+    {
+      "target": "src/modules/love/LoveC2S.ts",
+      "payload": "payload/src/modules/love/LoveC2S.ts",
+      "sha256": "6585f060651b9901ac7e804b475db51eb3bc7272390283fdee8fe1a15a5533e5"
+    },
+    {
+      "target": "src/modules/love/LoveModule.ts",
+      "payload": "payload/src/modules/love/LoveModule.ts",
+      "sha256": "11ad9be7dbf9b842f74a04229e85fecad357b1485502116292d4171866a19d84"
+    },
+    {
+      "target": "src/modules/love/action/ActionLove.ts",
+      "payload": "payload/src/modules/love/action/ActionLove.ts",
+      "sha256": "4a6464fe9f46b0a27572efd30eb4ae0469969cf357d3a98c548dac975dde215a"
+    },
+    {
+      "target": "src/modules/love/action/ActionLoveAward.ts",
+      "payload": "payload/src/modules/love/action/ActionLoveAward.ts",
+      "sha256": "acf0d4150c911c32f0acc98e7d03791d76045eec5218eb8828b14032620c38ab"
+    },
+    {
+      "target": "src/modules/love/action/ActionLoveTest.ts",
+      "payload": "payload/src/modules/love/action/ActionLoveTest.ts",
+      "sha256": "38107ae91ac57d8324764777511343fd2129ef0e7803c71423b9a31df11fd7be"
+    },
+    {
+      "target": "src/modules/love/bean/LoveRecordItem.ts",
+      "payload": "payload/src/modules/love/bean/LoveRecordItem.ts",
+      "sha256": "8243650176c7d58eaea0bcc225dff1bbfedd9b20aa2ea69727d3a226e73f0ca0"
+    },
+    {
+      "target": "src/modules/love/rules/LoveDefine.ts",
+      "payload": "payload/src/modules/love/rules/LoveDefine.ts",
+      "sha256": "e4c4bbaa3fc1ea0f1cea505421c41e86f2051340395cac479c36df9e11b1422d"
+    },
+    {
+      "target": "src/modules/love/rules/LoveRecordModel.ts",
+      "payload": "payload/src/modules/love/rules/LoveRecordModel.ts",
+      "sha256": "0f512d83319a0a50585e2e6115905350f5bfca628739925f37c74992c37efec0"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-love-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../love/bean/LoveRecordItem",
+      "import": "import { LoveRecordItem } from '../../love/bean/LoveRecordItem'",
+      "expectedAbsent": "LoveRecordItem"
+    },
+    {
+      "id": "user-love-fields",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "love: int = 0\n\n@Mod\nloveRecord?: DiffMap<int, LoveRecordItem>",
+      "expectedAbsent": "loveRecord?: DiffMap<int, LoveRecordItem>"
+    },
+    {
+      "id": "mission-love-import",
+      "type": "addImport",
+      "target": "src/modules/mission/action/ActionMission.ts",
+      "moduleSpecifier": "../../love/action/ActionLove",
+      "import": "import { ActionLove } from '../../love/action/ActionLove'",
+      "expectedAbsent": "ActionLove"
+    },
+    {
+      "id": "mission-love-day-init",
+      "type": "insertAfterText",
+      "target": "src/modules/mission/action/ActionMission.ts",
+      "after": "        // 爱心值奖励次数重置",
+      "text": "        ActionLove.dayInit(user)",
+      "expectedAbsent": "ActionLove.dayInit(user)"
+    },
+    {
+      "id": "item-love-path",
+      "type": "insertAfterText",
+      "target": "src/modules/props/rules/ItemIdDefine.ts",
+      "after": "        skillRecoveryNum: 'skillRecoveryNum',",
+      "text": "        love: 'love',",
+      "expectedAbsent": "love: 'love'"
+    },
+    {
+      "id": "item-love-cash-map",
+      "type": "insertAfterText",
+      "target": "src/modules/props/rules/ItemIdDefine.ts",
+      "after": "        [ItemIdDefine.ITEM_ID_SKILL_MP_NUM, this.USER_FIELD_PATH.skillRecoveryNum],",
+      "text": "        [ItemIdDefine.ITEM_ID_LOVE, this.USER_FIELD_PATH.love],",
+      "expectedAbsent": "ITEM_ID_LOVE, this.USER_FIELD_PATH.love"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- love"
+    ],
+    "manual": []
+  }
+}

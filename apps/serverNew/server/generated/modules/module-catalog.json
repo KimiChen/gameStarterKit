@@ -1,0 +1,1999 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "name": "activity",
+      "source": "src/modules/activity/ActivityModule.ts",
+      "systems": {
+        "startup": [
+          {
+            "moduleName": "activity",
+            "source": "src/modules/activity/ActivityModule.ts",
+            "contribution": {
+              "name": "reload-activity-on-service-start",
+              "app": "service",
+              "phase": "runtime-ready",
+              "scope": "process",
+              "run": "reloadActivityAtStartup"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "activity",
+            "source": "src/modules/activity/ActivityModule.ts",
+            "contribution": {
+              "name": "activity-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Activity"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "adjust",
+      "source": "src/modules/adjust/AdjustModule.ts",
+      "systems": {
+        "protocol": [
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "actionExecutor",
+              "name": "adjust-action-executor",
+              "app": "all",
+              "executor": "ApiChangeAction.execAction"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "internalJsonAction",
+              "name": "adjust-json-action",
+              "app": "all",
+              "key": "adjust",
+              "handler": "ApiChangeAction.execAction"
+            }
+          }
+        ],
+        "managementHttp": [
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-controller",
+              "app": "management",
+              "controller": "AdjustController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-api-controller",
+              "app": "management",
+              "after": [
+                "adjust-controller"
+              ],
+              "controller": "AdjustApiController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-config-controller",
+              "app": "management",
+              "after": [
+                "adjust-api-controller"
+              ],
+              "controller": "ConfigController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-custom-function-controller",
+              "app": "management",
+              "after": [
+                "adjust-config-controller"
+              ],
+              "controller": "CustomFunctionController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-ai-controller",
+              "app": "management",
+              "after": [
+                "adjust-custom-function-controller"
+              ],
+              "controller": "AdjustAiController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-account-white-controller",
+              "app": "management",
+              "after": [
+                "adjust-ai-controller"
+              ],
+              "controller": "AccountWhiteController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-func-case-controller",
+              "app": "management",
+              "after": [
+                "adjust-account-white-controller"
+              ],
+              "controller": "FuncCaseController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-robot-batch-plan-controller",
+              "app": "management",
+              "after": [
+                "adjust-func-case-controller"
+              ],
+              "controller": "RobotBatchPlanController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-robot-case-controller",
+              "app": "management",
+              "after": [
+                "adjust-robot-batch-plan-controller"
+              ],
+              "controller": "RobotCaseController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-robot-environment-controller",
+              "app": "management",
+              "after": [
+                "adjust-robot-case-controller"
+              ],
+              "controller": "RobotEnvironmentController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-robot-user-group-controller",
+              "app": "management",
+              "after": [
+                "adjust-robot-environment-controller"
+              ],
+              "controller": "RobotUserGroupController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-case-controller",
+              "app": "management",
+              "after": [
+                "adjust-robot-user-group-controller"
+              ],
+              "controller": "AdjustCaseController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "adjust-env-controller",
+              "app": "management",
+              "after": [
+                "adjust-case-controller"
+              ],
+              "controller": "AdjustEnvController"
+            }
+          },
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "kind": "middleware",
+              "name": "adjust-access-middleware",
+              "app": "management",
+              "middleware": "AdjustAccessMiddleware"
+            }
+          }
+        ],
+        "startup": [
+          {
+            "moduleName": "adjust",
+            "source": "src/modules/adjust/AdjustModule.ts",
+            "contribution": {
+              "name": "load-adjust-test-config",
+              "app": "service",
+              "phase": "persistence-ready",
+              "scope": "process",
+              "run": "() => AdjustConfigLoader.loadAllTestConfig()"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ads",
+      "source": "src/modules/ads/AdsModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "ads",
+            "source": "src/modules/ads/AdsModule.ts",
+            "contribution": {
+              "name": "ads-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Ads"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "arena",
+      "source": "src/modules/arena/ArenaModule.ts",
+      "systems": {
+        "nativeLobby": [
+          {
+            "moduleName": "arena",
+            "source": "src/modules/arena/ArenaModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "arena-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) =>\n                    new ArenaNativeLobbyRoutes(services.identities, new ArenaNativeLobbyStore()).register(registry)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "arenaShop",
+      "source": "src/modules/arenaShop/ArenaShopModule.ts",
+      "systems": {
+        "nativeLobby": [
+          {
+            "moduleName": "arenaShop",
+            "source": "src/modules/arenaShop/ArenaShopModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "arena-shop-native-lobby-routes",
+              "app": "service",
+              "after": [
+                "arena-native-lobby-routes",
+                "shop-native-lobby-routes"
+              ],
+              "register": "(registry, services) =>\n                    new ArenaShopNativeLobbyRoutes(services.identities, new ArenaShopNativeLobbyStore()).register(\n                        registry,\n                    )"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "attr",
+      "source": "src/modules/attr/AttrModule.ts",
+      "systems": {
+        "configuration": [
+          {
+            "moduleName": "attr",
+            "source": "src/modules/attr/AttrModule.ts",
+            "contribution": {
+              "kind": "initializer",
+              "name": "initialize-attr-config",
+              "app": "all",
+              "handler": "initializeAttrConfig"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "attr",
+            "source": "src/modules/attr/AttrModule.ts",
+            "contribution": {
+              "name": "attr-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Attr"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "chat",
+      "source": "src/modules/chat/ChatModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "chat",
+            "source": "src/modules/chat/ChatModule.ts",
+            "contribution": {
+              "name": "chat-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Chat",
+                "Cross"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "clientConfig",
+      "source": "src/modules/clientConfig/ClientConfigModule.ts",
+      "systems": {
+        "managementHttp": [
+          {
+            "moduleName": "clientConfig",
+            "source": "src/modules/clientConfig/ClientConfigModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "client-controller",
+              "app": "management",
+              "after": [
+                "user"
+              ],
+              "controller": "ClientController"
+            }
+          },
+          {
+            "moduleName": "clientConfig",
+            "source": "src/modules/clientConfig/ClientConfigModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "client-config-controller",
+              "app": "management",
+              "after": [
+                "client-controller"
+              ],
+              "controller": "ClientConfigController"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "diagnostics",
+      "source": "src/modules/diagnostics/DiagnosticsModule.ts",
+      "systems": {
+        "managementHttp": [
+          {
+            "moduleName": "diagnostics",
+            "source": "src/modules/diagnostics/DiagnosticsModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "error-log-controller",
+              "app": "management",
+              "after": [
+                "clientConfig"
+              ],
+              "controller": "ErrorLogController"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "equip",
+      "source": "src/modules/equip/EquipModule.ts",
+      "systems": {
+        "configuration": [
+          {
+            "moduleName": "equip",
+            "source": "src/modules/equip/EquipModule.ts",
+            "contribution": {
+              "kind": "initializer",
+              "name": "initialize-equip-config",
+              "app": "all",
+              "after": [
+                "user"
+              ],
+              "handler": "initializeEquipConfig"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "equip",
+            "source": "src/modules/equip/EquipModule.ts",
+            "contribution": {
+              "name": "equip-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Equip",
+                "Fashion"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "friend",
+      "source": "src/modules/friend/FriendModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "friend",
+            "source": "src/modules/friend/FriendModule.ts",
+            "contribution": {
+              "name": "friend-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Friend"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "gm",
+      "source": "src/modules/gm/GmModule.ts",
+      "systems": {
+        "managementHttp": [
+          {
+            "moduleName": "gm",
+            "source": "src/modules/gm/GmModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "gm-controller",
+              "app": "management",
+              "after": [
+                "diagnostics"
+              ],
+              "controller": "GmController"
+            }
+          }
+        ],
+        "startup": [
+          {
+            "moduleName": "gm",
+            "source": "src/modules/gm/GmModule.ts",
+            "contribution": {
+              "name": "load-gm-config",
+              "app": "management",
+              "phase": "persistence-ready",
+              "scope": "process",
+              "run": "() => GmConfigCatalog.loadAllConfig()"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "gm",
+            "source": "src/modules/gm/GmModule.ts",
+            "contribution": {
+              "name": "gm-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Cdkey"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "gong",
+      "source": "src/modules/gong/GongModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "gong",
+            "source": "src/modules/gong/GongModule.ts",
+            "contribution": {
+              "name": "gong-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Gong",
+                "Treasure"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "guild",
+      "source": "src/modules/guild/GuildModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "guild",
+            "source": "src/modules/guild/GuildModule.ts",
+            "contribution": {
+              "name": "guild-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Guild"
+              ]
+            }
+          }
+        ],
+        "nativeLobby": [
+          {
+            "moduleName": "guild",
+            "source": "src/modules/guild/GuildModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "guild-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) =>\n                    new GuildNativeLobbyRoutes(\n                        services.identities,\n                        new GuildNativeLobbyStore({\n                            registerCharacter: services.registerCharacter,\n                            pushToUser: services.pushToUser,\n                        }),\n                    ).register(registry)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mail",
+      "source": "src/modules/mail/MailModule.ts",
+      "systems": {
+        "actions": [
+          {
+            "moduleName": "mail",
+            "source": "src/modules/mail/MailModule.ts",
+            "contribution": {
+              "kind": "attachTask",
+              "name": "mail-attach-task",
+              "app": "service",
+              "task": "MailAttachTask"
+            }
+          }
+        ],
+        "cron": [
+          {
+            "moduleName": "mail",
+            "source": "src/modules/mail/MailModule.ts",
+            "contribution": {
+              "name": "gmCronGmEmailHandleTiming",
+              "app": "management",
+              "schedule": "*/10 * * * * *",
+              "handler": "handleGmMailTiming"
+            }
+          },
+          {
+            "moduleName": "mail",
+            "source": "src/modules/mail/MailModule.ts",
+            "contribution": {
+              "name": "gmCronEmailHandleEmailType",
+              "app": "management",
+              "schedule": "*/10 * * * * *",
+              "handler": "handleGmMailType"
+            }
+          },
+          {
+            "moduleName": "mail",
+            "source": "src/modules/mail/MailModule.ts",
+            "contribution": {
+              "name": "gmCronDeleteExpiredMail",
+              "app": "management",
+              "schedule": "0 * 5 * * *",
+              "handler": "cleanupExpiredMail"
+            }
+          }
+        ],
+        "startup": [
+          {
+            "moduleName": "mail",
+            "source": "src/modules/mail/MailModule.ts",
+            "contribution": {
+              "name": "initialize-global-mail-dispatcher",
+              "app": "service",
+              "phase": "runtime-ready",
+              "scope": "server",
+              "run": "() => GlobalMailDispatcher.init()"
+            }
+          }
+        ],
+        "nativeLobby": [
+          {
+            "moduleName": "mail",
+            "source": "src/modules/mail/MailModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "mail-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) =>\n                    new MailNativeLobbyRoutes(\n                        services.identities,\n                        new MailNativeLobbyStore(services.pushToUser),\n                    ).register(registry)"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "mail",
+            "source": "src/modules/mail/MailModule.ts",
+            "contribution": {
+              "name": "mail-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Mail"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mission",
+      "source": "src/modules/mission/MissionModule.ts",
+      "systems": {
+        "configuration": [
+          {
+            "moduleName": "mission",
+            "source": "src/modules/mission/MissionModule.ts",
+            "contribution": {
+              "kind": "initializer",
+              "name": "initialize-mission-config",
+              "app": "all",
+              "handler": "initializeMissionConfig"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "mission",
+            "source": "src/modules/mission/MissionModule.ts",
+            "contribution": {
+              "name": "mission-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Mission"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "pay",
+      "source": "src/modules/pay/PayModule.ts",
+      "systems": {
+        "managementHttp": [
+          {
+            "moduleName": "pay",
+            "source": "src/modules/pay/PayModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "order-controller",
+              "app": "management",
+              "after": [
+                "gm"
+              ],
+              "controller": "OrderController"
+            }
+          },
+          {
+            "moduleName": "pay",
+            "source": "src/modules/pay/PayModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "pay-controller",
+              "app": "management",
+              "after": [
+                "order-controller"
+              ],
+              "controller": "PayController"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "pay",
+            "source": "src/modules/pay/PayModule.ts",
+            "contribution": {
+              "name": "pay-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Pay",
+                "Gift"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "practice",
+      "source": "src/modules/practice/PracticeModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "practice",
+            "source": "src/modules/practice/PracticeModule.ts",
+            "contribution": {
+              "name": "practice-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Practice"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "props",
+      "source": "src/modules/props/PropsModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "props",
+            "source": "src/modules/props/PropsModule.ts",
+            "contribution": {
+              "name": "props-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Props",
+                "Prop",
+                "General"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rank",
+      "source": "src/modules/rank/RankModule.ts",
+      "systems": {
+        "events": [
+          {
+            "moduleName": "rank",
+            "source": "src/modules/rank/RankModule.ts",
+            "contribution": {
+              "kind": "actionHandler",
+              "name": "rank-user-enter",
+              "app": "service",
+              "route": "user/Enter",
+              "handlers": [
+                "RankUserEnterHandler"
+              ]
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "rank",
+            "source": "src/modules/rank/RankModule.ts",
+            "contribution": {
+              "name": "rank-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Rank"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "redeem",
+      "source": "src/modules/redeem/RedeemModule.ts",
+      "systems": {
+        "nativeLobby": [
+          {
+            "moduleName": "redeem",
+            "source": "src/modules/redeem/RedeemModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "redeem-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) =>\n                    new RedeemNativeLobbyRoutes(services.identities, new RedeemNativeLobbyStore()).register(registry)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "room",
+      "source": "src/modules/room/RoomModule.ts",
+      "systems": {
+        "nativeLobby": [
+          {
+            "moduleName": "room",
+            "source": "src/modules/room/RoomModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "room-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) =>\n                    new RoomNativeLobbyRoutes(services.identities, new RoomNativeLobbyStore()).register(registry)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "scene",
+      "source": "src/modules/scene/SceneModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "scene",
+            "source": "src/modules/scene/SceneModule.ts",
+            "contribution": {
+              "name": "scene-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Scene"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "serverSettings",
+      "source": "src/modules/serverSettings/ServerSettingsModule.ts",
+      "systems": {
+        "cron": [
+          {
+            "moduleName": "serverSettings",
+            "source": "src/modules/serverSettings/ServerSettingsModule.ts",
+            "contribution": {
+              "name": "reloadSettingVal",
+              "app": "service",
+              "schedule": "*/30 * * * * *",
+              "handler": "() => ServerSettingRefresh.refreshAllServerCache([SERVER_ID])"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "shop",
+      "source": "src/modules/shop/ShopModule.ts",
+      "systems": {
+        "nativeLobby": [
+          {
+            "moduleName": "shop",
+            "source": "src/modules/shop/ShopModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "shop-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) =>\n                    new ShopNativeLobbyRoutes(services.identities, new ShopNativeLobbyStore()).register(registry)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "slg",
+      "source": "src/modules/slg/SlgModule.ts",
+      "systems": {
+        "nativeLobby": [
+          {
+            "moduleName": "slg",
+            "source": "src/modules/slg/SlgModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "slg-native-lobby-routes",
+              "app": "service",
+              "after": [
+                "shop-native-lobby-routes"
+              ],
+              "register": "(registry, services) =>\n                    new SlgNativeLobbyRoutes(services.identities, new SlgNativeLobbyStore()).register(registry)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "snakeCosmetic",
+      "source": "src/modules/snakeCosmetic/SnakeCosmeticModule.ts",
+      "systems": {
+        "nativeLobby": [
+          {
+            "moduleName": "snakeCosmetic",
+            "source": "src/modules/snakeCosmetic/SnakeCosmeticModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "snakeCosmetic-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) =>\n                    new SnakeCosmeticNativeLobbyRoutes(\n                        services.identities,\n                        new SnakeCosmeticNativeLobbyStore(),\n                    ).register(registry)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "task",
+      "source": "src/modules/task/TaskModule.ts",
+      "systems": {
+        "telemetry": [
+          {
+            "moduleName": "task",
+            "source": "src/modules/task/TaskModule.ts",
+            "contribution": {
+              "kind": "provider",
+              "name": "task-telemetry-properties",
+              "app": "service",
+              "after": [
+                "user"
+              ],
+              "provider": "new TaskTelemetryProperties()"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "task",
+            "source": "src/modules/task/TaskModule.ts",
+            "contribution": {
+              "name": "task-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Task"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "title",
+      "source": "src/modules/title/TitleModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "title",
+            "source": "src/modules/title/TitleModule.ts",
+            "contribution": {
+              "name": "title-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Title"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "user",
+      "source": "src/modules/user/UserModule.ts",
+      "systems": {
+        "configuration": [
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "kind": "initializer",
+              "name": "initialize-user-config",
+              "app": "all",
+              "after": [
+                "attr"
+              ],
+              "handler": "initializeUserConfig"
+            }
+          }
+        ],
+        "events": [
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "kind": "actionHandler",
+              "name": "user-enter-telemetry",
+              "app": "service",
+              "after": [
+                "rank-user-enter"
+              ],
+              "route": "user/Enter",
+              "handlers": [
+                "UserEnterTelemetryHandler"
+              ]
+            }
+          },
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "kind": "actionHandler",
+              "name": "user-login-action-log",
+              "app": "service",
+              "route": "base/Login",
+              "handlers": [
+                "UserLoginActionLogHandler"
+              ]
+            }
+          }
+        ],
+        "telemetry": [
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "kind": "provider",
+              "name": "user-telemetry-properties",
+              "app": "service",
+              "provider": "new UserTelemetryProperties()"
+            }
+          }
+        ],
+        "managementHttp": [
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "center-controller",
+              "app": "management",
+              "after": [
+                "adjust"
+              ],
+              "controller": "CenterController"
+            }
+          },
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "kind": "controller",
+              "name": "sso-controller",
+              "app": "management",
+              "after": [
+                "center-controller"
+              ],
+              "controller": "SsoController"
+            }
+          }
+        ],
+        "errorCodes": [
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "name": "user-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "User",
+                "Sign",
+                "Magic"
+              ]
+            }
+          }
+        ],
+        "nativeLobby": [
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "user-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) => {\n                    const users = new NativeLobbyUserStore(services.registerCharacter)\n                    services.onAuthenticated((uid, _internalUid, sId) => users.ensure(uid, sId))\n                    // 会话结束的离线收尾。旧实现挂在 `SessionMgr` 的断线回调上，该链已随 P6 删除；\n                    // 现在由原生 Lobby 在「当前连接被释放」时回调，语义等价且不会晚到覆盖新会话。\n                    services.onReleased(async ({ internalUid }) => {\n                        const user = await User.load(internalUid)\n                        if (user) await UserSessionLifecycle.leave(user)\n                    })\n                    new UserNativeLobbyRoutes(services.identities, users).register(registry)\n                }"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "weapon",
+      "source": "src/modules/weapon/WeaponModule.ts",
+      "systems": {
+        "errorCodes": [
+          {
+            "moduleName": "weapon",
+            "source": "src/modules/weapon/WeaponModule.ts",
+            "contribution": {
+              "name": "weapon-error-codes",
+              "app": "all",
+              "namePrefixes": [
+                "Weapon"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "systems": {
+    "actions": [
+      {
+        "moduleName": "mail",
+        "source": "src/modules/mail/MailModule.ts",
+        "contribution": {
+          "kind": "attachTask",
+          "name": "mail-attach-task",
+          "app": "service",
+          "task": "MailAttachTask"
+        }
+      }
+    ],
+    "configuration": [
+      {
+        "moduleName": "attr",
+        "source": "src/modules/attr/AttrModule.ts",
+        "contribution": {
+          "kind": "initializer",
+          "name": "initialize-attr-config",
+          "app": "all",
+          "handler": "initializeAttrConfig"
+        }
+      },
+      {
+        "moduleName": "mission",
+        "source": "src/modules/mission/MissionModule.ts",
+        "contribution": {
+          "kind": "initializer",
+          "name": "initialize-mission-config",
+          "app": "all",
+          "handler": "initializeMissionConfig"
+        }
+      },
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "kind": "initializer",
+          "name": "initialize-user-config",
+          "app": "all",
+          "after": [
+            "attr"
+          ],
+          "handler": "initializeUserConfig"
+        }
+      },
+      {
+        "moduleName": "equip",
+        "source": "src/modules/equip/EquipModule.ts",
+        "contribution": {
+          "kind": "initializer",
+          "name": "initialize-equip-config",
+          "app": "all",
+          "after": [
+            "user"
+          ],
+          "handler": "initializeEquipConfig"
+        }
+      }
+    ],
+    "cron": [
+      {
+        "moduleName": "mail",
+        "source": "src/modules/mail/MailModule.ts",
+        "contribution": {
+          "name": "gmCronDeleteExpiredMail",
+          "app": "management",
+          "schedule": "0 * 5 * * *",
+          "handler": "cleanupExpiredMail"
+        }
+      },
+      {
+        "moduleName": "mail",
+        "source": "src/modules/mail/MailModule.ts",
+        "contribution": {
+          "name": "gmCronEmailHandleEmailType",
+          "app": "management",
+          "schedule": "*/10 * * * * *",
+          "handler": "handleGmMailType"
+        }
+      },
+      {
+        "moduleName": "mail",
+        "source": "src/modules/mail/MailModule.ts",
+        "contribution": {
+          "name": "gmCronGmEmailHandleTiming",
+          "app": "management",
+          "schedule": "*/10 * * * * *",
+          "handler": "handleGmMailTiming"
+        }
+      },
+      {
+        "moduleName": "serverSettings",
+        "source": "src/modules/serverSettings/ServerSettingsModule.ts",
+        "contribution": {
+          "name": "reloadSettingVal",
+          "app": "service",
+          "schedule": "*/30 * * * * *",
+          "handler": "() => ServerSettingRefresh.refreshAllServerCache([SERVER_ID])"
+        }
+      }
+    ],
+    "errorCodes": [
+      {
+        "moduleName": "activity",
+        "source": "src/modules/activity/ActivityModule.ts",
+        "contribution": {
+          "name": "activity-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Activity"
+          ]
+        }
+      },
+      {
+        "moduleName": "ads",
+        "source": "src/modules/ads/AdsModule.ts",
+        "contribution": {
+          "name": "ads-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Ads"
+          ]
+        }
+      },
+      {
+        "moduleName": "attr",
+        "source": "src/modules/attr/AttrModule.ts",
+        "contribution": {
+          "name": "attr-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Attr"
+          ]
+        }
+      },
+      {
+        "moduleName": "chat",
+        "source": "src/modules/chat/ChatModule.ts",
+        "contribution": {
+          "name": "chat-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Chat",
+            "Cross"
+          ]
+        }
+      },
+      {
+        "moduleName": "equip",
+        "source": "src/modules/equip/EquipModule.ts",
+        "contribution": {
+          "name": "equip-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Equip",
+            "Fashion"
+          ]
+        }
+      },
+      {
+        "moduleName": "friend",
+        "source": "src/modules/friend/FriendModule.ts",
+        "contribution": {
+          "name": "friend-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Friend"
+          ]
+        }
+      },
+      {
+        "moduleName": "gm",
+        "source": "src/modules/gm/GmModule.ts",
+        "contribution": {
+          "name": "gm-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Cdkey"
+          ]
+        }
+      },
+      {
+        "moduleName": "gong",
+        "source": "src/modules/gong/GongModule.ts",
+        "contribution": {
+          "name": "gong-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Gong",
+            "Treasure"
+          ]
+        }
+      },
+      {
+        "moduleName": "guild",
+        "source": "src/modules/guild/GuildModule.ts",
+        "contribution": {
+          "name": "guild-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Guild"
+          ]
+        }
+      },
+      {
+        "moduleName": "mail",
+        "source": "src/modules/mail/MailModule.ts",
+        "contribution": {
+          "name": "mail-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Mail"
+          ]
+        }
+      },
+      {
+        "moduleName": "mission",
+        "source": "src/modules/mission/MissionModule.ts",
+        "contribution": {
+          "name": "mission-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Mission"
+          ]
+        }
+      },
+      {
+        "moduleName": "pay",
+        "source": "src/modules/pay/PayModule.ts",
+        "contribution": {
+          "name": "pay-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Pay",
+            "Gift"
+          ]
+        }
+      },
+      {
+        "moduleName": "practice",
+        "source": "src/modules/practice/PracticeModule.ts",
+        "contribution": {
+          "name": "practice-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Practice"
+          ]
+        }
+      },
+      {
+        "moduleName": "props",
+        "source": "src/modules/props/PropsModule.ts",
+        "contribution": {
+          "name": "props-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Props",
+            "Prop",
+            "General"
+          ]
+        }
+      },
+      {
+        "moduleName": "rank",
+        "source": "src/modules/rank/RankModule.ts",
+        "contribution": {
+          "name": "rank-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Rank"
+          ]
+        }
+      },
+      {
+        "moduleName": "scene",
+        "source": "src/modules/scene/SceneModule.ts",
+        "contribution": {
+          "name": "scene-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Scene"
+          ]
+        }
+      },
+      {
+        "moduleName": "task",
+        "source": "src/modules/task/TaskModule.ts",
+        "contribution": {
+          "name": "task-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Task"
+          ]
+        }
+      },
+      {
+        "moduleName": "title",
+        "source": "src/modules/title/TitleModule.ts",
+        "contribution": {
+          "name": "title-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Title"
+          ]
+        }
+      },
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "name": "user-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "User",
+            "Sign",
+            "Magic"
+          ]
+        }
+      },
+      {
+        "moduleName": "weapon",
+        "source": "src/modules/weapon/WeaponModule.ts",
+        "contribution": {
+          "name": "weapon-error-codes",
+          "app": "all",
+          "namePrefixes": [
+            "Weapon"
+          ]
+        }
+      }
+    ],
+    "events": [
+      {
+        "moduleName": "rank",
+        "source": "src/modules/rank/RankModule.ts",
+        "contribution": {
+          "kind": "actionHandler",
+          "name": "rank-user-enter",
+          "app": "service",
+          "route": "user/Enter",
+          "handlers": [
+            "RankUserEnterHandler"
+          ]
+        }
+      },
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "kind": "actionHandler",
+          "name": "user-enter-telemetry",
+          "app": "service",
+          "after": [
+            "rank-user-enter"
+          ],
+          "route": "user/Enter",
+          "handlers": [
+            "UserEnterTelemetryHandler"
+          ]
+        }
+      },
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "kind": "actionHandler",
+          "name": "user-login-action-log",
+          "app": "service",
+          "route": "base/Login",
+          "handlers": [
+            "UserLoginActionLogHandler"
+          ]
+        }
+      }
+    ],
+    "managementHttp": [
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "middleware",
+          "name": "adjust-access-middleware",
+          "app": "management",
+          "middleware": "AdjustAccessMiddleware"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-controller",
+          "app": "management",
+          "controller": "AdjustController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-api-controller",
+          "app": "management",
+          "after": [
+            "adjust-controller"
+          ],
+          "controller": "AdjustApiController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-config-controller",
+          "app": "management",
+          "after": [
+            "adjust-api-controller"
+          ],
+          "controller": "ConfigController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-custom-function-controller",
+          "app": "management",
+          "after": [
+            "adjust-config-controller"
+          ],
+          "controller": "CustomFunctionController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-ai-controller",
+          "app": "management",
+          "after": [
+            "adjust-custom-function-controller"
+          ],
+          "controller": "AdjustAiController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-account-white-controller",
+          "app": "management",
+          "after": [
+            "adjust-ai-controller"
+          ],
+          "controller": "AccountWhiteController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-func-case-controller",
+          "app": "management",
+          "after": [
+            "adjust-account-white-controller"
+          ],
+          "controller": "FuncCaseController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-robot-batch-plan-controller",
+          "app": "management",
+          "after": [
+            "adjust-func-case-controller"
+          ],
+          "controller": "RobotBatchPlanController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-robot-case-controller",
+          "app": "management",
+          "after": [
+            "adjust-robot-batch-plan-controller"
+          ],
+          "controller": "RobotCaseController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-robot-environment-controller",
+          "app": "management",
+          "after": [
+            "adjust-robot-case-controller"
+          ],
+          "controller": "RobotEnvironmentController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-robot-user-group-controller",
+          "app": "management",
+          "after": [
+            "adjust-robot-environment-controller"
+          ],
+          "controller": "RobotUserGroupController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-case-controller",
+          "app": "management",
+          "after": [
+            "adjust-robot-user-group-controller"
+          ],
+          "controller": "AdjustCaseController"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "adjust-env-controller",
+          "app": "management",
+          "after": [
+            "adjust-case-controller"
+          ],
+          "controller": "AdjustEnvController"
+        }
+      },
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "center-controller",
+          "app": "management",
+          "after": [
+            "adjust"
+          ],
+          "controller": "CenterController"
+        }
+      },
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "sso-controller",
+          "app": "management",
+          "after": [
+            "center-controller"
+          ],
+          "controller": "SsoController"
+        }
+      },
+      {
+        "moduleName": "clientConfig",
+        "source": "src/modules/clientConfig/ClientConfigModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "client-controller",
+          "app": "management",
+          "after": [
+            "user"
+          ],
+          "controller": "ClientController"
+        }
+      },
+      {
+        "moduleName": "clientConfig",
+        "source": "src/modules/clientConfig/ClientConfigModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "client-config-controller",
+          "app": "management",
+          "after": [
+            "client-controller"
+          ],
+          "controller": "ClientConfigController"
+        }
+      },
+      {
+        "moduleName": "diagnostics",
+        "source": "src/modules/diagnostics/DiagnosticsModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "error-log-controller",
+          "app": "management",
+          "after": [
+            "clientConfig"
+          ],
+          "controller": "ErrorLogController"
+        }
+      },
+      {
+        "moduleName": "gm",
+        "source": "src/modules/gm/GmModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "gm-controller",
+          "app": "management",
+          "after": [
+            "diagnostics"
+          ],
+          "controller": "GmController"
+        }
+      },
+      {
+        "moduleName": "pay",
+        "source": "src/modules/pay/PayModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "order-controller",
+          "app": "management",
+          "after": [
+            "gm"
+          ],
+          "controller": "OrderController"
+        }
+      },
+      {
+        "moduleName": "pay",
+        "source": "src/modules/pay/PayModule.ts",
+        "contribution": {
+          "kind": "controller",
+          "name": "pay-controller",
+          "app": "management",
+          "after": [
+            "order-controller"
+          ],
+          "controller": "PayController"
+        }
+      }
+    ],
+    "nativeLobby": [
+      {
+        "moduleName": "arena",
+        "source": "src/modules/arena/ArenaModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "arena-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) =>\n                    new ArenaNativeLobbyRoutes(services.identities, new ArenaNativeLobbyStore()).register(registry)"
+        }
+      },
+      {
+        "moduleName": "guild",
+        "source": "src/modules/guild/GuildModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "guild-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) =>\n                    new GuildNativeLobbyRoutes(\n                        services.identities,\n                        new GuildNativeLobbyStore({\n                            registerCharacter: services.registerCharacter,\n                            pushToUser: services.pushToUser,\n                        }),\n                    ).register(registry)"
+        }
+      },
+      {
+        "moduleName": "mail",
+        "source": "src/modules/mail/MailModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "mail-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) =>\n                    new MailNativeLobbyRoutes(\n                        services.identities,\n                        new MailNativeLobbyStore(services.pushToUser),\n                    ).register(registry)"
+        }
+      },
+      {
+        "moduleName": "redeem",
+        "source": "src/modules/redeem/RedeemModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "redeem-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) =>\n                    new RedeemNativeLobbyRoutes(services.identities, new RedeemNativeLobbyStore()).register(registry)"
+        }
+      },
+      {
+        "moduleName": "room",
+        "source": "src/modules/room/RoomModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "room-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) =>\n                    new RoomNativeLobbyRoutes(services.identities, new RoomNativeLobbyStore()).register(registry)"
+        }
+      },
+      {
+        "moduleName": "shop",
+        "source": "src/modules/shop/ShopModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "shop-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) =>\n                    new ShopNativeLobbyRoutes(services.identities, new ShopNativeLobbyStore()).register(registry)"
+        }
+      },
+      {
+        "moduleName": "arenaShop",
+        "source": "src/modules/arenaShop/ArenaShopModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "arena-shop-native-lobby-routes",
+          "app": "service",
+          "after": [
+            "arena-native-lobby-routes",
+            "shop-native-lobby-routes"
+          ],
+          "register": "(registry, services) =>\n                    new ArenaShopNativeLobbyRoutes(services.identities, new ArenaShopNativeLobbyStore()).register(\n                        registry,\n                    )"
+        }
+      },
+      {
+        "moduleName": "slg",
+        "source": "src/modules/slg/SlgModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "slg-native-lobby-routes",
+          "app": "service",
+          "after": [
+            "shop-native-lobby-routes"
+          ],
+          "register": "(registry, services) =>\n                    new SlgNativeLobbyRoutes(services.identities, new SlgNativeLobbyStore()).register(registry)"
+        }
+      },
+      {
+        "moduleName": "snakeCosmetic",
+        "source": "src/modules/snakeCosmetic/SnakeCosmeticModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "snakeCosmetic-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) =>\n                    new SnakeCosmeticNativeLobbyRoutes(\n                        services.identities,\n                        new SnakeCosmeticNativeLobbyStore(),\n                    ).register(registry)"
+        }
+      },
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "user-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) => {\n                    const users = new NativeLobbyUserStore(services.registerCharacter)\n                    services.onAuthenticated((uid, _internalUid, sId) => users.ensure(uid, sId))\n                    // 会话结束的离线收尾。旧实现挂在 `SessionMgr` 的断线回调上，该链已随 P6 删除；\n                    // 现在由原生 Lobby 在「当前连接被释放」时回调，语义等价且不会晚到覆盖新会话。\n                    services.onReleased(async ({ internalUid }) => {\n                        const user = await User.load(internalUid)\n                        if (user) await UserSessionLifecycle.leave(user)\n                    })\n                    new UserNativeLobbyRoutes(services.identities, users).register(registry)\n                }"
+        }
+      }
+    ],
+    "protocol": [
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "actionExecutor",
+          "name": "adjust-action-executor",
+          "app": "all",
+          "executor": "ApiChangeAction.execAction"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "kind": "internalJsonAction",
+          "name": "adjust-json-action",
+          "app": "all",
+          "key": "adjust",
+          "handler": "ApiChangeAction.execAction"
+        }
+      }
+    ],
+    "startup": [
+      {
+        "moduleName": "gm",
+        "source": "src/modules/gm/GmModule.ts",
+        "contribution": {
+          "name": "load-gm-config",
+          "app": "management",
+          "phase": "persistence-ready",
+          "scope": "process",
+          "run": "() => GmConfigCatalog.loadAllConfig()"
+        }
+      },
+      {
+        "moduleName": "adjust",
+        "source": "src/modules/adjust/AdjustModule.ts",
+        "contribution": {
+          "name": "load-adjust-test-config",
+          "app": "service",
+          "phase": "persistence-ready",
+          "scope": "process",
+          "run": "() => AdjustConfigLoader.loadAllTestConfig()"
+        }
+      },
+      {
+        "moduleName": "activity",
+        "source": "src/modules/activity/ActivityModule.ts",
+        "contribution": {
+          "name": "reload-activity-on-service-start",
+          "app": "service",
+          "phase": "runtime-ready",
+          "scope": "process",
+          "run": "reloadActivityAtStartup"
+        }
+      },
+      {
+        "moduleName": "mail",
+        "source": "src/modules/mail/MailModule.ts",
+        "contribution": {
+          "name": "initialize-global-mail-dispatcher",
+          "app": "service",
+          "phase": "runtime-ready",
+          "scope": "server",
+          "run": "() => GlobalMailDispatcher.init()"
+        }
+      }
+    ],
+    "telemetry": [
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "kind": "provider",
+          "name": "user-telemetry-properties",
+          "app": "service",
+          "provider": "new UserTelemetryProperties()"
+        }
+      },
+      {
+        "moduleName": "task",
+        "source": "src/modules/task/TaskModule.ts",
+        "contribution": {
+          "kind": "provider",
+          "name": "task-telemetry-properties",
+          "app": "service",
+          "after": [
+            "user"
+          ],
+          "provider": "new TaskTelemetryProperties()"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,341 @@
+{
+	"10101": {
+		"id": 10101,
+		"type": 101,
+		"lvLimit": [
+			60,
+			-1
+		],
+		"times": 1,
+		"desc": "元神助力礼包",
+		"npcTalk": "海量灵气助你修为突飞猛进！",
+		"discount": 2700,
+		"duration": 18000,
+		"openShow": {
+			"type": 2,
+			"widgetName": "PropGetWay"
+		},
+		"npcIcon": 118,
+		"giftIcon": 1,
+		"more": {
+			"1010101": {
+				"giftId": 1010101,
+				"id": 10101,
+				"rechargeId": 21001,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010101,
+						"propId": 10201,
+						"num": 3500
+					},
+					{
+						"giftId": 1010101,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"1010102": {
+				"giftId": 1010102,
+				"id": 10101,
+				"rechargeId": 21002,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010102,
+						"propId": 10201,
+						"num": 7200
+					},
+					{
+						"giftId": 1010102,
+						"propId": 200001,
+						"num": 20
+					}
+				]
+			},
+			"1010103": {
+				"giftId": 1010103,
+				"id": 10101,
+				"rechargeId": 21003,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010103,
+						"propId": 10201,
+						"num": 14800
+					},
+					{
+						"giftId": 1010103,
+						"propId": 200001,
+						"num": 30
+					}
+				]
+			}
+		}
+	},
+	"10102": {
+		"id": 10102,
+		"type": 102,
+		"lvLimit": [
+			60,
+			-1
+		],
+		"times": 1,
+		"desc": "法宝助力礼包",
+		"npcTalk": "海量妖气让你的法宝迅速蜕变！",
+		"discount": 2700,
+		"duration": 18000,
+		"openShow": {
+			"type": 2,
+			"widgetName": "PropGetWay"
+		},
+		"npcIcon": 118,
+		"giftIcon": 1,
+		"more": {
+			"1010201": {
+				"giftId": 1010201,
+				"id": 10102,
+				"rechargeId": 24001,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010201,
+						"propId": 10202,
+						"num": 3500
+					},
+					{
+						"giftId": 1010201,
+						"propId": 10204,
+						"num": 10
+					}
+				]
+			},
+			"1010202": {
+				"giftId": 1010202,
+				"id": 10102,
+				"rechargeId": 24002,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010202,
+						"propId": 10202,
+						"num": 7200
+					},
+					{
+						"giftId": 1010202,
+						"propId": 10204,
+						"num": 20
+					}
+				]
+			},
+			"1010203": {
+				"giftId": 1010203,
+				"id": 10102,
+				"rechargeId": 24003,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010203,
+						"propId": 10202,
+						"num": 14800
+					},
+					{
+						"giftId": 1010203,
+						"propId": 10204,
+						"num": 30
+					}
+				]
+			}
+		}
+	},
+	"10103": {
+		"id": 10103,
+		"type": 1,
+		"lvLimit": [
+			50,
+			50
+		],
+		"times": 0,
+		"desc": "50级专属成长礼包",
+		"npcTalk": "穿上这套全简易装备，你就是九州大陆最靓的仔~",
+		"discount": 1200,
+		"duration": 18000,
+		"openShow": {
+			"type": 1
+		},
+		"npcIcon": 118,
+		"giftIcon": 1,
+		"more": {
+			"1010301": {
+				"giftId": 1010301,
+				"id": 10103,
+				"rechargeId": 25001,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010301,
+						"propId": 711001,
+						"num": 1
+					},
+					{
+						"giftId": 1010301,
+						"propId": 711002,
+						"num": 1
+					},
+					{
+						"giftId": 1010301,
+						"propId": 711003,
+						"num": 1
+					},
+					{
+						"giftId": 1010301,
+						"propId": 711004,
+						"num": 1
+					},
+					{
+						"giftId": 1010301,
+						"propId": 711005,
+						"num": 1
+					},
+					{
+						"giftId": 1010301,
+						"propId": 711006,
+						"num": 1
+					}
+				]
+			}
+		}
+	},
+	"10104": {
+		"id": 10104,
+		"type": 103,
+		"lvLimit": [
+			90,
+			-1
+		],
+		"times": 1,
+		"desc": "装备助力礼包",
+		"npcTalk": "精铁豪礼，炼器一次炼个爽！",
+		"discount": 2700,
+		"duration": 18000,
+		"openShow": {
+			"type": 2,
+			"widgetName": "EquipSmelt"
+		},
+		"npcIcon": 118,
+		"giftIcon": 1,
+		"more": {
+			"1010401": {
+				"giftId": 1010401,
+				"id": 10104,
+				"rechargeId": 26001,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010401,
+						"propId": 10203,
+						"num": 25000
+					},
+					{
+						"giftId": 1010401,
+						"propId": 8015,
+						"num": 1
+					}
+				]
+			},
+			"1010402": {
+				"giftId": 1010402,
+				"id": 10104,
+				"rechargeId": 26002,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010402,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"giftId": 1010402,
+						"propId": 8015,
+						"num": 3
+					}
+				]
+			},
+			"1010403": {
+				"giftId": 1010403,
+				"id": 10104,
+				"rechargeId": 26003,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010403,
+						"propId": 10203,
+						"num": 80000
+					},
+					{
+						"giftId": 1010403,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			}
+		}
+	},
+	"10105": {
+		"id": 10105,
+		"type": 2,
+		"lvLimit": [
+			30,
+			-1
+		],
+		"times": 1,
+		"desc": "体力特惠礼包",
+		"npcTalk": "没精神？一口仙桃下去活力满满！",
+		"discount": 1100,
+		"duration": 18000,
+		"openShow": {
+			"type": 1
+		},
+		"npcIcon": 118,
+		"giftIcon": 1,
+		"more": {
+			"1010501": {
+				"giftId": 1010501,
+				"id": 10105,
+				"rechargeId": 27001,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010501,
+						"propId": 1003,
+						"num": 60
+					},
+					{
+						"giftId": 1010501,
+						"propId": 10101,
+						"num": 1
+					}
+				]
+			},
+			"1010502": {
+				"giftId": 1010502,
+				"id": 10105,
+				"rechargeId": 27002,
+				"totalLimit": 1,
+				"awards": [
+					{
+						"giftId": 1010502,
+						"propId": 1003,
+						"num": 120
+					},
+					{
+						"giftId": 1010502,
+						"propId": 10101,
+						"num": 1
+					}
+				]
+			}
+		}
+	}
+}

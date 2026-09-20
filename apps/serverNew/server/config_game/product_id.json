@@ -1,0 +1,62 @@
+{
+	"1": {
+		"productId": 1,
+		"productName": "超值礼包1",
+		"recharge": 6
+	},
+	"2": {
+		"productId": 2,
+		"productName": "超值礼包2",
+		"recharge": 12
+	},
+	"3": {
+		"productId": 3,
+		"productName": "超值礼包3",
+		"recharge": 18
+	},
+	"4": {
+		"productId": 4,
+		"productName": "超值礼包4",
+		"recharge": 30
+	},
+	"5": {
+		"productId": 5,
+		"productName": "超值礼包5",
+		"recharge": 68
+	},
+	"6": {
+		"productId": 6,
+		"productName": "超值礼包6",
+		"recharge": 98
+	},
+	"7": {
+		"productId": 7,
+		"productName": "超值礼包7",
+		"recharge": 128
+	},
+	"8": {
+		"productId": 8,
+		"productName": "超值礼包8",
+		"recharge": 198
+	},
+	"9": {
+		"productId": 9,
+		"productName": "超值礼包9",
+		"recharge": 328
+	},
+	"10": {
+		"productId": 10,
+		"productName": "超值礼包10",
+		"recharge": 648
+	},
+	"11": {
+		"productId": 11,
+		"productName": "超值礼包11",
+		"recharge": 1998
+	},
+	"12": {
+		"productId": 12,
+		"productName": "超值礼包12",
+		"recharge": 168
+	}
+}

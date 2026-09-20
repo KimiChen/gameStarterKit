@@ -1,0 +1,378 @@
+{
+	"CrossMission": {
+		"activityName": "CrossMission",
+		"name": "八荒历练",
+		"type": 1,
+		"rank": {
+			"101": {
+				"rankId": 101,
+				"activityName": "CrossMission",
+				"rank": [
+					1,
+					1
+				],
+				"award1": [
+					{
+						"rankId": 101,
+						"propId": 1001,
+						"num": 5000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"102": {
+				"rankId": 102,
+				"activityName": "CrossMission",
+				"rank": [
+					2,
+					2
+				],
+				"award1": [
+					{
+						"rankId": 102,
+						"propId": 1001,
+						"num": 4000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"103": {
+				"rankId": 103,
+				"activityName": "CrossMission",
+				"rank": [
+					3,
+					3
+				],
+				"award1": [
+					{
+						"rankId": 103,
+						"propId": 1001,
+						"num": 3000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"104": {
+				"rankId": 104,
+				"activityName": "CrossMission",
+				"rank": [
+					4,
+					5
+				],
+				"award1": [
+					{
+						"rankId": 104,
+						"propId": 1001,
+						"num": 2500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"105": {
+				"rankId": 105,
+				"activityName": "CrossMission",
+				"rank": [
+					6,
+					10
+				],
+				"award1": [
+					{
+						"rankId": 105,
+						"propId": 1001,
+						"num": 2000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"106": {
+				"rankId": 106,
+				"activityName": "CrossMission",
+				"rank": [
+					11,
+					20
+				],
+				"award1": [
+					{
+						"rankId": 106,
+						"propId": 1001,
+						"num": 1500
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"107": {
+				"rankId": 107,
+				"activityName": "CrossMission",
+				"rank": [
+					21,
+					50
+				],
+				"award1": [
+					{
+						"rankId": 107,
+						"propId": 1001,
+						"num": 1000
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"108": {
+				"rankId": 108,
+				"activityName": "CrossMission",
+				"rank": [
+					51,
+					100
+				],
+				"award1": [
+					{
+						"rankId": 108,
+						"propId": 1001,
+						"num": 800
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"109": {
+				"rankId": 109,
+				"activityName": "CrossMission",
+				"rank": [
+					101,
+					200
+				],
+				"award1": [
+					{
+						"rankId": 109,
+						"propId": 1001,
+						"num": 600
+					}
+				],
+				"award2": [
+
+				]
+			},
+			"110": {
+				"rankId": 110,
+				"activityName": "CrossMission",
+				"rank": [
+					201,
+					999
+				],
+				"award1": [
+					{
+						"rankId": 110,
+						"propId": 1001,
+						"num": 200
+					}
+				],
+				"award2": [
+
+				]
+			}
+		},
+		"gifts": {
+			"101": {
+				"giftId": 101,
+				"activityName": "CrossMission",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			},
+			"201": {
+				"giftId": 201,
+				"activityName": "CrossMission",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			},
+			"301": {
+				"giftId": 301,
+				"activityName": "CrossMission",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			},
+			"401": {
+				"giftId": 401,
+				"activityName": "CrossMission",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			},
+			"501": {
+				"giftId": 501,
+				"activityName": "CrossMission",
+				"icon": 0,
+				"sort": 1,
+				"limitType": 0
+			}
+		},
+		"crossRank": {
+			"101": {
+				"id": 101,
+				"activityName": "CrossMission",
+				"rank": [
+					1,
+					1
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 101,
+						"propId": 1001,
+						"num": 5000
+					}
+				]
+			},
+			"102": {
+				"id": 102,
+				"activityName": "CrossMission",
+				"rank": [
+					2,
+					2
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 102,
+						"propId": 1001,
+						"num": 4000
+					}
+				]
+			},
+			"103": {
+				"id": 103,
+				"activityName": "CrossMission",
+				"rank": [
+					3,
+					3
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 103,
+						"propId": 1001,
+						"num": 3000
+					}
+				]
+			},
+			"104": {
+				"id": 104,
+				"activityName": "CrossMission",
+				"rank": [
+					4,
+					5
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 104,
+						"propId": 1001,
+						"num": 2500
+					}
+				]
+			},
+			"105": {
+				"id": 105,
+				"activityName": "CrossMission",
+				"rank": [
+					6,
+					10
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 105,
+						"propId": 1001,
+						"num": 2000
+					}
+				]
+			},
+			"106": {
+				"id": 106,
+				"activityName": "CrossMission",
+				"rank": [
+					11,
+					20
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 106,
+						"propId": 1001,
+						"num": 1500
+					}
+				]
+			},
+			"107": {
+				"id": 107,
+				"activityName": "CrossMission",
+				"rank": [
+					21,
+					50
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 107,
+						"propId": 1001,
+						"num": 1000
+					}
+				]
+			},
+			"108": {
+				"id": 108,
+				"activityName": "CrossMission",
+				"rank": [
+					51,
+					100
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 108,
+						"propId": 1001,
+						"num": 800
+					}
+				]
+			},
+			"109": {
+				"id": 109,
+				"activityName": "CrossMission",
+				"rank": [
+					101,
+					200
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 109,
+						"propId": 1001,
+						"num": 600
+					}
+				]
+			},
+			"110": {
+				"id": 110,
+				"activityName": "CrossMission",
+				"rank": [
+					201,
+					999
+				],
+				"crossRankAward": [
+					{
+						"crossRankId": 110,
+						"propId": 1001,
+						"num": 200
+					}
+				]
+			}
+		}
+	}
+}

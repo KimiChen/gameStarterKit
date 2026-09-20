@@ -1,0 +1,4002 @@
+{
+	"1": {
+		"id": 1,
+		"exp": 5,
+		"expAdd": 5,
+		"powerLimit": 10,
+		"strength": 3,
+		"endurance": 1,
+		"constitution": 1,
+		"pillLimit": 4,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 1,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"exp": 10,
+		"expAdd": 15,
+		"powerLimit": 15,
+		"strength": 6,
+		"endurance": 2,
+		"constitution": 2,
+		"pillLimit": 8,
+		"additionAttr": 1,
+		"awards": [
+			{
+				"id": 2,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"exp": 15,
+		"expAdd": 30,
+		"powerLimit": 20,
+		"strength": 9,
+		"endurance": 3,
+		"constitution": 3,
+		"pillLimit": 12,
+		"additionAttr": 2,
+		"awards": [
+			{
+				"id": 3,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"exp": 20,
+		"expAdd": 50,
+		"powerLimit": 25,
+		"strength": 12,
+		"endurance": 4,
+		"constitution": 4,
+		"pillLimit": 16,
+		"additionAttr": 3,
+		"awards": [
+			{
+				"id": 4,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"5": {
+		"id": 5,
+		"exp": 25,
+		"expAdd": 75,
+		"powerLimit": 30,
+		"strength": 15,
+		"endurance": 5,
+		"constitution": 5,
+		"pillLimit": 20,
+		"additionAttr": 4,
+		"awards": [
+			{
+				"id": 5,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"6": {
+		"id": 6,
+		"exp": 30,
+		"expAdd": 105,
+		"powerLimit": 35,
+		"strength": 18,
+		"endurance": 6,
+		"constitution": 6,
+		"pillLimit": 24,
+		"additionAttr": 5,
+		"awards": [
+			{
+				"id": 6,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"7": {
+		"id": 7,
+		"exp": 35,
+		"expAdd": 140,
+		"powerLimit": 40,
+		"strength": 21,
+		"endurance": 7,
+		"constitution": 7,
+		"pillLimit": 28,
+		"additionAttr": 6,
+		"awards": [
+			{
+				"id": 7,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"8": {
+		"id": 8,
+		"exp": 40,
+		"expAdd": 180,
+		"powerLimit": 45,
+		"strength": 24,
+		"endurance": 8,
+		"constitution": 8,
+		"pillLimit": 32,
+		"additionAttr": 7,
+		"awards": [
+			{
+				"id": 8,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"9": {
+		"id": 9,
+		"exp": 45,
+		"expAdd": 225,
+		"powerLimit": 50,
+		"strength": 27,
+		"endurance": 9,
+		"constitution": 9,
+		"pillLimit": 36,
+		"additionAttr": 8,
+		"awards": [
+			{
+				"id": 9,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"10": {
+		"id": 10,
+		"exp": 130,
+		"expAdd": 355,
+		"powerLimit": 55,
+		"strength": 30,
+		"endurance": 10,
+		"constitution": 10,
+		"pillLimit": 40,
+		"additionAttr": 9,
+		"awards": [
+			{
+				"id": 10,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"11": {
+		"id": 11,
+		"exp": 215,
+		"expAdd": 570,
+		"powerLimit": 60,
+		"strength": 33,
+		"endurance": 11,
+		"constitution": 11,
+		"pillLimit": 44,
+		"additionAttr": 10,
+		"awards": [
+			{
+				"id": 11,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"12": {
+		"id": 12,
+		"exp": 300,
+		"expAdd": 870,
+		"powerLimit": 65,
+		"strength": 36,
+		"endurance": 12,
+		"constitution": 12,
+		"pillLimit": 48,
+		"additionAttr": 11,
+		"awards": [
+			{
+				"id": 12,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"13": {
+		"id": 13,
+		"exp": 385,
+		"expAdd": 1255,
+		"powerLimit": 70,
+		"strength": 39,
+		"endurance": 13,
+		"constitution": 13,
+		"pillLimit": 52,
+		"additionAttr": 12,
+		"awards": [
+			{
+				"id": 13,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"14": {
+		"id": 14,
+		"exp": 470,
+		"expAdd": 1725,
+		"powerLimit": 75,
+		"strength": 42,
+		"endurance": 14,
+		"constitution": 14,
+		"pillLimit": 56,
+		"additionAttr": 13,
+		"awards": [
+			{
+				"id": 14,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"15": {
+		"id": 15,
+		"exp": 555,
+		"expAdd": 2280,
+		"powerLimit": 80,
+		"strength": 45,
+		"endurance": 15,
+		"constitution": 15,
+		"pillLimit": 60,
+		"additionAttr": 14,
+		"awards": [
+			{
+				"id": 15,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"16": {
+		"id": 16,
+		"exp": 640,
+		"expAdd": 2920,
+		"powerLimit": 85,
+		"strength": 48,
+		"endurance": 16,
+		"constitution": 16,
+		"pillLimit": 64,
+		"additionAttr": 15,
+		"awards": [
+			{
+				"id": 16,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"17": {
+		"id": 17,
+		"exp": 725,
+		"expAdd": 3645,
+		"powerLimit": 90,
+		"strength": 51,
+		"endurance": 17,
+		"constitution": 17,
+		"pillLimit": 68,
+		"additionAttr": 16,
+		"awards": [
+			{
+				"id": 17,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"18": {
+		"id": 18,
+		"exp": 810,
+		"expAdd": 4455,
+		"powerLimit": 95,
+		"strength": 54,
+		"endurance": 18,
+		"constitution": 18,
+		"pillLimit": 72,
+		"additionAttr": 17,
+		"awards": [
+			{
+				"id": 18,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"19": {
+		"id": 19,
+		"exp": 895,
+		"expAdd": 5350,
+		"powerLimit": 100,
+		"strength": 57,
+		"endurance": 19,
+		"constitution": 19,
+		"pillLimit": 76,
+		"additionAttr": 18,
+		"awards": [
+			{
+				"id": 19,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"20": {
+		"id": 20,
+		"exp": 913,
+		"expAdd": 6263,
+		"powerLimit": 105,
+		"strength": 60,
+		"endurance": 20,
+		"constitution": 20,
+		"pillLimit": 80,
+		"additionAttr": 19,
+		"awards": [
+			{
+				"id": 20,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"21": {
+		"id": 21,
+		"exp": 931,
+		"expAdd": 7194,
+		"powerLimit": 110,
+		"strength": 63,
+		"endurance": 21,
+		"constitution": 21,
+		"pillLimit": 84,
+		"additionAttr": 20,
+		"awards": [
+			{
+				"id": 21,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"22": {
+		"id": 22,
+		"exp": 949,
+		"expAdd": 8143,
+		"powerLimit": 115,
+		"strength": 66,
+		"endurance": 22,
+		"constitution": 22,
+		"pillLimit": 88,
+		"additionAttr": 21,
+		"awards": [
+			{
+				"id": 22,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"23": {
+		"id": 23,
+		"exp": 967,
+		"expAdd": 9110,
+		"powerLimit": 120,
+		"strength": 69,
+		"endurance": 23,
+		"constitution": 23,
+		"pillLimit": 92,
+		"additionAttr": 22,
+		"awards": [
+			{
+				"id": 23,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"24": {
+		"id": 24,
+		"exp": 985,
+		"expAdd": 10095,
+		"powerLimit": 125,
+		"strength": 72,
+		"endurance": 24,
+		"constitution": 24,
+		"pillLimit": 96,
+		"additionAttr": 23,
+		"awards": [
+			{
+				"id": 24,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"25": {
+		"id": 25,
+		"exp": 1003,
+		"expAdd": 11098,
+		"powerLimit": 130,
+		"strength": 75,
+		"endurance": 25,
+		"constitution": 25,
+		"pillLimit": 100,
+		"additionAttr": 24,
+		"awards": [
+			{
+				"id": 25,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"26": {
+		"id": 26,
+		"exp": 1021,
+		"expAdd": 12119,
+		"powerLimit": 135,
+		"strength": 78,
+		"endurance": 26,
+		"constitution": 26,
+		"pillLimit": 104,
+		"additionAttr": 25,
+		"awards": [
+			{
+				"id": 26,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"27": {
+		"id": 27,
+		"exp": 1039,
+		"expAdd": 13158,
+		"powerLimit": 140,
+		"strength": 81,
+		"endurance": 27,
+		"constitution": 27,
+		"pillLimit": 108,
+		"additionAttr": 26,
+		"awards": [
+			{
+				"id": 27,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"28": {
+		"id": 28,
+		"exp": 1057,
+		"expAdd": 14215,
+		"powerLimit": 145,
+		"strength": 84,
+		"endurance": 28,
+		"constitution": 28,
+		"pillLimit": 112,
+		"additionAttr": 27,
+		"awards": [
+			{
+				"id": 28,
+				"propId": 1003,
+				"num": 5
+			}
+		]
+	},
+	"29": {
+		"id": 29,
+		"exp": 1075,
+		"expAdd": 15290,
+		"powerLimit": 150,
+		"strength": 87,
+		"endurance": 29,
+		"constitution": 29,
+		"pillLimit": 116,
+		"additionAttr": 28,
+		"awards": [
+			{
+				"id": 29,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 29,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"30": {
+		"id": 30,
+		"exp": 1625,
+		"expAdd": 16915,
+		"powerLimit": 155,
+		"strength": 90,
+		"endurance": 30,
+		"constitution": 30,
+		"pillLimit": 120,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 30,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 30,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"31": {
+		"id": 31,
+		"exp": 2175,
+		"expAdd": 19090,
+		"powerLimit": 160,
+		"strength": 93,
+		"endurance": 31,
+		"constitution": 31,
+		"pillLimit": 124,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 31,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 31,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"32": {
+		"id": 32,
+		"exp": 2725,
+		"expAdd": 21815,
+		"powerLimit": 165,
+		"strength": 96,
+		"endurance": 32,
+		"constitution": 32,
+		"pillLimit": 128,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 32,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 32,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"33": {
+		"id": 33,
+		"exp": 3275,
+		"expAdd": 25090,
+		"powerLimit": 170,
+		"strength": 99,
+		"endurance": 33,
+		"constitution": 33,
+		"pillLimit": 132,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 33,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 33,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"34": {
+		"id": 34,
+		"exp": 3825,
+		"expAdd": 28915,
+		"powerLimit": 175,
+		"strength": 102,
+		"endurance": 34,
+		"constitution": 34,
+		"pillLimit": 136,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 34,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 34,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"35": {
+		"id": 35,
+		"exp": 4375,
+		"expAdd": 33290,
+		"powerLimit": 180,
+		"strength": 105,
+		"endurance": 35,
+		"constitution": 35,
+		"pillLimit": 140,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 35,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 35,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"36": {
+		"id": 36,
+		"exp": 4925,
+		"expAdd": 38215,
+		"powerLimit": 185,
+		"strength": 108,
+		"endurance": 36,
+		"constitution": 36,
+		"pillLimit": 144,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 36,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 36,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"37": {
+		"id": 37,
+		"exp": 5475,
+		"expAdd": 43690,
+		"powerLimit": 190,
+		"strength": 111,
+		"endurance": 37,
+		"constitution": 37,
+		"pillLimit": 148,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 37,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 37,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"38": {
+		"id": 38,
+		"exp": 6025,
+		"expAdd": 49715,
+		"powerLimit": 195,
+		"strength": 114,
+		"endurance": 38,
+		"constitution": 38,
+		"pillLimit": 152,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 38,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 38,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"39": {
+		"id": 39,
+		"exp": 6575,
+		"expAdd": 56290,
+		"powerLimit": 200,
+		"strength": 117,
+		"endurance": 39,
+		"constitution": 39,
+		"pillLimit": 156,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 39,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 39,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"40": {
+		"id": 40,
+		"exp": 6635,
+		"expAdd": 62925,
+		"powerLimit": 205,
+		"strength": 120,
+		"endurance": 40,
+		"constitution": 40,
+		"pillLimit": 160,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 40,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 40,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"41": {
+		"id": 41,
+		"exp": 6695,
+		"expAdd": 69620,
+		"powerLimit": 210,
+		"strength": 123,
+		"endurance": 41,
+		"constitution": 41,
+		"pillLimit": 164,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 41,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 41,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"42": {
+		"id": 42,
+		"exp": 6755,
+		"expAdd": 76375,
+		"powerLimit": 215,
+		"strength": 126,
+		"endurance": 42,
+		"constitution": 42,
+		"pillLimit": 168,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 42,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 42,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"43": {
+		"id": 43,
+		"exp": 6815,
+		"expAdd": 83190,
+		"powerLimit": 220,
+		"strength": 129,
+		"endurance": 43,
+		"constitution": 43,
+		"pillLimit": 172,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 43,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 43,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"44": {
+		"id": 44,
+		"exp": 6875,
+		"expAdd": 90065,
+		"powerLimit": 225,
+		"strength": 132,
+		"endurance": 44,
+		"constitution": 44,
+		"pillLimit": 176,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 44,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 44,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"45": {
+		"id": 45,
+		"exp": 6935,
+		"expAdd": 97000,
+		"powerLimit": 230,
+		"strength": 135,
+		"endurance": 45,
+		"constitution": 45,
+		"pillLimit": 180,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 45,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 45,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"46": {
+		"id": 46,
+		"exp": 6995,
+		"expAdd": 103995,
+		"powerLimit": 235,
+		"strength": 138,
+		"endurance": 46,
+		"constitution": 46,
+		"pillLimit": 184,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 46,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 46,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"47": {
+		"id": 47,
+		"exp": 7055,
+		"expAdd": 111050,
+		"powerLimit": 240,
+		"strength": 141,
+		"endurance": 47,
+		"constitution": 47,
+		"pillLimit": 188,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 47,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 47,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"48": {
+		"id": 48,
+		"exp": 7115,
+		"expAdd": 118165,
+		"powerLimit": 245,
+		"strength": 144,
+		"endurance": 48,
+		"constitution": 48,
+		"pillLimit": 192,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 48,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 48,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"49": {
+		"id": 49,
+		"exp": 7175,
+		"expAdd": 125340,
+		"powerLimit": 250,
+		"strength": 147,
+		"endurance": 49,
+		"constitution": 49,
+		"pillLimit": 196,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 49,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 49,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"50": {
+		"id": 50,
+		"exp": 7475,
+		"expAdd": 132815,
+		"powerLimit": 255,
+		"strength": 150,
+		"endurance": 50,
+		"constitution": 50,
+		"pillLimit": 200,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 50,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 50,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"51": {
+		"id": 51,
+		"exp": 7775,
+		"expAdd": 140590,
+		"powerLimit": 260,
+		"strength": 153,
+		"endurance": 51,
+		"constitution": 51,
+		"pillLimit": 204,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 51,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 51,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"52": {
+		"id": 52,
+		"exp": 8075,
+		"expAdd": 148665,
+		"powerLimit": 265,
+		"strength": 156,
+		"endurance": 52,
+		"constitution": 52,
+		"pillLimit": 208,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 52,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 52,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"53": {
+		"id": 53,
+		"exp": 8375,
+		"expAdd": 157040,
+		"powerLimit": 270,
+		"strength": 159,
+		"endurance": 53,
+		"constitution": 53,
+		"pillLimit": 212,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 53,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 53,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"54": {
+		"id": 54,
+		"exp": 8675,
+		"expAdd": 165715,
+		"powerLimit": 275,
+		"strength": 162,
+		"endurance": 54,
+		"constitution": 54,
+		"pillLimit": 216,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 54,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 54,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"55": {
+		"id": 55,
+		"exp": 8975,
+		"expAdd": 174690,
+		"powerLimit": 280,
+		"strength": 165,
+		"endurance": 55,
+		"constitution": 55,
+		"pillLimit": 220,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 55,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 55,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"56": {
+		"id": 56,
+		"exp": 9275,
+		"expAdd": 183965,
+		"powerLimit": 285,
+		"strength": 168,
+		"endurance": 56,
+		"constitution": 56,
+		"pillLimit": 224,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 56,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 56,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"57": {
+		"id": 57,
+		"exp": 9575,
+		"expAdd": 193540,
+		"powerLimit": 290,
+		"strength": 171,
+		"endurance": 57,
+		"constitution": 57,
+		"pillLimit": 228,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 57,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 57,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"58": {
+		"id": 58,
+		"exp": 9875,
+		"expAdd": 203415,
+		"powerLimit": 295,
+		"strength": 174,
+		"endurance": 58,
+		"constitution": 58,
+		"pillLimit": 232,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 58,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 58,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"59": {
+		"id": 59,
+		"exp": 10175,
+		"expAdd": 213590,
+		"powerLimit": 300,
+		"strength": 177,
+		"endurance": 59,
+		"constitution": 59,
+		"pillLimit": 236,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 59,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 59,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"60": {
+		"id": 60,
+		"exp": 10425,
+		"expAdd": 224015,
+		"powerLimit": 305,
+		"strength": 180,
+		"endurance": 60,
+		"constitution": 60,
+		"pillLimit": 240,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 60,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 60,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"61": {
+		"id": 61,
+		"exp": 10675,
+		"expAdd": 234690,
+		"powerLimit": 310,
+		"strength": 183,
+		"endurance": 61,
+		"constitution": 61,
+		"pillLimit": 244,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 61,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 61,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"62": {
+		"id": 62,
+		"exp": 10925,
+		"expAdd": 245615,
+		"powerLimit": 315,
+		"strength": 186,
+		"endurance": 62,
+		"constitution": 62,
+		"pillLimit": 248,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 62,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 62,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"63": {
+		"id": 63,
+		"exp": 11175,
+		"expAdd": 256790,
+		"powerLimit": 320,
+		"strength": 189,
+		"endurance": 63,
+		"constitution": 63,
+		"pillLimit": 252,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 63,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 63,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"64": {
+		"id": 64,
+		"exp": 11425,
+		"expAdd": 268215,
+		"powerLimit": 325,
+		"strength": 192,
+		"endurance": 64,
+		"constitution": 64,
+		"pillLimit": 256,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 64,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 64,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"65": {
+		"id": 65,
+		"exp": 11675,
+		"expAdd": 279890,
+		"powerLimit": 330,
+		"strength": 195,
+		"endurance": 65,
+		"constitution": 65,
+		"pillLimit": 260,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 65,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 65,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"66": {
+		"id": 66,
+		"exp": 11925,
+		"expAdd": 291815,
+		"powerLimit": 335,
+		"strength": 198,
+		"endurance": 66,
+		"constitution": 66,
+		"pillLimit": 264,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 66,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 66,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"67": {
+		"id": 67,
+		"exp": 12175,
+		"expAdd": 303990,
+		"powerLimit": 340,
+		"strength": 201,
+		"endurance": 67,
+		"constitution": 67,
+		"pillLimit": 268,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 67,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 67,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"68": {
+		"id": 68,
+		"exp": 12425,
+		"expAdd": 316415,
+		"powerLimit": 345,
+		"strength": 204,
+		"endurance": 68,
+		"constitution": 68,
+		"pillLimit": 272,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 68,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 68,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"69": {
+		"id": 69,
+		"exp": 12675,
+		"expAdd": 329090,
+		"powerLimit": 350,
+		"strength": 207,
+		"endurance": 69,
+		"constitution": 69,
+		"pillLimit": 276,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 69,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 69,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"70": {
+		"id": 70,
+		"exp": 13125,
+		"expAdd": 342215,
+		"powerLimit": 355,
+		"strength": 210,
+		"endurance": 70,
+		"constitution": 70,
+		"pillLimit": 280,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 70,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 70,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"71": {
+		"id": 71,
+		"exp": 13575,
+		"expAdd": 355790,
+		"powerLimit": 360,
+		"strength": 213,
+		"endurance": 71,
+		"constitution": 71,
+		"pillLimit": 284,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 71,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 71,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"72": {
+		"id": 72,
+		"exp": 14025,
+		"expAdd": 369815,
+		"powerLimit": 365,
+		"strength": 216,
+		"endurance": 72,
+		"constitution": 72,
+		"pillLimit": 288,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 72,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 72,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"73": {
+		"id": 73,
+		"exp": 14475,
+		"expAdd": 384290,
+		"powerLimit": 370,
+		"strength": 219,
+		"endurance": 73,
+		"constitution": 73,
+		"pillLimit": 292,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 73,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 73,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"74": {
+		"id": 74,
+		"exp": 14925,
+		"expAdd": 399215,
+		"powerLimit": 375,
+		"strength": 222,
+		"endurance": 74,
+		"constitution": 74,
+		"pillLimit": 296,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 74,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 74,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"75": {
+		"id": 75,
+		"exp": 15375,
+		"expAdd": 414590,
+		"powerLimit": 380,
+		"strength": 225,
+		"endurance": 75,
+		"constitution": 75,
+		"pillLimit": 300,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 75,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 75,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"76": {
+		"id": 76,
+		"exp": 15825,
+		"expAdd": 430415,
+		"powerLimit": 385,
+		"strength": 228,
+		"endurance": 76,
+		"constitution": 76,
+		"pillLimit": 304,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 76,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 76,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"77": {
+		"id": 77,
+		"exp": 16275,
+		"expAdd": 446690,
+		"powerLimit": 390,
+		"strength": 231,
+		"endurance": 77,
+		"constitution": 77,
+		"pillLimit": 308,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 77,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 77,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"78": {
+		"id": 78,
+		"exp": 16725,
+		"expAdd": 463415,
+		"powerLimit": 395,
+		"strength": 234,
+		"endurance": 78,
+		"constitution": 78,
+		"pillLimit": 312,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 78,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 78,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"79": {
+		"id": 79,
+		"exp": 17175,
+		"expAdd": 480590,
+		"powerLimit": 400,
+		"strength": 237,
+		"endurance": 79,
+		"constitution": 79,
+		"pillLimit": 316,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 79,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 79,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"80": {
+		"id": 80,
+		"exp": 17975,
+		"expAdd": 498565,
+		"powerLimit": 405,
+		"strength": 240,
+		"endurance": 80,
+		"constitution": 80,
+		"pillLimit": 320,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 80,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 80,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"81": {
+		"id": 81,
+		"exp": 18775,
+		"expAdd": 517340,
+		"powerLimit": 410,
+		"strength": 243,
+		"endurance": 81,
+		"constitution": 81,
+		"pillLimit": 324,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 81,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 81,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"82": {
+		"id": 82,
+		"exp": 19575,
+		"expAdd": 536915,
+		"powerLimit": 415,
+		"strength": 246,
+		"endurance": 82,
+		"constitution": 82,
+		"pillLimit": 328,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 82,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 82,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"83": {
+		"id": 83,
+		"exp": 20375,
+		"expAdd": 557290,
+		"powerLimit": 420,
+		"strength": 249,
+		"endurance": 83,
+		"constitution": 83,
+		"pillLimit": 332,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 83,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 83,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"84": {
+		"id": 84,
+		"exp": 21175,
+		"expAdd": 578465,
+		"powerLimit": 425,
+		"strength": 252,
+		"endurance": 84,
+		"constitution": 84,
+		"pillLimit": 336,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 84,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 84,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"85": {
+		"id": 85,
+		"exp": 21975,
+		"expAdd": 600440,
+		"powerLimit": 430,
+		"strength": 255,
+		"endurance": 85,
+		"constitution": 85,
+		"pillLimit": 340,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 85,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 85,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"86": {
+		"id": 86,
+		"exp": 22775,
+		"expAdd": 623215,
+		"powerLimit": 435,
+		"strength": 258,
+		"endurance": 86,
+		"constitution": 86,
+		"pillLimit": 344,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 86,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 86,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"87": {
+		"id": 87,
+		"exp": 23575,
+		"expAdd": 646790,
+		"powerLimit": 440,
+		"strength": 261,
+		"endurance": 87,
+		"constitution": 87,
+		"pillLimit": 348,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 87,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 87,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"88": {
+		"id": 88,
+		"exp": 24375,
+		"expAdd": 671165,
+		"powerLimit": 445,
+		"strength": 264,
+		"endurance": 88,
+		"constitution": 88,
+		"pillLimit": 352,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 88,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 88,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"89": {
+		"id": 89,
+		"exp": 25175,
+		"expAdd": 696340,
+		"powerLimit": 450,
+		"strength": 267,
+		"endurance": 89,
+		"constitution": 89,
+		"pillLimit": 356,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 89,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 89,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"90": {
+		"id": 90,
+		"exp": 26975,
+		"expAdd": 723315,
+		"powerLimit": 455,
+		"strength": 270,
+		"endurance": 90,
+		"constitution": 90,
+		"pillLimit": 360,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 90,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 90,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"91": {
+		"id": 91,
+		"exp": 50550,
+		"expAdd": 773865,
+		"powerLimit": 460,
+		"strength": 273,
+		"endurance": 91,
+		"constitution": 91,
+		"pillLimit": 364,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 91,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 91,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"92": {
+		"id": 92,
+		"exp": 50750,
+		"expAdd": 824615,
+		"powerLimit": 465,
+		"strength": 276,
+		"endurance": 92,
+		"constitution": 92,
+		"pillLimit": 368,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 92,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 92,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"93": {
+		"id": 93,
+		"exp": 50950,
+		"expAdd": 875565,
+		"powerLimit": 470,
+		"strength": 279,
+		"endurance": 93,
+		"constitution": 93,
+		"pillLimit": 372,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 93,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 93,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"94": {
+		"id": 94,
+		"exp": 51150,
+		"expAdd": 926715,
+		"powerLimit": 475,
+		"strength": 282,
+		"endurance": 94,
+		"constitution": 94,
+		"pillLimit": 376,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 94,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 94,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"95": {
+		"id": 95,
+		"exp": 51350,
+		"expAdd": 978065,
+		"powerLimit": 480,
+		"strength": 285,
+		"endurance": 95,
+		"constitution": 95,
+		"pillLimit": 380,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 95,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 95,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"96": {
+		"id": 96,
+		"exp": 51550,
+		"expAdd": 1029615,
+		"powerLimit": 485,
+		"strength": 288,
+		"endurance": 96,
+		"constitution": 96,
+		"pillLimit": 384,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 96,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 96,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"97": {
+		"id": 97,
+		"exp": 51750,
+		"expAdd": 1081365,
+		"powerLimit": 490,
+		"strength": 291,
+		"endurance": 97,
+		"constitution": 97,
+		"pillLimit": 388,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 97,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 97,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"98": {
+		"id": 98,
+		"exp": 51950,
+		"expAdd": 1133315,
+		"powerLimit": 495,
+		"strength": 294,
+		"endurance": 98,
+		"constitution": 98,
+		"pillLimit": 392,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 98,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 98,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"99": {
+		"id": 99,
+		"exp": 52150,
+		"expAdd": 1185465,
+		"powerLimit": 500,
+		"strength": 297,
+		"endurance": 99,
+		"constitution": 99,
+		"pillLimit": 396,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 99,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 99,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"100": {
+		"id": 100,
+		"exp": 52350,
+		"expAdd": 1237815,
+		"powerLimit": 500,
+		"strength": 300,
+		"endurance": 100,
+		"constitution": 100,
+		"pillLimit": 400,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 100,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 100,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"101": {
+		"id": 101,
+		"exp": 63350,
+		"expAdd": 1301165,
+		"powerLimit": 500,
+		"strength": 303,
+		"endurance": 101,
+		"constitution": 101,
+		"pillLimit": 404,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 101,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 101,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"102": {
+		"id": 102,
+		"exp": 63650,
+		"expAdd": 1364815,
+		"powerLimit": 500,
+		"strength": 306,
+		"endurance": 102,
+		"constitution": 102,
+		"pillLimit": 408,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 102,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 102,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"103": {
+		"id": 103,
+		"exp": 63950,
+		"expAdd": 1428765,
+		"powerLimit": 500,
+		"strength": 309,
+		"endurance": 103,
+		"constitution": 103,
+		"pillLimit": 412,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 103,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 103,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"104": {
+		"id": 104,
+		"exp": 64250,
+		"expAdd": 1493015,
+		"powerLimit": 500,
+		"strength": 312,
+		"endurance": 104,
+		"constitution": 104,
+		"pillLimit": 416,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 104,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 104,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"105": {
+		"id": 105,
+		"exp": 64550,
+		"expAdd": 1557565,
+		"powerLimit": 500,
+		"strength": 315,
+		"endurance": 105,
+		"constitution": 105,
+		"pillLimit": 420,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 105,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 105,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"106": {
+		"id": 106,
+		"exp": 64850,
+		"expAdd": 1622415,
+		"powerLimit": 500,
+		"strength": 318,
+		"endurance": 106,
+		"constitution": 106,
+		"pillLimit": 424,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 106,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 106,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"107": {
+		"id": 107,
+		"exp": 65150,
+		"expAdd": 1687565,
+		"powerLimit": 500,
+		"strength": 321,
+		"endurance": 107,
+		"constitution": 107,
+		"pillLimit": 428,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 107,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 107,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"108": {
+		"id": 108,
+		"exp": 65450,
+		"expAdd": 1753015,
+		"powerLimit": 500,
+		"strength": 324,
+		"endurance": 108,
+		"constitution": 108,
+		"pillLimit": 432,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 108,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 108,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"109": {
+		"id": 109,
+		"exp": 85450,
+		"expAdd": 1838465,
+		"powerLimit": 500,
+		"strength": 327,
+		"endurance": 109,
+		"constitution": 109,
+		"pillLimit": 436,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 109,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 109,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"110": {
+		"id": 110,
+		"exp": 85650,
+		"expAdd": 1924115,
+		"powerLimit": 500,
+		"strength": 330,
+		"endurance": 110,
+		"constitution": 110,
+		"pillLimit": 440,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 110,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 110,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"111": {
+		"id": 111,
+		"exp": 85850,
+		"expAdd": 2009965,
+		"powerLimit": 500,
+		"strength": 333,
+		"endurance": 111,
+		"constitution": 111,
+		"pillLimit": 444,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 111,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 111,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"112": {
+		"id": 112,
+		"exp": 86050,
+		"expAdd": 2096015,
+		"powerLimit": 500,
+		"strength": 336,
+		"endurance": 112,
+		"constitution": 112,
+		"pillLimit": 448,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 112,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 112,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"113": {
+		"id": 113,
+		"exp": 86250,
+		"expAdd": 2182265,
+		"powerLimit": 500,
+		"strength": 339,
+		"endurance": 113,
+		"constitution": 113,
+		"pillLimit": 452,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 113,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 113,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"114": {
+		"id": 114,
+		"exp": 86450,
+		"expAdd": 2268715,
+		"powerLimit": 500,
+		"strength": 342,
+		"endurance": 114,
+		"constitution": 114,
+		"pillLimit": 456,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 114,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 114,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"115": {
+		"id": 115,
+		"exp": 126450,
+		"expAdd": 2395165,
+		"powerLimit": 500,
+		"strength": 345,
+		"endurance": 115,
+		"constitution": 115,
+		"pillLimit": 460,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 115,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 115,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"116": {
+		"id": 116,
+		"exp": 127750,
+		"expAdd": 2522915,
+		"powerLimit": 500,
+		"strength": 348,
+		"endurance": 116,
+		"constitution": 116,
+		"pillLimit": 464,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 116,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 116,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"117": {
+		"id": 117,
+		"exp": 129050,
+		"expAdd": 2651965,
+		"powerLimit": 500,
+		"strength": 351,
+		"endurance": 117,
+		"constitution": 117,
+		"pillLimit": 468,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 117,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 117,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"118": {
+		"id": 118,
+		"exp": 130350,
+		"expAdd": 2782315,
+		"powerLimit": 500,
+		"strength": 354,
+		"endurance": 118,
+		"constitution": 118,
+		"pillLimit": 472,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 118,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 118,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"119": {
+		"id": 119,
+		"exp": 256350,
+		"expAdd": 3038665,
+		"powerLimit": 500,
+		"strength": 357,
+		"endurance": 119,
+		"constitution": 119,
+		"pillLimit": 476,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 119,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 119,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"120": {
+		"id": 120,
+		"exp": 258350,
+		"expAdd": 3297015,
+		"powerLimit": 500,
+		"strength": 360,
+		"endurance": 120,
+		"constitution": 120,
+		"pillLimit": 480,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 120,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 120,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"121": {
+		"id": 121,
+		"exp": 489350,
+		"expAdd": 3786365,
+		"powerLimit": 500,
+		"strength": 363,
+		"endurance": 121,
+		"constitution": 121,
+		"pillLimit": 484,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 121,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 121,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"122": {
+		"id": 122,
+		"exp": 490850,
+		"expAdd": 4277215,
+		"powerLimit": 500,
+		"strength": 366,
+		"endurance": 122,
+		"constitution": 122,
+		"pillLimit": 488,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 122,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 122,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"123": {
+		"id": 123,
+		"exp": 492350,
+		"expAdd": 4769565,
+		"powerLimit": 500,
+		"strength": 369,
+		"endurance": 123,
+		"constitution": 123,
+		"pillLimit": 492,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 123,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 123,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"124": {
+		"id": 124,
+		"exp": 493850,
+		"expAdd": 5263415,
+		"powerLimit": 500,
+		"strength": 372,
+		"endurance": 124,
+		"constitution": 124,
+		"pillLimit": 496,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 124,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 124,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"125": {
+		"id": 125,
+		"exp": 495350,
+		"expAdd": 5758765,
+		"powerLimit": 500,
+		"strength": 375,
+		"endurance": 125,
+		"constitution": 125,
+		"pillLimit": 500,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 125,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 125,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"126": {
+		"id": 126,
+		"exp": 496850,
+		"expAdd": 6255615,
+		"powerLimit": 500,
+		"strength": 378,
+		"endurance": 126,
+		"constitution": 126,
+		"pillLimit": 504,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 126,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 126,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"127": {
+		"id": 127,
+		"exp": 498350,
+		"expAdd": 6753965,
+		"powerLimit": 500,
+		"strength": 381,
+		"endurance": 127,
+		"constitution": 127,
+		"pillLimit": 508,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 127,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 127,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"128": {
+		"id": 128,
+		"exp": 499850,
+		"expAdd": 7253815,
+		"powerLimit": 500,
+		"strength": 384,
+		"endurance": 128,
+		"constitution": 128,
+		"pillLimit": 512,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 128,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 128,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"129": {
+		"id": 129,
+		"exp": 501350,
+		"expAdd": 7755165,
+		"powerLimit": 500,
+		"strength": 387,
+		"endurance": 129,
+		"constitution": 129,
+		"pillLimit": 516,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 129,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 129,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"130": {
+		"id": 130,
+		"exp": 502850,
+		"expAdd": 8258015,
+		"powerLimit": 500,
+		"strength": 390,
+		"endurance": 130,
+		"constitution": 130,
+		"pillLimit": 520,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 130,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 130,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"131": {
+		"id": 131,
+		"exp": 504850,
+		"expAdd": 8762865,
+		"powerLimit": 500,
+		"strength": 393,
+		"endurance": 131,
+		"constitution": 131,
+		"pillLimit": 524,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 131,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 131,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"132": {
+		"id": 132,
+		"exp": 506850,
+		"expAdd": 9269715,
+		"powerLimit": 500,
+		"strength": 396,
+		"endurance": 132,
+		"constitution": 132,
+		"pillLimit": 528,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 132,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 132,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"133": {
+		"id": 133,
+		"exp": 508850,
+		"expAdd": 9778565,
+		"powerLimit": 500,
+		"strength": 399,
+		"endurance": 133,
+		"constitution": 133,
+		"pillLimit": 532,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 133,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 133,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"134": {
+		"id": 134,
+		"exp": 510850,
+		"expAdd": 10289415,
+		"powerLimit": 500,
+		"strength": 402,
+		"endurance": 134,
+		"constitution": 134,
+		"pillLimit": 536,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 134,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 134,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"135": {
+		"id": 135,
+		"exp": 512850,
+		"expAdd": 10802265,
+		"powerLimit": 500,
+		"strength": 405,
+		"endurance": 135,
+		"constitution": 135,
+		"pillLimit": 540,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 135,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 135,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"136": {
+		"id": 136,
+		"exp": 514850,
+		"expAdd": 11317115,
+		"powerLimit": 500,
+		"strength": 408,
+		"endurance": 136,
+		"constitution": 136,
+		"pillLimit": 544,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 136,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 136,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"137": {
+		"id": 137,
+		"exp": 516850,
+		"expAdd": 11833965,
+		"powerLimit": 500,
+		"strength": 411,
+		"endurance": 137,
+		"constitution": 137,
+		"pillLimit": 548,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 137,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 137,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"138": {
+		"id": 138,
+		"exp": 518850,
+		"expAdd": 12352815,
+		"powerLimit": 500,
+		"strength": 414,
+		"endurance": 138,
+		"constitution": 138,
+		"pillLimit": 552,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 138,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 138,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"139": {
+		"id": 139,
+		"exp": 520850,
+		"expAdd": 12873665,
+		"powerLimit": 500,
+		"strength": 417,
+		"endurance": 139,
+		"constitution": 139,
+		"pillLimit": 556,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 139,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 139,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"140": {
+		"id": 140,
+		"exp": 522850,
+		"expAdd": 13396515,
+		"powerLimit": 500,
+		"strength": 420,
+		"endurance": 140,
+		"constitution": 140,
+		"pillLimit": 560,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 140,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 140,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"141": {
+		"id": 141,
+		"exp": 525350,
+		"expAdd": 13921865,
+		"powerLimit": 500,
+		"strength": 423,
+		"endurance": 141,
+		"constitution": 141,
+		"pillLimit": 564,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 141,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 141,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"142": {
+		"id": 142,
+		"exp": 527850,
+		"expAdd": 14449715,
+		"powerLimit": 500,
+		"strength": 426,
+		"endurance": 142,
+		"constitution": 142,
+		"pillLimit": 568,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 142,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 142,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"143": {
+		"id": 143,
+		"exp": 530350,
+		"expAdd": 14980065,
+		"powerLimit": 500,
+		"strength": 429,
+		"endurance": 143,
+		"constitution": 143,
+		"pillLimit": 572,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 143,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 143,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"144": {
+		"id": 144,
+		"exp": 532850,
+		"expAdd": 15512915,
+		"powerLimit": 500,
+		"strength": 432,
+		"endurance": 144,
+		"constitution": 144,
+		"pillLimit": 576,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 144,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 144,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"145": {
+		"id": 145,
+		"exp": 535350,
+		"expAdd": 16048265,
+		"powerLimit": 500,
+		"strength": 435,
+		"endurance": 145,
+		"constitution": 145,
+		"pillLimit": 580,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 145,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 145,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"146": {
+		"id": 146,
+		"exp": 537850,
+		"expAdd": 16586115,
+		"powerLimit": 500,
+		"strength": 438,
+		"endurance": 146,
+		"constitution": 146,
+		"pillLimit": 584,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 146,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 146,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"147": {
+		"id": 147,
+		"exp": 540350,
+		"expAdd": 17126465,
+		"powerLimit": 500,
+		"strength": 441,
+		"endurance": 147,
+		"constitution": 147,
+		"pillLimit": 588,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 147,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 147,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"148": {
+		"id": 148,
+		"exp": 542850,
+		"expAdd": 17669315,
+		"powerLimit": 500,
+		"strength": 444,
+		"endurance": 148,
+		"constitution": 148,
+		"pillLimit": 592,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 148,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 148,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"149": {
+		"id": 149,
+		"exp": 545350,
+		"expAdd": 18214665,
+		"powerLimit": 500,
+		"strength": 447,
+		"endurance": 149,
+		"constitution": 149,
+		"pillLimit": 596,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 149,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 149,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"150": {
+		"id": 150,
+		"exp": 547850,
+		"expAdd": 18762515,
+		"powerLimit": 500,
+		"strength": 450,
+		"endurance": 150,
+		"constitution": 150,
+		"pillLimit": 600,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 150,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 150,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"151": {
+		"id": 151,
+		"exp": 1002850,
+		"expAdd": 19765365,
+		"powerLimit": 500,
+		"strength": 453,
+		"endurance": 151,
+		"constitution": 151,
+		"pillLimit": 604,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 151,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 151,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"152": {
+		"id": 152,
+		"exp": 1004350,
+		"expAdd": 20769715,
+		"powerLimit": 500,
+		"strength": 456,
+		"endurance": 152,
+		"constitution": 152,
+		"pillLimit": 608,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 152,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 152,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"153": {
+		"id": 153,
+		"exp": 1005850,
+		"expAdd": 21775565,
+		"powerLimit": 500,
+		"strength": 459,
+		"endurance": 153,
+		"constitution": 153,
+		"pillLimit": 612,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 153,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 153,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"154": {
+		"id": 154,
+		"exp": 1007350,
+		"expAdd": 22782915,
+		"powerLimit": 500,
+		"strength": 462,
+		"endurance": 154,
+		"constitution": 154,
+		"pillLimit": 616,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 154,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 154,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"155": {
+		"id": 155,
+		"exp": 1008850,
+		"expAdd": 23791765,
+		"powerLimit": 500,
+		"strength": 465,
+		"endurance": 155,
+		"constitution": 155,
+		"pillLimit": 620,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 155,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 155,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"156": {
+		"id": 156,
+		"exp": 1010350,
+		"expAdd": 24802115,
+		"powerLimit": 500,
+		"strength": 468,
+		"endurance": 156,
+		"constitution": 156,
+		"pillLimit": 624,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 156,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 156,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"157": {
+		"id": 157,
+		"exp": 1011850,
+		"expAdd": 25813965,
+		"powerLimit": 500,
+		"strength": 471,
+		"endurance": 157,
+		"constitution": 157,
+		"pillLimit": 628,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 157,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 157,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"158": {
+		"id": 158,
+		"exp": 1013350,
+		"expAdd": 26827315,
+		"powerLimit": 500,
+		"strength": 474,
+		"endurance": 158,
+		"constitution": 158,
+		"pillLimit": 632,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 158,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 158,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"159": {
+		"id": 159,
+		"exp": 1014850,
+		"expAdd": 27842165,
+		"powerLimit": 500,
+		"strength": 477,
+		"endurance": 159,
+		"constitution": 159,
+		"pillLimit": 636,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 159,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 159,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"160": {
+		"id": 160,
+		"exp": 1016350,
+		"expAdd": 28858515,
+		"powerLimit": 500,
+		"strength": 480,
+		"endurance": 160,
+		"constitution": 160,
+		"pillLimit": 640,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 160,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 160,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"161": {
+		"id": 161,
+		"exp": 1018350,
+		"expAdd": 29876865,
+		"powerLimit": 500,
+		"strength": 483,
+		"endurance": 161,
+		"constitution": 161,
+		"pillLimit": 644,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 161,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 161,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"162": {
+		"id": 162,
+		"exp": 1020350,
+		"expAdd": 30897215,
+		"powerLimit": 500,
+		"strength": 486,
+		"endurance": 162,
+		"constitution": 162,
+		"pillLimit": 648,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 162,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 162,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"163": {
+		"id": 163,
+		"exp": 1022350,
+		"expAdd": 31919565,
+		"powerLimit": 500,
+		"strength": 489,
+		"endurance": 163,
+		"constitution": 163,
+		"pillLimit": 652,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 163,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 163,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"164": {
+		"id": 164,
+		"exp": 1024350,
+		"expAdd": 32943915,
+		"powerLimit": 500,
+		"strength": 492,
+		"endurance": 164,
+		"constitution": 164,
+		"pillLimit": 656,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 164,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 164,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"165": {
+		"id": 165,
+		"exp": 1026350,
+		"expAdd": 33970265,
+		"powerLimit": 500,
+		"strength": 495,
+		"endurance": 165,
+		"constitution": 165,
+		"pillLimit": 660,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 165,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 165,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"166": {
+		"id": 166,
+		"exp": 1028350,
+		"expAdd": 34998615,
+		"powerLimit": 500,
+		"strength": 498,
+		"endurance": 166,
+		"constitution": 166,
+		"pillLimit": 664,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 166,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 166,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"167": {
+		"id": 167,
+		"exp": 1030350,
+		"expAdd": 36028965,
+		"powerLimit": 500,
+		"strength": 501,
+		"endurance": 167,
+		"constitution": 167,
+		"pillLimit": 668,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 167,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 167,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"168": {
+		"id": 168,
+		"exp": 1032350,
+		"expAdd": 37061315,
+		"powerLimit": 500,
+		"strength": 504,
+		"endurance": 168,
+		"constitution": 168,
+		"pillLimit": 672,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 168,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 168,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"169": {
+		"id": 169,
+		"exp": 1034350,
+		"expAdd": 38095665,
+		"powerLimit": 500,
+		"strength": 507,
+		"endurance": 169,
+		"constitution": 169,
+		"pillLimit": 676,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 169,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 169,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"170": {
+		"id": 170,
+		"exp": 1036350,
+		"expAdd": 39132015,
+		"powerLimit": 500,
+		"strength": 510,
+		"endurance": 170,
+		"constitution": 170,
+		"pillLimit": 680,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 170,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 170,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"171": {
+		"id": 171,
+		"exp": 1038850,
+		"expAdd": 40170865,
+		"powerLimit": 500,
+		"strength": 513,
+		"endurance": 171,
+		"constitution": 171,
+		"pillLimit": 684,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 171,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 171,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"172": {
+		"id": 172,
+		"exp": 1041350,
+		"expAdd": 41212215,
+		"powerLimit": 500,
+		"strength": 516,
+		"endurance": 172,
+		"constitution": 172,
+		"pillLimit": 688,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 172,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 172,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"173": {
+		"id": 173,
+		"exp": 1043850,
+		"expAdd": 42256065,
+		"powerLimit": 500,
+		"strength": 519,
+		"endurance": 173,
+		"constitution": 173,
+		"pillLimit": 692,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 173,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 173,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"174": {
+		"id": 174,
+		"exp": 1046350,
+		"expAdd": 43302415,
+		"powerLimit": 500,
+		"strength": 522,
+		"endurance": 174,
+		"constitution": 174,
+		"pillLimit": 696,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 174,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 174,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"175": {
+		"id": 175,
+		"exp": 1048850,
+		"expAdd": 44351265,
+		"powerLimit": 500,
+		"strength": 525,
+		"endurance": 175,
+		"constitution": 175,
+		"pillLimit": 700,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 175,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 175,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"176": {
+		"id": 176,
+		"exp": 1051350,
+		"expAdd": 45402615,
+		"powerLimit": 500,
+		"strength": 528,
+		"endurance": 176,
+		"constitution": 176,
+		"pillLimit": 704,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 176,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 176,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"177": {
+		"id": 177,
+		"exp": 1053850,
+		"expAdd": 46456465,
+		"powerLimit": 500,
+		"strength": 531,
+		"endurance": 177,
+		"constitution": 177,
+		"pillLimit": 708,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 177,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 177,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"178": {
+		"id": 178,
+		"exp": 1056350,
+		"expAdd": 47512815,
+		"powerLimit": 500,
+		"strength": 534,
+		"endurance": 178,
+		"constitution": 178,
+		"pillLimit": 712,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 178,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 178,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"179": {
+		"id": 179,
+		"exp": 1058850,
+		"expAdd": 48571665,
+		"powerLimit": 500,
+		"strength": 537,
+		"endurance": 179,
+		"constitution": 179,
+		"pillLimit": 716,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 179,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 179,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	},
+	"180": {
+		"id": 180,
+		"exp": 1061350,
+		"expAdd": 49633015,
+		"powerLimit": 500,
+		"strength": 540,
+		"endurance": 180,
+		"constitution": 180,
+		"pillLimit": 720,
+		"additionAttr": 0,
+		"awards": [
+			{
+				"id": 180,
+				"propId": 1003,
+				"num": 5
+			},
+			{
+				"id": 180,
+				"propId": 1010,
+				"num": 1
+			}
+		]
+	}
+}

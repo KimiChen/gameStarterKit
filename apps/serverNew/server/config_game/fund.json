@@ -1,0 +1,1278 @@
+{
+	"LevelFund": {
+		"id": "LevelFund",
+		"desc": "解锁后可领取价值[color=#FFFFFF]11000[/color]仙玉的奖励",
+		"freeRewardTitle": "等级基金",
+		"buyRewardTitle": "高级等级基金",
+		"rechargeId": 22001,
+		"more": {
+			"10101": {
+				"sort": 10101,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10101,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10101,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10101,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10102": {
+				"sort": 10102,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 40,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10102,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10102,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10102,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10103": {
+				"sort": 10103,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10103,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10103,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10103,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10104": {
+				"sort": 10104,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 60,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10104,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10104,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10104,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10105": {
+				"sort": 10105,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 70,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10105,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10105,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10105,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10106": {
+				"sort": 10106,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 80,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10106,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10106,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10106,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10107": {
+				"sort": 10107,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 90,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10107,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10107,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10107,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10108": {
+				"sort": 10108,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10108,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10108,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10108,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10109": {
+				"sort": 10109,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 110,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10109,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10109,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10109,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			},
+			"10110": {
+				"sort": 10110,
+				"id": "LevelFund",
+				"type": 1002,
+				"value": 120,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10110,
+						"propId": 1003,
+						"num": 20
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10110,
+						"propId": 1003,
+						"num": 100
+					},
+					{
+						"sort": 10110,
+						"propId": 1001,
+						"num": 100
+					}
+				]
+			}
+		},
+		"previewDesc": "基金已解锁，超值奖励等你来领！",
+		"preview": [
+			{
+				"id": "LevelFund",
+				"propId": 1003,
+				"name": "海量精力"
+			},
+			{
+				"id": "LevelFund",
+				"propId": 1001,
+				"name": "大量仙玉"
+			}
+		]
+	},
+	"GongFund": {
+		"id": "GongFund",
+		"desc": "解锁后可领取价值[color=#FFFFFF]21600[/color]仙玉的奖励",
+		"freeRewardTitle": "元神基金",
+		"buyRewardTitle": "高级元神基金",
+		"rechargeId": 22002,
+		"more": {
+			"10201": {
+				"sort": 10201,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10201,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10201,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10201,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10202": {
+				"sort": 10202,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10202,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10202,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10202,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10203": {
+				"sort": 10203,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10203,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10203,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10203,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10204": {
+				"sort": 10204,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 41,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10204,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10204,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10204,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10205": {
+				"sort": 10205,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 51,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10205,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10205,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10205,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10206": {
+				"sort": 10206,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 61,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10206,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10206,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10206,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10207": {
+				"sort": 10207,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 72,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10207,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10207,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10207,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10208": {
+				"sort": 10208,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 82,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10208,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10208,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10208,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10209": {
+				"sort": 10209,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 92,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10209,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10209,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10209,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10210": {
+				"sort": 10210,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 103,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10210,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10210,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10210,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10211": {
+				"sort": 10211,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 113,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10211,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10211,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10211,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			},
+			"10212": {
+				"sort": 10212,
+				"id": "GongFund",
+				"type": 1004,
+				"value": 123,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10212,
+						"propId": 10201,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10212,
+						"propId": 10201,
+						"num": 5000
+					},
+					{
+						"sort": 10212,
+						"propId": 200001,
+						"num": 10
+					}
+				]
+			}
+		},
+		"previewDesc": "基金已解锁，超值奖励等你来领！",
+		"preview": [
+			{
+				"id": "GongFund",
+				"propId": 10201,
+				"name": "海量灵气"
+			},
+			{
+				"id": "GongFund",
+				"propId": 200001,
+				"name": "稀有道具"
+			}
+		]
+	},
+	"WeaponFund": {
+		"id": "WeaponFund",
+		"desc": "解锁后可领取价值[color=#FFFFFF]36000[/color]仙玉的奖励",
+		"freeRewardTitle": "法宝基金",
+		"buyRewardTitle": "高级法宝基金",
+		"rechargeId": 22003,
+		"more": {
+			"10301": {
+				"sort": 10301,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10301,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10301,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10301,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10302": {
+				"sort": 10302,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10302,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10302,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10302,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10303": {
+				"sort": 10303,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10303,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10303,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10303,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10304": {
+				"sort": 10304,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 41,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10304,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10304,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10304,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10305": {
+				"sort": 10305,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 51,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10305,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10305,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10305,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10306": {
+				"sort": 10306,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 61,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10306,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10306,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10306,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10307": {
+				"sort": 10307,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 72,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10307,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10307,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10307,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10308": {
+				"sort": 10308,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 82,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10308,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10308,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10308,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10309": {
+				"sort": 10309,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 92,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10309,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10309,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10309,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10310": {
+				"sort": 10310,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 103,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10310,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10310,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10310,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10311": {
+				"sort": 10311,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 113,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10311,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10311,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10311,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			},
+			"10312": {
+				"sort": 10312,
+				"id": "WeaponFund",
+				"type": 1003,
+				"value": 123,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10312,
+						"propId": 10202,
+						"num": 200
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10312,
+						"propId": 10202,
+						"num": 5000
+					},
+					{
+						"sort": 10312,
+						"propId": 10204,
+						"num": 4
+					}
+				]
+			}
+		},
+		"previewDesc": "基金已解锁，超值奖励等你来领！",
+		"preview": [
+			{
+				"id": "WeaponFund",
+				"propId": 10202,
+				"name": "海量妖气"
+			},
+			{
+				"id": "WeaponFund",
+				"propId": 10204,
+				"name": "稀有道具"
+			}
+		]
+	},
+	"EquipFund": {
+		"id": "EquipFund",
+		"desc": "解锁后可领取价值[color=#FFFFFF]60000[/color]仙玉的奖励",
+		"freeRewardTitle": "装备基金",
+		"buyRewardTitle": "高级装备基金",
+		"rechargeId": 22004,
+		"more": {
+			"10401": {
+				"sort": 10401,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 90,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10401,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10401,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10401,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10402": {
+				"sort": 10402,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 95,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10402,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10402,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10402,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10403": {
+				"sort": 10403,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10403,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10403,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10403,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10404": {
+				"sort": 10404,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 105,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10404,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10404,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10404,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10405": {
+				"sort": 10405,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 110,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10405,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10405,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10405,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10406": {
+				"sort": 10406,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 115,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10406,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10406,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10406,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10407": {
+				"sort": 10407,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 120,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10407,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10407,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10407,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10408": {
+				"sort": 10408,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 130,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10408,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10408,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10408,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10409": {
+				"sort": 10409,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 140,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10409,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10409,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10409,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			},
+			"10410": {
+				"sort": 10410,
+				"id": "EquipFund",
+				"type": 1002,
+				"value": 150,
+				"param1": 0,
+				"param2": 0,
+				"freeAwards": [
+					{
+						"sort": 10410,
+						"propId": 10203,
+						"num": 5000
+					}
+				],
+				"buyAwards": [
+					{
+						"sort": 10410,
+						"propId": 10203,
+						"num": 50000
+					},
+					{
+						"sort": 10410,
+						"propId": 8015,
+						"num": 5
+					}
+				]
+			}
+		},
+		"previewDesc": "基金已解锁，超值奖励等你来领！",
+		"preview": [
+			{
+				"id": "EquipFund",
+				"propId": 10203,
+				"name": "海量精铁"
+			},
+			{
+				"id": "EquipFund",
+				"propId": 8015,
+				"name": "稀有道具"
+			}
+		]
+	}
+}

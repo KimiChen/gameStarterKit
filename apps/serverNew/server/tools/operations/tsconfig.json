@@ -1,0 +1,18 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "incremental": false,
+        "plugins": [
+            {
+                "transform": "../../scripts/bean-compile/transformer.ts",
+                "transformProgram": true
+            }
+        ]
+    },
+    "include": ["./**/*.ts", "../../src/**/*.d.ts", "../../generated/**/*.d.ts", "../../../engine/src/**/*.d.ts"],
+    "ts-node": {
+        "compiler": "ts-patch/compiler",
+        "files": true,
+        "require": ["tsconfig-paths/register"]
+    }
+}

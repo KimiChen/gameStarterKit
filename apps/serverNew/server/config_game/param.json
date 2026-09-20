@@ -1,0 +1,473 @@
+{
+  "GongSkillRefreshCost": [
+    1001,
+    1
+  ],
+  "ChatTalkingLevel": 4,
+  "ChatLoad": 100,
+  "ChatInterval": 5,
+  "ChatLength": 50,
+  "ChatStrangerNum": 3,
+  "LetterStrangerLimit": 10,
+  "ChatDay": 432000,
+  "MailLimit": 99,
+  "LetterMailLastTime": 2592000,
+  "BattleGateTipsLastTime": 86400,
+  "Npc1": 1000,
+  "Npc2": 1000,
+  "Npc3": 100,
+  "FriendBlackList": 10,
+  "FriendApplyMaxLimit": 50,
+  "FriendApplyTime": 1296000,
+  "PracticeFastTime": 7200,
+  "PracticeFastMaxTimes": 3,
+  "PracticeFastFreeTimes": 1,
+  "PracticeHangUpMaxTime": 86400,
+  "PracticeUnitTime": 60,
+  "PracticeNpcAddTimesPerDay": [
+    1021,
+    0
+  ],
+  "PracticeNpcAttackMaxTimes": 1000,
+  "UserAttrAddRefreshCost": [
+    1001,
+    1
+  ],
+  "UserChangeNameCost": [
+    1011,
+    1
+  ],
+  "TransferStrengthRate": 50000,
+  "TransferEnduranceRate": 50000,
+  "TransferConstitutionRate": 4000000,
+  "FpAtkRate": 200000,
+  "FpDefRate": 200000,
+  "FpHpRate": 2500,
+  "UserAttrAddLimit": 99999,
+  "SkillInitialTime": 1,
+  "SkillManaLimit": 100,
+  "ManaChange": 0,
+  "ArenaBaseMana": 75,
+  "ArenaRefreshCd": 30,
+  "AtkMana": 1,
+  "KuiCowStart": 19,
+  "KuiCowTime": 1800,
+  "PowerRecoverCd": 180,
+  "PlayerCreateChineseNameLimit": 6,
+  "PlayerCreateOtherNameLimit": 6,
+  "PlayerCreateChangeNameCD": 7,
+  "EquipSmeltLv": [
+    1,
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+    120,
+    130,
+    140,
+    150,
+    160,
+    170,
+    180,
+    190,
+    200,
+    210,
+    220,
+    230,
+    240,
+    250,
+    260,
+    270,
+    280,
+    290,
+    300
+  ],
+  "KuiCowMap": 91001,
+  "WeaponSmallBaseNum": 20,
+  "WeaponBigBaseNum": 100,
+  "WeaponSmallBaseQuality": 8,
+  "WeaponBigBaseQuality": 10,
+  "EquipNumMax": 300,
+  "PracticeDropLimit1": 1000,
+  "PracticeDropLimit2": 500,
+  "PracticeDropLimit3": 200,
+  "PracticeDropLimit4": 100,
+  "PracticeDropLimit6": 10,
+  "PracticeDropLimit8": 10,
+  "OpenDropLimit": 10,
+  "GuildCreateCost": [
+    1001,
+    300
+  ],
+  "GuildChangeNameCost": [
+    1016,
+    1
+  ],
+  "GuildCreateChinseNameLimit": 6,
+  "GuildCreateOtherNameLimit": 6,
+  "GuildCreateDeclLimit": 30,
+  "GuildCreateNoticeLimit": 45,
+  "GuildCreateContactLimit": 25,
+  "GuildLeaderAutoTransferTime": 3,
+  "GuildLogLimit": 30,
+  "GuildQuitCD": 0,
+  "GuildInviteCD": 10000,
+  "PrivilegeMonthPracticeEffect": 0,
+  "UserInitSpeed": 1000,
+  "SkillAtkSpeed": 1000,
+  "ArenaPrestigeLoseRatio": 5000,
+  "ArenaScoreWinRatio": 10000,
+  "ArenaScoreLoseRatio": 5000,
+  "ArenaAwardTimes": 4,
+  "ArenaInceptionPrestige": 1000,
+  "ChatWorldTalkLevel": 10,
+  "ChatFriendTalkLevel": 10,
+  "GuildMissionStartTime": 43200,
+  "GuildMissionEndeTime": 50400,
+  "SteriousMan1": 30,
+  "PowerRecoverAdLimit": 2,
+  "PowerRecoverAdValue": 25,
+  "PowerRecoverGcLimit": 10,
+  "PowerRecoverPropId": 1017,
+  "PowerRecoverPropValue": 30,
+  "PowerRecoverPropIdOpen": 1,
+  "PowerRecoverAdOpen": 1,
+  "PowerRecoverGcOpen": 0,
+  "DoubleDropLimit": 20,
+  "MarqueeBlock": [
+    9,
+    11,
+    13,
+    24,
+    25,
+    26,
+    28,
+    29,
+    30,
+    31,
+    32
+  ],
+  "noonReceiveEnergy": 30,
+  "nightReceiveEnergy": 30,
+  "noonReceiveEnergyStart": 12,
+  "noonReceiveEnergyEND": 24,
+  "nightReceiveEnergyStart": 18,
+  "nightReceiveEnergyEND": 24,
+  "propEffect": [
+    4,
+    6,
+    8,
+    10
+  ],
+  "RealmHurtRate_Win": 10000,
+  "RealmHurtRate_Fail": 5000,
+  "TransRealm": 7,
+  "TransType": [
+    1
+  ],
+  "TransRealmRefreshCost": [
+    1020,
+    1
+  ],
+  "WeaponOpenQuality": 1,
+  "KuiCowType": 9999,
+  "CrossKuiCowType": 8888,
+  "CrossKuiCowStart": 19,
+  "CrossKuiCowTime": 1800,
+  "fightBossTaskTypes": [
+    1041,
+    1056,
+    1060
+  ],
+  "damage_float_min": 9000,
+  "damage_float_max": 11000,
+  "MarqueeSystemPushTime": 30,
+  "PrivateChatInterval": 5,
+  "CrossChatInterval": 5,
+  "GuildChatInterval": 3,
+  "EquipShowQuality": 6,
+  "CrossKuiCowSkillManaLimit": 60,
+  "CrossKuiCowSkillMaxTimes": 1,
+  "SteriousManChangeItem": [
+    1021,
+    10
+  ],
+  "SteriousManClickCost": [
+    1021,
+    1
+  ],
+  "SteriousManTransMainTaskId": 16,
+  "SteriousManTransMainTaskId2": 26,
+  "SteriousManTransPlotId": 0,
+  "SteriousManTransRealmBefore": 7,
+  "SteriousManTransRealmAfter": 1,
+  "SteriousManTransRealmBeforeSpine": 50003,
+  "SteriousManTransRealmBeforeAtk": 500,
+  "SteriousManClickTimeLimit": 100,
+  "Perform2ForbidPracticePlotId": 27,
+  "KuiCowRageHp": 3000,
+  "EquipSmeltquality": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    8
+  ],
+  "GhostCityLEDQuality": 8,
+  "EquipMissionFirst": [
+    [
+      1009,
+      1
+    ],
+    [
+      1002,
+      6000
+    ],
+    [
+      10203,
+      1600
+    ]
+  ],
+  "EquipMissionSecond": [],
+  "GongMissionFirst": [
+    [
+      1009,
+      1
+    ],
+    [
+      1002,
+      6000
+    ],
+    [
+      200001,
+      2
+    ]
+  ],
+  "WeaponMissionFirst": [
+    [
+      1009,
+      1
+    ],
+    [
+      1002,
+      6000
+    ],
+    [
+      10204,
+      2
+    ]
+  ],
+  "MissionNoticeCdTime": 10000,
+  "CrossMissionTalkInterval": 30,
+  "pushRealmLimit": 5,
+  "MainTaskOrderGuideFinger": 108,
+  "ArenaBossBloodBarSingleNum": 100000,
+  "ArenaKillRecordSaveTime": 3600,
+  "PracticeTaskPoint": [
+    1,
+    4,
+    7
+  ],
+  "TaskTipLimit": [
+    1,
+    2
+  ],
+  "GongLvLimit": 30,
+  "WeaponLvLimit": 30,
+  "WorshipSkillcost": [
+    200001,
+    10
+  ],
+  "WorshipSkillMaxTime1": [
+    10,
+    100,
+    0
+  ],
+  "WorshipSkillMaxTime2": [
+    8,
+    50,
+    0
+  ],
+  "WorshipPlotOpenLv": [
+    60,
+    90,
+    120
+  ],
+  "AudioPlayerFghitRate": 3000,
+  "AudioMonsterHitRate": 3000,
+  "AudioMonsterDieRate": 3000,
+  "AudioMonsterSpeakRate": 3000,
+  "AudioMonsterSpeakGapTime": 10000,
+  "AudioPeach0rchardEnterSpeakRate": 10000,
+  "TitleReportQuality": 8,
+  "GuideFightLeftHp": 0.3,
+  "GuideFightMyNormalAtk": [
+    0.04,
+    0.042
+  ],
+  "GuideFightMySpecialAtk": [
+    0.1,
+    0.12
+  ],
+  "GuideFightDazhuangNormalAtk": [
+    0.15,
+    0.16
+  ],
+  "GuideFightMonsterMaxHp": 20000,
+  "GuideFightPlayerMaxHp": 50000,
+  "PracticeTabFingerByGuideIds": [
+    11000
+  ],
+  "equip_roleeffect_limit": 3,
+  "Equip_dropeffect_limit": 10,
+  "EquipFirstFiveDraw": [
+    740126,
+    750124,
+    740123,
+    740124,
+    740125
+  ],
+  "bossFightFingerMapLv": 100,
+  "EquipAudioSpecialDrop": 6,
+  "durableRecovery": 1,
+  "playerDailyCutTimes": 1,
+  "guildCutGiftBuyLimit": 1,
+  "equipShareTimes": 1,
+  "equipShareAward": [
+    1001,
+    10
+  ],
+  "EquipDrawInfo": 10,
+  "PlayerBackShow": [
+    3,
+    5
+  ],
+  "ActivityRankLimit": 50,
+  "BigSkillShowTime": 300,
+  "BigSkillShowTime2": 2000,
+  "PeachOrchardCd": 14400,
+  "PeachOrchardMaxTimes": 1,
+  "PeachOrchardDailyTimes": 3,
+  "PeachOrchardWaterTimes": 5,
+  "PeachOrchardWaterReTime": 1800,
+  "PeachOrchardHelpTimes": 10,
+  "PeachOrchardHelpedTimes": 10,
+  "PeachOrchardSleepTimes": 3,
+  "PeachOrchardSleepCd": [
+    1200,
+    1800
+  ],
+  "PeachOrchardWakeReTime": 600,
+  "PeachOrchardNpcStateTime": 15,
+  "PeachOrchardWaterCd": 2,
+  "PeachOrchardAskHelpCd": 600,
+  "KilledReDurable": 1,
+  "BrokenEquipmentAttrRatio": 5000,
+  "DurableTips": -1,
+  "KillEvilValue": 10,
+  "EvilValueReCd": 60,
+  "PeachOrchardWaterGoto": [
+    229
+  ],
+  "PeachOrchardNpcTalkTime": 5,
+  "PeachOrchardNpcTalkCd": 20,
+  "PeachOrchardGetNpcJumpId": 53,
+  "PeachOrchardWeedingTime": 3000,
+  "PeachOrchardIdleTime": 3000,
+  "GuildBossStartTime": 36000,
+  "GuildBossEndeTime": 66600,
+  "GuildBossTimes": 1,
+  "GuildBossEnvelopeTimes": 1,
+  "TowerHelpTimes": 3,
+  "TowerDailyTimes": 10,
+  "GuildRedEnvelopeTimes": 10,
+  "GuildRedEnvelopeOverTimes": 86400,
+  "GuildRemindCd": 600,
+  "GuildNoticeHideTime": 30,
+  "GuildNoticeHideType": [
+    76,
+    92,
+    93,
+    94,
+    95
+  ],
+  "LodeProtectTime": 0,
+  "LodeProtectTimes": 0,
+  "LodeBeHelpedTimes": 0,
+  "LodeBeProtectedTime": 0,
+  "LodeHelpTimes": 0,
+  "LodeMaxTime": 10800,
+  "LodeUnitTime": 60,
+  "LodeRobDailyTimes": 10,
+  "LodeRobRatio": 0,
+  "LodeRefreshCd": 5,
+  "LodeAskHelpCd": 0,
+  "TowerInviteNumlimit": 1,
+  "TowBoxdistance": 1200,
+  "TowBoxSpeed": 10,
+  "TowBoxRefreshTimes": 10,
+  "TowBoxRefreshCd": 1,
+  "TowBoxRefreshCost": [
+    0,
+    5,
+    5,
+    10,
+    10,
+    15,
+    15,
+    20,
+    25,
+    30
+  ],
+  "TowBoxRefreshListCd": 300,
+  "TowBoxRefreshListNum": 100,
+  "TowBoxRefreshRobotLimitNum": 500,
+  "TowBoxWorkerOwnNum": 5,
+  "TowBoxWorkerPrice": 500,
+  "TowBoxWorkerBuyLimit": 1,
+  "TowBoxWorkerBuyItem": [
+    40001,
+    1
+  ],
+  "TowBoxWorkerPowerNum": 100,
+  "TowBoxInfoLimit": 50,
+  "TowBoxAutoRefresh": [
+    3,
+    180
+  ],
+  "TowBoxServerAutoRefresh": [
+    0,
+    10,
+    18
+  ],
+  "TowBoxListStrangerNum": 10,
+  "TowBoxListFriendNum": 0,
+  "TowBoxFirstTowId": 13001,
+  "TowBoxFirstTowTime": 3,
+  "RealmBattlePreTime": 60,
+  "RealmAutoStartNumb": 6,
+  "RealmHelperId": [
+    100021,
+    100022,
+    100023,
+    100024,
+    100025
+  ],
+  "UpvoteLimit": 999,
+  "BarrageSpeed": 4000,
+  "BarrageGap": 200,
+  "AttrFinalHitMin": 5000,
+  "AttrBaseCritDamage": 20000,
+  "AttrVertigoRatio": 20000,
+  "FestivalCongratulationTime": 3,
+  "SteriousManCongratulationTime": 5,
+  "SpringFundMissionScore": 50
+}

@@ -1,0 +1,23 @@
+{
+	"1": {
+		"id": 1,
+		"costPropId": 10105,
+		"costNum": 1,
+		"costPropId2": 1001,
+		"costNum2": 50
+	},
+	"2": {
+		"id": 2,
+		"costPropId": 10105,
+		"costNum": 1,
+		"costPropId2": 1001,
+		"costNum2": 100
+	},
+	"3": {
+		"id": 3,
+		"costPropId": 10105,
+		"costNum": 1,
+		"costPropId2": 1001,
+		"costNum2": 150
+	}
+}

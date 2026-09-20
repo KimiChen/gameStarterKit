@@ -1,0 +1,38 @@
+{
+	"1": {
+		"id": 1,
+		"name": "蟒天蛟",
+		"nickname": "蛇",
+		"skillId": 101001,
+		"gongSorceryId": [
+			10100,
+			10200,
+			10000
+		],
+		"recommendAttrId": 25
+	},
+	"2": {
+		"id": 2,
+		"name": "青鸾鸟",
+		"nickname": "鸟",
+		"skillId": 102001,
+		"gongSorceryId": [
+			20100,
+			20200,
+			20000
+		],
+		"recommendAttrId": 26
+	},
+	"3": {
+		"id": 3,
+		"name": "九尾狐",
+		"nickname": "狐狸",
+		"skillId": 103001,
+		"gongSorceryId": [
+			30100,
+			30200,
+			30000
+		],
+		"recommendAttrId": 25
+	}
+}

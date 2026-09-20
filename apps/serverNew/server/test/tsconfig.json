@@ -1,0 +1,26 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "plugins": [
+            {
+                "transform": "../scripts/bean-compile/transformer.ts",
+                "transformProgram": true
+            }
+        ]
+    },
+    "include": [
+        "./**/*.ts",
+        "../src/**/*.ts",
+        "../src/**/*.d.ts",
+        "../generated/**/*.ts",
+        "../generated/**/*.d.ts",
+        "../generated/lobby-contract/**/*.js",
+        "../../engine/src/**/*.ts",
+        "../../engine/src/**/*.d.ts"
+    ],
+    "ts-node": {
+        "compiler": "ts-patch/compiler",
+        "files": true,
+        "require": ["tsconfig-paths/register"]
+    }
+}

@@ -1,0 +1,692 @@
+{
+	"20001": {
+		"id": 20001,
+		"name": "蛤不困",
+		"sleepProb": 3000,
+		"detail": {
+			"1": {
+				"lv": 1,
+				"id": 20001,
+				"res": 101,
+				"costPropId": 1001,
+				"costNum": 200,
+				"cropsPropId": 1003,
+				"cropsNum": 20,
+				"quality": 1
+			},
+			"2": {
+				"lv": 2,
+				"id": 20001,
+				"res": 101,
+				"costPropId": 1001,
+				"costNum": 300,
+				"cropsPropId": 1003,
+				"cropsNum": 25,
+				"quality": 2
+			},
+			"3": {
+				"lv": 3,
+				"id": 20001,
+				"res": 101,
+				"costPropId": 1001,
+				"costNum": 400,
+				"cropsPropId": 1003,
+				"cropsNum": 30,
+				"quality": 3
+			},
+			"4": {
+				"lv": 4,
+				"id": 20001,
+				"res": 101,
+				"costPropId": 1001,
+				"costNum": 500,
+				"cropsPropId": 1003,
+				"cropsNum": 35,
+				"quality": 4
+			},
+			"5": {
+				"lv": 5,
+				"id": 20001,
+				"res": 101,
+				"costPropId": 1001,
+				"costNum": 0,
+				"cropsPropId": 1003,
+				"cropsNum": 40,
+				"quality": 5
+			}
+		},
+		"mode": [
+			{
+				"id": 20001,
+				"type": 1,
+				"prob": 0,
+				"modeRes": 1,
+				"desc": "收获",
+				"boxPro": 10000,
+				"emojiPro": 5000,
+				"audioPro": 0,
+				"emoji": [
+					1,
+					2
+				],
+				"tips": "呜…好想尝一口仙桃~",
+				"clickTip": "大王，刚摘的仙桃，新鲜着呢！",
+				"time": 0
+			},
+			{
+				"id": 20001,
+				"type": 2,
+				"prob": 0,
+				"modeRes": 2,
+				"desc": "睡觉",
+				"boxPro": 10000,
+				"emojiPro": 5000,
+				"audioPro": 0,
+				"emoji": [
+					3,
+					4
+				],
+				"tips": "呼~呼呼~",
+				"clickTip": "哇！小、小的刚才只是打个盹！",
+				"time": 0
+			},
+			{
+				"id": 20001,
+				"type": 3,
+				"prob": 30,
+				"modeRes": 3,
+				"desc": "浇水",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "啊，腮帮子好疼",
+				"clickTip": "大王，小的在浇水呢！",
+				"time": 20000,
+				"audioId": "16005_sfx_wateringFrog"
+			},
+			{
+				"id": 20001,
+				"type": 3,
+				"prob": 30,
+				"modeRes": 4,
+				"desc": "修剪",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "可恶啊，这树好难爬",
+				"clickTip": "大王，这桃树枝剪的好看吗？",
+				"time": 20000,
+				"audioId": "16004_sfx_clip"
+			},
+			{
+				"id": 20001,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 5,
+				"desc": "驱虫",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "为什么做了妖怪还要吃虫子…",
+				"clickTip": "大王，小的在除虫呢",
+				"time": 20000,
+				"audioId": "16003_sfx_expelling"
+			},
+			{
+				"id": 20001,
+				"type": 3,
+				"prob": 0,
+				"modeRes": 6,
+				"desc": "待机",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "好想去捉鱼吃",
+				"clickTip": "大王，小的就歇一会儿~",
+				"time": 10000
+			},
+			{
+				"id": 20001,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 7,
+				"desc": "除草",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "这草长得真快！",
+				"clickTip": "大王，咱们养羊来吃草好不好？",
+				"time": 10000,
+				"audioId": "16006_sfx_weeding"
+			},
+			{
+				"id": 20001,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 8,
+				"desc": "走路",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "这一路上走走停停…",
+				"clickTip": "大王，小的在锻炼呢",
+				"time": 10000
+			}
+		],
+		"privilegeId": 0
+	},
+	"20002": {
+		"id": 20002,
+		"name": "蛤不馋",
+		"sleepProb": 1000,
+		"detail": {
+			"1": {
+				"lv": 1,
+				"id": 20002,
+				"res": 201,
+				"costPropId": 1001,
+				"costNum": 200,
+				"cropsPropId": 1003,
+				"cropsNum": 20,
+				"quality": 1
+			},
+			"2": {
+				"lv": 2,
+				"id": 20002,
+				"res": 201,
+				"costPropId": 1001,
+				"costNum": 300,
+				"cropsPropId": 1003,
+				"cropsNum": 25,
+				"quality": 2
+			},
+			"3": {
+				"lv": 3,
+				"id": 20002,
+				"res": 201,
+				"costPropId": 1001,
+				"costNum": 400,
+				"cropsPropId": 1003,
+				"cropsNum": 30,
+				"quality": 3
+			},
+			"4": {
+				"lv": 4,
+				"id": 20002,
+				"res": 201,
+				"costPropId": 1001,
+				"costNum": 500,
+				"cropsPropId": 1003,
+				"cropsNum": 35,
+				"quality": 4
+			},
+			"5": {
+				"lv": 5,
+				"id": 20002,
+				"res": 201,
+				"costPropId": 1001,
+				"costNum": 0,
+				"cropsPropId": 1003,
+				"cropsNum": 40,
+				"quality": 5
+			}
+		},
+		"mode": [
+			{
+				"id": 20002,
+				"type": 1,
+				"prob": 0,
+				"modeRes": 1,
+				"desc": "收获",
+				"boxPro": 10000,
+				"emojiPro": 5000,
+				"audioPro": 0,
+				"emoji": [
+					1,
+					2
+				],
+				"tips": "肩…肩膀僵了…",
+				"clickTip": "大王，快来收仙桃吧！",
+				"time": 0
+			},
+			{
+				"id": 20002,
+				"type": 2,
+				"prob": 0,
+				"modeRes": 2,
+				"desc": "睡觉",
+				"boxPro": 10000,
+				"emojiPro": 5000,
+				"audioPro": 0,
+				"emoji": [
+					3,
+					4
+				],
+				"tips": "（梦话）桃子真好吃啊呜~",
+				"clickTip": "我、我梦到大王又变厉害了！",
+				"time": 0
+			},
+			{
+				"id": 20002,
+				"type": 3,
+				"prob": 30,
+				"modeRes": 3,
+				"desc": "浇水",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "噗~噗噗噗~",
+				"clickTip": "大王，小的可勤快啦",
+				"time": 20000,
+				"audioId": "16005_sfx_wateringFrog"
+			},
+			{
+				"id": 20002,
+				"type": 3,
+				"prob": 30,
+				"modeRes": 4,
+				"desc": "修剪",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "我剪~我剪~",
+				"clickTip": "其实…小的有点恐高…",
+				"time": 20000,
+				"audioId": "16004_sfx_clip"
+			},
+			{
+				"id": 20002,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 5,
+				"desc": "驱虫",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "呸呸呸，吃到了奇怪的虫子",
+				"clickTip": "吃的好撑啊，让我歇会吧",
+				"time": 20000,
+				"audioId": "16003_sfx_expelling"
+			},
+			{
+				"id": 20002,
+				"type": 3,
+				"prob": 0,
+				"modeRes": 6,
+				"desc": "待机",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "今天看到一只好漂亮的天鹅…",
+				"clickTip": "大王，让我再休息一会吧",
+				"time": 10000
+			},
+			{
+				"id": 20002,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 7,
+				"desc": "除草",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "呼~流了好多汗",
+				"clickTip": "在小小的桃园里面挖呀挖呀挖",
+				"time": 10000,
+				"audioId": "16006_sfx_weeding"
+			},
+			{
+				"id": 20002,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 8,
+				"desc": "走路",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "偶尔也要拉伸一下腿脚",
+				"clickTip": "唔，看看周围有没有坏人！",
+				"time": 10000
+			}
+		],
+		"privilegeId": 2003
+	},
+	"20003": {
+		"id": 20003,
+		"name": "蛤不怕",
+		"sleepProb": 800,
+		"detail": {
+			"1": {
+				"lv": 1,
+				"id": 20003,
+				"res": 301,
+				"costPropId": 1001,
+				"costNum": 200,
+				"cropsPropId": 1003,
+				"cropsNum": 20,
+				"quality": 1
+			},
+			"2": {
+				"lv": 2,
+				"id": 20003,
+				"res": 301,
+				"costPropId": 1001,
+				"costNum": 300,
+				"cropsPropId": 1003,
+				"cropsNum": 25,
+				"quality": 2
+			},
+			"3": {
+				"lv": 3,
+				"id": 20003,
+				"res": 301,
+				"costPropId": 1001,
+				"costNum": 400,
+				"cropsPropId": 1003,
+				"cropsNum": 30,
+				"quality": 3
+			},
+			"4": {
+				"lv": 4,
+				"id": 20003,
+				"res": 301,
+				"costPropId": 1001,
+				"costNum": 500,
+				"cropsPropId": 1003,
+				"cropsNum": 35,
+				"quality": 4
+			},
+			"5": {
+				"lv": 5,
+				"id": 20003,
+				"res": 301,
+				"costPropId": 1001,
+				"costNum": 0,
+				"cropsPropId": 1003,
+				"cropsNum": 40,
+				"quality": 5
+			}
+		},
+		"mode": [
+			{
+				"id": 20003,
+				"type": 1,
+				"prob": 0,
+				"modeRes": 1,
+				"desc": "收获",
+				"boxPro": 10000,
+				"emojiPro": 5000,
+				"audioPro": 0,
+				"emoji": [
+					1,
+					2
+				],
+				"tips": "这仙桃真香呀~",
+				"clickTip": "大王，小的又来孝敬您啦！",
+				"time": 0
+			},
+			{
+				"id": 20003,
+				"type": 2,
+				"prob": 0,
+				"modeRes": 2,
+				"desc": "睡觉",
+				"boxPro": 10000,
+				"emojiPro": 5000,
+				"audioPro": 0,
+				"emoji": [
+					3,
+					4
+				],
+				"tips": "（梦话）我当上大王啦！",
+				"clickTip": "大王，小的不困，马上干活！",
+				"time": 0
+			},
+			{
+				"id": 20003,
+				"type": 3,
+				"prob": 30,
+				"modeRes": 3,
+				"desc": "浇水",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "今天的山泉有点甜！",
+				"clickTip": "大王，咱们的桃子又长大了！",
+				"time": 20000,
+				"audioId": "16005_sfx_wateringFrog"
+			},
+			{
+				"id": 20003,
+				"type": 3,
+				"prob": 30,
+				"modeRes": 4,
+				"desc": "修剪",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "喂，谁把梯子拿走了？！",
+				"clickTip": "大王发的草帽真好用！",
+				"time": 20000,
+				"audioId": "16004_sfx_clip"
+			},
+			{
+				"id": 20003,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 5,
+				"desc": "驱虫",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "哎呀，被蜜蜂蛰到舌头了！",
+				"clickTip": "大王，周围的虫子都捉干净了！",
+				"time": 20000,
+				"audioId": "16003_sfx_expelling"
+			},
+			{
+				"id": 20003,
+				"type": 3,
+				"prob": 0,
+				"modeRes": 6,
+				"desc": "待机",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "再过一会就开饭了，嘻嘻",
+				"clickTip": "大王，您今天好威风呀！",
+				"time": 10000
+			},
+			{
+				"id": 20003,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 7,
+				"desc": "除草",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					1,
+					2
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "嘿呦~嘿呦~",
+				"clickTip": "大王，小的在锄草呢",
+				"time": 10000,
+				"audioId": "16006_sfx_weeding"
+			},
+			{
+				"id": 20003,
+				"type": 3,
+				"prob": 20,
+				"modeRes": 8,
+				"desc": "走路",
+				"boxPro": 3000,
+				"emojiPro": 3000,
+				"audioPro": 4000,
+				"emoji": [
+					3,
+					4
+				],
+				"audio": [
+					2,
+					3,
+					4
+				],
+				"tips": "闲杂人等，不许靠近桃园",
+				"clickTip": "大王，小的在守桃园呢",
+				"time": 10000
+			}
+		],
+		"privilegeId": 2001
+	}
+}

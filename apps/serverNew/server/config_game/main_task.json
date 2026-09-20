@@ -1,0 +1,11370 @@
+{
+	"1": {
+		"id": 1,
+		"nextId": 2,
+		"awardID": 0,
+		"auto": 0,
+		"order": 1,
+		"name": "1.青苗谷",
+		"text": "素萝攻击10次",
+		"type": 1054,
+		"value": 10,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 1,
+				"propId": 1002,
+				"num": 5
+			}
+		],
+		"skip": 0
+	},
+	"2": {
+		"id": 2,
+		"nextId": 3,
+		"awardID": 0,
+		"auto": 0,
+		"order": 2,
+		"name": "2.青苗谷",
+		"text": "击败第1位蛤蟆首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1001,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 2,
+				"propId": 1002,
+				"num": 10
+			}
+		],
+		"skip": 0
+	},
+	"3": {
+		"id": 3,
+		"nextId": 4,
+		"awardID": 0,
+		"auto": 0,
+		"order": 3,
+		"name": "3.青苗谷",
+		"text": "穿戴1件灰色装备",
+		"type": 1050,
+		"value": 1,
+		"param1": 1,
+		"param2": 1,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 3,
+				"propId": 1021,
+				"num": 10
+			},
+			{
+				"id": 3,
+				"propId": 1002,
+				"num": 15
+			}
+		],
+		"skip": 0
+	},
+	"4": {
+		"id": 4,
+		"nextId": 5,
+		"awardID": 0,
+		"auto": 0,
+		"order": 4,
+		"name": "4.青苗谷",
+		"text": "素萝攻击10次",
+		"type": 1054,
+		"value": 10,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 4,
+				"propId": 1002,
+				"num": 20
+			}
+		],
+		"skip": 0
+	},
+	"5": {
+		"id": 5,
+		"nextId": 6,
+		"awardID": 0,
+		"auto": 0,
+		"order": 5,
+		"name": "5.青苗谷",
+		"text": "击败第2位蛤蟆首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1001,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 5,
+				"propId": 1002,
+				"num": 25
+			}
+		],
+		"skip": 0
+	},
+	"6": {
+		"id": 6,
+		"nextId": 7,
+		"awardID": 0,
+		"auto": 0,
+		"order": 6,
+		"name": "6.青苗谷",
+		"text": "穿戴2件灰色装备",
+		"type": 1050,
+		"value": 2,
+		"param1": 1,
+		"param2": 1,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 6,
+				"propId": 1021,
+				"num": 10
+			},
+			{
+				"id": 6,
+				"propId": 1002,
+				"num": 30
+			}
+		],
+		"skip": 0
+	},
+	"7": {
+		"id": 7,
+		"nextId": 8,
+		"awardID": 0,
+		"auto": 0,
+		"order": 7,
+		"name": "7.青苗谷",
+		"text": "素萝攻击10次",
+		"type": 1054,
+		"value": 10,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 7,
+				"propId": 1002,
+				"num": 40
+			}
+		],
+		"skip": 0
+	},
+	"8": {
+		"id": 8,
+		"nextId": 9,
+		"awardID": 0,
+		"auto": 0,
+		"order": 8,
+		"name": "8.青苗谷",
+		"text": "击败第3位蛤蟆首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1001,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 8,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"9": {
+		"id": 9,
+		"nextId": 10,
+		"awardID": 0,
+		"auto": 0,
+		"order": 9,
+		"name": "9.青苗谷",
+		"text": "穿戴3件灰色装备",
+		"type": 1050,
+		"value": 3,
+		"param1": 1,
+		"param2": 1,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 9,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"10": {
+		"id": 10,
+		"nextId": 11,
+		"awardID": 0,
+		"auto": 0,
+		"order": 10,
+		"name": "10.七岩山",
+		"text": "前往九州-七岩山",
+		"type": 1059,
+		"value": 1,
+		"param1": 1002,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 10,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"11": {
+		"id": 11,
+		"nextId": 12,
+		"awardID": 0,
+		"auto": 0,
+		"order": 11,
+		"name": "11.七岩山",
+		"text": "击败第1波蝙蝠精",
+		"type": 1066,
+		"value": 1,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 11,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"12": {
+		"id": 12,
+		"nextId": 13,
+		"awardID": 0,
+		"auto": 0,
+		"order": 12,
+		"name": "12.七岩山",
+		"text": "击败第1位蜈蚣首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 12,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"13": {
+		"id": 13,
+		"nextId": 14,
+		"awardID": 0,
+		"auto": 0,
+		"order": 13,
+		"name": "13.七岩山",
+		"text": "穿戴1件绿色装备",
+		"type": 1050,
+		"value": 1,
+		"param1": 2,
+		"param2": 10,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 13,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"14": {
+		"id": 14,
+		"nextId": 15,
+		"awardID": 0,
+		"auto": 0,
+		"order": 14,
+		"name": "14.七岩山",
+		"text": "击败第2波蝙蝠精",
+		"type": 1066,
+		"value": 2,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 14,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"15": {
+		"id": 15,
+		"nextId": 16,
+		"awardID": 0,
+		"auto": 0,
+		"order": 15,
+		"name": "15.七岩山",
+		"text": "击败第2位蜈蚣首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 15,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"16": {
+		"id": 16,
+		"nextId": 17,
+		"awardID": 0,
+		"auto": 0,
+		"order": 16,
+		"name": "16.七岩山",
+		"text": "穿戴2件10级绿色装备",
+		"type": 1050,
+		"value": 2,
+		"param1": 2,
+		"param2": 10,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 16,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"17": {
+		"id": 17,
+		"nextId": 18,
+		"awardID": 0,
+		"auto": 1,
+		"order": 17,
+		"name": "17.七岩山",
+		"text": "前往万灵宝录-七岩山",
+		"type": 1059,
+		"value": 1,
+		"param1": 2002,
+		"param2": 2,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 17,
+				"propId": 10201,
+				"num": 50
+			},
+			{
+				"id": 17,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"18": {
+		"id": 18,
+		"nextId": 19,
+		"awardID": 0,
+		"auto": 0,
+		"order": 18,
+		"name": "18.七岩山",
+		"text": "元神达到1级",
+		"type": 1067,
+		"value": 1,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 18,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"19": {
+		"id": 19,
+		"nextId": 20,
+		"awardID": 0,
+		"auto": 0,
+		"order": 19,
+		"name": "19.七岩山",
+		"text": "击败蝙蝠精怪",
+		"type": 1060,
+		"value": 5,
+		"param1": 2002,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 19,
+				"propId": 10201,
+				"num": 200
+			},
+			{
+				"id": 19,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"20": {
+		"id": 20,
+		"nextId": 23,
+		"awardID": 0,
+		"auto": 0,
+		"order": 20,
+		"name": "20.七岩山",
+		"text": "元神达到5级",
+		"type": 1067,
+		"value": 5,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 20,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"23": {
+		"id": 23,
+		"nextId": 24,
+		"awardID": 0,
+		"auto": 0,
+		"order": 21,
+		"name": "21.七岩山",
+		"text": "击败蝙蝠精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2002,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 23,
+				"propId": 10201,
+				"num": 350
+			},
+			{
+				"id": 23,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"24": {
+		"id": 24,
+		"nextId": 25,
+		"awardID": 0,
+		"auto": 0,
+		"order": 22,
+		"name": "22.七岩山",
+		"text": "元神达到10级",
+		"type": 1067,
+		"value": 10,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 24,
+				"propId": 10102,
+				"num": 100
+			},
+			{
+				"id": 24,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"25": {
+		"id": 25,
+		"nextId": 26,
+		"awardID": 0,
+		"auto": 0,
+		"order": 23,
+		"name": "23.七岩山",
+		"text": "习得{param1}",
+		"type": 1071,
+		"value": 1,
+		"param1": 2,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			199,
+			202
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 25,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"26": {
+		"id": 26,
+		"nextId": 27,
+		"awardID": 0,
+		"auto": 0,
+		"order": 24,
+		"name": "24.七岩山",
+		"text": "击败蝙蝠精怪",
+		"type": 1060,
+		"value": 20,
+		"param1": 2002,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 26,
+				"propId": 10201,
+				"num": 1500
+			},
+			{
+				"id": 26,
+				"propId": 10102,
+				"num": 100
+			},
+			{
+				"id": 26,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"27": {
+		"id": 27,
+		"nextId": 28,
+		"awardID": 0,
+		"auto": 0,
+		"order": 25,
+		"name": "25.七岩山",
+		"text": "元神达到20级",
+		"type": 1067,
+		"value": 20,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 27,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"28": {
+		"id": 28,
+		"nextId": 30,
+		"awardID": 0,
+		"auto": 0,
+		"order": 26,
+		"name": "26.七岩山",
+		"text": "习得{param1}",
+		"type": 1071,
+		"value": 1,
+		"param1": 3,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			200,
+			202
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 28,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"30": {
+		"id": 30,
+		"nextId": 31,
+		"awardID": 0,
+		"auto": 0,
+		"order": 27,
+		"name": "27.七岩山",
+		"text": "前往九州-七岩山",
+		"type": 1059,
+		"value": 1,
+		"param1": 1002,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 30,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"31": {
+		"id": 31,
+		"nextId": 32,
+		"awardID": 0,
+		"auto": 0,
+		"order": 28,
+		"name": "28.七岩山",
+		"text": "关心素萝伤势",
+		"type": 1072,
+		"value": 1,
+		"param1": 90101,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 31,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"32": {
+		"id": 32,
+		"nextId": 33,
+		"awardID": 0,
+		"auto": 0,
+		"order": 29,
+		"name": "29.七岩山",
+		"text": "击败第3波蝙蝠精",
+		"type": 1066,
+		"value": 3,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 32,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"33": {
+		"id": 33,
+		"nextId": 34,
+		"awardID": 0,
+		"auto": 0,
+		"order": 30,
+		"name": "30.七岩山",
+		"text": "击败第3位蜈蚣首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 33,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"34": {
+		"id": 34,
+		"nextId": 35,
+		"awardID": 0,
+		"auto": 0,
+		"order": 31,
+		"name": "31.七岩山",
+		"text": "穿戴3件绿色10级装备",
+		"type": 1050,
+		"value": 3,
+		"param1": 2,
+		"param2": 10,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 34,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"35": {
+		"id": 35,
+		"nextId": 36,
+		"awardID": 0,
+		"auto": 0,
+		"order": 32,
+		"name": "32.七岩山",
+		"text": "击败第4波蝙蝠精",
+		"type": 1066,
+		"value": 4,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 35,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"36": {
+		"id": 36,
+		"nextId": 37,
+		"awardID": 0,
+		"auto": 0,
+		"order": 33,
+		"name": "33.七岩山",
+		"text": "击败第4位蜈蚣首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 36,
+				"propId": 1004,
+				"num": 1000
+			},
+			{
+				"id": 36,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"37": {
+		"id": 37,
+		"nextId": 38,
+		"awardID": 0,
+		"auto": 0,
+		"order": 34,
+		"name": "34.七岩山",
+		"text": "穿戴4件绿色10级装备",
+		"type": 1050,
+		"value": 4,
+		"param1": 2,
+		"param2": 10,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 37,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"38": {
+		"id": 38,
+		"nextId": 39,
+		"awardID": 0,
+		"auto": 0,
+		"order": 35,
+		"name": "35.七岩山",
+		"text": "击败第5波蝙蝠精",
+		"type": 1066,
+		"value": 5,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 38,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"39": {
+		"id": 39,
+		"nextId": 40,
+		"awardID": 0,
+		"auto": 0,
+		"order": 36,
+		"name": "36.七岩山",
+		"text": "击败第5位蜈蚣首领",
+		"type": 1041,
+		"value": 5,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 39,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"40": {
+		"id": 40,
+		"nextId": 41,
+		"awardID": 0,
+		"auto": 0,
+		"order": 37,
+		"name": "37.七岩山",
+		"text": "穿戴5件绿色10级装备",
+		"type": 1050,
+		"value": 5,
+		"param1": 2,
+		"param2": 10,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 40,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"41": {
+		"id": 41,
+		"nextId": 42,
+		"awardID": 0,
+		"auto": 0,
+		"order": 38,
+		"name": "38.七岩山",
+		"text": "击败第6波蝙蝠精",
+		"type": 1066,
+		"value": 6,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 41,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"42": {
+		"id": 42,
+		"nextId": 43,
+		"awardID": 0,
+		"auto": 0,
+		"order": 39,
+		"name": "39.七岩山",
+		"text": "击败第6位蜈蚣首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1002,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 42,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"43": {
+		"id": 43,
+		"nextId": 44,
+		"awardID": 0,
+		"auto": 0,
+		"order": 40,
+		"name": "40.七岩山",
+		"text": "穿戴6件绿色10级装备",
+		"type": 1050,
+		"value": 6,
+		"param1": 2,
+		"param2": 10,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 43,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"44": {
+		"id": 44,
+		"nextId": 45,
+		"awardID": 0,
+		"auto": 0,
+		"order": 41,
+		"name": "41.七岩山",
+		"text": "素萝修炼1次",
+		"type": 1057,
+		"value": 2,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			109,
+			189,
+			143
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 44,
+				"propId": 1002,
+				"num": 50
+			}
+		],
+		"skip": 0
+	},
+	"45": {
+		"id": 45,
+		"nextId": 46,
+		"awardID": 0,
+		"auto": 0,
+		"order": 42,
+		"name": "42.蝎子洞",
+		"text": "前往九州-蝎子洞",
+		"type": 1059,
+		"value": 1,
+		"param1": 1003,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 45,
+				"propId": 1002,
+				"num": 250
+			}
+		],
+		"skip": 0
+	},
+	"46": {
+		"id": 46,
+		"nextId": 47,
+		"awardID": 0,
+		"auto": 0,
+		"order": 43,
+		"name": "43.蝎子洞",
+		"text": "击败第1波天牛精",
+		"type": 1066,
+		"value": 1,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 46,
+				"propId": 1002,
+				"num": 250
+			}
+		],
+		"skip": 0
+	},
+	"47": {
+		"id": 47,
+		"nextId": 48,
+		"awardID": 0,
+		"auto": 0,
+		"order": 44,
+		"name": "44.蝎子洞",
+		"text": "击败第1位毒蝎首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 47,
+				"propId": 1002,
+				"num": 250
+			}
+		],
+		"skip": 0
+	},
+	"48": {
+		"id": 48,
+		"nextId": 49,
+		"awardID": 0,
+		"auto": 0,
+		"order": 45,
+		"name": "45.蝎子洞",
+		"text": "穿戴1件20级装备",
+		"type": 1050,
+		"value": 1,
+		"param1": 1,
+		"param2": 20,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 48,
+				"propId": 10202,
+				"num": 600
+			},
+			{
+				"id": 48,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"49": {
+		"id": 49,
+		"nextId": 50,
+		"awardID": 0,
+		"auto": 0,
+		"order": 46,
+		"name": "46.蝎子洞",
+		"text": "法宝达到5级",
+		"type": 1068,
+		"value": 5,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 49,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"50": {
+		"id": 50,
+		"nextId": 51,
+		"awardID": 0,
+		"auto": 0,
+		"order": 47,
+		"name": "47.蝎子洞",
+		"text": "击败第2波天牛精",
+		"type": 1066,
+		"value": 2,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 50,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"51": {
+		"id": 51,
+		"nextId": 52,
+		"awardID": 0,
+		"auto": 0,
+		"order": 48,
+		"name": "48.蝎子洞",
+		"text": "击败第2位毒蝎首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 51,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"52": {
+		"id": 52,
+		"nextId": 53,
+		"awardID": 0,
+		"auto": 0,
+		"order": 49,
+		"name": "49.蝎子洞",
+		"text": "穿戴2件20级绿色装备",
+		"type": 1050,
+		"value": 2,
+		"param1": 1,
+		"param2": 20,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 52,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"53": {
+		"id": 53,
+		"nextId": 54,
+		"awardID": 0,
+		"auto": 0,
+		"order": 50,
+		"name": "50.蝎子洞",
+		"text": "击败第3波天牛精",
+		"type": 1066,
+		"value": 3,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 53,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"54": {
+		"id": 54,
+		"nextId": 55,
+		"awardID": 0,
+		"auto": 0,
+		"order": 51,
+		"name": "51.蝎子洞",
+		"text": "击败第3位毒蝎首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 54,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"55": {
+		"id": 55,
+		"nextId": 56,
+		"awardID": 0,
+		"auto": 0,
+		"order": 52,
+		"name": "52.蝎子洞",
+		"text": "穿戴3件20级绿色装备",
+		"type": 1050,
+		"value": 3,
+		"param1": 1,
+		"param2": 20,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 55,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"56": {
+		"id": 56,
+		"nextId": 57,
+		"awardID": 0,
+		"auto": 0,
+		"order": 53,
+		"name": "53.蝎子洞",
+		"text": "前往万灵宝录-蝎子洞",
+		"type": 1059,
+		"value": 1,
+		"param1": 2003,
+		"param2": 2,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 56,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"57": {
+		"id": 57,
+		"nextId": 58,
+		"awardID": 0,
+		"auto": 0,
+		"order": 54,
+		"name": "54.蝎子洞",
+		"text": "击败天牛精怪",
+		"type": 1060,
+		"value": 20,
+		"param1": 2003,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 57,
+				"propId": 10202,
+				"num": 1800
+			},
+			{
+				"id": 57,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"58": {
+		"id": 58,
+		"nextId": 61,
+		"awardID": 0,
+		"auto": 0,
+		"order": 55,
+		"name": "55.蝎子洞",
+		"text": "法宝达到20级",
+		"type": 1068,
+		"value": 20,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 58,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"61": {
+		"id": 61,
+		"nextId": 62,
+		"awardID": 0,
+		"auto": 0,
+		"order": 56,
+		"name": "56.蝎子洞",
+		"text": "击败天牛精怪",
+		"type": 1060,
+		"value": 20,
+		"param1": 2003,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 61,
+				"propId": 10202,
+				"num": 2000
+			},
+			{
+				"id": 61,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"62": {
+		"id": 62,
+		"nextId": 65,
+		"awardID": 0,
+		"auto": 0,
+		"order": 57,
+		"name": "57.蝎子洞",
+		"text": "法宝达到30级",
+		"type": 1068,
+		"value": 30,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 62,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"65": {
+		"id": 65,
+		"nextId": 66,
+		"awardID": 0,
+		"auto": 0,
+		"order": 58,
+		"name": "58.蝎子洞",
+		"text": "回到九州-蝎子洞",
+		"type": 1059,
+		"value": 1,
+		"param1": 1003,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 65,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"66": {
+		"id": 66,
+		"nextId": 67,
+		"awardID": 0,
+		"auto": 0,
+		"order": 59,
+		"name": "59.蝎子洞",
+		"text": "击败第4波天牛精",
+		"type": 1066,
+		"value": 4,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 66,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"67": {
+		"id": 67,
+		"nextId": 68,
+		"awardID": 0,
+		"auto": 0,
+		"order": 60,
+		"name": "60.蝎子洞",
+		"text": "击败第4位毒蝎首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 67,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"68": {
+		"id": 68,
+		"nextId": 69,
+		"awardID": 0,
+		"auto": 0,
+		"order": 61,
+		"name": "61.蝎子洞",
+		"text": "穿戴4件20级装备",
+		"type": 1050,
+		"value": 4,
+		"param1": 1,
+		"param2": 20,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 68,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"69": {
+		"id": 69,
+		"nextId": 70,
+		"awardID": 0,
+		"auto": 0,
+		"order": 62,
+		"name": "62.蝎子洞",
+		"text": "熔炼1件装备",
+		"type": 1025,
+		"value": 1,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			102,
+			208,
+			198
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 69,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"70": {
+		"id": 70,
+		"nextId": 71,
+		"awardID": 0,
+		"auto": 0,
+		"order": 63,
+		"name": "63.蝎子洞",
+		"text": "击败第5波天牛精",
+		"type": 1066,
+		"value": 5,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 70,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"71": {
+		"id": 71,
+		"nextId": 72,
+		"awardID": 0,
+		"auto": 0,
+		"order": 64,
+		"name": "64.蝎子洞",
+		"text": "击败第5位毒蝎首领",
+		"type": 1041,
+		"value": 5,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 71,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"72": {
+		"id": 72,
+		"nextId": 73,
+		"awardID": 0,
+		"auto": 0,
+		"order": 65,
+		"name": "65.蝎子洞",
+		"text": "穿戴5件20级装备",
+		"type": 1050,
+		"value": 5,
+		"param1": 1,
+		"param2": 20,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 72,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"73": {
+		"id": 73,
+		"nextId": 74,
+		"awardID": 0,
+		"auto": 0,
+		"order": 66,
+		"name": "66.蝎子洞",
+		"text": "击败第6波天牛精",
+		"type": 1066,
+		"value": 6,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 73,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"74": {
+		"id": 74,
+		"nextId": 75,
+		"awardID": 0,
+		"auto": 0,
+		"order": 67,
+		"name": "67.蝎子洞",
+		"text": "击败第6位毒蝎首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1003,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 74,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"75": {
+		"id": 75,
+		"nextId": 76,
+		"awardID": 0,
+		"auto": 0,
+		"order": 68,
+		"name": "68.蝎子洞",
+		"text": "穿戴6件20级装备",
+		"type": 1050,
+		"value": 6,
+		"param1": 1,
+		"param2": 20,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 75,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"76": {
+		"id": 76,
+		"nextId": 77,
+		"awardID": 0,
+		"auto": 0,
+		"order": 69,
+		"name": "69.蝎子洞",
+		"text": "素萝修炼2次",
+		"type": 1057,
+		"value": 3,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			109,
+			189,
+			143
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 76,
+				"propId": 1002,
+				"num": 200
+			}
+		],
+		"skip": 0
+	},
+	"77": {
+		"id": 77,
+		"nextId": 78,
+		"awardID": 0,
+		"auto": 0,
+		"order": 70,
+		"name": "70.陈塘关",
+		"text": "前往九州-陈塘关",
+		"type": 1059,
+		"value": 1,
+		"param1": 1004,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 77,
+				"propId": 1002,
+				"num": 300
+			}
+		],
+		"skip": 0
+	},
+	"78": {
+		"id": 78,
+		"nextId": 79,
+		"awardID": 0,
+		"auto": 0,
+		"order": 71,
+		"name": "71.陈塘关",
+		"text": "了解妖族山头",
+		"type": 1072,
+		"value": 1,
+		"param1": 11600,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			113,
+			219
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 78,
+				"propId": 1002,
+				"num": 300
+			}
+		],
+		"skip": 0
+	},
+	"79": {
+		"id": 79,
+		"nextId": 80,
+		"awardID": 0,
+		"auto": 0,
+		"order": 72,
+		"name": "72.陈塘关",
+		"text": "击败第1波河豚精",
+		"type": 1066,
+		"value": 1,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 79,
+				"propId": 1002,
+				"num": 300
+			}
+		],
+		"skip": 0
+	},
+	"80": {
+		"id": 80,
+		"nextId": 81,
+		"awardID": 0,
+		"auto": 0,
+		"order": 73,
+		"name": "73.陈塘关",
+		"text": "击败第1位咸鱼首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 80,
+				"propId": 1002,
+				"num": 300
+			}
+		],
+		"skip": 0
+	},
+	"81": {
+		"id": 81,
+		"nextId": 82,
+		"awardID": 0,
+		"auto": 0,
+		"order": 74,
+		"name": "74.陈塘关",
+		"text": "穿戴1件30级装备",
+		"type": 1050,
+		"value": 1,
+		"param1": 1,
+		"param2": 30,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 81,
+				"propId": 1002,
+				"num": 300
+			}
+		],
+		"skip": 0
+	},
+	"82": {
+		"id": 82,
+		"nextId": 83,
+		"awardID": 0,
+		"auto": 0,
+		"order": 75,
+		"name": "75.陈塘关",
+		"text": "击败第2波河豚精",
+		"type": 1066,
+		"value": 2,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 82,
+				"propId": 1002,
+				"num": 300
+			}
+		],
+		"skip": 0
+	},
+	"83": {
+		"id": 83,
+		"nextId": 84,
+		"awardID": 0,
+		"auto": 0,
+		"order": 76,
+		"name": "76.陈塘关",
+		"text": "击败第2位咸鱼首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 83,
+				"propId": 1002,
+				"num": 300
+			}
+		],
+		"skip": 0
+	},
+	"84": {
+		"id": 84,
+		"nextId": 85,
+		"awardID": 0,
+		"auto": 0,
+		"order": 77,
+		"name": "77.陈塘关",
+		"text": "穿戴2件30级装备",
+		"type": 1050,
+		"value": 2,
+		"param1": 1,
+		"param2": 30,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 84,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"85": {
+		"id": 85,
+		"nextId": 86,
+		"awardID": 0,
+		"auto": 0,
+		"order": 78,
+		"name": "78.陈塘关",
+		"text": "击败第3波河豚精",
+		"type": 1066,
+		"value": 3,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 85,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"86": {
+		"id": 86,
+		"nextId": 87,
+		"awardID": 0,
+		"auto": 0,
+		"order": 79,
+		"name": "79.陈塘关",
+		"text": "击败第3位咸鱼首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 86,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"87": {
+		"id": 87,
+		"nextId": 88,
+		"awardID": 0,
+		"auto": 0,
+		"order": 80,
+		"name": "80.陈塘关",
+		"text": "穿戴3件30级装备",
+		"type": 1050,
+		"value": 3,
+		"param1": 1,
+		"param2": 30,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 87,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"88": {
+		"id": 88,
+		"nextId": 89,
+		"awardID": 0,
+		"auto": 0,
+		"order": 81,
+		"name": "81.陈塘关",
+		"text": "击败第4波河豚精",
+		"type": 1066,
+		"value": 4,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 88,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"89": {
+		"id": 89,
+		"nextId": 90,
+		"awardID": 0,
+		"auto": 0,
+		"order": 82,
+		"name": "82.陈塘关",
+		"text": "击败第4位咸鱼首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 89,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"90": {
+		"id": 90,
+		"nextId": 91,
+		"awardID": 0,
+		"auto": 0,
+		"order": 83,
+		"name": "83.陈塘关",
+		"text": "穿戴4件30级装备",
+		"type": 1050,
+		"value": 4,
+		"param1": 1,
+		"param2": 30,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 90,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"91": {
+		"id": 91,
+		"nextId": 92,
+		"awardID": 0,
+		"auto": 0,
+		"order": 84,
+		"name": "84.陈塘关",
+		"text": "完成1次东林院挑战",
+		"type": 1044,
+		"value": 1,
+		"param1": 1,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			105,
+			158,
+			209
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 91,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"92": {
+		"id": 92,
+		"nextId": 93,
+		"awardID": 0,
+		"auto": 0,
+		"order": 85,
+		"name": "85.陈塘关",
+		"text": "穿戴6件30级装备",
+		"type": 1050,
+		"value": 6,
+		"param1": 1,
+		"param2": 30,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			300000,
+			102,
+			139,
+			205
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 92,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"93": {
+		"id": 93,
+		"nextId": 94,
+		"awardID": 0,
+		"auto": 0,
+		"order": 86,
+		"name": "86.陈塘关",
+		"text": "前往万灵宝录-陈塘关",
+		"type": 1059,
+		"value": 1,
+		"param1": 2004,
+		"param2": 2,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 93,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"94": {
+		"id": 94,
+		"nextId": 95,
+		"awardID": 0,
+		"auto": 0,
+		"order": 87,
+		"name": "87.陈塘关",
+		"text": "击败河豚精怪",
+		"type": 1060,
+		"value": 20,
+		"param1": 2004,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 94,
+				"propId": 10201,
+				"num": 4000
+			},
+			{
+				"id": 94,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"95": {
+		"id": 95,
+		"nextId": 96,
+		"awardID": 0,
+		"auto": 0,
+		"order": 88,
+		"name": "88.陈塘关",
+		"text": "元神达到30级",
+		"type": 1067,
+		"value": 30,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 95,
+				"propId": 10102,
+				"num": 100
+			},
+			{
+				"id": 95,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"96": {
+		"id": 96,
+		"nextId": 98,
+		"awardID": 0,
+		"auto": 0,
+		"order": 89,
+		"name": "89.陈塘关",
+		"text": "习得{param1}",
+		"type": 1071,
+		"value": 1,
+		"param1": 1,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			201,
+			202
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 96,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"98": {
+		"id": 98,
+		"nextId": 99,
+		"awardID": 0,
+		"auto": 0,
+		"order": 90,
+		"name": "90.陈塘关",
+		"text": "突破达到妖丹期",
+		"type": 1021,
+		"value": 2,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			122,
+			176,
+			177
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 98,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"99": {
+		"id": 99,
+		"nextId": 100,
+		"awardID": 0,
+		"auto": 0,
+		"order": 91,
+		"name": "91.陈塘关",
+		"text": "分配一次天赋点",
+		"type": 1055,
+		"value": 1,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			122,
+			207
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 99,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"100": {
+		"id": 100,
+		"nextId": 101,
+		"awardID": 0,
+		"auto": 0,
+		"order": 92,
+		"name": "92.陈塘关",
+		"text": "完成2次东林院挑战",
+		"type": 1044,
+		"value": 2,
+		"param1": 1,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			105,
+			158,
+			209
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 100,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"101": {
+		"id": 101,
+		"nextId": 102,
+		"awardID": 0,
+		"auto": 0,
+		"order": 93,
+		"name": "93.陈塘关",
+		"text": "镶嵌一颗魂石",
+		"type": 1045,
+		"value": 1,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			102,
+			160,
+			161,
+			162
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 101,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"102": {
+		"id": 102,
+		"nextId": 103,
+		"awardID": 0,
+		"auto": 0,
+		"order": 94,
+		"name": "94.陈塘关",
+		"text": "前往九州-陈塘关",
+		"type": 1059,
+		"value": 1,
+		"param1": 1004,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 102,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"103": {
+		"id": 103,
+		"nextId": 104,
+		"awardID": 0,
+		"auto": 0,
+		"order": 95,
+		"name": "95.陈塘关",
+		"text": "击败第5波河豚精",
+		"type": 1066,
+		"value": 5,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 103,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"104": {
+		"id": 104,
+		"nextId": 105,
+		"awardID": 0,
+		"auto": 0,
+		"order": 96,
+		"name": "96.陈塘关",
+		"text": "击败第5位咸鱼首领",
+		"type": 1041,
+		"value": 5,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 104,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"105": {
+		"id": 105,
+		"nextId": 106,
+		"awardID": 0,
+		"auto": 0,
+		"order": 97,
+		"name": "97.陈塘关",
+		"text": "击败第6波河豚精",
+		"type": 1066,
+		"value": 6,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 105,
+				"propId": 1004,
+				"num": 2000
+			},
+			{
+				"id": 105,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"106": {
+		"id": 106,
+		"nextId": 107,
+		"awardID": 0,
+		"auto": 0,
+		"order": 98,
+		"name": "98.陈塘关",
+		"text": "击败第6位咸鱼首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1004,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 106,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"107": {
+		"id": 107,
+		"nextId": 108,
+		"awardID": 0,
+		"auto": 0,
+		"order": 99,
+		"name": "99.陈塘关",
+		"text": "素萝修炼3次",
+		"type": 1057,
+		"value": 4,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			109,
+			189,
+			143
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 107,
+				"propId": 1002,
+				"num": 450
+			}
+		],
+		"skip": 0
+	},
+	"108": {
+		"id": 108,
+		"nextId": 109,
+		"awardID": 0,
+		"auto": 0,
+		"order": 100,
+		"name": "100.南海",
+		"text": "前往九州-南海",
+		"type": 1059,
+		"value": 1,
+		"param1": 1005,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 108,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"109": {
+		"id": 109,
+		"nextId": 111,
+		"awardID": 0,
+		"auto": 0,
+		"order": 101,
+		"name": "101.南海",
+		"text": "通关战天兵1-1",
+		"type": 1043,
+		"value": 1001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 109,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"111": {
+		"id": 111,
+		"nextId": 113,
+		"awardID": 0,
+		"auto": 0,
+		"order": 102,
+		"name": "102.南海",
+		"text": "通关战天兵1-2",
+		"type": 1043,
+		"value": 1002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 111,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"113": {
+		"id": 113,
+		"nextId": 114,
+		"awardID": 0,
+		"auto": 0,
+		"order": 103,
+		"name": "103.南海",
+		"text": "通关战天兵1-3",
+		"type": 1043,
+		"value": 1003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 113,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"114": {
+		"id": 114,
+		"nextId": 115,
+		"awardID": 0,
+		"auto": 0,
+		"order": 104,
+		"name": "104.南海",
+		"text": "击败第1波虾兵",
+		"type": 1066,
+		"value": 1,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 114,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"115": {
+		"id": 115,
+		"nextId": 116,
+		"awardID": 0,
+		"auto": 0,
+		"order": 105,
+		"name": "105.南海",
+		"text": "击败第1位螃蟹首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 115,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"116": {
+		"id": 116,
+		"nextId": 117,
+		"awardID": 0,
+		"auto": 0,
+		"order": 106,
+		"name": "106.南海",
+		"text": "击败第2波虾兵",
+		"type": 1066,
+		"value": 2,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 116,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"117": {
+		"id": 117,
+		"nextId": 118,
+		"awardID": 0,
+		"auto": 0,
+		"order": 107,
+		"name": "107.南海",
+		"text": "击败第2位螃蟹首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 117,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"118": {
+		"id": 118,
+		"nextId": 119,
+		"awardID": 0,
+		"auto": 0,
+		"order": 108,
+		"name": "108.南海",
+		"text": "前往万灵宝录-南海",
+		"type": 1059,
+		"value": 1,
+		"param1": 2005,
+		"param2": 2,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 118,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"119": {
+		"id": 119,
+		"nextId": 120,
+		"awardID": 0,
+		"auto": 0,
+		"order": 109,
+		"name": "109.南海",
+		"text": "击败虾兵精怪",
+		"type": 1060,
+		"value": 30,
+		"param1": 2005,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 119,
+				"propId": 10202,
+				"num": 1000
+			},
+			{
+				"id": 119,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"120": {
+		"id": 120,
+		"nextId": 125,
+		"awardID": 0,
+		"auto": 0,
+		"order": 110,
+		"name": "110.南海",
+		"text": "法宝达到36级",
+		"type": 1068,
+		"value": 36,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 120,
+				"propId": 1004,
+				"num": 3000
+			},
+			{
+				"id": 120,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"125": {
+		"id": 125,
+		"nextId": 126,
+		"awardID": 0,
+		"auto": 0,
+		"order": 111,
+		"name": "111.南海",
+		"text": "完成1次幻蛇谷挑战",
+		"type": 1044,
+		"value": 1,
+		"param1": 3,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			105,
+			163,
+			211
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 125,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"126": {
+		"id": 126,
+		"nextId": 127,
+		"awardID": 0,
+		"auto": 0,
+		"order": 112,
+		"name": "112.南海",
+		"text": "法宝镌刻一次",
+		"type": 1022,
+		"value": 1,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			152,
+			156,
+			157
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 126,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"127": {
+		"id": 127,
+		"nextId": 128,
+		"awardID": 0,
+		"auto": 0,
+		"order": 113,
+		"name": "113.南海",
+		"text": "法宝达到40级",
+		"type": 1068,
+		"value": 40,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 127,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"128": {
+		"id": 128,
+		"nextId": 129,
+		"awardID": 0,
+		"auto": 0,
+		"order": 114,
+		"name": "114.南海",
+		"text": "前往九州-南海",
+		"type": 1059,
+		"value": 1,
+		"param1": 1005,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 128,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"129": {
+		"id": 129,
+		"nextId": 130,
+		"awardID": 0,
+		"auto": 0,
+		"order": 115,
+		"name": "115.南海",
+		"text": "击败第3波虾兵",
+		"type": 1066,
+		"value": 3,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 129,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"130": {
+		"id": 130,
+		"nextId": 131,
+		"awardID": 0,
+		"auto": 0,
+		"order": 116,
+		"name": "116.南海",
+		"text": "击败第3位螃蟹首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 130,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"131": {
+		"id": 131,
+		"nextId": 132,
+		"awardID": 0,
+		"auto": 0,
+		"order": 117,
+		"name": "117.南海",
+		"text": "击败第4波虾兵",
+		"type": 1066,
+		"value": 4,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 131,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"132": {
+		"id": 132,
+		"nextId": 133,
+		"awardID": 0,
+		"auto": 0,
+		"order": 118,
+		"name": "118.南海",
+		"text": "击败第4位螃蟹首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 132,
+				"propId": 1004,
+				"num": 4000
+			},
+			{
+				"id": 132,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"133": {
+		"id": 133,
+		"nextId": 134,
+		"awardID": 0,
+		"auto": 0,
+		"order": 119,
+		"name": "119.南海",
+		"text": "击败第5波虾兵",
+		"type": 1066,
+		"value": 5,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 133,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"134": {
+		"id": 134,
+		"nextId": 135,
+		"awardID": 0,
+		"auto": 0,
+		"order": 120,
+		"name": "120.南海",
+		"text": "击败第5位螃蟹首领",
+		"type": 1041,
+		"value": 5,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 134,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"135": {
+		"id": 135,
+		"nextId": 136,
+		"awardID": 0,
+		"auto": 0,
+		"order": 121,
+		"name": "121.南海",
+		"text": "击败第6波虾兵",
+		"type": 1066,
+		"value": 6,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 135,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"136": {
+		"id": 136,
+		"nextId": 137,
+		"awardID": 0,
+		"auto": 0,
+		"order": 122,
+		"name": "122.南海",
+		"text": "击败第6位螃蟹首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1005,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 136,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"137": {
+		"id": 137,
+		"nextId": 138,
+		"awardID": 0,
+		"auto": 0,
+		"order": 123,
+		"name": "123.南海",
+		"text": "素萝修炼4次",
+		"type": 1057,
+		"value": 5,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			109,
+			189,
+			143
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 137,
+				"propId": 1002,
+				"num": 2100
+			}
+		],
+		"skip": 0
+	},
+	"138": {
+		"id": 138,
+		"nextId": 139,
+		"awardID": 0,
+		"auto": 0,
+		"order": 124,
+		"name": "124.南海龙宫",
+		"text": "前往九州-南海龙宫",
+		"type": 1059,
+		"value": 1,
+		"param1": 1006,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 138,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"139": {
+		"id": 139,
+		"nextId": 140,
+		"awardID": 0,
+		"auto": 0,
+		"order": 125,
+		"name": "125.南海龙宫",
+		"text": "击败第1波夜叉",
+		"type": 1066,
+		"value": 1,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 139,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"140": {
+		"id": 140,
+		"nextId": 141,
+		"awardID": 0,
+		"auto": 0,
+		"order": 126,
+		"name": "126.南海龙宫",
+		"text": "击败第1位海龟首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 140,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"141": {
+		"id": 141,
+		"nextId": 142,
+		"awardID": 0,
+		"auto": 0,
+		"order": 127,
+		"name": "127.南海龙宫",
+		"text": "击败第2波夜叉",
+		"type": 1066,
+		"value": 2,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 141,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"142": {
+		"id": 142,
+		"nextId": 143,
+		"awardID": 0,
+		"auto": 0,
+		"order": 128,
+		"name": "128.南海龙宫",
+		"text": "击败第2位海龟首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 142,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"143": {
+		"id": 143,
+		"nextId": 148,
+		"awardID": 0,
+		"auto": 0,
+		"order": 129,
+		"name": "129.南海龙宫",
+		"text": "前往万灵宝录-南海龙宫",
+		"type": 1059,
+		"value": 1,
+		"param1": 2006,
+		"param2": 2,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 143,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"148": {
+		"id": 148,
+		"nextId": 149,
+		"awardID": 0,
+		"auto": 0,
+		"order": 134,
+		"name": "134.南海龙宫",
+		"text": "击败夜叉精怪",
+		"type": 1060,
+		"value": 30,
+		"param1": 2006,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 148,
+				"propId": 1004,
+				"num": 4000
+			},
+			{
+				"id": 148,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"149": {
+		"id": 149,
+		"nextId": 150,
+		"awardID": 0,
+		"auto": 0,
+		"order": 135,
+		"name": "135.南海龙宫",
+		"text": "元神达到36级",
+		"type": 1067,
+		"value": 36,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 149,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"150": {
+		"id": 150,
+		"nextId": 151,
+		"awardID": 0,
+		"auto": 0,
+		"order": 136,
+		"name": "136.南海龙宫",
+		"text": "完成1次昆仑山挑战",
+		"type": 1044,
+		"value": 1,
+		"param1": 2,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			105,
+			164,
+			210
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 150,
+				"propId": 200001,
+				"num": 10
+			},
+			{
+				"id": 150,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"151": {
+		"id": 151,
+		"nextId": 152,
+		"awardID": 0,
+		"auto": 0,
+		"order": 137,
+		"name": "137.南海龙宫",
+		"text": "请神一次",
+		"type": 1024,
+		"value": 1,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			212,
+			214,
+			218
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 151,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"152": {
+		"id": 152,
+		"nextId": 153,
+		"awardID": 0,
+		"auto": 0,
+		"order": 138,
+		"name": "138.南海龙宫",
+		"text": "元神达到40级",
+		"type": 1067,
+		"value": 40,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 152,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"153": {
+		"id": 153,
+		"nextId": 154,
+		"awardID": 0,
+		"auto": 0,
+		"order": 139,
+		"name": "139.南海龙宫",
+		"text": "前往九州-南海龙宫",
+		"type": 1059,
+		"value": 1,
+		"param1": 1006,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 153,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"154": {
+		"id": 154,
+		"nextId": 155,
+		"awardID": 0,
+		"auto": 0,
+		"order": 140,
+		"name": "140.南海龙宫",
+		"text": "通关战天兵2-1",
+		"type": 1043,
+		"value": 2001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 154,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"155": {
+		"id": 155,
+		"nextId": 156,
+		"awardID": 0,
+		"auto": 0,
+		"order": 141,
+		"name": "141.南海龙宫",
+		"text": "通关战天兵2-2",
+		"type": 1043,
+		"value": 2002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 155,
+				"propId": 10102,
+				"num": 100
+			},
+			{
+				"id": 155,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"156": {
+		"id": 156,
+		"nextId": 157,
+		"awardID": 0,
+		"auto": 0,
+		"order": 142,
+		"name": "142.南海龙宫",
+		"text": "{param1}达到2级",
+		"type": 1071,
+		"value": 2,
+		"param1": 2,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			199,
+			202
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 156,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"157": {
+		"id": 157,
+		"nextId": 158,
+		"awardID": 0,
+		"auto": 0,
+		"order": 143,
+		"name": "143.南海龙宫",
+		"text": "击败第3波夜叉",
+		"type": 1066,
+		"value": 3,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 157,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"158": {
+		"id": 158,
+		"nextId": 161,
+		"awardID": 0,
+		"auto": 0,
+		"order": 144,
+		"name": "144.南海龙宫",
+		"text": "击败第3位海龟首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 158,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"161": {
+		"id": 161,
+		"nextId": 159,
+		"awardID": 0,
+		"auto": 0,
+		"order": 145,
+		"name": "145.南海龙宫",
+		"text": "通关战天兵2-3",
+		"type": 1043,
+		"value": 2003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 161,
+				"propId": 10201,
+				"num": 1000
+			},
+			{
+				"id": 161,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"159": {
+		"id": 159,
+		"nextId": 160,
+		"awardID": 0,
+		"auto": 0,
+		"order": 146,
+		"name": "146.南海龙宫",
+		"text": "击败第4波夜叉",
+		"type": 1066,
+		"value": 4,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 159,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"160": {
+		"id": 160,
+		"nextId": 162,
+		"awardID": 0,
+		"auto": 0,
+		"order": 147,
+		"name": "147.南海龙宫",
+		"text": "击败第4位海龟首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 160,
+				"propId": 10201,
+				"num": 1000
+			},
+			{
+				"id": 160,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"162": {
+		"id": 162,
+		"nextId": 163,
+		"awardID": 0,
+		"auto": 0,
+		"order": 148,
+		"name": "148.南海龙宫",
+		"text": "查看乾坤袋收益",
+		"type": 1072,
+		"value": 1,
+		"param1": 10900,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			141,
+			126
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 162,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"163": {
+		"id": 163,
+		"nextId": 164,
+		"awardID": 0,
+		"auto": 0,
+		"order": 149,
+		"name": "149.南海龙宫",
+		"text": "元神达到50级",
+		"type": 1067,
+		"value": 50,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 163,
+				"propId": 10102,
+				"num": 100
+			},
+			{
+				"id": 163,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"164": {
+		"id": 164,
+		"nextId": 165,
+		"awardID": 0,
+		"auto": 0,
+		"order": 150,
+		"name": "150.南海龙宫",
+		"text": "{param1}达到2级",
+		"type": 1071,
+		"value": 2,
+		"param1": 3,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			200,
+			202
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 164,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"165": {
+		"id": 165,
+		"nextId": 166,
+		"awardID": 0,
+		"auto": 0,
+		"order": 151,
+		"name": "151.南海龙宫",
+		"text": "参与一次斗法",
+		"type": 1014,
+		"value": 1,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			113,
+			115,
+			196,
+			197
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 165,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"166": {
+		"id": 166,
+		"nextId": 167,
+		"awardID": 0,
+		"auto": 0,
+		"order": 152,
+		"name": "152.南海龙宫",
+		"text": "击败第5波夜叉",
+		"type": 1066,
+		"value": 5,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 166,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"167": {
+		"id": 167,
+		"nextId": 168,
+		"awardID": 0,
+		"auto": 0,
+		"order": 153,
+		"name": "153.南海龙宫",
+		"text": "击败第5位海龟首领",
+		"type": 1041,
+		"value": 5,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 167,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"168": {
+		"id": 168,
+		"nextId": 169,
+		"awardID": 0,
+		"auto": 0,
+		"order": 154,
+		"name": "154.南海龙宫",
+		"text": "通关战天兵3-1",
+		"type": 1043,
+		"value": 3001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 168,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"169": {
+		"id": 169,
+		"nextId": 170,
+		"awardID": 0,
+		"auto": 0,
+		"order": 155,
+		"name": "155.南海龙宫",
+		"text": "通关战天兵3-2",
+		"type": 1043,
+		"value": 3002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 169,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"170": {
+		"id": 170,
+		"nextId": 171,
+		"awardID": 0,
+		"auto": 0,
+		"order": 156,
+		"name": "156.南海龙宫",
+		"text": "通关战天兵3-3",
+		"type": 1043,
+		"value": 3003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 170,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"171": {
+		"id": 171,
+		"nextId": 172,
+		"awardID": 0,
+		"auto": 0,
+		"order": 157,
+		"name": "157.南海龙宫",
+		"text": "击败第6波夜叉",
+		"type": 1066,
+		"value": 6,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 171,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"172": {
+		"id": 172,
+		"nextId": 173,
+		"awardID": 0,
+		"auto": 0,
+		"order": 158,
+		"name": "158.南海龙宫",
+		"text": "击败第6位海龟首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1006,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 172,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"173": {
+		"id": 173,
+		"nextId": 174,
+		"awardID": 0,
+		"auto": 0,
+		"order": 159,
+		"name": "159.南海龙宫",
+		"text": "素萝修炼5次",
+		"type": 1057,
+		"value": 6,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			109,
+			189,
+			143
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 173,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"174": {
+		"id": 174,
+		"nextId": 175,
+		"awardID": 0,
+		"auto": 0,
+		"order": 160,
+		"name": "160.南海龙宫",
+		"text": "前往九州-清水河",
+		"type": 1059,
+		"value": 1,
+		"param1": 1007,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 174,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"175": {
+		"id": 175,
+		"nextId": 176,
+		"awardID": 0,
+		"auto": 0,
+		"order": 161,
+		"name": "161.南海龙宫",
+		"text": "击败第1波狒狒精",
+		"type": 1066,
+		"value": 1,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 175,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"176": {
+		"id": 176,
+		"nextId": 177,
+		"awardID": 0,
+		"auto": 0,
+		"order": 162,
+		"name": "162.南海龙宫",
+		"text": "击败第1位山魈首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 176,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"177": {
+		"id": 177,
+		"nextId": 178,
+		"awardID": 0,
+		"auto": 0,
+		"order": 163,
+		"name": "163.南海龙宫",
+		"text": "通关战天兵4-1",
+		"type": 1043,
+		"value": 4001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 177,
+				"propId": 1002,
+				"num": 2350
+			}
+		],
+		"skip": 0
+	},
+	"178": {
+		"id": 178,
+		"nextId": 179,
+		"awardID": 0,
+		"auto": 0,
+		"order": 164,
+		"name": "164.南海龙宫",
+		"text": "通关战天兵4-2",
+		"type": 1043,
+		"value": 4002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 178,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"179": {
+		"id": 179,
+		"nextId": 180,
+		"awardID": 0,
+		"auto": 0,
+		"order": 165,
+		"name": "165.南海龙宫",
+		"text": "通关战天兵4-3",
+		"type": 1043,
+		"value": 4003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 179,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"180": {
+		"id": 180,
+		"nextId": 181,
+		"awardID": 0,
+		"auto": 0,
+		"order": 166,
+		"name": "166.清水河",
+		"text": "击败第2波狒狒精",
+		"type": 1066,
+		"value": 2,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 180,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"181": {
+		"id": 181,
+		"nextId": 182,
+		"awardID": 0,
+		"auto": 0,
+		"order": 167,
+		"name": "167.清水河",
+		"text": "击败第2位山魈首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 181,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"182": {
+		"id": 182,
+		"nextId": 183,
+		"awardID": 0,
+		"auto": 0,
+		"order": 168,
+		"name": "168.清水河",
+		"text": "前往万灵宝录-清水河",
+		"type": 1059,
+		"value": 1,
+		"param1": 2007,
+		"param2": 2,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 182,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"183": {
+		"id": 183,
+		"nextId": 184,
+		"awardID": 0,
+		"auto": 0,
+		"order": 169,
+		"name": "169.清水河",
+		"text": "击败狒狒精怪",
+		"type": 1060,
+		"value": 30,
+		"param1": 2007,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 183,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"184": {
+		"id": 184,
+		"nextId": 185,
+		"awardID": 0,
+		"auto": 0,
+		"order": 170,
+		"name": "170.清水河",
+		"text": "法宝达到45级",
+		"type": 1068,
+		"value": 45,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 184,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"185": {
+		"id": 185,
+		"nextId": 186,
+		"awardID": 0,
+		"auto": 0,
+		"order": 171,
+		"name": "171.清水河",
+		"text": "前往九州-清水河",
+		"type": 1059,
+		"value": 1,
+		"param1": 1007,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 185,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"186": {
+		"id": 186,
+		"nextId": 187,
+		"awardID": 0,
+		"auto": 0,
+		"order": 172,
+		"name": "172.清水河",
+		"text": "击败第3波狒狒精",
+		"type": 1066,
+		"value": 3,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 186,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"187": {
+		"id": 187,
+		"nextId": 188,
+		"awardID": 0,
+		"auto": 0,
+		"order": 173,
+		"name": "173.清水河",
+		"text": "击败第3位山魈首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 187,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"188": {
+		"id": 188,
+		"nextId": 189,
+		"awardID": 0,
+		"auto": 0,
+		"order": 174,
+		"name": "174.清水河",
+		"text": "通关战天兵5-1",
+		"type": 1043,
+		"value": 5001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 188,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"189": {
+		"id": 189,
+		"nextId": 190,
+		"awardID": 0,
+		"auto": 0,
+		"order": 175,
+		"name": "175.清水河",
+		"text": "击败第4波狒狒精",
+		"type": 1066,
+		"value": 4,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 189,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"190": {
+		"id": 190,
+		"nextId": 191,
+		"awardID": 0,
+		"auto": 0,
+		"order": 176,
+		"name": "176.清水河",
+		"text": "击败第4位山魈首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 190,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"191": {
+		"id": 191,
+		"nextId": 192,
+		"awardID": 0,
+		"auto": 0,
+		"order": 177,
+		"name": "177.清水河",
+		"text": "了解山头历练",
+		"type": 1072,
+		"value": 1,
+		"param1": 11600,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			113,
+			219,
+			129
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 191,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"192": {
+		"id": 192,
+		"nextId": 193,
+		"awardID": 0,
+		"auto": 0,
+		"order": 178,
+		"name": "178.清水河",
+		"text": "法宝达到50级",
+		"type": 1068,
+		"value": 50,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 192,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"193": {
+		"id": 193,
+		"nextId": 194,
+		"awardID": 0,
+		"auto": 0,
+		"order": 179,
+		"name": "179.清水河",
+		"text": "通关战天兵5-2",
+		"type": 1043,
+		"value": 5002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 193,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"194": {
+		"id": 194,
+		"nextId": 195,
+		"awardID": 0,
+		"auto": 0,
+		"order": 180,
+		"name": "180.清水河",
+		"text": "击败第5波狒狒精",
+		"type": 1066,
+		"value": 5,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 194,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"195": {
+		"id": 195,
+		"nextId": 196,
+		"awardID": 0,
+		"auto": 0,
+		"order": 181,
+		"name": "181.清水河",
+		"text": "击败第5位山魈首领",
+		"type": 1041,
+		"value": 5,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 195,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"196": {
+		"id": 196,
+		"nextId": 197,
+		"awardID": 0,
+		"auto": 0,
+		"order": 182,
+		"name": "182.清水河",
+		"text": "通关战天兵5-3",
+		"type": 1043,
+		"value": 5003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 196,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"197": {
+		"id": 197,
+		"nextId": 198,
+		"awardID": 0,
+		"auto": 0,
+		"order": 183,
+		"name": "183.清水河",
+		"text": "击败第6波狒狒精",
+		"type": 1066,
+		"value": 6,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 197,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"198": {
+		"id": 198,
+		"nextId": 199,
+		"awardID": 0,
+		"auto": 0,
+		"order": 184,
+		"name": "184.清水河",
+		"text": "击败第6位山魈首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1007,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 198,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"199": {
+		"id": 199,
+		"nextId": 200,
+		"awardID": 0,
+		"auto": 0,
+		"order": 185,
+		"name": "185.清水河",
+		"text": "了解夔牛历练",
+		"type": 1072,
+		"value": 1,
+		"param1": 11900,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			105,
+			128
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 199,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"200": {
+		"id": 200,
+		"nextId": 201,
+		"awardID": 0,
+		"auto": 0,
+		"order": 186,
+		"name": "186.清水河",
+		"text": "素萝修炼6次",
+		"type": 1057,
+		"value": 7,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			109,
+			189,
+			143
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 200,
+				"propId": 1002,
+				"num": 2800
+			}
+		],
+		"skip": 0
+	},
+	"201": {
+		"id": 201,
+		"nextId": 202,
+		"awardID": 0,
+		"auto": 0,
+		"order": 187,
+		"name": "187.清水河",
+		"text": "等级升至70级",
+		"type": 1002,
+		"value": 70,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 201,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"202": {
+		"id": 202,
+		"nextId": 203,
+		"awardID": 0,
+		"auto": 0,
+		"order": 188,
+		"name": "188.花果山",
+		"text": "前往九州-花果山",
+		"type": 1059,
+		"value": 1,
+		"param1": 1008,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 202,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"203": {
+		"id": 203,
+		"nextId": 204,
+		"awardID": 0,
+		"auto": 0,
+		"order": 189,
+		"name": "189.花果山",
+		"text": "击败第1波金猴精",
+		"type": 1066,
+		"value": 1,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 203,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"204": {
+		"id": 204,
+		"nextId": 205,
+		"awardID": 0,
+		"auto": 0,
+		"order": 190,
+		"name": "190.花果山",
+		"text": "击败第1位猕猴首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 204,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"205": {
+		"id": 205,
+		"nextId": 206,
+		"awardID": 0,
+		"auto": 0,
+		"order": 191,
+		"name": "191.花果山",
+		"text": "击败第2波金猴精",
+		"type": 1066,
+		"value": 2,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 205,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"206": {
+		"id": 206,
+		"nextId": 207,
+		"awardID": 0,
+		"auto": 0,
+		"order": 192,
+		"name": "192.花果山",
+		"text": "击败第2位猕猴首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 206,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"207": {
+		"id": 207,
+		"nextId": 208,
+		"awardID": 0,
+		"auto": 0,
+		"order": 193,
+		"name": "193.花果山",
+		"text": "前往万灵宝录-花果山",
+		"type": 1059,
+		"value": 1,
+		"param1": 2008,
+		"param2": 2,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 207,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"208": {
+		"id": 208,
+		"nextId": 209,
+		"awardID": 0,
+		"auto": 0,
+		"order": 194,
+		"name": "194.花果山",
+		"text": "击败金猴精怪",
+		"type": 1060,
+		"value": 30,
+		"param1": 2008,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 208,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"209": {
+		"id": 209,
+		"nextId": 210,
+		"awardID": 0,
+		"auto": 0,
+		"order": 195,
+		"name": "195.花果山",
+		"text": "元神达到55级",
+		"type": 1067,
+		"value": 55,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 209,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"210": {
+		"id": 210,
+		"nextId": 211,
+		"awardID": 0,
+		"auto": 0,
+		"order": 196,
+		"name": "196.花果山",
+		"text": "前往九州-花果山",
+		"type": 1059,
+		"value": 1,
+		"param1": 1008,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 210,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"211": {
+		"id": 211,
+		"nextId": 212,
+		"awardID": 0,
+		"auto": 0,
+		"order": 197,
+		"name": "197.花果山",
+		"text": "击败第3波金猴精",
+		"type": 1066,
+		"value": 3,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 211,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"212": {
+		"id": 212,
+		"nextId": 213,
+		"awardID": 0,
+		"auto": 0,
+		"order": 198,
+		"name": "198.花果山",
+		"text": "击败第3位猕猴首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 212,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"213": {
+		"id": 213,
+		"nextId": 214,
+		"awardID": 0,
+		"auto": 0,
+		"order": 199,
+		"name": "199.花果山",
+		"text": "通关战天兵6-1",
+		"type": 1043,
+		"value": 6001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 213,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"214": {
+		"id": 214,
+		"nextId": 215,
+		"awardID": 0,
+		"auto": 0,
+		"order": 200,
+		"name": "200.花果山",
+		"text": "击败第4波金猴精",
+		"type": 1066,
+		"value": 4,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 214,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"215": {
+		"id": 215,
+		"nextId": 216,
+		"awardID": 0,
+		"auto": 0,
+		"order": 201,
+		"name": "201.花果山",
+		"text": "击败第4位猕猴首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 215,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"216": {
+		"id": 216,
+		"nextId": 217,
+		"awardID": 0,
+		"auto": 0,
+		"order": 202,
+		"name": "202.花果山",
+		"text": "通关战天兵6-2",
+		"type": 1043,
+		"value": 6002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 216,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"217": {
+		"id": 217,
+		"nextId": 218,
+		"awardID": 0,
+		"auto": 0,
+		"order": 203,
+		"name": "203.花果山",
+		"text": "元神达到60级",
+		"type": 1067,
+		"value": 60,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			101,
+			151
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 217,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"218": {
+		"id": 218,
+		"nextId": 219,
+		"awardID": 0,
+		"auto": 0,
+		"order": 204,
+		"name": "204.花果山",
+		"text": "击败第5波金猴精",
+		"type": 1066,
+		"value": 5,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 218,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"219": {
+		"id": 219,
+		"nextId": 220,
+		"awardID": 0,
+		"auto": 0,
+		"order": 205,
+		"name": "205.花果山",
+		"text": "击败第5位猕猴首领",
+		"type": 1041,
+		"value": 5,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 219,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"220": {
+		"id": 220,
+		"nextId": 221,
+		"awardID": 0,
+		"auto": 0,
+		"order": 206,
+		"name": "206.花果山",
+		"text": "通关战天兵6-3",
+		"type": 1043,
+		"value": 6003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 220,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"221": {
+		"id": 221,
+		"nextId": 222,
+		"awardID": 0,
+		"auto": 0,
+		"order": 207,
+		"name": "207.花果山",
+		"text": "击败第6波金猴精",
+		"type": 1066,
+		"value": 6,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 221,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"222": {
+		"id": 222,
+		"nextId": 223,
+		"awardID": 0,
+		"auto": 0,
+		"order": 208,
+		"name": "208.花果山",
+		"text": "击败第6位猕猴首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1008,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 222,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"223": {
+		"id": 223,
+		"nextId": 224,
+		"awardID": 0,
+		"auto": 0,
+		"order": 209,
+		"name": "209.花果山",
+		"text": "素萝修炼7次",
+		"type": 1057,
+		"value": 8,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			109,
+			189,
+			143
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 223,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"224": {
+		"id": 224,
+		"nextId": 225,
+		"awardID": 0,
+		"auto": 0,
+		"order": 210,
+		"name": "210.花果山",
+		"text": "等级升至80级",
+		"type": 1002,
+		"value": 80,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 224,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"225": {
+		"id": 225,
+		"nextId": 226,
+		"awardID": 0,
+		"auto": 0,
+		"order": 211,
+		"name": "211.水帘洞",
+		"text": "前往九州-水帘洞",
+		"type": 1059,
+		"value": 1,
+		"param1": 1009,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 225,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"226": {
+		"id": 226,
+		"nextId": 227,
+		"awardID": 0,
+		"auto": 0,
+		"order": 212,
+		"name": "212.水帘洞",
+		"text": "击败第1波黑猩精",
+		"type": 1066,
+		"value": 1,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 226,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"227": {
+		"id": 227,
+		"nextId": 228,
+		"awardID": 0,
+		"auto": 0,
+		"order": 213,
+		"name": "213.水帘洞",
+		"text": "击败第1位长臂猿首领",
+		"type": 1041,
+		"value": 1,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 227,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"228": {
+		"id": 228,
+		"nextId": 229,
+		"awardID": 0,
+		"auto": 0,
+		"order": 214,
+		"name": "214.水帘洞",
+		"text": "击败第2波黑猩精",
+		"type": 1066,
+		"value": 2,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 228,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"229": {
+		"id": 229,
+		"nextId": 230,
+		"awardID": 0,
+		"auto": 0,
+		"order": 215,
+		"name": "215.水帘洞",
+		"text": "击败第2位长臂猿首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 229,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"230": {
+		"id": 230,
+		"nextId": 231,
+		"awardID": 0,
+		"auto": 0,
+		"order": 216,
+		"name": "216.水帘洞",
+		"text": "前往万灵宝录-水帘洞",
+		"type": 1059,
+		"value": 1,
+		"param1": 2009,
+		"param2": 2,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 230,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"231": {
+		"id": 231,
+		"nextId": 236,
+		"awardID": 0,
+		"auto": 0,
+		"order": 217,
+		"name": "217.水帘洞",
+		"text": "击败黑猩精怪",
+		"type": 1060,
+		"value": 30,
+		"param1": 2009,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 231,
+				"propId": 1002,
+				"num": 4000
+			}
+		],
+		"skip": 0
+	},
+	"236": {
+		"id": 236,
+		"nextId": 237,
+		"awardID": 0,
+		"auto": 0,
+		"order": 222,
+		"name": "222.水帘洞",
+		"text": "法宝达到55级",
+		"type": 1068,
+		"value": 55,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 236,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"237": {
+		"id": 237,
+		"nextId": 238,
+		"awardID": 0,
+		"auto": 0,
+		"order": 223,
+		"name": "223.水帘洞",
+		"text": "前往九州-水帘洞",
+		"type": 1059,
+		"value": 1,
+		"param1": 1009,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 237,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"238": {
+		"id": 238,
+		"nextId": 239,
+		"awardID": 0,
+		"auto": 0,
+		"order": 224,
+		"name": "224.水帘洞",
+		"text": "击败第3波黑猩精",
+		"type": 1066,
+		"value": 3,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 238,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"239": {
+		"id": 239,
+		"nextId": 240,
+		"awardID": 0,
+		"auto": 0,
+		"order": 225,
+		"name": "225.水帘洞",
+		"text": "击败第3位长臂猿首领",
+		"type": 1041,
+		"value": 3,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 239,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"240": {
+		"id": 240,
+		"nextId": 241,
+		"awardID": 0,
+		"auto": 0,
+		"order": 226,
+		"name": "226.水帘洞",
+		"text": "通关战天兵7-1",
+		"type": 1043,
+		"value": 7001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 240,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"241": {
+		"id": 241,
+		"nextId": 242,
+		"awardID": 0,
+		"auto": 0,
+		"order": 227,
+		"name": "227.水帘洞",
+		"text": "击败第4波黑猩精",
+		"type": 1066,
+		"value": 4,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 241,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"242": {
+		"id": 242,
+		"nextId": 243,
+		"awardID": 0,
+		"auto": 0,
+		"order": 228,
+		"name": "228.水帘洞",
+		"text": "击败第4位长臂猿首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 242,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"243": {
+		"id": 243,
+		"nextId": 244,
+		"awardID": 0,
+		"auto": 0,
+		"order": 229,
+		"name": "229.水帘洞",
+		"text": "通关战天兵7-2",
+		"type": 1043,
+		"value": 7002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 243,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"244": {
+		"id": 244,
+		"nextId": 245,
+		"awardID": 0,
+		"auto": 0,
+		"order": 230,
+		"name": "230.水帘洞",
+		"text": "法宝达到60级",
+		"type": 1068,
+		"value": 60,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			103,
+			153
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 244,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"245": {
+		"id": 245,
+		"nextId": 246,
+		"awardID": 0,
+		"auto": 0,
+		"order": 231,
+		"name": "231.水帘洞",
+		"text": "击败第5波黑猩精",
+		"type": 1066,
+		"value": 5,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 245,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"246": {
+		"id": 246,
+		"nextId": 247,
+		"awardID": 0,
+		"auto": 0,
+		"order": 232,
+		"name": "232.水帘洞",
+		"text": "击败第5位长臂猿首领",
+		"type": 1041,
+		"value": 5,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 246,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"247": {
+		"id": 247,
+		"nextId": 248,
+		"awardID": 0,
+		"auto": 0,
+		"order": 233,
+		"name": "233.水帘洞",
+		"text": "通关战天兵7-3",
+		"type": 1043,
+		"value": 7003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 247,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"248": {
+		"id": 248,
+		"nextId": 249,
+		"awardID": 0,
+		"auto": 0,
+		"order": 234,
+		"name": "234.水帘洞",
+		"text": "击败第6波黑猩精",
+		"type": 1066,
+		"value": 6,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 248,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"249": {
+		"id": 249,
+		"nextId": 250,
+		"awardID": 0,
+		"auto": 0,
+		"order": 235,
+		"name": "235.水帘洞",
+		"text": "击败第6位长臂猿首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1009,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 249,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"250": {
+		"id": 250,
+		"nextId": 251,
+		"awardID": 0,
+		"auto": 0,
+		"order": 236,
+		"name": "236.水帘洞",
+		"text": "素萝修炼8次",
+		"type": 1057,
+		"value": 9,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			109,
+			189,
+			143
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 250,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"251": {
+		"id": 251,
+		"nextId": 252,
+		"awardID": 0,
+		"auto": 0,
+		"order": 237,
+		"name": "237.水帘洞",
+		"text": "等级升至90级",
+		"type": 1002,
+		"value": 90,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 251,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"252": {
+		"id": 252,
+		"nextId": 253,
+		"awardID": 0,
+		"auto": 0,
+		"order": 238,
+		"name": "238.弱水",
+		"text": "前往九州-弱水",
+		"type": 1059,
+		"value": 1,
+		"param1": 1010,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 252,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"253": {
+		"id": 253,
+		"nextId": 254,
+		"awardID": 0,
+		"auto": 0,
+		"order": 239,
+		"name": "239.弱水",
+		"text": "通关战天兵8-1",
+		"type": 1043,
+		"value": 8001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 253,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"254": {
+		"id": 254,
+		"nextId": 255,
+		"awardID": 0,
+		"auto": 0,
+		"order": 240,
+		"name": "240.弱水",
+		"text": "击败第2波幽鬼",
+		"type": 1066,
+		"value": 2,
+		"param1": 1010,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 254,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"255": {
+		"id": 255,
+		"nextId": 256,
+		"awardID": 0,
+		"auto": 0,
+		"order": 241,
+		"name": "241.弱水",
+		"text": "第2位蛮牛首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1010,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 255,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"256": {
+		"id": 256,
+		"nextId": 257,
+		"awardID": 0,
+		"auto": 0,
+		"order": 242,
+		"name": "242.弱水",
+		"text": "击败水精怪",
+		"type": 1060,
+		"value": 30,
+		"param1": 2010,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 256,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"257": {
+		"id": 257,
+		"nextId": 258,
+		"awardID": 0,
+		"auto": 0,
+		"order": 243,
+		"name": "243.弱水",
+		"text": "通关战天兵8-2",
+		"type": 1043,
+		"value": 8002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 257,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"258": {
+		"id": 258,
+		"nextId": 259,
+		"awardID": 0,
+		"auto": 0,
+		"order": 244,
+		"name": "244.弱水",
+		"text": "击败第4波幽鬼",
+		"type": 1066,
+		"value": 4,
+		"param1": 1010,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 258,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"259": {
+		"id": 259,
+		"nextId": 260,
+		"awardID": 0,
+		"auto": 0,
+		"order": 245,
+		"name": "245.弱水",
+		"text": "第4位蛮牛首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1010,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 259,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"260": {
+		"id": 260,
+		"nextId": 261,
+		"awardID": 0,
+		"auto": 0,
+		"order": 246,
+		"name": "246.弱水",
+		"text": "升到95级",
+		"type": 1002,
+		"value": 95,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 260,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"261": {
+		"id": 261,
+		"nextId": 262,
+		"awardID": 0,
+		"auto": 0,
+		"order": 247,
+		"name": "247.弱水",
+		"text": "击败水精怪",
+		"type": 1060,
+		"value": 30,
+		"param1": 2010,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 261,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"262": {
+		"id": 262,
+		"nextId": 263,
+		"awardID": 0,
+		"auto": 0,
+		"order": 248,
+		"name": "248.弱水",
+		"text": "通关战天兵8-3",
+		"type": 1043,
+		"value": 8003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 262,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"263": {
+		"id": 263,
+		"nextId": 264,
+		"awardID": 0,
+		"auto": 0,
+		"order": 249,
+		"name": "249.弱水",
+		"text": "击败第6波幽鬼",
+		"type": 1066,
+		"value": 6,
+		"param1": 1010,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 263,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"264": {
+		"id": 264,
+		"nextId": 265,
+		"awardID": 0,
+		"auto": 0,
+		"order": 250,
+		"name": "250.弱水",
+		"text": "第6位蛮牛首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1010,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 264,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"265": {
+		"id": 265,
+		"nextId": 266,
+		"awardID": 0,
+		"auto": 0,
+		"order": 251,
+		"name": "251.弱水",
+		"text": "等级升至100级",
+		"type": 1002,
+		"value": 100,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 265,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"266": {
+		"id": 266,
+		"nextId": 267,
+		"awardID": 0,
+		"auto": 0,
+		"order": 252,
+		"name": "252.炎沙山",
+		"text": "前往九州-炎沙山",
+		"type": 1059,
+		"value": 1,
+		"param1": 1011,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 266,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"267": {
+		"id": 267,
+		"nextId": 268,
+		"awardID": 0,
+		"auto": 0,
+		"order": 253,
+		"name": "253.炎沙山",
+		"text": "通关战天兵9-1",
+		"type": 1043,
+		"value": 9001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 267,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"268": {
+		"id": 268,
+		"nextId": 269,
+		"awardID": 0,
+		"auto": 0,
+		"order": 254,
+		"name": "254.炎沙山",
+		"text": "击败第2波炎鬼",
+		"type": 1066,
+		"value": 2,
+		"param1": 1011,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 268,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"269": {
+		"id": 269,
+		"nextId": 270,
+		"awardID": 0,
+		"auto": 0,
+		"order": 255,
+		"name": "255.炎沙山",
+		"text": "第2位苍狼首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1011,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 269,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"270": {
+		"id": 270,
+		"nextId": 271,
+		"awardID": 0,
+		"auto": 0,
+		"order": 256,
+		"name": "256.炎沙山",
+		"text": "击败赤精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2011,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 270,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"271": {
+		"id": 271,
+		"nextId": 272,
+		"awardID": 0,
+		"auto": 0,
+		"order": 257,
+		"name": "257.炎沙山",
+		"text": "通关战天兵9-2",
+		"type": 1043,
+		"value": 9002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 271,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"272": {
+		"id": 272,
+		"nextId": 273,
+		"awardID": 0,
+		"auto": 0,
+		"order": 258,
+		"name": "258.炎沙山",
+		"text": "击败第4波炎鬼",
+		"type": 1066,
+		"value": 4,
+		"param1": 1011,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 272,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"273": {
+		"id": 273,
+		"nextId": 274,
+		"awardID": 0,
+		"auto": 0,
+		"order": 259,
+		"name": "259.炎沙山",
+		"text": "第4位苍狼首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1011,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 273,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"274": {
+		"id": 274,
+		"nextId": 275,
+		"awardID": 0,
+		"auto": 0,
+		"order": 260,
+		"name": "260.炎沙山",
+		"text": "升到105级",
+		"type": 1002,
+		"value": 105,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 274,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"275": {
+		"id": 275,
+		"nextId": 276,
+		"awardID": 0,
+		"auto": 0,
+		"order": 261,
+		"name": "261.炎沙山",
+		"text": "击败赤精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2011,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 275,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"276": {
+		"id": 276,
+		"nextId": 277,
+		"awardID": 0,
+		"auto": 0,
+		"order": 262,
+		"name": "262.炎沙山",
+		"text": "通关战天兵9-3",
+		"type": 1043,
+		"value": 9003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 276,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"277": {
+		"id": 277,
+		"nextId": 278,
+		"awardID": 0,
+		"auto": 0,
+		"order": 263,
+		"name": "263.炎沙山",
+		"text": "击败第6波炎鬼",
+		"type": 1066,
+		"value": 6,
+		"param1": 1011,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 277,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"278": {
+		"id": 278,
+		"nextId": 279,
+		"awardID": 0,
+		"auto": 0,
+		"order": 264,
+		"name": "264.炎沙山",
+		"text": "第6位苍狼首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1011,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 278,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"279": {
+		"id": 279,
+		"nextId": 280,
+		"awardID": 0,
+		"auto": 0,
+		"order": 265,
+		"name": "265.炎沙山",
+		"text": "等级升至110级",
+		"type": 1002,
+		"value": 110,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 279,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"280": {
+		"id": 280,
+		"nextId": 281,
+		"awardID": 0,
+		"auto": 0,
+		"order": 266,
+		"name": "266.月泉城",
+		"text": "前往九州-月泉城",
+		"type": 1059,
+		"value": 1,
+		"param1": 1012,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 280,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"281": {
+		"id": 281,
+		"nextId": 282,
+		"awardID": 0,
+		"auto": 0,
+		"order": 267,
+		"name": "267.月泉城",
+		"text": "通关战天兵10-1",
+		"type": 1043,
+		"value": 10001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 281,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"282": {
+		"id": 282,
+		"nextId": 283,
+		"awardID": 0,
+		"auto": 0,
+		"order": 268,
+		"name": "268.月泉城",
+		"text": "通关战天兵10-2",
+		"type": 1043,
+		"value": 10002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 282,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"283": {
+		"id": 283,
+		"nextId": 284,
+		"awardID": 0,
+		"auto": 0,
+		"order": 269,
+		"name": "269.月泉城",
+		"text": "击败第2波旱鬼",
+		"type": 1066,
+		"value": 2,
+		"param1": 1012,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 283,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"284": {
+		"id": 284,
+		"nextId": 285,
+		"awardID": 0,
+		"auto": 0,
+		"order": 270,
+		"name": "270.月泉城",
+		"text": "第2位沙驼首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1012,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 284,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"285": {
+		"id": 285,
+		"nextId": 286,
+		"awardID": 0,
+		"auto": 0,
+		"order": 271,
+		"name": "271.月泉城",
+		"text": "击败沙精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2012,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 285,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"286": {
+		"id": 286,
+		"nextId": 287,
+		"awardID": 0,
+		"auto": 0,
+		"order": 272,
+		"name": "272.月泉城",
+		"text": "通关战天兵10-3",
+		"type": 1043,
+		"value": 10003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 286,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"287": {
+		"id": 287,
+		"nextId": 288,
+		"awardID": 0,
+		"auto": 0,
+		"order": 273,
+		"name": "273.月泉城",
+		"text": "通关战天兵10-4",
+		"type": 1043,
+		"value": 10004,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 287,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"288": {
+		"id": 288,
+		"nextId": 289,
+		"awardID": 0,
+		"auto": 0,
+		"order": 274,
+		"name": "274.月泉城",
+		"text": "击败第4波旱鬼",
+		"type": 1066,
+		"value": 4,
+		"param1": 1012,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 288,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"289": {
+		"id": 289,
+		"nextId": 290,
+		"awardID": 0,
+		"auto": 0,
+		"order": 275,
+		"name": "275.月泉城",
+		"text": "第4位沙驼首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1012,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 289,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"290": {
+		"id": 290,
+		"nextId": 291,
+		"awardID": 0,
+		"auto": 0,
+		"order": 276,
+		"name": "276.月泉城",
+		"text": "升到115级",
+		"type": 1002,
+		"value": 115,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 290,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"291": {
+		"id": 291,
+		"nextId": 292,
+		"awardID": 0,
+		"auto": 0,
+		"order": 277,
+		"name": "277.月泉城",
+		"text": "击败沙精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2012,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 291,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"292": {
+		"id": 292,
+		"nextId": 293,
+		"awardID": 0,
+		"auto": 0,
+		"order": 278,
+		"name": "278.月泉城",
+		"text": "通关战天兵10-5",
+		"type": 1043,
+		"value": 10005,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 292,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"293": {
+		"id": 293,
+		"nextId": 294,
+		"awardID": 0,
+		"auto": 0,
+		"order": 279,
+		"name": "279.月泉城",
+		"text": "击败第6波旱鬼",
+		"type": 1066,
+		"value": 6,
+		"param1": 1012,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 293,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"294": {
+		"id": 294,
+		"nextId": 295,
+		"awardID": 0,
+		"auto": 0,
+		"order": 280,
+		"name": "280.月泉城",
+		"text": "第6位沙驼首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1012,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 294,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"295": {
+		"id": 295,
+		"nextId": 296,
+		"awardID": 0,
+		"auto": 0,
+		"order": 281,
+		"name": "281.月泉城",
+		"text": "等级升至120级",
+		"type": 1002,
+		"value": 120,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 295,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"296": {
+		"id": 296,
+		"nextId": 297,
+		"awardID": 0,
+		"auto": 0,
+		"order": 282,
+		"name": "282.白孟山",
+		"text": "前往九州-白孟山",
+		"type": 1059,
+		"value": 1,
+		"param1": 1013,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 296,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"297": {
+		"id": 297,
+		"nextId": 298,
+		"awardID": 0,
+		"auto": 0,
+		"order": 283,
+		"name": "283.白孟山",
+		"text": "通关战天兵11-1",
+		"type": 1043,
+		"value": 11001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 297,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"298": {
+		"id": 298,
+		"nextId": 299,
+		"awardID": 0,
+		"auto": 0,
+		"order": 284,
+		"name": "284.白孟山",
+		"text": "通关战天兵11-2",
+		"type": 1043,
+		"value": 11002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 298,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"299": {
+		"id": 299,
+		"nextId": 300,
+		"awardID": 0,
+		"auto": 0,
+		"order": 285,
+		"name": "285.白孟山",
+		"text": "击败第2波冰狐妖",
+		"type": 1066,
+		"value": 2,
+		"param1": 1013,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 299,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"300": {
+		"id": 300,
+		"nextId": 301,
+		"awardID": 0,
+		"auto": 0,
+		"order": 286,
+		"name": "286.白孟山",
+		"text": "第2位巨鳄首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1013,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 300,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"301": {
+		"id": 301,
+		"nextId": 302,
+		"awardID": 0,
+		"auto": 0,
+		"order": 287,
+		"name": "287.白孟山",
+		"text": "击败狐精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2013,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 301,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"302": {
+		"id": 302,
+		"nextId": 303,
+		"awardID": 0,
+		"auto": 0,
+		"order": 288,
+		"name": "288.白孟山",
+		"text": "通关战天兵11-3",
+		"type": 1043,
+		"value": 11003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 302,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"303": {
+		"id": 303,
+		"nextId": 304,
+		"awardID": 0,
+		"auto": 0,
+		"order": 289,
+		"name": "289.白孟山",
+		"text": "通关战天兵11-4",
+		"type": 1043,
+		"value": 11004,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 303,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"304": {
+		"id": 304,
+		"nextId": 305,
+		"awardID": 0,
+		"auto": 0,
+		"order": 290,
+		"name": "290.白孟山",
+		"text": "击败第4波冰狐妖",
+		"type": 1066,
+		"value": 4,
+		"param1": 1013,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 304,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"305": {
+		"id": 305,
+		"nextId": 306,
+		"awardID": 0,
+		"auto": 0,
+		"order": 291,
+		"name": "291.白孟山",
+		"text": "第4位巨鳄首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1013,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 305,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"306": {
+		"id": 306,
+		"nextId": 307,
+		"awardID": 0,
+		"auto": 0,
+		"order": 292,
+		"name": "292.白孟山",
+		"text": "升到125级",
+		"type": 1002,
+		"value": 125,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 306,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"307": {
+		"id": 307,
+		"nextId": 308,
+		"awardID": 0,
+		"auto": 0,
+		"order": 293,
+		"name": "293.白孟山",
+		"text": "击败狐精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2013,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 307,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"308": {
+		"id": 308,
+		"nextId": 309,
+		"awardID": 0,
+		"auto": 0,
+		"order": 294,
+		"name": "294.白孟山",
+		"text": "通关战天兵11-5",
+		"type": 1043,
+		"value": 11005,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 308,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"309": {
+		"id": 309,
+		"nextId": 310,
+		"awardID": 0,
+		"auto": 0,
+		"order": 295,
+		"name": "295.白孟山",
+		"text": "击败第6波冰狐妖",
+		"type": 1066,
+		"value": 6,
+		"param1": 1013,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 309,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"310": {
+		"id": 310,
+		"nextId": 311,
+		"awardID": 0,
+		"auto": 0,
+		"order": 296,
+		"name": "296.白孟山",
+		"text": "第6位巨鳄首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1013,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 310,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"311": {
+		"id": 311,
+		"nextId": 312,
+		"awardID": 0,
+		"auto": 0,
+		"order": 297,
+		"name": "297.白孟山",
+		"text": "等级升至130级",
+		"type": 1002,
+		"value": 130,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 311,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"312": {
+		"id": 312,
+		"nextId": 313,
+		"awardID": 0,
+		"auto": 0,
+		"order": 298,
+		"name": "298.原水河",
+		"text": "前往九州-原水河",
+		"type": 1059,
+		"value": 1,
+		"param1": 1014,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 312,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"313": {
+		"id": 313,
+		"nextId": 314,
+		"awardID": 0,
+		"auto": 0,
+		"order": 299,
+		"name": "299.原水河",
+		"text": "通关战天兵12-1",
+		"type": 1043,
+		"value": 12001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 313,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"314": {
+		"id": 314,
+		"nextId": 315,
+		"awardID": 0,
+		"auto": 0,
+		"order": 300,
+		"name": "300.原水河",
+		"text": "通关战天兵12-2",
+		"type": 1043,
+		"value": 12002,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 314,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"315": {
+		"id": 315,
+		"nextId": 316,
+		"awardID": 0,
+		"auto": 0,
+		"order": 301,
+		"name": "301.原水河",
+		"text": "击败第2波白熊妖",
+		"type": 1066,
+		"value": 2,
+		"param1": 1014,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 315,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"316": {
+		"id": 316,
+		"nextId": 317,
+		"awardID": 0,
+		"auto": 0,
+		"order": 302,
+		"name": "302.原水河",
+		"text": "第2位鲨鱼首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1014,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 316,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"317": {
+		"id": 317,
+		"nextId": 318,
+		"awardID": 0,
+		"auto": 0,
+		"order": 303,
+		"name": "303.原水河",
+		"text": "击败熊精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2014,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 317,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"318": {
+		"id": 318,
+		"nextId": 319,
+		"awardID": 0,
+		"auto": 0,
+		"order": 304,
+		"name": "304.原水河",
+		"text": "通关战天兵12-3",
+		"type": 1043,
+		"value": 12003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 318,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"319": {
+		"id": 319,
+		"nextId": 320,
+		"awardID": 0,
+		"auto": 0,
+		"order": 305,
+		"name": "305.原水河",
+		"text": "通关战天兵12-4",
+		"type": 1043,
+		"value": 12004,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 319,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"320": {
+		"id": 320,
+		"nextId": 321,
+		"awardID": 0,
+		"auto": 0,
+		"order": 306,
+		"name": "306.原水河",
+		"text": "击败第4波白熊妖",
+		"type": 1066,
+		"value": 4,
+		"param1": 1014,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 320,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"321": {
+		"id": 321,
+		"nextId": 322,
+		"awardID": 0,
+		"auto": 0,
+		"order": 307,
+		"name": "307.原水河",
+		"text": "第4位鲨鱼首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1014,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 321,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"322": {
+		"id": 322,
+		"nextId": 323,
+		"awardID": 0,
+		"auto": 0,
+		"order": 308,
+		"name": "308.原水河",
+		"text": "升到135级",
+		"type": 1002,
+		"value": 135,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 322,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"323": {
+		"id": 323,
+		"nextId": 324,
+		"awardID": 0,
+		"auto": 0,
+		"order": 309,
+		"name": "309.原水河",
+		"text": "击败熊精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2014,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 323,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"324": {
+		"id": 324,
+		"nextId": 325,
+		"awardID": 0,
+		"auto": 0,
+		"order": 310,
+		"name": "310.原水河",
+		"text": "通关战天兵12-5",
+		"type": 1043,
+		"value": 12005,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 324,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"325": {
+		"id": 325,
+		"nextId": 326,
+		"awardID": 0,
+		"auto": 0,
+		"order": 311,
+		"name": "311.原水河",
+		"text": "击败第6波白熊妖",
+		"type": 1066,
+		"value": 6,
+		"param1": 1014,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 325,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"326": {
+		"id": 326,
+		"nextId": 327,
+		"awardID": 0,
+		"auto": 0,
+		"order": 312,
+		"name": "312.原水河",
+		"text": "第6位鲨鱼首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1014,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 326,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"327": {
+		"id": 327,
+		"nextId": 328,
+		"awardID": 0,
+		"auto": 0,
+		"order": 313,
+		"name": "313.原水河",
+		"text": "等级升至140级",
+		"type": 1002,
+		"value": 140,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 327,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"328": {
+		"id": 328,
+		"nextId": 329,
+		"awardID": 0,
+		"auto": 0,
+		"order": 314,
+		"name": "314.北狄国",
+		"text": "前往九州-北狄国",
+		"type": 1059,
+		"value": 1,
+		"param1": 1015,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 328,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"329": {
+		"id": 329,
+		"nextId": 330,
+		"awardID": 0,
+		"auto": 0,
+		"order": 315,
+		"name": "315.北狄国",
+		"text": "通关战天兵13-3",
+		"type": 1043,
+		"value": 13001,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 329,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"330": {
+		"id": 330,
+		"nextId": 331,
+		"awardID": 0,
+		"auto": 0,
+		"order": 316,
+		"name": "316.北狄国",
+		"text": "击败第2波寒豹妖",
+		"type": 1066,
+		"value": 2,
+		"param1": 1015,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 330,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"331": {
+		"id": 331,
+		"nextId": 332,
+		"awardID": 0,
+		"auto": 0,
+		"order": 317,
+		"name": "317.北狄国",
+		"text": "第2位白鲸首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1015,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 331,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"332": {
+		"id": 332,
+		"nextId": 333,
+		"awardID": 0,
+		"auto": 0,
+		"order": 318,
+		"name": "318.北狄国",
+		"text": "击败豹精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2015,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 332,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"333": {
+		"id": 333,
+		"nextId": 334,
+		"awardID": 0,
+		"auto": 0,
+		"order": 319,
+		"name": "319.北狄国",
+		"text": "通关战天兵13-6",
+		"type": 1043,
+		"value": 13006,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 333,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"334": {
+		"id": 334,
+		"nextId": 335,
+		"awardID": 0,
+		"auto": 0,
+		"order": 320,
+		"name": "320.北狄国",
+		"text": "击败第4波寒豹妖",
+		"type": 1066,
+		"value": 4,
+		"param1": 1015,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 334,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"335": {
+		"id": 335,
+		"nextId": 336,
+		"awardID": 0,
+		"auto": 0,
+		"order": 321,
+		"name": "321.北狄国",
+		"text": "第4波位白鲸首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1015,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 335,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"336": {
+		"id": 336,
+		"nextId": 337,
+		"awardID": 0,
+		"auto": 0,
+		"order": 322,
+		"name": "322.北狄国",
+		"text": "升到145级",
+		"type": 1002,
+		"value": 145,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 336,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"337": {
+		"id": 337,
+		"nextId": 338,
+		"awardID": 0,
+		"auto": 0,
+		"order": 323,
+		"name": "323.北狄国",
+		"text": "击败豹精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2015,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 337,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"338": {
+		"id": 338,
+		"nextId": 339,
+		"awardID": 0,
+		"auto": 0,
+		"order": 324,
+		"name": "324.北狄国",
+		"text": "通关战天兵13-10",
+		"type": 1043,
+		"value": 13010,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 338,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"339": {
+		"id": 339,
+		"nextId": 340,
+		"awardID": 0,
+		"auto": 0,
+		"order": 325,
+		"name": "325.北狄国",
+		"text": "击败第6波寒豹妖",
+		"type": 1066,
+		"value": 6,
+		"param1": 1015,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 339,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"340": {
+		"id": 340,
+		"nextId": 341,
+		"awardID": 0,
+		"auto": 0,
+		"order": 326,
+		"name": "326.北狄国",
+		"text": "第6位白鲸首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1015,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 340,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"341": {
+		"id": 341,
+		"nextId": 342,
+		"awardID": 0,
+		"auto": 0,
+		"order": 327,
+		"name": "327.北狄国",
+		"text": "等级升至150级",
+		"type": 1002,
+		"value": 150,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 341,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"342": {
+		"id": 342,
+		"nextId": 343,
+		"awardID": 0,
+		"auto": 0,
+		"order": 328,
+		"name": "328.诸钩谷",
+		"text": "前往九州-诸钩谷",
+		"type": 1059,
+		"value": 1,
+		"param1": 1016,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 342,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"343": {
+		"id": 343,
+		"nextId": 344,
+		"awardID": 0,
+		"auto": 0,
+		"order": 329,
+		"name": "329.诸钩谷",
+		"text": "通关战天兵14-3",
+		"type": 1043,
+		"value": 14003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 343,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"344": {
+		"id": 344,
+		"nextId": 345,
+		"awardID": 0,
+		"auto": 0,
+		"order": 330,
+		"name": "330.诸钩谷",
+		"text": "击败第2波幽魄",
+		"type": 1066,
+		"value": 2,
+		"param1": 1016,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 344,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"345": {
+		"id": 345,
+		"nextId": 346,
+		"awardID": 0,
+		"auto": 0,
+		"order": 331,
+		"name": "331.诸钩谷",
+		"text": "第2位残兵首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1016,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 345,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"346": {
+		"id": 346,
+		"nextId": 347,
+		"awardID": 0,
+		"auto": 0,
+		"order": 332,
+		"name": "332.诸钩谷",
+		"text": "击败幽魄精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2016,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 346,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"347": {
+		"id": 347,
+		"nextId": 348,
+		"awardID": 0,
+		"auto": 0,
+		"order": 333,
+		"name": "333.诸钩谷",
+		"text": "通关战天兵14-6",
+		"type": 1043,
+		"value": 14006,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 347,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"348": {
+		"id": 348,
+		"nextId": 349,
+		"awardID": 0,
+		"auto": 0,
+		"order": 334,
+		"name": "334.诸钩谷",
+		"text": "击败第4波幽魄",
+		"type": 1066,
+		"value": 4,
+		"param1": 1016,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 348,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"349": {
+		"id": 349,
+		"nextId": 350,
+		"awardID": 0,
+		"auto": 0,
+		"order": 335,
+		"name": "335.诸钩谷",
+		"text": "第4位残兵首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1016,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 349,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"350": {
+		"id": 350,
+		"nextId": 351,
+		"awardID": 0,
+		"auto": 0,
+		"order": 336,
+		"name": "336.诸钩谷",
+		"text": "升到155级",
+		"type": 1002,
+		"value": 155,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 350,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"351": {
+		"id": 351,
+		"nextId": 352,
+		"awardID": 0,
+		"auto": 0,
+		"order": 337,
+		"name": "337.诸钩谷",
+		"text": "击败幽魄精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2016,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 351,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"352": {
+		"id": 352,
+		"nextId": 353,
+		"awardID": 0,
+		"auto": 0,
+		"order": 338,
+		"name": "338.诸钩谷",
+		"text": "通关战天兵14-10",
+		"type": 1043,
+		"value": 14010,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 352,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"353": {
+		"id": 353,
+		"nextId": 354,
+		"awardID": 0,
+		"auto": 0,
+		"order": 339,
+		"name": "339.诸钩谷",
+		"text": "击败第6波幽魄",
+		"type": 1066,
+		"value": 6,
+		"param1": 1016,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 353,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"354": {
+		"id": 354,
+		"nextId": 355,
+		"awardID": 0,
+		"auto": 0,
+		"order": 340,
+		"name": "340.诸钩谷",
+		"text": "第6位残兵首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1016,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 354,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 354,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"355": {
+		"id": 355,
+		"nextId": 356,
+		"awardID": 0,
+		"auto": 0,
+		"order": 341,
+		"name": "341.诸钩谷",
+		"text": "等级升至160级",
+		"type": 1002,
+		"value": 160,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 355,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 355,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"356": {
+		"id": 356,
+		"nextId": 357,
+		"awardID": 0,
+		"auto": 0,
+		"order": 342,
+		"name": "342.射姑遗址",
+		"text": "前往九州-射姑遗址",
+		"type": 1059,
+		"value": 1,
+		"param1": 1017,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 356,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 356,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"357": {
+		"id": 357,
+		"nextId": 358,
+		"awardID": 0,
+		"auto": 0,
+		"order": 343,
+		"name": "343.射姑遗址",
+		"text": "通关战天兵15-3",
+		"type": 1043,
+		"value": 15003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 357,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 357,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"358": {
+		"id": 358,
+		"nextId": 359,
+		"awardID": 0,
+		"auto": 0,
+		"order": 344,
+		"name": "344.射姑遗址",
+		"text": "击败第2波鬼卒",
+		"type": 1066,
+		"value": 2,
+		"param1": 1017,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 358,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 358,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"359": {
+		"id": 359,
+		"nextId": 360,
+		"awardID": 0,
+		"auto": 0,
+		"order": 345,
+		"name": "345.射姑遗址",
+		"text": "第2位败将首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1017,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 359,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 359,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"360": {
+		"id": 360,
+		"nextId": 361,
+		"awardID": 0,
+		"auto": 0,
+		"order": 346,
+		"name": "346.射姑遗址",
+		"text": "击败鬼卒精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2017,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 360,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 360,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"361": {
+		"id": 361,
+		"nextId": 362,
+		"awardID": 0,
+		"auto": 0,
+		"order": 347,
+		"name": "347.射姑遗址",
+		"text": "通关战天兵15-6",
+		"type": 1043,
+		"value": 15006,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 361,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 361,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"362": {
+		"id": 362,
+		"nextId": 363,
+		"awardID": 0,
+		"auto": 0,
+		"order": 348,
+		"name": "348.射姑遗址",
+		"text": "击败第4波鬼卒",
+		"type": 1066,
+		"value": 4,
+		"param1": 1017,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 362,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 362,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"363": {
+		"id": 363,
+		"nextId": 364,
+		"awardID": 0,
+		"auto": 0,
+		"order": 349,
+		"name": "349.射姑遗址",
+		"text": "第4位败将首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1017,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 363,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 363,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"364": {
+		"id": 364,
+		"nextId": 365,
+		"awardID": 0,
+		"auto": 0,
+		"order": 350,
+		"name": "350.射姑遗址",
+		"text": "升到165级",
+		"type": 1002,
+		"value": 165,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 364,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 364,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"365": {
+		"id": 365,
+		"nextId": 366,
+		"awardID": 0,
+		"auto": 0,
+		"order": 351,
+		"name": "351.射姑遗址",
+		"text": "击败鬼卒精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2017,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 365,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 365,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"366": {
+		"id": 366,
+		"nextId": 367,
+		"awardID": 0,
+		"auto": 0,
+		"order": 352,
+		"name": "352.射姑遗址",
+		"text": "通关战天兵15-10",
+		"type": 1043,
+		"value": 15010,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 366,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 366,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"367": {
+		"id": 367,
+		"nextId": 368,
+		"awardID": 0,
+		"auto": 0,
+		"order": 353,
+		"name": "353.射姑遗址",
+		"text": "击败第6波鬼卒",
+		"type": 1066,
+		"value": 6,
+		"param1": 1017,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 367,
+				"propId": 1002,
+				"num": 6700
+			},
+			{
+				"id": 367,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"368": {
+		"id": 368,
+		"nextId": 369,
+		"awardID": 0,
+		"auto": 0,
+		"order": 354,
+		"name": "354.射姑遗址",
+		"text": "第6位败将首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1017,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 368,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"369": {
+		"id": 369,
+		"nextId": 370,
+		"awardID": 0,
+		"auto": 0,
+		"order": 355,
+		"name": "355.射姑遗址",
+		"text": "等级升至170级",
+		"type": 1002,
+		"value": 170,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 369,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"370": {
+		"id": 370,
+		"nextId": 371,
+		"awardID": 0,
+		"auto": 0,
+		"order": 356,
+		"name": "356.封魂山",
+		"text": "前往九州-封魂山",
+		"type": 1059,
+		"value": 1,
+		"param1": 1018,
+		"param2": 1,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 370,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"371": {
+		"id": 371,
+		"nextId": 372,
+		"awardID": 0,
+		"auto": 0,
+		"order": 357,
+		"name": "357.封魂山",
+		"text": "通关战天兵16-3",
+		"type": 1043,
+		"value": 16003,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 371,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"372": {
+		"id": 372,
+		"nextId": 373,
+		"awardID": 0,
+		"auto": 0,
+		"order": 358,
+		"name": "358.封魂山",
+		"text": "击败第2波鬼骑",
+		"type": 1066,
+		"value": 2,
+		"param1": 1018,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 372,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"373": {
+		"id": 373,
+		"nextId": 374,
+		"awardID": 0,
+		"auto": 0,
+		"order": 359,
+		"name": "359.封魂山",
+		"text": "第2位幽帅首领",
+		"type": 1041,
+		"value": 2,
+		"param1": 1018,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 373,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"374": {
+		"id": 374,
+		"nextId": 375,
+		"awardID": 0,
+		"auto": 0,
+		"order": 360,
+		"name": "360.封魂山",
+		"text": "击败鬼骑精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2018,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 374,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"375": {
+		"id": 375,
+		"nextId": 376,
+		"awardID": 0,
+		"auto": 0,
+		"order": 361,
+		"name": "361.封魂山",
+		"text": "通关战天兵16-6",
+		"type": 1043,
+		"value": 16006,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 375,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"376": {
+		"id": 376,
+		"nextId": 377,
+		"awardID": 0,
+		"auto": 0,
+		"order": 362,
+		"name": "362.封魂山",
+		"text": "击败第4波鬼骑",
+		"type": 1066,
+		"value": 4,
+		"param1": 1018,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 376,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"377": {
+		"id": 377,
+		"nextId": 378,
+		"awardID": 0,
+		"auto": 0,
+		"order": 363,
+		"name": "363.封魂山",
+		"text": "第4位幽帅首领",
+		"type": 1041,
+		"value": 4,
+		"param1": 1018,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 377,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"378": {
+		"id": 378,
+		"nextId": 379,
+		"awardID": 0,
+		"auto": 0,
+		"order": 364,
+		"name": "364.封魂山",
+		"text": "升到175级",
+		"type": 1002,
+		"value": 175,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 1002,
+		"plotID": 0,
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 378,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"379": {
+		"id": 379,
+		"nextId": 380,
+		"awardID": 0,
+		"auto": 0,
+		"order": 365,
+		"name": "365.封魂山",
+		"text": "击败鬼骑精怪",
+		"type": 1060,
+		"value": 10,
+		"param1": 2018,
+		"param2": 0,
+		"dataStart": 1,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			193
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 379,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"380": {
+		"id": 380,
+		"nextId": 381,
+		"awardID": 0,
+		"auto": 0,
+		"order": 366,
+		"name": "366.封魂山",
+		"text": "通关战天兵16-10",
+		"type": 1043,
+		"value": 16010,
+		"param1": 0,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			200000,
+			203,
+			204
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 380,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"381": {
+		"id": 381,
+		"nextId": 382,
+		"awardID": 0,
+		"auto": 0,
+		"order": 367,
+		"name": "367.封魂山",
+		"text": "击败第6波鬼骑",
+		"type": 1066,
+		"value": 6,
+		"param1": 1018,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			174
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 381,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	},
+	"382": {
+		"id": 382,
+		"nextId": 0,
+		"awardID": 0,
+		"auto": 0,
+		"order": 368,
+		"name": "368.封魂山",
+		"text": "第6位幽帅首领",
+		"type": 1041,
+		"value": 6,
+		"param1": 1018,
+		"param2": 0,
+		"dataStart": 0,
+		"getWay": 0,
+		"plotID": 0,
+		"goto": [
+			100000,
+			172
+		],
+		"plot": [
+
+		],
+		"awards": [
+			{
+				"id": 382,
+				"propId": 1002,
+				"num": 6700
+			}
+		],
+		"skip": 0
+	}
+}

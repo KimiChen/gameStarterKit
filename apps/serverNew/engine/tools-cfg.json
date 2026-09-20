@@ -1,0 +1,22 @@
+{
+  "cfgUrl": "http://conf.front.paoyou.work",
+  "confCISavePath": "./config_game/",
+  "cfgExt": "json5",
+  "projName": "game-config",
+  "autoGen": {
+    "system_id": {
+      "cfg": "system_id",
+      "codePath": "src/autogen/SystemId.ts"
+    }
+  },
+  "srcPath": "./src/",
+  "confPath": "config_game",
+  "typingsPath": "src/typings",
+  "pwd": "QcTRlPiVF0VIrDbr",
+  "libVer": "pyts",
+  "branch": "master",
+  "pbMode": "static",
+  "queryParams": {
+    "project": "game-config"
+  }
+}

@@ -1,7 +1,7 @@
 # scripts/protected-paths.lock —— 受保护手写路径的字节锁。Do not edit by hand.
 # writer: node scripts/protected-paths-lock.mjs --write ；checker: --check（npm run verify:protected-paths）
 # 每行 `<路径> <sha256>`（内容哈希，可用 shasum -a 256 复核）；范围见 scripts/protected-paths.json。
-apps/client/src/Main.ts 099c43d68e355bec3c78ad6b81c6d13a02b1ff75577b9fc91e53cf2c2ebf8378
+apps/client/src/Main.ts bc4e226749d68d77449252bdc6efa8fcc261f1c45c629ae43668f9b987fe5b64
 apps/client/src/app/AppRuntime.ts a8e75ab42c516d7b4bc6b8d556727b39d1ea3d3d24ec0c3b5dcb030506113f92
 apps/client/src/app/CocosLifecycleBridge.ts 333e689f1657019ab7e2f6dbf87a524b87af3988a2a1a6748b5fbf1c6e72361d
 apps/client/src/app/FrameScheduler.ts 04766a657ba81991e085d5cc960c1a4caa700686eee2ca69c9dd8a2d9ec3c262
@@ -13,11 +13,11 @@ apps/client/src/app/PluginRegistry.ts 894818e765ea6f7015d12dc2bb1f87589de6524795
 apps/client/src/app/RefreshCoordinator.ts ebeb171a1653b2dff66bbcffbc353902dda5c170751656fa456de88694b4c6c6
 apps/client/src/app/SessionCoordinator.ts 7830dc31b8bb08b8b2933bcc17eb50a8121c30bca64a678c3a1565277e0d2aad
 apps/client/src/app/appGeneration.ts d305935b381780a644e03cad8fd5fb87152b9965b04c43d3df95d26fc73d1d4b
-apps/client/src/app/bootstrap.ts e0dbbba16e949b457b322f8fe66e58edb8e312c3da959530b2f15293e0506fda
+apps/client/src/app/bootstrap.ts 8e5ef10ee7078d163444f3e55844ed1625a4e01066bbc0f7b5534033c178ce64
 apps/client/src/app/builtinPlugin.ts ccce2e9e5e79acd16afb23a2e6881bc2d03c0de5a5e6317090e487c7279dd4df
-apps/client/src/app/loginFlow.ts 7ba2c5cdfbbb6e87966f4a5c1aa53bcf0a0645ccc9ac9f82c9cbc4a026cdcd4d
-apps/client/src/app/ports.ts 298dc82d5b9d2f28fb6c7e7e59253266e90b72972e4a81ef89cb86754f23ad7c
-apps/client/src/app/wiring.ts d958e29cb74b6521a4a35668d09fa3d05d104520d1918f569c66bc93805dbcca
+apps/client/src/app/loginFlow.ts 67f43493fcb2892ce48180dd1695d6eed53609f1b5d25f68c64a3de97c0dc63e
+apps/client/src/app/ports.ts 03fb41eba962856c6e0b62d05bfadb473f611f59c34a9de6348d217451311c17
+apps/client/src/app/wiring.ts 58d704e9b8dc2fa6f847620db2ae1d611511753b88ef80f494de8267e3865a42
 apps/client/src/gameplay/catalog.ts 5cd68321b5fc2de84a389e7cc97c6874132953382e34661325ce1baef90e308f
 apps/client/src/gameplay/services.ts 9b461e2ebf4e9bc1170e154305c68e44b9f76fd4187889aa83d84bcf244b4bf4
 apps/client/src/logic/gameplay/GameplayModule.ts 366a5c73babe2fd72a71677445135c976cf4c8140e3918a08304941a51346f08
@@ -27,7 +27,7 @@ apps/client/src/logic/gameplay/RoomController.ts d54d5886bf949dbbc680022548bc954
 apps/client/src/logic/gameplay/index.ts df9705b50bb6734f5b4d98e3bbecdab15c44ec97fea9ac43f46a76bf9768c37a
 apps/client/src/logic/page/HomeLogic.ts 493cdd181ce62a281ff17943cb3b9e478059d209766cd872174d7847cd87e96f
 apps/client/src/net/RoomClient.ts 5ad219e50a472defdc4718bf4043c4214079fdfb51a50f326073d622fd9b9726
-apps/client/src/net/WebSocketClient.ts f7c569a7c6b16304279b43d8d4d2c3b12fe0316ca22d003f43bb11a5a14b288e
+apps/client/src/net/WebSocketClient.ts f69251c788e988e7f23d30c85e5c1d7c86509aa0a6dba2dd10708ef006aea5fa
 apps/client/src/net/rooms/GameRoomTransport.ts 3dc372372cf668269e1bd5b472d74d449c445526cffdffa24f65ab3fad2bd19a
 apps/client/src/net/session.ts 67f7f35372082d92d385db70d655d3caf93f71c5d9704ed2ebaa4ce3f86916ea
 apps/client/src/view/HomeView.ts 757781d51594acfc3d610cbf2a999544a1a6804414976b1ed12b0411df58fa66
@@ -46,6 +46,6 @@ apps/server/src/rooms/modes/catalog.ts ad1ed9c812834cd73f55bdca8c7dcdd865636fc75
 apps/server/src/websocket/dispatcher.ts d46f57eb731240b84bafd71206944117bf5787b1b9b82c23ac073c8d5b0ed6b0
 apps/server/src/websocket/rpc.ts beffdc4e0824fe92c1841d7de0335d9cccfdf4b486e4c06376e9ea6b4b88dca2
 apps/shared/src/protocol/lobbyRpc/envelope.ts 40284c03cf673d9f015f9740116e07cdde7f692eee9bc10bb4d89389c8584759
-apps/shared/src/protocol/lobbyRpc/index.ts 87a18b9bfd7fcd85fb943fe3fea022ae0a96345e08d04b6a00d712e086cbbe30
+apps/shared/src/protocol/lobbyRpc/index.ts 9c38ef5254eac232b75a1fd28643d24c7a5f538e0ee14b615d4aedd569951f83
 apps/shared/src/protocol/lobbyRpc/push.ts c2b5dba98d0a8ad28524ddb9874d20f47644f2874bc2e371e0dc4a935aa4619f
 apps/shared/src/protocol/messages.ts 3752120e35b0d993b960f05f582565a2048d2bd8c1a4287952053ec4b0c80f4e

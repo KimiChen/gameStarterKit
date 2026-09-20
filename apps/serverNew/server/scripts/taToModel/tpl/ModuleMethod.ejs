@@ -1,0 +1,11 @@
+<% method.uses.forEach(useItem => { %>
+<%- useItem %><% }) %>
+
+/**
+ * <%- method.name %> <% for (let annotation of method.annotation) { %>
+ * <%- annotation %> <% } %> <% for (let param of method.params) { %>
+ * @param <%- param.name %> <%- param.type %><% } %>
+ */
+export function <%- method.name %>(<% for (let param of method.params) { %> <%- param.name %>:<%- param.type %> <% } %>) {
+    <%- method.body %>
+}

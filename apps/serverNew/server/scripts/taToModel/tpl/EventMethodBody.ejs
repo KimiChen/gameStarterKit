@@ -1,0 +1,17 @@
+try {
+    if (!TelemetryEventWriter.isEnabled()) {
+        return
+    }
+
+    const obj = new <%- model.name %>()
+    <%for (const field of model.getProperties()) {_%>
+        <% if (field.staticOrConst === 0 && field.name !== 'EVENT_NAME' && !(field.name.match(/^_/))) { %>
+            // <%= field.annotation.join(",") %>
+            obj.<%- field.name %> = <%- field.value _%>
+        <% } _%>
+    <% } %>
+
+    UserTelemetryContext.record(obj, user)
+} catch (e) {
+    Log.error(e)
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "name": "fightLog",
+  "version": "1.0.0",
+  "description": "Archived fightLog game module",
+  "files": [
+    {
+      "target": "src/modules/fightLog/FightLogC2S.ts",
+      "payload": "payload/src/modules/fightLog/FightLogC2S.ts",
+      "sha256": "4cbf012c6eba77078569c9341f90cd1e1b4eba72ffcef868ad5c9e3d7ae96ef8"
+    },
+    {
+      "target": "src/modules/fightLog/action/ActionFightLogGetInfo.ts",
+      "payload": "payload/src/modules/fightLog/action/ActionFightLogGetInfo.ts",
+      "sha256": "7e3a362f70d9ebf7bbb2c151469d3c859130a3ca8e5918d794168d94a4f218a8"
+    },
+    {
+      "target": "src/modules/fightLog/persistence/FightLogKeys.ts",
+      "payload": "payload/src/modules/fightLog/persistence/FightLogKeys.ts",
+      "sha256": "0fc89a1962d48628c4fba6075f2bfa00387d65d6d97422d43394aa1fcbdef49b"
+    },
+    {
+      "target": "src/modules/fightLog/persistence/FightLogRecord.ts",
+      "payload": "payload/src/modules/fightLog/persistence/FightLogRecord.ts",
+      "sha256": "20c39e7ce39159f4af1f26eab2c1587c3a4c7465fdde6837bc6b94dedf421525"
+    },
+    {
+      "target": "src/modules/fightLog/rules/FightLogRecordSchema.ts",
+      "payload": "payload/src/modules/fightLog/rules/FightLogRecordSchema.ts",
+      "sha256": "13a0417a22c6b9f4f33ddf52fc0f2932c2856a574f35838788b9eaf9b3717b26"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- fightLog"
+    ],
+    "manual": []
+  }
+}

@@ -1,0 +1,137 @@
+{
+	"1": {
+		"id": 1,
+		"costPropId": 3002,
+		"costNum": [
+			1,
+			1
+		],
+		"costMoreNum": [
+			5,
+			5
+		],
+		"desc": "抽取可获得[color=#e187fe]紫色[/color]~[color=#ff9a40]橙色[/color]供品",
+		"times": {
+			"25": {
+				"id": 1,
+				"times": 25,
+				"propId": 381019,
+				"num": 1,
+				"grandPrize": 0
+			},
+			"50": {
+				"id": 1,
+				"times": 50,
+				"propId": 321010,
+				"num": 1,
+				"grandPrize": 1
+			}
+		},
+		"detail": {
+			"1": {
+				"aId": 1,
+				"id": 1,
+				"propId": 321010,
+				"num": 1,
+				"grandPrize": 1,
+				"pro": 20,
+				"propId2": 0,
+				"num2": 0
+			},
+			"2": {
+				"aId": 2,
+				"id": 1,
+				"propId": 3001,
+				"num": 500,
+				"grandPrize": 0,
+				"pro": 10,
+				"propId2": 0,
+				"num2": 0
+			},
+			"3": {
+				"aId": 3,
+				"id": 1,
+				"propId": 3001,
+				"num": 200,
+				"grandPrize": 0,
+				"pro": 20,
+				"propId2": 0,
+				"num2": 0
+			},
+			"4": {
+				"aId": 4,
+				"id": 1,
+				"propId": 3001,
+				"num": 100,
+				"grandPrize": 0,
+				"pro": 50,
+				"propId2": 0,
+				"num2": 0
+			},
+			"5": {
+				"aId": 5,
+				"id": 1,
+				"propId": 3001,
+				"num": 30,
+				"grandPrize": 0,
+				"pro": 200,
+				"propId2": 0,
+				"num2": 0
+			},
+			"6": {
+				"aId": 6,
+				"id": 1,
+				"propId": 3001,
+				"num": 10,
+				"grandPrize": 0,
+				"pro": 700,
+				"propId2": 0,
+				"num2": 0
+			}
+		},
+		"show": {
+			"1": {
+				"aId": 1,
+				"id": 1,
+				"propId": 321010,
+				"num": 1,
+				"grandPrize": 1
+			},
+			"2": {
+				"aId": 2,
+				"id": 1,
+				"propId": 3001,
+				"num": 500,
+				"grandPrize": 0
+			},
+			"3": {
+				"aId": 3,
+				"id": 1,
+				"propId": 3001,
+				"num": 200,
+				"grandPrize": 0
+			},
+			"4": {
+				"aId": 4,
+				"id": 1,
+				"propId": 3001,
+				"num": 100,
+				"grandPrize": 0
+			},
+			"5": {
+				"aId": 5,
+				"id": 1,
+				"propId": 3001,
+				"num": 30,
+				"grandPrize": 0
+			},
+			"6": {
+				"aId": 6,
+				"id": 1,
+				"propId": 3001,
+				"num": 10,
+				"grandPrize": 0
+			}
+		}
+	}
+}

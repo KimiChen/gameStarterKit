@@ -1,0 +1,26 @@
+{
+	"103": {
+		"id": 103,
+		"name": "虚弱",
+		"effectType": 46,
+		"value": 100,
+		"playerMinNum": 2,
+		"playerMaxNum": 21,
+		"icon": 103,
+		"desc": "场上超过1名玩家时，每多1名玩家,BOSS承受伤害增加[color=#a4fd77]1%[/color]，最多增加[color=#a4fd77]20%[/color]",
+		"valueTip": "BOSS承受伤害[color=#a4fd77]+{value}%[/color]",
+		"arrow": 2
+	},
+	"104": {
+		"id": 104,
+		"name": "真伤",
+		"effectType": 44,
+		"value": 500,
+		"playerMinNum": 21,
+		"playerMaxNum": 999,
+		"icon": 104,
+		"desc": "场上超过20名玩家时，每多1名玩家,BOSS真实伤害系数增加[color=#a4fd77]5%[/color]。世界BOSS防御和减伤较高，提升我方真实伤害系数，可以显著提升对BOSS的伤害。",
+		"valueTip": "BOSS真实伤害系数[color=#a4fd77]+{value}%[/color]",
+		"arrow": 1
+	}
+}

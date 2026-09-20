@@ -1,0 +1,65 @@
+{
+    "compilerOptions": {
+        "target": "es2022",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "module": "Node16",
+        "rootDir": "..",
+        "moduleResolution": "Node16",
+        "baseUrl": ".",
+        "resolveJsonModule": true,
+        "allowJs": true,
+        "declaration": false,
+        "declarationMap": false,
+        "sourceMap": true,
+        "outDir": "./build/compiled",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "strictFunctionTypes": false,
+        "strictPropertyInitialization": true,
+        "useUnknownInCatchVariables": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "exactOptionalPropertyTypes": false,
+        "noImplicitReturns": false,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": false,
+        "noImplicitOverride": false,
+        "noPropertyAccessFromIndexSignature": false,
+        "allowUnusedLabels": true,
+        "strictBuiltinIteratorReturn": false,
+        "skipLibCheck": true,
+        "incremental": true,
+        "plugins": [
+            {
+                "transform": "./scripts/bean-compile/transformer.ts",
+                "transformProgram": true
+            }
+        ],
+        "paths": {
+            "@arthropoda/game-engine": ["../engine/src/index.ts"],
+            "@arthropoda/typeorm": ["./node_modules/@arthropoda/typeorm"],
+            "@arthropoda/typeorm/*": ["./node_modules/@arthropoda/typeorm/*"]
+        }
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts",
+        "src/**/*.tsx",
+        "generated/**/*.ts",
+        "generated/**/*.d.ts",
+        "generated/**/*.js",
+        "../engine/src/**/*.ts",
+        "../engine/src/**/*.d.ts",
+        "../engine/src/**/*.tsx"
+    ],
+    "exclude": ["node_modules"],
+    "ts-node": {
+        "compiler": "ts-patch/compiler",
+        "files": true,
+        "require": ["tsconfig-paths/register"]
+    }
+}

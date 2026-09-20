@@ -1,0 +1,416 @@
+{
+	"100": {
+		"id": 100,
+		"type": 0,
+		"desc": "游戏参数设置",
+		"name": "client_login_process"
+	},
+	"105": {
+		"id": 105,
+		"type": 0,
+		"desc": "游戏骨架初始化",
+		"name": "client_login_process"
+	},
+	"110": {
+		"id": 110,
+		"type": 0,
+		"desc": "游戏骨架初始化成功",
+		"name": "client_login_process"
+	},
+	"115": {
+		"id": 115,
+		"type": 0,
+		"desc": "游戏骨架初始化失败",
+		"name": "client_login_process"
+	},
+	"120": {
+		"id": 120,
+		"type": 0,
+		"desc": "公共监听初始化",
+		"name": "client_login_process"
+	},
+	"125": {
+		"id": 125,
+		"type": 0,
+		"desc": "公共监听初始化成功",
+		"name": "client_login_process"
+	},
+	"130": {
+		"id": 130,
+		"type": 0,
+		"desc": "公共监听初始化失败",
+		"name": "client_login_process"
+	},
+	"135": {
+		"id": 135,
+		"type": 0,
+		"desc": "获取SDK",
+		"name": "client_login_process"
+	},
+	"140": {
+		"id": 140,
+		"type": 0,
+		"desc": "获取SDK成功",
+		"name": "client_login_process"
+	},
+	"145": {
+		"id": 145,
+		"type": 0,
+		"desc": "获取SDK失败",
+		"name": "client_login_process"
+	},
+	"150": {
+		"id": 150,
+		"type": 0,
+		"desc": "SDK是否已经登录账号",
+		"name": "client_login_process"
+	},
+	"155": {
+		"id": 155,
+		"type": 0,
+		"desc": "SDK账号注册登录",
+		"name": "client_login_process"
+	},
+	"160": {
+		"id": 160,
+		"type": 0,
+		"desc": "SDK账号登录成功",
+		"name": "client_login_process"
+	},
+	"165": {
+		"id": 165,
+		"type": 0,
+		"desc": "SDK账号登录失败",
+		"name": "client_login_process"
+	},
+	"170": {
+		"id": 170,
+		"type": 0,
+		"desc": "获取区服列表",
+		"name": "client_login_process"
+	},
+	"175": {
+		"id": 175,
+		"type": 0,
+		"desc": "获取区服列表成功",
+		"name": "client_login_process"
+	},
+	"180": {
+		"id": 180,
+		"type": 0,
+		"desc": "获取区服列表失败",
+		"name": "client_login_process"
+	},
+	"185": {
+		"id": 185,
+		"type": 0,
+		"desc": "打开登陆界面",
+		"name": "client_login_process"
+	},
+	"190": {
+		"id": 190,
+		"type": 0,
+		"desc": "打开登陆界面成功",
+		"name": "client_login_process"
+	},
+	"195": {
+		"id": 195,
+		"type": 0,
+		"desc": "打开登陆界面失败",
+		"name": "client_login_process"
+	},
+	"200": {
+		"id": 200,
+		"type": 0,
+		"desc": "游戏用户登录",
+		"name": "client_login_process"
+	},
+	"205": {
+		"id": 205,
+		"type": 0,
+		"desc": "游戏用户登录成功",
+		"name": "client_login_process"
+	},
+	"210": {
+		"id": 210,
+		"type": 0,
+		"desc": "游戏用户登录失败",
+		"name": "client_login_process"
+	},
+	"215": {
+		"id": 215,
+		"type": 0,
+		"desc": "点击创建角色",
+		"name": "client_login_process"
+	},
+	"220": {
+		"id": 220,
+		"type": 0,
+		"desc": "创建角色成功",
+		"name": "client_login_process"
+	},
+	"225": {
+		"id": 225,
+		"type": 0,
+		"desc": "创建角色失败",
+		"name": "client_login_process"
+	},
+	"230": {
+		"id": 230,
+		"type": 0,
+		"desc": "玩家开始进入游戏",
+		"name": "client_login_process"
+	},
+	"235": {
+		"id": 235,
+		"type": 0,
+		"desc": "玩家进入游戏成功",
+		"name": "client_login_process"
+	},
+	"240": {
+		"id": 240,
+		"type": 0,
+		"desc": "玩家进入游戏失败",
+		"name": "client_login_process"
+	},
+	"245": {
+		"id": 245,
+		"type": 0,
+		"desc": "更新配置",
+		"name": "client_login_process"
+	},
+	"250": {
+		"id": 250,
+		"type": 0,
+		"desc": "更新配置成功",
+		"name": "client_login_process"
+	},
+	"255": {
+		"id": 255,
+		"type": 0,
+		"desc": "更新配置失败",
+		"name": "client_login_process"
+	},
+	"260": {
+		"id": 260,
+		"type": 0,
+		"desc": "获取系统数据",
+		"name": "client_login_process"
+	},
+	"265": {
+		"id": 265,
+		"type": 0,
+		"desc": "获取系统数据成功",
+		"name": "client_login_process"
+	},
+	"270": {
+		"id": 270,
+		"type": 0,
+		"desc": "获取系统数据失败",
+		"name": "client_login_process"
+	},
+	"275": {
+		"id": 275,
+		"type": 0,
+		"desc": "系统数据初始化",
+		"name": "client_login_process"
+	},
+	"280": {
+		"id": 280,
+		"type": 0,
+		"desc": "系统数据初始化成功",
+		"name": "client_login_process"
+	},
+	"285": {
+		"id": 285,
+		"type": 0,
+		"desc": "红点初始化",
+		"name": "client_login_process"
+	},
+	"290": {
+		"id": 290,
+		"type": 0,
+		"desc": "红点初始化成功",
+		"name": "client_login_process"
+	},
+	"295": {
+		"id": 295,
+		"type": 0,
+		"desc": "红点初始化失败",
+		"name": "client_login_process"
+	},
+	"300": {
+		"id": 300,
+		"type": 0,
+		"desc": "游戏界面加载",
+		"name": "client_login_process"
+	},
+	"305": {
+		"id": 305,
+		"type": 0,
+		"desc": "游戏界面加载成功",
+		"name": "client_login_process"
+	},
+	"310": {
+		"id": 310,
+		"type": 0,
+		"desc": "游戏界面加载失败",
+		"name": "client_login_process"
+	},
+	"315": {
+		"id": 315,
+		"type": 0,
+		"desc": "世界场景加载",
+		"name": "client_login_process"
+	},
+	"320": {
+		"id": 320,
+		"type": 0,
+		"desc": "世界场景加载成功",
+		"name": "client_login_process"
+	},
+	"325": {
+		"id": 325,
+		"type": 0,
+		"desc": "世界场景加载失败",
+		"name": "client_login_process"
+	},
+	"501": {
+		"id": 501,
+		"type": 1,
+		"desc": "元神",
+		"name": "sys_inter"
+	},
+	"502": {
+		"id": 502,
+		"type": 1,
+		"desc": "装备",
+		"name": "sys_inter"
+	},
+	"503": {
+		"id": 503,
+		"type": 1,
+		"desc": "法宝",
+		"name": "sys_inter"
+	},
+	"504": {
+		"id": 504,
+		"type": 1,
+		"desc": "修炼",
+		"name": "sys_inter"
+	},
+	"505": {
+		"id": 505,
+		"type": 1,
+		"desc": "历练",
+		"name": "sys_inter"
+	},
+	"506": {
+		"id": 506,
+		"type": 1,
+		"desc": "山头",
+		"name": "sys_inter"
+	},
+	"507": {
+		"id": 507,
+		"type": 1,
+		"desc": "聊天",
+		"name": "sys_inter"
+	},
+	"508": {
+		"id": 508,
+		"type": 1,
+		"desc": "练功房伙伴",
+		"name": "sys_inter"
+	},
+	"509": {
+		"id": 509,
+		"type": 1,
+		"desc": "首充",
+		"name": "sys_inter"
+	},
+	"510": {
+		"id": 510,
+		"type": 1,
+		"desc": "冲榜",
+		"name": "sys_inter"
+	},
+	"511": {
+		"id": 511,
+		"type": 1,
+		"desc": "斩心魔",
+		"name": "sys_inter"
+	},
+	"512": {
+		"id": 512,
+		"type": 1,
+		"desc": "切换多人",
+		"name": "sys_inter"
+	},
+	"513": {
+		"id": 513,
+		"type": 1,
+		"desc": "切换单人",
+		"name": "sys_inter"
+	},
+	"514": {
+		"id": 514,
+		"type": 1,
+		"desc": "请神",
+		"name": "sys_inter"
+	},
+	"515": {
+		"id": 515,
+		"type": 1,
+		"desc": "神符",
+		"name": "sys_inter"
+	},
+	"516": {
+		"id": 516,
+		"type": 1,
+		"desc": "时装",
+		"name": "sys_inter"
+	},
+	"517": {
+		"id": 517,
+		"type": 1,
+		"desc": "神器",
+		"name": "sys_inter"
+	},
+	"518": {
+		"id": 518,
+		"type": 1,
+		"desc": "装备历练",
+		"name": "sys_inter"
+	},
+	"519": {
+		"id": 519,
+		"type": 1,
+		"desc": "元神历练",
+		"name": "sys_inter"
+	},
+	"520": {
+		"id": 520,
+		"type": 1,
+		"desc": "法宝历练",
+		"name": "sys_inter"
+	},
+	"521": {
+		"id": 521,
+		"type": 1,
+		"desc": "夔牛",
+		"name": "sys_inter"
+	},
+	"522": {
+		"id": 522,
+		"type": 1,
+		"desc": "地图",
+		"name": "sys_inter"
+	},
+	"523": {
+		"id": 523,
+		"type": 1,
+		"desc": "充值",
+		"name": "sys_inter"
+	}
+}

@@ -1,0 +1,29 @@
+# ignore built files
+dist/
+build/
+config_game/
+**/*.js
+# ignore log files
+logs
+*.log
+npm-debug.log*
+
+# ignore dependencies
+node_modules/
+
+# ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# ignore text editor files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ignore environment files
+.env
+
+# ignore IDE files
+.idea/
+.vscode/

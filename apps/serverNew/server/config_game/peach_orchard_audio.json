@@ -1,0 +1,22 @@
+{
+	"1": {
+		"id": 1,
+		"audioType": 1,
+		"audioId": "npc_vo_101_1"
+	},
+	"2": {
+		"id": 2,
+		"audioType": 2,
+		"audioId": "npc_vo_101_2"
+	},
+	"3": {
+		"id": 3,
+		"audioType": 2,
+		"audioId": "npc_vo_101_3"
+	},
+	"4": {
+		"id": 4,
+		"audioType": 2,
+		"audioId": "npc_vo_101_4"
+	}
+}

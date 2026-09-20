@@ -1,0 +1,6 @@
+{
+  "commands": [
+    "pnpm verify:module -- survey"
+  ],
+  "manual": []
+}

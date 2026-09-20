@@ -1,0 +1,2216 @@
+{
+	"10100": {
+		"id": 10100,
+		"sort": 10100,
+		"guideName": "guide_openStory",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10100,
+				"key": "trigger",
+				"value": "userLv_1&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 10100,
+				"key": "custom",
+				"value": "on|practiceCreateMonster"
+			},
+			{
+				"stepId": 3,
+				"id": 10100,
+				"key": "custom",
+				"value": "pauseFight|1"
+			},
+			{
+				"stepId": 4,
+				"id": 10100,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "{userName}，我们所在的地方，是人界的九州大陆"
+			},
+			{
+				"stepId": 5,
+				"id": 10100,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "我们可以在这里进行日常修炼"
+			},
+			{
+				"stepId": 6,
+				"id": 10100,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "打败这些妖怪，我们便可以获得相应的修为",
+				"select": "select_practiceFightRole"
+			},
+			{
+				"stepId": 7,
+				"id": 10100,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "此处的敌人还比较弱小，以后你游历到别处一定会遇到强大的敌人，切不可掉以轻心"
+			},
+			{
+				"stepId": 8,
+				"id": 10100,
+				"key": "save",
+				"value": "10100"
+			},
+			{
+				"stepId": 10,
+				"id": 10100,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "好啦，快来试试你的身手吧，别让我失望哦"
+			},
+			{
+				"stepId": 11,
+				"id": 10100,
+				"key": "custom",
+				"value": "pauseFight|0"
+			},
+			{
+				"stepId": 12,
+				"id": 10100,
+				"key": "click",
+				"value": "btn_practiceBg",
+				"fingerTip": "点击屏幕让素萝发起攻击"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"10200": {
+		"id": 10200,
+		"sort": 10200,
+		"guideName": "guide_mainTask",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10200,
+				"key": "trigger",
+				"value": "mainTask_24_99&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 10200,
+				"key": "save",
+				"value": "10200"
+			},
+			{
+				"stepId": 3,
+				"id": 10200,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "你的修为等级提升后，可获得妖丹，快去看看吧"
+			},
+			{
+				"stepId": 4,
+				"id": 10200,
+				"key": "click",
+				"value": "btn_headPractice",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "你屏息凝神，便可内视自身修炼的各项情形，也可以在此时服用妖丹"
+			},
+			{
+				"stepId": 5,
+				"id": 10200,
+				"key": "custom",
+				"value": "emit|upload_practice"
+			},
+			{
+				"stepId": 6,
+				"id": 10200,
+				"key": "custom",
+				"value": "on|upload_practice_suc"
+			},
+			{
+				"stepId": 7,
+				"id": 10200,
+				"key": "custom",
+				"value": "waitShowWidget|Player"
+			},
+			{
+				"stepId": 8,
+				"id": 10200,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "妖丹为妖族妖气所凝聚之精华，可提升自身天赋，十分珍惜，切勿浪费",
+				"select": "select_playerAttrPoint"
+			},
+			{
+				"stepId": 9,
+				"id": 10200,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "妖丹提升力量可以增加攻击",
+				"select": "select_playerStrength"
+			},
+			{
+				"stepId": 10,
+				"id": 10200,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "妖丹提升耐力可以增加防御",
+				"select": "select_playerEndurance"
+			},
+			{
+				"stepId": 11,
+				"id": 10200,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "妖丹提升体力可以增加生命值",
+				"select": "select_playerConstitution"
+			},
+			{
+				"stepId": 12,
+				"id": 10200,
+				"key": "click",
+				"value": "btn_recommandAdd",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "你可以先用几颗妖丹试试提升效果"
+			},
+			{
+				"stepId": 13,
+				"id": 10200,
+				"key": "click",
+				"value": "btn_sure",
+				"tipPos": 1,
+				"tipRolePos": 0
+			},
+			{
+				"stepId": 14,
+				"id": 10200,
+				"key": "click",
+				"value": "btn_close",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "不错，有妖丹之力加持，你的修为又精进不少，继续修炼吧"
+			}
+		],
+		"disable": 1,
+		"awards": [
+
+		]
+	},
+	"10300": {
+		"id": 10300,
+		"sort": 10300,
+		"guideName": "guide_equip",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10300,
+				"key": "trigger",
+				"value": "practiceAwdInfo_1&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 10300,
+				"key": "click",
+				"value": "btn_fightBox",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "哦，这妖怪竟然还带着一件装备？快捡起来看看吧！"
+			},
+			{
+				"stepId": 3,
+				"id": 10300,
+				"key": "save",
+				"value": "10300"
+			},
+			{
+				"stepId": 4,
+				"id": 10300,
+				"key": "custom",
+				"value": "waitShowWidget|GetProp"
+			},
+			{
+				"stepId": 6,
+				"id": 10300,
+				"key": "on",
+				"value": "removeWidget|GetProp",
+				"hideMask": 1
+			},
+			{
+				"stepId": 7,
+				"id": 10300,
+				"key": "tab",
+				"value": "tab_equip",
+				"tipPos": 1,
+				"tipRolePos": 0
+			},
+			{
+				"stepId": 8,
+				"id": 10300,
+				"key": "custom",
+				"value": "waitShowWidget|Equip"
+			},
+			{
+				"stepId": 9,
+				"id": 10300,
+				"key": "background",
+				"value": "0",
+				"tip": "从这里能查阅你身上的装备，是强是弱，一目了然"
+			},
+			{
+				"stepId": 10,
+				"id": 10300,
+				"key": "click",
+				"value": "btn_equipItem0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "喜欢吗？好好看看你的新装备吧"
+			},
+			{
+				"stepId": 11,
+				"id": 10300,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 12,
+				"id": 10300,
+				"key": "click",
+				"value": "btn_wearEquip",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "来，穿上这件装备试试，看看你会不会变得更好看一点？"
+			},
+			{
+				"stepId": 13,
+				"id": 10300,
+				"key": "tab",
+				"value": "tab_practice",
+				"tipPos": 1,
+				"tipRolePos": 0
+			},
+			{
+				"stepId": 14,
+				"id": 10300,
+				"key": "custom",
+				"value": "waitShowWidget|Practice"
+			},
+			{
+				"stepId": 15,
+				"id": 10300,
+				"key": "background",
+				"value": "0",
+				"tip": "虽然变得威风了一些，但是没有以前可爱了……呜，这就是孩子成长的代价吗……"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"10401": {
+		"id": 10401,
+		"sort": 10401,
+		"guideName": "guide_gong_fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10401,
+				"key": "trigger",
+				"value": "system_3"
+			},
+			{
+				"stepId": 2,
+				"id": 10401,
+				"key": "custom",
+				"value": "systemUnlock|3",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 10401,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "按照素萝之前的教导，此时我可以用灵气来修炼自身元神了"
+			},
+			{
+				"stepId": 4,
+				"id": 10401,
+				"key": "tab",
+				"value": "tab_gong"
+			},
+			{
+				"stepId": 5,
+				"id": 10401,
+				"key": "custom",
+				"value": "waitShowWidget|GongMain"
+			},
+			{
+				"stepId": 6,
+				"id": 10401,
+				"key": "background",
+				"value": "0",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "……屏息凝神，可内视自身的元神天赋修炼情况",
+				"select": "select_gongName"
+			},
+			{
+				"stepId": 7,
+				"id": 10401,
+				"key": "background",
+				"value": "0",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "这便是我的元神吗……原来我自身的血脉传承与种族渊源是如此形状……",
+				"select": "select_gongIcon"
+			},
+			{
+				"stepId": 8,
+				"id": 10401,
+				"key": "click",
+				"value": "btn_gongUpgrade",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "来试试修炼元神天赋的效果吧"
+			},
+			{
+				"stepId": 9,
+				"id": 10401,
+				"key": "save",
+				"value": "10401"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"10600": {
+		"id": 10600,
+		"sort": 10600,
+		"guideName": "guide_fight_boss",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10600,
+				"key": "trigger",
+				"value": "system_16&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 10600,
+				"key": "custom",
+				"value": "systemUnlock|16",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 10600,
+				"key": "delay",
+				"value": "800"
+			},
+			{
+				"stepId": 4,
+				"id": 10600,
+				"key": "click",
+				"value": "btn_godsSoldierEnter",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "这些天庭的追兵又来了，你要千万小心！"
+			},
+			{
+				"stepId": 5,
+				"id": 10600,
+				"key": "custom",
+				"value": "waitShowWidget|GodsSoldier"
+			},
+			{
+				"stepId": 6,
+				"id": 10600,
+				"key": "click",
+				"value": "btn_godsSoldierFight",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "若是觉得胜算不高，咱们逃就是了，千万别逞能！"
+			},
+			{
+				"stepId": 7,
+				"id": 10600,
+				"key": "save",
+				"value": "10600",
+				"tip": "要是你一味莽撞被天兵捉去了，我，我可不会救你！"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"10700": {
+		"id": 10700,
+		"sort": 10700,
+		"guideName": "guide_sterious_man",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10700,
+				"key": "trigger",
+				"value": "mainTask_8&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 10700,
+				"key": "save",
+				"value": "10700"
+			},
+			{
+				"stepId": 3,
+				"id": 10700,
+				"key": "click",
+				"value": "btn_bossFight",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "清除邪灵到一定程度，便能修复万灵宝录了"
+			},
+			{
+				"stepId": 4,
+				"id": 10700,
+				"key": "custom",
+				"value": "waitShowWidget|SteriousMan"
+			},
+			{
+				"stepId": 5,
+				"id": 10700,
+				"key": "click",
+				"value": "btn_sterioursManLvUp",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "修复万灵宝录，本器灵便能提升自己的修为……你放心，我肯定少不了你的好处"
+			}
+		],
+		"disable": 1,
+		"awards": [
+
+		]
+	},
+	"10800": {
+		"id": 10800,
+		"sort": 10800,
+		"guideName": "guide_switch_map",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10800,
+				"key": "trigger",
+				"value": "mainTask_11&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 10800,
+				"key": "save",
+				"value": "10800"
+			},
+			{
+				"stepId": 3,
+				"id": 10800,
+				"key": "click",
+				"value": "btn_map",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "此处灵气已经无法支撑你的修炼了，我们去下一个地方吧。"
+			},
+			{
+				"stepId": 4,
+				"id": 10800,
+				"key": "custom",
+				"value": "waitShowWidget|MapScene"
+			},
+			{
+				"stepId": 5,
+				"id": 10800,
+				"key": "click",
+				"value": "btn_mapScene1002",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "打开地图，便可查看各处地域，太危险的地方你就别去了，我可不想你白白送命"
+			}
+		],
+		"disable": 1,
+		"awards": [
+
+		]
+	},
+	"10900": {
+		"id": 10900,
+		"sort": 10900,
+		"guideName": "guide_offline_reward",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10900,
+				"key": "trigger",
+				"value": "widget_Practice&system_37"
+			},
+			{
+				"stepId": 2,
+				"id": 10900,
+				"key": "save",
+				"value": "10900"
+			},
+			{
+				"stepId": 3,
+				"id": 10900,
+				"key": "custom",
+				"value": "systemUnlock|37",
+				"hideMask": 1
+			},
+			{
+				"stepId": 4,
+				"id": 10900,
+				"key": "click",
+				"value": "btn_offlineNpc",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "你在平日的修炼中积累了大量战利品，点击这里就能查看它们"
+			},
+			{
+				"stepId": 5,
+				"id": 10900,
+				"key": "custom",
+				"value": "waitShowWidget|QuickAward"
+			},
+			{
+				"stepId": 6,
+				"id": 10900,
+				"key": "background",
+				"value": "0",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "这是当前你修炼时的收获速度。你需增强修为，收获速度自然也会提高",
+				"select": "select_quickAwardUp"
+			},
+			{
+				"stepId": 7,
+				"id": 10900,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "这收获着实不少，以你的修为来说很不错了，不愧是{userName}",
+				"select": "select_quickAwardItems"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11001": {
+		"id": 11001,
+		"sort": 11001,
+		"guideName": "guide_realm_break_practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11001,
+				"key": "trigger",
+				"value": "realm_1&realmBreak&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 11001,
+				"key": "background",
+				"value": "0",
+				"tip": "你当下的修为和妖力已经足够强大，现在可以突破自身境界了"
+			},
+			{
+				"stepId": 3,
+				"id": 11001,
+				"key": "click",
+				"value": "btn_headPractice",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "屏息凝神，便能感应到自身修为状况"
+			},
+			{
+				"stepId": 4,
+				"id": 11001,
+				"key": "custom",
+				"value": "waitShowWidget|Player"
+			},
+			{
+				"stepId": 5,
+				"id": 11001,
+				"key": "tab",
+				"value": "tab_playerRealm",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "再潜心观察，便能感应到自己当下之境界"
+			},
+			{
+				"stepId": 6,
+				"id": 11001,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 7,
+				"id": 11001,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tip": "境界会影响你的修为等级上限，等级达到境界上限后仍然可以获得修为，但无法升级，需进行突破",
+				"select": "select_realmlvLimit"
+			},
+			{
+				"stepId": 8,
+				"id": 11001,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tip": "只有等级和妖力达到方可进行渡劫，只要渡劫成功，你便能到达新的修炼境界，快去试试吧",
+				"select": "select_realmCondition"
+			},
+			{
+				"stepId": 9,
+				"id": 11001,
+				"key": "save",
+				"value": "11001",
+				"tipPos": 0,
+				"tipRolePos": 0
+			},
+			{
+				"stepId": 10,
+				"id": 11001,
+				"key": "save",
+				"value": "11002",
+				"tipPos": 0,
+				"tipRolePos": 0
+			},
+			{
+				"stepId": 11,
+				"id": 11001,
+				"key": "click",
+				"value": "btn_realmBreak",
+				"tipPos": 0,
+				"tipRolePos": 0
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11002": {
+		"id": 11002,
+		"sort": 11001,
+		"guideName": "guide_realm_break_fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11002,
+				"key": "trigger",
+				"value": "realm_1&realmBreak&widget_Fight"
+			},
+			{
+				"stepId": 2,
+				"id": 11002,
+				"key": "background",
+				"value": "0",
+				"tip": "你当下的修为和妖力已经足够强大，现在可以突破自身境界了"
+			},
+			{
+				"stepId": 3,
+				"id": 11002,
+				"key": "click",
+				"value": "btn_headFight",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "屏息凝神，便能感应到自身修为状况"
+			},
+			{
+				"stepId": 4,
+				"id": 11002,
+				"key": "custom",
+				"value": "waitShowWidget|Player"
+			},
+			{
+				"stepId": 5,
+				"id": 11002,
+				"key": "tab",
+				"value": "tab_playerRealm",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "再潜心观察，便能感应到自己当下之境界"
+			},
+			{
+				"stepId": 6,
+				"id": 11002,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 7,
+				"id": 11002,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tip": "境界会影响你的修为等级上限，等级达到境界上限后仍然可以获得修为，但无法升级，需进行突破",
+				"select": "select_realmlvLimit"
+			},
+			{
+				"stepId": 8,
+				"id": 11002,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tip": "只有等级和妖力达到方可进行渡劫，只要渡劫成功，你便能到达新的修炼境界，快去试试吧",
+				"select": "select_realmCondition"
+			},
+			{
+				"stepId": 9,
+				"id": 11002,
+				"key": "save",
+				"value": "11001",
+				"tipPos": 0,
+				"tipRolePos": 0
+			},
+			{
+				"stepId": 10,
+				"id": 11002,
+				"key": "save",
+				"value": "11002",
+				"tipPos": 0,
+				"tipRolePos": 0
+			},
+			{
+				"stepId": 11,
+				"id": 11002,
+				"key": "click",
+				"value": "btn_realmBreak",
+				"tipPos": 0,
+				"tipRolePos": 0
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11100": {
+		"id": 11100,
+		"sort": 11100,
+		"guideName": "guide_weapon",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11100,
+				"key": "trigger",
+				"value": "mainTask_49"
+			},
+			{
+				"stepId": 2,
+				"id": 11100,
+				"key": "custom",
+				"value": "waitShowWidget|Practice_or_Fight|10000",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 11100,
+				"key": "plot",
+				"value": "4010"
+			},
+			{
+				"stepId": 4,
+				"id": 11100,
+				"key": "custom",
+				"value": "trans|4020|Auction"
+			},
+			{
+				"stepId": 5,
+				"id": 11100,
+				"key": "plot",
+				"value": "4030"
+			},
+			{
+				"stepId": 6,
+				"id": 11100,
+				"key": "custom",
+				"value": "trans|4040|AuctionStore"
+			},
+			{
+				"stepId": 7,
+				"id": 11100,
+				"key": "plot",
+				"value": "4050"
+			},
+			{
+				"stepId": 8,
+				"id": 11100,
+				"key": "click",
+				"value": "btn_rubbish1",
+				"selectStyle": 1
+			},
+			{
+				"stepId": 9,
+				"id": 11100,
+				"key": "custom",
+				"value": "wait|findEnd"
+			},
+			{
+				"stepId": 10,
+				"id": 11100,
+				"key": "plot",
+				"value": "4060"
+			},
+			{
+				"stepId": 11,
+				"id": 11100,
+				"key": "click",
+				"value": "btn_rubbish2",
+				"selectStyle": 1
+			},
+			{
+				"stepId": 12,
+				"id": 11100,
+				"key": "custom",
+				"value": "wait|findEnd"
+			},
+			{
+				"stepId": 13,
+				"id": 11100,
+				"key": "plot",
+				"value": "4070"
+			},
+			{
+				"stepId": 14,
+				"id": 11100,
+				"key": "click",
+				"value": "btn_rubbish3",
+				"selectStyle": 1
+			},
+			{
+				"stepId": 15,
+				"id": 11100,
+				"key": "custom",
+				"value": "wait|findEnd"
+			},
+			{
+				"stepId": 16,
+				"id": 11100,
+				"key": "plot",
+				"value": "4071"
+			},
+			{
+				"stepId": 17,
+				"id": 11100,
+				"key": "custom",
+				"value": "active|btn_rubbish4"
+			},
+			{
+				"stepId": 18,
+				"id": 11100,
+				"key": "plot",
+				"value": "4080"
+			},
+			{
+				"stepId": 19,
+				"id": 11100,
+				"key": "click",
+				"value": "btn_rubbish4",
+				"selectStyle": 1
+			},
+			{
+				"stepId": 20,
+				"id": 11100,
+				"key": "custom",
+				"value": "wait|findEnd"
+			},
+			{
+				"stepId": 21,
+				"id": 11100,
+				"key": "plot",
+				"value": "4090"
+			},
+			{
+				"stepId": 22,
+				"id": 11100,
+				"key": "custom",
+				"value": "transWidget|4100|GetWeaponSucc"
+			},
+			{
+				"stepId": 23,
+				"id": 11100,
+				"key": "custom",
+				"value": "transWidget|4110|WeaponUnlock",
+				"hideMask": 1
+			},
+			{
+				"stepId": 24,
+				"id": 11100,
+				"key": "save",
+				"value": "11100"
+			},
+			{
+				"stepId": 25,
+				"id": 11100,
+				"key": "custom",
+				"value": "systemUnlock|4",
+				"hideMask": 1
+			},
+			{
+				"stepId": 26,
+				"id": 11100,
+				"key": "tab",
+				"value": "tab_weapon",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "哇，你运气真好！这个破烂居然还是本命法宝！这是非常罕见的宝贝！"
+			},
+			{
+				"stepId": 27,
+				"id": 11100,
+				"key": "custom",
+				"value": "waitShowWidget|Weapon"
+			},
+			{
+				"stepId": 28,
+				"id": 11100,
+				"key": "background",
+				"value": "0",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "咦，这法宝的灵气波动跟你好像，莫非是你们前世有什么渊源不成?",
+				"select": "select_weaponAttr"
+			},
+			{
+				"stepId": 29,
+				"id": 11100,
+				"key": "background",
+				"value": "0",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "现在使用修炼时收集到的妖气，便可对法宝进行祭炼升级",
+				"select": "select_weaponIcon"
+			},
+			{
+				"stepId": 30,
+				"id": 11100,
+				"key": "click",
+				"value": "btn_weaponStrength",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "好了，升级完法宝之后，快去试试它的威力吧！"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"10501": {
+		"id": 10501,
+		"sort": 10501,
+		"guideName": "guide_mission_equip",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 10501,
+				"key": "trigger",
+				"value": "system_40"
+			},
+			{
+				"stepId": 2,
+				"id": 10501,
+				"key": "save",
+				"value": "10501"
+			},
+			{
+				"stepId": 3,
+				"id": 10501,
+				"key": "custom",
+				"value": "systemUnlock|40",
+				"hideMask": 1
+			},
+			{
+				"stepId": 4,
+				"id": 10501,
+				"key": "tab",
+				"value": "tab_mission",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "妖族将讨伐人族修士称为历练吗……当真有趣"
+			},
+			{
+				"stepId": 5,
+				"id": 10501,
+				"key": "custom",
+				"value": "waitShowWidget|Mission"
+			},
+			{
+				"stepId": 6,
+				"id": 10501,
+				"key": "click",
+				"value": "btn_enterMission1",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "这些人族邪修不可小觑，我们可以与其他道友携手对敌"
+			},
+			{
+				"stepId": 7,
+				"id": 10501,
+				"key": "delay",
+				"value": "200"
+			},
+			{
+				"stepId": 8,
+				"id": 10501,
+				"key": "click",
+				"value": "btn_fightMission1",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "开启妖族的传送法阵，我们开始讨伐这些邪修吧！"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11300": {
+		"id": 11300,
+		"sort": 11300,
+		"guideName": "guide_fight_door",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11300,
+				"key": "trigger",
+				"value": "mainTask_10&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 11300,
+				"key": "click",
+				"value": "btn_practiceDoor",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "前往下一处地点的传送门已经打开了，我们出发吧"
+			},
+			{
+				"stepId": 2,
+				"id": 11300,
+				"key": "save",
+				"value": "11300"
+			},
+			{
+				"stepId": 4,
+				"id": 11300,
+				"key": "delay",
+				"value": "500"
+			},
+			{
+				"stepId": 5,
+				"id": 11300,
+				"key": "click",
+				"value": "btn_practiceBg"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11400": {
+		"id": 11400,
+		"sort": 11400,
+		"guideName": "guide_sorcery",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11400,
+				"key": "trigger",
+				"value": "mainTask_25"
+			},
+			{
+				"stepId": 2,
+				"id": 11400,
+				"key": "custom",
+				"value": "systemUnlock|59",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 11400,
+				"key": "tab",
+				"value": "tab_gong",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "嗯……素萝说过，妖族元神强化后便可领悟自身血脉之中之妖术"
+			},
+			{
+				"stepId": 4,
+				"id": 11400,
+				"key": "custom",
+				"value": "waitShowWidget|GongMain"
+			},
+			{
+				"stepId": 5,
+				"id": 11400,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 6,
+				"id": 11400,
+				"key": "click",
+				"value": "btn_sorceryItem0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "平时修炼所凝结的元神精魄，可以用来领悟和提升妖术"
+			},
+			{
+				"stepId": 7,
+				"id": 11400,
+				"key": "custom",
+				"value": "waitShowWidget|SorceryUpgrade"
+			},
+			{
+				"stepId": 8,
+				"id": 11400,
+				"key": "background",
+				"value": "0",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "妖族通过元神以特殊方式释放自己的妖力，此方法称为妖术，拥有很强的威力",
+				"select": "select_sorceryDetail"
+			},
+			{
+				"stepId": 9,
+				"id": 11400,
+				"key": "click",
+				"value": "btn_upgradeSorcery",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "此时我可以领悟妖术了，来试试看吧！"
+			},
+			{
+				"stepId": 10,
+				"id": 11400,
+				"key": "save",
+				"value": "11400"
+			},
+			{
+				"stepId": 11,
+				"id": 11400,
+				"key": "click",
+				"value": "btn_closeDialog"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11500": {
+		"id": 11500,
+		"sort": 11500,
+		"guideName": "guide_equip_gem",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11500,
+				"key": "trigger",
+				"value": "mainTask_101"
+			},
+			{
+				"stepId": 2,
+				"id": 11500,
+				"key": "custom",
+				"value": "systemUnlock|41",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 11500,
+				"key": "custom",
+				"value": "wearEquip_1_4|11500"
+			},
+			{
+				"stepId": 4,
+				"id": 11500,
+				"key": "tab",
+				"value": "tab_equip",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "方才在历练中我们获得了一块魂石，能够镶嵌在装备上增加威力"
+			},
+			{
+				"stepId": 5,
+				"id": 11500,
+				"key": "custom",
+				"value": "waitShowWidget|Equip|300"
+			},
+			{
+				"stepId": 6,
+				"id": 11500,
+				"key": "click",
+				"value": "btn_equipSlotGem",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "不同部位的装备，能装备的魂石种类也不一样。"
+			},
+			{
+				"stepId": 7,
+				"id": 11500,
+				"key": "custom",
+				"value": "waitShowWidget|EquipWearDetail|300"
+			},
+			{
+				"stepId": 8,
+				"id": 11500,
+				"key": "click",
+				"value": "btn_decorateTip",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "如此便能将魂石之力化为己用。你要快些变强，别重蹈这些魂石主人的覆辙啊……"
+			},
+			{
+				"stepId": 9,
+				"id": 11500,
+				"key": "custom",
+				"value": "waitShowWidget|EquipDecorate|300"
+			},
+			{
+				"stepId": 10,
+				"id": 11500,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 11,
+				"id": 11500,
+				"key": "click",
+				"value": "btn_decorate"
+			},
+			{
+				"stepId": 12,
+				"id": 11500,
+				"key": "save",
+				"value": "11500"
+			},
+			{
+				"stepId": 13,
+				"id": 11500,
+				"key": "click",
+				"value": "btn_closeDialog"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11600": {
+		"id": 11600,
+		"sort": 11600,
+		"guideName": "guide_guild_practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11600,
+				"key": "trigger",
+				"value": "mainTask_78&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 11600,
+				"key": "custom",
+				"value": "systemUnlock|8",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 11600,
+				"key": "click",
+				"value": "btn_funcEnterBarPractice"
+			},
+			{
+				"stepId": 4,
+				"id": 11600,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 5,
+				"id": 11600,
+				"key": "click",
+				"value": "btn_guild",
+				"tipPos": 2,
+				"tip": "现在你修炼有成，可以加入各大山头，与其他妖修并肩作战"
+			},
+			{
+				"stepId": 6,
+				"id": 11600,
+				"key": "custom",
+				"value": "waitShowWidget|FindGuild|500"
+			},
+			{
+				"stepId": 7,
+				"id": 11600,
+				"key": "delay",
+				"value": "600"
+			},
+			{
+				"stepId": 8,
+				"id": 11600,
+				"key": "background",
+				"value": "0",
+				"tip": "点击此处，便能查阅当前各个妖族山头，你可以自创一个属于自己的山头，也决定是否加入其他山头，快去试试吧",
+				"select": "select_findGuildList"
+			},
+			{
+				"stepId": 9,
+				"id": 11600,
+				"key": "save",
+				"value": "11600"
+			},
+			{
+				"stepId": 10,
+				"id": 11600,
+				"key": "save",
+				"value": "11601"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11601": {
+		"id": 11601,
+		"sort": 11601,
+		"guideName": "guide_guild_fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11601,
+				"key": "trigger",
+				"value": "mainTask_78&widget_Fight"
+			},
+			{
+				"stepId": 2,
+				"id": 11601,
+				"key": "custom",
+				"value": "systemUnlock|8",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 11601,
+				"key": "click",
+				"value": "btn_funcEnterBarFight"
+			},
+			{
+				"stepId": 4,
+				"id": 11601,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 5,
+				"id": 11601,
+				"key": "click",
+				"value": "btn_guild",
+				"tipPos": 2,
+				"tip": "现在你修炼有成，可以加入各大山头，与其他妖修并肩作战"
+			},
+			{
+				"stepId": 6,
+				"id": 11601,
+				"key": "custom",
+				"value": "waitShowWidget|FindGuild|500"
+			},
+			{
+				"stepId": 7,
+				"id": 11601,
+				"key": "delay",
+				"value": "600"
+			},
+			{
+				"stepId": 8,
+				"id": 11601,
+				"key": "background",
+				"value": "0",
+				"tip": "点击此处，便能查阅当前各个妖族山头，你可以自创一个属于自己的山头，也决定是否加入其他山头，快去试试吧",
+				"select": "select_findGuildList"
+			},
+			{
+				"stepId": 9,
+				"id": 11601,
+				"key": "save",
+				"value": "11600"
+			},
+			{
+				"stepId": 10,
+				"id": 11601,
+				"key": "save",
+				"value": "11601"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11700": {
+		"id": 11700,
+		"sort": 11700,
+		"guideName": "guide_soul",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11700,
+				"key": "trigger",
+				"value": "mainTask_126"
+			},
+			{
+				"stepId": 2,
+				"id": 11700,
+				"key": "tab",
+				"value": "tab_weapon",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "你的法宝可以用传说中的铭文来增强威力，真是非同小可！"
+			},
+			{
+				"stepId": 3,
+				"id": 11700,
+				"key": "custom",
+				"value": "waitShowWidget|Weapon"
+			},
+			{
+				"stepId": 5,
+				"id": 11700,
+				"key": "click",
+				"value": "btn_soulItem0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "铭文蕴含上古法力，镌刻到法宝上可以极大增加法宝威力"
+			},
+			{
+				"stepId": 6,
+				"id": 11700,
+				"key": "custom",
+				"value": "waitShowWidget|WeaponRefining"
+			},
+			{
+				"stepId": 7,
+				"id": 11700,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "用罕见珍贵的材料和巧夺天工的手法，才能镌刻出强大的铭文！",
+				"select": "select_weaponRefining"
+			},
+			{
+				"stepId": 8,
+				"id": 11700,
+				"key": "click",
+				"value": "btn_refininfg"
+			},
+			{
+				"stepId": 9,
+				"id": 11700,
+				"key": "save",
+				"value": "11700"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11800": {
+		"id": 11800,
+		"sort": 11800,
+		"guideName": "guide_booty",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11800,
+				"key": "trigger",
+				"value": "mainTask_151"
+			},
+			{
+				"stepId": 2,
+				"id": 11800,
+				"key": "custom",
+				"value": "systemUnlock|42",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 11800,
+				"key": "tab",
+				"value": "tab_gong",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "世事无常，祸福难测，我们妖族也会供奉神仙，以求庇佑"
+			},
+			{
+				"stepId": 4,
+				"id": 11800,
+				"key": "custom",
+				"value": "waitShowWidget|GongMain"
+			},
+			{
+				"stepId": 5,
+				"id": 11800,
+				"key": "click",
+				"value": "btn_worshipSkill"
+			},
+			{
+				"stepId": 6,
+				"id": 11800,
+				"key": "custom",
+				"value": "waitShowWidget|WorshipSkill"
+			},
+			{
+				"stepId": 7,
+				"id": 11800,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "地仙与天庭的神仙们不同，他们愿意偷偷帮助妖族，而妖族则暗中供养作为回馈",
+				"select": "select_worshipSkillSlots"
+			},
+			{
+				"stepId": 8,
+				"id": 11800,
+				"key": "click",
+				"value": "btn_worshipSkillSlot1",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "我们的神龛共有四个神位，你可以选择当前神位，然后选择你想要供奉的地仙"
+			},
+			{
+				"stepId": 9,
+				"id": 11800,
+				"key": "custom",
+				"value": "waitShowWidget|WorshipSkillLottery"
+			},
+			{
+				"stepId": 10,
+				"id": 11800,
+				"key": "save",
+				"value": "11800"
+			},
+			{
+				"stepId": 11,
+				"id": 11800,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 12,
+				"id": 11800,
+				"key": "click",
+				"value": "btn_upgradeWorshipSkill",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "供上请神香后，依据每时每刻之机缘变化，我们会遇到能力品级各不相同的地仙"
+			},
+			{
+				"stepId": 13,
+				"id": 11800,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "确定与这位地仙结缘的话，我们便可以获得他提供的各种增益，甚至让他在修炼中助你一臂之力，你快来试试吧",
+				"select": "select_worshipSkillLottery"
+			},
+			{
+				"stepId": 14,
+				"id": 11800,
+				"key": "click",
+				"value": "btn_replaceWorshipSkill"
+			},
+			{
+				"stepId": 15,
+				"id": 11800,
+				"key": "click",
+				"value": "btn_closeDialog"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"11900": {
+		"id": 11900,
+		"sort": 11900,
+		"guideName": "guide_mission5",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 11900,
+				"key": "trigger",
+				"value": "mainTask_199"
+			},
+			{
+				"stepId": 2,
+				"id": 11900,
+				"key": "custom",
+				"value": "systemUnlock|6",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 11900,
+				"key": "tab",
+				"value": "tab_mission",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tip": "上古大妖夔牛已疯癫发狂，四处为祸，我们要全力阻止它危害妖族"
+			},
+			{
+				"stepId": 4,
+				"id": 11900,
+				"key": "custom",
+				"value": "waitShowWidget|Mission"
+			},
+			{
+				"stepId": 5,
+				"id": 11900,
+				"key": "click",
+				"value": "btn_enterMission5",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "每日七点，妖修们将在此拦截夔牛，你一定要与他人携手作战，切勿莽撞！"
+			},
+			{
+				"stepId": 6,
+				"id": 11900,
+				"key": "save",
+				"value": "11900"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"12000": {
+		"id": 12000,
+		"sort": 12000,
+		"guideName": "guide_sterious",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 12000,
+				"key": "trigger",
+				"value": "mainTask_34&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 12000,
+				"key": "save",
+				"value": "12000"
+			},
+			{
+				"stepId": 3,
+				"id": 12000,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "素萝介绍"
+			}
+		],
+		"disable": 1,
+		"awards": [
+
+		]
+	},
+	"12102": {
+		"id": 12102,
+		"sort": 12102,
+		"guideName": "guide_arena_practice",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 12102,
+				"key": "trigger",
+				"value": "mainTask_165&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 12102,
+				"key": "custom",
+				"value": "systemUnlock|17",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 12102,
+				"key": "click",
+				"value": "btn_funcEnterBarPractice",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "万妖盟会定期设下斗法台，来自各处的妖修将在此进行挑战斗法"
+			},
+			{
+				"stepId": 4,
+				"id": 12102,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 5,
+				"id": 12102,
+				"key": "click",
+				"value": "btn_arena"
+			},
+			{
+				"stepId": 6,
+				"id": 12102,
+				"key": "save",
+				"value": "12103"
+			},
+			{
+				"stepId": 7,
+				"id": 12102,
+				"key": "save",
+				"value": "12102"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"12103": {
+		"id": 12103,
+		"sort": 12103,
+		"guideName": "guide_arena_fight",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 12103,
+				"key": "trigger",
+				"value": "mainTask_165&widget_Fight"
+			},
+			{
+				"stepId": 2,
+				"id": 12103,
+				"key": "custom",
+				"value": "systemUnlock|17",
+				"hideMask": 1
+			},
+			{
+				"stepId": 3,
+				"id": 12103,
+				"key": "click",
+				"value": "btn_funcEnterBarFight",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "万妖盟会定期设下斗法台，来自各处的妖修将在此进行挑战斗法"
+			},
+			{
+				"stepId": 4,
+				"id": 12103,
+				"key": "delay",
+				"value": "300"
+			},
+			{
+				"stepId": 5,
+				"id": 12103,
+				"key": "click",
+				"value": "btn_arena"
+			},
+			{
+				"stepId": 6,
+				"id": 12103,
+				"key": "save",
+				"value": "12102"
+			},
+			{
+				"stepId": 7,
+				"id": 12103,
+				"key": "save",
+				"value": "12103"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"12101": {
+		"id": 12101,
+		"sort": 0,
+		"guideName": "guide_first_enter_home",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 12101,
+				"key": "trigger",
+				"value": "FirstEnterHome"
+			},
+			{
+				"stepId": 2,
+				"id": 12101,
+				"key": "on",
+				"value": "showWidget|Home"
+			},
+			{
+				"stepId": 3,
+				"id": 12101,
+				"key": "custom",
+				"value": "on|HomeDoorShow",
+				"hideMask": 1
+			},
+			{
+				"stepId": 4,
+				"id": 12101,
+				"key": "click",
+				"value": "btn_door"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"12200": {
+		"id": 12200,
+		"sort": 12200,
+		"guideName": "guide_equip_smelt",
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 12200,
+				"key": "trigger",
+				"value": "mainTask_69&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 12200,
+				"key": "tab",
+				"value": "tab_equip",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "修炼时间长久，便会积累很多无用装备，使用此处便可以将其熔炼回收"
+			},
+			{
+				"stepId": 3,
+				"id": 12200,
+				"key": "custom",
+				"value": "waitShowWidget|Equip"
+			},
+			{
+				"stepId": 4,
+				"id": 12200,
+				"key": "click",
+				"value": "btn_equipAnalysis"
+			},
+			{
+				"stepId": 5,
+				"id": 12200,
+				"key": "custom",
+				"value": "waitShowWidget|EquipSmelt"
+			},
+			{
+				"stepId": 7,
+				"id": 12200,
+				"key": "click",
+				"value": "btn_smelt",
+				"tipPos": 1,
+				"tip": "此处可选择要熔炼的装备等级及品质，快来试试吧"
+			},
+			{
+				"stepId": 8,
+				"id": 12200,
+				"key": "save",
+				"value": "12200"
+			},
+			{
+				"stepId": 9,
+				"id": 12200,
+				"key": "custom",
+				"value": "waitShowWidget|GetProp"
+			},
+			{
+				"stepId": 10,
+				"id": 12200,
+				"key": "on",
+				"value": "removeWidget|GetProp",
+				"hideMask": 1
+			},
+			{
+				"stepId": 11,
+				"id": 12200,
+				"key": "click",
+				"value": "btn_close"
+			},
+			{
+				"stepId": 12,
+				"id": 12200,
+				"key": "click",
+				"value": "btn_autoSetting"
+			},
+			{
+				"stepId": 14,
+				"id": 12200,
+				"key": "custom",
+				"value": "waitShowWidget|EquipAutoSmelt"
+			},
+			{
+				"stepId": 13,
+				"id": 12200,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "此处可布设自行熔炼，不必再分神关注这等琐碎之事",
+				"select": "select_equipAutoSmelt"
+			},
+			{
+				"stepId": 15,
+				"id": 12200,
+				"key": "delay",
+				"value": "200"
+			},
+			{
+				"stepId": 16,
+				"id": 12200,
+				"key": "toggle",
+				"value": "tge_equipSmeltItem0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "让我们来选择自动熔炼灰色装备吧"
+			},
+			{
+				"stepId": 17,
+				"id": 12200,
+				"key": "click",
+				"value": "btn_closeDialog"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"12300": {
+		"id": 12300,
+		"sort": 12300,
+		"guideName": "guide_godsSoldier_sorcery",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 12300,
+				"key": "trigger",
+				"value": "godsSoldierSorcery&widget_Fight"
+			},
+			{
+				"stepId": 2,
+				"id": 12300,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "你已经学会了传承妖术，现在在对手身上检验吧"
+			},
+			{
+				"stepId": 3,
+				"id": 12300,
+				"key": "background",
+				"value": "0",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "万灵宝录修炼中能够借助法宝内的特殊灵气来恢复法力，法力足够时便可释放传承妖术",
+				"select": "select_smallProgress"
+			},
+			{
+				"stepId": 4,
+				"id": 12300,
+				"key": "background",
+				"value": "0",
+				"tipPos": 0,
+				"tipRolePos": 0,
+				"tip": "现在我就帮你恢复法力吧"
+			},
+			{
+				"stepId": 5,
+				"id": 12300,
+				"key": "save",
+				"value": "12300"
+			},
+			{
+				"stepId": 6,
+				"id": 12300,
+				"key": "click",
+				"value": "btn_fightBigSkill",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tip": "点这里可以释放妖术"
+			}
+		],
+		"disable": 1,
+		"awards": [
+			{
+				"id": 12300,
+				"propId": 1012,
+				"num": 1
+			}
+		]
+	},
+	"90100": {
+		"id": 90100,
+		"sort": 90100,
+		"guideName": "guide_second_story_up",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 90100,
+				"key": "trigger",
+				"value": "secondStoryUp&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 90100,
+				"key": "plot",
+				"value": "2000",
+				"hideMask": 1,
+				"weakGuide": 1
+			},
+			{
+				"stepId": 3,
+				"id": 90100,
+				"key": "save",
+				"value": "90100"
+			},
+			{
+				"stepId": 4,
+				"id": 90100,
+				"key": "custom",
+				"value": "waitShowWidget|Fight"
+			},
+			{
+				"stepId": 5,
+				"id": 90100,
+				"key": "background",
+				"value": "0",
+				"tipPos": 2,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "素萝之前教过我，在万灵宝录中击败怪物会消耗体力，并获取到不同的修炼资源",
+				"select": "select_fightBoss"
+			},
+			{
+				"stepId": 6,
+				"id": 90100,
+				"key": "click",
+				"value": "btn_autoFight",
+				"tipPos": 1,
+				"tipRolePos": 0,
+				"tipRole": 1,
+				"tip": "使用此处可布设自行杀敌，如此我就能快速修炼，早点出去帮素萝了！"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"90101": {
+		"id": 90101,
+		"sort": 90101,
+		"guideName": "guide_second_stry_down_trigger",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 90101,
+				"key": "trigger",
+				"value": "secondStoryDown&widget_Fight"
+			},
+			{
+				"stepId": 2,
+				"id": 90101,
+				"key": "save",
+				"value": "90101"
+			},
+			{
+				"stepId": 3,
+				"id": 90101,
+				"key": "plot",
+				"value": "2005"
+			},
+			{
+				"stepId": 4,
+				"id": 90101,
+				"key": "click",
+				"value": "btn_switchPve"
+			}
+		],
+		"awards": [
+
+		]
+	},
+	"90200": {
+		"id": 90200,
+		"sort": 90200,
+		"guideName": "guide_second_story_down",
+		"pauseFight": 1,
+		"steps": [
+			{
+				"stepId": 1,
+				"id": 90200,
+				"key": "trigger",
+				"value": "secondStoryDown&widget_Practice"
+			},
+			{
+				"stepId": 2,
+				"id": 90200,
+				"key": "plot",
+				"value": "3000",
+				"hideMask": 1,
+				"weakGuide": 1
+			},
+			{
+				"stepId": 3,
+				"id": 90200,
+				"key": "save",
+				"value": "90200"
+			}
+		],
+		"awards": [
+
+		]
+	}
+}

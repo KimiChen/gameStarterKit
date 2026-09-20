@@ -1,0 +1,5 @@
+<% if (property.annotation) { %>
+    /**<% property.annotation.forEach(annotation => { %>
+     * <%- annotation -%><% }) %>
+     */<% } %>
+    <%- property.visibility %> static <%- property.name %>:<%- property.type %> <% if (property.value!== undefined) { %> = <%- property.value %> <% } %>

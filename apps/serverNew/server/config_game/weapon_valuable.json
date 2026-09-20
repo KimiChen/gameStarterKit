@@ -1,0 +1,686 @@
+{
+	"331001": {
+		"id": 331001,
+		"name": "七星法剑",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1001,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331001,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331001,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331001,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331002": {
+		"id": 331002,
+		"name": "虎威刀",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1002,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331002,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331002,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331002,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331003": {
+		"id": 331003,
+		"name": "青莲宝杵",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1003,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331003,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331003,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331003,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331004": {
+		"id": 331004,
+		"name": "杀星飞刃",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1004,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331004,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331004,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331004,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331005": {
+		"id": 331005,
+		"name": "勾魂玄鞭",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1005,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331005,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331005,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331005,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331006": {
+		"id": 331006,
+		"name": "彩旗招展",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1006,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331006,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331006,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331006,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331007": {
+		"id": 331007,
+		"name": "命轮舍利",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1007,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331007,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331007,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331007,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331008": {
+		"id": 331008,
+		"name": "隐风雨现",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1008,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331008,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331008,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331008,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331009": {
+		"id": 331009,
+		"name": "花月潇湘",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1009,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331009,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331009,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331009,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"331010": {
+		"id": 331010,
+		"name": "龙珠福球",
+		"bullet": 1,
+		"showTag": 2,
+		"quality": 4,
+		"sort": 1010,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]25%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 331010,
+				"reply": 10804
+			}
+		],
+		"effects": [
+			{
+				"id": 331010,
+				"type": 1,
+				"value1": 12,
+				"value2": 2500
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 331010,
+				"attrType": 25,
+				"value": 1
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"durableRecovery": 10
+	},
+	"332001": {
+		"id": 332001,
+		"name": "火尖枪",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 6,
+		"sort": 2001,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]30%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 332001,
+				"reply": 10803
+			}
+		],
+		"effects": [
+			{
+				"id": 332001,
+				"type": 1,
+				"value1": 12,
+				"value2": 3000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 332001,
+				"attrType": 25,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"332002": {
+		"id": 332002,
+		"name": "回魂灯",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 6,
+		"sort": 2002,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]30%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 332002,
+				"reply": 10803
+			}
+		],
+		"effects": [
+			{
+				"id": 332002,
+				"type": 1,
+				"value1": 12,
+				"value2": 3000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 332002,
+				"attrType": 25,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"332003": {
+		"id": 332003,
+		"name": "娑伽宝珠",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 6,
+		"sort": 2003,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]30%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 332003,
+				"reply": 10803
+			}
+		],
+		"effects": [
+			{
+				"id": 332003,
+				"type": 1,
+				"value1": 12,
+				"value2": 3000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 332003,
+				"attrType": 25,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"332004": {
+		"id": 332004,
+		"name": "汐霞钺",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 6,
+		"sort": 2004,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]30%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 332004,
+				"reply": 10803
+			}
+		],
+		"effects": [
+			{
+				"id": 332004,
+				"type": 1,
+				"value1": 12,
+				"value2": 3000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 332004,
+				"attrType": 25,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"332005": {
+		"id": 332005,
+		"name": "碎魂棒",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 6,
+		"sort": 2005,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]30%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 332005,
+				"reply": 10803
+			}
+		],
+		"effects": [
+			{
+				"id": 332005,
+				"type": 1,
+				"value1": 12,
+				"value2": 3000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 332005,
+				"attrType": 25,
+				"value": 2
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"durableRecovery": 10
+	},
+	"333001": {
+		"id": 333001,
+		"name": "二郎神刀",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 8,
+		"sort": 3001,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]40%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 333001,
+				"reply": 10802
+			}
+		],
+		"effects": [
+			{
+				"id": 333001,
+				"type": 1,
+				"value1": 12,
+				"value2": 4000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 333001,
+				"attrType": 25,
+				"value": 5
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"durableRecovery": 10
+	},
+	"333002": {
+		"id": 333002,
+		"name": "打神鞭",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 8,
+		"sort": 3002,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]40%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 333002,
+				"reply": 10802
+			}
+		],
+		"effects": [
+			{
+				"id": 333002,
+				"type": 1,
+				"value1": 12,
+				"value2": 4000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 333002,
+				"attrType": 25,
+				"value": 5
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"durableRecovery": 10
+	},
+	"333003": {
+		"id": 333003,
+		"name": "绝龙剑",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 8,
+		"sort": 3003,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]40%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 333003,
+				"reply": 10802
+			}
+		],
+		"effects": [
+			{
+				"id": 333003,
+				"type": 1,
+				"value1": 12,
+				"value2": 4000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 333003,
+				"attrType": 25,
+				"value": 5
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"durableRecovery": 10
+	},
+	"334001": {
+		"id": 334001,
+		"name": "炎神明弓",
+		"bullet": 2,
+		"showTag": 2,
+		"quality": 10,
+		"sort": 4001,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 1,
+		"desc": "增伤增加[color=#a4fd77]50%[/color]\n每次攻击降低[color=#ff7166]1[/color]点耐久",
+		"more": [
+			{
+				"id": 334001,
+				"reply": 10801
+			}
+		],
+		"effects": [
+			{
+				"id": 334001,
+				"type": 1,
+				"value1": 12,
+				"value2": 5000
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 334001,
+				"attrType": 25,
+				"value": 25
+			}
+		],
+		"fp": 0,
+		"showValue": 5000,
+		"durableRecovery": 10
+	}
+}

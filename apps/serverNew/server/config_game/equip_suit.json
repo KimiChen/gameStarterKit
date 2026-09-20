@@ -1,0 +1,110 @@
+{
+	"1": {
+		"id": 1,
+		"name": "套装1",
+		"desc": "真伤系数+5%，真防系数+5%",
+		"quality": 2,
+		"attr": [
+			{
+				"id": 1,
+				"attrType": 44,
+				"value": 500
+			},
+			{
+				"id": 1,
+				"attrType": 45,
+				"value": 500
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"name": "套装2",
+		"desc": "真伤系数+10%，真防系数+10%",
+		"quality": 3,
+		"attr": [
+			{
+				"id": 2,
+				"attrType": 44,
+				"value": 1000
+			},
+			{
+				"id": 2,
+				"attrType": 45,
+				"value": 1000
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"name": "套装3",
+		"desc": "真伤系数+15%，真防系数+15%",
+		"quality": 4,
+		"attr": [
+			{
+				"id": 3,
+				"attrType": 44,
+				"value": 1500
+			},
+			{
+				"id": 3,
+				"attrType": 45,
+				"value": 1500
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"name": "套装4",
+		"desc": "真伤系数+20%，真防系数+20%",
+		"quality": 6,
+		"attr": [
+			{
+				"id": 4,
+				"attrType": 44,
+				"value": 2000
+			},
+			{
+				"id": 4,
+				"attrType": 45,
+				"value": 2000
+			}
+		]
+	},
+	"5": {
+		"id": 5,
+		"name": "套装5",
+		"desc": "真伤系数+25%，真防系数+25%",
+		"quality": 8,
+		"attr": [
+			{
+				"id": 5,
+				"attrType": 44,
+				"value": 2500
+			},
+			{
+				"id": 5,
+				"attrType": 45,
+				"value": 2500
+			}
+		]
+	},
+	"6": {
+		"id": 6,
+		"name": "套装6",
+		"desc": "真伤系数+30%，真防系数+30%",
+		"quality": 10,
+		"attr": [
+			{
+				"id": 6,
+				"attrType": 44,
+				"value": 3000
+			},
+			{
+				"id": 6,
+				"attrType": 45,
+				"value": 3000
+			}
+		]
+	}
+}

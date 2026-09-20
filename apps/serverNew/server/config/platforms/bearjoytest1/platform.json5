@@ -1,0 +1,153 @@
+{
+    // 是否开启白名单设备控制
+    whiteDeviceSwitch: false,
+    // hash的加密秘钥
+    sessionSignKey: '4RTDmP$rX1WWY2sA',
+    // gm api请求的秘钥
+    gmSecret: 'r7HpIaNXTMXaKw2',
+    // 设置系统的时区
+    timeZone: 'Asia/Shanghai',
+
+    centerRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 0,
+    },
+    userRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 15,
+    },
+    serverRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 1,
+    },
+    centerMysql: {
+        host: '127.0.0.1',
+        username: 'root',
+        password: '123456',
+        charset: 'utf8mb4',
+        database: 'nodedemo_center',
+        logging: false,
+    },
+
+    // 固定区服默认配置；一区使用 20001，后续区服按 sid 依次递增，可由 platforms/<platform><version>/sN.json5 独立覆盖。
+    fixedServer: {
+        clientHost: '127.0.0.1',
+        firstClientPort: 20001,
+        internalHost: '0.0.0.0',
+        heartbeatTimeoutMs: 60000,
+        authTimeoutMs: 30000,
+        maxPacketSize: 102400,
+        // 多进程进程池规模。两者同时为 0 时区服走单进程启动，直接 node 运行，不加载多进程运行时。
+        workerNum: 2,
+        taskWorkerNum: 2,
+        userTaskWorkerNum: 0,
+    },
+
+    // cdn的
+    cdn: {
+        //cdn的根地址
+        baseUrl: 'http://s1.static.xmpaoyou.com/demontale/bearjoy',
+    },
+    // 访问站点api地址
+    host: '127.0.0.1',
+    port: 25001,
+
+    log: {
+        env: 'dev',
+        output: 'file',
+        level: 'info',
+        encoding: 'text',
+        channels: [
+            {
+                name: 'game',
+                dirname: './log/game',
+                maxFiles: '1',
+            },
+            {
+                name: 'orm',
+                filename: 'orm_redis.log',
+                dirname: './log/orm',
+                maxFiles: '1',
+            },
+            {
+                name: 'console',
+                output: 'console',
+                level: 'warn',
+            },
+            {
+                name: 'http',
+                filename: 'http.log',
+                dirname: './log/http',
+            },
+            {
+                name: 'net',
+                filename: 'net.log',
+                dirname: './log/net',
+            },
+            {
+                name: 'redis',
+                filename: 'redis.log',
+                dirname: './log/redis',
+                level: 'error',
+            },
+            {
+                name: 'monitor',
+                filename: 'monitor.log',
+                dirname: './log/monitor',
+            },
+            {
+                name: 'webadjust',
+                filename: 'webadjust.log',
+                dirname: './log/adjust',
+            },
+        ],
+    },
+
+    log_monitor: {
+        scanCachePath: './log/scanCache.txt', //扫面缓存信息保存位置
+        tasks: {
+            default: {
+                title: 'api与service', //汇报的标题
+                rootPath: './log',
+                regexp: '/.+\\.log\\..+', //正则,匹配文件绝对路径
+                cacheFile: './log/scanCache.txt', //扫描记录存放位置
+                robotUrl: '', //企业微信hook推送链接,通过创建群机器人获取
+                errorLineRegexp: '^[0-9-]+\\s[0-9-:\\.]+\\serror\\s', //正则,匹配错误行
+                newLineRegexp: '^[0-9-]+\\s[0-9-:\\.]+\\s\\w+\\s', //正则,匹配新一行
+                displayErrorNum: 5,
+                displayTraceNum: 3,
+            },
+        },
+    },
+
+    onOffs: {
+        staTaOpen: 'false',
+    },
+
+    // wstool, 下面这些wstool配置并不是都在engine里用到, 具体逻辑wstool.ts
+    project: 'nodetest',
+
+    // wstool 协议类型配置: json / protobuf
+    protocol: 'protobuf',
+
+    // wstool route Api
+    routeApi: '/adjust/downloadProto',
+
+    // wstool adjust Api
+    adjustUrl: '/adjust/index',
+
+    // wstool 新建用户 Api
+    newUserUrl: '/adjust/newUser',
+
+    // wstool 获取hash
+    hashApi: '/adjust/wstool/getHash',
+
+    // wstool uid 渠道自增长值
+    PLATFORM_BASE_NUM: 10000000000,
+
+    // wstool uId 区服自增长值
+    SID_BASE_NUM: 1000000,
+}

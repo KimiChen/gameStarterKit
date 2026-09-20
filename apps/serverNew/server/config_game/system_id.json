@@ -1,0 +1,3260 @@
+{
+	"1": {
+		"id": 1,
+		"systemName": "Practice",
+		"name": "个人修炼",
+		"sort": 1,
+		"bigIcon": 1,
+		"smallIcon": 0,
+		"widgetName": "Practice",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 1,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 1
+	},
+	"2": {
+		"id": 2,
+		"systemName": "PracticeMulti",
+		"name": "多人修炼",
+		"sort": 2,
+		"bigIcon": 2,
+		"smallIcon": 0,
+		"widgetName": "Fight",
+		"preferenceId2MapId": 2008,
+		"preferenceId2": 1,
+		"preferenceId": 2,
+		"required": [
+			{
+				"id": 2,
+				"type": 1065,
+				"value": 16,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 1,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"topRes": [
+			1003
+		],
+		"bottomBtn": [
+			1,
+			2,
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"3": {
+		"id": 3,
+		"systemName": "Gong",
+		"name": "元神",
+		"sort": 3,
+		"bigIcon": 3,
+		"smallIcon": 0,
+		"widgetName": "GongMain",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 3,
+				"type": 1065,
+				"value": 17,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"4": {
+		"id": 4,
+		"systemName": "Weapon",
+		"name": "法宝",
+		"sort": 4,
+		"bigIcon": 4,
+		"smallIcon": 0,
+		"widgetName": "Weapon",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 4,
+				"type": 1065,
+				"value": 45,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"5": {
+		"id": 5,
+		"systemName": "Equip",
+		"name": "装备",
+		"sort": 5,
+		"bigIcon": 5,
+		"smallIcon": 0,
+		"widgetName": "Equip",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"6": {
+		"id": 6,
+		"systemName": "KuiCow",
+		"name": "夔牛",
+		"sort": 6,
+		"bigIcon": 6,
+		"smallIcon": 0,
+		"widgetName": "KuiCow",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 2,
+		"required": [
+			{
+				"id": 6,
+				"type": 1065,
+				"value": 177,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 1,
+		"canBossRun": 1,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 1,
+		"bottomBtn": [
+			1,
+			2,
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"7": {
+		"id": 7,
+		"systemName": "Chat",
+		"name": "聊天",
+		"sort": 7,
+		"bigIcon": 7,
+		"smallIcon": 0,
+		"widgetName": "Chat",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 1,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"8": {
+		"id": 8,
+		"systemName": "Guild",
+		"name": "山头",
+		"sortName": "山头",
+		"sort": 8,
+		"bigIcon": 8,
+		"smallIcon": 0,
+		"widgetName": "Guild",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 8,
+				"type": 1065,
+				"value": 70,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "Guild",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"guideName": "btn_guild",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"9": {
+		"id": 9,
+		"systemName": "Achievement",
+		"name": "成就",
+		"sortName": "成就",
+		"sort": 9,
+		"bigIcon": 9,
+		"smallIcon": 0,
+		"widgetName": "AchieveMain",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "Achieve",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 1,
+		"guideName": "btn_achieve",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"10": {
+		"id": 10,
+		"systemName": "Task",
+		"name": "任务",
+		"sort": 11,
+		"bigIcon": 10,
+		"smallIcon": 0,
+		"widgetName": "Task",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 10,
+				"type": 1002,
+				"value": 30,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"11": {
+		"id": 11,
+		"systemName": "Rank",
+		"name": "排行榜",
+		"sortName": "排行",
+		"sort": 12,
+		"bigIcon": 11,
+		"smallIcon": 0,
+		"widgetName": "Rank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 1,
+		"guideName": "btn_rank",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"12": {
+		"id": 12,
+		"systemName": "Friend",
+		"name": "好友",
+		"sort": 13,
+		"bigIcon": 12,
+		"smallIcon": 0,
+		"widgetName": "Friend",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"13": {
+		"id": 13,
+		"systemName": "Bag",
+		"name": "背包",
+		"sortName": "背包",
+		"sort": 14,
+		"bigIcon": 13,
+		"smallIcon": 0,
+		"widgetName": "Bag",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "Bag",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 1,
+		"guideName": "btn_bag",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"14": {
+		"id": 14,
+		"systemName": "Mail",
+		"name": "邮件",
+		"sort": 15,
+		"bigIcon": 14,
+		"smallIcon": 0,
+		"widgetName": "Mail",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"15": {
+		"id": 15,
+		"systemName": "Mission",
+		"name": "个人历练",
+		"sort": 16,
+		"bigIcon": 15,
+		"smallIcon": 0,
+		"widgetName": "Mission",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 2,
+		"required": [
+			{
+				"id": 15,
+				"type": 1065,
+				"value": 77,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 1,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 1,
+		"bottomBtn": [
+			1,
+			2,
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"16": {
+		"id": 16,
+		"systemName": "HeartDemon",
+		"name": "战天兵",
+		"sort": 17,
+		"bigIcon": 16,
+		"smallIcon": 0,
+		"widgetName": "HeartDemon",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 2,
+		"required": [
+			{
+				"id": 16,
+				"type": 1065,
+				"value": 102,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 1,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"topRes": [
+			1004
+		],
+		"hideBottomAll": 1,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"17": {
+		"id": 17,
+		"systemName": "Arena",
+		"name": "斗法台",
+		"sortName": "斗法",
+		"sort": 18,
+		"bigIcon": 17,
+		"smallIcon": 0,
+		"widgetName": "Arena",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 6,
+		"required": [
+			{
+				"id": 17,
+				"type": 1065,
+				"value": 150,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "Arena",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 1,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 1,
+		"autoFight": 0,
+		"shortcut": 2,
+		"guideName": "btn_arena",
+		"award": [
+
+		],
+		"durableEffective": 1
+	},
+	"18": {
+		"id": 18,
+		"systemName": "GuildMission",
+		"name": "护山妖兽",
+		"sort": 19,
+		"bigIcon": 18,
+		"smallIcon": 0,
+		"widgetName": "GuildMission",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 1,
+		"required": [
+			{
+				"id": 18,
+				"type": 1002,
+				"value": 32,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 1,
+		"canBossRun": 1,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"bottomBtn": [
+			1,
+			2,
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"19": {
+		"id": 19,
+		"systemName": "RankLevel",
+		"name": "角色等级冲榜",
+		"sort": 20,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"20": {
+		"id": 20,
+		"systemName": "RankWeapon",
+		"name": "法宝等级冲榜",
+		"sort": 21,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"21": {
+		"id": 21,
+		"systemName": "RankGong",
+		"name": "元神等级冲榜",
+		"sort": 22,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"22": {
+		"id": 22,
+		"systemName": "RankAbPointDraw",
+		"name": "灵气掉落冲榜",
+		"sort": 23,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"23": {
+		"id": 23,
+		"systemName": "RankEnergyDraw",
+		"name": "妖气掉落冲榜",
+		"sort": 24,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"24": {
+		"id": 24,
+		"systemName": "Recharge",
+		"name": "充值",
+		"sort": 50,
+		"bigIcon": 45,
+		"smallIcon": 24,
+		"widgetName": "RechargeTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"guideName": "btn_recharge",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"25": {
+		"id": 25,
+		"systemName": "DailyTaskMain",
+		"name": "任务",
+		"sortName": "任务",
+		"sort": 26,
+		"bigIcon": 25,
+		"smallIcon": 0,
+		"widgetName": "DailyTaskMain",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "DailyTask",
+		"open": 1,
+		"unlockAuto": 1,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 1,
+		"guideName": "btn_dailyTask",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"26": {
+		"id": 26,
+		"systemName": "Title",
+		"name": "称号",
+		"sort": 27,
+		"bigIcon": 26,
+		"smallIcon": 0,
+		"widgetName": "Title",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 1,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"27": {
+		"id": 27,
+		"systemName": "FirstRecharge",
+		"name": "首充礼包",
+		"sort": 28,
+		"bigIcon": 27,
+		"smallIcon": 0,
+		"widgetName": "FirstRecharge",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 0,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"28": {
+		"id": 28,
+		"systemName": "Shop",
+		"name": "商店",
+		"sortName": "商店",
+		"sort": 29,
+		"bigIcon": 28,
+		"smallIcon": 0,
+		"widgetName": "Shop",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "shop",
+		"open": 1,
+		"unlockAuto": 1,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 2,
+		"guideName": "btn_shop",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"29": {
+		"id": 29,
+		"systemName": "CrystalShop",
+		"name": "仙晶坊",
+		"sort": 30,
+		"bigIcon": 29,
+		"smallIcon": 0,
+		"widgetName": "Shop",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "baseShop",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"30": {
+		"id": 30,
+		"systemName": "KuiCowShop",
+		"name": "斗胜坊",
+		"sort": 31,
+		"bigIcon": 30,
+		"smallIcon": 0,
+		"widgetName": "Shop",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "arenaShop",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"31": {
+		"id": 31,
+		"systemName": "GuildShop",
+		"name": "山头坊",
+		"sort": 32,
+		"bigIcon": 31,
+		"smallIcon": 0,
+		"widgetName": "Shop",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"32": {
+		"id": 32,
+		"systemName": "IntegralShop",
+		"name": "馈礼坊",
+		"sort": 33,
+		"bigIcon": 32,
+		"smallIcon": 0,
+		"widgetName": "Shop",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"33": {
+		"id": 33,
+		"systemName": "GiftGc",
+		"name": "仙玉礼包",
+		"sort": 34,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "GiftGc",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"34": {
+		"id": 34,
+		"systemName": "GiftLimit",
+		"name": "限时礼包",
+		"sort": 35,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "GiftLimit",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"35": {
+		"id": 35,
+		"systemName": "ForgePoolsTab",
+		"name": "炼器",
+		"sort": 36,
+		"bigIcon": 45,
+		"smallIcon": 5,
+		"widgetName": "ForgePoolsTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 35,
+				"type": 1065,
+				"value": 78,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "ForgePoolsRed",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"guideName": "tab_equipDraw",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"37": {
+		"id": 37,
+		"systemName": "OfflineAward",
+		"name": "挂机收益",
+		"sort": 38,
+		"bigIcon": 37,
+		"smallIcon": 0,
+		"widgetName": "OfflineAward",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 37,
+				"type": 1065,
+				"value": 146,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+			{
+				"id": 37,
+				"propId": 1002,
+				"num": 600
+			},
+			{
+				"id": 37,
+				"propId": 10201,
+				"num": 30
+			}
+		],
+		"durableEffective": 0
+	},
+	"38": {
+		"id": 38,
+		"systemName": "WeaponMission",
+		"name": "两禅寺",
+		"sort": 39,
+		"bigIcon": 38,
+		"smallIcon": 0,
+		"widgetName": "Mission",
+		"preferenceId2MapId": 13003,
+		"preferenceId2": 2,
+		"preferenceId": 2,
+		"required": [
+			{
+				"id": 38,
+				"type": 1065,
+				"value": 111,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 1,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 1,
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"39": {
+		"id": 39,
+		"systemName": "GongMission",
+		"name": "昆仑山",
+		"sort": 40,
+		"bigIcon": 39,
+		"smallIcon": 0,
+		"widgetName": "Mission",
+		"preferenceId2MapId": 12003,
+		"preferenceId2": 2,
+		"preferenceId": 2,
+		"required": [
+			{
+				"id": 39,
+				"type": 1065,
+				"value": 136,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 1,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 1,
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"40": {
+		"id": 40,
+		"systemName": "EquipMission",
+		"name": "东林院",
+		"sort": 41,
+		"bigIcon": 40,
+		"smallIcon": 0,
+		"widgetName": "Mission",
+		"preferenceId2MapId": 11003,
+		"preferenceId2": 2,
+		"preferenceId": 2,
+		"required": [
+			{
+				"id": 40,
+				"type": 1065,
+				"value": 77,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 1,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 1,
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"41": {
+		"id": 41,
+		"systemName": "EquipGem",
+		"name": "魂石",
+		"sort": 42,
+		"bigIcon": 41,
+		"smallIcon": 0,
+		"widgetName": "Equip",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 41,
+				"type": 1065,
+				"value": 156,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 1,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"42": {
+		"id": 42,
+		"systemName": "gongbooty",
+		"name": "请神",
+		"sort": 43,
+		"bigIcon": 42,
+		"smallIcon": 0,
+		"widgetName": "GongMain",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 42,
+				"type": 1065,
+				"value": 180,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"43": {
+		"id": 43,
+		"systemName": "CrossKuiCow",
+		"name": "跨服夔牛",
+		"sort": 44,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "CrossKuiCow",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 5,
+		"required": [
+			{
+				"id": 43,
+				"type": 1002,
+				"value": 60,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 1,
+		"canBossRun": 1,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 1,
+		"bottomBtn": [
+			1,
+			2,
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"44": {
+		"id": 44,
+		"systemName": "CrossMission",
+		"name": "鏖战天庸",
+		"sort": 45,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "CrossMission",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 4,
+		"required": [
+			{
+				"id": 44,
+				"type": 1002,
+				"value": 60,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 1,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 1,
+		"bottomBtn": [
+			1,
+			2,
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 1,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"45": {
+		"id": 45,
+		"systemName": "Bonus",
+		"name": "福利",
+		"sort": 7,
+		"bigIcon": 45,
+		"smallIcon": 0,
+		"widgetName": "Bonus",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "Bonus",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 1,
+		"guideName": "btn_fuli",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"46": {
+		"id": 46,
+		"systemName": "LevelFund",
+		"name": "成长基金",
+		"sort": 53,
+		"bigIcon": 45,
+		"smallIcon": 55,
+		"widgetName": "FundComp",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 46,
+				"type": 1002,
+				"value": 50,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "LevelFund",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"47": {
+		"id": 47,
+		"systemName": "GongFund",
+		"name": "元神基金",
+		"sort": 54,
+		"bigIcon": 45,
+		"smallIcon": 56,
+		"widgetName": "FundComp",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 47,
+				"type": 1004,
+				"value": 30,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "GongFund",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"48": {
+		"id": 48,
+		"systemName": "WeaponFund",
+		"name": "法宝基金",
+		"sort": 64,
+		"bigIcon": 45,
+		"smallIcon": 57,
+		"widgetName": "FundComp",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 48,
+				"type": 1003,
+				"value": 40,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "WeaponFund",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"49": {
+		"id": 49,
+		"systemName": "EquipFund",
+		"name": "装备基金",
+		"sort": 70,
+		"bigIcon": 45,
+		"smallIcon": 58,
+		"widgetName": "FundComp",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 49,
+				"type": 1002,
+				"value": 90,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "EquipFund",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"50": {
+		"id": 50,
+		"systemName": "SmallPrivilege",
+		"name": "小月卡",
+		"sort": 48,
+		"bigIcon": 0,
+		"smallIcon": 50,
+		"widgetName": "Privilege",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"51": {
+		"id": 51,
+		"systemName": "BigPrivilege",
+		"name": "大月卡",
+		"sort": 49,
+		"bigIcon": 0,
+		"smallIcon": 51,
+		"widgetName": "Privilege",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"52": {
+		"id": 52,
+		"systemName": "RechargeGift",
+		"name": "超值礼包",
+		"sort": 51,
+		"bigIcon": 45,
+		"smallIcon": 40,
+		"widgetName": "RechargeGiftTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "RechargeGiftRedDot",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"53": {
+		"id": 53,
+		"systemName": "FirstRechargeGift",
+		"name": "首充礼包",
+		"sort": 25,
+		"bigIcon": 45,
+		"smallIcon": 20,
+		"widgetName": "FirstRechargeTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 53,
+				"type": 1065,
+				"value": 41,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"54": {
+		"id": 54,
+		"systemName": "RankGongFp",
+		"name": "元神评分冲榜",
+		"sort": 55,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"55": {
+		"id": 55,
+		"systemName": "RankWeaponFp",
+		"name": "法宝评分冲榜",
+		"sort": 56,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"56": {
+		"id": 56,
+		"systemName": "RankEquipFp",
+		"name": "装备评分冲榜",
+		"sort": 57,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"57": {
+		"id": 57,
+		"systemName": "WeaponSoul",
+		"name": "铭文",
+		"sort": 58,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "WeaponSoul",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 57,
+				"type": 1065,
+				"value": 112,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"58": {
+		"id": 58,
+		"systemName": "UserAttrAdd",
+		"name": "天赋加点",
+		"sort": 59,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "UserAttrAdd",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 58,
+				"type": 1065,
+				"value": 85,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"59": {
+		"id": 59,
+		"systemName": "GongSorcery",
+		"name": "妖术",
+		"sort": 60,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "GongSorcery",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 59,
+				"type": 1065,
+				"value": 22,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"60": {
+		"id": 60,
+		"systemName": "Realm",
+		"name": "境界突破",
+		"sort": 61,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "Realm",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 1,
+		"required": [
+			{
+				"id": 60,
+				"type": 1065,
+				"value": 84,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"bottomBtn": [
+			2,
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 1
+	},
+	"61": {
+		"id": 61,
+		"systemName": "EquipSalvage",
+		"name": "熔炼",
+		"sort": 62,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "EquipSalvage",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 61,
+				"type": 1065,
+				"value": 61,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"63": {
+		"id": 63,
+		"systemName": "TriggerGift",
+		"name": "限时礼包",
+		"sort": 47,
+		"bigIcon": 45,
+		"smallIcon": 30,
+		"widgetName": "TriggerGiftTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"64": {
+		"id": 64,
+		"systemName": "GhostCity",
+		"name": "罗刹鬼市",
+		"sort": 65,
+		"bigIcon": 64,
+		"smallIcon": 0,
+		"widgetName": "GhostCity",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 64,
+				"type": 1002,
+				"value": 999,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"65": {
+		"id": 65,
+		"systemName": "WeeklySign",
+		"name": "七日签到",
+		"sort": 50,
+		"bigIcon": 45,
+		"smallIcon": 45,
+		"widgetName": "SevenDaySignTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 65,
+				"type": 1002,
+				"value": 25,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"66": {
+		"id": 66,
+		"systemName": "Advertisement",
+		"name": "广告",
+		"sort": 67,
+		"bigIcon": 66,
+		"smallIcon": 0,
+		"widgetName": "Advertisement",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"67": {
+		"id": 67,
+		"systemName": "RabbitsDailyAd",
+		"name": "兔子送福",
+		"sort": 68,
+		"bigIcon": 67,
+		"smallIcon": 0,
+		"widgetName": "RabbitsDailyAd",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 67,
+				"type": 1065,
+				"value": 161,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"68": {
+		"id": 68,
+		"systemName": "Privilege",
+		"name": "月卡",
+		"sort": 52,
+		"bigIcon": 45,
+		"smallIcon": 50,
+		"widgetName": "PrivilegeTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "PrivilegeRedDot",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"guideName": "tab_privilegeTab",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"69": {
+		"id": 69,
+		"systemName": "AddQQ",
+		"name": "加群福利",
+		"sort": 71,
+		"bigIcon": 45,
+		"smallIcon": 69,
+		"widgetName": "AddQQTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"70": {
+		"id": 70,
+		"systemName": "Question",
+		"name": "问卷调查",
+		"sort": 72,
+		"bigIcon": 45,
+		"smallIcon": 70,
+		"widgetName": "QuestionTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"71": {
+		"id": 71,
+		"systemName": "RankEquipDraw",
+		"name": "炼器冲榜",
+		"sort": 73,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 71,
+				"type": 1065,
+				"value": 78,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"72": {
+		"id": 72,
+		"systemName": "RankWorship",
+		"name": "请神冲榜",
+		"sort": 74,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 72,
+				"type": 1065,
+				"value": 137,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"73": {
+		"id": 73,
+		"systemName": "RankWeaponSoul",
+		"name": "铭文冲榜",
+		"sort": 75,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "ActivityRank",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 73,
+				"type": 1065,
+				"value": 112,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"74": {
+		"id": 74,
+		"systemName": "TokenStore",
+		"name": "仙晶商城",
+		"sort": 76,
+		"bigIcon": 45,
+		"smallIcon": 25,
+		"widgetName": "TokenStoreTab",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 74,
+				"type": 1073,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"75": {
+		"id": 75,
+		"systemName": "GuildGift",
+		"name": "山头砍价礼包",
+		"sort": 77,
+		"bigIcon": 76,
+		"smallIcon": 76,
+		"widgetName": "GuildGift",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 75,
+				"type": 1065,
+				"value": 70,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"76": {
+		"id": 76,
+		"systemName": "Setting",
+		"name": "设置",
+		"sort": 78,
+		"bigIcon": 76,
+		"smallIcon": 76,
+		"widgetName": "Setting",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 2,
+		"guideName": "btn_setting",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"77": {
+		"id": 77,
+		"systemName": "PeachOrchard",
+		"name": "桃园",
+		"sort": 79,
+		"bigIcon": 77,
+		"smallIcon": 77,
+		"widgetName": "PeachOrchard",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 77,
+				"type": 1065,
+				"value": 126,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+			{
+				"id": 77,
+				"propId": 20001,
+				"num": 1
+			}
+		],
+		"durableEffective": 0
+	},
+	"78": {
+		"id": 78,
+		"systemName": "LoveMagical",
+		"name": "秘术",
+		"sort": 10,
+		"bigIcon": 78,
+		"smallIcon": 78,
+		"widgetName": "LoveMagical",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 78,
+				"type": 1065,
+				"value": 204,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "LoveMagical",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 1,
+		"guideName": "btn_loveMagical",
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"79": {
+		"id": 79,
+		"systemName": "WorldLevel",
+		"name": "世界等级",
+		"sort": 80,
+		"bigIcon": 79,
+		"smallIcon": 79,
+		"widgetName": "WorldLevel",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 1,
+		"required": [
+			{
+				"id": 79,
+				"type": 1002,
+				"value": 90,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 1,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"bottomBtn": [
+			1,
+			2,
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"80": {
+		"id": 80,
+		"systemName": "GuildBoss",
+		"name": "山头试炼",
+		"sort": 81,
+		"bigIcon": 80,
+		"smallIcon": 80,
+		"widgetName": "GuildBoss",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 1,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 1
+	},
+	"81": {
+		"id": 81,
+		"systemName": "Tower",
+		"name": "黄泉秘境",
+		"sortName": "秘境",
+		"sort": 82,
+		"bigIcon": 81,
+		"smallIcon": 81,
+		"widgetName": "Tower",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 1,
+		"required": [
+			{
+				"id": 81,
+				"type": 1002,
+				"value": 500,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "TowerRedDot",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"bottomBtn": [
+			3
+		],
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 1,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"82": {
+		"id": 82,
+		"systemName": "Lode",
+		"name": "灵脉",
+		"sort": 83,
+		"bigIcon": 82,
+		"smallIcon": 82,
+		"widgetName": "Lode",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 6,
+		"required": [
+			{
+				"id": 82,
+				"type": 1065,
+				"value": 184,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 1
+	},
+	"83": {
+		"id": 83,
+		"systemName": "GuildDonateRed",
+		"name": "功绩红包",
+		"sort": 84,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "DonateRedEnveloped",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"84": {
+		"id": 84,
+		"systemName": "Transformation",
+		"name": "化形",
+		"sort": 85,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "Transformation",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 84,
+				"type": 1021,
+				"value": 3,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"85": {
+		"id": 85,
+		"systemName": "HomeBox",
+		"name": "领地",
+		"sort": 86,
+		"bigIcon": 85,
+		"smallIcon": 85,
+		"widgetName": "HomeBox",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 85,
+				"type": 1065,
+				"value": 155,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"86": {
+		"id": 86,
+		"systemName": "QuickWear",
+		"name": "快捷穿戴",
+		"sort": 87,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "QuickWear",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 86,
+				"type": 1065,
+				"value": 41,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"87": {
+		"id": 87,
+		"systemName": "Stronger",
+		"name": "妖力提升",
+		"sort": 88,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "Stronger",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 87,
+				"type": 1065,
+				"value": 185,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"88": {
+		"id": 88,
+		"systemName": "SpringFund",
+		"name": "春节基金",
+		"sort": 89,
+		"bigIcon": 0,
+		"smallIcon": 0,
+		"widgetName": "SpringFund",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 0,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"89": {
+		"id": 89,
+		"systemName": "LevelFund2",
+		"name": "精力基金",
+		"sort": 90,
+		"bigIcon": 45,
+		"smallIcon": 55,
+		"widgetName": "FundComp",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 89,
+				"type": 1002,
+				"value": 105,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "LevelFund2",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"90": {
+		"id": 90,
+		"systemName": "GongFund2",
+		"name": "请神基金",
+		"sort": 91,
+		"bigIcon": 45,
+		"smallIcon": 56,
+		"widgetName": "FundComp",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 90,
+				"type": 1004,
+				"value": 85,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "GongFund2",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"91": {
+		"id": 91,
+		"systemName": "WeaponFund2",
+		"name": "铭文基金",
+		"sort": 92,
+		"bigIcon": 45,
+		"smallIcon": 57,
+		"widgetName": "FundComp",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 91,
+				"type": 1003,
+				"value": 85,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "WeaponFund2",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"92": {
+		"id": 92,
+		"systemName": "EquipFund2",
+		"name": "炼器基金",
+		"sort": 93,
+		"bigIcon": 45,
+		"smallIcon": 58,
+		"widgetName": "FundComp",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+			{
+				"id": 92,
+				"type": 1002,
+				"value": 120,
+				"param1": 0,
+				"param2": 0
+			}
+		],
+		"redDot": "EquipFund2",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"93": {
+		"id": 93,
+		"systemName": "SpringFestival",
+		"name": "拜年",
+		"sort": 94,
+		"bigIcon": 93,
+		"smallIcon": 93,
+		"widgetName": "SpringFestival",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "SpringFestival",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	},
+	"94": {
+		"id": 94,
+		"systemName": "ActivityFestival",
+		"name": "除夕送福",
+		"sort": 95,
+		"bigIcon": 94,
+		"smallIcon": 94,
+		"widgetName": "ActivityFestival",
+		"preferenceId2MapId": 0,
+		"preferenceId2": 0,
+		"preferenceId": 0,
+		"required": [
+
+		],
+		"redDot": "ActivityFestival",
+		"open": 1,
+		"unlockAuto": 0,
+		"isActivity": 1,
+		"canRevive": 0,
+		"canBossRun": 0,
+		"bossAtkSpeed": 1000,
+		"hidePosAndPlayer": 0,
+		"isShow": 1,
+		"canGrabOwner": 0,
+		"hideBottomAll": 0,
+		"autoFight": 0,
+		"shortcut": 0,
+		"award": [
+
+		],
+		"durableEffective": 0
+	}
+}

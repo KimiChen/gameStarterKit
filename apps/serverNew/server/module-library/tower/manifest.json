@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "name": "tower",
+  "version": "1.0.0",
+  "description": "Archived tower game module",
+  "files": [
+    {
+      "target": "src/modules/tower/bean/TowerBean.ts",
+      "payload": "payload/src/modules/tower/bean/TowerBean.ts",
+      "sha256": "67a48026af8bf9b8b2e483c4fa7987bee3e1fa5864ddfd8a14d986c755f7a09c"
+    },
+    {
+      "target": "src/modules/tower/bean/TowerPassItem.ts",
+      "payload": "payload/src/modules/tower/bean/TowerPassItem.ts",
+      "sha256": "cdd24bcc19f6d8f76a07db47efd1235c372fd9e5b1c8c451d1dcbb31321ebf73"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "hserver-tower-import",
+      "type": "addImport",
+      "target": "src/modules/serverProgress/bean/HServer.ts",
+      "moduleSpecifier": "../../tower/bean/TowerPassItem",
+      "import": "import { TowerPassItem } from '../../tower/bean/TowerPassItem'",
+      "expectedAbsent": "TowerPassItem"
+    },
+    {
+      "id": "hserver-tower-fields",
+      "type": "addClassMember",
+      "target": "src/modules/serverProgress/bean/HServer.ts",
+      "className": "HServer",
+      "member": "/** 爬塔已挑战成功的最高进度 */\ntowerMaxId: int = 0\n\n/** 爬塔首次通过信息 */\n@OnlyRedis\ntowerFirstPass?: DiffMap<int, TowerPassItem>",
+      "expectedAbsent": "towerMaxId: int = 0"
+    },
+    {
+      "id": "user-tower-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../tower/bean/TowerBean",
+      "import": "import { TowerBean } from '../../tower/bean/TowerBean'",
+      "expectedAbsent": "TowerBean"
+    },
+    {
+      "id": "user-tower-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "@Mod\ntower!: TowerBean",
+      "expectedAbsent": "tower!: TowerBean"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- tower"
+    ],
+    "manual": []
+  }
+}

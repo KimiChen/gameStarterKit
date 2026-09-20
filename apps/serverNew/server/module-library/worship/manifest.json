@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "name": "worship",
+  "version": "1.0.0",
+  "description": "Archived worship game module",
+  "files": [
+    {
+      "target": "config_game/worship_skill.json",
+      "payload": "payload/config_game/worship_skill.json",
+      "sha256": "17330f824e2e4c3cd04600bb473edc2b2ed550da42fad4b6af8d5a5dc7b4410c"
+    },
+    {
+      "target": "src/modules/worship/WorshipC2S.ts",
+      "payload": "payload/src/modules/worship/WorshipC2S.ts",
+      "sha256": "88114e1b15c8a122155e9c2b14c4b4ededefc8fca3059c7d42f1a4cc884f3095"
+    },
+    {
+      "target": "src/modules/worship/action/ActionWorshopLotter.ts",
+      "payload": "payload/src/modules/worship/action/ActionWorshopLotter.ts",
+      "sha256": "4bcb2cd1dedac9bc0f71a9ace9e18e6c3263c6f626ee72039cd3ae0f69f9440d"
+    },
+    {
+      "target": "src/modules/worship/action/ActionWorshopReplace.ts",
+      "payload": "payload/src/modules/worship/action/ActionWorshopReplace.ts",
+      "sha256": "85efecbd975ee2844859e43c7cae5d9fdc5c6865eb54b78c8de802a4ea06e5f0"
+    },
+    {
+      "target": "src/modules/worship/action/WorshipSkillRollRules.ts",
+      "payload": "payload/src/modules/worship/action/WorshipSkillRollRules.ts",
+      "sha256": "273f2f6a269dd8b962770e2bde3148ee02cd2fbb8b181cc47c99583ef79e57f8"
+    },
+    {
+      "target": "src/modules/worship/bean/UserWorshipBean.ts",
+      "payload": "payload/src/modules/worship/bean/UserWorshipBean.ts",
+      "sha256": "0805535aa9fc18174c51227718c886a0e12f322b06e816da5d7bd6abf82f91be"
+    },
+    {
+      "target": "src/modules/worship/bean/WorshipSkillBean.ts",
+      "payload": "payload/src/modules/worship/bean/WorshipSkillBean.ts",
+      "sha256": "de7a638b027b1cdfe08a4155e705da58cb3479f6dab9f5afe2cb5c0184a10995"
+    },
+    {
+      "target": "src/modules/worship/rules/StatDefine.ts",
+      "payload": "payload/src/modules/worship/rules/StatDefine.ts",
+      "sha256": "2e4fb382eed8e8a685d8e96682acd3b902f90f51417a5d0888dc1d6dd85919e3"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-worship-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../worship/bean/UserWorshipBean",
+      "import": "import { UserWorshipBean } from '../../worship/bean/UserWorshipBean'",
+      "expectedAbsent": "UserWorshipBean"
+    },
+    {
+      "id": "user-worship-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "/** 供奉系统 */\n@Mod\nworship!: UserWorshipBean",
+      "expectedAbsent": "worship!: UserWorshipBean"
+    },
+    {
+      "id": "user-login-worship-mod",
+      "type": "addStatement",
+      "target": "src/modules/user/action/ActionGetUserInfo.ts",
+      "functionName": "doAction",
+      "after": "    'tq',",
+      "statement": "    'worship',",
+      "expectedAbsent": "    'worship',"
+    },
+    {
+      "id": "rank-worship-fp",
+      "type": "insertAfterText",
+      "target": "src/modules/user/rules/PowerScoreRules.ts",
+      "after": "                this.FP_TYPE_MAGIC_GET,",
+      "text": "                this.FP_TYPE_WORSHIP,",
+      "expectedAbsent": "                this.FP_TYPE_WORSHIP,"
+    },
+    {
+      "id": "worship-fp-label",
+      "type": "insertAfterText",
+      "target": "src/modules/user/rules/PowerScoreRules.ts",
+      "after": "        [this.FP_TYPE_SORCERY, '妖术评分'],",
+      "text": "        [this.FP_TYPE_WORSHIP, '供奉评分'],",
+      "expectedAbsent": "[this.FP_TYPE_WORSHIP, '供奉评分']"
+    },
+    {
+      "id": "worship-fp-map",
+      "type": "insertAfterText",
+      "target": "src/modules/user/action/UserFp.ts",
+      "after": "        2: this.updateModFp_2,",
+      "text": "        3: this.updateModFp_3,",
+      "expectedAbsent": "        3: this.updateModFp_3,"
+    },
+    {
+      "id": "worship-fp-method",
+      "type": "addClassMember",
+      "target": "src/modules/user/action/UserFp.ts",
+      "className": "UserFp",
+      "member": "static updateModFp_3(user: User): [number, number] {\n    let fp = 0\n    for (const [, worshipSkill] of user.worship.skills) {\n        if (!worshipSkill.skillId) continue\n        fp += C.worship_skill(worshipSkill.skillId).fp\n    }\n    return [fp, fp]\n}",
+      "expectedAbsent": "static updateModFp_3"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- worship"
+    ],
+    "manual": []
+  }
+}

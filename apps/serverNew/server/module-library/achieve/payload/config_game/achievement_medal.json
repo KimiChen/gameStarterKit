@@ -1,0 +1,416 @@
+{
+	"1": {
+		"id": 1,
+		"quality": 2,
+		"icon": 1,
+		"star": 1,
+		"name": "入红尘(一)",
+		"desc": "资历达到[color=#ff7166]100[/color]时解锁",
+		"need": 100
+	},
+	"2": {
+		"id": 2,
+		"quality": 2,
+		"icon": 1,
+		"star": 2,
+		"name": "入红尘(二)",
+		"desc": "资历达到[color=#ff7166]200[/color]时解锁",
+		"need": 200
+	},
+	"3": {
+		"id": 3,
+		"quality": 2,
+		"icon": 1,
+		"star": 3,
+		"name": "入红尘(三)",
+		"desc": "资历达到[color=#ff7166]300[/color]时解锁",
+		"need": 300
+	},
+	"4": {
+		"id": 4,
+		"quality": 2,
+		"icon": 2,
+		"star": 1,
+		"name": "染烟火(一)",
+		"desc": "资历达到[color=#ff7166]400[/color]时解锁",
+		"need": 400
+	},
+	"5": {
+		"id": 5,
+		"quality": 2,
+		"icon": 2,
+		"star": 2,
+		"name": "染烟火(二)",
+		"desc": "资历达到[color=#ff7166]500[/color]时解锁",
+		"need": 500
+	},
+	"6": {
+		"id": 6,
+		"quality": 2,
+		"icon": 2,
+		"star": 3,
+		"name": "染烟火(三)",
+		"desc": "资历达到[color=#ff7166]600[/color]时解锁",
+		"need": 600
+	},
+	"7": {
+		"id": 7,
+		"quality": 3,
+		"icon": 3,
+		"star": 1,
+		"name": "步山河(一)",
+		"desc": "资历达到[color=#ff7166]700[/color]时解锁",
+		"need": 700
+	},
+	"8": {
+		"id": 8,
+		"quality": 3,
+		"icon": 3,
+		"star": 2,
+		"name": "步山河(二)",
+		"desc": "资历达到[color=#ff7166]800[/color]时解锁",
+		"need": 800
+	},
+	"9": {
+		"id": 9,
+		"quality": 3,
+		"icon": 3,
+		"star": 3,
+		"name": "步山河(三)",
+		"desc": "资历达到[color=#ff7166]900[/color]时解锁",
+		"need": 900
+	},
+	"10": {
+		"id": 10,
+		"quality": 3,
+		"icon": 4,
+		"star": 1,
+		"name": "舞流年(一)",
+		"desc": "资历达到[color=#ff7166]1000[/color]时解锁",
+		"need": 1000
+	},
+	"11": {
+		"id": 11,
+		"quality": 3,
+		"icon": 4,
+		"star": 2,
+		"name": "舞流年(二)",
+		"desc": "资历达到[color=#ff7166]1100[/color]时解锁",
+		"need": 1100
+	},
+	"12": {
+		"id": 12,
+		"quality": 3,
+		"icon": 4,
+		"star": 3,
+		"name": "舞流年(三)",
+		"desc": "资历达到[color=#ff7166]1200[/color]时解锁",
+		"need": 1200
+	},
+	"13": {
+		"id": 13,
+		"quality": 3,
+		"icon": 4,
+		"star": 4,
+		"name": "舞流年(四)",
+		"desc": "资历达到[color=#ff7166]1300[/color]时解锁",
+		"need": 1300
+	},
+	"14": {
+		"id": 14,
+		"quality": 4,
+		"icon": 5,
+		"star": 1,
+		"name": "涉长途(一)",
+		"desc": "资历达到[color=#ff7166]1400[/color]时解锁",
+		"need": 1400
+	},
+	"15": {
+		"id": 15,
+		"quality": 4,
+		"icon": 5,
+		"star": 2,
+		"name": "涉长途(二)",
+		"desc": "资历达到[color=#ff7166]1600[/color]时解锁",
+		"need": 1600
+	},
+	"16": {
+		"id": 16,
+		"quality": 4,
+		"icon": 5,
+		"star": 3,
+		"name": "涉长途(三)",
+		"desc": "资历达到[color=#ff7166]1800[/color]时解锁",
+		"need": 1800
+	},
+	"17": {
+		"id": 17,
+		"quality": 4,
+		"icon": 5,
+		"star": 4,
+		"name": "涉长途(四)",
+		"desc": "资历达到[color=#ff7166]2000[/color]时解锁",
+		"need": 2000
+	},
+	"18": {
+		"id": 18,
+		"quality": 4,
+		"icon": 6,
+		"star": 1,
+		"name": "觅人间(一)",
+		"desc": "资历达到[color=#ff7166]2200[/color]时解锁",
+		"need": 2200
+	},
+	"19": {
+		"id": 19,
+		"quality": 4,
+		"icon": 6,
+		"star": 2,
+		"name": "觅人间(二)",
+		"desc": "资历达到[color=#ff7166]2400[/color]时解锁",
+		"need": 2400
+	},
+	"20": {
+		"id": 20,
+		"quality": 4,
+		"icon": 6,
+		"star": 3,
+		"name": "觅人间(三)",
+		"desc": "资历达到[color=#ff7166]2600[/color]时解锁",
+		"need": 2600
+	},
+	"21": {
+		"id": 21,
+		"quality": 4,
+		"icon": 6,
+		"star": 4,
+		"name": "觅人间(四)",
+		"desc": "资历达到[color=#ff7166]2800[/color]时解锁",
+		"need": 2800
+	},
+	"22": {
+		"id": 22,
+		"quality": 6,
+		"icon": 7,
+		"star": 1,
+		"name": "醉清风(一)",
+		"desc": "资历达到[color=#ff7166]3000[/color]时解锁",
+		"need": 3000
+	},
+	"23": {
+		"id": 23,
+		"quality": 6,
+		"icon": 7,
+		"star": 2,
+		"name": "醉清风(二)",
+		"desc": "资历达到[color=#ff7166]3200[/color]时解锁",
+		"need": 3200
+	},
+	"24": {
+		"id": 24,
+		"quality": 6,
+		"icon": 7,
+		"star": 3,
+		"name": "醉清风(三)",
+		"desc": "资历达到[color=#ff7166]3400[/color]时解锁",
+		"need": 3400
+	},
+	"25": {
+		"id": 25,
+		"quality": 6,
+		"icon": 7,
+		"star": 4,
+		"name": "醉清风(四)",
+		"desc": "资历达到[color=#ff7166]3600[/color]时解锁",
+		"need": 3600
+	},
+	"26": {
+		"id": 26,
+		"quality": 6,
+		"icon": 7,
+		"star": 5,
+		"name": "醉清风(五)",
+		"desc": "资历达到[color=#ff7166]3800[/color]时解锁",
+		"need": 3800
+	},
+	"27": {
+		"id": 27,
+		"quality": 8,
+		"icon": 8,
+		"star": 1,
+		"name": "觅清欢(一)",
+		"desc": "资历达到[color=#ff7166]4000[/color]时解锁",
+		"need": 4000
+	},
+	"28": {
+		"id": 28,
+		"quality": 8,
+		"icon": 8,
+		"star": 2,
+		"name": "觅清欢(二)",
+		"desc": "资历达到[color=#ff7166]4300[/color]时解锁",
+		"need": 4300
+	},
+	"29": {
+		"id": 29,
+		"quality": 8,
+		"icon": 8,
+		"star": 3,
+		"name": "觅清欢(三)",
+		"desc": "资历达到[color=#ff7166]4600[/color]时解锁",
+		"need": 4600
+	},
+	"30": {
+		"id": 30,
+		"quality": 8,
+		"icon": 8,
+		"star": 4,
+		"name": "觅清欢(四)",
+		"desc": "资历达到[color=#ff7166]4900[/color]时解锁",
+		"need": 4900
+	},
+	"31": {
+		"id": 31,
+		"quality": 8,
+		"icon": 8,
+		"star": 5,
+		"name": "觅清欢(五)",
+		"desc": "资历达到[color=#ff7166]5200[/color]时解锁",
+		"need": 5200
+	},
+	"32": {
+		"id": 32,
+		"quality": 8,
+		"icon": 9,
+		"star": 1,
+		"name": "渡浮生(一)",
+		"desc": "资历达到[color=#ff7166]5500[/color]时解锁",
+		"need": 5500
+	},
+	"33": {
+		"id": 33,
+		"quality": 8,
+		"icon": 9,
+		"star": 2,
+		"name": "渡浮生(二)",
+		"desc": "资历达到[color=#ff7166]5800[/color]时解锁",
+		"need": 5800
+	},
+	"34": {
+		"id": 34,
+		"quality": 8,
+		"icon": 9,
+		"star": 3,
+		"name": "渡浮生(三)",
+		"desc": "资历达到[color=#ff7166]6100[/color]时解锁",
+		"need": 6100
+	},
+	"35": {
+		"id": 35,
+		"quality": 8,
+		"icon": 9,
+		"star": 4,
+		"name": "渡浮生(四)",
+		"desc": "资历达到[color=#ff7166]6400[/color]时解锁",
+		"need": 6400
+	},
+	"36": {
+		"id": 36,
+		"quality": 8,
+		"icon": 9,
+		"star": 5,
+		"name": "渡浮生(五)",
+		"desc": "资历达到[color=#ff7166]6700[/color]时解锁",
+		"need": 6700
+	},
+	"37": {
+		"id": 37,
+		"quality": 10,
+		"icon": 10,
+		"star": 1,
+		"name": "步星河(一)",
+		"desc": "资历达到[color=#ff7166]7000[/color]时解锁",
+		"need": 7000
+	},
+	"38": {
+		"id": 38,
+		"quality": 10,
+		"icon": 10,
+		"star": 2,
+		"name": "步星河(二)",
+		"desc": "资历达到[color=#ff7166]7300[/color]时解锁",
+		"need": 7300
+	},
+	"39": {
+		"id": 39,
+		"quality": 10,
+		"icon": 10,
+		"star": 3,
+		"name": "步星河(三)",
+		"desc": "资历达到[color=#ff7166]7600[/color]时解锁",
+		"need": 7600
+	},
+	"40": {
+		"id": 40,
+		"quality": 10,
+		"icon": 10,
+		"star": 4,
+		"name": "步星河(四)",
+		"desc": "资历达到[color=#ff7166]7900[/color]时解锁",
+		"need": 7900
+	},
+	"41": {
+		"id": 41,
+		"quality": 10,
+		"icon": 10,
+		"star": 5,
+		"name": "步星河(五)",
+		"desc": "资历达到[color=#ff7166]8200[/color]时解锁",
+		"need": 8200
+	},
+	"42": {
+		"id": 42,
+		"quality": 10,
+		"icon": 11,
+		"star": 1,
+		"name": "醉逍遥(一)",
+		"desc": "资历达到[color=#ff7166]8600[/color]时解锁",
+		"need": 8600
+	},
+	"43": {
+		"id": 43,
+		"quality": 10,
+		"icon": 11,
+		"star": 2,
+		"name": "醉逍遥(二)",
+		"desc": "资历达到[color=#ff7166]9000[/color]时解锁",
+		"need": 9000
+	},
+	"44": {
+		"id": 44,
+		"quality": 10,
+		"icon": 11,
+		"star": 3,
+		"name": "醉逍遥(三)",
+		"desc": "资历达到[color=#ff7166]9400[/color]时解锁",
+		"need": 9400
+	},
+	"45": {
+		"id": 45,
+		"quality": 10,
+		"icon": 11,
+		"star": 4,
+		"name": "醉逍遥(四)",
+		"desc": "资历达到[color=#ff7166]9800[/color]时解锁",
+		"need": 9800
+	},
+	"46": {
+		"id": 46,
+		"quality": 10,
+		"icon": 11,
+		"star": 5,
+		"name": "醉逍遥(五)",
+		"desc": "资历达到[color=#ff7166]10200[/color]时解锁",
+		"need": 10200
+	}
+}

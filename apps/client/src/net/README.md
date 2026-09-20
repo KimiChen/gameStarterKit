@@ -1,17 +1,31 @@
 # net/ —— 通道面（两端映射表）
 
-| 服务端 | 客户端通道 | 客户端逻辑 |
-|---|---|---|
-| `rooms/GameRoom` | `RoomClient.ts` + `rooms/GameRoomTransport.ts` + mode adapter | `gameplay/catalog.ts` → `logic/rooms/<mode>/` |
-| `websocket/room/*` + `rooms/GameRoom`（私房） | `rooms/PrivateRoomService.ts`（prepareCreate→create / resolve→joinById）+ `rooms/matchmaking.ts`（strategy 判别联合） | 视图装配（PrivateRoomLobby 包）为编辑器待办 |
-| `websocket/<域>/<接口>` | `WebSocketClient.ts`（rpc / rpcIdem / onPush） | 调用方在 page / rooms 皆可 |
-| 外部 WebPlatform Public HTTP | `http/account.ts`（开发登录）/ `http/area.ts`（选服） | `logic/page/` |
-| 游戏服 HTTP | `http/notice.ts`（公告） | `logic/page/` |
-| （无，纯客户端状态） | `serverSession.ts`（当前选中区服、列表与目录响应） | 页面写入，Lobby/GameRoom 读取 `gameWsUrl` |
-| （无，纯客户端状态） | `session.ts`（登录态 identity、角色快照与 authInvalid/connLost/battleLost 事件枢纽；Lobby 最终断线先对账，失败才进入统一 returnToLogin） | 编排层订阅 |
-| （无，两 transport 共用件） | `wireCommon.ts`（join options 克隆/稳定序列化、控制字段拆分、错误文本卫生与 SDK 离线重放闸）+ `joinControl.ts`（join timeout/deadline/cancel 契约）+ `connectionEvents.ts`（低层连接事件契约类型） | — |
+| 服务端                                        | 客户端通道                                                                                                                                                                                         | 客户端逻辑                                    |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `rooms/GameRoom`                              | `RoomClient.ts` + `rooms/GameRoomTransport.ts` + mode adapter                                                                                                                                      | `gameplay/catalog.ts` → `logic/rooms/<mode>/` |
+| `websocket/room/*` + `rooms/GameRoom`（私房） | `rooms/PrivateRoomService.ts`（prepareCreate→create / resolve→joinById）+ `rooms/matchmaking.ts`（strategy 判别联合）                                                                              | 视图装配（PrivateRoomLobby 包）为编辑器待办   |
+| `websocket/<域>/<接口>`                       | `WebSocketClient.ts`（rpc / rpcIdem / onPush）                                                                                                                                                     | 调用方在 page / rooms 皆可                    |
+| 外部 WebPlatform Public HTTP                  | `http/account.ts`（开发登录）/ `http/area.ts`（选服）                                                                                                                                              | `logic/page/`                                 |
+| 游戏服 HTTP                                   | `http/notice.ts`（公告）                                                                                                                                                                           | `logic/page/`                                 |
+| （无，纯客户端状态）                          | `serverSession.ts`（当前选中区服、列表与目录响应）                                                                                                                                                 | 页面写入，Lobby/GameRoom 读取 `gameWsUrl`     |
+| （无，纯客户端状态）                          | `session.ts`（登录态 identity、角色快照与 authInvalid/connLost/battleLost 事件枢纽；Lobby 最终断线先对账，失败才进入统一 returnToLogin）                                                           | 编排层订阅                                    |
+| （无，两 transport 共用件）                   | `wireCommon.ts`（join options 克隆/稳定序列化、控制字段拆分、错误文本卫生与 SDK 离线重放闸）+ `joinControl.ts`（join timeout/deadline/cancel 契约）+ `connectionEvents.ts`（低层连接事件契约类型） | —                                             |
 
 注意：RoomClient 与 WebSocketClient 都走 websocket 协议——按「有无状态同步」区分，不按协议区分。
+
+Lobby transport 由 `lobbyTransportConfig.ts` 的显式 `kind` 选择：`colyseus` 是默认旧链路，
+`native-websocket` 只用于新服务端独立端点。`Main` 通过 `lobbyTransportKind` / `nativeLobbyUrl`
+传给 `LobbyTransportHub`；不得根据 URL 形状猜测、覆盖 `gameWsUrl`，或在两条通道之间自动转移登录态、
+pending RPC 和写请求。原生实现位于 `NativeLobbyTransport.ts`，与旧 `WebSocketClient.ts` 并存，直到新端点
+完成完整业务验收。
+两条链的**真实联合验证**入口是 `npm run verify:dual-lobby`（`apps/client/scripts/verify/dual-lobby-transport.mts`，
+由根 `package.json` 转交 `apps/server` 的 tsx 运行）：它真的 fork 旧 `apps/server` 与新 `apps/serverNew` 两个进程，
+再用本目录的 `WebSocketClient`（配仓内 `src/lib/colyseus/colyseus.js` UMD，⛔ 不换实现）与 `LobbyTransportHub`
+分别连两条链，覆盖默认/显式/非法配置、通道切换、断线、重连与 GameRoom 回归。前置是旧 dev-stack 已启动
+（`cd apps/server && npm run stack`，本机 redis 6401/6402 + MySQL 3316，**不需要 Docker**），所以它放在
+`scripts/verify/` 而不是测试套件；旧链 token 由非生产缺省的 `AUTH_PROVIDER=dev` 经 `POST /v1/sessions/dev` 签发。
+⚠ 两条实测陷阱：SDK 自动重连有 `min uptime` 5s 门槛（不过门槛就断，测到的是「不允许重连」）；`connection.close()`
+到 `dropped` 事件有约 6ms 传播窗口，断言必须「先等离开 ready 再等回来」，否则会在断线事件到达前因谓词已真而返回。
 Game join 信封（v8，Non-intrusive §4.4）必填 `mode/modeVersion/profile`：默认撮合由 `joinGameRoom`
 注入 `profile:"default"` 与 catalog `modeVersion`；私房由 `PrivateRoomService` 按 prepareCreate/resolve
 结果注入并携带 `access` ticket。SDK 方法选择是本地 matchmaking strategy（join-or-create/create/join-by-id），
@@ -29,8 +43,14 @@ reconnect 的下一帧前发送闸保持关闭，SDK 自带离线消息队列固
 LobbyRoom 对 SDK 可重试的 transport drop 保留 10 秒窗口；WebSocketClient 在窗口内保留 room/ownership/listener，
 拒绝全部新 RPC 而不让 SDK 排队，当前 generation 的 onReconnect 恢复后续 RPC。主动 leave、停服与强踢不进宽限。
 Lobby 最终 `onLeave` 会在 transport 清理后触发客户端对账层：复用当前内存 token，以显式 ownership 重进所选区 Lobby，
-再用 `user.getInfo` 原子刷新当前 generation 的角色快照。join 有 15 秒超时且随页面 scope 取消；失败才走
-既有 `returnToLogin`，旧 generation 只能释放自己的 ownership，不能覆盖新快照或关闭新登录连接。
+再用 `user.getInfo` 原子刷新当前 generation 的角色快照。join 有 15 秒超时且随页面 scope 取消——但
+**join 的控制信号只约束这一次 join 尝试，不约束连接寿命**：join 一旦落定就必须解绑 abort 监听
+（`NativeLobbyTransport.joinOwned` 的 `detach()` + `cancel()` 的 `settled` 守卫，对齐旧
+`WebSocketClient.joinOwned` 的 `ready.then(dispose, dispose)`）。实测过反面：登录页在进入大厅后会关闭自己的生命周期
+context（`loginFlow` 的 `h.close()`），那个 abort 若还挂着监听就会把**刚建立**的大厅连接一起拆掉，表现为「登录成功、
+首屏正常，但之后任何写请求都 `CONN_LOST：大厅连接当前不可用`」——看着像服务端拒绝，实际是客户端自伤；这一层有
+`apps/client/test/nativeLobbyTransport.test.ts` 的两条互补用例钉住（落定后 abort 不得关连接 / 未落定时的 abort 仍须取消）。
+失败才走既有 `returnToLogin`，旧 generation 只能释放自己的 ownership，不能覆盖新快照或关闭新登录连接。
 
 区服 = 独立实例：目录返回的 `gameWsUrl` 是 Colyseus Client 的明确连接端点（SDK 会由它派生
 matchmaking HTTP URL），`gameHttpUrl` 仍只用于 Portal/游戏 HTTP 请求。目录响应中的 `hash` 只属于

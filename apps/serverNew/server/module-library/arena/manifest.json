@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "name": "arena",
+  "version": "1.0.0",
+  "description": "Archived arena game module",
+  "files": [
+    {
+      "target": "src/modules/arena/ArenaErrors.ts",
+      "payload": "payload/src/modules/arena/ArenaErrors.ts",
+      "sha256": "86e3f248e5e48b2c98364f97cd9216abc3bc24feecccdacee9cbb99e1b2084d9"
+    },
+    {
+      "target": "src/modules/arena/ArenaModule.ts",
+      "payload": "payload/src/modules/arena/ArenaModule.ts",
+      "sha256": "487bbd6a176b4f9e9bb74aa97b18c15cdb4fb10691ad469eb263d2e4927c8c5a"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaDailyMaxTierScore.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaDailyMaxTierScore.ts",
+      "sha256": "8c72510449aee19348ad5681932f1ea9bbf9c81edc381a20c7b5299429fb0b2a"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaHighlight.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaHighlight.ts",
+      "sha256": "a02e0fb10ed9c3d01b4a3707d00d94687a027e6cc245b81bd9396e9d34f37f74"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaHighlightItem.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaHighlightItem.ts",
+      "sha256": "6b3eb840799b13809c67e55d460ce29d498f4209803f3e0cb6150a664661b56b"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaMatchItem.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaMatchItem.ts",
+      "sha256": "fce0dc534695e33e97fdbcfd1db9dc5a2953b9c62de5f4e08c56cfc01bdcbbdb"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaSeasonMaxTierScore.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaSeasonMaxTierScore.ts",
+      "sha256": "24ea724523bccdb33828f1a46937637b437b7806ef2a0d1c790eb2c66751ea6f"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaSeasonUser.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaSeasonUser.ts",
+      "sha256": "12ad8aa3d54eaa8c7f9c58cbd52c19cdbb2a8bcbc6714821ddda7ae3a56f4c78"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaServerBean.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaServerBean.ts",
+      "sha256": "71f12fc2e329abbf5bf3556c5f444bfe53c127f0c73983af734c1973be4ade2e"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaUserDailyItem.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaUserDailyItem.ts",
+      "sha256": "dc73b5f81558df85ac9ae3c8c8de17b41a11a2dd4295a7cd7a5cafb56d013b41"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaUserItem.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaUserItem.ts",
+      "sha256": "b286eec04c1cf6339eff866c2c51253758c14e8e03072041eedf8aa6b99fd856"
+    },
+    {
+      "target": "src/modules/arena/bean/ArenaUserStatItem.ts",
+      "payload": "payload/src/modules/arena/bean/ArenaUserStatItem.ts",
+      "sha256": "f93cf3a844dc9cc814186a01f3a2d8e8426a8aec17646167df2bf6fc71ac3a43"
+    },
+    {
+      "target": "src/modules/arena/persistence/ArenaBattleRecordItem.ts",
+      "payload": "payload/src/modules/arena/persistence/ArenaBattleRecordItem.ts",
+      "sha256": "066683784ab4e486974377c3ba8212b44fdb05aeeba588f2e88514869ac048a8"
+    },
+    {
+      "target": "src/modules/arena/persistence/ArenaBattleRecordKeys.ts",
+      "payload": "payload/src/modules/arena/persistence/ArenaBattleRecordKeys.ts",
+      "sha256": "538478ca4c26065961ef846a4f0252e321310372338fefaa0ebd948df535bf34"
+    },
+    {
+      "target": "src/modules/arena/persistence/ArenaBattleRecords.ts",
+      "payload": "payload/src/modules/arena/persistence/ArenaBattleRecords.ts",
+      "sha256": "5cc0a65686479b9e4c4d09a16ca39f39bd0c121e29c2ab2d7c03dace6ae3ea1f"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-arena-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../arena/bean/ArenaUserItem",
+      "import": "import { ArenaUserItem } from '../../arena/bean/ArenaUserItem'",
+      "expectedAbsent": "ArenaUserItem"
+    },
+    {
+      "id": "user-arena-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "@OnlyRedis\narena?: ArenaUserItem",
+      "expectedAbsent": "arena?: ArenaUserItem"
+    },
+    {
+      "id": "hserver-arena-import",
+      "type": "addImport",
+      "target": "src/modules/serverProgress/bean/HServer.ts",
+      "moduleSpecifier": "../../arena/bean/ArenaServerBean",
+      "import": "import { ArenaServerBean } from '../../arena/bean/ArenaServerBean'",
+      "expectedAbsent": "ArenaServerBean"
+    },
+    {
+      "id": "hserver-arena-field",
+      "type": "addClassMember",
+      "target": "src/modules/serverProgress/bean/HServer.ts",
+      "className": "HServer",
+      "member": "arena?: ArenaServerBean",
+      "expectedAbsent": "arena?: ArenaServerBean"
+    },
+    {
+      "id": "user-info-arena-import",
+      "type": "addImport",
+      "target": "src/modules/user/action/ActionGetUserInfo.ts",
+      "moduleSpecifier": "../../arena/bean/ArenaSeasonUser",
+      "import": "import { ArenaSeasonUser } from '../../arena/bean/ArenaSeasonUser'",
+      "expectedAbsent": "ArenaSeasonUser"
+    },
+    {
+      "id": "user-info-arena-loader",
+      "type": "addStatement",
+      "target": "src/modules/user/action/ActionGetUserInfo.ts",
+      "functionName": "doAction",
+      "after": "    hServer: async (user: User) => UserServerSnapshot.load(user.sId, false),",
+      "statement": "    arenaSeasonUser: async (user: User) => ArenaSeasonUser.load(user.id),",
+      "expectedAbsent": "arenaSeasonUser:"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- arena"
+    ],
+    "manual": []
+  }
+}

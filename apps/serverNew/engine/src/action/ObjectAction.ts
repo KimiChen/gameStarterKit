@@ -1,0 +1,134 @@
+import { ContextEngine } from '../context/ContextEngine'
+import { ApiCall } from '../net/client/base/ApiCall'
+import { MessageDirection } from '../net/client/base/message'
+import { TraceIdGen } from '../net/client/codec/TraceIdGen'
+import type { ApiReturn } from '../protocol/ProtocolInterface'
+import { MsgType } from '../protocol/MsgType'
+import RouteAction from '../task/RouteAction'
+
+/** 从持久化身份映射取得的内部角色 ID；不是 Number(外部 uid)。 */
+export interface ObjectActionIdentity {
+    readonly uid: number
+    readonly sId: number
+    /**
+     * shared 契约里的字符串 uid（可信外部身份）。
+     * 跨进程转发时目标 worker 靠它解析内部身份；⛔ 业务代码不得用它做数值运算或当内部 ID 用。
+     */
+    readonly externalUid?: string
+    /**
+     * 跨进程转发时源 worker 首次解析出的 bindId。
+     * 目标 worker 必须原样复用，不得用 `getBindId` 重算（重算可能读到不同的业务状态）。
+     */
+    readonly routedBindId?: number
+    /** 跨进程转发时复用源调用的 traceId / invokeLayer，保持全链路可追踪。 */
+    readonly traceId?: number
+    readonly invokeLayer?: number
+}
+
+/** server 已完成 shared 校验后，按字符串路由直接执行对象。 */
+export interface ObjectActionHandler<Req, Res> {
+    getBindId?(call: ObjectActionCall<Req, Res>): Promise<number | undefined>
+    actionBefore?(call: ObjectActionCall<Req, Res>): Promise<void> | void
+    doAction(req: Req, res: Res, call: ObjectActionCall<Req, Res>): Promise<void> | void
+}
+
+export class ObjectActionCall<Req, Res> extends ApiCall<Req, Res> {
+    override readonly responseTransport = 'object' as const
+
+    /** 可信外部字符串 uid；跨进程转发时随请求一起传递。 */
+    readonly externalUid?: string
+
+    constructor(
+        readonly route: string,
+        req: Req,
+        res: Res,
+        handler: ObjectActionHandler<Req, Res>,
+        identity: ObjectActionIdentity,
+    ) {
+        if (!route || !Number.isSafeInteger(identity.uid) || identity.uid <= 0
+            || !Number.isSafeInteger(identity.sId) || identity.sId < 1 || identity.sId > 65535) {
+            throw new Error('object action requires a route and trusted internal uid/sId')
+        }
+        const parent = ContextEngine.isValid ? ContextEngine.currentCtxEngine!.ctxLogic.call : undefined
+        // 只消费 ApiCall 的上下文描述：路由是字符串，没有数字协议号，也没有 schema id。
+        super({
+            protocol: { name: route, type: 'api', serviceType: route.split('.')[0] },
+            messageHead: {
+                sendId: 0, targetId: 0, msgType: MsgType.MessageLocalAction,
+                direction: MessageDirection.request,
+                uId: identity.uid, serverId: identity.sId,
+                traceId: identity.traceId ?? parent?.messageHead.traceId ?? TraceIdGen.next(),
+                isError: 0, invokeLayer: identity.invokeLayer ?? parent?.messageHead.invokeLayer ?? 0,
+            },
+            uId: identity.uid,
+            req,
+            res,
+            handler: {
+                getBindId: async () => handler.getBindId?.(this),
+                actionBefore: async () => { await handler.actionBefore?.(this) },
+                doAction: async (request, response) => { await handler.doAction(request, response, this) },
+            },
+        })
+        // 显式身份优先；否则继承转发请求的父调用，避免目标 worker 重新解析 bindId / 外部身份。
+        const forwardedParent = parent as ObjectActionCall<Req, Res> | undefined
+        this.externalUid = identity.externalUid ?? forwardedParent?.externalUid
+        this.routedBindId = identity.routedBindId ?? forwardedParent?.routedBindId
+    }
+
+    override getApiType(): string {
+        return this.route.split('.')[0]
+    }
+
+    protected async _sendReturn(_ret: ApiReturn<Res>): Promise<{ opSuccess: boolean }> {
+        return { opSuccess: true }
+    }
+
+    get result(): { readonly ok: true; readonly data: Res } | { readonly ok: false; readonly error: unknown } {
+        const ret = this.return
+        if (!ret) return { ok: false, error: new Error(`object action did not return: ${this.route}`) }
+        if (!ret.isSucc) return { ok: false, error: this.failureCause ?? ret.err }
+        return { ok: true, data: ret.res }
+    }
+}
+
+/** 与本地 Action 共用调度、上下文、事件、Redis 提交和提交后任务；仅响应出口不再附加 PB mod。 */
+export async function executeObjectAction<Req, Res>(
+    route: string,
+    req: Req,
+    res: Res,
+    handler: ObjectActionHandler<Req, Res>,
+    identity: ObjectActionIdentity,
+): Promise<{ readonly ok: true; readonly data: Res } | { readonly ok: false; readonly error: unknown }> {
+    const call = new ObjectActionCall(route, req, res, handler, identity)
+    await RouteAction.onApiCall(call)
+    return call.result
+}
+
+/** 跨进程转发请求在目标 worker 内的父调用路由名；只占分组、不承载业务。 */
+const FORWARDED_ROUTE = 'internal.forwardedRoute'
+
+/**
+ * 目标 worker 执行跨进程转发过来的对象路由。
+ *
+ * 先建立父调用再执行 `run`，父调用因此占用 `bind:<routedBindId>` 分组；业务 ObjectActionCall
+ * 继承同一个 bindId 与 traceId 后就地执行，既不会重算 bindId，也不会被判定成「跨进程绕回同分组」。
+ * 业务失败按原始错误抛出，避免在进程边界被压成数字错误码。
+ */
+export async function executeForwardedRoute<T>(identity: ObjectActionIdentity, run: () => Promise<T>): Promise<T> {
+    let value: T | undefined
+    const call = new ObjectActionCall<Record<string, never>, Record<string, never>>(
+        FORWARDED_ROUTE,
+        {},
+        {},
+        {
+            doAction: async () => {
+                value = await run()
+            },
+        },
+        identity,
+    )
+    await RouteAction.onApiCall(call)
+    const result = call.result
+    if (!result.ok) throw result.error
+    return value as T
+}

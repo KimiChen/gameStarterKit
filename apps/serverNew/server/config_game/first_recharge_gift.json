@@ -1,0 +1,118 @@
+{
+	"2300101": {
+		"id": 2300101,
+		"need": 0,
+		"rechargeId": 23001,
+		"titie": 2,
+		"desc": 1,
+		"icon": 1,
+		"giftIcon": 1,
+		"fireIcon": 2,
+		"discount": 2888,
+		"openShow": 1,
+		"awards": [
+			{
+				"id": 2300101,
+				"propId": 504001,
+				"num": 1
+			},
+			{
+				"id": 2300101,
+				"propId": 1001,
+				"num": 120
+			},
+			{
+				"id": 2300101,
+				"propId": 1003,
+				"num": 50
+			}
+		]
+	},
+	"2300201": {
+		"id": 2300201,
+		"need": 2300101,
+		"rechargeId": 23002,
+		"titie": 2,
+		"desc": 2,
+		"icon": 2,
+		"giftIcon": 2,
+		"fireIcon": 2,
+		"discount": 1888,
+		"openShow": 1,
+		"awards": [
+			{
+				"id": 2300201,
+				"propId": 331001,
+				"num": 1
+			},
+			{
+				"id": 2300201,
+				"propId": 1001,
+				"num": 600
+			},
+			{
+				"id": 2300201,
+				"propId": 1003,
+				"num": 100
+			}
+		]
+	},
+	"2300301": {
+		"id": 2300301,
+		"need": 2300201,
+		"rechargeId": 23003,
+		"titie": 3,
+		"desc": 3,
+		"icon": 3,
+		"giftIcon": 3,
+		"fireIcon": 1,
+		"discount": 1888,
+		"openShow": 1,
+		"awards": [
+			{
+				"id": 2300301,
+				"propId": 311001,
+				"num": 1
+			},
+			{
+				"id": 2300301,
+				"propId": 1001,
+				"num": 1960
+			},
+			{
+				"id": 2300301,
+				"propId": 1003,
+				"num": 200
+			}
+		]
+	},
+	"2300401": {
+		"id": 2300401,
+		"need": 2300301,
+		"rechargeId": 23004,
+		"titie": 4,
+		"desc": 4,
+		"icon": 4,
+		"giftIcon": 4,
+		"fireIcon": 2,
+		"discount": 1888,
+		"openShow": 1,
+		"awards": [
+			{
+				"id": 2300401,
+				"propId": 321001,
+				"num": 1
+			},
+			{
+				"id": 2300401,
+				"propId": 1001,
+				"num": 3360
+			},
+			{
+				"id": 2300401,
+				"propId": 1003,
+				"num": 300
+			}
+		]
+	}
+}

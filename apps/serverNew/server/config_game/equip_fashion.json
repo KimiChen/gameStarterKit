@@ -1,0 +1,3573 @@
+{
+	"350101": {
+		"id": 350101,
+		"fashionType": 3,
+		"quality": 4,
+		"race": 1,
+		"gender": 2,
+		"type": 1,
+		"name": "异蛇发型1",
+		"desc": "异蛇的默认种族专属发型",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 1003000,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"350102": {
+		"id": 350102,
+		"fashionType": 3,
+		"quality": 4,
+		"race": 2,
+		"gender": 2,
+		"type": 1,
+		"name": "奇鸟发型1",
+		"desc": "奇鸟的默认种族专属发型",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 2003000,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"350103": {
+		"id": 350103,
+		"fashionType": 3,
+		"quality": 4,
+		"race": 3,
+		"gender": 2,
+		"type": 1,
+		"name": "灵狐发型1",
+		"desc": "灵狐的默认种族专属发型",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 3003000,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"350104": {
+		"id": 350104,
+		"fashionType": 3,
+		"quality": 4,
+		"race": 1,
+		"gender": 2,
+		"type": 1,
+		"name": "异蛇发型2",
+		"desc": "异蛇的种族专属发型2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 1003001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"350105": {
+		"id": 350105,
+		"fashionType": 3,
+		"quality": 4,
+		"race": 2,
+		"gender": 2,
+		"type": 1,
+		"name": "奇鸟发型2",
+		"desc": "奇鸟的种族专属发型2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 2003001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"350106": {
+		"id": 350106,
+		"fashionType": 3,
+		"quality": 4,
+		"race": 3,
+		"gender": 2,
+		"type": 1,
+		"name": "灵狐发型2",
+		"desc": "灵狐的种族专属发型2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 3003001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"350107": {
+		"id": 350107,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 2,
+		"type": 1,
+		"name": "通用发型1",
+		"desc": "通用发型1",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000002,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"350108": {
+		"id": 350108,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 2,
+		"type": 1,
+		"name": "通用发型2",
+		"desc": "通用发型2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000003,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"350109": {
+		"id": 350109,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 2,
+		"type": 1,
+		"name": "通用发型3",
+		"desc": "通用发型3",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000004,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360101": {
+		"id": 360101,
+		"fashionType": 4,
+		"quality": 4,
+		"race": 1,
+		"gender": 2,
+		"type": 1,
+		"name": "异蛇五官1",
+		"desc": "异蛇的默认种族专属五官",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 1003000,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360102": {
+		"id": 360102,
+		"fashionType": 4,
+		"quality": 4,
+		"race": 2,
+		"gender": 2,
+		"type": 1,
+		"name": "奇鸟五官1",
+		"desc": "奇鸟的默认种族专属五官",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 2003000,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360103": {
+		"id": 360103,
+		"fashionType": 4,
+		"quality": 4,
+		"race": 3,
+		"gender": 2,
+		"type": 1,
+		"name": "灵狐五官1",
+		"desc": "灵狐的默认种族专属五官",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 3003000,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360104": {
+		"id": 360104,
+		"fashionType": 4,
+		"quality": 4,
+		"race": 1,
+		"gender": 2,
+		"type": 1,
+		"name": "异蛇五官2",
+		"desc": "异蛇的种族专属五官2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 1003001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360105": {
+		"id": 360105,
+		"fashionType": 4,
+		"quality": 4,
+		"race": 2,
+		"gender": 2,
+		"type": 1,
+		"name": "奇鸟五官2",
+		"desc": "奇鸟的种族专属五官2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 2003001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360106": {
+		"id": 360106,
+		"fashionType": 4,
+		"quality": 4,
+		"race": 3,
+		"gender": 2,
+		"type": 1,
+		"name": "灵狐五官2",
+		"desc": "灵狐的种族专属五官2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 3003001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360107": {
+		"id": 360107,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 2,
+		"type": 1,
+		"name": "通用五官1",
+		"desc": "通用五官1",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000002,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360108": {
+		"id": 360108,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 2,
+		"type": 1,
+		"name": "通用五官2",
+		"desc": "通用五官2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000003,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"360109": {
+		"id": 360109,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 2,
+		"type": 1,
+		"name": "通用五官3",
+		"desc": "通用五官3",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000004,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"370100": {
+		"id": 370100,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 1,
+		"name": "无脸饰",
+		"desc": "默认无脸饰",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 0,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"370101": {
+		"id": 370101,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 0,
+		"name": "通用脸饰1",
+		"desc": "通用脸饰1",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 1003000,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"370102": {
+		"id": 370102,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 0,
+		"name": "通用脸饰2",
+		"desc": "通用脸饰2",
+		"tagIcon": 0,
+		"sort": 0,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 2003000,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"321001": {
+		"id": 321001,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "阴阳道袍",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1001,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000001,
+		"more": [
+			{
+				"id": 321001,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321001,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321001,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321002": {
+		"id": 321002,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "虎威战袍",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1002,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000010,
+		"more": [
+			{
+				"id": 321002,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321002,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321002,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321003": {
+		"id": 321003,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "岐董素袄",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1003,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000011,
+		"more": [
+			{
+				"id": 321003,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321003,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321003,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321004": {
+		"id": 321004,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "混元斗篷",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1004,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000012,
+		"more": [
+			{
+				"id": 321004,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321004,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321004,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321005": {
+		"id": 321005,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "灭情罩袍",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1005,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000013,
+		"more": [
+			{
+				"id": 321005,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321005,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321005,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321006": {
+		"id": 321006,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "千机百结",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1006,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000014,
+		"more": [
+			{
+				"id": 321006,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321006,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321006,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321007": {
+		"id": 321007,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "百纳袈裟",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1007,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000015,
+		"more": [
+			{
+				"id": 321007,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321007,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321007,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321008": {
+		"id": 321008,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "冰解罗裙",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1008,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000018,
+		"more": [
+			{
+				"id": 321008,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321008,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321008,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321009": {
+		"id": 321009,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "烟箩芳菲",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1009,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000023,
+		"more": [
+			{
+				"id": 321009,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321009,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321009,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"321010": {
+		"id": 321010,
+		"fashionType": 1,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "龙年贺岁",
+		"desc": "减伤增加[color=#a4fd77]25%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 1010,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000024,
+		"more": [
+			{
+				"id": 321010,
+				"reply": 10804
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 321010,
+				"attrType": 26,
+				"value": 1
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 321010,
+				"attrType": 13,
+				"value": 2500
+			}
+		],
+		"fp": 0,
+		"showValue": 1000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"322001": {
+		"id": 322001,
+		"fashionType": 1,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "圣婴战甲",
+		"desc": "减伤增加[color=#a4fd77]30%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 2001,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000002,
+		"more": [
+			{
+				"id": 322001,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 322001,
+				"attrType": 26,
+				"value": 2
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 322001,
+				"attrType": 13,
+				"value": 3000
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"322002": {
+		"id": 322002,
+		"fashionType": 1,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "一念忘川",
+		"desc": "减伤增加[color=#a4fd77]30%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 2002,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000016,
+		"more": [
+			{
+				"id": 322002,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 322002,
+				"attrType": 26,
+				"value": 2
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 322002,
+				"attrType": 13,
+				"value": 3000
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"322003": {
+		"id": 322003,
+		"fashionType": 1,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "潜龙袍",
+		"desc": "减伤增加[color=#a4fd77]30%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 2003,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000019,
+		"more": [
+			{
+				"id": 322003,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 322003,
+				"attrType": 26,
+				"value": 2
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 322003,
+				"attrType": 13,
+				"value": 3000
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"322004": {
+		"id": 322004,
+		"fashionType": 1,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "清珠映月",
+		"desc": "减伤增加[color=#a4fd77]30%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 2004,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000021,
+		"more": [
+			{
+				"id": 322004,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 322004,
+				"attrType": 26,
+				"value": 2
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 322004,
+				"attrType": 13,
+				"value": 3000
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"322005": {
+		"id": 322005,
+		"fashionType": 1,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "软猬鳞甲",
+		"desc": "减伤增加[color=#a4fd77]30%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 2005,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000022,
+		"more": [
+			{
+				"id": 322005,
+				"reply": 10803
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 322005,
+				"attrType": 26,
+				"value": 2
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 322005,
+				"attrType": 13,
+				"value": 3000
+			}
+		],
+		"fp": 0,
+		"showValue": 2000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"323001": {
+		"id": 323001,
+		"fashionType": 1,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "战神龙铠",
+		"desc": "减伤增加[color=#a4fd77]40%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 3001,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000003,
+		"more": [
+			{
+				"id": 323001,
+				"reply": 10802
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 323001,
+				"attrType": 26,
+				"value": 5
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 323001,
+				"attrType": 13,
+				"value": 4000
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"323002": {
+		"id": 323002,
+		"fashionType": 1,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "太公道袍",
+		"desc": "减伤增加[color=#a4fd77]40%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 3002,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000017,
+		"more": [
+			{
+				"id": 323002,
+				"reply": 10802
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 323002,
+				"attrType": 26,
+				"value": 5
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 323002,
+				"attrType": 13,
+				"value": 4000
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"323003": {
+		"id": 323003,
+		"fashionType": 1,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "雷霆玄甲",
+		"desc": "减伤增加[color=#a4fd77]40%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 3003,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000020,
+		"more": [
+			{
+				"id": 323003,
+				"reply": 10802
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 323003,
+				"attrType": 26,
+				"value": 5
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 323003,
+				"attrType": 13,
+				"value": 4000
+			}
+		],
+		"fp": 0,
+		"showValue": 3000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"324001": {
+		"id": 324001,
+		"fashionType": 1,
+		"quality": 10,
+		"race": -1,
+		"gender": 2,
+		"type": 2,
+		"name": "狂焰岩甲",
+		"desc": "减伤增加[color=#a4fd77]50%[/color]\n每次受击降低[color=#ff7166]1[/color]点耐久",
+		"tagIcon": 11,
+		"sort": 4001,
+		"durable": 3000,
+		"cost": 1,
+		"costType": 2,
+		"suit": 9000001,
+		"more": [
+			{
+				"id": 324001,
+				"reply": 10801
+			}
+		],
+		"baseAttr": [
+			{
+				"id": 324001,
+				"attrType": 26,
+				"value": 25
+			}
+		],
+		"wearAttr": [
+			{
+				"id": 324001,
+				"attrType": 13,
+				"value": 5000
+			}
+		],
+		"fp": 0,
+		"showValue": 5000,
+		"showDesc": "防御神装",
+		"durableRecovery": 10
+	},
+	"351001": {
+		"id": 351001,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "灵剑发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10001,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351005": {
+		"id": 351005,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "虎王发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10002,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000010,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351006": {
+		"id": 351006,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "青凌门发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10003,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000011,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351007": {
+		"id": 351007,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "无赦楼发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10004,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000012,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351008": {
+		"id": 351008,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "引魂楼发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10005,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000013,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351009": {
+		"id": 351009,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "幻蛇谷发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10006,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000014,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351010": {
+		"id": 351010,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "伽罗寺发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10007,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000015,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351013": {
+		"id": 351013,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "衍虚宗发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10008,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000018,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351018": {
+		"id": 351018,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "天心发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10009,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000023,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351019": {
+		"id": 351019,
+		"fashionType": 3,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "贺新春发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10010,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000024,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"351002": {
+		"id": 351002,
+		"fashionType": 3,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "红孩儿发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10011,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000002,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"351011": {
+		"id": 351011,
+		"fashionType": 3,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "孟婆发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10012,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000016,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"351014": {
+		"id": 351014,
+		"fashionType": 3,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "蛟王爷发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10013,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000019,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"351016": {
+		"id": 351016,
+		"fashionType": 3,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "蚌女发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10014,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000021,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"351017": {
+		"id": 351017,
+		"fashionType": 3,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "白仙发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10015,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000022,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"351003": {
+		"id": 351003,
+		"fashionType": 3,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "杨戬发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10016,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000003,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"351012": {
+		"id": 351012,
+		"fashionType": 3,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "太公发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10017,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000017,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"351015": {
+		"id": 351015,
+		"fashionType": 3,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "闻仲发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10018,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000020,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"351004": {
+		"id": 351004,
+		"fashionType": 3,
+		"quality": 10,
+		"race": -1,
+		"gender": 2,
+		"type": 2,
+		"name": "祝融发型",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10019,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 500,
+		"durableRecovery": 0
+	},
+	"361001": {
+		"id": 361001,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "灵剑五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10001,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361005": {
+		"id": 361005,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "虎王五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10002,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000010,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361006": {
+		"id": 361006,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "青凌门五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10003,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000011,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361007": {
+		"id": 361007,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "无赦楼五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10004,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000012,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361008": {
+		"id": 361008,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "引魂楼五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10005,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000013,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361009": {
+		"id": 361009,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "幻蛇谷五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10006,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000014,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361010": {
+		"id": 361010,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "伽罗寺五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10007,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000015,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361013": {
+		"id": 361013,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "衍虚宗五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10008,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000018,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361018": {
+		"id": 361018,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "天心五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10009,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000023,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361019": {
+		"id": 361019,
+		"fashionType": 4,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "贺新春五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10010,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000024,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"361002": {
+		"id": 361002,
+		"fashionType": 4,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "红孩儿五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10011,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000002,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"361011": {
+		"id": 361011,
+		"fashionType": 4,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "孟婆五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10012,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000016,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"361014": {
+		"id": 361014,
+		"fashionType": 4,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "蛟王爷五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10013,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000019,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"361016": {
+		"id": 361016,
+		"fashionType": 4,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "蚌女五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10014,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000021,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"361017": {
+		"id": 361017,
+		"fashionType": 4,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "白仙五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10015,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000022,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"361003": {
+		"id": 361003,
+		"fashionType": 4,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "杨戬五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10016,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000003,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"361012": {
+		"id": 361012,
+		"fashionType": 4,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "太公五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10017,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000017,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"361015": {
+		"id": 361015,
+		"fashionType": 4,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "闻仲五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10018,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000020,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"361004": {
+		"id": 361004,
+		"fashionType": 4,
+		"quality": 10,
+		"race": -1,
+		"gender": 2,
+		"type": 2,
+		"name": "祝融五官",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10019,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 500,
+		"durableRecovery": 0
+	},
+	"371001": {
+		"id": 371001,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "灵剑脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10001,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371005": {
+		"id": 371005,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "虎王脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10002,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000010,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371006": {
+		"id": 371006,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "青凌门脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10003,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000011,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371007": {
+		"id": 371007,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "无赦楼脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10004,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000012,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371008": {
+		"id": 371008,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "引魂楼脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10005,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000013,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371009": {
+		"id": 371009,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "幻蛇谷脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10006,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000014,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371010": {
+		"id": 371010,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "伽罗寺脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10007,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000015,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371013": {
+		"id": 371013,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "衍虚宗脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10008,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000018,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371018": {
+		"id": 371018,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "天心脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10009,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000023,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371019": {
+		"id": 371019,
+		"fashionType": 5,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "贺新春脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10010,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000024,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 100,
+		"durableRecovery": 0
+	},
+	"371002": {
+		"id": 371002,
+		"fashionType": 5,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "红孩儿脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10011,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000002,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"371011": {
+		"id": 371011,
+		"fashionType": 5,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "孟婆脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10012,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000016,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"371014": {
+		"id": 371014,
+		"fashionType": 5,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "蛟王爷脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10013,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000019,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"371016": {
+		"id": 371016,
+		"fashionType": 5,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "蚌女脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10014,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000021,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"371017": {
+		"id": 371017,
+		"fashionType": 5,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "白仙脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10015,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000022,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 200,
+		"durableRecovery": 0
+	},
+	"371003": {
+		"id": 371003,
+		"fashionType": 5,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "杨戬脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10016,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000003,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"371012": {
+		"id": 371012,
+		"fashionType": 5,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "太公脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10017,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000017,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"371015": {
+		"id": 371015,
+		"fashionType": 5,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "闻仲脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10018,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000020,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 300,
+		"durableRecovery": 0
+	},
+	"371004": {
+		"id": 371004,
+		"fashionType": 5,
+		"quality": 10,
+		"race": -1,
+		"gender": 2,
+		"type": 2,
+		"name": "祝融脸饰",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10019,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000001,
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 500,
+		"durableRecovery": 0
+	},
+	"381001": {
+		"id": 381001,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "灵剑头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10001,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000001,
+		"partGroup": [
+			351001,
+			361001,
+			371001
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381005": {
+		"id": 381005,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "虎王头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10002,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000010,
+		"partGroup": [
+			351005,
+			361005,
+			371005
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381006": {
+		"id": 381006,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "青凌门头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10003,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000011,
+		"partGroup": [
+			351006,
+			361006,
+			371006
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381007": {
+		"id": 381007,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "无赦楼头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10004,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000012,
+		"partGroup": [
+			351007,
+			361007,
+			371007
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381008": {
+		"id": 381008,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "引魂楼头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10005,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000013,
+		"partGroup": [
+			351008,
+			361008,
+			371008
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381009": {
+		"id": 381009,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "幻蛇谷头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10006,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000014,
+		"partGroup": [
+			351009,
+			361009,
+			371009
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381010": {
+		"id": 381010,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "伽罗寺头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10007,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000015,
+		"partGroup": [
+			351010,
+			361010,
+			371010
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381013": {
+		"id": 381013,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "衍虚宗头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10008,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000018,
+		"partGroup": [
+			351013,
+			361013,
+			371013
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381018": {
+		"id": 381018,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "天心头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10009,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000023,
+		"partGroup": [
+			351018,
+			361018,
+			371018
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381019": {
+		"id": 381019,
+		"fashionType": 6,
+		"quality": 4,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "贺新春头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10010,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000024,
+		"partGroup": [
+			351019,
+			361019,
+			371019
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381002": {
+		"id": 381002,
+		"fashionType": 6,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "红孩儿头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10011,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000002,
+		"partGroup": [
+			351002,
+			361002,
+			371002
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381011": {
+		"id": 381011,
+		"fashionType": 6,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "孟婆头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10012,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000016,
+		"partGroup": [
+			351011,
+			361011,
+			371011
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381014": {
+		"id": 381014,
+		"fashionType": 6,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "蛟王爷头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10013,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000019,
+		"partGroup": [
+			351014,
+			361014,
+			371014
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381016": {
+		"id": 381016,
+		"fashionType": 6,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "蚌女头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10014,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000021,
+		"partGroup": [
+			351016,
+			361016,
+			371016
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381017": {
+		"id": 381017,
+		"fashionType": 6,
+		"quality": 6,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "白仙头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10015,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000022,
+		"partGroup": [
+			351017,
+			361017,
+			371017
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381003": {
+		"id": 381003,
+		"fashionType": 6,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "杨戬头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10016,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000003,
+		"partGroup": [
+			351003,
+			361003,
+			371003
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381012": {
+		"id": 381012,
+		"fashionType": 6,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "太公头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10017,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000017,
+		"partGroup": [
+			351012,
+			361012,
+			371012
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381015": {
+		"id": 381015,
+		"fashionType": 6,
+		"quality": 8,
+		"race": -1,
+		"gender": 1,
+		"type": 2,
+		"name": "闻仲头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10018,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000020,
+		"partGroup": [
+			351015,
+			361015,
+			371015
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	},
+	"381004": {
+		"id": 381004,
+		"fashionType": 6,
+		"quality": 10,
+		"race": -1,
+		"gender": 2,
+		"type": 2,
+		"name": "祝融头",
+		"desc": "无",
+		"tagIcon": 0,
+		"sort": 10019,
+		"durable": 0,
+		"cost": 0,
+		"costType": 0,
+		"suit": 9000001,
+		"partGroup": [
+			351004,
+			361004,
+			371004
+		],
+		"more": [
+
+		],
+		"baseAttr": [
+
+		],
+		"wearAttr": [
+
+		],
+		"fp": 0,
+		"showValue": 0,
+		"durableRecovery": 0
+	}
+}

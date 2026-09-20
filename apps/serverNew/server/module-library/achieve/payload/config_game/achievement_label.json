@@ -1,0 +1,290 @@
+{
+	"1": {
+		"id": 1,
+		"icon": 4,
+		"name": "喜欢",
+		"value": 2,
+		"need": [
+			{
+				"id": 1,
+				"achievementSortId": 300106
+			},
+			{
+				"id": 1,
+				"achievementSortId": 200205
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"icon": 2,
+		"name": "大神",
+		"value": 2,
+		"need": [
+			{
+				"id": 2,
+				"achievementSortId": 100306
+			},
+			{
+				"id": 2,
+				"achievementSortId": 500403
+			},
+			{
+				"id": 2,
+				"achievementSortId": 101206
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"icon": 5,
+		"name": "富有",
+		"value": 2,
+		"need": [
+			{
+				"id": 3,
+				"achievementSortId": 500102
+			},
+			{
+				"id": 3,
+				"achievementSortId": 500202
+			},
+			{
+				"id": 3,
+				"achievementSortId": 500302
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"icon": 6,
+		"name": "守时",
+		"value": 2,
+		"need": [
+			{
+				"id": 4,
+				"achievementSortId": 400203
+			},
+			{
+				"id": 4,
+				"achievementSortId": 400303
+			}
+		]
+	},
+	"5": {
+		"id": 5,
+		"icon": 3,
+		"name": "勤劳",
+		"value": 2,
+		"need": [
+			{
+				"id": 5,
+				"achievementSortId": 500804
+			},
+			{
+				"id": 5,
+				"achievementSortId": 500604
+			}
+		]
+	},
+	"6": {
+		"id": 6,
+		"icon": 1,
+		"name": "主动",
+		"value": 2,
+		"need": [
+			{
+				"id": 6,
+				"achievementSortId": 100504
+			},
+			{
+				"id": 6,
+				"achievementSortId": 200406
+			}
+		]
+	},
+	"7": {
+		"id": 7,
+		"icon": 4,
+		"name": "爱",
+		"value": 1,
+		"need": [
+			{
+				"id": 7,
+				"achievementSortId": 300206
+			},
+			{
+				"id": 7,
+				"achievementSortId": 400104
+			}
+		]
+	},
+	"8": {
+		"id": 8,
+		"icon": 2,
+		"name": "珍",
+		"value": 1,
+		"need": [
+			{
+				"id": 8,
+				"achievementSortId": 100503
+			},
+			{
+				"id": 8,
+				"achievementSortId": 100804
+			}
+		]
+	},
+	"9": {
+		"id": 9,
+		"icon": 2,
+		"name": "宝",
+		"value": 1,
+		"need": [
+			{
+				"id": 9,
+				"achievementSortId": 100403
+			},
+			{
+				"id": 9,
+				"achievementSortId": 100604
+			}
+		]
+	},
+	"10": {
+		"id": 10,
+		"icon": 5,
+		"name": "大",
+		"value": 1,
+		"need": [
+			{
+				"id": 10,
+				"achievementSortId": 400105
+			}
+		]
+	},
+	"11": {
+		"id": 11,
+		"icon": 6,
+		"name": "小",
+		"value": 1,
+		"need": [
+			{
+				"id": 11,
+				"achievementSortId": 200309
+			}
+		]
+	},
+	"12": {
+		"id": 12,
+		"icon": 4,
+		"name": "赞",
+		"value": 1,
+		"need": [
+			{
+				"id": 12,
+				"achievementSortId": 200205
+			},
+			{
+				"id": 12,
+				"achievementSortId": 200104
+			}
+		]
+	},
+	"13": {
+		"id": 13,
+		"icon": 3,
+		"name": "魂",
+		"value": 1,
+		"need": [
+			{
+				"id": 13,
+				"achievementSortId": 101004
+			},
+			{
+				"id": 13,
+				"achievementSortId": 100106
+			}
+		]
+	},
+	"14": {
+		"id": 14,
+		"icon": 1,
+		"name": "我",
+		"value": 1,
+		"need": [
+			{
+				"id": 14,
+				"achievementSortId": 101304
+			},
+			{
+				"id": 14,
+				"achievementSortId": 100504
+			},
+			{
+				"id": 14,
+				"achievementSortId": 100404
+			}
+		]
+	},
+	"15": {
+		"id": 15,
+		"icon": 5,
+		"name": "你",
+		"value": 1,
+		"need": [
+			{
+				"id": 15,
+				"achievementSortId": 200503
+			},
+			{
+				"id": 15,
+				"achievementSortId": 200607
+			}
+		]
+	},
+	"16": {
+		"id": 16,
+		"icon": 5,
+		"name": "强",
+		"value": 1,
+		"need": [
+			{
+				"id": 16,
+				"achievementSortId": 100204
+			},
+			{
+				"id": 16,
+				"achievementSortId": 100905
+			}
+		]
+	},
+	"17": {
+		"id": 17,
+		"icon": 6,
+		"name": "的",
+		"value": 1,
+		"need": [
+			{
+				"id": 17,
+				"achievementSortId": 101303
+			}
+		]
+	},
+	"18": {
+		"id": 18,
+		"icon": 3,
+		"name": "盟",
+		"value": 1,
+		"need": [
+			{
+				"id": 18,
+				"achievementSortId": 200705
+			},
+			{
+				"id": 18,
+				"achievementSortId": 200806
+			}
+		]
+	}
+}

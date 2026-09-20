@@ -1,0 +1,70 @@
+{
+	"sorcery_hit_1": {
+		"FxName": "sorcery_hit_1",
+		"delay": 300
+	},
+	"sorcery_hit_skill3_1": {
+		"FxName": "sorcery_hit_skill3_1",
+		"delay": 300
+	},
+	"realm_boss_1_hit_skill": {
+		"FxName": "realm_boss_1_hit_skill",
+		"delay": 300
+	},
+	"sorcery_hit_skill3_3": {
+		"FxName": "sorcery_hit_skill3_3",
+		"delay": 300
+	},
+	"magical_shoot_312005": {
+		"FxName": "magical_shoot_312005",
+		"delay": 200
+	},
+	"magical_shoot_314001": {
+		"FxName": "magical_shoot_314001",
+		"delay": 400
+	},
+	"magical_emit_311002": {
+		"FxName": "magical_emit_311002",
+		"delay": 400
+	},
+	"magical_emit_311003": {
+		"FxName": "magical_emit_311003",
+		"delay": 400
+	},
+	"magical_emit_311006": {
+		"FxName": "magical_emit_311006",
+		"delay": 400
+	},
+	"magical_emit_311007": {
+		"FxName": "magical_emit_311007",
+		"delay": 400
+	},
+	"magical_emit_311008": {
+		"FxName": "magical_emit_311008",
+		"delay": 400
+	},
+	"magical_emit_312002": {
+		"FxName": "magical_emit_312002",
+		"delay": 400
+	},
+	"magical_emit_312004": {
+		"FxName": "magical_emit_312004",
+		"delay": 400
+	},
+	"magical_emit_313002": {
+		"FxName": "magical_emit_313002",
+		"delay": 400
+	},
+	"magical_emit_313003": {
+		"FxName": "magical_emit_313003",
+		"delay": 400
+	},
+	"sorcery_shoot_2_2": {
+		"FxName": "sorcery_shoot_2_2",
+		"delay": 500
+	},
+	"sorcery_shoot_2_4": {
+		"FxName": "sorcery_shoot_2_4",
+		"delay": 500
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"1": {
+		"id": 1,
+		"msg": "签名出错",
+		"key": "ProtectSign"
+	},
+	"2": {
+		"id": 2,
+		"msg": "请求出错",
+		"key": "ProtectRequest"
+	},
+	"1001": {
+		"id": 1001,
+		"msg": "道具不足",
+		"key": "PropNoEnough"
+	},
+	"2001": {
+		"id": 2001,
+		"msg": "门客不存在",
+		"key": "HeroNull"
+	}
+}

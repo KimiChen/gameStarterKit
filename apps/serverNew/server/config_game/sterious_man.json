@@ -1,0 +1,192 @@
+{
+	"1": {
+		"id": 1,
+		"name": "素萝",
+		"level": 1,
+		"realm": 1,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 300,
+		"breakThrough": 0
+	},
+	"2": {
+		"id": 2,
+		"name": "素萝",
+		"level": 1,
+		"realm": 1,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 600,
+		"breakThrough": 0
+	},
+	"3": {
+		"id": 3,
+		"name": "素萝",
+		"level": 1,
+		"realm": 1,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 1200,
+		"breakThrough": 0
+	},
+	"4": {
+		"id": 4,
+		"name": "素萝",
+		"level": 1,
+		"realm": 2,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 1800,
+		"breakThrough": 2
+	},
+	"5": {
+		"id": 5,
+		"name": "素萝",
+		"level": 1,
+		"realm": 2,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 2400,
+		"breakThrough": 0
+	},
+	"6": {
+		"id": 6,
+		"name": "素萝",
+		"level": 1,
+		"realm": 2,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 3000,
+		"breakThrough": 0
+	},
+	"7": {
+		"id": 7,
+		"name": "素萝",
+		"level": 1,
+		"realm": 3,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 3600,
+		"breakThrough": 3
+	},
+	"8": {
+		"id": 8,
+		"name": "素萝",
+		"level": 1,
+		"realm": 3,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 4200,
+		"breakThrough": 0
+	},
+	"9": {
+		"id": 9,
+		"name": "素萝",
+		"level": 1,
+		"realm": 3,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 4800,
+		"breakThrough": 0
+	},
+	"10": {
+		"id": 10,
+		"name": "素萝",
+		"level": 1,
+		"realm": 4,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 5400,
+		"breakThrough": 4
+	},
+	"11": {
+		"id": 11,
+		"name": "素萝",
+		"level": 1,
+		"realm": 4,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 6000,
+		"breakThrough": 0
+	},
+	"12": {
+		"id": 12,
+		"name": "素萝",
+		"level": 1,
+		"realm": 4,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 6600,
+		"breakThrough": 0
+	},
+	"13": {
+		"id": 13,
+		"name": "素萝",
+		"level": 1,
+		"realm": 5,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 7200,
+		"breakThrough": 5
+	},
+	"14": {
+		"id": 14,
+		"name": "素萝",
+		"level": 1,
+		"realm": 5,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 7800,
+		"breakThrough": 0
+	},
+	"15": {
+		"id": 15,
+		"name": "素萝",
+		"level": 1,
+		"realm": 5,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 8400,
+		"breakThrough": 0
+	},
+	"16": {
+		"id": 16,
+		"name": "素萝",
+		"level": 1,
+		"realm": 6,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 9000,
+		"breakThrough": 6
+	},
+	"17": {
+		"id": 17,
+		"name": "素萝",
+		"level": 1,
+		"realm": 6,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 9600,
+		"breakThrough": 0
+	},
+	"18": {
+		"id": 18,
+		"name": "素萝",
+		"level": 1,
+		"realm": 6,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 10200,
+		"breakThrough": 0
+	},
+	"19": {
+		"id": 19,
+		"name": "素萝",
+		"level": 1,
+		"realm": 7,
+		"costPropId": 1019,
+		"costNum": 1,
+		"atk": 10800,
+		"breakThrough": 7
+	}
+}

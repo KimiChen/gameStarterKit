@@ -1,0 +1,27 @@
+{
+    "schemaVersion": 2,
+    "purpose": "alloy-server 当前目录、唯一真源和构建入口的可执行契约。",
+    "sourceLayout": {
+        "entryFiles": ["src/main.ts"],
+        "directories": ["src/http", "src/modules", "src/runtime", "src/startup", "src/telemetry", "src/typings"]
+    },
+    "rootBoundaries": {
+        "requiredDirectories": ["generated", "scripts", "test", "tools"],
+        "generatedTruth": [
+            "generated/bean",
+            "generated/configTypes",
+            "generated/persistence",
+            "generated/protocol",
+            "generated/records",
+            "generated/telemetry"
+        ],
+        "operationsTruth": "tools/operations"
+    },
+    "buildContracts": {
+        "serviceEntry": "build/compiled/alloy-server/src/main.js",
+        "httpEntry": "build/compiled/alloy-server/src/http/main.js",
+        "operationsEntry": "build/compiled/alloy-server/tools/operations/main.js",
+        "operationsBundle": "dist/tool/index.js",
+        "operationsTsconfig": "tools/operations/tsconfig.json"
+    }
+}

@@ -1,0 +1,233 @@
+{
+	"1": {
+		"id": 1,
+		"name": "首充大礼",
+		"iconType": 1,
+		"iconDesc": 1,
+		"iconProp": 311001,
+		"discount": 2088,
+		"recharge": 6,
+		"list": {
+			"1": {
+				"actId": 101,
+				"id": 1,
+				"day": 1,
+				"awards": [
+					{
+						"actId": 101,
+						"propId": 311001,
+						"num": 1
+					},
+					{
+						"actId": 101,
+						"propId": 10105,
+						"num": 1
+					},
+					{
+						"actId": 101,
+						"propId": 10303,
+						"num": 1
+					}
+				]
+			},
+			"2": {
+				"actId": 102,
+				"id": 1,
+				"day": 2,
+				"awards": [
+					{
+						"actId": 102,
+						"propId": 10103,
+						"num": 1
+					},
+					{
+						"actId": 102,
+						"propId": 10105,
+						"num": 1
+					},
+					{
+						"actId": 102,
+						"propId": 10302,
+						"num": 1
+					}
+				]
+			},
+			"3": {
+				"actId": 103,
+				"id": 1,
+				"day": 3,
+				"awards": [
+					{
+						"actId": 103,
+						"propId": 10103,
+						"num": 1
+					},
+					{
+						"actId": 103,
+						"propId": 10105,
+						"num": 1
+					},
+					{
+						"actId": 103,
+						"propId": 10302,
+						"num": 1
+					}
+				]
+			}
+		}
+	},
+	"2": {
+		"id": 2,
+		"name": "续充贺礼",
+		"iconType": 2,
+		"iconDesc": 2,
+		"iconProp": 321001,
+		"discount": 2088,
+		"recharge": 60,
+		"list": {
+			"1": {
+				"actId": 201,
+				"id": 2,
+				"day": 1,
+				"awards": [
+					{
+						"actId": 201,
+						"propId": 321001,
+						"num": 1
+					},
+					{
+						"actId": 201,
+						"propId": 10105,
+						"num": 2
+					},
+					{
+						"actId": 201,
+						"propId": 10301,
+						"num": 5
+					}
+				]
+			},
+			"2": {
+				"actId": 202,
+				"id": 2,
+				"day": 2,
+				"awards": [
+					{
+						"actId": 202,
+						"propId": 10103,
+						"num": 1
+					},
+					{
+						"actId": 202,
+						"propId": 10105,
+						"num": 2
+					},
+					{
+						"actId": 202,
+						"propId": 10305,
+						"num": 5
+					}
+				]
+			},
+			"3": {
+				"actId": 203,
+				"id": 2,
+				"day": 3,
+				"awards": [
+					{
+						"actId": 203,
+						"propId": 10103,
+						"num": 1
+					},
+					{
+						"actId": 203,
+						"propId": 10105,
+						"num": 2
+					},
+					{
+						"actId": 203,
+						"propId": 10305,
+						"num": 5
+					}
+				]
+			}
+		}
+	},
+	"3": {
+		"id": 3,
+		"name": "豪充华礼",
+		"iconType": 3,
+		"iconDesc": 3,
+		"iconProp": 331001,
+		"discount": 2088,
+		"recharge": 120,
+		"list": {
+			"1": {
+				"actId": 301,
+				"id": 3,
+				"day": 1,
+				"awards": [
+					{
+						"actId": 301,
+						"propId": 331001,
+						"num": 1
+					},
+					{
+						"actId": 301,
+						"propId": 10105,
+						"num": 3
+					},
+					{
+						"actId": 301,
+						"propId": 10304,
+						"num": 10
+					}
+				]
+			},
+			"2": {
+				"actId": 302,
+				"id": 3,
+				"day": 2,
+				"awards": [
+					{
+						"actId": 302,
+						"propId": 10103,
+						"num": 1
+					},
+					{
+						"actId": 302,
+						"propId": 10105,
+						"num": 3
+					},
+					{
+						"actId": 302,
+						"propId": 10306,
+						"num": 10
+					}
+				]
+			},
+			"3": {
+				"actId": 303,
+				"id": 3,
+				"day": 3,
+				"awards": [
+					{
+						"actId": 303,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"actId": 303,
+						"propId": 10105,
+						"num": 3
+					},
+					{
+						"actId": 303,
+						"propId": 10306,
+						"num": 10
+					}
+				]
+			}
+		}
+	}
+}

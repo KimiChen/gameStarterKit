@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "name": "wife",
+  "version": "1.0.0",
+  "description": "Archived wife game module",
+  "files": [
+    {
+      "target": "src/modules/wife/bean/WifeEffectItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifeEffectItem.ts",
+      "sha256": "0fe941d288182a0925a184ef6f46523610623da065e30b455a8022e0b544c03e"
+    },
+    {
+      "target": "src/modules/wife/bean/WifeFurnitureItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifeFurnitureItem.ts",
+      "sha256": "477ade4558e3c54cc3af2bd5ae6ec5ae255874225d59bc5456c25117623fd8ca"
+    },
+    {
+      "target": "src/modules/wife/bean/WifeItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifeItem.ts",
+      "sha256": "71c03631b9a2bb47f7242795f602d5338dc05179078bdacf92313aad9a8b87eb"
+    },
+    {
+      "target": "src/modules/wife/bean/WifePlotItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifePlotItem.ts",
+      "sha256": "115f84df602e136f07d882ff2af42af0cc68d6fd3a9111b74f69e25e512fca7e"
+    },
+    {
+      "target": "src/modules/wife/bean/WifeRelativeItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifeRelativeItem.ts",
+      "sha256": "ea9af62e0a59485d6570bdc5fe1011d7aa032e4c538c330b78ae61f61d93e594"
+    },
+    {
+      "target": "src/modules/wife/bean/WifeSkillEffectItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifeSkillEffectItem.ts",
+      "sha256": "96115869e402b36562d413c0468e2e5bf8b418b756a7e93c1a958d5b948271ff"
+    },
+    {
+      "target": "src/modules/wife/bean/WifeSkillItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifeSkillItem.ts",
+      "sha256": "374c30f55616443a838e7d8996611a289dd8a708716ca9539f4ea435bfc89b91"
+    },
+    {
+      "target": "src/modules/wife/bean/WifeSkinItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifeSkinItem.ts",
+      "sha256": "d76b9e2e28faf2f70ecbca0e334abc46190cdebf4768152f8ff1e304d9dff4a6"
+    },
+    {
+      "target": "src/modules/wife/bean/WifeStageItem.ts",
+      "payload": "payload/src/modules/wife/bean/WifeStageItem.ts",
+      "sha256": "fb5cdf05d0558f8ee367f4c9f8e8830b3491ee6484623d08c029bfced2d118a4"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-wife-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../wife/bean/WifeItem",
+      "import": "import { WifeItem } from '../../wife/bean/WifeItem'",
+      "expectedAbsent": "WifeItem"
+    },
+    {
+      "id": "user-wife-skill-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../wife/bean/WifeSkillEffectItem",
+      "import": "import { WifeSkillEffectItem } from '../../wife/bean/WifeSkillEffectItem'",
+      "expectedAbsent": "WifeSkillEffectItem"
+    },
+    {
+      "id": "user-wifes-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "/** 红颜列表 */\n@Mod\nwifes?: DiffMap<int, WifeItem>",
+      "expectedAbsent": "wifes?: DiffMap<int, WifeItem>"
+    },
+    {
+      "id": "user-wife-skill-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "/** 红颜技能效果 */\n@Mod\nwifeSkillEffect?: DiffMap<int, WifeSkillEffectItem>",
+      "expectedAbsent": "wifeSkillEffect?: DiffMap<int, WifeSkillEffectItem>"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- wife"
+    ],
+    "manual": []
+  }
+}

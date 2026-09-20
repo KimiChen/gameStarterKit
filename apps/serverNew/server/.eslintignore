@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/compiled/
+generated/
+config_game/
+config/platforms/
+log/
+coverage/
+src/http/public/

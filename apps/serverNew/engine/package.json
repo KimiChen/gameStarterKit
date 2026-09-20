@@ -1,0 +1,65 @@
+{
+    "name": "@arthropoda/game-engine",
+    "version": "1.0.425",
+    "description": "",
+    "keywords": [],
+    "license": "ISC",
+    "author": "",
+    "type": "commonjs",
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./index.js",
+            "require": "./index.js"
+        }
+    },
+    "scripts": {
+        "build": "rm -rf ./dist && tsc",
+        "test:contracts": "node ./test/run-contracts.js",
+        "test:lobby": "TS_NODE_PROJECT=test/tsconfig.json ts-node test/direct/lobbyServer.test.ts",
+        "test:object-action": "TS_NODE_PROJECT=tsconfig.json ts-node test/direct/objectAction.test.ts",
+        "编译发布": "node publish.js"
+    },
+    "dependencies": {
+        "@arthropoda/typeorm": "0.3.22",
+        "@redis/client": "^1.5.13",
+        "async-mutex": "^0.4.0",
+        "axios": "^1.6.3",
+        "commander": "11.1.0",
+        "cookie-parser": "^1.4.6",
+        "cron": "^3.1.1",
+        "express": "^4.18.2",
+        "heap-js": "^2.3.0",
+        "http-errors": "^2.0.0",
+        "json5": "^2.2.3",
+        "logform": "^2.5.1",
+        "moment": "^2.29.4",
+        "moment-timezone": "^0.5.45",
+        "mysql": "^2.18.1",
+        "prettier": "^3.2.5",
+        "prettier-plugin-packagejson": "^2.4.12",
+        "redis": "^4.6.7",
+        "ts-morph": "^21.0.1",
+        "typescript": "^5.3.3",
+        "uuid": "^9.0.1",
+        "winston": "^3.10.0",
+        "winston-daily-rotate-file": "^5.0.0",
+        "winston-transport": "^4.5.0",
+        "ws": "^8.13.0"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/express-serve-static-core": "^4.17.41",
+        "@types/mocha": "^9.1.1",
+        "@types/node": "^20.10.5",
+        "@types/ws": "^8.5.5",
+        "@typescript-eslint/eslint-plugin": "^7.1.1",
+        "eslint-config-airbnb-typescript": "^18.0.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-import": "^2.28.1",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-prettier": "^5.0.0",
+        "mocha": "^9.2.2",
+        "ts-node": "^10.9.2"
+    }
+}

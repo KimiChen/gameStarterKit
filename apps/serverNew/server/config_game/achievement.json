@@ -1,0 +1,7317 @@
+{
+	"1": {
+		"id": 1,
+		"typeName": "实力",
+		"icon": 1,
+		"more": {
+			"100101": {
+				"sort": 100101,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1001,
+				"name": "百宝万货(一)",
+				"desc": "累计获得1件装备",
+				"type": 1013,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 100101,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100102": {
+				"sort": 100102,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1001,
+				"name": "百宝万货(二)",
+				"desc": "累计获得100件装备",
+				"type": 1013,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 100102,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100103": {
+				"sort": 100103,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1001,
+				"name": "百宝万货(三)",
+				"desc": "累计获得1000件装备",
+				"type": 1013,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 100103,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100104": {
+				"sort": 100104,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1001,
+				"name": "百宝万货(四)",
+				"desc": "累计获得3000件装备",
+				"type": 1013,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 100104,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100105": {
+				"sort": 100105,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1001,
+				"name": "百宝万货(五)",
+				"desc": "累计获得5000件装备",
+				"type": 1013,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 100105,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100106": {
+				"sort": 100106,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1001,
+				"name": "百宝万货(六)",
+				"desc": "累计获得10000件装备",
+				"type": 1013,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 100106,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100107": {
+				"sort": 100107,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1001,
+				"name": "百宝万货(七)",
+				"desc": "累计获得50000件装备",
+				"type": 1013,
+				"value": 50000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 100107,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100108": {
+				"sort": 100108,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1001,
+				"name": "百宝万货(八)",
+				"desc": "累计获得100000件装备",
+				"type": 1013,
+				"value": 100000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 100108,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100109": {
+				"sort": 100109,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1001,
+				"name": "百宝万货(九)",
+				"desc": "累计获得150000件装备",
+				"type": 1013,
+				"value": 150000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 100109,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100110": {
+				"sort": 100110,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1001,
+				"name": "百宝万货(十)",
+				"desc": "累计获得200000件装备",
+				"type": 1013,
+				"value": 200000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 100110,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100201": {
+				"sort": 100201,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1002,
+				"name": "稀世奇珍(一)",
+				"desc": "通过炼器抽取装备1次",
+				"type": 1020,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 100201,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100202": {
+				"sort": 100202,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1002,
+				"name": "稀世奇珍(二)",
+				"desc": "通过炼器抽取装备10次",
+				"type": 1020,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 100202,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100203": {
+				"sort": 100203,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1002,
+				"name": "稀世奇珍(三)",
+				"desc": "通过炼器抽取装备30次",
+				"type": 1020,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 100203,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100204": {
+				"sort": 100204,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1002,
+				"name": "稀世奇珍(四)",
+				"desc": "通过炼器抽取装备50次",
+				"type": 1020,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 100204,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100205": {
+				"sort": 100205,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1002,
+				"name": "稀世奇珍(五)",
+				"desc": "通过炼器抽取装备100次",
+				"type": 1020,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 100205,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100206": {
+				"sort": 100206,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1002,
+				"name": "稀世奇珍(六)",
+				"desc": "通过炼器抽取装备200次",
+				"type": 1020,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 100206,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100207": {
+				"sort": 100207,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1002,
+				"name": "稀世奇珍(七)",
+				"desc": "通过炼器抽取装备300次",
+				"type": 1020,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 100207,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100208": {
+				"sort": 100208,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1002,
+				"name": "稀世奇珍(八)",
+				"desc": "通过炼器抽取装备500次",
+				"type": 1020,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 100208,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100209": {
+				"sort": 100209,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1002,
+				"name": "稀世奇珍(九)",
+				"desc": "通过炼器抽取装备1000次",
+				"type": 1020,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 100209,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100210": {
+				"sort": 100210,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1002,
+				"name": "稀世奇珍(十)",
+				"desc": "通过炼器抽取装备2000次",
+				"type": 1020,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 100210,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100301": {
+				"sort": 100301,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1003,
+				"name": "蝉蜕龙变(一)",
+				"desc": "境界提升至妖丹",
+				"type": 1021,
+				"value": 2,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 100301,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100302": {
+				"sort": 100302,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1003,
+				"name": "蝉蜕龙变(二)",
+				"desc": "境界提升至化形",
+				"type": 1021,
+				"value": 3,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 100302,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100303": {
+				"sort": 100303,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1003,
+				"name": "蝉蜕龙变(三)",
+				"desc": "境界提升至凝魄",
+				"type": 1021,
+				"value": 4,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 100303,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100304": {
+				"sort": 100304,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1003,
+				"name": "蝉蜕龙变(四)",
+				"desc": "境界提升至出窍",
+				"type": 1021,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 100304,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100305": {
+				"sort": 100305,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1003,
+				"name": "蝉蜕龙变(五)",
+				"desc": "境界提升至化神",
+				"type": 1021,
+				"value": 6,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 100305,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100306": {
+				"sort": 100306,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1003,
+				"name": "蝉蜕龙变(六)",
+				"desc": "境界提升至炼虚",
+				"type": 1021,
+				"value": 7,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 100306,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100401": {
+				"sort": 100401,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1004,
+				"name": "日锻月炼(一)",
+				"desc": "法宝等级突破30级",
+				"type": 1003,
+				"value": 31,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 100401,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100402": {
+				"sort": 100402,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1004,
+				"name": "日锻月炼(二)",
+				"desc": "法宝等级突破60级",
+				"type": 1003,
+				"value": 62,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 100402,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100403": {
+				"sort": 100403,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1004,
+				"name": "日锻月炼(三)",
+				"desc": "法宝等级突破90级",
+				"type": 1003,
+				"value": 93,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 100403,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100404": {
+				"sort": 100404,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1004,
+				"name": "日锻月炼(四)",
+				"desc": "法宝等级突破120级",
+				"type": 1003,
+				"value": 124,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 100404,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100405": {
+				"sort": 100405,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1004,
+				"name": "日锻月炼(五)",
+				"desc": "法宝等级突破150级",
+				"type": 1003,
+				"value": 155,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 100405,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100406": {
+				"sort": 100406,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1004,
+				"name": "日锻月炼(六)",
+				"desc": "法宝等级突破180级",
+				"type": 1003,
+				"value": 186,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 100406,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100501": {
+				"sort": 100501,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1005,
+				"name": "只争朝夕(一)",
+				"desc": "元神等级突破30级",
+				"type": 1004,
+				"value": 31,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 100501,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100502": {
+				"sort": 100502,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1005,
+				"name": "只争朝夕(二)",
+				"desc": "元神等级突破60级",
+				"type": 1004,
+				"value": 62,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 100502,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100503": {
+				"sort": 100503,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1005,
+				"name": "只争朝夕(三)",
+				"desc": "元神等级突破90级",
+				"type": 1004,
+				"value": 93,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 100503,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100504": {
+				"sort": 100504,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1005,
+				"name": "只争朝夕(四)",
+				"desc": "元神等级突破120级",
+				"type": 1004,
+				"value": 124,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 100504,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100505": {
+				"sort": 100505,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1005,
+				"name": "只争朝夕(五)",
+				"desc": "元神等级突破150级",
+				"type": 1004,
+				"value": 155,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 100505,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100506": {
+				"sort": 100506,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1005,
+				"name": "只争朝夕(六)",
+				"desc": "元神等级突破180级",
+				"type": 1004,
+				"value": 186,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 100506,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100601": {
+				"sort": 100601,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1006,
+				"name": "积厚成器(一)",
+				"desc": "铭文镌刻1次",
+				"type": 1022,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 100601,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100602": {
+				"sort": 100602,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1006,
+				"name": "积厚成器(二)",
+				"desc": "铭文镌刻10次",
+				"type": 1022,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 100602,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100603": {
+				"sort": 100603,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1006,
+				"name": "积厚成器(三)",
+				"desc": "铭文镌刻30次",
+				"type": 1022,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 100603,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100604": {
+				"sort": 100604,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1006,
+				"name": "积厚成器(四)",
+				"desc": "铭文镌刻50次",
+				"type": 1022,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 100604,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100605": {
+				"sort": 100605,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1006,
+				"name": "积厚成器(五)",
+				"desc": "铭文镌刻100次",
+				"type": 1022,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 100605,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100606": {
+				"sort": 100606,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1006,
+				"name": "积厚成器(六)",
+				"desc": "铭文镌刻200次",
+				"type": 1022,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 100606,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100607": {
+				"sort": 100607,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1006,
+				"name": "积厚成器(七)",
+				"desc": "铭文镌刻300次",
+				"type": 1022,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 100607,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100608": {
+				"sort": 100608,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1006,
+				"name": "积厚成器(八)",
+				"desc": "铭文镌刻500次",
+				"type": 1022,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 100608,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100609": {
+				"sort": 100609,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1006,
+				"name": "积厚成器(九)",
+				"desc": "铭文镌刻1000次",
+				"type": 1022,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 100609,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100610": {
+				"sort": 100610,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1006,
+				"name": "积厚成器(十)",
+				"desc": "铭文镌刻2000次",
+				"type": 1022,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 100610,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100801": {
+				"sort": 100801,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1007,
+				"name": "顶礼膜拜(一)",
+				"desc": "进行请神操作1次",
+				"type": 1024,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 100801,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100802": {
+				"sort": 100802,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1007,
+				"name": "顶礼膜拜(二)",
+				"desc": "进行请神操作5次",
+				"type": 1024,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 100802,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100803": {
+				"sort": 100803,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1007,
+				"name": "顶礼膜拜(三)",
+				"desc": "进行请神操作10次",
+				"type": 1024,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 100803,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100804": {
+				"sort": 100804,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1007,
+				"name": "顶礼膜拜(四)",
+				"desc": "进行请神操作20次",
+				"type": 1024,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 100804,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100805": {
+				"sort": 100805,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1007,
+				"name": "顶礼膜拜(五)",
+				"desc": "进行请神操作30次",
+				"type": 1024,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 100805,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100806": {
+				"sort": 100806,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1007,
+				"name": "顶礼膜拜(六)",
+				"desc": "进行请神操作50次",
+				"type": 1024,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 100806,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100807": {
+				"sort": 100807,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1007,
+				"name": "顶礼膜拜(七)",
+				"desc": "进行请神操作100次",
+				"type": 1024,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 100807,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100808": {
+				"sort": 100808,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1007,
+				"name": "顶礼膜拜(八)",
+				"desc": "进行请神操作150次",
+				"type": 1024,
+				"value": 150,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 100808,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100809": {
+				"sort": 100809,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1007,
+				"name": "顶礼膜拜(九)",
+				"desc": "进行请神操作200次",
+				"type": 1024,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 100809,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100810": {
+				"sort": 100810,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1007,
+				"name": "顶礼膜拜(十)",
+				"desc": "进行请神操作300次",
+				"type": 1024,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 100810,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100901": {
+				"sort": 100901,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1008,
+				"name": "千锤百炼(一)",
+				"desc": "熔炼装备累积50件",
+				"type": 1025,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 100901,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100902": {
+				"sort": 100902,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1008,
+				"name": "千锤百炼(二)",
+				"desc": "熔炼装备累积1000件",
+				"type": 1025,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 100902,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100903": {
+				"sort": 100903,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1008,
+				"name": "千锤百炼(三)",
+				"desc": "熔炼装备累积2000件",
+				"type": 1025,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 100903,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100904": {
+				"sort": 100904,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1008,
+				"name": "千锤百炼(四)",
+				"desc": "熔炼装备累积5000件",
+				"type": 1025,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 100904,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100905": {
+				"sort": 100905,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1008,
+				"name": "千锤百炼(五)",
+				"desc": "熔炼装备累积10000件",
+				"type": 1025,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 100905,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100906": {
+				"sort": 100906,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1008,
+				"name": "千锤百炼(六)",
+				"desc": "熔炼装备累积20000件",
+				"type": 1025,
+				"value": 20000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 100906,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100907": {
+				"sort": 100907,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1008,
+				"name": "千锤百炼(七)",
+				"desc": "熔炼装备累积50000件",
+				"type": 1025,
+				"value": 50000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 100907,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100908": {
+				"sort": 100908,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1008,
+				"name": "千锤百炼(八)",
+				"desc": "熔炼装备累积100000件",
+				"type": 1025,
+				"value": 100000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 100908,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100909": {
+				"sort": 100909,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1008,
+				"name": "千锤百炼(九)",
+				"desc": "熔炼装备累积150000件",
+				"type": 1025,
+				"value": 150000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 100909,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"100910": {
+				"sort": 100910,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1008,
+				"name": "千锤百炼(十)",
+				"desc": "熔炼装备累积200000件",
+				"type": 1025,
+				"value": 200000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 100910,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101001": {
+				"sort": 101001,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1009,
+				"name": "沧海遗珠(一)",
+				"desc": "镶嵌6颗1阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 1,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 101001,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101002": {
+				"sort": 101002,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1009,
+				"name": "沧海遗珠(二)",
+				"desc": "镶嵌6颗2阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 2,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 101002,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101003": {
+				"sort": 101003,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1009,
+				"name": "沧海遗珠(三)",
+				"desc": "镶嵌6颗3阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 3,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 101003,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101004": {
+				"sort": 101004,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1009,
+				"name": "沧海遗珠(四)",
+				"desc": "镶嵌6颗4阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 4,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 101004,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101005": {
+				"sort": 101005,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1009,
+				"name": "沧海遗珠(五)",
+				"desc": "镶嵌6颗5阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 5,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 101005,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101006": {
+				"sort": 101006,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1009,
+				"name": "沧海遗珠(六)",
+				"desc": "镶嵌6颗6阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 6,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 101006,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101007": {
+				"sort": 101007,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1009,
+				"name": "沧海遗珠(七)",
+				"desc": "镶嵌6颗7阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 7,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 101007,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101008": {
+				"sort": 101008,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1009,
+				"name": "沧海遗珠(八)",
+				"desc": "镶嵌6颗8阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 8,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 101008,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101009": {
+				"sort": 101009,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1009,
+				"name": "沧海遗珠(九)",
+				"desc": "镶嵌6颗9阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 9,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 101009,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101010": {
+				"sort": 101010,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1009,
+				"name": "沧海遗珠(十)",
+				"desc": "镶嵌6颗10阶及以上魂石",
+				"type": 1045,
+				"value": 6,
+				"param1": 10,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 101010,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101201": {
+				"sort": 101201,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1010,
+				"name": "止于至善(一)",
+				"desc": "角色总妖力达到10000",
+				"type": 1028,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 101201,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101202": {
+				"sort": 101202,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1010,
+				"name": "止于至善(二)",
+				"desc": "角色总妖力达到50000",
+				"type": 1028,
+				"value": 50000,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 101202,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101203": {
+				"sort": 101203,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1010,
+				"name": "止于至善(三)",
+				"desc": "角色总妖力达到100000",
+				"type": 1028,
+				"value": 100000,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 101203,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101204": {
+				"sort": 101204,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1010,
+				"name": "止于至善(四)",
+				"desc": "角色总妖力达到200000",
+				"type": 1028,
+				"value": 200000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 101204,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101205": {
+				"sort": 101205,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1010,
+				"name": "止于至善(五)",
+				"desc": "角色总妖力达到300000",
+				"type": 1028,
+				"value": 300000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 101205,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101206": {
+				"sort": 101206,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1010,
+				"name": "止于至善(六)",
+				"desc": "角色总妖力达到400000",
+				"type": 1028,
+				"value": 400000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 101206,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101207": {
+				"sort": 101207,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1010,
+				"name": "止于至善(七)",
+				"desc": "角色总妖力达到500000",
+				"type": 1028,
+				"value": 500000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 101207,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101208": {
+				"sort": 101208,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1010,
+				"name": "止于至善(八)",
+				"desc": "角色总妖力达到1000000",
+				"type": 1028,
+				"value": 1000000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 101208,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101209": {
+				"sort": 101209,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1010,
+				"name": "止于至善(九)",
+				"desc": "角色总妖力达到1500000",
+				"type": 1028,
+				"value": 1500000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 101209,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101210": {
+				"sort": 101210,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1010,
+				"name": "止于至善(十)",
+				"desc": "角色总妖力达到2000000",
+				"type": 1028,
+				"value": 2000000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 101210,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101301": {
+				"sort": 101301,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1011,
+				"name": "修炼之道(一)",
+				"desc": "角色等级达到30级",
+				"type": 1002,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 101301,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101302": {
+				"sort": 101302,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1011,
+				"name": "修炼之道(二)",
+				"desc": "角色等级达到60级",
+				"type": 1002,
+				"value": 60,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 101302,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101303": {
+				"sort": 101303,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1011,
+				"name": "修炼之道(三)",
+				"desc": "角色等级达到90级",
+				"type": 1002,
+				"value": 90,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 101303,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101304": {
+				"sort": 101304,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1011,
+				"name": "修炼之道(四)",
+				"desc": "角色等级达到120级",
+				"type": 1002,
+				"value": 120,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 101304,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101305": {
+				"sort": 101305,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1011,
+				"name": "修炼之道(五)",
+				"desc": "角色等级达到150级",
+				"type": 1002,
+				"value": 150,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 101305,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101306": {
+				"sort": 101306,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1011,
+				"name": "修炼之道(六)",
+				"desc": "角色等级达到180级",
+				"type": 1002,
+				"value": 180,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 101306,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101401": {
+				"sort": 101401,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1012,
+				"name": "鬼斧神工(一)",
+				"desc": "累计获取具有3个特效的红色装备共1个",
+				"type": 1069,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 101401,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101402": {
+				"sort": 101402,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1012,
+				"name": "鬼斧神工(二)",
+				"desc": "累计获取具有3个特效的红色装备共5个",
+				"type": 1069,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 101402,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101403": {
+				"sort": 101403,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1012,
+				"name": "鬼斧神工(三)",
+				"desc": "累计获取具有3个特效的红色装备共10个",
+				"type": 1069,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 101403,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101404": {
+				"sort": 101404,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1012,
+				"name": "鬼斧神工(四)",
+				"desc": "累计获取具有3个特效的红色装备共15个",
+				"type": 1069,
+				"value": 15,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 101404,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101405": {
+				"sort": 101405,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1012,
+				"name": "鬼斧神工(五)",
+				"desc": "累计获取具有3个特效的红色装备共20个",
+				"type": 1069,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 101405,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101406": {
+				"sort": 101406,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1012,
+				"name": "鬼斧神工(六)",
+				"desc": "累计获取具有3个特效的红色装备共25个",
+				"type": 1069,
+				"value": 25,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 101406,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101407": {
+				"sort": 101407,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1012,
+				"name": "鬼斧神工(七)",
+				"desc": "累计获取具有3个特效的红色装备共30个",
+				"type": 1069,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 101407,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101408": {
+				"sort": 101408,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1012,
+				"name": "鬼斧神工(八)",
+				"desc": "累计获取具有3个特效的红色装备共35个",
+				"type": 1069,
+				"value": 35,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 101408,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101409": {
+				"sort": 101409,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1012,
+				"name": "鬼斧神工(九)",
+				"desc": "累计获取具有3个特效的红色装备共40个",
+				"type": 1069,
+				"value": 40,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 101409,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101410": {
+				"sort": 101410,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1012,
+				"name": "鬼斧神工(十)",
+				"desc": "累计获取具有3个特效的红色装备共50个",
+				"type": 1069,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 101410,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101501": {
+				"sort": 101501,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1013,
+				"name": "巧夺天工(一)",
+				"desc": "累计获取具有3个属性的红色装备共1个",
+				"type": 1070,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 101501,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101502": {
+				"sort": 101502,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1013,
+				"name": "巧夺天工(二)",
+				"desc": "累计获取具有3个属性的红色装备共5个",
+				"type": 1070,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 101502,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101503": {
+				"sort": 101503,
+				"id": 1,
+				"stageIcon": 1,
+				"groupId": 1013,
+				"name": "巧夺天工(三)",
+				"desc": "累计获取具有3个属性的红色装备共10个",
+				"type": 1070,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 101503,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101504": {
+				"sort": 101504,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1013,
+				"name": "巧夺天工(四)",
+				"desc": "累计获取具有3个属性的红色装备共15个",
+				"type": 1070,
+				"value": 15,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 101504,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101505": {
+				"sort": 101505,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1013,
+				"name": "巧夺天工(五)",
+				"desc": "累计获取具有3个属性的红色装备共20个",
+				"type": 1070,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 101505,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101506": {
+				"sort": 101506,
+				"id": 1,
+				"stageIcon": 2,
+				"groupId": 1013,
+				"name": "巧夺天工(六)",
+				"desc": "累计获取具有3个属性的红色装备共25个",
+				"type": 1070,
+				"value": 25,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 101506,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101507": {
+				"sort": 101507,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1013,
+				"name": "巧夺天工(七)",
+				"desc": "累计获取具有3个属性的红色装备共30个",
+				"type": 1070,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 101507,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101508": {
+				"sort": 101508,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1013,
+				"name": "巧夺天工(八)",
+				"desc": "累计获取具有3个属性的红色装备共35个",
+				"type": 1070,
+				"value": 35,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 101508,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101509": {
+				"sort": 101509,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1013,
+				"name": "巧夺天工(九)",
+				"desc": "累计获取具有3个属性的红色装备共40个",
+				"type": 1070,
+				"value": 40,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 101509,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"101510": {
+				"sort": 101510,
+				"id": 1,
+				"stageIcon": 3,
+				"groupId": 1013,
+				"name": "巧夺天工(十)",
+				"desc": "累计获取具有3个属性的红色装备共50个",
+				"type": 1070,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 101510,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			}
+		}
+	},
+	"2": {
+		"id": 2,
+		"typeName": "玩法",
+		"icon": 2,
+		"more": {
+			"200101": {
+				"sort": 200101,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2001,
+				"name": "众望所归(一)",
+				"desc": "获得点赞次数达到1次",
+				"type": 1029,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200101,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200102": {
+				"sort": 200102,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2001,
+				"name": "众望所归(二)",
+				"desc": "获得点赞次数达到10次",
+				"type": 1029,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200102,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200103": {
+				"sort": 200103,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2001,
+				"name": "众望所归(三)",
+				"desc": "获得点赞次数达到50次",
+				"type": 1029,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200103,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200104": {
+				"sort": 200104,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2001,
+				"name": "众望所归(四)",
+				"desc": "获得点赞次数达到100次",
+				"type": 1029,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200104,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200105": {
+				"sort": 200105,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2001,
+				"name": "众望所归(五)",
+				"desc": "获得点赞次数达到200次",
+				"type": 1029,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200105,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200106": {
+				"sort": 200106,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2001,
+				"name": "众望所归(六)",
+				"desc": "获得点赞次数达到300次",
+				"type": 1029,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200106,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200107": {
+				"sort": 200107,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2001,
+				"name": "众望所归(七)",
+				"desc": "获得点赞次数达到500次",
+				"type": 1029,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200107,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200108": {
+				"sort": 200108,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2001,
+				"name": "众望所归(八)",
+				"desc": "获得点赞次数达到1000次",
+				"type": 1029,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200108,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200109": {
+				"sort": 200109,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2001,
+				"name": "众望所归(九)",
+				"desc": "获得点赞次数达到3000次",
+				"type": 1029,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200109,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200110": {
+				"sort": 200110,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2001,
+				"name": "众望所归(十)",
+				"desc": "获得点赞次数达到5000次",
+				"type": 1029,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200110,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200201": {
+				"sort": 200201,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2002,
+				"name": "君子之美(一)",
+				"desc": "点赞次数达到1次",
+				"type": 1015,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200201,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200202": {
+				"sort": 200202,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2002,
+				"name": "君子之美(二)",
+				"desc": "点赞次数达到10次",
+				"type": 1015,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200202,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200203": {
+				"sort": 200203,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2002,
+				"name": "君子之美(三)",
+				"desc": "点赞次数达到50次",
+				"type": 1015,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200203,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200204": {
+				"sort": 200204,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2002,
+				"name": "君子之美(四)",
+				"desc": "点赞次数达到100次",
+				"type": 1015,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200204,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200205": {
+				"sort": 200205,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2002,
+				"name": "君子之美(五)",
+				"desc": "点赞次数达到500次",
+				"type": 1015,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200205,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200206": {
+				"sort": 200206,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2002,
+				"name": "君子之美(六)",
+				"desc": "点赞次数达到1000次",
+				"type": 1015,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200206,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200207": {
+				"sort": 200207,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2002,
+				"name": "君子之美(七)",
+				"desc": "点赞次数达到2000次",
+				"type": 1015,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200207,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200208": {
+				"sort": 200208,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2002,
+				"name": "君子之美(八)",
+				"desc": "点赞次数达到3000次",
+				"type": 1015,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200208,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200209": {
+				"sort": 200209,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2002,
+				"name": "君子之美(九)",
+				"desc": "点赞次数达到5000次",
+				"type": 1015,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200209,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200210": {
+				"sort": 200210,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2002,
+				"name": "君子之美(十)",
+				"desc": "点赞次数达到10000次",
+				"type": 1015,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200210,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200301": {
+				"sort": 200301,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2003,
+				"name": "斩除邪灵(一)",
+				"desc": "多人修炼击败小怪累积达到50只",
+				"type": 1011,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200301,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200302": {
+				"sort": 200302,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2003,
+				"name": "斩除邪灵(二)",
+				"desc": "多人修炼击败小怪累积达到100只",
+				"type": 1011,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200302,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200303": {
+				"sort": 200303,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2003,
+				"name": "斩除邪灵(三)",
+				"desc": "多人修炼击败小怪累积达到500只",
+				"type": 1011,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200303,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200304": {
+				"sort": 200304,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2003,
+				"name": "斩除邪灵(四)",
+				"desc": "多人修炼击败小怪累积达到1000只",
+				"type": 1011,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200304,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200305": {
+				"sort": 200305,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2003,
+				"name": "斩除邪灵(五)",
+				"desc": "多人修炼击败小怪累积达到3000只",
+				"type": 1011,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200305,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200306": {
+				"sort": 200306,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2003,
+				"name": "斩除邪灵(六)",
+				"desc": "多人修炼击败小怪累积达到5000只",
+				"type": 1011,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200306,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200307": {
+				"sort": 200307,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2003,
+				"name": "斩除邪灵(七)",
+				"desc": "多人修炼击败小怪累积达到10000只",
+				"type": 1011,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200307,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200308": {
+				"sort": 200308,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2003,
+				"name": "斩除邪灵(八)",
+				"desc": "多人修炼击败小怪累积达到30000只",
+				"type": 1011,
+				"value": 30000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200308,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200309": {
+				"sort": 200309,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2003,
+				"name": "斩除邪灵(九)",
+				"desc": "多人修炼击败小怪累积达到50000只",
+				"type": 1011,
+				"value": 50000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200309,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200310": {
+				"sort": 200310,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2003,
+				"name": "斩除邪灵(十)",
+				"desc": "多人修炼击败小怪累积达到100000只",
+				"type": 1011,
+				"value": 100000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200310,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200401": {
+				"sort": 200401,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2004,
+				"name": "言出法随(一)",
+				"desc": "释放主动妖术或神符共1次",
+				"type": 1031,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200401,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200402": {
+				"sort": 200402,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2004,
+				"name": "言出法随(二)",
+				"desc": "释放主动妖术或神符共10次",
+				"type": 1031,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200402,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200403": {
+				"sort": 200403,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2004,
+				"name": "言出法随(三)",
+				"desc": "释放主动妖术或神符共50次",
+				"type": 1031,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200403,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200404": {
+				"sort": 200404,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2004,
+				"name": "言出法随(四)",
+				"desc": "释放主动妖术或神符共100次",
+				"type": 1031,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200404,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200405": {
+				"sort": 200405,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2004,
+				"name": "言出法随(五)",
+				"desc": "释放主动妖术或神符共200次",
+				"type": 1031,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200405,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200406": {
+				"sort": 200406,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2004,
+				"name": "言出法随(六)",
+				"desc": "释放主动妖术或神符共300次",
+				"type": 1031,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200406,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200407": {
+				"sort": 200407,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2004,
+				"name": "言出法随(七)",
+				"desc": "释放主动妖术或神符共500次",
+				"type": 1031,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200407,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200408": {
+				"sort": 200408,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2004,
+				"name": "言出法随(八)",
+				"desc": "释放主动妖术或神符共1000次",
+				"type": 1031,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200408,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200409": {
+				"sort": 200409,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2004,
+				"name": "言出法随(九)",
+				"desc": "释放主动妖术或神符共3000次",
+				"type": 1031,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200409,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200410": {
+				"sort": 200410,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2004,
+				"name": "言出法随(十)",
+				"desc": "释放主动妖术或神符共5000次",
+				"type": 1031,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200410,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200501": {
+				"sort": 200501,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2005,
+				"name": "一荣俱荣(一)",
+				"desc": "素萝恢复1点神魂",
+				"type": 1057,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200501,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200502": {
+				"sort": 200502,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2005,
+				"name": "一荣俱荣(二)",
+				"desc": "素萝恢复5点神魂",
+				"type": 1057,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200502,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200503": {
+				"sort": 200503,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2005,
+				"name": "一荣俱荣(三)",
+				"desc": "素萝恢复10点神魂",
+				"type": 1057,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200503,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200504": {
+				"sort": 200504,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2005,
+				"name": "一荣俱荣(四)",
+				"desc": "素萝恢复15点神魂",
+				"type": 1057,
+				"value": 15,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200504,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200505": {
+				"sort": 200505,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2005,
+				"name": "一荣俱荣(五)",
+				"desc": "素萝恢复20点神魂",
+				"type": 1057,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200505,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200506": {
+				"sort": 200506,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2005,
+				"name": "一荣俱荣(六)",
+				"desc": "素萝恢复25点神魂",
+				"type": 1057,
+				"value": 25,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200506,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200507": {
+				"sort": 200507,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2005,
+				"name": "一荣俱荣(七)",
+				"desc": "素萝恢复30点神魂",
+				"type": 1057,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200507,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200508": {
+				"sort": 200508,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2005,
+				"name": "一荣俱荣(八)",
+				"desc": "素萝恢复35点神魂",
+				"type": 1057,
+				"value": 35,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200508,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200509": {
+				"sort": 200509,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2005,
+				"name": "一荣俱荣(九)",
+				"desc": "素萝恢复40点神魂",
+				"type": 1057,
+				"value": 40,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200509,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200510": {
+				"sort": 200510,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2005,
+				"name": "一荣俱荣(十)",
+				"desc": "素萝恢复45点神魂",
+				"type": 1057,
+				"value": 45,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200510,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200601": {
+				"sort": 200601,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2006,
+				"name": "并肩作战(一)",
+				"desc": "素萝攻击次数累计达到200次",
+				"type": 1061,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200601,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200602": {
+				"sort": 200602,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2006,
+				"name": "并肩作战(二)",
+				"desc": "素萝攻击次数累计达到500次",
+				"type": 1061,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200602,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200603": {
+				"sort": 200603,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2006,
+				"name": "并肩作战(三)",
+				"desc": "素萝攻击次数累计达到1000次",
+				"type": 1061,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200603,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200604": {
+				"sort": 200604,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2006,
+				"name": "并肩作战(四)",
+				"desc": "素萝攻击次数累计达到3000次",
+				"type": 1061,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200604,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200605": {
+				"sort": 200605,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2006,
+				"name": "并肩作战(五)",
+				"desc": "素萝攻击次数累计达到5000次",
+				"type": 1061,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200605,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200606": {
+				"sort": 200606,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2006,
+				"name": "并肩作战(六)",
+				"desc": "素萝攻击次数累计达到10000次",
+				"type": 1061,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200606,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200607": {
+				"sort": 200607,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2006,
+				"name": "并肩作战(七)",
+				"desc": "素萝攻击次数累计达到20000次",
+				"type": 1061,
+				"value": 20000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200607,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200608": {
+				"sort": 200608,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2006,
+				"name": "并肩作战(八)",
+				"desc": "素萝攻击次数累计达到30000次",
+				"type": 1061,
+				"value": 30000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200608,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200609": {
+				"sort": 200609,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2006,
+				"name": "并肩作战(九)",
+				"desc": "素萝攻击次数累计达到50000次",
+				"type": 1061,
+				"value": 50000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200609,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200610": {
+				"sort": 200610,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2006,
+				"name": "并肩作战(十)",
+				"desc": "素萝攻击次数累计达到100000次",
+				"type": 1061,
+				"value": 100000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200610,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200701": {
+				"sort": 200701,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2007,
+				"name": "万妖齐心(一)",
+				"desc": "累计捐献修士腰牌达到1个",
+				"type": 1062,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200701,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200702": {
+				"sort": 200702,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2007,
+				"name": "万妖齐心(二)",
+				"desc": "累计捐献修士腰牌达到10个",
+				"type": 1062,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200702,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200703": {
+				"sort": 200703,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2007,
+				"name": "万妖齐心(三)",
+				"desc": "累计捐献修士腰牌达到30个",
+				"type": 1062,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200703,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200704": {
+				"sort": 200704,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2007,
+				"name": "万妖齐心(四)",
+				"desc": "累计捐献修士腰牌达到50个",
+				"type": 1062,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200704,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200705": {
+				"sort": 200705,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2007,
+				"name": "万妖齐心(五)",
+				"desc": "累计捐献修士腰牌达到100个",
+				"type": 1062,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200705,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200706": {
+				"sort": 200706,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2007,
+				"name": "万妖齐心(六)",
+				"desc": "累计捐献修士腰牌达到300个",
+				"type": 1062,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200706,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200707": {
+				"sort": 200707,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2007,
+				"name": "万妖齐心(七)",
+				"desc": "累计捐献修士腰牌达到500个",
+				"type": 1062,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200707,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200708": {
+				"sort": 200708,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2007,
+				"name": "万妖齐心(八)",
+				"desc": "累计捐献修士腰牌达到1000个",
+				"type": 1062,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200708,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200709": {
+				"sort": 200709,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2007,
+				"name": "万妖齐心(九)",
+				"desc": "累计捐献修士腰牌达到1500个",
+				"type": 1062,
+				"value": 1500,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200709,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200710": {
+				"sort": 200710,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2007,
+				"name": "万妖齐心(十)",
+				"desc": "累计捐献修士腰牌达到2000个",
+				"type": 1062,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200710,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200801": {
+				"sort": 200801,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2008,
+				"name": "功勋卓著(一)",
+				"desc": "累计消耗妖血达到1个",
+				"type": 1063,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200801,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200802": {
+				"sort": 200802,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2008,
+				"name": "功勋卓著(二)",
+				"desc": "累计消耗妖血达到10个",
+				"type": 1063,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200802,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200803": {
+				"sort": 200803,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2008,
+				"name": "功勋卓著(三)",
+				"desc": "累计消耗妖血达到30个",
+				"type": 1063,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200803,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200804": {
+				"sort": 200804,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2008,
+				"name": "功勋卓著(四)",
+				"desc": "累计消耗妖血达到50个",
+				"type": 1063,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200804,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200805": {
+				"sort": 200805,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2008,
+				"name": "功勋卓著(五)",
+				"desc": "累计消耗妖血达到100个",
+				"type": 1063,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200805,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200806": {
+				"sort": 200806,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2008,
+				"name": "功勋卓著(六)",
+				"desc": "累计消耗妖血达到300个",
+				"type": 1063,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200806,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200807": {
+				"sort": 200807,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2008,
+				"name": "功勋卓著(七)",
+				"desc": "累计消耗妖血达到500个",
+				"type": 1063,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200807,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200808": {
+				"sort": 200808,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2008,
+				"name": "功勋卓著(八)",
+				"desc": "累计消耗妖血达到1000个",
+				"type": 1063,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200808,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200809": {
+				"sort": 200809,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2008,
+				"name": "功勋卓著(九)",
+				"desc": "累计消耗妖血达到1500个",
+				"type": 1063,
+				"value": 1500,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200809,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200810": {
+				"sort": 200810,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2008,
+				"name": "功勋卓著(十)",
+				"desc": "累计消耗妖血达到2000个",
+				"type": 1063,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200810,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200901": {
+				"sort": 200901,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2009,
+				"name": "殚精竭力(一)",
+				"desc": "消耗精力累计达到10",
+				"type": 1040,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200901,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200902": {
+				"sort": 200902,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2009,
+				"name": "殚精竭力(二)",
+				"desc": "消耗精力累计达到100",
+				"type": 1040,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 200902,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200903": {
+				"sort": 200903,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2009,
+				"name": "殚精竭力(三)",
+				"desc": "消耗精力累计达到500",
+				"type": 1040,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200903,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200904": {
+				"sort": 200904,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2009,
+				"name": "殚精竭力(四)",
+				"desc": "消耗精力累计达到1000",
+				"type": 1040,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 200904,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200905": {
+				"sort": 200905,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2009,
+				"name": "殚精竭力(五)",
+				"desc": "消耗精力累计达到2000",
+				"type": 1040,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200905,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200906": {
+				"sort": 200906,
+				"id": 2,
+				"stageIcon": 1,
+				"groupId": 2009,
+				"name": "殚精竭力(六)",
+				"desc": "消耗精力累计达到3000",
+				"type": 1040,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 200906,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200907": {
+				"sort": 200907,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2009,
+				"name": "殚精竭力(七)",
+				"desc": "消耗精力累计达到5000",
+				"type": 1040,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200907,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200908": {
+				"sort": 200908,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2009,
+				"name": "殚精竭力(八)",
+				"desc": "消耗精力累计达到10000",
+				"type": 1040,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 200908,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200909": {
+				"sort": 200909,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2009,
+				"name": "殚精竭力(九)",
+				"desc": "消耗精力累计达到15000",
+				"type": 1040,
+				"value": 15000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200909,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200910": {
+				"sort": 200910,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2009,
+				"name": "殚精竭力(十)",
+				"desc": "消耗精力累计达到20000",
+				"type": 1040,
+				"value": 20000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 200910,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200911": {
+				"sort": 200911,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2009,
+				"name": "殚精竭力(十一)",
+				"desc": "消耗精力累计达到25000",
+				"type": 1040,
+				"value": 25000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200911,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200912": {
+				"sort": 200912,
+				"id": 2,
+				"stageIcon": 2,
+				"groupId": 2009,
+				"name": "殚精竭力(十二)",
+				"desc": "消耗精力累计达到30000",
+				"type": 1040,
+				"value": 30000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 200912,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200913": {
+				"sort": 200913,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2009,
+				"name": "殚精竭力(十三)",
+				"desc": "消耗精力累计达到35000",
+				"type": 1040,
+				"value": 35000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200913,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200914": {
+				"sort": 200914,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2009,
+				"name": "殚精竭力(十四)",
+				"desc": "消耗精力累计达到40000",
+				"type": 1040,
+				"value": 40000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 200914,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200915": {
+				"sort": 200915,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2009,
+				"name": "殚精竭力(十五)",
+				"desc": "消耗精力累计达到45000",
+				"type": 1040,
+				"value": 45000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200915,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200916": {
+				"sort": 200916,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2009,
+				"name": "殚精竭力(十六)",
+				"desc": "消耗精力累计达到50000",
+				"type": 1040,
+				"value": 50000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 200916,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200917": {
+				"sort": 200917,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2009,
+				"name": "殚精竭力(十七)",
+				"desc": "消耗精力累计达到100000",
+				"type": 1040,
+				"value": 100000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200917,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200918": {
+				"sort": 200918,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2009,
+				"name": "殚精竭力(十八)",
+				"desc": "消耗精力累计达到150000",
+				"type": 1040,
+				"value": 150000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 200918,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200919": {
+				"sort": 200919,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2009,
+				"name": "殚精竭力(十九)",
+				"desc": "消耗精力累计达到200000",
+				"type": 1040,
+				"value": 200000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200919,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"200920": {
+				"sort": 200920,
+				"id": 2,
+				"stageIcon": 3,
+				"groupId": 2009,
+				"name": "殚精竭力(二十)",
+				"desc": "消耗精力累计达到500000",
+				"type": 1040,
+				"value": 500000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 200920,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			}
+		}
+	},
+	"3": {
+		"id": 3,
+		"typeName": "社交",
+		"icon": 3,
+		"more": {
+			"300101": {
+				"sort": 300101,
+				"id": 3,
+				"stageIcon": 1,
+				"groupId": 3001,
+				"name": "四海亲朋(一)",
+				"desc": "拥有1个好友",
+				"type": 1032,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 300101,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300102": {
+				"sort": 300102,
+				"id": 3,
+				"stageIcon": 1,
+				"groupId": 3001,
+				"name": "四海亲朋(二)",
+				"desc": "拥有3个好友",
+				"type": 1032,
+				"value": 3,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 300102,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300103": {
+				"sort": 300103,
+				"id": 3,
+				"stageIcon": 1,
+				"groupId": 3001,
+				"name": "四海亲朋(三)",
+				"desc": "拥有5个好友",
+				"type": 1032,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 300103,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300104": {
+				"sort": 300104,
+				"id": 3,
+				"stageIcon": 2,
+				"groupId": 3001,
+				"name": "四海亲朋(四)",
+				"desc": "拥有10个好友",
+				"type": 1032,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 300104,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300105": {
+				"sort": 300105,
+				"id": 3,
+				"stageIcon": 2,
+				"groupId": 3001,
+				"name": "四海亲朋(五)",
+				"desc": "拥有13个好友",
+				"type": 1032,
+				"value": 13,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 300105,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300106": {
+				"sort": 300106,
+				"id": 3,
+				"stageIcon": 2,
+				"groupId": 3001,
+				"name": "四海亲朋(六)",
+				"desc": "拥有15个好友",
+				"type": 1032,
+				"value": 15,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 300106,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300107": {
+				"sort": 300107,
+				"id": 3,
+				"stageIcon": 3,
+				"groupId": 3001,
+				"name": "四海亲朋(七)",
+				"desc": "拥有20个好友",
+				"type": 1032,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 300107,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300108": {
+				"sort": 300108,
+				"id": 3,
+				"stageIcon": 3,
+				"groupId": 3001,
+				"name": "四海亲朋(八)",
+				"desc": "拥有25个好友",
+				"type": 1032,
+				"value": 25,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 300108,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300109": {
+				"sort": 300109,
+				"id": 3,
+				"stageIcon": 3,
+				"groupId": 3001,
+				"name": "四海亲朋(九)",
+				"desc": "拥有30个好友",
+				"type": 1032,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 300109,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300110": {
+				"sort": 300110,
+				"id": 3,
+				"stageIcon": 3,
+				"groupId": 3001,
+				"name": "四海亲朋(十)",
+				"desc": "拥有35个好友",
+				"type": 1032,
+				"value": 35,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 300110,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300201": {
+				"sort": 300201,
+				"id": 3,
+				"stageIcon": 1,
+				"groupId": 3002,
+				"name": "大爱无疆(一)",
+				"desc": "累计获得爱心值达到10",
+				"type": 1053,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 300201,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300202": {
+				"sort": 300202,
+				"id": 3,
+				"stageIcon": 1,
+				"groupId": 3002,
+				"name": "大爱无疆(二)",
+				"desc": "累计获得爱心值达到50",
+				"type": 1053,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 300202,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300203": {
+				"sort": 300203,
+				"id": 3,
+				"stageIcon": 1,
+				"groupId": 3002,
+				"name": "大爱无疆(三)",
+				"desc": "累计获得爱心值达到100",
+				"type": 1053,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 300203,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300204": {
+				"sort": 300204,
+				"id": 3,
+				"stageIcon": 2,
+				"groupId": 3002,
+				"name": "大爱无疆(四)",
+				"desc": "累计获得爱心值达到200",
+				"type": 1053,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 300204,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300205": {
+				"sort": 300205,
+				"id": 3,
+				"stageIcon": 2,
+				"groupId": 3002,
+				"name": "大爱无疆(五)",
+				"desc": "累计获得爱心值达到300",
+				"type": 1053,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 300205,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300206": {
+				"sort": 300206,
+				"id": 3,
+				"stageIcon": 2,
+				"groupId": 3002,
+				"name": "大爱无疆(六)",
+				"desc": "累计获得爱心值达到500",
+				"type": 1053,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 300206,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300207": {
+				"sort": 300207,
+				"id": 3,
+				"stageIcon": 3,
+				"groupId": 3002,
+				"name": "大爱无疆(七)",
+				"desc": "累计获得爱心值达到1000",
+				"type": 1053,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 300207,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300208": {
+				"sort": 300208,
+				"id": 3,
+				"stageIcon": 3,
+				"groupId": 3002,
+				"name": "大爱无疆(八)",
+				"desc": "累计获得爱心值达到2000",
+				"type": 1053,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 300208,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300209": {
+				"sort": 300209,
+				"id": 3,
+				"stageIcon": 3,
+				"groupId": 3002,
+				"name": "大爱无疆(九)",
+				"desc": "累计获得爱心值达到3000",
+				"type": 1053,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 300209,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"300210": {
+				"sort": 300210,
+				"id": 3,
+				"stageIcon": 3,
+				"groupId": 3002,
+				"name": "大爱无疆(十)",
+				"desc": "累计获得爱心值达到5000",
+				"type": 1053,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 300210,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			}
+		}
+	},
+	"4": {
+		"id": 4,
+		"typeName": "挑战",
+		"icon": 4,
+		"more": {
+			"400101": {
+				"sort": 400101,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4001,
+				"name": "势不可挡(一)",
+				"desc": "参与并击败个人历练BOSS共1次",
+				"type": 1008,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 400101,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400102": {
+				"sort": 400102,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4001,
+				"name": "势不可挡(二)",
+				"desc": "参与并击败个人历练BOSS共10次",
+				"type": 1008,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 400102,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400103": {
+				"sort": 400103,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4001,
+				"name": "势不可挡(三)",
+				"desc": "参与并击败个人历练BOSS共50次",
+				"type": 1008,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 400103,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400104": {
+				"sort": 400104,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4001,
+				"name": "势不可挡(四)",
+				"desc": "参与并击败个人历练BOSS共100次",
+				"type": 1008,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 400104,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400105": {
+				"sort": 400105,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4001,
+				"name": "势不可挡(五)",
+				"desc": "参与并击败个人历练BOSS共200次",
+				"type": 1008,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 400105,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400106": {
+				"sort": 400106,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4001,
+				"name": "势不可挡(六)",
+				"desc": "参与并击败个人历练BOSS共300次",
+				"type": 1008,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 400106,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400107": {
+				"sort": 400107,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4001,
+				"name": "势不可挡(七)",
+				"desc": "参与并击败个人历练BOSS共500次",
+				"type": 1008,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 400107,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400108": {
+				"sort": 400108,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4001,
+				"name": "势不可挡(八)",
+				"desc": "参与并击败个人历练BOSS共1000次",
+				"type": 1008,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 400108,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400109": {
+				"sort": 400109,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4001,
+				"name": "势不可挡(九)",
+				"desc": "参与并击败个人历练BOSS共1500次",
+				"type": 1008,
+				"value": 1500,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 400109,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400110": {
+				"sort": 400110,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4001,
+				"name": "势不可挡(十)",
+				"desc": "参与并击败个人历练BOSS共2000次",
+				"type": 1008,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 400110,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400111": {
+				"sort": 400111,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4001,
+				"name": "势不可挡(十一)",
+				"desc": "参与并击败个人历练BOSS共2500次",
+				"type": 1008,
+				"value": 2500,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 400111,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400112": {
+				"sort": 400112,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4001,
+				"name": "势不可挡(十二)",
+				"desc": "参与并击败个人历练BOSS共3000次",
+				"type": 1008,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 400112,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400113": {
+				"sort": 400113,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4001,
+				"name": "势不可挡(十三)",
+				"desc": "参与并击败个人历练BOSS共5000次",
+				"type": 1008,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 400113,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400114": {
+				"sort": 400114,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4001,
+				"name": "势不可挡(十四)",
+				"desc": "参与并击败个人历练BOSS共6000次",
+				"type": 1008,
+				"value": 6000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 400114,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400115": {
+				"sort": 400115,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4001,
+				"name": "势不可挡(十五)",
+				"desc": "参与并击败个人历练BOSS共7000次",
+				"type": 1008,
+				"value": 7000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 400115,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400116": {
+				"sort": 400116,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4001,
+				"name": "势不可挡(十六)",
+				"desc": "参与并击败个人历练BOSS共8000次",
+				"type": 1008,
+				"value": 8000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 400116,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400117": {
+				"sort": 400117,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4001,
+				"name": "势不可挡(十七)",
+				"desc": "参与并击败个人历练BOSS共9000次",
+				"type": 1008,
+				"value": 9000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 400117,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400118": {
+				"sort": 400118,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4001,
+				"name": "势不可挡(十八)",
+				"desc": "参与并击败个人历练BOSS共10000次",
+				"type": 1008,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 400118,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400119": {
+				"sort": 400119,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4001,
+				"name": "势不可挡(十九)",
+				"desc": "参与并击败个人历练BOSS共15000次",
+				"type": 1008,
+				"value": 15000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 400119,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400120": {
+				"sort": 400120,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4001,
+				"name": "势不可挡(二十)",
+				"desc": "参与并击败个人历练BOSS共20000次",
+				"type": 1008,
+				"value": 20000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 400120,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400201": {
+				"sort": 400201,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4002,
+				"name": "护山试炼(一)",
+				"desc": "参与并通过护山妖兽的试炼1次",
+				"type": 1010,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 400201,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400202": {
+				"sort": 400202,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4002,
+				"name": "护山试炼(二)",
+				"desc": "参与并通过护山妖兽的试炼10次",
+				"type": 1010,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 400202,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400203": {
+				"sort": 400203,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4002,
+				"name": "护山试炼(三)",
+				"desc": "参与并通过护山妖兽的试炼30次",
+				"type": 1010,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 400203,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400204": {
+				"sort": 400204,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4002,
+				"name": "护山试炼(四)",
+				"desc": "参与并通过护山妖兽的试炼50次",
+				"type": 1010,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 400204,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400205": {
+				"sort": 400205,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4002,
+				"name": "护山试炼(五)",
+				"desc": "参与并通过护山妖兽的试炼100次",
+				"type": 1010,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 400205,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400206": {
+				"sort": 400206,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4002,
+				"name": "护山试炼(六)",
+				"desc": "参与并通过护山妖兽的试炼300次",
+				"type": 1010,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 400206,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400207": {
+				"sort": 400207,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4002,
+				"name": "护山试炼(七)",
+				"desc": "参与并通过护山妖兽的试炼500次",
+				"type": 1010,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 400207,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400208": {
+				"sort": 400208,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4002,
+				"name": "护山试炼(八)",
+				"desc": "参与并通过护山妖兽的试炼1000次",
+				"type": 1010,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 400208,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400209": {
+				"sort": 400209,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4002,
+				"name": "护山试炼(九)",
+				"desc": "参与并通过护山妖兽的试炼1500次",
+				"type": 1010,
+				"value": 1500,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 400209,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400210": {
+				"sort": 400210,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4002,
+				"name": "护山试炼(十)",
+				"desc": "参与并通过护山妖兽的试炼2000次",
+				"type": 1010,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 400210,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400301": {
+				"sort": 400301,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4003,
+				"name": "封印夔牛(一)",
+				"desc": "参与并击败夔牛1次",
+				"type": 1009,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 400301,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400302": {
+				"sort": 400302,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4003,
+				"name": "封印夔牛(二)",
+				"desc": "参与并击败夔牛10次",
+				"type": 1009,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 400302,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400303": {
+				"sort": 400303,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4003,
+				"name": "封印夔牛(三)",
+				"desc": "参与并击败夔牛30次",
+				"type": 1009,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 400303,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400304": {
+				"sort": 400304,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4003,
+				"name": "封印夔牛(四)",
+				"desc": "参与并击败夔牛50次",
+				"type": 1009,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 400304,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400305": {
+				"sort": 400305,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4003,
+				"name": "封印夔牛(五)",
+				"desc": "参与并击败夔牛100次",
+				"type": 1009,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 400305,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400306": {
+				"sort": 400306,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4003,
+				"name": "封印夔牛(六)",
+				"desc": "参与并击败夔牛300次",
+				"type": 1009,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 400306,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400307": {
+				"sort": 400307,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4003,
+				"name": "封印夔牛(七)",
+				"desc": "参与并击败夔牛500次",
+				"type": 1009,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 400307,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400308": {
+				"sort": 400308,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4003,
+				"name": "封印夔牛(八)",
+				"desc": "参与并击败夔牛1000次",
+				"type": 1009,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 400308,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400309": {
+				"sort": 400309,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4003,
+				"name": "封印夔牛(九)",
+				"desc": "参与并击败夔牛1500次",
+				"type": 1009,
+				"value": 1500,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 400309,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400310": {
+				"sort": 400310,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4003,
+				"name": "封印夔牛(十)",
+				"desc": "参与并击败夔牛2000次",
+				"type": 1009,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 400310,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400401": {
+				"sort": 400401,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4004,
+				"name": "龙争虎斗(一)",
+				"desc": "参与斗法台竞技1次",
+				"type": 1014,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 400401,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400402": {
+				"sort": 400402,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4004,
+				"name": "龙争虎斗(二)",
+				"desc": "参与斗法台竞技10次",
+				"type": 1014,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 400402,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400403": {
+				"sort": 400403,
+				"id": 4,
+				"stageIcon": 1,
+				"groupId": 4004,
+				"name": "龙争虎斗(三)",
+				"desc": "参与斗法台竞技30次",
+				"type": 1014,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 400403,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400404": {
+				"sort": 400404,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4004,
+				"name": "龙争虎斗(四)",
+				"desc": "参与斗法台竞技50次",
+				"type": 1014,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 400404,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400405": {
+				"sort": 400405,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4004,
+				"name": "龙争虎斗(五)",
+				"desc": "参与斗法台竞技100次",
+				"type": 1014,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 400405,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400406": {
+				"sort": 400406,
+				"id": 4,
+				"stageIcon": 2,
+				"groupId": 4004,
+				"name": "龙争虎斗(六)",
+				"desc": "参与斗法台竞技200次",
+				"type": 1014,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 400406,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400407": {
+				"sort": 400407,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4004,
+				"name": "龙争虎斗(七)",
+				"desc": "参与斗法台竞技500次",
+				"type": 1014,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 400407,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400408": {
+				"sort": 400408,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4004,
+				"name": "龙争虎斗(八)",
+				"desc": "参与斗法台竞技1000次",
+				"type": 1014,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 400408,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400409": {
+				"sort": 400409,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4004,
+				"name": "龙争虎斗(九)",
+				"desc": "参与斗法台竞技1500次",
+				"type": 1014,
+				"value": 1500,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 400409,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"400410": {
+				"sort": 400410,
+				"id": 4,
+				"stageIcon": 3,
+				"groupId": 4004,
+				"name": "龙争虎斗(十)",
+				"desc": "参与斗法台竞技2000次",
+				"type": 1014,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 400410,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			}
+		}
+	},
+	"5": {
+		"id": 5,
+		"typeName": "收集",
+		"icon": 5,
+		"more": {
+			"500101": {
+				"sort": 500101,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5001,
+				"name": "雍容华贵(一)",
+				"desc": "收集1套任意神装部位",
+				"type": 1033,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 500101,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500102": {
+				"sort": 500102,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5001,
+				"name": "雍容华贵(二)",
+				"desc": "收集5套任意神装部位",
+				"type": 1033,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 500102,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500103": {
+				"sort": 500103,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5001,
+				"name": "雍容华贵(三)",
+				"desc": "收集10套任意神装部位",
+				"type": 1033,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 500103,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500104": {
+				"sort": 500104,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5001,
+				"name": "雍容华贵(四)",
+				"desc": "收集15套任意神装部位",
+				"type": 1033,
+				"value": 15,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 500104,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500105": {
+				"sort": 500105,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5001,
+				"name": "雍容华贵(五)",
+				"desc": "收集20套任意神装部位",
+				"type": 1033,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 500105,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500106": {
+				"sort": 500106,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5001,
+				"name": "雍容华贵(六)",
+				"desc": "收集25套任意神装部位",
+				"type": 1033,
+				"value": 25,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 500106,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500107": {
+				"sort": 500107,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5001,
+				"name": "雍容华贵(七)",
+				"desc": "收集30套任意神装部位",
+				"type": 1033,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 500107,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500108": {
+				"sort": 500108,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5001,
+				"name": "雍容华贵(八)",
+				"desc": "收集35套任意神装部位",
+				"type": 1033,
+				"value": 35,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 500108,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500109": {
+				"sort": 500109,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5001,
+				"name": "雍容华贵(九)",
+				"desc": "收集40套任意神装部位",
+				"type": 1033,
+				"value": 40,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 500109,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500110": {
+				"sort": 500110,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5001,
+				"name": "雍容华贵(十)",
+				"desc": "收集50套任意神装部位",
+				"type": 1033,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 500110,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500201": {
+				"sort": 500201,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5002,
+				"name": "汗牛充栋(一)",
+				"desc": "收集1本任意神符",
+				"type": 1034,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 500201,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500202": {
+				"sort": 500202,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5002,
+				"name": "汗牛充栋(二)",
+				"desc": "收集5本任意神符",
+				"type": 1034,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 500202,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500203": {
+				"sort": 500203,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5002,
+				"name": "汗牛充栋(三)",
+				"desc": "收集10本任意神符",
+				"type": 1034,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 500203,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500204": {
+				"sort": 500204,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5002,
+				"name": "汗牛充栋(四)",
+				"desc": "收集15本任意神符",
+				"type": 1034,
+				"value": 15,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 500204,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500205": {
+				"sort": 500205,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5002,
+				"name": "汗牛充栋(五)",
+				"desc": "收集20本任意神符",
+				"type": 1034,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 500205,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500206": {
+				"sort": 500206,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5002,
+				"name": "汗牛充栋(六)",
+				"desc": "收集25本任意神符",
+				"type": 1034,
+				"value": 25,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 500206,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500207": {
+				"sort": 500207,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5002,
+				"name": "汗牛充栋(七)",
+				"desc": "收集30本任意神符",
+				"type": 1034,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 500207,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500208": {
+				"sort": 500208,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5002,
+				"name": "汗牛充栋(八)",
+				"desc": "收集35本任意神符",
+				"type": 1034,
+				"value": 35,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 500208,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500209": {
+				"sort": 500209,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5002,
+				"name": "汗牛充栋(九)",
+				"desc": "收集40本任意神符",
+				"type": 1034,
+				"value": 40,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 500209,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500210": {
+				"sort": 500210,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5002,
+				"name": "汗牛充栋(十)",
+				"desc": "收集50本任意神符",
+				"type": 1034,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 500210,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500301": {
+				"sort": 500301,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5003,
+				"name": "霞光万道(一)",
+				"desc": "收集1件任意神器",
+				"type": 1035,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 500301,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500302": {
+				"sort": 500302,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5003,
+				"name": "霞光万道(二)",
+				"desc": "收集5件任意神器",
+				"type": 1035,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 500302,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500303": {
+				"sort": 500303,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5003,
+				"name": "霞光万道(三)",
+				"desc": "收集10件任意神器",
+				"type": 1035,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 500303,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500304": {
+				"sort": 500304,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5003,
+				"name": "霞光万道(四)",
+				"desc": "收集15件任意神器",
+				"type": 1035,
+				"value": 15,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 500304,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500305": {
+				"sort": 500305,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5003,
+				"name": "霞光万道(五)",
+				"desc": "收集20件任意神器",
+				"type": 1035,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 500305,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500306": {
+				"sort": 500306,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5003,
+				"name": "霞光万道(六)",
+				"desc": "收集25件任意神器",
+				"type": 1035,
+				"value": 25,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 500306,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500307": {
+				"sort": 500307,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5003,
+				"name": "霞光万道(七)",
+				"desc": "收集30件任意神器",
+				"type": 1035,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 500307,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500308": {
+				"sort": 500308,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5003,
+				"name": "霞光万道(八)",
+				"desc": "收集35件任意神器",
+				"type": 1035,
+				"value": 35,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 500308,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500309": {
+				"sort": 500309,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5003,
+				"name": "霞光万道(九)",
+				"desc": "收集40件任意神器",
+				"type": 1035,
+				"value": 40,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 500309,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500310": {
+				"sort": 500310,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5003,
+				"name": "霞光万道(十)",
+				"desc": "收集50件任意神器",
+				"type": 1035,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 500310,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500401": {
+				"sort": 500401,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5004,
+				"name": "国色天香(一)",
+				"desc": "总颜值达到200",
+				"type": 1036,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 500401,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500402": {
+				"sort": 500402,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5004,
+				"name": "国色天香(二)",
+				"desc": "总颜值达到1000",
+				"type": 1036,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 500402,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500403": {
+				"sort": 500403,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5004,
+				"name": "国色天香(三)",
+				"desc": "总颜值达到5000",
+				"type": 1036,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 500403,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500404": {
+				"sort": 500404,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5004,
+				"name": "国色天香(四)",
+				"desc": "总颜值达到10000",
+				"type": 1036,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 500404,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500405": {
+				"sort": 500405,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5004,
+				"name": "国色天香(五)",
+				"desc": "总颜值达到15000",
+				"type": 1036,
+				"value": 15000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 500405,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500406": {
+				"sort": 500406,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5004,
+				"name": "国色天香(六)",
+				"desc": "总颜值达到20000",
+				"type": 1036,
+				"value": 20000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 500406,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500407": {
+				"sort": 500407,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5004,
+				"name": "国色天香(七)",
+				"desc": "总颜值达到25000",
+				"type": 1036,
+				"value": 25000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 500407,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500408": {
+				"sort": 500408,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5004,
+				"name": "国色天香(八)",
+				"desc": "总颜值达到30000",
+				"type": 1036,
+				"value": 30000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 500408,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500409": {
+				"sort": 500409,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5004,
+				"name": "国色天香(九)",
+				"desc": "总颜值达到50000",
+				"type": 1036,
+				"value": 50000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 500409,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500410": {
+				"sort": 500410,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5004,
+				"name": "国色天香(十)",
+				"desc": "总颜值达到100000",
+				"type": 1036,
+				"value": 100000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 500410,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500501": {
+				"sort": 500501,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5005,
+				"name": "仙风道骨(一)",
+				"desc": "获得称号数达到1个",
+				"type": 1037,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 500501,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500502": {
+				"sort": 500502,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5005,
+				"name": "仙风道骨(二)",
+				"desc": "获得称号数达到5个",
+				"type": 1037,
+				"value": 5,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 500502,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500503": {
+				"sort": 500503,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5005,
+				"name": "仙风道骨(三)",
+				"desc": "获得称号数达到10个",
+				"type": 1037,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 500503,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500504": {
+				"sort": 500504,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5005,
+				"name": "仙风道骨(四)",
+				"desc": "获得称号数达到15个",
+				"type": 1037,
+				"value": 15,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 500504,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500505": {
+				"sort": 500505,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5005,
+				"name": "仙风道骨(五)",
+				"desc": "获得称号数达到20个",
+				"type": 1037,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 500505,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500506": {
+				"sort": 500506,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5005,
+				"name": "仙风道骨(六)",
+				"desc": "获得称号数达到25个",
+				"type": 1037,
+				"value": 25,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 500506,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500507": {
+				"sort": 500507,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5005,
+				"name": "仙风道骨(七)",
+				"desc": "获得称号数达到30个",
+				"type": 1037,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 500507,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500508": {
+				"sort": 500508,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5005,
+				"name": "仙风道骨(八)",
+				"desc": "获得称号数达到35个",
+				"type": 1037,
+				"value": 35,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 500508,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500509": {
+				"sort": 500509,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5005,
+				"name": "仙风道骨(九)",
+				"desc": "获得称号数达到40个",
+				"type": 1037,
+				"value": 40,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 500509,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500510": {
+				"sort": 500510,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5005,
+				"name": "仙风道骨(十)",
+				"desc": "获得称号数达到50个",
+				"type": 1037,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 500510,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500601": {
+				"sort": 500601,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5006,
+				"name": "金石为开(一)",
+				"desc": "购买个人历练次数达到1次",
+				"type": 1038,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 500601,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500602": {
+				"sort": 500602,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5006,
+				"name": "金石为开(二)",
+				"desc": "购买个人历练次数达到10次",
+				"type": 1038,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 500602,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500603": {
+				"sort": 500603,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5006,
+				"name": "金石为开(三)",
+				"desc": "购买个人历练次数达到20次",
+				"type": 1038,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 500603,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500604": {
+				"sort": 500604,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5006,
+				"name": "金石为开(四)",
+				"desc": "购买个人历练次数达到30次",
+				"type": 1038,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 500604,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500605": {
+				"sort": 500605,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5006,
+				"name": "金石为开(五)",
+				"desc": "购买个人历练次数达到50次",
+				"type": 1038,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 500605,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500606": {
+				"sort": 500606,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5006,
+				"name": "金石为开(六)",
+				"desc": "购买个人历练次数达到100次",
+				"type": 1038,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 500606,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500607": {
+				"sort": 500607,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5006,
+				"name": "金石为开(七)",
+				"desc": "购买个人历练次数达到200次",
+				"type": 1038,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 500607,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500608": {
+				"sort": 500608,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5006,
+				"name": "金石为开(八)",
+				"desc": "购买个人历练次数达到300次",
+				"type": 1038,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 500608,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500609": {
+				"sort": 500609,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5006,
+				"name": "金石为开(九)",
+				"desc": "购买个人历练次数达到500次",
+				"type": 1038,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 500609,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500610": {
+				"sort": 500610,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5006,
+				"name": "金石为开(十)",
+				"desc": "购买个人历练次数达到1000次",
+				"type": 1038,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 500610,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500701": {
+				"sort": 500701,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5007,
+				"name": "一掷千金(一)",
+				"desc": "消耗仙玉数量达到50",
+				"type": 1039,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 500701,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500702": {
+				"sort": 500702,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5007,
+				"name": "一掷千金(二)",
+				"desc": "消耗仙玉数量达到100",
+				"type": 1039,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 500702,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500703": {
+				"sort": 500703,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5007,
+				"name": "一掷千金(三)",
+				"desc": "消耗仙玉数量达到500",
+				"type": 1039,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 500703,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500704": {
+				"sort": 500704,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5007,
+				"name": "一掷千金(四)",
+				"desc": "消耗仙玉数量达到1000",
+				"type": 1039,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 500704,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500705": {
+				"sort": 500705,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5007,
+				"name": "一掷千金(五)",
+				"desc": "消耗仙玉数量达到2000",
+				"type": 1039,
+				"value": 2000,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 500705,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500706": {
+				"sort": 500706,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5007,
+				"name": "一掷千金(六)",
+				"desc": "消耗仙玉数量达到3000",
+				"type": 1039,
+				"value": 3000,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 500706,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500707": {
+				"sort": 500707,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5007,
+				"name": "一掷千金(七)",
+				"desc": "消耗仙玉数量达到5000",
+				"type": 1039,
+				"value": 5000,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 500707,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500708": {
+				"sort": 500708,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5007,
+				"name": "一掷千金(八)",
+				"desc": "消耗仙玉数量达到10000",
+				"type": 1039,
+				"value": 10000,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 500708,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500709": {
+				"sort": 500709,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5007,
+				"name": "一掷千金(九)",
+				"desc": "消耗仙玉数量达到50000",
+				"type": 1039,
+				"value": 50000,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 500709,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500710": {
+				"sort": 500710,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5007,
+				"name": "一掷千金(十)",
+				"desc": "消耗仙玉数量达到100000",
+				"type": 1039,
+				"value": 100000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 500710,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500801": {
+				"sort": 500801,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5008,
+				"name": "精力充沛(一)",
+				"desc": "购买精力次数达到1次",
+				"type": 1016,
+				"value": 1,
+				"param1": 0,
+				"param2": 0,
+				"point": 5,
+				"awards": [
+					{
+						"sort": 500801,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500802": {
+				"sort": 500802,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5008,
+				"name": "精力充沛(二)",
+				"desc": "购买精力次数达到10次",
+				"type": 1016,
+				"value": 10,
+				"param1": 0,
+				"param2": 0,
+				"point": 10,
+				"awards": [
+					{
+						"sort": 500802,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500803": {
+				"sort": 500803,
+				"id": 5,
+				"stageIcon": 1,
+				"groupId": 5008,
+				"name": "精力充沛(三)",
+				"desc": "购买精力次数达到20次",
+				"type": 1016,
+				"value": 20,
+				"param1": 0,
+				"param2": 0,
+				"point": 15,
+				"awards": [
+					{
+						"sort": 500803,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500804": {
+				"sort": 500804,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5008,
+				"name": "精力充沛(四)",
+				"desc": "购买精力次数达到30次",
+				"type": 1016,
+				"value": 30,
+				"param1": 0,
+				"param2": 0,
+				"point": 20,
+				"awards": [
+					{
+						"sort": 500804,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500805": {
+				"sort": 500805,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5008,
+				"name": "精力充沛(五)",
+				"desc": "购买精力次数达到50次",
+				"type": 1016,
+				"value": 50,
+				"param1": 0,
+				"param2": 0,
+				"point": 25,
+				"awards": [
+					{
+						"sort": 500805,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500806": {
+				"sort": 500806,
+				"id": 5,
+				"stageIcon": 2,
+				"groupId": 5008,
+				"name": "精力充沛(六)",
+				"desc": "购买精力次数达到100次",
+				"type": 1016,
+				"value": 100,
+				"param1": 0,
+				"param2": 0,
+				"point": 30,
+				"awards": [
+					{
+						"sort": 500806,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500807": {
+				"sort": 500807,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5008,
+				"name": "精力充沛(七)",
+				"desc": "购买精力次数达到200次",
+				"type": 1016,
+				"value": 200,
+				"param1": 0,
+				"param2": 0,
+				"point": 35,
+				"awards": [
+					{
+						"sort": 500807,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500808": {
+				"sort": 500808,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5008,
+				"name": "精力充沛(八)",
+				"desc": "购买精力次数达到300次",
+				"type": 1016,
+				"value": 300,
+				"param1": 0,
+				"param2": 0,
+				"point": 40,
+				"awards": [
+					{
+						"sort": 500808,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500809": {
+				"sort": 500809,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5008,
+				"name": "精力充沛(九)",
+				"desc": "购买精力次数达到500次",
+				"type": 1016,
+				"value": 500,
+				"param1": 0,
+				"param2": 0,
+				"point": 45,
+				"awards": [
+					{
+						"sort": 500809,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			},
+			"500810": {
+				"sort": 500810,
+				"id": 5,
+				"stageIcon": 3,
+				"groupId": 5008,
+				"name": "精力充沛(十)",
+				"desc": "购买精力次数达到1000次",
+				"type": 1016,
+				"value": 1000,
+				"param1": 0,
+				"param2": 0,
+				"point": 50,
+				"awards": [
+					{
+						"sort": 500810,
+						"propId": 1001,
+						"num": 10
+					}
+				]
+			}
+		}
+	}
+}

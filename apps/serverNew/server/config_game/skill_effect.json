@@ -1,0 +1,8671 @@
+{
+	"1010011": {
+		"id": 1010011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_2",
+		"atkHit": "monster_atk_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1020011": {
+		"id": 1020011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1030011": {
+		"id": 1030011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011011": {
+		"id": 1011011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 17000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011021": {
+		"id": 1011021,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 18700,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011031": {
+		"id": 1011031,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 20400,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011041": {
+		"id": 1011041,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 22100,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011051": {
+		"id": 1011051,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 23800,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011061": {
+		"id": 1011061,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 25500,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011071": {
+		"id": 1011071,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 27200,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011081": {
+		"id": 1011081,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 28900,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011091": {
+		"id": 1011091,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 30600,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1011101": {
+		"id": 1011101,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmit": "sorcery_start_2_1",
+		"atkBallistic": "sorcery_shoot_2_1",
+		"atkHit": "sorcery_hit_2_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1011,
+		"effectValue1": 34000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012011": {
+		"id": 1012011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101101": {
+				"id": 1012011,
+				"buffId": 101101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012021": {
+		"id": 1012021,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101102": {
+				"id": 1012021,
+				"buffId": 101102,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012031": {
+		"id": 1012031,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101103": {
+				"id": 1012031,
+				"buffId": 101103,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012041": {
+		"id": 1012041,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101104": {
+				"id": 1012041,
+				"buffId": 101104,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012051": {
+		"id": 1012051,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101105": {
+				"id": 1012051,
+				"buffId": 101105,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012061": {
+		"id": 1012061,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101106": {
+				"id": 1012061,
+				"buffId": 101106,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012071": {
+		"id": 1012071,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101107": {
+				"id": 1012071,
+				"buffId": 101107,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012081": {
+		"id": 1012081,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101108": {
+				"id": 1012081,
+				"buffId": 101108,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012091": {
+		"id": 1012091,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101109": {
+				"id": 1012091,
+				"buffId": 101109,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1012101": {
+		"id": 1012101,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"101110": {
+				"id": 1012101,
+				"buffId": 101110,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013011": {
+		"id": 1013011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 50000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013012": {
+		"id": 1013012,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 12000,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013021": {
+		"id": 1013021,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 55000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013022": {
+		"id": 1013022,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 13200,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013031": {
+		"id": 1013031,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 60000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013032": {
+		"id": 1013032,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 14400,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013041": {
+		"id": 1013041,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 65000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013042": {
+		"id": 1013042,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 15600,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013051": {
+		"id": 1013051,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 70000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013052": {
+		"id": 1013052,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 16800,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013061": {
+		"id": 1013061,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 75000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013062": {
+		"id": 1013062,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 18000,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013071": {
+		"id": 1013071,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 80000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013072": {
+		"id": 1013072,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 19200,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013081": {
+		"id": 1013081,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 85000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013082": {
+		"id": 1013082,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 20400,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013091": {
+		"id": 1013091,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 90000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013092": {
+		"id": 1013092,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 21600,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013101": {
+		"id": 1013101,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_1",
+		"atkHit": "sorcery_hit_skill3_1",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1013102": {
+		"id": 1013102,
+		"conditionType": 0,
+		"effectType": 5,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 24000,
+		"effectValue2": 0,
+		"effectValue3": [
+			11
+		],
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021011": {
+		"id": 1021011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 8000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021011,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021021": {
+		"id": 1021021,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 8800,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021021,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021031": {
+		"id": 1021031,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 9600,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021031,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021041": {
+		"id": 1021041,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 10400,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021041,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021051": {
+		"id": 1021051,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 11200,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021051,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021061": {
+		"id": 1021061,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 12000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021061,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021071": {
+		"id": 1021071,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 12800,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021071,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021081": {
+		"id": 1021081,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 13600,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021081,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021091": {
+		"id": 1021091,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 14400,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021091,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1021101": {
+		"id": 1021101,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_3",
+		"atkHit": "sorcery_hit_2_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1021,
+		"effectValue1": 16000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102101": {
+				"id": 1021101,
+				"buffId": 102101,
+				"prob": 1000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022011": {
+		"id": 1022011,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102201": {
+				"id": 1022011,
+				"buffId": 102201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022021": {
+		"id": 1022021,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102202": {
+				"id": 1022021,
+				"buffId": 102202,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022031": {
+		"id": 1022031,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102203": {
+				"id": 1022031,
+				"buffId": 102203,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022041": {
+		"id": 1022041,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102204": {
+				"id": 1022041,
+				"buffId": 102204,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022051": {
+		"id": 1022051,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102205": {
+				"id": 1022051,
+				"buffId": 102205,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022061": {
+		"id": 1022061,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102206": {
+				"id": 1022061,
+				"buffId": 102206,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022071": {
+		"id": 1022071,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102207": {
+				"id": 1022071,
+				"buffId": 102207,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022081": {
+		"id": 1022081,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102208": {
+				"id": 1022081,
+				"buffId": 102208,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022091": {
+		"id": 1022091,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102209": {
+				"id": 1022091,
+				"buffId": 102209,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1022101": {
+		"id": 1022101,
+		"conditionType": 5,
+		"conditionValue": [
+			1021,
+			1023
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkEmit": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"102210": {
+				"id": 1022101,
+				"buffId": 102210,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023011": {
+		"id": 1023011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023011,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023011,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023021": {
+		"id": 1023021,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 35000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023021,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023021,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023031": {
+		"id": 1023031,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 40000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023031,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023031,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023041": {
+		"id": 1023041,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 45000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023041,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023041,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023051": {
+		"id": 1023051,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 50000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023051,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023051,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023061": {
+		"id": 1023061,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 55000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023061,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023061,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023071": {
+		"id": 1023071,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 60000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023071,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023071,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023081": {
+		"id": 1023081,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 65000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023081,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023081,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023091": {
+		"id": 1023091,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 70000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023091,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023091,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1023101": {
+		"id": 1023101,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_3",
+		"atkHit": "sorcery_hit_skill3_3",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 80000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"102301": {
+				"id": 1023101,
+				"buffId": 102301,
+				"prob": 10000
+			},
+			"102302": {
+				"id": 1023101,
+				"buffId": 102302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031011": {
+		"id": 1031011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 12000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031012": {
+		"id": 1031012,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 6000,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031021": {
+		"id": 1031021,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 13200,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031022": {
+		"id": 1031022,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 6600,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031031": {
+		"id": 1031031,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 14400,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031032": {
+		"id": 1031032,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 7200,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031041": {
+		"id": 1031041,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 15600,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031042": {
+		"id": 1031042,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 7800,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031051": {
+		"id": 1031051,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 16800,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031052": {
+		"id": 1031052,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 8400,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031061": {
+		"id": 1031061,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 18000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031062": {
+		"id": 1031062,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 9000,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031071": {
+		"id": 1031071,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 19200,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031072": {
+		"id": 1031072,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 9600,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031081": {
+		"id": 1031081,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 20400,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031082": {
+		"id": 1031082,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 10200,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031091": {
+		"id": 1031091,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 21600,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031092": {
+		"id": 1031092,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 10800,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031101": {
+		"id": 1031101,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkBallistic": "sorcery_shoot_2_2",
+		"atkHit": "sorcery_hit_2_2",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 1031,
+		"effectValue1": 0,
+		"effectValue2": 24000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1031102": {
+		"id": 1031102,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 12000,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1032011": {
+		"id": 1032011,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032011,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103201": {
+				"id": 1032011,
+				"buffId": 103201,
+				"prob": 10000
+			}
+		}
+	},
+	"1032021": {
+		"id": 1032021,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032021,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103202": {
+				"id": 1032021,
+				"buffId": 103202,
+				"prob": 10000
+			}
+		}
+	},
+	"1032031": {
+		"id": 1032031,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032031,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103203": {
+				"id": 1032031,
+				"buffId": 103203,
+				"prob": 10000
+			}
+		}
+	},
+	"1032041": {
+		"id": 1032041,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032041,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103204": {
+				"id": 1032041,
+				"buffId": 103204,
+				"prob": 10000
+			}
+		}
+	},
+	"1032051": {
+		"id": 1032051,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032051,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103205": {
+				"id": 1032051,
+				"buffId": 103205,
+				"prob": 10000
+			}
+		}
+	},
+	"1032061": {
+		"id": 1032061,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032061,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103206": {
+				"id": 1032061,
+				"buffId": 103206,
+				"prob": 10000
+			}
+		}
+	},
+	"1032071": {
+		"id": 1032071,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032071,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103207": {
+				"id": 1032071,
+				"buffId": 103207,
+				"prob": 10000
+			}
+		}
+	},
+	"1032081": {
+		"id": 1032081,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032081,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103208": {
+				"id": 1032081,
+				"buffId": 103208,
+				"prob": 10000
+			}
+		}
+	},
+	"1032091": {
+		"id": 1032091,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032091,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103209": {
+				"id": 1032091,
+				"buffId": 103209,
+				"prob": 10000
+			}
+		}
+	},
+	"1032101": {
+		"id": 1032101,
+		"conditionType": 5,
+		"conditionValue": [
+			1031
+		],
+		"effectType": 3,
+		"resType": 2,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"103211": {
+				"id": 1032101,
+				"buffId": 103211,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+			"103210": {
+				"id": 1032101,
+				"buffId": 103210,
+				"prob": 10000
+			}
+		}
+	},
+	"1033011": {
+		"id": 1033011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 40000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033012": {
+		"id": 1033012,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103301": {
+				"id": 1033012,
+				"buffId": 103301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033021": {
+		"id": 1033021,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 44000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033022": {
+		"id": 1033022,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103302": {
+				"id": 1033022,
+				"buffId": 103302,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033031": {
+		"id": 1033031,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 48000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033032": {
+		"id": 1033032,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103303": {
+				"id": 1033032,
+				"buffId": 103303,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033041": {
+		"id": 1033041,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 52000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033042": {
+		"id": 1033042,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103304": {
+				"id": 1033042,
+				"buffId": 103304,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033051": {
+		"id": 1033051,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 56000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033052": {
+		"id": 1033052,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103305": {
+				"id": 1033052,
+				"buffId": 103305,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033061": {
+		"id": 1033061,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 60000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033062": {
+		"id": 1033062,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103306": {
+				"id": 1033062,
+				"buffId": 103306,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033071": {
+		"id": 1033071,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 64000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033072": {
+		"id": 1033072,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103307": {
+				"id": 1033072,
+				"buffId": 103307,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033081": {
+		"id": 1033081,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 68000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033082": {
+		"id": 1033082,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103308": {
+				"id": 1033082,
+				"buffId": 103308,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033091": {
+		"id": 1033091,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 72000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033092": {
+		"id": 1033092,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103309": {
+				"id": 1033092,
+				"buffId": 103309,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033101": {
+		"id": 1033101,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "sorcery_start_skill3_2",
+		"atkBallistic": "sorcery_shoot_2",
+		"atkHit": "sorcery_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 80000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"1033102": {
+		"id": 1033102,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 7,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+			"103310": {
+				"id": 1033102,
+				"buffId": 103310,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"2001011": {
+		"id": 2001011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"1001": {
+				"id": 2001011,
+				"buffId": 1001,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"2002011": {
+		"id": 2002011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"1002": {
+				"id": 2002011,
+				"buffId": 1002,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"2003011": {
+		"id": 2003011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 1,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"1003": {
+				"id": 2003011,
+				"buffId": 1003,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"2004011": {
+		"id": 2004011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"2005011": {
+		"id": 2005011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"1005": {
+				"id": 2005011,
+				"buffId": 1005,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"2006011": {
+		"id": 2006011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"1006": {
+				"id": 2006011,
+				"buffId": 1006,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3001011": {
+		"id": 3001011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3002011": {
+		"id": 3002011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_2",
+		"atkHit": "monster_atk_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3003011": {
+		"id": 3003011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3004011": {
+		"id": 3004011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_4",
+		"atkHit": "monster_atk_hit_4",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3005011": {
+		"id": 3005011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_5",
+		"atkHit": "monster_atk_hit_5",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3006011": {
+		"id": 3006011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "monster_atk_start_6",
+		"atkHit": "monster_atk_hit_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3007011": {
+		"id": 3007011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3008011": {
+		"id": 3008011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmit": "monster_atk_start_411001",
+		"atkBallistic": "monster_atk_shoot_411001",
+		"atkHit": "monster_atk_hit_411001",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3009011": {
+		"id": 3009011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmit": "monster_atk_start_412001",
+		"atkBallistic": "monster_atk_shoot_412001",
+		"atkHit": "monster_atk_hit_412001",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3010011": {
+		"id": 3010011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmit": "monster_atk_start_413001",
+		"atkBallistic": "monster_atk_shoot_413001",
+		"atkHit": "monster_atk_hit_413001",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3011011": {
+		"id": 3011011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "kuicow_shoot_1",
+		"atkHit": "kuicow_hit_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3012011": {
+		"id": 3012011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3013011": {
+		"id": 3013011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3101011": {
+		"id": 3101011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkBallistic": "monster_atk_start_1",
+		"atkHit": "monster_atk_hit_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3102011": {
+		"id": 3102011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkBallistic": "monster_atk_start_2",
+		"atkHit": "monster_atk_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3103011": {
+		"id": 3103011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkBallistic": "monster_atk_start_3",
+		"atkHit": "monster_atk_hit_3",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3104011": {
+		"id": 3104011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkBallistic": "monster_atk_start_4",
+		"atkHit": "monster_atk_hit_4",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3105011": {
+		"id": 3105011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkBallistic": "monster_atk_start_5",
+		"atkHit": "monster_atk_hit_5",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3106011": {
+		"id": 3106011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkBallistic": "monster_atk_start_6",
+		"atkHit": "monster_atk_hit_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3107011": {
+		"id": 3107011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 0,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 15000,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": 3,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3108011": {
+		"id": 3108011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 20000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"310801": {
+				"id": 3108011,
+				"buffId": 310801,
+				"prob": 2000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3109011": {
+		"id": 3109011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 0,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"310901": {
+				"id": 3109011,
+				"buffId": 310901,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3201011": {
+		"id": 3201011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3202011": {
+		"id": 3202011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 50000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"3202012": {
+		"id": 3202012,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 0,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 50000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"4001011": {
+		"id": 4001011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "kuicow_shoot_1",
+		"atkHit": "kuicow_hit_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": [
+			7,
+			3
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"4002011": {
+		"id": 4002011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "kuicow_shoot_2",
+		"atkHit": "kuicow_hit_2",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 50000,
+		"effectValue2": 0,
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"4003011": {
+		"id": 4003011,
+		"conditionType": 2,
+		"conditionValue": [
+			0,
+			3000
+		],
+		"effectType": 3,
+		"resType": 5,
+		"atkBallistic": "kuicow_shoot_1",
+		"atkHit": "kuicow_hit_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 50000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"400301": {
+				"id": 4003011,
+				"buffId": 400301,
+				"prob": 10000
+			},
+			"400302": {
+				"id": 4003011,
+				"buffId": 400302,
+				"prob": 10000
+			},
+			"400303": {
+				"id": 4003011,
+				"buffId": 400303,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"4011011": {
+		"id": 4011011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"4012011": {
+		"id": 4012011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 50000,
+		"effectValue2": 0,
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"4021011": {
+		"id": 4021011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmit": "world_boss_1_start",
+		"atkHit": "world_boss_1_hit",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10000,
+		"effectValue2": 0,
+		"target1": [
+			7,
+			3
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"4022011": {
+		"id": 4022011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkEmit": "world_boss_1_start",
+		"atkHit": "world_boss_1_hit_skill",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 4,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"10001011": {
+		"id": 10001011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 2,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"1000101": {
+				"id": 10001011,
+				"buffId": 1000101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11001011": {
+		"id": 11001011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkBallistic": "magical_shoot_311001",
+		"atkHit": "magical_hit_311001",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1100101": {
+				"id": 11001011,
+				"buffId": 1100101,
+				"prob": 10000
+			}
+		}
+	},
+	"11002011": {
+		"id": 11002011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_311002",
+		"atkBallistic": "magical_shoot_311002",
+		"atkHit": "magical_hit_311002",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"1100201": {
+				"id": 11002011,
+				"buffId": 1100201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11003011": {
+		"id": 11003011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_311003",
+		"atkBallistic": "magical_shoot_311003",
+		"atkHit": "magical_hit_311003",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 100000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11003012": {
+		"id": 11003012,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 100000,
+		"target1": 2,
+		"target2": [
+			9,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11004011": {
+		"id": 11004011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkBallistic": "magical_shoot_311004",
+		"atkHit": "magical_hit_311004",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"1100401": {
+				"id": 11004011,
+				"buffId": 1100401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11005011": {
+		"id": 11005011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkBallistic": "magical_shoot_311005",
+		"atkHit": "magical_hit_311005",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11005012": {
+		"id": 11005012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 1,
+		"effectValue2": 1,
+		"target1": 1,
+		"target2": [
+			8,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11006011": {
+		"id": 11006011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_311006",
+		"atkBallistic": "magical_shoot_311006",
+		"atkHit": "magical_hit_311006",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 100000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1100601": {
+				"id": 11006011,
+				"buffId": 1100601,
+				"prob": 10000
+			}
+		}
+	},
+	"11007011": {
+		"id": 11007011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_311007",
+		"atkBallistic": "magical_shoot_311007",
+		"atkHit": "magical_hit_311007",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1100701": {
+				"id": 11007011,
+				"buffId": 1100701,
+				"prob": 10000
+			}
+		}
+	},
+	"11008011": {
+		"id": 11008011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_311008",
+		"atkBallistic": "magical_shoot_311008",
+		"atkHit": "magical_hit_311008",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"1100801": {
+				"id": 11008011,
+				"buffId": 1100801,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11009011": {
+		"id": 11009011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_311009",
+		"atkBallistic": "magical_shoot_311009",
+		"atkHit": "magical_hit_311009",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 100000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11009012": {
+		"id": 11009012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 2,
+		"effectValue2": 1,
+		"target1": 2,
+		"target2": [
+			9,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11010011": {
+		"id": 11010011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_311010",
+		"atkBallistic": "magical_shoot_311010",
+		"atkHit": "magical_hit_311010",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 100000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"11010012": {
+		"id": 11010012,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"target2": [
+			9,
+			5
+		],
+		"targetBuff": {
+			"1101001": {
+				"id": 11010012,
+				"buffId": 1101001,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"12001011": {
+		"id": 12001011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkBallistic": "magical_shoot_312001",
+		"atkHit": "magical_hit_312001",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 150000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1200101": {
+				"id": 12001011,
+				"buffId": 1200101,
+				"prob": 10000
+			}
+		}
+	},
+	"12002011": {
+		"id": 12002011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_312002",
+		"atkBallistic": "magical_shoot_312002",
+		"atkHit": "magical_hit_312002",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 150000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1200201": {
+				"id": 12002011,
+				"buffId": 1200201,
+				"prob": 10000
+			}
+		}
+	},
+	"12003011": {
+		"id": 12003011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkBallistic": "magical_shoot_312003",
+		"atkHit": "magical_hit_312003",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 150000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1200301": {
+				"id": 12003011,
+				"buffId": 1200301,
+				"prob": 10000
+			}
+		}
+	},
+	"12004011": {
+		"id": 12004011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_312004",
+		"atkBallistic": "magical_shoot_312004",
+		"atkHit": "magical_hit_312004",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 150000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1200401": {
+				"id": 12004011,
+				"buffId": 1200401,
+				"prob": 10000
+			}
+		}
+	},
+	"12005011": {
+		"id": 12005011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_312005",
+		"atkBallistic": "magical_shoot_312005",
+		"atkHit": "magical_hit_312005",
+		"atkEmitTime": 0,
+		"playIme": 3,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 150000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1200501": {
+				"id": 12005011,
+				"buffId": 1200501,
+				"prob": 10000
+			}
+		}
+	},
+	"13001011": {
+		"id": 13001011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkBallistic": "magical_shoot_313001",
+		"atkHit": "magical_hit_313001",
+		"atkEmitTime": 0,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 200000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1300101": {
+				"id": 13001011,
+				"buffId": 1300101,
+				"prob": 10000
+			}
+		}
+	},
+	"13002011": {
+		"id": 13002011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_313002",
+		"atkBallistic": "magical_shoot_313002",
+		"atkHit": "magical_hit_313002",
+		"atkEmitTime": 400,
+		"playIme": 2,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 200000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"13002012": {
+		"id": 13002012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 1,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 1,
+		"effectValue2": 5,
+		"target1": 1,
+		"targetBuff": {
+			"1300201": {
+				"id": 13002012,
+				"buffId": 1300201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"13003011": {
+		"id": 13003011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkEmit": "magical_emit_313003",
+		"atkBallistic": "magical_shoot_313003",
+		"atkHit": "magical_hit_313003",
+		"atkEmitTime": 400,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 200000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+			"1300301": {
+				"id": 13003011,
+				"buffId": 1300301,
+				"prob": 10000
+			},
+			"1300302": {
+				"id": 13003011,
+				"buffId": 1300302,
+				"prob": 10000
+			}
+		}
+	},
+	"14001011": {
+		"id": 14001011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 1,
+		"atkBallistic": "magical_shoot_314001",
+		"atkHit": "magical_hit_314001",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 250000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+			"1400101": {
+				"id": 14001011,
+				"buffId": 1400101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31011011": {
+		"id": 31011011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3101101": {
+				"id": 31011011,
+				"buffId": 3101101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31012011": {
+		"id": 31012011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3101201": {
+				"id": 31012011,
+				"buffId": 3101201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31013011": {
+		"id": 31013011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3101301": {
+				"id": 31013011,
+				"buffId": 3101301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31014011": {
+		"id": 31014011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3101401": {
+				"id": 31014011,
+				"buffId": 3101401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31015011": {
+		"id": 31015011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3101501": {
+				"id": 31015011,
+				"buffId": 3101501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31016011": {
+		"id": 31016011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3101601": {
+				"id": 31016011,
+				"buffId": 3101601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31021011": {
+		"id": 31021011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3102101": {
+				"id": 31021011,
+				"buffId": 3102101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31022011": {
+		"id": 31022011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3102201": {
+				"id": 31022011,
+				"buffId": 3102201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31023011": {
+		"id": 31023011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3102301": {
+				"id": 31023011,
+				"buffId": 3102301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31024011": {
+		"id": 31024011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3102401": {
+				"id": 31024011,
+				"buffId": 3102401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31025011": {
+		"id": 31025011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3102501": {
+				"id": 31025011,
+				"buffId": 3102501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31026011": {
+		"id": 31026011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3102601": {
+				"id": 31026011,
+				"buffId": 3102601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31032011": {
+		"id": 31032011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_611",
+		"atkHit": "worship_atk_hit_611",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_600",
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 12000,
+		"effectValue2": 0,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31033011": {
+		"id": 31033011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_611",
+		"atkHit": "worship_atk_hit_611",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_600",
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 14000,
+		"effectValue2": 0,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31034011": {
+		"id": 31034011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_613",
+		"atkHit": "worship_atk_hit_613",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_600",
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 16000,
+		"effectValue2": 0,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31035011": {
+		"id": 31035011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_613",
+		"atkHit": "worship_atk_hit_613",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_600",
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 18000,
+		"effectValue2": 0,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31036011": {
+		"id": 31036011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_613",
+		"atkHit": "worship_atk_hit_613",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_600",
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 20000,
+		"effectValue2": 0,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31042011": {
+		"id": 31042011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_111",
+		"atkHit": "worship_atk_hit_111",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 12000,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31043011": {
+		"id": 31043011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_111",
+		"atkHit": "worship_atk_hit_111",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 14000,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31044011": {
+		"id": 31044011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_113",
+		"atkHit": "worship_atk_hit_113",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 16000,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31045011": {
+		"id": 31045011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_113",
+		"atkHit": "worship_atk_hit_113",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 18000,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31046011": {
+		"id": 31046011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_113",
+		"atkHit": "worship_atk_hit_113",
+		"atkEmitTime": 0,
+		"atkFb": "worship_atk_fb_100",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 20000,
+		"target1": 5,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31053011": {
+		"id": 31053011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_511",
+		"atkHit": "worship_atk_hit_511",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 17500,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31054011": {
+		"id": 31054011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_511",
+		"atkHit": "worship_atk_hit_511",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 20000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31055011": {
+		"id": 31055011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_513",
+		"atkHit": "worship_atk_hit_513",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 22500,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31056011": {
+		"id": 31056011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_513",
+		"atkHit": "worship_atk_hit_513",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31063011": {
+		"id": 31063011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_411",
+		"atkHit": "worship_atk_hit_411",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 17500,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31064011": {
+		"id": 31064011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_411",
+		"atkHit": "worship_atk_hit_411",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 20000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31065011": {
+		"id": 31065011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_413",
+		"atkHit": "worship_atk_hit_413",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 22500,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31066011": {
+		"id": 31066011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_413",
+		"atkHit": "worship_atk_hit_413",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 25000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31073011": {
+		"id": 31073011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_211",
+		"atkHit": "worship_atk_hit_211",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 28000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31074011": {
+		"id": 31074011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_211",
+		"atkHit": "worship_atk_hit_211",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 32000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31075011": {
+		"id": 31075011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_213",
+		"atkHit": "worship_atk_hit_213",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 36000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31076011": {
+		"id": 31076011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_213",
+		"atkHit": "worship_atk_hit_213",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 40000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31083011": {
+		"id": 31083011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_311",
+		"atkHit": "worship_atk_hit_311",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 28000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31084011": {
+		"id": 31084011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_311",
+		"atkHit": "worship_atk_hit_311",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 32000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31085011": {
+		"id": 31085011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_313",
+		"atkHit": "worship_atk_hit_313",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 36000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31086011": {
+		"id": 31086011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_313",
+		"atkHit": "worship_atk_hit_313",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 40000,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31093011": {
+		"id": 31093011,
+		"conditionType": 2,
+		"conditionValue": [
+			0,
+			5000
+		],
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "sorcery_shoot_2_6",
+		"atkHit": "sorcery_hit_2_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 14000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31094011": {
+		"id": 31094011,
+		"conditionType": 2,
+		"conditionValue": [
+			0,
+			5000
+		],
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "sorcery_shoot_2_6",
+		"atkHit": "sorcery_hit_2_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 16000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31095011": {
+		"id": 31095011,
+		"conditionType": 2,
+		"conditionValue": [
+			0,
+			5000
+		],
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "sorcery_shoot_2_6",
+		"atkHit": "sorcery_hit_2_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 18000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31096011": {
+		"id": 31096011,
+		"conditionType": 2,
+		"conditionValue": [
+			0,
+			5000
+		],
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "sorcery_shoot_2_6",
+		"atkHit": "sorcery_hit_2_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 20000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31103011": {
+		"id": 31103011,
+		"conditionType": 3,
+		"conditionValue": 5,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "sorcery_shoot_2_6",
+		"atkHit": "sorcery_hit_2_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 35000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31104011": {
+		"id": 31104011,
+		"conditionType": 3,
+		"conditionValue": 5,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "sorcery_shoot_2_6",
+		"atkHit": "sorcery_hit_2_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 40000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31105011": {
+		"id": 31105011,
+		"conditionType": 3,
+		"conditionValue": 5,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "sorcery_shoot_2_6",
+		"atkHit": "sorcery_hit_2_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 45000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31106011": {
+		"id": 31106011,
+		"conditionType": 3,
+		"conditionValue": 5,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "sorcery_shoot_2_6",
+		"atkHit": "sorcery_hit_2_6",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 50000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31113011": {
+		"id": 31113011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkHit": "worship_atk_hit_5_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 21000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31113012": {
+		"id": 31113012,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkHit": "worship_atk_hit_5_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10500,
+		"effectValue2": 0,
+		"target1": [
+			8,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31114011": {
+		"id": 31114011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkHit": "worship_atk_hit_5_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 24000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31114012": {
+		"id": 31114012,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkHit": "worship_atk_hit_5_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 12000,
+		"effectValue2": 0,
+		"target1": [
+			8,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31115011": {
+		"id": 31115011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkHit": "worship_atk_hit_5_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 27000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31115012": {
+		"id": 31115012,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkHit": "worship_atk_hit_5_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 13500,
+		"effectValue2": 0,
+		"target1": [
+			8,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31116011": {
+		"id": 31116011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkHit": "worship_atk_hit_5_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"31116012": {
+		"id": 31116012,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkHit": "worship_atk_hit_5_1",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 15000,
+		"effectValue2": 0,
+		"target1": [
+			8,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32011011": {
+		"id": 32011011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3201101": {
+				"id": 32011011,
+				"buffId": 3201101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32012011": {
+		"id": 32012011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3201201": {
+				"id": 32012011,
+				"buffId": 3201201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32013011": {
+		"id": 32013011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3201301": {
+				"id": 32013011,
+				"buffId": 3201301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32014011": {
+		"id": 32014011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3201401": {
+				"id": 32014011,
+				"buffId": 3201401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32015011": {
+		"id": 32015011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3201501": {
+				"id": 32015011,
+				"buffId": 3201501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32016011": {
+		"id": 32016011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3201601": {
+				"id": 32016011,
+				"buffId": 3201601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32021011": {
+		"id": 32021011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3202101": {
+				"id": 32021011,
+				"buffId": 3202101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32022011": {
+		"id": 32022011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3202201": {
+				"id": 32022011,
+				"buffId": 3202201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32023011": {
+		"id": 32023011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3202301": {
+				"id": 32023011,
+				"buffId": 3202301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32024011": {
+		"id": 32024011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3202401": {
+				"id": 32024011,
+				"buffId": 3202401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32025011": {
+		"id": 32025011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3202501": {
+				"id": 32025011,
+				"buffId": 3202501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32026011": {
+		"id": 32026011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3202601": {
+				"id": 32026011,
+				"buffId": 3202601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32032011": {
+		"id": 32032011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_621",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 18000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32033011": {
+		"id": 32033011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_621",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 21000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32034011": {
+		"id": 32034011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_621",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 24000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32035011": {
+		"id": 32035011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_621",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 27000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32036011": {
+		"id": 32036011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_621",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 30000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32042011": {
+		"id": 32042011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_121",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 18000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32043011": {
+		"id": 32043011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_121",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 21000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32044011": {
+		"id": 32044011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_121",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 24000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32045011": {
+		"id": 32045011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_121",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 27000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32046011": {
+		"id": 32046011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_121",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 30000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32053011": {
+		"id": 32053011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_521",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 10500,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32054011": {
+		"id": 32054011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_521",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 12000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32055011": {
+		"id": 32055011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_521",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 13500,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32056011": {
+		"id": 32056011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_521",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 15000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32063011": {
+		"id": 32063011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_421",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 10500,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32064011": {
+		"id": 32064011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_421",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 12000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32065011": {
+		"id": 32065011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_421",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 13500,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32066011": {
+		"id": 32066011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_421",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 15000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32073011": {
+		"id": 32073011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_221",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 17500,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32074011": {
+		"id": 32074011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_221",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 20000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32075011": {
+		"id": 32075011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_221",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 22500,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32076011": {
+		"id": 32076011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_221",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32083011": {
+		"id": 32083011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_321",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 17500,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32084011": {
+		"id": 32084011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_321",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 20000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32085011": {
+		"id": 32085011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_321",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 22500,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32086011": {
+		"id": 32086011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatHit": "worship_atk_start_321",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 25000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32093011": {
+		"id": 32093011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 14000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32093012": {
+		"id": 32093012,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 7000,
+		"target1": [
+			9,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32094011": {
+		"id": 32094011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 16000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32094012": {
+		"id": 32094012,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 8000,
+		"target1": [
+			9,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32095011": {
+		"id": 32095011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 18000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32095012": {
+		"id": 32095012,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 9000,
+		"target1": [
+			9,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32096011": {
+		"id": 32096011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 20000,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"32096012": {
+		"id": 32096012,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 10000,
+		"target1": [
+			9,
+			5
+		],
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33011011": {
+		"id": 33011011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3301101": {
+				"id": 33011011,
+				"buffId": 3301101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33012011": {
+		"id": 33012011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3301201": {
+				"id": 33012011,
+				"buffId": 3301201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33013011": {
+		"id": 33013011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3301301": {
+				"id": 33013011,
+				"buffId": 3301301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33014011": {
+		"id": 33014011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3301401": {
+				"id": 33014011,
+				"buffId": 3301401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33015011": {
+		"id": 33015011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3301501": {
+				"id": 33015011,
+				"buffId": 3301501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33016011": {
+		"id": 33016011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3301601": {
+				"id": 33016011,
+				"buffId": 3301601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33021011": {
+		"id": 33021011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3302101": {
+				"id": 33021011,
+				"buffId": 3302101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33022011": {
+		"id": 33022011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3302201": {
+				"id": 33022011,
+				"buffId": 3302201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33023011": {
+		"id": 33023011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3302301": {
+				"id": 33023011,
+				"buffId": 3302301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33024011": {
+		"id": 33024011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3302401": {
+				"id": 33024011,
+				"buffId": 3302401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33025011": {
+		"id": 33025011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3302501": {
+				"id": 33025011,
+				"buffId": 3302501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33026011": {
+		"id": 33026011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+			"3302601": {
+				"id": 33026011,
+				"buffId": 3302601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33031011": {
+		"id": 33031011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_311",
+		"atkHit": "worship_atk_hit_311",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 35000,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33032011": {
+		"id": 33032011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_311",
+		"atkHit": "worship_atk_hit_311",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 42000,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33033011": {
+		"id": 33033011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_311",
+		"atkHit": "worship_atk_hit_311",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 49000,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33034011": {
+		"id": 33034011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_313",
+		"atkHit": "worship_atk_hit_313",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 56000,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33035011": {
+		"id": 33035011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_313",
+		"atkHit": "worship_atk_hit_313",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 63000,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33036011": {
+		"id": 33036011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_313",
+		"atkHit": "worship_atk_hit_313",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 70000,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33041011": {
+		"id": 33041011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 24000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33042011": {
+		"id": 33042011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 28800,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33043011": {
+		"id": 33043011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 33600,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33044011": {
+		"id": 33044011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 38400,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33045011": {
+		"id": 33045011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 43200,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33046011": {
+		"id": 33046011,
+		"conditionType": 0,
+		"effectType": 2,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"treatBallistic": "start_cure",
+		"treatHit": "hit_cure",
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 48000,
+		"effectValue2": 0,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33051011": {
+		"id": 33051011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+			"3305101": {
+				"id": 33051011,
+				"buffId": 3305101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33052011": {
+		"id": 33052011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+			"3305201": {
+				"id": 33052011,
+				"buffId": 3305201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33053011": {
+		"id": 33053011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+			"3305301": {
+				"id": 33053011,
+				"buffId": 3305301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33054011": {
+		"id": 33054011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+			"3305401": {
+				"id": 33054011,
+				"buffId": 3305401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33055011": {
+		"id": 33055011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+			"3305501": {
+				"id": 33055011,
+				"buffId": 3305501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33056011": {
+		"id": 33056011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": 10,
+		"targetBuff": {
+			"3305601": {
+				"id": 33056011,
+				"buffId": 3305601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33061011": {
+		"id": 33061011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3306101": {
+				"id": 33061011,
+				"buffId": 3306101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33062011": {
+		"id": 33062011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3306201": {
+				"id": 33062011,
+				"buffId": 3306201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33063011": {
+		"id": 33063011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3306301": {
+				"id": 33063011,
+				"buffId": 3306301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33064011": {
+		"id": 33064011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3306401": {
+				"id": 33064011,
+				"buffId": 3306401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33065011": {
+		"id": 33065011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3306501": {
+				"id": 33065011,
+				"buffId": 3306501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33066011": {
+		"id": 33066011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3306601": {
+				"id": 33066011,
+				"buffId": 3306601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33071011": {
+		"id": 33071011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3307101": {
+				"id": 33071011,
+				"buffId": 3307101,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33072011": {
+		"id": 33072011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3307201": {
+				"id": 33072011,
+				"buffId": 3307201,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33073011": {
+		"id": 33073011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3307301": {
+				"id": 33073011,
+				"buffId": 3307301,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33074011": {
+		"id": 33074011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3307401": {
+				"id": 33074011,
+				"buffId": 3307401,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33075011": {
+		"id": 33075011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3307501": {
+				"id": 33075011,
+				"buffId": 3307501,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33076011": {
+		"id": 33076011,
+		"conditionType": 0,
+		"effectType": 3,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 0,
+		"effectValue2": 0,
+		"target1": [
+			6,
+			2
+		],
+		"targetBuff": {
+			"3307601": {
+				"id": 33076011,
+				"buffId": 3307601,
+				"prob": 10000
+			}
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33083011": {
+		"id": 33083011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_511",
+		"atkHit": "worship_atk_hit_511",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33083012": {
+		"id": 33083012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 1,
+		"effectValue2": 1,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33084011": {
+		"id": 33084011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_511",
+		"atkHit": "worship_atk_hit_511",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33084012": {
+		"id": 33084012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 1,
+		"effectValue2": 1,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33085011": {
+		"id": 33085011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_513",
+		"atkHit": "worship_atk_hit_513",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33085012": {
+		"id": 33085012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 1,
+		"effectValue2": 1,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33086011": {
+		"id": 33086011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_513",
+		"atkHit": "worship_atk_hit_513",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33086012": {
+		"id": 33086012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 1,
+		"effectValue2": 1,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33093011": {
+		"id": 33093011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_411",
+		"atkHit": "worship_atk_hit_411",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33093012": {
+		"id": 33093012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 2,
+		"effectValue2": 1,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33094011": {
+		"id": 33094011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_411",
+		"atkHit": "worship_atk_hit_411",
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33094012": {
+		"id": 33094012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 2,
+		"effectValue2": 1,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33095011": {
+		"id": 33095011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_413",
+		"atkHit": "worship_atk_hit_413",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33095012": {
+		"id": 33095012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 2,
+		"effectValue2": 1,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33096011": {
+		"id": 33096011,
+		"conditionType": 0,
+		"effectType": 1,
+		"resType": 5,
+		"atkBallistic": "worship_atk_shoot_413",
+		"atkHit": "worship_atk_hit_413",
+		"atkEmitTime": 0,
+		"playIme": 1,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 25000,
+		"effectValue2": 0,
+		"target1": 1,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	},
+	"33096012": {
+		"id": 33096012,
+		"conditionType": 0,
+		"effectType": 6,
+		"resType": 5,
+		"atkEmitTime": 0,
+		"playIme": 0,
+		"need": 0,
+		"isFive": 0,
+		"delayHit": 0,
+		"showNameId": 0,
+		"effectValue1": 2,
+		"effectValue2": 1,
+		"target1": 2,
+		"targetBuff": {
+
+		},
+		"ownBuff": {
+
+		}
+	}
+}

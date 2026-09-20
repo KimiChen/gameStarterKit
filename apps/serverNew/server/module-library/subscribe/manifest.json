@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "name": "subscribe",
+  "version": "1.0.0",
+  "description": "Archived subscribe game module",
+  "files": [
+    {
+      "target": "src/modules/subscribe/bean/SubscribeItem.ts",
+      "payload": "payload/src/modules/subscribe/bean/SubscribeItem.ts",
+      "sha256": "2f02a3c71ae019831e269cc727abccaeb22ea51f094bee0a95323c3721e587fd"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-subscribe-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../subscribe/bean/SubscribeItem",
+      "import": "import { SubscribeItem } from '../../subscribe/bean/SubscribeItem'",
+      "expectedAbsent": "SubscribeItem"
+    },
+    {
+      "id": "user-subscribe-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "/** 订阅开关 */\n@Mod\nsubscribe?: DiffMap<int, SubscribeItem>",
+      "expectedAbsent": "subscribe?: DiffMap<int, SubscribeItem>"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- subscribe"
+    ],
+    "manual": []
+  }
+}

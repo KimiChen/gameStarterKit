@@ -1,0 +1,97 @@
+{
+  "tool": "tools/creator-preview/run.mjs",
+  "scenario": "home",
+  "startedAt": "2026-09-20T02:22:53.748Z",
+  "options": {
+    "scenario": "home",
+    "out": "/Users/kk/26/gameKit/apps/serverNew/humanDocs/evidence/p8-gameroom-gui/home",
+    "code": "WELCOME2026",
+    "format": "jpeg",
+    "devtools": "http://127.0.0.1:9222",
+    "preview": "http://127.0.0.1:7458",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 20000,
+    "reuse": false
+  },
+  "scene": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+  "ok": true,
+  "steps": [
+    {
+      "name": "加载预览场景（Fetch 改写 settings.js?scene=）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:22:53.936Z",
+      "detail": {
+        "frames": 74,
+        "canvas": {
+          "x": 225,
+          "y": 33,
+          "width": 750,
+          "height": 886
+        },
+        "visible": {
+          "width": 750,
+          "height": 886
+        },
+        "topLevel": [
+          "Canvas",
+          "PROFILER_NODE"
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:22:55.974Z"
+    },
+    {
+      "name": "登录页可见（FGUI btn_login）",
+      "ok": true,
+      "startedAt": "2026-09-20T02:22:55.979Z",
+      "detail": {
+        "via": "fgui:btn_login",
+        "shot": "01-login.jpg"
+      },
+      "screenshots": [
+        "01-login.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:22:56.329Z"
+    },
+    {
+      "name": "点「开始游戏」",
+      "ok": true,
+      "startedAt": "2026-09-20T02:22:56.329Z",
+      "detail": {
+        "tapped": "btn_login",
+        "at": [
+          599,
+          618
+        ]
+      },
+      "screenshots": [],
+      "finishedAt": "2026-09-20T02:22:56.400Z"
+    },
+    {
+      "name": "首屏 PromoHomeView 挂载",
+      "ok": true,
+      "startedAt": "2026-09-20T02:22:56.400Z",
+      "detail": {
+        "card": [
+          "gono",
+          "Cocos Creator + Colyseus 实时游戏脚手架",
+          "协议 game v8 · lobby v7 · 已登记玩法 8",
+          "本地开发服 · dev-63bfdde39b49cc16 · 体力 30 · 0胜0负"
+        ],
+        "protocolLine": "协议 game v8 · lobby v7 · 已登记玩法 8",
+        "shot": "02-home.jpg"
+      },
+      "screenshots": [
+        "02-home.jpg"
+      ],
+      "finishedAt": "2026-09-20T02:22:57.130Z"
+    }
+  ],
+  "console": [],
+  "tab": {
+    "id": "3095D70739F2E76B7BF51882BDF24989",
+    "created": true
+  },
+  "finishedAt": "2026-09-20T02:22:57.135Z"
+}

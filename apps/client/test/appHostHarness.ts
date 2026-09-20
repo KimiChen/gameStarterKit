@@ -26,6 +26,8 @@ export interface AppHostModules {
   wiring: typeof import("../src/app/wiring");
   appGeneration: typeof import("../src/app/appGeneration");
   webSocketClient: typeof import("../src/net/WebSocketClient");
+  /** transport 选择点的单例：bootstrap 装配结果只能从这里观察（原生通道配置面）。 */
+  lobbyTransportHub: typeof import("../src/net/LobbyTransportHub").lobbyTransportHub;
   http: typeof import("../src/core/http");
   /** 返回 never 便于直接充当 cc Node 形参（最小 cc 桩，无引擎属性面）。 */
   makeNode(): never;
@@ -71,7 +73,7 @@ export function loadAppHost(): Promise<AppHostModules> {
       return originalLoad.call(this, request, parent, isMain);
     };
     try {
-      const [appRuntime, bootstrap, loginFlow, coordinator, session, wiring, appGeneration, webSocketClient, http] =
+      const [appRuntime, bootstrap, loginFlow, coordinator, session, wiring, appGeneration, webSocketClient, http, hub] =
         await Promise.all([
           import("../src/app/AppRuntime"),
           import("../src/app/bootstrap"),
@@ -82,6 +84,7 @@ export function loadAppHost(): Promise<AppHostModules> {
           import("../src/app/appGeneration"),
           import("../src/net/WebSocketClient"),
           import("../src/core/http"),
+          import("../src/net/LobbyTransportHub"),
         ]);
       return {
         appRuntime,
@@ -92,6 +95,7 @@ export function loadAppHost(): Promise<AppHostModules> {
         wiring,
         appGeneration,
         webSocketClient,
+        lobbyTransportHub: hub.lobbyTransportHub,
         http,
         makeNode: () => new FakeNode() as never,
       };

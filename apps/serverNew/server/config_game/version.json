@@ -1,0 +1,22 @@
+{
+	"serverVer": {
+		"type": "serverVer",
+		"value": "1.0.01",
+		"desc": "服务端版本号"
+	},
+	"configVer": {
+		"type": "configVer",
+		"value": "1.0.01",
+		"desc": "客户端版本号"
+	},
+	"languageBaseVer": {
+		"type": "languageBaseVer",
+		"value": "0.0.1272",
+		"desc": "多语言基础版本号"
+	},
+	"pbMole": {
+		"type": "pbMole",
+		"value": "1682290800-1682298000",
+		"desc": "聊天屏蔽时段"
+	}
+}

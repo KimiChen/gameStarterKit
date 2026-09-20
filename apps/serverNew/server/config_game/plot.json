@@ -1,0 +1,4635 @@
+{
+	"1": [
+		{
+			"id": 1,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "天上落下的闪闪发光的宝物静静地躺在坑中，你感受到它身上强大的力量。"
+		},
+		{
+			"id": 1,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "一群妖怪围上来，不怀好意地看着你和那件宝贝。"
+		},
+		{
+			"id": 1,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你……你们……！"
+		},
+		{
+			"id": 1,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 5,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（摩拳擦掌）嘿嘿嘿，刚开智的小妖怪啊，真鲜啊！"
+		},
+		{
+			"id": 1,
+			"pid": 5,
+			"nextPid": [
+				6,
+				7
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 5,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（抽了抽鼻子）那宝贝好强的灵气！若是吸食干净，本大爷修为还能再进一步！"
+		},
+		{
+			"id": 1,
+			"pid": 6,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我可不会任由宰割！"
+		},
+		{
+			"id": 1,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我跟你们拼了！"
+		},
+		{
+			"id": 1,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（一个神秘女子的声音传来）小妖怪，别跟他们硬拼，他们人多！"
+		},
+		{
+			"id": 1,
+			"pid": 9,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "眼下，我们只有并肩作战，才能活下去！你愿意相信我吗？！"
+		},
+		{
+			"id": 1,
+			"pid": 10,
+			"nextPid": [
+				11
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我相信你！"
+		},
+		{
+			"id": 1,
+			"pid": 11,
+			"nextPid": [
+				12
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我要活下去！"
+		},
+		{
+			"id": 1,
+			"pid": 12,
+			"nextPid": [
+				13
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "好，那么，就请你随我进入这万灵宝录中吧！"
+		},
+		{
+			"id": 1,
+			"pid": 13,
+			"nextPid": [
+				14
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（念动咒语）不乐寿，不哀夭；不荣通，不丑穷，藏金于山，藏珠于渊，非道不生，非德不明，万灵一卷，山河宝录！"
+		},
+		{
+			"id": 1,
+			"pid": 14,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "随着神秘女子念动咒语，那天上落下的宝物发出一阵灵光，将你吸了进去。"
+		}
+	],
+	"2": [
+		{
+			"id": 2,
+			"pid": 1,
+			"nextPid": [
+				2,
+				3
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "你进入了法宝内的世界，这里是一处奇妙的天地，你感受到这里有充沛的灵气，还有一股极为古老的邪气。"
+		},
+		{
+			"id": 2,
+			"pid": 2,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "这是哪里？"
+		},
+		{
+			"id": 2,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "这里好奇怪！"
+		},
+		{
+			"id": 2,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这是上古法宝【万灵宝录】内的世界，我便是这【万灵宝录】的【器灵】，素萝。"
+		},
+		{
+			"id": 2,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "万灵宝录复刻天地万灵，只是从前在一场上古之战而受到污染，因此而神威大减，邪气丛生。从这些邪气中还诞生了不少邪灵。"
+		},
+		{
+			"id": 2,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "如今你可以闭关其中，击败这些邪灵来潜心修炼，待到修为有成，再去面对外界的凶险不迟。"
+		},
+		{
+			"id": 2,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我应该怎么做？"
+		},
+		{
+			"id": 2,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我要如何修炼？"
+		},
+		{
+			"id": 2,
+			"pid": 9,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我来教你！"
+		}
+	],
+	"3": [
+		{
+			"id": 3,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "这前方有一处密林，林中有灵气波动，应该是有一件装备。"
+		},
+		{
+			"id": 3,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "有了装备相助，你的修为便能事半功倍。"
+		},
+		{
+			"id": 3,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 5,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "……什么小怪物，也敢来跟本大爷抢宝物？！"
+		},
+		{
+			"id": 3,
+			"pid": 4,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "糟糕，有敌人，小妖怪，你可别输给它！"
+		}
+	],
+	"4": [
+		{
+			"id": 4,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你来到了一处山洞前。"
+		},
+		{
+			"id": 4,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "前面有一股灵气波动，那发光的宝箱内，应该一件强力装备……"
+		},
+		{
+			"id": 4,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 5,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "喂！你这小妖，探头探脑看什么东西！这是本大爷的宝贝，你休想打什么歪主意！"
+		},
+		{
+			"id": 4,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "那你倒是打开用啊？"
+		},
+		{
+			"id": 4,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 5,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我……我打不开，但是别人也休想动它一根汗毛！"
+		},
+		{
+			"id": 4,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "小心，这只蛤蟆精不是普通邪灵，乃是撕裂吞噬了不少万灵宝录碎片的邪灵首领。击败他之后，你还可以用它掉落的碎片来修复万灵宝录。"
+		},
+		{
+			"id": 4,
+			"pid": 7,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我们要小心应付！"
+		}
+	],
+	"5": [
+		{
+			"id": 5,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "此处邪灵首领已经被你尽数铲除，再以普通邪灵修炼也是事倍功半。"
+		},
+		{
+			"id": 5,
+			"pid": 2,
+			"nextPid": [
+				3,
+				4
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "跟我去下一个地方吧。"
+		},
+		{
+			"id": 5,
+			"pid": 3,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "万灵宝录到底有多大？"
+		},
+		{
+			"id": 5,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "下一个地方？"
+		},
+		{
+			"id": 5,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（不以为然地笑了笑）万灵宝录曾经复刻了整个天地山河，草木万灵……"
+		},
+		{
+			"id": 5,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "只是如今它受到污染，大部分地区你不能前往罢了。"
+		},
+		{
+			"id": 5,
+			"pid": 7,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "来吧，让你见识一下这万灵宝录内的天地。"
+		}
+	],
+	"6": [
+		{
+			"id": 6,
+			"pid": 1,
+			"nextPid": [
+				2,
+				3
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（皱着眉头看你）……唔……"
+		},
+		{
+			"id": 6,
+			"pid": 2,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我这么好看吗？"
+		},
+		{
+			"id": 6,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我会害羞的"
+		},
+		{
+			"id": 6,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（莞尔一笑）你这小妖怪，才开智没多久，口舌倒是比修为升的快！"
+		},
+		{
+			"id": 6,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（扔了一个画卷给你）喏，这个给你。"
+		},
+		{
+			"id": 6,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这是万灵宝录复刻的一卷画册，里面记载了一种初阶的功法，我看很适合你。"
+		},
+		{
+			"id": 6,
+			"pid": 7,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "能不能学会这门功法，就看你的本事了。"
+		}
+	],
+	"7": [
+		{
+			"id": 7,
+			"pid": 1,
+			"nextPid": [
+				2,
+				3
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "好啦，现在你修炼得也差不多了，我们可以返回现世世界了。"
+		},
+		{
+			"id": 7,
+			"pid": 2,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我不能一直待下去吗？"
+		},
+		{
+			"id": 7,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我不想出去了"
+		},
+		{
+			"id": 7,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（在你额头上敲了一记爆栗）小妖怪，你在想什么呢！"
+		},
+		{
+			"id": 7,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "万灵宝录虽强，可以减缓内部时间流动，但也是有极限的。"
+		},
+		{
+			"id": 7,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "你在这里修炼这三日，我看外面的怪物已经冲过来了。"
+		},
+		{
+			"id": 7,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "再不出去，只怕你就真成了它们的盘中餐啦！"
+		},
+		{
+			"id": 7,
+			"pid": 8,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "放心，本器灵见多识广，以你现在的修为足够揍扁他们，咱们出去吧！"
+		}
+	],
+	"8": [
+		{
+			"id": 8,
+			"pid": 1,
+			"nextPid": [
+				2,
+				3
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（递给你一张手绢）你累了吧，要不要擦擦汗歇息一下？"
+		},
+		{
+			"id": 8,
+			"pid": 2,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我不累"
+		},
+		{
+			"id": 8,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "修炼要紧"
+		},
+		{
+			"id": 8,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（递给你一个仙桃）我看你面色发白，还是吃些东西为好。"
+		},
+		{
+			"id": 8,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这是仙桃，可助修士恢复体力，是修炼必不可缺的宝贝。"
+		},
+		{
+			"id": 8,
+			"pid": 6,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "吃好了再修炼吧，提升修为固然重要，但是也要注意修生养息，这才是修炼之道。"
+		}
+	],
+	"9": [
+		{
+			"id": 9,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你遭到了一群妖怪们的袭击。"
+		},
+		{
+			"id": 9,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 5,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这小妖身上宝贝可真不少！"
+		},
+		{
+			"id": 9,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 5,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "揍它，抢宝贝！"
+		},
+		{
+			"id": 9,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（不屑一顾）如今你已有根基，这些小妖不足为虑。"
+		},
+		{
+			"id": 9,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "不过此刻你灵气充盈体内，再吸收灵气便会有灵气过盛，内焚心腑之危。"
+		},
+		{
+			"id": 9,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "那该怎么办？"
+		},
+		{
+			"id": 9,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我要逃吗？"
+		},
+		{
+			"id": 9,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（展颜一笑）笨小妖，你放心，有本器灵在，你只管安心修炼。"
+		},
+		{
+			"id": 9,
+			"pid": 9,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "待到你灵气过盛之时，我自会教你内体小周天吐纳运行之法。"
+		},
+		{
+			"id": 9,
+			"pid": 10,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这道充盈的灵气若是转化得当，定能助你提升修为……"
+		}
+	],
+	"10": [
+		{
+			"id": 10,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你继续前行，突然感觉到前方有一阵强大阴风掠过。"
+		},
+		{
+			"id": 10,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（惊慌）快躲开！"
+		},
+		{
+			"id": 10,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你急忙闪身避开，然后，在你身后出现了一道庞大的身影。"
+		},
+		{
+			"id": 10,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 10,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（阴恻恻地笑了）哼……反应挺快……可惜……"
+		},
+		{
+			"id": 10,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 10,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "不过是垂死挣扎罢了……"
+		},
+		{
+			"id": 10,
+			"pid": 6,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "小心，这邪灵首领身上有更强的装备！"
+		}
+	],
+	"11": [
+		{
+			"id": 11,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "经过一段时日的修炼，你感到自己的修为又有精进。"
+		},
+		{
+			"id": 11,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "于是，你出发寻找下一处灵气充沛而修炼之地。"
+		}
+	],
+	"12": [
+		{
+			"id": 12,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "初来此地，你感受到一股似曾相识的灵气……"
+		},
+		{
+			"id": 12,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（惊讶）咦，此地有一道淡淡的灵气，与你产生了感应。"
+		},
+		{
+			"id": 12,
+			"pid": 3,
+			"nextPid": [
+				4,
+				5
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这道灵气与你乃是同族……"
+		},
+		{
+			"id": 12,
+			"pid": 4,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我族前辈？"
+		},
+		{
+			"id": 12,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "它似乎在寻找我……"
+		},
+		{
+			"id": 12,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（叹息）这末法时期，灵气稀薄，吾已许久未见吾族有如此新锐之后辈了……"
+		},
+		{
+			"id": 12,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "想不到如今后继有人，本尊甚感欣慰。"
+		},
+		{
+			"id": 12,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（骄傲）吾等妖族曾执掌天庭，号令三界，那是何等之荣耀与权威！"
+		},
+		{
+			"id": 12,
+			"pid": 9,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（叹息）然三次上古大战之后，一切过往，皆为烟云矣。"
+		},
+		{
+			"id": 12,
+			"pid": 10,
+			"nextPid": [
+				11
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "本尊留下一道神念与一件法宝，留与有缘之后辈取之。"
+		},
+		{
+			"id": 12,
+			"pid": 11,
+			"nextPid": [
+				12
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "虽看不出你的传承，但本尊还望你以妖族大业为重，早日已臻化境，复兴我妖族昔日荣光！"
+		},
+		{
+			"id": 12,
+			"pid": 12,
+			"nextPid": [
+				13
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "那道似曾相识的灵气消失了。"
+		},
+		{
+			"id": 12,
+			"pid": 13,
+			"nextPid": [
+				14
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "一件闪闪发光的宝贝出现在你眼前。"
+		},
+		{
+			"id": 12,
+			"pid": 14,
+			"nextPid": [
+				15
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（十分惊喜）小妖怪！那、那是法宝！以你的修为，若非有这等奇遇，绝无可能现在有自己的法宝的！"
+		},
+		{
+			"id": 12,
+			"pid": 15,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "快拿起来，看看你能不能取得这位妖修前辈的传承！"
+		}
+	],
+	"13": [
+		{
+			"id": 13,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "这天，素萝面色苍白，汗如雨下。"
+		},
+		{
+			"id": 13,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你似乎身体不适"
+		},
+		{
+			"id": 13,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你好像有什么麻烦"
+		},
+		{
+			"id": 13,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（对你露出一个勉强地笑容）小妖怪，你别瞎操心啦。"
+		},
+		{
+			"id": 13,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我可是上古法宝万灵宝录的器灵，我既不会生病，也不会受伤……"
+		},
+		{
+			"id": 13,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你不由分说，将手按到万灵宝录之上，然后，你感受到一股几乎凝结为实质的强大邪气。"
+		},
+		{
+			"id": 13,
+			"pid": 7,
+			"nextPid": [
+				8,
+				9
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "你……"
+		},
+		{
+			"id": 13,
+			"pid": 8,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "万灵宝录内的邪气有异动……"
+		},
+		{
+			"id": 13,
+			"pid": 9,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "它似乎在里面凝结为了实体，而且，它们在吞噬你的力量。"
+		},
+		{
+			"id": 13,
+			"pid": 10,
+			"nextPid": [
+				11
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（对你摇了摇头）我没关系的，我……"
+		},
+		{
+			"id": 13,
+			"pid": 11,
+			"nextPid": [
+				12
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我们是同伴"
+		},
+		{
+			"id": 13,
+			"pid": 12,
+			"nextPid": [
+				13
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（焦急）那是万灵宝录内邪气聚集凝结而成的邪尊，我可以忍一忍……"
+		},
+		{
+			"id": 13,
+			"pid": 13,
+			"nextPid": [
+				14
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（忍住痛苦，试图阻拦你）小妖怪，别乱来，此刻……你……你还对付不了它们！"
+		},
+		{
+			"id": 13,
+			"pid": 14,
+			"nextPid": [
+				15
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我不会让它折磨你"
+		},
+		{
+			"id": 13,
+			"pid": 15,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "不顾素萝的劝阻，你进入了万灵宝录内的邪尊所在之处。"
+		}
+	],
+	"14": [
+		{
+			"id": 14,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "这天，素萝笑吟吟地来到你身边。"
+		},
+		{
+			"id": 14,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（高兴地看着你）呀，你来啦。"
+		},
+		{
+			"id": 14,
+			"pid": 3,
+			"nextPid": [
+				4,
+				5
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "嗯，上次的事情，多谢啦。"
+		},
+		{
+			"id": 14,
+			"pid": 4,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你到底想说什么？"
+		},
+		{
+			"id": 14,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "上次？"
+		},
+		{
+			"id": 14,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（捂嘴轻笑，在你脑门弹了一记爆栗）到底是刚开智的笨蛋小妖怪！"
+		},
+		{
+			"id": 14,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（大咧咧地摆摆手）算啦，你不记得，我记得就行。"
+		},
+		{
+			"id": 14,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "你的法宝已经聚集了不少灵气，喏，这个给你,权当谢礼啦。（递给你几颗闪闪发亮的珠子）"
+		},
+		{
+			"id": 14,
+			"pid": 9,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这是洗炼法宝的材料，我好不容易收集来的宝贝，你要好好使用哦。"
+		}
+	],
+	"15": [
+		{
+			"id": 15,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "一天，你在洞府外听到一个刚健英锐的女子声音。"
+		},
+		{
+			"id": 15,
+			"pid": 2,
+			"nextPid": [
+				3,
+				4
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "平天圣宫前锋营旗下，骑尉边溪，前来拜访妖修大人。"
+		},
+		{
+			"id": 15,
+			"pid": 3,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "拜访？"
+		},
+		{
+			"id": 15,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "妖修大人？"
+		},
+		{
+			"id": 15,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（捂嘴轻笑）这是有客人上门了呀，笨蛋小妖。"
+		},
+		{
+			"id": 15,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "如今人族鼎盛，妖族式微，你这样的妖修，虽然无门无派，但也一定会成为他们的网络对象。"
+		},
+		{
+			"id": 15,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我们去见一见吧。"
+		},
+		{
+			"id": 15,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "于是，你们见到了一位英姿勃发的犬妖少女。"
+		},
+		{
+			"id": 15,
+			"pid": 9,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（彬彬有礼地拱手施礼）这位妖修大人，想必你也知道，人族与我妖族不共戴天，我妖族各长老便组织妖军与他们抗衡。"
+		},
+		{
+			"id": 15,
+			"pid": 10,
+			"nextPid": [
+				11
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我奉命前来，就是希望你这样的妖族有为之士加入妖军，与人族作战。"
+		},
+		{
+			"id": 15,
+			"pid": 11,
+			"nextPid": [
+				12
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "妖军旗下有诸多妖盟，我们平天圣宫便是妖军之中鼎鼎大名的一支妖盟。有事之时，妖军便会召集各个妖盟，协力作战。"
+		},
+		{
+			"id": 15,
+			"pid": 12,
+			"nextPid": [
+				13,
+				14
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "一个妖族单打独斗，很容易沦为人族修士的猎物。（看了一眼素萝）尤其是你这样身怀强大宝贝的妖修，更是危险。"
+		},
+		{
+			"id": 15,
+			"pid": 13,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "多谢邀请"
+		},
+		{
+			"id": 15,
+			"pid": 14,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我一定好好考虑"
+		}
+	],
+	"16": [
+		{
+			"id": 16,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你遭到了一群妖怪们的围攻，经过一番苦战，你打败了它们。"
+		},
+		{
+			"id": 16,
+			"pid": 2,
+			"nextPid": [
+				3,
+				4
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（担心地看着你）小妖怪，你没事吧？"
+		},
+		{
+			"id": 16,
+			"pid": 3,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我没事"
+		},
+		{
+			"id": 16,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "它们奈何不了我"
+		},
+		{
+			"id": 16,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（忧心忡忡）你应该是被敌人盯上了。"
+		},
+		{
+			"id": 16,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这些妖怪，只是一群探路的罢了，后续肯定还有妖族前来。"
+		},
+		{
+			"id": 16,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "现在你要感觉吸取它们的灵气，吐纳修炼，现在正是你领悟新招式的大好时机。"
+		},
+		{
+			"id": 16,
+			"pid": 8,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "待你领悟了新招式，这些妖怪就再也不是你的对手了。"
+		}
+	],
+	"17": [
+		{
+			"id": 17,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "经过一段时间的修炼，你感觉到自己似乎体内充斥着一股特别的力量。"
+		},
+		{
+			"id": 17,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（开心地揉了揉你的毛发）小妖怪，这可是修道之路上大好事，你要突破境界了呀。"
+		},
+		{
+			"id": 17,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "修士在突破境界之时，上天便会施以雷劫之考验。这雷劫非同小可，须准备完全方可冲击境界。"
+		},
+		{
+			"id": 17,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "若是修为不足，贸然冲击，轻则被雷劫打得渡劫失败，修为大损，重则在雷劫之下灰飞烟灭，身死道消。"
+		},
+		{
+			"id": 17,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "……"
+		},
+		{
+			"id": 17,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（拉了拉你的耳朵）好啦好啦，小妖怪，看把你吓得。"
+		},
+		{
+			"id": 17,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我可是万灵宝录的器灵，你这妖丹期的雷劫，对我来说小菜一碟。"
+		},
+		{
+			"id": 17,
+			"pid": 8,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我来教你如何突破境界吧。"
+		}
+	],
+	"18": [
+		{
+			"id": 18,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "恭喜，听说你修为又有精进，今日一见，果然不同以往。"
+		},
+		{
+			"id": 18,
+			"pid": 2,
+			"nextPid": [
+				3,
+				4
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（嗅了嗅你身上的味道）你这是提升到妖丹境了吧。"
+		},
+		{
+			"id": 18,
+			"pid": 3,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "好鼻力"
+		},
+		{
+			"id": 18,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "狗鼻子真灵"
+		},
+		{
+			"id": 18,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（炸毛）我是狼妖！不是狗！别看我的耳朵和尾巴很可爱，就觉得我是狗啊！"
+		},
+		{
+			"id": 18,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（恼羞成怒）至于嗅觉……咳，我家世代在妖军中供职，若是连对手的修为都判断不出来，如何能够百战余生？！"
+		},
+		{
+			"id": 18,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（摸了摸边溪的狼头）边姑娘息怒，我家小妖怪乃是无门无派的妖族散修，礼数自然难以周到。"
+		},
+		{
+			"id": 18,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "呜……（舒服得闭上眼睛）……如此说来，本狼妖就不跟你计较了……啊，器灵大人可以再用力一些（高兴地吐出舌头）哈赤哈赤……"
+		},
+		{
+			"id": 18,
+			"pid": 9,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（突然醒悟过来，推开素萝）咳咳，多谢器灵大人宽慰，我心领了。"
+		},
+		{
+			"id": 18,
+			"pid": 10,
+			"nextPid": [
+				11
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（严肃起来）我此次前来，确有要事相商。"
+		},
+		{
+			"id": 18,
+			"pid": 11,
+			"nextPid": [
+				12
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "人族之中，以东林院、两禅寺、昆仑山这三支邪修最为张狂，他们对妖族百般残害，为我妖族之心腹大患。"
+		},
+		{
+			"id": 18,
+			"pid": 12,
+			"nextPid": [
+				13
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（递给你一卷书册）妖族大长老四处召集妖修之中修为有成者对付他们，这是大长老悬赏的人族邪修名录，请你过目。"
+		},
+		{
+			"id": 18,
+			"pid": 13,
+			"nextPid": [
+				14,
+				15
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "现在你的实力已经可以与他们一较高下，请你前往讨伐他们，以张我妖族声威！"
+		},
+		{
+			"id": 18,
+			"pid": 14,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我会试试的"
+		},
+		{
+			"id": 18,
+			"pid": 15,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "责无旁贷"
+		}
+	],
+	"19": [
+		{
+			"id": 19,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "按照妖族提供的悬赏目录，你来到了东林院的势力范围。"
+		},
+		{
+			"id": 19,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这东林院的邪修真是歹毒，他们猎取奴役妖族也就罢了。"
+		},
+		{
+			"id": 19,
+			"pid": 3,
+			"nextPid": [
+				4,
+				5
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "他们还抽取妖族修士的妖丹，炼化成宝石供他们修炼，着实可恶！"
+		},
+		{
+			"id": 19,
+			"pid": 4,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "东林院的悬赏令为何几乎都是妖族？"
+		},
+		{
+			"id": 19,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "东林院不是人族邪修吗？"
+		},
+		{
+			"id": 19,
+			"pid": 6,
+			"nextPid": [
+				7,
+				8
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（摇头叹息）因为……这都是被他们下了禁制所控制的妖修吧。"
+		},
+		{
+			"id": 19,
+			"pid": 7,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "希望能解除它们的禁制"
+		},
+		{
+			"id": 19,
+			"pid": 8,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我不会放过那君子剑仙"
+		}
+	],
+	"20": [
+		{
+			"id": 20,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这是那些东林院被控制的妖修们身上掉落的宝石。"
+		},
+		{
+			"id": 20,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我们可以用它来强化自己的装备。"
+		},
+		{
+			"id": 20,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "它们原本是妖丹……"
+		},
+		{
+			"id": 20,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "如此与东林邪修何异？"
+		},
+		{
+			"id": 20,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（叹息）这不是善良，是天真。"
+		},
+		{
+			"id": 20,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "将来你的修炼之路上，不知还有多少凶险还在等着你。"
+		},
+		{
+			"id": 20,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（神色稍微温暖了些）不过，这也是你的可爱之处。"
+		},
+		{
+			"id": 20,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "希望有朝一日你修道大成之时，你依然能记得今日这份天真，那时，便是真正的善良了。"
+		},
+		{
+			"id": 20,
+			"pid": 8,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "……我明白了。"
+		}
+	],
+	"21": [
+		{
+			"id": 21,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "按照妖族的悬赏令，你来到的两禅寺的势力范围。"
+		},
+		{
+			"id": 21,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "望着远处香火鼎盛的寺庙，你一时沉默不语。"
+		},
+		{
+			"id": 21,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这两禅院的邪僧引诱信徒供奉所谓佛门宝珠。"
+		},
+		{
+			"id": 21,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "其实只是在借机抽取他们的血气来炼化引魂珠罢了。"
+		},
+		{
+			"id": 21,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "不过，他们跟东林院不同，他们拿到引魂珠，却也并非为一己之私。"
+		},
+		{
+			"id": 21,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 0,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "他们提升自己的法宝威力，四处降妖除魔，弘扬正法，在人族之中，也颇有声誉。"
+		},
+		{
+			"id": 21,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "作为口口声声要被他们铲除的【邪魔外道】，你以为如何？"
+		},
+		{
+			"id": 21,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我会打败他们"
+		},
+		{
+			"id": 21,
+			"pid": 9,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "他们是敌人"
+		}
+	],
+	"22": [
+		{
+			"id": 22,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "按照妖族的悬赏令，你见到了昆仑山的修士。"
+		},
+		{
+			"id": 22,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "近日来，天界散落不少奇珍宝物落到人间。"
+		},
+		{
+			"id": 22,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "听说，昆仑山乃是受仙界之命，四处收集这些奇珍。"
+		},
+		{
+			"id": 22,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "他们要避免这些威力巨大的奇珍被心怀叵测之徒所拥有，以免生出事端。"
+		},
+		{
+			"id": 22,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "他们应该是三支邪修之中，看似最为正派的了吧。"
+		},
+		{
+			"id": 22,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "一群走狗罢了"
+		},
+		{
+			"id": 22,
+			"pid": 7,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（微微一笑）小妖怪，你学得很快嘛。"
+		}
+	],
+	"23": [
+		{
+			"id": 23,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "这就是昆仑山邪修们身上收集的奇珍。"
+		},
+		{
+			"id": 23,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "这些宝贝要妥善收藏，定能助你一臂之力。"
+		},
+		{
+			"id": 23,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "不久之后，狼妖边溪又来找你。"
+		},
+		{
+			"id": 23,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "你这些时日来与人族邪修的战斗，大长老也有所耳闻。"
+		},
+		{
+			"id": 23,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "大长老因此下令让我邀请你参加妖修斗法。"
+		},
+		{
+			"id": 23,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "妖修斗法？"
+		},
+		{
+			"id": 23,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（骄傲）这是我妖族一较高下之处，各展所长，点到即止，不知多少妖修都热衷于此！"
+		},
+		{
+			"id": 23,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 4,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "凡是在妖修斗法中脱颖而出者，不但能获得无上荣耀，更能博得大长老青睐，平步青云。"
+		},
+		{
+			"id": 23,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我一定试试"
+		}
+	],
+	"24": [
+		{
+			"id": 24,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "在一处倒塌的洞府中，你发现了一个锈迹斑斑的炉鼎。"
+		},
+		{
+			"id": 24,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（迟疑）等等，这炉鼎上被炼制过的痕迹……"
+		},
+		{
+			"id": 24,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "这竟然是炼器炉！"
+		},
+		{
+			"id": 24,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "炼器炉是什么？"
+		},
+		{
+			"id": 24,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（惊喜）快用你的灵气激活它！这炼器炉乃是专修炼器之道的修士用来炼器的顶级法宝！"
+		},
+		{
+			"id": 24,
+			"pid": 6,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "将精铁投入其中，便有机会炼制神兵利器，小妖怪，你快试试吧！"
+		}
+	],
+	"25": [
+		{
+			"id": 25,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 3,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "欢迎加入本山头，山头内各位兄弟姐妹都将会成为你日后行走妖界的强大后盾。"
+		}
+	],
+	"26": [
+		{
+			"id": 26,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 4,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "你正在素萝的指引下辛勤修炼，天界却发现你居然从雷劫下活了下来，于是派兵捉拿。素萝为了掩护你，被天兵重创后退回原形。"
+		},
+		{
+			"id": 26,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "（被素萝的原形逗笑了）噗嗤……"
+		},
+		{
+			"id": 26,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（十分生气）我可不是萝卜精，我是桃花妖！都是为了救你我才变成这样子的！你居然笑我，你到底有没有良心？"
+		},
+		{
+			"id": 26,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "对、对不起，刚才没忍住……"
+		},
+		{
+			"id": 26,
+			"pid": 5,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "我现在需要五色石才能恢复元气，我可是你的救命恩人，你不准不管我！"
+		}
+	],
+	"27": [
+		{
+			"id": 27,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我的修为还不足，需先在万灵宝录内修炼，否则便辜负了素萝一番心意"
+		}
+	],
+	"1000": [
+		{
+			"id": 1000,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 3,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "八十一道化形雷劫之下你的神形俱灭，魂灰魄散"
+		},
+		{
+			"id": 1000,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 4,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		}
+	],
+	"1001": [
+		{
+			"id": 1001,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 7,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"bgm": "Bgm_create",
+			"talkText": "昔日你们揭竿而起，本以为能改天换命，却不料转眼便众叛亲离，身死道消，岂不可笑？！"
+		},
+		{
+			"id": 1001,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 7,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "但是……若就此散场，未免太过无趣。不如送你一场造化，且看你能否真的率领妖族卷土重来？！"
+		}
+	],
+	"1002": [
+		{
+			"id": 1002,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"bgm": "empty"
+		},
+		{
+			"id": 1002,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"extParam": {
+				"play": "t0",
+				"plot": 1003
+			},
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"sound": "plot_01_fallInPot"
+		},
+		{
+			"id": 1002,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"extParam": {
+				"play": "t1",
+				"plot": 1004
+			},
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"sound": "plot_01_seeMom"
+		},
+		{
+			"id": 1002,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"extParam": {
+				"plot": 1005
+			},
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		},
+		{
+			"id": 1002,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"extParam": {
+				"play": "t2"
+			},
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		},
+		{
+			"id": 1002,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"extParam": {
+				"racePlot": [
+					1006,
+					1007
+				]
+			},
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		},
+		{
+			"id": 1002,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"extParam": {
+				"play": "t3"
+			},
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		},
+		{
+			"id": 1002,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 6,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		},
+		{
+			"id": 1002,
+			"pid": 9,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"extParam": {
+				"plot": 1010
+			},
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		},
+		{
+			"id": 1002,
+			"pid": 10,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 5,
+			"extParam": {
+				"end": "1"
+			},
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		}
+	],
+	"1003": [
+		{
+			"id": 1003,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"emoji": "angry",
+			"hideMask": 1,
+			"bgm": "Bgm_meet",
+			"talkText": "啊啊啊啊！我的金杞银枣玉莲滋补养颜汤！"
+		},
+		{
+			"id": 1003,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"emoji": "angry",
+			"hideMask": 1,
+			"talkText": "你这个臭{race}，你赔我的名贵药汤！啊啊啊……我一定要把你做成点心吃掉！……*￥@#￥#&*%"
+		}
+	],
+	"1004": [
+		{
+			"id": 1004,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1,
+			"talkText": "你从眩晕中醒来，一个美丽的身影映入了你的眼帘。"
+		},
+		{
+			"id": 1004,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1,
+			"talkText": "出于生物的本能，你感觉眼前这位美貌而成熟的女性一定是……"
+		},
+		{
+			"id": 1004,
+			"pid": 3,
+			"nextPid": [
+				4,
+				5,
+				6
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		},
+		{
+			"id": 1004,
+			"pid": 4,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "是妈妈吧？"
+		},
+		{
+			"id": 1004,
+			"pid": 5,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "一定是妈妈！"
+		},
+		{
+			"id": 1004,
+			"pid": 6,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "妈--！！！"
+		}
+	],
+	"1005": [
+		{
+			"id": 1005,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "（吃了一惊）你、你这个臭烘烘的小东西……你在干嘛啊！"
+		}
+	],
+	"1006": [
+		{
+			"id": 1006,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "（情不自禁地摸摸你）咦，毛滑滑的，嗯，身子也暖暖的……啊，摸起来真舒服……"
+		},
+		{
+			"id": 1006,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 1008,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "……算了算了，（忍不住又摸了摸你）看在你这么可爱的份儿上，本姑娘就不跟你计较啦。"
+		}
+	],
+	"1007": [
+		{
+			"id": 1007,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "（情不自禁地摸摸你）啊，感觉凉凉的……咦，身子还能盘起来……哈，摸起来真好玩……"
+		},
+		{
+			"id": 1007,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 1008,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "……算了算了，（忍不住又摸了摸你）看在你这么可爱的份儿上，本姑娘就不跟你计较啦。"
+		}
+	],
+	"1008": [
+		{
+			"id": 1008,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "你没有妈妈吗？也罢，反正我也是孤身一人四处游历……要不，你就留下来我们一起做个伴吧！"
+		},
+		{
+			"id": 1008,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "哎呀呀，好啦好啦，小家伙，你怎么撒起娇来还没完了呢，真拿你没办法……"
+		},
+		{
+			"id": 1008,
+			"pid": 3,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "既然把你留在我身边，那该给你起个名字了吧，总不能一直叫你臭{race}……"
+		}
+	],
+	"1009": [
+		{
+			"id": 1009,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "既然要跟我一起游历，那我就教你一些人界的修炼生存之方法吧。你要好好学，可别真的被其他人抓去当点心吃掉了呀！"
+		}
+	],
+	"1010": [
+		{
+			"id": 1010,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "嗯，{userName}，跟你很配嘛，真是个好名字！我是起名的天才，嘻嘻！"
+		}
+	],
+	"2000": [
+		{
+			"id": 2000,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 3,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1,
+			"talkText": "与此同时，天界·灵官殿…"
+		},
+		{
+			"id": 2000,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 7,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1
+		},
+		{
+			"id": 2000,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 17,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "不错不错，你修为提升得很快嘛。"
+		},
+		{
+			"id": 2000,
+			"pid": 4,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 8,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1
+		}
+	],
+	"2001": [
+		{
+			"id": 2001,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 13,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "废物！天雷行刑居然也能失手！现在竟然让那罪妖逃亡下界，若是上仙追查起来，你我都要吃不了兜着走！"
+		}
+	],
+	"2002": [
+		{
+			"id": 2002,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 12,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（惶恐）上、上仙息怒，您看此事应该如何处理，还请示下，小仙一定尽力去办！"
+		},
+		{
+			"id": 2002,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 13,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "哼……我记得我们下辖不是有个游奕司吗，里面都是连正式天职都没有的地仙散仙，挑个倒霉蛋，让他以巡查下界的名义处理此事吧！"
+		},
+		{
+			"id": 2002,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 12,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "啊！游奕司这种没人管的孤魂野鬼再合适不过了！事儿办成了功劳也是咱们的！出了事儿他们就是替死鬼！"
+		},
+		{
+			"id": 2002,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 12,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（一脸谄媚）上仙英明！小仙这就去办！"
+		},
+		{
+			"id": 2002,
+			"pid": 5,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 3,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1,
+			"talkText": "两个时辰后"
+		}
+	],
+	"2003": [
+		{
+			"id": 2003,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 14,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "本仙奉天界之命，捉拿罪妖，法网恢恢，尔等还不束手就擒……等等，你是素萝仙子？"
+		},
+		{
+			"id": 2003,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 17,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "啊……（糟了，是天庭的人，我的行踪暴露了吗，逃了这么久，终于还是要被天庭灭口了吗……）"
+		},
+		{
+			"id": 2003,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 14,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（骄傲地挺起了自己干瘪的胸膛）素萝仙子，是我啊，王大壮！快离开那罪妖身边，我会用我强壮的胸肌保护你的！♥"
+		},
+		{
+			"id": 2003,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 17,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "（一脸嫌弃）呜哇，这个天兵怎么这么自恋啊，好恶心……"
+		},
+		{
+			"id": 2003,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 14,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "我……我王大壮数百年来的一片苦心，终究是错付了吗……"
+		},
+		{
+			"id": 2003,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 17,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "不是，你谁啊，不要随便给自己加戏啊！"
+		},
+		{
+			"id": 2003,
+			"pid": 7,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 14,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（恼羞成怒）本仙乃是乃天庭灵官殿游奕司九天游奕远捉史副史三辅，奉命捉拿罪妖，敢有阻拦者，一律同罪，小的们，给我上！"
+		}
+	],
+	"2004": [
+		{
+			"id": 2004,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 17,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "糟糕，对方人这么多，小家伙，你现在可不是他们的对手！"
+		},
+		{
+			"id": 2004,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 17,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "你快躲进我的法宝万灵宝录里！我来应付他们！"
+		}
+	],
+	"2005": [
+		{
+			"id": 2005,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "我变强了，我得快点出去帮忙，不能让素萝一个人！"
+		}
+	],
+	"3000": [
+		{
+			"id": 3000,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 9,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1
+		}
+	],
+	"3001": [
+		{
+			"id": 3001,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 14,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "素萝仙子，你如此高贵，何苦为了一个罪妖与天庭作对？只要你乖乖交出它，我定能保你……"
+		},
+		{
+			"id": 3001,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 17,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "住口！我才不会……把那么可爱的小家伙交给你们！死了这条心吧！"
+		},
+		{
+			"id": 3001,
+			"pid": 3,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 14,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "……我真是搞不懂女人"
+		}
+	],
+	"3002": [
+		{
+			"id": 3002,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "素萝，我来帮你！"
+		},
+		{
+			"id": 3002,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 17,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（又惊又喜）小家伙……你……！"
+		}
+	],
+	"3003": [
+		{
+			"id": 3003,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 14,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "可恶！本仙今日小瞧了你！你给我好好记着，我会回来的！"
+		}
+	],
+	"3004": [
+		{
+			"id": 3004,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "（关切）素萝，你怎么样，伤得重不重？"
+		},
+		{
+			"id": 3004,
+			"pid": 2,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 17,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（脸色苍白，摇摇欲坠）我、我不要紧……你……没事就好……"
+		}
+	],
+	"3005": [
+		{
+			"id": 3005,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "（没绷住）噗哈哈哈哈！原来你是个萝卜精，难怪你叫素萝。"
+		},
+		{
+			"id": 3005,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "喂！我是桃花精，不是萝卜精！！再说了，我可是为了救你才变成现在这个样子的，你居然还笑我？你到底有没有良心？？！！"
+		},
+		{
+			"id": 3005,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "对、对不起，刚才没忍住……（又没绷住）噗嗤！"
+		},
+		{
+			"id": 3005,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "你还笑？！"
+		},
+		{
+			"id": 3005,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "那我要怎么感谢你呢？胖萝卜？"
+		},
+		{
+			"id": 3005,
+			"pid": 6,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "不要叫我胖萝卜！我现在需要五色石才能恢复元气，我是你的救命恩人，你不准不管我！"
+		},
+		{
+			"id": 3005,
+			"pid": 7,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "好的胖萝卜，没问题胖萝卜……"
+		},
+		{
+			"id": 3005,
+			"pid": 8,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（痛心疾首）呜……小时候明明那么可爱，进入叛逆期竟然那么讨厌，真是可恶啊……"
+		}
+	],
+	"4010": [
+		{
+			"id": 4010,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "{userName}，怎么从万灵宝录里面回来就整天就跟掉了魂一样？给你做了好吃的你也不吃"
+		},
+		{
+			"id": 4010,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "（双眼紧盯着万灵宝录）我要……"
+		},
+		{
+			"id": 4010,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（哄哄你）乖啊，我的本命法宝可不能给你，我给你糖吃吧？"
+		},
+		{
+			"id": 4010,
+			"pid": 4,
+			"nextPid": [
+				5,
+				6
+			],
+			"linkPlot": 0,
+			"type": 2,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		},
+		{
+			"id": 4010,
+			"pid": 5,
+			"nextPid": [
+				7
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "撒娇"
+		},
+		{
+			"id": 4010,
+			"pid": 6,
+			"nextPid": [
+				8
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "耍赖"
+		},
+		{
+			"id": 4010,
+			"pid": 7,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "你跳到素萝的怀里打滚儿"
+		},
+		{
+			"id": 4010,
+			"pid": 8,
+			"nextPid": [
+				9
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "你躺地上满地打滚儿"
+		},
+		{
+			"id": 4010,
+			"pid": 9,
+			"nextPid": [
+				10
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "（扶额）{userName}，又来这套？！好啦好啦！想要法宝是吧，我带你去个好地方！"
+		},
+		{
+			"id": 4010,
+			"pid": 10,
+			"nextPid": [
+				11
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 0,
+			"talkText": "（星星眼）真的吗！"
+		},
+		{
+			"id": 4010,
+			"pid": 11,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 0,
+			"talkText": "嘻嘻，那可是蓬莱仙市，你可别挑花了眼！"
+		}
+	],
+	"4020": [
+		{
+			"id": 4020,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 3,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1,
+			"talkText": "素萝果然带着你来到一个气势非凡的市场……"
+		}
+	],
+	"4030": [
+		{
+			"id": 4030,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 16,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "二位客人，本仙市的法宝拍卖会马上就开始了，不知道您订了哪个包间"
+		},
+		{
+			"id": 4030,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "这位道友，我不是来买东西的，（悄声）我是来哄孩子的"
+		},
+		{
+			"id": 4030,
+			"pid": 3,
+			"nextPid": [
+				4
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 16,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（恍然大悟）我懂我懂！（悄悄递过一把钥匙）出门左转下楼第三间仓库，包您满意！"
+		},
+		{
+			"id": 4030,
+			"pid": 4,
+			"nextPid": [
+				5
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 1,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "？？？"
+		},
+		{
+			"id": 4030,
+			"pid": 5,
+			"nextPid": [
+				6
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 2,
+			"rightNpc": 0,
+			"talkNpc": 1,
+			"hideMask": 1,
+			"talkText": "看什么看，人家已经给我们安排好了，我们走！"
+		},
+		{
+			"id": 4030,
+			"pid": 6,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 16,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "癸丑包间贵宾二位！"
+		}
+	],
+	"4040": [
+		{
+			"id": 4040,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 3,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1,
+			"bgm": "cellar",
+			"sound": "plot_03_openDoor",
+			"talkText": "拍卖师带你们来到一个神秘莫测的房间内……"
+		}
+	],
+	"4050": [
+		{
+			"id": 4050,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（眼神躲闪）咳咳，俗话说大隐隐于市，真正的好宝贝都藏着呢，快去挑挑看吧！"
+		}
+	],
+	"4060": [
+		{
+			"id": 4060,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "呃，破掉的捕妖网……拿去卖给渔夫打渔吧。"
+		}
+	],
+	"4070": [
+		{
+			"id": 4070,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "噫，谁的破靴子……已经变成毒属性的法宝了吧！"
+		}
+	],
+	"4071": [
+		{
+			"id": 4071,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "啊？“天王虎符”，名字这么嚣张的赝品我还是第一次见！"
+		}
+	],
+	"4080": [
+		{
+			"id": 4080,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（摸摸你）算了算了，看来真的是一堆破烂，别伤心那，走吧，我去外面给你几盒糖糕。"
+		}
+	],
+	"4090": [
+		{
+			"id": 4090,
+			"pid": 1,
+			"nextPid": [
+				2
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "好啦好啦，你就别翻了，回去还得给你洗澡……"
+		},
+		{
+			"id": 4090,
+			"pid": 2,
+			"nextPid": [
+				3
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "（吃了一惊）哎呀！你没事吧！让你别乱翻，手被划伤了吧，让我看看……"
+		},
+		{
+			"id": 4090,
+			"pid": 3,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 2,
+			"talkNpc": 2,
+			"hideMask": 1,
+			"talkText": "等等，这道光芒和法阵是……！！！"
+		}
+	],
+	"4100": [
+		{
+			"id": 4100,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 12,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0,
+			"talkText": "你伤口流出的血激活了一道神秘的阵法"
+		}
+	],
+	"4110": [
+		{
+			"id": 4110,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 12,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		}
+	],
+	"3006": [
+		{
+			"id": 3006,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 1,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 1,
+			"talkText": "为了帮助素萝恢复，不断通关获取[color=#ff9a40]五色石[/color]吧"
+		}
+	],
+	"4120": [
+		{
+			"id": 4120,
+			"pid": 1,
+			"nextPid": [
+				0
+			],
+			"linkPlot": 0,
+			"type": 6,
+			"leftNpc": 0,
+			"rightNpc": 0,
+			"talkNpc": 0,
+			"hideMask": 0
+		}
+	]
+}

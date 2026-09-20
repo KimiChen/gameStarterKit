@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "name": "lode",
+  "version": "1.0.0",
+  "description": "Archived lode game module",
+  "files": [
+    {
+      "target": "config_game/lode.json",
+      "payload": "payload/config_game/lode.json",
+      "sha256": "62b2450dd4534b91426837a1d4db913ba335b0eed2538ca8124f6f511b5cd68f"
+    },
+    {
+      "target": "src/modules/lode/bean/LodeList.ts",
+      "payload": "payload/src/modules/lode/bean/LodeList.ts",
+      "sha256": "134925ac8d7b76a1465c024690d01cde8be53f887543c93ef59c0dc9a4664468"
+    },
+    {
+      "target": "src/modules/lode/bean/LodeUserBean.ts",
+      "payload": "payload/src/modules/lode/bean/LodeUserBean.ts",
+      "sha256": "959a980b49cc080999b89d8a779ed4d36953b3bd79994d835dabb79c6aa6efe9"
+    },
+    {
+      "target": "src/modules/lode/bean/Lodes.ts",
+      "payload": "payload/src/modules/lode/bean/Lodes.ts",
+      "sha256": "a9cf72c2d6aaf7e447f01ad8339b46cbb92b7c4d5d0e8c06bc0ed0b479c49c04"
+    },
+    {
+      "target": "src/modules/lode/persistence/LodeBattleRecordItem.ts",
+      "payload": "payload/src/modules/lode/persistence/LodeBattleRecordItem.ts",
+      "sha256": "e2e4a0c7663a322d9402b40c1d3c4d5a28d439e0b26585539bf29b871f4b9b93"
+    },
+    {
+      "target": "src/modules/lode/persistence/LodeBattleRecordKeys.ts",
+      "payload": "payload/src/modules/lode/persistence/LodeBattleRecordKeys.ts",
+      "sha256": "a3de9c41a53b50366020b1b3a349e1a375894754e8845165219ea0ce60452e3d"
+    },
+    {
+      "target": "src/modules/lode/persistence/LodeBattleRecords.ts",
+      "payload": "payload/src/modules/lode/persistence/LodeBattleRecords.ts",
+      "sha256": "fc00b60a2351fa1aed4f7b04c4d66c2c3a3ac04b58a8eeb816edad921e743776"
+    },
+    {
+      "target": "src/modules/lode/rules/LodeDefine.ts",
+      "payload": "payload/src/modules/lode/rules/LodeDefine.ts",
+      "sha256": "957cb6aa50d86fd243ec3ccec8b425fb4e471dfe680e03d7de55cf6bebc43ddc"
+    }
+  ],
+  "dependencies": {
+    "base": [],
+    "hard": [],
+    "optional": []
+  },
+  "integrations": [
+    {
+      "id": "user-lode-import",
+      "type": "addImport",
+      "target": "src/modules/user/bean/User.ts",
+      "moduleSpecifier": "../../lode/bean/LodeUserBean",
+      "import": "import { LodeUserBean } from '../../lode/bean/LodeUserBean'",
+      "expectedAbsent": "LodeUserBean"
+    },
+    {
+      "id": "user-lode-field",
+      "type": "addClassMember",
+      "target": "src/modules/user/bean/User.ts",
+      "className": "User",
+      "member": "@Mod\nlodeUser!: LodeUserBean",
+      "expectedAbsent": "lodeUser!: LodeUserBean"
+    }
+  ],
+  "configFragments": [],
+  "verification": {
+    "commands": [
+      "pnpm verify:module -- lode"
+    ],
+    "manual": []
+  }
+}

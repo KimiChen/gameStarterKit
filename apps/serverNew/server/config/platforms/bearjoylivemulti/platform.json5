@@ -1,0 +1,178 @@
+{
+    // ⚠️ 本目录是「原生 Lobby 真实**多进程**宿主联调」专用线路（`-p bearjoy -v livemulti`），
+    // 不是发布配置，也不要拿它替换 `bearjoylive`（那条是单进程线路）。
+    // 与 `bearjoylive` 的差异只有四处，改动前先看这里：
+    //   1. Redis 库号再错开一档（center 6 / user 5 / server 4），与 base（0/15/1）、
+    //      bearjoylive（9/8/7）互不干扰；
+    //   2. 客户端端口错开到 18095（内网端口派生为 28095）；
+    //   3. **进程池非 0** —— workerNum=1 + taskWorkerNum=2 + userTaskWorkerNum=1，于是真的会 fork 出
+    //      master + 4 个 worker：worker 0 监听原生 Lobby，worker 1/2 是 task worker，worker 3 是
+    //      user task worker（只装载路由表并转发推送，不绑任何端点）。
+    //   4. 进程池刻意覆盖**全部四种角色**，且 taskWorkerNum>1 让 `bindId % taskWorkerNum` 真的产生
+    //      分布而不是常量落点：固定公会集合 {1,2,3,4} 里 1/3 取余 1 → worker 2，2/4 取余 0 → worker 1，
+    //      于是「谁执行了这次写」可以被区分开。⛔ 不要退回 taskWorkerNum=1：那会让 `% taskWorkerNum`
+    //      恒等于 0，跨进程路由的目标退化成常量，分布类断言全部变成空转。
+    // 配合 `scripts/verify/native-lobby-multiprocess-live.cjs` 使用；该脚本会注入
+    // NATIVE_LOBBY_* 与 WEBPLATFORM_*，并设 `ALLOY_MULTI_PROCESS_ENABLED=1`。
+    // 是否开启白名单设备控制
+    whiteDeviceSwitch: false,
+    // hash的加密秘钥
+    sessionSignKey: '4RTDmP$rX1WWY2sA',
+    // gm api请求的秘钥
+    gmSecret: 'r7HpIaNXTMXaKw2',
+    // 设置系统的时区
+    timeZone: 'Asia/Shanghai',
+
+    // 多进程联调线路专用库号：与 base（0/15/1）、bearjoylive（9/8/7）都错开。
+    centerRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 6,
+    },
+    userRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 5,
+    },
+    serverRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 4, // 未配置精确 sN.json5 时作为一区起始 DB，后续区服按 sid 递增
+    },
+    centerMysql: {
+        host: '127.0.0.1',
+        username: 'root',
+        password: '123456',
+        charset: 'utf8mb4',
+        database: 'nodedemo_center',
+        logging: false,
+    },
+
+    // 固定区服默认配置；一区使用 18095，后续区服按 sid 依次递增，可由 platforms/<platform><version>/sN.json5 独立覆盖。
+    // clientHost 同时是「监听地址」与「对外广播地址」（/adjust/getHash 返回的 ws）。
+    fixedServer: {
+        // 联调线路：只绑回环，端口与 base（20001/30001）、bearjoylive（18090/28090）错开。
+        clientHost: '127.0.0.1',
+        firstClientPort: 18095,
+        internalHost: '127.0.0.1',
+        heartbeatTimeoutMs: 60000,
+        // 认证超时压到 2s：联调要真的等一次「未认证连接被服务端关掉」，30s 不现实。
+        authTimeoutMs: 2000,
+        maxPacketSize: 102400,
+        // 多进程进程池规模。三者同时为 0 时区服走单进程启动。
+        // ⛔ 不要改成 0：本线路存在的意义就是「真实多进程宿主」，改成 0 会让整套多进程断言静默退化成单进程。
+        // ⛔ 也不要退回 taskWorkerNum=1 / userTaskWorkerNum=1：两个池的取余都会恒等于 0，
+        //    跨进程路由与用户任务的落点都退化成常量，分布类断言全部变成空转。
+        workerNum: 1,
+        taskWorkerNum: 2,
+        userTaskWorkerNum: 2,
+    },
+
+    // cdn的
+    cdn: {
+        //cdn的根地址
+        baseUrl: 'http://s1.static.xmpaoyou.com/demontale/bearjoy',
+    },
+    // 访问站点api地址；host 同时是管理 HTTP 的监听地址与「自指 URL」的拼接前缀。
+    host: '127.0.0.1',
+    port: 25015,
+
+    // /adjust/* 与 /center/sso* 的浏览器 Origin 白名单（见 isAllowedToolOrigin）。
+    adjustOrigins: ['http://10.130.0.133:7456', 'http://10.130.0.133:8899'],
+
+    log: {
+        env: 'dev',
+        output: 'file',
+        level: 'info',
+        encoding: 'text',
+        channels: [
+            {
+                name: 'game',
+                dirname: './log/game',
+                maxFiles: '1',
+            },
+            {
+                name: 'orm',
+                filename: 'orm_redis.log',
+                dirname: './log/orm',
+                maxFiles: '1',
+            },
+            {
+                name: 'console',
+                output: 'console',
+                level: 'warn',
+            },
+            {
+                name: 'http',
+                filename: 'http.log',
+                dirname: './log/http',
+            },
+            {
+                name: 'net',
+                filename: 'net.log',
+                dirname: './log/net',
+            },
+            {
+                name: 'redis',
+                filename: 'redis.log',
+                dirname: './log/redis',
+                level: 'error',
+            },
+            {
+                name: 'monitor',
+                filename: 'monitor.log',
+                dirname: './log/monitor',
+            },
+            {
+                name: 'webadjust',
+                filename: 'webadjust.log',
+                dirname: './log/adjust',
+            },
+        ],
+    },
+
+    log_monitor: {
+        scanCachePath: './log/scanCache.txt', //扫面缓存信息保存位置
+        tasks: {
+            default: {
+                title: 'api与service', //汇报的标题
+                rootPath: './log',
+                regexp: '/.+\\.log\\..+', //正则,匹配文件绝对路径
+                cacheFile: './log/scanCache.txt', //扫描记录存放位置
+                robotUrl: '', //企业微信hook推送链接,通过创建群机器人获取
+                errorLineRegexp: '^[0-9-]+\\s[0-9-:\\.]+\\serror\\s', //正则,匹配错误行
+                newLineRegexp: '^[0-9-]+\\s[0-9-:\\.]+\\s\\w+\\s', //正则,匹配新一行
+                displayErrorNum: 5,
+                displayTraceNum: 3,
+            },
+        },
+    },
+
+    onOffs: {
+        staTaOpen: 'false',
+    },
+
+    // wstool, 下面这些wstool配置并不是都在engine里用到, 具体逻辑wstool.ts
+    project: 'nodetest',
+
+    // wstool 协议类型配置: json / protobuf
+    protocol: 'protobuf',
+
+    // wstool route Api
+    routeApi: '/adjust/downloadProto',
+
+    // wstool adjust Api
+    adjustUrl: '/adjust/index',
+
+    // wstool 新建用户 Api
+    newUserUrl: '/adjust/newUser',
+
+    // wstool 获取hash
+    hashApi: '/adjust/wstool/getHash',
+
+    // wstool uid 渠道自增长值
+    PLATFORM_BASE_NUM: 10000000000,
+
+    // wstool uId 区服自增长值
+    SID_BASE_NUM: 1000000,
+}

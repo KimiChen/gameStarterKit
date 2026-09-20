@@ -1,0 +1,632 @@
+{
+	"1001": {
+		"id": 1001,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "装备强度",
+		"desc": "{value}件{param2}级{param1}装",
+		"desc1": "条件V填装备数量，参数P1填装备品质，参数P2填装备等级"
+	},
+	"1002": {
+		"id": 1002,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "玩家等级",
+		"desc": "玩家等级达到{value}级",
+		"desc1": "条件V填玩家等级"
+	},
+	"1003": {
+		"id": 1003,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "法宝等级",
+		"desc": "法宝等级达到{value}级",
+		"desc1": "条件V填法宝等级"
+	},
+	"1004": {
+		"id": 1004,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "元神等级",
+		"desc": "元神等级达到{value}级",
+		"desc1": "条件V填元神等级"
+	},
+	"1005": {
+		"id": 1005,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "装备升级",
+		"desc": "{value}件装备等级达到{param1}级",
+		"desc1": "条件V填装备数量，参数P1填装备等级"
+	},
+	"1006": {
+		"id": 1006,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "离线修炼",
+		"desc": "领取{value}次离线修炼收益",
+		"desc1": "条件V填离线修炼收益的领取次数"
+	},
+	"1007": {
+		"id": 1007,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "快速修炼",
+		"desc": "购买{value}次快速修炼",
+		"desc1": "条件V填快速修炼的购买次数"
+	},
+	"1008": {
+		"id": 1008,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "个人历练",
+		"desc": "参与{value}次个人历练",
+		"desc1": "条件V填个人历练的参与次数"
+	},
+	"1009": {
+		"id": 1009,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "夔牛活动",
+		"desc": "参与{value}次夔牛活动",
+		"desc1": "条件V填夔牛活动的参与次数"
+	},
+	"1010": {
+		"id": 1010,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "护山妖兽",
+		"desc": "参与{value}次护山妖兽的试炼",
+		"desc1": "条件V填护山妖兽的参与次数"
+	},
+	"1011": {
+		"id": 1011,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "击杀小怪",
+		"desc": "在多人修炼地图中击杀{value}个小怪",
+		"desc1": "条件V填多人修炼地图中击杀小怪的数量"
+	},
+	"1012": {
+		"id": 1012,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "山头捐纳",
+		"desc": "山头捐纳{value}次",
+		"desc1": "条件V填山头捐纳的次数"
+	},
+	"1013": {
+		"id": 1013,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "获得装备",
+		"desc": "获得{value}件装备",
+		"desc1": "条件V填装备的数量"
+	},
+	"1014": {
+		"id": 1014,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "参与竞技",
+		"desc": "参与竞技场{value}次",
+		"desc1": "条件V填参与竞技场的次数"
+	},
+	"1015": {
+		"id": 1015,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "给人点赞",
+		"desc": "给他人点赞{value}次",
+		"desc1": "条件V填给他人点赞的次数"
+	},
+	"1016": {
+		"id": 1016,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "购买精力",
+		"desc": "购买精力{value}次",
+		"desc1": "条件V填购买精力的次数"
+	},
+	"1017": {
+		"id": 1017,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "观看广告",
+		"desc": "观看广告{value}次",
+		"desc1": "条件V填观看广告的次数"
+	},
+	"1018": {
+		"id": 1018,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "领取月卡",
+		"desc": "领取{param1}每日奖励{value}次",
+		"desc1": "条件V填领取月卡每日奖励的次数，参数p1填月卡id，显示月卡名称"
+	},
+	"1019": {
+		"id": 1019,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "领取年卡",
+		"desc": "领取年卡每日奖励{value}次",
+		"desc1": "条件V填领取年卡每日奖励的次数"
+	},
+	"1020": {
+		"id": 1020,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "抽取装备",
+		"desc": "抽取{value}次装备",
+		"desc1": "条件V填抽取装备的次数"
+	},
+	"1021": {
+		"id": 1021,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "境界提升",
+		"desc": "境界提升至{value}",
+		"desc1": "条件V填境界的id"
+	},
+	"1022": {
+		"id": 1022,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "铭文镌刻",
+		"desc": "铭文镌刻{value}次",
+		"desc1": "条件V填铭文镌刻的次数"
+	},
+	"1023": {
+		"id": 1023,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "奇珍拥有",
+		"desc": "获得{value}个供品",
+		"desc1": "条件V填获得的供品数量"
+	},
+	"1024": {
+		"id": 1024,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "进行请神",
+		"desc": "请神操作{value}次",
+		"desc1": "条件V填请神的次数"
+	},
+	"1025": {
+		"id": 1025,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "熔炼装备",
+		"desc": "熔炼装备累积{value}件",
+		"desc1": "条件V填熔炼装备的数量"
+	},
+	"1026": {
+		"id": 1026,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "装备符石(废弃）",
+		"desc": "拥有{value}个{param1}符石",
+		"desc1": "条件V填数量，参数P1填符石等阶"
+	},
+	"1027": {
+		"id": 1027,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "装备宝箱",
+		"desc": "开启装备箱数量达到{value}个",
+		"desc1": "条件V填开启装备箱的数量"
+	},
+	"1028": {
+		"id": 1028,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "养成评分",
+		"desc": "角色总妖力达到{value}",
+		"desc1": "条件V填角色总妖力的数值"
+	},
+	"1029": {
+		"id": 1029,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "被人点赞",
+		"desc": "被他人点赞{value}次",
+		"desc1": "条件V填被他人点赞的次数"
+	},
+	"1030": {
+		"id": 1030,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "护山妖兽活动",
+		"desc": "参与{value}次护山妖兽活动",
+		"desc1": "条件V填护山妖兽活动的参与次数"
+	},
+	"1031": {
+		"id": 1031,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "释放技能",
+		"desc": "释放主动技能达到{value}次",
+		"desc1": "条件V填释放主动技能达到的次数"
+	},
+	"1032": {
+		"id": 1032,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "拥有好友",
+		"desc": "拥有{value}个好友",
+		"desc1": "条件V填好友的数量"
+	},
+	"1033": {
+		"id": 1033,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "收集时装",
+		"desc": "收集{value}个时装",
+		"desc1": "条件V填收集时装的数量"
+	},
+	"1034": {
+		"id": 1034,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "收集神符",
+		"desc": "收集{value}个神符",
+		"desc1": "条件V填收集神符的数量"
+	},
+	"1035": {
+		"id": 1035,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "收集神器",
+		"desc": "收集{value}个神器",
+		"desc1": "条件V填收集神器的数量"
+	},
+	"1036": {
+		"id": 1036,
+		"type": 3,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "颜值达标",
+		"desc": "总颜值达到{value}",
+		"desc1": "条件V填颜值的数值"
+	},
+	"1037": {
+		"id": 1037,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "称号获得",
+		"desc": "获得称号数达到{value}个",
+		"desc1": "条件V填称号的数量"
+	},
+	"1038": {
+		"id": 1038,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "购买历练",
+		"desc": "购买个人历练次数达到{value}次",
+		"desc1": "条件V填购买个人历练的次数"
+	},
+	"1039": {
+		"id": 1039,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "消耗仙玉",
+		"desc": "消耗仙玉数量达到{value}",
+		"desc1": "条件V填消耗仙玉的总数量"
+	},
+	"1040": {
+		"id": 1040,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "消耗精力",
+		"desc": "消耗精力数量达到{value}",
+		"desc1": "条件V填消耗精力的总数量"
+	},
+	"1041": {
+		"id": 1041,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "击杀波次boss",
+		"desc": "击杀{param1}地图第{value}波次boss",
+		"desc1": "条件V填第几波次，p1填单人地图id地图"
+	},
+	"1042": {
+		"id": 1042,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "对话",
+		"desc": "无参数，就是对话",
+		"desc1": "无参数，就是对话"
+	},
+	"1043": {
+		"id": 1043,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 1,
+		"name": "斩心魔进度",
+		"desc": "斩心魔达到{value}关",
+		"desc1": "条件V填斩心魔进度"
+	},
+	"1044": {
+		"id": 1044,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "进行个人历练",
+		"desc": "参与{value}次{param1}历练",
+		"desc1": "条件V填历练的参与次数,P1填历练类型"
+	},
+	"1045": {
+		"id": 1045,
+		"type": 1,
+		"paramType": 1,
+		"showValue": 0,
+		"name": "镶嵌装备符石",
+		"desc": "镶嵌{value}个{param1}阶及以上符石",
+		"desc1": "条件V填数量，参数P1填符石等阶"
+	},
+	"1046": {
+		"id": 1046,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "山头兑换",
+		"desc": "山头商店兑换{value}次",
+		"desc1": "条件V填山头商店兑换的次数"
+	},
+	"1047": {
+		"id": 1047,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "血脉契印",
+		"desc": "进行{value}次血脉契印的资源提交",
+		"desc1": "条件V填次数"
+	},
+	"1048": {
+		"id": 1048,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "山头修炼",
+		"desc": "血脉秘术达到{value}级",
+		"desc1": "条件V填血脉秘术等级（取最高等级的那个秘法）"
+	},
+	"1049": {
+		"id": 1049,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "铭文坑位",
+		"desc": "铭文坑位镌刻{valua}个",
+		"desc1": "条件V填铭文镌刻的坑位数量"
+	},
+	"1050": {
+		"id": 1050,
+		"type": 1,
+		"paramType": 1,
+		"showValue": 0,
+		"name": "穿戴装备",
+		"desc": "{value}件{param2}级{param1}以上装备",
+		"desc1": "条件V填装备数量，参数P1填装备品质，参数P2填装备等级"
+	},
+	"1053": {
+		"id": 1053,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "获得爱心值",
+		"desc": "获得爱心值达到{valua}点",
+		"desc1": "条件V填获得爱心值的数量"
+	},
+	"1054": {
+		"id": 1054,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "操作素萝攻击次数",
+		"desc": "操作素萝攻击{valua}次",
+		"desc1": "条件V填素萝攻击次数"
+	},
+	"1055": {
+		"id": 1055,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "玩家加点总数",
+		"desc": "玩家天赋加点{valua}次",
+		"desc1": "条件V填加点点数"
+	},
+	"1056": {
+		"id": 1056,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "击杀波次小怪",
+		"desc": "击杀{param1}地图{value}只小怪",
+		"desc1": "条件V填击杀数量，p1填单人地图id地图"
+	},
+	"1057": {
+		"id": 1057,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "恢复神魂",
+		"desc": "恢复{value}点神魂",
+		"desc1": "条件V填素罗强化等级"
+	},
+	"1058": {
+		"id": 1058,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "素萝境界",
+		"desc": "素萝境界提升至{valua}",
+		"desc1": "条件V填境界id"
+	},
+	"1059": {
+		"id": 1059,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 1,
+		"name": "到达某个单人地图",
+		"desc": "到达{value}{param1}地图",
+		"desc1": "条件V填1,P1填地图id"
+	},
+	"1060": {
+		"id": 1060,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "击杀小怪",
+		"desc": "在{param1}多人修炼地图中击杀{value}个小怪",
+		"desc1": "条件V填多人修炼地图中击杀小怪的数量，p1填地图id"
+	},
+	"1061": {
+		"id": 1061,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "素萝攻击",
+		"desc": "素萝攻击次数累计达到{valua}次",
+		"desc1": "条件V填素萝攻击次数"
+	},
+	"1062": {
+		"id": 1062,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "捐修士腰牌",
+		"desc": "累计捐纳修士腰牌达到{value}个",
+		"desc1": "条件V填捐纳修士腰牌的个数"
+	},
+	"1063": {
+		"id": 1063,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "消耗妖丹",
+		"desc": "累计消耗妖丹达到{value}个",
+		"desc1": "条件V填消耗妖丹的个数"
+	},
+	"1064": {
+		"id": 1064,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 1,
+		"name": "到达某个多人地图",
+		"desc": "到达{value}{param1}地图",
+		"desc1": "条件V填1,P1填地图id"
+	},
+	"1065": {
+		"id": 1065,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "通过任务开启功能",
+		"desc": "完成{param1}任务开启功能",
+		"desc1": "条件V填任务id"
+	},
+	"1066": {
+		"id": 1066,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "完成某个波次",
+		"desc": "在{param1}单人修炼地图中完成第{value}波次",
+		"desc1": "条件V填波次id，p1填地图id"
+	},
+	"1067": {
+		"id": 1067,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "元神等级",
+		"desc": "元神等级达到{value}级",
+		"desc1": "条件V填元神等级"
+	},
+	"1068": {
+		"id": 1068,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "法宝等级",
+		"desc": "法宝等级达到{value}级",
+		"desc1": "条件V填法宝等级"
+	},
+	"1069": {
+		"id": 1069,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "获得多特效红装",
+		"desc": "累计获取具有3个及以上特效的红色装备共{value}件",
+		"desc1": "条件V填累计获得件数"
+	},
+	"1070": {
+		"id": 1070,
+		"type": 2,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "获得多属性红装",
+		"desc": "累计获取具有3个及以上属性的红色装备共{value}件",
+		"desc1": "条件V填累计获得件数"
+	},
+	"1071": {
+		"id": 1071,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 0,
+		"name": "妖术升级",
+		"desc": "升级{param1}妖术至{valua}级",
+		"desc1": "条件V填妖术等级，p1填妖术类型id（主动被动）"
+	},
+	"1072": {
+		"id": 1072,
+		"type": 1,
+		"paramType": 0,
+		"showValue": 1,
+		"name": "完成X引导",
+		"desc": "完成{param1}引导",
+		"desc1": "条件V填1，p1填引导id"
+	}
+}

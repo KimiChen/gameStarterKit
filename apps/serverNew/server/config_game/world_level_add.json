@@ -1,0 +1,17 @@
+{
+	"1": {
+		"id": 1,
+		"lvDiff": 10,
+		"expRatio": 5000
+	},
+	"2": {
+		"id": 2,
+		"lvDiff": 20,
+		"expRatio": 10000
+	},
+	"3": {
+		"id": 3,
+		"lvDiff": 30,
+		"expRatio": 15000
+	}
+}

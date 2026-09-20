@@ -1,0 +1,87 @@
+# 步骤名称
+stages:
+    - validate
+    - build
+    - package
+    # - deploy 我们不需要部署
+
+# 局部变量 根据项目自定义即可
+variables:
+    PROJECT_NAME: game-service
+    SERVICE: build
+    DOCKER_IMAGE_NAME: arthropoda/$PROJECT_NAME/$SERVICE
+    DOCKER_DRIVER: overlay2
+    DOCKERFILE_PATH: ./deploy/docker/Dockerfile
+    DOCKER_TAG: $CI_COMMIT_REF_NAME
+
+.validation-template:
+    image: node:20.11
+    before_script:
+        - apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+        - corepack enable
+        - corepack prepare pnpm@10.33.0 --activate
+        - git clone --depth 1 "http://gitlab-ci-token:${CI_JOB_TOKEN}@git.paoyou.work/alloy/alloy-engine.git" ../../alloy-engine
+        - cp .npmrc ../../alloy-engine/.npmrc
+        - pnpm -C ../../alloy-engine install --frozen-lockfile
+        - pnpm install --frozen-lockfile
+
+validate:
+    extends: .validation-template
+    stage: validate
+    script:
+        - pnpm check
+
+generator-contract:
+    extends: .validation-template
+    stage: validate
+    script:
+        - pnpm test:suite -- generator
+    rules:
+        - changes:
+              - scripts/generator/**/*
+              - scripts/modules/**/*
+              - test/generator/**/*
+              - package.json
+              - tsconfig.json
+
+build:
+    stage: build
+    image: docker:dind
+    before_script:
+        - DOCKER_REGISTRY=$(cat $DOCKER_AUTH_CONFIG | grep DOCKER_REGISTRY | awk -v FS='=' '{print $2}')
+        - DOCKER_AUTH_USER=$(cat $DOCKER_AUTH_CONFIG | grep DOCKER_AUTH_USER | awk -v FS='=' '{print $2}')
+        - DOCKER_AUTH_TOKEN=$(cat $DOCKER_AUTH_CONFIG | grep DOCKER_AUTH_TOKEN | awk -v FS='=' '{print $2}')
+        - echo "$DOCKER_AUTH_TOKEN" | docker login $DOCKER_REGISTRY --username "$DOCKER_AUTH_USER" --password-stdin
+    script:
+        - docker pull $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$DOCKER_TAG || true # 拉取最新镜像
+        - DOCKER_BUILDKIT=1 docker build --force-rm -f $DOCKERFILE_PATH -t $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$DOCKER_TAG -t $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME .
+    rules:
+        - changes:
+              - package.json
+              - deploy/docker/Dockerfile
+              - deploy/docker/Dockerfile.dockerignore
+              - .gitlab-ci.yml
+              - pnpm-lock.yaml
+              - .npmrc
+              - patches/**/*
+package:
+    stage: package
+    image: docker:dind
+    variables:
+        GIT_STRATEGY: none
+    before_script:
+        - DOCKER_REGISTRY=$(cat $DOCKER_AUTH_CONFIG | grep DOCKER_REGISTRY | awk -v FS='=' '{print $2}')
+        - DOCKER_AUTH_USER=$(cat $DOCKER_AUTH_CONFIG | grep DOCKER_AUTH_USER | awk -v FS='=' '{print $2}')
+        - DOCKER_AUTH_TOKEN=$(cat $DOCKER_AUTH_CONFIG | grep DOCKER_AUTH_TOKEN | awk -v FS='=' '{print $2}')
+        - echo "$DOCKER_AUTH_TOKEN" | docker login $DOCKER_REGISTRY --username "$DOCKER_AUTH_USER" --password-stdin
+    script:
+        - docker push $DOCKER_REGISTRY/$DOCKER_IMAGE_NAME:$DOCKER_TAG
+    rules:
+        - changes:
+              - package.json
+              - deploy/docker/Dockerfile
+              - deploy/docker/Dockerfile.dockerignore
+              - .gitlab-ci.yml
+              - pnpm-lock.yaml
+              - .npmrc
+              - patches/**/*

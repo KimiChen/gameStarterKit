@@ -1,0 +1,96 @@
+{
+    debugPoints: {
+        queueAction: false,
+    },
+    centerRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 0,
+    },
+    userRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 1,
+    },
+    serverRedis: {
+        host: '127.0.0.1',
+        port: 6379,
+        database: 2,
+    },
+    centerMysql: {
+        host: '127.0.0.1',
+        username: 'nodeframe',
+        password: 'pGHPsX=TJFE_khr-Dbc9Bn%O',
+        charset: 'utf8mb4',
+        database: 'nodedemo_center',
+        logging: false,
+    },
+    // 是否开启白名单设备控制
+    whiteDeviceSwitch: false,
+    // hash的加密秘钥
+    sessionSignKey: '4RTDmP$rX1WWY2sA',
+    // gm api请求的秘钥
+    gmSecret: 'r7HpIaNXTMXaKw2',
+    // cdn的
+    cdn: {
+        //cdn的根地址
+        baseUrl: 'http://s1.static.xmpaoyou.com/demontale/bearjoy',
+    },
+    // 访问站点api地址
+    host: '127.0.0.1',
+    port: 25001,
+
+    // 设置系统的时区
+    timeZone: 'Asia/Shanghai',
+    log: {
+        env: 'dev',
+        output: 'file',
+        level: 'info',
+        encoding: 'text',
+        channels: [
+            {
+                name: 'game',
+                dirname: './log',
+            },
+            {
+                name: 'orm',
+                filename: 'orm_redis.log',
+                dirname: './log',
+            },
+            {
+                name: 'console',
+                output: 'console',
+                level: 'warn',
+            },
+            {
+                name: 'http',
+                filename: 'http.log',
+                dirname: './log',
+            },
+        ],
+    },
+
+    // wstool
+    project: 'demontale',
+
+    // 协议类型配置: json / protobuf
+    protocol: 'protobuf',
+
+    // route Api
+    routeApi: '/adjust/downloadProto',
+
+    // adjust Api
+    adjustUrl: '/adjust/index',
+
+    // 新建用户 Api
+    newUserUrl: '/adjust/newUser',
+
+    // 获取hash
+    hashApi: '/adjust/wstool/getHash',
+
+    // uid 渠道自增长值
+    PLATFORM_BASE_NUM: 10000000000,
+
+    // uId 区服自增长值
+    SID_BASE_NUM: 1000000,
+}

@@ -65,6 +65,7 @@
     "typecheck:client": "tsc -p apps/client/tsconfig.test.json --noEmit",
     "typecheck:client:legacy": "tsc -p apps/client/tsconfig.json --noEmit",
     "test:client": "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs ../../scripts/uniflex-output.test.mjs ../../scripts/uniflex-resources.test.mjs ../../scripts/uniflex-ui-cli.test.mjs",
+    "verify:dual-lobby": "cd apps/server && node --import tsx ../client/scripts/verify/dual-lobby-transport.mts",
     "test:changed": "npm --workspace @game/server run plugin -- changed",
     "test:vendor": "node --test scripts/vendor-lock.test.mjs",
     "test:fgui": "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts",

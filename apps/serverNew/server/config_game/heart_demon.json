@@ -1,0 +1,3702 @@
+{
+	"1": {
+		"id": 1,
+		"name": "第1章",
+		"level": 10,
+		"mapRes": 11001,
+		"more": {
+			"1001": {
+				"sort": 1001,
+				"id": 1,
+				"bgRes": 4,
+				"monsterId": [
+					201001
+				],
+				"costPropId": 1004,
+				"costNum": 10,
+				"awards": [
+					{
+						"sort": 1001,
+						"propId": 10201,
+						"num": 20
+					},
+					{
+						"sort": 1001,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 1001,
+						"propId": 10102,
+						"num": 25
+					}
+				]
+			},
+			"1002": {
+				"sort": 1002,
+				"id": 1,
+				"bgRes": 4,
+				"monsterId": [
+					201002
+				],
+				"costPropId": 1004,
+				"costNum": 20,
+				"awards": [
+					{
+						"sort": 1002,
+						"propId": 10201,
+						"num": 40
+					},
+					{
+						"sort": 1002,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 1002,
+						"propId": 10102,
+						"num": 25
+					}
+				]
+			},
+			"1003": {
+				"sort": 1003,
+				"id": 1,
+				"bgRes": 4,
+				"monsterId": [
+					201003
+				],
+				"costPropId": 1004,
+				"costNum": 30,
+				"awards": [
+					{
+						"sort": 1003,
+						"propId": 10201,
+						"num": 65
+					},
+					{
+						"sort": 1003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 1003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200000,
+		"entranceBubble": [
+			{
+				"id": 1,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 1,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 1,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200000,
+		"battleBubble": [
+			{
+				"id": 1,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 1,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 1,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"2": {
+		"id": 2,
+		"name": "第2章",
+		"level": 20,
+		"mapRes": 11001,
+		"more": {
+			"2001": {
+				"sort": 2001,
+				"id": 2,
+				"bgRes": 4,
+				"monsterId": [
+					201101,
+					201101
+				],
+				"costPropId": 1004,
+				"costNum": 40,
+				"awards": [
+					{
+						"sort": 2001,
+						"propId": 10202,
+						"num": 65
+					},
+					{
+						"sort": 2001,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 2001,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"2002": {
+				"sort": 2002,
+				"id": 2,
+				"bgRes": 4,
+				"monsterId": [
+					201102,
+					201102
+				],
+				"costPropId": 1004,
+				"costNum": 50,
+				"awards": [
+					{
+						"sort": 2002,
+						"propId": 10202,
+						"num": 110
+					},
+					{
+						"sort": 2002,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 2002,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"2003": {
+				"sort": 2003,
+				"id": 2,
+				"bgRes": 4,
+				"monsterId": [
+					201103
+				],
+				"costPropId": 1004,
+				"costNum": 100,
+				"awards": [
+					{
+						"sort": 2003,
+						"propId": 10202,
+						"num": 130
+					},
+					{
+						"sort": 2003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 2003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200001,
+		"entranceBubble": [
+			{
+				"id": 2,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 2,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 2,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200001,
+		"battleBubble": [
+			{
+				"id": 2,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 2,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 2,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"3": {
+		"id": 3,
+		"name": "第3章",
+		"level": 30,
+		"mapRes": 11001,
+		"more": {
+			"3001": {
+				"sort": 3001,
+				"id": 3,
+				"bgRes": 4,
+				"monsterId": [
+					201201,
+					201201
+				],
+				"costPropId": 1004,
+				"costNum": 200,
+				"awards": [
+					{
+						"sort": 3001,
+						"propId": 10201,
+						"num": 220
+					},
+					{
+						"sort": 3001,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 3001,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"3002": {
+				"sort": 3002,
+				"id": 3,
+				"bgRes": 4,
+				"monsterId": [
+					201202,
+					201202
+				],
+				"costPropId": 1004,
+				"costNum": 300,
+				"awards": [
+					{
+						"sort": 3002,
+						"propId": 10201,
+						"num": 665
+					},
+					{
+						"sort": 3002,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 3002,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"3003": {
+				"sort": 3003,
+				"id": 3,
+				"bgRes": 4,
+				"monsterId": [
+					201203
+				],
+				"costPropId": 1004,
+				"costNum": 400,
+				"awards": [
+					{
+						"sort": 3003,
+						"propId": 10201,
+						"num": 1110
+					},
+					{
+						"sort": 3003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 3003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200002,
+		"entranceBubble": [
+			{
+				"id": 3,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 3,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 3,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200002,
+		"battleBubble": [
+			{
+				"id": 3,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 3,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 3,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"4": {
+		"id": 4,
+		"name": "第4章",
+		"level": 40,
+		"mapRes": 11001,
+		"more": {
+			"4001": {
+				"sort": 4001,
+				"id": 4,
+				"bgRes": 4,
+				"monsterId": [
+					201301,
+					201301,
+					201301
+				],
+				"costPropId": 1004,
+				"costNum": 500,
+				"awards": [
+					{
+						"sort": 4001,
+						"propId": 10202,
+						"num": 1550
+					},
+					{
+						"sort": 4001,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 4001,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"4002": {
+				"sort": 4002,
+				"id": 4,
+				"bgRes": 4,
+				"monsterId": [
+					201302,
+					201302,
+					201302
+				],
+				"costPropId": 1004,
+				"costNum": 1000,
+				"awards": [
+					{
+						"sort": 4002,
+						"propId": 10202,
+						"num": 1550
+					},
+					{
+						"sort": 4002,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 4002,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"4003": {
+				"sort": 4003,
+				"id": 4,
+				"bgRes": 4,
+				"monsterId": [
+					201303
+				],
+				"costPropId": 1004,
+				"costNum": 2000,
+				"awards": [
+					{
+						"sort": 4003,
+						"propId": 10202,
+						"num": 2000
+					},
+					{
+						"sort": 4003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 4003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200003,
+		"entranceBubble": [
+			{
+				"id": 4,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 4,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 4,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200003,
+		"battleBubble": [
+			{
+				"id": 4,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 4,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 4,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"5": {
+		"id": 5,
+		"name": "第5章",
+		"level": 50,
+		"mapRes": 11001,
+		"more": {
+			"5001": {
+				"sort": 5001,
+				"id": 5,
+				"bgRes": 4,
+				"monsterId": [
+					201401,
+					201401
+				],
+				"costPropId": 1004,
+				"costNum": 3000,
+				"awards": [
+					{
+						"sort": 5001,
+						"propId": 10201,
+						"num": 2450
+					},
+					{
+						"sort": 5001,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 5001,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"5002": {
+				"sort": 5002,
+				"id": 5,
+				"bgRes": 4,
+				"monsterId": [
+					201402,
+					201402,
+					201402
+				],
+				"costPropId": 1004,
+				"costNum": 4000,
+				"awards": [
+					{
+						"sort": 5002,
+						"propId": 10201,
+						"num": 2450
+					},
+					{
+						"sort": 5002,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 5002,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"5003": {
+				"sort": 5003,
+				"id": 5,
+				"bgRes": 4,
+				"monsterId": [
+					201403
+				],
+				"costPropId": 1004,
+				"costNum": 5000,
+				"awards": [
+					{
+						"sort": 5003,
+						"propId": 10201,
+						"num": 2450
+					},
+					{
+						"sort": 5003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 5003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200004,
+		"entranceBubble": [
+			{
+				"id": 5,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 5,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 5,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200004,
+		"battleBubble": [
+			{
+				"id": 5,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 5,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 5,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"6": {
+		"id": 6,
+		"name": "第6章",
+		"level": 60,
+		"mapRes": 11001,
+		"more": {
+			"6001": {
+				"sort": 6001,
+				"id": 6,
+				"bgRes": 4,
+				"monsterId": [
+					201501,
+					201501
+				],
+				"costPropId": 1004,
+				"costNum": 6000,
+				"awards": [
+					{
+						"sort": 6001,
+						"propId": 10202,
+						"num": 2450
+					},
+					{
+						"sort": 6001,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 6001,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"6002": {
+				"sort": 6002,
+				"id": 6,
+				"bgRes": 4,
+				"monsterId": [
+					201502,
+					201502,
+					201502
+				],
+				"costPropId": 1004,
+				"costNum": 7000,
+				"awards": [
+					{
+						"sort": 6002,
+						"propId": 10202,
+						"num": 2450
+					},
+					{
+						"sort": 6002,
+						"propId": 10204,
+						"num": 2
+					},
+					{
+						"sort": 6002,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"6003": {
+				"sort": 6003,
+				"id": 6,
+				"bgRes": 4,
+				"monsterId": [
+					201503
+				],
+				"costPropId": 1004,
+				"costNum": 8000,
+				"awards": [
+					{
+						"sort": 6003,
+						"propId": 10202,
+						"num": 2450
+					},
+					{
+						"sort": 6003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 6003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200005,
+		"entranceBubble": [
+			{
+				"id": 6,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 6,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 6,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200005,
+		"battleBubble": [
+			{
+				"id": 6,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 6,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 6,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"7": {
+		"id": 7,
+		"name": "第7章",
+		"level": 70,
+		"mapRes": 11001,
+		"more": {
+			"7001": {
+				"sort": 7001,
+				"id": 7,
+				"bgRes": 4,
+				"monsterId": [
+					201601,
+					201601,
+					201601
+				],
+				"costPropId": 1004,
+				"costNum": 9000,
+				"awards": [
+					{
+						"sort": 7001,
+						"propId": 10201,
+						"num": 2910
+					},
+					{
+						"sort": 7001,
+						"propId": 10204,
+						"num": 3
+					},
+					{
+						"sort": 7001,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"7002": {
+				"sort": 7002,
+				"id": 7,
+				"bgRes": 4,
+				"monsterId": [
+					201602,
+					201602,
+					201602
+				],
+				"costPropId": 1004,
+				"costNum": 10000,
+				"awards": [
+					{
+						"sort": 7002,
+						"propId": 10201,
+						"num": 2910
+					},
+					{
+						"sort": 7002,
+						"propId": 10204,
+						"num": 3
+					},
+					{
+						"sort": 7002,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"7003": {
+				"sort": 7003,
+				"id": 7,
+				"bgRes": 4,
+				"monsterId": [
+					201603
+				],
+				"costPropId": 1004,
+				"costNum": 11000,
+				"awards": [
+					{
+						"sort": 7003,
+						"propId": 10201,
+						"num": 2910
+					},
+					{
+						"sort": 7003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 7003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200006,
+		"entranceBubble": [
+			{
+				"id": 7,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 7,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 7,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200006,
+		"battleBubble": [
+			{
+				"id": 7,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 7,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 7,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"8": {
+		"id": 8,
+		"name": "第8章",
+		"level": 80,
+		"mapRes": 11001,
+		"more": {
+			"8001": {
+				"sort": 8001,
+				"id": 8,
+				"bgRes": 4,
+				"monsterId": [
+					201701,
+					201701,
+					201701
+				],
+				"costPropId": 1004,
+				"costNum": 12000,
+				"awards": [
+					{
+						"sort": 8001,
+						"propId": 10202,
+						"num": 2910
+					},
+					{
+						"sort": 8001,
+						"propId": 10204,
+						"num": 3
+					},
+					{
+						"sort": 8001,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"8002": {
+				"sort": 8002,
+				"id": 8,
+				"bgRes": 4,
+				"monsterId": [
+					201702,
+					201702,
+					201702
+				],
+				"costPropId": 1004,
+				"costNum": 19000,
+				"awards": [
+					{
+						"sort": 8002,
+						"propId": 10202,
+						"num": 2910
+					},
+					{
+						"sort": 8002,
+						"propId": 10204,
+						"num": 3
+					},
+					{
+						"sort": 8002,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"8003": {
+				"sort": 8003,
+				"id": 8,
+				"bgRes": 4,
+				"monsterId": [
+					201703
+				],
+				"costPropId": 1004,
+				"costNum": 19000,
+				"awards": [
+					{
+						"sort": 8003,
+						"propId": 10202,
+						"num": 2910
+					},
+					{
+						"sort": 8003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 8003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200007,
+		"entranceBubble": [
+			{
+				"id": 8,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 8,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 8,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200007,
+		"battleBubble": [
+			{
+				"id": 8,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 8,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 8,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"9": {
+		"id": 9,
+		"name": "第9章",
+		"level": 90,
+		"mapRes": 11001,
+		"more": {
+			"9001": {
+				"sort": 9001,
+				"id": 9,
+				"bgRes": 4,
+				"monsterId": [
+					201801,
+					201801,
+					201801
+				],
+				"costPropId": 1004,
+				"costNum": 19000,
+				"awards": [
+					{
+						"sort": 9001,
+						"propId": 10201,
+						"num": 2910
+					},
+					{
+						"sort": 9001,
+						"propId": 10204,
+						"num": 3
+					},
+					{
+						"sort": 9001,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"9002": {
+				"sort": 9002,
+				"id": 9,
+				"bgRes": 4,
+				"monsterId": [
+					201802,
+					201802,
+					201802
+				],
+				"costPropId": 1004,
+				"costNum": 19000,
+				"awards": [
+					{
+						"sort": 9002,
+						"propId": 10201,
+						"num": 2910
+					},
+					{
+						"sort": 9002,
+						"propId": 10204,
+						"num": 3
+					},
+					{
+						"sort": 9002,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			},
+			"9003": {
+				"sort": 9003,
+				"id": 9,
+				"bgRes": 4,
+				"monsterId": [
+					201803
+				],
+				"costPropId": 1004,
+				"costNum": 20500,
+				"awards": [
+					{
+						"sort": 9003,
+						"propId": 10201,
+						"num": 3170
+					},
+					{
+						"sort": 9003,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 9003,
+						"propId": 10102,
+						"num": 50
+					}
+				]
+			}
+		},
+		"entranceShow": 200008,
+		"entranceBubble": [
+			{
+				"id": 9,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 9,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 9,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200008,
+		"battleBubble": [
+			{
+				"id": 9,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 9,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 9,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"10": {
+		"id": 10,
+		"name": "第10章",
+		"level": 100,
+		"mapRes": 11001,
+		"more": {
+			"10001": {
+				"sort": 10001,
+				"id": 10,
+				"bgRes": 4,
+				"monsterId": [
+					201901,
+					201901
+				],
+				"costPropId": 1004,
+				"costNum": 34500,
+				"awards": [
+					{
+						"sort": 10001,
+						"propId": 10202,
+						"num": 5560
+					},
+					{
+						"sort": 10001,
+						"propId": 10204,
+						"num": 4
+					},
+					{
+						"sort": 10001,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"10002": {
+				"sort": 10002,
+				"id": 10,
+				"bgRes": 4,
+				"monsterId": [
+					201902,
+					201902
+				],
+				"costPropId": 1004,
+				"costNum": 34500,
+				"awards": [
+					{
+						"sort": 10002,
+						"propId": 10202,
+						"num": 5560
+					},
+					{
+						"sort": 10002,
+						"propId": 10204,
+						"num": 4
+					},
+					{
+						"sort": 10002,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"10003": {
+				"sort": 10003,
+				"id": 10,
+				"bgRes": 4,
+				"monsterId": [
+					201903,
+					201903,
+					201903
+				],
+				"costPropId": 1004,
+				"costNum": 34500,
+				"awards": [
+					{
+						"sort": 10003,
+						"propId": 10202,
+						"num": 5560
+					},
+					{
+						"sort": 10003,
+						"propId": 10204,
+						"num": 4
+					},
+					{
+						"sort": 10003,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"10004": {
+				"sort": 10004,
+				"id": 10,
+				"bgRes": 4,
+				"monsterId": [
+					201904,
+					201904,
+					201904
+				],
+				"costPropId": 1004,
+				"costNum": 34500,
+				"awards": [
+					{
+						"sort": 10004,
+						"propId": 10202,
+						"num": 5560
+					},
+					{
+						"sort": 10004,
+						"propId": 10204,
+						"num": 4
+					},
+					{
+						"sort": 10004,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"10005": {
+				"sort": 10005,
+				"id": 10,
+				"bgRes": 4,
+				"monsterId": [
+					201905
+				],
+				"costPropId": 1004,
+				"costNum": 34500,
+				"awards": [
+					{
+						"sort": 10005,
+						"propId": 10202,
+						"num": 5560
+					},
+					{
+						"sort": 10005,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 10005,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			}
+		},
+		"entranceShow": 200009,
+		"entranceBubble": [
+			{
+				"id": 10,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 10,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 10,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200009,
+		"battleBubble": [
+			{
+				"id": 10,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 10,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 10,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"11": {
+		"id": 11,
+		"name": "第11章",
+		"level": 110,
+		"mapRes": 11001,
+		"more": {
+			"11001": {
+				"sort": 11001,
+				"id": 11,
+				"bgRes": 4,
+				"monsterId": [
+					202001,
+					202001
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 11001,
+						"propId": 10201,
+						"num": 11400
+					},
+					{
+						"sort": 11001,
+						"propId": 10204,
+						"num": 5
+					},
+					{
+						"sort": 11001,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"11002": {
+				"sort": 11002,
+				"id": 11,
+				"bgRes": 4,
+				"monsterId": [
+					202002,
+					202002
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 11002,
+						"propId": 10201,
+						"num": 11400
+					},
+					{
+						"sort": 11002,
+						"propId": 10204,
+						"num": 5
+					},
+					{
+						"sort": 11002,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"11003": {
+				"sort": 11003,
+				"id": 11,
+				"bgRes": 4,
+				"monsterId": [
+					202003,
+					202003,
+					202003
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 11003,
+						"propId": 10201,
+						"num": 11400
+					},
+					{
+						"sort": 11003,
+						"propId": 10204,
+						"num": 5
+					},
+					{
+						"sort": 11003,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"11004": {
+				"sort": 11004,
+				"id": 11,
+				"bgRes": 4,
+				"monsterId": [
+					202004,
+					202004,
+					202004
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 11004,
+						"propId": 10201,
+						"num": 11400
+					},
+					{
+						"sort": 11004,
+						"propId": 10204,
+						"num": 5
+					},
+					{
+						"sort": 11004,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"11005": {
+				"sort": 11005,
+				"id": 11,
+				"bgRes": 4,
+				"monsterId": [
+					202005
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 11005,
+						"propId": 10201,
+						"num": 11400
+					},
+					{
+						"sort": 11005,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 11005,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			}
+		},
+		"entranceShow": 200010,
+		"entranceBubble": [
+			{
+				"id": 11,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 11,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 11,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200010,
+		"battleBubble": [
+			{
+				"id": 11,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 11,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 11,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"12": {
+		"id": 12,
+		"name": "第12章",
+		"level": 120,
+		"mapRes": 11001,
+		"more": {
+			"12001": {
+				"sort": 12001,
+				"id": 12,
+				"bgRes": 4,
+				"monsterId": [
+					202101,
+					202101
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 12001,
+						"propId": 10202,
+						"num": 12250
+					},
+					{
+						"sort": 12001,
+						"propId": 10204,
+						"num": 6
+					},
+					{
+						"sort": 12001,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"12002": {
+				"sort": 12002,
+				"id": 12,
+				"bgRes": 4,
+				"monsterId": [
+					202102,
+					202102,
+					202102
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 12002,
+						"propId": 10202,
+						"num": 12250
+					},
+					{
+						"sort": 12002,
+						"propId": 10204,
+						"num": 6
+					},
+					{
+						"sort": 12002,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"12003": {
+				"sort": 12003,
+				"id": 12,
+				"bgRes": 4,
+				"monsterId": [
+					202103,
+					202103
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 12003,
+						"propId": 10202,
+						"num": 12250
+					},
+					{
+						"sort": 12003,
+						"propId": 10204,
+						"num": 6
+					},
+					{
+						"sort": 12003,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"12004": {
+				"sort": 12004,
+				"id": 12,
+				"bgRes": 4,
+				"monsterId": [
+					202104,
+					202104,
+					202104
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 12004,
+						"propId": 10202,
+						"num": 12250
+					},
+					{
+						"sort": 12004,
+						"propId": 10204,
+						"num": 6
+					},
+					{
+						"sort": 12004,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			},
+			"12005": {
+				"sort": 12005,
+				"id": 12,
+				"bgRes": 4,
+				"monsterId": [
+					202105
+				],
+				"costPropId": 1004,
+				"costNum": 69500,
+				"awards": [
+					{
+						"sort": 12005,
+						"propId": 10202,
+						"num": 12250
+					},
+					{
+						"sort": 12005,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 12005,
+						"propId": 10102,
+						"num": 20
+					}
+				]
+			}
+		},
+		"entranceShow": 200011,
+		"entranceBubble": [
+			{
+				"id": 12,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 12,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 12,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200011,
+		"battleBubble": [
+			{
+				"id": 12,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 12,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 12,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"13": {
+		"id": 13,
+		"name": "第13章",
+		"level": 130,
+		"mapRes": 11001,
+		"more": {
+			"13001": {
+				"sort": 13001,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202201,
+					202201
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13001,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13001,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13001,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13002": {
+				"sort": 13002,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202202,
+					202202
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13002,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13002,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13002,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13003": {
+				"sort": 13003,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202203,
+					202203
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13003,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13003,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13003,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13004": {
+				"sort": 13004,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202204,
+					202204,
+					202204
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13004,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13004,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13004,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13005": {
+				"sort": 13005,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202205,
+					202205,
+					202205
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13005,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13005,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13005,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13006": {
+				"sort": 13006,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202206,
+					202206,
+					202206
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13006,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13006,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13006,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13007": {
+				"sort": 13007,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202207,
+					202207,
+					202207,
+					202207
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13007,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13007,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13007,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13008": {
+				"sort": 13008,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202208,
+					202208,
+					202208,
+					202208
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13008,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13008,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13008,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13009": {
+				"sort": 13009,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202209,
+					202209,
+					202209,
+					202209
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13009,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13009,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 13009,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"13010": {
+				"sort": 13010,
+				"id": 13,
+				"bgRes": 4,
+				"monsterId": [
+					202210
+				],
+				"costPropId": 1004,
+				"costNum": 104000,
+				"awards": [
+					{
+						"sort": 13010,
+						"propId": 10201,
+						"num": 20850
+					},
+					{
+						"sort": 13010,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 13010,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			}
+		},
+		"entranceShow": 200012,
+		"entranceBubble": [
+			{
+				"id": 13,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 13,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 13,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200012,
+		"battleBubble": [
+			{
+				"id": 13,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 13,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 13,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"14": {
+		"id": 14,
+		"name": "第14章",
+		"level": 140,
+		"mapRes": 11001,
+		"more": {
+			"14001": {
+				"sort": 14001,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202301,
+					202301
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14001,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14001,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14001,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14002": {
+				"sort": 14002,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202302,
+					202302
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14002,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14002,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14002,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14003": {
+				"sort": 14003,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202303,
+					202303,
+					202303
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14003,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14003,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14003,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14004": {
+				"sort": 14004,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202304,
+					202304
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14004,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14004,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14004,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14005": {
+				"sort": 14005,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202305,
+					202305
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14005,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14005,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14005,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14006": {
+				"sort": 14006,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202306,
+					202306,
+					202306
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14006,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14006,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14006,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14007": {
+				"sort": 14007,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202307,
+					202307
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14007,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14007,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14007,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14008": {
+				"sort": 14008,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202308,
+					202308
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14008,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14008,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14008,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14009": {
+				"sort": 14009,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202309,
+					202309,
+					202309
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14009,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14009,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 14009,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"14010": {
+				"sort": 14010,
+				"id": 14,
+				"bgRes": 4,
+				"monsterId": [
+					202310
+				],
+				"costPropId": 1004,
+				"costNum": 156000,
+				"awards": [
+					{
+						"sort": 14010,
+						"propId": 10202,
+						"num": 31300
+					},
+					{
+						"sort": 14010,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 14010,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			}
+		},
+		"entranceShow": 200013,
+		"entranceBubble": [
+			{
+				"id": 14,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 14,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 14,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200013,
+		"battleBubble": [
+			{
+				"id": 14,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 14,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 14,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"15": {
+		"id": 15,
+		"name": "第15章",
+		"level": 150,
+		"mapRes": 11001,
+		"more": {
+			"15001": {
+				"sort": 15001,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202401,
+					202401
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15001,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15001,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15001,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15002": {
+				"sort": 15002,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202402,
+					202402,
+					202402
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15002,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15002,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15002,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15003": {
+				"sort": 15003,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202403,
+					202403,
+					202403,
+					202403
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15003,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15003,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15003,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15004": {
+				"sort": 15004,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202404,
+					202404
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15004,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15004,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15004,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15005": {
+				"sort": 15005,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202405,
+					202405,
+					202405
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15005,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15005,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15005,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15006": {
+				"sort": 15006,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202406,
+					202406,
+					202406,
+					202406
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15006,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15006,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15006,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15007": {
+				"sort": 15007,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202407,
+					202407,
+					202407
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15007,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15007,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15007,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15008": {
+				"sort": 15008,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202408,
+					202408,
+					202408
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15008,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15008,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15008,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15009": {
+				"sort": 15009,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202409,
+					202409,
+					202409,
+					202409
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15009,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15009,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 15009,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"15010": {
+				"sort": 15010,
+				"id": 15,
+				"bgRes": 4,
+				"monsterId": [
+					202410
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 15010,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 15010,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 15010,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			}
+		},
+		"entranceShow": 200014,
+		"entranceBubble": [
+			{
+				"id": 15,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 15,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 15,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200014,
+		"battleBubble": [
+			{
+				"id": 15,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 15,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 15,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"16": {
+		"id": 16,
+		"name": "第16章",
+		"level": 160,
+		"mapRes": 11001,
+		"more": {
+			"16001": {
+				"sort": 16001,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202501,
+					202501
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16001,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16001,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16001,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16002": {
+				"sort": 16002,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202502,
+					202502,
+					202502
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16002,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16002,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16002,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16003": {
+				"sort": 16003,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202503,
+					202503,
+					202503,
+					202503
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16003,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16003,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16003,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16004": {
+				"sort": 16004,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202504,
+					202504
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16004,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16004,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16004,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16005": {
+				"sort": 16005,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202505,
+					202505,
+					202505
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16005,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16005,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16005,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16006": {
+				"sort": 16006,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202506,
+					202506,
+					202506,
+					202506
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16006,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16006,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16006,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16007": {
+				"sort": 16007,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202507,
+					202507,
+					202507
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16007,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16007,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16007,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16008": {
+				"sort": 16008,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202508,
+					202508,
+					202508
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16008,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16008,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16008,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16009": {
+				"sort": 16009,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202509,
+					202509,
+					202509,
+					202509
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16009,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16009,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 16009,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"16010": {
+				"sort": 16010,
+				"id": 16,
+				"bgRes": 4,
+				"monsterId": [
+					202510
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 16010,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 16010,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 16010,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			}
+		},
+		"entranceShow": 200015,
+		"entranceBubble": [
+			{
+				"id": 16,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 16,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 16,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200015,
+		"battleBubble": [
+			{
+				"id": 16,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 16,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 16,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"17": {
+		"id": 17,
+		"name": "第17章",
+		"level": 170,
+		"mapRes": 11001,
+		"more": {
+			"17001": {
+				"sort": 17001,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202601,
+					202601,
+					202601
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17001,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17001,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17001,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17002": {
+				"sort": 17002,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202602,
+					202602,
+					202602
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17002,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17002,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17002,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17003": {
+				"sort": 17003,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202603,
+					202603,
+					202603,
+					202603
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17003,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17003,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17003,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17004": {
+				"sort": 17004,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202604,
+					202604,
+					202604
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17004,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17004,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17004,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17005": {
+				"sort": 17005,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202605,
+					202605,
+					202605
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17005,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17005,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17005,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17006": {
+				"sort": 17006,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202606,
+					202606,
+					202606,
+					202606
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17006,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17006,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17006,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17007": {
+				"sort": 17007,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202607,
+					202607,
+					202607
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17007,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17007,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17007,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17008": {
+				"sort": 17008,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202608,
+					202608,
+					202608
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17008,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17008,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17008,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17009": {
+				"sort": 17009,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202609,
+					202609,
+					202609,
+					202609
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17009,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17009,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 17009,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"17010": {
+				"sort": 17010,
+				"id": 17,
+				"bgRes": 4,
+				"monsterId": [
+					202610
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 17010,
+						"propId": 10201,
+						"num": 52200
+					},
+					{
+						"sort": 17010,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 17010,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			}
+		},
+		"entranceShow": 200016,
+		"entranceBubble": [
+			{
+				"id": 17,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 17,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 17,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200016,
+		"battleBubble": [
+			{
+				"id": 17,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 17,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 17,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	},
+	"18": {
+		"id": 18,
+		"name": "第18章",
+		"level": 180,
+		"mapRes": 11001,
+		"more": {
+			"18001": {
+				"sort": 18001,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202701,
+					202701,
+					202701
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18001,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18001,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18001,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18002": {
+				"sort": 18002,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202702,
+					202702,
+					202702
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18002,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18002,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18002,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18003": {
+				"sort": 18003,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202703,
+					202703,
+					202703,
+					202703
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18003,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18003,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18003,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18004": {
+				"sort": 18004,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202704,
+					202704,
+					202704
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18004,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18004,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18004,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18005": {
+				"sort": 18005,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202705,
+					202705,
+					202705
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18005,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18005,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18005,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18006": {
+				"sort": 18006,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202706,
+					202706,
+					202706,
+					202706
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18006,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18006,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18006,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18007": {
+				"sort": 18007,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202707,
+					202707,
+					202707
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18007,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18007,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18007,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18008": {
+				"sort": 18008,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202708,
+					202708,
+					202708
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18008,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18008,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18008,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18009": {
+				"sort": 18009,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202709,
+					202709,
+					202709,
+					202709
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18009,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18009,
+						"propId": 10204,
+						"num": 8
+					},
+					{
+						"sort": 18009,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			},
+			"18010": {
+				"sort": 18010,
+				"id": 18,
+				"bgRes": 4,
+				"monsterId": [
+					202710
+				],
+				"costPropId": 1004,
+				"costNum": 260500,
+				"awards": [
+					{
+						"sort": 18010,
+						"propId": 10202,
+						"num": 52200
+					},
+					{
+						"sort": 18010,
+						"propId": 10101,
+						"num": 1
+					},
+					{
+						"sort": 18010,
+						"propId": 10102,
+						"num": 10
+					}
+				]
+			}
+		},
+		"entranceShow": 200017,
+		"entranceBubble": [
+			{
+				"id": 18,
+				"sort": 1,
+				"text": "臭妖怪，把素萝还给我！"
+			},
+			{
+				"id": 18,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 18,
+				"sort": 3,
+				"text": "哇呀呀呀呀呀！"
+			}
+		],
+		"battleShow": 200017,
+		"battleBubble": [
+			{
+				"id": 18,
+				"sort": 1,
+				"text": "先打败我手下的天兵再说！"
+			},
+			{
+				"id": 18,
+				"sort": 2,
+				"text": "今日定要叫你有来无回！"
+			},
+			{
+				"id": 18,
+				"sort": 3,
+				"text": "吾欲灭尔，易如反掌！"
+			}
+		]
+	}
+}
