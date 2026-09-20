@@ -15,6 +15,7 @@ import {
     type IMmoWorldTransferReady, type IMmoWorldUpdate,
 } from "../../shared/index";
 import { parseWorldAddress } from "../../shared/kits/mmo/api/world/index";
+import type { IMmoBagWire } from "../../shared/gameplays/mmoWorld/wire";
 import type { IWorldChatRes } from "../../shared/protocol/messages";
 import { WorldRoomTransport, type WorldRoomHandle } from "./WorldRoomTransport";
 
@@ -56,6 +57,8 @@ export function createMmoWorldRoom(handle: WorldRoomHandle): MmoWorldRoom {
 function observeMmoWorld(handle: WorldRoomHandle, observer: MmoWorldRoomObserver): () => void {
     const reconciler = createMmoWorldReconciler();
     let active = true;
+    /** 背包（MK3-B1）：私有流只在变化时带 bag，没带 ⇒ 沿用上次 */
+    let lastBag: IMmoBagWire | null = null;
     const publish = (): void => {
         if (!active) return;
         observer.entities(reconciler.snapshot(), reconciler.isSynced);
@@ -75,7 +78,8 @@ function observeMmoWorld(handle: WorldRoomHandle, observer: MmoWorldRoomObserver
     });
     const offPrivate = handle.onMessage(S2C.MmoWorldPrivate, (payload: IMmoWorldPrivate) => {
         reconciler.acceptPrivate(payload);
-        if (active) observer.privateState({ hp: payload.hp, hpMax: payload.hpMax, mp: payload.mp, mpMax: payload.mpMax, cooldowns: payload.cooldowns ?? {}, casting: payload.casting ?? null });
+        lastBag = payload.bag ?? lastBag;
+        if (active) observer.privateState({ hp: payload.hp, hpMax: payload.hpMax, mp: payload.mp, mpMax: payload.mpMax, cooldowns: payload.cooldowns ?? {}, casting: payload.casting ?? null, bag: lastBag });
         publish();
     });
     const offResult = handle.onMessage(S2C.MmoWorldOpResult, (payload: IMmoWorldOpResult) => { if (active) observer.opResult(payload); });

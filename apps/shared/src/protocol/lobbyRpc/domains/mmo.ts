@@ -2,7 +2,8 @@
  * mmo 域 ws-RPC 契约——mmo kit（apps/kits/mmo，docs/MMO.md §7.2 characters 面）自带的域文件。
  * 只使用框架已有的 defineDomain / primitives / http 助手与本 kit 的 shared `characters` api 面。
  *
- * 执行模式：Characters=query（本账号本区的角色 + 孤儿 persona）；CreateCharacter=idempotent-write（同一 clientReqId 重放返回首次结果）。
+ * 执行模式：Characters=query（本账号本区的角色 + 孤儿 persona）；CreateCharacter=idempotent-write（同一 clientReqId 重放返回首次结果）；
+ * Bag=query（MK3-B1：某角色的背包视图）；MoveItem=idempotent-write（移动 / 装备一件；拒绝 ⇒ MMO_INVENTORY_REJECTED，别人的角色 ⇒ MMO_INVENTORY_FORBIDDEN）。
  * 进世界不在本域：客户端拿角色的 personaId 走框架 `world.enter`（MF8）。文件顶层保持可静态读取形态（约束见 ../defineDomain.ts 抬头）。
  */
 import { assertExactKeys, finiteInteger, type RuntimeValidator, WireValidationError } from "../../http";
@@ -10,6 +11,7 @@ import {
     type ICharacterSummary, type IOrphanPersona, type MmoClassId, type MmoFactionId, MAX_CHARACTER_SLOTS,
     validateCharacterName, validateCharacterSlot, validateCharacterSummary, validateClassId, validateFactionId, validateOrphanPersona,
 } from "../../../kits/mmo/api/characters/index";
+import { MMO_BAG_SLOTS, MMO_EQUIP_SLOT_COUNT, validateBagWire, type IMmoBagWire } from "../../../kits/mmo/api/inventory/index";
 import { defineLobbyRpcDomain, defineRpcIdempotentWrite, defineRpcQuery } from "../defineDomain";
 import { emptyPayload, requiredId, rpcRecord } from "../primitives";
 
@@ -19,7 +21,22 @@ export const MmoRpc = {
     Characters: "mmo.characters",
     /** 建角：同一 withKitTx 内 createPersona + 插角色行 */
     CreateCharacter: "mmo.createCharacter",
+    /** 背包视图（MK3-B1）：本账号某角色的全部物品实例 */
+    Bag: "mmo.bag",
+    /** 移动 / 装备一件（MK3-B1；幂等写） */
+    MoveItem: "mmo.moveItem",
 } as const;
+
+export interface IMmoBagReq { readonly characterId: string }
+export interface IMmoBagRes { bag: IMmoBagWire }
+export interface IMmoMoveItemReq {
+    clientReqId: string;
+    characterId: string;
+    itemInstanceId: string;
+    location: "bag" | "equip";
+    slot: number;
+}
+export interface IMmoMoveItemRes { bag: IMmoBagWire }
 
 export interface IMmoCharactersReq {
     readonly [key: string]: never;
@@ -47,7 +64,35 @@ export interface IMmoCreateCharacterRes {
 export interface MmoRpcMap {
     [MmoRpc.Characters]: { req: IMmoCharactersReq; res: IMmoCharactersRes };
     [MmoRpc.CreateCharacter]: { req: IMmoCreateCharacterReq; res: IMmoCreateCharacterRes };
+    [MmoRpc.Bag]: { req: IMmoBagReq; res: IMmoBagRes };
+    [MmoRpc.MoveItem]: { req: IMmoMoveItemReq; res: IMmoMoveItemRes };
 }
+
+export const validateMmoBagReq: RuntimeValidator<IMmoBagReq> = (input) => {
+    const value = rpcRecord(input);
+    assertExactKeys(value, ["characterId"], [], "payload");
+    return { characterId: requiredId(value, "characterId") };
+};
+
+export const validateMmoBagRes: RuntimeValidator<IMmoBagRes> = (input) => {
+    const value = rpcRecord(input, "response");
+    assertExactKeys(value, ["bag"], [], "response");
+    return { bag: validateBagWire(value.bag, "response.bag") };
+};
+
+export const validateMmoMoveItemReq: RuntimeValidator<IMmoMoveItemReq> = (input) => {
+    const value = rpcRecord(input);
+    assertExactKeys(value, ["clientReqId", "characterId", "itemInstanceId", "location", "slot"], [], "payload");
+    if (value.location !== "bag" && value.location !== "equip") throw new WireValidationError("MESSAGE_FIELD_RANGE", "payload.location");
+    const slot = finiteInteger(value.slot, "payload.slot", 0, value.location === "bag" ? MMO_BAG_SLOTS - 1 : MMO_EQUIP_SLOT_COUNT - 1);
+    return { clientReqId: requiredId(value, "clientReqId"), characterId: requiredId(value, "characterId"), itemInstanceId: requiredId(value, "itemInstanceId"), location: value.location, slot };
+};
+
+export const validateMmoMoveItemRes: RuntimeValidator<IMmoMoveItemRes> = (input) => {
+    const value = rpcRecord(input, "response");
+    assertExactKeys(value, ["bag"], [], "response");
+    return { bag: validateBagWire(value.bag, "response.bag") };
+};
 
 export const validateMmoCharactersReq: RuntimeValidator<IMmoCharactersReq> = (input) => emptyPayload(input);
 
@@ -89,11 +134,13 @@ export const validateMmoCreateCharacterRes: RuntimeValidator<IMmoCreateCharacter
 
 export default defineLobbyRpcDomain({
     domain: "mmo",
-    contractVersion: 1,
-    errorCodes: ["MMO_NAME_TAKEN", "MMO_SLOT_TAKEN", "MMO_SLOTS_FULL"],
+    contractVersion: 2,
+    errorCodes: ["MMO_NAME_TAKEN", "MMO_SLOT_TAKEN", "MMO_SLOTS_FULL", "MMO_INVENTORY_FORBIDDEN", "MMO_INVENTORY_REJECTED"],
     pushes: [],
     routes: [
         defineRpcQuery(MmoRpc.Characters, { request: validateMmoCharactersReq, response: validateMmoCharactersRes }),
         defineRpcIdempotentWrite(MmoRpc.CreateCharacter, { request: validateMmoCreateCharacterReq, response: validateMmoCreateCharacterRes }),
+        defineRpcQuery(MmoRpc.Bag, { request: validateMmoBagReq, response: validateMmoBagRes }),
+        defineRpcIdempotentWrite(MmoRpc.MoveItem, { request: validateMmoMoveItemReq, response: validateMmoMoveItemRes }),
     ],
 });

@@ -6,6 +6,8 @@
  *  - onEnter：角色实体落在最新角色检查点的位置（persona 信封回灌，M08）或出生点；onLeave 回收；
  *  - onStep：move 意图（dir / target）→ 权威积分（`movement` 面）；baselineRequest → 框架 baseline；pickup（MK2-B3）：拾取半径内的掉落 ⇒ `lootClaimed` durable 事件
  *    （随下一个分线检查点同事务落库，worker 发物品）+ 掉落离开视野 + opResult ok；怪死按模板 lootTable 掷骰（分线随机流 ⇒ 无头重放一致）落地为 kind loot 实体（带 count、到期消失）；
+ *    掉落归属（MK3-B1）：击杀者（仇恨最高的角色）在 MMO_LOOT_OWNER_MS 内独占拾取权（他人 ⇒ rejected owned），超时放开；背包（MK3-B1）：进图随角色预热一份
+ *    （inventory 面 bagOfCharacter）进私有流 `bag`，装备属性合计进战斗基础属性；拾取后按节拍轮询背包直到 worker 把物品落库（变化才发），⛔ 影响模拟确定性；
  *    transfer（MK1-B3 两图交接）：portal 存在 + 在半径内 + 无在途 ⇒ 落点先写进实体（框架 prepare 后强制点的 persona 快照带 arrival）⇒
  *    `context.transfer.request`（框架 MF8 状态机）⇒ Committed 后 perSession `transferReady`（凭据只此一处出网）⇒ 壳以 "transferred" 离座；
  *    失败 ⇒ opResult rejected + 落点清；目标图 onEnter 按 arrival 落位（HP / MP 随身）；interact / choose 暂忽略（MK4）；本人私有流 hp / mp / 冷却集合 / 施法中变了才发；
@@ -30,7 +32,11 @@ import {
 } from "@game/shared";
 import type { IContentPackIndex, IMapDef } from "@game/shared/kits/mmo/api/content/index";
 import { clampToMap, withinRadius } from "@game/shared/kits/mmo/api/world/index";
-import { MMO_EVENT_LOOT_CLAIMED, MMO_LOOT_EXPIRE_MS, MMO_LOOT_MAX_PER_INSTANCE, MMO_PICKUP_RADIUS, rollLoot, type IMmoLootClaimedPayload } from "@game/shared/kits/mmo/api/inventory/index";
+import {
+    MMO_EVENT_LOOT_CLAIMED, MMO_LOOT_EXPIRE_MS, MMO_LOOT_MAX_PER_INSTANCE, MMO_LOOT_OWNER_MS, MMO_PICKUP_RADIUS, bagAttrs, bagSignature, equippedTemplates, rollLoot,
+    type IMmoBagWire, type IMmoLootClaimedPayload,
+} from "@game/shared/kits/mmo/api/inventory/index";
+import { bagOfCharacter } from "../../../kits/mmo/api/inventory/index";
 import {
     MMO_PLAYER_RESPAWN_MS, auraOf, castReqIdOf, checkCast, cooldownReadyTick, damageOf, effectiveStats, healOf, needsHostileTarget, threatOf, ticksOf, type IAura,
 } from "@game/shared/kits/mmo/api/combat/index";
@@ -90,9 +96,9 @@ export interface MmoEntity {
     arrival: { readonly mapId: string; readonly spawnPointId: string } | null;
     /** 冷却：spellId → 就绪 tick（快照按 tick 差折算成剩余 ms） */
     readonly cooldowns: Map<string, number>;
-    /** 基础属性（职业 / 怪物模板）；生效值 = effectiveStats(base, auras) */
-    readonly attack: number;
-    readonly defense: number;
+    /** 基础属性（职业 / 怪物模板 + 角色的装备合计，换装刷新时重算）；生效值 = effectiveStats(base, auras) */
+    attack: number;
+    defense: number;
     /** 已学技能（角色 = 职业模板；怪物 = 模板 spells） */
     readonly spells: readonly string[];
     /** 战斗热状态（⛔ 进检查点，§7.3）：aura / 仇恨 / 施法中 / 选中目标 */
@@ -131,6 +137,9 @@ export interface MmoLootDrop {
     readonly rev: number;
     readonly spawnedTick: number;
     readonly expiresTick: number;
+    /** 归属（MK3-B1）：击杀者角色 id 在 ownerUntilTick 前独占拾取；null = 任何人可拾 */
+    readonly ownerCharacterId: string | null;
+    readonly ownerUntilTick: number;
     readonly plane: number;
     readonly stealth: boolean;
     readonly factionId: null;
@@ -143,6 +152,11 @@ export interface MmoWorldModeOptions {
     readonly loadCharacter?: (sId: number, personaId: string) => Promise<MmoCharacterRow | null>;
     /** 检查点能力（缺省 = SQL 端口；null = 无能力（纯内存单测）；可注入 MemoryCheckpointPort 形态）。 */
     readonly checkpoint?: WorldModeCheckpointCapability | null;
+    /** 按角色读背包（缺省 = inventory 面 bagOfCharacter 走 kit 事务；null = 无背包（纯内存单测）；单测注入）。 */
+    readonly loadBag?: ((sId: number, characterId: string) => Promise<IMmoBagWire>) | null;
+    /** 拾取后轮询背包的节拍 / 时长（步数；缺省 20 步 = 1 s、1200 步 = 60 s）。 */
+    readonly bagRefreshEveryTicks?: number;
+    readonly bagRefreshForTicks?: number;
     readonly capacity?: number;
     /** 角色位置进观察者流的节拍（每 N 固定步 bump 一次 rev；停下那步必 bump）；缺省 1 = 每步。热点调优（MK1-B6），⛔ 影响本人 pos 回执 */
     readonly characterUpdateEveryTicks?: number;
@@ -171,7 +185,10 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         aiStats(): { readonly thought: number; readonly deferred: number };
         /** 掉落接缝（测试）：未认领掉落表 / 直接落一件掉落（走同一 spawn 路径，返回 lootId） */
         loot(): ReadonlyMap<string, MmoLootDrop>;
-        spawnLoot(itemId: string, count: number, x: number, y: number): string;
+        spawnLoot(itemId: string, count: number, x: number, y: number, ownerCharacterId?: string | null): string;
+        /** 背包接缝（测试）：会话当前背包视图 / 正在轮询的会话 */
+        bagOf(session: string): IMmoBagWire | null;
+        bagRefreshing(): readonly string[];
         /** 检查点接缝（MK2–MK4 接入前的直接写口）：冷却 / timer / 区域开关 / 脚本 var */
         setCooldown(id: string, spellId: string, readyAtTick: number): void;
         setTimer(id: string, dueTick: number): void;
@@ -236,6 +253,13 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     /** 未认领掉落（MK2-B3；随分线快照 loot / lootSeq 往返） */
     const lootDrops = new Map<string, MmoLootDrop>();
     let lootSeq = 0;
+    /** 背包（MK3-B1）：persona 预热 → 会话；拾取后按节拍轮询直到落库（变化才发） */
+    const loadBag = options.loadBag === undefined ? (sId: number, characterId: string) => bagOfCharacter(sId, characterId) : options.loadBag;
+    const pendingBags = new Map<string, IMmoBagWire | null>();
+    const bags = new Map<string, IMmoBagWire>();
+    const bagRefresh = new Map<string, { readonly characterId: string; readonly untilTick: number; nextTick: number; inFlight: boolean }>();
+    const bagRefreshEveryTicks = Math.max(1, Math.floor(options.bagRefreshEveryTicks ?? 20));
+    const bagRefreshForTicks = Math.max(1, Math.floor(options.bagRefreshForTicks ?? 1200));
     /** 探针用的最近一次 onWorldInit 上下文（只给 __probe.spawnLoot） */
     let probeContext: WorldModeContext<MmoWorldRoomState> | null = null;
     const log: string[] = [];
@@ -300,6 +324,44 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             ...(Object.keys(cooldowns).length > 0 ? { cooldowns } : {}),
             ...(mover.arrival ? { arrival: mover.arrival } : {}),
         };
+    };
+    /** 装备属性合计进角色基础属性（职业模板 + 装备；换装刷新时重算）。 */
+    const applyEquipment = (mover: MmoEntity, bag: IMmoBagWire | null): void => {
+        const klass = content.classById.get(mover.templateId);
+        const attrs = bagAttrs(equippedTemplates(bag, (itemId) => content.itemById.get(itemId)));
+        mover.attack = (klass?.attack ?? mover.attack) + attrs.attack;
+        mover.defense = (klass?.defense ?? mover.defense) + attrs.defense;
+    };
+    /** 拾取后开始轮询背包（worker 落库有延迟 ≤ 一个分线检查点周期 + worker 节拍）。 */
+    const scheduleBagRefresh = (session: string, characterId: string, tick: number): void => {
+        const existing = bagRefresh.get(session);
+        if (existing) { bagRefresh.set(session, { ...existing, untilTick: tick + bagRefreshForTicks }); return; }
+        bagRefresh.set(session, { characterId, untilTick: tick + bagRefreshForTicks, nextTick: tick + bagRefreshEveryTicks, inFlight: false });
+    };
+    const bagRefreshStep = (context: WorldModeContext<MmoWorldRoomState>, tick: number): void => {
+        if (!loadBag) return;
+        for (const [session, refresh] of bagRefresh) {
+            if (tick > refresh.untilTick) { bagRefresh.delete(session); continue; }
+            if (refresh.inFlight || tick < refresh.nextTick) continue;
+            refresh.inFlight = true;
+            refresh.nextTick = tick + bagRefreshEveryTicks;
+            loadBag(context.sId, refresh.characterId).then((bag) => {
+                const current = bagRefresh.get(session);
+                if (current) current.inFlight = false;
+                const mover = moverOf(session);
+                if (!mover || mover.characterId !== refresh.characterId) return;
+                if (bagSignature(bag) === bagSignature(bags.get(session) ?? null)) return;
+                bags.set(session, bag);
+                applyEquipment(mover, bag);
+                privateDirty.add(session);
+                bagRefresh.delete(session); // 变了一次即停（再拾再排）
+                log.push(`bag:${session}:${bag.items.length}`);
+            }).catch((error: unknown) => {
+                const current = bagRefresh.get(session);
+                if (current) current.inFlight = false;
+                log.push(`bag:${session}:error:${error instanceof Error ? error.message : String(error)}`);
+            });
+        }
     };
     const reject = (context: WorldModeContext<MmoWorldRoomState>, session: string, clientReqId: string, detail: string): void => {
         context.sendS2C(session, MmoWorldOpResult, { clientReqId, result: "rejected", detail });
@@ -399,7 +461,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         if (target.session) privateDirty.add(target.session);
     };
     /** 掉落落地（MK2-B3）：超上限先淘汰最早的一件；id = loot:<lootSeq>（恢复后续用计数，⛔ 撞 id）；进 AOI 网格 ⇒ 下一次兴趣集重算即 enter。 */
-    const spawnLoot = (context: WorldModeContext<MmoWorldRoomState>, itemId: string, count: number, x: number, y: number, tick: number): string => {
+    const spawnLoot = (context: WorldModeContext<MmoWorldRoomState>, itemId: string, count: number, x: number, y: number, tick: number, ownerCharacterId: string | null = null): string => {
         if (lootDrops.size >= MMO_LOOT_MAX_PER_INSTANCE) {
             const oldest = lootDrops.keys().next().value;
             if (oldest !== undefined) removeLoot(context, oldest, "cap");
@@ -409,10 +471,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         const pos = clampToMap({ x, y }, mapOf(context).size);
         lootDrops.set(id, {
             id, kind: "loot", itemId, name: content.itemById.get(itemId)?.name ?? itemId, count, x: pos.x, y: pos.y, rev: 0, spawnedTick: tick,
-            expiresTick: tick + ticksOf(MMO_LOOT_EXPIRE_MS, context.fixedStepMs), plane: 0, stealth: false, factionId: null,
+            expiresTick: tick + ticksOf(MMO_LOOT_EXPIRE_MS, context.fixedStepMs), ownerCharacterId, ownerUntilTick: ownerCharacterId === null ? 0 : tick + ticksOf(MMO_LOOT_OWNER_MS, context.fixedStepMs),
+            plane: 0, stealth: false, factionId: null,
         });
         aoiOf(context).insert(id, pos.x, pos.y);
-        log.push(`loot:${id}:${itemId}x${count}`);
+        log.push(`loot:${id}:${itemId}x${count}${ownerCharacterId ? `:owner=${ownerCharacterId}` : ""}`);
         return id;
     };
     const removeLoot = (context: WorldModeContext<MmoWorldRoomState>, id: string, reason: string): void => {
@@ -421,13 +484,15 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         log.push(`loot-gone:${id}:${reason}`);
     };
     /** 拾取（MK2-B3）：活着 + 掉落存在 + 拾取半径内 + 有 durable 能力 ⇒ 追加 lootClaimed 事件（随下一个分线检查点落库）+ 掉落离开视野 + ok。 */
-    const requestPickup = (context: WorldModeContext<MmoWorldRoomState>, session: string, request: IMmoWorldPickupReq): void => {
+    const requestPickup = (context: WorldModeContext<MmoWorldRoomState>, session: string, request: IMmoWorldPickupReq, tick: number): void => {
         const mover = moverOf(session);
         if (!mover) return;
         if (!mover.alive) { reject(context, session, request.clientReqId, "dead"); return; }
         const drop = lootDrops.get(request.lootId);
         if (!drop) { reject(context, session, request.clientReqId, "loot 不存在"); return; }
         if (!withinRadius(mover, drop, MMO_PICKUP_RADIUS)) { reject(context, session, request.clientReqId, "range"); return; }
+        // 归属（MK3-B1）：击杀者独占期内他人不能拾
+        if (drop.ownerCharacterId !== null && drop.ownerCharacterId !== mover.characterId && tick < drop.ownerUntilTick) { reject(context, session, request.clientReqId, "owned"); return; }
         if (!checkpoint?.eventTable) { reject(context, session, request.clientReqId, "durable 不可用"); return; }
         if (mover.characterId === null) { reject(context, session, request.clientReqId, "no-character"); return; }
         const payload: IMmoLootClaimedPayload = { actorEntityId: mover.id, actorCharacterId: mover.characterId, lootId: drop.id, itemTemplateId: drop.itemId, count: drop.count };
@@ -435,6 +500,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         removeLoot(context, drop.id, `claim:${mover.id}`);
         context.sendS2C(session, MmoWorldOpResult, { clientReqId: request.clientReqId, result: "ok" });
         log.push(`pickup:${session}:${drop.id}`);
+        if (loadBag) scheduleBagRefresh(session, mover.characterId, tick);
     };
     /** 死亡：清热状态、停下；怪物按 respawnSec 复活、角色按 MMO_PLAYER_RESPAWN_MS 复活；checkpointOnDeath ⇒ 强制点（有检查点能力时）；怪物按 lootTable 掷骰落掉落。 */
     const die = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity, tick: number): void => {
@@ -443,6 +509,14 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         entity.rev += 1;
         entity.casting = null;
         entity.auras.clear();
+        // 击杀者 = 仇恨最高的角色（并列按 id；⛔ 在死亡清仇恨之前取）
+        let killerCharacterId: string | null = null;
+        let killerThreat = -1;
+        for (const [id, threat] of entity.threat) {
+            const attacker = entities.get(id);
+            if (!attacker || attacker.characterId === null) continue;
+            if (threat > killerThreat || (threat === killerThreat && id < (killerCharacterId ?? ""))) { killerThreat = threat; killerCharacterId = attacker.characterId; }
+        }
         entity.threat.clear();
         entity.dirX = 0;
         entity.dirY = 0;
@@ -458,7 +532,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         const table = template?.lootTableId === undefined ? undefined : content.lootTableById.get(template.lootTableId);
         if (table) {
             const rolled = rollLoot(table, context.random);
-            if (rolled) spawnLoot(context, rolled.itemId, rolled.count, entity.x, entity.y, tick);
+            if (rolled) spawnLoot(context, rolled.itemId, rolled.count, entity.x, entity.y, tick, killerCharacterId);
         }
     };
     /** 复活：怪物回出生位置、角色回最近复活点；满血满蓝。 */
@@ -713,6 +787,9 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             scriptVars = {};
             lootDrops.clear();
             lootSeq = 0;
+            pendingBags.clear();
+            bags.clear();
+            bagRefresh.clear();
             for (const region of content.regionsByMap.get(def.mapId) ?? []) regions.set(region.regionId, region.enabledByDefault);
             pending.clear();
             privateDirty.clear();
@@ -772,7 +849,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 const pos = clampToMap({ x: drop.x, y: drop.y }, mapOf(context).size);
                 lootDrops.set(drop.id, {
                     id: drop.id, kind: "loot", itemId: drop.itemId, name: content.itemById.get(drop.itemId)?.name ?? drop.itemId, count: drop.count, x: pos.x, y: pos.y, rev: 0,
-                    spawnedTick: context.state.tick, expiresTick: Math.max(0, drop.expiresTick - snapshotTick) + context.state.tick, plane: 0, stealth: false, factionId: null,
+                    spawnedTick: context.state.tick, expiresTick: Math.max(0, drop.expiresTick - snapshotTick) + context.state.tick,
+                    ownerCharacterId: typeof drop.ownerCharacterId === "string" ? drop.ownerCharacterId : null,
+                    ownerUntilTick: typeof drop.ownerCharacterId === "string" && typeof drop.ownerUntilTick === "number" ? Math.max(0, drop.ownerUntilTick - snapshotTick) + context.state.tick : 0,
+                    plane: 0, stealth: false, factionId: null,
                 });
                 aoiOf(context).insert(drop.id, pos.x, pos.y);
                 const seq = Number(drop.id.slice("loot:".length));
@@ -781,7 +861,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             log.push(`restore:${restored}`);
         },
         async onBeforeAdmit(context, request: WorldAdmitRequest) {
-            pending.set(request.personaId, await loadCharacter(context.sId, request.personaId));
+            const row = await loadCharacter(context.sId, request.personaId);
+            pending.set(request.personaId, row);
+            // 背包随角色预热（读失败 ⇒ 无背包进图，拾取后轮询会补；⛔ 因背包拒准入）
+            pendingBags.set(request.personaId, row && loadBag ? await loadBag(context.sId, row.characterId).catch(() => null) : null);
         },
         onAdmit(_context, request) {
             const row = pending.get(request.personaId);
@@ -827,9 +910,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             });
             aoiOf(context).insert(id, pos.x, pos.y);
             movers.set(session.session, id);
+            const bag = pendingBags.get(session.personaId) ?? null;
+            pendingBags.delete(session.personaId);
+            if (bag) { bags.set(session.session, bag); applyEquipment(entities.get(id)!, bag); }
             privateDirty.add(session.session);
             syncPopulation(context);
-            log.push(`enter:${session.session}${usable ? ":restored" : arrival ? ":arrival" : ""}`);
+            log.push(`enter:${session.session}${usable ? ":restored" : arrival ? ":arrival" : ""}${bag ? `:bag${bag.items.length}` : ""}`);
         },
         onLeave(context, session, reason) {
             const id = movers.get(session.session);
@@ -840,6 +926,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             }
             privateDirty.delete(session.session);
             privateSent.delete(session.session);
+            bags.delete(session.session);
+            bagRefresh.delete(session.session);
             inFlight.delete(session.session);
             interestCache.delete(session.session);
             if (id !== undefined) revPending.delete(id);
@@ -856,7 +944,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     continue;
                 }
                 if (command.type === MmoWorldPickup.type) {
-                    requestPickup(context, command.session, command.payload as IMmoWorldPickupReq);
+                    requestPickup(context, command.session, command.payload as IMmoWorldPickupReq, step.tick);
                     continue;
                 }
                 if (command.type === MmoWorldTransfer.type) {
@@ -919,6 +1007,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             // AI 步（角色移动之后）：怪物思考 + 移动；再战斗步（读条到点 / 死亡 / 复活）；确定性：按实体插入序
             aiStep(context, step.tick, step.dtMs, def);
             combatStep(context, step.tick);
+            bagRefreshStep(context, step.tick);
             for (const entity of entities.values()) {
                 if (entity.kind !== "character" || entity.session === null) continue;
                 // 本人私有流（不可丢类，与视野流共用单 seq 流）：hp / mp / 冷却集合（按就绪 tick）/ 施法中 变了才发（⛔ 每 tick 倒计时）
@@ -926,9 +1015,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (privateDirty.has(entity.session) || privateSent.get(entity.session) !== signature) {
                     privateDirty.delete(entity.session);
                     privateSent.set(entity.session, signature);
+                    const bag = bags.get(entity.session);
                     context.observers.emitPerSession(entity.session, MmoWorldPrivate, {
                         seq: context.observers.nextSeq(entity.session), tick: step.tick, hp: entity.hp, hpMax: entity.hpMax, mp: entity.mp, mpMax: entity.mpMax,
                         ...privateCombatOf(entity, step.tick, context.fixedStepMs),
+                        ...(bag ? { bag } : {}),
                     });
                 }
             }
@@ -949,7 +1040,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     id: entity.id, templateId: entity.templateId, x: entity.x, y: entity.y, hp: entity.hp, alive: entity.alive,
                     ...(entity.respawnDueTick === null ? {} : { respawnDueTick: entity.respawnDueTick }),
                 })),
-                loot: [...lootDrops.values()].map((drop): MmoLootSnapshot => ({ id: drop.id, itemId: drop.itemId, count: drop.count, x: drop.x, y: drop.y, expiresTick: drop.expiresTick })),
+                loot: [...lootDrops.values()].map((drop): MmoLootSnapshot => ({
+                    id: drop.id, itemId: drop.itemId, count: drop.count, x: drop.x, y: drop.y, expiresTick: drop.expiresTick,
+                    ...(drop.ownerCharacterId === null ? {} : { ownerCharacterId: drop.ownerCharacterId, ownerUntilTick: drop.ownerUntilTick }),
+                })),
                 lootSeq,
                 scriptVars: { ...scriptVars },
                 timers: [...timers].map(([id, dueTick]) => ({ id, dueTick })),
@@ -987,9 +1081,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             },
             aiStats: () => ({ thought: ai.stats.thought, deferred: ai.stats.deferred }),
             loot: () => lootDrops,
-            spawnLoot: (itemId, count, x, y) => {
+            bagOf: (session) => bags.get(session) ?? null,
+            bagRefreshing: () => [...bagRefresh.keys()],
+            spawnLoot: (itemId, count, x, y, ownerCharacterId = null) => {
                 if (!probeContext) throw new Error("[mmoWorld] spawnLoot：世界未初始化");
-                return spawnLoot(probeContext, itemId, count, x, y, probeContext.state.tick);
+                return spawnLoot(probeContext, itemId, count, x, y, probeContext.state.tick, ownerCharacterId);
             },
             damage: (id, amount) => {
                 const entity = entities.get(id);

@@ -23,13 +23,13 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
     },
     {
         id: "mmo",
-        version: "0.1.9",
+        version: "0.1.11",
         api: {
             ai: { version: 1, minSupported: 1 },
             characters: { version: 1, minSupported: 1 },
             combat: { version: 1, minSupported: 1 },
             content: { version: 2, minSupported: 2 },
-            inventory: { version: 1, minSupported: 1 },
+            inventory: { version: 2, minSupported: 1 },
             movement: { version: 1, minSupported: 1 },
             social: { version: 1, minSupported: 1 },
             world: { version: 2, minSupported: 1 },

@@ -12,7 +12,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | ✅ 2026-09-20 退出（B1–B6，kit 0.1.6；kill criterion 取 §11.2 v1 例外「热点互见 ≤ 50 人」，50 人三次重跑 ✅；MMO.md §12 MK1 行；tag `mk1-exit`） |
 | MK2 模拟闭环 | combat + ai 面、掉落 | ✅ 2026-09-20 退出（B1 combat / B2 ai / B3 掉落，kit 0.1.9；MMO.md §12 MK2 行；tag `mk2-exit`） |
-| MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 未开工 |
+| MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 施工中：B1 inventory 面物品半边 ✅ 2026-09-20（kit 0.1.11；B2–B3 未开工） |
 | MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 未开工 |
 
 ## 定义了什么（MK0-B1）
@@ -23,7 +23,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | wire | `apps/shared/src/gameplays/mmoWorld/wire.ts`（§7.4 全部 token：8 个 C2S 意图 + 10 个 perSession S2C + 2 个分线广播；观察者六件取框架 MF5b 形态，⛔ 单一 delta）；向量 `apps/server/test/wire-vectors/mmoWorld.ts` |
 | SQL | `sql/001-characters.sql`（`k_mmo_character` / `k_mmo_character_checkpoint`）、`002-items.sql`（`k_mmo_item_instance` / `k_mmo_receipt`）、`003-world.sql`（`k_mmo_instance` / `k_mmo_instance_checkpoint` / `k_mmo_world_event` role:"world-event"）、`004-character-checkpoint-instance-rev.sql`（MK1-B4：角色检查点表加 `instance_rev` 列 + 索引，只追加）；全部 per-zone；检查点表整份落框架信封（`envelope JSON`，snapshot 在其内） |
 | worker | `workers/worldEvents.ts`：认领门内 `k_mmo_world_event`，`grantCurrency` ⇒ 主账 credit（persona 主体，opId = eventId）；`lootClaimed`（MK2-B3）⇒ `persistence/items.ts` `grantItemInTx`（bag 下一空槽 + `k_mmo_receipt` op_id = eventId，重放只回读回执）；其余死信 |
-| 域 `mmo` | `mmo.characters`（query：角色 + 孤儿 persona + 槽位上限）、`mmo.createCharacter`（idempotent-write：同一 withKitTx 内 createPersona + 角色行 + 回执；errorCodes MMO_NAME_TAKEN / MMO_SLOT_TAKEN / MMO_SLOTS_FULL）；进世界走框架 `world.enter` |
+| 域 `mmo` | `mmo.characters`（query：角色 + 孤儿 persona + 槽位上限）、`mmo.createCharacter`（idempotent-write：同一 withKitTx 内 createPersona + 角色行 + 回执；errorCodes MMO_NAME_TAKEN / MMO_SLOT_TAKEN / MMO_SLOTS_FULL）；进世界走框架 `world.enter`；**MK3-B1**：`mmo.bag { characterId }`（query → `{ bag }`）、`mmo.moveItem { clientReqId, characterId, itemInstanceId, location: bag \| equip, slot }`（idempotent-write → `{ bag }`；errorCodes MMO_INVENTORY_FORBIDDEN / MMO_INVENTORY_REJECTED(message 带 code)；contractVersion 2） |
 | 域 `mmoSocial`（MK1-B5） | `mmoSocial.partyLocate { characterId }`（query）→ `{ party: IMmoPartyLocate \| null }`：框架 party 成员 → 本 kit 角色 + worldAddress / mapId；errorCodes MMO_SOCIAL_CHARACTER_FORBIDDEN；世界 / 附近聊天 ⛔ 不在本域 |
 | 服务端 api 面 | `characters`（listCharacters / createCharacter / characterOfPersona）、`world`（readInstanceMeta）、`content`（contentIndex / packForMap / mapDefOf / creatureOf / spellOf / itemOf；内置灰盒包启动期 validateContentPack fail-closed）、`movement`（MK1-B1：resolveMove / applyIntent / parseCollisionGrid 再导出 + teleportWithin） |
 | WorldMode | `rooms/modes/mmoWorld/index.ts`：撒怪 / 准入预热（职业模板不在内容包 ⇒ 拒）/ 检查点回灌 / 权威积分（movement 面 `resolveMove` + 内容包碰撞网格）/ 本人 `s2c.mmoWorld.pos` 直发回执 / 视野流（AOI 网格候选 + 规则 + 上限）/ 私有流 / 检查点（全批 `onCheckpoint` + persona 级 `onPersonaCheckpoint`）；检查点端口住 kit 目录 `kits/mmo/persistence/checkpoint.ts`（MK1-B4 迁回：kit-api 再导出 CheckpointPort / CheckpointEnvelope / CheckpointSchema） |
@@ -85,6 +85,19 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 内容 | 灰盒 v5：野猪 boar（aggro 150 / 拴绳 400 / 90 速 / strike）在 (1000,1500)、田鼠 rat（patrol 三点）在 (500,500)；slime 仍 idle（leash 0 只还手） |
 | 用例 | 服务端 `mmo-ai.test.ts`（decide 十三条 / 分桶 / A* 绕墙・终点阻挡・展开上限 / 调度器预算顺延 / compute 任务 / 迟到判定）、`mmoWorld-mode.test.ts` 新增 3（野猪追击 → 射程内扣血 → 出拴绳 evade 回家；slime 还手不追；田鼠巡逻一圈 / 每 4 步思考 / 假时钟顺延；绕墙不进阻挡格 / 权威换代・版本变更的回执丢弃） |
 | 偏差 | 找路端口回执可同步（缺省进程内：同 tick 生效 ⇒ 无头重放确定性）或 Promise（compute 池：下一步消费）；compute 池接线留给组合根（kit ⛔ import compute）；仇恨 = 直伤值，治疗 / 增益不计；怪物无阵营，感知用位面 / 隐身规则；MK2-B1 战斗用例改用 slime 无技能的木桩内容（还手归 ai 用例） |
+
+## 物品（MK3-B1；`inventory` 面物品半边，v2）
+
+| 层 | 内容 |
+| --- | --- |
+| shared `api/inventory` v2 | 背包 wire `IMmoBagWire { rev, items[{ id, itemId, count, location: bag \| equip \| mail, slot, rev }] }`（校验在 gameplays/mmoWorld/wire：≤ 91 件、(location, slot) / id 不重复）；容量 `MMO_BAG_SLOTS 24` / `MMO_EQUIP_SLOT_COUNT 3`（weapon 0 / armor 1 / trinket 2）/ `MMO_MAIL_SLOTS 64`（发放溢出落点，⛔ 丢物品）；`equipSlotOf` / `checkEquip`（槽位类型 → 职业限制 → 单件）；`planGrant`（先并入背包同模板未满堆叠（slot 升序）→ 背包空格（每格 ≤ stackMax）→ 邮箱；都满 ⇒ null）；`bagAttrs`（装备属性合计）/ `equippedTemplates` / `bagSignature` / `sortBagItems`；掉落归属 `MMO_LOOT_OWNER_MS 15 s` |
+| 存储 | `persistence/items.ts` `ItemStore`（list / insert / **按 rev CAS 的 update / remove** / 回执 / newId）+ `sqlItemStore(tx)`（k_mmo_item_instance + k_mmo_receipt；交换经 `tmp` 位置三步过渡，同事务内 ⛔ 落库可见）；单测内存实现钉同一语义 |
+| 服务端 `api/inventory` | `grantItem`（按 planGrant 落地 + 回执 `{ itemId, count, merged, inserted }`；同 opId 重放零写入；模板不在包 ⇒ unknown-item、都满 ⇒ mail-full）、`moveItem`（bag ↔ bag / bag ↔ equip；装备拒 not-equippable / class-mismatch / stacked / bad-slot；目标有物 ⇒ 同模板堆叠合并（余量留原地）或交换——被换下的一件必须能待在原位置（equip ⇒ 也得能装那格、mail ⇒ occupied）；no-op 也写回执；并发改同一件 ⇒ conflict）、`claimLoot`（= grantItem，opId = 事件 id）、`readBag`；账号级 `bagOf` / `moveItemFor`（角色必须属本账号 ⇒ forbidden，经 withKitTx）、世界房用 `bagOfCharacter`；错误 `MmoInventoryError(code, detail)` |
+| worker | `lootClaimed` ⇒ `claimLoot(sqlItemStore(tx), …)`；`MmoInventoryError` ⇒ 死信（⛔ 整轮回滚） |
+| mode | 掉落归属：怪死时击杀者 = 仇恨最高的角色（⛔ 清仇恨前取），`ownerCharacterId / ownerUntilTick` 随快照（重排）；独占期内他人拾 ⇒ rejected owned；背包：`onBeforeAdmit` 随角色预热（`loadBag`，读失败 ⇒ 无背包进图 ⛔ 拒准入）⇒ 进图私有流带 `bag`，装备属性合计进 `attack / defense`（职业 + 装备）；拾取后按 `bagRefreshEveryTicks 20 / bagRefreshForTicks 1200` 轮询 loadBag，签名变了才再发一次 bag 并停（worker 落库延迟 ≤ 分线检查点周期 + worker 节拍）；离座清；`__probe.bagOf / bagRefreshing / spawnLoot(…, owner)` |
+| 客户端 | `api/inventory` v2：`fetchBag` / `moveItem`（Lobby RPC）、`bagRows` / `equippedOf` / `describeBag`（HUD 摘要「背包 n/24 · 装备 … · 邮箱 m」）；private 流 `bag` 进 `MmoPrivateState`（没带 ⇒ 沿用上次）⇒ 模型 `bag / bagSummary` ⇒ HUD 一行；kit runtime `bag(characterId) / moveItem(input)`（背包页归内容插件） |
+| 用例 | 服务端 `mmo-inventory.test.ts`（纯函数 / grantItem / moveItem 十余条规则 / 账号归属）、`mmo-worker` 新增 1（模板不在包 ⇒ 死信）、`mmoWorld-mode` 新增 2（归属：击杀者独占 → 他人 owned → 超时放开 → 探针无主 → 快照重排；背包：预热进流 + 攻防 + 轮询变了才发并停 + 到期停 + 离座清）；真栈 `int/mmo-inventory`（SQL 唯一键 / rev / 回执 / 重放 / 装备 / 交换 tmp 不残留 / **并发同一件恰一个 conflict** / forbidden）+ `int/mmo-loot` 加 ⑥（拾取后世界房轮询到落库背包 ⇒ 私有流带 bag）；客户端 gameplay / room 各 1 |
+| 偏差 | moveItem 经 Lobby RPC 走 withKitTx（无分线作用域；withWorldTx 形态留给世界内编排 grantItem，MK4）；背包变更无推送（kit-api 无 push 门面），靠拾取后轮询 + 客户端 mmo.bag 查询；队伍分配 / 拾取权转让归内容 / MK4 |
 
 ## 掉落（MK2-B3；`inventory` 面掉落半边）
 

@@ -16,4 +16,12 @@ export default {
     request: { clientReqId: "c1", slot: 0, name: "Rook", classId: "fighter", factionId: "dawn" },
     response: { character },
   },
+  [MmoRpc.Bag]: {
+    request: { characterId: "c1" },
+    response: { bag: { rev: 3, items: [{ id: "i1", itemId: "slime-gel", count: 2, location: "bag", slot: 0, rev: 1 }, { id: "i2", itemId: "rusty-blade", count: 1, location: "equip", slot: 0, rev: 3 }] } },
+  },
+  [MmoRpc.MoveItem]: {
+    request: { clientReqId: "m1", characterId: "c1", itemInstanceId: "i2", location: "bag", slot: 1 },
+    response: { bag: { rev: 4, items: [{ id: "i1", itemId: "slime-gel", count: 2, location: "bag", slot: 0, rev: 1 }, { id: "i2", itemId: "rusty-blade", count: 1, location: "bag", slot: 1, rev: 4 }] } },
+  },
 } satisfies LobbyRpcVectorFile;

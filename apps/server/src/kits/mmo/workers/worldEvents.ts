@@ -3,14 +3,15 @@
  * `KIT_WORKER_ZONES=<区> npm --workspace @game/server run worker -- mmo:worldEvents`。
  * 一轮 = 一条租约守卫事务：认领门内（checkpoint_rev ≤ 已落库分线检查点 rev）的 k_mmo_world_event 行，按 kind 落地：
  *  - grantCurrency { personaId, userId, amount }：主账 credit（opId = eventId ⇒ 重放 DUP；owner = persona 主体，§7.1「货币在框架主账」）；
- *  - lootClaimed { actorEntityId, actorCharacterId, lootId, itemTemplateId, count }（MK2-B3）：`grantItemInTx`（k_mmo_item_instance 下一空槽 + k_mmo_receipt
- *    op_id = eventId；重放只回读回执 ⇒ ⛔ 复制物品）；
+ *  - lootClaimed { actorEntityId, actorCharacterId, lootId, itemTemplateId, count }（MK2-B3 / MK3-B1）：inventory 面 `claimLoot`（并入堆叠 / 空格 / 溢出进 mail，
+ *    k_mmo_receipt op_id = eventId；重放只回读回执 ⇒ ⛔ 复制物品）；模板不在包 / 邮箱也满 ⇒ MmoInventoryError ⇒ 死信；
  *  - grantItem（MK3 接入）与未知 kind：一律死信（⛔ 放回 pending 空转）。
  * 单条载荷非法 ⇒ deadLetter，⛔ 不拖累整轮；返回 { more } 让入口同区再跑。K1：只 import kit-api 门面与本 kit 目录。
  */
 import { MMO_EVENT_LOOT_CLAIMED, lootClaimedPayloadOf } from "@game/shared/kits/mmo/api/inventory/index";
 import { CUR_GOLD, defineKitWorker } from "../../../core/infra/kitApi";
-import { grantItemInTx } from "../persistence/items";
+import { MmoInventoryError, claimLoot } from "../api/inventory/index";
+import { sqlItemStore } from "../persistence/items";
 
 export const MMO_WORLD_EVENT_TABLE = "k_mmo_world_event";
 export const MMO_EVENT_GRANT_CURRENCY = "grantCurrency";
@@ -45,7 +46,12 @@ export default defineKitWorker({
                     await tx.deadLetterWorldEvent(MMO_WORLD_EVENT_TABLE, event.eventId);
                     continue;
                 }
-                await grantItemInTx(tx, { opId: event.eventId, characterId: loot.actorCharacterId, itemId: loot.itemTemplateId, count: loot.count, kind: MMO_EVENT_LOOT_CLAIMED });
+                try {
+                    await claimLoot(sqlItemStore(tx), loot, event.eventId);
+                } catch (error) {
+                    if (!(error instanceof MmoInventoryError)) throw error;
+                    await tx.deadLetterWorldEvent(MMO_WORLD_EVENT_TABLE, event.eventId);
+                }
                 continue;
             }
             if (event.kind !== MMO_EVENT_GRANT_CURRENCY) {

@@ -5,6 +5,7 @@
  */
 import type { PluginModule } from "../../app/PluginHost";
 import { createCharacter, fetchCharacters } from "./api/characters/index";
+import { fetchBag, moveItem } from "./api/inventory/index";
 import { enterWorld } from "./api/world/index";
 import { setMmoRuntime } from "./logic/mmoRuntime";
 
@@ -18,6 +19,8 @@ export function createPluginModule(): PluginModule {
                 selfUid: () => context.ports.session.getUserId(),
                 characters: () => fetchCharacters(context.ports.lobbyRpc),
                 createCharacter: (input) => createCharacter(context.ports.lobbyRpc, input),
+                bag: (characterId) => fetchBag(context.ports.lobbyRpc, characterId),
+                moveItem: (input) => moveItem(context.ports.lobbyRpc, input),
                 enterWorld: (personaId, mapId) => enterWorld(context.ports.lobbyRpc, personaId, mapId),
                 launchWorld: (characterId, mapId, transfer) => context.ports.launch.launch({ kind: "gameplay", gameplayId: WORLD_GAMEPLAY_ID, payload: { characterId, mapId, ...(transfer ? { transfer } : {}) } }),
                 close: () => context.ports.navigation.close(ROUTE_ID),

@@ -66,7 +66,7 @@ export class MmoWorldView implements MmoWorldPresentation {
         const world = this.world;
         const hud = this.hud;
         if (!world || !hud) return;
-        const key = JSON.stringify([model.entities.map((entity) => [entity.id, Math.round(entity.x), Math.round(entity.y), entity.hp]), model.hp, model.mp, model.synced, model.dropping, model.notice]);
+        const key = JSON.stringify([model.entities.map((entity) => [entity.id, Math.round(entity.x), Math.round(entity.y), entity.hp]), model.hp, model.mp, model.synced, model.dropping, model.notice, model.bagSummary]);
         if (key === this.lastKey) return;
         this.lastKey = key;
         for (const child of [...world.children]) { child.removeFromParent(); child.destroy(); }
@@ -96,6 +96,7 @@ export class MmoWorldView implements MmoWorldPresentation {
         this.label(panel, model.dropping ? "连接中断，重连中…" : model.notice || combat, Math.round(line * 0.85), model.dropping ? WARN : DIM, 0, -line * 0.7);
         // 附近聊天最近两行（MK1-B5；完整聊天 UI 归内容插件 / FGUI HUD）
         if (model.chat.length > 0) this.label(panel, model.chat.slice(-2).map((entry) => `${entry.from}: ${entry.text}`).join("   "), Math.round(line * 0.75), DIM, 0, -line * 1.6);
+        if (model.bagSummary) this.label(panel, model.bagSummary, Math.round(line * 0.7), DIM, 0, -line * 2.4);
     }
 
     unmount(): void {

@@ -4,7 +4,7 @@
  */
 import type { IWorldEnterRes } from "../../../shared/protocol/lobbyRpc/domains/world";
 import type { IMmoWorldTransferReady } from "../../../shared/gameplays/mmoWorld/wire";
-import type { IMmoCharactersRes, IMmoCreateCharacterReq, IMmoCreateCharacterRes } from "../../../shared/protocol/lobbyRpc/domains/mmo";
+import type { IMmoBagRes, IMmoCharactersRes, IMmoCreateCharacterReq, IMmoCreateCharacterRes, IMmoMoveItemReq, IMmoMoveItemRes } from "../../../shared/protocol/lobbyRpc/domains/mmo";
 
 export interface MmoRuntime {
     /** 本人 uid。 */
@@ -13,6 +13,10 @@ export interface MmoRuntime {
     characters(): Promise<IMmoCharactersRes>;
     /** 幂等写：clientReqId 由宿主 sendIdempotent 生成（mmo.createCharacter）。 */
     createCharacter(input: Omit<IMmoCreateCharacterReq, "clientReqId">): Promise<IMmoCreateCharacterRes>;
+    /** 只读背包（mmo.bag，MK3-B1）。 */
+    bag(characterId: string): Promise<IMmoBagRes>;
+    /** 幂等写：移动 / 装备一件（mmo.moveItem，MK3-B1）。 */
+    moveItem(input: Omit<IMmoMoveItemReq, "clientReqId">): Promise<IMmoMoveItemRes>;
     /** 框架 world.enter：签发一次性凭据（凭据原文 ⛔ 落日志）。 */
     enterWorld(personaId: string, mapId: string): Promise<IWorldEnterRes>;
     /** 带参 launch：启动 mmoWorld 玩法（payload = { characterId, mapId, transfer? }，经 GameplayModule.validateLaunch；transfer = 两图交接凭据）。 */

@@ -21,6 +21,10 @@ export const MMO_WORLD_STAT_MAX = 100_000_000;
 export const MMO_SCRIPT_STATE_MAX_KEYS = 16;
 /** 私有流一次最多带的冷却条目（技能栏上限）。 */
 export const MMO_PRIVATE_MAX_COOLDOWNS = 16;
+/** 背包 wire（MK3-B1）：bag 24 格 + equip 3 格 + mail 64 格 ⇒ 一份私有流最多 91 件；count 1..9999。 */
+export const MMO_BAG_MAX_ITEMS = 91;
+export const MMO_ITEM_COUNT_MAX = 9_999;
+export const MMO_ITEM_SLOT_MAX = 255;
 /** 提示最多选项数。 */
 export const MMO_PROMPT_MAX_CHOICES = 8;
 
@@ -67,11 +71,24 @@ export interface IMmoWorldBaselineRequestReq { readonly authorityEpoch: number; 
 export interface IMmoWorldEnter { readonly seq: number; readonly tick: number; readonly entity: IMmoEntityWire }
 export interface IMmoWorldUpdate { readonly seq: number; readonly tick: number; readonly id: string; readonly x: number; readonly y: number; readonly rev: number; readonly hp: number }
 export interface IMmoWorldLeave { readonly seq: number; readonly tick: number; readonly id: string }
-/** 本人私有流（与视野流共用单 seq 流）：hp / mp；MK2-B1 加 cooldowns（spellId → 剩余 ms，只在集合变化时发）与 casting（施法中）；bag / quest / vars 随 MK3 / MK4 增列（可选键）。 */
+export type MmoItemLocation = "bag" | "equip" | "mail";
+/** 一件物品实例的公开形态（本人私有流 / mmo.bag 查询共用；rev 每次变动 +1）。 */
+export interface IMmoBagItemWire {
+    readonly id: string;
+    readonly itemId: string;
+    readonly count: number;
+    readonly location: MmoItemLocation;
+    readonly slot: number;
+    readonly rev: number;
+}
+/** 背包视图（MK3-B1）：全部位置的物品实例 + 视图 rev（= 物品 rev 最大值，变化提示；内容比对以 items 为准）。 */
+export interface IMmoBagWire { readonly rev: number; readonly items: readonly IMmoBagItemWire[] }
+/** 本人私有流（与视野流共用单 seq 流）：hp / mp；MK2-B1 加 cooldowns（spellId → 剩余 ms，只在集合变化时发）与 casting（施法中）；MK3-B1 加 bag（进图一份、变化才发）；quest / vars 随 MK4 增列（可选键）。 */
 export interface IMmoWorldPrivate {
     readonly seq: number; readonly tick: number; readonly hp: number; readonly hpMax: number; readonly mp: number; readonly mpMax: number;
     readonly cooldowns?: Readonly<Record<string, number>>;
     readonly casting?: { readonly spellId: string; readonly readyInMs: number };
+    readonly bag?: IMmoBagWire;
 }
 /** 本人移动回执（movement 面，MK1-B1）：服务端权威位置 + 它反映到的意图 seq（客户端按 seq 和解本地预测）；直发回执，⛔ 不进观察者单流。 */
 export interface IMmoWorldPos { readonly seq: number; readonly tick: number; readonly x: number; readonly y: number }
@@ -217,9 +234,44 @@ function validateLeave(input: unknown): IMmoWorldLeave {
     return { ...envelopeOf(value, "payload"), id: idOf(value.id, "payload.id") };
 }
 
+function locationOf(value: unknown, path: string): MmoItemLocation {
+    if (value !== "bag" && value !== "equip" && value !== "mail") throw new WireValidationError("MESSAGE_FIELD_RANGE", path);
+    return value;
+}
+
+function bagItemOf(input: unknown, path: string): IMmoBagItemWire {
+    const value = recordOf(input, path);
+    assertExactKeys(value, ["id", "itemId", "count", "location", "slot", "rev"], [], path);
+    return {
+        id: idOf(value.id, `${path}.id`),
+        itemId: idOf(value.itemId, `${path}.itemId`),
+        count: finiteInteger(value.count, `${path}.count`, 1, MMO_ITEM_COUNT_MAX),
+        location: locationOf(value.location, `${path}.location`),
+        slot: finiteInteger(value.slot, `${path}.slot`, 0, MMO_ITEM_SLOT_MAX),
+        rev: finiteInteger(value.rev, `${path}.rev`, 0, Number.MAX_SAFE_INTEGER),
+    };
+}
+
+/** 背包视图校验（私有流 / mmo.bag 共用）：exact keys、上限 91 件、(location, slot) 不重复、id 不重复。 */
+export function validateBagWire(input: unknown, path = "payload.bag"): IMmoBagWire {
+    const value = recordOf(input, path);
+    assertExactKeys(value, ["rev", "items"], [], path);
+    if (!Array.isArray(value.items) || value.items.length > MMO_BAG_MAX_ITEMS) throw new WireValidationError("MESSAGE_FIELD_RANGE", `${path}.items`);
+    const items = value.items.map((item, index) => bagItemOf(item, `${path}.items[${index}]`));
+    const cells = new Set<string>();
+    const ids = new Set<string>();
+    for (const item of items) {
+        const cell = `${item.location}:${item.slot}`;
+        if (cells.has(cell) || ids.has(item.id)) throw new WireValidationError("MESSAGE_FIELD_RANGE", `${path}.items`);
+        cells.add(cell);
+        ids.add(item.id);
+    }
+    return { rev: finiteInteger(value.rev, `${path}.rev`, 0, Number.MAX_SAFE_INTEGER), items };
+}
+
 function validatePrivate(input: unknown): IMmoWorldPrivate {
     const value = recordOf(input, "payload");
-    assertExactKeys(value, ["seq", "tick", "hp", "hpMax", "mp", "mpMax"], ["cooldowns", "casting"], "payload");
+    assertExactKeys(value, ["seq", "tick", "hp", "hpMax", "mp", "mpMax"], ["cooldowns", "casting", "bag"], "payload");
     const out: IMmoWorldPrivate = {
         ...envelopeOf(value, "payload"),
         hp: finiteInteger(value.hp, "payload.hp", 0, MMO_WORLD_STAT_MAX),
@@ -241,6 +293,7 @@ function validatePrivate(input: unknown): IMmoWorldPrivate {
         assertExactKeys(raw, ["spellId", "readyInMs"], [], "payload.casting");
         result = { ...result, casting: { spellId: idOf(raw.spellId, "payload.casting.spellId"), readyInMs: finiteInteger(raw.readyInMs, "payload.casting.readyInMs", 0, 60_000) } };
     }
+    if (value.bag !== undefined) result = { ...result, bag: validateBagWire(value.bag, "payload.bag") };
     return result;
 }
 

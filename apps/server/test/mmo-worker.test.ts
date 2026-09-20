@@ -1,6 +1,6 @@
 /**
  * mmo kit worldEvents worker（apps/server/src/kits/mmo/workers/worldEvents.ts）：载荷闸纯函数 + 一轮 pass 的落地规则
- * （grantCurrency ⇒ credit(opId = eventId, persona 主体)；lootClaimed ⇒ grantItemInTx（MK2-B3：物品 + 回执，op_id = eventId）；未知 kind / 非法载荷 ⇒ deadLetter；
+ * （grantCurrency ⇒ credit(opId = eventId, persona 主体)；lootClaimed ⇒ inventory 面 claimLoot（MK3-B1：物品 + 回执，op_id = eventId；模板不在包 ⇒ 死信）；未知 kind / 非法载荷 ⇒ deadLetter；
  * more = 本轮有认领）。假 KitWorkerTx 记录调用，⛔ 不连库。
  */
 import assert from "node:assert/strict";
@@ -23,7 +23,7 @@ function fakeTx(claimed: readonly KitWorldEventRow[]) {
     query: async (statement: string, params: unknown[] = []) => {
       sql.push([statement, params]);
       if (statement.startsWith("SELECT result FROM k_mmo_receipt")) return [];
-      if (statement.startsWith("SELECT COALESCE(MAX(slot)")) return [{ next_slot: 0 }];
+      if (statement.startsWith("SELECT item_id, template_id")) return [];
       return { affectedRows: 1 };
     },
   } as unknown as KitWorkerTx;
@@ -57,7 +57,14 @@ test("pass：lootClaimed ⇒ grantItemInTx（物品进 bag 下一空槽 + 回执
   assert.deepEqual(await worker.pass(tx, { kitId: "mmo", workerId: "worldEvents", sId: 1, now: 0, signal: new AbortController().signal }), { more: true });
   const inserts = sql.filter(([statement]) => statement.startsWith("INSERT"));
   assert.equal(inserts.length, 2);
-  assert.deepEqual(inserts[0]![1].slice(2), ["slime-gel", "c1", "bag", 0, 2], "物品：模板 / 角色 / bag / 槽 0 / 数量 2");
+  assert.deepEqual(inserts[0]![1].slice(2), ["slime-gel", "c1", "bag", 0, 2], "物品：模板 / 角色 / bag / 槽 0 / 数量 2（空背包 ⇒ 第一格）");
   assert.deepEqual(inserts[1]![1].slice(1, 4), ["e9", "c1", "lootClaimed"], "回执 op_id = eventId");
   assert.deepEqual(dead, ["e10"]);
+});
+
+test("pass：lootClaimed 的模板不在内容包 ⇒ MmoInventoryError ⇒ 死信（⛔ 整轮回滚）", async () => {
+  const claim = row("e11", MMO_EVENT_LOOT_CLAIMED, { actorEntityId: "char:c1", actorCharacterId: "c1", lootId: "loot:1", itemTemplateId: "not-in-pack", count: 1 });
+  const { tx, dead, sql } = fakeTx([claim]);
+  assert.deepEqual(await worker.pass(tx, { kitId: "mmo", workerId: "worldEvents", sId: 1, now: 0, signal: new AbortController().signal }), { more: true });
+  assert.deepEqual([dead, sql.filter(([statement]) => statement.startsWith("INSERT")).length], [["e11"], 0]);
 });

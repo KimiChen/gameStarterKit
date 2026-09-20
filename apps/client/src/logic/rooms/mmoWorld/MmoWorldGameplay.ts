@@ -5,6 +5,7 @@
  * 附近聊天（MK1-B5）：`say` 输入 ⇒ 框架 core 世界 token；收到的 `chat` 只把 fromEntityId 映射成视野实体名（受众由服务端按兴趣集算）。
  * 战斗（MK2-B1）：`target` 选目标、`cast` 施法（无目标时敌对技能自动选视野内最近存活怪）；冷却取 private 流集合本地倒计时；施法回执 `cast:<seq>` 进提示。
  * 掉落（MK2-B3）：视野里的 loot 实体带 count；`pickup` 输入 ⇒ 拾取半径内最近的掉落（inventory 面 nearestLoot，本人取预测位置）⇒ `room.pickup`；回执 `p<seq>` 进提示。
+ * 背包（MK3-B1）：private 流的 bag（进图一份、变化才来）进模型 `bag` + 摘要 `bagSummary`（inventory 面 describeBag）；移动 / 装备走 Lobby RPC（kit runtime bag / moveItem），⛔ 经世界房。
  * 渲染归 ../../../view/rooms/mmoWorld/MmoWorldView.ts；⛔ 不 import cc（铁律 9）。
  */
 import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
@@ -15,7 +16,7 @@ import { MovementPredictor, normalizeDir, parseCollisionGrid } from "../../../ki
 import { classOf, mapDefOf, presentationOf, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
 import { appendChatLine, nearbyChatLineOf, type INearbyChatLine } from "../../../kits/mmo/api/social/index";
 import { CooldownModel, pickHostileTarget } from "../../../kits/mmo/api/combat/index";
-import { MMO_PICKUP_RADIUS, nearestLoot } from "../../../kits/mmo/api/inventory/index";
+import { MMO_PICKUP_RADIUS, describeBag, nearestLoot, type IMmoBagWire } from "../../../kits/mmo/api/inventory/index";
 import type { IWorldChatRes } from "../../../shared/protocol/messages";
 
 export const MMO_WORLD_GAMEPLAY_ID = "mmoWorld";
@@ -115,6 +116,9 @@ export interface MmoWorldViewModel {
     readonly spells: readonly string[];
     readonly cooldowns: Readonly<Record<string, number>>;
     readonly casting: { readonly spellId: string; readonly readyInMs: number } | null;
+    /** 背包（MK3-B1）：private 流最近一份；未收到 ⇒ null */
+    readonly bag: IMmoBagWire | null;
+    readonly bagSummary: string;
 }
 
 export interface MmoWorldPresentation {
@@ -153,7 +157,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     private synced = false;
     /** 本地预测器（本人实体首次出现在视野流时按职业模板 / 地图建） */
     private predictor: MovementPredictor | null = null;
-    private privateState: MmoPrivateState = { hp: 0, hpMax: 1, mp: 0, mpMax: 0, cooldowns: {}, casting: null };
+    private privateState: MmoPrivateState = { hp: 0, hpMax: 1, mp: 0, mpMax: 0, cooldowns: {}, casting: null, bag: null };
     private readonly cooldowns = new CooldownModel();
     /** 本地时钟（tick 累加；冷却倒计时用） */
     private nowMs = 0;
@@ -336,6 +340,8 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             spells: this.spellBar(),
             cooldowns: this.cooldowns.snapshot(this.nowMs),
             casting: this.privateState.casting,
+            bag: this.privateState.bag,
+            bagSummary: describeBag(this.privateState.bag),
         };
     }
 

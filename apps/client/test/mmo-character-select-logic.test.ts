@@ -23,6 +23,8 @@ function fakeRuntime(options: { fail?: string } = {}) {
             if (options.fail === "create") throw Object.assign(new Error("dup"), { code: "MMO_NAME_TAKEN" });
             return { character: { ...fresh, characterId: "c9", personaId: "p9", slot: input.slot, name: input.name, classId: input.classId, factionId: input.factionId } };
         },
+        bag: async () => ({ bag: { rev: 0, items: [] } }),
+        moveItem: async () => ({ bag: { rev: 0, items: [] } }),
         enterWorld: async () => { throw new Error("joiner 才调"); },
         launchWorld: async (characterId, mapId) => { calls.push(["launchWorld", characterId, mapId]); if (options.fail === "launch") throw Object.assign(new Error("full"), { code: "WORLD_LINE_UNAVAILABLE" }); },
         close: () => { calls.push(["close"]); },

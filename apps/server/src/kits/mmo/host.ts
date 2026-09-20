@@ -14,7 +14,7 @@ export type MmoTxRunner = <T>(sId: number, fn: (tx: KitTx) => Promise<T>) => Pro
 export const defaultMmoTxRunner: MmoTxRunner = (sId, fn) => withKitTx(MMO_KIT_ID, sId, fn);
 
 /** 本 kit 命名空间化的 op_id（`kit:mmo:<op>`）。 */
-export function mmoOpId(uid: string, sId: number, op: "createCharacter", clientReqId: string): string {
+export function mmoOpId(uid: string, sId: number, op: "createCharacter" | "moveItem", clientReqId: string): string {
     return kitOpId(MMO_KIT_ID, uid, sId, op, clientReqId);
 }
 

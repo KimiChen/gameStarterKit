@@ -52,6 +52,9 @@ export interface MmoLootSnapshot {
     readonly x: number;
     readonly y: number;
     readonly expiresTick: number;
+    /** 归属（MK3-B1）：击杀者角色 + 独占到期 tick（落盘时的分线 tick；恢复后按 tick 差重排）；无 = 任何人可拾 */
+    readonly ownerCharacterId?: string;
+    readonly ownerUntilTick?: number;
 }
 
 /** 分线快照（tick + 怪物 + 掉落 / 脚本 vars / timers / 区域开关；脚本内容随 MK4 填充，槽位 MK1-B4 定稿）。 */

@@ -4,7 +4,8 @@
  *  ② A 点地走到掉落旁 ⇒ pickup ⇒ opResult ok + 掉落 leave；再拾同一件 ⇒ rejected（不存在）；
  *  ③ lootClaimed 事件**随周期分线检查点**（checkpointMs 300）同事务落进 k_mmo_world_event（status 0、checkpoint_rev ≤ world_instance.checkpoint_rev ⇒ 门内）；
  *  ④ 真租约 + withKitWorkerTx 跑 worker 一轮 ⇒ k_mmo_item_instance 多一行（模板 / 数量 = 掉落、bag 槽 0）+ k_mmo_receipt op_id = event_id；
- *  ⑤ 再跑一轮 ⇒ more:false、物品行数不变（至少一次 + 回执去重 ⇒ 0 重复）。
+ *  ⑤ 再跑一轮 ⇒ more:false、物品行数不变（至少一次 + 回执去重 ⇒ 0 重复）；
+ *  ⑥（MK3-B1）拾取后世界房按节拍轮询背包 ⇒ 私有流带上新 bag（含刚落库的凝胶）。
  * 前置：本地栈已启动且 db:bootstrap 到 MK1-B4。⚠ int 文件只能单文件串行跑。
  */
 import "./env-setup";
@@ -15,7 +16,8 @@ import { WebSocketTransport } from "@colyseus/ws-transport";
 import { Client as SDKClient, type Room as SDKRoom } from "@colyseus/sdk";
 import {
     C2S, GAMEPLAY_CATALOG, RoomName, S2C, WORLD_ROOM_PROTOCOL_VERSION, WorldPhase,
-    type IMmoEntityWire, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IWorldRoomJoinOptions,
+    type IMmoEntityWire, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate,
+    type IWorldRoomJoinOptions,
 } from "@game/shared";
 import { GREYBOX_MAP_ID } from "@game/shared/kits/mmo/content/greybox";
 import { MMO_EVENT_LOOT_CLAIMED } from "@game/shared/kits/mmo/api/inventory/index";
@@ -98,16 +100,18 @@ function collect(room: SDKRoom) {
     const leaves: string[] = [];
     const positions: IMmoWorldPos[] = [];
     const results: IMmoWorldOpResult[] = [];
+    const bags: IMmoWorldPrivate["bag"][] = [];
     room.onMessage(S2C.MmoWorldBaselineBegin, (payload: IMmoWorldBaselineBegin) => { begins.push(payload); });
     room.onMessage(S2C.MmoWorldBaselineChunk, (payload: IMmoWorldBaselineChunk) => { chunks.push(payload); });
     room.onMessage(S2C.MmoWorldEnter, (payload: IMmoWorldEnter) => { enters.push(payload.entity); });
     room.onMessage(S2C.MmoWorldLeave, (payload: IMmoWorldLeave) => { leaves.push(payload.id); });
     room.onMessage(S2C.MmoWorldPos, (payload: IMmoWorldPos) => { positions.push(payload); });
     room.onMessage(S2C.MmoWorldOpResult, (payload: IMmoWorldOpResult) => { results.push(payload); });
-    for (const type of [S2C.MmoWorldBaselineEnd, S2C.MmoWorldUpdate, S2C.MmoWorldPrivate, S2C.Welcome, S2C.Error]) room.onMessage(type, () => undefined);
+    room.onMessage(S2C.MmoWorldPrivate, (payload: IMmoWorldPrivate) => { if (payload.bag) bags.push(payload.bag); });
+    for (const type of [S2C.MmoWorldBaselineEnd, S2C.MmoWorldUpdate, S2C.Welcome, S2C.Error]) room.onMessage(type, () => undefined);
     const itemsOf = (begin: IMmoWorldBaselineBegin): IMmoEntityWire[] => chunks.filter((chunk) => chunk.baselineId === begin.baselineId).sort((a, b) => a.index - b.index).flatMap((chunk) => chunk.items);
     const selfOf = (characterId: string): IMmoEntityWire | null => (begins.length > 0 ? itemsOf(begins[0]!).find((item) => item.id === `char:${characterId}`) ?? null : null);
-    return { begins, enters, leaves, positions, results, itemsOf, selfOf };
+    return { begins, enters, leaves, positions, results, bags, itemsOf, selfOf };
 }
 
 interface EventRow extends RowDataPacket { event_id: string; kind: string; payload: unknown; status: number; checkpoint_rev: number | string }
@@ -187,6 +191,9 @@ test("MK2-B3：打死 slime ⇒ 掉落 enter → 走过去拾取 ⇒ ok + leave�
         // ⑤ 再跑一轮：无可认领 ⇒ more:false；物品行不变
         assert.deepEqual(await passOnce(), { more: false });
         assert.equal((await itemRows(characterId)).length, 1, "0 重复");
+        // ⑥ 世界房轮询到落库的背包 ⇒ 私有流带 bag（进图那份是空背包）
+        assert.deepEqual(inbox.bags[0]?.items, [], "进图私有流带预热的空背包");
+        await waitFor(() => inbox.bags.some((bag) => bag.items.some((item) => item.itemId === drop.templateId && item.count === drop.count)), "拾取后私有流带上落库的物品", 20_000);
     } finally {
         for (const room of rooms) {
             if (room.connection.isOpen) await Promise.race([room.leave(), sleep(2_000)]);

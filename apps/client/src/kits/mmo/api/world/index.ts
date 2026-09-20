@@ -6,13 +6,14 @@ import type { LobbyRpcPort } from "../../../../app/ports";
 import { ObserverReconciler, type ObserverReconcilerCodec } from "../../../../logic/rooms/observer/ObserverReconciler";
 import type { ObserverStreamTypes } from "../../../../net/rooms/GameRoomTransport";
 import { S2C, type IMmoEntityWire, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldPrivate, type IMmoWorldUpdate } from "../../../../shared/index";
+import type { IMmoBagWire } from "../../../../shared/gameplays/mmoWorld/wire";
 import { WorldRpc, type IWorldEnterRes } from "../../../../shared/protocol/lobbyRpc/domains/world";
 import { clampToMap, integrate, withinRadius } from "../../../../shared/kits/mmo/api/world/index";
 
 export { clampToMap, integrate, withinRadius };
-export type { IMmoEntityWire, IMmoWorldPrivate, IWorldEnterRes };
+export type { IMmoBagWire, IMmoEntityWire, IMmoWorldPrivate, IWorldEnterRes };
 
-/** 本人私有态（private 流）：hp / mp + MK2-B1 冷却集合（spellId → 收到时的剩余 ms）与施法中。 */
+/** 本人私有态（private 流）：hp / mp + MK2-B1 冷却集合（spellId → 收到时的剩余 ms）与施法中 + MK3-B1 背包（进图一份、变化才来；未带 ⇒ 沿用上次）。 */
 export interface MmoPrivateState {
     readonly hp: number;
     readonly hpMax: number;
@@ -20,6 +21,7 @@ export interface MmoPrivateState {
     readonly mpMax: number;
     readonly cooldowns: Readonly<Record<string, number>>;
     readonly casting: { readonly spellId: string; readonly readyInMs: number } | null;
+    readonly bag: IMmoBagWire | null;
 }
 
 /** mmoWorld 观察者六件 token（WorldRoomHandle.bindObserverStream 用）。 */

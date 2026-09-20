@@ -58,7 +58,7 @@ test("MmoWorldGameplay：实体表 → 模型（本人 / 视野 / hp）；输入
     await gameplay.start(context);
     assert.equal(renders[0]?.mapId, "mount");
     observer().entities(new Map([[self.id, self], ["slime-camp:0", slime("slime-camp:0", 1200)]]), true);
-    observer().privateState({ hp: 80, hpMax: 100, mp: 50, mpMax: 50, cooldowns: {}, casting: null });
+    observer().privateState({ hp: 80, hpMax: 100, mp: 50, mpMax: 50, cooldowns: {}, casting: null, bag: null });
     gameplay.tick(0.016, context);
     const model = renders.at(-1)!;
     assert.deepEqual([model.mapId, model.mapSize, model.self?.id, model.self?.isSelf, model.entities.length, model.hp, model.mp, model.synced], ["greybox", { w: 2000, h: 2000 }, "char:c1", true, 2, 80, 50, true]);
@@ -135,6 +135,7 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     const room = createMmoWorldRoom(handle);
     const snapshots: [number, boolean][] = [];
     const privates: number[] = [];
+    const bags: (number | null)[] = [];
     const resyncs: (string | null)[] = [];
     const lefts: string[] = [];
     const positions: [number, number][] = [];
@@ -142,7 +143,7 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     const chats: string[] = [];
     room.observe({
         entities: (snapshot, synced) => { snapshots.push([snapshot.size, synced]); },
-        privateState: (state) => { privates.push(state.hp); },
+        privateState: (state) => { privates.push(state.hp); bags.push(state.bag ? state.bag.items.length : null); },
         pos: (payload) => { positions.push([payload.seq, payload.x]); },
         transferReady: (payload) => { readies.push(payload.transferId); },
         chat: (payload) => { chats.push(payload.fromEntityId); },
@@ -175,15 +176,18 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.cast", { seq: 6, spellId: "guard" }], "无目标不带 targetId");
     assert.equal(room.pickup("loot:1"), "p7", "pickup 返回 clientReqId（与移动共用计数）");
     assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.pickup", { lootId: "loot:1", clientReqId: "p7" }]);
-    emit(S2C.MmoWorldPrivate, { seq: 4, tick: 12, hp: 90, hpMax: 100, mp: 40, mpMax: 50, cooldowns: { strike: 1500 }, casting: { spellId: "fireball", readyInMs: 800 } });
+    emit(S2C.MmoWorldPrivate, { seq: 4, tick: 12, hp: 90, hpMax: 100, mp: 40, mpMax: 50, cooldowns: { strike: 1500 }, casting: { spellId: "fireball", readyInMs: 800 }, bag: { rev: 1, items: [{ id: "i1", itemId: "slime-gel", count: 2, location: "bag", slot: 0, rev: 1 }] } });
     assert.deepEqual(privates.at(-1), 90);
+    assert.deepEqual(bags, [null, 1], "背包随私有流到达");
+    emit(S2C.MmoWorldPrivate, { seq: 5, tick: 12, hp: 80, hpMax: 100, mp: 40, mpMax: 50 });
+    assert.deepEqual(bags.at(-1), 1, "没带 bag 的私有流沿用上次背包");
     emit(S2C.WorldChat, { fromEntityId: "char:c1", text: "hi", at: 5 });
     assert.deepEqual(chats, ["char:c1"]);
-    emit(S2C.MmoWorldLeave, { seq: 5, tick: 12, id: "slime-camp:0" });
+    emit(S2C.MmoWorldLeave, { seq: 6, tick: 12, id: "slime-camp:0" });
     assert.deepEqual(snapshots.at(-1), [1, true]);
     emit(S2C.MmoWorldUpdate, { seq: 9, tick: 13, id: "char:c1", x: 1012, y: 1000, rev: 2, hp: 100 });
     assert.deepEqual(resyncs, ["seq-gap"], "seq 断裂 ⇒ 标记重同步");
-    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.baselineRequest", { authorityEpoch: 1, afterSeq: 5 }]);
+    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.baselineRequest", { authorityEpoch: 1, afterSeq: 6 }]);
     kick("replaced");
     assert.deepEqual(lefts, ["replaced"]);
 });
@@ -290,7 +294,7 @@ test("战斗（gameplay）：target 输入选目标；cast 无目标时自动选
     gameplay.handleInput({ type: "target", entityId: "slime-camp:0" }, context);
     gameplay.handleInput({ type: "cast", spellId: "strike" }, context);
     assert.deepEqual(calls.at(-1), ["cast", "strike", "slime-camp:0"], "已选目标优先");
-    observer().privateState({ hp: 100, hpMax: 100, mp: 50, mpMax: 50, cooldowns: { strike: 1500 }, casting: null });
+    observer().privateState({ hp: 100, hpMax: 100, mp: 50, mpMax: 50, cooldowns: { strike: 1500 }, casting: null, bag: null });
     gameplay.tick(0.5, context);
     assert.equal(renders.at(-1)!.cooldowns.strike, 1000, "本地倒计时（1500 − 500）");
     const before = calls.length;
@@ -326,5 +330,25 @@ test("掉落（gameplay，MK2-B3）：视野里的 loot 实体带 count 进模�
     gameplay.handleInput({ type: "pickup" }, context);
     gameplay.tick(0.016, context);
     assert.deepEqual([calls.length, renders.at(-1)!.notice], [before, "附近没有掉落"], "半径外不发");
+    gameplay.stop({ kind: "manual" });
+});
+
+test("背包（gameplay，MK3-B1）：private 流的 bag 进模型 + HUD 摘要（背包数 / 装备名 / 邮箱数）；未收到 ⇒ null / 空串", async () => {
+    const { room, observer } = fakeRoom();
+    const { presentation, renders } = fakePresentation();
+    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
+    const context = contextOf(room);
+    await gameplay.start(context);
+    gameplay.tick(0.016, context);
+    assert.deepEqual([renders.at(-1)!.bag, renders.at(-1)!.bagSummary], [null, ""]);
+    const bag = { rev: 3, items: [
+        { id: "i1", itemId: "slime-gel", count: 2, location: "bag" as const, slot: 0, rev: 1 },
+        { id: "i2", itemId: "rusty-blade", count: 1, location: "equip" as const, slot: 0, rev: 3 },
+        { id: "i3", itemId: "boar-hide", count: 4, location: "mail" as const, slot: 0, rev: 2 },
+    ] };
+    observer().privateState({ hp: 100, hpMax: 100, mp: 50, mpMax: 50, cooldowns: {}, casting: null, bag });
+    gameplay.tick(0.016, context);
+    assert.deepEqual([renders.at(-1)!.bag?.items.length, renders.at(-1)!.bagSummary], [3, "背包 1/24 · 装备 锈剑 · 邮箱 1"]);
     gameplay.stop({ kind: "manual" });
 });
