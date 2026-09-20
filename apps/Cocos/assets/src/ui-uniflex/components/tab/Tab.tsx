@@ -75,7 +75,8 @@ export const Tab = defineComponent<TabProps>((p) => {
         <text value={p.label} style={{ position: 'absolute', width: '100%', height: '100%',
             font: fontRef('fonts/regular', 700), fontSize: fontSize, color: '#3F3254', bold: true,
             horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-        <NotificationBadge count={badge} source={badgeSource} left={badgeLeft} top={badgeTop} />
+        <NotificationBadge mode="count" count={badge} source={badgeSource}
+            left={badgeLeft} top={badgeTop} />
     </view>
     );
 });

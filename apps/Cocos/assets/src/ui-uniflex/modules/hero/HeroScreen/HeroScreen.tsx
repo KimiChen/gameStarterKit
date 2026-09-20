@@ -1,5 +1,6 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
 import { HeroBondsPanel, type HeroBond, type HeroBondMember } from './HeroBondsPanel';
@@ -67,6 +68,7 @@ export const HeroScreen = defineView<HeroScreenParams | void>({ zIndex: 'screen'
     const members = params.bondMembers ?? defaultBondMembers;
     const [tab, setTab] = useState<HeroScreenTab>('hero');
     const [nav, setNav] = useState<MainNavSlot>(params.nav ?? 'hero');
+    const unreadDot = imageRef('ui/mail/unread-dot');
     const selectNav = (slot: MainNavSlot) => {
         setNav(slot);
         params.onNav?.(slot);
@@ -111,10 +113,10 @@ export const HeroScreen = defineView<HeroScreenParams | void>({ zIndex: 'screen'
                 <text value="羁绊" style={{ width: 227, height: 80, font: fontRef('fonts/regular', 700), fontSize: 32,
                     color: '#584871', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
-            <image visible={tab === 'hero'} source={imageRef('ui/mail/unread-dot')}
-                style={{ position: 'absolute', left: 236, top: 1124, width: 24, height: 24 }} />
-            <image visible={tab === 'bonds'} source={imageRef('ui/mail/unread-dot')}
-                style={{ position: 'absolute', left: 690, top: 1124, width: 24, height: 24 }} />
+            <NotificationBadge mode="dot" visible={tab === 'hero'} source={unreadDot}
+                left={236} top={1124} />
+            <NotificationBadge mode="dot" visible={tab === 'bonds'} source={unreadDot}
+                left={690} top={1124} />
 
             <MainNav selected={nav} noticeExplore onSelect={selectNav} />
         </view>

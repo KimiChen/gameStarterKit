@@ -1,5 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { imageRef } from '../../../kits/uniflex/api/core/index';
+import { NotificationBadge } from '../../components/badge/NotificationBadge';
 
 export const MAIN_NAV_SLOTS = ['wheel', 'island', 'hero', 'explore', 'ship'] as const;
 export type MainNavSlot = (typeof MAIN_NAV_SLOTS)[number];
@@ -14,6 +15,7 @@ export interface MainNavProps {
 /** Bottom main nav shared by future screens; this screen currently sits on `hero`. */
 export const MainNav = defineComponent<MainNavProps>((p) => {
     const selected = p.selected ?? 'hero';
+    const unreadDot = imageRef('ui/mail/unread-dot');
     return (
         <view name="MainNav" style={{ position: 'absolute', left: 0, bottom: 0, width: 750, height: 125 }}>
             <image source={imageRef('ui/hero/nav-base')}
@@ -53,10 +55,10 @@ export const MainNav = defineComponent<MainNavProps>((p) => {
                 <image source={imageRef('ui/hero/nav-ship')}
                     style={{ position: 'absolute', left: 29, top: 22, width: 89, height: 95 }} />
             </view>
-            <image visible={p.noticeExplore === true} source={imageRef('ui/mail/unread-dot')}
-                style={{ position: 'absolute', left: 560, top: 16, width: 24, height: 24 }} />
-            <image visible={p.noticeShip === true} source={imageRef('ui/mail/unread-dot')}
-                style={{ position: 'absolute', left: 710, top: 16, width: 24, height: 24 }} />
+            <NotificationBadge mode="dot" visible={p.noticeExplore === true} source={unreadDot}
+                left={560} top={16} />
+            <NotificationBadge mode="dot" visible={p.noticeShip === true} source={unreadDot}
+                left={710} top={16} />
         </view>
     );
 });
