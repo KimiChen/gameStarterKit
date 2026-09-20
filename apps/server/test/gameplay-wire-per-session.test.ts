@@ -56,12 +56,13 @@ test("真仓：GAME_WIRE_PER_SESSION 与运行时 token 逐条一致；既有全
   }
   assert.deepEqual({ ...GAME_WIRE_PER_SESSION }, expected);
   // worldFixture 的 pos 是 MF4 的直发回执（刻意非 perSession），其余七个观察者 token + MF8 transfer perSession
-  assert.equal(GAME_WIRE_PER_SESSION["s2c.worldFixture.pos"], undefined, "直发回执不进 perSession 表");
+  const table: Readonly<Record<string, string | null>> = GAME_WIRE_PER_SESSION;
+  assert.equal(table["s2c.worldFixture.pos"], undefined, "直发回执不进 perSession 表");
   assert.equal(GAME_WIRE_PER_SESSION["s2c.viewFixture.update"], "id", "位置类按 id 合并");
   assert.equal(GAME_WIRE_PER_SESSION["s2c.worldFixture.update"], "id", "世界夹具位置类同样按 id 合并");
   assert.equal(Object.keys(GAME_WIRE_PER_SESSION).filter((type) => type.startsWith("s2c.worldFixture.")).length, 8, "worldFixture 七个观察者 token + MF8 transfer");
   // mmo kit（MK0）：观察者六件 + private / opResult / transferReady / prompt 十个 perSession，update 按 id 合并；scriptState / notice 是分线广播
   assert.equal(GAME_WIRE_PER_SESSION["s2c.mmoWorld.update"], "id");
   assert.equal(Object.keys(GAME_WIRE_PER_SESSION).filter((type) => type.startsWith("s2c.mmoWorld.")).length, 10, "mmoWorld 十个 perSession token");
-  assert.equal(GAME_WIRE_PER_SESSION["s2c.mmoWorld.notice"], undefined, "分线广播不进 perSession 表");
+  assert.equal(table["s2c.mmoWorld.notice"], undefined, "分线广播不进 perSession 表");
 });
