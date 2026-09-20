@@ -1128,7 +1128,7 @@ function parentTextStyle(node, ctx) {
     if (node.kind !== "text") return null;
     const parent = ctx.byId?.get(node.parent);
     const name = parent?.name;
-    if (name === "PanelTab") {
+    if (name === "Tab" || name === "PanelTab") {
         const active = (parent.rect?.height ?? 0) >= 60;
         return {
             fontSize: active ? 32 : 28,

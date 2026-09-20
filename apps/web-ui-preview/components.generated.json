@@ -303,11 +303,6 @@
       "source": "apps/client/src/ui-uniflex/components/badge/NotificationBadge.tsx"
     },
     {
-      "key": "PanelTab",
-      "rootName": "PanelTab",
-      "source": "apps/client/src/ui-uniflex/components/tab/PanelTab.tsx"
-    },
-    {
       "key": "PopupFrame",
       "rootName": "PopupFrame",
       "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"
@@ -356,6 +351,11 @@
       "key": "StarRow",
       "rootName": "StarRow",
       "source": "apps/client/src/ui-uniflex/gamecomponents/star/StarRow.tsx"
+    },
+    {
+      "key": "Tab",
+      "rootName": "Tab",
+      "source": "apps/client/src/ui-uniflex/components/tab/Tab.tsx"
     },
     {
       "key": "TabBar",

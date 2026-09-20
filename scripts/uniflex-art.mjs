@@ -74,11 +74,12 @@ async function writeComponentArtJson(rootDir, item, patch) {
 }
 
 async function linkedManifestForPage(rootDir, page, cache) {
-    const nextToPage = join(artPageDir(rootDir, page), "linked-components.json");
-    const fromCache = cache ? join(cache, "linked-components.json") : null;
-    for (const file of [fromCache, nextToPage].filter(Boolean)) {
-        if (await pathExists(file)) return JSON.parse(await readFile(file, "utf8"));
-    }
+    // The manifest is an export-time plan consumed from the cache only. The
+    // committed copy next to the page PSD was dropped: import/check read the
+    // key list from the page art.json `linkedComponents` instead.
+    if (!cache) return null;
+    const fromCache = join(cache, "linked-components.json");
+    if (await pathExists(fromCache)) return JSON.parse(await readFile(fromCache, "utf8"));
     return null;
 }
 
@@ -93,9 +94,6 @@ async function linkedKeysForPage(rootDir, page, cache) {
 async function publishLinkedComponents(cache, page, { force = false } = {}) {
     const manifest = await linkedManifestForPage(root, page, cache);
     if (!manifest?.components?.length) return [];
-    await mkdir(artPageDir(root, page), { recursive: true });
-    await cp(join(cache, "linked-components.json"),
-        join(artPageDir(root, page), "linked-components.json"));
     const keys = [];
     for (const item of manifest.components) {
         const src = join(cache, item.psd);

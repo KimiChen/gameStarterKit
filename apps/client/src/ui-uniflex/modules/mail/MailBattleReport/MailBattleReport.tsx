@@ -3,7 +3,7 @@ import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionCo
 import { ActionButton } from '../../../components/button/ActionButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { TabBar } from '../../../components/tab/TabBar';
+import { mailTab, TabBar } from '../../../components/tab/TabBar';
 import { MailBattleRow, type MailBattleRowProps } from './MailBattleRow';
 
 export type MailBattleItem = Omit<MailBattleRowProps, 'onClick' | 'read'> & {
@@ -78,7 +78,6 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
     useEffect(() => listController.current?.scrollToIndex(0, 'start', 0), [activeTab, source]);
     const redButton = imageRef('ui/button/red');
     const yellowButton = imageRef('ui/button/yellow');
-    const badgeSource = imageRef('ui/mail/number-badge');
     const unreadCounts = tabGroups.map((tab) => tab.items.reduce(
         (count, item) => count + (!deletedById[item.id] && !item.read && !openedById[item.id] ? 1 : 0),
         0,
@@ -104,8 +103,8 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
         <view name="MailBattleReport" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
             <ScreenHeader title={params.title ?? '邮件'} titleWidth={300} titleHeight={60} />
-            <TabBar left={14} top={118} itemWidth={170} selected={tabGroups[activeTab].id}
-                items={tabItems} badgeSource={badgeSource} badgeTop={99}
+            <TabBar skin={mailTab} left={14} top={118} itemWidth={170} selected={tabGroups[activeTab].id}
+                items={tabItems} badgeTop={-19}
                 onSelect={(_id, index) => setActiveTab(index)} />
             <VirtualList source={source} key="id" direction="vertical" itemSize={163} gap={25} overscan={2}
                 controller={listController} inertia elastic style={{ position: 'absolute', left: 10, top: 236, width: 730, height: 905 }}>
