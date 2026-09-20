@@ -8,6 +8,7 @@ export interface PanelTabProps {
     readonly top: number;
     readonly width: number;
     readonly kind?: 'mail' | 'flag' | 'alliance';
+    readonly visible?: boolean;
     readonly onClick?: () => void;
 }
 
@@ -15,6 +16,7 @@ export interface PanelTabProps {
 export const PanelTab = defineComponent<PanelTabProps>((p) => {
     const flag = p.kind === 'flag';
     const alliance = p.kind === 'alliance';
+    const visible = p.visible !== false;
     const active = p.active;
     const left = active ? (flag ? p.left - 2 : p.left - 3) : p.left;
     const top = active ? (flag ? p.top - 14 : p.top - 15) : p.top;
@@ -31,7 +33,7 @@ export const PanelTab = defineComponent<PanelTabProps>((p) => {
         : alliance ? (active ? allianceOn : allianceOff)
         : (active ? mailOn : mailOff);
     return (
-    <view name="PanelTab" interaction="press" onClick={() => p.onClick?.()}
+    <view name="PanelTab" visible={visible} interaction="press" onClick={() => p.onClick?.()}
         style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
         <image source={source}
             style={{ position: 'absolute', width: '100%', height: '100%', sizeMode: 'sliced' }} />

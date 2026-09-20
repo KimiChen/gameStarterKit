@@ -1,10 +1,9 @@
 import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
-import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { ActionButton } from '../../../components/button/ActionButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { TabBar } from '../../../components/tab/TabBar';
 import { MailBattleRow, type MailBattleRowProps } from './MailBattleRow';
 
 export type MailBattleItem = Omit<MailBattleRowProps, 'onClick' | 'read'> & {
@@ -77,20 +76,19 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
     const listController = useRef<VirtualCollectionController | null>(null);
     useEffect(() => () => source.dispose(), [source]);
     useEffect(() => listController.current?.scrollToIndex(0, 'start', 0), [activeTab, source]);
-    const tabs = [14, 195, 382, 566];
     const redButton = imageRef('ui/button/red');
     const yellowButton = imageRef('ui/button/yellow');
     const badgeSource = imageRef('ui/mail/number-badge');
-    const tabWidth = (index: number) => activeTab === index ? 176 : 170;
     const unreadCounts = tabGroups.map((tab) => tab.items.reduce(
         (count, item) => count + (!deletedById[item.id] && !item.read && !openedById[item.id] ? 1 : 0),
         0,
     ));
-    const badgeLeft = (index: number) => Math.min(tabs[index] + tabWidth(index) - 25, 750 - 34);
-    const badgeLeft0 = badgeLeft(0);
-    const badgeLeft1 = badgeLeft(1);
-    const badgeLeft2 = badgeLeft(2);
-    const badgeLeft3 = badgeLeft(3);
+    const tabItems = [
+        { id: tabGroups[0].id, label: tabGroups[0].label, badge: unreadCounts[0] },
+        { id: tabGroups[1].id, label: tabGroups[1].label, badge: unreadCounts[1] },
+        { id: tabGroups[2].id, label: tabGroups[2].label, badge: unreadCounts[2] },
+        { id: tabGroups[3].id, label: tabGroups[3].label, badge: unreadCounts[3] },
+    ];
     const deleteRead = () => {
         const readItems = items.filter((item) => item.read || openedById[item.id]);
         if (readItems.length > 0) {
@@ -106,18 +104,9 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
         <view name="MailBattleReport" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
             <ScreenHeader title={params.title ?? '邮件'} titleWidth={300} titleHeight={60} />
-            <PanelTab label={tabGroups[0].label} active={activeTab === 0} left={tabs[0]} top={118} width={170}
-                onClick={() => setActiveTab(0)} />
-            <PanelTab label={tabGroups[1].label} active={activeTab === 1} left={tabs[1]} top={118} width={170}
-                onClick={() => setActiveTab(1)} />
-            <PanelTab label={tabGroups[2].label} active={activeTab === 2} left={tabs[2]} top={118} width={170}
-                onClick={() => setActiveTab(2)} />
-            <PanelTab label={tabGroups[3].label} active={activeTab === 3} left={tabs[3]} top={118} width={170}
-                onClick={() => setActiveTab(3)} />
-            <NotificationBadge count={unreadCounts[0]} source={badgeSource} left={badgeLeft0} top={99} />
-            <NotificationBadge count={unreadCounts[1]} source={badgeSource} left={badgeLeft1} top={99} />
-            <NotificationBadge count={unreadCounts[2]} source={badgeSource} left={badgeLeft2} top={99} />
-            <NotificationBadge count={unreadCounts[3]} source={badgeSource} left={badgeLeft3} top={99} />
+            <TabBar left={14} top={118} itemWidth={170} selected={tabGroups[activeTab].id}
+                items={tabItems} badgeSource={badgeSource} badgeTop={99}
+                onSelect={(_id, index) => setActiveTab(index)} />
             <VirtualList source={source} key="id" direction="vertical" itemSize={163} gap={25} overscan={2}
                 controller={listController} inertia elastic style={{ position: 'absolute', left: 10, top: 236, width: 730, height: 905 }}>
                 {(item) => <MailBattleRow title={item.title} subtitle={item.subtitle} sentAt={item.sentAt} expiresAt={item.expiresAt}

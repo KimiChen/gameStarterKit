@@ -4,7 +4,7 @@ import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { TabBar } from '../../../components/tab/TabBar';
 
 export type AllianceGiftTab = 'normal' | 'rare';
 
@@ -67,10 +67,9 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
 
             <ScreenHeader title={p.title ?? '联盟礼物'} top={144} titleWidth={280} />
 
-            <PanelTab label="普通礼物" active={tab === 'normal'} left={13} top={492} width={200}
-                onClick={() => selectTab('normal')} />
-            <PanelTab label="稀有礼物" active={tab === 'rare'} left={227} top={492} width={200}
-                onClick={() => selectTab('rare')} />
+            <TabBar left={13} top={492} itemWidth={200} selected={tab}
+                items={[{ id: 'normal', label: '普通礼物' }, { id: 'rare', label: '稀有礼物' }]}
+                onSelect={(id) => { if (id === 'normal' || id === 'rare') selectTab(id); }} />
 
             <ScreenFooter onBack={back} />
             <view style={{ position: 'absolute', left: 280, bottom: 16, width: claimWidth, height: claimHeight }}>
