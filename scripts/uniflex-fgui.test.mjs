@@ -440,10 +440,10 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
             nodes: [
                 node(1, null, "MailBattleReport", "view", rect(0, 0, 750, 1334), { planId: 1 }),
                 node(2, 1, "", "view", rect(0, 0, 750, 170), { planId: 2 }),
-                node(3, 1, "PanelTab", "view", rect(14, 118, 170, 52), { planId: 5 }),
+                node(3, 1, "Tab", "view", rect(14, 118, 170, 52), { planId: 5 }),
                 node(4, 3, "", "image", rect(14, 118, 170, 52), { resourceId: "ui/mail/tab-inactive" }),
                 node(5, 3, "", "text", rect(14, 118, 170, 52), { value: "系统", planId: 10 }),
-                node(6, 1, "PanelTab", "view", rect(192, 118, 170, 52)),
+                node(6, 1, "Tab", "view", rect(192, 118, 170, 52)),
                 node(7, 6, "", "image", rect(192, 118, 170, 52), { resourceId: "ui/mail/tab-inactive" }),
                 node(8, 6, "", "text", rect(192, 118, 170, 52), { value: "战报" }),
                 node(9, 1, "", "virtual-list", rect(10, 236, 730, 905)),
@@ -475,7 +475,7 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
                 children: [
                     { planId: 2, kind: "view", props: { backgroundColor: "#553E78" } },
                     {
-                        planId: 5, kind: "view", props: { name: "PanelTab" },
+                        planId: 5, kind: "view", props: { name: "Tab" },
                         children: [{
                             planId: 10, kind: "text",
                             props: { bold: true, color: "#3F3254", fontSize: 28, horizontalAlign: "center" },
@@ -509,7 +509,7 @@ test("panel pages emit fills, virtual-list rows, and shared text overrides", asy
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_MailBattleReport/MailBattleReport.xml"), "utf8");
         const listXml = readFileSync(join(out, "assets/UniFlex_MailBattleReport/UniFlex_MailBattleReport_List_1.xml"), "utf8");
-        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
+        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/Tab.xml"), "utf8");
         const rowXml = readFileSync(join(out, "assets/UniFlex_Common/MailBattleRow.xml"), "utf8");
         const badgeXml = readFileSync(join(out, "assets/UniFlex_Common/NotificationBadge.xml"), "utf8");
         assert.doesNotMatch(pageXml, /<graph/);
@@ -1066,7 +1066,7 @@ test("UniFlex components export as FairyGUI components; fills are images not gra
                 node(8, 5, "QuantityControl/Increase", "view", rect(511, 1118, 76, 85), { interaction: "press" }),
                 node(9, 8, "", "image", rect(511, 1118, 76, 85), { resourceId: "ui/backpack/button-plus" }),
                 node(10, 5, "", "text", rect(604, 1132, 121, 54), { value: "0" }),
-                node(11, 1, "PanelTab", "view", rect(14, 118, 134, 52), { interaction: "press" }),
+                node(11, 1, "Tab", "view", rect(14, 118, 134, 52), { interaction: "press" }),
                 node(12, 11, "", "image", rect(14, 118, 134, 52), { resourceId: "ui/mail/tab-inactive" }),
                 node(13, 11, "", "text", rect(14, 118, 134, 52), { value: "装备" }),
             ],
@@ -1077,11 +1077,11 @@ test("UniFlex components export as FairyGUI components; fills are images not gra
             catalog, images,
         });
         const pageXml = readFileSync(join(out, "assets/UniFlex_Backpack/Backpack.xml"), "utf8");
-        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/PanelTab.xml"), "utf8");
+        const tabXml = readFileSync(join(out, "assets/UniFlex_Common/Tab.xml"), "utf8");
         const qtyXml = readFileSync(join(out, "assets/UniFlex_Common/QuantityControl.xml"), "utf8");
         assert.match(tabXml, /extention="Button"/);
         assert.match(pageXml, /fileName="QuantityControl.xml"/);
-        assert.match(pageXml, /fileName="PanelTab.xml"/);
+        assert.match(pageXml, /fileName="Tab.xml"/);
         assert.match(pageXml, /name="Backpack\/Back"/);
         assert.doesNotMatch(pageXml, /fileName="Backpack_Back.xml"/);
         assert.doesNotMatch(pageXml, /fileName="QuantityControl_Decrease.xml"/);

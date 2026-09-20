@@ -2,7 +2,7 @@ import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { Tab } from '../../../components/tab/Tab';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
 import { AllianceBoardPanel } from '../AllianceBoard/AllianceBoardPanel';
 import { AllianceGiftPanel } from '../AllianceGift/AllianceGiftPanel';
@@ -91,11 +91,11 @@ export const AllianceRestored = defineView<AllianceRestoredParams | void>({ zInd
                     font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
                     outlineColor: '#593d84', outlineWidth: 2, verticalAlign: 'center' }} />
 
-            <PanelTab label="联盟" active={tab === 'home'} left={13} top={262} width={200}
+            <Tab label="联盟" active={tab === 'home'} left={13} top={262} width={200}
                 onClick={() => selectTab('home')} />
-            <PanelTab label="成员" active={tab === 'members'} left={227} top={262} width={200}
+            <Tab label="成员" active={tab === 'members'} left={227} top={262} width={200}
                 onClick={() => selectTab('members')} />
-            <PanelTab label="设置" active={tab === 'settings'} left={440} top={262} width={200}
+            <Tab label="设置" active={tab === 'settings'} left={440} top={262} width={200}
                 onClick={() => selectTab('settings')} />
             <NotificationBadge count={tab === 'members' ? 0 : badgeCount}
                 source={badge} left={401} top={248} />

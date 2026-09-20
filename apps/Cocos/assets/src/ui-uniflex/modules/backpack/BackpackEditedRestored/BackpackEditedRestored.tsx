@@ -3,7 +3,7 @@ import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { BackpackItemCard, type BackpackItem, type BackpackQuality } from '../Backpack/components/BackpackItemCard';
 import { BackpackQuantityControl } from '../Backpack/components/BackpackQuantityControl';
 import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { Tab } from '../../../components/tab/Tab';
 
 export type BackpackEditedRestoredAction = {
     readonly id: string;
@@ -111,15 +111,15 @@ export const BackpackEditedRestored = defineView<BackpackEditedRestoredParams | 
             <ResourceCounter icon={resourceIcon} left={591} top={22} value={resources[3]}
                 id="resource-4" onClick={() => emit('resource-4', 'primary')} />
 
-            <PanelTab label={tabs[0].label} active={activeTab === 0} left={14} top={118} width={134}
+            <Tab label={tabs[0].label} active={activeTab === 0} left={14} top={118} width={134}
                 onClick={() => selectTab(0)} />
-            <PanelTab label={tabs[1].label} active={activeTab === 1} left={161} top={118} width={134}
+            <Tab label={tabs[1].label} active={activeTab === 1} left={161} top={118} width={134}
                 onClick={() => selectTab(1)} />
-            <PanelTab label={tabs[2].label} active={activeTab === 2} left={308} top={118} width={134}
+            <Tab label={tabs[2].label} active={activeTab === 2} left={308} top={118} width={134}
                 onClick={() => selectTab(2)} />
-            <PanelTab label={tabs[3].label} active={activeTab === 3} left={455} top={118} width={134}
+            <Tab label={tabs[3].label} active={activeTab === 3} left={455} top={118} width={134}
                 onClick={() => selectTab(3)} />
-            <PanelTab label={tabs[4].label} active={activeTab === 4} left={602} top={118} width={134}
+            <Tab label={tabs[4].label} active={activeTab === 4} left={602} top={118} width={134}
                 onClick={() => selectTab(4)} />
 
             <view visible={hasItems} name="BackpackEditedRestored/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>

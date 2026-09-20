@@ -1,8 +1,8 @@
 {
   "key": "PanelTab",
-  "source": "apps/client/src/ui-uniflex/components/tab/PanelTab.tsx",
+  "source": "apps/client/src/ui-uniflex/components/tab/Tab.tsx",
   "export": {
-    "uniflexSha256": "c215beb7e8691e5724fa464f439fe9214568727480eef4055b932479b002c306",
+    "uniflexSha256": "d3917b91e7db690458b507eae8dd76a5af5933a1d05bfe52b274348395f72b60",
     "psdSha256": "7dc2da925a146b9f1a3113bef026f762f76a1c83e85d288ebe85a1a2ed19f45b",
     "at": "2026-09-17T17:33:35.173Z"
   },

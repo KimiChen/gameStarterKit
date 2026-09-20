@@ -2,7 +2,7 @@ import { defineView, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
-import { TabBar } from '../../../components/tab/TabBar';
+import { mailTab, TabBar } from '../../../components/tab/TabBar';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
 import { AllianceBoardPanel } from '../AllianceBoard/AllianceBoardPanel';
 import { AllianceGiftPanel } from '../AllianceGift/AllianceGiftPanel';
@@ -66,7 +66,6 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
         if (id === 'open_tech') setTechOpen(true);
         params.onAction?.(id);
     };
-    const badge = imageRef('ui/mail/number-badge');
     const badgeCount = params.badgeCount ?? 3;
     const tabItems = [
         { id: 'home', label: '联盟' },
@@ -94,8 +93,8 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
 
             <ScreenHeader title={params.title ?? '联盟'} top={144} titleLeft={20} />
 
-            <TabBar left={13} top={262} itemWidth={200} selected={tab} items={tabItems}
-                badgeSource={badge} onSelect={selectBarTab} />
+            <TabBar skin={mailTab} left={13} top={262} itemWidth={200} selected={tab} items={tabItems}
+                onSelect={selectBarTab} />
 
             <MainNav selected={nav} noticeExplore onSelect={selectNav} />
             <AllianceAnnouncePanel visible={announceOpen} onClose={() => setAnnounceOpen(false)} />

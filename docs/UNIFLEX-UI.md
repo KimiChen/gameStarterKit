@@ -55,7 +55,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 | 用途 | 组件 |
 |---|---|
 | 黄确定 / 绿取消 / 青前往 / 关闭 / 返回 | `ConfirmButton` / `CancelButton` / `CyanButton` / `CloseButton` / `BackButton` |
-| 页签 | `TabBar` / `PanelTab` |
+| 页签 | `TabBar` / `Tab` |
 | 弹窗 | `PopupFrame` |
 | 勾选 | `CheckBox` |
 | 数量加减 / 滑条 | `QuantityControl` |

@@ -1,7 +1,7 @@
 import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
-import { CharacterManageTab } from './CharacterManageTab';
+import { characterTab, TabBar } from '../../../components/tab/TabBar';
 import { CharacterPlayerRow } from './CharacterPlayerRow';
 import { CharacterServerItem, type CharacterServerStatus } from './CharacterServerItem';
 
@@ -31,10 +31,10 @@ export interface CharacterManageParams {
     readonly onClose?: () => void;
 }
 
-const tabs: readonly { readonly id: CharacterManageTabId; readonly label: string; readonly left: number }[] = [
-    { id: 'mine', label: '我的服务器', left: 37 },
-    { id: 'recommend', label: '推荐服务器', left: 257 },
-    { id: 'all', label: '所有服务器', left: 477 },
+const tabs: readonly { readonly id: CharacterManageTabId; readonly label: string }[] = [
+    { id: 'mine', label: '我的服务器' },
+    { id: 'recommend', label: '推荐服务器' },
+    { id: 'all', label: '所有服务器' },
 ];
 
 /** Popup-relative layout from 切图参数.json (content clip_rect / server_list / create_hint). */
@@ -120,9 +120,9 @@ export const CharacterManage = defineView<CharacterManageParams | void>({ zIndex
                 width={708} height={992} onClose={params.onClose} />
             <view name="CharacterManage/Content"
                 style={{ position: 'absolute', left: panelLeft, top: panelTop, width: 708, height: 992 }}>
-                <CharacterManageTab label={tabs[0].label} active={tab === 'mine'} left={tabs[0].left} onClick={() => setTab('mine')} />
-                <CharacterManageTab label={tabs[1].label} active={tab === 'recommend'} left={tabs[1].left} onClick={() => setTab('recommend')} />
-                <CharacterManageTab label={tabs[2].label} active={tab === 'all'} left={tabs[2].left} onClick={() => setTab('all')} />
+                <TabBar skin={characterTab} left={37} top={102} itemWidth={195} gap={25} width={671}
+                    selected={tab} items={tabs}
+                    onSelect={(id) => { if (id === 'mine' || id === 'recommend' || id === 'all') setTab(id); }} />
                 <image source={imageRef('ui/character/content')}
                     style={{ position: 'absolute', left: CONTENT.left, top: CONTENT.top,
                         width: CONTENT.width, height: CONTENT.height, sizeMode: 'sliced' }} />

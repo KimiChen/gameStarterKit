@@ -2,7 +2,7 @@ import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { ActionButton } from '../../../components/button/ActionButton';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { Tab } from '../../../components/tab/Tab';
 import { MailBattleRow, type MailBattleRowProps } from '../MailBattleReport/MailBattleRow';
 
 export type MailBattleItem = Omit<MailBattleRowProps, 'onClick' | 'read'> & {
@@ -105,13 +105,13 @@ export const MailBattleReportRestored = defineView<MailBattleReportRestoredParam
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
             <image source={imageRef('ui/mail/header')} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 90, sizeMode: 'sliced' }} />
             <text value={params.title ?? '邮件'} style={{ position: 'absolute', left: 38, top: 16, width: 300, height: 60, font: fontRef('fonts/regular', 700), fontSize: 40, color: '#FFFFFF', bold: true, outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
-            <PanelTab label={tabGroups[0].label} active={activeTab === 0} left={tabs[0]} top={118} width={170}
+            <Tab label={tabGroups[0].label} active={activeTab === 0} left={tabs[0]} top={118} width={170}
                 onClick={() => setActiveTab(0)} />
-            <PanelTab label={tabGroups[1].label} active={activeTab === 1} left={tabs[1]} top={118} width={170}
+            <Tab label={tabGroups[1].label} active={activeTab === 1} left={tabs[1]} top={118} width={170}
                 onClick={() => setActiveTab(1)} />
-            <PanelTab label={tabGroups[2].label} active={activeTab === 2} left={tabs[2]} top={118} width={170}
+            <Tab label={tabGroups[2].label} active={activeTab === 2} left={tabs[2]} top={118} width={170}
                 onClick={() => setActiveTab(2)} />
-            <PanelTab label={tabGroups[3].label} active={activeTab === 3} left={tabs[3]} top={118} width={170}
+            <Tab label={tabGroups[3].label} active={activeTab === 3} left={tabs[3]} top={118} width={170}
                 onClick={() => setActiveTab(3)} />
             <NotificationBadge count={unreadCounts[0]} source={badgeSource} left={badgeLeft0} top={99} />
             <NotificationBadge count={unreadCounts[1]} source={badgeSource} left={badgeLeft1} top={99} />
