@@ -20,6 +20,11 @@ import {
     sgzzMarchDurationMs, sgzzMarchOrigin, sgzzMarchTarget, type ISgzzMarch,
 } from "@game/shared/kits/sgzzmap/api/march/index";
 import {
+    SGZZ_MAX_ZOOM_LEVEL, sgzzZoomChunkCols, sgzzZoomChunkKey,
+    type ISgzzChunkSummary,
+} from "@game/shared/kits/sgzzmap/api/chunk/index";
+import {
+    validateSgzzZoomRes, type ISgzzZoomRes,
     validateSgzzMarchDispatchRes, validateSgzzMarchRecallRes,
     type ISgzzMarchDispatchRes, type ISgzzMarchRecallRes,
 } from "@game/shared/protocol/lobbyRpc/domains/sgzzmap";
@@ -162,6 +167,26 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
     }
 
     /**
+     * 把一次地块归属变化摊进三档鸟瞰聚合。
+     * ⚠ 与地块写在**同一事务**，⛔ 不做定时重算、⛔ 不实时 COUNT 扫地块表。
+     * before/after 是「这一格归属的同盟」（"" = 有主无盟，null = 无主）。
+     */
+    async function reindexChunks(ctx: WorldTx, cell: number,
+                                 before: string | null, after: string | null): Promise<void> {
+        if (before === after) return;
+        const { row, col } = sgzzDecodeCell(cell);
+        for (let level = 0; level <= SGZZ_MAX_ZOOM_LEVEL; level += 1) {
+            const key = sgzzZoomChunkKey(level, row, col);
+            if (before !== null) await ctx.repo.bumpChunk(level, key, before, -1);
+            if (after !== null) await ctx.repo.bumpChunk(level, key, after, 1);
+        }
+    }
+    /** 一格当前归属哪个同盟（无主 = null）。 */
+    function ownerAidOf(tile: ISgzzTile): string | null {
+        return tile.ownerUid === "" ? null : tile.ownerAid;
+    }
+
+    /**
      * 到期行军结算：按全区总序 (arrive_at, march_id) 一次最多 SGZZ_SETTLEMENT_BATCH_SIZE 条。
      * 到达即在终点格执行一次占领动作（与手动占领同一套纯函数结算）。
      * 返回 `more`：本批打满就说明还有积压，调用方（worker / 懒结算）据此决定继续还是让位。
@@ -187,6 +212,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             if (result.outcome === "captured") {
                 await ctx.repo.upsertHolding({ ...holding, tiles: holding.tiles + 1 });
             }
+            await reindexChunks(ctx, target, ownerAidOf(before), ownerAidOf(result.tile));
             await ctx.repo.updateMarchStatus(m.marchId, SgzzMarchStatus.ARRIVED);
             await ctx.repo.appendLog("march", "arrive", { marchId: m.marchId, cell: target }, false);
             await ctx.repo.appendLog("tile", result.outcome, result.tile, false);
@@ -304,6 +330,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             }
             const held = result.outcome === "captured" ? holding.tiles + 1 : holding.tiles;
             if (held !== holding.tiles) await ctx.repo.upsertHolding({ ...holding, tiles: held });
+            await reindexChunks(ctx, cell, ownerAidOf(target), ownerAidOf(result.tile));
             await ctx.repo.appendLog("tile", result.outcome, result.tile, false);
             return validateSgzzOccupyRes({ tile: result.tile, outcome: result.outcome, heldTiles: held });
         });
@@ -319,9 +346,18 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             await ctx.repo.deleteTile(cell);
             const held = Math.max(0, holding.tiles - 1);
             await ctx.repo.upsertHolding({ ...holding, tiles: held });
+            await reindexChunks(ctx, cell, ownerAidOf(target), null);
             await ctx.repo.appendLog("tile", "abandon", { cell }, true);
             return validateSgzzAbandonRes({ cell, heldTiles: held });
         });
+    }
+
+    /** 同盟变更时把该玩家名下地块的聚合从旧盟搬到新盟。⚠ 受 SGZZ_MAX_TILES_PER_PLAYER 封顶。 */
+    async function retagChunks(ctx: WorldTx, uid: string, from: string, to: string): Promise<void> {
+        if (from === to) return;
+        for (const cell of await ctx.repo.readTileCellsOf(uid)) {
+            await reindexChunks(ctx, cell, from, to);
+        }
     }
 
     /**
@@ -364,6 +400,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
                 }
                 const m: ISgzzMembership = { uid, allianceId: created.allianceId, role: SgzzAllianceRole.LEADER };
                 await ctx.repo.insertMembership(m);
+                await retagChunks(ctx, uid, "", created.allianceId);
                 await ctx.repo.retagTiles(uid, created.allianceId);
                 await ctx.repo.upsertHolding({ ...holding, allianceId: created.allianceId });
                 return validateSgzzAllianceRes({ membership: m, alliance: created });
@@ -375,6 +412,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
                 const m: ISgzzMembership = { uid, allianceId: target.allianceId, role: SgzzAllianceRole.MEMBER };
                 await ctx.repo.insertMembership(m);
                 await ctx.repo.updateAllianceMembers(target.allianceId, joined.members);
+                await retagChunks(ctx, uid, "", target.allianceId);
                 await ctx.repo.retagTiles(uid, target.allianceId);
                 await ctx.repo.upsertHolding({ ...holding, allianceId: target.allianceId });
                 await ctx.repo.appendLog("alliance", "join", { uid, allianceId: target.allianceId }, false);
@@ -384,6 +422,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             // leave：盟主只有在只剩自己时才走到这里 ⇒ 该同盟随之解散
             const aid = membership!.allianceId;
             await ctx.repo.deleteMembership(uid);
+            await retagChunks(ctx, uid, aid, "");
             await ctx.repo.retagTiles(uid, "");
             await ctx.repo.upsertHolding({ ...holding, allianceId: "" });
             if (current && current.members <= 1) {
@@ -444,8 +483,41 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
         });
     }
 
+    /** 鸟瞰：只读预聚合表，按分块取主导同盟。⛔ 不碰地块表。 */
+    async function zoom(uid: string, sId: number, level: number, rect: ISgzzRect): Promise<ISgzzZoomRes> {
+        assertIdentity(uid);
+        return world(sId, async (ctx) => {
+            const cols = sgzzZoomChunkCols(level);
+            const rows = await ctx.repo.readChunks(level, rect, cols);
+            const alliances: string[] = [];
+            const index = new Map<string, number>();
+            const indexAid = (aid: string): number => {
+                if (aid === "") return -1;
+                const hit = index.get(aid);
+                if (hit !== undefined) return hit;
+                const idx = alliances.length;
+                alliances.push(aid); index.set(aid, idx);
+                return idx;
+            };
+            // 每块取「占格最多的同盟」做主导色；平局按 alliance_id 升序定，⛔ 不能随机（要可复现）
+            const byChunk = new Map<number, { tiles: number; topAid: string; top: number }>();
+            for (const row of rows) {
+                const hit = byChunk.get(row.chunkKey) ?? { tiles: 0, topAid: "", top: 0 };
+                hit.tiles += row.tiles;
+                if (row.tiles > hit.top || (row.tiles === hit.top && row.allianceId < hit.topAid)) {
+                    hit.top = row.tiles; hit.topAid = row.allianceId;
+                }
+                byChunk.set(row.chunkKey, hit);
+            }
+            const chunks: ISgzzChunkSummary[] = [...byChunk.entries()]
+                .sort((a, b) => a[0] - b[0])
+                .map(([key, v]) => ({ key, tiles: v.tiles, alliance: indexAid(v.topAid), top: v.top }));
+            return validateSgzzZoomRes({ level, rect, revision: ctx.repo.revision, alliances, chunks });
+        });
+    }
+
     return {
-        view, tile, occupy, abandon, alliance, marchDispatch, marchRecall,
+        view, tile, occupy, abandon, alliance, marchDispatch, marchRecall, zoom,
         settleDueMarches, settleOnTx, neighbourCells,
     };
 }

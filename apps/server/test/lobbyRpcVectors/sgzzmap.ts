@@ -45,4 +45,11 @@ export default {
         request: { clientReqId: "m2", marchId: "m1" },
         response: { march: { ...march, status: "recalled" } },
     },
+    [SgzzmapRpc.Zoom]: {
+        request: { level: 0, rect: { minRow: 37, minCol: 37, maxRow: 37, maxCol: 37 } },
+        response: {
+            level: 0, rect: { minRow: 37, minCol: 37, maxRow: 37, maxCol: 37 }, revision: 1,
+            alliances: ["a1"], chunks: [{ key: 2812, tiles: 5, alliance: 0, top: 5 }],
+        },
+    },
 } satisfies LobbyRpcVectorFile;

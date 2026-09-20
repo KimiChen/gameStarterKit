@@ -53,12 +53,23 @@ export interface SgzzRepository {
     deleteMembership(uid: string): Promise<void>;
     /** 同盟变更后刷新该玩家名下地块的 owner_aid。⚠ 受 SGZZ_MAX_TILES_PER_PLAYER 封顶。 */
     retagTiles(uid: string, allianceId: string): Promise<void>;
+    /** 该玩家名下全部地块的 cell（用于把鸟瞰聚合从旧盟搬到新盟）。 */
+    readTileCellsOf(uid: string): Promise<number[]>;
     insertMarch(march: ISgzzMarch): Promise<void>;
     readMarchForUpdate(marchId: string): Promise<ISgzzMarch | null>;
     updateMarchStatus(marchId: string, status: ISgzzMarch["status"]): Promise<void>;
     /** 到期队列，按 (arrive_at, march_id) 全区总序；⚠ 必须 FOR UPDATE，否则两个结算者会重复落地。 */
     readDueMarches(now: number, limit: number): Promise<ISgzzMarch[]>;
     countActiveMarches(uid: string): Promise<number>;
+    /** 分块聚合增量。delta 可正可负；归零的行删掉，⛔ 不留 tiles=0 的垃圾行。 */
+    bumpChunk(level: number, chunkKey: number, allianceId: string, delta: number): Promise<void>;
+    readChunks(level: number, rect: ISgzzRect, cols: number): Promise<SgzzChunkRow[]>;
+}
+
+export interface SgzzChunkRow {
+    readonly chunkKey: number;
+    readonly allianceId: string;
+    readonly tiles: number;
 }
 
 function integer(value: unknown, label: string, max = Number.MAX_SAFE_INTEGER): number {
@@ -251,6 +262,36 @@ export function createSqlSgzzRepository(tx: KitTx, sId: number): SgzzRepository 
             return integer(rows[0]?.n, "active marches");
         },
 
+        async bumpChunk(level: number, chunkKey: number, allianceId: string, delta: number): Promise<void> {
+            if (delta === 0) return;
+            await tx.query(
+                "INSERT INTO k_sgzzmap_chunk (server_id, level, chunk_key, alliance_id, tiles) "
+                + "VALUES (?, ?, ?, ?, GREATEST(0, ?)) "
+                + "ON DUPLICATE KEY UPDATE tiles = GREATEST(0, CAST(tiles AS SIGNED) + ?)",
+                [sId, level, chunkKey, allianceId, delta, delta]);
+            await tx.query(
+                "DELETE FROM k_sgzzmap_chunk WHERE server_id = ? AND level = ? AND chunk_key = ? "
+                + "AND alliance_id = ? AND tiles = 0",
+                [sId, level, chunkKey, allianceId]);
+        },
+
+        async readChunks(level: number, rect: ISgzzRect, cols: number): Promise<SgzzChunkRow[]> {
+            // 分块 key 是一维的（row*cols+col），单纯的区间会把 [minCol,maxCol] 之外的整行带进来，
+            // 所以必须另核 MOD(chunk_key, cols)——与 readTilesInRect 同一个坑。
+            const lo = rect.minRow * cols + rect.minCol;
+            const hi = rect.maxRow * cols + rect.maxCol;
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT chunk_key, alliance_id, tiles FROM k_sgzzmap_chunk "
+                + "WHERE server_id = ? AND level = ? AND chunk_key BETWEEN ? AND ? "
+                + "AND MOD(chunk_key, ?) BETWEEN ? AND ? AND tiles > 0 ORDER BY chunk_key",
+                [sId, level, lo, hi, cols, rect.minCol, rect.maxCol]);
+            return rows.map((row) => ({
+                chunkKey: integer(row.chunk_key, "chunk_key"),
+                allianceId: text(row.alliance_id, "alliance_id", SGZZ_MAX_AID),
+                tiles: integer(row.tiles, "tiles"),
+            }));
+        },
+
         async readMembershipForUpdate(uid: string): Promise<ISgzzMembership | null> {
             const rows = await tx.query<RowDataPacket[]>(
                 "SELECT uid, alliance_id, role FROM k_sgzzmap_alliance_member "
@@ -304,6 +345,13 @@ export function createSqlSgzzRepository(tx: KitTx, sId: number): SgzzRepository 
 
         async deleteMembership(uid: string): Promise<void> {
             await tx.query("DELETE FROM k_sgzzmap_alliance_member WHERE server_id = ? AND uid = ?", [sId, uid]);
+        },
+
+        async readTileCellsOf(uid: string): Promise<number[]> {
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT cell FROM k_sgzzmap_tile WHERE server_id = ? AND owner_uid = ? ORDER BY cell",
+                [sId, uid]);
+            return rows.map((row) => integer(row.cell, "cell"));
         },
 
         async retagTiles(uid: string, allianceId: string): Promise<void> {

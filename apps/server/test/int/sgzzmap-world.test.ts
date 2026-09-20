@@ -14,6 +14,7 @@ import { randomUUID } from "node:crypto";
 import { after, test } from "node:test";
 import { sgzzCellOf, sgzzCubeDistance, sgzzDecodeCell, sgzzIsPassable, sgzzNeighbours, sgzzNextPos } from "@game/shared/kits/sgzzmap/api/hexmap/index";
 import { SGZZ_MARCH_MS_PER_TILE, sgzzMarchDurationMs } from "@game/shared/kits/sgzzmap/api/march/index";
+import { SGZZ_MAX_ZOOM_LEVEL, sgzzZoomRectForCenter } from "@game/shared/kits/sgzzmap/api/chunk/index";
 import type { RowDataPacket } from "mysql2/promise";
 import { closeMysql, getPool } from "../../src/core/infra/mysql";
 import { closeRedis } from "../../src/core/infra/redisRoute";
@@ -258,4 +259,62 @@ test("真库：到期行军被结算到终点 —— 覆盖 LIMIT 绑定与 FOR 
         `⛔ 不得重复落地（第二轮又结算了 ${settledAgain.settled} 条）`);
 
     await pool.execute("DELETE FROM k_sgzzmap_tile WHERE server_id = ? AND cell = ?", [SID, dest]);
+});
+
+test("真库：鸟瞰聚合与地块表对账，整张图一次 zoom 体积可控", async () => {
+    const pool = getPool();
+    const t = terrainOf();
+    // ⚠ 本用例断言的是「全区聚合总数 == 全区有主地块数」，所以必须从干净状态起跑：
+    //   前面几条用例用裸 SQL 删过地块行（绕过 service ⇒ 聚合不会跟着减），留下的是**测试**残留，
+    //   ⛔ 不是产品 bug。sgzzmap 是新 kit，本地开发库的 SID=0 上没有别的真实数据。
+    await pool.execute("DELETE FROM k_sgzzmap_chunk WHERE server_id = ?", [SID]);
+    await pool.execute("DELETE FROM k_sgzzmap_tile WHERE server_id = ?", [SID]);
+    await pool.execute("DELETE FROM k_sgzzmap_holding WHERE server_id = ?", [SID]);
+    const chain: number[] = [hub];
+    let cur = sgzzDecodeCell(hub);
+    for (let i = 0; i < 14; i += 1) {
+        let moved = false;
+        for (let dir = 1; dir <= 6 && !moved; dir += 1) {
+            const n = sgzzNextPos(cur.row, cur.col, dir);
+            const cell = sgzzCellOf(n.row, n.col);
+            if (sgzzIsPassable(t, n.row, n.col) && !chain.includes(cell)) {
+                chain.push(cell); cur = n; moved = true;
+            }
+        }
+        if (!moved) break;
+    }
+    await pool.execute(
+        `DELETE FROM k_sgzzmap_tile WHERE server_id = ? AND cell IN (${chain.map(() => "?").join(",")})`,
+        [SID, ...chain]);
+    for (let i = 0; i < chain.length; i += 1) {
+        await api.occupy(U1, SID, chain[i], op(`agg-${i}`));
+    }
+
+    const [ownedRows] = await pool.execute<RowDataPacket[]>(
+        "SELECT COUNT(*) AS n FROM k_sgzzmap_tile WHERE server_id = ? AND owner_uid <> ''", [SID]);
+    const owned = Number((ownedRows as unknown as { n: number }[])[0].n);
+    assert.ok(owned >= chain.length, `至少落地 ${chain.length} 格，实得 ${owned}`);
+
+    for (let level = 0; level <= SGZZ_MAX_ZOOM_LEVEL; level += 1) {
+        const [sumRows] = await pool.execute<RowDataPacket[]>(
+            "SELECT COALESCE(SUM(tiles),0) AS n FROM k_sgzzmap_chunk WHERE server_id = ? AND level = ?",
+            [SID, level]);
+        assert.equal(Number((sumRows as unknown as { n: number }[])[0].n), owned,
+            `档 ${level} 的聚合总数必须等于有主地块数`);
+    }
+    const [zeroRows] = await pool.execute<RowDataPacket[]>(
+        "SELECT COUNT(*) AS n FROM k_sgzzmap_chunk WHERE server_id = ? AND tiles = 0", [SID]);
+    assert.equal(Number((zeroRows as unknown as { n: number }[])[0].n), 0, "⛔ 不得留下 tiles=0 的垃圾行");
+
+    // 最粗档一次拉整张图：块数与体积都要在闸内
+    const whole = sgzzZoomRectForCenter(SGZZ_MAX_ZOOM_LEVEL, 750, 750, 9999);
+    const res = await api.zoom(U1, SID, SGZZ_MAX_ZOOM_LEVEL, whole);
+    assert.ok(res.chunks.length >= 1, "整图至少能看到一块");
+    const bytes = Buffer.byteLength(JSON.stringify(res), "utf8");
+    assert.ok(bytes < 20_000, `整图 zoom 响应应 < 20KB，实得 ${bytes}`);
+
+    await pool.execute(
+        `DELETE FROM k_sgzzmap_tile WHERE server_id = ? AND cell IN (${chain.map(() => "?").join(",")})`,
+        [SID, ...chain]);
+    await pool.execute("DELETE FROM k_sgzzmap_chunk WHERE server_id = ?", [SID]);
 });

@@ -7,6 +7,7 @@ import {
 import {
     SGZZ_MARCH_MS_PER_TILE, SGZZ_SETTLEMENT_BATCH_SIZE,
 } from "@game/shared/kits/sgzzmap/api/march/index";
+import { SGZZ_MAX_ZOOM_LEVEL, sgzzZoomChunkCols } from "@game/shared/kits/sgzzmap/api/chunk/index";
 import { sgzzEmptyTile, type ISgzzTile } from "@game/shared/kits/sgzzmap/api/territory/index";
 import { createSgzzApi, sgzzInSpawnRegion, type SgzzOperation } from "../src/kits/sgzzmap/service";
 import type { SgzzHolding, SgzzReceipt, SgzzRepository } from "../src/kits/sgzzmap/repository";
@@ -33,6 +34,7 @@ function fakeRepo() {
     const members = new Map<string, ISgzzMembership>();
     const retags: { uid: string; aid: string }[] = [];
     const marches = new Map<string, ISgzzMarch>();
+    const chunks = new Map<string, number>();
     const debits: { uid: string; amount: number; opId: string }[] = [];
     const lockOrders: number[][] = [];
     let revision = 0;
@@ -113,9 +115,29 @@ function fakeRepo() {
         async countActiveMarches(uid) {
             return [...marches.values()].filter((m) => m.uid === uid && m.status === "marching").length;
         },
+        async readTileCellsOf(uid) {
+            return [...tiles.values()].filter((t) => t.ownerUid === uid).map((t) => t.cell).sort((a, b) => a - b);
+        },
+        async bumpChunk(level, key, aid, delta) {
+            const k = `${level}:${key}:${aid}`;
+            const next = Math.max(0, (chunks.get(k) ?? 0) + delta);
+            if (next === 0) chunks.delete(k); else chunks.set(k, next);
+        },
+        async readChunks(level, rect, cols) {
+            const out: { chunkKey: number; allianceId: string; tiles: number }[] = [];
+            for (const [k, n] of chunks) {
+                const [lv, key, ...rest] = k.split(":");
+                if (Number(lv) !== level) continue;
+                const ck = Number(key);
+                const r = Math.floor(ck / cols), c = ck % cols;
+                if (r < rect.minRow || r > rect.maxRow || c < rect.minCol || c > rect.maxCol) continue;
+                out.push({ chunkKey: ck, allianceId: rest.join(":"), tiles: n });
+            }
+            return out.sort((a, b) => a.chunkKey - b.chunkKey);
+        },
     };
     return {
-        repo, tiles, holdings, receipts, log, lockOrders, alliances, members, retags, marches, debits,
+        repo, tiles, holdings, receipts, log, lockOrders, alliances, members, retags, marches, debits, chunks,
         seed(cell: number, over: Partial<ISgzzTile>) {
             tiles.set(cell, { ...sgzzEmptyTile(cell), durability: 1, ...over });
         },
@@ -523,4 +545,74 @@ test("sgzzmap service: ★ worker 路径与懒结算路径对同一 fixture 产�
 
     assert.deepEqual(viaWorker, viaLazy, "两条路径的返回值必须一致");
     assert.equal(snapshot(worker.f), snapshot(lazy.f), "两条路径落库后的世界状态必须逐字段一致");
+});
+
+test("sgzzmap service: ★ 鸟瞰聚合与地块表始终对账（占领/弃地/到达/换盟都不漏）", async () => {
+    const { cell, neighbour } = spawnPair();
+    const f = fakeRepo(); const api = apiOn(f);
+
+    /** 每一档的聚合总数都必须等于「有主地块数」。 */
+    function reconcile(why: string) {
+        const owned = [...f.tiles.values()].filter((t) => t.ownerUid !== "").length;
+        for (let level = 0; level <= SGZZ_MAX_ZOOM_LEVEL; level += 1) {
+            let sum = 0;
+            for (const [k, n] of f.chunks) if (k.startsWith(`${level}:`)) sum += n;
+            assert.equal(sum, owned, `${why}：档 ${level} 聚合 ${sum} ≠ 有主地块 ${owned}`);
+        }
+        for (const [, n] of f.chunks) assert.ok(n > 0, "⛔ 不得留下 tiles=0 的垃圾行");
+    }
+
+    await api.occupy("u1", 1, cell, op("o1"));
+    reconcile("占领一格");
+    await api.occupy("u1", 1, neighbour, op("o2"));
+    reconcile("再占一格");
+    await api.occupy("u1", 1, cell, op("o3"));   // 加固：归属没变，聚合不该动
+    reconcile("加固");
+
+    // 换盟：聚合要整体从「无盟」搬到新盟
+    const created = await api.alliance("u1", 1,
+        { clientReqId: "c1", act: "create", name: "青州军", tag: "青" }, op("al1"));
+    const aid = created.alliance!.allianceId;
+    reconcile("建盟后");
+    let underAid = 0;
+    for (const [k, n] of f.chunks) if (k.startsWith(`0:`) && k.endsWith(`:${aid}`)) underAid += n;
+    assert.equal(underAid, 2, "两格都要挂到新盟名下");
+
+    await api.alliance("u1", 1, { clientReqId: "c2", act: "leave" }, op("al2"));
+    reconcile("退盟后");
+
+    // 弃地
+    await api.abandon("u1", 1, neighbour, op("ab1"));
+    reconcile("弃地");
+
+    // 被别人打下来（改主）
+    const g = fakeRepo(); const api2 = apiOn(g);
+    await api2.occupy("u1", 1, cell, op("x1"));
+    // ⚠ u2 得先有一块**合法**的邻地（走出生豁免），⛔ 不能直接 seed——seed 不过 service 就不会进聚合
+    await api2.occupy("u2", 1, neighbour, op("x2"));
+    await api2.occupy("u2", 1, cell, op("x3"));   // 由 neighbour 连过去；守军 1 ⇒ 当次改主
+    assert.equal(g.tiles.get(cell)?.ownerUid, "u2", "前提：这一格确实改主了");
+    const owned2 = [...g.tiles.values()].filter((t) => t.ownerUid !== "").length;
+    for (let level = 0; level <= SGZZ_MAX_ZOOM_LEVEL; level += 1) {
+        let sum = 0;
+        for (const [k, n] of g.chunks) if (k.startsWith(`${level}:`)) sum += n;
+        assert.equal(sum, owned2, `改主后档 ${level} 聚合必须仍等于有主地块数`);
+    }
+});
+
+test("sgzzmap service: zoom 取主导同盟，平局按 id 升序（可复现）", async () => {
+    const f = fakeRepo(); const api = apiOn(f);
+    const cols = sgzzZoomChunkCols(2);
+    // 同一块里：a2 占 3 格、a1 占 3 格 ⇒ 平局取 a1（id 升序）
+    f.chunks.set(`2:${5 * cols + 5}:a2`, 3);
+    f.chunks.set(`2:${5 * cols + 5}:a1`, 3);
+    f.chunks.set(`2:${5 * cols + 6}:a2`, 7);
+    const res = await api.zoom("u1", 1, 2, { minRow: 5, minCol: 5, maxRow: 5, maxCol: 6 });
+    assert.equal(res.chunks.length, 2);
+    assert.equal(res.chunks[0].tiles, 6, "块内总数是各盟之和");
+    assert.equal(res.alliances[res.chunks[0].alliance], "a1", "平局按 id 升序，⛔ 不能随机");
+    assert.equal(res.chunks[0].top, 3);
+    assert.equal(res.alliances[res.chunks[1].alliance], "a2");
+    assert.equal(res.chunks[1].top, 7);
+    assert.ok(res.chunks[0].key < res.chunks[1].key, "按 key 升序");
 });

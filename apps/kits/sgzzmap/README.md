@@ -25,7 +25,7 @@
 | `hexmap` | 1/1 | cell key、六邻与环序、cube 距离、等距投影、6 档 LOD + 滞回、chunk 矩形、地形内容与解码器、长程邻接校验 | ✅ P1 |
 | `territory` | 1/1 | 19 态 GRID_STATE、关系态推导、连地判定、占领 / 弃地结算 | ✅ P2 |
 | `march` | 1/1 | 转折点路径与逐格展开、确定性插值、到达结算 | ✅ P4 |
-| `chunk` | — | 鸟瞰分块摘要 | ⏳ P5 |
+| `chunk` | 1/1 | 鸟瞰三档分块聚合（20/40/60 格）、摘要契约 | ✅ P5 |
 | `alliance` | 1/1 | 最小同盟（建盟 / 加入 / 退出，⛔ 无外交、无职位、无仓库） | ✅ P3 |
 
 ### `hexmap` 的三条易错点（都有专门用例钉住）
@@ -89,6 +89,7 @@
 | `sgzzmap.alliance` | idempotent-write | 单路由 `{act: create/join/leave}`——三者锁同一组表 |
 | `sgzzmap.marchDispatch` | idempotent-write | 出发格须自有、在途上限 3、扣框架货币 |
 | `sgzzmap.marchRecall` | idempotent-write | 只能撤自己的、还在途的 |
+| `sgzzmap.zoom` | query | 鸟瞰分块摘要，只读预聚合表 |
 
 响应体积：框架硬上限 64 KB、幂等写结果上限 32 KB。`view` 把 uid / 同盟折叠进
 `owners` / `alliances` 字典，地块行只带下标 ⇒ 400 格也稳在 28 KB 以内。
@@ -117,7 +118,20 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
   UNION / GANG_MASTER 两态由此可达，真栈 int 用例证明「入盟后同一格立刻可连地」。
 - ✅ **P4** 行军 + 结算 worker：`march` 面（转折点路径、共线硬校验、确定性插值）、
   `k_sgzzmap_march`、dispatch/recall 路由（contractVersion → 3）、`marchSettle` worker。
-- ⏳ P5 鸟瞰 + 缩略图 ／ P6 客户端页。
+- ✅ **P5** 鸟瞰聚合：`chunk` 面（三档 20/40/60 格）、`k_sgzzmap_chunk`、`zoom` 路由
+  （contractVersion → 4）；远档底图与缩略图资源在 P0 已入库。
+- ⏳ P6 客户端页。
+
+### 鸟瞰聚合的三条硬规矩
+
+1. **随写更新，⛔ 不定时重算**：占领 / 弃地 / 到达 / 换盟都在**同一事务**里 upsert 三档聚合，
+   ⛔ 不实时 `COUNT` 扫地块表（225 万格扫不动）。一条用例钉住「每档 Σtiles 恒等于有主地块数」。
+2. **归零即删行**，⛔ 不留 `tiles=0` 的垃圾行。
+3. **主导同盟平局按 id 升序**定，⛔ 不能随机——否则同一份数据两次请求画出两种颜色。
+
+体积：最粗档（60 格）整张图 25×25=625 块，一次请求拉得完且 < 20 KB（有 int 用例实测）；
+最细档（20 格）整图 75×75=5625 块 > `SGZZ_MAX_ZOOM_CHUNKS`(1024)，**拉不动**——
+体积闸不是摆设，近档必须分窗。
 
 ### 行军的四条硬规矩
 

@@ -21,6 +21,10 @@ import {
     SGZZ_MAX_TURNING_POINTS, sgzzExpandPath, validateSgzzMarch, type ISgzzMarch,
 } from "../../../kits/sgzzmap/api/march/index";
 import {
+    SGZZ_MAX_ZOOM_CHUNKS, sgzzZoomChunkTiles, validateSgzzAllianceId, validateSgzzChunkSummary,
+    validateSgzzZoomLevel, validateSgzzZoomRect, type ISgzzChunkSummary,
+} from "../../../kits/sgzzmap/api/chunk/index";
+import {
     isSgzzAllianceAct, validateSgzzAlliance, validateSgzzAllianceName, validateSgzzAllianceTag,
     validateSgzzMembership, type ISgzzAlliance, type ISgzzMembership, type SgzzAllianceAct,
 } from "../../../kits/sgzzmap/api/alliance/index";
@@ -35,6 +39,7 @@ export const SgzzmapRpc = {
     Alliance: "sgzzmap.alliance",
     MarchDispatch: "sgzzmap.marchDispatch",
     MarchRecall: "sgzzmap.marchRecall",
+    Zoom: "sgzzmap.zoom",
 } as const;
 
 /** 一次 view 最多回多少个非默认地块。 */
@@ -74,6 +79,12 @@ export interface ISgzzMarchDispatchReq { clientReqId: string; path: number[] }
 export interface ISgzzMarchDispatchRes { march: ISgzzMarch; balance: number }
 export interface ISgzzMarchRecallReq { clientReqId: string; marchId: string }
 export interface ISgzzMarchRecallRes { march: ISgzzMarch }
+/** 鸟瞰：只读预聚合表，⛔ 不逐格发数据。 */
+export interface ISgzzZoomReq { level: number; rect: ISgzzRect }
+export interface ISgzzZoomRes {
+    level: number; rect: ISgzzRect; revision: number;
+    alliances: string[]; chunks: ISgzzChunkSummary[];
+}
 
 export interface SgzzmapRpcMap {
     [SgzzmapRpc.View]: { req: ISgzzViewReq; res: ISgzzViewRes };
@@ -83,6 +94,7 @@ export interface SgzzmapRpcMap {
     [SgzzmapRpc.Alliance]: { req: ISgzzAllianceReq; res: ISgzzAllianceRes };
     [SgzzmapRpc.MarchDispatch]: { req: ISgzzMarchDispatchReq; res: ISgzzMarchDispatchRes };
     [SgzzmapRpc.MarchRecall]: { req: ISgzzMarchRecallReq; res: ISgzzMarchRecallRes };
+    [SgzzmapRpc.Zoom]: { req: ISgzzZoomReq; res: ISgzzZoomRes };
 }
 
 function validateViewer(value: unknown, path: string): ISgzzViewerWire {
@@ -266,13 +278,42 @@ export const validateSgzzMarchRecallRes: RuntimeValidator<ISgzzMarchRecallRes> =
     return { march };
 };
 
+export const validateSgzzZoomReq: RuntimeValidator<ISgzzZoomReq> = (input) => {
+    const r = rpcRecord(input);
+    assertExactKeys(r, ["level", "rect"], [], "payload");
+    const level = validateSgzzZoomLevel(r.level);
+    return { level, rect: validateSgzzZoomRect(r.rect, level) };
+};
+export const validateSgzzZoomRes: RuntimeValidator<ISgzzZoomRes> = (input) => {
+    const r = rpcRecord(input, "response");
+    assertExactKeys(r, ["level", "rect", "revision", "alliances", "chunks"], [], "response");
+    const level = validateSgzzZoomLevel(r.level, "response.level");
+    const rect = validateSgzzZoomRect(r.rect, level, "response.rect");
+    if (!Array.isArray(r.alliances) || r.alliances.length > SGZZ_MAX_ZOOM_CHUNKS
+        || !Array.isArray(r.chunks) || r.chunks.length > SGZZ_MAX_ZOOM_CHUNKS) {
+        throw new WireValidationError("SGZZMAP_ZOOM_SIZE", "response");
+    }
+    const alliances = r.alliances.map((v, i) => validateSgzzAllianceId(v, `response.alliances[${i}]`));
+    const size = sgzzZoomChunkTiles(level);
+    const chunks = r.chunks.map((v, i) =>
+        validateSgzzChunkSummary(v, alliances.length, size * size, `response.chunks[${i}]`));
+    for (let i = 1; i < chunks.length; i += 1) {
+        if (chunks[i].key <= chunks[i - 1].key) {
+            throw new WireValidationError("SGZZMAP_ZOOM_ORDER", "response.chunks");
+        }
+    }
+    return {
+        level, rect, revision: finiteInteger(r.revision, "response.revision", 0), alliances, chunks,
+    };
+};
+
 /** 请求窗的 chunk 数上限由 validateSgzzChunkRect 保证；这里再导出便于测试直接断言。 */
 export function sgzzViewRequestChunks(rect: ISgzzRect): number {
     return sgzzRectArea(rect);
 }
 
 export default defineLobbyRpcDomain({
-    domain: "sgzzmap", contractVersion: 3,
+    domain: "sgzzmap", contractVersion: 4,
     errorCodes: [
         "SGZZMAP_IMPASSABLE", "SGZZMAP_NOT_ADJACENT", "SGZZMAP_TILE_LIMIT",
         "SGZZMAP_NOT_OWNED", "SGZZMAP_SETTLEMENT_PENDING",
@@ -289,5 +330,6 @@ export default defineLobbyRpcDomain({
         defineRpcIdempotentWrite(SgzzmapRpc.Alliance, { request: validateSgzzAllianceReq, response: validateSgzzAllianceRes }),
         defineRpcIdempotentWrite(SgzzmapRpc.MarchDispatch, { request: validateSgzzMarchDispatchReq, response: validateSgzzMarchDispatchRes }),
         defineRpcIdempotentWrite(SgzzmapRpc.MarchRecall, { request: validateSgzzMarchRecallReq, response: validateSgzzMarchRecallRes }),
+        defineRpcQuery(SgzzmapRpc.Zoom, { request: validateSgzzZoomReq, response: validateSgzzZoomRes }),
     ],
 });

@@ -49,6 +49,7 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
         version: null,
         api: {
             alliance: { version: 1, minSupported: 1 },
+            chunk: { version: 1, minSupported: 1 },
             hexmap: { version: 1, minSupported: 1 },
             march: { version: 1, minSupported: 1 },
             territory: { version: 1, minSupported: 1 },

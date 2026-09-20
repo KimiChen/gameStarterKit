@@ -136,6 +136,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         version: null,
         api: {
             alliance: { version: 1, minSupported: 1 },
+            chunk: { version: 1, minSupported: 1 },
             hexmap: { version: 1, minSupported: 1 },
             march: { version: 1, minSupported: 1 },
             territory: { version: 1, minSupported: 1 },
@@ -149,6 +150,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
             "sql/001-grid.sql",
             "sql/002-alliance.sql",
             "sql/003-march.sql",
+            "sql/004-chunk.sql",
         ],
         sqlTables: [
             { name: "k_sgzzmap_revision", zone: "per-zone" },
@@ -159,6 +161,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
             { name: "k_sgzzmap_alliance", zone: "per-zone" },
             { name: "k_sgzzmap_alliance_member", zone: "per-zone" },
             { name: "k_sgzzmap_march", zone: "per-zone" },
+            { name: "k_sgzzmap_chunk", zone: "per-zone" },
         ],
         userKeys: [],
         workers: [

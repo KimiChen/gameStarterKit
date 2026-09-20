@@ -18,6 +18,10 @@
     "march": {
       "version": 1,
       "minSupported": 1
+    },
+    "chunk": {
+      "version": 1,
+      "minSupported": 1
     }
   },
   "domains": [
@@ -27,7 +31,8 @@
     "files": [
       "sql/001-grid.sql",
       "sql/002-alliance.sql",
-      "sql/003-march.sql"
+      "sql/003-march.sql",
+      "sql/004-chunk.sql"
     ],
     "tables": [
       {
@@ -60,6 +65,10 @@
       },
       {
         "name": "k_sgzzmap_march",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_sgzzmap_chunk",
         "zone": "per-zone"
       }
     ]
