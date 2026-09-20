@@ -124,7 +124,8 @@ test("MK0：建角 → 进图（看到三只 slime）→ 走路 → 离座强制
         const address = server.transport.server?.address();
         assert.ok(address && typeof address === "object");
         const endpoint = `http://127.0.0.1:${address.port}`;
-        const connect = async (): Promise<SDKRoom> => {
+        // 监听在 join 一回来就挂（再等 Active）：再进已 Active 的房时下一 tick 就发 baseline，晚挂会丢（MK1-B3 修）
+        const connect = async (): Promise<{ room: SDKRoom; inbox: ReturnType<typeof collect> }> => {
             const { token } = await issueSession(user, null, "", SID);
             const sdk = new SDKClient(endpoint);
             sdk.auth.token = token;
@@ -135,12 +136,11 @@ test("MK0：建角 → 进图（看到三只 slime）→ 走路 → 离座强制
             };
             const room = await sdk.joinOrCreate(RoomName.World, options);
             rooms.push(room);
-            return room;
+            return { room, inbox: collect(room) };
         };
-        const a = await connect();
-        const inbox = collect(a);
+        const { room: a, inbox } = await connect();
         await waitFor(() => rootOf(a).phase === WorldPhase.Active && rootOf(a).instanceId.length > 0, "Active root");
-        assert.deepEqual([rootOf(a).mapId, rootOf(a).packId, rootOf(a).packVersion, rootOf(a).population], [MAP_ID, "greybox", 2, 1], "root：图 / 内容包 / 在线数");
+        assert.deepEqual([rootOf(a).mapId, rootOf(a).packId, rootOf(a).packVersion, rootOf(a).population], [MAP_ID, "greybox", 3, 1], "root：图 / 内容包 / 在线数");
         await waitFor(() => inbox.begins.length >= 1 && inbox.itemsOf(inbox.begins[0]!).length >= 4, "首个 baseline：本人 + 三只 slime");
         const items = inbox.itemsOf(inbox.begins[0]!);
         const self = items.find((item) => item.kind === "character");
@@ -183,8 +183,7 @@ test("MK0：建角 → 进图（看到三只 slime）→ 走路 → 离座强制
         assert.equal(after.characters[0]?.mapId, MAP_ID, "选角页读最新检查点的 mapId");
 
         // 再进图：从检查点位置起（persona 信封回灌）
-        const b = await connect();
-        const inboxB = collect(b);
+        const { inbox: inboxB } = await connect();
         await waitFor(() => inboxB.begins.length >= 1 && inboxB.itemsOf(inboxB.begins[0]!).some((item) => item.kind === "character"), "再进图 baseline");
         const selfB = inboxB.itemsOf(inboxB.begins[0]!).find((item) => item.kind === "character")!;
         assert.ok(Math.abs(selfB.x - lastX) < 1e-6, `回灌位置 ${selfB.x} vs ${lastX}`);

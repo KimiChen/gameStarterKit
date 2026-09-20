@@ -1,12 +1,13 @@
 /**
  * mmoWorld 客户端玩法插件（kits/mmo 的世界形态玩法；纯 TS，无头单测）：观察世界房句柄维护本地实体表 / 本人私有态 → 视图模型；
- * 输入：方向意图 / 点地 / 停 / 离开（⛔ 客户端不上报坐标，位置以服务端 update 为准；本地预测归 MK1 movement 面）。
+ * 输入：方向意图 / 点地 / 停 / 传送（最近的传送门，MK1-B3）/ 离开（⛔ 客户端不上报坐标；本人位置取 movement 面本地预测）。
+ * 两图交接：`transferReady` 回执（凭据只此一处）⇒ 记下并请求退出，stop 时把凭据交给 `onTransfer`（mode 模块带参重进目标图）。
  * 渲染归 ../../../view/rooms/mmoWorld/MmoWorldView.ts；⛔ 不 import cc（铁律 9）。
  */
 import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
 import type { GameplayInstanceHost } from "../../gameplay/GameplayModule";
-import type { IMmoEntityWire, IMmoWorldOpResult, IMmoWorldPos } from "../../../shared/index";
-import type { MmoPrivateState } from "../../../kits/mmo/api/world/index";
+import type { IMmoEntityWire, IMmoWorldOpResult, IMmoWorldPos, IMmoWorldTransferReady } from "../../../shared/index";
+import { withinRadius, type MmoPrivateState } from "../../../kits/mmo/api/world/index";
 import { MovementPredictor, normalizeDir, parseCollisionGrid } from "../../../kits/mmo/api/movement/index";
 import { classOf, mapDefOf, presentationOf, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
 
@@ -16,6 +17,8 @@ export type MmoWorldInput =
     | { readonly type: "move"; readonly dir: { readonly x: number; readonly y: number } }
     | { readonly type: "moveTo"; readonly x: number; readonly y: number }
     | { readonly type: "stop" }
+    /** 走最近的传送门（本人在其半径内才发） */
+    | { readonly type: "transfer" }
     | { readonly type: "leave" };
 
 /** 世界房句柄观察者：net 层把观察者流 / 私有流 / 回执 / 连接事件翻译成这几个回调，逻辑层不认识 Colyseus。 */
@@ -25,6 +28,8 @@ export interface MmoWorldRoomObserver {
     opResult(result: IMmoWorldOpResult): void;
     /** 本人移动回执（movement 面）：服务端权威位置 + 意图 seq */
     pos(payload: IMmoWorldPos): void;
+    /** 交接就绪（MK1-B3）：目标分线凭据，只此一处出网 */
+    transferReady(payload: IMmoWorldTransferReady): void;
     resync(reason: string | null): void;
     dropped(): void;
     reconnected(): void;
@@ -41,6 +46,8 @@ export interface MmoWorldRoom {
     move(dir: { readonly x: number; readonly y: number }): number | null;
     moveTo(target: { readonly x: number; readonly y: number }): number | null;
     stop(): number | null;
+    /** 发起交接（portalId）；返回 clientReqId（拒发 ⇒ null） */
+    transfer(portalId: string): string | null;
     requestBaseline(afterSeq: number): boolean;
     observe(observer: MmoWorldRoomObserver): () => void;
     leave(): Promise<void>;
@@ -88,6 +95,8 @@ export interface MmoWorldGameplayOptions {
     readonly presentationFactory?: () => MmoWorldPresentation | undefined | Promise<MmoWorldPresentation | undefined>;
     /** 本人实体判定（缺省：kind character 且 id 以 `char:` 开头的第一个；MK1 随 join 回执带 characterId 后精确匹配）。 */
     readonly selfCharacterId?: string;
+    /** 交接就绪后（本局 stop 时）交出凭据：mode 模块据此带参重进目标图。 */
+    readonly onTransfer?: (ready: IMmoWorldTransferReady) => void;
 }
 
 export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldInput> {
@@ -96,6 +105,9 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     private readonly host: GameplayInstanceHost<MmoWorldInput> | null;
     private readonly presentationFactory: () => MmoWorldPresentation | undefined | Promise<MmoWorldPresentation | undefined>;
     private readonly selfCharacterId: string | null;
+    private readonly onTransfer: ((ready: IMmoWorldTransferReady) => void) | null;
+    /** 已收到的交接凭据（stop 时交出） */
+    private pendingTransfer: IMmoWorldTransferReady | null = null;
     private presentation: MmoWorldPresentation | null = null;
     private context: GameplayContext<MmoWorldRoom> | null = null;
     private unobserve: (() => void) | null = null;
@@ -114,6 +126,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         this.host = options.host ?? null;
         this.presentationFactory = options.presentationFactory ?? (() => options.presentation);
         this.selfCharacterId = options.selfCharacterId ?? null;
+        this.onTransfer = options.onTransfer ?? null;
     }
 
     async start(context: GameplayContext<MmoWorldRoom>): Promise<void> {
@@ -136,6 +149,13 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                     if (this.predictor === null) this.predictor = this.createPredictor(snapshot, context.room.mapId);
                 },
                 pos: (payload) => { if (active()) this.predictor?.reconcile(payload); },
+                transferReady: (payload) => {
+                    if (!active()) return;
+                    // 凭据只此一处：记下 → 退出本局 → stop 时交给 onTransfer 带参重进目标图（源房随后被服务端以 transferred 离座）
+                    this.pendingTransfer = payload;
+                    this.notice = "传送中…";
+                    this.requestExit("settled");
+                },
                 privateState: (state) => { if (active()) this.privateState = state; },
                 opResult: (result) => { if (active()) this.notice = result.result === "ok" ? "" : `${result.result}${result.detail ? `：${result.detail}` : ""}`; },
                 resync: (reason) => { if (active()) this.notice = `重同步${reason ? `（${reason}）` : ""}`; },
@@ -154,6 +174,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         if (!this.started || this.context !== context || !context.isActive()) return;
         if (input.type === "leave") { this.requestExit("user-exit"); return; }
         if (context.room.dropping || !context.room.current) return;
+        if (input.type === "transfer") { this.requestTransfer(context); return; }
         if (input.type === "move") {
             const dir = normalizeDir(input.dir);
             const seq = context.room.move(dir);
@@ -176,7 +197,21 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     }
 
     stop(_reason: GameplayStopReason): void {
+        const pending = this.pendingTransfer;
+        this.pendingTransfer = null;
         this.teardown();
+        if (pending && this.onTransfer) {
+            try { this.onTransfer(pending); } catch (error) { console.error("[mmoWorld] onTransfer 失败：", error); }
+        }
+    }
+
+    /** 传送：本人（预测位置）在某个传送门半径内才发；否则提示。 */
+    private requestTransfer(context: GameplayContext<MmoWorldRoom>): void {
+        const map = mapDefOf(context.room.mapId);
+        const self = this.predictor?.position() ?? [...this.entities.values()].find((entity) => this.isSelf(entity)) ?? null;
+        const portal = map && self ? map.portals.find((entry) => withinRadius(self, entry.pos, entry.radius)) ?? null : null;
+        if (!portal) { this.notice = "不在传送门范围内"; return; }
+        this.notice = context.room.transfer(portal.portalId) === null ? "传送请求未发出" : `传送：${portal.portalId}`;
     }
 
     dispose(): void {

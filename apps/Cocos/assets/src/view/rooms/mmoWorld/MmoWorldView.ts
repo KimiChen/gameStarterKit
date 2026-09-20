@@ -1,6 +1,6 @@
 /**
  * mmoWorld presentation（Cocos 纯节点 2D 公告板，挂在玩法 presentation host 节点下；坐标以 host 中心为原点）——3d.md SD9 = C 首版：
- * 世界视图 = 相机跟随本人的正交投影，实体 = 按 presentationId 取色的方块 + 名字；最小 HUD = HP / MP 文本 + 四向按钮 + 停 / 离开。
+ * 世界视图 = 相机跟随本人的正交投影，实体 = 按 presentationId 取色的方块 + 名字；最小 HUD = HP / MP 文本 + 四向按钮 + 停 / 传送 / 离开。
  * 分工（铁律 9）：本文件只管节点与触摸；视图模型来自 logic/rooms/mmoWorld/MmoWorldGameplay.ts 的 model()。
  * ⚠ HUD 与世界的输入归属等 3d.md SC1-B9（本版 HUD 画在世界节点内，即退路）。手搓粗糙版（同 ArenaCaptureView 口径），每帧按模型重建实体层。
  */
@@ -50,6 +50,7 @@ export class MmoWorldView implements MmoWorldPresentation {
         this.button(hud, "←", pad, pad, bx - pad, by, () => this.dispatchInput({ type: "move", dir: { x: -1, y: 0 } }));
         this.button(hud, "→", pad, pad, bx + pad, by, () => this.dispatchInput({ type: "move", dir: { x: 1, y: 0 } }));
         this.button(hud, "停", pad, pad, bx, by, () => this.dispatchInput({ type: "stop" }));
+        this.button(hud, "传送", this.width * 0.24, this.height * 0.055, this.width * 0.5 - this.width * 0.16, -this.height * 0.5 + this.height * 0.13, () => this.dispatchInput({ type: "transfer" }));
         this.button(hud, "离开", this.width * 0.24, this.height * 0.055, this.width * 0.5 - this.width * 0.16, -this.height * 0.5 + this.height * 0.06, () => this.dispatchInput({ type: "leave" }));
         this.lastKey = "";
     }

@@ -4,8 +4,10 @@
  *  - onWorldInit：按内容包（`content` 面）为本图撒怪（spawns，确定性抖动来自分线随机流），根写 packId / packVersion；图不在包内 ⇒ 抛（WorldRoom 拒启）；
  *  - onBeforeAdmit（唯一可 await 的准入钩子）：按 persona 预热角色行（`characters` 面）；onAdmit 无角色即拒；
  *  - onEnter：角色实体落在最新角色检查点的位置（persona 信封回灌，M08）或出生点；onLeave 回收；
- *  - onStep：move 意图（dir / target）→ 常量速度积分 + 钳图（`world` 面双端同源纯函数）；baselineRequest → 框架 baseline；pickup / transfer 回 opResult
- *    rejected（MK1 / MK3 接入）；target / cast / interact / choose 暂忽略（MK2 / MK4）；本人私有流 hp / mp 变了才发；
+ *  - onStep：move 意图（dir / target）→ 权威积分（`movement` 面）；baselineRequest → 框架 baseline；pickup 回 opResult rejected（MK3 接入）；
+ *    transfer（MK1-B3 两图交接）：portal 存在 + 在半径内 + 无在途 ⇒ 落点先写进实体（框架 prepare 后强制点的 persona 快照带 arrival）⇒
+ *    `context.transfer.request`（框架 MF8 状态机）⇒ Committed 后 perSession `transferReady`（凭据只此一处出网）⇒ 壳以 "transferred" 离座；
+ *    失败 ⇒ opResult rejected + 落点清；目标图 onEnter 按 arrival 落位（HP / MP 随身）；target / cast / interact / choose 暂忽略（MK2 / MK4）；本人私有流 hp / mp 变了才发；
  *  - observer（MK1-B2 AOI 接入）：候选来自 kit 网格（`aoi/grid.ts`，格长 = 图的 aoi.cellSize）→ 精确视距（aoi.viewRadius 欧氏）→ 可见性规则
  *    （`aoi/visibility.ts`：位面 / 隐身 / 阵营；本人永远可见）→ 最近优先截到 MMO_INTEREST_MAX_ENTITIES（框架 InterestSet 超限即抛，kit 先收敛）；
  *    公开投影 = IMmoEntityWire（名片含 factionId，⛔ mp 等私有字段）；差分 / baseline / 投递归框架；
@@ -14,11 +16,11 @@
  */
 import {
     GAMEPLAY_CATALOG, MmoWorldBaselineBegin, MmoWorldBaselineChunk, MmoWorldBaselineEnd, MmoWorldBaselineRequest, MmoWorldCast, MmoWorldChoose, MmoWorldEnter,
-    MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldOpResult, MmoWorldPickup, MmoWorldPos, MmoWorldPrivate, MmoWorldTarget, MmoWorldTransfer, MmoWorldUpdate,
+    MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldOpResult, MmoWorldPickup, MmoWorldPos, MmoWorldPrivate, MmoWorldTarget, MmoWorldTransfer, MmoWorldTransferReady, MmoWorldUpdate,
     type IMmoEntityWire, type IMmoWorldMoveReq, type IMmoWorldPickupReq, type IMmoWorldTransferReq, type IObserverEnvelope,
 } from "@game/shared";
 import type { IContentPackIndex, IMapDef } from "@game/shared/kits/mmo/api/content/index";
-import { clampToMap } from "@game/shared/kits/mmo/api/world/index";
+import { clampToMap, withinRadius } from "@game/shared/kits/mmo/api/world/index";
 import { applyIntent, parseCollisionGrid, resolveMove, type CollisionGrid } from "../../../kits/mmo/api/movement/index";
 import { AoiGrid } from "../../../kits/mmo/aoi/grid";
 import { pickInterest } from "../../../kits/mmo/aoi/visibility";
@@ -60,6 +62,8 @@ export interface MmoEntity {
     plane: number;
     /** 隐身（只对自己与同阵营可见） */
     stealth: boolean;
+    /** 交接落点（发起交接时写入；随 persona 快照落库；失败即清） */
+    arrival: { readonly mapId: string; readonly spawnPointId: string } | null;
     x: number;
     y: number;
     /** 公开投影修订号（位置 / hp 变即 +1） */
@@ -88,6 +92,8 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         moverOf(session: string): MmoEntity | null;
         /** 测试 / 编排接缝：改位面 / 隐身（MK2 aura、MK4 编排接入前的直接写口） */
         setVisibility(id: string, facts: { readonly plane?: number; readonly stealth?: boolean }): void;
+        /** 在途交接的会话 */
+        transfersInFlight(): readonly string[];
         readonly log: string[];
     };
 }
@@ -109,6 +115,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     /** 私有流脏标（hp / mp 变了才发） */
     const privateDirty = new Set<string>();
     const privateSent = new Map<string, string>();
+    /** 在途交接（发起 → Committed / 失败）的会话；在途期间再发 ⇒ 拒 */
+    const inFlight = new Set<string>();
     const log: string[] = [];
     let map: IMapDef | null = null;
     /** 碰撞网格（内容包 collision；无 = 全图通行） */
@@ -136,6 +144,38 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     };
     const syncPopulation = (context: WorldModeContext<MmoWorldRoomState>): void => {
         context.state.population = movers.size;
+    };
+    const reject = (context: WorldModeContext<MmoWorldRoomState>, session: string, clientReqId: string, detail: string): void => {
+        context.sendS2C(session, MmoWorldOpResult, { clientReqId, result: "rejected", detail });
+    };
+    /** 两图交接（MK1-B3）：门存在 + 在半径内 + 无在途 ⇒ 落点先写进实体 ⇒ 框架状态机；Committed ⇒ perSession transferReady；失败 ⇒ rejected + 落点清。 */
+    const requestTransfer = (context: WorldModeContext<MmoWorldRoomState>, session: string, request: IMmoWorldTransferReq, def: IMapDef): void => {
+        const mover = moverOf(session);
+        if (!mover) return;
+        const portal = def.portals.find((entry) => entry.portalId === request.portalId);
+        if (!portal) { reject(context, session, request.clientReqId, "portal 不存在"); return; }
+        if (!withinRadius(mover, portal.pos, portal.radius)) { reject(context, session, request.clientReqId, "不在传送门范围内"); return; }
+        if (inFlight.has(session)) { reject(context, session, request.clientReqId, "交接在途"); return; }
+        inFlight.add(session);
+        // 落点先写进实体：框架 prepare 后立即强制检查点，persona 快照随之带 arrival（目标图 onEnter 按它落位）；同时停下
+        mover.arrival = { mapId: portal.toMapId, spawnPointId: portal.toSpawnPointId };
+        mover.dirX = 0;
+        mover.dirY = 0;
+        mover.target = null;
+        log.push(`transfer:${session}:${portal.portalId}`);
+        context.transfer.request(session, { toMap: portal.toMapId, payload: { portalId: portal.portalId, toSpawnPointId: portal.toSpawnPointId } })
+            .then((ready) => {
+                // Committed：凭据只经本 perSession token 出网一次（不可丢类）；随后壳排空出站并以 "transferred" 离座
+                context.observers.emitPerSession(session, MmoWorldTransferReady, { transferId: ready.transferId, worldAddress: ready.worldAddress, ticket: ready.ticket, expiresAt: ready.expiresAt });
+                log.push(`transfer:${session}:ready:${ready.toMap}`);
+            })
+            .catch((error: unknown) => {
+                inFlight.delete(session);
+                const current = moverOf(session);
+                if (current) current.arrival = null;
+                log.push(`transfer:${session}:failed`);
+                reject(context, session, request.clientReqId, `交接失败：${error instanceof Error ? error.message : String(error)}`);
+            });
     };
 
     const observer: WorldModeObserverCapability<MmoWorldRoomState, IMmoEntityWire, IMmoEntityWire> = {
@@ -183,6 +223,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             entities.clear();
             aoiOf(context).clear();
             movers.clear();
+            inFlight.clear();
             pending.clear();
             privateDirty.clear();
             privateSent.clear();
@@ -198,7 +239,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     const id = `${spawn.spawnId}:${index}`; // wire id 形态：[A-Za-z0-9._:-]
                     entities.set(id, {
                         id, kind: "creature", templateId: template.templateId, name: template.name, level: template.level, hpMax: template.hpMax, mpMax: template.mpMax,
-                        speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, factionId: null, plane: 0, stealth: false,
+                        speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, factionId: null, plane: 0, stealth: false, arrival: null,
                         x: pos.x, y: pos.y, rev: 0, hp: template.hpMax, mp: template.mpMax, dirX: 0, dirY: 0, target: null, seq: 0,
                     });
                     aoiOf(context).insert(id, pos.x, pos.y);
@@ -239,14 +280,18 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const restored = session.checkpoint?.snapshot as Partial<MmoPersonaSnapshot> | null | undefined;
             const spawn = def.spawnPoints[0]!.pos;
             const usable = restored && restored.mapId === def.mapId && typeof restored.x === "number" && typeof restored.y === "number";
-            const pos = usable ? clampToMap({ x: restored.x as number, y: restored.y as number }, def.size) : { x: spawn.x, y: spawn.y };
+            // 交接落点：上一图发起交接时写进快照的 arrival（图相同才认；落点 id 不在本图 ⇒ 首个出生点）
+            const arrival = !usable && restored?.arrival && restored.arrival.mapId === def.mapId
+                ? def.spawnPoints.find((point) => point.spawnPointId === restored.arrival?.spawnPointId)?.pos ?? null
+                : null;
+            const pos = usable ? clampToMap({ x: restored.x as number, y: restored.y as number }, def.size) : arrival ? { x: arrival.x, y: arrival.y } : { x: spawn.x, y: spawn.y };
             const klass = content.classById.get(row?.classId ?? "");
             const hpMax = klass?.hpMax ?? 100;
             const mpMax = klass?.mpMax ?? 50;
             const id = `char:${row?.characterId ?? session.personaId}`;
             entities.set(id, {
                 id, kind: "character", templateId: row?.classId ?? "fighter", name: row?.name ?? "?", level: row?.level ?? 1, hpMax, mpMax, speedPerSec: klass?.speedPerSec ?? 120,
-                session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null, factionId: row?.factionId ?? null, plane: 0, stealth: false,
+                session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null, factionId: row?.factionId ?? null, plane: 0, stealth: false, arrival: null,
                 x: pos.x, y: pos.y, rev: 0,
                 hp: typeof restored?.hp === "number" ? Math.max(0, Math.min(hpMax, restored.hp)) : hpMax,
                 mp: typeof restored?.mp === "number" ? Math.max(0, Math.min(mpMax, restored.mp)) : mpMax,
@@ -256,7 +301,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             movers.set(session.session, id);
             privateDirty.add(session.session);
             syncPopulation(context);
-            log.push(`enter:${session.session}${usable ? ":restored" : ""}`);
+            log.push(`enter:${session.session}${usable ? ":restored" : arrival ? ":arrival" : ""}`);
         },
         onLeave(context, session, reason) {
             const id = movers.get(session.session);
@@ -267,6 +312,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             }
             privateDirty.delete(session.session);
             privateSent.delete(session.session);
+            inFlight.delete(session.session);
             syncPopulation(context);
             log.push(`leave:${session.session}:${reason}`);
         },
@@ -279,9 +325,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     context.observers.requestBaseline(command.session);
                     continue;
                 }
-                if (command.type === MmoWorldPickup.type || command.type === MmoWorldTransfer.type) {
-                    const { clientReqId } = command.payload as IMmoWorldPickupReq | IMmoWorldTransferReq;
-                    context.sendS2C(command.session, MmoWorldOpResult, { clientReqId, result: "rejected", detail: command.type === MmoWorldPickup.type ? "inventory 面 MK3" : "portal MK1" });
+                if (command.type === MmoWorldPickup.type) {
+                    reject(context, command.session, (command.payload as IMmoWorldPickupReq).clientReqId, "inventory 面 MK3");
+                    continue;
+                }
+                if (command.type === MmoWorldTransfer.type) {
+                    requestTransfer(context, command.session, command.payload as IMmoWorldTransferReq, def);
                     continue;
                 }
                 if (command.type !== MmoWorldMove.type) continue; // target / cast / interact / choose：MK2 / MK4
@@ -325,7 +374,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const persona = [...movers.values()].flatMap((id) => {
                 const mover = entities.get(id);
                 if (!mover || mover.personaId === null) return [];
-                const snapshot: MmoPersonaSnapshot = { mapId: def.mapId, x: mover.x, y: mover.y, hp: mover.hp, mp: mover.mp };
+                const snapshot: MmoPersonaSnapshot = { mapId: def.mapId, x: mover.x, y: mover.y, hp: mover.hp, mp: mover.mp, ...(mover.arrival ? { arrival: mover.arrival } : {}) };
                 return [{ personaId: mover.personaId, snapshot }];
             });
             const instance: MmoInstanceSnapshot = {
@@ -355,6 +404,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (facts.plane !== undefined) entity.plane = facts.plane;
                 if (facts.stealth !== undefined) entity.stealth = facts.stealth;
             },
+            transfersInFlight: () => [...inFlight],
             log,
         },
     };

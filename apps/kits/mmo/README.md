@@ -10,7 +10,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
 | MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
-| MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | 施工中：B1 movement 面 ✅、B2 AOI 接入 ✅ 2026-09-20（kit 0.1.2；B3–B6 未开工） |
+| MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | 施工中：B1 movement 面 ✅、B2 AOI 接入 ✅、B3 两图交接 ✅ 2026-09-20（kit 0.1.3；B4–B6 未开工） |
 | MK2 模拟闭环 | combat + ai 面、掉落 | 未开工 |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 未开工 |
 | MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 未开工 |
@@ -56,10 +56,19 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | wire / world 面 | 名片 `IMmoEntityWire` 新增可选 `factionId`（怪物省略，exact keys）⇒ `world` 面 v2（minSupported 1）、`mmoWorld` modeVersion 4；客户端 `MmoWorldEntityView.factionId`（无阵营 null） |
 | 验收（`mmoWorld-mode.test.ts`） | 超视野零泄露（900 单位外的角色 id 不出现在对方任何出站，含 baseline）；走进视距（第 84 步）enter 恰一次；隐身：异阵营 leave / 同阵营不变 / 本人不变，解除 ⇒ enter；位面：双向 leave，回位面 ⇒ enter；300 只 slime 挤在出生点：baseline = 256 条、本人必在、没选上的都不比选上的近、继续走不抛 |
 
-## 灰盒内容包（MK0-B5，随 B2 交付；MK1-B1 升 version 2）
+## 两图交接（MK1-B3）
 
-`apps/shared/src/kits/mmo/content/greybox.ts`：一图（greybox 2000×2000，视距 400，一堵 200×200 的墙 x ∈ [1500, 1700) × y ∈ [900, 1100)）两职业
-（fighter 120 / 100 / 50、caster 110 / 80 / 100 = 速度 / HP / MP）一怪（slime ×3，idle）一技能（strike）的 TS 字面量单源，启动期与用例都经
+| 层 | 内容 |
+| --- | --- |
+| 内容 | 灰盒 v3：主图 `gate-east`（(1000,700) 半径 60）↔ 东郊 `greybox-east`（1000×1000，slime ×2）`gate-west`（(500,800)）；落点各自的 `gate` 出生点在门外（半径外，⛔ 落地即再触发） |
+| 服务端 mode | `c2s.mmoWorld.transfer { portalId, clientReqId }`：portal 不存在 / 不在半径内 / 在途 ⇒ opResult rejected；否则**落点先写进实体**（`arrival = { toMapId, toSpawnPointId }`，停下）⇒ `context.transfer.request(session, { toMap, payload: { portalId, toSpawnPointId } })`（框架 MF8：prepare → 强制点 → 凭据 → commit）⇒ Committed ⇒ perSession `s2c.mmoWorld.transferReady { transferId, worldAddress, ticket, expiresAt }`（凭据只此一处出网，不可丢类）⇒ 壳以 "transferred" 离座；端口失败 ⇒ rejected + 落点清 + 可重试。落点经 persona 快照 `arrival`（框架 prepare 后强制点落库）传到目标图：onEnter 同图检查点优先，否则 `arrival.mapId` 等于本图 ⇒ 该出生点，否则首个出生点；HP / MP 随快照随身 |
+| 客户端 | HUD「传送」⇒ `{ type: "transfer" }` ⇒ 本人（预测位置）在某个传送门半径内才发 `room.transfer(portalId)`（clientReqId `t<n>`）；`transferReady` ⇒ 记下凭据 + 请求退出，本局 stop 时交给 `onTransfer` ⇒ mode 模块下一拍 `runtime.launchWorld(characterId, 目标 mapId, 凭据)`（launch `{ characterId, mapId, transfer? }` exact 校验，凭据 worldAddress 必须与 mapId 一致）⇒ joiner 凭据在手 ⇒ 跳过 world.enter、`{ kind: "transfer" }` strategy 直进；无凭据（重连 / 回复丢失）⇒ world.enter 由框架解析在途交接 ⇒ transferId 非 null 时同样 transfer strategy |
+| 验收 | 无头 `mmoWorld-mode.test.ts`（拒绝三态 / 端口目标 + 载荷 / 在途快照带落点 / 失败清落点 / Committed perSession 出网；目标图落位 / 异图 / 未知落点 / 同图优先）；真栈 `test/int/mmo-transfer.test.ts`（门外拒 → 门内交接 → 源房 CONSENTED → **reply-lost 注入**走 resolveTransfer 轮换 → 东郊落点 + 2 slime + 职业 HP / MP → finalized + 载荷落库 → 离座检查点 mapId 东郊 → 再进从检查点起）；其余三个注入（client-drop / source-crash / target-crash）是框架状态机性质，由 MF8-B7 `world-transfer-flow` 覆盖，kit ⛔ 复制 |
+
+## 灰盒内容包（MK0-B5，随 B2 交付；MK1-B1 升 version 2；MK1-B3 升 version 3 加东郊）
+
+`apps/shared/src/kits/mmo/content/greybox.ts`：主图 greybox（2000×2000，视距 400，一堵 200×200 的墙 x ∈ [1500, 1700) × y ∈ [900, 1100)，slime ×3）+ 东郊
+greybox-east（1000×1000，slime ×2）经 gate-east / gate-west 互通，两职业（fighter 120 / 100 / 50、caster 110 / 80 / 100 = 速度 / HP / MP）一技能（strike）的 TS 字面量单源，启动期与用例都经
 `content` 面 `validateContentPack` 过闸（结构 / 数值域 / 引用完整性 / 几何在图内 / 碰撞位图形态 / 出生・复活・刷新点不落墙；可达性随 MK2 nav）。⛔ 不是 JSON 文件：kit 服务端代码不能读文件、
 tsconfig 未开 resolveJsonModule；MK4 改经贡献点 `content`（data 贡献本就是 JSON → `contributions.generated.ts`）装载，届时字面量退役。
 

@@ -8,13 +8,16 @@
  *  - MK1-B1 movement 面：速度 / HP / MP 取内容包职业模板（caster 110 / 80 / 100）；本人每步收直发 `s2c.mmoWorld.pos`（seq = 最新意图；停下那步回执一次，之后不动不回）；
  *    撞灰盒墙停下并清目标；职业不在内容包 ⇒ 准入拒；
  *  - MK1-B2 AOI 接入：候选来自 kit 网格、精确视距 + 规则（位面 / 隐身 × 阵营）、最近优先截到 MMO_INTEREST_MAX_ENTITIES；超视野零泄露（远处角色的 id 不出现在任何出站）、
- *    走进视距 enter 恰一次、隐身只对同阵营可见、位面隔离、300 只挤在出生点也不触发框架 InterestSet 上限。
+ *    走进视距 enter 恰一次、隐身只对同阵营可见、位面隔离、300 只挤在出生点也不触发框架 InterestSet 上限；
+ *  - MK1-B3 两图交接：portal 不存在 / 不在半径 / 在途 ⇒ rejected；门内 ⇒ 框架交接端口（目标图 + kit 载荷）且落点先进 persona 快照；端口失败 ⇒ rejected + 落点清；
+ *    Committed ⇒ perSession transferReady；目标图（东郊 2 只 slime）按 arrival 落位、HP / MP 随身，异图 / 未知落点 ⇒ 首个出生点。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate, type IMmoWorldUpdate,
+    C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate,
+    type IMmoWorldTransferReady, type IMmoWorldUpdate,
 } from "@game/shared";
 import { indexContentPack, validateContentPack, type IContentPack, type IContentPackIndex } from "@game/shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
@@ -24,6 +27,7 @@ import { buildCheckpointEnvelope } from "../src/rooms/core/CheckpointPort";
 import { WorldRuntime, type WorldCheckpointBatch } from "../src/rooms/core/WorldRuntime";
 import { MMO_INTEREST_MAX_ENTITIES, createMmoWorldMode, type MmoWorldMode } from "../src/rooms/modes/mmoWorld/index";
 import { createRoomStateForMode, type MmoWorldRoomState } from "../src/rooms/schema/GameRoomState";
+import type { WorldTransferReady, WorldTransferTarget } from "../src/rooms/WorldMode";
 import type { MmoInstanceSnapshot, MmoPersonaSnapshot } from "../src/rooms/modes/mmoWorld/checkpoint";
 
 const CONTENT = indexContentPack(validateContentPack(GREYBOX_PACK));
@@ -43,7 +47,9 @@ interface Harness {
     clock: number;
 }
 
-function harness(content: IContentPackIndex = CONTENT): Harness {
+type TransferPort = (session: string, target: WorldTransferTarget) => Promise<WorldTransferReady>;
+
+function harness(content: IContentPackIndex = CONTENT, transfer: TransferPort | null = null): Harness {
     const characters = new Map<string, MmoCharacterRow>();
     const mode = createMmoWorldMode({ content, loadCharacter: async (_sId, personaId) => characters.get(personaId) ?? null, checkpoint: null });
     const state = createRoomStateForMode("mmoWorld") as MmoWorldRoomState;
@@ -57,6 +63,7 @@ function harness(content: IContentPackIndex = CONTENT): Harness {
             sendS2C: (session, token, payload) => { direct.push({ session, type: token.type, payload }); },
             broadcastS2C: (token, payload) => { direct.push({ session: "*", type: token.type, payload }); },
             onCheckpoint: (batch) => { batches.push(batch); },
+            ...(transfer ? { requestTransfer: transfer } : {}),
         },
     });
     return { mode, runtime, state, characters, direct, batches, get clock() { return clockRef.value; }, set clock(value: number) { clockRef.value = value; } };
@@ -94,7 +101,7 @@ test("撒怪：本图三只 slime 落在 spawn 附近（确定性）；图不在
         assert.ok(Math.abs(creature.x - 1200) <= 40 && Math.abs(creature.y - 1000) <= 40, `${creature.id} 在 spawn 抖动半径内 (${creature.x}, ${creature.y})`);
         assert.deepEqual([creature.templateId, creature.hp, creature.hpMax], ["slime", 30, 30]);
     }
-    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 2, 0]);
+    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 3, 0]);
     const other = harness();
     await assert.rejects(other.runtime.recover({ instanceId: "i2", mapId: "nowhere", line: 0, authorityEpoch: 1, checkpoint: null }), /不在内容包/u);
     const req = request("s0", "p-nobody");
@@ -288,4 +295,76 @@ test("兴趣集上限：300 只 slime 挤在出生点 ⇒ 兴趣集最近优先�
     h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 1, dir: { x: 1, y: 0 } });
     step(h, 2);
     assert.ok(drain(h, "a").some((message) => message.type === S2C.MmoWorldUpdate));
+});
+
+const flush = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
+
+test("两图交接：portal 不存在 / 不在范围 / 在途 ⇒ rejected；门内 ⇒ 框架端口（目标图 + kit 载荷）且落点先进 persona 快照；端口失败 ⇒ rejected + 落点清；Committed ⇒ perSession transferReady", async () => {
+    const calls: { session: string; target: WorldTransferTarget }[] = [];
+    let settle: { resolve: (ready: WorldTransferReady) => void; reject: (error: Error) => void } | null = null;
+    const h = harness(CONTENT, (session, target) => new Promise((resolve, reject) => { calls.push({ session, target }); settle = { resolve, reject }; }));
+    await activeWorld(h);
+    await seat(h, "a", "p-a", personaAt(1000, 720)); // gate-east 在 (1000, 700) 半径 60
+    step(h);
+    drain(h, "a");
+    const results = (): IMmoWorldOpResult[] => h.direct.filter((m) => m.session === "a" && m.type === S2C.MmoWorldOpResult).map((m) => m.payload as IMmoWorldOpResult);
+    h.runtime.enqueue("a", C2S.MmoWorldTransfer, { portalId: "gate-nowhere", clientReqId: "t0" });
+    step(h);
+    assert.deepEqual(results().map((r) => [r.clientReqId, r.result, r.detail]), [["t0", "rejected", "portal 不存在"]]);
+    // 走远：(1000, 720) → 向下 20 步 × 6 = (1000, 840)，距门 140
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 1, dir: { x: 0, y: 1 } });
+    step(h, 20);
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 2, dir: { x: 0, y: 0 } });
+    h.runtime.enqueue("a", C2S.MmoWorldTransfer, { portalId: "gate-east", clientReqId: "t1" });
+    step(h);
+    assert.deepEqual([results().at(-1)!.clientReqId, results().at(-1)!.detail], ["t1", "不在传送门范围内"]);
+    assert.equal(calls.length, 0, "⛔ 没到门不找框架");
+    // 回到门内并发起
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 3, target: { x: 1000, y: 730 } });
+    step(h, 25);
+    assert.ok(Math.abs(h.mode.__probe.moverOf("a")!.y - 730) < 1e-6, "点地到门内");
+    h.runtime.enqueue("a", C2S.MmoWorldTransfer, { portalId: "gate-east", clientReqId: "t2" });
+    step(h);
+    assert.deepEqual(calls.map((c) => [c.session, c.target.toMap, c.target.payload]), [["a", "greybox-east", { portalId: "gate-east", toSpawnPointId: "gate" }]], "框架交接端口：目标图 + kit 载荷");
+    assert.deepEqual(h.mode.__probe.transfersInFlight(), ["a"]);
+    h.runtime.enqueue("a", C2S.MmoWorldTransfer, { portalId: "gate-east", clientReqId: "t3" });
+    step(h);
+    assert.deepEqual([results().at(-1)!.clientReqId, results().at(-1)!.detail, calls.length], ["t3", "交接在途", 1]);
+    const during = h.runtime.takeCheckpoint(true)!;
+    assert.deepEqual((during.persona[0]!.snapshot as MmoPersonaSnapshot).arrival, { mapId: "greybox-east", spawnPointId: "gate" }, "在途期间的强制点带落点");
+    // 端口失败 ⇒ rejected + 落点清 + 可重试
+    settle!.reject(new Error("目标不可解析"));
+    await flush();
+    assert.deepEqual([results().at(-1)!.clientReqId, results().at(-1)!.detail], ["t2", "交接失败：目标不可解析"]);
+    assert.deepEqual(h.mode.__probe.transfersInFlight(), []);
+    assert.equal((h.runtime.takeCheckpoint(true)!.persona[0]!.snapshot as MmoPersonaSnapshot).arrival, undefined, "落点清");
+    // 重试成功：Committed ⇒ transferReady perSession（凭据只此一处出网）
+    h.runtime.enqueue("a", C2S.MmoWorldTransfer, { portalId: "gate-east", clientReqId: "t4" });
+    step(h);
+    assert.equal(calls.length, 2);
+    settle!.resolve({ transferId: "wt_1", worldAddress: "s0/greybox-east/0", toMap: "greybox-east", toLine: 0, toInstance: "i-east", ticket: "T".repeat(24), expiresAt: 999 });
+    await flush();
+    step(h);
+    const ready = drain(h, "a").filter((m) => m.type === S2C.MmoWorldTransferReady).map((m) => m.payload as IMmoWorldTransferReady);
+    assert.deepEqual(ready, [{ transferId: "wt_1", worldAddress: "s0/greybox-east/0", ticket: "T".repeat(24), expiresAt: 999 }]);
+    assert.ok(h.mode.__probe.log.includes("transfer:a:ready:greybox-east"));
+    assert.deepEqual(h.mode.__probe.transfersInFlight(), ["a"], "Committed 后由壳离座清在途");
+    assert.equal(h.direct.filter((m) => m.type === S2C.MmoWorldTransferReady).length, 0, "transferReady ⛔ 直发（perSession 不可丢类）");
+});
+
+test("交接落点：目标图（东郊 2 只 slime）按 persona 快照 arrival 落在 \"gate\" 且 HP / MP 随身；arrival 是别的图 / 未知落点 ⇒ 首个出生点；同图检查点优先", async () => {
+    const east = harness();
+    await activeWorld(east, "greybox-east");
+    assert.equal([...east.mode.__probe.entities().values()].filter((e) => e.kind === "creature").length, 2);
+    const envelope = (snapshot: MmoPersonaSnapshot) => buildCheckpointEnvelope({ rev: 5, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 1, snapshot });
+    await seat(east, "a", "p-a", envelope({ mapId: "greybox", x: 1000, y: 730, hp: 60, mp: 20, arrival: { mapId: "greybox-east", spawnPointId: "gate" } }));
+    const a = east.mode.__probe.moverOf("a")!;
+    assert.deepEqual([a.x, a.y, a.hp, a.mp, a.arrival], [500, 720, 60, 20, null], "东郊 gate 落点 + HP / MP 随身，落点不带进新实体");
+    assert.ok(east.mode.__probe.log.includes("enter:a:arrival"));
+    await seat(east, "b", "p-b", envelope({ mapId: "greybox", x: 1, y: 1, hp: 60, mp: 20, arrival: { mapId: "greybox", spawnPointId: "gate" } }));
+    assert.deepEqual([east.mode.__probe.moverOf("b")!.x, east.mode.__probe.moverOf("b")!.y], [500, 500], "arrival 指向别的图 ⇒ 首个出生点");
+    await seat(east, "c", "p-c", envelope({ mapId: "greybox", x: 1, y: 1, hp: 60, mp: 20, arrival: { mapId: "greybox-east", spawnPointId: "nowhere" } }));
+    assert.deepEqual([east.mode.__probe.moverOf("c")!.x, east.mode.__probe.moverOf("c")!.y], [500, 500], "未知落点 ⇒ 首个出生点");
+    await seat(east, "d", "p-d", envelope({ mapId: "greybox-east", x: 600, y: 600, hp: 60, mp: 20, arrival: { mapId: "greybox-east", spawnPointId: "gate" } }));
+    assert.deepEqual([east.mode.__probe.moverOf("d")!.x, east.mode.__probe.moverOf("d")!.y], [600, 600], "同图检查点优先于落点");
 });

@@ -4,12 +4,15 @@
  *    本人位置取本地预测（职业模板速度 + 灰盒碰撞网格），`pos` 回执按 seq 和解（MK1-B1）；
  *    掉线 / 重同步 / 回执写提示；被服务端踢 ⇒ settled 退出；presentation 无效即抛；
  *  - createMmoWorldRoom：句柄 → 端口（seq 递增的 move / stop / target、观察者流经 reconciler 拼 baseline 后发实体表、私有流推进 cursor、回执 / 掉线回调）；
- *  - createMmoWorldRoomJoiner：world.enter → transport.join（mode / strategy / persona / 凭据）→ MmoWorldRoom；取消 ⇒ 离开。
+ *  - createMmoWorldRoomJoiner：world.enter → transport.join（mode / strategy / persona / 凭据）→ MmoWorldRoom；取消 ⇒ 离开；
+ *  - MK1-B3 两图交接：传送输入只在传送门半径内发；transferReady ⇒ 提示 + 请求退出，stop 时把凭据交给 onTransfer；端口 transfer 发 clientReqId；
+ *    joiner 有交接凭据 ⇒ 跳过 enter、transfer strategy；enter 解析出在途交接（transferId 非 null）⇒ 同样 transfer strategy；launch.transfer 校验。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { GameplayContext } from "../src/logic/gameplay/index";
 import { MmoWorldGameplay, type MmoWorldRoom, type MmoWorldRoomObserver, type MmoWorldPresentation, type MmoWorldViewModel } from "../src/logic/rooms/mmoWorld/MmoWorldGameplay";
+import { validateMmoWorldLaunch } from "../src/gameplay/modes/mmoWorld/index";
 import { createMmoWorldRoom, createMmoWorldRoomJoiner } from "../src/net/rooms/MmoWorldRoom";
 import type { WorldRoomHandle, WorldRoomTransport } from "../src/net/rooms/WorldRoomTransport";
 import { S2C, wireChecksum, type IMmoEntityWire } from "../src/shared/index";
@@ -25,6 +28,7 @@ function fakeRoom() {
         move: (dir) => { calls.push(["move", dir]); return calls.length; },
         moveTo: (target) => { calls.push(["moveTo", target]); return calls.length; },
         stop: () => { calls.push(["stop"]); return calls.length; },
+        transfer: (portalId) => { calls.push(["transfer", portalId]); return `t${calls.length}`; },
         requestBaseline: (afterSeq) => { calls.push(["baseline", afterSeq]); return true; },
         observe: (next) => { observer = next; return () => { observer = null; }; },
         leave: async () => { calls.push(["leave"]); },
@@ -130,10 +134,12 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     const resyncs: (string | null)[] = [];
     const lefts: string[] = [];
     const positions: [number, number][] = [];
+    const readies: string[] = [];
     room.observe({
         entities: (snapshot, synced) => { snapshots.push([snapshot.size, synced]); },
         privateState: (state) => { privates.push(state.hp); },
         pos: (payload) => { positions.push([payload.seq, payload.x]); },
+        transferReady: (payload) => { readies.push(payload.transferId); },
         opResult: () => undefined, resync: (reason) => { resyncs.push(reason); }, dropped: () => undefined, reconnected: () => undefined, left: (kind) => { lefts.push(kind); },
     });
     assert.deepEqual([room.move({ x: 1, y: 0 }), room.stop(), room.moveTo({ x: 10, y: 20 })], [1, 2, 3], "意图返回自己的 seq");
@@ -149,6 +155,10 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     assert.deepEqual(privates, [90]);
     emit(S2C.MmoWorldPos, { seq: 3, tick: 11, x: 1006, y: 1000 });
     assert.deepEqual(positions, [[3, 1006]], "pos 直发回执到 observer.pos");
+    assert.equal(room.transfer("gate-east"), "t4", "transfer 返回 clientReqId");
+    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.transfer", { portalId: "gate-east", clientReqId: "t4" }]);
+    emit(S2C.MmoWorldTransferReady, { transferId: "wt_1", worldAddress: "s0/greybox-east/0", ticket: "x".repeat(24), expiresAt: 9 });
+    assert.deepEqual(readies, ["wt_1"]);
     emit(S2C.MmoWorldLeave, { seq: 4, tick: 12, id: "slime-camp:0" });
     assert.deepEqual(snapshots.at(-1), [1, true]);
     emit(S2C.MmoWorldUpdate, { seq: 9, tick: 13, id: "char:c1", x: 1012, y: 1000, rev: 2, hp: 100 });
@@ -173,4 +183,51 @@ test("createMmoWorldRoomJoiner：world.enter → transport.join(mode / strategy 
     await capability.leave();
     assert.deepEqual(sent.at(-1), ["leave"]);
     assert.throws(() => joiner.join(new AbortController().signal, { mapId: "greybox" }), /缺 personaId/u);
+});
+
+test("两图交接（joiner）：交接凭据在手 ⇒ 跳过 world.enter、transfer strategy 直进目标分线；enter 解析出在途交接 ⇒ 同样 transfer strategy；launch.transfer 校验", async () => {
+    const joins: { strategy: unknown; ticket: string }[] = [];
+    let enters = 0;
+    const { handle } = fakeHandle();
+    const transport = { join: async (request: { strategy: unknown; ticket: string }) => { joins.push({ strategy: request.strategy, ticket: request.ticket }); return handle; } } as unknown as WorldRoomTransport;
+    const joiner = createMmoWorldRoomJoiner({
+        transport: () => transport,
+        enter: async (personaId, mapId) => { enters += 1; return { worldAddress: `s0/${mapId}/2`, mapId, line: 2, endpoint: "", ticket: "e".repeat(24), expiresAt: 1, transferId: "wt_pending", personaId } as never; },
+    });
+    const credential = { transferId: "wt_1", worldAddress: "s0/greybox-east/0", ticket: "x".repeat(24), expiresAt: 5 };
+    await joiner.joinFor("p1", "greybox-east", new AbortController().signal, credential).ready;
+    assert.deepEqual([enters, joins[0]], [0, { strategy: { kind: "transfer", transferId: "wt_1", mapId: "greybox-east", line: 0 }, ticket: "x".repeat(24) }], "凭据在手 ⛔ enter");
+    await joiner.join(new AbortController().signal, { characterId: "c1", personaId: "p1", mapId: "greybox" }).ready;
+    assert.deepEqual([enters, joins[1]], [1, { strategy: { kind: "transfer", transferId: "wt_pending", mapId: "greybox", line: 2 }, ticket: "e".repeat(24) }], "enter 解析出在途交接 ⇒ transfer strategy");
+    await assert.rejects(joiner.joinFor("p1", "greybox", new AbortController().signal, { ...credential, worldAddress: "bad" }).ready, /worldAddress/u);
+    assert.deepEqual(validateMmoWorldLaunch({ characterId: "c1", mapId: "greybox-east", transfer: credential }), { characterId: "c1", mapId: "greybox-east", transfer: credential });
+    assert.throws(() => validateMmoWorldLaunch({ characterId: "c1", mapId: "greybox", transfer: credential }), /与 mapId 不一致/u);
+    assert.throws(() => validateMmoWorldLaunch({ characterId: "c1", mapId: "greybox-east", transfer: { ...credential, ticket: "" } }), /ticket/u);
+    assert.throws(() => validateMmoWorldLaunch({ characterId: "c1", mapId: "greybox-east", transfer: { ...credential, extra: 1 } }), /未知字段/u);
+});
+
+test("两图交接（gameplay）：传送输入只在传送门半径内发（预测位置）；transferReady ⇒ 提示 + 请求退出，stop 时把凭据交给 onTransfer 恰一次", async () => {
+    const { room, calls, observer } = fakeRoom();
+    const { presentation, renders } = fakePresentation();
+    const exits: string[] = [];
+    const handed: string[] = [];
+    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async (reason: string) => { exits.push(reason); } };
+    const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1", onTransfer: (ready) => { handed.push(ready.transferId); } });
+    const context = contextOf(room);
+    await gameplay.start(context);
+    observer().entities(new Map([[self.id, self]]), true); // 本人 (1000, 1000)；gate-east 在 (1000, 700) 半径 60
+    gameplay.handleInput({ type: "transfer" }, context);
+    gameplay.tick(0.016, context);
+    assert.deepEqual([calls.filter((call) => call[0] === "transfer").length, renders.at(-1)!.notice], [0, "不在传送门范围内"]);
+    observer().pos({ seq: 0, tick: 1, x: 1000, y: 720 }); // 权威位置回执把预测拉到门内
+    gameplay.handleInput({ type: "transfer" }, context);
+    gameplay.tick(0.016, context);
+    assert.deepEqual([calls.at(-1), renders.at(-1)!.notice], [["transfer", "gate-east"], "传送：gate-east"]);
+    const ready = { transferId: "wt_1", worldAddress: "s0/greybox-east/0", ticket: "x".repeat(24), expiresAt: 9 };
+    observer().transferReady(ready);
+    gameplay.tick(0.016, context);
+    assert.deepEqual([exits, renders.at(-1)!.notice, handed], [["settled"], "传送中…", []], "先退出本局，凭据 stop 时才交出");
+    gameplay.stop({ kind: "manual" });
+    gameplay.stop({ kind: "manual" });
+    assert.deepEqual(handed, ["wt_1"], "凭据交出恰一次");
 });

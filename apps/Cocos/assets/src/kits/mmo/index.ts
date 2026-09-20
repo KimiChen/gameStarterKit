@@ -19,7 +19,7 @@ export function createPluginModule(): PluginModule {
                 characters: () => fetchCharacters(context.ports.lobbyRpc),
                 createCharacter: (input) => createCharacter(context.ports.lobbyRpc, input),
                 enterWorld: (personaId, mapId) => enterWorld(context.ports.lobbyRpc, personaId, mapId),
-                launchWorld: (characterId, mapId) => context.ports.launch.launch({ kind: "gameplay", gameplayId: WORLD_GAMEPLAY_ID, payload: { characterId, mapId } }),
+                launchWorld: (characterId, mapId, transfer) => context.ports.launch.launch({ kind: "gameplay", gameplayId: WORLD_GAMEPLAY_ID, payload: { characterId, mapId, ...(transfer ? { transfer } : {}) } }),
                 close: () => context.ports.navigation.close(ROUTE_ID),
             }));
         },

@@ -3,6 +3,7 @@
  * 的 joiner 读取（route 形态入口的 navigation.open 不带 setup，故走与 arena 同形的模块级 holder + 身份守卫注销）。⛔ 不 import cc（铁律 9）。
  */
 import type { IWorldEnterRes } from "../../../shared/protocol/lobbyRpc/domains/world";
+import type { IMmoWorldTransferReady } from "../../../shared/gameplays/mmoWorld/wire";
 import type { IMmoCharactersRes, IMmoCreateCharacterReq, IMmoCreateCharacterRes } from "../../../shared/protocol/lobbyRpc/domains/mmo";
 
 export interface MmoRuntime {
@@ -14,8 +15,8 @@ export interface MmoRuntime {
     createCharacter(input: Omit<IMmoCreateCharacterReq, "clientReqId">): Promise<IMmoCreateCharacterRes>;
     /** 框架 world.enter：签发一次性凭据（凭据原文 ⛔ 落日志）。 */
     enterWorld(personaId: string, mapId: string): Promise<IWorldEnterRes>;
-    /** 带参 launch：启动 mmoWorld 玩法（payload = { characterId, mapId }，经 GameplayModule.validateLaunch）。 */
-    launchWorld(characterId: string, mapId: string): Promise<void>;
+    /** 带参 launch：启动 mmoWorld 玩法（payload = { characterId, mapId, transfer? }，经 GameplayModule.validateLaunch；transfer = 两图交接凭据）。 */
+    launchWorld(characterId: string, mapId: string, transfer?: IMmoWorldTransferReady): Promise<void>;
     /** 关闭本 kit 的选角 route。 */
     close(): void;
 }

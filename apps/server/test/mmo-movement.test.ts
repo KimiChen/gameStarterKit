@@ -82,7 +82,7 @@ test("content v2：灰盒包两职业 + 墙过闸并可索引；classes 缺 / �
         [index.classById.get("fighter")?.speedPerSec, index.classById.get("caster")?.speedPerSec, index.classById.get("caster")?.hpMax, index.classById.get("caster")?.mpMax],
         [120, 110, 80, 100],
     );
-    assert.deepEqual([pack.version, pack.maps[0]!.collision?.bitmap.length], [2, 400]);
+    assert.deepEqual([pack.version, pack.maps[0]!.collision?.bitmap.length], [3, 400]);
     type MutablePack = { -readonly [K in keyof IContentPack]: IContentPack[K] };
     type MutableMap = { -readonly [K in keyof IMapDef]: IMapDef[K] };
     const mutate = (edit: (pack: MutablePack, map: MutableMap) => void): unknown => {
@@ -100,7 +100,7 @@ test("content v2：灰盒包两职业 + 墙过闸并可索引；classes 缺 / �
     expectError(mutate((copy) => { copy.classes = [{ ...copy.classes[0]!, speedPerSec: 0 }]; }), /classes\[0\]\.speedPerSec/u, "速度 ≥ 1");
     expectError(mutate((_copy, map) => { map.collision = { cellSize: 100, bitmap: "0".repeat(399) }; }), /maps\[0\]\.collision\.bitmap/u, "位图长度 ≠ cols × rows");
     expectError(mutate((_copy, map) => { map.collision = { cellSize: 100, bitmap: `${"0".repeat(399)}x` }; }), /maps\[0\]\.collision\.bitmap/u, "位图字符");
-    expectError(mutate((_copy, map) => { map.spawnPoints = [{ spawnPointId: "start", pos: { x: 1550, y: 950 } }]; }), /maps\[0\]\.spawnPoints\[0\]\.pos/u, "出生点落阻挡格");
+    expectError(mutate((_copy, map) => { map.spawnPoints = [{ spawnPointId: "start", pos: { x: 1550, y: 950 } }, map.spawnPoints[1]!]; }), /maps\[0\]\.spawnPoints\[0\]\.pos/u, "出生点落阻挡格（保留东郊门引用的 gate 点）");
     expectError(mutate((_copy, map) => { map.respawnPoints = [{ x: 1550, y: 950 }]; }), /maps\[0\]\.respawnPoints\[0\]/u, "复活点落阻挡格");
     expectError(mutate((copy) => { copy.spawns = [{ ...copy.spawns[0]!, pos: { x: 1550, y: 950 } }]; }), /^pack\.spawns\[0\]\.pos$/u, "刷新点落阻挡格");
     const noWall = validateContentPack(mutate((_copy, map) => { delete (map as Partial<MutableMap>).collision; }));

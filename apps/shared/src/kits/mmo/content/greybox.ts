@@ -1,6 +1,7 @@
 /**
- * mmo kit · 灰盒内容包（docs/MMO.md §7.6「kit v1 自带灰盒内容包」；MK0-B5，MK1-B1 加职业模板与碰撞位图）：一图（greybox 2000×2000，视距 400，
- * 一堵 200×200 的墙）两职业（fighter / caster）一怪（slime，三只）一技能（strike）。只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点
+ * mmo kit · 灰盒内容包（docs/MMO.md §7.6「kit v1 自带灰盒内容包」；MK0-B5，MK1-B1 加职业模板与碰撞位图，MK1-B3 加第二图与一对传送门）：
+ * 主图 greybox（2000×2000，视距 400，一堵 200×200 的墙，slime ×3）+ 东郊 greybox-east（1000×1000，slime ×2），gate-east ↔ gate-west 互通，
+ * 落点各自的 "gate" 出生点在门外（半径外）；两职业（fighter / caster）一技能（strike）。只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点
  * （data 贡献 = JSON）装载，届时本 TS 字面量退役——MK0 以 TS 字面量作单源（kit 服务端代码 ⛔ node:fs、tsconfig 未开 resolveJsonModule，
  * 见 MMO.md §12 MK0 偏差 ①）。启动期与用例都经 `validateContentPack` 过闸。
  */
@@ -12,6 +13,13 @@ export const GREYBOX_SPAWN_POINT_ID = "start";
 export const GREYBOX_CREATURE_ID = "slime";
 export const GREYBOX_SPELL_ID = "strike";
 export const GREYBOX_MAP_SIZE = 2000;
+export const GREYBOX_EAST_MAP_ID = "greybox-east";
+export const GREYBOX_EAST_MAP_SIZE = 1000;
+/** 交接落点出生点 id（两图同名，各自在自己门外）。 */
+export const GREYBOX_GATE_SPAWN_POINT_ID = "gate";
+export const GREYBOX_PORTAL_EAST_ID = "gate-east";
+export const GREYBOX_PORTAL_WEST_ID = "gate-west";
+export const GREYBOX_PORTAL_RADIUS = 60;
 export const GREYBOX_COLLISION_CELL = 100;
 /** 墙：格 col 15–16 × row 9–10 ⇒ 世界坐标 x ∈ [1500, 1700)、y ∈ [900, 1100)。 */
 export const GREYBOX_WALL = Object.freeze({ colMin: 15, colMax: 16, rowMin: 9, rowMax: 10 });
@@ -31,16 +39,30 @@ function greyboxBitmap(): string {
 export const GREYBOX_PACK: IContentPack = {
     schemaVersion: 1,
     packId: GREYBOX_PACK_ID,
-    version: 2,
+    version: 3,
     maps: [{
         mapId: GREYBOX_MAP_ID,
         name: "灰盒草原",
         size: { w: GREYBOX_MAP_SIZE, h: GREYBOX_MAP_SIZE },
         aoi: { cellSize: 100, viewRadius: 400 },
         collision: { cellSize: GREYBOX_COLLISION_CELL, bitmap: greyboxBitmap() },
-        spawnPoints: [{ spawnPointId: GREYBOX_SPAWN_POINT_ID, pos: { x: 1000, y: 1000 } }],
-        portals: [],
+        spawnPoints: [
+            { spawnPointId: GREYBOX_SPAWN_POINT_ID, pos: { x: 1000, y: 1000 } },
+            { spawnPointId: GREYBOX_GATE_SPAWN_POINT_ID, pos: { x: 1000, y: 780 } }, // 门外 80（半径 60 之外，⛔ 落地即再触发）
+        ],
+        portals: [{ portalId: GREYBOX_PORTAL_EAST_ID, pos: { x: 1000, y: 700 }, radius: GREYBOX_PORTAL_RADIUS, toMapId: GREYBOX_EAST_MAP_ID, toSpawnPointId: GREYBOX_GATE_SPAWN_POINT_ID }],
         respawnPoints: [{ x: 1000, y: 1000 }],
+    }, {
+        mapId: GREYBOX_EAST_MAP_ID,
+        name: "灰盒东郊",
+        size: { w: GREYBOX_EAST_MAP_SIZE, h: GREYBOX_EAST_MAP_SIZE },
+        aoi: { cellSize: 100, viewRadius: 400 },
+        spawnPoints: [
+            { spawnPointId: GREYBOX_SPAWN_POINT_ID, pos: { x: 500, y: 500 } },
+            { spawnPointId: GREYBOX_GATE_SPAWN_POINT_ID, pos: { x: 500, y: 720 } },
+        ],
+        portals: [{ portalId: GREYBOX_PORTAL_WEST_ID, pos: { x: 500, y: 800 }, radius: GREYBOX_PORTAL_RADIUS, toMapId: GREYBOX_MAP_ID, toSpawnPointId: GREYBOX_GATE_SPAWN_POINT_ID }],
+        respawnPoints: [{ x: 500, y: 500 }],
     }],
     regions: [],
     classes: [
@@ -66,7 +88,10 @@ export const GREYBOX_PACK: IContentPack = {
         checkpointOnDeath: false,
         interacts: [],
     }],
-    spawns: [{ spawnId: "slime-camp", mapId: GREYBOX_MAP_ID, templateId: GREYBOX_CREATURE_ID, pos: { x: 1200, y: 1000 }, count: 3, waypoints: [], managed: "kit" }],
+    spawns: [
+        { spawnId: "slime-camp", mapId: GREYBOX_MAP_ID, templateId: GREYBOX_CREATURE_ID, pos: { x: 1200, y: 1000 }, count: 3, waypoints: [], managed: "kit" },
+        { spawnId: "east-camp", mapId: GREYBOX_EAST_MAP_ID, templateId: GREYBOX_CREATURE_ID, pos: { x: 700, y: 500 }, count: 2, waypoints: [], managed: "kit" },
+    ],
     spells: [{ spellId: GREYBOX_SPELL_ID, name: "挥击", kind: "damage", castMs: 0, cooldownMs: 1500, mpCost: 0, range: 60, power: 8 }],
     items: [],
     lootTables: [],
