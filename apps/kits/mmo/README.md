@@ -12,7 +12,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | ✅ 2026-09-20 退出（B1–B6，kit 0.1.6；kill criterion 取 §11.2 v1 例外「热点互见 ≤ 50 人」，50 人三次重跑 ✅；MMO.md §12 MK1 行；tag `mk1-exit`） |
 | MK2 模拟闭环 | combat + ai 面、掉落 | ✅ 2026-09-20 退出（B1 combat / B2 ai / B3 掉落，kit 0.1.9；MMO.md §12 MK2 行；tag `mk2-exit`） |
-| MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 施工中：B1 inventory 面物品半边 ✅ 2026-09-20（kit 0.1.11；B2–B3 未开工） |
+| MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | B1 inventory 面物品半边 ✅、B2 角色保存定稿 ✅、B3 长跑基准台 + 4 分钟冒烟 ✅ 2026-09-20（kit 0.1.12）；**退出待 24–72 h 正式长跑报告**（命令见基准段；需要机器连续跑一天） |
 | MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 未开工 |
 
 ## 定义了什么（MK0-B1）
@@ -86,6 +86,16 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 用例 | 服务端 `mmo-ai.test.ts`（decide 十三条 / 分桶 / A* 绕墙・终点阻挡・展开上限 / 调度器预算顺延 / compute 任务 / 迟到判定）、`mmoWorld-mode.test.ts` 新增 3（野猪追击 → 射程内扣血 → 出拴绳 evade 回家；slime 还手不追；田鼠巡逻一圈 / 每 4 步思考 / 假时钟顺延；绕墙不进阻挡格 / 权威换代・版本变更的回执丢弃） |
 | 偏差 | 找路端口回执可同步（缺省进程内：同 tick 生效 ⇒ 无头重放确定性）或 Promise（compute 池：下一步消费）；compute 池接线留给组合根（kit ⛔ import compute）；仇恨 = 直伤值，治疗 / 增益不计；怪物无阵营，感知用位面 / 隐身规则；MK2-B1 战斗用例改用 slime 无技能的木桩内容（还手归 ai 用例） |
 
+## 角色保存定稿（MK3-B2）
+
+| 项 | 定稿 |
+| --- | --- |
+| `k_mmo_character` | 只留身份与成长：server_id / character_id / persona_id / user_id / slot / name / class_id / faction_id / level / exp + `checkpoint_rev` + created_at（列集由 `mmo-sql.test.ts` 冻结；再加列 = 新迁移 + 更新该用例）；⛔ 位置 / HP / MP / 冷却 |
+| 角色检查点 | `k_mmo_character_checkpoint` 信封 `snapshot` = v2 `{ mapId, x, y, hp, mp, cooldowns?, arrival? }`（schema `{ 2, minSupported 1 }`，v1 五键照常）；**内容 fail-closed**：`validatePersonaSnapshot`（exact keys / 有限数 / 冷却正整数 / arrival 形态），坏快照 ⇒ 当无检查点从出生点满血进图并记 `enter:<s>:bad-snapshot`（⛔ 半信半疑地回灌） |
+| 选角页 | `mapId` = 最新已落库角色检查点的 `snapshot.mapId`（`persistence/characters.ts` 子查询按 `checkpoint_rev`），无检查点 = null（真栈 `int/mmo-checkpoint` ④） |
+| 物品 | `k_mmo_item_instance`（MK3-B1）；⛔ 进检查点 |
+| 保留策略（MF11 R2-05 归 kit） | 分线 / 角色检查点各只留最近 `MMO_INSTANCE_CHECKPOINT_KEEP 32` / `MMO_CHARACTER_CHECKPOINT_KEEP 16` 个 rev（落盘同事务删更旧的行；恢复只读最大 rev、重放去重只看近期行）⇒ 长跑期间两张表**有界** |
+
 ## 物品（MK3-B1；`inventory` 面物品半边，v2）
 
 | 层 | 内容 |
@@ -140,6 +150,8 @@ tsconfig 未开 resolveJsonModule；MK4 改经贡献点 `content`（data 贡献�
 ## 基准（MK0-B6 `mmo-greybox` 场景 A；MK1-B6 `mmo-hotspot` 场景 B）
 
 场景 A 首次数字见 MMO.md §12 MK0 行；MK1-B6 起两剧本都用生产节拍 `MMO_WORLD_TUNING`（`rooms/modes/mmoWorld/index.ts`：角色位置每 2 步 = 10 Hz 进观察者流、相位按实体错开、停下那步补 bump、本人 pos 回执仍 20 Hz；兴趣集每 4 步 = 200 ms 按会话相位重算；单测直构 mode 缺省 1 / 1）。MK1 数字（20 s / 种子 7）：A 40 人 192 只 tick p99 16.2 ms、出站 p50 40.2 KB/s/会话（逐步节拍 75.2 → −47%）；B 热点 500 只 slime：25 人 p99 15.9 ms / 40.5 KB/s ✅、50 人 p99 24.9 ms / 68.5 KB/s ✅（贴线）、100 人 p99 55.2 ms / 125.8 KB/s ❌——热点上限的本质是互见人数 × 更新率的 O(N²) 扇出，且同进程机器人把 SDK 解码算进事件循环；详见 MMO.md §12 MK1 行偏差 ⑧。报告 `docs/perf/world-bench/2026-09-20T14*-mmo-{greybox-mk1-exit,hotspot-hot25|50|100-exit}.json`；⚠ 只用于比较与阈值判定。
+
+长跑（MK3-B3）：`tools/world-bench/run.ts --sample-every <s>`（tools/world-bench/README.md「长跑」段）把窗口切成等长采样，每样本记 tick / 出站 / 事件循环 / 内存 / 活动资源按类型 / 在线机器人 / 错误 / 世界探针（事件积压、两张检查点表行数与主体数），结束时最小二乘得每小时增长 + 检查点表有界检查 ⇒ `stable` / `growing`（容差 `SOAK_TOLERANCE`：RSS ≤ 20 MB/h、heap ≤ 10 MB/h、活动资源 ≤ 2/h、积压 ≤ 1/h、tick p99 ≤ 2 ms/h、行数 ≤ 主体数 × KEEP、不掉线、错误不增）。冒烟 `mmo-greybox --bots 20 --seconds 240 --sample-every 30`：8 样本，RSS 139 → 126 MB（斜率 −482 MB/h = GC 回落）、heap 55 → 56 MB、活动资源恒 68、tick p99 7.9 → 4.4 ms、事件积压 0、分线检查点行 7 ≤ 1 × 32、角色检查点行 140 ≤ 20 × 16、机器人 20 不掉线 errors 0 ⇒ **stable**（报告 `docs/perf/world-bench/2026-09-20T170039-mmo-greybox-soak-smoke.json`）。正式 24 h：`npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario mmo-hotspot --bots 50 --seconds 86400 --sample-every 300 --label soak-24h`（72 h 改 259200），报告回写 MMO.md §12 MK3 行后 MK3 退出。
 
 MK1 退出复核（2026-09-20，用户拍板选项 ③「接受 50 人热点为 v1 上限」）：`mmo-hotspot --bots 50` 三次重跑，50 人三次重跑（种子 7 / 8 / 9，2026-09-20T1615*）tick p99 20.8 / 24.2 / 24.8 ms、出站 p50 69.1 / 68.8 / 68.5 KB/s/会话、RSS 峰值 ≤ 222 MB、errors 0（种子 9 有一次 108 ms 单 tick 尖峰，p99 仍在线内）；报告 `docs/perf/world-bench/2026-09-20T1615*-mmo-hotspot-hot50-mk1-exit-s{7,8,9}.json`。**内容侧约束：聚集玩法（帮战 / 城内集会 / boss 战）设计上限 = 50 人互见**（§11.2 例外行），超过要靠分线 / 位面 / 视野分层。热点 100 人的根因与候选收紧（分层节拍 / 角色可见上限 / 位置量化 / 聊天限频）与独立进程基准台留作 v1.x 可选项。
 

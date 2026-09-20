@@ -20,7 +20,7 @@ import {
     type IWorldRoomJoinOptions,
 } from "@game/shared";
 import { GREYBOX_MAP_ID } from "@game/shared/kits/mmo/content/greybox";
-import { MMO_EVENT_LOOT_CLAIMED } from "@game/shared/kits/mmo/api/inventory/index";
+import { MMO_EVENT_LOOT_CLAIMED, type IMmoBagWire } from "@game/shared/kits/mmo/api/inventory/index";
 import { withKitWorkerTx } from "../../src/core/infra/kitApi";
 import { kWorldFence, kWorldLease } from "../../src/core/infra/keys";
 import { tryAcquireLease } from "../../src/core/infra/lease";
@@ -100,7 +100,7 @@ function collect(room: SDKRoom) {
     const leaves: string[] = [];
     const positions: IMmoWorldPos[] = [];
     const results: IMmoWorldOpResult[] = [];
-    const bags: IMmoWorldPrivate["bag"][] = [];
+    const bags: IMmoBagWire[] = [];
     room.onMessage(S2C.MmoWorldBaselineBegin, (payload: IMmoWorldBaselineBegin) => { begins.push(payload); });
     room.onMessage(S2C.MmoWorldBaselineChunk, (payload: IMmoWorldBaselineChunk) => { chunks.push(payload); });
     room.onMessage(S2C.MmoWorldEnter, (payload: IMmoWorldEnter) => { enters.push(payload.entity); });

@@ -29,6 +29,22 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --compare docs
 
 主要指标集（`report.ts` 的 `KEY_METRICS`）：tick p50 / p95 / p99、每会话出站 B/s p50 / p95、baseline B/join p50、事件循环 p99。
 
+### 长跑（MMO MK3-B3；docs/MMO.md §10.2「24–72 h 长跑：内存 / 计时器 / 连接 / 积压无增长」）
+
+```bash
+# 冒烟：5 分钟、每 30 s 一个样本（10 个样本）
+npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario mmo-greybox --bots 20 --seconds 300 --sample-every 30 --label soak-smoke
+# 正式：24 h、每 5 min 一个样本（288 个样本）；72 h 把 --seconds 改 259200
+npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario mmo-hotspot --bots 50 --seconds 86400 --sample-every 300 --label soak-24h
+```
+
+`--sample-every <s>` > 0 时窗口切成等长采样：每样本记 tick 摘要 / 出站 p50 / 事件循环 p99 / 内存（rss / heapUsed / external）/ 活动资源按类型
+（`process.getActiveResourcesInfo()`：TCPSocketWrap = 连接、Timeout = 计时器 …）/ 在线机器人 / 错误 / 世界探针（`k_mmo_world_event` pending、两张检查点表行数），
+每窗口后清空累计（采样本身有界，⛔ 制造增长）。报告多一段 `soak { samples[], growthPerHour, verdict, reasons }`：对每条序列做最小二乘（样本 ≥ 4 跳过首个预热），
+容差 `SOAK_TOLERANCE`（RSS ≤ 20 MB/h、heap ≤ 10 MB/h、活动资源 ≤ 2/h、事件积压 ≤ 1/h、tick p99 ≤ 2 ms/h、检查点表**有界**（行数 ≤ 主体数 × KEEP，保留策略
+`MMO_INSTANCE_CHECKPOINT_KEEP 32` / `MMO_CHARACTER_CHECKPOINT_KEEP 16`）、机器人不掉线、错误不增）⇒ `stable` / `growing` / `insufficient`（< 3 样本）。
+⚠ 长跑期间 headline `tick` 取最后一个采样窗口、`outbound.bytesPerSessionPerSec` 是各窗口 p50 的摘要；序列在 `soak.samples`。
+
 ## 剧本
 
 | 剧本 | 内容 |

@@ -7,6 +7,9 @@
  *  - 每会话出站字节：包一层 `@colyseus/ws-transport` 的 `WebSocketClient.prototype.raw`（所有出站帧，含 Schema patch）；
  *  - baseline 体积：机器人首次完整 baseline 的分块字节（JSON 长度作代理，由剧本统计）；
  *  - 事件循环延迟（`monitorEventLoopDelay`）与进程 RSS。
+ *  - 长跑（MMO MK3-B3 `--sample-every <s>`）：把窗口切成等长采样，每样本记 tick / 出站 / 事件循环 / 内存（rss / heapUsed / external）/ 活动资源按类型
+ *    （`process.getActiveResourcesInfo()`：TCPSocketWrap / Timeout / …）/ 在线机器人 / 错误 / 世界探针（k_mmo_world_event pending、两张检查点表行数），
+ *    结束时对每条序列做线性回归得「每小时增长」，超出容差 ⇒ verdict growing（内存 / 计时器 / 连接 / 积压无增长 = §10.2 长跑行）。
  * 结果落 `docs/perf/world-bench/<时间戳>-<剧本>[-<标签>].json`；`--compare a.json b.json` 逐项算主要指标的相对偏差
  * （MF1 退出条件：同剧本两次主要指标偏差 < 10%）。
  *
@@ -25,7 +28,8 @@ import { matchMaker, Server } from "colyseus";
 import { WebSocketClient, WebSocketTransport } from "@colyseus/ws-transport";
 import { Client as SDKClient, type Room as SDKRoom } from "@colyseus/sdk";
 import { GamePhase, RoomName, WorldPhase } from "@game/shared";
-import { closeMysql } from "../../src/core/infra/mysql";
+import { closeMysql, getPool, type RowDataPacket } from "../../src/core/infra/mysql";
+import { MMO_CHARACTER_CHECKPOINT_KEEP, MMO_INSTANCE_CHECKPOINT_KEEP } from "../../src/kits/mmo/persistence/checkpoint";
 import { closeRedis } from "../../src/core/infra/redisRoute";
 import { GameRoom } from "../../src/rooms/GameRoom";
 import { WorldRoom } from "../../src/rooms/WorldRoom";
@@ -52,6 +56,7 @@ const { values: args, positionals } = parseArgs({
     scenario: { type: "string", default: "snake-baseline" },
     bots: { type: "string", default: "40" },
     seconds: { type: "string", default: "20" },
+    "sample-every": { type: "string", default: "0" },
     seed: { type: "string", default: "7" },
     sid: { type: "string", default: "0" },
     label: { type: "string", default: "" },
@@ -86,6 +91,92 @@ export interface WorldBenchReport {
   readonly baseline: { readonly bytesPerJoin: Summary; readonly begins: number };
   readonly eventLoop: { readonly p50: number; readonly p99: number; readonly max: number };
   readonly memory: { readonly rssStartMB: number; readonly rssEndMB: number };
+  /** 长跑（--sample-every > 0）：采样序列 + 每小时增长 + 判定 */
+  readonly soak?: SoakReport;
+}
+
+export interface SoakSample {
+  readonly atSec: number;
+  readonly tick: Summary;
+  readonly outboundP50BytesPerSessionPerSec: number;
+  readonly eventLoopP99Ms: number;
+  readonly rssMB: number;
+  readonly heapUsedMB: number;
+  readonly externalMB: number;
+  readonly resources: Readonly<Record<string, number>>;
+  readonly resourcesTotal: number;
+  readonly botsOpen: number;
+  readonly errors: number;
+  /** 世界探针：事件积压 + 两张检查点表的行数与主体数（保留策略 ⇒ 行数 ≤ 主体数 × KEEP，有界而非零增长） */
+  readonly world?: { readonly pendingEvents: number; readonly instanceCheckpointRows: number; readonly instances: number; readonly characterCheckpointRows: number; readonly characters: number };
+}
+
+export interface SoakReport {
+  readonly sampleEverySeconds: number;
+  readonly samples: readonly SoakSample[];
+  /** 线性回归斜率（每小时）；样本 ≥ 4 时跳过首个（预热） */
+  readonly growthPerHour: { readonly rssMB: number; readonly heapUsedMB: number; readonly resourcesTotal: number; readonly pendingEvents: number | null; readonly tickP99Ms: number; readonly outboundP50: number };
+  /** 检查点表有界检查（最后一个样本）：行数 ≤ 主体数 × KEEP */
+  readonly checkpointRowsBounded: boolean | null;
+  readonly verdict: "stable" | "growing" | "insufficient";
+  readonly reasons: readonly string[];
+}
+
+/** 长跑容差（§10.2「内存 / 计时器 / 连接 / 积压无增长」的机检口径；只许收紧）。 */
+export const SOAK_TOLERANCE = Object.freeze({ rssMBPerHour: 20, heapUsedMBPerHour: 10, resourcesPerHour: 2, pendingEventsPerHour: 1, tickP99MsPerHour: 2, minSamples: 3, instanceKeep: MMO_INSTANCE_CHECKPOINT_KEEP, characterKeep: MMO_CHARACTER_CHECKPOINT_KEEP });
+
+/** 最小二乘斜率（y 对 x 小时）；点数 < 2 ⇒ 0。 */
+export function slopePerHour(points: readonly { readonly atSec: number; readonly value: number }[]): number {
+  if (points.length < 2) return 0;
+  const n = points.length;
+  const meanX = points.reduce((acc, point) => acc + point.atSec / 3600, 0) / n;
+  const meanY = points.reduce((acc, point) => acc + point.value, 0) / n;
+  let cov = 0;
+  let variance = 0;
+  for (const point of points) {
+    const dx = point.atSec / 3600 - meanX;
+    cov += dx * (point.value - meanY);
+    variance += dx * dx;
+  }
+  return variance === 0 ? 0 : cov / variance;
+}
+
+/** 从采样序列算增长与判定（纯函数，单测可钉）。 */
+export function judgeSoak(samples: readonly SoakSample[], sampleEverySeconds: number, tolerance = SOAK_TOLERANCE): SoakReport {
+  const used = samples.length >= 4 ? samples.slice(1) : samples;
+  const series = (pick: (sample: SoakSample) => number | null): { atSec: number; value: number }[] => used.flatMap((sample) => { const value = pick(sample); return value === null ? [] : [{ atSec: sample.atSec, value }]; });
+  const hasWorld = used.some((sample) => sample.world !== undefined);
+  const growthPerHour = {
+    rssMB: round(slopePerHour(series((sample) => sample.rssMB)), 2),
+    heapUsedMB: round(slopePerHour(series((sample) => sample.heapUsedMB)), 2),
+    resourcesTotal: round(slopePerHour(series((sample) => sample.resourcesTotal)), 2),
+    pendingEvents: hasWorld ? round(slopePerHour(series((sample) => sample.world?.pendingEvents ?? null)), 2) : null,
+    tickP99Ms: round(slopePerHour(series((sample) => sample.tick.p99)), 2),
+    outboundP50: round(slopePerHour(series((sample) => sample.outboundP50BytesPerSessionPerSec)), 0),
+  };
+  const lastWorld = used.length > 0 ? used[used.length - 1]!.world : undefined;
+  const checkpointRowsBounded = lastWorld === undefined ? null
+    : lastWorld.instanceCheckpointRows <= lastWorld.instances * tolerance.instanceKeep && lastWorld.characterCheckpointRows <= lastWorld.characters * tolerance.characterKeep;
+  const reasons: string[] = [];
+  if (used.length < tolerance.minSamples) return { sampleEverySeconds, samples, growthPerHour, checkpointRowsBounded, verdict: "insufficient", reasons: [`样本 ${used.length} < ${tolerance.minSamples}`] };
+  if (growthPerHour.rssMB > tolerance.rssMBPerHour) reasons.push(`RSS +${growthPerHour.rssMB} MB/h > ${tolerance.rssMBPerHour}`);
+  if (growthPerHour.heapUsedMB > tolerance.heapUsedMBPerHour) reasons.push(`heapUsed +${growthPerHour.heapUsedMB} MB/h > ${tolerance.heapUsedMBPerHour}`);
+  if (growthPerHour.resourcesTotal > tolerance.resourcesPerHour) reasons.push(`活动资源 +${growthPerHour.resourcesTotal}/h > ${tolerance.resourcesPerHour}`);
+  if (growthPerHour.pendingEvents !== null && growthPerHour.pendingEvents > tolerance.pendingEventsPerHour) reasons.push(`世界事件积压 +${growthPerHour.pendingEvents}/h > ${tolerance.pendingEventsPerHour}`);
+  if (checkpointRowsBounded === false) reasons.push(`检查点表越界：分线 ${lastWorld!.instanceCheckpointRows} > ${lastWorld!.instances} × ${tolerance.instanceKeep} 或角色 ${lastWorld!.characterCheckpointRows} > ${lastWorld!.characters} × ${tolerance.characterKeep}（保留策略失效）`);
+  if (growthPerHour.tickP99Ms > tolerance.tickP99MsPerHour) reasons.push(`tick p99 +${growthPerHour.tickP99Ms} ms/h > ${tolerance.tickP99MsPerHour}`);
+  const last = used[used.length - 1]!;
+  const first = used[0]!;
+  if (last.botsOpen < first.botsOpen) reasons.push(`在线机器人 ${first.botsOpen} → ${last.botsOpen}（连接掉了）`);
+  if (last.errors > first.errors) reasons.push(`机器人错误 ${first.errors} → ${last.errors}`);
+  return { sampleEverySeconds, samples, growthPerHour, checkpointRowsBounded, verdict: reasons.length === 0 ? "stable" : "growing", reasons };
+}
+
+function countResources(): { readonly byType: Record<string, number>; readonly total: number } {
+  const byType: Record<string, number> = {};
+  const info = typeof process.getActiveResourcesInfo === "function" ? process.getActiveResourcesInfo() : [];
+  for (const type of info) byType[type] = (byType[type] ?? 0) + 1;
+  return { byType, total: info.length };
 }
 
 function positiveInt(raw: string | undefined, label: string): number {
@@ -204,11 +295,60 @@ async function runScenario(): Promise<number> {
     loop.enable();
     sampling = true;
     const windowStart = performance.now();
-    await sleep(seconds * 1000);
+    const sampleEvery = Number(args["sample-every"] ?? 0);
+    if (!Number.isFinite(sampleEvery) || sampleEvery < 0) throw new Error(`--sample-every 非法：${args["sample-every"]}`);
+    const soakSamples: SoakSample[] = [];
+    let soakWindowStart = windowStart;
+    let bytesTotalBeforeWindow = 0;
+    if (sampleEvery > 0 && seconds > sampleEvery) {
+      // 长跑：等长采样窗口；每窗口后清空 tick / 出站 / 事件循环累计（有界内存，⛔ 采样本身制造「增长」）
+      const worldProbe = async (): Promise<SoakSample["world"] | undefined> => {
+        if (!scenario.world) return undefined;
+        try {
+          const [rows] = await getPool().query<RowDataPacket[]>(
+            "SELECT (SELECT COUNT(*) FROM k_mmo_world_event WHERE server_id = ? AND status = 0) AS pending, (SELECT COUNT(*) FROM k_mmo_instance_checkpoint WHERE server_id = ?) AS icp, "
+            + "(SELECT COUNT(DISTINCT instance_id) FROM k_mmo_instance_checkpoint WHERE server_id = ?) AS instances, (SELECT COUNT(*) FROM k_mmo_character_checkpoint WHERE server_id = ?) AS ccp, "
+            + "(SELECT COUNT(DISTINCT character_id) FROM k_mmo_character_checkpoint WHERE server_id = ?) AS characters",
+            [sId, sId, sId, sId, sId]);
+          const row = rows[0] ?? {};
+          return { pendingEvents: Number(row.pending ?? 0), instanceCheckpointRows: Number(row.icp ?? 0), instances: Number(row.instances ?? 0), characterCheckpointRows: Number(row.ccp ?? 0), characters: Number(row.characters ?? 0) };
+        } catch { return undefined; }
+      };
+      while ((performance.now() - windowStart) / 1000 < seconds) {
+        const remaining = seconds - (performance.now() - windowStart) / 1000;
+        await sleep(Math.max(1, Math.min(sampleEvery, remaining)) * 1000);
+        const windowSecondsNow = (performance.now() - soakWindowStart) / 1000;
+        const sessionIds = new Set(live.map((bot) => bot.room.sessionId));
+        const perSession = [...bytesBySession.entries()].filter(([sessionId]) => sessionIds.has(sessionId)).map(([, bytes]) => round(bytes / windowSecondsNow, 0));
+        const memory = process.memoryUsage();
+        const resources = countResources();
+        const sample: SoakSample = {
+          atSec: round((performance.now() - windowStart) / 1000, 1),
+          tick: summarize(tickSamples),
+          outboundP50BytesPerSessionPerSec: summarize(perSession).p50,
+          eventLoopP99Ms: round(loop.percentile(99) / 1e6),
+          rssMB: mb(memory.rss), heapUsedMB: mb(memory.heapUsed), externalMB: mb(memory.external),
+          resources: resources.byType, resourcesTotal: resources.total,
+          botsOpen: live.filter((bot) => bot.room.connection?.isOpen).length,
+          errors: live.reduce((acc, bot) => acc + bot.errors, 0),
+          ...(scenario.world ? { world: await worldProbe() } : {}),
+        };
+        soakSamples.push(sample);
+        console.log(`    [soak ${sample.atSec}s] tick p99 ${sample.tick.p99} ms | 出站 p50 ${sample.outboundP50BytesPerSessionPerSec} B/s | 循环 p99 ${sample.eventLoopP99Ms} ms | RSS ${sample.rssMB} MB heap ${sample.heapUsedMB} MB | 资源 ${sample.resourcesTotal} | bots ${sample.botsOpen} err ${sample.errors}${sample.world ? ` | pending ${sample.world.pendingEvents} icp ${sample.world.instanceCheckpointRows}/${sample.world.instances} ccp ${sample.world.characterCheckpointRows}/${sample.world.characters}` : ""}`);
+        tickSamples.length = 0;
+        bytesTotalBeforeWindow += [...bytesBySession.values()].reduce((acc, value) => acc + value, 0);
+        bytesBySession.clear();
+        loop.reset();
+        soakWindowStart = performance.now();
+      }
+    } else {
+      await sleep(seconds * 1000);
+    }
     sampling = false;
     loop.disable();
-    const windowSeconds = (performance.now() - windowStart) / 1000;
+    const windowSeconds = (performance.now() - (soakSamples.length > 0 ? soakWindowStart : windowStart)) / 1000;
     const rssEnd = process.memoryUsage().rss;
+    const soak = soakSamples.length > 0 ? judgeSoak(soakSamples, sampleEvery) : undefined;
 
     const botSessionIds = new Set(live.map((bot) => bot.room.sessionId));
     const perSessionBytesPerSec = [...bytesBySession.entries()].filter(([sessionId]) => botSessionIds.has(sessionId)).map(([, bytes]) => bytes / windowSeconds);
@@ -222,10 +362,11 @@ async function runScenario(): Promise<number> {
       node: process.version,
       config: { bots, seconds, seed, sId },
       rooms: { count: serverRooms.length, clientsPerRoom: serverRooms.map((room) => room.clients.length) },
-      tick: { ...summarize(tickSamples), fixedStepMs },
+      // 长跑：headline 取最后一个采样窗口（窗口间累计已清空）
+      tick: { ...(soak ? soak.samples[soak.samples.length - 1]!.tick : summarize(tickSamples)), fixedStepMs },
       outbound: {
-        bytesTotal: [...bytesBySession.values()].reduce((acc, value) => acc + value, 0),
-        bytesPerSessionPerSec: summarize(perSessionBytesPerSec.map((value) => round(value, 0))),
+        bytesTotal: bytesTotalBeforeWindow + [...bytesBySession.values()].reduce((acc, value) => acc + value, 0),
+        bytesPerSessionPerSec: soak ? summarize(soak.samples.map((sample) => sample.outboundP50BytesPerSessionPerSec)) : summarize(perSessionBytesPerSec.map((value) => round(value, 0))),
       },
       clientSide: {
         deltaMessagesPerSec: summarize(live.map((bot) => round(bot.stats.deltaMessages / windowSeconds, 2))),
@@ -238,7 +379,12 @@ async function runScenario(): Promise<number> {
       baseline: { bytesPerJoin: summarize(live.map((bot) => bot.stats.firstBaselineBytes)), begins: live.reduce((acc, bot) => acc + bot.stats.baselineBegins, 0) },
       eventLoop: { p50: round(loop.percentile(50) / 1e6), p99: round(loop.percentile(99) / 1e6), max: round(loop.max / 1e6) },
       memory: { rssStartMB: mb(rssStart), rssEndMB: mb(rssEnd) },
+      ...(soak ? { soak } : {}),
     };
+    if (soak) {
+      const growth = soak.growthPerHour;
+      console.log(`    长跑 ${soak.samples.length} 样本 × ${soak.sampleEverySeconds} s：RSS ${growth.rssMB > 0 ? "+" : ""}${growth.rssMB} MB/h、heap ${growth.heapUsedMB} MB/h、活动资源 ${growth.resourcesTotal}/h、tick p99 ${growth.tickP99Ms} ms/h${growth.pendingEvents === null ? "" : `、事件积压 ${growth.pendingEvents}/h、检查点表有界 ${soak.checkpointRowsBounded}`} ⇒ ${soak.verdict}${soak.reasons.length > 0 ? `（${soak.reasons.join("；")}）` : ""}`);
+    }
 
     console.log(`    rooms ${report.rooms.count}（clients ${report.rooms.clientsPerRoom.join("/")}），fixedStep ${fixedStepMs} ms，窗口 ${windowSeconds.toFixed(1)} s`);
     console.log(`    tick ms      p50 ${report.tick.p50} / p95 ${report.tick.p95} / p99 ${report.tick.p99} / max ${report.tick.max}（${report.tick.count} 步）`);

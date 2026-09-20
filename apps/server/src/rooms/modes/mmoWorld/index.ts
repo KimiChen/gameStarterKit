@@ -54,7 +54,7 @@ import {
     worldModeRegistry, type WorldAdmitRequest, type WorldCheckpoint, type WorldMode, type WorldModeCheckpointCapability, type WorldModeContext,
     type WorldModeObserverCapability, type WorldModeRegistry, type WorldSessionInfo,
 } from "../../WorldMode";
-import { createMmoCheckpointCapability, type MmoInstanceSnapshot, type MmoLootSnapshot, type MmoPersonaSnapshot } from "../../../kits/mmo/persistence/checkpoint";
+import { createMmoCheckpointCapability, validatePersonaSnapshot, type MmoInstanceSnapshot, type MmoLootSnapshot, type MmoPersonaSnapshot } from "../../../kits/mmo/persistence/checkpoint";
 
 export { MMO_WORLD_MODE_ID };
 
@@ -877,14 +877,17 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const row = pending.get(session.personaId) ?? null;
             pending.delete(session.personaId);
             const def = mapOf(context);
-            const restored = session.checkpoint?.snapshot as Partial<MmoPersonaSnapshot> | null | undefined;
+            // 角色快照内容 fail-closed（MK3-B2 定稿）：坏快照 ⇒ 当无检查点从出生点进图（⛔ 半信半疑地回灌）
+            const rawSnapshot = session.checkpoint?.snapshot;
+            const restored: MmoPersonaSnapshot | null = rawSnapshot === undefined || rawSnapshot === null ? null : validatePersonaSnapshot(rawSnapshot);
+            if (rawSnapshot !== undefined && rawSnapshot !== null && restored === null) log.push(`enter:${session.session}:bad-snapshot`);
             const spawn = def.spawnPoints[0]!.pos;
             const usable = restored && restored.mapId === def.mapId && typeof restored.x === "number" && typeof restored.y === "number";
             // 交接落点：上一图发起交接时写进快照的 arrival（图相同才认；落点 id 不在本图 ⇒ 首个出生点）
             const arrival = !usable && restored?.arrival && restored.arrival.mapId === def.mapId
                 ? def.spawnPoints.find((point) => point.spawnPointId === restored.arrival?.spawnPointId)?.pos ?? null
                 : null;
-            const pos = usable ? clampToMap({ x: restored.x as number, y: restored.y as number }, def.size) : arrival ? { x: arrival.x, y: arrival.y } : { x: spawn.x, y: spawn.y };
+            const pos = usable ? clampToMap({ x: restored.x, y: restored.y }, def.size) : arrival ? { x: arrival.x, y: arrival.y } : { x: spawn.x, y: spawn.y };
             const klass = content.classById.get(row?.classId ?? "");
             const hpMax = klass?.hpMax ?? 100;
             const mpMax = klass?.mpMax ?? 50;

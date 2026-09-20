@@ -873,3 +873,16 @@ test("背包（MK3-B1）：进图私有流带预热的 bag、装备属性进基�
     h.runtime.leave("a", "left");
     assert.equal(h.mode.__probe.bagOf("a"), null, "离座清");
 });
+
+test("角色保存定稿（MK3-B2）：坏角色快照（多键 / 非数）⇒ 当无检查点从出生点满血进图并记 bad-snapshot；好快照照常回灌", async () => {
+    const h = harness();
+    await activeWorld(h);
+    const bad = buildCheckpointEnvelope({ rev: 3, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 2, snapshot: { mapId: "greybox", x: 1500, y: 700, hp: 40, mp: 10, junk: true } });
+    await seat(h, "a", "p-a", bad);
+    const a = h.mode.__probe.moverOf("a")!;
+    assert.deepEqual([a.x, a.y, a.hp, h.mode.__probe.log.includes("enter:a:bad-snapshot")], [1000, 1000, 100, true], "坏快照 ⇒ 出生点满血 + 日志");
+    const good = buildCheckpointEnvelope({ rev: 3, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 2, snapshot: { mapId: "greybox", x: 1500, y: 700, hp: 40, mp: 10 } });
+    await seat(h, "b", "p-b", good);
+    const b = h.mode.__probe.moverOf("b")!;
+    assert.deepEqual([b.x, b.y, b.hp, b.mp], [1500, 700, 40, 10]);
+});

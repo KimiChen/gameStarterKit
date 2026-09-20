@@ -1,0 +1,347 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "world-bench",
+  "scenario": "mmo-greybox",
+  "description": "MMO MK0 场景 A：mmoWorld 单分线（greybox），192 只 idle slime，机器人各一角色（建角 + 凭据），每 300 ms 按种子随机方向 move（10% 停）；周期检查点照常落库",
+  "startedAt": "2026-09-20T09:00:39.152Z",
+  "commit": "042044fa",
+  "node": "v26.5.0",
+  "config": {
+    "bots": 20,
+    "seconds": 240,
+    "seed": 7,
+    "sId": 0
+  },
+  "rooms": {
+    "count": 1,
+    "clientsPerRoom": [
+      20
+    ]
+  },
+  "tick": {
+    "count": 592,
+    "mean": 1.878,
+    "p50": 1.804,
+    "p95": 3.322,
+    "p99": 4.44,
+    "max": 5.972,
+    "fixedStepMs": 50
+  },
+  "outbound": {
+    "bytesTotal": 0,
+    "bytesPerSessionPerSec": {
+      "count": 8,
+      "mean": 8217,
+      "p50": 5725,
+      "p95": 19616,
+      "p99": 19616,
+      "max": 19616
+    }
+  },
+  "clientSide": {
+    "deltaMessagesPerSec": {
+      "count": 20,
+      "mean": 53845904.961,
+      "p50": 53626079.15,
+      "p95": 65810709.99,
+      "p99": 66282716.93,
+      "max": 66282716.93
+    },
+    "deltaBytesPerSec": {
+      "count": 20,
+      "mean": 7132456377.6,
+      "p50": 7138682492,
+      "p95": 8781742467,
+      "p99": 8869741310,
+      "max": 8869741310
+    },
+    "inputsSent": 15957,
+    "relives": 0,
+    "runResults": 0,
+    "errors": 0
+  },
+  "baseline": {
+    "bytesPerJoin": {
+      "count": 20,
+      "mean": 7295.65,
+      "p50": 7275,
+      "p95": 8795,
+      "p99": 8795,
+      "max": 8795
+    },
+    "begins": 20
+  },
+  "eventLoop": {
+    "p50": 0.001,
+    "p99": 0.001,
+    "max": 0
+  },
+  "memory": {
+    "rssStartMB": 151.6,
+    "rssEndMB": 126.9
+  },
+  "soak": {
+    "sampleEverySeconds": 30,
+    "samples": [
+      {
+        "atSec": 30,
+        "tick": {
+          "count": 593,
+          "mean": 3.373,
+          "p50": 3.244,
+          "p95": 5.818,
+          "p99": 7.914,
+          "max": 15.852
+        },
+        "outboundP50BytesPerSessionPerSec": 19616,
+        "eventLoopP99Ms": 15.983,
+        "rssMB": 139.3,
+        "heapUsedMB": 54.7,
+        "externalMB": 6.4,
+        "resources": {
+          "TCPSocketWrap": 42,
+          "TCPServerWrap": 1,
+          "Timeout": 25
+        },
+        "resourcesTotal": 68,
+        "botsOpen": 20,
+        "errors": 0,
+        "world": {
+          "pendingEvents": 0,
+          "instanceCheckpointRows": 1,
+          "instances": 1,
+          "characterCheckpointRows": 20,
+          "characters": 20
+        }
+      },
+      {
+        "atSec": 60,
+        "tick": {
+          "count": 593,
+          "mean": 2.714,
+          "p50": 2.723,
+          "p95": 4.492,
+          "p99": 5.559,
+          "max": 6.841
+        },
+        "outboundP50BytesPerSessionPerSec": 11782,
+        "eventLoopP99Ms": 14.549,
+        "rssMB": 149.9,
+        "heapUsedMB": 73.7,
+        "externalMB": 6.7,
+        "resources": {
+          "TCPSocketWrap": 42,
+          "TCPServerWrap": 1,
+          "Timeout": 25
+        },
+        "resourcesTotal": 68,
+        "botsOpen": 20,
+        "errors": 0,
+        "world": {
+          "pendingEvents": 0,
+          "instanceCheckpointRows": 2,
+          "instances": 1,
+          "characterCheckpointRows": 40,
+          "characters": 20
+        }
+      },
+      {
+        "atSec": 90,
+        "tick": {
+          "count": 594,
+          "mean": 2.47,
+          "p50": 2.394,
+          "p95": 3.87,
+          "p99": 5.383,
+          "max": 17.781
+        },
+        "outboundP50BytesPerSessionPerSec": 7553,
+        "eventLoopP99Ms": 14.123,
+        "rssMB": 152.1,
+        "heapUsedMB": 73.7,
+        "externalMB": 6.7,
+        "resources": {
+          "TCPSocketWrap": 42,
+          "TCPServerWrap": 1,
+          "Timeout": 25
+        },
+        "resourcesTotal": 68,
+        "botsOpen": 20,
+        "errors": 0,
+        "world": {
+          "pendingEvents": 0,
+          "instanceCheckpointRows": 3,
+          "instances": 1,
+          "characterCheckpointRows": 60,
+          "characters": 20
+        }
+      },
+      {
+        "atSec": 120,
+        "tick": {
+          "count": 593,
+          "mean": 2.066,
+          "p50": 1.992,
+          "p95": 3.523,
+          "p99": 4.749,
+          "max": 6.304
+        },
+        "outboundP50BytesPerSessionPerSec": 5725,
+        "eventLoopP99Ms": 13.885,
+        "rssMB": 134.1,
+        "heapUsedMB": 48.2,
+        "externalMB": 6.7,
+        "resources": {
+          "TCPSocketWrap": 42,
+          "TCPServerWrap": 1,
+          "Timeout": 25
+        },
+        "resourcesTotal": 68,
+        "botsOpen": 20,
+        "errors": 0,
+        "world": {
+          "pendingEvents": 0,
+          "instanceCheckpointRows": 4,
+          "instances": 1,
+          "characterCheckpointRows": 80,
+          "characters": 20
+        }
+      },
+      {
+        "atSec": 150,
+        "tick": {
+          "count": 594,
+          "mean": 2.306,
+          "p50": 2.201,
+          "p95": 3.473,
+          "p99": 4.688,
+          "max": 7.208
+        },
+        "outboundP50BytesPerSessionPerSec": 5339,
+        "eventLoopP99Ms": 13.795,
+        "rssMB": 130.7,
+        "heapUsedMB": 51.5,
+        "externalMB": 7.3,
+        "resources": {
+          "TCPSocketWrap": 42,
+          "TCPServerWrap": 1,
+          "Timeout": 25
+        },
+        "resourcesTotal": 68,
+        "botsOpen": 20,
+        "errors": 0,
+        "world": {
+          "pendingEvents": 0,
+          "instanceCheckpointRows": 5,
+          "instances": 1,
+          "characterCheckpointRows": 100,
+          "characters": 20
+        }
+      },
+      {
+        "atSec": 180,
+        "tick": {
+          "count": 594,
+          "mean": 2.253,
+          "p50": 2.159,
+          "p95": 3.292,
+          "p99": 4.456,
+          "max": 5.987
+        },
+        "outboundP50BytesPerSessionPerSec": 5799,
+        "eventLoopP99Ms": 13.779,
+        "rssMB": 147.5,
+        "heapUsedMB": 53.9,
+        "externalMB": 6.6,
+        "resources": {
+          "TCPSocketWrap": 42,
+          "TCPServerWrap": 1,
+          "Timeout": 25
+        },
+        "resourcesTotal": 68,
+        "botsOpen": 20,
+        "errors": 0,
+        "world": {
+          "pendingEvents": 0,
+          "instanceCheckpointRows": 6,
+          "instances": 1,
+          "characterCheckpointRows": 120,
+          "characters": 20
+        }
+      },
+      {
+        "atSec": 210,
+        "tick": {
+          "count": 593,
+          "mean": 1.946,
+          "p50": 1.879,
+          "p95": 3.406,
+          "p99": 4.168,
+          "max": 7.162
+        },
+        "outboundP50BytesPerSessionPerSec": 5100,
+        "eventLoopP99Ms": 13.566,
+        "rssMB": 124.9,
+        "heapUsedMB": 56.6,
+        "externalMB": 6.6,
+        "resources": {
+          "TCPSocketWrap": 42,
+          "TCPServerWrap": 1,
+          "Timeout": 25
+        },
+        "resourcesTotal": 68,
+        "botsOpen": 20,
+        "errors": 0,
+        "world": {
+          "pendingEvents": 0,
+          "instanceCheckpointRows": 7,
+          "instances": 1,
+          "characterCheckpointRows": 140,
+          "characters": 20
+        }
+      },
+      {
+        "atSec": 240,
+        "tick": {
+          "count": 592,
+          "mean": 1.878,
+          "p50": 1.804,
+          "p95": 3.322,
+          "p99": 4.44,
+          "max": 5.972
+        },
+        "outboundP50BytesPerSessionPerSec": 4822,
+        "eventLoopP99Ms": 13.451,
+        "rssMB": 126.1,
+        "heapUsedMB": 56.4,
+        "externalMB": 6.6,
+        "resources": {
+          "TCPSocketWrap": 42,
+          "TCPServerWrap": 1,
+          "Timeout": 25
+        },
+        "resourcesTotal": 68,
+        "botsOpen": 20,
+        "errors": 0,
+        "world": {
+          "pendingEvents": 0,
+          "instanceCheckpointRows": 7,
+          "instances": 1,
+          "characterCheckpointRows": 140,
+          "characters": 20
+        }
+      }
+    ],
+    "growthPerHour": {
+      "rssMB": -481.71,
+      "heapUsedMB": -344.57,
+      "resourcesTotal": 0,
+      "pendingEvents": 0,
+      "tickP99Ms": -26.06,
+      "outboundP50": -110194
+    },
+    "checkpointRowsBounded": true,
+    "verdict": "stable",
+    "reasons": []
+  }
+}

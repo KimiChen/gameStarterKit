@@ -64,6 +64,9 @@ test("mmo sql：全部 per-zone——server_id SMALLINT UNSIGNED NOT NULL 进主
   assert.match(byTable.get("k_mmo_character")!, /UNIQUE KEY uk_mmo_character_name \(server_id, name\)/u);
   assert.match(byTable.get("k_mmo_character")!, /UNIQUE KEY uk_mmo_character_persona \(server_id, persona_id\)/u);
   assert.doesNotMatch(byTable.get("k_mmo_character")!, /\b(x|y|hp|mp)\b/u, "角色行 ⛔ 放位置 / HP / MP（真源是检查点表，M08）");
+  // MK3-B2 角色保存定稿：k_mmo_character 列集冻结 = 身份 + 成长 + checkpoint_rev（再加列 = 新迁移 + 本行更新）
+  const columns = [...byTable.get("k_mmo_character")!.matchAll(/\n  ([a-z_]+) /gu)].map((match) => match[1]);
+  assert.deepEqual(columns, ["server_id", "character_id", "persona_id", "user_id", "slot", "name", "class_id", "faction_id", "level", "exp", "checkpoint_rev", "created_at"], "角色行列集冻结");
   assert.match(byTable.get("k_mmo_character_checkpoint")!, /PRIMARY KEY \(server_id, character_id, rev\)/u);
   assert.match(byTable.get("k_mmo_item_instance")!, /UNIQUE KEY uk_mmo_item_slot \(server_id, owner_character_id, location, slot\)/u);
   assert.match(byTable.get("k_mmo_receipt")!, /PRIMARY KEY \(server_id, op_id\)/u);
