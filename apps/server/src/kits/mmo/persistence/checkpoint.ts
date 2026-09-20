@@ -49,6 +49,22 @@ export interface MmoCreatureSnapshot {
     /** v2：存活；死亡时 respawnDueTick = 复活到期 tick（MK2 写入） */
     readonly alive?: boolean;
     readonly respawnDueTick?: number;
+    /** MK4：脚本 spawn（编排命令撒的怪）——恢复时按模板重建；tag / 到期自动 despawn（分线 tick，恢复重排） */
+    readonly scripted?: boolean;
+    readonly tag?: string;
+    readonly despawnAtTick?: number;
+}
+
+/** 编排状态（MK4-B1；一图一包）：vars / timers（dueTick 恢复重排）/ publishState / suspended / eventSeq / 环形日志 / 已回投的 grantResult 水位。 */
+export interface MmoOrchestrationSnapshot {
+    readonly packId: string;
+    readonly vars: Readonly<Record<string, string | number | boolean>>;
+    readonly timers: readonly { readonly id: string; readonly dueTick: number; readonly tag: string; readonly repeatMs: number }[];
+    readonly publish: { readonly rev: number; readonly state: Readonly<Record<string, string | number | boolean>> };
+    readonly suspended: string | null;
+    readonly eventSeq: number;
+    readonly ring: readonly { readonly seq: number; readonly eventDigest: string; readonly commandDigest: string }[];
+    readonly grantResultSeq: number;
 }
 
 /** 未认领掉落（MK2-B3）：expiresTick 为落盘时的分线 tick；恢复后按 tick 差重排。 */
@@ -81,6 +97,8 @@ export interface MmoInstanceSnapshot {
     readonly timers?: readonly { readonly id: string; readonly dueTick: number }[];
     /** v2：区域开关（regionId → enabled；缺省取内容包 enabledByDefault） */
     readonly regions?: Readonly<Record<string, boolean>>;
+    /** MK4-B1：编排状态（无编排模块 ⇒ 省略） */
+    readonly orchestration?: MmoOrchestrationSnapshot;
 }
 
 const isFiniteNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);

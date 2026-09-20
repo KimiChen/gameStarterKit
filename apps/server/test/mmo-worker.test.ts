@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { KitWorkerTx, KitWorldEventRow } from "../src/core/infra/kitApi";
-import worker, { MMO_EVENT_GRANT_CURRENCY, MMO_EVENT_LOOT_CLAIMED, MMO_WORLD_EVENT_TABLE, grantCurrencyPayloadOf } from "../src/kits/mmo/workers/worldEvents";
+import worker, { MMO_EVENT_GRANT_CURRENCY, MMO_EVENT_GRANT_ITEM, MMO_EVENT_LOOT_CLAIMED, MMO_EVENT_PACK_SUSPENDED, MMO_WORLD_EVENT_TABLE, grantCurrencyPayloadOf, grantItemPayloadOf } from "../src/kits/mmo/workers/worldEvents";
 
 const row = (eventId: string, kind: string, payload: unknown): KitWorldEventRow => ({ eventId, instanceId: "i1", seq: 1, kind, payload, checkpointRev: 1, attempts: 1 });
 
@@ -67,4 +67,17 @@ test("pass：lootClaimed 的模板不在内容包 ⇒ MmoInventoryError ⇒ 死�
   const { tx, dead, sql } = fakeTx([claim]);
   assert.deepEqual(await worker.pass(tx, { kitId: "mmo", workerId: "worldEvents", sId: 1, now: 0, signal: new AbortController().signal }), { more: true });
   assert.deepEqual([dead, sql.filter(([statement]) => statement.startsWith("INSERT")).length], [["e11"], 0]);
+});
+
+test("pass：grantItem（MK4-B1 编排命令）⇒ inventory grantItem，回执 op_id = 载荷 opId（跨重启同一命令同一 opId）；packSuspended 审计行认领即 done；载荷坏 ⇒ 死信", async () => {
+  assert.deepEqual(grantItemPayloadOf({ opId: "orch:greybox:3:0", toCharacterId: "c1", itemTemplateId: "slime-gel", count: 2, reason: "boss", packId: "greybox" }), { opId: "orch:greybox:3:0", toCharacterId: "c1", itemTemplateId: "slime-gel", count: 2 });
+  assert.equal(grantItemPayloadOf({ opId: "x", toCharacterId: "c1", itemTemplateId: "slime-gel", count: 0 }), null);
+  const grant = row("e20", MMO_EVENT_GRANT_ITEM, { opId: "orch:greybox:3:0", toCharacterId: "c1", itemTemplateId: "slime-gel", count: 2, reason: "boss", packId: "greybox" });
+  const audit = row("e21", MMO_EVENT_PACK_SUSPENDED, { packId: "greybox", reason: "commands" });
+  const bad = row("e22", MMO_EVENT_GRANT_ITEM, { toCharacterId: "c1", itemTemplateId: "slime-gel", count: 2 });
+  const { tx, dead, sql } = fakeTx([grant, audit, bad]);
+  assert.deepEqual(await worker.pass(tx, { kitId: "mmo", workerId: "worldEvents", sId: 1, now: 0, signal: new AbortController().signal }), { more: true });
+  const inserts = sql.filter(([statement]) => statement.startsWith("INSERT"));
+  assert.deepEqual([inserts.length, inserts[1]![1].slice(1, 4)], [2, ["orch:greybox:3:0", "c1", "grantItem"]], "物品 + 回执（op_id = 载荷 opId）");
+  assert.deepEqual(dead, ["e22"], "审计行不死信、坏载荷死信");
 });

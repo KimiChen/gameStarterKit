@@ -27,9 +27,16 @@
  */
 import {
     GAMEPLAY_CATALOG, MmoWorldBaselineBegin, MmoWorldBaselineChunk, MmoWorldBaselineEnd, MmoWorldBaselineRequest, MmoWorldCast, MmoWorldChoose, MmoWorldEnter,
-    MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldOpResult, MmoWorldPickup, MmoWorldPos, MmoWorldPrivate, MmoWorldTarget, MmoWorldTransfer, MmoWorldTransferReady, MmoWorldUpdate,
-    type IMmoEntityWire, type IMmoWorldCastReq, type IMmoWorldMoveReq, type IMmoWorldPickupReq, type IMmoWorldTargetReq, type IMmoWorldTransferReq, type IObserverEnvelope,
+    MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldNotice, MmoWorldOpResult, MmoWorldPickup, MmoWorldPos, MmoWorldPrivate, MmoWorldPrompt, MmoWorldScriptState, MmoWorldTarget,
+    MmoWorldTransfer, MmoWorldTransferReady, MmoWorldUpdate, CORE_S2C_TOKENS,
+    type IMmoEntityWire, type IMmoWorldCastReq, type IMmoWorldChooseReq, type IMmoWorldInteractReq, type IMmoWorldMoveReq, type IMmoWorldPickupReq, type IMmoWorldTargetReq, type IMmoWorldTransferReq,
+    type IObserverEnvelope, type IWorldChatRes,
 } from "@game/shared";
+import { ORCH_DURABLE_VAR_MIN_INTERVAL_MS, type IEntityView, type OrchestrationEvent, type OrchestrationModule } from "@game/shared/kits/mmo/api/orchestration/index";
+import { OrchestrationRunner, type RunnerEffect, type RunnerWorld } from "../../../kits/mmo/orchestration/runner";
+import { orchestrationFor } from "../../../kits/mmo/orchestration/registry";
+import { pollGrantResults, regionContains, type GrantResultRow } from "../../../kits/mmo/api/orchestration/index";
+import { readPartyView } from "../../../core/infra/kitApi";
 import type { IContentPackIndex, IMapDef } from "@game/shared/kits/mmo/api/content/index";
 import { clampToMap, withinRadius } from "@game/shared/kits/mmo/api/world/index";
 import {
@@ -40,7 +47,7 @@ import { bagOfCharacter } from "../../../kits/mmo/api/inventory/index";
 import {
     MMO_PLAYER_RESPAWN_MS, auraOf, castReqIdOf, checkCast, cooldownReadyTick, damageOf, effectiveStats, healOf, needsHostileTarget, threatOf, ticksOf, type IAura,
 } from "@game/shared/kits/mmo/api/combat/index";
-import { applyIntent, parseCollisionGrid, resolveMove, type CollisionGrid } from "../../../kits/mmo/api/movement/index";
+import { applyIntent, parseCollisionGrid, resolveMove, teleportWithin, type CollisionGrid } from "../../../kits/mmo/api/movement/index";
 import { AI_ARRIVE_RADIUS, decide, type AiPerception, type AiState, type INavPoint } from "@game/shared/kits/mmo/api/ai/index";
 import { AoiGrid } from "../../../kits/mmo/aoi/grid";
 import { canSee, pickInterest } from "../../../kits/mmo/aoi/visibility";
@@ -54,7 +61,7 @@ import {
     worldModeRegistry, type WorldAdmitRequest, type WorldCheckpoint, type WorldMode, type WorldModeCheckpointCapability, type WorldModeContext,
     type WorldModeObserverCapability, type WorldModeRegistry, type WorldSessionInfo,
 } from "../../WorldMode";
-import { createMmoCheckpointCapability, validatePersonaSnapshot, type MmoInstanceSnapshot, type MmoLootSnapshot, type MmoPersonaSnapshot } from "../../../kits/mmo/persistence/checkpoint";
+import { createMmoCheckpointCapability, validatePersonaSnapshot, type MmoInstanceSnapshot, type MmoLootSnapshot, type MmoOrchestrationSnapshot, type MmoPersonaSnapshot } from "../../../kits/mmo/persistence/checkpoint";
 
 export { MMO_WORLD_MODE_ID };
 
@@ -72,6 +79,8 @@ export const MMO_WORLD_TUNING = Object.freeze({ characterUpdateEveryTicks: 2, in
 /** AI 分桶数（每只怪每 4 步 = 200 ms 思考一次）与每 tick 思考的 wall 预算（§11.2 候选，MK2-B2；超预算顺延）。 */
 export const MMO_AI_BUCKETS = 4;
 export const MMO_AI_TICK_BUDGET_MS = 2;
+/** 交互半径（c2s.mmoWorld.interact 命中目标的距离上限；MK4-B1 候选）。 */
+export const MMO_INTERACT_RADIUS = 80;
 
 export interface MmoEntity {
     readonly id: string;
@@ -86,6 +95,8 @@ export interface MmoEntity {
     readonly session: string | null;
     readonly personaId: string | null;
     readonly characterId: string | null;
+    /** 角色所属账号（grantCurrency 的主体；怪物 null） */
+    readonly userId: string | null;
     /** 阵营（角色 = 建角时选的；怪物 null = 无阵营）；名片公开，也是隐身规则的输入 */
     readonly factionId: string | null;
     /** 位面（缺省 0；不同位面互不可见） */
@@ -111,6 +122,12 @@ export interface MmoEntity {
     respawnDueTick: number | null;
     /** 怪物出生位置（复活落点 / 拴绳中心） */
     readonly origin: { readonly x: number; readonly y: number };
+    /** 刷新点 id（kit 撒的怪；脚本 spawn / 角色 null） */
+    readonly spawnId: string | null;
+    /** 编排（MK4-B1）：脚本 spawn 的 tag / 是否脚本管理（死后不复活、可 despawn）/ 到期自动 despawn */
+    readonly tag: string | null;
+    readonly scripted: boolean;
+    despawnAtTick: number | null;
     /** 怪物脑（角色 null）：状态 / 巡逻点序 / 当前路径 / 找路版本（目标变了 +1，迟到回执丢）/ 上次思考 tick */
     readonly brain: { state: AiState; waypointIndex: number; path: INavPoint[] | null; pathPending: boolean; pathVersion: number; pathGoal: INavPoint | null; thinkTick: number } | null;
     x: number;
@@ -157,6 +174,16 @@ export interface MmoWorldModeOptions {
     /** 拾取后轮询背包的节拍 / 时长（步数；缺省 20 步 = 1 s、1200 步 = 60 s）。 */
     readonly bagRefreshEveryTicks?: number;
     readonly bagRefreshForTicks?: number;
+    /** 编排模块（MK4-B1；缺省 = 注册表按 packId；null = 无编排；单测注入）。 */
+    readonly orchestration?: OrchestrationModule | null;
+    /** 编排 wall 时钟 / 预算（单测注入假时钟钉预算语义）。 */
+    readonly orchestrationClock?: () => number;
+    readonly orchestrationBudgetMs?: number;
+    /** 队伍：按账号读 partyId（缺省 = kit-api readPartyView；null = 无队伍；单测注入）。 */
+    readonly loadParty?: ((uid: string) => Promise<number | null>) | null;
+    /** grantResult 回投轮询（缺省 = pollGrantResults 读世界事件表；null = 不轮询；单测注入）+ 节拍（步）。 */
+    readonly pollGrantResults?: ((sId: number, instanceId: string, afterSeq: number) => Promise<readonly GrantResultRow[]>) | null;
+    readonly grantResultEveryTicks?: number;
     readonly capacity?: number;
     /** 角色位置进观察者流的节拍（每 N 固定步 bump 一次 rev；停下那步必 bump）；缺省 1 = 每步。热点调优（MK1-B6），⛔ 影响本人 pos 回执 */
     readonly characterUpdateEveryTicks?: number;
@@ -189,6 +216,11 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         /** 背包接缝（测试）：会话当前背包视图 / 正在轮询的会话 */
         bagOf(session: string): IMmoBagWire | null;
         bagRefreshing(): readonly string[];
+        /** 编排接缝（测试）：运行器快照 / 注入事件 / 恢复 pack / 脚本 spawn 列表 */
+        orchestration(): (MmoOrchestrationSnapshot & { readonly queued: number }) | null;
+        emitOrchestration(event: OrchestrationEvent): void;
+        resumePack(): void;
+        scriptedCreatures(): readonly MmoEntity[];
         /** 检查点接缝（MK2–MK4 接入前的直接写口）：冷却 / timer / 区域开关 / 脚本 var */
         setCooldown(id: string, spellId: string, readyAtTick: number): void;
         setTimer(id: string, dueTick: number): void;
@@ -262,6 +294,24 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     const bagRefreshForTicks = Math.max(1, Math.floor(options.bagRefreshForTicks ?? 1200));
     /** 探针用的最近一次 onWorldInit 上下文（只给 __probe.spawnLoot） */
     let probeContext: WorldModeContext<MmoWorldRoomState> | null = null;
+    /** 编排（MK4-B1）：一图一包一运行器；未订阅 / 无模块 ⇒ 不投 */
+    let runner: OrchestrationRunner | null = null;
+    const loadParty = options.loadParty === undefined ? (uid: string) => readPartyView(uid).then((view) => view?.partyId ?? null).catch(() => null) : options.loadParty;
+    const pendingParties = new Map<string, number | null>();
+    const parties = new Map<string, number | null>();
+    /** 未答复的 prompt：`${session}:${promptId}` → 可选项 */
+    const prompts = new Map<string, Set<string>>();
+    /** 区域成员（regionId → 实体 id；⛔ 持久，重算即得） */
+    const regionMembers = new Map<string, Set<string>>();
+    let lastDurableTick = Number.NEGATIVE_INFINITY;
+    let scriptedSeq = 0;
+    let grantResultSeq = 0;
+    let grantResultNextTick = 0;
+    let grantResultInFlight = false;
+    const grantResultEveryTicks = Math.max(1, Math.floor(options.grantResultEveryTicks ?? 100));
+    const pollGrants = options.pollGrantResults === undefined ? (sId: number, instanceId: string, afterSeq: number) => pollGrantResults(sId, instanceId, afterSeq) : options.pollGrantResults;
+    const grantInbox: GrantResultRow[] = [];
+    const emitOrch = (event: OrchestrationEvent): void => { if (runner) runner.enqueue(event); };
     const log: string[] = [];
     let map: IMapDef | null = null;
     /** 碰撞网格（内容包 collision；无 = 全图通行） */
@@ -363,6 +413,198 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             });
         }
     };
+    /** 撒一只怪（kit 刷新点 / 脚本 spawn / 恢复共用）：实体 + AOI + 脑；投 creatureSpawned。 */
+    const spawnCreature = (
+        context: WorldModeContext<MmoWorldRoomState>, template: NonNullable<ReturnType<typeof content.creatureById.get>>, pos: { readonly x: number; readonly y: number },
+        facts: { readonly id: string; readonly spawnId: string | null; readonly tag: string | null; readonly scripted: boolean; readonly despawnAtTick: number | null },
+    ): MmoEntity => {
+        const entity: MmoEntity = {
+            id: facts.id, kind: "creature", templateId: template.templateId, name: template.name, level: template.level, hpMax: template.hpMax, mpMax: template.mpMax,
+            speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, userId: null, factionId: null, plane: 0, stealth: false, arrival: null, cooldowns: new Map(),
+            attack: template.attack, defense: template.defense, spells: template.spells, auras: new Map(), threat: new Map(), casting: null, targetId: null, alive: true, respawnDueTick: null,
+            origin: { x: pos.x, y: pos.y }, spawnId: facts.spawnId, tag: facts.tag, scripted: facts.scripted, despawnAtTick: facts.despawnAtTick,
+            brain: { state: "idle", waypointIndex: 0, path: null, pathPending: false, pathVersion: 0, pathGoal: null, thinkTick: -1 },
+            x: pos.x, y: pos.y, rev: 0, hp: template.hpMax, mp: template.mpMax, dirX: 0, dirY: 0, target: null, seq: 0,
+        };
+        entities.set(entity.id, entity);
+        aoiOf(context).insert(entity.id, pos.x, pos.y);
+        emitOrch({ kind: "creatureSpawned", entityId: entity.id, templateId: template.templateId, ...(facts.spawnId === null ? {} : { spawnId: facts.spawnId }), ...(facts.tag === null ? {} : { tag: facts.tag }), pos: { x: pos.x, y: pos.y } });
+        return entity;
+    };
+    /** 收回一只脚本怪（despawn 命令 / 到期）：离开视野、脑 / 仇恨清、⛔ 复活。 */
+    const despawnCreature = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity, reason: string): void => {
+        entities.delete(entity.id);
+        aoiOf(context).remove(entity.id);
+        ai.forget(entity.id);
+        revPending.delete(entity.id);
+        for (const other of entities.values()) { if (other.targetId === entity.id) other.targetId = null; other.threat.delete(entity.id); }
+        log.push(`despawn:${entity.id}:${reason}`);
+    };
+    const entityViewOf = (entity: MmoEntity): IEntityView => ({
+        id: entity.id, kind: entity.kind, templateId: entity.templateId, name: entity.name, x: entity.x, y: entity.y, hp: entity.hp, hpMax: entity.hpMax, level: entity.level,
+        factionId: entity.factionId, tag: entity.tag, alive: entity.alive, characterId: entity.characterId,
+    });
+    const entityOfCharacter = (characterId: string): MmoEntity | null => [...entities.values()].find((entity) => entity.characterId === characterId) ?? null;
+    /** 事件时刻的只读世界（运行器不缓存；每次 dispatch 新建）。 */
+    const worldView = (def: IMapDef): RunnerWorld => ({
+        entity: (id) => { const entity = entities.get(id); return entity ? entityViewOf(entity) : null; },
+        entitiesInRegion: (regionId, filter) => {
+            const region = (content.regionsByMap.get(def.mapId) ?? []).find((entry) => entry.regionId === regionId);
+            if (!region) return [];
+            const out: string[] = [];
+            for (const entity of entities.values()) {
+                if (!entity.alive || !regionContains(region, entity)) continue;
+                if (filter?.kind !== undefined && entity.kind !== filter.kind) continue;
+                if (filter?.tag !== undefined && entity.tag !== filter.tag) continue;
+                if (filter?.factionId !== undefined && entity.factionId !== filter.factionId) continue;
+                out.push(entity.id);
+            }
+            return out;
+        },
+        playersInInstance: () => [...movers.values()],
+        isWalkable: (pos) => { const at = teleportWithin(pos, def.size, grid); return at !== null && at.x === pos.x && at.y === pos.y; },
+        region: (regionId) => (content.regionsByMap.get(def.mapId) ?? []).find((entry) => entry.regionId === regionId) ?? null,
+        creature: (templateId) => content.creatureById.get(templateId) ?? null,
+        item: (itemId) => content.itemById.get(itemId) ?? null,
+        partyMembersInInstance: (entityId) => {
+            const self = entities.get(entityId);
+            if (!self || self.session === null) return [];
+            const partyId = parties.get(self.session) ?? null;
+            if (partyId === null) return [entityId];
+            return [...movers.entries()].filter(([session]) => parties.get(session) === partyId).map(([, id]) => id);
+        },
+    });
+    /** 编排命令落地（本地命令已在运行器生效）；语义拒绝只记日志（⛔ 因单条命令 suspend 整包）。 */
+    const applyEffect = (context: WorldModeContext<MmoWorldRoomState>, effect: RunnerEffect, tick: number, def: IMapDef, opIndex: number): void => {
+        const packId = runner!.packId;
+        const rejectEffect = (why: string): void => { log.push(`orch:${packId}:reject:${effect.op}:${why}`); };
+        switch (effect.op) {
+            case "spawn": {
+                const template = content.creatureById.get(effect.templateId);
+                if (!template) { rejectEffect("template"); return; }
+                const pos = teleportWithin(effect.pos, def.size, grid);
+                if (!pos || pos.x !== effect.pos.x || pos.y !== effect.pos.y) { rejectEffect("pos"); return; }
+                const alive = [...entities.values()].filter((entity) => entity.scripted && entity.alive).length;
+                if (alive >= runner!.limits.maxSpawnsAlive) { rejectEffect("max-spawns"); return; }
+                scriptedSeq += 1;
+                spawnCreature(context, template, pos, { id: `orch:${packId}:${scriptedSeq}`, spawnId: null, tag: effect.tag ?? null, scripted: true, despawnAtTick: effect.despawnAfterMs === undefined ? null : tick + ticksOf(effect.despawnAfterMs, context.fixedStepMs) });
+                return;
+            }
+            case "despawn": {
+                const targets = "entityId" in effect ? [entities.get(effect.entityId)].filter((entity): entity is MmoEntity => Boolean(entity && entity.scripted)) : [...entities.values()].filter((entity) => entity.scripted && entity.tag === effect.tag);
+                if (targets.length === 0) { rejectEffect("not-scripted"); return; }
+                for (const target of targets) despawnCreature(context, target, "command");
+                return;
+            }
+            case "grantItem": {
+                if (!checkpoint?.eventTable) { rejectEffect("no-durable"); return; }
+                if (!content.itemById.has(effect.itemTemplateId)) { rejectEffect("item"); return; }
+                if (effect.count > runner!.limits.maxGrantCount) { rejectEffect("count"); return; }
+                if (!entityOfCharacter(effect.toCharacterId)) { rejectEffect("character"); return; }
+                const opId = `orch:${packId}:${runner!.eventSeq}:${opIndex}`;
+                context.events.append("grantItem", { opId, toCharacterId: effect.toCharacterId, itemTemplateId: effect.itemTemplateId, count: effect.count, reason: effect.reason, packId });
+                log.push(`orch:${packId}:grantItem:${opId}`);
+                return;
+            }
+            case "grantCurrency": {
+                if (!checkpoint?.eventTable) { rejectEffect("no-durable"); return; }
+                if (effect.amount > runner!.limits.maxCurrencyPerGrant) { rejectEffect("amount"); return; }
+                const target = entityOfCharacter(effect.toCharacterId);
+                if (!target || target.personaId === null || target.userId === null) { rejectEffect("character"); return; }
+                const opId = `orch:${packId}:${runner!.eventSeq}:${opIndex}`;
+                context.events.append("grantCurrency", { personaId: target.personaId, userId: target.userId, amount: effect.amount, opId, reason: effect.reason, packId });
+                log.push(`orch:${packId}:grantCurrency:${opId}`);
+                return;
+            }
+            case "sayNearby": {
+                const anchor = entities.get(effect.anchorEntityId);
+                if (!anchor) { rejectEffect("anchor"); return; }
+                const payload: IWorldChatRes = { fromEntityId: anchor.id, text: effect.text, at: tick * context.fixedStepMs };
+                for (const id of aoiOf(context).candidates(anchor, def.aoi.viewRadius, candidates)) {
+                    const listener = entities.get(id);
+                    if (listener && listener.session !== null && withinRadius(listener, anchor, def.aoi.viewRadius)) context.observers.emitPerSession(listener.session, CORE_S2C_TOKENS.WorldChat, payload);
+                }
+                return;
+            }
+            case "sayWorld": context.broadcastS2C(MmoWorldNotice, { text: effect.text, level: "info" }); return; // v1：框架 channel 不可达 ⇒ 分线广播（偏差）
+            case "notice": context.broadcastS2C(MmoWorldNotice, { text: effect.text, level: effect.level }); return;
+            case "prompt": {
+                const target = entities.get(effect.toEntityId);
+                if (!target || target.session === null) { rejectEffect("target"); return; }
+                prompts.set(`${target.session}:${effect.promptId}`, new Set(effect.choices.map((choice) => choice.id)));
+                context.sendS2C(target.session, MmoWorldPrompt, { promptId: effect.promptId, packId, choices: effect.choices.map((choice) => ({ choiceId: choice.id, text: choice.label })) });
+                return;
+            }
+            case "teleportWithin": {
+                const target = entities.get(effect.entityId);
+                if (!target) { rejectEffect("entity"); return; }
+                const pos = teleportWithin(effect.pos, def.size, grid);
+                if (!pos) { rejectEffect("pos"); return; }
+                target.x = pos.x;
+                target.y = pos.y;
+                target.target = null;
+                target.dirX = 0;
+                target.dirY = 0;
+                target.rev += 1;
+                aoiOf(context).move(target.id, pos.x, pos.y);
+                if (target.session !== null) context.sendS2C(target.session, MmoWorldPos, { seq: target.seq, tick, x: pos.x, y: pos.y });
+                return;
+            }
+            case "transfer": {
+                const target = entityOfCharacter(effect.characterId);
+                if (!target || target.session === null) { rejectEffect("character"); return; }
+                const portal = def.portals.find((entry) => entry.portalId === effect.toPortalId && entry.toMapId === effect.toMapId);
+                if (!portal) { rejectEffect("portal"); return; }
+                beginTransfer(context, target.session, portal, `orch:${packId}`);
+                return;
+            }
+            case "setRegionEnabled": {
+                if (!(content.regionsByMap.get(def.mapId) ?? []).some((region) => region.regionId === effect.regionId)) { rejectEffect("region"); return; }
+                regions.set(effect.regionId, effect.enabled);
+                if (!effect.enabled) regionMembers.delete(effect.regionId);
+                return;
+            }
+            default: return;
+        }
+    };
+    /** 区域进出（只在模块订阅时算）：每步对已启用区域 × 活实体做精确形状判定，diff 上一步成员。 */
+    const regionStep = (def: IMapDef): void => {
+        if (!runner || !(runner.isSubscribed("regionEntered") || runner.isSubscribed("regionLeft"))) return;
+        for (const region of content.regionsByMap.get(def.mapId) ?? []) {
+            if (regions.get(region.regionId) !== true) continue;
+            const members = regionMembers.get(region.regionId) ?? new Set<string>();
+            const now = new Set<string>();
+            for (const entity of entities.values()) if (entity.alive && regionContains(region, entity)) now.add(entity.id);
+            for (const id of now) if (!members.has(id)) emitOrch({ kind: "regionEntered", regionId: region.regionId, entityId: id, entityKind: entities.get(id)!.kind });
+            for (const id of members) if (!now.has(id)) { const entity = entities.get(id); emitOrch({ kind: "regionLeft", regionId: region.regionId, entityId: id, entityKind: entity?.kind ?? "creature" }); }
+            regionMembers.set(region.regionId, now);
+        }
+    };
+    /** 编排步（AI / 战斗 / 背包之后、出站之前）：区域事件 → timer / tick 节拍 → grantResult 回投 → dispatch → 命令落地 → 到期 despawn。 */
+    const orchestrationStep = (context: WorldModeContext<MmoWorldRoomState>, tick: number, def: IMapDef): void => {
+        for (const entity of [...entities.values()]) if (entity.scripted && entity.despawnAtTick !== null && entity.despawnAtTick <= tick) despawnCreature(context, entity, "expired");
+        if (!runner) return;
+        regionStep(def);
+        runner.schedule(tick);
+        for (const row of grantInbox.splice(0, grantInbox.length)) { grantResultSeq = Math.max(grantResultSeq, row.seq); emitOrch({ kind: "grantResult", opId: row.opId, ok: row.ok, ...(row.reason === undefined ? {} : { reason: row.reason }) }); }
+        if (pollGrants && runner.isSubscribed("grantResult") && tick >= grantResultNextTick && !grantResultInFlight) {
+            grantResultInFlight = true;
+            grantResultNextTick = tick + grantResultEveryTicks;
+            pollGrants(context.sId, context.instanceId, grantResultSeq).then((rows) => { grantResultInFlight = false; grantInbox.push(...rows); }).catch(() => { grantResultInFlight = false; });
+        }
+        const world = worldView(def);
+        const result = runner.dispatch(tick, world);
+        result.effects.forEach((effect, index) => applyEffect(context, effect, tick, def, index));
+        if (result.publishChanged) { const publish = runner.publish(); context.broadcastS2C(MmoWorldScriptState, { packId: runner.packId, rev: publish.rev, state: publish.state }); }
+        if (result.durableVar && tick - lastDurableTick >= ticksOf(ORCH_DURABLE_VAR_MIN_INTERVAL_MS, context.fixedStepMs)) {
+            lastDurableTick = tick;
+            if (checkpoint) context.requestCheckpoint(`orch:${runner.packId}:durable`);
+        }
+        if (result.suspendedNow !== null) {
+            if (checkpoint?.eventTable) context.events.append("packSuspended", { packId: runner.packId, reason: result.suspendedNow });
+            runner.notifySuspended(tick, world);
+        }
+    };
     const reject = (context: WorldModeContext<MmoWorldRoomState>, session: string, clientReqId: string, detail: string): void => {
         context.sendS2C(session, MmoWorldOpResult, { clientReqId, result: "rejected", detail });
     };
@@ -374,6 +616,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         if (!portal) { reject(context, session, request.clientReqId, "portal 不存在"); return; }
         if (!withinRadius(mover, portal.pos, portal.radius)) { reject(context, session, request.clientReqId, "不在传送门范围内"); return; }
         if (inFlight.has(session)) { reject(context, session, request.clientReqId, "交接在途"); return; }
+        beginTransfer(context, session, portal, request.clientReqId);
+    };
+    /** 发起交接（玩家走门 / 编排 transfer 命令共用；编排不要求在门半径内）。 */
+    const beginTransfer = (context: WorldModeContext<MmoWorldRoomState>, session: string, portal: IMapDef["portals"][number], clientReqId: string): void => {
+        const mover = moverOf(session);
+        if (!mover || inFlight.has(session)) return;
         inFlight.add(session);
         // 落点先写进实体：框架 prepare 后立即强制检查点，persona 快照随之带 arrival（目标图 onEnter 按它落位）；同时停下
         mover.arrival = { mapId: portal.toMapId, spawnPointId: portal.toSpawnPointId };
@@ -392,7 +640,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 const current = moverOf(session);
                 if (current) current.arrival = null;
                 log.push(`transfer:${session}:failed`);
-                reject(context, session, request.clientReqId, `交接失败：${error instanceof Error ? error.message : String(error)}`);
+                reject(context, session, clientReqId, `交接失败：${error instanceof Error ? error.message : String(error)}`);
             });
     };
 
@@ -501,6 +749,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         context.sendS2C(session, MmoWorldOpResult, { clientReqId: request.clientReqId, result: "ok" });
         log.push(`pickup:${session}:${drop.id}`);
         if (loadBag) scheduleBagRefresh(session, mover.characterId, tick);
+        emitOrch({ kind: "lootClaimed", actorEntityId: mover.id, lootId: drop.id, itemTemplateId: drop.itemId, count: drop.count });
     };
     /** 死亡：清热状态、停下；怪物按 respawnSec 复活、角色按 MMO_PLAYER_RESPAWN_MS 复活；checkpointOnDeath ⇒ 强制点（有检查点能力时）；怪物按 lootTable 掷骰落掉落。 */
     const die = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity, tick: number): void => {
@@ -511,11 +760,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         entity.auras.clear();
         // 击杀者 = 仇恨最高的角色（并列按 id；⛔ 在死亡清仇恨之前取）
         let killerCharacterId: string | null = null;
+        let killerEntityId: string | null = null;
         let killerThreat = -1;
         for (const [id, threat] of entity.threat) {
             const attacker = entities.get(id);
-            if (!attacker || attacker.characterId === null) continue;
-            if (threat > killerThreat || (threat === killerThreat && id < (killerCharacterId ?? ""))) { killerThreat = threat; killerCharacterId = attacker.characterId; }
+            if (!attacker) continue;
+            if (threat > killerThreat || (threat === killerThreat && id < (killerEntityId ?? ""))) { killerThreat = threat; killerEntityId = id; killerCharacterId = attacker.characterId; }
         }
         entity.threat.clear();
         entity.dirX = 0;
@@ -525,7 +775,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         if (entity.brain) { entity.brain.state = "idle"; entity.brain.path = null; entity.brain.pathPending = false; entity.brain.pathGoal = null; entity.brain.pathVersion += 1; ai.forget(entity.id); }
         revPending.delete(entity.id);
         const template = entity.kind === "creature" ? content.creatureById.get(entity.templateId) : undefined;
-        entity.respawnDueTick = tick + ticksOf(template ? template.respawnSec * 1000 : MMO_PLAYER_RESPAWN_MS, context.fixedStepMs);
+        // 脚本 spawn 死后 ⛔ 复活（收回）；kit 撒的怪按 respawnSec
+        entity.respawnDueTick = entity.scripted ? null : tick + ticksOf(template ? template.respawnSec * 1000 : MMO_PLAYER_RESPAWN_MS, context.fixedStepMs);
+        if (entity.kind === "creature") emitOrch({ kind: "creatureDied", entityId: entity.id, templateId: entity.templateId, ...(entity.spawnId === null ? {} : { spawnId: entity.spawnId }), ...(entity.tag === null ? {} : { tag: entity.tag }), ...(killerEntityId === null ? {} : { killerEntityId }), pos: { x: entity.x, y: entity.y } });
+        else emitOrch({ kind: "playerDied", entityId: entity.id, ...(killerEntityId === null ? {} : { killerEntityId }) });
+        if (entity.scripted) entity.despawnAtTick = tick + ticksOf(MMO_PLAYER_RESPAWN_MS, context.fixedStepMs); // 尸体停留 5 s 后收回
         if (template?.checkpointOnDeath && checkpoint) context.requestCheckpoint(`death:${entity.id}`);
         log.push(`death:${entity.id}`);
         // 掉落：模板有 lootTable ⇒ 分线随机流掷骰（同种子同命令序 ⇒ 同掉落）落在尸体位置
@@ -796,6 +1050,22 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             privateSent.clear();
             context.state.packId = content.pack.packId;
             context.state.packVersion = content.pack.version;
+            // 编排（MK4-B1）：一图一包一运行器（注入优先，其次注册表；无 ⇒ 无编排）；撒怪前建好，creatureSpawned 才投得到
+            const module = options.orchestration === undefined ? orchestrationFor(content.pack.packId) : options.orchestration;
+            runner = module ? new OrchestrationRunner({
+                module, instanceId: context.instanceId, address: `${context.sId}/${def.mapId}/${context.line}`, fixedStepMs: context.fixedStepMs, log: (line) => log.push(line),
+                ...(options.orchestrationClock ? { now: options.orchestrationClock } : {}), ...(options.orchestrationBudgetMs === undefined ? {} : { budgetMs: options.orchestrationBudgetMs }),
+            }) : null;
+            prompts.clear();
+            regionMembers.clear();
+            parties.clear();
+            pendingParties.clear();
+            grantInbox.length = 0;
+            grantResultSeq = 0;
+            grantResultNextTick = 0;
+            grantResultInFlight = false;
+            scriptedSeq = 0;
+            lastDurableTick = Number.NEGATIVE_INFINITY;
             for (const spawn of content.spawnsByMap.get(def.mapId) ?? []) {
                 const template = content.creatureById.get(spawn.templateId);
                 if (!template) continue; // validateContentPack 已保证引用完整；防御
@@ -803,26 +1073,28 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     const pos = clampToMap({
                         x: spawn.pos.x + context.random.nextInt(-MMO_SPAWN_JITTER, MMO_SPAWN_JITTER), y: spawn.pos.y + context.random.nextInt(-MMO_SPAWN_JITTER, MMO_SPAWN_JITTER),
                     }, def.size);
-                    const id = `${spawn.spawnId}:${index}`; // wire id 形态：[A-Za-z0-9._:-]
-                    entities.set(id, {
-                        id, kind: "creature", templateId: template.templateId, name: template.name, level: template.level, hpMax: template.hpMax, mpMax: template.mpMax,
-                        speedPerSec: template.speedPerSec, session: null, personaId: null, characterId: null, factionId: null, plane: 0, stealth: false, arrival: null, cooldowns: new Map(),
-                        attack: template.attack, defense: template.defense, spells: template.spells, auras: new Map(), threat: new Map(), casting: null, targetId: null, alive: true, respawnDueTick: null,
-                        origin: { x: pos.x, y: pos.y },
-                        brain: { state: "idle", waypointIndex: 0, path: null, pathPending: false, pathVersion: 0, pathGoal: null, thinkTick: -1 },
-                        x: pos.x, y: pos.y, rev: 0, hp: template.hpMax, mp: template.mpMax, dirX: 0, dirY: 0, target: null, seq: 0,
-                    });
-                    aoiOf(context).insert(id, pos.x, pos.y);
+                    spawnCreature(context, template, pos, { id: `${spawn.spawnId}:${index}`, spawnId: spawn.spawnId, tag: null, scripted: false, despawnAtTick: null }); // wire id 形态：[A-Za-z0-9._:-]
                 }
             }
+            emitOrch({ kind: "instanceStarted", recovered: info.recovered, checkpointRev: 0 });
             syncPopulation(context);
             log.push(`init:${def.mapId}#${context.line}:${info.recovered}:${entities.size}`);
         },
         onRestore(context, snapshot) {
             const instance = snapshot.instance as Partial<MmoInstanceSnapshot> | null;
             let restored = 0;
+            const restoreTick = typeof instance?.tick === "number" ? instance.tick : 0;
             for (const creature of instance?.creatures ?? []) {
-                const entity = entities.get(creature.id);
+                let entity = entities.get(creature.id);
+                // 脚本 spawn：按模板重建（活着才建；tag / 到期重排）
+                if (!entity && creature.scripted === true && creature.alive !== false) {
+                    const template = content.creatureById.get(creature.templateId);
+                    if (!template) continue;
+                    const pos = clampToMap({ x: creature.x, y: creature.y }, mapOf(context).size);
+                    const seq = Number(creature.id.split(":").pop());
+                    if (Number.isSafeInteger(seq)) scriptedSeq = Math.max(scriptedSeq, seq);
+                    entity = spawnCreature(context, template, pos, { id: creature.id, spawnId: null, tag: creature.tag ?? null, scripted: true, despawnAtTick: typeof creature.despawnAtTick === "number" ? Math.max(0, creature.despawnAtTick - restoreTick) + context.state.tick : null });
+                }
                 if (!entity) continue;
                 const pos = clampToMap({ x: creature.x, y: creature.y }, mapOf(context).size);
                 entity.x = pos.x;
@@ -858,6 +1130,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 const seq = Number(drop.id.slice("loot:".length));
                 if (Number.isSafeInteger(seq)) lootSeq = Math.max(lootSeq, seq);
             }
+            // 编排状态：同一 pack 才回灌（timers 按 tick 差重排；suspended 保留）
+            const orchestration = instance?.orchestration;
+            if (runner && orchestration && orchestration.packId === runner.packId) {
+                runner.restore({ vars: orchestration.vars, timers: orchestration.timers, publish: orchestration.publish, suspended: orchestration.suspended, eventSeq: orchestration.eventSeq, ring: orchestration.ring }, snapshotTick, context.state.tick);
+                grantResultSeq = typeof orchestration.grantResultSeq === "number" ? orchestration.grantResultSeq : 0;
+            }
             log.push(`restore:${restored}`);
         },
         async onBeforeAdmit(context, request: WorldAdmitRequest) {
@@ -865,6 +1143,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             pending.set(request.personaId, row);
             // 背包随角色预热（读失败 ⇒ 无背包进图，拾取后轮询会补；⛔ 因背包拒准入）
             pendingBags.set(request.personaId, row && loadBag ? await loadBag(context.sId, row.characterId).catch(() => null) : null);
+            pendingParties.set(request.personaId, loadParty ? await loadParty(request.userId).catch(() => null) : null);
         },
         onAdmit(_context, request) {
             const row = pending.get(request.personaId);
@@ -900,11 +1179,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const hp = typeof restored?.hp === "number" ? Math.max(0, Math.min(hpMax, restored.hp)) : hpMax;
             entities.set(id, {
                 id, kind: "character", templateId: row?.classId ?? "fighter", name: row?.name ?? "?", level: row?.level ?? 1, hpMax, mpMax, speedPerSec: klass?.speedPerSec ?? 120,
-                session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null, factionId: row?.factionId ?? null, plane: 0, stealth: false, arrival: null, cooldowns,
+                session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null, userId: session.userId, factionId: row?.factionId ?? null, plane: 0, stealth: false, arrival: null, cooldowns,
                 attack: klass?.attack ?? 0, defense: klass?.defense ?? 0, spells: klass?.spells ?? [], auras: new Map(), threat: new Map(), casting: null, targetId: null,
                 // 带着 0 hp 进图（死亡时离座）⇒ 立即按角色复活等待重生
                 alive: hp > 0, respawnDueTick: hp > 0 ? null : context.state.tick + ticksOf(MMO_PLAYER_RESPAWN_MS, context.fixedStepMs),
-                origin: { x: pos.x, y: pos.y },
+                origin: { x: pos.x, y: pos.y }, spawnId: null, tag: null, scripted: false, despawnAtTick: null,
                 brain: null,
                 x: pos.x, y: pos.y, rev: 0,
                 hp,
@@ -915,6 +1194,9 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             movers.set(session.session, id);
             const bag = pendingBags.get(session.personaId) ?? null;
             pendingBags.delete(session.personaId);
+            parties.set(session.session, pendingParties.get(session.personaId) ?? null);
+            pendingParties.delete(session.personaId);
+            emitOrch({ kind: "playerEntered", entityId: id, characterId: row?.characterId ?? session.personaId, factionId: row?.factionId ?? null });
             if (bag) { bags.set(session.session, bag); applyEquipment(entities.get(id)!, bag); }
             privateDirty.add(session.session);
             syncPopulation(context);
@@ -922,6 +1204,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         },
         onLeave(context, session, reason) {
             const id = movers.get(session.session);
+            const leaving = id === undefined ? undefined : entities.get(id);
+            if (leaving) emitOrch({ kind: "playerLeft", entityId: leaving.id, characterId: leaving.characterId ?? session.personaId, factionId: leaving.factionId });
+            for (const key of [...prompts.keys()]) if (key.startsWith(`${session.session}:`)) prompts.delete(key);
+            parties.delete(session.session);
             if (id !== undefined) {
                 entities.delete(id);
                 aoiOf(context).remove(id);
@@ -964,7 +1250,30 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     requestCast(context, command.session, command.payload as IMmoWorldCastReq, step.tick);
                     continue;
                 }
-                if (command.type !== MmoWorldMove.type) continue; // interact / choose：MK4
+                if (command.type === MmoWorldInteract.type) {
+                    const mover = moverOf(command.session);
+                    const request = command.payload as IMmoWorldInteractReq;
+                    const target = entities.get(request.entityId);
+                    if (!mover || !mover.alive || !target || !target.alive || target.id === mover.id || !runner) continue;
+                    if (!withinRadius(mover, target, MMO_INTERACT_RADIUS)) { log.push(`interact:${command.session}:range`); continue; }
+                    const template = content.creatureById.get(target.templateId);
+                    const declared = runner.module.interacts ?? {};
+                    const interactId = request.interactId ?? Object.keys(declared).find((id) => declared[id]!.targets.includes(target.templateId) && (template?.interacts.includes(id) ?? false)) ?? null;
+                    if (interactId === null || !declared[interactId]?.targets.includes(target.templateId) || !(template?.interacts.includes(interactId) ?? false)) { log.push(`interact:${command.session}:unknown`); continue; }
+                    emitOrch({ kind: "interact", actorEntityId: mover.id, targetEntityId: target.id, interactId });
+                    continue;
+                }
+                if (command.type === MmoWorldChoose.type) {
+                    const mover = moverOf(command.session);
+                    const request = command.payload as IMmoWorldChooseReq;
+                    const key = `${command.session}:${request.promptId}`;
+                    const choices = prompts.get(key);
+                    if (!mover || !choices || !choices.has(request.choiceId)) { log.push(`choose:${command.session}:unknown`); continue; }
+                    prompts.delete(key);
+                    emitOrch({ kind: "choice", actorEntityId: mover.id, promptId: request.promptId, choiceId: request.choiceId });
+                    continue;
+                }
+                if (command.type !== MmoWorldMove.type) continue;
                 const mover = moverOf(command.session);
                 if (!mover || !mover.alive) continue; // 死者不动
                 const intent = command.payload as IMmoWorldMoveReq;
@@ -1011,6 +1320,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             aiStep(context, step.tick, step.dtMs, def);
             combatStep(context, step.tick);
             bagRefreshStep(context, step.tick);
+            orchestrationStep(context, step.tick, def);
             for (const entity of entities.values()) {
                 if (entity.kind !== "character" || entity.session === null) continue;
                 // 本人私有流（不可丢类，与视野流共用单 seq 流）：hp / mp / 冷却集合（按就绪 tick）/ 施法中 变了才发（⛔ 每 tick 倒计时）
@@ -1042,6 +1352,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 creatures: [...entities.values()].filter((entity) => entity.kind === "creature").map((entity) => ({
                     id: entity.id, templateId: entity.templateId, x: entity.x, y: entity.y, hp: entity.hp, alive: entity.alive,
                     ...(entity.respawnDueTick === null ? {} : { respawnDueTick: entity.respawnDueTick }),
+                    ...(entity.scripted ? { scripted: true, ...(entity.tag === null ? {} : { tag: entity.tag }), ...(entity.despawnAtTick === null ? {} : { despawnAtTick: entity.despawnAtTick }) } : {}),
                 })),
                 loot: [...lootDrops.values()].map((drop): MmoLootSnapshot => ({
                     id: drop.id, itemId: drop.itemId, count: drop.count, x: drop.x, y: drop.y, expiresTick: drop.expiresTick,
@@ -1051,6 +1362,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 scriptVars: { ...scriptVars },
                 timers: [...timers].map(([id, dueTick]) => ({ id, dueTick })),
                 regions: Object.fromEntries(regions),
+                ...(runner ? { orchestration: { packId: runner.packId, ...runner.snapshot(), grantResultSeq } } : {}),
             };
             return { persona, instance };
         },
@@ -1086,6 +1398,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             loot: () => lootDrops,
             bagOf: (session) => bags.get(session) ?? null,
             bagRefreshing: () => [...bagRefresh.keys()],
+            orchestration: () => (runner ? { packId: runner.packId, ...runner.snapshot(), grantResultSeq, queued: runner.queued } : null),
+            emitOrchestration: (event) => { emitOrch(event); },
+            resumePack: () => { runner?.resume(); },
+            scriptedCreatures: () => [...entities.values()].filter((entity) => entity.scripted),
             spawnLoot: (itemId, count, x, y, ownerCharacterId = null) => {
                 if (!probeContext) throw new Error("[mmoWorld] spawnLoot：世界未初始化");
                 return spawnLoot(probeContext, itemId, count, x, y, probeContext.state.tick, ownerCharacterId);

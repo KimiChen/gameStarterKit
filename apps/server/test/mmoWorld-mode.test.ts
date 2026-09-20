@@ -21,7 +21,10 @@
  *  - MK2-B3 掉落：怪死按 lootTable 掷骰（同种子同掉落）落地为 kind loot 实体（带 count）进视野；拾取：远 ⇒ range、拾到 ⇒ ok + 离开视野 + lootClaimed 进事件批、
  *    再拾 ⇒ 不存在；快照往返（expiresTick 重排、lootSeq 续用）；到期消失；无 eventTable ⇒ 拒；
  *  - MK3-B1 归属 / 背包：击杀者（仇恨最高的角色）15 s 内独占拾取（他人 ⇒ owned）、超时放开、快照带 owner 重排；进图私有流带预热的 bag、装备属性进基础攻防；
- *    拾取后按节拍轮询 loadBag，变了才再发一次 bag（然后停），没变则轮询到期停；离座清。
+ *    拾取后按节拍轮询 loadBag，变了才再发一次 bag（然后停），没变则轮询到期停；离座清；
+ *  - MK4-B1 编排：注入模块 ⇒ instanceStarted / playerEntered（sayNearby ⇒ core 世界聊天 perSession）/ timer ⇒ 脚本 spawn（tag、上限、到期收回）+ notice 广播 /
+ *    tick ⇒ publishState ⇒ scriptState 广播（值不变不发）/ 击杀 boss ⇒ creatureDied（killer）⇒ grantItem 事件行（确定性 opId）+ durable setVar ⇒ 强制点 /
+ *    interact ⇒ prompt perSession ⇒ choose ⇒ choice ⇒ grantCurrency 事件行 / 快照往返（vars / timers 重排 / 脚本怪重建）/ 65 条命令 ⇒ suspend + packSuspended 审计行 ⇒ resume。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
@@ -45,6 +48,8 @@ import type { WorldTransferReady, WorldTransferTarget } from "../src/rooms/World
 import { MMO_WORLD_CHECKPOINT_SCHEMA, MMO_WORLD_EVENT_TABLE, type MmoInstanceSnapshot, type MmoPersonaSnapshot } from "../src/kits/mmo/persistence/checkpoint";
 import { MemoryCheckpointPort } from "../src/rooms/core/CheckpointPort";
 import { MMO_EVENT_LOOT_CLAIMED, MMO_LOOT_EXPIRE_MS, type IMmoBagWire } from "@game/shared/kits/mmo/api/inventory/index";
+import { bossTimer, commandFlood } from "./fixtures/orchestrationFixture";
+import type { IMmoWorldPrompt, IMmoWorldScriptState } from "@game/shared";
 
 const CONTENT = indexContentPack(validateContentPack(GREYBOX_PACK));
 const rowOf = (personaId: string, name = "Rook", classId: MmoClassId = "fighter", factionId: MmoFactionId = "dawn"): MmoCharacterRow => ({
@@ -67,7 +72,7 @@ type TransferPort = (session: string, target: WorldTransferTarget) => Promise<Wo
 
 function harness(content: IContentPackIndex = CONTENT, transfer: TransferPort | null = null, tuning: Partial<MmoWorldModeOptions> = {}): Harness {
     const characters = new Map<string, MmoCharacterRow>();
-    const mode = createMmoWorldMode({ content, loadCharacter: async (_sId, personaId) => characters.get(personaId) ?? null, checkpoint: null, loadBag: null, ...tuning });
+    const mode = createMmoWorldMode({ content, loadCharacter: async (_sId, personaId) => characters.get(personaId) ?? null, checkpoint: null, loadBag: null, loadParty: null, pollGrantResults: null, orchestration: null, ...tuning });
     const state = createRoomStateForMode("mmoWorld") as MmoWorldRoomState;
     const direct: Harness["direct"] = [];
     const batches: WorldCheckpointBatch[] = [];
@@ -885,4 +890,95 @@ test("角色保存定稿（MK3-B2）：坏角色快照（多键 / 非数）⇒ �
     await seat(h, "b", "p-b", good);
     const b = h.mode.__probe.moverOf("b")!;
     assert.deepEqual([b.x, b.y, b.hp, b.mp], [1500, 700, 40, 10]);
+});
+
+/** 编排用例的内容：木桩 slime（无技能）+ 声明 talk 交互（内容包 interacts 与模块 interacts 交叉核对）。 */
+const ORCH_CONTENT: IContentPackIndex = (() => {
+    const pack = clone(GREYBOX_PACK) as unknown as MutablePack;
+    pack.creatures = pack.creatures.map((creature) => (creature.templateId === "slime" ? { ...creature, spells: [], interacts: ["talk"] } : creature));
+    return indexContentPack(validateContentPack(pack));
+})();
+const orchHarness = (module = bossTimer, extra: Partial<MmoWorldModeOptions> = {}): Harness =>
+    harness(ORCH_CONTENT, null, { checkpoint: { kitId: "mmo", port: new MemoryCheckpointPort(), schema: MMO_WORLD_CHECKPOINT_SCHEMA, eventTable: MMO_WORLD_EVENT_TABLE }, orchestration: module, ...extra });
+const broadcastsOf = (h: Harness, type: string) => h.direct.filter((m) => m.session === "*" && m.type === type).map((m) => m.payload);
+
+test("编排（MK4-B1）：instanceStarted / playerEntered（sayNearby ⇒ 世界聊天）/ timer ⇒ 脚本 spawn + notice / tick ⇒ scriptState（值不变不发）/ 击杀 boss ⇒ grantItem 事件行 + durable 强制点 / interact ⇒ prompt ⇒ choice ⇒ grantCurrency", async () => {
+    const h = orchHarness();
+    await activeWorld(h);
+    assert.deepEqual([h.mode.__probe.orchestration()?.packId, h.mode.__probe.orchestration()?.vars.started, h.mode.__probe.orchestration()?.timers.map((timer) => [timer.id, timer.tag, timer.repeatMs])], ["greybox", undefined, []], "onWorldInit 只是进队，还没 dispatch");
+    step(h);
+    assert.deepEqual([h.mode.__probe.orchestration()?.vars.started, h.mode.__probe.orchestration()?.timers.map((timer) => [timer.id, timer.tag, timer.repeatMs])], [true, [["bossSpawn", "boss", 1000]]], "首步 dispatch：setVar + startTimer 生效");
+    await seat(h, "a", "p-a", personaAt(1000, 1000));
+    step(h);
+    const out = drain(h, "a");
+    assert.deepEqual(out.filter((m) => m.type === S2C.WorldChat).map((m) => (m.payload as { fromEntityId: string; text: string }).text), ["welcome"], "playerEntered ⇒ sayNearby 走 core 世界聊天（perSession）");
+    step(h, 20);
+    const boss = h.mode.__probe.scriptedCreatures()[0]!;
+    assert.deepEqual([boss.templateId, boss.tag, boss.scripted, boss.despawnAtTick !== null, boss.y], ["slime", "boss", true, true, 900], "1 s 后 timer ⇒ 脚本 spawn（tag / 到期收回）");
+    assert.ok(broadcastsOf(h, S2C.MmoWorldNotice).some((payload) => (payload as { text: string }).text.startsWith("boss ")), "notice 广播");
+    assert.ok(idsOf(drain(h, "a"), S2C.MmoWorldEnter).includes(boss.id), "脚本怪进视野");
+    const scriptStates = broadcastsOf(h, S2C.MmoWorldScriptState) as IMmoWorldScriptState[];
+    assert.ok(scriptStates.length >= 1 && scriptStates[0]!.packId === "greybox" && scriptStates[0]!.rev === 1, "tick ⇒ publishState ⇒ scriptState 广播 rev 1");
+    const before = scriptStates.length;
+    step(h, 40);
+    assert.equal(broadcastsOf(h, S2C.MmoWorldScriptState).length, before, "publishState 值不变 ⇒ 不再广播");
+    // 击杀 boss：a 的 strike 收尾（仇恨 ⇒ killer）⇒ creatureDied ⇒ grantItem 事件行 + bossKills durable ⇒ 强制点
+    const a = h.mode.__probe.moverOf("a")!;
+    a.x = boss.x - 20; a.y = boss.y;
+    h.mode.__probe.damage(boss.id, 29);
+    const batchesBefore = h.batches.length;
+    h.runtime.enqueue("a", C2S.MmoWorldCast, { seq: 1, spellId: GREYBOX_SPELLS.strike, targetId: boss.id });
+    step(h, 2);
+    assert.equal(h.mode.__probe.orchestration()?.vars.bossKills, 1, "creatureDied(killer) ⇒ bossKills");
+    assert.ok(h.batches.length > batchesBefore, "durable setVar ⇒ 强制分线检查点");
+    const grant = h.batches.at(-1)!.events.find((event) => event.kind === "grantItem")?.payload as { opId: string; toCharacterId: string; itemTemplateId: string; count: number; packId: string } | undefined;
+    assert.deepEqual([grant?.toCharacterId, grant?.itemTemplateId, grant?.count, grant?.packId, grant?.opId.startsWith("orch:greybox:")], [a.characterId, "slime-gel", 1, "greybox", true], "grantItem 事件行（确定性 opId）");
+    // interact ⇒ prompt ⇒ choose yes ⇒ grantCurrency
+    const slime = [...h.mode.__probe.entities().values()].find((e) => e.kind === "creature" && e.templateId === "slime" && !e.scripted && e.alive)!;
+    a.x = slime.x - 20; a.y = slime.y;
+    h.runtime.enqueue("a", C2S.MmoWorldInteract, { entityId: slime.id });
+    step(h, 2);
+    const prompt = h.direct.find((m) => m.session === "a" && m.type === S2C.MmoWorldPrompt)?.payload as IMmoWorldPrompt | undefined; // perSession 直发（sendS2C）
+    assert.deepEqual([prompt?.promptId, prompt?.packId, prompt?.choices.map((choice) => choice.choiceId)], [`talk:${slime.id}`, "greybox", ["yes", "no"]], "interact ⇒ prompt perSession");
+    h.runtime.enqueue("a", C2S.MmoWorldChoose, { promptId: prompt!.promptId, choiceId: "yes" });
+    step(h, 2);
+    const batch = h.runtime.takeCheckpointBatch(true, "test")!;
+    const currency = batch.events.find((event) => event.kind === "grantCurrency")?.payload as { personaId: string; userId: string; amount: number; opId: string } | undefined;
+    assert.deepEqual([currency?.personaId, currency?.userId, currency?.amount], ["p-a", "u-p-a", 5], "choice yes ⇒ grantCurrency 事件行（persona 主体）");
+    h.runtime.enqueue("a", C2S.MmoWorldChoose, { promptId: prompt!.promptId, choiceId: "yes" });
+    step(h);
+    assert.ok(h.mode.__probe.log.includes("choose:a:unknown"), "同一 prompt 只能答一次");
+});
+
+test("编排（MK4-B1）：快照往返（vars / timers 重排 / 脚本怪重建）；65 条命令 ⇒ suspend + packSuspended 审计行 ⇒ 后续不投 ⇒ resume 恢复；脚本 spawn 上限 4 与到期收回", async () => {
+    const h = orchHarness();
+    await activeWorld(h);
+    step(h, 25);
+    const snapshot = h.runtime.takeCheckpoint(true)!.instance as MmoInstanceSnapshot;
+    const scripted = snapshot.creatures.filter((creature) => creature.scripted);
+    assert.deepEqual([scripted.length, scripted[0]?.tag, typeof scripted[0]?.despawnAtTick, snapshot.orchestration?.packId, snapshot.orchestration?.vars.started, snapshot.orchestration?.timers[0]?.id], [1, "boss", "number", "greybox", true, "bossSpawn"]);
+    const r = orchHarness();
+    await activeWorld(r, "greybox", snapshot);
+    const rebuilt = r.mode.__probe.scriptedCreatures()[0]!;
+    assert.deepEqual([rebuilt.id, rebuilt.tag, rebuilt.despawnAtTick, r.mode.__probe.orchestration()?.vars.started, r.mode.__probe.orchestration()?.timers[0]?.dueTick], [scripted[0]!.id, "boss", scripted[0]!.despawnAtTick! - snapshot.tick, true, snapshot.orchestration!.timers[0]!.dueTick - snapshot.tick], "脚本怪重建 + 到期 / timer 按 tick 差重排");
+    // 上限 4：每 20 步一只，第 5 只被拒
+    step(r, 20 * 5);
+    assert.equal(r.mode.__probe.scriptedCreatures().length, 4, "maxSpawnsAlive 4");
+    assert.ok(r.mode.__probe.log.some((line) => line === "orch:greybox:reject:spawn:max-spawns"));
+    // 到期收回：30 s = 600 步后第一只消失
+    step(r, 600);
+    assert.ok(r.mode.__probe.log.some((line) => line.startsWith("despawn:") && line.endsWith(":expired")), "到期 despawn");
+    // suspend
+    const f = orchHarness(commandFlood);
+    await activeWorld(f);
+    step(f, 12);
+    assert.deepEqual([f.mode.__probe.orchestration()?.suspended, f.mode.__probe.orchestration()?.vars], ["commands", {}], "65 条 ⇒ suspend、整批丢弃");
+    const batch = f.runtime.takeCheckpointBatch(true, "test")!;
+    assert.deepEqual(batch.events.filter((event) => event.kind === "packSuspended").map((event) => event.payload), [{ packId: "greybox", reason: "commands" }], "packSuspended 审计行一条");
+    f.mode.__probe.emitOrchestration({ kind: "tick", tick: 0, bucket: 0 });
+    step(f, 20);
+    assert.equal(f.mode.__probe.orchestration()?.queued, 0, "suspended 期间事件不进队");
+    f.mode.__probe.resumePack();
+    step(f, 12);
+    assert.deepEqual([f.mode.__probe.orchestration()?.suspended, f.runtime.takeCheckpointBatch(true, "again")!.events.filter((event) => event.kind === "packSuspended").length], ["commands", 1], "resume 后再炸一次：又 suspend、审计行再一条（只投一次是每次 suspend 一次）");
 });
