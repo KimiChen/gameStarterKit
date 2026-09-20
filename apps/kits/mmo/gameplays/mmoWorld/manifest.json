@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "mmoWorld",
   "constantName": "MmoWorld",
-  "modeVersion": 5,
+  "modeVersion": 6,
   "wireExposed": true,
   "maxPlayers": 100,
   "profiles": [

@@ -140,7 +140,7 @@ test("MK0：建角 → 进图（看到三只 slime）→ 走路 → 离座强制
         };
         const { room: a, inbox } = await connect();
         await waitFor(() => rootOf(a).phase === WorldPhase.Active && rootOf(a).instanceId.length > 0, "Active root");
-        assert.deepEqual([rootOf(a).mapId, rootOf(a).packId, rootOf(a).packVersion, rootOf(a).population], [MAP_ID, "greybox", 5, 1], "root：图 / 内容包 / 在线数");
+        assert.deepEqual([rootOf(a).mapId, rootOf(a).packId, rootOf(a).packVersion, rootOf(a).population], [MAP_ID, "greybox", 6, 1], "root：图 / 内容包 / 在线数");
         await waitFor(() => inbox.begins.length >= 1 && inbox.itemsOf(inbox.begins[0]!).length >= 4, "首个 baseline：本人 + 三只 slime");
         const items = inbox.itemsOf(inbox.begins[0]!);
         const self = items.find((item) => item.kind === "character");

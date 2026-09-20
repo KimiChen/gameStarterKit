@@ -1,24 +1,33 @@
 /**
  * mmo kit worldEvents worker（apps/server/src/kits/mmo/workers/worldEvents.ts）：载荷闸纯函数 + 一轮 pass 的落地规则
- * （grantCurrency ⇒ credit(opId = eventId, persona 主体)；未知 kind / 非法载荷 ⇒ deadLetter；more = 本轮有认领）。假 KitWorkerTx 记录调用，⛔ 不连库。
+ * （grantCurrency ⇒ credit(opId = eventId, persona 主体)；lootClaimed ⇒ grantItemInTx（MK2-B3：物品 + 回执，op_id = eventId）；未知 kind / 非法载荷 ⇒ deadLetter；
+ * more = 本轮有认领）。假 KitWorkerTx 记录调用，⛔ 不连库。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { KitWorkerTx, KitWorldEventRow } from "../src/core/infra/kitApi";
-import worker, { MMO_EVENT_GRANT_CURRENCY, MMO_WORLD_EVENT_TABLE, grantCurrencyPayloadOf } from "../src/kits/mmo/workers/worldEvents";
+import worker, { MMO_EVENT_GRANT_CURRENCY, MMO_EVENT_LOOT_CLAIMED, MMO_WORLD_EVENT_TABLE, grantCurrencyPayloadOf } from "../src/kits/mmo/workers/worldEvents";
 
 const row = (eventId: string, kind: string, payload: unknown): KitWorldEventRow => ({ eventId, instanceId: "i1", seq: 1, kind, payload, checkpointRev: 1, attempts: 1 });
 
 function fakeTx(claimed: readonly KitWorldEventRow[]) {
   const credits: unknown[][] = [];
   const dead: string[] = [];
+  const sql: [string, unknown[]][] = [];
   const tx = {
+    sId: 1,
     claimWorldEvents: async (table: string) => { assert.equal(table, MMO_WORLD_EVENT_TABLE); return claimed; },
     deadLetterWorldEvent: async (_table: string, eventId: string) => { dead.push(eventId); },
     releaseWorldEvent: async () => { throw new Error("MK0 不放回"); },
     credit: async (...args: unknown[]) => { credits.push(args); return 1; },
+    query: async (statement: string, params: unknown[] = []) => {
+      sql.push([statement, params]);
+      if (statement.startsWith("SELECT result FROM k_mmo_receipt")) return [];
+      if (statement.startsWith("SELECT COALESCE(MAX(slot)")) return [{ next_slot: 0 }];
+      return { affectedRows: 1 };
+    },
   } as unknown as KitWorkerTx;
-  return { tx, credits, dead };
+  return { tx, credits, dead, sql };
 }
 
 test("grantCurrencyPayloadOf：personaId / userId 非空且有界、amount 正整数；其余 null", () => {
@@ -39,4 +48,16 @@ test("pass：grantCurrency ⇒ credit(uid, CUR_GOLD, amount, eventId, world-even
   assert.deepEqual(dead, ["e2", "e3"]);
   const idle = fakeTx([]);
   assert.deepEqual(await worker.pass(idle.tx, { kitId: "mmo", workerId: "worldEvents", sId: 1, now: 0, signal: new AbortController().signal }), { more: false });
+});
+
+test("pass：lootClaimed ⇒ grantItemInTx（物品进 bag 下一空槽 + 回执 op_id = eventId）；载荷非法 ⇒ 死信", async () => {
+  const claim = row("e9", MMO_EVENT_LOOT_CLAIMED, { actorEntityId: "char:c1", actorCharacterId: "c1", lootId: "loot:1", itemTemplateId: "slime-gel", count: 2 });
+  const bad = row("e10", MMO_EVENT_LOOT_CLAIMED, { actorEntityId: "char:c1", lootId: "loot:1", itemTemplateId: "slime-gel", count: 2 });
+  const { tx, dead, sql } = fakeTx([claim, bad]);
+  assert.deepEqual(await worker.pass(tx, { kitId: "mmo", workerId: "worldEvents", sId: 1, now: 0, signal: new AbortController().signal }), { more: true });
+  const inserts = sql.filter(([statement]) => statement.startsWith("INSERT"));
+  assert.equal(inserts.length, 2);
+  assert.deepEqual(inserts[0]![1].slice(2), ["slime-gel", "c1", "bag", 0, 2], "物品：模板 / 角色 / bag / 槽 0 / 数量 2");
+  assert.deepEqual(inserts[1]![1].slice(1, 4), ["e9", "c1", "lootClaimed"], "回执 op_id = eventId");
+  assert.deepEqual(dead, ["e10"]);
 });

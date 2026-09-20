@@ -66,7 +66,8 @@ test("content：未知键 / 坏枚举 / 引用断裂（spawn→template、portal
   expectError(mutate((pack) => { pack.spawns = [{ ...pack.spawns[0]!, templateId: "dragon" }]; }), /spawns\[0\]\.templateId/u, "spawn → 缺模板");
   expectError(mutate((pack) => { pack.spawns = [{ ...pack.spawns[0]!, pos: { x: 5000, y: 10 } }]; }), /spawns\[0\]\.pos/u, "spawn 越出图");
   expectError(mutate((pack) => { pack.maps = [{ ...pack.maps[0]!, portals: [{ portalId: "p", pos: { x: 1, y: 1 }, radius: 10, toMapId: "nowhere", toSpawnPointId: "start" }] }]; }), /portals\[0\]\.toMapId/u, "portal → 缺图");
-  expectError(mutate((pack) => { pack.lootTables = [{ lootTableId: "lt", entries: [{ itemId: "gem", weight: 1, countMin: 1, countMax: 1 }] }]; }), /lootTables\[0\]\.entries\[0\]\.itemId/u, "loot → 缺物品");
+  expectError(mutate((pack) => { pack.lootTables = [...pack.lootTables, { lootTableId: "lt", entries: [{ itemId: "gem", weight: 1, countMin: 1, countMax: 1 }] }]; }), /lootTables\[2\]\.entries\[0\]\.itemId/u, "loot → 缺物品");
+  expectError(mutate((pack) => { pack.creatures = [{ ...pack.creatures[0]!, lootTableId: "nowhere" }]; }), /creatures\[0\]\.lootTableId/u, "creature → 缺掉落表");
   expectError(mutate((pack) => { pack.creatures = [pack.creatures[0]!, { ...pack.creatures[0]! }]; }), /creatures\[1\]/u, "重复 id");
   expectError(mutate((pack) => { pack.creatures = [{ ...pack.creatures[0]!, spells: ["nova"] }]; }), /creatures\[0\]\.spells\[0\]/u, "creature → 缺技能");
   expectError(mutate((pack) => { pack.maps = [{ ...pack.maps[0]!, spawnPoints: [] }]; }), /spawnPoints/u, "无出生点");

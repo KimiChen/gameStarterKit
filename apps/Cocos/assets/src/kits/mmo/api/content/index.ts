@@ -22,6 +22,12 @@ export const BUILTIN_PRESENTATION: IPresentationMap = Object.freeze({
     fighter: { label: "战士", color: [70, 130, 210, 255], size: 44 },
     caster: { label: "法师", color: [150, 100, 220, 255], size: 44 },
     slime: { label: "史莱姆", color: [110, 200, 120, 255], size: 36 },
+    boar: { label: "野猪", color: [160, 110, 70, 255], size: 40 },
+    rat: { label: "田鼠", color: [150, 150, 130, 255], size: 26 },
+    // MK2-B3 掉落（kind loot 的 templateId = itemId）
+    "slime-gel": { label: "史莱姆凝胶", color: [230, 210, 90, 255], size: 18 },
+    "boar-hide": { label: "野猪皮", color: [210, 160, 100, 255], size: 18 },
+    "rusty-blade": { label: "锈剑", color: [200, 200, 220, 255], size: 18 },
 });
 
 export const FALLBACK_PRESENTATION: IPresentationEntry = Object.freeze<IPresentationEntry>({ label: "?", color: [140, 140, 140, 255], size: 32 });

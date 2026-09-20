@@ -4,6 +4,7 @@
  * 两图交接：`transferReady` 回执（凭据只此一处）⇒ 记下并请求退出，stop 时把凭据交给 `onTransfer`（mode 模块带参重进目标图）。
  * 附近聊天（MK1-B5）：`say` 输入 ⇒ 框架 core 世界 token；收到的 `chat` 只把 fromEntityId 映射成视野实体名（受众由服务端按兴趣集算）。
  * 战斗（MK2-B1）：`target` 选目标、`cast` 施法（无目标时敌对技能自动选视野内最近存活怪）；冷却取 private 流集合本地倒计时；施法回执 `cast:<seq>` 进提示。
+ * 掉落（MK2-B3）：视野里的 loot 实体带 count；`pickup` 输入 ⇒ 拾取半径内最近的掉落（inventory 面 nearestLoot，本人取预测位置）⇒ `room.pickup`；回执 `p<seq>` 进提示。
  * 渲染归 ../../../view/rooms/mmoWorld/MmoWorldView.ts；⛔ 不 import cc（铁律 9）。
  */
 import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
@@ -14,6 +15,7 @@ import { MovementPredictor, normalizeDir, parseCollisionGrid } from "../../../ki
 import { classOf, mapDefOf, presentationOf, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
 import { appendChatLine, nearbyChatLineOf, type INearbyChatLine } from "../../../kits/mmo/api/social/index";
 import { CooldownModel, pickHostileTarget } from "../../../kits/mmo/api/combat/index";
+import { MMO_PICKUP_RADIUS, nearestLoot } from "../../../kits/mmo/api/inventory/index";
 import type { IWorldChatRes } from "../../../shared/protocol/messages";
 
 export const MMO_WORLD_GAMEPLAY_ID = "mmoWorld";
@@ -30,6 +32,8 @@ export type MmoWorldInput =
     | { readonly type: "target"; readonly entityId: string | null }
     /** 施法（敌对技能无目标时自动选最近存活怪） */
     | { readonly type: "cast"; readonly spellId: string }
+    /** 拾取拾取半径内最近的掉落 */
+    | { readonly type: "pickup" }
     | { readonly type: "leave" };
 
 /** 世界房句柄观察者：net 层把观察者流 / 私有流 / 回执 / 连接事件翻译成这几个回调，逻辑层不认识 Colyseus。 */
@@ -67,6 +71,8 @@ export interface MmoWorldRoom {
     target(entityId: string | null): boolean;
     /** 施法；返回 seq（回执 clientReqId = cast:<seq>；拒发 ⇒ null） */
     cast(spellId: string, targetId?: string): number | null;
+    /** 拾取掉落；返回 clientReqId（拒发 ⇒ null） */
+    pickup(lootId: string): string | null;
     requestBaseline(afterSeq: number): boolean;
     observe(observer: MmoWorldRoomObserver): () => void;
     leave(): Promise<void>;
@@ -83,6 +89,8 @@ export interface MmoWorldEntityView {
     readonly level: number;
     /** 阵营（名片；无阵营实体 null） */
     readonly factionId: string | null;
+    /** 掉落堆叠数（kind loot；其余 null） */
+    readonly count: number | null;
     readonly isSelf: boolean;
     readonly presentation: IPresentationEntry;
 }
@@ -219,6 +227,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             return;
         }
         if (input.type === "cast") { this.requestCast(context, input.spellId); return; }
+        if (input.type === "pickup") { this.requestPickup(context); return; }
         if (input.type === "move") {
             const dir = normalizeDir(input.dir);
             const seq = context.room.move(dir);
@@ -271,6 +280,15 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         this.notice = seq === null ? "施法未发出" : `施法：${spellId}`;
     }
 
+    /** 拾取：拾取半径内最近的掉落（本人取预测位置）；没有 ⇒ 提示不发。 */
+    private requestPickup(context: GameplayContext<MmoWorldRoom>): void {
+        const self = this.predictor?.position() ?? [...this.entities.values()].find((entity) => this.isSelf(entity)) ?? null;
+        if (!self) { this.notice = "尚未进入世界"; return; }
+        const drop = nearestLoot(this.entities.values(), self, MMO_PICKUP_RADIUS);
+        if (!drop) { this.notice = "附近没有掉落"; return; }
+        this.notice = context.room.pickup(drop.id) === null ? "拾取未发出" : `拾取：${drop.name}`;
+    }
+
     /** 传送：本人（预测位置）在某个传送门半径内才发；否则提示。 */
     private requestTransfer(context: GameplayContext<MmoWorldRoom>): void {
         const map = mapDefOf(context.room.mapId);
@@ -298,7 +316,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                 const pos = isSelf && predicted ? predicted : entity;
                 return {
                     id: entity.id, kind: entity.kind, name: entity.name, x: pos.x, y: pos.y, hp: entity.hp, hpMax: entity.hpMax, level: entity.level,
-                    factionId: entity.factionId ?? null, isSelf, presentation: presentationOf(entity.templateId),
+                    factionId: entity.factionId ?? null, count: entity.count ?? null, isSelf, presentation: presentationOf(entity.templateId),
                 };
             });
         return {

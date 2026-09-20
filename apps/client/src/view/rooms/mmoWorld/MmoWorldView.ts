@@ -54,6 +54,7 @@ export class MmoWorldView implements MmoWorldPresentation {
         // 战斗（MK2-B1）：技能栏第 1 / 2 格（职业技能表来自 model.spells，点击时按当前模型取）
         this.button(hud, "技1", pad, pad, this.width * 0.5 - pad * 1.6, by, () => { const spell = this.lastSpells[0]; if (spell) this.dispatchInput({ type: "cast", spellId: spell }); });
         this.button(hud, "技2", pad, pad, this.width * 0.5 - pad * 2.7, by, () => { const spell = this.lastSpells[1]; if (spell) this.dispatchInput({ type: "cast", spellId: spell }); });
+        this.button(hud, "拾取", pad, pad, this.width * 0.5 - pad * 1.6, by + pad, () => this.dispatchInput({ type: "pickup" }));
         this.button(hud, "离开", this.width * 0.24, this.height * 0.055, this.width * 0.5 - this.width * 0.16, -this.height * 0.5 + this.height * 0.06, () => this.dispatchInput({ type: "leave" }));
         this.lastKey = "";
     }
@@ -80,7 +81,7 @@ export class MmoWorldView implements MmoWorldPresentation {
             const size = entity.presentation.size;
             if (entity.isSelf) this.plate(world, size + 8, size + 8, SELF_RING, x, y, "self-ring");
             this.plate(world, size, size, new Color(r, g, b, a), x, y, entity.id);
-            this.label(world, `${entity.name} ${entity.hp}/${entity.hpMax}`, Math.round(size * 0.42), TEXT, x, y + size * 0.85);
+            this.label(world, entity.kind === "loot" ? `${entity.name}×${entity.count ?? 1}` : `${entity.name} ${entity.hp}/${entity.hpMax}`, Math.round(size * 0.42), TEXT, x, y + size * 0.85);
         }
         const status = hud.getChildByName("status");
         if (status) { status.removeFromParent(); status.destroy(); }

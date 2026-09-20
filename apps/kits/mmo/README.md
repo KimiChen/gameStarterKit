@@ -11,7 +11,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | --- | --- | --- |
 | MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | B1–B6 ✅ 2026-09-20 交付（kit 0.1.6）；**退出待拍板**：场景 B 热点 100 人未达 kill criterion（50 人贴线达标），见 MMO.md §12 MK1 行 |
-| MK2 模拟闭环 | combat + ai 面、掉落 | 施工中：B1 combat 面 ✅、B2 ai 面 ✅ 2026-09-20（kit 0.1.8；B3 未开工） |
+| MK2 模拟闭环 | combat + ai 面、掉落 | ✅ 2026-09-20 退出（B1 combat / B2 ai / B3 掉落，kit 0.1.9；MMO.md §12 MK2 行；tag `mk2-exit`） |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 未开工 |
 | MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 未开工 |
 
@@ -22,7 +22,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 玩法 `mmoWorld` | `gameplays/mmoWorld/{manifest,state}.json`：`kind:"world"`、`maxPlayers` 100（§11.2）、空实例 `sleep` 120 s、分线检查点 30 s；root `MmoWorldRoomState` 只放全图公开的分线元数据（tick / phase / instanceId / mapId / line / authorityEpoch + packId / packVersion / population / scriptStateRev），⛔ 名册 |
 | wire | `apps/shared/src/gameplays/mmoWorld/wire.ts`（§7.4 全部 token：8 个 C2S 意图 + 10 个 perSession S2C + 2 个分线广播；观察者六件取框架 MF5b 形态，⛔ 单一 delta）；向量 `apps/server/test/wire-vectors/mmoWorld.ts` |
 | SQL | `sql/001-characters.sql`（`k_mmo_character` / `k_mmo_character_checkpoint`）、`002-items.sql`（`k_mmo_item_instance` / `k_mmo_receipt`）、`003-world.sql`（`k_mmo_instance` / `k_mmo_instance_checkpoint` / `k_mmo_world_event` role:"world-event"）、`004-character-checkpoint-instance-rev.sql`（MK1-B4：角色检查点表加 `instance_rev` 列 + 索引，只追加）；全部 per-zone；检查点表整份落框架信封（`envelope JSON`，snapshot 在其内） |
-| worker | `workers/worldEvents.ts`：认领门内 `k_mmo_world_event`，`grantCurrency` ⇒ 主账 credit（persona 主体，opId = eventId），其余 MK0 死信 |
+| worker | `workers/worldEvents.ts`：认领门内 `k_mmo_world_event`，`grantCurrency` ⇒ 主账 credit（persona 主体，opId = eventId）；`lootClaimed`（MK2-B3）⇒ `persistence/items.ts` `grantItemInTx`（bag 下一空槽 + `k_mmo_receipt` op_id = eventId，重放只回读回执）；其余死信 |
 | 域 `mmo` | `mmo.characters`（query：角色 + 孤儿 persona + 槽位上限）、`mmo.createCharacter`（idempotent-write：同一 withKitTx 内 createPersona + 角色行 + 回执；errorCodes MMO_NAME_TAKEN / MMO_SLOT_TAKEN / MMO_SLOTS_FULL）；进世界走框架 `world.enter` |
 | 域 `mmoSocial`（MK1-B5） | `mmoSocial.partyLocate { characterId }`（query）→ `{ party: IMmoPartyLocate \| null }`：框架 party 成员 → 本 kit 角色 + worldAddress / mapId；errorCodes MMO_SOCIAL_CHARACTER_FORBIDDEN；世界 / 附近聊天 ⛔ 不在本域 |
 | 服务端 api 面 | `characters`（listCharacters / createCharacter / characterOfPersona）、`world`（readInstanceMeta）、`content`（contentIndex / packForMap / mapDefOf / creatureOf / spellOf / itemOf；内置灰盒包启动期 validateContentPack fail-closed）、`movement`（MK1-B1：resolveMove / applyIntent / parseCollisionGrid 再导出 + teleportWithin） |
@@ -86,6 +86,19 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 用例 | 服务端 `mmo-ai.test.ts`（decide 十三条 / 分桶 / A* 绕墙・终点阻挡・展开上限 / 调度器预算顺延 / compute 任务 / 迟到判定）、`mmoWorld-mode.test.ts` 新增 3（野猪追击 → 射程内扣血 → 出拴绳 evade 回家；slime 还手不追；田鼠巡逻一圈 / 每 4 步思考 / 假时钟顺延；绕墙不进阻挡格 / 权威换代・版本变更的回执丢弃） |
 | 偏差 | 找路端口回执可同步（缺省进程内：同 tick 生效 ⇒ 无头重放确定性）或 Promise（compute 池：下一步消费）；compute 池接线留给组合根（kit ⛔ import compute）；仇恨 = 直伤值，治疗 / 增益不计；怪物无阵营，感知用位面 / 隐身规则；MK2-B1 战斗用例改用 slime 无技能的木桩内容（还手归 ai 用例） |
 
+## 掉落（MK2-B3；`inventory` 面掉落半边）
+
+| 层 | 内容 |
+| --- | --- |
+| shared `api/inventory` v1 | `rollLoot(table, rng)`（按权重选条目 + 数量域，只经调用方传入的随机流：服务端 = 分线随机流 ⇒ 同种子同命令序同掉落）、`nearestLoot`（半径内最近、只挑 kind loot、并列按 id）、`lootClaimed` 事件载荷 + 纯载荷闸 `lootClaimedPayloadOf`、候选数字 `MMO_LOOT_EXPIRE_MS = 60 s` / `MMO_PICKUP_RADIUS = 48` / `MMO_LOOT_MAX_PER_INSTANCE = 512`（§11.2 只许收紧）；MK3-B1 补物品实例 / 容器 / 装备 / 掉落归属并 bump |
+| wire | `IMmoEntityWire.count?`（kind loot 的堆叠数；modeVersion 6）；`c2s.mmoWorld.pickup { lootId, clientReqId }` ⇒ `s2c.mmoWorld.opResult`（ok / rejected：dead / loot 不存在 / range / durable 不可用） |
+| mode | 怪死按模板 `lootTableId` 掷骰落在尸体位置 ⇒ `MmoLootDrop`（id = `loot:<lootSeq>`，进 AOI 网格 ⇒ 兴趣集 enter，投影 templateId = itemId / count）；拾取 = 活着 + 存在 + 拾取半径内 + 有 `checkpoint.eventTable` ⇒ `context.events.append("lootClaimed", …)`（随下一个分线检查点同事务落 `k_mmo_world_event`，§7.3 原子规则；⛔ 强制点 ⇒ 奖励最多延迟一个分线周期）+ 掉落离开视野 + ok；到期消失；超上限淘汰最早；分线快照 `loot[] / lootSeq`（expiresTick 按 tick 差重排、恢复后 id 续号）；`__probe.loot / spawnLoot` |
+| worker | `lootClaimed` ⇒ `grantItemInTx`：`SELECT k_mmo_receipt(op_id = eventId)` 有 ⇒ 零写入，无 ⇒ 物品进 bag 下一空槽 + 回执（同事务）⇒ 至少一次 + 回执去重 = 0 重复 |
+| 客户端 | `api/inventory`（`nearestLoot` / 拾取半径再导出）；gameplay `pickup` 输入 ⇒ 本人预测位置起拾取半径内最近的掉落 ⇒ `room.pickup`（clientReqId `p<seq>`）；模型实体带 `count`；HUD「拾取」按钮、掉落画「名字×数量」；表现映射加三件物品 + boar / rat |
+| 内容 | 灰盒 v6：物品 slime-gel（堆 99）/ boar-hide（堆 20）/ rusty-blade（武器 攻 +2，fighter）；掉落表 slime-drops（凝胶 8 : 锈剑 1，凝胶 1–2）/ boar-drops（兽皮 1–3）；slime / boar 挂表 |
+| 用例 | 服务端 `mmo-loot.test.ts`（rollLoot 同流同果 / 数量域 / 耗流次数 / 分布按权重 ≈ 0.889 / 越界钳制 / 空表；载荷闸；nearestLoot；grantItemInTx 首发 + 重放零写入 + 输入闸）、`mmo-worker.test.ts` 新增 1、`mmoWorld-mode.test.ts` 新增 2（掷骰 enter 带 count / 同种子同掉落 / 远拒近拾 / 事件批 / 再拾拒 / 无 eventTable 拒；快照往返 + 续号 + 到期 leave + 上限淘汰）、真栈 `int/mmo-loot`（打死 → enter → 走过去拾取 → ok + leave → 事件随周期检查点落库门内 → 真租约 worker 一轮发物品 + 回执 → 再跑一轮零重复）；客户端 gameplay / room 各 1 |
+| 偏差 | 掉落归属（拾取权 / 队伍分配）与堆叠合并归 MK3；⚠ int 用例 ⛔ 删 `singleton_lease` 行（worker 租约行由安装 / bootstrap 预铺，`tryAcquireLease` 只 UPDATE 过期行）——归还 = 把 expires_at 置过期 |
+
 ## 社交包装（MK1-B5）
 
 | 层 | 内容 |
@@ -104,7 +117,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 快照 v2（schema `{ version: 2, minSupported: 1 }`） | 角色 `{ mapId, x, y, hp, mp, cooldowns?（spellId → 剩余 ms，落盘按 tick 差折算、进图按 fixedStep 回灌）, arrival? }`；分线 `{ tick, mapId, packId, packVersion, creatures[{ id, templateId, x, y, hp, alive, respawnDueTick? }], loot, scriptVars, timers[{ id, dueTick }], regions }`；恢复：timers 按 tick 差重排（分线 tick 从 0 起）、regions 覆盖内容包 `enabledByDefault`、scriptVars / loot 原样；v1 快照（无新字段）照常回灌；`__probe.setCooldown / setTimer / setRegion / setVar` 是 MK2–MK4 接入前的直接写口 |
 | 回退窗口验收（§7.3） | 无头 `mmoWorld-mode.test.ts`（v2 往返 / 重排 / v1 兼容 / onPersonaCheckpoint 只给该会话）；真栈 `test/int/mmo-checkpoint.test.ts`：周期分线检查点（≤ 1 周期）捕获怪物 hp 改动 → **硬杀**（停续租 + 停固定步、⛔ drain）→ 新房从检查点恢复（怪物 hp / 位置回灌、`world_instance` 权威 epoch +1）→ 角色再进从最近角色检查点位置起（≤ 1 角色周期）；离座 = persona 级强制点：只多该角色一行、`instance_rev` 是预留号（不在分线检查点表）、他人零新行、分线 rev 不动 |
 
-## 灰盒内容包（MK0-B5，随 B2 交付；MK1-B1 升 version 2；MK1-B3 升 version 3 加东郊）
+## 灰盒内容包（MK0-B5，随 B2 交付；MK1-B1 升 version 2；MK1-B3 升 version 3 加东郊；MK2 升 4 / 5 / 6 加技能族、野猪・田鼠、物品・掉落表）
 
 `apps/shared/src/kits/mmo/content/greybox.ts`：主图 greybox（2000×2000，视距 400，一堵 200×200 的墙 x ∈ [1500, 1700) × y ∈ [900, 1100)，slime ×3）+ 东郊
 greybox-east（1000×1000，slime ×2）经 gate-east / gate-west 互通，两职业（fighter 120 / 100 / 50、caster 110 / 80 / 100 = 速度 / HP / MP）一技能（strike）的 TS 字面量单源，启动期与用例都经

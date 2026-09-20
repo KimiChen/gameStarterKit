@@ -1,7 +1,8 @@
 /**
  * mmo kit · 灰盒内容包（docs/MMO.md §7.6「kit v1 自带灰盒内容包」；MK0-B5，MK1-B1 加职业模板与碰撞位图，MK1-B3 加第二图与一对传送门）：
  * 主图 greybox（2000×2000，视距 400，一堵 200×200 的墙，slime ×3 + 野猪 ×1（aggro）+ 田鼠 ×1（patrol，MK2-B2））+ 东郊 greybox-east（1000×1000，slime ×2），gate-east ↔ gate-west 互通，
- * 落点各自的 "gate" 出生点在门外（半径外）；两职业（fighter / caster）五技能（MK2-B1：strike / guard / fireball / mend / weaken）。只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点
+ * 落点各自的 "gate" 出生点在门外（半径外）；两职业（fighter / caster）五技能（MK2-B1：strike / guard / fireball / mend / weaken）；三件物品两张掉落表
+ * （MK2-B3：slime → slime-drops（凝胶 8 : 锈剑 1）、boar → boar-drops（兽皮 1–3））。只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点
  * （data 贡献 = JSON）装载，届时本 TS 字面量退役——MK0 以 TS 字面量作单源（kit 服务端代码 ⛔ node:fs、tsconfig 未开 resolveJsonModule，
  * 见 MMO.md §12 MK0 偏差 ①）。启动期与用例都经 `validateContentPack` 过闸。
  */
@@ -19,6 +20,9 @@ export const GREYBOX_RAT_WAYPOINTS: readonly { readonly x: number; readonly y: n
 export const GREYBOX_SPELL_ID = "strike";
 /** MK2-B1 技能族：战士 strike（瞬发直伤）/ guard（自增防御）；法师 fireball（读条直伤）/ mend（读条治疗）/ weaken（减防）。 */
 export const GREYBOX_SPELLS = Object.freeze({ strike: "strike", guard: "guard", fireball: "fireball", mend: "mend", weaken: "weaken" });
+/** MK2-B3 物品与掉落表：slime 掉凝胶（偶尔锈剑），boar 掉兽皮。 */
+export const GREYBOX_ITEMS = Object.freeze({ gel: "slime-gel", hide: "boar-hide", blade: "rusty-blade" });
+export const GREYBOX_LOOT_TABLES = Object.freeze({ slime: "slime-drops", boar: "boar-drops" });
 export const GREYBOX_MAP_SIZE = 2000;
 export const GREYBOX_EAST_MAP_ID = "greybox-east";
 export const GREYBOX_EAST_MAP_SIZE = 1000;
@@ -46,7 +50,7 @@ function greyboxBitmap(): string {
 export const GREYBOX_PACK: IContentPack = {
     schemaVersion: 1,
     packId: GREYBOX_PACK_ID,
-    version: 5,
+    version: 6,
     maps: [{
         mapId: GREYBOX_MAP_ID,
         name: "灰盒草原",
@@ -90,13 +94,14 @@ export const GREYBOX_PACK: IContentPack = {
         aggroRadius: 0,
         leashRadius: 0,
         spells: [GREYBOX_SPELLS.strike],
+        lootTableId: GREYBOX_LOOT_TABLES.slime,
         respawnSec: 20,
         tier: "normal",
         checkpointOnDeath: false,
         interacts: [],
     }, {
         templateId: GREYBOX_BOAR_ID, name: "野猪", presentationId: "boar", level: 2, hpMax: 40, mpMax: 0, attack: 6, defense: 1, speedPerSec: 90,
-        behavior: "aggro", aggroRadius: 150, leashRadius: 400, spells: [GREYBOX_SPELLS.strike], respawnSec: 15, tier: "normal", checkpointOnDeath: false, interacts: [],
+        behavior: "aggro", aggroRadius: 150, leashRadius: 400, spells: [GREYBOX_SPELLS.strike], lootTableId: GREYBOX_LOOT_TABLES.boar, respawnSec: 15, tier: "normal", checkpointOnDeath: false, interacts: [],
     }, {
         templateId: GREYBOX_RAT_ID, name: "田鼠", presentationId: "rat", level: 1, hpMax: 10, mpMax: 0, attack: 1, defense: 0, speedPerSec: 80,
         behavior: "patrol", aggroRadius: 0, leashRadius: 0, spells: [], respawnSec: 10, tier: "normal", checkpointOnDeath: false, interacts: [],
@@ -114,7 +119,14 @@ export const GREYBOX_PACK: IContentPack = {
         { spellId: GREYBOX_SPELLS.mend, name: "缝合", kind: "heal", castMs: 1_500, cooldownMs: 6_000, mpCost: 15, range: 200, power: 25 },
         { spellId: GREYBOX_SPELLS.weaken, name: "虚弱", kind: "debuff", castMs: 0, cooldownMs: 8_000, mpCost: 8, range: 200, power: 3, durationMs: 6_000 },
     ],
-    items: [],
-    lootTables: [],
+    items: [
+        { itemId: GREYBOX_ITEMS.gel, name: "史莱姆凝胶", presentationId: GREYBOX_ITEMS.gel, slot: "none", stackMax: 99, classIds: [], price: 1, attrs: {} },
+        { itemId: GREYBOX_ITEMS.hide, name: "野猪皮", presentationId: GREYBOX_ITEMS.hide, slot: "none", stackMax: 20, classIds: [], price: 5, attrs: {} },
+        { itemId: GREYBOX_ITEMS.blade, name: "锈剑", presentationId: GREYBOX_ITEMS.blade, slot: "weapon", stackMax: 1, classIds: ["fighter"], price: 30, attrs: { attack: 2 } },
+    ],
+    lootTables: [
+        { lootTableId: GREYBOX_LOOT_TABLES.slime, entries: [{ itemId: GREYBOX_ITEMS.gel, weight: 8, countMin: 1, countMax: 2 }, { itemId: GREYBOX_ITEMS.blade, weight: 1, countMin: 1, countMax: 1 }] },
+        { lootTableId: GREYBOX_LOOT_TABLES.boar, entries: [{ itemId: GREYBOX_ITEMS.hide, weight: 1, countMin: 1, countMax: 3 }] },
+    ],
     npcs: [],
 };

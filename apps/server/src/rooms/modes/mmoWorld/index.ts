@@ -4,7 +4,8 @@
  *  - onWorldInit：按内容包（`content` 面）为本图撒怪（spawns，确定性抖动来自分线随机流），根写 packId / packVersion；图不在包内 ⇒ 抛（WorldRoom 拒启）；
  *  - onBeforeAdmit（唯一可 await 的准入钩子）：按 persona 预热角色行（`characters` 面）；onAdmit 无角色即拒；
  *  - onEnter：角色实体落在最新角色检查点的位置（persona 信封回灌，M08）或出生点；onLeave 回收；
- *  - onStep：move 意图（dir / target）→ 权威积分（`movement` 面）；baselineRequest → 框架 baseline；pickup 回 opResult rejected（MK3 接入）；
+ *  - onStep：move 意图（dir / target）→ 权威积分（`movement` 面）；baselineRequest → 框架 baseline；pickup（MK2-B3）：拾取半径内的掉落 ⇒ `lootClaimed` durable 事件
+ *    （随下一个分线检查点同事务落库，worker 发物品）+ 掉落离开视野 + opResult ok；怪死按模板 lootTable 掷骰（分线随机流 ⇒ 无头重放一致）落地为 kind loot 实体（带 count、到期消失）；
  *    transfer（MK1-B3 两图交接）：portal 存在 + 在半径内 + 无在途 ⇒ 落点先写进实体（框架 prepare 后强制点的 persona 快照带 arrival）⇒
  *    `context.transfer.request`（框架 MF8 状态机）⇒ Committed 后 perSession `transferReady`（凭据只此一处出网）⇒ 壳以 "transferred" 离座；
  *    失败 ⇒ opResult rejected + 落点清；目标图 onEnter 按 arrival 落位（HP / MP 随身）；interact / choose 暂忽略（MK4）；本人私有流 hp / mp / 冷却集合 / 施法中变了才发；
@@ -29,6 +30,7 @@ import {
 } from "@game/shared";
 import type { IContentPackIndex, IMapDef } from "@game/shared/kits/mmo/api/content/index";
 import { clampToMap, withinRadius } from "@game/shared/kits/mmo/api/world/index";
+import { MMO_EVENT_LOOT_CLAIMED, MMO_LOOT_EXPIRE_MS, MMO_LOOT_MAX_PER_INSTANCE, MMO_PICKUP_RADIUS, rollLoot, type IMmoLootClaimedPayload } from "@game/shared/kits/mmo/api/inventory/index";
 import {
     MMO_PLAYER_RESPAWN_MS, auraOf, castReqIdOf, checkCast, cooldownReadyTick, damageOf, effectiveStats, healOf, needsHostileTarget, threatOf, ticksOf, type IAura,
 } from "@game/shared/kits/mmo/api/combat/index";
@@ -46,7 +48,7 @@ import {
     worldModeRegistry, type WorldAdmitRequest, type WorldCheckpoint, type WorldMode, type WorldModeCheckpointCapability, type WorldModeContext,
     type WorldModeObserverCapability, type WorldModeRegistry, type WorldSessionInfo,
 } from "../../WorldMode";
-import { createMmoCheckpointCapability, type MmoInstanceSnapshot, type MmoPersonaSnapshot } from "../../../kits/mmo/persistence/checkpoint";
+import { createMmoCheckpointCapability, type MmoInstanceSnapshot, type MmoLootSnapshot, type MmoPersonaSnapshot } from "../../../kits/mmo/persistence/checkpoint";
 
 export { MMO_WORLD_MODE_ID };
 
@@ -117,6 +119,23 @@ export interface MmoEntity {
     seq: number;
 }
 
+/** 未认领掉落（分线内存态；⛔ 不是资产：认领 durable 后才由 worker 落 k_mmo_item_instance）。实现 IVisibilityFacts（无阵营 / 位面 0 / 不隐身）。 */
+export interface MmoLootDrop {
+    readonly id: string;
+    readonly kind: "loot";
+    readonly itemId: string;
+    readonly name: string;
+    readonly count: number;
+    readonly x: number;
+    readonly y: number;
+    readonly rev: number;
+    readonly spawnedTick: number;
+    readonly expiresTick: number;
+    readonly plane: number;
+    readonly stealth: boolean;
+    readonly factionId: null;
+}
+
 export interface MmoWorldModeOptions {
     /** 内容索引（缺省 = 内置灰盒；单测注入）。 */
     readonly content?: IContentPackIndex;
@@ -150,6 +169,9 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         /** AI 接缝（测试）：脑快照 / 调度统计 */
         brainOf(id: string): { readonly state: AiState; readonly targetId: string | null; readonly path: readonly INavPoint[] | null; readonly pathPending: boolean; readonly pathVersion: number; readonly thinkTick: number } | null;
         aiStats(): { readonly thought: number; readonly deferred: number };
+        /** 掉落接缝（测试）：未认领掉落表 / 直接落一件掉落（走同一 spawn 路径，返回 lootId） */
+        loot(): ReadonlyMap<string, MmoLootDrop>;
+        spawnLoot(itemId: string, count: number, x: number, y: number): string;
         /** 检查点接缝（MK2–MK4 接入前的直接写口）：冷却 / timer / 区域开关 / 脚本 var */
         setCooldown(id: string, spellId: string, readyAtTick: number): void;
         setTimer(id: string, dueTick: number): void;
@@ -160,6 +182,14 @@ export interface MmoWorldMode extends WorldMode<MmoWorldRoomState> {
         vars(): Readonly<Record<string, unknown>>;
         readonly log: string[];
     };
+}
+
+/** 分线快照里的掉落条目闸（v2 早期快照 loot 为 unknown[]；坏条目跳过）。 */
+function isLootSnapshot(value: unknown): value is MmoLootSnapshot {
+    if (typeof value !== "object" || value === null) return false;
+    const drop = value as Record<string, unknown>;
+    return typeof drop.id === "string" && drop.id.startsWith("loot:") && typeof drop.itemId === "string" && Number.isSafeInteger(drop.count) && (drop.count as number) >= 1
+        && typeof drop.x === "number" && typeof drop.y === "number" && Number.isSafeInteger(drop.expiresTick);
 }
 
 /** 私有流的冷却 / 施法中投影（冷却按 tick 差折算成剩余 ms，只含未就绪的）。 */
@@ -179,6 +209,11 @@ const projectionOf = (entity: MmoEntity): IMmoEntityWire => ({
     id: entity.id, kind: entity.kind, templateId: entity.templateId, name: entity.name, x: entity.x, y: entity.y, rev: entity.rev, hp: entity.hp, hpMax: entity.hpMax, level: entity.level,
     ...(entity.factionId === null ? {} : { factionId: entity.factionId }),
 });
+/** 掉落的公开投影（templateId = itemId；hp / hpMax / level 填 1 只为满足 wire 形态；count = 堆叠数）。 */
+const lootProjectionOf = (drop: MmoLootDrop): IMmoEntityWire => ({
+    id: drop.id, kind: "loot", templateId: drop.itemId, name: drop.name, x: drop.x, y: drop.y, rev: drop.rev, hp: 1, hpMax: 1, level: 1, count: drop.count,
+});
+const visibleProjectionOf = (target: MmoEntity | MmoLootDrop): IMmoEntityWire => (target.kind === "loot" ? lootProjectionOf(target) : projectionOf(target));
 
 export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldMode {
     const content = options.content ?? contentIndex();
@@ -198,7 +233,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     const timers = new Map<string, number>();
     const regions = new Map<string, boolean>();
     let scriptVars: Record<string, unknown> = {};
-    let loot: readonly unknown[] = [];
+    /** 未认领掉落（MK2-B3；随分线快照 loot / lootSeq 往返） */
+    const lootDrops = new Map<string, MmoLootDrop>();
+    let lootSeq = 0;
+    /** 探针用的最近一次 onWorldInit 上下文（只给 __probe.spawnLoot） */
+    let probeContext: WorldModeContext<MmoWorldRoomState> | null = null;
     const log: string[] = [];
     let map: IMapDef | null = null;
     /** 碰撞网格（内容包 collision；无 = 全图通行） */
@@ -359,7 +398,45 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         if (caster.session) privateDirty.add(caster.session);
         if (target.session) privateDirty.add(target.session);
     };
-    /** 死亡：清热状态、停下；怪物按 respawnSec 复活、角色按 MMO_PLAYER_RESPAWN_MS 复活；checkpointOnDeath ⇒ 强制点（有检查点能力时）。 */
+    /** 掉落落地（MK2-B3）：超上限先淘汰最早的一件；id = loot:<lootSeq>（恢复后续用计数，⛔ 撞 id）；进 AOI 网格 ⇒ 下一次兴趣集重算即 enter。 */
+    const spawnLoot = (context: WorldModeContext<MmoWorldRoomState>, itemId: string, count: number, x: number, y: number, tick: number): string => {
+        if (lootDrops.size >= MMO_LOOT_MAX_PER_INSTANCE) {
+            const oldest = lootDrops.keys().next().value;
+            if (oldest !== undefined) removeLoot(context, oldest, "cap");
+        }
+        lootSeq += 1;
+        const id = `loot:${lootSeq}`;
+        const pos = clampToMap({ x, y }, mapOf(context).size);
+        lootDrops.set(id, {
+            id, kind: "loot", itemId, name: content.itemById.get(itemId)?.name ?? itemId, count, x: pos.x, y: pos.y, rev: 0, spawnedTick: tick,
+            expiresTick: tick + ticksOf(MMO_LOOT_EXPIRE_MS, context.fixedStepMs), plane: 0, stealth: false, factionId: null,
+        });
+        aoiOf(context).insert(id, pos.x, pos.y);
+        log.push(`loot:${id}:${itemId}x${count}`);
+        return id;
+    };
+    const removeLoot = (context: WorldModeContext<MmoWorldRoomState>, id: string, reason: string): void => {
+        if (!lootDrops.delete(id)) return;
+        aoiOf(context).remove(id);
+        log.push(`loot-gone:${id}:${reason}`);
+    };
+    /** 拾取（MK2-B3）：活着 + 掉落存在 + 拾取半径内 + 有 durable 能力 ⇒ 追加 lootClaimed 事件（随下一个分线检查点落库）+ 掉落离开视野 + ok。 */
+    const requestPickup = (context: WorldModeContext<MmoWorldRoomState>, session: string, request: IMmoWorldPickupReq): void => {
+        const mover = moverOf(session);
+        if (!mover) return;
+        if (!mover.alive) { reject(context, session, request.clientReqId, "dead"); return; }
+        const drop = lootDrops.get(request.lootId);
+        if (!drop) { reject(context, session, request.clientReqId, "loot 不存在"); return; }
+        if (!withinRadius(mover, drop, MMO_PICKUP_RADIUS)) { reject(context, session, request.clientReqId, "range"); return; }
+        if (!checkpoint?.eventTable) { reject(context, session, request.clientReqId, "durable 不可用"); return; }
+        if (mover.characterId === null) { reject(context, session, request.clientReqId, "no-character"); return; }
+        const payload: IMmoLootClaimedPayload = { actorEntityId: mover.id, actorCharacterId: mover.characterId, lootId: drop.id, itemTemplateId: drop.itemId, count: drop.count };
+        context.events.append(MMO_EVENT_LOOT_CLAIMED, payload);
+        removeLoot(context, drop.id, `claim:${mover.id}`);
+        context.sendS2C(session, MmoWorldOpResult, { clientReqId: request.clientReqId, result: "ok" });
+        log.push(`pickup:${session}:${drop.id}`);
+    };
+    /** 死亡：清热状态、停下；怪物按 respawnSec 复活、角色按 MMO_PLAYER_RESPAWN_MS 复活；checkpointOnDeath ⇒ 强制点（有检查点能力时）；怪物按 lootTable 掷骰落掉落。 */
     const die = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity, tick: number): void => {
         entity.alive = false;
         entity.hp = 0;
@@ -377,6 +454,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         entity.respawnDueTick = tick + ticksOf(template ? template.respawnSec * 1000 : MMO_PLAYER_RESPAWN_MS, context.fixedStepMs);
         if (template?.checkpointOnDeath && checkpoint) context.requestCheckpoint(`death:${entity.id}`);
         log.push(`death:${entity.id}`);
+        // 掉落：模板有 lootTable ⇒ 分线随机流掷骰（同种子同命令序 ⇒ 同掉落）落在尸体位置
+        const table = template?.lootTableId === undefined ? undefined : content.lootTableById.get(template.lootTableId);
+        if (table) {
+            const rolled = rollLoot(table, context.random);
+            if (rolled) spawnLoot(context, rolled.itemId, rolled.count, entity.x, entity.y, tick);
+        }
     };
     /** 复活：怪物回出生位置、角色回最近复活点；满血满蓝。 */
     const respawn = (context: WorldModeContext<MmoWorldRoomState>, entity: MmoEntity): void => {
@@ -552,6 +635,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             if (entity.alive && entity.hp <= 0) die(context, entity, tick);
             else if (!entity.alive && entity.respawnDueTick !== null && entity.respawnDueTick <= tick) respawn(context, entity);
         }
+        for (const drop of [...lootDrops.values()]) if (drop.expiresTick <= tick) removeLoot(context, drop.id, "expire");
     };
 
     const observer: WorldModeObserverCapability<MmoWorldRoomState, IMmoEntityWire, IMmoEntityWire> = {
@@ -580,21 +664,25 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             if (cached && (context.state.tick + cached.phase) % interestEveryTicks !== 0) {
                 for (const id of cached.ids) {
                     const entity = entities.get(id);
-                    if (entity && (entity.alive || entity.kind === "character")) visible.set(id, projectionOf(entity));
+                    if (entity) { if (entity.alive || entity.kind === "character") visible.set(id, projectionOf(entity)); continue; }
+                    const drop = lootDrops.get(id);
+                    if (drop) visible.set(id, lootProjectionOf(drop));
                 }
                 return visible;
             }
             // 候选：网格（视距圆外接矩形覆盖的格子）→ 兴趣集：精确视距 + 规则 + 最近优先截断
             const ids = aoiOf(context).candidates(center, def.aoi.viewRadius, candidates);
-            const pool: MmoEntity[] = [];
+            const pool: (MmoEntity | MmoLootDrop)[] = [];
             for (const id of ids) {
                 const entity = entities.get(id);
-                // 死亡的怪物离开视野（复活再 enter）；死亡的角色留在视野（hp 0 的尸体）
-                if (entity && (entity.alive || entity.kind === "character")) pool.push(entity);
+                // 死亡的怪物离开视野（复活再 enter）；死亡的角色留在视野（hp 0 的尸体）；掉落随网格候选进池
+                if (entity) { if (entity.alive || entity.kind === "character") pool.push(entity); continue; }
+                const drop = lootDrops.get(id);
+                if (drop) pool.push(drop);
             }
             const picked: string[] = [];
-            for (const pick of pickInterest(center, pool, def.aoi.viewRadius, MMO_INTEREST_MAX_ENTITIES)) {
-                visible.set(pick.entity.id, projectionOf(pick.entity));
+            for (const pick of pickInterest<MmoEntity | MmoLootDrop>(center, pool, def.aoi.viewRadius, MMO_INTEREST_MAX_ENTITIES)) {
+                visible.set(pick.entity.id, visibleProjectionOf(pick.entity));
                 picked.push(pick.entity.id);
             }
             if (interestEveryTicks > 1) interestCache.set(session, { ids: picked, phase: cached?.phase ?? phaseOf(session, interestEveryTicks) });
@@ -610,6 +698,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         observer,
         ...(checkpoint ? { checkpoint } : {}),
         onWorldInit(context, info) {
+            probeContext = context;
             const def = mapOf(context);
             entities.clear();
             aoiOf(context).clear();
@@ -622,7 +711,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             timers.clear();
             regions.clear();
             scriptVars = {};
-            loot = [];
+            lootDrops.clear();
+            lootSeq = 0;
             for (const region of content.regionsByMap.get(def.mapId) ?? []) regions.set(region.regionId, region.enabledByDefault);
             pending.clear();
             privateDirty.clear();
@@ -674,7 +764,20 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             for (const timer of instance?.timers ?? []) timers.set(timer.id, Math.max(0, timer.dueTick - snapshotTick) + context.state.tick);
             for (const [regionId, enabled] of Object.entries(instance?.regions ?? {})) regions.set(regionId, enabled);
             scriptVars = { ...(instance?.scriptVars ?? {}) };
-            loot = [...(instance?.loot ?? [])];
+            // 掉落回灌：expiresTick 按 tick 差重排；lootSeq = max(快照计数, 已有 id 的序号)（⛔ 新掉落撞 id）
+            lootDrops.clear();
+            lootSeq = typeof instance?.lootSeq === "number" && Number.isSafeInteger(instance.lootSeq) ? Math.max(0, instance.lootSeq) : 0;
+            for (const drop of instance?.loot ?? []) {
+                if (!isLootSnapshot(drop)) continue;
+                const pos = clampToMap({ x: drop.x, y: drop.y }, mapOf(context).size);
+                lootDrops.set(drop.id, {
+                    id: drop.id, kind: "loot", itemId: drop.itemId, name: content.itemById.get(drop.itemId)?.name ?? drop.itemId, count: drop.count, x: pos.x, y: pos.y, rev: 0,
+                    spawnedTick: context.state.tick, expiresTick: Math.max(0, drop.expiresTick - snapshotTick) + context.state.tick, plane: 0, stealth: false, factionId: null,
+                });
+                aoiOf(context).insert(drop.id, pos.x, pos.y);
+                const seq = Number(drop.id.slice("loot:".length));
+                if (Number.isSafeInteger(seq)) lootSeq = Math.max(lootSeq, seq);
+            }
             log.push(`restore:${restored}`);
         },
         async onBeforeAdmit(context, request: WorldAdmitRequest) {
@@ -753,7 +856,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     continue;
                 }
                 if (command.type === MmoWorldPickup.type) {
-                    reject(context, command.session, (command.payload as IMmoWorldPickupReq).clientReqId, "inventory 面 MK3");
+                    requestPickup(context, command.session, command.payload as IMmoWorldPickupReq);
                     continue;
                 }
                 if (command.type === MmoWorldTransfer.type) {
@@ -846,7 +949,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                     id: entity.id, templateId: entity.templateId, x: entity.x, y: entity.y, hp: entity.hp, alive: entity.alive,
                     ...(entity.respawnDueTick === null ? {} : { respawnDueTick: entity.respawnDueTick }),
                 })),
-                loot,
+                loot: [...lootDrops.values()].map((drop): MmoLootSnapshot => ({ id: drop.id, itemId: drop.itemId, count: drop.count, x: drop.x, y: drop.y, expiresTick: drop.expiresTick })),
+                lootSeq,
                 scriptVars: { ...scriptVars },
                 timers: [...timers].map(([id, dueTick]) => ({ id, dueTick })),
                 regions: Object.fromEntries(regions),
@@ -882,6 +986,11 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 return entity?.brain ? { state: entity.brain.state, targetId: entity.targetId, path: entity.brain.path, pathPending: entity.brain.pathPending, pathVersion: entity.brain.pathVersion, thinkTick: entity.brain.thinkTick } : null;
             },
             aiStats: () => ({ thought: ai.stats.thought, deferred: ai.stats.deferred }),
+            loot: () => lootDrops,
+            spawnLoot: (itemId, count, x, y) => {
+                if (!probeContext) throw new Error("[mmoWorld] spawnLoot：世界未初始化");
+                return spawnLoot(probeContext, itemId, count, x, y, probeContext.state.tick);
+            },
             damage: (id, amount) => {
                 const entity = entities.get(id);
                 if (!entity) throw new Error(`[mmoWorld] damage：${id} 不存在`);

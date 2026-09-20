@@ -17,7 +17,9 @@
  *  - MK2-B1 combat：瞬发 strike 扣怪血 + 记仇恨 + 冷却进 private（集合变化才发）；拒绝原因经 opResult（cast:<seq>）；读条 fireball 到点结算 / 移动打断；治疗 / buff aura 到期消失；
  *    怪死 ⇒ 离开视野、按 respawnSec 复活回出生位；角色死 ⇒ 不能动不能施、5 s 后回复活点满血；同一命令序 + 同一种子 ⇒ 同一 hp 轨迹（无头重放）；
  *  - MK2-B2 ai：野猪 aggro 150 内主动追击、射程内 strike、玩家跑出拴绳 400 ⇒ evade（清仇恨回满血回家）；slime leash 0 只在射程内还手不追；田鼠三点巡逻；分桶每 4 步思考一次、
- *    假时钟下超预算顺延且下一 tick 优先；绕墙追击不进阻挡格；找路回执按 instanceEpoch / entityVersion 迟到即丢。
+ *    假时钟下超预算顺延且下一 tick 优先；绕墙追击不进阻挡格；找路回执按 instanceEpoch / entityVersion 迟到即丢；
+ *  - MK2-B3 掉落：怪死按 lootTable 掷骰（同种子同掉落）落地为 kind loot 实体（带 count）进视野；拾取：远 ⇒ range、拾到 ⇒ ok + 离开视野 + lootClaimed 进事件批、
+ *    再拾 ⇒ 不存在；快照往返（expiresTick 重排、lootSeq 续用）；到期消失；无 eventTable ⇒ 拒。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
@@ -26,7 +28,7 @@ import {
     C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate,
     type IMmoWorldTransferReady, type IMmoWorldUpdate,
 } from "@game/shared";
-import { GREYBOX_BOAR_ID, GREYBOX_RAT_ID, GREYBOX_SPELLS } from "@game/shared/kits/mmo/content/greybox";
+import { GREYBOX_BOAR_ID, GREYBOX_ITEMS, GREYBOX_RAT_ID, GREYBOX_SPELLS } from "@game/shared/kits/mmo/content/greybox";
 import { indexContentPack, validateContentPack, type IContentPack, type IContentPackIndex } from "@game/shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
 import type { MmoClassId, MmoFactionId } from "@game/shared/kits/mmo/api/characters/index";
@@ -38,7 +40,9 @@ import { parseCollisionGrid } from "@game/shared/kits/mmo/api/movement/index";
 import type { PathResult, PathfinderPort } from "../src/kits/mmo/api/ai/index";
 import { createRoomStateForMode, type MmoWorldRoomState } from "../src/rooms/schema/GameRoomState";
 import type { WorldTransferReady, WorldTransferTarget } from "../src/rooms/WorldMode";
-import type { MmoInstanceSnapshot, MmoPersonaSnapshot } from "../src/kits/mmo/persistence/checkpoint";
+import { MMO_WORLD_CHECKPOINT_SCHEMA, MMO_WORLD_EVENT_TABLE, type MmoInstanceSnapshot, type MmoPersonaSnapshot } from "../src/kits/mmo/persistence/checkpoint";
+import { MemoryCheckpointPort } from "../src/rooms/core/CheckpointPort";
+import { MMO_EVENT_LOOT_CLAIMED, MMO_LOOT_EXPIRE_MS } from "@game/shared/kits/mmo/api/inventory/index";
 
 const CONTENT = indexContentPack(validateContentPack(GREYBOX_PACK));
 const rowOf = (personaId: string, name = "Rook", classId: MmoClassId = "fighter", factionId: MmoFactionId = "dawn"): MmoCharacterRow => ({
@@ -114,7 +118,7 @@ test("撒怪：本图五只怪（三只 slime + 野猪 + 田鼠）落在 spawn �
         assert.deepEqual([creature.templateId, creature.hp, creature.hpMax], [spawn.templateId, template.hpMax, template.hpMax]);
     }
     assert.deepEqual(creatures.map((creature) => creature.templateId).sort(), ["boar", "rat", "slime", "slime", "slime"]);
-    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 5, 0]);
+    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 6, 0]);
     const other = harness();
     await assert.rejects(other.runtime.recover({ instanceId: "i2", mapId: "nowhere", line: 0, authorityEpoch: 1, checkpoint: null }), /不在内容包/u);
     const req = request("s0", "p-nobody");
@@ -696,3 +700,88 @@ test("ai（MK2-B2）：绕墙追击不进阻挡格；找路回执按 entityVersi
     step(l);
     assert.deepEqual([l.mode.__probe.brainOf(boar2.id)?.pathVersion, l.mode.__probe.brainOf(boar2.id)?.path], [2, null], "版本变了的回执丢弃");
 });
+
+const lootHarness = (content: IContentPackIndex = DUMMY_CONTENT): Harness =>
+    harness(content, null, { checkpoint: { kitId: "mmo", port: new MemoryCheckpointPort(), schema: MMO_WORLD_CHECKPOINT_SCHEMA, eventTable: MMO_WORLD_EVENT_TABLE } });
+
+test("掉落（MK2-B3）：怪死掷骰落地为 loot 实体（count 进视野；同种子同掉落）；拾取：远 ⇒ range、近 ⇒ ok + 离开视野 + lootClaimed 进事件批（随检查点）、再拾 ⇒ 不存在；无 eventTable ⇒ 拒", async () => {
+    const killAndDrop = async (h: Harness) => {
+        await activeWorld(h);
+        const slime = nearestSlime(h);
+        await seat(h, "a", "p-a", personaAt(slime.x - 30, slime.y));
+        step(h);
+        drain(h, "a");
+        h.mode.__probe.damage(slime.id, 30);
+        step(h);
+        const drops = [...h.mode.__probe.loot().values()];
+        assert.equal(drops.length, 1, "一件掉落");
+        return { slime, drop: drops[0]! };
+    };
+    const h = lootHarness();
+    const { slime, drop } = await killAndDrop(h);
+    assert.ok([GREYBOX_ITEMS.gel, GREYBOX_ITEMS.blade].includes(drop.itemId as "slime-gel"), `掉落来自 slime-drops：${drop.itemId}`);
+    assert.deepEqual([drop.x, drop.y, drop.count >= 1], [slime.x, slime.y, true], "落在尸体位置");
+    const out = drain(h, "a");
+    assert.deepEqual(idsOf(out, S2C.MmoWorldLeave), [slime.id], "怪离开视野");
+    const enter = out.find((m) => m.type === S2C.MmoWorldEnter && (m.payload as IMmoWorldEnter).entity.id === drop.id)?.payload as IMmoWorldEnter | undefined;
+    assert.deepEqual([enter?.entity.kind, enter?.entity.templateId, enter?.entity.count, enter?.entity.hp], ["loot", drop.itemId, drop.count, 1], "loot 实体进视野带 count");
+    const again = lootHarness();
+    const replay = await killAndDrop(again);
+    assert.deepEqual([replay.drop.itemId, replay.drop.count], [drop.itemId, drop.count], "同种子同命令序 ⇒ 同掉落");
+    // 远处的 b 拾不到；a 拾到 ⇒ ok + 掉落离开视野 + 事件批
+    await seat(h, "b", "p-b", personaAt(slime.x - 300, slime.y));
+    step(h);
+    drain(h, "b");
+    h.runtime.enqueue("b", C2S.MmoWorldPickup, { lootId: drop.id, clientReqId: "pb1" });
+    h.runtime.enqueue("a", C2S.MmoWorldPickup, { lootId: "loot:404", clientReqId: "pa0" });
+    h.runtime.enqueue("a", C2S.MmoWorldPickup, { lootId: drop.id, clientReqId: "pa1" });
+    step(h);
+    assert.deepEqual(resultsOf(h, "b").map((r) => [r.clientReqId, r.result, r.detail]), [["pb1", "rejected", "range"]]);
+    assert.deepEqual(resultsOf(h, "a").map((r) => [r.clientReqId, r.result, r.detail]), [["pa0", "rejected", "loot 不存在"], ["pa1", "ok", undefined]]);
+    assert.equal(h.mode.__probe.loot().size, 0, "掉落已认领");
+    assert.deepEqual(idsOf(drain(h, "a"), S2C.MmoWorldLeave), [drop.id], "掉落离开视野");
+    h.runtime.enqueue("a", C2S.MmoWorldPickup, { lootId: drop.id, clientReqId: "pa2" });
+    step(h);
+    assert.deepEqual(resultsOf(h, "a").at(-1)?.detail, "loot 不存在", "再拾 ⇒ 不存在");
+    const batch = h.runtime.takeCheckpointBatch(true, "test")!;
+    const fighter = h.mode.__probe.moverOf("a")!;
+    assert.deepEqual(batch.events.map((event) => [event.kind, event.payload]), [[MMO_EVENT_LOOT_CLAIMED, { actorEntityId: fighter.id, actorCharacterId: fighter.characterId, lootId: drop.id, itemTemplateId: drop.itemId, count: drop.count }]], "lootClaimed 随检查点批出去");
+    assert.ok(h.mode.__probe.log.includes(`pickup:a:${drop.id}`));
+    // 无 durable 能力（checkpoint null）：拾取拒绝、掉落仍在
+    const plain = harness(DUMMY_CONTENT);
+    await activeWorld(plain);
+    await seat(plain, "a", "p-a", personaAt(600, 600));
+    step(plain);
+    const id = plain.mode.__probe.spawnLoot(GREYBOX_ITEMS.hide, 2, 610, 600);
+    plain.runtime.enqueue("a", C2S.MmoWorldPickup, { lootId: id, clientReqId: "p1" });
+    step(plain);
+    assert.deepEqual([resultsOf(plain, "a").at(-1)?.detail, plain.mode.__probe.loot().size], ["durable 不可用", 1]);
+});
+
+test("掉落（MK2-B3）：分线快照 loot / lootSeq 往返（expiresTick 按 tick 差重排、新掉落 id 续号）；到期消失（leave）；上限淘汰最早的一件", async () => {
+    const h = lootHarness();
+    await activeWorld(h);
+    await seat(h, "a", "p-a", personaAt(600, 600));
+    step(h, 3);
+    const id = h.mode.__probe.spawnLoot(GREYBOX_ITEMS.hide, 3, 620, 600);
+    step(h);
+    assert.ok(idsOf(drain(h, "a"), S2C.MmoWorldEnter).includes(id), "掉落 enter");
+    const snapshot = h.runtime.takeCheckpoint(true)!.instance as MmoInstanceSnapshot;
+    const expiresTicks = ticksOfMs(MMO_LOOT_EXPIRE_MS);
+    assert.deepEqual(snapshot.loot, [{ id, itemId: GREYBOX_ITEMS.hide, count: 3, x: 620, y: 600, expiresTick: 3 + expiresTicks }]);
+    assert.equal(snapshot.lootSeq, 1);
+    const restored = lootHarness();
+    await activeWorld(restored, "greybox", snapshot);
+    const back = restored.mode.__probe.loot().get(id)!;
+    assert.deepEqual([back.itemId, back.count, back.x, back.expiresTick], [GREYBOX_ITEMS.hide, 3, 620, expiresTicks - 1], "新分线 tick 从 0 起 ⇒ 到期重排（快照 tick 4 − 3 = 1 步已过）");
+    assert.equal(restored.mode.__probe.spawnLoot(GREYBOX_ITEMS.gel, 1, 500, 500), "loot:2", "lootSeq 续号");
+    await seat(restored, "a", "p-a", personaAt(600, 600));
+    step(restored);
+    drain(restored, "a");
+    step(restored, expiresTicks);
+    assert.equal(restored.mode.__probe.loot().has(id), false, "到期消失");
+    assert.ok(idsOf(drain(restored, "a"), S2C.MmoWorldLeave).includes(id), "到期 ⇒ leave");
+    for (let index = 0; index < 512; index += 1) restored.mode.__probe.spawnLoot(GREYBOX_ITEMS.gel, 1, 100 + (index % 50), 100 + Math.floor(index / 50));
+    assert.deepEqual([restored.mode.__probe.loot().size, restored.mode.__probe.loot().has("loot:2")], [512, false], "上限 512：最早的一件被淘汰");
+});
+const ticksOfMs = (ms: number): number => Math.ceil(ms / 50);

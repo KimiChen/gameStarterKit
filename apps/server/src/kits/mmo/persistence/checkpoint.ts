@@ -8,7 +8,8 @@
  *  - load* 走 kit-api withKitTx（kit 自己的读事务）取最大 rev；保留策略归 kit（MF11 R2-05）：MK3 长跑前不删旧行。
  * 快照形态（schema v2，minSupported 1：v1 快照缺省字段照常回灌）：
  *  - 角色：mapId / x / y / hp / mp + cooldowns（spellId → 剩余 ms；分线 tick 不续，落盘时按 tick 差折算）+ arrival（交接落点，MK1-B3）；
- *  - 分线：tick / mapId / pack + creatures（id / templateId / x / y / hp / alive / respawnDueTick）+ loot / scriptVars / timers（dueTick，恢复后按 tick 差重排）/ regions（regionId → 开关）。
+ *  - 分线：tick / mapId / pack + creatures（id / templateId / x / y / hp / alive / respawnDueTick）+ loot（MK2-B3：未认领掉落 id / itemId / count / x / y / expiresTick，恢复后按 tick 差重排；
+ *    lootSeq 保证恢复后新掉落 id 不撞）/ scriptVars / timers（dueTick，恢复后按 tick 差重排）/ regions（regionId → 开关）。
  * 只 import kit-api 门面与本 kit 模块（K1），⛔ 不 import rooms/core 内核 / WorldMode 类型。
  */
 import { withKitTx, type CheckpointEnvelope, type CheckpointPort, type CheckpointSchema, type KitWorldTx, type ResultSetHeader, type RowDataPacket } from "../../../core/infra/kitApi";
@@ -43,15 +44,27 @@ export interface MmoCreatureSnapshot {
     readonly respawnDueTick?: number;
 }
 
-/** 分线快照（tick + 怪物 + 掉落 / 脚本 vars / timers / 区域开关；掉落与脚本内容随 MK2–MK4 填充，槽位 MK1-B4 定稿）。 */
+/** 未认领掉落（MK2-B3）：expiresTick 为落盘时的分线 tick；恢复后按 tick 差重排。 */
+export interface MmoLootSnapshot {
+    readonly id: string;
+    readonly itemId: string;
+    readonly count: number;
+    readonly x: number;
+    readonly y: number;
+    readonly expiresTick: number;
+}
+
+/** 分线快照（tick + 怪物 + 掉落 / 脚本 vars / timers / 区域开关；脚本内容随 MK4 填充，槽位 MK1-B4 定稿）。 */
 export interface MmoInstanceSnapshot {
     readonly tick: number;
     readonly mapId: string;
     readonly packId: string;
     readonly packVersion: number;
     readonly creatures: readonly MmoCreatureSnapshot[];
-    /** v2：未认领掉落（MK2 掉落写入） */
-    readonly loot?: readonly unknown[];
+    /** v2：未认领掉落（MK2-B3 写入；v2 早期快照为空数组） */
+    readonly loot?: readonly MmoLootSnapshot[];
+    /** v2：掉落 id 计数（恢复后续用，⛔ 与已有掉落撞 id） */
+    readonly lootSeq?: number;
     /** v2：编排脚本 vars（MK4 写入） */
     readonly scriptVars?: Readonly<Record<string, unknown>>;
     /** v2：timers（dueTick 为落盘时的分线 tick；恢复后按 tick 差重排） */

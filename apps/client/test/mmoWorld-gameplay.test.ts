@@ -32,6 +32,7 @@ function fakeRoom() {
         say: (text) => { calls.push(["say", text]); return true; },
         target: (entityId) => { calls.push(["target", entityId]); return true; },
         cast: (spellId, targetId) => { calls.push(["cast", spellId, targetId]); return calls.length; },
+        pickup: (lootId) => { calls.push(["pickup", lootId]); return `p${calls.length}`; },
         requestBaseline: (afterSeq) => { calls.push(["baseline", afterSeq]); return true; },
         observe: (next) => { observer = next; return () => { observer = null; }; },
         leave: async () => { calls.push(["leave"]); },
@@ -172,6 +173,8 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.cast", { seq: 5, spellId: "strike", targetId: "slime-camp:0" }]);
     assert.equal(room.cast("guard"), 6);
     assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.cast", { seq: 6, spellId: "guard" }], "无目标不带 targetId");
+    assert.equal(room.pickup("loot:1"), "p7", "pickup 返回 clientReqId（与移动共用计数）");
+    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.pickup", { lootId: "loot:1", clientReqId: "p7" }]);
     emit(S2C.MmoWorldPrivate, { seq: 4, tick: 12, hp: 90, hpMax: 100, mp: 40, mpMax: 50, cooldowns: { strike: 1500 }, casting: { spellId: "fireball", readyInMs: 800 } });
     assert.deepEqual(privates.at(-1), 90);
     emit(S2C.WorldChat, { fromEntityId: "char:c1", text: "hi", at: 5 });
@@ -299,5 +302,29 @@ test("战斗（gameplay）：target 输入选目标；cast 无目标时自动选
     gameplay.handleInput({ type: "target", entityId: null }, context);
     gameplay.tick(0.016, context);
     assert.equal(renders.at(-1)!.targetId, null);
+    gameplay.stop({ kind: "manual" });
+});
+
+test("掉落（gameplay，MK2-B3）：视野里的 loot 实体带 count 进模型；pickup 输入 ⇒ 拾取半径内最近的掉落（本人预测位置）⇒ room.pickup；没有 ⇒ 提示不发", async () => {
+    const { room, calls, observer } = fakeRoom();
+    const { presentation, renders } = fakePresentation();
+    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
+    const context = contextOf(room);
+    await gameplay.start(context);
+    const loot = (id: string, x: number, count: number): IMmoEntityWire => ({ id, kind: "loot", templateId: "slime-gel", name: "史莱姆凝胶", x, y: 1000, rev: 0, hp: 1, hpMax: 1, level: 1, count });
+    observer().entities(new Map([[self.id, self], ["loot:2", loot("loot:2", 1040, 2)], ["loot:1", loot("loot:1", 1030, 1)], ["loot:3", loot("loot:3", 1300, 5)], ["slime-camp:0", slime("slime-camp:0", 1010)]]), true);
+    gameplay.tick(0.016, context);
+    const model = renders.at(-1)!;
+    assert.deepEqual(model.entities.filter((entity) => entity.kind === "loot").map((entity) => [entity.id, entity.count, entity.presentation.label]), [["loot:1", 1, "史莱姆凝胶"], ["loot:2", 2, "史莱姆凝胶"], ["loot:3", 5, "史莱姆凝胶"]]);
+    assert.equal(model.entities.find((entity) => entity.isSelf)?.count, null, "非掉落 count null");
+    gameplay.handleInput({ type: "pickup" }, context);
+    gameplay.tick(0.016, context);
+    assert.deepEqual([calls.filter((call) => call[0] === "pickup"), renders.at(-1)!.notice], [[["pickup", "loot:1"]], "拾取：史莱姆凝胶"], "半径 48 内最近的掉落（怪不算）");
+    observer().entities(new Map([[self.id, self], ["loot:3", loot("loot:3", 1300, 5)]]), true);
+    const before = calls.length;
+    gameplay.handleInput({ type: "pickup" }, context);
+    gameplay.tick(0.016, context);
+    assert.deepEqual([calls.length, renders.at(-1)!.notice], [before, "附近没有掉落"], "半径外不发");
     gameplay.stop({ kind: "manual" });
 });

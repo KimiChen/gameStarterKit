@@ -45,6 +45,8 @@ export function createMmoWorldRoom(handle: WorldRoomHandle): MmoWorldRoom {
         // 战斗（MK2-B1）：选目标 / 施法（seq 与移动共用计数器；回执 clientReqId = cast:<seq>）
         target(entityId) { return handle.send(C2S.MmoWorldTarget, { entityId }); },
         cast(spellId, targetId) { const seq = nextSeq(); return handle.send(C2S.MmoWorldCast, { seq, spellId, ...(targetId === undefined ? {} : { targetId }) }) ? seq : null; },
+        // 拾取（MK2-B3）：durable 请求，回执 clientReqId = p<seq>
+        pickup(lootId) { const clientReqId = `p${nextSeq()}`; return handle.send(C2S.MmoWorldPickup, { lootId, clientReqId }) ? clientReqId : null; },
         requestBaseline(afterSeq) { return handle.send(C2S.MmoWorldBaselineRequest, { authorityEpoch: 1, afterSeq }); },
         observe(observer) { return observeMmoWorld(handle, observer); },
         leave: () => handle.leave(),
