@@ -2,7 +2,7 @@ import { defineComponent, useEffect, useMemo, useRef, useState, VirtualList } fr
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { TabBar } from '../../../components/tab/TabBar';
 import { ShopGetItemPanel } from '../ShopGetItem/ShopGetItemPanel';
 import { ShopCard, type ShopGoods } from './ShopCard';
 
@@ -191,12 +191,9 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
                 {(item) => <ShopCard goods={item} onClick={() => clickCard(item)} />}
             </VirtualList>
 
-            <PanelTab label="VIP商店" active={isVip} left={24} top={302} width={200} kind="alliance"
-                onClick={() => selectTab('vip')} />
-            <PanelTab label="联盟每周商店" active={isAlliance} left={237} top={302} width={200} kind="alliance"
-                onClick={() => selectTab('alliance')} />
-            <PanelTab label="宝石商店" active={isGem} left={447} top={302} width={200} kind="alliance"
-                onClick={() => selectTab('gem')} />
+            <TabBar kind="alliance" left={24} top={302} itemWidth={200} gap={13} selected={tab}
+                items={[{ id: 'vip', label: 'VIP商店' }, { id: 'alliance', label: '联盟每周商店' }, { id: 'gem', label: '宝石商店' }]}
+                onSelect={(id) => { if (id === 'vip' || id === 'alliance' || id === 'gem') selectTab(id); }} />
 
             <ScreenFooter onBack={back} />
             <text visible={showRestock} value={p.restockLabel ?? '每周一补货'}

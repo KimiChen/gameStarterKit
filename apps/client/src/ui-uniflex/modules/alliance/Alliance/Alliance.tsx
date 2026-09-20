@@ -1,9 +1,8 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
-import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { TabBar } from '../../../components/tab/TabBar';
 import { AllianceAnnouncePanel } from '../AllianceAnnounce/AllianceAnnouncePanel';
 import { AllianceBoardPanel } from '../AllianceBoard/AllianceBoardPanel';
 import { AllianceGiftPanel } from '../AllianceGift/AllianceGiftPanel';
@@ -69,6 +68,14 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
     };
     const badge = imageRef('ui/mail/number-badge');
     const badgeCount = params.badgeCount ?? 3;
+    const tabItems = [
+        { id: 'home', label: '联盟' },
+        { id: 'members', label: '成员', badge: tab === 'members' ? 0 : badgeCount },
+        { id: 'settings', label: '设置', badge: tab === 'members' ? badgeCount : 0 },
+    ];
+    const selectBarTab = (id: string) => {
+        if (id === 'home' || id === 'members' || id === 'settings') selectTab(id);
+    };
     return (
         <view name="Alliance" style={{ width: 750, height: 1624 }}>
             <image source={imageRef('ui/hero/bond-bg')}
@@ -87,16 +94,8 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
 
             <ScreenHeader title={params.title ?? '联盟'} top={144} titleLeft={20} />
 
-            <PanelTab label="联盟" active={tab === 'home'} left={13} top={262} width={200}
-                onClick={() => selectTab('home')} />
-            <PanelTab label="成员" active={tab === 'members'} left={227} top={262} width={200}
-                onClick={() => selectTab('members')} />
-            <PanelTab label="设置" active={tab === 'settings'} left={440} top={262} width={200}
-                onClick={() => selectTab('settings')} />
-            <NotificationBadge count={tab === 'members' ? 0 : badgeCount}
-                source={badge} left={401} top={248} />
-            <NotificationBadge count={tab === 'members' ? badgeCount : 0}
-                source={badge} left={614} top={248} />
+            <TabBar left={13} top={262} itemWidth={200} selected={tab} items={tabItems}
+                badgeSource={badge} onSelect={selectBarTab} />
 
             <MainNav selected={nav} noticeExplore onSelect={selectNav} />
             <AllianceAnnouncePanel visible={announceOpen} onClose={() => setAnnounceOpen(false)} />

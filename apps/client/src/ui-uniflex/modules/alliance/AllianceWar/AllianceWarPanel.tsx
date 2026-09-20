@@ -4,7 +4,7 @@ import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { CyanButton } from '../../../components/button/CyanButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { TabBar } from '../../../components/tab/TabBar';
 
 export type AllianceWarTab = 'rally' | 'war' | 'event';
 
@@ -38,12 +38,9 @@ export const AllianceWarPanel = defineComponent<AllianceWarPanelProps>((p) => {
 
             <ScreenHeader title={p.title ?? '战争'} top={144} titleLeft={41} />
 
-            <PanelTab label="集结" active={tab === 'rally'} left={13} top={262} width={200}
-                onClick={() => selectTab('rally')} />
-            <PanelTab label="战争" active={tab === 'war'} left={227} top={262} width={200}
-                onClick={() => selectTab('war')} />
-            <PanelTab label="活动" active={tab === 'event'} left={440} top={262} width={200}
-                onClick={() => selectTab('event')} />
+            <TabBar left={13} top={262} itemWidth={200} selected={tab}
+                items={[{ id: 'rally', label: '集结' }, { id: 'war', label: '战争' }, { id: 'event', label: '活动' }]}
+                onSelect={(id) => { if (id === 'rally' || id === 'war' || id === 'event') selectTab(id); }} />
 
             <ScreenFooter onBack={back} />
             <view style={{ position: 'absolute', left: 111.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>

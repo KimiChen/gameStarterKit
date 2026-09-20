@@ -2,7 +2,7 @@ import { defineComponent, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { PanelTab } from '../../../components/tab/PanelTab';
+import { TabBar } from '../../../components/tab/TabBar';
 import { AllianceBoardApplyPanel } from './AllianceBoardApplyPanel';
 import { AllianceBoardMessagePanel } from './AllianceBoardMessagePanel';
 
@@ -43,10 +43,9 @@ export const AllianceBoardPanel = defineComponent<AllianceBoardPanelProps>((p) =
 
             <ScreenHeader title={p.title ?? '联盟'} top={144} />
 
-            <PanelTab label="留言板" active={tab === 'board'} left={13} top={262} width={200}
-                onClick={() => selectTab('board')} />
-            <PanelTab label="申请列表" active={tab === 'apply'} left={227} top={262} width={200}
-                onClick={() => selectTab('apply')} />
+            <TabBar left={13} top={262} itemWidth={200} selected={tab}
+                items={[{ id: 'board', label: '留言板' }, { id: 'apply', label: '申请列表' }]}
+                onSelect={(id) => { if (id === 'board' || id === 'apply') selectTab(id); }} />
 
             <ScreenFooter onBack={back} />
             <AllianceBoardMessagePanel visible={tab === 'board'} placeholder={p.placeholder}
