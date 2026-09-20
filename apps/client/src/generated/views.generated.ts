@@ -48,6 +48,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA","ui/Common_ComboBox","ui/L10n_zh_hans"],
         load: () => import("../view/LoginNoticeView").then((m) => m.LoginNoticeView),
     }),
+    MmoCharacterSelect: defineView({
+        name: "MmoCharacterSelect", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../kits/mmo/view/MmoCharacterSelectView").then((m) => m.MmoCharacterSelectView),
+    }),
     PromoHome: defineView({
         name: "PromoHome", kind: "cocos", layer: "base",
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
@@ -101,6 +106,8 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "Home", owner: "builtin", kind: "fgui", pkg: "View_Home_Home", comp: "Home", path: "apps/client/src/view/HomeView.ts", logic: "apps/client/src/logic/page/HomeLogic.ts", sidecar: "apps/client/src/view/HomeView.view.json" },
     { name: "Login", owner: "builtin", kind: "fgui", pkg: "View_AreaList_Login", comp: "Login", path: "apps/client/src/view/LoginView.ts", logic: "apps/client/src/logic/page/LoginLogic.ts", sidecar: "apps/client/src/view/LoginView.view.json" },
     { name: "LoginNotice", owner: "builtin", kind: "fgui", pkg: "View_AreaList_LoginNotice", comp: "LoginNotice", path: "apps/client/src/view/LoginNoticeView.ts", logic: "apps/client/src/logic/page/LoginNoticeLogic.ts", sidecar: "apps/client/src/view/LoginNoticeView.view.json" },
+    { name: "MmoCharacterSelect", owner: "mmo", kind: "cocos", path: "apps/client/src/kits/mmo/view/MmoCharacterSelectView.ts", logic: "apps/client/src/kits/mmo/logic/MmoCharacterSelectLogic.ts", sidecar: "apps/client/src/kits/mmo/view/MmoCharacterSelectView.view.json" },
+    { name: "MmoWorld", owner: "mmoWorld", kind: "cocos", path: "apps/client/src/view/rooms/mmoWorld/MmoWorldView.ts", logic: "apps/client/src/logic/rooms/mmoWorld/MmoWorldGameplay.ts", sidecar: "apps/client/src/view/rooms/mmoWorld/MmoWorldView.view.json" },
     { name: "PromoHome", owner: "builtin", kind: "cocos", path: "apps/client/src/view/PromoHomeView.ts", logic: "apps/client/src/logic/page/PromoHomeLogic.ts", sidecar: "apps/client/src/view/PromoHomeView.view.json" },
     { name: "Redeem", owner: "redeem", kind: "cocos", path: "apps/client/src/plugins/redeem/view/RedeemView.ts", logic: "apps/client/src/plugins/redeem/logic/RedeemLogic.ts", sidecar: "apps/client/src/plugins/redeem/view/RedeemView.view.json" },
     { name: "Settings", owner: "builtin", kind: "cocos", path: "apps/client/src/view/SettingsView.ts", logic: "apps/client/src/logic/page/SettingsLogic.ts", sidecar: "apps/client/src/view/SettingsView.view.json" },
@@ -113,6 +120,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
 /** manifest 声明的 view 目录（守门测试的递归比对根）。 */
 export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/kits/arena/view",
+    "apps/client/src/kits/mmo/view",
     "apps/client/src/kits/slg/view",
     "apps/client/src/plugins/arenaShop/view",
     "apps/client/src/plugins/redeem/view",
@@ -120,6 +128,7 @@ export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/view",
     "apps/client/src/view/rooms/arenaCapture",
     "apps/client/src/view/rooms/arenaDuel",
+    "apps/client/src/view/rooms/mmoWorld",
     "apps/client/src/view/rooms/snake",
     "apps/client/src/view/rooms/tally",
 ];

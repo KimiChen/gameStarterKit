@@ -46,6 +46,7 @@ export const PLUGIN_IDS: readonly string[] = [
     "arena",
     "arenaShop",
     "builtin",
+    "mmo",
     "redeem",
     "slg",
     "snake",
@@ -95,6 +96,18 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         ],
         menu: [
             { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+        ],
+    },
+    {
+        id: "mmo",
+        resident: true,
+        load: () => import("../kits/mmo/index").then((m) => m.createPluginModule()),
+        dependencies: [],
+        routes: [
+            { id: "mmoCharacters", view: "MmoCharacterSelect", group: "authenticated", restore: "discard" },
+        ],
+        menu: [
+            { entryId: "enter", pluginId: "mmo", label: "进入世界", labelKey: "menu.mmo.enter", launch: { kind: "route", routeId: "mmoCharacters" } },
         ],
     },
     {
@@ -152,6 +165,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "duel", pluginId: "arena", label: "决斗", labelKey: "menu.arena.duel", launch: { kind: "gameplay", gameplayId: "arenaDuel" } },
     { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", labelKey: "menu.arenaShop", launch: { kind: "route", routeId: "arenaShop" } },
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+    { entryId: "enter", pluginId: "mmo", label: "进入世界", labelKey: "menu.mmo.enter", launch: { kind: "route", routeId: "mmoCharacters" } },
     { entryId: "redeem", pluginId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
     { entryId: "map", pluginId: "slg", label: "大地图", labelKey: "menu.slg.map", launch: { kind: "route", routeId: "slgMap" } },
     { entryId: "snake", pluginId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },

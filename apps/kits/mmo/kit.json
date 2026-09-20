@@ -75,9 +75,41 @@
   "docs": [
     "apps/kits/mmo/README.md"
   ],
-  "routes": [],
-  "menu": [],
-  "viewDirs": [],
-  "views": [],
-  "owners": []
+  "resident": true,
+  "entry": "apps/client/src/kits/mmo/index.ts",
+  "viewDirs": [
+    "apps/client/src/kits/mmo/view",
+    "apps/client/src/view/rooms/mmoWorld"
+  ],
+  "views": [
+    "apps/client/src/kits/mmo/view/MmoCharacterSelectView.view.json",
+    "apps/client/src/view/rooms/mmoWorld/MmoWorldView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "mmo",
+      "logicDir": "apps/client/src/kits/mmo/logic"
+    },
+    {
+      "id": "mmoWorld",
+      "logicDir": "apps/client/src/logic/rooms/mmoWorld"
+    }
+  ],
+  "routes": [
+    {
+      "id": "mmoCharacters",
+      "view": "MmoCharacterSelect"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "enter",
+      "label": "进入世界",
+      "labelKey": "menu.mmo.enter",
+      "launch": {
+        "kind": "route",
+        "routeId": "mmoCharacters"
+      }
+    }
+  ]
 }
