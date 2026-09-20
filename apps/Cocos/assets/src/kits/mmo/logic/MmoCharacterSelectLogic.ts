@@ -2,7 +2,7 @@
  * 选角页逻辑（纯 TS，无头单测）：加载角色 → 槽位视图（角色 / 孤儿 / 空槽）→ 建角（在途闸）→ 进入世界（带参 launch mmoWorld）。
  * 渲染归 ../view/MmoCharacterSelectView.ts；⛔ 不 import cc。错误分支只按 RpcError.code 分派，⛔ 不解析错误文案。
  */
-import { DEFAULT_MAP_ID } from "../api/content/index";
+import { defaultMapId } from "../api/content/index";
 import { characterSlots, defaultCharacterName, describeCharacter, type CharacterSlotView, type ICharacterSummary } from "../api/characters/index";
 import type { MmoRuntime } from "./mmoRuntime";
 
@@ -118,8 +118,8 @@ export class MmoCharacterSelectLogic {
         this.busy = true;
         this.onChanged();
         try {
-            await runtime.launchWorld(characterId, character.mapId ?? DEFAULT_MAP_ID);
-            this.notice = { kind: "success", text: `进入 ${character.mapId ?? DEFAULT_MAP_ID}` };
+            await runtime.launchWorld(characterId, character.mapId ?? defaultMapId());
+            this.notice = { kind: "success", text: `进入 ${character.mapId ?? defaultMapId()}` };
             return true;
         } catch (error) {
             this.notice = { kind: "error", text: describeMmoError(error) };

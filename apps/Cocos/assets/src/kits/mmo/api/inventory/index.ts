@@ -4,12 +4,12 @@
  * ⛔ 不 import cc；本面任何导出变化都要 bump `api.inventory.version`。
  */
 import type { LobbyRpcPort } from "../../../../app/ports";
-import { GREYBOX_PACK } from "../../../../shared/kits/mmo/content/greybox";
 import {
     MMO_BAG_SLOTS, MMO_EQUIP_SLOT_COUNT, MMO_EQUIP_SLOT_INDEX, MMO_LOOT_EXPIRE_MS, MMO_MAIL_SLOTS, MMO_PICKUP_RADIUS, bagAttrs, bagSignature, capacityOf, checkEquip, equipSlotOf,
     equippedTemplates, nearestLoot, planGrant, sortBagItems, type IBagAttrs, type IMmoBagItemWire, type IMmoBagWire, type MmoItemLocation,
 } from "../../../../shared/kits/mmo/api/inventory/index";
 import type { IItemTemplate } from "../../../../shared/kits/mmo/api/content/index";
+import { itemTemplateOf } from "../content/index";
 import { MmoRpc, type IMmoBagRes, type IMmoMoveItemReq, type IMmoMoveItemRes } from "../../../../shared/protocol/lobbyRpc/domains/mmo";
 
 export {
@@ -18,10 +18,7 @@ export {
 };
 export type { IBagAttrs, IMmoBagItemWire, IMmoBagRes, IMmoBagWire, IMmoMoveItemRes, MmoItemLocation };
 
-/** 物品模板（客户端同源内置灰盒包；MK4 改经贡献点）；不在包内 = null。 */
-export function itemTemplateOf(itemId: string): IItemTemplate | null {
-    return GREYBOX_PACK.items.find((item) => item.itemId === itemId) ?? null;
-}
+export { itemTemplateOf };
 
 /** 只读背包（mmo.bag）。 */
 export function fetchBag(lobbyRpc: Pick<LobbyRpcPort, "query">, characterId: string): Promise<IMmoBagRes> {

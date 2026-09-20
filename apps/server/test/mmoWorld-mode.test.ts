@@ -982,3 +982,20 @@ test("编排（MK4-B1）：快照往返（vars / timers 重排 / 脚本怪重建
     step(f, 12);
     assert.deepEqual([f.mode.__probe.orchestration()?.suspended, f.runtime.takeCheckpointBatch(true, "again")!.events.filter((event) => event.kind === "packSuspended").length], ["commands", 1], "resume 后再炸一次：又 suspend、审计行再一条（只投一次是每次 suspend 一次）");
 });
+
+test("内容按图解析（MK4-B2）：未注入单包时 onWorldInit 用 contentFor(mapId)（贡献包优先、内置兜底）；解析不到 ⇒ recover 拒", async () => {
+    const east = clone(GREYBOX_PACK) as unknown as MutablePack;
+    east.packId = "east-plugin"; east.version = 9;
+    east.maps = east.maps.filter((map) => map.mapId === "greybox-east").map((map) => ({ ...map, portals: [] })); east.spawns = east.spawns.filter((spawn) => spawn.mapId === "greybox-east"); east.regions = []; east.npcs = [];
+    const eastIndex = indexContentPack(validateContentPack(east));
+    const modeFor = () => createMmoWorldMode({ contentFor: (mapId) => (mapId === "greybox-east" ? eastIndex : mapId === "greybox" ? CONTENT : null), loadCharacter: async () => null, checkpoint: null, loadBag: null, loadParty: null, pollGrantResults: null, orchestration: null });
+    const build = (mapId: string) => { const state = createRoomStateForMode("mmoWorld") as MmoWorldRoomState; const runtime = new WorldRuntime<MmoWorldRoomState>({ mode: modeFor(), state, sId: 0, fixedStepMs: 50, seed: 7, now: () => 0, world: { emptyPolicy: "run", emptyAfterMs: 100_000, checkpointMs: 100_000 }, ports: { sendS2C: () => undefined, broadcastS2C: () => undefined, onCheckpoint: () => undefined } }); return { state, runtime, mapId }; };
+    const eastWorld = build("greybox-east");
+    await eastWorld.runtime.recover({ instanceId: "e1", mapId: "greybox-east", line: 0, authorityEpoch: 1, checkpoint: null });
+    assert.deepEqual([eastWorld.state.packId, eastWorld.state.packVersion], ["east-plugin", 9], "东郊由贡献包承载");
+    const west = build("greybox");
+    await west.runtime.recover({ instanceId: "w1", mapId: "greybox", line: 0, authorityEpoch: 1, checkpoint: null });
+    assert.equal(west.state.packId, "greybox", "主图由内置包兜底");
+    const nowhere = build("nowhere");
+    await assert.rejects(nowhere.runtime.recover({ instanceId: "n1", mapId: "nowhere", line: 0, authorityEpoch: 1, checkpoint: null }), /不在内容包/u);
+});

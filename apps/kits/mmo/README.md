@@ -13,7 +13,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | ✅ 2026-09-20 退出（B1–B6，kit 0.1.6；kill criterion 取 §11.2 v1 例外「热点互见 ≤ 50 人」，50 人三次重跑 ✅；MMO.md §12 MK1 行；tag `mk1-exit`） |
 | MK2 模拟闭环 | combat + ai 面、掉落 | ✅ 2026-09-20 退出（B1 combat / B2 ai / B3 掉落，kit 0.1.9；MMO.md §12 MK2 行；tag `mk2-exit`） |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | B1 inventory 面物品半边 ✅、B2 角色保存定稿 ✅、B3 长跑基准台 + 4 分钟冒烟 ✅ 2026-09-20（kit 0.1.12）；**退出待 24–72 h 正式长跑报告**（命令见基准段；需要机器连续跑一天） |
-| MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 施工中：B1 orchestration 面 ✅ 2026-09-20（kit 0.1.13；B2–B6 未开工） |
+| MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、冻结 `mmo-kit-v1-frozen` | 施工中：B1 orchestration 面 ✅、B2 贡献点装载 ✅ 2026-09-20（kit 0.1.14；B3–B6 未开工） |
 
 ## 定义了什么（MK0-B1）
 
@@ -85,6 +85,16 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 内容 | 灰盒 v5：野猪 boar（aggro 150 / 拴绳 400 / 90 速 / strike）在 (1000,1500)、田鼠 rat（patrol 三点）在 (500,500)；slime 仍 idle（leash 0 只还手） |
 | 用例 | 服务端 `mmo-ai.test.ts`（decide 十三条 / 分桶 / A* 绕墙・终点阻挡・展开上限 / 调度器预算顺延 / compute 任务 / 迟到判定）、`mmoWorld-mode.test.ts` 新增 3（野猪追击 → 射程内扣血 → 出拴绳 evade 回家；slime 还手不追；田鼠巡逻一圈 / 每 4 步思考 / 假时钟顺延；绕墙不进阻挡格 / 权威换代・版本变更的回执丢弃） |
 | 偏差 | 找路端口回执可同步（缺省进程内：同 tick 生效 ⇒ 无头重放确定性）或 Promise（compute 池：下一步消费）；compute 池接线留给组合根（kit ⛔ import compute）；仇恨 = 直伤值，治疗 / 增益不计；怪物无阵营，感知用位面 / 隐身规则；MK2-B1 战斗用例改用 slime 无技能的木桩内容（还手归 ai 用例） |
+
+## 贡献点装载（MK4-B2；docs/KIT.md §4 / MMO.md §8.6）
+
+| 贡献点（kit.json `contributions`） | kind / ends | 插件怎么交 | kit 怎么消费 |
+| --- | --- | --- | --- |
+| `content` | data · server + client；schema = 内容包顶层形状（schemaVersion 1 / packId / version ≥ 1 / 十个数组），细校验在装载期 `validateContentPack` | `plugin.json` `contributes.mmo.content = "apps/plugins/<id>/content/pack.json"`（须同时 `requires.kits.mmo`） | 服务端 `content/registry.ts`：贡献包（按插件 id 序）在前、内置灰盒兜底，逐包校验 + 索引，跨包 packId / mapId 重复 ⇒ 拒启（一图一包）；`packForMap(mapId)` 贡献包优先；world mode 未注入单包时 onWorldInit 按 `contentFor(context.mapId)` 解析（图级缓存随世界重建）；客户端 `api/content` 同规则（`contentPacks / packForMap / mapDefOf / classOf / itemTemplateOf / defaultMapId`） |
+| `presentation` | module · client · export `presentation`（`IPresentationMap`） | `contributes.mmo.presentation = "apps/client/src/plugins/<id>/mmoPresentation.ts"` | 客户端 `presentationMap()`：插件映射按 id 顺序盖在内置之上；`presentationOf` 缺省用它 |
+| `orchestration` | module · server · export `orchestration`（`defineOrchestration(...)`） | `contributes.mmo.orchestration = "apps/server/src/core/<id>/mmoOrchestration.ts"` | `orchestration/registry.ts` 首次访问逐个形状断言登记（一包一模块）；`registerMmoWorldWorldMode` 启动期 `assertOrchestrationsResolvable`（模块 packId ∈ 已收录包）⇒ 失败拒启；边界机检扫描 `contributions.generated` 的 import |
+
+生成物：`apps/{server,client}/src/kits/mmo/contributions.generated.ts`（`KIT_CONTRIBUTIONS`，codegen:plugins 刷新；无插件填充时为空列表）。⚠ 发现（本批修）：`plugin -- install --reinstall-from-tree` 的推导集冲突闸此前把这一族 writer 生成物（含 Cocos 镜像 + .meta）当「混入」拒绝——首个在树声明贡献点的 kit 才碰到；`tools/plugin/install.ts` ownershipConflicts 现按硬排除形态豁免（用例 `plugin-reinstall-generated.test.ts`）。内置灰盒包仍是 TS 字面量兜底（kit 服务端 ⛔ node:fs、tsconfig 未开 resolveJsonModule，MK0 偏差 ①），贡献包 = 通道证明；首个真实填充在内容插件样本 MG0（`mmodemo`）。
 
 ## 编排（MK4-B1；`orchestration` 面 v1）
 

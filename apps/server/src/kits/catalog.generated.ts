@@ -36,7 +36,7 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
     },
     {
         id: "mmo",
-        version: "0.1.13",
+        version: "0.1.14",
         api: {
             ai: { version: 1, minSupported: 1 },
             characters: { version: 1, minSupported: 1 },
@@ -75,7 +75,60 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         workers: [
             { id: "worldEvents", entry: "apps/server/src/kits/mmo/workers/worldEvents.ts" },
         ],
-        contributions: {},
+        contributions: {
+            content: {
+                kind: "data",
+                ends: [
+                    "server",
+                    "client",
+                ],
+                schema: {
+                    type: "object",
+                    required: [
+                        "schemaVersion",
+                        "packId",
+                        "version",
+                        "maps",
+                        "regions",
+                        "classes",
+                        "creatures",
+                        "spawns",
+                        "spells",
+                        "items",
+                        "lootTables",
+                        "npcs",
+                    ],
+                    properties: {
+                        schemaVersion: { type: "integer", minimum: 1, maximum: 1 },
+                        packId: { type: "string", pattern: "^[A-Za-z0-9._:-]{1,64}$" },
+                        version: { type: "integer", minimum: 1 },
+                        maps: { type: "array" },
+                        regions: { type: "array" },
+                        classes: { type: "array" },
+                        creatures: { type: "array" },
+                        spawns: { type: "array" },
+                        spells: { type: "array" },
+                        items: { type: "array" },
+                        lootTables: { type: "array" },
+                        npcs: { type: "array" },
+                    },
+                },
+            },
+            presentation: {
+                kind: "module",
+                ends: [
+                    "client",
+                ],
+                export: "presentation",
+            },
+            orchestration: {
+                kind: "module",
+                ends: [
+                    "server",
+                ],
+                export: "orchestration",
+            },
+        },
         fragments: [],
     },
     {

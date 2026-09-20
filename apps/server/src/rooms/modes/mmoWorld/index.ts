@@ -54,7 +54,8 @@ import { canSee, pickInterest } from "../../../kits/mmo/aoi/visibility";
 import { AiScheduler } from "../../../kits/mmo/ai/scheduler";
 import { createInProcessPathfinder, isDeferredPathResult, isStalePathResult, type PathResult, type PathfinderPort } from "../../../kits/mmo/api/ai/index";
 import { characterOfPersona, type MmoCharacterRow } from "../../../kits/mmo/api/characters/index";
-import { contentIndex } from "../../../kits/mmo/api/content/index";
+import { contentIndex, contentPacks, packForMap } from "../../../kits/mmo/api/content/index";
+import { assertOrchestrationsResolvable } from "../../../kits/mmo/orchestration/registry";
 import { MMO_WORLD_MODE_ID } from "../../../kits/mmo/host";
 import type { MmoWorldRoomState } from "../../schema/GameRoomState";
 import {
@@ -163,8 +164,10 @@ export interface MmoLootDrop {
 }
 
 export interface MmoWorldModeOptions {
-    /** 内容索引（缺省 = 内置灰盒；单测注入）。 */
+    /** 内容索引（单包；单测注入）。缺省 = 按图解析：`contentFor(mapId)`（贡献包优先、内置灰盒兜底，MK4-B2）。 */
     readonly content?: IContentPackIndex;
+    /** 按图取内容包（缺省 = content 面 packForMap；注入 content 时不用）。 */
+    readonly contentFor?: (mapId: string) => IContentPackIndex | null;
     /** 按 persona 预热角色行（缺省 = characters 面走 kit 事务；单测注入）。 */
     readonly loadCharacter?: (sId: number, personaId: string) => Promise<MmoCharacterRow | null>;
     /** 检查点能力（缺省 = SQL 端口；null = 无能力（纯内存单测）；可注入 MemoryCheckpointPort 形态）。 */
@@ -265,7 +268,8 @@ const lootProjectionOf = (drop: MmoLootDrop): IMmoEntityWire => ({
 const visibleProjectionOf = (target: MmoEntity | MmoLootDrop): IMmoEntityWire => (target.kind === "loot" ? lootProjectionOf(target) : projectionOf(target));
 
 export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldMode {
-    const content = options.content ?? contentIndex();
+    let content = options.content ?? contentIndex();
+    const contentFor = options.contentFor ?? ((mapId: string) => packForMap(mapId));
     const loadCharacter = options.loadCharacter ?? ((sId: number, personaId: string) => characterOfPersona(sId, personaId));
     const checkpoint = options.checkpoint === undefined ? createMmoCheckpointCapability() : options.checkpoint;
     const entities = new Map<string, MmoEntity>();
@@ -1027,6 +1031,9 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         ...(checkpoint ? { checkpoint } : {}),
         onWorldInit(context, info) {
             probeContext = context;
+            // 一图一包（MK4-B2）：未注入单包时按本图解析内容包（贡献包优先、内置兜底）；解析不到 ⇒ mapOf 抛（拒启）
+            if (options.content === undefined) { const picked = contentFor(context.mapId); if (picked) content = picked; }
+            map = null; grid = null; aoi = null; pathfinder = options.pathfinder ?? null; // 图级缓存随世界重建（同一 mode 实例只服务一个世界，防御）
             const def = mapOf(context);
             entities.clear();
             aoiOf(context).clear();
@@ -1432,6 +1439,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
 
 /** 约定导出符号 `register<Constant>WorldMode`（codegen `registerGeneratedWorldModes` 静态 import）：登记前先取内容索引——包不合法即抛，组合根拒启。 */
 export function registerMmoWorldWorldMode(registry: WorldModeRegistry = worldModeRegistry): () => void {
-    const content = contentIndex();
-    return registry.register(MMO_WORLD_MODE_ID, () => createMmoWorldMode({ content, ...MMO_WORLD_TUNING }));
+    // 启动期 fail-closed：全部内容包（贡献 + 内置）过闸；编排模块 packId 对应已收录包
+    const packs = contentPacks();
+    assertOrchestrationsResolvable(packs.map((index) => index.pack.packId));
+    return registry.register(MMO_WORLD_MODE_ID, () => createMmoWorldMode({ ...MMO_WORLD_TUNING }));
 }

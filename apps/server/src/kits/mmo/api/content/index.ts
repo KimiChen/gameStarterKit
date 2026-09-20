@@ -1,20 +1,26 @@
 /**
- * mmo kit · `content` api 面（服务端，docs/MMO.md §7.2）：内容注册表的只读门面——`packForMap(mapId)`、`mapDefOf`、`creature` / `spell` / `item`。
- * 插件只能 import 本门面；内容本身经贡献点交给 kit（MK4），⛔ 不 import 注册表内部。本面任何导出变化都要 bump `api.content.version`。
+ * mmo kit · `content` api 面（服务端，docs/MMO.md §7.2）：内容注册表的只读门面——`contentPacks()`（贡献包 + 内置灰盒，MK4-B2）、`packForMap(mapId)`、
+ * `mapDefOf`、`creature` / `spell` / `item`。插件只能 import 本门面；内容本身经贡献点 `content` 交给 kit（MK4-B2），⛔ 不 import 注册表内部。
+ * 本面任何导出变化都要 bump `api.content.version`。
  */
 import type { ICreatureTemplate, IContentPackIndex, IItemTemplate, IMapDef, ISpellTemplate } from "@game/shared/kits/mmo/api/content/index";
-import { builtinContent } from "../../content/registry";
+import { builtinContent, contentForMap, contentIndexes } from "../../content/registry";
 
 export type { ICreatureTemplate, IContentPackIndex, IItemTemplate, IMapDef, ISpellTemplate };
 
-/** 当前生效的内容包索引（MK0 = 内置灰盒；MK4 = 贡献点装载）。 */
+/** 内置灰盒包索引（兜底；MK0 起的单包入口，既有调用照旧）。 */
 export function contentIndex(): IContentPackIndex {
     return builtinContent();
 }
 
-/** 承载该图的内容包（MK0 单包：图不在包内 = null）。 */
-export function packForMap(mapId: string, index: IContentPackIndex = contentIndex()): IContentPackIndex | null {
-    return index.mapById.has(mapId) ? index : null;
+/** 全部已校验内容包（贡献包在前、内置灰盒兜底；启动期 fail-closed）。 */
+export function contentPacks(): readonly IContentPackIndex[] {
+    return contentIndexes();
+}
+
+/** 承载该图的内容包（贡献包优先，再内置；图不在任何包内 = null）。 */
+export function packForMap(mapId: string, indexes: readonly IContentPackIndex[] = contentIndexes()): IContentPackIndex | null {
+    return contentForMap(mapId, indexes);
 }
 
 export function mapDefOf(mapId: string, index: IContentPackIndex = contentIndex()): IMapDef | null {

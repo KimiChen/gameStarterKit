@@ -2,10 +2,27 @@
  * mmo kit · `content` api 面（客户端，docs/MMO.md §7.2 / §7.5）：客户端地图几何（内置灰盒包）与表现映射注册表 `IPresentationMap`
  * （presentationId → 表现描述；MK0 = 2D 公告板的颜色 / 尺寸，3d.md SD9：`model` 预留）。⛔ 不 import cc；本面任何导出变化都要 bump `api.content.version`。
  */
-import type { IClassTemplate, IMapDef } from "../../../../shared/kits/mmo/api/content/index";
+import { indexContentPack, validateContentPack, type IClassTemplate, type IContentPackIndex, type IItemTemplate, type IMapDef } from "../../../../shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "../../../../shared/kits/mmo/content/greybox";
+import { KIT_CONTRIBUTIONS } from "../../contributions.generated";
 
-export type { IClassTemplate, IMapDef };
+export type { IClassTemplate, IContentPackIndex, IItemTemplate, IMapDef };
+
+let cachedPacks: readonly IContentPackIndex[] | null = null;
+
+/** 全部内容包（MK4-B2：贡献点 `content` 的插件 JSON 在前、内置灰盒兜底；每份过 validateContentPack，坏包抛 ⇒ 装载期拒）。 */
+export function contentPacks(): readonly IContentPackIndex[] {
+    if (cachedPacks === null) {
+        const contributed = (KIT_CONTRIBUTIONS as { readonly content: readonly { readonly pluginId: string; readonly value: unknown }[] }).content;
+        cachedPacks = [...contributed.map((entry) => indexContentPack(validateContentPack(entry.value))), indexContentPack(validateContentPack(GREYBOX_PACK))];
+    }
+    return cachedPacks;
+}
+
+/** 承载该图的包（贡献包优先）；没有 = null。 */
+export function packForMap(mapId: string): IContentPackIndex | null {
+    return contentPacks().find((index) => index.mapById.has(mapId)) ?? null;
+}
 
 /** 表现描述（2D 公告板首版：颜色 RGBA + 边长；`model` = 3D 预制路径，预留）。 */
 export interface IPresentationEntry {
@@ -32,19 +49,46 @@ export const BUILTIN_PRESENTATION: IPresentationMap = Object.freeze({
 
 export const FALLBACK_PRESENTATION: IPresentationEntry = Object.freeze<IPresentationEntry>({ label: "?", color: [140, 140, 140, 255], size: 32 });
 
-export function presentationOf(presentationId: string, map: IPresentationMap = BUILTIN_PRESENTATION): IPresentationEntry {
+let cachedPresentation: IPresentationMap | null = null;
+
+/** 生效的表现映射（MK4-B2：贡献点 `presentation` 的插件模块（按插件 id 顺序覆盖）盖在内置之上）。 */
+export function presentationMap(): IPresentationMap {
+    if (cachedPresentation === null) {
+        const contributed = (KIT_CONTRIBUTIONS as { readonly presentation: readonly { readonly pluginId: string; readonly value: unknown }[] }).presentation;
+        let merged: Record<string, IPresentationEntry> = { ...BUILTIN_PRESENTATION };
+        for (const entry of contributed) {
+            if (typeof entry.value !== "object" || entry.value === null) throw new Error(`[mmo content] 插件 ${entry.pluginId} 的 presentation 贡献不是映射`);
+            merged = { ...merged, ...(entry.value as Record<string, IPresentationEntry>) };
+        }
+        cachedPresentation = Object.freeze(merged);
+    }
+    return cachedPresentation;
+}
+
+export function presentationOf(presentationId: string, map: IPresentationMap = presentationMap()): IPresentationEntry {
     return map[presentationId] ?? FALLBACK_PRESENTATION;
 }
 
-/** 客户端地图几何（size / spawnPoints / aoi）；不在包内 = null。 */
+/** 客户端地图几何（size / spawnPoints / aoi）；不在任何包内 = null。 */
 export function mapDefOf(mapId: string): IMapDef | null {
-    return GREYBOX_PACK.maps.find((map) => map.mapId === mapId) ?? null;
+    return packForMap(mapId)?.mapById.get(mapId) ?? null;
 }
 
-/** 职业模板（速度 / HP / MP 的客户端同源；不在包内 = null）。 */
+/** 职业模板（速度 / HP / MP 的客户端同源；贡献包优先；不在包内 = null）。 */
 export function classOf(classId: string): IClassTemplate | null {
-    return GREYBOX_PACK.classes.find((klass) => klass.classId === classId) ?? null;
+    for (const index of contentPacks()) { const klass = index.classById.get(classId); if (klass) return klass; }
+    return null;
 }
 
-/** 首图 id（选角页「进入世界」的缺省目标；角色有最新检查点图时用检查点图）。 */
+/** 物品模板（贡献包优先；不在包内 = null）。 */
+export function itemTemplateOf(itemId: string): IItemTemplate | null {
+    for (const index of contentPacks()) { const item = index.itemById.get(itemId); if (item) return item; }
+    return null;
+}
+
+/** 首图 id（选角页「进入世界」的缺省目标：首个包的首图；角色有最新检查点图时用检查点图）。 */
+export function defaultMapId(): string {
+    return contentPacks()[0]!.pack.maps[0]!.mapId;
+}
+/** @deprecated 用 defaultMapId()（MK4-B2 起内容按贡献包解析；保留给既有调用） */
 export const DEFAULT_MAP_ID = GREYBOX_PACK.maps[0]!.mapId;

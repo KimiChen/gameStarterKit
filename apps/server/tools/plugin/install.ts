@@ -23,7 +23,7 @@ import { INSTALLED_LOCK_DIR, contributorsOfKit, dependentsOfKit, filesLockSha256
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, packageMetaUuids, pluginDeclarations, readPackage, validatePackage, type ValidatedPackage } from "./package";
 import { hostMetaUuids, parseMeta } from "./meta";
-import { kitDir, matchesPrefixRule, mirrorPathOf, modesOf, packageManifestPath, pluginDir, readGeneratedWriterPaths, type OwnershipRule, type PackageClass, type PluginKind } from "./ownership";
+import { hardExclusionReason, kitDir, matchesPrefixRule, mirrorPathOf, modesOf, packageManifestPath, pluginDir, readGeneratedWriterPaths, type OwnershipRule, type PackageClass, type PluginKind } from "./ownership";
 
 /** 外部命令执行器（npm / git）；测试 fixture 用它替换掉真实的 codegen/sync 以模拟 postinstall 失败与参数断言。 */
 export type CommandRunner = (root: string, command: string, args: readonly string[], env?: NodeJS.ProcessEnv) => void;
@@ -561,6 +561,9 @@ export function ownershipConflicts(
   };
   const check = (relative: string): void => {
     if (owned.has(relative)) return;
+    // 硬排除形态（*.generated.ts 等 writer 生成物及其 .meta）永远不随包：它们落在推导集内是正常的（MMO MK4-B2 贡献点生成物），⛔ 当混入
+    const base = relative.endsWith(".meta") ? relative.slice(0, -".meta".length) : relative;
+    if (hardExclusionReason(base, rules) !== null) return;
     const owner = foreign.get(relative);
     conflicts.add(owner ? `${relative}（属于插件 ${owner}）` : relative);
   };

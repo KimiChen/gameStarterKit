@@ -11,6 +11,7 @@
  * sharedPkgs 闭包 fail-fast、删除走 --allow-delete。
  * ⚠ 本文件的值导入把生成器自身的 .ts 纳入 tsc（§5.5 的先例形态）。
  */
+import { CONTRIBUTIONS_FILE_RE } from "../tools/plugin-codegen/contributions";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -729,8 +730,11 @@ test("渲染确定性：相同输入重复渲染字节相同（registry + 客户
   const catalog = readViewCatalog(REPOSITORY_ROOT);
   const first = renderPluginArtifacts(descriptors, catalog);
   const second = renderPluginArtifacts(readPluginDescriptors(), readViewCatalog(REPOSITORY_ROOT));
-  assert.deepEqual([...first.keys()], [...ALL_ARTIFACTS]);
-  for (const relative of ALL_ARTIFACTS) {
+  // MF9 / MK4-B2：kit 声明贡献点后多出 apps/{shared,server,client}/src/kits/<id>/contributions.generated.ts（按声明端）；其余产物集合固定
+  const contributionKeys = [...first.keys()].filter((relative) => CONTRIBUTIONS_FILE_RE.test(relative));
+  assert.deepEqual([...first.keys()].filter((relative) => !CONTRIBUTIONS_FILE_RE.test(relative)), [...ALL_ARTIFACTS]);
+  assert.ok(contributionKeys.every((relative) => /^apps\/(shared|server|client)\/src\/kits\/[a-z][A-Za-z0-9]*\/contributions\.generated\.ts$/u.test(relative)), contributionKeys.join(","));
+  for (const relative of first.keys()) {
     assert.equal(first.get(relative), second.get(relative), `${relative} 渲染不确定`);
   }
 });
