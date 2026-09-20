@@ -52,6 +52,54 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
   <script type="module">
     const fgui = window.fgui;
     if (!fgui) throw new Error("fairygui-dom failed to load");
+    const patchNineSlice = () => {
+      const Ctor = customElements.get("fgui-img");
+      if (!Ctor || !Ctor.prototype || Ctor.prototype.__nineSlicePatched) return;
+      Ctor.prototype.__nineSlicePatched = true;
+      Ctor.prototype.refresh = function() {
+        if (this._timerID_1 != 0) return;
+        this._timerID_1 = window.requestAnimationFrame(() => {
+          this._timerID_1 = 0;
+          if (!this._src) {
+            this.style.backgroundImage = "none";
+            this.style.borderImage = "none";
+            return;
+          }
+          if (this._scaleByTile) {
+            this.style.borderImage = "none";
+            this.style.backgroundImage = "url('" + this._src + "')";
+            if (this._textureScale.x != 1 || this._textureScale.y != 1) {
+              this.style.backgroundSize = this._textureScale.x + "px " + this._textureScale.y + "px";
+            } else {
+              this.style.backgroundSize = "auto";
+            }
+            this.style.backgroundRepeat = "repeat";
+            return;
+          }
+          if (this._scale9Grid) {
+            const g = this._scale9Grid;
+            const sx = (this._textureScale && this._textureScale.x) || 1;
+            const sy = (this._textureScale && this._textureScale.y) || 1;
+            const t = Math.max(0, Math.floor(g.top / sy));
+            const r = Math.max(0, Math.floor(g.right / sx));
+            const b = Math.max(0, Math.floor(g.bottom / sy));
+            const l = Math.max(0, Math.floor(g.left / sx));
+            this.style.boxSizing = "border-box";
+            this.style.backgroundImage = "none";
+            this.style.borderImage = "url('" + this._src + "')";
+            this.style.borderImageWidth = t + "px " + r + "px " + b + "px " + l + "px";
+            this.style.borderImageSlice = g.top + " " + g.right + " " + g.bottom + " " + g.left + " fill";
+            this.style.borderImageRepeat = (this._tileGridIndice & 0xF) != 0 ? "repeat" : "stretch";
+            return;
+          }
+          this.style.borderImage = "none";
+          this.style.backgroundImage = "url('" + this._src + "')";
+          this.style.backgroundSize = "100% 100%";
+          this.style.backgroundRepeat = "no-repeat";
+        });
+      };
+    };
+    patchNineSlice();
     const screens = ${JSON.stringify(list)};
     const titles = ${JSON.stringify(CATALOG_TITLES)};
     const catalogId = ${JSON.stringify(catalogId)};
