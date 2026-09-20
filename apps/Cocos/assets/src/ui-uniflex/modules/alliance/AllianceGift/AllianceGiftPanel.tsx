@@ -67,7 +67,7 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
 
             <ScreenHeader title={p.title ?? '联盟礼物'} top={144} titleWidth={280} />
 
-            <TabBar skin={mailTab} left={13} top={492} itemWidth={200} selected={tab}
+            <TabBar skin={mailTab} left={13} top={492} itemWidth={200} width={737} selected={tab}
                 items={[{ id: 'normal', label: '普通礼物' }, { id: 'rare', label: '稀有礼物' }]}
                 onSelect={(id) => { if (id === 'normal' || id === 'rare') selectTab(id); }} />
 

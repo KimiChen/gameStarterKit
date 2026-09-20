@@ -1,12 +1,19 @@
 import { defineView, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
+import { heroListTab, TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
 import { HeroBondsPanel, type HeroBond, type HeroBondMember } from './HeroBondsPanel';
 import { HeroListPanel, type HeroCardItem } from './HeroListPanel';
 
 export type HeroScreenTab = 'hero' | 'team' | 'bonds';
+
+const HERO_LIST_TABS: readonly TabBarItem[] = [
+    { id: 'hero', label: '英雄' },
+    { id: 'team', label: '队伍' },
+    { id: 'bonds', label: '羁绊' },
+];
 
 export interface HeroScreenParams {
     readonly title?: string;
@@ -73,6 +80,9 @@ export const HeroScreen = defineView<HeroScreenParams | void>({ zIndex: 'screen'
         setNav(slot);
         params.onNav?.(slot);
     };
+    const selectHeroTab = (id: string) => {
+        if (id === 'hero' || id === 'team' || id === 'bonds') setTab(id);
+    };
     return (
         <view name="HeroScreen" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <image visible={tab === 'bonds'} source={imageRef('ui/hero/bond-bg')}
@@ -92,27 +102,8 @@ export const HeroScreen = defineView<HeroScreenParams | void>({ zIndex: 'screen'
 
             <image source={imageRef('ui/hero/tabs-base')}
                 style={{ position: 'absolute', left: 34, top: 1122, width: 682, height: 80 }} />
-            <image visible={tab === 'hero'} source={imageRef('ui/hero/tabs-selected')}
-                style={{ position: 'absolute', left: 37, top: 1127, width: 222, height: 74 }} />
-            <image visible={tab === 'team'} source={imageRef('ui/hero/tabs-selected')}
-                style={{ position: 'absolute', left: 264, top: 1127, width: 222, height: 74 }} />
-            <image visible={tab === 'bonds'} source={imageRef('ui/hero/tabs-selected')}
-                style={{ position: 'absolute', left: 491, top: 1127, width: 222, height: 74 }} />
-            <view interaction="press" onClick={() => setTab('hero')}
-                style={{ position: 'absolute', left: 34, top: 1122, width: 227, height: 80 }}>
-                <text value="英雄" style={{ width: 227, height: 80, font: fontRef('fonts/regular', 700), fontSize: 32,
-                    color: '#584871', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => setTab('team')}
-                style={{ position: 'absolute', left: 261, top: 1122, width: 227, height: 80 }}>
-                <text value="队伍" style={{ width: 227, height: 80, font: fontRef('fonts/regular', 700), fontSize: 32,
-                    color: '#584871', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
-            <view interaction="press" onClick={() => setTab('bonds')}
-                style={{ position: 'absolute', left: 489, top: 1122, width: 227, height: 80 }}>
-                <text value="羁绊" style={{ width: 227, height: 80, font: fontRef('fonts/regular', 700), fontSize: 32,
-                    color: '#584871', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
-            </view>
+            <TabBar skin={heroListTab} left={34} top={1122} itemWidth={227} gap={0} width={681}
+                selected={tab} items={HERO_LIST_TABS} badgeTop={0} onSelect={selectHeroTab} />
             <NotificationBadge mode="dot" visible={tab === 'hero'} source={unreadDot}
                 left={236} top={1124} />
             <NotificationBadge mode="dot" visible={tab === 'bonds'} source={unreadDot}

@@ -38,7 +38,7 @@ export const AllianceWarPanel = defineComponent<AllianceWarPanelProps>((p) => {
 
             <ScreenHeader title={p.title ?? '战争'} top={144} titleLeft={41} />
 
-            <TabBar skin={mailTab} left={13} top={262} itemWidth={200} selected={tab}
+            <TabBar skin={mailTab} left={13} top={262} itemWidth={200} width={737} selected={tab}
                 items={[{ id: 'rally', label: '集结' }, { id: 'war', label: '战争' }, { id: 'event', label: '活动' }]}
                 onSelect={(id) => { if (id === 'rally' || id === 'war' || id === 'event') selectTab(id); }} />
 

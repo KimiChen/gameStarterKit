@@ -191,7 +191,7 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
                 {(item) => <ShopCard goods={item} onClick={() => clickCard(item)} />}
             </VirtualList>
 
-            <TabBar skin={allianceTab} left={24} top={302} itemWidth={200} gap={13} selected={tab}
+            <TabBar skin={allianceTab} left={24} top={302} itemWidth={200} gap={13} width={726} selected={tab}
                 items={[{ id: 'vip', label: 'VIP商店' }, { id: 'alliance', label: '联盟每周商店' }, { id: 'gem', label: '宝石商店' }]}
                 onSelect={(id) => { if (id === 'vip' || id === 'alliance' || id === 'gem') selectTab(id); }} />
 

@@ -93,7 +93,7 @@ export const Alliance = defineView<AllianceParams | void>({ zIndex: 'screen' }, 
 
             <ScreenHeader title={params.title ?? '联盟'} top={144} titleLeft={20} />
 
-            <TabBar skin={mailTab} left={13} top={262} itemWidth={200} selected={tab} items={tabItems}
+            <TabBar skin={mailTab} left={13} top={262} itemWidth={200} width={737} selected={tab} items={tabItems}
                 onSelect={selectBarTab} />
 
             <MainNav selected={nav} noticeExplore onSelect={selectNav} />
