@@ -103,7 +103,7 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
         <view name="MailBattleReport" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
             <ScreenHeader title={params.title ?? '邮件'} titleWidth={300} titleHeight={60} />
-            <TabBar skin={mailTab} left={14} top={118} itemWidth={170} selected={tabGroups[activeTab].id}
+            <TabBar skin={mailTab} left={14} top={118} itemWidth={170} width={736} selected={tabGroups[activeTab].id}
                 items={tabItems} badgeTop={-19}
                 onSelect={(_id, index) => setActiveTab(index)} />
             <VirtualList source={source} key="id" direction="vertical" itemSize={163} gap={25} overscan={2}

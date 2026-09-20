@@ -49,7 +49,7 @@ export const AllianceTerritoryPanel = defineComponent<AllianceTerritoryPanelProp
             <AllianceTerritoryPortPanel visible={tab === 'port'} onAction={p.onAction} />
             <AllianceTerritoryFortPanel visible={tab === 'fort'} onAction={p.onAction} />
 
-            <TabBar skin={flagTab} left={14} top={262} itemWidth={170} selected={tab}
+            <TabBar skin={flagTab} left={14} top={262} itemWidth={170} width={736} selected={tab}
                 items={[{ id: 'land', label: '联盟领地' }, { id: 'port', label: '港口' }, { id: 'fort', label: '要塞' }]}
                 onSelect={(id) => { if (id === 'land' || id === 'port' || id === 'fort') selectTab(id); }} />
 

@@ -238,11 +238,6 @@
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailSkills.tsx"
     },
     {
-      "key": "HeroDetailTabs",
-      "rootName": "HeroDetailTabs",
-      "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailTabs.tsx"
-    },
-    {
       "key": "HeroFilterBar",
       "rootName": "HeroFilterBar",
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroFilterBar.tsx"
