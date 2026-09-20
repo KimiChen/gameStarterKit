@@ -20,6 +20,8 @@ import {
 import {
     SGZZ_MAX_TURNING_POINTS, sgzzExpandPath, validateSgzzMarch, type ISgzzMarch,
 } from "../../../kits/sgzzmap/api/march/index";
+/** 一次 view 最多带回多少条行军线。⚠ v1 只带**观察者自己的**在途行军（见下方注释）。 */
+export const SGZZ_MAX_VIEW_MARCHES = 8;
 import {
     SGZZ_MAX_ZOOM_CHUNKS, sgzzZoomChunkTiles, validateSgzzAllianceId, validateSgzzChunkSummary,
     validateSgzzZoomLevel, validateSgzzZoomRect, type ISgzzChunkSummary,
@@ -60,6 +62,13 @@ export interface ISgzzViewReq { rect: ISgzzRect }
 export interface ISgzzViewRes {
     rect: ISgzzRect; revision: number; viewer: ISgzzViewerWire;
     alliances: string[]; owners: ISgzzOwnerRef[]; tiles: ISgzzTileRef[];
+    /**
+     * 观察者**自己**的在途行军（≤ SGZZ_MAX_ACTIVE_MARCHES）。
+     * ⚠ v1 ⛔ 不带别人的行军：原作里敌军是经 AOI 实体流（sc_enter_aoi_army 那一套）+ 侦察
+     * 才看得到的，「把窗内所有敌军都发下去」既不忠实也没有空间索引可依。
+     * 等 AOI 实体流做出来再扩，那时这里是加字段而不是改语义。
+     */
+    marches: ISgzzMarch[];
 }
 export interface ISgzzTileReq { cell: number }
 export interface ISgzzTileRes { tile: ISgzzTile; viewer: ISgzzViewerWire }
@@ -118,7 +127,7 @@ export const validateSgzzViewReq: RuntimeValidator<ISgzzViewReq> = (input) => {
 };
 export const validateSgzzViewRes: RuntimeValidator<ISgzzViewRes> = (input) => {
     const r = rpcRecord(input, "response");
-    assertExactKeys(r, ["rect", "revision", "viewer", "alliances", "owners", "tiles"], [], "response");
+    assertExactKeys(r, ["rect", "revision", "viewer", "alliances", "owners", "tiles", "marches"], [], "response");
     const rect = validateSgzzChunkRect(r.rect, "response.rect");
     if (!Array.isArray(r.alliances) || r.alliances.length > SGZZ_MAX_VIEW_ALLIANCES
         || !Array.isArray(r.owners) || r.owners.length > SGZZ_MAX_VIEW_OWNERS
@@ -166,9 +175,26 @@ export const validateSgzzViewRes: RuntimeValidator<ISgzzViewRes> = (input) => {
             throw new WireValidationError("SGZZMAP_TILE_OWNER", `response.tiles[${i}]`);
         }
     }
+    if (!Array.isArray(r.marches) || r.marches.length > SGZZ_MAX_VIEW_MARCHES) {
+        throw new WireValidationError("SGZZMAP_VIEW_SIZE", "response.marches");
+    }
+    const viewer = validateViewer(r.viewer, "response.viewer");
+    const marches = r.marches.map((v, i) => validateSgzzMarch(v, `response.marches[${i}]`));
+    for (let i = 0; i < marches.length; i += 1) {
+        // v1 契约：只带自己的、还在途的。⛔ 别的一律不许混进来（客户端据此直接画，不再筛）
+        if (marches[i].uid !== viewer.uid) {
+            throw new WireValidationError("SGZZMAP_VIEW_MARCH_OWNER", `response.marches[${i}].uid`);
+        }
+        if (marches[i].status !== "marching") {
+            throw new WireValidationError("SGZZMAP_VIEW_MARCH_STATUS", `response.marches[${i}].status`);
+        }
+        if (i > 0 && marches[i].marchId <= marches[i - 1].marchId) {
+            throw new WireValidationError("SGZZMAP_VIEW_MARCH_ORDER", "response.marches");
+        }
+    }
     return {
         rect, revision: finiteInteger(r.revision, "response.revision", 0),
-        viewer: validateViewer(r.viewer, "response.viewer"), alliances, owners, tiles,
+        viewer, alliances, owners, tiles, marches,
     };
 };
 export const validateSgzzTileReq: RuntimeValidator<ISgzzTileReq> = (input) => {
@@ -313,7 +339,7 @@ export function sgzzViewRequestChunks(rect: ISgzzRect): number {
 }
 
 export default defineLobbyRpcDomain({
-    domain: "sgzzmap", contractVersion: 4,
+    domain: "sgzzmap", contractVersion: 5,
     errorCodes: [
         "SGZZMAP_IMPASSABLE", "SGZZMAP_NOT_ADJACENT", "SGZZMAP_TILE_LIMIT",
         "SGZZMAP_NOT_OWNED", "SGZZMAP_SETTLEMENT_PENDING",

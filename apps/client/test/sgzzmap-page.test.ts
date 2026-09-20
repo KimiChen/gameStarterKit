@@ -5,7 +5,8 @@ import {
 } from "../src/kits/sgzzmap/logic/SgzzmapWorldLogic";
 import type { SgzzRuntime } from "../src/kits/sgzzmap/logic/sgzzRuntime";
 import { SgzzGridState } from "../src/shared/kits/sgzzmap/api/territory/index";
-import { sgzzCellOf } from "../src/shared/kits/sgzzmap/api/hexmap/index";
+import { sgzzCellOf, sgzzNextPos } from "../src/shared/kits/sgzzmap/api/hexmap/index";
+import { sgzzMarchDurationMs } from "../src/shared/kits/sgzzmap/api/march/index";
 
 const W = 750, H = 1204;
 
@@ -19,7 +20,7 @@ function fakeRuntime(over: Partial<SgzzRuntime> = {}) {
             return {
                 rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1,
                 viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
-                alliances: [], owners: [], tiles: [],
+                alliances: [], owners: [], tiles: [], marches: [],
             };
         },
         zoom: async () => {
@@ -74,6 +75,7 @@ test("sgzzmap page: ★ 代际围栏 —— 迟到的旧响应⛔不得覆盖新
                     viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
                     alliances: [], owners: [{ uid: "u-stale", alliance: -1 }],
                     tiles: [{ cell: sgzzCellOf(700, 700), owner: 0, durability: 9, addition: false, capturing: -1 }],
+                    marches: [],
                 };
             }
             return {
@@ -81,6 +83,7 @@ test("sgzzmap page: ★ 代际围栏 —— 迟到的旧响应⛔不得覆盖新
                 viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
                 alliances: [], owners: [{ uid: "u-fresh", alliance: -1 }],
                 tiles: [{ cell: sgzzCellOf(800, 800), owner: 0, durability: 1, addition: false, capturing: -1 }],
+                marches: [],
             };
         },
     });
@@ -182,7 +185,7 @@ test("sgzzmap page: 结算积压是「稍后再试」而不是报错，且允许
             return {
                 rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1,
                 viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
-                alliances: [], owners: [], tiles: [],
+                alliances: [], owners: [], tiles: [], marches: [],
             };
         },
     });
@@ -210,4 +213,70 @@ test("sgzzmap page: 错误码翻译覆盖全部业务码", () => {
     }
     assert.equal(noticeOf(null), "操作失败", "⛔ 不把原始错误甩给玩家");
     assert.equal(noticeOf(new Error("boom")), "操作失败");
+});
+
+test("sgzzmap page: view 带回的行军进 tracker，档位决定要不要细线", () => {
+    const f = fakeRuntime();
+    const logic = new SgzzmapWorldLogic(f.runtime, W, H);
+    const from = sgzzCellOf(700, 700);
+    let cur = { row: 700, col: 700 };
+    for (let i = 0; i < 3; i += 1) cur = sgzzNextPos(cur.row, cur.col, 3);
+    const to = sgzzCellOf(cur.row, cur.col);
+    const path = [from, to];
+    const march = {
+        marchId: "m1", uid: "u-me", path,
+        departAt: 0, arriveAt: sgzzMarchDurationMs(path), status: "marching" as const,
+    };
+
+    logic.applyView({
+        viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
+        alliances: [], owners: [], tiles: [], marches: [march],
+    });
+    assert.equal(logic.marches.length, 1);
+    assert.equal(logic.marchLines.size, 1);
+    assert.equal(logic.wantsMarchLines, true, "初始档位要画行军线");
+    assert.equal(logic.wantsMarchDetail, true, "近档要画细线");
+    assert.ok(logic.marchLines.visuals()[0].detail.length > 0);
+
+    // 缩到最远：线不画了
+    for (let i = 0; i < 40; i += 1) logic.camera.zoom(0.5);
+    assert.equal(logic.wantsMarchLines, false, "LOD5 ⛔ 不画行军线");
+    assert.equal(logic.wantsMarchDetail, false);
+
+    // 下一批不含这条 ⇒ 必须丢掉
+    logic.applyView({
+        viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
+        alliances: [], owners: [], tiles: [], marches: [],
+    });
+    assert.equal(logic.marches.length, 0);
+    assert.equal(logic.marchLines.size, 0, "撤回/到达后线必须消失");
+});
+
+test("sgzzmap page: applyZoom 记住档位，色块按那一档的分块形状画", () => {
+    const f = fakeRuntime();
+    const logic = new SgzzmapWorldLogic(f.runtime, W, H);
+    logic.applyZoom({ level: 2, alliances: ["a1"], chunks: [{ key: 7, tiles: 9, alliance: 0, top: 9 }] });
+    assert.equal(logic.summaryLevel, 2, "⚠ 不记住档位的话色块会按错误的块尺寸画");
+    assert.equal(logic.summaries.size, 1);
+    assert.deepEqual([...logic.summaryAlliances], ["a1"]);
+
+    logic.applyZoom({ level: 0, alliances: [], chunks: [] });
+    assert.equal(logic.summaryLevel, 0);
+    assert.equal(logic.summaries.size, 0, "换档要清掉上一档的块");
+});
+
+test("sgzzmap page: locate 会强制重拉（⛔ 跳转后不能还盯着旧窗）", async () => {
+    const f = fakeRuntime();
+    const logic = new SgzzmapWorldLogic(f.runtime, W, H);
+    f.at(10_000);
+    logic.update(0.016); await flush();
+    assert.equal(f.calls.view, 1);
+
+    // 同一时刻直接 locate：lastKey 被清掉，下一次 update 就该重拉
+    logic.locate(200, 200);
+    f.at(10_000 + SGZZ_READ_INTERVAL_MS + 1);
+    logic.update(0.016); await flush();
+    assert.equal(f.calls.view, 2, "跳转后必须重拉");
+    const centre = logic.camera.centreCell();
+    assert.ok(Math.abs(centre.row - 200) <= 1 && Math.abs(centre.col - 200) <= 1);
 });

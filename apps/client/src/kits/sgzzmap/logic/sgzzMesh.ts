@@ -107,3 +107,49 @@ export function buildSgzzPlateMesh(bounds: { minX: number; minY: number; maxX: n
         minPos: [bounds.minX, bounds.minY, 0], maxPos: [bounds.maxX, bounds.maxY, 0],
     };
 }
+
+/**
+ * 把一条线段铺成一个带宽度的四边形（行军线用）。
+ * ⚠ 零长度线段要直接跳过，⛔ 否则法线是 NaN、整张 mesh 报废。
+ */
+export function writeSgzzSegmentQuad(x0: number, y0: number, x1: number, y1: number,
+                                     halfWidth: number): readonly (readonly [number, number])[] | null {
+    const dx = x1 - x0, dy = y1 - y0;
+    const len = Math.hypot(dx, dy);
+    if (!(len > 1e-6)) return null;
+    const nx = (-dy / len) * halfWidth, ny = (dx / len) * halfWidth;
+    return [[x0 + nx, y0 + ny], [x1 + nx, y1 + ny], [x1 - nx, y1 - ny], [x0 - nx, y0 - ny]];
+}
+
+/** 由任意四边形（四角，顺时针或逆时针）铺 mesh；给行军线与鸟瞰色块共用。 */
+export function buildSgzzPolyMesh(
+    polys: readonly { readonly points: readonly (readonly [number, number])[]; readonly rgba: readonly [number, number, number, number] }[],
+): SgzzGeometry {
+    if (polys.length > SGZZ_MAX_QUADS_PER_MESH) {
+        throw new RangeError(`SGZZ poly quads ${polys.length} > ${SGZZ_MAX_QUADS_PER_MESH}`);
+    }
+    const n = polys.length;
+    const positions = new Float32Array(n * 4 * 3);
+    const uvs = new Float32Array(n * 4 * 2);
+    const colors = new Float32Array(n * 4 * 4);
+    const indices16 = new Uint16Array(n * 6);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let i = 0; i < n; i += 1) {
+        const { points, rgba } = polys[i];
+        for (let v = 0; v < 4; v += 1) {
+            const px = points[v][0], py = points[v][1];
+            positions[(i * 4 + v) * 3] = px;
+            positions[(i * 4 + v) * 3 + 1] = py;
+            positions[(i * 4 + v) * 3 + 2] = 0;
+            if (px < minX) minX = px;
+            if (px > maxX) maxX = px;
+            if (py < minY) minY = py;
+            if (py > maxY) maxY = py;
+            for (let k = 0; k < 4; k += 1) colors[(i * 4 + v) * 4 + k] = rgba[k];
+        }
+        const base = i * 4;
+        indices16.set([base, base + 1, base + 2, base, base + 2, base + 3], i * 6);
+    }
+    if (n === 0) { minX = minY = maxX = maxY = 0; }
+    return { positions, uvs, colors, indices16, quads: n, minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
+}

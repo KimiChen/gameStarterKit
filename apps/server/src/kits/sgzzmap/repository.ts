@@ -61,6 +61,8 @@ export interface SgzzRepository {
     /** 到期队列，按 (arrive_at, march_id) 全区总序；⚠ 必须 FOR UPDATE，否则两个结算者会重复落地。 */
     readDueMarches(now: number, limit: number): Promise<ISgzzMarch[]>;
     countActiveMarches(uid: string): Promise<number>;
+    /** 该玩家的在途行军，按 march_id 升序。走 idx_uid，⛔ 不扫全表。 */
+    readActiveMarches(uid: string, limit: number): Promise<ISgzzMarch[]>;
     /** 分块聚合增量。delta 可正可负；归零的行删掉，⛔ 不留 tiles=0 的垃圾行。 */
     bumpChunk(level: number, chunkKey: number, allianceId: string, delta: number): Promise<void>;
     readChunks(level: number, rect: ISgzzRect, cols: number): Promise<SgzzChunkRow[]>;
@@ -290,6 +292,17 @@ export function createSqlSgzzRepository(tx: KitTx, sId: number): SgzzRepository 
                 allianceId: text(row.alliance_id, "alliance_id", SGZZ_MAX_AID),
                 tiles: integer(row.tiles, "tiles"),
             }));
+        },
+
+        async readActiveMarches(uid: string, limit: number): Promise<ISgzzMarch[]> {
+            // ⚠ 同 readDueMarches：MySQL 预处理不接受 `LIMIT ?`，钳成有界整数后内联。
+            const bounded = Math.max(1, Math.min(64, Math.trunc(Number(limit) || 1)));
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT march_id, uid, path_json, depart_at, arrive_at, status FROM k_sgzzmap_march "
+                + "WHERE server_id = ? AND uid = ? AND status = 'marching' "
+                + `ORDER BY march_id LIMIT ${bounded}`,
+                [sId, uid]);
+            return rows.map(marchOf);
         },
 
         async readMembershipForUpdate(uid: string): Promise<ISgzzMembership | null> {

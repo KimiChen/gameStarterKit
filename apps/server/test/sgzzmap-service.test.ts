@@ -115,6 +115,12 @@ function fakeRepo() {
         async countActiveMarches(uid) {
             return [...marches.values()].filter((m) => m.uid === uid && m.status === "marching").length;
         },
+        async readActiveMarches(uid, limit) {
+            return [...marches.values()]
+                .filter((m) => m.uid === uid && m.status === "marching")
+                .sort((a, b) => a.marchId.localeCompare(b.marchId))
+                .slice(0, limit);
+        },
         async readTileCellsOf(uid) {
             return [...tiles.values()].filter((t) => t.ownerUid === uid).map((t) => t.cell).sort((a, b) => a - b);
         },
@@ -615,4 +621,34 @@ test("sgzzmap service: zoom 取主导同盟，平局按 id 升序（可复现）
     assert.equal(res.alliances[res.chunks[1].alliance], "a2");
     assert.equal(res.chunks[1].top, 7);
     assert.ok(res.chunks[0].key < res.chunks[1].key, "按 key 升序");
+});
+
+test("sgzzmap service: view 只带自己的在途行军 —— ⛔ 不泄露别人的军队", async () => {
+    const { cell } = spawnPair();
+    const dest = passableRay(cell, 2)!;
+    const f = fakeRepo();
+    let clock = 1_000_000;
+    const api = apiOn(f, () => clock);
+    await api.occupy("u1", 1, cell, op("o1"));
+    const mine = await api.marchDispatch("u1", 1, [cell, dest], op("d1"));
+
+    // 别人的行军也塞进库里
+    f.marches.set("m-other", {
+        marchId: "m-other", uid: "u2", path: [cell, dest],
+        departAt: clock, arriveAt: clock + 2000, status: "marching",
+    });
+
+    const here = sgzzDecodeCell(cell);
+    const rect = sgzzChunkRectForGridRect({
+        minRow: here.row, minCol: here.col, maxRow: here.row, maxCol: here.col,
+    });
+    const res = await api.view("u1", 1, rect);
+    assert.equal(res.marches.length, 1, "只该带回一条");
+    assert.equal(res.marches[0].marchId, mine.march.marchId);
+    assert.ok(res.marches.every((m) => m.uid === "u1"), "⛔ 不得混进别人的行军");
+
+    // 撤回后就不该再出现在 view 里
+    await api.marchRecall("u1", 1, mine.march.marchId, op("r1"));
+    const after = await api.view("u1", 1, rect);
+    assert.equal(after.marches.length, 0, "撤回的行军⛔不该还挂在视野里");
 });

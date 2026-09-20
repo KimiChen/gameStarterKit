@@ -15,6 +15,10 @@ import { getSgzzRuntime } from "../logic/sgzzRuntime";
 import { sgzzPassableAt, sgzzTerrainIdAt } from "../logic/sgzzTerrain";
 import { SGZZ_TERRAIN_PALETTE } from "../../../shared/kits/sgzzmap/content/terrain.data";
 import { SgzzMapRenderer } from "./SgzzMapRenderer";
+import { SgzzFarRenderer } from "./SgzzFarRenderer";
+import { SgzzMarchRenderer } from "./SgzzMarchRenderer";
+import { SgzzMinimap } from "./SgzzMinimap";
+import { loadSgzzArtResources, type SgzzArtResources } from "./SgzzArtResources";
 
 const BACK = new Color(22, 26, 24, 255);
 const PANEL = new Color(24, 30, 28, 255);
@@ -28,6 +32,12 @@ export class SgzzmapWorldView extends CocosView {
     private world: Node | null = null;
     private selection: Node | null = null;
     private renderer: SgzzMapRenderer | null = null;
+    private farRenderer: SgzzFarRenderer | null = null;
+    private marchRenderer: SgzzMarchRenderer | null = null;
+    private minimap: SgzzMinimap | null = null;
+    private art: SgzzArtResources | null = null;
+    /** 资源加载的代际：路由关掉后晚到的加载结果必须自己 release，⛔ 不能挂上去。 */
+    private assetGeneration = 0;
     private details: Label | null = null;
     private status: Label | null = null;
     private title: Label | null = null;
@@ -76,7 +86,9 @@ export class SgzzmapWorldView extends CocosView {
         this.status = this.label("", 17, MUTED, 0, -height / 2 + footer * 0.17, width * 0.94);
 
         this.renderer = new SgzzMapRenderer(world);
+        this.marchRenderer = new SgzzMarchRenderer(world);
         this.bindInput(true);
+        void this.loadArt();
         this.offTick = runtime.tick((dt) => {
             const logic = this.logic;
             if (!logic || !this.active) return;
@@ -88,10 +100,32 @@ export class SgzzmapWorldView extends CocosView {
 
     protected onCloseLifecycle(): void {
         this.active = false;
+        this.assetGeneration += 1;
         this.bindInput(false);
         this.offTick?.(); this.offTick = null;
         this.renderer?.dispose(); this.renderer = null;
+        this.farRenderer?.dispose(); this.farRenderer = null;
+        this.marchRenderer?.dispose(); this.marchRenderer = null;
+        this.minimap?.dispose(); this.minimap = null;
+        this.art?.release(); this.art = null;
         this.logic = null;
+    }
+
+    /** 远档底图与缩略图的素材。⚠ 加载完才建远档渲染器与缩略图；失败也照常跑（只是没底图）。 */
+    private async loadArt(): Promise<void> {
+        const generation = ++this.assetGeneration;
+        const art = await loadSgzzArtResources();
+        if (!this.active || generation !== this.assetGeneration || !this.world) {
+            art.release();   // ★ 晚到的结果自己收，⛔ 不泄露引用
+            return;
+        }
+        this.art = art;
+        this.farRenderer = new SgzzFarRenderer(this.world, art);
+        const size = Math.min(140, this.layerWidth * 0.32);
+        this.minimap = new SgzzMinimap(this.root, size,
+            this.layerWidth / 2 - size / 2 - 12, this.mapTop - size / 2 - 14, art,
+            (row, col) => { this.logic?.locate(row, col); this.render(true); });
+        this.render(true);
     }
 
     /** 只有相机真动过或数据真变过才重建网格，⛔ 不要每帧重建。 */
@@ -109,13 +143,17 @@ export class SgzzmapWorldView extends CocosView {
         this.world.setScale(scale, scale, 1);
         this.world.setPosition(-logic.camera.x * scale, -logic.camera.y * scale + (this.mapBottom + this.mapTop) / 2, 0);
 
+        this.world.active = true;
         if (sgzzIsNearField(logic.camera.lod)) {
             this.renderer.render(logic);
-            this.world.active = true;
+            this.farRenderer?.clear();
         } else {
-            // 远档先不铺逐格网格（底图与聚合色块见 README 的 P6 余留项）
-            this.world.active = false;
+            // 远档：整幅底图 + 鸟瞰聚合色块，逐格网格整批撤掉
+            this.renderer.clear();
+            this.farRenderer?.render(logic);
         }
+        this.marchRenderer?.render(logic);
+        this.minimap?.update(logic);
 
         const sel = logic.selection;
         if (this.selection) {

@@ -82,7 +82,7 @@
 
 | 路由 | 模式 | 说明 |
 |---|---|---|
-| `sgzzmap.view` | natural-write | 近景视窗；一次最多 4 chunk = 400 格 |
+| `sgzzmap.view` | natural-write | 近景视窗；一次最多 4 chunk = 400 格；带回**自己**的在途行军 |
 | `sgzzmap.tile` | query | 单格详情 |
 | `sgzzmap.occupy` | idempotent-write | 连地闸 + 稀疏插入竞争重读 |
 | `sgzzmap.abandon` | idempotent-write | 只有地主能弃 |
@@ -127,6 +127,7 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
   - View 层：`SgzzMeshBatch`（创建/上传/扩容/销毁纪律只写一遍）+ `SgzzMapRenderer`
     （地表 / 领地 / 描边各一张合并 mesh）+ `SgzzmapWorldView`。
   - 地形直接消费 shared 内容模块 ⇒ **首帧即可绘制**，⛔ 不等资源加载、⛔ 不需要 BufferAsset 类型桩。
+  - 远档底图 + 鸟瞰聚合色块 + 常显缩略图 + 行军线（简线/细线/部队位置）均已接上，见下。
 
 ### 客户端的五条硬规矩
 
@@ -140,64 +141,32 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
 5. **代际围栏**：每次请求带 generation，回来对不上就整批丢弃，
    ⛔ 否则快速平移时迟到的旧响应会把新视野覆盖掉。
 
-### P6 余留（不挡用）
+### 远档、缩略图与行军线
 
-远档（LOD ≥ 3）目前只关掉近景网格，**底图与聚合色块的绘制尚未接上**
-（服务端 `zoom` 与素材 `plate-lod4/5.png`、`minimap.png` 都已就位，缺的是 View 侧的一张
-带贴图的四边形与缩略图浮层）；行军线的客户端绘制同理（`march` 面与逐格展开已在 logic 层）。
+- **远档底图**：LOD3/4 用 `plate-lod4.png`（Z08），LOD5 用 `plate-lod5.png`（Z09）。
+  底图的世界矩形由 `sgzzWorldBounds()` 算出，**⛔ 不读 `plate-lod*.info.json`** ——
+  管线烘图时用的就是同一个函数（`tools/sgzzmap-maps/lib/projection.py` 逐式对齐，
+  实测两边都是 `-48000,-48008 → 47984,0`）。少读一个资源、少一处可能漂移的真源。
+  ⚠ 近三档的素材是**区域特写**，⛔ 不能当整幅底图，所以只烘了 lod4/lod5 两张。
+- **鸟瞰色块**：一个分块在等距世界里是**平行四边形**（四角 = 四个角格各外扩半格），
+  ⛔ 不要拿包围盒去画，那会让相邻块互相盖住、边界成锯齿。
+  配色按**关系**（我盟/敌/无主），浓淡按主导同盟在这块里的占比；⛔ 仍然不给同盟分色相。
+- **缩略图**：常显 HUD，纯 Sprite/Plate 拼的（⛔ 不建网格）。`minimap.png` 是正方、内容垂直居中，
+  所以世界↔缩略图要带**上下各 1/4 的留白**；留白区点一下会夹回内容带，⛔ 不能算出图外的世界点。
+  贴图没加载出来也留一块可点的底板，⛔ 不让缩略图整个消失。
+- **行军线**：简线（起点直连终点，LOD ≤ 4）+ 细线（逐格，LOD ≤ 2）+ 部队位置标记。
+  ⚠ 线宽按缩放**反算**（网格建在世界坐标里、由父节点统一缩放），不反算的话缩远了会细成头发丝。
+  ⚠ 逐格展开按 `marchId` 缓存 + 分帧游标一帧只推一条，⛔ 不在一帧里把所有线全重建。
 
-### 鸟瞰聚合的三条硬规矩
+#### ⚠ v1 只画**自己**的行军
 
-1. **随写更新，⛔ 不定时重算**：占领 / 弃地 / 到达 / 换盟都在**同一事务**里 upsert 三档聚合，
-   ⛔ 不实时 `COUNT` 扫地块表（225 万格扫不动）。一条用例钉住「每档 Σtiles 恒等于有主地块数」。
-2. **归零即删行**，⛔ 不留 `tiles=0` 的垃圾行。
-3. **主导同盟平局按 id 升序**定，⛔ 不能随机——否则同一份数据两次请求画出两种颜色。
+`sgzzmap.view` 的 `marches` 字段只带观察者自己的在途行军（≤ 3，走 `idx_uid`）。
+⛔ 不带别人的：原作里敌军是经 AOI 实体流（`sc_enter_aoi_army` 那一套）+ 侦察才看得到的，
+「把窗内所有敌军都发下去」既不忠实、也没有空间索引可依（`k_sgzzmap_march` 只存 `path_json`）。
+等 AOI 实体流做出来再扩，那时是**加字段**而不是改语义。
 
-体积：最粗档（60 格）整张图 25×25=625 块，一次请求拉得完且 < 20 KB（有 int 用例实测）；
-最细档（20 格）整图 75×75=5625 块 > `SGZZ_MAX_ZOOM_CHUNKS`(1024)，**拉不动**——
-体积闸不是摆设，近档必须分窗。
+### P6 余留
 
-### 行军的四条硬规矩
-
-1. **服务端只存转折点**（`path_json`），逐格路径两端用同一个 `sgzzExpandPath` 展开。
-2. **每段必须共线**：从 src 朝 `dirIndex` 走 `steps` 步要**恰好**落在 dest 上。
-   ⚠ 六边形里「看着像直线」不等于是直线——把拐点抹掉当一段下发会被拒。校验在**域入口**就做，
-   ⛔ 不让伪造路径进到事务里。
-3. **到达时刻由路径重算**（`validateSgzzMarch`），⛔ 不信任线上传来的数字；仓储读出来也过同一道闸。
-4. **结算⛔不走连地闸**：路径合法性在派遣时已闸过，到达是既成事实。
-
-### worker 与懒结算
-
-`marchSettle` worker 是主路径，懒结算（`view` 每次推进一批，积压超批次返回
-`SGZZMAP_SETTLEMENT_PENDING`）是兜底。**必须有 worker**：行军到达会改**别人**的地块，
-只靠懒结算的话，攻击方下线后防守方的地块状态会无限期停在过去。
-一条用例钉住两条路径对同一 fixture 产出**逐字段相同**的世界状态。
-
-```bash
-KIT_WORKER_ZONES=0 npm --workspace @game/server run worker -- sgzzmap:marchSettle
-```
-
-⚠ 框架已经把 worker 的 `pass` 包在 `withKitWorkerTx` 里：⛔ 里面再开 `withKitTx` 会被直接拒。
-worker 必须把自己的 tx 递给 `settleOnTx`，⛔ 不走自开事务的 `settleDueMarches`。
-⚠ MySQL 预处理语句不接受 `LIMIT ?`（实测 `Incorrect arguments to mysqld_stmt_execute`），
-`readDueMarches` 把 limit 钳成有界整数后内联。
-
-### 同盟的三条硬规矩
-
-1. **一人一盟**靠 `PRIMARY KEY (server_id, uid)`，⛔ 不靠应用层查重。
-2. **盟标唯一**靠 `uk_tag`，`INSERT IGNORE` 撞键即 `SGZZMAP_ALLIANCE_TAG_TAKEN`，⛔ 不先查再插（TOCTOU）。
-3. **盟主只有在盟里只剩自己时才能退**（退出即解散）——否则同盟会没有盟主、`GANG_MASTER` 态悬空。
-   ⛔ v1 不做转让也不做踢人。
-
-`alliance_id` 取「建盟那一刻的 revision」：该行已被锁住、每区唯一且单调。
-⛔ 不用随机数（kit 代码没有 `node:crypto`），⛔ 也不用 AUTO_INCREMENT（per-zone 复合 PK 放不下自增列）。
-同盟变更会把该玩家名下地块的 `owner_aid` 一次性改写（受 `SGZZ_MAX_TILES_PER_PLAYER` 封顶）。
-
-## 七、运维
-
-重跑内容包：见 `tools/sgzzmap-maps/README.md`，末步 `install-to-kit.py <mapId>` 装入双份并铸 `.meta`；
-`install-to-kit.py <mapId> --check` 只校验不写。
-
-⚠ **`db:bootstrap` 对已应用的迁移文件 sha256 fail-closed**（P2 起才有 SQL）。每阶段**追加**迁移没问题，
-但**回头改**已 bootstrap 过的文件会按设计拒启。开发机恢复：
-`DELETE FROM kit_migration WHERE kit_id='sgzzmap'` + `DROP` 掉 `k_sgzzmap_*`。
+无。远档底图、鸟瞰色块、缩略图、行军线均已接上。
+下一步的自然延伸是 AOI 实体流（敌军可见性）与地块/摆件图集的人工策展
+（现在近景是按地形 id 顶色，图集已烘好但还没贴上去）。

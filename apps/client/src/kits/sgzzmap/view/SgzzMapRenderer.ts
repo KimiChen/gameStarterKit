@@ -82,6 +82,13 @@ export class SgzzMapRenderer {
         return { x: p.x, y: p.y, w: SGZZ_TILE_HALF_W * 2 * scale, h: SGZZ_TILE_HALF_H * 2 * scale };
     }
 
+    /** 切到远档：把近档三层整批撤掉，⛔ 不要留着挡在底图上。 */
+    clear(): void {
+        destroySgzzBatch(this.terrain); this.terrain = null;
+        destroySgzzBatch(this.territory); this.territory = null;
+        destroySgzzBatch(this.border); this.border = null;
+    }
+
     dispose(): void {
         this.disposed = true;
         destroySgzzBatch(this.terrain); this.terrain = null;

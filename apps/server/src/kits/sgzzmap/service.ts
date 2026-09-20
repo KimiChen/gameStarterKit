@@ -24,7 +24,7 @@ import {
     type ISgzzChunkSummary,
 } from "@game/shared/kits/sgzzmap/api/chunk/index";
 import {
-    validateSgzzZoomRes, type ISgzzZoomRes,
+    SGZZ_MAX_VIEW_MARCHES, validateSgzzZoomRes, type ISgzzZoomRes,
     validateSgzzMarchDispatchRes, validateSgzzMarchRecallRes,
     type ISgzzMarchDispatchRes, type ISgzzMarchRecallRes,
 } from "@game/shared/protocol/lobbyRpc/domains/sgzzmap";
@@ -280,9 +280,11 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
                 cell: t.cell, owner: indexOwner(t), durability: t.durability,
                 addition: t.addition, capturing: indexAlliance(t.capturingAid),
             }));
+            // ⚠ 只带自己的在途行军：敌军要经 AOI 实体流 + 侦察才该可见（见域里的注释）。
+            const marches = await ctx.repo.readActiveMarches(uid, SGZZ_MAX_VIEW_MARCHES);
             return validateSgzzViewRes({
                 rect, revision: ctx.repo.revision, viewer: viewerWire(viewer),
-                alliances, owners, tiles: refs,
+                alliances, owners, tiles: refs, marches,
             });
         });
     }

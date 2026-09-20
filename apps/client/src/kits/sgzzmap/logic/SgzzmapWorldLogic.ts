@@ -17,9 +17,11 @@ import {
 import {
     sgzzEmptyTile, sgzzGridState, type ISgzzTile, type ISgzzViewer, type SgzzGridStateValue,
 } from "../../../shared/kits/sgzzmap/api/territory/index";
+import type { ISgzzMarch } from "../../../shared/kits/sgzzmap/api/march/index";
 import { SgzzCamera } from "./sgzzCamera";
+import { SgzzMarchLineTracker } from "./sgzzMarchLines";
 import { SgzzBorderSet } from "./sgzzBorder";
-import { sgzzAoiMode, sgzzIsNearField } from "./sgzzLayers";
+import { sgzzAoiMode, sgzzIsNearField, sgzzLayerVisible } from "./sgzzLayers";
 import { SgzzViewportStencil } from "./sgzzViewport";
 import type { SgzzRuntime } from "./sgzzRuntime";
 
@@ -42,6 +44,11 @@ export class SgzzmapWorldLogic {
     /** 远档分块摘要，key = chunk key。 */
     readonly summaries = new Map<number, ISgzzChunkSummary>();
     summaryAlliances: readonly string[] = [];
+    /** 拉回来的那一档（画色块要按它算分块形状）。 */
+    summaryLevel = 0;
+    /** 我的在途行军（v1 只有自己的，见域契约注释）。 */
+    marches: readonly ISgzzMarch[] = [];
+    readonly marchLines = new SgzzMarchLineTracker();
     viewer: ISgzzViewer = { uid: "", aid: "", leaderUid: "", friendAids: [] };
     selection: SgzzSelection | null = null;
     notice = "";
@@ -90,7 +97,21 @@ export class SgzzmapWorldLogic {
     update(dt: number): void {
         this.camera.step(dt);
         this.stencil.refresh(this.camera.scale, this.camera.width, this.camera.height);
+        // 行军线分帧推进：一帧只重建一条，⛔ 不在一帧里把所有线全重算
+        if (this.marches.length > 0) {
+            this.marchLines.sync(this.marches, this.wantsMarchDetail, this.runtime.now());
+            this.marchLines.step(this.marches, this.runtime.now());
+        }
         void this.maybeRead();
+    }
+
+    /** 近档才画逐格细线。 */
+    get wantsMarchDetail(): boolean {
+        return sgzzLayerVisible("marchDetail", this.camera.lod);
+    }
+    /** 这一档要不要画行军线（远到 LOD5 就不画了）。 */
+    get wantsMarchLines(): boolean {
+        return sgzzLayerVisible("marchLine", this.camera.lod);
     }
 
     private async maybeRead(): Promise<void> {
@@ -131,7 +152,8 @@ export class SgzzmapWorldLogic {
     }
 
     applyView(res: { viewer: ISgzzViewer; alliances: string[]; owners: { uid: string; alliance: number }[];
-                     tiles: { cell: number; owner: number; durability: number; addition: boolean; capturing: number }[] }): void {
+                     tiles: { cell: number; owner: number; durability: number; addition: boolean; capturing: number }[];
+                     marches?: readonly ISgzzMarch[] }): void {
         this.viewer = {
             uid: res.viewer.uid, aid: res.viewer.aid,
             leaderUid: res.viewer.leaderUid, friendAids: [...res.viewer.friendAids],
@@ -148,12 +170,15 @@ export class SgzzmapWorldLogic {
                 capturingAid: ref.capturing >= 0 ? res.alliances[ref.capturing] : "",
             });
         }
+        this.marches = res.marches ? [...res.marches] : [];
+        this.marchLines.sync(this.marches, this.wantsMarchDetail, this.runtime.now());
         this.rebuildBorders();
         this.revision += 1;
     }
 
-    applyZoom(res: { alliances: string[]; chunks: ISgzzChunkSummary[] }): void {
+    applyZoom(res: { level?: number; alliances: string[]; chunks: ISgzzChunkSummary[] }): void {
         this.summaryAlliances = [...res.alliances];
+        if (typeof res.level === "number") this.summaryLevel = res.level;
         this.summaries.clear();
         for (const c of res.chunks) this.summaries.set(c.key, c);
         this.revision += 1;
