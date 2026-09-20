@@ -10,6 +10,8 @@ import { test } from "node:test";
 // @ts-expect-error 纯 ESM 工具模块，无类型声明。
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
+import { readSgzzmapEvidence, sgzzmapGestureArea, sgzzmapMinimapCenter } from "../../../tools/creator-preview/sgzzmap.mjs";
+// @ts-expect-error 纯 ESM 场景工具，无类型声明。
 import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, SLG_WORLD_SIZE, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
 import { SLG_MAPS } from "@game/shared/kits/slg/api/worldmap/index";
 
@@ -340,4 +342,98 @@ test("SLG LOD 截图等待：远档整图层集合变化同样重置稳定计时
   assert.equal(state.ready, false, "farNodes 变化（归属网格重建/图层增删）也须重新稳定 1.2 秒");
   state = slgFrameStability(state, changed, 3700, 4);
   assert.equal(state.ready, true);
+});
+
+// ── sgzzmap 大地图重放的纯函数闸 ───────────────────────────────────────────────
+
+const sgzzNode = (name: string, text: string | null, center: { x: number; y: number } | null) => ({
+    name, text, path: `Canvas/popup/SgzzmapWorldView/${name}`, kind: text ? "label" : "node",
+    center: center ?? { x: 0, y: 0, width: 10, height: 10 },
+});
+
+test("readSgzzmapEvidence：近档解出标题/地块/三层网格，半加载一律判未就位", () => {
+    const walk = {
+        nodes: [
+            { name: "SgzzmapWorldView", text: null, path: "Canvas/popup/SgzzmapWorldView", kind: "node", center: { x: 0, y: 0, width: 1, height: 1 } },
+            sgzzNode("label", "大地图 · LOD 1/5", { x: 0, y: 0 }),
+            sgzzNode("label", "(750, 751) 平原 · 无主", { x: 0, y: 10 }),
+            sgzzNode("sgzz-terrain", null, null),
+            sgzzNode("sgzz-territory", null, null),
+            sgzzNode("sgzz-border", null, null),
+            sgzzNode("sgzz-world", null, { x: -12, y: 34 }),
+            sgzzNode("sgzz-minimap", null, { x: 100, y: 100 }),
+        ],
+        canvas: { x: 0, y: 0, width: 375, height: 812 },
+    };
+    const value = readSgzzmapEvidence(walk);
+    assert.equal(value.lod, 1);
+    assert.equal(value.nearLoaded, true);
+    assert.equal(value.farLoaded, false, "近档没有底图/色块");
+    assert.equal(value.terrain, true);
+    assert.equal(value.territory, true);
+    assert.equal(value.border, true);
+    assert.equal(value.minimap, true);
+    assert.deepEqual(value.tile, {
+        row: 750, col: 751, terrainName: "平原", passable: true, owner: "无主",
+        text: "(750, 751) 平原 · 无主",
+    });
+    assert.deepEqual(value.worldCenter, { x: -12, y: 34 }, "世界节点中心原样透出，供「镜头真的动了」比对");
+
+    // 标题还没出来 ⇒ 判未就位（⛔ 不把半加载的画面当证据）
+    const noTitle = { ...walk, nodes: walk.nodes.filter((n) => n.text !== "大地图 · LOD 1/5") };
+    assert.equal(readSgzzmapEvidence(noTitle).nearLoaded, false);
+    assert.equal(readSgzzmapEvidence(noTitle).lod, null);
+    // 地表网格没建起来 ⇒ 同样判未就位
+    const noMesh = { ...walk, nodes: walk.nodes.filter((n) => n.name !== "sgzz-terrain") };
+    assert.equal(readSgzzmapEvidence(noMesh).nearLoaded, false);
+    // 不在这个 route 上 ⇒ null
+    assert.equal(readSgzzmapEvidence({ nodes: [], canvas: walk.canvas }), null);
+    assert.equal(readSgzzmapEvidence(null), null);
+});
+
+test("readSgzzmapEvidence：远档解出底图与色块；不可通行/有主的详情都解得开", () => {
+    const base = [
+        { name: "SgzzmapWorldView", text: null, path: "Canvas/popup/SgzzmapWorldView", kind: "node", center: { x: 0, y: 0, width: 1, height: 1 } },
+        sgzzNode("label", "大地图 · LOD 5/5", { x: 0, y: 0 }),
+        sgzzNode("sgzz-plate-5", null, null),
+        sgzzNode("sgzz-birdview", null, null),
+        sgzzNode("sgzz-march", null, null),
+    ];
+    const far = readSgzzmapEvidence({ nodes: base, canvas: { x: 0, y: 0, width: 375, height: 812 } });
+    assert.equal(far.lod, 5);
+    assert.equal(far.farLoaded, true);
+    assert.equal(far.terrain, false, "远档不该还留着逐格网格");
+    assert.equal(far.plate, "sgzz-plate-5");
+    assert.equal(far.birdview, true);
+    assert.equal(far.march, true);
+
+    // LOD3/4 用另一张底图
+    const lod4 = readSgzzmapEvidence({
+        nodes: [base[0], sgzzNode("label", "大地图 · LOD 3/5", { x: 0, y: 0 }), sgzzNode("sgzz-plate-4", null, null)],
+        canvas: { x: 0, y: 0, width: 375, height: 812 },
+    });
+    assert.equal(lod4.plate, "sgzz-plate-4");
+    assert.equal(lod4.farLoaded, true);
+
+    // 详情的三种形态
+    const detail = (text: string) => readSgzzmapEvidence({
+        nodes: [base[0], sgzzNode("label", "大地图 · LOD 0/5", { x: 0, y: 0 }), sgzzNode("label", text, { x: 0, y: 9 })],
+        canvas: { x: 0, y: 0, width: 375, height: 812 },
+    }).tile;
+    assert.equal(detail("(10, 20) 山地 · 不可通行 · 无主").passable, false);
+    assert.equal(detail("(10, 20) 平原 · u-abc（守军 3）").owner, "u-abc（守军 3）");
+    assert.equal(detail("点选地图中的一格"), null, "占位文案⛔不能被当成地块详情");
+});
+
+test("sgzzmapGestureArea / sgzzmapMinimapCenter：点击区避开页眉页脚，缩略图缺席返回 null", () => {
+    const canvas = { x: 100, y: 50, width: 375, height: 812 };
+    const area = sgzzmapGestureArea({ canvas });
+    assert.ok(area.y > canvas.y + canvas.height * 0.14, "⛔ 不能点到页眉");
+    assert.ok(area.y < canvas.y + canvas.height * 0.74, "⛔ 不能点到页脚");
+    assert.ok(area.x > canvas.x && area.x < canvas.x + canvas.width);
+    assert.ok(area.width > 0 && area.height > 0);
+
+    assert.deepEqual(sgzzmapMinimapCenter({ nodes: [{ name: "sgzz-minimap", center: { x: 7, y: 8 } }] }), { x: 7, y: 8 });
+    assert.equal(sgzzmapMinimapCenter({ nodes: [] }), null);
+    assert.equal(sgzzmapMinimapCenter(null), null);
 });

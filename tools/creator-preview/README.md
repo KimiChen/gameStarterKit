@@ -28,6 +28,7 @@ node tools/creator-preview/run.mjs arena --reuse --out /tmp/arena-run           
 node tools/creator-preview/run.mjs redeem --code SNAKE90 --out /tmp/redeem-run
 node tools/creator-preview/run.mjs tally --reuse            # 复用已打开的预览页（已在首屏时跳过登录）
 node tools/creator-preview/run.mjs home --format png --step-timeout 30000
+node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run          # 三战式大地图（sgzzmap kit）
 node tools/creator-preview/run.mjs slg --out /tmp/slg-preview --format png         # SLG 地图独立验收
 node tools/creator-preview/capture-uniflex-golden.mjs --screen backpack --out /tmp/gameStarterKit-cocos-backpack.png
 ```
@@ -103,3 +104,30 @@ SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观�
 - `run.mjs`：场景与报告。
 - `slg.mjs`：SLG 地图场景与公开 UI 证据解析。只遍历渲染节点/文本、发送普通 CDP 点击/拖动/滚轮，不访问页面 Logic、RPC 端口或私有相机字段；场景只验证阶段 1，行军面板和房间 AOI 不在本轮范围。
 - 钉：`apps/server/test/creator-preview-tool.test.ts`。
+
+## sgzzmap 场景（三战式大地图）
+
+```bash
+node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
+```
+
+七步，覆盖 P6 的四件事：
+
+| 步 | 判据 | 截图 |
+| --- | --- | --- |
+| 进入 route | 按 **entryId=`world`** 点设置卡片 —— ⚠ sgzzmap 与 slg 的卡片标签都是「大地图」，⛔ 不能按文本定位 | — |
+| 近档就位 | 标题 `大地图 · LOD n/5` + `sgzz-terrain` 网格在 | `sgzzmap-opened` |
+| 点选地块 | 详情解出 `(row, col) 地形 · 归属`；会连点几处直到找到**可通行的无主格** | `sgzzmap-selected` |
+| 占领 | 同一格转我方，且 `sgzz-territory` 叠色 + `sgzz-border` 描边网格建起来 | `sgzzmap-occupied` |
+| 拉远 | 连发滚轮到 LOD ≥ 3：`sgzz-plate-4/5` 底图或 `sgzz-birdview` 色块在，且 `sgzz-terrain` 已撤 | `sgzzmap-far` |
+| 缩略图跳转 | 点右上角 `sgzz-minimap`，`sgzz-world` 的中心真的位移了 | `sgzzmap-minimap-locate` |
+| 推回近档 | LOD ≤ 2、逐格网格回来、底图撤走 | `sgzzmap-back-near` |
+
+行军线（`sgzz-march`）在解析器里有判据，但本场景不派遣行军（要先有金币与相邻地块），
+需要时手工派一支再看 `sgzzmap-far` / `sgzzmap-opened` 里的 `march` 字段。
+
+⚠ **首次在 Creator 里打开本仓时**：`apps/Cocos/assets/resources/kits/sgzzmap/**` 的 `.meta`
+是脚本按「相对路径 sha1」确定性铸的（`tools/sgzzmap-maps/install-to-kit.py`），**不是 Creator 导入出来的**。
+Creator 打开后会正式导入这些图并可能改写 uuid / 补 library 条目 —— 那是正常的，
+**把 Creator 改动后的 `.meta` 一并提交**即可。在 Creator 真正导入之前，
+`resources.load` 很可能找不到底图与缩略图贴图：此时远档只有鸟瞰色块、缩略图只有可点底板（都有兜底，⛔ 不崩）。

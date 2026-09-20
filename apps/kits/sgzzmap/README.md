@@ -165,6 +165,24 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
 「把窗内所有敌军都发下去」既不忠实、也没有空间索引可依（`k_sgzzmap_march` 只存 `path_json`）。
 等 AOI 实体流做出来再扩，那时是**加字段**而不是改语义。
 
+### 真引擎证据
+
+```bash
+node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
+```
+
+七步重放（进入 → 近档 → 点选 → 占领 → 拉远 → 缩略图跳转 → 推回），落七张截图 + `report.json`。
+判据全部来自**渲染出来的节点与文本**，⛔ 不调 Logic、⛔ 不直接发 RPC。
+纯函数部分（证据解析器、点击区、缩略图中心）由 `apps/server/test/creator-preview-tool.test.ts` 进门禁。
+
+⚠ **本 kit 的渲染尚未经真引擎目视确认过** —— 上面这条命令需要 Cocos Creator 开着（预览 7456）
++ 本地栈与游戏服（`npm run dev`）。在那之前，保障只有纯逻辑用例 + 双 tsconfig + 抄自 slg 的 mesh 批次纪律。
+
+⚠ **首次用 Creator 打开本仓**：`resources/kits/sgzzmap/**` 的 `.meta` 是脚本确定性铸的、
+不是 Creator 导入出来的。Creator 会正式导入并可能改写 uuid —— 把它改完的 `.meta` 一并提交。
+在此之前 `resources.load` 多半找不到底图/缩略图贴图，届时远档只剩鸟瞰色块、缩略图只剩可点底板
+（两处都有兜底，⛔ 不崩）。
+
 ### P6 余留
 
 无。远档底图、鸟瞰色块、缩略图、行军线均已接上。
