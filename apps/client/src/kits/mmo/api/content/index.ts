@@ -2,10 +2,10 @@
  * mmo kit · `content` api 面（客户端，docs/MMO.md §7.2 / §7.5）：客户端地图几何（内置灰盒包）与表现映射注册表 `IPresentationMap`
  * （presentationId → 表现描述；MK0 = 2D 公告板的颜色 / 尺寸，3d.md SD9：`model` 预留）。⛔ 不 import cc；本面任何导出变化都要 bump `api.content.version`。
  */
-import type { IMapDef } from "../../../../shared/kits/mmo/api/content/index";
+import type { IClassTemplate, IMapDef } from "../../../../shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "../../../../shared/kits/mmo/content/greybox";
 
-export type { IMapDef };
+export type { IClassTemplate, IMapDef };
 
 /** 表现描述（2D 公告板首版：颜色 RGBA + 边长；`model` = 3D 预制路径，预留）。 */
 export interface IPresentationEntry {
@@ -33,6 +33,11 @@ export function presentationOf(presentationId: string, map: IPresentationMap = B
 /** 客户端地图几何（size / spawnPoints / aoi）；不在包内 = null。 */
 export function mapDefOf(mapId: string): IMapDef | null {
     return GREYBOX_PACK.maps.find((map) => map.mapId === mapId) ?? null;
+}
+
+/** 职业模板（速度 / HP / MP 的客户端同源；不在包内 = null）。 */
+export function classOf(classId: string): IClassTemplate | null {
+    return GREYBOX_PACK.classes.find((klass) => klass.classId === classId) ?? null;
 }
 
 /** 首图 id（选角页「进入世界」的缺省目标；角色有最新检查点图时用检查点图）。 */

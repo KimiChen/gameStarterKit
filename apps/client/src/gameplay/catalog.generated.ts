@@ -74,14 +74,14 @@ export const GAMEPLAY_CATALOG = {
     "mmoWorld": {
         id: "mmoWorld",
         constantName: "MmoWorld",
-        modeVersion: 2,
+        modeVersion: 3,
         maxPlayers: 100,
         roster: "hidden",
         kind: "world",
         world: {"emptyPolicy":"sleep","emptyAfterMs":120000,"checkpointMs":30000},
         profiles: ["world"],
         stateFragments: [],
-        contractDigest: "13d7c2ba9423b6ce69d8ec88d77f299976345122d222be800707eeb7264d47dc",
+        contractDigest: "54235b503ced531ea2deb4d257b3460347bbf4ea34304e0f5099729608d4caa4",
     },
     "privateFixture": {
         id: "privateFixture",

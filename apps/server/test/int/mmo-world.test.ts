@@ -2,7 +2,7 @@
  * mmo kit MK0 真栈（真 MySQL / Redis + 真 Server + @colyseus/sdk；docs/MMO.md §7.6 MK0 验收「一个角色进图、走路、看到怪」）：
  *  ① characters 面：建角（createPersona + 角色行 + 回执同事务）→ 列表；同 opId 重放回读；同槽再建 MmoSlotTakenError；同名 MmoNameTakenError；
  *  ② mmoWorld 真房：凭据（world.enter 同形）→ joinOrCreate(RoomName.World) → Active root（packId / population）→ 首个 baseline 含本人 + 三只 slime
- *     （视距 400 内）→ move 意图 ⇒ update 单流 seq 递增且本人 x 前进 → private 收到 hp / mp → baselineRequest ⇒ 再一份 baseline；
+ *     （视距 400 内）→ move 意图 ⇒ update 单流 seq 递增且本人 x 前进、直发 pos 回执 seq = 意图（MK1-B1）→ private 收到 hp / mp → baselineRequest ⇒ 再一份 baseline；
  *  ③ 离座强制点：leave 后 k_mmo_character_checkpoint 落一行（snapshot 位置 = 离座时位置、mapId = greybox）、k_mmo_character.checkpoint_rev 前进、
  *     列表的 mapId 变成 greybox；再进图从检查点位置起（onEnter 回灌）。
  * 前置：本地栈已启动且 db:bootstrap 到 MK0-B1（k_mmo_* 七表）。⚠ int 文件只能单文件串行跑。
@@ -15,7 +15,7 @@ import { WebSocketTransport } from "@colyseus/ws-transport";
 import { Client as SDKClient, type Room as SDKRoom } from "@colyseus/sdk";
 import {
     C2S, GAMEPLAY_CATALOG, RoomName, S2C, WORLD_ROOM_PROTOCOL_VERSION, WorldPhase,
-    type IMmoEntityWire, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldPrivate, type IMmoWorldUpdate, type IWorldRoomJoinOptions,
+    type IMmoEntityWire, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldPos, type IMmoWorldPrivate, type IMmoWorldUpdate, type IWorldRoomJoinOptions,
 } from "@game/shared";
 import { GREYBOX_MAP_ID } from "@game/shared/kits/mmo/content/greybox";
 import { kWorldFence, kWorldLease } from "../../src/core/infra/keys";
@@ -83,6 +83,7 @@ function collect(room: SDKRoom) {
     const chunks: IMmoWorldBaselineChunk[] = [];
     const updates: IMmoWorldUpdate[] = [];
     const privates: IMmoWorldPrivate[] = [];
+    const positions: IMmoWorldPos[] = [];
     room.onMessage(S2C.MmoWorldBaselineBegin, (payload: IMmoWorldBaselineBegin) => { begins.push(payload); });
     room.onMessage(S2C.MmoWorldBaselineChunk, (payload: IMmoWorldBaselineChunk) => { chunks.push(payload); });
     room.onMessage(S2C.MmoWorldBaselineEnd, () => undefined);
@@ -90,10 +91,11 @@ function collect(room: SDKRoom) {
     room.onMessage(S2C.MmoWorldLeave, () => undefined);
     room.onMessage(S2C.MmoWorldUpdate, (payload: IMmoWorldUpdate) => { updates.push(payload); });
     room.onMessage(S2C.MmoWorldPrivate, (payload: IMmoWorldPrivate) => { privates.push(payload); });
+    room.onMessage(S2C.MmoWorldPos, (payload: IMmoWorldPos) => { positions.push(payload); });
     room.onMessage(S2C.Welcome, () => undefined);
     room.onMessage(S2C.Error, () => undefined);
     const itemsOf = (begin: IMmoWorldBaselineBegin): IMmoEntityWire[] => chunks.filter((chunk) => chunk.baselineId === begin.baselineId).sort((a, b) => a.index - b.index).flatMap((chunk) => chunk.items);
-    return { begins, chunks, updates, privates, itemsOf };
+    return { begins, chunks, updates, privates, positions, itemsOf };
 }
 
 test("MK0：建角 → 进图（看到三只 slime）→ 走路 → 离座强制点落角色检查点 → 再进图从检查点位置起", { timeout: 60_000 }, async () => {
@@ -138,7 +140,7 @@ test("MK0：建角 → 进图（看到三只 slime）→ 走路 → 离座强制
         const a = await connect();
         const inbox = collect(a);
         await waitFor(() => rootOf(a).phase === WorldPhase.Active && rootOf(a).instanceId.length > 0, "Active root");
-        assert.deepEqual([rootOf(a).mapId, rootOf(a).packId, rootOf(a).packVersion, rootOf(a).population], [MAP_ID, "greybox", 1, 1], "root：图 / 内容包 / 在线数");
+        assert.deepEqual([rootOf(a).mapId, rootOf(a).packId, rootOf(a).packVersion, rootOf(a).population], [MAP_ID, "greybox", 2, 1], "root：图 / 内容包 / 在线数");
         await waitFor(() => inbox.begins.length >= 1 && inbox.itemsOf(inbox.begins[0]!).length >= 4, "首个 baseline：本人 + 三只 slime");
         const items = inbox.itemsOf(inbox.begins[0]!);
         const self = items.find((item) => item.kind === "character");
@@ -153,11 +155,13 @@ test("MK0：建角 → 进图（看到三只 slime）→ 走路 → 离座强制
         await waitFor(() => inbox.updates.some((update) => update.id === self.id && update.x >= 1024), "本人 x 前进（≥ 4 步）");
         const seqs = inbox.updates.map((update) => update.seq);
         for (let index = 1; index < seqs.length; index += 1) assert.ok(seqs[index]! >= seqs[index - 1]!, "update 单流 seq 单调");
+        await waitFor(() => inbox.positions.some((pos) => pos.seq === 1 && pos.x >= 1024), "直发 pos 回执：seq = 意图 1 且 x 前进");
         a.send(C2S.MmoWorldMove, { seq: 2, dir: { x: 0, y: 0 } });
         await sleep(200);
         const lastX = inbox.updates.filter((update) => update.id === self.id).at(-1)!.x;
         await sleep(200);
         assert.equal(inbox.updates.filter((update) => update.id === self.id).at(-1)!.x, lastX, "停下后不再前进");
+        assert.deepEqual([inbox.positions.at(-1)!.seq, inbox.positions.at(-1)!.x], [2, lastX], "最后一条 pos 回执 = 停下意图 seq 2、位置 = 视野流终点");
         assert.ok(lastX > 1000 && lastX < 1200, `位置 ${lastX}`);
 
         // baselineRequest ⇒ 再一份 baseline

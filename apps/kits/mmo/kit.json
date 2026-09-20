@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "mmo",
-  "version": "0.1.0",
-  "description": "MMO 地基（docs/MMO.md §7；MK0 骨架）：常驻分线世界 mmoWorld + characters / world / content 三个 api 面；movement / combat / ai / inventory / social / orchestration 面随 MK1–MK4 加入并各自 versioning",
+  "version": "0.1.1",
+  "description": "MMO 地基（docs/MMO.md §7；MK1 施工中）：常驻分线世界 mmoWorld + characters / world / movement / content 四个 api 面；combat / ai / inventory / social / orchestration 面随 MK1–MK4 加入并各自 versioning",
   "api": {
     "characters": {
       "version": 1,
@@ -12,9 +12,13 @@
       "version": 1,
       "minSupported": 1
     },
-    "content": {
+    "movement": {
       "version": 1,
       "minSupported": 1
+    },
+    "content": {
+      "version": 2,
+      "minSupported": 2
     }
   },
   "domains": [

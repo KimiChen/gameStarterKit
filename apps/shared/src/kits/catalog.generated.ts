@@ -23,10 +23,11 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
     },
     {
         id: "mmo",
-        version: "0.1.0",
+        version: "0.1.1",
         api: {
             characters: { version: 1, minSupported: 1 },
-            content: { version: 1, minSupported: 1 },
+            content: { version: 2, minSupported: 2 },
+            movement: { version: 1, minSupported: 1 },
             world: { version: 1, minSupported: 1 },
         },
         modes: [

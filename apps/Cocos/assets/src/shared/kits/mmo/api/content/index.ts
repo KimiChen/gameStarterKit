@@ -2,15 +2,17 @@
  * mmo kit · `content` api 面（shared，docs/MMO.md §7.5）：内容包 schema + 零依赖 validator（fail-closed：未知键 / 坏类型 / 越界 / 引用断裂一律抛）
  * + 索引助手。插件（MG 段内容包）只按本面形状交内容；kit 在 codegen 期与启动期都用同一个 `validateContentPack`，任一失败 codegen 拒绝 / WorldRoom 拒启。
  * 原始数据 id 与 `presentationId` 分离（表现映射归客户端 `IPresentationMap`）。可达性（出生点到每个传送点有 nav 路径）随 MK2 的 nav 网格接入，
- * MK0 只做引用完整性 + 数值域 + 几何在图内。本面任何导出变化都要 bump `api.content.version`。
+ * MK0 只做引用完整性 + 数值域 + 几何在图内；v2（MK1-B1）加职业模板 `classes`（角色速度 / HP / MP 的真源）与碰撞位图校验（长度 = cols × rows、'0'/'1'、
+ * 出生点 / 刷新点 ⛔ 落在阻挡格）。本面任何导出变化都要 bump `api.content.version`。
  */
 import { assertExactKeys, boundedString, finiteInteger, finiteNumber, isPlainRecord, type PlainRecord } from "../../../../protocol/http";
+import { collisionGridDims, parseCollisionGrid } from "../movement/index";
 
 export const MMO_CONTENT_SCHEMA_VERSION = 1;
 
 /** 上限（内容包大小闸；数字是 v1 候选，MK4 冻结）。 */
 export const MMO_CONTENT_LIMITS = Object.freeze({
-    maps: 64, regions: 1024, creatures: 1024, spawns: 4096, spells: 512, items: 4096, lootTables: 1024, npcs: 1024,
+    maps: 64, regions: 1024, classes: 64, creatures: 1024, spawns: 4096, spells: 512, items: 4096, lootTables: 1024, npcs: 1024,
     spawnCountMax: 64, waypointsMax: 32, mapSizeMax: 1_000_000, viewRadiusMax: 5_000, speedMax: 10_000, statMax: 100_000_000,
 });
 
@@ -66,6 +68,20 @@ export interface ICreatureTemplate {
     readonly interacts: readonly string[];
 }
 
+/** 职业模板（MK1-B1）：角色的成长起点与常量速度（服务端权威积分用；客户端预测同源）。 */
+export interface IClassTemplate {
+    readonly classId: string;
+    readonly name: string;
+    readonly presentationId: string;
+    readonly hpMax: number;
+    readonly mpMax: number;
+    readonly attack: number;
+    readonly defense: number;
+    /** 服务端常量（世界单位 / 秒） */
+    readonly speedPerSec: number;
+    readonly spells: readonly string[];
+}
+
 export interface ISpawnDef {
     readonly spawnId: string;
     readonly mapId: string;
@@ -109,6 +125,7 @@ export interface IContentPack {
     readonly version: number;
     readonly maps: readonly IMapDef[];
     readonly regions: readonly IRegionDef[];
+    readonly classes: readonly IClassTemplate[];
     readonly creatures: readonly ICreatureTemplate[];
     readonly spawns: readonly ISpawnDef[];
     readonly spells: readonly ISpellTemplate[];
@@ -202,7 +219,7 @@ function mapDef(input: unknown, path: string): IMapDef {
     const aoi = record(value.aoi, `${path}.aoi`);
     exact(aoi, `${path}.aoi`, ["cellSize", "viewRadius"]);
     const out: {
-        mapId: string; name: string; size: IMapDef["size"]; aoi: IMapDef["aoi"]; collision?: IMapDef["collision"]; nav?: IMapDef["nav"];
+        mapId: string; name: string; size: IMapDef["size"]; aoi: IMapDef["aoi"]; collision?: NonNullable<IMapDef["collision"]>; nav?: NonNullable<IMapDef["nav"]>;
         spawnPoints: ISpawnPoint[]; portals: IPortalDef[]; respawnPoints: IContentVec2[];
     } = {
         mapId: idOf(value.mapId, `${path}.mapId`),
@@ -217,6 +234,9 @@ function mapDef(input: unknown, path: string): IMapDef {
         const collision = record(value.collision, `${path}.collision`);
         exact(collision, `${path}.collision`, ["cellSize", "bitmap"]);
         out.collision = { cellSize: int(collision.cellSize, `${path}.collision.cellSize`, 1, MMO_CONTENT_LIMITS.mapSizeMax), bitmap: guard(`${path}.collision.bitmap`, () => boundedString(collision.bitmap, `${path}.collision.bitmap`, 0, 1_048_576)) };
+        const dims = collisionGridDims(sizeOut, out.collision.cellSize);
+        if (out.collision.bitmap.length !== dims.cols * dims.rows) fail(`${path}.collision.bitmap`, `length ${out.collision.bitmap.length} ≠ cols × rows = ${dims.cols} × ${dims.rows}`);
+        if (!/^[01]*$/u.test(out.collision.bitmap)) fail(`${path}.collision.bitmap`, "only '0' / '1'");
     }
     if (value.nav !== undefined) {
         const nav = record(value.nav, `${path}.nav`);
@@ -308,6 +328,23 @@ function creatureTemplate(input: unknown, path: string): ICreatureTemplate {
     return out;
 }
 
+function classTemplate(input: unknown, path: string): IClassTemplate {
+    const value = record(input, path);
+    exact(value, path, ["classId", "name", "presentationId", "hpMax", "mpMax", "attack", "defense", "speedPerSec", "spells"]);
+    const stat = MMO_CONTENT_LIMITS.statMax;
+    return {
+        classId: idOf(value.classId, `${path}.classId`),
+        name: nameOf(value.name, `${path}.name`),
+        presentationId: idOf(value.presentationId, `${path}.presentationId`),
+        hpMax: int(value.hpMax, `${path}.hpMax`, 1, stat),
+        mpMax: int(value.mpMax, `${path}.mpMax`, 0, stat),
+        attack: int(value.attack, `${path}.attack`, 0, stat),
+        defense: int(value.defense, `${path}.defense`, 0, stat),
+        speedPerSec: num(value.speedPerSec, `${path}.speedPerSec`, 1, MMO_CONTENT_LIMITS.speedMax),
+        spells: idList(value.spells, `${path}.spells`, 16),
+    };
+}
+
 function spawnDef(input: unknown, path: string): ISpawnDef {
     const value = record(input, path);
     exact(value, path, ["spawnId", "mapId", "templateId", "pos", "count", "waypoints", "managed"]);
@@ -396,12 +433,14 @@ function npcDef(input: unknown, path: string): INpcDef {
 /** 结构 + 数值域 + 引用完整性 + 几何在图内；任一失败抛 ContentPackError（fail-closed）。返回冻结的规范化副本。 */
 export function validateContentPack(input: unknown): IContentPack {
     const value = record(input, "pack");
-    exact(value, "pack", ["schemaVersion", "packId", "version", "maps", "regions", "creatures", "spawns", "spells", "items", "lootTables", "npcs"]);
+    exact(value, "pack", ["schemaVersion", "packId", "version", "maps", "regions", "classes", "creatures", "spawns", "spells", "items", "lootTables", "npcs"]);
     if (value.schemaVersion !== MMO_CONTENT_SCHEMA_VERSION) fail("pack.schemaVersion", `must be ${MMO_CONTENT_SCHEMA_VERSION}`);
     const limits = MMO_CONTENT_LIMITS;
     const maps = list(value.maps, "pack.maps", limits.maps).map((entry, index) => mapDef(entry, `pack.maps[${index}]`));
     if (maps.length === 0) fail("pack.maps", "at least one map");
     const regions = list(value.regions, "pack.regions", limits.regions).map((entry, index) => regionDef(entry, `pack.regions[${index}]`));
+    const classes = list(value.classes, "pack.classes", limits.classes).map((entry, index) => classTemplate(entry, `pack.classes[${index}]`));
+    if (classes.length === 0) fail("pack.classes", "at least one class");
     const creatures = list(value.creatures, "pack.creatures", limits.creatures).map((entry, index) => creatureTemplate(entry, `pack.creatures[${index}]`));
     const spawns = list(value.spawns, "pack.spawns", limits.spawns).map((entry, index) => spawnDef(entry, `pack.spawns[${index}]`));
     const spells = list(value.spells, "pack.spells", limits.spells).map((entry, index) => spellTemplate(entry, `pack.spells[${index}]`));
@@ -411,6 +450,7 @@ export function validateContentPack(input: unknown): IContentPack {
 
     const mapIds = unique(maps.map((map) => map.mapId), "pack.maps");
     unique(regions.map((region) => region.regionId), "pack.regions");
+    unique(classes.map((klass) => klass.classId), "pack.classes");
     const creatureIds = unique(creatures.map((creature) => creature.templateId), "pack.creatures");
     unique(spawns.map((spawn) => spawn.spawnId), "pack.spawns");
     const spellIds = unique(spells.map((spell) => spell.spellId), "pack.spells");
@@ -430,6 +470,23 @@ export function validateContentPack(input: unknown): IContentPack {
     regions.forEach((region, index) => {
         if (!mapIds.has(region.mapId)) fail(`pack.regions[${index}].mapId`, `unknown map "${region.mapId}"`);
     });
+    classes.forEach((klass, index) => {
+        klass.spells.forEach((spellId, spellIndex) => {
+            if (!spellIds.has(spellId)) fail(`pack.classes[${index}].spells[${spellIndex}]`, `unknown spell "${spellId}"`);
+        });
+    });
+    // 碰撞位图：出生点 / 复活点 / 刷新点 ⛔ 落在阻挡格（进图即卡死）
+    const grids = new Map(maps.map((map) => [map.mapId, parseCollisionGrid(map.collision ?? null, map.size)]));
+    maps.forEach((map, mapIndex) => {
+        const grid = grids.get(map.mapId) ?? null;
+        if (!grid) return;
+        map.spawnPoints.forEach((point, index) => {
+            if (grid.blocked(point.pos.x, point.pos.y)) fail(`pack.maps[${mapIndex}].spawnPoints[${index}].pos`, "spawn point inside a blocked cell");
+        });
+        map.respawnPoints.forEach((point, index) => {
+            if (grid.blocked(point.x, point.y)) fail(`pack.maps[${mapIndex}].respawnPoints[${index}]`, "respawn point inside a blocked cell");
+        });
+    });
     creatures.forEach((creature, index) => {
         creature.spells.forEach((spellId, spellIndex) => {
             if (!spellIds.has(spellId)) fail(`pack.creatures[${index}].spells[${spellIndex}]`, `unknown spell "${spellId}"`);
@@ -441,6 +498,8 @@ export function validateContentPack(input: unknown): IContentPack {
         if (!map) fail(`pack.spawns[${index}].mapId`, `unknown map "${spawn.mapId}"`);
         if (!creatureIds.has(spawn.templateId)) fail(`pack.spawns[${index}].templateId`, `unknown creature "${spawn.templateId}"`);
         if (spawn.pos.x > map.size.w || spawn.pos.y > map.size.h) fail(`pack.spawns[${index}].pos`, `outside map size ${map.size.w}×${map.size.h}`);
+        const grid = grids.get(map.mapId) ?? null;
+        if (grid && grid.blocked(spawn.pos.x, spawn.pos.y)) fail(`pack.spawns[${index}].pos`, "spawn inside a blocked cell");
         spawn.waypoints.forEach((point, pointIndex) => {
             if (point.x > map.size.w || point.y > map.size.h) fail(`pack.spawns[${index}].waypoints[${pointIndex}]`, "outside map");
         });
@@ -460,7 +519,7 @@ export function validateContentPack(input: unknown): IContentPack {
         schemaVersion: MMO_CONTENT_SCHEMA_VERSION,
         packId: idOf(value.packId, "pack.packId"),
         version: int(value.version, "pack.version", 1, 65535),
-        maps, regions, creatures, spawns, spells, items, lootTables, npcs,
+        maps, regions, classes, creatures, spawns, spells, items, lootTables, npcs,
     };
 }
 
@@ -468,6 +527,7 @@ export function validateContentPack(input: unknown): IContentPack {
 export interface IContentPackIndex {
     readonly pack: IContentPack;
     readonly mapById: ReadonlyMap<string, IMapDef>;
+    readonly classById: ReadonlyMap<string, IClassTemplate>;
     readonly creatureById: ReadonlyMap<string, ICreatureTemplate>;
     readonly spellById: ReadonlyMap<string, ISpellTemplate>;
     readonly itemById: ReadonlyMap<string, IItemTemplate>;
@@ -492,6 +552,7 @@ export function indexContentPack(pack: IContentPack): IContentPackIndex {
     return {
         pack,
         mapById: new Map(pack.maps.map((map) => [map.mapId, map])),
+        classById: new Map(pack.classes.map((klass) => [klass.classId, klass])),
         creatureById: new Map(pack.creatures.map((creature) => [creature.templateId, creature])),
         spellById: new Map(pack.spells.map((spell) => [spell.spellId, spell])),
         itemById: new Map(pack.items.map((item) => [item.itemId, item])),

@@ -2,14 +2,16 @@
  * mmo kit · `world` api 面（shared，docs/MMO.md §7.2）：世界地址 / 向量 / 实体 id 与三档可见性的零依赖类型，以及 mmoWorld wire 契约的
  * 再导出（wire 契约属本面：任一 token 变化 bump `api.world.version`）。插件只能 import 本门面，⛔ 不 import kit 内部模块。
  * 三档可见性（§4.3）：全图公开（root：分线元数据）/ 视野内公开投影（IEntityCard = IMmoEntityWire，perSession 视野流）/ 本人私有（IMmoWorldPrivate）。
+ * 移动纯函数（integrate / clampToMap）自 MK1-B1 起归 `movement` 面，此处再导出保持 v1 导出面不变。
  */
 export type WorldAddress = string;
 export type EntityId = string;
 export type {
     IMmoEntityWire as IEntityCard, IMmoVec2 as Vec2, IMmoWorldBaselineBegin, IMmoWorldBaselineChunk, IMmoWorldBaselineEnd, IMmoWorldEnter, IMmoWorldLeave,
-    IMmoWorldMoveReq, IMmoWorldOpResult, IMmoWorldPrivate, IMmoWorldTransferReady, IMmoWorldUpdate, MmoEntityKind,
+    IMmoWorldMoveReq, IMmoWorldOpResult, IMmoWorldPos, IMmoWorldPrivate, IMmoWorldTransferReady, IMmoWorldUpdate, MmoEntityKind,
 } from "../../../../gameplays/mmoWorld/wire";
 export { MMO_WORLD_COORD_MAX } from "../../../../gameplays/mmoWorld/wire";
+export { clampToMap, integrate } from "../movement/index";
 
 /** 分线号上限（WorldAddress 的一段；框架 IWorldRoomJoinOptions.line 同界）。 */
 export const MMO_WORLD_MAX_LINE = 0xffff;
@@ -63,17 +65,4 @@ export function distanceSq(a: { readonly x: number; readonly y: number }, b: { r
 /** 欧氏视距判定（内容包 aoi.viewRadius 用世界单位）。 */
 export function withinRadius(a: { readonly x: number; readonly y: number }, b: { readonly x: number; readonly y: number }, radius: number): boolean {
     return distanceSq(a, b) <= radius * radius;
-}
-
-/** 常量速度积分（双端同源：服务端权威、客户端预测；dir 归一化，零向量原地）。 */
-export function integrate(pos: { readonly x: number; readonly y: number }, dir: { readonly x: number; readonly y: number }, speedPerSec: number, dtMs: number): { readonly x: number; readonly y: number } {
-    const length = Math.hypot(dir.x, dir.y);
-    if (length === 0 || speedPerSec <= 0 || dtMs <= 0) return { x: pos.x, y: pos.y };
-    const step = (speedPerSec * dtMs) / 1000;
-    return { x: pos.x + (dir.x / length) * step, y: pos.y + (dir.y / length) * step };
-}
-
-/** 钳到地图范围 [0, w] × [0, h]。 */
-export function clampToMap(pos: { readonly x: number; readonly y: number }, size: { readonly w: number; readonly h: number }): { readonly x: number; readonly y: number } {
-    return { x: Math.min(size.w, Math.max(0, pos.x)), y: Math.min(size.h, Math.max(0, pos.y)) };
 }

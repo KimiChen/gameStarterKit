@@ -5,9 +5,10 @@
  */
 import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
 import type { GameplayInstanceHost } from "../../gameplay/GameplayModule";
-import type { IMmoEntityWire, IMmoWorldOpResult } from "../../../shared/index";
+import type { IMmoEntityWire, IMmoWorldOpResult, IMmoWorldPos } from "../../../shared/index";
 import type { MmoPrivateState } from "../../../kits/mmo/api/world/index";
-import { mapDefOf, presentationOf, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
+import { MovementPredictor, normalizeDir, parseCollisionGrid } from "../../../kits/mmo/api/movement/index";
+import { classOf, mapDefOf, presentationOf, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
 
 export const MMO_WORLD_GAMEPLAY_ID = "mmoWorld";
 
@@ -22,6 +23,8 @@ export interface MmoWorldRoomObserver {
     entities(snapshot: ReadonlyMap<string, IMmoEntityWire>, synced: boolean): void;
     privateState(state: MmoPrivateState): void;
     opResult(result: IMmoWorldOpResult): void;
+    /** 本人移动回执（movement 面）：服务端权威位置 + 意图 seq */
+    pos(payload: IMmoWorldPos): void;
     resync(reason: string | null): void;
     dropped(): void;
     reconnected(): void;
@@ -34,9 +37,10 @@ export interface MmoWorldRoom {
     readonly mapId: string;
     readonly current: boolean;
     readonly dropping: boolean;
-    move(dir: { readonly x: number; readonly y: number }): boolean;
-    moveTo(target: { readonly x: number; readonly y: number }): boolean;
-    stop(): boolean;
+    /** 发出意图；返回它的 seq（掉线 / 已离开拒发 ⇒ null） */
+    move(dir: { readonly x: number; readonly y: number }): number | null;
+    moveTo(target: { readonly x: number; readonly y: number }): number | null;
+    stop(): number | null;
     requestBaseline(afterSeq: number): boolean;
     observe(observer: MmoWorldRoomObserver): () => void;
     leave(): Promise<void>;
@@ -84,8 +88,6 @@ export interface MmoWorldGameplayOptions {
     readonly selfCharacterId?: string;
 }
 
-const clampNumber = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
-
 export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldInput> {
     readonly id = MMO_WORLD_GAMEPLAY_ID;
 
@@ -101,6 +103,8 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
 
     private entities: ReadonlyMap<string, IMmoEntityWire> = new Map();
     private synced = false;
+    /** 本地预测器（本人实体首次出现在视野流时按职业模板 / 地图建） */
+    private predictor: MovementPredictor | null = null;
     private privateState: MmoPrivateState = { hp: 0, hpMax: 1, mp: 0, mpMax: 0 };
     private notice = "";
 
@@ -123,7 +127,13 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             presentation.mount();
             const active = () => this.started && this.context === context && context.isActive();
             this.unobserve = context.room.observe({
-                entities: (snapshot, synced) => { if (active()) { this.entities = snapshot; this.synced = synced; } },
+                entities: (snapshot, synced) => {
+                    if (!active()) return;
+                    this.entities = snapshot;
+                    this.synced = synced;
+                    if (this.predictor === null) this.predictor = this.createPredictor(snapshot, context.room.mapId);
+                },
+                pos: (payload) => { if (active()) this.predictor?.reconcile(payload); },
                 privateState: (state) => { if (active()) this.privateState = state; },
                 opResult: (result) => { if (active()) this.notice = result.result === "ok" ? "" : `${result.result}${result.detail ? `：${result.detail}` : ""}`; },
                 resync: (reason) => { if (active()) this.notice = `重同步${reason ? `（${reason}）` : ""}`; },
@@ -142,14 +152,24 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         if (!this.started || this.context !== context || !context.isActive()) return;
         if (input.type === "leave") { this.requestExit("user-exit"); return; }
         if (context.room.dropping || !context.room.current) return;
-        if (input.type === "move") context.room.move({ x: clampNumber(input.dir.x, -1, 1), y: clampNumber(input.dir.y, -1, 1) });
-        else if (input.type === "moveTo") context.room.moveTo({ x: Math.max(0, input.x), y: Math.max(0, input.y) });
-        else context.room.stop();
+        if (input.type === "move") {
+            const dir = normalizeDir(input.dir);
+            const seq = context.room.move(dir);
+            if (seq !== null) this.predictor?.push({ seq, dir });
+        } else if (input.type === "moveTo") {
+            const target = { x: Math.max(0, input.x), y: Math.max(0, input.y) };
+            const seq = context.room.moveTo(target);
+            if (seq !== null) this.predictor?.push({ seq, target });
+        } else {
+            const seq = context.room.stop();
+            if (seq !== null) this.predictor?.push({ seq, dir: { x: 0, y: 0 } });
+        }
     }
 
     tick(dt: number, context: GameplayContext<MmoWorldRoom>): void {
         if (!this.started || this.context !== context || !context.isActive()) return;
         if (!Number.isFinite(dt) || dt < 0) return;
+        this.predictor?.tick(dt * 1000);
         this.presentation?.render(this.model());
     }
 
@@ -166,12 +186,18 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     model(): MmoWorldViewModel {
         const mapId = this.context?.room.mapId ?? "";
         const map = mapDefOf(mapId);
+        const predicted = this.predictor?.position() ?? null;
         const views = [...this.entities.values()]
             .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))
-            .map((entity) => ({
-                id: entity.id, kind: entity.kind, name: entity.name, x: entity.x, y: entity.y, hp: entity.hp, hpMax: entity.hpMax, level: entity.level,
-                isSelf: this.isSelf(entity), presentation: presentationOf(entity.templateId),
-            }));
+            .map((entity) => {
+                const isSelf = this.isSelf(entity);
+                // 本人位置取本地预测（回执按 seq 和解），他人位置取视野流
+                const pos = isSelf && predicted ? predicted : entity;
+                return {
+                    id: entity.id, kind: entity.kind, name: entity.name, x: pos.x, y: pos.y, hp: entity.hp, hpMax: entity.hpMax, level: entity.level,
+                    isSelf, presentation: presentationOf(entity.templateId),
+                };
+            });
         return {
             mapId,
             mapSize: map ? map.size : { w: 0, h: 0 },
@@ -185,6 +211,17 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             dropping: this.context?.room.dropping ?? false,
             notice: this.notice,
         };
+    }
+
+    /** 本人实体首次出现：按职业模板（templateId = classId）速度与地图碰撞网格建预测器；职业 / 地图未知 ⇒ 不预测（位置取视野流）。 */
+    private createPredictor(snapshot: ReadonlyMap<string, IMmoEntityWire>, mapId: string): MovementPredictor | null {
+        const self = [...snapshot.values()].find((entity) => this.isSelf(entity));
+        const map = mapDefOf(mapId);
+        const klass = self ? classOf(self.templateId) : null;
+        if (!self || !map || !klass) return null;
+        let grid = null;
+        try { grid = parseCollisionGrid(map.collision ?? null, map.size); } catch { grid = null; }
+        return new MovementPredictor({ x: self.x, y: self.y }, { speedPerSec: klass.speedPerSec, size: map.size, grid });
     }
 
     private isSelf(entity: IMmoEntityWire): boolean {
@@ -210,6 +247,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         this.context = null;
         this.entities = new Map();
         this.synced = false;
+        this.predictor = null;
     }
 }
 

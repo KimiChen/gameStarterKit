@@ -12,7 +12,7 @@ import { ArenaCaptureCapture, type IArenaCaptureCaptureReq } from "../arenaCaptu
 import { ArenaDuelStrike, type IArenaDuelStrikeReq } from "../arenaDuel/wire";
 import { CastSkill, Move, SkillResult, type ICastSkillReq, type IMoveReq, type ISkillResultRes } from "../ballMove/wire";
 import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
-import { MmoWorldBaselineBegin, MmoWorldBaselineChunk, MmoWorldBaselineEnd, MmoWorldBaselineRequest, MmoWorldCast, MmoWorldChoose, MmoWorldEnter, MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldNotice, MmoWorldOpResult, MmoWorldPickup, MmoWorldPrivate, MmoWorldPrompt, MmoWorldScriptState, MmoWorldTarget, MmoWorldTransfer, MmoWorldTransferReady, MmoWorldUpdate, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldBaselineEnd, type IMmoWorldBaselineRequestReq, type IMmoWorldCastReq, type IMmoWorldChooseReq, type IMmoWorldEnter, type IMmoWorldInteractReq, type IMmoWorldLeave, type IMmoWorldMoveReq, type IMmoWorldNotice, type IMmoWorldOpResult, type IMmoWorldPickupReq, type IMmoWorldPrivate, type IMmoWorldPrompt, type IMmoWorldScriptState, type IMmoWorldTargetReq, type IMmoWorldTransferReady, type IMmoWorldTransferReq, type IMmoWorldUpdate } from "../mmoWorld/wire";
+import { MmoWorldBaselineBegin, MmoWorldBaselineChunk, MmoWorldBaselineEnd, MmoWorldBaselineRequest, MmoWorldCast, MmoWorldChoose, MmoWorldEnter, MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldNotice, MmoWorldOpResult, MmoWorldPickup, MmoWorldPos, MmoWorldPrivate, MmoWorldPrompt, MmoWorldScriptState, MmoWorldTarget, MmoWorldTransfer, MmoWorldTransferReady, MmoWorldUpdate, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldBaselineEnd, type IMmoWorldBaselineRequestReq, type IMmoWorldCastReq, type IMmoWorldChooseReq, type IMmoWorldEnter, type IMmoWorldInteractReq, type IMmoWorldLeave, type IMmoWorldMoveReq, type IMmoWorldNotice, type IMmoWorldOpResult, type IMmoWorldPickupReq, type IMmoWorldPos, type IMmoWorldPrivate, type IMmoWorldPrompt, type IMmoWorldScriptState, type IMmoWorldTargetReq, type IMmoWorldTransferReady, type IMmoWorldTransferReq, type IMmoWorldUpdate } from "../mmoWorld/wire";
 import { SnakeBaselineBegin, SnakeBaselineChunk, SnakeBaselineEnd, SnakeBaselineRequest, SnakeDelta, SnakeEndRun, SnakeInput, SnakeReliveDecision, SnakeReliveDecisionResult, SnakeReliveOffered, SnakeReliveResolved, SnakeRunFinalizing, SnakeRunResult, type ISnakeBaselineBegin, type ISnakeBaselineChunk, type ISnakeBaselineEnd, type ISnakeBaselineRequestReq, type ISnakeEndRunReq, type ISnakeInputReq, type ISnakeReliveDecisionReq, type ISnakeReliveDecisionResult, type ISnakeReliveOffered, type ISnakeReliveResolved, type ISnakeRunFinalizing, type ISnakeRunResultV2, type ISnakeWorldDelta } from "../snake/wire";
 import { TallyTap, type ITallyTapReq } from "../tally/wire";
 import { ViewFixtureBaselineBegin, ViewFixtureBaselineChunk, ViewFixtureBaselineEnd, ViewFixtureEnter, ViewFixtureLeave, ViewFixtureLook, ViewFixturePrivate, ViewFixtureResync, ViewFixtureUpdate, type IViewFixtureBaselineBegin, type IViewFixtureBaselineChunk, type IViewFixtureBaselineEnd, type IViewFixtureEnter, type IViewFixtureLeave, type IViewFixtureLookReq, type IViewFixturePrivate, type IViewFixtureResyncReq, type IViewFixtureUpdate } from "../viewFixture/wire";
@@ -67,6 +67,7 @@ export const S2C = {
     MmoWorldBaselineChunk: "s2c.mmoWorld.baselineChunk",
     MmoWorldBaselineEnd: "s2c.mmoWorld.baselineEnd",
     MmoWorldPrivate: "s2c.mmoWorld.private",
+    MmoWorldPos: "s2c.mmoWorld.pos",
     MmoWorldOpResult: "s2c.mmoWorld.opResult",
     MmoWorldTransferReady: "s2c.mmoWorld.transferReady",
     MmoWorldPrompt: "s2c.mmoWorld.prompt",
@@ -150,6 +151,7 @@ export interface S2CPayloadMap {
     "s2c.mmoWorld.baselineChunk": IMmoWorldBaselineChunk;
     "s2c.mmoWorld.baselineEnd": IMmoWorldBaselineEnd;
     "s2c.mmoWorld.private": IMmoWorldPrivate;
+    "s2c.mmoWorld.pos": IMmoWorldPos;
     "s2c.mmoWorld.opResult": IMmoWorldOpResult;
     "s2c.mmoWorld.transferReady": IMmoWorldTransferReady;
     "s2c.mmoWorld.prompt": IMmoWorldPrompt;
@@ -234,6 +236,7 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.mmoWorld.baselineChunk": MmoWorldBaselineChunk.validate,
     "s2c.mmoWorld.baselineEnd": MmoWorldBaselineEnd.validate,
     "s2c.mmoWorld.private": MmoWorldPrivate.validate,
+    "s2c.mmoWorld.pos": MmoWorldPos.validate,
     "s2c.mmoWorld.opResult": MmoWorldOpResult.validate,
     "s2c.mmoWorld.transferReady": MmoWorldTransferReady.validate,
     "s2c.mmoWorld.prompt": MmoWorldPrompt.validate,
@@ -327,6 +330,7 @@ export const GAME_WIRE_OWNERS = {
     "s2c.mmoWorld.baselineChunk": "mmoWorld",
     "s2c.mmoWorld.baselineEnd": "mmoWorld",
     "s2c.mmoWorld.private": "mmoWorld",
+    "s2c.mmoWorld.pos": "mmoWorld",
     "s2c.mmoWorld.opResult": "mmoWorld",
     "s2c.mmoWorld.transferReady": "mmoWorld",
     "s2c.mmoWorld.prompt": "mmoWorld",
@@ -516,6 +520,7 @@ export const gameplayS2CTokens = {
         "s2c.mmoWorld.baselineChunk": MmoWorldBaselineChunk,
         "s2c.mmoWorld.baselineEnd": MmoWorldBaselineEnd,
         "s2c.mmoWorld.private": MmoWorldPrivate,
+        "s2c.mmoWorld.pos": MmoWorldPos,
         "s2c.mmoWorld.opResult": MmoWorldOpResult,
         "s2c.mmoWorld.transferReady": MmoWorldTransferReady,
         "s2c.mmoWorld.prompt": MmoWorldPrompt,

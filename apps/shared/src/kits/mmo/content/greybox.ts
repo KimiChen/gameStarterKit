@@ -1,7 +1,8 @@
 /**
- * mmo kit · 灰盒内容包（docs/MMO.md §7.6「kit v1 自带灰盒内容包」；MK0-B5）：一图（greybox 2000×2000）一怪（slime，三只）一技能（strike）。
- * 只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点（data 贡献 = JSON）装载，届时本 TS 字面量退役——MK0 以 TS 字面量作单源
- * （kit 服务端代码 ⛔ node:fs、tsconfig 未开 resolveJsonModule，见 MMO.md §12 MK0 偏差）。启动期与用例都经 `validateContentPack` 过闸。
+ * mmo kit · 灰盒内容包（docs/MMO.md §7.6「kit v1 自带灰盒内容包」；MK0-B5，MK1-B1 加职业模板与碰撞位图）：一图（greybox 2000×2000，视距 400，
+ * 一堵 200×200 的墙）两职业（fighter / caster）一怪（slime，三只）一技能（strike）。只证能力不承诺内容：数值全是灰盒；MK4 改经贡献点
+ * （data 贡献 = JSON）装载，届时本 TS 字面量退役——MK0 以 TS 字面量作单源（kit 服务端代码 ⛔ node:fs、tsconfig 未开 resolveJsonModule，
+ * 见 MMO.md §12 MK0 偏差 ①）。启动期与用例都经 `validateContentPack` 过闸。
  */
 import type { IContentPack } from "../api/content/index";
 
@@ -10,25 +11,42 @@ export const GREYBOX_MAP_ID = "greybox";
 export const GREYBOX_SPAWN_POINT_ID = "start";
 export const GREYBOX_CREATURE_ID = "slime";
 export const GREYBOX_SPELL_ID = "strike";
-/** 角色常量速度（世界单位 / 秒；MK1 movement 面改由职业模板给出）。 */
-export const GREYBOX_CHARACTER_SPEED = 120;
-export const GREYBOX_CHARACTER_HP = 100;
-export const GREYBOX_CHARACTER_MP = 50;
+export const GREYBOX_MAP_SIZE = 2000;
+export const GREYBOX_COLLISION_CELL = 100;
+/** 墙：格 col 15–16 × row 9–10 ⇒ 世界坐标 x ∈ [1500, 1700)、y ∈ [900, 1100)。 */
+export const GREYBOX_WALL = Object.freeze({ colMin: 15, colMax: 16, rowMin: 9, rowMax: 10 });
+
+function greyboxBitmap(): string {
+    const cells = GREYBOX_MAP_SIZE / GREYBOX_COLLISION_CELL;
+    let bitmap = "";
+    for (let row = 0; row < cells; row += 1) {
+        for (let col = 0; col < cells; col += 1) {
+            const wall = col >= GREYBOX_WALL.colMin && col <= GREYBOX_WALL.colMax && row >= GREYBOX_WALL.rowMin && row <= GREYBOX_WALL.rowMax;
+            bitmap += wall ? "1" : "0";
+        }
+    }
+    return bitmap;
+}
 
 export const GREYBOX_PACK: IContentPack = {
     schemaVersion: 1,
     packId: GREYBOX_PACK_ID,
-    version: 1,
+    version: 2,
     maps: [{
         mapId: GREYBOX_MAP_ID,
         name: "灰盒草原",
-        size: { w: 2000, h: 2000 },
+        size: { w: GREYBOX_MAP_SIZE, h: GREYBOX_MAP_SIZE },
         aoi: { cellSize: 100, viewRadius: 400 },
+        collision: { cellSize: GREYBOX_COLLISION_CELL, bitmap: greyboxBitmap() },
         spawnPoints: [{ spawnPointId: GREYBOX_SPAWN_POINT_ID, pos: { x: 1000, y: 1000 } }],
         portals: [],
         respawnPoints: [{ x: 1000, y: 1000 }],
     }],
     regions: [],
+    classes: [
+        { classId: "fighter", name: "战士", presentationId: "fighter", hpMax: 100, mpMax: 50, attack: 10, defense: 2, speedPerSec: 120, spells: [GREYBOX_SPELL_ID] },
+        { classId: "caster", name: "法师", presentationId: "caster", hpMax: 80, mpMax: 100, attack: 6, defense: 1, speedPerSec: 110, spells: [GREYBOX_SPELL_ID] },
+    ],
     creatures: [{
         templateId: GREYBOX_CREATURE_ID,
         name: "史莱姆",

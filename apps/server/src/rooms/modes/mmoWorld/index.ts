@@ -12,12 +12,12 @@
  */
 import {
     GAMEPLAY_CATALOG, MmoWorldBaselineBegin, MmoWorldBaselineChunk, MmoWorldBaselineEnd, MmoWorldBaselineRequest, MmoWorldCast, MmoWorldChoose, MmoWorldEnter,
-    MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldOpResult, MmoWorldPickup, MmoWorldPrivate, MmoWorldTarget, MmoWorldTransfer, MmoWorldUpdate,
+    MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldOpResult, MmoWorldPickup, MmoWorldPos, MmoWorldPrivate, MmoWorldTarget, MmoWorldTransfer, MmoWorldUpdate,
     type IMmoEntityWire, type IMmoWorldMoveReq, type IMmoWorldPickupReq, type IMmoWorldTransferReq, type IObserverEnvelope,
 } from "@game/shared";
 import type { IContentPackIndex, IMapDef } from "@game/shared/kits/mmo/api/content/index";
-import { clampToMap, integrate, withinRadius } from "@game/shared/kits/mmo/api/world/index";
-import { GREYBOX_CHARACTER_HP, GREYBOX_CHARACTER_MP, GREYBOX_CHARACTER_SPEED } from "@game/shared/kits/mmo/content/greybox";
+import { clampToMap, withinRadius } from "@game/shared/kits/mmo/api/world/index";
+import { applyIntent, parseCollisionGrid, resolveMove, type CollisionGrid } from "../../../kits/mmo/api/movement/index";
 import { characterOfPersona, type MmoCharacterRow } from "../../../kits/mmo/api/characters/index";
 import { contentIndex } from "../../../kits/mmo/api/content/index";
 import { MMO_WORLD_MODE_ID } from "../../../kits/mmo/host";
@@ -32,8 +32,6 @@ export { MMO_WORLD_MODE_ID };
 
 /** 撒怪抖动半径（世界单位；灰盒参数）。 */
 export const MMO_SPAWN_JITTER = 40;
-/** 点地移动的到达阈值（世界单位）。 */
-export const MMO_ARRIVE_EPSILON = 0.5;
 /** baseline 每块条目数。 */
 export const MMO_BASELINE_CHUNK_ITEMS = 32;
 
@@ -98,11 +96,14 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     const privateSent = new Map<string, string>();
     const log: string[] = [];
     let map: IMapDef | null = null;
+    /** 碰撞网格（内容包 collision；无 = 全图通行） */
+    let grid: CollisionGrid | null = null;
 
     const mapOf = (context: WorldModeContext<MmoWorldRoomState>): IMapDef => {
         if (map === null) {
             map = content.mapById.get(context.mapId) ?? null;
             if (map === null) throw new Error(`[mmoWorld] 地图 ${context.mapId} 不在内容包 ${content.pack.packId}@${content.pack.version} 内`);
+            grid = parseCollisionGrid(map.collision ?? null, map.size);
         }
         return map;
     };
@@ -194,7 +195,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         },
         onAdmit(_context, request) {
             const row = pending.get(request.personaId);
-            const ok = row !== undefined && row !== null;
+            // 职业模板是速度 / HP / MP 的真源：角色的 classId 不在当前内容包 ⇒ 拒（内容包换版后的存量角色由内容侧迁移）
+            const ok = row !== undefined && row !== null && content.classById.has(row.classId);
             log.push(`admit:${request.personaId}:${ok}`);
             return ok;
         },
@@ -206,11 +208,12 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             const spawn = def.spawnPoints[0]!.pos;
             const usable = restored && restored.mapId === def.mapId && typeof restored.x === "number" && typeof restored.y === "number";
             const pos = usable ? clampToMap({ x: restored.x as number, y: restored.y as number }, def.size) : { x: spawn.x, y: spawn.y };
-            const hpMax = GREYBOX_CHARACTER_HP;
-            const mpMax = GREYBOX_CHARACTER_MP;
+            const klass = content.classById.get(row?.classId ?? "");
+            const hpMax = klass?.hpMax ?? 100;
+            const mpMax = klass?.mpMax ?? 50;
             const id = `char:${row?.characterId ?? session.personaId}`;
             entities.set(id, {
-                id, kind: "character", templateId: row?.classId ?? "fighter", name: row?.name ?? "?", level: row?.level ?? 1, hpMax, mpMax, speedPerSec: GREYBOX_CHARACTER_SPEED,
+                id, kind: "character", templateId: row?.classId ?? "fighter", name: row?.name ?? "?", level: row?.level ?? 1, hpMax, mpMax, speedPerSec: klass?.speedPerSec ?? 120,
                 session: session.session, personaId: session.personaId, characterId: row?.characterId ?? null,
                 x: pos.x, y: pos.y, rev: 0,
                 hp: typeof restored?.hp === "number" ? Math.max(0, Math.min(hpMax, restored.hp)) : hpMax,
@@ -235,6 +238,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         },
         onStep(context, step) {
             const def = mapOf(context);
+            /** 本步收到意图的角色（pos 回执：动了或有新意图都回） */
+            const touched = new Set<string>();
             for (const command of step.commands) {
                 if (command.type === MmoWorldBaselineRequest.type) {
                     context.observers.requestBaseline(command.session);
@@ -250,40 +255,24 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (!mover) continue;
                 const intent = command.payload as IMmoWorldMoveReq;
                 mover.seq = intent.seq;
-                if (intent.dir) {
-                    mover.dirX = intent.dir.x;
-                    mover.dirY = intent.dir.y;
-                    mover.target = null;
-                } else if (intent.target) {
-                    mover.target = clampToMap(intent.target, def.size);
-                    mover.dirX = 0;
-                    mover.dirY = 0;
-                }
+                const applied = applyIntent(mover, intent.dir ? { seq: intent.seq, dir: intent.dir } : { seq: intent.seq, target: intent.target ?? { x: mover.x, y: mover.y } }, def.size);
+                mover.dirX = applied.dirX;
+                mover.dirY = applied.dirY;
+                mover.target = applied.target;
+                touched.add(mover.id);
             }
             for (const entity of entities.values()) {
                 if (entity.kind !== "character" || entity.session === null) continue;
-                let next: { readonly x: number; readonly y: number } | null = null;
-                if (entity.target) {
-                    const dx = entity.target.x - entity.x;
-                    const dy = entity.target.y - entity.y;
-                    const distance = Math.hypot(dx, dy);
-                    const reach = (entity.speedPerSec * step.dtMs) / 1000;
-                    if (distance <= reach + MMO_ARRIVE_EPSILON) {
-                        next = { x: entity.target.x, y: entity.target.y };
-                        entity.target = null;
-                    } else {
-                        next = integrate(entity, { x: dx, y: dy }, entity.speedPerSec, step.dtMs);
-                    }
-                } else if (entity.dirX !== 0 || entity.dirY !== 0) {
-                    next = integrate(entity, { x: entity.dirX, y: entity.dirY }, entity.speedPerSec, step.dtMs);
+                // 权威积分（movement 面 resolveMove：双端同源；碰撞候选来自内容包网格）
+                const result = resolveMove(entity, entity.speedPerSec, step.dtMs, def.size, grid);
+                if (result.moved) {
+                    entity.x = result.x;
+                    entity.y = result.y;
+                    entity.rev += 1;
                 }
-                if (next) {
-                    const pos = clampToMap(next, def.size);
-                    if (pos.x !== entity.x || pos.y !== entity.y) {
-                        entity.x = pos.x;
-                        entity.y = pos.y;
-                        entity.rev += 1;
-                    }
+                entity.target = result.target;
+                if (result.moved || touched.has(entity.id)) {
+                    context.sendS2C(entity.session, MmoWorldPos, { seq: entity.seq, tick: step.tick, x: entity.x, y: entity.y });
                 }
                 // 本人私有流（不可丢类，与视野流共用单 seq 流）：hp / mp 变了才发
                 const signature = `${entity.hp}/${entity.hpMax}/${entity.mp}/${entity.mpMax}`;

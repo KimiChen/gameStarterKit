@@ -4,14 +4,17 @@
  *  - onBeforeAdmit 预热角色行 → onAdmit：有角色放行、无角色拒；onEnter 落出生点或 persona 检查点位置（同图才回灌）；
  *  - move dir ⇒ 常量速度积分（120 × 0.05 = 6 / 步）并钳图；target ⇒ 直奔并到达停下；停下不再前进；
  *  - 视野流：首个 baseline = 本人 + 三只 slime；update 只在位置变时；本人私有流 hp / mp 一次；pickup / transfer ⇒ opResult rejected；
- *  - onCheckpoint：persona 快照 {mapId, x, y, hp, mp}、分线快照 creatures；onRestore 回灌怪物位置。
+ *  - onCheckpoint：persona 快照 {mapId, x, y, hp, mp}、分线快照 creatures；onRestore 回灌怪物位置；
+ *  - MK1-B1 movement 面：速度 / HP / MP 取内容包职业模板（caster 110 / 80 / 100）；本人每步收直发 `s2c.mmoWorld.pos`（seq = 最新意图；停下那步回执一次，之后不动不回）；
+ *    撞灰盒墙停下并清目标；职业不在内容包 ⇒ 准入拒。
  * 变异验证（改哪一行 → 哪条用例转红）：mode 撒怪 count 循环改为 1 → 「三只 slime」红；onEnter 不看 restored.mapId → 「异图检查点不回灌」红。
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldOpResult, type IMmoWorldPrivate, type IMmoWorldUpdate } from "@game/shared";
+import { C2S, S2C, WorldPhase, type IMmoEntityWire, type IMmoWorldBaselineChunk, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate, type IMmoWorldUpdate } from "@game/shared";
 import { indexContentPack, validateContentPack } from "@game/shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
+import type { MmoClassId } from "@game/shared/kits/mmo/api/characters/index";
 import type { MmoCharacterRow } from "../src/kits/mmo/api/characters/index";
 import { buildCheckpointEnvelope } from "../src/rooms/core/CheckpointPort";
 import { WorldRuntime, type WorldCheckpointBatch } from "../src/rooms/core/WorldRuntime";
@@ -20,8 +23,8 @@ import { createRoomStateForMode, type MmoWorldRoomState } from "../src/rooms/sch
 import type { MmoInstanceSnapshot, MmoPersonaSnapshot } from "../src/rooms/modes/mmoWorld/checkpoint";
 
 const CONTENT = indexContentPack(validateContentPack(GREYBOX_PACK));
-const rowOf = (personaId: string, name = "Rook"): MmoCharacterRow => ({
-    characterId: `c-${personaId}`, personaId, userId: `u-${personaId}`, slot: 0, name, classId: "fighter", factionId: "dawn", level: 1, exp: 0, checkpointRev: 0, mapId: null,
+const rowOf = (personaId: string, name = "Rook", classId: MmoClassId = "fighter"): MmoCharacterRow => ({
+    characterId: `c-${personaId}`, personaId, userId: `u-${personaId}`, slot: 0, name, classId, factionId: "dawn", level: 1, exp: 0, checkpointRev: 0, mapId: null,
 });
 
 interface Harness {
@@ -85,7 +88,7 @@ test("撒怪：本图三只 slime 落在 spawn 附近（确定性）；图不在
         assert.ok(Math.abs(creature.x - 1200) <= 40 && Math.abs(creature.y - 1000) <= 40, `${creature.id} 在 spawn 抖动半径内 (${creature.x}, ${creature.y})`);
         assert.deepEqual([creature.templateId, creature.hp, creature.hpMax], ["slime", 30, 30]);
     }
-    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 1, 0]);
+    assert.deepEqual([h.state.packId, h.state.packVersion, h.state.population], ["greybox", 2, 0]);
     const other = harness();
     await assert.rejects(other.runtime.recover({ instanceId: "i2", mapId: "nowhere", line: 0, authorityEpoch: 1, checkpoint: null }), /不在内容包/u);
     const req = request("s0", "p-nobody");
@@ -154,4 +157,42 @@ test("检查点：persona 快照 {mapId,x,y,hp,mp} + 分线 creatures；onRestor
     await seat(recovered, "b", "p-b", otherMap);
     const moverB = recovered.mode.__probe.moverOf("b")!;
     assert.deepEqual([moverB.x, moverB.y], [1000, 1000], "异图检查点不回灌位置");
+});
+
+test("movement 面：caster 每步 5.5 单位（职业模板）；本人每步收直发 pos 回执（seq = 最新意图，⛔ 观察者单流）；停下回执一次后静默；撞墙停下清目标；职业不在包 ⇒ 准入拒", async () => {
+    const h = harness();
+    await activeWorld(h);
+    h.characters.set("p-c", rowOf("p-c", "Mage", "caster"));
+    const reqC = request("c", "p-c");
+    await h.runtime.beforeAdmit(reqC);
+    assert.equal(h.runtime.admit(reqC), "admitted");
+    step(h);
+    const first = drain(h, "c");
+    const privates = first.filter((message) => message.type === S2C.MmoWorldPrivate).map((message) => message.payload as IMmoWorldPrivate);
+    assert.deepEqual([privates[0]!.hpMax, privates[0]!.mpMax], [80, 100], "职业模板的 HP / MP");
+    const posOf = (session: string) => h.direct.filter((message) => message.session === session && message.type === S2C.MmoWorldPos).map((message) => message.payload as IMmoWorldPos);
+    assert.equal(posOf("c").length, 0, "没意图没移动 ⇒ 无回执");
+    h.runtime.enqueue("c", C2S.MmoWorldMove, { seq: 1, dir: { x: 1, y: 0 } });
+    step(h, 2);
+    assert.deepEqual(posOf("c").map((pos) => [pos.seq, pos.x, pos.y]), [[1, 1005.5, 1000], [1, 1011, 1000]], "每步一条，seq = 意图 seq，110 × 0.05 = 5.5");
+    assert.ok(posOf("c").every((pos) => pos.tick > 0));
+    assert.equal(drain(h, "c").filter((message) => message.type === S2C.MmoWorldPos).length, 0, "pos 直发，⛔ 进观察者单流");
+    h.runtime.enqueue("c", C2S.MmoWorldMove, { seq: 2, dir: { x: 0, y: 0 } });
+    step(h, 3);
+    assert.deepEqual(posOf("c").slice(2).map((pos) => [pos.seq, pos.x]), [[2, 1011]], "停：意图那步回执一次（seq 2），之后不动不回");
+
+    // 撞墙：从检查点 (1490, 1000) 点地 (1600, 1000)——1496 之后下一步 1502 落墙（x ∈ [1500, 1700)）⇒ 停、清目标
+    const nearWall = buildCheckpointEnvelope({ rev: 3, eventOffset: 0, authorityEpoch: 1, controlEpoch: 1, schemaVersion: 1, snapshot: { mapId: "greybox", x: 1490, y: 1000, hp: 100, mp: 50 } satisfies MmoPersonaSnapshot });
+    await seat(h, "w", "p-w", nearWall);
+    h.runtime.enqueue("w", C2S.MmoWorldMove, { seq: 1, target: { x: 1600, y: 1000 } });
+    step(h, 5);
+    const mover = h.mode.__probe.moverOf("w")!;
+    assert.deepEqual([mover.x, mover.y, mover.target], [1496, 1000, null], "撞墙原地并清目标（⛔ 空转）");
+    assert.deepEqual(posOf("w").map((pos) => pos.x), [1496], "只有真动的那步回执");
+
+    // 职业模板不在内容包 ⇒ 准入拒
+    h.characters.set("p-x", rowOf("p-x", "Pal", "paladin" as MmoClassId)); // 枚举外的存量职业（内容包换版）
+    const reqX = request("x", "p-x");
+    await h.runtime.beforeAdmit(reqX);
+    assert.equal(h.runtime.admit(reqX), "refused", "职业不在内容包 ⇒ 拒");
 });

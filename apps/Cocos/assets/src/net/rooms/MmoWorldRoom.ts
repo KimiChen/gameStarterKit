@@ -9,7 +9,7 @@ import type { GameplayRoomJoiner } from "../../logic/gameplay/RoomController";
 import type { MmoWorldRoom, MmoWorldRoomObserver } from "../../logic/rooms/mmoWorld/MmoWorldGameplay";
 import { MMO_WORLD_GAMEPLAY_ID } from "../../logic/rooms/mmoWorld/MmoWorldGameplay";
 import { MMO_WORLD_STREAM_TYPES, createMmoWorldReconciler, type IWorldEnterRes } from "../../kits/mmo/api/world/index";
-import { C2S, S2C, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldBaselineEnd, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPrivate, type IMmoWorldUpdate } from "../../shared/index";
+import { C2S, S2C, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldBaselineEnd, type IMmoWorldEnter, type IMmoWorldLeave, type IMmoWorldOpResult, type IMmoWorldPos, type IMmoWorldPrivate, type IMmoWorldUpdate } from "../../shared/index";
 import { WorldRoomTransport, type WorldRoomHandle } from "./WorldRoomTransport";
 
 export interface MmoWorldJoinDeps {
@@ -30,9 +30,9 @@ export function createMmoWorldRoom(handle: WorldRoomHandle): MmoWorldRoom {
         mapId: handle.mapId,
         get current() { return handle.current; },
         get dropping() { return handle.dropping; },
-        move(dir) { return handle.send(C2S.MmoWorldMove, { seq: nextSeq(), dir }); },
-        moveTo(target) { return handle.send(C2S.MmoWorldMove, { seq: nextSeq(), target }); },
-        stop() { return handle.send(C2S.MmoWorldMove, { seq: nextSeq(), dir: { x: 0, y: 0 } }); },
+        move(dir) { const seq = nextSeq(); return handle.send(C2S.MmoWorldMove, { seq, dir }) ? seq : null; },
+        moveTo(target) { const seq = nextSeq(); return handle.send(C2S.MmoWorldMove, { seq, target }) ? seq : null; },
+        stop() { const seq = nextSeq(); return handle.send(C2S.MmoWorldMove, { seq, dir: { x: 0, y: 0 } }) ? seq : null; },
         requestBaseline(afterSeq) { return handle.send(C2S.MmoWorldBaselineRequest, { authorityEpoch: 1, afterSeq }); },
         observe(observer) { return observeMmoWorld(handle, observer); },
         leave: () => handle.leave(),
@@ -65,13 +65,15 @@ function observeMmoWorld(handle: WorldRoomHandle, observer: MmoWorldRoomObserver
         publish();
     });
     const offResult = handle.onMessage(S2C.MmoWorldOpResult, (payload: IMmoWorldOpResult) => { if (active) observer.opResult(payload); });
+    // 本人移动回执（直发，不在观察者单流内）：预测器按 seq 和解
+    const offPos = handle.onMessage(S2C.MmoWorldPos, (payload: IMmoWorldPos) => { if (active) observer.pos(payload); });
     const offDrop = handle.onDrop(() => { if (active) observer.dropped(); });
     const offReconnect = handle.onReconnect(() => { if (active) observer.reconnected(); });
     const offLeave = handle.onLeave((kind) => { if (active) observer.left(kind); });
     return () => {
         if (!active) return;
         active = false;
-        for (const off of [offStream, offPrivate, offResult, offDrop, offReconnect, offLeave]) {
+        for (const off of [offStream, offPrivate, offResult, offPos, offDrop, offReconnect, offLeave]) {
             try { off(); } catch (error) { console.error("[MmoWorldRoom] 解绑异常", error); }
         }
     };

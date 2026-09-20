@@ -4,7 +4,7 @@
  *    target、cast、interact、choose、pickup、transfer、baselineRequest；
  *  - S2C perSession（框架观察者同步 MF5b：enter / update / leave + baselineBegin / Chunk / End 六件，差分 / 编号 / 投递归框架；
  *    ⚠ §7.4 草案的单一 `delta` token 在 MF5 落地为六件分流，本文件以框架形态为准）、private（本人私有流）、opResult（durable 命令回执）、
- *    transferReady（交接就绪，凭据原文只此一处出网）、prompt（编排提示）；
+ *    transferReady（交接就绪，凭据原文只此一处出网）、prompt（编排提示）；S2C 直发：pos（本人移动回执，movement 面按 seq 和解，MK1-B1）；
  *  - S2C 分线广播：scriptState（≤ MMO_SCRIPT_STATE_MAX_KEYS 个标量键）、notice。
  * 附近聊天 ⛔ 不是本玩法 token（框架 core `c2s/s2c.world.chat`，§6.5.1）。数值域只做 wire 边界闸：地图 size 来自内容包（content 面）。
  */
@@ -63,6 +63,8 @@ export interface IMmoWorldUpdate { readonly seq: number; readonly tick: number; 
 export interface IMmoWorldLeave { readonly seq: number; readonly tick: number; readonly id: string }
 /** 本人私有流（与视野流共用单 seq 流）：MK0 只有 hp / mp；bag / cooldowns / quest / vars 随 MK2–MK4 增列（可选键）。 */
 export interface IMmoWorldPrivate { readonly seq: number; readonly tick: number; readonly hp: number; readonly hpMax: number; readonly mp: number; readonly mpMax: number }
+/** 本人移动回执（movement 面，MK1-B1）：服务端权威位置 + 它反映到的意图 seq（客户端按 seq 和解本地预测）；直发回执，⛔ 不进观察者单流。 */
+export interface IMmoWorldPos { readonly seq: number; readonly tick: number; readonly x: number; readonly y: number }
 export interface IMmoWorldOpResult { readonly clientReqId: string; readonly result: MmoOpResultKind; readonly detail?: string }
 export interface IMmoWorldTransferReady { readonly transferId: string; readonly worldAddress: string; readonly ticket: string; readonly expiresAt: number }
 export interface IMmoWorldPromptChoice { readonly choiceId: string; readonly text: string }
@@ -215,6 +217,17 @@ function validatePrivate(input: unknown): IMmoWorldPrivate {
     };
 }
 
+function validatePos(input: unknown): IMmoWorldPos {
+    const value = recordOf(input, "payload");
+    assertExactKeys(value, ["seq", "tick", "x", "y"], [], "payload");
+    return {
+        seq: finiteInteger(value.seq, "payload.seq", 0, Number.MAX_SAFE_INTEGER),
+        tick: finiteInteger(value.tick, "payload.tick", 0, Number.MAX_SAFE_INTEGER),
+        x: finiteNumber(value.x, "payload.x", 0, MMO_WORLD_COORD_MAX),
+        y: finiteNumber(value.y, "payload.y", 0, MMO_WORLD_COORD_MAX),
+    };
+}
+
 function validateOpResult(input: unknown): IMmoWorldOpResult {
     const value = recordOf(input, "payload");
     assertExactKeys(value, ["clientReqId", "result"], ["detail"], "payload");
@@ -320,6 +333,7 @@ export const MmoWorldBaselineBegin = defineS2C("s2c.mmoWorld.baselineBegin", val
 export const MmoWorldBaselineChunk = defineS2C("s2c.mmoWorld.baselineChunk", validateBaselineChunk, { perSession: true });
 export const MmoWorldBaselineEnd = defineS2C("s2c.mmoWorld.baselineEnd", validateBaselineEnd, { perSession: true });
 export const MmoWorldPrivate = defineS2C("s2c.mmoWorld.private", validatePrivate, { perSession: true });
+export const MmoWorldPos = defineS2C("s2c.mmoWorld.pos", validatePos);
 export const MmoWorldOpResult = defineS2C("s2c.mmoWorld.opResult", validateOpResult, { perSession: true });
 export const MmoWorldTransferReady = defineS2C("s2c.mmoWorld.transferReady", validateTransferReady, { perSession: true });
 export const MmoWorldPrompt = defineS2C("s2c.mmoWorld.prompt", validatePrompt, { perSession: true });
