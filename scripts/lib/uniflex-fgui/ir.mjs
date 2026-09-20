@@ -671,6 +671,23 @@ function isContainer(node) {
         || node.kind === "component";
 }
 
+/** Direction from row overflow: beyond width only → horizontal, both → both, else vertical. */
+function scrollDirection(node, rows) {
+    const viewW = node.rect?.width ?? 0;
+    const viewH = node.rect?.height ?? 0;
+    let right = 0;
+    let bottom = 0;
+    for (const row of rows) {
+        right = Math.max(right, (row.x ?? 0) + (row.width ?? 0));
+        bottom = Math.max(bottom, (row.y ?? 0) + (row.height ?? 0));
+    }
+    const overX = right > viewW + 1;
+    const overY = bottom > viewH + 1;
+    if (overX && overY) return "both";
+    if (overX) return "horizontal";
+    return "vertical";
+}
+
 /** A virtual-list/scroll-view becomes a real scroll component; rows live inside it. */
 function scrollListChild(ctx, node, groupIndex) {
     const xy = rel(node.rect, ctx.origin);
@@ -685,7 +702,7 @@ function scrollListChild(ctx, node, groupIndex) {
         size: roundSize(node.rect),
         extension: null,
         objectType: ObjectType.Component,
-        scroll: "vertical",
+        scroll: scrollDirection(node, rows),
         children: rows,
     });
     return {

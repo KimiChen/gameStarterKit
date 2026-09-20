@@ -86,6 +86,7 @@ npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt
 npm run ui:export-fgui -- --screens prompt,small-popup,confirm --out .cache/fgui/popups
 npm run ui:export-fgui -- --all --out .cache/fgui/catalog
 npm run ui:preview-fgui -- --out .cache/fgui/prompt
+npm run ui:verify-fgui-dom -- --out .cache/fgui/catalog
 npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001
 npm run ui:art-export -- --screen backpack
 npm run ui:art-import -- --changed
