@@ -1,0 +1,9 @@
+{
+  "key": "AllianceWarPanel",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceWar/AllianceWarPanel.tsx",
+  "export": {
+    "uniflexSha256": "e6a62efba2fafa74591a272f0cf49e643ae2f9b3fc84716cfc0d2893a4ab8b1a",
+    "psdSha256": "90ad4adbdda640292478a838997b222d617973090a25b57f41e1fed1b5bf7fe5",
+    "at": "2026-09-20T10:45:11.390Z"
+  }
+}

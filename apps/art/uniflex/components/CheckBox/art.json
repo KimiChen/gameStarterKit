@@ -1,0 +1,9 @@
+{
+  "key": "CheckBox",
+  "source": "apps/client/src/ui-uniflex/components/checkbox/CheckBox.tsx",
+  "export": {
+    "uniflexSha256": "31c091a04835cee963db5c7095f7fb40b7bd61c58b412de5804211553c360ed5",
+    "psdSha256": "726eb7d16570d00eb1d2bec93f2a44bf4cfde438ef0545458fc64ef1ad70330d",
+    "at": "2026-09-20T10:44:41.457Z"
+  }
+}

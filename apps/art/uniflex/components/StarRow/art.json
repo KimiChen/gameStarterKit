@@ -1,0 +1,9 @@
+{
+  "key": "StarRow",
+  "source": "apps/client/src/ui-uniflex/gamecomponents/star/StarRow.tsx",
+  "export": {
+    "uniflexSha256": "748747a5396f5b945cfa8adc7075b667ed40bc9c2db8de0d8fb0b51ca8297684",
+    "psdSha256": "5c0a7d71c2b1472b70de4d341897a3bb5587569dc2c28a9fa042c5b02fe7f8d7",
+    "at": "2026-09-20T10:44:45.770Z"
+  }
+}

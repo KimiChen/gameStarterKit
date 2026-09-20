@@ -9,13 +9,22 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "8df1031108cd1b4ff3c7c02571a8f91ef87f6eb8eb5f07d0eb9432a68a69bb68",
-    "psdSha256": "bc3f807dd4132c784915eaa5a8d640b00eeb1adff46d060593951de6562e6fe0",
-    "at": "2026-09-16T06:55:31.035Z"
+    "uniflexSha256": "d888aea62eb926ec100cbc850dc36b913600633cb1113ee70fdfd9eebf23329a",
+    "psdSha256": "de023237c7ffb4e19e5734d60f2f0b75f9d2bdea29a140c2b98aae157bd8107f",
+    "at": "2026-09-20T10:44:37.017Z"
   },
   "import": {
     "psdSha256": "bc3f807dd4132c784915eaa5a8d640b00eeb1adff46d060593951de6562e6fe0",
     "at": "2026-09-17T06:41:15.620Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "ScreenHeader",
+    "NotificationBadge",
+    "Tab",
+    "MailBattleRow",
+    "BackButton",
+    "ScreenFooter",
+    "ActionButton"
+  ]
 }

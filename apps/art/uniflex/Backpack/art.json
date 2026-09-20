@@ -9,9 +9,9 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "b7ec8392929cc674c05903fbc8482d298281fbff4f3ed335a293a6cbec736418",
-    "psdSha256": "6b4cb726b826560377275fe37b7d357e1da77b2e5e2f5f92ef9ceade34add29f",
-    "at": "2026-09-17T17:33:35.180Z"
+    "uniflexSha256": "fc48f43e5caae245043239e217076bb41a42813ec11721bac90f9dd68fbdf2e0",
+    "psdSha256": "225519a29e5d1d66202234ea9015310b4182bf25adfbb917e239da9f08ab7b34",
+    "at": "2026-09-20T10:44:33.020Z"
   },
   "import": {
     "psdSha256": "6b4cb726b826560377275fe37b7d357e1da77b2e5e2f5f92ef9ceade34add29f",
@@ -19,11 +19,14 @@
     "target": "restored"
   },
   "linkedComponents": [
-    "BackpackResourceCounter",
-    "PanelTab",
+    "ScreenHeader",
+    "ResourceCounter",
+    "Tab",
     "ItemSlot",
     "BackpackItemCard",
     "QuantityControl",
-    "BackpackQuantityControl"
+    "BackpackQuantityControl",
+    "BackButton",
+    "ScreenFooter"
   ]
 }

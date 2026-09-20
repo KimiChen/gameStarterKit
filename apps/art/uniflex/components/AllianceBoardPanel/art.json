@@ -1,0 +1,9 @@
+{
+  "key": "AllianceBoardPanel",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceBoard/AllianceBoardPanel.tsx",
+  "export": {
+    "uniflexSha256": "2c7f9ec184ab633994accf7acfcd15c6b4d0bfe85e8dab83b498a2176e3d5294",
+    "psdSha256": "7ce28f9151e7dc370f059863cf1aa047bda855b88cff975b048c75b02e9ab333",
+    "at": "2026-09-20T10:45:32.905Z"
+  }
+}

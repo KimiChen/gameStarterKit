@@ -1,0 +1,9 @@
+{
+  "key": "AllianceTerritoryLandPanel",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTerritory/AllianceTerritoryLandPanel.tsx",
+  "export": {
+    "uniflexSha256": "c1cb43eccac4f038b86cb34e5772964cbddb036fd5bc1466a821c1ca94e4123c",
+    "psdSha256": "2cfe6feb946b76ecd5311dbc32d42ca58ff9f25bb0be257ea26ddce31eeca75d",
+    "at": "2026-09-20T10:45:15.527Z"
+  }
+}

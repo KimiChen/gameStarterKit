@@ -1,0 +1,9 @@
+{
+  "key": "BackButton",
+  "source": "apps/client/src/ui-uniflex/components/button/BackButton.tsx",
+  "export": {
+    "uniflexSha256": "b0b4f5dd7351471315130f8e235bb8775193d369e35af52715250c7de3e0ee94",
+    "psdSha256": "6f7493377410630fcb58dd57a772ed45eeb02bf6eaa9b9ec60dd6528069b437b",
+    "at": "2026-09-20T10:44:33.018Z"
+  }
+}

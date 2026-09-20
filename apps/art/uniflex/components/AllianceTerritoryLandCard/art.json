@@ -1,0 +1,9 @@
+{
+  "key": "AllianceTerritoryLandCard",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTerritory/AllianceTerritoryLandCard.tsx",
+  "export": {
+    "uniflexSha256": "2eb8f4236d5f3071246e0b08db2eab59c08a39d4c2bc23ce89c5b0e9abc1ecd2",
+    "psdSha256": "3f011d6c2044ef57da81aed79f1514a52bb9b9a7878f56a111e1f2b27860e00a",
+    "at": "2026-09-20T10:45:15.523Z"
+  }
+}

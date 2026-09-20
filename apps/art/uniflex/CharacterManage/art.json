@@ -9,13 +9,19 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "c692d03ea6c802de25812fa33785d24d4a5de3958c40bd355384babba0e4d4f9",
-    "psdSha256": "4a5b716d60d0e8d897bf8819896c044e20c3602f1bb2f9ea32643d2a8ea019f1",
-    "at": "2026-09-16T03:32:33.305Z"
+    "uniflexSha256": "8ade47f3f87d2595b8ef0b749807ea5e9928736a4bcd99e1e7eb18c25e620fbd",
+    "psdSha256": "78af13b01b38a87fabb20e7408ed217b6ac18844e3b863a6ab05ab43b5da75ad",
+    "at": "2026-09-20T10:44:41.459Z"
   },
   "import": {
     "psdSha256": "4a5b716d60d0e8d897bf8819896c044e20c3602f1bb2f9ea32643d2a8ea019f1",
     "at": "2026-09-17T03:58:27.325Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "CloseButton",
+    "Tab",
+    "CheckBox",
+    "CharacterPlayerRow"
+  ]
 }

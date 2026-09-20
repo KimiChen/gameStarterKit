@@ -9,13 +9,19 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "870687af488db7dde193894a6bb3b2e6377e93afa584092a983a6b807ed20cb2",
-    "psdSha256": "86685c39201a58a31b44a2592d8601533dde1a010b68e7eccc4f08424544020f",
-    "at": "2026-09-16T03:44:18.999Z"
+    "uniflexSha256": "cfc7212f1a29e577177791d512093a939d74e0ad081c60f6b611cfbdb8caf93a",
+    "psdSha256": "f62a2a3f59b428de7162b90a1389cdb8e611982a7671bc65ec0eb78226a7f07b",
+    "at": "2026-09-20T10:44:50.003Z"
   },
   "import": {
     "psdSha256": "86685c39201a58a31b44a2592d8601533dde1a010b68e7eccc4f08424544020f",
     "at": "2026-09-17T03:58:30.417Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "StarRow",
+    "HeroDetailAttributes",
+    "NotificationBadge",
+    "HeroDetailTabs"
+  ]
 }

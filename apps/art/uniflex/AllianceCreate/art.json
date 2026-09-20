@@ -9,13 +9,20 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "9564b8c663c01b086774de7e7176ac43c9229268a0cfa99d3b7de04ba4350d16",
-    "psdSha256": "61b4ec536bc32f3d93c74171f07a233b366c2359000c33682dfdd2f67cd6b842",
-    "at": "2026-09-17T03:32:23.214Z"
+    "uniflexSha256": "ba6a568e05e326305c5959fedbee0c31e5818543977088421101956d25354e47",
+    "psdSha256": "da422342eedfe0d54e47cc8f8133369bd07015589db4abe0e37de0cd21e969d4",
+    "at": "2026-09-20T10:45:04.595Z"
   },
   "import": {
     "psdSha256": "61b4ec536bc32f3d93c74171f07a233b366c2359000c33682dfdd2f67cd6b842",
     "at": "2026-09-17T03:58:36.148Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "CloseButton",
+    "InputText",
+    "ActionButton",
+    "ConfirmButton",
+    "AllianceCreatePanel"
+  ]
 }

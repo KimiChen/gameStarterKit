@@ -1,0 +1,9 @@
+{
+  "key": "AllianceCreatePanel",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceCreate/AllianceCreatePanel.tsx",
+  "export": {
+    "uniflexSha256": "ae784ff5df7ed339c5ec331d8a95cd6f7eae877542e6be6288a846255d92cb0c",
+    "psdSha256": "6efa72e11d89502e0e5bb92ba86af8f258e521b4f0386c27f9a3aedf2cd67223",
+    "at": "2026-09-20T10:45:04.594Z"
+  }
+}

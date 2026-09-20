@@ -9,13 +9,16 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "d4d6b30eb06141df798a6b6e8902e4fda922423c3f767128180fd15a01b19b1f",
-    "psdSha256": "32ca2adccb1002923c1e9c7080427deceb54e8739eebe63d2493351a3337a539",
-    "at": "2026-09-16T03:31:51.237Z"
+    "uniflexSha256": "8fad0f3dbb437c8268cb44f1ad5d5c750600ea4e8beb9bb00c893857080b371c",
+    "psdSha256": "8cb3b2e97d6063b93db48e9821342fde44640eb2419edcb2ddf98680614a693a",
+    "at": "2026-09-20T10:44:25.365Z"
   },
   "import": {
     "psdSha256": "32ca2adccb1002923c1e9c7080427deceb54e8739eebe63d2493351a3337a539",
     "at": "2026-09-17T03:58:20.388Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "CloseButton"
+  ]
 }

@@ -1,0 +1,9 @@
+{
+  "key": "ResourceCounter",
+  "source": "apps/client/src/ui-uniflex/gamecomponents/resource/ResourceCounter.tsx",
+  "export": {
+    "uniflexSha256": "1232dfffe6e8fc4e668b2bd86d6947b8ddd4fff2bab915a44a1969c4d0998aea",
+    "psdSha256": "0a7d8ab4e5e97f938716a99021a563921680ee7702ac572ebe2ceaf26689dbd0",
+    "at": "2026-09-20T10:44:33.015Z"
+  }
+}

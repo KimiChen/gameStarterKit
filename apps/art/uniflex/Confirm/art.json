@@ -9,9 +9,9 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "aded2f965968b257f8f0b5e4b5634571bd59a520a05ef0a0830018101e54bf70",
-    "psdSha256": "a09bdadb5e11410f81ef4fe78df6cac9d3b4b66ae7ac592a8902f95246d507ea",
-    "at": "2026-09-18T02:10:34.075Z"
+    "uniflexSha256": "56e846f6d4f935c86936ca7a69ad62eab8084a4755688dc30ab3efcd86adcb33",
+    "psdSha256": "8942f368ce280c441fcd9c69b06f123064600fd0be827c0ba7a4b04e783bf493",
+    "at": "2026-09-20T10:44:28.950Z"
   },
   "import": {
     "psdSha256": "a09bdadb5e11410f81ef4fe78df6cac9d3b4b66ae7ac592a8902f95246d507ea",
@@ -19,6 +19,7 @@
     "target": "restored"
   },
   "linkedComponents": [
+    "CloseButton",
     "ActionButton",
     "CancelButton",
     "ConfirmButton"

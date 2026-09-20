@@ -1,0 +1,9 @@
+{
+  "key": "AllianceMemberSettingsPanel",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceMemberSettings/AllianceMemberSettingsPanel.tsx",
+  "export": {
+    "uniflexSha256": "420d7cc3bec98fb0b4313c3546fe1aa844031522209a6134e96b99cc18866b4f",
+    "psdSha256": "e3e93e32d8c877bdbd6262c150be532e77edbe09e0a4de57b2efa732323621b4",
+    "at": "2026-09-20T10:45:07.860Z"
+  }
+}

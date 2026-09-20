@@ -9,13 +9,23 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "614a1e39c9a69bab168997b9651b0cfc2fbcdd23f91a9ed4f9aeb7b4f7d04eed",
-    "psdSha256": "69f33af24f36ac37436b98cd00d4ad887a1b428f93997d10814bda521dbe4b02",
-    "at": "2026-09-17T03:33:04.337Z"
+    "uniflexSha256": "d3bf17d6cdcaa8124a9b4da128c574169a2579a2b79826ef5b6979c4cc0cef1f",
+    "psdSha256": "eba0fdf7993bbbe3e91afba7e4f6d83e91c8699bd48ec4ffcc0aa448a156f7bd",
+    "at": "2026-09-20T10:45:26.045Z"
   },
   "import": {
     "psdSha256": "69f33af24f36ac37436b98cd00d4ad887a1b428f93997d10814bda521dbe4b02",
     "at": "2026-09-17T03:58:46.176Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "EmptyState",
+    "ScreenHeader",
+    "Tab",
+    "BackButton",
+    "ScreenFooter",
+    "ActionButton",
+    "ConfirmButton",
+    "AllianceGiftPanel"
+  ]
 }

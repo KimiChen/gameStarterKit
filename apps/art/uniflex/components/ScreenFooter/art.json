@@ -1,0 +1,9 @@
+{
+  "key": "ScreenFooter",
+  "source": "apps/client/src/ui-uniflex/components/chrome/ScreenFooter.tsx",
+  "export": {
+    "uniflexSha256": "807528db06930579be23f13800dcc96a9d1fbecfd748fab338048a6273d23033",
+    "psdSha256": "43c48f0ab830d4a97bba993df8c75396a3340a87acab8b123d3cb09d281283c0",
+    "at": "2026-09-20T10:44:33.019Z"
+  }
+}

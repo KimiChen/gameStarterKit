@@ -9,13 +9,23 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "770fdbceea7bbd3634011e7c4c074b5a23ee5a8dfd002242afe812c5ef2d7f6a",
-    "psdSha256": "eca93da7a420bc52d83fb3d2d841692366227bec46f93bac0a972e353c280af4",
-    "at": "2026-09-17T03:32:46.711Z"
+    "uniflexSha256": "35db919b9f39375bf1f4a69f8c14a054399ce121ef3d1dc0c7a1d6e61e73f9c1",
+    "psdSha256": "dcfbd12260fa1715742176ea5aba82c395cefd6f5ee2fb0573a347de40604cbd",
+    "at": "2026-09-20T10:45:15.542Z"
   },
   "import": {
     "psdSha256": "eca93da7a420bc52d83fb3d2d841692366227bec46f93bac0a972e353c280af4",
     "at": "2026-09-17T03:58:42.080Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "ProgressBar",
+    "ActionButton",
+    "AllianceTerritoryLandCard",
+    "AllianceTerritoryLandPanel",
+    "Tab",
+    "BackButton",
+    "ScreenFooter",
+    "AllianceTerritoryPanel"
+  ]
 }

@@ -140,9 +140,10 @@ async function selectPages(catalog, { screen, all, changed, mode }, rootDir) {
     }
     if (changed) {
         const selected = [];
+        const wanted = mode === "export" ? "export" : "import";
         for (const page of catalog.pages) {
             const state = await inspectArtPage(rootDir, page);
-            if (state.action === "import") selected.push(page);
+            if (state.action === wanted) selected.push(page);
         }
         return selected;
     }

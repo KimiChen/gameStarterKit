@@ -1,0 +1,9 @@
+{
+  "key": "Tab",
+  "source": "apps/client/src/ui-uniflex/components/tab/Tab.tsx",
+  "export": {
+    "uniflexSha256": "bc999d9c33506067bd3fdd2d4c6d04fb6eb33ab5adf9293404e77a7522693e51",
+    "psdSha256": "a8cc4e4490a90ea80e20261607c10cf8ad3093c3080a587d39c1aadabbe6ff61",
+    "at": "2026-09-20T10:44:33.016Z"
+  }
+}

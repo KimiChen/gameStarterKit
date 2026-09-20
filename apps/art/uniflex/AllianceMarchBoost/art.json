@@ -9,13 +9,21 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "73e671d938fdccf1cb397ce837438d1fde937bce99d539f08ac2e995c5556c18",
-    "psdSha256": "acc68e517a4b7719d1045ed03c7f465934388f2075face34d0bedbd59952881e",
-    "at": "2026-09-17T03:32:53.796Z"
+    "uniflexSha256": "079b12e3acdd96f15830c7307b1d748e2b719bbe61990cd4397ad532a3118208",
+    "psdSha256": "fc9ecf81a32ae97ccfbf738fd7c02f9d920699d0c188bdf94ac48b5971f75877",
+    "at": "2026-09-20T10:45:18.960Z"
   },
   "import": {
     "psdSha256": "acc68e517a4b7719d1045ed03c7f465934388f2075face34d0bedbd59952881e",
     "at": "2026-09-17T03:58:43.430Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "CloseButton",
+    "ProgressBar",
+    "ActionButton",
+    "ConfirmButton",
+    "CancelButton",
+    "AllianceMarchBoostPanel"
+  ]
 }

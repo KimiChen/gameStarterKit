@@ -9,13 +9,22 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "f4686b25ef76f1449eb6253d71b40b79f7c9bda2f63755e76e823c2740f712de",
-    "psdSha256": "5f84c147a47f71f9fbc0712fd394d2d92a978fac54cdb82e3afe8be4284540b1",
-    "at": "2026-09-17T03:32:39.813Z"
+    "uniflexSha256": "fa9a09a6be845bac579a0997b12c77da6a877dd489745a3e41dc12ed128e7932",
+    "psdSha256": "3708392f186776ff60571aef6af91b750c291f320dbe657597293b6f9e4e9069",
+    "at": "2026-09-20T10:45:11.391Z"
   },
   "import": {
     "psdSha256": "5f84c147a47f71f9fbc0712fd394d2d92a978fac54cdb82e3afe8be4284540b1",
     "at": "2026-09-17T03:58:40.593Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "ScreenHeader",
+    "Tab",
+    "BackButton",
+    "ScreenFooter",
+    "ActionButton",
+    "ConfirmButton",
+    "AllianceWarPanel"
+  ]
 }
