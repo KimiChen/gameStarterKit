@@ -4,6 +4,7 @@ import arenaDuelVectors from "./arenaDuel";
 import ballMoveVectors from "./ballMove";
 import coreVectors from "./core";
 import idleVectors from "./idle";
+import mmoWorldVectors from "./mmoWorld";
 import snakeVectors from "./snake";
 import tallyVectors from "./tally";
 import viewFixtureVectors from "./viewFixture";
@@ -17,6 +18,7 @@ export const WIRE_VECTOR_FILES: Readonly<Record<string, WireVectorFile>> = {
     ballMove: ballMoveVectors,
     core: coreVectors,
     idle: idleVectors,
+    mmoWorld: mmoWorldVectors,
     snake: snakeVectors,
     tally: tallyVectors,
     viewFixture: viewFixtureVectors,

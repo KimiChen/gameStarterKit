@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "mmoWorld",
+  "constantName": "MmoWorld",
+  "modeVersion": 1,
+  "wireExposed": false,
+  "maxPlayers": 100,
+  "profiles": [
+    "world"
+  ],
+  "kind": "world",
+  "world": {
+    "emptyPolicy": "sleep",
+    "emptyAfterMs": 120000,
+    "checkpointMs": 30000
+  }
+}

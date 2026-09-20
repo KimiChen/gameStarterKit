@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "root": "MmoWorldRoomState",
+  "types": [
+    {
+      "name": "MmoWorldRoomState",
+      "sharedName": "IMmoWorldRoomState",
+      "validatorName": "validateMmoWorldRoomState",
+      "defaultPath": "mmoWorldRoomState",
+      "fields": [
+        {
+          "name": "tick",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "description": "Logical frame number"
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "enumObject": "WorldPhase",
+          "enumType": "WorldPhaseType",
+          "members": [
+            "Recovering",
+            "Active",
+            "Draining",
+            "Offline"
+          ],
+          "default": "Recovering",
+          "errorCode": "STATE_PHASE",
+          "description": "世界生命周期（core WorldPhase，MMO MF4）"
+        },
+        {
+          "name": "instanceId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "分线实例 id（world_instance.instance_id）"
+        },
+        {
+          "name": "mapId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 64,
+          "description": "地图 id（WorldAddress 的一段）"
+        },
+        {
+          "name": "line",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": 65535,
+          "description": "分线号（WorldAddress 的一段）"
+        },
+        {
+          "name": "authorityEpoch",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "权威代号（world_instance.authority_epoch，单主不变量）"
+        },
+        {
+          "name": "packId",
+          "kind": "string",
+          "default": "",
+          "minLength": 0,
+          "maxLength": 64,
+          "description": "本分线装载的内容包 id（k_mmo_instance.pack_id）"
+        },
+        {
+          "name": "packVersion",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": 65535,
+          "description": "内容包版本"
+        },
+        {
+          "name": "population",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": 65535,
+          "description": "在线数（⛔ 不是名册：名册只在服务端座位表，D4）"
+        },
+        {
+          "name": "scriptStateRev",
+          "kind": "integer",
+          "default": 0,
+          "min": 0,
+          "max": "MAX_SAFE_INTEGER",
+          "description": "编排脚本公开状态修订号（s2c.mmoWorld.scriptState，MK4）"
+        }
+      ],
+      "serverOnly": []
+    }
+  ]
+}

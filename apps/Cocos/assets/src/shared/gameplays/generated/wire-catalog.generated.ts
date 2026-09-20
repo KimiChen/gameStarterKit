@@ -12,6 +12,7 @@ import { ArenaCaptureCapture, type IArenaCaptureCaptureReq } from "../arenaCaptu
 import { ArenaDuelStrike, type IArenaDuelStrikeReq } from "../arenaDuel/wire";
 import { CastSkill, Move, SkillResult, type ICastSkillReq, type IMoveReq, type ISkillResultRes } from "../ballMove/wire";
 import { IdlePulse, type IIdlePulseReq } from "../idle/wire";
+import { MmoWorldBaselineBegin, MmoWorldBaselineChunk, MmoWorldBaselineEnd, MmoWorldBaselineRequest, MmoWorldCast, MmoWorldChoose, MmoWorldEnter, MmoWorldInteract, MmoWorldLeave, MmoWorldMove, MmoWorldNotice, MmoWorldOpResult, MmoWorldPickup, MmoWorldPrivate, MmoWorldPrompt, MmoWorldScriptState, MmoWorldTarget, MmoWorldTransfer, MmoWorldTransferReady, MmoWorldUpdate, type IMmoWorldBaselineBegin, type IMmoWorldBaselineChunk, type IMmoWorldBaselineEnd, type IMmoWorldBaselineRequestReq, type IMmoWorldCastReq, type IMmoWorldChooseReq, type IMmoWorldEnter, type IMmoWorldInteractReq, type IMmoWorldLeave, type IMmoWorldMoveReq, type IMmoWorldNotice, type IMmoWorldOpResult, type IMmoWorldPickupReq, type IMmoWorldPrivate, type IMmoWorldPrompt, type IMmoWorldScriptState, type IMmoWorldTargetReq, type IMmoWorldTransferReady, type IMmoWorldTransferReq, type IMmoWorldUpdate } from "../mmoWorld/wire";
 import { SnakeBaselineBegin, SnakeBaselineChunk, SnakeBaselineEnd, SnakeBaselineRequest, SnakeDelta, SnakeEndRun, SnakeInput, SnakeReliveDecision, SnakeReliveDecisionResult, SnakeReliveOffered, SnakeReliveResolved, SnakeRunFinalizing, SnakeRunResult, type ISnakeBaselineBegin, type ISnakeBaselineChunk, type ISnakeBaselineEnd, type ISnakeBaselineRequestReq, type ISnakeEndRunReq, type ISnakeInputReq, type ISnakeReliveDecisionReq, type ISnakeReliveDecisionResult, type ISnakeReliveOffered, type ISnakeReliveResolved, type ISnakeRunFinalizing, type ISnakeRunResultV2, type ISnakeWorldDelta } from "../snake/wire";
 import { TallyTap, type ITallyTapReq } from "../tally/wire";
 import { ViewFixtureBaselineBegin, ViewFixtureBaselineChunk, ViewFixtureBaselineEnd, ViewFixtureEnter, ViewFixtureLeave, ViewFixtureLook, ViewFixturePrivate, ViewFixtureResync, ViewFixtureUpdate, type IViewFixtureBaselineBegin, type IViewFixtureBaselineChunk, type IViewFixtureBaselineEnd, type IViewFixtureEnter, type IViewFixtureLeave, type IViewFixtureLookReq, type IViewFixturePrivate, type IViewFixtureResyncReq, type IViewFixtureUpdate } from "../viewFixture/wire";
@@ -29,6 +30,14 @@ export const C2S = {
     Move: "c2s.move",
     CastSkill: "c2s.castSkill",
     IdlePulse: "c2s.idle.pulse",
+    MmoWorldMove: "c2s.mmoWorld.move",
+    MmoWorldTarget: "c2s.mmoWorld.target",
+    MmoWorldCast: "c2s.mmoWorld.cast",
+    MmoWorldInteract: "c2s.mmoWorld.interact",
+    MmoWorldChoose: "c2s.mmoWorld.choose",
+    MmoWorldPickup: "c2s.mmoWorld.pickup",
+    MmoWorldTransfer: "c2s.mmoWorld.transfer",
+    MmoWorldBaselineRequest: "c2s.mmoWorld.baselineRequest",
     SnakeInput: "c2s.snake.input",
     SnakeReliveDecision: "c2s.snake.reliveDecision",
     SnakeEndRun: "c2s.snake.endRun",
@@ -51,6 +60,18 @@ export const S2C = {
     RoomCodeInvalidated: "s2c.room.codeInvalidated",
     WorldChat: "s2c.world.chat",
     SkillResult: "s2c.skillResult",
+    MmoWorldEnter: "s2c.mmoWorld.enter",
+    MmoWorldUpdate: "s2c.mmoWorld.update",
+    MmoWorldLeave: "s2c.mmoWorld.leave",
+    MmoWorldBaselineBegin: "s2c.mmoWorld.baselineBegin",
+    MmoWorldBaselineChunk: "s2c.mmoWorld.baselineChunk",
+    MmoWorldBaselineEnd: "s2c.mmoWorld.baselineEnd",
+    MmoWorldPrivate: "s2c.mmoWorld.private",
+    MmoWorldOpResult: "s2c.mmoWorld.opResult",
+    MmoWorldTransferReady: "s2c.mmoWorld.transferReady",
+    MmoWorldPrompt: "s2c.mmoWorld.prompt",
+    MmoWorldScriptState: "s2c.mmoWorld.scriptState",
+    MmoWorldNotice: "s2c.mmoWorld.notice",
     SnakeBaselineBegin: "s2c.snake.baselineBegin",
     SnakeBaselineChunk: "s2c.snake.baselineChunk",
     SnakeBaselineEnd: "s2c.snake.baselineEnd",
@@ -93,6 +114,14 @@ export interface C2SPayloadMap {
     "c2s.move": IMoveReq;
     "c2s.castSkill": ICastSkillReq;
     "c2s.idle.pulse": IIdlePulseReq;
+    "c2s.mmoWorld.move": IMmoWorldMoveReq;
+    "c2s.mmoWorld.target": IMmoWorldTargetReq;
+    "c2s.mmoWorld.cast": IMmoWorldCastReq;
+    "c2s.mmoWorld.interact": IMmoWorldInteractReq;
+    "c2s.mmoWorld.choose": IMmoWorldChooseReq;
+    "c2s.mmoWorld.pickup": IMmoWorldPickupReq;
+    "c2s.mmoWorld.transfer": IMmoWorldTransferReq;
+    "c2s.mmoWorld.baselineRequest": IMmoWorldBaselineRequestReq;
     "c2s.snake.input": ISnakeInputReq;
     "c2s.snake.reliveDecision": ISnakeReliveDecisionReq;
     "c2s.snake.endRun": ISnakeEndRunReq;
@@ -114,6 +143,18 @@ export interface S2CPayloadMap {
     "s2c.room.codeInvalidated": CoreS2CPayloadMap["s2c.room.codeInvalidated"];
     "s2c.world.chat": CoreS2CPayloadMap["s2c.world.chat"];
     "s2c.skillResult": ISkillResultRes;
+    "s2c.mmoWorld.enter": IMmoWorldEnter;
+    "s2c.mmoWorld.update": IMmoWorldUpdate;
+    "s2c.mmoWorld.leave": IMmoWorldLeave;
+    "s2c.mmoWorld.baselineBegin": IMmoWorldBaselineBegin;
+    "s2c.mmoWorld.baselineChunk": IMmoWorldBaselineChunk;
+    "s2c.mmoWorld.baselineEnd": IMmoWorldBaselineEnd;
+    "s2c.mmoWorld.private": IMmoWorldPrivate;
+    "s2c.mmoWorld.opResult": IMmoWorldOpResult;
+    "s2c.mmoWorld.transferReady": IMmoWorldTransferReady;
+    "s2c.mmoWorld.prompt": IMmoWorldPrompt;
+    "s2c.mmoWorld.scriptState": IMmoWorldScriptState;
+    "s2c.mmoWorld.notice": IMmoWorldNotice;
     "s2c.snake.baselineBegin": ISnakeBaselineBegin;
     "s2c.snake.baselineChunk": ISnakeBaselineChunk;
     "s2c.snake.baselineEnd": ISnakeBaselineEnd;
@@ -156,6 +197,14 @@ export const C2S_RUNTIME_VALIDATORS: { [K in C2SType]: RuntimeValidator<C2SPaylo
     "c2s.move": Move.validate,
     "c2s.castSkill": CastSkill.validate,
     "c2s.idle.pulse": IdlePulse.validate,
+    "c2s.mmoWorld.move": MmoWorldMove.validate,
+    "c2s.mmoWorld.target": MmoWorldTarget.validate,
+    "c2s.mmoWorld.cast": MmoWorldCast.validate,
+    "c2s.mmoWorld.interact": MmoWorldInteract.validate,
+    "c2s.mmoWorld.choose": MmoWorldChoose.validate,
+    "c2s.mmoWorld.pickup": MmoWorldPickup.validate,
+    "c2s.mmoWorld.transfer": MmoWorldTransfer.validate,
+    "c2s.mmoWorld.baselineRequest": MmoWorldBaselineRequest.validate,
     "c2s.snake.input": SnakeInput.validate,
     "c2s.snake.reliveDecision": SnakeReliveDecision.validate,
     "c2s.snake.endRun": SnakeEndRun.validate,
@@ -178,6 +227,18 @@ export const S2C_RUNTIME_VALIDATORS: { [K in S2CType]: RuntimeValidator<S2CPaylo
     "s2c.room.codeInvalidated": CORE_S2C_WIRE["s2c.room.codeInvalidated"],
     "s2c.world.chat": CORE_S2C_WIRE["s2c.world.chat"],
     "s2c.skillResult": SkillResult.validate,
+    "s2c.mmoWorld.enter": MmoWorldEnter.validate,
+    "s2c.mmoWorld.update": MmoWorldUpdate.validate,
+    "s2c.mmoWorld.leave": MmoWorldLeave.validate,
+    "s2c.mmoWorld.baselineBegin": MmoWorldBaselineBegin.validate,
+    "s2c.mmoWorld.baselineChunk": MmoWorldBaselineChunk.validate,
+    "s2c.mmoWorld.baselineEnd": MmoWorldBaselineEnd.validate,
+    "s2c.mmoWorld.private": MmoWorldPrivate.validate,
+    "s2c.mmoWorld.opResult": MmoWorldOpResult.validate,
+    "s2c.mmoWorld.transferReady": MmoWorldTransferReady.validate,
+    "s2c.mmoWorld.prompt": MmoWorldPrompt.validate,
+    "s2c.mmoWorld.scriptState": MmoWorldScriptState.validate,
+    "s2c.mmoWorld.notice": MmoWorldNotice.validate,
     "s2c.snake.baselineBegin": SnakeBaselineBegin.validate,
     "s2c.snake.baselineChunk": SnakeBaselineChunk.validate,
     "s2c.snake.baselineEnd": SnakeBaselineEnd.validate,
@@ -233,6 +294,14 @@ export const GAME_WIRE_OWNERS = {
     "c2s.move": "ballMove",
     "c2s.castSkill": "ballMove",
     "c2s.idle.pulse": "idle",
+    "c2s.mmoWorld.move": "mmoWorld",
+    "c2s.mmoWorld.target": "mmoWorld",
+    "c2s.mmoWorld.cast": "mmoWorld",
+    "c2s.mmoWorld.interact": "mmoWorld",
+    "c2s.mmoWorld.choose": "mmoWorld",
+    "c2s.mmoWorld.pickup": "mmoWorld",
+    "c2s.mmoWorld.transfer": "mmoWorld",
+    "c2s.mmoWorld.baselineRequest": "mmoWorld",
     "c2s.snake.input": "snake",
     "c2s.snake.reliveDecision": "snake",
     "c2s.snake.endRun": "snake",
@@ -251,6 +320,18 @@ export const GAME_WIRE_OWNERS = {
     "s2c.room.codeInvalidated": "core",
     "s2c.world.chat": "core",
     "s2c.skillResult": "ballMove",
+    "s2c.mmoWorld.enter": "mmoWorld",
+    "s2c.mmoWorld.update": "mmoWorld",
+    "s2c.mmoWorld.leave": "mmoWorld",
+    "s2c.mmoWorld.baselineBegin": "mmoWorld",
+    "s2c.mmoWorld.baselineChunk": "mmoWorld",
+    "s2c.mmoWorld.baselineEnd": "mmoWorld",
+    "s2c.mmoWorld.private": "mmoWorld",
+    "s2c.mmoWorld.opResult": "mmoWorld",
+    "s2c.mmoWorld.transferReady": "mmoWorld",
+    "s2c.mmoWorld.prompt": "mmoWorld",
+    "s2c.mmoWorld.scriptState": "mmoWorld",
+    "s2c.mmoWorld.notice": "mmoWorld",
     "s2c.snake.baselineBegin": "snake",
     "s2c.snake.baselineChunk": "snake",
     "s2c.snake.baselineEnd": "snake",
@@ -287,6 +368,14 @@ export const GAME_WIRE_PHASES = {
     "c2s.move": [GamePhase.Playing],
     "c2s.castSkill": [GamePhase.Playing],
     "c2s.idle.pulse": [GamePhase.Playing],
+    "c2s.mmoWorld.move": [GamePhase.Playing],
+    "c2s.mmoWorld.target": [GamePhase.Playing],
+    "c2s.mmoWorld.cast": [GamePhase.Playing],
+    "c2s.mmoWorld.interact": [GamePhase.Playing],
+    "c2s.mmoWorld.choose": [GamePhase.Playing],
+    "c2s.mmoWorld.pickup": [GamePhase.Playing],
+    "c2s.mmoWorld.transfer": [GamePhase.Playing],
+    "c2s.mmoWorld.baselineRequest": [GamePhase.Playing],
     "c2s.snake.input": [GamePhase.Playing],
     "c2s.snake.reliveDecision": [GamePhase.Playing],
     "c2s.snake.endRun": [GamePhase.Playing],
@@ -306,6 +395,14 @@ export const GAME_WIRE_RATE_COST = {
     "c2s.move": 1,
     "c2s.castSkill": 1,
     "c2s.idle.pulse": 1,
+    "c2s.mmoWorld.move": 1,
+    "c2s.mmoWorld.target": 1,
+    "c2s.mmoWorld.cast": 2,
+    "c2s.mmoWorld.interact": 2,
+    "c2s.mmoWorld.choose": 2,
+    "c2s.mmoWorld.pickup": 2,
+    "c2s.mmoWorld.transfer": 4,
+    "c2s.mmoWorld.baselineRequest": 4,
     "c2s.snake.input": 1,
     "c2s.snake.reliveDecision": 2,
     "c2s.snake.endRun": 2,
@@ -321,6 +418,16 @@ export const GAME_WIRE_RATE_COST = {
 
 /** 每会话 S2C token（MMO MF5a）：只经 sendS2C 发给单个会话，broadcastS2C 对它 fail-closed；值 = coalesceKey（payload 字段名）或 null（不合并、不可丢）。 */
 export const GAME_WIRE_PER_SESSION = {
+    "s2c.mmoWorld.enter": null,
+    "s2c.mmoWorld.update": "id",
+    "s2c.mmoWorld.leave": null,
+    "s2c.mmoWorld.baselineBegin": null,
+    "s2c.mmoWorld.baselineChunk": null,
+    "s2c.mmoWorld.baselineEnd": null,
+    "s2c.mmoWorld.private": null,
+    "s2c.mmoWorld.opResult": null,
+    "s2c.mmoWorld.transferReady": null,
+    "s2c.mmoWorld.prompt": null,
     "s2c.viewFixture.enter": null,
     "s2c.viewFixture.update": "id",
     "s2c.viewFixture.leave": null,
@@ -356,6 +463,16 @@ export const gameplayC2STokens = {
     "idle": {
         "c2s.idle.pulse": IdlePulse,
     },
+    "mmoWorld": {
+        "c2s.mmoWorld.move": MmoWorldMove,
+        "c2s.mmoWorld.target": MmoWorldTarget,
+        "c2s.mmoWorld.cast": MmoWorldCast,
+        "c2s.mmoWorld.interact": MmoWorldInteract,
+        "c2s.mmoWorld.choose": MmoWorldChoose,
+        "c2s.mmoWorld.pickup": MmoWorldPickup,
+        "c2s.mmoWorld.transfer": MmoWorldTransfer,
+        "c2s.mmoWorld.baselineRequest": MmoWorldBaselineRequest,
+    },
     "privateFixture": {
     },
     "snake": {
@@ -390,6 +507,20 @@ export const gameplayS2CTokens = {
     "dropInFixture": {
     },
     "idle": {
+    },
+    "mmoWorld": {
+        "s2c.mmoWorld.enter": MmoWorldEnter,
+        "s2c.mmoWorld.update": MmoWorldUpdate,
+        "s2c.mmoWorld.leave": MmoWorldLeave,
+        "s2c.mmoWorld.baselineBegin": MmoWorldBaselineBegin,
+        "s2c.mmoWorld.baselineChunk": MmoWorldBaselineChunk,
+        "s2c.mmoWorld.baselineEnd": MmoWorldBaselineEnd,
+        "s2c.mmoWorld.private": MmoWorldPrivate,
+        "s2c.mmoWorld.opResult": MmoWorldOpResult,
+        "s2c.mmoWorld.transferReady": MmoWorldTransferReady,
+        "s2c.mmoWorld.prompt": MmoWorldPrompt,
+        "s2c.mmoWorld.scriptState": MmoWorldScriptState,
+        "s2c.mmoWorld.notice": MmoWorldNotice,
     },
     "privateFixture": {
     },

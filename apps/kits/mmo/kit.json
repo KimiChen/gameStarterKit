@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "id": "mmo",
+  "version": "0.1.0",
+  "description": "MMO 地基（docs/MMO.md §7；MK0 骨架）：常驻分线世界 mmoWorld + characters / world / content 三个 api 面；movement / combat / ai / inventory / social / orchestration 面随 MK1–MK4 加入并各自 versioning",
+  "api": {
+    "characters": {
+      "version": 1,
+      "minSupported": 1
+    },
+    "world": {
+      "version": 1,
+      "minSupported": 1
+    },
+    "content": {
+      "version": 1,
+      "minSupported": 1
+    }
+  },
+  "domains": [],
+  "modes": [
+    {
+      "id": "mmoWorld",
+      "constantName": "MmoWorld"
+    }
+  ],
+  "sql": {
+    "files": [
+      "sql/001-characters.sql",
+      "sql/002-items.sql",
+      "sql/003-world.sql"
+    ],
+    "tables": [
+      {
+        "name": "k_mmo_character",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_mmo_character_checkpoint",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_mmo_item_instance",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_mmo_receipt",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_mmo_instance",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_mmo_instance_checkpoint",
+        "zone": "per-zone"
+      },
+      {
+        "name": "k_mmo_world_event",
+        "zone": "per-zone",
+        "role": "world-event"
+      }
+    ]
+  },
+  "userKeys": [],
+  "workers": [
+    {
+      "id": "worldEvents",
+      "entry": "apps/server/src/kits/mmo/workers/worldEvents.ts"
+    }
+  ],
+  "category": "extra",
+  "docs": [
+    "apps/kits/mmo/README.md"
+  ],
+  "routes": [],
+  "menu": [],
+  "viewDirs": [],
+  "views": [],
+  "owners": []
+}

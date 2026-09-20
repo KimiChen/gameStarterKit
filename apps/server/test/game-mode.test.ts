@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join as joinPath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
@@ -132,13 +132,16 @@ test("生产 mode catalog 与 shared/state 生成映射保持精确同集", () =
         // 方式：进 catalog/生成映射走完整单源链，⛔ 不进生产 mode registry/默认撮合池）。
         // ⛔ 不写死 fixture 玩法名：从每玩法 manifest 读 wireExposed:false 的集合（真源），
         // 生产 registry = canonical、catalog = canonical ∪ fixture，两边都由生成器/组合根派生。
-        const schemaDir = fileURLToPath(new URL("../../shared/schema/gameplays", import.meta.url));
-        const fixtureModes = readdirSync(schemaDir, { withFileTypes: true })
-            .filter((entry) => entry.isDirectory())
-            .map((entry) => JSON.parse(readFileSync(joinPath(schemaDir, entry.name, "manifest.json"), "utf8")) as {
-                readonly id: string;
-                readonly wireExposed?: boolean;
-            })
+        // 三个发现根（铁律 2）：宿主 apps/shared/schema/gameplays/<id>/、插件 apps/plugins/<id>/gameplay/、kit apps/kits/<kitId>/gameplays/<modeId>/
+        const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
+        const subdirs = (dir: string): string[] => (existsSync(dir) ? readdirSync(dir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => joinPath(dir, entry.name)) : []);
+        const manifestFiles = [
+            ...subdirs(joinPath(repoRoot, "apps/shared/schema/gameplays")).map((dir) => joinPath(dir, "manifest.json")),
+            ...subdirs(joinPath(repoRoot, "apps/plugins")).map((dir) => joinPath(dir, "gameplay", "manifest.json")),
+            ...subdirs(joinPath(repoRoot, "apps/kits")).flatMap((kitDir) => subdirs(joinPath(kitDir, "gameplays")).map((dir) => joinPath(dir, "manifest.json"))),
+        ].filter((file) => existsSync(file));
+        const fixtureModes = manifestFiles
+            .map((file) => JSON.parse(readFileSync(file, "utf8")) as { readonly id: string; readonly wireExposed?: boolean })
             .filter((manifest) => manifest.wireExposed === false)
             .map((manifest) => manifest.id);
         assert.ok(fixtureModes.length >= 1, "至少一个 fixture 玩法（wireExposed:false）驱动本闸");

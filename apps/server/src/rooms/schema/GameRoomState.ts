@@ -6,6 +6,7 @@ import { ArenaDuelRoomState, ArenaDuelPlayerState } from "./generated/arenaDuel"
 import { GameRoomState, PlayerState } from "./generated/ballMove";
 import { DropInFixtureState, DropInFixturePlayerState } from "./generated/dropInFixture";
 import { IdleRoomState, IdlePlayerState } from "./generated/idle";
+import { MmoWorldRoomState } from "./generated/mmoWorld";
 import { PrivateFixtureState, PrivateFixturePlayerState } from "./generated/privateFixture";
 import { SnakeRoomState, SnakePlayerState } from "./generated/snake";
 import { TallyRoomState, TallyPlayerState } from "./generated/tally";
@@ -17,6 +18,7 @@ export { ArenaDuelPlayerState, ArenaDuelRoomState } from "./generated/arenaDuel"
 export { PlayerState, GameRoomState } from "./generated/ballMove";
 export { DropInFixturePlayerState, DropInFixtureState } from "./generated/dropInFixture";
 export { IdlePlayerState, IdleRoomState } from "./generated/idle";
+export { MmoWorldRoomState } from "./generated/mmoWorld";
 export { PrivateFixturePlayerState, PrivateFixtureState } from "./generated/privateFixture";
 export { SnakePlayerState, SnakeRoomState } from "./generated/snake";
 export { TallyPlayerState, TallyRoomState } from "./generated/tally";
@@ -72,6 +74,7 @@ export const ROOM_STATE_FRAGMENTS = Object.freeze({
     "ballMove": [],
     "dropInFixture": [],
     "idle": [],
+    "mmoWorld": [],
     "privateFixture": ["ownerReady", "inviteRoom"],
     "snake": [],
     "tally": [],
@@ -86,6 +89,7 @@ export const ROOM_STATE_ROSTER = Object.freeze({
     "ballMove": "public",
     "dropInFixture": "public",
     "idle": "public",
+    "mmoWorld": "hidden",
     "privateFixture": "public",
     "snake": "public",
     "tally": "public",
@@ -100,6 +104,7 @@ export const ROOM_STATE_KIND = Object.freeze({
     "ballMove": "match",
     "dropInFixture": "match",
     "idle": "match",
+    "mmoWorld": "world",
     "privateFixture": "match",
     "snake": "match",
     "tally": "match",
@@ -113,6 +118,7 @@ export const ROOM_STATE_ROOT_CONSTRUCTORS = Object.freeze({
     "ballMove": GameRoomState,
     "dropInFixture": DropInFixtureState,
     "idle": IdleRoomState,
+    "mmoWorld": MmoWorldRoomState,
     "privateFixture": PrivateFixtureState,
     "snake": SnakeRoomState,
     "tally": TallyRoomState,

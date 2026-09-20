@@ -13,6 +13,8 @@ export * from "./generated/state/ballMove";
 export * from "./generated/state/dropInFixture";
 export * from "./idle/wire";
 export * from "./generated/state/idle";
+export * from "./mmoWorld/wire";
+export * from "./generated/state/mmoWorld";
 export * from "./generated/state/privateFixture";
 export * from "./snake/ruleset";
 export * from "./snake/wire";

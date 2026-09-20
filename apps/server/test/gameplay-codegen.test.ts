@@ -1759,8 +1759,16 @@ test("MF5a-B1 生成：GAME_WIRE_PER_SESSION 恒生成（键 = perSession token�
     writeFixtureJson(fixture.root, path.relative(fixture.root, manifestFile), { ...manifest, modeVersion: (manifest.modeVersion as number) + 1 });
     writeGameplayArtifacts(fixture.options);
     const after = readFixtureText(fixture.root, SHARED_WIRE_CATALOG);
-    // 表按玩法 id 序再按 token 声明序：snake < viewFixture ⇒ 新条目插在表头
-    const expected = before.replace(tableHead, `${tableHead}    "s2c.snake.delta": "roomEpochId",\n`);
+    // 表按玩法 id 序再按 token 声明序：新条目插在「首个玩法 id > snake 的条目」之前（真仓有 mmoWorld < snake < viewFixture 等，⛔ 假设表头）
+    const tableStart = before.indexOf(tableHead) + tableHead.length;
+    const tableEnd = before.indexOf("\n} as const", tableStart);
+    assert.ok(tableEnd > tableStart, "表尾锚点 `} as const`");
+    const entries = before.slice(tableStart, tableEnd).split("\n").filter((line) => line.trim().length > 0);
+    const modeOf = (line: string): string => /"s2c\.([^.]+)\./u.exec(line)?.[1] ?? "";
+    const insertAt = entries.findIndex((line) => modeOf(line) > "snake");
+    const nextEntries = [...entries];
+    nextEntries.splice(insertAt === -1 ? entries.length : insertAt, 0, '    "s2c.snake.delta": "roomEpochId",');
+    const expected = `${before.slice(0, tableStart)}${nextEntries.join("\n")}${before.slice(tableEnd)}`;
     assert.notEqual(expected, before);
     assert.equal(after, expected, "只多出一条 GAME_WIRE_PER_SESSION 表项，S2C / OWNERS / validators / tokens 表字节不变");
   } finally {

@@ -38,25 +38,30 @@ test("defineS2C：非法选项在声明期拒", () => {
   }
 });
 
-test("真仓：只有 viewFixture（MF5a-B5）与 worldFixture（MF5b-B3）两个夹具 + core 附近聊天（MF6b）声明 perSession token，GAME_WIRE_PER_SESSION 与运行时 token 逐条一致", () => {
+test("真仓：GAME_WIRE_PER_SESSION 与运行时 token 逐条一致；既有全房 mode 无 perSession；观察者夹具 / kit 世界玩法的关键条目钉死", () => {
   // MMO MF6b：core 表经 CORE_S2C_OPTIONS 声明的 perSession token（s2c.world.chat，不合并）
   const expected: Record<string, string | null> = { "s2c.world.chat": null };
-  // worldFixture 的 pos 是 MF4 的直发回执（刻意非 perSession），其余七个观察者 token perSession
-  const WORLD_FIXTURE_DIRECT = new Set(["s2c.worldFixture.pos"]);
+  // 既有全房消息 mode（MF5a 前的形态）：⛔ 任何 perSession——它们的 S2C 仍是 broadcast；新 mode（夹具 / kit 世界玩法）从运行时 token 派生
+  const LEGACY_BROADCAST_MODES = new Set(["ballMove", "idle", "snake", "tally", "arenaCapture", "arenaDuel"]);
   for (const [modeId, tokens] of Object.entries(gameplayS2CTokens)) {
     for (const token of Object.values(tokens as Record<string, { type: string; perSession: boolean; coalesceKey: string | null }>)) {
-      const observerOwner = modeId === "viewFixture" || (modeId === "worldFixture" && !WORLD_FIXTURE_DIRECT.has(token.type));
-      if (!observerOwner) {
-        assert.equal(token.perSession, false, `${token.type} 既有 mode / 直发回执仍是全房消息`);
+      if (LEGACY_BROADCAST_MODES.has(modeId)) {
+        assert.equal(token.perSession, false, `${token.type} 既有 mode 仍是全房消息`);
         assert.equal(token.coalesceKey, null);
-      } else {
-        assert.equal(token.perSession, true, `${token.type} 观察者流 perSession`);
-        expected[token.type] = token.coalesceKey;
+        continue;
       }
+      if (token.perSession) expected[token.type] = token.coalesceKey;
+      else assert.equal(token.coalesceKey, null, `${token.type} 非 perSession 不得带 coalesceKey`);
     }
   }
   assert.deepEqual({ ...GAME_WIRE_PER_SESSION }, expected);
+  // worldFixture 的 pos 是 MF4 的直发回执（刻意非 perSession），其余七个观察者 token + MF8 transfer perSession
+  assert.equal(GAME_WIRE_PER_SESSION["s2c.worldFixture.pos"], undefined, "直发回执不进 perSession 表");
   assert.equal(GAME_WIRE_PER_SESSION["s2c.viewFixture.update"], "id", "位置类按 id 合并");
   assert.equal(GAME_WIRE_PER_SESSION["s2c.worldFixture.update"], "id", "世界夹具位置类同样按 id 合并");
   assert.equal(Object.keys(GAME_WIRE_PER_SESSION).filter((type) => type.startsWith("s2c.worldFixture.")).length, 8, "worldFixture 七个观察者 token + MF8 transfer");
+  // mmo kit（MK0）：观察者六件 + private / opResult / transferReady / prompt 十个 perSession，update 按 id 合并；scriptState / notice 是分线广播
+  assert.equal(GAME_WIRE_PER_SESSION["s2c.mmoWorld.update"], "id");
+  assert.equal(Object.keys(GAME_WIRE_PER_SESSION).filter((type) => type.startsWith("s2c.mmoWorld.")).length, 10, "mmoWorld 十个 perSession token");
+  assert.equal(GAME_WIRE_PER_SESSION["s2c.mmoWorld.notice"], undefined, "分线广播不进 perSession 表");
 });

@@ -35,6 +35,40 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         fragments: [],
     },
     {
+        id: "mmo",
+        version: "0.1.0",
+        api: {
+            characters: { version: 1, minSupported: 1 },
+            content: { version: 1, minSupported: 1 },
+            world: { version: 1, minSupported: 1 },
+        },
+        modes: [
+            { id: "mmoWorld", constantName: "MmoWorld" },
+        ],
+        domains: [],
+        effects: [],
+        sqlFiles: [
+            "sql/001-characters.sql",
+            "sql/002-items.sql",
+            "sql/003-world.sql",
+        ],
+        sqlTables: [
+            { name: "k_mmo_character", zone: "per-zone" },
+            { name: "k_mmo_character_checkpoint", zone: "per-zone" },
+            { name: "k_mmo_item_instance", zone: "per-zone" },
+            { name: "k_mmo_receipt", zone: "per-zone" },
+            { name: "k_mmo_instance", zone: "per-zone" },
+            { name: "k_mmo_instance_checkpoint", zone: "per-zone" },
+            { name: "k_mmo_world_event", zone: "per-zone", role: "world-event" },
+        ],
+        userKeys: [],
+        workers: [
+            { id: "worldEvents", entry: "apps/server/src/kits/mmo/workers/worldEvents.ts" },
+        ],
+        contributions: {},
+        fragments: [],
+    },
+    {
         id: "slg",
         version: null,
         api: {

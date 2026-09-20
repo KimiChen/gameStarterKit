@@ -22,6 +22,20 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
         ],
     },
     {
+        id: "mmo",
+        version: "0.1.0",
+        api: {
+            characters: { version: 1, minSupported: 1 },
+            content: { version: 1, minSupported: 1 },
+            world: { version: 1, minSupported: 1 },
+        },
+        modes: [
+            { id: "mmoWorld", constantName: "MmoWorld" },
+        ],
+        domains: [],
+        effects: [],
+    },
+    {
         id: "slg",
         version: null,
         api: {
