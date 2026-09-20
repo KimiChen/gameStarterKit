@@ -28,6 +28,26 @@ function findLayer(layer, predicate) {
     return null;
 }
 
+function removeLayer(root, predicate) {
+    function walk(children) {
+        if (!children) return false;
+        const at = children.findIndex(predicate);
+        if (at >= 0) {
+            children.splice(at, 1);
+            return true;
+        }
+        return children.some((child) => walk(child.children));
+    }
+    return walk(root.children);
+}
+
+// Same derivation as the converter's linkedFileGuid (uniflex-linked-psd.mjs).
+function linkedFileGuid(seed) {
+    const hex = createHash("sha256").update(String(seed)).digest("hex");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}`
+        + `-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
 function repaintLayer(layer, createCanvas, paint) {
     const width = layer.right - layer.left;
     const height = layer.bottom - layer.top;
@@ -991,6 +1011,174 @@ export const Cards = defineView(() => (
         assert.match(report, /style: .*CardsRestored\/Card\.opacity/);
         assert.match(await readFile(join(pageDir, "Cards.tsx"), "utf8"),
             /width: 100, height: 100 \}\}/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+const CONFIRM_FIXTURE_PAGE = `import { defineView } from '@uniflex/compiler';
+import { CancelButton } from '../../components/button/CancelButton';
+import { ConfirmButton } from '../../components/button/ConfirmButton';
+
+export const Confirm = defineView((context) => {
+    const params = context.params;
+    return (
+        <view name="Confirm" style={{ width: 750, height: 1624 }}>
+            <text name="Confirm/Title" value={params.title ?? '提示'} style={{}} />
+            <CancelButton label="取消" />
+            <ConfirmButton label={params.yesText ?? '确定'} onClick={() => params.yes()} />
+        </view>
+    );
+});
+`;
+
+const CONFIRM_FIXTURE_BUTTONS = {
+    "CancelButton.tsx": `import { defineComponent } from '@uniflex/compiler';
+export interface CancelButtonProps {
+    readonly label: string;
+    readonly tone: string;
+    readonly onClick?: () => void;
+}
+export const CancelButton = defineComponent<CancelButtonProps>((p) => (
+    <view name="CancelButton" style={{ position: 'relative' }}><text name="CancelButton/Label" value={p.label} style={{}} /></view>
+));
+`,
+    "ConfirmButton.tsx": `import { defineComponent } from '@uniflex/compiler';
+export interface ConfirmButtonProps {
+    readonly label: string;
+    readonly onClick?: () => void;
+}
+export const ConfirmButton = defineComponent<ConfirmButtonProps>((p) => (
+    <view name="ConfirmButton" style={{ position: 'relative' }}><text name="ConfirmButton/Label" value={p.label} style={{}} /></view>
+));
+`,
+};
+
+async function stageConfirmFixture(sourceRoot) {
+    const base = join(sourceRoot, "apps/client/src/ui-uniflex");
+    await mkdir(join(base, "pages/Confirm"), { recursive: true });
+    await mkdir(join(base, "components/button"), { recursive: true });
+    await writeFile(join(base, "pages/Confirm/Confirm.tsx"), CONFIRM_FIXTURE_PAGE);
+    for (const [file, text] of Object.entries(CONFIRM_FIXTURE_BUTTONS)) {
+        await writeFile(join(base, "components/button", file), text);
+    }
+}
+
+async function runConfirmTextRound(converter, env, root, tempRoot, edited, sourceRoot) {
+    const designDir = join(tempRoot, "design");
+    const packageDir = join(tempRoot, "package");
+    await execFileAsync(converter.command, [
+        ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+        "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
+    ], { cwd: root, env });
+    await execFileAsync(converter.command, [
+        ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+        "--name", "ConfirmRestored", "--source-root", sourceRoot, "--out", packageDir,
+    ], { cwd: root, env });
+    return {
+        authoring: await readFile(join(packageDir, "ConfirmRestored.authoring.tsx"), "utf8"),
+        report: await readFile(join(packageDir, "IMPORT.md"), "utf8"),
+    };
+}
+
+test("deleting PSD component instances and named nodes removes TSX tags with gates", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "Confirm" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-remove-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        assert.equal(removeLayer(psd, (l) => String(l.name || "").startsWith("CancelButton")), true);
+        assert.equal(removeLayer(psd, (l) => String(l.name || "").startsWith("ConfirmButton")), true);
+        assert.equal(removeLayer(psd, (l) => String(l.name || "").startsWith("Confirm/Title")), true);
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const sourceRoot = join(tempRoot, "src");
+        await stageConfirmFixture(sourceRoot);
+        const { authoring, report } = await runConfirmTextRound(
+            converter, env, root, tempRoot, edited, sourceRoot);
+        assert.doesNotMatch(authoring, /<CancelButton/);
+        assert.doesNotMatch(authoring, /ConfirmRestored\/Title/);
+        assert.match(authoring, /<ConfirmButton label=\{params\.yesText \?\? '确定'\}/);
+        assert.doesNotMatch(authoring, /import \{ CancelButton \}/);
+        assert.match(authoring, /import \{ ConfirmButton \}/);
+        assert.match(report, /removed: .*CancelButton\.remove/);
+        assert.match(report, /removed: .*ConfirmRestored\/Title\.remove/);
+        assert.match(report, /blocked: .*ConfirmButton\.remove \[event-binding\]/);
+        const fixture = await readFile(
+            join(sourceRoot, "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx"), "utf8");
+        assert.equal(fixture, CONFIRM_FIXTURE_PAGE);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("swapping a smart object to another catalog component renames the tag", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "Confirm" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-swap-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const button = findLayer(psd, (l) => String(l.name || "").startsWith("ConfirmButton"));
+        assert.ok(button?.placedLayer, "ConfirmButton should be a linked smart object");
+        button.placedLayer.id = linkedFileGuid("uniflex-component:CancelButton");
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const sourceRoot = join(tempRoot, "src");
+        await stageConfirmFixture(sourceRoot);
+        const { authoring, report } = await runConfirmTextRound(
+            converter, env, root, tempRoot, edited, sourceRoot);
+        assert.match(authoring,
+            /<CancelButton label=\{params\.yesText \?\? '确定'\} onClick=\{\(\) => params\.yes\(\)\} \/>/);
+        assert.doesNotMatch(authoring, /<ConfirmButton/);
+        assert.doesNotMatch(authoring, /import \{ ConfirmButton \}/);
+        assert.match(authoring, /import \{ CancelButton \}/);
+        assert.match(report, /swapped: .*ConfirmButton\.swap/);
+        assert.match(report, /missing-required: .*CancelButton\.tone/);
+        const fixture = await readFile(
+            join(sourceRoot, "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx"), "utf8");
+        assert.equal(fixture, CONFIRM_FIXTURE_PAGE);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("linking a smart object to a foreign psd reports conflict and keeps the TSX", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "Confirm" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-swap-conflict-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const button = findLayer(psd, (l) => String(l.name || "").startsWith("ConfirmButton"));
+        assert.ok(button?.placedLayer, "ConfirmButton should be a linked smart object");
+        button.placedLayer.id = linkedFileGuid("uniflex-component:NoSuchComponent");
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const sourceRoot = join(tempRoot, "src");
+        await stageConfirmFixture(sourceRoot);
+        const { authoring, report } = await runConfirmTextRound(
+            converter, env, root, tempRoot, edited, sourceRoot);
+        assert.match(authoring, /<ConfirmButton label=\{params\.yesText \?\? '确定'\}/);
+        assert.match(authoring, /import \{ ConfirmButton \}/);
+        assert.match(report, /conflict: .*ConfirmButton.*\.swap \[foreign-smart-object\]/);
+        assert.doesNotMatch(report, /swapped:/);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }

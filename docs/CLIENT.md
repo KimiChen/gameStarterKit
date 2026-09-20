@@ -111,7 +111,12 @@ apps/Cocos/
   `${base}LineHeight` / `${base}Bold` / `${base}Font` 命名）按组件已声明 prop 回写，
   未声明被白名单过滤并记报告；图层不透明度回写组件 `opacity` prop 或具名原生节点的
   `style` 对象；`role === 'fill'` 的色块被重涂成均匀纯色（±8/通道容差）时回写
-  `backgroundColor` 而不再换图，非均匀则维持换图。
+  `backgroundColor` 而不再换图，非均匀则维持换图。删除有身份的图层会删掉页面里对应
+  组件标签（For 列表则只删 items 对象字面量）或具名原生节点子树，标签带 `on*=` 事件
+  绑定或非常量表达式 prop 时拒删；智能对象链接换到另一个 catalog 组件时标签换型
+  （同名 prop 保留、新组件必填缺失记报告、import 同步增删），换到非 catalog 链接记
+  conflict 不动 TSX。这几类结构变更全部只写 `*Restored` 并记入 IMPORT.md 的
+  removed / blocked / swapped / conflict 条目。
   设计师可编辑 PSD 的落点是 `apps/art/uniflex/<Page>/screen.psd`（建议 Git LFS；本机未装则按二进制入库）。
   `ui:art-export` 从原稿功能页导出；`ui:art-import` / `ui:art-sync` 按身份 overlay 回去。
   当前 catalog `applyTarget` 为 `restored`，只写 `*Restored`，不覆盖原稿；`ui:art-check` 是只读新鲜度闸。
