@@ -9,7 +9,7 @@
 
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
-| MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 验收链 | 施工中（B1–B3 ✅：服务端三面 + WorldMode + mmo 域已落地，客户端 B4 / 验收链 B6 待做） |
+| MK0 骨架 | kit.json / SQL / `mmoWorld` 单源 + wire / characters + world + content 面 / 灰盒内容包 / 客户端选角页 + 世界视图 / 验收链 | ✅ 2026-09-20 退出（MMO.md §12 MK0 行；tag `mk0-exit`） |
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | 未开工 |
 | MK2 模拟闭环 | combat + ai 面、掉落 | 未开工 |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | 未开工 |
@@ -26,6 +26,25 @@
 | 域 `mmo` | `mmo.characters`（query：角色 + 孤儿 persona + 槽位上限）、`mmo.createCharacter`（idempotent-write：同一 withKitTx 内 createPersona + 角色行 + 回执；errorCodes MMO_NAME_TAKEN / MMO_SLOT_TAKEN / MMO_SLOTS_FULL）；进世界走框架 `world.enter` |
 | 服务端 api 面 | `characters`（listCharacters / createCharacter / characterOfPersona）、`world`（readInstanceMeta）、`content`（contentIndex / packForMap / mapDefOf / creatureOf / spellOf / itemOf；内置灰盒包启动期 validateContentPack fail-closed） |
 | WorldMode | `rooms/modes/mmoWorld/index.ts`：撒怪 / 准入预热 / 检查点回灌 / 常量速度积分 / 视野流 / 私有流；检查点端口 `checkpoint.ts`（k_mmo_character_checkpoint + k_mmo_instance_checkpoint + k_mmo_instance） |
+
+## 客户端（MK0-B4）
+
+| 件 | 内容 |
+| --- | --- |
+| kit module | `apps/client/src/kits/mmo/index.ts`（resident）：install 组装 `MmoRuntime`（角色列表 / 建角 / 框架 `world.enter` / 带参 launch `mmoWorld` / 关闭 route） |
+| 客户端 api 面 | `characters`（fetchCharacters / createCharacter / describeCharacter / 槽位视图）、`world`（enterWorld、观察者六件 token 集 + reconciler codec、双端同源 integrate / clampToMap）、`content`（客户端地图几何 + `IPresentationMap` 表现映射：2D 公告板颜色 / 尺寸，`model` 3D 预留） |
+| 选角页 | route `mmoCharacters`（View `MmoCharacterSelect`，纯节点手搓版）+ 菜单「进入世界」；逻辑 `logic/MmoCharacterSelectLogic.ts` |
+| mode 四件 | `gameplay/modes/mmoWorld/`（launch exact `{ characterId, mapId }`，characterId → personaId 经角色列表解析）、`net/rooms/MmoWorldRoom.ts`（world.enter → WorldRoomTransport.join；seq 递增意图；观察者流 → ObserverReconciler；seq 断裂自动重同步）、`logic/rooms/mmoWorld/MmoWorldGameplay.ts`、`view/rooms/mmoWorld/MmoWorldView.ts`（相机跟随的 2D 方块 + 最小 HUD；HUD 画在世界节点内 = 3d.md SC1-B9 退路） |
+
+## 灰盒内容包（MK0-B5，随 B2 交付）
+
+`apps/shared/src/kits/mmo/content/greybox.ts`：一图（greybox 2000×2000，视距 400）一怪（slime ×3，idle）一技能（strike）的 TS 字面量单源，启动期与用例都经
+`content` 面 `validateContentPack` 过闸（结构 / 数值域 / 引用完整性 / 几何在图内；可达性随 MK2 nav）。⛔ 不是 JSON 文件：kit 服务端代码不能读文件、
+tsconfig 未开 resolveJsonModule；MK4 改经贡献点 `content`（data 贡献本就是 JSON → `contributions.generated.ts`）装载，届时字面量退役。
+
+## 基准（MK0-B6，`tools/world-bench` 剧本 `mmo-greybox`）
+
+场景 A 首次数字见 MMO.md §12 MK0 行与 `docs/perf/world-bench/*-mmo-greybox-*.json`；⚠ 机器人与服务端同进程，只用于比较与阈值设定。
 
 ## 回退窗口（§7.3，MF1 冻结）
 

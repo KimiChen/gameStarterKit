@@ -24,20 +24,24 @@ import { parseArgs } from "node:util";
 import { matchMaker, Server } from "colyseus";
 import { WebSocketClient, WebSocketTransport } from "@colyseus/ws-transport";
 import { Client as SDKClient, type Room as SDKRoom } from "@colyseus/sdk";
-import { GamePhase, RoomName } from "@game/shared";
+import { GamePhase, RoomName, WorldPhase } from "@game/shared";
+import { closeMysql } from "../../src/core/infra/mysql";
 import { closeRedis } from "../../src/core/infra/redisRoute";
 import { GameRoom } from "../../src/rooms/GameRoom";
+import { WorldRoom } from "../../src/rooms/WorldRoom";
 import { assertRedisUp, cleanupUser, issueSession, sleep, testUid } from "../../test/int/helpers";
 import { compareReports, formatDeviations, gitCommit, round, stamp, summarize, writeReport, type Summary } from "./report";
 import { emptyBotStats, seededRng, type BotStats, type Scenario } from "./scenario";
 import { snakeBaseline } from "./scenarios/snake-baseline";
 import { viewRange100, viewRange300 } from "./scenarios/view-range";
+import { mmoGreybox } from "./scenarios/mmo-greybox";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const SCENARIOS: Readonly<Record<string, Scenario>> = {
   [snakeBaseline.id]: snakeBaseline,
   [viewRange100.id]: viewRange100,
   [viewRange300.id]: viewRange300,
+  [mmoGreybox.id]: mmoGreybox,
 };
 
 const { values: args, positionals } = parseArgs({
@@ -137,6 +141,15 @@ async function runScenario(): Promise<number> {
     originalStep.call(this);
     if (sampling && playing) tickSamples.push(performance.now() - startedAt);
   };
+  // 世界房（MMO MK0-B6）：采样接 WorldRoom.advance（Active 时的一次推进 = 一或多个固定步）
+  const originalAdvance = WorldRoom.prototype.advance;
+  WorldRoom.prototype.advance = function patchedAdvance(this: WorldRoom, dtMs: number): number {
+    const active = (this.state as { phase?: string } | undefined)?.phase === WorldPhase.Active;
+    const startedAt = performance.now();
+    const steps = originalAdvance.call(this, dtMs);
+    if (sampling && active) tickSamples.push(performance.now() - startedAt);
+    return steps;
+  };
   const bytesBySession = new Map<string, number>();
   const originalRaw = WebSocketClient.prototype.raw;
   WebSocketClient.prototype.raw = function patchedRaw(this: WebSocketClient, ...rawArgs: Parameters<WebSocketClient["raw"]>): void {
@@ -148,6 +161,9 @@ async function runScenario(): Promise<number> {
   const unregister = scenario.register();
   const server = new Server({ transport: new WebSocketTransport(), gracefullyShutdown: false, greet: false, devMode: false });
   server.define(RoomName.Game, GameRoom).filterBy(["sId", "mode", "profile"]);
+  if (scenario.world) server.define(RoomName.World, WorldRoom).filterBy(["sId", "mode", "profile", "mapId", "line"]);
+  const roomName = scenario.world ? RoomName.World : RoomName.Game;
+  const isReady = (state: unknown): boolean => (scenario.ready ? scenario.ready(state) : (state as { phase?: string } | undefined)?.phase === GamePhase.Playing);
   const startedAt = new Date();
   const rssStart = process.memoryUsage().rss;
   const live: Bot[] = [];
@@ -166,7 +182,8 @@ async function runScenario(): Promise<number> {
       const { token } = await issueSession(uid, null, "", sId);
       const sdk = new SDKClient(endpoint);
       sdk.auth.token = token;
-      const room = await sdk.joinOrCreate(RoomName.Game, scenario.joinOptions(sId));
+      const prepared = scenario.world ? await scenario.world.prepare(uid, sId, index) : undefined;
+      const room = await sdk.joinOrCreate(roomName, scenario.joinOptions(sId, prepared));
       const stats = emptyBotStats();
       const bot: Bot = { uid, room, stats, stop: scenario.attach(room, stats, seededRng(seed * 1_000_003 + index)), errors: 0 };
       room.onError(() => { bot.errors += 1; });
@@ -176,7 +193,7 @@ async function runScenario(): Promise<number> {
     const roomIds = [...new Set(live.map((bot) => bot.room.roomId))];
     const serverRooms = roomIds.map((roomId) => matchMaker.getLocalRoomById(roomId)).filter((room): room is NonNullable<typeof room> => Boolean(room));
     fixedStepMs = (serverRooms[0] as unknown as { fixedStepMs?: number } | undefined)?.fixedStepMs ?? 0;
-    await waitFor(() => serverRooms.every((room) => (room.state as { phase?: string }).phase === GamePhase.Playing), "全部房间 Playing", 10_000);
+    await waitFor(() => serverRooms.every((room) => isReady(room.state)), "全部房间就绪（Playing / Active）", 10_000);
 
     // ── 采样窗口 ─────────────────────────────────────────────────────────────────
     bytesBySession.clear();
@@ -236,11 +253,23 @@ async function runScenario(): Promise<number> {
     for (const bot of live) bot.stop();
     await Promise.allSettled(live.filter((bot) => bot.room.connection?.isOpen).map((bot) => Promise.race([bot.room.leave(true), sleep(2_000)])));
     if (listening) await server.gracefullyShutdown(false);
+    if (scenario.world) {
+      // 世界房：离座 / 关房的强制检查点是异步落盘，等房全部 dispose 再清角色 / 分线行（否则清理与落盘竞态 ⇒ PersonaNotFound / AuthorityLost 噪音）
+      const ids = [...new Set(live.map((bot) => bot.room.roomId))];
+      await waitFor(() => ids.every((roomId) => !matchMaker.getLocalRoomById(roomId)), "世界房全部 dispose", 30_000).catch(() => undefined);
+      await sleep(1_500);
+    }
     unregister();
     GameRoom.prototype.stepFixed = originalStep;
+    WorldRoom.prototype.advance = originalAdvance;
     WebSocketClient.prototype.raw = originalRaw;
     await Promise.allSettled(live.map((bot) => cleanupUser(bot.uid)));
+    if (scenario.world) {
+      await Promise.allSettled(live.map((bot) => scenario.world!.cleanup(bot.uid, sId)));
+      await scenario.world.cleanupAll?.(sId);
+    }
     await closeRedis();
+    if (scenario.world) await closeMysql(); // 世界房剧本碰了 MySQL 池（角色 / 凭据 / 检查点）：不关池进程不退出
   }
 }
 

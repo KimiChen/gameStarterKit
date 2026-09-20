@@ -41,6 +41,10 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --compare docs
 p95 98,524 → 14,539；baseline B/join p50 7,928 → 1,368；delta 条/s/会话 887 → 151；tick p99 10.1 → 4.7 ms。报告：
 `docs/perf/world-bench/2026-09-19T170610-view-r300-mf5a.json`、`2026-09-19T170623-view-r100-mf5a.json`（比较用，不作绝对容量；已写回 MMO.md §11.2）。
 
+| `mmo-greybox` | MMO MK0-B6（§10.1 场景 A 首次数字）：机器人各一角色（characters 面建角 + world.enter 同形凭据）进 mmoWorld 单分线（greybox），灰盒包扩成 8² 处刷新点 × 3 = 192 只 idle slime，每 300 ms 按种子随机方向 `c2s.mmoWorld.move`（10% 停）；采样接 `WorldRoom.advance`（Active），周期检查点（30 s）照常落库；跑完删角色 / persona / 分线行 |
+
+世界形态剧本（MK0-B6 起）：`Scenario.world = { prepare(uid, sId, index) → 并入 join 选项的准备（建角 / 凭据）, cleanup(uid, sId), cleanupAll?(sId) }` ⇒ 房型 RoomName.World（WorldRoom）、`ready(state)` 判 WorldPhase.Active；其余剧本仍是 GameRoom。
+
 新增剧本：在 `scenarios/<id>.ts` 实现 `Scenario`（`register` / `joinOptions` / `attach`）并登进 `run.ts` 的 `SCENARIOS`。机器人行为只能用 `attach` 收到的种子 RNG（`seededRng`），⛔ 不用 `Math.random`——种子改一位结果文件必须变（MF1 变异验证）。
 
 ## 边界

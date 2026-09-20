@@ -253,6 +253,8 @@ kit    MK0（← MF0–MF4 + MF7）→ MK1（← MF5 + MF6 + MF8）→ MK2 → M
 | MK4-B5 容量证据 | 场景 A / B 最终数字；故障矩阵全表 | 进 §12 |
 | MK4-B6 冻结 | tag `mmo-kit-v1-frozen`（含 `scripts/packages/mmo.lock`） | — |
 
+MK0 退出：B1–B6 全部（✅ 2026-09-20；B5 随 B2 交付）；干净树全链闭环落为根命令 `npm run verify:kit-clean-install -- --kit mmo`（`scripts/kit-clean-install.mjs`，MK4-B6 复用）；场景 A 数字与偏差 ①–⑫ 见 MMO.md §12 MK0 行。回滚：可回退（`plugin -- uninstall mmo`，表保留）。
+
 ## 4. 内容插件施工单（MG0–MG2）
 
 | 批次 | 内容 | 验收 |
@@ -343,6 +345,7 @@ npm --workspace @game/server exec tsx -- tools/world-bench/run.ts --scenario <na
 - [x] MF8-B1（056096a3） [x] MF8-B2（162334f9；状态机 / 凭据用例落 test/int：world-transfer / world-ticket） [x] MF8-B3（2bb25a8c） [x] MF8-B4（73716dac） [x] MF8-B5（0c6c596f） [x] MF8-B6（356f003e） [x] MF8-B7（本行所在提交：`test/int/world-transfer-flow.test.ts` 四注入 + fault-matrix `world-transfer` 组 + `tools/plugin/transferGate.ts` 卸载闸 + 文档）— MF8 退出 2026-09-20，见 MMO.md §12；tag `mf8-exit`
 - [x] MF10-B1（76ae49ff） [x] MF10-B2（a8211ff7） [x] MF10-B3（b1898b14） [x] MF10-B4（本行所在提交：`tools/world-bench/multi-process.ts` + 报告 `docs/perf/world-bench/2026-09-20T040342-multi-process.json` + 文档）— MF10 退出 2026-09-20，见 MMO.md §12；tag `mf10-exit`
 - [x] MF11-B1（80234284；MMO-REVIEW-2 R2-01 / R2-02 改代码） [x] MF11-B2（f6eeb83b） [x] MF11-B3（52db09d2） [x] MF11-B4（b11bda7b；独立命令 `verify:mmo-fixture-matrix`，34 步） [x] MF11-B5（本行所在提交）— MF11 退出 2026-09-20，见 MMO.md §12；tag `mmo-framework-v1`（框架段 MF0–MF11 完成）
-- [ ] MK0-B1…B6 [ ] MK1-B1…B6 [ ] MK2-B1…B3 [ ] MK3-B1…B3 [ ] MK4-B1…B6
+- [x] MK0-B1（a7b9ebf8） [x] MK0-B2（334db811） [x] MK0-B3（b897745f） [x] MK0-B4（09ce50bb） [x] MK0-B5（随 B2：灰盒包 TS 字面量单源，JSON 形态归 MK4-B2） [x] MK0-B6（本行所在提交：仓内首装 + `verify:kit-clean-install` 干净树 25 步 + `mmo-greybox` 场景 A 首次数字）— MK0 退出 2026-09-20，见 MMO.md §12；tag `mk0-exit`
+- [ ] MK1-B1…B6 [ ] MK2-B1…B3 [ ] MK3-B1…B3 [ ] MK4-B1…B6
 - [ ] MG0-B1…B3 [ ] MG1-B1…B2 [ ] MG2-B1…B3
 - [x] PS0（2026-09-19 拍板 → MMO.md D27） [ ] PS1 [ ] PS2 [ ] PS3 [ ] PS4 [ ] PS5
