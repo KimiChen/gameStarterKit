@@ -8,7 +8,16 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { resolveConverter } from "./uniflex-ui-cli.mjs";
-import { artComponentPsdPath } from "./lib/uniflex-art.mjs";
+import { artComponentPsdPath, artPsdPath } from "./lib/uniflex-art.mjs";
+
+function findTextLayer(layer, namePrefix) {
+    if (layer.text && String(layer.name || "").startsWith(namePrefix)) return layer;
+    for (const child of layer.children || []) {
+        const found = findTextLayer(child, namePrefix);
+        if (found) return found;
+    }
+    return null;
+}
 
 const execFileAsync = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -481,6 +490,248 @@ test("editing BackpackItemCard PSD overlays the shared restored copy and leaves 
         assert.match(await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"), "utf8"),
             /from '\.\/components\/BackpackItemCard'/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("editing Confirm PSD text rewrites ?? fallbacks and reports pure bindings", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artPsdPath(root, { componentName: "Confirm" });
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-confirm-text-edit-"));
+    try {
+        // The PSD baseline declares the authoring path at export time; stage a
+        // fixture source there so the test survives page source moves/shapes.
+        const stagedSource = join(tempRoot,
+            "apps/client/src/ui-uniflex/pages/Confirm/Confirm.tsx");
+        await mkdir(join(stagedSource, ".."), { recursive: true });
+        await writeFile(stagedSource, `import { defineView } from '@uniflex/compiler';
+export const Confirm = defineView((context) => {
+    const params = context.params;
+    return (
+        <view name="Confirm">
+            <view name="Confirm/Panel">
+                <text name="Confirm/Title" value={params.title ?? '提示'} style={{}} />
+                <text name="Confirm/Message" value={params.content} style={{}} />
+                <CancelButton label={params.noText ?? '取消'} />
+                <ConfirmButton label={params.yesText ?? '确定'} />
+            </view>
+        </view>
+    );
+});
+`);
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const title = findTextLayer(psd, "Confirm/Title");
+        const message = findTextLayer(psd, "Confirm/Message");
+        assert.ok(title && message, "Confirm.psd should keep editable Title/Message text layers");
+        // Glyphs are reused from the original art so the font coverage check passes.
+        title.text.text = "UniFlex 本地预览";
+        message.text.text = "本地运行预览";
+        const edited = join(tempRoot, "screen.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        await execFileAsync(converter.command, [
+            ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+            "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
+        ], { cwd: root, env });
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "ConfirmRestored", "--source-root", tempRoot, "--out", packageDir,
+        ], { cwd: root, env });
+        const restored = await readFile(join(packageDir, "ConfirmRestored.authoring.tsx"), "utf8");
+        assert.match(restored, /value=\{params\.title \?\? "UniFlex 本地预览"\}/);
+        assert.match(restored, /value=\{params\.content\}/);
+        assert.ok(!restored.includes("本地运行预览"),
+            "pure binding without a ?? fallback must not be rewritten");
+        const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
+        assert.match(report, /Text value write-back/);
+        assert.match(report, /fallback: .*ConfirmRestored\/Title\.value/);
+        assert.match(report, /bound: .*ConfirmRestored\/Message\.value/);
+        assert.match(await readFile(stagedSource, "utf8"), /params\.title \?\? '提示'/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("editing ActionButton PSD text skips pure prop bindings and reports them", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const psdPath = artComponentPsdPath(root, "ActionButton");
+    await access(psdPath);
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    initializeCanvas(createCanvas);
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-action-button-text-edit-"));
+    try {
+        const psd = readPsd(await readFile(psdPath), { useImageData: true });
+        const label = findTextLayer(psd, "ActionButton/IconLabel");
+        assert.ok(label, "ActionButton.psd should keep the IconLabel text layer editable");
+        label.text.text = "2000";
+        const edited = join(tempRoot, "component.psd");
+        await writeFile(edited, writePsdBuffer(psd));
+        const designDir = join(tempRoot, "design");
+        const packageDir = join(tempRoot, "package");
+        await execFileAsync(converter.command, [
+            ...converter.args, "psd-import", "--file", edited, "--out", designDir,
+            "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
+        ], { cwd: root, env });
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "ActionButton", "--source-root", root, "--out", packageDir,
+        ], { cwd: root, env });
+        const restored = await readFile(
+            join(packageDir, "restored/components/button/ActionButton.tsx"), "utf8");
+        assert.match(restored, /name="ActionButton\/IconLabel" value=\{p\.label\}/);
+        assert.ok(!restored.includes("2000"),
+            "value={p.label} has no ?? fallback and must stay untouched");
+        const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
+        assert.match(report, /bound: .*ActionButton\/IconLabel\.value/);
+        const original = await readFile(
+            resolve(root, "apps/client/src/ui-uniflex/components/button/ActionButton.tsx"), "utf8");
+        assert.match(original, /name="ActionButton\/IconLabel" value=\{p\.label\}/);
+    } finally {
+        await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("edited For list item text lands in the defaultItems object literals", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-for-text-edit-"));
+    try {
+        const pageDir = join(tempRoot, "apps/client/src/ui-uniflex/pages/Rows");
+        const packageDir = join(tempRoot, "package");
+        const designDir = join(tempRoot, "design");
+        await mkdir(pageDir, { recursive: true });
+        await mkdir(join(designDir, "fonts"), { recursive: true });
+        const font = await readFile(
+            resolve(root, "apps/art/uniflex/fonts/1846353947485b97-0-400.ttf"));
+        await writeFile(join(designDir, "fonts/regular.ttf"), font);
+        const fontSha = createHash("sha256").update(font).digest("hex");
+        await writeFile(join(pageDir, "Row.tsx"), `import { defineComponent } from '@uniflex/compiler';
+export const Row = defineComponent((p) => (
+    <view name="Row">
+        <text name="Row/Title" value={p.title} style={{}} />
+    </view>
+));
+`);
+        await writeFile(join(pageDir, "RowsPanel.tsx"), `import { defineComponent, For } from '@uniflex/compiler';
+import { Row } from './Row';
+export const DEFAULT_ROWS = [
+    { id: 'r0', title: '旧标题零' },
+    { id: 'r1', title: '旧标题一' },
+];
+export const RowsPanel = defineComponent((p) => {
+    const rows = p.rows ?? DEFAULT_ROWS;
+    return (
+        <view name="RowsPanel">
+            <For each={rows} key="id">
+                {(row) => <Row title={row.title} />}
+            </For>
+        </view>
+    );
+});
+`);
+        await writeFile(join(pageDir, "Rows.tsx"), `import { defineView } from '@uniflex/compiler';
+import { RowsPanel } from './RowsPanel';
+export const Rows = defineView(() => (
+    <view name="RowsPage">
+        <RowsPanel />
+    </view>
+));
+`);
+        const frame = { x: 0, y: 0, width: 750, height: 1624 };
+        const textNode = (id, key, value) => ({
+            id, name: "Row/Title", kind: "text",
+            frame: { x: 0, y: 0, width: 200, height: 40 }, opacity: 1, visible: true,
+            text: {
+                value, fontId: "font-regular", size: 20, lineHeight: 24,
+                align: "left", wrap: false, color: "#ffffff",
+                outlineWidth: 0, outlineColor: "#000000",
+            },
+            identity: { key, role: "node", definitionKey: "Row" },
+        });
+        const rowNode = (id, index, textId) => ({
+            id, name: "Row", kind: "group",
+            frame: { x: 0, y: index * 100, width: 750, height: 100 }, opacity: 1, visible: true,
+            children: [textId],
+            identity: {
+                key: `Row:Rows/RowsPanel/Row:${index}`, role: "component", definitionKey: "Row",
+            },
+        });
+        await writeFile(join(designDir, "design.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-design", canvas: { width: 750, height: 1624 },
+            roots: ["page"], assets: {},
+            fonts: { "font-regular": { path: "fonts/regular.ttf", sha256: fontSha, weight: 400 } },
+            nodes: {
+                page: {
+                    id: "page", name: "RowsPage", kind: "group", frame,
+                    opacity: 1, visible: true, children: ["panel"],
+                    identity: { key: "Rows.root", role: "page", definitionKey: "Rows" },
+                },
+                panel: {
+                    id: "panel", name: "RowsPanel", kind: "group", frame,
+                    opacity: 1, visible: true, children: ["row0", "row1"],
+                    identity: {
+                        key: "RowsPanel:Rows/RowsPanel", role: "component",
+                        definitionKey: "RowsPanel",
+                    },
+                },
+                row0: rowNode("row0", 0, "text0"),
+                text0: textNode("text0", "Row:Rows/RowsPanel/Row:0/Row/Title", "新标题零"),
+                row1: rowNode("row1", 1, "text1"),
+                text1: textNode("text1", "Row:Rows/RowsPanel/Row:1/Row/Title", "新标题一"),
+            },
+        }));
+        await writeFile(join(designDir, "component-declarations.json"), JSON.stringify({
+            schemaVersion: 1, kind: "uniflex-component-declarations",
+            definitions: [
+                { key: "Rows", source: "apps/client/src/ui-uniflex/pages/Rows/Rows.tsx" },
+                { key: "RowsPanel", source: "apps/client/src/ui-uniflex/pages/Rows/RowsPanel.tsx" },
+                { key: "Row", source: "apps/client/src/ui-uniflex/pages/Rows/Row.tsx" },
+            ],
+            instances: [
+                { key: "Rows.root", definitionKey: "Rows", role: "page", rootRecordId: 1 },
+                { key: "RowsPanel:Rows/RowsPanel", definitionKey: "RowsPanel", role: "component", rootRecordId: 2 },
+                { key: "Row:Rows/RowsPanel/Row:0", definitionKey: "Row", role: "component", rootRecordId: 3 },
+                { key: "Row:Rows/RowsPanel/Row:1", definitionKey: "Row", role: "component", rootRecordId: 4 },
+            ],
+        }));
+        await writeFile(join(designDir, "uniflex-export-baseline.json"), JSON.stringify({
+            kind: "uniflex-design-snapshot", schemaVersion: 1,
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                {
+                    id: 101, kind: "text", name: "Row/Title", value: "旧标题零",
+                    identity: { key: "Row:Rows/RowsPanel/Row:0/Row/Title", role: "node" },
+                },
+                {
+                    id: 102, kind: "text", name: "Row/Title", value: "旧标题一",
+                    identity: { key: "Row:Rows/RowsPanel/Row:1/Row/Title", role: "node" },
+                },
+            ],
+        }));
+        await execFileAsync(converter.command, [
+            ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
+            "--name", "RowsRestored", "--source-root", tempRoot, "--out", packageDir,
+        ], { cwd: root, env });
+        const panel = await readFile(
+            join(packageDir, "restored/pages/Rows/RowsPanel.tsx"), "utf8");
+        assert.match(panel, /\{ id: 'r0', title: "新标题零" \}/);
+        assert.match(panel, /\{ id: 'r1', title: "新标题一" \}/);
+        const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
+        assert.match(report, /item-field: .*Row:0\.title/);
+        assert.match(report, /item-field: .*Row:1\.title/);
+        const original = await readFile(join(pageDir, "RowsPanel.tsx"), "utf8");
+        assert.match(original, /title: '旧标题零'/);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }
