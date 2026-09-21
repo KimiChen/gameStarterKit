@@ -11,6 +11,7 @@ import {
   type NativeWebSocket,
 } from "../src/net/NativeLobbyTransport";
 import { RpcError } from "../src/net/LobbyRpcError";
+import { lobbyDataSync } from "../src/net/LobbyDataSync";
 
 class FakeSocket implements NativeWebSocket {
   readyState = 1;
@@ -175,4 +176,53 @@ test("NativeLobbyTransport：join 未落定时的 abort 仍然取消本次 join 
 
   await assert.rejects(owner.ready, /join 已取消/);
   assert.equal(socket.readyState, 3, "未落定的 join 被取消后必须关闭连接");
+});
+
+test("NativeLobbyTransport：reply.sync 与服务端主动 sync 进入同一数据同步入口", async () => {
+  lobbyDataSync.reset();
+  const sockets: FakeSocket[] = [];
+  const client = new NativeLobbyTransport(() => {
+    const socket = new FakeSocket();
+    sockets.push(socket);
+    return socket;
+  });
+  const received: unknown[] = [];
+  const off = lobbyDataSync.subscribe((sync) => received.push(sync));
+  client.init("wss://lobby.example");
+  const owner = client.joinOwned("opaque-token", { sId: 3 });
+  const socket = sockets[0]!;
+  socket.open();
+  socket.receive(serializeLobbyTransportFrame({
+    v: LOBBY_TRANSPORT_VERSION, kind: "auth.ok", uid: "u-1", sId: 3,
+  }));
+  await owner.ready;
+
+  const active = { mods: { versions: { User: 1 }, User: { copper: 10 } } };
+  socket.receive(serializeLobbyTransportFrame({
+    v: LOBBY_TRANSPORT_VERSION, kind: "sync", sync: active,
+  }));
+  // 同版本主动包是幂等重放，不得第二次通知。
+  socket.receive(serializeLobbyTransportFrame({
+    v: LOBBY_TRANSPORT_VERSION, kind: "sync", sync: active,
+  }));
+
+  const pending = client.rpc(UserRpc.GetUserId, {});
+  const request = JSON.parse(socket.sent[1]!);
+  socket.receive(serializeLobbyTransportFrame({
+    v: LOBBY_TRANSPORT_VERSION,
+    kind: "reply",
+    reply: {
+      id: request.rpc.id,
+      ok: true,
+      data: { uid: "u-1" },
+      sync: { mods: { versions: { User: 2 }, User: { copper: 20 } } },
+    },
+  }));
+  await pending;
+  assert.equal(received.length, 2);
+  assert.deepEqual(lobbyDataSync.latest(), {
+    mods: { versions: { User: 2 }, User: { copper: 20 } },
+  });
+  off();
+  await owner.leave();
 });

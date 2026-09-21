@@ -15,6 +15,7 @@ import type {
   LobbyConnectionListener,
   LobbyConnectionSnapshot,
 } from "./connectionEvents";
+import { lobbyDataSync } from "./LobbyDataSync";
 import { observeJoinControlResult, waitMsForJoin } from "./joinControl";
 import {
   cloneJson,
@@ -610,6 +611,7 @@ export class WebSocketClient {
       clearTimeout(p.timer);
       if (reply.ok) {
         try {
+          if (reply.sync) lobbyDataSync.apply(reply.sync);
           const data = validateLobbyRpcResponse(p.type, reply.data);
           p.resolve(data);
         } catch (error) {

@@ -1,5 +1,6 @@
 import http from 'node:http'
 import { WebSocket, WebSocketServer } from 'ws'
+import { isLobbyRouteOutcome, lobbyRouteOutcome } from './LobbyRouteOutcome'
 
 /**
  * 无状态 Lobby wire 的引擎接缝。
@@ -99,9 +100,10 @@ export type LobbyOutboundFrame =
     | {
           readonly kind: 'reply'
           readonly reply:
-              | { readonly id: string; readonly ok: true; readonly data?: unknown }
+              | { readonly id: string; readonly ok: true; readonly data?: unknown; readonly sync?: unknown }
               | { readonly id: string; readonly ok: false; readonly err: LobbyWireBusinessError }
       }
+    | { readonly kind: 'sync'; readonly sync: unknown }
     | { readonly kind: 'push'; readonly push: { readonly type: string; readonly data: unknown } }
     | { readonly kind: 'ping' | 'pong'; readonly nonce: string }
     | { readonly kind: 'control.error'; readonly err: { readonly code: string; readonly msg: string } }
@@ -206,6 +208,15 @@ class LobbyServerConnection {
         try {
             const push = this.server.options.wire.validatePush(type, data)
             return this.send({ kind: 'push', push })
+        } catch {
+            return false
+        }
+    }
+
+    async sync(data: unknown): Promise<boolean> {
+        if (this.state !== 'ready') return false
+        try {
+            return this.send({ kind: 'sync', sync: data })
         } catch {
             return false
         }
@@ -316,8 +327,14 @@ class LobbyServerConnection {
                 ),
                 this.server.options.handlerTimeoutMs,
             )
-            const data = this.server.options.wire.validateResponse(rpc.type, result)
-            this.send({ kind: 'reply', reply: { id: rpc.id, ok: true, data } })
+            const outcome = isLobbyRouteOutcome(result) ? result : lobbyRouteOutcome(result)
+            const data = this.server.options.wire.validateResponse(rpc.type, outcome.data)
+            this.send({
+                kind: 'reply',
+                reply: outcome.sync === undefined
+                    ? { id: rpc.id, ok: true, data }
+                    : { id: rpc.id, ok: true, data, sync: outcome.sync },
+            })
         } catch (error) {
             const expected = asBusinessError(error)
             this.sendReply(rpc.id, expected ?? { code: 'INTERNAL', msg: '服务器内部错误' })
@@ -423,6 +440,10 @@ export class LobbyServer {
 
     async push(connectionId: string, type: string, data: unknown): Promise<boolean> {
         return this.connections.get(connectionId)?.push(type, data) ?? false
+    }
+
+    async sync(connectionId: string, data: unknown): Promise<boolean> {
+        return this.connections.get(connectionId)?.sync(data) ?? false
     }
 
     forceLogout(connectionId: string, error: LobbyWireBusinessError, closeCode: number): void {

@@ -16,6 +16,8 @@ export interface NativeLobbyRuntime {
     stop(): Promise<void>
     /** 在持有连接的进程里写一条领域推送；没有该 uid/sId 的在线连接时返回 false。 */
     push(uid: string, sId: number, type: string, data: unknown): Promise<boolean>
+    /** 按当前在线内部 uid 下发通用数据同步；没有在线连接时返回 false。 */
+    syncByInternalUid(internalUid: number, sId: number, data: unknown): Promise<boolean>
     /** 运营强制下线（4903）；没有在线连接时返回 false。 */
     revoke(uid: string, sId: number): boolean
     /** 运营后台按引擎内部 role_id 强制下线；只定位当前在线连接。 */
@@ -33,6 +35,8 @@ export type NativeLobbyRole = 'off' | 'listen' | 'forward'
 
 /** 非监听进程把 Lobby 推送交给监听进程的传输；由多进程装配注入。 */
 export type LobbyPushForwarder = (uid: string, sId: number, type: string, data: unknown) => Promise<boolean>
+/** 非监听进程按内部 uid 把 sync 交给监听进程。 */
+export type LobbySyncForwarder = (internalUid: number, sId: number, data: unknown) => Promise<boolean>
 
 interface NativeLobbyConfiguration {
     readonly host: string
@@ -116,6 +120,10 @@ export async function startConfiguredNativeLobby(): Promise<NativeLobbyRuntime |
     }
     return {
         push: pushToUser,
+        syncByInternalUid: async (internalUid, sId, data) => {
+            const connectionId = auth.connectionIdByInternalUid(internalUid, sId)
+            return connectionId === undefined ? false : server.sync(connectionId, data)
+        },
         revoke: (uid, sId) => auth.revoke(uid, sId),
         revokeByInternalUid: (internalUid, sId) => auth.revokeByInternalUid(internalUid, sId),
         kick: (uid, sId, reason) => auth.kick(uid, sId, reason),

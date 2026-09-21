@@ -149,6 +149,7 @@ export { RefHash, FromData } from './differ/RefHash'
 export { HashLoadOpts, OtherLoadOpts } from './differ/subs/optsInterface'
 export { ReadonlyBean, ReadonlyDiffArray, ReadonlyDiffMap } from './differ/readonly'
 export { RedisService } from './differ/RedisService'
+export { isLobbyRouteOutcome, lobbyRouteOutcome, type LobbyRouteOutcome } from './net/lobby/LobbyRouteOutcome'
 
 /** Redis,Mysql连接使用相关 */
 export { DBExport as DB } from './database/DB'
@@ -166,6 +167,7 @@ export { IActionLogic } from './action/IActionLogic'
 export {
     ObjectActionCall,
     executeObjectAction,
+    recordObjectActionSync,
     executeForwardedRoute,
     type ObjectActionHandler,
     type ObjectActionIdentity,

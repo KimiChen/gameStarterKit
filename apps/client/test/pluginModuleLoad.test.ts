@@ -26,9 +26,22 @@ test("generated load：每个带 module 的 plugin 都能动态装载出 { insta
 });
 
 test("PluginHost：按 AppRuntime 同一口径托管 generated plugins，launch 走真实 loader 到 active，disposeAll 干净", { skip: loadable.length === 0 && "当前没有带 module 的 plugin" }, async () => {
+  // 端口面必须与 AppRuntime 注入的一致：install 里读到的每个 port 都要在这里存在，
+  // 否则「装到 active」测的是 harness 的残缺，不是插件。⛔ 别用可选链把缺失的 port 掩盖过去。
   const ports = {
     lobbyRpc: { query: async () => { throw new Error("not in test"); }, sendIdempotent: async () => { throw new Error("not in test"); } },
     navigation: { open: async () => { throw new Error("not in test"); }, replace: async () => { throw new Error("not in test"); }, back() {}, close() {}, closeGroup() {} },
+    session: { getUserId: () => "", isLoggedIn: () => false, getSessionGeneration: () => 0, getSessionProfile: () => null },
+    clock: { now: () => 0 },
+    // subscribeConnection 只登记订阅、不回放：本用例验的是装载链，⛔ 不在这里模拟连接。
+    lifecycle: {
+      subscribeConnection: () => () => {},
+      getConnectionState: () => ({ state: "idle", connGeneration: 0, lastSeq: 0 }),
+      subscribeHost: () => () => {},
+    },
+    ticker: { add: () => () => {} },
+    views: { open: async () => { throw new Error("not in test"); } },
+    launch: { enterBattle: async () => {}, launch: async () => {} },
   } as unknown as AppPorts;
   const host = new PluginHost(
     GENERATED_PLUGINS.map((plugin) => ({

@@ -52,13 +52,16 @@ async function main() {
     const readyTimeoutMs = Number(options['timeout-ms'] ?? 240000)
 
     // 与 `config/platforms/bearjoylive/platform.json5` 对齐：
-    // 中心库固定 9、firstClientPort 18090（内网端口派生为 28090），联调数据不落共享开发库。
+    // 中心库固定 9、用户库固定 8、firstClientPort 18090（内网端口派生为 28090），联调数据不落共享开发库。
+    // ⚠ `userRedisDb` 必须显式给：缺省时 `h.userRedis()` 会执行 `redis-cli -n undefined`，而 redis-cli
+    // 对非法 `-n` **不报错**、静默落到 db 0 ⇒ 夹具写进 0 号库、服务进程读 8 号库，症状是「登录钩子什么都没做」。
     const nativePort = Number(options['native-port'] ?? (await freePort()))
     const h = createHarness({
         platform,
         platformVersion,
         sid,
         centerRedisDb: 9,
+        userRedisDb: 8,
         clientPort: 18090,
         internalPort: 28090,
         gmSecret: 'r7HpIaNXTMXaKw2',

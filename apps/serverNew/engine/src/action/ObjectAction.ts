@@ -32,6 +32,17 @@ export interface ObjectActionHandler<Req, Res> {
     doAction(req: Req, res: Res, call: ObjectActionCall<Req, Res>): Promise<void> | void
 }
 
+/**
+ * 为不经过 RootBean diff 的原生 store 登记已提交数据差异。只能在 ObjectAction 的有效
+ * 上下文中调用；没有对象调用时静默忽略，避免后台代码伪造某个客户端的同步。
+ */
+export function recordObjectActionSync(mods: unknown): void {
+    if (!ContextEngine.isValid) return
+    const call = ContextEngine.currentCtxEngine!.ctxLogic.call
+    if (!call || call.responseTransport !== 'object') return
+    call.appendSyncChange(call.uId, mods)
+}
+
 export class ObjectActionCall<Req, Res> extends ApiCall<Req, Res> {
     override readonly responseTransport = 'object' as const
 
@@ -83,11 +94,14 @@ export class ObjectActionCall<Req, Res> extends ApiCall<Req, Res> {
         return { opSuccess: true }
     }
 
-    get result(): { readonly ok: true; readonly data: Res } | { readonly ok: false; readonly error: unknown } {
+    get result(): { readonly ok: true; readonly data: Res; readonly sync?: unknown } | { readonly ok: false; readonly error: unknown } {
         const ret = this.return
         if (!ret) return { ok: false, error: new Error(`object action did not return: ${this.route}`) }
         if (!ret.isSucc) return { ok: false, error: this.failureCause ?? ret.err }
-        return { ok: true, data: ret.res }
+        const sync = this.syncForReply ?? (this.syncChanges?.[this.uId] === undefined ? undefined : { mods: this.syncChanges[this.uId] })
+        return sync === undefined
+            ? { ok: true, data: ret.res }
+            : { ok: true, data: ret.res, sync }
     }
 }
 
@@ -98,7 +112,7 @@ export async function executeObjectAction<Req, Res>(
     res: Res,
     handler: ObjectActionHandler<Req, Res>,
     identity: ObjectActionIdentity,
-): Promise<{ readonly ok: true; readonly data: Res } | { readonly ok: false; readonly error: unknown }> {
+): Promise<{ readonly ok: true; readonly data: Res; readonly sync?: unknown } | { readonly ok: false; readonly error: unknown }> {
     const call = new ObjectActionCall(route, req, res, handler, identity)
     await RouteAction.onApiCall(call)
     return call.result

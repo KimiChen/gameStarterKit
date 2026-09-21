@@ -295,6 +295,15 @@ function createHarness(fixture) {
         UserRpc: contract.UserRpc,
         GuildRpc: contract.GuildRpc,
         RoomRpc: contract.RoomRpc,
+        /**
+         * income 域的路由名常量。
+         *
+         * ⚠ 不能像上面三个那样从 façade 取：`lobbyRpc/index.ts` 是**手工维护的稳定 façade**，注释已写明
+         * 新增域不再登记进去（`⛔ 本文件与 envelope/push 不再登记`）。生产代码取新域也是直接 import
+         * `domains/<域>`（`IncomeNativeLobbyRoutes` 就是这么写的），这里照同一份路径取。
+         */
+        IncomeRpc: require(path.join(SERVER_ROOT, 'generated/lobby-contract/protocol/lobbyRpc/domains/income'))
+            .IncomeRpc,
         KICK_CLOSE_CODE: contract.KICK_CLOSE_CODE,
         ForceLogoutReason: contract.ForceLogoutReason,
 
@@ -319,6 +328,25 @@ function createHarness(fixture) {
     h.roomCodeKey = (code) => `${h.ROOM_KEY_PREFIX}code:{s${h.SID}:${code}}`
     h.roomCodeGenerationKey = (code) => `${h.ROOM_KEY_PREFIX}code:gen:{s${h.SID}:${code}}`
 
+    /**
+     * 库号闸：`redis-cli -n <非数字>` **不报错**，静默落到 db 0。
+     *
+     * 这是真实踩过的坑：单进程线路漏传 `userRedisDb` 时 `-n undefined` 会把夹具写进 0 号库，
+     * 而服务进程读 8 号库，症状表现为「登录钩子什么都没做」——排查成本极高，且一旦 0 号库
+     * 恰好也有同名键就会变成**假绿**。所以这里宁可硬失败，也不允许任何库号落到字符串化后的
+     * 非正整数上。
+     */
+    for (const [label, value] of [
+        ['centerRedisDb', h.CENTER_REDIS_DB],
+        ['userRedisDb', h.USER_REDIS_DB],
+    ]) {
+        if (!Number.isInteger(value) || value < 0) {
+            fail(
+                `createHarness: fixture.${label} 必须是 >=0 的整数，实际 ${JSON.stringify(value)}。` +
+                    '（redis-cli 对非法 -n 不报错、静默落 db 0，会让夹具写到错误的库上）',
+            )
+        }
+    }
     h.redis = (...args) =>
         execFileSync('redis-cli', ['-n', String(h.CENTER_REDIS_DB), ...args], { encoding: 'utf8' }).trim()
     /**

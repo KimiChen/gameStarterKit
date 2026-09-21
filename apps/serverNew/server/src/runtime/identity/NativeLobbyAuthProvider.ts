@@ -182,6 +182,12 @@ export class NativeLobbyAuthProvider implements LobbyAuthProvider {
         return this.online.get(`${sId}:${uid}`)?.connectionId
     }
 
+    /** 只查询当前在线会话；不建立持久化 internal uid → 外部 uid 反查。 */
+    connectionIdByInternalUid(internalUid: number, sId: number): string | undefined {
+        if (!Number.isSafeInteger(internalUid) || internalUid < 1) return undefined
+        return this.onlineByInternalUid.get(`${sId}:${internalUid}`)?.connectionId
+    }
+
     /**
      * 运营强制下线（未封号，可重新登录）。这是 4903 的唯一入口：
      * 封号走鉴权拒绝（4901），顶号走 `claimOnline`（4902）。

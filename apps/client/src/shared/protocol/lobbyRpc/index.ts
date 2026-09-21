@@ -14,6 +14,7 @@ export * from "./canonicalJson";
 export * from "./defineDomain";
 export * from "./primitives";
 export * from "./envelope";
+export * from "./sync";
 export * from "./transport";
 export * from "./economy";
 export * from "./user";

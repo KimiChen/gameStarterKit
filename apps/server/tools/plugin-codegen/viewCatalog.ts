@@ -1053,6 +1053,21 @@ export function readViewCatalog(repositoryRoot: string): ViewCatalog {
       fail("apps/plugins/host.json", `home 引用不存在的入口 "${qualified}"（形态 pluginId/entryId，须与某条 menu contribution 一致）`);
     }
   }
+  // autoStart（session 级自动装载）：必须是**有客户端 module 的插件**，且 resident。两条都不是
+  // 形式要求：无 entry 的单元装载是空操作（built-in 静态常驻，没有 install 可跑）；非 resident
+  // 的单元会在自己的 route refcount 归零时被拆掉，于是「自动装载」只对第一次 ready 有效。
+  for (const id of host.autoStart) {
+    const unit = plugins.find((candidate) => candidate.id === id);
+    if (!unit || unit.class !== "plugin") {
+      fail("apps/plugins/host.json", `autoStart 引用未登记的插件 "${id}"（autoStart 只收 plugin，不收 kit）`);
+    }
+    if (!unit.entry) {
+      fail("apps/plugins/host.json", `autoStart 的 "${id}" 没有客户端 module（无 entry = 静态常驻，装载是空操作）`);
+    }
+    if (!unit.resident) {
+      fail("apps/plugins/host.json", `autoStart 的 "${id}" 必须 resident:true——否则 route refcount 归零时会立刻把它拆掉`);
+    }
+  }
   // 分组：成员必须真实存在；组 id ⛔ 不得与任何入口 id 或单元 id 撞车（设置面板把组渲染成一行，
   // 撞车会让「点的到底是组还是入口」取决于实现细节）。
   const unitIds = new Set(plugins.map((plugin) => plugin.id));
@@ -1424,10 +1439,12 @@ export function renderPlugins(catalog: ViewCatalog): string {
   lines.push("    readonly members: readonly GeneratedHostHomeEntry[];");
   lines.push("}");
   lines.push("");
-  lines.push("/** 宿主 placement（apps/plugins/host.json）：默认玩法、首屏入口顺序与入口分组的唯一来源（docs/PLUGIN.md §6）。 */");
+  lines.push("/** 宿主 placement（apps/plugins/host.json）：默认玩法、首屏入口顺序、自动装载单元与入口分组的唯一来源（docs/PLUGIN.md §6）。 */");
   lines.push("export interface GeneratedHostDescriptor {");
   lines.push(`    readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };`);
   lines.push("    readonly home: readonly GeneratedHostHomeEntry[];");
+  lines.push("    /** session 级自动装载的插件 id：宿主在 Lobby ready 时装一次，装完做什么归插件自己。 */");
+  lines.push("    readonly autoStart: readonly string[];");
   lines.push("    readonly groups: readonly GeneratedHostGroup[];");
   lines.push("}");
   lines.push("");
@@ -1438,6 +1455,9 @@ export function renderPlugins(catalog: ViewCatalog): string {
     const [pluginId, entryId] = qualified.split("/");
     lines.push(`        { pluginId: ${JSON.stringify(pluginId)}, entryId: ${JSON.stringify(entryId)} },`);
   }
+  lines.push("    ],");
+  lines.push("    autoStart: [");
+  for (const id of catalog.host.autoStart) lines.push(`        ${JSON.stringify(id)},`);
   lines.push("    ],");
   lines.push("    groups: [");
   for (const group of catalog.host.groups) {

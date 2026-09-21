@@ -1,4 +1,4 @@
-import type { LobbyConnectionContext, LobbyRouteHandler, LobbyRouteRegistry } from '@arthropoda/game-engine'
+import { isLobbyRouteOutcome, lobbyRouteOutcome, type LobbyConnectionContext, type LobbyRouteHandler, type LobbyRouteOutcome, type LobbyRouteRegistry } from '@arthropoda/game-engine'
 import {
     ALL_LOBBY_RPC_TYPES,
     LOBBY_RPC_CONTRACT_VERSIONS,
@@ -8,6 +8,7 @@ import {
 } from '../../../generated/lobby-contract/protocol/lobbyRpc'
 import type { NativeLobbyIdentityResolver } from '../identity/NativeLobbyAuthProvider'
 import { NativeLobbyIdempotency } from './NativeLobbyIdempotency'
+import { NativeLobbyPendingRoutes } from './NativeLobbyPendingRoutes'
 
 /** 会话结束（断线 / 顶号 / 被踢）时回调的可信身份；只有当前连接被释放时才会触发。 */
 export interface NativeLobbyReleasedIdentity {
@@ -56,7 +57,11 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
     async execute(type: string, context: LobbyConnectionContext, payload: unknown): Promise<unknown> {
         const handler = this.handlers.get(type as LobbyRpcType)
         if (!handler) throw new Error(`unregistered native Lobby route: ${type}`)
-        if (LOBBY_RPC_ROUTE_MODES[type as LobbyRpcType] !== 'idempotent-write') return handler(context, payload)
+        const execute = async (): Promise<LobbyRouteOutcome> => {
+            const result = await handler(context, payload)
+            return isLobbyRouteOutcome(result) ? result : lobbyRouteOutcome(result)
+        }
+        if (LOBBY_RPC_ROUTE_MODES[type as LobbyRpcType] !== 'idempotent-write') return execute()
 
         const idempotency = this.idempotency
         const validateResponse = this.options?.validateResponse
@@ -71,8 +76,12 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
             clientReqId: clientReqIdOf(payload),
             payload,
             contractVersion: LOBBY_RPC_CONTRACT_VERSIONS[idemType],
-            execute: () => handler(context, payload),
-            validate: (route, result) => validateResponse(route, result),
+            execute,
+            validate: (route, result) => {
+                if (!isLobbyRouteOutcome(result)) throw new Error(`idempotent route did not return outcome: ${route}`)
+                validateResponse(route, result.data)
+                return result
+            },
         })
     }
 
@@ -89,17 +98,46 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
     async executeForwarded(type: string, context: LobbyConnectionContext, payload: unknown): Promise<unknown> {
         const handler = this.handlers.get(type as LobbyRpcType)
         if (!handler) throw new Error(`unregistered native Lobby route: ${type}`)
-        return handler(context, payload)
+        const result = await handler(context, payload)
+        return isLobbyRouteOutcome(result) ? result : lobbyRouteOutcome(result)
     }
 
+    /**
+     * 启动期路由完整性闸。
+     *
+     * ⚠ 期望集**不是** `ALL_LOBBY_RPC_TYPES`：shared 的 lobbyRpc registry 是**两代服务端共有**的 wire 面
+     * （另一条产品线 MMO 在 `apps/server` 上实现 chat / party / world，并把域加进同一份声明面），
+     * 所以「声明面 ∖ 注册面」里有一类是**归属另一条通道**的，不是本项目的欠账。
+     *
+     * 那类必须逐条登记在 `NativeLobbyPendingRoutes`（带原因），并与「声明面 ∖ 注册面」**双向对齐**：
+     * 路由迁走（已注册）或从 shared 删除都会让登记陈旧 ⇒ 直接 fail，强制同批删行。
+     * ⛔ 不要为了让启动通过而往登记表里塞「本项目该实现但还没实现」的路由 —— 那是把启动期 fail-fast
+     * 换成永久静默。判定标准是**归属**，不是进度。
+     */
     assertComplete(): void {
-        const missing = ALL_LOBBY_RPC_TYPES.filter((type) => !this.handlers.has(type))
-        const unexpected = [...this.handlers.keys()].filter(
-            (type) => !(ALL_LOBBY_RPC_TYPES as readonly string[]).includes(type),
+        const declared = new Set<string>(ALL_LOBBY_RPC_TYPES)
+        const registered = new Set<string>(this.handlers.keys())
+
+        // ① 注册面不得超出声明面：多出来的 handler 一定是路由名写错。
+        const unexpected = [...registered].filter((type) => !declared.has(type))
+        // ② 声明面里没注册的，必须逐条登记「归属另一条通道」，否则就是本项目的欠账。
+        const missing = [...declared].filter((type) => !registered.has(type))
+        const unowned = missing.filter((type) => !Object.prototype.hasOwnProperty.call(NativeLobbyPendingRoutes, type))
+        // ③ 双向对齐：登记项必须仍是「声明了但没注册」的，否则登记已陈旧（迁移落地没删行 / shared 删了路由）。
+        const stalePending = Object.keys(NativeLobbyPendingRoutes).filter(
+            (type) => !declared.has(type) || registered.has(type),
         )
-        if (missing.length || unexpected.length) {
+        const reasonlessPending = Object.entries(NativeLobbyPendingRoutes)
+            .filter(([, reason]) => reason.trim().length === 0)
+            .map(([type]) => type)
+
+        if (unexpected.length || unowned.length || stalePending.length || reasonlessPending.length) {
             throw new Error(
-                `native Lobby route registry mismatch: missing=[${missing.join(', ')}], unexpected=[${unexpected.join(', ')}]`,
+                'native Lobby route registry mismatch: ' +
+                    `unexpected=[${unexpected.join(', ')}]（注册了 shared 未声明的路由）, ` +
+                    `unowned missing=[${unowned.join(', ')}]（既没注册、也没在 NativeLobbyPendingRoutes 登记归属）, ` +
+                    `stale pending=[${stalePending.join(', ')}]（已注册或已不在 shared 声明面，应同批删除登记行）, ` +
+                    `reasonless pending=[${reasonlessPending.join(', ')}]（登记必须写明归属原因）`,
             )
         }
         // 幂等写路由没有通用闸就等于把「重试可能重复扣费」放进了活动链。

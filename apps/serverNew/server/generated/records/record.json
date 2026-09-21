@@ -2831,9 +2831,9 @@
       "initFunc": true
     },
     "User.ts": {
-      "version": 170,
-      "md5": "66354c14c735f0851a84ce8de5ef5787",
-      "mtime": 1789653700326,
+      "version": 172,
+      "md5": "f97a0a1e03ed78d4fd33e1308ee4b120",
+      "mtime": 1789911456213,
       "sourcePath": "src/modules/user/bean/User.ts",
       "relativePath": "/base/User",
       "name": "User",
@@ -5597,6 +5597,40 @@
           "name": "lastCopperIncomeTime",
           "type": "int",
           "comment": "铜币上次结算时间；仅服务端持久化，不下发客户端",
+          "typeImport": "",
+          "hasQuestionToken": false,
+          "sourceType": "int",
+          "sourceInitializer": "0",
+          "decorators": [
+            "@OnlyRedis"
+          ],
+          "saveType": "SaveType.ForRedis",
+          "modType": "ModType.None",
+          "listen": "undefined"
+        },
+        "offlineCopperPending": {
+          "defaultValue": "0",
+          "id": 170,
+          "name": "offlineCopperPending",
+          "type": "int",
+          "comment": "已算好但尚未领取的离线铜币。\n     \n      登录时由 `CopperIncome.parkOffline` 暂存在这里，等客户端请求领取才进 `copper`\n      （离线收益不再在登录时自动到账）。断线前没领走的那笔会在下次登录时累加，不会丢。",
+          "typeImport": "",
+          "hasQuestionToken": false,
+          "sourceType": "int",
+          "sourceInitializer": "0",
+          "decorators": [
+            "@OnlyRedis"
+          ],
+          "saveType": "SaveType.ForRedis",
+          "modType": "ModType.None",
+          "listen": "undefined"
+        },
+        "offlineCopperSecondsPending": {
+          "defaultValue": "0",
+          "id": 171,
+          "name": "offlineCopperSecondsPending",
+          "type": "int",
+          "comment": "上面那笔离线收益对应的离线秒数；同样只在领取时清零，供弹窗展示",
           "typeImport": "",
           "hasQuestionToken": false,
           "sourceType": "int",

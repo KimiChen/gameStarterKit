@@ -20,6 +20,20 @@ export interface LoadedHashMod {
  * （旧二进制通道的 `_mod` 推送与 `pushModChangeToUser` 已随 P6 删除）。
  */
 export class ModSync {
+    private static readonly committedListeners = new Set<
+        (changes: { [key: int]: { [key: string]: any } } | undefined, call: unknown) => Promise<void> | void
+    >()
+
+    /** 宿主注册提交后的同步投递器；返回注销器，避免重启/测试遗留全局监听。 */
+    static onCommitted(listener: (changes: { [key: int]: { [key: string]: any } } | undefined, call: unknown) => Promise<void> | void): () => void {
+        this.committedListeners.add(listener)
+        return () => this.committedListeners.delete(listener)
+    }
+
+    static async notifyCommitted(changes: { [key: int]: { [key: string]: any } } | undefined, call: unknown): Promise<void> {
+        if (!changes) return
+        for (const listener of this.committedListeners) await listener(changes, call)
+    }
     /**
      * 自动加载mod列表
      * @param loadedHashs

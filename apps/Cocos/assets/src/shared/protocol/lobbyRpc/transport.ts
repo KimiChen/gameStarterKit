@@ -13,6 +13,7 @@ import {
   type IRpcEnvelope,
   type IRpcReply,
 } from "./envelope";
+import { type ILobbyDataSync, validateLobbyDataSync } from "./sync";
 import {
   isRpcErrCode,
   validateLobbyPush,
@@ -24,7 +25,8 @@ import {
  * 原生 Lobby WebSocket 的传输层版本。它与每条 RPC 的 contractVersion 分离：前者只描述
  * 连接外壳，后者描述业务 payload。版本不同时必须明确拒绝，禁止猜测旧帧含义。
  */
-export const LOBBY_TRANSPORT_VERSION = 1;
+// v2：reply 可带 sync，服务端也可发送独立 sync 帧；旧 v1 帧明确拒绝，禁止猜测含义。
+export const LOBBY_TRANSPORT_VERSION = 2;
 export const LOBBY_TRANSPORT_MAX_MESSAGE_BYTES = 64 * 1024;
 export const LOBBY_TRANSPORT_AUTH_TIMEOUT_MS = 10_000;
 export const LOBBY_TRANSPORT_RPC_TIMEOUT_MS = 15_000;
@@ -82,6 +84,13 @@ export interface ILobbyTransportReplyFrame {
   reply: IRpcReply;
 }
 
+/** 无请求上下文的服务端主动数据同步。 */
+export interface ILobbyTransportSyncFrame {
+  v: typeof LOBBY_TRANSPORT_VERSION;
+  kind: "sync";
+  sync: ILobbyDataSync;
+}
+
 export interface ILobbyTransportPushFrame {
   v: typeof LOBBY_TRANSPORT_VERSION;
   kind: "push";
@@ -124,6 +133,7 @@ export type LobbyTransportServerFrame =
   | ILobbyTransportAuthOkFrame
   | ILobbyTransportAuthErrorFrame
   | ILobbyTransportReplyFrame
+  | ILobbyTransportSyncFrame
   | ILobbyTransportPushFrame
   | ILobbyTransportPingFrame
   | ILobbyTransportPongFrame
@@ -216,6 +226,11 @@ function validateReply(value: PlainRecord): ILobbyTransportReplyFrame {
   };
 }
 
+function validateSync(value: PlainRecord): ILobbyTransportSyncFrame {
+  assertExactKeys(value, ["v", "kind", "sync"], [], "frame");
+  return { v: version(value), kind: "sync", sync: validateLobbyDataSync(value.sync) };
+}
+
 function validatePush(value: PlainRecord): ILobbyTransportPushFrame {
   assertExactKeys(value, ["v", "kind", "push"], [], "frame");
   return {
@@ -288,6 +303,8 @@ export function validateLobbyTransportFrame(
         return validateRpc(value);
       case "reply":
         return validateReply(value);
+      case "sync":
+        return validateSync(value);
       case "push":
         return validatePush(value);
       case "ping":

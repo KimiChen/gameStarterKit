@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict'
-import { GameError, PlatformLineInfo, RedisService, RouteAction } from '@arthropoda/game-engine'
+import {
+    GameError,
+    PlatformLineInfo,
+    RedisService,
+    RouteAction,
+    timestamp,
+    type LobbyConnectionContext,
+} from '@arthropoda/game-engine'
 import {
     ALL_LOBBY_RPC_TYPES,
     LOBBY_RPC_ROUTE_MODES,
@@ -7,6 +14,8 @@ import {
 } from '../../../generated/lobby-contract/protocol/lobbyRpc'
 import { NativeLobbyIdentityMap } from '../../../src/runtime/identity/NativeLobbyIdentityMap'
 import { grantedItemCount } from '../../../src/runtime/lobby/NativeLobbyGrants'
+import { NativeLobbyRouteRegistry } from '../../../src/runtime/lobby/NativeLobbyRouteRegistry'
+import { NativeLobbyPendingRoutes } from '../../../src/runtime/lobby/NativeLobbyPendingRoutes'
 import { assembleNativeLobbyRoutes, type NativeLobbyRouteAssembly } from '../../../src/runtime/lobby/NativeLobbyRoutes'
 import { MailNativeLobbyStore } from '../../../src/modules/mail/lobby/MailNativeLobbyStore'
 import { ShopNativeLobbyStore } from '../../../src/modules/shop/lobby/ShopNativeLobbyStore'
@@ -118,21 +127,59 @@ describe('native Lobby full route contract', () => {
         }
     })
 
-    it('has exactly one handler for every shared route and rejects a partial registry', () => {
-        assert.equal(ALL_LOBBY_RPC_TYPES.length, 25)
-        for (const type of ALL_LOBBY_RPC_TYPES) assert.equal(assembly.routes.has(type), true, `缺少 handler: ${type}`)
-        // 启动期全集校验：少一条就拒绝启动，而不是等第一个请求才发现。
+    it('treats routes owned by the other channel as declared ownership, not as a backlog', () => {
+        // ⚠ 期望集**不能**直接取 shared 声明面：MMO（chat / party / world）在 apps/server 上实现，
+        // 只是把域加进了同一份 registry（见 NativeLobbyPendingRoutes 抬头）。这里钉的是那条边界：
+        // 「声明面 ∖ 注册面」必须与「归属另一条通道」登记表**逐条相等**，多一条少一条都红。
+        assert.equal(ALL_LOBBY_RPC_TYPES.length, 40)
+        const unregistered = ALL_LOBBY_RPC_TYPES.filter((type) => !assembly.routes.has(type))
+        assert.deepEqual(
+            [...unregistered].sort(),
+            Object.keys(NativeLobbyPendingRoutes).sort(),
+            '未注册的路由必须与「归属另一条通道」登记表逐条一致',
+        )
+        for (const type of unregistered) {
+            assert.notEqual(NativeLobbyPendingRoutes[type]?.trim(), '', `${type} 的登记必须写明归属原因`)
+        }
         assert.doesNotThrow(() => assembly.routes.assertComplete())
         assert.equal(assembly.routes.has('user.notARoute'), false)
+    })
+
+    it('rejects a registry that silently drops a route this project owns', () => {
+        // 负向：登记表只能装「归属另一条通道」的路由。少注册一条本项目自己的路由，
+        // 必须仍然拒绝启动 —— 否则这张表就从「登记归属」退化成「允许缺失」的旁路。
+        const registry = new NativeLobbyRouteRegistry({ validateResponse: (_route, response) => response })
+        const owned = ALL_LOBBY_RPC_TYPES.filter(
+            (type) => !Object.prototype.hasOwnProperty.call(NativeLobbyPendingRoutes, type),
+        )
+        for (const type of owned) {
+            if (type !== 'user.getInfo') registry.register(type, async () => ({}))
+        }
+        assert.throws(() => registry.assertComplete(), /unowned missing=\[user\.getInfo\]/)
+    })
+
+    it('rejects a stale ownership entry once the route is migrated', () => {
+        // 负向：路由迁走（已注册）后登记行就陈旧了。这条闸是「自动收紧」——迁移落地必须同批删行，
+        // 不然这张表会变成永久旁路。
+        const registry = new NativeLobbyRouteRegistry({ validateResponse: (_route, response) => response })
+        for (const type of ALL_LOBBY_RPC_TYPES) registry.register(type, async () => ({}))
+        assert.throws(() => registry.assertComplete(), /stale pending=\[/)
+    })
+
+    it('rejects a registry that registers a route shared never declared', () => {
+        const registry = new NativeLobbyRouteRegistry({ validateResponse: (_route, response) => response })
+        for (const type of ALL_LOBBY_RPC_TYPES) registry.register(type, async () => ({}))
+        registry.register('user.notARoute' as LobbyRpcType, async () => ({}))
+        assert.throws(() => registry.assertComplete(), /unexpected=\[user\.notARoute\]/)
     })
 
     it('keeps the execution mode declared by shared as the only source of truth', () => {
         // 模式必须来自 shared：本地维护第二份清单会让「哪些路由需要幂等闸」漂移。
         const modes = Object.entries(LOBBY_RPC_ROUTE_MODES)
-        assert.equal(modes.length, 25)
-        assert.equal(modes.filter(([, mode]) => mode === 'idempotent-write').length, 12)
-        assert.equal(modes.filter(([, mode]) => mode === 'natural-write').length, 4)
-        assert.equal(modes.filter(([, mode]) => mode === 'query').length, 9)
+        assert.equal(modes.length, 40)
+        assert.equal(modes.filter(([, mode]) => mode === 'idempotent-write').length, 20)
+        assert.equal(modes.filter(([, mode]) => mode === 'natural-write').length, 6)
+        assert.equal(modes.filter(([, mode]) => mode === 'query').length, 14)
     })
 
     it('credits coins through redeem and lands the purchase reward in real state', async () => {
@@ -831,6 +878,111 @@ describe('native Lobby full route contract', () => {
         assert.equal(await balanceOf(uid), 0)
     })
 
+    it('initializes a native income account and keeps offline income claim-only without loading legacy User', async () => {
+        const uid = 'contract-income'
+        const internalUid = await identities.resolve(uid, SID)
+        const accountKey = 'nativeLobby:income:account:v1'
+        const accountField = `${SID}:${internalUid}`
+        const accountOf = async () => {
+            const raw = await redis.hGet(accountKey, accountField)
+            assert.ok(raw, '认证必须初始化新服务收益账户')
+            return JSON.parse(raw) as {
+                level: number
+                copper: number
+                lastIncomeAt: number
+                offlineCopper: number
+                offlineSeconds: number
+            }
+        }
+        const userBean = User as unknown as { load: unknown }
+        const savedLoad = userBean.load
+        userBean.load = async () => { throw new Error('income must not read legacy User') }
+        try {
+            // ① 登录钩子：新账号首次认证原子初始化 1 级 / 0 铜币账户；不读旧 User Bean。
+            //    ⚠ 这一步有副作用，所以下面一律用 `rpc(context, …)`：`call` 会重新认证，
+            //    等于在每条 RPC 前再跑一次登录钩子，把被测状态改掉。
+            const context = await connect(uid)
+            const first = await accountOf()
+            assert.equal(first.level, 1)
+            assert.equal(first.lastIncomeAt > 0, true)
+            assert.equal(first.offlineCopper, 0)
+            assert.equal(first.copper, 0)
+
+            // ② 预览是只读路由（query）：查一次不能让任何字段动，⛔ 更不能顺手把待领收益发出去。
+            const baseline = first.lastIncomeAt
+            assert.deepEqual(await rpc(context, 'income.getPending', {}), {
+                level: 1,
+                intervalSeconds: 5,
+                perInterval: 100,
+                offlineSeconds: 0,
+                offlineCopper: 0,
+                copper: 0,
+            })
+            assert.equal((await accountOf()).lastIncomeAt, baseline)
+            assert.equal((await accountOf()).copper, 0)
+
+            // ③ 在线结算：12s → 2 个整周期，基线按整周期推进（余量留给下一次心跳）。
+            const onlineSince = timestamp() - 12
+            await redis.hSet(accountKey, accountField, JSON.stringify({ ...await accountOf(), lastIncomeAt: onlineSince }))
+            assert.deepEqual(await rpc(context, 'income.settleOnline', {}), { copper: 200, balance: 200 })
+            assert.equal((await accountOf()).copper, 200)
+            assert.equal((await accountOf()).lastIncomeAt, onlineSince + 10)
+
+            // ④ 再登录一次：这次有历史结算点，钩子必须把离线那段**算好暂存**，⛔ 不到账。
+            const offlineSince = timestamp() - 120
+            await redis.hSet(accountKey, accountField, JSON.stringify({ ...await accountOf(), lastIncomeAt: offlineSince }))
+            await connect(uid)
+            // 断言落在「关系」上而不是写死的秒数：认证与取时间之间会跨过 1 秒边界。
+            const parkedAccount = await accountOf()
+            const parkedSeconds = parkedAccount.offlineSeconds
+            assert.ok(parkedSeconds >= 120 && parkedSeconds <= 125, `离线秒数应约等于 120，实际 ${parkedSeconds}`)
+            assert.equal(parkedAccount.offlineCopper, 100 * Math.floor(parkedSeconds / 5))
+            assert.ok(parkedAccount.lastIncomeAt > offlineSince)
+            assert.equal(parkedAccount.copper, 200)
+
+            // ⑤ 待领收益在预览里看得到，但⛔ 领取前不进 copper。
+            const parkedCopper = parkedAccount.offlineCopper
+            assert.deepEqual(await rpc(context, 'income.getPending', {}), {
+                level: 1,
+                intervalSeconds: 5,
+                perInterval: 100,
+                offlineSeconds: parkedSeconds,
+                offlineCopper: parkedCopper,
+                copper: 200,
+            })
+            assert.equal((await accountOf()).copper, 200)
+
+            // ⑥ 点「确定」→ 领取：响应、实际余额、暂存清零三者必须自洽。
+            const claimedBalance = 200 + parkedCopper
+            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'i-1' }), {
+                copper: parkedCopper,
+                offlineSeconds: parkedSeconds,
+                balance: claimedBalance,
+            })
+            assert.equal((await accountOf()).copper, claimedBalance)
+            assert.equal((await accountOf()).offlineCopper, 0)
+            assert.equal((await accountOf()).offlineSeconds, 0)
+
+            // ⑦ 同一 clientReqId 重放返回首次结果，且不重复发钱（通用幂等闸承重）。
+            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'i-1' }), {
+                copper: parkedCopper,
+                offlineSeconds: parkedSeconds,
+                balance: claimedBalance,
+            })
+            assert.equal((await accountOf()).copper, claimedBalance)
+
+            // ⑧ 换一个 clientReqId 再来一次：没有待领收益，⛔ 不能凭空发钱。
+            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'i-2' }), {
+                copper: 0,
+                offlineSeconds: 0,
+                balance: claimedBalance,
+            })
+            assert.equal((await accountOf()).copper, claimedBalance)
+        } finally {
+            userBean.load = savedLoad
+        }
+    })
+
     it('fans a released session out to the owning module so the offline cleanup runs exactly once', async () => {
         // `onReleased` 是 P6 删除旧 `SessionMgr` 断线回调后的替代入口：会话结束的离线收尾由所属
         // 模块贡献。只注册不消费会让收尾静默失效，所以这里走生产装配，证明「装配真的把回调扇出到
@@ -861,10 +1013,21 @@ describe('native Lobby full route contract', () => {
         assert.deepEqual(cleaned, [internalUid])
     })
 
-    it('exercises every route shared declares at least once', () => {
+    it('exercises every route this project owns at least once', () => {
         // 这条断言是「局部闭环不能宣称全量完成」的机器化版本：漏测一条就失败。
-        const missing = ALL_LOBBY_RPC_TYPES.filter((type) => !exercised.has(type))
-        assert.deepEqual(missing, [])
+        // ⚠ 期望集是「本项目拥有的路由」，不是 shared 声明面 —— 归属另一条通道的（见
+        // NativeLobbyPendingRoutes）在这里既没有 handler、也不会被驱动。
+        const pending = new Set(Object.keys(NativeLobbyPendingRoutes))
+        const owned = ALL_LOBBY_RPC_TYPES.filter((type) => !pending.has(type))
+        assert.deepEqual(
+            owned.filter((type) => !exercised.has(type)),
+            [],
+        )
+        // 反向：登记为「归属另一条通道」的路由一条都不许被驱动过（被驱动 = 其实有 handler = 登记陈旧）。
+        assert.deepEqual(
+            [...exercised].filter((type) => pending.has(type)),
+            [],
+        )
     })
 
     /** 认证成功后的上下文：真实身份解析 + 建档钩子，和监听进程装配路径一致。 */
@@ -875,8 +1038,18 @@ describe('native Lobby full route contract', () => {
     }
 
     async function call(uid: string, type: LobbyRpcType, payload: unknown): Promise<unknown> {
+        return rpc(await connect(uid), type, payload)
+    }
+
+    /**
+     * 用**已经拿到的**上下文发一条 RPC。
+     *
+     * 多数用例走 `call` 就够了；但只要某个模块在 `onAuthenticated` 上有副作用（income 的登录
+     * 离线暂存就是），`call` 的隐式重新认证就会在每条 RPC 前再跑一次那个副作用，把被测状态改掉。
+     * 那种用例必须先 `connect` 一次、再用本函数连续发多条 RPC。
+     */
+    async function rpc(context: LobbyConnectionContext, type: LobbyRpcType, payload: unknown): Promise<unknown> {
         exercised.add(type)
-        const context = await connect(uid)
         const result = await assembly.routes.execute(type, context, payload)
         // 出站必须过 shared 响应 validator；本地「看起来对」不算契约通过。
         return assembly.wire.validateResponse(type, result)

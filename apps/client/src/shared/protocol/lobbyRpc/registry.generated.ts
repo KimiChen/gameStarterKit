@@ -8,6 +8,7 @@ import { validateArenaBoardReq, validateArenaBoardRes, validateArenaCaptureReq, 
 import { validateArenaShopBuyBoostReq, validateArenaShopBuyBoostRes, type IArenaShopBuyBoostReq, type IArenaShopBuyBoostRes } from "./domains/arenaShop";
 import { validateChatMessagePush, validateChatSendReq, validateChatSendRes, type IChatMessagePush, type IChatSendReq, type IChatSendRes } from "./domains/chat";
 import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, validateGuildJoinReq, validateGuildLeaveReq, validateGuildLeaveRes, validateJoinRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
+import { validateIncomeClaimOfflineReq, validateIncomeClaimOfflineRes, validateIncomeGetPendingReq, validateIncomeGetPendingRes, validateIncomeSettleOnlineReq, validateIncomeSettleOnlineRes, type IIncomeClaimOfflineReq, type IIncomeClaimOfflineRes, type IIncomeGetPendingReq, type IIncomeGetPendingRes, type IIncomeSettleOnlineReq, type IIncomeSettleOnlineRes } from "./domains/income";
 import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
 import { validatePartyAcceptReq, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyLeaveReq, validatePartyLeaveRes, validatePartySeqRes, validatePartyTransferLeaderReq, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
@@ -24,6 +25,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "arenaShop",
     "chat",
     "guild",
+    "income",
     "mail",
     "party",
     "redeem",
@@ -44,6 +46,9 @@ export interface LobbyRpcMap {
     "guild.join": { req: IGuildJoinReq; res: IGuildJoinRes };
     "guild.leave": { req: IGuildLeaveReq; res: IGuildLeaveRes };
     "guild.getEvents": { req: IGuildGetEventsReq; res: IGuildGetEventsRes };
+    "income.getPending": { req: IIncomeGetPendingReq; res: IIncomeGetPendingRes };
+    "income.settleOnline": { req: IIncomeSettleOnlineReq; res: IIncomeSettleOnlineRes };
+    "income.claimOffline": { req: IIncomeClaimOfflineReq; res: IIncomeClaimOfflineRes };
     "mail.list": { req: IMailListReq; res: IMailListRes };
     "mail.claimAttach": { req: IMailClaimAttachReq; res: IPurchaseResult };
     "mail.markRead": { req: IMailMarkReadReq; res: IMailMarkReadRes };
@@ -86,6 +91,7 @@ export type LobbyRpcIdemType =
     | "arenaShop.buyBoost"
     | "guild.join"
     | "guild.leave"
+    | "income.claimOffline"
     | "mail.claimAttach"
     | "party.create"
     | "party.invite"
@@ -105,6 +111,7 @@ export type LobbyRpcIdemType =
 /** natural-write 路由子集（写入天然可安全重复；不进通用幂等层） */
 export type LobbyRpcNaturalWriteType =
     | "chat.send"
+    | "income.settleOnline"
     | "mail.markRead"
     | "slg.mapTiles"
     | "snakeCosmetic.equip"
@@ -119,6 +126,9 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "guild.join": "idempotent-write",
     "guild.leave": "idempotent-write",
     "guild.getEvents": "query",
+    "income.getPending": "query",
+    "income.settleOnline": "natural-write",
+    "income.claimOffline": "idempotent-write",
     "mail.list": "query",
     "mail.claimAttach": "idempotent-write",
     "mail.markRead": "natural-write",
@@ -160,6 +170,9 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "guild.join",
     "guild.leave",
     "guild.getEvents",
+    "income.getPending",
+    "income.settleOnline",
+    "income.claimOffline",
     "mail.list",
     "mail.claimAttach",
     "mail.markRead",
@@ -202,6 +215,9 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "guild.join": 1,
     "guild.leave": 1,
     "guild.getEvents": 1,
+    "income.getPending": 1,
+    "income.settleOnline": 1,
+    "income.claimOffline": 1,
     "mail.list": 1,
     "mail.claimAttach": 1,
     "mail.markRead": 1,
@@ -240,6 +256,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     arenaShop: { contractVersion: 2, digest: "2cb9597e5558094b464d70a16a03a8a63c95c86fa2fbd523cc96d5b93c63dd73" },
     chat: { contractVersion: 1, digest: "3e34b7840131614c0c9c05c6858ffaf76187e14dc71df1e5703ddad63b4dbc96" },
     guild: { contractVersion: 1, digest: "4a996a135ffd900eb39c0b83697ee03d4d4587829da88ce537f363d56ceb4bde" },
+    income: { contractVersion: 2, digest: "b0f293d7efe6ca2b3f4576a439dcb55bcde50d3ec7ce4250db6fa8ad9af8a8d9" },
     mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
     party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
@@ -272,6 +289,9 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "guild.join": guardRpcValidator("payload", validateGuildJoinReq),
     "guild.leave": guardRpcValidator("payload", validateGuildLeaveReq),
     "guild.getEvents": guardRpcValidator("payload", validateGuildEventsReq),
+    "income.getPending": guardRpcValidator("payload", validateIncomeGetPendingReq),
+    "income.settleOnline": guardRpcValidator("payload", validateIncomeSettleOnlineReq),
+    "income.claimOffline": guardRpcValidator("payload", validateIncomeClaimOfflineReq),
     "mail.list": guardRpcValidator("payload", validateMailListReq),
     "mail.claimAttach": guardRpcValidator("payload", validateMailClaimReq),
     "mail.markRead": guardRpcValidator("payload", validateMailMarkReq),
@@ -313,6 +333,9 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "guild.join": guardRpcValidator("response", validateJoinRes),
     "guild.leave": guardRpcValidator("response", validateGuildLeaveRes),
     "guild.getEvents": guardRpcValidator("response", validateEventsRes),
+    "income.getPending": guardRpcValidator("response", validateIncomeGetPendingRes),
+    "income.settleOnline": guardRpcValidator("response", validateIncomeSettleOnlineRes),
+    "income.claimOffline": guardRpcValidator("response", validateIncomeClaimOfflineRes),
     "mail.list": guardRpcValidator("response", validateMailListRes),
     "mail.claimAttach": guardRpcValidator("response", validateMailClaimAttachRes),
     "mail.markRead": guardRpcValidator("response", validateMailMarkReadRes),

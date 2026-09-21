@@ -1,4 +1,4 @@
-import { executeObjectAction } from '@arthropoda/game-engine'
+import { executeObjectAction, lobbyRouteOutcome } from '@arthropoda/game-engine'
 import {
     RedeemRpc,
     type IRedeemClaimReq,
@@ -27,7 +27,7 @@ export class RedeemNativeLobbyRoutes {
                 },
                 { uid, externalUid: c.uid, sId: c.sId },
             )
-            if (result.ok) return result.data
+            if (result.ok) return lobbyRouteOutcome(result.data, result.sync) as unknown as IRedeemClaimRes
             throw result.error
         })
     }

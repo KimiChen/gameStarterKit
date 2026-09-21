@@ -113,6 +113,19 @@ export class User extends UserHash {
     lastCopperIncomeTime: int = 0
 
     /**
+     * 已算好但**尚未领取**的离线铜币。
+     *
+     * 登录时由 `CopperIncome.parkOffline` 暂存在这里，等客户端请求领取才进 `copper`
+     * （离线收益不再在登录时自动到账）。断线前没领走的那笔会在下次登录时累加，不会丢。
+     */
+    @OnlyRedis
+    offlineCopperPending: int = 0
+
+    /** 上面那笔离线收益对应的离线秒数；同样只在领取时清零，供弹窗展示 */
+    @OnlyRedis
+    offlineCopperSecondsPending: int = 0
+
+    /**
      * 经验
      */
     exp: int = 0

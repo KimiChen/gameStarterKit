@@ -547,4 +547,15 @@ export interface User {
      * 铜币上次结算时间；仅服务端持久化，不下发客户端
      */
     lastCopperIncomeTime: int
+    /**
+     * 已算好但尚未领取的离线铜币。
+     *
+     *       登录时由 `CopperIncome.parkOffline` 暂存在这里，等客户端请求领取才进 `copper`
+     *       （离线收益不再在登录时自动到账）。断线前没领走的那笔会在下次登录时累加，不会丢。
+     */
+    offlineCopperPending: int
+    /**
+     * 上面那笔离线收益对应的离线秒数；同样只在领取时清零，供弹窗展示
+     */
+    offlineCopperSecondsPending: int
 }

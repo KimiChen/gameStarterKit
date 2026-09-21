@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": "income",
+  "kind": "cocos",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": true,
+  "logic": "apps/client/src/plugins/income/logic/IncomeLogic.ts",
+  "group": "authenticated",
+  "restore": "discard"
+}

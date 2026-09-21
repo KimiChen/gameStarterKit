@@ -13,6 +13,7 @@ import { FriendModule } from '../../src/modules/friend/FriendModule'
 import { GmModule } from '../../src/modules/gm/GmModule'
 import { GongModule } from '../../src/modules/gong/GongModule'
 import { GuildModule } from '../../src/modules/guild/GuildModule'
+import { IncomeModule } from '../../src/modules/income/IncomeModule'
 import { MailModule } from '../../src/modules/mail/MailModule'
 import { MissionModule } from '../../src/modules/mission/MissionModule'
 import { PayModule } from '../../src/modules/pay/PayModule'
@@ -46,6 +47,7 @@ export const gameModuleRegistry = Object.freeze([
     { moduleName: 'gm', source: 'src/modules/gm/GmModule.ts', module: GmModule },
     { moduleName: 'gong', source: 'src/modules/gong/GongModule.ts', module: GongModule },
     { moduleName: 'guild', source: 'src/modules/guild/GuildModule.ts', module: GuildModule },
+    { moduleName: 'income', source: 'src/modules/income/IncomeModule.ts', module: IncomeModule },
     { moduleName: 'mail', source: 'src/modules/mail/MailModule.ts', module: MailModule },
     { moduleName: 'mission', source: 'src/modules/mission/MissionModule.ts', module: MissionModule },
     { moduleName: 'pay', source: 'src/modules/pay/PayModule.ts', module: PayModule },

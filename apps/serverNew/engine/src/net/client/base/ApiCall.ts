@@ -48,6 +48,20 @@ export abstract class ApiCall<
 
     public callGroup?: CallGroup
 
+    /** Redis 提交后的按内部 uid 分组数据差异；object route 用它组装 reply.sync。 */
+    public syncChanges?: Record<number, unknown>
+    /** 跨进程目标已组装好的当前用户 sync；优先于源进程不存在的本地 differ。 */
+    public syncForReply?: unknown
+
+    /** 合并一位用户的模块差异；直接 Redis store 可与 Bean ModSync 共用同一回执。 */
+    appendSyncChange(uid: number, mods: unknown): void {
+        if (!Number.isSafeInteger(uid) || uid < 1 || !mods || typeof mods !== 'object') return
+        const current = this.syncChanges?.[uid]
+        const merged = mergeSyncMods(current, mods)
+        if (!this.syncChanges) this.syncChanges = {}
+        this.syncChanges[uid] = merged
+    }
+
     public readonly callTime: int = 0
 
     protected constructor(options: ApiCallOptions<Req, Res, ServiceType>) {
@@ -168,6 +182,22 @@ export abstract class ApiCall<
     public loadApiHandlerByName<T extends MsgType>(type: T, name: string) {
         throw new Error('not inject yet')
     }
+}
+
+function mergeSyncMods(previous: unknown, next: unknown): Record<string, unknown> {
+    const left = previous && typeof previous === 'object' && !Array.isArray(previous)
+        ? previous as Record<string, unknown>
+        : {}
+    const right = next && typeof next === 'object' && !Array.isArray(next)
+        ? next as Record<string, unknown>
+        : {}
+    const leftVersions = left.versions && typeof left.versions === 'object' && !Array.isArray(left.versions)
+        ? left.versions as Record<string, unknown>
+        : {}
+    const rightVersions = right.versions && typeof right.versions === 'object' && !Array.isArray(right.versions)
+        ? right.versions as Record<string, unknown>
+        : {}
+    return { ...left, ...right, versions: { ...leftVersions, ...rightVersions } }
 }
 
 export declare type EncodeApiReturnOutput<T> =

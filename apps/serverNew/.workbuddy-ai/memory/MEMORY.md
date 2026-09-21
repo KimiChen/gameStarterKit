@@ -6,6 +6,15 @@
 
 服务端是唯一主交付物：默认只改 `engine/` `server/`；shared 仅随 wire 契约调整；客户端只做黑盒测试 + 最小 transport 适配。⛔ 不做 UI 技术栈迁移、视觉打磨、客户端架构清理。
 
+- ⛔ **业务玩法开发不跨到旧 `apps/server`**（2026-09-20 用户明确定调「开发业务过程不要管 apps/server」）。新增一个 lobbyRpc 域**必然**让旧 server 的端点全集闸（`apps/server/src/websocket/loader.ts`：shared 声明的每条路由都必须有 `src/websocket/<域>/<方法>.ts`）报「shared 已声明但无端点文件」并**拒绝启动**（4 条契约测试红）。那是**另一条通道**的工作项，不是业务玩法的缺陷：⛔ 不造 fail-closed 桩、不伪造等级/账本、不缩窄 shared 契约。已写入 `server/README.md`「生成和 Bean」段与 `humanDocs/协议模块调整.md` §6。
+- ⚠ **但「不动 `apps/server`」≠「`apps/server` 下路径一律不许改」**：`apps/server/test/lobbyRpcVectors/<域>.ts` 是 **codegen 契约要求**（`apps/server/tools/plugin-codegen/lib.ts` 的 `readVectorSidecars` 双向对齐：每个 domain 必须有同名 sidecar，缺则 `codegen:plugins` 直接失败；域删除要同批删 sidecar，⛔ 不留孤儿）；`apps/server/tools/plugin-codegen/**` 是**客户端插件 codegen 面**（`autoStart` 三道校验就在这）。⇒ 新增域必须同批给最小合法 request/response 向量 + 重跑 `codegen:plugins`，`index.generated.ts` 由生成器独占（⛔ 不手改）。判据：`cd apps/server && node --import tsx tools/plugin-codegen/cli.ts --check` → `generated plugin artifacts are fresh`（exit 0）。区分标准 = **所有权**：codegen/契约面必须跟着改，旧通道**业务端点与测试套件**不碰。
+- 业务玩法的验收面**只有** `apps/serverNew`：`pnpm check`、`pnpm verify:module -- <module>`、`test/runtime/protocol/native-lobby-routes.test.ts`，不含 `apps/server` 的测试套件。
+- ⚠ `verify:module` 的 `test:module` 要求 `test/modules/<module>/` 存在 ⇒ 只有原生 Lobby handler 的模块（`arena`/`arenaShop`/`redeem`/`slg`/`income`）**必然**报 `module has no tests`，属既有形态，⛔ 不为凑门禁造空测试目录（覆盖在 `native-lobby-routes.test.ts`）。
+- ⚠ 改 `apps/shared/src/protocol/lobbyRpc/domains/<域>.ts` **任一字**（含注释）都会变域 digest ⇒ `codegen:plugins` 要求递增该域 `contractVersion`，否则拒绝生成；撤回改动必须**字节级精确**（用 `codegen:plugins` 报 `no changes` 自证）。
+- 🔑 **shared 的 lobbyRpc registry 是两代服务端「共有」的 wire 面**（2026-09-21 查清）：MMO 产品线（`chat` / `party` / `world`）在**旧 `apps/server`** 上实现，只把域加进同一份 registry（`e4f9f692` party / `1280037e` chat / `73716dac` world / `76ae49ff` 分线，三者落 `apps/serverNew` 的文件数 = 0；`docs/MMO.md` 从不提 serverNew；本项目 `Persona`/`WorldRoom`/`world_instance`/`controlEpoch` 命中全为 0，对照 apps/server 29/23/15/13）。⇒ **「shared 声明了 N 条」≠「本项目应实现 N 条」**。启动期 `NativeLobbyRouteRegistry.assertComplete()` 的期望集是「**本项目拥有的**路由」= 声明面 ∖ `src/runtime/lobby/NativeLobbyPendingRoutes.ts` 里登记的路由（带归属原因）；该表与「声明面 ∖ 注册面」**双向对齐**（路由迁走或从 shared 删除 ⇒ 登记陈旧 ⇒ 启动即红，强制同批删行）。⛔ 这张表登记的是**归属**不是**进度**：不许把「本项目该实现但还没实现」的路由登记进去换启动通过。⚠ 新增该文件的导出名必须等于文件名（命名审计：文件只有一个主导出时导出名 == 文件名，⛔ 加豁免不如改名）。
+- 🔑 原生通道**已于 2026-09-21 恢复可启动**（自 09-19 party 加入起一直起不来）。`pnpm verify:native-lobby-live` **20/20 无旁路**、`test:suite -- runtime startup` exit 0、`pnpm check` **exit 0**。⚠ 但**旧 `apps/server` 仍缺 income 三条端点**（本次新增域的直接后果）⇒ 旧通道拒绝启动、客户端**默认 Colyseus 路径**不可用；且**客户端 GUI 端到端链条从未验证**。
+- ⚠ 多进程联调报 `EADDRINUSE`（如 `28095`）时先查**孤儿夹具进程**（`ps -ax -o pid,etime,command | grep entrypoint.cjs`，带 `-v livemulti` 的就是）——异常退出的联调会留下 master+worker 占端口；先 `kill <master>` 等几秒，仍在则 `kill -9`。
+
 ## 命令纪律
 
 - 根目录无 `package.json`：`check:*` / `test:*` / `typecheck` 先 `cd server`。
@@ -46,7 +55,10 @@
 
 ## 真实环境联调（改协议/装配后主动跑，都不在门禁里）
 
-- `cd server && pnpm verify:native-lobby-live` 19/19；`...-multiprocess-live` 27/27（夹具 `bearjoylive` / `bearjoylivemulti`，⛔ `taskWorkerNum` 不得退回 1）。前置 Redis 6379 + MySQL 3306。
+- ⚠ **原生通道当前起不来（既有缺口，非改动引入）**：`LobbyServer.start` 先跑 `NativeLobbyRouteRegistry.assertComplete()`，而 shared 声明 37 条只注册 28 条（`chat.send` / `party.*`×10 / `world.*`×2 在 `src/` 零引用）⇒ 真实进程一启动就抛 `route registry mismatch`，`verify:native-lobby-live` 的症状是**无输出干等到超时**（最后错误 `ECONNREFUSED`），不是卡在编译或 Redis。要验证别的改动只能**临时旁路**该抛错（带 `MUTATION-PROBE` 标记）+ 跑完**逐字还原**（`grep -rn MUTATION-PROBE server/` 为 0 + `git diff` 为空），⛔ 不许留成常态或改成 `console.warn`。补齐这 12 条是独立工作项。
+- `cd server && pnpm verify:native-lobby-live` **20/20**（含 income 真实落库场景）；`...-multiprocess-live` 27/27（夹具 `bearjoylive` / `bearjoylivemulti`，⛔ `taskWorkerNum` 不得退回 1）。前置 Redis 6379 + MySQL 3306。
+- ⚠ **`redis-cli -n <非数字>` 不报错、静默落 db 0** ⇒ 夹具漏传库号会写错库（症状「登录钩子什么都没做」，更糟的是 0 号库有同名键时**假绿**）。`lobbyLiveHarness.createHarness` 已对 `centerRedisDb`/`userRedisDb` 加正整数闸硬失败；新增线路时库号必须显式传（单进程 center 9 / user 8，多进程 6 / 5）。
+- 服务进程由 `deploy/dev/entrypoint.cjs` 以 **ts-node（`transpileOnly: false` + `ts-patch/compiler`）** 拉起 ⇒ 真实联调**直接读 TS 源码**，改完 `src/` 不用先 build（禁 `transpileOnly` 是为了 bean transform 不静默失效）。
 - 根 `npm run verify:dual-lobby` 9/9（前置 `cd apps/server && npm run stack` + `npm run db:bootstrap`）。
 - Creator GUI 驱动陷阱全文在 `tools/creator-preview/README.md`。
 - 同服多账号：uid = `dev-` + `sha256("<devKey>:<serverId>")[:16]`（同 devKey 恒同号，⚠ 与旧 `apps/server` 的 `devUidOf` 不同）；首选 `?devKey=`。改 `src/app/**` 必须重启 Creator 进程才重编译。⚠ 非法 devKey 故意 warn + 回落 `dev_local`，别改成 throw。
@@ -57,6 +69,14 @@
 - 金币账本两个：原生 = Redis `nativeLobby:shop:balance:v1`（唯一入账路径是兑换码）；旧 = MySQL `user_currency`，兑换奖励进插件私钱包不进主账本。
 - 联调数据在 Redis 6379 的 db 6；清玩法状态直接 `DEL nativeLobby:*`。
 - 自动化只覆盖一部分：`native-lobby.mjs`（原生 8 步）与 `run.mjs <场景>`（旧通道）；兑换码、竞技场、大地图、衣柜在原生通道上只能手动点。
+
+## 玩家数据落点（用户已定：默认 Redis）
+
+- **业务玩家数据默认落 Redis**（engine Redis Bean `Hash`/`UserHash`/`HashJson`，随 Action 提交写回）；MySQL 只承载账号映射（`center_user`）、角色查询快照（`server_user`）与运营/GM/活动配置表。⛔ 不为业务数据建表或引入第二份真源。
+- 真源 = `userRedis`（`127.0.0.1:6379 db15`）的 `User_<uid>` hash；写入时机 = `ServerTask` 成功后 `RedisTask.onActionSuccess` → `RedisService.save()` 管道（提交成功后才回响应）。
+- `server_user` 只在建号/登录/过天/改名/下线刷新 ⇒ 与 Redis 会漂移，⛔ 不得当排行榜/统计/结算的准确值来源。
+- 例外：旧通道邮件在 MySQL `mail`/`global_mail`（`MailBean.mails` 是 `@OnlyNet`）；原生通道邮件/金币在 Redis `nativeLobby:*`；排行榜是 Redis ZSet。
+- 该约定已落三处文档：`server/README.md`「生成和 Bean」段、`engine/docs/development.md`「Change 和持久化」段、`humanDocs/协议模块调整.md` §6。
 
 ## 既有基线（别误判成本次引入）
 

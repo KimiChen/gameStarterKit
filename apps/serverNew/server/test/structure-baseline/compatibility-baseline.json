@@ -3,15 +3,15 @@
     "semanticArtifacts": {
         "unifiedRecord": {
             "path": "generated/records/record.json",
-            "semanticSha256": "ac38f2d08fab234bd9a5364c8b7fa7ac9ad547f99c2c4b9965ad5c04d523fed1"
+            "semanticSha256": "e40f198527a75f60ab638e052aec05343d5e3a329b60086c77c1b8492e02fbba"
         },
         "beanDefinition": {
             "path": "generated/records/bean.json5",
-            "semanticSha256": "58faa51a090fcf70c358a191bc366e28b7cecd3dadbbbf29a0f7d7f393e8ad11"
+            "semanticSha256": "bdd17dbc702beaf77b406481ee07875f36d98629dd58291d673910bbfc3675b8"
         },
         "protocolDefinition": {
             "path": "generated/records/proto.json5",
-            "semanticSha256": "ac38f2d08fab234bd9a5364c8b7fa7ac9ad547f99c2c4b9965ad5c04d523fed1"
+            "semanticSha256": "e40f198527a75f60ab638e052aec05343d5e3a329b60086c77c1b8492e02fbba"
         },
         "c2sServiceProtocol": {
             "path": "generated/protocol/server/C2S/serviceProto.ts",
@@ -25,15 +25,15 @@
     "physicalArtifacts": {
         "unifiedRecord": {
             "path": "generated/records/record.json",
-            "sha256": "27eacaeb672d6d52f5219e0d953837226ba0d55cdaad727e4c12e57bc3ac6023"
+            "sha256": "f5858388fa53dd433d315c979cc53ed1dbdceb8378507b5c907f38b16ee53e87"
         },
         "beanDefinition": {
             "path": "generated/records/bean.json5",
-            "sha256": "df496f48566f8c7c565c3b28eefa8c11adf571bf99abbae6686505c015bf3348"
+            "sha256": "8aea44ec55f0481fe2919758da9f91faa863fee8f765273b8adcb42efb4ed688"
         },
         "protocolDefinition": {
             "path": "generated/records/proto.json5",
-            "sha256": "adf31cafe856f93decb3ada537b230dcb252ea602ce130ba36609112222ce6c6"
+            "sha256": "8543dae4373783e03f893e1cd0f3fb2f3963f43a063467f67fb0af523503c9e1"
         },
         "c2sServiceProtocol": {
             "path": "generated/protocol/server/C2S/serviceProto.ts",
@@ -11573,7 +11573,7 @@
                 },
                 {
                     "className": "User",
-                    "nextFieldId": 170,
+                    "nextFieldId": 172,
                     "diffType": 2,
                     "idFieldType": "int",
                     "saveType": "SaveType.All",
@@ -12541,6 +12541,24 @@
                             "type": "int",
                             "collectionTypes": [],
                             "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "offlineCopperPending",
+                            "id": 170,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "offlineCopperSecondsPending",
+                            "id": 171,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.ForRedis",
                             "modType": "ModType.None"
                         },
                         {
@@ -22632,7 +22650,7 @@
         "protocolMessages": 298,
         "protocolFields": 587,
         "beans": 94,
-        "beanFields": 623,
+        "beanFields": 625,
         "mods": 30,
         "errorCodes": 312,
         "redisKeys": 40,

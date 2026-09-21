@@ -4,7 +4,7 @@ import type {
     IUpdateProfileReq,
 } from '../../../../generated/lobby-contract/protocol/lobbyRpc'
 import { canonicalJsonString } from '../../../../generated/lobby-contract/protocol/lobbyRpc'
-import { RedisInstance } from '@arthropoda/game-engine'
+import { recordObjectActionSync, RedisInstance } from '@arthropoda/game-engine'
 
 type NativeLobbyUserProfile = IUserView & {
     nickname: string
@@ -60,6 +60,10 @@ export class NativeLobbyUserStore {
             field,
             JSON.stringify({ ...current, guildId, ver: current.ver + 1 }),
         )
+        recordObjectActionSync({
+            versions: { nativeUser: current.ver + 1 },
+            nativeUser: syncViewOf({ ...current, guildId, ver: current.ver + 1 }),
+        })
     }
 
     async update(uid: string, sId: number, request: IUpdateProfileReq): Promise<void> {
@@ -86,6 +90,10 @@ export class NativeLobbyUserStore {
         // ObjectAction 已按内部 uid 串行；先落档，再保存成功结果，失败不会回报写成功。
         await redis.hSet(NativeLobbyUserStore.profilesKey, field, JSON.stringify(next))
         await redis.hSet(NativeLobbyUserStore.updateOperationsKey, operationField, fingerprint)
+        recordObjectActionSync({
+            versions: { nativeUser: next.ver },
+            nativeUser: syncViewOf(next),
+        })
     }
 
     private async read(uid: string, sId: number): Promise<NativeLobbyUserProfile | null> {
@@ -131,6 +139,14 @@ function viewOf(profile: NativeLobbyUserProfile): IUserView {
     delete view.avatarId
     delete view.province
     return view as IUserView
+}
+
+/**
+ * `user.getInfo` 的公开契约不能泄漏个人资料字段；而 nativeUser 是当前登录者自己的
+ * 同步模块，必须带回本次写入的完整已提交档案，不能复用公开视图。
+ */
+function syncViewOf(profile: NativeLobbyUserProfile): NativeLobbyUserProfile {
+    return { ...profile }
 }
 
 function isProfile(value: NativeLobbyUserProfile, uid: string): boolean {

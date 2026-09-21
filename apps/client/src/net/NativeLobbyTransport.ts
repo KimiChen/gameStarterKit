@@ -24,6 +24,7 @@ import {
   type ForceLogoutReasonType,
 } from "../shared/index";
 import { RpcError } from "./LobbyRpcError";
+import { lobbyDataSync } from "./LobbyDataSync";
 
 const IDEM_RETRY_MAX = 3;
 const IDEM_RETRY_DELAY_MS = 300;
@@ -383,6 +384,10 @@ export class NativeLobbyTransport {
       settle(new RpcError(frame.err.code, frame.err.msg));
       return;
     }
+    if (frame.kind === "sync") {
+      lobbyDataSync.apply(frame.sync);
+      return;
+    }
     if (frame.kind === "reply") {
       const pending = this.pending.get(frame.reply.id);
       if (!pending || pending.slot !== slot) return;
@@ -402,6 +407,7 @@ export class NativeLobbyTransport {
         return;
       }
       try {
+        if (frame.reply.sync) lobbyDataSync.apply(frame.reply.sync);
         pending.resolve(
           validateLobbyRpcResponse(pending.type, frame.reply.data),
         );

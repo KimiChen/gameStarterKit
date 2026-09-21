@@ -46,6 +46,7 @@ export const PLUGIN_IDS: readonly string[] = [
     "arena",
     "arenaShop",
     "builtin",
+    "income",
     "redeem",
     "slg",
     "snake",
@@ -95,6 +96,18 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         ],
         menu: [
             { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+        ],
+    },
+    {
+        id: "income",
+        resident: true,
+        load: () => import("../plugins/income/index").then((m) => m.createPluginModule()),
+        dependencies: [],
+        routes: [
+            { id: "income", view: "IncomePopup", group: "authenticated", restore: "discard" },
+        ],
+        menu: [
+            { entryId: "income", pluginId: "income", label: "铜币收益", labelKey: "menu.income", launch: { kind: "route", routeId: "income" } },
         ],
     },
     {
@@ -152,6 +165,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "duel", pluginId: "arena", label: "决斗", labelKey: "menu.arena.duel", launch: { kind: "gameplay", gameplayId: "arenaDuel" } },
     { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", labelKey: "menu.arenaShop", launch: { kind: "route", routeId: "arenaShop" } },
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+    { entryId: "income", pluginId: "income", label: "铜币收益", labelKey: "menu.income", launch: { kind: "route", routeId: "income" } },
     { entryId: "redeem", pluginId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
     { entryId: "map", pluginId: "slg", label: "大地图", labelKey: "menu.slg.map", launch: { kind: "route", routeId: "slgMap" } },
     { entryId: "snake", pluginId: "snake", label: "贪吃蛇大作战", labelKey: "menu.snakeOff", launch: { kind: "gameplay", gameplayId: "snake" } },
@@ -172,10 +186,12 @@ export interface GeneratedHostGroup {
     readonly members: readonly GeneratedHostHomeEntry[];
 }
 
-/** 宿主 placement（apps/plugins/host.json）：默认玩法、首屏入口顺序与入口分组的唯一来源（docs/PLUGIN.md §6）。 */
+/** 宿主 placement（apps/plugins/host.json）：默认玩法、首屏入口顺序、自动装载单元与入口分组的唯一来源（docs/PLUGIN.md §6）。 */
 export interface GeneratedHostDescriptor {
     readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };
     readonly home: readonly GeneratedHostHomeEntry[];
+    /** session 级自动装载的插件 id：宿主在 Lobby ready 时装一次，装完做什么归插件自己。 */
+    readonly autoStart: readonly string[];
     readonly groups: readonly GeneratedHostGroup[];
 }
 
@@ -183,6 +199,9 @@ export const GENERATED_HOST: GeneratedHostDescriptor = {
     defaultLaunch: { kind: "gameplay", gameplayId: "snake" },
     home: [
         { pluginId: "snake", entryId: "snake" },
+    ],
+    autoStart: [
+        "income",
     ],
     groups: [
         { id: "arenaHub", label: "竞技场", labelKey: "menu.group.arena", members: [

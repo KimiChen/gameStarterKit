@@ -21,7 +21,7 @@ const { check, equal, deepEqual, fail, scenario } = require('./lobbyLiveHarness.
 async function runLobbyProtocolScenarios(h, ctx) {
     const { clients, platform } = ctx
     const connect = h.makeConnector(clients)
-    const { UserRpc, GuildRpc, RoomRpc, ForceLogoutReason, KICK_CLOSE_CODE } = h
+    const { UserRpc, GuildRpc, RoomRpc, IncomeRpc, ForceLogoutReason, KICK_CLOSE_CODE } = h
 
     // 启动自检：隔离的中心库必须真的被这次启动写过，否则后面的存储断言没有意义。
     await scenario(`启动落在隔离线路的中心库（db ${h.CENTER_REDIS_DB}）`, async () => {
@@ -56,6 +56,97 @@ async function runLobbyProtocolScenarios(h, ctx) {
         check(profile.kind === 'reply' && profile.reply.ok === true, `getProfile 应成功：${JSON.stringify(profile)}`)
         check(typeof profile.reply.data.profile.nickname === 'string', 'getProfile 必须返回昵称字符串')
         return `ver=${info.reply.data.user.ver} nickname=${JSON.stringify(profile.reply.data.profile.nickname)}`
+    })
+
+    // ---- 铜币收益（income）：新服务账户首次初始化，登录只暂存、领取才到账
+    await scenario('铜币收益：新账号自动初始化，登录只暂存离线收益（真实 Redis）', async () => {
+        const uid = `live-income-${h.RUN_ID}`
+        const LEVEL = 1
+        const PER_INTERVAL = 100 // 100 × 1^1.1
+        const COPPER_BEFORE = 0
+        const OFFLINE_SECONDS = 120
+
+        // ① 首次认证只能由新服务自动建档；夹具不预写 identity 或任何旧 `User_<id>` 哈希。
+        await connect(`tk-income-first-${h.RUN_ID}`, uid)
+        const internalUid = Number(h.redis('hget', 'nativeLobby:identity:v1', `${h.SID}:${uid}`))
+        check(Number.isSafeInteger(internalUid) && internalUid > 0, `必须自动分配有效内部 uid，实际 ${internalUid}`)
+        const accountKey = 'nativeLobby:income:account:v1'
+        const accountField = `${h.SID}:${internalUid}`
+        const accountOf = () => JSON.parse(h.redis('hget', accountKey, accountField))
+        const firstAccount = accountOf()
+        equal(firstAccount.level, LEVEL, '新账号收益等级默认 1')
+        equal(firstAccount.copper, COPPER_BEFORE, '新账号铜币默认 0')
+        check(firstAccount.lastIncomeAt > 0, '首次认证必须建立收益时间轴')
+
+        // ② 人为推进新服务账户的基线，再认证一次模拟离线回归；依然不触碰旧用户库。
+        const seedAt = Math.floor(Date.now() / 1000) - OFFLINE_SECONDS
+        h.redis('hset', accountKey, accountField, JSON.stringify({ ...firstAccount, lastIncomeAt: seedAt }))
+        const client = await connect(`tk-income-${h.RUN_ID}`, uid)
+        const parkedAccount = accountOf()
+        const parkedSeconds = parkedAccount.offlineSeconds
+        const parked = parkedAccount.offlineCopper
+        check(parkedSeconds >= OFFLINE_SECONDS, `登录必须暂存离线秒数，实际 ${parkedSeconds}`)
+        equal(
+            parked,
+            PER_INTERVAL * Math.floor(parkedSeconds / 5),
+            `暂存铜币必须等于 每周期收益 × 整周期数（实际 ${parked} / ${parkedSeconds}s）`,
+        )
+        check(parked >= PER_INTERVAL * Math.floor(OFFLINE_SECONDS / 5), `暂存铜币不得少于 ${OFFLINE_SECONDS}s 应得`)
+        // 本玩法最核心的一条：登录⛔ 不得直接到账，否则「客户端请求才发放」就是空话。
+        equal(parkedAccount.copper, COPPER_BEFORE, '登录⛔ 不得把离线收益直接入账')
+        check(parkedAccount.lastIncomeAt > seedAt, '登录必须把收益基线推到当前时刻')
+
+        // ③ 预览是只读路由（query）：查一次不能让存储里任何字段动。
+        const beforePreview = JSON.stringify(parkedAccount)
+        client.send(h.rpc('i1', IncomeRpc.GetPending))
+        const preview = await client.next()
+        check(preview.kind === 'reply' && preview.reply.ok === true, `getPending 应成功：${JSON.stringify(preview)}`)
+        equal(preview.reply.data.level, LEVEL, 'getPending 的等级必须来自新服务收益账户')
+        equal(preview.reply.data.perInterval, PER_INTERVAL, '每周期收益必须是 100 × 等级^1.1')
+        equal(preview.reply.data.offlineCopper, parked, '预览必须给出真实待领收益')
+        equal(preview.reply.data.offlineSeconds, parkedSeconds, '预览必须给出真实待领秒数')
+        equal(preview.reply.data.copper, COPPER_BEFORE, '预览余额⛔ 不含待领那笔')
+        equal(JSON.stringify(accountOf()), beforePreview, 'getPending 不得改动任何存储字段')
+
+        // ④ 在线结算：把基线往前挪 12 秒（2 个整周期）再打一次心跳，余量留给下一拍。
+        h.redis('hset', accountKey, accountField, JSON.stringify({ ...accountOf(), lastIncomeAt: Math.floor(Date.now() / 1000) - 12 }))
+        client.send(h.rpc('i2', IncomeRpc.SettleOnline))
+        const settled = await client.next()
+        check(settled.kind === 'reply' && settled.reply.ok === true, `settleOnline 应成功：${JSON.stringify(settled)}`)
+        equal(settled.reply.data.copper, PER_INTERVAL * 2, '12 秒必须结算 2 个整周期')
+        equal(settled.reply.data.balance, COPPER_BEFORE + PER_INTERVAL * 2, '响应余额必须与实际存储一致')
+        equal(accountOf().copper, COPPER_BEFORE + PER_INTERVAL * 2, '在线结算必须真的写回新服务账户')
+        equal(accountOf().offlineCopper, parked, '在线结算⛔ 不得动待领的离线收益')
+
+        // ⑤ 点「确定」→ 领取：唯一把暂存写进 `copper` 的入口。
+        const clientReqId = `income-${h.RUN_ID}`
+        const copperBeforeClaim = accountOf().copper
+        client.send(h.rpc('i3', IncomeRpc.ClaimOffline, { clientReqId }))
+        const claimed = await client.next()
+        check(claimed.kind === 'reply' && claimed.reply.ok === true, `claimOffline 应成功：${JSON.stringify(claimed)}`)
+        equal(claimed.reply.data.copper, parked, '领取额必须等于待领收益')
+        equal(claimed.reply.data.balance, copperBeforeClaim + parked, '领取后的余额')
+        equal(accountOf().copper, copperBeforeClaim + parked, '领取必须真的写回新服务账户')
+        equal(accountOf().offlineCopper, 0, '领取必须清零暂存')
+
+        // ⑥ 同 clientReqId 重放：返回首次结果且⛔ 不重复发钱（通用幂等闸承重）。
+        client.send(h.rpc('i4', IncomeRpc.ClaimOffline, { clientReqId }))
+        const replayed = await client.next()
+        check(replayed.kind === 'reply' && replayed.reply.ok === true, `重放应成功：${JSON.stringify(replayed)}`)
+        deepEqual(replayed.reply.data, claimed.reply.data, '同 clientReqId 必须返回首次结果')
+        equal(accountOf().copper, copperBeforeClaim + parked, '重放⛔ 不得第二次入账')
+
+        // ⑦ 换一个 clientReqId：没有待领收益，⛔ 不能凭空发钱。
+        client.send(h.rpc('i5', IncomeRpc.ClaimOffline, { clientReqId: `${clientReqId}-2` }))
+        const empty = await client.next()
+        check(empty.kind === 'reply' && empty.reply.ok === true, `二次领取应成功：${JSON.stringify(empty)}`)
+        equal(empty.reply.data.copper, 0, '没有待领收益时领取额必须为 0')
+        equal(accountOf().copper, copperBeforeClaim + parked, '第二次领取⛔ 不得改余额')
+
+        return (
+            `内部 uid=${internalUid} 暂存=${parked}(${parkedSeconds}s) ` +
+            `结算+${settled.reply.data.copper} 领取+${claimed.reply.data.copper} 终值=${accountOf().copper}`
+        )
     })
 
     // ---- 幂等写 + 领域推送
@@ -274,6 +365,8 @@ async function runLobbyProtocolScenarios(h, ctx) {
         first.send(h.rpc('u1', UserRpc.UpdateProfile, { clientReqId: `rc-${h.RUN_ID}`, nickname, avatarId: 3 }))
         const [written] = await first.collect(h.isReplyFor('u1'), 1)
         check(written.reply.ok === true, `updateProfile 应成功：${JSON.stringify(written)}`)
+        check(written.reply.sync?.mods?.nativeUser?.nickname === nickname, `updateProfile reply.sync 必须带已提交昵称：${JSON.stringify(written)}`)
+        check(written.reply.sync?.mods?.versions?.nativeUser >= 1, `updateProfile reply.sync 必须带模块版本：${JSON.stringify(written)}`)
         first.close()
         await first.waitClose()
 

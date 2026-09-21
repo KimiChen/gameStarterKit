@@ -1,4 +1,5 @@
 import { assertExactKeys, boundedString, guardWire, isPlainRecord, type PlainRecord, type RuntimeValidator, WireValidationError } from "../http";
+import { type ILobbyDataSync, validateLobbyDataSync } from "./sync";
 import { isRpcErrCode, type RpcErrCode } from "./registry.generated";
 
 /**
@@ -25,6 +26,8 @@ export interface IRpcSuccessReply {
     id: string;
     ok: true;
     data?: unknown;
+    /** Redis 已提交后的当前用户数据差异；不改变业务 data 的 exact shape。 */
+    sync?: ILobbyDataSync;
 }
 
 /** S2C 失败响应信封；客户端只按 err.code 分支，⛔ 禁止解析 msg（09·G3）。 */
@@ -60,14 +63,19 @@ export function validateRpcEnvelope(input: unknown): IRpcEnvelope {
 export function validateRpcReply(input: unknown): IRpcReply {
     return guardWire("reply", () => {
         const value = envelopeRecord(input, "reply");
-        assertExactKeys(value, ["id", "ok"], ["data", "err"], "reply");
+        assertExactKeys(value, ["id", "ok"], ["data", "err", "sync"], "reply");
         const id = boundedString(value.id, "reply.id", 1, RPC_ID_MAX);
         if (typeof value.ok !== "boolean") throw new WireValidationError("RPC_OK", "reply.ok");
         const hasData = Object.prototype.hasOwnProperty.call(value, "data");
         const hasErr = Object.prototype.hasOwnProperty.call(value, "err");
         if (value.ok) {
             if (hasErr) throw new WireValidationError("RPC_REPLY_SHAPE", "reply.err");
-            return hasData ? { id, ok: true, data: value.data } : { id, ok: true };
+            const sync = Object.prototype.hasOwnProperty.call(value, "sync")
+                ? validateLobbyDataSync(value.sync)
+                : undefined;
+            const out: IRpcSuccessReply = hasData ? { id, ok: true, data: value.data } : { id, ok: true };
+            if (sync) out.sync = sync;
+            return out;
         }
         if (!hasErr || hasData) throw new WireValidationError("RPC_REPLY_SHAPE", "reply");
         const err = envelopeRecord(value.err, "reply.err");

@@ -244,7 +244,17 @@ describe('native Lobby shared wire and identity boundary', () => {
         assert.equal(routes.has('snakeCosmetic.getSnapshot'), true)
         assert.equal(routes.has('snakeCosmetic.equip'), true)
         assert.equal(routes.has('snakeCosmetic.unlock'), true)
-        assert.equal(handlers.length, 1)
+        /**
+         * 登录钩子（`onAuthenticated`）的贡献者**必须点名**，⛔ 不许用魔数：新增一个「登录时改玩家
+         * 状态」的钩子是有副作用的决定（会在每条 RPC 之前重跑），多一个都要有人明确同意。
+         * 当前两个：`user.ensure`（建档）+ `income.parkOffline`（离线收益暂存）。
+         */
+        const authHookOwners = ['income', 'user']
+        const contributing = new Set(GameModuleCatalog.systems.nativeLobby.entries.map((entry) => entry.moduleName))
+        for (const owner of authHookOwners) {
+            assert.equal(contributing.has(owner), true, `清单里的 ${owner} 未贡献原生 Lobby 路由（清单已陈旧）`)
+        }
+        assert.equal(handlers.length, authHookOwners.length)
         // 模块贡献必须覆盖 shared 全集，否则启动期 assertComplete 会拒绝启动。
         assert.doesNotThrow(() => routes.assertComplete())
     })

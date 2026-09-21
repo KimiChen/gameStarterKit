@@ -1,4 +1,4 @@
-import { CronService, EngineInitHelper, RouteAction } from '@arthropoda/game-engine'
+import { CronService, EngineInitHelper, ModSync, RouteAction } from '@arthropoda/game-engine'
 import { DelayedActionQueueWorker } from '../runtime/scheduling/DelayedActionQueueWorker'
 import { RuntimeCronScheduler } from '../runtime/scheduling/RuntimeCronScheduler'
 import { GameEvent } from '../runtime/event/GameEvent'
@@ -11,6 +11,7 @@ import {
     installForwardedNativeLobbyRoutes,
     startConfiguredNativeLobby,
     type LobbyPushForwarder,
+    type LobbySyncForwarder,
     type NativeLobbyRuntime,
 } from './NativeLobbyRuntime'
 
@@ -18,6 +19,7 @@ let nativeLobby: NativeLobbyRuntime | undefined
 let forwardedLobbyRoutes: { stop(): void } | undefined
 let initialized = false
 let shutdownPrepared = false
+let removeSyncListener: (() => void) | undefined
 
 export interface ServiceRuntimeOptions {
     directNetwork: boolean
@@ -28,7 +30,11 @@ export interface ServiceRuntimeOptions {
      * - `listen`：绑定原生端点并处理鉴权/wire。
      * - `forward`：不绑定端点，只装载路由表并把推送转发给监听进程。
      */
-    nativeLobby?: { readonly role: 'listen' | 'forward'; readonly forwardPush?: LobbyPushForwarder }
+    nativeLobby?: {
+        readonly role: 'listen' | 'forward'
+        readonly forwardPush?: LobbyPushForwarder
+        readonly forwardSync?: LobbySyncForwarder
+    }
 }
 
 /**
@@ -68,12 +74,14 @@ async function startServiceRuntime(options: ServiceRuntimeOptions) {
     if (!lobbyRole && hasNativeLobbyEnvironment()) {
         throw new Error('native Lobby is configured but this process has no Lobby role assigned')
     }
-    if (lobbyRole === 'forward' && !options.nativeLobby?.forwardPush) {
-        throw new Error('native Lobby forward role requires a cross-process push transport')
+    if (lobbyRole === 'forward' && (!options.nativeLobby?.forwardPush || !options.nativeLobby?.forwardSync)) {
+        throw new Error('native Lobby forward role requires cross-process push and sync transports')
     }
     if (lobbyRole === 'listen') nativeLobby = await startConfiguredNativeLobby()
     else if (lobbyRole === 'forward' && !options.directNetwork)
         forwardedLobbyRoutes = installForwardedNativeLobbyRoutes(options.nativeLobby!.forwardPush!)
+
+    installCommittedSyncDelivery(lobbyRole, options.nativeLobby?.forwardSync)
 
     if (options.runSchedulers) {
         await DelayedActionQueueWorker.init()
@@ -93,6 +101,8 @@ async function startServiceRuntime(options: ServiceRuntimeOptions) {
  * 而不是 fail-closed。
  */
 export function rollbackServiceRuntimeStart(): void {
+    removeSyncListener?.()
+    removeSyncListener = undefined
     nativeLobby = undefined
     forwardedLobbyRoutes = undefined
     nativeLobbyProcessRoutes.reset()
@@ -110,6 +120,8 @@ export async function shutdownServiceRuntime() {
     await prepareServiceRuntimeShutdown()
     await nativeLobby?.stop()
     forwardedLobbyRoutes?.stop()
+    removeSyncListener?.()
+    removeSyncListener = undefined
     // 关闭后必须卸载进程级路由表：残留的 handler 会继续被跨进程请求命中，而它依赖的
     // 鉴权校验器与在线归属已经释放，那是「静默执行」而不是 fail-closed。
     nativeLobbyProcessRoutes.reset()
@@ -117,6 +129,36 @@ export async function shutdownServiceRuntime() {
     nativeLobby = undefined
     forwardedLobbyRoutes = undefined
     initialized = false
+}
+
+/**
+ * 所有 Action 都在 Redis 成功提交后由 SyncReceiptTask 进入这里。请求发起者的数据由
+ * ObjectAction.result 附到 reply.sync，避免同一变化既 reply 又 push；其余在线用户以及
+ * 无请求上下文的后台 Action 走主动 sync 帧。
+ */
+function installCommittedSyncDelivery(
+    role: 'listen' | 'forward' | undefined,
+    forwardSync: LobbySyncForwarder | undefined,
+): void {
+    removeSyncListener?.()
+    removeSyncListener = undefined
+    if (!role) return
+    removeSyncListener = ModSync.onCommitted(async (changes, call) => {
+        if (!changes) return
+        const caller = call as { readonly responseTransport?: unknown; readonly uId?: unknown } | undefined
+        const replyUid = caller?.responseTransport === 'object' && typeof caller.uId === 'number'
+            ? caller.uId
+            : undefined
+        for (const [rawUid, mods] of Object.entries(changes)) {
+            const internalUid = Number(rawUid)
+            if (!Number.isSafeInteger(internalUid) || internalUid < 1) continue
+            // 当前 native RPC 的同步由 reply.sync 回传；不要重复 push。
+            if (internalUid === replyUid) continue
+            const sync = { mods }
+            if (role === 'listen') await nativeLobby?.syncByInternalUid(internalUid, SERVER_ID, sync)
+            else await forwardSync?.(internalUid, SERVER_ID, sync)
+        }
+    })
 }
 
 export async function prepareServiceRuntimeShutdown() {

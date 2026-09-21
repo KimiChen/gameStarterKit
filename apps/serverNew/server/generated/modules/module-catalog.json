@@ -571,6 +571,24 @@
       }
     },
     {
+      "name": "income",
+      "source": "src/modules/income/IncomeModule.ts",
+      "systems": {
+        "nativeLobby": [
+          {
+            "moduleName": "income",
+            "source": "src/modules/income/IncomeModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "income-native-lobby-routes",
+              "app": "service",
+              "register": "(registry, services) => {\n                    const store = new IncomeNativeLobbyStore()\n                    // 登录侧：首次原子初始化账户；已有账户只在这里算好离线暂存，领取前不入账。\n                    services.onAuthenticated((uid, internalUid, sId) => store.parkOffline(internalUid, uid, sId))\n                    new IncomeNativeLobbyRoutes(services.identities, store).register(registry)\n                }"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "mail",
       "source": "src/modules/mail/MailModule.ts",
       "systems": {
@@ -1811,6 +1829,16 @@
           "name": "guild-native-lobby-routes",
           "app": "service",
           "register": "(registry, services) =>\n                    new GuildNativeLobbyRoutes(\n                        services.identities,\n                        new GuildNativeLobbyStore({\n                            registerCharacter: services.registerCharacter,\n                            pushToUser: services.pushToUser,\n                        }),\n                    ).register(registry)"
+        }
+      },
+      {
+        "moduleName": "income",
+        "source": "src/modules/income/IncomeModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "income-native-lobby-routes",
+          "app": "service",
+          "register": "(registry, services) => {\n                    const store = new IncomeNativeLobbyStore()\n                    // 登录侧：首次原子初始化账户；已有账户只在这里算好离线暂存，领取前不入账。\n                    services.onAuthenticated((uid, internalUid, sId) => store.parkOffline(internalUid, uid, sId))\n                    new IncomeNativeLobbyRoutes(services.identities, store).register(registry)\n                }"
         }
       },
       {

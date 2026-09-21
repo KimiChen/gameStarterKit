@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "defaultLaunch": { "kind": "gameplay", "gameplayId": "snake" },
   "home": ["snake/snake"],
+  "autoStart": ["income"],
   "groups": [
     {
       "id": "arenaHub",

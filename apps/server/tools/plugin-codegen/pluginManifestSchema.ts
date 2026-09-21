@@ -73,11 +73,19 @@ export type HostManifestGroup = {
   readonly members: readonly string[];
 };
 
-/** 宿主 placement（apps/plugins/host.json）：默认玩法 + 首屏 Home 入口的有序 qualified id（`pluginId/entryId`）+ 入口分组。 */
+/**
+ * 宿主 placement（apps/plugins/host.json）：默认玩法 + 首屏 Home 入口的有序 qualified id（`pluginId/entryId`）+ 入口分组
+ * + session 级自动装载的单元 id（`autoStart`）。
+ *
+ * `autoStart` 只声明**身份**：宿主在 Lobby 连接 ready 时把每个 id 装一次（`PluginHost.launch`），
+ * 装完做什么全归那个插件自己（例：income 拉一次待领离线收益，有就弹窗）。⛔ 它不是一个 menu
+ * 入口——没有点击、不进设置面板，所以只能放这里，插件 manifest 无权声明。
+ */
 export type HostManifest = {
   readonly schemaVersion: 1;
   readonly defaultLaunch: { readonly kind: "gameplay"; readonly gameplayId: string };
   readonly home: readonly string[];
+  readonly autoStart: readonly string[];
   readonly groups: readonly HostManifestGroup[];
 };
 
@@ -418,6 +426,12 @@ export function readHostManifest(repositoryRoot: string): HostManifest {
     if (seen.has(entry)) fail("apps/plugins/host.json", `home 重复登记 "${entry}"`);
     seen.add(entry);
   }
+  const autoStart = [...(Array.isArray(value.autoStart) ? (value.autoStart as string[]) : [])];
+  const autoSeen = new Set<string>();
+  for (const id of autoStart) {
+    if (autoSeen.has(id)) fail("apps/plugins/host.json", `autoStart 重复登记 "${id}"`);
+    autoSeen.add(id);
+  }
   const groups = (Array.isArray(value.groups) ? value.groups : []).map((raw) => {
     const record = raw as JsonRecord;
     return {
@@ -445,6 +459,7 @@ export function readHostManifest(repositoryRoot: string): HostManifest {
     schemaVersion: 1,
     defaultLaunch: { kind: "gameplay", gameplayId: (value.defaultLaunch as JsonRecord).gameplayId as string },
     home,
+    autoStart,
     groups,
   };
 }

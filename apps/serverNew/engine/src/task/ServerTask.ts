@@ -6,6 +6,7 @@ import { IActionAttachTask, IEngineAttachTask } from './IAttachTask'
 import { EventActionTask } from './attachTask/EventActionTask'
 import { NetTask } from './attachTask/NetTask'
 import { RedisTask } from './attachTask/RedisTask'
+import { SyncReceiptTask } from './attachTask/SyncReceiptTask'
 
 export class ServerTask {
     /** 所有的其他任务 */
@@ -30,6 +31,7 @@ export class ServerTask {
     initAttachTasks() {
         // 先完成 Redis 提交，NetTask 再发送成功响应。
         this.attachTasks.push(new RedisTask())
+        this.attachTasks.push(new SyncReceiptTask(this))
         this.netTask = new NetTask(this)
         this.actionAttachTasks.push(new EventActionTask())
         for (const task of ServerTask.templateActionAttackTasks) {

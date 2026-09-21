@@ -207,6 +207,8 @@ test("菜单排序：多 contribution fixture 按 pluginId → entryId；首屏�
   const host = {
     defaultLaunch: { kind: "gameplay" as const, gameplayId: "zBGame" },
     home: [{ pluginId: "zeta", entryId: "zB" }, { pluginId: "alpha", entryId: "aD" }],
+    // autoStart 与菜单位置无关（session 级自动装载，不进 Home/设置列表），本 fixture 不用它。
+    autoStart: [],
     groups: [],
   };
   const registry = new PluginRegistry(descriptors, host);

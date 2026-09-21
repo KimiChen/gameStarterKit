@@ -85,7 +85,9 @@ export class ActionEnter extends GameAction {
         Ctx.user = user
 
         const now = timestamp()
-        const offlineCopper = CopperIncome.settleOffline(user, now)
+        // 离线收益只在这里**算好暂存**，⛔ 不再随登录到账：客户端要显式请求才发放。
+        // 下面两个响应字段因此只是「待领预览」，真正入账走 CopperIncome.claimOffline。
+        const offlineCopper = CopperIncome.parkOffline(user, now)
         // 每日首次登录时间
         if (user.dailyFirstLoginTime < UtilTime.getDayStartTime(now)) {
             user.dailyFirstLoginTime = now

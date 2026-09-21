@@ -89,6 +89,8 @@ export type ProcessPipeRequest =
           readonly type: string
           readonly data: unknown
       }
+    /** 非监听 worker 的通用数据同步；定位键是仅当前在线有效的内部 uid。 */
+    | { readonly kind: 'lobby-sync'; readonly internalUid: number; readonly sid: number; readonly data: unknown }
     | { readonly kind: 'lobby-kick'; readonly uid: string; readonly sid: number; readonly reason: string }
 
 export interface ProcessPipeDependencies {
@@ -97,6 +99,7 @@ export interface ProcessPipeDependencies {
     executeInternalAction(payload: unknown, remoteAddress?: string): Promise<unknown>
     lookupUserConnection(uid: number, sid: number): Promise<number | null>
     pushLobbyConnection(uid: string, sid: number, type: string, data: unknown): Promise<boolean>
+    syncLobbyConnection?(internalUid: number, sid: number, data: unknown): Promise<boolean>
     kickLobbyConnection(uid: string, sid: number, reason: string): boolean
 }
 
@@ -113,6 +116,7 @@ const PIPE_KINDS = new Set([
     'user-task',
     'routed-lobby-route',
     'lobby-push',
+    'lobby-sync',
     'lobby-kick',
 ])
 
@@ -170,6 +174,8 @@ export async function handleProcessPipeRequest(
         }
         case 'lobby-push':
             return deps.pushLobbyConnection(message.uid, message.sid, message.type, message.data)
+        case 'lobby-sync':
+            return deps.syncLobbyConnection?.(message.internalUid, message.sid, message.data) ?? false
         case 'lobby-kick':
             return deps.kickLobbyConnection(message.uid, message.sid, message.reason)
     }

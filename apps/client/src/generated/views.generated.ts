@@ -36,6 +36,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA"],
         load: () => import("../view/HomeView").then((m) => m.HomeView),
     }),
+    IncomePopup: defineView({
+        name: "IncomePopup", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: true,
+        load: () => import("../plugins/income/view/IncomePopupView").then((m) => m.IncomePopupView),
+    }),
     Login: defineView({
         name: "Login", kind: "fgui", contract: LOGIN_CONTRACT, layer: "base",
         fullscreen: true, onlyOne: true, permanent: false, interactive: true,
@@ -99,6 +104,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "Confirm", owner: "builtin", kind: "cocos", path: "apps/client/src/view/ConfirmView.ts", logic: "apps/client/src/logic/page/ConfirmLogic.ts", sidecar: "apps/client/src/view/ConfirmView.view.json" },
     { name: "EntryGroup", owner: "builtin", kind: "cocos", path: "apps/client/src/view/EntryGroupView.ts", logic: "apps/client/src/logic/page/EntryGroupLogic.ts", sidecar: "apps/client/src/view/EntryGroupView.view.json" },
     { name: "Home", owner: "builtin", kind: "fgui", pkg: "View_Home_Home", comp: "Home", path: "apps/client/src/view/HomeView.ts", logic: "apps/client/src/logic/page/HomeLogic.ts", sidecar: "apps/client/src/view/HomeView.view.json" },
+    { name: "IncomePopup", owner: "income", kind: "cocos", path: "apps/client/src/plugins/income/view/IncomePopupView.ts", logic: "apps/client/src/plugins/income/logic/IncomeLogic.ts", sidecar: "apps/client/src/plugins/income/view/IncomePopupView.view.json" },
     { name: "Login", owner: "builtin", kind: "fgui", pkg: "View_AreaList_Login", comp: "Login", path: "apps/client/src/view/LoginView.ts", logic: "apps/client/src/logic/page/LoginLogic.ts", sidecar: "apps/client/src/view/LoginView.view.json" },
     { name: "LoginNotice", owner: "builtin", kind: "fgui", pkg: "View_AreaList_LoginNotice", comp: "LoginNotice", path: "apps/client/src/view/LoginNoticeView.ts", logic: "apps/client/src/logic/page/LoginNoticeLogic.ts", sidecar: "apps/client/src/view/LoginNoticeView.view.json" },
     { name: "PromoHome", owner: "builtin", kind: "cocos", path: "apps/client/src/view/PromoHomeView.ts", logic: "apps/client/src/logic/page/PromoHomeLogic.ts", sidecar: "apps/client/src/view/PromoHomeView.view.json" },
@@ -115,6 +121,7 @@ export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/kits/arena/view",
     "apps/client/src/kits/slg/view",
     "apps/client/src/plugins/arenaShop/view",
+    "apps/client/src/plugins/income/view",
     "apps/client/src/plugins/redeem/view",
     "apps/client/src/plugins/snake/view",
     "apps/client/src/view",

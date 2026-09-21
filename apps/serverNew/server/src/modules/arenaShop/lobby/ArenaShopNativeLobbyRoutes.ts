@@ -1,4 +1,4 @@
-import { executeObjectAction, type LobbyConnectionContext } from '@arthropoda/game-engine'
+import { executeObjectAction, lobbyRouteOutcome, type LobbyConnectionContext } from '@arthropoda/game-engine'
 import {
     ArenaShopRpc,
     type IArenaShopBuyBoostReq,
@@ -41,7 +41,7 @@ export class ArenaShopNativeLobbyRoutes {
             },
             { uid, externalUid: context.uid, sId: context.sId },
         )
-        if (result.ok) return result.data
+        if (result.ok) return lobbyRouteOutcome(result.data, result.sync) as unknown as IArenaShopBuyBoostRes
         throw result.error
     }
 }

@@ -1,5 +1,5 @@
 import type { RuntimeServerLike } from './runtimeTypes'
-import { hasNativeLobbyEnvironment, type LobbyPushForwarder } from './NativeLobbyRuntime'
+import { hasNativeLobbyEnvironment, type LobbyPushForwarder, type LobbySyncForwarder } from './NativeLobbyRuntime'
 import type { ProcessPipeRequest } from './processPipe'
 import { writeProcessRouteTrace } from './writeProcessRouteTrace'
 import type { ForceLogoutReasonType } from '../../generated/lobby-contract/protocol/lobbyRpc'
@@ -21,7 +21,7 @@ export type WorkerRole = 'MASTER' | 'WORKER' | 'TASK_WORKER' | 'USER_TASK_WORKER
 
 /** 角色分配结果；`undefined` 表示本进程不参与原生入口（未配置时才是合法结果）。 */
 export type NativeLobbyRoleAssignment =
-    { readonly role: 'listen' } | { readonly role: 'forward'; readonly forwardPush: LobbyPushForwarder } | undefined
+    { readonly role: 'listen' } | { readonly role: 'forward'; readonly forwardPush: LobbyPushForwarder; readonly forwardSync: LobbySyncForwarder } | undefined
 
 export function workerRole(runtime: RuntimeServerLike): WorkerRole {
     const workerId = runtime.worker_id
@@ -51,7 +51,11 @@ export function lobbyRoleOf(
     const hasEnvironment = options.hasEnvironment ?? hasNativeLobbyEnvironment()
     if (!hasEnvironment) return undefined
     if (role === 'WORKER' && runtime.worker_id === NATIVE_LOBBY_HOST_WORKER_ID) return { role: 'listen' }
-    return { role: 'forward', forwardPush: forwardLobbyPush(runtime, options.pipeTimeoutMs) }
+    return {
+        role: 'forward',
+        forwardPush: forwardLobbyPush(runtime, options.pipeTimeoutMs),
+        forwardSync: forwardLobbySync(runtime, options.pipeTimeoutMs),
+    }
 }
 
 /** 非监听 worker 的推送出口：只有持有连接的监听进程能写 wire 消息。 */
@@ -70,6 +74,21 @@ export function forwardLobbyPush(runtime: RuntimeServerLike, pipeTimeoutMs: numb
         const result = await runtime.requestMessage(request, NATIVE_LOBBY_HOST_WORKER_ID, pipeTimeoutMs)
         // 只有监听进程明确回 true 才算送达；超时、缺连接、回包异常一律是 false，不猜成功。
         return result === true
+    }
+}
+
+/** 非监听进程的用户数据同步出口；监听进程按当前在线 internal uid 找连接。 */
+export function forwardLobbySync(runtime: RuntimeServerLike, pipeTimeoutMs: number): LobbySyncForwarder {
+    return async (internalUid, sId, data) => {
+        const request: ProcessPipeRequest = { kind: 'lobby-sync', internalUid, sid: sId, data }
+        writeProcessRouteTrace({
+            event: 'push',
+            kind: request.kind,
+            route: 'sync',
+            sourceWorkerId: runtime.worker_id,
+            targetWorkerId: NATIVE_LOBBY_HOST_WORKER_ID,
+        })
+        return (await runtime.requestMessage(request, NATIVE_LOBBY_HOST_WORKER_ID, pipeTimeoutMs)) === true
     }
 }
 

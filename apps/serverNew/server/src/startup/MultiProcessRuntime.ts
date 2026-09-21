@@ -75,6 +75,7 @@ function pipeDependencies(): ProcessPipeDependencies {
         executeInternalAction: (payload, remoteAddress) => executeInternalAction(payload, remoteAddress),
         lookupUserConnection: async (uid, sid) => (await UserOnlineMgr.get(uid, sid))?.connectionId ?? null,
         pushLobbyConnection: async (uid, sid, type, data) => nativeLobbyRuntime()?.push(uid, sid, type, data) ?? false,
+        syncLobbyConnection: async (internalUid, sid, data) => nativeLobbyRuntime()?.syncByInternalUid(internalUid, sid, data) ?? false,
         kickLobbyConnection: (uid, sid, reason) =>
             isForceLogoutReason(reason) ? (nativeLobbyRuntime()?.kick(uid, sid, reason) ?? false) : false,
     }

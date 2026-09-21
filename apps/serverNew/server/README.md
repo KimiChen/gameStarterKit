@@ -14,6 +14,11 @@
 - service 的 dev 启动（`pnpm dev`、pm2 dev、多进程子进程）统一经 `deploy/dev/entrypoint.cjs`；禁止裸 `ts-node/register` 或 transpileOnly —— bean transform 会被静默跳过，垫片的 `_class_info` 金丝雀负责 fail-fast。
 - `workerNum`、`taskWorkerNum`、`userTaskWorkerNum` 全为 0 才走单进程；多进程适配模块必须在分支内惰性加载，再动态加载 ESM runtime bundle。`ALLOY_MULTI_PROCESS_ENABLED=0` 仅作显式逃生门，禁止在 bundle/addon 失败时静默降级。
 - 内部 HTTP 必须在合并 `sN.json5` 后解析 `internalPort`（缺省为最终 `clientPort + 10000`）；`gmSecret` 为空或端口冲突时 fail-fast，客户端端口不承载内部路由。
+- 原生 Lobby transport v2 的 `reply.sync` 与独立 `sync` 帧承载已提交的单用户模块差异（`mods` + `versions`）。当前请求用户的变更只能随 `reply.sync` 返回，不得再额外 push；没有请求上下文或影响其他在线用户的变更才发独立 `sync` 帧。业务 `data` 仍须严格匹配各路由自己的 shared response validator。
+- `SyncReceiptTask` 只在 `RedisTask.save()` 成功后读取 `ModSync.autoGetModChanged()`；先提交再冻结 sync、再发 reply/push。⛔ 不得在业务 Action 中途推送，也不得把服务端 Bean 的任意对象绕过 shared `sync` validator 直接写 socket。幂等路由缓存的是 `{ data, sync }` outcome，重放必须返回同一份 sync。
+- 原生 Lobby 的独立 Redis store（例如 `NativeLobbyUserStore`）不经过 RootBean diff，成功写入后必须在同一 `ObjectAction` 上调用 `recordObjectActionSync()` 登记公开视图和版本；否则业务响应会成功却没有 `reply.sync`。⛔ 不在 action 上下文外伪造 sync，后台写路径应复用 Action 或走显式同步投递。
+- Cocos Web 原生 Lobby 预览只接受显式 `?lobby=native&lobbyUrl=<ws(s)://...>`；`lobbyUrl` 必须逐字匹配本次进程的 `NATIVE_LOBBY_PORT`（默认编排脚本为 `18091`）。端口不一致时 WebSocket 建连失败，客户端登录页的“开始游戏”可能没有可见反馈；排查先核对启动日志、TCP 监听和 WebSocket 握手，再检查业务路由。
+- 原生预览 URL 的 `server`、`lobby`、`lobbyUrl` 必须是独立查询参数，不能把编码后的 `&lobby=...` 或 `&lobbyUrl=...` 拼进 `server` 值；本地编排默认还需要 WebPlatform `2570/2571`、Cocos 预览 `7458` 与内部动作口 `28090` 同时可达。
 - 内部 HTTP 端点（`/health` 与 `/internal/action`）在多进程下由**承担原生 Lobby 监听的 worker** 承载，而不是主控进程。alloy-core 的 worker 侧只接受源角色为 worker 的进程请求，主控的 `requestMessage` 会把 `PROCESS_MESSAGE` 发出去却被对端判为 `INVALID_SOURCE` 丢弃，调用方只能等到超时（表现为内网 HTTP 请求 `socket hang up`）。所以凡是「需要落到某个 worker 执行」的内部动作都不得从主控发起；`/health` 需要的 worker 列表与统计来自共享状态，监听进程读得到。⛔ 不要把端点搬回主控。
 - 多进程的独立探针由主控在 `healthPort`（缺省为最终 `clientPort + 20000`）承载：`GET /livez` 只证明主控存活，`GET /readyz` 要求完整 worker 池就绪。监听 worker 重拉时，内部 `/health` 与 `/internal/action` 可暂不可用，但独立探针必须继续可达；探针是只读端点，⛔ 不得在其上增加内部动作。
 - `/gm/api` 的原生 Lobby 强制下线沿用内部数值 `role_id`：管理进程只把它投递到目标区服，监听 worker 用当前在线会话中的 `internalUid` 定位连接并复用 4903 `revoked` 语义。⛔ 不要新增持久化的 role_id → 外部 uid 反查表，离线用户必须诚实返回 `kicked: false`，也不得把外部 uid 视为数字。
@@ -42,6 +47,9 @@
 ## 生成和 Bean
 
 - 原生 Lobby 的类型、路由、错误码和校验器从 `apps/shared` 真源编译到忽略的 `generated/lobby-contract/`；运行 `pnpm gen:lobby-contract` 刷新，`pnpm check:lobby-contract` 只读校验。禁止在新框架维护第二份业务协议或修改旧服务端来接入新通道。
+- 新增一个 lobbyRpc 域（`apps/shared` 的 `domains/<域>.ts`）会让旧 `apps/server` 的端点全集闸（`src/websocket/loader.ts`：shared 声明的每条路由都必须有 `src/websocket/<域>/<方法>.ts`）报「shared 已声明但无端点文件」并**拒绝启动**。那是**另一条通道**的工作项，不属于业务玩法开发：⛔ 不要为让它变绿在 `apps/server` 造 fail-closed 桩或伪造业务数据，也不要因此缩窄 wire 契约。业务开发的验收面只有本项目（`pnpm check`、`pnpm verify:module -- <module>`、`test/runtime/protocol/native-lobby-routes.test.ts`），不含 `apps/server` 的测试套件。
+- ⚠ **但「不动 `apps/server`」不等于「`apps/server` 下的路径一律不许改」**，两者别混：`apps/server/test/lobbyRpcVectors/<域>.ts` 是**codegen 契约要求的**（`tools/plugin-codegen/lib.ts` 的 `readVectorSidecars` 做双向对齐：每个 domain 必须有同名 sidecar，缺则 `codegen:plugins` 直接失败；域删了还要同批删 sidecar）。新增域必须同批提供最小合法 request/response 向量并重跑 `codegen:plugins`，其产物 `lobbyRpcVectors/index.generated.ts` 由生成器独占，⛔ 不手改。判据：`node --import tsx tools/plugin-codegen/cli.ts --check` 报 `generated plugin artifacts are fresh`。区分标准是**这条路径属于谁的所有权**：codegen/契约面（向量 sidecar、`tools/plugin-codegen/**`）必须跟着改；旧通道的**业务端点与测试套件**不碰。
+- `pnpm verify:module -- <module>` 的 `test:module` 一步要求 `test/modules/<module>/` 存在。只有原生 Lobby handler、没有业务模块测试目录的模块（`arena` / `arenaShop` / `redeem` / `slg` / `income` 等）在这一步必然报 `module has no tests`——这是既有形态，它们的覆盖在 `test/runtime/protocol/native-lobby-routes.test.ts`；⛔ 不要为凑门禁建空测试目录。
 
 - 模块协议源必须位于模块根部 `<Module>C2S.ts` / `<Module>S2S.ts`；每个 `Req<Name>` 必须先有 `action/Action<Name>.ts`，再运行生成器登记路由。
 - 协议与 Bean 兼容记录只存在于 `generated/records/`；正式 `record.json` 缺失时从 Git 恢复，禁止创建空记录或恢复 `resources/`。
@@ -53,6 +61,8 @@
 - 发布构建先在 `build/compiled/` 生成经过 Bean 转换的 JavaScript，NCC 不得直接编译手写 Bean TypeScript。
 - Source Map 只允许作为 Bean 编译校正的临时产物；最终 `build/compiled/` 必须移除 `.js.map` 和映射注释，JS 运行命令不得启用 `--enable-source-maps`。
 - 删除或移动源码后，如 `build/compiled/` 旧 source map 导致 `ENOENT`，先清理对应旧产物再完整编译。
+- 玩家业务数据默认落 Redis：字段加在所属 Bean 上，随 Action 提交统一写回。MySQL 只承载账号映射（`center_user`）、角色查询快照（`server_user`）与运营/GM/活动配置表，⛔ 不要为玩家业务数据新建表或 typeorm 实体。
+- `server_user` 是查询用快照，只在建号、登录、过天、改名和下线时刷新，与 Redis 会漂移；需要准确值必须读 Bean，不得拿它当排行榜、统计或结算的真源。
 - Bean 只能在所属 Action 上下文内修改；异步业务必须等待完成，不能让上下文失效后继续写 Bean。
 - 业务事件必须显式携带其归属实体；事件处理器不得从全局 `Ctx` 反查玩家或请求数据，因为事件可由不同 Action 或延后阶段发布。
 - Bean 集合不是原生集合；修改前核对引擎 API，`DiffArray` 按下标读取只能用 `.at(i)`，禁止按原生数组的 `indexOf` 语义推断。
@@ -63,6 +73,8 @@
 - 默认测试套件不得依赖已启动的 Redis、MySQL 或外部服务；需要真实环境的集成脚本不要使用 `.test.*` 命名。
 - 真实环境联调入口是 `pnpm verify:native-lobby-live`（`scripts/verify/native-lobby-live.cjs`）：它真的 fork 一次服务进程，走真实 Redis/MySQL 与真实 ws 端点，只把不属于本仓的 WebPlatform 身份服务换成进程内桩；断言用 `redis-cli` 直读存储，不复用生产读函数。因此它需要 Redis/MySQL 可达，放在 `scripts/verify/` 而不是测试套件里。
 - 真实**多进程**宿主入口是 `pnpm verify:native-lobby-multiprocess-live`：它跑与单进程线路**同一份**协议场景集（`lobbyProtocolScenarios.cjs`），再补「只有真实多进程才能证明」的进程池拓扑（四种角色 + 端口归属交叉核对）、跨进程转发/推送痕迹、`bindId % taskWorkerNum` 的**分布**、运营入口落点、**worker 崩溃重拉**与优雅退出。崩溃重拉的判据取 `/health` 的 `generation` 恰好 +1（只在重新 fork 同一槽位时递增）＋新 pid 存活，而不是「配置里写了几个 worker」。⚠ 该线路的 `bearjoylivemulti` 夹具必须保持 `taskWorkerNum ≥ 2`：等于 1 时 `bindId % taskWorkerNum` 恒为 0，「按 bindId 路由」与「永远发给同一个 worker」在外部观测上完全一样，分布类断言会退化成空转（脚本里有 `TASK_WORKER_NUM >= 2` 闸，夹具与脚本常量必须一起改）。两条线路都**不在门禁里**——改了 Lobby 协议、跨进程装配或内部 HTTP 端点归属后必须主动跑。
+- ⚠ **启动期全集闸的期望集是「本项目拥有的路由」，不是 shared 声明面**。`apps/shared` 的 lobbyRpc registry 是**两代服务端共有**的 wire 面：MMO 产品线（`chat` / `party` / `world`）在旧 `apps/server` 上实现，只把域加进同一份 registry。因此「归属另一条通道」的路由必须逐条登记在 `src/runtime/lobby/NativeLobbyPendingRoutes.ts`（带原因），`assertComplete()` 校验三条：① 注册面 ⊆ 声明面；② 声明面 ∖ 注册面 ⊆ 登记表；③ 登记表 ⊆ 声明面 ∖ 注册面（**双向对齐**，路由迁走或从 shared 删除都会让登记陈旧 ⇒ 启动即红，强制同批删行）。⛔ 这张表登记的是**归属**不是进度：不要把「本项目该实现但还没实现」的路由登记进去换启动通过，那是把启动期 fail-fast 换成永久静默。新增域时先确认它属于哪条通道——属于本项目就必须真实现，属于另一条通道才登记。
+- 真实联调脚本必须显式传 `userRedisDb`（`createHarness({ …, centerRedisDb, userRedisDb })`）。`redis-cli -n <非数字>` **不报错、静默落 db 0**，漏传时夹具会把数据写进 0 号库而服务进程读 8 号库，症状是「登录钩子什么都没做」；`lobbyLiveHarness.cjs` 的 `createHarness` 现已对两个库号做正整数闸硬失败。
 - 关闭日志中的 `DisconnectsClientError: Disconnects client`（未处理拒绝，每次关闭打印数条）是**既有基线**：`RedisCache.disconnect`、`RedisInstance.clear`、`EngineInitHelper.stopInfrastructure` 与 P6 前备份逐字节一致，与协议链无关。排查启动或协议问题时不要把它当成回归；修它属于独立的引擎关闭健壮性任务。
 - 日常改模块先运行 `pnpm verify:module -- <module>`；提交前运行 `pnpm check`。前者只校验模块索引与目标测试，后者执行完整静态检查、生成物检查和 engine 契约。
 - 全局协议、Bean、错误码、数据库和生成产物兼容性只由统一兼容基线维护；模块测试不得重复硬编码路由和字段编号，保留所属业务的可读契约和行为验证。

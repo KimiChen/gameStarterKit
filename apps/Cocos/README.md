@@ -22,6 +22,9 @@ Cocos Dashboard 3.8.8 打开本目录，等首次导入（生成 `temp/`、`libr
 （`sync:shared` 已级联 `sync:client`；运行时产物——colyseus UMD、fairygui-cc 运行时和锁定的
  bitECS 源码——已入库，无需 fetch。依赖抓取脚本只用于框架维护团队显式升级。）
 
+已打开的 Creator 预览在外部同步写入 `assets/src` 后可能继续使用旧的 `temp/` 编译产物；真实预览验证前，
+在 Creator 中执行 **Developer → Reload**，再刷新浏览器页面。不要修改 `temp/` 或 `library/` 来规避缓存。
+
 UniFlex 独立场景预览使用独立 Cocos CLI，并要求兼容的 Node.js 22 环境：
 
 ```bash

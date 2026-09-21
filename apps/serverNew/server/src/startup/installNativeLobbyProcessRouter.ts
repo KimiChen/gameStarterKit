@@ -1,4 +1,4 @@
-import { RouteAction, type ApiCall, type ObjectActionCall } from '@arthropoda/game-engine'
+import { isLobbyRouteOutcome, RouteAction, type ApiCall, type ObjectActionCall } from '@arthropoda/game-engine'
 import type { ProcessPipeOutcome, ProcessPipeRequest } from './processPipe'
 import type { RuntimeServerLike } from './runtimeTypes'
 import { writeProcessRouteTrace } from './writeProcessRouteTrace'
@@ -93,5 +93,11 @@ async function applyRoutedOutcome(call: ApiCall, outcome: ProcessPipeOutcome | u
         await call.error({ code: 0, message: failure.msg, noLogin: failure.noLogin })
         return
     }
-    await call.succ(outcome.res ?? {})
+    const result = outcome.res
+    if (isLobbyRouteOutcome(result)) {
+        call.syncForReply = result.sync
+        await call.succ(result.data)
+        return
+    }
+    await call.succ(result ?? {})
 }

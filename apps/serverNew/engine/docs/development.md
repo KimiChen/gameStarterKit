@@ -14,6 +14,7 @@
 
 - Bean setter、`DiffArray` 和 `DiffMap` 变更由当前上下文收集；不要手工拼接能够由 `toModData` 表达的增量数据。
 - `getNotifyUids()` 决定 Change 接收者；`UserHash` 默认通知自身，跨玩家模块必须明确返回稳定接收者集合。
+- 业务数据默认落 Redis：玩家档由 `Hash` / `UserHash` / `HashJson` 承载，随 Action 提交写回。MySQL 只用于账号映射与运营/配置面，⛔ 不要为玩家业务字段新建表或 typeorm 实体。
 - `RedisTask` 只在 Action 成功阶段调用 `RedisService.save()`；错误阶段没有通用回滚，跨 Redis、数据库或外部系统写入必须由业务设计幂等和补偿。
 - 所有触碰 Bean 或上下文的 Promise 都必须在 Action 生命周期内等待完成；上下文结束后的写入会被拒绝或产生不可追踪状态。
 - Action 的成功响应和 Change 推送只会在 Redis 保存成功后发送；保存失败会返回错误，业务不应在 Action 内自行提前通知客户端成功。

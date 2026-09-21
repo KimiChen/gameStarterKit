@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "id": "income",
+  "version": "1.0.0",
+  "description": "铜币收益：新服务账户在线每 5 秒结算，重新登录后弹窗领取离线收益",
+  "domains": [
+    "income"
+  ],
+  "category": "extra",
+  "docs": [
+    "apps/plugins/income/README.md"
+  ],
+  "resident": true,
+  "entry": "apps/client/src/plugins/income/index.ts",
+  "viewDirs": [
+    "apps/client/src/plugins/income/view"
+  ],
+  "views": [
+    "apps/client/src/plugins/income/view/IncomePopupView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "income",
+      "logicDir": "apps/client/src/plugins/income/logic"
+    }
+  ],
+  "routes": [
+    {
+      "id": "income",
+      "view": "IncomePopup"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "income",
+      "label": "铜币收益",
+      "labelKey": "menu.income",
+      "launch": {
+        "kind": "route",
+        "routeId": "income"
+      }
+    }
+  ]
+}

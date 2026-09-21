@@ -41,7 +41,7 @@ import {
     onConnLost,
     returnToLogin,
 } from "./SessionCoordinator";
-import { resolveLaunchGameplayId } from "./builtinPlugin";
+import { APP_HOST, resolveLaunchGameplayId } from "./builtinPlugin";
 import type { PluginLaunchTarget, PluginMenuContribution } from "./builtinPlugin";
 import { PluginHost, type PluginStatus, type HostedPlugin } from "./PluginHost";
 import { FrameScheduler } from "./FrameScheduler";
@@ -249,6 +249,8 @@ export class AppRuntime {
             onAuthInvalid(() => { this.journal.clearForSessionEnd(); }),
             lifecycleBus.subscribe("connection", (event) => {
                 if (event.kind === "dropped") this.journal.markInflightUnknown();
+                // session 级自动装载（宿主 placement 的 autoStart）：Lobby ready 时装一次。
+                if (event.kind === "ready") this.launchAutoStartPlugins();
                 if (event.kind === "reconnected") {
                     // 发送闸已恢复：刷新当前 authenticated base（合流经 RefreshCoordinator）。
                     void refreshAuthenticatedBaseProfile().catch(() => {});
@@ -271,6 +273,30 @@ export class AppRuntime {
                 }
             }),
         );
+    }
+
+    /**
+     * session 级自动装载（apps/plugins/host.json 的 `autoStart`）：Lobby 连接 ready 时把声明的
+     * 插件各装一次。宿主不认任何具体插件——装完做什么（拉快照 / 弹窗 / 起心跳）全归那个插件
+     * 自己的 install。幂等：PluginHost.launch 对已 active 的单元直接返回 active，同会话重连不会
+     * 重复安装；`resident:true` 保证它不被 route refcount 拆掉（codegen 已闸）。
+     * 非 active 只记日志——可用性叠加层会把它显示成不可用，⛔ 不在这里替插件重试。
+     */
+    private launchAutoStartPlugins(): void {
+        if (this.disposed) return;
+        for (const pluginId of APP_HOST.autoStart) {
+            if (!this.pluginHost.hosts(pluginId)) continue;
+            void this.pluginHost.launch(pluginId).then(
+                (status) => {
+                    if (status !== "active") {
+                        console.error(`[AppRuntime] autoStart 插件 ${pluginId} 不可用（${status}）`);
+                    }
+                },
+                (error) => {
+                    console.error(`[AppRuntime] autoStart 插件 ${pluginId} 装载异常：`, error);
+                },
+            );
+        }
     }
 
     /** §7.8 (1)(2)：hide 暂停本地 tick/预测与新输入意图。 */
