@@ -231,6 +231,10 @@ export function sgzzOccupyRefusal(check: ISgzzOccupyCheck, viewer: ISgzzViewer):
     if (!check.passable) return "SGZZMAP_IMPASSABLE";
     if (check.heldTiles >= SGZZ_MAX_TILES_PER_PLAYER
         && check.target.ownerUid !== viewer.uid) return "SGZZMAP_TILE_LIMIT";
+    // ★ 目标就是自己的地 ⇒ 这是**加固**，天然连着自己的领地（它本身就是），⛔ 不查邻居。
+    // ⚠ 早先漏了这条：只看六邻的话，一块**孤地**永远加固不了 —— 邻居都不是我的，
+    //   于是加固自己的地被回 SGZZMAP_NOT_ADJACENT。真机重放里「回领地 → 加固」一直被拒就是这个。
+    if (check.target.ownerUid === viewer.uid) return null;
     if (check.heldTiles === 0) {
         return (check.inSpawnRegion && check.target.ownerUid === "") ? null : "SGZZMAP_NOT_ADJACENT";
     }

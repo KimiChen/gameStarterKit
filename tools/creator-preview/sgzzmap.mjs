@@ -230,16 +230,22 @@ export async function replaySgzzmapWorld(runner) {
             // ⚠ 选中格必须还是刚才那一格。早先手势绑在整页 root 上，点「占领」那一下会**顺手换掉选中格**，
             //   于是这里永远等不到；那条 bug 由 sgzzInMapBand 封住了，这里顺带当哨兵。
             if (value.tile.row !== selected.tile.row || value.tile.col !== selected.tile.col) return null;
-            if (value.tile.mine && value.territory && value.border) return { ...value, outcome: "occupied" };
-            // ⚠ 加固自己的地没有失败的道理：这一支只留给「全新账号占空地」，
-            //   拿它兜住加固失败等于把 bug 盖掉。
-            if (selected.plan === "加固") return null;
+            if (!value.territory || !value.border) return null;
+            // ★ 必须证明这一发 RPC **真的生效了**，⛔ 不能拿「点选时本来就是我方」冒充成功：
+            //   run 8 就这么假通过过 —— 守军前后都是 1，而占领其实被连地闸拒了（孤地加固 bug）。
+            if (selected.plan === "加固") {
+                return value.tile.mine && value.tile.guard > selected.tile.guard
+                    ? { ...value, outcome: "occupied" } : null;
+            }
+            if (value.tile.mine) return { ...value, outcome: "occupied" };
+            // 拒绝这一支只留给「全新账号占空地」，⛔ 加固失败不许往这儿兜
             if (value.notice && REFUSAL_RE.test(value.notice)) return { ...value, outcome: "refused" };
             return null;
         });
         return {
             plan: selected.plan, before: selected.tile.text,
-            ...evidence, shot: await runner.shot(`sgzzmap-${evidence.outcome}`),
+            ...evidence, guardBefore: selected.tile.guard, guardAfter: evidence.tile?.guard ?? null,
+            shot: await runner.shot(`sgzzmap-${evidence.outcome}`),
         };
     });
 

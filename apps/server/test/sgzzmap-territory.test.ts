@@ -187,3 +187,20 @@ test("sgzzmap territory: 地块线型校验 fail-closed", () => {
         assert.throws(() => validateSgzzTile(fixture), `必须拒：${why}`);
     }
 });
+
+test("sgzzmap territory: ★ 加固自己的地不查邻居 —— 孤地也必须加得动", () => {
+    // ⚠ 真机重放抓到的：只看六邻的话，一块四周都不是自己的**孤地**永远加固不了，
+    //   「回领地 → 加固」一路被回 SGZZMAP_NOT_ADJACENT。目标本身就是我的领地，它天然连着。
+    const lone = { passable: true, heldTiles: 1, inSpawnRegion: false,
+                   target: owned("u-me", "a-1"), neighbours: [] as ISgzzTile[] };
+    assert.equal(sgzzOccupyRefusal(lone, me), null, "四周无我方地也要能加固自己的地");
+    assert.equal(sgzzOccupyRefusal({ ...lone, neighbours: [owned("u-foe", "a-2")] }, me), null,
+        "四周全是敌地同样要能加固");
+    assert.equal(applySgzzTileAction(lone.target, me).outcome, "reinforced");
+
+    // ⛔ 豁免只对**自己的**地：盟友的地、敌人的地照旧要连地
+    assert.equal(sgzzOccupyRefusal({ ...lone, target: owned("u-mate", "a-1") }, me), "SGZZMAP_NOT_ADJACENT");
+    assert.equal(sgzzOccupyRefusal({ ...lone, target: owned("u-foe", "a-2") }, me), "SGZZMAP_NOT_ADJACENT");
+    // ⛔ 不可通行仍然先于一切（自己的地本不该不可通行，但闸的次序要稳）
+    assert.equal(sgzzOccupyRefusal({ ...lone, passable: false }, me), "SGZZMAP_IMPASSABLE");
+});

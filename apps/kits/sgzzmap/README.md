@@ -230,6 +230,12 @@ node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
 | 2 | 点「占领」顺手把选中格换成按钮底下那一格 | 手势绑在整页 root，页脚按钮的触摸**冒泡**上来被当成点选 | `sgzzInMapBand` 挡住地图区外的点 |
 | 3 | 操作结果活不过 220 ms，屏幕上什么提示都没有 | view 轮询一成功就无差别清空 notice | `noticeKind`：只清「读出来的」提示 |
 | 4 | 窗外的格显示成「无主」（撒谎） | `tileAt` 缺 key 即默认空格，`sgzzmap.tile` 路由从未接线 | `select` 标 pending + 单格补查 |
+| 5 | **孤地永远加固不了**（回 `SGZZMAP_NOT_ADJACENT`） | 连地闸只看六邻，目标就是自己的地时也照查 | `sgzzOccupyRefusal` 先放行 `target.ownerUid === viewer.uid` |
+
+⚠ 第 5 条是**重放自己差点放过的**：判据写成「地块是我方 + 叠色描边在」，而点选时它本来就是我方，
+于是 RPC 被拒也照样判过（run 8：守军前后都是 1、提示在后面三步才浮出来）。
+判据已改成必须证明这一发**真的生效**——加固要守军上涨、占领要从无主翻成我方。
+⛔ 别再写「断言一个动作前后都成立的状态」。
 
 ### P6 余留
 
