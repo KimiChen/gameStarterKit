@@ -43,4 +43,12 @@ test("UniFlex preview uses a dedicated scene and does not hijack Main", () => {
     const defaultScene = JSON.parse(readFileSync(resolve(root, "apps/Cocos/assets/scene.scene.meta"), "utf8")) as { uuid: string };
     assert.equal(preview.general.start_scene, defaultScene.uuid);
     assert.notEqual(sceneMeta.uuid, defaultScene.uuid);
+
+    const uniFlexPreview = readFileSync(resolve(root, "apps/client/src/ui-uniflex/UniFlexPreview.ts"), "utf8");
+    assert.match(uniFlexPreview, /createPreviewScreen/);
+    assert.match(uniFlexPreview, /resolvePreviewScreenId/);
+    assert.equal(uniFlexPreview.includes("createConfirmPreview(this.node"), false);
+    const catalog = readFileSync(resolve(root, "apps/client/src/ui-uniflex/previewCatalog.ts"), "utf8");
+    assert.match(catalog, /case "preview-home"/);
+    assert.match(catalog, /PreviewHome/);
 });

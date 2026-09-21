@@ -746,3 +746,13 @@ export function createHeroStarUpgradePreview(parent: Node) {
         dispose,
     };
 }
+
+export {
+    createPreviewHomePreview,
+    createPreviewScreen,
+    createRestoredPreviewHomePreview,
+    createSmallPopupPreview,
+    previewCanvasHeight,
+    resolvePreviewScreenId,
+} from "./previewCatalog";
+
