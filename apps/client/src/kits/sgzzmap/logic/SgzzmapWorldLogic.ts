@@ -24,6 +24,7 @@ import { SgzzMarchLineTracker } from "./sgzzMarchLines";
 import { SgzzBorderSet } from "./sgzzBorder";
 import { sgzzAoiMode, sgzzIsNearField, sgzzLayerVisible } from "./sgzzLayers";
 import { SgzzViewportStencil } from "./sgzzViewport";
+import { SGZZ_DECOR_MARGIN_TILES } from "./sgzzDecor";
 import type { SgzzRuntime } from "./sgzzRuntime";
 
 /** 两次拉取之间的最小间隔（毫秒）。相机每帧都在动，⛔ 不能每帧发。 */
@@ -40,7 +41,11 @@ export interface SgzzSelection {
 
 export class SgzzmapWorldLogic {
     readonly camera: SgzzCamera;
-    readonly stencil = new SgzzViewportStencil();
+    /**
+     * ⚠ 预取余量按**最高摆件**取（⛔ 不是默认的 2 格）：摆件从格心往上长，
+     * 屏幕下边缘之外的格，它的树梢是会探进视野的。余量不够就表现为「树突然弹出来」。
+     */
+    readonly stencil = new SgzzViewportStencil(SGZZ_DECOR_MARGIN_TILES);
     readonly borders = new SgzzBorderSet();
     /** cell → 非默认地块。缺 key 即默认无主格。 */
     readonly tiles = new Map<number, ISgzzTile>();

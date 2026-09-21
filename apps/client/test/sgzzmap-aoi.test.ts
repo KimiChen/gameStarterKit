@@ -12,6 +12,7 @@ import {
 } from "../src/shared/kits/sgzzmap/api/hexmap/index";
 import { sgzzInMapBand } from "../src/kits/sgzzmap/logic/sgzzCamera";
 import { SgzzViewportStencil } from "../src/kits/sgzzmap/logic/sgzzViewport";
+import { SGZZ_DECOR_MARGIN_TILES } from "../src/kits/sgzzmap/logic/sgzzDecor";
 import { SgzzmapWorldLogic } from "../src/kits/sgzzmap/logic/SgzzmapWorldLogic";
 import type { SgzzRuntime } from "../src/kits/sgzzmap/logic/sgzzRuntime";
 
@@ -38,7 +39,8 @@ test("近景窗：贴地图边界时仍占满预算，⛔ 不缩水", () => {
 
 test("★ 近景窗盖住 LOD0 整屏：可视集里每一格都在窗内（⛔ 没有「显示成无主」的空白区）", () => {
     // 真机布局：750 宽、地图区高 1122，初始 scale 0.85
-    const stencil = new SgzzViewportStencil();
+    // ⚠ 必须与页模型同一个余量（摆件要多预取一圈），⛔ 用默认值测的不是真实配置
+    const stencil = new SgzzViewportStencil(SGZZ_DECOR_MARGIN_TILES);
     stencil.refresh(0.85, 750, 1122);
     const centre = { row: 750, col: 750 };
     const span = stencil.spanFor(centre.row);

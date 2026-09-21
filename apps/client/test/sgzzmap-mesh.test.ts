@@ -9,9 +9,10 @@ import {
 } from "../src/kits/sgzzmap/logic/sgzzLayers";
 import { SGZZ_MAX_BORDER_EDGES, SgzzBorderSet } from "../src/kits/sgzzmap/logic/sgzzBorder";
 import {
-    SGZZ_DECOR_KINDS, SGZZ_DECOR_MAX_HEIGHT, SGZZ_DECOR_NONE, sgzzDecorAt, sgzzDecorQuad,
+    SGZZ_DECOR_JITTER, SGZZ_DECOR_KINDS, SGZZ_DECOR_MARGIN_TILES, SGZZ_DECOR_MAX_HEIGHT,
+    SGZZ_DECOR_NONE, sgzzDecorAt, sgzzDecorQuad,
 } from "../src/kits/sgzzmap/logic/sgzzDecor";
-import { SgzzViewportStencil } from "../src/kits/sgzzmap/logic/sgzzViewport";
+import { SgzzmapWorldLogic } from "../src/kits/sgzzmap/logic/SgzzmapWorldLogic";
 import {
     SGZZ_MAP_COLS, SGZZ_MAP_ROWS, SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W,
     sgzzAtlasUv, sgzzGrid2Pos, sgzzNeighbours, sgzzRingTable, sgzzTileVariant,
@@ -363,7 +364,10 @@ test("★ 摆件必须超出菱形往上长，⛔ 压回格内就退化成地表
         const ys = poly!.points.map((p) => p[1]);
         const top = Math.max(...ys), bottom = Math.min(...ys);
         assert.ok(bottom < c.y, `${kind.name} 的底该略沉进格里`);
-        assert.ok(top - bottom === kind.height, `${kind.name} 高度应为 ${kind.height}`);
+        const h = top - bottom;
+        assert.ok(h >= kind.height * (1 - SGZZ_DECOR_JITTER) - 1e-9
+            && h <= kind.height * (1 + SGZZ_DECOR_JITTER) + 1e-9,
+            `${kind.name} 高度 ${h.toFixed(1)} 超出抖动带 ${kind.height}±${SGZZ_DECOR_JITTER * 100}%`);
         // 顶边比底边窄 ⇒ 是剪影不是方块
         const topW = Math.abs(poly!.points[1][0] - poly!.points[0][0]);
         const bottomW = Math.abs(poly!.points[2][0] - poly!.points[3][0]);
@@ -376,9 +380,15 @@ test("★ 摆件必须超出菱形往上长，⛔ 压回格内就退化成地表
 });
 
 test("★ 视口预取余量要盖得住摆件高度，⛔ 否则下边缘的树会突然弹出来", () => {
-    const stencil = new SgzzViewportStencil();
-    // marginTiles 是构造参数，默认 2；余量换算成世界单位要 ≥ 最高摆件
-    const marginWorld = stencil.marginTiles * SGZZ_TILE_HALF_H * 2;
+    // ⚠ 这条红过一次：加了尺寸抖动之后最高摆件从 62 涨到 71.3，越过了默认的 2 格（64）余量。
+    const marginWorld = SGZZ_DECOR_MARGIN_TILES * SGZZ_TILE_HALF_H * 2;
     assert.ok(marginWorld >= SGZZ_DECOR_MAX_HEIGHT,
-        `可视模板余量 ${marginWorld} < 最高摆件 ${SGZZ_DECOR_MAX_HEIGHT}：屏幕下方的摆件会弹出`);
+        `余量 ${marginWorld} < 最高摆件 ${SGZZ_DECOR_MAX_HEIGHT.toFixed(1)}：屏幕下方的摆件会弹出`);
+    // ⚠ 页模型必须真的用这个余量，⛔ 不能只是常量对了而构造时忘了传
+    const logicStencil = new SgzzmapWorldLogic(
+        { selfUid: () => "u", view: async () => { throw new Error("x"); }, zoom: async () => { throw new Error("x"); },
+          tile: async () => { throw new Error("x"); }, occupy: async () => { throw new Error("x"); },
+          abandon: async () => { throw new Error("x"); }, now: () => 0, tick: () => () => {}, close: () => {} } as never,
+        750, 1122).stencil;
+    assert.equal(logicStencil.marginTiles, SGZZ_DECOR_MARGIN_TILES);
 });

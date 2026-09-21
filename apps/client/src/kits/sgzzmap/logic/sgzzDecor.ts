@@ -68,6 +68,20 @@ export function sgzzDecorAt(terrainId: number, row: number, col: number): number
     return rule.ids[(h >>> 10) % rule.ids.length];
 }
 
+/** 尺寸抖动的幅度（±）。⚠ 真机上不抖的话成排锥体一模一样，一眼假。 */
+export const SGZZ_DECOR_JITTER = 0.15;
+
+/**
+ * 这一格摆件的尺寸系数。⚠ 同样是**位置的纯函数**（⛔ 随机数会让平移时摆件忽大忽小），
+ * 且与「种类」「UV 翻转」用不同的混洗常数 —— ⛔ 否则大小会和种类相关，现出规律。
+ */
+export function sgzzDecorScale(row: number, col: number): number {
+    let h = (row * 668265263) ^ (col * 374761393);
+    h = (h ^ (h >>> 16)) * 2246822519;
+    h = (h ^ (h >>> 13)) >>> 0;
+    return 1 - SGZZ_DECOR_JITTER + (h % 1000) / 1000 * SGZZ_DECOR_JITTER * 2;
+}
+
 /**
  * 摆件的四边形（世界坐标，顺时针：左上、右上、右下、左下）。
  *
@@ -80,9 +94,10 @@ export function sgzzDecorQuad(row: number, col: number, decorId: number):
     const kind = SGZZ_DECOR_KINDS[decorId];
     if (!kind) return null;
     const c = sgzzGrid2Pos(row, col);
+    const scale = sgzzDecorScale(row, col);
     const bottom = c.y - SGZZ_TILE_HALF_H * 0.25;      // 略沉进地里，看着是「立在格上」
-    const top = bottom + kind.height;
-    const halfB = kind.width / 2, halfT = halfB * kind.topRatio;
+    const top = bottom + kind.height * scale;
+    const halfB = kind.width * scale / 2, halfT = halfB * kind.topRatio;
     return {
         points: [
             [c.x - halfT, top], [c.x + halfT, top],
@@ -95,8 +110,12 @@ export function sgzzDecorQuad(row: number, col: number, decorId: number):
 /** 一屏摆件的硬上限（单 mesh 四边形上限之内，留足余量）。超了就整层不画，⛔ 不抛异常。 */
 export const SGZZ_MAX_DECOR_QUADS = 12_000;
 
-/** 摆件层的世界高度上界（世界单位），供视口预取多留一圈 —— ⛔ 否则上边缘的树会突然弹出来。 */
-export const SGZZ_DECOR_MAX_HEIGHT = SGZZ_DECOR_KINDS.reduce((m, k) => Math.max(m, k.height), 0);
+/**
+ * 摆件层的世界高度上界（世界单位），供视口预取多留一圈 —— ⛔ 否则下边缘的树会突然弹出来。
+ * ⚠ 必须算上尺寸抖动的上限，⛔ 不能只取 kind.height。
+ */
+export const SGZZ_DECOR_MAX_HEIGHT =
+    SGZZ_DECOR_KINDS.reduce((m, k) => Math.max(m, k.height), 0) * (1 + SGZZ_DECOR_JITTER);
 /** 换算成格数（向上取整），可视模板要按它多取几行。 */
 export const SGZZ_DECOR_MARGIN_TILES = Math.ceil(SGZZ_DECOR_MAX_HEIGHT / (SGZZ_TILE_HALF_H * 2));
 /** ⚠ 引用一下 TILE_HALF_W，免得未来有人以为摆件宽度与格宽无关。 */
