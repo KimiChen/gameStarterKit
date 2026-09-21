@@ -32,6 +32,7 @@ export class MapoMapRenderer {
     private paletteKey = "";
     private disposed = false;
 
+    /** ⚠ baseColors 必须是 **16 类显示层**调色板（`MAPO_DISPLAY_PALETTE`），⛔ 不是 4 类通行层那份。 */
     constructor(private readonly root: Node, private readonly art: MapoArtResources | null,
                 private readonly baseColors: readonly MapoRgb[]) {
         this.technique = mapoUnlitTechnique();

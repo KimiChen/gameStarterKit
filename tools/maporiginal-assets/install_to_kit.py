@@ -36,6 +36,12 @@ FILES = {
     "plate.calib.json": "plate.calib.json",
 }
 KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "plate.calib.json"}
+# ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
+#   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
+#   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。
+#   Creator 按 uuid + 内容哈希缓存，改 .meta 不会让它重导 ⇒ 换路径（连带换掉确定性 uuid）
+#   才能拿到一次干净的导入。权威产物仍叫 terrain.bytes，⛔ 不改。
+MIRROR_RENAME = {"terrain.bytes": "terrain.bin"}
 
 
 def uuid_for(rel: str) -> str:
@@ -115,8 +121,9 @@ def main() -> int:
             bad += 1
             continue
         data = open(s, "rb").read()
+        mirror_name = MIRROR_RENAME.get(ship, ship)
         targets = [os.path.join(kit, ship)] if ship in KIT_ONLY else \
-                  [os.path.join(kit, ship), os.path.join(coc, ship)]
+                  [os.path.join(kit, ship), os.path.join(coc, mirror_name)]
         for dest in targets:
             if a.check:
                 if not os.path.isfile(dest) or open(dest, "rb").read() != data:
@@ -127,16 +134,16 @@ def main() -> int:
         manifest.append({
             "logical": ship, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
             "target": os.path.relpath(os.path.join(kit, ship), REPO),
-            "mirror": None if ship in KIT_ONLY else os.path.relpath(os.path.join(coc, ship), REPO),
+            "mirror": None if ship in KIT_ONLY else os.path.relpath(os.path.join(coc, mirror_name), REPO),
             "convert": "由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl）",
             "meta": "本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)",
         })
         if a.check or ship in KIT_ONLY:
             continue
-        rel = os.path.relpath(os.path.join(coc, ship), assets)
-        meta = meta_for(rel, ship)
+        rel = os.path.relpath(os.path.join(coc, mirror_name), assets)
+        meta = meta_for(rel, mirror_name)
         owner = existing.get(meta["uuid"])
-        mp = os.path.join(coc, ship + ".meta")
+        mp = os.path.join(coc, mirror_name + ".meta")
         if owner and os.path.abspath(owner) != os.path.abspath(mp):
             print("  ❌ uuid 撞车 %s 已属 %s" % (meta["uuid"], owner))
             bad += 1

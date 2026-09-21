@@ -11,6 +11,11 @@ docs/evidence/creator-2026-09-06/（预览证据目录按 .gitignore 政策不�
 进门禁的只有纯函数钉 `apps/server/test/creator-preview-tool.test.ts`（参数解析、`scene=` 改写、坐标换算、
 注入脚本自包含）。
 
+⚠ **页面一旦报过错，预览页会弹出 DOM 浮层 `#error`，它盖在画布之上、会把 CDP 的鼠标事件整个吃掉**
+（实测：登录页 Spine 骨骼版本不匹配 ⇒ 之后一步都点不动）。`runner.tap()` 每次点击前会先关掉它，
+并把出现过这件事记进 `report.json` 的 `overlayDismissals` —— ⛔ 这不是掩盖错误，
+console 的 error/uncaught 仍由 consoleHook 全量记录。
+
 ## 前置
 
 | 进程 | 要求 | 检测方式 |
@@ -29,6 +34,7 @@ node tools/creator-preview/run.mjs redeem --code SNAKE90 --out /tmp/redeem-run
 node tools/creator-preview/run.mjs tally --reuse            # 复用已打开的预览页（已在首屏时跳过登录）
 node tools/creator-preview/run.mjs home --format png --step-timeout 30000
 node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run          # 三战式大地图（sgzzmap kit）
+node tools/creator-preview/run.mjs mapOriginal --out /tmp/maporiginal-run          # 三战原版大地图（mapOriginal kit）
 node tools/creator-preview/run.mjs slg --out /tmp/slg-preview --format png         # SLG 地图独立验收
 node tools/creator-preview/run.mjs mmohold --out /tmp/mmohold-preview --format png # MG2 据点争夺独立验收
 node tools/creator-preview/capture-uniflex-golden.mjs --screen backpack --out /tmp/gameStarterKit-cocos-backpack.png
@@ -54,6 +60,7 @@ node tools/creator-preview/capture-uniflex-golden.mjs --screen backpack --out /t
 | `arenaDuel` | 「决斗 · arena」（kit 的第二个 mode）→「HP N」→ 连点「出击」到「你赢了！」→ 回首屏 |
 | `arenaShop` | 「竞技场商店 · arenaShop」（建在 kit 上的 plugin）→ 经 kit 的 `board` 面读自有格（没有就先跑 `arena` 占一格）→ 取最上面一行的「+守备」（自有格可能多块）→ 结果归类 `bought` / `insufficient-balance` / `not-owned` → 点「刷新」重读 |
 | `mmoWorld` | 设置中的「进入世界」整卡（`enter`，**mmo kit** 的 route 形态）→ 选角页（没有角色先「建角」）→「进入」→ `MmoWorldLayer`（状态条 HP、摇杆 `joystick`/`knob`、轮盘 `wheel`、停 / 拾取 / 传送 / 离开）→ 摇杆按住向右拖 1.2 s 松手 ⇒ 地面相对左移 ≥ 4 px（本人向 +x 走）+ 旋钮回中 → 轻点非本人实体方块（优先行商）⇒ 状态条「目标 <名>」+ `target-ring` → 点轮盘第一槽 ⇒ 施法反馈（提示或槽上冷却秒数）→「离开」回首屏。MG1-B1 证据；不在 `all` 里（要 mmo kit 与世界房）。 |
+| `mapOriginal` | 设置中的「原版大地图」整卡（`originalWorld`，**mapOriginal kit** 的 route 形态）→ `MapOriginalWorldView` 标题「原版大地图 · LOD n/5」+ `mapo-terrain` 就位 → 点选一格（判据含**选中框必须落在点击处**，容差 2 格）→ 画面设置切「鲜艳」并从状态行确认真的生效 → 点「3D 沙盘」**断言切不过去**（否定判据：框架 Stage3D 零实施，能切反而是缺陷）→ 滚轮拉远到 LOD ≥ 3 且 `mapo-plate-4/5` 就位 → 点缩略图确认镜头位移 → 推回近档。⚠ 本 kit **无服务端**，所以 ⛔ 没有占领/行军这类写操作可重放。独立触发，不加入 `all`。 |
 | `mmohold` | 设置中的 `card-standings` → 自有比分页（无角色时建曙光角色）→ 选 active 角色入 `holdRidge` → `MmoHoldHudView` / `hold-scoreboard` / `hold-owners` / 两阵营分数与操作节点到位 →「前往 A」后 A 归属与同轮比分增长 →「前往 B」后 B 归属、活守卫严格 4 名且 A/B 各 2（公开名片 HP > 0；横坐标经地面宽度和内容包据点中心还原；尸体另记）→ 离开 → 同角色重进，本人实体出现后 1.5 s 内收到即时据点快照、活守卫仍为 4 且每点 2 → 再离开，比分页刷新得到非零检查点 rev / tick。MG2 证据；独立触发，不加入 `all`。 |
 | `areaList` | 登录页 FGUI `btn_server` → 区服列表（判据：子件 `lst_server`）→ `btn_close` 关闭回登录页 |
 | `loginNotice` | 登录页 FGUI `btn_notice` → 公告（判据：子件 `tge_tip`）→ 关闭。⚠ FGUI 视图挂在 `GRoot/…/layer_popup/…/GComponent` 下、节点名不是类名，只能按**独有子件名**判定；外部服务不在时会落到 ConfirmView（子件 `yesBtn`），脚本如实记 `outcome: error-confirm` |

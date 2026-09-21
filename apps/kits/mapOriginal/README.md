@@ -123,6 +123,20 @@ npm --workspace @game/server run codegen:plugins && npm run sync:shared
 ⚠ **首次用 Creator 打开本仓**：`resources/kits/mapOriginal/**` 的 `.meta` 是脚本确定性铸的、
 不是 Creator 导入出来的。Creator 会正式导入并可能改写 uuid —— 把它改完的 `.meta` 一并提交。
 
+## 八·五、真机重放抓出来的两条（2026-09-22）
+
+单测钉的是我当时**写错的那个假设**，所以两条都只有真引擎能发现。
+
+| # | 症状 | 根因 | 封印 |
+|---|---|---|---|
+| 1 | 地图区**全黑**，只剩选中框 | world 节点 transform 把「相机坐标原点」当节点位置用了 —— 相机坐标原点在地图区**左上**且 y 向下，而根局部原点在屏幕中心、y 向上。整张网格被推到屏幕外 | `refresh()` 里改成 `rootX=(wx−cam.x)·scale`、`rootY=centre+(wy−cam.y)·scale`；选中框与 world **共用同一套换算**，⛔ 不再各写一份 |
+| 2 | 详情把「森林」显示成「可走陆地」、近档配色全落回第 0 类 | 拿 **16 类显示 id** 去查 **4 类通行层**的 `MAPO_TERRAIN_PALETTE` | 新增生成物 `content/display.data.ts`（16 类调色板，2.9 KB）；⛔ 两份调色板不许混用 |
+
+⚠ 还有一条**不是本 kit 的**但会挡住所有重放：登录页 Spine 骨骼版本不匹配
+（`GLoader3D.onChangeSpine` → `Cannot read properties of null (reading 'skins')`）会弹出 DOM 浮层
+`#error`，它盖在画布之上、吃掉 CDP 的全部点击。已在 `runner.tap()` 里统一关掉并记进
+`report.json` 的 `overlayDismissals`。
+
 ## 九、进度
 
 - ✅ **P0** namehash 反查（`SipHash-2-4(零 key, 去 asset/ 前缀路径)`），11,489 个文件改回真名。
@@ -130,6 +144,8 @@ npm --workspace @game/server run codegen:plugins && npm run sync:shared
 - ✅ **P2** 内容包：s1 全 23 层定性、16 类显示层 + 4 类通行层、远档底图/缩略图/三档图集。
 - ✅ **P3** kit 骨架 + `hexmap` 面（抄改 700 行）+ shared 内容模块。
 - ✅ **P4** 客户端地图页 `mapOriginalWorld`（首屏菜单「原版大地图」）+ 画面设置面板。
-- ⛔ **P5 真引擎验收未做**：`tools/creator-preview/` 还没登记本 kit，渲染**尚未经真引擎目视确认**。
-  在那之前，保障只有 5 条内容用例 + 双 tsconfig + 抄自 sgzzmap 的 mesh 批次纪律。
+- ✅ **P5 真引擎验收**：`node tools/creator-preview/run.mjs mapOriginal --out <dir>` 十一步全绿
+  （进入 → 近档地表 → 点选含坐标换算判据 → 色彩模式生效 → **3D 沙盘断言切不过去** →
+  拉远换远档底图 → 缩略图跳转 → 推回近档）。实测 LOD0 近档 48 FPS / 130 draw call / 4234 三角形。
+  ⚠ 真机重放抓出的**两条**缺陷（673 条绿单测一条没抓到，见下）已修并有回归。
 - ⛔ **P6 3D 沙盘**：等框架 `docs/3d.md` 的 SC0–SC1。

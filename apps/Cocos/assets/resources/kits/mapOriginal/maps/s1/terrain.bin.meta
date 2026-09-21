@@ -2,9 +2,9 @@
   "ver": "1.0.3",
   "importer": "buffer",
   "imported": true,
-  "uuid": "0b7c0047-e352-40b8-a799-9ceb13ffaa60",
+  "uuid": "930d7ce7-206c-400b-a255-cea78326e697",
   "files": [
-    ".bytes",
+    ".bin",
     ".json"
   ],
   "subMetas": {},

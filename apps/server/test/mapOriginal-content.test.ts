@@ -97,17 +97,22 @@ test("mapOriginal 内容：图集布局 = shared 的 MAPO_ATLAS_* 常量（逐�
 });
 
 test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一致", () => {
-    const mirrored = [
-        "terrain.bytes",
-        ...MAPO_ATLAS_LODS.flatMap((l) => [`atlas-lod${l}.png`, `atlas-lod${l}.info.json`]),
-        "plate-lod4.png", "plate-lod4.info.json", "plate-lod5.png", "plate-lod5.info.json",
-        "minimap.png", "minimap-mask.png",
+    const mirrored: [string, string][] = [
+        // ⚠ 运行时镜像用 Cocos 的规范缓冲扩展名 `.bin`（权威产物仍叫 terrain.bytes）：
+        //   镜像叫 .bytes 而 .meta 写 [".bin"] 时 Creator 会导出 `_native: ".bin"`，
+        //   与库里的 .bytes 对不上 ⇒ 运行时「the native asset is missing」。
+        ["terrain.bytes", "terrain.bin"],
+        ...MAPO_ATLAS_LODS.flatMap((l): [string, string][] =>
+            [[`atlas-lod${l}.png`, `atlas-lod${l}.png`], [`atlas-lod${l}.info.json`, `atlas-lod${l}.info.json`]]),
+        ["plate-lod4.png", "plate-lod4.png"], ["plate-lod4.info.json", "plate-lod4.info.json"],
+        ["plate-lod5.png", "plate-lod5.png"], ["plate-lod5.info.json", "plate-lod5.info.json"],
+        ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
     ];
-    for (const name of mirrored) {
-        assert.deepEqual(kit(name), cocos(name), `${name} 两处必须逐字节一致`);
+    for (const [src, dst] of mirrored) {
+        assert.deepEqual(kit(src), cocos(dst), `${src} → ${dst} 两处必须逐字节一致`);
     }
     // ⚠ 通行层与 info 只留 kit 数据目录：⛔ 不多存一份到运行时
-    for (const name of ["terrain.pass.bytes", "terrain.info.json"]) {
+    for (const name of ["terrain.pass.bytes", "terrain.info.json", "terrain.bytes"]) {
         assert.throws(() => cocos(name), /ENOENT/, `${name} ⛔ 不该进 Cocos`);
     }
 });

@@ -8,6 +8,30 @@
     ".png"
   ],
   "subMetas": {
+    "229b7": {
+      "importer": "texture",
+      "uuid": "f2980062-2057-47af-a0d2-2a4b797d9d14@229b7",
+      "displayName": "plate-lod5",
+      "id": "229b7",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "f2980062-2057-47af-a0d2-2a4b797d9d14",
+        "visible": false
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
     "6c48a": {
       "importer": "texture",
       "uuid": "f2980062-2057-47af-a0d2-2a4b797d9d14@6c48a",

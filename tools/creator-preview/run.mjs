@@ -29,11 +29,12 @@ import {
   selectNodes,
   sleep,
 } from "./lib.mjs";
+import { replayMapOriginalWorld } from "./maporiginal.mjs";
 import { replaySgzzmapWorld } from "./sgzzmap.mjs";
 import { replaySlgMap } from "./slg.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "slg", "sgzzmap", "mmoWorld", "mmohold", "all"];
+const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "slg", "sgzzmap", "mapOriginal", "mmoWorld", "mmohold", "all"];
 /** `all` 的顺序：先 route 形态再 gameplay 形态；arenaShop 排在 arena 之后（它要一块自己的格子）。 */
 const ALL_SEQUENCE = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "arena", "arenaCapture", "arenaDuel", "arenaShop", "snake", "ballMove"];
 /** 登录页兜底坐标（设计 375×812）：只在找不到 FGUI 对象 btn_login 时使用，并在报告里标注。 */
@@ -48,6 +49,8 @@ class Runner {
     this.shotIndex = 0;
     this.lastWalk = null;
   }
+
+  overlayDismissals = [];
 
   async walk() {
     this.lastWalk = await this.client.evaluate(pageWalkSource);
@@ -95,8 +98,30 @@ class Runner {
 
   async tap(node, note) {
     if (!node || !node.center) throw new Error(`无法点击：${note ?? "节点缺少坐标"}`);
+    await this.dismissErrorOverlay();
     await this.client.click(node.center.x, node.center.y);
     return { tapped: note ?? node.path, at: [Math.round(node.center.x), Math.round(node.center.y)] };
+  }
+
+  /**
+   * 关掉预览页的 DOM 错误浮层（`#error`）。
+   *
+   * ⚠ 它是**盖在画布之上的 DOM**，会把 CDP 的鼠标事件整个吃掉 —— 一旦页面报过错，
+   * 后续所有点击都点不动（实测：登录页 Spine 骨骼版本不匹配 ⇒ 之后一步都走不下去）。
+   * ⛔ 这**不是**在掩盖错误：console 里的 error/uncaught 仍由 consoleHook 全量记进 report.json，
+   * 浮层出现过这件事也记在 `overlayDismissals` 里。
+   */
+  async dismissErrorOverlay() {
+    const hit = await this.client.evaluate(`(() => {
+      const panel = document.getElementById("error");
+      if (!panel || panel.style.display === "none" || panel.offsetParent === null) return null;
+      const text = (panel.innerText || "").trim().slice(0, 200);
+      const close = [...panel.querySelectorAll("button")].find((b) => (b.innerText || "").trim() === "关闭");
+      if (close) close.click(); else panel.style.display = "none";
+      return text;
+    })()`).catch(() => null);
+    if (hit) this.overlayDismissals.push(hit);
+    return hit;
   }
 
   /** 点文本节点；`near` 给定时在多个同名候选里挑与锚点同一行的那个（分组页的多枚「进入」）。 */
@@ -1228,6 +1253,9 @@ async function main() {
       slg: async (current) => { await scenarioSettings(current); await replaySlgMap(current); },
       // ⚠ sgzzmap 与 slg 的卡片标签都是「大地图」，入口按 entryId 定位（world / map），⛔ 不按文本
       sgzzmap: async (current) => { await scenarioSettings(current); await replaySgzzmapWorld(current); },
+      // ⚠ mapOriginal 的卡片标签是「原版大地图」，entryId=originalWorld；它**无服务端**，
+      //    所以重放里 ⛔ 没有占领/行军这类写操作
+      mapOriginal: async (current) => { await scenarioSettings(current); await replayMapOriginalWorld(current); },
       cosmetic: scenarioCosmetic, arena: scenarioArena, arenaCapture: scenarioArenaCapture,
       arenaDuel: scenarioArenaDuel, arenaShop: scenarioArenaShop, mmoWorld: scenarioMmoWorld, mmohold: scenarioMmoHold,
       snake: scenarioSnake, ballMove: scenarioBallMove,
@@ -1247,10 +1275,15 @@ async function main() {
       client.close();
     }
     report.steps = runner ? runner.steps : [];
+    // ⚠ 浮层出现过就如实记：它是「页面报过错」的旁证，⛔ 不因为被关掉就当没发生
+    report.overlayDismissals = runner ? runner.overlayDismissals : [];
     report.finishedAt = new Date().toISOString();
     fs.writeFileSync(path.join(outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
   }
   for (const step of report.steps) console.log(`${step.ok ? "✔" : "✘"} ${step.name}${step.skipped ? "（跳过）" : ""}${step.error ? ` — ${step.error}` : ""}${step.screenshots.length ? `  [${step.screenshots.join(", ")}]` : ""}`);
+  if ((report.overlayDismissals ?? []).length > 0) {
+    console.log(`⚠ 关掉了 ${report.overlayDismissals.length} 次页面错误浮层（会吞掉点击；原因见 report.json 的 overlayDismissals）`);
+  }
   if (report.console.length > 0) {
     const bad = report.console.filter((entry) => entry.level !== "warn").length;
     console.log(`⚠ 页面 console 有 ${report.console.length} 条记录（其中 error/uncaught ${bad} 条；见 report.json）`);
