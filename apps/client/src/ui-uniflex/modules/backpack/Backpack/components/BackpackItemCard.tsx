@@ -16,16 +16,15 @@ export interface BackpackItem {
 
 export const BackpackItemCard = defineComponent<{
     readonly item: BackpackItem;
-    readonly slot: number;
+    /** Legacy Restored callers still provide this; original page uses VirtualList order. */
+    readonly slot?: number;
     readonly selected: boolean;
     readonly onClick?: () => void;
 }>((p) => {
-    const left = 25 + p.slot % 4 * 182;
-    const top = p.slot < 4 ? 216 : 407;
     const count = String(p.item.count);
     return (
     <view name="BackpackItemCard" interaction="press" accessibilityLabel={`${p.item.name} 数量${p.item.count}`}
-        onClick={p.onClick} style={{ position: 'absolute', left: left, top: top, width: 154, height: 159 }}>
+        onClick={p.onClick} style={{ position: 'relative', width: 154, height: 159 }}>
         <ItemSlot left={0} top={0} itemId={p.item.id} count={count} />
         <image visible={p.selected} source={imageRef('ui/backpack/detail-count-bg')}
             style={{ position: 'absolute', left: 8, top: 8, width: 138, height: 40, sizeMode: 'sliced' }} />

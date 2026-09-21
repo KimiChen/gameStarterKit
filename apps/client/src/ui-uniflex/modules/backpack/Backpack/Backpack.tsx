@@ -1,5 +1,5 @@
-import { defineView, For, useMemo, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { defineView, useEffect, useMemo, useState, VirtualList } from '@uniflex/compiler';
+import { ArrayVirtualListDataSource, fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { BackpackItemCard, type BackpackItem, type BackpackQuality } from './components/BackpackItemCard';
 import { BackpackQuantityControl } from './components/BackpackQuantityControl';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
@@ -77,6 +77,8 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
     const [quantity, setQuantity] = useState(0);
     const items = tabs[activeTab].items;
     const detailItem = useMemo(() => items.find((entry) => entry.id === selectedId) ?? items[0], [items, selectedId]);
+    const itemSource = useMemo(() => new ArrayVirtualListDataSource(items), [items]);
+    useEffect(() => () => itemSource.dispose(), [itemSource]);
     const emit = (id: string, action: BackpackAction['action'], value?: string | number) =>
         params.onAction?.({ id, action, value });
     const selectTab = (index: number) => {
@@ -115,12 +117,13 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
             <TabBar skin={mailTab} left={14} top={118} itemWidth={134} gap={13} width={736} selected={tabs[activeTab].id}
                 items={tabs} onSelect={(_id, index) => selectTab(index)} />
 
-            <view visible={hasItems} name="Backpack/Items" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 900 }}>
-                <For each={items} key="id">
-                    {(entry) => <BackpackItemCard item={entry} selected={selectedId === entry.id}
-                        slot={entry.slot} onClick={() => selectItem(entry)} />}
-                </For>
-            </view>
+            <VirtualList visible={hasItems} name="Backpack/Items" source={itemSource} key="id"
+                layout="grid" lanes={4} direction="vertical" itemSize={191} gap={32} crossGap={28}
+                overscan={1} inertia elastic
+                style={{ position: 'absolute', left: 25, top: 216, width: 700, height: 690 }}>
+                {(entry) => <BackpackItemCard item={entry} selected={selectedId === entry.id}
+                    onClick={() => selectItem(entry)} />}
+            </VirtualList>
             <image source={imageRef('ui/settings/divider')} style={{ position: 'absolute', left: 26, top: 928, width: 698, height: 3, sizeMode: 'sliced' }} />
 
             <view visible={!hasItems} name="Backpack/Empty" style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1225 }}>
