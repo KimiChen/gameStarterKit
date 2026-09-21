@@ -5,7 +5,7 @@
 import { SGZZ_BIRDVIEW_LOD, SGZZ_LOD_MAX } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 
 export type SgzzLayerId =
-    | "terrain" | "grid" | "territory" | "border" | "decor"
+    | "terrain" | "blend" | "grid" | "territory" | "border" | "decor"
     | "marchLine" | "marchDetail" | "banner" | "birdview" | "plate" | "label";
 
 interface LayerGate {
@@ -27,6 +27,8 @@ interface LayerGate {
 
 export const SGZZ_LAYERS: readonly LayerGate[] = Object.freeze([
     { id: "terrain", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
+    // ⚠ 过渡只到 L1：L2 一格才 22×11 屏幕像素，过渡带看不见，白花四边形预算
+    { id: "blend", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: true },
     { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: true },
     { id: "territory", hideAtLod: 3, showFromLod: 0, streamed: true, implemented: true },
     { id: "border", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },

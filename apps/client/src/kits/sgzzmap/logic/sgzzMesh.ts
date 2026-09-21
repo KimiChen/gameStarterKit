@@ -127,10 +127,20 @@ export function writeSgzzSegmentQuad(x0: number, y0: number, x1: number, y1: num
     return [[x0 + nx, y0 + ny], [x1 + nx, y1 + ny], [x1 - nx, y1 - ny], [x0 - nx, y0 - ny]];
 }
 
-/** 由任意四边形（四角，顺时针或逆时针）铺 mesh；给行军线与鸟瞰色块共用。 */
-export function buildSgzzPolyMesh(
-    polys: readonly { readonly points: readonly (readonly [number, number])[]; readonly rgba: readonly [number, number, number, number] }[],
-): SgzzGeometry {
+export interface SgzzPolyInput {
+    readonly points: readonly (readonly [number, number])[];
+    readonly rgba: readonly [number, number, number, number];
+    /**
+     * 逐顶点色（四个）。给了就**顶替** rgba —— 过渡片靠它做「贴边不透明、往格内化开」的 alpha 斜坡。
+     * ⛔ 不要用它做整片染色，那是 rgba 的活。
+     */
+    readonly rgbas?: readonly (readonly [number, number, number, number])[];
+    /** 逐顶点 UV（四个，已是图集归一化坐标）。不贴图就不给。 */
+    readonly uvs?: readonly (readonly [number, number])[];
+}
+
+/** 由任意四边形（四角，顺时针或逆时针）铺 mesh；给行军线、鸟瞰色块与过渡片共用。 */
+export function buildSgzzPolyMesh(polys: readonly SgzzPolyInput[]): SgzzGeometry {
     if (polys.length > SGZZ_MAX_QUADS_PER_MESH) {
         throw new RangeError(`SGZZ poly quads ${polys.length} > ${SGZZ_MAX_QUADS_PER_MESH}`);
     }
@@ -141,7 +151,7 @@ export function buildSgzzPolyMesh(
     const indices16 = new Uint16Array(n * 6);
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (let i = 0; i < n; i += 1) {
-        const { points, rgba } = polys[i];
+        const { points, rgba, rgbas, uvs: pointUvs } = polys[i];
         for (let v = 0; v < 4; v += 1) {
             const px = points[v][0], py = points[v][1];
             positions[(i * 4 + v) * 3] = px;
@@ -151,7 +161,12 @@ export function buildSgzzPolyMesh(
             if (px > maxX) maxX = px;
             if (py < minY) minY = py;
             if (py > maxY) maxY = py;
-            for (let k = 0; k < 4; k += 1) colors[(i * 4 + v) * 4 + k] = rgba[k];
+            const c = rgbas ? rgbas[v] : rgba;
+            for (let k = 0; k < 4; k += 1) colors[(i * 4 + v) * 4 + k] = c[k];
+            if (pointUvs) {
+                uvs[(i * 4 + v) * 2] = pointUvs[v][0];
+                uvs[(i * 4 + v) * 2 + 1] = pointUvs[v][1];
+            }
         }
         const base = i * 4;
         indices16.set([base, base + 1, base + 2, base, base + 2, base + 3], i * 6);

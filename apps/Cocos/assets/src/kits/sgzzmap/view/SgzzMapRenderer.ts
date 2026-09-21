@@ -6,7 +6,8 @@
  *
  * ⚠ 一层一张合并 mesh（⛔ 不是每 chunk 一张）：per-chunk 会让跨 chunk 的绘制序随平移抖动。
  * ⚠ 领地叠色**必须**也是合并 mesh —— 原作是每格一个节点，那在 Cocos 上会是成千上万个节点。
- * 兄弟序 = 绘制序：地表(0) → 网格线(1) → 领地(2) → 描边(3) → 摆件(4)。
+ * 兄弟序 = 绘制序：地表(0) → 过渡(1) → 网格线(2) → 领地(3) → 描边(4) → 摆件(5)。
+ * ⚠ 过渡紧贴地表之上：它要盖住的是**地形色的硬边**，压到网格线之上反而会把格线糊掉。
  * ⚠ 摆件在最上：它是唯一**超出菱形**的一层，压在领地叠色之下就会被半透明的色块糊掉。
  * ⚠ 网格线压在领地叠色**下面**：叠色是半透明的，压上面会把格线糊成一片。
  */
@@ -26,7 +27,8 @@ import type { SgzzArtResources } from "./SgzzArtResources";
 import {
     SGZZ_MAX_DECOR_QUADS, sgzzDecorAt, sgzzDecorQuad, SGZZ_DECOR_NONE,
 } from "../logic/sgzzDecor";
-import { sgzzPainterCompare } from "../logic/sgzzMesh";
+import { sgzzPainterCompare, type SgzzPolyInput } from "../logic/sgzzMesh";
+import { SGZZ_MAX_BLEND_QUADS, sgzzBlendDepth, sgzzBlendQuad, sgzzBlendSource } from "../logic/sgzzBlend";
 import {
     createSgzzBatch, createSgzzMaterial, destroySgzzBatch, sgzzPipelineToneMapping,
     sgzzUnlitTechnique, uploadSgzzBatch, type SgzzBatch,
@@ -49,6 +51,7 @@ export class SgzzMapRenderer {
     private terrain: SgzzBatch | null = null;
     private grid: SgzzBatch | null = null;
     private decor: SgzzBatch | null = null;
+    private blend: SgzzBatch | null = null;
     private territory: SgzzBatch | null = null;
     private border: SgzzBatch | null = null;
     private readonly material: Material;
@@ -100,6 +103,8 @@ export class SgzzMapRenderer {
         const decorCells: { row: number; col: number; id: number }[] = [];
         const wantGrid = sgzzLayerVisible("grid", logic.camera.lod);
         const wantDecor = sgzzLayerVisible("decor", logic.camera.lod);
+        const wantBlend = sgzzLayerVisible("blend", logic.camera.lod);
+        const blendPolys: SgzzPolyInput[] = [];
         const gridRgba = sgzzCompensate(GRID_RGBA, this.tone);
         // 线宽折算成世界单位：拉近了才不会变粗、拉远了才不会消失
         const gridHalf = GRID_LINE_PX / 2 / Math.max(0.01, logic.camera.scale);
@@ -115,6 +120,7 @@ export class SgzzMapRenderer {
                 rgba: terrainMat.textured ? WHITE : sgzzCompensate(sgzzTerrainColor(id), this.tone),
             });
             if (wantGrid) for (const poly of sgzzGridEdgePolys(row, col, gridHalf, gridRgba)) gridPolys.push(poly);
+            if (wantBlend) this.pushBlend(blendPolys, logic, row, col, terrainMat);
             if (wantDecor) {
                 const decorId = sgzzDecorAt(id, row, col);
                 if (decorId !== SGZZ_DECOR_NONE) decorCells.push({ row, col, id: decorId });
@@ -124,11 +130,14 @@ export class SgzzMapRenderer {
         });
 
         this.terrain = this.sync(this.terrain, "sgzz-terrain", terrainQuads, 0, terrainMat.material);
-        this.grid = this.syncPoly(this.grid, "sgzz-grid", gridPolys, 1);
-        this.territory = this.sync(this.territory, "sgzz-territory", territoryQuads, 2);
+        // ⚠ 过渡片与地表同一张图集 ⇒ 必须用**同一个材质**，⛔ 用平涂材质会丢贴图
+        this.blend = this.syncPoly(this.blend, "sgzz-blend",
+            blendPolys.length > SGZZ_MAX_BLEND_QUADS ? [] : blendPolys, 1, terrainMat.material);
+        this.grid = this.syncPoly(this.grid, "sgzz-grid", gridPolys, 2);
+        this.territory = this.sync(this.territory, "sgzz-territory", territoryQuads, 3);
         // 描边比格线粗一点才看得出是「边」
-        this.border = this.syncPoly(this.border, "sgzz-border", this.borderPolys(logic, gridHalf * 2.5), 3);
-        this.decor = this.syncPoly(this.decor, "sgzz-decor", this.decorPolys(decorCells), 4);
+        this.border = this.syncPoly(this.border, "sgzz-border", this.borderPolys(logic, gridHalf * 2.5), 4);
+        this.decor = this.syncPoly(this.decor, "sgzz-decor", this.decorPolys(decorCells), 5);
     }
 
     /**
@@ -146,14 +155,41 @@ export class SgzzMapRenderer {
         return out;
     }
 
-    /** 任意四边形层（网格线）。⚠ 超过单 mesh 上限就整层撤掉：网格线是装饰，⛔ 不值得为它抛异常炸掉整页。 */
-    private syncPoly(batch: SgzzBatch | null, name: string, polys: SgzzPoly[], at: number): SgzzBatch | null {
+    /**
+     * 一格朝六个方向的过渡片。⚠ 只有**低优先级**的那一格画，⛔ 两边都画会互相糊。
+     * 贴图在场时采样邻格地形的图集片；没图集就退回邻格的平涂色 —— 两种形态都能看出过渡。
+     */
+    private pushBlend(out: SgzzPolyInput[], logic: SgzzmapWorldLogic, row: number, col: number,
+                      mat: { textured: boolean }): void {
+        for (let dir = 1; dir <= 6; dir += 1) {
+            const src = sgzzBlendSource(sgzzTerrainIdAt, row, col, dir, logic.mapRows, logic.mapCols);
+            if (src < 0) continue;
+            const quad = sgzzBlendQuad(row, col, dir, sgzzBlendDepth(row, col, dir));
+            if (!quad) continue;
+            const base = mat.textured ? WHITE : sgzzCompensate(sgzzTerrainColor(src), this.tone);
+            out.push({
+                points: quad.points,
+                rgba: base,
+                rgbas: quad.alphas.map((a) => [base[0], base[1], base[2], base[3] * a] as const),
+                uvs: mat.textured
+                    ? quad.localUvs.map(([u, v]) => {
+                        const [au, av, aw, ah] = sgzzAtlasUv(src);
+                        return [au + u * aw, av + v * ah] as const;
+                    })
+                    : undefined,
+            });
+        }
+    }
+
+    /** 任意四边形层（网格线 / 描边 / 摆件 / 过渡）。⚠ 超过单 mesh 上限就整层撤掉，⛔ 不抛异常炸页。 */
+    private syncPoly(batch: SgzzBatch | null, name: string, polys: SgzzPolyInput[], at: number,
+                     material: Material = this.material): SgzzBatch | null {
         if (polys.length === 0 || polys.length > SGZZ_MAX_QUADS_PER_MESH) {
             destroySgzzBatch(batch);
             return null;
         }
         const geometry = buildSgzzPolyMesh(polys);
-        if (!batch) return createSgzzBatch(this.root, name, geometry, this.material, Math.min(at, this.root.children.length));
+        if (!batch) return createSgzzBatch(this.root, name, geometry, material, Math.min(at, this.root.children.length));
         uploadSgzzBatch(batch, geometry);
         return batch;
     }
@@ -198,6 +234,7 @@ export class SgzzMapRenderer {
         destroySgzzBatch(this.terrain); this.terrain = null;
         destroySgzzBatch(this.grid); this.grid = null;
         destroySgzzBatch(this.decor); this.decor = null;
+        destroySgzzBatch(this.blend); this.blend = null;
         destroySgzzBatch(this.territory); this.territory = null;
         destroySgzzBatch(this.border); this.border = null;
     }

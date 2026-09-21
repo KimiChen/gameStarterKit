@@ -46,6 +46,7 @@ export function readSgzzmapEvidence(walk) {
         // 近档三层
         terrain: has("sgzz-terrain"),
         grid: has("sgzz-grid"),
+        blend: has("sgzz-blend"),
         decor: has("sgzz-decor"),
         territory: has("sgzz-territory"),
         border: has("sgzz-border"),
@@ -261,7 +262,7 @@ export async function replaySgzzmapWorld(runner) {
             const value = readSgzzmapEvidence(walk);
             // ⚠ 网格线与摆件也必须撤干净：压在底图上会把远档糊成一片
             return value && value.lod !== null && value.lod >= 3 && value.farLoaded
-                && !value.terrain && !value.grid && !value.decor ? value : null;
+                && !value.terrain && !value.grid && !value.decor && !value.blend ? value : null;
         }, 45_000);
         return { ...evidence, shot: await runner.shot("sgzzmap-far") };
     });

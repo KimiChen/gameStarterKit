@@ -14,6 +14,10 @@ import {
 } from "../src/kits/sgzzmap/logic/sgzzDecor";
 import { SgzzmapWorldLogic } from "../src/kits/sgzzmap/logic/SgzzmapWorldLogic";
 import {
+    SGZZ_BLEND_DEPTH_MAX, SGZZ_BLEND_DEPTH_MIN, SGZZ_BLEND_PRIORITY,
+    sgzzBlendDepth, sgzzBlendQuad, sgzzBlendSource,
+} from "../src/kits/sgzzmap/logic/sgzzBlend";
+import {
     SGZZ_MAP_COLS, SGZZ_MAP_ROWS, SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W,
     sgzzAtlasUv, sgzzGrid2Pos, sgzzNeighbours, sgzzRingTable, sgzzTileVariant,
 } from "../src/shared/kits/sgzzmap/api/hexmap/index";
@@ -207,6 +211,9 @@ test("★ 层表：未实现的层恒不可见（⛔ 不许门控说该建而渲
     assert.equal(sgzzLayerVisible("decor", 1), true);
     assert.equal(sgzzLayerVisible("decor", 2), false);
     assert.ok(sgzzVisibleLayers(0).includes("decor"));
+    // blend 已实现：LOD 0/1 建、LOD 2 起撤（一格 22×11 像素时过渡看不见）
+    assert.equal(sgzzLayerVisible("blend", 1), true);
+    assert.equal(sgzzLayerVisible("blend", 2), false);
 });
 
 test("★ 描边：六段首尾相接绕菱形一圈，⛔ 不是重涂整格、也⛔不是六道乱划的斜杠", () => {
@@ -391,4 +398,64 @@ test("★ 视口预取余量要盖得住摆件高度，⛔ 否则下边缘的树
           abandon: async () => { throw new Error("x"); }, now: () => 0, tick: () => () => {}, close: () => {} } as never,
         750, 1122).stencil;
     assert.equal(logicStencil.marginTiles, SGZZ_DECOR_MARGIN_TILES);
+});
+
+test("★ 过渡：一条交界只画一次 —— 只有低优先级那一格画，⛔ 两边都画会互相糊", () => {
+    const ROWS = 1500, COLS = 1500;
+    // 造一条交界：左半森林(1)、右半平原(0)
+    const terrain = (row: number, col: number) => (col < 700 ? 1 : 0);
+    let mine = 0, theirs = 0;
+    for (let row = 690; row < 710; row += 1) {
+        for (let dir = 1; dir <= 6; dir += 1) {
+            if (sgzzBlendSource(terrain, row, 699, dir, ROWS, COLS) >= 0) mine += 1;   // 森林侧
+            if (sgzzBlendSource(terrain, row, 700, dir, ROWS, COLS) >= 0) theirs += 1; // 平原侧
+        }
+    }
+    assert.equal(mine, 0, "森林优先级高，⛔ 不该在自己这一格上铺");
+    assert.ok(theirs > 0, "平原侧应铺森林的边缘");
+    // 铺的必须是**邻格**的地形
+    for (let dir = 1; dir <= 6; dir += 1) {
+        const src = sgzzBlendSource(terrain, 700, 700, dir, ROWS, COLS);
+        if (src >= 0) assert.equal(src, 1, "铺的该是森林");
+    }
+    // 同地形不铺；出界不铺；图外不参与
+    assert.equal(sgzzBlendSource(() => 0, 700, 700, 1, ROWS, COLS), -1, "同地形⛔不铺");
+    assert.equal(sgzzBlendSource(() => 1, 0, 0, 2, ROWS, COLS), -1, "出界⛔不铺");
+    assert.equal(sgzzBlendSource((r, c) => (c < 700 ? 8 : 0), 700, 700, 1, ROWS, COLS), -1, "图外⛔不参与");
+    assert.equal(sgzzBlendSource((r, c) => (c < 700 ? 0 : 8), 700, 699, 4, ROWS, COLS), -1, "图外⛔不参与");
+    // 优先级里除图外之外必须两两不同，⛔ 平局会让「谁铺谁」不确定
+    const active = SGZZ_BLEND_PRIORITY.filter((p) => p >= 0);
+    assert.equal(new Set(active).size, active.length, "优先级⛔不得有平局");
+    assert.equal(SGZZ_BLEND_PRIORITY[8], -1, "图外必须标成不参与");
+});
+
+test("★ 过渡片：贴边不透明、往格内化开，UV 不出本格", () => {
+    for (const dir of [1, 2, 3, 4, 5, 6]) {
+        const depth = sgzzBlendDepth(700, 713, dir);
+        assert.ok(depth >= SGZZ_BLEND_DEPTH_MIN && depth <= SGZZ_BLEND_DEPTH_MAX,
+            `depth ${depth} 超出区间`);
+        const q = sgzzBlendQuad(700, 713, dir, depth);
+        assert.ok(q, `resDir ${dir} 该出片`);
+        // ⚠ 贴边两点 alpha=1：留一点透明就会在交界处露出硬线
+        assert.deepEqual([...q!.alphas], [1, 1, 0, 0]);
+        // 贴边两点必须在菱形边界上（深度 1.0），内沿两点在格内
+        const c = sgzzGrid2Pos(700, 713);
+        const depthOf = (p: readonly [number, number]) =>
+            Math.abs(p[0] - c.x) / SGZZ_TILE_HALF_W + Math.abs(p[1] - c.y) / SGZZ_TILE_HALF_H;
+        assert.ok(Math.abs(depthOf(q!.points[0] as [number, number]) - 1) < 1e-9, "第 1 点该贴边");
+        assert.ok(Math.abs(depthOf(q!.points[1] as [number, number]) - 1) < 1e-9, "第 2 点该贴边");
+        assert.ok(depthOf(q!.points[2] as [number, number]) < 0.7, "内沿该收进格里");
+        // UV 全部落在本格的 0..1 内 —— ⛔ 出界会采到图集的出血带甚至隔壁格
+        for (const [u, v] of q!.localUvs) {
+            assert.ok(u >= -1e-9 && u <= 1 + 1e-9 && v >= -1e-9 && v <= 1 + 1e-9, `UV (${u},${v}) 出界`);
+        }
+    }
+    assert.equal(sgzzBlendQuad(700, 713, 7, 0.5), null, "方向号越界回 null");
+    // 深度是「位置+方向」的纯函数：⛔ 随机数会让平移时过渡带宽窄乱跳
+    for (let i = 0; i < 30; i += 1) {
+        assert.equal(sgzzBlendDepth(700 + i, 713, 3), sgzzBlendDepth(700 + i, 713, 3));
+    }
+    // 同一格不同方向要有差别，否则六条边一样宽，看着像套了个框
+    const widths = new Set([1, 2, 3, 4, 5, 6].map((d) => Math.round(sgzzBlendDepth(700, 713, d) * 1000)));
+    assert.ok(widths.size >= 3, "同格六向的过渡宽度太一致");
 });
