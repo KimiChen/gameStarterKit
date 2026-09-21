@@ -10,7 +10,7 @@ import {
 import { SGZZ_MAX_BORDER_EDGES, SgzzBorderSet } from "../src/kits/sgzzmap/logic/sgzzBorder";
 import {
     SGZZ_MAP_COLS, SGZZ_MAP_ROWS, SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W,
-    sgzzGrid2Pos, sgzzNeighbours, sgzzRingTable,
+    sgzzAtlasUv, sgzzGrid2Pos, sgzzNeighbours, sgzzRingTable, sgzzTileVariant,
 } from "../src/shared/kits/sgzzmap/api/hexmap/index";
 
 function quad(row: number, col: number): SgzzQuadInput {
@@ -262,4 +262,48 @@ test("★ 选中框是菱形轮廓，⛔ 不是包围盒长方形", () => {
         [0, SGZZ_TILE_HALF_H], [SGZZ_TILE_HALF_W, 0], [0, -SGZZ_TILE_HALF_H], [-SGZZ_TILE_HALF_W, 0],
     ].map((p) => p.map((v) => Math.round(v * 1e6) / 1e6).join(",")));
     assert.deepEqual([...corners].sort(), [...want].sort(), "四条边应首尾相接于 N/E/S/W 四个顶点");
+});
+
+test("★ 图集取样变体：位置的纯函数、四种都用得到、相邻格不同", () => {
+    // ⚠ 必须是位置的纯函数：同一格每帧同一个变体，⛔ 随机数会让平移时纹理乱闪
+    for (let i = 0; i < 50; i += 1) {
+        assert.equal(sgzzTileVariant(700 + i, 713), sgzzTileVariant(700 + i, 713));
+    }
+    // 四种变体都要出现，且分布不至于太偏（否则等于没打散）
+    const hist = [0, 0, 0, 0];
+    for (let row = 600; row < 700; row += 1) {
+        for (let col = 600; col < 700; col += 1) hist[sgzzTileVariant(row, col)] += 1;
+    }
+    const total = hist.reduce((a, b) => a + b, 0);
+    assert.equal(total, 10_000);
+    for (const [i, n] of hist.entries()) {
+        assert.ok(n > total * 0.15, `变体 ${i} 只占 ${(n / total * 100).toFixed(1)}%，太偏`);
+    }
+    // 相邻格大多不同 —— 否则成片同变体，铺地砖感照旧
+    let same = 0, pairs = 0;
+    for (let row = 600; row < 700; row += 1) {
+        for (let col = 600; col < 699; col += 1) {
+            pairs += 1;
+            if (sgzzTileVariant(row, col) === sgzzTileVariant(row, col + 1)) same += 1;
+        }
+    }
+    assert.ok(same / pairs < 0.4, `相邻同变体占 ${(same / pairs * 100).toFixed(1)}%，打散得不够`);
+});
+
+test("★ 翻转只在格内镜像，⛔ 不会采到隔壁格", () => {
+    const uv = [...sgzzAtlasUv(1)] as [number, number, number, number];   // forest 那一格
+    const [u0, v0, uw, vh] = uv;
+    for (const flip of [0, 1, 2, 3]) {
+        const g = buildSgzzDiamondMesh([{ row: 700, col: 700, uv, flip, rgba: [1, 1, 1, 1] }]);
+        for (let i = 0; i < 4; i += 1) {
+            const u = g.uvs[i * 2], v = g.uvs[i * 2 + 1];
+            assert.ok(u >= u0 - 1e-9 && u <= u0 + uw + 1e-9, `flip ${flip} 的 u 跑出格外`);
+            assert.ok(v >= v0 - 1e-9 && v <= v0 + vh + 1e-9, `flip ${flip} 的 v 跑出格外`);
+        }
+    }
+    // 横翻确实换了内容：N/S 顶点不动（u=0.5），E/W 互换
+    const plain = buildSgzzDiamondMesh([{ row: 700, col: 700, uv, flip: 0, rgba: [1, 1, 1, 1] }]);
+    const flipped = buildSgzzDiamondMesh([{ row: 700, col: 700, uv, flip: 1, rgba: [1, 1, 1, 1] }]);
+    assert.equal(plain.uvs[2], flipped.uvs[6], "E 的 u 该变成原来 W 的");
+    assert.equal(plain.uvs[6], flipped.uvs[2], "W 的 u 该变成原来 E 的");
 });

@@ -11,7 +11,7 @@
  */
 import { Material, Node, Texture2D } from "cc";
 import {
-    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzAtlasUv, sgzzGrid2Pos,
+    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzAtlasUv, sgzzGrid2Pos, sgzzTileVariant,
 } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 import {
     SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPolyMesh, sgzzBorderStripPoly,
@@ -28,8 +28,11 @@ import {
 } from "./SgzzMeshBatch";
 
 const BORDER_RGBA: SgzzRgba = [1, 0.878, 0.467, 0.85];
-/** 网格线：压在地表上的一层淡黑。⚠ 太重会盖住地形色，太轻在浅色地形上看不见。 */
-const GRID_RGBA: SgzzRgba = [0, 0, 0, 0.2];
+/**
+ * 网格线：压在地表上的一层淡黑。⚠ 太重会盖住地形色，太轻在浅色地形上看不见。
+ * ⚠ 0.13 是**贴上真实纹理之后**定的：平涂时 0.2 才看得见，有纹理后同样的值会把整片地读成铺地砖。
+ */
+const GRID_RGBA: SgzzRgba = [0, 0, 0, 0.13];
 /** 贴图层的顶点色。⚠ 顶点色相乘 ⇒ 必须是纯白，否则贴图被整体染一遍。 */
 const WHITE: SgzzRgba = [1, 1, 1, 1];
 /** 网格线的**屏幕**宽度（设计像素）。世界宽 = 它 / scale，⛔ 别写成固定世界宽。 */
@@ -100,6 +103,7 @@ export class SgzzMapRenderer {
             terrainQuads.push({
                 row, col,
                 uv: terrainMat.textured ? sgzzAtlasUv(id) : null,
+                flip: sgzzTileVariant(row, col),
                 rgba: terrainMat.textured ? WHITE : sgzzCompensate(sgzzTerrainColor(id), this.tone),
             });
             if (wantGrid) for (const poly of sgzzGridEdgePolys(row, col, gridHalf, gridRgba)) gridPolys.push(poly);

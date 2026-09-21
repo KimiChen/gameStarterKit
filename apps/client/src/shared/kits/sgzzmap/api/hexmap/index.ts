@@ -308,6 +308,21 @@ export function sgzzAtlasCellRect(terrainId: number): readonly [number, number, 
         SGZZ_ATLAS_CELL_W, SGZZ_ATLAS_CELL_H,
     ];
 }
+/**
+ * 逐格的图集取样变体（0..3，bit0 = 横向翻转、bit1 = 纵向翻转）。
+ *
+ * ⚠ 存在的理由：每格采样的是**同一张** 256×128 的片，不做变化的话整片地就是同一块纹理
+ * 复制上千遍，屏幕上读作"铺地砖"而不是连续地貌（真机 run 16 实证）。
+ * 翻转不需要额外美术、不破坏菱形几何，对草地/林冠/岩纹这类**各向同性**的纹理效果最好。
+ * ⚠ 必须是**位置的纯函数**：同一格每帧要给出同一个变体，⛔ 不能用随机数，否则平移时会闪。
+ */
+export function sgzzTileVariant(row: number, col: number): number {
+    // 小整数混洗：乘质数 + 异或高位，低两位够用且在相邻格之间跳得开
+    let h = (row * 73856093) ^ (col * 19349663);
+    h = (h ^ (h >>> 13)) * 1274126177;
+    return (h ^ (h >>> 16)) & 3;
+}
+
 /** 第 id 格的归一化 UV [u0, v0, uw, vh]。⚠ v 原点在**上**（与 buildSgzzDiamondMesh 一致）。 */
 export function sgzzAtlasUv(terrainId: number): readonly [number, number, number, number] {
     const [x, y, w, h] = sgzzAtlasCellRect(terrainId);

@@ -23,6 +23,8 @@ export interface SgzzQuadInput {
     readonly col: number;
     /** 图集格（左上 u,v 与宽高，均为 0..1）；不贴图就传 null。 */
     readonly uv: readonly [number, number, number, number] | null;
+    /** 取样变体 0..3（bit0 横翻 / bit1 纵翻），打散"每格同一块纹理"的铺地砖感。默认 0。 */
+    readonly flip?: number;
     readonly rgba: readonly [number, number, number, number];
 }
 
@@ -74,9 +76,13 @@ export function buildSgzzDiamondMesh(quads: SgzzQuadInput[], inset = 0): SgzzGeo
 
             if (q.uv) {
                 const [u0, v0, uw, vh] = q.uv;
+                // ⚠ 翻转在**格内归一化**坐标上做（镜像 0.5），⛔ 不能翻整张图集，否则会采到隔壁格
+                const flip = q.flip ?? 0;
+                const su = (flip & 1) ? 1 - DIAMOND_UV[v][0] : DIAMOND_UV[v][0];
+                const sv = (flip & 2) ? 1 - DIAMOND_UV[v][1] : DIAMOND_UV[v][1];
                 // 朝格中心收 inset 比例，等价于沿四条对角边的法线内缩
-                const du = (DIAMOND_UV[v][0] - 0.5) * (1 - inset) + 0.5;
-                const dv = (DIAMOND_UV[v][1] - 0.5) * (1 - inset) + 0.5;
+                const du = (su - 0.5) * (1 - inset) + 0.5;
+                const dv = (sv - 0.5) * (1 - inset) + 0.5;
                 uvs[(i * 4 + v) * 2] = u0 + du * uw;
                 uvs[(i * 4 + v) * 2 + 1] = v0 + dv * vh;
             }
