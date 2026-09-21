@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "id": "mmodemo",
+  "version": "0.1.0",
+  "description": "MMO 内容插件样本 1（docs/MMO.md §9.2）：灰谷内容包 demoVale + 表现映射 + 编排（定时 boss / 区域伏击 / 行商）——只消费 mmo kit 冻结的面与三个贡献点",
+  "requires": {
+    "kits": {
+      "mmo": {
+        "content": 3,
+        "orchestration": 1
+      }
+    }
+  },
+  "contributes": {
+    "mmo": {
+      "content": "apps/plugins/mmodemo/content/pack.json",
+      "presentation": "apps/client/src/plugins/mmodemo/mmoPresentation.ts",
+      "orchestration": "apps/server/src/core/mmodemo/mmoOrchestration.ts"
+    }
+  },
+  "category": "extra",
+  "docs": [
+    "apps/plugins/mmodemo/README.md"
+  ],
+  "resident": false,
+  "entry": "apps/client/src/plugins/mmodemo/index.ts"
+}

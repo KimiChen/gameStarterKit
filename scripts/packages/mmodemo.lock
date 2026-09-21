@@ -1,0 +1,21 @@
+# scripts/packages/mmodemo.lock —— 已安装插件 mmodemo@0.1.0 的登记与文件清单锁。Do not edit by hand.
+# writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
+# manifest {"id":"mmodemo","version":"0.1.0","kinds":["client"],"constantName":null,"contributes":{"mmo":{"content":"apps/plugins/mmodemo/content/pack.json","presentation":"apps/client/src/plugins/mmodemo/mmoPresentation.ts","orchestration":"apps/server/src/core/mmodemo/mmoOrchestration.ts"}},"domains":[],"fguiPackages":[],"requires":{"pluginApiVersion":null,"kits":{"mmo":{"content":3,"orchestration":1}}}}
+# source {"kind":"package","filesLockSha256":"e860f65e20e8ca106e6700877f6d906b631d16c4b39a9bbd0506c1fd32d84d08"}
+apps/Cocos/assets/src/plugins/mmodemo.meta e354dc2c68fda1c7eebb788ffb63f73a22f971dd03621358151edb6ec959f870
+apps/Cocos/assets/src/plugins/mmodemo/index.ts 8aac4ba9ddfe729b4007cc734695de401b7d1550563ff30128a0862cafb85c90
+apps/Cocos/assets/src/plugins/mmodemo/index.ts.meta 9c91cf27f725e5d003027b7002d3c965ecaa10592ce9aad23c14be78ee9f1603
+apps/Cocos/assets/src/plugins/mmodemo/mmoPresentation.ts 8b5d534f5eaf2749b98f976b8ece116729ba0750b600dfce5d18fc6461aee790
+apps/Cocos/assets/src/plugins/mmodemo/mmoPresentation.ts.meta 1bcc3c05b5e6c18d128ce5a059ffdf1c0123355ac0b9757bedda6787593f7049
+apps/client/src/plugins/mmodemo/index.ts 8aac4ba9ddfe729b4007cc734695de401b7d1550563ff30128a0862cafb85c90
+apps/client/src/plugins/mmodemo/mmoPresentation.ts 8b5d534f5eaf2749b98f976b8ece116729ba0750b600dfce5d18fc6461aee790
+apps/client/test/mmodemo-logic.test.ts 2d32cf53ab61b9a8eebd9b1da7bd684c762ba325c9a62ded664ea3787c84fb0b
+apps/plugins/mmodemo/README.md 48dd8b3cb6d131d553135f522a3b9077baef1c23f6220647a3751fb255493b48
+apps/plugins/mmodemo/content/pack.json cca0fe1406d70ae80bd074da1f58d114bc701475e16b10d91629574feb7a9537
+apps/plugins/mmodemo/plugin.json d45e0381dce404a05a27baf8de4cae50a8dc055afdcabc993afdd12f442f0ff8
+apps/server/src/core/mmodemo/encounters/ambush.ts ede7bc4f9bb5f35c27a46ec9b8ab362ea0e138cd30f3f39c902707e70fd30109
+apps/server/src/core/mmodemo/encounters/bossTimer.ts 0df01dafda91eab64bdbcd55ad0360c17b1bf43c9b84b8d32b274159a75f97c9
+apps/server/src/core/mmodemo/encounters/merchant.ts 25a79ca2dbfd7ea84bc44706f7732018dd8be3ca68c34235ed65dc20f1917ae2
+apps/server/src/core/mmodemo/mmoOrchestration.ts d302ac9316b06972ba01de1f85d95ac40490b0f64d14f40c76558c074ba637b1
+apps/server/test/mmodemo-content.test.ts d6df06a9c30733f267b06c28c94d990f7d3bc9b89acd43f7b912f812444f470f
+apps/server/test/mmodemo-orchestration.test.ts 267e2883da026f7c82e6943a0e95780bde6ae73230eb59cd1151e026c3aa5303

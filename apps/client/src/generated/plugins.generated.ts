@@ -47,6 +47,7 @@ export const PLUGIN_IDS: readonly string[] = [
     "arenaShop",
     "builtin",
     "mmo",
+    "mmodemo",
     "redeem",
     "sgzzmap",
     "slg",
@@ -109,6 +110,16 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         ],
         menu: [
             { entryId: "enter", pluginId: "mmo", label: "进入世界", labelKey: "menu.mmo.enter", launch: { kind: "route", routeId: "mmoCharacters" } },
+        ],
+    },
+    {
+        id: "mmodemo",
+        resident: false,
+        load: () => import("../plugins/mmodemo/index").then((m) => m.createPluginModule()),
+        dependencies: ["mmo"],
+        routes: [
+        ],
+        menu: [
         ],
     },
     {
