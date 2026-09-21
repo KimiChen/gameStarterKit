@@ -1,0 +1,38 @@
+{
+  "source": "Spine 3.8.99 / idle / t=0",
+  "runtime": "Cocos Creator 3.8.8 Spine 3.8 WASM",
+  "renderer": "original runtime mesh/UV; normal alpha blend; 2x top-left-rule triangle raster; Lanczos3 downsample",
+  "vertices": 433,
+  "triangles": 395,
+  "width": 882,
+  "height": 1305,
+  "origin": [
+    432,
+    729
+  ],
+  "designPosition": [
+    -57,
+    82
+  ],
+  "originalLoader": {
+    "position": [
+      -66,
+      106
+    ],
+    "itemSize": [
+      872,
+      1283
+    ],
+    "skeletonAnchor": [
+      441,
+      705
+    ]
+  },
+  "hashes": {
+    "loading_animals.skel": "8efc27b15c71dcee9385cda084643d43b9c96455a8f2c3e8cd73a53d64218f6b",
+    "loading_animals.atlas.txt": "94a5f6cc7ca2dd350157a26c01d8cbe0c95df602ebbd96bf53894dc5c040b57c",
+    "loading_animals.png": "df21297b910ab82f9948324314eda87ff227f48d8b0636d7db0f2872ab72c0a2"
+  },
+  "runtimeWasmSha256": "b3d705bd391da35dcf0980c1d8c526f609ad64ac12652dd8c0bf3b20a626f2f2",
+  "outputSha256": "eb66fb377756df349a9944dc326e4eb5270f5263ed5e1c7982434adeacf3b3df"
+}

@@ -23,6 +23,7 @@
     <image id="p1eh1b" name="btn_music_on.png" path="/RGBA/" smoothing="false"/>
     <image id="p1eh1c" name="btn_music_off.png" path="/RGBA/" smoothing="false"/>
     <image id="tm4b1d" name="icon_progress_fox.png" path="/RGBA/" smoothing="false"/>
+    <image id="sc0static" name="login_animals_static.png" path="/RGBA/" smoothing="false"/>
     <image id="h8l61m" name="bg_login.jpg" path="/RGB/"/>
     <image id="h0d01o" name="tge_checkbox_autoFight.png" path="/RGBA/" smoothing="false"/>
     <image id="h0d0dir" name="bg_cbox.png" path="/RGBA/" smoothing="false"/>

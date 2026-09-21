@@ -15,7 +15,6 @@
     "ui/Common_Component",
     "ui/Common_RGBA",
     "ui/Dynamic_Login",
-    "ui/Dynamic_Spine",
     "ui/L10n_zh_hans"
   ],
   "controllers": ["view", "mode", "read"],

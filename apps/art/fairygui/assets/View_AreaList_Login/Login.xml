@@ -7,9 +7,9 @@
     <image id="n51_h8l6" name="n51" src="h8l61m" fileName="RGB/bg_login.jpg" xy="0,0">
       <relation target="" sidePair="bottom-bottom"/>
     </image>
-    <loader3D id="n101_r9po" name="n101" xy="-66,106" size="100,100" url="ui://y58q4zu3r9po1a7kmz4" animation="idle" skin="" loop="true">
+    <image id="n101_r9po" name="n101" src="sc0static" fileName="RGBA/login_animals_static.png" xy="-57,82" size="882,1305" touchable="false">
       <relation target="" sidePair="bottom-bottom"/>
-    </loader3D>
+    </image>
     <image id="n100_slme" name="n100" src="slmediz" fileName="RGBA/bg_cover.png" xy="-5,789" size="760,836">
       <relation target="" sidePair="width-width,bottom-bottom"/>
     </image>

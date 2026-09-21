@@ -39,7 +39,7 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
     Login: defineView({
         name: "Login", kind: "fgui", contract: LOGIN_CONTRACT, layer: "base",
         fullscreen: true, onlyOne: true, permanent: false, interactive: true,
-        sharedPkgs: ["ui/Common_Btn","ui/Common_Component","ui/Common_RGBA","ui/Dynamic_Login","ui/Dynamic_Spine","ui/L10n_zh_hans"],
+        sharedPkgs: ["ui/Common_Btn","ui/Common_Component","ui/Common_RGBA","ui/Dynamic_Login","ui/L10n_zh_hans"],
         load: () => import("../view/LoginView").then((m) => m.LoginView),
     }),
     LoginNotice: defineView({

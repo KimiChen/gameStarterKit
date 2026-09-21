@@ -43,7 +43,7 @@ export function makeFixtureDir(prefix, repoRoot = REPO_ROOT) {
  * 把 git 可见的检出文件复制成一份一次性检出。包含未忽略的未跟踪文件（新 verifier/测试在首次
  * 提交前也必须可测）；被忽略的本地状态与凭据不进夹具。
  *
- * 排除清单的公共基线（四份套件一致）：`apps/website/`、`.env`、`.claude/`。
+ * 排除清单的公共基线（四份套件一致）：`apps/website/`、`.env`、`.claude/`、`docs/evidence/`。
  * 唯一的有意差异由 `excludeEnvVariants` 参数化：默认 true 连 `.env.*` 一起排；
  * sync-mirror 传 false——已入库的 `.env.development` 必须进它的夹具（理由留在调用点注释）。
  *
@@ -59,6 +59,9 @@ export function buildCheckout({ prefix, excludeEnvVariants = true, gitCommit = f
   ).toString().split("\0").filter(Boolean);
   for (const file of checkoutFiles) {
     if (file === "apps/website" || file.startsWith("apps/website/")) continue;
+    // Old commits still track evidence files despite today's ignore policy.
+    // Keep local screenshots/reports out of clean verification fixtures too.
+    if (file === "docs/evidence" || file.startsWith("docs/evidence/")) continue;
     if (file === ".env" || (excludeEnvVariants && file.startsWith(".env."))) continue;
     // .claude/ 是 Claude Code 的会话目录（worktrees/ 里是别的检出副本），⛔ 不属于被测检出。
     if (file === ".claude" || file.startsWith(".claude/")) continue;

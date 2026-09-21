@@ -13,10 +13,11 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { packageInfos, roundtripInputs } from "./fgui-manifest.mjs";
+import { packageDescription, packageInfos, resourceDeclarations, roundtripInputs } from "./fgui-manifest.mjs";
 import { parsePackageBin, readPackageBin, roundtripProblems } from "./fgui-roundtrip.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -39,9 +40,41 @@ const withBins = (bins) => roundtripProblems(inputs, {
 /** 深拷贝真解析结果，避免用例之间互相污染。 */
 const clone = () => new Map([...realBins].map(([name, bin]) => [name, structuredClone(bin)]));
 
+/** 外部文件命名与 require= 守门不依赖仍在运行的业务 Spine 包。 */
+function withExternalFileFixture(run) {
+  const uiDir = fs.mkdtempSync(path.join(tmpdir(), "fgui-external-fixture-"));
+  try {
+    const archive = path.join(ROOT, "apps/art/fairygui/archive/Dynamic_Spine");
+    const xml = fs.readFileSync(path.join(archive, "package.xml"), "utf8");
+    const [info] = roundtripInputs([{
+      name: "Dynamic_Spine", id: packageDescription(xml),
+      resources: resourceDeclarations(xml), source: [],
+    }]);
+    fs.copyFileSync(path.join(archive, "Dynamic_Spine.bin"), path.join(uiDir, "Dynamic_Spine.bin"));
+    for (const name of ["loading_animals.skel", "loading_animals.atlas.txt", "loading_animals.png"]) {
+      fs.copyFileSync(path.join(archive, "Login/1", name), path.join(uiDir, name));
+      assert.equal(fs.existsSync(path.join(uiDir, `Dynamic_Spine_${name}`)), false,
+        "独立资源仅按原基名落盘，不能由包名前缀候选掩盖 resolver 退化");
+    }
+    // 归档的真实发布 bin 必须经过解析器；不能用预造条目绕过 type 9 / Spine 解析。
+    const bin = readPackageBin(path.join(uiDir, "Dynamic_Spine.bin"));
+    assert.equal(bin.items.length, 1);
+    assert.deepEqual(
+      { type: bin.items[0].type, typeName: bin.items[0].typeName, file: bin.items[0].file },
+      { type: 9, typeName: "Spine", file: "loading_animals.skel" },
+    );
+    assert.equal(info.requiredCompanions.length, 2, "原 package.xml 必须解析出两个 require= 伴生文件");
+    const problems = () => roundtripProblems([info], { uiDir });
+    run({ uiDir, info, bin, problems });
+  } finally {
+    fs.rmSync(uiDir, { recursive: true, force: true });
+  }
+}
+
 test("parsePackageBin 必须能解析仓内全部真产物，且与 package.xml 的 exported 数一致", () => {
   const files = fs.readdirSync(UI).filter((file) => file.endsWith(".bin")).sort();
-  assert.ok(files.length >= 12, `产物数量异常：${files.length}`);
+  assert.ok(files.length > 0, "活动 FGUI 工程必须有真实产物");
+  assert.equal(files.length, inputs.length, "每个活动源包必须且只对应一个 bin");
   let items = 0;
   let exported = 0;
   for (const file of files) {
@@ -212,23 +245,18 @@ test("B：被引用但未导出的资源被漏导时必须被命中（A 对它�
 });
 
 test("D'：package.xml 用 require= 声明的伴生文件未落盘必须被命中", () => {
-  // Spine 的 .bin 只记 .skel，伴生的 .atlas.txt / .png 既不在条目 file 里也没有 exported，
-  // 所以 A 和 D 都看不见它们——漏导的后果是骨骼加载不出图集与贴图。
-  const companions = inputs.flatMap((info) => info.requiredCompanions ?? []);
-  assert.ok(companions.length > 0, "构造前提：仓里必须真的有 require= 声明");
-  const holder = inputs.find((info) => (info.requiredCompanions ?? []).length > 0);
-  const missing = { ...holder, requiredCompanions: [
-    ...holder.requiredCompanions,
-    { ownerId: "x", ownerName: "ghost.skel", id: "gone", name: "ghost.atlas.txt" },
-  ] };
-  const problems = roundtripProblems(
-    inputs.map((info) => info.name === holder.name ? missing : info),
-    { uiDir: UI },
-  );
-  assert.equal(problems.length, 1, `应且只应报缺失的那一个：${problems.join(" | ")}`);
-  assert.match(problems[0], /ghost\.skel 用 require= 声明的伴生文件 ghost\.atlas\.txt 未落盘/u);
-  // 真实的两个伴生文件必须仍算落盘，⛔ 否则上面的命中可能只是因为闸恒报
-  assert.deepEqual(roundtripProblems(inputs, { uiDir: UI }), []);
+  // Spine 条目只记 .skel；伴生 .atlas.txt / .png 既不在条目 file 里也没有 exported。
+  withExternalFileFixture(({ uiDir, problems }) => {
+    assert.deepEqual(problems(), [], "两个真实伴生文件齐全时应通过");
+    const atlas = path.join(uiDir, "loading_animals.atlas.txt");
+    const original = fs.readFileSync(atlas);
+    fs.unlinkSync(atlas);
+    const missing = problems();
+    assert.equal(missing.length, 1, `应且只应报缺失的那一个：${missing.join(" | ")}`);
+    assert.match(missing[0], /loading_animals\.skel 用 require= 声明的伴生文件 loading_animals\.atlas\.txt 未落盘/u);
+    fs.writeFileSync(atlas, original);
+    assert.deepEqual(problems(), [], "恢复伴生文件后必须重新通过");
+  });
 });
 
 test("C：产物声明的依赖包不存在、或 id 与名字对不上，必须分别被命中", () => {
@@ -266,13 +294,17 @@ test("D：产物引用的外部文件未落盘必须被命中，且两种命名�
   // 图集是包名前缀（Pkg_atlas0.png），Spine 等独立资源保留原基名——两种都必须算落盘。
   atlas.file = original;
   assert.deepEqual(withBins(bins), []);
-  const spineHolder = [...bins.values()].find((value) =>
-    value.items.some((item) => item.type === 9 && item.file));
-  assert.ok(spineHolder, "构造前提：仓内有 Spine 条目，用来钉住「不带包名前缀」这一形态");
-  assert.ok(
-    fs.existsSync(path.join(UI, spineHolder.items.find((item) => item.type === 9).file)),
-    "Spine 文件按原基名落盘，⛔ 若只认包名前缀这一形态，它会被误报",
-  );
+  withExternalFileFixture(({ uiDir, problems }) => {
+    assert.deepEqual(problems(), [], "原基名 Spine 文件必须可解析");
+    const skeleton = path.join(uiDir, "loading_animals.skel");
+    const original = fs.readFileSync(skeleton);
+    fs.unlinkSync(skeleton);
+    const missing = problems();
+    assert.equal(missing.length, 1);
+    assert.match(missing[0], /产物 Spine 条目引用的外部文件 loading_animals\.skel 未落盘/u);
+    fs.writeFileSync(skeleton, original);
+    assert.deepEqual(problems(), [], "恢复原基名文件后必须重新通过");
+  });
 });
 
 test("解析器对损坏产物必须抛错而不是静默给出空结果", () => {

@@ -37,7 +37,8 @@ Creator 预览中人工确认。
 ## 当前包目录
 
 - 基础包：`Common_Btn`、`Common_ComboBox`、`Common_Component`、`Common_RGBA`
-- 动态资源样例：`Dynamic_Login`、`Dynamic_Spine`
+- 动态资源样例：`Dynamic_Login`
+- 历史素材：`archive/Dynamic_Spine/` 保留旧 Spine 3.8.99 原文件与静态导出脚本，位于 `assets/` 外，不参与发布。登录页已改为其 `idle` t=0 静态姿态以兼容工程 Spine 4.2。
 - 文本资源：`L10n_zh_hans`
 - 页面包：`View_AreaList_AreaList`、`View_AreaList_Login`、`View_AreaList_LoginNotice`、
   `View_Home_Home`、`View_SharedWidget_Confirm`

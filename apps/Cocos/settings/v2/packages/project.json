@@ -7,5 +7,15 @@
       "fitWidth": true,
       "fitHeight": false
     }
-  }
+  },
+  "layer": [
+    {
+      "name": "STAGE3D_HIDDEN",
+      "value": 1
+    },
+    {
+      "name": "STAGE3D_OVERLAY",
+      "value": 2
+    }
+  ]
 }

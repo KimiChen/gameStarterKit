@@ -1002,68 +1002,6 @@
       ]
     },
     {
-      "name": "Dynamic_Spine",
-      "id": "y58q4zu3",
-      "source": [
-        {
-          "path": "apps/art/fairygui/assets/Dynamic_Spine/Login/1/loading_animals.atlas.txt",
-          "sha256": "94a5f6cc7ca2dd350157a26c01d8cbe0c95df602ebbd96bf53894dc5c040b57c"
-        },
-        {
-          "path": "apps/art/fairygui/assets/Dynamic_Spine/Login/1/loading_animals.png",
-          "sha256": "df21297b910ab82f9948324314eda87ff227f48d8b0636d7db0f2872ab72c0a2"
-        },
-        {
-          "path": "apps/art/fairygui/assets/Dynamic_Spine/Login/1/loading_animals.skel",
-          "sha256": "8efc27b15c71dcee9385cda084643d43b9c96455a8f2c3e8cd73a53d64218f6b"
-        },
-        {
-          "path": "apps/art/fairygui/assets/Dynamic_Spine/package.xml",
-          "sha256": "c2ee3403be71be30b4577cc28c5af9b5e9137c299b15f2ffe02115dafa1aec3f"
-        }
-      ],
-      "components": [],
-      "resources": [
-        {
-          "kind": "misc",
-          "id": "r9po1a7kmz5",
-          "name": "loading_animals.atlas.txt",
-          "exported": false
-        },
-        {
-          "kind": "image",
-          "id": "r9po1a7kmz6",
-          "name": "loading_animals.png",
-          "exported": false
-        },
-        {
-          "kind": "spine",
-          "id": "r9po1a7kmz4",
-          "name": "loading_animals.skel",
-          "exported": true,
-          "require": "r9po1a7kmz5,r9po1a7kmz6"
-        }
-      ],
-      "outputs": [
-        {
-          "path": "apps/Cocos/assets/resources/ui/Dynamic_Spine.bin",
-          "sha256": "d9e161b8c0a29f1705fb4a05f31a66af622fb0d8d214a5d9f33e768c0aac350f"
-        },
-        {
-          "path": "apps/Cocos/assets/resources/ui/loading_animals.atlas.txt",
-          "sha256": "94a5f6cc7ca2dd350157a26c01d8cbe0c95df602ebbd96bf53894dc5c040b57c"
-        },
-        {
-          "path": "apps/Cocos/assets/resources/ui/loading_animals.png",
-          "sha256": "df21297b910ab82f9948324314eda87ff227f48d8b0636d7db0f2872ab72c0a2"
-        },
-        {
-          "path": "apps/Cocos/assets/resources/ui/loading_animals.skel",
-          "sha256": "8efc27b15c71dcee9385cda084643d43b9c96455a8f2c3e8cd73a53d64218f6b"
-        }
-      ]
-    },
-    {
       "name": "L10n_zh_hans",
       "id": "15js40c9",
       "source": [
@@ -1288,7 +1226,7 @@
         },
         {
           "path": "apps/art/fairygui/assets/View_AreaList_Login/Login.xml",
-          "sha256": "ecd3938eb325329fd593f480b34b046399a0b090a1ae84b64d649ea78858fda2"
+          "sha256": "e9d5ce5790cdfa937797a6da2dc0199aee4f92377e5e13a39603acd6429c7021"
         },
         {
           "path": "apps/art/fairygui/assets/View_AreaList_Login/ProgressBarLoading.xml",
@@ -1343,6 +1281,10 @@
           "sha256": "c9dd85ff3d7766af194b0db9add5d535d9ed9a15ec09649f9147629a064da5c5"
         },
         {
+          "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/login_animals_static.png",
+          "sha256": "eb66fb377756df349a9944dc326e4eb5270f5263ed5e1c7982434adeacf3b3df"
+        },
+        {
           "path": "apps/art/fairygui/assets/View_AreaList_Login/RGBA/progress_loading_bar.png",
           "sha256": "6e0a498943eca72ea81078878610cfbae4abc8763cd17c05b29fd308fd33a6df"
         },
@@ -1368,7 +1310,7 @@
         },
         {
           "path": "apps/art/fairygui/assets/View_AreaList_Login/package.xml",
-          "sha256": "c3fa8cdfc02dc7e101695d3e28e572b2bc74b64d7ef3a3b589ed90774c5952af"
+          "sha256": "defad402c8480fb09ab034094feab34eaa59a477671d5377a9bb22a500ec3020"
         }
       ],
       "components": [
@@ -1520,6 +1462,12 @@
         },
         {
           "kind": "image",
+          "id": "sc0static",
+          "name": "login_animals_static.png",
+          "exported": false
+        },
+        {
+          "kind": "image",
           "id": "h8l61m",
           "name": "bg_login.jpg",
           "exported": false
@@ -1546,11 +1494,11 @@
       "outputs": [
         {
           "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login.bin",
-          "sha256": "c784c51cb6796fb3301d868b6cf628bb3d5eef6eaf4594972c62706e14802a6b"
+          "sha256": "6cf93e26d8f938161e45bb6433c313a35daed842c80ee44f3d39e12eadb59e8b"
         },
         {
           "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login_atlas1.png",
-          "sha256": "e4e74a081113b2df16267fc1e68b3fa35b77b2474c30dc90eeb70dba490c6365"
+          "sha256": "2655201a9def9295295b599d828067b83a445a96438cdfd891f6807cc3904314"
         },
         {
           "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login_atlas_h8l61m.jpg",
@@ -1767,10 +1715,6 @@
       "sha256": "15e0866e2c87a9aea3cae758f7e0f2e2fb17bcd86eba9d95e3394e2825d0177b"
     },
     {
-      "path": "apps/Cocos/assets/resources/ui/Dynamic_Spine.bin",
-      "sha256": "d9e161b8c0a29f1705fb4a05f31a66af622fb0d8d214a5d9f33e768c0aac350f"
-    },
-    {
       "path": "apps/Cocos/assets/resources/ui/L10n_zh_hans.bin",
       "sha256": "4c070d4b15376f31c15cc49755354853fd8de04a029bd8352fda5451df1dfea8"
     },
@@ -1788,7 +1732,7 @@
     },
     {
       "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login.bin",
-      "sha256": "c784c51cb6796fb3301d868b6cf628bb3d5eef6eaf4594972c62706e14802a6b"
+      "sha256": "6cf93e26d8f938161e45bb6433c313a35daed842c80ee44f3d39e12eadb59e8b"
     },
     {
       "path": "apps/Cocos/assets/resources/ui/View_AreaList_LoginNotice.bin",
@@ -1796,7 +1740,7 @@
     },
     {
       "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login_atlas1.png",
-      "sha256": "e4e74a081113b2df16267fc1e68b3fa35b77b2474c30dc90eeb70dba490c6365"
+      "sha256": "2655201a9def9295295b599d828067b83a445a96438cdfd891f6807cc3904314"
     },
     {
       "path": "apps/Cocos/assets/resources/ui/View_AreaList_Login_atlas_h8l61m.jpg",
@@ -1813,18 +1757,6 @@
     {
       "path": "apps/Cocos/assets/resources/ui/View_SharedWidget_Confirm_atlas0.png",
       "sha256": "6013bb66e06ed8d2f86424557a48e2508b90de35946c392ac68506103459bdbf"
-    },
-    {
-      "path": "apps/Cocos/assets/resources/ui/loading_animals.atlas.txt",
-      "sha256": "94a5f6cc7ca2dd350157a26c01d8cbe0c95df602ebbd96bf53894dc5c040b57c"
-    },
-    {
-      "path": "apps/Cocos/assets/resources/ui/loading_animals.png",
-      "sha256": "df21297b910ab82f9948324314eda87ff227f48d8b0636d7db0f2872ab72c0a2"
-    },
-    {
-      "path": "apps/Cocos/assets/resources/ui/loading_animals.skel",
-      "sha256": "8efc27b15c71dcee9385cda084643d43b9c96455a8f2c3e8cd73a53d64218f6b"
     }
   ],
   "views": [
