@@ -17,6 +17,7 @@ import {
 import { parseWorldAddress } from "../../shared/kits/mmo/api/world/index";
 import type { IMmoBagWire } from "../../shared/gameplays/mmoWorld/wire";
 import type { IWorldChatRes } from "../../shared/protocol/messages";
+import { ScriptStateStore } from "../../kits/mmo/logic/ScriptStateStore";
 import { WorldRoomTransport, type WorldRoomHandle } from "./WorldRoomTransport";
 
 export interface MmoWorldJoinDeps {
@@ -31,6 +32,22 @@ export function createMmoWorldRoom(handle: WorldRoomHandle, selfCharacterId?: st
     if (handle.mode !== MMO_WORLD_GAMEPLAY_ID) throw new TypeError("[MmoWorldRoom] 句柄 mode 与玩法不匹配");
     let seq = 0;
     const nextSeq = (): number => { seq += 1; return seq; };
+    const scriptState = new ScriptStateStore(handle.current && !handle.dropping);
+    let requestedScriptState = false;
+    let released = false;
+    const offScriptState = handle.onMessage(S2C.MmoWorldScriptState, (payload) => scriptState.accept(payload));
+    const offScriptDrop = handle.onDrop(() => { requestedScriptState = false; scriptState.connection(false); });
+    const offScriptReconnect = handle.onReconnect(() => {
+        scriptState.connection(true);
+        requestedScriptState = handle.send(C2S.MmoWorldBaselineRequest, { authorityEpoch: 1, afterSeq: 0 });
+    });
+    const releaseScriptState = (): void => {
+        if (released) return;
+        released = true;
+        scriptState.dispose();
+        for (const off of [offScriptState, offScriptDrop, offScriptReconnect, offScriptLeave]) off();
+    };
+    const offScriptLeave = handle.onLeave(releaseScriptState);
     return {
         roomId: handle.roomId,
         sessionId: handle.sessionId,
@@ -50,8 +67,16 @@ export function createMmoWorldRoom(handle: WorldRoomHandle, selfCharacterId?: st
         // 拾取（MK2-B3）：durable 请求，回执 clientReqId = p<seq>
         pickup(lootId) { const clientReqId = `p${nextSeq()}`; return handle.send(C2S.MmoWorldPickup, { lootId, clientReqId }) ? clientReqId : null; },
         requestBaseline(afterSeq) { return handle.send(C2S.MmoWorldBaselineRequest, { authorityEpoch: 1, afterSeq }); },
+        subscribeScriptState(packId, listener) {
+            const off = scriptState.subscribeScriptState(packId, listener);
+            // 第一次订阅补全量，覆盖 join → 动态加载 View 期间漏掉服务器初始推送的情形。
+            if (!released && !requestedScriptState && handle.current && !handle.dropping) {
+                requestedScriptState = handle.send(C2S.MmoWorldBaselineRequest, { authorityEpoch: 1, afterSeq: 0 });
+            }
+            return off;
+        },
         observe(observer) { return observeMmoWorld(handle, observer); },
-        leave: () => handle.leave(),
+        leave: () => { releaseScriptState(); return handle.leave(); },
     };
 }
 
@@ -89,13 +114,14 @@ function observeMmoWorld(handle: WorldRoomHandle, observer: MmoWorldRoomObserver
     // 交接就绪（perSession 不可丢类；凭据只此一处出网，⛔ 落日志）
     const offTransfer = handle.onMessage(S2C.MmoWorldTransferReady, (payload: IMmoWorldTransferReady) => { if (active) observer.transferReady(payload); });
     const offChat = handle.onMessage(S2C.WorldChat, (payload: IWorldChatRes) => { if (active) observer.chat(payload); });
+    const offNotice = handle.onMessage(S2C.MmoWorldNotice, (payload) => { if (active) observer.notice?.(payload); });
     const offDrop = handle.onDrop(() => { if (active) observer.dropped(); });
     const offReconnect = handle.onReconnect(() => { if (active) observer.reconnected(); });
     const offLeave = handle.onLeave((kind) => { if (active) observer.left(kind); });
     return () => {
         if (!active) return;
         active = false;
-        for (const off of [offStream, offPrivate, offResult, offPos, offTransfer, offChat, offDrop, offReconnect, offLeave]) {
+        for (const off of [offStream, offPrivate, offResult, offPos, offTransfer, offChat, offNotice, offDrop, offReconnect, offLeave]) {
             try { off(); } catch (error) { console.error("[MmoWorldRoom] 解绑异常", error); }
         }
     };

@@ -12,7 +12,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    MMO_ORCHESTRATION_VERSION, ORCH_MAX_EVENT_QUEUE, ORCH_MAX_VARS_BYTES, OrchestrationContractError, defineOrchestration, digestOf, effectiveLimits, stableStringify, validateOrchestrationCommand,
+    MMO_ORCHESTRATION_VERSION, ORCH_MAX_EVENT_QUEUE, ORCH_MAX_GRANT_TARGETS_PER_TICK, ORCH_MAX_VARS_BYTES, OrchestrationContractError, defineOrchestration, digestOf, effectiveLimits, stableStringify, validateOrchestrationCommand,
     type OrchestrationCommand, type OrchestrationEvent, type OrchestrationModule,
 } from "@game/shared/kits/mmo/api/orchestration/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
@@ -246,9 +246,127 @@ test("listCheckpointedVars（面 v2，MG1-B2）：按 map / pack 列分线（ins
         { instanceId: "wi_b", rev: 0, tick: 0, vars: {} },
         { instanceId: "wi_c", rev: 2, tick: 10, vars: {} },
     ]);
-    assert.deepEqual(queries[0]!.params, [0, "demoVale", "demoVale", CHECKPOINTED_VARS_MAX_ROWS], "分线清单按 sId / map / pack 过滤且有界");
+    assert.deepEqual(queries[0]!.params, [0, "demoVale", "demoVale"], "分线清单身份筛选值保持绑定参数");
+    assert.ok(queries[0]!.sql.endsWith(`LIMIT ${CHECKPOINTED_VARS_MAX_ROWS}`), "可信整数上限进入SQL，避免mysql2 execute的DOUBLE绑定在LIMIT位置被MySQL拒绝");
     assert.equal(queries.length, 4, "1 条清单 + 每分线 1 条最新检查点");
     for (const { sql } of queries) assert.doesNotThrow(() => assertKitTableAccess(sql, "mmo"), sql);
     const none = await listCheckpointedVars(0, "greybox", "greybox", async (sId, fn) => fn({ sId, query: async () => [] } as unknown as KitTx));
     assert.deepEqual(none, []);
+});
+
+test("批量奖励契约：100 名 64 字符角色 id；单人兼容；收件人互斥、非空、去重、有界", () => {
+    const ids = Array.from({ length: 100 }, (_unused, i) => `${i}`.padEnd(64, "x"));
+    for (const base of [{ op: "grantItem", itemTemplateId: "slime-gel", count: 1, reason: "win" }, { op: "grantCurrency", amount: 25, reason: "win" }]) {
+        const command = { ...base, toCharacterIds: ids };
+        assert.deepEqual(validateOrchestrationCommand(command), command);
+        assert.deepEqual(validateOrchestrationCommand({ ...base, toCharacterId: ids[0] }), { ...base, toCharacterId: ids[0] });
+        for (const recipients of [{}, { toCharacterIds: [] }, { toCharacterIds: [...ids, "overflow"] }, { toCharacterIds: ["same", "same"] }, { toCharacterIds: ["bad id"] }, { toCharacterIds: ["x".repeat(65)] }, { toCharacterIds: ["valid", 2] }, { toCharacterId: "one", toCharacterIds: ["two"] }]) {
+            assert.throws(() => validateOrchestrationCommand({ ...base, ...recipients }), OrchestrationContractError, JSON.stringify(recipients));
+        }
+    }
+});
+
+test("批量奖励预算：两条100人奖励只计两条命令，65条仍整批作废", () => {
+    const recipients = Array.from({ length: 100 }, (_unused, i) => `char-${i}`);
+    const grant: OrchestrationCommand = { op: "grantItem", toCharacterIds: recipients, itemTemplateId: "slime-gel", count: 1, reason: "win" };
+    const runner = runnerOf(moduleOf(() => [grant, { op: "grantCurrency", toCharacterIds: recipients, amount: 25, reason: "win" }]));
+    runner.enqueue({ kind: "instanceStarted", recovered: false, checkpointRev: 0 });
+    const result = runner.dispatch(1, emptyWorld);
+    assert.equal(result.suspendedNow, null);
+    assert.equal(result.commands, 2);
+    assert.equal(result.effects.length, 2);
+    const flood = runnerOf(moduleOf(() => Array.from({ length: 65 }, () => grant)));
+    flood.enqueue({ kind: "instanceStarted", recovered: false, checkpointRev: 0 });
+    const rejected = flood.dispatch(1, emptyWorld);
+    assert.equal(rejected.suspendedNow, "commands");
+    assert.deepEqual(rejected.effects, []);
+});
+
+test("奖励展开预算：200目标可落地；第201目标跨事件累计，变量/定时器/发布/全部effects一并回滚", () => {
+    assert.equal(ORCH_MAX_GRANT_TARGETS_PER_TICK, 200);
+    const recipients = Array.from({ length: 100 }, (_unused, i) => `char-${i}`);
+    const grants: OrchestrationCommand[] = [
+        { op: "grantItem", toCharacterIds: recipients, itemTemplateId: "slime-gel", count: 1, reason: "win" },
+        { op: "grantCurrency", toCharacterIds: recipients.slice(0, 99), amount: 25, reason: "win" },
+        { op: "grantCurrency", toCharacterId: recipients[99]!, amount: 25, reason: "win" },
+    ];
+    const module = moduleOf((event) => event.kind === "instanceStarted" ? [
+        { op: "setVar", key: "paid", value: true, durable: true },
+        { op: "publishState", key: "paid", value: true },
+        { op: "startTimer", timerId: "reopen", afterMs: 1000 },
+        ...grants,
+    ] : [{ op: "grantCurrency", toCharacterId: "extra", amount: 1, reason: "overflow" }]);
+    const accepted = runnerOf(module);
+    accepted.enqueue({ kind: "instanceStarted", recovered: false, checkpointRev: 0 });
+    const full = accepted.dispatch(1, emptyWorld);
+    assert.equal(full.suspendedNow, null);
+    assert.equal(full.effects.length, 3, "100 + 99 + 1 按展开目标数计量");
+    assert.equal(accepted.vars().get("paid"), true);
+    accepted.enqueue({ kind: "tick", tick: 2, bucket: 0 });
+    assert.equal(accepted.dispatch(2, emptyWorld).effects.length, 1, "下一dispatch重新获得预算");
+    const rejected = runnerOf(module);
+    rejected.enqueue({ kind: "instanceStarted", recovered: false, checkpointRev: 0 });
+    rejected.enqueue({ kind: "tick", tick: 1, bucket: 0 });
+    const result = rejected.dispatch(1, emptyWorld);
+    assert.deepEqual([result.suspendedNow, result.effects, result.durableVar, result.publishChanged, result.events], ["grant-targets", [], false, false, 2]);
+    assert.deepEqual([rejected.vars().size, rejected.timers().size, rejected.publish(), rejected.ring], [0, 0, { rev: 0, state: {} }, []], "前一事件暂存不能越过展开预算闸");
+    assert.equal(rejected.dispatch(2, emptyWorld).suspendedNow, null, "暂停只报告一次");
+});
+
+test("奖励展开预算：64条×100人不会绕过2ms handler预算展开6400条durable事件", () => {
+    const recipients = Array.from({ length: 100 }, (_unused, i) => `${i}`.padEnd(64, "x"));
+    const grant: OrchestrationCommand = { op: "grantItem", toCharacterIds: recipients, itemTemplateId: "slime-gel", count: 1, reason: "flood" };
+    const flood = runnerOf(moduleOf(() => Array.from({ length: 64 }, () => grant)));
+    flood.enqueue({ kind: "instanceStarted", recovered: false, checkpointRev: 0 });
+    const result = flood.dispatch(1, emptyWorld);
+    assert.deepEqual([result.suspendedNow, result.commands, result.effects, result.wallMs], ["grant-targets", 64, [], 0], "即使假时钟显示0ms，也在交给mode之前拒绝放大");
+    assert.deepEqual(flood.ring, [], "超限命令不进入已提交摘要");
+});
+
+test("公开harness snapshot/restore：真实timer剩余时间、vars/发布/区域状态、事件序、暂停恢复与引用隔离", () => {
+    const module = moduleOf((event) => {
+        if (event.kind === "instanceStarted") return [
+            { op: "setVar", key: "saved", value: 7, durable: true },
+            { op: "publishState", key: "phase", value: "waiting" },
+            { op: "setRegionEnabled", regionId: "arena", enabled: false },
+            { op: "startTimer", timerId: "next", afterMs: 1000 },
+        ];
+        if (event.kind === "timer") return [{ op: "setVar", key: "fired", value: true }, { op: "setRegionEnabled", regionId: "arena", enabled: true }];
+        if (event.kind === "choice") return Array.from({ length: 65 }, () => ({ op: "setVar" as const, key: "discarded", value: true }));
+        return [];
+    }, { subscribes: ["instanceStarted", "timer", "choice"] });
+    const pack = { ...GREYBOX_PACK, regions: [{ regionId: "arena", mapId: "greybox", shape: { kind: "circle" as const, center: { x: 1000, y: 1000 }, radius: 100 }, enabledByDefault: true, tags: [] }] };
+    const make = () => createOrchestrationHarness({ module, pack, mapId: "greybox", seed: 8 });
+    const source = make();
+    source.emit({ kind: "instanceStarted", recovered: false, checkpointRev: 0 }, 0);
+    source.advance(10);
+    source.emit({ kind: "choice", actorEntityId: "a", promptId: "p", choiceId: "overflow" }, 10);
+    const snapshot = source.snapshot();
+    assert.deepEqual([snapshot.tick, snapshot.suspended, snapshot.regions.arena], [10, "commands", false]);
+    const detached = source.snapshot();
+    (detached.vars as Record<string, unknown>).saved = 999;
+    (detached.publish.state as Record<string, unknown>).phase = "mutated";
+    (detached.ring[0] as { seq: number }).seq = 999;
+    assert.equal(source.vars().saved, 7);
+    assert.equal(source.publish().state.phase, "waiting");
+    assert.notEqual(source.ring()[0]?.seq, 999);
+    const restored = make();
+    restored.restore(JSON.parse(JSON.stringify(snapshot)) as typeof snapshot, 100);
+    assert.equal(restored.tick, 100);
+    assert.equal(restored.snapshot().suspended, null);
+    assert.equal(restored.snapshot().timers[0]?.dueTick, 110);
+    assert.equal(restored.snapshot().eventSeq, snapshot.eventSeq);
+    assert.deepEqual(restored.snapshot().regions, snapshot.regions);
+    assert.deepEqual(restored.advance(9), []);
+    assert.equal(restored.vars().fired, undefined);
+    restored.advance(1);
+    assert.equal(restored.vars().fired, true);
+    assert.equal(restored.snapshot().regions.arena, true);
+    assert.throws(() => restored.restore({ ...snapshot, mapId: "wrong" }), /incompatible snapshot/u);
+    assert.throws(() => restored.restore(snapshot, -1), /invalid snapshot\/current tick/u);
+    const replayed = make();
+    replayed.restore(snapshot);
+    const timerEvent: OrchestrationEvent = { kind: "timer", timerId: "next", tag: "" };
+    replayed.emit(timerEvent, 10);
+    assert.equal(replayed.replay([{ event: timerEvent, tick: 10 }]).equal, true, "恢复后重放从相同检查点起步");
 });

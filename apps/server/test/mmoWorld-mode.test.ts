@@ -1097,3 +1097,106 @@ test("内容按图解析（MK4-B2）：未注入单包时 onWorldInit 用 conten
     const nowhere = build("nowhere");
     await assert.rejects(nowhere.runtime.recover({ instanceId: "n1", mapId: "nowhere", line: 0, authorityEpoch: 1, checkpoint: null }), /不在内容包/u);
 });
+
+test("批量奖励：同tick冻结100名长ID角色，展开200个durable事件；键稳定且与单人键隔离", async () => {
+    const ids = Array.from({ length: 100 }, (_unused, i) => `recipient-${i}-`.padEnd(64, "x"));
+    const collect = async (toCharacterIds: readonly string[], single = false, missing = false) => {
+        const module = defineOrchestration({
+            orchestrationVersion: 1, packId: "greybox", subscribes: ["choice"],
+            handle: () => {
+                const recipients = single ? { toCharacterId: toCharacterIds[0]! } : { toCharacterIds };
+                return [
+                    { op: "grantItem", ...recipients, itemTemplateId: "slime-gel", count: 1, reason: "win" },
+                    { op: "grantCurrency", ...recipients, amount: 25, reason: "win" },
+                ];
+            },
+        });
+        const h = orchHarness(module, { orchestrationClock: () => 0 });
+        await activeWorld(h);
+        for (const [index, characterId] of ids.entries()) {
+            if (missing && index === ids.length - 1) continue;
+            const personaId = `batch-${index}`;
+            h.characters.set(personaId, { ...rowOf(personaId), characterId });
+            const req = request(`batch-${index}`, personaId);
+            await h.runtime.beforeAdmit(req);
+            assert.equal(h.runtime.admit(req), "admitted");
+        }
+        h.mode.__probe.emitOrchestration({ kind: "choice", actorEntityId: `char:${ids[0]!}`, promptId: "win", choiceId: "award" });
+        step(h);
+        const batch = h.runtime.takeCheckpointBatch(true, "batch-awards")!;
+        assert.equal(h.mode.__probe.orchestration()?.suspended, null);
+        return batch.events;
+    };
+    const first = await collect(ids);
+    assert.equal(first.filter((event) => event.kind === "grantItem").length, 100);
+    assert.equal(first.filter((event) => event.kind === "grantCurrency").length, 100);
+    const opIds = first.map((event) => (event.payload as { opId: string }).opId);
+    assert.equal(new Set(opIds).size, 200, "每角色每奖独立幂等键");
+    const byRecipient = (events: typeof first) => Object.fromEntries(events.map((event) => {
+        const payload = event.payload as { opId: string; toCharacterId?: string; personaId?: string };
+        return [`${event.kind}:${payload.toCharacterId ?? payload.personaId}`, payload.opId];
+    }));
+    assert.deepEqual(byRecipient(await collect([...ids].reverse())), byRecipient(first), "同事件名单重排不改变角色键");
+    assert.deepEqual(byRecipient(await collect(ids)), byRecipient(first), "同实例同事件序重放稳定");
+    const singleIds = (await collect([ids[0]!], true)).map((event) => (event.payload as { opId: string }).opId);
+    assert.ok(singleIds.every((id) => !opIds.includes(id)), "旧单人语义与批量语义互不撞键");
+    assert.deepEqual(await collect(ids, false, true), [], "名单里有离场角色，两个批量命令各自先完整验证，零事件写入");
+});
+
+test("scriptState：晚准入与 baselineRequest 取得全量，即使 publishState 未再变化", async () => {
+    const module = defineOrchestration({
+        orchestrationVersion: 1, packId: "greybox", subscribes: ["instanceStarted"],
+        handle: () => [{ op: "publishState", key: "score:dawn", value: 7 }],
+    });
+    const h = orchHarness(module, { orchestrationClock: () => 0 });
+    await activeWorld(h);
+    step(h);
+    const published = broadcastsOf(h, S2C.MmoWorldScriptState) as IMmoWorldScriptState[];
+    assert.deepEqual(published, [{ packId: "greybox", rev: 1, state: { "score:dawn": 7 } }]);
+    await seat(h, "late", "p-late");
+    assert.deepEqual(h.direct.filter((message) => message.session === "late" && message.type === S2C.MmoWorldScriptState).map((message) => message.payload), published, "晚入场不能等下一次publishChanged");
+    h.runtime.enqueue("late", C2S.MmoWorldBaselineRequest, { authorityEpoch: 1, afterSeq: 0 });
+    step(h);
+    assert.deepEqual(h.direct.filter((message) => message.session === "late" && message.type === S2C.MmoWorldScriptState).map((message) => message.payload), [published[0], published[0]], "重连与晚订阅请求得到同rev全量");
+    assert.equal(broadcastsOf(h, S2C.MmoWorldScriptState).length, 1, "单人补发不向分线重复广播");
+});
+
+test("出生定义所有权：只初始化kit管理怪；恢复忽略旧误刷的非scripted副本，保留4只正确脚本怪与kit怪", async () => {
+    const pack = clone(ORCH_CONTENT.pack) as unknown as MutablePack;
+    const baseSpawn = pack.spawns.find((spawn) => spawn.mapId === "greybox")!;
+    pack.spawns = [
+        { ...baseSpawn, spawnId: "kit-guard", count: 1, managed: "kit" },
+        { ...baseSpawn, spawnId: "script-guard", count: 4, managed: "orchestration" },
+    ];
+    const content = indexContentPack(validateContentPack(pack));
+    const module = defineOrchestration({
+        orchestrationVersion: 1, packId: "greybox", subscribes: ["instanceStarted"], limits: { maxSpawnsAlive: 4 },
+        handle: (_event, api) => api.vars.get("booted") === true ? [] : [
+            { op: "setVar", key: "booted", value: true },
+            ...Array.from({ length: 4 }, (_unused, index) => ({ op: "spawn" as const, templateId: baseSpawn.templateId, pos: { x: 900 + index * 30, y: 900 }, tag: index < 2 ? "west-guard" : "east-guard" })),
+        ],
+    });
+    const make = () => harness(content, null, { orchestration: module, orchestrationClock: () => 0 });
+    const first = make();
+    await activeWorld(first);
+    assert.deepEqual([...first.mode.__probe.entities().keys()], ["kit-guard:0"], "尚未dispatch编排：只存在kit管理怪");
+    step(first);
+    assert.equal(first.mode.__probe.scriptedCreatures().length, 4);
+    assert.equal(first.mode.__probe.entities().size, 5);
+    const checkpoint = first.runtime.takeCheckpoint(true)!.instance as MmoInstanceSnapshot;
+    const scripted = checkpoint.creatures.filter((creature) => creature.scripted);
+    const oldBug: MmoInstanceSnapshot = {
+        ...checkpoint,
+        creatures: [
+            ...checkpoint.creatures.map((creature) => creature.id === "kit-guard:0" ? { ...creature, hp: 20 } : creature),
+            ...Array.from({ length: 4 }, (_unused, index) => ({ id: `script-guard:${index}`, templateId: baseSpawn.templateId, x: 900, y: 900, hp: 30, alive: true })),
+        ],
+    };
+    const restored = make();
+    await activeWorld(restored, "greybox", oldBug);
+    step(restored);
+    assert.equal(restored.mode.__probe.entities().size, 5, "旧错误快照的4只非scripted副本不会重建");
+    assert.equal(restored.mode.__probe.entities().get("kit-guard:0")?.hp, 20, "正常kit怪仍初始化并回灌检查点血量");
+    assert.ok([...restored.mode.__probe.entities().keys()].every((id) => !id.startsWith("script-guard:")));
+    assert.deepEqual(restored.mode.__probe.scriptedCreatures().map((entity) => [entity.id, entity.tag, entity.hp]), scripted.map((entity) => [entity.id, entity.tag, entity.hp]), "正确脚本怪完整恢复，不重复刷、不丢实体");
+});

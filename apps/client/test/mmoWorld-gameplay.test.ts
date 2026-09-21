@@ -19,6 +19,7 @@ import { S2C, wireChecksum, type IMmoEntityWire } from "../src/shared/index";
 import { createGameplayServices } from "../src/gameplay/services";
 import { setMmoRuntime, type MmoRuntime } from "../src/kits/mmo/logic/mmoRuntime";
 import { createMmoWorldReconciler } from "../src/kits/mmo/api/world/index";
+import { contentPacks, presentationOf } from "../src/kits/mmo/api/content/index";
 
 const slime = (id: string, x: number): IMmoEntityWire => ({ id, kind: "creature", templateId: "slime", name: "史莱姆", x, y: 1000, rev: 0, hp: 30, hpMax: 30, level: 1 });
 const self: IMmoEntityWire = { id: "char:c1", kind: "character", templateId: "fighter", name: "Rook", x: 1000, y: 1000, rev: 0, hp: 100, hpMax: 100, level: 1, factionId: "dawn" };
@@ -37,6 +38,7 @@ function fakeRoom() {
         cast: (spellId, targetId) => { calls.push(["cast", spellId, targetId]); return calls.length; },
         pickup: (lootId) => { calls.push(["pickup", lootId]); return `p${calls.length}`; },
         requestBaseline: (afterSeq) => { calls.push(["baseline", afterSeq]); return true; },
+        subscribeScriptState: () => () => undefined,
         observe: (next) => { observer = next; return () => { observer = null; }; },
         leave: async () => { calls.push(["leave"]); },
     };
@@ -75,6 +77,9 @@ test("MmoWorldGameplay：实体表 → 模型（本人 / 视野 / hp）；输入
     observer().opResult({ clientReqId: "c1", result: "rejected", detail: "portal MK1" });
     gameplay.tick(0.016, context);
     assert.equal(renders.at(-1)!.notice, "rejected：portal MK1");
+    observer().notice?.({ text: "据点归属改变", level: "info" });
+    gameplay.tick(0.016, context);
+    assert.equal(renders.at(-1)!.notice, "据点归属改变", "编排公告进入默认与自定义HUD共享模型");
     observer().dropped();
     gameplay.tick(0.016, context);
     assert.equal(renders.at(-1)!.notice, "连接中断，重连中…");
@@ -115,13 +120,15 @@ test("MmoWorldGameplay：本人位置取本地预测（fighter 120 / 步 6）；
 function fakeHandle() {
     const sent: unknown[][] = [];
     const listeners = new Map<string, (payload: unknown) => unknown>();
-    let leaveListener: ((kind: string, code: number | undefined) => void) | null = null;
+    const leaveListeners = new Set<(kind: string, code: number | undefined) => void>();
+    const dropListeners = new Set<() => void>();
+    const reconnectListeners = new Set<() => void>();
     const handle = {
         kind: "world-room", mode: "mmoWorld", mapId: "greybox", line: 0, roomId: "r1", sessionId: "s1", transferId: null, current: true, dropping: false, left: false,
         onMessage: (type: string, callback: (payload: unknown) => unknown) => { listeners.set(type, callback); return () => { listeners.delete(type); }; },
-        onDrop: () => () => undefined,
-        onReconnect: () => () => undefined,
-        onLeave: (callback: (kind: string, code: number | undefined) => void) => { leaveListener = callback; return () => { leaveListener = null; }; },
+        onDrop: (callback: () => void) => { dropListeners.add(callback); return () => { dropListeners.delete(callback); }; },
+        onReconnect: (callback: () => void) => { reconnectListeners.add(callback); return () => { reconnectListeners.delete(callback); }; },
+        onLeave: (callback: (kind: string, code: number | undefined) => void) => { leaveListeners.add(callback); return () => { leaveListeners.delete(callback); }; },
         send: (type: string, payload: unknown) => { sent.push([type, payload]); return true; },
         bindObserverStream: (types: Record<string, string>, sink: Record<string, (payload: unknown) => unknown>) => {
             for (const [key, type] of Object.entries(types)) listeners.set(type, sink[key]!);
@@ -130,7 +137,11 @@ function fakeHandle() {
         leave: async () => { sent.push(["leave"]); },
     } as unknown as WorldRoomHandle;
     const emit = (type: string, payload: unknown): void => { listeners.get(type)?.(payload); };
-    return { handle, sent, emit, kick: (kind: string) => leaveListener?.(kind, undefined) };
+    return {
+        handle, sent, emit, kick: (kind: string) => { for (const callback of leaveListeners) callback(kind, undefined); },
+        drop: () => { for (const callback of dropListeners) callback(); }, reconnect: () => { for (const callback of reconnectListeners) callback(); },
+        listenerCount: () => listeners.size + leaveListeners.size + dropListeners.size + reconnectListeners.size,
+    };
 }
 
 test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体表（synced）；update 合并；私有流推进 cursor；pos 直发回执 → observer.pos；seq 断裂 ⇒ 重同步请求", () => {
@@ -144,12 +155,14 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     const positions: [number, number][] = [];
     const readies: string[] = [];
     const chats: string[] = [];
+    const notices: string[] = [];
     room.observe({
         entities: (snapshot, synced) => { snapshots.push([snapshot.size, synced]); },
         privateState: (state) => { privates.push(state.hp); bags.push(state.bag ? state.bag.items.length : null); },
         pos: (payload) => { positions.push([payload.seq, payload.x]); },
         transferReady: (payload) => { readies.push(payload.transferId); },
         chat: (payload) => { chats.push(payload.fromEntityId); },
+        notice: (payload) => { notices.push(payload.text); },
         opResult: () => undefined, resync: (reason) => { resyncs.push(reason); }, dropped: () => undefined, reconnected: () => undefined, left: (kind) => { lefts.push(kind); },
     });
     assert.deepEqual([room.move({ x: 1, y: 0 }), room.stop(), room.moveTo({ x: 10, y: 20 })], [1, 2, 3], "意图返回自己的 seq");
@@ -186,6 +199,8 @@ test("createMmoWorldRoom：意图返回递增 seq；baseline 三件 → 实体�
     assert.deepEqual(bags.at(-1), 1, "没带 bag 的私有流沿用上次背包");
     emit(S2C.WorldChat, { fromEntityId: "char:c1", text: "hi", at: 5 });
     assert.deepEqual(chats, ["char:c1"]);
+    emit(S2C.MmoWorldNotice, { text: "守卫已出现", level: "info" });
+    assert.deepEqual(notices, ["守卫已出现"]);
     emit(S2C.MmoWorldLeave, { seq: 6, tick: 12, id: "slime-camp:0" });
     assert.deepEqual(snapshots.at(-1), [1, true]);
     emit(S2C.MmoWorldUpdate, { seq: 9, tick: 13, id: "char:c1", x: 1012, y: 1000, rev: 2, hp: 100 });
@@ -438,4 +453,82 @@ test("MMO 死亡清理旧预测意图，复活回执立即校正本人且不再�
     gameplay.tick(0.05, context);
     assert.equal(gameplay.model().self?.x, 806);
     gameplay.stop({ kind: "manual" });
+});
+
+test("scriptState：早帧缓存 / late subscribe / pack隔离 / rev去重 / 重连新代际 / 离房释放", async () => {
+    const { handle, sent, emit, drop, reconnect, listenerCount } = fakeHandle();
+    const room = createMmoWorldRoom(handle);
+    const frames: unknown[] = [];
+    emit(S2C.MmoWorldScriptState, { packId: "pack-one", rev: 8, state: { score: 8 } });
+    const off = room.subscribeScriptState("pack-one", (frame) => frames.push(frame));
+    assert.deepEqual(frames, [{ packId: "pack-one", rev: 8, state: { score: 8 }, connected: true }]);
+    assert.deepEqual(sent.at(-1), ["c2s.mmoWorld.baselineRequest", { authorityEpoch: 1, afterSeq: 0 }], "首次订阅主动补全量");
+    emit(S2C.MmoWorldScriptState, { packId: "pack-two", rev: 9, state: { score: 99 } });
+    emit(S2C.MmoWorldScriptState, { packId: "pack-one", rev: 7, state: { score: 7 } });
+    emit(S2C.MmoWorldScriptState, { packId: "pack-one", rev: 8, state: { score: 80 } });
+    assert.equal(frames.length, 1, "不同包与旧/重复rev不投递");
+    emit(S2C.MmoWorldScriptState, { packId: "pack-one", rev: 10, state: { score: 10 } });
+    assert.equal(frames.length, 2, "full snapshot允许rev跳跃");
+    const latest = frames.at(-1) as { state: { score: number } };
+    assert.ok(Object.isFrozen(latest.state), "消费者不能篡改共享缓存");
+    drop();
+    assert.deepEqual(frames.at(-1), { packId: "pack-one", rev: null, state: {}, connected: false });
+    emit(S2C.MmoWorldScriptState, { packId: "pack-one", rev: 11, state: { score: 11 } });
+    assert.equal(frames.length, 3, "掉线期迟到帧丢弃");
+    reconnect();
+    assert.deepEqual(frames.at(-1), { packId: "pack-one", rev: null, state: {}, connected: true });
+    assert.equal(sent.filter(([type]) => type === "c2s.mmoWorld.baselineRequest").length, 2, "重连补全量");
+    emit(S2C.MmoWorldScriptState, { packId: "pack-one", rev: 1, state: { score: 1 } });
+    assert.deepEqual(frames.at(-1), { packId: "pack-one", rev: 1, state: { score: 1 }, connected: true }, "恢复后的低rev属于新代际");
+    off(); off();
+    const before = frames.length;
+    emit(S2C.MmoWorldScriptState, { packId: "pack-one", rev: 2, state: { score: 2 } });
+    assert.equal(frames.length, before);
+    let late = -1;
+    room.subscribeScriptState("pack-one", (frame) => { late = frame.rev ?? -1; });
+    assert.equal(late, 2, "无订阅者期间也继续维护缓存");
+    await room.leave();
+    assert.equal(late, -1, "离房时使现有快照失效");
+    assert.equal(listenerCount(), 0, "离房释放message与连接监听");
+    room.subscribeScriptState("pack-one", () => { throw new Error("已关闭房间不允许新订阅"); });
+    assert.equal(listenerCount(), 0);
+});
+
+test("MmoWorldGameplay：异步 HUD 加载期间取消，迟到 adapter 只释放、不挂载", async () => {
+    const { room } = fakeRoom();
+    const { presentation, renders } = fakePresentation();
+    let resolve!: (value: MmoWorldPresentation) => void;
+    const pending = new Promise<MmoWorldPresentation>((done) => { resolve = done; });
+    let selected: MmoWorldRoom | null = null;
+    const gameplay = new MmoWorldGameplay({ presentationFactory: (inputRoom) => { selected = inputRoom; return pending; } });
+    const controller = new AbortController();
+    const started = gameplay.start({ ...contextOf(room), signal: controller.signal });
+    assert.equal(selected, room, "factory绑定本次房间");
+    controller.abort();
+    gameplay.dispose();
+    resolve(presentation);
+    await started;
+    assert.deepEqual(renders.map((model) => model.mapId), ["unmount"]);
+});
+
+test("实体表现：当前内容包的模板presentationId生效，共享职业id不串包", async () => {
+    for (const pack of contentPacks()) {
+        const map = pack.pack.maps[0]!;
+        const { room, observer } = fakeRoom();
+        const gameplay = new MmoWorldGameplay({ presentation: fakePresentation().presentation });
+        await gameplay.start(contextOf({ ...room, mapId: map.mapId }));
+        const templates = [
+            ...pack.pack.classes.map((value) => ({ kind: "character" as const, id: value.classId, presentationId: value.presentationId })),
+            ...pack.pack.creatures.map((value) => ({ kind: "creature" as const, id: value.templateId, presentationId: value.presentationId })),
+            ...pack.pack.items.map((value) => ({ kind: "loot" as const, id: value.itemId, presentationId: value.presentationId })),
+            ...pack.pack.npcs.filter((value) => value.mapId === map.mapId).map((value) => ({ kind: "npc" as const, id: value.npcId, presentationId: value.presentationId })),
+        ];
+        const entities = templates.map((template, index): IMmoEntityWire => ({ ...self, id: `entity:${index}`, kind: template.kind, templateId: template.id }));
+        observer().entities(new Map(entities.map((entity) => [entity.id, entity])), true);
+        const views = gameplay.model().entities;
+        for (let i = 0; i < templates.length; i++) {
+            assert.deepEqual(views.find((view) => view.id === `entity:${i}`)!.presentation, presentationOf(templates[i]!.presentationId), `${pack.pack.packId}/${templates[i]!.kind}/${templates[i]!.id}`);
+        }
+        gameplay.stop({ kind: "manual" });
+    }
 });

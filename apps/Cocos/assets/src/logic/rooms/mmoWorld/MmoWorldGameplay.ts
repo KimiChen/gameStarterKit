@@ -10,14 +10,15 @@
  */
 import type { GameplayContext, GameplayPlugin, GameplayStopReason } from "../../gameplay/index";
 import type { GameplayInstanceHost } from "../../gameplay/GameplayModule";
-import type { IMmoEntityWire, IMmoWorldOpResult, IMmoWorldPos, IMmoWorldTransferReady } from "../../../shared/index";
+import type { IMmoEntityWire, IMmoWorldNotice, IMmoWorldOpResult, IMmoWorldPos, IMmoWorldTransferReady } from "../../../shared/index";
 import { withinRadius, type MmoPrivateState } from "../../../kits/mmo/api/world/index";
 import { MovementPredictor, normalizeDir, parseCollisionGrid } from "../../../kits/mmo/api/movement/index";
-import { mapDefOf, packForMap, presentationOf, type IClassTemplate, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
+import { itemTemplateOf, mapDefOf, packForMap, presentationOf, type IClassTemplate, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
 import { appendChatLine, nearbyChatLineOf, type INearbyChatLine } from "../../../kits/mmo/api/social/index";
 import { CooldownModel, pickHostileTarget } from "../../../kits/mmo/api/combat/index";
 import { MMO_PICKUP_RADIUS, describeBag, nearestLoot, type IMmoBagWire } from "../../../kits/mmo/api/inventory/index";
 import type { IWorldChatRes } from "../../../shared/protocol/messages";
+import type { IMmoScriptStateSource } from "../../../kits/mmo/api/orchestration/index";
 
 export const MMO_WORLD_GAMEPLAY_ID = "mmoWorld";
 
@@ -48,13 +49,15 @@ export interface MmoWorldRoomObserver {
     transferReady(payload: IMmoWorldTransferReady): void;
     /** 附近聊天（框架 core 世界 token；MK1-B5） */
     chat(payload: IWorldChatRes): void;
+    /** 编排分线公告（wire 限长；默认与内容 HUD 均从 notice 模型字段消费）。 */
+    notice?(payload: IMmoWorldNotice): void;
     resync(reason: string | null): void;
     dropped(): void;
     reconnected(): void;
     left(kind: string): void;
 }
 
-export interface MmoWorldRoom {
+export interface MmoWorldRoom extends IMmoScriptStateSource {
     readonly roomId: string;
     readonly sessionId: string;
     readonly mapId: string;
@@ -132,7 +135,7 @@ export interface MmoWorldPresentation {
 export interface MmoWorldGameplayOptions {
     readonly host?: GameplayInstanceHost<MmoWorldInput>;
     readonly presentation?: MmoWorldPresentation;
-    readonly presentationFactory?: () => MmoWorldPresentation | undefined | Promise<MmoWorldPresentation | undefined>;
+    readonly presentationFactory?: (room: MmoWorldRoom) => MmoWorldPresentation | undefined | Promise<MmoWorldPresentation | undefined>;
     /** 无头调用可显式注入；生产从本次 room.selfCharacterId 读取，身份缺席时不猜本人。 */
     readonly selfCharacterId?: string;
     /** 交接就绪后（本局 stop 时）交出凭据：mode 模块据此带参重进目标图。 */
@@ -143,7 +146,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     readonly id = MMO_WORLD_GAMEPLAY_ID;
 
     private readonly host: GameplayInstanceHost<MmoWorldInput> | null;
-    private readonly presentationFactory: () => MmoWorldPresentation | undefined | Promise<MmoWorldPresentation | undefined>;
+    private readonly presentationFactory: (room: MmoWorldRoom) => MmoWorldPresentation | undefined | Promise<MmoWorldPresentation | undefined>;
     private selfCharacterId: string | null;
     private readonly onTransfer: ((ready: IMmoWorldTransferReady, characterId: string | null) => void) | null;
     /** 已收到的交接凭据（stop 时交出） */
@@ -179,7 +182,8 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
 
     async start(context: GameplayContext<MmoWorldRoom>): Promise<void> {
         if (this.started || this.disposed) return;
-        const presentation = await this.presentationFactory();
+        const presentation = await this.presentationFactory(context.room);
+        if (this.disposed || context.signal.aborted || !context.isActive()) { presentation?.unmount(); return; }
         if (!presentation || typeof presentation.mount !== "function" || typeof presentation.render !== "function" || typeof presentation.unmount !== "function") {
             throw new TypeError("[mmoWorld] 需要有效的 presentation adapter");
         }
@@ -203,6 +207,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                     else this.predictor?.reconcile(payload);
                 },
                 chat: (payload) => { if (active()) this.chatLog = appendChatLine(this.chatLog, nearbyChatLineOf(payload, (id) => this.entities.get(id)?.name ?? null)); },
+                notice: (payload) => { if (active()) this.notice = payload.text; },
                 transferReady: (payload) => {
                     if (!active()) return;
                     // 凭据只此一处：记下 → 退出本局 → stop 时交给 onTransfer 带参重进目标图（源房随后被服务端以 transferred 离座）
@@ -351,7 +356,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                 const pos = isSelf && predicted ? predicted : entity;
                 return {
                     id: entity.id, kind: entity.kind, name: entity.name, x: pos.x, y: pos.y, hp: entity.hp, hpMax: entity.hpMax, level: entity.level,
-                    factionId: entity.factionId ?? null, count: entity.count ?? null, isSelf, presentation: presentationOf(entity.templateId),
+                    factionId: entity.factionId ?? null, count: entity.count ?? null, isSelf, presentation: this.entityPresentation(entity, mapId),
                 };
             });
         return {
@@ -374,6 +379,16 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             bag: this.privateState.bag,
             bagSummary: describeBag(this.privateState.bag),
         };
+    }
+
+    /** 模板 id 与表现 id 独立；职业/怪物按当前包解析，物品沿全区同义目录。 */
+    private entityPresentation(entity: IMmoEntityWire, mapId: string): IPresentationEntry {
+        const pack = packForMap(mapId);
+        const template = entity.kind === "character" ? pack?.classById.get(entity.templateId)
+            : entity.kind === "creature" ? pack?.creatureById.get(entity.templateId)
+            : entity.kind === "loot" ? itemTemplateOf(entity.templateId)
+            : pack?.npcsByMap.get(mapId)?.find((npc) => npc.npcId === entity.templateId);
+        return presentationOf(template?.presentationId ?? entity.templateId);
     }
 
     /** 本人实体首次出现：按职业模板（templateId = classId）速度与地图碰撞网格建预测器；职业 / 地图未知 ⇒ 不预测（位置取视野流）。 */

@@ -20,6 +20,10 @@ export interface Vec2 { readonly x: number; readonly y: number }
 // ── 预算 / 上限（§8.1；ORCH_TICK_BUDGET_MS / ORCH_SAY_WORLD_PER_MIN 为 §11.2 冻结值，其余为候选，只许收紧）──
 export const ORCH_TICK_BUDGET_MS = 2;
 export const ORCH_MAX_COMMANDS_PER_TICK = 64;
+/** 单条奖励命令最多覆盖 100 名角色；名单在同 tick 校验后展开为逐角色 durable 事件。 */
+export const ORCH_MAX_GRANT_RECIPIENTS = 100;
+/** 每 tick 全部奖励命令累计最多展开 200 个 durable 事件（100 人各一份道具与币）；单人命令也计 1。 */
+export const ORCH_MAX_GRANT_TARGETS_PER_TICK = 200;
 export const ORCH_MAX_EVENT_QUEUE = 256;
 export const ORCH_MAX_VARS_BYTES = 4096;
 export const ORCH_MAX_TIMERS = 32;
@@ -57,14 +61,19 @@ export const ORCHESTRATION_EVENT_KINDS: readonly OrchestrationEventKind[] = Obje
     "instanceStarted", "tick", "timer", "playerEntered", "playerLeft", "regionEntered", "regionLeft", "creatureSpawned", "creatureDied", "playerDied", "interact", "choice", "lootClaimed", "grantResult", "packSuspended",
 ]);
 
+/** 奖励单人旧形态继续兼容；批量名单与单人字段互斥，不接受空数组或重复角色。 */
+export type OrchestrationGrantRecipients =
+    | { readonly toCharacterId: string; readonly toCharacterIds?: never }
+    | { readonly toCharacterId?: never; readonly toCharacterIds: readonly string[] };
+
 export type OrchestrationCommand =
     | { readonly op: "spawn"; readonly templateId: string; readonly pos: Vec2; readonly tag?: string; readonly despawnAfterMs?: number; readonly leashRegionId?: string }
     | { readonly op: "despawn"; readonly entityId: EntityId }
     | { readonly op: "despawn"; readonly tag: string }
     | { readonly op: "startTimer"; readonly timerId: string; readonly afterMs: number; readonly tag?: string; readonly repeat?: boolean }
     | { readonly op: "cancelTimer"; readonly timerId: string }
-    | { readonly op: "grantItem"; readonly toCharacterId: string; readonly itemTemplateId: string; readonly count: number; readonly reason: string }
-    | { readonly op: "grantCurrency"; readonly toCharacterId: string; readonly amount: number; readonly reason: string }
+    | ({ readonly op: "grantItem"; readonly itemTemplateId: string; readonly count: number; readonly reason: string } & OrchestrationGrantRecipients)
+    | ({ readonly op: "grantCurrency"; readonly amount: number; readonly reason: string } & OrchestrationGrantRecipients)
     | { readonly op: "sayNearby"; readonly anchorEntityId: EntityId; readonly text: string }
     | { readonly op: "sayWorld"; readonly text: string }
     | { readonly op: "notice"; readonly text: string; readonly level: "info" | "warn" }
@@ -164,6 +173,19 @@ const scalarOf = (value: unknown, path: string): ScriptScalar => {
     return fail(path, "expected scalar (number | string | boolean)");
 };
 
+function grantRecipientsOf(value: Record<string, unknown>, path: string): OrchestrationGrantRecipients {
+    if ("toCharacterId" in value) {
+        if ("toCharacterIds" in value) fail(path, "toCharacterId and toCharacterIds are mutually exclusive");
+        return { toCharacterId: idOf(value.toCharacterId, `${path}.toCharacterId`) };
+    }
+    if (!Array.isArray(value.toCharacterIds) || value.toCharacterIds.length === 0 || value.toCharacterIds.length > ORCH_MAX_GRANT_RECIPIENTS) {
+        fail(`${path}.toCharacterIds`, `expected 1..${ORCH_MAX_GRANT_RECIPIENTS} character ids`);
+    }
+    const ids = value.toCharacterIds.map((id, index) => idOf(id, `${path}.toCharacterIds[${index}]`));
+    if (new Set(ids).size !== ids.length) fail(`${path}.toCharacterIds`, "duplicate character id");
+    return { toCharacterIds: ids };
+}
+
 /** 零依赖命令校验：exact keys + 数值域 + 文本长度；未知 op ⇒ 抛（kit 收到即整批丢弃 + suspend）。 */
 export function validateOrchestrationCommand(input: unknown, path = "command"): OrchestrationCommand {
     if (!isRecord(input)) fail(path, "expected object");
@@ -193,12 +215,12 @@ export function validateOrchestrationCommand(input: unknown, path = "command"): 
         }
         case "cancelTimer": exact(value, path, ["op", "timerId"]); return { op: "cancelTimer", timerId: idOf(value.timerId, `${path}.timerId`) };
         case "grantItem": {
-            exact(value, path, ["op", "toCharacterId", "itemTemplateId", "count", "reason"]);
-            return { op: "grantItem", toCharacterId: idOf(value.toCharacterId, `${path}.toCharacterId`), itemTemplateId: idOf(value.itemTemplateId, `${path}.itemTemplateId`), count: intOf(value.count, `${path}.count`, 1, 9_999), reason: textOf(value.reason, `${path}.reason`, ORCH_MAX_TAG) };
+            exact(value, path, ["op", "itemTemplateId", "count", "reason"], ["toCharacterId", "toCharacterIds"]);
+            return { op: "grantItem", ...grantRecipientsOf(value, path), itemTemplateId: idOf(value.itemTemplateId, `${path}.itemTemplateId`), count: intOf(value.count, `${path}.count`, 1, 9_999), reason: textOf(value.reason, `${path}.reason`, ORCH_MAX_TAG) };
         }
         case "grantCurrency": {
-            exact(value, path, ["op", "toCharacterId", "amount", "reason"]);
-            return { op: "grantCurrency", toCharacterId: idOf(value.toCharacterId, `${path}.toCharacterId`), amount: intOf(value.amount, `${path}.amount`, 1, 1_000_000_000), reason: textOf(value.reason, `${path}.reason`, ORCH_MAX_TAG) };
+            exact(value, path, ["op", "amount", "reason"], ["toCharacterId", "toCharacterIds"]);
+            return { op: "grantCurrency", ...grantRecipientsOf(value, path), amount: intOf(value.amount, `${path}.amount`, 1, 1_000_000_000), reason: textOf(value.reason, `${path}.reason`, ORCH_MAX_TAG) };
         }
         case "sayNearby": exact(value, path, ["op", "anchorEntityId", "text"]); return { op: "sayNearby", anchorEntityId: idOf(value.anchorEntityId, `${path}.anchorEntityId`), text: textOf(value.text, `${path}.text`, ORCH_MAX_TEXT) };
         case "sayWorld": exact(value, path, ["op", "text"]); return { op: "sayWorld", text: textOf(value.text, `${path}.text`, ORCH_MAX_TEXT) };

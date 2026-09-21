@@ -10,7 +10,7 @@
  * ⛔ 插件不得 import 本文件（走 api/orchestration）。
  */
 import {
-    ORCH_MAX_COMMANDS_PER_TICK, ORCH_MAX_EVENT_QUEUE, ORCH_MAX_PUBLISH_KEYS, ORCH_MAX_TIMERS, ORCH_MAX_VARS_BYTES, ORCH_RING_SIZE, ORCH_SAY_NEARBY_PER_MIN,
+    ORCH_MAX_COMMANDS_PER_TICK, ORCH_MAX_EVENT_QUEUE, ORCH_MAX_GRANT_TARGETS_PER_TICK, ORCH_MAX_PUBLISH_KEYS, ORCH_MAX_TIMERS, ORCH_MAX_VARS_BYTES, ORCH_RING_SIZE, ORCH_SAY_NEARBY_PER_MIN,
     ORCH_SAY_WORLD_PER_MIN, ORCH_TICK_BUDGET_MS, ORCH_TICK_EVERY_DEFAULT, digestOf, effectiveLimits, validateOrchestrationCommand, varsBytesOf,
     type EntityId, type EntityKind, type IEntityView, type OrchestrationCommand, type OrchestrationEvent, type OrchestrationLimits, type OrchestrationModule,
     type OrchestrationReadApi, type OrchestrationRingEntry, type ScriptScalar, type Vec2,
@@ -163,6 +163,7 @@ export class OrchestrationRunner {
         let durableVar = false;
         let publishChanged = false;
         let commandsTotal = 0;
+        let grantTargetsTotal = 0;
         let events = 0;
         const startedAt = this.now();
         let wallMs = 0;
@@ -200,10 +201,17 @@ export class OrchestrationRunner {
             if (commandsTotal > ORCH_MAX_COMMANDS_PER_TICK) return fail("commands");
             const commands: OrchestrationCommand[] = [];
             for (const [index, item] of raw.entries()) {
-                try { commands.push(validateOrchestrationCommand(item, `commands[${index}]`)); } catch (error) {
+                let command: OrchestrationCommand;
+                try { command = validateOrchestrationCommand(item, `commands[${index}]`); } catch (error) {
                     this.log(`orch:${this.packId}:bad-command:${error instanceof Error ? error.message : String(error)}`);
                     return fail("command");
                 }
+                if (command.op === "grantItem" || command.op === "grantCurrency") {
+                    grantTargetsTotal += command.toCharacterIds?.length ?? 1;
+                    // 在命令摘要、宿主 crypto 派生和 durable 事件扩展前卡住总量；跨事件累计，失败连同暂存变量整批回滚。
+                    if (grantTargetsTotal > ORCH_MAX_GRANT_TARGETS_PER_TICK) return fail("grant-targets");
+                }
+                commands.push(command);
             }
             ring.push({ seq: eventSeq, eventDigest: digestOf(event), commandDigest: digestOf(commands) });
             for (const command of commands) {

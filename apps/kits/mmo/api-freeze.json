@@ -136,7 +136,7 @@
       }
     },
     "content": {
-      "version": 3,
+      "version": 4,
       "minSupported": 2,
       "exports": {
         "shared": [
@@ -194,12 +194,30 @@
           "function classOf",
           "function contentPacks",
           "function defaultMapId",
+          "function hudForPack",
           "function itemTemplateOf",
           "function mapDefOf",
           "function packForMap",
           "function presentationMap",
           "function presentationOf",
           "interface IPresentationEntry",
+          "reexport JoystickSession from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport cooldownLabel from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport hudLayout from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport joystickFrame from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport screenToWorld from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport wheelSlotPositions from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport worldToScreen from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport-type HudCircle from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport-type HudLayout from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport-type IMmoHud from ./hud",
+          "reexport-type IMmoHudContext from ./hud",
+          "reexport-type IMmoHudContribution from ./hud",
+          "reexport-type IMmoHudModule from ./hud",
+          "reexport-type JoystickFrame from ../../../../logic/rooms/mmoWorld/hudControls",
+          "reexport-type MmoWorldEntityView from ./hud",
+          "reexport-type MmoWorldInput from ./hud",
+          "reexport-type MmoWorldViewModel from ./hud",
           "type IPresentationMap"
         ]
       }
@@ -346,7 +364,7 @@
       }
     },
     "orchestration": {
-      "version": 2,
+      "version": 3,
       "minSupported": 1,
       "exports": {
         "shared": [
@@ -357,6 +375,8 @@
           "const ORCH_DURABLE_VAR_MIN_INTERVAL_MS",
           "const ORCH_MAX_COMMANDS_PER_TICK",
           "const ORCH_MAX_EVENT_QUEUE",
+          "const ORCH_MAX_GRANT_RECIPIENTS",
+          "const ORCH_MAX_GRANT_TARGETS_PER_TICK",
           "const ORCH_MAX_PROMPT_CHOICES",
           "const ORCH_MAX_PUBLISH_KEYS",
           "const ORCH_MAX_TAG",
@@ -388,6 +408,7 @@
           "type OrchestrationCommand",
           "type OrchestrationEvent",
           "type OrchestrationEventKind",
+          "type OrchestrationGrantRecipients",
           "type OrchestrationOp",
           "type ScriptScalar"
         ],
@@ -405,9 +426,15 @@
           "interface HarnessEmitResult",
           "interface HarnessOptions",
           "interface HarnessReplayResult",
+          "interface HarnessSnapshot",
           "interface OrchestrationHarness"
         ],
-        "client": null
+        "client": [
+          "export-type ScriptScalar",
+          "function subscribeScriptState",
+          "interface IMmoScriptStateSnapshot",
+          "interface IMmoScriptStateSource"
+        ]
       }
     },
     "social": {

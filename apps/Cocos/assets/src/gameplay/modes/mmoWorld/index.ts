@@ -12,6 +12,7 @@ import { getMmoRuntime } from "../../../kits/mmo/logic/mmoRuntime";
 import { isMapId, parseWorldAddress } from "../../../shared/kits/mmo/api/world/index";
 import { GAMEPLAY_CATALOG } from "../../../shared/index";
 import type { GameplayServicesContext } from "../../services";
+import { hudForPack, packForMap } from "../../../kits/mmo/api/content/index";
 
 export interface MmoWorldLaunch {
     readonly characterId: string;
@@ -104,18 +105,25 @@ export function createGameplayModule(services: GameplayServicesContext): Gamepla
                     void runtime.launchWorld(characterId, parts.mapId, ready).catch((error) => { console.error("[mmoWorld] 交接后重进世界失败：", error); });
                 }, 0);
             },
-            ...(services.presentationHost ? { presentationFactory: () => createMmoWorldPresentation(services, host) } : {}),
+            ...(services.presentationHost ? { presentationFactory: (room) => createMmoWorldPresentation(services, host, room) } : {}),
         }),
     };
 }
 
-async function createMmoWorldPresentation(services: GameplayServicesContext, host: GameplayInstanceHost<MmoWorldInput>): Promise<MmoWorldPresentation | undefined> {
+async function createMmoWorldPresentation(services: GameplayServicesContext, host: GameplayInstanceHost<MmoWorldInput>, room: MmoWorldRoom): Promise<MmoWorldPresentation | undefined> {
     const presentationHost = services.presentationHost;
     if (!presentationHost) return undefined;
+    const packId = packForMap(room.mapId)?.pack.packId ?? "";
+    const contribution = hudForPack(packId);
+    const hudModule = contribution ? await contribution.load() : null;
+    if (contribution && (!hudModule || typeof hudModule.create !== "function")) throw new TypeError("[mmoWorld] hud 模块缺少 create");
     const { MmoWorldView } = await import("../../../view/rooms/mmoWorld/MmoWorldView");
     return new MmoWorldView(presentationHost.node, (input) => {
         void host.dispatchInput(input).catch((error) => {
             console.error("[mmoWorld] gameplay input 失败：", error);
         });
-    });
+    }, hudModule ? {
+        create: hudModule.create.bind(hudModule), packId, mapId: room.mapId,
+        subscribeScriptState: (id, listener) => room.subscribeScriptState(id, listener),
+    } : undefined);
 }

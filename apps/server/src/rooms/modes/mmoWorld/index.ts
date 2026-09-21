@@ -482,7 +482,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     const applyEffect = (context: WorldModeContext<MmoWorldRoomState>, effect: RunnerEffect, tick: number, def: IMapDef, opIndex: number): void => {
         const packId = runner!.packId;
         // 复用 kit-api 的稳定 UUID 派生，覆盖分线与区；固定长度不受 packId / instanceId 长度影响。
-        const grantOpId = (): string => `orch:${kitOpId("mmo", context.instanceId, context.sId, "orchestration", JSON.stringify([packId, runner!.eventSeq, opIndex]))}`;
+        // 单人维持原键；批量加独立命名段 + 角色 id，名单重排也不影响该角色的派生键。
+        const grantOpId = (batchCharacterId?: string): string => `orch:${kitOpId("mmo", context.instanceId, context.sId, "orchestration", JSON.stringify(batchCharacterId === undefined
+            ? [packId, runner!.eventSeq, opIndex]
+            : [packId, runner!.eventSeq, opIndex, "recipients", batchCharacterId]))}`;
         const rejectEffect = (why: string): void => { log.push(`orch:${packId}:reject:${effect.op}:${why}`); };
         switch (effect.op) {
             case "spawn": {
@@ -506,20 +509,28 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (!checkpoint?.eventTable) { rejectEffect("no-durable"); return; }
                 if (!content.itemById.has(effect.itemTemplateId)) { rejectEffect("item"); return; }
                 if (effect.count > runner!.limits.maxGrantCount) { rejectEffect("count"); return; }
-                if (!entityOfCharacter(effect.toCharacterId)) { rejectEffect("character"); return; }
-                const opId = grantOpId();
-                context.events.append("grantItem", { opId, toCharacterId: effect.toCharacterId, itemTemplateId: effect.itemTemplateId, count: effect.count, reason: effect.reason, packId });
-                log.push(`orch:${packId}:grantItem:${opId}`);
+                const recipients = effect.toCharacterIds ?? [effect.toCharacterId!];
+                // 先检查整份名单，再写任何事件；含一名离场角色时整条命令零发放。
+                if (recipients.some((characterId) => !entityOfCharacter(characterId))) { rejectEffect("character"); return; }
+                for (const characterId of recipients) {
+                    const opId = grantOpId(effect.toCharacterIds === undefined ? undefined : characterId);
+                    context.events.append("grantItem", { opId, toCharacterId: characterId, itemTemplateId: effect.itemTemplateId, count: effect.count, reason: effect.reason, packId });
+                    log.push(`orch:${packId}:grantItem:${opId}`);
+                }
                 return;
             }
             case "grantCurrency": {
                 if (!checkpoint?.eventTable) { rejectEffect("no-durable"); return; }
                 if (effect.amount > runner!.limits.maxCurrencyPerGrant) { rejectEffect("amount"); return; }
-                const target = entityOfCharacter(effect.toCharacterId);
-                if (!target || target.personaId === null || target.userId === null) { rejectEffect("character"); return; }
-                const opId = grantOpId();
-                context.events.append("grantCurrency", { personaId: target.personaId, userId: target.userId, amount: effect.amount, opId, reason: effect.reason, packId });
-                log.push(`orch:${packId}:grantCurrency:${opId}`);
+                const recipients = effect.toCharacterIds ?? [effect.toCharacterId!];
+                const targets = recipients.map((characterId) => entityOfCharacter(characterId));
+                if (targets.some((target) => !target || target.personaId === null || target.userId === null)) { rejectEffect("character"); return; }
+                for (let index = 0; index < targets.length; index += 1) {
+                    const target = targets[index]!;
+                    const opId = grantOpId(effect.toCharacterIds === undefined ? undefined : recipients[index]!);
+                    context.events.append("grantCurrency", { personaId: target.personaId, userId: target.userId, amount: effect.amount, opId, reason: effect.reason, packId });
+                    log.push(`orch:${packId}:grantCurrency:${opId}`);
+                }
                 return;
             }
             case "sayNearby": {
@@ -1079,6 +1090,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             scriptedSeq = 0;
             lastDurableTick = Number.NEGATIVE_INFINITY;
             for (const spawn of content.spawnsByMap.get(def.mapId) ?? []) {
+                if (spawn.managed !== "kit") continue; // 编排拥有的出生定义只由 spawn 命令落地，启动期不能重复撒怪。
                 const template = content.creatureById.get(spawn.templateId);
                 if (!template) continue; // validateContentPack 已保证引用完整；防御
                 for (let index = 0; index < spawn.count; index += 1) {
@@ -1211,6 +1223,9 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             emitOrch({ kind: "playerEntered", entityId: id, characterId: row?.characterId ?? session.personaId, factionId: row?.factionId ?? null });
             if (bag) { bags.set(session.session, bag); applyEquipment(entities.get(id)!, bag); }
             privateDirty.add(session.session);
+            // 新准入取得全量脚本状态；publishChanged 广播本身无法服务晚加入者。
+            const published = runner?.publish() ?? { rev: 0, state: {} };
+            context.sendS2C(session.session, MmoWorldScriptState, { packId: content.pack.packId, rev: published.rev, state: published.state });
             syncPopulation(context);
             log.push(`enter:${session.session}${usable ? ":restored" : arrival ? ":arrival" : ""}${bag ? `:bag${bag.items.length}` : ""}`);
         },
@@ -1242,6 +1257,9 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
             for (const command of step.commands) {
                 if (command.type === MmoWorldBaselineRequest.type) {
                     context.observers.requestBaseline(command.session);
+                    // 客户端首次订阅 / 断线重连用既有 baseline 请求补全量，不增加 token。
+                    const published = runner?.publish() ?? { rev: 0, state: {} };
+                    context.sendS2C(command.session, MmoWorldScriptState, { packId: content.pack.packId, rev: published.rev, state: published.state });
                     continue;
                 }
                 if (command.type === MmoWorldPickup.type) {

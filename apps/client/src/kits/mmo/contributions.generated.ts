@@ -457,6 +457,8 @@ export const KIT_CONTRIBUTIONS = {
             ]
         } },
     ],
+    /** 贡献点 "hud"：0 个插件填充（按插件 id 排序）。 */
+    hud: [],
     /** 贡献点 "presentation"：1 个插件填充（按插件 id 排序）。 */
     presentation: [
         { pluginId: "mmodemo", value: mmodemo_presentation },

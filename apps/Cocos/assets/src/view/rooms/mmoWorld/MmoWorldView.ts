@@ -15,6 +15,10 @@ import {
 } from "../../../logic/rooms/mmoWorld/hudControls";
 import type { IVec2 } from "../../../kits/mmo/api/movement/index";
 import { createSolidPlate } from "../../uiPlate";
+import type { IMmoHud, IMmoHudModule } from "../../../kits/mmo/api/content/index";
+import type { IMmoScriptStateSource } from "../../../kits/mmo/api/orchestration/index";
+
+interface CustomHud extends IMmoScriptStateSource { readonly packId: string; readonly mapId: string; readonly create: IMmoHudModule["create"] }
 
 const BG = new Color(18, 24, 20, 255);
 const GROUND = new Color(40, 56, 44, 255);
@@ -44,10 +48,13 @@ export class MmoWorldView implements MmoWorldPresentation {
     private lastModel: MmoWorldViewModel | null = null;
     private joystick: JoystickSession | null = null;
     private tapStart: IVec2 | null = null;
+    private customHud: IMmoHud | null = null;
+    private readonly hudSubscriptions = new Set<() => void>();
 
     constructor(
         private readonly host: Node,
         private readonly dispatchInput: (input: MmoWorldInput) => void,
+        private readonly custom?: CustomHud,
     ) {}
 
     mount(): void {
@@ -65,6 +72,22 @@ export class MmoWorldView implements MmoWorldPresentation {
         world.on(Node.EventType.TOUCH_CANCEL, this.onWorldTouchCancel, this);
         const hud = this.node("hud", layer, this.width, this.height);
         this.hud = hud;
+        this.lastKey = "";
+        this.lastWheelKey = "";
+        if (this.custom) {
+            this.customHud = this.custom.create({
+                host: hud, packId: this.custom.packId, mapId: this.custom.mapId, width: this.width, height: this.height, dispatchInput: this.dispatchInput,
+                subscribeScriptState: (packId, listener) => {
+                    if (!this.layer) return () => undefined;
+                    const off = this.custom!.subscribeScriptState(packId, listener);
+                    this.hudSubscriptions.add(off);
+                    return () => { this.hudSubscriptions.delete(off); off(); };
+                },
+            });
+            if (!this.customHud || typeof this.customHud.mount !== "function" || typeof this.customHud.render !== "function" || typeof this.customHud.unmount !== "function") throw new TypeError("[mmoWorld] HUD adapter 非法");
+            this.customHud.mount();
+            return;
+        }
         const layout = hudLayout(this.width, this.height, this.readSafeBottom());
         this.layout = layout;
         this.buildJoystick(hud, layout);
@@ -83,7 +106,10 @@ export class MmoWorldView implements MmoWorldPresentation {
         const hud = this.hud;
         if (!world || !hud) return;
         this.lastModel = model;
-        const cooldownSeconds = Object.fromEntries(model.spells.map((spell) => [spell, cooldownLabel(model.cooldowns[spell])]));
+        // 独立 HUD 状态可通过 scriptState 更新，即使实体渲染键未变也必须收到模型。
+        this.customHud?.render(model);
+        const cooldownSeconds: Record<string, string> = {};
+        for (const spell of model.spells) cooldownSeconds[spell] = cooldownLabel(model.cooldowns[spell]);
         const key = JSON.stringify([
             model.entities.map((entity) => [entity.id, Math.round(entity.x), Math.round(entity.y), entity.hp]), model.hp, model.mp, model.synced, model.dropping, model.notice,
             model.bagSummary, model.targetId, model.spells, cooldownSeconds, model.casting?.spellId ?? null, model.chat.length,
@@ -103,13 +129,17 @@ export class MmoWorldView implements MmoWorldPresentation {
             this.plate(world, size, size, new Color(r, g, b, a), x, y, entity.id);
             this.label(world, entity.kind === "loot" ? `${entity.name}×${entity.count ?? 1}` : `${entity.name} ${entity.hp}/${entity.hpMax}`, Math.round(size * 0.42), TEXT, x, y + size * 0.85);
         }
-        this.renderStatus(hud, model);
-        this.renderWheel(model, cooldownSeconds);
+        if (!this.customHud) { this.renderStatus(hud, model); this.renderWheel(model, cooldownSeconds); }
     }
 
     unmount(): void {
         const layer = this.layer;
         this.layer = null;
+        try { this.customHud?.unmount(); } catch (error) { console.error("[mmoWorld] HUD unmount 失败", error); } finally {
+            this.customHud = null;
+            for (const off of this.hudSubscriptions) { try { off(); } catch (error) { console.error("[mmoWorld] HUD 订阅解绑失败", error); } }
+            this.hudSubscriptions.clear();
+        }
         this.world = null;
         this.hud = null;
         this.wheel = null;

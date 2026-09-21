@@ -1,10 +1,15 @@
 /**
  * mmo kit · `content` api 面（客户端，docs/MMO.md §7.2 / §7.5）：客户端地图几何（内置灰盒包）与表现映射注册表 `IPresentationMap`
- * （presentationId → 表现描述；MK0 = 2D 公告板的颜色 / 尺寸，3d.md SD9：`model` 预留）。⛔ 不 import cc；本面任何导出变化都要 bump `api.content.version`。
+ * （presentationId → 表现描述；MK0 = 2D 公告板的颜色 / 尺寸，3d.md SD9：`model` 预留）。HUD 挂载仅引用 cc 类型，无引擎运行时依赖；本面任何导出变化都要 bump `api.content.version`。
  */
 import { indexContentPack, mergeItemTemplates, validateContentPack, type IClassTemplate, type IContentPackIndex, type IItemTemplate, type IMapDef } from "../../../../shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "../../../../shared/kits/mmo/content/greybox";
 import { KIT_CONTRIBUTIONS } from "../../contributions.generated";
+import { resolveHudContribution, type IMmoHudContribution } from "./hud";
+
+export type { IMmoHud, IMmoHudContext, IMmoHudModule, IMmoHudContribution, MmoWorldEntityView, MmoWorldInput, MmoWorldViewModel } from "./hud";
+export { JoystickSession, hudLayout, wheelSlotPositions, cooldownLabel, joystickFrame, screenToWorld, worldToScreen } from "../../../../logic/rooms/mmoWorld/hudControls";
+export type { HudLayout, HudCircle, JoystickFrame } from "../../../../logic/rooms/mmoWorld/hudControls";
 
 export type { IClassTemplate, IContentPackIndex, IItemTemplate, IMapDef };
 
@@ -71,6 +76,13 @@ export function presentationMap(): IPresentationMap {
 
 export function presentationOf(presentationId: string, map: IPresentationMap = presentationMap()): IPresentationEntry {
     return map[presentationId] ?? FALLBACK_PRESENTATION;
+}
+
+/** 按内容包选择独立 HUD；没有贡献时保留 kit 默认 HUD。 */
+export function hudForPack(packId: string): IMmoHudContribution | null {
+    const contributions = KIT_CONTRIBUTIONS as { readonly hud?: readonly { readonly pluginId: string; readonly value: unknown }[]; readonly content: readonly { readonly pluginId: string; readonly value: unknown }[] };
+    const owners = new Map(contributions.content.map((entry) => [validateContentPack(entry.value).packId, entry.pluginId] as const));
+    return resolveHudContribution(packId, contributions.hud ?? [], owners);
 }
 
 /** 客户端地图几何（size / spawnPoints / aoi）；不在任何包内 = null。 */
