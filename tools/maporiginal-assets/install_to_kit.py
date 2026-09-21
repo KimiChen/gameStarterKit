@@ -73,8 +73,10 @@ def meta_for(rel: str, name: str) -> dict:
     if name.endswith(".json"):
         return {"ver": "2.0.1", "importer": "json", "imported": True, "uuid": uuid,
                 "files": [".json"], "subMetas": {}, "userData": {}}
+    # ⚠ 扩展名段要与真实文件一致（Creator 导入 terrain.bytes 后把 ".bin" 纠成 ".bytes"）
+    ext = "." + name.rsplit(".", 1)[-1]
     return {"ver": "1.0.3", "importer": "buffer", "imported": True, "uuid": uuid,
-            "files": [".bin", ".json"], "subMetas": {}, "userData": {}}
+            "files": [ext, ".json"], "subMetas": {}, "userData": {}}
 
 
 def main() -> int:

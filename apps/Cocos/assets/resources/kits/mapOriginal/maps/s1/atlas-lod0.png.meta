@@ -8,15 +8,15 @@
     ".png"
   ],
   "subMetas": {
-    "dddbd": {
+    "6c48a": {
       "importer": "texture",
-      "uuid": "d9d41136-0de3-4742-a57b-3befc6ff7edb@dddbd",
+      "uuid": "d9d41136-0de3-4742-a57b-3befc6ff7edb@6c48a",
       "displayName": "atlas-lod0",
-      "id": "dddbd",
+      "id": "6c48a",
       "name": "texture",
       "userData": {
-        "wrapModeS": "clamp-to-edge",
-        "wrapModeT": "clamp-to-edge",
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat",
         "minfilter": "linear",
         "magfilter": "linear",
         "mipfilter": "none",
@@ -37,6 +37,6 @@
     "type": "texture",
     "fixAlphaTransparencyArtifacts": false,
     "hasAlpha": true,
-    "redirect": "d9d41136-0de3-4742-a57b-3befc6ff7edb@dddbd"
+    "redirect": "d9d41136-0de3-4742-a57b-3befc6ff7edb@6c48a"
   }
 }
