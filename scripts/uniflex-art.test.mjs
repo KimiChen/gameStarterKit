@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { readFile, readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import ts from "typescript";
 import {
     artComponentPsdPath, classifyArtPage, findArtPage, isArtScreen, loadArtCatalog,
 } from "./lib/uniflex-art.mjs";
@@ -136,9 +137,15 @@ test("restored backpack shares copies while originals keep original imports", as
     const restoredSlot = await readFile(
         resolve(root, "apps/client/src/ui-uniflex/restored/gamecomponents/item/ItemSlot.tsx"), "utf8");
     assert.match(originalPage, /from '\.\/components\/BackpackItemCard'/);
-    assert.doesNotMatch(originalPage, /restored/);
     assert.match(originalCard, /from '\.\.\/\.\.\/\.\.\/\.\.\/gamecomponents\/item\/ItemSlot'/);
-    assert.doesNotMatch(originalCard, /Restored/);
+    for (const source of [originalPage, originalCard]) {
+        const ast = ts.createSourceFile("original.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+        for (const statement of ast.statements) {
+            if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
+                assert.doesNotMatch(statement.moduleSpecifier.text, /restored/i, "原始组件不得倒导 Restored 源码");
+            }
+        }
+    }
     assert.match(restoredPage,
         /from '\.\.\/\.\.\/\.\.\/restored\/modules\/backpack\/Backpack\/components\/BackpackItemCard'/);
     assert.match(restoredPage, /from '\.\.\/\.\.\/\.\.\/restored\/components\/tab\/PanelTab'/);

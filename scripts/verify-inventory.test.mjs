@@ -448,14 +448,15 @@ test("inventory verifier rejects a broken registered Markdown link", async () =>
 });
 
 test("inventory verifier 豁免不入库的本地证据链接（docs/evidence 按 .gitignore 政策只留本机）", async () => {
-  // 预览截图/报告按政策不入库（.gitignore `/docs/evidence/`），夹具按 git ls-files --exclude-standard
-  // 复制，永远不含它们——但登记文档需要写明证据存放位置。豁免只按解析后的 `docs/evidence/` 前缀
+  // 历史已跟踪的证据可能随检出进入夹具；本例只在独占夹具内移除它们，明确构造文件不存在的情形。
+  // 登记文档仍需写明本地证据存放位置。豁免只按解析后的 `docs/evidence/` 前缀
   // 生效：本用例正面放行该前缀，并用仅含 evidence 字样的兄弟前缀证明闸没有变宽。
   const root = await createFixture();
   try {
+    rmSync(join(root, "docs", "evidence"), { recursive: true, force: true });
     const overview = join(root, "docs", "OVERVIEW.md");
     const base = readFileSync(overview, "utf8");
-    assert.equal(existsSync(join(root, "docs", "evidence")), false, "夹具本就不含 docs/evidence（证明走的是豁免而非文件存在）");
+    assert.equal(existsSync(join(root, "docs", "evidence")), false, "本例夹具明确不含 docs/evidence（证明走的是豁免而非文件存在）");
     writeFileSync(overview, `${base}\n[本地预览证据](evidence/creator-2099-01-01/README.md)\n`);
     assert.equal((await runVerifier(root)).status, 0, "docs/evidence/ 前缀的本地证据链接应放行");
     writeFileSync(overview, `${base}\n[evidence 字样的普通坏链](evidence-backdoor/README.md)\n`);
