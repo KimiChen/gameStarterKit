@@ -543,3 +543,20 @@ test("sgzzmap 重放：页眉按钮文案（回中/回领地）要解得出来�
     const decoy = walkWith([{ name: "label", path: "Canvas/SgzzmapWorldView/sgzz-details", text: "回领地" }]);
     assert.equal(readSgzzmapEvidence(decoy)?.homeLabel, null);
 });
+
+test("sgzzmap 重放：块名里的档号要解得出来（LOD0/1 用 tier0、LOD2 用 tier1）", () => {
+    const walk = { canvas: { width: 750, height: 1624 }, nodes: [
+        { name: "SgzzmapWorldView", path: "Canvas/SgzzmapWorldView" },
+        { name: "sgzz-title", path: "Canvas/SgzzmapWorldView/sgzz-title", text: "大地图 · LOD 2/5" },
+        { name: "sgzz-field-1_3_-2", path: "Canvas/SgzzmapWorldView/sgzz-world/sgzz-field/sgzz-field-1_3_-2" },
+        { name: "sgzz-field-1_4_-2", path: "Canvas/SgzzmapWorldView/sgzz-world/sgzz-field/sgzz-field-1_4_-2" },
+    ] };
+    const value = readSgzzmapEvidence(walk);
+    assert.equal(value?.fieldChunks, 2);
+    assert.deepEqual(value?.fieldTiers, [1], "⛔ 档号解错会让「分档切换」那步永远等不到");
+    // 混档（切换瞬间）也要解得出两档
+    const mixed = { ...walk, nodes: walk.nodes.concat([
+        { name: "sgzz-field-0_9_-7", path: "Canvas/SgzzmapWorldView/sgzz-world/sgzz-field/sgzz-field-0_9_-7" },
+    ]) };
+    assert.deepEqual(readSgzzmapEvidence(mixed)?.fieldTiers, [0, 1]);
+});

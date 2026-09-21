@@ -84,6 +84,10 @@ export function readSgzzmapEvidence(walk) {
         // ⚠ 块数要**稳定**才算铺满：每帧只烘 1 块，填满要十几帧。
         //   只要求「有一个 field 节点」的话会在填充到一半时截图（真机 run 27 就是这么截到半屏黑的）。
         fieldChunks: nodes.filter((node) => node.name.startsWith("sgzz-field-")).length,
+        // 块名是 sgzz-field-<档号>_<cx>_<cy> ⇒ 由此看当前用的是哪一档（LOD0/1 用 0、LOD2 用 1）
+        fieldTiers: [...new Set(nodes.filter((node) => node.name.startsWith("sgzz-field-"))
+            .map((node) => Number(node.name.slice("sgzz-field-".length).split("_")[0]))
+            .filter((v) => Number.isInteger(v)))].sort(),
         // ⚠ 常驻网格线已停用（v2 拍板）⇒ ⛔ 不再作为就位条件。
         //   ⚠ 摆件在**陆地**上才有（水里不种树），重放的视野在出生区陆地上，恒有。
         nearLoaded: !!titleMatch && has("sgzz-decor")
@@ -264,6 +268,18 @@ export async function replaySgzzmapWorld(runner) {
             ...evidence, guardBefore: selected.tile.guard, guardAfter: evidence.tile?.guard ?? null,
             shot: await runner.shot(`sgzzmap-${evidence.outcome}`),
         };
+    });
+
+    await runner.step("拉到 LOD2：覆盖场切到大块档（tier 1），⛔ 不是继续用小块", async () => {
+        // ⚠ 这一档以前从没被真机跑到过（重放是 0 → 4 → 0），分档只有离线验证
+        const area = sgzzmapGestureArea(await runner.walk());
+        await sgzzmapWheel(runner, area, 240, 6);
+        const evidence = await runner.waitFor("LOD 2 且覆盖场用 tier 1 的大块", (walk) => {
+            const value = readSgzzmapEvidence(walk);
+            if (!value || value.lod !== 2) return null;
+            return value.fieldChunks > 0 && value.fieldTiers.includes(1) ? value : null;
+        }, 45_000);
+        return { ...evidence, shot: await runner.shot("sgzzmap-lod2-tier1") };
     });
 
     const far = await runner.step("拉远到远档：底图 + 鸟瞰色块顶替逐格网格", async () => {
