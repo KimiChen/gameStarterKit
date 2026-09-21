@@ -12,6 +12,7 @@ import { SGZZ_LOD_MAX } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 import { SgzzGridState } from "../../../shared/kits/sgzzmap/api/territory/index";
 import { SgzzmapWorldLogic } from "../logic/SgzzmapWorldLogic";
 import { sgzzCameraToRootLocal, sgzzInMapBand, sgzzRootLocalToCamera } from "../logic/sgzzCamera";
+import { sgzzSelectionEdges } from "../logic/sgzzMesh";
 import { sgzzIsNearField } from "../logic/sgzzLayers";
 import { getSgzzRuntime } from "../logic/sgzzRuntime";
 import { sgzzPassableAt, sgzzTerrainIdAt } from "../logic/sgzzTerrain";
@@ -70,8 +71,10 @@ export class SgzzmapWorldView extends CocosView {
         const selection = this.node("sgzz-selection", this.root, 8, 8);
         selection.active = false;
         this.selection = selection;
-        for (const [w, h, x, y] of [[64, 3, 0, 15], [64, 3, 0, -15], [3, 30, -31, 0], [3, 30, 31, 0]]) {
-            createSolidPlate(selection, w, h, MARK, x, y);
+        // ⚠ 菱形轮廓，⛔ 不是包围盒长方形：边的倾角 ≈ 26.565°（2:1 菱形），⛔ 不是 45°。
+        //   overhang 让四角交叠一点，否则拐角会有缺口。
+        for (const bar of sgzzSelectionEdges(3, 3)) {
+            createSolidPlate(selection, bar.length, bar.thickness, MARK, bar.x, bar.y).angle = bar.angle;
         }
 
         // ⚠ 这三个节点是**重放契约**：可点区由它们实测，⛔ 不按百分比猜（猜出来差一格）。

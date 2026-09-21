@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPlateMesh, sgzzBorderStripPoly,
-    sgzzGridEdgePolys, sgzzPainterCompare, type SgzzQuadInput,
+    sgzzGridEdgePolys, sgzzPainterCompare, sgzzSelectionEdges, type SgzzQuadInput,
 } from "../src/kits/sgzzmap/logic/sgzzMesh";
 import {
     SGZZ_PLANNED_LAYERS, sgzzLayerVisible, sgzzVisibleLayers,
@@ -236,4 +236,30 @@ test("★ 描边：六段首尾相接绕菱形一圈，⛔ 不是重涂整格、
     }
     assert.equal(sgzzBorderStripPoly(700, 700, 0, 0.6, rgba), null, "方向号越界回 null");
     assert.equal(sgzzBorderStripPoly(700, 700, 7, 0.6, rgba), null, "方向号越界回 null");
+});
+
+test("★ 选中框是菱形轮廓，⛔ 不是包围盒长方形", () => {
+    const bars = sgzzSelectionEdges(3, 0);
+    assert.equal(bars.length, 4);
+
+    // ⚠ 2:1 菱形的边倾角是 atan2(TH,TW) ≈ 26.565°，⛔ 不是 45°（那是正方形转的）
+    const tilt = Math.atan2(SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W) * 180 / Math.PI;
+    assert.ok(Math.abs(tilt - 26.565) < 0.01, `倾角应约 26.565°，实际 ${tilt.toFixed(3)}`);
+    for (const bar of bars) assert.ok(Math.abs(Math.abs(bar.angle) - tilt) < 1e-9);
+    // ⛔ 不许出现轴对齐的条（0° / 90°）——那就是长方形
+    for (const bar of bars) assert.notEqual(Math.round(Math.abs(bar.angle)) % 90, 0);
+
+    // 四条边的端点要正好落在菱形的四个顶点 N/E/S/W 上
+    const corners = new Set<string>();
+    for (const bar of bars) {
+        const rad = bar.angle * Math.PI / 180;
+        const dx = Math.cos(rad) * bar.length / 2, dy = Math.sin(rad) * bar.length / 2;
+        for (const s of [-1, 1]) {
+            corners.add([bar.x + s * dx, bar.y + s * dy].map((v) => Math.round(v * 1e6) / 1e6).join(","));
+        }
+    }
+    const want = new Set([
+        [0, SGZZ_TILE_HALF_H], [SGZZ_TILE_HALF_W, 0], [0, -SGZZ_TILE_HALF_H], [-SGZZ_TILE_HALF_W, 0],
+    ].map((p) => p.map((v) => Math.round(v * 1e6) / 1e6).join(",")));
+    assert.deepEqual([...corners].sort(), [...want].sort(), "四条边应首尾相接于 N/E/S/W 四个顶点");
 });

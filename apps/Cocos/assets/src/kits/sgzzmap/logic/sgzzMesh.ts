@@ -218,3 +218,25 @@ export function sgzzBorderStripPoly(row: number, col: number, resDir: number, ha
         c.x + b[0] * BORDER_INSET, c.y + b[1] * BORDER_INSET, halfWidth);
     return points ? { points, rgba } : null;
 }
+
+/**
+ * 选中框的四条边（菱形轮廓）。返回**设计单位**下的条形描述，由 View 摆成四块旋转底板。
+ *
+ * ⚠ 菱形是 2:1，⛔ 不是正方形转 45° —— 边的倾角是 `atan2(TH, TW)` ≈ 26.565°，不是 45°。
+ * 早先用四条轴对齐的长条围成**长方形**（菱形的包围盒），在菱形网格上看着格格不入。
+ * `angle` 是 Cocos 的角度（度、逆时针）；条形左右对称，所以模 180° 等价。
+ */
+export function sgzzSelectionEdges(thickness: number, overhang = 0):
+    readonly { readonly x: number; readonly y: number; readonly length: number;
+               readonly thickness: number; readonly angle: number }[] {
+    const hw = SGZZ_TILE_HALF_W, hh = SGZZ_TILE_HALF_H;
+    const edge = Math.hypot(hw, hh);
+    const tilt = Math.atan2(hh, hw) * 180 / Math.PI;
+    // 四条边的中点与倾角：NE / SE / SW / NW
+    return [
+        { x: hw / 2, y: hh / 2, angle: -tilt, length: edge + overhang, thickness },
+        { x: hw / 2, y: -hh / 2, angle: tilt, length: edge + overhang, thickness },
+        { x: -hw / 2, y: -hh / 2, angle: -tilt, length: edge + overhang, thickness },
+        { x: -hw / 2, y: hh / 2, angle: tilt, length: edge + overhang, thickness },
+    ];
+}
