@@ -1137,7 +1137,7 @@ apps/client/test/mmodemo-logic.test.ts
 | --- | --- |
 | R01 检查点后继批漏事件 | `WorldRuntime` 事件日志保留到提交，预捕获后批包含全部未提交前缀；串行执行前过滤已经提交的前缀，前批失败只作废该批，后批仍可完整持久化状态与事件 |
 | R02 CAS 冲突提交半份奖励 | `worldEvents` 对库存 `conflict` 抛出，整个事务回滚后重试；不把已经写入前序堆叠的事件死信并提交 |
-| R03 跨房失控制权阻断旧房保存 | 检查点捕获 `ControlConflictError` 后踢出对应旧会话，旧房停止全部脏写并 Offline，重建从最后有效检查点恢复，其余玩家重新进入；不删除失败 persona 守卫后保存未耐久世界状态。`MemoryCheckpointPort` 角色新旧改按 `(controlEpoch, rev)` 比较 |
+| R03 跨房失控制权阻断旧房保存 | 检查点捕获 `ControlConflictError` 后只踢出对应旧会话（lost-control），把它从 personas 剔除后重试同一批（同 rev、同事件前缀），其余座位与事件日志保留；persona 级强制点冲突同样踢出并传回交接取消。**2026-09-22 复审改法**（原实现「旧房停止全部脏写并 Offline、其余玩家重新进入」会让一人跨线双登 / 源房迟到把整条分线下线，并打红 MF8 交接四注入 `int/world-transfer-flow`——源房崩溃注入留下的陈旧座位触发整线 Offline，第 ④ 段超时；改后该用例与 `world-transfer` 故障组恢复 ✅）。`MemoryCheckpointPort` 角色新旧改按 `(controlEpoch, rev)` 比较 |
 | R04 强制检查点失败仍交接 | 后台串行链与本批原始结果分开，交接等待本次强制点结果；落盘失败传回调用者，不继续 commit transfer |
 | R05 客户端本人身份污染 | `selfCharacterId` 绑定本次 join 返回的房间句柄，gameplay 与交接沿用该身份，清除提前捕获与跨 join 共享 pending 状态的依赖 |
 | R06 编排奖励跨实例误去重 | 新 opId 以区 / instanceId / packId / 事件序 / 命令序稳定派生固定长度 `orch:<uuid>`；worker 继续按旧载荷原键读取已有回执，避免升级后重发 |

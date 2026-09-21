@@ -1,7 +1,6 @@
 /** 世界检查点故障回归：在途批前缀、交接强制点结果、跨分线接管后 fail-closed 重建。 */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CloseCode } from "colyseus";
 import { C2S, WorldPhase } from "@game/shared";
 import { MemoryCheckpointPort } from "../src/rooms/core/CheckpointPort";
 import { WorldCheckpointer } from "../src/rooms/core/WorldCheckpoint";
@@ -104,39 +103,48 @@ for (const personaCheckpoint of [true, false]) {
     });
 }
 
-test("跨分线接管：旧分线停止全部排队写入并退出，从最后持久点重建后可以继续保存", async () => {
+test("跨分线接管：只踢出陈旧会话、剔除它后重试同一批（同 rev、同事件前缀），其余座位与事件日志保留，分线不下线", async () => {
     const c = cluster(), a = await c.build("m1"), b = await c.build("m2");
     const alice = await c.enter(a, "a"), bob = await c.enter(a, "bob", P_B, U_B), carol = await c.enter(a, "carol", P_C, U_C);
     checkpoint(a); await a.room.flushCheckpoints();
-    const durableLog = [...c.port.log], durableBob = c.port.personas.get(`0:${P_B}`)!.snapshot as WorldFixturePersonaSnapshot;
+    const durableAlice = c.port.personas.get(`0:${P_A}`)!;
     const gate = deferred(), started = deferred(), save = a.checkpointer.save.bind(a.checkpointer);
-    let saveCalls = 0, personaSaveCalls = 0;
-    a.checkpointer.save = async (id, batch) => { saveCalls += 1; started.resolve(); await gate.promise; return save(id, batch); };
-    a.checkpointer.savePersona = async () => { personaSaveCalls += 1; throw new Error("must not save queued persona"); };
+    const savedPersonas: string[][] = [];
+    a.checkpointer.save = async (id, batch) => { savedPersonas.push(batch.personas.map((persona) => persona.personaId)); if (savedPersonas.length === 1) { started.resolve(); await gate.promise; } return save(id, batch); };
     a.room.signal("loot", { session: "a", amount: 9 });
     dispatch(a.room, C2S.WorldFixtureMove, bob, { dirX: 1, dirY: 0, seq: 1 }); checkpoint(a);
     await started.promise;
-    await c.enter(b, "new-a"); // 当前 epoch 普通票：新的合法控制者已在另一图。
-    checkpoint(a); // 全批已排队，仍包含旧 epoch 的 alice。
-    await a.room.onLeave(carol as never, CloseCode.CONSENTED); // persona 强制点也排在失败批之后。
+    await c.enter(b, "new-a"); // 当前 epoch 普通票：alice 的合法控制者已在另一图（epoch 抬高），a 房里的座位成了陈旧座位
     gate.resolve(); await a.room.flushCheckpoints(); await settle();
-    assert.equal(a.room.phase, WorldPhase.Offline, "不再无限留在 Active 重试失败");
-    assert.equal(a.room.isDisposed, true);
-    assert.equal(alice.closed, WORLD_LOST_CONTROL_CLOSE_CODE);
-    assert.notEqual(bob.closed, null, "其余玩家重新连接已持久状态，⛔ 删除守卫后保存脏世界");
+    assert.equal(a.room.phase, WorldPhase.Active, "⛔ 因一个 persona 让整条分线 Offline");
+    assert.equal(a.room.isDisposed, false);
+    assert.equal(alice.closed, WORLD_LOST_CONTROL_CLOSE_CODE, "陈旧会话被踢出（lost-control）");
+    assert.deepEqual([bob.closed, carol.closed, a.room.seatedCount], [null, null, 2], "其余座位不受影响");
+    assert.deepEqual(savedPersonas, [[P_A, P_B, P_C], [P_B, P_C]], "同一批剔除 alice 后恰重试一次");
+    assert.equal(a.room.checkpointRevision, 2, "重试成功 ⇒ rev 推进");
+    assert.deepEqual(c.events.map((event) => [event.seq, (event.payload as { amount: number }).amount, event.checkpointRev]), [[1, 9, 2]], "事件日志保留并只落库一次");
+    assert.deepEqual(c.port.personas.get(`0:${P_A}`), durableAlice, "陈旧 persona 的快照不再由本房写（归新控制者）");
+    assert.ok((c.port.personas.get(`0:${P_B}`)!.snapshot as WorldFixturePersonaSnapshot).x > 0, "其他 persona 的快照照常落盘");
+    assert.equal(c.control.personas.get(P_A)!.controlEpoch, 2, "⛔ 归还已被抬高的控制权");
     assert.equal(b.room.seatedCount, 1, "新控制者不受影响");
-    assert.equal(saveCalls, 1, "后继全批和 drain 强制点都不能再写");
-    assert.equal(personaSaveCalls, 0, "已排队的 persona 强制点也不能再写");
-    assert.deepEqual(c.port.log, durableLog);
-    assert.equal(c.events.length, 0, "失控来源不明的未耐久事件不得去掉守卫重放");
-    const restarted = await c.build("m1");
-    assert.equal(restarted.room.checkpointRevision, 1);
-    const bob2 = await c.enter(restarted, "bob2", P_B, U_B);
-    assert.equal(restarted.mode.__probe.moverOf("bob2")?.x, durableBob.x, "角色回到最后耐久快照");
-    dispatch(restarted.room, C2S.WorldFixtureMove, bob2, { dirX: 1, dirY: 0, seq: 1 }); checkpoint(restarted);
-    await restarted.room.flushCheckpoints();
-    assert.equal(restarted.room.checkpointRevision, 2, "重建后可正常保存");
-    assert.ok((c.port.personas.get(`0:${P_B}`)!.snapshot as WorldFixturePersonaSnapshot).x > durableBob.x);
-    assert.equal(c.events.length, 0);
-    await restarted.room.onDispose(); await b.room.onDispose();
+    checkpoint(a); await a.room.flushCheckpoints();
+    assert.equal(a.room.checkpointRevision, 3, "之后照常保存");
+    assert.deepEqual(savedPersonas.at(-1), [P_B, P_C]);
+    await a.room.onDispose(); await b.room.onDispose();
+});
+
+test("persona 级强制点遇控制权冲突：只踢出该会话、交接取消，分线与其他座位不受影响", async () => {
+    const c = cluster(), a = await c.build("m1"), b = await c.build("m2");
+    const alice = await c.enter(a, "a"), bob = await c.enter(a, "bob", P_B, U_B);
+    checkpoint(a); await a.room.flushCheckpoints();
+    await c.enter(b, "new-a"); // alice 在另一图被接管
+    dispatch(a.room, C2S.WorldFixturePortal, alice, { toMap: "m2" }); a.room.advance(50);
+    await settle();
+    assert.equal(alice.closed, WORLD_LOST_CONTROL_CLOSE_CODE, "persona 强制点冲突 ⇒ 踢出陈旧会话");
+    assert.deepEqual([a.room.phase, bob.closed, a.room.seatedCount], [WorldPhase.Active, null, 1]);
+    assert.deepEqual([...c.transfers.rows.values()].map((row) => row.state), ["cancelled"], "交接不能继续 commit");
+    assert.ok(!a.mode.__probe.log.some((line) => line.startsWith("transfer:a:ready")));
+    checkpoint(a); await a.room.flushCheckpoints();
+    assert.equal(a.room.checkpointRevision, 3, "分线照常保存（persona 强制点已预留 rev 2，下一批取 3）");
+    await a.room.onDispose(); await b.room.onDispose();
 });
