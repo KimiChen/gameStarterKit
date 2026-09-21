@@ -10,7 +10,7 @@ import { test } from "node:test";
 // @ts-expect-error 纯 ESM 工具模块，无类型声明。
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
-import { readSgzzmapEvidence, sgzzmapGestureArea, sgzzmapMinimapCenter } from "../../../tools/creator-preview/sgzzmap.mjs";
+import { judgeSelectionUnderCursor, readSgzzmapEvidence, sgzzmapGestureArea, sgzzmapMinimapCenter } from "../../../tools/creator-preview/sgzzmap.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
 import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, SLG_WORLD_SIZE, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
 import { SLG_MAPS } from "@game/shared/kits/slg/api/worldmap/index";
@@ -436,4 +436,22 @@ test("sgzzmapGestureArea / sgzzmapMinimapCenter：点击区避开页眉页脚，
     assert.deepEqual(sgzzmapMinimapCenter({ nodes: [{ name: "sgzz-minimap", center: { x: 7, y: 8 } }] }), { x: 7, y: 8 });
     assert.equal(sgzzmapMinimapCenter({ nodes: [] }), null);
     assert.equal(sgzzmapMinimapCenter(null), null);
+});
+
+test("judgeSelectionUnderCursor：框在画布外 / 离点击处太远都点名，正常放行", () => {
+    const canvas = { x: 0, y: 0, width: 1125, height: 2313 };
+    const click = { x: 560, y: 1100 };
+    const ok = { selectionAt: { x: 566, y: 1090 } };
+    assert.equal(judgeSelectionUnderCursor(ok, canvas, click), null);
+
+    // ★ 真机上抓到的那个形态：y 为负 ⇒ 框在画布上方
+    const outside = judgeSelectionUnderCursor({ selectionAt: { x: 954, y: -4.6 } }, canvas, click);
+    assert.match(String(outside), /画布外/u);
+
+    // 在画布内但离点击处一屏远
+    const far = judgeSelectionUnderCursor({ selectionAt: { x: 100, y: 2200 } }, canvas, click);
+    assert.match(String(far), /离点击处/u);
+
+    assert.match(String(judgeSelectionUnderCursor({}, canvas, click)), /不在渲染树/u);
+    assert.match(String(judgeSelectionUnderCursor(null, canvas, click)), /不在渲染树/u);
 });

@@ -81,6 +81,29 @@ export function sgzzmapGestureArea(walk) {
     };
 }
 
+/**
+ * 选中框必须落在**点击处**——这是「点击→格」坐标换算的直接判据。
+ * ⚠ 换算错过一次（UI 坐标原点在左下，被当成居中坐标），症状是选中框跑到画布外，
+ * 而「地块详情」照样出得来 ⇒ 光看详情文本是抓不到的。
+ */
+export function judgeSelectionUnderCursor(evidence, canvas, clickAt, toleranceTiles = 2) {
+    const at = evidence?.selectionAt;
+    if (!at) return "选中框节点不在渲染树上";
+    const inside = at.x >= canvas.x && at.x <= canvas.x + canvas.width
+        && at.y >= canvas.y && at.y <= canvas.y + canvas.height;
+    if (!inside) {
+        return `选中框在画布外：${JSON.stringify(at)}（画布 ${canvas.x},${canvas.y} ${canvas.width}×${canvas.height}）`;
+    }
+    // 一格在页面上约 canvas.width/12（近档 LOD0 的量级），给 toleranceTiles 格的余量
+    const tile = canvas.width / 12;
+    const distance = Math.hypot(at.x - clickAt.x, at.y - clickAt.y);
+    if (distance > tile * toleranceTiles) {
+        return `选中框离点击处 ${Math.round(distance)}px（> ${Math.round(tile * toleranceTiles)}px）：`
+            + `点 ${JSON.stringify(clickAt)}，框 ${JSON.stringify({ x: Math.round(at.x), y: Math.round(at.y) })}`;
+    }
+    return null;
+}
+
 /** 缩略图中心（右上角浮层）；点它会跳到对应坐标。 */
 export function sgzzmapMinimapCenter(walk) {
     const node = walk?.nodes?.find((entry) => entry.name === "sgzz-minimap");
@@ -123,6 +146,10 @@ export async function replaySgzzmapWorld(runner) {
                     const got = readSgzzmapEvidence(walk);
                     return got?.tile ? got : null;
                 });
+                // ★ 先判「选中框是否落在点击处」——坐标换算错的话这里立刻红，
+                //   ⛔ 不要等到占领那步才发现「占了但看不见」
+                const misplaced = judgeSelectionUnderCursor(value, (await runner.walk()).canvas, at);
+                if (misplaced) throw new Error(`点击→格 坐标换算不对：${misplaced}`);
                 tried.push({ at: [Math.round(at.x), Math.round(at.y)], tile: value.tile.text });
                 // 要一格「可通行且无主」的，才能演占领
                 if (value.tile.passable && value.tile.owner === "无主") {
