@@ -1,5 +1,5 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { fontRef, imageRef, type ImageRef } from '../../../../kits/uniflex/api/core/index';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
 import { StarRow } from '../../../gamecomponents/star/StarRow';
 
@@ -9,6 +9,7 @@ export type HeroCardClass = 'shield' | 'sword' | 'anchor';
 export interface HeroCardProps {
     readonly quality: HeroCardQuality;
     readonly classId: HeroCardClass;
+    readonly portrait?: ImageRef;
     readonly owned: boolean;
     readonly level?: string;
     readonly fragments?: string;
@@ -55,7 +56,7 @@ export const HeroCard = defineComponent<HeroCardProps>((p) => {
         style={{ position: 'relative', width: 170, height: 248 }}>
         <image source={frame}
             style={{ position: 'absolute', width: 170, height: 248 }} />
-        <image source={imageRef('ui/hero/portrait')}
+        <image source={p.portrait ?? imageRef('ui/hero/portrait')}
             style={{ position: 'absolute', left: 4, top: 4, width: 162, height: 180 }} />
         <image source={classIcon}
             style={{ position: 'absolute', left: 6, top: 6, width: 34, height: 42 }} />

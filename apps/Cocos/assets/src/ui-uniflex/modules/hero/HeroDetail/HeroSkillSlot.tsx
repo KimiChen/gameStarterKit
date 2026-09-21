@@ -1,11 +1,12 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { fontRef, imageRef, type ImageRef } from '../../../../kits/uniflex/api/core/index';
 
 export interface HeroSkillSlotProps {
     readonly left: number;
     readonly top: number;
     readonly selected?: boolean;
     readonly locked?: boolean;
+    readonly icon?: ImageRef;
     readonly level?: string;
     readonly onClick?: () => void;
 }
@@ -20,6 +21,8 @@ export const HeroSkillSlot = defineComponent<HeroSkillSlotProps>((p) => (
             style={{ position: 'absolute', left: 0, top: 0, width: 194, height: 194 }} />
         <image source={imageRef('ui/hero-detail/skill-base')}
             style={{ position: 'absolute', left: p.selected ? 25 : 0, top: p.selected ? 25 : 0, width: 144, height: 144 }} />
+        <image visible={p.icon != null} source={p.icon ?? imageRef('ui/hero-detail/skill-base')}
+            style={{ position: 'absolute', left: p.selected ? 37 : 12, top: p.selected ? 37 : 12, width: 120, height: 120 }} />
         <image visible={p.locked === true} source={imageRef('ui/hero-detail/skill-lock')}
             style={{ position: 'absolute', left: p.selected ? 28 : 3, top: p.selected ? 28 : 3, width: 138, height: 138 }} />
         <image source={imageRef('ui/hero-detail/skill-level-bg')}

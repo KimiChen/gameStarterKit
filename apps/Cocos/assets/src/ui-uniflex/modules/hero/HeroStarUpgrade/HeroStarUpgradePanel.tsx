@@ -26,17 +26,17 @@ export interface HeroStarUpgradePanelProps {
     readonly onExchange?: () => void;
 }
 
-const defaultAttributes: readonly HeroStarAttribute[] = [
-    { name: '攻击力', current: '44444', next: '44444' },
-    { name: '攻击力', current: '44444', next: '44444' },
-    { name: '攻击力', current: '44444', next: '44444' },
-    { name: '攻击力', current: '44444', next: '44444' },
-];
+const EMPTY_ATTRIBUTE: HeroStarAttribute = { name: '', current: '', next: '' };
+
 const starSlots = [148, 234, 320, 405, 491] as const;
 
 export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((p) => {
     const stars = Math.max(0, Math.min(5, p.stars ?? 1));
-    const attributes = p.attributes ?? defaultAttributes;
+    const attributes = p.attributes ?? [];
+    const attribute0 = attributes[0] ?? EMPTY_ATTRIBUTE;
+    const attribute1 = attributes[1] ?? EMPTY_ATTRIBUTE;
+    const attribute2 = attributes[2] ?? EMPTY_ATTRIBUTE;
+    const attribute3 = attributes[3] ?? EMPTY_ATTRIBUTE;
     const owned = p.owned ?? 40;
     const required = p.required ?? 45;
     const progressText = `${owned}/${required}`;
@@ -74,29 +74,29 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
                     style={{ position: 'absolute', left: 12, top: 284, width: 683, height: 50,
                         font: fontRef('fonts/regular', 700), fontSize: 30, color: '#3F3254', bold: true,
                         horizontalAlign: 'center', verticalAlign: 'center' }} />
-                <view style={{ position: 'absolute', left: 12, top: rows[0], width: 683, height: 55 }}>
-                    <HeroStarAttributeRow striped={attributes[0]?.striped === true}
-                        name={attributes[0]?.name ?? '攻击力'}
-                        current={attributes[0]?.current ?? '44444'}
-                        next={attributes[0]?.next ?? '44444'} />
+                <view visible={attributes[0] != null} style={{ position: 'absolute', left: 12, top: rows[0], width: 683, height: 55 }}>
+                    <HeroStarAttributeRow icon={attribute0.icon} striped={attribute0.striped === true}
+                        name={attribute0.name}
+                        current={attribute0.current}
+                        next={attribute0.next} />
                 </view>
-                <view style={{ position: 'absolute', left: 12, top: rows[1], width: 683, height: 55 }}>
-                    <HeroStarAttributeRow striped={attributes[1]?.striped !== false}
-                        name={attributes[1]?.name ?? '攻击力'}
-                        current={attributes[1]?.current ?? '44444'}
-                        next={attributes[1]?.next ?? '44444'} />
+                <view visible={attributes[1] != null} style={{ position: 'absolute', left: 12, top: rows[1], width: 683, height: 55 }}>
+                    <HeroStarAttributeRow icon={attribute1.icon} striped={attribute1.striped !== false}
+                        name={attribute1.name}
+                        current={attribute1.current}
+                        next={attribute1.next} />
                 </view>
-                <view style={{ position: 'absolute', left: 12, top: rows[2], width: 683, height: 55 }}>
-                    <HeroStarAttributeRow striped={attributes[2]?.striped === true}
-                        name={attributes[2]?.name ?? '攻击力'}
-                        current={attributes[2]?.current ?? '44444'}
-                        next={attributes[2]?.next ?? '44444'} />
+                <view visible={attributes[2] != null} style={{ position: 'absolute', left: 12, top: rows[2], width: 683, height: 55 }}>
+                    <HeroStarAttributeRow icon={attribute2.icon} striped={attribute2.striped === true}
+                        name={attribute2.name}
+                        current={attribute2.current}
+                        next={attribute2.next} />
                 </view>
-                <view style={{ position: 'absolute', left: 12, top: rows[3], width: 683, height: 55 }}>
-                    <HeroStarAttributeRow striped={attributes[3]?.striped !== false}
-                        name={attributes[3]?.name ?? '攻击力'}
-                        current={attributes[3]?.current ?? '44444'}
-                        next={attributes[3]?.next ?? '44444'} />
+                <view visible={attributes[3] != null} style={{ position: 'absolute', left: 12, top: rows[3], width: 683, height: 55 }}>
+                    <HeroStarAttributeRow icon={attribute3.icon} striped={attribute3.striped !== false}
+                        name={attribute3.name}
+                        current={attribute3.current}
+                        next={attribute3.next} />
                 </view>
                 <ProgressBar left={157} top={604} width={391} height={44}
                     track={progressTrack} fill={progressFill} value={owned} max={required}

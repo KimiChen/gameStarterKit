@@ -1,8 +1,9 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { fontRef, imageRef, type ImageRef } from '../../../../kits/uniflex/api/core/index';
 
 export interface HeroStarAttributeRowProps {
     readonly striped: boolean;
+    readonly icon?: ImageRef;
     readonly name: string;
     readonly current: string;
     readonly next: string;
@@ -12,7 +13,7 @@ export const HeroStarAttributeRow = defineComponent<HeroStarAttributeRowProps>((
     <view name="HeroStarAttributeRow" style={{ width: 683, height: 55 }}>
         <image visible={p.striped} source={imageRef('ui/star-upgrade/row-bg')}
             style={{ position: 'absolute', width: 683, height: 55 }} />
-        <image source={imageRef('ui/star-upgrade/attack-icon')}
+        <image source={p.icon ?? imageRef('ui/star-upgrade/attack-icon')}
             style={{ position: 'absolute', left: 29, top: 12, width: 25, height: 32 }} />
         <text value={p.name}
             style={{ position: 'absolute', left: 57, top: 10, width: 160, height: 36,

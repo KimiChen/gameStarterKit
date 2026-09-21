@@ -5,6 +5,7 @@ import { HeroSkillSlot } from './HeroSkillSlot';
 export interface HeroSkill {
     readonly id: string;
     readonly name: string;
+    readonly icon?: import('../../../../kits/uniflex/api/core/index').ImageRef;
     readonly level: string;
     readonly locked: boolean;
     readonly desc: string;
@@ -45,13 +46,13 @@ export const HeroDetailSkills = defineComponent<HeroDetailSkillsProps>((p) => {
     return (
         <view name="HeroDetailSkills" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <HeroSkillSlot left={slots[0].left} top={slots[0].top} selected={index === 0}
+            <HeroSkillSlot left={slots[0].left} top={slots[0].top} selected={index === 0} icon={skills[0]?.icon}
                 locked={skills[0]?.locked} level={skills[0]?.level} onClick={() => pick(0)} />
-            <HeroSkillSlot left={slots[1].left} top={slots[1].top} selected={index === 1}
+            <HeroSkillSlot left={slots[1].left} top={slots[1].top} selected={index === 1} icon={skills[1]?.icon}
                 locked={skills[1]?.locked} level={skills[1]?.level} onClick={() => pick(1)} />
-            <HeroSkillSlot left={slots[2].left} top={slots[2].top} selected={index === 2}
+            <HeroSkillSlot left={slots[2].left} top={slots[2].top} selected={index === 2} icon={skills[2]?.icon}
                 locked={skills[2]?.locked} level={skills[2]?.level} onClick={() => pick(2)} />
-            <HeroSkillSlot left={slots[3].left} top={slots[3].top} selected={index === 3}
+            <HeroSkillSlot left={slots[3].left} top={slots[3].top} selected={index === 3} icon={skills[3]?.icon}
                 locked={skills[3]?.locked} level={skills[3]?.level} onClick={() => pick(3)} />
             <view interaction="press" style={{ position: 'absolute', left: 25, top: 798, width: 58, height: 80 }}>
                 <image source={imageRef('ui/hero-detail/arrow')} style={{ width: 58, height: 80 }} />

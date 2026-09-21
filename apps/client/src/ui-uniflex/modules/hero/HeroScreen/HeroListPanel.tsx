@@ -1,5 +1,5 @@
 import { defineComponent, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
-import { ArrayVirtualListDataSource, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
+import { ArrayVirtualListDataSource, imageRef, type ImageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { HeroCard, type HeroCardClass, type HeroCardQuality } from './HeroCard';
 import { HeroFilterBar, type HeroFilterId } from './HeroFilterBar';
 
@@ -7,6 +7,7 @@ export interface HeroCardItem {
     readonly id: string;
     readonly quality: HeroCardQuality;
     readonly classId: HeroCardClass;
+    readonly portrait?: ImageRef;
     readonly owned: boolean;
     readonly level?: string;
     readonly fragments?: string;
@@ -51,7 +52,7 @@ export const HeroListPanel = defineComponent<HeroListPanelProps>((p) => {
                 direction="vertical" itemSize={248} gap={12} crossGap={5} overscan={1}
                 controller={list} inertia elastic
                 style={{ position: 'absolute', left: 25, top: 169, width: 696, height: 923 }}>
-                {(item) => <HeroCard quality={item.quality} classId={item.classId} owned={item.owned}
+                {(item) => <HeroCard quality={item.quality} classId={item.classId} portrait={item.portrait} owned={item.owned}
                     level={item.level} fragments={item.fragments} fillWidth={item.fillWidth}
                     stars={item.stars} team={item.team} onClick={() => p.onSelectCard?.(item.id)} />}
             </VirtualList>
