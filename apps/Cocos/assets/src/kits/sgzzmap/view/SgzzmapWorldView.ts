@@ -27,7 +27,11 @@ const BACK = new Color(22, 26, 24, 255);
 const PANEL = new Color(24, 30, 28, 255);
 const TEXT = new Color(236, 243, 237, 255);
 const MUTED = new Color(150, 176, 168, 255);
-const MARK = new Color(255, 224, 119, 255);
+/**
+ * 选中框。⚠ 必须与描边（金黄 `BORDER_RGBA`）拉开：两者都是贴着格子的菱形轮廓、半径只差 0.12，
+ * 同色会并成一条粗黄带，分不出「这格是我的」和「这格被选中」。
+ */
+const MARK = new Color(255, 255, 255, 255);
 const ACCENT = new Color(46, 84, 74, 255);
 
 export class SgzzmapWorldView extends CocosView {
