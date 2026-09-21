@@ -4,7 +4,7 @@
  * `test:int` 的行：SET NX 单一胜者、碰撞重试上限、Lua CAS（旧 lease 不能 renew/release
  * 新 lease）、renew lost、tombstone 隔离期（⛔ 非 DEL）、崩溃 TTL 回收与 generation 永不
  * 重置、ticket jti 状态机（并发/重放/失败重试/expiry）、配额、resolve 折叠类响应字节
- * 完全相同、专用速率桶，以及「invite 房不被 joinOrCreate 选中 + driver 回查 private」
+ * 完全相同、专用速率桶、PS3 resolve 不读满员 / 锁定快照，以及「invite 房不被 joinOrCreate 选中 + driver 回查 private」
  * 的真服端到端（§6.9 用户流程）。
  */
 import "./env-setup";
@@ -378,7 +378,7 @@ test("resolve：专用速率桶（fail/ok/全区 fail 三桶独立于通用 RPC 
     }
 });
 
-test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private===true、resolve→joinById→Ready→Start", {
+test("端到端：private 撮合隔离；PS3 锁定/满员仍可 resolve，入房端拒绝；解锁原票入座→Ready→Start", {
     timeout: 30_000,
 }, async () => {
     await assertRedisUp();
@@ -410,6 +410,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
     let listening = false;
     let ownerRoom: SDKRoom | undefined;
     let friendRoom: SDKRoom | undefined;
+    const extraRooms: SDKRoom[] = [];
     try {
         await server.listen(0);
         listening = true;
@@ -462,21 +463,50 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
             "joinOrCreate 不得撮合进 private 房，也不能白手创建私房",
         );
 
-        // §6.9 好友流程：resolve(code) → joinById(roomId, joinTicket)。
+        // PS3：锁定 listing 不能阻止 Lobby 签票；锁房拒绝属于 game 端。
+        // 变异：恢复 privateRoomRpc 的 listing.locked 分支，本次 resolve 转红。
+        await serverRoom.lock();
+        assert.equal((await matchMaker.driver.findOne({ roomId }))?.locked, true);
         const resolved = await zoneCtx.run({ sId: SID }, () => handleRoomResolve(friendUid, { code: view.roomCode }));
         usedTicketHashes.push(accessTicketHash(resolved.joinTicket));
         assert.equal(resolved.roomId, roomId);
         assert.equal(resolved.mode, FIXTURE_MODE_ID);
         assert.equal(resolved.profile, "private");
-        friendRoom = await strangerClient.joinById(roomId, {
+        const friendOptions: IGameRoomJoinOptions = {
             v: GAME_ROOM_PROTOCOL_VERSION,
             sId: SID,
             mode: FIXTURE_MODE_ID,
             modeVersion: FIXTURE_MODE_VERSION,
             profile: "private",
             access: { kind: "join", ticket: resolved.joinTicket },
-        });
+        };
+        await assert.rejects(strangerClient.joinById(roomId, friendOptions), /locked/u, "锁定只在 game 端拒绝");
+        await serverRoom.unlock();
+        friendRoom = await strangerClient.joinById(roomId, friendOptions);
         assert.equal(view.players.size, 2, "好友经 ticket 准入落座");
+
+        // 真正坐满四人后仍签第五人的票；拒绝发生在 SDK 预留 / GameRoom admission。
+        for (const suffix of ["third", "fourth", "overflow"]) {
+            const guestUid = testUid(`e2e-${suffix}`);
+            const { token } = await issueSession(guestUid, null, "", SID);
+            const guestClient = new SDKClient(endpoint);
+            guestClient.auth.token = token;
+            const ticket = await zoneCtx.run({ sId: SID }, () => handleRoomResolve(guestUid, { code: view.roomCode }));
+            usedTicketHashes.push(accessTicketHash(ticket.joinTicket));
+            const options: IGameRoomJoinOptions = { ...friendOptions, access: { kind: "join", ticket: ticket.joinTicket } };
+            if (suffix === "overflow") {
+                const full = await matchMaker.driver.findOne({ roomId });
+                assert.ok(full && full.clients >= full.maxClients, "真实 listing 已满，resolve 仍成功");
+                await assert.rejects(guestClient.joinById(roomId, options), "第五人由入房端拒绝");
+            } else {
+                extraRooms.push(await guestClient.joinById(roomId, options));
+            }
+        }
+        await Promise.all(extraRooms.map((room) => room.leave()));
+        extraRooms.length = 0;
+        const seatsDeadline = Date.now() + 5_000;
+        while (view.players.size !== 2 && Date.now() < seatsDeadline) await sleep(20);
+        assert.equal(view.players.size, 2, "两名临时成员离开后恢复双人开局");
         // 入座默认 Ready=false；双方 Ready 后房主 Start → Playing。
         ownerRoom.send(C2S.RoomReady, { ready: true });
         friendRoom.send(C2S.RoomReady, { ready: true });
@@ -496,6 +526,7 @@ test("端到端：private 房不进 joinOrCreate 撮合、driver 回查 private=
         assert.equal(await readInviteLease(SID, view.roomCode), "unavailable", "Playing 后码立即失效");
     } finally {
         await Promise.allSettled([
+            ...extraRooms.map((room) => room.leave()),
             friendRoom?.leave() ?? Promise.resolve(),
             ownerRoom?.leave() ?? Promise.resolve(),
         ]);

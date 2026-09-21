@@ -349,7 +349,7 @@ test("私房容量矩阵：2/3/4 人全 Ready 可开局，1 人 BelowMin，第�
 
 // ── §10.3：非房主 Start、有人未 Ready、重复 Start 都有稳定拒绝 ────────────────
 // 变异验证：去掉 handleRoomStart 的 owner 校验 → NotOwner 断言转红。
-test("私房：非房主 Start / 未全 Ready / Start 在途重复 Start 的稳定拒绝", async () => {
+test("私房：非房主 Start / 未全 Ready / Start 在途重复 Start 与新客入房的稳定拒绝", async () => {
     const gate = deferred();
     const harness = await buildPrivateRoom({ lock: () => gate.promise });
     const owner = await seatOwner(harness);
@@ -368,6 +368,16 @@ test("私房：非房主 Start / 未全 Ready / Start 在途重复 Start 的稳�
     assert.equal(harness.view().starting, true, "starting 必须写进 state（客户端禁用按钮的依据）");
     dispatch(harness.room, C2S.RoomStart, owner, {});
     assert.equal(lastRoomError(owner), RoomControlError.StartInProgress);
+    // PS3：resolve 不预判 start fence；即使好友持有效票，入房端仍必须在 claim 前拒绝。
+    const lateTicket = "JOINTICKET_starting_0000000000000000000000";
+    harness.tickets.issueJoin(lateTicket, "u-starting-late");
+    const claimsBefore = harness.tickets.callLog.length;
+    await assert.rejects(
+        harness.room.onJoin(client("starting-late", "u-starting-late") as never, harness.joinOptions({ kind: "join", ticket: lateTicket })),
+        (error: unknown) => error instanceof Error && error.message.includes(String(ErrorCode.GameAlreadyStarted)),
+        "starting 期间的新客由 GameRoom admission 拒绝",
+    );
+    assert.equal(harness.tickets.callLog.length, claimsBefore, "同步 start fence 拒绝不消费 join ticket");
     gate.resolve();
     await startAndSettle(harness.room, owner);
     assert.equal(harness.view().phase, GamePhase.Playing);

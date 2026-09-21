@@ -6,18 +6,17 @@
  * 两个 handler 都跑在 LobbyRoom 建立的 `zoneCtx.run({sId})` 内，经 `currentZoneId()` 取
  * 权威区号（⛔ 不接受客户端自报 sId），随后向邀请码/ticket 层以显式参数逐层传递。
  *
- * resolve 错误三分（§6.8，⛔ 不把 resolve 变成存在性预言机）：
+ * resolve 只读 lease 并签票（MMO PS3）；不依赖 game 进程的 matchmaker 快照，不预留座位。
+ * 容量 / start fence 留在入房端判断（GameRoom admission 或 SDK 预留阶段）。
+ * resolve 错误纪律（§6.8，⛔ 不把 resolve 变成存在性预言机）：
  *  - 折叠类：码不存在 / 隔离期 / 过期 / mode·profile 不匹配 / 区不匹配 → 同一稳定码
  *    `ROOM_CODE_UNAVAILABLE`，**响应字节完全相同**（同一构造点、同一文案、不回显 code）；
- *  - 保留类：`ROOM_FULL`（持码者本就是被邀请方）；码格式非法 → core `INVALID_PAYLOAD`
- *    （request validator 已拒）；
- *  - 可重试类：`ROOM_START_IN_PROGRESS`（start fence 已置位、Playing 未发布的小窗），以及
- *    `ROOM_SERVICE_UNAVAILABLE` / `ROOM_RESULT_UNKNOWN`——协调 Redis 不可达时 ⛔ 绝不降级
+ *  - 码格式非法 → core `INVALID_PAYLOAD`（request validator 已拒）；
+ *  - 可重试类：`ROOM_SERVICE_UNAVAILABLE`——协调 Redis 不可达时 ⛔ 绝不降级
  *    为「码不存在」这类确定性结论（§6.5）。
  *
  * 真实原因只进服务端日志与指标，且 ⛔ 不与 code / ticket 同行记录。
  */
-import { matchMaker } from "@colyseus/core";
 import { GAMEPLAY_CATALOG, type RpcReq, type RpcRes } from "@game/shared";
 import { RateLimitedError, RpcFault } from "../errors";
 import {
@@ -131,25 +130,6 @@ export async function handleRoomResolve(
   // mode/profile 不匹配（catalog 已不再声明该组合）与区不匹配同属折叠类。
   const entry = (GAMEPLAY_CATALOG as Readonly<Partial<Record<string, CatalogEntry>>>)[lease.mode];
   if (!entry || !entry.profiles.includes(lease.profile)) throw foldedUnavailable();
-
-  // phase / starting / 容量只能作为最佳努力 UX 快照（查询失败只跳过，⛔ 不改变结论；
-  // 真正入座仍以 GameRoom 的原子 admission 结果为准——resolve 不预留座位）。
-  try {
-    const listing = await matchMaker.driver.findOne({ roomId: lease.roomId });
-    if (listing) {
-      if (listing.locked) {
-        // §6.7 取 tombstone 后，「已开局」只剩 start fence 置位、Playing 未发布的小窗：
-        // 可重试的 Start 在途（客户端退避后重试即可得到确定结论）。
-        throw new RpcFault("ROOM_START_IN_PROGRESS", "开局中，请稍后重试");
-      }
-      if (listing.clients >= listing.maxClients) {
-        throw new RpcFault("ROOM_FULL", "房间已满");
-      }
-    }
-  } catch (error) {
-    if (error instanceof RpcFault) throw error;
-    // listing 快照失败不是权威结论的一部分。
-  }
 
   // 成功预算独立于失败预算（§6.8：至少区分 per-uid 失败与成功预算）。
   await consumeResolveBudget(RESOLVE_BUCKET_SCOPES.ok(uid), RESOLVE_OK_CAPACITY, RESOLVE_OK_REFILL_PER_S);
