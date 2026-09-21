@@ -84,22 +84,18 @@ export function readSgzzmapEvidence(walk) {
 /** 地图可点区域（页眉页脚之间），用于挑一个不会点到按钮的位置。 */
 export function sgzzmapGestureArea(walk) {
     const canvas = walk.canvas;
-    // ★ 从渲染出来的页眉/页脚底板**实测**可点区。
-    // ⚠ 早先按 20%/68% 猜，而 View 用的是 min(150, h*0.14) / min(270, h*0.26)：
-    //   高 1542 时真中心在 46.1%、猜出来是 44%，差 32 px —— 恰好一格，
-    //   于是「回领地」之后点中心选到的是家旁边那一格而不是家本身。⛔ 不要再写死百分比。
-    const rect = (name) => walk.nodes.find((node) => node.name === name && node.center)?.center ?? null;
-    const header = rect("sgzz-header"), footer = rect("sgzz-footer");
-    if (!header || !footer) throw new Error("地图页缺少 sgzz-header / sgzz-footer 底板，无法实测可点区");
-    const top = header.y + header.height / 2;
-    const bottom = footer.y - footer.height / 2;
-    const inset = (bottom - top) * 0.06;          // 各缩 6% 留安全边，⛔ 别贴着按钮点
-    return {
-        x: canvas.x + canvas.width / 2,
-        y: (top + bottom) / 2,
-        width: canvas.width * 0.7,
-        height: (bottom - top) - inset * 2,
-    };
+    // ★ 全程走**页面坐标**（node.center.x/y），⛔ 不碰 center.width/height ——
+    //   后者是**设计单位**（UITransform.width/height），两者混用会算出一个差一格的中心：
+    //   run 5/6 就是这么把「回领地」之后的中心点选打偏到家旁边那一格的。
+    const at = (name) => walk.nodes.find((node) => node.name === name && node.center)?.center ?? null;
+    const anchor = at("sgzz-map-anchor"), header = at("sgzz-header"), footer = at("sgzz-footer");
+    if (!anchor || !header || !footer) {
+        throw new Error("地图页缺少 sgzz-map-anchor / sgzz-header / sgzz-footer，无法实测可点区");
+    }
+    // 到页眉/页脚中心的距离取小者再留 20% 余量：算出来的半高必落在地图区内，且够不着按钮
+    const half = Math.min(anchor.y - header.y, footer.y - anchor.y) * 0.8;
+    if (!(half > 0)) throw new Error("地图可点区算成了空：页眉/页脚锚点次序不对");
+    return { x: anchor.x, y: anchor.y, width: canvas.width * 0.7, height: half * 2 };
 }
 
 /**
@@ -201,6 +197,12 @@ export async function replaySgzzmapWorld(runner) {
                 const misplaced = judgeSelectionUnderCursor(value, (await runner.walk()).canvas, at);
                 if (misplaced) throw new Error(`点击→格 坐标换算不对：${misplaced}`);
                 tried.push({ at: [Math.round(at.x), Math.round(at.y)], tile: value.tile.text });
+                // ★ 刚「回领地」过来，正中那一格**必须**是我方 —— 相机中心就是家那一格。
+                //   不是的话说明可点区中心算错了（run 5/6 就差了一格），要红，
+                //   ⛔ 不能让它悄悄降级成后面那支「连地闸拒绝」。
+                if (home.label === "回领地" && tried.length === 1 && !value.tile.mine) {
+                    throw new Error(`回领地后正中不是我方地（${value.tile.text}）：可点区中心算错了`);
+                }
                 if (value.tile.passable && value.tile.mine) {
                     return { ...value, tried, plan: "加固", shot: await runner.shot("sgzzmap-selected") };
                 }
@@ -225,6 +227,9 @@ export async function replaySgzzmapWorld(runner) {
             //   于是这里永远等不到；那条 bug 由 sgzzInMapBand 封住了，这里顺带当哨兵。
             if (value.tile.row !== selected.tile.row || value.tile.col !== selected.tile.col) return null;
             if (value.tile.mine && value.territory && value.border) return { ...value, outcome: "occupied" };
+            // ⚠ 加固自己的地没有失败的道理：这一支只留给「全新账号占空地」，
+            //   拿它兜住加固失败等于把 bug 盖掉。
+            if (selected.plan === "加固") return null;
             if (value.notice && REFUSAL_RE.test(value.notice)) return { ...value, outcome: "refused" };
             return null;
         });

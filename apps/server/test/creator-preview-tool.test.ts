@@ -434,21 +434,27 @@ test("readSgzzmapEvidence：远档解出底图与色块；不可通行/有主的
     assert.equal(detail("点选地图中的一格"), null, "占位文案⛔不能被当成地块详情");
 });
 
-test("sgzzmapGestureArea / sgzzmapMinimapCenter：点击区实测自页眉页脚底板，缩略图缺席返回 null", () => {
-    // ★ 真机布局（设计坐标，y 向下）：页眉 150、页脚 270、总高 1542 ⇒ 地图区 150..1272、中心 711
-    const canvas = { x: 0, y: 0, width: 750, height: 1542 };
+test("sgzzmapGestureArea / sgzzmapMinimapCenter：可点区实测自页面坐标锚点，缩略图缺席返回 null", () => {
+    // ⚠ center.x/y 是**页面像素**、center.width/height 是**设计单位**（lib.mjs 的 walk 就是这么产的）。
+    //   这里的 fixture 故意把两者写成不同量级：混用就会算错，混用正是 run 5/6 点偏一格的原因。
+    const canvas = { x: 659, y: 0, width: 374, height: 812 };
     const nodes = [
-        { name: "sgzz-header", center: { x: 375, y: 75, width: 750, height: 150 } },
-        { name: "sgzz-footer", center: { x: 375, y: 1407, width: 750, height: 270 } },
+        { name: "sgzz-header", center: { x: 846, y: 137, width: 750, height: 150 } },
+        { name: "sgzz-map-anchor", center: { x: 846, y: 388, width: 750, height: 1122 } },
+        { name: "sgzz-footer", center: { x: 846, y: 662, width: 750, height: 270 } },
     ];
     const area = sgzzmapGestureArea({ canvas, nodes });
-    // ⚠ 差一格就够把「回领地」之后的中心点选打偏：按 20%/68% 猜出来是 678.5，真值 711
-    assert.equal(area.y, 711, "可点区中心必须是页眉底边与页脚顶边的正中");
-    assert.ok(area.height > 0 && area.height < 1272 - 150, "各缩安全边后要比地图区窄");
-    assert.ok(area.x > canvas.x && area.x < canvas.x + canvas.width);
+    assert.equal(area.y, 388, "可点区中心 = 地图区锚点，⛔ 不是页眉页脚的中点");
+    assert.equal(area.x, 846);
+    // 半高取 min(388-137, 662-388)=251 再留 20% 余量 ⇒ 200.8
+    assert.equal(Math.round(area.height), 402);
+    assert.ok(area.y - area.height / 2 > 137, "⛔ 够不着页眉");
+    assert.ok(area.y + area.height / 2 < 662, "⛔ 够不着页脚");
 
-    // ⛔ 缺底板时不许拿百分比兜底——那正是当初点偏的原因
-    assert.throws(() => sgzzmapGestureArea({ canvas, nodes: [] }), /sgzz-header/u);
+    for (const missing of ["sgzz-map-anchor", "sgzz-header", "sgzz-footer"]) {
+        assert.throws(() => sgzzmapGestureArea({ canvas, nodes: nodes.filter((n) => n.name !== missing) }),
+                      /sgzz-map-anchor/u, `缺 ${missing} 必须抛`);
+    }
 
     assert.deepEqual(sgzzmapMinimapCenter({ nodes: [{ name: "sgzz-minimap", center: { x: 7, y: 8 } }] }), { x: 7, y: 8 });
     assert.equal(sgzzmapMinimapCenter({ nodes: [] }), null);

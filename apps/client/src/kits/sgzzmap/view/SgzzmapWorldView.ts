@@ -74,9 +74,13 @@ export class SgzzmapWorldView extends CocosView {
             createSolidPlate(selection, w, h, MARK, x, y);
         }
 
-        // ⚠ 这两块底板要有名字：重放据此实测地图可点区，⛔ 不再按百分比猜（猜错 32px = 差一格）
+        // ⚠ 这三个节点是**重放契约**：可点区由它们实测，⛔ 不按百分比猜（猜出来差一格）。
+        //   anchor 不挂渲染件、只有 UITransform，屏幕上看不见，但 walk 会给出它的页面坐标中心 ——
+        //   那就是地图区正中，点这里选到的必然是相机中心那一格。
         createSolidPlate(this.root, width, header, PANEL, 0, height / 2 - header / 2, "sgzz-header");
         createSolidPlate(this.root, width, footer, PANEL, 0, -height / 2 + footer / 2, "sgzz-footer");
+        this.node("sgzz-map-anchor", this.root, width, this.mapTop - this.mapBottom)
+            .setPosition(0, (this.mapBottom + this.mapTop) / 2);
         this.title = this.label("大地图", 25, TEXT, 0, height / 2 - header * 0.35, width * 0.55);
         this.button("关闭", width * 0.14, 44, width * 0.39, height / 2 - header * 0.35, () => runtime.close());
         // ⚠ 有地时这颗按钮是「回领地」：225 万格上关掉再进来，自己的地可能在几百格外，
