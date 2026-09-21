@@ -5,7 +5,7 @@
  * app/AppRuntime + app/bootstrap；本组件不再直接触达 pages/session/gameplay。
  */
 import { _decorator, Component, ResolutionPolicy, view } from "cc";
-import { DEV } from "cc/env";
+import { DEV, EDITOR } from "cc/env";
 import { installErrorOverlay } from "./core/errorOverlay";
 import { installWeChatCompat } from "./core/wechat-compat";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "./designSpec";
@@ -18,7 +18,9 @@ import type { AppRuntime } from "./app/AppRuntime";
 installWeChatCompat();
 // 开发期错误弹框：手机上开预览时「请打开控制台」等于没说，这个弹框可读、可选中、可一键复制。
 // ⚠ 要在最早期装上，才盖得住模块求值阶段就抛的错；⛔ DEV 闸不能去掉——release 不把堆栈甩给玩家。
-if (DEV) installErrorOverlay();
+// Creator 场景编辑器的 webview 禁止指针事件，DOM 弹框会挡住场景且无法关闭。
+// 编辑器使用自身控制台；游戏预览与 debug 构建仍在模块求值期安装。
+if (DEV && !EDITOR) installErrorOverlay({ enabled: DEV && !EDITOR });
 
 const { ccclass, property } = _decorator;
 
