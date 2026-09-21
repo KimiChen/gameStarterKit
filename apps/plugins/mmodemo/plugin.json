@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "id": "mmodemo",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "MMO 内容插件样本 1（docs/MMO.md §9.2）：灰谷内容包 demoVale + 表现映射 + 编排（定时 boss / 区域伏击 / 行商）——只消费 mmo kit 冻结的面与三个贡献点",
   "requires": {
     "kits": {

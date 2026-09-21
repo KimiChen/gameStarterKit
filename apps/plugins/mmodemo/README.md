@@ -45,8 +45,20 @@
 ## 验证
 
 `npm --workspace @game/server run plugin -- test mmodemo`（内容包 validator / 对齐 / 与灰盒同装载；harness：boss 周期与不叠刷、奖励只发同队在场者、
-70 人封顶不撑爆预算、伏击冷却、行商 prompt → 赠送、同种子重放逐条相等）+ `npm run test:client`（表现覆盖与不重叠）。
-动线：§9.4 #1–#7、#9（MG0-B3）。
+70 人封顶不撑爆预算、伏击冷却、行商 prompt → 赠送、同种子重放逐条相等、换成 65 条命令的 handler ⇒ suspend）+ `npm run test:client`（表现覆盖与不重叠）。
+
+MG0-B3 动线验收（docs/MMO.md §9.4，2026-09-22，相对 tag `mmo-kit-v1-frozen` = kit 0.1.26 的修复提交）：
+
+| # | 判据 | 结果 |
+| --- | --- | --- |
+| 1 | 全量 diff 分四类 | 插件提交 24 条：手写 17（插件目录 / core/mmodemo / client/plugins/mmodemo / 三份用例）+ 生成物 6（两端 contributions.generated、plugins.generated、docs/plugins.generated.md 及 Cocos 镜像）+ 锁 1；宿主 placement 0 |
+| 2 | `plugin -- changed --base mmo-kit-v1-frozen --dry-run` | 24 条全部落在包 mmodemo 的所有权推导集内（另 7 条生成物 / 镜像由 codegen --check 与 verify:sync 把关）⇒ foreign = []、packages = [mmodemo] |
+| 3 | 框架 / kit 冻结基线零变 | 指定路径 `':!*.generated.*'` diff 为空；`scripts/packages/mmo.lock` 字节不变；`git grep mmodemo` 在 kit 路径只命中 `*.generated.*` 与 kit README 的样本名说明文字（B4 说明书与 MG0 反馈段，非代码耦合） |
+| 4 | 生成物来源 | 全部生成路径 ∈ generatedWriterOwned；四个 writer 重跑零变；`codegen:plugins --check` / `codegen:gameplays --check` fresh |
+| 5 | 锁与指纹 | `scripts/packages/mmodemo.lock` 新增；`LOBBY_PROTOCOL_VERSION` 不动（指纹 e03aae620dcd02d3 不变）；GAME_ROOM / WORLD_ROOM 协议版本不变 |
+| 6 | 宿主 placement | `apps/plugins/host.json` 未动（无路由 / 菜单） |
+| 7 | 干净安装（worktree at tag） | `plugin -- pack` 17 文件 zip → `install`（written 17）→ codegen:plugins / gameplays → sync → `db:bootstrap` 两遍 `kit_migration` 11 → 11 行（插件零 DDL）→ `check` 7 包一致 → `plugin -- test mmodemo` 15 例 → 服务端 typecheck 零错（客户端 typecheck 在裸检出缺未跟踪的 `ui-uniflex/generated`，与插件无关，kit-clean-install 同样要补拷）→ harness 事件序列 = mmodemo-orchestration → `uninstall`（17 文件收回）→ `check` ✔ |
+| 9 | 沙箱 | `mmo-orchestration-boundary` 收录本模块绿；65 条命令注入 ⇒ suspend(commands) 整批丢弃；同种子重放逐条相等 |
 
 ## 偏差（对照 §9.2）
 

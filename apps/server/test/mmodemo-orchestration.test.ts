@@ -9,6 +9,7 @@ import { test } from "node:test";
 import type { IEntityView, OrchestrationEvent } from "@game/shared/kits/mmo/api/orchestration/index";
 import { ORCH_MAX_COMMANDS_PER_TICK } from "@game/shared/kits/mmo/api/orchestration/index";
 import { createOrchestrationHarness, regionContains } from "../src/kits/mmo/api/orchestration/index";
+import { MMO_ORCHESTRATION_VERSION, defineOrchestration } from "@game/shared/kits/mmo/api/orchestration/index";
 import { indexContentPack } from "@game/shared/kits/mmo/api/content/index";
 import { orchestration } from "../src/core/mmodemo/mmoOrchestration";
 import { AMBUSH_AT_VAR, AMBUSH_COOLDOWN_TICKS, AMBUSH_DESPAWN_MS, AMBUSH_TAG, AMBUSH_WOLVES } from "../src/core/mmodemo/encounters/ambush";
@@ -122,4 +123,24 @@ test("重放：同种子同事件序列逐条摘要相等；换种子伏击落�
     assert.equal(replay.equal, true, JSON.stringify(replay.mismatches));
     assert.deepEqual(spawnsAt(42), spawnsAt(42), "同种子同落点");
     assert.notDeepEqual(spawnsAt(42), spawnsAt(43), "换种子落点不全同");
+});
+
+test("沙箱（§9.4 #9）：本包模块被换成一次吐 65 条命令的 handler ⇒ 整批丢弃 + suspend(commands)，vars 不变，之后事件不再处理；真模块单事件命令数远在 64 内", () => {
+    const flood = defineOrchestration({
+        orchestrationVersion: MMO_ORCHESTRATION_VERSION, packId: orchestration.packId, subscribes: ["instanceStarted", "choice"],
+        handle: (event) => (event.kind === "choice" ? Array.from({ length: ORCH_MAX_COMMANDS_PER_TICK + 1 }, (_u, i) => ({ op: "setVar" as const, key: `k${i}`, value: i })) : [{ op: "setVar", key: "ok", value: 1 }]),
+    });
+    const h = createOrchestrationHarness({ module: flood, pack: PACK, mapId: MAP, seed: 9 });
+    h.emit(INSTANCE_STARTED, 0);
+    assert.equal(h.vars().ok, 1);
+    const blown = h.emit({ kind: "choice", actorEntityId: "char:a", promptId: "p", choiceId: "yes" }, 1);
+    assert.equal(blown.suspended, "commands", "预算超限 ⇒ suspend");
+    assert.deepEqual(Object.keys(h.vars()), ["ok"], "整批丢弃，65 条 setVar 一条都没生效");
+    assert.deepEqual(h.emit({ kind: "choice", actorEntityId: "char:a", promptId: "p", choiceId: "yes" }, 2).effects, [], "suspended 期间不再处理");
+    // 真模块：最重的事件（70 人 boss 奖励）也只有 51 条，留在预算内
+    const ids = Array.from({ length: 70 }, (_u, i) => `m${i}`);
+    const real = createOrchestrationHarness({ module: orchestration, pack: PACK, mapId: MAP, seed: 9, entities: ids.map((id) => character(id, 1900, 1900)), parties: party(ids[0]!, ...ids.slice(1)) });
+    const heavy = real.emit({ kind: "creatureDied", entityId: "orch:demoVale:1", templateId: BOSS_TEMPLATE_ID, tag: BOSS_TAG, killerEntityId: "char:m0", pos: { x: 1900, y: 1900 } }, 3);
+    assert.equal(heavy.suspended, null);
+    assert.ok(heavy.effects.length + 1 <= ORCH_MAX_COMMANDS_PER_TICK);
 });
