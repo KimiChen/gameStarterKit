@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { BUILTIN_PRESENTATION } from "../src/kits/mmo/api/content/index";
 import { presentation } from "../src/plugins/mmohold/mmoPresentation";
+import { hud } from "../src/plugins/mmohold/mmoHud";
 
-test("holdRidge 表现覆盖内容身份，不覆盖内置映射", () => {
+test("holdRidge 表现覆盖内容身份，不覆盖内置映射；HUD只选择本包", () => {
     const pack = JSON.parse(readFileSync(new URL("../../plugins/mmohold/content/pack.json", import.meta.url), "utf8"));
     for (const item of [...pack.classes, ...pack.creatures, ...pack.items, ...pack.npcs]) {
         const entry = presentation[item.presentationId];
@@ -14,4 +15,5 @@ test("holdRidge 表现覆盖内容身份，不覆盖内置映射", () => {
         assert.ok(entry.color.every((channel) => Number.isInteger(channel) && channel >= 0 && channel <= 255));
         assert.equal(BUILTIN_PRESENTATION[item.presentationId], undefined);
     }
+    assert.equal(hud.packId, pack.packId);
 });

@@ -1,11 +1,15 @@
 {
   "schemaVersion": 2,
   "id": "mmohold",
-  "version": "0.1.0",
-  "description": "MMO 内容样本 2：holdRidge 据点争夺、阵营计分与编排",
+  "version": "0.2.0",
+  "description": "MMO 内容样本 2：holdRidge 据点争夺、阵营计分、自有 HUD 与检查点战况页",
+  "domains": [
+    "mmohold"
+  ],
   "requires": {
     "kits": {
       "mmo": {
+        "characters": 1,
         "content": 4,
         "orchestration": 3
       }
@@ -15,7 +19,8 @@
     "mmo": {
       "content": "apps/plugins/mmohold/content/pack.json",
       "presentation": "apps/client/src/plugins/mmohold/mmoPresentation.ts",
-      "orchestration": "apps/server/src/core/mmohold/mmoOrchestration.ts"
+      "orchestration": "apps/server/src/core/mmohold/mmoOrchestration.ts",
+      "hud": "apps/client/src/plugins/mmohold/mmoHud.ts"
     }
   },
   "category": "extra",
@@ -23,5 +28,35 @@
     "apps/plugins/mmohold/README.md"
   ],
   "resident": false,
-  "entry": "apps/client/src/plugins/mmohold/index.ts"
+  "entry": "apps/client/src/plugins/mmohold/index.ts",
+  "viewDirs": [
+    "apps/client/src/plugins/mmohold/view"
+  ],
+  "views": [
+    "apps/client/src/plugins/mmohold/view/MmoHoldStandingsView.view.json",
+    "apps/client/src/plugins/mmohold/view/MmoHoldHudView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "mmohold",
+      "logicDir": "apps/client/src/plugins/mmohold/logic"
+    }
+  ],
+  "routes": [
+    {
+      "id": "standings",
+      "view": "MmoHoldStandings"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "standings",
+      "label": "据点争夺",
+      "labelKey": "menu.mmohold.standings",
+      "launch": {
+        "kind": "route",
+        "routeId": "standings"
+      }
+    }
+  ]
 }

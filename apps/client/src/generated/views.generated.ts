@@ -58,6 +58,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
         load: () => import("../plugins/mmodemo/view/MmoDemoBoardView").then((m) => m.MmoDemoBoardView),
     }),
+    MmoHoldStandings: defineView({
+        name: "MmoHoldStandings", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../plugins/mmohold/view/MmoHoldStandingsView").then((m) => m.MmoHoldStandingsView),
+    }),
     PromoHome: defineView({
         name: "PromoHome", kind: "cocos", layer: "base",
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
@@ -118,6 +123,8 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "LoginNotice", owner: "builtin", kind: "fgui", pkg: "View_AreaList_LoginNotice", comp: "LoginNotice", path: "apps/client/src/view/LoginNoticeView.ts", logic: "apps/client/src/logic/page/LoginNoticeLogic.ts", sidecar: "apps/client/src/view/LoginNoticeView.view.json" },
     { name: "MmoCharacterSelect", owner: "mmo", kind: "cocos", path: "apps/client/src/kits/mmo/view/MmoCharacterSelectView.ts", logic: "apps/client/src/kits/mmo/logic/MmoCharacterSelectLogic.ts", sidecar: "apps/client/src/kits/mmo/view/MmoCharacterSelectView.view.json" },
     { name: "MmoDemoBoard", owner: "mmodemo", kind: "cocos", path: "apps/client/src/plugins/mmodemo/view/MmoDemoBoardView.ts", logic: "apps/client/src/plugins/mmodemo/logic/MmoDemoBoardLogic.ts", sidecar: "apps/client/src/plugins/mmodemo/view/MmoDemoBoardView.view.json" },
+    { name: "MmoHoldHud", owner: "mmohold", kind: "cocos", path: "apps/client/src/plugins/mmohold/view/MmoHoldHudView.ts", logic: "apps/client/src/plugins/mmohold/logic/MmoHoldHudLogic.ts", sidecar: "apps/client/src/plugins/mmohold/view/MmoHoldHudView.view.json" },
+    { name: "MmoHoldStandings", owner: "mmohold", kind: "cocos", path: "apps/client/src/plugins/mmohold/view/MmoHoldStandingsView.ts", logic: "apps/client/src/plugins/mmohold/logic/MmoHoldStandingsLogic.ts", sidecar: "apps/client/src/plugins/mmohold/view/MmoHoldStandingsView.view.json" },
     { name: "MmoWorld", owner: "mmoWorld", kind: "cocos", path: "apps/client/src/view/rooms/mmoWorld/MmoWorldView.ts", logic: "apps/client/src/logic/rooms/mmoWorld/MmoWorldGameplay.ts", sidecar: "apps/client/src/view/rooms/mmoWorld/MmoWorldView.view.json" },
     { name: "PromoHome", owner: "builtin", kind: "cocos", path: "apps/client/src/view/PromoHomeView.ts", logic: "apps/client/src/logic/page/PromoHomeLogic.ts", sidecar: "apps/client/src/view/PromoHomeView.view.json" },
     { name: "Redeem", owner: "redeem", kind: "cocos", path: "apps/client/src/plugins/redeem/view/RedeemView.ts", logic: "apps/client/src/plugins/redeem/logic/RedeemLogic.ts", sidecar: "apps/client/src/plugins/redeem/view/RedeemView.view.json" },
@@ -137,6 +144,7 @@ export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/kits/slg/view",
     "apps/client/src/plugins/arenaShop/view",
     "apps/client/src/plugins/mmodemo/view",
+    "apps/client/src/plugins/mmohold/view",
     "apps/client/src/plugins/redeem/view",
     "apps/client/src/plugins/snake/view",
     "apps/client/src/view",

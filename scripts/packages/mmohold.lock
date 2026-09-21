@@ -1,19 +1,55 @@
-# scripts/packages/mmohold.lock —— 已安装插件 mmohold@0.1.0 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/mmohold.lock —— 已安装插件 mmohold@0.2.0 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"mmohold","version":"0.1.0","kinds":["client"],"constantName":null,"contributes":{"mmo":{"content":"apps/plugins/mmohold/content/pack.json","presentation":"apps/client/src/plugins/mmohold/mmoPresentation.ts","orchestration":"apps/server/src/core/mmohold/mmoOrchestration.ts"}},"domains":[],"fguiPackages":[],"requires":{"pluginApiVersion":null,"kits":{"mmo":{"content":4,"orchestration":3}}}}
-# source {"kind":"package","filesLockSha256":"c11e48a32eb2c62f5818a8f870991a3f93ff250d6b925241586e7a53e1d01e45"}
+# manifest {"id":"mmohold","version":"0.2.0","kinds":["client"],"constantName":null,"contributes":{"mmo":{"content":"apps/plugins/mmohold/content/pack.json","presentation":"apps/client/src/plugins/mmohold/mmoPresentation.ts","orchestration":"apps/server/src/core/mmohold/mmoOrchestration.ts","hud":"apps/client/src/plugins/mmohold/mmoHud.ts"}},"domains":["mmohold"],"fguiPackages":[],"requires":{"pluginApiVersion":null,"kits":{"mmo":{"characters":1,"content":4,"orchestration":3}}}}
+# source {"kind":"tree","filesLockSha256":"5caaf9322151e7d44389f4b6207b78202ba6307aae340ca0c71e2df35bfce97c","forkedFrom":{"kind":"package","filesLockSha256":"c11e48a32eb2c62f5818a8f870991a3f93ff250d6b925241586e7a53e1d01e45"}}
 apps/Cocos/assets/src/plugins/mmohold.meta c12837de32cc69d487bec9661cf0d481da8d461f30b633d4a5c2d118353e59dd
-apps/Cocos/assets/src/plugins/mmohold/index.ts 45c308daa98f5b76984d9925066ce1576c122e48114109f26306682215043ee9
+apps/Cocos/assets/src/plugins/mmohold/index.ts d02dbef30fcde8b0b7ed1c56710d30d7801bb45112b2e55e521eeb36ad5092db
 apps/Cocos/assets/src/plugins/mmohold/index.ts.meta 58e452b7cd10ceaf226bfa264942ddddaedcff4a0ef1b97cb73cdf0885a105ed
+apps/Cocos/assets/src/plugins/mmohold/logic.meta 1afaa0ce3bec9f6b8983091ed465df3ab69f816ac9c890b94dae6496b90175f5
+apps/Cocos/assets/src/plugins/mmohold/logic/MmoHoldEntryLogic.ts a18db05ac0814a69069685e73e333a465460e954cbb6254fa1f32eb7838f42e7
+apps/Cocos/assets/src/plugins/mmohold/logic/MmoHoldEntryLogic.ts.meta dd0abe0592440244e0923e2b9ecabcf50dae36cb720246e4ecec3776a3e10370
+apps/Cocos/assets/src/plugins/mmohold/logic/MmoHoldHudLogic.ts 37e3da8498fb8945773fb346e7bd9cc9f41abae2922b4fbb65c46ae3f751fea3
+apps/Cocos/assets/src/plugins/mmohold/logic/MmoHoldHudLogic.ts.meta e6a27f366e68c64d4e499710fe1c7b0c626c6fb3eaf5cfca77073f9c7cd0daf6
+apps/Cocos/assets/src/plugins/mmohold/logic/MmoHoldStandingsLogic.ts 22a6d4cec6a16b4061bd780db261bc267f1b93d877d266d579aa0dbdcc33b354
+apps/Cocos/assets/src/plugins/mmohold/logic/MmoHoldStandingsLogic.ts.meta 00fed0680c8cf698660e6e3e54e0b830ad55a6fc10154bd9c34d2976166f0a37
+apps/Cocos/assets/src/plugins/mmohold/logic/mmoHoldRuntime.ts 8849ef0f2e7ae770da3538a6d349e7c7b7431c364d6894c97a0e24580886be2c
+apps/Cocos/assets/src/plugins/mmohold/logic/mmoHoldRuntime.ts.meta f6ed07b5825ddf1487f45b66a275595723d8d0b0133198d0c09f50b6adcf342f
+apps/Cocos/assets/src/plugins/mmohold/mmoHud.ts 533174aca10a079e23efe7535f8473447048ed1813786d31f4a7e2074d8b8397
+apps/Cocos/assets/src/plugins/mmohold/mmoHud.ts.meta f840fc9eab8b6a2ea2e28519eb22f3f0d97e3db7584573a943067dfc0df78bad
 apps/Cocos/assets/src/plugins/mmohold/mmoPresentation.ts 977dd4d3783cec8a6a4ebb5d84c179153208e526fa85b44f7c8d59a01bb01927
 apps/Cocos/assets/src/plugins/mmohold/mmoPresentation.ts.meta 3e4cf651724a8f2adeca6c46ace7672564696f3914bea5524465303f97aba007
-apps/client/src/plugins/mmohold/index.ts 45c308daa98f5b76984d9925066ce1576c122e48114109f26306682215043ee9
+apps/Cocos/assets/src/plugins/mmohold/view.meta d88ae7bd88ff17f2b8204c82dba8d1f7385170c0fc834474549fe24d7be23426
+apps/Cocos/assets/src/plugins/mmohold/view/MmoHoldHudView.ts 20363f63e4f6c07734ed6acf5bfc0c851ccea4e1c339bd5a553ae4001b8f6e21
+apps/Cocos/assets/src/plugins/mmohold/view/MmoHoldHudView.ts.meta f1ebeb4d5478cdd0928df3fcca027538419e3c2cb86fbd104cbf467bac33c1db
+apps/Cocos/assets/src/plugins/mmohold/view/MmoHoldHudView.view.json cd9d0aaed601db409001eb42f2f2a404a56321bafe20eefa445893d4c87bd306
+apps/Cocos/assets/src/plugins/mmohold/view/MmoHoldHudView.view.json.meta c67051e9f29b1686572c61005b5ceabe8a7ea7067886b218b7202fcc92c562d8
+apps/Cocos/assets/src/plugins/mmohold/view/MmoHoldStandingsView.ts 80e04e8c7a69c7cb233c0eb8bb8548bb33eb688af75a67aedf3fa65327394fa9
+apps/Cocos/assets/src/plugins/mmohold/view/MmoHoldStandingsView.ts.meta 33748773e34ddf620654328c856c8795d18a97ee27594b7b30a27578eeae40fb
+apps/Cocos/assets/src/plugins/mmohold/view/MmoHoldStandingsView.view.json 6cfaec9e5747f768154ee7ee12b396e1fcb406a49998973e6f769a7d6d3a1054
+apps/Cocos/assets/src/plugins/mmohold/view/MmoHoldStandingsView.view.json.meta 32f3f7c59aba88f5f6e174d1f72f113a1112d4f06e6c3df8cc2f3c2891b48224
+apps/client/src/plugins/mmohold/index.ts d02dbef30fcde8b0b7ed1c56710d30d7801bb45112b2e55e521eeb36ad5092db
+apps/client/src/plugins/mmohold/logic/MmoHoldEntryLogic.ts a18db05ac0814a69069685e73e333a465460e954cbb6254fa1f32eb7838f42e7
+apps/client/src/plugins/mmohold/logic/MmoHoldHudLogic.ts 37e3da8498fb8945773fb346e7bd9cc9f41abae2922b4fbb65c46ae3f751fea3
+apps/client/src/plugins/mmohold/logic/MmoHoldStandingsLogic.ts 22a6d4cec6a16b4061bd780db261bc267f1b93d877d266d579aa0dbdcc33b354
+apps/client/src/plugins/mmohold/logic/mmoHoldRuntime.ts 8849ef0f2e7ae770da3538a6d349e7c7b7431c364d6894c97a0e24580886be2c
+apps/client/src/plugins/mmohold/mmoHud.ts 533174aca10a079e23efe7535f8473447048ed1813786d31f4a7e2074d8b8397
 apps/client/src/plugins/mmohold/mmoPresentation.ts 977dd4d3783cec8a6a4ebb5d84c179153208e526fa85b44f7c8d59a01bb01927
-apps/client/test/mmohold-presentation.test.ts 072330cfb5d330ca7bf475dad154cf535e802c8762898798e12ec7befbae49ca
-apps/plugins/mmohold/README.md 2a8cd3f474e4cd2f6b7787a286f44ff834a212c63670cf279f4cc79764f64a9b
+apps/client/src/plugins/mmohold/view/MmoHoldHudView.ts 20363f63e4f6c07734ed6acf5bfc0c851ccea4e1c339bd5a553ae4001b8f6e21
+apps/client/src/plugins/mmohold/view/MmoHoldHudView.view.json cd9d0aaed601db409001eb42f2f2a404a56321bafe20eefa445893d4c87bd306
+apps/client/src/plugins/mmohold/view/MmoHoldStandingsView.ts 80e04e8c7a69c7cb233c0eb8bb8548bb33eb688af75a67aedf3fa65327394fa9
+apps/client/src/plugins/mmohold/view/MmoHoldStandingsView.view.json 6cfaec9e5747f768154ee7ee12b396e1fcb406a49998973e6f769a7d6d3a1054
+apps/client/test/mmohold-hud-logic.test.ts bf1dce7ea39c91d936a574d684a0ef9df0fbb38b3613b84c0998f4cc7d815b03
+apps/client/test/mmohold-presentation.test.ts 254cbae150be7925515a32543414991b61049125fbd86f8df956255ed4dda57d
+apps/client/test/mmohold-standings-logic.test.ts 46ba6245736025c342c03db654e6733bdf9aa6c418992135d1331aa1bbb14c11
+apps/plugins/mmohold/README.md c60d7819318911533e61dac8edc101e3835bffa1b94956767a7a2b4a45ca856d
 apps/plugins/mmohold/content/pack.json c717126030196e0d2d0598b83defb349d003c6b332c7b0e9aa8f56781e07e440
-apps/plugins/mmohold/plugin.json ef5977409da427abeaec1071eaeb8e0b9e2029ed114df039641f103b0ae1f3bd
+apps/plugins/mmohold/plugin.json 8bfe2807742c20e0d58a4e4d9c67ca9f1ec8476dd48d4d83b3578c122788f1cf
 apps/server/src/core/mmohold/encounters/capture.ts 4a9159566d35c694b37a3adc5055b85a4118cc75ea183cd486d0bbe9c2c9386f
 apps/server/src/core/mmohold/mmoOrchestration.ts 6d01d034bccab8710e304da8deb53336beaa22694d6653e3c718878f1f7747cf
+apps/server/src/core/mmohold/standings.ts 94a455b36627683da4d4cffe5561b17e9a0c26618ecb3b90d8aaa335ae72fc9d
+apps/server/src/websocket/mmohold/standings.ts 55b0825dc59d9e020ed46e05f346283fe156c102c2e7dc457d78c3c1e522d109
+apps/server/test/lobbyRpcVectors/mmohold.ts 3c76eb4dcd8bc340f20ffa009cccc0dba0e9201f5c1207963c1670ae3cafa069
 apps/server/test/mmohold-content.test.ts 61dd28a62ee346e0b7dadbb3aa2c57b61e3bff5aa8a3d28d96a2cb38b77c165a
 apps/server/test/mmohold-orchestration.test.ts 5ebd20a9da97822ef02e8834969e4d236caf2f1f7cca045c327d5e9ca7bb2473
+apps/server/test/mmohold-standings.test.ts 14fc8d5ba892c40b52bfbf51c41b39301c41b23c23d2706a12cbeeaa2e038399
+apps/shared/src/protocol/lobbyRpc/domains/mmohold.ts 9194ed2d63123b9d36f238f90fa19b8f30618032796ff85c9fbe2eed8164eaca
