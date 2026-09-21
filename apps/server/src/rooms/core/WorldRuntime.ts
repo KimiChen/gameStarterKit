@@ -28,7 +28,7 @@ export interface WorldRuntimePorts {
     /**
      * 检查点落点（MF7b-B4：WorldRoom 交 WorldCheckpointer 同一世界事务落盘；单测接记录器）：advance 末尾按 checkpointMs 节拍 `periodic`，
      * 强制点（drain / 离座 / mode.requestCheckpoint / unload 收尾）`forced`。批次含 rev（= 已落库 rev + 1，⛔ runtime 不先推进，落盘后
-     * `commitCheckpoint(rev)`；失败 `rollbackCheckpoint(batch)` 把事件放回缓冲）。缺省不取检查点。
+     * `commitCheckpoint(rev)`；事件在提交确认前保留，失败 `rollbackCheckpoint(batch)` 只作废该批）。缺省不取检查点。
      */
     onCheckpoint?(batch: WorldCheckpointBatch, reason: "periodic" | "forced"): void;
     /** persona 级强制点落点（MK1-B4）：只落该 persona 的快照（WorldRoom 交 WorldCheckpointer.savePersona；单测接记录器）；缺省 = 宿主不支持 ⇒ 壳退化为全批。 */
@@ -118,7 +118,10 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     private issuedRev = 0;
     /** 最后分配的世界事件 seq（分线内单调；Recovering 从 eventOffset 续）。 */
     private eventSeq = 0;
+    /** 未确认提交的事件日志：在途批次共享前缀，成功后才按 eventOffset 清理。 */
     private pendingEvents: WorldEventDraft[] = [];
+    private readonly checkpointOffsets = new Map<number, number>();
+    private committedEventOffset = 0;
     private checkpointRequested: string | null = null;
     readonly sId: number;
     readonly fixedStepMs: number;
@@ -241,6 +244,7 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
             this.checkpointRev = info.checkpoint.rev;
             this.issuedRev = info.checkpoint.rev;
             this.eventSeq = info.checkpoint.eventOffset;
+            this.committedEventOffset = info.checkpoint.eventOffset;
         }
         await this.mode.onWorldInit(this.context(), { recovered: info.checkpoint !== null });
         // §4.5 Recovering 顺序：装载 → loadInstance 检查点回灌（persona 级在准入时各自回灌）→ 开放准入
@@ -370,7 +374,8 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     }
 
     /**
-     * 取一批（节拍或强制）：rev = max(已落库, 已发出) + 1、eventOffset = 最后分配的 seq、事件批从缓冲**移出**（落盘失败由 rollbackCheckpoint 放回）。
+     * 取一批（节拍或强制）：rev = max(已落库, 已发出) + 1、eventOffset = 最后分配的 seq；复制尚未提交的事件前缀。
+     * 前批未决时取得的后批也必须包含此前缀，否则前批失败、后批成功会形成已保存状态与事件行之间的永久缺口。
      * ⛔ 不在这里推进 checkpointRev：只有落盘提交后 commitCheckpoint 才推进（§7.3 ①：事件行的 checkpoint_rev 指向「下一个将落盘」的 rev）。
      */
     takeCheckpointBatch(force = false, reason = "periodic"): WorldCheckpointBatch | null {
@@ -378,7 +383,8 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
         if (!checkpoint) return null;
         const rev = Math.max(this.checkpointRev, this.issuedRev) + 1;
         this.issuedRev = rev;
-        const events = this.pendingEvents.splice(0, this.pendingEvents.length);
+        const events = [...this.pendingEvents];
+        this.checkpointOffsets.set(rev, this.eventSeq);
         return {
             rev, eventOffset: this.eventSeq, authorityEpoch: this.state.authorityEpoch, reason, checkpoint, events,
             personas: [...this.sessionTable.values()].map((info) => ({ personaId: info.personaId, controlEpoch: info.controlEpoch })),
@@ -389,11 +395,24 @@ export class WorldRuntime<TState extends WorldStateLifecycle = WorldStateLifecyc
     commitCheckpoint(rev: number): void {
         if (!Number.isSafeInteger(rev) || rev <= this.checkpointRev) return;
         this.checkpointRev = rev;
+        const offset = this.checkpointOffsets.get(rev);
+        if (offset !== undefined) {
+            this.committedEventOffset = Math.max(this.committedEventOffset, offset);
+            this.pendingEvents = this.pendingEvents.filter((event) => event.seq > this.committedEventOffset);
+        }
+        for (const issued of this.checkpointOffsets.keys()) {
+            if (issued <= rev) this.checkpointOffsets.delete(issued);
+        }
     }
 
-    /** 落盘失败：事件批放回缓冲最前（保持 seq 序），rev 作废（下一批取更大的号）。 */
+    /** 串行落盘前收窄事件批：它取得后可能已有前批提交，已确认的前缀无需再次入库。 */
+    uncommittedCheckpoint(batch: WorldCheckpointBatch): WorldCheckpointBatch {
+        return { ...batch, events: batch.events.filter((event) => event.seq > this.committedEventOffset) };
+    }
+
+    /** 落盘失败只作废该批；事件仍在未提交日志中，已捕获的后批也保有同一前缀。 */
     rollbackCheckpoint(batch: WorldCheckpointBatch): void {
-        if (batch.events.length > 0) this.pendingEvents = [...batch.events, ...this.pendingEvents];
+        this.checkpointOffsets.delete(batch.rev);
     }
 
     get checkpointRevision(): number {

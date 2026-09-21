@@ -50,6 +50,7 @@ import { MemoryCheckpointPort } from "../src/rooms/core/CheckpointPort";
 import { MMO_EVENT_LOOT_CLAIMED, MMO_LOOT_EXPIRE_MS, type IMmoBagWire } from "@game/shared/kits/mmo/api/inventory/index";
 import { bossTimer, commandFlood } from "./fixtures/orchestrationFixture";
 import type { IMmoWorldPrompt, IMmoWorldScriptState } from "@game/shared";
+import { ORCH_MAX_EVENT_QUEUE, defineOrchestration } from "@game/shared/kits/mmo/api/orchestration/index";
 
 const CONTENT = indexContentPack(validateContentPack(GREYBOX_PACK));
 const rowOf = (personaId: string, name = "Rook", classId: MmoClassId = "fighter", factionId: MmoFactionId = "dawn"): MmoCharacterRow => ({
@@ -93,9 +94,9 @@ function harness(content: IContentPackIndex = CONTENT, transfer: TransferPort | 
 const request = (session: string, personaId: string, checkpoint: ReturnType<typeof buildCheckpointEnvelope> | null = null) =>
     ({ session, userId: `u-${personaId}`, personaId, controlEpoch: 1, ticketSha256: "x".repeat(64), resumeSeq: null, checkpoint });
 
-async function activeWorld(h: Harness, mapId = "greybox", instanceSnapshot: MmoInstanceSnapshot | null = null): Promise<void> {
+async function activeWorld(h: Harness, mapId = "greybox", instanceSnapshot: MmoInstanceSnapshot | null = null, instanceId = "i1"): Promise<void> {
     await h.runtime.recover({
-        instanceId: "i1", mapId, line: 0, authorityEpoch: 1,
+        instanceId, mapId, line: 0, authorityEpoch: 1,
         checkpoint: instanceSnapshot ? buildCheckpointEnvelope({ rev: 1, eventOffset: 0, authorityEpoch: 1, schemaVersion: 1, snapshot: instanceSnapshot }) : null,
     });
     assert.equal(h.runtime.phase, WorldPhase.Active);
@@ -591,6 +592,27 @@ test("combat（MK2-B1）：怪死 ⇒ 离开视野 + 按 respawnSec 复活回出
     assert.ok(first[0]! > first[1]! && first[1]! >= first[2]!, "每轮都在掉血");
 });
 
+test("角色复活：停止死亡前的方向，并主动回执本人复活位置与最近已接受意图 seq", async () => {
+    const h = harness(DUMMY_CONTENT);
+    await activeWorld(h);
+    await seat(h, "a", "p-a", personaAt(700, 600));
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 9, dir: { x: 1, y: 0 } });
+    step(h);
+    const mover = h.mode.__probe.moverOf("a")!;
+    h.mode.__probe.damage(mover.id, mover.hp);
+    step(h);
+    assert.equal(mover.alive, false);
+    const respawnTick = mover.respawnDueTick!;
+    h.direct.length = 0;
+    h.runtime.enqueue("a", C2S.MmoWorldMove, { seq: 10, dir: { x: 0, y: 1 } }); // 死亡期间拒收
+    step(h, respawnTick - h.state.tick);
+    const positions = h.direct.filter((entry) => entry.session === "a" && entry.type === S2C.MmoWorldPos).map((entry) => entry.payload);
+    assert.deepEqual(positions, [{ seq: 9, tick: respawnTick, x: 1000, y: 1000 }], "无需新输入即同步本人权威复活点");
+    assert.deepEqual([mover.alive, mover.x, mover.y, mover.dirX, mover.dirY, mover.target], [true, 1000, 1000, 0, 0, null]);
+    step(h, 3);
+    assert.deepEqual([mover.x, mover.y], [1000, 1000], "旧方向不会在复活后继续移动");
+});
+
 const creatureOf = (h: Harness, templateId: string) => [...h.mode.__probe.entities().values()].find((e) => e.kind === "creature" && e.templateId === templateId)!;
 const dist = (a: { x: number; y: number }, b: { x: number; y: number }): number => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -879,6 +901,20 @@ test("背包（MK3-B1）：进图私有流带预热的 bag、装备属性进基�
     assert.equal(h.mode.__probe.bagOf("a"), null, "离座清");
 });
 
+test("跨内容包进图：当前地图未声明的已装备物品仍从全局模板计入属性", async () => {
+    const destination = clone(GREYBOX_PACK) as unknown as MutablePack;
+    destination.packId = "destination";
+    destination.items = destination.items.filter((item) => item.itemId !== GREYBOX_ITEMS.blade);
+    destination.lootTables = destination.lootTables.map((table) => ({ ...table, entries: table.entries.filter((entry) => entry.itemId !== GREYBOX_ITEMS.blade) }));
+    const content = indexContentPack(validateContentPack(destination));
+    assert.equal(content.itemById.has(GREYBOX_ITEMS.blade), false);
+    const h = harness(content, null, { loadBag: async () => ({ rev: 1, items: [{ id: "i1", itemId: GREYBOX_ITEMS.blade, count: 1, location: "equip", slot: 0, rev: 1 }] }) });
+    await activeWorld(h);
+    await seat(h, "a", "p-a");
+    const mover = h.mode.__probe.moverOf("a")!;
+    assert.deepEqual([mover.attack, mover.defense], [12, 2], "携带灰盒锈剑进入另一包的图，装备加攻仍有效");
+});
+
 test("角色保存定稿（MK3-B2）：坏角色快照（多键 / 非数）⇒ 当无检查点从出生点满血进图并记 bad-snapshot；好快照照常回灌", async () => {
     const h = harness();
     await activeWorld(h);
@@ -932,7 +968,7 @@ test("编排（MK4-B1）：instanceStarted / playerEntered（sayNearby ⇒ 世�
     assert.equal(h.mode.__probe.orchestration()?.vars.bossKills, 1, "creatureDied(killer) ⇒ bossKills");
     assert.ok(h.batches.length > batchesBefore, "durable setVar ⇒ 强制分线检查点");
     const grant = h.batches.at(-1)!.events.find((event) => event.kind === "grantItem")?.payload as { opId: string; toCharacterId: string; itemTemplateId: string; count: number; packId: string } | undefined;
-    assert.deepEqual([grant?.toCharacterId, grant?.itemTemplateId, grant?.count, grant?.packId, grant?.opId.startsWith("orch:greybox:")], [a.characterId, "slime-gel", 1, "greybox", true], "grantItem 事件行（确定性 opId）");
+    assert.deepEqual([grant?.toCharacterId, grant?.itemTemplateId, grant?.count, grant?.packId, grant?.opId.startsWith("orch:")], [a.characterId, "slime-gel", 1, "greybox", true], "grantItem 事件行（确定性 opId）");
     // interact ⇒ prompt ⇒ choose yes ⇒ grantCurrency
     const slime = [...h.mode.__probe.entities().values()].find((e) => e.kind === "creature" && e.templateId === "slime" && !e.scripted && e.alive)!;
     a.x = slime.x - 20; a.y = slime.y;
@@ -975,12 +1011,74 @@ test("编排（MK4-B1）：快照往返（vars / timers 重排 / 脚本怪重建
     assert.deepEqual([f.mode.__probe.orchestration()?.suspended, f.mode.__probe.orchestration()?.vars], ["commands", {}], "65 条 ⇒ suspend、整批丢弃");
     const batch = f.runtime.takeCheckpointBatch(true, "test")!;
     assert.deepEqual(batch.events.filter((event) => event.kind === "packSuspended").map((event) => event.payload), [{ packId: "greybox", reason: "commands" }], "packSuspended 审计行一条");
+    f.runtime.commitCheckpoint(batch.rev); // 模拟审计落库；只有提交确认后事件才从待持久化批次移除
     f.mode.__probe.emitOrchestration({ kind: "tick", tick: 0, bucket: 0 });
     step(f, 20);
     assert.equal(f.mode.__probe.orchestration()?.queued, 0, "suspended 期间事件不进队");
     f.mode.__probe.resumePack();
     step(f, 12);
     assert.deepEqual([f.mode.__probe.orchestration()?.suspended, f.runtime.takeCheckpointBatch(true, "again")!.events.filter((event) => event.kind === "packSuspended").length], ["commands", 1], "resume 后再炸一次：又 suspend、审计行再一条（只投一次是每次 suspend 一次）");
+});
+
+test("编排奖励：同一实例重放键稳定、不同实例不撞键；恢复后新事件使用新键", async () => {
+    const module = defineOrchestration({
+        orchestrationVersion: 1, packId: "greybox", subscribes: ["choice"],
+        handle: () => [
+            { op: "grantItem", toCharacterId: "c-p-a", itemTemplateId: "slime-gel", count: 1, reason: "test" },
+            { op: "grantCurrency", toCharacterId: "c-p-a", amount: 5, reason: "test" },
+        ],
+    });
+    const grants = async (instanceId: string, snapshot: MmoInstanceSnapshot | null = null) => {
+        const h = orchHarness(module, { orchestrationClock: () => 0 });
+        await activeWorld(h, "greybox", snapshot, instanceId);
+        await seat(h, "a", "p-a");
+        h.mode.__probe.emitOrchestration({ kind: "choice", actorEntityId: "char:c-p-a", promptId: "p", choiceId: "yes" });
+        step(h);
+        const batch = h.runtime.takeCheckpointBatch(true, "grants")!;
+        const ids = batch.events.map((event) => (event.payload as { opId: string }).opId);
+        assert.deepEqual(batch.events.map((event) => event.kind), ["grantItem", "grantCurrency"]);
+        assert.ok(ids.every((id) => /^[A-Za-z0-9._:-]{1,64}$/u.test(id)), "派生键满足 worker / 回执的 64 字符限制");
+        assert.notEqual(ids[0], ids[1], "同事件多条奖励也不同键");
+        return { ids, snapshot: batch.checkpoint.instance as MmoInstanceSnapshot };
+    };
+    const first = await grants("instance-one");
+    assert.deepEqual((await grants("instance-one")).ids, first.ids, "同实例同命令序重放稳定");
+    const other = await grants("instance-two");
+    assert.ok(other.ids.every((id) => !first.ids.includes(id)), "同包同角色在另一分线仍须各自发奖");
+    const recovered = await grants("instance-one", first.snapshot);
+    assert.ok(recovered.ids.every((id) => !first.ids.includes(id)), "恢复后事件序继续，后续奖励不能误判旧回执");
+});
+
+test("编排队列溢出：暂停审计与通知各一次；从检查点重启解除暂停并保留业务状态", async () => {
+    const notified: string[] = [];
+    const module = defineOrchestration({
+        orchestrationVersion: 1, packId: "greybox", subscribes: ["instanceStarted", "choice", "timer", "packSuspended"],
+        handle: (event) => {
+            if (event.kind === "packSuspended") { notified.push(event.reason); return []; }
+            if (event.kind === "instanceStarted" && !event.recovered) return [{ op: "setVar", key: "saved", value: 7 }, { op: "startTimer", timerId: "next", afterMs: 1000 }];
+            if (event.kind === "timer") return [{ op: "setVar", key: "fired", value: true }];
+            if (event.kind === "choice") return [{ op: "setVar", key: "chosen", value: true }];
+            return [];
+        },
+    });
+    const h = orchHarness(module, { orchestrationClock: () => 0 });
+    await activeWorld(h);
+    step(h);
+    for (let index = 0; index <= ORCH_MAX_EVENT_QUEUE; index += 1) h.mode.__probe.emitOrchestration({ kind: "choice", actorEntityId: "a", promptId: "p", choiceId: "yes" });
+    step(h, 2);
+    const batch = h.runtime.takeCheckpointBatch(true, "overflow")!;
+    assert.deepEqual(batch.events.map((event) => [event.kind, event.payload]), [["packSuspended", { packId: "greybox", reason: "event-queue" }]]);
+    assert.deepEqual(notified, ["event-queue"]);
+    const snapshot = batch.checkpoint.instance as MmoInstanceSnapshot;
+    assert.equal(snapshot.orchestration?.suspended, "event-queue");
+    const restored = orchHarness(module, { orchestrationClock: () => 0 });
+    await activeWorld(restored, "greybox", snapshot);
+    assert.deepEqual([restored.mode.__probe.orchestration()?.suspended, restored.mode.__probe.orchestration()?.vars], [null, { saved: 7 }]);
+    restored.mode.__probe.emitOrchestration({ kind: "choice", actorEntityId: "a", promptId: "p", choiceId: "yes" });
+    step(restored, 20);
+    assert.deepEqual(restored.mode.__probe.orchestration()?.vars, { saved: 7, chosen: true, fired: true }, "重启后事件与已恢复 timer 都继续运行");
+    assert.deepEqual(restored.runtime.takeCheckpointBatch(true, "restored")!.events, [], "历史暂停不重复审计");
+    assert.deepEqual(notified, ["event-queue"], "历史暂停不重复通知");
 });
 
 test("内容按图解析（MK4-B2）：未注入单包时 onWorldInit 用 contentFor(mapId)（贡献包优先、内置兜底）；解析不到 ⇒ recover 拒", async () => {

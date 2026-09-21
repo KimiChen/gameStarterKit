@@ -2,9 +2,10 @@
  * mmo kit 内部模块：内容注册表（docs/MMO.md §7.5「启动期校验 fail-closed」/ §7.6「MK4 改为经贡献点装载」；MK4-B2）。
  * 内容来源 = 贡献点 `content`（`./contributions.generated` 的 data 贡献：插件 JSON 内容包，按插件 id 排序）+ 内置灰盒包（shared TS 字面量，兜底）。
  * 每份都过 `validateContentPack`（任一失败抛 ⇒ 登记 world mode 的组合根拒启）；packId 与 mapId 跨包不得重复（一图一包，v1 ⛔ 多包叠加）；
+ * 物品只持久化 itemId：跨包同 id 同模板可复用，不同定义由双端共享 mergeItemTemplates 拒绝。
  * `contentFor(mapId)` 取承载该图的包索引（贡献包优先，再内置）。首次访问即校验并缓存（⛔ 缓存失败态）。⛔ 插件不得 import 本文件（走 api/content）。
  */
-import { indexContentPack, validateContentPack, type IContentPackIndex } from "@game/shared/kits/mmo/api/content/index";
+import { indexContentPack, mergeItemTemplates, validateContentPack, type IContentPackIndex } from "@game/shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
 import { KIT_CONTRIBUTIONS } from "../contributions.generated";
 
@@ -35,6 +36,7 @@ export function contentIndexesOf(sources: readonly ContentSource[], builtin: unk
         }
         indexes.push(index);
     }
+    mergeItemTemplates(indexes); // 库存只存 itemId：同 id 的资产语义必须跨包一致。
     return indexes;
 }
 

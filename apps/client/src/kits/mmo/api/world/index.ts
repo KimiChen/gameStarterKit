@@ -39,6 +39,7 @@ export const MMO_WORLD_RECONCILER_CODEC: ObserverReconcilerCodec<IMmoEntityWire,
     entityOfItem: (item) => item as IMmoEntityWire,
     entityOfEnter: (payload) => payload.entity,
     entityOfUpdate: (previous, payload) => ({
+        ...previous,
         id: payload.id,
         kind: previous?.kind ?? "creature",
         templateId: previous?.templateId ?? "",

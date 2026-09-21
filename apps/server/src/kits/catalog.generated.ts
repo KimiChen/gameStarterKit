@@ -36,17 +36,17 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
     },
     {
         id: "mmo",
-        version: "0.1.18",
+        version: "0.1.19",
         api: {
             ai: { version: 1, minSupported: 1 },
             characters: { version: 1, minSupported: 1 },
             combat: { version: 1, minSupported: 1 },
-            content: { version: 2, minSupported: 2 },
-            inventory: { version: 2, minSupported: 1 },
+            content: { version: 3, minSupported: 2 },
+            inventory: { version: 3, minSupported: 1 },
             movement: { version: 1, minSupported: 1 },
             orchestration: { version: 1, minSupported: 1 },
             social: { version: 1, minSupported: 1 },
-            world: { version: 2, minSupported: 1 },
+            world: { version: 3, minSupported: 1 },
         },
         modes: [
             { id: "mmoWorld", constantName: "MmoWorld" },

@@ -503,6 +503,19 @@ relayer 重试超过 `OUTBOX_MAX_ATTEMPTS` 后会把 intent 行标记为 dead（
 
 世界形态玩法（`kind:"world"`）的 durable 命令（grant* / lootClaim 一类）⛔ 不直接写主账本：mode 在固定步里 `context.events.append(kind, payload)`（分线内单调 seq），框架把事件批与它所属状态的**分线检查点同一世界事务**落库（`rooms/core/WorldCheckpoint.ts`：`withKitWorldTx` 首句权威 CAS → kit `CheckpointPort.saveInstance / savePersona` → `tx.appendWorldEvent(role:"world-event" 表, { eventId, seq, kind, payload, checkpointRev: rev })` → `world_instance.checkpoint_rev = rev`），即 docs/MMO.md §7.3 原子规则的选项 ④——「事件已落库、检查点未落」的窗口不存在，崩溃丢掉的只是未落盘缓冲，恢复后重放重新产生（新 event_id），⛔ 双发；代价 = 奖励最多延迟到下一个分线检查点（强制点即时：drain / 离座 / `requestCheckpoint`）。消费侧是 kit worker（MF7a 的 `withKitWorkerTx`）：`tx.claimWorldEvents(table)` 只认领 `checkpoint_rev ≤ world_instance.checkpoint_rev` 且 `attempts < 5` 的 pending 行（status 0 → 1 与效果同事务；效果以 eventId 作 opId ⇒ 重放 `credit` 得 "DUP"），单事件失败 `releaseWorldEvent`（达上限 ⇒ dead 2）或 `deadLetterWorldEvent`；Recovering 把 pending 且 checkpoint_rev > 恢复点的行标 superseded（3，正常 0 行）。状态 0 pending / 1 done / 2 dead / 3 superseded；运维读 `worldEventStats`；uninstall 闸（MF7a）对 pending 行照拒。回退窗口逐行用例：`test/world-rollback-windows.test.ts` + `test/int/{world-event-dedup,world-crash-restart}.test.ts`。
 
+2026-09-21 审阅修复后的事件日志纪律：`WorldRuntime` 捕获检查点只复制事件，未提交日志一直保留到 SQL 提交确认。前批尚未完成时预捕获的
+后批必须包含全部未提交前缀；`WorldRoom` 串行执行该批前，通过 `uncommittedCheckpoint` 过滤已经提交的前缀。前批失败只作废该批，不能
+让已经捕获的后批保存新状态却漏掉旧事件。成功提交才推进持久水位并清理日志。
+
+强制检查点的原始 Promise 与后台串行链分开：后台链吸收失败以便处理后续批次，交接等待的是本次强制点的真实结果；没有成功落盘则不进入
+transfer commit。检查点遇 `ControlConflictError` 时采用整房停止策略：先踢出对应旧控制代会话，再停止所有未耐久写入并进入 Offline；
+不能仅删除失败 persona 的守卫后保存包含其影响的世界状态 / 事件。其余玩家重新进入后重建分线，恢复最后有效检查点。
+无头 `MemoryCheckpointPort` 的角色信封也按 `(controlEpoch, rev)` 判定新旧，避免新分线较小 rev 覆盖失败或旧控制代反向覆盖。
+
+worker 的永久业务拒绝与瞬态冲突必须区分。`mmo` 发奖在后续堆叠 CAS 失败时会抛出 `conflict`，由事务边界回滚整轮后重试，不能死信并提交
+此前已写的部分奖励。该 kit 的编排物品奖励按载荷 opId 去重：新键由区 / 实例 / 包 / 事件序 / 命令序稳定派生，旧载荷与旧回执仍保留原键。
+物品模板经全部贡献包与内置包合并，同 itemId 不同定义拒绝装载；详细消费规则见 `apps/kits/mmo/README.md`（安装该 kit 后可用）。
+
 ### 8.2 门①发布 SOP（MMO MF2 资产主体迁移，2026-09-19）
 
 MMO MF2（[MMO.md](MMO.md) §5 / §12）把经济三表切到 `(owner_kind, owner_id)` 资产主体：`user_currency` 主键、`currency_ledger.uk_idem`

@@ -46,7 +46,7 @@ export interface RunnerSnapshot {
 
 export interface DispatchResult {
     readonly effects: readonly RunnerEffect[];
-    /** 本次 dispatch 内新发生的 suspend（原因）；null = 正常 */
+    /** 自上次 dispatch 以来新发生的 suspend（含 enqueue 溢出）；只报告一次 */
     readonly suspendedNow: string | null;
     /** 有 durable setVar ⇒ mode 请求强制分线检查点（限频在 mode） */
     readonly durableVar: boolean;
@@ -101,6 +101,7 @@ export class OrchestrationRunner {
     private publishState: Record<string, ScriptScalar> = {};
     private suspendedReason: string | null = null;
     private suspendedNotified = false;
+    private pendingSuspension: string | null = null;
     private seq = 0;
     private readonly ringLog: OrchestrationRingEntry[] = [];
     private readonly queue: OrchestrationEvent[] = [];
@@ -154,6 +155,10 @@ export class OrchestrationRunner {
 
     /** 处理整队：逐事件 handle → 校验 → 本地命令暂存 / effects；预算超限或任一不合 ⇒ 整批丢弃（暂存全部作废）+ suspend；全部通过才提交。 */
     dispatch(tick: number, world: RunnerWorld): DispatchResult {
+        // enqueue / schedule 也可能先触发暂停；交给 mode 同一路径写审计并通知一次。
+        if (this.suspendedReason !== null) {
+            return { effects: [], suspendedNow: this.takePendingSuspension(), durableVar: false, publishChanged: false, events: 0, commands: 0, wallMs: 0 };
+        }
         const effects: RunnerEffect[] = [];
         let durableVar = false;
         let publishChanged = false;
@@ -173,7 +178,7 @@ export class OrchestrationRunner {
         const fail = (reason: string): DispatchResult => {
             this.seq = seq;
             this.suspend(reason);
-            return { effects: [], suspendedNow: reason, durableVar: false, publishChanged: false, events, commands: commandsTotal, wallMs };
+            return { effects: [], suspendedNow: this.takePendingSuspension(), durableVar: false, publishChanged: false, events, commands: commandsTotal, wallMs };
         };
         while (this.queue.length > 0 && this.suspendedReason === null) {
             const event = this.queue.shift()!;
@@ -265,6 +270,7 @@ export class OrchestrationRunner {
     resume(): void {
         this.suspendedReason = null;
         this.suspendedNotified = false;
+        this.pendingSuspension = null;
     }
 
     snapshot(): RunnerSnapshot {
@@ -278,7 +284,7 @@ export class OrchestrationRunner {
         };
     }
 
-    /** 回灌：timers 按 tick 差重排（快照 tick → 当前 tick）；suspended 保留（分线重启才清）。 */
+    /** 重启回灌：timers 按 tick 差重排；恢复业务状态并解除上一进程的暂停（§8.1 重启恢复）。 */
     restore(snapshot: RunnerSnapshot, snapshotTick: number, currentTick: number): void {
         this.varsMap.clear();
         for (const [key, value] of Object.entries(snapshot.vars)) this.varsMap.set(key, value);
@@ -286,8 +292,7 @@ export class OrchestrationRunner {
         for (const timer of snapshot.timers) this.timersMap.set(timer.id, { dueTick: Math.max(0, timer.dueTick - snapshotTick) + currentTick, tag: timer.tag, repeatMs: timer.repeatMs });
         this.publishRev = snapshot.publish.rev;
         this.publishState = { ...snapshot.publish.state };
-        this.suspendedReason = snapshot.suspended;
-        this.suspendedNotified = snapshot.suspended !== null;
+        // snapshot.suspended 只保留作故障诊断，不带回新进程；本次初始化若已溢出则仍须暂停并报告。
         this.seq = snapshot.eventSeq;
         this.ringLog.length = 0;
         this.ringLog.push(...snapshot.ring.slice(-ORCH_RING_SIZE));
@@ -296,8 +301,15 @@ export class OrchestrationRunner {
     private suspend(reason: string): void {
         if (this.suspendedReason !== null) return;
         this.suspendedReason = reason;
+        this.pendingSuspension = reason;
         this.queue.length = 0;
         this.log(`orch:${this.packId}:suspended:${reason}`);
+    }
+
+    private takePendingSuspension(): string | null {
+        const reason = this.pendingSuspension;
+        this.pendingSuspension = null;
+        return reason;
     }
 
     private pushRing(entry: OrchestrationRingEntry): void {

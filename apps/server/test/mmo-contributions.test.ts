@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { MMO_ORCHESTRATION_VERSION, defineOrchestration } from "@game/shared/kits/mmo/api/orchestration/index";
 import { GREYBOX_EAST_MAP_ID, GREYBOX_MAP_ID, GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
+import { indexContentPack, mergeItemTemplates, validateContentPack } from "@game/shared/kits/mmo/api/content/index";
 import { contentForMap, contentIndexesOf } from "../src/kits/mmo/content/registry";
 import { assertOrchestrationsResolvable, registerOrchestration } from "../src/kits/mmo/orchestration/registry";
 import { renderContributionsModule } from "../tools/plugin-codegen/contributions";
@@ -75,4 +76,30 @@ test("编排交叉核对：模块 packId 不对应已收录包 ⇒ 抛；重复 
     assert.match(rendered, /import \{ orchestration as mmodemo_orchestration \} from "\.\.\/\.\.\/core\/mmodemo\/mmoOrchestration";/u);
     assert.match(rendered, /"packId": "demo"/u);
     assert.match(rendered, /\{ pluginId: "mmodemo", value: mmodemo_orchestration \}/u);
+});
+
+test("物品 id 跨包同义：相同模板可复用，属性 / 堆叠 / 职业等不同定义装载期拒绝，包顺序不能改变资产", () => {
+    const builtin = indexContentPack(validateContentPack(GREYBOX_PACK));
+    const copy = { ...GREYBOX_PACK, packId: "copied-items" };
+    assert.equal(mergeItemTemplates([builtin, indexContentPack(validateContentPack(copy))]).size, GREYBOX_PACK.items.length);
+    const item = GREYBOX_PACK.items[0]!;
+    for (const patch of [
+        { name: "different" }, { presentationId: "different" }, { slot: "armor" }, { stackMax: item.stackMax + 1 },
+        { classIds: ["different"] }, { price: item.price + 1 }, { attrs: { attack: 99 } },
+    ]) {
+        const other = indexContentPack(validateContentPack({ ...copy, items: [{ ...item, ...patch }, ...copy.items.slice(1)] }));
+        for (const indexes of [[builtin, other], [other, builtin]]) assert.throws(() => mergeItemTemplates(indexes), /conflicting definitions/u);
+    }
+    const east = {
+        ...copy,
+        maps: GREYBOX_PACK.maps.filter((map) => map.mapId === GREYBOX_EAST_MAP_ID).map((map) => ({ ...map, portals: [] })),
+        spawns: GREYBOX_PACK.spawns.filter((spawn) => spawn.mapId === GREYBOX_EAST_MAP_ID),
+        items: [{ ...item, stackMax: item.stackMax + 1 }, ...copy.items.slice(1)],
+    };
+    const west = {
+        ...GREYBOX_PACK,
+        maps: GREYBOX_PACK.maps.filter((map) => map.mapId === GREYBOX_MAP_ID).map((map) => ({ ...map, portals: [] })),
+        spawns: GREYBOX_PACK.spawns.filter((spawn) => spawn.mapId === GREYBOX_MAP_ID),
+    };
+    assert.throws(() => contentIndexesOf([{ pluginId: "east", value: east }], west), /conflicting definitions/u, "生产注册表必须调用跨包物品闸");
 });

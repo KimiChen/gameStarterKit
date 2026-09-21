@@ -10,12 +10,15 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { GameplayContext } from "../src/logic/gameplay/index";
-import { MmoWorldGameplay, type MmoWorldRoom, type MmoWorldRoomObserver, type MmoWorldPresentation, type MmoWorldViewModel } from "../src/logic/rooms/mmoWorld/MmoWorldGameplay";
-import { validateMmoWorldLaunch } from "../src/gameplay/modes/mmoWorld/index";
+import { GameplayRegistry, RoomController, registerGameplayModule, type GameplayContext } from "../src/logic/gameplay/index";
+import { MmoWorldGameplay, type MmoWorldInput, type MmoWorldRoom, type MmoWorldRoomObserver, type MmoWorldPresentation, type MmoWorldViewModel } from "../src/logic/rooms/mmoWorld/MmoWorldGameplay";
+import { createGameplayModule, validateMmoWorldLaunch } from "../src/gameplay/modes/mmoWorld/index";
 import { createMmoWorldRoom, createMmoWorldRoomJoiner } from "../src/net/rooms/MmoWorldRoom";
-import type { WorldRoomHandle, WorldRoomTransport } from "../src/net/rooms/WorldRoomTransport";
+import { WorldRoomTransport, type WorldRoomHandle } from "../src/net/rooms/WorldRoomTransport";
 import { S2C, wireChecksum, type IMmoEntityWire } from "../src/shared/index";
+import { createGameplayServices } from "../src/gameplay/services";
+import { setMmoRuntime, type MmoRuntime } from "../src/kits/mmo/logic/mmoRuntime";
+import { createMmoWorldReconciler } from "../src/kits/mmo/api/world/index";
 
 const slime = (id: string, x: number): IMmoEntityWire => ({ id, kind: "creature", templateId: "slime", name: "史莱姆", x, y: 1000, rev: 0, hp: 30, hpMax: 30, level: 1 });
 const self: IMmoEntityWire = { id: "char:c1", kind: "character", templateId: "fighter", name: "Rook", x: 1000, y: 1000, rev: 0, hp: 100, hpMax: 100, level: 1, factionId: "dawn" };
@@ -350,5 +353,89 @@ test("背包（gameplay，MK3-B1）：private 流的 bag 进模型 + HUD 摘要�
     observer().privateState({ hp: 100, hpMax: 100, mp: 50, mpMax: 50, cooldowns: {}, casting: null, bag });
     gameplay.tick(0.016, context);
     assert.deepEqual([renders.at(-1)!.bag?.items.length, renders.at(-1)!.bagSummary], [3, "背包 1/24 · 装备 锈剑 · 邮箱 1"]);
+    gameplay.stop({ kind: "manual" });
+});
+
+test("MMO 模块真实装配：首次进入与切换角色的身份按房间隔离，旧 lease 不会关闭新房", async (t) => {
+    const controller = new RoomController<MmoWorldRoom, MmoWorldInput>();
+    const registry = new GameplayRegistry<MmoWorldRoom, MmoWorldInput>();
+    const bridge = { currentGeneration: () => controller.currentGeneration, dispatchInput: (input: unknown) => controller.input(input as MmoWorldInput), requestStop: (reason: Parameters<typeof controller.stop>[0]) => controller.stop(reason) };
+    const handles: ReturnType<typeof fakeHandle>[] = [];
+    t.mock.method(WorldRoomTransport, "forCurrentServer", () => ({ join: async () => { const next = fakeHandle(); handles.push(next); return next.handle; } }));
+    const identities: (string | undefined)[] = [];
+    t.mock.method(MmoWorldGameplay.prototype, "start", async (context: GameplayContext<MmoWorldRoom>) => { identities.push(context.room.selfCharacterId); });
+    const characters = ["c1", "c2"].map((characterId, slot) => ({ characterId, personaId: `p${slot + 1}`, slot, name: `Rook${slot}`, classId: "fighter" as const, factionId: "dawn" as const, level: 1, exp: 0, mapId: "greybox", status: "active" as const }));
+    const runtime: MmoRuntime = {
+        selfUid: () => "u1", characters: async () => ({ characters, orphans: [], maxSlots: 4 }),
+        createCharacter: async () => { throw new Error("unused"); }, bag: async () => ({ bag: { rev: 0, items: [] } }), moveItem: async () => ({ bag: { rev: 0, items: [] } }),
+        enterWorld: async (_personaId, mapId) => ({ worldAddress: `s0/${mapId}/0`, mapId, line: 0, endpoint: "", ticket: "t".repeat(24), expiresAt: 1, transferId: null }),
+        launchWorld: async () => undefined, close: () => undefined,
+    };
+    const release = setMmoRuntime(runtime);
+    t.after(async () => { await controller.dispose(); release(); });
+    const module = createGameplayModule(createGameplayServices({ controllerBridge: bridge }));
+    registerGameplayModule(registry, module, bridge);
+    for (const characterId of ["c1", "c2"]) {
+        assert.equal((await controller.startRegistered(registry, "mmoWorld", undefined, { characterId, mapId: "greybox" })).status, "started");
+        await controller.stop();
+    }
+    assert.deepEqual(identities, ["c1", "c2"]);
+    const old = module.joiner.join({ characterId: "c1", mapId: "greybox" }, new AbortController().signal);
+    await old.ready;
+    await old.leave();
+    const next = module.joiner.join({ characterId: "c2", mapId: "greybox" }, new AbortController().signal);
+    await next.ready;
+    await old.leave();
+    assert.deepEqual(handles.at(-1)!.sent, [], "旧 lease 的重复清理不能触及后来进入的角色");
+    await next.leave();
+});
+
+test("MMO 本人只匹配本次 room 身份，多个角色不会共享预测位置", async () => {
+    const { room, observer } = fakeRoom();
+    const gameplay = new MmoWorldGameplay({ presentation: fakePresentation().presentation });
+    await gameplay.start(contextOf({ ...room, selfCharacterId: "c1" }));
+    const other: IMmoEntityWire = { ...self, id: "char:a-other", x: 1200 };
+    observer().entities(new Map([[other.id, other], [self.id, self]]), true);
+    assert.equal(gameplay.model().self?.id, self.id);
+    assert.deepEqual(gameplay.model().entities.map((entity) => [entity.id, entity.isSelf, entity.x]), [[other.id, false, 1200], [self.id, true, 1000]]);
+    gameplay.stop({ kind: "manual" });
+});
+
+test("MMO 增量投影保留阵营和掉落数量", () => {
+    const reconciler = createMmoWorldReconciler();
+    const loot: IMmoEntityWire = { ...slime("loot:1", 1100), kind: "loot", templateId: "slime-gel", count: 7 };
+    const items = [self, loot];
+    reconciler.acceptBaselineBegin({ baselineId: "cards", seq: 1, chunkCount: 1, itemCount: 2 });
+    reconciler.acceptBaselineChunk({ baselineId: "cards", seq: 1, index: 0, items });
+    reconciler.acceptBaselineEnd({ baselineId: "cards", seq: 1, checksum: wireChecksum(items) });
+    reconciler.acceptUpdate({ seq: 2, tick: 2, id: self.id, x: 1006, y: 1000, rev: 1, hp: 90 });
+    reconciler.acceptUpdate({ seq: 3, tick: 2, id: loot.id, x: 1106, y: 1000, rev: 1, hp: 30 });
+    assert.deepEqual(reconciler.snapshot().get(self.id), { ...self, x: 1006, rev: 1, hp: 90 });
+    assert.deepEqual(reconciler.snapshot().get(loot.id), { ...loot, x: 1106, rev: 1 });
+});
+
+test("MMO 死亡清理旧预测意图，复活回执立即校正本人且不再漂移", async () => {
+    const { room, observer, calls } = fakeRoom();
+    const gameplay = new MmoWorldGameplay({ selfCharacterId: "c1", presentation: fakePresentation().presentation });
+    const context = contextOf(room);
+    await gameplay.start(context);
+    observer().entities(new Map([[self.id, self]]), true);
+    gameplay.handleInput({ type: "move", dir: { x: 1, y: 0 } }, context);
+    gameplay.tick(0.1, context);
+    assert.equal(gameplay.model().self?.x, 1012);
+    const state = { hp: 0, hpMax: 100, mp: 0, mpMax: 50, cooldowns: {}, casting: null, bag: null };
+    observer().privateState(state);
+    gameplay.handleInput({ type: "moveTo", x: 1600, y: 1000 }, context);
+    assert.equal(calls.length, 1, "死亡期间不发送新移动意图");
+    observer().pos({ seq: 1, tick: 110, x: 800, y: 900 });
+    // 多个固定步合并出站时，复活 pos 先于前一子步的死亡 private 到达。
+    observer().privateState(state);
+    observer().privateState({ ...state, hp: 100, mp: 50 });
+    observer().entities(new Map([[self.id, { ...self, x: 800, y: 900, rev: 2 }]]), true);
+    gameplay.tick(0.2, context);
+    assert.deepEqual([gameplay.model().self?.x, gameplay.model().self?.y], [800, 900]);
+    gameplay.handleInput({ type: "move", dir: { x: 1, y: 0 } }, context);
+    gameplay.tick(0.05, context);
+    assert.equal(gameplay.model().self?.x, 806);
     gameplay.stop({ kind: "manual" });
 });

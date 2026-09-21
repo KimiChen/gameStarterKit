@@ -1,7 +1,7 @@
 # scripts/protected-paths.lock —— 受保护手写路径的字节锁。Do not edit by hand.
 # writer: node scripts/protected-paths-lock.mjs --write ；checker: --check（npm run verify:protected-paths）
 # 每行 `<路径> <sha256>`（内容哈希，可用 shasum -a 256 复核）；范围见 scripts/protected-paths.json。
-apps/client/src/Main.ts 099c43d68e355bec3c78ad6b81c6d13a02b1ff75577b9fc91e53cf2c2ebf8378
+apps/client/src/Main.ts 191f4065c7c32bd446a6ad361e7d8e15596759e7c7fb4c7b49043f496685e97b
 apps/client/src/app/AppRuntime.ts ae593523cdf806fb74a9e1f6424fbac843873ec4c43bc77c382cc5edabaad23d
 apps/client/src/app/CocosLifecycleBridge.ts 333e689f1657019ab7e2f6dbf87a524b87af3988a2a1a6748b5fbf1c6e72361d
 apps/client/src/app/FrameScheduler.ts 04766a657ba81991e085d5cc960c1a4caa700686eee2ca69c9dd8a2d9ec3c262
@@ -43,10 +43,10 @@ apps/server/src/core/idem.ts a82f495bbd41f7a07169e28269328505bb3305fd0ea681a6869
 apps/server/src/rooms/GameMode.ts 5cd7d5148ede98f7da0f365c9ef6a34c3d4cfd7d99c03e4e6f71ca573b9618ca
 apps/server/src/rooms/GameRoom.ts 263417296e7d090833fdc7e4e8802d8cb7ff132203a8d090651eb6a99cab94a6
 apps/server/src/rooms/WorldMode.ts 8f65277d2833f707f15d6a771870dee5ec5480b2000826fc82a8b00156df0484
-apps/server/src/rooms/WorldRoom.ts 238461238e6505e7e10eaa285cbf6ef638fdddd6d6b80de5182b486e0978434f
+apps/server/src/rooms/WorldRoom.ts d73f48240a27a53d0e798be975b3f21cbc065018dee45f37c5a44c46acf908b3
 apps/server/src/rooms/core/AccessPolicy.ts d6bee6114f8e3fe015bff42657c739366df64fe3ad694a46c241e149d105a2a2
 apps/server/src/rooms/core/Baseline.ts 80b401e7a01d23f04eb00fe34aa98f35210bf4f096c611f9f7c20f754396c208
-apps/server/src/rooms/core/CheckpointPort.ts dc0e7eab77ba5c564691e04d9c4dd67695b74fc8ca5652822c05c8230a616b73
+apps/server/src/rooms/core/CheckpointPort.ts 2f6949f1b61b76003658e763aa160f71029f238401a38d688c12d43638029a31
 apps/server/src/rooms/core/InterestSet.ts 76293a71a62b2cef5ccafa6ec7858ede49379738bed78313267f708d3e6ded12
 apps/server/src/rooms/core/MessageBudget.ts b6b3eaed8adf8d4d5eb9086d6eaf73790b7df41c3eed276cfc4285ace980f7ca
 apps/server/src/rooms/core/ObserverSync.ts 884d922617542911dd2a90cd242bec59b6abb56b53e5274fa6fbbc3daceed716
@@ -57,13 +57,13 @@ apps/server/src/rooms/core/RoomProfile.ts cea866c7e63a30fa058ea964e59b6a93e4e9c2
 apps/server/src/rooms/core/S2CPorts.ts 3e4af5e3e1105d4533af89978cae1a2344500d3217d41f19bcb657bc79de9a85
 apps/server/src/rooms/core/StartPolicy.ts 3a89240dd9f91a64091bf5cde91f441f06acbc06b29071426ef1eba4f924ef58
 apps/server/src/rooms/core/WireDispatcher.ts c020e18340e996a31bb4aa07d34d3a7d15533e65a1e213d30b2ec84280cb0e35
-apps/server/src/rooms/core/WorldCheckpoint.ts c851ede2fd1396e8b8139833847390feab3f4db3e7e67e48414c837312fcd763
+apps/server/src/rooms/core/WorldCheckpoint.ts 66490dae03bca19154b1a38c2054eb3e2c4276906878289c2a8ddd500a4a105d
 apps/server/src/rooms/core/WorldDirectory.ts cc8783150b33aac54d3e7005adbee406ff751750d6823a49fe93cbd334334d63
 apps/server/src/rooms/core/WorldEventPort.ts 83495e6ac4c84e9d738ff5067b4fb60a44814014bf52990fc6e2d2dd9a3c702f
 apps/server/src/rooms/core/WorldLease.ts 4100810ff08b4933d795a68a5de959b00408c19fa5f1618e695c06d377d4ca94
 apps/server/src/rooms/core/WorldProfile.ts ca95f735d29690dc8411a653a7dc7b86948012f657f8eecfe51baef167475c0b
 apps/server/src/rooms/core/WorldRegistry.ts 27e1cab0445094b9081ffc45d7d75680628a86681e11b828e6920e645a33ded5
-apps/server/src/rooms/core/WorldRuntime.ts d74db20f3e87eada71a510f127efb40254812340eeb77cb61a42eb0eeb9368ca
+apps/server/src/rooms/core/WorldRuntime.ts 43d26eebbd63e5aeba8605743ff1750d49a4c72caad6d2d4686061a77656db72
 apps/server/src/rooms/core/WorldTicket.ts 87302739b305f856346eb408052b24a510037685e1e42c437d26ae5a0d0bddc2
 apps/server/src/rooms/core/WorldTransfer.ts c0d11ee8b7527a3e3c863f72344bba51fe96ccafdbe7529695b95add855f69bb
 apps/server/src/rooms/core/WorldTx.ts bee0ab9c1854cc704510879f99f9966acbde7492804e182497bbbf362eba0f81

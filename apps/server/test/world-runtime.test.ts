@@ -231,7 +231,7 @@ test("context.requestDrain 走同一状态机（缺省直接 drain；壳可接�
     assert.throws(() => assertWorldModeContract({ id: "fx", capacity: 1, commands: [] }, "fx"), /必须实现 onWorldInit 与 onStep/u);
 });
 
-test("MF7b：durable 事件缓冲与检查点批（rev = 已落库 + 1、事件随批移出、commit 只许前进 / rollback 放回）、requestCheckpoint 强制点、recover 带信封续 rev / eventSeq；无能力 fail-closed", async () => {
+test("MF7b：durable 事件缓冲与检查点批（rev = 已落库 + 1、事件提交前保留、commit 只许前进 / rollback 不丢）、requestCheckpoint 强制点、recover 带信封续 rev / eventSeq；无能力 fail-closed", async () => {
     const plain = harness();
     await plain.runtime.recover({ instanceId: "i", mapId: "m", line: 0, authorityEpoch: 1, checkpoint: null });
     assert.throws(() => plain.runtime.context().events.append("grant", {}), /eventTable/u, "无 eventTable ⛔ 追加事件");
@@ -256,21 +256,23 @@ test("MF7b：durable 事件缓冲与检查点批（rev = 已落库 + 1、事件�
     assert.deepEqual([first.rev, first.eventOffset, first.authorityEpoch, first.reason], [5, 12, 2, "periodic"]);
     assert.deepEqual(first.events.map((event) => [event.seq, event.kind]), [[11, "grant"], [12, "grant"]]);
     assert.deepEqual(first.personas, [{ personaId: "p-a", controlEpoch: 1 }]);
-    assert.equal(h.runtime.pendingEventCount, 0, "事件随批移出");
+    assert.equal(h.runtime.pendingEventCount, 2, "在途事件保留到提交成功，后继批才能覆盖失败前缀");
     assert.equal(h.runtime.checkpointRevision, 4, "⛔ 未 commit 不推进");
     h.runtime.rollbackCheckpoint(first);
-    assert.equal(h.runtime.pendingEventCount, 2, "落盘失败 ⇒ 事件放回");
+    assert.equal(h.runtime.pendingEventCount, 2, "落盘失败 ⇒ 事件仍保留");
     context.requestCheckpoint("loot");
     h.runtime.advance(50);
     assert.equal(h.batches.length, 2, "强制点：本步末尾立即取");
     assert.deepEqual([h.batches[1]!.rev, h.batches[1]!.reason, h.batches[1]!.events.length], [6, "loot", 2], "rev 不重用作废的号");
+    assert.equal(context.events.append("grant", { amount: 3 }), 13, "批次捕获之后产生的新事件不属于 rev 6");
     h.runtime.commitCheckpoint(6);
+    assert.equal(h.runtime.pendingEventCount, 1, "只在提交后移除已耐久前缀，保留批次之后的新事件");
     assert.equal(h.runtime.checkpointRevision, 6);
     h.runtime.commitCheckpoint(5);
     assert.equal(h.runtime.checkpointRevision, 6, "只许前进");
     h.runtime.advance(50);
     assert.equal(h.batches.length, 2, "未到节拍且无强制点 ⇒ 不取");
     assert.equal(h.runtime.forceCheckpoint("drain"), true);
-    assert.deepEqual([h.batches[2]!.rev, h.batches[2]!.reason, h.batches[2]!.events], [7, "drain", []]);
-    assert.equal(h.batches[2]!.eventOffset, 12, "eventOffset = 最后分配的 seq");
+    assert.deepEqual([h.batches[2]!.rev, h.batches[2]!.reason, h.batches[2]!.events.map((event) => event.seq)], [7, "drain", [13]]);
+    assert.equal(h.batches[2]!.eventOffset, 13, "eventOffset = 最后分配的 seq");
 });

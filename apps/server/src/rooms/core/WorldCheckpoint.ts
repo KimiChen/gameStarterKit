@@ -6,7 +6,7 @@
  *     → 每个 persona 条目 port.savePersona(tx, personaId, 信封{…, controlEpoch})
  *     → 每条事件 tx.appendWorldEvent(eventTable, { eventId(uuid), seq, kind, payload, checkpointRev: rev })
  *     → beforeCommit：UPDATE world_instance SET checkpoint_rev = rev WHERE … AND authority_epoch = ? AND checkpoint_rev < rev（0 行 ⇒ AuthorityLostError）
- *   全部成功 COMMIT ⇒ 壳 `runtime.commitCheckpoint(rev)`；任一步失败整体 ROLLBACK ⇒ 壳 `runtime.rollbackCheckpoint(batch)`（事件放回缓冲）。
+ *   全部成功 COMMIT ⇒ 壳 `runtime.commitCheckpoint(rev)`；任一步失败整体 ROLLBACK ⇒ 壳 `runtime.rollbackCheckpoint(batch)`（事件保留到后继批提交成功）。
  * 这就是 MF7b-B3 选定的实现选项 ④「事件批只随分线检查点同事务落库」：事件行与它所属状态的检查点原子，worker 的 `checkpoint_rev ≤` 门
  * 与 Recovering 的 superseded 只作纵深。
  * 加载：`loadInstance` / `loadPersona` 经 port 读回后 `validateCheckpointEnvelope`（版本窗口 / stateHash，不兼容 fail-closed）；

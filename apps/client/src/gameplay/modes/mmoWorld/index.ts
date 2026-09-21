@@ -69,37 +69,36 @@ export function createGameplayModule(services: GameplayServicesContext): Gamepla
             return runtime.enterWorld(personaId, mapId);
         },
     });
-    let selfCharacterId: string | null = null;
     return {
         id: MMO_WORLD_GAMEPLAY_ID,
         validateLaunch: validateMmoWorldLaunch,
         joiner: {
             join: (launch, signal) => {
-                selfCharacterId = launch.characterId;
+                let pending: ReturnType<typeof joiner.joinFor> | null = null;
+                let abandoned = false;
                 return {
                     ready: (async () => {
                         const runtime = getMmoRuntime();
                         if (!runtime) throw new Error("[mmoWorld] mmo kit 未装载（runtime 缺席），不能进入世界");
                         // characterId → personaId：从 kit 的角色列表解析（launch 输入 ⛔ 带 personaId）
                         const listing = await runtime.characters();
+                        if (abandoned || signal.aborted) throw new Error("[mmoWorld] join 已取消");
                         const character = listing.characters.find((entry) => entry.characterId === launch.characterId);
                         if (!character) throw new Error(`[mmoWorld] 角色 ${launch.characterId} 不属于本账号`);
-                        const capability = joiner.joinFor(character.personaId, launch.mapId, signal, launch.transfer ?? null);
+                        const capability = joiner.joinFor(character.personaId, launch.mapId, signal, launch.transfer ?? null, character.characterId);
                         pending = capability;
                         return capability.ready;
                     })(),
-                    leave: async () => { await pending?.leave(); },
+                    leave: async () => { abandoned = true; await pending?.leave(); },
                 };
             },
         },
         createPlugin: (host) => createMmoWorldGameplay({
             host,
-            ...(selfCharacterId === null ? {} : { selfCharacterId }),
             // 两图交接：本局 stop 时拿到凭据 ⇒ 下一拍带参重进目标图（凭据只在内存流转，⛔ 落日志）
-            onTransfer: (ready) => {
+            onTransfer: (ready, characterId) => {
                 const runtime = getMmoRuntime();
                 const parts = parseWorldAddress(ready.worldAddress);
-                const characterId = selfCharacterId;
                 if (!runtime || !parts || characterId === null) { console.error("[mmoWorld] 交接就绪但无法重进（runtime / 地址 / 角色缺席）"); return; }
                 setTimeout(() => {
                     void runtime.launchWorld(characterId, parts.mapId, ready).catch((error) => { console.error("[mmoWorld] 交接后重进世界失败：", error); });
@@ -109,8 +108,6 @@ export function createGameplayModule(services: GameplayServicesContext): Gamepla
         }),
     };
 }
-
-let pending: { ready: Promise<MmoWorldRoom>; leave(): Promise<void> } | null = null;
 
 async function createMmoWorldPresentation(services: GameplayServicesContext, host: GameplayInstanceHost<MmoWorldInput>): Promise<MmoWorldPresentation | undefined> {
     const presentationHost = services.presentationHost;

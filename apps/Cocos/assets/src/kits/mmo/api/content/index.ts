@@ -2,19 +2,23 @@
  * mmo kit · `content` api 面（客户端，docs/MMO.md §7.2 / §7.5）：客户端地图几何（内置灰盒包）与表现映射注册表 `IPresentationMap`
  * （presentationId → 表现描述；MK0 = 2D 公告板的颜色 / 尺寸，3d.md SD9：`model` 预留）。⛔ 不 import cc；本面任何导出变化都要 bump `api.content.version`。
  */
-import { indexContentPack, validateContentPack, type IClassTemplate, type IContentPackIndex, type IItemTemplate, type IMapDef } from "../../../../shared/kits/mmo/api/content/index";
+import { indexContentPack, mergeItemTemplates, validateContentPack, type IClassTemplate, type IContentPackIndex, type IItemTemplate, type IMapDef } from "../../../../shared/kits/mmo/api/content/index";
 import { GREYBOX_PACK } from "../../../../shared/kits/mmo/content/greybox";
 import { KIT_CONTRIBUTIONS } from "../../contributions.generated";
 
 export type { IClassTemplate, IContentPackIndex, IItemTemplate, IMapDef };
 
 let cachedPacks: readonly IContentPackIndex[] | null = null;
+let cachedItems: ReadonlyMap<string, IItemTemplate> | null = null;
 
 /** 全部内容包（MK4-B2：贡献点 `content` 的插件 JSON 在前、内置灰盒兜底；每份过 validateContentPack，坏包抛 ⇒ 装载期拒）。 */
 export function contentPacks(): readonly IContentPackIndex[] {
     if (cachedPacks === null) {
         const contributed = (KIT_CONTRIBUTIONS as { readonly content: readonly { readonly pluginId: string; readonly value: unknown }[] }).content;
-        cachedPacks = [...contributed.map((entry) => indexContentPack(validateContentPack(entry.value))), indexContentPack(validateContentPack(GREYBOX_PACK))];
+        const packs = [...contributed.map((entry) => indexContentPack(validateContentPack(entry.value))), indexContentPack(validateContentPack(GREYBOX_PACK))];
+        const items = mergeItemTemplates(packs); // 与服务端同闸：失败不缓存，包顺序不得改变物品含义。
+        cachedPacks = packs;
+        cachedItems = items;
     }
     return cachedPacks;
 }
@@ -80,10 +84,10 @@ export function classOf(classId: string): IClassTemplate | null {
     return null;
 }
 
-/** 物品模板（贡献包优先；不在包内 = null）。 */
+/** 全区物品模板（同 id 必须同定义；不在任何包内 = null）。 */
 export function itemTemplateOf(itemId: string): IItemTemplate | null {
-    for (const index of contentPacks()) { const item = index.itemById.get(itemId); if (item) return item; }
-    return null;
+    contentPacks();
+    return cachedItems!.get(itemId) ?? null;
 }
 
 /** 首图 id（选角页「进入世界」的缺省目标：首个包的首图；角色有最新检查点图时用检查点图）。 */

@@ -12,7 +12,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    MMO_ORCHESTRATION_VERSION, ORCH_MAX_VARS_BYTES, OrchestrationContractError, defineOrchestration, digestOf, effectiveLimits, stableStringify, validateOrchestrationCommand,
+    MMO_ORCHESTRATION_VERSION, ORCH_MAX_EVENT_QUEUE, ORCH_MAX_VARS_BYTES, OrchestrationContractError, defineOrchestration, digestOf, effectiveLimits, stableStringify, validateOrchestrationCommand,
     type OrchestrationCommand, type OrchestrationEvent, type OrchestrationModule,
 } from "@game/shared/kits/mmo/api/orchestration/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
@@ -127,6 +127,52 @@ test("runner fail-closed：65 条命令 ⇒ suspend（整批丢弃、不再收�
     const chatty = runnerOf(moduleOf(() => Array.from({ length: 8 }, () => ({ op: "sayWorld" as const, text: "hi" }))));
     chatty.enqueue({ kind: "tick", tick: 0, bucket: 0 });
     assert.equal(chatty.dispatch(0, emptyWorld).effects.length, 6, "sayWorld 每分钟 ≤ 6，多余丢弃不 suspend");
+});
+
+test("runner：队列溢出经 dispatch 报告暂停一次，通知一次；恢复后再次溢出重新报告", () => {
+    const seen: OrchestrationEvent[] = [];
+    const runner = runnerOf(moduleOf((event) => { seen.push(event); return []; }));
+    const event: OrchestrationEvent = { kind: "instanceStarted", recovered: false, checkpointRev: 0 };
+    const overflow = (): void => {
+        for (let index = 0; index < ORCH_MAX_EVENT_QUEUE; index += 1) assert.equal(runner.enqueue(event), "queued");
+        assert.equal(runner.enqueue(event), "overflow");
+        assert.equal(runner.queued, 0, "溢出整队作废");
+        assert.equal(runner.dispatch(0, emptyWorld).suspendedNow, "event-queue");
+        assert.equal(runner.dispatch(1, emptyWorld).suspendedNow, null, "暂停只向宿主报告一次");
+        assert.equal(runner.notifySuspended(1, emptyWorld), true);
+        assert.equal(runner.notifySuspended(2, emptyWorld), false);
+    };
+    overflow();
+    runner.resume();
+    overflow();
+    assert.deepEqual(seen, [{ kind: "packSuspended", reason: "event-queue" }, { kind: "packSuspended", reason: "event-queue" }]);
+});
+
+test("runner：重启恢复 vars / timers / publish / 序号并解除历史暂停，定时器重新运行", () => {
+    const module = moduleOf((event) => {
+        if (event.kind === "instanceStarted") return [{ op: "setVar", key: "saved", value: 7 }, { op: "publishState", key: "phase", value: "ready" }, { op: "startTimer", timerId: "next", afterMs: 1000 }];
+        if (event.kind === "choice") return Array.from({ length: 65 }, () => ({ op: "setVar" as const, key: "discarded", value: true }));
+        if (event.kind === "timer") return [{ op: "setVar", key: "fired", value: true }];
+        return [];
+    }, { subscribes: ["instanceStarted", "choice", "timer", "packSuspended"] });
+    const source = runnerOf(module);
+    source.enqueue({ kind: "instanceStarted", recovered: false, checkpointRev: 0 });
+    source.dispatch(0, emptyWorld);
+    source.enqueue({ kind: "choice", actorEntityId: "a", promptId: "p", choiceId: "c" });
+    assert.equal(source.dispatch(10, emptyWorld).suspendedNow, "commands");
+    const snapshot = source.snapshot();
+    assert.equal(snapshot.suspended, "commands", "快照仍保留故障诊断");
+    const restored = runnerOf(module);
+    restored.restore(snapshot, 10, 0);
+    assert.deepEqual([restored.suspended, restored.vars().get("saved"), restored.publish(), restored.eventSeq, restored.ring], [null, 7, snapshot.publish, snapshot.eventSeq, snapshot.ring]);
+    assert.equal(restored.dispatch(0, emptyWorld).suspendedNow, null, "旧暂停不重新审计");
+    restored.schedule(10);
+    const result = restored.dispatch(10, emptyWorld);
+    assert.deepEqual([result.events, result.suspendedNow, restored.vars().get("fired"), restored.vars().has("discarded")], [1, null, true, false]);
+    const overflowing = runnerOf(module);
+    for (let index = 0; index <= ORCH_MAX_EVENT_QUEUE; index += 1) overflowing.enqueue({ kind: "instanceStarted", recovered: true, checkpointRev: 1 });
+    overflowing.restore(snapshot, 10, 0);
+    assert.equal(overflowing.dispatch(0, emptyWorld).suspendedNow, "event-queue", "回灌不能抹掉本次初始化新发生的溢出");
 });
 
 test("rng / 摘要：同 instanceId・tick・eventSeq・stream 同值，同事件内连续取值确定且不同；stableStringify 键序无关；hashSeed 稳定", () => {

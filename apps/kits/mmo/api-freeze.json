@@ -136,7 +136,7 @@
       }
     },
     "content": {
-      "version": 2,
+      "version": 3,
       "minSupported": 2,
       "exports": {
         "shared": [
@@ -144,6 +144,7 @@
           "const MMO_CONTENT_LIMITS",
           "const MMO_CONTENT_SCHEMA_VERSION",
           "function indexContentPack",
+          "function mergeItemTemplates",
           "function validateContentPack",
           "interface IClassTemplate",
           "interface IContentPack",
@@ -176,6 +177,7 @@
           "function contentIndex",
           "function contentPacks",
           "function creatureOf",
+          "function itemCatalog",
           "function itemOf",
           "function mapDefOf",
           "function packForMap",
@@ -203,7 +205,7 @@
       }
     },
     "inventory": {
-      "version": 2,
+      "version": 3,
       "minSupported": 1,
       "exports": {
         "shared": [
@@ -445,7 +447,7 @@
       }
     },
     "world": {
-      "version": 2,
+      "version": 3,
       "minSupported": 1,
       "exports": {
         "shared": [

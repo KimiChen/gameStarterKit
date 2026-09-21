@@ -1131,4 +1131,27 @@ apps/client/test/mmodemo-logic.test.ts
 | 手机后台 / 断网 / 杀进程 | `int/world-room`（非主动断线进宽限、重连归位、到期清理）、`int/persona-session`（会话代）、`int/mmo-checkpoint`（离座 = persona 级强制点 = 离线结算） | ✅ |
 | 24–72 h 长跑 | MK3-B3 4 分钟冒烟 stable（`2026-09-20T170039-mmo-greybox-soak-smoke.json`）；正式 24 h 待跑 | ⏳（MK3 退出项） |
 
+**2026-09-21 最近一周提交审阅修复**（kit `0.1.19`，本行所在提交；R01–R11 为本轮问题编号，不复用设计审阅 M01–M20）：
+
+| 编号 | 实施修复 |
+| --- | --- |
+| R01 检查点后继批漏事件 | `WorldRuntime` 事件日志保留到提交，预捕获后批包含全部未提交前缀；串行执行前过滤已经提交的前缀，前批失败只作废该批，后批仍可完整持久化状态与事件 |
+| R02 CAS 冲突提交半份奖励 | `worldEvents` 对库存 `conflict` 抛出，整个事务回滚后重试；不把已经写入前序堆叠的事件死信并提交 |
+| R03 跨房失控制权阻断旧房保存 | 检查点捕获 `ControlConflictError` 后踢出对应旧会话，旧房停止全部脏写并 Offline，重建从最后有效检查点恢复，其余玩家重新进入；不删除失败 persona 守卫后保存未耐久世界状态。`MemoryCheckpointPort` 角色新旧改按 `(controlEpoch, rev)` 比较 |
+| R04 强制检查点失败仍交接 | 后台串行链与本批原始结果分开，交接等待本次强制点结果；落盘失败传回调用者，不继续 commit transfer |
+| R05 客户端本人身份污染 | `selfCharacterId` 绑定本次 join 返回的房间句柄，gameplay 与交接沿用该身份，清除提前捕获与跨 join 共享 pending 状态的依赖 |
+| R06 编排奖励跨实例误去重 | 新 opId 以区 / instanceId / packId / 事件序 / 命令序稳定派生固定长度 `orch:<uuid>`；worker 继续按旧载荷原键读取已有回执，避免升级后重发 |
+| R07 贡献包物品不可发放 / 装备 | shared `mergeItemTemplates` 在双端装载时保证全区同 itemId 同语义（相同模板可复用，异义拒绝）；server `itemCatalog` 汇总全部包，默认库存 / worker 及跨图装备属性使用该目录，兼容无 packId 的既有持久事件 |
+| R08 复活位置与旧预测意图 | 服务端复活立即发 pos；客户端死亡时清旧预测，复活按权威位置重建，覆盖单帧多模拟步导致 pos / HP 更新交错的顺序 |
+| R09 队列溢出漏暂停通知 | enqueue / schedule 的溢出交由 dispatch 报告一次暂停，审计与 `packSuspended` 通知走同一路径 |
+| R10 暂停被错误恢复 | 重新初始化回灌业务状态时不恢复上一进程的 suspended，快照字段只供诊断；本次初始化若再次触发暂停仍生效 |
+| R11 delta 丢名片元数据 | 客户端 delta 合并保留未携带的 `factionId` / `count` 等字段 |
+
+版本与兼容：`world` / `content` / `inventory` 的 version 均升到 3，minSupported 仍为 1 / 2 / 1；SQL、wire 载荷与已存回执不改形态。
+历史上已经因跨实例键冲突被吞掉的奖励无法由新键推断补发，需按历史事件另行核对。当前消费说明见 `apps/kits/mmo/README.md` §10（安装该 kit 后可用），按批次施工记录保留原文。
+
+已完成定向验证：客户端 19 条、world 126 条、服务端 worker / inventory / contributions 17 条、库存 MySQL 2 条通过；
+独立 `PROJECT_ID=mmo_review_0921_world` 真栈的 `mmo-checkpoint` / `mmo-transfer` / `mmo-loot` / `world-crash-restart` / `world-event-dedup` 五文件通过。
+完整校验：`verify:all` 已执行；类型检查、生成物 / 镜像 / 保护锁检查、FGUI 与 inventory 校验通过，聚合链在 `test:inventory` 的历史基线断言停止（`docs/evidence` 已被旧提交跟踪，而用例要求夹具中不存在）。本轮新增文档曾使「kit 缺席」夹具产生坏链，已改为可选路径说明并定向重跑通过。后续项目另行补跑：服务端全测 1188 / 客户端 689 通过（同步现有 `new` 后，完整 typecheck、客户端全测以及受该同步影响的服务端 42 条定向回归再次通过），launcher / npm-reference / aggregate-chain / sync-mirror / toolchain-runtime 五个矩阵及 perf 通过；UniFlex UI contract 为 59/60，剩余失败是既有 `BackpackItemCard` 注释含 `Restored` 被文本断言误判（与本轮 MMO 改动无关）。`verify:kit-clean-install -- --kit mmo` 的 25 步通过；本轮同时补齐 README 中已有 `ui:verify-fgui-dom` 命令登记，保护锁 writer 也刷新了此前已修改的 Main.ts 哈希（源码未再改）。本次修复不改变 MK3 长跑待办、MK4-B6 冻结前置、既有容量例外或 MG 段的实施状态。
+
 下一动作：**框架段 MF0–MF11 全部退出（tag `mmo-framework-v1`）；`mmo` kit MK0 已退出（tag `mk0-exit`）；MK1 世界闭环 B1–B6 已于 2026-09-20 交付、同日用户拍板选项 ③ 退出（tag `mk1-exit`；§11.2 v1 例外「热点互见 ≤ 50 人」）；MK2 模拟闭环 B1–B3 已于 2026-09-20 退出（tag `mk2-exit`）；MK3 资产闭环 B1–B3 已于 2026-09-20 交付、退出待 24–72 h 长跑报告（§12 MK3 行）**——热点 100 人的根因（互见 × 更新率 O(N²) 扇出 + 同进程机器人污染）与候选收紧（分层节拍 / 角色可见上限 / 位置量化 / 聊天限频）留在 §12 MK1 行偏差 ⑧，独立进程基准台与收紧留作 v1.x 的可选项（⛔ 阻塞 MK3）；MK3 待长跑报告补 tag `mk3-exit`（用户择时跑 24 h）；MK4 编排与验收 B1–B5 已于 2026-09-20 交付（§12 MK4 行），B6 冻结 tag `mmo-kit-v1-frozen` 只待 ① MK3 长跑报告（② 场景 B 50 人整窗 tick p99 回归 37.2 / 25.1 / 32.6 ms 已于 2026-09-20 用户拍板接受为 v1 已知回归、优化留 v1.x）；下一阶段 MG0 内容插件（`mmodemo` / `mmohold`，MMO-PLAN §4）可开工；PS1 + PS4 入口拆分可随时落地；**MF5a 已退出 ⇒ slg 2b 与 lvr 视图房可开工**（已通知 slg.md §10.8，接法见 KIT.md §4 / SERVER.md §5）；门① 已过，线上部署方按 SERVER.md §8.2 SOP 执行迁移；MF7a 已退出 ⇒ slg / lvr 无人在线结算可开工（已通知 slg.md §0.1 / lvr.md §4.3），各自落地后在此回写一行；门③ 已过：`WORLD_ROOM_PROTOCOL_VERSION=1` 一次定型，首个客户端发版前仍可 revert。MF0 行登记的基线红项（Creator 镜像 `.meta` 同步——现连带 `test:sync-mirror-matrix` 8 例、`docs/evidence` 跟踪文件政策）仍待处置，⛔ 不算 MMO 阶段偏差。

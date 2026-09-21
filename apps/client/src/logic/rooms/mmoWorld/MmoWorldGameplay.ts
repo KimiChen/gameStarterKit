@@ -58,6 +58,8 @@ export interface MmoWorldRoom {
     readonly roomId: string;
     readonly sessionId: string;
     readonly mapId: string;
+    /** 本次 join 已验证归属的角色身份，随房间实例传递，不依赖 module 的上一次 launch。 */
+    readonly selfCharacterId?: string;
     readonly current: boolean;
     readonly dropping: boolean;
     /** 发出意图；返回它的 seq（掉线 / 已离开拒发 ⇒ null） */
@@ -131,10 +133,10 @@ export interface MmoWorldGameplayOptions {
     readonly host?: GameplayInstanceHost<MmoWorldInput>;
     readonly presentation?: MmoWorldPresentation;
     readonly presentationFactory?: () => MmoWorldPresentation | undefined | Promise<MmoWorldPresentation | undefined>;
-    /** 本人实体判定（缺省：kind character 且 id 以 `char:` 开头的第一个；MK1 随 join 回执带 characterId 后精确匹配）。 */
+    /** 无头调用可显式注入；生产从本次 room.selfCharacterId 读取，身份缺席时不猜本人。 */
     readonly selfCharacterId?: string;
     /** 交接就绪后（本局 stop 时）交出凭据：mode 模块据此带参重进目标图。 */
-    readonly onTransfer?: (ready: IMmoWorldTransferReady) => void;
+    readonly onTransfer?: (ready: IMmoWorldTransferReady, characterId: string | null) => void;
 }
 
 export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldInput> {
@@ -142,8 +144,8 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
 
     private readonly host: GameplayInstanceHost<MmoWorldInput> | null;
     private readonly presentationFactory: () => MmoWorldPresentation | undefined | Promise<MmoWorldPresentation | undefined>;
-    private readonly selfCharacterId: string | null;
-    private readonly onTransfer: ((ready: IMmoWorldTransferReady) => void) | null;
+    private selfCharacterId: string | null;
+    private readonly onTransfer: ((ready: IMmoWorldTransferReady, characterId: string | null) => void) | null;
     /** 已收到的交接凭据（stop 时交出） */
     private pendingTransfer: IMmoWorldTransferReady | null = null;
     private presentation: MmoWorldPresentation | null = null;
@@ -157,6 +159,9 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     private synced = false;
     /** 本地预测器（本人实体首次出现在视野流时按职业模板 / 地图建） */
     private predictor: MovementPredictor | null = null;
+    private dead = false;
+    /** 复活位置回执先于同一步 private 到达；待 HP 恢复后重建预测器，丢弃死亡前意图。 */
+    private respawnPosition: IMmoWorldPos | null = null;
     private privateState: MmoPrivateState = { hp: 0, hpMax: 1, mp: 0, mpMax: 0, cooldowns: {}, casting: null, bag: null };
     private readonly cooldowns = new CooldownModel();
     /** 本地时钟（tick 累加；冷却倒计时用） */
@@ -179,6 +184,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
             throw new TypeError("[mmoWorld] 需要有效的 presentation adapter");
         }
         this.started = true;
+        this.selfCharacterId = context.room.selfCharacterId ?? this.selfCharacterId;
         this.context = context;
         this.presentation = presentation;
         try {
@@ -189,9 +195,13 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                     if (!active()) return;
                     this.entities = snapshot;
                     this.synced = synced;
-                    if (this.predictor === null) this.predictor = this.createPredictor(snapshot, context.room.mapId);
+                    if (!this.dead && this.predictor === null) this.predictor = this.createPredictor(snapshot, context.room.mapId);
                 },
-                pos: (payload) => { if (active()) this.predictor?.reconcile(payload); },
+                pos: (payload) => {
+                    if (!active()) return;
+                    if (this.dead) this.respawnPosition = payload;
+                    else this.predictor?.reconcile(payload);
+                },
                 chat: (payload) => { if (active()) this.chatLog = appendChatLine(this.chatLog, nearbyChatLineOf(payload, (id) => this.entities.get(id)?.name ?? null)); },
                 transferReady: (payload) => {
                     if (!active()) return;
@@ -200,7 +210,21 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
                     this.notice = "传送中…";
                     this.requestExit("settled");
                 },
-                privateState: (state) => { if (active()) { this.privateState = state; this.cooldowns.accept(state.cooldowns, this.nowMs); } },
+                privateState: (state) => {
+                    if (!active()) return;
+                    const wasDead = this.dead;
+                    this.dead = state.hp <= 0;
+                    this.privateState = state;
+                    this.cooldowns.accept(state.cooldowns, this.nowMs);
+                    if (this.dead) {
+                        this.predictor = null;
+                        if (!wasDead) this.respawnPosition = null;
+                    } else if (wasDead) {
+                        this.predictor = this.createPredictor(this.entities, context.room.mapId);
+                        if (this.respawnPosition) this.predictor?.reconcile(this.respawnPosition);
+                        this.respawnPosition = null;
+                    }
+                },
                 opResult: (result) => { if (active()) this.notice = result.result === "ok" ? "" : `${result.result}${result.detail ? `：${result.detail}` : ""}`; },
                 resync: (reason) => { if (active()) this.notice = `重同步${reason ? `（${reason}）` : ""}`; },
                 dropped: () => { if (active()) this.notice = "连接中断，重连中…"; },
@@ -218,6 +242,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         if (!this.started || this.context !== context || !context.isActive()) return;
         if (input.type === "leave") { this.requestExit("user-exit"); return; }
         if (context.room.dropping || !context.room.current) return;
+        if (this.dead && input.type !== "say" && input.type !== "target") return;
         if (input.type === "transfer") { this.requestTransfer(context); return; }
         if (input.type === "say") {
             const text = input.text.trim();
@@ -259,7 +284,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         this.pendingTransfer = null;
         this.teardown();
         if (pending && this.onTransfer) {
-            try { this.onTransfer(pending); } catch (error) { console.error("[mmoWorld] onTransfer 失败：", error); }
+            try { this.onTransfer(pending, this.selfCharacterId); } catch (error) { console.error("[mmoWorld] onTransfer 失败：", error); }
         }
     }
 
@@ -357,8 +382,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     }
 
     private isSelf(entity: IMmoEntityWire): boolean {
-        if (this.selfCharacterId !== null) return entity.id === `char:${this.selfCharacterId}`;
-        return entity.kind === "character" && entity.id.startsWith("char:");
+        return this.selfCharacterId !== null && entity.id === `char:${this.selfCharacterId}`;
     }
 
     private requestExit(reason: "user-exit" | "settled"): void {
@@ -380,6 +404,8 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         this.entities = new Map();
         this.synced = false;
         this.predictor = null;
+        this.dead = false;
+        this.respawnPosition = null;
         this.chatLog = [];
         this.targetId = null;
     }

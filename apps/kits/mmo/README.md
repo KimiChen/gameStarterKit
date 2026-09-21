@@ -37,13 +37,13 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 面 | version / minSupported | shared（双端同源纯函数 / 类型 / validator） | server（经 kit-api 事务） | client | 附带域 / token |
 | --- | --- | --- | --- | --- | --- |
 | `characters` | 1 / 1 | 常量（`MAX_CHARACTER_SLOTS` 4、名字 2–16、`MMO_CHARACTER_LEVEL_MAX` 60、`MMO_CLASS_IDS` fighter・caster、`MMO_FACTION_IDS` dawn・dusk）、`ICharacterSummary` / `IOrphanPersona`、validator（名字 / 槽位 / 摘要 / 孤儿 persona / classId / factionId）、`characterSlots` | `listCharacters` / `createCharacter`（同一 withKitTx：createPersona + 角色行 + 回执）/ `characterOfPersona` / `summaryOf`；错误类 NameTaken / SlotTaken / SlotsFull / Input；`defaultCharactersDeps` | `fetchCharacters` / `createCharacter` / `describeCharacter` / `defaultCharacterName` + 常量再导出 | 域 `mmo.characters`（query）/ `mmo.createCharacter`（idempotent-write；MMO_NAME_TAKEN / MMO_SLOT_TAKEN / MMO_SLOTS_FULL） |
-| `world` | 2 / 1 | `worldAddressOf` / `parseWorldAddress` / `isMapId` / `distanceSq` / `withinRadius`、`IInstanceMeta`、名片 `IEntityCard`、观察者六件 + private / pos / opResult / transferReady 的类型、`MMO_WORLD_MAX_LINE`；再导出 `clampToMap` / `integrate` / `MMO_WORLD_COORD_MAX` | `readInstanceMeta`、`MMO_WORLD_MODE_ID` | `enterWorld`（框架 `world.enter` 凭据）、`createMmoWorldReconciler` + `MMO_WORLD_STREAM_TYPES` / `MMO_WORLD_RECONCILER_CODEC`、`MmoPrivateState` | v2 = 名片 `factionId?`（MK1-B2，向后兼容） |
-| `content` | 2 / 2 | `validateContentPack`（结构 / 数值域 / 引用完整性 / 几何在图内 / 碰撞位图 / 出生・复活・刷新点不落墙）/ `indexContentPack`、`IContentPack` 全家（map / region / class / creature / spawn / spell / item / lootTable / npc / portal）、`MMO_CONTENT_LIMITS` / `MMO_CONTENT_SCHEMA_VERSION`、`ContentPackError` | `contentPacks` / `packForMap` / `contentIndex`（内置）/ `mapDefOf` / `creatureOf` / `spellOf` / `itemOf` | `contentPacks` / `packForMap` / `defaultMapId` / `mapDefOf` / `classOf` / `itemTemplateOf` / `presentationMap` / `presentationOf`、`IPresentationMap`（2D 公告板颜色 / 尺寸，`model?` 3D 预留）、`BUILTIN_PRESENTATION` / `FALLBACK_PRESENTATION` | minSupported 2：v2 起 `classes[]` 是速度 / HP / MP 真源（v1 消费方不兼容） |
+| `world` | 3 / 1 | `worldAddressOf` / `parseWorldAddress` / `isMapId` / `distanceSq` / `withinRadius`、`IInstanceMeta`、名片 `IEntityCard`、观察者六件 + private / pos / opResult / transferReady 的类型、`MMO_WORLD_MAX_LINE`；再导出 `clampToMap` / `integrate` / `MMO_WORLD_COORD_MAX` | `readInstanceMeta`、`MMO_WORLD_MODE_ID` | `enterWorld`（框架 `world.enter` 凭据）、`createMmoWorldReconciler` + `MMO_WORLD_STREAM_TYPES` / `MMO_WORLD_RECONCILER_CODEC`、`MmoPrivateState` | v2 = 名片 `factionId?`；v3 修复 delta 合并保留 `factionId` / `count` 等未携带字段（向后兼容） |
+| `content` | 3 / 2 | `validateContentPack`（结构 / 数值域 / 引用完整性 / 几何在图内 / 碰撞位图 / 出生・复活・刷新点不落墙）/ `indexContentPack` / `mergeItemTemplates`（全区同 itemId 同语义，歧义拒绝）、`IContentPack` 全家（map / region / class / creature / spawn / spell / item / lootTable / npc / portal）、`MMO_CONTENT_LIMITS` / `MMO_CONTENT_SCHEMA_VERSION`、`ContentPackError` | `contentPacks` / `packForMap` / `contentIndex`（内置）/ `itemCatalog`（全区物品）/ `mapDefOf` / `creatureOf` / `spellOf` / `itemOf`（默认全区） | `contentPacks` / `packForMap` / `defaultMapId` / `mapDefOf` / `classOf` / `itemTemplateOf`（全区同义物品）/ `presentationMap` / `presentationOf`、`IPresentationMap`（2D 公告板颜色 / 尺寸，`model?` 3D 预留）、`BUILTIN_PRESENTATION` / `FALLBACK_PRESENTATION` | minSupported 2：v2 起 `classes[]` 是速度 / HP / MP 真源（v1 消费方不兼容）；v3 增量物品聚合 |
 | `movement` | 1 / 1 | `normalizeDir` / `integrate` / `clampToMap` / `parseCollisionGrid` / `collisionGridDims` / `applyIntent` / `resolveMove`（一个固定步：点地到达、撞墙轴向滑动、阻挡即停）、`MMO_MOVE_STEP_MS` = TICK_MS、`MMO_ARRIVE_EPSILON` 0.5 | 再导出 + `teleportWithin`（钳图、落阻挡格 ⇒ null） | `MovementPredictor`（预测 + 按 seq 和解）/ `IntentThrottle` / `dirFromJoystick`（死区 0.15、同向 100 ms 合并） | token `c2s.mmoWorld.move` / `s2c.mmoWorld.pos` |
 | `social` | 1 / 1 | `worldChannelId(sId)` = `realm:<sId>`、`IMmoPartyLocate` / `IMmoPartyMember` + validator、`nearbyChatLineOf` / `appendChatLine`（`NEARBY_CHAT_LOG_MAX` 50）、`MMO_PARTY_LOCATE_MAX_MEMBERS` 64 | `partyOf`（框架 party 名册 → 本 kit 角色 + worldAddress）、`MmoSocialForbiddenError` | `sayWorld`（框架 chat 门面投 realm 频道）/ `partyLocate` / `partyPanelRows`、`WorldChatPort` | 域 `mmoSocial.partyLocate`；附近聊天 = 框架 core token `c2s/s2c.world.chat` |
 | `combat` | 1 / 1 | `ticksOf` / `effectiveStats` / `damageOf`（框架 `calcDamageWithDefense`：max(1, power + 0.5·atk − 0.3·def) × 成长 × ±10%）/ `healOf` / `auraOf` / `cooldownReadyTick` / `checkCast`（拒绝顺序 unknown-spell → not-learned → dead → casting → cooldown → mp → no-target → self-target → target-dead → range）/ `needsHostileTarget` / `threatOf` / `castReqIdOf` | —（结算住 mode 内部） | `CooldownModel` / `pickHostileTarget` + 再导出 | token `c2s.mmoWorld.target` / `cast`；private 流 `cooldowns` / `casting` |
 | `ai` | 1 / 1 | `decide(perception)`（idle / patrol / chase / attack / return 状态机）/ `bucketOf` / `shouldThink`、`AiPerception` / `AiDecision`、`AI_ARRIVE_RADIUS` 8；`./nav`：`findPath`（网格 A*，`NAV_DEFAULT_MAX_EXPANSIONS` 4096 fail-closed）/ `lineClear` | `PathfinderPort`（请求带 instanceEpoch + entityVersion）/ `createInProcessPathfinder` / `isStalePathResult` / `isDeferredPathResult`（组合根可换 compute 池实现） | — | 内容包 `behavior` idle / patrol / aggro |
-| `inventory` | 2 / 1 | 掉落半边：`rollLoot` / `nearestLoot` / `lootClaimedPayloadOf` + 数字（§6）；物品半边（v2）：`IMmoBagWire`、`planGrant`（堆叠 → 空格 → 邮箱）/ `checkEquip` / `equipSlotOf` / `capacityOf` / `freeSlots` / `sortBagItems` / `bagAttrs` / `equippedTemplates` / `bagSignature` | `grantItem` / `moveItem` / `claimLoot` / `readBag` / 账号级 `bagOf` / `moveItemFor` / 世界房 `bagOfCharacter`、`MmoInventoryError(code)` | `fetchBag` / `moveItem` / `bagRows` / `equippedOf` / `describeBag` + 再导出 | 域 `mmo.bag` / `mmo.moveItem`（contractVersion 2）；token `c2s.mmoWorld.pickup`；private 流 `bag` |
+| `inventory` | 3 / 1 | 掉落半边：`rollLoot` / `nearestLoot` / `lootClaimedPayloadOf` + 数字（§6）；物品半边（v2）：`IMmoBagWire`、`planGrant`（堆叠 → 空格 → 邮箱）/ `checkEquip` / `equipSlotOf` / `capacityOf` / `freeSlots` / `sortBagItems` / `bagAttrs` / `equippedTemplates` / `bagSignature` | `grantItem` / `moveItem` / `claimLoot` / `readBag` / 账号级 `bagOf` / `moveItemFor` / 世界房 `bagOfCharacter`、`MmoInventoryError(code)`；v3 默认模板来自全区 `itemCatalog`，既有单包参数兼容 | `fetchBag` / `moveItem` / `bagRows` / `equippedOf` / `describeBag` + 再导出 | 域 `mmo.bag` / `mmo.moveItem`（contractVersion 2）；token `c2s.mmoWorld.pickup`；private 流 `bag` |
 | `orchestration` | 1 / 1 | 契约类型（`OrchestrationEvent` / `OrchestrationCommand` / `OrchestrationReadApi` / `OrchestrationModule` / `IEntityView`）、`defineOrchestration`（形状校验 + freeze）/ `validateOrchestrationCommand` / `effectiveLimits` / `digestOf` / `stableStringify` / `varsBytesOf`、`ORCHESTRATION_EVENT_KINDS`、ORCH_* 数字（§5） | `createOrchestrationHarness`（无头：emit / advance / vars / publish / ring / replay）/ `readCheckpointedVars` / `pollGrantResults` / `regionContains` | — | 贡献点 `orchestration`；token `s2c.mmoWorld.prompt` / `scriptState` / `notice`、`c2s.mmoWorld.interact` / `choose` |
 
 ### 3. 三个贡献点（kit.json `contributions`；KIT.md §4 / MMO.md §8.6）
@@ -56,12 +56,16 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 
 生成物：`apps/{server,client}/src/kits/mmo/contributions.generated.ts`（`KIT_CONTRIBUTIONS`，`codegen:plugins` 刷新；无插件填充时空列表）。
 
+库存、wire 与既有持久事件只保存 `itemId`，因此它是全区物品身份。双端装载均调用 `mergeItemTemplates`：同 ID 同模板可跨包复用，
+同 ID 的属性、槽位、堆叠、职业限制或其他模板含义不同则拒绝装载，不能以插件顺序覆盖资产。发奖、装备和跨图装备属性都使用这一目录；
+既有不含 `packId` 的 `lootClaimed` 事件与库存无需迁移。
+
 ### 4. 玩法 `mmoWorld` 与 wire（`gameplays/mmoWorld/`，modeVersion 7）
 
 | 项 | 内容 |
 | --- | --- |
 | manifest | `kind:"world"`、`maxPlayers` 100（§11.2）、`profiles ["world"]`、空实例 `sleep` / `emptyAfterMs` 120 s / `checkpointMs` 30 s；root `MmoWorldRoomState` 只放分线元数据（tick / phase / instanceId / mapId / line / authorityEpoch / packId / packVersion / population / scriptStateRev），⛔ 名册 |
-| launch | 客户端 `gameplay/modes/mmoWorld/` launch 参数 exact `{ characterId, mapId, transfer? }`（characterId → personaId 经角色列表；凭据在手走 `{ kind: "transfer" }` strategy 直进，否则框架 `world.enter`） |
+| launch | 客户端 `gameplay/modes/mmoWorld/` launch 参数 exact `{ characterId, mapId, transfer? }`（characterId → personaId 经角色列表；凭据在手走 `{ kind: "transfer" }` strategy 直进，否则框架 `world.enter`）；本人身份绑定本次房间句柄 `selfCharacterId`，交接沿用该身份，⛔ 从视野首个角色或其他 join 的临时状态猜测 |
 | C2S（8） | `move {seq, dir? \| target?}`（rateCost 1）/ `target {entityId \| null}`（1）/ `cast {spellId, targetId?, clientReqId}`（2）/ `interact {targetEntityId, interactId, clientReqId}`（2）/ `choose {promptId, choiceId}`（2）/ `pickup {lootId, clientReqId}`（2）/ `transfer {portalId, clientReqId}`（4）/ `baselineRequest`（重同步） |
 | S2C perSession（10） | 观察者六件 `enter` / `update`（coalesceKey id）/ `leave` / `baselineBegin` / `baselineChunk`（`MMO_BASELINE_CHUNK_ITEMS` 32）/ `baselineEnd`；`private {hp, mp, cooldowns, casting, bag?}`；`opResult {clientReqId, ok, reason?}`；`transferReady {transferId, worldAddress, ticket, expiresAt}`（凭据只此一处出网）；`prompt {promptId, choices}` |
 | S2C 直发 / 广播（3） | `pos {seq, tick, x, y}`（本人权威位置，20 Hz）；分线广播 `scriptState {rev, entries}`（编排 publishState）/ `notice {text, level}` |
@@ -96,7 +100,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | `spawn` | `templateId, pos, tag?, despawnAfterMs?, leashRegionId?` | 模板存在・可行走・存活脚本怪 ≤ `limits.maxSpawnsAlive`；spawnId `orch:<packId>:<n>`；到期收回，死后 5 s 收回不复活 |
 | `despawn` | `entityId` 或 `tag` | 只对脚本怪 |
 | `startTimer` / `cancelTimer` | `timerId, afterMs ≥ 500, tag?, repeat?` / `timerId` | 本地暂存；≤ `ORCH_MAX_TIMERS` 32；快照往返按 tick 差重排 |
-| `grantItem` / `grantCurrency` | `toCharacterId, itemTemplateId, count ≤ maxGrantCount, reason` / `toCharacterId, amount ≤ maxCurrencyPerGrant, reason` | durable 世界事件行（opId `orch:<packId>:<eventSeq>:<idx>` ⇒ 跨重启重放零写入）；角色不在分线 ⇒ 语义拒绝只记日志 |
+| `grantItem` / `grantCurrency` | `toCharacterId, itemTemplateId, count ≤ maxGrantCount, reason` / `toCharacterId, amount ≤ maxCurrencyPerGrant, reason` | durable 世界事件行（新 opId `orch:<uuid>` 稳定派生自区 / 实例 / 包 / 事件序 / 命令序；旧键保留兼容 ⇒ 跨重启重放零写入）；角色不在分线 ⇒ 语义拒绝只记日志 |
 | `sayNearby` / `sayWorld` | `anchorEntityId, text` / `text` | 附近 = core 世界聊天 perSession（视距内会话），30/min；世界 = 分线 notice 广播（偏差：kit-api 无 channel 门面），`ORCH_SAY_WORLD_PER_MIN` 6 |
 | `notice` | `text, level: info \| warn` | 分线广播 `s2c.mmoWorld.notice` |
 | `setVar` | `key, value, durable?` | 本地 vars（≤ 4 KB 序列化）；durable ⇒ 强制检查点（≥ 30 s 一次） |
@@ -107,6 +111,11 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | `setRegionEnabled` | `regionId, enabled` | 区域开关随快照 |
 
 预算与 fail-closed（数字冻结 §11.2 / validator 同源）：每次 dispatch wall ≤ `ORCH_TICK_BUDGET_MS` 2 ms、命令 ≤ 64、事件队列 ≤ 256（满 ⇒ suspend）、vars ≤ 4096 B、timers ≤ 32 且 ≥ 500 ms、prompt 选项 ≤ 6、publishState ≤ 16 键、文本 ≤ 200 / tag ≤ 32、`ORCH_DEFAULT_LIMITS { maxSpawnsAlive 64, maxGrantCount 99, maxCurrencyPerGrant 10000 }`（模块 `limits` 只许收紧）；超预算 / 超命令数 / 坏命令 / handler 抛 / 超限 ⇒ **整批作废 + suspend** ⇒ `packSuspended` 审计行（worker 认领即 done）+ 事件只投一次；`__probe.resumePack` / 分线重启恢复。确定性：`api.rng(stream)` 种子 = instanceId + tick + eventSeq + stream + 调用序；环形日志 `ORCH_RING_SIZE` 64 条 `(seq, eventDigest, commandDigest)`；harness `replay` 同种子重跑逐条比对摘要。
+
+`enqueue` / `schedule` 阶段触发的溢出也由下一次 dispatch 报告一次暂停，走相同的审计与通知路径。暂停是当前运行期状态：
+快照中的 `suspended` 只供诊断，重启回灌业务状态时不会恢复上一进程的暂停；新初始化过程中若再次溢出，仍暂停并报告。
+新编排奖励的 opId 由区、`instanceId`、包、事件序与命令序稳定派生（固定长度 `orch:<uuid>`），跨分线不会互相去重；worker 原样消费
+旧载荷中的 opId，使已有回执继续生效。历史上已被错误去重的奖励不能靠改键推断补发，需要针对历史事件核对。
 
 ### 6. 数字表（kit 侧；框架侧数字只引用 MMO.md §11.2）
 
@@ -146,6 +155,11 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | NPC 存活 / 复活 / 未认领掉落 / 脚本 vars / timers / regions | `k_mmo_instance_checkpoint` | ≤ 1 个分线检查点周期（30 s） |
 | 脚本 durable 命令 | `k_mmo_world_event` + checkpoint_rev 门 | 0 重复；最多延迟到下一个分线检查点 |
 
+框架事件日志保留到 SQL 提交确认：前批尚未提交时捕获的后批包含全部未提交事件前缀，串行执行前再过滤已提交前缀；失败不移走事件。
+worker 发奖遇 `conflict` 必须抛出并回滚整轮（包括已更新的堆叠），由后续轮次重试；非法模板 / 邮箱满等永久拒绝才死信。
+交接等待本次强制检查点的原始结果，落盘失败不能继续 commit transfer。若检查点发现 `ControlConflictError`，旧 persona 会话被踢出，
+旧房停止全部未耐久写入并 Offline；不删除该 persona 的守卫后继续提交。重建从最后有效检查点恢复，其余玩家需重新进入。
+
 ### 8. 运维
 
 | 动作 | 命令 / 规则 |
@@ -159,11 +173,33 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 长跑 | `… --scenario mmo-hotspot --bots 50 --seconds 86400 --sample-every 300 --label soak-24h`（`judgeSoak` stable / growing；72 h 改 259200） |
 | 运维只读面 | 框架 MF10-B3：`admin/worldInstances`（world_instance ⊕ 登记 seated / capacity / publicAddress / mode）/ `admin/worldTransfers` / `admin/worldEvents`（各 kit world-event 表 pending / done / dead / superseded） |
 
-### 9. 验证与容量证据
+### 9. 验证与容量证据（0.1.18 及以前基线；本轮修复见 §10）
 
 - 机检闭环：`plugin -- test mmo`（22 文件 / 99 用例）+ `--int`（mmo-world / transfer / checkpoint / social / loot / inventory）+ `verify:kit-clean-install`；每批手工变异写进提交信息。
 - 容量数字（20 s / 同机同进程机器人；⚠ 只作比较与阈值判定；全表与故障矩阵在 MMO.md §12 MK4 行）：**MK4 最终（kit 0.1.15）**——A 40 人 192 只 tick p99 18.5 / 13.9 ms（种子 7 / 8）、出站 p50 ≈ 40 KB/s/会话 ✅；B 热点 500 只 slime：25 人 p99 23.3 ms ✅、**50 人整窗 p99 37.2 / 25.1 / 32.6 ms（种子 7 / 8 / 9）❌ vs MK1 退出 20.8 / 24.2 / 24.8**——分窗看首窗（入座 + baseline + JIT 预热）34.4、其后 14.7 / 21.4 / 23.8 ✅，回归集中在预热段（MK2–MK4 新增入座路径每人一次 DB 读 + 新代码 JIT），稳态贴线在线内 ⇒ 2026-09-20 拍板接受为 v1 已知回归（优化留 v1.x：入座路径每人一次 DB 读合并 / 预热、基准台 `--warmup` 稳态口径）；100 人 p99 66.0 ms ❌（已知上限，v1 例外互见 ≤ 50）。
 - 故障矩阵（§10.2 十二行）：`npm run test:faults`（单元 2 组）+ `npm run test:faults:int`（集成 3 组）全绿；`world-transfer` 组首跑红 = 用例竞态（client-drop 段归还控制权是离座后的异步任务，立即断言 ⇒ 改条件等待），⛔ 产品缺陷；「同图两分线」只有间接证据（框架唯一键 / CAS + kit 按 instance_id），专门用例登记 MG 段补；「24–72 h 长跑」待 MK3 正式报告。
+
+### 10. 0.1.19 审阅修复（2026-09-21）
+
+本次修复对应最近一周提交审阅的 R01–R11（仅为本轮编号，不是 MMO.md 设计审阅的 M01–M20）。当前面版本为
+`world 3/1`、`content 3/2`、`inventory 3/1`（version / minSupported）；阶段退出与容量结论不随本次修复改变。
+
+| 编号 | 修复后的行为 |
+| --- | --- |
+| R01 检查点事件缺口 | 未提交事件留在日志，预捕获后批带全部未提交前缀；执行前过滤已经提交的部分，前批失败不再使后批漏事件 |
+| R02 worker 半份奖励 | 后续堆叠 CAS 冲突抛出，整轮事务回滚；重试重新规划发奖，回执仍恰好一份 |
+| R03 跨房控制权丢失 | 检查点捕获旧控制代后踢出旧会话、旧房停止全部脏写并 Offline，重建恢复最后有效点；内存检查点端口按 `(controlEpoch, rev)` 比较角色新旧，接受新控制代较小的分线 rev |
+| R04 交接强制点失败 | 后台串行链与强制点结果分开；失败传回交接调用者，不继续 commit transfer |
+| R05 客户端本人身份 | join 返回的房间句柄携带 `selfCharacterId`，gameplay 与后续交接读取本次句柄身份，避免提前捕获或并行 join 相互污染 |
+| R06 奖励幂等隔离 | 新编排 opId 包含实例作用域的稳定派生值，旧事件 / 旧回执继续按原键消费 |
+| R07 贡献包物品 | 双端合并全区物品模板并拒绝同 ID 异义；worker、默认库存操作及跨图装备属性均能解析贡献包物品 |
+| R08 复活位置与预测 | 服务端复活立即发权威 pos；客户端死亡时停止并清除旧预测意图，HP 恢复后以复活位置重建预测，覆盖一个渲染帧内多模拟步的 pos / HP 到达顺序 |
+| R09 队列溢出通知 | enqueue / schedule 溢出也向 dispatch 交付一次暂停原因，审计与 `packSuspended` 通知不遗漏 |
+| R10 重启解除暂停 | 回灌 vars / timers / publish 等业务状态，不恢复上一进程的暂停；初始化再次触发的暂停照常生效 |
+| R11 观察者名片保留 | delta 合并保留未携带的 `factionId` / `count` 等字段，位置变化不再抹掉阵营或掉落数量 |
+
+已完成定向验证：客户端 19 条、world 126 条、服务端 worker / inventory / contributions 17 条、库存 MySQL 2 条全部通过。
+完整校验及其余真栈结果见 [MMO.md §12 本次修复记录](../../../docs/MMO.md#12-实施状态回写)；本节不替代 MK3 的 24–72 h 长跑报告，也不提前发布 `mmo-kit-v1-frozen`。
 
 ## 二、施工记录（按批次；每批的用例 / 变异 / 偏差原文保留，⛔ 不作说明书）
 

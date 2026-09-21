@@ -46,8 +46,11 @@
   **MF5b 观察者同步**：`WorldMode.observer`（与 GameMode 同形）由 `core/WorldRuntime.ts` 消费——每会话 OutboundQueue、prepareObservers（首发 / 归位 / 超限 /
   请求 ⇒ 只含兴趣集的 baseline）→ onStep → flushObservers（差分），壳只 `drainOutbound` 在线会话（宽限中 `markAway`，⛔ 不排空、归位先 baseline）。
   **MF7b 检查点 / 世界事件**：`WorldMode.checkpoint`（kit 的 `CheckpointPort` + schema 窗口 + 事件表）由 `core/WorldCheckpoint.ts` 编排——runtime 取批
-  （rev = 已落库 + 1，事件批移出）→ 同一 `withWorldTx` 落分线快照 + persona 快照 + 事件行 + `world_instance.checkpoint_rev` → commit；失败 rollback 放回、
-  权威已失 ⇒ Draining；Recovering `loadInstance` + superseded，准入 `loadPersona` 进 `session.checkpoint`；强制点 = drain / 离座 / `requestCheckpoint`。
+  （rev = max(已落库, 已发出) + 1，复制全部未提交事件前缀，原日志保留）→ 串行执行前过滤已提交前缀 → 同一 `withWorldTx` 落分线快照 + persona 快照 +
+  事件行 + `world_instance.checkpoint_rev` → commit 后清理日志；失败只作废批次，预捕获的后批仍带未提交前缀。后台链吸收失败以继续排队，
+  交接等待独立的强制点结果，失败不能继续 commit transfer。权威已失 ⇒ Draining；`ControlConflictError` ⇒ 踢出旧 persona 会话、停止本房全部脏写并
+  Offline（不再保存失控后的状态）；其余玩家重新进入重建分线，从最后有效检查点恢复。Recovering `loadInstance` + superseded，准入 `loadPersona` 进
+  `session.checkpoint`；强制点 = drain / 离座 / `requestCheckpoint`。`MemoryCheckpointPort` 的 persona 新旧按 `(controlEpoch, rev)` 比较，跨分线的新控制代可从较小 rev 起步。
   **MF6b 附近聊天**：core 世界 token `c2s.world.chat`（rateCost 2，只在 Active）/ `s2c.world.chat`（perSession）；壳固定序 = 在座 → `chatPolicy.canSend` →
   `transform`（结果再过 wire validator）→ `runtime.sayNearby`（受众 = 兴趣集含 `primaryEntityOf(sender)` 的在座会话 ∪ 发送者，进观察者队列与
   enter / leave 同序；⛔ 广播、⛔ Redis）；任一步拒 ⇒ BadRequest。match 形态 GameRoom 对该 token 直接 BadRequest。

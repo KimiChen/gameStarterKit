@@ -26,7 +26,7 @@ type End = (typeof ENDS)[number];
 
 /** v1 冻结表（MK4-B3，2026-09-20）：面 → [version, minSupported]。 */
 export const FROZEN_API: Readonly<Record<string, readonly [number, number]>> = Object.freeze({
-    characters: [1, 1], world: [2, 1], movement: [1, 1], content: [2, 2], social: [1, 1], combat: [1, 1], ai: [1, 1], inventory: [2, 1], orchestration: [1, 1],
+    characters: [1, 1], world: [3, 1], movement: [1, 1], content: [3, 2], social: [1, 1], combat: [1, 1], ai: [1, 1], inventory: [3, 1], orchestration: [1, 1],
 });
 
 export interface FaceSurface {

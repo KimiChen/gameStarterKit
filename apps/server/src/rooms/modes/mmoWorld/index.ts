@@ -36,7 +36,7 @@ import { ORCH_DURABLE_VAR_MIN_INTERVAL_MS, type IEntityView, type OrchestrationE
 import { OrchestrationRunner, type RunnerEffect, type RunnerWorld } from "../../../kits/mmo/orchestration/runner";
 import { orchestrationFor } from "../../../kits/mmo/orchestration/registry";
 import { pollGrantResults, regionContains, type GrantResultRow } from "../../../kits/mmo/api/orchestration/index";
-import { readPartyView } from "../../../core/infra/kitApi";
+import { kitOpId, readPartyView } from "../../../core/infra/kitApi";
 import type { IContentPackIndex, IMapDef } from "@game/shared/kits/mmo/api/content/index";
 import { clampToMap, withinRadius } from "@game/shared/kits/mmo/api/world/index";
 import {
@@ -54,7 +54,7 @@ import { canSee, pickInterest } from "../../../kits/mmo/aoi/visibility";
 import { AiScheduler } from "../../../kits/mmo/ai/scheduler";
 import { createInProcessPathfinder, isDeferredPathResult, isStalePathResult, type PathResult, type PathfinderPort } from "../../../kits/mmo/api/ai/index";
 import { characterOfPersona, type MmoCharacterRow } from "../../../kits/mmo/api/characters/index";
-import { contentIndex, contentPacks, packForMap } from "../../../kits/mmo/api/content/index";
+import { contentIndex, contentPacks, itemOf, packForMap } from "../../../kits/mmo/api/content/index";
 import { assertOrchestrationsResolvable } from "../../../kits/mmo/orchestration/registry";
 import { MMO_WORLD_MODE_ID } from "../../../kits/mmo/host";
 import type { MmoWorldRoomState } from "../../schema/GameRoomState";
@@ -382,7 +382,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     /** 装备属性合计进角色基础属性（职业模板 + 装备；换装刷新时重算）。 */
     const applyEquipment = (mover: MmoEntity, bag: IMmoBagWire | null): void => {
         const klass = content.classById.get(mover.templateId);
-        const attrs = bagAttrs(equippedTemplates(bag, (itemId) => content.itemById.get(itemId)));
+        const attrs = bagAttrs(equippedTemplates(bag, (itemId) => content.itemById.get(itemId) ?? itemOf(itemId)));
         mover.attack = (klass?.attack ?? mover.attack) + attrs.attack;
         mover.defense = (klass?.defense ?? mover.defense) + attrs.defense;
     };
@@ -481,6 +481,8 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
     /** 编排命令落地（本地命令已在运行器生效）；语义拒绝只记日志（⛔ 因单条命令 suspend 整包）。 */
     const applyEffect = (context: WorldModeContext<MmoWorldRoomState>, effect: RunnerEffect, tick: number, def: IMapDef, opIndex: number): void => {
         const packId = runner!.packId;
+        // 复用 kit-api 的稳定 UUID 派生，覆盖分线与区；固定长度不受 packId / instanceId 长度影响。
+        const grantOpId = (): string => `orch:${kitOpId("mmo", context.instanceId, context.sId, "orchestration", JSON.stringify([packId, runner!.eventSeq, opIndex]))}`;
         const rejectEffect = (why: string): void => { log.push(`orch:${packId}:reject:${effect.op}:${why}`); };
         switch (effect.op) {
             case "spawn": {
@@ -505,7 +507,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (!content.itemById.has(effect.itemTemplateId)) { rejectEffect("item"); return; }
                 if (effect.count > runner!.limits.maxGrantCount) { rejectEffect("count"); return; }
                 if (!entityOfCharacter(effect.toCharacterId)) { rejectEffect("character"); return; }
-                const opId = `orch:${packId}:${runner!.eventSeq}:${opIndex}`;
+                const opId = grantOpId();
                 context.events.append("grantItem", { opId, toCharacterId: effect.toCharacterId, itemTemplateId: effect.itemTemplateId, count: effect.count, reason: effect.reason, packId });
                 log.push(`orch:${packId}:grantItem:${opId}`);
                 return;
@@ -515,7 +517,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 if (effect.amount > runner!.limits.maxCurrencyPerGrant) { rejectEffect("amount"); return; }
                 const target = entityOfCharacter(effect.toCharacterId);
                 if (!target || target.personaId === null || target.userId === null) { rejectEffect("character"); return; }
-                const opId = `orch:${packId}:${runner!.eventSeq}:${opIndex}`;
+                const opId = grantOpId();
                 context.events.append("grantCurrency", { personaId: target.personaId, userId: target.userId, amount: effect.amount, opId, reason: effect.reason, packId });
                 log.push(`orch:${packId}:grantCurrency:${opId}`);
                 return;
@@ -807,7 +809,10 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
         entity.alive = true;
         entity.respawnDueTick = null;
         entity.rev += 1;
-        if (entity.session) privateDirty.add(entity.session);
+        if (entity.session) {
+            privateDirty.add(entity.session);
+            context.sendS2C(entity.session, MmoWorldPos, { seq: entity.seq, tick: context.state.tick, x: entity.x, y: entity.y });
+        }
         log.push(`respawn:${entity.id}`);
     };
     /** 怪物的"可见" = 位面 / 隐身规则（用 aoi/visibility 的 canSee，怪物无阵营）。 */
@@ -1137,7 +1142,7 @@ export function createMmoWorldMode(options: MmoWorldModeOptions = {}): MmoWorldM
                 const seq = Number(drop.id.slice("loot:".length));
                 if (Number.isSafeInteger(seq)) lootSeq = Math.max(lootSeq, seq);
             }
-            // 编排状态：同一 pack 才回灌（timers 按 tick 差重排；suspended 保留）
+            // 编排状态：同一 pack 才回灌（timers 按 tick 差重排；重启解除此前暂停）
             const orchestration = instance?.orchestration;
             if (runner && orchestration && orchestration.packId === runner.packId) {
                 runner.restore({ vars: orchestration.vars, timers: orchestration.timers, publish: orchestration.publish, suspended: orchestration.suspended, eventSeq: orchestration.eventSeq, ring: orchestration.ring }, snapshotTick, context.state.tick);

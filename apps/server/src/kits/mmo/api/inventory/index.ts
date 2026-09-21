@@ -3,7 +3,8 @@
  * `moveItem`（bag ↔ bag / bag ↔ equip：装备槽类型 / 职业 / 单件；目标有物 ⇒ 同模板堆叠合并或交换；按 rev CAS，并发改同一件 ⇒ conflict）、
  * `claimLoot`（worker 认领掉落 = grantItem，opId = 事件 id ⇒ 至少一次 + 回执去重 = 0 重复）、`readBag`；账号级入口 `bagOf` / `moveItemFor`
  * （角色必须属本账号，⛔ 区分不存在 / 别人的）经 withKitTx（Lobby RPC 无分线作用域；世界内编排 grantItem 走 withWorldTx 归 MK4）。
- * 存储只经 `ItemStore`（persistence/items.ts；单测内存实现同语义）；模板只读 content 面。插件只能 import 本门面；任何导出变化都要 bump `api.inventory.version`。
+ * 存储只经 `ItemStore`（persistence/items.ts；单测内存实现同语义）；模板只读 content 面全区 itemCatalog（跨包同 itemId 必须同定义，兼容无 packId 的既有事件 / 库存）。
+ * 插件只能 import 本门面；任何导出变化都要 bump `api.inventory.version`。
  */
 import {
     MMO_BAG_SLOTS, MMO_EVENT_LOOT_CLAIMED, MMO_ITEM_COUNT_MAX, checkEquip, equipSlotOf, planGrant, sortBagItems,
@@ -13,7 +14,7 @@ import type { IContentPackIndex } from "@game/shared/kits/mmo/api/content/index"
 import { defaultMmoTxRunner, type MmoTxRunner } from "../../host";
 import { selectCharactersByUser } from "../../persistence/characters";
 import { MMO_ITEM_LOCATION_TMP, sqlItemStore, type ItemRow, type ItemStore } from "../../persistence/items";
-import { contentIndex } from "../content/index";
+import { itemCatalog } from "../content/index";
 
 export type MmoInventoryErrorCode = "forbidden" | "unknown-item" | "item-not-found" | "not-equippable" | "class-mismatch" | "stacked" | "bad-slot" | "occupied" | "mail-full" | "conflict";
 
@@ -68,7 +69,7 @@ export async function readBag(store: ItemStore, characterId: string): Promise<IM
 }
 
 /** 发放：先并入背包同模板堆叠、再背包空格、再邮箱；邮箱也满 ⇒ mail-full（⛔ 丢物品）；同 opId 重放只回读回执。 */
-export async function grantItem(store: ItemStore, input: GrantItemInput, content: IContentPackIndex = contentIndex()): Promise<InventoryOutcome> {
+export async function grantItem(store: ItemStore, input: GrantItemInput, content: Pick<IContentPackIndex, "itemById"> = itemCatalog()): Promise<InventoryOutcome> {
     if (!ID_RE.test(input.opId) || !ID_RE.test(input.characterId) || !ID_RE.test(input.itemId)) throw new TypeError("[mmo inventory] grant id 形态非法");
     if (!Number.isSafeInteger(input.count) || input.count < 1 || input.count > MMO_ITEM_COUNT_MAX) throw new RangeError(`[mmo inventory] count ${input.count} 非法`);
     if (!KIND_RE.test(input.kind)) throw new TypeError(`[mmo inventory] 回执 kind "${input.kind}" 非法`);
@@ -95,7 +96,7 @@ export async function grantItem(store: ItemStore, input: GrantItemInput, content
 }
 
 /** 认领掉落（worker）：opId = 事件 id ⇒ 重放零写入。 */
-export function claimLoot(store: ItemStore, payload: IMmoLootClaimedPayload, eventId: string, content: IContentPackIndex = contentIndex()): Promise<InventoryOutcome> {
+export function claimLoot(store: ItemStore, payload: IMmoLootClaimedPayload, eventId: string, content: Pick<IContentPackIndex, "itemById"> = itemCatalog()): Promise<InventoryOutcome> {
     return grantItem(store, { opId: eventId, characterId: payload.actorCharacterId, itemId: payload.itemTemplateId, count: payload.count, kind: MMO_EVENT_LOOT_CLAIMED }, content);
 }
 
@@ -105,7 +106,7 @@ const tmpSlotOf = (row: ItemRow): number => (row.location === "bag" ? 0 : row.lo
  * 移动 / 装备：目标 = bag 格（0..23）或 equip 格（必须等于模板槽位类型的索引）；目标有物 ⇒ 同模板可堆叠则合并（余量留在原件），否则交换
  * （被换下的一件必须能待在原位置：原位置是 equip ⇒ 它也得能装在那一格；原位置是 mail ⇒ 拒 occupied）；三步经 tmp 位置避开唯一键；全程按 rev CAS。
  */
-export async function moveItem(store: ItemStore, input: MoveItemInput, content: IContentPackIndex = contentIndex()): Promise<InventoryOutcome> {
+export async function moveItem(store: ItemStore, input: MoveItemInput, content: Pick<IContentPackIndex, "itemById"> = itemCatalog()): Promise<InventoryOutcome> {
     if (!ID_RE.test(input.opId) || !ID_RE.test(input.characterId) || !ID_RE.test(input.itemInstanceId)) throw new TypeError("[mmo inventory] move id 形态非法");
     if (await store.receipt(input.opId) !== null) return { bag: await readBag(store, input.characterId), replayed: true };
     const rows = await store.list(input.characterId);
@@ -160,10 +161,10 @@ export async function moveItem(store: ItemStore, input: MoveItemInput, content: 
 
 export interface InventoryDeps {
     readonly run: MmoTxRunner;
-    readonly content: () => IContentPackIndex;
+    readonly content: () => Pick<IContentPackIndex, "itemById">;
 }
 
-export const defaultInventoryDeps: InventoryDeps = { run: defaultMmoTxRunner, content: () => contentIndex() };
+export const defaultInventoryDeps: InventoryDeps = { run: defaultMmoTxRunner, content: itemCatalog };
 
 /** 账号级：角色必须属本账号（⛔ 区分不存在 / 别人的）。 */
 async function ownCharacter(tx: Parameters<typeof selectCharactersByUser>[0], uid: string, characterId: string): Promise<{ readonly classId: string }> {

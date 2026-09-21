@@ -10,7 +10,7 @@ import "./env-setup";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { GREYBOX_ITEMS } from "@game/shared/kits/mmo/content/greybox";
-import { withKitTx } from "../../src/core/infra/kitApi";
+import { withKitTx, type KitWorkerTx } from "../../src/core/infra/kitApi";
 import { closeMysql, getPool, type RowDataPacket } from "../../src/core/infra/mysql";
 import { closeRedis } from "../../src/core/infra/redisRoute";
 import { createCharacter } from "../../src/kits/mmo/api/characters/index";
@@ -18,6 +18,7 @@ import { MmoInventoryError, bagOf, grantItem, moveItem, moveItemFor, readBag } f
 import { MMO_KIT_ID, mmoOpId } from "../../src/kits/mmo/host";
 import { sqlItemStore } from "../../src/kits/mmo/persistence/items";
 import { testUid } from "./helpers";
+import worker from "../../src/kits/mmo/workers/worldEvents";
 
 const SID = 0;
 const uids: string[] = [];
@@ -94,4 +95,50 @@ test("MK3-B1：grantItem（唯一键 / rev / 回执 / 重放）→ moveItem（�
     assert.deepEqual((await bagOf(userB, SID, b0.character.characterId)).items, [], "自己的空背包");
     const mine = await bagOf(userA, SID, characterId);
     assert.equal(mine.items.length, 2);
+});
+
+test("worker 发奖与移动并发：第二堆 CAS 冲突回滚首堆，重试恰好发满且回执去重", { timeout: 60_000 }, async () => {
+    const user = uid("workerRace");
+    const made = await createCharacter(user, SID, { slot: 0, name: `Wr${user.slice(-8)}`, classId: "fighter", factionId: "dawn" }, mmoOpId(user, SID, "createCharacter", "c1"));
+    const characterId = made.character.characterId;
+    const first = `${characterId}:a`, second = `${characterId}:b`, eventId = `${characterId}:loot`;
+    await withKitTx(MMO_KIT_ID, SID, async (tx) => {
+        for (const [id, slot] of [[first, 0], [second, 1]] as const) await tx.query(
+            "INSERT INTO k_mmo_item_instance (server_id, item_id, template_id, owner_character_id, location, slot, count) VALUES (?, ?, ?, ?, 'bag', ?, 98)",
+            [SID, id, GREYBOX_ITEMS.gel, characterId, slot]);
+    });
+    let read!: () => void, release!: () => void;
+    const readDone = new Promise<void>((resolve) => { read = resolve; });
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const dead: string[] = [];
+    const pass = (pause: boolean) => withKitTx(MMO_KIT_ID, SID, async (tx) => {
+        let paused = false;
+        // 认领使用夹具；库存读写 / 并发移动 / 回滚与提交均为真实 READ COMMITTED MySQL 事务。
+        const workerTx = {
+            ...tx,
+            query: async (sql: string, params: unknown[] = []) => {
+                const result = await tx.query(sql, params);
+                if (pause && !paused && sql.startsWith("SELECT item_id, template_id")) { paused = true; read(); await gate; }
+                return result;
+            },
+            claimWorldEvents: async () => [{ eventId, instanceId: "inventory-race", seq: 1, kind: "lootClaimed", attempts: 1, checkpointRev: 1,
+                payload: { actorEntityId: `char:${characterId}`, actorCharacterId: characterId, lootId: "loot:1", itemTemplateId: GREYBOX_ITEMS.gel, count: 2 } }],
+            deadLetterWorldEvent: async (_table: string, id: string) => { dead.push(id); },
+        } as unknown as KitWorkerTx;
+        return worker.pass(workerTx, { kitId: MMO_KIT_ID, workerId: "worldEvents", sId: SID, now: 0, signal: new AbortController().signal });
+    });
+    const pending = pass(true);
+    const rejected = assert.rejects(pending, (error: unknown) => error instanceof MmoInventoryError && error.code === "conflict");
+    try {
+        await readDone;
+        await inTx((store) => moveItem(store, { opId: `${characterId}:move`, characterId, classId: "fighter", itemInstanceId: second, location: "bag", slot: 2 }));
+    } finally { release(); }
+    await rejected;
+    assert.deepEqual((await rowsOf(characterId)).map((entry) => [entry[2], entry[3]]), [[0, 98], [2, 98]], "并发移动已提交，worker 的首堆加一必须回滚");
+    assert.deepEqual(dead, []);
+    await pass(false);
+    await pass(false);
+    assert.deepEqual((await rowsOf(characterId)).map((entry) => [entry[2], entry[3]]), [[0, 99], [2, 99]], "重试发满两件，同事件重放零重复");
+    const [receipts] = await getPool().query<RowDataPacket[]>("SELECT op_id FROM k_mmo_receipt WHERE server_id = ? AND op_id = ?", [SID, eventId]);
+    assert.equal(receipts.length, 1);
 });

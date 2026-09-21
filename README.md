@@ -180,6 +180,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run ui:export-fgui -- --screens prompt,small-popup,confirm --out .cache/fgui/popups` | 多页收进同一候选工程，共享 `UniFlex_Common` |
 | `npm run ui:export-fgui -- --all --out .cache/fgui/catalog` | 捕获 `screens.json` 全部预览页并导出 |
 | `npm run ui:preview-fgui -- --out .cache/fgui/prompt` | 用锁定的 `fairygui-dom@1.0.0` 预览刚导出的发布态包；多页用 `?screen=` |
+| `npm run ui:verify-fgui-dom -- --out .cache/fgui/catalog` | 校验已导出的 FairyGUI DOM 预览包 |
 | `npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001` | UniFlex → PSD → UniFlex 项目包往返；默认不写项目源，加 `--apply` 才导入 |
 | `npm run ui:art-export` / `npm run ui:art-import` / `npm run ui:art-sync` / `npm run ui:art-check` | 原稿 ↔ `apps/art/uniflex` PSD；一阶段导入只写 `*Restored`，`art-check` 是 CI 闸 |
 | `npm run ui:capture-cocos-golden` | 用 Creator 预览抓 UniFlex 页面的 golden 截图（tools/creator-preview） |

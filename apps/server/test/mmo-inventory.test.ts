@@ -16,6 +16,10 @@ import { WireValidationError } from "@game/shared/protocol/http";
 import { MmoInventoryError, bagOf, claimLoot, grantItem, moveItem, moveItemFor, readBag, type InventoryDeps } from "../src/kits/mmo/api/inventory/index";
 import type { ItemRow, ItemStore } from "../src/kits/mmo/persistence/items";
 import type { MmoCharacterRow } from "../src/kits/mmo/persistence/characters";
+import { CONTRIBUTED_BLADE_ID, installInventoryContributionForTest } from "./mmo-inventory-fixture";
+import { defaultInventoryDeps } from "../src/kits/mmo/api/inventory/index";
+
+installInventoryContributionForTest();
 
 const CONTENT = indexContentPack(validateContentPack(GREYBOX_PACK));
 const template = (itemId: string) => CONTENT.itemById.get(itemId)!;
@@ -51,6 +55,21 @@ function memoryStore(seed: readonly Omit<ItemRow, "rev">[] = []) {
 }
 const item = (id: string, itemId: string, location: "bag" | "equip" | "mail", slot: number, count = 1, characterId = "c1"): Omit<ItemRow, "rev"> => ({ id, characterId, itemId, location, slot, count });
 const wire = (id: string, itemId: string, location: "bag" | "equip" | "mail", slot: number, count = 1, rev = 0): IMmoBagItemWire => ({ id, itemId, count, location, slot, rev });
+
+test("多包库存：默认发放与装备解析贡献包模板，仍能交换回内置装备", async () => {
+    const m = memoryStore();
+    const granted = await grantItem(m.store, { opId: "contributed-reward", characterId: "c1", itemId: CONTRIBUTED_BLADE_ID, count: 1, kind: "grantItem" });
+    const blade = granted.bag.items[0]!;
+    assert.equal(blade.itemId, CONTRIBUTED_BLADE_ID);
+    assert.equal(defaultInventoryDeps.content().itemById.get(CONTRIBUTED_BLADE_ID)?.attrs.attack, 17, "Lobby 默认依赖也使用全区模板");
+    const equipped = await moveItem(m.store, { opId: "contributed-equip", characterId: "c1", classId: "fighter", itemInstanceId: blade.id, location: "equip", slot: 0 });
+    assert.equal(equipped.bag.items[0]!.location, "equip");
+    const old = await grantItem(m.store, { opId: "builtin-reward", characterId: "c1", itemId: GREYBOX_ITEMS.blade, count: 1, kind: "grantItem" });
+    const builtin = old.bag.items.find((entry) => entry.itemId === GREYBOX_ITEMS.blade)!;
+    const swapped = await moveItem(m.store, { opId: "builtin-equip", characterId: "c1", classId: "fighter", itemInstanceId: builtin.id, location: "equip", slot: 0 });
+    assert.equal(swapped.bag.items.find((entry) => entry.itemId === CONTRIBUTED_BLADE_ID)?.location, "bag");
+    assert.equal(swapped.bag.items.find((entry) => entry.itemId === GREYBOX_ITEMS.blade)?.location, "equip");
+});
 
 test("shared：equipSlotOf / checkEquip（槽位类型 / 职业 / 单件）；freeSlots；planGrant 先并入同模板堆叠、再背包空格、再 mail、都满 ⇒ null；bagAttrs；bagSignature；validateBagWire", () => {
     assert.deepEqual([equipSlotOf("weapon"), equipSlotOf("armor"), equipSlotOf("trinket"), equipSlotOf("none"), equipSlotOf("consumable")], [0, 1, 2, null, null]);

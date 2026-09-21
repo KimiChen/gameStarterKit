@@ -68,3 +68,17 @@ test("MemoryCheckpointPort：只留最新 rev、rev 不单调即拒、回读信�
     assert.deepEqual(validateCheckpointEnvelope(await port.loadPersona(0, "p_alice_0000000001"), SCHEMA, "persona"), persona);
     assert.deepEqual(port.log, ["instance:wi_1:1@1", "instance:wi_1:2@2", "persona:p_alice_0000000001:1@3"]);
 });
+
+
+test("MemoryCheckpointPort：persona 跨分线新 controlEpoch 可以使用较低 rev，旧控制代不能回写", async () => {
+    const port = new MemoryCheckpointPort();
+    const original = buildCheckpointEnvelope({ rev: 20, eventOffset: 3, authorityEpoch: 4, controlEpoch: 1, schemaVersion: 3, snapshot: { x: 5 } });
+    const transferred = buildCheckpointEnvelope({ rev: 1, eventOffset: 0, authorityEpoch: 1, controlEpoch: 2, schemaVersion: 3, snapshot: { x: 9 } });
+    await port.savePersona(fakeTx(0, 1), "p_alice_0000000001", original);
+    await port.savePersona(fakeTx(0, 2), "p_alice_0000000001", transferred);
+    assert.deepEqual(await port.loadPersona(0, "p_alice_0000000001"), transferred);
+    await assert.rejects(port.savePersona(fakeTx(0, 3), "p_alice_0000000001", { ...original, rev: 21 }), /必须单调/u, "旧控制代再高的分线 rev 也不能覆盖新控制者");
+    await assert.rejects(port.savePersona(fakeTx(0, 4), "p_alice_0000000001", transferred), /必须单调/u, "同控制代仍要求 rev 递增");
+    await port.savePersona(fakeTx(0, 5), "p_alice_0000000001", { ...transferred, rev: 2 });
+    assert.equal((await port.loadPersona(0, "p_alice_0000000001") as { rev: number }).rev, 2);
+});

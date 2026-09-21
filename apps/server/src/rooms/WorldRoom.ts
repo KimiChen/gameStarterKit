@@ -287,6 +287,10 @@ export class WorldRoom extends Room {
     private checkpointer: WorldCheckpointer | null = null;
     /** 落盘串行链（批次按 rev 顺序落库；失败回滚不影响后续批次）。 */
     private checkpointChain: Promise<void> = Promise.resolve();
+    /** 最新批次的原始结果（串行尾链会吸收失败以便后续重试；交接必须等这一份真实结果）。 */
+    private checkpointResult: Promise<void> | null = null;
+    /** 控制权冲突后未耐久状态不可再保存：事件没有 persona 来源，必须从上次持久快照重建整条分线。 */
+    private checkpointControlFailure: ControlConflictError | null = null;
     /** MF8-B6：本进程 room signal 登记的注销句柄（Active 起登记；Offline / dispose 注销）。 */
     private unregisterSignal: (() => void) | null = null;
     /** MF10-B1：上次发布分线登记的时刻（按 WORLD_INFO_REFRESH_MS 节拍刷新，TTL 两倍租约）。 */
@@ -673,8 +677,11 @@ export class WorldRoom extends Room {
             await this.deps.transfers.prepare(this.sId, transferId, { toInstance: targetRow.instanceId, reserveExpiresAt: now + WORLD_TRANSFER_RESERVE_MS });
             // §4.5 / §7.3 交接强制点：persona 快照先落盘（目标房准入 loadPersona 读到的就是它）；MK1-B4：mode 支持时只落该 persona
             if (this.checkpointer) {
-                if (!runtime.forcePersonaCheckpoint(session, `transfer:${transferId}`)) runtime.forceCheckpoint(`transfer:${transferId}`);
-                await this.flushCheckpoints();
+                const previous = this.checkpointResult;
+                const queued = runtime.forcePersonaCheckpoint(session, `transfer:${transferId}`) || runtime.forceCheckpoint(`transfer:${transferId}`);
+                const result = this.checkpointResult;
+                if (!queued || result === null || result === previous) throw new Error("[WorldRoom] 交接：未取得强制检查点");
+                await result;
             }
             const still = runtime.sessionOf(session);
             if (!still || still.controlEpoch !== info.controlEpoch || this.disposed || this.lifecycleGeneration !== generation || runtime.phase !== WorldPhase.Active) {
@@ -930,7 +937,8 @@ export class WorldRoom extends Room {
         const seated = runtime ? runtime.sessions() : [];
         if (runtime && runtime.phase !== WorldPhase.Offline) {
             if (runtime.phase !== WorldPhase.Draining) runtime.drain(reason, 0);
-            runtime.forceCheckpoint(`offline:${reason}`); // §4.5 Draining：强制检查点（MF7b 同一世界事务落盘）
+            // 失控后的未耐久状态含来源不明的事件，⛔ 删除 persona 守卫后再保存；恢复时整批回到最后持久点。
+            if (!this.checkpointControlFailure) runtime.forceCheckpoint(`offline:${reason}`);
             runtime.offline();
         }
         for (const info of seated) {
@@ -1010,7 +1018,7 @@ export class WorldRoom extends Room {
         if (!runtime) return false;
         const info = runtime.sessionOf(session);
         // §7.3 角色检查点「登出 / 交接强制点」：离座前落盘（异步串行）；MK1-B4：mode 实现 onPersonaCheckpoint ⇒ 只落该 persona 的快照，否则退化为全批
-        if (info && this.checkpointer && (runtime.phase === WorldPhase.Active || runtime.phase === WorldPhase.Draining)) {
+        if (info && reason !== "lost-control" && !this.checkpointControlFailure && this.checkpointer && (runtime.phase === WorldPhase.Active || runtime.phase === WorldPhase.Draining)) {
             if (!runtime.forcePersonaCheckpoint(session, `leave:${reason}`)) runtime.forceCheckpoint(`leave:${reason}`);
         }
         const left = runtime.leave(session, reason);
@@ -1045,22 +1053,38 @@ export class WorldRoom extends Room {
         }));
     }
 
-    /** 检查点落盘（串行）：成功 ⇒ runtime.commitCheckpoint；失败 ⇒ rollbackCheckpoint（事件放回）；权威已失 ⇒ Draining。 */
+    /** 失控制权：丢弃整条分线的未耐久状态并退出，⛔ 仅去掉失败 persona 的守卫继续提交其来源不明的事件。 */
+    private stopAfterControlConflict(error: ControlConflictError): void {
+        if (this.checkpointControlFailure) return;
+        this.checkpointControlFailure = error;
+        const stale = this.runtime?.sessions().find((info) => info.personaId === error.personaId && info.controlEpoch === error.expectedEpoch);
+        if (stale) this.evict(stale.session, "lost-control", WORLD_LOST_CONTROL_CLOSE_CODE);
+        this.drain("control-lost");
+        // 继续模拟或等待宽限不能修复丢失的控制权；立即退出，其他玩家重新进入后恢复最后已落盘快照。
+        void this.finalizeOffline("control-lost");
+    }
+
+    /** 检查点落盘（串行）：成功清理已提交事件前缀；失败保留前缀；交接使用原始 Promise，后台链吸收失败。 */
     private persistCheckpoint(batch: WorldCheckpointBatch): void {
         const checkpointer = this.checkpointer;
         const runtime = this.runtime;
         if (!checkpointer || !runtime) return;
         const instanceId = this.instanceId;
-        this.checkpointChain = this.checkpointChain.then(async () => {
+        const result = this.checkpointChain.then(async () => {
             try {
-                await checkpointer.save(instanceId, batch);
+                if (this.checkpointControlFailure) throw this.checkpointControlFailure;
+                await checkpointer.save(instanceId, runtime.uncommittedCheckpoint(batch));
                 runtime.commitCheckpoint(batch.rev);
             } catch (error) {
                 runtime.rollbackCheckpoint(batch);
                 console.error(`[WorldRoom ${this.roomId}] 检查点 rev=${batch.rev}（${batch.reason}）落盘失败`, error);
-                if (error instanceof AuthorityLostError) this.drain("authority-lost");
+                if (error instanceof ControlConflictError) this.stopAfterControlConflict(error);
+                else if (error instanceof AuthorityLostError) this.drain("authority-lost");
+                throw error;
             }
         });
+        this.checkpointResult = result;
+        this.checkpointChain = result.catch(() => undefined);
         void trackTask("world:checkpoint", this.checkpointChain);
     }
 
@@ -1069,14 +1093,19 @@ export class WorldRoom extends Room {
         const checkpointer = this.checkpointer;
         if (!checkpointer || !this.runtime) return;
         const instanceId = this.instanceId;
-        this.checkpointChain = this.checkpointChain.then(async () => {
+        const result = this.checkpointChain.then(async () => {
             try {
+                if (this.checkpointControlFailure) throw this.checkpointControlFailure;
                 await checkpointer.savePersona(instanceId, batch);
             } catch (error) {
                 console.error(`[WorldRoom ${this.roomId}] persona 检查点 rev=${batch.rev}（${batch.reason}）落盘失败`, error);
-                if (error instanceof AuthorityLostError) this.drain("authority-lost");
+                if (error instanceof ControlConflictError) this.stopAfterControlConflict(error);
+                else if (error instanceof AuthorityLostError) this.drain("authority-lost");
+                throw error;
             }
         });
+        this.checkpointResult = result;
+        this.checkpointChain = result.catch(() => undefined);
         void trackTask("world:checkpoint", this.checkpointChain);
     }
 

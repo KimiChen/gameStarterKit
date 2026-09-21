@@ -537,6 +537,32 @@ export interface IContentPackIndex {
     readonly npcsByMap: ReadonlyMap<string, readonly INpcDef[]>;
 }
 
+/**
+ * 物品在库存 / wire / 已落库事件中只保存 itemId，因此跨包必须保持同一语义。
+ * 允许多个包复用同一模板；同 id 不同定义拒绝装载，不能由包顺序决定资产含义。
+ */
+export function mergeItemTemplates(indexes: readonly IContentPackIndex[]): ReadonlyMap<string, IItemTemplate> {
+    const items = new Map<string, IItemTemplate>();
+    const definitions = new Map<string, { readonly packId: string; readonly signature: string }>();
+    for (const index of indexes) {
+        for (const item of index.itemById.values()) {
+            const signature = JSON.stringify([
+                item.name, item.presentationId, item.slot, item.stackMax, [...item.classIds].sort(), item.price,
+                item.attrs.attack ?? 0, item.attrs.defense ?? 0, item.attrs.hpMax ?? 0,
+            ]);
+            const existing = definitions.get(item.itemId);
+            if (existing && existing.signature !== signature) {
+                fail(`items.${item.itemId}`, `conflicting definitions in packs "${existing.packId}" and "${index.pack.packId}"`);
+            }
+            if (!existing) {
+                items.set(item.itemId, item);
+                definitions.set(item.itemId, { packId: index.pack.packId, signature });
+            }
+        }
+    }
+    return items;
+}
+
 function groupBy<T>(entries: readonly T[], keyOf: (entry: T) => string): ReadonlyMap<string, readonly T[]> {
     const map = new Map<string, T[]>();
     for (const entry of entries) {

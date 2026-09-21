@@ -132,7 +132,7 @@ export interface CheckpointPort {
     loadPersona(sId: number, personaId: string): Promise<unknown | null>;
 }
 
-/** 内存端口（无头单测 / 回放）：按 (sId, id) 只留最新 rev；rev 不单调即拒（与真表 PRIMARY KEY(rev) 同语义）。 */
+/** 内存端口（无头单测 / 回放）：分线按 rev、persona 按 (controlEpoch, rev) 只留最新信封；跨分线的新控制代可以从较小的分线 rev 起步。 */
 export class MemoryCheckpointPort implements CheckpointPort {
     readonly instances = new Map<string, CheckpointEnvelope>();
     readonly personas = new Map<string, CheckpointEnvelope>();
@@ -157,7 +157,12 @@ export class MemoryCheckpointPort implements CheckpointPort {
     async savePersona(tx: KitWorldTx, personaId: string, envelope: CheckpointEnvelope): Promise<void> {
         const key = MemoryCheckpointPort.key(tx.sId, personaId);
         const previous = this.personas.get(key);
-        if (previous && envelope.rev <= previous.rev) throw new Error(`[MemoryCheckpointPort] persona rev 必须单调：${envelope.rev} ≤ ${previous.rev}`);
+        const controlEpoch = envelope.controlEpoch;
+        if (controlEpoch === undefined) throw new TypeError("[MemoryCheckpointPort] persona 信封必须带 controlEpoch");
+        if (previous && (controlEpoch < (previous.controlEpoch ?? 0)
+            || (controlEpoch === previous.controlEpoch && envelope.rev <= previous.rev))) {
+            throw new Error(`[MemoryCheckpointPort] persona (controlEpoch, rev) 必须单调：(${controlEpoch}, ${envelope.rev}) ≤ (${previous.controlEpoch}, ${previous.rev})`);
+        }
         this.personas.set(key, envelope);
         this.log.push(`persona:${personaId}:${envelope.rev}@${tx.writeSeq}`);
     }

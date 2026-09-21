@@ -27,7 +27,7 @@ export interface MmoWorldJoinDeps {
 }
 
 /** 把玩法操作绑定到这一间世界房句柄（⛔ 不是全局 current）。 */
-export function createMmoWorldRoom(handle: WorldRoomHandle): MmoWorldRoom {
+export function createMmoWorldRoom(handle: WorldRoomHandle, selfCharacterId?: string): MmoWorldRoom {
     if (handle.mode !== MMO_WORLD_GAMEPLAY_ID) throw new TypeError("[MmoWorldRoom] 句柄 mode 与玩法不匹配");
     let seq = 0;
     const nextSeq = (): number => { seq += 1; return seq; };
@@ -35,6 +35,7 @@ export function createMmoWorldRoom(handle: WorldRoomHandle): MmoWorldRoom {
         roomId: handle.roomId,
         sessionId: handle.sessionId,
         mapId: handle.mapId,
+        ...(selfCharacterId === undefined ? {} : { selfCharacterId }),
         get current() { return handle.current; },
         get dropping() { return handle.dropping; },
         move(dir) { const seq = nextSeq(); return handle.send(C2S.MmoWorldMove, { seq, dir }) ? seq : null; },
@@ -109,8 +110,8 @@ export interface MmoWorldJoinCapability { ready: Promise<MmoWorldRoom>; leave():
  * joiner：凭据在手（交接）⇒ 跳过 world.enter、transfer strategy 直进目标分线；否则 world.enter（框架把在途交接解析成目标分线凭据，transferId 非 null
  * 时同样走 transfer strategy）→ WorldRoomTransport.join → MmoWorldRoom；leave 经句柄。
  */
-export function createMmoWorldRoomJoiner(deps: MmoWorldJoinDeps): GameplayRoomJoiner<MmoWorldRoom> & { joinFor(personaId: string, mapId: string, signal: AbortSignal, transfer?: MmoWorldTransferCredential | null): MmoWorldJoinCapability } {
-    const joinFor = (personaId: string, mapId: string, signal: AbortSignal, transfer: MmoWorldTransferCredential | null = null): MmoWorldJoinCapability => {
+export function createMmoWorldRoomJoiner(deps: MmoWorldJoinDeps): GameplayRoomJoiner<MmoWorldRoom> & { joinFor(personaId: string, mapId: string, signal: AbortSignal, transfer?: MmoWorldTransferCredential | null, selfCharacterId?: string): MmoWorldJoinCapability } {
+    const joinFor = (personaId: string, mapId: string, signal: AbortSignal, transfer: MmoWorldTransferCredential | null = null, selfCharacterId?: string): MmoWorldJoinCapability => {
         let handle: WorldRoomHandle | null = null;
         let abandoned = false;
         const ready = (async () => {
@@ -134,7 +135,7 @@ export function createMmoWorldRoomJoiner(deps: MmoWorldJoinDeps): GameplayRoomJo
                 await joined.leave();
                 throw new Error("[MmoWorldRoom] join 已取消");
             }
-            return createMmoWorldRoom(joined);
+            return createMmoWorldRoom(joined, selfCharacterId);
         })();
         return {
             ready,
@@ -151,7 +152,7 @@ export function createMmoWorldRoomJoiner(deps: MmoWorldJoinDeps): GameplayRoomJo
             const personaId = input?.personaId;
             const mapId = input?.mapId;
             if (typeof personaId !== "string" || typeof mapId !== "string") throw new TypeError("[MmoWorldRoom] launch 缺 personaId / mapId（经 GameplayModule.validateLaunch 补全）");
-            return joinFor(personaId, mapId, signal, input?.transfer ?? null);
+            return joinFor(personaId, mapId, signal, input?.transfer ?? null, input?.characterId);
         },
     };
 }
