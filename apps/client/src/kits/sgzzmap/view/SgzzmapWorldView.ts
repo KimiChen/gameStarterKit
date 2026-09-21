@@ -119,7 +119,10 @@ export class SgzzmapWorldView extends CocosView {
             const logic = this.logic;
             if (!logic || !this.active) return;
             logic.update(dt);
-            this.render(false);
+            // ⚠ 覆盖场还没铺满时必须**强制**渲染：render 在「相机没动、数据没变」时整体早退，
+            //   那样分帧烘焙就再也没机会跑 —— 真机 run 28 里只烘出了一块就停住。
+            const filling = this.fieldRenderer?.ready === true && this.fieldRenderer.isCovered === false;
+            this.render(filling);
         });
         this.render(true);
     }
