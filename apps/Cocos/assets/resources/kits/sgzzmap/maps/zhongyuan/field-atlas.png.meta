@@ -8,15 +8,15 @@
     ".png"
   ],
   "subMetas": {
-    "3218f": {
+    "6c48a": {
       "importer": "texture",
-      "uuid": "0b0dc878-2436-49fc-a12f-40ff804f0858@3218f",
+      "uuid": "0b0dc878-2436-49fc-a12f-40ff804f0858@6c48a",
       "displayName": "field-atlas",
-      "id": "3218f",
+      "id": "6c48a",
       "name": "texture",
       "userData": {
-        "wrapModeS": "clamp-to-edge",
-        "wrapModeT": "clamp-to-edge",
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat",
         "minfilter": "linear",
         "magfilter": "linear",
         "mipfilter": "none",
@@ -36,7 +36,7 @@
   "userData": {
     "type": "texture",
     "fixAlphaTransparencyArtifacts": false,
-    "hasAlpha": true,
-    "redirect": "0b0dc878-2436-49fc-a12f-40ff804f0858@3218f"
+    "hasAlpha": false,
+    "redirect": "0b0dc878-2436-49fc-a12f-40ff804f0858@6c48a"
   }
 }

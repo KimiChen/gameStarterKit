@@ -8,7 +8,7 @@
  *   REPEAT 则会让块边采到对面。
  * ⚠ A 通道是**权重**不是透明度，⛔ 不要开预乘。
  */
-import { Material, Node, Texture2D } from "cc";
+import { Material, Node, Texture2D, Vec4 } from "cc";
 import { bakeSgzzField } from "../logic/sgzzField";
 import {
     SGZZ_FIELD_BAKE_BUDGET, SGZZ_FIELD_CACHE_LIMIT, sgzzFieldBakeRect, sgzzFieldChunkQuad,
@@ -79,8 +79,10 @@ export class SgzzFieldRenderer {
         material.setProperty("weights0", w0);
         material.setProperty("weights1", w1);
         // (minX, minY, 1/width, 1/height) —— 着色器据此把 map 坐标换成权重图 UV
-        material.setProperty("chunkRect", [chunk.minX, chunk.minY, 1 / chunk.size, 1 / chunk.size]);
-        material.setProperty("tileWorld", [TILE_WORLD, TILE_WORLD, ATLAS_COLS, ATLAS_ROWS]);
+        // ⚠ 必须传 Vec4：⛔ 传 JS 数组 setProperty 会**静默失败**，uniform 留 0 ⇒
+        //   fract(v_map/0) = NaN、cellOrigin 除以 0 ⇒ 整片地表渲成一块纯色（真机 run 24 实证）。
+        material.setProperty("chunkRect", new Vec4(chunk.minX, chunk.minY, 1 / chunk.size, 1 / chunk.size));
+        material.setProperty("tileWorld", new Vec4(TILE_WORLD, TILE_WORLD, ATLAS_COLS, ATLAS_ROWS));
 
         const geometry = buildSgzzPolyMesh([{
             points: sgzzFieldChunkQuad(chunk), rgba: [1, 1, 1, 1],

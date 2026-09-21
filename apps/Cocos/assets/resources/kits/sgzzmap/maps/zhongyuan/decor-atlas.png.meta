@@ -31,12 +31,36 @@
         ".json"
       ],
       "subMetas": {}
+    },
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "d83215c1-a592-4598-a368-6b761f86ddf7@6c48a",
+      "displayName": "decor-atlas",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat",
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "d83215c1-a592-4598-a368-6b761f86ddf7",
+        "visible": false
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
     }
   },
   "userData": {
     "type": "texture",
     "fixAlphaTransparencyArtifacts": false,
     "hasAlpha": true,
-    "redirect": "d83215c1-a592-4598-a368-6b761f86ddf7@af336"
+    "redirect": "d83215c1-a592-4598-a368-6b761f86ddf7@6c48a"
   }
 }

@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     SGZZ_FIELD_CELL_EDGE, SGZZ_FIELD_CLASSES, SGZZ_FIELD_DEFAULTS, SGZZ_FIELD_STEP,
-    bakeSgzzField, sgzzFieldNoise, sgzzFromPlane, sgzzGaussianKernel, sgzzToPlane,
+    bakeSgzzField, sgzzChamferDistance, sgzzFieldNoise, sgzzFromPlane, sgzzGaussianKernel, sgzzToPlane,
 } from "../src/kits/sgzzmap/logic/sgzzField";
 import { SGZZ_TILE_HALF_W } from "../src/shared/kits/sgzzmap/api/hexmap/index";
 import {
@@ -167,4 +167,87 @@ test("★ 块四边形：平面 y 增大 = 世界 y 减小，⛔ 上下不能弄
     assert.ok(rt[0] > lt[0], "右上的世界 x 必须大于左上");
     assert.equal(lt[1] - lb[1], chunk.size / 2, "世界高度 = 平面尺寸的一半（y 轴压缩 2 倍）");
     assert.equal(rt[0] - lt[0], chunk.size, "世界宽度 = 平面尺寸");
+});
+
+test("★ 距离场：chamfer 近似要接近真实欧氏距离，⛔ 不能用模糊指示函数顶替", () => {
+    const w = 81, h = 81;
+    const seed = new Uint8Array(w * h);
+    seed[40 * w + 40] = 1;                       // 中心一个种子
+    const d = sgzzChamferDistance(seed, w, h);
+    for (const [x, y, want] of [[40, 40, 0], [45, 40, 5], [40, 47, 7], [44, 43, 5]]) {
+        const got = d[y * w + x];
+        const truth = Math.hypot(x - 40, y - 40);
+        assert.ok(Math.abs(got - truth) <= truth * 0.1 + 0.34,
+            `(${x},${y}) 距离 ${got.toFixed(2)} 偏离真值 ${truth.toFixed(2)} 太多（want≈${want}）`);
+    }
+});
+
+/** 造一块含水的地形 fixture 并烘出来。 */
+function bakeWith(terrain: (row: number, col: number) => number, cells = 6) {
+    const R = SGZZ_FIELD_CELL_EDGE, step = SGZZ_FIELD_STEP;
+    const halo = Math.ceil((SGZZ_FIELD_DEFAULTS.coastSigmaCells * 3 * R) / step) + 2;
+    const innerN = Math.round((cells * R) / step);
+    const centre = sgzzToPlane(0, -(700 + 700 + 1) * 16);
+    const rect = {
+        minX: centre[0] - (innerN / 2 + halo) * step, minY: centre[1] - (innerN / 2 + halo) * step,
+        width: innerN + halo * 2, height: innerN + halo * 2, step,
+    };
+    return bakeSgzzField(terrain, rect, { x: halo, y: halo, width: innerN, height: innerN }, 1500, 1500);
+}
+/** 某采样点的「水占比」= 水域+海 的权重之和 / 255。 */
+function waterAt(f: { weights1: Uint8Array }, i: number): number {
+    return (f.weights1[i * 4] + f.weights1[i * 4 + 1]) / 255;
+}
+
+test("★ 海岸：陆水分界连续过渡，且两侧各自纯净", () => {
+    const f = bakeWith((row) => (row < 700 ? 5 : 0));       // 上海下平原
+    let pureWater = 0, pureLand = 0, band = 0;
+    for (let i = 0; i < f.width * f.height; i += 1) {
+        const wv = waterAt(f, i);
+        if (wv > 0.98) pureWater += 1;
+        else if (wv < 0.02) pureLand += 1;
+        else band += 1;
+    }
+    assert.ok(pureWater > 0 && pureLand > 0, "两侧都该有纯净区");
+    assert.ok(band > 0, "⛔ 没有过渡带就还是硬边");
+    // ⚠ 过渡带要窄：半宽 0.08R ⇒ 只占一小条，⛔ 糊成一片就看不出岸了
+    assert.ok(band < pureWater + pureLand, `过渡带 ${band} 太宽`);
+});
+
+test("★ 小岛不被平滑吃掉 —— ⛔ 限位移就是为这个存在的", () => {
+    // 一片海里的单格陆地
+    const island = (row: number, col: number) => (row === 700 && col === 700 ? 0 : 5);
+    const f = bakeWith(island, 6);
+    let land = 0;
+    for (let i = 0; i < f.width * f.height; i += 1) if (waterAt(f, i) < 0.5) land += 1;
+    assert.ok(land > 0, "单格孤岛被整个吃掉了：限位移/格心保护没起作用");
+
+    // 反向：一片陆地里的单格湖
+    const lake = (row: number, col: number) => (row === 700 && col === 700 ? 4 : 0);
+    const g = bakeWith(lake, 6);
+    let water = 0;
+    for (let i = 0; i < g.width * g.height; i += 1) if (waterAt(g, i) > 0.5) water += 1;
+    assert.ok(water > 0, "单格孤湖被整个吃掉了");
+});
+
+test("★ 海岸不沿菱形边走 —— 轮廓必须是弯的，⛔ 不是逐格折角", () => {
+    // ⚠ fixture 要在**平面里是斜的**：row+col 恒定在平面里是水平线（逐行扫描取不到切点），
+    //   row 恒定才是斜线。⛔ 选错 fixture 这条用例就什么都测不出来。
+    const f = bakeWith((row) => (row < 700 ? 5 : 0), 6);
+    const cuts: number[] = [];
+    for (let j = 0; j < f.height; j += 1) {
+        let cut = -1;
+        for (let i = 0; i < f.width; i += 1) {
+            if (waterAt(f, j * f.width + i) < 0.5) { cut = i; break; }
+        }
+        if (cut > 0) cuts.push(cut);
+    }
+    assert.ok(cuts.length > 10, "样本太少");
+    // 切换点的步进要细腻：逐格折角的话相邻行的切换点会成段相等再突然跳一大格
+    const jumps = cuts.slice(1).map((v, i) => Math.abs(v - cuts[i]));
+    // 沿格边走的话，切换点会成段相等再突跳一整格（R/step ≈ 22 个采样点）
+    const cellSamples = SGZZ_FIELD_CELL_EDGE / SGZZ_FIELD_STEP;
+    const big = jumps.filter((v) => v > cellSamples * 0.5).length;
+    assert.equal(big, 0, `有 ${big}/${jumps.length} 处跳超过半格，像是沿格边走的折角`);
+    assert.ok(Math.max(...jumps) < cellSamples * 0.5, "最大跳变应远小于一格");
 });

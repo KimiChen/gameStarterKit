@@ -24,6 +24,11 @@ export const SGZZ_FIELD_CELL_EDGE = SGZZ_TILE_HALF_W * Math.SQRT2;
 export const SGZZ_FIELD_STEP = 2;
 /** 参与混合的地形类数。⚠ 地形 8（图外）**不参与** —— 它是雾，另有遮罩。 */
 export const SGZZ_FIELD_CLASSES = 8;
+/** 算作「水」的地形 id：水域 4、海 5。⚠ 图外 8 ⛔ 不算水也不算陆。 */
+export const SGZZ_WATER_CLASSES: readonly number[] = Object.freeze([4, 5]);
+export function sgzzIsWaterClass(id: number): boolean {
+    return id === 4 || id === 5;
+}
 
 export interface SgzzFieldParams {
     /** 陆地权重平滑 σ（单位：格边长 R）。 */
@@ -33,6 +38,12 @@ export interface SgzzFieldParams {
     readonly noisePeriodCells: number;
     /** 格心判别余量（R）：这个半径内强制归属本格的地形，保证玩法可读性。 */
     readonly cellCenterMarginCells: number;
+    /** 开阔岸线平滑 σ（R）。⚠ 比陆地权重的 σ 大：海岸要更圆滑。 */
+    readonly coastSigmaCells: number;
+    /** 岸线相对原始轮廓的位移上限（R）。⛔ 不限的话平滑会把小岛整个吃掉。 */
+    readonly coastDisplacementMaxCells: number;
+    /** 陆水颜色混合半宽（R）：零等值线两侧多宽范围内做过渡。 */
+    readonly waterBlendHalfWidthCells: number;
 }
 
 /** 交付 manifest 里的参考参数。⚠ 改这些要连带重烘，⛔ 不要在运行时随手改。 */
@@ -41,6 +52,9 @@ export const SGZZ_FIELD_DEFAULTS: SgzzFieldParams = Object.freeze({
     noiseAmplitudeCells: 0.04,
     noisePeriodCells: 6,
     cellCenterMarginCells: 0.08,
+    coastSigmaCells: 0.60,
+    coastDisplacementMaxCells: 0.38,
+    waterBlendHalfWidthCells: 0.08,
 });
 
 /** 引擎世界坐标 → map 平面。 */
@@ -79,6 +93,37 @@ export interface SgzzBakedField {
     readonly weights1: Uint8Array;
     readonly width: number;
     readonly height: number;
+}
+
+/**
+ * 二值图 → 到最近「1」的距离（chamfer 3-4 两遍近似，单位 = 采样步长）。
+ *
+ * ⚠ ⛔ 不要用「模糊指示函数」代替距离场：模糊会把窄河、小岛整个吃掉，
+ *   而距离场的零等值线在细特征上稳得多（v2 §6 专门点了这条）。
+ */
+export function sgzzChamferDistance(seed: Uint8Array, w: number, h: number): Float32Array {
+    const INF = 1e9;
+    const d = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i += 1) d[i] = seed[i] ? 0 : INF;
+    const at = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? INF : d[y * w + x]);
+    // 前向
+    for (let y = 0; y < h; y += 1) {
+        for (let x = 0; x < w; x += 1) {
+            const i = y * w + x;
+            d[i] = Math.min(d[i], at(x - 1, y) + 3, at(x, y - 1) + 3,
+                at(x - 1, y - 1) + 4, at(x + 1, y - 1) + 4);
+        }
+    }
+    // 后向
+    for (let y = h - 1; y >= 0; y -= 1) {
+        for (let x = w - 1; x >= 0; x -= 1) {
+            const i = y * w + x;
+            d[i] = Math.min(d[i], at(x + 1, y) + 3, at(x, y + 1) + 3,
+                at(x + 1, y + 1) + 4, at(x - 1, y + 1) + 4);
+        }
+    }
+    for (let i = 0; i < w * h; i += 1) d[i] = d[i] >= INF ? INF : d[i] / 3;   // 3-4 核的单位化
+    return d;
 }
 
 /** 一维高斯核（分离卷积用）。⚠ 半径取 3σ，⛔ 截太短边界会有台阶。 */
@@ -135,6 +180,7 @@ export function bakeSgzzField(
     params: SgzzFieldParams = SGZZ_FIELD_DEFAULTS,
 ): SgzzBakedField {
     const R = SGZZ_FIELD_CELL_EDGE;
+    const margin = params.cellCenterMarginCells * R;
     const w = rect.width, h = rect.height;
     const total = w * h;
     const cover: Float32Array[] = [];
@@ -143,6 +189,8 @@ export function bakeSgzzField(
     // 逐格归属（未扰动）与到格心的距离，供格心保护用
     const ownClass = new Int8Array(total);
     const centreDist = new Float32Array(total);
+    const waterSeed = new Uint8Array(total);
+    const landSeed = new Uint8Array(total);
     const amp = params.noiseAmplitudeCells * R;
     const period = params.noisePeriodCells * R;
 
@@ -157,6 +205,9 @@ export function bakeSgzzField(
             const g = sgzzClampGrid(raw.row, raw.col, rows, cols);
             const id = terrainAt(g.row, g.col);
             if (id >= 0 && id < SGZZ_FIELD_CLASSES) cover[id][idx] = 1;
+            // 陆水二值（图外 8 ⛔ 既不算水也不算陆，两边都留 0 ⇒ 它附近不生成假岸）
+            if (sgzzIsWaterClass(id)) waterSeed[idx] = 1;
+            else if (id >= 0 && id < SGZZ_FIELD_CLASSES) landSeed[idx] = 1;
 
             const [ux, uy] = sgzzFromPlane(px, py);
             const ur = sgzzClampGrid(sgzzPos2GridRaw(ux, uy).row, sgzzPos2GridRaw(ux, uy).col, rows, cols);
@@ -174,7 +225,38 @@ export function bakeSgzzField(
     const tmp = new Float32Array(total);
     for (let c = 0; c < SGZZ_FIELD_CLASSES; c += 1) blurSeparable(cover[c], tmp, w, h, kernel);
 
-    const margin = params.cellCenterMarginCells * R;
+    // ── 海岸：有符号距离场 → 平滑 → 限位移 → 加扰动（v2 §3.2/§5） ──────────────
+    // ⚠ 正值 = 水。⛔ 不要用模糊指示函数代替距离场：那会把窄河小岛整个吃掉。
+    const distToLand = sgzzChamferDistance(landSeed, w, h);
+    const distToWater = sgzzChamferDistance(waterSeed, w, h);
+    const clampD = (3 * R) / rect.step;          // ⚠ 截断到 ±3R，⛔ 不截的话远处的巨值会把高斯拉偏
+    const d0 = new Float32Array(total);
+    for (let i = 0; i < total; i += 1) {
+        const v = waterSeed[i] ? Math.min(distToLand[i], clampD) : -Math.min(distToWater[i], clampD);
+        d0[i] = Number.isFinite(v) ? v : (waterSeed[i] ? clampD : -clampD);
+    }
+    const coast = Float32Array.from(d0);
+    blurSeparable(coast, tmp, w, h, sgzzGaussianKernel((params.coastSigmaCells * R) / rect.step));
+    const maxDisp = (params.coastDisplacementMaxCells * R) / rect.step;
+    const coastAmp = (params.noiseAmplitudeCells * R) / rect.step;
+    for (let j = 0; j < h; j += 1) {
+        for (let i = 0; i < w; i += 1) {
+            const idx = j * w + i;
+            // ⚠ 限位移：平滑可以把岸线推圆，⛔ 但不能把它推到离原轮廓 0.38R 之外（小岛会消失）
+            let g = Math.max(d0[idx] - maxDisp, Math.min(d0[idx] + maxDisp, coast[idx]));
+            const px = rect.minX + i * rect.step, py = rect.minY + j * rect.step;
+            const n = sgzzFieldNoise(px, py, period);
+            g += (n[0] + n[1]) * 0.5 * coastAmp;
+            // ★ 格心保护：格心附近岸线⛔不得翻面，否则玩法上「这格是水还是陆」会被美术推翻
+            if (centreDist[idx] <= margin) {
+                const wantWater = sgzzIsWaterClass(ownClass[idx]);
+                if (wantWater && g <= 0) g = margin / rect.step;
+                if (!wantWater && ownClass[idx] >= 0 && g >= 0) g = -margin / rect.step;
+            }
+            coast[idx] = g;
+        }
+    }
+
     const weights0 = new Uint8Array(inner.width * inner.height * 4);
     const weights1 = new Uint8Array(inner.width * inner.height * 4);
     for (let j = 0; j < inner.height; j += 1) {
@@ -194,6 +276,20 @@ export function bakeSgzzField(
                 const v = cover[c][src];
                 const t = v <= 0 ? 0 : v * v * v;
                 cubed.push(t); sum += t;
+            }
+            // ★ 海岸：用平滑后的零等值线定陆水，⛔ 不再沿用逐格的菱形边
+            //   —— 这是「连续弯曲海岸」与「菱形锯齿」的分界点。
+            const half = Math.max(1e-6, (params.waterBlendHalfWidthCells * R) / rect.step);
+            const t01 = Math.max(0, Math.min(1, (coast[src] + half) / (2 * half)));
+            const waterness = t01 * t01 * (3 - 2 * t01);          // smoothstep
+            for (let c = 0; c < SGZZ_FIELD_CLASSES; c += 1) {
+                cubed[c] *= sgzzIsWaterClass(c) ? waterness : 1 - waterness;
+            }
+            sum = cubed.reduce((a, b) => a + b, 0);
+            if (sum <= 1e-6) {
+                // 窄带一侧完全没覆盖率（例：整片水里的一点陆）⇒ 按 waterness 兜底成纯水/纯陆
+                const fallback = waterness > 0.5 ? 5 : 0;
+                cubed[fallback] = 1; sum = 1;
             }
             if (sum <= 1e-6) {
                 if (own >= 0 && own < SGZZ_FIELD_CLASSES) {

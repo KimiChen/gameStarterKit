@@ -12,6 +12,9 @@
  */
 declare module "cc" {
     export class Vec2 { constructor(x?: number, y?: number); x: number; y: number; }
+    /** ⚠ 给 Material.setProperty 设 vec4 uniform 用：⛔ 传 JS 数组设不进去（静默失败）。 */
+    export class Vec4 { constructor(x?: number, y?: number, z?: number, w?: number);
+        x: number; y: number; z: number; w: number; }
     export class Vec3 { constructor(x?: number, y?: number, z?: number); x: number; y: number; z: number; set(x: number, y: number, z?: number): this; }
     export class Color { constructor(r?: number, g?: number, b?: number, a?: number); r: number; g: number; b: number; a: number; }
     export class Rect { constructor(x?: number, y?: number, width?: number, height?: number); x: number; y: number; width: number; height: number; }
