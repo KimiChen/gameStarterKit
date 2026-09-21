@@ -351,13 +351,14 @@ const sgzzNode = (name: string, text: string | null, center: { x: number; y: num
     center: center ?? { x: 0, y: 0, width: 10, height: 10 },
 });
 
-test("readSgzzmapEvidence：近档解出标题/地块/三层网格，半加载一律判未就位", () => {
+test("readSgzzmapEvidence：近档解出标题/地块/四层网格，半加载一律判未就位", () => {
     const walk = {
         nodes: [
             { name: "SgzzmapWorldView", text: null, path: "Canvas/popup/SgzzmapWorldView", kind: "node", center: { x: 0, y: 0, width: 1, height: 1 } },
             sgzzNode("label", "大地图 · LOD 1/5", { x: 0, y: 0 }),
             sgzzNode("label", "(750, 751) 平原 · 无主", { x: 0, y: 10 }),
             sgzzNode("sgzz-terrain", null, null),
+            sgzzNode("sgzz-grid", null, null),
             sgzzNode("sgzz-territory", null, null),
             sgzzNode("sgzz-border", null, null),
             sgzzNode("sgzz-world", null, { x: -12, y: 34 }),
@@ -370,6 +371,7 @@ test("readSgzzmapEvidence：近档解出标题/地块/三层网格，半加载�
     assert.equal(value.nearLoaded, true);
     assert.equal(value.farLoaded, false, "近档没有底图/色块");
     assert.equal(value.terrain, true);
+    assert.equal(value.grid, true);
     assert.equal(value.territory, true);
     assert.equal(value.border, true);
     assert.equal(value.minimap, true);
@@ -378,6 +380,12 @@ test("readSgzzmapEvidence：近档解出标题/地块/三层网格，半加载�
         mine: false, guard: 0, text: "(750, 751) 平原 · 无主",
     });
     assert.deepEqual(value.worldCenter, { x: -12, y: 34 }, "世界节点中心原样透出，供「镜头真的动了」比对");
+
+    // ★ 网格线缺席 ⇒ 判未就位。grid 层曾经在门控表里写着可见、渲染器里一行都没有，
+    //   而当时的判据只看 sgzz-terrain，于是「没画网格线」一路绿到底。
+    const noGrid = { ...walk, nodes: walk.nodes.filter((n) => n.name !== "sgzz-grid") };
+    assert.equal(readSgzzmapEvidence(noGrid).grid, false);
+    assert.equal(readSgzzmapEvidence(noGrid).nearLoaded, false, "⛔ 缺网格线不算近档画好了");
 
     // 标题还没出来 ⇒ 判未就位（⛔ 不把半加载的画面当证据）
     const noTitle = { ...walk, nodes: walk.nodes.filter((n) => n.text !== "大地图 · LOD 1/5") };

@@ -45,6 +45,7 @@ export function readSgzzmapEvidence(walk) {
         title: title?.text ?? null,
         // 近档三层
         terrain: has("sgzz-terrain"),
+        grid: has("sgzz-grid"),
         territory: has("sgzz-territory"),
         border: has("sgzz-border"),
         // 远档两件
@@ -76,7 +77,8 @@ export function readSgzzmapEvidence(walk) {
         notice: notice?.text ?? null,
         worldCenter: nodes.find((node) => node.name === "sgzz-world")?.center ?? null,
         // 近档「画出来了」= 标题在 + 地表网格在；远档 = 标题在 + 底图或色块在
-        nearLoaded: !!titleMatch && has("sgzz-terrain"),
+        // ⚠ 近档「画出来了」要连网格线一起算：grid 层曾经在门控表里写着可见、渲染器里一行都没有
+        nearLoaded: !!titleMatch && has("sgzz-terrain") && has("sgzz-grid"),
         farLoaded: !!titleMatch && (!!plate || has("sgzz-birdview")),
     };
 }
@@ -254,7 +256,9 @@ export async function replaySgzzmapWorld(runner) {
         await sgzzmapWheel(runner, area, 240, 14);
         const evidence = await runner.waitFor("LOD ≥ 3 且底图/色块在、地表网格已撤", (walk) => {
             const value = readSgzzmapEvidence(walk);
-            return value && value.lod !== null && value.lod >= 3 && value.farLoaded && !value.terrain ? value : null;
+            // ⚠ 网格线也必须撤干净：它压在底图上会把远档糊成一片
+            return value && value.lod !== null && value.lod >= 3 && value.farLoaded
+                && !value.terrain && !value.grid ? value : null;
         }, 45_000);
         return { ...evidence, shot: await runner.shot("sgzzmap-far") };
     });
@@ -278,9 +282,11 @@ export async function replaySgzzmapWorld(runner) {
     await runner.step("推回近档：逐格网格回来，底图撤走", async () => {
         const area = sgzzmapGestureArea(await runner.walk());
         await sgzzmapWheel(runner, area, -240, 16);
-        const evidence = await runner.waitFor("LOD ≤ 2 且地表网格回来", (walk) => {
+        const evidence = await runner.waitFor("LOD ≤ 2 且地表与网格线都回来", (walk) => {
             const value = readSgzzmapEvidence(walk);
-            return value && value.lod !== null && value.lod <= 2 && value.terrain && !value.plate ? value : null;
+            // ⚠ lod ≤ 1 才有网格线（门控 hideAtLod:1），滚轮多半停在 0
+            return value && value.lod !== null && value.lod <= 2 && value.terrain && !value.plate
+                && (value.lod > 1 || value.grid) ? value : null;
         }, 45_000);
         return { farLod: far.lod, ...evidence, shot: await runner.shot("sgzzmap-back-near") };
     });

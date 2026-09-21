@@ -152,9 +152,31 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
     可视格模板、分层门控、菱形网格与画家序、六向描边引用计数、页模型（节流 + 代际围栏）、
     配色与 tonemapping 预补偿。
   - View 层：`SgzzMeshBatch`（创建/上传/扩容/销毁纪律只写一遍）+ `SgzzMapRenderer`
-    （地表 / 领地 / 描边各一张合并 mesh）+ `SgzzmapWorldView`。
+    （地表 / 网格线 / 领地 / 描边各一张合并 mesh）+ `SgzzmapWorldView`。
   - 地形直接消费 shared 内容模块 ⇒ **首帧即可绘制**，⛔ 不等资源加载、⛔ 不需要 BufferAsset 类型桩。
   - 远档底图 + 鸟瞰聚合色块 + 常显缩略图 + 行军线（简线/细线/部队位置）均已接上，见下。
+
+### 分层门控：哪些层**真的**会建
+
+`sgzzLayers.ts` 的 `SGZZ_LAYERS` 是唯一真源，每层带一个 `implemented`。
+⚠ **未实现的层 `sgzzLayerVisible` 恒回 false** —— ⛔ 不许出现「门控说该建、渲染器根本没写」的两张皮：
+真机重放发现 LOD0 没有网格线，就是因为表里 grid 写着可见而 `SgzzMapRenderer` 里一行都没有。
+
+| 层 | 档位 | 状态 |
+|---|---|---|
+| `terrain` 地表菱形 | L0–L2 | ✅ |
+| `grid` 网格线 | L0–L1 | ✅ 每格只画 NE/SE 两条边（每条边恰好一遍），线宽按 `屏幕像素 / scale` 折算 |
+| `territory` 领地叠色 | L0–L3 | ✅ |
+| `border` 六向描边 | L0–L2 | ✅ |
+| `marchLine` / `marchDetail` 行军线 | L0–L4 / L0–L2 | ✅ |
+| `plate` 世界底图 | L3–L5 | ✅ |
+| `birdview` 聚合色块 | L4–L5 | ✅ |
+| `decor` 摆件/地标 | L0–L1 | ⛔ **未实现**（等地块图集人工策展） |
+| `banner` 目标旗 | L0–L1 | ⛔ **未实现**（等图集） |
+| `label` 地名 | L0–L2 | ⛔ **未实现**（还缺地名数据） |
+
+绘制序 = 兄弟序：地表(0) → 网格线(1) → 领地(2) → 描边(3)。
+⚠ 网格线压在领地叠色**下面**：叠色是半透明的，压上面会把格线糊成一片。
 
 ### 客户端的五条硬规矩
 
@@ -231,6 +253,7 @@ node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
 | 3 | 操作结果活不过 220 ms，屏幕上什么提示都没有 | view 轮询一成功就无差别清空 notice | `noticeKind`：只清「读出来的」提示 |
 | 4 | 窗外的格显示成「无主」（撒谎） | `tileAt` 缺 key 即默认空格，`sgzzmap.tile` 路由从未接线 | `select` 标 pending + 单格补查 |
 | 5 | **孤地永远加固不了**（回 `SGZZMAP_NOT_ADJACENT`） | 连地闸只看六邻，目标就是自己的地时也照查 | `sgzzOccupyRefusal` 先放行 `target.ownerUid === viewer.uid` |
+| 6 | LOD0 **一条网格线都没有** | 门控表里 grid 写着可见，`SgzzMapRenderer` 里一行都没写（两张皮） | 补 `sgzz-grid` 层；层表加 `implemented`，未实现的层恒不可见；`nearLoaded` 判据把网格线算进去 |
 
 ⚠ 第 5 条是**重放自己差点放过的**：判据写成「地块是我方 + 叠色描边在」，而点选时它本来就是我方，
 于是 RPC 被拒也照样判过（run 8：守军前后都是 1、提示在后面三步才浮出来）。

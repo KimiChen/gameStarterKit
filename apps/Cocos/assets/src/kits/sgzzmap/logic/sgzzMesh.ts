@@ -153,3 +153,28 @@ export function buildSgzzPolyMesh(
     if (n === 0) { minX = minY = maxX = maxY = 0; }
     return { positions, uvs, colors, indices16, quads: n, minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
 }
+
+/**
+ * 一格的网格线：只画 **NE / SE** 两条边。
+ *
+ * ⚠ 平面上每条边恰好是某一格的 NE 或 SE 边（一格的 NE 边 = 右上邻格的 SW 边），
+ * 所以逐格画两条就铺满整张网，⛔ 画四条会把每条内部边画两遍 ——
+ * 四边形翻倍，而且半透明线叠加后会一深一浅，看起来像脏了。
+ * ⚠ 线宽是**世界单位**：调用方要按 `屏幕像素 / scale` 折算，否则拉近了变粗、拉远了消失。
+ */
+export function sgzzGridEdgePolys(row: number, col: number, halfWidth: number,
+                                  rgba: readonly [number, number, number, number]):
+    { readonly points: readonly (readonly [number, number])[]; readonly rgba: readonly [number, number, number, number] }[] {
+    const c = sgzzGrid2Pos(row, col);
+    const hw = SGZZ_TILE_HALF_W, hh = SGZZ_TILE_HALF_H;
+    const out: { points: readonly (readonly [number, number])[]; rgba: readonly [number, number, number, number] }[] = [];
+    // N→E（右上边）与 E→S（右下边）
+    for (const [x0, y0, x1, y1] of [
+        [c.x, c.y + hh, c.x + hw, c.y],
+        [c.x + hw, c.y, c.x, c.y - hh],
+    ]) {
+        const points = writeSgzzSegmentQuad(x0, y0, x1, y1, halfWidth);
+        if (points) out.push({ points, rgba });
+    }
+    return out;
+}

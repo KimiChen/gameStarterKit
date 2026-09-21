@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPlateMesh, sgzzPainterCompare,
-    type SgzzQuadInput,
+    SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPlateMesh, sgzzGridEdgePolys,
+    sgzzPainterCompare, type SgzzQuadInput,
 } from "../src/kits/sgzzmap/logic/sgzzMesh";
+import {
+    SGZZ_PLANNED_LAYERS, sgzzLayerVisible, sgzzVisibleLayers,
+} from "../src/kits/sgzzmap/logic/sgzzLayers";
 import { SGZZ_MAX_BORDER_EDGES, SgzzBorderSet } from "../src/kits/sgzzmap/logic/sgzzBorder";
 import {
     SGZZ_MAP_COLS, SGZZ_MAP_ROWS, SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W,
@@ -149,4 +152,49 @@ test("sgzzmap border: 地图边缘算「外面」，边片有硬上限", () => {
     const capped = big.edges(SGZZ_MAP_ROWS, SGZZ_MAP_COLS);
     assert.equal(capped.length, SGZZ_MAX_BORDER_EDGES, "必须钳在上限");
     assert.ok(big.dropped > 0, "被丢掉的数量要记下来（调试面板要显示）");
+});
+
+test("★ 网格线：每格只画 NE/SE 两条边 —— 铺满整张网且每条边只画一遍", () => {
+    const rgba = [0, 0, 0, 0.2] as const;
+    const polys = sgzzGridEdgePolys(700, 700, 0.5, rgba);
+    assert.equal(polys.length, 2, "⛔ 画四条会把每条内部边画两遍");
+
+    // 两条边必须是 N→E 与 E→S：端点落在菱形的 N/E/S 三个顶点上
+    const c = sgzzGrid2Pos(700, 700);
+    const N = [c.x, c.y + SGZZ_TILE_HALF_H], E = [c.x + SGZZ_TILE_HALF_W, c.y], S = [c.x, c.y - SGZZ_TILE_HALF_H];
+    const mid = (p: readonly (readonly [number, number])[]) => [
+        (p[0][0] + p[1][0] + p[2][0] + p[3][0]) / 4, (p[0][1] + p[1][1] + p[2][1] + p[3][1]) / 4,
+    ];
+    const near = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-6;
+    assert.ok(near(mid(polys[0].points), [(N[0] + E[0]) / 2, (N[1] + E[1]) / 2]), "第一条是 N→E");
+    assert.ok(near(mid(polys[1].points), [(E[0] + S[0]) / 2, (E[1] + S[1]) / 2]), "第二条是 E→S");
+
+    // ★ 无缝无重：一格的 NE 边 = 右上邻格的 SW 边。全平面逐格画两条 ⇒ 每条边恰好一次。
+    // 用「边的中点」作为边的身份，在一片格上统计：出现两次就说明画重了。
+    const seen = new Map<string, number>();
+    for (let row = 700; row < 712; row += 1) {
+        for (let col = 700; col < 712; col += 1) {
+            for (const poly of sgzzGridEdgePolys(row, col, 0.5, rgba)) {
+                const m = mid(poly.points).map((v) => Math.round(v * 1000)).join(",");
+                seen.set(m, (seen.get(m) ?? 0) + 1);
+            }
+        }
+    }
+    assert.equal([...seen.values()].filter((n) => n > 1).length, 0, "同一条边⛔不得画两遍");
+    assert.equal(seen.size, 12 * 12 * 2, "12×12 格该出 288 条互不相同的边");
+});
+
+test("★ 层表：未实现的层恒不可见（⛔ 不许门控说该建而渲染器没写）", () => {
+    assert.deepEqual([...SGZZ_PLANNED_LAYERS], ["decor", "banner", "label"]);
+    for (const id of SGZZ_PLANNED_LAYERS) {
+        for (let lod = 0; lod <= 5; lod += 1) {
+            assert.equal(sgzzLayerVisible(id, lod), false, `${id} @LOD${lod} 必须不可见`);
+        }
+        assert.ok(!sgzzVisibleLayers(0).includes(id), `${id} ⛔ 不得出现在 LOD0 的可见层里`);
+    }
+    // grid 已实现：LOD 0/1 建、LOD 2 起撤
+    assert.equal(sgzzLayerVisible("grid", 0), true);
+    assert.equal(sgzzLayerVisible("grid", 1), true);
+    assert.equal(sgzzLayerVisible("grid", 2), false);
+    assert.ok(sgzzVisibleLayers(0).includes("grid"));
 });
