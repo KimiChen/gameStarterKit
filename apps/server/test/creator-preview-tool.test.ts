@@ -451,9 +451,18 @@ test("sgzzmapGestureArea / sgzzmapMinimapCenter：可点区实测自页面坐标
     assert.ok(area.y - area.height / 2 > 137, "⛔ 够不着页眉");
     assert.ok(area.y + area.height / 2 < 662, "⛔ 够不着页脚");
 
+    // ⚠ 报错必须**点名**缺的那个：三个名字一起报，看不出是漏了节点还是 Creator 没重编
     for (const missing of ["sgzz-map-anchor", "sgzz-header", "sgzz-footer"]) {
-        assert.throws(() => sgzzmapGestureArea({ canvas, nodes: nodes.filter((n) => n.name !== missing) }),
-                      /sgzz-map-anchor/u, `缺 ${missing} 必须抛`);
+        const rest = nodes.filter((n) => n.name !== missing);
+        assert.throws(() => sgzzmapGestureArea({ canvas, nodes: rest }),
+                      (e: unknown) => {
+                          const text = String(e);
+                          assert.match(text, new RegExp(missing, "u"));
+                          for (const other of nodes.map((n) => n.name).filter((n) => n !== missing)) {
+                              assert.doesNotMatch(text, new RegExp(other, "u"), `⛔ 不该把在场的 ${other} 也报进去`);
+                          }
+                          return true;
+                      }, `缺 ${missing} 必须点名它`);
     }
 
     assert.deepEqual(sgzzmapMinimapCenter({ nodes: [{ name: "sgzz-minimap", center: { x: 7, y: 8 } }] }), { x: 7, y: 8 });

@@ -89,8 +89,12 @@ export function sgzzmapGestureArea(walk) {
     //   run 5/6 就是这么把「回领地」之后的中心点选打偏到家旁边那一格的。
     const at = (name) => walk.nodes.find((node) => node.name === name && node.center)?.center ?? null;
     const anchor = at("sgzz-map-anchor"), header = at("sgzz-header"), footer = at("sgzz-footer");
-    if (!anchor || !header || !footer) {
-        throw new Error("地图页缺少 sgzz-map-anchor / sgzz-header / sgzz-footer，无法实测可点区");
+    // ⚠ 要**点名**缺的是哪个：一次把三个名字一起报出来，看不出是漏了节点还是 Creator 没重编。
+    const missing = [["sgzz-map-anchor", anchor], ["sgzz-header", header], ["sgzz-footer", footer]]
+        .filter(([, v]) => !v).map(([k]) => k);
+    if (missing.length > 0) {
+        throw new Error(`地图页缺少重放契约节点 ${missing.join(" / ")}（页内共 ${walk.nodes.length} 个节点）`
+            + "：若源码里有而这里没有，多半是 Creator 还没重编出新 bundle，等它编完再跑");
     }
     // 到页眉/页脚中心的距离取小者再留 20% 余量：算出来的半高必落在地图区内，且够不着按钮
     const half = Math.min(anchor.y - header.y, footer.y - anchor.y) * 0.8;
