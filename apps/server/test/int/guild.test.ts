@@ -6,11 +6,12 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
  *     getEvents 全量/增量自愈拉取（唤醒式推送语义：推送是优化，拉取是权威路径）
  *  2. 幂等重放：同 clientReqId 返回缓存结果，⛔ 不重复发事件
  *  3. leave：在线索引清除（不再收工会唤醒）+ memberLeave 留在原工会频道；无工会视图归零
- * 前置：npm --workspace @game/server run stack（且 dev server 未占 2568）。
+ * 前置：npm --workspace @game/server run stack（测试自动分配独立端口）。
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { ColyseusTestServer } from "@colyseus/testing";
+import { bootTestServer } from "./helpers";
 import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 
@@ -80,7 +81,7 @@ before(async () => {
   for (const { gid } of GUILD_CATALOG) {
     await clientForKey(kGuildEvtSeq(gid)).unlink(kGuildEvtSeq(gid), kGuildEvtLog(gid));
   }
-  colyseus = await boot(server);
+  colyseus = await bootTestServer(server);
   startPushConsumer(); // MF6a-B2：工会唤醒经投递总线扇出（发布方不本地直投），测试进程显式起消费者
 });
 

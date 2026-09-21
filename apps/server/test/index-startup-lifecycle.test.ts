@@ -162,6 +162,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
     // external adapters are replaced in this child so the test is deterministic
     // and does not borrow the developer's Redis/MySQL/WebPlatform processes.
     cpSync(join(SERVER_ROOT, "src/index.ts"), join(sandbox, "src/index.ts"));
+    cpSync(join(SERVER_ROOT, "src/bootstrapProcess.ts"), join(sandbox, "src/bootstrapProcess.ts"));
     cpSync(join(SERVER_ROOT, "src/shutdown.ts"), join(sandbox, "src/shutdown.ts"));
     cpSync(
       join(SERVER_ROOT, "src/core/infra/lifecycle.ts"),
@@ -232,6 +233,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
     `);
     writeSandboxFile(sandbox, "src/core/push/pushBus.ts", `
       import { record } from "../../probe";
+      export function setPushLocalHandlers(_handlers: unknown): void { record("set-push"); }
       export function startPushConsumer(): void { record("start-push"); }
       export async function stopPushConsumer(): Promise<void> { record("stop-push"); }
     `);
@@ -247,6 +249,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
     `);
     writeSandboxFile(sandbox, "src/websocket/push.ts", `
       import { record } from "../probe";
+      export const pushLocalHandlers = {};
       export function kickUser(): boolean { return false; }
       export async function stopMailWakeLoop(): Promise<void> { record("stop-mailwake"); }
     `);
@@ -311,9 +314,10 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
     assert.deepEqual(events, [
       "app-loaded",
       "routes-ready",
+      "set-kick",
+      "set-push",
       "start-infra",
       "start-depth",
-      "set-kick",
       "start-kick",
       "start-push",
       "start-repair",
@@ -331,7 +335,7 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
       "close-redis",
       "marker",
     ], `事件序列异常；stderr=${stderr.slice(-4_000)} lines=${JSON.stringify(lines)}`);
-    for (const line of lines.slice(8)) { // 8 条启动事件（含 MF6a-B2 的 start-push）之后全是停服阶段
+    for (const line of lines.slice(9)) { // 9 条启动事件（含显式 set-push）之后全是停服阶段
       assert.match(line, /admission=false$/, `停服阶段必须已关闭 admission：${line}`);
     }
   } finally {
@@ -343,17 +347,18 @@ test("index 默认入口：真实监听后收到 SIGTERM 按序释放并以 0 �
   }
 });
 
-test("index 默认入口：真实依赖装配、停服列表与 listen(app, PORT) 均有显式接缝", () => {
-  const source = readFileSync(join(SERVER_ROOT, "src/index.ts"), "utf8");
+test("index 默认入口：统一 bootstrap 保留生产资源登记和显式 PORT 注入", () => {
+  const entry = readFileSync(join(SERVER_ROOT, "src/index.ts"), "utf8");
+  const source = readFileSync(join(SERVER_ROOT, "src/bootstrapProcess.ts"), "utf8");
   for (const registration of [
     'defaultLifecycle.register("redis", closeRedis)',
     'defaultLifecycle.register("mysql", closeMysql)',
     'defaultLifecycle.register("webplatform", closeWebPlatformClient)',
-    'infraMonitorStop = startInfraMonitors()',
+    'infraMonitorStop = deps.startInfraMonitors()',
     'startStreamDepthAlert()',
     'setKickHandler(kickUser)',
     'startKickConsumer()',
-    'startPushConsumer()',
+    'deps.startPushConsumer(',
     'startCharacterRepairWorker()',
   ]) {
     assert.ok(source.includes(registration), `默认入口缺少真实依赖装配：${registration}`);
@@ -371,11 +376,11 @@ test("index 默认入口：真实依赖装配、停服列表与 listen(app, PORT
     "push-bus",
   ]);
 
-  const cleanupBlock = source.match(/await runShutdownCleanup\(stopBackgroundProducers, \[([\s\S]*?)\]\);/)?.[1];
+  const cleanupBlock = source.match(/runShutdownCleanup\(stopBackgroundProducers, \[([\s\S]*?)\]\);/)?.[1];
   assert.ok(cleanupBlock, "默认入口必须通过最终 cleanup 编排器收口");
   const cleanupNames = [...cleanupBlock.matchAll(/name: "([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(cleanupNames, ["character-ready", "detached-tasks", "registered-resources"]);
-  assert.match(source, /await listen\(app, PORT\)/, "端口必须由 config.PORT 传入 listen");
+  assert.match(entry, /await bootstrapProcess\(app, "combined", PORT\)/, "合体入口必须向公共 bootstrap 传 config.PORT");
   assert.equal(
     (source.match(/installShutdownAggregator\(app/g) ?? []).length,
     1,

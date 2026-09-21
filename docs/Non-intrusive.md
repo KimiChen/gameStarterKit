@@ -2987,6 +2987,11 @@ apps/client/src/gameplay/services.ts
 apps/client/src/logic/gameplay/**
 apps/server/src/rooms/modes/catalog.ts
 apps/server/src/app.config.ts
+apps/server/src/lobby.config.ts
+apps/server/src/game.config.ts
+apps/server/src/process.config.ts
+apps/server/src/bootstrapProcess.ts
+apps/server/src/entries/**
 apps/server/src/world.config.ts
 apps/server/sql/schema.sql
 ```
@@ -2999,6 +3004,7 @@ RoomAuth / WireDispatcher / MessageBudget / ReconnectGrace / S2CPorts 是 GameRo
 GameplayDispatcher 之名预留的职责由 WireDispatcher 落地），与既有 RoomProfile / StartPolicy / AccessPolicy
 同批登进 gameplayFlow（关 PLUGIN-REVIEW F03）。`apps/server/src/rooms/{WorldRoom,WorldMode}.ts` 与 `apps/server/src/world.config.ts`
 自 MMO MF4-B6（2026-09-19）登记：世界形态的传输壳 / 契约 / world 进程 rooms 表，新增 world 玩法只经 codegen 分表登记，⛔ 不改它们。
+PS（2026-09-22）补登记 lobby / game / process config、bootstrapProcess 与 entries：三角色房型装配及启停归属是框架边界，普通玩法仍只改自己的登记真源。
 随 MMO MF4–MF10（2026-09-19 / 20）目录内新增世界房内核：WorldRuntime / WorldLease / control / WorldDirectory / WorldProfile（MF4）、InterestSet / ObserverSync / Baseline / OutboundQueue（MF5a）、CheckpointPort / WorldTx / WorldEventPort / WorldCheckpoint（MF7b）、transfer / WorldTicket / WorldTransfer（MF8）、WorldRegistry（MF10）——同一条 glob 覆盖，kit / 插件只经 `WorldMode` 钩子与 kit-api 门面（`withKitWorldTx` / `CheckpointPort` / worker 事务）消费，⛔ 直接 import 内核。
 
 

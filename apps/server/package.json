@@ -25,7 +25,9 @@
     "plugin": "node --import tsx tools/plugin/cli.ts",
     "typecheck": "tsc --noEmit",
     "loadtest": "tsx loadtest/bot.ts --endpoint ws://localhost:2568 --room game --numClients 20",
-    "dev:server-only": "tsx watch src/index.ts"
+    "dev:server-only": "tsx watch src/index.ts",
+    "start:lobby": "tsx src/entries/lobby.ts",
+    "start:game": "tsx src/entries/game.ts"
   },
   "dependencies": {
     "@colyseus/core": "^0.17.0",

@@ -219,15 +219,19 @@ export async function publishPush(input: PublishPushInput, deps: Partial<Publish
 
 // ── 消费 ─────────────────────────────────────────────────────────────────────
 
-export type PushDeliveryOutcome = "delivered" | "stale" | "invalid-data" | "no-handlers" | "unknown";
+export type PushDeliveryOutcome = "delivered" | "stale" | "invalid-data" | "no-handlers" | "unknown" | "out-of-scope";
+export type PushConsumerScope = "all" | "lobby" | "room";
 
 /**
  * 单条落地：时间栅栏（issuedAt 早于 PUSH_BUS_MAX_AGE_MS ⇒ 丢弃）→ 再过一次 data validator → 按 kind 分发到本地落地端。
  * 返回 outcome 与送达连接数（诊断 / 测试）。
  */
 export async function deliverPushEntry(
-  entry: PushBusEntry, local: PushLocalHandlers | null, nowMs: number,
+  entry: PushBusEntry, local: PushLocalHandlers | null, nowMs: number, scope: PushConsumerScope = "all",
 ): Promise<{ outcome: PushDeliveryOutcome; delivered: number }> {
+  if ((scope === "room" && entry.kind !== "room") || (scope === "lobby" && entry.kind === "room")) {
+    return { outcome: "out-of-scope", delivered: 0 };
+  }
   if (nowMs - entry.issuedAt > PUSH_BUS_MAX_AGE_MS) return { outcome: "stale", delivered: 0 };
   let data: unknown;
   try {
@@ -250,7 +254,7 @@ export async function deliverPushEntry(
 /** 建一个消费者（非单例：int 测试可在同进程起两个各挂不同本地落地端，模拟双节点）。 */
 export function createPushConsumer(
   local: () => PushLocalHandlers | null,
-  opts: { name?: string; now?: () => number; client?: () => Redis } = {},
+  opts: { name?: string; now?: () => number; client?: () => Redis; scope?: PushConsumerScope } = {},
 ): StreamConsumer {
   const now = opts.now ?? (() => Date.now());
   return startStreamConsumer(opts.name ?? "push", opts.client ?? coordClient, K_STREAM_PUSH, async (fields) => {
@@ -259,7 +263,7 @@ export function createPushConsumer(
       console.warn("[push-bus] 丢弃非法投递条目");
       return;
     }
-    await deliverPushEntry(entry, local(), now());
+    await deliverPushEntry(entry, local(), now(), opts.scope);
   }, { trimMs: PUSH_STREAM_TRIM_MS });
 }
 
@@ -267,11 +271,11 @@ let consumer: StreamConsumer | null = null;
 let consumerUnregister: (() => void) | null = null;
 
 /** 本节点单例消费（LobbyRoom.onCreate / 进程入口调用，幂等）。 */
-export function startPushConsumer(): void {
+export function startPushConsumer(scope: PushConsumerScope = "all"): void {
   if (consumer) return;
   if (!isAdmissionOpen()) return;
   try {
-    consumer = createPushConsumer(getPushLocalHandlers);
+    consumer = createPushConsumer(getPushLocalHandlers, { scope });
   } catch (error) {
     if (!isAdmissionOpen()) return;
     throw error;

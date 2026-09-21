@@ -10,7 +10,8 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { ColyseusTestServer } from "@colyseus/testing";
+import { bootTestServer, testServerHttpEndpoint } from "./helpers";
 import { LOBBY_MSG_PUSH, LOBBY_PROTOCOL_VERSION, LobbyPush, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 
@@ -54,7 +55,7 @@ async function waitFor(cond: () => boolean, label: string, timeoutMs = 5_000): P
 
 before(async () => {
   await assertRedisUp();
-  colyseus = await boot(server);
+  colyseus = await bootTestServer(server);
   startPushConsumer(); // 本节点消费者由进程入口显式起（index.ts）；测试进程自行起
 });
 
@@ -136,7 +137,7 @@ test("POST /admin/notice（MF6a-B5）：正确密钥 ⇒ 同区两个在线连�
     const gotA = collect(roomA, LobbyPush.ServerNotice);
     const gotB = collect(roomB, LobbyPush.ServerNotice);
     const gotC = collect(roomC, LobbyPush.ServerNotice);
-    const post = (hdr: Record<string, string>, body: unknown) => fetch("http://127.0.0.1:2568/admin/notice", {
+    const post = (hdr: Record<string, string>, body: unknown) => fetch(`${testServerHttpEndpoint(server)}/admin/notice`, {
       method: "POST", headers: { "content-type": "application/json", ...hdr }, body: JSON.stringify(body),
     });
     assert.equal((await post({ "x-admin-secret": "wrong" }, { sId: 1, text: "x" })).status, 401, "错密钥拒绝");

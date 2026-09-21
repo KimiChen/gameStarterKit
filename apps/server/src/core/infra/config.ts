@@ -130,6 +130,10 @@ function processPort(name: string, fallback: number): number {
   return n;
 }
 export const PORT = processPort("PORT", 2568);
+/** 独立入口端口；缺省都等于 PORT，dev:split 为三者显式分配互异端口。 */
+export const LOBBY_PORT = processPort("LOBBY_PORT", PORT);
+export const GAME_PORT = processPort("GAME_PORT", PORT);
+export const WORLD_PORT = processPort("WORLD_PORT", PORT);
 
 /** 本进程/组承载的区服 sId 集合（逗号分隔，如 `"1,2,3"`）。**空 = 承载全部**
  *  （单形态 / 大混服 / legacy，onAuth 不做区归属闸）。区服形态下由它做进服硬闸：

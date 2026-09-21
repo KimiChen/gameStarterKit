@@ -59,6 +59,11 @@
       "apps/client/src/logic/gameplay/**",
       "apps/server/src/rooms/modes/catalog.ts",
       "apps/server/src/app.config.ts",
+      "apps/server/src/lobby.config.ts",
+      "apps/server/src/game.config.ts",
+      "apps/server/src/process.config.ts",
+      "apps/server/src/bootstrapProcess.ts",
+      "apps/server/src/entries/**",
       "apps/server/src/world.config.ts",
       "apps/server/sql/schema.sql"
     ]
@@ -116,6 +121,11 @@
     "apps/client/src/gameplay/services.ts": "GameplayServicesContext 稳定服务注入面；⛔ 不得出现逐玩法字段",
     "apps/client/src/logic/gameplay/**": "GameplayModule/GameplayRegistry/RoomController 中央契约；新玩法只新增 gameplay/modes/<id>/ 模块文件",
     "apps/server/src/rooms/modes/catalog.ts": "阶段 9 收敛后为生成物 modes/catalog.generated.ts 的稳定 façade（登记全集按 manifest.wireExposed 发现 modes/<id>/index.ts 的 register<Constant>GameMode）；新增玩法只新增 modes/<id>/index.ts 并重跑 codegen:gameplays",
+    "apps/server/src/lobby.config.ts": "PS 进程组合根与生命周期，普通 plugin / gameplay 不得修改",
+    "apps/server/src/game.config.ts": "PS 进程组合根与生命周期，普通 plugin / gameplay 不得修改",
+    "apps/server/src/process.config.ts": "PS 进程组合根与生命周期，普通 plugin / gameplay 不得修改",
+    "apps/server/src/bootstrapProcess.ts": "PS 进程组合根与生命周期，普通 plugin / gameplay 不得修改",
+    "apps/server/src/entries/**": "PS 进程组合根与生命周期，普通 plugin / gameplay 不得修改",
     "apps/server/src/app.config.ts": "进程组合根（registerDefaultGameModes + assertRoomProfilesConfigured + 单一 RoomName.Game 定义）；玩法经 generated catalog 进入，⛔ 不因玩法名修改",
     "apps/server/src/world.config.ts": "world 进程 rooms 表（MMO MF4-B6 / D27 PS4）：registerWorldRuntime（registerDefaultWorldModes + assertWorldProfilesConfigured）+ 单一 RoomName.World 定义（filterBy sId/mode/profile/mapId/line）；合体入口 app.config.ts 合并它，拆分后原样归 world 进程；⛔ 不登记进 lobby / game 的 config"
   }

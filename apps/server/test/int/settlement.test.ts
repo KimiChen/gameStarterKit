@@ -13,7 +13,8 @@
 import "./env-setup"; // 必须第一个 import（env 先于 config.ts 模块级读取）
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { ColyseusTestServer } from "@colyseus/testing";
+import { bootTestServer } from "./helpers";
 
 import {
   ErrorCode,
@@ -721,7 +722,7 @@ test("startMatchConsumer 常驻循环：阻塞等待中投递的证据被自动�
 // ── 4. 房间端到端：真 GameRoom 打一局 → matchId 进 state、证据进流、消费落库 ──
 
 test("GameRoom 区服端到端：跨区 joinById 拒绝；同区开局 → 收局证据落库", async () => {
-  const colyseus: ColyseusTestServer = await boot((await import("../../src/app.config")).server);
+  const colyseus: ColyseusTestServer = await bootTestServer((await import("../../src/app.config")).server);
   const players: { uid: string; sId: number }[] = [];
   try {
     // 造玩法档 + 组缓存会话。GameRoom strict onAuth 仍需契约一致的 WebPlatform 测试服务。

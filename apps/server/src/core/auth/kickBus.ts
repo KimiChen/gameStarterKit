@@ -46,7 +46,7 @@ function hasValidKickScope(
   return false;
 }
 /** 注入本节点强制下线句柄（index.ts 启动期挂 push.kickUser）。 */
-export function setKickHandler(fn: (uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number) => void): void { kickHandler = fn; }
+export function setKickHandler(fn: ((uid: string, reason: ForceLogoutReasonType, exceptTokenHash?: string, sId?: number) => void) | null): void { kickHandler = fn; }
 
 /** 本节点自筛踢：命中本节点在线连接即强制下线（先推 reason 再关）；不在本节点直接跳过（§2.3 每节点自筛，⛔ 不查 presence）。 */
 /** @param sId 只踢该区的连接（顶号，M12e）；**省略 = 踢该 uid 在本节点的全部区**（封号/撤销：账号级）。 */

@@ -18,7 +18,8 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { ColyseusTestServer } from "@colyseus/testing";
+import { bootTestServer } from "./helpers";
 import {
   ErrorCode, GAME_ROOM_PROTOCOL_VERSION, GAMEPLAY_CATALOG, GameplayModeId, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName, UserRpc,
   type IRoomJoinOptions,
@@ -106,7 +107,7 @@ const zoneUserKey = (uid: string, sId: number): string => zoneCtx.run({ sId }, (
 
 before(async () => {
   await assertRedisUp();
-  colyseus = await boot(server);
+  colyseus = await bootTestServer(server);
 });
 
 after(async () => {

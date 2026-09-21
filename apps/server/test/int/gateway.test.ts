@@ -8,7 +8,8 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { ColyseusTestServer } from "@colyseus/testing";
+import { bootTestServer, testServerHttpEndpoint } from "./helpers";
 import { ErrorCode as SharedErrorCode, KICK_CLOSE_CODE, LOBBY_MSG_PUSH, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, RoomName } from "@game/shared";
 import { server } from "../../src/app.config";
 
@@ -65,7 +66,7 @@ function rpc(room: Awaited<ReturnType<typeof joinLobby>>, type: string, payload?
 
 before(async () => {
   await assertRedisUp();
-  colyseus = await boot(server);
+  colyseus = await bootTestServer(server);
 });
 
 after(async () => {
@@ -224,7 +225,7 @@ test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLea
   await sleep(100); // 待 onJoin/registerOnline 注册 kick 句柄
   setKickHandler(kickUser); // boot 不跑 index.ts，显式挂（生产在 index.ts 启动期挂）
 
-  const kickReq = (hdr?: Record<string, string>) => fetch("http://127.0.0.1:2568/admin/kick", {
+  const kickReq = (hdr?: Record<string, string>) => fetch(`${testServerHttpEndpoint(server)}/admin/kick`, {
     method: "POST", headers: { "content-type": "application/json", ...hdr }, body: JSON.stringify({ uid: u.uid }),
   });
   assert.equal((await kickReq()).status, 401, "⛔ 无密钥拒绝（踢人端点无鉴权 = DoS 面）");
@@ -242,7 +243,7 @@ test("GM SOP e2e：POST /admin/kick 踢掉在连用户（ack kicked:true + onLea
   const room2 = await joinLobby(u2.token);
   await sleep(100);
   const left2 = new Promise<number>((resolve) => { room2.onLeave((code: number) => resolve(code)); });
-  const res2 = await fetch("http://127.0.0.1:2568/admin/kick", {
+  const res2 = await fetch(`${testServerHttpEndpoint(server)}/admin/kick`, {
     method: "POST", headers: { "content-type": "application/json", "x-admin-secret": secret },
     body: JSON.stringify({ uid: u2.uid, reason: "revoked" }),
   });

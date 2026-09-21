@@ -74,7 +74,9 @@
     "test:faults": "node scripts/fault-matrix.mjs",
     "test:faults:int": "node scripts/fault-matrix.mjs --integration",
     "verify:core": "node scripts/verify-toolchain.mjs && npm run verify:project && npm run typecheck && npm run typecheck:uniflex-ui && npm run check:uniflex-ui && npm run verify:ecs && npm run verify:vendor && npm run verify:fgui && npm run verify:protected-paths && npm run test:fgui && npm run verify:inventory && npm run test:inventory && npm run test:launcher-matrix && npm run test:npm-reference-matrix && npm run test:aggregate-chain-matrix && npm run test:sync-mirror-matrix && npm run test:toolchain-runtime-matrix && npm run verify:perf && npm run test:client",
-    "verify:all": "npm run verify:core && npm run test:uniflex-ui-contract && npm --workspace @game/server run test"
+    "verify:all": "npm run verify:core && npm run test:uniflex-ui-contract && npm --workspace @game/server run test",
+    "start:lobby": "npm --workspace @game/server run start:lobby",
+    "start:game": "npm --workspace @game/server run start:game"
   },
   "engines": {
     "node": ">=22"

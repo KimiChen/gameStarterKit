@@ -139,6 +139,8 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run dev` | 一条命令启动完整开发环境：本地栈（stack）→ 建库（db:bootstrap）→ 连通性自检（smoke:framework）→ watch 模式服务端 |
 | `npm run dev:server-only` | 跳过串链只起 watch 模式服务端（栈与库已就绪时的快速重启逃生口） |
 | `npm run start:server` | 非 watch 方式启动服务端，等价于 `@game/server` 的 `start` |
+| `npm run start:lobby` | 启动大厅进程（`LOBBY_PORT` 缺省 `PORT`） |
+| `npm run start:game` | 启动对局进程（`GAME_PORT` 缺省 `PORT`） |
 | `npm run dev:client` | 启动时先按锁定契约重生成 `apps/shared/src/generated/webplatform`、再全量同步一次 shared，然后常驻监听 shared/client 改动并同步到 Cocos 工程；需先 `npm install`（契约刷新读 `node_modules/@gono/webplatform-contract`，缺失则在起 watcher 前退出） |
 | `npm run init:project -- <参数>` | 幂等写入项目身份元数据并同步生成投影；用 `--help` 查看必填身份参数和 dry-run 选项 |
 | `npm run sync:webplatform-contract` | 刷新外部身份服务契约生成物并级联同步 |

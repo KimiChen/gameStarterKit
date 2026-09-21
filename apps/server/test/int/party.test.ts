@@ -10,7 +10,8 @@ import "./env-setup"; // ⚠ 必须第一个 import（限流放宽）
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { ColyseusTestServer } from "@colyseus/testing";
+import { bootTestServer } from "./helpers";
 import { LOBBY_MSG_PUSH, LOBBY_MSG_RPC, LOBBY_PROTOCOL_VERSION, LobbyPush, RoomName } from "@game/shared";
 import { PartyRpc } from "@game/shared/protocol/lobbyRpc/domains/party";
 import { server } from "../../src/app.config";
@@ -83,7 +84,7 @@ async function partyField(uid: string): Promise<string | undefined> {
 
 before(async () => {
   await assertRedisUp();
-  colyseus = await boot(server);
+  colyseus = await bootTestServer(server);
   startPushConsumer();
 });
 

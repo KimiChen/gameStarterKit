@@ -5,11 +5,12 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import type Redis from "ioredis";
 import { LobbyPush } from "@game/shared";
 import { PUSH_BUS_MAX_AGE_MS, PUSH_BUS_MAX_UIDS } from "../src/core/infra/config";
 import {
   PushBusError, _pushBusTestHooks, deliverPushEntry, encodePushEntries, parsePushFields, publishPush,
-  registerRoomSignal, type PushBusEntry, type PushLocalHandlers,
+  createPushConsumer, registerRoomSignal, type PushBusEntry, type PushLocalHandlers,
 } from "../src/core/push/pushBus";
 import { pushLocalHandlers, pushToRealm, pushToUsers, registerOnline, unregisterOnline } from "../src/websocket/push";
 
@@ -166,3 +167,46 @@ test("websocket/push：发布方 ⛔ 不本地直投；本地落地按 conn.sId 
   const realm = entryOf(encodePushEntries({ kind: "realm", sId: 1, type: LobbyPush.ServerNotice, data: notice }, NOW)[0]);
   assert.equal((await deliverPushEntry(realm, pushLocalHandlers, NOW)).delivered, 0);
 });
+
+
+for (const scope of ["room", "lobby"] as const) {
+  test(`PS push consumer ${scope}：真实消费循环按角色隔离，即使 world 意外挂入大厅 handlers`, { timeout: 3_000 }, async () => {
+    const node = fakeNode(new Set(["ps-user"]), 1);
+    const signals: string[] = [];
+    const off = registerRoomSignal("ps-world", 1, (type) => { signals.push(type); });
+    const inputs = [
+      { kind: "users" as const, sId: 1, uids: ["ps-user"], type: LobbyPush.ServerNotice, data: notice },
+      { kind: "realm" as const, sId: 1, type: LobbyPush.ServerNotice, data: notice },
+      { kind: "guild" as const, sId: 1, gid: 8, type: LobbyPush.GuildEvent, data: { seq: 1, guildId: 8 } },
+      { kind: "room" as const, sId: 1, instanceId: "ps-world", type: LobbyPush.ServerNotice, data: notice },
+    ];
+    const rows = inputs.map((input, index) => [String(index + 1), encodePushEntries(input, NOW)[0]]);
+    let markDrained!: () => void;
+    const drained = new Promise<void>((resolve) => { markDrained = resolve; });
+    let reads = 0;
+    let disconnected = false;
+    const blockingClient = {
+      xread: async () => {
+        if (reads++ === 0) return [["push-stream", rows]];
+        markDrained();
+        return new Promise(() => {});
+      },
+      disconnect: () => { disconnected = true; },
+    };
+    const client = { duplicate: () => blockingClient } as unknown as Redis;
+    const consumer = createPushConsumer(() => node.handlers, {
+      scope, name: `ps-scope-${scope}`, now: () => NOW, client: () => client,
+    });
+    try {
+      await drained;
+      assert.deepEqual(signals, scope === "room" ? ["server.notice"] : [], "lobby 不得投递 world 的房间信号");
+      assert.deepEqual(node.log, scope === "room" ? [] : [
+        'users:ps-user:server.notice:{"text":"hello"}', "realm:ps-user:server.notice", "guild:8:guild.event",
+      ], "world 即使有大厅 handlers，也不得消费 users / realm / guild");
+    } finally {
+      off();
+      await consumer.stop();
+    }
+    assert.equal(disconnected, true, "阻塞 XREAD 专用连接随消费者停止而释放");
+  });
+}

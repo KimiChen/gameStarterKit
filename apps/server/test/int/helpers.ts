@@ -2,6 +2,10 @@
  * 集成测试公共件：真实 Redis（⛔ 不 mock，10·M2 DoD），先 `npm run stack`（apps/server）起本地栈。
  * uid 带运行期前缀隔离，跑完 UNLINK 清理（09·R6）。
  */
+import assert from "node:assert/strict";
+import type { Server } from "colyseus";
+import { ColyseusTestServer } from "@colyseus/testing";
+import { listenProcessServer } from "../../src/bootstrapProcess";
 import { writeGroupSess } from "../../src/core/auth/session";
 import { writeDevTokenIndex } from "../../src/platform/devAuthProvider";
 import { kApplied, kAppliedPayload, kArchiveProof, kBagAll, kFence, kLock, kUser } from "../../src/core/infra/keys";
@@ -14,6 +18,30 @@ import {
   installWebPlatformClientForTests,
   type WebPlatformClient,
 } from "../../src/platform/webPlatformClient";
+
+/** 实际监听地址；禁止把测试请求误发到用户正在运行的 2568 服务。 */
+export function testServerHttpEndpoint(server: Server): string {
+  const address = server.transport.server?.address();
+  assert.ok(address && typeof address === "object" && address.port > 0, "测试 Server 必须已经监听 TCP 端口");
+  return `http://127.0.0.1:${address.port}`;
+}
+
+/**
+ * 锁定 @colyseus/testing 0.17 的 boot(Server) 忽略 port 参数、恒用 2568。
+ * 用正式监听包装器申请随机端口，随后只在测试适配层修正 protected port：
+ * ColyseusTestServer 0.17 用该值构造 SDK / HTTP 地址。⛔ 修改 vendor 或安装身份 provider。
+ */
+export async function bootTestServer(server: Server): Promise<ColyseusTestServer> {
+  try {
+    await listenProcessServer(server, 0);
+    const endpoint = new URL(testServerHttpEndpoint(server));
+    (server as unknown as { port: number }).port = Number(endpoint.port);
+    return new ColyseusTestServer(server);
+  } catch (error) {
+    await server.gracefullyShutdown(false);
+    throw error;
+  }
+}
 
 const runId = `t${Date.now().toString(36)}_${process.pid}`;
 export const testUid = (name: string): string => `${runId}_${name}`;

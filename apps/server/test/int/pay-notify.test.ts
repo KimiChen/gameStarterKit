@@ -5,11 +5,12 @@ import "./env-setup"; // ⚠ 必须第一个 import
  *  1. 共享密钥闸：无头/错头/未配置 secret 三种形态一律 401，订单不被触动
  *  2. 金额不符 → 400 ORDER_MISMATCH 且订单保持 created；修正金额后正常发放
  *  3. 成功发放：created→delivered + ledger 发币到账；同 wxTxnId 重放幂等 ack 不双发
- * 前置：npm --workspace @game/server run stack（且 dev server 未占 2568）。
+ * 前置：npm --workspace @game/server run stack（测试自动分配独立端口）。
  */
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { boot, type ColyseusTestServer } from "@colyseus/testing";
+import type { ColyseusTestServer } from "@colyseus/testing";
+import { bootTestServer, testServerHttpEndpoint } from "./helpers";
 import { server } from "../../src/app.config";
 import { createUser } from "../../src/core/userRecord";
 import { createOrder } from "../../src/core/economy/purchases";
@@ -26,8 +27,7 @@ process.env.WXPAY_NOTIFY_SECRET = SECRET;
 // 「关着时返 501 而不是 401」另有独立用例（见文件末尾）。
 process.env.PAY_ENABLED = "1";
 
-// boot(server) 恒监听 2568（@colyseus/testing DEFAULT_TEST_PORT）
-const BASE = "http://127.0.0.1:2568";
+let base = "";
 
 let colyseus: ColyseusTestServer;
 const uids: string[] = [];
@@ -41,7 +41,7 @@ async function makeUser(name: string): Promise<string> {
 }
 
 const post = async (body: unknown, secret?: string): Promise<{ status: number; json: any }> => {
-  const res = await fetch(`${BASE}/pay/wx-notify`, {
+  const res = await fetch(`${base}/pay/wx-notify`, {
     method: "POST",
     headers: { "content-type": "application/json", ...(secret !== undefined ? { "x-notify-secret": secret } : {}) },
     body: JSON.stringify(body),
@@ -63,7 +63,8 @@ const balanceOf = async (uid: string): Promise<number> => {
 
 before(async () => {
   await assertRedisUp();
-  colyseus = await boot(server);
+  colyseus = await bootTestServer(server);
+  base = testServerHttpEndpoint(server);
 });
 
 after(async () => {

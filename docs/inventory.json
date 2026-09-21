@@ -124,7 +124,7 @@
       "category": "core",
       "defaultEntry": "apps/server/src/index.ts",
       "sourceOfTruth": "apps/server/src/core/infra/lifecycle.ts",
-      "wireBoundary": "apps/server/src/index.ts",
+      "wireBoundary": "apps/server/src/bootstrapProcess.ts",
       "verification": [
         {
           "kind": "workspace",
@@ -378,6 +378,52 @@
         "docs/MMO.md",
         "docs/SERVER.md"
       ]
+    },
+    {
+      "id": "lobby-process",
+      "category": "core",
+      "defaultEntry": "apps/server/src/entries/lobby.ts",
+      "sourceOfTruth": "apps/server/src/lobby.config.ts",
+      "wireBoundary": "apps/server/src/bootstrapProcess.ts",
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        },
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/SERVER.md",
+        "docs/MMO.md"
+      ]
+    },
+    {
+      "id": "game-process",
+      "category": "core",
+      "defaultEntry": "apps/server/src/entries/game.ts",
+      "sourceOfTruth": "apps/server/src/game.config.ts",
+      "wireBoundary": "apps/server/src/bootstrapProcess.ts",
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        },
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/SERVER.md",
+        "docs/MMO.md"
+      ]
     }
   ],
   "defaultModules": [
@@ -601,6 +647,30 @@
       },
       "documentedIn": "docs/PLUGIN.md",
       "reason": "插件 pack/install/uninstall/check 命令，登记在插件机制设计基线的包格式与安装流程章节而非日常命令表"
+    },
+    {
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "start:lobby"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "start:lobby"
+      },
+      "reason": "PS 三进程入口；根命令直接转调，合体 dev 保持默认"
+    },
+    {
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "start:game"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "start:game"
+      },
+      "reason": "PS 三进程入口；根命令直接转调，合体 dev 保持默认"
     }
   ]
 }
