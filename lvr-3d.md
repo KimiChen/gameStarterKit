@@ -1,13 +1,14 @@
 # `lvr` kit 的 3D 场景管线 —— 需求文档
 
-> - 日期：2026-09-22。状态：**需求 v1.4（2026-09-22），未开工**；⛔ 本次仅修订文档，未实施任何 3D 能力、未冻结候选数字。
+> - 日期：2026-09-22。状态：**需求 v1.5（2026-09-22），未开工**；⛔ 本次仅修订文档，未实施任何 3D 能力、未冻结候选数字。
 > - 归属：本文是 [lvr.md](lvr.md) §9.1 拍板「走 B：自建 3D 管线，用 Cocos 的 3D 能力」之后拆出的独立需求，
 >   **由单独的人/单独的排期实现**，⛔ 不占 lvr.md §7 的 100–200 人月核心工程估算。
 > - 逆向源：`../sourceVersion/lvr-1.0.0/`（仓外，只读）。本文引用的类名与目录均为实测。
 > - **2026-09-19 v1.1（对照 Cocos Cyberpunk 校正）**：R1–R8 与 §4–§7 按 [docs/3d.md](docs/3d.md) v1.1 与 [docs/3D-ASSETS.md](docs/3D-ASSETS.md) 改为**消费方口径**（框架给舞台 / 租约 / 纯数学 / 机械件 / 画质分档 / 工具骨架，本文只留内容、shader、特效、数值与授权）。三份预算边界：框架 SC0–SC5（[docs/3D-PLAN.md](docs/3D-PLAN.md)）、lvr 3D 内容（本文）、lvr 核心工程（lvr.md §7）。
 > - **2026-09-19 v1.2**：随 3d.md SD12 / v1.3 对齐——运行时落点改 `apps/Cocos/assets/bundles/kit-lvr[-<map>]/3d/`（小数据表留 `resources/kits/lvr/3d/data/`）；主城 / 世界的 FGUI HUD 走框架 overlay 输入接缝（3d.md §3.3，SC1-B9），⛔ 自建输入仲裁。
-> - **2026-09-19 v1.3**：docs/3d.md **SD10 拍板 lvr 为首发小游戏 / WebGL1 消费方**——新增 §3 R0 平台目标：框架画质 low 档为 lvr 必达档，A1–A5 每阶段附 WebGL1 证据、A3 加微信开发者工具证据；渠道 SDK / 打包 / 审核仍按 lvr.md §9.3 不做。
-> - **2026-09-22 v1.4**：随框架 3D-41–3D-47 修订消费方契约：框架原始输入路由 / cancel、蒙皮 jointTexture 分批与 RGBA8 回退、UUID / 子资产依赖闭合、raw wall frame interval、预热后稳定内存基线、实际构建包体门及真实微信缓存证据。开发者工具证据仅作补充；⛔ 未实施能力、未勾完成、未冻结候选值。
+> - **2026-09-19 v1.3**：docs/3d.md **SD10 拍板 lvr 为首发小游戏 / WebGL1 消费方**——新增 §3 R0 平台目标：框架画质 low 档为 lvr 必达档，A1–A5 每阶段附 WebGL1 证据；渠道 SDK / 打包 / 审核仍按 lvr.md §9.3 不做。
+> - **2026-09-22 v1.4**：随框架 3D-41–3D-45、3D-47 修订消费方契约：框架原始输入路由 / cancel、蒙皮 jointTexture 分批与 RGBA8 回退、UUID / 子资产依赖闭合、raw wall frame interval、预热后稳定内存基线及真实微信缓存证据；⛔ 未实施能力、未勾完成、未冻结候选值。
+> - **2026-09-22 v1.5**：按当前任务范围收窄验收项，保留远程 bundle、WebGL1 目标与真实微信客户端缓存 / 退化证据；⛔ 仅文档调整，未实施能力、未冻结候选值、未勾完成。
 > - 治理：实施状态只在本文 §8 回写；⛔ 不进 plan-v5。
 > - **2026-09-19 提升**：本文的框架侧内容已提升为框架级设计 [docs/3d.md](docs/3d.md)（Stage3D 舞台 / AssetLease / `logic/scene3d` 纯数学 / 机械件 / 资产闸 / `tools/art3d`，阶段 SC0–SC5）；本文降为 **lvr 消费方需求**：§3 R1–R8 的框架侧落点见 docs/3d.md §1.2，§4 表中的框架约束以 docs/3d.md §2 为准，§5 A0 并入 SC0。实施状态：框架段在 docs/3d.md §10，lvr 接入仍在本文 §8。
 
@@ -107,9 +108,9 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 ### R0 平台目标（SD10 首发消费方）
 
 - **M** 首发目标平台 = **微信小游戏 / WebGL1**（docs/3d.md SD10，2026-09-19 拍板 lvr 为首发消费方）：lvr 3D 内容以框架画质 **low 档**为必达档（docs/3D-ASSETS.md §11：只 base 层、无实时阴影、特效并发与同屏单位按 low 行上限，数字 SC0-B4 后冻结）；medium / high 是增益，⛔ 任何 M 需求不得只在 WebGL2 下成立。
-- **M** 每阶段证据：A1–A5 除 Creator 预览证据外，各附一份 Chrome `--disable-webgl2` 的 `creator-preview --perf` 报告（标注实际 WebGL 版本、画质档与设备，帧率用 raw wall frame interval，见 §7）；A3 必须在**真实微信客户端**验远程 bundle 冷缓存下载，实际触发缓存写入失败并观察 LRU 淘汰 / 清理、重试、重新访问与退出重启后的命中 / 必要重下载；记录平台实际存储容量 / 限制、可复现触发步骤与真实错误，以及机型 / OS / 微信 / 基础库、构建与 bundle 版本、网络 / 命中证据。⛔ 假设引擎有可配置容量开关或以「接近满」替代失败分支覆盖。口径同 docs/3D-ASSETS.md §12 与框架 SC4-B3；A3 等其退出且须补 lvr 内容的同类证据，失败不得退出。开发者工具只作补充，不能替代真实客户端缓存实现。
-- **M** 体积：3D 资产全部走远程 bundle（SD12：`bundles/kit-lvr[-<map>]/`），首屏必需集合单独一个小 bundle；实际构建主包 / 单分包 / 全部分包及总发布包按 docs/3D-ASSETS.md **§15.2** 的口径与官方限额验收。限额来源 / 核验日期 / 适用版本 / 数值由 SC0-B4 核验填写，本轮不擅定数字；未填或超限不得通过。SC0 一并处理既有 `resources` 的内容过滤 / 远程策略，A3 再验最终 lvr 测试构建，⛔ 以源素材小于 64 MB 或构建成功替代合格包体。
-- 边界：渠道账号 / 登录 / 支付 / 广告 / 分享 SDK、渠道打包 / 审核 / 灰度仍按 lvr.md §9.3 ⛔ 不做；本条只要求「小游戏构建可跑、WebGL1 下 low 档达标」的技术证据。小游戏构建平台配置（构建面板 / 引擎模块 / 压缩预设）归框架 settings（SC0-B4 回填内置管线在小游戏构建的可用性与体积），lvr 提需求走 docs/3d.md。
+- **M** 每阶段证据：A1–A5 除 Creator 预览证据外，各附一份 Chrome `--disable-webgl2` 的 `creator-preview --perf` 报告（标注实际 WebGL 版本、画质档与设备，帧率用 raw wall frame interval，见 §7）；A3 必须在**真实微信客户端**验远程 bundle 冷缓存下载，实际触发缓存写入失败并观察 LRU 淘汰 / 清理、重试、重新访问与退出重启后的命中 / 必要重下载；记录平台实际存储容量 / 限制、可复现触发步骤与真实错误，以及机型 / OS / 微信 / 基础库、构建与 bundle 版本、网络 / 命中证据。⛔ 假设引擎有可配置容量开关或以「接近满」替代失败分支覆盖。口径同 docs/3D-ASSETS.md §12 与框架 SC4-B3；A3 等其退出且须补 lvr 内容的同类证据，失败不得退出。
+- **M** 资源部署：3D 资产全部走远程 bundle（SD12：`bundles/kit-lvr[-<map>]/`），首屏必需集合单独一个小 bundle。
+- 边界：渠道账号 / 登录 / 支付 / 广告 / 分享 SDK、渠道打包 / 审核 / 灰度仍按 lvr.md §9.3 ⛔ 不做；本条只要求「小游戏构建可跑、WebGL1 下 low 档达标」的技术证据。小游戏构建平台配置（构建面板 / 引擎模块 / 压缩预设）归框架 settings（SC0-B4 回填内置管线在小游戏构建的可用性），lvr 提需求走 docs/3d.md。
 
 ### R1 场景与相机
 
@@ -205,7 +206,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 | **A0 可行性 spike**（并入框架 SC0） | 用 UnityPy 从原作 bundle 取 **1 个建筑模型 + 1 套单位动画 + 1 张海面贴图**，在框架 SC0 的 CDP 探针里作第二份证据渲出来 | ⚠ **这是门**：Unity 材质/shader 不能自动转，若此步走不通需重估整条管线；框架接缝五项判据归 SC0 |
 | **A1 场景骨架**（← SC1–SC3） | 取 Stage3D 租约 + 海面 EffectAsset + 静态地表 + `cameraRig` / `lodBands` 常量 | 能在 `kind:"cocos"` 页里平移缩放，60fps（`creator-preview --perf`）；WebGL1 证据一份（R0） |
 | **A2 实体层**（← SC3） | `EntityPool` 两级档 + `chunkStreamer` + `assetPlan` + 19 种实体预制 / 离线 `lod_1` | 同屏 100 实体 60fps，进出视口引用归零；WebGL1 low 档按 3D-ASSETS §11 上限达标（R0） |
-| **A3 单位动画**（← SC4） | `SkinnedUnits`（预烘焙、jointTexture / 布局分批）+ 行军线简模 | 同屏 100 个动画单位 60fps（§7 原始帧间隔）；多 clip / 跨 atlas 正确，WebGL1 浮点 / RGBA8 与必要退化路径有证据，实时蒙皮禁 instancing；真实微信冷缓存 / 写入失败 / LRU / 重试 / 重启缓存及实际构建包体通过（R0；等 SC4-B3 门，开发者工具仅补充） |
+| **A3 单位动画**（← SC4） | `SkinnedUnits`（预烘焙、jointTexture / 布局分批）+ 行军线简模 | 同屏 100 个动画单位 60fps（§7 原始帧间隔）；多 clip / 跨 atlas 正确，WebGL1 浮点 / RGBA8 与必要退化路径有证据，实时蒙皮禁 instancing；真实微信冷缓存 / 写入失败 / LRU / 重试 / 重启缓存证据通过（R0；等 SC4-B3 门） |
 | **A4 主城**（← SC3、SC4） | 三档细节状态机（kit `logic/`）+ 建筑四态 + 建筑特效挂点表 + 细节层按画质档 | 主城三档切换无卡顿；low 档 details 层不加载（R3）且 WebGL1 证据一份（R0） |
 | **A5 特效与表演**（← SC4） | `Vfx` 池 + 20–30 个高频特效（每特效一目录）+ Spine 4.2 立绘 | 战斗表演可看；low 档特效并发上限内（R0） |
 
@@ -236,7 +237,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 - **Creator 真引擎预览证据**：截图 + `report.json` 落 `docs/evidence/creator-<date>/lvr-3d/`，console 为空
 - **性能实证**：同屏实体数 × 帧率，用 `node tools/creator-preview/run.mjs <lvr 剧本> --perf`；帧率与 p50 / p95 / max 来自相邻真实引擎帧的单调时钟原始时间戳差（raw wall frame interval），保留样本并对齐 draw call / 三角数，附 GFX 内存、画质档 / 设备 / 时钟单位与采样窗口。`director.root.frameTime` 仅作附加诊断；后台无效窗口重跑，前台卡顿不得剔除；⛔ `perf:client` 是 Node 无头探针，不测 GPU（3D-45）
 - **资源泄漏实证**：按 R8 的相同剧本预热后反复进出视口 / 切换场景 N 次，业务引用归零且 GFX 稳定值不持续增长；引擎高水位缓存的归属与预热后基线成文
-- **WebGL1 / 微信证据**（R0，SD10 首发消费方）：每阶段一份 `--disable-webgl2` 的 `--perf` 报告；A3 必须有真实微信客户端冷缓存 / 写入失败 / LRU / 重试 / 重启缓存证据及 docs/3D-ASSETS.md §15.2 实际构建包体通过记录，开发者工具仅补充；缺失或失败不得退出
+- **WebGL1 / 微信证据**（R0，SD10 首发消费方）：每阶段一份 `--disable-webgl2` 的 `--perf` 报告；A3 必须有真实微信客户端冷缓存 / 写入失败 / LRU / 重试 / 重启缓存证据；缺失或失败不得退出
 
 ---
 

@@ -410,7 +410,7 @@ kit 迁移**已发布只能追加、改一字节 sha256 fail-closed**，下面�
 **已拍板：走自建 3D 管线（用 Cocos 的 3D 能力），拆成独立需求文档 [lvr-3d.md](lvr-3d.md) 由单独排期实现。**
 ⚠ 因此 **§7 的 100–200 人月 ⛔ 不含 3D 管线**——它是一条独立预算。
 
-**2026-09-19 补拍（docs/3d.md SD10）**：lvr 是 3D 轨道的**首发小游戏 / WebGL1 消费方**——lvr 3D 内容以框架画质 low 档为必达档，A1–A5 每阶段附 WebGL1 证据、A3 加微信开发者工具证据（lvr-3d.md R0）；框架 SC4-B3（WebGL1 退化）是门，A3 等其退出。
+**2026-09-19 补拍（docs/3d.md SD10）**：lvr 是 3D 轨道的**首发小游戏 / WebGL1 消费方**——lvr 3D 内容以框架画质 low 档为必达档，A1–A5 每阶段附 WebGL1 证据（lvr-3d.md R0）；框架 SC4-B3（WebGL1 退化）是门，A3 等其退出。
 
 lvr-3d.md 里已登记的三条主要风险：shader ⛔ 不能自动转（海面 / GPU skinning 采样 / 阴影三处要手工重写）、
 Unity ParticleSystem ⛔ 不能转（265 个 vfxbaseres bundle 要逐个重建或替代）、

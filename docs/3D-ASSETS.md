@@ -1,6 +1,6 @@
 # 3D 素材使用方式、规范与原则（框架级）
 
-> - 日期：2026-09-22。状态：**规范 v1.4**（3D-PLAN 3D-41–3D-47 审阅修订），与 [3d.md](3d.md) v1.4 对齐；⛔ 本次仅修订文档，未实施任何 3D 能力、未冻结候选数字。
+> - 日期：2026-09-22。状态：**规范 v1.5**（3D-PLAN 3D-41–3D-45、3D-47 审阅修订），与 [3d.md](3d.md) v1.5 对齐；⛔ 本次仅修订文档，未实施任何 3D 能力、未冻结候选数字。
 > - 来历：对照 Cocos 官方 3D 演示项目 **Cocos Cyberpunk**（本机 `/Volumes/KimData/work/CocosCyberpunk`，仓外只读；Creator 3.8.4 工程，806 MB 资产，1,374 个模型、685 张图、259 个材质、262 个粒子系统）逐项实测，取其**做法**、⛔ 不取其**素材**（§14）；再对照本仓现状（`apps/Cocos` 3.8.8 工程、`resources/kits/<id>/` 所有权、`verify:sync` 的 `.meta` 闸、`tools/slg-maps/` 管线先例）落成本仓规则。
 > - 定位：素材侧唯一规范；机制侧（Stage3D / AssetLease / 纯数学 / 机械件）在 [3d.md](3d.md)，施工批次在 [3D-PLAN.md](3D-PLAN.md)，lvr 内容需求在 [lvr-3d.md](../lvr-3d.md)。三者冲突以本文为素材口径、以 3d.md 为机制口径。
 > - 治理：⛔ 不进 plan-v5；数字候选在 §15，SC0 后冻结；实施状态不在本文回写（在 3d.md §10）。修订登记见 §16。
@@ -24,7 +24,7 @@
 
 | 项 | Cyberpunk 做法（实测） | 本仓采纳 | 差异 / 理由 |
 | --- | --- | --- | --- |
-| 引擎版本 / 模块 | Creator 3.8.4；`engine.json` **逐项显式**勾选（ON：3d、skeletal-animation、particle、marionette、spine、light-probe、custom-pipeline、physics-physx…；OFF：terrain、tiled-map、dragon-bones、xr、legacy-pipeline…） | 采纳「显式清单」：SC0 把本仓 `engine.json`（今只有版本号 = 编辑器缺省）改为显式勾选并写进 `apps/Cocos/README.md` | 微信小游戏包体敏感；首版按 SD11 开启 `custom-pipeline` + `custom-pipeline-builtin-scripts` + `custom-pipeline-post-process`，关闭 `legacy-pipeline` 与 physics；⛔ 自研 pass |
+| 引擎版本 / 模块 | Creator 3.8.4；`engine.json` **逐项显式**勾选（ON：3d、skeletal-animation、particle、marionette、spine、light-probe、custom-pipeline、physics-physx…；OFF：terrain、tiled-map、dragon-bones、xr、legacy-pipeline…） | 采纳「显式清单」：SC0 把本仓 `engine.json`（今只有版本号 = 编辑器缺省）改为显式勾选并写进 `apps/Cocos/README.md` | 首版按 SD11 开启 `custom-pipeline` + `custom-pipeline-builtin-scripts` + `custom-pipeline-post-process`，关闭 `legacy-pipeline` 与 physics；⛔ 自研 pass |
 | 渲染管线 | `custom-pipeline` 扩展（GBuffer / 延迟光照 / TAA / FSR / bloom / 雾），`project.json` 指向自定义管线资产 | **引擎内置新管线**（`custom-pipeline` + `custom-pipeline-builtin-scripts` + `custom-pipeline-post-process`，引擎维护；3d.md SD11）；后处理只用其自带开关；⛔ 自研 pass | 演示项目的重点是自研管线，本仓的重点是 kit 能消费；WebGL1 / 小游戏下可用性 SC0 实测 |
 | 目录 | `assets/res`（静态引用，545 MB）vs `assets/resources`（动态加载，179 MB）；`scene-development/` 十个特性场景；`test/`；`LightFX/` 烘焙产物 | 本仓一切动态加载：小数据与框架灰盒在 `resources/`，3D 重资产**每包一个 bundle**（`apps/Cocos/assets/bundles/<class>-<id>/`，3d.md SD12），按包分命名空间（§2）；框架 `stage3d-dev.scene` + kit 验收场景 | 本仓没有「静态引用整场景」的形态，页面即入口 |
 | 场景组织 | `scene.scene` 是 8 节点骨架；城市全在 `resources/prefabs/scene-root.prefab`（2,881 个 MeshRenderer，分 `lights / mesh-root / meshes-no-culling`）+ `mesh-details.prefab`（336 个，`fullScene` 画质门控才加载）；`DelayActive` 分帧激活 | 采纳：Stage3D 租约 `root` 下挂 kit 的内容 prefab，分 **base / details** 两层，details 按画质档加载；`EntityPool` 每帧激活预算（§7） | 同构 |
@@ -177,10 +177,10 @@ Stage3D 租约 root
 | 持有 | 只经 `AssetLease.acquire(requests, { deadlineMs, signal })`；页面关闭先解除场景 / 全局 token 引用，再释放本页租约；池内 inactive 节点持有资产直到淘汰销毁，其他有效 token 不受影响；迟到完成仍 decRef |
 | 预载 | `data/preload.json` 目录清单（Cyberpunk `data-res-cache.json` 同法），在页面 `onOpen` 里一次 `acquire`，⛔ 全局常驻（Cyberpunk 的永不释放 ⛔ 不学） |
 | 分块 | 世界内容按 `chunkStreamer` 差分 + `assetPlan` 计划加载 / 延迟释放；进档只加载该档变体 |
-| bundle | **每包一个 bundle**（3d.md SD12）：`bundles/<class>-<id>/`，可按地图 / 场景细分；开发期本地、发布远程（小游戏主包 / 分包硬上限，SD10）；`AssetLease` 以「bundle 名 + 路径」寻址，`data/preload.json` 按 bundle 分组，首屏必需集合单独一个小 bundle；kit 代码零改动 |
+| bundle | **每包一个 bundle**（3d.md SD12）：`bundles/<class>-<id>/`，可按地图 / 场景细分；开发期本地、发布远程（SD12）；`AssetLease` 以「bundle 名 + 路径」寻址，`data/preload.json` 按 bundle 分组，首屏必需集合单独一个小 bundle；kit 代码零改动 |
 | 缓存诊断 | `--perf` 报告带 `memoryStatus.{bufferSize,textureSize}`、业务租约 / 节点计数；先预热该剧本的模型、clip 与特效，再以所有业务持有释放后的稳定值为基线，按相同剧本开关 20 次不得持续增长。引擎关节纹理 atlas / 内部池的高水位缓存可留存，但必须记录归属、预热范围与稳定值；业务引用须归零，⛔ 用「引擎缓存」解释未释放租约，⛔ 要求引擎缓存恢复首次加载前的冷启动值（3D-42） |
 | 性能计时 | 帧率与 p50 / p95 / max 用相邻真实引擎帧的单调时钟时间戳差（raw wall frame interval，保留原始样本），与该帧 draw call / 三角数对齐；`director.root.frameTime` 只能作附加诊断，⛔ 单独充当帧率证据。报告记录时钟 / 单位 / 帧号、前后台切换与样本有效性；后台限频等无效窗口重跑，前台卡顿不能过滤掉（3D-45） |
-| 微信持久缓存 | SC4-B3 与 lvr A3 必须使用**真实微信客户端**验远程 bundle 的冷缓存下载，随后实际触发缓存写入失败，观察失败后的 LRU 淘汰 / 清理、重试、重新访问与退出重启后的命中或必要重下载。记录平台实际存储容量 / 限制、可复现的填满或触发失败步骤及真实错误、机型 / OS / 微信 / 基础库版本、构建与 bundle 版本、网络请求与缓存命中证据；⛔ 假设存在某个引擎可配置容量开关，⛔ 仅「接近满」却未触发失败就算覆盖。要求失败恢复与重试按预期完成，否则不得退出；开发者工具只补充调试与截图，不能替代真实客户端缓存实现（3D-47） |
+| 微信持久缓存 | SC4-B3 与 lvr A3 必须使用**真实微信客户端**验远程 bundle 的冷缓存下载，随后实际触发缓存写入失败，观察失败后的 LRU 淘汰 / 清理、重试、重新访问与退出重启后的命中或必要重下载。记录平台实际存储容量 / 限制、可复现的填满或触发失败步骤及真实错误、机型 / OS / 微信 / 基础库版本、构建与 bundle 版本、网络请求与缓存命中证据；⛔ 假设存在某个引擎可配置容量开关，⛔ 仅「接近满」却未触发失败就算覆盖。要求失败恢复与重试按预期完成，否则不得退出（3D-47） |
 
 ## 13. 入库流程与验收
 
@@ -237,18 +237,6 @@ SC5-B1 工具验收还须执行离线简化：主模型 → `lod_1.glb / lod_2.g
 | 出档延迟释放 | 5 s | 本文 §7 |
 | 基线设备 | 麒麟 970 / 骁龙 835 / A10（Cyberpunk 基线）作下限候选 | SC0 实测 |
 
-### 15.2 微信实际构建包体门（3D-46；SC0-B4 核验后填写）
-
-本表与 §15.1 的源资产预算分别验收。SC0-B4 按当时适用的**微信官方渠道规范**登记来源 URL、核验日期、客户端 / 基础库 / 构建目标及限额数值与单位；明确平台无独立单分包上限时也须记录官方依据，⛔ 从源资产预算或旧版文档推定。当前仅定义测量与退出契约，未核验 / 冻结任何平台数值；字段未填或证据缺失不得退出 SC0。
-
-| 测量对象 | 实际构建测量范围 | 限额与依据（SC0-B4 待填） | 退出判定 |
-| --- | --- | --- | --- |
-| 主包 | 最终微信构建的主包代码、引擎、配置与本地资源；按官方统计口径列文件清单和字节数 | 当前官方主包上限、URL、核验日期、适用版本与单位 | 实测不得超限 |
-| 单个分包 | 按最终 `game.json` 的实际分包逐个统计并列出最大值；分包数为 0 时显式记录 | 当前单分包上限或「无独立上限」的官方依据、核验日期与适用版本 | 有上限时逐包不得超限；无上限仍计入总量 |
-| 全部分包 / 总发布包 | 分包汇总、主包与总发布包分别列值；总限额是否含主包、引擎插件如何计入按官方口径登记 | 当前总量上限、所含范围、URL、核验日期、适用版本与单位 | 按登记范围比较，超限失败 |
-
-SC0-B1/B4 必须覆盖**既有 `resources`**（含 slg / sgzzmap 等已安装包资源）和新增框架夹具：选定本次构建内容集合、过滤或远程资源方案并记录保留 / 排除清单，⛔ 仅把新增 3D bundle 设 remote 就认定主包合格；remote 目录不算本地分包，但其必要脚本 / 配置仍计入实际构建。SC1-B7 复验平台覆写后的产物，SC4-B3 与 lvr A3 用最终测试构建再验本表及 §12 真机缓存门。构建完成、记录体积或远程目录存在均不能代替「未超限」；超限须调整构建方案重跑。
-
 ## 16. 修订登记
 
 - 2026-09-19 规范 v1：对照 Cocos Cyberpunk 实测（§1）成文；与 3d.md v1.1、3D-PLAN.md、lvr-3d.md v1.1 同批。
@@ -256,4 +244,5 @@ SC0-B1/B4 必须覆盖**既有 `resources`**（含 slg / sgzzmap 等已安装包
 - 2026-09-19 v1.2：审阅修订：统一 SD11 开关与 SD12 资产目录 / 所有权口径；GLB 图片必须外提、跨包与外部 buffer 依赖拒绝；§13 对齐完整资产闸、子 `.meta` / 压缩 / 授权覆盖 / 预算及反例；补 SC0 烘焙 apply → 独立预制动态加载证据与 SC5 离线 LOD 退出。⛔ 仅修订规范，未实施能力、未冻结 §15 数字。
 - 2026-09-19 v1.3：3D-38 glb 外部图片导入验证项（§3）、3D-40 细分 bundle 后缀正则（§2.1）。
 - 2026-09-19 SD10 补拍：low 档首发消费方 = lvr（§11）。
-- 2026-09-22 v1.4：按 3D-PLAN 3D-41–3D-47 同步素材相关契约：蒙皮按 jointTexture / 布局分批与 RGBA8 回退、实时蒙皮禁 instancing；UUID / 子资产引用闭合与包归属、内置资源 allowlist 和干净安装反例；raw wall frame interval、预热后稳定内存基线；实际构建包体表与既有 resources 策略；真实微信冷缓存 / 写入失败 / LRU / 重试 / 重启缓存退出门。⛔ 本次仅文档修订，未实施能力、未冻结候选值、未勾阶段完成。
+- 2026-09-22 v1.4：按 3D-PLAN 3D-41–3D-45、3D-47 同步素材相关契约：蒙皮按 jointTexture / 布局分批与 RGBA8 回退、实时蒙皮禁 instancing；UUID / 子资产引用闭合与包归属、内置资源 allowlist 和干净安装反例；raw wall frame interval、预热后稳定内存基线；真实微信冷缓存 / 写入失败 / LRU / 重试 / 重启缓存退出门。⛔ 本次仅文档修订，未实施能力、未冻结候选值、未勾阶段完成。
+- 2026-09-22 v1.5：按当前任务范围收窄验收项，保留源资产与运行时预算、WebGL1 目标及真实微信缓存证据；⛔ 仅文档调整，未实施能力、未冻结候选值、未勾阶段完成。
