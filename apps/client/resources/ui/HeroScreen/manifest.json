@@ -181,7 +181,8 @@
       "file": "assets/progress_track.png",
       "width": 124,
       "height": 26,
-      "sha256": "76650d99ab06823687b848a1165cebde3e1db68b99a9b1d0c76b62776e45e116"
+      "sha256": "76650d99ab06823687b848a1165cebde3e1db68b99a9b1d0c76b62776e45e116",
+      "nineSlice": [13, 0, 13, 0]
     },
     {
       "id": "ui/hero/progress-fill",
