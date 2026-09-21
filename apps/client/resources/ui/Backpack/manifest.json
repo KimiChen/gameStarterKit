@@ -1,23 +1,135 @@
 {
   "version": 1,
   "assets": [
-    {"id":"ui/backpack/empty","kind":"image","file":"assets/bag_empty.png","width":108,"height":116,"sha256":"088ec07120c4b1dee35b399213fbced39187e78d9259136fab2c8ae50a19bf28"},
-    {"id":"ui/backpack/slider-track","kind":"image","file":"assets/bag_slider_track.png","width":32,"height":44,"sha256":"f394c51f908095167f209e9e6fd757d1b506244e8eb1bfbb941b858a846c22b4","nineSlice":[14,0,14,0]},
-    {"id":"ui/backpack/slider-fill","kind":"image","file":"assets/bag_slider_fill.png","width":32,"height":40,"sha256":"081fdd9527df9a90d6f59ac7c0508808170e417c2d01c9d1d582444ddd087720","nineSlice":[14,0,14,0]},
-    {"id":"ui/backpack/slider-handle","kind":"image","file":"assets/bag_slider_handle.png","width":32,"height":38,"sha256":"88ecfbb1866412483e145899cf0480f37d9338752d5c2510e6f1043c827dcae0","nineSlice":[14,16,14,18]},
-    {"id":"ui/backpack/quantity-bg","kind":"image","file":"assets/bag_quantity_bg.png","width":36,"height":36,"sha256":"7ad667095cf10dac296ebdfad52764351379215aec2837368aadc3325d04ac10","nineSlice":[16,16,16,16]},
-    {"id":"ui/backpack/item-green","kind":"image","file":"assets/bag_item_green.png","width":68,"height":68,"sha256":"0801e8e3bce9eb435d555b0ec62902be48c6b1a24d5c121975cd8f3f96936947","nineSlice":[32,28,32,36]},
-    {"id":"ui/backpack/item-blue","kind":"image","file":"assets/bag_item_blue.png","width":68,"height":68,"sha256":"772e29217cefab74b7f68533f2e552cc44a89defdbe7388517c21e8d298ef679","nineSlice":[32,28,32,36]},
-    {"id":"ui/backpack/item-purple","kind":"image","file":"assets/bag_item_purple.png","width":68,"height":68,"sha256":"33a32e7bc6b3208cfef55531abef1c364fe3acbfb698dcece3d8e59321dfd761","nineSlice":[32,28,32,36]},
-    {"id":"ui/backpack/item-orange","kind":"image","file":"assets/bag_item_orange.png","width":68,"height":68,"sha256":"15d36cf6fad92d314fdf05f4b666cfe2af82536b0eb18813c5123e03067a90e8","nineSlice":[32,28,32,36]},
-    {"id":"ui/backpack/item-red","kind":"image","file":"assets/bag_item_red.png","width":68,"height":68,"sha256":"ac262c5c2a71c2888d7d2723fe62abd11c8d8822aa731c2840474e958e0a8fe1","nineSlice":[32,28,32,36]},
-    {"id":"ui/backpack/diamond","kind":"image","file":"assets/bag_diamond.png","width":129,"height":107,"sha256":"ff5d72c99052558f2361daeb6758033566b6da43271866bc3a6f78085e8febfc"},
-    {"id":"ui/backpack/detail-count-bg","kind":"image","file":"assets/bag_detail_count_bg.png","width":92,"height":40,"sha256":"0b90de8b1c35c54c7ac8365474fa14c9e2f57e52626c4f891bde4adfd979bb57","nineSlice":[32,0,56,0]},
-    {"id":"ui/backpack/selection","kind":"image","file":"assets/bag_selection.png","width":116,"height":124,"sha256":"b19e318489a4fdc0ab586ca8801567f9f7e4b9bb5f20bf0e8a7d984e65707bd3","nineSlice":[56,60,56,60]},
-    {"id":"ui/backpack/button-minus","kind":"image","file":"assets/bag_button_minus.png","width":76,"height":85,"sha256":"70c9b195bc464e5206c6b62f266955a1b6cca5de66619a1cfaa5b2b68b3fba3d"},
-    {"id":"ui/backpack/button-plus","kind":"image","file":"assets/bag_button_plus.png","width":76,"height":85,"sha256":"d90a7efcd865bb72b254ea40cc9e5d52c340a78e6b0a50480c3af041052b3b81"},
-    {"id":"ui/backpack/resource-bg","kind":"image","file":"assets/bag_resource_bg.png","width":40,"height":32,"sha256":"c1b9c7455d09abeb1846a60385429b57413ff78655f5f5900f9808a40c027338","nineSlice":[18,0,18,0]},
-    {"id":"ui/backpack/resource-diamond","kind":"image","file":"assets/bag_resource_diamond.png","width":37,"height":31,"sha256":"8d031fc7837210c145772fddba88d8eff96df7de6995876a42f8a52df2e248de"},
-    {"id":"ui/backpack/resource-plus","kind":"image","file":"assets/bag_resource_plus.png","width":20,"height":21,"sha256":"f822c53b63f59da10573e2a2d041ae405bb1fedc7af7cf190a412e9075e5762d"}
+    {
+      "id": "ui/backpack/empty",
+      "kind": "image",
+      "file": "assets/bag_empty.png",
+      "width": 108,
+      "height": 116,
+      "sha256": "088ec07120c4b1dee35b399213fbced39187e78d9259136fab2c8ae50a19bf28"
+    },
+    {
+      "id": "ui/backpack/slider-track",
+      "kind": "image",
+      "file": "assets/bag_slider_track.png",
+      "width": 32,
+      "height": 44,
+      "sha256": "f394c51f908095167f209e9e6fd757d1b506244e8eb1bfbb941b858a846c22b4",
+      "nineSlice": [
+        14,
+        0,
+        14,
+        0
+      ]
+    },
+    {
+      "id": "ui/backpack/slider-fill",
+      "kind": "image",
+      "file": "assets/bag_slider_fill.png",
+      "width": 32,
+      "height": 40,
+      "sha256": "081fdd9527df9a90d6f59ac7c0508808170e417c2d01c9d1d582444ddd087720",
+      "nineSlice": [
+        14,
+        0,
+        14,
+        0
+      ]
+    },
+    {
+      "id": "ui/backpack/slider-handle",
+      "kind": "image",
+      "file": "assets/bag_slider_handle.png",
+      "width": 32,
+      "height": 38,
+      "sha256": "88ecfbb1866412483e145899cf0480f37d9338752d5c2510e6f1043c827dcae0",
+      "nineSlice": [
+        14,
+        16,
+        14,
+        18
+      ]
+    },
+    {
+      "id": "ui/backpack/quantity-bg",
+      "kind": "image",
+      "file": "assets/bag_quantity_bg.png",
+      "width": 36,
+      "height": 36,
+      "sha256": "7ad667095cf10dac296ebdfad52764351379215aec2837368aadc3325d04ac10",
+      "nineSlice": [
+        16,
+        16,
+        16,
+        16
+      ]
+    },
+    {
+      "id": "ui/backpack/detail-count-bg",
+      "kind": "image",
+      "file": "assets/bag_detail_count_bg.png",
+      "width": 92,
+      "height": 40,
+      "sha256": "0b90de8b1c35c54c7ac8365474fa14c9e2f57e52626c4f891bde4adfd979bb57",
+      "nineSlice": [
+        32,
+        0,
+        56,
+        0
+      ]
+    },
+    {
+      "id": "ui/backpack/selection",
+      "kind": "image",
+      "file": "assets/bag_selection.png",
+      "width": 116,
+      "height": 124,
+      "sha256": "b19e318489a4fdc0ab586ca8801567f9f7e4b9bb5f20bf0e8a7d984e65707bd3",
+      "nineSlice": [
+        56,
+        60,
+        56,
+        60
+      ]
+    },
+    {
+      "id": "ui/backpack/button-minus",
+      "kind": "image",
+      "file": "assets/bag_button_minus.png",
+      "width": 76,
+      "height": 85,
+      "sha256": "70c9b195bc464e5206c6b62f266955a1b6cca5de66619a1cfaa5b2b68b3fba3d"
+    },
+    {
+      "id": "ui/backpack/button-plus",
+      "kind": "image",
+      "file": "assets/bag_button_plus.png",
+      "width": 76,
+      "height": 85,
+      "sha256": "d90a7efcd865bb72b254ea40cc9e5d52c340a78e6b0a50480c3af041052b3b81"
+    },
+    {
+      "id": "ui/backpack/resource-bg",
+      "kind": "image",
+      "file": "assets/bag_resource_bg.png",
+      "width": 40,
+      "height": 32,
+      "sha256": "c1b9c7455d09abeb1846a60385429b57413ff78655f5f5900f9808a40c027338",
+      "nineSlice": [
+        18,
+        0,
+        18,
+        0
+      ]
+    },
+    {
+      "id": "ui/backpack/resource-plus",
+      "kind": "image",
+      "file": "assets/bag_resource_plus.png",
+      "width": 20,
+      "height": 21,
+      "sha256": "f822c53b63f59da10573e2a2d041ae405bb1fedc7af7cf190a412e9075e5762d"
+    }
   ]
 }

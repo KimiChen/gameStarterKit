@@ -3,6 +3,60 @@ import { fontRef, imageRef, type ImageRef } from '../../../kits/uniflex/api/core
 
 export type ItemQuality = 'green' | 'blue' | 'purple' | 'orange' | 'red';
 
+export type ItemConfigQuality = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export type ItemConfigIcon = 'egg' | 'meat' | 'book' | 'scroll' | 'gem';
+
+/** Client projection of the item.json5 contract. Keep item art IDs in this single table. */
+export interface ItemConfig {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string;
+    readonly icon: ItemConfigIcon;
+    readonly quality: ItemConfigQuality;
+}
+
+const ITEM_CONFIG: Readonly<Record<string, ItemConfig>> = {
+    cube: { id: 'cube', name: '秘能立方', description: '蕴含稳定魔力的合成核心。', icon: 'book', quality: 5 },
+    axe: { id: 'axe', name: '霜风战斧', description: '可用于强化英雄装备。', icon: 'scroll', quality: 4 },
+    crate: { id: 'crate', name: '联盟补给箱', description: '每周联盟商店可兑换的物资。', icon: 'book', quality: 5 },
+    helm: { id: 'helm', name: '勇士盔', description: '可用于强化英雄装备。', icon: 'meat', quality: 5 },
+    'book-blue': { id: 'book-blue', name: '秘典', description: '提升英雄技能的读物。', icon: 'book', quality: 3 },
+    'book-orange': { id: 'book-orange', name: '秘典', description: '提升英雄技能的读物。', icon: 'book', quality: 5 },
+    'scroll-red': { id: 'scroll-red', name: '卷轴', description: '联盟科技所需的研究卷轴。', icon: 'scroll', quality: 6 },
+    egg: { id: 'egg', name: '火蛋', description: '可在商店兑换的稀有孵化材料。', icon: 'egg', quality: 6 },
+    meat: { id: 'meat', name: '烤肉', description: '联盟补给用的食材。', icon: 'meat', quality: 5 },
+    book: { id: 'book', name: '秘典', description: '提升英雄技能的读物。', icon: 'book', quality: 4 },
+    scroll: { id: 'scroll', name: '卷轴', description: '联盟科技所需的研究卷轴。', icon: 'scroll', quality: 4 },
+    gem: { id: 'gem', name: '高级钻石', description: '可以购买好多东西', icon: 'gem', quality: 3 },
+};
+
+export function getItemConfig(itemId: string): ItemConfig {
+    const item = ITEM_CONFIG[itemId];
+    if (!item) throw new Error(`Unknown item id: ${itemId}`);
+    return item;
+}
+
+export function itemQuality(itemId: string): ItemQuality {
+    switch (getItemConfig(itemId).quality) {
+        case 2: return 'green';
+        case 3: return 'blue';
+        case 4: return 'purple';
+        case 5: return 'orange';
+        case 6: return 'red';
+        default: throw new Error(`Missing quality artwork for item: ${itemId}`);
+    }
+}
+
+export function itemIcon(itemId: string) {
+    switch (getItemConfig(itemId).icon) {
+        case 'egg': return imageRef('ui/shop/item-egg');
+        case 'meat': return imageRef('ui/shop/item-meat');
+        case 'book': return imageRef('ui/shop/item-book');
+        case 'scroll': return imageRef('ui/shop/item-scroll');
+        case 'gem': return imageRef('ui/shop/getitem-icon');
+    }
+}
+
 export interface ItemSlotProps {
     readonly left: number;
     readonly top: number;
@@ -16,16 +70,11 @@ export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
     const left = p.left;
     const top = p.top;
     const quality = p.quality;
-    const frameGreen = imageRef('ui/backpack/item-green');
-    const frameBlue = imageRef('ui/backpack/item-blue');
-    const framePurple = imageRef('ui/backpack/item-purple');
-    const frameOrange = imageRef('ui/backpack/item-orange');
-    const frameRed = imageRef('ui/backpack/item-red');
-    const frame = quality === 'red' ? frameRed
-        : quality === 'orange' ? frameOrange
-        : quality === 'purple' ? framePurple
-        : quality === 'blue' ? frameBlue
-        : frameGreen;
+    const frame = quality === 'red' ? imageRef('ui/backpack/item-red')
+        : quality === 'orange' ? imageRef('ui/backpack/item-orange')
+        : quality === 'purple' ? imageRef('ui/backpack/item-purple')
+        : quality === 'blue' ? imageRef('ui/backpack/item-blue')
+        : imageRef('ui/backpack/item-green');
     const count = p.count ?? '';
     const showCount = count !== '';
     const showIcon = Boolean(p.icon);

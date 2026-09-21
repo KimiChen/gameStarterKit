@@ -1,23 +1,19 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ItemSlot } from '../../../gamecomponents/item/ItemSlot';
+import { itemIcon, itemQuality, ItemSlot } from '../../../gamecomponents/item/ItemSlot';
 
-export type ShopQuality = 'red' | 'blue' | 'purple' | 'orange';
-export type ShopIcon = 'egg' | 'meat' | 'book' | 'scroll' | 'gem';
 export type ShopCurrency = 'gem' | 'medal';
 
 export interface ShopGoods {
     readonly id: string;
-    readonly name: string;
-    readonly description: string;
-    readonly icon: ShopIcon;
-    readonly quality: ShopQuality;
+    readonly itemId: string;
     readonly owned: string;
     readonly price: string;
     readonly unitPrice: number;
     readonly currency: ShopCurrency;
     readonly width: number;
     readonly height: number;
+    readonly max?: number;
     readonly stock?: string;
     readonly discount?: string;
     readonly lock?: string;
@@ -32,18 +28,8 @@ export const ShopCard = defineComponent<ShopCardProps>((p) => {
     const goods = p.goods;
     const width = goods.width;
     const height = goods.height;
-    const icon = goods.icon;
-    const isEgg = icon === 'egg';
-    const isMeat = icon === 'meat';
-    const isBook = icon === 'book';
-    const isScroll = icon === 'scroll';
-    const eggIcon = imageRef('ui/shop/item-egg');
-    const meatIcon = imageRef('ui/shop/item-meat');
-    const bookIcon = imageRef('ui/shop/item-book');
-    const scrollIcon = imageRef('ui/shop/item-scroll');
-    const gemIcon = imageRef('ui/shop/getitem-icon');
-    const itemIcon = isEgg ? eggIcon : isMeat ? meatIcon : isBook ? bookIcon : isScroll ? scrollIcon : gemIcon;
-    const quality = goods.quality;
+    const icon = itemIcon(goods.itemId);
+    const quality = itemQuality(goods.itemId);
     const owned = goods.owned;
     const locked = goods.lock != null && goods.lock !== '';
     const buyable = !locked;
@@ -70,7 +56,7 @@ export const ShopCard = defineComponent<ShopCardProps>((p) => {
                 style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }} />
             <image source={imageRef('ui/shop/card-buybar')}
                 style={{ position: 'absolute', left: 0, top: buybarTop, width: width, height: buybarHeight, sizeMode: 'sliced' }} />
-            <ItemSlot left={24} top={25} quality={quality} icon={itemIcon} count={owned} />
+            <ItemSlot left={24} top={25} quality={quality} icon={icon} count={owned} />
             <text visible={hasStock} value={stock}
                 style={{ position: 'absolute', left: 20, top: 188, width: 190, height: 36,
                     font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true,

@@ -28,92 +28,85 @@ const CARD_H = 302;
 
 const goods = (
     id: string,
-    name: string,
-    description: string,
-    icon: ShopGoods['icon'],
-    quality: ShopGoods['quality'],
+    itemId: string,
     owned: string,
     price: string,
     unitPrice: number,
     currency: ShopGoods['currency'],
     width: number,
     height: number,
-    extra?: Pick<ShopGoods, 'stock' | 'discount' | 'lock'>,
+    extra?: Pick<ShopGoods, 'max' | 'stock' | 'discount' | 'lock'>,
 ): ShopGoods => ({
-    id, name, description, icon, quality, owned, price, unitPrice, currency, width, height,
-    stock: extra?.stock, discount: extra?.discount, lock: extra?.lock,
+    id, itemId, owned, price, unitPrice, currency, width, height,
+    max: extra?.max, stock: extra?.stock, discount: extra?.discount, lock: extra?.lock,
 });
 
 const defaultVip: readonly ShopGoods[] = [
-    goods('vip-egg', '火蛋', '可在商店兑换的稀有孵化材料。', 'egg', 'red', '99', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-egg', 'egg', '99', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '100/200', discount: '-60%' }),
-    goods('vip-cube', '秘能立方', '蕴含稳定魔力的合成核心。', 'book', 'orange', '99', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-cube', 'cube', '99', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '100/200', discount: '-60%' }),
-    goods('vip-axe', '霜风战斧', '可用于强化英雄装备。', 'scroll', 'purple', '99', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-axe', 'axe', '99', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '100/200', discount: '-60%' }),
-    goods('vip-gem-1', '高级钻石', '可以购买好多东西', 'gem', 'blue', '99', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-gem-1', 'gem', '99', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '5/5', discount: '-60%', lock: 'VIP1解锁' }),
-    goods('vip-gem-2', '高级钻石', '可以购买好多东西', 'gem', 'blue', '99', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-gem-2', 'gem', '99', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '5/5', discount: '-60%', lock: 'VIP3解锁' }),
-    goods('vip-gem-3', '高级钻石', '可以购买好多东西', 'gem', 'blue', '99', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-gem-3', 'gem', '99', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '5/5', discount: '-60%', lock: 'VIP5解锁' }),
-    goods('vip-egg-2', '火蛋', '可在商店兑换的稀有孵化材料。', 'egg', 'red', '64', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-egg-2', 'egg', '64', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '80/200', discount: '-40%' }),
-    goods('vip-meat', '烤肉', '联盟补给用的食材。', 'meat', 'orange', '32', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-meat', 'meat', '32', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '12/50', discount: '-20%' }),
-    goods('vip-book', '秘典', '提升英雄技能的读物。', 'book', 'purple', '8', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-book', 'book', '8', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '4/10' }),
-    goods('vip-scroll-2', '卷轴', '联盟科技所需的研究卷轴。', 'scroll', 'red', '15', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-scroll-2', 'scroll-red', '15', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '9/30', discount: '-30%' }),
-    goods('vip-meat-2', '烤肉', '联盟补给用的食材。', 'meat', 'orange', '21', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-meat-2', 'meat', '21', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '10/40' }),
-    goods('vip-egg-3', '火蛋', '可在商店兑换的稀有孵化材料。', 'egg', 'red', '5', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('vip-egg-3', 'egg', '5', '20', 20, 'gem', CARD_W, CARD_H,
         { stock: '1/10', discount: '-50%' }),
 ];
 
 const defaultAlliance: readonly ShopGoods[] = [
-    goods('ally-crate', '联盟补给箱', '每周联盟商店可兑换的物资。', 'book', 'orange', '99', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-crate', 'crate', '99', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '100/200' }),
-    goods('ally-meat-1', '烤肉', '联盟补给用的食材。', 'meat', 'orange', '99', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-meat-1', 'meat', '99', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '100/200' }),
-    goods('ally-meat-2', '烤肉', '联盟补给用的食材。', 'meat', 'orange', '99', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-meat-2', 'meat', '99', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '100/200' }),
-    goods('ally-egg', '火蛋', '可在商店兑换的稀有孵化材料。', 'egg', 'red', '18', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-egg', 'egg', '18', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '6/20' }),
-    goods('ally-scroll', '卷轴', '联盟科技所需的研究卷轴。', 'scroll', 'purple', '11', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-scroll', 'scroll', '11', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '3/15' }),
-    goods('ally-book', '秘典', '提升英雄技能的读物。', 'book', 'blue', '7', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-book', 'book-blue', '7', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '2/10' }),
-    goods('ally-meat-3', '烤肉', '联盟补给用的食材。', 'meat', 'orange', '14', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-meat-3', 'meat', '14', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '8/40' }),
-    goods('ally-scroll-2', '卷轴', '联盟科技所需的研究卷轴。', 'scroll', 'purple', '6', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-scroll-2', 'scroll', '6', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '4/12' }),
-    goods('ally-egg-2', '火蛋', '可在商店兑换的稀有孵化材料。', 'egg', 'red', '3', '20', 20, 'medal', CARD_W, CARD_H,
+    goods('ally-egg-2', 'egg', '3', '20', 20, 'medal', CARD_W, CARD_H,
         { stock: '1/8' }),
 ];
 
 const defaultGem: readonly ShopGoods[] = [
-    goods('gem-book', '秘典', '提升英雄技能的读物。', 'book', 'orange', '99', '20', 20, 'gem', CARD_W, CARD_H),
-    goods('gem-helm', '勇士盔', '可用于强化英雄装备。', 'meat', 'orange', '99', '20', 20, 'gem', CARD_W, CARD_H),
-    goods('gem-scroll', '卷轴', '联盟科技所需的研究卷轴。', 'scroll', 'purple', '99', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('gem-book', 'book-orange', '99', '20', 20, 'gem', CARD_W, CARD_H),
+    goods('gem-helm', 'helm', '99', '20', 20, 'gem', CARD_W, CARD_H),
+    goods('gem-scroll', 'scroll', '99', '20', 20, 'gem', CARD_W, CARD_H,
         { discount: '500' }),
-    goods('gem-egg', '火蛋', '可在商店兑换的稀有孵化材料。', 'egg', 'red', '40', '20', 20, 'gem', CARD_W, CARD_H),
-    goods('gem-meat', '烤肉', '联盟补给用的食材。', 'meat', 'orange', '22', '20', 20, 'gem', CARD_W, CARD_H),
-    goods('gem-book-2', '秘典', '提升英雄技能的读物。', 'book', 'blue', '9', '20', 20, 'gem', CARD_W, CARD_H),
-    goods('gem-scroll-2', '卷轴', '联盟科技所需的研究卷轴。', 'scroll', 'purple', '5', '20', 20, 'gem', CARD_W, CARD_H,
+    goods('gem-egg', 'egg', '40', '20', 20, 'gem', CARD_W, CARD_H),
+    goods('gem-meat', 'meat', '22', '20', 20, 'gem', CARD_W, CARD_H),
+    goods('gem-book-2', 'book-blue', '9', '20', 20, 'gem', CARD_W, CARD_H),
+    goods('gem-scroll-2', 'scroll', '5', '20', 20, 'gem', CARD_W, CARD_H,
         { discount: '200' }),
-    goods('gem-egg-2', '火蛋', '可在商店兑换的稀有孵化材料。', 'egg', 'red', '16', '20', 20, 'gem', CARD_W, CARD_H),
-    goods('gem-meat-2', '烤肉', '联盟补给用的食材。', 'meat', 'orange', '11', '20', 20, 'gem', CARD_W, CARD_H),
+    goods('gem-egg-2', 'egg', '16', '20', 20, 'gem', CARD_W, CARD_H),
+    goods('gem-meat-2', 'meat', '11', '20', 20, 'gem', CARD_W, CARD_H),
 ];
 
 export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
     const [tab, setTab] = useState<ShopTab>(p.tab ?? 'vip');
     const [buyOpen, setBuyOpen] = useState(false);
-    const [buyId, setBuyId] = useState('');
-    const [buyName, setBuyName] = useState('');
-    const [buyDesc, setBuyDesc] = useState('');
-    const [buyOwned, setBuyOwned] = useState('99');
-    const [buyPrice, setBuyPrice] = useState(20);
+    const [buyGoods, setBuyGoods] = useState<ShopGoods | null>(null);
     const vipGoods = p.vipGoods ?? defaultVip;
     const allianceGoods = p.allianceGoods ?? defaultAlliance;
     const gemGoods = p.gemGoods ?? defaultGem;
@@ -155,11 +148,7 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
             p.onAction?.(`locked:${item.id}`);
             return;
         }
-        setBuyId(item.id);
-        setBuyName(item.name);
-        setBuyDesc(item.description);
-        setBuyOwned(item.owned);
-        setBuyPrice(item.unitPrice);
+        setBuyGoods(item);
         setBuyOpen(true);
         p.onAction?.(`buy:${item.id}`);
     };
@@ -217,10 +206,11 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
                     style={{ width: 154, height: 77 }} />
             </view>
 
-            <ShopGetItemPanel visible={buyOpen} name={buyName} description={buyDesc}
-                owned={buyOwned} unitPrice={buyPrice} onClose={closeBuy}
+            <ShopGetItemPanel visible={buyOpen} itemId={buyGoods?.itemId}
+                currency={buyGoods?.currency}
+                owned={buyGoods?.owned} unitPrice={buyGoods?.unitPrice} max={buyGoods?.max} onClose={closeBuy}
                 onBuy={(quantity) => {
-                    p.onAction?.(`confirm_buy:${buyId}:${quantity}`);
+                    p.onAction?.(`confirm_buy:${buyGoods?.id}:${quantity}`);
                     closeBuy();
                 }} />
         </view>

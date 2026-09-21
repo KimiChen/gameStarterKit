@@ -7,7 +7,8 @@ export const ShopGetItem = defineView<ShopGetItemParams | void>({ zIndex: 'windo
     const params = context.params ?? {};
     return (
         <view name="ShopGetItemPage" style={{ width: 750, height: 1624 }}>
-            <ShopGetItemPanel title={params.title} name={params.name} description={params.description}
+            <ShopGetItemPanel title={params.title}
+                itemId={params.itemId} currency={params.currency}
                 owned={params.owned} quantity={params.quantity} max={params.max}
                 unitPrice={params.unitPrice} onClose={params.onClose} onChange={params.onChange}
                 onBuy={params.onBuy} />
