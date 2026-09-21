@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPlateMesh, sgzzGridEdgePolys,
-    sgzzPainterCompare, type SgzzQuadInput,
+    SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPlateMesh, sgzzBorderStripPoly,
+    sgzzGridEdgePolys, sgzzPainterCompare, type SgzzQuadInput,
 } from "../src/kits/sgzzmap/logic/sgzzMesh";
 import {
     SGZZ_PLANNED_LAYERS, sgzzLayerVisible, sgzzVisibleLayers,
@@ -197,4 +197,35 @@ test("★ 层表：未实现的层恒不可见（⛔ 不许门控说该建而渲
     assert.equal(sgzzLayerVisible("grid", 1), true);
     assert.equal(sgzzLayerVisible("grid", 2), false);
     assert.ok(sgzzVisibleLayers(0).includes("grid"));
+});
+
+test("★ 描边是六条边条，⛔ 不是把整格重涂六遍", () => {
+    const rgba = [1, 0.878, 0.467, 0.85] as const;
+    const c = sgzzGrid2Pos(700, 700);
+    const inside = (x: number, y: number) =>
+        Math.abs(x - c.x) / SGZZ_TILE_HALF_W + Math.abs(y - c.y) / SGZZ_TILE_HALF_H;
+
+    const seen = new Set<string>();
+    for (let dir = 1; dir <= 6; dir += 1) {
+        const poly = sgzzBorderStripPoly(700, 700, dir, 1.5, rgba);
+        assert.ok(poly, `resDir ${dir} 必须出条`);
+        const mid = [
+            (poly!.points[0][0] + poly!.points[2][0]) / 2,
+            (poly!.points[0][1] + poly!.points[2][1]) / 2,
+        ];
+        // ① 落在格内、且贴着内缘（⛔ 不是盖住整格，也⛔不是跑到格外）
+        const depth = inside(mid[0], mid[1]);
+        assert.ok(depth > 0.75 && depth < 1.0, `resDir ${dir} 的边条该贴内缘，实际深度 ${depth.toFixed(2)}`);
+        // ② 六向互不重合
+        const key = mid.map((v) => Math.round(v * 100)).join(",");
+        assert.equal(seen.has(key), false, `resDir ${dir} 与别的方向重合了`);
+        seen.add(key);
+        // ③ 面积远小于整格（整格 = 2·TW·TH）
+        const w = Math.hypot(poly!.points[0][0] - poly!.points[3][0], poly!.points[0][1] - poly!.points[3][1]);
+        const h = Math.hypot(poly!.points[0][0] - poly!.points[1][0], poly!.points[0][1] - poly!.points[1][1]);
+        assert.ok(w * h < 2 * SGZZ_TILE_HALF_W * SGZZ_TILE_HALF_H * 0.25,
+            `resDir ${dir} 的边条太大了（${(w * h).toFixed(0)}），像在铺整格`);
+    }
+    assert.equal(seen.size, 6);
+    assert.equal(sgzzBorderStripPoly(700, 700, 7, 1.5, rgba), null, "方向号越界回 null");
 });

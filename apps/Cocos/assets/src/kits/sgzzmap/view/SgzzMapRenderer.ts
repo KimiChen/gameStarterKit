@@ -11,8 +11,8 @@ import {
     SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzGrid2Pos,
 } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 import {
-    SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPolyMesh, sgzzGridEdgePolys,
-    type SgzzQuadInput,
+    SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPolyMesh, sgzzBorderStripPoly,
+    sgzzGridEdgePolys, type SgzzQuadInput,
 } from "../logic/sgzzMesh";
 import { sgzzLayerVisible } from "../logic/sgzzLayers";
 import { sgzzCompensate, sgzzStateColor, sgzzTerrainColor, type SgzzRgba } from "../logic/sgzzPalette";
@@ -69,15 +69,21 @@ export class SgzzMapRenderer {
         this.terrain = this.sync(this.terrain, "sgzz-terrain", terrainQuads, 0);
         this.grid = this.syncPoly(this.grid, "sgzz-grid", gridPolys, 1);
         this.territory = this.sync(this.territory, "sgzz-territory", territoryQuads, 2);
-        this.border = this.sync(this.border, "sgzz-border", this.borderQuads(logic), 3);
+        // 描边比格线粗一点才看得出是「边」
+        this.border = this.syncPoly(this.border, "sgzz-border", this.borderPolys(logic, gridHalf * 2.5), 3);
     }
 
-    /** 边片：在该格朝 resDir 方向的半边上压一条细菱形。⛔ 没有美术前先用几何顶色。 */
-    private borderQuads(logic: SgzzmapWorldLogic): SgzzQuadInput[] {
+    /**
+     * 边条：在该格朝 resDir 方向的边界上压一段中垂线条。⛔ 没有美术前先用几何顶色。
+     * ⚠ 必须逐 resDir 画**条**，⛔ 不能每个边界方向铺一整格 —— 孤地有 6 个边界方向，
+     *   叠 6 层 alpha 0.85 会把整格涂成不透明，底下的领地色全看不见。
+     */
+    private borderPolys(logic: SgzzmapWorldLogic, halfWidth: number): SgzzPoly[] {
         const rgba = sgzzCompensate(BORDER_RGBA, this.tone);
-        const out: SgzzQuadInput[] = [];
+        const out: SgzzPoly[] = [];
         for (const edge of logic.borders.edges(logic.mapRows, logic.mapCols)) {
-            out.push({ row: edge.row, col: edge.col, uv: null, rgba });
+            const poly = sgzzBorderStripPoly(edge.row, edge.col, edge.resDir, halfWidth, rgba);
+            if (poly) out.push(poly);
         }
         return out;
     }

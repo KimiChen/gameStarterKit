@@ -156,6 +156,13 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
   - 地形直接消费 shared 内容模块 ⇒ **首帧即可绘制**，⛔ 不等资源加载、⛔ 不需要 BufferAsset 类型桩。
   - 远档底图 + 鸟瞰聚合色块 + 常显缩略图 + 行军线（简线/细线/部队位置）均已接上，见下。
 
+### ⚠ 六邻接与菱形的四条边**对不上**
+
+这套投影里六个邻格是 ±a、±b、±(a+b)（a=(TW,TH)、b=(0.5TW,−1.5TH)），
+只有 ±a（`resDir` 1 / 4）正好共享菱形的 SW / NE 边，其余四个方向的边界是**斜穿**过去的。
+所以描边 ⛔ 不能按「菱形的某条边」画，而是画在**本格与该邻格连线的中垂线**上、贴着菱形内缘，
+六段合起来围成一圈。美术规范见 `~/Downloads/maps/美术规范-sgzzmap地图资产.md` §5。
+
 ### 分层门控：哪些层**真的**会建
 
 `sgzzLayers.ts` 的 `SGZZ_LAYERS` 是唯一真源，每层带一个 `implemented`。
@@ -254,6 +261,10 @@ node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
 | 4 | 窗外的格显示成「无主」（撒谎） | `tileAt` 缺 key 即默认空格，`sgzzmap.tile` 路由从未接线 | `select` 标 pending + 单格补查 |
 | 5 | **孤地永远加固不了**（回 `SGZZMAP_NOT_ADJACENT`） | 连地闸只看六邻，目标就是自己的地时也照查 | `sgzzOccupyRefusal` 先放行 `target.ownerUid === viewer.uid` |
 | 6 | LOD0 **一条网格线都没有** | 门控表里 grid 写着可见，`SgzzMapRenderer` 里一行都没写（两张皮） | 补 `sgzz-grid` 层；层表加 `implemented`，未实现的层恒不可见；`nearLoaded` 判据把网格线算进去 |
+| 7 | 己方地块**整格涂成不透明黄**，领地色看不见 | 描边把 `resDir` 丢了，每个边界方向铺**一整格**菱形；孤地 6 个方向叠 6 层 alpha 0.85 ⇒ 几乎不透明 | `sgzzBorderStripPoly`：逐 `resDir` 画贴内缘的**短条** |
+
+⚠ 第 7 条是写美术规范、逐条核对事实时才发现的 —— 六向描边在真机上**从来就不是描边**，
+而是把整格重涂六遍。之前几轮截图里「己方那格是黄的而不是蓝的」就是它，只是没人往这儿想。
 
 ⚠ 第 5 条是**重放自己差点放过的**：判据写成「地块是我方 + 叠色描边在」，而点选时它本来就是我方，
 于是 RPC 被拒也照样判过（run 8：守军前后都是 1、提示在后面三步才浮出来）。

@@ -6,7 +6,7 @@
  * ⚠ 画家序是纯整数排序：(row+col) 升序、(row−col) 升序。⛔ 不要用浮点 y 去比。
  */
 import {
-    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzGrid2Pos,
+    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzGrid2Pos, sgzzRingTable,
 } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 
 export interface SgzzGeometry {
@@ -177,4 +177,37 @@ export function sgzzGridEdgePolys(row: number, col: number, halfWidth: number,
         if (points) out.push({ points, rgba });
     }
     return out;
+}
+
+/** 边条落在「到邻格中点」的这个比例处：0.92 的深度刚好贴着菱形内缘。 */
+const BORDER_AT = 0.46;
+/** 边条半长（世界单位）。六向各一段，合起来围出一圈。 */
+const BORDER_HALF_LEN = SGZZ_TILE_HALF_W * 0.34;
+
+/**
+ * 一格在 resDir(1..6) 方向上的**边界条**。
+ *
+ * ⚠ 六边邻接与菱形的四条边**对不上**：这套投影里六个邻居是 ±a、±b、±(a+b)
+ * （a=(TW,TH)、b=(0.5TW,−1.5TH)），只有 ±a 正好共享菱形的 NE / SW 边，其余四个是斜向的。
+ * 所以边条不按「菱形的某条边」画，而是画在**本格与该邻格连线的中垂线**上、贴着菱形内缘 ——
+ * 六段合起来就是一圈描边。
+ * ⛔ 早先的实现把 resDir 整个丢掉、每个边界方向铺一整格菱形：孤地有 6 个边界方向，
+ *   同一格叠 6 层 alpha 0.85 ⇒ 几乎不透明，把底下的领地色完全盖住（真机上那格是黄的而不是蓝的）。
+ */
+export function sgzzBorderStripPoly(row: number, col: number, resDir: number, halfWidth: number,
+                                    rgba: readonly [number, number, number, number]):
+    { readonly points: readonly (readonly [number, number])[]; readonly rgba: readonly [number, number, number, number] } | null {
+    const ring = sgzzRingTable(row);
+    const step = ring[resDir - 1];
+    if (!step) return null;
+    const c = sgzzGrid2Pos(row, col);
+    const n = sgzzGrid2Pos(row + step[0], col + step[1]);
+    const dx = n.x - c.x, dy = n.y - c.y;
+    const len = Math.hypot(dx, dy);
+    if (!(len > 1e-6)) return null;
+    const mx = c.x + dx * BORDER_AT, my = c.y + dy * BORDER_AT;
+    // 中垂线方向
+    const px = (-dy / len) * BORDER_HALF_LEN, py = (dx / len) * BORDER_HALF_LEN;
+    const points = writeSgzzSegmentQuad(mx - px, my - py, mx + px, my + py, halfWidth);
+    return points ? { points, rgba } : null;
 }
