@@ -143,8 +143,9 @@ export class SgzzmapWorldLogic {
             this.notice = "";
         } catch (error) {
             // 结算积压是预期内的「稍后再试」，⛔ 不当成错误刷屏
-            const code = (error as { rpcCode?: string } | null)?.rpcCode;
-            this.notice = code === "SGZZMAP_SETTLEMENT_PENDING" ? "正在补算到达事件…" : "地图数据读取失败";
+            const code = sgzzErrorCode(error);
+            this.notice = code === "SGZZMAP_SETTLEMENT_PENDING" ? "正在补算到达事件…"
+                : code ? `地图数据读取失败（${code}）` : "地图数据读取失败";
             this.lastKey = "";   // 允许下一轮重试
         } finally {
             this.inflight = false;
@@ -261,16 +262,30 @@ export class SgzzmapWorldLogic {
     get mapCols(): number { return SGZZ_MAP_COLS; }
 }
 
-/** 把服务端错误码翻成一句人话。⛔ 不把原始错误直接甩给玩家。 */
+/**
+ * 取客户端错误码。
+ * ⚠ 客户端抛的是 `RpcError { code }`（net/WebSocketClient），**⛔ 不是**服务端 `RpcFault` 的
+ * `rpcCode` —— 这两个字段名不一样，我一开始照服务端写，结果真机上所有失败都只显示「操作失败」。
+ */
+export function sgzzErrorCode(error: unknown): string {
+    const code = error && typeof error === "object" ? (error as { code?: unknown }).code : null;
+    return typeof code === "string" ? code : "";
+}
+
+/** 把错误码翻成一句人话。⛔ 不把原始错误直接甩给玩家。 */
 export function noticeOf(error: unknown): string {
-    const code = (error as { rpcCode?: string } | null)?.rpcCode ?? "";
-    switch (code) {
+    switch (sgzzErrorCode(error)) {
         case "SGZZMAP_IMPASSABLE": return "这一格过不去";
         case "SGZZMAP_NOT_ADJACENT": return "必须与自己或同盟的领地相连";
         case "SGZZMAP_TILE_LIMIT": return "已达持地上限";
         case "SGZZMAP_NOT_OWNED": return "这不是你的领地";
         case "SGZZMAP_SETTLEMENT_PENDING": return "正在补算到达事件，请稍后重试";
         case "RATE_LIMITED": return "操作太快了，缓一缓";
-        default: return "操作失败";
+        case "TIMEOUT": case "CONN_LOST": return "网络暂不可用，请稍后重试";
+        default: {
+            // ⚠ 未登记的码也要把码带出来，⛔ 不要让排查的人只看到「操作失败」
+            const code = sgzzErrorCode(error);
+            return code ? `操作失败（${code}）` : "操作失败";
+        }
     }
 }

@@ -148,7 +148,7 @@ test("sgzzmap page: 选格与占领/放弃，失败会翻成人话且⛔不改�
 
     // 失败路径
     const bad = fakeRuntime({
-        occupy: async () => { throw Object.assign(new Error("x"), { rpcCode: "SGZZMAP_NOT_ADJACENT" }); },
+        occupy: async () => { throw Object.assign(new Error("x"), { code: "SGZZMAP_NOT_ADJACENT" }); },
     });
     const l2 = new SgzzmapWorldLogic(bad.runtime, W, H);
     l2.select(700, 700);
@@ -181,7 +181,7 @@ test("sgzzmap page: 结算积压是「稍后再试」而不是报错，且允许
     let fail = true;
     const f = fakeRuntime({
         view: async () => {
-            if (fail) throw Object.assign(new Error("x"), { rpcCode: "SGZZMAP_SETTLEMENT_PENDING" });
+            if (fail) throw Object.assign(new Error("x"), { code: "SGZZMAP_SETTLEMENT_PENDING" });
             return {
                 rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1,
                 viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
@@ -202,6 +202,8 @@ test("sgzzmap page: 结算积压是「稍后再试」而不是报错，且允许
 });
 
 test("sgzzmap page: 错误码翻译覆盖全部业务码", () => {
+    // ⚠ 客户端抛的是 RpcError { code }，**⛔ 不是**服务端 RpcFault 的 rpcCode。
+    //   我最初照服务端字段名写，真机上所有失败都只显示「操作失败」——夹具必须用真实形状。
     for (const [code, want] of [
         ["SGZZMAP_IMPASSABLE", "这一格过不去"],
         ["SGZZMAP_NOT_ADJACENT", "必须与自己或同盟的领地相连"],
@@ -209,10 +211,15 @@ test("sgzzmap page: 错误码翻译覆盖全部业务码", () => {
         ["SGZZMAP_NOT_OWNED", "这不是你的领地"],
         ["RATE_LIMITED", "操作太快了，缓一缓"],
     ] as const) {
-        assert.equal(noticeOf({ rpcCode: code }), want);
+        assert.equal(noticeOf({ code }), want);
     }
+    assert.equal(noticeOf({ rpcCode: "SGZZMAP_IMPASSABLE" }), "操作失败",
+        "⛔ 服务端字段名在客户端读不到——这条就是那个 bug 的回归");
     assert.equal(noticeOf(null), "操作失败", "⛔ 不把原始错误甩给玩家");
     assert.equal(noticeOf(new Error("boom")), "操作失败");
+    assert.equal(noticeOf({ code: "TIMEOUT" }), "网络暂不可用，请稍后重试");
+    assert.equal(noticeOf({ code: "WEIRD_CODE" }), "操作失败（WEIRD_CODE）",
+        "未登记的码也要带出来，⛔ 不要让排查的人只看到「操作失败」");
 });
 
 test("sgzzmap page: view 带回的行军进 tracker，档位决定要不要细线", () => {

@@ -9,6 +9,7 @@ import { Color, EventMouse, EventTouch, Game, game, Label, Node, UITransform, Ve
 import { CocosView } from "../../../view/CocosView";
 import { createSolidPlate } from "../../../view/uiPlate";
 import { SGZZ_LOD_MAX } from "../../../shared/kits/sgzzmap/api/hexmap/index";
+import { SgzzGridState } from "../../../shared/kits/sgzzmap/api/territory/index";
 import { SgzzmapWorldLogic } from "../logic/SgzzmapWorldLogic";
 import { sgzzCameraToRootLocal, sgzzRootLocalToCamera } from "../logic/sgzzCamera";
 import { sgzzIsNearField } from "../logic/sgzzLayers";
@@ -206,8 +207,10 @@ export class SgzzmapWorldView extends CocosView {
         const sel = logic.selection;
         if (!sel) return "点选地图中的一格";
         const terrain = SGZZ_TERRAIN_PALETTE[sgzzTerrainIdAt(sel.row, sel.col)];
-        const owner = sel.tile.ownerUid === "" ? "无主" : `${sel.tile.ownerUid}（守军 ${sel.tile.durability}）`;
         const pass = sgzzPassableAt(sel.row, sel.col) ? "" : " · 不可通行";
+        // ⚠ 按**关系**说话，⛔ 不要把原始 uid 甩给玩家（也让重放能判「这格是不是我的」）
+        const owner = sel.tile.ownerUid === "" ? "无主"
+            : `${sgzzOwnerWord(sel.state)}（守军 ${sel.tile.durability}）`;
         return `(${sel.row}, ${sel.col}) ${terrain?.cn ?? "?"}${pass} · ${owner}`;
     }
 
@@ -265,5 +268,17 @@ export class SgzzmapWorldView extends CocosView {
         const p = this.toLocal(event.getUILocation().x, event.getUILocation().y);
         logic.camera.zoom(event.getScrollY() > 0 ? 1.12 : 1 / 1.12, p?.x, p?.y);
         this.render(false);
+    }
+}
+
+/** 关系态 → 归属说法。与领地着色同一套语义。 */
+function sgzzOwnerWord(state: number): string {
+    switch (state) {
+        case SgzzGridState.MY: case SgzzGridState.MY_ADDITION_LAND: return "我方";
+        case SgzzGridState.GANG_MASTER: return "盟主";
+        case SgzzGridState.UNION: return "同盟";
+        case SgzzGridState.GANG_FRIEND: return "友盟";
+        case SgzzGridState.UNION_CAPTURE: case SgzzGridState.FRIEND_UNION_CAPTURE: return "攻占中";
+        default: return "敌方";
     }
 }

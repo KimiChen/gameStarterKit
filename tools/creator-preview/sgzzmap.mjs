@@ -11,8 +11,11 @@ const inView = (node) => node.path.includes(`${VIEW}/`);
 
 /** 标题形如「大地图 · LOD 2/5」。 */
 const TITLE_RE = /^大地图 · LOD ([0-5])\/5$/u;
-/** 详情形如「(750, 751) 平原 · 无主」或「… · u-xxx（守军 3）」，不可通行时多一段「· 不可通行」。 */
-const DETAIL_RE = /^\((\d+), (\d+)\) ([^\s·]+)( · 不可通行)? · (无主|.+)$/u;
+/**
+ * 详情形如「(750, 751) 平原 · 无主」或「… · 我方（守军 3）」，不可通行时多一段「· 不可通行」。
+ * ⚠ 归属说的是**关系词**（我方/盟主/同盟/友盟/攻占中/敌方），⛔ 不是原始 uid。
+ */
+const DETAIL_RE = /^\((\d+), (\d+)\) ([^\s·]+)( · 不可通行)? · (无主|我方|盟主|同盟|友盟|攻占中|敌方)(（守军 (\d+)）)?$/u;
 
 /**
  * 解析地图页的公开 UI。⚠ 刻意拒绝「标题还没出来」「详情不完整」这些中间态——
@@ -56,6 +59,8 @@ export function readSgzzmapEvidence(walk) {
                 terrainName: detailMatch[3],
                 passable: !detailMatch[4],
                 owner: detailMatch[5],
+                mine: detailMatch[5] === "我方",
+                guard: detailMatch[7] ? Number(detailMatch[7]) : 0,
                 text: detail.text,
             }
             : null,
@@ -138,6 +143,9 @@ export async function replaySgzzmapWorld(runner) {
     const selected = await runner.step("点选一格（普通鼠标点击，⛔ 不调 Logic）", async () => {
         const area = sgzzmapGestureArea(await runner.walk());
         const tried = [];
+        let fallback = null;
+        // ⚠ dev 账号跨轮累积领地：第二轮起「出生豁免」就没了，随便点一格无主的多半不连地。
+        //   所以**优先挑已经是我方的格**（占领 = 加固，永远成立）；没有才退回无主格。
         for (const row of [0, -0.25, 0.25]) {
             for (const column of [0, -0.3, 0.3]) {
                 const at = { x: area.x + area.width * column, y: area.y + area.height * row };
@@ -151,13 +159,19 @@ export async function replaySgzzmapWorld(runner) {
                 const misplaced = judgeSelectionUnderCursor(value, (await runner.walk()).canvas, at);
                 if (misplaced) throw new Error(`点击→格 坐标换算不对：${misplaced}`);
                 tried.push({ at: [Math.round(at.x), Math.round(at.y)], tile: value.tile.text });
-                // 要一格「可通行且无主」的，才能演占领
-                if (value.tile.passable && value.tile.owner === "无主") {
-                    return { ...value, tried, shot: await runner.shot("sgzzmap-selected") };
+                if (value.tile.passable && value.tile.mine) {
+                    return { ...value, tried, plan: "加固", shot: await runner.shot("sgzzmap-selected") };
                 }
+                if (!fallback && value.tile.passable && value.tile.owner === "无主") fallback = { ...value, at };
             }
         }
-        throw new Error(`可见区域里没找到可通行的无主格：${JSON.stringify(tried)}`);
+        if (fallback) {
+            // 回到那一格再点一次，让选中态与截图一致
+            await runner.client.click(fallback.at.x, fallback.at.y);
+            const value = await runner.waitFor("选中格详情", (walk) => readSgzzmapEvidence(walk)?.tile ? readSgzzmapEvidence(walk) : null);
+            return { ...value, tried, plan: "占领（需连地或出生豁免）", shot: await runner.shot("sgzzmap-selected") };
+        }
+        throw new Error(`可见区域里没找到可通行的格：${JSON.stringify(tried)}`);
     });
 
     await runner.step("占领：领地叠色与六向描边出现（sgzz-territory / sgzz-border）", async () => {
@@ -165,9 +179,9 @@ export async function replaySgzzmapWorld(runner) {
         const evidence = await runner.waitFor("同一格变我方 + 叠色与描边网格建起来", (walk) => {
             const value = readSgzzmapEvidence(walk);
             return value?.tile?.row === selected.tile.row && value.tile.col === selected.tile.col
-                && value.tile.owner !== "无主" && value.territory && value.border ? value : null;
+                && value.tile.mine && value.territory && value.border ? value : null;
         });
-        return { before: selected.tile.text, ...evidence, shot: await runner.shot("sgzzmap-occupied") };
+        return { plan: selected.plan, before: selected.tile.text, ...evidence, shot: await runner.shot("sgzzmap-occupied") };
     });
 
     const far = await runner.step("拉远到远档：底图 + 鸟瞰色块顶替逐格网格", async () => {

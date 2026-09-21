@@ -375,7 +375,7 @@ test("readSgzzmapEvidence：近档解出标题/地块/三层网格，半加载�
     assert.equal(value.minimap, true);
     assert.deepEqual(value.tile, {
         row: 750, col: 751, terrainName: "平原", passable: true, owner: "无主",
-        text: "(750, 751) 平原 · 无主",
+        mine: false, guard: 0, text: "(750, 751) 平原 · 无主",
     });
     assert.deepEqual(value.worldCenter, { x: -12, y: 34 }, "世界节点中心原样透出，供「镜头真的动了」比对");
 
@@ -421,7 +421,16 @@ test("readSgzzmapEvidence：远档解出底图与色块；不可通行/有主的
         canvas: { x: 0, y: 0, width: 375, height: 812 },
     }).tile;
     assert.equal(detail("(10, 20) 山地 · 不可通行 · 无主").passable, false);
-    assert.equal(detail("(10, 20) 平原 · u-abc（守军 3）").owner, "u-abc（守军 3）");
+    // ⚠ 归属是**关系词**，⛔ 不是原始 uid（早先直接甩 uid，既不该给玩家看，重放也没法判「是不是我的」）
+    const mine = detail("(10, 20) 平原 · 我方（守军 3）");
+    assert.equal(mine.owner, "我方");
+    assert.equal(mine.mine, true);
+    assert.equal(mine.guard, 3);
+    const foe = detail("(10, 20) 平原 · 敌方（守军 9）");
+    assert.equal(foe.mine, false);
+    assert.equal(foe.guard, 9);
+    assert.equal(detail("(10, 20) 平原 · 同盟（守军 1）").owner, "同盟");
+    assert.equal(detail("(10, 20) 平原 · u-abc（守军 3）"), null, "⛔ 裸 uid 不该再出现，出现即判未识别");
     assert.equal(detail("点选地图中的一格"), null, "占位文案⛔不能被当成地块详情");
 });
 
