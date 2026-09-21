@@ -1,5 +1,5 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, Shop, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, ComponentGallery, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, Shop, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
@@ -65,6 +65,9 @@ window.addEventListener("pagehide", dispose, { once: true });
 async function startScreen(entry: ScreenEntry): Promise<void> {
     document.title = `UniFlex ${entry.componentName}`;
     switch (entry.id) {
+        case "component-gallery":
+            await runtime.start(ComponentGallery, { onBack: backToPreview });
+            return;
         case "preview-home":
             await runtime.start(PreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
             return;

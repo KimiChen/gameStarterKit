@@ -1,7 +1,9 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, type ImageRef } from '../../../kits/uniflex/api/core/index';
+import type { ImageRef } from '../../../kits/uniflex/api/core/index';
+import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface IconCaptionButtonProps {
+    readonly theme?: ComponentTheme;
     readonly icon: ImageRef;
     readonly label: string;
     readonly left: number;
@@ -18,15 +20,17 @@ export interface IconCaptionButtonProps {
 
 /** Icon above, caption below. Hit area covers both; the icon stays at its own size. */
 export const IconCaptionButton = defineComponent<IconCaptionButtonProps>((p) => {
+    const theme = p.theme ?? activeTheme;
     const left = p.left;
     const top = p.top;
     const iconWidth = p.iconWidth;
     const iconHeight = p.iconHeight;
     const width = p.width ?? iconWidth;
     const labelTop = p.labelTop ?? iconHeight;
-    const labelHeight = p.labelHeight ?? 26;
-    const fontSize = p.fontSize ?? 26;
-    const color = p.color ?? '#ffffff';
+    const labelHeight = p.labelHeight ?? p.theme?.iconCaption.labelHeight ?? activeTheme.iconCaption.labelHeight;
+    const fontSize = p.fontSize ?? p.theme?.iconCaption.fontSize ?? activeTheme.iconCaption.fontSize;
+    const labelAlign = p.theme?.iconCaption.labelAlign ?? activeTheme.iconCaption.labelAlign;
+    const color = p.color ?? theme.iconCaption.color;
     const height = labelTop + labelHeight;
     const iconLeft = (width - iconWidth) / 2;
     const label = p.label;
@@ -38,8 +42,8 @@ export const IconCaptionButton = defineComponent<IconCaptionButtonProps>((p) => 
             </view>
             <text value={label}
                 style={{ position: 'absolute', left: 0, top: labelTop, width: width, height: labelHeight,
-                    font: fontRef('fonts/regular', 700), fontSize: fontSize, color: color, bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+                    font: theme.iconCaption.font, fontSize: fontSize, color: color, bold: true,
+                    horizontalAlign: labelAlign, verticalAlign: 'center', overflow: 'shrink' }} />
         </view>
     );
 });

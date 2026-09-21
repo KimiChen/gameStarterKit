@@ -1,9 +1,11 @@
 import { defineComponent } from '@uniflex/compiler';
 import type { ImageRef } from '../../../kits/uniflex/api/core/index';
+import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface StarRowProps {
-    readonly filled: ImageRef;
-    readonly empty: ImageRef;
+    readonly theme?: ComponentTheme;
+    readonly filled?: ImageRef;
+    readonly empty?: ImageRef;
     readonly value: number;
     readonly lefts: readonly number[];
     readonly top: number;
@@ -17,8 +19,9 @@ export interface StarRowProps {
 
 /** n filled/empty stars. Callers inject skins and assembled lefts. */
 export const StarRow = defineComponent<StarRowProps>((p) => {
-    const filled = p.filled;
-    const empty = p.empty;
+    const theme = p.theme ?? activeTheme;
+    const filled = p.filled ?? theme.star.filled;
+    const empty = p.empty ?? theme.star.empty;
     const value = p.value;
     const lefts = p.lefts;
     const top = p.top;

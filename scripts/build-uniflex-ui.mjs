@@ -68,7 +68,16 @@ const transformed = ts.transform(source, [(context) => {
     const visit = (node) => {
         if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)
             && node.moduleSpecifier.text.startsWith(".")) {
-            const target = resolve(client, "src/ui-uniflex", node.moduleSpecifier.text);
+            const specifier = node.moduleSpecifier.text;
+            // AOT flattens author modules into one generated file, so author-relative
+            // imports must be anchored at the UniFlex source root before relocation.
+            // The compiler preserves the leading `../` depth from the original file.
+            const rootRelative = specifier.replace(/^(?:\.\.\/)+/u, "");
+            const target = rootRelative.startsWith("logic/")
+                ? resolve(client, "src", rootRelative)
+                : /^(?:components|gamecomponents|themes|kits)\//u.test(rootRelative)
+                    ? resolve(client, "src/ui-uniflex", rootRelative)
+                : resolve(client, "src/ui-uniflex", specifier);
             const path = relative(generated, target).replace(/\.js$/, "");
             return context.factory.updateImportDeclaration(node, node.modifiers,
                 node.importClause, context.factory.createStringLiteral(

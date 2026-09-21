@@ -10,6 +10,14 @@
       "source": "apps/client/src/ui-uniflex/modules/preview/PreviewHome/PreviewHome.tsx"
     },
     {
+      "id": "component-gallery",
+      "aliases": ["component-gallery", "components", "ui-components"],
+      "canvas": { "width": 750, "height": 1424 },
+      "componentName": "ComponentGallery",
+      "rootName": "ComponentGallery",
+      "source": "apps/client/src/ui-uniflex/modules/preview/ComponentGallery/ComponentGallery.tsx"
+    },
+    {
       "id": "restored-home",
       "aliases": ["restored", "restored-preview", "restore"],
       "canvas": { "width": 750, "height": 1424 },

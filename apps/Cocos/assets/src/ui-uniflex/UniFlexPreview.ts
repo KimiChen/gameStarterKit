@@ -1,6 +1,6 @@
 import { _decorator, Color, Component, Label, Node, ResolutionPolicy, UITransform, view } from "cc";
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from "../designSpec";
-import { createAllianceAnnouncePreview, createAllianceBoardPreview, createAllianceCreatePreview, createAllianceGiftPreview, createAllianceHelpPreview, createAllianceInvitePreview, createAllianceJoinPreview, createAllianceMarchBoostPreview, createAllianceMemberSettingsPreview, createAlliancePreview, createAllianceTechPreview, createAllianceTerritoryPreview, createAllianceWarPreview, createBackpackPreview, createCharacterManagePreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createHeroStarUpgradePreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview, createShopGetItemPreview, createShopPreview } from "./preview";
+import { createAllianceAnnouncePreview, createAllianceBoardPreview, createAllianceCreatePreview, createAllianceGiftPreview, createAllianceHelpPreview, createAllianceInvitePreview, createAllianceJoinPreview, createAllianceMarchBoostPreview, createAllianceMemberSettingsPreview, createAlliancePreview, createAllianceTechPreview, createAllianceTerritoryPreview, createAllianceWarPreview, createBackpackPreview, createCharacterManagePreview, createComponentGalleryPreview, createConfirmPreview, createHeroDetailPreview, createHeroScreenPreview, createHeroStarUpgradePreview, createMailBattleReportPreview, createPromptPreview, createSettingsPreview, createShopGetItemPreview, createShopPreview } from "./preview";
 
 const { ccclass } = _decorator;
 
@@ -36,11 +36,13 @@ export class UniFlexPreview extends Component {
         const allianceTech = query?.get("screen") === "alliance-tech";
         const shopGetItem = query?.get("screen") === "shop-getitem";
         const shop = query?.get("screen") === "shop";
+        const componentGallery = query?.get("screen") === "component-gallery";
         const prompt = query?.get("ui") === "prompt";
         if (backpack) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (mail) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (settings) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
         if (hero) view.setDesignResolutionSize(DESIGN_WIDTH, 1334, ResolutionPolicy.FIXED_WIDTH);
+        if (componentGallery) view.setDesignResolutionSize(DESIGN_WIDTH, 1424, ResolutionPolicy.FIXED_WIDTH);
         const preview = backpack
             ? createBackpackPreview(this.node)
             : mail ? createMailBattleReportPreview(this.node)
@@ -64,6 +66,7 @@ export class UniFlexPreview extends Component {
             : allianceTech ? createAllianceTechPreview(this.node)
             : shopGetItem ? createShopGetItemPreview(this.node)
             : shop ? createShopPreview(this.node)
+            : componentGallery ? createComponentGalleryPreview(this.node)
             : prompt ? createPromptPreview(this.node, query?.get("cancel") !== "0")
             : createConfirmPreview(this.node, query?.get("cancel") !== "0");
         this.runtime = preview;

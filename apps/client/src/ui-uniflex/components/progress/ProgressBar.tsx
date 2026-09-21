@@ -1,9 +1,11 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, type ImageRef } from '../../../kits/uniflex/api/core/index';
+import type { ImageRef } from '../../../kits/uniflex/api/core/index';
+import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface ProgressBarProps {
-    readonly track: ImageRef;
-    readonly fill: ImageRef;
+    readonly theme?: ComponentTheme;
+    readonly track?: ImageRef;
+    readonly fill?: ImageRef;
     readonly left: number;
     readonly top: number;
     readonly width: number;
@@ -18,18 +20,17 @@ export interface ProgressBarProps {
     readonly labelOutline?: string;
 }
 
-const INSET = 2;
-
 /** Track + sliced fill. Callers inject skins; `left`/`top` are parent-absolute. */
 export const ProgressBar = defineComponent<ProgressBarProps>((p) => {
+    const theme = p.theme ?? activeTheme;
     const left = p.left;
     const top = p.top;
     const width = p.width;
     const height = p.height;
-    const track = p.track;
-    const fill = p.fill;
+    const track = p.track ?? theme.progress.track;
+    const fill = p.fill ?? theme.progress.fill;
     const visible = p.visible !== false;
-    const inset = INSET;
+    const inset = p.theme?.progress.inset ?? activeTheme.progress.inset;
     const inner = width - inset * 2;
     const fillHeight = height - inset * 2;
     const value = p.value;
@@ -42,10 +43,11 @@ export const ProgressBar = defineComponent<ProgressBarProps>((p) => {
     const showFill = fillWidth > 0;
     const label = p.label ?? '';
     const showLabel = label !== '';
-    const labelColor = p.labelColor ?? '#ffffff';
-    const labelSize = p.labelSize ?? 24;
-    const labelOutline = p.labelOutline ?? '#000000';
-    const font = fontRef('fonts/regular', 700);
+    const labelColor = p.labelColor ?? theme.progress.color;
+    const labelSize = p.labelSize ?? p.theme?.progress.labelSize ?? activeTheme.progress.labelSize;
+    const labelOutline = p.labelOutline ?? theme.progress.outline;
+    const outlineWidth = p.theme?.progress.outlineWidth ?? activeTheme.progress.outlineWidth;
+    const font = theme.progress.font;
     return (
         <view name="ProgressBar" visible={visible}
             style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
@@ -57,7 +59,7 @@ export const ProgressBar = defineComponent<ProgressBarProps>((p) => {
             <text visible={showLabel} value={label}
                 style={{ position: 'absolute', left: 0, top: 0, width: width, height: height,
                     font: font, fontSize: labelSize, color: labelColor, bold: true,
-                    outlineColor: labelOutline, outlineWidth: 2,
+                    outlineColor: labelOutline, outlineWidth: outlineWidth,
                     horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
         </view>
     );

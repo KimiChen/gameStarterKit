@@ -1,5 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { imageRef, type ImageRef } from '../../../kits/uniflex/api/core/index';
+import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export type ItemQuality = 'green' | 'blue' | 'purple' | 'orange' | 'red';
 
@@ -67,48 +68,67 @@ export function itemQuality(itemId: string): ItemQuality {
     }
 }
 
+const ITEM_ICONS: Readonly<Record<ItemConfigIcon, ImageRef>> = {
+    egg: imageRef('ui/shop/item-egg'),
+    meat: imageRef('ui/shop/item-meat'),
+    book: imageRef('ui/shop/item-book'),
+    scroll: imageRef('ui/shop/item-scroll'),
+    gem: imageRef('ui/shop/getitem-icon'),
+};
+
+/** Item artwork follows the item contract, not the UI theme. */
 export function itemIcon(itemId: string) {
-    switch (getItemConfig(itemId).icon) {
-        case 'egg': return imageRef('ui/shop/item-egg');
-        case 'meat': return imageRef('ui/shop/item-meat');
-        case 'book': return imageRef('ui/shop/item-book');
-        case 'scroll': return imageRef('ui/shop/item-scroll');
-        case 'gem': return imageRef('ui/shop/getitem-icon');
-    }
+    return ITEM_ICONS[getItemConfig(itemId).icon];
 }
 
 export interface ItemSlotProps {
+    readonly theme?: ComponentTheme;
     readonly left: number;
     readonly top: number;
     readonly itemId: string;
     readonly count?: string;
+    readonly countColor?: string;
+    readonly countOutline?: string;
 }
 
 /** Shared 154×159 item frame (backpack / shop / hero bond). Icon and count are optional. */
 export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
+    const theme = p.theme ?? activeTheme;
     const left = p.left;
     const top = p.top;
     const quality = itemQuality(p.itemId);
-    const frame = quality === 'red' ? imageRef('ui/backpack/item-red')
-        : quality === 'orange' ? imageRef('ui/backpack/item-orange')
-        : quality === 'purple' ? imageRef('ui/backpack/item-purple')
-        : quality === 'blue' ? imageRef('ui/backpack/item-blue')
-        : imageRef('ui/backpack/item-green');
+    const frame = theme.item.frames[quality];
     const count = p.count ?? '';
     const showCount = count !== '';
     const showIcon = true;
     const icon = itemIcon(p.itemId);
+    const width = p.theme?.item.width ?? activeTheme.item.width;
+    const height = p.theme?.item.height ?? activeTheme.item.height;
+    const iconLeft = p.theme?.item.iconLeft ?? activeTheme.item.iconLeft;
+    const iconTop = p.theme?.item.iconTop ?? activeTheme.item.iconTop;
+    const iconWidth = p.theme?.item.iconWidth ?? activeTheme.item.iconWidth;
+    const iconHeight = p.theme?.item.iconHeight ?? activeTheme.item.iconHeight;
+    const countLeft = p.theme?.item.countLeft ?? activeTheme.item.countLeft;
+    const countTop = p.theme?.item.countTop ?? activeTheme.item.countTop;
+    const countWidth = p.theme?.item.countWidth ?? activeTheme.item.countWidth;
+    const countHeight = p.theme?.item.countHeight ?? activeTheme.item.countHeight;
+    const countSize = p.theme?.item.countSize ?? activeTheme.item.countSize;
+    const countAlign = p.theme?.item.countAlign ?? activeTheme.item.countAlign;
+    const countColor = p.countColor ?? theme.item.color;
+    const countOutline = p.countOutline ?? theme.item.outline;
+    const outlineWidth = p.theme?.item.outlineWidth ?? activeTheme.item.outlineWidth;
+    const font = theme.item.font;
     return (
-        <view name="ItemSlot" style={{ position: 'absolute', left: left, top: top, width: 154, height: 159 }}>
+        <view name="ItemSlot" style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
             <image name="ItemSlot/Frame" source={frame}
-                style={{ position: 'absolute', left: 0, top: 0, width: 154, height: 159, sizeMode: 'sliced' }} />
+                style={{ position: 'absolute', left: 0, top: 0, width: width, height: height, sizeMode: 'sliced' }} />
             <image name="ItemSlot/Icon" visible={showIcon} source={icon}
-                style={{ position: 'absolute', left: 13, top: 24, width: 129, height: 107 }} />
+                style={{ position: 'absolute', left: iconLeft, top: iconTop, width: iconWidth, height: iconHeight }} />
             <text name="ItemSlot/Count" visible={showCount} value={count}
-                style={{ position: 'absolute', left: 87, top: 107, width: 57, height: 42,
-                    font: fontRef('fonts/regular', 700), fontSize: 32, color: '#FFFFFF', bold: true,
-                    outlineColor: '#000000', outlineWidth: 2,
-                    horizontalAlign: 'right', verticalAlign: 'center', overflow: 'shrink' }} />
+                style={{ position: 'absolute', left: countLeft, top: countTop, width: countWidth, height: countHeight,
+                    font: font, fontSize: countSize, color: countColor, bold: true,
+                    outlineColor: countOutline, outlineWidth: outlineWidth,
+                    horizontalAlign: countAlign, verticalAlign: 'center', overflow: 'shrink' }} />
         </view>
     );
 });

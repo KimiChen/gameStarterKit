@@ -6,7 +6,8 @@ import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
-import { mailTab, TabBar } from '../../../components/tab/TabBar';
+import { TabBar } from '../../../components/tab/TabBar';
+import { mailTab } from '../../../components/tab/tabSkins';
 
 export type BackpackAction = {
     readonly id: string;

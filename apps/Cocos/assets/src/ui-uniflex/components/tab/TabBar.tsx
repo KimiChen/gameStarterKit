@@ -1,6 +1,7 @@
 import { defineComponent, For, useMemo } from '@uniflex/compiler';
 import { type ImageRef } from '../../../kits/uniflex/api/core/index';
 import { Tab, type TabSkin } from './Tab';
+import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export { allianceTab, characterTab, flagTab, heroDetailTab, heroListTab, mailTab } from './tabSkins';
 export type { TabSkin };
@@ -13,6 +14,7 @@ export interface TabBarItem {
 }
 
 export interface TabBarProps {
+    readonly theme?: ComponentTheme;
     readonly items: readonly TabBarItem[];
     readonly selected: string;
     readonly left: number;
@@ -36,9 +38,6 @@ interface TabBarRow {
     readonly left: number;
     readonly index: number;
 }
-
-const DEFAULT_GAP = 14;
-const DEFAULT_BADGE_TOP = -14;
 
 function stampTabs(
     items: readonly TabBarItem[],
@@ -68,21 +67,22 @@ function stampTabs(
 
 /** Lays out `Tab` chips from `left` + `itemWidth` + `gap`. Pass `width` for the bar; overflow scrolls. */
 export const TabBar = defineComponent<TabBarProps>((p) => {
+    const theme = p.theme ?? activeTheme;
     const items = p.items;
     const selected = p.selected;
     const left = p.left;
     const top = p.top;
     const itemWidth = p.itemWidth;
-    const gap = p.gap ?? DEFAULT_GAP;
+    const gap = p.gap ?? p.theme?.tab.gap ?? activeTheme.tab.gap;
     const skin = p.skin;
     const onSelect = p.onSelect;
     const badgeSource = p.badgeSource;
     const noticeSource = p.noticeSource;
     const badgeTopOverride = p.badgeTop;
-    const activeTop = skin.activeTop ?? -15;
-    const idleHeight = skin.height ?? 52;
-    const selectedHeight = skin.activeHeight ?? 67;
-    const badgeIdleTop = p.badgeTop ?? skin.badgeTop ?? DEFAULT_BADGE_TOP;
+    const activeTop = skin.activeTop ?? p.theme?.tab.activeTop ?? activeTheme.tab.activeTop;
+    const idleHeight = skin.height ?? p.theme?.tab.height ?? activeTheme.tab.height;
+    const selectedHeight = skin.activeHeight ?? p.theme?.tab.activeHeight ?? activeTheme.tab.activeHeight;
+    const badgeIdleTop = p.badgeTop ?? skin.badgeTop ?? p.theme?.tab.badgeTop ?? activeTheme.tab.badgeTop;
     const liftPad = activeTop < 0 ? -activeTop : 0;
     const badgePad = badgeIdleTop < 0 ? -badgeIdleTop : 0;
     const padTop = liftPad < badgePad ? badgePad : liftPad;
@@ -105,7 +105,7 @@ export const TabBar = defineComponent<TabBarProps>((p) => {
                     {(item) => (
                         <view name="TabBar/Item"
                             style={{ position: 'absolute', left: item.left, top: 0, width: itemWidth, height: barHeight }}>
-                            <Tab label={item.label} active={item.active} left={0} top={chipTop}
+                            <Tab theme={theme} label={item.label} active={item.active} left={0} top={chipTop}
                                 width={itemWidth} skin={skin} badge={item.badge} notice={item.notice}
                                 badgeSource={badgeSource} noticeSource={noticeSource}
                                 badgeTop={badgeTopOverride}

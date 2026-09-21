@@ -1,7 +1,9 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, imageRef, type ImageRef } from '../../../kits/uniflex/api/core/index';
+import type { ImageRef } from '../../../kits/uniflex/api/core/index';
+import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface ResourceCounterProps {
+    readonly theme?: ComponentTheme;
     readonly icon: ImageRef;
     readonly left: number;
     readonly top: number;
@@ -17,57 +19,47 @@ export interface ResourceCounterProps {
     readonly valueLeft?: number;
     readonly valueTop?: number;
     readonly valueWidth?: number;
+    readonly valueColor?: string;
+    readonly valueOutline?: string;
 }
-
-const WIDTH = 153;
-const HEIGHT = 45;
-const BG_WIDTH = 138;
-const BG_HEIGHT = 32;
-const ICON_HEIGHT = 31;
-const PLUS_WIDTH = 20;
-const PLUS_HEIGHT = 21;
-const VALUE_HEIGHT = 32;
-const DEFAULT_BG_LEFT = 7;
-const DEFAULT_BG_TOP = 5;
-const DEFAULT_ICON_LEFT = 4;
-const DEFAULT_ICON_TOP = 4;
-const DEFAULT_ICON_WIDTH = 37;
-const PLUS_OFFSET_LEFT = 16;
-const PLUS_OFFSET_TOP = 12;
-const DEFAULT_VALUE_LEFT = 44;
-const DEFAULT_VALUE_TOP = 5;
-const DEFAULT_VALUE_WIDTH = 101;
 
 /** Currency chip. Callers inject icon; inner boxes paste assembled values. */
 export const ResourceCounter = defineComponent<ResourceCounterProps>((p) => {
+    const theme = p.theme ?? activeTheme;
     const icon = p.icon;
-    const plus = imageRef('ui/backpack/resource-plus');
+    const plus = theme.resource.plus;
     const left = p.left;
     const top = p.top;
     const value = p.value;
     const id = p.id ?? '';
     const onClick = p.onClick;
-    const background = p.background ?? imageRef('ui/backpack/resource-bg');
-    const backgroundLeft = p.backgroundLeft ?? DEFAULT_BG_LEFT;
-    const backgroundTop = p.backgroundTop ?? DEFAULT_BG_TOP;
-    const iconLeft = p.iconLeft ?? DEFAULT_ICON_LEFT;
-    const iconTop = p.iconTop ?? DEFAULT_ICON_TOP;
-    const iconWidth = p.iconWidth ?? DEFAULT_ICON_WIDTH;
-    const plusLeft = backgroundLeft + PLUS_OFFSET_LEFT;
-    const plusTop = backgroundTop + PLUS_OFFSET_TOP;
-    const valueLeft = p.valueLeft ?? DEFAULT_VALUE_LEFT;
-    const valueTop = p.valueTop ?? DEFAULT_VALUE_TOP;
-    const valueWidth = p.valueWidth ?? DEFAULT_VALUE_WIDTH;
-    const width = WIDTH;
-    const height = HEIGHT;
-    const bgWidth = BG_WIDTH;
-    const bgHeight = BG_HEIGHT;
-    const iconHeight = ICON_HEIGHT;
-    const plusWidth = PLUS_WIDTH;
-    const plusHeight = PLUS_HEIGHT;
-    const valueHeight = VALUE_HEIGHT;
+    const background = p.background ?? theme.resource.background;
+    const backgroundLeft = p.backgroundLeft ?? p.theme?.resource.bgLeft ?? activeTheme.resource.bgLeft;
+    const backgroundTop = p.backgroundTop ?? p.theme?.resource.bgTop ?? activeTheme.resource.bgTop;
+    const iconLeft = p.iconLeft ?? p.theme?.resource.iconLeft ?? activeTheme.resource.iconLeft;
+    const iconTop = p.iconTop ?? p.theme?.resource.iconTop ?? activeTheme.resource.iconTop;
+    const iconWidth = p.iconWidth ?? p.theme?.resource.iconWidth ?? activeTheme.resource.iconWidth;
+    const plusOffsetLeft = p.theme?.resource.plusOffsetLeft ?? activeTheme.resource.plusOffsetLeft;
+    const plusOffsetTop = p.theme?.resource.plusOffsetTop ?? activeTheme.resource.plusOffsetTop;
+    const plusLeft = backgroundLeft + plusOffsetLeft;
+    const plusTop = backgroundTop + plusOffsetTop;
+    const valueLeft = p.valueLeft ?? p.theme?.resource.valueLeft ?? activeTheme.resource.valueLeft;
+    const valueTop = p.valueTop ?? p.theme?.resource.valueTop ?? activeTheme.resource.valueTop;
+    const valueWidth = p.valueWidth ?? p.theme?.resource.valueWidth ?? activeTheme.resource.valueWidth;
+    const width = p.theme?.resource.width ?? activeTheme.resource.width;
+    const height = p.theme?.resource.height ?? activeTheme.resource.height;
+    const bgWidth = p.theme?.resource.bgWidth ?? activeTheme.resource.bgWidth;
+    const bgHeight = p.theme?.resource.bgHeight ?? activeTheme.resource.bgHeight;
+    const iconHeight = p.theme?.resource.iconHeight ?? activeTheme.resource.iconHeight;
+    const plusWidth = p.theme?.resource.plusWidth ?? activeTheme.resource.plusWidth;
+    const plusHeight = p.theme?.resource.plusHeight ?? activeTheme.resource.plusHeight;
+    const valueHeight = p.theme?.resource.valueHeight ?? activeTheme.resource.valueHeight;
+    const valueSize = p.theme?.resource.valueSize ?? activeTheme.resource.valueSize;
+    const valueColor = p.valueColor ?? theme.resource.color;
+    const valueOutline = p.valueOutline ?? theme.resource.outline;
+    const outlineWidth = p.theme?.resource.outlineWidth ?? activeTheme.resource.outlineWidth;
     const label = id === '' ? value : `${id} ${value}`;
-    const font = fontRef('fonts/regular', 700);
+    const font = theme.resource.font;
     return (
         <view name="ResourceCounter" interaction="press" accessibilityLabel={label} onClick={() => onClick?.()}
             style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
@@ -80,8 +72,8 @@ export const ResourceCounter = defineComponent<ResourceCounterProps>((p) => {
                 style={{ position: 'absolute', left: plusLeft, top: plusTop, width: plusWidth, height: plusHeight }} />
             <text value={value}
                 style={{ position: 'absolute', left: valueLeft, top: valueTop, width: valueWidth, height: valueHeight,
-                    font: font, fontSize: 22, color: '#FFFFFF', bold: true,
-                    outlineColor: '#000000', outlineWidth: 2, verticalAlign: 'center', overflow: 'shrink' }} />
+                    font: font, fontSize: valueSize, color: valueColor, bold: true,
+                    outlineColor: valueOutline, outlineWidth: outlineWidth, verticalAlign: 'center', overflow: 'shrink' }} />
         </view>
     );
 });

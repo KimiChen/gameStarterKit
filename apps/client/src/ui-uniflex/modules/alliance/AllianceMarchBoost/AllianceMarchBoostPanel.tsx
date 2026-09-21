@@ -42,6 +42,8 @@ export const AllianceMarchBoostPanel = defineComponent<AllianceMarchBoostPanelPr
     const fillWidth = hasProgress ? 0 : PSD_FILL_WIDTH;
     const progressTrack = imageRef('ui/alliance-march/track');
     const progressFill = imageRef('ui/alliance-march/fill');
+    const payGemIcon = imageRef('ui/alliance-march/pay-gem');
+    const payCoinIcon = imageRef('ui/alliance-march/pay-coin');
     return (
         <view name="AllianceMarchBoost" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -140,12 +142,12 @@ export const AllianceMarchBoostPanel = defineComponent<AllianceMarchBoostPanelPr
 
                 <view style={{ position: 'absolute', left: 55, top: 729, width: 255, height: 102 }}>
                     <ConfirmButton label={p.payGem ?? '10'}
-                        icon={imageRef('ui/alliance-march/pay-gem')} iconWidth={51} iconHeight={49}
+                        icon={payGemIcon} iconWidth={51} iconHeight={49}
                         onClick={p.onPayGem} />
                 </view>
                 <view style={{ position: 'absolute', left: 397, top: 729, width: 255, height: 102 }}>
                     <CancelButton label={p.payCoin ?? '1000'}
-                        icon={imageRef('ui/alliance-march/pay-coin')} iconWidth={54} iconHeight={55}
+                        icon={payCoinIcon} iconWidth={54} iconHeight={55}
                         onClick={p.onPayCoin} />
                 </view>
             </view>

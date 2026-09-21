@@ -1,7 +1,8 @@
 import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
-import { characterTab, TabBar } from '../../../components/tab/TabBar';
+import { TabBar } from '../../../components/tab/TabBar';
+import { characterTab } from '../../../components/tab/tabSkins';
 import { CharacterPlayerRow } from './CharacterPlayerRow';
 import { CharacterServerItem, type CharacterServerStatus } from './CharacterServerItem';
 

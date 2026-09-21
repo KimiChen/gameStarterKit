@@ -2,7 +2,8 @@ import { defineComponent, useEffect, useMemo, useRef, useState, VirtualList } fr
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
-import { allianceTab, TabBar } from '../../../components/tab/TabBar';
+import { TabBar } from '../../../components/tab/TabBar';
+import { allianceTab } from '../../../components/tab/tabSkins';
 import { ShopGetItemPanel } from '../ShopGetItem/ShopGetItemPanel';
 import { ShopCard, type ShopGoods } from './ShopCard';
 

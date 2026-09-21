@@ -1,25 +1,27 @@
 import { defineComponent } from '@uniflex/compiler';
-import { imageRef } from '../../../kits/uniflex/api/core/index';
+import type { ImageRef } from '../../../kits/uniflex/api/core/index';
+import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface BackButtonProps {
+    readonly theme?: ComponentTheme;
     readonly top: number;
     readonly left?: number;
+    readonly source?: ImageRef;
     readonly onClick?: () => void;
 }
 
-const WIDTH = 64;
-const HEIGHT = 56;
-const DEFAULT_LEFT = 13;
-
 /** Footer back arrow. `left`/`top` are page-absolute so assembled values paste through. */
 export const BackButton = defineComponent<BackButtonProps>((p) => {
-    const left = p.left ?? DEFAULT_LEFT;
+    const theme = p.theme ?? activeTheme;
+    const left = p.left ?? p.theme?.chrome.backLeft ?? activeTheme.chrome.backLeft;
     const top = p.top;
-    const icon = imageRef('ui/mail/back');
+    const width = p.theme?.chrome.backWidth ?? activeTheme.chrome.backWidth;
+    const height = p.theme?.chrome.backHeight ?? activeTheme.chrome.backHeight;
+    const icon = p.source ?? theme.chrome.back;
     return (
         <view name="BackButton" interaction="press" accessibilityLabel="返回" onClick={() => p.onClick?.()}
-            style={{ position: 'absolute', left: left, top: top, width: WIDTH, height: HEIGHT }}>
-            <image source={icon} style={{ width: WIDTH, height: HEIGHT }} />
+            style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
+            <image source={icon} style={{ width: width, height: height }} />
         </view>
     );
 });

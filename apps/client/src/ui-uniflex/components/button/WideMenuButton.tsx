@@ -1,8 +1,10 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, type ImageRef } from '../../../kits/uniflex/api/core/index';
+import type { ImageRef } from '../../../kits/uniflex/api/core/index';
+import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface WideMenuButtonProps {
-    readonly background: ImageRef;
+    readonly theme?: ComponentTheme;
+    readonly background?: ImageRef;
     readonly icon: ImageRef;
     readonly iconWidth: number;
     readonly iconHeight: number;
@@ -14,20 +16,13 @@ export interface WideMenuButtonProps {
     readonly labelTop?: number;
     readonly labelWidth?: number;
     readonly labelHeight?: number;
+    readonly color?: string;
 }
-
-const WIDTH = 326;
-const HEIGHT = 114;
-const ICON_CENTER_X = 60;
-const DEFAULT_LABEL_LEFT = 118;
-const DEFAULT_LABEL_TOP = 28;
-const DEFAULT_LABEL_WIDTH = 190;
-const DEFAULT_LABEL_HEIGHT = 58;
-const COLOR = '#3F3254';
 
 /** Wide icon+label row. Callers inject the skin and icon. */
 export const WideMenuButton = defineComponent<WideMenuButtonProps>((p) => {
-    const background = p.background;
+    const theme = p.theme ?? activeTheme;
+    const background = p.background ?? theme.wideMenu.background;
     const icon = p.icon;
     const iconWidth = p.iconWidth;
     const iconHeight = p.iconHeight;
@@ -35,15 +30,19 @@ export const WideMenuButton = defineComponent<WideMenuButtonProps>((p) => {
     const left = p.left;
     const top = p.top;
     const onClick = p.onClick;
-    const width = WIDTH;
-    const height = HEIGHT;
-    const iconLeft = ICON_CENTER_X - iconWidth / 2;
+    const width = p.theme?.wideMenu.width ?? activeTheme.wideMenu.width;
+    const height = p.theme?.wideMenu.height ?? activeTheme.wideMenu.height;
+    const iconCenterX = p.theme?.wideMenu.iconCenterX ?? activeTheme.wideMenu.iconCenterX;
+    const iconLeft = iconCenterX - iconWidth / 2;
     const iconTop = (height - iconHeight) / 2;
-    const labelLeft = p.labelLeft ?? DEFAULT_LABEL_LEFT;
-    const labelTop = p.labelTop ?? DEFAULT_LABEL_TOP;
-    const labelWidth = p.labelWidth ?? DEFAULT_LABEL_WIDTH;
-    const labelHeight = p.labelHeight ?? DEFAULT_LABEL_HEIGHT;
-    const font = fontRef('fonts/regular', 700);
+    const labelLeft = p.labelLeft ?? p.theme?.wideMenu.labelLeft ?? activeTheme.wideMenu.labelLeft;
+    const labelTop = p.labelTop ?? p.theme?.wideMenu.labelTop ?? activeTheme.wideMenu.labelTop;
+    const labelWidth = p.labelWidth ?? p.theme?.wideMenu.labelWidth ?? activeTheme.wideMenu.labelWidth;
+    const labelHeight = p.labelHeight ?? p.theme?.wideMenu.labelHeight ?? activeTheme.wideMenu.labelHeight;
+    const labelAlign = p.theme?.wideMenu.labelAlign ?? activeTheme.wideMenu.labelAlign;
+    const fontSize = p.theme?.wideMenu.fontSize ?? activeTheme.wideMenu.fontSize;
+    const font = theme.wideMenu.font;
+    const color = p.color ?? theme.wideMenu.color;
     return (
         <view name="WideMenuButton" interaction="press" onClick={() => onClick?.()}
             style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
@@ -53,8 +52,8 @@ export const WideMenuButton = defineComponent<WideMenuButtonProps>((p) => {
                 style={{ position: 'absolute', left: iconLeft, top: iconTop, width: iconWidth, height: iconHeight }} />
             <text value={label}
                 style={{ position: 'absolute', left: labelLeft, top: labelTop, width: labelWidth, height: labelHeight,
-                    font: font, fontSize: 28, color: COLOR, bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+                    font: font, fontSize: fontSize, color: color, bold: true,
+                    horizontalAlign: labelAlign, verticalAlign: 'center', overflow: 'shrink' }} />
         </view>
     );
 });

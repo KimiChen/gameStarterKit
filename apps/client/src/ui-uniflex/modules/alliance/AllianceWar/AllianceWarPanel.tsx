@@ -4,7 +4,8 @@ import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { CyanButton } from '../../../components/button/CyanButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { mailTab, TabBar } from '../../../components/tab/TabBar';
+import { TabBar } from '../../../components/tab/TabBar';
+import { mailTab } from '../../../components/tab/tabSkins';
 
 export type AllianceWarTab = 'rally' | 'war' | 'event';
 

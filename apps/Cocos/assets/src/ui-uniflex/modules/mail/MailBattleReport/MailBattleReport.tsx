@@ -3,7 +3,8 @@ import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionCo
 import { ActionButton } from '../../../components/button/ActionButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { mailTab, TabBar } from '../../../components/tab/TabBar';
+import { TabBar } from '../../../components/tab/TabBar';
+import { mailTab } from '../../../components/tab/tabSkins';
 import { MailBattleRow, type MailBattleRowProps } from './MailBattleRow';
 
 export type MailBattleItem = Omit<MailBattleRowProps, 'onClick' | 'read'> & {

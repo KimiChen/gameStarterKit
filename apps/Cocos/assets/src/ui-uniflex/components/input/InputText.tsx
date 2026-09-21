@@ -1,8 +1,10 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, type ImageRef } from '../../../kits/uniflex/api/core/index';
+import type { ImageRef } from '../../../kits/uniflex/api/core/index';
+import { theme as activeTheme, type ComponentTheme, type ThemeTextAlign } from '../../themes/active';
 
 export interface InputTextProps {
-    readonly background: ImageRef;
+    readonly theme?: ComponentTheme;
+    readonly background?: ImageRef;
     readonly left: number;
     readonly top: number;
     readonly width: number;
@@ -14,16 +16,15 @@ export interface InputTextProps {
     readonly fontSize?: number;
     readonly color?: string;
     readonly placeholderColor?: string;
-    readonly textAlign?: 'left' | 'center';
+    readonly textAlign?: ThemeTextAlign;
     readonly textLeft?: number;
     readonly textWidth?: number;
 }
 
-const DEFAULT_COLOR = '#6F6555';
-
 /** Background + input + placeholder text. Callers inject the skin. */
 export const InputText = defineComponent<InputTextProps>((p) => {
-    const background = p.background;
+    const theme = p.theme ?? activeTheme;
+    const background = p.background ?? theme.input.background;
     const left = p.left;
     const top = p.top;
     const width = p.width;
@@ -32,15 +33,15 @@ export const InputText = defineComponent<InputTextProps>((p) => {
     const onInput = p.onInput;
     const placeholder = p.placeholder ?? '';
     const maxLength = p.maxLength;
-    const fontSize = p.fontSize ?? 26;
-    const color = p.color ?? DEFAULT_COLOR;
-    const placeholderColor = p.placeholderColor ?? color;
-    const textAlign = p.textAlign ?? 'center';
-    const textLeft = p.textLeft ?? 0;
-    const textWidth = p.textWidth ?? width;
+    const fontSize = p.fontSize ?? p.theme?.input.fontSize ?? activeTheme.input.fontSize;
+    const color = p.color ?? theme.input.color;
+    const placeholderColor = p.placeholderColor ?? theme.input.placeholder;
+    const textAlign = p.textAlign ?? p.theme?.input.textAlign ?? activeTheme.input.textAlign;
+    const textLeft = p.textLeft ?? p.theme?.input.textLeft ?? activeTheme.input.textLeft;
+    const textWidth = p.textWidth ?? (width - textLeft);
     const empty = value === '';
     const showPlaceholder = empty && placeholder !== '';
-    const font = fontRef('fonts/regular', 700);
+    const font = theme.input.font;
     return (
         <view name="InputText" style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
             <image source={background}

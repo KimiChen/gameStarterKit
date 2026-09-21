@@ -2,7 +2,8 @@ import { defineComponent, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
-import { mailTab, TabBar } from '../../../components/tab/TabBar';
+import { TabBar } from '../../../components/tab/TabBar';
+import { mailTab } from '../../../components/tab/tabSkins';
 import { AllianceBoardApplyPanel } from './AllianceBoardApplyPanel';
 import { AllianceBoardMessagePanel } from './AllianceBoardMessagePanel';
 

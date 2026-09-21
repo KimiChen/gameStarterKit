@@ -1,11 +1,10 @@
-import { imageRef } from '../../../kits/uniflex/api/core/index';
-import type { TabSkin } from './Tab';
+import type { TabSkin } from './TabSkin';
+import { theme } from '../../themes/active';
 
-const RAISED_COLOR = '#3F3254';
+const RAISED_COLOR = theme.tab.color;
 
 export const mailTab: TabSkin = {
-    selected: imageRef('ui/mail/tab-active'),
-    unselected: imageRef('ui/mail/tab-inactive'),
+    ...theme.tab.skins.mail,
     sizeMode: 'sliced',
     height: 52,
     activeHeight: 67,
@@ -16,14 +15,13 @@ export const mailTab: TabSkin = {
     activeFontSize: 32,
     color: RAISED_COLOR,
     activeColor: RAISED_COLOR,
-    badgeSource: imageRef('ui/mail/number-badge'),
+    badgeSource: theme.tab.badge,
     badgeInset: 26,
     badgeTop: -14,
 };
 
 export const allianceTab: TabSkin = {
-    selected: imageRef('ui/alliance/tab-selected'),
-    unselected: imageRef('ui/alliance/tab-unselected'),
+    ...theme.tab.skins.alliance,
     sizeMode: 'sliced',
     height: 52,
     activeHeight: 67,
@@ -34,14 +32,13 @@ export const allianceTab: TabSkin = {
     activeFontSize: 32,
     color: RAISED_COLOR,
     activeColor: RAISED_COLOR,
-    badgeSource: imageRef('ui/mail/number-badge'),
+    badgeSource: theme.tab.badge,
     badgeInset: 26,
     badgeTop: -14,
 };
 
 export const flagTab: TabSkin = {
-    selected: imageRef('ui/alliance/flag-tab-selected'),
-    unselected: imageRef('ui/alliance/flag-tab-unselected'),
+    ...theme.tab.skins.flag,
     sizeMode: 'sliced',
     height: 52,
     activeHeight: 67,
@@ -52,14 +49,13 @@ export const flagTab: TabSkin = {
     activeFontSize: 32,
     color: RAISED_COLOR,
     activeColor: RAISED_COLOR,
-    badgeSource: imageRef('ui/mail/number-badge'),
+    badgeSource: theme.tab.badge,
     badgeInset: 26,
     badgeTop: -14,
 };
 
 export const characterTab: TabSkin = {
-    selected: imageRef('ui/character/tab-selected'),
-    unselected: imageRef('ui/character/tab-unselected'),
+    ...theme.tab.skins.character,
     sizeMode: 'simple',
     height: 58,
     activeHeight: 58,
@@ -70,13 +66,13 @@ export const characterTab: TabSkin = {
     activeFontSize: 28,
     color: RAISED_COLOR,
     activeColor: RAISED_COLOR,
-    badgeSource: imageRef('ui/mail/number-badge'),
+    badgeSource: theme.tab.badge,
     badgeInset: 26,
     badgeTop: -8,
 };
 
 export const heroListTab: TabSkin = {
-    selected: imageRef('ui/hero/tabs-selected'),
+    ...theme.tab.skins.heroList,
     showUnselected: false,
     sizeMode: 'simple',
     height: 80,
@@ -90,12 +86,12 @@ export const heroListTab: TabSkin = {
     selectedInsetBottom: 1,
     fontSize: 32,
     activeFontSize: 32,
-    color: '#584871',
-    activeColor: '#584871',
+    color: theme.tab.color,
+    activeColor: theme.tab.activeColor,
 };
 
 export const heroDetailTab: TabSkin = {
-    selected: imageRef('ui/hero-detail/nav-selected'),
+    ...theme.tab.skins.heroDetail,
     showUnselected: false,
     sizeMode: 'sliced',
     height: 90,
@@ -105,8 +101,8 @@ export const heroDetailTab: TabSkin = {
     activeWidth: 0,
     fontSize: 36,
     activeFontSize: 36,
-    color: '#ffffff',
-    activeColor: '#3F3254',
+    color: theme.button.label,
+    activeColor: theme.tab.color,
     badgeInset: 43,
     badgeTop: 7,
 };

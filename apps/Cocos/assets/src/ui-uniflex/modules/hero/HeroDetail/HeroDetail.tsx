@@ -1,7 +1,8 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef, type ImageRef } from '../../../../kits/uniflex/api/core/index';
 import { SCREEN_FOOTER_HEIGHT, ScreenFooter } from '../../../components/chrome/ScreenFooter';
-import { heroDetailTab, TabBar, type TabBarItem } from '../../../components/tab/TabBar';
+import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
+import { heroDetailTab } from '../../../components/tab/tabSkins';
 import { HeroStarUpgradePanel } from '../HeroStarUpgrade/HeroStarUpgradePanel';
 import { HeroDetailAttributes } from './HeroDetailAttributes';
 import { HeroDetailSkills } from './HeroDetailSkills';
