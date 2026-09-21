@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SgzzCamera, SGZZ_TAP_SLOP } from "../src/kits/sgzzmap/logic/sgzzCamera";
+import {
+    SgzzCamera, SGZZ_TAP_SLOP, sgzzCameraToRootLocal, sgzzRootLocalToCamera,
+} from "../src/kits/sgzzmap/logic/sgzzCamera";
 import { SgzzViewportStencil, sgzzPackOffset, sgzzUnpackOffset } from "../src/kits/sgzzmap/logic/sgzzViewport";
 import {
     sgzzAoiMode, sgzzIsNearField, sgzzLayerVisible, sgzzVisibleLayers,
@@ -190,4 +192,41 @@ test("sgzzmap layers: 分层门控与远近档、AOI 模式切换", () => {
         assert.equal(sgzzIsNearField(lod), lod <= 2);
         assert.equal(sgzzAoiMode(lod), lod >= SGZZ_BIRDVIEW_LOD ? "summary" : "detail");
     }
+});
+
+test("sgzzmap camera: ★ 根局部 ↔ 相机坐标互逆，且地图区中心 = 相机中心", () => {
+    // 真机实测的版式：layerWidth 750、layerHeight 1542、页眉 150、页脚 270 ⇒ 地图区高 1122
+    const W = 750, H = 1542;
+    const mapTop = H / 2 - 150, mapBottom = -H / 2 + 270;
+    const mapH = mapTop - mapBottom;
+    assert.equal(mapH, 1122, "版式核对：地图区高应为 1122（与真机 report.json 的 world 节点一致）");
+
+    // ⚠ 这条是那个真 bug 的回归：UI 坐标原点在**左下**、x∈[0,W]，
+    //   经 convertToNodeSpaceAR 落到根局部后，地图区中心必须换算成相机坐标的正中。
+    const centreLocal = { x: 0, y: (mapTop + mapBottom) / 2 };
+    const centreCam = sgzzRootLocalToCamera(centreLocal.x, centreLocal.y, W, mapTop, mapBottom);
+    assert.deepEqual(centreCam, { x: W / 2, y: mapH / 2 }, "地图区中心必须落在相机坐标的正中");
+
+    // 四角
+    const topLeft = sgzzRootLocalToCamera(-W / 2, mapTop, W, mapTop, mapBottom);
+    assert.deepEqual(topLeft, { x: 0, y: 0 }, "地图区左上 → 相机 (0,0)");
+    const bottomRight = sgzzRootLocalToCamera(W / 2, mapBottom, W, mapTop, mapBottom);
+    assert.deepEqual(bottomRight, { x: W, y: mapH }, "地图区右下 → 相机 (W, mapH)");
+
+    // 互逆
+    for (const [lx, ly] of [[0, 0], [-W / 2, mapTop], [W / 2, mapBottom], [123, -45], [-300, 500]]) {
+        const cam = sgzzRootLocalToCamera(lx, ly, W, mapTop, mapBottom);
+        const back = sgzzCameraToRootLocal(cam.x, cam.y, W, mapTop, mapBottom);
+        assert.ok(Math.abs(back.x - lx) < 1e-9 && Math.abs(back.y - ly) < 1e-9,
+            `(${lx},${ly}) 往返失败：${JSON.stringify(back)}`);
+    }
+
+    // ★ 端到端：屏幕正中点一下，必须选到相机中心那一格（⛔ 早先错在这里，真机上点哪都选屏幕外）
+    const cam = new SgzzCamera(W, mapH);
+    const picked = cam.cellAt(centreCam.x, centreCam.y);
+    assert.deepEqual(picked, cam.centreCell(), "屏幕正中 → 中心格");
+
+    // 相机移开以后仍然成立
+    cam.locate(400, 900);
+    assert.deepEqual(cam.cellAt(centreCam.x, centreCam.y), cam.centreCell());
 });

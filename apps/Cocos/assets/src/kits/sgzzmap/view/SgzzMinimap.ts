@@ -30,17 +30,19 @@ export class SgzzMinimap {
         parent.addChild(this.node);
 
         if (art?.minimap) {
-            const image = new Node("image");
+            const image = new Node("sgzz-minimap-image");
             image.layer = parent.layer;
             const it = image.addComponent(UITransform);
-            it.width = size; it.height = size;
             const frame = new SpriteFrame();
             frame.texture = art.minimap;
             frame.packable = false;   // ⚠ 自建帧必须关动态图集（见 view/uiPlate.ts 的告诫）
             this.frame = frame;
             const sprite = image.addComponent(Sprite);
-            sprite.spriteFrame = frame;
+            // ⚠ 次序有讲究：赋 spriteFrame 会按默认 TRIMMED 把 UITransform 重置成**贴图原尺寸**
+            // （512×512），所以必须先切 CUSTOM，最后再定尺寸；反过来写缩略图会撑成原图那么大。
             sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+            sprite.spriteFrame = frame;
+            it.width = size; it.height = size;
             this.node.addChild(image);
         } else {
             // ⛔ 贴图没加载出来也要有个能点的底板，不然缩略图整个消失

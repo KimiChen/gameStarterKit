@@ -5,11 +5,12 @@
  * 深度**只有兄弟序**，⛔ 不要指望 z。
  * ⚠ 实心矩形一律走 createSolidPlate，⛔ 不要每块一个 Graphics（docs/CLIENT.md §3）。
  */
-import { Color, EventMouse, EventTouch, Game, game, Label, Node, UITransform } from "cc";
+import { Color, EventMouse, EventTouch, Game, game, Label, Node, UITransform, Vec3 } from "cc";
 import { CocosView } from "../../../view/CocosView";
 import { createSolidPlate } from "../../../view/uiPlate";
 import { SGZZ_LOD_MAX } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 import { SgzzmapWorldLogic } from "../logic/SgzzmapWorldLogic";
+import { sgzzCameraToRootLocal, sgzzRootLocalToCamera } from "../logic/sgzzCamera";
 import { sgzzIsNearField } from "../logic/sgzzLayers";
 import { getSgzzRuntime } from "../logic/sgzzRuntime";
 import { sgzzPassableAt, sgzzTerrainIdAt } from "../logic/sgzzTerrain";
@@ -161,9 +162,8 @@ export class SgzzmapWorldView extends CocosView {
             if (sel) {
                 const rect = SgzzMapRenderer.selectionRect(sel.row, sel.col, scale);
                 const screen = logic.camera.screenAt(rect.x, rect.y);
-                this.selection.setPosition(
-                    screen.x - this.layerWidth / 2,
-                    (this.mapBottom + this.mapTop) / 2 + (this.logicHeight() / 2 - screen.y), 0);
+                const at = sgzzCameraToRootLocal(screen.x, screen.y, this.layerWidth, this.mapTop, this.mapBottom);
+                this.selection.setPosition(at.x, at.y, 0);
                 this.selection.setScale(scale, scale, 1);
             }
         }
@@ -172,8 +172,6 @@ export class SgzzmapWorldView extends CocosView {
         if (this.details) this.details.string = this.describe();
         if (this.status) this.status.string = logic.notice;
     }
-
-    private logicHeight(): number { return this.mapTop - this.mapBottom; }
 
     // ── 小工具（CocosView 只提供 root / layerWidth / layerHeight） ─────────────
     private node(name: string, parent: Node, width: number, height: number): Node {
@@ -225,10 +223,17 @@ export class SgzzmapWorldView extends CocosView {
         if (on) game.on(Game.EVENT_HIDE, this.onHide, this);
         else game.off(Game.EVENT_HIDE, this.onHide, this);
     }
+    /**
+     * `getUILocation()` → 相机坐标。
+     * ⚠ UI 坐标的原点在**左下**、x∈[0,W]（⛔ 不是居中的），先经 convertToNodeSpaceAR 落到根局部，
+     * 再交给纯函数换算 —— 早先直接 `x + layerWidth/2` 把它当居中坐标，结果点哪都选到屏幕外的格。
+     */
     private toLocal(x: number, y: number): { x: number; y: number } | null {
         if (!this.logic) return null;
-        // 屏幕（y 向上、中心原点）→ 地图区局部（左上原点、y 向下）
-        return { x: x + this.layerWidth / 2, y: this.mapTop - y };
+        const local = this.root.getComponent(UITransform)?.convertToNodeSpaceAR(new Vec3(x, y, 0));
+        const lx = local?.x ?? (x - this.layerWidth / 2);
+        const ly = local?.y ?? (y - this.layerHeight / 2);
+        return sgzzRootLocalToCamera(lx, ly, this.layerWidth, this.mapTop, this.mapBottom);
     }
     /** ⚠ Node 的 TOUCH_* 是**逐触点**派发的：一次事件一根手指，⛔ 别去找 getTouches()。 */
     private onTouchStart(event: EventTouch): void {

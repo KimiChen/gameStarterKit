@@ -175,3 +175,24 @@ export class SgzzCamera {
         this.version += 1;
     }
 }
+
+/**
+ * 根节点局部坐标 ↔ 相机坐标。⚠ 这一段曾经写错过，真机上表现为「点哪都选到屏幕外的格」。
+ *
+ * 三套坐标系，⛔ 别混：
+ *  - **UI 坐标**（`event.getUILocation()`）：原点在**左下**，x∈[0,W]、y∈[0,H]，y 向上；
+ *  - **根局部**（`UITransform.convertToNodeSpaceAR`）：原点在**屏幕中心**，y 向上；
+ *  - **相机坐标**（`SgzzCamera.worldAt/screenAt`）：原点在**地图区左上**，y 向**下**，
+ *    尺寸是地图区的 (layerWidth, mapTop−mapBottom)。
+ */
+export function sgzzRootLocalToCamera(lx: number, ly: number,
+                                      layerWidth: number, mapTop: number, mapBottom: number): SgzzPoint {
+    const centre = (mapTop + mapBottom) / 2;
+    return { x: lx + layerWidth / 2, y: (mapTop - mapBottom) / 2 - (ly - centre) };
+}
+/** 相机坐标 → 根局部（摆选中框、浮层用）。与 sgzzRootLocalToCamera 互逆。 */
+export function sgzzCameraToRootLocal(sx: number, sy: number,
+                                      layerWidth: number, mapTop: number, mapBottom: number): SgzzPoint {
+    const centre = (mapTop + mapBottom) / 2;
+    return { x: sx - layerWidth / 2, y: centre + (mapTop - mapBottom) / 2 - sy };
+}

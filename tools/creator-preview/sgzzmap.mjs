@@ -45,6 +45,10 @@ export function readSgzzmapEvidence(walk) {
         march: has("sgzz-march"),
         minimap: nodes.some((node) => node.name === "sgzz-minimap")
             || walk.nodes.some((node) => node.name === "sgzz-minimap"),
+        // 诊断用：缩略图浮层与贴图子节点的真实尺寸（⚠ 赋 spriteFrame 会按 TRIMMED 重置成贴图原尺寸）
+        minimapSize: nodes.find((node) => node.name === "sgzz-minimap")?.center ?? null,
+        minimapImageSize: nodes.find((node) => node.name === "sgzz-minimap-image")?.center ?? null,
+        selectionAt: nodes.find((node) => node.name === "sgzz-selection")?.center ?? null,
         selection: nodes.some((node) => node.name === "sgzz-selection"),
         tile: detailMatch
             ? {
