@@ -238,7 +238,10 @@ shared 契约
 ## Git 约定
 
 - 默认 git 是个私密 git，不会对外公开
-- 用户已要求：以后每次改动后，按改动范围自己先 `git pull`、`git add` 和 `git commit`；`git push` 必须等用户明确确认后执行。需要的 PrivateKey 路径和 Passphrase 在 .env 文件中
+- 用户已要求：以后每次改动后，按改动范围先以 `git pull --rebase` 同步，再 `git add` 和 `git commit`；`git push` 必须等用户明确确认后执行。需要的 PrivateKey 路径和 Passphrase 在 .env 文件中
+- 当前工作区采用直线历史：同步使用普通 rebase，不使用保留合并节点的 `--rebase-merges`；分支集成先 rebase 到目标分支，再使用 `git merge --ff-only` 快进，避免新增合并提交。
+- 仅在当前仓库设置 `pull.rebase=true`、`branch.new.rebase=true`、`rebase.rebaseMerges=false`，不修改全局 Git 配置。同步或重放前先保护已有未提交文件，禁止混入其他任务的改动。
+- 整段历史重写后、首次发布完成前，若远端仍指向旧历史，暂停自动 pull/rebase；先核对迁移记录中的远端 SHA，经用户明确确认后以绑定该 SHA 的 `--force-with-lease` 仅更新目标分支，再恢复日常同步。原阶段标签与其他分支不随历史整理移动。
 - 提交只包含本轮相关文件，不要把无关生成物混进去。
 - 生成物和依赖目录应保持 ignored，写入.gitignore
 - 提交信息明确，例如：
