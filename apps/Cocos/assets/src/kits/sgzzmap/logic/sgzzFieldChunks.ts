@@ -15,8 +15,13 @@ import { SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W } from "../../../shared/kits/sgzzmap
 export const SGZZ_FIELD_CHUNK_CELLS = 20;
 /** 烘焙采样步长（世界单位）。⚠ 4 而不是规范里的 2：见文件头，⛔ 2 在 JS 里跑不动。 */
 export const SGZZ_FIELD_BAKE_STEP = 4;
-/** 每帧最多烘几块。⚠ 一次全烘会卡住主线程，⛔ 不要为了「一次到位」去掉这个闸。 */
-export const SGZZ_FIELD_BAKE_BUDGET = 2;
+/**
+ * 每帧最多烘几块。⚠ 一次全烘会卡住主线程，⛔ 不要为了「一次到位」去掉这个闸。
+ * ⚠ 实测单块 31 ms（16.7 ms 是 60fps 的预算）⇒ 只能 1 块。
+ *   进图时约 16 块 ⇒ 半秒左右的分帧填充；⛔ 调成 2 会让进图那几帧直接掉到 20fps。
+ *   真正的解法是挪到 worker，那是另一件事。
+ */
+export const SGZZ_FIELD_BAKE_BUDGET = 1;
 /** 最多缓存几块（超出按最久未用淘汰）。 */
 export const SGZZ_FIELD_CACHE_LIMIT = 48;
 

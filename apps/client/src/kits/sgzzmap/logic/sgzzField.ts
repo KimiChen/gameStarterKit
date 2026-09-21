@@ -105,21 +105,33 @@ export function sgzzChamferDistance(seed: Uint8Array, w: number, h: number): Flo
     const INF = 1e9;
     const d = new Float32Array(w * h);
     for (let i = 0; i < w * h; i += 1) d[i] = seed[i] ? 0 : INF;
-    const at = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? INF : d[y * w + x]);
-    // 前向
+    // ⚠ 内联边界判断，⛔ 不要用 at(x,y) 闭包：每像素 8 次闭包调用，实测两遍要 17 ms
     for (let y = 0; y < h; y += 1) {
+        const row = y * w, up = row - w;
         for (let x = 0; x < w; x += 1) {
-            const i = y * w + x;
-            d[i] = Math.min(d[i], at(x - 1, y) + 3, at(x, y - 1) + 3,
-                at(x - 1, y - 1) + 4, at(x + 1, y - 1) + 4);
+            const i = row + x;
+            let v = d[i];
+            if (x > 0 && d[i - 1] + 3 < v) v = d[i - 1] + 3;
+            if (y > 0) {
+                if (d[up + x] + 3 < v) v = d[up + x] + 3;
+                if (x > 0 && d[up + x - 1] + 4 < v) v = d[up + x - 1] + 4;
+                if (x + 1 < w && d[up + x + 1] + 4 < v) v = d[up + x + 1] + 4;
+            }
+            d[i] = v;
         }
     }
-    // 后向
     for (let y = h - 1; y >= 0; y -= 1) {
+        const row = y * w, down = row + w;
         for (let x = w - 1; x >= 0; x -= 1) {
-            const i = y * w + x;
-            d[i] = Math.min(d[i], at(x + 1, y) + 3, at(x, y + 1) + 3,
-                at(x + 1, y + 1) + 4, at(x - 1, y + 1) + 4);
+            const i = row + x;
+            let v = d[i];
+            if (x + 1 < w && d[i + 1] + 3 < v) v = d[i + 1] + 3;
+            if (y + 1 < h) {
+                if (d[down + x] + 3 < v) v = d[down + x] + 3;
+                if (x + 1 < w && d[down + x + 1] + 4 < v) v = d[down + x + 1] + 4;
+                if (x > 0 && d[down + x - 1] + 4 < v) v = d[down + x - 1] + 4;
+            }
+            d[i] = v;
         }
     }
     for (let i = 0; i < w * h; i += 1) d[i] = d[i] >= INF ? INF : d[i] / 3;   // 3-4 核的单位化
@@ -139,29 +151,39 @@ export function sgzzGaussianKernel(sigma: number): Float32Array {
     return out;
 }
 
-/** 分离高斯：先横后纵，就地复用两块缓冲。⛔ 不要写成二维核，那是 O(r²) 的浪费。 */
-function blurSeparable(src: Float32Array, tmp: Float32Array, w: number, h: number, kernel: Float32Array): void {
-    const r = (kernel.length - 1) / 2;
-    for (let y = 0; y < h; y += 1) {
-        const row = y * w;
-        for (let x = 0; x < w; x += 1) {
-            let acc = 0;
-            for (let k = -r; k <= r; k += 1) {
-                const sx = Math.min(w - 1, Math.max(0, x + k));   // 边缘钳制
-                acc += src[row + sx] * kernel[k + r];
-            }
-            tmp[row + x] = acc;
+/**
+ * 三遍盒滤波近似高斯。⚠ **O(1)/像素**（滑动和），与半径无关。
+ *
+ * ⛔ 不要用逐点卷积核：σ=0.46R、步长 4 时半径 16 ⇒ 33 抽头 × 8 类 × 2 方向，
+ *   实测单块 122 ms（60fps 的预算是 16.7 ms）。三遍盒滤波在这类低频场上肉眼不可分。
+ * ⚠ 盒宽按 σ 反算：三遍盒的等效方差 = 3·(n²−1)/12。
+ */
+export function sgzzBoxRadiusFor(sigma: number): number {
+    return Math.max(1, Math.round(Math.sqrt((12 * sigma * sigma) / 3 + 1) / 2));
+}
+
+function boxPass(src: Float32Array, dst: Float32Array, w: number, h: number, r: number, vertical: boolean): void {
+    const n = 2 * r + 1;
+    const outer = vertical ? w : h, inner = vertical ? h : w;
+    const stride = vertical ? w : 1, base = vertical ? 1 : w;
+    for (let o = 0; o < outer; o += 1) {
+        const head = o * base;
+        // 起始窗口（边缘按钳制复制）
+        let acc = src[head] * (r + 1);
+        for (let k = 1; k <= r; k += 1) acc += src[head + Math.min(inner - 1, k) * stride];
+        for (let i = 0; i < inner; i += 1) {
+            dst[head + i * stride] = acc / n;
+            const add = src[head + Math.min(inner - 1, i + r + 1) * stride];
+            const sub = src[head + Math.max(0, i - r) * stride];
+            acc += add - sub;
         }
     }
-    for (let x = 0; x < w; x += 1) {
-        for (let y = 0; y < h; y += 1) {
-            let acc = 0;
-            for (let k = -r; k <= r; k += 1) {
-                const sy = Math.min(h - 1, Math.max(0, y + k));
-                acc += tmp[sy * w + x] * kernel[k + r];
-            }
-            src[y * w + x] = acc;
-        }
+}
+
+function blurSeparable(src: Float32Array, tmp: Float32Array, w: number, h: number, radius: number): void {
+    for (let pass = 0; pass < 3; pass += 1) {
+        boxPass(src, tmp, w, h, radius, false);
+        boxPass(tmp, src, w, h, radius, true);
     }
 }
 
@@ -194,13 +216,29 @@ export function bakeSgzzField(
     const amp = params.noiseAmplitudeCells * R;
     const period = params.noisePeriodCells * R;
 
+    // ⚠ 噪声是**可分离**的（x 项 + y 项）⇒ 预算 4 张一维表。
+    // ⛔ 逐采样点调 4 次三角函数：68k 点 × 4 = 27 万次，实测占烘焙的大头。
+    const k = (2 * Math.PI) / Math.max(1e-6, period);
+    const sinX = new Float32Array(w), cosX = new Float32Array(w);
+    const sinY = new Float32Array(h), cosY = new Float32Array(h);
+    for (let i = 0; i < w; i += 1) {
+        const px = rect.minX + i * rect.step;
+        sinX[i] = Math.sin(px * k) * 0.6;
+        cosX[i] = Math.cos(px * k * 0.61 + 0.4) * 0.4;
+    }
+    for (let j = 0; j < h; j += 1) {
+        const py = rect.minY + j * rect.step;
+        sinY[j] = Math.sin(py * k * 0.73 + 1.7) * 0.4;
+        cosY[j] = Math.cos(py * k) * 0.6;
+    }
+
     for (let j = 0; j < h; j += 1) {
         for (let i = 0; i < w; i += 1) {
             const idx = j * w + i;
             const px = rect.minX + i * rect.step, py = rect.minY + j * rect.step;
             // ⚠ 扰动只作用于**覆盖率采样**，格心保护仍按未扰动位置算，⛔ 否则玩法可读性会被噪声推翻
-            const n = sgzzFieldNoise(px, py, period);
-            const [wx, wy] = sgzzFromPlane(px + n[0] * amp, py + n[1] * amp);
+            const nx = sinX[i] + sinY[j], ny = cosY[j] + cosX[i];
+            const [wx, wy] = sgzzFromPlane(px + nx * amp, py + ny * amp);
             const raw = sgzzPos2GridRaw(wx, wy);
             const g = sgzzClampGrid(raw.row, raw.col, rows, cols);
             const id = terrainAt(g.row, g.col);
@@ -210,7 +248,9 @@ export function bakeSgzzField(
             else if (id >= 0 && id < SGZZ_FIELD_CLASSES) landSeed[idx] = 1;
 
             const [ux, uy] = sgzzFromPlane(px, py);
-            const ur = sgzzClampGrid(sgzzPos2GridRaw(ux, uy).row, sgzzPos2GridRaw(ux, uy).col, rows, cols);
+            // ⚠ 只解一次：早先这行把 sgzzPos2GridRaw 调了**两遍**（取 row 一遍、取 col 一遍）
+            const uraw = sgzzPos2GridRaw(ux, uy);
+            const ur = sgzzClampGrid(uraw.row, uraw.col, rows, cols);
             ownClass[idx] = terrainAt(ur.row, ur.col);
             // 到本格中心的距离（map 平面）
             const centreWorldY = -(ur.row + ur.col + 1) * SGZZ_TILE_HALF_H
@@ -221,9 +261,9 @@ export function bakeSgzzField(
         }
     }
 
-    const kernel = sgzzGaussianKernel((params.landSigmaCells * R) / rect.step);
+    const landRadius = sgzzBoxRadiusFor((params.landSigmaCells * R) / rect.step);
     const tmp = new Float32Array(total);
-    for (let c = 0; c < SGZZ_FIELD_CLASSES; c += 1) blurSeparable(cover[c], tmp, w, h, kernel);
+    for (let c = 0; c < SGZZ_FIELD_CLASSES; c += 1) blurSeparable(cover[c], tmp, w, h, landRadius);
 
     // ── 海岸：有符号距离场 → 平滑 → 限位移 → 加扰动（v2 §3.2/§5） ──────────────
     // ⚠ 正值 = 水。⛔ 不要用模糊指示函数代替距离场：那会把窄河小岛整个吃掉。
@@ -236,7 +276,7 @@ export function bakeSgzzField(
         d0[i] = Number.isFinite(v) ? v : (waterSeed[i] ? clampD : -clampD);
     }
     const coast = Float32Array.from(d0);
-    blurSeparable(coast, tmp, w, h, sgzzGaussianKernel((params.coastSigmaCells * R) / rect.step));
+    blurSeparable(coast, tmp, w, h, sgzzBoxRadiusFor((params.coastSigmaCells * R) / rect.step));
     const maxDisp = (params.coastDisplacementMaxCells * R) / rect.step;
     const coastAmp = (params.noiseAmplitudeCells * R) / rect.step;
     for (let j = 0; j < h; j += 1) {
@@ -244,9 +284,7 @@ export function bakeSgzzField(
             const idx = j * w + i;
             // ⚠ 限位移：平滑可以把岸线推圆，⛔ 但不能把它推到离原轮廓 0.38R 之外（小岛会消失）
             let g = Math.max(d0[idx] - maxDisp, Math.min(d0[idx] + maxDisp, coast[idx]));
-            const px = rect.minX + i * rect.step, py = rect.minY + j * rect.step;
-            const n = sgzzFieldNoise(px, py, period);
-            g += (n[0] + n[1]) * 0.5 * coastAmp;
+            g += (sinX[i] + sinY[j] + cosY[j] + cosX[i]) * 0.5 * coastAmp;
             // ★ 格心保护：格心附近岸线⛔不得翻面，否则玩法上「这格是水还是陆」会被美术推翻
             if (centreDist[idx] <= margin) {
                 const wantWater = sgzzIsWaterClass(ownClass[idx]);
@@ -259,6 +297,8 @@ export function bakeSgzzField(
 
     const weights0 = new Uint8Array(inner.width * inner.height * 4);
     const weights1 = new Uint8Array(inner.width * inner.height * 4);
+    // ⚠ 复用一条缓冲：⛔ 每个输出像素 new 一个数组 = 5 万次分配
+    const cubed = new Float32Array(SGZZ_FIELD_CLASSES);
     for (let j = 0; j < inner.height; j += 1) {
         for (let i = 0; i < inner.width; i += 1) {
             const src = (j + inner.y) * w + (i + inner.x);
@@ -271,11 +311,10 @@ export function bakeSgzzField(
             }
             // ⚠ 阈值后取三次幂再归一：钝化三类交汇处的「和稀泥」，⛔ 不做会出现发灰的洞
             let sum = 0;
-            const cubed: number[] = [];
             for (let c = 0; c < SGZZ_FIELD_CLASSES; c += 1) {
                 const v = cover[c][src];
                 const t = v <= 0 ? 0 : v * v * v;
-                cubed.push(t); sum += t;
+                cubed[c] = t; sum += t;
             }
             // ★ 海岸：用平滑后的零等值线定陆水，⛔ 不再沿用逐格的菱形边
             //   —— 这是「连续弯曲海岸」与「菱形锯齿」的分界点。
@@ -285,7 +324,8 @@ export function bakeSgzzField(
             for (let c = 0; c < SGZZ_FIELD_CLASSES; c += 1) {
                 cubed[c] *= sgzzIsWaterClass(c) ? waterness : 1 - waterness;
             }
-            sum = cubed.reduce((a, b) => a + b, 0);
+            sum = 0;
+            for (let c = 0; c < SGZZ_FIELD_CLASSES; c += 1) sum += cubed[c];
             if (sum <= 1e-6) {
                 // 窄带一侧完全没覆盖率（例：整片水里的一点陆）⇒ 按 waterness 兜底成纯水/纯陆
                 const fallback = waterness > 0.5 ? 5 : 0;
