@@ -1,10 +1,12 @@
 import { defineComponent } from '@uniflex/compiler';
+import type { ImageRef } from '../../../kits/uniflex/api/core/index';
 import { CloseButton } from '../button/CloseButton';
 import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface PopupFrameProps {
     readonly theme?: ComponentTheme;
     readonly title: string;
+    readonly background?: ImageRef;
     readonly left: number;
     readonly top: number;
     readonly width?: number;
@@ -25,7 +27,7 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
     const top = p.top;
     const onClose = p.onClose;
     const font = theme.popup.font;
-    const background = theme.popup.prompt;
+    const background = p.background ?? theme.popup.prompt;
     // UniFlex AOT inlines `theme.popup.titleLeft` to classic's number; `p.theme?.popup.*` stays a runtime read.
     const titleLeft = p.theme?.popup.titleLeft ?? activeTheme.popup.titleLeft;
     const titleRight = p.theme?.popup.titleRight ?? activeTheme.popup.titleRight;

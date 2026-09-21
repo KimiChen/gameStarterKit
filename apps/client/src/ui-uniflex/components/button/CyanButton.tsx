@@ -7,7 +7,7 @@ import { theme as activeTheme } from '../../themes/active';
 export const CyanButton = defineComponent<ConfirmButtonProps>((p) => {
     const theme = p.theme ?? activeTheme;
     const label = p.label ?? '';
-    const source = theme.button.cyan.image;
+    const source = p.source ?? theme.button.cyan.image;
     const outlineColor = theme.button.cyan.outline;
     const width = p.width;
     const height = p.height;

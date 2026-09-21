@@ -89,6 +89,7 @@ export interface ItemSlotProps {
     readonly count?: string;
     readonly countColor?: string;
     readonly countOutline?: string;
+    readonly frames?: Readonly<Record<ItemQuality, ImageRef>>;
 }
 
 /** Shared 154×159 item frame (backpack / shop / hero bond). Icon and count are optional. */
@@ -97,7 +98,8 @@ export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
     const left = p.left;
     const top = p.top;
     const quality = itemQuality(p.itemId);
-    const frame = theme.item.frames[quality];
+    const frames = p.frames ?? theme.item.frames;
+    const frame = frames[quality];
     const count = p.count ?? '';
     const showCount = count !== '';
     const showIcon = true;

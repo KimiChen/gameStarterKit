@@ -6,6 +6,7 @@ import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 export interface ScreenFooterProps {
     readonly theme?: ComponentTheme;
     readonly source?: ImageRef;
+    readonly backSource?: ImageRef;
     readonly backLeft?: number;
     readonly onBack?: () => void;
 }
@@ -22,11 +23,12 @@ export const ScreenFooter = defineComponent<ScreenFooterProps>((p) => {
     const backLeft = p.backLeft ?? p.theme?.chrome.backLeft ?? activeTheme.chrome.backLeft;
     const backTop = p.theme?.chrome.backTop ?? activeTheme.chrome.backTop;
     const onBack = p.onBack;
+    const backSource = p.backSource;
     return (
         <view name="ScreenFooter" style={{ position: 'absolute', left: 0, bottom: 0, width: footerWidth, height: footerHeight }}>
             <image source={source}
                 style={{ position: 'absolute', left: 0, top: 0, width: footerWidth, height: footerHeight, sizeMode: 'sliced' }} />
-            <BackButton theme={theme} left={backLeft} top={backTop} source={theme.chrome.back} onClick={onBack} />
+            <BackButton theme={theme} left={backLeft} top={backTop} source={backSource} onClick={onBack} />
         </view>
     );
 });

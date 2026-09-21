@@ -11,6 +11,7 @@ export interface ConfirmButtonProps {
     readonly height?: number;
     readonly disabled?: boolean;
     readonly labelColor?: string;
+    readonly source?: ImageRef;
     readonly icon?: ImageRef;
     readonly iconWidth?: number;
     readonly iconHeight?: number;
@@ -19,7 +20,7 @@ export interface ConfirmButtonProps {
 export const ConfirmButton = defineComponent<ConfirmButtonProps>((p) => {
     const theme = p.theme ?? activeTheme;
     const label = p.label ?? '确定';
-    const source = theme.button.confirm.image;
+    const source = p.source ?? theme.button.confirm.image;
     const outlineColor = theme.button.confirm.outline;
     const disabled = p.disabled;
     const labelColor = p.labelColor;

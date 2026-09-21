@@ -7,7 +7,7 @@ import { theme as activeTheme } from '../../themes/active';
 export const CancelButton = defineComponent<ConfirmButtonProps>((p) => {
     const theme = p.theme ?? activeTheme;
     const label = p.label ?? '取消';
-    const source = theme.button.cancel.image;
+    const source = p.source ?? theme.button.cancel.image;
     const outlineColor = theme.button.cancel.outline;
     const disabled = p.disabled;
     const labelColor = p.labelColor;

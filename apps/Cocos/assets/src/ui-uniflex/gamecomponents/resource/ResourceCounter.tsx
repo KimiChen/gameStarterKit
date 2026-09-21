@@ -11,6 +11,7 @@ export interface ResourceCounterProps {
     readonly id?: string;
     readonly onClick?: () => void;
     readonly background?: ImageRef;
+    readonly plus?: ImageRef;
     readonly backgroundLeft?: number;
     readonly backgroundTop?: number;
     readonly iconLeft?: number;
@@ -27,7 +28,7 @@ export interface ResourceCounterProps {
 export const ResourceCounter = defineComponent<ResourceCounterProps>((p) => {
     const theme = p.theme ?? activeTheme;
     const icon = p.icon;
-    const plus = theme.resource.plus;
+    const plus = p.plus ?? theme.resource.plus;
     const left = p.left;
     const top = p.top;
     const value = p.value;
