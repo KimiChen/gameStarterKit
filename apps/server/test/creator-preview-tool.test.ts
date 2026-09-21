@@ -434,13 +434,21 @@ test("readSgzzmapEvidence：远档解出底图与色块；不可通行/有主的
     assert.equal(detail("点选地图中的一格"), null, "占位文案⛔不能被当成地块详情");
 });
 
-test("sgzzmapGestureArea / sgzzmapMinimapCenter：点击区避开页眉页脚，缩略图缺席返回 null", () => {
-    const canvas = { x: 100, y: 50, width: 375, height: 812 };
-    const area = sgzzmapGestureArea({ canvas });
-    assert.ok(area.y > canvas.y + canvas.height * 0.14, "⛔ 不能点到页眉");
-    assert.ok(area.y < canvas.y + canvas.height * 0.74, "⛔ 不能点到页脚");
+test("sgzzmapGestureArea / sgzzmapMinimapCenter：点击区实测自页眉页脚底板，缩略图缺席返回 null", () => {
+    // ★ 真机布局（设计坐标，y 向下）：页眉 150、页脚 270、总高 1542 ⇒ 地图区 150..1272、中心 711
+    const canvas = { x: 0, y: 0, width: 750, height: 1542 };
+    const nodes = [
+        { name: "sgzz-header", center: { x: 375, y: 75, width: 750, height: 150 } },
+        { name: "sgzz-footer", center: { x: 375, y: 1407, width: 750, height: 270 } },
+    ];
+    const area = sgzzmapGestureArea({ canvas, nodes });
+    // ⚠ 差一格就够把「回领地」之后的中心点选打偏：按 20%/68% 猜出来是 678.5，真值 711
+    assert.equal(area.y, 711, "可点区中心必须是页眉底边与页脚顶边的正中");
+    assert.ok(area.height > 0 && area.height < 1272 - 150, "各缩安全边后要比地图区窄");
     assert.ok(area.x > canvas.x && area.x < canvas.x + canvas.width);
-    assert.ok(area.width > 0 && area.height > 0);
+
+    // ⛔ 缺底板时不许拿百分比兜底——那正是当初点偏的原因
+    assert.throws(() => sgzzmapGestureArea({ canvas, nodes: [] }), /sgzz-header/u);
 
     assert.deepEqual(sgzzmapMinimapCenter({ nodes: [{ name: "sgzz-minimap", center: { x: 7, y: 8 } }] }), { x: 7, y: 8 });
     assert.equal(sgzzmapMinimapCenter({ nodes: [] }), null);

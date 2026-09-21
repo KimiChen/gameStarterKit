@@ -84,14 +84,21 @@ export function readSgzzmapEvidence(walk) {
 /** 地图可点区域（页眉页脚之间），用于挑一个不会点到按钮的位置。 */
 export function sgzzmapGestureArea(walk) {
     const canvas = walk.canvas;
-    // 页眉 14% / 页脚 26%（与 SgzzmapWorldView.onOpen 的比例一致），再各缩 6% 留安全边
-    const top = canvas.y + canvas.height * 0.20;
-    const bottom = canvas.y + canvas.height * 0.68;
+    // ★ 从渲染出来的页眉/页脚底板**实测**可点区。
+    // ⚠ 早先按 20%/68% 猜，而 View 用的是 min(150, h*0.14) / min(270, h*0.26)：
+    //   高 1542 时真中心在 46.1%、猜出来是 44%，差 32 px —— 恰好一格，
+    //   于是「回领地」之后点中心选到的是家旁边那一格而不是家本身。⛔ 不要再写死百分比。
+    const rect = (name) => walk.nodes.find((node) => node.name === name && node.center)?.center ?? null;
+    const header = rect("sgzz-header"), footer = rect("sgzz-footer");
+    if (!header || !footer) throw new Error("地图页缺少 sgzz-header / sgzz-footer 底板，无法实测可点区");
+    const top = header.y + header.height / 2;
+    const bottom = footer.y - footer.height / 2;
+    const inset = (bottom - top) * 0.06;          // 各缩 6% 留安全边，⛔ 别贴着按钮点
     return {
         x: canvas.x + canvas.width / 2,
         y: (top + bottom) / 2,
         width: canvas.width * 0.7,
-        height: bottom - top,
+        height: (bottom - top) - inset * 2,
     };
 }
 
