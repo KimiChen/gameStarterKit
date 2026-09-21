@@ -1,0 +1,19 @@
+# scripts/packages/mmohold.lock —— 已安装插件 mmohold@0.1.0 的登记与文件清单锁。Do not edit by hand.
+# writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
+# manifest {"id":"mmohold","version":"0.1.0","kinds":["client"],"constantName":null,"contributes":{"mmo":{"content":"apps/plugins/mmohold/content/pack.json","presentation":"apps/client/src/plugins/mmohold/mmoPresentation.ts","orchestration":"apps/server/src/core/mmohold/mmoOrchestration.ts"}},"domains":[],"fguiPackages":[],"requires":{"pluginApiVersion":null,"kits":{"mmo":{"content":4,"orchestration":3}}}}
+# source {"kind":"package","filesLockSha256":"c11e48a32eb2c62f5818a8f870991a3f93ff250d6b925241586e7a53e1d01e45"}
+apps/Cocos/assets/src/plugins/mmohold.meta c12837de32cc69d487bec9661cf0d481da8d461f30b633d4a5c2d118353e59dd
+apps/Cocos/assets/src/plugins/mmohold/index.ts 45c308daa98f5b76984d9925066ce1576c122e48114109f26306682215043ee9
+apps/Cocos/assets/src/plugins/mmohold/index.ts.meta 58e452b7cd10ceaf226bfa264942ddddaedcff4a0ef1b97cb73cdf0885a105ed
+apps/Cocos/assets/src/plugins/mmohold/mmoPresentation.ts 977dd4d3783cec8a6a4ebb5d84c179153208e526fa85b44f7c8d59a01bb01927
+apps/Cocos/assets/src/plugins/mmohold/mmoPresentation.ts.meta 3e4cf651724a8f2adeca6c46ace7672564696f3914bea5524465303f97aba007
+apps/client/src/plugins/mmohold/index.ts 45c308daa98f5b76984d9925066ce1576c122e48114109f26306682215043ee9
+apps/client/src/plugins/mmohold/mmoPresentation.ts 977dd4d3783cec8a6a4ebb5d84c179153208e526fa85b44f7c8d59a01bb01927
+apps/client/test/mmohold-presentation.test.ts 072330cfb5d330ca7bf475dad154cf535e802c8762898798e12ec7befbae49ca
+apps/plugins/mmohold/README.md 2a8cd3f474e4cd2f6b7787a286f44ff834a212c63670cf279f4cc79764f64a9b
+apps/plugins/mmohold/content/pack.json c717126030196e0d2d0598b83defb349d003c6b332c7b0e9aa8f56781e07e440
+apps/plugins/mmohold/plugin.json ef5977409da427abeaec1071eaeb8e0b9e2029ed114df039641f103b0ae1f3bd
+apps/server/src/core/mmohold/encounters/capture.ts 4a9159566d35c694b37a3adc5055b85a4118cc75ea183cd486d0bbe9c2c9386f
+apps/server/src/core/mmohold/mmoOrchestration.ts 6d01d034bccab8710e304da8deb53336beaa22694d6653e3c718878f1f7747cf
+apps/server/test/mmohold-content.test.ts 61dd28a62ee346e0b7dadbb3aa2c57b61e3bff5aa8a3d28d96a2cb38b77c165a
+apps/server/test/mmohold-orchestration.test.ts 5ebd20a9da97822ef02e8834969e4d236caf2f1f7cca045c327d5e9ca7bb2473

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "id": "mmohold",
+  "version": "0.1.0",
+  "description": "MMO 内容样本 2：holdRidge 据点争夺、阵营计分与编排",
+  "requires": {
+    "kits": {
+      "mmo": {
+        "content": 4,
+        "orchestration": 3
+      }
+    }
+  },
+  "contributes": {
+    "mmo": {
+      "content": "apps/plugins/mmohold/content/pack.json",
+      "presentation": "apps/client/src/plugins/mmohold/mmoPresentation.ts",
+      "orchestration": "apps/server/src/core/mmohold/mmoOrchestration.ts"
+    }
+  },
+  "category": "extra",
+  "docs": [
+    "apps/plugins/mmohold/README.md"
+  ],
+  "resident": false,
+  "entry": "apps/client/src/plugins/mmohold/index.ts"
+}

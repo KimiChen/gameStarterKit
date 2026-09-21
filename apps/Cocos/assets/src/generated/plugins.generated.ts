@@ -48,6 +48,7 @@ export const PLUGIN_IDS: readonly string[] = [
     "builtin",
     "mmo",
     "mmodemo",
+    "mmohold",
     "redeem",
     "sgzzmap",
     "slg",
@@ -122,6 +123,16 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         ],
         menu: [
             { entryId: "bossBoard", pluginId: "mmodemo", label: "头狼战报", labelKey: "menu.mmodemo.bossBoard", launch: { kind: "route", routeId: "bossBoard" } },
+        ],
+    },
+    {
+        id: "mmohold",
+        resident: false,
+        load: () => import("../plugins/mmohold/index").then((m) => m.createPluginModule()),
+        dependencies: ["mmo"],
+        routes: [
+        ],
+        menu: [
         ],
     },
     {
