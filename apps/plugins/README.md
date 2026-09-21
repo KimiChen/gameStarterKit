@@ -1,7 +1,7 @@
 # apps/plugins/ —— 插件目录（作者侧真源）
 
 一个插件一个目录 `apps/plugins/<id>/`（PLUGIN.md §5.5）；仓内自研的和安装进来的是同一种东西，区别只有一条：
-**有 `version` 的可打包、进锁（`snake` / `redeem` / `tally` / `arenaShop`），没有 `version` 的是宿主自有单元，
+**有 `version` 的可打包、进锁（`snake` / `redeem` / `tally` / `arenaShop` / `mmodemo`），没有 `version` 的是宿主自有单元，
 不可打包、不进锁（`builtin`）**。⚠ 「仓内自研」与「可分发」是两件事：`snake` 就是仓内自研且带 version 的。
 （`snakeCosmetic` 已于 2026-09-06 整体并入 `snake`，见 PLUGIN.md §5.5.2。）
 
