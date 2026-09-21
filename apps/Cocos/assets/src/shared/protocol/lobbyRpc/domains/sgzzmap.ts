@@ -62,7 +62,17 @@ export interface ISgzzTileRef {
     cell: number; owner: number; durability: number; addition: boolean; capturing: number;
 }
 /** 观察者自身的关系上下文，客户端用它跑 sgzzGridState。 */
-export interface ISgzzViewerWire { uid: string; aid: string; leaderUid: string; friendAids: string[] }
+export interface ISgzzViewerWire {
+    uid: string; aid: string; leaderUid: string; friendAids: string[];
+    /**
+     * 我名下任意一块地的 cell，-1 = 一块都没有。
+     *
+     * ⚠ 存在的理由是可用性而非功能：1500×1500 = 225 万格，关掉再打开就**找不到自己的地**了。
+     * 取值走 `idx_owner (server_id, owner_uid)` 现查（⛔ 不落列，省得被行军夺地/弃地打成陈旧值），
+     * 只在持地数 > 0 时才查，无地的号零开销。
+     */
+    home: number;
+}
 
 export interface ISgzzViewReq { rect: ISgzzRect }
 export interface ISgzzViewRes {
@@ -116,7 +126,7 @@ export interface SgzzmapRpcMap {
 
 function validateViewer(value: unknown, path: string): ISgzzViewerWire {
     const r = rpcRecord(value, path);
-    assertExactKeys(r, ["uid", "aid", "leaderUid", "friendAids"], [], path);
+    assertExactKeys(r, ["uid", "aid", "leaderUid", "friendAids", "home"], [], path);
     if (!Array.isArray(r.friendAids) || r.friendAids.length > SGZZ_MAX_VIEW_ALLIANCES) {
         throw new WireValidationError("SGZZMAP_VIEWER", `${path}.friendAids`);
     }
@@ -125,6 +135,8 @@ function validateViewer(value: unknown, path: string): ISgzzViewerWire {
         aid: boundedString(r.aid, `${path}.aid`, 0, SGZZ_MAX_AID),
         leaderUid: boundedString(r.leaderUid, `${path}.leaderUid`, 0, SGZZ_MAX_UID),
         friendAids: r.friendAids.map((v, i) => boundedString(v, `${path}.friendAids[${i}]`, 1, SGZZ_MAX_AID)),
+        // -1 = 无地；其余必须是合法 cell
+        home: r.home === -1 ? -1 : validateSgzzCell(r.home, `${path}.home`),
     };
 }
 
@@ -348,7 +360,7 @@ export function sgzzViewRequestChunks(rect: ISgzzRect): number {
 }
 
 export default defineLobbyRpcDomain({
-    domain: "sgzzmap", contractVersion: 6,
+    domain: "sgzzmap", contractVersion: 7,
     errorCodes: [
         "SGZZMAP_IMPASSABLE", "SGZZMAP_NOT_ADJACENT", "SGZZMAP_TILE_LIMIT",
         "SGZZMAP_NOT_OWNED", "SGZZMAP_SETTLEMENT_PENDING",

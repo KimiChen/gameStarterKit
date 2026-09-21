@@ -15,7 +15,7 @@ import { SgzzViewportStencil } from "../src/kits/sgzzmap/logic/sgzzViewport";
 import { SgzzmapWorldLogic } from "../src/kits/sgzzmap/logic/SgzzmapWorldLogic";
 import type { SgzzRuntime } from "../src/kits/sgzzmap/logic/sgzzRuntime";
 
-const VIEWER = { uid: "u1", aid: "", leaderUid: "", friendAids: [] as string[] };
+const VIEWER = { uid: "u1", aid: "", leaderUid: "", friendAids: [] as string[], home: -1 };
 
 test("近景窗：对称收缩，⛔ 不再整体偏到相机左上", () => {
     const want = sgzzChunkRectForGridRect({ minRow: 720, minCol: 720, maxRow: 780, maxCol: 780 });
@@ -137,4 +137,24 @@ test("★ 窗外的格标 pending 并单独查 sgzzmap.tile，⛔ 不拿默认�
     assert.equal(asked, 7000700, "必须真去查单格");
     assert.equal(logic.selection?.pending, false);
     assert.equal(logic.selection?.tile.ownerUid, "u9");
+});
+
+test("★ 回领地：有地就回自己的地，无地退回地图中心", async () => {
+    const f = fakeRuntime({
+        view: async () => ({
+            rect: { minRow: 72, minCol: 72, maxRow: 77, maxCol: 77 }, revision: 1,
+            viewer: { ...VIEWER, home: 7270713 },      // (727, 713)
+            alliances: [], owners: [], tiles: [], truncated: false, marches: [],
+        }),
+    });
+    const logic = new SgzzmapWorldLogic(f.runtime, 750, 1122);
+    assert.equal(logic.hasHome, false, "还没拉过数据时没有地可回");
+    assert.deepEqual(logic.locateHome(), { row: 750, col: 750 }, "无地时回地图中心");
+
+    f.at(10_000); logic.update(0.016); await flush();
+    assert.equal(logic.hasHome, true);
+    assert.deepEqual(logic.locateHome(), { row: 727, col: 713 });
+    const centre = logic.camera.centreCell();
+    assert.equal(centre.row, 727);
+    assert.equal(centre.col, 713);
 });

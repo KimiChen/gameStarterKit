@@ -19,7 +19,7 @@ function fakeRuntime(over: Partial<SgzzRuntime> = {}) {
             calls.view += 1;
             return {
                 rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1,
-                viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
+                viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [], home: -1 },
                 alliances: [], owners: [], tiles: [], truncated: false, marches: [],
             };
         },
@@ -28,7 +28,7 @@ function fakeRuntime(over: Partial<SgzzRuntime> = {}) {
             return { level: 0, rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1, alliances: [], chunks: [] };
         },
         tile: async () => ({ tile: { cell: 0, ownerUid: "", ownerAid: "", durability: 0, addition: false, capturingAid: "" },
-                             viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] } }),
+                             viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [], home: -1 } }),
         occupy: async (cell) => {
             calls.occupy += 1;
             return { tile: { cell, ownerUid: "u-me", ownerAid: "", durability: 1, addition: false, capturingAid: "" },
@@ -72,7 +72,7 @@ test("sgzzmap page: ★ 代际围栏 —— 迟到的旧响应⛔不得覆盖新
                 await slow;   // 第一次请求卡住
                 return {
                     rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1,
-                    viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
+                    viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [], home: -1 },
                     alliances: [], owners: [{ uid: "u-stale", alliance: -1 }],
                     tiles: [{ cell: sgzzCellOf(700, 700), owner: 0, durability: 9, addition: false, capturing: -1 }],
                     truncated: false, marches: [],
@@ -80,7 +80,7 @@ test("sgzzmap page: ★ 代际围栏 —— 迟到的旧响应⛔不得覆盖新
             }
             return {
                 rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 2,
-                viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
+                viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [], home: -1 },
                 alliances: [], owners: [{ uid: "u-fresh", alliance: -1 }],
                 tiles: [{ cell: sgzzCellOf(800, 800), owner: 0, durability: 1, addition: false, capturing: -1 }],
                 truncated: false, marches: [],
@@ -106,7 +106,7 @@ test("sgzzmap page: applyView 把折叠的下标还原成地块，并重建描�
     const f = fakeRuntime();
     const logic = new SgzzmapWorldLogic(f.runtime, W, H);
     logic.applyView({
-        viewer: { uid: "u-me", aid: "a1", leaderUid: "u-lead", friendAids: [] },
+        viewer: { uid: "u-me", aid: "a1", leaderUid: "u-lead", friendAids: [], home: -1 },
         alliances: ["a1", "a2"],
         owners: [{ uid: "u-me", alliance: 0 }, { uid: "u-foe", alliance: 1 }],
         tiles: [
@@ -184,7 +184,7 @@ test("sgzzmap page: 结算积压是「稍后再试」而不是报错，且允许
             if (fail) throw Object.assign(new Error("x"), { code: "SGZZMAP_SETTLEMENT_PENDING" });
             return {
                 rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1,
-                viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
+                viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [], home: -1 },
                 alliances: [], owners: [], tiles: [], truncated: false, marches: [],
             };
         },
@@ -236,7 +236,7 @@ test("sgzzmap page: view 带回的行军进 tracker，档位决定要不要细�
     };
 
     logic.applyView({
-        viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
+        viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [], home: -1 },
         alliances: [], owners: [], tiles: [], marches: [march],
     });
     assert.equal(logic.marches.length, 1);
@@ -252,7 +252,7 @@ test("sgzzmap page: view 带回的行军进 tracker，档位决定要不要细�
 
     // 下一批不含这条 ⇒ 必须丢掉
     logic.applyView({
-        viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
+        viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [], home: -1 },
         alliances: [], owners: [], tiles: [], truncated: false, marches: [],
     });
     assert.equal(logic.marches.length, 0);

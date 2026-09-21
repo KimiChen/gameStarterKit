@@ -105,10 +105,14 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
      * ⚠ friendAids 恒空：v1 没有外交系统，⛔ 不要在这里凭空造友盟。
      */
     async function readViewer(ctx: WorldTx, holding: SgzzHolding):
-        Promise<{ viewer: ISgzzViewer; membership: ISgzzMembership | null; alliance: ISgzzAlliance | null }> {
+        Promise<{ viewer: ISgzzViewer; home: number;
+                  membership: ISgzzMembership | null; alliance: ISgzzAlliance | null }> {
         const membership = await ctx.repo.readMembershipForUpdate(holding.uid);
         const alliance = membership ? await ctx.repo.readAllianceForUpdate(membership.allianceId) : null;
+        // ⚠ 只在真有地时才查：无地的号连一次索引访问都不花
+        const home = holding.tiles > 0 ? await ctx.repo.readAnyOwnedCell(holding.uid) : -1;
         return {
+            home,
             viewer: {
                 uid: holding.uid,
                 aid: membership?.allianceId ?? "",
@@ -118,8 +122,8 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             membership, alliance,
         };
     }
-    function viewerWire(v: ISgzzViewer): ISgzzViewerWire {
-        return { uid: v.uid, aid: v.aid, leaderUid: v.leaderUid, friendAids: [...v.friendAids] };
+    function viewerWire(v: ISgzzViewer, home: number): ISgzzViewerWire {
+        return { uid: v.uid, aid: v.aid, leaderUid: v.leaderUid, friendAids: [...v.friendAids], home };
     }
 
     /**
@@ -250,8 +254,8 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
         return world(sId, async (ctx) => {
             await advanceDue(ctx);
             const holding = await ctx.repo.readHoldingForUpdate(uid);
-            const { viewer } = await readViewer(ctx, holding);
-            // 多读一行探截断：窗口盖整屏（36 块 = 3,600 格）而响应只装得下 SGZZ_MAX_VIEW_TILES 行。
+            const { viewer, home } = await readViewer(ctx, holding);
+            // 多读一行探截断：窗口盖整屏（64 块 = 6,400 格）而响应只装得下 SGZZ_MAX_VIEW_TILES 行。
             const scanned = await ctx.repo.readTilesInRect(rect, SGZZ_MAX_VIEW_TILES + 1);
             const truncated = scanned.length > SGZZ_MAX_VIEW_TILES;
             const tiles = truncated ? scanned.slice(0, SGZZ_MAX_VIEW_TILES) : scanned;
@@ -286,7 +290,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             // ⚠ 只带自己的在途行军：敌军要经 AOI 实体流 + 侦察才该可见（见域里的注释）。
             const marches = await ctx.repo.readActiveMarches(uid, SGZZ_MAX_VIEW_MARCHES);
             return validateSgzzViewRes({
-                rect, revision: ctx.repo.revision, viewer: viewerWire(viewer),
+                rect, revision: ctx.repo.revision, viewer: viewerWire(viewer, home),
                 alliances, owners, tiles: refs, truncated, marches,
             });
         });
@@ -296,8 +300,8 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
         assertIdentity(uid);
         return world(sId, async (ctx) => {
             const holding = await ctx.repo.readHoldingForUpdate(uid);
-            const { viewer } = await readViewer(ctx, holding);
-            return validateSgzzTileRes({ tile: await ctx.repo.readTile(cell), viewer: viewerWire(viewer) });
+            const { viewer, home } = await readViewer(ctx, holding);
+            return validateSgzzTileRes({ tile: await ctx.repo.readTile(cell), viewer: viewerWire(viewer, home) });
         });
     }
 

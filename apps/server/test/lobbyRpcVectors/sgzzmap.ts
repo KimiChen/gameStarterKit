@@ -4,7 +4,7 @@ import type { LobbyRpcVectorFile } from "./vectorTypes";
 // cell = row*10000+col；rect 是 chunk 单位（10 格一块），(75,75) 块覆盖格 750..759
 const cell = 7500750;
 const rect = { minRow: 75, minCol: 75, maxRow: 75, maxCol: 75 };
-const viewer = { uid: "u1", aid: "a1", leaderUid: "", friendAids: [] };
+const viewer = { uid: "u1", aid: "a1", leaderUid: "", friendAids: [], home: cell };
 const tile = { cell, ownerUid: "u1", ownerAid: "a1", durability: 1, addition: false, capturingAid: "" };
 // 行军：从 (750,750) 朝 dirIndex=4（(0,+1)）走 3 步 ⇒ (750,753)，耗时 3×1000ms
 const marchTo = 7500753;

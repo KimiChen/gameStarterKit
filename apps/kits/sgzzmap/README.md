@@ -78,7 +78,7 @@
 - 取地形用展平 `Uint8Array` 的 O(1) 读。⛔ 不要照抄 slg 的 `terrainAt`（逐格线扫矩形表），
   1500² 格上跑不动。
 
-## 五、RPC 域 `sgzzmap`（contractVersion 6）
+## 五、RPC 域 `sgzzmap`（contractVersion 7）
 
 | 路由 | 模式 | 说明 |
 |---|---|---|
@@ -94,6 +94,18 @@
 响应体积：框架硬上限 64 KB、幂等写结果上限 32 KB。`view` 把 uid / 同盟折叠进
 `owners` / `alliances` 字典，地块行只带下标 ⇒ 400 行稳在 28 KB 以内。
 ⚠ 改 `domains/sgzzmap.ts` 的字节必须**同 commit** 抬 `contractVersion`，否则 codegen 拒绝生成。
+
+#### 「回领地」：`viewer.home`
+
+`view` / `tile` 的 `viewer` 带一个 `home`（我名下任意一块地的 cell，`-1` = 无地），页眉那颗按钮据此在
+**回中**（回地图中心）与**回领地**之间翻转。
+
+⚠ 这是可用性的**必需**件而非锦上添花：1500×1500 = 225 万格，关掉页面再进来视野落在地图正中，
+自己的地可能在几百格外——没有这个入口就真的找不回去了。
+
+取值走 `idx_owner (server_id, owner_uid)` **现查**（`readAnyOwnedCell`，cell 升序第一块），
+⛔ 不落列：行军夺地 / 弃地都会让落列的值变陈旧，而现查永远是真的。
+只在 `holding.tiles > 0` 时才查 ⇒ 无地的号零开销。
 
 #### 近景窗的两条预算（2026-09-21 真机重放校正，⛔ 别再按手算改）
 
@@ -186,7 +198,9 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
 node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
 ```
 
-七步重放（进入 → 近档 → 点选 → 占领 → 拉远 → 缩略图跳转 → 推回），落七张截图 + `report.json`。
+八步重放（进入 → 近档 → **回领地** → 点选 → 占领 → 拉远 → 缩略图跳转 → 推回），落截图 + `report.json`。
+⚠ 「回领地」那步同时是 `sgzz-territory` / `sgzz-border` 两层**唯一的真机证据**：dev 账号跨轮累积领地、
+出生豁免早就失效，不先把镜头带到自己的地就永远看不到领地叠色与描边。
 判据全部来自**渲染出来的节点与文本**，⛔ 不调 Logic、⛔ 不直接发 RPC。
 纯函数部分（证据解析器、点击区、缩略图中心）由 `apps/server/test/creator-preview-tool.test.ts` 进门禁。
 
@@ -214,7 +228,6 @@ node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
 无。远档底图、鸟瞰色块、缩略图、行军线均已接上。
 下一步的自然延伸：
 
-- **「回到领地」入口**（1500×1500 上找不到自己的地是真实可用性缺口；重放也因此无法稳定走到「占领成功」
-  这一支——账号一旦有地就不再享出生豁免，而它那块地不在默认视野里）；
+- ~~「回到领地」入口~~ **已做**（`viewer.home` + 页眉按钮，见第五节）；
 - AOI 实体流（敌军可见性）；
 - 地块/摆件图集的人工策展（现在近景是按地形 id 顶色，图集已烘好但还没贴上去）。

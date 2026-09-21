@@ -50,6 +50,10 @@ function fakeRepo() {
             return out;
         },
         async readTile(cell) { return tiles.get(cell) ?? sgzzEmptyTile(cell); },
+        async readAnyOwnedCell(uid: string) {
+            const mine = [...tiles.values()].filter((t) => t.ownerUid === uid).map((t) => t.cell).sort((a, b) => a - b);
+            return mine.length > 0 ? mine[0] : -1;
+        },
         async readTilesInRect(rect: ISgzzRect, limit: number) {
             // ⚠ 必须真按窗过滤：回了窗外的格，validateSgzzViewRes 会（正确地）拒掉整个响应
             const g = sgzzGridRectForChunkRect(rect);
@@ -652,4 +656,22 @@ test("sgzzmap service: view 只带自己的在途行军 —— ⛔ 不泄露别�
     await api.marchRecall("u1", 1, mine.march.marchId, op("r1"));
     const after = await api.view("u1", 1, rect);
     assert.equal(after.marches.length, 0, "撤回的行军⛔不该还挂在视野里");
+});
+
+test("sgzzmap service: ★ 回领地 —— viewer.home 给出自己名下最小的 cell，无地时 -1", async () => {
+    const f = fakeRepo(); const api = apiOn(f);
+    const rect = { minRow: 70, minCol: 70, maxRow: 70, maxCol: 70 };
+
+    // 一块地都没有：⛔ 不查索引，直接 -1
+    assert.equal((await api.view("u1", 1, rect)).viewer.home, -1);
+
+    // 有地：取 cell 升序第一块（⚠ 是「我的」地，别人的不算）
+    const mine1 = sgzzCellOf(701, 705), mine2 = sgzzCellOf(700, 702), other = sgzzCellOf(700, 701);
+    f.seed(other, { ownerUid: "u-other", ownerAid: "", durability: 1 });
+    f.seed(mine1, { ownerUid: "u1", ownerAid: "", durability: 1 });
+    f.seed(mine2, { ownerUid: "u1", ownerAid: "", durability: 1 });
+    f.holdings.set("u1", { uid: "u1", allianceId: "", tiles: 2 });
+    const res = await api.view("u1", 1, rect);
+    assert.equal(res.viewer.home, mine2, "700,702 的 cell 比 701,705 小");
+    assert.notEqual(res.viewer.home, other, "⛔ 不能把别人的地当成我的家");
 });

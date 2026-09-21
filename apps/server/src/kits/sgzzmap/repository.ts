@@ -39,6 +39,8 @@ export interface SgzzRepository {
     updateTile(tile: ISgzzTile): Promise<void>;
     deleteTile(cell: number): Promise<void>;
     readHoldingForUpdate(uid: string): Promise<SgzzHolding>;
+    /** 我名下任意一块地（cell 升序取第一块），没有则 -1。⚠ 走 idx_owner，⛔ 别退化成全表扫。 */
+    readAnyOwnedCell(uid: string): Promise<number>;
     upsertHolding(holding: SgzzHolding): Promise<void>;
     readReceipt(kind: SgzzReceiptKind, opId: string): Promise<SgzzReceipt | null>;
     insertReceipt(receipt: SgzzReceipt): Promise<void>;
@@ -199,6 +201,13 @@ export function createSqlSgzzRepository(tx: KitTx, sId: number): SgzzRepository 
                 allianceId: text(row.alliance_id, "alliance_id", SGZZ_MAX_AID),
                 tiles: integer(row.tiles, "tiles"),
             };
+        },
+
+        async readAnyOwnedCell(uid: string): Promise<number> {
+            const rows = await tx.query<RowDataPacket[]>(
+                "SELECT cell FROM k_sgzzmap_tile WHERE server_id = ? AND owner_uid = ? ORDER BY cell LIMIT 1",
+                [sId, uid]);
+            return rows.length > 0 ? Number(rows[0].cell) : -1;
         },
 
         async upsertHolding(holding: SgzzHolding): Promise<void> {

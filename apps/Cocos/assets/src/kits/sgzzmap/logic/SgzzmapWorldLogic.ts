@@ -53,6 +53,11 @@ export class SgzzmapWorldLogic {
     marches: readonly ISgzzMarch[] = [];
     readonly marchLines = new SgzzMarchLineTracker();
     viewer: ISgzzViewer = { uid: "", aid: "", leaderUid: "", friendAids: [] };
+    /**
+     * 我名下任意一块地的 cell，-1 = 一块都没有。
+     * ⚠ 服务端现查下发（见域契约 ISgzzViewerWire.home）：225 万格上没有这个入口就**找不回自己的地**。
+     */
+    home = -1;
     selection: SgzzSelection | null = null;
     notice = "";
     /**
@@ -182,7 +187,8 @@ export class SgzzmapWorldLogic {
     }
 
     applyView(res: { rect?: ISgzzRect; truncated?: boolean;
-                     viewer: ISgzzViewer; alliances: string[]; owners: { uid: string; alliance: number }[];
+                     viewer: ISgzzViewer & { home?: number };
+                     alliances: string[]; owners: { uid: string; alliance: number }[];
                      tiles: { cell: number; owner: number; durability: number; addition: boolean; capturing: number }[];
                      marches?: readonly ISgzzMarch[] }): void {
         this.loadedRect = res.rect ? sgzzGridRectForChunkRect(res.rect) : null;
@@ -191,6 +197,7 @@ export class SgzzmapWorldLogic {
             uid: res.viewer.uid, aid: res.viewer.aid,
             leaderUid: res.viewer.leaderUid, friendAids: [...res.viewer.friendAids],
         };
+        this.home = typeof res.viewer.home === "number" ? res.viewer.home : -1;
         this.tiles.clear();
         for (const ref of res.tiles) {
             const owner = ref.owner >= 0 ? res.owners[ref.owner] : null;
@@ -311,6 +318,23 @@ export class SgzzmapWorldLogic {
         } finally {
             this.busy = false;
         }
+    }
+
+    /** 有没有自己的地可回。没有就只能回地图中心。 */
+    get hasHome(): boolean { return this.home >= 0; }
+
+    /**
+     * 回到自己的领地；没有地时回地图中心。返回落点。
+     *
+     * ⚠ 这是 1500×1500 上的**必需**入口而不是锦上添花：关掉页面再进来，视野默认在地图正中，
+     * 而自己的地可能在几百格外——没有它就真的找不回去了。
+     */
+    locateHome(): { row: number; col: number } {
+        const at = this.home >= 0
+            ? sgzzDecodeCell(this.home)
+            : { row: Math.floor(SGZZ_MAP_ROWS / 2), col: Math.floor(SGZZ_MAP_COLS / 2) };
+        this.locate(at.row, at.col);
+        return at;
     }
 
     /** 跳转到坐标（缩略图/搜索用）。 */

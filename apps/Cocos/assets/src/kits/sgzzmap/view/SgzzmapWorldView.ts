@@ -45,6 +45,8 @@ export class SgzzmapWorldView extends CocosView {
     private title: Label | null = null;
     private offTick: (() => void) | null = null;
     private active = false;
+    private homeButton: Node | null = null;
+    private homeLabel: Label | null = null;
     private mapTop = 0;
     private mapBottom = 0;
     private lastRevision = -1;
@@ -76,8 +78,13 @@ export class SgzzmapWorldView extends CocosView {
         createSolidPlate(this.root, width, footer, PANEL, 0, -height / 2 + footer / 2);
         this.title = this.label("大地图", 25, TEXT, 0, height / 2 - header * 0.35, width * 0.55);
         this.button("关闭", width * 0.14, 44, width * 0.39, height / 2 - header * 0.35, () => runtime.close());
-        this.button("回中", width * 0.14, 44, -width * 0.39, height / 2 - header * 0.35,
-            () => this.logic?.locate(Math.floor(this.logic.mapRows / 2), Math.floor(this.logic.mapCols / 2)));
+        // ⚠ 有地时这颗按钮是「回领地」：225 万格上关掉再进来，自己的地可能在几百格外，
+        //   没有这个入口就真的找不回去了。无地时退回「回中」（回地图中心）。
+        this.homeButton = this.button("回中", width * 0.18, 44, -width * 0.37, height / 2 - header * 0.35,
+            () => { this.logic?.locateHome(); this.render(true); });
+        // 名字要稳定：文案会在 回中/回领地 之间翻转，⛔ 别让节点名跟着变
+        this.homeButton.name = "sgzz-home";
+        this.homeLabel = this.homeButton.getComponentInChildren(Label);
         this.label("拖动平移 · 双指/滚轮缩放 · 点选地块", 18, MUTED, 0, height / 2 - header * 0.77, width * 0.9);
 
         this.details = this.label("点选地图中的一格", 22, TEXT, 0, this.mapBottom - footer * 0.18, width * 0.94);
@@ -139,6 +146,11 @@ export class SgzzmapWorldView extends CocosView {
         if (!force && !moved && !changed) return;
         this.lastCameraVersion = logic.camera.version;
         this.lastRevision = logic.revision;
+        // 按钮语义随「有没有地」翻转。⚠ 文案是重放的判据之一，改字要同改 tools/creator-preview/sgzzmap.mjs
+        if (this.homeLabel) {
+            const want = logic.hasHome ? "回领地" : "回中";
+            if (this.homeLabel.string !== want) this.homeLabel.string = want;
+        }
 
         // 世界节点：平移 + 缩放；网格本身建在世界坐标里，⛔ 平移不重建
         const scale = logic.camera.scale;

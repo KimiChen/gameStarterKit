@@ -57,6 +57,9 @@ export function readSgzzmapEvidence(walk) {
         // 诊断用：缩略图浮层与贴图子节点的真实尺寸（⚠ 赋 spriteFrame 会按 TRIMMED 重置成贴图原尺寸）
         minimapSize: nodes.find((node) => node.name === "sgzz-minimap")?.center ?? null,
         minimapImageSize: nodes.find((node) => node.name === "sgzz-minimap-image")?.center ?? null,
+        // 页眉那颗按钮：有地时是「回领地」，无地时是「回中」（SgzzmapWorldView.render 按 logic.hasHome 翻）
+        homeLabel: nodes.find((node) => node.path.includes("/sgzz-home/")
+            && typeof node.text === "string" && /^(回领地|回中)$/u.test(node.text))?.text ?? null,
         selectionAt: nodes.find((node) => node.name === "sgzz-selection")?.center ?? null,
         selection: nodes.some((node) => node.name === "sgzz-selection"),
         tile: detailMatch
@@ -144,6 +147,32 @@ export async function replaySgzzmapWorld(runner) {
             return value?.nearLoaded ? value : null;
         }, 60_000);
         return { ...evidence, shot: await runner.shot("sgzzmap-opened") };
+    });
+
+    const home = await runner.step("回领地：页眉按钮把镜头带到自己的地（无地时退回地图中心）", async () => {
+        // ⚠ 按钮文案要等第一次 view 回来才定型（hasHome 源自服务端下发的 viewer.home），
+        //   ⛔ 不能直接用首屏那一刻的 opened.homeLabel。
+        let label = null;
+        for (let i = 0; i < 20; i += 1) {
+            label = readSgzzmapEvidence(await runner.walk())?.homeLabel ?? null;
+            if (label === "回领地") break;
+            await sleep(500);
+        }
+        if (label === null) throw new Error("页眉没有 回中/回领地 按钮");
+        const before = readSgzzmapEvidence(await runner.walk())?.worldCenter ?? null;
+        if (label === "回中") {
+            // 全新账号：一块地都没有，下一步靠出生豁免占第一块
+            return { label, moved: 0, skipped: "全新账号（一块地都没有），下一步靠出生豁免占第一块" };
+        }
+        await runner.tapText("回领地", { pathIncludes: VIEW });
+        const evidence = await runner.waitFor("世界节点位移（镜头真的跳到领地了）", (walk) => {
+            const value = readSgzzmapEvidence(walk);
+            if (!value?.worldCenter || !before) return null;
+            const moved = Math.hypot(value.worldCenter.x - before.x, value.worldCenter.y - before.y);
+            // ⚠ 跳过去之后领地叠色与描边必须**真的画出来**——这是 territory/border 两层唯一的真机证据
+            return moved > 1 && value.territory && value.border ? { ...value, moved: Math.round(moved) } : null;
+        });
+        return { label, ...evidence, shot: await runner.shot("sgzzmap-home") };
     });
 
     const selected = await runner.step("点选一格（普通鼠标点击，⛔ 不调 Logic）", async () => {
@@ -234,5 +263,5 @@ export async function replaySgzzmapWorld(runner) {
         return { farLod: far.lod, ...evidence, shot: await runner.shot("sgzzmap-back-near") };
     });
 
-    return { ...opened, occupyOutcome: occupied.outcome };
+    return { ...opened, homeLabel: home.label, occupyOutcome: occupied.outcome };
 }

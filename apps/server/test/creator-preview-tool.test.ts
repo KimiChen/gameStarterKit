@@ -484,3 +484,21 @@ test("sgzzmap 重放：连地闸的拒绝理由算通过，⛔ 但未知错误�
     assert.equal(REFUSAL_RE.test("操作失败（SGZZMAP_WHATEVER）"), false);
     assert.equal(REFUSAL_RE.test("地图数据读取失败"), false);
 });
+
+test("sgzzmap 重放：页眉按钮文案（回中/回领地）要解得出来，⛔ 别的按钮不算", () => {
+    const walkWith = (nodes: unknown[]) => ({ canvas: { width: 750, height: 1624 }, nodes: [
+        { name: "SgzzmapWorldView", path: "Canvas/SgzzmapWorldView" },
+        { name: "sgzz-title", path: "Canvas/SgzzmapWorldView/sgzz-title", text: "大地图 · LOD 0/5" },
+        ...nodes,
+    ] });
+    for (const text of ["回中", "回领地"]) {
+        const walk = walkWith([
+            { name: "sgzz-home", path: "Canvas/SgzzmapWorldView/sgzz-home" },
+            { name: "label", path: "Canvas/SgzzmapWorldView/sgzz-home/label", text },
+        ]);
+        assert.equal(readSgzzmapEvidence(walk)?.homeLabel, text);
+    }
+    // ⚠ 同文字若出现在别处（例如详情行）⛔ 不得当成按钮
+    const decoy = walkWith([{ name: "label", path: "Canvas/SgzzmapWorldView/sgzz-details", text: "回领地" }]);
+    assert.equal(readSgzzmapEvidence(decoy)?.homeLabel, null);
+});
