@@ -6,7 +6,8 @@
  *
  * ⚠ 一层一张合并 mesh（⛔ 不是每 chunk 一张）：per-chunk 会让跨 chunk 的绘制序随平移抖动。
  * ⚠ 领地叠色**必须**也是合并 mesh —— 原作是每格一个节点，那在 Cocos 上会是成千上万个节点。
- * 兄弟序 = 绘制序：地表(0) → 网格线(1) → 领地(2) → 描边(3)。
+ * 兄弟序 = 绘制序：地表(0) → 网格线(1) → 领地(2) → 描边(3) → 摆件(4)。
+ * ⚠ 摆件在最上：它是唯一**超出菱形**的一层，压在领地叠色之下就会被半透明的色块糊掉。
  * ⚠ 网格线压在领地叠色**下面**：叠色是半透明的，压上面会把格线糊成一片。
  */
 import { Material, Node, Texture2D } from "cc";
@@ -22,6 +23,10 @@ import { sgzzCompensate, sgzzStateColor, sgzzTerrainColor, type SgzzRgba } from 
 import { sgzzTerrainIdAt } from "../logic/sgzzTerrain";
 import type { SgzzmapWorldLogic } from "../logic/SgzzmapWorldLogic";
 import type { SgzzArtResources } from "./SgzzArtResources";
+import {
+    SGZZ_MAX_DECOR_QUADS, sgzzDecorAt, sgzzDecorQuad, SGZZ_DECOR_NONE,
+} from "../logic/sgzzDecor";
+import { sgzzPainterCompare } from "../logic/sgzzMesh";
 import {
     createSgzzBatch, createSgzzMaterial, destroySgzzBatch, sgzzPipelineToneMapping,
     sgzzUnlitTechnique, uploadSgzzBatch, type SgzzBatch,
@@ -43,6 +48,7 @@ type SgzzPoly = { readonly points: readonly (readonly [number, number])[]; reado
 export class SgzzMapRenderer {
     private terrain: SgzzBatch | null = null;
     private grid: SgzzBatch | null = null;
+    private decor: SgzzBatch | null = null;
     private territory: SgzzBatch | null = null;
     private border: SgzzBatch | null = null;
     private readonly material: Material;
@@ -91,7 +97,9 @@ export class SgzzMapRenderer {
         const terrainQuads: SgzzQuadInput[] = [];
         const territoryQuads: SgzzQuadInput[] = [];
         const gridPolys: SgzzPoly[] = [];
+        const decorCells: { row: number; col: number; id: number }[] = [];
         const wantGrid = sgzzLayerVisible("grid", logic.camera.lod);
+        const wantDecor = sgzzLayerVisible("decor", logic.camera.lod);
         const gridRgba = sgzzCompensate(GRID_RGBA, this.tone);
         // 线宽折算成世界单位：拉近了才不会变粗、拉远了才不会消失
         const gridHalf = GRID_LINE_PX / 2 / Math.max(0.01, logic.camera.scale);
@@ -107,6 +115,10 @@ export class SgzzMapRenderer {
                 rgba: terrainMat.textured ? WHITE : sgzzCompensate(sgzzTerrainColor(id), this.tone),
             });
             if (wantGrid) for (const poly of sgzzGridEdgePolys(row, col, gridHalf, gridRgba)) gridPolys.push(poly);
+            if (wantDecor) {
+                const decorId = sgzzDecorAt(id, row, col);
+                if (decorId !== SGZZ_DECOR_NONE) decorCells.push({ row, col, id: decorId });
+            }
             const colour = sgzzStateColor(logic.stateAt(row, col));
             if (colour) territoryQuads.push({ row, col, uv: null, rgba: sgzzCompensate(colour, this.tone) });
         });
@@ -116,6 +128,7 @@ export class SgzzMapRenderer {
         this.territory = this.sync(this.territory, "sgzz-territory", territoryQuads, 2);
         // 描边比格线粗一点才看得出是「边」
         this.border = this.syncPoly(this.border, "sgzz-border", this.borderPolys(logic, gridHalf * 2.5), 3);
+        this.decor = this.syncPoly(this.decor, "sgzz-decor", this.decorPolys(decorCells), 4);
     }
 
     /**
@@ -145,6 +158,21 @@ export class SgzzMapRenderer {
         return batch;
     }
 
+    /**
+     * 摆件四边形。⚠ 必须按**画家序**排：菱形网格上「屏幕越低 = 越靠前」，
+     * 一棵树要挡住它**后面**那些格，⛔ 顺着可视模板的遍历序画会前后颠倒。
+     */
+    private decorPolys(cells: { row: number; col: number; id: number }[]): SgzzPoly[] {
+        if (cells.length === 0 || cells.length > SGZZ_MAX_DECOR_QUADS) return [];
+        cells.sort(sgzzPainterCompare);
+        const out: SgzzPoly[] = [];
+        for (const cell of cells) {
+            const poly = sgzzDecorQuad(cell.row, cell.col, cell.id);
+            if (poly) out.push(poly);
+        }
+        return out;
+    }
+
     private sync(batch: SgzzBatch | null, name: string, quads: SgzzQuadInput[], at: number,
                  material: Material = this.material): SgzzBatch | null {
         if (quads.length === 0) {
@@ -165,10 +193,11 @@ export class SgzzMapRenderer {
         return { x: p.x, y: p.y, w: SGZZ_TILE_HALF_W * 2 * scale, h: SGZZ_TILE_HALF_H * 2 * scale };
     }
 
-    /** 切到远档：把近档四层整批撤掉，⛔ 不要留着挡在底图上。 */
+    /** 切到远档：把近档五层整批撤掉，⛔ 不要留着挡在底图上。 */
     clear(): void {
         destroySgzzBatch(this.terrain); this.terrain = null;
         destroySgzzBatch(this.grid); this.grid = null;
+        destroySgzzBatch(this.decor); this.decor = null;
         destroySgzzBatch(this.territory); this.territory = null;
         destroySgzzBatch(this.border); this.border = null;
     }

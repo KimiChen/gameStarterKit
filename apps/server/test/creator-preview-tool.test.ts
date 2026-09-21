@@ -359,6 +359,7 @@ test("readSgzzmapEvidence：近档解出标题/地块/四层网格，半加载�
             sgzzNode("label", "(750, 751) 平原 · 无主", { x: 0, y: 10 }),
             sgzzNode("sgzz-terrain", null, null),
             sgzzNode("sgzz-grid", null, null),
+            sgzzNode("sgzz-decor", null, null),
             sgzzNode("sgzz-territory", null, null),
             sgzzNode("sgzz-border", null, null),
             sgzzNode("sgzz-world", null, { x: -12, y: 34 }),
@@ -372,6 +373,7 @@ test("readSgzzmapEvidence：近档解出标题/地块/四层网格，半加载�
     assert.equal(value.farLoaded, false, "近档没有底图/色块");
     assert.equal(value.terrain, true);
     assert.equal(value.grid, true);
+    assert.equal(value.decor, true);
     assert.equal(value.territory, true);
     assert.equal(value.border, true);
     assert.equal(value.minimap, true);
@@ -383,9 +385,11 @@ test("readSgzzmapEvidence：近档解出标题/地块/四层网格，半加载�
 
     // ★ 网格线缺席 ⇒ 判未就位。grid 层曾经在门控表里写着可见、渲染器里一行都没有，
     //   而当时的判据只看 sgzz-terrain，于是「没画网格线」一路绿到底。
-    const noGrid = { ...walk, nodes: walk.nodes.filter((n) => n.name !== "sgzz-grid") };
-    assert.equal(readSgzzmapEvidence(noGrid).grid, false);
-    assert.equal(readSgzzmapEvidence(noGrid).nearLoaded, false, "⛔ 缺网格线不算近档画好了");
+    for (const missing of ["sgzz-grid", "sgzz-decor"]) {
+        const without = { ...walk, nodes: walk.nodes.filter((n) => n.name !== missing) };
+        assert.equal(readSgzzmapEvidence(without).nearLoaded, false, `⛔ 缺 ${missing} 不算近档画好了`);
+    }
+    assert.equal(readSgzzmapEvidence({ ...walk, nodes: walk.nodes.filter((n) => n.name !== "sgzz-grid") }).grid, false);
 
     // 标题还没出来 ⇒ 判未就位（⛔ 不把半加载的画面当证据）
     const noTitle = { ...walk, nodes: walk.nodes.filter((n) => n.text !== "大地图 · LOD 1/5") };

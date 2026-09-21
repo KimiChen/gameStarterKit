@@ -34,9 +34,9 @@ export const SGZZ_LAYERS: readonly LayerGate[] = Object.freeze([
     { id: "marchDetail", hideAtLod: 2, showFromLod: 0, streamed: false, implemented: true },
     { id: "birdview", hideAtLod: SGZZ_LOD_MAX, showFromLod: SGZZ_BIRDVIEW_LOD, streamed: false, implemented: true },
     { id: "plate", hideAtLod: SGZZ_LOD_MAX, showFromLod: 3, streamed: false, implemented: true },
-    // ── 以下三层**尚未实现**：位置留着，但渲染器里没有它们，⛔ 别当成能用 ──────────────
-    // decor（摆件/地标）与 banner（目标旗）等地块图集人工策展；label（地名）还缺地名数据。
-    { id: "decor", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: false },
+    { id: "decor", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: true },
+    // ── 以下两层**尚未实现**：位置留着，但渲染器里没有它们，⛔ 别当成能用 ──────────────
+    // banner（目标旗）等地块图集人工策展；label（地名）还缺地名数据。
     { id: "banner", hideAtLod: 1, showFromLod: 0, streamed: false, implemented: false },
     { id: "label", hideAtLod: 2, showFromLod: 0, streamed: false, implemented: false },
 ] as const);

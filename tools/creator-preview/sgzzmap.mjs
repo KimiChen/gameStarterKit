@@ -46,6 +46,7 @@ export function readSgzzmapEvidence(walk) {
         // 近档三层
         terrain: has("sgzz-terrain"),
         grid: has("sgzz-grid"),
+        decor: has("sgzz-decor"),
         territory: has("sgzz-territory"),
         border: has("sgzz-border"),
         // 远档两件
@@ -77,8 +78,10 @@ export function readSgzzmapEvidence(walk) {
         notice: notice?.text ?? null,
         worldCenter: nodes.find((node) => node.name === "sgzz-world")?.center ?? null,
         // 近档「画出来了」= 标题在 + 地表网格在；远档 = 标题在 + 底图或色块在
-        // ⚠ 近档「画出来了」要连网格线一起算：grid 层曾经在门控表里写着可见、渲染器里一行都没有
-        nearLoaded: !!titleMatch && has("sgzz-terrain") && has("sgzz-grid"),
+        // ⚠ 近档「画出来了」要连网格线与摆件一起算：这两层都曾经在门控表里写着可见、
+        //   渲染器里一行都没有，而判据只看 sgzz-terrain，于是一路绿到底。
+        //   ⚠ 摆件在**陆地**上才有（水里不种树），重放的视野在出生区陆地上，恒有。
+        nearLoaded: !!titleMatch && has("sgzz-terrain") && has("sgzz-grid") && has("sgzz-decor"),
         farLoaded: !!titleMatch && (!!plate || has("sgzz-birdview")),
     };
 }
@@ -256,9 +259,9 @@ export async function replaySgzzmapWorld(runner) {
         await sgzzmapWheel(runner, area, 240, 14);
         const evidence = await runner.waitFor("LOD ≥ 3 且底图/色块在、地表网格已撤", (walk) => {
             const value = readSgzzmapEvidence(walk);
-            // ⚠ 网格线也必须撤干净：它压在底图上会把远档糊成一片
+            // ⚠ 网格线与摆件也必须撤干净：压在底图上会把远档糊成一片
             return value && value.lod !== null && value.lod >= 3 && value.farLoaded
-                && !value.terrain && !value.grid ? value : null;
+                && !value.terrain && !value.grid && !value.decor ? value : null;
         }, 45_000);
         return { ...evidence, shot: await runner.shot("sgzzmap-far") };
     });

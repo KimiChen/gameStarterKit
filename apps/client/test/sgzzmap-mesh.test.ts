@@ -9,6 +9,10 @@ import {
 } from "../src/kits/sgzzmap/logic/sgzzLayers";
 import { SGZZ_MAX_BORDER_EDGES, SgzzBorderSet } from "../src/kits/sgzzmap/logic/sgzzBorder";
 import {
+    SGZZ_DECOR_KINDS, SGZZ_DECOR_MAX_HEIGHT, SGZZ_DECOR_NONE, sgzzDecorAt, sgzzDecorQuad,
+} from "../src/kits/sgzzmap/logic/sgzzDecor";
+import { SgzzViewportStencil } from "../src/kits/sgzzmap/logic/sgzzViewport";
+import {
     SGZZ_MAP_COLS, SGZZ_MAP_ROWS, SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W,
     sgzzAtlasUv, sgzzGrid2Pos, sgzzNeighbours, sgzzRingTable, sgzzTileVariant,
 } from "../src/shared/kits/sgzzmap/api/hexmap/index";
@@ -185,7 +189,8 @@ test("★ 网格线：每格只画 NE/SE 两条边 —— 铺满整张网且每�
 });
 
 test("★ 层表：未实现的层恒不可见（⛔ 不许门控说该建而渲染器没写）", () => {
-    assert.deepEqual([...SGZZ_PLANNED_LAYERS], ["decor", "banner", "label"]);
+    // ⚠ 实现一层就从这里少一个 —— 这条红过一次（decor 做完时），说明它真的在看守
+    assert.deepEqual([...SGZZ_PLANNED_LAYERS], ["banner", "label"]);
     for (const id of SGZZ_PLANNED_LAYERS) {
         for (let lod = 0; lod <= 5; lod += 1) {
             assert.equal(sgzzLayerVisible(id, lod), false, `${id} @LOD${lod} 必须不可见`);
@@ -197,6 +202,10 @@ test("★ 层表：未实现的层恒不可见（⛔ 不许门控说该建而渲
     assert.equal(sgzzLayerVisible("grid", 1), true);
     assert.equal(sgzzLayerVisible("grid", 2), false);
     assert.ok(sgzzVisibleLayers(0).includes("grid"));
+    // decor 已实现：LOD 0/1 建、LOD 2 起撤
+    assert.equal(sgzzLayerVisible("decor", 1), true);
+    assert.equal(sgzzLayerVisible("decor", 2), false);
+    assert.ok(sgzzVisibleLayers(0).includes("decor"));
 });
 
 test("★ 描边：六段首尾相接绕菱形一圈，⛔ 不是重涂整格、也⛔不是六道乱划的斜杠", () => {
@@ -306,4 +315,70 @@ test("★ 翻转只在格内镜像，⛔ 不会采到隔壁格", () => {
     const flipped = buildSgzzDiamondMesh([{ row: 700, col: 700, uv, flip: 1, rgba: [1, 1, 1, 1] }]);
     assert.equal(plain.uvs[2], flipped.uvs[6], "E 的 u 该变成原来 W 的");
     assert.equal(plain.uvs[6], flipped.uvs[2], "W 的 u 该变成原来 E 的");
+});
+
+test("★ 摆件：地形决定种类、位置的纯函数、水里不种树", () => {
+    // ⛔ 水域/海/图外不许有摆件
+    for (const terrain of [4, 5, 8]) {
+        for (let row = 700; row < 740; row += 1) {
+            for (let col = 700; col < 740; col += 1) {
+                assert.equal(sgzzDecorAt(terrain, row, col), SGZZ_DECOR_NONE, `地形 ${terrain} 不该有摆件`);
+            }
+        }
+    }
+    // ⚠ 位置的纯函数：⛔ 随机数会让平移时摆件乱跳
+    for (let i = 0; i < 40; i += 1) {
+        assert.equal(sgzzDecorAt(1, 700 + i, 713), sgzzDecorAt(1, 700 + i, 713));
+    }
+    // 密度要留白：森林最密也得留出空地，平原要稀疏
+    const rate = (terrain: number) => {
+        let hit = 0, total = 0;
+        for (let row = 600; row < 700; row += 1) {
+            for (let col = 600; col < 700; col += 1) {
+                total += 1;
+                if (sgzzDecorAt(terrain, row, col) !== SGZZ_DECOR_NONE) hit += 1;
+            }
+        }
+        return hit / total;
+    };
+    const forest = rate(1), plain = rate(0);
+    assert.ok(forest > 0.45 && forest < 0.65, `森林摆件率 ${(forest * 100).toFixed(1)}%`);
+    assert.ok(plain > 0.05 && plain < 0.2, `平原摆件率 ${(plain * 100).toFixed(1)}%，该稀疏`);
+    // 森林两种树都要出现
+    const kinds = new Set<number>();
+    for (let row = 600; row < 700; row += 1) {
+        for (let col = 600; col < 700; col += 1) {
+            const d = sgzzDecorAt(1, row, col);
+            if (d !== SGZZ_DECOR_NONE) kinds.add(d);
+        }
+    }
+    assert.deepEqual([...kinds].sort(), [0, 1], "森林该有阔叶与针叶两种");
+});
+
+test("★ 摆件必须超出菱形往上长，⛔ 压回格内就退化成地表片了", () => {
+    const c = sgzzGrid2Pos(700, 700);
+    for (const kind of SGZZ_DECOR_KINDS) {
+        const poly = sgzzDecorQuad(700, 700, kind.id);
+        assert.ok(poly, `${kind.name} 该出四边形`);
+        const ys = poly!.points.map((p) => p[1]);
+        const top = Math.max(...ys), bottom = Math.min(...ys);
+        assert.ok(bottom < c.y, `${kind.name} 的底该略沉进格里`);
+        assert.ok(top - bottom === kind.height, `${kind.name} 高度应为 ${kind.height}`);
+        // 顶边比底边窄 ⇒ 是剪影不是方块
+        const topW = Math.abs(poly!.points[1][0] - poly!.points[0][0]);
+        const bottomW = Math.abs(poly!.points[2][0] - poly!.points[3][0]);
+        assert.ok(topW < bottomW, `${kind.name} 顶边该比底边窄`);
+    }
+    // ★ 至少有一种要真的高过菱形（2×TH），否则这一层没有存在意义
+    assert.ok(SGZZ_DECOR_MAX_HEIGHT > SGZZ_TILE_HALF_H * 2,
+        `最高摆件 ${SGZZ_DECOR_MAX_HEIGHT} 没超过一格的高度 ${SGZZ_TILE_HALF_H * 2}`);
+    assert.equal(sgzzDecorQuad(700, 700, 99), null, "未知摆件号回 null");
+});
+
+test("★ 视口预取余量要盖得住摆件高度，⛔ 否则下边缘的树会突然弹出来", () => {
+    const stencil = new SgzzViewportStencil();
+    // marginTiles 是构造参数，默认 2；余量换算成世界单位要 ≥ 最高摆件
+    const marginWorld = stencil.marginTiles * SGZZ_TILE_HALF_H * 2;
+    assert.ok(marginWorld >= SGZZ_DECOR_MAX_HEIGHT,
+        `可视模板余量 ${marginWorld} < 最高摆件 ${SGZZ_DECOR_MAX_HEIGHT}：屏幕下方的摆件会弹出`);
 });
