@@ -10,6 +10,24 @@
       "sha256": "088ec07120c4b1dee35b399213fbced39187e78d9259136fab2c8ae50a19bf28"
     },
     {
+      "id": "ui/backpack/header",
+      "kind": "image",
+      "file": "assets/bag_header.png",
+      "width": 172,
+      "height": 90,
+      "sha256": "d0c56ce54a511f5c5ab9603448ebd904dc32cc18e0afd7fd40a4af0975ed68a2",
+      "nineSlice": [164, 0, 4, 0]
+    },
+    {
+      "id": "ui/backpack/footer",
+      "kind": "image",
+      "file": "assets/bag_footer.png",
+      "width": 16,
+      "height": 21,
+      "sha256": "c5e57dfb2188a457e71999ee277148a00bfc011ab5e8d67d7ad54ba6f2e1683a",
+      "nineSlice": [6, 8, 6, 9]
+    },
+    {
       "id": "ui/backpack/slider-track",
       "kind": "image",
       "file": "assets/bag_slider_track.png",

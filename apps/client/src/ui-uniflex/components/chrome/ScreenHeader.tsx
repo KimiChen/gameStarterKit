@@ -1,9 +1,11 @@
 import { defineComponent } from '@uniflex/compiler';
+import type { ImageRef } from '../../../kits/uniflex/api/core/index';
 import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface ScreenHeaderProps {
     readonly theme?: ComponentTheme;
     readonly title: string;
+    readonly source?: ImageRef;
     readonly top?: number;
     readonly titleLeft?: number;
     readonly titleTop?: number;
@@ -29,7 +31,7 @@ export const ScreenHeader = defineComponent<ScreenHeaderProps>((p) => {
     const titleAlign = p.theme?.chrome.titleAlign ?? activeTheme.chrome.titleAlign;
     const titleOutlineWidth = p.theme?.chrome.titleOutlineWidth ?? activeTheme.chrome.titleOutlineWidth;
     const labelTop = titleTop - top;
-    const header = theme.chrome.header;
+    const header = p.source ?? theme.chrome.header;
     const font = theme.chrome.font;
     const titleColor = p.titleColor ?? theme.chrome.title;
     const titleOutline = p.titleOutline ?? theme.chrome.outline;

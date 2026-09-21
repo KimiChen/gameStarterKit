@@ -105,7 +105,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
     return (
         <view name="Backpack" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }}>
             <view style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 170, backgroundColor: '#553E78' }} />
-            <ScreenHeader title={params.title ?? '背包'} titleWidth={118} titleHeight={60} />
+            <ScreenHeader title={params.title ?? '背包'} titleWidth={118} titleHeight={60} source={imageRef('ui/backpack/header')} />
             <ResourceCounter icon={resourceIcon} left={159} top={22} value={resources[0]}
                 id="resource-1" onClick={() => emit('resource-1', 'primary')} />
             <ResourceCounter icon={resourceIcon} left={303} top={22} value={resources[1]}
@@ -144,7 +144,7 @@ export const Backpack = defineView<BackpackParams | void>({ zIndex: 'window' }, 
                     onChange={setSafeQuantity} />
             </view>
 
-            <ScreenFooter onBack={() => emit('back', 'back')} />
+            <ScreenFooter source={imageRef('ui/backpack/footer')} onBack={() => emit('back', 'back')} />
         </view>
     );
 });
