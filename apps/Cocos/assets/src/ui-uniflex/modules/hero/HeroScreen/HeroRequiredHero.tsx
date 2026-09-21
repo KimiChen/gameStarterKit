@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ItemSlot, type ItemQuality } from '../../../gamecomponents/item/ItemSlot';
+import { ItemSlot } from '../../../gamecomponents/item/ItemSlot';
 import type { HeroCardQuality } from './HeroCard';
 
 export interface HeroRequiredHeroProps {
@@ -12,17 +12,13 @@ export interface HeroRequiredHeroProps {
     readonly onClick?: () => void;
 }
 
-function slotQuality(quality: HeroCardQuality): ItemQuality {
-    return quality === 'yellow' ? 'orange' : quality;
-}
-
 export const HeroRequiredHero = defineComponent<HeroRequiredHeroProps>((p) => {
     const owned = p.owned;
     const nameColor = p.nameColor;
     return (
     <view name="HeroRequiredHero" interaction="press" onClick={p.onClick}
         style={{ position: 'relative', width: 158, height: 196 }}>
-        <ItemSlot left={4} top={4} quality={slotQuality(p.quality)} />
+        <ItemSlot left={4} top={4} itemId="gem" />
         <image source={imageRef('ui/hero/bond-portrait')}
             style={{ position: 'absolute', left: 12, top: 13, width: 138, height: 138 }} />
         <image source={imageRef('ui/hero/bond-class')}

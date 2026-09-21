@@ -1,6 +1,6 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { itemIcon, itemQuality, ItemSlot } from '../../../gamecomponents/item/ItemSlot';
+import { ItemSlot } from '../../../gamecomponents/item/ItemSlot';
 
 export type ShopCurrency = 'gem' | 'medal';
 
@@ -28,8 +28,6 @@ export const ShopCard = defineComponent<ShopCardProps>((p) => {
     const goods = p.goods;
     const width = goods.width;
     const height = goods.height;
-    const icon = itemIcon(goods.itemId);
-    const quality = itemQuality(goods.itemId);
     const owned = goods.owned;
     const locked = goods.lock != null && goods.lock !== '';
     const buyable = !locked;
@@ -56,7 +54,7 @@ export const ShopCard = defineComponent<ShopCardProps>((p) => {
                 style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }} />
             <image source={imageRef('ui/shop/card-buybar')}
                 style={{ position: 'absolute', left: 0, top: buybarTop, width: width, height: buybarHeight, sizeMode: 'sliced' }} />
-            <ItemSlot left={24} top={25} quality={quality} icon={icon} count={owned} />
+            <ItemSlot left={24} top={25} itemId={goods.itemId} count={owned} />
             <text visible={hasStock} value={stock}
                 style={{ position: 'absolute', left: 20, top: 188, width: 190, height: 36,
                     font: fontRef('fonts/regular', 700), fontSize: 28, color: '#3F3254', bold: true,

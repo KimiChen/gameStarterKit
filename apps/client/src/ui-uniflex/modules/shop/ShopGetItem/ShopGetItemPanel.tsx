@@ -1,7 +1,7 @@
 import { defineComponent, useEffect, useState } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { getItemConfig, itemIcon, itemQuality, ItemSlot } from '../../../gamecomponents/item/ItemSlot';
+import { getItemConfig, ItemSlot } from '../../../gamecomponents/item/ItemSlot';
 import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 
@@ -49,8 +49,6 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
     const payIcon = isMedalPay ? imageRef('ui/shop/price-medal') : imageRef('ui/shop/getitem-pay-gem');
     const payIconWidth = isMedalPay ? 44 : 64;
     const payIconHeight = isMedalPay ? 35 : 54;
-    const icon = itemIcon(p.itemId ?? 'gem');
-    const quality = itemQuality(p.itemId ?? 'gem');
     const qtyTrack = imageRef('ui/star-upgrade/progress-track');
     const qtyFill = imageRef('ui/star-upgrade/progress-fill');
     const qtyThumb = imageRef('ui/shop/getitem-thumb');
@@ -70,7 +68,7 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
             <PopupFrame title={p.title ?? '获取道具'} left={21} top={502} width={708} height={620}
                 onClose={p.onClose} />
             <view style={{ position: 'absolute', left: 21, top: 502, width: 708, height: 620 }}>
-                <ItemSlot left={18} top={119} quality={quality} icon={icon} count={owned} />
+                <ItemSlot left={18} top={119} itemId={p.itemId ?? 'gem'} count={owned} />
                 <text value={item.name}
                     style={{ position: 'absolute', left: 191, top: 132, width: 470, height: 36,
                         font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true,
