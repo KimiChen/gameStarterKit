@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
+import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { flagTab, TabBar } from '../../../components/tab/TabBar';
 import { AllianceTerritoryFortPanel } from './AllianceTerritoryFortPanel';
 import { AllianceTerritoryLandPanel } from './AllianceTerritoryLandPanel';
@@ -38,12 +39,8 @@ export const AllianceTerritoryPanel = defineComponent<AllianceTerritoryPanelProp
                 style={{ position: 'absolute', left: 0, top: 140, width: 750, height: 209 }} />
             <image source={imageRef('ui/alliance/flag-content-bg')}
                 style={{ position: 'absolute', left: 0, top: 314, width: 750, height: 1310, sizeMode: 'sliced' }} />
-            <image source={imageRef('ui/alliance/flag-header')}
-                style={{ position: 'absolute', left: 0, top: 144, width: 750, height: 90 }} />
-            <text value={p.title ?? '领地旗帜'}
-                style={{ position: 'absolute', left: 38, top: 169, width: 400, height: 50,
-                    font: fontRef('fonts/regular', 700), fontSize: 40, color: '#ffffff', bold: true,
-                    outlineColor: '#593D84', outlineWidth: 2, verticalAlign: 'center' }} />
+            <ScreenHeader title={p.title ?? '领地旗帜'} top={144} titleTop={169}
+                titleWidth={400} titleHeight={50} />
 
             <AllianceTerritoryLandPanel visible={tab === 'land'} onAction={p.onAction} />
             <AllianceTerritoryPortPanel visible={tab === 'port'} onAction={p.onAction} />
