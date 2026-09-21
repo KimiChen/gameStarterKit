@@ -38,6 +38,12 @@ export class SgzzFieldRenderer {
     private readonly cache = new Map<number, Cached>();
     private tick = 0;
     private disposed = false;
+    /**
+     * 上一帧视野内的块是不是**全部**烘好了。
+     * ⚠ 没铺满之前 ⛔ 不能撤掉逐格地表：未烘的块什么都不画 ⇒ 那一片是**全黑**，
+     *   摆件浮在黑底上（真机 run 27 实证）。每帧只烘 1 块，填满要十几帧。
+     */
+    private covered = false;
 
     constructor(private readonly root: Node, private readonly art: SgzzArtResources | null) {}
 
@@ -53,15 +59,16 @@ export class SgzzFieldRenderer {
         const halfW = cam.width / cam.scale / 2, halfH = cam.height / cam.scale / 2;
         const wanted = sgzzFieldChunksFor(cam.x, cam.y, halfW, halfH);
 
-        let baked = 0;
+        let baked = 0, missing = 0;
         for (const chunk of wanted) {
             const hit = this.cache.get(chunk.key);
             if (hit) { hit.used = this.tick; continue; }
             // ⚠ 分帧烘：这一帧的预算用完就先不画那块，下一帧接着来
-            if (baked >= SGZZ_FIELD_BAKE_BUDGET) continue;
+            if (baked >= SGZZ_FIELD_BAKE_BUDGET) { missing += 1; continue; }
             const made = this.bake(chunk);
-            if (made) { this.cache.set(chunk.key, made); baked += 1; }
+            if (made) { this.cache.set(chunk.key, made); baked += 1; } else missing += 1;
         }
+        this.covered = missing === 0;
         this.evict(wanted);
     }
 
@@ -124,6 +131,7 @@ export class SgzzFieldRenderer {
     clear(): void {
         for (const c of this.cache.values()) this.drop(c);
         this.cache.clear();
+        this.covered = false;
     }
 
     dispose(): void {
@@ -131,6 +139,8 @@ export class SgzzFieldRenderer {
         this.clear();
     }
 
+    /** 视野内的块是否已全部烘好。⚠ false 时调用方**必须**保留逐格地表垫底，⛔ 否则是黑的。 */
+    get isCovered(): boolean { return this.covered; }
     /** ⚠ 只给用例/诊断用：当前缓存了几块。 */
     get cached(): number { return this.cache.size; }
 }

@@ -183,9 +183,13 @@ export class SgzzmapWorldView extends CocosView {
             // ★ 连续覆盖场就绪就由它画地表；缺 effect/图集则退回逐格地表 + 过渡片
             const field = this.fieldRenderer?.ready === true
                 && sgzzLayerVisible("field", logic.camera.lod);
-            if (field) { this.fieldRenderer?.render(logic); this.fieldRoot?.setSiblingIndex(0); }
+            if (field) this.fieldRenderer?.render(logic);
             else this.fieldRenderer?.clear();
-            this.renderer.render(logic, field);
+            // ⚠ 只有覆盖场**铺满视野**才撤逐格地表：没铺满时未烘的块是全黑的，
+            //   摆件会浮在黑底上（真机 run 27 实证）。没铺满就让逐格地表垫在下面。
+            const covered = field && this.fieldRenderer?.isCovered === true;
+            this.fieldRoot?.setSiblingIndex(covered ? 0 : 1);
+            this.renderer.render(logic, covered);
             this.farRenderer?.clear();
         } else {
             this.fieldRenderer?.clear();

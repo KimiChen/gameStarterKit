@@ -81,6 +81,9 @@ export function readSgzzmapEvidence(walk) {
         // 近档「画出来了」= 标题在 + 地表网格在；远档 = 标题在 + 底图或色块在
         // 连续覆盖场（v2）接管地表后就没有 sgzz-terrain 了 ⇒ 两种形态都算就位
         field: nodes.some((node) => node.name.startsWith("sgzz-field-")),
+        // ⚠ 块数要**稳定**才算铺满：每帧只烘 1 块，填满要十几帧。
+        //   只要求「有一个 field 节点」的话会在填充到一半时截图（真机 run 27 就是这么截到半屏黑的）。
+        fieldChunks: nodes.filter((node) => node.name.startsWith("sgzz-field-")).length,
         // ⚠ 常驻网格线已停用（v2 拍板）⇒ ⛔ 不再作为就位条件。
         //   ⚠ 摆件在**陆地**上才有（水里不种树），重放的视野在出生区陆地上，恒有。
         nearLoaded: !!titleMatch && has("sgzz-decor")
@@ -156,10 +159,16 @@ export async function replaySgzzmapWorld(runner) {
         return runner.tapSettingsEntry("world");
     });
 
-    const opened = await runner.step("近档：地表网格与标题就位（地形随代码走，⛔ 不等资源加载）", async () => {
-        const evidence = await runner.waitFor("地图标题 + sgzz-terrain 网格", (walk) => {
+    const opened = await runner.step("近档：地表与标题就位（覆盖场要铺满，⛔ 不接受填到一半）", async () => {
+        // ⚠ 覆盖场是分帧烘的 ⇒ 要等块数连续两次采样不变才算铺满
+        let lastChunks = -1, stable = 0;
+        const evidence = await runner.waitFor("地图标题 + 地表就位且覆盖场块数稳定", (walk) => {
             const value = readSgzzmapEvidence(walk);
-            return value?.nearLoaded ? value : null;
+            if (!value?.nearLoaded) { lastChunks = -1; stable = 0; return null; }
+            if (value.fieldChunks === 0) return value;          // 退回逐格地表的形态
+            stable = value.fieldChunks === lastChunks ? stable + 1 : 0;
+            lastChunks = value.fieldChunks;
+            return stable >= 2 && value.fieldChunks >= 4 ? value : null;
         }, 60_000);
         return { ...evidence, shot: await runner.shot("sgzzmap-opened") };
     });
