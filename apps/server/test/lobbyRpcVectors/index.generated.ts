@@ -6,6 +6,7 @@ import guildVectors from "./guild";
 import mailVectors from "./mail";
 import mmoVectors from "./mmo";
 import mmoSocialVectors from "./mmoSocial";
+import mmodemoVectors from "./mmodemo";
 import partyVectors from "./party";
 import redeemVectors from "./redeem";
 import roomVectors from "./room";
@@ -26,6 +27,7 @@ export const LOBBY_RPC_VECTOR_FILES: Readonly<Record<string, LobbyRpcVectorFile>
     mail: mailVectors,
     mmo: mmoVectors,
     mmoSocial: mmoSocialVectors,
+    mmodemo: mmodemoVectors,
     party: partyVectors,
     redeem: redeemVectors,
     room: roomVectors,

@@ -2,7 +2,8 @@
 
 `mmodemo` 是 [docs/MMO.md](../../../docs/MMO.md) §9.2 的**内容插件样本 1**：建在冻结的 [`mmo` kit](../../kits/mmo/README.md)（tag `mmo-kit-v1-frozen`）上，
 只交三样东西——内容包 `demoVale`、表现映射、编排模块——经 kit 的三个贡献点装载（`plugin.json` 的 `contributes.mmo`），
-`requires.kits.mmo = { content: 3, orchestration: 1 }`。⛔ 不自带 mode / wire / state / SQL（§9.1 判据）；世界运行时是 kit 的 `mmoWorld`。
+`requires.kits.mmo = { content: 3, orchestration: 2 }`；MG1-B2 起另带一个**可选自有域页面**「头狼战报」（域 `mmodemo`，query `mmodemo.bossBoard`，
+route `bossBoard` + 设置面板菜单入口）。⛔ 不自带 mode / wire / state / SQL（§9.1 判据）；世界运行时是 kit 的 `mmoWorld`。
 实施状态只在 MMO.md §12 回写（施工单 MMO-PLAN.md §4 MG0–MG1）。
 
 ## 文件
@@ -13,8 +14,11 @@
 | `apps/plugins/mmodemo/content/pack.json` | 内容包 `demoVale` v1（一份 JSON = 贡献点 `content` 的 data；§9.2 写的分文件形态在 v1 贡献点里是单文件） |
 | `apps/server/src/core/mmodemo/mmoOrchestration.ts` | `defineOrchestration({ packId: "demoVale", … })`：只分派事件 |
 | `apps/server/src/core/mmodemo/encounters/{bossTimer,ambush,merchant}.ts` | 三段遭遇的纯函数 |
-| `apps/client/src/plugins/mmodemo/{index.ts,mmoPresentation.ts}` | 空 plugin module；表现映射（占位胶囊颜色 / 尺寸） |
-| `apps/server/test/mmodemo-{content,orchestration}.test.ts`、`apps/client/test/mmodemo-logic.test.ts` | 内容包 / 对齐 / harness 重放 / 表现覆盖 |
+| `apps/client/src/plugins/mmodemo/{index.ts,mmoPresentation.ts}` | plugin module（install 只组装 MmoDemoRuntime：bossBoard 只读 + 关闭 route）；表现映射（占位胶囊颜色 / 尺寸） |
+| `apps/shared/src/protocol/lobbyRpc/domains/mmodemo.ts` | 域 `mmodemo`（MG1-B2）：`mmodemo.bossBoard` query 契约 + validator；常量 `MMO_DEMO_PACK_ID` / `MMO_DEMO_MAP_ID` / `MMO_DEMO_BOSS_BOARD_MAX_LINES`（与内容包 / 编排 / kit 面用例交叉核对） |
+| `apps/server/src/core/mmodemo/bossBoard.ts`、`apps/server/src/websocket/mmodemo/bossBoard.ts` | 用例（只经 kit `orchestration` 面 v2 `listCheckpointedVars`；坏 var ⇒ 0）+ 端点 |
+| `apps/client/src/plugins/mmodemo/logic/{mmoDemoRuntime,MmoDemoBoardLogic}.ts`、`view/MmoDemoBoardView.{ts,view.json}` | 战报页：runtime holder / 逻辑（击杀降序、运行时长、错误码翻译）/ 纯节点 View（popup 层） |
+| `apps/server/test/mmodemo-{content,orchestration,bossboard}.test.ts`、`test/lobbyRpcVectors/mmodemo.ts`、`apps/client/test/mmodemo-{logic,board-logic}.test.ts` | 内容包 / 对齐 / harness 重放 / 战报用例与 validator 正反向 / 向量 / 表现覆盖 / 页面逻辑 |
 
 ## 内容包 `demoVale`
 
@@ -42,10 +46,19 @@
 `limits: { maxSpawnsAlive: 8, maxGrantCount: 5 }`；订阅 `instanceStarted / timer / creatureDied / regionEntered / interact / choice`。
 模块只 import kit shared `api/orchestration` 门面与本目录，无 Date / Math.random / 计时器（`mmo-orchestration-boundary.test.ts` 机检）。
 
+## 可选域页面「头狼战报」（MG1-B2；§9.2「自有域（可选）」）
+
+`mmodemo.bossBoard`（query，无参数）：服务端经 kit `orchestration` 面 v2 `listCheckpointedVars(sId, "demoVale", "demoVale")` 读 demoVale 各分线
+**最新已落库检查点**里编排 durable var `bossKills`（bossTimer 在 creatureDied(tag boss) 时 `setVar` 累计）→ `{ mapId, packId, lines[{ instanceId, rev, tick, bossKills }], totalKills }`
+（≤ 64 条分线 = kit `CHECKPOINTED_VARS_MAX_ROWS`；无检查点 rev / tick 0；非法 var ⇒ 0）。插件 ⛔ 碰 kit 表、⛔ 读框架 `world_instance`，也不新增错误码。
+客户端：设置面板「头狼战报」卡（`card-bossBoard`）→ route `bossBoard` → `MmoDemoBoardView`（popup）：击杀降序列分线（标签「分线 n · …末 6 位」、检查点 rev、
+运行时长 = tick × TICK_MS）、合计、刷新 / 关闭；错误只按 code 翻译，失败保留旧数据。`host.json` 未动（未登记的入口默认落设置面板玩法卡）。
+
 ## 验证
 
 `npm --workspace @game/server run plugin -- test mmodemo`（内容包 validator / 对齐 / 与灰盒同装载；harness：boss 周期与不叠刷、奖励只发同队在场者、
-70 人封顶不撑爆预算、伏击冷却、行商 prompt → 赠送、同种子重放逐条相等、换成 65 条命令的 handler ⇒ suspend）+ `npm run test:client`（表现覆盖与不重叠）。
+70 人封顶不撑爆预算、伏击冷却、行商 prompt → 赠送、同种子重放逐条相等、换成 65 条命令的 handler ⇒ suspend；MG1-B2 战报用例 / validator 正反向 / 向量）
++ `npm run test:client`（表现覆盖与不重叠；战报页逻辑）+ 框架 `lobby-rpc-vectors`（域 ⇔ 向量文件、validator 正反向）。
 
 MG0-B3 动线验收（docs/MMO.md §9.4，2026-09-22，相对 tag `mmo-kit-v1-frozen` = kit 0.1.26 的修复提交）：
 
@@ -64,4 +77,4 @@ MG0-B3 动线验收（docs/MMO.md §9.4，2026-09-22，相对 tag `mmo-kit-v1-fr
 
 - `dash` 改为 `warcry`（buff）：v1 `MmoSpellKind` 只有 damage / heal / buff / debuff。
 - 内容包是一份 `pack.json`（贡献点 data = 单文件），不是 §9.2 列的分文件。
-- 行商是赠送不是交易；奖励封顶 50 人；可选域页面 `mmodemo.bossBoard` 归 MG1-B2。
+- 行商是赠送不是交易；奖励封顶 50 人；可选域页面 `mmodemo.bossBoard` 已于 MG1-B2 交付（战报只读最新检查点，⛔ 运行中实时值）。

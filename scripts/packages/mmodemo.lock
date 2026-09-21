@@ -1,21 +1,41 @@
-# scripts/packages/mmodemo.lock —— 已安装插件 mmodemo@0.1.2 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/mmodemo.lock —— 已安装插件 mmodemo@0.2.0 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"mmodemo","version":"0.1.2","kinds":["client"],"constantName":null,"contributes":{"mmo":{"content":"apps/plugins/mmodemo/content/pack.json","presentation":"apps/client/src/plugins/mmodemo/mmoPresentation.ts","orchestration":"apps/server/src/core/mmodemo/mmoOrchestration.ts"}},"domains":[],"fguiPackages":[],"requires":{"pluginApiVersion":null,"kits":{"mmo":{"content":3,"orchestration":1}}}}
-# source {"kind":"tree","filesLockSha256":"09198fc474ddb2531eac7429d6d9fe17d0f94c15217d7569a4a525e7e94f5701","forkedFrom":{"kind":"package","filesLockSha256":"e860f65e20e8ca106e6700877f6d906b631d16c4b39a9bbd0506c1fd32d84d08"}}
+# manifest {"id":"mmodemo","version":"0.2.0","kinds":["client"],"constantName":null,"contributes":{"mmo":{"content":"apps/plugins/mmodemo/content/pack.json","presentation":"apps/client/src/plugins/mmodemo/mmoPresentation.ts","orchestration":"apps/server/src/core/mmodemo/mmoOrchestration.ts"}},"domains":["mmodemo"],"fguiPackages":[],"requires":{"pluginApiVersion":null,"kits":{"mmo":{"content":3,"orchestration":2}}}}
+# source {"kind":"tree","filesLockSha256":"df0b5f1e46949ca14a39500dfab8c0fe466323f47ffec51f4d3c9462c806aec3","forkedFrom":{"kind":"package","filesLockSha256":"e860f65e20e8ca106e6700877f6d906b631d16c4b39a9bbd0506c1fd32d84d08"}}
 apps/Cocos/assets/src/plugins/mmodemo.meta e354dc2c68fda1c7eebb788ffb63f73a22f971dd03621358151edb6ec959f870
-apps/Cocos/assets/src/plugins/mmodemo/index.ts 8aac4ba9ddfe729b4007cc734695de401b7d1550563ff30128a0862cafb85c90
+apps/Cocos/assets/src/plugins/mmodemo/index.ts bc098c2258b9a9efd3b5d703b3f7bbbe5dce1fdacb25052cf69d43ec3af32bb3
 apps/Cocos/assets/src/plugins/mmodemo/index.ts.meta 9c91cf27f725e5d003027b7002d3c965ecaa10592ce9aad23c14be78ee9f1603
+apps/Cocos/assets/src/plugins/mmodemo/logic.meta 10ce9895df44376da9efe746d9f5a437f266f1dd73e71d9b37d8dd5ae7c6e15e
+apps/Cocos/assets/src/plugins/mmodemo/logic/MmoDemoBoardLogic.ts f664008814a1896db961e3cae7c37987ffe31b8dfa8f36dbd8702dadd8ae8972
+apps/Cocos/assets/src/plugins/mmodemo/logic/MmoDemoBoardLogic.ts.meta ee07280ac5ca33bc12f26c6b8892dbf4e07abe30f5ee08c6c3a0f17c14c82163
+apps/Cocos/assets/src/plugins/mmodemo/logic/mmoDemoRuntime.ts 5ee12f109c1191de26112c38e74b9c4adc8951c9356e1b77657f031186836e00
+apps/Cocos/assets/src/plugins/mmodemo/logic/mmoDemoRuntime.ts.meta a9d8238df4698912adb6563bc59156cce34b7bd4f50cc9653a4790f83117372a
 apps/Cocos/assets/src/plugins/mmodemo/mmoPresentation.ts 8b5d534f5eaf2749b98f976b8ece116729ba0750b600dfce5d18fc6461aee790
 apps/Cocos/assets/src/plugins/mmodemo/mmoPresentation.ts.meta 1bcc3c05b5e6c18d128ce5a059ffdf1c0123355ac0b9757bedda6787593f7049
-apps/client/src/plugins/mmodemo/index.ts 8aac4ba9ddfe729b4007cc734695de401b7d1550563ff30128a0862cafb85c90
+apps/Cocos/assets/src/plugins/mmodemo/view.meta 427be70c175005a44c2b50c273e7a2cb21bc48ae7d483cbf7baae20410bc05a4
+apps/Cocos/assets/src/plugins/mmodemo/view/MmoDemoBoardView.ts 98b292cb0052592cc26326ca98994a15bf4047074f40d393d923ead996e55813
+apps/Cocos/assets/src/plugins/mmodemo/view/MmoDemoBoardView.ts.meta 024cf35ca6c158c65a65bb7bb5cfa2c5336457d4aaf08aefc5014123c1315a26
+apps/Cocos/assets/src/plugins/mmodemo/view/MmoDemoBoardView.view.json 8774b734106723b39f0b9047f31b12a7fdb630cd829a0148c42095d844a3b9d0
+apps/Cocos/assets/src/plugins/mmodemo/view/MmoDemoBoardView.view.json.meta e1e155c996ffbdf7a66fd09633fddacf380e916f58cd148915bc910ad0c37dc8
+apps/client/src/plugins/mmodemo/index.ts bc098c2258b9a9efd3b5d703b3f7bbbe5dce1fdacb25052cf69d43ec3af32bb3
+apps/client/src/plugins/mmodemo/logic/MmoDemoBoardLogic.ts f664008814a1896db961e3cae7c37987ffe31b8dfa8f36dbd8702dadd8ae8972
+apps/client/src/plugins/mmodemo/logic/mmoDemoRuntime.ts 5ee12f109c1191de26112c38e74b9c4adc8951c9356e1b77657f031186836e00
 apps/client/src/plugins/mmodemo/mmoPresentation.ts 8b5d534f5eaf2749b98f976b8ece116729ba0750b600dfce5d18fc6461aee790
+apps/client/src/plugins/mmodemo/view/MmoDemoBoardView.ts 98b292cb0052592cc26326ca98994a15bf4047074f40d393d923ead996e55813
+apps/client/src/plugins/mmodemo/view/MmoDemoBoardView.view.json 8774b734106723b39f0b9047f31b12a7fdb630cd829a0148c42095d844a3b9d0
+apps/client/test/mmodemo-board-logic.test.ts 9fc42d12673cba8bf5db00df78fb8f2c4d93045302495e6747b9ed5f441153c2
 apps/client/test/mmodemo-logic.test.ts 2d32cf53ab61b9a8eebd9b1da7bd684c762ba325c9a62ded664ea3787c84fb0b
-apps/plugins/mmodemo/README.md 4dfb1b5cc45e621201dcb4b90f5dc5168d0a4018ee2b5115f4f6881ed4ae046d
+apps/plugins/mmodemo/README.md 43d4b1d6cc062409d07daccd1bc28865f006e13abe08976686eddc19e1f3bfdf
 apps/plugins/mmodemo/content/pack.json cca0fe1406d70ae80bd074da1f58d114bc701475e16b10d91629574feb7a9537
-apps/plugins/mmodemo/plugin.json 418689b9edd7410fc8a8ac84cd9058d46baf5fe50fba97b37a2a8fc07fc0a31a
+apps/plugins/mmodemo/plugin.json 75226b3e8f7eb998ab6161720cd6c8353787cbbd4ab66c8b01ab4faa50f2223e
+apps/server/src/core/mmodemo/bossBoard.ts d3139c24cf5810cddcee695c1cb21cbd7f1909984e43547a65e2c87bcd21173a
 apps/server/src/core/mmodemo/encounters/ambush.ts ede7bc4f9bb5f35c27a46ec9b8ab362ea0e138cd30f3f39c902707e70fd30109
 apps/server/src/core/mmodemo/encounters/bossTimer.ts 0df01dafda91eab64bdbcd55ad0360c17b1bf43c9b84b8d32b274159a75f97c9
 apps/server/src/core/mmodemo/encounters/merchant.ts 25a79ca2dbfd7ea84bc44706f7732018dd8be3ca68c34235ed65dc20f1917ae2
 apps/server/src/core/mmodemo/mmoOrchestration.ts d302ac9316b06972ba01de1f85d95ac40490b0f64d14f40c76558c074ba637b1
+apps/server/src/websocket/mmodemo/bossBoard.ts de10340eb0b13221142abfca3ecf875b1e0c85142d37b7f255f80292944cf767
+apps/server/test/lobbyRpcVectors/mmodemo.ts 6577c8eed27b7629a19c59becf10e28e1b02a47ff76147615bd64133e3385c76
+apps/server/test/mmodemo-bossboard.test.ts e0c1c0e2aa4c58ad15d48d6ce3619b9ae6ee79bd9a4508d598ec026ad621d6d8
 apps/server/test/mmodemo-content.test.ts d6df06a9c30733f267b06c28c94d990f7d3bc9b89acd43f7b912f812444f470f
 apps/server/test/mmodemo-orchestration.test.ts f5d07d26a6fae7b0d593ceb3132fb7d7b3ad0ea7f3820b64e7381aaad9278eb8
+apps/shared/src/protocol/lobbyRpc/domains/mmodemo.ts f55f116faf0f63fe451d4d475d0bc4c3b56ed7ece52d7b3eaa6433640c50fc29

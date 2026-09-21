@@ -1,13 +1,16 @@
 {
   "schemaVersion": 2,
   "id": "mmodemo",
-  "version": "0.1.2",
-  "description": "MMO 内容插件样本 1（docs/MMO.md §9.2）：灰谷内容包 demoVale + 表现映射 + 编排（定时 boss / 区域伏击 / 行商）——只消费 mmo kit 冻结的面与三个贡献点",
+  "version": "0.2.0",
+  "description": "MMO 内容插件样本 1（docs/MMO.md §9.2）：灰谷内容包 demoVale + 表现映射 + 编排（定时 boss / 区域伏击 / 行商）+ 可选自有域页面「头狼战报」（mmodemo.bossBoard）——只消费 mmo kit 冻结的面与三个贡献点",
+  "domains": [
+    "mmodemo"
+  ],
   "requires": {
     "kits": {
       "mmo": {
         "content": 3,
-        "orchestration": 1
+        "orchestration": 2
       }
     }
   },
@@ -23,5 +26,34 @@
     "apps/plugins/mmodemo/README.md"
   ],
   "resident": false,
-  "entry": "apps/client/src/plugins/mmodemo/index.ts"
+  "entry": "apps/client/src/plugins/mmodemo/index.ts",
+  "viewDirs": [
+    "apps/client/src/plugins/mmodemo/view"
+  ],
+  "views": [
+    "apps/client/src/plugins/mmodemo/view/MmoDemoBoardView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "mmodemo",
+      "logicDir": "apps/client/src/plugins/mmodemo/logic"
+    }
+  ],
+  "routes": [
+    {
+      "id": "bossBoard",
+      "view": "MmoDemoBoard"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "bossBoard",
+      "label": "头狼战报",
+      "labelKey": "menu.mmodemo.bossBoard",
+      "launch": {
+        "kind": "route",
+        "routeId": "bossBoard"
+      }
+    }
+  ]
 }

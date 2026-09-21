@@ -11,6 +11,7 @@ import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, vali
 import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
 import { validateMmoBagReq, validateMmoBagRes, validateMmoCharactersReq, validateMmoCharactersRes, validateMmoCreateCharacterReq, validateMmoCreateCharacterRes, validateMmoMoveItemReq, validateMmoMoveItemRes, type IMmoBagReq, type IMmoBagRes, type IMmoCharactersReq, type IMmoCharactersRes, type IMmoCreateCharacterReq, type IMmoCreateCharacterRes, type IMmoMoveItemReq, type IMmoMoveItemRes } from "./domains/mmo";
 import { validateMmoSocialPartyLocateReq, validateMmoSocialPartyLocateRes, type IMmoSocialPartyLocateReq, type IMmoSocialPartyLocateRes } from "./domains/mmoSocial";
+import { validateMmoDemoBossBoardReq, validateMmoDemoBossBoardRes, type IMmoDemoBossBoardReq, type IMmoDemoBossBoardRes } from "./domains/mmodemo";
 import { validatePartyAcceptReq, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyLeaveReq, validatePartyLeaveRes, validatePartySeqRes, validatePartyTransferLeaderReq, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
 import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
@@ -30,6 +31,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "mail",
     "mmo",
     "mmoSocial",
+    "mmodemo",
     "party",
     "redeem",
     "room",
@@ -58,6 +60,7 @@ export interface LobbyRpcMap {
     "mmo.bag": { req: IMmoBagReq; res: IMmoBagRes };
     "mmo.moveItem": { req: IMmoMoveItemReq; res: IMmoMoveItemRes };
     "mmoSocial.partyLocate": { req: IMmoSocialPartyLocateReq; res: IMmoSocialPartyLocateRes };
+    "mmodemo.bossBoard": { req: IMmoDemoBossBoardReq; res: IMmoDemoBossBoardRes };
     "party.create": { req: IPartyCreateReq; res: IPartyCreateRes };
     "party.invite": { req: IPartyInviteReq; res: IPartyInviteRes };
     "party.accept": { req: IPartyAcceptReq; res: IPartyAcceptRes };
@@ -154,6 +157,7 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "mmo.bag": "query",
     "mmo.moveItem": "idempotent-write",
     "mmoSocial.partyLocate": "query",
+    "mmodemo.bossBoard": "query",
     "party.create": "idempotent-write",
     "party.invite": "idempotent-write",
     "party.accept": "idempotent-write",
@@ -208,6 +212,7 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "mmo.bag",
     "mmo.moveItem",
     "mmoSocial.partyLocate",
+    "mmodemo.bossBoard",
     "party.create",
     "party.invite",
     "party.accept",
@@ -263,6 +268,7 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "mmo.bag": 1,
     "mmo.moveItem": 1,
     "mmoSocial.partyLocate": 1,
+    "mmodemo.bossBoard": 1,
     "party.create": 1,
     "party.invite": 1,
     "party.accept": 1,
@@ -309,6 +315,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
     mmo: { contractVersion: 2, digest: "4afe37decf5d1f1f4ba4a6e978706d023130bc65df47bd9e106ee4643bd61837" },
     mmoSocial: { contractVersion: 1, digest: "91454d69481cbebbf617b63d9239ef70ec2a70d3f4ae38069880eed71bd56056" },
+    mmodemo: { contractVersion: 1, digest: "f55f116faf0f63fe451d4d475d0bc4c3b56ed7ece52d7b3eaa6433640c50fc29" },
     party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
@@ -349,6 +356,7 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "mmo.bag": guardRpcValidator("payload", validateMmoBagReq),
     "mmo.moveItem": guardRpcValidator("payload", validateMmoMoveItemReq),
     "mmoSocial.partyLocate": guardRpcValidator("payload", validateMmoSocialPartyLocateReq),
+    "mmodemo.bossBoard": guardRpcValidator("payload", validateMmoDemoBossBoardReq),
     "party.create": guardRpcValidator("payload", validatePartyCreateReq),
     "party.invite": guardRpcValidator("payload", validatePartyInviteReq),
     "party.accept": guardRpcValidator("payload", validatePartyAcceptReq),
@@ -403,6 +411,7 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "mmo.bag": guardRpcValidator("response", validateMmoBagRes),
     "mmo.moveItem": guardRpcValidator("response", validateMmoMoveItemRes),
     "mmoSocial.partyLocate": guardRpcValidator("response", validateMmoSocialPartyLocateRes),
+    "mmodemo.bossBoard": guardRpcValidator("response", validateMmoDemoBossBoardRes),
     "party.create": guardRpcValidator("response", validatePartyCreateRes),
     "party.invite": guardRpcValidator("response", validatePartyInviteRes),
     "party.accept": guardRpcValidator("response", validatePartySeqRes),

@@ -118,8 +118,10 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         load: () => import("../plugins/mmodemo/index").then((m) => m.createPluginModule()),
         dependencies: ["mmo"],
         routes: [
+            { id: "bossBoard", view: "MmoDemoBoard", group: "authenticated", restore: "discard" },
         ],
         menu: [
+            { entryId: "bossBoard", pluginId: "mmodemo", label: "头狼战报", labelKey: "menu.mmodemo.bossBoard", launch: { kind: "route", routeId: "bossBoard" } },
         ],
     },
     {
@@ -190,6 +192,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", labelKey: "menu.arenaShop", launch: { kind: "route", routeId: "arenaShop" } },
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
     { entryId: "enter", pluginId: "mmo", label: "进入世界", labelKey: "menu.mmo.enter", launch: { kind: "route", routeId: "mmoCharacters" } },
+    { entryId: "bossBoard", pluginId: "mmodemo", label: "头狼战报", labelKey: "menu.mmodemo.bossBoard", launch: { kind: "route", routeId: "bossBoard" } },
     { entryId: "redeem", pluginId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },
     { entryId: "world", pluginId: "sgzzmap", label: "大地图", labelKey: "menu.sgzzmap.world", launch: { kind: "route", routeId: "sgzzmapWorld" } },
     { entryId: "map", pluginId: "slg", label: "大地图", labelKey: "menu.slg.map", launch: { kind: "route", routeId: "slgMap" } },
