@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateWebSocketOrigin } from "@game/shared/protocol/http";
 
 // 根 .env.development 加载（仅开发便利；只填 process.env 里**没有**的键，显式环境变量优先）。
 // 放根而非 apps/server：PROJECT_ID 是全仓级标识，且不依赖 @colyseus/tools 的 cwd 自动加载——
@@ -120,14 +121,15 @@ export const AUTH_PROVIDER: "dev" | "webplatform" = (() => {
  *  ⚠ 严格校验（纯整数 1–65535，非法即 throw），⛔ 不用 envInt：parseInt 会把
  *  「2599junk」截成 2599，而 devEnv 生成器按纯数字正则回退默认——双方各自「容错」
  *  出不同结果 = 服务端与客户端端口静默脑裂。两侧同一规则、非法即失败。 */
-export const PORT = (() => {
-  const v = env("PORT", "2568");
+function processPort(name: string, fallback: number): number {
+  const v = env(name, String(fallback));
   const n = /^\d+$/.test(v) ? Number(v) : NaN;
   if (!Number.isInteger(n) || n < 1 || n > 65535) {
-    throw new Error(`PORT 非法：「${v}」——须为 1–65535 的纯整数（devEnv 生成器同一规则，防双端端口脑裂）`);
+    throw new Error(`${name} 非法：「${v}」——须为 1–65535 的纯整数`);
   }
   return n;
-})();
+}
+export const PORT = processPort("PORT", 2568);
 
 /** 本进程/组承载的区服 sId 集合（逗号分隔，如 `"1,2,3"`）。**空 = 承载全部**
  *  （单形态 / 大混服 / legacy，onAuth 不做区归属闸）。区服形态下由它做进服硬闸：
@@ -369,10 +371,19 @@ if (WORLD_LEASE_RENEW_MS < 1 || WORLD_LEASE_TTL_MS < 1 || WORLD_LEASE_RENEW_MS *
  * world 进程公开 ws 地址（MMO MF8-B4 / D27）：`world.enter` 回给客户端的 endpoint；空串 = 与当前区 gameWsUrl 相同
  * （world 进程拆分（PS4）前的缺省；拆分后由部署方设置 wss origin）。非空必须是 ws/wss origin。
  */
-export const WORLD_PUBLIC_WS_URL = (process.env.WORLD_PUBLIC_WS_URL ?? "").trim();
-if (WORLD_PUBLIC_WS_URL !== "" && !/^wss?:\/\/[A-Za-z0-9.-]+(:\d{1,5})?$/u.test(WORLD_PUBLIC_WS_URL)) {
-  throw new Error(`WORLD_PUBLIC_WS_URL(${WORLD_PUBLIC_WS_URL}) 必须是 ws:// 或 wss:// origin（无路径）`);
+function publicWsOrigin(name: string): string {
+  const value = (process.env[name] ?? "").trim();
+  if (value === "") return value;
+  try {
+    return validateWebSocketOrigin(value);
+  } catch {
+    throw new Error(`${name} 必须是 ws:// 或 wss:// origin（无路径，端口 1–65535）`);
+  }
 }
+/** PS2：由游戏 HTTP /version 下发；不改变外部目录契约。空值回落目录 gameWsUrl。 */
+export const LOBBY_PUBLIC_WS_URL = publicWsOrigin("LOBBY_PUBLIC_WS_URL");
+export const GAME_PUBLIC_WS_URL = publicWsOrigin("GAME_PUBLIC_WS_URL");
+export const WORLD_PUBLIC_WS_URL = publicWsOrigin("WORLD_PUBLIC_WS_URL");
 /**
  * 多 world 进程（MMO MF10-B2 / D27）：`WORLD_MULTI_PROCESS=1` 时 world 进程装 RedisDriver / RedisPresence（多个 world 进程共享房间列表 / IPC），
  * 承载它们的 `REDIS_COLYSEUS_URL` 必须是与 durable / coord 不同的 Redis **实例**（加载期断言，错配即拒启；独立 db 不算）。

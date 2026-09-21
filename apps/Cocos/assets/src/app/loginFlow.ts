@@ -20,7 +20,7 @@
  * `sys.localStorage`，公告「今日不再提醒」的存取；⛔ 不得扩散到其它 app/ 模块）。
  *
  * 选服链路：openLogin 时拉 WebPlatform GET /v1/areas 存 serverSession + 默认选中服 →
- * Login 显示当前服 → 选服改 currentServer → HTTP 使用 gameHttpUrl、Colyseus 使用 gameWsUrl。
+ * Login 显示当前服 → 选服改 currentServer → HTTP 使用 gameHttpUrl、/version 发现三角色 WS 端点。
  */
 import { sys } from "cc";
 import type { LoginView } from "../view/LoginView";
@@ -49,7 +49,7 @@ import { AreaListLogic } from "../logic/page/AreaListLogic";
 import { LoginNoticeLogic, noticeDateStamp } from "../logic/page/LoginNoticeLogic";
 import type { IConfirmOptions } from "../logic/page/ConfirmLogic";
 import { ConfirmLogic } from "../logic/page/ConfirmLogic";
-import { initHttp } from "../core/http";
+import { initHttp, request } from "../core/http";
 import { devLogin } from "../net/http/account";
 import { WebSocketClient } from "../net/WebSocketClient";
 import {
@@ -65,6 +65,7 @@ import {
   type SessionReconcileIdentity,
 } from "./SessionCoordinator";
 import {
+  ApiPath,
   UserRpc,
   joinErrText,
   type IUserView,
@@ -74,6 +75,8 @@ import { fetchAreaList } from "../net/http/area";
 import { fetchNotices } from "../net/http/notice";
 import {
   chooseServer,
+  discoverServerEndpoints,
+  getCurrentLobbyWsUrl,
   getCurrentServer,
   setServerList,
   getServerList,
@@ -254,10 +257,11 @@ async function reconcilePageSession(
   if (!isPageOwnerActive(owner, wiredAppGeneration)) return false;
   const server = getCurrentServer();
   if (!server) return false;
+  const lobbyEndpoint = getCurrentLobbyWsUrl();
 
   const result = await reconcileSessionProfile<IUserView>(identity, {
     connect: (captured, control) => {
-      WebSocketClient.inst.init(server.gameWsUrl);
+      WebSocketClient.inst.init(lobbyEndpoint);
       return WebSocketClient.inst.joinOwned(captured.accessToken, { sId: server.serverId }, control);
     },
     // GetInfo 对账经 RefreshCoordinator 合流（§7.2：同 key 并发只合流当前 flight）。
@@ -655,9 +659,18 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
                 flowSessionGen = getSessionGeneration();
               },
               join: async (accessToken, signal) => {
+                logic.onProgress(0.5, "正在获取服务器地址…");
+                const endpoints = await discoverServerEndpoints(cur, () => {
+                  initHttp(cur.gameHttpUrl);
+                  return request("GET", ApiPath.Version);
+                });
+                if (!isFlightActive(flight) || !context.isActive()
+                  || getSessionGeneration() !== flowSessionGen) {
+                  throw new Error("登录事务已失效");
+                }
                 logic.onProgress(0.6, "正在进入大厅…");
                 // 同一份目录快照同时提供 endpoint 与 sId，不能跨 await 混入后续选服结果。
-                await joinSelectedServerLobby(cur, accessToken, {
+                await joinSelectedServerLobby({ ...cur, lobbyWs: endpoints.lobbyWs }, accessToken, {
                   init: (endpoint) => WebSocketClient.inst.init(endpoint),
                   // WebPlatform 的 serverId 在 Colyseus join 边界显式转换为 sId。
                   join: (token, options, joinSignal) =>

@@ -44,9 +44,16 @@ npm run sync:shared
 [外部身份服务开发边界](WEBPLATFORM.md) §5）`Main.start()` 直接抛错，后续的会话事件订阅与登录页都不会执行。
 
 目录中的 `gameHttpUrl` 与 `gameWsUrl` 是两个独立、不可互相推导的端点：前者用于游戏 HTTP 请求，后者
-直接传给 Colyseus `Client`。Lobby join 只允许 `v/token/sId`；Game join 还必须携带 shared 定义的 canonical
+是各角色 WS 地址的兼容回落。每次登录在 Lobby join 前，从所选区的游戏 HTTP `GET /version` 读取可选
+`lobbyWs / gameWs / worldWs`；每个字段独立使用其非空值，缺字段或空串才回落目录 `gameWsUrl`，
+不会用发现的 `gameWs` 代替缺失的 `worldWs`。合法旧版三字段响应继续可用，HTTP 失败或响应非法则本次登录失败，
+不静默回落。发现字段只允许无路径、无查询、无 userinfo 的 WS(S) origin；外部 WebPlatform 目录契约不变。
+Lobby join 只允许 `v/token/sId`；Game join 还必须携带 shared 定义的 canonical
 `mode`，用于撮合隔离和玩法选择。目录响应中的 `hash` 不会被伪装成服务端准入校验。
 目录刷新成功后保留仍存在的当前 `serverId`；当前区消失才按默认规则回退，刷新失败则保留完整旧快照。
+发现结果在 `serverSession` 按 `serverId / gameHttpUrl / gameWsUrl` 绑定：切服或目录端点改变会清除缓存，
+同端点目录刷新可保留已发现值；切服、目录刷新和后发发现请求都会使旧的在途响应失效。
+Lobby 初登与最终断线重进使用 lobby 地址，GameRoom 使用 `getCurrentGameWsUrl()`，两者各持自己的 SDK Client。
 
 ## 2. 源码与工程壳
 
@@ -368,7 +375,10 @@ reconcile；idle 没有该 hook，join/reconnect 都不会构造 Move。
 token / sId 取会话，本地先过 `validateWorldRoomJoinOptions` 再 `client.joinOrCreate(RoomName.World, options)`；一个 transport 同时
 只持一个世界房；出站只放行 core 与本 mode 的 C2S 且掉线期间拒发（⛔ 不重放旧意图）；入站先过 `validateS2CPayload`；离开分类
 `consented / drained（WITH_ERROR：须经 world.enter 重进）/ replaced（同 persona 别处取得控制权）/ dropped（SDK 自动重连）`。
-端点在 PS2 前用 `getCurrentGameWsUrl()`。交接（MMO MF8-B5）：收到 mode 的「交接就绪」token（或 Lobby `world.resolveTransfer { transferId }` 的结果）后调
+默认端点由 `getCurrentWorldWsUrl()` 提供，即 `/version.worldWs`，缺省回落目录 `gameWsUrl`，并在创建 transport 时捕获。
+首次 `world.enter` 与交接都通过 `transport.transfer()` 消费服务端返回的 `endpoint`：非空的节点地址优先，
+空串使用该 transport 的默认 world 端点。Lobby 的 `world.enter` 只定位实例记录、签发凭据，实际 `joinOrCreate` 发往 world 端点。
+交接（MMO MF8-B5）：收到 mode 的「交接就绪」token（或 Lobby `world.resolveTransfer { transferId }` 的结果）后调
 `transport.transfer({ mode, personaId, ready })`——退源房（有界等待 `WORLD_TRANSFER_LEAVE_TIMEOUT_MS` = 3 s，`leaveTimeoutMs` 可注入：LEAVE 无回执 ⇒ 本地收尾继续，服务端 Committed 后本就离座；MMO MF11 R2-02） → 带凭据 join 目标分线（`ready.endpoint` 非空且注入 `clientFor` 时换 world 进程的 SDK client）→ 新句柄
 `transferId`（重连凭它 resolveTransfer）；strategy 形态 `{ kind:"transfer", transferId, mapId, line? }`（凭据仍在请求的 `ticket`，⛔ 进 strategy / 日志）。视野流 / baseline 的 reconcile 端口 = `WorldRoomHandle.bindObserverStream(types, sink)`（MMO MF5b-B2，
 与 `GameRoomTransport.bindObserverStream` 同形：六个 perSession S2C 经 wire 校验绑到 `logic/rooms/observer/ObserverReconciler`；本人私有流走

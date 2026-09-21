@@ -1515,6 +1515,8 @@ test("pages login flight：重复打开与重复进入只完成一次首屏导�
           gameHttpUrl: "https://game-7.example",
           gameWsUrl: "wss://game-7.example",
         }],
+      } : this.url.endsWith("/version") ? {
+        name: "game-server", gameRoomProtocol: 8, lobbyProtocol: 1,
       } : {
         userId: "login-flight-user",
         accessToken: "login-flight-access-token",
@@ -1698,6 +1700,7 @@ interface PageFlowHarnessOptions {
   /** authenticated base（宣传首屏）在 open / setup 阶段失败一次。 */
   baseFailure?: PageFlowBaseFailure;
   baseGate?: Deferred<void>;
+  versionStatus?: number;
 }
 
 async function waitForPageFlow(predicate: () => boolean, message: string): Promise<void> {
@@ -1762,6 +1765,10 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
             gameWsUrl: "wss://game-9.example",
           }],
         });
+      } else if (this.url.endsWith("/version")) {
+        this.status = options.versionStatus ?? 200;
+        this.responseText = JSON.stringify({ name: "game-server", gameRoomProtocol: 8, lobbyProtocol: 1,
+          lobbyWs: "wss://lobby-9.example", gameWs: "wss://match-9.example", worldWs: "wss://world-9.example" });
       } else {
         const generation = ++loginResponses;
         this.responseText = JSON.stringify({
@@ -1845,8 +1852,9 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
   let rootDisposals = 0;
   /** authenticated base 每次 setup 消费到的会话摘要行（对账后必须是刷新过的快照）。 */
   const baseSetups: string[] = [];
+  const lobbyEndpoints: string[] = [];
 
-  socket.init = () => {};
+  socket.init = (endpoint: string) => { lobbyEndpoints.push(endpoint); };
   socket.join = async () => { joinCalls++; };
   socket.joinOwned = (_token: string, _options: unknown, control: { timeoutMs?: number; signal?: AbortSignal }) => {
     reconcileJoinCalls++;
@@ -1932,6 +1940,7 @@ async function createPageFlowHarness(runtime: ViewRuntime, options: PageFlowHarn
     session,
     scope,
     requests,
+    lobbyEndpoints,
     loginHandles,
     baseHandles,
     confirmLogics,
@@ -1968,6 +1977,8 @@ test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新首屏�
     assert.equal(harness.session.isLoggedIn(), true);
     assert.equal(harness.rpcCalls, 1);
     assert.equal(harness.baseAttempts, 1);
+    assert.deepEqual(harness.lobbyEndpoints, ["wss://lobby-9.example"]);
+    assert.equal(harness.requests.filter((request) => request.url === "https://game-9.example/version").length, 1);
     const loginPostsBefore = harness.requests.filter((request) => request.method === "POST").length;
 
     harness.session.notifyConnLost();
@@ -1977,6 +1988,7 @@ test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新首屏�
       "最终断线后必须完成 Lobby rejoin、GetInfo 和首屏恢复");
 
     assert.equal(harness.reconcileJoinCalls, 1);
+    assert.deepEqual(harness.lobbyEndpoints, ["wss://lobby-9.example", "wss://lobby-9.example"], "初登与最终断线重进必须使用同一发现的Lobby端点");
     assert.equal(harness.joinCalls, 1, "reconciliation 不应重跑初始隐式 join 流程");
     assert.equal(harness.requests.filter((request) => request.method === "POST").length, loginPostsBefore,
       "有效 token 对账不能重新调用会签发 token 的登录 HTTP");
@@ -1986,6 +1998,24 @@ test("pages Lobby 最终断线：复用 session 对账 GetInfo 并刷新首屏�
     assert.match(harness.baseSetups.at(-1) ?? "", /2胜0负/,
       "authenticated base 必须消费刷新后的角色快照（首屏的会话摘要行）");
     assert.equal(harness.confirmLogics.length, 0, "成功对账不应弹回登录提示");
+  } finally {
+    harness.cleanup();
+  }
+});
+
+test("PS2 pages：version HTTP失败清理半截会话，不回落目录Lobby也不进入首屏", async () => {
+  const runtime = await loadViewRuntime();
+  const harness = await createPageFlowHarness(runtime, { versionStatus: 503 });
+  try {
+    await harness.pages.openLogin(() => {}, harness.scope);
+    await harness.loginHandles[0].view.onEnter();
+    assert.equal(harness.requests.filter((request) => request.url === "https://game-9.example/version").length, 1);
+    assert.deepEqual(harness.lobbyEndpoints, []);
+    assert.equal(harness.joinCalls, 0);
+    assert.equal(harness.baseAttempts, 0);
+    assert.equal(harness.session.isLoggedIn(), false);
+    assert.equal(harness.http.getToken(), "");
+    assert.equal(harness.loginHandles[0].isActive(), true, "仍可由用户显式重试");
   } finally {
     harness.cleanup();
   }

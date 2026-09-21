@@ -1,12 +1,13 @@
 /**
  * 选服会话状态（对应原项目 launcher.serverList/currentServer）——当前选中区服。
  *
- * 大厅（登录/选服，view 层）写、Main（进房）读；纯状态模块，只 import shared 类型（无 cc/fairygui）。
- * ⚠ 区服 = 独立实例：游戏 HTTP/Colyseus 连接使用目录返回的 gameHttpUrl，
- * gameWsUrl 作为明确的 WS 地址一并保存在会话中，不再从旧 wsUrl 推导。
+ * 大厅（登录/选服，view 层）写、进房装配读；纯状态与发现事务（无 cc/fairygui）。
+ * 游戏 HTTP 使用目录 gameHttpUrl；角色 WS 使用 /version 的发现值，
+ * 缺字段回落目录明确给出的 gameWsUrl，不从 HTTP 地址推导。
  */
 import { isServerEnterable } from "../logic/areaDirectory";
 import {
+  GameHttpContractMap,
   validateWebPlatformAreaListResponse,
   type WebPlatformAreaListResponse,
   type WebPlatformAreaServer,
@@ -15,11 +16,25 @@ import {
 interface ServerSnapshot {
   readonly list: WebPlatformAreaListResponse | null;
   readonly current: WebPlatformAreaServer | null;
+  readonly endpoints: ServerEndpoints | null;
+}
+
+/** 游戏 HTTP /version 的发现结果；外部区服目录契约保持不变。 */
+export interface ServerEndpoints {
+  readonly lobbyWs: string;
+  readonly gameWs: string;
+  readonly worldWs: string;
 }
 
 // Keep the list and selection in one replaceable snapshot. Consumers must
 // never observe a freshly fetched list paired with an old selection.
-let snapshot: ServerSnapshot = { list: null, current: null };
+let snapshot: ServerSnapshot = { list: null, current: null, endpoints: null };
+let endpointDiscovery = 0;
+
+function sameEndpointBinding(left: WebPlatformAreaServer | null, right: WebPlatformAreaServer | null): boolean {
+  return left !== null && right !== null && left.serverId === right.serverId
+    && left.gameHttpUrl === right.gameHttpUrl && left.gameWsUrl === right.gameWsUrl;
+}
 
 /**
  * The directory response crosses an async/network boundary.  Keep an owned
@@ -57,6 +72,7 @@ export function setServerList(input: unknown): void {
   snapshot = {
     list: ownedList,
     current: current ? cloneServer(current) : null,
+    endpoints: sameEndpointBinding(snapshot.current, current) ? snapshot.endpoints : null,
   };
 }
 
@@ -69,18 +85,50 @@ export function chooseServer(server: WebPlatformAreaServer): void {
   // Store the canonical object from the current snapshot when possible.  This
   // prevents a caller retaining a stale server record after a refresh.
   const canonical = snapshot.list?.servers.find((item) => item.serverId === server.serverId) ?? server;
-  snapshot = { ...snapshot, current: cloneServer(canonical) };
+  snapshot = {
+    ...snapshot,
+    current: cloneServer(canonical),
+    endpoints: sameEndpointBinding(snapshot.current, canonical) ? snapshot.endpoints : null,
+  };
 }
 
 export function getCurrentServer(): WebPlatformAreaServer | null {
   return snapshot.current ? cloneServer(snapshot.current) : null;
 }
 
-/** Return the explicitly advertised WS endpoint for the selected zone. */
-export function getCurrentGameWsUrl(): string {
+function currentEndpoint(role: keyof ServerEndpoints): string {
   const current = snapshot.current;
   if (!current) throw new Error("[serverSession] 尚未选择区服，不能建立 WS 连接");
-  return current.gameWsUrl;
+  return snapshot.endpoints?.[role] ?? current.gameWsUrl;
+}
+
+export const getCurrentLobbyWsUrl = (): string => currentEndpoint("lobbyWs");
+export const getCurrentGameWsUrl = (): string => currentEndpoint("gameWs");
+export const getCurrentWorldWsUrl = (): string => currentEndpoint("worldWs");
+
+/**
+ * 发现与发布使用同一份选服快照。切服、目录刷新或更新的发现请求使旧响应失效；
+ * 失败保留已有结果并向调用方报错，只有合法旧版响应可以回落目录端点。
+ */
+export async function discoverServerEndpoints(
+  server: WebPlatformAreaServer,
+  load: () => Promise<unknown>,
+): Promise<ServerEndpoints> {
+  const selected = snapshot;
+  if (!selected.current || !sameEndpointBinding(selected.current, server)) throw new Error("[serverSession] 所选区服已变更");
+  const fallback = selected.current.gameWsUrl;
+  const discovery = ++endpointDiscovery;
+  const response = GameHttpContractMap.Version.response(await load());
+  if (selected !== snapshot || discovery !== endpointDiscovery) {
+    throw new Error("[serverSession] 端点发现已失效，请重新进入区服");
+  }
+  const endpoints: ServerEndpoints = {
+    lobbyWs: response.lobbyWs || fallback,
+    gameWs: response.gameWs || fallback,
+    worldWs: response.worldWs || fallback,
+  };
+  snapshot = { ...selected, endpoints };
+  return { ...endpoints };
 }
 
 /**

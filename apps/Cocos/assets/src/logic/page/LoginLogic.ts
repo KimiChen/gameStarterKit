@@ -33,24 +33,24 @@ export interface AuthenticatedLoginFlowDeps<TUser extends { readonly uid: string
     shouldRollback?: () => boolean;
 }
 
-/** Narrow transport port for joining the Lobby advertised by one directory row. */
+/** Narrow transport port for joining the Lobby discovered for one directory row. */
 export interface SelectedServerLobbyPort {
     init(endpoint: string): void;
     join(accessToken: string, options: { sId: number }, signal?: AbortSignal): Promise<void>;
 }
 
 /**
- * Join Lobby using one selected-directory snapshot.  Reading both the endpoint
- * and server id before the first await prevents a concurrent directory change
+ * Join Lobby using one selected-directory snapshot and its discovered lobby origin.
+ * Reading both the endpoint and server id before the first await prevents a directory change
  * from combining one zone's token/id with another zone's websocket endpoint.
  */
 export async function joinSelectedServerLobby(
-    server: Pick<WebPlatformAreaServer, "serverId" | "gameWsUrl">,
+    server: Pick<WebPlatformAreaServer, "serverId" | "gameWsUrl"> & { readonly lobbyWs?: string },
     accessToken: string,
     port: SelectedServerLobbyPort,
     signal?: AbortSignal,
 ): Promise<void> {
-    const endpoint = server.gameWsUrl;
+    const endpoint = server.lobbyWs || server.gameWsUrl;
     const sId = server.serverId;
     port.init(endpoint);
     await port.join(accessToken, { sId }, signal);

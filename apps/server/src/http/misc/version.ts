@@ -4,6 +4,7 @@
  * 灰度/热更混跑期启动时探测双端是否匹配。无鉴权。
  */
 import { GAME_ROOM_PROTOCOL_VERSION, LOBBY_PROTOCOL_VERSION, PROJECT_NAME, type IVersionRes } from "@game/shared";
+import { GAME_PUBLIC_WS_URL, LOBBY_PUBLIC_WS_URL, WORLD_PUBLIC_WS_URL } from "../../core/infra/config";
 import { createGameEndpoint } from "../contract";
 
 export default createGameEndpoint("Version", { method: "GET" }, async (ctx) => {
@@ -11,5 +12,8 @@ export default createGameEndpoint("Version", { method: "GET" }, async (ctx) => {
     name: `${PROJECT_NAME}-server`,
     gameRoomProtocol: GAME_ROOM_PROTOCOL_VERSION,
     lobbyProtocol: LOBBY_PROTOCOL_VERSION,
+    ...(LOBBY_PUBLIC_WS_URL ? { lobbyWs: LOBBY_PUBLIC_WS_URL } : {}),
+    ...(GAME_PUBLIC_WS_URL ? { gameWs: GAME_PUBLIC_WS_URL } : {}),
+    ...(WORLD_PUBLIC_WS_URL ? { worldWs: WORLD_PUBLIC_WS_URL } : {}),
   } satisfies IVersionRes);
 });

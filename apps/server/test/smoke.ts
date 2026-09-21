@@ -9,10 +9,13 @@
  *   2. 独立账号库已 migration，WebPlatform Public/Internal 两个 listener 已启动；
  *   3. 游戏服已启动且配置同一 WEBPLATFORM_SERVICE_SECRET；
  *   4. 若要验 GM 第二步，游戏服设置 ADMIN_API_SECRET，并把同值传给本进程。
+ *   5. SERVER_URL 为游戏 HTTP 探针/发现基址；LOBBY_URL/GAME_URL 可覆盖发现的各角色地址。
  *
  * 运行：npm --workspace @game/server run smoke
  */
 import { Client, getStateCallbacks, type Room } from "@colyseus/sdk";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
     ApiPath,
     C2S,
@@ -20,10 +23,14 @@ import {
     GameplayModeId,
     GAME_ROOM_PROTOCOL_VERSION,
     GAMEPLAY_CATALOG,
+    GameHttpContractMap,
     LOBBY_PROTOCOL_VERSION,
     RoomName,
     S2C,
     WebPlatformPath,
+    validateHttpOrigin,
+    validateOrigin,
+    validateWebSocketOrigin,
     type IHealthRes,
     type INoticeListRes,
     type IPongRes,
@@ -34,12 +41,30 @@ import {
     type WebPlatformLoginResponse,
 } from "@game/shared";
 
-const GAME_BASE = process.env.SERVER_URL ?? "http://127.0.0.1:2568";
+const SERVER_BASE = process.env.SERVER_URL ?? "http://127.0.0.1:2568";
 const PORTAL_BASE = process.env.WEBPLATFORM_PUBLIC_URL ?? "http://127.0.0.1:2570";
 const INTERNAL_BASE = process.env.WEBPLATFORM_INTERNAL_URL ?? "http://127.0.0.1:2571";
 const WP_ADMIN_SECRET = process.env.WEBPLATFORM_ADMIN_SECRET ?? "dev-admin-secret";
 const GAME_ADMIN_SECRET = process.env.ADMIN_API_SECRET ?? "";
 let passed = 0;
+
+/** PS2：即使显式覆盖WS，也必须验证发现服务；网络失败不能冒充旧三字段响应。 */
+export async function discoverSmokeEndpoints(
+    selected: Pick<WebPlatformAreaServer, "gameWsUrl">,
+    config: { readonly serverUrl: string; readonly lobbyUrl?: string; readonly gameUrl?: string },
+    requestVersion: (url: string) => Promise<Pick<Response, "ok" | "status" | "json">> = fetch,
+): Promise<{ readonly lobbyUrl: string; readonly gameUrl: string }> {
+    const httpBase = validateHttpOrigin(config.serverUrl, "SERVER_URL").replace(/\/+$/, "");
+    const response = await requestVersion(httpBase + ApiPath.Version);
+    if (!response.ok) throw new Error(`游戏服 GET /version 失败：HTTP ${response.status}`);
+    const version = GameHttpContractMap.Version.response(await response.json());
+    const fallback = validateWebSocketOrigin(selected.gameWsUrl, "directory.gameWsUrl");
+    const protocols = ["http", "https", "ws", "wss"] as const;
+    return {
+        lobbyUrl: validateOrigin(config.lobbyUrl || version.lobbyWs || fallback, protocols, "LOBBY_URL"),
+        gameUrl: validateOrigin(config.gameUrl || version.gameWs || fallback, protocols, "GAME_URL"),
+    };
+}
 
 function check(name: string, condition: boolean, detail?: unknown): void {
     if (!condition) {
@@ -122,7 +147,7 @@ async function eventually(
 
 async function main(): Promise<void> {
     const health = await json<IHealthRes>(
-        await fetch(GAME_BASE + ApiPath.Health),
+        await fetch(SERVER_BASE + ApiPath.Health),
         "游戏服 GET /healthz",
     );
     check("游戏服健康响应", health.status === "ok" && health.serverTime > 0, health);
@@ -132,6 +157,12 @@ async function main(): Promise<void> {
     check("目录含可进入区服", server !== undefined, publicAreas);
     const selected = server as WebPlatformAreaServer;
     const serverId = selected.serverId;
+    const endpoints = await discoverSmokeEndpoints(selected, {
+        serverUrl: SERVER_BASE,
+        lobbyUrl: process.env.LOBBY_URL,
+        gameUrl: process.env.GAME_URL,
+    });
+    check("游戏服 /version 端点发现", true);
 
     const banKey = `smoke-ban-user-${Date.now().toString(36)}`;
     const login = await devLogin(banKey, serverId);
@@ -146,7 +177,7 @@ async function main(): Promise<void> {
     );
 
     const notice = await json<INoticeListRes>(
-        await fetch(GAME_BASE + "/notice/list"),
+        await fetch(SERVER_BASE + ApiPath.NoticeList),
         "游戏服 GET /notice/list",
     );
     check(
@@ -156,10 +187,12 @@ async function main(): Promise<void> {
         notice,
     );
 
-    const client = new Client(selected.gameHttpUrl || GAME_BASE);
+    const gameClient = new Client(endpoints.gameUrl);
+    const lobbyClient = new Client(endpoints.lobbyUrl);
+    gameClient.auth.token = "forged-opaque-token";
     let forgedRejected = false;
     try {
-        await client.joinOrCreate(RoomName.Game, {
+        await gameClient.joinOrCreate(RoomName.Game, {
             v: GAME_ROOM_PROTOCOL_VERSION,
             token: "forged-opaque-token",
             sId: serverId,
@@ -174,8 +207,9 @@ async function main(): Promise<void> {
 
     // LobbyRoom 使用 Colyseus 的标准 auth token 参数；战斗房同时允许显式 options.token，
     // 因此真实客户端也会在大厅 join 前写入 Client.auth.token。
-    client.auth.token = login.accessToken;
-    const lobby = await client.joinOrCreate(RoomName.Lobby, {
+    lobbyClient.auth.token = login.accessToken;
+    gameClient.auth.token = login.accessToken;
+    const lobby = await lobbyClient.joinOrCreate(RoomName.Lobby, {
         v: LOBBY_PROTOCOL_VERSION,
         sId: serverId,
     });
@@ -186,7 +220,7 @@ async function main(): Promise<void> {
         return list.myServerIds.includes(serverId);
     });
 
-    const room = await client.joinOrCreate(RoomName.Game, {
+    const room = await gameClient.joinOrCreate(RoomName.Game, {
         v: GAME_ROOM_PROTOCOL_VERSION,
         token: login.accessToken,
         sId: serverId,
@@ -240,7 +274,7 @@ async function main(): Promise<void> {
     check("ban 原子权威写成功", ban.accountExists && ban.status === "banned", ban);
 
     if (GAME_ADMIN_SECRET) {
-        const kicked = await json<{ kicked: boolean }>(await fetch(GAME_BASE + "/admin/kick", {
+        const kicked = await json<{ kicked: boolean }>(await fetch(SERVER_BASE + ApiPath.AdminKick, {
             method: "POST",
             headers: {
                 "content-type": "application/json",
@@ -267,7 +301,7 @@ async function main(): Promise<void> {
 
     let oldTokenRejected = false;
     try {
-        await client.joinOrCreate(RoomName.Game, {
+        await gameClient.joinOrCreate(RoomName.Game, {
             v: GAME_ROOM_PROTOCOL_VERSION,
             token: login.accessToken,
             sId: serverId,
@@ -290,8 +324,10 @@ async function main(): Promise<void> {
     check("revoke 清会话但不封号", revoked.accountExists && revoked.status === "revoked", revoked);
 
     let revokedTokenRejected = false;
+    // 标准 auth 与 options.token 必须指向本次被 revoke 的 token，避免旧 ban token 制造假阳性。
+    gameClient.auth.token = revokeLogin.accessToken;
     try {
-        await client.joinOrCreate(RoomName.Game, {
+        await gameClient.joinOrCreate(RoomName.Game, {
             v: GAME_ROOM_PROTOCOL_VERSION,
             token: revokeLogin.accessToken,
             sId: serverId,
@@ -318,7 +354,9 @@ async function main(): Promise<void> {
     console.log(`\n全部通过（${passed} 项）`);
 }
 
-main().catch((error) => {
-    console.error("✗ 拆分拓扑冒烟失败：", error);
-    process.exit(1);
-});
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+    main().catch((error) => {
+        console.error("✗ 拆分拓扑冒烟失败：", error);
+        process.exit(1);
+    });
+}

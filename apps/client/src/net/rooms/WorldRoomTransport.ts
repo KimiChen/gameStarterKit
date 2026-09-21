@@ -14,7 +14,7 @@
  *    KICK_CLOSE_CODE[Replaced] = 同 persona 在别处取得控制权；其余 = 掉线（SDK 自动重连，onReconnect 归位）。
  *  - 观察者流（MF5b-B2）：`bindObserverStream(types, sink)` 把该玩法 perSession 的 enter / update / leave / baseline 六个 S2C 绑到 sink
  *    （通常是 logic/rooms/observer/ObserverReconciler），本人私有流仍走 `onMessage`；与 GameRoomTransport.bindObserverStream 同形。
- *  端点：PS2 落地前用 getCurrentGameWsUrl()（D27：/version 的 worldWs 缺省回落 gameWs）。
+ *  端点：PS2 /version 的 worldWs；缺字段回落目录 gameWsUrl。
  */
 import { getToken } from "../../core/http";
 import {
@@ -31,7 +31,7 @@ import {
     type IWorldRoomJoinOptions,
     type S2CPayloadMap,
 } from "../../shared/index";
-import { getCurrentGameWsUrl, getCurrentServer } from "../serverSession";
+import { getCurrentWorldWsUrl, getCurrentServer } from "../serverSession";
 import { cloneJson, disableSdkOutboundReplay, safeError, warnInvalidWire as sharedWarnInvalidWire } from "../wireCommon";
 import { WORLD_ROOM_PROFILE, normalizeWorldRoomStrategy, worldRoomModeVersion, type WorldRoomStrategy } from "./matchmaking";
 import type { ObserverStreamSink, ObserverStreamTypes } from "./GameRoomTransport";
@@ -59,7 +59,7 @@ export interface WorldTransferRequest {
         readonly transferId: string | null;
         readonly mapId: string;
         readonly line: number;
-        /** 空串 = 沿用当前 SDK client（同当前区 gameWsUrl）；非空 ⇒ deps.clientFor(endpoint)（未注入则沿用当前 client）。 */
+        /** 空串 = transport 捕获的默认 world 端点；非空 ⇒ deps.clientFor(endpoint)（未注入则用默认 client）。 */
         readonly endpoint: string;
         readonly ticket: string;
     };
@@ -166,7 +166,7 @@ export class WorldRoomTransport {
     static forCurrentServer(): WorldRoomTransport {
         const server = getCurrentServer();
         if (!server) throw new Error("[WorldRoom] 尚未选择区服，不能进入世界");
-        const endpoint = validateOrigin(getCurrentGameWsUrl(), ["http", "https", "ws", "wss"], "endpoint");
+        const endpoint = validateOrigin(getCurrentWorldWsUrl(), ["http", "https", "ws", "wss"], "endpoint");
         const client = new Colyseus.Client(endpoint) as unknown as WorldRoomSdkClient;
         const clients = new Map<string, WorldRoomSdkClient>([[endpoint, client]]);
         return new WorldRoomTransport({

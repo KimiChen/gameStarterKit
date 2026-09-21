@@ -10,6 +10,8 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { getToken, setToken } from "../src/core/http";
+import { discoverServerEndpoints, setServerList } from "../src/net/serverSession";
 import {
   C2S,
   ForceLogoutReason,
@@ -93,6 +95,41 @@ const TICKET = "t".repeat(32);
 const request = (overrides: Partial<WorldJoinRequest> = {}): WorldJoinRequest =>
   ({ mode: "worldFixture", strategy: { mapId: "m1" }, personaId: PERSONA, ticket: TICKET, ...overrides });
 const deps = { token: () => "opaque-token", sId: () => 3 };
+
+test("PS2生产装配：首次world.enter空endpoint连worldWs，显式节点优先，随后空值仍回到发现的world", async () => {
+  const row = { serverId: 3, name: "区3", status: "smooth" as const, tag: "normal" as const, openTime: 1,
+    gameHttpUrl: "https://http.example", gameWsUrl: "wss://directory.example" };
+  setServerList({ hash: "world-endpoints", isOps: false, myServerIds: [], servers: [row] });
+  await discoverServerEndpoints(row, async () => ({ name: "game-server", gameRoomProtocol: 8, lobbyProtocol: 1,
+    lobbyWs: "wss://lobby.example", gameWs: "wss://game.example", worldWs: "wss://world.example" }));
+  const previousSdk = (globalThis as { Colyseus?: unknown }).Colyseus;
+  const previousToken = getToken();
+  const clients = new Map<string, ReturnType<typeof makeClient>>();
+  (globalThis as { Colyseus?: unknown }).Colyseus = {
+    Client: function (endpoint: string) {
+      const fake = makeClient([makeFakeRoom(`${endpoint}-1`), makeFakeRoom(`${endpoint}-2`)]);
+      clients.set(endpoint, fake); return fake.client;
+    },
+  };
+  let transport: WorldRoomTransport | undefined;
+  try {
+    setToken("opaque-token"); transport = WorldRoomTransport.forCurrentServer();
+    const ready = { transferId: null, mapId: "m1", line: 0, endpoint: "", ticket: TICKET };
+    const first = await transport.transfer({ mode: "worldFixture", personaId: PERSONA, ready });
+    assert.deepEqual([...clients.keys()], ["wss://world.example"]);
+    assert.equal(clients.get("wss://world.example")?.calls[0].roomName, RoomName.World);
+    await first.leave();
+    const remote = await transport.transfer({ mode: "worldFixture", personaId: PERSONA, ready: { ...ready, endpoint: "wss://world-node.example" } });
+    assert.equal(clients.get("wss://world-node.example")?.calls.length, 1);
+    await remote.leave();
+    await transport.transfer({ mode: "worldFixture", personaId: PERSONA, ready });
+    assert.equal(clients.get("wss://world.example")?.calls.length, 2, "空endpoint须回到world默认，不能沿用别的world节点或game端点");
+  } finally {
+    await transport?.active?.leave();
+    setToken(previousToken); (globalThis as { Colyseus?: unknown }).Colyseus = previousSdk;
+    setServerList({ hash: "reset", isOps: false, myServerIds: [], servers: [] });
+  }
+});
 
 test("信封：v / modeVersion / profile / token / sId 单源注入；strategy 归一；非 world mode、坏 mapId、坏 ticket 本地 fail-fast", () => {
   const options = buildWorldJoinOptions(request({ strategy: { mapId: "m1", line: 2 }, resumeSeq: 9 }), deps);

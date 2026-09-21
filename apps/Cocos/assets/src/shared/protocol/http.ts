@@ -321,6 +321,10 @@ export interface IVersionRes {
     name: string;
     gameRoomProtocol: number;
     lobbyProtocol: number;
+    /** PS2：各角色公开 WS origin；旧响应缺字段或空串均回落区服目录 gameWsUrl。 */
+    lobbyWs?: string;
+    gameWs?: string;
+    worldWs?: string;
 }
 
 // ---------------- GET /clock/now ----------------
@@ -476,12 +480,18 @@ function validateHealthResponse(input: unknown): IHealthRes {
 
 function validateVersionResponse(input: unknown): IVersionRes {
     const value = objectAt(input, "response");
-    assertExactKeys(value, ["name", "gameRoomProtocol", "lobbyProtocol"], [], "response");
-    return {
+    assertExactKeys(value, ["name", "gameRoomProtocol", "lobbyProtocol"], ["lobbyWs", "gameWs", "worldWs"], "response");
+    const result: IVersionRes = {
         name: boundedString(value.name, "response.name", 1, 64),
         gameRoomProtocol: finiteInteger(value.gameRoomProtocol, "response.gameRoomProtocol", 1, 0xffff),
         lobbyProtocol: finiteInteger(value.lobbyProtocol, "response.lobbyProtocol", 1, 0xffff),
     };
+    for (const key of ["lobbyWs", "gameWs", "worldWs"] as const) {
+        if (Object.prototype.hasOwnProperty.call(value, key)) {
+            result[key] = value[key] === "" ? "" : validateWebSocketOrigin(value[key], `response.${key}`);
+        }
+    }
+    return result;
 }
 
 function validateClockResponse(input: unknown): IClockNowRes {
