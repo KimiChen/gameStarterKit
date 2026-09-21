@@ -10,13 +10,16 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
         width: entry.width ?? entry.canvas?.width,
         height: entry.height ?? entry.canvas?.height,
         commonPackage: entry.commonPackage ?? COMMON_PACKAGE,
+        tabOf: entry.tabOf,
+        tabLabel: entry.tabLabel,
+        activeTabLabel: entry.activeTabLabel,
     }));
     const first = list[0] ?? { id: "catalog", width: 750, height: 1424 };
     const face = PREVIEW_FONT_FAMILY;
     const catalogId = catalogIdFor(list);
-    const options = list.map((entry) =>
+    const options = list.filter((entry) => !entry.tabOf).map((entry) =>
         `<option value="${escapeHtml(entry.id)}">${escapeHtml(entry.componentName)}</option>`).join("");
-    const picker = list.length > 1
+    const picker = list.filter((entry) => !entry.tabOf).length > 1
         ? `<label id="picker" style="position:fixed;top:8px;left:8px;z-index:10;color:#e8edf2;font:14px/1.4 sans-serif">`
             + `<select id="screen">${options}</select></label>`
         : "";
@@ -369,6 +372,22 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
         if (dismissActions && (obj.name === "ConfirmButton" || obj.name === "CancelButton")) hit(obj, goCatalog);
       });
     };
+    const bindTabClicks = (root, screen, goScreen) => {
+      const family = screen.tabOf || screen.id;
+      const variants = screens.filter((entry) => entry.tabOf === family && entry.tabLabel);
+      if (!variants.length) return;
+      const base = screens.find((entry) => entry.id === family);
+      const byLabel = new Map(variants.map((entry) => [entry.tabLabel, entry.id]));
+      if (base?.activeTabLabel) byLabel.set(base.activeTabLabel, base.id);
+      walk(root, (obj) => {
+        if (obj.numChildren) return;
+        const label = String(obj.text || obj.title || "").trim();
+        if (!label) return;
+        const target = byLabel.get(label);
+        if (!target || target === screen.id) return;
+        bindLabeled(obj, () => goScreen(target));
+      });
+    };
     const setCanvas = (width, height) => {
       canvas.width = width;
       canvas.height = height;
@@ -423,6 +442,7 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
       resize();
       currentId = screen.id;
       if (screen.id === "preview-home") bindCatalogClicks(view, go);
+      bindTabClicks(view, screen, go);
       bindPageInteractions(view, () => go(catalogId), { dismissActions: screen.id !== "preview-home" && screen.id !== catalogId });
       if (homeBtn && !exportMode) homeBtn.hidden = screen.id === catalogId;
       window.__FGUI_PREVIEW__ = {
@@ -512,5 +532,8 @@ export function screensFromIr(ir) {
         width: entry.canvas.width,
         height: entry.canvas.height,
         commonPackage: COMMON_PACKAGE,
+        tabOf: entry.tabOf,
+        tabLabel: entry.tabLabel,
+        activeTabLabel: entry.activeTabLabel,
     }));
 }

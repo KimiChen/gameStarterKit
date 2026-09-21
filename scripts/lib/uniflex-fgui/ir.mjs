@@ -186,6 +186,9 @@ export function buildCatalogIR(pages, options = {}) {
             rootName: item.screen.rootName,
             packageName: pagePkg.name,
             canvas: item.canvas,
+            tabOf: item.screen.tabOf,
+            tabLabel: item.screen.tabLabel,
+            activeTabLabel: item.screen.activeTabLabel,
         });
     }
 
@@ -212,6 +215,15 @@ export function buildCatalogIR(pages, options = {}) {
             candidate: true,
             screen: screens.length === 1 ? screens[0].id : screens.map((entry) => entry.id),
             screens: screens.map((entry) => entry.id),
+            screenDetails: screens.map((entry) => ({
+                id: entry.id,
+                componentName: entry.componentName,
+                packageName: entry.packageName,
+                canvas: entry.canvas,
+                tabOf: entry.tabOf,
+                tabLabel: entry.tabLabel,
+                activeTabLabel: entry.activeTabLabel,
+            })),
             slot: "PopupFrame 是外壳模板；各页是特化树，不是 PopupFrame 实例 + 运行时插槽。",
             components: [commonPkg, ...pagePkgs].flatMap((pkg) => pkg.components.map((item) => ({
                 package: pkg.name,

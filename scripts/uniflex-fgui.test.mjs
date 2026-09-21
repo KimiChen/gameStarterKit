@@ -19,6 +19,7 @@ import { parsePackageBin } from "./fgui-roundtrip.mjs";
 import { parseFguiComponent } from "../tools/fgui-codegen/parseFgui.ts";
 import { runCli } from "./uniflex-ui-cli.mjs";
 import { mergeListRows } from "./lib/uniflex-fgui/capture.mjs";
+import { renderPreviewHtml, screensFromIr } from "./lib/uniflex-fgui/preview-html.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const art = resolve(root, "apps/art/fairygui");
@@ -1294,6 +1295,28 @@ test("scroll-merge unions newly mounted virtual-list rows by rect", () => {
     assert.ok(newRow.id > 5 && newText.id > 5, "cloned ids do not collide");
     assert.equal(mergeListRows(base, extra).nodes.length, merged.nodes.length, "idempotent");
     assert.equal(mergeListRows(base, base), base, "no new rows returns base");
+});
+
+test("tab variant screens feed the picker filter and preview binding", () => {
+    const ir = {
+        screens: [
+            { id: "mail", componentName: "MailBattleReport", packageName: "UniFlex_MailBattleReport",
+                canvas: { width: 750, height: 1334 }, activeTabLabel: "战报" },
+            { id: "shop", componentName: "Shop", packageName: "UniFlex_Shop",
+                canvas: { width: 750, height: 1334 } },
+            { id: "mail-tab1", componentName: "MailBattleReportTab1", packageName: "UniFlex_MailBattleReportTab1",
+                canvas: { width: 750, height: 1334 }, tabOf: "mail", tabLabel: "系统" },
+        ],
+    };
+    const screens = screensFromIr(ir);
+    assert.equal(screens[2].tabOf, "mail");
+    assert.equal(screens[2].tabLabel, "系统");
+    assert.equal(screens[0].activeTabLabel, "战报");
+    const html = renderPreviewHtml({ screens, font: false });
+    assert.match(html, /<option value="mail">/, "base screen stays in the picker");
+    assert.doesNotMatch(html, /<option value="mail-tab1">/, "tab variants are hidden from the picker");
+    assert.match(html, /"tabOf":"mail"/, "variant metadata reaches the page script");
+    assert.match(html, /bindTabClicks/, "tab click binding is wired");
 });
 
 function snapshotDir(dir) {

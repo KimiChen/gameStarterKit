@@ -45,9 +45,11 @@ export async function captureSnapshots({
         for (const screen of wanted) {
             const page = resolvePreviewUrl(base, screen);
             try {
-                const snapshot = await session.capture(page);
+                const captured = await session.capture(page);
                 results.push({
-                    snapshot: { ...snapshot, screenId: screen.id },
+                    snapshot: { ...captured.snapshot, screenId: screen.id },
+                    tabVariants: captured.tabVariants ?? [],
+                    activeTabLabel: captured.activeTabLabel ?? null,
                     screen,
                     page,
                 });
@@ -100,7 +102,9 @@ async function connectDevtools(pageUrl, env) {
                 });
                 const snapshot = result.result?.value;
                 if (!snapshot || snapshot.kind !== "uniflex-design-snapshot") return null;
-                return mergeScrolledRows(ws, snapshot);
+                const merged = await mergeScrolledRows(ws, snapshot);
+                const { variants, activeLabel } = await captureTabVariants(ws, merged);
+                return { snapshot: merged, tabVariants: variants, activeTabLabel: activeLabel };
             }, 30_000);
         },
         close() {
@@ -337,4 +341,72 @@ export function mergeListRows(base, extra) {
     }
     if (!added.length) return base;
     return { ...base, nodes: [...base.nodes, ...added] };
+}
+
+/**
+ * 演示用页签变体捕获：点遍 TabBar/Item 与 PanelTab，每次点击重拍一份快照。
+ * 与基础快照或前面变体内容相同的点击（如点已激活页签）按签名去重。
+ */
+const TAB_ITEMS = '[data-name="TabBar/Item"], [data-name="PanelTab"]';
+
+function snapshotSignature(snapshot) {
+    return snapshot.nodes.map((node) =>
+        `${node.kind}${rectKey(node) ?? ""}${node.value ?? ""}${node.resourceId ?? ""}`).join("|");
+}
+
+async function stampedSnapshot(ws) {
+    await evaluateValue(ws, "window.__UNIFLEX_DESIGN_SNAPSHOT__ = window.__UNIFLEX_RESNAPSHOT__()");
+    const stamped = await cdp(ws, "Runtime.evaluate", {
+        expression: STAMP_INSPECT_TEXT_STYLES,
+        returnByValue: true,
+    });
+    return stamped.result?.value;
+}
+
+async function captureTabVariants(ws, base) {
+    try {
+        if (!base || !Array.isArray(base.nodes)) return { variants: [], activeLabel: null };
+        const hasHook = await evaluateValue(ws, "typeof window.__UNIFLEX_RESNAPSHOT__ === 'function'");
+        if (!hasHook) return { variants: [], activeLabel: null };
+        const tabs = await evaluateValue(ws, `(() => {
+            const seen = new Set();
+            const out = [];
+            document.querySelectorAll('${TAB_ITEMS}').forEach((el) => {
+                if (seen.has(el)) return;
+                seen.add(el);
+                const r = el.getBoundingClientRect();
+                if (r.width < 8 || r.height < 8) return;
+                const label = String(el.innerText || "").split("\\n")[0].trim();
+                if (!label) return;
+                out.push({ label, x: r.left + r.width / 2, y: r.top + r.height / 2 });
+            });
+            return out;
+        })()`);
+        if (!Array.isArray(tabs) || tabs.length < 2) return { variants: [], activeLabel: null };
+        const taken = new Set([snapshotSignature(base)]);
+        const variants = [];
+        let activeLabel = null;
+        for (const tab of tabs.slice(0, 12)) {
+            await cdp(ws, "Input.dispatchMouseEvent", {
+                type: "mousePressed", x: tab.x, y: tab.y, button: "left", clickCount: 1,
+            });
+            await sleep(120);
+            await cdp(ws, "Input.dispatchMouseEvent", {
+                type: "mouseReleased", x: tab.x, y: tab.y, button: "left", clickCount: 1,
+            });
+            await sleep(450);
+            const variant = await stampedSnapshot(ws);
+            if (!variant?.nodes) continue;
+            const signature = snapshotSignature(variant);
+            if (taken.has(signature)) {
+                if (!activeLabel) activeLabel = tab.label;
+                continue;
+            }
+            taken.add(signature);
+            variants.push({ label: tab.label, snapshot: variant });
+        }
+        return { variants, activeLabel };
+    } catch {
+        return { variants: [], activeLabel: null };
+    }
 }

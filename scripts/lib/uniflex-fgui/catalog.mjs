@@ -90,20 +90,25 @@ export function loadMergedScreens(groups, catalog, { prefixGroups = groups.lengt
     for (const group of groups) {
         const report = readJson(join(group.exportDir, "report.json"));
         const mapping = readJson(join(group.exportDir, "mapping.json")) ?? {};
+        const details = new Map((report?.screenDetails ?? []).map((entry) => [entry.id, entry]));
         for (const id of report?.screens ?? []) {
             if (seen.has(id)) continue;
+            const detail = details.get(id);
             const screen = byId.get(id);
-            const componentName = screen?.componentName;
+            const componentName = detail?.componentName ?? screen?.componentName;
             if (!componentName) continue;
             const mapped = mapping[componentName];
             screens.push({
                 id,
                 group: prefixGroups ? group.name : "",
-                packageName: mapped?.package ?? `UniFlex_${componentName}`,
+                packageName: mapped?.package ?? detail?.packageName ?? `UniFlex_${componentName}`,
                 componentName,
-                width: screen.canvas?.width ?? 750,
-                height: screen.canvas?.height ?? 1624,
+                width: detail?.canvas?.width ?? screen?.canvas?.width ?? 750,
+                height: detail?.canvas?.height ?? screen?.canvas?.height ?? 1624,
                 commonPackage: COMMON_PACKAGE,
+                tabOf: detail?.tabOf,
+                tabLabel: detail?.tabLabel,
+                activeTabLabel: detail?.activeTabLabel,
             });
             seen.add(id);
         }

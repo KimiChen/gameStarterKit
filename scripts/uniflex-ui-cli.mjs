@@ -344,7 +344,28 @@ async function loadFguiPages(args, { root, env, catalog, startPreview, readText 
         const detail = captured.failures.map((item) => `${item.screen}: ${item.error}`).join("; ");
         throw new Error(`Capture failed (${captured.failures.length}/${wanted.length}): ${detail}`);
     }
-    return captured.results;
+    const pages = [];
+    for (const result of captured.results) {
+        pages.push({
+            snapshot: result.snapshot,
+            screen: result.activeTabLabel
+                ? { ...result.screen, activeTabLabel: result.activeTabLabel }
+                : result.screen,
+        });
+        (result.tabVariants ?? []).forEach((variant, index) => {
+            pages.push({
+                snapshot: variant.snapshot,
+                screen: {
+                    ...result.screen,
+                    id: `${result.screen.id}-tab${index + 1}`,
+                    componentName: `${result.screen.componentName}Tab${index + 1}`,
+                    tabOf: result.screen.id,
+                    tabLabel: variant.label,
+                },
+            });
+        });
+    }
+    return pages;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
