@@ -1,0 +1,71 @@
+# tools/art3d — SC0 合成灰盒
+
+当前交付 `greybox.py`；SC5 的 Unity 抽取、素材转换与离线 LOD 尚未实现。
+灰盒模型、动画和棋盘 PNG 由代码合成，不读取外部素材。生成器不写 `.meta`，不调用 Creator，
+结构检查通过不表示 SC0-B2 的真实导入与 Prefab 加载已经通过。
+
+## 隔离依赖与运行
+
+已验证环境：CPython **3.14.6** / macOS arm64；Python 依赖及传递依赖逐项固定在
+`requirements.txt`。venv 在仓外，既不修改根 npm 依赖，也不成为客户端运行时依赖。
+
+```bash
+python3 -m venv /tmp/codex-stage3d-greybox-venv
+/tmp/codex-stage3d-greybox-venv/bin/python -m pip install -r tools/art3d/requirements.txt
+
+/tmp/codex-stage3d-greybox-venv/bin/python tools/art3d/greybox.py --out apps/Cocos/assets/resources/stage3d
+/tmp/codex-stage3d-greybox-venv/bin/python tools/art3d/greybox.py --check
+/tmp/codex-stage3d-greybox-venv/bin/python -m unittest discover -s tools/art3d -p 'test_*.py' -v
+```
+
+`--out` 可指向临时目录；缺省为本仓框架灰盒目录。`--check` 仅在内存重生成并比对指定输出目录
+及工具目录中的 `greybox-manifest.json`，不修复、创建或删除文件；文件缺失／字节变化均非零退出。
+普通生成只写所列五个产物及 manifest，不删除未知文件，不覆盖已有 `.meta` 或烘焙产物。
+PNG 使用固定字节的无压缩 DEFLATE，GLB 使用固定顺序与小端 buffer，不带时间戳。
+
+## 合成内容
+
+| 文件 | 内容 |
+| --- | --- |
+| `greybox-cube.glb` | 底部中心枢轴、1 m 立方体、12 三角、两套 UV；通过 `images[].uri` 引用同目录外部 PNG |
+| `T_Greybox_Checker_BC.png` | 64×64 RGBA8 棋盘，四角颜色标记用于检查方向；SC0-B2 的显式尺寸例外 |
+| `greybox-plane.glb` | Y=0、X/Z 各 64 m，UV2 位于 0.01–0.99，供静态光烘焙 |
+| `greybox-biped.glb` | Root / Upper 两骨、192 顶点 / 96 三角、脚底枢轴；鼻子指向 -Z；两个 1 s 动画 |
+| `greybox-biped-atlas-b.glb` | 同样 rig / mesh，另一组命名及角度不同的 1 s 动画；用于请求独立 Joint Texture Layout 的受控候选 |
+
+各 GLB 的 scene 名等于文件 stem（不带 `.glb`）；两个 biped 的内部模型根节点均固定为
+`GreyboxBiped`，使导入后的 `GreyboxBiped/Root/Upper` 等骨架与动画相对路径一致，允许夹具
+在同一模型上选择主组／备用组 clip（是否跨纹理仍须实测）。所有模型都带 POSITION / NORMAL / TANGENT /
+TEXCOORD_0 / TEXCOORD_1；蒙皮再带 JOINTS_0 / WEIGHTS_0，骨骼矩阵按 glTF 列主序写入。
+主 biped 的 clip 为 `ANIM_Greybox_Sway_Main`（绕 Z 摆动）和 `ANIM_Greybox_Bow_Main`（绕 X 鞠躬）；
+备用组为对应 `_AtlasB` 名称，角度从主样本的 ±20° 增至 ±30°。每段 0、0.25、0.5、0.75、1 s
+共五个关键帧，首尾闭合。两骨是机制样本，不代表完整角色骨架或步行动画。
+
+manifest 的 `generatedAssets` 记录生成来源、SHA256、尺寸／面数／动画结构；
+`namingAndTextureExceptions` 保留生成器对四个固定文件名及 64² PNG 的需求说明。
+实际 SC0 例外统一登记在 [sc0-asset-exceptions.json](sc0-asset-exceptions.json)，按精确路径、
+UUID 与文件 SHA 匹配；这份临时清单不是资产检查器。正式 `scripts/assets3d.config.json` 与
+SC1-B5 检查器尚未实现，后续按清单迁移，不能据此放宽业务资产规范。
+
+## Creator 3.8.8 导入与后续验收
+
+`greybox-manifest.json.creatorVerification` 是**待验收需求**，所有 observed 字段保持 null，
+`candidatePrefabPath` 只是推测路径，不能直接作为已验证的运行时清单。实际证据另存
+`tools/art3d/creator-import-report.json` 或本轮证据目录，不手改确定性生成 manifest。
+
+1. 让 Creator 作者态导入上述资源及目录，保留其生成的 `.meta`；确认 GLB 顶层 importer 为 `gltf`。
+   根据真实 `subMetas` 中 `gltf-scene` 名称／UUID 填写导入报告，实际以 Prefab 类型成功加载后
+   才能将路径交给夹具页。2026-09-22 已在隔离 Creator 3.8.8 实际导入并加载四份 Prefab，
+   路径均为 `stage3d/<文件 stem>/<文件 stem>`，其中包括
+   `stage3d/greybox-biped/greybox-biped`；UUID、产物哈希和外部 PNG 目检记录见
+   [creator-import-report.json](creator-import-report.json)。不把 GLB 父路径当 Prefab。
+2. 特别检查 cube 的外部 PNG URI 能解析、图片／texture 子 meta 生成、材质棋盘可见；64² PNG 按
+   texture 导入，设置 mipfilter 为 linear。若 GLB 外部 URI 不被支持，保留失败证据并走设计拍板，
+   不能静默改为内嵌图片。模型导入设置按 `docs/3D-ASSETS.md §3`，UV2 由文件提供。
+3. 后续 SC0-B3 用主 biped 的两个 clip 验证同图集路径，并用备用组验证跨图集。必须记录实际 Skeleton / AnimationClip 与 GPU 纹理身份；两个 GLB 文件或不同 clip 名字不能证明纹理分开。实时蒙皮与分批实现由 B3 交付。
+4. 烘焙 / instancing / 浮点与 RGBA8 关节纹理 / WebGL1 行为属于 SC0-B3/B5 的真实引擎证据，
+   本工具不会宣称这些检查已经通过。实时蒙皮实例不得沿用开启 instancing 的预烘焙材质。
+
+自检独立回读 GLB chunk、buffer/accessor、三角朝向、法线／切线、UV2、外部图片依赖、
+inverse bind、骨骼权重和动画。测试含反向三角、丢 bind 平移、权重不足、动画重复、内嵌／越界
+图片、截断 GLB 与 PNG CRC 破坏，验证错误确实被拒绝；不依赖 Creator 缓存。

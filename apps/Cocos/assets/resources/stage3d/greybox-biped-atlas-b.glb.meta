@@ -1,0 +1,195 @@
+{
+  "ver": "2.3.14",
+  "importer": "gltf",
+  "imported": true,
+  "uuid": "31efbc7a-7583-4395-a710-b515929172ec",
+  "files": [
+    "__original-animation-0.bin",
+    "__original-animation-1.bin"
+  ],
+  "subMetas": {
+    "359f1": {
+      "importer": "gltf-mesh",
+      "uuid": "31efbc7a-7583-4395-a710-b515929172ec@359f1",
+      "displayName": "",
+      "id": "359f1",
+      "name": "greybox-biped-atlas-b-mesh.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 96
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "ad751": {
+      "importer": "gltf-animation",
+      "uuid": "31efbc7a-7583-4395-a710-b515929172ec@ad751",
+      "displayName": "",
+      "id": "ad751",
+      "name": "ANIM_Greybox_Sway_AtlasB.animation",
+      "userData": {
+        "gltfIndex": 0,
+        "wrapMode": 2,
+        "sample": 30,
+        "span": {
+          "from": 0,
+          "to": 1
+        },
+        "events": []
+      },
+      "ver": "1.0.18",
+      "imported": true,
+      "files": [
+        ".bin"
+      ],
+      "subMetas": {}
+    },
+    "ba16e": {
+      "importer": "gltf-animation",
+      "uuid": "31efbc7a-7583-4395-a710-b515929172ec@ba16e",
+      "displayName": "",
+      "id": "ba16e",
+      "name": "ANIM_Greybox_Bow_AtlasB.animation",
+      "userData": {
+        "gltfIndex": 1,
+        "wrapMode": 2,
+        "sample": 30,
+        "span": {
+          "from": 0,
+          "to": 1
+        },
+        "events": []
+      },
+      "ver": "1.0.18",
+      "imported": true,
+      "files": [
+        ".bin"
+      ],
+      "subMetas": {}
+    },
+    "f6076": {
+      "importer": "gltf-skeleton",
+      "uuid": "31efbc7a-7583-4395-a710-b515929172ec@f6076",
+      "displayName": "",
+      "id": "f6076",
+      "name": "GreyboxTwoBones.skeleton",
+      "userData": {
+        "gltfIndex": 0,
+        "jointsLength": 2
+      },
+      "ver": "1.0.1",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "2012d": {
+      "importer": "gltf-material",
+      "uuid": "31efbc7a-7583-4395-a710-b515929172ec@2012d",
+      "displayName": "",
+      "id": "2012d",
+      "name": "M_Greybox.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "6f817": {
+      "importer": "gltf-scene",
+      "uuid": "31efbc7a-7583-4395-a710-b515929172ec@6f817",
+      "displayName": "",
+      "id": "6f817",
+      "name": "greybox-biped-atlas-b.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "animationImportSettings": [
+      {
+        "name": "ANIM_Greybox_Sway_AtlasB",
+        "duration": 1,
+        "fps": 30,
+        "splits": [
+          {
+            "name": "ANIM_Greybox_Sway_AtlasB",
+            "from": 0,
+            "to": 1,
+            "wrapMode": 2,
+            "previousId": "ad751"
+          }
+        ]
+      },
+      {
+        "name": "ANIM_Greybox_Bow_AtlasB",
+        "duration": 1,
+        "fps": 30,
+        "splits": [
+          {
+            "name": "ANIM_Greybox_Bow_AtlasB",
+            "from": 0,
+            "to": 1,
+            "wrapMode": 2,
+            "previousId": "ba16e"
+          }
+        ]
+      }
+    ],
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "31efbc7a-7583-4395-a710-b515929172ec@359f1"
+      ],
+      "skeletons": [
+        "31efbc7a-7583-4395-a710-b515929172ec@f6076"
+      ],
+      "textures": [],
+      "materials": [
+        "31efbc7a-7583-4395-a710-b515929172ec@2012d"
+      ],
+      "scenes": [
+        "31efbc7a-7583-4395-a710-b515929172ec@6f817"
+      ]
+    },
+    "allowMeshDataAccess": true,
+    "normals": 2,
+    "tangents": 2,
+    "generateLightmapUVNode": false
+  }
+}

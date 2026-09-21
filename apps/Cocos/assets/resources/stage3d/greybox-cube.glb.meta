@@ -1,0 +1,127 @@
+{
+  "ver": "2.3.14",
+  "importer": "gltf",
+  "imported": true,
+  "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b",
+  "files": [],
+  "subMetas": {
+    "b5d26": {
+      "importer": "gltf-mesh",
+      "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@b5d26",
+      "displayName": "",
+      "id": "b5d26",
+      "name": "greybox-cube-mesh.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 12
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "78a7d": {
+      "importer": "texture",
+      "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@78a7d",
+      "displayName": "",
+      "id": "78a7d",
+      "name": "GreyboxChecker.texture",
+      "userData": {
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat",
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "linear",
+        "anisotropy": 0,
+        "isUuid": false,
+        "imageUuidOrDatabaseUri": "db://assets/resources/stage3d/T_Greybox_Checker_BC.png"
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "2012d": {
+      "importer": "gltf-material",
+      "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@2012d",
+      "displayName": "",
+      "id": "2012d",
+      "name": "M_Greybox.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "45cbf": {
+      "importer": "gltf-scene",
+      "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@45cbf",
+      "displayName": "",
+      "id": "45cbf",
+      "name": "greybox-cube.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [
+      {
+        "name": "GreyboxChecker",
+        "uri": "db://assets/resources/stage3d/T_Greybox_Checker_BC.png"
+      }
+    ],
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@b5d26"
+      ],
+      "skeletons": [],
+      "textures": [
+        "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@78a7d"
+      ],
+      "materials": [
+        "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@2012d"
+      ],
+      "scenes": [
+        "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@45cbf"
+      ]
+    },
+    "allowMeshDataAccess": false,
+    "normals": 2,
+    "tangents": 2,
+    "generateLightmapUVNode": false
+  }
+}

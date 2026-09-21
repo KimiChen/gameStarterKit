@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "generator": "gono SC0 greybox v1 (pygltflib 1.16.5)",
+  "runtimeRoot": "apps/Cocos/assets/resources/stage3d",
+  "generatedAssets": [
+    {
+      "file": "greybox-cube.glb",
+      "bytes": 3312,
+      "sha256": "fb18dd6d72b687954a20a185998db277effad50d43f98ed0b7e24d1cb5238f73",
+      "source": "tools/art3d/greybox.py (procedural; no external assets)",
+      "kind": "model",
+      "sceneName": "greybox-cube",
+      "vertices": 24,
+      "triangles": 12,
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.5
+        ],
+        "max": [
+          0.5,
+          1.0,
+          0.5
+        ]
+      },
+      "uvSets": [
+        0,
+        1
+      ],
+      "clips": []
+    },
+    {
+      "file": "greybox-plane.glb",
+      "bytes": 1880,
+      "sha256": "a3b9222791457b56bb89d6f418e8aa3df9227c089f45ce99df973e8734670de2",
+      "source": "tools/art3d/greybox.py (procedural; no external assets)",
+      "kind": "model",
+      "sceneName": "greybox-plane",
+      "vertices": 4,
+      "triangles": 2,
+      "bounds": {
+        "min": [
+          -32.0,
+          0.0,
+          -32.0
+        ],
+        "max": [
+          32.0,
+          0.0,
+          32.0
+        ]
+      },
+      "uvSets": [
+        0,
+        1
+      ],
+      "clips": []
+    },
+    {
+      "file": "greybox-biped.glb",
+      "bytes": 19484,
+      "sha256": "e209df67d53c5d6a1208e15b7a3e69c5253f6faba6717feafae8c06958f98dd3",
+      "source": "tools/art3d/greybox.py (procedural; no external assets)",
+      "kind": "model",
+      "sceneName": "greybox-biped",
+      "vertices": 192,
+      "triangles": 96,
+      "bounds": {
+        "min": [
+          -0.5299999713897705,
+          0.0,
+          -0.2800000011920929
+        ],
+        "max": [
+          0.5299999713897705,
+          1.9199999570846558,
+          0.18000000715255737
+        ]
+      },
+      "uvSets": [
+        0,
+        1
+      ],
+      "clips": [
+        {
+          "name": "ANIM_Greybox_Sway_Main",
+          "durationSeconds": 1,
+          "keyframes": 5
+        },
+        {
+          "name": "ANIM_Greybox_Bow_Main",
+          "durationSeconds": 1,
+          "keyframes": 5
+        }
+      ],
+      "jointCount": 2,
+      "rigRootNode": "GreyboxBiped"
+    },
+    {
+      "file": "greybox-biped-atlas-b.glb",
+      "bytes": 19504,
+      "sha256": "4781ace968432cc6b3014352a81ddee32878174bf9472f991798940f0cf4fadd",
+      "source": "tools/art3d/greybox.py (procedural; no external assets)",
+      "kind": "model",
+      "sceneName": "greybox-biped-atlas-b",
+      "vertices": 192,
+      "triangles": 96,
+      "bounds": {
+        "min": [
+          -0.5299999713897705,
+          0.0,
+          -0.2800000011920929
+        ],
+        "max": [
+          0.5299999713897705,
+          1.9199999570846558,
+          0.18000000715255737
+        ]
+      },
+      "uvSets": [
+        0,
+        1
+      ],
+      "clips": [
+        {
+          "name": "ANIM_Greybox_Sway_AtlasB",
+          "durationSeconds": 1,
+          "keyframes": 5
+        },
+        {
+          "name": "ANIM_Greybox_Bow_AtlasB",
+          "durationSeconds": 1,
+          "keyframes": 5
+        }
+      ],
+      "jointCount": 2,
+      "rigRootNode": "GreyboxBiped"
+    },
+    {
+      "file": "T_Greybox_Checker_BC.png",
+      "bytes": 16516,
+      "sha256": "b3651b49a622ce516b0bd5c58686ad5500435b1c3f9f4a811dbed517a26d1498",
+      "source": "tools/art3d/greybox.py (procedural; no external assets)",
+      "kind": "texture",
+      "width": 64,
+      "height": 64,
+      "channels": "RGBA8"
+    }
+  ],
+  "namingAndTextureExceptions": {
+    "scope": "framework SC0 fixtures only",
+    "modelNames": [
+      "greybox-cube.glb",
+      "greybox-plane.glb",
+      "greybox-biped.glb",
+      "greybox-biped-atlas-b.glb"
+    ],
+    "textureSize": {
+      "T_Greybox_Checker_BC.png": [
+        64,
+        64
+      ]
+    },
+    "reason": "SC0-B2 explicitly requires greybox-* and a 64x64 external PNG"
+  },
+  "creatorVerification": {
+    "status": "pending",
+    "creatorVersion": "3.8.8",
+    "prefabs": [
+      {
+        "file": "greybox-cube.glb",
+        "candidatePrefabPath": "stage3d/greybox-cube/greybox-cube",
+        "observedPrefabPath": null,
+        "observedSubAssetUuid": null,
+        "loadAsPrefab": "pending"
+      },
+      {
+        "file": "greybox-plane.glb",
+        "candidatePrefabPath": "stage3d/greybox-plane/greybox-plane",
+        "observedPrefabPath": null,
+        "observedSubAssetUuid": null,
+        "loadAsPrefab": "pending"
+      },
+      {
+        "file": "greybox-biped.glb",
+        "candidatePrefabPath": "stage3d/greybox-biped/greybox-biped",
+        "observedPrefabPath": null,
+        "observedSubAssetUuid": null,
+        "loadAsPrefab": "pending"
+      },
+      {
+        "file": "greybox-biped-atlas-b.glb",
+        "candidatePrefabPath": "stage3d/greybox-biped-atlas-b/greybox-biped-atlas-b",
+        "observedPrefabPath": null,
+        "observedSubAssetUuid": null,
+        "loadAsPrefab": "pending"
+      }
+    ],
+    "externalImageImport": {
+      "status": "pending",
+      "file": "greybox-cube.glb",
+      "imageUri": "T_Greybox_Checker_BC.png",
+      "textureSubMetaObserved": null
+    },
+    "skinning": {
+      "status": "pending",
+      "sameAtlasCandidate": "greybox-biped.glb",
+      "separateAtlasCandidate": "greybox-biped-atlas-b.glb",
+      "observedJointTextures": null,
+      "requiredEvidence": [
+        "Create separate Joint Texture Layout entries using imported skeleton/clip UUIDs",
+        "Record actual jointTexture identity for both clips in each model",
+        "Verify same-atlas play and cross-atlas switching with rendered animation",
+        "Separate GLB files and clip UUIDs alone do not prove separate joint textures"
+      ]
+    }
+  }
+}

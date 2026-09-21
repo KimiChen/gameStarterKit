@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "scope": "Exact framework SC0 fixtures only; temporary exception register, not an implemented asset checker.",
+  "recordedOn": "2026-09-22",
+  "pathBase": "repository root",
+  "matching": "All identity fields in an entry must match. No globs, directory exemptions, prefix exemptions, or automatic permission for changed bytes.",
+  "formalHandoff": {
+    "status": "not-implemented",
+    "batch": "SC1-B5",
+    "configuration": "scripts/assets3d.config.json",
+    "checker": "scripts/verify-assets3d.mjs",
+    "requirement": "Migrate exact entries, implement their validation and rejection cases; do not claim an automatic gate before implementation."
+  },
+  "exceptions": [
+    {
+      "id": "sc0-greybox-model-names",
+      "rule": "docs/3D-ASSETS.md §2.2 model naming",
+      "reason": "SC0-B2 explicitly requires these four fixed greybox filenames.",
+      "generatedRequirement": "tools/art3d/greybox-manifest.json#namingAndTextureExceptions.modelNames",
+      "assets": [
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/greybox-cube.glb",
+          "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b",
+          "sha256": "fb18dd6d72b687954a20a185998db277effad50d43f98ed0b7e24d1cb5238f73"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/greybox-plane.glb",
+          "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb",
+          "sha256": "a3b9222791457b56bb89d6f418e8aa3df9227c089f45ce99df973e8734670de2"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/greybox-biped.glb",
+          "uuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e",
+          "sha256": "e209df67d53c5d6a1208e15b7a3e69c5253f6faba6717feafae8c06958f98dd3"
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/greybox-biped-atlas-b.glb",
+          "uuid": "31efbc7a-7583-4395-a710-b515929172ec",
+          "sha256": "4781ace968432cc6b3014352a81ddee32878174bf9472f991798940f0cf4fadd"
+        }
+      ],
+      "allowedDeviation": "Only the listed exact filenames may omit the regular SM_/SK_ naming convention."
+    },
+    {
+      "id": "sc0-checker-size",
+      "rule": "docs/3D-ASSETS.md §5 texture size tiers",
+      "reason": "SC0-B2 requires a 64x64 external PNG dependency fixture.",
+      "generatedRequirement": "tools/art3d/greybox-manifest.json#namingAndTextureExceptions.textureSize",
+      "asset": {
+        "path": "apps/Cocos/assets/resources/stage3d/T_Greybox_Checker_BC.png",
+        "uuid": "3a28cd1f-e7bd-404b-b799-ae399cc4df65",
+        "sha256": "b3651b49a622ce516b0bd5c58686ad5500435b1c3f9f4a811dbed517a26d1498"
+      },
+      "dimensions": [
+        64,
+        64
+      ],
+      "allowedDeviation": "64x64 is below the regular 256/512/1024/2048 size tiers. The ordinary linear mip policy still applies."
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "ver": "2.3.14",
+  "importer": "gltf",
+  "imported": true,
+  "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb",
+  "files": [],
+  "subMetas": {
+    "02e92": {
+      "importer": "gltf-mesh",
+      "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb@02e92",
+      "displayName": "",
+      "id": "02e92",
+      "name": "greybox-plane-mesh.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 2
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "2012d": {
+      "importer": "gltf-material",
+      "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb@2012d",
+      "displayName": "",
+      "id": "2012d",
+      "name": "M_Greybox.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "af462": {
+      "importer": "gltf-scene",
+      "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb@af462",
+      "displayName": "",
+      "id": "af462",
+      "name": "greybox-plane.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [],
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "5f994f93-0805-43cd-a032-3efe875c7ccb@02e92"
+      ],
+      "skeletons": [],
+      "textures": [],
+      "materials": [
+        "5f994f93-0805-43cd-a032-3efe875c7ccb@2012d"
+      ],
+      "scenes": [
+        "5f994f93-0805-43cd-a032-3efe875c7ccb@af462"
+      ]
+    },
+    "allowMeshDataAccess": false,
+    "normals": 2,
+    "tangents": 2,
+    "generateLightmapUVNode": false
+  }
+}

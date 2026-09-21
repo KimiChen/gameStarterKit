@@ -80,7 +80,7 @@
 | 坐标 | 米制、Y 上、右手系；静态物件枢轴在底部中心，角色枢轴在脚底；正面朝 `-Z`（Cocos `Node.forward`）；导入不缩放（`scale = 1`） |
 | 网格 | 三角化；单网格 ≤ 65k 顶点（16 位索引）；静态世界网格带 **UV2**（烘焙用，Cyberpunk 359 个材质 `HAS_SECOND_UV`），UV2 在 DCC 做（`generateLightmapUVNode:false`）；法线 / 切线随文件带（法线贴图需要切线） |
 | LOD 变体 | 主文件 = lod_0；`lod_1.glb`（≈ 1/4 面）/ `lod_2.glb`（≈ 1/10 面）由 `tools/art3d`（meshopt simplify）离线生成或美术手做；同目录、同材质槽；工具必须报告各档面数、包围盒和材质槽并验证贴图引用。蒙皮变体还须保留骨架 / joints / weights / 动画轨并校验骨骼数与动画时长；不能保真的输入显式失败，改走登记的手工作品，⛔ 静默丢弃动画。SC5-B1 必须产出并导入两份 LOD，运行时由 `EntityPool` 按档选择（3d.md §4） |
-| 导入选项（`.meta` `userData`，机检项） | `mountAllAnimationsOnPrefab: true`；`lods.enable: false`（LOD 由变体 + 档位管，⛔ 不用 Creator 内置 LOD）；`allowMeshDataAccess: false`（只有工具场景需要 CPU 读网格才开）；FBX：`legacyFbxImporter: false`、`smartMaterialEnabled: true`；`meshOptimizer / meshSimplify` 关（离线做）；`addVertexColor: false`（顶点色仅 slg 2D 地表那类显式需要时开） |
+| 导入选项（`.meta` `userData`，机检项） | `mountAllAnimationsOnPrefab: true`；`lods.enable: false`（LOD 由变体 + 档位管，⛔ 不用 Creator 内置 LOD）；静态网格 `allowMeshDataAccess: false`（工具场景需 CPU 读取时才开）；蒙皮网格保留 `true`：Creator 3.8.8 首次预烘焙播放须读取 JOINTS / WEIGHTS / POSITION 计算骨骼包围盒，关闭后会在 `Mesh.getBoneSpaceBounds` 抛错（SC0 实测；`mesh.ts` 的 setter 也明确只适用于静态网格）；蒙皮 CPU 数据计入资源预算；FBX：`legacyFbxImporter: false`、`smartMaterialEnabled: true`；`meshOptimizer / meshSimplify` 关（离线做）；`addVertexColor: false`（顶点色仅 slg 2D 地表那类显式需要时开） |
 | 面数预算（候选，§15 冻结） | 世界地图实体近档 ≤ 3k 三角、远档 ≤ 300；建筑 / 地标 ≤ 10k；主角 ≤ 20k；同屏总量 ≤ 500k（移动 medium 档） |
 | 碰撞 | 渲染网格 ⛔ 不当碰撞体；需要物理时用盒 / 胶囊（Cyberpunk 0 个网格碰撞体），见 §10 |
 
@@ -208,7 +208,12 @@ Stage3D 租约 root
 | 预算 | 读取包 `art3d.config.json`（框架用 `scripts/assets3d.config.json`）：单 GLB / PNG、全部贴图、lightmap 与包总量均须在配置限额内；外提图片和细分 bundle 必须计入同一包总量，重复引用只按实体文件计一次；运行时性能预算另由 `--perf` 提供证据。数字仍为 §15 候选，SC0 后冻结，本轮文档修订不冻结数字 |
 | 授权覆盖 | kit / 插件必须存在 `art3d.config.json` 与 `art/3d/LICENSES.md`；授权台账覆盖每份源素材、转换产物、外提贴图与 LOD 的来源映射，引用不能悬空；只查存在 / 覆盖，许可是否允许用途仍归人工（§14） |
 
-正例：合法 `.mtl / .hdr / .animgraph / .animask` 应通过白名单。反例必须逐项转红：PNG 改名 `.jpg`、删除 `.meta`、删掉必需 texture 子 `.meta`、`mipfilter: none` 未登记、压缩预设引用不存在、模型 `lods.enable:true` 未登记、GLB 内嵌 PNG / JPEG、图片 URI 指向另一包或远程地址、GLB 外部 buffer、授权漏一张外提贴图、下调预算到实际体积以下均失败。另验证相邻包 `foo` / `foobar` 不互认所有权，细分 bundle 的命名冲突必须拒绝；这些反例随 SC1-B5 / B7 落地，当前文档不代表机检已实现。
+SC0 的四个灰盒命名与 64² 棋盘 PNG 尺寸例外暂存于
+[sc0-asset-exceptions.json](../tools/art3d/sc0-asset-exceptions.json)。确定性灰盒 manifest 仍记录
+生成需求，不手改为实测通过；临时清单尚未接入自动资产闸。SC1-B5 须将其逐项迁移到正式配置并
+实现匹配和拒绝用例，不能因清单存在就声称 verify:assets3d 已实现。
+
+正例：合法 `.mtl / .hdr / .animgraph / .animask` 应通过白名单。反例必须逐项转红：PNG 改名 `.jpg`、删除 `.meta`、删掉必需 texture 子 `.meta`、`mipfilter: none` 未登记、压缩预设引用不存在、模型 `lods.enable:true` 未登记、GLB 内嵌 PNG / JPEG、图片 URI 指向另一包或远程地址、GLB 外部 buffer、授权漏一张外提贴图、下调预算到实际体积以下均失败。蒙皮须按实际 skin 与 JOINTS / WEIGHTS 属性识别，不能只看文件前缀；关闭蒙皮 `allowMeshDataAccess` 必须失败，静态网格开启而无精确工具用途例外也必须失败。混合静态 / 蒙皮 GLB 如受同一文件级开关影响，登记该文件的保留理由与 CPU 数据预算；导入报告中的 native buffer 字节数仅为数据量下界，不代表总 CPU 内存。另验证相邻包 `foo` / `foobar` 不互认所有权，细分 bundle 的命名冲突必须拒绝；这些反例随 SC1-B5 / B7 落地，当前文档不代表机检已实现。
 
 UUID 依赖正例必须含同包细分 bundle 间引用和已登记内置资源；反例覆盖不存在 UUID、父资产存在但子资产缺失、跨 kit / plugin 引用（含已声明 `requires.kits` 却直接引用该 kit 内部材质）、未登记宿主 / 验收场景资源。SC1-B7 把带 Prefab → 材质 → 贴图 / 模型子资产依赖链的合成包走 pack → 干净根 install → Creator 重导入 / 加载，移除母仓旁路资源后仍可解析；另验卸载无关包不破坏该链。`verify:sync` 的顶层 UUID 唯一性和包内路径所有权都不能替代本项（3D-44）。
 

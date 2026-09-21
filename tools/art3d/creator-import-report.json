@@ -1,0 +1,1086 @@
+{
+  "schemaVersion": 2,
+  "stage": "SC0-B2",
+  "status": "SC0-B2-complete",
+  "stageComplete": false,
+  "observedAt": "2026-09-21T21:10:52.333Z",
+  "methodology": "Read-only audit of current Creator metadata and compiled Library, deterministic generator checks, selected completed loading steps from an existing preview report, and visual inspection of an existing screenshot. This audit did not operate Creator, browser tabs, importer settings or runtime. SC0-B3 and formal performance acceptance are not asserted.",
+  "environment": {
+    "workspace": "/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion",
+    "creatorVersion": "3.8.8",
+    "previewOrigin": "http://127.0.0.1:7457",
+    "previewProjectConfirmedBy": "isolated apps/Cocos/temp/logs/project.log records the worktree preview-template path; settings.js exposes Stage3D customLayers",
+    "customLayers": [
+      {
+        "name": "STAGE3D_HIDDEN",
+        "bit": 0
+      },
+      {
+        "name": "STAGE3D_OVERLAY",
+        "bit": 1
+      }
+    ],
+    "customPipelineName": "Builtin",
+    "customJointTextureLayouts": [],
+    "customJointTextureLayoutsObservedAt": "2026-09-21T20:46:18.822Z",
+    "customJointTextureLayoutsNote": "Historical static settings.js observation at customJointTextureLayoutsObservedAt, not re-queried here. This empty editor-config list does not include layouts added later through the runtime jointTexturePool.registerCustomTextureLayouts API. Actual layout/texture identities and cross-atlas results are determined by independent B3 reports, not this import snapshot."
+  },
+  "source": {
+    "generator": "tools/art3d/greybox.py",
+    "generatorSha256": "84781bd7b6fa6e73aa516d9d6ce77fda778734904595b73ff4f762d22ffa93ea",
+    "manifest": "tools/art3d/greybox-manifest.json",
+    "manifestSha256": "67e943f61247ee96e24ec82b7299a1752851373f9e5e022ab7c4a044e95ca97d",
+    "requirementsSha256": "cf256e5dd19f7cdc6035046dd953c721e76e7698bb32ed5a96c50f6b30c1e714"
+  },
+  "automatedChecks": [
+    {
+      "id": "generator-byte-check",
+      "status": "pass",
+      "command": "python tools/art3d/greybox.py --check",
+      "result": "PASS: 5 deterministic assets and manifest; Creator import remains pending",
+      "observedAt": "2026-09-21T21:10:52.333Z"
+    },
+    {
+      "id": "generator-regressions",
+      "status": "pass",
+      "command": "python -m unittest discover -s tools/art3d -p 'test_*.py'",
+      "testCount": 8,
+      "observedAt": "2026-09-21T21:10:52.333Z"
+    },
+    {
+      "id": "creator-gltf-import-and-artifacts",
+      "status": "pass",
+      "modelCount": 4
+    },
+    {
+      "id": "cube-external-image-reference-chain",
+      "status": "pass",
+      "note": "Current Library preserves Prefab -> Material -> glTF Texture2D -> standalone ImageAsset -> external PNG. Historical HTTP evidence is separately labeled."
+    },
+    {
+      "id": "source-and-imported-plane-uv2",
+      "status": "pass"
+    },
+    {
+      "id": "imported-two-bone-two-one-second-clips",
+      "status": "pass"
+    },
+    {
+      "id": "runtime-prefab-loading-selected-evidence",
+      "status": "pass",
+      "evidence": "docs/evidence/creator-2026-09-21/stage3d-fixture/report.json",
+      "steps": [
+        "imported-prefab-paths",
+        "initial-load-and-first-activation"
+      ],
+      "scope": "Four Prefab paths and initial activation only."
+    },
+    {
+      "id": "consistent-biped-rig-paths",
+      "status": "pass",
+      "jointPaths": [
+        "GreyboxBiped/Root",
+        "GreyboxBiped/Root/Upper"
+      ]
+    },
+    {
+      "id": "mesh-cpu-policy-with-skinned-exception",
+      "status": "pass-with-documented-exception",
+      "staticAllowDataAccess": false,
+      "skinnedAllowDataAccess": true
+    },
+    {
+      "id": "external-png-mip-filter",
+      "status": "pass",
+      "mipfilter": "linear"
+    },
+    {
+      "id": "sync-gate",
+      "requiredFor": "SC0-B2",
+      "status": "pass",
+      "command": "npm run verify:sync",
+      "reviewedAt": "2026-09-21T22:45:39.368Z",
+      "result": "Both shared/client mirror checks passed; tracked metadata is complete and UUIDs are unique.",
+      "evidence": {
+        "file": ".cache/stage3d/final-sync-check.log",
+        "bytes": 233,
+        "sha256": "abf1d37d7b1526af56400c2db843569eb34876902bd7fec82559f5ada8addc7c",
+        "storage": "local-only"
+      },
+      "scope": "Synchronization only; does not establish verify:all success or B2/SC0 exit."
+    },
+    {
+      "id": "full-verification-gate",
+      "command": "TMPDIR=/Volumes/KimData/.codex-stage3d-tests npm run verify:all",
+      "status": "passed",
+      "exitCode": 0,
+      "candidate": "B2 plus already committed prerequisites only; later batch sources hidden",
+      "recordedAt": "2026-09-21T23:56:08.809089+00:00",
+      "evidence": {
+        "file": ".cache/stage3d/verify-all-sc0-b2.log",
+        "bytes": 409548,
+        "sha256": "8fe941d73b5f31af03c52b5c87de8ee47660285fef392381d0f56a6902e21f33",
+        "storage": "local-only"
+      }
+    }
+  ],
+  "models": [
+    {
+      "file": "greybox-cube.glb",
+      "sourceSha256": "fb18dd6d72b687954a20a185998db277effad50d43f98ed0b7e24d1cb5238f73",
+      "metaFile": "apps/Cocos/assets/resources/stage3d/greybox-cube.glb.meta",
+      "metaSha256": "b3d69508943965fe3dc008247902eb577726d221fcfbf35aa088fce9814e3c3c",
+      "importer": "gltf",
+      "imported": true,
+      "scene": {
+        "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@45cbf",
+        "subAssetName": "greybox-cube.prefab",
+        "importer": "gltf-scene",
+        "registeredResourcePath": "stage3d/greybox-cube/greybox-cube",
+        "registeredType": "cc.Prefab",
+        "compiledType": "cc.Prefab",
+        "loadAsPrefab": "passed",
+        "loadEvidence": {
+          "report": "docs/evidence/creator-2026-09-21/stage3d-fixture/report.json",
+          "reportSha256": "5ac3d40cfe11427a280e9fc1692d432e4316ff8aa0ade89f475b2f83577083ed",
+          "steps": [
+            "imported-prefab-paths",
+            "initial-load-and-first-activation"
+          ]
+        }
+      },
+      "mesh": {
+        "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@b5d26",
+        "triangleCount": 12,
+        "vertexCount": 24,
+        "attributes": [
+          "a_position",
+          "a_normal",
+          "a_texCoord",
+          "a_tangent",
+          "a_texCoord1"
+        ],
+        "minPosition": {
+          "__type__": "cc.Vec3",
+          "x": -0.5,
+          "y": 0,
+          "z": -0.5
+        },
+        "maxPosition": {
+          "__type__": "cc.Vec3",
+          "x": 0.5,
+          "y": 1,
+          "z": 0.5
+        },
+        "allowDataAccess": false,
+        "compiledJson": {
+          "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@b5d26.json",
+          "bytes": 1435,
+          "sha256": "dc1ccace72ffe9a8a6d8062ee1c8d29f1226567f3c5b65a8fe7cbcadb0a8c05d"
+        },
+        "nativeBuffer": {
+          "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@b5d26.bin",
+          "bytes": 1416,
+          "sha256": "e30363b6c605287bde48e82da1a58980db53bfa99810dca9c5e30b6cd02589e8"
+        }
+      },
+      "material": {
+        "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@2012d",
+        "effectUuid": "c8f66d17-351a-48da-a12c-0212d28575c4",
+        "defines": [
+          {
+            "HAS_SECOND_UV": true,
+            "USE_ALBEDO_MAP": true
+          }
+        ],
+        "importedAssetEnablesInstancing": false,
+        "runtimeOverride": "Fixture uses Material.copy plus USE_INSTANCING at runtime. Aggregate counters are preliminary, not material-by-material acceptance.",
+        "compiledJson": {
+          "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@2012d.json",
+          "bytes": 987,
+          "sha256": "4322558580871922a4de8a85f4a01ab8c3a59891ab8064f9e7d0e4e17723b68e"
+        }
+      },
+      "skeleton": null,
+      "skeletalAnimation": [],
+      "animations": [],
+      "importedArtifactCount": 5,
+      "allDeclaredArtifactsExist": true,
+      "compiledPrefabSha256": "b64b9e3da0e39170e8b21ba5e7ae1fe58d5ecc0601187cb590c84243b962aa46",
+      "importerVersion": "2.3.14",
+      "importSettings": {
+        "allowMeshDataAccess": false,
+        "lodsEnabled": false,
+        "generateLightmapUVNode": false
+      },
+      "importedArtifacts": [
+        {
+          "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@b5d26.bin",
+          "bytes": 1416,
+          "sha256": "e30363b6c605287bde48e82da1a58980db53bfa99810dca9c5e30b6cd02589e8"
+        },
+        {
+          "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@b5d26.json",
+          "bytes": 1435,
+          "sha256": "dc1ccace72ffe9a8a6d8062ee1c8d29f1226567f3c5b65a8fe7cbcadb0a8c05d"
+        },
+        {
+          "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@78a7d.json",
+          "bytes": 147,
+          "sha256": "2725549e12371f18ee15c07a2022094fb002e922e87214b10f98bd7850fe811d"
+        },
+        {
+          "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@2012d.json",
+          "bytes": 987,
+          "sha256": "4322558580871922a4de8a85f4a01ab8c3a59891ab8064f9e7d0e4e17723b68e"
+        },
+        {
+          "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@45cbf.json",
+          "bytes": 3566,
+          "sha256": "b64b9e3da0e39170e8b21ba5e7ae1fe58d5ecc0601187cb590c84243b962aa46"
+        }
+      ]
+    },
+    {
+      "file": "greybox-plane.glb",
+      "sourceSha256": "a3b9222791457b56bb89d6f418e8aa3df9227c089f45ce99df973e8734670de2",
+      "metaFile": "apps/Cocos/assets/resources/stage3d/greybox-plane.glb.meta",
+      "metaSha256": "987868d39d3ae3d0ec761fe2da4a2c0e6eb4694227d881665fcadf5af0cf34a8",
+      "importer": "gltf",
+      "imported": true,
+      "scene": {
+        "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb@af462",
+        "subAssetName": "greybox-plane.prefab",
+        "importer": "gltf-scene",
+        "registeredResourcePath": "stage3d/greybox-plane/greybox-plane",
+        "registeredType": "cc.Prefab",
+        "compiledType": "cc.Prefab",
+        "loadAsPrefab": "passed",
+        "loadEvidence": {
+          "report": "docs/evidence/creator-2026-09-21/stage3d-fixture/report.json",
+          "reportSha256": "5ac3d40cfe11427a280e9fc1692d432e4316ff8aa0ade89f475b2f83577083ed",
+          "steps": [
+            "imported-prefab-paths",
+            "initial-load-and-first-activation"
+          ]
+        }
+      },
+      "mesh": {
+        "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb@02e92",
+        "triangleCount": 2,
+        "vertexCount": 4,
+        "attributes": [
+          "a_position",
+          "a_normal",
+          "a_texCoord",
+          "a_tangent",
+          "a_texCoord1"
+        ],
+        "minPosition": {
+          "__type__": "cc.Vec3",
+          "x": -32,
+          "y": 0,
+          "z": -32
+        },
+        "maxPosition": {
+          "__type__": "cc.Vec3",
+          "x": 32,
+          "y": 0,
+          "z": 32
+        },
+        "allowDataAccess": false,
+        "compiledJson": {
+          "file": "apps/Cocos/library/5f/5f994f93-0805-43cd-a032-3efe875c7ccb@02e92.json",
+          "bytes": 1427,
+          "sha256": "e4d84fb0ef2ce18b8ce622bd806529deaa0aa0cd983bbcefa379a95e80ee02d9"
+        },
+        "nativeBuffer": {
+          "file": "apps/Cocos/library/5f/5f994f93-0805-43cd-a032-3efe875c7ccb@02e92.bin",
+          "bytes": 236,
+          "sha256": "c93f7580adc4478742edb541956241be07062af4e0deb3ba762fde0ad3823e1d"
+        }
+      },
+      "material": {
+        "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb@2012d",
+        "effectUuid": "c8f66d17-351a-48da-a12c-0212d28575c4",
+        "defines": [
+          {
+            "HAS_SECOND_UV": true
+          }
+        ],
+        "importedAssetEnablesInstancing": false,
+        "runtimeOverride": "Fixture uses Material.copy plus USE_INSTANCING at runtime. Aggregate counters are preliminary, not material-by-material acceptance.",
+        "compiledJson": {
+          "file": "apps/Cocos/library/5f/5f994f93-0805-43cd-a032-3efe875c7ccb@2012d.json",
+          "bytes": 825,
+          "sha256": "b1191fde32f085e13a56187e81976aae6ca7fdb94f5a29203322cec8bc2e97dc"
+        }
+      },
+      "skeleton": null,
+      "skeletalAnimation": [],
+      "animations": [],
+      "importedArtifactCount": 4,
+      "allDeclaredArtifactsExist": true,
+      "compiledPrefabSha256": "18469e16605e5a01e3cbebfac1885d70699fe226c7a235e4e6693afe6d938b96",
+      "importerVersion": "2.3.14",
+      "importSettings": {
+        "allowMeshDataAccess": false,
+        "lodsEnabled": false,
+        "generateLightmapUVNode": false
+      },
+      "importedArtifacts": [
+        {
+          "file": "apps/Cocos/library/5f/5f994f93-0805-43cd-a032-3efe875c7ccb@02e92.bin",
+          "bytes": 236,
+          "sha256": "c93f7580adc4478742edb541956241be07062af4e0deb3ba762fde0ad3823e1d"
+        },
+        {
+          "file": "apps/Cocos/library/5f/5f994f93-0805-43cd-a032-3efe875c7ccb@02e92.json",
+          "bytes": 1427,
+          "sha256": "e4d84fb0ef2ce18b8ce622bd806529deaa0aa0cd983bbcefa379a95e80ee02d9"
+        },
+        {
+          "file": "apps/Cocos/library/5f/5f994f93-0805-43cd-a032-3efe875c7ccb@2012d.json",
+          "bytes": 825,
+          "sha256": "b1191fde32f085e13a56187e81976aae6ca7fdb94f5a29203322cec8bc2e97dc"
+        },
+        {
+          "file": "apps/Cocos/library/5f/5f994f93-0805-43cd-a032-3efe875c7ccb@af462.json",
+          "bytes": 3568,
+          "sha256": "18469e16605e5a01e3cbebfac1885d70699fe226c7a235e4e6693afe6d938b96"
+        }
+      ]
+    },
+    {
+      "file": "greybox-biped.glb",
+      "sourceSha256": "e209df67d53c5d6a1208e15b7a3e69c5253f6faba6717feafae8c06958f98dd3",
+      "metaFile": "apps/Cocos/assets/resources/stage3d/greybox-biped.glb.meta",
+      "metaSha256": "1895cbe5b8ed4080df71d250bdbae64b370b3c527f44e87889e2bd9327a1e53b",
+      "importer": "gltf",
+      "imported": true,
+      "scene": {
+        "uuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@491f4",
+        "subAssetName": "greybox-biped.prefab",
+        "importer": "gltf-scene",
+        "registeredResourcePath": "stage3d/greybox-biped/greybox-biped",
+        "registeredType": "cc.Prefab",
+        "compiledType": "cc.Prefab",
+        "loadAsPrefab": "passed",
+        "loadEvidence": {
+          "report": "docs/evidence/creator-2026-09-21/stage3d-fixture/report.json",
+          "reportSha256": "5ac3d40cfe11427a280e9fc1692d432e4316ff8aa0ade89f475b2f83577083ed",
+          "steps": [
+            "imported-prefab-paths",
+            "initial-load-and-first-activation"
+          ]
+        }
+      },
+      "mesh": {
+        "uuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@71e4a",
+        "triangleCount": 96,
+        "vertexCount": 192,
+        "attributes": [
+          "a_position",
+          "a_normal",
+          "a_texCoord",
+          "a_tangent",
+          "a_joints",
+          "a_weights",
+          "a_texCoord1"
+        ],
+        "minPosition": {
+          "__type__": "cc.Vec3",
+          "x": -0.5299999713897705,
+          "y": 0,
+          "z": -0.2800000011920929
+        },
+        "maxPosition": {
+          "__type__": "cc.Vec3",
+          "x": 0.5299999713897705,
+          "y": 1.9199999570846558,
+          "z": 0.18000000715255737
+        },
+        "allowDataAccess": true,
+        "compiledJson": {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@71e4a.json",
+          "bytes": 1843,
+          "sha256": "9987adfb392ae8a0807d98a8fcf45b0e4a249503d3d4b4d28ecb39c9cd5051bd"
+        },
+        "nativeBuffer": {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@71e4a.bin",
+          "bytes": 15936,
+          "sha256": "fb80bf241a2b533eecb79a6423b856e5dc81bbc16a21833a711e845fffed478f"
+        }
+      },
+      "material": {
+        "uuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@2012d",
+        "effectUuid": "c8f66d17-351a-48da-a12c-0212d28575c4",
+        "defines": [
+          {
+            "HAS_SECOND_UV": true
+          }
+        ],
+        "importedAssetEnablesInstancing": false,
+        "runtimeOverride": "Fixture uses Material.copy plus USE_INSTANCING at runtime. Aggregate counters are preliminary, not material-by-material acceptance.",
+        "compiledJson": {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@2012d.json",
+          "bytes": 825,
+          "sha256": "b1191fde32f085e13a56187e81976aae6ca7fdb94f5a29203322cec8bc2e97dc"
+        }
+      },
+      "skeleton": {
+        "uuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@f6076",
+        "jointPaths": [
+          "GreyboxBiped/Root",
+          "GreyboxBiped/Root/Upper"
+        ],
+        "hash": 2538276794,
+        "bindposeCount": 2,
+        "compiledJson": {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@f6076.json",
+          "bytes": 837,
+          "sha256": "64c7971632bc8e96e7c8087bc3df7470af0086fbaceb208ed57ce91faada05a5"
+        }
+      },
+      "skeletalAnimation": [
+        {
+          "useBakedAnimation": true,
+          "clipUuids": [
+            "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@60e45",
+            "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@ae6a2"
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "uuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@60e45",
+          "name": "ANIM_Greybox_Sway_Main",
+          "durationSeconds": 1,
+          "sampleRate": 30,
+          "clipHash": 1388145058,
+          "animatedNodePaths": [
+            "GreyboxBiped/Root/Upper",
+            "GreyboxBiped",
+            "GreyboxBiped/Body",
+            "GreyboxBiped/Root"
+          ],
+          "compiledFile": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@60e45.bin",
+          "sha256": "8e8696cd993097adeff70fd37b3223b828739f732f3b35d5e8d9ec8c4c07d4d3"
+        },
+        {
+          "uuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@ae6a2",
+          "name": "ANIM_Greybox_Bow_Main",
+          "durationSeconds": 1,
+          "sampleRate": 30,
+          "clipHash": 3585340301,
+          "animatedNodePaths": [
+            "GreyboxBiped/Root/Upper",
+            "GreyboxBiped",
+            "GreyboxBiped/Body",
+            "GreyboxBiped/Root"
+          ],
+          "compiledFile": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@ae6a2.bin",
+          "sha256": "ffc5747e2cc4ce41913f12c4d951e5b4e05c1c22174c6c3598ace05891ffd708"
+        }
+      ],
+      "importedArtifactCount": 9,
+      "allDeclaredArtifactsExist": true,
+      "compiledPrefabSha256": "c299daf619aae49c4666a4a533ad9f57104ffa93af50eb0e09e1a526afc8340d",
+      "importerVersion": "2.3.14",
+      "importSettings": {
+        "allowMeshDataAccess": true,
+        "lodsEnabled": false,
+        "generateLightmapUVNode": false
+      },
+      "importedArtifacts": [
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e/__original-animation-0.bin",
+          "bytes": 4148,
+          "sha256": "db47cf303afc3380f6f1c996921e277102ebc9950c82d7e9ef9f8628d82b5b91"
+        },
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e/__original-animation-1.bin",
+          "bytes": 4148,
+          "sha256": "b6c3584cfaa1c0856c241d7a8a543a0fd3bb49bde1b2661997f5c1d771aafc55"
+        },
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@71e4a.bin",
+          "bytes": 15936,
+          "sha256": "fb80bf241a2b533eecb79a6423b856e5dc81bbc16a21833a711e845fffed478f"
+        },
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@71e4a.json",
+          "bytes": 1843,
+          "sha256": "9987adfb392ae8a0807d98a8fcf45b0e4a249503d3d4b4d28ecb39c9cd5051bd"
+        },
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@60e45.bin",
+          "bytes": 4148,
+          "sha256": "8e8696cd993097adeff70fd37b3223b828739f732f3b35d5e8d9ec8c4c07d4d3"
+        },
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@ae6a2.bin",
+          "bytes": 4148,
+          "sha256": "ffc5747e2cc4ce41913f12c4d951e5b4e05c1c22174c6c3598ace05891ffd708"
+        },
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@f6076.json",
+          "bytes": 837,
+          "sha256": "64c7971632bc8e96e7c8087bc3df7470af0086fbaceb208ed57ce91faada05a5"
+        },
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@2012d.json",
+          "bytes": 825,
+          "sha256": "b1191fde32f085e13a56187e81976aae6ca7fdb94f5a29203322cec8bc2e97dc"
+        },
+        {
+          "file": "apps/Cocos/library/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@491f4.json",
+          "bytes": 7580,
+          "sha256": "c299daf619aae49c4666a4a533ad9f57104ffa93af50eb0e09e1a526afc8340d"
+        }
+      ]
+    },
+    {
+      "file": "greybox-biped-atlas-b.glb",
+      "sourceSha256": "4781ace968432cc6b3014352a81ddee32878174bf9472f991798940f0cf4fadd",
+      "metaFile": "apps/Cocos/assets/resources/stage3d/greybox-biped-atlas-b.glb.meta",
+      "metaSha256": "095694c24fd9a74e245a2b52b5e8b8f1806f487ff73e725e0ddbd06c90a6533c",
+      "importer": "gltf",
+      "imported": true,
+      "scene": {
+        "uuid": "31efbc7a-7583-4395-a710-b515929172ec@6f817",
+        "subAssetName": "greybox-biped-atlas-b.prefab",
+        "importer": "gltf-scene",
+        "registeredResourcePath": "stage3d/greybox-biped-atlas-b/greybox-biped-atlas-b",
+        "registeredType": "cc.Prefab",
+        "compiledType": "cc.Prefab",
+        "loadAsPrefab": "passed",
+        "loadEvidence": {
+          "report": "docs/evidence/creator-2026-09-21/stage3d-fixture/report.json",
+          "reportSha256": "5ac3d40cfe11427a280e9fc1692d432e4316ff8aa0ade89f475b2f83577083ed",
+          "steps": [
+            "imported-prefab-paths",
+            "initial-load-and-first-activation"
+          ]
+        }
+      },
+      "mesh": {
+        "uuid": "31efbc7a-7583-4395-a710-b515929172ec@359f1",
+        "triangleCount": 96,
+        "vertexCount": 192,
+        "attributes": [
+          "a_position",
+          "a_normal",
+          "a_texCoord",
+          "a_tangent",
+          "a_joints",
+          "a_weights",
+          "a_texCoord1"
+        ],
+        "minPosition": {
+          "__type__": "cc.Vec3",
+          "x": -0.5299999713897705,
+          "y": 0,
+          "z": -0.2800000011920929
+        },
+        "maxPosition": {
+          "__type__": "cc.Vec3",
+          "x": 0.5299999713897705,
+          "y": 1.9199999570846558,
+          "z": 0.18000000715255737
+        },
+        "allowDataAccess": true,
+        "compiledJson": {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@359f1.json",
+          "bytes": 1843,
+          "sha256": "9987adfb392ae8a0807d98a8fcf45b0e4a249503d3d4b4d28ecb39c9cd5051bd"
+        },
+        "nativeBuffer": {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@359f1.bin",
+          "bytes": 15936,
+          "sha256": "fb80bf241a2b533eecb79a6423b856e5dc81bbc16a21833a711e845fffed478f"
+        }
+      },
+      "material": {
+        "uuid": "31efbc7a-7583-4395-a710-b515929172ec@2012d",
+        "effectUuid": "c8f66d17-351a-48da-a12c-0212d28575c4",
+        "defines": [
+          {
+            "HAS_SECOND_UV": true
+          }
+        ],
+        "importedAssetEnablesInstancing": false,
+        "runtimeOverride": "Fixture uses Material.copy plus USE_INSTANCING at runtime. Aggregate counters are preliminary, not material-by-material acceptance.",
+        "compiledJson": {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@2012d.json",
+          "bytes": 825,
+          "sha256": "b1191fde32f085e13a56187e81976aae6ca7fdb94f5a29203322cec8bc2e97dc"
+        }
+      },
+      "skeleton": {
+        "uuid": "31efbc7a-7583-4395-a710-b515929172ec@f6076",
+        "jointPaths": [
+          "GreyboxBiped/Root",
+          "GreyboxBiped/Root/Upper"
+        ],
+        "hash": 2538276794,
+        "bindposeCount": 2,
+        "compiledJson": {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@f6076.json",
+          "bytes": 837,
+          "sha256": "64c7971632bc8e96e7c8087bc3df7470af0086fbaceb208ed57ce91faada05a5"
+        }
+      },
+      "skeletalAnimation": [
+        {
+          "useBakedAnimation": true,
+          "clipUuids": [
+            "31efbc7a-7583-4395-a710-b515929172ec@ad751",
+            "31efbc7a-7583-4395-a710-b515929172ec@ba16e"
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "uuid": "31efbc7a-7583-4395-a710-b515929172ec@ad751",
+          "name": "ANIM_Greybox_Sway_AtlasB",
+          "durationSeconds": 1,
+          "sampleRate": 30,
+          "clipHash": 4250087398,
+          "animatedNodePaths": [
+            "GreyboxBiped/Root/Upper",
+            "GreyboxBiped",
+            "GreyboxBiped/Body",
+            "GreyboxBiped/Root"
+          ],
+          "compiledFile": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@ad751.bin",
+          "sha256": "99c6a19f684b4e4f43906f215a827245103284c5f2dc63db06bbc7b73c7f9728"
+        },
+        {
+          "uuid": "31efbc7a-7583-4395-a710-b515929172ec@ba16e",
+          "name": "ANIM_Greybox_Bow_AtlasB",
+          "durationSeconds": 1,
+          "sampleRate": 30,
+          "clipHash": 2378436870,
+          "animatedNodePaths": [
+            "GreyboxBiped/Root/Upper",
+            "GreyboxBiped",
+            "GreyboxBiped/Body",
+            "GreyboxBiped/Root"
+          ],
+          "compiledFile": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@ba16e.bin",
+          "sha256": "b4128ecc920120afea7ef26e10b6d080050191aa37369a5fef2e23bb71191e72"
+        }
+      ],
+      "importedArtifactCount": 9,
+      "allDeclaredArtifactsExist": true,
+      "compiledPrefabSha256": "4a437e1ba983d738c86203c532de39da5d5951cdf094c79fb644ffa288098b95",
+      "importerVersion": "2.3.14",
+      "importSettings": {
+        "allowMeshDataAccess": true,
+        "lodsEnabled": false,
+        "generateLightmapUVNode": false
+      },
+      "importedArtifacts": [
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec/__original-animation-0.bin",
+          "bytes": 4148,
+          "sha256": "fef834ab47ba30721f0053443e068727d0dec4ef457186e158c730f80337f8aa"
+        },
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec/__original-animation-1.bin",
+          "bytes": 4148,
+          "sha256": "6d7b883fded26118b2491284b27f3a2f6005f44cc99a5434b474d139ab8a32ea"
+        },
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@359f1.bin",
+          "bytes": 15936,
+          "sha256": "fb80bf241a2b533eecb79a6423b856e5dc81bbc16a21833a711e845fffed478f"
+        },
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@359f1.json",
+          "bytes": 1843,
+          "sha256": "9987adfb392ae8a0807d98a8fcf45b0e4a249503d3d4b4d28ecb39c9cd5051bd"
+        },
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@ad751.bin",
+          "bytes": 4148,
+          "sha256": "99c6a19f684b4e4f43906f215a827245103284c5f2dc63db06bbc7b73c7f9728"
+        },
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@ba16e.bin",
+          "bytes": 4148,
+          "sha256": "b4128ecc920120afea7ef26e10b6d080050191aa37369a5fef2e23bb71191e72"
+        },
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@f6076.json",
+          "bytes": 837,
+          "sha256": "64c7971632bc8e96e7c8087bc3df7470af0086fbaceb208ed57ce91faada05a5"
+        },
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@2012d.json",
+          "bytes": 825,
+          "sha256": "b1191fde32f085e13a56187e81976aae6ca7fdb94f5a29203322cec8bc2e97dc"
+        },
+        {
+          "file": "apps/Cocos/library/31/31efbc7a-7583-4395-a710-b515929172ec@6f817.json",
+          "bytes": 7588,
+          "sha256": "4a437e1ba983d738c86203c532de39da5d5951cdf094c79fb644ffa288098b95"
+        }
+      ]
+    }
+  ],
+  "externalImage": {
+    "source": "T_Greybox_Checker_BC.png",
+    "width": 64,
+    "height": 64,
+    "imageUuid": "3a28cd1f-e7bd-404b-b799-ae399cc4df65",
+    "cubeTextureSubAssetUuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@78a7d",
+    "cubeTextureImageDatabaseUri": "db://assets/resources/stage3d/T_Greybox_Checker_BC.png",
+    "compiledMipImageUuids": [
+      "3a28cd1f-e7bd-404b-b799-ae399cc4df65"
+    ],
+    "cubeTextureMipFilter": "linear",
+    "standaloneTextureSubAssetUuid": "3a28cd1f-e7bd-404b-b799-ae399cc4df65@6c48a",
+    "standaloneTextureMipFilter": "linear",
+    "renderedCheckerboard": "visually-observed",
+    "sourceSha256": "b3651b49a622ce516b0bd5c58686ad5500435b1c3f9f4a811dbed517a26d1498",
+    "metaSha256": "90b7d893b8f117a9540e467fe82d35ba101069bbb33361ad1bb2da106486cd2f",
+    "visualEvidence": ".cache/stage3d/instanced-fixed.jpg",
+    "visualScope": "Checker pattern is visibly sampled on cube surfaces. Exact per-corner orientation and distant filtering are not independently accepted by this screenshot.",
+    "importedArtifacts": [
+      {
+        "file": "apps/Cocos/library/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65.json",
+        "bytes": 92,
+        "sha256": "e8d0b3e69929e9e76a78cb8d57b785dca71a254d1cfe432a4d0c546b8b49c4b0"
+      },
+      {
+        "file": "apps/Cocos/library/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65.png",
+        "bytes": 16516,
+        "sha256": "b3651b49a622ce516b0bd5c58686ad5500435b1c3f9f4a811dbed517a26d1498"
+      },
+      {
+        "file": "apps/Cocos/library/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65@6c48a.json",
+        "bytes": 147,
+        "sha256": "2725549e12371f18ee15c07a2022094fb002e922e87214b10f98bd7850fe811d"
+      },
+      {
+        "file": "apps/Cocos/library/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@78a7d.json",
+        "bytes": 147,
+        "sha256": "2725549e12371f18ee15c07a2022094fb002e922e87214b10f98bd7850fe811d"
+      }
+    ]
+  },
+  "builtinEffect": {
+    "name": "builtin-standard",
+    "uuid": "c8f66d17-351a-48da-a12c-0212d28575c4",
+    "matchesImportedMaterials": true,
+    "creatorSource": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/editor/assets/effects/builtin-standard.effect.meta",
+    "metaSha256": "44eb95c68b263908fe90a3ce904ebcbdb1d6ea4174405ac423feca30e0313efd"
+  },
+  "findings": [
+    {
+      "id": "IMPORT-01",
+      "status": "resolved-with-engine-required-skinned-exception",
+      "severity": "medium",
+      "finding": "Cube/plane allowDataAccess=false. Both skinned meshes retain CPU data for first-pose bounds extraction.",
+      "reference": "cpuDataException"
+    },
+    {
+      "id": "IMPORT-02",
+      "status": "resolved",
+      "severity": "medium",
+      "finding": "Standalone PNG and cube glTF texture use mipfilter=linear; checker sampling is visible in a real-preview screenshot."
+    },
+    {
+      "id": "IMPORT-03",
+      "status": "resolved-structure",
+      "severity": "high",
+      "finding": "Both skeleton and animation paths start with GreyboxBiped; scene/prefab names remain distinct file stems. Cross-atlas playback remains a separate check."
+    },
+    {
+      "id": "IMPORT-04",
+      "status": "partial-runtime-evidence",
+      "severity": "medium",
+      "finding": "At the original observedAt, Runtime Material.copy overrides had preliminary draw/instance evidence and imported materials did not enable instancing themselves. Later controlled same/cross jointTexture layout and B3 acceptance are reported independently; this historical import finding does not decide their current status."
+    }
+  ],
+  "pendingChecks": [
+    {
+      "id": "skinning-animation-render",
+      "requiredFor": "SC0-B3",
+      "description": "Render both distinguishable one-second clips, verify skeletal deformation, same/cross-atlas play and switching, and record actual jointTexture and compatible grouping."
+    },
+    {
+      "id": "webgl-and-release",
+      "requiredFor": "SC0-B3",
+      "description": "Run WebGL2 and WebGL1 including floating-point/RGBA8 paths, real-time non-instanced fallback, node/reference release and raw-frame/GFX evidence."
+    },
+    {
+      "id": "baked-lighting-prefab",
+      "requiredFor": "SC0-B5",
+      "description": "Current B5 real-engine bake/apply and independent-prefab reload evidence is maintained in separate B5 reports. This historical B2 import snapshot neither determines B5 completion nor treats UV2 presence as baked-lighting acceptance."
+    },
+    {
+      "id": "formal-performance-and-controlled-layout",
+      "requiredFor": "SC0-B3",
+      "description": "Complete timing/memory sampling and same/cross-atlas switching tests; a single drawCalls=10 frame is not an exit criterion."
+    }
+  ],
+  "limitations": [
+    "Machine-local Creator Library and selected preview evidence are an observed snapshot; refresh hashes after regeneration/reimport.",
+    "Parent task is iterating the runtime report. Its recorded SHA identifies the inspected snapshot; later contents may differ.",
+    "This historical imported-asset snapshot does not determine B3 success, frame-budget freeze, WebGL1/RGBA8 fallback, B5 completion or exit tags. Current LightFX bake and independent-prefab runtime evidence belongs to separate B5 reports, not an absence-of-bake claim in this file.",
+    "This audit only updates tools/art3d files and did not change importer metadata/settings or operate Creator/browser."
+  ],
+  "historicalHttpEvidence": {
+    "observedAt": "2026-09-21T20:46:18.822Z",
+    "status": "historical-not-revalidated-after-reimport",
+    "resourceConfigSha256": "2b9bae6850c73d82c3cb8d96602c0864488bcf100a4dc66e46ddabca8469827b",
+    "resources": [
+      {
+        "path": "/assets/resources/import/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@45cbf.json",
+        "status": 200,
+        "bytes": 3566,
+        "sha256": "b64b9e3da0e39170e8b21ba5e7ae1fe58d5ecc0601187cb590c84243b962aa46",
+        "matchesLibrary": true
+      },
+      {
+        "path": "/assets/resources/import/5f/5f994f93-0805-43cd-a032-3efe875c7ccb@af462.json",
+        "status": 200,
+        "bytes": 3568,
+        "sha256": "18469e16605e5a01e3cbebfac1885d70699fe226c7a235e4e6693afe6d938b96",
+        "matchesLibrary": true
+      },
+      {
+        "path": "/assets/resources/import/f1/f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@491f4.json",
+        "status": 200,
+        "bytes": 7581,
+        "sha256": "bad6c0778b7c0d84e6e53b217613dc8433a3e8d9b680eafe26483090fd565221",
+        "matchesLibrary": true
+      },
+      {
+        "path": "/assets/resources/import/31/31efbc7a-7583-4395-a710-b515929172ec@6f817.json",
+        "status": 200,
+        "bytes": 7597,
+        "sha256": "cd8aa1e60b1612b52414f5a8c580e7f093d880dd0f9017733bc3bbaeb3436bfd",
+        "matchesLibrary": true
+      },
+      {
+        "path": "/assets/resources/import/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@2012d.json",
+        "status": 200,
+        "bytes": 987,
+        "sha256": "4322558580871922a4de8a85f4a01ab8c3a59891ab8064f9e7d0e4e17723b68e",
+        "matchesLibrary": true
+      },
+      {
+        "path": "/assets/resources/import/48/48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@78a7d.json",
+        "status": 200,
+        "bytes": 147,
+        "sha256": "2725549e12371f18ee15c07a2022094fb002e922e87214b10f98bd7850fe811d",
+        "matchesLibrary": true
+      },
+      {
+        "path": "/assets/resources/import/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65.json",
+        "status": 200,
+        "bytes": 92,
+        "sha256": "e8d0b3e69929e9e76a78cb8d57b785dca71a254d1cfe432a4d0c546b8b49c4b0",
+        "matchesLibrary": true
+      },
+      {
+        "path": "/assets/resources/native/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65.png",
+        "status": 200,
+        "bytes": 16516,
+        "sha256": "b3651b49a622ce516b0bd5c58686ad5500435b1c3f9f4a811dbed517a26d1498",
+        "matchesLibrary": true
+      }
+    ]
+  },
+  "runtimeEvidence": {
+    "report": {
+      "file": "docs/evidence/creator-2026-09-21/stage3d-fixture/report.json",
+      "sha256": "5ac3d40cfe11427a280e9fc1692d432e4316ff8aa0ade89f475b2f83577083ed",
+      "startedAt": "2026-09-21T21:02:14.467Z",
+      "finishedAt": "2026-09-21T21:03:00.822Z",
+      "overallOk": false,
+      "overallExecutedOk": false,
+      "failedSteps": [
+        "modal-cancels-held-world-and-restores-fresh-only"
+      ],
+      "acceptedScope": "Only imported-prefab-paths and initial-load-and-first-activation establish B2 loading. Later input steps and B3 exit are not accepted."
+    },
+    "selectedSteps": [
+      {
+        "name": "imported-prefab-paths",
+        "status": "passed",
+        "finishedAt": "2026-09-21T21:02:16.802Z",
+        "prefabs": [
+          {
+            "name": "greybox-plane",
+            "uuid": "5f994f93-0805-43cd-a032-3efe875c7ccb",
+            "prefabUuid": "5f994f93-0805-43cd-a032-3efe875c7ccb@af462",
+            "prefabPath": "stage3d/greybox-plane/greybox-plane",
+            "importedName": "greybox-plane.prefab"
+          },
+          {
+            "name": "greybox-cube",
+            "uuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b",
+            "prefabUuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@45cbf",
+            "prefabPath": "stage3d/greybox-cube/greybox-cube",
+            "importedName": "greybox-cube.prefab"
+          },
+          {
+            "name": "greybox-biped",
+            "uuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e",
+            "prefabUuid": "f132d723-f7c9-4cf7-b6ec-b827f2be6c6e@491f4",
+            "prefabPath": "stage3d/greybox-biped/greybox-biped",
+            "importedName": "greybox-biped.prefab"
+          },
+          {
+            "name": "greybox-biped-atlas-b",
+            "uuid": "31efbc7a-7583-4395-a710-b515929172ec",
+            "prefabUuid": "31efbc7a-7583-4395-a710-b515929172ec@6f817",
+            "prefabPath": "stage3d/greybox-biped-atlas-b/greybox-biped-atlas-b",
+            "importedName": "greybox-biped-atlas-b.prefab"
+          }
+        ]
+      },
+      {
+        "name": "initial-load-and-first-activation",
+        "status": "passed",
+        "finishedAt": "2026-09-21T21:02:28.103Z",
+        "session": {
+          "ready": true,
+          "error": null,
+          "businessRefs": 4,
+          "nodeCount": 604
+        },
+        "cubes": 500,
+        "bipeds": 100,
+        "screenshot": "001-initial-fixture.png"
+      }
+    ],
+    "environment": {
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+      "platform": "MacIntel",
+      "webgl": 2,
+      "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "gfxAPI": 7,
+      "device": "WebGL2Device",
+      "pipeline": "WebPipeline",
+      "quality": "SC0 fixed greybox; SC1 quality tiers are not implemented"
+    },
+    "consoleEntryCountAtSourceSnapshot": 0,
+    "screenshot": {
+      "file": ".cache/stage3d/instanced-fixed.jpg",
+      "bytes": 355059,
+      "sha256": "df183e5d621b8d80d4ada9d9bcd46d4e97f460e73a4bb938af76a57189f4c8d9",
+      "observedAt": "2026-09-21T21:10:52.333Z",
+      "visualObservation": "Plane, checker-textured cubes, greybox characters and fixture HUD are visible.",
+      "visibleCounters": {
+        "drawCalls": 10,
+        "instances": 612
+      },
+      "scope": "Single frame; counts can vary with particle activity and are not a formal performance result."
+    },
+    "instancingObservation": {
+      "status": "preliminary",
+      "reportedBy": "parent task preview after Material.copy override",
+      "reportedDrawCalls": 10,
+      "reportedInstances": 615,
+      "initialActivationCounters": {
+        "drawCalls": 10,
+        "triangles": 15970,
+        "instances": 601,
+        "bufferBytes": 314916,
+        "textureBytes": 41662372
+      },
+      "formalPerformanceAcceptance": "pending",
+      "note": "Parent observation, screenshot and captured initial activation are different instants; actual counts are retained separately."
+    },
+    "animationObservation": {
+      "bakedAnimations": 100,
+      "skinnedRenderers": 100,
+      "missingJointTexture": 0,
+      "playingClips": [
+        {
+          "name": "ANIM_Greybox_Sway_Main",
+          "count": 50
+        },
+        {
+          "name": "ANIM_Greybox_Bow_Main",
+          "count": 49
+        },
+        {
+          "name": "ANIM_Greybox_Bow_AtlasB",
+          "count": 1
+        }
+      ],
+      "jointTextures": [
+        {
+          "id": 1,
+          "renderers": 100,
+          "width": 480,
+          "height": 480,
+          "format": 44,
+          "modelType": "BakedSkinningModel"
+        }
+      ],
+      "status": "preliminary",
+      "crossAtlasSwitchVerified": false,
+      "note": "Baked instances have joint textures; a single texture group does not prove controlled cross-atlas switching or full animation/SC0-B3 acceptance."
+    }
+  },
+  "cpuDataException": {
+    "status": "applied-engine-required-exception",
+    "scope": [
+      "greybox-biped.glb",
+      "greybox-biped-atlas-b.glb"
+    ],
+    "setting": "allowMeshDataAccess=true",
+    "baseline": "Static-mesh CPU-read policy must distinguish skinned meshes; this exception is not silently treated as ordinary compliance.",
+    "reason": "Cocos 3.8.8 uploads then releases CPU data when allowDataAccess=false outside EDITOR. First baked pose calls getBoneSpaceBounds and reads JOINTS/WEIGHTS/POSITION from the released buffer, causing RangeError. Setter documentation limits the setting to static meshes.",
+    "authoringBoundsAlternative": "No supported authoring-only persistent bounds cache found: _boneSpaceBounds is an unserialized Map. Runtime prewarming depends on ordering and is not adopted.",
+    "evidence": [
+      {
+        "file": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/cocos/3d/assets/mesh.ts",
+        "bytes": 67970,
+        "sha256": "29681279ffcc67c5d7a46764dc3c4aaaddf5f7af80c4b34862ed4ee4ca018a5d",
+        "lines": [
+          389,
+          561,
+          742,
+          1177,
+          1370,
+          1389
+        ]
+      },
+      {
+        "file": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/cocos/3d/skeletal-animation/skeletal-animation-utils.ts",
+        "bytes": 21210,
+        "sha256": "b187c1663fc31be0c33cc91b8da539e47eee78dba2a1b218affa5727fc8ec0f8",
+        "lines": [
+          232,
+          292
+        ]
+      }
+    ],
+    "meshNativeBytes": [
+      {
+        "file": "greybox-biped.glb",
+        "bytes": 15936
+      },
+      {
+        "file": "greybox-biped-atlas-b.glb",
+        "bytes": 15936
+      }
+    ],
+    "budgetNote": "Native buffer sizes are data measures, not a measured total CPU-memory budget."
+  },
+  "batchComplete": true,
+  "sc0Exit": false,
+  "reviewedAt": "2026-09-21T23:56:08.809089+00:00",
+  "reviewMethodology": "Historical import evidence retained. Final B2-only candidate verify:all passed; later B3/B5 acceptance is reported separately.",
+  "stageCompleteScope": "SC0 overall; batchComplete covers SC0-B2 only"
+}
