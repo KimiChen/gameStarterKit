@@ -15,7 +15,7 @@ import { test } from "node:test";
 import { MMO_ORCHESTRATION_VERSION, defineOrchestration } from "@game/shared/kits/mmo/api/orchestration/index";
 import { GREYBOX_EAST_MAP_ID, GREYBOX_MAP_ID, GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
 import { indexContentPack, mergeItemTemplates, validateContentPack } from "@game/shared/kits/mmo/api/content/index";
-import { contentForMap, contentIndexesOf } from "../src/kits/mmo/content/registry";
+import { contentForMap, contentIndexes, contentIndexesOf } from "../src/kits/mmo/content/registry";
 import { assertOrchestrationsResolvable, registerOrchestration } from "../src/kits/mmo/orchestration/registry";
 import { renderContributionsModule } from "../tools/plugin-codegen/contributions";
 import { parseKitRegistration, validateAgainstSchema } from "../tools/plugin-codegen/pluginManifestSchema";
@@ -48,12 +48,21 @@ test("注册表组合：贡献包在前、内置兜底；contentForMap 贡献包
     assert.throws(() => contentIndexesOf([{ pluginId: "dup", value: jsonPack() }]), /packId "greybox" 重复/u, "同 packId");
     assert.throws(() => contentIndexesOf([{ pluginId: "shadow", value: { ...east, packId: "shadow" } }], jsonPack()), /一图一包/u, "同图两包");
     assert.throws(() => contentIndexesOf([{ pluginId: "bad", value: { ...east, packId: "bad", classes: [] } }], builtinWestOnly), /贡献包 plugin:bad 不合法/u, "坏包 fail-closed");
+    // 生成物两端存在且形状与填充无关（MG0 起有真实插件填充，⛔ 假设为空）：每个 pluginId 都对应树上声明了 contributes.mmo 的插件
     for (const end of ["server", "client"] as const) {
         const source = fs.readFileSync(path.join(REPO, `apps/${end}/src/kits/mmo/contributions.generated.ts`), "utf8");
         assert.match(source, /export const KIT_CONTRIBUTIONS = \{/u);
-        assert.match(source, /content: \[\],/u, `${end} 端 content 空`);
-        assert.match(source, end === "server" ? /orchestration: \[\],/u : /presentation: \[\],/u);
+        assert.match(source, /\n {4}content: \[/u, `${end} 端有 content 列表`);
+        assert.match(source, end === "server" ? /\n {4}orchestration: \[/u : /\n {4}presentation: \[/u);
+        for (const [, pluginId] of source.matchAll(/pluginId: "([A-Za-z0-9]+)"/gu)) {
+            const manifest = JSON.parse(fs.readFileSync(path.join(REPO, `apps/plugins/${pluginId}/plugin.json`), "utf8")) as { contributes?: { mmo?: unknown } };
+            assert.ok(manifest.contributes?.mmo, `${end} 端收录的 ${pluginId} 必须在树上声明 contributes.mmo`);
+        }
     }
+    // 生产注册表：全部贡献包 + 内置兜底都过闸（坏包在此即抛），内置灰盒永远垫底
+    const live = contentIndexes();
+    assert.ok(live.length >= 1);
+    assert.equal(live.at(-1)?.pack.packId, GREYBOX_PACK.packId, "内置灰盒兜底");
 });
 
 test("编排交叉核对：模块 packId 不对应已收录包 ⇒ 抛；重复 packId 登记 ⇒ 抛；renderContributionsModule 渲染 data 字面量与 module import", () => {
@@ -61,8 +70,10 @@ test("编排交叉核对：模块 packId 不对应已收录包 ⇒ 抛；重复 
     const unregister = registerOrchestration(module);
     try {
         assert.throws(() => registerOrchestration(module), /已有编排模块/u, "一包一模块");
-        assert.throws(() => assertOrchestrationsResolvable(["greybox"]), /"ghost-pack" 不对应任何已收录内容包/u);
-        assert.doesNotThrow(() => assertOrchestrationsResolvable(["greybox", "ghost-pack"]));
+        // 贡献点收录的真实模块（MG0 起有）也要能解析：用生产注册表的全部包 id，⛔ 假设只有灰盒
+        const livePackIds = contentIndexes().map((index) => index.pack.packId);
+        assert.throws(() => assertOrchestrationsResolvable(livePackIds), /"ghost-pack" 不对应任何已收录内容包/u);
+        assert.doesNotThrow(() => assertOrchestrationsResolvable([...livePackIds, "ghost-pack"]));
     } finally {
         unregister();
     }

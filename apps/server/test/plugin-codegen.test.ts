@@ -96,6 +96,25 @@ function createFixture(): { readonly root: string; readonly options: PluginCodeg
     if (OPTIONAL_INPUT_DIRS.has(dir) && !fs.existsSync(path.join(REPOSITORY_ROOT, dir))) continue;
     fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
   }
+  // 插件的贡献文件（plugin.json `contributes.<kit>.<id>` 指向的 module / data）可以落在输入面之外（如 apps/server/src/core/<id>/），
+  // codegen 会读它们（存在性 / 导出 / schema）：逐个补拷，⛔ 假设树上没有带贡献点的插件（MG0 起有 mmodemo）。
+  const pluginsDir = path.join(REPOSITORY_ROOT, "apps/plugins");
+  for (const entry of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
+    const manifestFile = path.join(pluginsDir, entry.name, "plugin.json");
+    if (!entry.isDirectory() || !fs.existsSync(manifestFile)) continue;
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8")) as { contributes?: Record<string, Record<string, string>> };
+    for (const byKit of Object.values(manifest.contributes ?? {})) {
+      for (const relative of Object.values(byKit)) {
+        const source = path.join(REPOSITORY_ROOT, relative);
+        const target = path.join(root, relative);
+        if (!fs.existsSync(source) || fs.existsSync(target)) continue;
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.cpSync(source, target);
+        // module 贡献的相对 import（同目录内）也要在：拷整个所在目录（apps/server/src/core/<id>/ 之类），只补缺失文件
+        fs.cpSync(path.dirname(source), path.dirname(target), { recursive: true, force: false, errorOnExist: false });
+      }
+    }
+  }
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
   fs.cpSync(path.join(REPOSITORY_ROOT, PLUGIN_INDEX_RELATIVE), path.join(root, PLUGIN_INDEX_RELATIVE));
   fs.cpSync(

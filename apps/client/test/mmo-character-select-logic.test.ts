@@ -7,6 +7,7 @@ import { test } from "node:test";
 import { MmoCharacterSelectLogic, describeMmoError } from "../src/kits/mmo/logic/MmoCharacterSelectLogic";
 import type { MmoRuntime } from "../src/kits/mmo/logic/mmoRuntime";
 import { defaultCharacterName } from "../src/kits/mmo/api/characters/index";
+import { defaultMapId } from "../src/kits/mmo/api/content/index";
 import type { ICharacterSummary } from "../src/shared/kits/mmo/api/characters/index";
 
 const rook: ICharacterSummary = { characterId: "c1", personaId: "p1", slot: 0, name: "Rook", classId: "fighter", factionId: "dawn", level: 3, exp: 10, mapId: "greybox", status: "active" };
@@ -80,7 +81,7 @@ test("进入世界：有检查点图回那张图，否则首图；带参 launch(
     await logic.refresh();
     assert.ok(await logic.enter("c1"));
     assert.ok(await logic.enter("c2"));
-    assert.deepEqual(calls.filter((call) => call[0] === "launchWorld"), [["launchWorld", "c1", "greybox"], ["launchWorld", "c2", "greybox"]]);
+    assert.deepEqual(calls.filter((call) => call[0] === "launchWorld"), [["launchWorld", "c1", "greybox"], ["launchWorld", "c2", defaultMapId()]], "无检查点图 ⇒ 首图 = defaultMapId()（贡献包优先，⛔ 写死灰盒）");
     assert.equal(await logic.enter("nope"), false);
     const full = new MmoCharacterSelectLogic(fakeRuntime({ fail: "launch" }).runtime);
     await full.refresh();

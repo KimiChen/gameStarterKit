@@ -203,6 +203,10 @@ worker 发奖遇 `conflict` 必须抛出并回滚整轮（包括已更新的堆�
 
 ## 二、施工记录（按批次；每批的用例 / 变异 / 偏差原文保留，⛔ 不作说明书）
 
+### MG0 反馈修复（2026-09-22；kit 0.1.24 → 0.1.25）
+
+首个真实内容插件 `mmodemo`（[apps/plugins/mmodemo/README.md](../../plugins/mmodemo/README.md)）暴露三处：① kit 测试假设贡献点为空（服务端 `mmo-contributions` / 客户端 `mmo-content`、`mmo-character-select-logic`）⇒ 改为与填充无关；② `MmoWorldGameplay` 用 `classOf(classId)`（贡献包优先）取职业模板，多包并存时进灰盒图会拿到别的包的战士 ⇒ 改按当前图所在包解析（`packForMap(room.mapId).classById`，与服务端准入同源；`classOf` 面签名不动）；③ 框架 `plugin-codegen.test.ts` 隔离根不拷插件贡献文件 ⇒ 补拷。`mmo-kit-v1-frozen` 重打到修复提交；插件侧 diff 相对该 tag 只含插件文件与生成物（§9.4 #1–#3）。
+
 ### 定义了什么（MK0-B1）
 
 | 面 | 内容 |

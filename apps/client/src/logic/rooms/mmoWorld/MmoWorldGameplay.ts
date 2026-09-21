@@ -13,7 +13,7 @@ import type { GameplayInstanceHost } from "../../gameplay/GameplayModule";
 import type { IMmoEntityWire, IMmoWorldOpResult, IMmoWorldPos, IMmoWorldTransferReady } from "../../../shared/index";
 import { withinRadius, type MmoPrivateState } from "../../../kits/mmo/api/world/index";
 import { MovementPredictor, normalizeDir, parseCollisionGrid } from "../../../kits/mmo/api/movement/index";
-import { classOf, mapDefOf, presentationOf, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
+import { mapDefOf, packForMap, presentationOf, type IClassTemplate, type IPresentationEntry } from "../../../kits/mmo/api/content/index";
 import { appendChatLine, nearbyChatLineOf, type INearbyChatLine } from "../../../kits/mmo/api/social/index";
 import { CooldownModel, pickHostileTarget } from "../../../kits/mmo/api/combat/index";
 import { MMO_PICKUP_RADIUS, describeBag, nearestLoot, type IMmoBagWire } from "../../../kits/mmo/api/inventory/index";
@@ -288,10 +288,16 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
         }
     }
 
+    /** 职业模板按**当前地图所在的包**解析（与服务端准入同源：`contentFor(mapId).classById`）；⛔ classOf 的「贡献包优先」——多包并存时别的包会盖住本图的职业（MG0 发现）。 */
+    private classTemplate(classId: string): IClassTemplate | null {
+        const mapId = this.context?.room.mapId;
+        return mapId === undefined ? null : packForMap(mapId)?.classById.get(classId) ?? null;
+    }
+
     /** 职业技能栏（本人实体的 templateId = classId）。 */
     private spellBar(): readonly string[] {
         const self = [...this.entities.values()].find((entity) => this.isSelf(entity));
-        return self ? classOf(self.templateId)?.spells ?? [] : [];
+        return self ? this.classTemplate(self.templateId)?.spells ?? [] : [];
     }
 
     /** 施法：目标 = 已选目标，否则视野内最近存活怪（本人预测位置起、按视距）；本地冷却未就绪只提示不发。 */
@@ -374,7 +380,7 @@ export class MmoWorldGameplay implements GameplayPlugin<MmoWorldRoom, MmoWorldIn
     private createPredictor(snapshot: ReadonlyMap<string, IMmoEntityWire>, mapId: string): MovementPredictor | null {
         const self = [...snapshot.values()].find((entity) => this.isSelf(entity));
         const map = mapDefOf(mapId);
-        const klass = self ? classOf(self.templateId) : null;
+        const klass = self ? packForMap(mapId)?.classById.get(self.templateId) ?? null : null;
         if (!self || !map || !klass) return null;
         let grid = null;
         try { grid = parseCollisionGrid(map.collision ?? null, map.size); } catch { grid = null; }
