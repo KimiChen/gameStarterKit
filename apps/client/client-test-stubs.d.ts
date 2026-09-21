@@ -45,8 +45,15 @@ declare module "cc" {
   }
   export class Texture2D {
     width: number; height: number; addRef(): unknown; decRef(): unknown;
-    reset(info: { width: number; height: number }): void;
+    reset(info: { width: number; height: number; format?: number; mipmapLevel?: number }): void;
     uploadData(source: Uint8Array): void;
+    destroy(): boolean;
+    /** ⚠ 权重图要 LINEAR：默认可能是 POINT，放大后会露出烘焙分辨率的方块。 */
+    setFilters(min: number, mag: number): void;
+    setWrapMode(s: number, t: number): void;
+    static Filter: { NONE: number; LINEAR: number; NEAREST: number };
+    static WrapMode: { REPEAT: number; CLAMP_TO_EDGE: number };
+    static PixelFormat: { RGBA8888: number };
   }
   export class JsonAsset { json: unknown; addRef(): unknown; decRef(): unknown; }
   export class SpriteFrame { texture: Texture2D | null; rect: Rect; rotated: boolean;
@@ -88,7 +95,9 @@ declare module "cc" {
   }
   export class Material {
     initialize(options: {
-      effectName: string;
+      /** ⚠ 内置 effect 用名字；**自定义 .effect 必须传 effectAsset**（名字查不到）。 */
+      effectName?: string;
+      effectAsset?: EffectAsset;
       technique?: number;
       defines?: Record<string, unknown>;
       states?: Record<string, unknown>;
@@ -98,6 +107,7 @@ declare module "cc" {
   }
   export class EffectAsset {
     static get(name: string): { techniques: ReadonlyArray<{ name?: string }> } | null;
+    addRef(): unknown; decRef(): unknown;
   }
   /**
    * ⚠ 引擎侧的 UIMeshRenderer **既没有 mesh 也没有 material**——它只是 UI 桥，在 onLoad 里查一次

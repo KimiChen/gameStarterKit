@@ -4,9 +4,10 @@
  *    否则先 reject 再 release，晚到的成功回调会给一张已经 decRef 的资源再 addRef。
  *  ⚠ 路由关掉/切图时无论成功失败都要 release 整包。
  */
-import { Texture2D, resources } from "cc";
+import { EffectAsset, Texture2D, resources } from "cc";
 import {
-    SGZZ_DECOR_ATLAS_ASSET, SGZZ_MINIMAP_ASSET, sgzzAtlasAsset, sgzzPlateAsset,
+    SGZZ_DECOR_ATLAS_ASSET, SGZZ_FIELD_ATLAS_ASSET, SGZZ_FIELD_EFFECT_ASSET,
+    SGZZ_MINIMAP_ASSET, sgzzAtlasAsset, sgzzPlateAsset,
 } from "../logic/sgzzFar";
 import { SGZZ_ATLAS_LODS } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 
@@ -18,6 +19,9 @@ export interface SgzzArtResources {
     atlasFor(lod: number): Texture2D | null;
     /** 摆件图集。缺席则退回梯形剪影占位。 */
     readonly decorAtlas: Texture2D | null;
+    /** 连续覆盖场用：无缝地表图集 + 自定义着色器。⚠ 缺任一就退回逐格地表，⛔ 不半开着跑。 */
+    readonly fieldAtlas: Texture2D | null;
+    readonly fieldEffect: EffectAsset | null;
     release(): void;
 }
 
@@ -32,12 +36,25 @@ function loadTexture(path: string): Promise<Texture2D | null> {
     });
 }
 
+/** ⚠ effect 没有 `/texture` 子资源段，⛔ 别照抄 loadTexture 的路径拼法。 */
+function loadEffect(path: string): Promise<EffectAsset | null> {
+    return new Promise((resolve) => {
+        resources.load(path, EffectAsset, (error, asset) => {
+            if (error || !asset) { resolve(null); return; }
+            asset.addRef();
+            resolve(asset);
+        });
+    });
+}
+
 export async function loadSgzzArtResources(): Promise<SgzzArtResources> {
-    const [plate4, plate5, minimap, decorAtlas, ...atlases] = await Promise.all([
+    const [plate4, plate5, minimap, decorAtlas, fieldAtlas, fieldEffect, ...atlases] = await Promise.all([
         loadTexture(sgzzPlateAsset(4)),
         loadTexture(sgzzPlateAsset(5)),
         loadTexture(SGZZ_MINIMAP_ASSET),
         loadTexture(SGZZ_DECOR_ATLAS_ASSET),
+        loadTexture(SGZZ_FIELD_ATLAS_ASSET),
+        loadEffect(SGZZ_FIELD_EFFECT_ASSET),
         ...SGZZ_ATLAS_LODS.map((lod) => loadTexture(sgzzAtlasAsset(lod))),
     ]);
     const byLod = new Map<number, Texture2D | null>();
@@ -45,11 +62,15 @@ export async function loadSgzzArtResources(): Promise<SgzzArtResources> {
     let released = false;
     return {
         plate4, plate5, minimap, decorAtlas,
+        fieldAtlas: fieldAtlas as Texture2D | null,
+        fieldEffect: fieldEffect as EffectAsset | null,
         atlasFor(lod: number): Texture2D | null { return byLod.get(lod) ?? null; },
         release(): void {
             if (released) return;
             released = true;
-            for (const asset of [plate4, plate5, minimap, decorAtlas, ...atlases]) asset?.decRef();
+            for (const asset of [plate4, plate5, minimap, decorAtlas, fieldAtlas, fieldEffect, ...atlases]) {
+                asset?.decRef();
+            }
         },
     };
 }

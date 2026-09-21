@@ -9,6 +9,10 @@ import {
     bakeSgzzField, sgzzFieldNoise, sgzzFromPlane, sgzzGaussianKernel, sgzzToPlane,
 } from "../src/kits/sgzzmap/logic/sgzzField";
 import { SGZZ_TILE_HALF_W } from "../src/shared/kits/sgzzmap/api/hexmap/index";
+import {
+    SGZZ_FIELD_BAKE_STEP, sgzzFieldBakeRect, sgzzFieldChunkAt, sgzzFieldChunkKey,
+    sgzzFieldChunkOf, sgzzFieldChunkQuad, sgzzFieldChunksFor,
+} from "../src/kits/sgzzmap/logic/sgzzFieldChunks";
 
 test("map 平面：X=worldX、Y=−2·worldY，一格边长 = 32√2（等距剪切被还原成正方格）", () => {
     assert.deepEqual([...sgzzToPlane(10, 20)], [10, -40]);
@@ -117,4 +121,50 @@ test("★ 地形 8（图外）不参与混合 —— ⛔ 别把雾当陆地混�
     assert.equal(anyEight, 0, "⛔ 8 不该有通道");
     assert.ok(plainSeen > 0, "另一侧的平原仍应有权重");
     assert.equal(SGZZ_FIELD_CLASSES, 8, "只混 0..7");
+});
+
+test("★ 分块：块是缓存单元，⛔ 不是视觉边界 —— 同一世界位置落在哪块都算出同样的场", () => {
+    // 取一个正好压在块边界上的位置，用两块各自的烘焙参数去算，结果必须一致
+    const a = sgzzFieldChunkOf(0, 0), b = sgzzFieldChunkOf(1, 0);
+    assert.equal(b.minX, a.minX + a.size, "相邻块应首尾相接");
+    assert.equal(sgzzFieldChunkAt(a.minX + 1, a.minY + 1).cx, 0);
+    assert.equal(sgzzFieldChunkAt(b.minX + 1, b.minY + 1).cx, 1);
+    // key 唯一且可含负块号（地图原点在平面里不是 0）
+    const keys = new Set<number>();
+    for (let cx = -3; cx <= 3; cx += 1) for (let cy = -3; cy <= 3; cy += 1) keys.add(sgzzFieldChunkKey(cx, cy));
+    assert.equal(keys.size, 49);
+});
+
+test("★ 烘焙区必须带 3σ halo，⛔ 截短了块边会有台阶", () => {
+    const chunk = sgzzFieldChunkOf(2, -1);
+    const { rect, inner } = sgzzFieldBakeRect(chunk);
+    const sigma = (SGZZ_FIELD_DEFAULTS.landSigmaCells * SGZZ_FIELD_CELL_EDGE) / SGZZ_FIELD_BAKE_STEP;
+    assert.ok(inner.x >= Math.ceil(sigma * 3), `halo ${inner.x} < 3σ ${Math.ceil(sigma * 3)}`);
+    assert.equal(rect.width, inner.width + inner.x * 2);
+    assert.equal(rect.minX + inner.x * rect.step, chunk.minX, "内区起点应正好对上块的左边");
+    assert.equal(inner.width, chunk.samples);
+});
+
+test("★ 视口取块：世界矩形要按四角换到平面，⛔ 只换中心点会少取一半", () => {
+    const chunks = sgzzFieldChunksFor(0, -22416, 400, 600);
+    assert.ok(chunks.length >= 4, `只取到 ${chunks.length} 块，视野盖不住`);
+    // 由近及远：第一块的中心离镜头最近
+    const [pcx, pcy] = sgzzToPlane(0, -22416);
+    const d = chunks.map((c) => Math.hypot(c.minX + c.size / 2 - pcx, c.minY + c.size / 2 - pcy));
+    assert.deepEqual([...d].sort((x, y) => x - y), d, "⛔ 边角块不得抢在中心块前面");
+    // 覆盖性：视口四角所在的块都要在列表里
+    for (const [wx, wy] of [[-400, -23016], [400, -23016], [-400, -21816], [400, -21816]]) {
+        const p = sgzzToPlane(wx, wy);
+        const at = sgzzFieldChunkAt(p[0], p[1]);
+        assert.ok(chunks.some((c) => c.cx === at.cx && c.cy === at.cy), `视口角 (${wx},${wy}) 的块没取到`);
+    }
+});
+
+test("★ 块四边形：平面 y 增大 = 世界 y 减小，⛔ 上下不能弄反", () => {
+    const chunk = sgzzFieldChunkOf(0, 0);
+    const [lt, rt, , lb] = sgzzFieldChunkQuad(chunk) as readonly [number, number][];
+    assert.ok(lt[1] > lb[1], "左上的世界 y 必须大于左下");
+    assert.ok(rt[0] > lt[0], "右上的世界 x 必须大于左上");
+    assert.equal(lt[1] - lb[1], chunk.size / 2, "世界高度 = 平面尺寸的一半（y 轴压缩 2 倍）");
+    assert.equal(rt[0] - lt[0], chunk.size, "世界宽度 = 平面尺寸");
 });

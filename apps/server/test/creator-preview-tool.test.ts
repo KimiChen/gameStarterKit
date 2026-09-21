@@ -385,11 +385,17 @@ test("readSgzzmapEvidence：近档解出标题/地块/四层网格，半加载�
 
     // ★ 网格线缺席 ⇒ 判未就位。grid 层曾经在门控表里写着可见、渲染器里一行都没有，
     //   而当时的判据只看 sgzz-terrain，于是「没画网格线」一路绿到底。
-    for (const missing of ["sgzz-grid", "sgzz-decor"]) {
-        const without = { ...walk, nodes: walk.nodes.filter((n) => n.name !== missing) };
-        assert.equal(readSgzzmapEvidence(without).nearLoaded, false, `⛔ 缺 ${missing} 不算近档画好了`);
-    }
-    assert.equal(readSgzzmapEvidence({ ...walk, nodes: walk.nodes.filter((n) => n.name !== "sgzz-grid") }).grid, false);
+    // ⚠ 常驻网格线已停用（v2 拍板）⇒ 它不再是就位条件；摆件仍是
+    const noDecor = { ...walk, nodes: walk.nodes.filter((n) => n.name !== "sgzz-decor") };
+    assert.equal(readSgzzmapEvidence(noDecor).nearLoaded, false, "⛔ 缺摆件不算近档画好了");
+    // ★ 连续覆盖场接管后没有 sgzz-terrain，但有 sgzz-field-* ⇒ 同样算就位
+    const fieldOnly = {
+        ...walk,
+        nodes: walk.nodes.filter((n) => n.name !== "sgzz-terrain")
+            .concat([sgzzNode("sgzz-field-3_-2", null, null)]),
+    };
+    assert.equal(readSgzzmapEvidence(fieldOnly).field, true);
+    assert.equal(readSgzzmapEvidence(fieldOnly).nearLoaded, true, "覆盖场形态也该算就位");
 
     // 标题还没出来 ⇒ 判未就位（⛔ 不把半加载的画面当证据）
     const noTitle = { ...walk, nodes: walk.nodes.filter((n) => n.text !== "大地图 · LOD 1/5") };

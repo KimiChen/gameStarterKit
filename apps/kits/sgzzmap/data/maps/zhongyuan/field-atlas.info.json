@@ -1,0 +1,98 @@
+{
+ "schemaVersion": 1,
+ "mapId": "zhongyuan",
+ "cell": [
+  256,
+  128
+ ],
+ "gridCols": 4,
+ "gridRows": 2,
+ "size": [
+  1024,
+  256
+ ],
+ "gutter": 0,
+ "uv": "world-tiled-fract",
+ "cells": [
+  {
+   "id": 0,
+   "name": "plain",
+   "cell": [
+    0,
+    0,
+    256,
+    128
+   ]
+  },
+  {
+   "id": 1,
+   "name": "forest",
+   "cell": [
+    256,
+    0,
+    256,
+    128
+   ]
+  },
+  {
+   "id": 2,
+   "name": "hill",
+   "cell": [
+    512,
+    0,
+    256,
+    128
+   ]
+  },
+  {
+   "id": 3,
+   "name": "mountain",
+   "cell": [
+    768,
+    0,
+    256,
+    128
+   ]
+  },
+  {
+   "id": 4,
+   "name": "water",
+   "cell": [
+    0,
+    128,
+    256,
+    128
+   ]
+  },
+  {
+   "id": 5,
+   "name": "sea",
+   "cell": [
+    256,
+    128,
+    256,
+    128
+   ]
+  },
+  {
+   "id": 6,
+   "name": "wetland",
+   "cell": [
+    512,
+    128,
+    256,
+    128
+   ]
+  },
+  {
+   "id": 7,
+   "name": "desert",
+   "cell": [
+    768,
+    128,
+    256,
+    128
+   ]
+  }
+ ]
+}

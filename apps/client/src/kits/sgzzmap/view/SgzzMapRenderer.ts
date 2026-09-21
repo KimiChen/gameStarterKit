@@ -108,7 +108,11 @@ export class SgzzMapRenderer {
         return { material: this.terrainMaterial, textured: true };
     }
 
-    render(logic: SgzzmapWorldLogic): void {
+    /**
+     * @param skipTerrain 连续覆盖场接管时为 true：地表与过渡片都不建
+     *   —— ⚠ 场本身就是连续的，再叠逐格片只会互相打架。
+     */
+    render(logic: SgzzmapWorldLogic, skipTerrain = false): void {
         if (this.disposed) return;
         const centre = logic.camera.centreCell();
         const terrainQuads: SgzzQuadInput[] = [];
@@ -117,7 +121,7 @@ export class SgzzMapRenderer {
         const decorCells: { row: number; col: number; id: number }[] = [];
         const wantGrid = sgzzLayerVisible("grid", logic.camera.lod);
         const wantDecor = sgzzLayerVisible("decor", logic.camera.lod);
-        const wantBlend = sgzzLayerVisible("blend", logic.camera.lod);
+        const wantBlend = !skipTerrain && sgzzLayerVisible("blend", logic.camera.lod);
         const blendPolys: SgzzPolyInput[] = [];
         const gridRgba = sgzzCompensate(GRID_RGBA, this.tone);
         // 线宽折算成世界单位：拉近了才不会变粗、拉远了才不会消失
@@ -126,6 +130,16 @@ export class SgzzMapRenderer {
         const terrainMat = this.terrainMaterialFor(logic.camera.lod);
         logic.stencil.forEach(centre.row, centre.col, logic.mapRows, logic.mapCols, (row, col) => {
             const id = sgzzTerrainIdAt(row, col);
+            if (skipTerrain) {
+                // 覆盖场接管地表 ⇒ 这里只还要领地叠色与摆件
+                const tint = sgzzStateColor(logic.stateAt(row, col));
+                if (tint) territoryQuads.push({ row, col, uv: null, rgba: sgzzCompensate(tint, this.tone) });
+                if (wantDecor) {
+                    const decorId = sgzzDecorAt(id, row, col);
+                    if (decorId !== SGZZ_DECOR_NONE) decorCells.push({ row, col, id: decorId });
+                }
+                return;
+            }
             // ⚠ 贴图时顶点色取白：顶点色是**相乘**的，拿地形色去乘会把贴图整体染一遍。
             terrainQuads.push({
                 row, col,
@@ -144,6 +158,7 @@ export class SgzzMapRenderer {
         });
 
         this.terrain = this.sync(this.terrain, "sgzz-terrain", terrainQuads, 0, terrainMat.material);
+        if (skipTerrain) { destroySgzzBatch(this.terrain); this.terrain = null; }
         // ⚠ 过渡片与地表同一张图集 ⇒ 必须用**同一个材质**，⛔ 用平涂材质会丢贴图
         this.blend = this.syncPoly(this.blend, "sgzz-blend",
             blendPolys.length > SGZZ_MAX_BLEND_QUADS ? [] : blendPolys, 1, terrainMat.material);

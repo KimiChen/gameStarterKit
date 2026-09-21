@@ -13,12 +13,13 @@ import { SgzzGridState } from "../../../shared/kits/sgzzmap/api/territory/index"
 import { SgzzmapWorldLogic } from "../logic/SgzzmapWorldLogic";
 import { sgzzCameraToRootLocal, sgzzInMapBand, sgzzRootLocalToCamera } from "../logic/sgzzCamera";
 import { sgzzSelectionEdges } from "../logic/sgzzMesh";
-import { sgzzIsNearField } from "../logic/sgzzLayers";
+import { sgzzIsNearField, sgzzLayerVisible } from "../logic/sgzzLayers";
 import { getSgzzRuntime } from "../logic/sgzzRuntime";
 import { sgzzPassableAt, sgzzTerrainIdAt } from "../logic/sgzzTerrain";
 import { SGZZ_TERRAIN_PALETTE } from "../../../shared/kits/sgzzmap/content/terrain.data";
 import { SgzzMapRenderer } from "./SgzzMapRenderer";
 import { SgzzFarRenderer } from "./SgzzFarRenderer";
+import { SgzzFieldRenderer } from "./SgzzFieldRenderer";
 import { SgzzMarchRenderer } from "./SgzzMarchRenderer";
 import { SgzzMinimap } from "./SgzzMinimap";
 import { loadSgzzArtResources, type SgzzArtResources } from "./SgzzArtResources";
@@ -50,6 +51,8 @@ export class SgzzmapWorldView extends CocosView {
     private title: Label | null = null;
     private offTick: (() => void) | null = null;
     private active = false;
+    private fieldRoot: Node | null = null;
+    private fieldRenderer: SgzzFieldRenderer | null = null;
     private homeButton: Node | null = null;
     private homeLabel: Label | null = null;
     private mapTop = 0;
@@ -72,6 +75,8 @@ export class SgzzmapWorldView extends CocosView {
         const world = this.node("sgzz-world", this.root, width, this.mapTop - this.mapBottom);
         world.setPosition(0, (this.mapBottom + this.mapTop) / 2);
         this.world = world;
+        // ⚠ 覆盖场自己的容器：它会建多个块节点，放进容器才不会打乱其余层的兄弟序
+        this.fieldRoot = this.node("sgzz-field", world, width, this.mapTop - this.mapBottom);
         const selection = this.node("sgzz-selection", this.root, 8, 8);
         selection.active = false;
         this.selection = selection;
@@ -125,6 +130,7 @@ export class SgzzmapWorldView extends CocosView {
         this.bindInput(false);
         this.offTick?.(); this.offTick = null;
         this.renderer?.dispose(); this.renderer = null;
+        this.fieldRenderer?.dispose(); this.fieldRenderer = null;
         this.farRenderer?.dispose(); this.farRenderer = null;
         this.marchRenderer?.dispose(); this.marchRenderer = null;
         this.minimap?.dispose(); this.minimap = null;
@@ -143,6 +149,7 @@ export class SgzzmapWorldView extends CocosView {
         this.art = art;
         // ⚠ 近档地表也要：在此之前它走平涂顶点色（首帧就能画），到货后换成图集贴图
         this.renderer?.setArt(art);
+        if (this.fieldRoot) this.fieldRenderer = new SgzzFieldRenderer(this.fieldRoot, art);
         this.farRenderer = new SgzzFarRenderer(this.world, art);
         const size = Math.min(140, this.layerWidth * 0.32);
         this.minimap = new SgzzMinimap(this.root, size,
@@ -173,9 +180,15 @@ export class SgzzmapWorldView extends CocosView {
 
         this.world.active = true;
         if (sgzzIsNearField(logic.camera.lod)) {
-            this.renderer.render(logic);
+            // ★ 连续覆盖场就绪就由它画地表；缺 effect/图集则退回逐格地表 + 过渡片
+            const field = this.fieldRenderer?.ready === true
+                && sgzzLayerVisible("field", logic.camera.lod);
+            if (field) { this.fieldRenderer?.render(logic); this.fieldRoot?.setSiblingIndex(0); }
+            else this.fieldRenderer?.clear();
+            this.renderer.render(logic, field);
             this.farRenderer?.clear();
         } else {
+            this.fieldRenderer?.clear();
             // 远档：整幅底图 + 鸟瞰聚合色块，逐格网格整批撤掉
             this.renderer.clear();
             this.farRenderer?.render(logic);

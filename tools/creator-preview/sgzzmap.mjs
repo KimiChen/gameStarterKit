@@ -79,10 +79,12 @@ export function readSgzzmapEvidence(walk) {
         notice: notice?.text ?? null,
         worldCenter: nodes.find((node) => node.name === "sgzz-world")?.center ?? null,
         // 近档「画出来了」= 标题在 + 地表网格在；远档 = 标题在 + 底图或色块在
-        // ⚠ 近档「画出来了」要连网格线与摆件一起算：这两层都曾经在门控表里写着可见、
-        //   渲染器里一行都没有，而判据只看 sgzz-terrain，于是一路绿到底。
+        // 连续覆盖场（v2）接管地表后就没有 sgzz-terrain 了 ⇒ 两种形态都算就位
+        field: nodes.some((node) => node.name.startsWith("sgzz-field-")),
+        // ⚠ 常驻网格线已停用（v2 拍板）⇒ ⛔ 不再作为就位条件。
         //   ⚠ 摆件在**陆地**上才有（水里不种树），重放的视野在出生区陆地上，恒有。
-        nearLoaded: !!titleMatch && has("sgzz-terrain") && has("sgzz-grid") && has("sgzz-decor"),
+        nearLoaded: !!titleMatch && has("sgzz-decor")
+            && (has("sgzz-terrain") || nodes.some((node) => node.name.startsWith("sgzz-field-"))),
         farLoaded: !!titleMatch && (!!plate || has("sgzz-birdview")),
     };
 }
@@ -262,7 +264,7 @@ export async function replaySgzzmapWorld(runner) {
             const value = readSgzzmapEvidence(walk);
             // ⚠ 网格线与摆件也必须撤干净：压在底图上会把远档糊成一片
             return value && value.lod !== null && value.lod >= 3 && value.farLoaded
-                && !value.terrain && !value.grid && !value.decor && !value.blend ? value : null;
+                && !value.terrain && !value.decor && !value.blend && !value.field ? value : null;
         }, 45_000);
         return { ...evidence, shot: await runner.shot("sgzzmap-far") };
     });
@@ -289,8 +291,8 @@ export async function replaySgzzmapWorld(runner) {
         const evidence = await runner.waitFor("LOD ≤ 2 且地表与网格线都回来", (walk) => {
             const value = readSgzzmapEvidence(walk);
             // ⚠ lod ≤ 1 才有网格线（门控 hideAtLod:1），滚轮多半停在 0
-            return value && value.lod !== null && value.lod <= 2 && value.terrain && !value.plate
-                && (value.lod > 1 || value.grid) ? value : null;
+            return value && value.lod !== null && value.lod <= 2 && !value.plate
+                && (value.terrain || value.field) ? value : null;
         }, 45_000);
         return { farLod: far.lod, ...evidence, shot: await runner.shot("sgzzmap-back-near") };
     });
