@@ -50,7 +50,7 @@ function fakeRepo() {
             return out;
         },
         async readTile(cell) { return tiles.get(cell) ?? sgzzEmptyTile(cell); },
-        async readTilesInRect(rect: ISgzzRect) {
+        async readTilesInRect(rect: ISgzzRect, limit: number) {
             // ⚠ 必须真按窗过滤：回了窗外的格，validateSgzzViewRes 会（正确地）拒掉整个响应
             const g = sgzzGridRectForChunkRect(rect);
             return [...tiles.values()]
@@ -58,7 +58,8 @@ function fakeRepo() {
                     const { row, col } = sgzzDecodeCell(t.cell);
                     return row >= g.minRow && row <= g.maxRow && col >= g.minCol && col <= g.maxCol;
                 })
-                .sort((a, b) => a.cell - b.cell);
+                .sort((a, b) => a.cell - b.cell)
+                .slice(0, Math.max(1, Math.floor(limit)));   // 与真仓一样按 LIMIT 截断，截断标记才测得出来
         },
         async insertTile(tile) {
             if (failNextInsert) {

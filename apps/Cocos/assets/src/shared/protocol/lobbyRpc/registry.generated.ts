@@ -312,7 +312,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
     redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
     room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
-    sgzzmap: { contractVersion: 5, digest: "68a949d23fe5756d48d3bd96b66b50df26e66db347680a3a8db3c304db41d798" },
+    sgzzmap: { contractVersion: 6, digest: "ebbdda1f805042e17b6840e1df89f6f2301d6a7965ce49add6db8dcbb8c3fdcc" },
     shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
     slg: { contractVersion: 2, digest: "077ecba95687aa0a4130f51eba2cda7d4a2548e6e347154d3f153fdcc641bca5" },
     snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },

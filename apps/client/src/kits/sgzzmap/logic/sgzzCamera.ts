@@ -196,3 +196,13 @@ export function sgzzCameraToRootLocal(sx: number, sy: number,
     const centre = (mapTop + mapBottom) / 2;
     return { x: sx - layerWidth / 2, y: centre + (mapTop - mapBottom) / 2 - sy };
 }
+/**
+ * 根局部 y 是否落在地图区内。
+ *
+ * ⚠ 手势绑在整页的 root 上，页眉/页脚按钮的触摸会**冒泡**上来。不挡住就会出现
+ * 「点一下占领按钮、选中格顺手被换成按钮底下那一格」——真机重放里点选记的是 (749,748)、
+ * 收尾时屏幕显示 (736,778)，就是这条缺口。
+ */
+export function sgzzInMapBand(ly: number, mapTop: number, mapBottom: number): boolean {
+    return ly <= mapTop && ly >= mapBottom;
+}

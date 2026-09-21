@@ -11,7 +11,7 @@ import { createSolidPlate } from "../../../view/uiPlate";
 import { SGZZ_LOD_MAX } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 import { SgzzGridState } from "../../../shared/kits/sgzzmap/api/territory/index";
 import { SgzzmapWorldLogic } from "../logic/SgzzmapWorldLogic";
-import { sgzzCameraToRootLocal, sgzzRootLocalToCamera } from "../logic/sgzzCamera";
+import { sgzzCameraToRootLocal, sgzzInMapBand, sgzzRootLocalToCamera } from "../logic/sgzzCamera";
 import { sgzzIsNearField } from "../logic/sgzzLayers";
 import { getSgzzRuntime } from "../logic/sgzzRuntime";
 import { sgzzPassableAt, sgzzTerrainIdAt } from "../logic/sgzzTerrain";
@@ -209,6 +209,7 @@ export class SgzzmapWorldView extends CocosView {
         const terrain = SGZZ_TERRAIN_PALETTE[sgzzTerrainIdAt(sel.row, sel.col)];
         const pass = sgzzPassableAt(sel.row, sel.col) ? "" : " · 不可通行";
         // ⚠ 按**关系**说话，⛔ 不要把原始 uid 甩给玩家（也让重放能判「这格是不是我的」）
+        if (sel.pending) return `(${sel.row}, ${sel.col}) ${terrain?.cn ?? "?"}${pass} · 读取中…`;
         const owner = sel.tile.ownerUid === "" ? "无主"
             : `${sgzzOwnerWord(sel.state)}（守军 ${sel.tile.durability}）`;
         return `(${sel.row}, ${sel.col}) ${terrain?.cn ?? "?"}${pass} · ${owner}`;
@@ -236,6 +237,10 @@ export class SgzzmapWorldView extends CocosView {
         const local = this.root.getComponent(UITransform)?.convertToNodeSpaceAR(new Vec3(x, y, 0));
         const lx = local?.x ?? (x - this.layerWidth / 2);
         const ly = local?.y ?? (y - this.layerHeight / 2);
+        // ⚠ 手势绑在 root（整页）上，事件会从页眉/页脚的按钮**冒泡**上来。
+        // 不挡住地图区之外的点，点「占领」那一下会顺手把选中格换成按钮底下那一格 ——
+        // 真机重放里点选到的是 (749,748)、结束时屏幕上却是 (736,778)，就是这么来的。
+        if (!sgzzInMapBand(ly, this.mapTop, this.mapBottom)) return null;
         return sgzzRootLocalToCamera(lx, ly, this.layerWidth, this.mapTop, this.mapBottom);
     }
     /** ⚠ Node 的 TOUCH_* 是**逐触点**派发的：一次事件一根手指，⛔ 别去找 getTouches()。 */
@@ -255,6 +260,8 @@ export class SgzzmapWorldView extends CocosView {
     private onTouchEnd(event: EventTouch): void {
         const logic = this.logic;
         if (!logic) return;
+        // ⚠ 只对「在地图区起手」的触点收尾：页脚按钮上的 TOUCH_END 冒泡上来时 camera 里没有这个 id，
+        // end() 自然回 null，⛔ 不会误判成一次点选。
         const tapped = logic.camera.end(event.getID(), this.now());
         if (tapped) logic.select(tapped.row, tapped.col);
         this.render(true);

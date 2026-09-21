@@ -9,7 +9,8 @@
  */
 import {
     SGZZ_BIRDVIEW_LOD, SGZZ_MAP_COLS, SGZZ_MAP_ROWS, SGZZ_MAX_QUERY_CHUNKS,
-    sgzzCellOf, sgzzChunkRectForGridRect, sgzzDecodeCell, type ISgzzRect,
+    sgzzCellOf, sgzzChunkRectForGridRect, sgzzClampChunkRect, sgzzDecodeCell,
+    sgzzGridRectForChunkRect, type ISgzzRect,
 } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 import {
     SGZZ_MAX_ZOOM_LEVEL, sgzzZoomRectForCenter, type ISgzzChunkSummary,
@@ -33,6 +34,8 @@ export interface SgzzSelection {
     readonly col: number;
     readonly tile: ISgzzTile;
     readonly state: SgzzGridStateValue;
+    /** 这一格落在近景窗外、正在单独查详情。面板要显示「读取中…」，⛔ 不能显示成无主。 */
+    readonly pending: boolean;
 }
 
 export class SgzzmapWorldLogic {
@@ -52,6 +55,16 @@ export class SgzzmapWorldLogic {
     viewer: ISgzzViewer = { uid: "", aid: "", leaderUid: "", friendAids: [] };
     selection: SgzzSelection | null = null;
     notice = "";
+    /**
+     * 提示的来路。
+     * ⚠ 早先 view 轮询一成功就把 notice 清空，结果占领/弃地的结果活不过 220 ms：
+     * 真机重放里「操作失败」根本没来得及出现在屏幕上。只有读出来的提示才该被下一次读成功清掉。
+     */
+    noticeKind: "" | "read" | "act" = "";
+    /** 当前已载入的格矩形（近景窗）。窗外的格是**未知**，⛔ 不等于无主。 */
+    loadedRect: ISgzzRect | null = null;
+    /** 窗内非默认格超了响应上限，已被服务端截断。 */
+    truncated = false;
     busy = false;
     /** 渲染层据此判断要不要重建 mesh。 */
     revision = 0;
@@ -74,17 +87,31 @@ export class SgzzmapWorldLogic {
         return sgzzGridState(this.tileAt(row, col), this.viewer);
     }
 
-    /** 当前视野要拉的近景窗（chunk 单位，已钳在一次请求的上限内）。 */
+    /**
+     * 当前视野要拉的近景窗（chunk 单位，已钳在一次请求的上限内）。
+     *
+     * ⚠ 必须按**屏幕真实可视半径**取并且**对称**收缩。早先的写法是
+     * `minRow - half` 而 max 不动、half 又固定为 1，窗口只有 20×20 格且整体偏到相机左上：
+     * LOD0 屏幕上四分之三的格没有数据，而客户端把没数据显示成「无主」——
+     * 真机重放点哪都说无主，根因就在这里。
+     */
     nearRect(): ISgzzRect {
         const centre = this.camera.centreCell();
-        const half = Math.max(0, Math.floor(Math.sqrt(SGZZ_MAX_QUERY_CHUNKS) / 2));
-        const rect = sgzzChunkRectForGridRect({
+        const span = this.stencil.spanFor(centre.row);
+        const want = sgzzChunkRectForGridRect({
+            minRow: centre.row - span.dr, minCol: centre.col - span.dc,
+            maxRow: centre.row + span.dr, maxCol: centre.col + span.dc,
+        });
+        const c = sgzzChunkRectForGridRect({
             minRow: centre.row, minCol: centre.col, maxRow: centre.row, maxCol: centre.col,
         });
-        return {
-            minRow: Math.max(0, rect.minRow - half), minCol: Math.max(0, rect.minCol - half),
-            maxRow: rect.maxRow, maxCol: rect.maxCol,
-        };
+        return sgzzClampChunkRect(want, c.minRow, c.minCol, SGZZ_MAX_QUERY_CHUNKS);
+    }
+
+    /** 这一格在已载入的窗里吗？窗外是**未知**，⛔ 不能当无主展示。 */
+    isLoaded(row: number, col: number): boolean {
+        const r = this.loadedRect;
+        return r !== null && row >= r.minRow && row <= r.maxRow && col >= r.minCol && col <= r.maxCol;
     }
     /** 远档要拉的分块窗。 */
     farRect(): { level: number; rect: ISgzzRect } {
@@ -140,21 +167,26 @@ export class SgzzmapWorldLogic {
                 if (gen !== this.generation) return;
                 this.applyZoom(res);
             }
-            this.notice = "";
+            // ⚠ 只清掉「读出来的」提示：占领/弃地的结果要留到下一次动作，⛔ 不能被轮询抹掉
+            if (this.noticeKind !== "act") { this.notice = ""; this.noticeKind = ""; }
         } catch (error) {
             // 结算积压是预期内的「稍后再试」，⛔ 不当成错误刷屏
             const code = sgzzErrorCode(error);
             this.notice = code === "SGZZMAP_SETTLEMENT_PENDING" ? "正在补算到达事件…"
                 : code ? `地图数据读取失败（${code}）` : "地图数据读取失败";
+            this.noticeKind = "read";
             this.lastKey = "";   // 允许下一轮重试
         } finally {
             this.inflight = false;
         }
     }
 
-    applyView(res: { viewer: ISgzzViewer; alliances: string[]; owners: { uid: string; alliance: number }[];
+    applyView(res: { rect?: ISgzzRect; truncated?: boolean;
+                     viewer: ISgzzViewer; alliances: string[]; owners: { uid: string; alliance: number }[];
                      tiles: { cell: number; owner: number; durability: number; addition: boolean; capturing: number }[];
                      marches?: readonly ISgzzMarch[] }): void {
+        this.loadedRect = res.rect ? sgzzGridRectForChunkRect(res.rect) : null;
+        this.truncated = res.truncated === true;
         this.viewer = {
             uid: res.viewer.uid, aid: res.viewer.aid,
             leaderUid: res.viewer.leaderUid, friendAids: [...res.viewer.friendAids],
@@ -199,13 +231,39 @@ export class SgzzmapWorldLogic {
         }
     }
 
-    /** 点击选格。返回是否真的选中（远档不选格）。 */
+    /**
+     * 点击选格。返回是否真的选中（远档不选格）。
+     *
+     * ⚠ 窗外的格**不知道**归属：近景窗只盖 SGZZ_MAX_QUERY_CHUNKS 块，LOD ≥ 1 时屏幕比窗大。
+     * 这种格标成 pending 并单独查 sgzzmap.tile，⛔ 不能拿默认空格冒充「无主」——那是在撒谎。
+     */
     select(row: number, col: number): boolean {
         if (!sgzzIsNearField(this.camera.lod)) return false;
+        const known = this.isLoaded(row, col) && !this.truncated;
         const tile = this.tileAt(row, col);
-        this.selection = { row, col, tile, state: sgzzGridState(tile, this.viewer) };
+        this.selection = {
+            row, col, tile, state: sgzzGridState(tile, this.viewer), pending: !known,
+        };
         this.revision += 1;
+        if (!known) void this.readTile(row, col);
         return true;
+    }
+
+    /** 单格详情补查。代际 + 同格双重围栏：⛔ 旧响应不得盖新选择。 */
+    private async readTile(row: number, col: number): Promise<void> {
+        const gen = this.generation;
+        const cell = sgzzCellOf(row, col);
+        try {
+            const res = await this.runtime.tile(cell);
+            const sel = this.selection;
+            if (gen !== this.generation || !sel || sel.row !== row || sel.col !== col) return;
+            if (res.tile.ownerUid !== "" || res.tile.capturingAid !== "") this.tiles.set(cell, res.tile);
+            else this.tiles.delete(cell);
+            this.selection = { row, col, tile: res.tile, state: sgzzGridState(res.tile, this.viewer), pending: false };
+            this.revision += 1;
+        } catch {
+            // 查不到就维持 pending：面板显示「读取中…」，⛔ 不退化成「无主」
+        }
     }
     clearSelection(): void {
         if (!this.selection) return;
@@ -221,12 +279,14 @@ export class SgzzmapWorldLogic {
             const res = await this.runtime.occupy(sgzzCellOf(sel.row, sel.col));
             this.tiles.set(res.tile.cell, res.tile);
             this.rebuildBorders();
-            this.selection = { ...sel, tile: res.tile, state: sgzzGridState(res.tile, this.viewer) };
+            this.selection = { ...sel, tile: res.tile, state: sgzzGridState(res.tile, this.viewer), pending: false };
             this.notice = res.outcome === "captured" ? "已占领"
                 : res.outcome === "reinforced" ? "已加固" : "已削弱守军";
+            this.noticeKind = "act";
             this.revision += 1;
         } catch (error) {
             this.notice = noticeOf(error);
+            this.noticeKind = "act";
         } finally {
             this.busy = false;
         }
@@ -241,11 +301,13 @@ export class SgzzmapWorldLogic {
             await this.runtime.abandon(cell);
             this.tiles.delete(cell);
             this.rebuildBorders();
-            this.selection = { ...sel, tile: sgzzEmptyTile(cell), state: sgzzGridState(sgzzEmptyTile(cell), this.viewer) };
+            this.selection = { ...sel, tile: sgzzEmptyTile(cell), state: sgzzGridState(sgzzEmptyTile(cell), this.viewer), pending: false };
             this.notice = "已放弃";
+            this.noticeKind = "act";
             this.revision += 1;
         } catch (error) {
             this.notice = noticeOf(error);
+            this.noticeKind = "act";
         } finally {
             this.busy = false;
         }

@@ -77,10 +77,23 @@ function buildStencil(parity: 0 | 1, halfWorldW: number, halfWorldH: number,
 }
 
 /** 缓存两张偏移表；只有 (scale, width, height, margin) 变了才重算。 */
+/** 偏移表的最大半径（格）。近景窗按它取，⛔ 别再另算一套几何。 */
+function spanOf(offsets: Int32Array): { dr: number; dc: number } {
+    let dr = 0, dc = 0;
+    for (let i = 0; i < offsets.length; i += 1) {
+        const o = sgzzUnpackOffset(offsets[i]);
+        if (Math.abs(o.dr) > dr) dr = Math.abs(o.dr);
+        if (Math.abs(o.dc) > dc) dc = Math.abs(o.dc);
+    }
+    return { dr, dc };
+}
+
 export class SgzzViewportStencil {
     private key = "";
     private even: Int32Array = new Int32Array(0);
     private odd: Int32Array = new Int32Array(0);
+    private evenSpan = { dr: 0, dc: 0 };
+    private oddSpan = { dr: 0, dc: 0 };
     /** 重算次数，供用例断言「平移不重算」。 */
     rebuilds = 0;
 
@@ -96,6 +109,13 @@ export class SgzzViewportStencil {
         const halfH = height / scale / 2;
         this.even = buildStencil(0, halfW, halfH, this.marginTiles);
         this.odd = buildStencil(1, halfW, halfH, this.marginTiles);
+        this.evenSpan = spanOf(this.even);
+        this.oddSpan = spanOf(this.odd);
+    }
+
+    /** 当前缩放下、以中心格为原点的可视半径（格）。近景窗要盖住它，否则屏幕上会有「没数据」的区域。 */
+    spanFor(centreRow: number): { dr: number; dc: number } {
+        return (centreRow & 1) === 0 ? this.evenSpan : this.oddSpan;
     }
 
     offsetsFor(centreRow: number): Int32Array {

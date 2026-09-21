@@ -16,6 +16,12 @@ const TITLE_RE = /^大地图 · LOD ([0-5])\/5$/u;
  * ⚠ 归属说的是**关系词**（我方/盟主/同盟/友盟/攻占中/敌方），⛔ 不是原始 uid。
  */
 const DETAIL_RE = /^\((\d+), (\d+)\) ([^\s·]+)( · 不可通行)? · (无主|我方|盟主|同盟|友盟|攻占中|敌方)(（守军 (\d+)）)?$/u;
+/**
+ * 连地闸按设计拒绝时的理由。
+ * ⚠ 出生豁免只对「一块地都没有」的号生效，账号跑过一轮之后再点空地本来就该被拒 ——
+ * 这不是缺陷，所以它和「真占到」一样算通过，但 report 里分得清清楚楚（outcome）。
+ */
+export const REFUSAL_RE = /^(这一格过不去|必须与自己或同盟的领地相连|已达持地上限|这不是你的领地)/u;
 
 /**
  * 解析地图页的公开 UI。⚠ 刻意拒绝「标题还没出来」「详情不完整」这些中间态——
@@ -174,14 +180,22 @@ export async function replaySgzzmapWorld(runner) {
         throw new Error(`可见区域里没找到可通行的格：${JSON.stringify(tried)}`);
     });
 
-    await runner.step("占领：领地叠色与六向描边出现（sgzz-territory / sgzz-border）", async () => {
+    const occupied = await runner.step("占领：要么真占到（叠色 + 描边出现），要么连地闸按设计拒绝并说明理由", async () => {
         await runner.tapText("占领 / 加固", { pathIncludes: VIEW });
-        const evidence = await runner.waitFor("同一格变我方 + 叠色与描边网格建起来", (walk) => {
+        const evidence = await runner.waitFor("同一格变我方 + 叠色描边建起来，或给出明确的拒绝理由", (walk) => {
             const value = readSgzzmapEvidence(walk);
-            return value?.tile?.row === selected.tile.row && value.tile.col === selected.tile.col
-                && value.tile.mine && value.territory && value.border ? value : null;
+            if (!value?.tile) return null;
+            // ⚠ 选中格必须还是刚才那一格。早先手势绑在整页 root 上，点「占领」那一下会**顺手换掉选中格**，
+            //   于是这里永远等不到；那条 bug 由 sgzzInMapBand 封住了，这里顺带当哨兵。
+            if (value.tile.row !== selected.tile.row || value.tile.col !== selected.tile.col) return null;
+            if (value.tile.mine && value.territory && value.border) return { ...value, outcome: "occupied" };
+            if (value.notice && REFUSAL_RE.test(value.notice)) return { ...value, outcome: "refused" };
+            return null;
         });
-        return { plan: selected.plan, before: selected.tile.text, ...evidence, shot: await runner.shot("sgzzmap-occupied") };
+        return {
+            plan: selected.plan, before: selected.tile.text,
+            ...evidence, shot: await runner.shot(`sgzzmap-${evidence.outcome}`),
+        };
     });
 
     const far = await runner.step("拉远到远档：底图 + 鸟瞰色块顶替逐格网格", async () => {
@@ -220,5 +234,5 @@ export async function replaySgzzmapWorld(runner) {
         return { farLod: far.lod, ...evidence, shot: await runner.shot("sgzzmap-back-near") };
     });
 
-    return opened;
+    return { ...opened, occupyOutcome: occupied.outcome };
 }

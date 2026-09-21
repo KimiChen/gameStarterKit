@@ -10,7 +10,7 @@ import {
     assertExactKeys, boundedString, finiteInteger, type RuntimeValidator, WireValidationError,
 } from "../../http";
 import {
-    SGZZ_CHUNK_TILES, SGZZ_MAX_QUERY_CHUNKS, sgzzGridRectForChunkRect, sgzzRectArea,
+    sgzzGridRectForChunkRect, sgzzRectArea,
     validateSgzzCell, validateSgzzChunkRect, type ISgzzRect,
 } from "../../../kits/sgzzmap/api/hexmap/index";
 import {
@@ -44,8 +44,14 @@ export const SgzzmapRpc = {
     Zoom: "sgzzmap.zoom",
 } as const;
 
-/** 一次 view 最多回多少个非默认地块。 */
-export const SGZZ_MAX_VIEW_TILES = SGZZ_MAX_QUERY_CHUNKS * SGZZ_CHUNK_TILES * SGZZ_CHUNK_TILES;
+/**
+ * 一次 view 最多回多少个非默认地块。
+ *
+ * ⚠ 这是**响应体积**预算，⛔ 不再由 SGZZ_MAX_QUERY_CHUNKS 推导——两者约束的是不同的东西：
+ * 窗口尺寸要盖住屏幕（36 块 = 3,600 格），而每行 JSON ≈ 75 B，28 KB 的目标只装得下约 380 行。
+ * 窗内非默认格超过这个数时服务端按 cell 升序截断并回 `truncated: true`，⛔ 不静默丢。
+ */
+export const SGZZ_MAX_VIEW_TILES = 400;
 export const SGZZ_MAX_VIEW_OWNERS = SGZZ_MAX_VIEW_TILES;
 export const SGZZ_MAX_VIEW_ALLIANCES = 256;
 
@@ -62,6 +68,8 @@ export interface ISgzzViewReq { rect: ISgzzRect }
 export interface ISgzzViewRes {
     rect: ISgzzRect; revision: number; viewer: ISgzzViewerWire;
     alliances: string[]; owners: ISgzzOwnerRef[]; tiles: ISgzzTileRef[];
+    /** 窗内非默认格超过 SGZZ_MAX_VIEW_TILES，已按 cell 升序截断。客户端据此提示并停止把窗外当无主。 */
+    truncated: boolean;
     /**
      * 观察者**自己**的在途行军（≤ SGZZ_MAX_ACTIVE_MARCHES）。
      * ⚠ v1 ⛔ 不带别人的行军：原作里敌军是经 AOI 实体流（sc_enter_aoi_army 那一套）+ 侦察
@@ -127,7 +135,8 @@ export const validateSgzzViewReq: RuntimeValidator<ISgzzViewReq> = (input) => {
 };
 export const validateSgzzViewRes: RuntimeValidator<ISgzzViewRes> = (input) => {
     const r = rpcRecord(input, "response");
-    assertExactKeys(r, ["rect", "revision", "viewer", "alliances", "owners", "tiles", "marches"], [], "response");
+    assertExactKeys(r, ["rect", "revision", "viewer", "alliances", "owners", "tiles", "truncated", "marches"], [], "response");
+    if (typeof r.truncated !== "boolean") throw new WireValidationError("SGZZMAP_VIEW_SIZE", "response.truncated");
     const rect = validateSgzzChunkRect(r.rect, "response.rect");
     if (!Array.isArray(r.alliances) || r.alliances.length > SGZZ_MAX_VIEW_ALLIANCES
         || !Array.isArray(r.owners) || r.owners.length > SGZZ_MAX_VIEW_OWNERS
@@ -194,7 +203,7 @@ export const validateSgzzViewRes: RuntimeValidator<ISgzzViewRes> = (input) => {
     }
     return {
         rect, revision: finiteInteger(r.revision, "response.revision", 0),
-        viewer, alliances, owners, tiles, marches,
+        viewer, alliances, owners, tiles, truncated: r.truncated, marches,
     };
 };
 export const validateSgzzTileReq: RuntimeValidator<ISgzzTileReq> = (input) => {
@@ -339,7 +348,7 @@ export function sgzzViewRequestChunks(rect: ISgzzRect): number {
 }
 
 export default defineLobbyRpcDomain({
-    domain: "sgzzmap", contractVersion: 5,
+    domain: "sgzzmap", contractVersion: 6,
     errorCodes: [
         "SGZZMAP_IMPASSABLE", "SGZZMAP_NOT_ADJACENT", "SGZZMAP_TILE_LIMIT",
         "SGZZMAP_NOT_OWNED", "SGZZMAP_SETTLEMENT_PENDING",

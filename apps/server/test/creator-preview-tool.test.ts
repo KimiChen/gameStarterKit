@@ -10,7 +10,7 @@ import { test } from "node:test";
 // @ts-expect-error 纯 ESM 工具模块，无类型声明。
 import { DESIGN, designToPage, nearestByRow, pageWalkSource, parseArgs, rewriteSceneQuery, sceneUuidFromMeta, selectNodes, worldToPage } from "../../../tools/creator-preview/lib.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
-import { judgeSelectionUnderCursor, readSgzzmapEvidence, sgzzmapGestureArea, sgzzmapMinimapCenter } from "../../../tools/creator-preview/sgzzmap.mjs";
+import { REFUSAL_RE, judgeSelectionUnderCursor, readSgzzmapEvidence, sgzzmapGestureArea, sgzzmapMinimapCenter } from "../../../tools/creator-preview/sgzzmap.mjs";
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
 import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, SLG_WORLD_SIZE, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
 import { SLG_MAPS } from "@game/shared/kits/slg/api/worldmap/index";
@@ -463,4 +463,24 @@ test("judgeSelectionUnderCursor：框在画布外 / 离点击处太远都点名�
 
     assert.match(String(judgeSelectionUnderCursor({}, canvas, click)), /不在渲染树/u);
     assert.match(String(judgeSelectionUnderCursor(null, canvas, click)), /不在渲染树/u);
+});
+
+test("sgzzmap 重放：连地闸的拒绝理由算通过，⛔ 但未知错误码不算", () => {
+    // 出生豁免只对「一块地都没有」的号生效 —— 跑过一轮的账号再点空地本来就该被拒。
+    for (const notice of ["必须与自己或同盟的领地相连", "这一格过不去", "已达持地上限", "这不是你的领地"]) {
+        assert.equal(REFUSAL_RE.test(notice), true, notice);
+        // 拒绝理由本身必须也被证据解析器当成 notice 认出来，否则重放永远等不到它
+        const walk = {
+            canvas: { width: 750, height: 1624 },
+            nodes: [
+                { name: "SgzzmapWorldView", path: "Canvas/SgzzmapWorldView" },
+                { name: "sgzz-title", path: "Canvas/SgzzmapWorldView/sgzz-title", text: "大地图 · LOD 0/5" },
+                { name: "sgzz-status", path: "Canvas/SgzzmapWorldView/sgzz-status", text: notice },
+            ],
+        };
+        assert.equal(readSgzzmapEvidence(walk)?.notice, notice);
+    }
+    // ⚠ 未知错误码是「出了没预料到的事」，必须让这一步红，⛔ 不能当成设计内的拒绝放过
+    assert.equal(REFUSAL_RE.test("操作失败（SGZZMAP_WHATEVER）"), false);
+    assert.equal(REFUSAL_RE.test("地图数据读取失败"), false);
 });

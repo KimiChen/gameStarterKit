@@ -24,7 +24,7 @@ import {
     type ISgzzChunkSummary,
 } from "@game/shared/kits/sgzzmap/api/chunk/index";
 import {
-    SGZZ_MAX_VIEW_MARCHES, validateSgzzZoomRes, type ISgzzZoomRes,
+    SGZZ_MAX_VIEW_MARCHES, SGZZ_MAX_VIEW_TILES, validateSgzzZoomRes, type ISgzzZoomRes,
     validateSgzzMarchDispatchRes, validateSgzzMarchRecallRes,
     type ISgzzMarchDispatchRes, type ISgzzMarchRecallRes,
 } from "@game/shared/protocol/lobbyRpc/domains/sgzzmap";
@@ -251,7 +251,10 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             await advanceDue(ctx);
             const holding = await ctx.repo.readHoldingForUpdate(uid);
             const { viewer } = await readViewer(ctx, holding);
-            const tiles = await ctx.repo.readTilesInRect(rect);
+            // 多读一行探截断：窗口盖整屏（36 块 = 3,600 格）而响应只装得下 SGZZ_MAX_VIEW_TILES 行。
+            const scanned = await ctx.repo.readTilesInRect(rect, SGZZ_MAX_VIEW_TILES + 1);
+            const truncated = scanned.length > SGZZ_MAX_VIEW_TILES;
+            const tiles = truncated ? scanned.slice(0, SGZZ_MAX_VIEW_TILES) : scanned;
 
             const alliances: string[] = [];
             const allianceIndex = new Map<string, number>();
@@ -284,7 +287,7 @@ export function createSgzzApi(overrides: Partial<SgzzApiDeps> = {}) {
             const marches = await ctx.repo.readActiveMarches(uid, SGZZ_MAX_VIEW_MARCHES);
             return validateSgzzViewRes({
                 rect, revision: ctx.repo.revision, viewer: viewerWire(viewer),
-                alliances, owners, tiles: refs, marches,
+                alliances, owners, tiles: refs, truncated, marches,
             });
         });
     }

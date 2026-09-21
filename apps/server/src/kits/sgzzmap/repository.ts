@@ -33,7 +33,8 @@ export interface SgzzRepository {
     /** 按 cell 升序批量加锁读；⚠ 调用方必须已把 cells 排好序（= 锁序）。 */
     readTilesForUpdate(cells: readonly number[]): Promise<Map<number, ISgzzTile>>;
     readTile(cell: number): Promise<ISgzzTile>;
-    readTilesInRect(rect: ISgzzRect): Promise<ISgzzTile[]>;
+    /** 视窗读。`limit` 含「探一行」的余量，调用方据此判断是否截断。 */
+    readTilesInRect(rect: ISgzzRect, limit: number): Promise<ISgzzTile[]>;
     insertTile(tile: ISgzzTile): Promise<boolean>;
     updateTile(tile: ISgzzTile): Promise<void>;
     deleteTile(cell: number): Promise<void>;
@@ -150,14 +151,17 @@ export function createSqlSgzzRepository(tx: KitTx, sId: number): SgzzRepository 
          * 视窗读。⚠ 用 cell BETWEEN 之外还必须逐行核 col ——
          * cell = row*10000+col 是一维的，单纯的区间会把 [minCol,maxCol] 之外的整行带进来。
          */
-        async readTilesInRect(rect: ISgzzRect): Promise<ISgzzTile[]> {
+        async readTilesInRect(rect: ISgzzRect, limit: number): Promise<ISgzzTile[]> {
             const grid = sgzzGridRectForChunkRect(rect);
             const lo = sgzzCellOf(grid.minRow, grid.minCol);
             const hi = sgzzCellOf(grid.maxRow, grid.maxCol);
+            // ⚠ `LIMIT ?` 会被 MySQL 预处理拒掉（Incorrect arguments to mysqld_stmt_execute），
+            // 只能钳成有界整数后拼进 SQL。⛔ 别再改回占位符。
+            const cap = Math.max(1, Math.min(100_000, Math.floor(limit)));
             const rows = await tx.query<RowDataPacket[]>(
                 "SELECT cell, owner_uid, owner_aid, durability, addition FROM k_sgzzmap_tile "
                 + "WHERE server_id = ? AND cell BETWEEN ? AND ? "
-                + "AND MOD(cell, 10000) BETWEEN ? AND ? ORDER BY cell",
+                + `AND MOD(cell, 10000) BETWEEN ? AND ? ORDER BY cell LIMIT ${cap}`,
                 [sId, lo, hi, grid.minCol, grid.maxCol]);
             return rows.map(tileOf);
         },

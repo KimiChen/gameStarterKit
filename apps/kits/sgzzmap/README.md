@@ -78,11 +78,11 @@
 - 取地形用展平 `Uint8Array` 的 O(1) 读。⛔ 不要照抄 slg 的 `terrainAt`（逐格线扫矩形表），
   1500² 格上跑不动。
 
-## 五、RPC 域 `sgzzmap`（contractVersion 1）
+## 五、RPC 域 `sgzzmap`（contractVersion 6）
 
 | 路由 | 模式 | 说明 |
 |---|---|---|
-| `sgzzmap.view` | natural-write | 近景视窗；一次最多 4 chunk = 400 格；带回**自己**的在途行军 |
+| `sgzzmap.view` | natural-write | 近景视窗；一次最多 64 chunk = 80×80 格；带回**自己**的在途行军 |
 | `sgzzmap.tile` | query | 单格详情 |
 | `sgzzmap.occupy` | idempotent-write | 连地闸 + 稀疏插入竞争重读 |
 | `sgzzmap.abandon` | idempotent-write | 只有地主能弃 |
@@ -92,8 +92,23 @@
 | `sgzzmap.zoom` | query | 鸟瞰分块摘要，只读预聚合表 |
 
 响应体积：框架硬上限 64 KB、幂等写结果上限 32 KB。`view` 把 uid / 同盟折叠进
-`owners` / `alliances` 字典，地块行只带下标 ⇒ 400 格也稳在 28 KB 以内。
+`owners` / `alliances` 字典，地块行只带下标 ⇒ 400 行稳在 28 KB 以内。
 ⚠ 改 `domains/sgzzmap.ts` 的字节必须**同 commit** 抬 `contractVersion`，否则 codegen 拒绝生成。
+
+#### 近景窗的两条预算（2026-09-21 真机重放校正，⛔ 别再按手算改）
+
+`SGZZ_MAX_QUERY_CHUNKS`（窗口尺寸）与 `SGZZ_MAX_VIEW_TILES`（响应行数）约束的是**不同的东西**，
+早先把后者由前者推导，结果窗口被响应预算拖成 2×2 块（20×20 格），只盖了 LOD0 屏幕的四分之一 ——
+而客户端把「没数据」显示成「无主」，真机上点哪都说无主。现在：
+
+| 常量 | 值 | 由什么决定 |
+|---|---|---|
+| `SGZZ_MAX_QUERY_CHUNKS` | 64（8×8 块 = 80×80 格） | LOD0 实测可视半径 ±32 格，由 `sgzzmap-aoi.test.ts` 现场量 |
+| `SGZZ_MAX_VIEW_TILES` | 400 | 每行 JSON ≈ 75 B，28 KB 目标 |
+
+窗内非默认格超过 400 时服务端按 cell 升序截断并回 `truncated: true`，⛔ 不静默丢。
+⚠ **已知 v1 限制**：LOD1 要 11×11 块、LOD2 要 16×16 块，都超预算 ⇒ 这两档的**领地叠色只覆盖屏幕中心**。
+点选窗外的格会标 pending 并单独走 `sgzzmap.tile` 拿真相（面板显示「读取中…」），⛔ 不拿默认空格冒充无主。
 
 ### 占领闸
 
@@ -183,8 +198,23 @@ node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
 在此之前 `resources.load` 多半找不到底图/缩略图贴图，届时远档只剩鸟瞰色块、缩略图只剩可点底板
 （两处都有兜底，⛔ 不崩）。
 
+### 真机重放抓出来的四条（2026-09-21，673 条绿单测一条都没抓到）
+
+单测钉的是我当时**写错的那个假设**，所以四条都只有真引擎能发现。全部已修 + 各有回归：
+
+| # | 症状 | 根因 | 封印 |
+|---|---|---|---|
+| 1 | 点哪都说「无主」 | 近景窗只有 2×2 块且只往 min 方向扩，整体偏到相机左上 | `sgzzClampChunkRect` 对称收缩 + 「盖住 LOD0 整屏」一条 |
+| 2 | 点「占领」顺手把选中格换成按钮底下那一格 | 手势绑在整页 root，页脚按钮的触摸**冒泡**上来被当成点选 | `sgzzInMapBand` 挡住地图区外的点 |
+| 3 | 操作结果活不过 220 ms，屏幕上什么提示都没有 | view 轮询一成功就无差别清空 notice | `noticeKind`：只清「读出来的」提示 |
+| 4 | 窗外的格显示成「无主」（撒谎） | `tileAt` 缺 key 即默认空格，`sgzzmap.tile` 路由从未接线 | `select` 标 pending + 单格补查 |
+
 ### P6 余留
 
 无。远档底图、鸟瞰色块、缩略图、行军线均已接上。
-下一步的自然延伸是 AOI 实体流（敌军可见性）与地块/摆件图集的人工策展
-（现在近景是按地形 id 顶色，图集已烘好但还没贴上去）。
+下一步的自然延伸：
+
+- **「回到领地」入口**（1500×1500 上找不到自己的地是真实可用性缺口；重放也因此无法稳定走到「占领成功」
+  这一支——账号一旦有地就不再享出生豁免，而它那块地不在默认视野里）；
+- AOI 实体流（敌军可见性）；
+- 地块/摆件图集的人工策展（现在近景是按地形 id 顶色，图集已烘好但还没贴上去）。

@@ -19,6 +19,7 @@ export default {
             rect, revision: 1, viewer, alliances: ["a1"],
             owners: [{ uid: "u1", alliance: 0 }],
             tiles: [{ cell, owner: 0, durability: 1, addition: false, capturing: -1 }],
+            truncated: false,
             marches: [march],
         },
     },

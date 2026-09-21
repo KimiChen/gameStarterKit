@@ -439,8 +439,18 @@ export function sgzzLinksIndex(table: ISgzzLinkTable,
 
 // ── 近景视窗矩形（chunk 单位） ────────────────────────────────────────────────
 
-/** 单次 view 请求最多几个 chunk。10×10 一块 ⇒ 上限 4 块 = 400 格，够一次视窗且压得住响应体积。 */
-export const SGZZ_MAX_QUERY_CHUNKS = 4;
+/**
+ * 单次 view 请求最多几个 chunk（10×10 格一块）。
+ *
+ * ⚠ 这个数必须**盖住 LOD0 的整屏**，⛔ 不是拍脑袋的「压得住响应体积」——那是 SGZZ_MAX_VIEW_TILES 的活。
+ * 750×1122 的地图区、scale 0.85（含 2 格预取边距）实测可视半径 ±32 格 = 65×65 格 ⇒ **8×8 块**恰好盖满
+ * （数字由 sgzzmap-aoi.test.ts 的「盖住整屏」一条现场量出来，⛔ 不要凭手算改小）。
+ * 早先取 4（2×2 块 = 20×20 格）只盖了 LOD0 的四分之一，屏幕其余部分**没有地块数据**，
+ * 而客户端把「没数据」显示成「无主」——真机重放点哪都说无主，根因就在这里。
+ * ⚠ LOD1 要 11×11 块、LOD2 要 16×16 块，都超预算：外围格靠 sgzzmap.tile 单格查补
+ *   （见 SgzzmapWorldLogic.select，窗外一律标 pending，⛔ 不冒充无主）。
+ */
+export const SGZZ_MAX_QUERY_CHUNKS = 64;
 export const SGZZ_CHUNK_ROWS = Math.ceil(SGZZ_MAP_ROWS / SGZZ_CHUNK_TILES);
 export const SGZZ_CHUNK_COLS = Math.ceil(SGZZ_MAP_COLS / SGZZ_CHUNK_TILES);
 
@@ -475,6 +485,30 @@ export function validateSgzzChunkRect(value: unknown, path = "payload.rect",
     }
     return rect;
 }
+/**
+ * 把 chunk 矩形收进一次请求的预算，尽量以中心块为心。
+ *
+ * ⚠ 收缩必须**对称**：早先 nearRect 只往 min 方向扩（`minRow - half` 而 max 不动），
+ * 窗口整体偏到相机左上一半，屏幕右下角恒无数据。这个函数就是那条 bug 的封印。
+ */
+export function sgzzClampChunkRect(rect: ISgzzRect, centreChunkRow: number, centreChunkCol: number,
+                                   maxChunks = SGZZ_MAX_QUERY_CHUNKS,
+                                   chunkRows = SGZZ_CHUNK_ROWS,
+                                   chunkCols = SGZZ_CHUNK_COLS): ISgzzRect {
+    const side = Math.max(1, Math.floor(Math.sqrt(Math.max(1, maxChunks))));
+    const fit = (min: number, max: number, centre: number, hi: number): readonly [number, number] => {
+        const want = Math.max(1, Math.min(max - min + 1, side, hi));
+        // ⚠ 装得下就**原样保留**，只有放不下才以中心块重新居中：
+        // 无条件居中会因 round(半块) 把窗口整体推一格，屏幕另一侧就少掉一条格。
+        const raw = (max - min + 1) <= want ? min : Math.round(centre - (want - 1) / 2);
+        const lo = Math.max(0, Math.min(hi - want, raw));
+        return [lo, lo + want - 1] as const;
+    };
+    const [minRow, maxRow] = fit(rect.minRow, rect.maxRow, centreChunkRow, chunkRows);
+    const [minCol, maxCol] = fit(rect.minCol, rect.maxCol, centreChunkCol, chunkCols);
+    return { minRow, minCol, maxRow, maxCol };
+}
+
 /** chunk 矩形 → 格矩形（含端点，已按地图边界收口）。 */
 export function sgzzGridRectForChunkRect(rect: ISgzzRect,
                                          rows = SGZZ_MAP_ROWS, cols = SGZZ_MAP_COLS): ISgzzRect {

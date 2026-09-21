@@ -20,7 +20,7 @@ function fakeRuntime(over: Partial<SgzzRuntime> = {}) {
             return {
                 rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1,
                 viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
-                alliances: [], owners: [], tiles: [], marches: [],
+                alliances: [], owners: [], tiles: [], truncated: false, marches: [],
             };
         },
         zoom: async () => {
@@ -75,7 +75,7 @@ test("sgzzmap page: ★ 代际围栏 —— 迟到的旧响应⛔不得覆盖新
                     viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
                     alliances: [], owners: [{ uid: "u-stale", alliance: -1 }],
                     tiles: [{ cell: sgzzCellOf(700, 700), owner: 0, durability: 9, addition: false, capturing: -1 }],
-                    marches: [],
+                    truncated: false, marches: [],
                 };
             }
             return {
@@ -83,7 +83,7 @@ test("sgzzmap page: ★ 代际围栏 —— 迟到的旧响应⛔不得覆盖新
                 viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
                 alliances: [], owners: [{ uid: "u-fresh", alliance: -1 }],
                 tiles: [{ cell: sgzzCellOf(800, 800), owner: 0, durability: 1, addition: false, capturing: -1 }],
-                marches: [],
+                truncated: false, marches: [],
             };
         },
     });
@@ -185,7 +185,7 @@ test("sgzzmap page: 结算积压是「稍后再试」而不是报错，且允许
             return {
                 rect: { minRow: 0, minCol: 0, maxRow: 0, maxCol: 0 }, revision: 1,
                 viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
-                alliances: [], owners: [], tiles: [], marches: [],
+                alliances: [], owners: [], tiles: [], truncated: false, marches: [],
             };
         },
     });
@@ -253,7 +253,7 @@ test("sgzzmap page: view 带回的行军进 tracker，档位决定要不要细�
     // 下一批不含这条 ⇒ 必须丢掉
     logic.applyView({
         viewer: { uid: "u-me", aid: "", leaderUid: "", friendAids: [] },
-        alliances: [], owners: [], tiles: [], marches: [],
+        alliances: [], owners: [], tiles: [], truncated: false, marches: [],
     });
     assert.equal(logic.marches.length, 0);
     assert.equal(logic.marchLines.size, 0, "撤回/到达后线必须消失");
