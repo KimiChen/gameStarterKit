@@ -7,6 +7,8 @@ import {
     loadSgzzTerrain, sgzzTerrainAt, sgzzIsPassable, sgzzInBounds, sgzzTerrainToBytes,
     sgzzDecodeBase64, sgzzDecodeRle, decodeSgzzTerrainRle,
     SGZZ_TERRAIN_HEADER_BYTES, SGZZ_MAP_ROWS, SGZZ_MAP_COLS,
+    SGZZ_ATLAS_CELL_H, SGZZ_ATLAS_CELL_W, SGZZ_ATLAS_COLS, SGZZ_ATLAS_GUTTER,
+    SGZZ_ATLAS_H, SGZZ_ATLAS_LODS, SGZZ_ATLAS_W, sgzzAtlasCellRect, sgzzAtlasUv,
 } from "@game/shared/kits/sgzzmap/api/hexmap/index";
 import {
     SGZZ_TERRAIN_COLS, SGZZ_TERRAIN_MAP_ID, SGZZ_TERRAIN_PALETTE,
@@ -37,7 +39,9 @@ test("sgzzmap content: Creator 资源与 kit 源逐字节一致（全部文件�
     const kitFiles = readdirSync(kitDir).sort();
     const mirrored = kitFiles.filter((f) => !KIT_ONLY.has(f));
     const cocosFiles = readdirSync(cocosDir).filter((f) => !f.endsWith(".meta")).sort();
-    assert.ok(kitFiles.length >= 17, `kit 数据文件过少：${kitFiles.length}`);
+    // 防截断下限。⚠ 15 = 地形 2 + regions 1 + 图集 3×2 + plate 2×2 + 缩略图 2；
+    //   ⛔ 没有 atlas-lod3（地表层门控 hideAtLod:2，LOD3 起用整幅底图），早先那张从没人消费。
+    assert.ok(kitFiles.length >= 15, `kit 数据文件过少：${kitFiles.length}`);
     assert.deepEqual(cocosFiles, mirrored, "除地形外，两处文件清单必须一致");
     for (const name of KIT_ONLY) {
         assert.ok(kitFiles.includes(name), `${name} 必须留在 kit 数据目录作权威产物`);
@@ -154,4 +158,39 @@ test("sgzzmap content: linksOf 空表 = 本图没有长程链接，⛔ 不是错
     const links = linksOf(MAP);
     assert.equal(links.size, 0, "v1 内容包没有长程链接");
     assert.equal(linksOf(MAP), links, "同样按进程缓存");
+});
+
+test("sgzzmap content: ★ 图集布局 —— 打包脚本写的 info.json 与 shared 常量逐格一致", () => {
+    // ⚠ 两边漂了的症状是「地形对不上颜色」：UV 整体错格，画面还照样出，极难查。
+    //   所以拿 kit 数据目录里的成品 info.json 与 shared 的 SGZZ_ATLAS_* 硬比。
+    const dir = "../../apps/kits/sgzzmap/data/maps/zhongyuan";
+    for (const lod of SGZZ_ATLAS_LODS) {
+        const info = JSON.parse(readFileSync(`${dir}/atlas-lod${lod}.info.json`, "utf8")) as {
+            cell: [number, number]; gutter: number; gridCols: number; size: [number, number];
+            uv: string; cells: { id: number; name: string; cell: [number, number, number, number] }[];
+        };
+        assert.deepEqual(info.cell, [SGZZ_ATLAS_CELL_W, SGZZ_ATLAS_CELL_H], `lod${lod} 单格尺寸`);
+        assert.equal(info.gutter, SGZZ_ATLAS_GUTTER, `lod${lod} 出血带`);
+        assert.equal(info.gridCols, SGZZ_ATLAS_COLS, `lod${lod} 列数`);
+        assert.deepEqual(info.size, [SGZZ_ATLAS_W, SGZZ_ATLAS_H], `lod${lod} 图集尺寸`);
+        assert.equal(info.uv, "diamond-midpoints", `lod${lod} UV 约定`);
+        assert.equal(info.cells.length, SGZZ_TERRAIN_PALETTE.length, `lod${lod} 格数 = 地形数`);
+        for (const cell of info.cells) {
+            assert.equal(cell.name, SGZZ_TERRAIN_PALETTE[cell.id].name, `lod${lod} 第 ${cell.id} 格的地形名`);
+            assert.deepEqual(cell.cell, [...sgzzAtlasCellRect(cell.id)], `lod${lod} 第 ${cell.id} 格的矩形`);
+        }
+    }
+    // 出血带真的在：相邻两格之间至少隔 2×GUTTER，⛔ 贴边会被双线性采样串色
+    const a = sgzzAtlasCellRect(0), b = sgzzAtlasCellRect(1);
+    assert.equal(b[0] - (a[0] + a[2]), SGZZ_ATLAS_GUTTER * 2);
+    // 每格都在图集内
+    for (let id = 0; id < SGZZ_TERRAIN_PALETTE.length; id += 1) {
+        const [x, y, w, h] = sgzzAtlasCellRect(id);
+        assert.ok(x - SGZZ_ATLAS_GUTTER >= 0 && x + w + SGZZ_ATLAS_GUTTER <= SGZZ_ATLAS_W, `第 ${id} 格横向越界`);
+        assert.ok(y - SGZZ_ATLAS_GUTTER >= 0 && y + h + SGZZ_ATLAS_GUTTER <= SGZZ_ATLAS_H, `第 ${id} 格纵向越界`);
+        const uv = sgzzAtlasUv(id);
+        assert.ok(uv.every((v) => v >= 0 && v <= 1), `第 ${id} 格 UV 越界`);
+    }
+    // ⛔ 没有 atlas-lod3：地表层门控 hideAtLod:2，LOD3 起改用整幅底图
+    assert.throws(() => readFileSync(`${dir}/atlas-lod3.info.json`), /ENOENT/u);
 });

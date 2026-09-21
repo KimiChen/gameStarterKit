@@ -1,14 +1,17 @@
 /**
  * 近档渲染：地表菱形 + 网格线 + 领地叠色 + 六向描边，各一张合并 mesh。
  *
+ * 地表有图集就贴图集、没有就平涂顶点色（⚠ 首帧必须能画：地形数据随代码走，⛔ 不等资源加载）。
+ * 图集是逐档的（LOD0/1/2 各一张），换档要换贴图 ⇒ 材质与 batch 都要重建，⛔ 不能只换 UV。
+ *
  * ⚠ 一层一张合并 mesh（⛔ 不是每 chunk 一张）：per-chunk 会让跨 chunk 的绘制序随平移抖动。
  * ⚠ 领地叠色**必须**也是合并 mesh —— 原作是每格一个节点，那在 Cocos 上会是成千上万个节点。
  * 兄弟序 = 绘制序：地表(0) → 网格线(1) → 领地(2) → 描边(3)。
  * ⚠ 网格线压在领地叠色**下面**：叠色是半透明的，压上面会把格线糊成一片。
  */
-import { Material, Node } from "cc";
+import { Material, Node, Texture2D } from "cc";
 import {
-    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzGrid2Pos,
+    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzAtlasUv, sgzzGrid2Pos,
 } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 import {
     SGZZ_MAX_QUADS_PER_MESH, buildSgzzDiamondMesh, buildSgzzPolyMesh, sgzzBorderStripPoly,
@@ -18,6 +21,7 @@ import { sgzzLayerVisible } from "../logic/sgzzLayers";
 import { sgzzCompensate, sgzzStateColor, sgzzTerrainColor, type SgzzRgba } from "../logic/sgzzPalette";
 import { sgzzTerrainIdAt } from "../logic/sgzzTerrain";
 import type { SgzzmapWorldLogic } from "../logic/SgzzmapWorldLogic";
+import type { SgzzArtResources } from "./SgzzArtResources";
 import {
     createSgzzBatch, createSgzzMaterial, destroySgzzBatch, sgzzPipelineToneMapping,
     sgzzUnlitTechnique, uploadSgzzBatch, type SgzzBatch,
@@ -26,6 +30,8 @@ import {
 const BORDER_RGBA: SgzzRgba = [1, 0.878, 0.467, 0.85];
 /** 网格线：压在地表上的一层淡黑。⚠ 太重会盖住地形色，太轻在浅色地形上看不见。 */
 const GRID_RGBA: SgzzRgba = [0, 0, 0, 0.2];
+/** 贴图层的顶点色。⚠ 顶点色相乘 ⇒ 必须是纯白，否则贴图被整体染一遍。 */
+const WHITE: SgzzRgba = [1, 1, 1, 1];
 /** 网格线的**屏幕**宽度（设计像素）。世界宽 = 它 / scale，⛔ 别写成固定世界宽。 */
 const GRID_LINE_PX = 1;
 
@@ -39,10 +45,41 @@ export class SgzzMapRenderer {
     private readonly material: Material;
     private readonly tone: number;
     private disposed = false;
+    /** 当前地表材质与它绑的图集。⚠ 贴图换了必须换材质，⛔ setProperty 改不动 USE_TEXTURE 宏。 */
+    private terrainMaterial: Material | null = null;
+    private terrainTexture: Texture2D | null = null;
+    private art: SgzzArtResources | null = null;
 
     constructor(private readonly root: Node) {
         this.material = createSgzzMaterial(sgzzUnlitTechnique(), false);
         this.tone = sgzzPipelineToneMapping();
+    }
+
+    /** 素材到货后灌进来。⚠ 在此之前地表走平涂，⛔ 不阻塞首帧。 */
+    setArt(art: SgzzArtResources | null): void { this.art = art; }
+
+    /**
+     * 这一档地表该用的材质：有图集就贴图集，否则平涂。
+     * ⚠ 换贴图要**重建材质与 batch**：mesh 的 material 是建 batch 时定的，
+     *   而 USE_TEXTURE 是编译期宏，⛔ 不能靠 setProperty 切换。
+     */
+    private terrainMaterialFor(lod: number): { material: Material; textured: boolean } {
+        const texture = this.art?.atlasFor(lod) ?? null;
+        if (!texture) {
+            if (this.terrainTexture !== null) {   // 从有图集退回平涂：丢掉旧材质
+                this.terrainMaterial?.destroy(); this.terrainMaterial = null; this.terrainTexture = null;
+                destroySgzzBatch(this.terrain); this.terrain = null;
+            }
+            return { material: this.material, textured: false };
+        }
+        if (texture !== this.terrainTexture || !this.terrainMaterial) {
+            this.terrainMaterial?.destroy();
+            this.terrainMaterial = createSgzzMaterial(sgzzUnlitTechnique(), true);
+            this.terrainMaterial.setProperty("mainTexture", texture);
+            this.terrainTexture = texture;
+            destroySgzzBatch(this.terrain); this.terrain = null;   // 材质变了，batch 必须重建
+        }
+        return { material: this.terrainMaterial, textured: true };
     }
 
     render(logic: SgzzmapWorldLogic): void {
@@ -56,17 +93,21 @@ export class SgzzMapRenderer {
         // 线宽折算成世界单位：拉近了才不会变粗、拉远了才不会消失
         const gridHalf = GRID_LINE_PX / 2 / Math.max(0.01, logic.camera.scale);
 
+        const terrainMat = this.terrainMaterialFor(logic.camera.lod);
         logic.stencil.forEach(centre.row, centre.col, logic.mapRows, logic.mapCols, (row, col) => {
+            const id = sgzzTerrainIdAt(row, col);
+            // ⚠ 贴图时顶点色取白：顶点色是**相乘**的，拿地形色去乘会把贴图整体染一遍。
             terrainQuads.push({
-                row, col, uv: null,
-                rgba: sgzzCompensate(sgzzTerrainColor(sgzzTerrainIdAt(row, col)), this.tone),
+                row, col,
+                uv: terrainMat.textured ? sgzzAtlasUv(id) : null,
+                rgba: terrainMat.textured ? WHITE : sgzzCompensate(sgzzTerrainColor(id), this.tone),
             });
             if (wantGrid) for (const poly of sgzzGridEdgePolys(row, col, gridHalf, gridRgba)) gridPolys.push(poly);
             const colour = sgzzStateColor(logic.stateAt(row, col));
             if (colour) territoryQuads.push({ row, col, uv: null, rgba: sgzzCompensate(colour, this.tone) });
         });
 
-        this.terrain = this.sync(this.terrain, "sgzz-terrain", terrainQuads, 0);
+        this.terrain = this.sync(this.terrain, "sgzz-terrain", terrainQuads, 0, terrainMat.material);
         this.grid = this.syncPoly(this.grid, "sgzz-grid", gridPolys, 1);
         this.territory = this.sync(this.territory, "sgzz-territory", territoryQuads, 2);
         // 描边比格线粗一点才看得出是「边」
@@ -100,13 +141,14 @@ export class SgzzMapRenderer {
         return batch;
     }
 
-    private sync(batch: SgzzBatch | null, name: string, quads: SgzzQuadInput[], at: number): SgzzBatch | null {
+    private sync(batch: SgzzBatch | null, name: string, quads: SgzzQuadInput[], at: number,
+                 material: Material = this.material): SgzzBatch | null {
         if (quads.length === 0) {
             destroySgzzBatch(batch);
             return null;
         }
         const geometry = buildSgzzDiamondMesh(quads);
-        if (!batch) return createSgzzBatch(this.root, name, geometry, this.material, Math.min(at, this.root.children.length));
+        if (!batch) return createSgzzBatch(this.root, name, geometry, material, Math.min(at, this.root.children.length));
         uploadSgzzBatch(batch, geometry);
         return batch;
     }
@@ -131,5 +173,7 @@ export class SgzzMapRenderer {
         this.disposed = true;
         this.clear();
         this.material.destroy();
+        this.terrainMaterial?.destroy();
+        this.terrainMaterial = null; this.terrainTexture = null; this.art = null;
     }
 }

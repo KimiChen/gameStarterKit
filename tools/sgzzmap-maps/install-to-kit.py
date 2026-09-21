@@ -35,8 +35,8 @@ FILES = {
     "atlas-lod1.meta.json": "atlas-lod1.info.json",
     "atlas-lod2.png": "atlas-lod2.png",
     "atlas-lod2.meta.json": "atlas-lod2.info.json",
-    "atlas-lod3.png": "atlas-lod3.png",
-    "atlas-lod3.meta.json": "atlas-lod3.info.json",
+    # ⚠ ⛔ 没有 atlas-lod3：地表层门控 hideAtLod:2（LOD3 起改用整幅底图），
+    #   早先烘的那张从来没人消费，已撤。
     "minimap.png": "minimap.png",
     "minimap-mask.png": "minimap-mask.png",
 }

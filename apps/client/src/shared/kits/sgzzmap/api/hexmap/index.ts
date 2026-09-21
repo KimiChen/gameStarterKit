@@ -278,6 +278,42 @@ export interface ISgzzTerrain {
 }
 
 /** terrain.bytes 头长度：4 字节大端 rows + 4 字节大端 cols。 */
+// ── 地表图集布局（与 tools/sgzzmap-maps/pack-atlas.py 一一对应） ──────────────
+//
+// ⚠ 这些数是**契约**：打包脚本按它摆格，客户端按它算 UV，⛔ 两边必须同改。
+//   `apps/server/test/sgzzmap-content.test.ts` 拿 kit 数据目录里的 atlas-lod*.info.json
+//   逐格比对，漂了就红 —— 否则 UV 整体错格，屏幕上是「地形对不上颜色」这种很难查的症状。
+// ⚠ 格与格之间留出血带并复制边缘像素：菱形四个顶点正好落在图集格**四条边的中点**上，
+//   双线性采样会跨到隔壁格。⛔ 不靠 UV 内缩解决（内缩会把画面往里压，菱形边缘少一圈）。
+
+/** 单格画布（像素）。 */
+export const SGZZ_ATLAS_CELL_W = 256;
+export const SGZZ_ATLAS_CELL_H = 128;
+/** 格与格之间的出血带（像素，四周都有）。 */
+export const SGZZ_ATLAS_GUTTER = 4;
+/** 每行几格；id = 行×列数 + 列。 */
+export const SGZZ_ATLAS_COLS = 3;
+/** 图集尺寸。⚠ 取 2 的幂：NPOT 贴图在 WebGL1 上不能开 mipmap / repeat。 */
+export const SGZZ_ATLAS_W = 1024;
+export const SGZZ_ATLAS_H = 512;
+/** 有图集的档位（地表层门控 hideAtLod:2 ⇒ LOD3 起改用整幅底图，⛔ 没有 atlas-lod3）。 */
+export const SGZZ_ATLAS_LODS: readonly number[] = Object.freeze([0, 1, 2]);
+
+/** 第 id 格在图集里的像素矩形 [x, y, w, h]。 */
+export function sgzzAtlasCellRect(terrainId: number): readonly [number, number, number, number] {
+    const row = Math.floor(terrainId / SGZZ_ATLAS_COLS), col = terrainId % SGZZ_ATLAS_COLS;
+    return [
+        SGZZ_ATLAS_GUTTER + col * (SGZZ_ATLAS_CELL_W + SGZZ_ATLAS_GUTTER * 2),
+        SGZZ_ATLAS_GUTTER + row * (SGZZ_ATLAS_CELL_H + SGZZ_ATLAS_GUTTER * 2),
+        SGZZ_ATLAS_CELL_W, SGZZ_ATLAS_CELL_H,
+    ];
+}
+/** 第 id 格的归一化 UV [u0, v0, uw, vh]。⚠ v 原点在**上**（与 buildSgzzDiamondMesh 一致）。 */
+export function sgzzAtlasUv(terrainId: number): readonly [number, number, number, number] {
+    const [x, y, w, h] = sgzzAtlasCellRect(terrainId);
+    return [x / SGZZ_ATLAS_W, y / SGZZ_ATLAS_H, w / SGZZ_ATLAS_W, h / SGZZ_ATLAS_H];
+}
+
 export const SGZZ_TERRAIN_HEADER_BYTES = 8;
 export const SGZZ_TERRAIN_MAX_CLASSES = 16;
 

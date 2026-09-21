@@ -141,6 +141,8 @@ export class SgzzmapWorldView extends CocosView {
             return;
         }
         this.art = art;
+        // ⚠ 近档地表也要：在此之前它走平涂顶点色（首帧就能画），到货后换成图集贴图
+        this.renderer?.setArt(art);
         this.farRenderer = new SgzzFarRenderer(this.world, art);
         const size = Math.min(140, this.layerWidth * 0.32);
         this.minimap = new SgzzMinimap(this.root, size,

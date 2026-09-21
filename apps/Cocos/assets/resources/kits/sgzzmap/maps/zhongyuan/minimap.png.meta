@@ -8,15 +8,15 @@
     ".png"
   ],
   "subMetas": {
-    "6c48a": {
+    "6dcbe": {
       "importer": "texture",
-      "uuid": "ecb68d29-15e8-4bfd-a5eb-705d8e86df84@6c48a",
+      "uuid": "ecb68d29-15e8-4bfd-a5eb-705d8e86df84@6dcbe",
       "displayName": "minimap",
-      "id": "6c48a",
+      "id": "6dcbe",
       "name": "texture",
       "userData": {
-        "wrapModeS": "repeat",
-        "wrapModeT": "repeat",
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
         "minfilter": "linear",
         "magfilter": "linear",
         "mipfilter": "none",
@@ -37,6 +37,6 @@
     "type": "texture",
     "fixAlphaTransparencyArtifacts": false,
     "hasAlpha": true,
-    "redirect": "ecb68d29-15e8-4bfd-a5eb-705d8e86df84@6c48a"
+    "redirect": "ecb68d29-15e8-4bfd-a5eb-705d8e86df84@6dcbe"
   }
 }

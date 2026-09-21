@@ -1,189 +1,126 @@
 {
-  "schemaVersion": 1,
-  "mapId": "zhongyuan",
-  "lod": 1,
-  "source": "Z02-缩放2级.png",
-  "cell": [
+ "schemaVersion": 2,
+ "mapId": "zhongyuan",
+ "lod": 1,
+ "cell": [
+  256,
+  128
+ ],
+ "gutter": 4,
+ "gridCols": 3,
+ "size": [
+  1024,
+  512
+ ],
+ "uv": "diamond-midpoints",
+ "cells": [
+  {
+   "id": 0,
+   "name": "plain",
+   "cn": "平原",
+   "cell": [
+    4,
+    4,
     256,
     128
-  ],
-  "gridCols": 3,
-  "size": [
-    768,
-    384
-  ],
-  "uv": "diamond-midpoints",
-  "cells": [
-    {
-      "id": 0,
-      "name": "plain",
-      "cn": "平原",
-      "cell": [
-        0,
-        0,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        895,
-        544
-      ],
-      "score": 47.28,
-      "std": 16.26,
-      "tint": 0.42
-    },
-    {
-      "id": 1,
-      "name": "forest",
-      "cn": "森林",
-      "cell": [
-        256,
-        0,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        470,
-        950
-      ],
-      "score": 13.06,
-      "std": 28.28,
-      "tint": 0.42
-    },
-    {
-      "id": 2,
-      "name": "hill",
-      "cn": "丘陵",
-      "cell": [
-        512,
-        0,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        895,
-        544
-      ],
-      "score": 61.0,
-      "std": 16.26,
-      "tint": 0.42
-    },
-    {
-      "id": 3,
-      "name": "mountain",
-      "cn": "山地",
-      "cell": [
-        0,
-        128,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        882,
-        544
-      ],
-      "score": 50.02,
-      "std": 16.63,
-      "tint": 0.42
-    },
-    {
-      "id": 4,
-      "name": "water",
-      "cn": "水域",
-      "cell": [
-        256,
-        128,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        974,
-        264
-      ],
-      "score": 50.6,
-      "std": 14.69,
-      "tint": 0.42
-    },
-    {
-      "id": 5,
-      "name": "sea",
-      "cn": "海",
-      "cell": [
-        512,
-        128,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        885,
-        226
-      ],
-      "score": 20.05,
-      "std": 12.46,
-      "tint": 0.42
-    },
-    {
-      "id": 6,
-      "name": "wetland",
-      "cn": "湿地",
-      "cell": [
-        0,
-        256,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        882,
-        544
-      ],
-      "score": 29.62,
-      "std": 16.63,
-      "tint": 0.42
-    },
-    {
-      "id": 7,
-      "name": "desert",
-      "cn": "荒漠",
-      "cell": [
-        256,
-        256,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        895,
-        544
-      ],
-      "score": 94.37,
-      "std": 16.26,
-      "tint": 0.42
-    },
-    {
-      "id": 8,
-      "name": "offmap",
-      "cn": "图外",
-      "cell": [
-        512,
-        256,
-        256,
-        128
-      ],
-      "source": "Z02-缩放2级.png",
-      "from": [
-        882,
-        544
-      ],
-      "score": 32.31,
-      "std": 16.63,
-      "tint": 0.42
-    }
-  ]
+   ],
+   "source": "tiles/lod1/plain.png"
+  },
+  {
+   "id": 1,
+   "name": "forest",
+   "cn": "森林",
+   "cell": [
+    268,
+    4,
+    256,
+    128
+   ],
+   "source": "tiles/lod1/forest.png"
+  },
+  {
+   "id": 2,
+   "name": "hill",
+   "cn": "丘陵",
+   "cell": [
+    532,
+    4,
+    256,
+    128
+   ],
+   "source": "tiles/lod1/hill.png"
+  },
+  {
+   "id": 3,
+   "name": "mountain",
+   "cn": "山地",
+   "cell": [
+    4,
+    140,
+    256,
+    128
+   ],
+   "source": "tiles/lod1/mountain.png"
+  },
+  {
+   "id": 4,
+   "name": "water",
+   "cn": "水域",
+   "cell": [
+    268,
+    140,
+    256,
+    128
+   ],
+   "source": "tiles/lod1/water.png"
+  },
+  {
+   "id": 5,
+   "name": "sea",
+   "cn": "海",
+   "cell": [
+    532,
+    140,
+    256,
+    128
+   ],
+   "source": "tiles/lod1/sea.png"
+  },
+  {
+   "id": 6,
+   "name": "wetland",
+   "cn": "湿地",
+   "cell": [
+    4,
+    276,
+    256,
+    128
+   ],
+   "source": "tiles/lod1/wetland.png"
+  },
+  {
+   "id": 7,
+   "name": "desert",
+   "cn": "荒漠",
+   "cell": [
+    268,
+    276,
+    256,
+    128
+   ],
+   "source": "tiles/lod1/desert.png"
+  },
+  {
+   "id": 8,
+   "name": "offmap",
+   "cn": "图外",
+   "cell": [
+    532,
+    276,
+    256,
+    128
+   ],
+   "source": "tiles/lod1/offmap.png"
+  }
+ ]
 }

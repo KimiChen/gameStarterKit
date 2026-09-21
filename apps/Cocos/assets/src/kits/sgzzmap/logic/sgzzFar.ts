@@ -18,6 +18,10 @@ export function sgzzPlateAsset(lod: number): string {
     return `kits/sgzzmap/maps/zhongyuan/plate-lod${sgzzPlateLodOf(lod)}`;
 }
 export const SGZZ_MINIMAP_ASSET = "kits/sgzzmap/maps/zhongyuan/minimap";
+/** 近档地表图集。⚠ 只有 LOD0/1/2 有（门控 hideAtLod:2），⛔ 没有 atlas-lod3。 */
+export function sgzzAtlasAsset(lod: number): string {
+    return `kits/sgzzmap/maps/zhongyuan/atlas-lod${lod}`;
+}
 
 export function sgzzPlateBounds(): ISgzzWorldBounds {
     return sgzzWorldBounds();

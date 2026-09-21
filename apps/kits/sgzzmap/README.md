@@ -176,6 +176,7 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
 |---|---|---|
 | `terrain` 地表菱形 | L0–L2 | ✅ |
 | `grid` 网格线 | L0–L1 | ✅ 每格只画 NE/SE 两条边（每条边恰好一遍），线宽按 `屏幕像素 / scale` 折算 |
+| 地表**图集** | L0–L2 | ✅ 逐档一张（`atlas-lod{0,1,2}.png`，1024×512，3×3 格 256×128 + 4px 出血）；⛔ 无 atlas-lod3 |
 | `territory` 领地叠色 | L0–L3 | ✅ |
 | `border` 六向描边 | L0–L2 | ✅ |
 | `marchLine` / `marchDetail` 行军线 | L0–L4 / L0–L2 | ✅ |
@@ -187,6 +188,19 @@ E. tile 写 + holding ± + log(revision++) + receipt，同一事务
 
 绘制序 = 兄弟序：地表(0) → 网格线(1) → 领地(2) → 描边(3)。
 ⚠ 网格线压在领地叠色**下面**：叠色是半透明的，压上面会把格线糊成一片。
+
+### 地表图集（2026-09-22 接通）
+
+- 布局是**契约**：`tools/sgzzmap-maps/pack-atlas.py` 摆格、shared 的 `SGZZ_ATLAS_*` 算 UV，
+  `sgzzmap-content.test.ts` 拿成品 `atlas-lod*.info.json` 逐格比对。
+  ⚠ 漂了的症状是「地形对不上颜色」——UV 整体错格，画面照样出，极难查。
+- **出血带 4px + 边缘复制**：菱形四顶点正好落在图集格**四条边的中点**上，双线性采样会跨格。
+  ⛔ 不靠 UV 内缩解决（内缩把画面往里压，菱形边缘会少一圈）。
+- 图集尺寸取 2 的幂（1024×512）：NPOT 在 WebGL1 上不能开 mipmap / repeat。
+- **换档要换材质与 batch**：`USE_TEXTURE` 是编译期宏，⛔ `setProperty` 切换不了；
+  贴图变了 mesh 的 material 也得跟着换，所以 `terrainMaterialFor` 里连 batch 一起销毁重建。
+- **贴图时顶点色取纯白**：顶点色是**相乘**的，拿地形色去乘会把贴图整体染一遍。
+- **图集没到货就平涂顶点色**：地形数据随代码走，首帧必须能画，⛔ 不等资源加载。
 
 ### 客户端的五条硬规矩
 
