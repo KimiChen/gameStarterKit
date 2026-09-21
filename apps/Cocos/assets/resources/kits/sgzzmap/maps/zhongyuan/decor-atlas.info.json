@@ -1,0 +1,91 @@
+{
+ "schemaVersion": 1,
+ "mapId": "zhongyuan",
+ "cell": [
+  256,
+  256
+ ],
+ "gutter": 4,
+ "gridCols": 3,
+ "size": [
+  1024,
+  1024
+ ],
+ "anchor": [
+  128,
+  224
+ ],
+ "pixelsPerWorldUnit": 3,
+ "cells": [
+  {
+   "id": 0,
+   "name": "tree",
+   "cell": [
+    4,
+    4,
+    256,
+    256
+   ]
+  },
+  {
+   "id": 1,
+   "name": "pine",
+   "cell": [
+    268,
+    4,
+    256,
+    256
+   ]
+  },
+  {
+   "id": 2,
+   "name": "rock",
+   "cell": [
+    532,
+    4,
+    256,
+    256
+   ]
+  },
+  {
+   "id": 3,
+   "name": "peak",
+   "cell": [
+    4,
+    268,
+    256,
+    256
+   ]
+  },
+  {
+   "id": 4,
+   "name": "reed",
+   "cell": [
+    268,
+    268,
+    256,
+    256
+   ]
+  },
+  {
+   "id": 5,
+   "name": "dune",
+   "cell": [
+    532,
+    268,
+    256,
+    256
+   ]
+  },
+  {
+   "id": 6,
+   "name": "tuft",
+   "cell": [
+    4,
+    532,
+    256,
+    256
+   ]
+  }
+ ]
+}

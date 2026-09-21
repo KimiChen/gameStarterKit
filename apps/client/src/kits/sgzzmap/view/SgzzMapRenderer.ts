@@ -25,7 +25,8 @@ import { sgzzTerrainIdAt } from "../logic/sgzzTerrain";
 import type { SgzzmapWorldLogic } from "../logic/SgzzmapWorldLogic";
 import type { SgzzArtResources } from "./SgzzArtResources";
 import {
-    SGZZ_MAX_DECOR_QUADS, sgzzDecorAt, sgzzDecorQuad, SGZZ_DECOR_NONE,
+    SGZZ_MAX_DECOR_QUADS, SGZZ_DECOR_NONE, sgzzDecorAt, sgzzDecorQuad,
+    sgzzDecorSpriteQuad, sgzzDecorSpriteUvs,
 } from "../logic/sgzzDecor";
 import { sgzzPainterCompare, type SgzzPolyInput } from "../logic/sgzzMesh";
 import { SGZZ_MAX_BLEND_QUADS, sgzzBlendDepth, sgzzBlendQuad, sgzzBlendSource } from "../logic/sgzzBlend";
@@ -52,6 +53,9 @@ export class SgzzMapRenderer {
     private grid: SgzzBatch | null = null;
     private decor: SgzzBatch | null = null;
     private blend: SgzzBatch | null = null;
+    /** 摆件材质。⚠ 与地表图集**不是同一张贴图** ⇒ 必须是独立材质与独立 batch。 */
+    private decorMaterial: Material | null = null;
+    private decorTexture: Texture2D | null = null;
     private territory: SgzzBatch | null = null;
     private border: SgzzBatch | null = null;
     private readonly material: Material;
@@ -147,7 +151,9 @@ export class SgzzMapRenderer {
         this.territory = this.sync(this.territory, "sgzz-territory", territoryQuads, 3);
         // 描边比格线粗一点才看得出是「边」
         this.border = this.syncPoly(this.border, "sgzz-border", this.borderPolys(logic, gridHalf * 2.5), 4);
-        this.decor = this.syncPoly(this.decor, "sgzz-decor", this.decorPolys(decorCells), 5);
+        const decorMat = this.decorMaterialFor();
+        this.decor = this.syncPoly(this.decor, "sgzz-decor",
+            this.decorPolys(decorCells, decorMat.textured), 5, decorMat.material);
     }
 
     /**
@@ -205,16 +211,48 @@ export class SgzzMapRenderer {
     }
 
     /**
+     * 这一档摆件该用的材质：有摆件图集就贴图、否则平涂剪影。
+     * ⚠ 摆件图集与地表图集是**两张不同的贴图**，⛔ 不能复用地表材质。
+     */
+    private decorMaterialFor(): { material: Material; textured: boolean } {
+        const texture = this.art?.decorAtlas ?? null;
+        if (!texture) {
+            if (this.decorTexture !== null) {
+                this.decorMaterial?.destroy(); this.decorMaterial = null; this.decorTexture = null;
+                destroySgzzBatch(this.decor); this.decor = null;
+            }
+            return { material: this.material, textured: false };
+        }
+        if (texture !== this.decorTexture || !this.decorMaterial) {
+            this.decorMaterial?.destroy();
+            this.decorMaterial = createSgzzMaterial(sgzzUnlitTechnique(), true);
+            this.decorMaterial.setProperty("mainTexture", texture);
+            this.decorTexture = texture;
+            destroySgzzBatch(this.decor); this.decor = null;   // 材质变了，batch 必须重建
+        }
+        return { material: this.decorMaterial, textured: true };
+    }
+
+    /**
      * 摆件四边形。⚠ 必须按**画家序**排：菱形网格上「屏幕越低 = 越靠前」，
      * 一棵树要挡住它**后面**那些格，⛔ 顺着可视模板的遍历序画会前后颠倒。
+     *
+     * ⚠ 有图集时用**整张画布的矩形 + UV**（剪影在 alpha 里），
+     * ⛔ 不能套到 topRatio 压窄的占位梯形上 —— 那会把画布连同透明留白一起挤变形。
      */
-    private decorPolys(cells: { row: number; col: number; id: number }[]): SgzzPoly[] {
+    private decorPolys(cells: { row: number; col: number; id: number }[], textured: boolean): SgzzPolyInput[] {
         if (cells.length === 0 || cells.length > SGZZ_MAX_DECOR_QUADS) return [];
         cells.sort(sgzzPainterCompare);
-        const out: SgzzPoly[] = [];
+        const out: SgzzPolyInput[] = [];
         for (const cell of cells) {
-            const poly = sgzzDecorQuad(cell.row, cell.col, cell.id);
-            if (poly) out.push(poly);
+            if (textured) {
+                const quad = sgzzDecorSpriteQuad(cell.row, cell.col, cell.id);
+                // ⚠ 顶点色纯白：本体自带矿物色，⛔ 再乘占位那套灰绿顶色会整体发暗
+                if (quad) out.push({ points: quad.points, rgba: WHITE, uvs: sgzzDecorSpriteUvs(cell.id) });
+            } else {
+                const poly = sgzzDecorQuad(cell.row, cell.col, cell.id);
+                if (poly) out.push(poly);
+            }
         }
         return out;
     }
@@ -254,6 +292,9 @@ export class SgzzMapRenderer {
         this.clear();
         this.material.destroy();
         this.terrainMaterial?.destroy();
-        this.terrainMaterial = null; this.terrainTexture = null; this.art = null;
+        this.decorMaterial?.destroy();
+        this.terrainMaterial = null; this.terrainTexture = null;
+        this.decorMaterial = null; this.decorTexture = null;
+        this.art = null;
     }
 }

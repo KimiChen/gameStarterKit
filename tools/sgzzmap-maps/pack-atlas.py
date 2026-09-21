@@ -6,6 +6,7 @@
 输入：<交付目录>/lod{0,1,2}/<name>.png，各 9 张、每张 256×128 RGBA，
       name 取自地形调色板的英文名（plain/forest/.../offmap），id 即调色板下标。
 输出：out/<mapId>/atlas-lod{0,1,2}.{png,meta.json}
+      out/<mapId>/decor-atlas.{png,meta.json}（若 <交付目录>/../decor 存在）
 
 ⚠ 布局是**契约**，与 shared 的 SGZZ_ATLAS_* 常量一一对应，由
   apps/server/test/sgzzmap-content.test.ts 逐格钉住 —— 改这里必须同改那边，否则 UV 会整体错格。
@@ -35,6 +36,14 @@ LODS = (0, 1, 2)
 
 # id 即下标，与 terrain.meta.json 的 palette 同序
 NAMES = ["plain", "forest", "hill", "mountain", "water", "sea", "wetland", "desert", "offmap"]
+
+# ── 摆件图集 ──────────────────────────────────────────────────────────────────
+# ⚠ 画布 256×256、锚点 (128,224)（左上原点）、**3 像素 = 1 世界单位**。
+#   ⛔ 不要把整张带透明留白的画布缩成「主体参考框」的尺寸 —— 那会二次缩小并变形。
+DECOR_CELL = 256
+DECOR_COLS = 3
+DECOR_SHEET = 1024
+DECOR_NAMES = ["tree", "pine", "rock", "peak", "reed", "dune", "tuft"]
 
 
 def cell_origin(index: int) -> tuple[int, int]:
@@ -94,6 +103,35 @@ def pack(map_id: str, src_root: Path) -> None:
     _ = cfg
 
 
+def pack_decor(map_id: str, src: Path) -> None:
+    out = config.out_dir(map_id)
+    sheet = Image.new("RGBA", (DECOR_SHEET, DECOR_SHEET), (0, 0, 0, 0))
+    cells = []
+    for index, name in enumerate(DECOR_NAMES):
+        path = src / f"{name}.png"
+        if not path.exists():
+            raise SystemExit(f"缺摆件：{path}")
+        tile = Image.open(path).convert("RGBA")
+        if tile.size != (DECOR_CELL, DECOR_CELL):
+            raise SystemExit(f"{path} 尺寸 {tile.size}，应为 {(DECOR_CELL, DECOR_CELL)}")
+        row, col = divmod(index, DECOR_COLS)
+        x = GUTTER + col * (DECOR_CELL + GUTTER * 2)
+        y = GUTTER + row * (DECOR_CELL + GUTTER * 2)
+        # ⚠ 摆件画布四周本就是透明的，出血带复制的也是透明像素 —— 正确且无害
+        sheet.paste(tile, (x, y))
+        cells.append({"id": index, "name": name, "cell": [x, y, DECOR_CELL, DECOR_CELL]})
+    if cells[-1]["cell"][1] + DECOR_CELL + GUTTER > DECOR_SHEET:
+        raise SystemExit("摆件图集放不下，调 DECOR_SHEET")
+    sheet.save(out / "decor-atlas.png")
+    (out / "decor-atlas.meta.json").write_text(json.dumps({
+        "schemaVersion": 1, "mapId": map_id,
+        "cell": [DECOR_CELL, DECOR_CELL], "gutter": GUTTER, "gridCols": DECOR_COLS,
+        "size": [DECOR_SHEET, DECOR_SHEET], "anchor": [128, 224], "pixelsPerWorldUnit": 3,
+        "cells": cells,
+    }, ensure_ascii=False, indent=1) + "\n")
+    print(f"decor-atlas.png  {DECOR_SHEET}×{DECOR_SHEET}  {len(cells)} 格（锚点 128,224；3px = 1 世界单位）")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("map_id")
@@ -105,6 +143,11 @@ def main() -> None:
     if not src.exists():
         raise SystemExit(f"交付目录不存在：{src}")
     pack(args.map_id, src)
+    decor = src.parent / "decor"
+    if decor.exists():
+        pack_decor(args.map_id, decor)
+    else:
+        print(f"⚠ 没有 {decor}，跳过摆件图集")
 
 
 if __name__ == "__main__":

@@ -10,7 +10,9 @@ import {
 import { SGZZ_MAX_BORDER_EDGES, SgzzBorderSet } from "../src/kits/sgzzmap/logic/sgzzBorder";
 import {
     SGZZ_DECOR_JITTER, SGZZ_DECOR_KINDS, SGZZ_DECOR_MARGIN_TILES, SGZZ_DECOR_MAX_HEIGHT,
-    SGZZ_DECOR_NONE, sgzzDecorAt, sgzzDecorQuad,
+    SGZZ_DECOR_ANCHOR_Y_PX, SGZZ_DECOR_CANVAS_PX, SGZZ_DECOR_NONE, SGZZ_DECOR_PX_PER_UNIT,
+    sgzzDecorAt, sgzzDecorAtlasUv, sgzzDecorBaseY, sgzzDecorQuad, sgzzDecorScale,
+    sgzzDecorSpriteQuad, sgzzDecorSpriteUvs,
 } from "../src/kits/sgzzmap/logic/sgzzDecor";
 import { SgzzmapWorldLogic } from "../src/kits/sgzzmap/logic/SgzzmapWorldLogic";
 import {
@@ -403,7 +405,7 @@ test("★ 视口预取余量要盖得住摆件高度，⛔ 否则下边缘的树
 test("★ 过渡：一条交界只画一次 —— 只有低优先级那一格画，⛔ 两边都画会互相糊", () => {
     const ROWS = 1500, COLS = 1500;
     // 造一条交界：左半森林(1)、右半平原(0)
-    const terrain = (row: number, col: number) => (col < 700 ? 1 : 0);
+    const terrain = (_row: number, col: number) => (col < 700 ? 1 : 0);
     let mine = 0, theirs = 0;
     for (let row = 690; row < 710; row += 1) {
         for (let dir = 1; dir <= 6; dir += 1) {
@@ -421,8 +423,8 @@ test("★ 过渡：一条交界只画一次 —— 只有低优先级那一格�
     // 同地形不铺；出界不铺；图外不参与
     assert.equal(sgzzBlendSource(() => 0, 700, 700, 1, ROWS, COLS), -1, "同地形⛔不铺");
     assert.equal(sgzzBlendSource(() => 1, 0, 0, 2, ROWS, COLS), -1, "出界⛔不铺");
-    assert.equal(sgzzBlendSource((r, c) => (c < 700 ? 8 : 0), 700, 700, 1, ROWS, COLS), -1, "图外⛔不参与");
-    assert.equal(sgzzBlendSource((r, c) => (c < 700 ? 0 : 8), 700, 699, 4, ROWS, COLS), -1, "图外⛔不参与");
+    assert.equal(sgzzBlendSource((_r, c) => (c < 700 ? 8 : 0), 700, 700, 1, ROWS, COLS), -1, "图外⛔不参与");
+    assert.equal(sgzzBlendSource((_r, c) => (c < 700 ? 0 : 8), 700, 699, 4, ROWS, COLS), -1, "图外⛔不参与");
     // 优先级里除图外之外必须两两不同，⛔ 平局会让「谁铺谁」不确定
     const active = SGZZ_BLEND_PRIORITY.filter((p) => p >= 0);
     assert.equal(new Set(active).size, active.length, "优先级⛔不得有平局");
@@ -458,4 +460,41 @@ test("★ 过渡片：贴边不透明、往格内化开，UV 不出本格", () =
     // 同一格不同方向要有差别，否则六条边一样宽，看着像套了个框
     const widths = new Set([1, 2, 3, 4, 5, 6].map((d) => Math.round(sgzzBlendDepth(700, 713, d) * 1000)));
     assert.ok(widths.size >= 3, "同格六向的过渡宽度太一致");
+});
+
+test("★ 摆件贴图：整张画布矩形 + 3px/世界单位的锚点换算，⛔ 不是压窄的梯形", () => {
+    const c = sgzzGrid2Pos(700, 713);
+    const baseY = sgzzDecorBaseY(700, 713);
+    const scale = sgzzDecorScale(700, 713);
+    for (const kind of SGZZ_DECOR_KINDS) {
+        const q = sgzzDecorSpriteQuad(700, 713, kind.id);
+        assert.ok(q, `${kind.name} 该出矩形`);
+        const [lt, rt, rb, lb] = q!.points as readonly [number, number][];
+        // ① 是矩形：上下两边等宽、左右两边等高
+        assert.ok(Math.abs((rt[0] - lt[0]) - (rb[0] - lb[0])) < 1e-9, "上下边应等宽");
+        assert.ok(Math.abs(lt[1] - rt[1]) < 1e-9 && Math.abs(lb[1] - rb[1]) < 1e-9, "两端应等高");
+        // ② 尺寸由**画布**决定：宽 = 256/3×scale，高 = 256/3×scale ⇒ 与参考框无关
+        const canvas = SGZZ_DECOR_CANVAS_PX / SGZZ_DECOR_PX_PER_UNIT * scale;
+        assert.ok(Math.abs((rt[0] - lt[0]) - canvas) < 1e-6, `${kind.name} 宽应是画布宽`);
+        assert.ok(Math.abs((lt[1] - lb[1]) - canvas) < 1e-6, `${kind.name} 高应是画布高`);
+        // ③ 锚点：画布底在 baseY − 32/3×scale（224 以下那 32px）
+        const below = (SGZZ_DECOR_CANVAS_PX - SGZZ_DECOR_ANCHOR_Y_PX) / SGZZ_DECOR_PX_PER_UNIT * scale;
+        assert.ok(Math.abs(lb[1] - (baseY - below)) < 1e-6, `${kind.name} 底边锚点不对`);
+        // ④ 横向以格心居中
+        assert.ok(Math.abs((lt[0] + rt[0]) / 2 - c.x) < 1e-6, "应以格心居中");
+        // ⑤ ⛔ 不是梯形：占位那套 topRatio 在这里必须无效
+        assert.notEqual(rt[0] - lt[0], 0);
+    }
+    assert.equal(sgzzDecorSpriteQuad(700, 713, 99), null, "未知摆件号回 null");
+
+    // UV 四角与点序一一对应，且落在各自的图集格内
+    for (const kind of SGZZ_DECOR_KINDS) {
+        const [u0, v0, uw, vh] = sgzzDecorAtlasUv(kind.id);
+        assert.deepEqual(sgzzDecorSpriteUvs(kind.id).map((p) => [...p]),
+            [[u0, v0], [u0 + uw, v0], [u0 + uw, v0 + vh], [u0, v0 + vh]]);
+        assert.ok(u0 >= 0 && v0 >= 0 && u0 + uw <= 1 && v0 + vh <= 1, `${kind.name} UV 出界`);
+    }
+    // 七个格互不重叠
+    const seen = new Set(SGZZ_DECOR_KINDS.map((k) => sgzzDecorAtlasUv(k.id).join(",")));
+    assert.equal(seen.size, SGZZ_DECOR_KINDS.length, "图集格⛔不得重合");
 });
