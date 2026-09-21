@@ -1,9 +1,9 @@
 /**
  * S4-03 run 终局结算：**同步**算完全部奖励、一次替换进程内 profile、缓存结果，
- * 再用**一条** best-effort `HSET` 镜像所有变化字段。
+ * 再用 best-effort 字段 CAS 将本次奖励增量合并到 Redis 最新档。
  *
- * ⚠ 这里是 S3-02 里那条「⛔ 不合并 coinBalance」的延后点兑现处：终局是唯一同时持有
- * 钱包与 cosmetic/progression 最新值的时刻，所以合并成一条写是安全的；⛔ 不要退回各写各的。
+ * ⚠ lobby 可能已换装 / 合成，⛔ 不镜像整份 game 旧档。装备字段不写；拥有集取并集，
+ * XP / 碎片 / 金币按本次增量合并，成就按本次进度累加。Lua 只做原子 CAS，业务公式仍来自 shared。
  *
  * 去重键 `uid + roomEpochId + runId`（S4 文档）。重复终局直接返回缓存结果，
  * ⛔ 不重复发奖、不重复写 Redis。⚠ 只在进程内存——进程重启后去重与最近结果都会重置，这是登记在案的
@@ -22,16 +22,16 @@ import {
     levelUnlocksBetween,
     type SnakeRunStats,
 } from "@game/shared/gameplays/snake/progression";
-import { clientFor } from "../../../core/infra/redisRoute";
 import {
     SNAKE_ACHIEVEMENT_KEYS,
     applyRunGrantToProfile,
     fullSnapshotOf,
+    decodeStoredSnakeProfile,
     isProfileHydrated,
     type SnakeDemoFullProfile,
 } from "./cosmeticProfile";
-import { kSnakeUser } from "./keys";
-import { demoCoinBalanceOf, grantDemoCoins, isDemoCoinBalanceHydrated } from "./lifecycle";
+import { mergeStoredSnakeFields, enqueueSnakeProfileWrite } from "./profilePersistence";
+import { SNAKE_DEMO_INITIAL_COINS, demoCoinBalanceOf, grantDemoCoins, isDemoCoinBalanceHydrated } from "./lifecycle";
 
 /** 冷档兜底的默认告警：点名 uid，⛔ 不静默——静默正是 F13 一路没被发现的原因。 */
 const reportColdProfile = (uid: string): void => {
@@ -68,25 +68,43 @@ export type SnakeRewardPersistence = (record: SnakeRewardPersistenceRecord) => P
 
 export interface SnakeRewardPersistenceRecord {
     readonly uid: string;
-    readonly coinBalance: number;
-    readonly equippedSkinId: number;
-    readonly ownedSkinIds: readonly number[];
-    readonly fragmentBalances: Readonly<Record<string, number>>;
-    readonly snakeXp: number;
-    readonly achievementProgress: Readonly<Record<string, number>>;
+    readonly coinAmount: number;
+    readonly xpAmount: number;
+    readonly newlyUnlockedSkinIds: readonly number[];
+    readonly fragmentSkinId: number | null;
+    readonly fragmentAmount: number;
+    readonly achievementGains: Readonly<Record<string, number>>;
 }
 
-/** 一条 `HSET` 写六项白名单字段（S5 验收口径）。⛔ 不写 run、结果、处理标记、请求 ID 或 `sId`。 */
-const persistRewards: SnakeRewardPersistence = async (record): Promise<void> => {
-    await clientFor(record.uid).hset(
-        kSnakeUser(record.uid),
-        "coinBalance", String(record.coinBalance),
-        "equippedSkinId", String(record.equippedSkinId),
-        "ownedSkinIds", JSON.stringify([...record.ownedSkinIds].sort((a, b) => a - b)),
-        "fragmentBalances", JSON.stringify(record.fragmentBalances),
-        "snakeXp", String(record.snakeXp),
-        "achievementProgress", JSON.stringify(record.achievementProgress),
-    );
+/** 本次奖励的增量原子合并到最新热档，⛔ 不写 lobby 独占的 equippedSkinId。 */
+export const persistSnakeRunReward: SnakeRewardPersistence = async (record): Promise<void> => {
+    await mergeStoredSnakeFields(record.uid,
+        ["ownedSkinIds", "fragmentBalances", "snakeXp", "achievementProgress", "coinBalance"], (raw) => {
+            const profile = decodeStoredSnakeProfile([null, ...raw.slice(0, 4)]);
+            const oldLevel = derivedLevel(profile.xp);
+            profile.xp += record.xpAmount;
+            const storedCoins = raw[4] === null ? NaN : Number(raw[4]);
+            const coinBalance = (Number.isSafeInteger(storedCoins) && storedCoins >= 0
+                ? storedCoins : SNAKE_DEMO_INITIAL_COINS) + record.coinAmount;
+            const owned = new Set([...profile.ownedSkinIds, ...record.newlyUnlockedSkinIds,
+                ...levelUnlocksBetween(oldLevel, derivedLevel(profile.xp))]);
+            for (const achievement of SNAKE_ACHIEVEMENTS) {
+                const key = String(achievement.skinId);
+                const next = accumulateAchievement(profile.achievementProgress[key] ?? 0,
+                    record.achievementGains[key] ?? 0, achievement.threshold);
+                profile.achievementProgress[key] = next;
+                if (next >= achievement.threshold) owned.add(achievement.skinId);
+            }
+            if (record.fragmentSkinId !== null && record.fragmentAmount > 0) {
+                const key = String(record.fragmentSkinId);
+                profile.fragmentBalances[key] = (profile.fragmentBalances[key] ?? 0) + record.fragmentAmount;
+            }
+            if (![coinBalance, profile.xp, ...Object.values(profile.fragmentBalances)].every(Number.isSafeInteger)) {
+                throw new Error("Snake stored reward exceeds safe integer range");
+            }
+            return [JSON.stringify([...owned].sort((a, b) => a - b)), JSON.stringify(profile.fragmentBalances),
+                String(profile.xp), JSON.stringify(profile.achievementProgress), String(coinBalance)];
+        });
 };
 
 /**
@@ -142,11 +160,13 @@ export function applyRunRewards(
 
     // 成就进度只在合格 run 累计；达到门槛即解锁对应皮肤。
     const achievementProgressAfter: Record<string, number> = {};
+    const achievementGains: Record<string, number> = {};
     const achievementUnlocks: number[] = [];
     for (const achievement of SNAKE_ACHIEVEMENTS) {
         const mapKey = String(achievement.skinId);
         const previous = before.achievementProgress[mapKey] ?? 0;
         const gained = qualified ? achievementMetricOf(input.stats, achievement.metric) : 0;
+        achievementGains[mapKey] = gained;
         const next = accumulateAchievement(previous, gained, achievement.threshold);
         achievementProgressAfter[mapKey] = next;
         if (next >= achievement.threshold && !before.ownedSkinIds.includes(achievement.skinId)) {
@@ -187,27 +207,24 @@ export function applyRunRewards(
     processedRuns.set(key, result);
     latestResultByUid.set(input.uid, result);
 
-    const persistence = options.persistence ?? persistRewards;
+    const persistence = options.persistence ?? persistSnakeRunReward;
     const reportError = options.reportError
         ?? ((error: unknown) => console.warn("[snake] demo reward Redis mirror failed; result is kept", error));
-    // ⚠ F13 兜底闸：那条六字段 HSET 是**全量覆盖**，一旦 profile / 钱包没被 Redis 回灌过，
-    // 写回去的就是默认档——玩家的皮肤、碎片、余额会被本局结算抹平。⛔ 宁可这一局的奖励
-    // 落不了盘，也不能拿默认档盖掉真实档。正常路径由 mode 的 onBeforeAdmission 在入房前
-    // await 回灌保证走不到这里；走到了就是 Redis 当时不可用。
+    // F13 冷档闸保持：本局奖励裁决须有入房回灌依据；Redis 当时不可用则仍不写镜像。
     const trustworthy = isProfileHydrated(input.uid) && isDemoCoinBalanceHydrated(input.uid);
     if (!trustworthy) {
         (options.reportColdProfile ?? reportColdProfile)(input.uid);
         return result;
     }
-    void persistence({
+    enqueueSnakeProfileWrite(input.uid, () => persistence({
         uid: input.uid,
-        coinBalance: coinBalanceAfter,
-        equippedSkinId: after.equippedSkinId,
-        ownedSkinIds: after.ownedSkinIds,
-        fragmentBalances: after.fragmentBalances,
-        snakeXp: after.xp,
-        achievementProgress: after.achievementProgress,
-    }).catch(reportError);
+        coinAmount,
+        xpAmount,
+        newlyUnlockedSkinIds,
+        fragmentSkinId: fragment.skinId,
+        fragmentAmount: fragment.amount,
+        achievementGains,
+    }), reportError);
 
     return result;
 }

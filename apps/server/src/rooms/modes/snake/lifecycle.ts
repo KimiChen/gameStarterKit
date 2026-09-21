@@ -5,6 +5,7 @@ import { clientFor } from "../../../core/infra/redisRoute";
 import { equippedSkinIdOf } from "./cosmeticProfile";
 import { snakeCosmeticStore } from "./cosmeticRpc";
 import { kSnakeUser } from "./keys";
+import { mergeStoredSnakeFields, enqueueSnakeProfileWrite } from "./profilePersistence";
 
 export const ONLINE_COIN_RELIVE_PLAYER_RELEASED = false;
 
@@ -26,7 +27,7 @@ export interface SnakeRunSkinResolver {
 }
 
 /**
- * 自 S3-03 起读进程内已预热的衣柜 profile（由普通 Lobby RPC `snakeCosmetic.getSnapshot` 预热）。
+ * 读本次入房前从 Redis 水合的衣柜快照（`onBeforeAdmission` await 预热）；不依赖 lobby 进程内存。
  * 未预热、uid 缺失或装备值失效时回退默认皮肤 1，⛔ 绝不因衣柜数据异常阻塞进房。
  */
 export const DEFAULT_SNAKE_RUN_SKIN_RESOLVER: SnakeRunSkinResolver = Object.freeze({
@@ -109,7 +110,8 @@ export const SNAKE_DEMO_INITIAL_COINS = 10_000;
 
 export interface DemoRelivePersistenceRecord {
     readonly uid: string;
-    readonly coinBalance: number;
+    readonly coinCost: number;
+    readonly initialBalance: number;
 }
 
 export type DemoRelivePersistence = (record: DemoRelivePersistenceRecord) => Promise<void>;
@@ -120,8 +122,8 @@ const demoBalances = new Map<string, number>();
 const demoResults = new Map<string, ReliveEconomyResult>();
 /**
  * 已从 Redis 回灌过余额的 uid（失败不记，下次重试）。⚠ 与衣柜 profile 同一道理：
- * 没回灌过的钱包是「默认 10000」，而结算的六字段 HSET 会把它写回 Redis——回访玩家的余额
- * 会被重置成初始值（F13 的同族写回，只是种子档余额恰好也是 10000 才没在复现里显形）。
+ * 没回灌过的钱包是「默认 10000」，不能据此作真实余额裁决。F13 的旧整档写回曾将回访余额
+ * 重置成初始值；如今镜像改增量 CAS，仍保留入房回灌与冷档写回闸。
  */
 const coinHydrated = new Set<string>();
 const coinHydrations = new Map<string, Promise<void>>();
@@ -176,20 +178,25 @@ export async function hydrateDemoCoinBalance(
     await inFlight;
 }
 
-const persistDemoRelive: DemoRelivePersistence = async (record): Promise<void> => {
-    await clientFor(record.uid).hset(kSnakeUser(record.uid), "coinBalance", String(record.coinBalance));
+export const persistSnakeReliveDebit: DemoRelivePersistence = async (record): Promise<void> => {
+    await mergeStoredSnakeFields(record.uid, ["coinBalance"], (raw) => {
+        const stored = raw[0] === null ? NaN : Number(raw[0]);
+        const balance = Number.isSafeInteger(stored) && stored >= 0 ? stored : record.initialBalance;
+        if (balance < record.coinCost) throw new Error("Snake stored coins no longer cover relive");
+        return [String(balance - record.coinCost)];
+    });
 };
 
 /**
  * Demo-only synchronous wallet. Gameplay commits immediately in memory and mirrors only
- * the resulting balance to durable Redis without waiting on the room hot path.
+ * the debit to durable Redis with a field CAS, without waiting on the room hot path.
  */
 export class RedisDemoReliveEconomy implements ReliveEconomyPort {
     readonly kind = "demo-redis" as const;
 
     constructor(
         private readonly initialBalance = SNAKE_DEMO_INITIAL_COINS,
-        private readonly persistence: DemoRelivePersistence = persistDemoRelive,
+        private readonly persistence: DemoRelivePersistence = persistSnakeReliveDebit,
         private readonly reportError: (error: unknown) => void = (error) => {
             console.warn("[snake] demo relive Redis mirror failed; gameplay result is kept", error);
         },
@@ -220,17 +227,18 @@ export class RedisDemoReliveEconomy implements ReliveEconomyPort {
         demoResults.set(operationKey, result);
         const record: DemoRelivePersistenceRecord = {
             uid: input.uid,
-            coinBalance: balanceAfter,
+            coinCost: input.coinCost,
+            initialBalance: this.initialBalance,
         };
-        void this.persistence(record).catch(this.reportError);
+        enqueueSnakeProfileWrite(input.uid, () => this.persistence(record), this.reportError);
         return result;
     }
 }
 
 /**
  * S4 结算加币：直接落到 S2R 共用的进程内余额，返回新余额。
- * ⚠ ⛔ 本函数不写 Redis——S4 终局用**一条** HSET 连同 cosmetic/progression 字段一起镜像，
- * 在这里各写各的会造出「两条 fire-and-forget 各持过期快照互相覆盖」的窗口。
+ * ⚠ 本函数只更新同步玩法余额；S4 终局另将本次奖励增量与养成变化一同 CAS 合并，
+ * 不能在这里额外写一次，否则会重复加币。
  */
 export function grantDemoCoins(uid: string, amount: number, initialBalance = SNAKE_DEMO_INITIAL_COINS): number {
     const gain = Number.isSafeInteger(amount) && amount > 0 ? amount : 0;
@@ -253,9 +261,9 @@ export function __resetDemoCoinsForTest(): void {
 }
 
 /**
- * 入房前预热：把该 uid 的衣柜档与 demo 钱包从 Redis 回灌进进程内。
+ * 入房前预热：每次 join 都刷新该 uid 的衣柜 / 养成档；demo 钱包沿用首次成功回灌。
  *
- * ⚠ 它是 `createPlayer`（同步读装备皮肤）与结算（同步读档算奖励、再全量写回）唯一的正确性前提，
+ * ⚠ 它是 `createPlayer`（同步读装备皮肤）与结算（同步读档算奖励、再按增量镜像）唯一的正确性前提，
  * 由 mode 的 `onBeforeAdmission` **await**。⛔ 不能 fire-and-forget：两处读都在同步路径上，
  * 不等它就等于读默认档（F13）。两份档在同一个 Redis hash 里，但分属两个模块各自的读闸，
  * 这里并行打一次。任一失败都不抛——各自不标记「已回灌」，结算侧的兜底闸据此跳过写回。

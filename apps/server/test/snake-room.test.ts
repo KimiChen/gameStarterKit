@@ -28,6 +28,7 @@ import {
     SnakeDemoCosmeticStore,
     __grantSnakeFragmentsForTest,
     __resetSnakeCosmeticProfilesForTest,
+    fullSnapshotOf,
 } from "../src/rooms/modes/snake/cosmeticProfile";
 import { SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "../src/rooms/modes/snake/skinBusinessCatalog";
 import { __resetRunRewardsForTest, processedRunCount } from "../src/rooms/modes/snake/runRewards";
@@ -644,6 +645,46 @@ test("F13：onBeforeAdmission 在入房前 await 档案预热，createPlayer 因
     assert.deepEqual(preheated, ["u-p1"], "入房前必须为该 uid 预热过一次");
     assert.equal(harness.view().players.get("p1")?.skinId, 401,
         "⛔ 不许再是默认皮肤 1：预热已被 await，createPlayer 读得到存档");
+    __resetSnakeCosmeticProfilesForTest();
+});
+
+test("PS5：同一 game 进程再次真实 join 必须刷新 lobby 换装，当前 run 外观仍锁存", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    let saved = ["401", "[1,2,401]", '{"133":0,"401":7,"403":0,"411":0}', "150", null];
+    let reads = 0;
+    const store = new SnakeDemoCosmeticStore({
+        hydration: async () => { reads += 1; return saved; },
+        persistence: async (record) => {
+            assert.equal(record.kind, "equip");
+            saved = [String(record.skinId), ...saved.slice(1)];
+        },
+    });
+    const harness = await buildSnakeRoom(new DeterministicTestReliveEconomy(), {
+        profilePreheat: async (uid) => { await store.hydrate(uid); },
+    });
+    const first = await seat(harness, "ps5");
+    assert.equal(harness.view().players.get("ps5")?.skinId, 401);
+    assert.equal(fullSnapshotOf("u-ps5").xp, 150);
+
+    await harness.room.onLeave(first as never, 4000);
+    // 退出后在 lobby 换装：另一进程只改持久档，game 的旧快照尚未更新。
+    saved = ["2", "[1,2,401]", '{"133":0,"401":9,"403":0,"411":0}', "260", null];
+    assert.equal(fullSnapshotOf("u-ps5").equippedSkinId, 401);
+    const second = await seat(harness, "ps5");
+    assert.equal(harness.view().players.get("ps5")?.skinId, 2, "真实 onJoin 不得复用上局回灌成功的旧快照");
+    assert.equal(fullSnapshotOf("u-ps5").xp, 260);
+    assert.equal(fullSnapshotOf("u-ps5").fragmentBalances["401"], 9);
+    assert.equal(reads, 2);
+
+    // 合体模式仍可装备后再入房；镜像的三个字段不能抹掉养成热档。
+    assert.equal(store.equip("u-ps5", 1).kind, "ok");
+    assert.equal(harness.view().players.get("ps5")?.skinId, 2);
+    await harness.room.onLeave(second as never, 4000);
+    await seat(harness, "ps5");
+    assert.equal(harness.view().players.get("ps5")?.skinId, 1);
+    assert.equal(fullSnapshotOf("u-ps5").xp, 260);
+    assert.equal(fullSnapshotOf("u-ps5").fragmentBalances["401"], 9);
+    assert.equal(reads, 3);
     __resetSnakeCosmeticProfilesForTest();
 });
 

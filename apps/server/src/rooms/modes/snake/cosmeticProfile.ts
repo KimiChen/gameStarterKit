@@ -1,18 +1,20 @@
 /**
- * S3 Demo 衣柜 profile：**进程内唯一真相 + Redis best-effort 镜像**。
+ * S3 Demo 衣柜 profile：**同步操作用进程内快照 + Redis best-effort 镜像**。
  *
  * 形态沿用 S2R 的 `demoBalances`（`lifecycle.ts`）：模块级 Map、同步改内存、再 fire-and-forget
- * 写 Redis，写失败只告警不回滚。两点与 S2R 不同，都是 apps/plugins/snake/README.md §5.6 的显式判据：
+ * 写 Redis，写失败只告警不回滚。每次入房 / 衣柜请求重新从 Redis 水合，避免 lobby 与 game
+ * 拆进程后长期复用旧档。两点与 S2R 不同，都是 apps/plugins/snake/README.md §5.6 的显式判据：
  *  1. **读函数返回深拷贝**——⛔ 绝不把模块内可变对象交给 handler 或客户端（s3「对外返回排序后的副本」）。
  *  2. **回灌用白名单 `HMGET`**——⛔ 全仓禁 `HGETALL`（09·R1，见 `core/userRecord.ts` 抬头与 docs/SERVER.md）。
  *
- * ⚠ 本模块只读写三个 cosmetic field（`equippedSkinId` / `ownedSkinIds` / `fragmentBalances`）。
- * `coinBalance` 归 S2R 的钱包路径独占；⛔ 不要在这里合并写——两条 fire-and-forget 路径各持一份
- * 可能过期的快照，合并写会让后到者用旧值覆盖新值。S4 统一终局写入时再处理。
+ * ⚠ 本模块水合 cosmetic / progression，但衣柜写只拥有装备与合成涉及的字段。
+ * 换装只写 equippedSkinId；合成 CAS ownedSkinIds / fragmentBalances，不携带 XP / 金币旧快照。
+ * 结算与复活也必须按操作增量合并，见 runRewards.ts / lifecycle.ts。
  */
 
 import { clientFor } from "../../../core/infra/redisRoute";
 import { kSnakeUser } from "./keys";
+import { drainSnakeProfileWrites, mergeStoredSnakeFields, enqueueSnakeProfileWrite } from "./profilePersistence";
 import { SNAKE_ACHIEVEMENTS } from "@game/shared/gameplays/snake/progression";
 import { SNAKE_FRAGMENT_SKIN_IDS, SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "./skinBusinessCatalog";
 import { DEFAULT_SNAKE_SKIN, isPlayerUsableSnakeSkin } from "@game/shared";
@@ -66,9 +68,8 @@ export interface SnakeDemoFullProfile extends SnakeDemoCosmeticProfile {
 
 const profiles = new Map<string, MutableProfile>();
 /**
- * 回灌成功的 uid。⚠ 语义是「这份进程内 profile 可信」，⛔ 不是「试过了」——
- * 失败**不**记入，否则一次 Redis 抖动就让该 uid 在整个进程生命周期里永远停在默认档
- * （而结算的六字段 HSET 会把这份默认档盖回 Redis，正是 F13）。
+ * 最近一次回灌成功的 uid，只是结算写回的可信闸，⛔ 不用于跳过 Redis 读取。
+ * 首次失败不记入，后续读取失败清除标记，避免按默认档或陈旧档裁决后继续写回（F13 / PS5）。
  */
 const hydrated = new Set<string>();
 /**
@@ -79,7 +80,7 @@ const hydrated = new Set<string>();
 const hydrations = new Map<string, Promise<void>>();
 
 /**
- * 该 uid 的进程内 profile 是否已被 Redis 回灌过（= 可以安全地写回 Redis）。
+ * 该 uid 最近一次 Redis 回灌是否成功（= 可以安全地写回 Redis）。
  * ⚠ 结算的写回路径必须问过它：未回灌的 profile 是默认档，写回去就是抹掉玩家的皮肤与碎片。
  */
 export function isProfileHydrated(uid: string): boolean {
@@ -232,24 +233,64 @@ const parseXp = (raw: string): number | null => {
     return Number.isSafeInteger(value) && value >= 0 ? value : null;
 };
 
-export interface SnakeCosmeticPersistenceRecord {
-    readonly uid: string;
-    readonly equippedSkinId: number;
-    readonly ownedSkinIds: readonly number[];
-    readonly fragmentBalances: SnakeFragmentBalances;
+/** 存储解码只保留白名单字段；缺失 / 损坏值与准入水合使用同一默认规则。 */
+export function decodeStoredSnakeProfile(
+    raw: readonly (string | null)[], reportCorrupt: (field: string) => void = () => {},
+): MutableProfile {
+    const profile = defaultProfile();
+    const [equippedRaw, ownedRaw, fragmentsRaw, xpRaw, achievementsRaw] = raw;
+    if (ownedRaw !== null && ownedRaw !== undefined) {
+        const owned = parseOwnedSkinIds(ownedRaw);
+        if (owned === null) reportCorrupt("ownedSkinIds");
+        else profile.ownedSkinIds = owned;
+    }
+    if (fragmentsRaw !== null && fragmentsRaw !== undefined) {
+        const fragments = parseFragmentBalances(fragmentsRaw);
+        if (fragments === null) reportCorrupt("fragmentBalances");
+        else profile.fragmentBalances = fragments;
+    }
+    if (equippedRaw !== null && equippedRaw !== undefined) {
+        const equipped = parseEquippedSkinId(equippedRaw, profile.ownedSkinIds);
+        if (equipped === null) reportCorrupt("equippedSkinId");
+        else profile.equippedSkinId = equipped;
+    }
+    // S4 字段：缺失采用默认 0，损坏则告警并保留默认 progression。
+    if (xpRaw !== null && xpRaw !== undefined) {
+        const xp = parseXp(xpRaw);
+        if (xp === null) reportCorrupt("snakeXp");
+        else profile.xp = xp;
+    }
+    if (achievementsRaw !== null && achievementsRaw !== undefined) {
+        const progress = parseAchievementProgress(achievementsRaw);
+        if (progress === null) reportCorrupt("achievementProgress");
+        else profile.achievementProgress = progress;
+    }
+    return profile;
 }
+
+export type SnakeCosmeticPersistenceRecord =
+    | { readonly uid: string; readonly kind: "equip"; readonly skinId: number }
+    | { readonly uid: string; readonly kind: "unlock"; readonly skinId: number; readonly fragmentCost: number };
 
 export type SnakeCosmeticPersistence = (record: SnakeCosmeticPersistenceRecord) => Promise<void>;
 export type SnakeCosmeticHydration = (uid: string) => Promise<readonly (string | null)[]>;
 
-/** 单条 `HSET` 写三个 field，⛔ 不带 `coinBalance`（见文件抬头）。 */
-const persistToRedis: SnakeCosmeticPersistence = async (record): Promise<void> => {
-    await clientFor(record.uid).hset(
-        kSnakeUser(record.uid),
-        "equippedSkinId", String(record.equippedSkinId),
-        "ownedSkinIds", JSON.stringify([...record.ownedSkinIds].sort((a, b) => a - b)),
-        "fragmentBalances", JSON.stringify(record.fragmentBalances),
-    );
+/** 装备只写装备字段；合成原子扣碎片并合并拥有集，不覆盖 game 新奖励。 */
+export const persistSnakeCosmeticOperation: SnakeCosmeticPersistence = async (record): Promise<void> => {
+    if (record.kind === "equip") {
+        await clientFor(record.uid).hset(kSnakeUser(record.uid), "equippedSkinId", String(record.skinId));
+        return;
+    }
+    await mergeStoredSnakeFields(record.uid, ["ownedSkinIds", "fragmentBalances"], (raw) => {
+        const profile = decodeStoredSnakeProfile([null, ...raw]);
+        if (profile.ownedSkinIds.includes(record.skinId)) return null;
+        const fragmentKey = String(record.skinId);
+        const balance = profile.fragmentBalances[fragmentKey] ?? 0;
+        if (balance < record.fragmentCost) throw new Error("Snake stored fragments no longer cover unlock");
+        profile.fragmentBalances[fragmentKey] = balance - record.fragmentCost;
+        profile.ownedSkinIds.push(record.skinId);
+        return [JSON.stringify(profile.ownedSkinIds.sort((a, b) => a - b)), JSON.stringify(profile.fragmentBalances)];
+    });
 };
 
 /** 白名单 `HMGET`，⛔ 不用 `HGETALL`。 */
@@ -273,7 +314,7 @@ export class SnakeDemoCosmeticStore {
     private readonly reportCorrupt: (uid: string, field: string) => void;
 
     constructor(options: SnakeCosmeticStoreOptions = {}) {
-        this.persistence = options.persistence ?? persistToRedis;
+        this.persistence = options.persistence ?? persistSnakeCosmeticOperation;
         this.hydration = options.hydration ?? hydrateFromRedis;
         this.reportError = options.reportError
             ?? ((error) => console.warn("[snake] demo cosmetic Redis mirror failed; in-process result is kept", error));
@@ -287,12 +328,11 @@ export class SnakeDemoCosmeticStore {
     }
 
     /**
-     * Redis 回灌：每个 uid 成功一次；并发调用共用同一次在途请求并都等它返回。
-     * Redis 不可用或数据非法都不抛错——保留默认 profile 并告警，但**不**标记为已回灌
-     * （下次还会重试，且在那之前 `isProfileHydrated` 为 false，结算不会把默认档写回去）。
+     * 每次都从 Redis 重新水合；仅同一 uid 的并发调用共用在途请求，并都等它返回。
+     * Redis 不可用时保留当前快照并告警，但清除写回可信标记；下一次仍重试。
+     * 成功读取后，缺失 / 非法字段回退默认值，不得从上一次快照带回已被删除的字段。
      */
     async hydrate(uid: string): Promise<SnakeDemoCosmeticProfile> {
-        if (hydrated.has(uid)) return this.getSnapshot(uid);
         let inFlight = hydrations.get(uid);
         if (!inFlight) {
             inFlight = this.runHydration(uid).finally(() => {
@@ -306,42 +346,25 @@ export class SnakeDemoCosmeticStore {
 
     private async runHydration(uid: string): Promise<void> {
         let raw: readonly (string | null)[];
-        try {
-            raw = await this.hydration(uid);
-        } catch (error) {
-            this.reportError(error);
-            return;
+        for (;;) {
+            await drainSnakeProfileWrites(uid);
+            const versionBeforeRead = ensure(uid).version;
+            try {
+                raw = await this.hydration(uid);
+            } catch (error) {
+                hydrated.delete(uid);
+                this.reportError(error);
+                return;
+            }
+            // 合体模式下，异步 HMGET 期间仍可能同步结算 / 换装。下一轮先等这些镜像完成，
+            // 重新读取才能避免旧响应覆盖本进程刚产生的奖励；只比较进程内版本，不当作 Redis CAS。
+            if (ensure(uid).version === versionBeforeRead) break;
         }
-        const profile = ensure(uid);
-        const [equippedRaw, ownedRaw, fragmentsRaw, xpRaw, achievementsRaw] = raw;
-        if (ownedRaw !== null && ownedRaw !== undefined) {
-            const owned = parseOwnedSkinIds(ownedRaw);
-            if (owned === null) this.reportCorrupt(uid, "ownedSkinIds");
-            else profile.ownedSkinIds = owned;
-        }
-        if (fragmentsRaw !== null && fragmentsRaw !== undefined) {
-            const fragments = parseFragmentBalances(fragmentsRaw);
-            if (fragments === null) this.reportCorrupt(uid, "fragmentBalances");
-            else profile.fragmentBalances = fragments;
-        }
-        if (equippedRaw !== null && equippedRaw !== undefined) {
-            const equipped = parseEquippedSkinId(equippedRaw, profile.ownedSkinIds);
-            if (equipped === null) this.reportCorrupt(uid, "equippedSkinId");
-            else profile.equippedSkinId = equipped;
-        }
-        // S4 字段：缺失采用默认 0，损坏则告警并保留默认 progression。
-        if (xpRaw !== null && xpRaw !== undefined) {
-            const xp = parseXp(xpRaw);
-            if (xp === null) this.reportCorrupt(uid, "snakeXp");
-            else profile.xp = xp;
-        }
-        if (achievementsRaw !== null && achievementsRaw !== undefined) {
-            const progress = parseAchievementProgress(achievementsRaw);
-            if (progress === null) this.reportCorrupt(uid, "achievementProgress");
-            else profile.achievementProgress = progress;
-        }
+        const profile = decodeStoredSnakeProfile(raw, (field) => this.reportCorrupt(uid, field));
+        profile.version = ensure(uid).version;
         // ⚠ 只有真读到了 Redis 才算可信：字段损坏按默认值兜底仍算回灌成功（那是 Redis 里的事实），
         // 但**读不到 Redis**（上面 catch 已 return）绝不落这一行。
+        profiles.set(uid, profile);
         hydrated.add(uid);
     }
 
@@ -353,7 +376,7 @@ export class SnakeDemoCosmeticStore {
         if (profile.equippedSkinId === skinId) return { kind: "ok", profile: snapshot(profile) };
         profile.equippedSkinId = skinId;
         profile.version += 1;
-        return this.commit(uid, profile);
+        return this.commit({ uid, kind: "equip", skinId }, profile);
     }
 
     /** 碎片合成解锁。仅四款碎片皮肤；已拥有直接返回快照且⛔ 不再扣碎片。 */
@@ -370,17 +393,12 @@ export class SnakeDemoCosmeticStore {
         profile.fragmentBalances[key] = balance - threshold;
         profile.ownedSkinIds = [...profile.ownedSkinIds, skinId].sort((a, b) => a - b);
         profile.version += 1;
-        return this.commit(uid, profile);
+        return this.commit({ uid, kind: "unlock", skinId, fragmentCost: threshold }, profile);
     }
 
-    private commit(uid: string, profile: MutableProfile): SnakeCosmeticResult {
+    private commit(record: SnakeCosmeticPersistenceRecord, profile: MutableProfile): SnakeCosmeticResult {
         const result = snapshot(profile);
-        void this.persistence({
-            uid,
-            equippedSkinId: result.equippedSkinId,
-            ownedSkinIds: result.ownedSkinIds,
-            fragmentBalances: result.fragmentBalances,
-        }).catch(this.reportError);
+        enqueueSnakeProfileWrite(record.uid, () => this.persistence(record), this.reportError);
         return { kind: "ok", profile: result };
     }
 }
@@ -389,7 +407,7 @@ export class SnakeDemoCosmeticStore {
  * 玩法侧**同步**读取当前装备皮肤（S3-03 的 run 起始锁存用）。
  *
  * ⚠ 只读进程内已预热的 profile：`createPlayer` 是同步的，⛔ 不能在这里 await Redis 回灌。
- * 未预热（客户端没先调 `snakeCosmetic.getSnapshot`）、uid 缺失、或装备值因目录漂移而失效时，
+ * 未预热（真实 join 由 `onBeforeAdmission` 等待水合）、uid 缺失、或装备值因目录漂移而失效时，
  * 一律回退默认皮肤 1——⛔ 绝不因为衣柜数据异常而让玩家进不了房。
  */
 export function equippedSkinIdOf(uid: string | null): number {

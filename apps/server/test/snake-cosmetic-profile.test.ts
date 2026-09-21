@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { defaultTasks, drainTasks } from "../src/core/infra/lifecycle";
 import {
     SNAKE_COSMETIC_FIELDS,
+    applyRunGrantToProfile,
     SnakeDemoCosmeticStore,
     __forceEquippedSkinIdForTest,
     __grantSnakeFragmentsForTest,
     __resetSnakeCosmeticProfilesForTest,
     equippedSkinIdOf,
+    fullSnapshotOf,
     isProfileHydrated,
     type SnakeCosmeticPersistenceRecord,
 } from "../src/rooms/modes/snake/cosmeticProfile";
@@ -55,19 +58,25 @@ test("回灌走白名单 HMGET 的三个 field，且顺序固定", () => {
     assert.deepEqual([...SNAKE_COSMETIC_FIELDS], ["equippedSkinId", "ownedSkinIds", "fragmentBalances"]);
 });
 
-test("回灌：合法值进内存；只回灌一次，后续读走进程内值", async () => {
+test("PS5：每次回灌重读存储，已有快照不能掩盖其他进程更新的皮肤与养成", async () => {
     let calls = 0;
     __resetSnakeCosmeticProfilesForTest();
+    let saved = ["401", "[1,401]", '{"133":0,"401":7,"403":0,"411":0}', "10", null];
     const store = new SnakeDemoCosmeticStore({
         persistence: async () => {},
-        hydration: async () => { calls += 1; return ["401", "[1,401]", '{"133":0,"401":7,"403":0,"411":0}']; },
+        hydration: async () => { calls += 1; return saved; },
     });
     const profile = await store.hydrate("u1");
     assert.equal(profile.equippedSkinId, 401);
     assert.deepEqual(profile.ownedSkinIds, [1, 401]);
     assert.equal(profile.fragmentBalances["401"], 7);
-    await store.hydrate("u1");
-    assert.equal(calls, 1, "同一 uid 只打一次 Redis");
+    saved = ["2", "[1,2]", '{"133":0,"401":11,"403":0,"411":0}', "250", null];
+    const refreshed = await store.hydrate("u1");
+    assert.equal(calls, 2, "旧 game / lobby 进程里的成功标记不能跳过 Redis");
+    assert.equal(refreshed.equippedSkinId, 2);
+    assert.deepEqual(refreshed.ownedSkinIds, [1, 2]);
+    assert.equal(refreshed.fragmentBalances["401"], 11);
+    assert.equal(fullSnapshotOf("u1").xp, 250);
 });
 
 test("回灌：坏 JSON / 越权皮肤 / 未拥有的装备值都告警并退回默认，⛔ 坏值不进玩法", async () => {
@@ -160,6 +169,83 @@ test("F13：回灌失败不毒化——下一次调用会重试，成功后才�
     assert.equal(errors.length, 1);
 });
 
+test("PS5：合体进程在回灌期间结算，旧响应不能覆盖新奖励", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    let saved: readonly (string | null)[] = ["401", "[1,401]", '{"133":0,"401":7,"403":0,"411":0}', "100", null];
+    let calls = 0;
+    let release!: () => void;
+    let markRead!: () => void;
+    const readStarted = new Promise<void>((resolve) => { markRead = resolve; });
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const store = new SnakeDemoCosmeticStore({
+        hydration: async () => {
+            calls += 1;
+            const response = saved;
+            if (calls === 2) { markRead(); await gate; }
+            return response;
+        },
+    });
+    await store.hydrate("u1");
+    const refreshing = store.hydrate("u1");
+    await readStarted;
+    const before = fullSnapshotOf("u1");
+    applyRunGrantToProfile("u1", {
+        xpGained: 10, newlyOwnedSkinIds: [], fragmentSkinId: 401, fragmentAmount: 2,
+        achievementProgressAfter: before.achievementProgress,
+    });
+    saved = ["401", "[1,401]", '{"133":0,"401":9,"403":0,"411":0}', "110", null];
+    release();
+    await refreshing;
+    assert.equal(fullSnapshotOf("u1").xp, 110);
+    assert.equal(fullSnapshotOf("u1").fragmentBalances["401"], 9);
+    assert.equal(fullSnapshotOf("u1").version, 1);
+    assert.equal(calls, 3, "发现本进程同步改档后必须再读，不能安装旧响应");
+});
+
+test("PS5：重读缺失或损坏字段回到默认，不能留下上次成功档的皮肤与养成", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    let saved: readonly (string | null)[] = ["401", "[1,401]", '{"133":0,"401":7,"403":0,"411":0}', "99", null];
+    const corrupt: string[] = [];
+    const store = new SnakeDemoCosmeticStore({
+        hydration: async () => saved,
+        reportCorrupt: (_uid, field) => { corrupt.push(field); },
+    });
+    await store.hydrate("u1");
+    saved = ["401", "{broken", null, null, null];
+    const fresh = await store.hydrate("u1");
+    assert.equal(fresh.equippedSkinId, 1);
+    assert.deepEqual(fresh.ownedSkinIds, [1]);
+    assert.equal(fresh.fragmentBalances["401"], 0);
+    assert.equal(fullSnapshotOf("u1").xp, 0);
+    assert.deepEqual(corrupt, ["ownedSkinIds", "equippedSkinId"]);
+    assert.equal(isProfileHydrated("u1"), true, "成功读到了 Redis 的损坏字段，按默认值兜底");
+
+    saved = [null, null, null, null, null];
+    assert.equal((await store.hydrate("u1")).equippedSkinId, 1, "删除后的空档也不能复活旧装备");
+});
+
+test("PS5：已有快照后重读失败保留当前外观但禁止结算写回，成功重试才恢复可信标记", async () => {
+    __resetSnakeCosmeticProfilesForTest();
+    let failing = false;
+    let calls = 0;
+    const store = new SnakeDemoCosmeticStore({
+        hydration: async () => {
+            calls += 1;
+            if (failing) throw new Error("redis down");
+            return ["401", "[1,401]", null, null, null];
+        },
+        reportError: () => {},
+    });
+    await store.hydrate("u1");
+    failing = true;
+    assert.equal((await store.hydrate("u1")).equippedSkinId, 401);
+    assert.equal(isProfileHydrated("u1"), false, "上次成功不代表此次陈旧档仍可全量写回");
+    failing = false;
+    assert.equal((await store.hydrate("u1")).equippedSkinId, 401);
+    assert.equal(isProfileHydrated("u1"), true);
+    assert.equal(calls, 3);
+});
+
 test("equip：未拥有拒绝、非法 ID 拒绝、重复装备是 no-op 且不写 Redis", () => {
     const h = harness();
     assert.deepEqual(h.store.equip("u1", 99999), { kind: "unknownSkin" });
@@ -204,13 +290,13 @@ test("unlock：已拥有再次解锁直接返回快照，⛔ 不二次扣碎片"
     assert.equal(h.writes.length, 1, "只有第一次真实变化写 Redis");
 });
 
-test("镜像只写三个 cosmetic field，⛔ 不含 coinBalance", () => {
+test("镜像记录只携带本次合成操作，⛔ 不含装备 / XP / 金币旧快照", () => {
     const h = harness();
     const threshold = SNAKE_FRAGMENT_SKIN_THRESHOLDS.get(403)!;
     __grantSnakeFragmentsForTest("u1", 403, threshold);
     h.store.unlock("u1", 403);
     assert.equal(h.writes.length, 1);
-    assert.deepEqual(Object.keys(h.writes[0]).sort(), ["equippedSkinId", "fragmentBalances", "ownedSkinIds", "uid"]);
+    assert.deepEqual(Object.keys(h.writes[0]).sort(), ["fragmentCost", "kind", "skinId", "uid"]);
     assert.equal("coinBalance" in h.writes[0], false);
 });
 
@@ -271,4 +357,44 @@ test("DEFAULT_SNAKE_RUN_SKIN_RESOLVER 是同步的，且只认服务端传入的
     assert.equal(resolved, 403);
     assert.equal(typeof resolved, "number", "⛔ 必须同步返回：createPlayer 不能 await");
     assert.equal(DEFAULT_SNAKE_RUN_SKIN_RESOLVER.resolve({ roomEpochId: "e1", sessionId: "s1", uid: null }), 1);
+});
+
+
+test("PS5：入房水合与全局停服都等待已发出的多步镜像，再读档 / 关连接", async () => {
+    await defaultTasks.drain();
+    defaultTasks.reset();
+    __resetSnakeCosmeticProfilesForTest();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    let equipped = "1";
+    let reads = 0;
+    let mirrorComplete = false;
+    const store = new SnakeDemoCosmeticStore({
+        hydration: async () => { reads += 1; return [equipped, "[1,401]", null, null, null]; },
+        persistence: async (record) => {
+            await gate;
+            equipped = String(record.skinId);
+            mirrorComplete = true;
+        },
+    });
+    await store.hydrate("pending");
+    store.equip("pending", 401);
+    const refreshing = store.hydrate("pending");
+    let resourcesClosed = false;
+    const stopping = drainTasks().then(() => { resourcesClosed = true; });
+    try {
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        assert.equal(reads, 1, "镜像尚未写完时不能重新读到旧档");
+        assert.equal(resourcesClosed, false, "全局drainTasks不能越过在途CAS去关Redis");
+        release();
+        assert.equal((await refreshing).equippedSkinId, 401);
+        await stopping;
+        assert.equal(mirrorComplete, true);
+        assert.equal(resourcesClosed, true);
+        assert.equal(defaultTasks.size, 0);
+    } finally {
+        release();
+        await stopping;
+        defaultTasks.reset();
+    }
 });

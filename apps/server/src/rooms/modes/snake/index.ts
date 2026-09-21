@@ -771,7 +771,7 @@ export function createSnakeGameMode(options: SnakeGameModeOptions = {}): SnakeGa
         },
 
         // ⚠ 入房前**等**档案回灌完：紧随其后的 createPlayer 同步读装备皮肤、结算同步读档算奖励并
-        // 全量写回 Redis，两处都不能 await。不等它 = 读默认档 = 结算把默认档盖回玩家的真实档（F13）。
+        // 按增量镜像 Redis，两处都不能 await。不等它会按默认档决定外观与奖励（F13 / PS5）。
         // ⛔ 这里只预热、不分配任何房间资源（契约见 GameMode.onBeforeAdmission）；预热失败不抛，
         // 由 runRewards 的兜底闸跳过写回——⛔ 绝不因衣柜/钱包数据异常阻塞进房。
         onBeforeAdmission: async (context): Promise<void> => {

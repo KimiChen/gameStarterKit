@@ -35,7 +35,7 @@ test("Redis demo economy charges one business death once and mirrors its balance
     assert.equal(economy.balance({ uid }), 400);
     await waitImmediate();
     assert.equal(records.length, 1);
-    assert.deepEqual(records[0], { uid, coinBalance: 400 });
+    assert.deepEqual(records[0], { uid, coinCost: 100, initialBalance: 500 });
 });
 
 test("Redis demo mirror failure is reported but does not roll back gameplay", async () => {

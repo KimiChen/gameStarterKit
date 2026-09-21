@@ -408,6 +408,30 @@ fail-closed 发布开关；② 双端模块加载期的三层目录 fail-closed�
 预热后照常写回、只热了一半也不写）、`snake-cosmetic-profile.test.ts` 与 `snake-relive-demo.test.ts`
 各两三条（并发共用一次回灌、失败不毒化可重试、键不存在算成功）。
 
+**PS5 拆进程补充（2026-09-22）**：衣柜 / 养成 `hydrate(uid)` 每次从 Redis 白名单重读，只有同一
+uid 的在途调用共用请求；`hydrated` 只表示最近一次读取成功，不能拿它跳过下一次读取。
+因此 `onBeforeAdmission` 每次真实 join 都能拿到 lobby 进程最新装备；衣柜 RPC 也会读到 game
+结算后的养成档。当前 run 仍锁存起始皮肤，重进才切换。成功重读时缺失 / 损坏字段回默认，读取失败
+保留当前外观但清除结算写回可信标记。读取期间若本进程同步结算 / 换装则重新读，避免旧响应盖掉
+新奖励。同步内存快照仍供建蛇 / 结算使用，demo best-effort 镜像、
+进程内 run 去重及发布禁用边界不变；demo 钱包仍沿用首次成功回灌。
+
+拆进程后 **不能用 game 入局旧档整份覆盖 Redis**。换装只写 `equippedSkinId`；合成在最新
+`ownedSkinIds` / `fragmentBalances` 上原子合并拥有集、扣该皮肤门槛；结算不写装备，向最新
+`coinBalance` / `snakeXp` / `fragmentBalances` 加本次奖励、合并 `ownedSkinIds`，并按 shared
+公式累计 `achievementProgress` 与补齐跨越的等级 / 成就解锁。奖励目标皮肤和本次增量沿用
+同步结算裁决，不因并发合成而改投其他皮肤。`profilePersistence.ts` 用白名单 HMGET + 同键字段
+CAS（Lua 只比较和提交）处理冲突，最多重读 8 次；Redis 故障 / 超预算仍只告警，不回滚已返回的
+同步 demo 结果，也不新增持久幂等键。因而同步结果并非跨进程资产回执，原生产禁用边界不变。
+复活镜像同样只向最新 `coinBalance` 扣本次费用；热档余额不足时镜像失败，不会扣成负数。
+同 uid 镜像按调用顺序排队，避免先发奖后复活却在 Redis 抢读旧余额；下一次水合等待队尾。
+每笔镜像经 `trackTask` 登记，停服先等这些多步 CAS 完成再关 Redis。
+
+回归：`snake-room.test.ts` 通过真实 `GameRoom.onJoin → onBeforeAdmission → createPlayer` 连续
+三次入房验证跨进程换装和合体换装；`snake-cosmetic-profile.test.ts` 覆盖重复刷新、在途合并与
+失败重试；`test/int/snake-cosmetic-profile.test.ts` 使用真实 Redis 独立连接更新装备，证明准入
+重新水合且其余热档字段不变，并验证旧 game 离座不会覆盖 Lobby 换装 / 合成、竞争奖励增量不丢与 CAS 预算。
+
 ---
 
 ### 8.4 F14 的修法（2026-09-06 已修）

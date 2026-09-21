@@ -4,7 +4,7 @@
  * ⛔ 本文件不能住在 `websocket/snakeCosmetic/` 下——loader 把域目录里每个非 `*.test.ts` /
  * `*.d.ts` 的 `.ts` 都当端点文件，放进去会因「缺少 defineRpc 的 default 导出」启动期 throw。
  *
- * 真状态在 `cosmeticProfile.ts` 的模块级 Map，本单例只持四个回调；
+ * 同步操作用快照在 `cosmeticProfile.ts` 的模块级 Map，每次 hydrate 都重新读 Redis；本单例只持四个回调；
  * ⛔ 构造期不得建连接/读盘/起定时器——端点模块会被 `collectEndpoints()` 在纯内存测试里 import。
  */
 import type { ISnakeCosmeticCatalogEntry } from "@game/shared/protocol/lobbyRpc/domains/snakeCosmetic";

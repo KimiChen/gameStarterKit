@@ -8,6 +8,7 @@ import {
     __resetSnakeCosmeticProfilesForTest,
     fullSnapshotOf,
 } from "../src/rooms/modes/snake/cosmeticProfile";
+import { drainSnakeProfileWrites } from "../src/rooms/modes/snake/profilePersistence";
 import { SNAKE_FRAGMENT_SKIN_THRESHOLDS } from "../src/rooms/modes/snake/skinBusinessCatalog";
 import {
     __resetDemoCoinsForTest,
@@ -58,7 +59,7 @@ function harness() {
     };
 }
 
-test("合格 run：金币/XP/碎片同步落进程内 profile，并只写一条六字段镜像", async () => {
+test("合格 run：金币/XP/碎片同步落进程内 profile，并只发一条奖励增量镜像", async () => {
     const h = harness();
     await preheat("u1");
     const before = demoCoinBalanceOf("u1");
@@ -79,9 +80,9 @@ test("合格 run：金币/XP/碎片同步落进程内 profile，并只写一条�
 
     assert.equal(h.writes.length, 1, "⛔ 一次终局只写一条");
     assert.deepEqual(Object.keys(h.writes[0]).sort(),
-        ["achievementProgress", "coinBalance", "equippedSkinId", "fragmentBalances", "ownedSkinIds", "snakeXp", "uid"]);
-    assert.equal(h.writes[0].coinBalance, result.coinBalanceAfter, "同一条写里带上钱包，⛔ 不再各写各的");
-    assert.equal(h.writes[0].snakeXp, profile.xp);
+        ["achievementGains", "coinAmount", "fragmentAmount", "fragmentSkinId", "newlyUnlockedSkinIds", "uid", "xpAmount"]);
+    assert.equal(h.writes[0].coinAmount, result.coinAmount, "只发送本次增量，不能覆盖别的进程已持久化的余额");
+    assert.equal(h.writes[0].xpAmount, result.xpAmount);
 });
 
 test("同一 uid+roomEpochId+runId 重复终局只奖一次，返回缓存结果且不重复写", async () => {
@@ -105,6 +106,7 @@ test("换 runId 或换 roomEpochId 都算新 run，各自发一次", async () =>
     const b = applyRunRewards({ ...base, roomEpochId: "e1", runId: "r2" }, h.opts);
     const c = applyRunRewards({ ...base, roomEpochId: "e2", runId: "r1" }, h.opts);
     assert.equal(processedRunCount(), 3);
+    await drainSnakeProfileWrites("u1");
     assert.equal(h.writes.length, 3);
     assert.equal(fullSnapshotOf("u1").xp, a.xpAmount + b.xpAmount + c.xpAmount);
 });
@@ -149,7 +151,7 @@ test("F13：预热过的同一局照常写回（证明上一条测的是冷档�
         { ...h.opts, reportColdProfile: (uid) => { cold.push(uid); } });
     assert.equal(h.writes.length, 1);
     assert.equal(h.writes[0].uid, "u-warm");
-    assert.equal(h.writes[0].snakeXp, result.xpAmount);
+    assert.equal(h.writes[0].xpAmount, result.xpAmount);
     assert.deepEqual(cold, []);
 });
 
