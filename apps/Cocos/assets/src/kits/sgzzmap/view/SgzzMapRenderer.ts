@@ -67,6 +67,16 @@ export class SgzzMapRenderer {
         this.tone = sgzzPipelineToneMapping();
     }
 
+    /**
+     * 丢掉**所有**用地表材质的 batch。
+     * ⚠ 过渡片与地表共用同一个材质 —— 换贴图时只重建地表会让过渡片留着旧材质：
+     *   它的顶点色是纯白，没贴图就渲成一条**白带**（真机 run 20 实证）。
+     */
+    private dropTerrainBatches(): void {
+        destroySgzzBatch(this.terrain); this.terrain = null;
+        destroySgzzBatch(this.blend); this.blend = null;
+    }
+
     /** 素材到货后灌进来。⚠ 在此之前地表走平涂，⛔ 不阻塞首帧。 */
     setArt(art: SgzzArtResources | null): void { this.art = art; }
 
@@ -80,7 +90,7 @@ export class SgzzMapRenderer {
         if (!texture) {
             if (this.terrainTexture !== null) {   // 从有图集退回平涂：丢掉旧材质
                 this.terrainMaterial?.destroy(); this.terrainMaterial = null; this.terrainTexture = null;
-                destroySgzzBatch(this.terrain); this.terrain = null;
+                this.dropTerrainBatches();
             }
             return { material: this.material, textured: false };
         }
@@ -89,7 +99,7 @@ export class SgzzMapRenderer {
             this.terrainMaterial = createSgzzMaterial(sgzzUnlitTechnique(), true);
             this.terrainMaterial.setProperty("mainTexture", texture);
             this.terrainTexture = texture;
-            destroySgzzBatch(this.terrain); this.terrain = null;   // 材质变了，batch 必须重建
+            this.dropTerrainBatches();   // 材质变了，batch 必须重建
         }
         return { material: this.terrainMaterial, textured: true };
     }
