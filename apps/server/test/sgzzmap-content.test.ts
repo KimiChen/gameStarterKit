@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
+import ts from "typescript";
 import {
     loadSgzzTerrain, sgzzTerrainAt, sgzzIsPassable, sgzzInBounds, sgzzTerrainToBytes,
     sgzzDecodeBase64, sgzzDecodeRle, decodeSgzzTerrainRle,
@@ -17,6 +18,18 @@ import { linksOf, resetSgzzLinksCache } from "../src/kits/sgzzmap/content/links"
 const MAP = SGZZMAP_DEFAULT_MAP_ID;
 const kitDir = new URL(`../../kits/sgzzmap/data/maps/${MAP}/`, import.meta.url);
 const cocosDir = new URL(`../../Cocos/assets/resources/kits/sgzzmap/maps/${MAP}/`, import.meta.url);
+
+test("sgzzmap content: 地形模块 AST 深度有界，避免 Creator 转换器栈溢出", () => {
+    const source = readFileSync(new URL("../../shared/src/kits/sgzzmap/content/terrain.data.ts", import.meta.url), "utf8");
+    const root = ts.createSourceFile("terrain.data.ts", source, ts.ScriptTarget.Latest, true);
+    const pending: { node: ts.Node; depth: number }[] = [{ node: root, depth: 0 }];
+    // 用迭代遍历检查，探针自身不能因旧版数千层字符串加法树而栈溢出。
+    while (pending.length) {
+        const { node, depth } = pending.pop()!;
+        assert.ok(depth <= 64, "地形内容表达式过深：请避免用连续 + 拼接数千段数据");
+        ts.forEachChild(node, child => { pending.push({ node: child, depth: depth + 1 }); });
+    }
+});
 
 test("sgzzmap content: Creator 资源与 kit 源逐字节一致（全部文件，不只是地形）", () => {
     // ⚠ 地形不进 Cocos：它以 shared TS 模块进两端（见下一条用例），⛔ 不再多存一份二进制。

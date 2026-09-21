@@ -53,7 +53,9 @@ def run(map_id: str) -> None:
     print(f"格 {rows}×{cols}  RLE {len(payload)} B  base64 {len(b64)} 字符")
 
     chunks = [b64[i:i + 110] for i in range(0, len(b64), 110)]
-    body = "\n".join(f'    + "{c}"' for c in chunks[1:])
+    # A long `a + b + ...` chain creates a deeply nested AST and overflows
+    # Creator's script transformer. Array elements keep the AST depth bounded.
+    body = "\n".join(f'    "{c}",' for c in chunks)
     palette = json.dumps(
         [{"id": e["id"], "name": e["name"], "cn": e["cn"], "color": e["color"], "passable": e["passable"]}
          for e in meta["palette"]], ensure_ascii=False, indent=8)
@@ -81,8 +83,9 @@ export const SGZZ_TERRAIN_SHA256 = "{meta["sha256"]}";
 export const SGZZ_TERRAIN_PALETTE: readonly ISgzzTerrainClass[] = {palette};
 
 /** varint-RLE 载荷（不含头），base64。 */
-export const SGZZ_TERRAIN_RLE_B64 = "{chunks[0]}"
-{body};
+export const SGZZ_TERRAIN_RLE_B64 = [
+{body}
+].join("");
 '''
     dest = config.REPO / "apps/shared/src/kits/sgzzmap/content/terrain.data.ts"
     dest.parent.mkdir(parents=True, exist_ok=True)
