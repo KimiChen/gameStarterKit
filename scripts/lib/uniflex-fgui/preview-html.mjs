@@ -55,11 +55,57 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
   <script type="module">
     const fgui = window.fgui;
     if (!fgui) throw new Error("fairygui-dom failed to load");
+    // 九宫格合成缓存：CSS border-image 在切片接缝处会露出格子线，改为 canvas 一次性合成
+    const nineSliceCache = new Map();
+    const nineSliceImages = new Map();
+    const nineSliceImage = (src) => {
+      let entry = nineSliceImages.get(src);
+      if (!entry) {
+        entry = { img: new Image(), ready: false, queue: [] };
+        entry.img.onload = () => {
+          entry.ready = true;
+          entry.queue.splice(0).forEach((fn) => fn());
+        };
+        entry.img.src = src;
+        nineSliceImages.set(src, entry);
+      }
+      return entry;
+    };
+    const drawNineSlice = (src, sg, dg, w, h) => {
+      const key = [src, w, h, sg.left, sg.top, sg.right, sg.bottom, dg.left, dg.top, dg.right, dg.bottom].join("|");
+      const cached = nineSliceCache.get(key);
+      if (cached) return cached;
+      const entry = nineSliceImages.get(src);
+      if (!entry || !entry.ready) return null;
+      const img = entry.img;
+      const L = Math.round(dg.left), T = Math.round(dg.top);
+      const R = Math.round(dg.right), B = Math.round(dg.bottom);
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const cols = [[0, L, 0, sg.left], [L, Math.max(0, w - L - R), sg.left, Math.max(0, iw - sg.left - sg.right)], [w - R, R, iw - sg.right, sg.right]];
+      const rows = [[0, T, 0, sg.top], [T, Math.max(0, h - T - B), sg.top, Math.max(0, ih - sg.top - sg.bottom)], [h - B, B, ih - sg.bottom, sg.bottom]];
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, w);
+      canvas.height = Math.max(1, h);
+      const ctx = canvas.getContext("2d");
+      for (const [dy, dh, sy, sh] of rows) {
+        for (const [dx, dw, sx, sw] of cols) {
+          if (dw <= 0 || dh <= 0 || sw <= 0 || sh <= 0) continue;
+          ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+        }
+      }
+      const url = canvas.toDataURL();
+      if (nineSliceCache.size > 400) nineSliceCache.clear();
+      nineSliceCache.set(key, url);
+      return url;
+    };
     const patchNineSlice = () => {
-      const Ctor = customElements.get("fgui-img");
-      if (!Ctor || !Ctor.prototype || Ctor.prototype.__nineSlicePatched) return;
-      Ctor.prototype.__nineSlicePatched = true;
-      Ctor.prototype.refresh = function() {
+      let proto = null;
+      document.querySelectorAll("#ui div").forEach((el) => {
+        if (!proto && el._scale9Grid) proto = Object.getPrototypeOf(el);
+      });
+      if (!proto || proto.__nineSliceCanvasPatched) return Boolean(proto);
+      proto.__nineSliceCanvasPatched = true;
+      proto.refresh = function() {
         if (this._timerID_1 != 0) return;
         this._timerID_1 = window.requestAnimationFrame(() => {
           this._timerID_1 = 0;
@@ -83,16 +129,24 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
             const g = this._scale9Grid;
             const sx = (this._textureScale && this._textureScale.x) || 1;
             const sy = (this._textureScale && this._textureScale.y) || 1;
-            const t = Math.max(0, Math.floor(g.top / sy));
-            const r = Math.max(0, Math.floor(g.right / sx));
-            const b = Math.max(0, Math.floor(g.bottom / sy));
-            const l = Math.max(0, Math.floor(g.left / sx));
+            const w = Math.round(parseFloat(this.style.width) || this.clientWidth || 0);
+            const h = Math.round(parseFloat(this.style.height) || this.clientHeight || 0);
             this.style.boxSizing = "border-box";
-            this.style.backgroundImage = "none";
-            this.style.borderImage = "url('" + this._src + "')";
-            this.style.borderImageWidth = t + "px " + r + "px " + b + "px " + l + "px";
-            this.style.borderImageSlice = g.top + " " + g.right + " " + g.bottom + " " + g.left + " fill";
-            this.style.borderImageRepeat = (this._tileGridIndice & 0xF) != 0 ? "repeat" : "stretch";
+            this.style.borderImage = "none";
+            if (w > 0 && h > 0) {
+              const src = this._src;
+              const dst = { left: g.left / sx, top: g.top / sy, right: g.right / sx, bottom: g.bottom / sy };
+              const apply = () => {
+                const url = drawNineSlice(src, g, dst, w, h);
+                if (!url) return;
+                this.style.backgroundImage = "url('" + url + "')";
+                this.style.backgroundSize = "100% 100%";
+                this.style.backgroundRepeat = "no-repeat";
+              };
+              const entry = nineSliceImage(src);
+              if (entry.ready) apply();
+              else entry.queue.push(apply);
+            }
             return;
           }
           this.style.borderImage = "none";
@@ -101,6 +155,18 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
           this.style.backgroundRepeat = "no-repeat";
         });
       };
+      return true;
+    };
+    // 视图创建后调用：补丁 Image.prototype（幂等）并让已有九宫格元素按新逻辑重绘。
+    // 清零 pending 定时器：创建期旧 refresh 的 rAF 可能仍在排队，会被它顶掉后由新逻辑收尾。
+    const refreshNineSlice = () => {
+      if (!patchNineSlice()) return;
+      document.querySelectorAll("#ui div").forEach((el) => {
+        if (el._scale9Grid && typeof el.refresh === "function") {
+          el._timerID_1 = 0;
+          el.refresh();
+        }
+      });
     };
     patchNineSlice();
     const screens = ${JSON.stringify(list)};
@@ -439,6 +505,7 @@ export function renderPreviewHtml({ screens = [], font = true } = {}) {
       };
       relayout(view);
       clearFillNineGrid(view);
+      refreshNineSlice();
       resize();
       currentId = screen.id;
       if (screen.id === "preview-home") bindCatalogClicks(view, go);

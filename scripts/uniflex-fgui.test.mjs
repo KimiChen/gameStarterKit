@@ -153,7 +153,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.doesNotMatch(commonXml, /fill_[0-9a-f]+\.png"[^>]*scale="9grid"/);
         assert.match(previewHtml, /clearFillNineGrid/);
         assert.match(previewHtml, /patchNineSlice/);
-        assert.match(previewHtml, /borderImageWidth/);
+        assert.match(previewHtml, /drawNineSlice/);
 
         for (const file of [
             "assets/UniFlex_Common/ActionButton.xml",
