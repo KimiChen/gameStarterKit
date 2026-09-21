@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { test } from "node:test";
 import { createOutputWriter } from "./lib/uniflex-output.mjs";
+import { relocateAuthorImport } from "./lib/uniflex-relocate-logic.mjs";
 
 async function snapshot(file) {
     const { size, mtimeMs, ctimeMs } = await stat(file);
@@ -44,3 +45,20 @@ test("UniFlex output check does not turn filesystem errors into stale output", a
         await rm(root, { recursive: true, force: true });
     }
 });
+
+test("AOT author imports re-anchor kits/logic at src and themes under ui-uniflex", () => {
+    const client = "/repo/apps/client";
+    const generated = "/repo/apps/client/src/ui-uniflex/generated";
+    const relocate = (specifier) => relocateAuthorImport(specifier, { client, generated });
+    assert.equal(relocate("../../../kits/uniflex/api/core/index"),
+        "../../kits/uniflex/api/core/index");
+    assert.equal(relocate("../../../../kits/uniflex/api/core/index"),
+        "../../kits/uniflex/api/core/index");
+    assert.equal(relocate("../../logic/page/ConfirmLogic"),
+        "../../logic/page/ConfirmLogic");
+    assert.equal(relocate("../../themes/active"), "../themes/active");
+    assert.equal(relocate("../../../themes/active"), "../themes/active");
+    assert.equal(relocate("../../components/button/ConfirmButton"),
+        "../components/button/ConfirmButton");
+});
+

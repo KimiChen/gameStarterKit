@@ -7,6 +7,7 @@ import ts from "typescript";
 import { canonicalJson, jsonHash, parseResourceCatalog } from "@uniflex/core/provider";
 import { discoverPsdComponents } from "./lib/uniflex-component-catalog.mjs";
 import { createOutputWriter } from "./lib/uniflex-output.mjs";
+import { relocateAuthorImport } from "./lib/uniflex-relocate-logic.mjs";
 import { createImageResourceEntry } from "./lib/uniflex-resources.mjs";
 
 const root = resolve(import.meta.dirname, "..");
@@ -68,20 +69,10 @@ const transformed = ts.transform(source, [(context) => {
     const visit = (node) => {
         if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)
             && node.moduleSpecifier.text.startsWith(".")) {
-            const specifier = node.moduleSpecifier.text;
-            // AOT flattens author modules into one generated file, so author-relative
-            // imports must be anchored at the UniFlex source root before relocation.
-            // The compiler preserves the leading `../` depth from the original file.
-            const rootRelative = specifier.replace(/^(?:\.\.\/)+/u, "");
-            const target = rootRelative.startsWith("logic/")
-                ? resolve(client, "src", rootRelative)
-                : /^(?:components|gamecomponents|themes|kits)\//u.test(rootRelative)
-                    ? resolve(client, "src/ui-uniflex", rootRelative)
-                : resolve(client, "src/ui-uniflex", specifier);
-            const path = relative(generated, target).replace(/\.js$/, "");
             return context.factory.updateImportDeclaration(node, node.modifiers,
                 node.importClause, context.factory.createStringLiteral(
-                    path.startsWith(".") ? path : `./${path}`), node.attributes);
+                    relocateAuthorImport(node.moduleSpecifier.text, { client, generated })),
+                node.attributes);
         }
         return ts.visitEachChild(node, visit, context);
     };
