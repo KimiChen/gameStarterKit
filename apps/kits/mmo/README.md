@@ -44,7 +44,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | `combat` | 1 / 1 | `ticksOf` / `effectiveStats` / `damageOf`（框架 `calcDamageWithDefense`：max(1, power + 0.5·atk − 0.3·def) × 成长 × ±10%）/ `healOf` / `auraOf` / `cooldownReadyTick` / `checkCast`（拒绝顺序 unknown-spell → not-learned → dead → casting → cooldown → mp → no-target → self-target → target-dead → range）/ `needsHostileTarget` / `threatOf` / `castReqIdOf` | —（结算住 mode 内部） | `CooldownModel` / `pickHostileTarget` + 再导出 | token `c2s.mmoWorld.target` / `cast`；private 流 `cooldowns` / `casting` |
 | `ai` | 1 / 1 | `decide(perception)`（idle / patrol / chase / attack / return 状态机）/ `bucketOf` / `shouldThink`、`AiPerception` / `AiDecision`、`AI_ARRIVE_RADIUS` 8；`./nav`：`findPath`（网格 A*，`NAV_DEFAULT_MAX_EXPANSIONS` 4096 fail-closed）/ `lineClear` | `PathfinderPort`（请求带 instanceEpoch + entityVersion）/ `createInProcessPathfinder` / `isStalePathResult` / `isDeferredPathResult`（组合根可换 compute 池实现） | — | 内容包 `behavior` idle / patrol / aggro |
 | `inventory` | 3 / 1 | 掉落半边：`rollLoot` / `nearestLoot` / `lootClaimedPayloadOf` + 数字（§6）；物品半边（v2）：`IMmoBagWire`、`planGrant`（堆叠 → 空格 → 邮箱）/ `checkEquip` / `equipSlotOf` / `capacityOf` / `freeSlots` / `sortBagItems` / `bagAttrs` / `equippedTemplates` / `bagSignature` | `grantItem` / `moveItem` / `claimLoot` / `readBag` / 账号级 `bagOf` / `moveItemFor` / 世界房 `bagOfCharacter`、`MmoInventoryError(code)`；v3 默认模板来自全区 `itemCatalog`，既有单包参数兼容 | `fetchBag` / `moveItem` / `bagRows` / `equippedOf` / `describeBag` + 再导出 | 域 `mmo.bag` / `mmo.moveItem`（contractVersion 2）；token `c2s.mmoWorld.pickup`；private 流 `bag` |
-| `orchestration` | 1 / 1 | 契约类型（`OrchestrationEvent` / `OrchestrationCommand` / `OrchestrationReadApi` / `OrchestrationModule` / `IEntityView`）、`defineOrchestration`（形状校验 + freeze）/ `validateOrchestrationCommand` / `effectiveLimits` / `digestOf` / `stableStringify` / `varsBytesOf`、`ORCHESTRATION_EVENT_KINDS`、ORCH_* 数字（§5） | `createOrchestrationHarness`（无头：emit / advance / vars / publish / ring / replay）/ `readCheckpointedVars` / `pollGrantResults` / `regionContains` | — | 贡献点 `orchestration`；token `s2c.mmoWorld.prompt` / `scriptState` / `notice`、`c2s.mmoWorld.interact` / `choose` |
+| `orchestration` | 2 / 1 | 契约类型（`OrchestrationEvent` / `OrchestrationCommand` / `OrchestrationReadApi` / `OrchestrationModule` / `IEntityView`）、`defineOrchestration`（形状校验 + freeze）/ `validateOrchestrationCommand` / `effectiveLimits` / `digestOf` / `stableStringify` / `varsBytesOf`、`ORCHESTRATION_EVENT_KINDS`、ORCH_* 数字（§5） | `createOrchestrationHarness`（无头：emit / advance / vars / publish / ring / replay）/ `readCheckpointedVars` / `pollGrantResults` / `regionContains` | — | 贡献点 `orchestration`；token `s2c.mmoWorld.prompt` / `scriptState` / `notice`、`c2s.mmoWorld.interact` / `choose` |
 
 ### 3. 三个贡献点（kit.json `contributions`；KIT.md §4 / MMO.md §8.6）
 
@@ -72,7 +72,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | 观察者裁剪 | AOI 网格候选 → `canSee`（本人 / 位面 / 隐身 × 阵营）→ 最近优先截到 `MMO_INTEREST_MAX_ENTITIES` 256；角色位置每 2 步进流、兴趣集每 4 步重算（`MMO_WORLD_TUNING`，相位错开）；超视野零泄露（含 baseline） |
 | 步序（每固定步） | 命令 → 角色移动（`resolveMove`）→ AI（分桶 + 预算）→ 战斗结算 → 背包轮询 → 编排步（§5）→ 观察者出站；同命令序 + 同种子 ⇒ 同轨迹（无头重放） |
 
-### 5. 编排：事件 / 命令清单与预算（`orchestration` 面 v1；MMO.md §8）
+### 5. 编排：事件 / 命令清单与预算（`orchestration` 面 v1，v2 只加服务端只读 `listCheckpointedVars`；MMO.md §8）
 
 模块 = `defineOrchestration({ version: 1, packId, subscribes[], tickEvery?, interacts?, limits?, handle(event, api) → commands[] })`；一图一包一运行器；`handle` 必须纯（边界机检）。
 
@@ -202,6 +202,16 @@ worker 发奖遇 `conflict` 必须抛出并回滚整轮（包括已更新的堆�
 完整校验及其余真栈结果见 [MMO.md §12 本次修复记录](../../../docs/MMO.md#12-实施状态回写)；本节不替代 MK3 的 24–72 h 长跑报告，也不提前发布 `mmo-kit-v1-frozen`。
 
 ## 二、施工记录（按批次；每批的用例 / 变异 / 偏差原文保留，⛔ 不作说明书）
+
+### MG1 竖屏操作模型 + orchestration 面 v2（2026-09-22；kit 0.1.26 → 0.1.27；MMO-PLAN MG1-B1 / B2 前置）
+
+| 件 | 内容 |
+| --- | --- |
+| 操作模型（纯逻辑） | `apps/client/src/logic/rooms/mmoWorld/hudControls.ts`：`hudLayout`（竖屏布局：左下摇杆 / 右下轮盘 hub / 底部中列停・拾取 / 安全区）、`joystickFrame` + `JoystickSession`（movement 面 `dirFromJoystick` 死区归一 + `IntentThrottle` 限频合并；死区内未动过不发、变向立即发、抬手只在动过时发停）、`wheelSlotPositions`（正上 → 正左弧形分槽，弦长 ≥ 槽边长，放不下溢外圈且不越过内圈最左）、`screenToWorld` / `worldToScreen`（y 翻转）、`pickEntity` / `resolveWorldTap`（最近命中排除本人、再点同一目标清除、空地 ⇒ moveTo）、`cooldownLabel`；⛔ 不 import cc |
+| 默认 HUD | `view/rooms/mmoWorld/MmoWorldView.ts`：摇杆（节点级 TOUCH_START / MOVE / END / CANCEL，旋钮跟手回中）、世界层轻点（按下抬起 ≤ 12 px）选目标 / 点地走、技能轮盘（就绪高亮 / 冷却秒数）、目标红环、状态条吞触摸；四向按钮退役。HUD 仍画在世界节点内（3d.md SC1-B9 前退路） |
+| orchestration 面 v2 | 服务端加 `listCheckpointedVars(sId, mapId, packId)`（`k_mmo_instance` 按 map / pack 列分线 ≤ 64 → 各取 `k_mmo_instance_checkpoint` 最新 rev / tick / 该 pack 的 vars；只读两张 kit 表，`run` 可注入）+ `CheckpointedVarsRow` / `CHECKPOINTED_VARS_MAX_ROWS`；version 1 → 2、minSupported 不动；`api-freeze.json` 重钉；供插件自有域页面（mmodemo.bossBoard）读 |
+| 用例 | 客户端 `mmoWorld-hud-controls.test.ts`（摇杆几何 / 会话限频 / 轮盘不重叠不越界 / 互逆换算 / 点选 / 布局不压钮）；服务端 `mmo-orchestration.test.ts` 加 listCheckpointedVars（假 KitTx：清单 + 每分线最新、无检查点 0 / {}、别的 pack {}、SQL 全过表闸） |
+| 证据 | `tools/creator-preview/run.mjs mmoWorld`（新场景：选角 → 世界 → 摇杆拖动地面左移 + 旋钮回中 → 轻点实体目标红环 → 轮盘施法反馈 → 离开）；结果登记在 MMO.md §12 MG1 行 |
 
 ### MG0 反馈修复（2026-09-22；kit 0.1.24 → 0.1.25）
 

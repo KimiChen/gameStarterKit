@@ -346,7 +346,7 @@
       }
     },
     "orchestration": {
-      "version": 1,
+      "version": 2,
       "minSupported": 1,
       "exports": {
         "shared": [
@@ -392,12 +392,15 @@
           "type ScriptScalar"
         ],
         "server": [
+          "const CHECKPOINTED_VARS_MAX_ROWS",
           "export-type OrchestrationRingEntry",
           "export-type RunnerEffect",
           "function createOrchestrationHarness",
+          "function listCheckpointedVars",
           "function pollGrantResults",
           "function readCheckpointedVars",
           "function regionContains",
+          "interface CheckpointedVarsRow",
           "interface GrantResultRow",
           "interface HarnessEmitResult",
           "interface HarnessOptions",

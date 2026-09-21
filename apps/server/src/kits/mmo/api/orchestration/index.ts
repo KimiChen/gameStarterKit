@@ -1,6 +1,8 @@
 /**
- * mmo kit · `orchestration` api 面（服务端，docs/MMO.md §8.5 末段；MK4-B1）：对插件只导出两件——
+ * mmo kit · `orchestration` api 面（服务端，docs/MMO.md §8.5 末段；MK4-B1；v2 MG1-B2）：对插件只导出这几件——
  *  - `readCheckpointedVars(sId, instanceId, packId)`：最新已落库分线检查点里该 pack 的 vars（运维 / 用例读；⛔ 运行中写口）；
+ *  - `listCheckpointedVars(sId, mapId, packId)`（v2）：某图全部分线（k_mmo_instance 语义行，按 instance_id 序、≤ 64 条）各自最新检查点的
+ *    pack vars + rev / tick（插件自有域页面读，如 mmodemo.bossBoard；没有检查点 / 检查点里不是该 pack ⇒ vars 为空对象，rev / tick 为 0）；
  *  - `createOrchestrationHarness({ module, pack, mapId, seed, entities? })`：无头重放台——同一运行器 + 内存世界（内容包的图 / 区域 / 碰撞 + 注入的实体视图），
  *    `emit(event)` 跑一条事件返回命令（本地命令已生效、其余原样），`vars()` / `publish()` / `ring()`，`replay(events)` 用同种子重跑并逐条比对环形日志摘要。
  * 插件只能 import 本门面；任何导出变化都要 bump `api.orchestration.version`。
@@ -11,7 +13,7 @@ import {
     type EntityId, type IEntityView, type OrchestrationCommand, type OrchestrationEvent, type OrchestrationModule, type OrchestrationRingEntry, type ScriptScalar, type Vec2,
 } from "@game/shared/kits/mmo/api/orchestration/index";
 import { withKitTx, type RowDataPacket } from "../../../../core/infra/kitApi";
-import { MMO_KIT_ID } from "../../host";
+import { MMO_KIT_ID, defaultMmoTxRunner, type MmoTxRunner } from "../../host";
 import { OrchestrationRunner, type RunnerEffect, type RunnerWorld } from "../../orchestration/runner";
 
 export type { OrchestrationRingEntry, RunnerEffect };
@@ -28,6 +30,51 @@ export async function readCheckpointedVars(sId: number, instanceId: string, pack
         const orchestration = envelope.snapshot?.orchestration;
         if (!orchestration || orchestration.packId !== packId || typeof orchestration.vars !== "object" || orchestration.vars === null) return null;
         return orchestration.vars as Record<string, ScriptScalar>;
+    });
+}
+
+/** 一条分线的最新检查点 vars（listCheckpointedVars）。 */
+export interface CheckpointedVarsRow {
+    readonly instanceId: string;
+    /** 最新检查点 rev / 分线 tick；无检查点 ⇒ 0 / 0 */
+    readonly rev: number;
+    readonly tick: number;
+    /** 该 pack 的脚本 vars；无检查点或检查点里不是该 pack ⇒ {} */
+    readonly vars: Readonly<Record<string, ScriptScalar>>;
+}
+
+/** listCheckpointedVars 一次最多返回的分线数。 */
+export const CHECKPOINTED_VARS_MAX_ROWS = 64;
+
+interface InstanceIdRow extends RowDataPacket { instance_id: string }
+interface LatestCheckpointRow extends RowDataPacket { rev: number | string; tick: number | string; envelope: unknown }
+
+const varsOf = (raw: unknown, packId: string): Readonly<Record<string, ScriptScalar>> => {
+    const envelope = (typeof raw === "string" ? JSON.parse(raw) : raw) as { snapshot?: { orchestration?: { packId?: unknown; vars?: unknown } } } | null;
+    const orchestration = envelope?.snapshot?.orchestration;
+    if (!orchestration || orchestration.packId !== packId || typeof orchestration.vars !== "object" || orchestration.vars === null || Array.isArray(orchestration.vars)) return {};
+    return orchestration.vars as Record<string, ScriptScalar>;
+};
+
+/**
+ * 某图全部分线（k_mmo_instance 语义行里 map_id / pack_id 匹配者，按 instance_id 序、≤ CHECKPOINTED_VARS_MAX_ROWS）各自最新分线检查点的 pack vars。
+ * 只读两张 kit 表（表闸内），⛔ 不碰框架 world_instance；`run` 只给单测注入。
+ */
+export async function listCheckpointedVars(sId: number, mapId: string, packId: string, run: MmoTxRunner = defaultMmoTxRunner): Promise<readonly CheckpointedVarsRow[]> {
+    return run(sId, async (tx) => {
+        const instances = await tx.query<InstanceIdRow[]>(
+            "SELECT instance_id FROM k_mmo_instance WHERE server_id = ? AND map_id = ? AND pack_id = ? ORDER BY instance_id LIMIT ?", [sId, mapId, packId, CHECKPOINTED_VARS_MAX_ROWS]);
+        const out: CheckpointedVarsRow[] = [];
+        for (const instance of instances) {
+            const instanceId = String(instance.instance_id);
+            const rows = await tx.query<LatestCheckpointRow[]>(
+                "SELECT rev, tick, envelope FROM k_mmo_instance_checkpoint WHERE server_id = ? AND instance_id = ? ORDER BY rev DESC LIMIT 1", [sId, instanceId]);
+            const latest = rows[0];
+            out.push(latest
+                ? { instanceId, rev: Number(latest.rev), tick: Number(latest.tick), vars: varsOf(latest.envelope, packId) }
+                : { instanceId, rev: 0, tick: 0, vars: {} });
+        }
+        return out;
     });
 }
 

@@ -52,6 +52,7 @@ node tools/creator-preview/capture-uniflex-golden.mjs --screen backpack --out /t
 | `arenaCapture` | 「占领赛 · arena」（kit 的 gameplay mode）→「目标 N 格」→ 连点「占领」到「你赢了！」→ 回首屏 |
 | `arenaDuel` | 「决斗 · arena」（kit 的第二个 mode）→「HP N」→ 连点「出击」到「你赢了！」→ 回首屏 |
 | `arenaShop` | 「竞技场商店 · arenaShop」（建在 kit 上的 plugin）→ 经 kit 的 `board` 面读自有格（没有就先跑 `arena` 占一格）→ 取最上面一行的「+守备」（自有格可能多块）→ 结果归类 `bought` / `insufficient-balance` / `not-owned` → 点「刷新」重读 |
+| `mmoWorld` | 设置中的「进入世界」整卡（`enter`，**mmo kit** 的 route 形态）→ 选角页（没有角色先「建角」）→「进入」→ `MmoWorldLayer`（状态条 HP、摇杆 `joystick`/`knob`、轮盘 `wheel`、停 / 拾取 / 传送 / 离开）→ 摇杆按住向右拖 1.2 s 松手 ⇒ 地面相对左移 ≥ 4 px（本人向 +x 走）+ 旋钮回中 → 轻点非本人实体方块（优先行商）⇒ 状态条「目标 <名>」+ `target-ring` → 点轮盘第一槽 ⇒ 施法反馈（提示或槽上冷却秒数）→「离开」回首屏。MG1-B1 证据；不在 `all` 里（要 mmo kit 与世界房）。 |
 | `areaList` | 登录页 FGUI `btn_server` → 区服列表（判据：子件 `lst_server`）→ `btn_close` 关闭回登录页 |
 | `loginNotice` | 登录页 FGUI `btn_notice` → 公告（判据：子件 `tge_tip`）→ 关闭。⚠ FGUI 视图挂在 `GRoot/…/layer_popup/…/GComponent` 下、节点名不是类名，只能按**独有子件名**判定；外部服务不在时会落到 ConfirmView（子件 `yesBtn`），脚本如实记 `outcome: error-confirm` |
 | `all` | 依次 areaList → loginNotice → home → settings → redeem → tally → cosmetic → arena → arenaCapture → arenaDuel → arenaShop → snake → ballMove（两个登录页场景排最前：它们会重载页面回登录态） |

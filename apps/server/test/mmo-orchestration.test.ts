@@ -16,7 +16,9 @@ import {
     type OrchestrationCommand, type OrchestrationEvent, type OrchestrationModule,
 } from "@game/shared/kits/mmo/api/orchestration/index";
 import { GREYBOX_PACK } from "@game/shared/kits/mmo/content/greybox";
-import { createOrchestrationHarness, regionContains } from "../src/kits/mmo/api/orchestration/index";
+import { CHECKPOINTED_VARS_MAX_ROWS, createOrchestrationHarness, listCheckpointedVars, regionContains } from "../src/kits/mmo/api/orchestration/index";
+import { assertKitTableAccess, type KitTx } from "../src/core/infra/kitApi";
+import type { MmoTxRunner } from "../src/kits/mmo/host";
 import { OrchestrationRunner, hashSeed, type RunnerWorld } from "../src/kits/mmo/orchestration/runner";
 import { bossTimer, commandFlood } from "./fixtures/orchestrationFixture";
 
@@ -222,4 +224,31 @@ test("harness：emit / advance / vars / publish / ring；replay 逐条相等、�
     const xs = [1, 2, 3, 4, 5, 6, 7, 8].map(spawnXOf);
     assert.ok(new Set(xs).size > 1, `改种子 ⇒ 落点不全相同：${xs.join(",")}`);
     assert.equal(spawnXOf(7), spawnXOf(7), "同种子同落点");
+});
+
+test("listCheckpointedVars（面 v2，MG1-B2）：按 map / pack 列分线（instance_id 序、LIMIT 64）各取最新检查点 rev / tick / 该 pack 的 vars；无检查点 ⇒ 0 / 0 / {}；检查点里是别的 pack ⇒ {}；SQL 全部过 kit 表闸", async () => {
+    const queries: { readonly sql: string; readonly params: readonly unknown[] }[] = [];
+    const envelopeA = JSON.stringify({ rev: 7, snapshot: { orchestration: { packId: "demoVale", vars: { bossKills: 3, ambushAt: 1200 } } } });
+    const envelopeC = { rev: 2, snapshot: { orchestration: { packId: "other", vars: { bossKills: 9 } } } };
+    const run: MmoTxRunner = async (sId, fn) => fn({
+        sId,
+        query: async (sql: string, params: unknown[] = []) => {
+            queries.push({ sql, params });
+            if (sql.startsWith("SELECT instance_id FROM k_mmo_instance")) return [{ instance_id: "wi_a" }, { instance_id: "wi_b" }, { instance_id: "wi_c" }];
+            if (params[1] === "wi_a") return [{ rev: "7", tick: "1400", envelope: envelopeA }];
+            if (params[1] === "wi_c") return [{ rev: 2, tick: 10, envelope: envelopeC }];
+            return [];
+        },
+    } as unknown as KitTx);
+    const rows = await listCheckpointedVars(0, "demoVale", "demoVale", run);
+    assert.deepEqual(rows, [
+        { instanceId: "wi_a", rev: 7, tick: 1400, vars: { bossKills: 3, ambushAt: 1200 } },
+        { instanceId: "wi_b", rev: 0, tick: 0, vars: {} },
+        { instanceId: "wi_c", rev: 2, tick: 10, vars: {} },
+    ]);
+    assert.deepEqual(queries[0]!.params, [0, "demoVale", "demoVale", CHECKPOINTED_VARS_MAX_ROWS], "分线清单按 sId / map / pack 过滤且有界");
+    assert.equal(queries.length, 4, "1 条清单 + 每分线 1 条最新检查点");
+    for (const { sql } of queries) assert.doesNotThrow(() => assertKitTableAccess(sql, "mmo"), sql);
+    const none = await listCheckpointedVars(0, "greybox", "greybox", async (sId, fn) => fn({ sId, query: async () => [] } as unknown as KitTx));
+    assert.deepEqual(none, []);
 });

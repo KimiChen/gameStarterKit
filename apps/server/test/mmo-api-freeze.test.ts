@@ -24,9 +24,9 @@ const FREEZE_JSON = path.join(REPO, "apps/kits/mmo/api-freeze.json");
 const ENDS = ["shared", "server", "client"] as const;
 type End = (typeof ENDS)[number];
 
-/** v1 冻结表（MK4-B3，2026-09-20）：面 → [version, minSupported]。 */
+/** v1 冻结表（MK4-B3，2026-09-20；MG1-B2 2026-09-22 orchestration 1 → 2：加 `listCheckpointedVars`，minSupported 不动）：面 → [version, minSupported]。 */
 export const FROZEN_API: Readonly<Record<string, readonly [number, number]>> = Object.freeze({
-    characters: [1, 1], world: [3, 1], movement: [1, 1], content: [3, 2], social: [1, 1], combat: [1, 1], ai: [1, 1], inventory: [3, 1], orchestration: [1, 1],
+    characters: [1, 1], world: [3, 1], movement: [1, 1], content: [3, 2], social: [1, 1], combat: [1, 1], ai: [1, 1], inventory: [3, 1], orchestration: [2, 1],
 });
 
 export interface FaceSurface {

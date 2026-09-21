@@ -33,7 +33,7 @@ import { replaySgzzmapWorld } from "./sgzzmap.mjs";
 import { replaySlgMap } from "./slg.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "slg", "sgzzmap", "all"];
+const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "slg", "sgzzmap", "mmoWorld", "all"];
 /** `all` 的顺序：先 route 形态再 gameplay 形态；arenaShop 排在 arena 之后（它要一块自己的格子）。 */
 const ALL_SEQUENCE = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "arena", "arenaCapture", "arenaDuel", "arenaShop", "snake", "ballMove"];
 /** 登录页兜底坐标（设计 375×812）：只在找不到 FGUI 对象 btn_login 时使用，并在报告里标注。 */
@@ -855,6 +855,172 @@ async function scenarioBallMove(runner) {
   });
 }
 
+/**
+ * 按住拖动再松手（CDP 鼠标：按下 → 8 段移动到目标点 → 原地按住 holdMs（每 150 ms 补一次同点 move，节点级 TOUCH_MOVE 才会持续到达）→ 松开）。
+ * `poll(walk)` 给定时按住期间每 ~600 ms 重读一次场景，返回真值即提前松手并把它返回。
+ */
+async function dragHold(runner, from, to, holdMs, poll = null) {
+  const send = (params) => runner.client.send("Input.dispatchMouseEvent", params);
+  await send({ type: "mouseMoved", x: from.x, y: from.y });
+  await send({ type: "mousePressed", x: from.x, y: from.y, button: "left", buttons: 1, clickCount: 1 });
+  for (let step = 1; step <= 8; step++) {
+    await send({ type: "mouseMoved", x: from.x + ((to.x - from.x) * step) / 8, y: from.y + ((to.y - from.y) * step) / 8, button: "left", buttons: 1 });
+    await sleep(40);
+  }
+  let found = null;
+  const deadline = Date.now() + holdMs;
+  let nextPoll = Date.now() + 600;
+  while (Date.now() < deadline && !found) {
+    await send({ type: "mouseMoved", x: to.x, y: to.y, button: "left", buttons: 1 });
+    await sleep(150);
+    if (poll && Date.now() >= nextPoll) {
+      found = poll(await runner.walk());
+      nextPoll = Date.now() + 600;
+    }
+  }
+  await send({ type: "mouseReleased", x: to.x, y: to.y, button: "left", buttons: 0, clickCount: 1 });
+  return found;
+}
+
+/** 世界层里非本人的实体方块（名字 = 实体 id；排除地面 / 环 / 文本 / 本人 char:）。 */
+const otherEntityPlates = (walk) => selectNodes(walk, { pathIncludes: "MmoWorldLayer/world/", kind: "node" })
+  .filter((node) => !["world", "ground", "label", "self-ring", "target-ring", "plate"].includes(node.name) && !node.name.startsWith("char:"));
+
+/** 摇杆朝 dir 按住直到 poll 命中或超时（探索：出生点旁没有别的实体时朝各方向走，视野 400 单位）。 */
+async function joystickHold(runner, dir, holdMs, poll) {
+  await runner.walk();
+  const pad = runner.find({ name: "joystick", pathIncludes: "MmoWorldLayer/hud/" })[0];
+  if (!pad) throw new Error("找不到摇杆");
+  const scale = runner.lastWalk.canvas.width / runner.lastWalk.visible.width;
+  const reach = pad.center.width * scale * 0.45;
+  const from = { x: pad.center.x, y: pad.center.y };
+  // 屏幕 y 向下为正（CDP 页面坐标）；世界 +y 也向下 ⇒ dir 直接用
+  const to = { x: from.x + dir.x * reach, y: from.y + dir.y * reach };
+  return dragHold(runner, from, to, holdMs, poll);
+}
+
+const distance = (a, b) => Math.hypot(a.center.x - b.center.x, a.center.y - b.center.y);
+
+/**
+ * MG1-B1 竖屏操作模型证据（mmo kit 默认 HUD）：设置面板「进入世界」整卡（`card-enter`，kit 的 route 形态）→ 选角页（没有角色先「建角」）
+ * →「进入」→ `MmoWorldLayer`（状态条 HP、摇杆 / 轮盘 / 停 / 拾取 / 传送 / 离开）→ 摇杆按住向右拖 1.2 s 松手 ⇒ 地面相对左移（本人向 +x 走）+ 旋钮回中
+ * → 轻点一个非本人实体方块 ⇒ 状态条「目标 <名>」+ 红环 → 点轮盘第一槽 ⇒ 施法反馈（提示 / 冷却秒数）→「离开」回首屏。
+ * 前置：本地栈 `npm run dev`（mmo kit 已装；有 mmodemo 时首图 demoVale 出生点旁就有行商）。
+ */
+async function scenarioMmoWorld(runner) {
+  await enterFromSettings(runner, "进入世界", "enter", "mmo kit 的 route 形态入口（选角页）");
+  await runner.step("选角页挂载（「选择角色」+ 槽位行）", async () => {
+    await runner.waitFor("「选择角色」", (walk) => selectNodes(walk, { kind: "label", text: "选择角色" })[0] ?? null, 30_000);
+    await runner.waitFor("槽位行（进入 / 建角）", (walk) => selectNodes(walk, { kind: "label", textMatches: /^(进入|建角)$/u })[0] ?? null, 30_000);
+    const rows = runner.find({ pathIncludes: "MmoCharacterSelectView", kind: "label" }).map((node) => node.text).filter(Boolean);
+    const shot = await runner.shot("mmo-characters");
+    return { rows: rows.slice(0, 12), shot };
+  });
+  await runner.step("没有角色先「建角」（fighter / dawn 默认名）；点第一枚「进入」", async () => {
+    await runner.walk();
+    let created = false;
+    if (runner.find({ kind: "label", text: "进入" }).length === 0) {
+      const create = runner.find({ kind: "label", text: "建角" })[0];
+      if (!create) throw new Error("选角页既无「进入」也无「建角」");
+      await runner.tap(create, "建角");
+      await runner.waitFor("建角后出现「进入」", (walk) => selectNodes(walk, { kind: "label", text: "进入" })[0] ?? null, 30_000);
+      created = true;
+    }
+    const enter = runner.find({ kind: "label", text: "进入" })[0];
+    return { created, ...(await runner.tap(enter, "进入")) };
+  });
+  const world = await runner.step("世界 HUD 挂载（MmoWorldLayer：状态条 HP、摇杆 joystick/knob、轮盘 wheel、停 / 拾取 / 传送 / 离开）", async () => {
+    const statusOf = (walk) => selectNodes(walk, { pathIncludes: "MmoWorldLayer/hud/status", kind: "label", textMatches: /HP \d+\/\d+/u })[0] ?? null;
+    await runner.waitFor("MmoWorldLayer 状态条 HP", statusOf, 90_000);
+    await runner.waitFor("视野同步完成 + 本人实体（char: 方块）", (walk) => {
+      const status = statusOf(walk);
+      const self = selectNodes(walk, { pathIncludes: "MmoWorldLayer/world/", namePrefix: "char:" })[0];
+      return status && !status.text.includes("同步中") && self ? true : null;
+    }, 60_000);
+    const required = ["joystick", "knob", "wheel", "btn-停", "btn-拾取", "btn-传送", "btn-离开"];
+    const missing = required.filter((name) => !runner.hasNode(name));
+    if (missing.length > 0) throw new Error(`HUD 缺少节点：${missing.join(", ")}`);
+    const spells = runner.find({ pathIncludes: "MmoWorldLayer/hud/wheel/slots/", kind: "label" }).map((node) => node.text).filter((text) => text && !/^\d+s$/u.test(text));
+    if (spells.length === 0) throw new Error("轮盘没有技能槽（职业技能表为空？）");
+    const status = runner.find({ pathIncludes: "MmoWorldLayer/hud/status", kind: "label" }).map((node) => node.text);
+    const ground = runner.find({ name: "ground", pathIncludes: "MmoWorldLayer/world/" })[0];
+    if (!ground) throw new Error("世界层没有地面");
+    const shot = await runner.shot("mmo-world");
+    return { status, spells, groundAt: [ground.center.x, ground.center.y], shot };
+  });
+  await runner.step("摇杆：按住向右拖到 90% 半径、按住 1.2 s 松手 ⇒ 地面相对左移（本人向 +x 走）且旋钮回中", async () => {
+    await runner.walk();
+    const pad = runner.find({ name: "joystick", pathIncludes: "MmoWorldLayer/hud/" })[0];
+    if (!pad) throw new Error("找不到摇杆");
+    const scaleX = runner.lastWalk.canvas.width / runner.lastWalk.visible.width;
+    const from = { x: pad.center.x, y: pad.center.y };
+    const to = { x: pad.center.x + pad.center.width * scaleX * 0.45, y: pad.center.y };
+    await dragHold(runner, from, to, 1_200);
+    await sleep(500);
+    await runner.walk();
+    const ground = runner.find({ name: "ground", pathIncludes: "MmoWorldLayer/world/" })[0];
+    const knob = runner.find({ name: "knob", pathIncludes: "MmoWorldLayer/hud/joystick/" })[0];
+    const shift = ground.center.x - world.groundAt[0];
+    const knobBack = Math.abs(knob.center.x - pad.center.x) < 2 && Math.abs(knob.center.y - pad.center.y) < 2;
+    const shot = await runner.shot("mmo-joystick");
+    if (!(shift < -4)) throw new Error(`拖摇杆后地面未相对左移（Δx=${shift.toFixed(1)} px）——本人没有向 +x 移动`);
+    if (!knobBack) throw new Error("松手后旋钮未回中");
+    return { groundShiftX: Math.round(shift * 10) / 10, knobBack, shot };
+  });
+  await runner.step("视野里没有别的实体就摇杆探索（下 → 右 → 上 → 左，各 ≤ 14 s；demoVale 出生点到野猪田约 8 s）", async () => {
+    await runner.walk();
+    if (otherEntityPlates(runner.lastWalk).length > 0) return { explored: false, visible: otherEntityPlates(runner.lastWalk).map((node) => node.name) };
+    const tried = [];
+    for (const [name, dir] of [["down", { x: 0, y: 1 }], ["right", { x: 1, y: 0 }], ["up", { x: 0, y: -1 }], ["left", { x: -1, y: 0 }]]) {
+      const startedAt = Date.now();
+      const found = await joystickHold(runner, dir, 14_000, (walk) => (otherEntityPlates(walk).length > 0 ? otherEntityPlates(walk).map((node) => node.name) : null));
+      tried.push({ dir: name, ms: Date.now() - startedAt, found: found ?? null });
+      if (found) {
+        await sleep(400);
+        return { explored: true, tried, visible: found, shot: await runner.shot("mmo-explore") };
+      }
+    }
+    throw new Error(`四个方向各走 14 s 仍没遇到别的实体：${JSON.stringify(tried)}`);
+  });
+  await runner.step("轻点一个非本人实体方块（优先行商）⇒ 状态条「目标 <名>」+ target-ring", async () => {
+    await runner.walk();
+    const labels = runner.find({ pathIncludes: "MmoWorldLayer/world/", kind: "label" });
+    const plates = otherEntityPlates(runner.lastWalk);
+    if (plates.length === 0) throw new Error("视野里没有非本人实体");
+    const plate = plates.find((node) => labels.some((label) => label.text.startsWith("行商") && distance(label, node) < 60)) ?? plates[0];
+    const label = labels.slice().sort((a, b) => distance(a, plate) - distance(b, plate))[0];
+    const name = (label?.text ?? "").split(" ")[0];
+    await runner.tap(plate, `实体方块 ${plate.name}`);
+    await runner.waitFor(`状态条「目标 ${name}」`, (walk) => selectNodes(walk, { pathIncludes: "MmoWorldLayer/hud/status", kind: "label", textIncludes: `目标 ${name}` })[0] ?? null, 15_000);
+    const targetRing = runner.hasNode("target-ring");
+    const shot = await runner.shot("mmo-target");
+    if (!targetRing) throw new Error("选中后没有 target-ring");
+    return { entity: plate.name, name, targetRing, shot };
+  });
+  await runner.step("轮盘：点第一枚技能槽 ⇒ cast 发出（状态条施法 / 冷却提示或槽上冷却秒数）", async () => {
+    await runner.walk();
+    const spell = world.spells[0];
+    const slot = runner.find({ pathIncludes: "MmoWorldLayer/hud/wheel/slots/", kind: "label", text: spell })[0];
+    if (!slot) throw new Error(`轮盘找不到技能槽 ${spell}`);
+    await runner.tap(slot, `轮盘槽 ${spell}`);
+    const feedback = await runner.waitFor("施法反馈", (walk) => {
+      const status = selectNodes(walk, { pathIncludes: "MmoWorldLayer/hud/status", kind: "label" }).map((node) => node.text).find((text) => text && /施法|冷却|未发出|：/u.test(text));
+      if (status) return { via: "status", text: status };
+      const cooldown = selectNodes(walk, { pathIncludes: "MmoWorldLayer/hud/wheel/slots/", kind: "label", textMatches: /^\d+s$/u })[0];
+      return cooldown ? { via: "wheel-cooldown", text: cooldown.text } : null;
+    }, 15_000);
+    const shot = await runner.shot("mmo-cast");
+    return { spell, feedback, shot };
+  });
+  return runner.step("点「离开」回首屏（MmoWorldLayer 卸载）", async () => {
+    await runner.tapText("离开", { pathIncludes: "MmoWorldLayer/hud/" });
+    await runner.waitFor("PromoHomeView 回来且世界已卸载",
+      (walk) => (selectNodes(walk, { name: "PromoHomeView" }).length > 0 && selectNodes(walk, { name: "MmoWorldLayer" }).length === 0 ? true : null), 45_000);
+    const shot = await runner.shot("mmo-back-home");
+    return { shot };
+  });
+}
+
 // ---------- 入口 ----------
 
 async function main() {
@@ -902,7 +1068,7 @@ async function main() {
       // ⚠ sgzzmap 与 slg 的卡片标签都是「大地图」，入口按 entryId 定位（world / map），⛔ 不按文本
       sgzzmap: async (current) => { await scenarioSettings(current); await replaySgzzmapWorld(current); },
       cosmetic: scenarioCosmetic, arena: scenarioArena, arenaCapture: scenarioArenaCapture,
-      arenaDuel: scenarioArenaDuel, arenaShop: scenarioArenaShop,
+      arenaDuel: scenarioArenaDuel, arenaShop: scenarioArenaShop, mmoWorld: scenarioMmoWorld,
       snake: scenarioSnake, ballMove: scenarioBallMove,
       areaList: scenarioAreaList, loginNotice: scenarioLoginNotice,
     };
