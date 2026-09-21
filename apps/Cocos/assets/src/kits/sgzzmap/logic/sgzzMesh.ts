@@ -6,7 +6,7 @@
  * ⚠ 画家序是纯整数排序：(row+col) 升序、(row−col) 升序。⛔ 不要用浮点 y 去比。
  */
 import {
-    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzGrid2Pos, sgzzRingTable,
+    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzGrid2Pos,
 } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 
 export interface SgzzGeometry {
@@ -179,35 +179,42 @@ export function sgzzGridEdgePolys(row: number, col: number, halfWidth: number,
     return out;
 }
 
-/** 边条落在「到邻格中点」的这个比例处：0.92 的深度刚好贴着菱形内缘。 */
-const BORDER_AT = 0.46;
-/** 边条半长（世界单位）。六向各一段，合起来围出一圈。 */
-const BORDER_HALF_LEN = SGZZ_TILE_HALF_W * 0.34;
+/**
+ * 菱形边界上的六个点（本格局部坐标）：S → W → NW中点 → N → E → SE中点。
+ *
+ * ★ `resDir` i 的共享边界**正好**是第 i 段（RING[i-1] → RING[i%6]）——六段首尾相接绕一圈。
+ * 其中 `resDir` 1（SW）与 4（NE）是**整条**菱形边；2/3（NW）与 5/6（SE）各是**半条**——
+ * 这套铺法是「错缝砌砖」，NW / SE 两条边各挨着两个邻格，所以一人一半。
+ * ⚠ 与行奇偶**无关**（两种奇偶实测一致）。
+ */
+const BORDER_RING: readonly (readonly [number, number])[] = [
+    [0, -SGZZ_TILE_HALF_H],                          // S
+    [-SGZZ_TILE_HALF_W, 0],                          // W
+    [-SGZZ_TILE_HALF_W / 2, SGZZ_TILE_HALF_H / 2],   // NW 中点
+    [0, SGZZ_TILE_HALF_H],                           // N
+    [SGZZ_TILE_HALF_W, 0],                           // E
+    [SGZZ_TILE_HALF_W / 2, -SGZZ_TILE_HALF_H / 2],   // SE 中点
+];
+/** 往格心收一点，让边条落在菱形**内缘**而不是骑在边上（骑着会和邻格的边条打架）。 */
+const BORDER_INSET = 0.88;
 
 /**
- * 一格在 resDir(1..6) 方向上的**边界条**。
+ * 一格在 resDir(1..6) 方向上的**边界条**：画在该方向真正的共享边界上，略向内收。
  *
- * ⚠ 六边邻接与菱形的四条边**对不上**：这套投影里六个邻居是 ±a、±b、±(a+b)
- * （a=(TW,TH)、b=(0.5TW,−1.5TH)），只有 ±a 正好共享菱形的 NE / SW 边，其余四个是斜向的。
- * 所以边条不按「菱形的某条边」画，而是画在**本格与该邻格连线的中垂线**上、贴着菱形内缘 ——
- * 六段合起来就是一圈描边。
- * ⛔ 早先的实现把 resDir 整个丢掉、每个边界方向铺一整格菱形：孤地有 6 个边界方向，
- *   同一格叠 6 层 alpha 0.85 ⇒ 几乎不透明，把底下的领地色完全盖住（真机上那格是黄的而不是蓝的）。
+ * ⛔ 早先两版都错过：
+ *  ① 把 resDir 整个丢掉、每个边界方向铺一整格菱形 —— 孤地 6 个方向叠 6 层 alpha 0.85
+ *    ⇒ 几乎不透明，把底下的领地色完全盖住（真机上那格是黄的而不是蓝的）；
+ *  ② 改画「到邻格连线的中垂线」—— 方向对了但位置不对，六段互不相接、还戳出格外，
+ *    看着像六道乱划的斜杠。共享边界不是中垂线，是上面 BORDER_RING 的那一段。
  */
 export function sgzzBorderStripPoly(row: number, col: number, resDir: number, halfWidth: number,
                                     rgba: readonly [number, number, number, number]):
     { readonly points: readonly (readonly [number, number])[]; readonly rgba: readonly [number, number, number, number] } | null {
-    const ring = sgzzRingTable(row);
-    const step = ring[resDir - 1];
-    if (!step) return null;
+    if (!Number.isInteger(resDir) || resDir < 1 || resDir > 6) return null;
     const c = sgzzGrid2Pos(row, col);
-    const n = sgzzGrid2Pos(row + step[0], col + step[1]);
-    const dx = n.x - c.x, dy = n.y - c.y;
-    const len = Math.hypot(dx, dy);
-    if (!(len > 1e-6)) return null;
-    const mx = c.x + dx * BORDER_AT, my = c.y + dy * BORDER_AT;
-    // 中垂线方向
-    const px = (-dy / len) * BORDER_HALF_LEN, py = (dx / len) * BORDER_HALF_LEN;
-    const points = writeSgzzSegmentQuad(mx - px, my - py, mx + px, my + py, halfWidth);
+    const a = BORDER_RING[resDir - 1], b = BORDER_RING[resDir % 6];
+    const points = writeSgzzSegmentQuad(
+        c.x + a[0] * BORDER_INSET, c.y + a[1] * BORDER_INSET,
+        c.x + b[0] * BORDER_INSET, c.y + b[1] * BORDER_INSET, halfWidth);
     return points ? { points, rgba } : null;
 }

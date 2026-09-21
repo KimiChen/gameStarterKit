@@ -199,33 +199,41 @@ test("★ 层表：未实现的层恒不可见（⛔ 不许门控说该建而渲
     assert.ok(sgzzVisibleLayers(0).includes("grid"));
 });
 
-test("★ 描边是六条边条，⛔ 不是把整格重涂六遍", () => {
+test("★ 描边：六段首尾相接绕菱形一圈，⛔ 不是重涂整格、也⛔不是六道乱划的斜杠", () => {
     const rgba = [1, 0.878, 0.467, 0.85] as const;
-    const c = sgzzGrid2Pos(700, 700);
-    const inside = (x: number, y: number) =>
-        Math.abs(x - c.x) / SGZZ_TILE_HALF_W + Math.abs(y - c.y) / SGZZ_TILE_HALF_H;
-
-    const seen = new Set<string>();
-    for (let dir = 1; dir <= 6; dir += 1) {
-        const poly = sgzzBorderStripPoly(700, 700, dir, 1.5, rgba);
-        assert.ok(poly, `resDir ${dir} 必须出条`);
-        const mid = [
-            (poly!.points[0][0] + poly!.points[2][0]) / 2,
-            (poly!.points[0][1] + poly!.points[2][1]) / 2,
-        ];
-        // ① 落在格内、且贴着内缘（⛔ 不是盖住整格，也⛔不是跑到格外）
-        const depth = inside(mid[0], mid[1]);
-        assert.ok(depth > 0.75 && depth < 1.0, `resDir ${dir} 的边条该贴内缘，实际深度 ${depth.toFixed(2)}`);
-        // ② 六向互不重合
-        const key = mid.map((v) => Math.round(v * 100)).join(",");
-        assert.equal(seen.has(key), false, `resDir ${dir} 与别的方向重合了`);
-        seen.add(key);
-        // ③ 面积远小于整格（整格 = 2·TW·TH）
-        const w = Math.hypot(poly!.points[0][0] - poly!.points[3][0], poly!.points[0][1] - poly!.points[3][1]);
-        const h = Math.hypot(poly!.points[0][0] - poly!.points[1][0], poly!.points[0][1] - poly!.points[1][1]);
-        assert.ok(w * h < 2 * SGZZ_TILE_HALF_W * SGZZ_TILE_HALF_H * 0.25,
-            `resDir ${dir} 的边条太大了（${(w * h).toFixed(0)}），像在铺整格`);
+    for (const row of [700, 701]) {          // ⚠ 与行奇偶无关，两种都测
+        const c = sgzzGrid2Pos(row, 700);
+        const ends: [number, number][][] = [];
+        for (let dir = 1; dir <= 6; dir += 1) {
+            const poly = sgzzBorderStripPoly(row, 700, dir, 0.6, rgba);
+            assert.ok(poly, `resDir ${dir} 必须出条`);
+            // 条是「线段 ± 法线」铺出来的四边形 ⇒ 两端中点即线段端点
+            const p = poly!.points;
+            ends.push([
+                [(p[0][0] + p[3][0]) / 2, (p[0][1] + p[3][1]) / 2],
+                [(p[1][0] + p[2][0]) / 2, (p[1][1] + p[2][1]) / 2],
+            ]);
+        }
+        // ① 首尾相接：第 i 段的终点 = 第 i+1 段的起点
+        for (let i = 0; i < 6; i += 1) {
+            const cur = ends[i][1], next = ends[(i + 1) % 6][0];
+            assert.ok(Math.hypot(cur[0] - next[0], cur[1] - next[1]) < 1e-6,
+                `row ${row}: 第 ${i + 1} 段与第 ${(i + 1) % 6 + 1} 段没接上 —— 那就围不成一圈`);
+        }
+        // ② 全部落在菱形内缘（⛔ 不许戳出格外，⛔ 也不许缩到格心）
+        for (const [i, seg] of ends.entries()) {
+            for (const [x, y] of seg) {
+                const depth = Math.abs(x - c.x) / SGZZ_TILE_HALF_W + Math.abs(y - c.y) / SGZZ_TILE_HALF_H;
+                assert.ok(depth > 0.7 && depth <= 1.0,
+                    `row ${row} resDir ${i + 1} 的端点深度 ${depth.toFixed(2)}，该贴内缘`);
+            }
+        }
+        // ③ resDir 1(SW) 与 4(NE) 是整条菱形边，2/3、5/6 各是半条
+        const len = (i: number) => Math.hypot(ends[i][1][0] - ends[i][0][0], ends[i][1][1] - ends[i][0][1]);
+        const edge = Math.hypot(SGZZ_TILE_HALF_W, SGZZ_TILE_HALF_H) * 0.88;
+        for (const i of [0, 3]) assert.ok(Math.abs(len(i) - edge) < 1e-6, `resDir ${i + 1} 该是整条边`);
+        for (const i of [1, 2, 4, 5]) assert.ok(Math.abs(len(i) - edge / 2) < 1e-6, `resDir ${i + 1} 该是半条边`);
     }
-    assert.equal(seen.size, 6);
-    assert.equal(sgzzBorderStripPoly(700, 700, 7, 1.5, rgba), null, "方向号越界回 null");
+    assert.equal(sgzzBorderStripPoly(700, 700, 0, 0.6, rgba), null, "方向号越界回 null");
+    assert.equal(sgzzBorderStripPoly(700, 700, 7, 0.6, rgba), null, "方向号越界回 null");
 });
