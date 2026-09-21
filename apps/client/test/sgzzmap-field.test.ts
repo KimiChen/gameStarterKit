@@ -251,3 +251,30 @@ test("★ 海岸不沿菱形边走 —— 轮廓必须是弯的，⛔ 不是逐�
     assert.equal(big, 0, `有 ${big}/${jumps.length} 处跳超过半格，像是沿格边走的折角`);
     assert.ok(Math.max(...jumps) < cellSamples * 0.5, "最大跳变应远小于一格");
 });
+
+test("★ 单格宽的河与陆桥不被掐断 —— v2 §6 的窄特征保护，实测当前参数已经够", () => {
+    // ⚠ 断在**边角**不算断：河是平面里的斜线，方形采样区的角上本来就没有它。
+    //   只看内区中段，⛔ 拿整块的「有水行数」当判据会把边角误判成断裂。
+    const interior = (f: { width: number; height: number }, j: number) =>
+        j >= f.height * 0.15 && j <= f.height * 0.85;
+
+    for (const [name, terrain, wantWater] of [
+        ["单格宽河", (row: number, col: number) => (col === 700 ? 4 : 0), true],
+        ["单格宽陆桥", (row: number, col: number) => (col === 700 ? 0 : 5), false],
+    ] as const) {
+        const f = bakeWith(terrain, 8);
+        let broken = 0, checked = 0;
+        for (let j = 0; j < f.height; j += 1) {
+            if (!interior(f, j)) continue;
+            checked += 1;
+            let has = false;
+            for (let i = 0; i < f.width; i += 1) {
+                const isWater = waterAt(f, j * f.width + i) > 0.5;
+                if (isWater === wantWater) { has = true; break; }
+            }
+            if (!has) broken += 1;
+        }
+        assert.ok(checked > 50, `${name}：检查的行太少`);
+        assert.equal(broken, 0, `${name} 在中段断了 ${broken}/${checked} 行 —— 平滑把细特征掐断了`);
+    }
+});
