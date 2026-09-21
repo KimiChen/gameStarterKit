@@ -15,7 +15,7 @@
  * ⚠ A 通道是**权重**不是透明度：⛔ 不要预乘、不要在 A=0 时清 RGB。
  */
 import {
-    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzClampGrid, sgzzPos2GridRaw,
+    SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W, sgzzClampGrid, sgzzPos2GridRaw, sgzzRingTable,
 } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 
 /** map 平面里一格的边长。⚠ = 半宽×√2（菱形对角 64×32 ⇒ 还原成边长 45.25 的正方格）。 */
@@ -44,6 +44,12 @@ export interface SgzzFieldParams {
     readonly coastDisplacementMaxCells: number;
     /** 陆水颜色混合半宽（R）：零等值线两侧多宽范围内做过渡。 */
     readonly waterBlendHalfWidthCells: number;
+    /**
+     * 细特征（同类邻居 ≤ 此数）的保护半宽（R）。
+     * ⚠ 只给细特征加宽，⛔ 全局加宽会把开阔岸线压成一块块方的。
+     */
+    readonly thinTubeHalfWidthCells: number;
+    readonly thinNeighbourMax: number;
 }
 
 /** 交付 manifest 里的参考参数。⚠ 改这些要连带重烘，⛔ 不要在运行时随手改。 */
@@ -55,6 +61,11 @@ export const SGZZ_FIELD_DEFAULTS: SgzzFieldParams = Object.freeze({
     coastSigmaCells: 0.60,
     coastDisplacementMaxCells: 0.38,
     waterBlendHalfWidthCells: 0.08,
+    // ⚠ 必须 ≥ 0.5R：细特征上相邻格心相距 R，保护圆盘的直径不到 R 就搭不上，
+    //   河会被打散成一串圆点（实测 0.42R 时仍断 6/64 行）。⛔ 别照抄文档的 0.42 —— 那是
+    //   「沿中心线展开的管带」的半宽，我这里是逐格圆盘，几何不同。
+    thinTubeHalfWidthCells: 0.55,
+    thinNeighbourMax: 2,
 });
 
 /** 引擎世界坐标 → map 平面。 */
@@ -213,6 +224,9 @@ export function bakeSgzzField(
     const centreDist = new Float32Array(total);
     const waterSeed = new Uint8Array(total);
     const landSeed = new Uint8Array(total);
+    /** 本采样点所属格是不是**细特征**（同类邻居 ≤ thinNeighbourMax）。 */
+    const thin = new Uint8Array(total);
+    const thinCache = new Map<number, number>();
     const amp = params.noiseAmplitudeCells * R;
     const period = params.noisePeriodCells * R;
 
@@ -252,6 +266,22 @@ export function bakeSgzzField(
             const uraw = sgzzPos2GridRaw(ux, uy);
             const ur = sgzzClampGrid(uraw.row, uraw.col, rows, cols);
             ownClass[idx] = terrainAt(ur.row, ur.col);
+            // ★ 细特征判定（v2 §6）：同类六邻 ≤ 2 ⇒ 窄河 / 陆桥 / 孤岛。
+            // ⚠ 按格缓存：⛔ 逐采样点数六邻会把烘焙拖慢一倍。
+            const cellKey = ur.row * 10000 + ur.col;
+            let isThin = thinCache.get(cellKey);
+            if (isThin === undefined) {
+                const mineWater = sgzzIsWaterClass(ownClass[idx]);
+                let same = 0;
+                for (const [dr, dc] of sgzzRingTable(ur.row)) {
+                    const nr = ur.row + dr, nc = ur.col + dc;
+                    if (nr < 0 || nc < 0 || nr >= rows || nc >= cols) continue;
+                    if (sgzzIsWaterClass(terrainAt(nr, nc)) === mineWater) same += 1;
+                }
+                isThin = same <= params.thinNeighbourMax ? 1 : 0;
+                thinCache.set(cellKey, isThin);
+            }
+            thin[idx] = isThin;
             // 到本格中心的距离（map 平面）
             const centreWorldY = -(ur.row + ur.col + 1) * SGZZ_TILE_HALF_H
                 - ((ur.row & 1) === 1 ? SGZZ_TILE_HALF_H * 0.5 : 0);
@@ -286,10 +316,14 @@ export function bakeSgzzField(
             let g = Math.max(d0[idx] - maxDisp, Math.min(d0[idx] + maxDisp, coast[idx]));
             g += (sinX[i] + sinY[j] + cosY[j] + cosX[i]) * 0.5 * coastAmp;
             // ★ 格心保护：格心附近岸线⛔不得翻面，否则玩法上「这格是水还是陆」会被美术推翻
-            if (centreDist[idx] <= margin) {
+            // ⚠ 细特征（窄河/陆桥/孤岛）用**更宽**的保护带：0.08R 只有一个采样点宽，
+            //   生产步长 4 下窄河会被平滑打散成一串孤立水点（v2 §6 说的就是这个）。
+            //   ⛔ 但只给细特征加宽 —— 全局加宽会把开阔岸线压成一块块方的。
+            const guard = thin[idx] ? params.thinTubeHalfWidthCells * R : margin;
+            if (centreDist[idx] <= guard) {
                 const wantWater = sgzzIsWaterClass(ownClass[idx]);
-                if (wantWater && g <= 0) g = margin / rect.step;
-                if (!wantWater && ownClass[idx] >= 0 && g >= 0) g = -margin / rect.step;
+                if (wantWater && g <= 0) g = guard / rect.step;
+                if (!wantWater && ownClass[idx] >= 0 && g >= 0) g = -guard / rect.step;
             }
             coast[idx] = g;
         }

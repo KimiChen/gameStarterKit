@@ -12,7 +12,7 @@ import { Material, Node, Texture2D, Vec4 } from "cc";
 import { bakeSgzzField } from "../logic/sgzzField";
 import {
     SGZZ_FIELD_BAKE_BUDGET, SGZZ_FIELD_CACHE_LIMIT, sgzzFieldBakeRect, sgzzFieldChunkQuad,
-    sgzzFieldChunksFor, type SgzzFieldChunk,
+    sgzzFieldChunksFor, sgzzFieldTierFor, type SgzzFieldChunk,
 } from "../logic/sgzzFieldChunks";
 import { sgzzTerrainIdAt } from "../logic/sgzzTerrain";
 import { buildSgzzPolyMesh } from "../logic/sgzzMesh";
@@ -57,7 +57,8 @@ export class SgzzFieldRenderer {
         this.tick += 1;
         const cam = logic.camera;
         const halfW = cam.width / cam.scale / 2, halfH = cam.height / cam.scale / 2;
-        const wanted = sgzzFieldChunksFor(cam.x, cam.y, halfW, halfH);
+        // ⚠ 按档取块：LOD2 用 80 格的大块（36 块 → 6 块），⛔ 一套尺寸吃遍所有档会烘 1.1 秒
+        const wanted = sgzzFieldChunksFor(cam.x, cam.y, halfW, halfH, sgzzFieldTierFor(cam.lod));
 
         let baked = 0, missing = 0;
         for (const chunk of wanted) {
@@ -94,7 +95,8 @@ export class SgzzFieldRenderer {
         const geometry = buildSgzzPolyMesh([{
             points: sgzzFieldChunkQuad(chunk), rgba: [1, 1, 1, 1],
         }]);
-        const batch = createSgzzBatch(this.root, `sgzz-field-${chunk.cx}_${chunk.cy}`, geometry, material, 0);
+        const batch = createSgzzBatch(this.root, `sgzz-field-${chunk.tier}_${chunk.cx}_${chunk.cy}`,
+            geometry, material, 0);
         return { chunk, material, w0, w1, batch, used: this.tick };
     }
 

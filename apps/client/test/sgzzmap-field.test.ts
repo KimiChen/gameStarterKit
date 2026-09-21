@@ -10,8 +10,8 @@ import {
 } from "../src/kits/sgzzmap/logic/sgzzField";
 import { SGZZ_TILE_HALF_W } from "../src/shared/kits/sgzzmap/api/hexmap/index";
 import {
-    SGZZ_FIELD_BAKE_STEP, sgzzFieldBakeRect, sgzzFieldChunkAt, sgzzFieldChunkKey,
-    sgzzFieldChunkOf, sgzzFieldChunkQuad, sgzzFieldChunksFor,
+    SGZZ_FIELD_BAKE_STEP, SGZZ_FIELD_TIERS, sgzzFieldBakeRect, sgzzFieldChunkAt, sgzzFieldChunkKey,
+    sgzzFieldChunkOf, sgzzFieldChunkQuad, sgzzFieldChunksFor, sgzzFieldTierFor,
 } from "../src/kits/sgzzmap/logic/sgzzFieldChunks";
 
 test("map 平面：X=worldX、Y=−2·worldY，一格边长 = 32√2（等距剪切被还原成正方格）", () => {
@@ -182,9 +182,14 @@ test("★ 距离场：chamfer 近似要接近真实欧氏距离，⛔ 不能用�
     }
 });
 
-/** 造一块含水的地形 fixture 并烘出来。 */
-function bakeWith(terrain: (row: number, col: number) => number, cells = 6) {
-    const R = SGZZ_FIELD_CELL_EDGE, step = SGZZ_FIELD_STEP;
+/**
+ * 造一块含水的地形 fixture 并烘出来。
+ * ⚠ 步长必须用**生产档位**的 tier.step，⛔ 不能用 SGZZ_FIELD_STEP（那是规范里的理想值 2，
+ *   线上从没用过）。早先用 2 测，把「窄河不断」测成了绿的，而生产步长 4 下它是断的。
+ */
+function bakeWith(terrain: (row: number, col: number) => number, cells = 6,
+                  step = SGZZ_FIELD_TIERS[0].step) {
+    const R = SGZZ_FIELD_CELL_EDGE;
     const halo = Math.ceil((SGZZ_FIELD_DEFAULTS.coastSigmaCells * 3 * R) / step) + 2;
     const innerN = Math.round((cells * R) / step);
     const centre = sgzzToPlane(0, -(700 + 700 + 1) * 16);
@@ -252,17 +257,20 @@ test("★ 海岸不沿菱形边走 —— 轮廓必须是弯的，⛔ 不是逐�
     assert.ok(Math.max(...jumps) < cellSamples * 0.5, "最大跳变应远小于一格");
 });
 
-test("★ 单格宽的河与陆桥不被掐断 —— v2 §6 的窄特征保护，实测当前参数已经够", () => {
+test("★ 单格宽的河与陆桥不被掐断（v2 §6 的窄特征保护）—— 两档都要验", () => {
     // ⚠ 断在**边角**不算断：河是平面里的斜线，方形采样区的角上本来就没有它。
     //   只看内区中段，⛔ 拿整块的「有水行数」当判据会把边角误判成断裂。
     const interior = (f: { width: number; height: number }, j: number) =>
         j >= f.height * 0.15 && j <= f.height * 0.85;
 
+    // ⚠ 两个档位都要验：LOD0/1 步长 4、LOD2 步长 16。
+    //   ⛔ 只验一档没用 —— 早先只用规范里的理想步长 2 测，把这条测成了绿的。
+    for (const tier of SGZZ_FIELD_TIERS) {
     for (const [name, terrain, wantWater] of [
-        ["单格宽河", (row: number, col: number) => (col === 700 ? 4 : 0), true],
-        ["单格宽陆桥", (row: number, col: number) => (col === 700 ? 0 : 5), false],
+        ["单格宽河", (_row: number, col: number) => (col === 700 ? 4 : 0), true],
+        ["单格宽陆桥", (_row: number, col: number) => (col === 700 ? 0 : 5), false],
     ] as const) {
-        const f = bakeWith(terrain, 8);
+        const f = bakeWith(terrain, 8, tier.step);
         let broken = 0, checked = 0;
         for (let j = 0; j < f.height; j += 1) {
             if (!interior(f, j)) continue;
@@ -274,7 +282,36 @@ test("★ 单格宽的河与陆桥不被掐断 —— v2 §6 的窄特征保护�
             }
             if (!has) broken += 1;
         }
-        assert.ok(checked > 50, `${name}：检查的行太少`);
-        assert.equal(broken, 0, `${name} 在中段断了 ${broken}/${checked} 行 —— 平滑把细特征掐断了`);
+        assert.ok(checked > 10, `${name}：检查的行太少`);
+        assert.equal(broken, 0,
+            `${name}（步长 ${tier.step}）在中段断了 ${broken}/${checked} 行 —— 平滑把细特征掐断了`);
     }
+    }
+});
+
+test("★ 分档：LOD2 用大块，⛔ 一套尺寸吃遍所有档会烘一秒", () => {
+    assert.equal(sgzzFieldTierFor(0).cells, 20);
+    assert.equal(sgzzFieldTierFor(1).cells, 20);
+    assert.ok(sgzzFieldTierFor(2).cells > sgzzFieldTierFor(0).cells, "LOD2 该用更大的块");
+    // ⚠ 步长最多粗一倍：⛔ 再粗（16）时一格才 2.8 个采样点，单格宽的河会被平滑抹掉
+    assert.ok(sgzzFieldTierFor(2).step <= sgzzFieldTierFor(0).step * 2,
+        `LOD2 步长 ${sgzzFieldTierFor(2).step} 太粗，窄河会消失`);
+    // ⚠ 采样点数必须**不随档变**：块放大 4 倍、步长也放大 4 倍 ⇒ 单块成本不变
+    for (const tier of SGZZ_FIELD_TIERS) {
+        const chunk = sgzzFieldChunkOf(0, 0, tier);
+        assert.equal(chunk.samples, Math.round(tier.cells * SGZZ_FIELD_CELL_EDGE / tier.step));
+    }
+    assert.equal(sgzzFieldChunkOf(0, 0, SGZZ_FIELD_TIERS[0]).samples,
+        sgzzFieldChunkOf(0, 0, SGZZ_FIELD_TIERS[1]).samples, "两档单块成本应相同");
+    // ⚠ key 必须带档号：⛔ 不带的话两档同坐标的块会互相顶掉
+    assert.notEqual(sgzzFieldChunkKey(3, -2, 0), sgzzFieldChunkKey(3, -2, 1));
+    const keys = new Set<number>();
+    for (const t of [0, 1]) for (let cx = -4; cx <= 4; cx += 1) for (let cy = -4; cy <= 4; cy += 1) {
+        keys.add(sgzzFieldChunkKey(cx, cy, t));
+    }
+    assert.equal(keys.size, 2 * 9 * 9, "key ⛔ 不得碰撞");
+    // LOD2 的块数要真的降下来
+    const near = sgzzFieldChunksFor(0, -22416, 750 / 0.34 / 2, 1122 / 0.34 / 2, SGZZ_FIELD_TIERS[1]);
+    const naive = sgzzFieldChunksFor(0, -22416, 750 / 0.34 / 2, 1122 / 0.34 / 2, SGZZ_FIELD_TIERS[0]);
+    assert.ok(near.length * 3 <= naive.length, `LOD2 大块 ${near.length} 块 vs 小块 ${naive.length} 块，省得不够`);
 });
