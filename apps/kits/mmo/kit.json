@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "mmo",
-  "version": "0.1.21",
-  "description": "MMO 地基（docs/MMO.md §7；MK4 施工中）：常驻分线世界 mmoWorld + characters / world / movement / content / social / combat / ai / inventory / orchestration 九个 api 面，各自 versioning",
+  "version": "0.1.22",
+  "description": "MMO 地基（docs/MMO.md §7；v1 冻结 2026-09-22，tag mmo-kit-v1-frozen）：常驻分线世界 mmoWorld + characters / world / movement / content / social / combat / ai / inventory / orchestration 九个 api 面，各自 versioning",
   "api": {
     "characters": {
       "version": 1,

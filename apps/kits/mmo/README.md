@@ -13,7 +13,7 @@ MK1–MK4 依次再加 `combat` / `ai` / `inventory` / `social` / `orchestration
 | MK1 世界闭环 | movement 面、AOI 接入、两图交接、检查点验收、社交包装、基准 | ✅ 2026-09-20 退出（B1–B6，kit 0.1.6；kill criterion 取 §11.2 v1 例外「热点互见 ≤ 50 人」，50 人三次重跑 ✅；MMO.md §12 MK1 行；tag `mk1-exit`） |
 | MK2 模拟闭环 | combat + ai 面、掉落 | ✅ 2026-09-20 退出（B1 combat / B2 ai / B3 掉落，kit 0.1.9；MMO.md §12 MK2 行；tag `mk2-exit`） |
 | MK3 资产闭环 | inventory 面、角色保存定稿、长跑 | B1 inventory 面物品半边 ✅、B2 角色保存定稿 ✅、B3 长跑基准台 + 4 分钟冒烟 ✅ 2026-09-20（kit 0.1.12）；**✅ 2026-09-22 退出**：24 h 长跑 stable（officenvidia，见基准段；MMO.md §12 MK3 行；tag `mk3-exit`） |
-| MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、卸载 / 升级闸、说明书、容量证据、冻结 `mmo-kit-v1-frozen` | B1 orchestration 面 ✅、B2 贡献点装载 ✅、B3 卸载 / 升级闸 ✅、B4 说明书 ✅（本 README「一、说明书」）、B5 容量证据 ✅ 2026-09-20（kit 0.1.17；MMO.md §12 MK4 行）；**B6 冻结 tag 待 MK3 长跑报告**（场景 B 50 人整窗 p99 回归已于 2026-09-20 拍板接受为 v1 已知回归、优化留 v1.x；kit 0.1.18） |
+| MK4 编排与验收 | orchestration 面 + 运行器 + harness、贡献点装载、卸载 / 升级闸、说明书、容量证据、冻结 `mmo-kit-v1-frozen` | B1 orchestration 面 ✅、B2 贡献点装载 ✅、B3 卸载 / 升级闸 ✅、B4 说明书 ✅（本 README「一、说明书」）、B5 容量证据 ✅ 2026-09-20、**B6 冻结 ✅ 2026-09-22 退出**（tag `mmo-kit-v1-frozen` 含 mmo.lock，kit 0.1.22；MMO.md §12 MK4 行；50 人整窗 p99 回归已拍板接受、优化留 v1.x） |
 
 ## 一、说明书（MK4-B4；消费方视角——内容插件怎么用这个 kit）
 
