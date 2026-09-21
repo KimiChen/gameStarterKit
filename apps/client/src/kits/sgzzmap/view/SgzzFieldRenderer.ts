@@ -60,6 +60,14 @@ export class SgzzFieldRenderer {
         // ⚠ 按档取块：LOD2 用 80 格的大块（36 块 → 6 块），⛔ 一套尺寸吃遍所有档会烘 1.1 秒
         const wanted = sgzzFieldChunksFor(cam.x, cam.y, halfW, halfH, sgzzFieldTierFor(cam.lod));
 
+        // ⚠ 不在本帧视野里的块（含**别的档**的块）要停掉节点，⛔ 否则它们还在画：
+        //   切档瞬间旧档的块全留着 —— 真机 run 32 在 LOD2 上同时挂着 26 块（应为 8）。
+        //   只停用不销毁 ⇒ 来回缩放不用重烘（单块 31 ms）。
+        const want = new Set(wanted.map((c) => c.key));
+        for (const c of this.cache.values()) {
+            if (c.batch) c.batch.node.active = want.has(c.chunk.key);
+        }
+
         let baked = 0, missing = 0;
         for (const chunk of wanted) {
             const hit = this.cache.get(chunk.key);

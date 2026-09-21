@@ -277,7 +277,9 @@ export async function replaySgzzmapWorld(runner) {
         const evidence = await runner.waitFor("LOD 2 且覆盖场用 tier 1 的大块", (walk) => {
             const value = readSgzzmapEvidence(walk);
             if (!value || value.lod !== 2) return null;
-            return value.fieldChunks > 0 && value.fieldTiers.includes(1) ? value : null;
+            // ⚠ 切档后旧档的块必须停掉：⛔ 还挂着的话是白画（真机 run 32 在 LOD2 挂了 26 块）
+            return value.fieldChunks > 0 && value.fieldTiers.length === 1
+                && value.fieldTiers[0] === 1 ? value : null;
         }, 45_000);
         return { ...evidence, shot: await runner.shot("sgzzmap-lod2-tier1") };
     });
