@@ -45,6 +45,14 @@ DECOR_COLS = 3
 DECOR_SHEET = 1024
 DECOR_NAMES = ["tree", "pine", "rock", "peak", "reed", "dune", "tuft"]
 
+# ── 连续覆盖场用的**无缝**地表图集（美术规范-过渡区域 v2） ────────────────────
+# ⚠ 与逐格图集不同：这张**没有出血带**，因为着色器用 fract() 在格内平铺 ——
+#   留出血带反而会让 fract 回绕处采到隔壁像素。⛔ 别照搬 GUTTER。
+# ⚠ 片必须周期接边（实测交付的 8 张左右/上下接边差 0.00）。
+FIELD_NAMES = ["plain", "forest", "hill", "mountain", "water", "sea", "wetland", "desert"]
+FIELD_COLS = 4
+FIELD_ROWS = 2
+
 
 def cell_origin(index: int) -> tuple[int, int]:
     """第 index 格的左上角（含出血带偏移）。id = 行×COLS + 列。"""
@@ -132,6 +140,40 @@ def pack_decor(map_id: str, src: Path) -> None:
     print(f"decor-atlas.png  {DECOR_SHEET}×{DECOR_SHEET}  {len(cells)} 格（锚点 128,224；3px = 1 世界单位）")
 
 
+def pack_field_atlas(map_id: str, src: Path) -> None:
+    """8 类地表拼成 4×2 的无缝图集，供连续覆盖场着色器按世界坐标平铺采样。"""
+    out = config.out_dir(map_id)
+    tile = Image.open(src / f"{FIELD_NAMES[0]}.png").convert("RGB")
+    cw, ch = tile.size
+    sheet = Image.new("RGB", (cw * FIELD_COLS, ch * FIELD_ROWS))
+    cells = []
+    for index, name in enumerate(FIELD_NAMES):
+        path = src / f"{name}.png"
+        if not path.exists():
+            raise SystemExit(f"缺无缝地表：{path}")
+        im = Image.open(path).convert("RGB")
+        if im.size != (cw, ch):
+            raise SystemExit(f"{path} 尺寸 {im.size}，应与 {FIELD_NAMES[0]} 一致 {(cw, ch)}")
+        # ⚠ 周期接边自检：接不上的话世界坐标平铺会露出规则缝
+        px = im.load()
+        lr = sum(abs(px[0, y][k] - px[cw - 1, y][k]) for y in range(ch) for k in range(3)) / (ch * 3)
+        tb = sum(abs(px[x, 0][k] - px[x, ch - 1][k]) for x in range(cw) for k in range(3)) / (cw * 3)
+        if lr > 6 or tb > 6:
+            raise SystemExit(f"{path} 接边差过大（左右 {lr:.1f} 上下 {tb:.1f}），⛔ 不可平铺")
+        row, col = divmod(index, FIELD_COLS)
+        sheet.paste(im, (col * cw, row * ch))
+        cells.append({"id": index, "name": name, "cell": [col * cw, row * ch, cw, ch]})
+    sheet.save(out / "field-atlas.png")
+    (out / "field-atlas.meta.json").write_text(json.dumps({
+        "schemaVersion": 1, "mapId": map_id, "cell": [cw, ch],
+        "gridCols": FIELD_COLS, "gridRows": FIELD_ROWS,
+        "size": [cw * FIELD_COLS, ch * FIELD_ROWS], "gutter": 0,
+        "uv": "world-tiled-fract", "cells": cells,
+    }, ensure_ascii=False, indent=1) + "\n")
+    print(f"field-atlas.png  {cw * FIELD_COLS}×{ch * FIELD_ROWS}  {len(cells)} 格"
+          f"（⛔ 无出血带：着色器用 fract 平铺）")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("map_id")
@@ -143,6 +185,11 @@ def main() -> None:
     if not src.exists():
         raise SystemExit(f"交付目录不存在：{src}")
     pack(args.map_id, src)
+    field = src.parent / "blend-smooth-v2" / "terrain"
+    if field.exists():
+        pack_field_atlas(args.map_id, field)
+    else:
+        print(f"⚠ 没有 {field}，跳过无缝地表图集")
     decor = src.parent / "decor"
     if decor.exists():
         pack_decor(args.map_id, decor)

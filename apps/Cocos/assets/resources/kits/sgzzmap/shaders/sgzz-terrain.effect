@@ -1,0 +1,109 @@
+// sgzzmap 近档地表：连续覆盖场混合（美术规范-过渡区域 v2）
+//
+// ⚠ 为什么必须自定义 effect：8 路地形按**逐像素权重**混合，builtin-unlit 只有一个采样器、
+//   顶点色也只能做整片染色，做不到。这是本仓第一个自定义着色器。
+// ⚠ 顶点位置就是 **sgzzmap 世界坐标**（平移/缩放在父节点 transform 上），
+//   所以 map 平面坐标可以直接从 a_position 算，⛔ 不需要额外 uniform 传相机。
+// ⚠ 地形贴图用 fract() 在图集格内手动平铺 ⇒ 图集必须 mipfilter:none，
+//   ⛔ 开 mip 会在 fract 的回绕处出现导数跳变形成缝。
+CCEffect %{
+  techniques:
+  - name: opaque
+    passes:
+    - vert: sgzz-terrain-vs:vert
+      frag: sgzz-terrain-fs:frag
+      rasterizerState:
+        cullMode: none
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: one
+          blendDstAlpha: one_minus_src_alpha
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+      properties:
+        atlasTex:   { value: grey }
+        weights0:   { value: white }
+        weights1:   { value: white }
+        chunkRect:  { value: [0.0, 0.0, 1.0, 1.0] }
+        tileWorld:  { value: [64.0, 64.0, 0.0, 0.0] }
+}%
+
+CCProgram sgzz-terrain-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <builtin/uniforms/cc-local>
+
+  in vec3 a_position;
+  in vec4 a_color;
+
+  out vec4 v_color;
+  // map 平面坐标：X = worldX，Y = -2 * worldY（把等距剪切还原成正方格）
+  out vec2 v_map;
+
+  vec4 vert () {
+    v_color = a_color;
+    v_map = vec2(a_position.x, -2.0 * a_position.y);
+    return cc_matProj * (cc_matView * cc_matWorld) * vec4(a_position, 1.0);
+  }
+}%
+
+CCProgram sgzz-terrain-fs %{
+  precision highp float;
+
+  in vec4 v_color;
+  in vec2 v_map;
+
+  uniform sampler2D atlasTex;
+  uniform sampler2D weights0;
+  uniform sampler2D weights1;
+
+  uniform SgzzTerrain {
+    // (minX, minY, 1/width, 1/height) —— chunk 在 map 平面里的矩形
+    vec4 chunkRect;
+    // (tileWorldX, tileWorldY, atlasCols, atlasRows) —— 一次平铺覆盖多少世界单位 / 图集排布
+    vec4 tileWorld;
+  };
+
+  // 第 i 类地形在图集里的格（按 atlasCols/atlasRows 均分，与 pack-atlas 的排布一致）
+  vec2 cellOrigin (float index) {
+    float cols = tileWorld.z;
+    float row = floor(index / cols);
+    float col = index - row * cols;
+    return vec2(col / cols, row / tileWorld.w);
+  }
+
+  vec3 sampleClass (float index, vec2 tileUv) {
+    vec2 size = vec2(1.0 / tileWorld.z, 1.0 / tileWorld.w);
+    return texture(atlasTex, cellOrigin(index) + tileUv * size).rgb;
+  }
+
+  vec4 frag () {
+    vec2 wuv = (v_map - chunkRect.xy) * chunkRect.zw;
+    // ⚠ A 通道是**权重**不是透明度：⛔ 不要在这里做预乘或按 alpha 丢弃
+    vec4 w0 = texture(weights0, wuv);
+    vec4 w1 = texture(weights1, wuv);
+
+    // ⚠ 世界坐标平铺：⛔ 不能每格重置 UV，否则平滑之后仍会露出纹理格
+    vec2 tileUv = fract(v_map / tileWorld.xy);
+
+    vec3 acc = vec3(0.0);
+    float total = 0.0;
+    // 0..3 在 weights0，4..7 在 weights1
+    acc += w0.r * sampleClass(0.0, tileUv); total += w0.r;
+    acc += w0.g * sampleClass(1.0, tileUv); total += w0.g;
+    acc += w0.b * sampleClass(2.0, tileUv); total += w0.b;
+    acc += w0.a * sampleClass(3.0, tileUv); total += w0.a;
+    acc += w1.r * sampleClass(4.0, tileUv); total += w1.r;
+    acc += w1.g * sampleClass(5.0, tileUv); total += w1.g;
+    acc += w1.b * sampleClass(6.0, tileUv); total += w1.b;
+    acc += w1.a * sampleClass(7.0, tileUv); total += w1.a;
+
+    // ⚠ 采样后重新归一：八个通道是独立数值，⛔ 不保证和为 1
+    vec3 col = total > 0.0001 ? acc / total : sampleClass(0.0, tileUv);
+    return vec4(col * v_color.rgb, v_color.a);
+  }
+}%
