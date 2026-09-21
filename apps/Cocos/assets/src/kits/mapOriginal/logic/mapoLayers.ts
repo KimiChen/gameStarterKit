@@ -1,0 +1,55 @@
+/**
+ * 分层门控：每一档 LOD 建哪些层。⛔ 改了要同步改 kit README 的层表。
+ * 取自原作 viewport_lod 的逐档 gate（LOD_4 起切远档底图）。
+ *
+ * ⚠ v1 只有「看得见的地图」这几层：⛔ 无领地/描边/行军/鸟瞰聚合（那些要服务端）。
+ */
+import { MAPO_LOD_MAX } from "../../../shared/kits/mapOriginal/api/hexmap/index";
+
+export type MapoLayerId = "terrain" | "grid" | "decor" | "plate" | "banner" | "label";
+
+interface LayerGate {
+    readonly id: MapoLayerId;
+    /** LOD > hideAtLod 时不建。 */
+    readonly hideAtLod: number;
+    /** LOD < showFromLod 时不建。 */
+    readonly showFromLod: number;
+    readonly streamed: boolean;
+    /**
+     * 渲染层**真的会建它**吗。
+     * ⚠ false = 只占位、尚无实现，`mapoLayerVisible` 对它恒回 false ——
+     * ⛔ 不许出现「门控说该建、渲染器根本没写」的两张皮（sgzzmap 真机重放为此红过一次）。
+     */
+    readonly implemented: boolean;
+}
+
+export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
+    { id: "terrain", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
+    // ⚠ 网格线只在最近两档；线宽按「屏幕像素 / scale」折算，⛔ 不是世界常量
+    { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: true },
+    { id: "plate", hideAtLod: MAPO_LOD_MAX, showFromLod: 3, streamed: false, implemented: true },
+    // ── 以下**尚未实现**：位置留着，⛔ 别当成能用 ──────────────────────────────
+    // decor 摆件等原版地物图集策展；banner 目标旗、label 地名都要服务端数据。
+    { id: "decor", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: false },
+    { id: "banner", hideAtLod: 1, showFromLod: 0, streamed: false, implemented: false },
+    { id: "label", hideAtLod: 2, showFromLod: 0, streamed: false, implemented: false },
+] as const);
+
+/** 表里写着但还没实现的层。⚠ 加实现时把 implemented 翻成 true，这个列表会自动缩短。 */
+export const MAPO_PLANNED_LAYERS: readonly MapoLayerId[] =
+    Object.freeze(MAPO_LAYERS.filter((l) => !l.implemented).map((l) => l.id));
+
+export function mapoLayerVisible(id: MapoLayerId, lod: number): boolean {
+    const gate = MAPO_LAYERS.find((l) => l.id === id);
+    if (!gate) throw new RangeError(`MAPO unknown layer ${id}`);
+    return gate.implemented && lod >= gate.showFromLod && lod <= gate.hideAtLod;
+}
+
+export function mapoVisibleLayers(lod: number): MapoLayerId[] {
+    return MAPO_LAYERS.filter((l) => mapoLayerVisible(l.id, lod)).map((l) => l.id);
+}
+
+/** 近档（逐格铺菱形）还是远档（整幅底图）。 */
+export function mapoIsNearField(lod: number): boolean {
+    return mapoLayerVisible("terrain", lod);
+}

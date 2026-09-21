@@ -48,6 +48,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         sharedPkgs: ["ui/Common_Btn","ui/Common_RGBA","ui/Common_ComboBox","ui/L10n_zh_hans"],
         load: () => import("../view/LoginNoticeView").then((m) => m.LoginNoticeView),
     }),
+    MapOriginalWorld: defineView({
+        name: "MapOriginalWorld", kind: "cocos", layer: "popup",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../kits/mapOriginal/view/MapOriginalWorldView").then((m) => m.MapOriginalWorldView),
+    }),
     MmoCharacterSelect: defineView({
         name: "MmoCharacterSelect", kind: "cocos", layer: "popup",
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
@@ -121,6 +126,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "Home", owner: "builtin", kind: "fgui", pkg: "View_Home_Home", comp: "Home", path: "apps/client/src/view/HomeView.ts", logic: "apps/client/src/logic/page/HomeLogic.ts", sidecar: "apps/client/src/view/HomeView.view.json" },
     { name: "Login", owner: "builtin", kind: "fgui", pkg: "View_AreaList_Login", comp: "Login", path: "apps/client/src/view/LoginView.ts", logic: "apps/client/src/logic/page/LoginLogic.ts", sidecar: "apps/client/src/view/LoginView.view.json" },
     { name: "LoginNotice", owner: "builtin", kind: "fgui", pkg: "View_AreaList_LoginNotice", comp: "LoginNotice", path: "apps/client/src/view/LoginNoticeView.ts", logic: "apps/client/src/logic/page/LoginNoticeLogic.ts", sidecar: "apps/client/src/view/LoginNoticeView.view.json" },
+    { name: "MapOriginalWorld", owner: "mapOriginal", kind: "cocos", path: "apps/client/src/kits/mapOriginal/view/MapOriginalWorldView.ts", logic: "apps/client/src/kits/mapOriginal/logic/MapOriginalWorldLogic.ts", sidecar: "apps/client/src/kits/mapOriginal/view/MapOriginalWorldView.view.json" },
     { name: "MmoCharacterSelect", owner: "mmo", kind: "cocos", path: "apps/client/src/kits/mmo/view/MmoCharacterSelectView.ts", logic: "apps/client/src/kits/mmo/logic/MmoCharacterSelectLogic.ts", sidecar: "apps/client/src/kits/mmo/view/MmoCharacterSelectView.view.json" },
     { name: "MmoDemoBoard", owner: "mmodemo", kind: "cocos", path: "apps/client/src/plugins/mmodemo/view/MmoDemoBoardView.ts", logic: "apps/client/src/plugins/mmodemo/logic/MmoDemoBoardLogic.ts", sidecar: "apps/client/src/plugins/mmodemo/view/MmoDemoBoardView.view.json" },
     { name: "MmoHoldHud", owner: "mmohold", kind: "cocos", path: "apps/client/src/plugins/mmohold/view/MmoHoldHudView.ts", logic: "apps/client/src/plugins/mmohold/logic/MmoHoldHudLogic.ts", sidecar: "apps/client/src/plugins/mmohold/view/MmoHoldHudView.view.json" },
@@ -139,6 +145,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
 /** manifest 声明的 view 目录（守门测试的递归比对根）。 */
 export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/kits/arena/view",
+    "apps/client/src/kits/mapOriginal/view",
     "apps/client/src/kits/mmo/view",
     "apps/client/src/kits/sgzzmap/view",
     "apps/client/src/kits/slg/view",

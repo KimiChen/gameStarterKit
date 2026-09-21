@@ -22,6 +22,16 @@ export const KIT_CATALOG: readonly KitCatalogEntry[] = [
         ],
     },
     {
+        id: "mapOriginal",
+        version: null,
+        api: {
+            hexmap: { version: 1, minSupported: 1 },
+        },
+        modes: [],
+        domains: [],
+        effects: [],
+    },
+    {
         id: "mmo",
         version: "0.1.28",
         api: {

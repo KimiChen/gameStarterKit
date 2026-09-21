@@ -35,6 +35,22 @@ export const SERVER_KIT_CATALOG: readonly ServerKitCatalogEntry[] = [
         fragments: [],
     },
     {
+        id: "mapOriginal",
+        version: null,
+        api: {
+            hexmap: { version: 1, minSupported: 1 },
+        },
+        modes: [],
+        domains: [],
+        effects: [],
+        sqlFiles: [],
+        sqlTables: [],
+        userKeys: [],
+        workers: [],
+        contributions: {},
+        fragments: [],
+    },
+    {
         id: "mmo",
         version: "0.1.28",
         api: {

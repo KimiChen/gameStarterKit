@@ -1,0 +1,264 @@
+{
+ "schemaVersion": 1,
+ "mapId": "s1",
+ "maxRow": 1500,
+ "maxCol": 1500,
+ "byteLength": 2250008,
+ "sha256": "a77826d39e72e677f1f4c25e258ed5f7dbf2c966050c6fe6e21788f2737604a3",
+ "palette": [
+  {
+   "id": 0,
+   "name": "plain",
+   "cn": "平地",
+   "passable": true,
+   "color": [
+    137,
+    148,
+    100
+   ],
+   "tiles": 844134
+  },
+  {
+   "id": 1,
+   "name": "wood",
+   "cn": "木材",
+   "passable": true,
+   "color": [
+    104,
+    132,
+    78
+   ],
+   "tiles": 180654
+  },
+  {
+   "id": 2,
+   "name": "stone",
+   "cn": "石料",
+   "passable": true,
+   "color": [
+    150,
+    148,
+    112
+   ],
+   "tiles": 154656
+  },
+  {
+   "id": 3,
+   "name": "food",
+   "cn": "粮田",
+   "passable": true,
+   "color": [
+    166,
+    168,
+    96
+   ],
+   "tiles": 222473
+  },
+  {
+   "id": 4,
+   "name": "iron",
+   "cn": "铁矿",
+   "passable": true,
+   "color": [
+    128,
+    124,
+    116
+   ],
+   "tiles": 210511
+  },
+  {
+   "id": 5,
+   "name": "gold",
+   "cn": "金矿",
+   "passable": true,
+   "color": [
+    176,
+    160,
+    100
+   ],
+   "tiles": 132835
+  },
+  {
+   "id": 6,
+   "name": "water",
+   "cn": "水域",
+   "passable": false,
+   "color": [
+    96,
+    128,
+    138
+   ],
+   "tiles": 33958
+  },
+  {
+   "id": 7,
+   "name": "forest",
+   "cn": "森林",
+   "passable": true,
+   "color": [
+    86,
+    112,
+    74
+   ],
+   "tiles": 15395
+  },
+  {
+   "id": 8,
+   "name": "wetland",
+   "cn": "湿地",
+   "passable": true,
+   "color": [
+    112,
+    132,
+    104
+   ],
+   "tiles": 6120
+  },
+  {
+   "id": 9,
+   "name": "desert",
+   "cn": "荒漠",
+   "passable": true,
+   "color": [
+    176,
+    166,
+    124
+   ],
+   "tiles": 2264
+  },
+  {
+   "id": 10,
+   "name": "hill",
+   "cn": "丘陵",
+   "passable": true,
+   "color": [
+    150,
+    148,
+    112
+   ],
+   "tiles": 1513
+  },
+  {
+   "id": 11,
+   "name": "river",
+   "cn": "河流",
+   "passable": false,
+   "color": [
+    70,
+    120,
+    160
+   ],
+   "tiles": 235292
+  },
+  {
+   "id": 12,
+   "name": "mountain",
+   "cn": "山地",
+   "passable": false,
+   "color": [
+    123,
+    130,
+    126
+   ],
+   "tiles": 43533
+  },
+  {
+   "id": 13,
+   "name": "grove",
+   "cn": "林丛",
+   "passable": true,
+   "color": [
+    95,
+    118,
+    80
+   ],
+   "tiles": 136820
+  },
+  {
+   "id": 14,
+   "name": "scatter",
+   "cn": "散落地物",
+   "passable": true,
+   "color": [
+    130,
+    145,
+    98
+   ],
+   "tiles": 17732
+  },
+  {
+   "id": 15,
+   "name": "special",
+   "cn": "特殊地块",
+   "passable": true,
+   "color": [
+    170,
+    140,
+    110
+   ],
+   "tiles": 12110
+  }
+ ],
+ "passPalette": [
+  {
+   "id": 0,
+   "name": "land",
+   "cn": "可走陆地",
+   "color": [
+    137,
+    148,
+    100
+   ],
+   "passable": true,
+   "tiles": 1937217
+  },
+  {
+   "id": 1,
+   "name": "river",
+   "cn": "河流",
+   "color": [
+    70,
+    120,
+    160
+   ],
+   "passable": false,
+   "tiles": 235292
+  },
+  {
+   "id": 2,
+   "name": "mountain",
+   "cn": "山地",
+   "color": [
+    123,
+    130,
+    126
+   ],
+   "passable": false,
+   "tiles": 43533
+  },
+  {
+   "id": 3,
+   "name": "water",
+   "cn": "水域",
+   "color": [
+    96,
+    128,
+    138
+   ],
+   "passable": false,
+   "tiles": 33958
+  }
+ ],
+ "passSha256": "27a36a16754c83de04bb4816c8b1d31df3dcc132ca5e7d2a392f23e35d3718e2",
+ "layering": "16 类显示层走 Cocos BufferAsset（全分辨率、近档选片用）；4 类通行层走 shared TS 模块（首帧轮廓 + 通行判定）。⚠ 16 类层熵 2.95 bit/格，RLE 胀到 125.6%，⛔ 进不了 shared。",
+ "source": {
+  "upstream": "《三国志·战略版》2084.1768",
+  "layers": [
+   "map/s1/cn/res.bytes",
+   "map/s1/cn/res_multi.bytes",
+   "map/s1/cn/logic_background.bytes"
+  ],
+  "rule": "res==1 平地；2..41 → LAND_TYPE=(res-2)%10+2；42..46 特殊；47 河流；res==0 或 >=48 取 res_multi（60/61 山地，57..59/52..55 林丛，48..51 散落）",
+  "authority": "asset/config/S1/cn/res_pro/terrain_attr.lua"
+ }
+}

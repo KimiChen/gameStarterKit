@@ -21,6 +21,7 @@ capability fragment 的合并规则由 `npm run verify:inventory` fail-closed �
 | `arena` | kit | extra | registered | [apps/kits/arena/README.md](../apps/kits/arena/README.md) |
 | `arenaShop` | plugin | extra | registered | [apps/plugins/arenaShop/README.md](../apps/plugins/arenaShop/README.md) |
 | `builtin` | plugin | core | registered | [docs/CLIENT.md](./CLIENT.md) |
+| `mapOriginal` | kit | extra | registered | [apps/kits/mapOriginal/README.md](../apps/kits/mapOriginal/README.md) |
 | `mmo` | kit | extra | registered | [apps/kits/mmo/README.md](../apps/kits/mmo/README.md) |
 | `mmodemo` | plugin | extra | registered | [apps/plugins/mmodemo/README.md](../apps/plugins/mmodemo/README.md) |
 | `mmohold` | plugin | extra | registered | [apps/plugins/mmohold/README.md](../apps/plugins/mmohold/README.md) |

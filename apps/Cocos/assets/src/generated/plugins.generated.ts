@@ -46,6 +46,7 @@ export const PLUGIN_IDS: readonly string[] = [
     "arena",
     "arenaShop",
     "builtin",
+    "mapOriginal",
     "mmo",
     "mmodemo",
     "mmohold",
@@ -99,6 +100,18 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         ],
         menu: [
             { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+        ],
+    },
+    {
+        id: "mapOriginal",
+        resident: false,
+        load: () => import("../kits/mapOriginal/index").then((m) => m.createPluginModule()),
+        dependencies: [],
+        routes: [
+            { id: "mapOriginalWorld", view: "MapOriginalWorld", group: "authenticated", restore: "discard" },
+        ],
+        menu: [
+            { entryId: "originalWorld", pluginId: "mapOriginal", label: "原版大地图", labelKey: "menu.mapOriginal.world", launch: { kind: "route", routeId: "mapOriginalWorld" } },
         ],
     },
     {
@@ -204,6 +217,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "duel", pluginId: "arena", label: "决斗", labelKey: "menu.arena.duel", launch: { kind: "gameplay", gameplayId: "arenaDuel" } },
     { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", labelKey: "menu.arenaShop", launch: { kind: "route", routeId: "arenaShop" } },
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+    { entryId: "originalWorld", pluginId: "mapOriginal", label: "原版大地图", labelKey: "menu.mapOriginal.world", launch: { kind: "route", routeId: "mapOriginalWorld" } },
     { entryId: "enter", pluginId: "mmo", label: "进入世界", labelKey: "menu.mmo.enter", launch: { kind: "route", routeId: "mmoCharacters" } },
     { entryId: "bossBoard", pluginId: "mmodemo", label: "头狼战报", labelKey: "menu.mmodemo.bossBoard", launch: { kind: "route", routeId: "bossBoard" } },
     { entryId: "standings", pluginId: "mmohold", label: "据点争夺", labelKey: "menu.mmohold.standings", launch: { kind: "route", routeId: "standings" } },

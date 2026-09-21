@@ -1,0 +1,23 @@
+{
+  "comment": [
+    "第一版要接的原版素材清单（前缀匹配）。⛔ 不要一把梭全解 9,018 张 KTX——只取大地图用得上的。",
+    "kind: plate=远档底图 / ground=可平铺地表 albedo / atlas=图集页(配同名 xml 切片) / mask=遮罩 / ui=地图 UI"
+  ],
+  "mapId": "s1",
+  "groups": [
+    { "kind": "plate",  "paths": ["fairy/ui/ui_common_map/map/map_s1/image/noexpo_birdview_map_1.ktx"] },
+    { "kind": "ground", "prefixes": [
+        "scene_3d/ground/gaodi/tex/",
+        "scene_3d/ground/gaodi_snow/tex/",
+        "scene_3d/ground/gaodi_shan/tex/",
+        "scene_3d/ground/dibiaohuawen/tex/",
+        "scene_3d/ground/dibiaohuawen_snow/tex/",
+        "scene_3d/ground/terrain/"
+      ] },
+    { "kind": "ground", "prefixes": ["scene_3d/ground/mountain_new/"], "suffix": "_d.ktx" },
+    { "kind": "mask",   "prefixes": ["scene_3d/pcg_v5/water/"], "maxBytes": 200000 },
+    { "kind": "atlas",  "prefixes": ["scene/_output_atlas_scene/atlas_tex/"],
+      "only": ["armyline", "ext_building_flag", "build_attachment", "alliance_extend_build"] },
+    { "kind": "ui",     "prefixes": ["fairy/atlas_3d/map_s1"] }
+  ]
+}

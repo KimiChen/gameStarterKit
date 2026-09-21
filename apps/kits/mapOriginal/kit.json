@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "mapOriginal",
+  "description": "三战原版大地图：1500×1500 原版地块数据 + 原版美术，odd-q 六边形等距菱形，6 档 LOD 与画面设置",
+  "api": {
+    "hexmap": {
+      "version": 1,
+      "minSupported": 1
+    }
+  },
+  "category": "extra",
+  "docs": [
+    "apps/kits/mapOriginal/README.md"
+  ],
+  "resident": false,
+  "entry": "apps/client/src/kits/mapOriginal/index.ts",
+  "viewDirs": [
+    "apps/client/src/kits/mapOriginal/view"
+  ],
+  "views": [
+    "apps/client/src/kits/mapOriginal/view/MapOriginalWorldView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "mapOriginal",
+      "logicDir": "apps/client/src/kits/mapOriginal/logic"
+    }
+  ],
+  "routes": [
+    {
+      "id": "mapOriginalWorld",
+      "view": "MapOriginalWorld"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "originalWorld",
+      "label": "原版大地图",
+      "labelKey": "menu.mapOriginal.world",
+      "launch": {
+        "kind": "route",
+        "routeId": "mapOriginalWorld"
+      }
+    }
+  ]
+}

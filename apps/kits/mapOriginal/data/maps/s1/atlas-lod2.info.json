@@ -1,0 +1,209 @@
+{
+ "schemaVersion": 1,
+ "lod": 2,
+ "cell": [
+  256,
+  128
+ ],
+ "gutter": 4,
+ "gridCols": 4,
+ "size": [
+  2048,
+  1024
+ ],
+ "uv": "diamond-midpoints",
+ "cells": [
+  {
+   "id": 0,
+   "name": "plain",
+   "cn": "平地",
+   "cell": [
+    4,
+    4,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/gaodi/tex/grass.png"
+  },
+  {
+   "id": 1,
+   "name": "wood",
+   "cn": "木材",
+   "cell": [
+    268,
+    4,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_01_d.png"
+  },
+  {
+   "id": 2,
+   "name": "stone",
+   "cn": "石料",
+   "cell": [
+    532,
+    4,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/gaodi_shan/tex/m_grass_xl_04_d.png"
+  },
+  {
+   "id": 3,
+   "name": "food",
+   "cn": "粮田",
+   "cell": [
+    796,
+    4,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_01_d.png"
+  },
+  {
+   "id": 4,
+   "name": "iron",
+   "cn": "铁矿",
+   "cell": [
+    4,
+    140,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/dibiaohuawen/tex/xiaobujian_d.png"
+  },
+  {
+   "id": 5,
+   "name": "gold",
+   "cn": "金矿",
+   "cell": [
+    268,
+    140,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_03_d.png"
+  },
+  {
+   "id": 6,
+   "name": "water",
+   "cn": "水域",
+   "cell": [
+    532,
+    140,
+    256,
+    128
+   ],
+   "source": "scene_3d/pcg_v5/water/normal.png"
+  },
+  {
+   "id": 7,
+   "name": "forest",
+   "cn": "森林",
+   "cell": [
+    796,
+    140,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_01_d.png"
+  },
+  {
+   "id": 8,
+   "name": "wetland",
+   "cn": "湿地",
+   "cell": [
+    4,
+    276,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/gaodi/tex/grass.png"
+  },
+  {
+   "id": 9,
+   "name": "desert",
+   "cn": "荒漠",
+   "cell": [
+    268,
+    276,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/gaodi_snow/tex/zhandao_02_d.png"
+  },
+  {
+   "id": 10,
+   "name": "hill",
+   "cn": "丘陵",
+   "cell": [
+    532,
+    276,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/gaodi_shan/tex/m_grass_xl_04_d.png"
+  },
+  {
+   "id": 11,
+   "name": "river",
+   "cn": "河流",
+   "cell": [
+    796,
+    276,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/terrain/albedo_river_v2.png"
+  },
+  {
+   "id": 12,
+   "name": "mountain",
+   "cn": "山地",
+   "cell": [
+    4,
+    412,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_03_d.png"
+  },
+  {
+   "id": 13,
+   "name": "grove",
+   "cn": "林丛",
+   "cell": [
+    268,
+    412,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_03_d.png"
+  },
+  {
+   "id": 14,
+   "name": "scatter",
+   "cn": "散落地物",
+   "cell": [
+    532,
+    412,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/gaodi/tex/grass.png"
+  },
+  {
+   "id": 15,
+   "name": "special",
+   "cn": "特殊地块",
+   "cell": [
+    796,
+    412,
+    256,
+    128
+   ],
+   "source": "scene_3d/ground/dibiaohuawen_snow/tex/xiaobujian_d.png"
+  }
+ ]
+}

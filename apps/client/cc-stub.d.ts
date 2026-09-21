@@ -64,6 +64,8 @@ declare module "cc" {
         static PixelFormat: { RGBA8888: number };
     }
     export class JsonAsset { json: unknown; addRef(): unknown; decRef(): unknown; }
+    /** ⚠ `.bytes` / `.bin` 资源导入成它；mapOriginal 的 16 类地形显示层走这条（塞不进 shared）。 */
+    export class BufferAsset { buffer(): ArrayBuffer; addRef(): unknown; decRef(): unknown; }
     export class SpriteFrame { texture: Texture2D | null; rect: Rect; rotated: boolean;
         insetTop: number; insetBottom: number; insetLeft: number; insetRight: number;
         /** ⚠ 引擎侧只有 getter：赋值会抛 TypeError，故声明为 readonly 让 typecheck 拦下。 */

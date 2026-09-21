@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": "mapOriginal",
+  "kind": "cocos",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": false,
+  "logic": "apps/client/src/kits/mapOriginal/logic/MapOriginalWorldLogic.ts",
+  "group": "authenticated",
+  "restore": "discard"
+}
