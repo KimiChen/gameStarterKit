@@ -1,0 +1,9 @@
+{
+  "comment": [
+    "仓外只读素材根。⛔ 不要把 elp-unpacked 的任何原始文件拷进仓库（只入派生产物，同 tools/sgzzmap-maps 口径）。",
+    "换机器只改这两行。"
+  ],
+  "elpRoot": "/Volumes/KimData/unlockTheWorld/apkdecode/sgzz-1768.2084/elp-unpacked",
+  "sourceVersionRoot": "/Volumes/KimData/unlockTheWorld/sourceVersion/sgzz-2084.1768",
+  "outDir": "out"
+}
