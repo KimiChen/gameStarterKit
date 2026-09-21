@@ -33,7 +33,7 @@ import { replaySgzzmapWorld } from "./sgzzmap.mjs";
 import { replaySlgMap } from "./slg.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "slg", "sgzzmap", "mmoWorld", "all"];
+const SCENARIOS = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "snake", "ballMove", "arena", "arenaCapture", "arenaDuel", "arenaShop", "slg", "sgzzmap", "mmoWorld", "mmohold", "all"];
 /** `all` 的顺序：先 route 形态再 gameplay 形态；arenaShop 排在 arena 之后（它要一块自己的格子）。 */
 const ALL_SEQUENCE = ["areaList", "loginNotice", "home", "settings", "redeem", "tally", "cosmetic", "arena", "arenaCapture", "arenaDuel", "arenaShop", "snake", "ballMove"];
 /** 登录页兜底坐标（设计 375×812）：只在找不到 FGUI 对象 btn_login 时使用，并在报告里标注。 */
@@ -1021,6 +1021,167 @@ async function scenarioMmoWorld(runner) {
   });
 }
 
+/** MG2：只解析公开 HUD Label，⛔ 不读 Logic、网络端口或脚本状态缓存。 */
+function readHoldHud(walk) {
+  const label = (name) => selectNodes(walk, { name, kind: "label", pathIncludes: "MmoHoldHudView/" })[0]?.text ?? "";
+  const dawn = /^曙光\s+(\d+)\s*\/\s*100$/u.exec(label("hold-dawn-score"));
+  const dusk = /^暮光\s+(\d+)\s*\/\s*100$/u.exec(label("hold-dusk-score"));
+  const owners = /^A 据点 · (曙光|暮光|中立)\s+B 据点 · (曙光|暮光|中立)$/u.exec(label("hold-owners"));
+  const phase = label("hold-phase");
+  return {
+    ready: !!dawn && !!dusk && !!owners,
+    dawn: dawn ? Number(dawn[1]) : null,
+    dusk: dusk ? Number(dusk[1]) : null,
+    pointA: owners?.[1] ?? null,
+    pointB: owners?.[2] ?? null,
+    phase,
+    round: Number(/第 (\d+) 轮/u.exec(phase)?.[1]) || null,
+    status: label("hold-status"),
+  };
+}
+
+/** 只读可见名片 HP 与横坐标。用公开地面宽度 + 内容包区域中心还原 world x，区分两点各两名活守卫。 */
+function readHoldGuards(walk) {
+  const pack = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "apps/plugins/mmohold/content/pack.json"), "utf8"));
+  const map = pack.maps.find((entry) => entry.mapId === "holdRidge");
+  const regions = pack.regions.filter((entry) => entry.mapId === map?.mapId && ["pointA", "pointB"].includes(entry.regionId));
+  const ground = selectNodes(walk, { name: "ground", pathIncludes: "MmoWorldLayer/world/", kind: "node" })[0];
+  const pixelWidth = ground?.center.width * walk.canvas.width / walk.visible.width;
+  if (!map || regions.length !== 2 || !ground || !(pixelWidth > 0)) return null;
+  const alive = [], dead = [], unmatched = [];
+  const counts = { pointA: 0, pointB: 0 };
+  for (const label of selectNodes(walk, { kind: "label", pathIncludes: "MmoWorldLayer/world/", textMatches: /^据点守卫 \d+\/\d+$/u })) {
+    const hp = Number(/^据点守卫 (\d+)\//u.exec(label.text)[1]);
+    const x = map.size.w * 0.5 + (label.center.x - ground.center.x) * map.size.w / pixelWidth;
+    const region = regions.find((entry) => entry.shape.kind === "circle" && Math.abs(entry.shape.center.x - x) <= entry.shape.radius);
+    const guard = { text: label.text, hp, worldX: Math.round(x), point: region?.regionId ?? null };
+    if (hp <= 0) { dead.push(guard); continue; }
+    alive.push(guard);
+    if (region) counts[region.regionId] += 1;
+    else unmatched.push(guard);
+  }
+  return { alive, dead, counts, unmatched, exact: alive.length === 4 && counts.pointA === 2 && counts.pointB === 2 && unmatched.length === 0 };
+}
+
+async function waitHoldHud(runner, timeoutMs = 90_000) {
+  return runner.waitFor("MmoHoldHudView 已收到服务器据点快照与本人实体", (walk) => {
+    const state = readHoldHud(walk);
+    const self = selectNodes(walk, { pathIncludes: "MmoWorldLayer/world/", namePrefix: "char:" })[0];
+    return state.ready && self && /HP \d+\/\d+/u.test(state.status) ? state : null;
+  }, timeoutMs);
+}
+
+async function enterHoldCharacter(runner, preferredName = null) {
+  await runner.waitFor("据点比分页角色入口", (walk) => selectNodes(walk, { name: "MmoHoldStandingsView" })[0] ?? null, 30_000);
+  await runner.waitFor("角色列表或建角按钮", (walk) => selectNodes(walk, { pathIncludes: "MmoHoldStandingsView/", namePrefix: "btn-enter-" })[0]
+    ?? selectNodes(walk, { name: "btn-create-dawn", pathIncludes: "MmoHoldStandingsView/" })[0] ?? null, 30_000);
+  let buttons = runner.find({ pathIncludes: "MmoHoldStandingsView/", namePrefix: "btn-enter-" });
+  let created = false;
+  if (!buttons.length) {
+    await runner.tap(runner.find({ name: "btn-create-dawn", pathIncludes: "MmoHoldStandingsView/" })[0], "建曙光角色");
+    await runner.waitFor("建角后的进入按钮", (walk) => selectNodes(walk, { pathIncludes: "MmoHoldStandingsView/", namePrefix: "btn-enter-" })[0] ?? null, 30_000);
+    buttons = runner.find({ pathIncludes: "MmoHoldStandingsView/", namePrefix: "btn-enter-" });
+    created = true;
+  }
+  const labels = runner.find({ pathIncludes: "MmoHoldStandingsView/", kind: "label", textMatches: / · (曙光|暮光)$/u });
+  const enabled = buttons.filter((button) => runner.find({ pathIncludes: `${button.path}/`, kind: "label", text: "进入" }).length > 0);
+  const button = preferredName ? enabled.find((entry) => entry.name === preferredName) : enabled[0];
+  if (!button) throw new Error(preferredName ? `原角色 ${preferredName} 不再可进入` : "没有可进入的 active 角色");
+  const label = nearestByRow(labels, button);
+  const factionLabel = / · (曙光|暮光)$/u.exec(label?.text ?? "")?.[1];
+  if (!factionLabel) throw new Error("角色行未显示可识别的阵营");
+  const result = { created, button: button.name, character: label.text, faction: factionLabel === "曙光" ? "dawn" : "dusk", factionLabel };
+  await runner.tap(button, `进入争夺 ${label.text}`);
+  return result;
+}
+
+async function leaveHoldWorld(runner) {
+  await runner.tapText("离开", { pathIncludes: "MmoHoldHudView/" });
+  await runner.waitFor("据点世界卸载并回首屏", (walk) => selectNodes(walk, { name: "PromoHomeView" }).length && !selectNodes(walk, { name: "MmoWorldLayer" }).length ? true : null, 45_000);
+}
+
+/** MG2 独立回放：自有域 route → 据点 HUD → 占点 / 得分 → 离座重进即时状态 → 检查点战况。 */
+async function scenarioMmoHold(runner) {
+  await enterFromSettings(runner, "据点战况", "standings", "mmohold 自有域 + 角色入口");
+  const entry = await runner.step("据点战况页：无角色时建曙光角色，选择 active 角色进入争旗山脊", async () => {
+    const selected = await enterHoldCharacter(runner);
+    return { ...selected, shot: await runner.shot("mmohold-enter") };
+  });
+  await runner.step("自有 HUD：比分 / 据点归属 / 操作按钮与本人实体到位", async () => {
+    const state = await waitHoldHud(runner);
+    const required = ["MmoHoldHudView", "hold-scoreboard", "hold-owners", "hold-dawn-score", "hold-dusk-score", "hold-joystick", "hold-wheel", "btn-前往 A", "btn-前往 B", "btn-离开"];
+    const missing = required.filter((name) => !runner.hasNode(name));
+    if (missing.length) throw new Error(`据点 HUD 缺少 ${missing.join(", ")}`);
+    return { state, shot: await runner.shot("mmohold-world") };
+  });
+  await runner.step("点「前往 A」：A 归本阵营后实时比分增长", async () => {
+    await runner.tapText("前往 A", { pathIncludes: "MmoHoldHudView/" });
+    const owned = await runner.waitFor("A 据点已归本阵营且本轮仍在计分", (walk) => {
+      const state = readHoldHud(walk);
+      return state.ready && state.pointA === entry.factionLabel && state.round !== null && state[entry.faction] < 99 ? state : null;
+    }, 100_000);
+    const advanced = await runner.waitFor("同一轮次内实时阵营比分增长", (walk) => {
+      const state = readHoldHud(walk);
+      return state.ready && state.round === owned.round && state[entry.faction] > owned[entry.faction] ? state : null;
+    }, 15_000);
+    return { before: owned, after: advanced, shot: await runner.shot("mmohold-score-growth") };
+  });
+  const captured = await runner.step("点「前往 B」：B 归本阵营，活守卫总数严格为 4、A/B 各 2", async () => {
+    await runner.tapText("前往 B", { pathIncludes: "MmoHoldHudView/" });
+    const evidence = await runner.waitFor("B 归属与两据点各两名活守卫", (walk) => {
+      const state = readHoldHud(walk);
+      const guards = readHoldGuards(walk);
+      if (guards && guards.alive.length > 4) throw new Error(`活守卫重复：${JSON.stringify(guards)}`);
+      return state.ready && state.pointB === entry.factionLabel && guards?.exact ? { state, guards } : null;
+    }, 100_000);
+    return { ...evidence, shot: await runner.shot("mmohold-point-b") };
+  });
+  await runner.step("离开争旗山脊，卸载自有 HUD", async () => {
+    await leaveHoldWorld(runner);
+    return { shot: await runner.shot("mmohold-left") };
+  });
+  await enterFromSettings(runner, "据点战况", "standings", "重进原角色");
+  await runner.step("同角色重新进入：本人实体出现时已有当前比分快照", async () => {
+    const selected = await enterHoldCharacter(runner, entry.button);
+    await runner.waitFor("重进后的本人实体", (walk) => selectNodes(walk, { pathIncludes: "MmoWorldLayer/world/", namePrefix: "char:" })[0] ?? null, 90_000);
+    const started = Date.now();
+    const state = await waitHoldHud(runner, 1_500);
+    const elapsedAfterSelfMs = Date.now() - started;
+    const guards = await runner.waitFor("重进后活守卫仍为 4、A/B 各 2", (walk) => {
+      const result = readHoldGuards(walk);
+      if (result && result.alive.length > 4) throw new Error(`重进后活守卫重复：${JSON.stringify(result)}`);
+      return result?.exact ? result : null;
+    }, 10_000);
+    return { selected, elapsedAfterSelfMs, priorState: captured.state, state, guards, shot: await runner.shot("mmohold-reentered") };
+  });
+  await runner.step("重进验证后离开争旗山脊", async () => {
+    await leaveHoldWorld(runner);
+    return { shot: await runner.shot("mmohold-left-again") };
+  });
+  await enterFromSettings(runner, "据点战况", "standings", "刷新当前轮次检查点");
+  await runner.step("自有域刷新当前轮次检查点比分", async () => {
+    await runner.waitFor("据点比分页", (walk) => selectNodes(walk, { name: "MmoHoldStandingsView" })[0] ?? null, 30_000);
+    let rows = [];
+    for (let attempt = 0; attempt < 12; attempt++) {
+      await runner.tapText("刷新", { pathIncludes: "MmoHoldStandingsView/" });
+      await sleep(1_000);
+      await runner.walk();
+      const error = runner.find({ pathIncludes: "MmoHoldStandingsView/", kind: "label", textMatches: /^读取失败/u })[0];
+      if (error) throw new Error(`比分查询失败：${error.text}`);
+      // 行色板与文字为同级节点，按公开行文本辨认；⛔ 不假设文字挂在色板下面。
+      rows = runner.find({ pathIncludes: "MmoHoldStandingsView/hold-standings/", kind: "label" }).map((node) => node.text)
+        .filter((text) => /^分线 \d+ ·|^\d+ : \d+$|^A (曙光|暮光|中立) · B (曙光|暮光|中立) ·/u.test(text));
+      if (rows.some((text) => /检查点 [1-9]\d* · tick [1-9]\d*/u.test(text))) break;
+      await sleep(3_000);
+    }
+    if (!rows.some((text) => /检查点 [1-9]\d* · tick [1-9]\d*/u.test(text))) throw new Error("刷新后仍无已持久化的分线检查点战况");
+    const texts = runner.find({ pathIncludes: "MmoHoldStandingsView/", kind: "label" }).map((node) => node.text);
+    const shot = await runner.shot("mmohold-checkpoint-standings");
+    await runner.tapText("关闭", { pathIncludes: "MmoHoldStandingsView/" });
+    return { rows, texts, shot, note: "检查点比分按周期刷新；不把当前 HUD 比分与旧检查点强行比较" };
+  });
+}
+
 // ---------- 入口 ----------
 
 async function main() {
@@ -1068,7 +1229,7 @@ async function main() {
       // ⚠ sgzzmap 与 slg 的卡片标签都是「大地图」，入口按 entryId 定位（world / map），⛔ 不按文本
       sgzzmap: async (current) => { await scenarioSettings(current); await replaySgzzmapWorld(current); },
       cosmetic: scenarioCosmetic, arena: scenarioArena, arenaCapture: scenarioArenaCapture,
-      arenaDuel: scenarioArenaDuel, arenaShop: scenarioArenaShop, mmoWorld: scenarioMmoWorld,
+      arenaDuel: scenarioArenaDuel, arenaShop: scenarioArenaShop, mmoWorld: scenarioMmoWorld, mmohold: scenarioMmoHold,
       snake: scenarioSnake, ballMove: scenarioBallMove,
       areaList: scenarioAreaList, loginNotice: scenarioLoginNotice,
     };
