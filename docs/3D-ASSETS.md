@@ -1,6 +1,6 @@
 # 3D 素材使用方式、规范与原则（框架级）
 
-> - 日期：2026-09-19。状态：**规范 v1.3**（同日两轮审阅修订），与 [3d.md](3d.md) v1.3 对齐；⛔ 未实施任何 3D 能力，本文先于素材存在。
+> - 日期：2026-09-22。状态：**规范 v1.4**（3D-PLAN 3D-41–3D-47 审阅修订），与 [3d.md](3d.md) v1.4 对齐；⛔ 本次仅修订文档，未实施任何 3D 能力、未冻结候选数字。
 > - 来历：对照 Cocos 官方 3D 演示项目 **Cocos Cyberpunk**（本机 `/Volumes/KimData/work/CocosCyberpunk`，仓外只读；Creator 3.8.4 工程，806 MB 资产，1,374 个模型、685 张图、259 个材质、262 个粒子系统）逐项实测，取其**做法**、⛔ 不取其**素材**（§14）；再对照本仓现状（`apps/Cocos` 3.8.8 工程、`resources/kits/<id>/` 所有权、`verify:sync` 的 `.meta` 闸、`tools/slg-maps/` 管线先例）落成本仓规则。
 > - 定位：素材侧唯一规范；机制侧（Stage3D / AssetLease / 纯数学 / 机械件）在 [3d.md](3d.md)，施工批次在 [3D-PLAN.md](3D-PLAN.md)，lvr 内容需求在 [lvr-3d.md](../lvr-3d.md)。三者冲突以本文为素材口径、以 3d.md 为机制口径。
 > - 治理：⛔ 不进 plan-v5；数字候选在 §15，SC0 后冻结；实施状态不在本文回写（在 3d.md §10）。修订登记见 §16。
@@ -11,13 +11,13 @@
 
 1. **作者态导入，运行时不解析**：模型 / 贴图 / 材质 / 动画都在 Creator 里导入成引擎资产（`.meta` + 子资产），运行时只 `resources.load` / bundle 加载；⛔ 运行时不需要 glTF / FBX loader（3d.md SD4）。
 2. **静态先离线，运行时只做选择**：LOD 变体、静态合批、光照与反射探针、遮挡数据一律离线产出为资产；运行时只按**画质档 × 视口**选择加载哪些资产（Cyberpunk 校正：1,374 个模型 `lods.enable:false`、`LODGroup` 0 处、运行时阴影全关）。
-3. **每次持有都有租约**：加载 / 释放只经框架 `AssetLease`（3d.md §4）；⛔ kit 内裸调 `addRef` / `decRef` / `resources.load`；页面关闭归还本页引用，其他页面 / 全局 token / 对象池的有效持有继续保留；全部持有结束才归零。Cyberpunk 全量预载后永不释放（0 处 `decRef`）是**演示项目的取巧**，⛔ 不学。
+3. **每次持有都有租约**：加载 / 释放只经框架 `AssetLease`（3d.md §4）；⛔ kit 内裸调 `addRef` / `decRef` / `resources.load`；页面关闭归还本页引用，其他页面 / 全局 token / 对象池的有效持有继续保留；全部业务持有结束后业务引用归零，GFX 内存按 §12 的预热后稳定基线验收。Cyberpunk 全量预载后永不释放（0 处 `decRef`）是**演示项目的取巧**，⛔ 不学。
 4. **画质档决定加载什么**：`low / medium / high` 由平台 + GPU 查表得出（Cyberpunk `href-setting.ts` + `gpu.ts` 形态），细节层、特效并发、同屏单位上限、阴影都按档给；dev 可 URL 参数覆盖。
 5. **贴图 POT + 平台压缩预设 + 体积预算**：3D 贴图一律 2 的幂、走框架压缩预设（astc_8x8 + png 回落，Cyberpunk 同款）、进 `art3d.config.json` 体积预算；UI / VFX / lightmap / 天空图不压或单独预设。
 6. **命名即元数据**：前缀说类型（`SM_ / SK_ / T_ / M_ / FX_ / ANIM_ / ANIG_`），后缀说通道（`_BC / _N / _ORM / _E / _M`），目录说归属（框架 `resources/stage3d/`；包重资产 `bundles/<class>-<id>/3d/`、小数据 `resources/{kits,plugins}/<id>/3d/data/`）；机检读名字不读脑子。
 7. **每个 3D 特性一个可目检的场景**：框架 `apps/Cocos/assets/stage3d-dev.scene` 与 kit 自己的验收场景（Cyberpunk `scene-development/` 十个特性场景同法），素材入库前先在场景里过一遍（§13）。
 8. **数据表驱动**：预加载清单、对象池容量、画质档表、细节层归属都是 JSON（Cyberpunk `data-res-cache / data-pool / data-quality.json` 同法），⛔ 不写死在代码里。
-9. **机检优先**：`verify:assets3d` 守格式 / `.meta` / 体积 / 命名 / 导入选项 / 授权台账；Creator 目检与 `--perf` 不进自动聚合门禁，但所列证据是阶段人工退出条件。
+9. **机检优先**：`verify:assets3d` 守格式 / `.meta` / UUID 依赖闭合与归属 / 体积 / 命名 / 导入选项 / 授权台账；Creator 目检、`--perf` 与真实微信证据不进自动聚合门禁，但所列证据是阶段人工退出条件。
 10. **授权可追溯**：每个 kit / 插件的 3D 目录带素材授权台账（snake 先例）；合成灰盒零授权；**Cocos Cyberpunk 的任何文件 ⛔ 不得进仓**（其许可仅限学习研究，§14）。
 
 ## 1. Cocos Cyberpunk 实测对照表
@@ -136,7 +136,8 @@ Stage3D 租约 root
 | 项 | 规则 |
 | --- | --- |
 | 少量主角 / 近景 | Marionette 动画图（`ANIG_*.animgraph` + `MASK_*.animask`）+ `SkinnedMeshRenderer` 实时蒙皮（Cyberpunk 主角 / 敌人同法）；引擎模块 `marionette` 必须勾选 |
-| 大批量单位 | 框架 `SkinnedUnits`：`SkeletalAnimation.useBakedAnimation:true` + instancing（3d.md SD3）；动画只允许「切 clip」，⛔ 混合 / IK；同模型同材质才合并 |
+| 大批量单位 | 框架 `SkinnedUnits`：`SkeletalAnimation.useBakedAnimation:true` + instancing（3d.md SD3）；动画只允许「切 clip」，⛔ 混合 / IK。同模型 / 同材质只是必要条件，还须共享兼容的 `jointTexture` 与实例数据布局；框架按有效关节贴图与布局分批，或预先把该批模型 / clip 布置进同一 joint-texture atlas，⛔ 仅按 prefab / 材质键合批（3D-42） |
+| 蒙皮路径与退化 | 实时蒙皮材质必须关闭 instancing（包括少量主角与低档退化路径）；浮点纹理不支持 ⛔ 不等于预烘焙不可用，先验证 Creator 的 RGBA8 关节纹理回退及实际采样能力，只有烘焙路径确实不可用或超预算时才切受数量限制的实时蒙皮 / 公告板。SC0 / SC4 证据覆盖同模型多 clip、跨 atlas、切 clip 后重分批、浮点 / RGBA8 路径，既验画面也验 draw call，⛔ 单 clip 同材质样本替代（3D-42） |
 | 导入 | `mountAllAnimationsOnPrefab:true`；FBX / glb 内多动作用 `animationImportSettings` 切分并命名 `ANIM_<Asset>_<动作>`（Cyberpunk 的 `Unreal Take` 切分同法）；帧率 30 |
 | 骨骼 | 单位 ≤ 30 骨、主角 ≤ 80 骨；蒙皮每顶点 ≤ 4 权重 |
 | 2D 骨骼 | Spine **4.2**（工程级单选，3d.md SD5）；`.json / .atlas / .png` 三件放 `3d/spine/<name>/` |
@@ -162,7 +163,7 @@ Stage3D 租约 root
 
 | 档 | 判定（`qualityTiers.ts` 查表；⛔ 第三方 detect-gpu） | 内容 |
 | --- | --- | --- |
-| low（**首版目标**，3d.md SD10；首发消费方 `lvr`，lvr-3d.md R0） | 微信小游戏 / WebGL1 / 未知移动 GPU / 命中黑名单型号 | 只 base 层；无实时阴影；特效并发 8；同屏单位 50；贴图按档降一级（Creator 构建预设或运行时选 `lod_1` 贴图变体，SC0 定）；预烘焙蒙皮不可用时退化实时蒙皮上限 + 公告板远档，instancing 不可用时降合批数，ASTC 不可用时 png 回落（体积按回落计） |
+| low（**首版目标**，3d.md SD10；首发消费方 `lvr`，lvr-3d.md R0） | 微信小游戏 / WebGL1 / 未知移动 GPU / 命中黑名单型号 | 只 base 层；无实时阴影；特效并发 8；同屏单位 50；贴图按档降一级（Creator 构建预设或运行时选 `lod_1` 贴图变体，SC0 定）；先验证预烘焙关节纹理的浮点 / RGBA8 路径，实际不可用或超预算才退化为禁 instancing 的实时蒙皮上限 + 公告板远档；instancing 不可用时降低单位 / 绘制预算，ASTC 不可用时 png 回落（体积按回落计） |
 | medium | 主流移动 GPU（Adreno 6xx / Mali-G7x / Apple A12+ 候选） | base + details；主角阴影；特效 24；单位 100 |
 | high | 桌面 / 高端移动 | 全部；阴影 ShadowMap；特效 48；单位 100+（受 kill criterion 约束） |
 
@@ -177,7 +178,9 @@ Stage3D 租约 root
 | 预载 | `data/preload.json` 目录清单（Cyberpunk `data-res-cache.json` 同法），在页面 `onOpen` 里一次 `acquire`，⛔ 全局常驻（Cyberpunk 的永不释放 ⛔ 不学） |
 | 分块 | 世界内容按 `chunkStreamer` 差分 + `assetPlan` 计划加载 / 延迟释放；进档只加载该档变体 |
 | bundle | **每包一个 bundle**（3d.md SD12）：`bundles/<class>-<id>/`，可按地图 / 场景细分；开发期本地、发布远程（小游戏主包 / 分包硬上限，SD10）；`AssetLease` 以「bundle 名 + 路径」寻址，`data/preload.json` 按 bundle 分组，首屏必需集合单独一个小 bundle；kit 代码零改动 |
-| 缓存诊断 | `--perf` 报告带 `memoryStatus.{bufferSize,textureSize}`；开关 20 次回基线是验收项 |
+| 缓存诊断 | `--perf` 报告带 `memoryStatus.{bufferSize,textureSize}`、业务租约 / 节点计数；先预热该剧本的模型、clip 与特效，再以所有业务持有释放后的稳定值为基线，按相同剧本开关 20 次不得持续增长。引擎关节纹理 atlas / 内部池的高水位缓存可留存，但必须记录归属、预热范围与稳定值；业务引用须归零，⛔ 用「引擎缓存」解释未释放租约，⛔ 要求引擎缓存恢复首次加载前的冷启动值（3D-42） |
+| 性能计时 | 帧率与 p50 / p95 / max 用相邻真实引擎帧的单调时钟时间戳差（raw wall frame interval，保留原始样本），与该帧 draw call / 三角数对齐；`director.root.frameTime` 只能作附加诊断，⛔ 单独充当帧率证据。报告记录时钟 / 单位 / 帧号、前后台切换与样本有效性；后台限频等无效窗口重跑，前台卡顿不能过滤掉（3D-45） |
+| 微信持久缓存 | SC4-B3 与 lvr A3 必须使用**真实微信客户端**验远程 bundle 的冷缓存下载，随后实际触发缓存写入失败，观察失败后的 LRU 淘汰 / 清理、重试、重新访问与退出重启后的命中或必要重下载。记录平台实际存储容量 / 限制、可复现的填满或触发失败步骤及真实错误、机型 / OS / 微信 / 基础库版本、构建与 bundle 版本、网络请求与缓存命中证据；⛔ 假设存在某个引擎可配置容量开关，⛔ 仅「接近满」却未触发失败就算覆盖。要求失败恢复与重试按预期完成，否则不得退出；开发者工具只补充调试与截图，不能替代真实客户端缓存实现（3D-47） |
 
 ## 13. 入库流程与验收
 
@@ -187,7 +190,7 @@ Stage3D 租约 root
   → Creator 导入到 bundles/<class>-<id>/3d/**（小数据表到 resources/<class>s/<id>/3d/data/；生成 .meta 与子资产；导入选项按 §3 / §5 缺省，压缩预设按 §5）
   → kit 验收场景（Creator）目检：拖入预制、三档 LOD、材质、透明排序；烘焙 apply 回独立预制后，卸载烘焙场景并动态加载验证照明（SC0 灰盒证据先行）
   → npm run verify:assets3d（机检，进 verify:all）
-  → node tools/creator-preview/run.mjs <剧本> --perf（证据：帧时 / draw call / 三角数 / GFX 内存，落 docs/evidence，不入库）
+  → node tools/creator-preview/run.mjs <剧本> --perf（证据：raw wall frame interval / draw call / 三角数 / GFX 内存，口径见 §12，落 docs/evidence，不入库）
   → 提交（含 .meta；verify:sync 守 uuid 唯一）
 ```
 
@@ -197,14 +200,17 @@ Stage3D 租约 root
 | --- | --- |
 | 扫描与归属 | 扫框架 `resources/stage3d/**` 与包 `resources/{kits,plugins}/*/3d/**`（后者只允许 `data/` 小数据）；枚举 `assets/bundles/` 并按包身份核对精确目录边界，再扫包 bundle 及细分 bundle 的全部资产（必须位于 `3d/**`，目录 `.meta` 除外）。拒绝包重资产遗留在 `resources/`、无主 bundle 或多包归属；源侧 `apps/{kits,plugins}/<id>/art/3d/` 的配置 / 授权与运行时文件逐项映射 |
 | 格式白名单 | `glb / fbx / png / hdr / effect / mtl / prefab / anim / animgraph / animask / json / atlas / skel`；FBX 须有 `exceptions[]` 文件与理由。`.meta` 是受检伴随文件，不要求再配 `.meta.meta`；作者态 `art3d.config.json` / `LICENSES.md` 是配置与授权输入，⛔ 因 Markdown 不在运行时资产白名单而拒绝合法台账 |
-| Creator 导入 | 运行时每个资产及 bundle 根的 `.meta` 存在，`importer` 与真实格式匹配；按 Creator 3.8.8 导入样本校验顶层与 `subMetas` 的实际字段，uuid 唯一继续交 `verify:sync`。GLB / FBX 的 texture 子资产也必须接受图片规则检查，⛔ 只按独立文件扩展名筛选 |
+| Creator 导入 | 运行时每个资产及 bundle 根的 `.meta` 存在，`importer` 与真实格式匹配；按 Creator 3.8.8 导入样本校验顶层与 `subMetas` 的实际字段；顶层 uuid 唯一继续交 `verify:sync`，本闸另建子资产索引并检查重复 / 悬空子资产。GLB / FBX 的 texture 子资产也必须接受图片规则检查，⛔ 只按独立文件扩展名筛选 |
 | GLB 结构与依赖 | 校验 glTF 2.0 头、声明长度、JSON / BIN chunk 长度与边界；解析 JSON 并拒绝内嵌图片（`images[].bufferView` / `data:`）、外部 buffer URI；图片相对 URI 经规范化与实际路径解析后必须落入本包资产根并存在，跨包 / 路径越界 / 远程 URI 均失败；独立图片全部进入后续检查 |
+| Creator 序列化依赖与归属（3D-44） | 对 `.prefab / .mtl / .anim / .animgraph / .animask`、模型 `.meta / subMetas` 等按 Creator 3.8.8 序列化格式抽取外部资产 UUID 引用，规范化完整 / 压缩 UUID 与子资产标识，区分 `__id__` 对象内部索引；递归解析到实际文件 / 子资产并检查闭合。允许本包资产（含同包细分 bundle）及框架维护的精确资源 / 子资产 allowlist；引擎内置 effect / 默认纹理等在该 allowlist 单列，并钉引擎版本与可解析性，⛔ 因 UUID 看似内置而放行。`requires.kits` 仍只授权声明的 kit API，⛔ 自动放行被依赖 kit 的内部资源；kit→kit 依赖仍禁。本轮不新增跨包内容依赖机制。缺文件、缺子资产、跨包或引用未登记宿主资产均失败；相同检查复用到 pack / install 的落盘前校验，不能只依赖母仓完整资源树 |
 | 贴图与压缩 | 校验实际图片格式、POT 与尺寸档（UI 例外须登记）；独立图片及导入 texture 子 `.meta` 的 `type`、wrap、min / mag、mipfilter、anisotropy、通道色彩空间均按 §5；`3d-default / 3d-alpha` 引用须在 `builder.json` 有对应平台与回落配置；lightmap / 天空 / 反射探针及获准不压的 VFX 须在配置标明用途并验证其不压设置，⛔ 目录改名即绕过压缩规则 |
 | 模型与命名 | §3 所列模型导入选项（含 FBX 专有项）逐项等于缺省或有精确文件级例外；按 §2.2 检查目录、类型前缀、贴图通道后缀、LOD 文件名；灰盒固定文件名在框架配置显式声明，不以放宽所有命名规避 |
 | 预算 | 读取包 `art3d.config.json`（框架用 `scripts/assets3d.config.json`）：单 GLB / PNG、全部贴图、lightmap 与包总量均须在配置限额内；外提图片和细分 bundle 必须计入同一包总量，重复引用只按实体文件计一次；运行时性能预算另由 `--perf` 提供证据。数字仍为 §15 候选，SC0 后冻结，本轮文档修订不冻结数字 |
 | 授权覆盖 | kit / 插件必须存在 `art3d.config.json` 与 `art/3d/LICENSES.md`；授权台账覆盖每份源素材、转换产物、外提贴图与 LOD 的来源映射，引用不能悬空；只查存在 / 覆盖，许可是否允许用途仍归人工（§14） |
 
 正例：合法 `.mtl / .hdr / .animgraph / .animask` 应通过白名单。反例必须逐项转红：PNG 改名 `.jpg`、删除 `.meta`、删掉必需 texture 子 `.meta`、`mipfilter: none` 未登记、压缩预设引用不存在、模型 `lods.enable:true` 未登记、GLB 内嵌 PNG / JPEG、图片 URI 指向另一包或远程地址、GLB 外部 buffer、授权漏一张外提贴图、下调预算到实际体积以下均失败。另验证相邻包 `foo` / `foobar` 不互认所有权，细分 bundle 的命名冲突必须拒绝；这些反例随 SC1-B5 / B7 落地，当前文档不代表机检已实现。
+
+UUID 依赖正例必须含同包细分 bundle 间引用和已登记内置资源；反例覆盖不存在 UUID、父资产存在但子资产缺失、跨 kit / plugin 引用（含已声明 `requires.kits` 却直接引用该 kit 内部材质）、未登记宿主 / 验收场景资源。SC1-B7 把带 Prefab → 材质 → 贴图 / 模型子资产依赖链的合成包走 pack → 干净根 install → Creator 重导入 / 加载，移除母仓旁路资源后仍可解析；另验卸载无关包不破坏该链。`verify:sync` 的顶层 UUID 唯一性和包内路径所有权都不能替代本项（3D-44）。
 
 SC5-B1 工具验收还须执行离线简化：主模型 → `lod_1.glb / lod_2.glb` → 三档 Creator 导入与夹具显示，往返报告列出每档面数 / 包围盒 / 材质槽 / 贴图依赖；蒙皮样例另外校验骨架、权重与动画时长。面数未下降、材质槽错位或适用动画数据丢失应失败，⛔ 只跑主模型往返即可冻结 SC5。
 
@@ -215,6 +221,8 @@ SC5-B1 工具验收还须执行离线简化：主模型 → `lod_1.glb / lod_2.g
 - 合成灰盒（`tools/art3d/greybox.py`）零授权；逆向来源（`../sourceVersion/*`）按各自全记录的授权口径，转换产物同样登记。
 
 ## 15. 待冻结数字表（候选；SC0 实测后冻结，改数 = 新拍板 + 3d.md §10 登记）
+
+### 15.1 源资产与运行时预算（候选）
 
 | 项 | 候选 | 依据 |
 | --- | --- | --- |
@@ -229,6 +237,18 @@ SC5-B1 工具验收还须执行离线简化：主模型 → `lod_1.glb / lod_2.g
 | 出档延迟释放 | 5 s | 本文 §7 |
 | 基线设备 | 麒麟 970 / 骁龙 835 / A10（Cyberpunk 基线）作下限候选 | SC0 实测 |
 
+### 15.2 微信实际构建包体门（3D-46；SC0-B4 核验后填写）
+
+本表与 §15.1 的源资产预算分别验收。SC0-B4 按当时适用的**微信官方渠道规范**登记来源 URL、核验日期、客户端 / 基础库 / 构建目标及限额数值与单位；明确平台无独立单分包上限时也须记录官方依据，⛔ 从源资产预算或旧版文档推定。当前仅定义测量与退出契约，未核验 / 冻结任何平台数值；字段未填或证据缺失不得退出 SC0。
+
+| 测量对象 | 实际构建测量范围 | 限额与依据（SC0-B4 待填） | 退出判定 |
+| --- | --- | --- | --- |
+| 主包 | 最终微信构建的主包代码、引擎、配置与本地资源；按官方统计口径列文件清单和字节数 | 当前官方主包上限、URL、核验日期、适用版本与单位 | 实测不得超限 |
+| 单个分包 | 按最终 `game.json` 的实际分包逐个统计并列出最大值；分包数为 0 时显式记录 | 当前单分包上限或「无独立上限」的官方依据、核验日期与适用版本 | 有上限时逐包不得超限；无上限仍计入总量 |
+| 全部分包 / 总发布包 | 分包汇总、主包与总发布包分别列值；总限额是否含主包、引擎插件如何计入按官方口径登记 | 当前总量上限、所含范围、URL、核验日期、适用版本与单位 | 按登记范围比较，超限失败 |
+
+SC0-B1/B4 必须覆盖**既有 `resources`**（含 slg / sgzzmap 等已安装包资源）和新增框架夹具：选定本次构建内容集合、过滤或远程资源方案并记录保留 / 排除清单，⛔ 仅把新增 3D bundle 设 remote 就认定主包合格；remote 目录不算本地分包，但其必要脚本 / 配置仍计入实际构建。SC1-B7 复验平台覆写后的产物，SC4-B3 与 lvr A3 用最终测试构建再验本表及 §12 真机缓存门。构建完成、记录体积或远程目录存在均不能代替「未超限」；超限须调整构建方案重跑。
+
 ## 16. 修订登记
 
 - 2026-09-19 规范 v1：对照 Cocos Cyberpunk 实测（§1）成文；与 3d.md v1.1、3D-PLAN.md、lvr-3d.md v1.1 同批。
@@ -236,3 +256,4 @@ SC5-B1 工具验收还须执行离线简化：主模型 → `lod_1.glb / lod_2.g
 - 2026-09-19 v1.2：审阅修订：统一 SD11 开关与 SD12 资产目录 / 所有权口径；GLB 图片必须外提、跨包与外部 buffer 依赖拒绝；§13 对齐完整资产闸、子 `.meta` / 压缩 / 授权覆盖 / 预算及反例；补 SC0 烘焙 apply → 独立预制动态加载证据与 SC5 离线 LOD 退出。⛔ 仅修订规范，未实施能力、未冻结 §15 数字。
 - 2026-09-19 v1.3：3D-38 glb 外部图片导入验证项（§3）、3D-40 细分 bundle 后缀正则（§2.1）。
 - 2026-09-19 SD10 补拍：low 档首发消费方 = lvr（§11）。
+- 2026-09-22 v1.4：按 3D-PLAN 3D-41–3D-47 同步素材相关契约：蒙皮按 jointTexture / 布局分批与 RGBA8 回退、实时蒙皮禁 instancing；UUID / 子资产引用闭合与包归属、内置资源 allowlist 和干净安装反例；raw wall frame interval、预热后稳定内存基线；实际构建包体表与既有 resources 策略；真实微信冷缓存 / 写入失败 / LRU / 重试 / 重启缓存退出门。⛔ 本次仅文档修订，未实施能力、未冻结候选值、未勾阶段完成。
