@@ -8,6 +8,13 @@ import { canonicalJson, jsonHash, parseResourceCatalog } from "@uniflex/core/pro
 import { discoverPsdComponents } from "./lib/uniflex-component-catalog.mjs";
 import { createOutputWriter } from "./lib/uniflex-output.mjs";
 import { relocateAuthorImport } from "./lib/uniflex-relocate-logic.mjs";
+import {
+    assertSpriteFrameImageMeta,
+    createSpriteFrameImageMeta,
+    displayNameFromPng,
+    existingImageUuid,
+    pngSize,
+} from "./lib/uniflex-cocos-image-meta.mjs";
 import { createImageResourceEntry } from "./lib/uniflex-resources.mjs";
 
 const root = resolve(import.meta.dirname, "..");
@@ -160,11 +167,36 @@ for (const destination of [cocosResources, resolve(cache, "uniflex")]) {
         await emit(resolve(destination, `ui/${name}.json`), canonicalJson(pagePlan) + "\n");
     for (const resourcePackage of resourcePackages) {
         for (const resource of resourcePackage.resources) {
-            await emit(resolve(destination, `ui/${resourcePackage.name}/${resource.file}`),
-                await readFile(resolve(uiResources, resourcePackage.name, resource.file)));
+            const bytes = await readFile(resolve(uiResources, resourcePackage.name, resource.file));
+            const pngPath = resolve(destination, `ui/${resourcePackage.name}/${resource.file}`);
+            await emit(pngPath, bytes);
+            if (destination === cocosResources && resource.kind !== "font")
+                await emitCocosSpriteFrameMeta(pngPath, resource, bytes);
         }
     }
     await emit(resolve(destination, "catalog.json"), canonicalJson(catalog) + "\n");
+}
+
+async function emitCocosSpriteFrameMeta(pngPath, resource, bytes) {
+    const metaPath = `${pngPath}.meta`;
+    const size = pngSize(bytes);
+    const width = resource.width ?? size.width;
+    const height = resource.height ?? size.height;
+    const nineSlice = resource.nineSlice ?? [0, 0, 0, 0];
+    if (check) {
+        const actual = JSON.parse(await readFile(metaPath, "utf8").catch(() => "{}"));
+        assertSpriteFrameImageMeta(actual, { width, height, nineSlice });
+        return;
+    }
+    const meta = createSpriteFrameImageMeta({
+        uuid: await existingImageUuid(metaPath),
+        displayName: displayNameFromPng(pngPath),
+        width,
+        height,
+        nineSlice,
+        hasAlpha: size.hasAlpha,
+    });
+    await emit(metaPath, `${JSON.stringify(meta, null, 2)}\n`);
 }
 await emit(resolve(generated, "catalog-ref.ts"), header +
     `import type { JsonRef } from '../../kits/uniflex/api/core/index';\n` +
