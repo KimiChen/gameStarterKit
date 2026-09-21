@@ -94,11 +94,25 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 配套 JSON：`river_path` / `ground_snow_path` / `ground_desert_path`（**group 资源名表**）、
 `river_area_info`、`mountain_effect`（大整数即 `(row<<16)|col` 客户端格键）。
 
-### 4.2 近档地表素材：原版 2D 档 `.group` ⛔ 不在基础包里
+### 4.2 近档素材：`.group` 预制体不在包里，但**它引用的精灵在**
 
-`*_path.json` 里那 205 条 `scene/ground/{river,snow,desert}/<n>_<m>[_x|_y].group`
-**一条都不在 ELP 中**（直查与 8 种扩展名变体全 0）——原版 2D 沙盘的地表是按需热更下发的，
-基础包里只有 3D 那一套。⛔ 别再去包里找它们。
+⚠ **更正（2026-09-22，早先这里写错过）**：`*_path.json` 里那 205 条
+`scene/ground/{river,snow,desert}/<n>_<m>.group` 确实一条都不在 ELP 中（**预制体**按需热更），
+但它们引用的**精灵本身在包里** —— 就在 `scene/_output_atlas_scene/atlas_tex/` 下的 62 个图集里：
+
+| 图集 | 内容 | 切片数 |
+|---|---|---:|
+| `ground.xml` | 云、飞鸟、**不规则地表斑块**（沙/草有机色块）—— 原版打散「铺地砖」的手法 | 49 |
+| `resource.xml` / `resource_food` / `resource_gold` | **逐格地皮精灵**：草丘/岩山/城楼/营寨，原版靠它们互相叠压出连续地貌 | 612 |
+| `small_build*.xml` | 小建筑 | 471 |
+| `npc_city` / `player_city*` / `junying` | NPC 城 / 玩家城 / 军营 | 1,001 |
+| `road.xml` | 道路片（配 `road_info.bytes` 的 52–61 走向编码） | 58 |
+| `map_birdview_icons.xml` | 鸟瞰图标 | 141 |
+| `grid.xml` | 格线与状态格 | 97 |
+
+⚠ 找不到它们的原因是**图集页的扩展名**：XML 里的 `imagePath` 写的是 `.png`，包里却是构建期
+转出的 `.ktx`（与 §1 坑③同源）。`slice_atlas.py` 现在会按扩展名回退再找一遍。
+现已切出 **3,510 张**原版切片。
 
 因此近档贴片的来源改为**原版可平铺的 3D 地表 albedo**（仍是原版像素）：
 

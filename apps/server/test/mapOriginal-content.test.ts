@@ -3,9 +3,9 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
-    decodeMapoTerrainRle, mapoAtlasCellRect, mapoAtlasUv, mapoTerrainToBytes,
+    decodeMapoTerrainRle, mapoAtlasCellId, mapoAtlasCellRect, mapoAtlasUv, mapoTerrainToBytes,
     MAPO_ATLAS_CELL_H, MAPO_ATLAS_CELL_W, MAPO_ATLAS_COLS, MAPO_ATLAS_GUTTER,
-    MAPO_ATLAS_H, MAPO_ATLAS_LODS, MAPO_ATLAS_W, MAPO_MAP_COLS, MAPO_MAP_ROWS,
+    MAPO_ATLAS_H, MAPO_ATLAS_LODS, MAPO_ATLAS_VARIANTS, MAPO_ATLAS_W, MAPO_MAP_COLS, MAPO_MAP_ROWS,
     MAPO_TERRAIN_HEADER_BYTES,
 } from "@game/shared/kits/mapOriginal/api/hexmap/index";
 import {
@@ -79,17 +79,23 @@ test("mapOriginal 内容：通行层是显示层的派生（river/mountain/water
 test("mapOriginal 内容：图集布局 = shared 的 MAPO_ATLAS_* 常量（逐格）", () => {
     for (const lod of MAPO_ATLAS_LODS) {
         const meta = JSON.parse(kit(`atlas-lod${lod}.info.json`).toString("utf8")) as {
-            cell: [number, number]; gutter: number; gridCols: number; size: [number, number];
-            uv: string; cells: { id: number; cell: [number, number, number, number] }[];
+            cell: [number, number]; gutter: number; gridCols: number; variants: number;
+            size: [number, number]; uv: string;
+            cells: { id: number; classId: number; variant: number;
+                     cell: [number, number, number, number] }[];
         };
         assert.deepEqual(meta.cell, [MAPO_ATLAS_CELL_W, MAPO_ATLAS_CELL_H], `lod${lod} 单格`);
         assert.equal(meta.gutter, MAPO_ATLAS_GUTTER);
         assert.equal(meta.gridCols, MAPO_ATLAS_COLS);
         assert.deepEqual(meta.size, [MAPO_ATLAS_W, MAPO_ATLAS_H]);
         assert.equal(meta.uv, "diamond-midpoints");
+        // ⚠ 每类 4 个变体是**去「铺地砖」的契约**：少了它整片地会读作重复瓦片
+        assert.equal(meta.variants, MAPO_ATLAS_VARIANTS, `lod${lod} 变体数`);
+        assert.equal(meta.cells.length, info.palette.length * MAPO_ATLAS_VARIANTS);
         for (const c of meta.cells) {
             // ⚠ 漂了的症状是「地形对不上颜色」—— UV 整体错格，画面照样出，极难查
             assert.deepEqual(c.cell, [...mapoAtlasCellRect(c.id)], `lod${lod} 第 ${c.id} 格`);
+            assert.equal(c.id, mapoAtlasCellId(c.classId, c.variant), `lod${lod} 格 id 编码`);
             const uv = mapoAtlasUv(c.id);
             assert.ok(uv[0] >= 0 && uv[1] >= 0 && uv[0] + uv[2] <= 1 && uv[1] + uv[3] <= 1);
         }
@@ -107,12 +113,13 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
         ["plate-lod4.png", "plate-lod4.png"], ["plate-lod4.info.json", "plate-lod4.info.json"],
         ["plate-lod5.png", "plate-lod5.png"], ["plate-lod5.info.json", "plate-lod5.info.json"],
         ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
+        ["decor-atlas.png", "decor-atlas.png"], ["decor-atlas.info.json", "decor-atlas.info.json"],
     ];
     for (const [src, dst] of mirrored) {
         assert.deepEqual(kit(src), cocos(dst), `${src} → ${dst} 两处必须逐字节一致`);
     }
     // ⚠ 通行层与 info 只留 kit 数据目录：⛔ 不多存一份到运行时
-    for (const name of ["terrain.pass.bytes", "terrain.info.json", "terrain.bytes"]) {
+    for (const name of ["terrain.pass.bytes", "terrain.info.json", "terrain.bytes", "labels.json"]) {
         assert.throws(() => cocos(name), /ENOENT/, `${name} ⛔ 不该进 Cocos`);
     }
 });

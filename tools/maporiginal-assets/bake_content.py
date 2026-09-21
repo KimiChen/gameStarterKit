@@ -46,8 +46,12 @@ TEXTURE_OF = {
     "scatter":  "scene_3d/ground/gaodi/tex/grass.png",
     "special":  "scene_3d/ground/dibiaohuawen_snow/tex/xiaobujian_d.png",
 }
-CELL_W, CELL_H, GUTTER = 256, 128, 4
-ATLAS_W, ATLAS_H, GRID_COLS = 2048, 1024, 4
+# ⚠ 单格 240×120（仍 2:1）而不是 256×128：8 列 × (256+8) = 2112 > 2048 放不下，
+#   240 的节距 248 × 8 = 1984 ≤ 2048、行 128 × 8 = 1024 正好铺满。
+CELL_W, CELL_H, GUTTER = 240, 120, 4
+# ★ 每类 **4 个变体**：同一张片复制上千遍时整片地会读作「铺地砖」而不是连续地貌。
+#   16 类 × 4 变体 = 64 格，8×8 正好铺满 2048×1024。
+ATLAS_W, ATLAS_H, GRID_COLS, VARIANTS = 2048, 1024, 8, 4
 
 
 def load_pack(mid: str):
@@ -120,38 +124,48 @@ def pack_atlas(d, info, lods=(0, 1, 2)):
     for lod in lods:
         atlas = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
         cells = []
-        for i, e in enumerate(pal):
+        for e in pal:
             tex_rel = TEXTURE_OF.get(e["name"])
-            base = None
+            src = None
             if tex_rel and os.path.exists(os.path.join(PNG, tex_rel)):
-                t = Image.open(os.path.join(PNG, tex_rel)).convert("RGB")
-                step = max(1, 2 ** lod)                 # 远档取更大的纹理块 ⇒ 更平
-                side = min(t.width, t.height) // step or 1
-                t = t.crop((0, 0, side, side)).resize((CELL_W, CELL_H), Image.LANCZOS)
-                base = np.asarray(t).astype(np.float32)
+                src = Image.open(os.path.join(PNG, tex_rel)).convert("RGB")
             col = np.array(e["color"], np.float32)
-            if base is None:
-                rgb = np.tile(col, (CELL_H, CELL_W, 1))
-            else:                                       # 纹理去色后按类基色着色，保留笔触
-                lum = base.mean(2, keepdims=True) / 255.0
-                rgb = np.clip(col * (0.62 + 0.76 * lum), 0, 255)
-            a = mask * 255.0
-            tile = np.dstack([rgb, a]).astype(np.uint8)
-            cx = (i % GRID_COLS) * (CELL_W + GUTTER * 2) + GUTTER
-            cy = (i // GRID_COLS) * (CELL_H + GUTTER * 2) + GUTTER
-            atlas.paste(Image.fromarray(tile, "RGBA"), (cx, cy))
-            cells.append({"id": e["id"], "name": e["name"], "cn": e["cn"],
-                          "cell": [cx, cy, CELL_W, CELL_H],
-                          "source": tex_rel or "（纯色，无原版纹理）"})
+            for v in range(VARIANTS):
+                idx = e["id"] * VARIANTS + v
+                if src is None:
+                    rgb = np.tile(col, (CELL_H, CELL_W, 1))
+                else:
+                    step = max(1, 2 ** lod)             # 远档取更大的纹理块 ⇒ 更平
+                    side = max(8, min(src.width, src.height) // step)
+                    # ⚠ 四个变体取**不同位置 + 不同朝向**的窗口，⛔ 不是同一块的镜像
+                    #   （镜像只在格内翻，整片地仍读得出重复节律）
+                    ox = (v % 2) * max(0, src.width - side)
+                    oy = (v // 2) * max(0, src.height - side)
+                    t = src.crop((ox, oy, ox + side, oy + side))
+                    if v in (1, 2):
+                        t = t.transpose(Image.Transpose.ROTATE_90 if v == 1 else Image.Transpose.ROTATE_270)
+                    t = t.resize((CELL_W, CELL_H), Image.LANCZOS)
+                    base = np.asarray(t).astype(np.float32)
+                    lum = base.mean(2, keepdims=True) / 255.0
+                    rgb = np.clip(col * (0.62 + 0.76 * lum), 0, 255)
+                tile = np.dstack([rgb, mask * 255.0]).astype(np.uint8)
+                cx = (idx % GRID_COLS) * (CELL_W + GUTTER * 2) + GUTTER
+                cy = (idx // GRID_COLS) * (CELL_H + GUTTER * 2) + GUTTER
+                atlas.paste(Image.fromarray(tile, "RGBA"), (cx, cy))
+                cells.append({"id": idx, "classId": e["id"], "variant": v,
+                              "name": e["name"], "cn": e["cn"],
+                              "cell": [cx, cy, CELL_W, CELL_H],
+                              "source": tex_rel or "（纯色，无原版纹理）"})
         p = os.path.join(d, "atlas-lod%d.png" % lod)
         atlas.save(p)
         json.dump({"schemaVersion": 1, "lod": lod, "cell": [CELL_W, CELL_H], "gutter": GUTTER,
-                   "gridCols": GRID_COLS, "size": [ATLAS_W, ATLAS_H], "uv": "diamond-midpoints",
+                   "gridCols": GRID_COLS, "variants": VARIANTS,
+                   "size": [ATLAS_W, ATLAS_H], "uv": "diamond-midpoints",
                    "cells": cells},
                   open(os.path.join(d, "atlas-lod%d.info.json" % lod), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=1)
-        print("  atlas-lod%d %dx%d（%d 类 × %dx%d + %dpx 出血）" %
-              (lod, ATLAS_W, ATLAS_H, len(pal), CELL_W, CELL_H, GUTTER))
+        print("  atlas-lod%d %dx%d（%d 类 × %d 变体 × %dx%d + %dpx 出血）" %
+              (lod, ATLAS_W, ATLAS_H, len(pal), VARIANTS, CELL_W, CELL_H, GUTTER))
 
 
 def main() -> int:

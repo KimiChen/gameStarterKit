@@ -261,3 +261,48 @@ export function mapoSelectionEdges(thickness: number, overhang = 0):
         { x: -hw / 2, y: hh / 2, angle: tilt, length: edge + overhang, thickness },
     ];
 }
+
+/**
+ * 把一批**带 UV 的矩形精灵**铺成一张 mesh（摆件层用）。
+ *
+ * ⚠ 精灵是**底边中点**对齐到 (x, y)：地物立在格上，往上长 —— ⛔ 不是几何中心对齐。
+ * ⚠ 入参会被就地排序成**画家序**（屏幕越低越靠前）：摆件超出菱形、会互相叠压，
+ *   顺着可视模板的遍历序画会前后颠倒。
+ */
+export interface MapoSpriteInput {
+    readonly row: number;
+    readonly col: number;
+    /** 底边中点的世界坐标。 */
+    readonly x: number;
+    readonly y: number;
+    readonly w: number;
+    readonly h: number;
+    readonly uv: readonly [number, number, number, number];
+}
+
+export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
+    sprites.sort(mapoPainterCompare);
+    const n = Math.min(sprites.length, MAPO_MAX_QUADS_PER_MESH);
+    const positions = new Float32Array(n * 12);
+    const uvs = new Float32Array(n * 8);
+    const colors = new Float32Array(n * 16);
+    const indices16 = new Uint16Array(n * 6);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let i = 0; i < n; i += 1) {
+        const s = sprites[i];
+        const x0 = s.x - s.w / 2, x1 = s.x + s.w / 2, y0 = s.y, y1 = s.y + s.h;
+        const [u0, v0, uw, vh] = s.uv;
+        positions.set([x0, y1, 0, x1, y1, 0, x1, y0, 0, x0, y0, 0], i * 12);
+        uvs.set([u0, v0, u0 + uw, v0, u0 + uw, v0 + vh, u0, v0 + vh], i * 8);
+        for (let v = 0; v < 16; v += 1) colors[i * 16 + v] = 1;   // ⚠ 贴图件取纯白，顶点色是相乘的
+        const b = i * 4;
+        indices16.set([b, b + 1, b + 2, b, b + 2, b + 3], i * 6);
+        if (x0 < minX) minX = x0;
+        if (x1 > maxX) maxX = x1;
+        if (y0 < minY) minY = y0;
+        if (y1 > maxY) maxY = y1;
+    }
+    if (n === 0) { minX = minY = maxX = maxY = 0; }
+    return { positions, uvs, colors, indices16, quads: n,
+             minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
+}

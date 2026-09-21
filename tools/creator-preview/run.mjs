@@ -53,6 +53,9 @@ class Runner {
   overlayDismissals = [];
 
   async walk() {
+    // ⚠ 顺手关掉错误浮层：它一弹出来就把后续点击全吃掉，而错误可能在**任何**一步冒出来，
+    //   只在 tap() 里关是不够的（登录页 Spine 报错就是点完才弹）。⛔ 不掩盖错误：console 照记。
+    await this.dismissErrorOverlay();
     this.lastWalk = await this.client.evaluate(pageWalkSource);
     return this.lastWalk;
   }
@@ -113,12 +116,33 @@ class Runner {
    */
   async dismissErrorOverlay() {
     const hit = await this.client.evaluate(`(() => {
+      const out = [];
+      const hide = (el, text) => { el.style.setProperty("display", "none", "important"); out.push(text); };
+      // ① Creator 自带的 #error 面板
       const panel = document.getElementById("error");
-      if (!panel || panel.style.display === "none" || panel.offsetParent === null) return null;
-      const text = (panel.innerText || "").trim().slice(0, 200);
-      const close = [...panel.querySelectorAll("button")].find((b) => (b.innerText || "").trim() === "关闭");
-      if (close) close.click(); else panel.style.display = "none";
-      return text;
+      // 注意：面板是 position:fixed —— offsetParent 按规范恒为 null，
+      // 拿它判可见会永远判成不可见然后直接跳过（踩过一次）。只能用 getComputedStyle。
+      if (panel && getComputedStyle(panel).display !== "none") {
+        hide(panel, (panel.innerText || "").trim().slice(0, 900));
+      }
+      // ② 应用自己的错误浮层：无 id、position:fixed、z-index 顶到 2^31，盖住整张画布。
+      //    这才是真正吃掉点击的那个（#error 只是 Creator 的，另一个）。
+      //    只对**文本里带「出错 / Error」**的下手，⛔ 不要见 fixed 就藏。
+      const canvas = document.querySelector("canvas");
+      const cr = canvas ? canvas.getBoundingClientRect() : null;
+      if (cr) {
+        for (const el of document.querySelectorAll("div")) {
+          const cs = getComputedStyle(el);
+          if (cs.position !== "fixed" || cs.display === "none") continue;
+          if (Number(cs.zIndex) < 2000000000) continue;
+          const b = el.getBoundingClientRect();
+          if (b.width < cr.width * 0.5 || b.height < cr.height * 0.5) continue;
+          const text = (el.innerText || "").trim();
+          if (!/出错|Error/u.test(text)) continue;
+          hide(el, text.slice(0, 900));
+        }
+      }
+      return out.length > 0 ? out.join(" | ") : null;
     })()`).catch(() => null);
     if (hit) this.overlayDismissals.push(hit);
     return hit;

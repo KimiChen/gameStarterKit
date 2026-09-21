@@ -27,15 +27,30 @@ OUT = os.path.join(HERE, CFG["outDir"])
 
 
 def page_image(xml_logical: str, image_path: str):
-    """图集页与 xml 同目录；优先用已解码的 out/png，没有就现解。"""
+    """图集页与 xml 同目录；优先用已解码的 out/png，没有就现解。
+
+    ⚠ XML 里的 `imagePath` 写的是**源**扩展名（.png/.tga），而包里是构建期转出的 `.ktx`
+    —— 与 README §1 坑③同源。所以要按扩展名回退再找一遍，⛔ 别只认字面名。
+    """
     from PIL import Image
     d = xml_logical.rsplit("/", 1)[0]
-    page = d + "/" + image_path
-    cached = os.path.join(OUT, "png", page.rsplit(".", 1)[0] + ".png")
+    base = (d + "/" + image_path).rsplit(".", 1)[0]
+    cached = os.path.join(OUT, "png", base + ".png")
     if os.path.exists(cached):
-        return Image.open(cached), page
-    img, _fmt = decode(open(resolve_by_name(page), "rb").read())
-    return img, page
+        return Image.open(cached), base + ".png"
+    last = None
+    for ext in ("ktx", "png", "win.ktx", "astc", "jpg"):
+        page = base + "." + ext
+        try:
+            path = resolve_by_name(page)
+        except SystemExit as e:                      # name_map 里没有这条
+            last = e
+            continue
+        if page.endswith(".png") or page.endswith(".jpg"):
+            return Image.open(path), page
+        img, _fmt = decode(open(path, "rb").read())
+        return img, page
+    raise SystemExit(last or f"⛔ 找不到图集页 {base}.*")
 
 
 def slice_one(xml_logical: str, rows: list) -> int:

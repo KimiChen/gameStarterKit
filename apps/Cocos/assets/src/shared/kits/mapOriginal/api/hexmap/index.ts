@@ -291,12 +291,26 @@ export interface IMapoTerrain {
 //   双线性采样会跨到隔壁格。⛔ 不靠 UV 内缩解决（内缩会把画面往里压，菱形边缘少一圈）。
 
 /** 单格画布（像素）。 */
-export const MAPO_ATLAS_CELL_W = 256;
-export const MAPO_ATLAS_CELL_H = 128;
+export const MAPO_ATLAS_CELL_W = 240;
+export const MAPO_ATLAS_CELL_H = 120;
 /** 格与格之间的出血带（像素，四周都有）。 */
 export const MAPO_ATLAS_GUTTER = 4;
 /** 每行几格；id = 行×列数 + 列。 */
-export const MAPO_ATLAS_COLS = 4;
+export const MAPO_ATLAS_COLS = 8;
+/**
+ * 每个地形类在图集里有几个**变体片**。
+ * ⚠ 存在的理由：同一张片复制上千遍时整片地读作「铺地砖」而不是连续地貌。
+ *   四个变体取的是源纹理**不同位置 + 不同朝向**的窗口，⛔ 不是同一块的镜像
+ *   （镜像只在格内翻，整片地仍读得出重复节律）。
+ * ⚠ 图集格 id = `classId * MAPO_ATLAS_VARIANTS + variant`。
+ */
+export const MAPO_ATLAS_VARIANTS = 4;
+
+/** 地形类 + 变体 → 图集格 id。 */
+export function mapoAtlasCellId(classId: number, variant: number): number {
+    return classId * MAPO_ATLAS_VARIANTS + (((variant % MAPO_ATLAS_VARIANTS) + MAPO_ATLAS_VARIANTS)
+        % MAPO_ATLAS_VARIANTS);
+}
 /** 图集尺寸。⚠ 取 2 的幂：NPOT 贴图在 WebGL1 上不能开 mipmap / repeat。 */
 export const MAPO_ATLAS_W = 2048;
 export const MAPO_ATLAS_H = 1024;

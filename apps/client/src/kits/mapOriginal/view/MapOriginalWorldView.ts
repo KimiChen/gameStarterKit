@@ -20,7 +20,7 @@ import { MAPO_LOD_MAX, MAPO_MAP_COLS, MAPO_MAP_ROWS, mapoGrid2Pos } from "../../
 import { MAPO_DISPLAY_BY_ID, MAPO_DISPLAY_PALETTE } from "../../../shared/kits/mapOriginal/content/display.data";
 import { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
 import { mapoInMapBand, mapoRootLocalToCamera } from "../logic/mapoCamera";
-import { mapoIsNearField } from "../logic/mapoLayers";
+import { mapoIsNearField, mapoLayerVisible } from "../logic/mapoLayers";
 import { mapoSelectionEdges } from "../logic/mapoMesh";
 import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
@@ -30,6 +30,8 @@ import {
 } from "../logic/mapoSettings";
 import type { MapoRgb } from "../logic/mapoPalette";
 import { MapoViewportStencil } from "../logic/mapoViewport";
+import { MapoDecorRenderer } from "./MapoDecorRenderer";
+import { MapoLabelRenderer } from "./MapoLabelRenderer";
 import { MapoMapRenderer } from "./MapoMapRenderer";
 import { MapoFarRenderer } from "./MapoFarRenderer";
 import { MapoMinimap } from "./MapoMinimap";
@@ -58,6 +60,8 @@ export class MapOriginalWorldView extends CocosView {
     private world: Node | null = null;
     private selection: Node | null = null;
     private renderer: MapoMapRenderer | null = null;
+    private decorRenderer: MapoDecorRenderer | null = null;
+    private labelRenderer: MapoLabelRenderer | null = null;
     private farRenderer: MapoFarRenderer | null = null;
     private minimap: MapoMinimap | null = null;
     private art: MapoArtResources | null = null;
@@ -104,7 +108,10 @@ export class MapOriginalWorldView extends CocosView {
         // ⚠ 用 **16 类显示层**调色板，⛔ 不是 4 类通行层那份（拿 16 类 id 去查它会显示成「可走陆地」）
         const base: MapoRgb[] = MAPO_DISPLAY_PALETTE.map((e) => e.color as MapoRgb);
         this.renderer = new MapoMapRenderer(this.world, null, base);
+        this.decorRenderer = new MapoDecorRenderer(this.world, null);
         this.farRenderer = new MapoFarRenderer(this.world, null);
+        // ⚠ 地名建在 root 上、⛔ 不挂 world：文本要保持可读字号，不能跟着相机缩放糊掉
+        this.labelRenderer = new MapoLabelRenderer(this.root);
 
         const generation = ++this.assetGeneration;
         void loadMapoArt().then((art) => {
@@ -114,8 +121,10 @@ export class MapOriginalWorldView extends CocosView {
                 try { mapoSetDisplayTerrain(art.terrain.buffer()); } catch { /* 退回通行层 */ }
             }
             this.renderer?.dispose();
+            this.decorRenderer?.dispose();
             this.farRenderer?.dispose();
             this.renderer = new MapoMapRenderer(this.world!, art, base);
+            this.decorRenderer = new MapoDecorRenderer(this.world!, art);
             this.farRenderer = new MapoFarRenderer(this.world!, art);
             this.minimap = new MapoMinimap(this.root, 180, w / 2 - 110, this.mapBottom + 110, art,
                 (row, col) => { this.logic?.centerOn(row, col); this.refresh(true); });
@@ -133,6 +142,8 @@ export class MapOriginalWorldView extends CocosView {
         this.bindInput(false);
         this.offTick?.(); this.offTick = null;
         this.renderer?.dispose(); this.renderer = null;
+        this.decorRenderer?.dispose(); this.decorRenderer = null;
+        this.labelRenderer?.dispose(); this.labelRenderer = null;
         this.farRenderer?.dispose(); this.farRenderer = null;
         this.minimap?.dispose(); this.minimap = null;
         this.art?.release(); this.art = null;
@@ -364,6 +375,12 @@ export class MapOriginalWorldView extends CocosView {
         if (!force && key === this.lastKey) return;
         this.lastKey = key;
 
+        // 地名全档都画（远档大区、近档郡），⛔ 两档不要一起画
+        if (mapoLayerVisible("label", cam.lod)) {
+            this.labelRenderer?.render(l, bandCentre);
+        } else {
+            this.labelRenderer?.clear();
+        }
         if (near) {
             this.farRenderer?.clear();
             // ⚠ 可视格用偏移模板：平移时只换中心格，⛔ 不每帧重算整套偏移
@@ -372,8 +389,12 @@ export class MapOriginalWorldView extends CocosView {
             this.stencil.forEach(centre.row, centre.col, MAPO_MAP_ROWS, MAPO_MAP_COLS,
                 (row, col) => { cells.push({ row, col }); });
             this.renderer?.render(l, cells);
+            // ⚠ 摆件在地表**之上**（兄弟序即绘制序），⛔ 不要反过来
+            if (mapoLayerVisible("decor", cam.lod)) this.decorRenderer?.render(l, cells);
+            else this.decorRenderer?.clear();
         } else {
             this.renderer?.clear();
+            this.decorRenderer?.clear();
             this.farRenderer?.render(l);
         }
         if (this.titleLabel) this.titleLabel.string = `原版大地图 · LOD ${cam.lod}/${MAPO_LOD_MAX}`;

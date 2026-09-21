@@ -19,6 +19,8 @@ export function mapoPlateAsset(lod: number): string {
 }
 /** ⚠ 显示层地形走 BufferAsset：它塞不进 shared（熵太高），见 logic/mapoTerrain.ts。 */
 export const MAPO_TERRAIN_ASSET = "kits/mapOriginal/maps/s1/terrain";
+/** 摆件图集（原版切片打包，2048²）。 */
+export const MAPO_DECOR_ATLAS_ASSET = "kits/mapOriginal/maps/s1/decor-atlas";
 export const MAPO_MINIMAP_ASSET = "kits/mapOriginal/maps/s1/minimap";
 /** 近档地表图集。⚠ 只有 LOD0/1/2 有（门控 hideAtLod:2），⛔ 没有 atlas-lod3。 */
 export function mapoAtlasAsset(lod: number): string {

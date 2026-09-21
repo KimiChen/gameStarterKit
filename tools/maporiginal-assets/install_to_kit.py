@@ -33,9 +33,11 @@ FILES = {
     "plate-lod4.png": "plate-lod4.png", "plate-lod4.info.json": "plate-lod4.info.json",
     "plate-lod5.png": "plate-lod5.png", "plate-lod5.info.json": "plate-lod5.info.json",
     "minimap.png": "minimap.png", "minimap-mask.png": "minimap-mask.png",
+    "decor-atlas.png": "decor-atlas.png", "decor-atlas.info.json": "decor-atlas.info.json",
+    "labels.json": "labels.json",
     "plate.calib.json": "plate.calib.json",
 }
-KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "plate.calib.json"}
+KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "plate.calib.json", "labels.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。

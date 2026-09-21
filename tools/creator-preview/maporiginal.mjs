@@ -48,6 +48,12 @@ export function readMapOriginalEvidence(walk) {
         layers: statusMatch ? statusMatch[6].split(" / ").filter((s) => s && s !== "（无）") : [],
         // 近档 / 远档各自的「画出来了」
         terrain: has("mapo-terrain"),
+        // ★ 摆件层：原版切片立在格上（去「铺地砖」的主力）
+        decor: has("mapo-decor"),
+        // ★ 地名层：远档大区名、近档郡名。取的是**渲染出来的文本**，⛔ 不读内部状态
+        labels: nodes.filter((node) => node.path.includes("/mapo-label-")
+            && typeof node.text === "string" && node.text.trim().length > 0)
+            .map((node) => node.text.trim()),
         plate: nodes.find((node) => /^mapo-plate-[45]$/u.test(node.name))?.name ?? null,
         minimap: has("mapo-minimap"),
         selection: has("mapo-selection"),
@@ -144,6 +150,19 @@ export async function replayMapOriginalWorld(runner) {
         };
     });
 
+    const decorAndLabels = await runner.step("近档：摆件层与郡名就位（⛔ 不接受只有地表）", async () => {
+        const evidence = await runner.waitFor("mapo-decor 在树上且能读到郡名", (walk) => {
+            const value = readMapOriginalEvidence(walk);
+            if (!value?.nearLoaded || !value.decor) return null;
+            // ⚠ 近档该看到的是**郡名**（带「郡/国」字），⛔ 不是远档那九个大区名
+            const jun = [...new Set(value.labels)].filter((t) => /[郡国]$/u.test(t));
+            return jun.length > 0 ? { ...value, jun } : null;
+        }, 30_000);
+        return { decor: evidence.decor, jun: evidence.jun,
+                 labelCount: new Set(evidence.labels).size,
+                 shot: await runner.shot("maporiginal-decor-labels") };
+    });
+
     const colorMode = await runner.step("画面设置：色彩模式切「鲜艳」并确认真的生效", async () => {
         const before = readMapOriginalEvidence(await runner.walk())?.graphics ?? null;
         await runner.tapText("鲜艳", { pathIncludes: VIEW });
@@ -175,7 +194,11 @@ export async function replayMapOriginalWorld(runner) {
             const got = readMapOriginalEvidence(walk);
             return got?.farLoaded && got.lod >= 3 ? got : null;
         }, 30_000);
+        // ⚠ 远档该换成**大区名**（西凉/山东/…），⛔ 不该还挂着郡名
+        const names = [...new Set(value.labels)];
+        const canton = names.filter((t) => !/[郡国]$/u.test(t));
         return { lod: value.lod, plate: value.plate, band: value.band, layers: value.layers,
+                 canton, stillJun: names.filter((t) => /[郡国]$/u.test(t)),
                  shot: await runner.shot("maporiginal-far") };
     });
 
@@ -204,5 +227,5 @@ export async function replayMapOriginalWorld(runner) {
         return { lod: value.lod, band: value.band, shot: await runner.shot("maporiginal-back") };
     });
 
-    return { opened, selected, colorMode, sandbox3d, far, jumped, back };
+    return { opened, selected, decorAndLabels, colorMode, sandbox3d, far, jumped, back };
 }

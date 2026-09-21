@@ -8,7 +8,7 @@
  */
 import { Material, Node } from "cc";
 import {
-    mapoAtlasUv, mapoTileVariant, MAPO_ATLAS_LODS,
+    mapoAtlasCellId, mapoAtlasUv, mapoTileVariant, MAPO_ATLAS_LODS,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import { buildMapoDiamondMesh, MAPO_MAX_QUADS_PER_MESH, type MapoQuadInput } from "../logic/mapoMesh";
 import { MAPO_TEXTURED_TINT, mapoBuildPalette, type MapoRgb } from "../logic/mapoPalette";
@@ -76,10 +76,12 @@ export class MapoMapRenderer {
             const id = mapoDisplayClassAt(row, col);
             // ⚠ 贴图时顶点色取纯白：顶点色是相乘的，拿地形色去乘会把贴图整体染一遍
             const c = textured ? MAPO_TEXTURED_TINT : (this.palette[id] ?? this.palette[0]);
+            // ★ 变体选**片**、flip 在格内**镜像**：两者用不同的散列源，叠起来 16 种组合
+            //   —— 这是去「铺地砖」的主要手段，⛔ 只翻不换片是不够的。
             quads.push({
                 row, col,
-                uv: textured ? mapoAtlasUv(id) : null,
-                flip: textured ? mapoTileVariant(row, col) : 0,
+                uv: textured ? mapoAtlasUv(mapoAtlasCellId(id, mapoTileVariant(row, col))) : null,
+                flip: textured ? mapoTileVariant(col, row) : 0,
                 rgba: [c[0] / 255, c[1] / 255, c[2] / 255, 1],
             });
         }

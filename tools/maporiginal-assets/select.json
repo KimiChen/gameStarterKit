@@ -5,19 +5,66 @@
   ],
   "mapId": "s1",
   "groups": [
-    { "kind": "plate",  "paths": ["fairy/ui/ui_common_map/map/map_s1/image/noexpo_birdview_map_1.ktx"] },
-    { "kind": "ground", "prefixes": [
+    {
+      "kind": "plate",
+      "paths": [
+        "fairy/ui/ui_common_map/map/map_s1/image/noexpo_birdview_map_1.ktx"
+      ]
+    },
+    {
+      "kind": "ground",
+      "prefixes": [
         "scene_3d/ground/gaodi/tex/",
         "scene_3d/ground/gaodi_snow/tex/",
         "scene_3d/ground/gaodi_shan/tex/",
         "scene_3d/ground/dibiaohuawen/tex/",
         "scene_3d/ground/dibiaohuawen_snow/tex/",
         "scene_3d/ground/terrain/"
-      ] },
-    { "kind": "ground", "prefixes": ["scene_3d/ground/mountain_new/"], "suffix": "_d.ktx" },
-    { "kind": "mask",   "prefixes": ["scene_3d/pcg_v5/water/"], "maxBytes": 200000 },
-    { "kind": "atlas",  "prefixes": ["scene/_output_atlas_scene/atlas_tex/"],
-      "only": ["armyline", "ext_building_flag", "build_attachment", "alliance_extend_build"] },
-    { "kind": "ui",     "prefixes": ["fairy/atlas_3d/map_s1"] }
+      ]
+    },
+    {
+      "kind": "ground",
+      "prefixes": [
+        "scene_3d/ground/mountain_new/"
+      ],
+      "suffix": "_d.ktx"
+    },
+    {
+      "kind": "mask",
+      "prefixes": [
+        "scene_3d/pcg_v5/water/"
+      ],
+      "maxBytes": 200000
+    },
+    {
+      "kind": "atlas",
+      "prefixes": [
+        "scene/_output_atlas_scene/atlas_tex/"
+      ],
+      "only": [
+        "ground",
+        "grid",
+        "resource",
+        "resource_food",
+        "resource_gold",
+        "road",
+        "small_build",
+        "map_birdview_icons",
+        "npc_city",
+        "player_city",
+        "junying",
+        "armyline",
+        "ext_building_flag",
+        "build_attachment",
+        "alliance_extend_build"
+      ],
+      "comment": "★ ground/resource/road/small_build 是**原版 2D 档**的地表与地物图集 —— 它们在包里（只是 .group 预制体不在），⛔ 别再说「原版 2D 地表不在基础包」"
+    },
+    {
+      "kind": "ui",
+      "prefixes": [
+        "fairy/atlas_3d/map_s1"
+      ]
+    }
   ]
 }

@@ -28,11 +28,13 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     // ⚠ 网格线只在最近两档；线宽按「屏幕像素 / scale」折算，⛔ 不是世界常量
     { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: true },
     { id: "plate", hideAtLod: MAPO_LOD_MAX, showFromLod: 3, streamed: false, implemented: true },
+    // ★ 摆件：**原版切片**（城/营/建筑/资源地物）立在格上。超出菱形，必须画在地表之上、按画家序排。
+    { id: "decor", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
+    // ★ 地名：原版 canton/area 名表。⚠ 全档都画（远档大区、近档郡），⛔ 两档不要一起画。
+    { id: "label", hideAtLod: MAPO_LOD_MAX, showFromLod: 0, streamed: false, implemented: true },
     // ── 以下**尚未实现**：位置留着，⛔ 别当成能用 ──────────────────────────────
-    // decor 摆件等原版地物图集策展；banner 目标旗、label 地名都要服务端数据。
-    { id: "decor", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: false },
+    // banner 目标旗要服务端的归属数据。
     { id: "banner", hideAtLod: 1, showFromLod: 0, streamed: false, implemented: false },
-    { id: "label", hideAtLod: 2, showFromLod: 0, streamed: false, implemented: false },
 ] as const);
 
 /** 表里写着但还没实现的层。⚠ 加实现时把 implemented 翻成 true，这个列表会自动缩短。 */
