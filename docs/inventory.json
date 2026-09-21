@@ -424,6 +424,29 @@
         "docs/SERVER.md",
         "docs/MMO.md"
       ]
+    },
+    {
+      "id": "world-process",
+      "category": "core",
+      "defaultEntry": "apps/server/src/entries/world.ts",
+      "sourceOfTruth": "apps/server/src/world.config.ts",
+      "wireBoundary": "apps/server/src/bootstrapProcess.ts",
+      "verification": [
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test"
+        },
+        {
+          "kind": "workspace",
+          "workspace": "@game/server",
+          "script": "test:int"
+        }
+      ],
+      "docs": [
+        "docs/SERVER.md",
+        "docs/MMO.md"
+      ]
     }
   ],
   "defaultModules": [
@@ -652,6 +675,18 @@
       "command": {
         "kind": "workspace",
         "workspace": "@game/server",
+        "script": "dev:split"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "dev:split"
+      },
+      "reason": "PS 三进程入口；根命令直接转调，合体 dev 保持默认"
+    },
+    {
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
         "script": "start:lobby"
       },
       "supersededBy": {
@@ -669,6 +704,18 @@
       "supersededBy": {
         "kind": "root",
         "script": "start:game"
+      },
+      "reason": "PS 三进程入口；根命令直接转调，合体 dev 保持默认"
+    },
+    {
+      "command": {
+        "kind": "workspace",
+        "workspace": "@game/server",
+        "script": "start:world"
+      },
+      "supersededBy": {
+        "kind": "root",
+        "script": "start:world"
       },
       "reason": "PS 三进程入口；根命令直接转调，合体 dev 保持默认"
     }

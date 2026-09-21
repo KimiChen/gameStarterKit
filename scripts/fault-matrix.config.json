@@ -20,6 +20,24 @@
       ]
     },
     {
+      "id": "process-split",
+      "cwd": "apps/server",
+      "files": [
+        "apps/server/test/bootstrap-process.test.ts",
+        "apps/server/test/dev-split-lifecycle.test.ts"
+      ],
+      "faultPoints": [
+        "process-startup-half-failure",
+        "process-cleanup-failure",
+        "process-listen-address-in-use",
+        "process-after-listen-failure",
+        "dev-supervisor-child-failure",
+        "dev-supervisor-force-stop",
+        "dev-supervisor-ipc-disconnect",
+        "dev-supervisor-before-init-disconnect"
+      ]
+    },
+    {
       "id": "client-transitions",
       "cwd": ".",
       "files": [

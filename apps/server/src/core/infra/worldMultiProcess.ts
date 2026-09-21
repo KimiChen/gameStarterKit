@@ -1,7 +1,7 @@
 /**
  * 多 world 进程启用路径的纯判定（MMO MF10-B2，docs/MMO.md §5.4 MF10 / D27）：
  *  - `WORLD_MULTI_PROCESS=1` 时才需要 RedisDriver / RedisPresence（多个 world 进程之间共享房间列表 / IPC；lobby / game 进程不需要：
- *    客户端不 joinOrCreate 世界房，由 world.enter 按 WorldDirectory 选节点后直连）；
+ *    客户端先由 lobby world.enter 取凭据 / 端点，再向 world 端 joinOrCreate；lobby 不调用 matchmaker 创建世界房）；
  *  - 承载 driver / presence 的 Redis **必须是独立实例**（host:port 与 durable / coord 都不同；⛔ 独立 db 不够：Pub/Sub 是实例全局的，
  *    roomcaches / roomcount / $lobby 等固定键名与频道不可加前缀，见 app.config.ts 多项目段）——加载期断言，错配即拒启。
  * 纯函数便于单测（config.ts 在加载期调用一次）。

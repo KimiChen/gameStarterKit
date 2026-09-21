@@ -1,12 +1,12 @@
 /**
  * world 进程 config（MMO MF4-B6；docs/MMO.md D27 / MMO-PLAN PS4）：WorldRoom 登记 + world 形态玩法装配。
- * PS1 / PS4 的入口拆分（`entries/world.ts` + `WORLD_PORT`）尚未落地，当前由合体入口 `app.config.ts` 合并本文件
- * （`...worldRooms` + `registerWorldRuntime()`）；拆分后本文件原样成为 world 进程的 rooms 表，⛔ 不登记进 lobby / game 的 config。
+ * `entries/world.ts` 使用 createWorldServer；合体入口 app.config.ts 合并 worldRooms。
+ * WorldRoom 不登记进 lobby / game 的 config。
  *
  * ⚠ `filterBy(["sId","mode","profile","mapId","line"])`：撮合只在同区同玩法同图（同线）内匹配；缺 `line` 的 join 不参与该键过滤
  * （服务端分配，v1 = DEFAULT_WORLD_LINE），房内 onJoin 仍以 onAuth 权威值对 mapId / line 再闸一次（joinById 直连）。
  */
-import { defineRoom } from "colyseus";
+import { defineRoom, defineServer } from "colyseus";
 import type { MatchMakerDriver, Presence } from "@colyseus/core";
 import { RedisDriver } from "@colyseus/redis-driver";
 import { RedisPresence } from "@colyseus/redis-presence";
@@ -16,6 +16,7 @@ import type { WorldMultiProcessVerdict } from "./core/infra/worldMultiProcess";
 import { WorldRoom } from "./rooms/WorldRoom";
 import { assertWorldProfilesConfigured } from "./rooms/core/WorldProfile";
 import { registerDefaultWorldModes } from "./rooms/modes/catalog";
+import { processServerOptions } from "./process.config";
 
 let registered = false;
 
@@ -30,6 +31,11 @@ export function registerWorldRuntime(): void {
 export const worldRooms = {
     [RoomName.World]: defineRoom(WorldRoom).filterBy(["sId", "mode", "profile", "mapId", "line"]),
 };
+
+export function createWorldServer() {
+    registerWorldRuntime();
+    return defineServer({ ...processServerOptions(), rooms: worldRooms, ...worldServerOptions() });
+}
 
 // ── MMO MF10-B2：多 world 进程启用路径（只在多个 world 进程之间；lobby / game 进程不需要，D27）──────────────────────────────
 

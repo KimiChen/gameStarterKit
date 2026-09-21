@@ -26,8 +26,10 @@
     "typecheck": "tsc --noEmit",
     "loadtest": "tsx loadtest/bot.ts --endpoint ws://localhost:2568 --room game --numClients 20",
     "dev:server-only": "tsx watch src/index.ts",
+    "dev:split": "npm run stack && npm run db:bootstrap && npm run smoke:framework && tsx watch --clear-screen=false --include 'src/**' --include '../shared/src/**' --include 'tools/dev-split-parent.mjs' tools/dev-split.ts",
     "start:lobby": "tsx src/entries/lobby.ts",
-    "start:game": "tsx src/entries/game.ts"
+    "start:game": "tsx src/entries/game.ts",
+    "start:world": "tsx src/entries/world.ts"
   },
   "dependencies": {
     "@colyseus/core": "^0.17.0",

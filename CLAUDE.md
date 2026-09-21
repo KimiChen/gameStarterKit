@@ -65,8 +65,10 @@ npm run dev:client
 npm run dev
 npm run dev:server-only
 npm run start:server
+npm run dev:split
 npm run start:lobby
 npm run start:game
+npm run start:world
 npm run init:project -- --project-id <id> --name <name> --display-name <text> --scope <scope|none> --brand <text>
 npm run typecheck
 npm run typecheck:client
