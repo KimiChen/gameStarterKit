@@ -64,6 +64,8 @@ const info = JSON.parse(kit("terrain.info.json").toString("utf8")) as {
     palette: { id: number; kind: string; cn: string; color: [number, number, number];
                passable: boolean; tiles: number; resType?: number; level?: number }[];
     passPalette: { id: number; name: string; passable: boolean; tiles: number }[];
+    blockingLandIds: number[];
+    mountainLandIds: number[];
 };
 
 test("mapOriginal 内容：terrain.bytes 与 terrain.info.json 逐字节自洽", () => {
@@ -112,16 +114,18 @@ test("mapOriginal 内容：通行层是显示层的派生（河流/山脉不可�
     for (let i = MAPO_TERRAIN_HEADER_BYTES; i < n; i += 1) {
         const v = display[i], p = pass[i], at = i - MAPO_TERRAIN_HEADER_BYTES;
         if (v === 47) assert.equal(p, RIVER, `第 ${at} 格是河流却不是不可通行河`);
-        else if (v === 60 || v === 61) assert.equal(p, MOUNTAIN, `第 ${at} 格是山脉锚点却不挡路`);
+        else if (v >= 48 && v <= 61) assert.equal(p, MOUNTAIN, `第 ${at} 格是山族锚点却不挡路`);
         else if (v === 0) assert.ok(p === LAND || p === MOUNTAIN, `第 ${at} 格覆盖格的通行类 ${p} 非法`);
         else assert.equal(p, LAND, `第 ${at} 格原版值 ${v} 不该挡路，实际 ${p}`);
         if (p === MOUNTAIN) blocked += 1;
     }
-    // ★ 挡路格数必须等于覆盖掩码里 60/61 的格数（两份产物互证）
+    // ★ 挡路格数必须等于覆盖掩码里**挡路集**的格数（两份产物互证）
+    //   ⚠ 挡路集由 base.cw 的 `land.is_block` 直给（实测 1..46 通行 / 47..61 挡路），
+    //   ⛔ 不再是硬编码的 {60,61} —— 那少挡了 154,552 格（1/2/4/7 格的山形）。
     const regionsMeta = JSON.parse(kit("regions.info.json").toString("utf8")) as
         { coverMask: Record<string, number> };
-    assert.equal(blocked, regionsMeta.coverMask["60/61 覆盖格"],
-        "挡路格数 == res_multi ∈ {60,61} 的格数");
+    assert.equal(blocked, regionsMeta.coverMask["挡路覆盖格"],
+        "挡路格数 == res_multi ∈ 挡路集 的格数");
     // ⚠ 通行层的三类里只有 land 可通行
     for (const e of info.passPalette) assert.equal(e.passable, e.name === "land", e.name);
 });
@@ -355,6 +359,10 @@ test("mapOriginal 内容：显示层 = res 原值（⛔ 不再 merge res_multi�
     //   数字来自 MAPORIGINAL-2D §3.1 的六项判据（实测）。
     const byId = new Map(info.palette.map((e) => [e.id, e]));
     assert.equal(byId.get(0)?.tiles, 142958, "值 0（多格地形覆盖格）必须是 142,958 格");
+    // ★ 挡路集由 base.cw 的 land.is_block 直给：1..46 通行、47..61 挡路（实测）
+    assert.deepEqual(info.blockingLandIds, [47, 48, 49, 50, 51, 52, 53, 54, 55, 57, 58, 59, 60, 61],
+        "挡路 land id 集");
+    assert.deepEqual(info.mountainLandIds, info.blockingLandIds.filter((v) => v >= 48));
     let anchors = 0;
     for (const e of info.palette) if (e.id >= 48 && e.id <= 61) anchors += e.tiles;
     assert.equal(anchors, 55127, "48..61 锚点必须是 55,127 格");
@@ -363,8 +371,10 @@ test("mapOriginal 内容：显示层 = res 原值（⛔ 不再 merge res_multi�
     const mountainPass = info.passPalette.find((e) => e.name === "mountain")!.tiles;
     const regions = JSON.parse(kit("regions.info.json").toString("utf8")) as
         { coverMask: Record<string, number> };
-    assert.equal(mountainPass, regions.coverMask["60/61 覆盖格"],
-        "不可通行山地格数 == 60/61 的覆盖掩码格数");
+    assert.equal(mountainPass, regions.coverMask["挡路覆盖格"],
+        "不可通行山地格数 == res_multi ∈ 挡路集 的格数");
+    // ⚠ 早先按硬编码 {60,61} 只挡 43,533 格，**少挡了 154,552 格**（1/2/4/7 格的山形）
+    assert.ok(mountainPass > regions.coverMask["60/61 覆盖格"], "⛔ 别退回只挡 60/61");
 });
 
 test("mapOriginal 内容：城占格表 = city.bytes（249 座 / 2,689 格 / 首格对上 city_center）", () => {

@@ -52,6 +52,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+from ctable_cw import BaseCw  # noqa: E402
 from decode_ktx import resolve_by_name  # noqa: E402
 
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
@@ -130,11 +131,21 @@ def main() -> int:
     body = struct.pack(">II", rows, cols) + disp.tobytes()
 
     # 通行层：0 可走陆地 / 1 河流 / 2 山地。⚠ 水域已并入河流（原版海与河同为 47）
-    # ⚠ 山地按**整片足迹**挡路（multi ∈ {60,61}，含 19 格覆盖区）—— 这条是 `[推断]`：
-    #   覆盖格的通行性继承多格 land 行的 `is_block`，而 land 表在未解的 base.cw 里（§3.1）。
+    # ★ **挡路集由 `base.cw` 的 `land.is_block` 直给**（2026-09-23 解开，⛔ 不再硬编码 60/61）：
+    #   实测 land id **1..46 全部可通行、47..61 全部挡路**（47 名「河」、48..61 名「山1..山14」）。
+    #   ⇒ §3.1 那条「覆盖格继承多格 land 的 is_block ⇒ 整片挡路」由 `[推断]` 变**实证**。
+    # ⚠ 早先只挡 multi ∈ {60,61}（43,533 格），**少挡了 154,552 格** ——
+    #   1/2/4/7 格的山形（48..55、57..59）同样 is_block，⛔ 别再按「只有大山挡路」想。
+    cw = BaseCw()
+    blocking = {r["id"] for r in cw.land_rows() if r["is_block"] == cw.LAND_IS_BLOCK}
+    present = set(np.unique(res).tolist()) | set(np.unique(multi).tolist())
+    blk_here = sorted(v for v in present if v in blocking)
+    if 47 not in blk_here:
+        raise SystemExit("⛔ land 表里 47（河）不挡路？结构读错了")
+    mountain_ids = [v for v in blk_here if v >= 48]
     pas = np.zeros(disp.shape, np.uint8)
     pas[res == 47] = 1
-    pas[(multi == 60) | (multi == 61)] = 2
+    pas[np.isin(multi, mountain_ids)] = 2
     pass_body = struct.pack(">II", rows, cols) + pas.tobytes()
 
     d = os.path.join(OUT, "pack", mid)
@@ -173,7 +184,10 @@ def main() -> int:
                          "color": [70, 120, 160], "tiles": int((pas == 1).sum())},
                         {"id": 2, "name": "mountain", "cn": "山地", "passable": False,
                          "color": [123, 130, 126], "tiles": int((pas == 2).sum())}],
-        "passNote": "山地按整片足迹挡路（res_multi ∈ {60,61}）—— [推断]，见 MAPORIGINAL-2D §3.1",
+        "passNote": "挡路集取自 base.cw 的 land.is_block（实测 1..46 通行 / 47..61 挡路）；"
+                    "山地按**整片足迹**挡路（res_multi ∈ 挡路集）—— 由 [推断] 升为实证",
+        "blockingLandIds": blk_here,
+        "mountainLandIds": mountain_ids,
         "source": {"upstream": "《三国志·战略版》2084.1768",
                    "layers": ["map/%s/cn/res.bytes" % mid, "map/%s/cn/res_multi.bytes" % mid,
                               "map/%s/cn/logic_background.bytes" % mid],

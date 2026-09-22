@@ -258,8 +258,11 @@ BG(100) < TERRAIN_MASK(200) < TERRAIN(300) < ROAD(900) < RIVER(1600)
 > ⚠ **有一个渲染侧例外**：`terrain_layer_view` 直接读 res_multi（§3.5 的连通区机制）——
 > 原写「全是逻辑不是渲染」的全称判断不成立；但 S1 四张 multi_grid 表全空、无实际绘制（§1.7），
 > 「res_multi 不参与 48..61 山体撒件」的核心意思仍成立。
-> `[推断]` 覆盖格的通行性继承多格 land 行的 `is_block` ⇒ **整片 19 格都挡路**
-> （⚠ `land` 表在未解的 `base.cw` 里，这条是推断）。
+> ★ `[实测]` 覆盖格的通行性继承多格 land 行的 `is_block` ⇒ **整片足迹都挡路**
+> （2026-09-23 解开 `base.cw` 的 `land` 表，⛔ 不再是推断）：
+> land id **1..46 全部可通行、47..61 全部挡路**（47 名「河」、48..61 名「山1..山14」）。
+> ⚠ 因此挡路的是**全部 14 形**（198,085 格），⛔ 不只是 19 格的大山 ——
+> 本 kit 早先硬编码只挡 `multi ∈ {60,61}`（43,533 格），**少挡了 154,552 格**，已改正。
 
 ### 3.2 48..61 是同一族山体的 14 种足迹
 
@@ -270,8 +273,9 @@ BG(100) < TERRAIN_MASK(200) < TERRAIN(300) < ROAD(900) < RIVER(1600)
 另有平行的 `雪山1..14`(mountain_snow) / `荒地山1..14` / `秋季山N`（⚠ 2D 秋季件挂在
 **`新秋季山N`** → `mountain_new/grass_fall_new/`，`秋季山N` 标签只带 3D）。
 **山9 没有 2D prefab，而数据里字节 56 恰好 0 命中**（res/multi 双侧均 0，补核轮复算；
-48..61 各值计数与 §3.1 表逐值一致）⇒ `res 值 v ↔ 山(v−47)`，`RES_LAND_MOUNTAIN_1 = 48`
-（⚠ 该数值本身无直接证据：IdConsts 在干净集只剩注解档，等号由回落逻辑 + 三角定位支撑）。
+48..61 各值计数与 §3.1 表逐值一致）⇒ `res 值 v ↔ 山(v−47)`，`RES_LAND_MOUNTAIN_1 = 48`。
+★ `[实测]` **2026-09-23 已坐实**（⛔ 不再是三角定位）：`base.cw` 的 `land` 表里
+id 48..61 的 `name` 逐条就是 **`山1`..`山14`**，且 id 47 名「河」—— 与 `TERRAIN_TYPE.RIVER = 47` 吻合。
 
 ★ `[disasm]` 代码铁证：`res_layer_logic:get_res_multi()` 在 `res_multi.bytes` 缺失时
 **直接 `return IdConsts.RES_LAND_MOUNTAIN_1`** ⇒ res_multi 的值空间就是「山」的 land id 空间。
@@ -607,14 +611,26 @@ vp_scale_default = vp_scale_max        ← 默认值就是 max
    ⇒ `client_res` **848 行全出**，`scene/ground/road/` 152 条 —— 道路的 id→精灵绑定
    已由此从 `[推断]` 升为 `[实测]`（§4.2）。复现：`tools/maporiginal-assets/ctable_cw.py`。
 
-   ⛔ **仍未解**：`land` / `land_shape`（含 **`even_res_center` = 件的美术锚点偏移**，
-   直接影响摆位精度）、`city_info` / `city_res`（249 城各用哪个方位×规模件）、`minimap_plate`。
+   ★ `[实测]` **`land` 表也已解开**（2026-09-23）：**49 列 / 392 B 一行、键按字母序**排
+   （⚠ 又一次印证「行长与列集逐表不同」—— 与 `client_res` 的 25 列毫无共同点）。
+   353 行，`id` 1..359。标量列直接可读（`is_block` / `land_type` / `shape` /
+   `client_res_id` / `snow_·` / `desert_·` / `level` / `sphere` …），
+   字符串列是池偏移（`name` → `山1`、`editor_key` → `Land Wood 1`）。
+   ⚠ `is_block` 的真值是 **0x01000000**（不是 1），只有 0 与它两种取值（229 / 124 行）。
+
+   ⛔ **仍未解**：
+   - **列表列的数组池**：`offset_2d` / `vector` / `variant_*_client_res_id_list` /
+     `reward_*` 的值是**连号句柄**（同一行的多个列表按序分配），指向未解的数组池
+     ⇒ **`even_res_center` 这类 2 向量读不出来**，件的美术锚点偏移仍无解。
+   - `land_shape`、`city_info` / `city_res`（249 城各用哪个方位×规模件）、`minimap_plate`。
    ⚠ **别把 `client_res` 的布局推广到它们**：行长与列集**逐表不同**，本轮的通用 KV 盲扫
    实测会捞到 45,786 行（跨表串味）。换表要重定：找该表独有键的池偏移 → 搜它的 u32 引用
    → dump 周围 ±40 B 看键值对节律 → 用一组固定槽圈定。
 2. ~~`road_info.bytes` 是半文本、未解~~ ✅ **已解**（2026-09-23，见 §4.2）：它是**二进制**
    （可打印仅 15.6%），且坐标系由干净集 `road_info.lua` 直给、片由 `type_info` 烘死。
    ⚠ 余下的只有 **id → 精灵的绑定仍是 `[推断]`**（结构签名），要升为实证得先解 `client_res`（即第 1 条）。
-3. 覆盖格通行性「整片足迹都挡路」是 `[推断]`（依赖 `land` 行的 `is_block`，在 base.cw 里）。
+3. ~~覆盖格通行性「整片足迹都挡路」是 `[推断]`~~ ✅ **已实证**（2026-09-23）：
+   `land` 表 id **1..46 通行 / 47..61 挡路**，⇒ 挡路的是**全部 14 形**（198,085 格）。
+   ⚠ 顺带查出本 kit 早先只挡 `{60,61}`（43,533 格）、**少挡了 154,552 格**，已改正。
 4. `CAM_SCALE_MAX_FACTOR` 的确切值（1.45 / 1.35 两个候选）。
 5. 小地图底图的落位是否数据驱动（线索：`grid2point_pid` / `WORLD_PLATE_ID`），未验证。

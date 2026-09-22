@@ -143,6 +143,8 @@ def main() -> int:
                            "逐值": {str(k): v for k, v in fp_stats.items()}},
         "coverMask": {"res_multi 非零": int((multi != 0).sum()),
                       "60/61 覆盖格": int(((multi == 60) | (multi == 61)).sum()),
+                      # ★ 挡路集取自 base.cw 的 land.is_block（实测 47..61 全挡）
+                      "挡路覆盖格": int(np.isin(multi, MF.VALUES).sum()),
                       "res 非锚点(==0)": int((res == 0).sum()),
                       "锚点处 res==multi": int((res[res != 0] == multi[res != 0]).sum())},
         "source": {

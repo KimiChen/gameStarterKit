@@ -129,6 +129,36 @@ class BaseCw:
             out[r["id"]] = stem[: -len("_complex_group.prefab")]
         return out
 
+    # ★ `land` 表：**49 列 / 392 B 一行**，键按**字母序**排（与 `client_res` 的定长布局同理，
+    #   但列集完全不同 —— 又一次印证「行长与列集逐表不同」）。
+    # ⚠ 值分三类：标量 int 直接读；**字符串列**是池偏移（`name` → `1级木材`）；
+    #   **列表列**（`offset_2d` / `vector` / `variant_*_list` / `reward_*`）是**连号句柄**，
+    #   指向未解的数组池 ⇒ ⛔ 别把它们当数字读。
+    LAND_ANCHOR = "army_fight_confirm_diaplay_func"   # 字母序第一列，兼作行首锚
+    LAND_COLS = 49
+    # ⚠ `is_block` 的真值是 **0x01000000**（不是 1）：疑似大端布尔或高字节标志位。
+    #   实测只有 0 与它两种取值（229 / 124 行）。⛔ 别写成 `!= 0` 以外的判断。
+    LAND_IS_BLOCK = 0x01000000
+
+    def land_rows(self) -> list:
+        """全量 `land` 行（字典：列名 → 原始 u32）。⚠ 只保证**标量列**可直接当数读。"""
+        ka = self.key_off(self.LAND_ANCHOR)
+        w = self.words
+        out = []
+        for i in np.nonzero(w[: -self.LAND_COLS * 2] == ka)[0]:
+            row, ok = {}, True
+            for j in range(self.LAND_COLS):
+                key = self.s(int(w[i + j * 2]))
+                if not key or not key.replace("_", "a").isalnum() or key[0].isdigit():
+                    ok = False
+                    break
+                row[key] = int(w[i + j * 2 + 1])
+            if ok and "is_block" in row and "id" in row:
+                row["_at"] = int(i) * 4
+                out.append(row)
+        return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--table", default="client_res")
