@@ -280,13 +280,10 @@ test("settings and alliance share the same WideMenuButton file", async () => {
     const settings = await readArtPsd(resolve(root, "apps/art/uniflex/Settings/screen.psd"));
     const alliance = await readArtPsd(resolve(root, "apps/art/uniflex/Alliance/screen.psd"));
     const home = await readArtPsd(artComponentPsdPath(root, "AllianceHomePanel"));
-    // Settings carries pending designer edits, so it was not re-exported when
-    // web-ui-to-psd 0.1.12 renamed linked files to <Key>.psd; it keeps the legacy
-    // link (old guid + component.psd name) until the page is imported and re-exported.
-    const settingsWide = [...linkedPaths(settings).values()]
-        .find((link) => link.relativePath === "../components/WideMenuButton/component.psd");
-    assert.ok(settingsWide, "settings keeps the legacy WideMenuButton link until re-exported");
-    assert.equal(collectPlaced(settings).filter((item) => item.name.startsWith("WideMenuButton")).length, 10);
+    assert.equal(linkedPaths(settings).get(buttonId)?.relativePath,
+        "../components/WideMenuButton/WideMenuButton.psd");
+    assert.equal(linkedPaths(settings).get(buttonId)?.childDocumentID, "");
+    assert.equal(collectPlaced(settings).filter((item) => item.id === buttonId).length, 10);
     assert.equal(linkedPaths(alliance).get(homeId)?.relativePath,
         "../components/AllianceHomePanel/AllianceHomePanel.psd");
     assert.equal(collectPlaced(alliance).some((item) => item.id === buttonId), false);
