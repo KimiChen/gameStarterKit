@@ -4,6 +4,14 @@
  * join this boundary in SC3; this module is not a kit retain API.
  */
 
+/** Stable address for SC3 loading: resources is also a bundle name; paths omit extensions.
+ * Package bundles use <class>-<id>[-<map>]. No URL/path inference at kit call sites.
+ */
+export interface AssetAddress {
+    readonly bundle: string;
+    readonly path: string;
+}
+
 /** Structural subset of cc.Asset, so the same boundary works without an engine. */
 export interface LoadedAsset {
     readonly isValid: boolean;

@@ -78,5 +78,32 @@
         }
       }
     }
+  },
+  "bundleConfig": {
+    "custom": {
+      "package3d": {
+        "displayName": "Package 3D",
+        "configs": {
+          "native": {
+            "preferredOptions": {
+              "compressionType": "merge_dep",
+              "isRemote": false
+            }
+          },
+          "web": {
+            "preferredOptions": {
+              "compressionType": "merge_dep",
+              "isRemote": false
+            }
+          },
+          "miniGame": {
+            "preferredOptions": {
+              "compressionType": "merge_dep",
+              "isRemote": true
+            }
+          }
+        }
+      }
+    }
   }
 }

@@ -54,6 +54,9 @@ apps/Cocos/profiles/
 apps/Cocos/native/
 # Local installation of the checked-in tools/art3d/editor-probe template.
 apps/Cocos/extensions/stage3d-probe/
+# Local installation/configuration of the SC1-B7 bundle import probe.
+apps/Cocos/extensions/bundle-probe/
+tools/art3d/bundle-probe/local-config.json
 # LightFX editor history contains machine-local absolute output directories.
 apps/Cocos/settings/v2/packages/lightmap.json
 

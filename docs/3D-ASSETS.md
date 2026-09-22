@@ -52,7 +52,7 @@
 | 插件 | `apps/plugins/<id>/art/3d/` | `apps/Cocos/assets/bundles/plugin-<id>/3d/…` + `resources/plugins/<id>/3d/data/`（同形） |
 
 - 运行时目录 ⛔ 不是源目录的逐字节镜像（含 Creator 子资产与 `.meta`）；源目录只放可再生成的输入。
-- **bundle 策略（3d.md SD12，2026-09-19 拍板）**：`resources/` 仍是小数据与框架灰盒的 bundle；kit / 插件 3D 重资产**每包一个 bundle** `apps/Cocos/assets/bundles/<kit|plugin>-<id>/`（目录 `.meta` `isBundle:true`；开发期 `isRemote:false`，发布按平台在 `builder.json` bundleConfig 覆写为 `isRemote:true`，压缩类型候选 `merge_dep`），可按地图 / 场景细分为 `bundles/<class>-<id>-<map>/`；目录名须精确归属一个包，⛔ 用 `<class>-<id>*` 裸前缀推导所有权，细分 bundle 归属按包身份推导，只有精确 `<class>-<id>` 或非空 `<class>-<id>-<map>`（`<map>` 匹配 `^[a-z][A-Za-z0-9]*$`，`<class>` ∈ {kit, plugin}，3D-40）后缀可归属；根目录 `.meta` 同规，详见 3D-PLAN SC1-B7；Asset Bundle ⛔ 嵌套在 `resources/` 内 ⇒ ⛔ 把 3D 重资产放 `resources/{kits,plugins}/<id>/`；所有权 / 锁 / 安装 / `verify:assets3d` 在 SC1-B7 扩到 `bundles/`；`AssetLease` 以「bundle 名 + 路径」寻址，kit 代码不感知来源。
+- **bundle 策略（3d.md SD12，2026-09-19 拍板）**：`resources/` 仍是小数据与框架灰盒的 bundle；kit / 插件 3D 重资产**每包一个 bundle** `apps/Cocos/assets/bundles/<kit|plugin>-<id>/`（目录 `.meta` `isBundle:true`；开发期 `isRemote:false`，发布按平台在 `builder.json` bundleConfig 覆写为 `isRemote:true`，压缩类型候选 `merge_dep`），可按地图 / 场景细分为 `bundles/<class>-<id>-<map>/`；目录名须精确归属一个包，⛔ 用 `<class>-<id>*` 裸前缀推导所有权，细分 bundle 归属按包身份推导，只有精确 `<class>-<id>` 或非空 `<class>-<id>-<map>`（`<map>` 匹配 `^[a-z][A-Za-z0-9]*$`，`<class>` ∈ {kit, plugin}，3D-40）后缀可归属；根目录 `.meta` 同规，详见 3D-PLAN SC1-B7；Asset Bundle ⛔ 嵌套在 `resources/` 内 ⇒ ⛔ 把 3D 重资产放 `resources/{kits,plugins}/<id>/`；包所有权 / 锁 / 安装 / check 在 SC1-B7 扩到 `bundles/`，SC1-B5 的 `verify:assets3d` 复用其引用检查核心；`AssetLease` 以「bundle 名 + 路径」寻址，kit 代码不感知来源。
 - 每个模型一目录：`models/<SM_Asset>/{SM_Asset.glb, lod_1.glb, lod_2.glb}`（Cyberpunk `res/meshes/<SM_x>/lod_{0,1,2}.gltf` 同法，主文件即 lod_0）。
 
 ### 2.2 命名
@@ -225,7 +225,7 @@ SC0 的四个灰盒命名、64² 棋盘 PNG 尺寸与上述 LightFX 采样例外
 生成需求，不手改为实测通过；临时清单尚未接入自动资产闸。SC1-B5 须将其逐项迁移到正式配置并
 实现匹配和拒绝用例，⛔ 因清单存在就声称 `verify:assets3d` 已实现。
 
-正例：合法 `.mtl / .hdr / .animgraph / .animask` 应通过白名单。反例必须逐项转红：PNG 改名 `.jpg`、删除 `.meta`、删掉必需 texture 子 `.meta`、`mipfilter: none` 未登记、压缩预设引用不存在、模型 `lods.enable:true` 未登记、GLB 内嵌 PNG / JPEG、图片 URI 指向另一包或远程地址、GLB 外部 buffer、授权漏一张外提贴图、下调预算到实际体积以下均失败。蒙皮须按实际 skin 与 JOINTS / WEIGHTS 属性识别，不能只看文件前缀；关闭蒙皮 `allowMeshDataAccess` 必须失败，静态网格开启而无精确工具用途例外也必须失败。混合静态 / 蒙皮 GLB 如受同一文件级开关影响，登记该文件的保留理由与 CPU 数据预算；导入报告中的 native buffer 字节数仅为数据量下界，不代表总 CPU 内存。另验证相邻包 `foo` / `foobar` 不互认所有权，细分 bundle 的命名冲突必须拒绝；这些反例随 SC1-B5 / B7 落地，当前文档不代表机检已实现。
+正例：合法 `.mtl / .hdr / .animgraph / .animask` 应通过白名单。反例必须逐项转红：PNG 改名 `.jpg`、删除 `.meta`、删掉必需 texture 子 `.meta`、`mipfilter: none` 未登记、压缩预设引用不存在、模型 `lods.enable:true` 未登记、GLB 内嵌 PNG / JPEG、图片 URI 指向另一包或远程地址、GLB 外部 buffer、授权漏一张外提贴图、下调预算到实际体积以下均失败。蒙皮须按实际 skin 与 JOINTS / WEIGHTS 属性识别，不能只看文件前缀；关闭蒙皮 `allowMeshDataAccess` 必须失败，静态网格开启而无精确工具用途例外也必须失败。混合静态 / 蒙皮 GLB 如受同一文件级开关影响，登记该文件的保留理由与 CPU 数据预算；导入报告中的 native buffer 字节数仅为数据量下界，不代表总 CPU 内存。另验证相邻包 `foo` / `foobar` 不互认所有权，细分 bundle 的命名冲突必须拒绝；这些反例分别由 SC1-B5 / B7 验收，实现覆盖与证据以 3D-PLAN §8 为准；本节规范不单独表示完整资产闸已交付。
 
 UUID 依赖正例必须含同包细分 bundle 间引用和已登记内置资源；反例覆盖不存在 UUID、父资产存在但子资产缺失、跨 kit / plugin 引用（含已声明 `requires.kits` 却直接引用该 kit 内部材质）、未登记宿主 / 验收场景资源。SC1-B7 把带 Prefab → 材质 → 贴图 / 模型子资产依赖链的合成包走 pack → 干净根 install → Creator 重导入 / 加载，移除母仓旁路资源后仍可解析；另验卸载无关包不破坏该链。`verify:sync` 的顶层 UUID 唯一性和包内路径所有权都不能替代本项（3D-44）。
 

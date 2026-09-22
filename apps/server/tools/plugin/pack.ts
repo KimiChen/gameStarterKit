@@ -8,7 +8,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { classifyPath, deriveOwnership, hardExclusionReason, matchesPrefixRule, mirrorPathOf, packageManifestName, packageManifestPath, readProtectedPaths, type OwnershipRule } from "./ownership";
+import { BUNDLES, bundleRuleRoots, classifyPath, deriveOwnership, hardExclusionReason, matchesPrefixRule, mirrorPathOf, packageManifestName, packageManifestPath, readProtectedPaths, type OwnershipRule } from "./ownership";
 import { assertKitModesConsistent, readTreeKitGameplayDirs, readTreePackageManifest, treeIdentityOf, type PackageManifest } from "./manifest";
 import { PACKAGE_FILES_LOCK, foreignLockOwners, renderFilesLock, sha256, type LockEntry } from "./lock";
 import { validatePackage, type PluginPackage } from "./package";
@@ -87,7 +87,9 @@ export function collectPluginFiles(root: string, manifest: PackageManifest): {
   }
   const candidates = new Set<string>();
   for (const rule of rules) {
-    if (rule.kind === "dir") for (const file of listFiles(root, rule.path)) candidates.add(file);
+    if (rule.kind === "bundle") {
+      for (const dir of bundleRuleRoots(root, rule)) for (const file of listFiles(root, dir)) candidates.add(file);
+    } else if (rule.kind === "dir") for (const file of listFiles(root, rule.path)) candidates.add(file);
     else if (rule.kind === "file") {
       if (fs.existsSync(path.join(root, rule.path))) candidates.add(rule.path);
     } else {
@@ -133,7 +135,7 @@ export function collectPluginFiles(root: string, manifest: PackageManifest): {
       continue;
     }
     if (relative.endsWith(".meta")) continue; // 由真源带出
-    if (relative.startsWith(`${RESOURCES}/`)) {
+    if (relative.startsWith(`${RESOURCES}/`) || relative.startsWith(`${BUNDLES}/`)) {
       addWithMeta(relative, true);
       addOwnedAncestorMetas(relative);
       continue;

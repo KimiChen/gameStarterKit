@@ -10,11 +10,12 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { classifyPath, deriveOwnership, packageManifestPath, readProtectedPaths, type PackageClass } from "./ownership";
+import { classifyPath, deriveOwnership, packageManifestPath, readBundleRootNames, readProtectedPaths, type PackageClass } from "./ownership";
 import { identityDifferences, identityFromSummary, readTreePackageManifest, treeIdentityOf } from "./manifest";
 import { filesLockSha256Of, kitApiViolations, listInstalledLocks, verifyLockAgainstTree } from "./lock";
 import { resolveKitApi, resolveKitContributions } from "./install";
 import { pluginDeclarations } from "./package";
+import { assertAssetReferences, assertBundleLayout, readAssetFiles } from "./assetReferences";
 
 export interface PluginCheckEntry {
   readonly class: PackageClass;
@@ -136,6 +137,13 @@ export function checkInstalledPlugins(root: string): PluginCheckReport {
         const verdict = classifyPath(entry.path, rules, protectedPaths);
         if (!verdict.allowed) problems.push(`锁内路径已不在所有权推导集内：${entry.path}（${verdict.reason}）`);
       }
+    } catch (error) {
+      problems.push(error instanceof Error ? error.message : String(error));
+    }
+    try {
+      const files = readAssetFiles(root, lock.entries.map((entry) => entry.path));
+      assertBundleLayout(files, readBundleRootNames(root));
+      assertAssetReferences(files);
     } catch (error) {
       problems.push(error instanceof Error ? error.message : String(error));
     }

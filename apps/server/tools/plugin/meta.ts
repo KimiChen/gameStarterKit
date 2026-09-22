@@ -24,6 +24,15 @@ export const IMPORTER_BY_EXTENSION: ReadonlyMap<string, string> = new Map([
   [".ogg", "audio-clip"],
   [".wav", "audio-clip"],
   [".m4a", "audio-clip"],
+  [".glb", "gltf"],
+  [".gltf", "gltf"],
+  [".fbx", "fbx"],
+  [".prefab", "prefab"],
+  [".mtl", "material"],
+  [".hdr", "image"],
+  [".anim", "animation-clip"],
+  [".animgraph", "animation-graph"],
+  [".animask", "animation-mask"],
 ]);
 
 export interface MetaSummary {

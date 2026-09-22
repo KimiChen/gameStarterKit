@@ -56,7 +56,7 @@ export interface PluginIdentity {
 }
 
 export interface OwnershipRule {
-  readonly kind: "dir" | "file" | "prefix";
+  readonly kind: "dir" | "file" | "prefix" | "bundle";
   /** dir：目录（含其下全部文件）；file：精确文件；prefix：`path` 目录下以 `prefix` 开头的文件。 */
   readonly path: string;
   readonly prefix?: string;
@@ -92,6 +92,7 @@ const CONTROL_CHARS = /[\u0000-\u001f\u007f]/u;
 const CLIENT_SRC = "apps/client/src";
 const COCOS_SRC = "apps/Cocos/assets/src";
 const RESOURCES = "apps/Cocos/assets/resources";
+export const BUNDLES = "apps/Cocos/assets/bundles";
 /**
  * 插件根（PLUGIN.md §5.5 阶段 1）：`apps/plugins/<id>/` 装插件自己的登记面——plugin.json、plugin.json、README.md、
  * gameplay/{manifest,state}.json；⛔ 不再散落到 plugins/、docs/、apps/shared/schema/gameplays/。
@@ -276,6 +277,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
       ? { kind: "dir", path: kitDir(id), reason: "kit 目录（kit.json / README.md / gameplays/<modeId>/ 单源 / sql/ 迁移）" }
       : { kind: "dir", path: pluginDir(id), reason: "插件目录（plugin.json / README.md / gameplay 单源）" },
     ...testPrefixRules(id, what),
+    { kind: "bundle", path: BUNDLES, prefix: `${identity.class}-${id}`, reason: "包 3D bundle（精确包名或合法地图后缀，根 .meta 随归属）" },
   ];
   for (const mode of modesOf(identity)) {
     rules.push(...gameplayRules(mode.id, mode.constantName));
@@ -339,7 +341,35 @@ export function matchesPrefixRule(base: string, rule: OwnershipRule): boolean {
   return PREFIX_SEPARATORS.includes(base.charAt(prefix.length));
 }
 
+/** Bundle roots have one unambiguous package owner; package ids cannot contain hyphens. */
+export function parsePackageBundleName(name: string): { class: PackageClass; id: string; map: string | null } | null {
+  const match = /^(kit|plugin)-([a-z][A-Za-z0-9]{0,63})(?:-([a-z][A-Za-z0-9]*))?$/u.exec(name);
+  return match ? { class: match[1] as PackageClass, id: match[2], map: match[3] ?? null } : null;
+}
+
+export function matchesBundleRule(name: string, rule: OwnershipRule): boolean {
+  const owner = parsePackageBundleName(name);
+  return rule.kind === "bundle" && owner !== null && `${owner.class}-${owner.id}` === rule.prefix;
+}
+
+/** Expand only owned bundle roots, including orphan root metas for conflict checks. Never traverse a neighbour. */
+export function bundleRuleRoots(root: string, rule: OwnershipRule): readonly string[] {
+  if (rule.kind !== "bundle") return [];
+  return readBundleRootNames(root).filter((name) => matchesBundleRule(name, rule)).map((name) => `${rule.path}/${name}`);
+}
+
+/** Actual directory-entry spelling matters on both case-sensitive and case-insensitive hosts. */
+export function readBundleRootNames(root: string): readonly string[] {
+  const base = path.join(root, BUNDLES);
+  if (!fs.existsSync(base)) return [];
+  return [...new Set(fs.readdirSync(base).map((name) => name.replace(/\.meta$/u, "")))].sort();
+}
+
 function matchesRule(relative: string, rule: OwnershipRule): boolean {
+  if (rule.kind === "bundle") {
+    if (!relative.startsWith(`${rule.path}/`)) return false;
+    return matchesBundleRule(relative.slice(rule.path.length + 1).split("/")[0], rule);
+  }
   if (rule.kind === "dir") return relative === rule.path || relative.startsWith(`${rule.path}/`);
   if (rule.kind === "file") return relative === rule.path;
   return path.posix.dirname(relative) === rule.path && matchesPrefixRule(path.posix.basename(relative), rule);

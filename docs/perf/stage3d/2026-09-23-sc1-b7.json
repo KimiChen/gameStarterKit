@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 1,
+  "batch": "SC1-B7",
+  "date": "2026-09-23",
+  "status": "implemented-awaiting-final-verification",
+  "sc1Exit": false,
+  "scope": "Exact package bundle ownership, package asset-reference closure and clean Creator 3.8.8 import/loading. Complete verify:assets3d remains SC1-B5; asynchronous AssetLease remains SC3; full platform builds and real WeChat cache acceptance are not claimed.",
+  "implementation": [
+    "kit/plugin-<id>[-<map>] ownership includes root metadata and uses the same rule for collection, validation, locks, conflicts, changed and uninstall. Adjacent package names remain independent. Existing host roots, including orphan root metadata, cannot be aliased by a name differing only in case.",
+    "Reusable source/subMeta UUID index resolves full and compressed UUIDs, exact subassets, serialized external references and Creator metadata/database references. Same-package bundles may cross-reference; dangling/cross-package/host references fail, including requires.kits.",
+    "The exact built-in effect allowlist pins Creator 3.8.8 source and meta hashes; unknown UUIDs and missing built-in subassets fail.",
+    "package3d builder profile selects miniGame remote and native/web local. AssetAddress fixes bundle and extensionless path."
+  ],
+  "sourceHashes": [
+    {
+      "path": "apps/server/tools/plugin/ownership.ts",
+      "sha256": "adb7c28a7b55f9ba787ff84a6c1781cec3a1169dd057926089c0df667b5a955f"
+    },
+    {
+      "path": "apps/server/tools/plugin/pack.ts",
+      "sha256": "d3725955089be80a4d5901ed30191693880bb25d9b9521db9a96d6d5e08aee06"
+    },
+    {
+      "path": "apps/server/tools/plugin/install.ts",
+      "sha256": "00b19a8c24107b62c0fe1f97935f8e37f28716c3327b86bce5f37a5e88d833ba"
+    },
+    {
+      "path": "apps/server/tools/plugin/package.ts",
+      "sha256": "b4a176df0a2f6b174ebcb189ffbef2a0f5fba17f807969f7201a2e53acaf4b8c"
+    },
+    {
+      "path": "apps/server/tools/plugin/check.ts",
+      "sha256": "b612b27133ec39658589b04b035f596bfcc822bcb1a9203650abe27462aecd3e"
+    },
+    {
+      "path": "apps/server/tools/plugin/changed.ts",
+      "sha256": "8fb9c55c2a3193ba6f9b59b527dbcdf2e65996859854afbde020ad2c56712601"
+    },
+    {
+      "path": "apps/server/tools/plugin/meta.ts",
+      "sha256": "402cb0f62f351660a32ca64082842f36567b2855b4a66e6bca0ff2708a12b29d"
+    },
+    {
+      "path": "apps/server/tools/plugin/assetReferences.ts",
+      "sha256": "d97a88f0b146c5cddb3fb71b1ef64c8cde5eb2a0b845e050c271f63d1ee2e3f5"
+    },
+    {
+      "path": "apps/server/tools/plugin/creator-builtins-3.8.8.json",
+      "sha256": "cab2ab1a770e23360f14e75d0c0e1348bf64dc99a06567cfdfa98e8802d456a2"
+    },
+    {
+      "path": "apps/server/test/plugin-bundles.test.ts",
+      "sha256": "f170913c5d5160e49893442440d100d6c7bc508914d731123eb932afdecdf6b0"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/AssetLease.ts",
+      "sha256": "427955138a9a7dbbcc64f846d4227c664bef5a5fe1164b2fe7a40fa90e432c3c"
+    },
+    {
+      "path": "apps/Cocos/settings/v2/packages/builder.json",
+      "sha256": "67dd2b7c6321c08ce9bd46ce08ebb2ff5d020b12b56bc8da7a3683343eae037e"
+    },
+    {
+      "path": "tools/art3d/bundle-fixture.ts",
+      "sha256": "a9244ecfadb35ae419776da87d16cbd4fe259c4279ad51e1187456a2c371bb56"
+    },
+    {
+      "path": "tools/art3d/bundle-probe/main.js",
+      "sha256": "c5b0a694d6c5b4e81eb31cf9459d1b9000e28196e7e798c4c3bbcfc1e5e9efd3"
+    },
+    {
+      "path": "tools/art3d/bundle-probe/scene.js",
+      "sha256": "b53e73ccda16a616aa54b2f162ba003e4a60ca65987e77f925c94b3631f1f1d6"
+    },
+    {
+      "path": "tools/creator-preview/probe-bundle-install.mjs",
+      "sha256": "8a86aad91fe7eba8385d49ba6b56ee01861432bb78876917eadc6452107318fd"
+    }
+  ],
+  "engine": {
+    "version": "3.8.8",
+    "declarations": "bin/.declarations/cc.d.ts:30271,30981 (loadBundle / Bundle)",
+    "uuidDecoder": "cocos/core/utils/decode-uuid.ts:54",
+    "builtinHashesVerified": true
+  },
+  "cleanInstall": {
+    "noLibraryAtInstall": true,
+    "noNodeModulesAtInstall": true,
+    "cachePolicy": "New scaffold: host settings/scene/probe plus ZIP files only; Library/temp are neither packaged nor copied. Author process closed and original author path removed before the clean editor starts.",
+    "authorOriginalPathAbsentAtRuntime": true,
+    "fixtureEntries": 23,
+    "neighbourEntries": 9,
+    "gitAndPostinstall": false,
+    "scope": "File-package acceptance in an isolated minimal Creator host, without full game codegen or login.",
+    "closure": {
+      "assets": 18,
+      "references": 14
+    },
+    "lockedBytesUnchangedAfterCreatorImport": true,
+    "creatorInspection": {
+      "graph": {
+        "uuid": "5cccbef1-f110-49d3-931e-a31e0290fa9b",
+        "mask": "baf6aa9b-252b-4902-a38c-38308abb3ca8",
+        "clip": "1323185c-8c2d-4e5e-b31f-5e5978cbffea"
+      },
+      "assets": [
+        {
+          "uuid": "a9fbd957-dfb2-41e9-bdca-83f814d5646d",
+          "url": "db://assets/bundles/kit-bundleFixture/3d/P_Chain.prefab",
+          "type": "Prefab"
+        },
+        {
+          "uuid": "631dc098-3551-4939-a059-2ed5c0d73240@b5d26",
+          "url": "db://assets/bundles/kit-bundleFixture/3d/greybox-cube.glb/greybox-cube-mesh.mesh",
+          "type": "Mesh"
+        },
+        {
+          "uuid": "f5c77102-65e1-4e64-90e8-d3a6e4115486",
+          "url": "db://assets/bundles/kit-bundleFixture-detail/3d/M_Chain.mtl",
+          "type": "Material"
+        },
+        {
+          "uuid": "06169ae6-bd5b-462c-bf3a-05239c224008@6c48a",
+          "url": "db://assets/bundles/kit-bundleFixture-detail/3d/T_Greybox_Checker_BC.png/texture",
+          "type": "Texture2D"
+        },
+        {
+          "uuid": "06169ae6-bd5b-462c-bf3a-05239c224008",
+          "url": "db://assets/bundles/kit-bundleFixture-detail/3d/T_Greybox_Checker_BC.png",
+          "type": "ImageAsset"
+        },
+        {
+          "uuid": "a3cd009f-0ab0-420d-9278-b9fdab939bbc",
+          "url": "db://internal/effects/builtin-unlit.effect",
+          "type": "EffectAsset"
+        }
+      ],
+      "texture": {
+        "width": 64,
+        "height": 64
+      },
+      "vertices": 24,
+      "animation": {
+        "uuid": "1323185c-8c2d-4e5e-b31f-5e5978cbffea",
+        "duration": 1
+      }
+    },
+    "finalArchiveValidation": {
+      "entries": 23,
+      "unchanged": 23,
+      "written": 0,
+      "deleted": 0,
+      "check": true
+    }
+  },
+  "platformPolicy": {
+    "source": "Actual Editor.Profile.getProject(builder, bundleConfig.custom).package3d on the clean Creator project",
+    "value": {
+      "displayName": "Package 3D",
+      "configs": {
+        "native": {
+          "preferredOptions": {
+            "compressionType": "merge_dep",
+            "isRemote": false
+          }
+        },
+        "web": {
+          "preferredOptions": {
+            "compressionType": "merge_dep",
+            "isRemote": false
+          }
+        },
+        "miniGame": {
+          "preferredOptions": {
+            "compressionType": "merge_dep",
+            "isRemote": true
+          }
+        }
+      }
+    },
+    "fullPlatformBuilds": false
+  },
+  "runtime": {
+    "beforeNeighbourUninstall": {
+      "address": {
+        "bundle": "kit-bundleFixture",
+        "path": "3d/P_Chain"
+      },
+      "prefab": "a9fbd957-dfb2-41e9-bdca-83f814d5646d",
+      "mesh": "631dc098-3551-4939-a059-2ed5c0d73240@b5d26",
+      "material": "f5c77102-65e1-4e64-90e8-d3a6e4115486",
+      "texture": "06169ae6-bd5b-462c-bf3a-05239c224008@6c48a",
+      "image": "06169ae6-bd5b-462c-bf3a-05239c224008",
+      "effect": "a3cd009f-0ab0-420d-9278-b9fdab939bbc",
+      "width": 64,
+      "height": 64,
+      "graph": "5cccbef1-f110-49d3-931e-a31e0290fa9b",
+      "mask": "baf6aa9b-252b-4902-a38c-38308abb3ca8",
+      "clip": "1323185c-8c2d-4e5e-b31f-5e5978cbffea",
+      "clipDuration": 1,
+      "device": "WebGL2Device",
+      "scene": "scene"
+    },
+    "afterNeighbourUninstallIdentical": true,
+    "previewContext": "Fresh Chrome preview tabs; actual WebGL2Device via System.import(cc), assetManager.loadBundle and Bundle.load. Author original path unavailable.",
+    "errors": 0,
+    "neighbourDeletedFiles": 9,
+    "neighbourFilesAbsent": true,
+    "mainLockedFilesUnchanged": true,
+    "screenshotsReviewed": [
+      "clean-runtime.png",
+      "after-uninstall-final.png"
+    ],
+    "visualResult": "Checker cube geometry and colored-corner texture render correctly before/after unrelated package removal; no missing-material placeholder."
+  },
+  "validation": {
+    "node": "24.19.0",
+    "verifyAll": {
+      "command": "TMPDIR=<external-cache>/tmp UV_OFFLINE=true npm run verify:all",
+      "exitCode": 0,
+      "clientTests": 990,
+      "uniflexContractTests": 63,
+      "serverTests": 1371,
+      "bothClientTypechecks": true,
+      "scope": "Passed before the final host-root case-alias fix. The final rerun is still running at the user-requested initial commit/merge."
+    },
+    "bundleTests": {
+      "command": "node --import tsx --test apps/server/test/plugin-bundles.test.ts",
+      "passed": 22,
+      "failed": 0
+    },
+    "fixtureToolStrictTypecheck": true,
+    "serverTypecheck": true,
+    "probeJavaScriptSyntax": true,
+    "diffCheck": true,
+    "mutations": [
+      {
+        "name": "bundle-boundary",
+        "exitCode": 1,
+        "originalSha256": "ba52e4e2f4c18f01c9d1d339f2d753e52c8b28c26d17a65556a540ccfae33700",
+        "log": "mutation-bundle-boundary.log",
+        "restored": true,
+        "mutation": "Replace exact bundle ownership with naked startsWith",
+        "failedTests": 2
+      },
+      {
+        "name": "package-reference-gate",
+        "exitCode": 1,
+        "originalSha256": "eae43e0b81cda5ca6511172401379a93c1a51076a9d086af87959934d5ae75f4",
+        "log": "mutation-package-reference-gate.log",
+        "restored": true,
+        "mutation": "Remove assertAssetReferences(files) from validatePackage",
+        "failedTests": 9
+      }
+    ],
+    "pluginCheck": {
+      "command": "npm --workspace @game/server run plugin -- check",
+      "exitCode": 0,
+      "note": "All 8 installed package locks consistent. Existing MMO pending world-event row warning is unrelated to this batch; no database mutation was performed."
+    },
+    "postSync": {
+      "base": "fe0de32121392f2f4feb6b6f7a476e84c8982984",
+      "upstreamChanges": [
+        "docs/MAPORIGINAL-2D.md",
+        "tools/maporiginal-assets/README.md",
+        "tools/maporiginal-assets/ctable_cw.py"
+      ],
+      "batchSourcesUnchanged": true,
+      "verifyPerf": true,
+      "verifySync": true
+    },
+    "caseAliasRegression": {
+      "beforeFix": "case-alias-before.log: one failed test (missing expected exception)",
+      "afterFix": "bundle-tests.log: all 22 tests passed; existing bytes preserved and no package manifest written"
+    },
+    "mutationsPhase": "Both mutations were executed and restored before the final host-root case-alias fix; final source hashes below include that later fix.",
+    "finalVerifyAll": {
+      "status": "running",
+      "log": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc1-b7/verify-all-final.log"
+    }
+  },
+  "reproducibility": "tools/art3d/bundle-probe/README.md",
+  "localFixtureRoot": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc1-b7",
+  "evidenceRoot": "docs/evidence/creator-2026-09-23/stage3d/sc1-b7",
+  "evidence": [
+    {
+      "path": "clean-install.json",
+      "sha256": "7f1186bae10addfc93d759a29decdb66ffbca9b9b52fbed85cee1d8236f6d697",
+      "bytes": 13890
+    },
+    {
+      "path": "check.json",
+      "sha256": "563d5476bf2c16d359bdc26a79474174c86154fa10ddbfc2f404eb40b6476538",
+      "bytes": 4470
+    },
+    {
+      "path": "reinstall-neighbour.json",
+      "sha256": "109d2ab9672aed297e6e3c0a852ff81a0c9b55b0d729c41cc11952d4209362f2",
+      "bytes": 1287
+    },
+    {
+      "path": "uninstall-neighbour.json",
+      "sha256": "4a1062518a3f175c717b30f0c600e685e697def8a0ddf29376b43f21bf862795",
+      "bytes": 5106
+    },
+    {
+      "path": "clean-runtime.json",
+      "sha256": "382f4b584824a14786f7b09d83389c67fc78d3e7073749b21e96ec6a49e0e4e2",
+      "bytes": 1003
+    },
+    {
+      "path": "clean-runtime.png",
+      "sha256": "957ae365402eef6742d72768e4755413d1b293d0055a1229d8caccc0209a413f",
+      "bytes": 203014
+    },
+    {
+      "path": "after-uninstall-final.json",
+      "sha256": "9d003c12360258bcb31f9c371ae7a62e7202b55df51482a593376786554471ee",
+      "bytes": 1011
+    },
+    {
+      "path": "after-uninstall-final.png",
+      "sha256": "3c2414056870cfd226b8d2ec82dc9d4e5f5f58e44f65f3ae46e10044e484cce0",
+      "bytes": 203391
+    },
+    {
+      "path": "builtin-verification.json",
+      "sha256": "11c41999fce4bc4418f89f48878bf6c00945bad76b10228f323381a6336724f7",
+      "bytes": 852
+    },
+    {
+      "path": "mutations.json",
+      "sha256": "14cad2daa7d1de455d801c41b19eb9888e3664302ead84b5de90072a38423e10",
+      "bytes": 443
+    },
+    {
+      "path": "server-typecheck.log",
+      "sha256": "7435f52f86dd739ba1e5e60d87c47e3f923dbb81f48c5a51bd170601a25efbe3",
+      "bytes": 48
+    },
+    {
+      "path": "fixture-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "verify-all.log",
+      "sha256": "edd8a9efaed4105d8adc685a60812cc8e1f5ce1712d437b60c7536208b67581e",
+      "bytes": 451918
+    },
+    {
+      "path": "mutation-bundle-boundary.log",
+      "sha256": "7ca962f7e656d3024337606cd67cb9016fae8dcd8e13127c763de2cbc12df357",
+      "bytes": 1994
+    },
+    {
+      "path": "mutation-package-reference-gate.log",
+      "sha256": "8c6f5c6f257cffc0fed0f7f75ae6de74bc2b2b57cb2e38ed8006fda2b78e56e0",
+      "bytes": 11341
+    },
+    {
+      "path": "bundleFixture.zip",
+      "sha256": "b7f8b78a5c7a8a76e029ac2c9c1583019dbe4d233a9e1a0417f38f658723b1c7",
+      "bytes": 12246
+    },
+    {
+      "path": "bundleFixtureExtra.zip",
+      "sha256": "01726eaef968a75c462e77ac2211a966eadc0f6bf87b6ef799c15055f7261c3f",
+      "bytes": 3579
+    },
+    {
+      "path": "author-probe/result-author-graph.json",
+      "sha256": "467406037bc3cdf4b6b86d64a1f585e5a873ed418757685c02a0f32d2f97d2d5",
+      "bytes": 7322
+    },
+    {
+      "path": "clean-probe/result-clean-load.json",
+      "sha256": "04a33339d3fa9f9760b5cf41932328a109354904ede8520cb5ad79d5932c5080",
+      "bytes": 5299
+    },
+    {
+      "path": "clean-probe/result-after-uninstall-final.json",
+      "sha256": "98716732355ad2efba250019daf7837b2bb388b3e8f4d6df400dffa83b147b3b",
+      "bytes": 1872
+    },
+    {
+      "path": "bundle-tests.log",
+      "sha256": "bddf25b9a3f17e096db8abc5422246184d72876e140774f9377477c9e0e830d5",
+      "bytes": 2214
+    },
+    {
+      "path": "plugin-check.log",
+      "sha256": "587f250d5663dcd1f2362dd8a127c794e3597124858c5070fd82188fa73dc306",
+      "bytes": 595
+    },
+    {
+      "path": "case-alias-before.log",
+      "sha256": "abb99216d79404137a22ac1d6734799e68ed5d35befcd3a1f19c3a03a1fb554f",
+      "bytes": 1249
+    },
+    {
+      "path": "final-archive-validation.json",
+      "sha256": "fbea978524c5f2d92488a087f06b613b9d4f86926c650d2192e4eb78ee988b9e",
+      "bytes": 281
+    }
+  ],
+  "attemptHistory": [
+    "Initial full verification needed ignored UniFlex outputs in the fresh worktree; build:uniflex-ui + sync:client produced them before the successful full run.",
+    "Early probe runs exposed query-asset-meta returning an object, sharedMaterial needing setSharedMaterial, and imported Prefab nested-instance serialization; the final probe creates an independent Node with the imported Mesh.",
+    "Early browser runs used the wrong scene name/global cc surface; the final probe waits for the exact scene UUID and loads cc via System.import. Failed reports remain under the local fixture root.",
+    "After the first successful neighbour removal, a helper report overwrite was corrected; the same neighbour ZIP was reinstalled and removed again so the final report retains the actual 9-file deletion and closure result."
+  ],
+  "remaining": [
+    "SC1-B5: complete format/GLB/image/compression/import-option/budget/license guard and aggregate command registration.",
+    "SC1-B6: stage documentation and exit.",
+    "SC3 async AssetLease and SC4 real-device remote/cache verification."
+  ]
+}

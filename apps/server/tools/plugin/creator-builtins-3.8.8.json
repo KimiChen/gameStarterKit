@@ -1,0 +1,20 @@
+{
+  "version": "3.8.8",
+  "source": "Creator 3.8.8 resources/3d/engine/editor/assets; verified against the installed engine and clean-import fixture",
+  "assets": [
+    {
+      "uuid": "a3cd009f-0ab0-420d-9278-b9fdab939bbc",
+      "path": "effects/builtin-unlit.effect",
+      "metaPath": "effects/builtin-unlit.effect.meta",
+      "sha256": "c71f5ed4e878e0fe3bd670a456bc814912674800ad32c0942b442525ec3345dd",
+      "metaSha256": "9c157e8d780dcaf2756846c082301ec9127d24e1bc932fcbb11de5abc6060c18"
+    },
+    {
+      "uuid": "c8f66d17-351a-48da-a12c-0212d28575c4",
+      "path": "effects/builtin-standard.effect",
+      "metaPath": "effects/builtin-standard.effect.meta",
+      "sha256": "36877f415fee4712f54127651f9566b9c0136e98beb699b1aa5f1307d3cf2efa",
+      "metaSha256": "44eb95c68b263908fe90a3ce904ebcbdb1d6ea4174405ac423feca30e0313efd"
+    }
+  ]
+}

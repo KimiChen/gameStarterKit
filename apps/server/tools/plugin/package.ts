@@ -41,6 +41,8 @@ import {
 } from "./manifest";
 import { KIT_PACKAGE_MANIFEST, PACKAGE_FILES_LOCK, PACKAGE_MANIFEST, parseFilesLock, sha256, type InstalledLock, type LockEntry } from "./lock";
 import { expectedImporter, parseMeta } from "./meta";
+import { BUNDLES, readBundleRootNames } from "./ownership";
+import { assertAssetReferences, assertBundleLayout, createAssetIndex } from "./assetReferences";
 import { readZip } from "./zip";
 
 export interface PluginPackage {
@@ -233,6 +235,8 @@ export function validatePackage(pkg: PluginPackage, root: string): ValidatedPack
   if (denied.length > 0) fail(`包内路径不在${manifest.class === "kit" ? " kit" : "插件"} "${manifest.id}" 的所有权推导集内，整包拒绝：\n  ${denied.join("\n  ")}`);
 
   assertMirrorsAndMetas(files, rules, protectedPaths);
+  assertBundleLayout(files, readBundleRootNames(root));
+  assertAssetReferences(files);
   return { ...pkg, identity, rules, viewNames, gameplay };
 }
 
@@ -274,7 +278,7 @@ function assertMirrorsAndMetas(
       requireOwnedAncestorMetas(mirror);
       continue;
     }
-    if (relative.startsWith(`${RESOURCES}/`)) {
+    if (relative.startsWith(`${RESOURCES}/`) || relative.startsWith(`${BUNDLES}/`)) {
       requireMeta(relative);
       requireOwnedAncestorMetas(relative);
     }
@@ -312,11 +316,7 @@ function assertMirrorsAndMetas(
 
 /** 包内全部 .meta 的 uuid → 包内路径（validatePackage 已保证可解析且互不重复）。 */
 export function packageMetaUuids(files: ReadonlyMap<string, Buffer>): ReadonlyMap<string, string> {
-  const out = new Map<string, string>();
-  for (const [relative, data] of files) {
-    if (relative.endsWith(".meta")) out.set(parseMeta(data, relative).uuid, relative);
-  }
-  return out;
+  return new Map([...createAssetIndex(files)].map(([uuid, asset]) => [uuid, asset.metaPath]));
 }
 
 /**

@@ -22,7 +22,9 @@ import { EMPTY_CONTRIBUTES, EMPTY_REQUIRES, type KitContributionSummary, type Ki
 import { INSTALLED_LOCK_DIR, contributorsOfKit, dependentsOfKit, filesLockSha256Of, foreignLockOwners, kitApiViolations, parseInstalledLock, readInstalledLock, verifyLockAgainstTree, writeInstalledLock, type LockEntry, type LockManifestSummary, type LockSource, type LockSourceRegistry } from "./lock";
 import { packPlugin } from "./pack";
 import { assertInstalledLockOwned, packageMetaUuids, pluginDeclarations, readPackage, validatePackage, type ValidatedPackage } from "./package";
-import { hostMetaUuids, parseMeta } from "./meta";
+import { parseMeta } from "./meta";
+import { createAssetIndex, readHostAssetFiles } from "./assetReferences";
+import { BUNDLES, bundleRuleRoots, parsePackageBundleName } from "./ownership";
 import { hardExclusionReason, kitDir, matchesPrefixRule, mirrorPathOf, modesOf, packageManifestPath, pluginDir, readGeneratedWriterPaths, type OwnershipRule, type PackageClass, type PluginKind } from "./ownership";
 
 /** 外部命令执行器（npm / git）；测试 fixture 用它替换掉真实的 codegen/sync 以模拟 postinstall 失败与参数断言。 */
@@ -568,11 +570,11 @@ export function ownershipConflicts(
     conflicts.add(owner ? `${relative}（属于插件 ${owner}）` : relative);
   };
   for (const rule of rules) {
-    const targets = [rule.path];
+    const targets = rule.kind === "bundle" ? [...bundleRuleRoots(root, rule)] : [rule.path];
     const mirror = mirrorPathOf(rule.path);
     if (mirror) targets.push(mirror);
     for (const target of targets) {
-      if (rule.kind === "dir") {
+      if (rule.kind === "dir" || rule.kind === "bundle") {
         for (const relative of listFiles(target)) check(relative);
         if (fs.existsSync(path.join(root, `${target}.meta`))) check(`${target}.meta`);
       } else if (rule.kind === "file") {
@@ -605,14 +607,16 @@ export function gitTrackedFiles(root: string, paths: readonly string[]): Readonl
 function assertNoHostUuidCollision(root: string, id: string, pkg: ValidatedPackage, skip: ReadonlySet<string>): void {
   const incoming = packageMetaUuids(pkg.files);
   if (incoming.size === 0) return;
-  const host = hostMetaUuids(root, "apps/Cocos/assets", skip);
-  if (host.unreadable.length > 0) {
-    fail(`拒绝：宿主 apps/Cocos/assets 下有无法解析的 .meta，无从判定 uuid 撞车（先修好它们，或 verify:sync 会同样点名）：\n  ${host.unreadable.join("\n  ")}`);
+  let host;
+  try {
+    host = createAssetIndex(readHostAssetFiles(root, skip), { requireSources: false });
+  } catch (error) {
+    fail(`拒绝：宿主 assets 有无法解析的 .meta / 子资产，无从判定 uuid 撞车：${error instanceof Error ? error.message : String(error)}`);
   }
   const clashes: string[] = [];
   for (const [uuid, relative] of incoming) {
-    const holders = host.byUuid.get(uuid);
-    if (holders) clashes.push(`${uuid}：包内 ${relative} ⟷ 宿主 ${holders.join("、")}`);
+    const holder = host.get(uuid);
+    if (holder) clashes.push(`${uuid}：包内 ${relative} ⟷ 宿主 ${holder.metaPath}`);
   }
   if (clashes.length > 0) {
     fail(`拒绝：插件 "${id}" 随包 .meta 的 uuid 与宿主资源撞车（Creator 只认一个 uuid，另一个的引用会静默指错；作者侧删掉包内那个 .meta 让 Creator 重铸后重新 pack）：\n  ${clashes.join("\n  ")}`);
@@ -682,6 +686,9 @@ export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextS
   if (pkg.identity.kinds.includes("gameplay") || pkg.manifest.domains.length > 0) {
     steps.push("提交前打开一次 Cocos Creator 为 sync:shared 新建的镜像文件（apps/Cocos/assets/src/shared/**）生成 .meta，再 git add apps/Cocos/assets/src");
   }
+  if ([...pkg.files.keys()].some((relative) => relative.startsWith(`${BUNDLES}/`)) && !fs.existsSync(path.join(root, `${BUNDLES}.meta`))) {
+    steps.push("首个 3D bundle：打开一次 Cocos Creator 生成共享祖先 assets/bundles.meta；它由宿主持有，不随包分发。根 bundle 使用宿主 builder.json 的 package3d 配置");
+  }
   steps.push("打开一次 Cocos Creator 确认随包 .meta 的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）");
   return steps;
 }
@@ -696,6 +703,11 @@ function gameplayExclusivePrefixes(modeId: string): readonly string[] {
 
 /** 推导集里与框架/其它包共用父目录的落点（按前缀或域名归属，而不是 <id> 专属目录）。插件缺省 class=plugin、单玩法 = id。 */
 export function isSharedNamespace(relative: string, id: string, cls: PackageClass = "plugin", modeIds: readonly string[] = [id]): boolean {
+  if (relative.startsWith(`${BUNDLES}/`)) {
+    const name = relative.slice(BUNDLES.length + 1).split("/")[0].replace(/\.meta$/u, "");
+    const owner = parsePackageBundleName(name);
+    if (owner?.class === cls && owner.id === id) return false;
+  }
   const exclusive = cls === "kit"
     ? [`${kitDir(id)}/`, `apps/client/src/kits/${id}/`, `apps/Cocos/assets/src/kits/${id}/`, `apps/shared/src/kits/${id}/`, `apps/server/src/kits/${id}/`,
       `apps/server/src/core/compute/tasks/kits/${id}/`, `apps/Cocos/assets/resources/kits/${id}/`, ...modeIds.flatMap(gameplayExclusivePrefixes)]

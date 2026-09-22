@@ -138,6 +138,7 @@
 | 共有 | `apps/plugins/<id>/`（plugin.json / README.md / gameplay 单源，§5.5）、`apps/server/test/<id>-*.test.ts`、`apps/server/test/int/<id>-*.test.ts`、`apps/client/test/<id>-*.test.ts`（前缀后**必须**紧跟 `-` 或 `.`，⛔ 不是裸 startsWith：`tally` 不拥有 `tallyBoard-*`、`red` 不拥有 `redis-*`；2026-09-05 收紧，PLUGIN-REGISTRY §1-4） |
 | gameplay | `apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`、`apps/Cocos/assets/resources/plugins/<id>/` |
 | plugin | `apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；plugin.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/plugins/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
+| 3D bundle（SC1-B7） | `apps/Cocos/assets/bundles/plugin-<id>/` 与 `plugin-<id>-<map>/`；根 `.meta` 同属该包，`<map>` 必须匹配 `^[a-z][A-Za-z0-9]*$`，不认裸前缀（`foo` 不拥有 `foobar`） |
 | fguiPackages | `apps/art/fairygui/assets/<Pkg>/`、`apps/Cocos/assets/resources/ui/<Pkg>.bin`、`<Pkg>_atlas*` |
 | 镜像 / `.meta` | 由真源推导：`apps/client/src/X` 可写 ⇒ `apps/Cocos/assets/src/X` 与 `X.meta` 可写；插件专属目录的目录 `.meta` 可写，共享祖先目录（如 `view/rooms.meta`）⛔ 不随包 |
 
@@ -153,6 +154,25 @@
 **多插件共存的所有权账本**（2026-09-05，PLUGIN-REGISTRY §1-4）：别的已安装插件锁登记的路径永远不是本插件的——
 `pack` 遇到推导集与他锁重叠即拒绝采集（⛔ 不静默把别人的文件打进自己的包），`install` 对包内文件与他锁的交集单独点名
 （「属于插件 X」），`check` 断言各锁清单两两不交。保留 id 是 `host` / `registry` / `ui` / `config`（后两个是宿主在 `resources/` 下的既有目录，见 §5.5.3）。
+
+**3D bundle 与序列化依赖（SC1-B7）**：包 id 不含连字符，bundle 名按 `plugin-<id>[-<map>]`
+唯一归属；kit 对称使用 `kit-<id>[-<map>]`。根 `.meta` 必须 `importer:directory`、
+`userData.isBundle:true`，`bundleName` 缺省或等于目录名，`bundleConfigID:"package3d"`。
+共享 `assets/bundles.meta` 由宿主持有，首次安装后由 Creator 生成。禁止嵌套 bundle、
+在 `resources/` 内开启 bundle、冒用别包名字及大小写冲突。
+
+宿主 `apps/Cocos/settings/v2/packages/builder.json` 的 `bundleConfig.custom.package3d` 管发布政策：
+`miniGame` 远程、`native/web` 本地，均 `merge_dep`；开发预览从本地加载。包不能携带 settings 覆写。
+运行时地址为 `{ bundle, path }`，路径省扩展名；完整异步 AssetLease 仍在 SC3 交付。
+
+`tools/plugin/assetReferences.ts` 在 pack 输出及 install 落盘前检查本包真实文件、顶层与 subMeta UUID；
+同包细分 bundle 和小数据可以互引。完整 / 22 字符压缩 UUID、`@子资产`、序列化 `__uuid__`、
+模型 metadata 的引用及 `db://assets/` 地址必须闭合；`__id__` 是对象内部索引。
+缺子资产、悬空引用和借用宿主 / 其它包资源均拒绝，声明 `requires.kits` 也不授权 kit 内部材质。
+内置例外仅来自框架的 `creator-builtins-3.8.8.json`，钉住 UUID、安装版来源与哈希，未知 UUID 不视为内置。
+`check` 持续复核相同依赖；升级 / 卸载仍按锁逐文件执行，`changed` 沿用同一归属规则。
+该核心供 SC1-B5 复用；格式、GLB 数据、压缩、预算和授权完整资产闸仍归 B5。
+真实干净安装的可重复步骤见 [bundle probe](../tools/art3d/bundle-probe/README.md)。
 
 ### 5.3 包格式
 

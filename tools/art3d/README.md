@@ -101,3 +101,9 @@ inverse bind、骨骼权重和动画。测试含反向三角、丢 bind 平移�
 
 [quality.md](quality.md) 登记画质端口、JSON 契约、默认值生成、压缩预设与独立验收场景。
 本批不实现 SC3 的加载计划 / 池，也不提前交付 SC5 离线变体工具。
+
+## SC1-B7 bundle 验证
+
+包工具已接入 bundle 精确所有权及 Creator 序列化 UUID / 子资产闭合检查。
+[bundle-probe/README.md](bundle-probe/README.md) 提供合成 kit → pack → 干净安装 → Creator 重导入 / 浏览器加载 →
+卸载邻包的可重复步骤。`bundle-fixture.ts` 只准备隔离验证数据，不改生产包；完整 `verify:assets3d` 留 SC1-B5。

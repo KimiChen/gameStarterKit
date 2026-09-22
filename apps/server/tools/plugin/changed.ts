@@ -47,6 +47,7 @@ export const MACHINERY_TESTS: readonly string[] = [
   "apps/server/test/kit-import-boundary.test.ts",
   "apps/server/test/kit-keys.test.ts",
   "apps/server/test/kit-migrations.test.ts",
+  "apps/server/test/plugin-bundles.test.ts",
   "apps/server/test/plugin-changed.test.ts",
   "apps/server/test/plugin-codegen.test.ts",
   "apps/server/test/plugin-keys.test.ts",
