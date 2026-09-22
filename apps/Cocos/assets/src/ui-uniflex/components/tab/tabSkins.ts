@@ -20,39 +20,9 @@ export const mailTab: TabSkin = {
     badgeTop: -14,
 };
 
-export const allianceTab: TabSkin = {
-    ...theme.tab.skins.alliance,
-    sizeMode: 'sliced',
-    height: 52,
-    activeHeight: 67,
-    activeLeft: -3,
-    activeTop: -15,
-    activeWidth: 6,
-    fontSize: 28,
-    activeFontSize: 32,
-    color: RAISED_COLOR,
-    activeColor: RAISED_COLOR,
-    badgeSource: theme.tab.badge,
-    badgeInset: 26,
-    badgeTop: -14,
-};
-
-export const flagTab: TabSkin = {
-    ...theme.tab.skins.flag,
-    sizeMode: 'sliced',
-    height: 52,
-    activeHeight: 67,
-    activeLeft: -2,
-    activeTop: -14,
-    activeWidth: 6,
-    fontSize: 28,
-    activeFontSize: 32,
-    color: RAISED_COLOR,
-    activeColor: RAISED_COLOR,
-    badgeSource: theme.tab.badge,
-    badgeInset: 26,
-    badgeTop: -14,
-};
+/** Alliance and flag bars use the mail nine-slice art. */
+export const allianceTab: TabSkin = mailTab;
+export const flagTab: TabSkin = mailTab;
 
 export const characterTab: TabSkin = {
     ...theme.tab.skins.character,

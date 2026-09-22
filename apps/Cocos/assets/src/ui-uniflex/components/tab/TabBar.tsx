@@ -103,23 +103,30 @@ export const TabBar = defineComponent<TabBarProps>((p) => {
     const contentWidth = count === 0 ? barWidth : overhangLeft + count * itemWidth + (count - 1) * gap + overhangRight;
     const innerWidth = contentWidth < barWidth ? barWidth : contentWidth;
     const rows = useMemo(() => stampTabs(items, selected, itemWidth, gap, overhangLeft), [items, selected, itemWidth, gap, overhangLeft]);
+    const track = skin.track;
+    const showTrack = track !== undefined;
+    const trackSource = track ?? theme.tab.selected;
     return (
-        <scroll-view name="TabBar" direction="horizontal" inertia
-            style={{ position: 'absolute', left: left, top: barTop, width: barWidth, height: barHeight }}>
-            <view name="TabBar/Track" style={{ width: innerWidth, height: barHeight }}>
-                <For each={rows} key="id">
-                    {(item) => (
-                        <view name="TabBar/Item"
-                            style={{ position: 'absolute', left: item.left, top: 0, width: itemWidth, height: barHeight }}>
-                            <Tab theme={theme} label={item.label} active={item.active} left={0} top={chipTop}
-                                width={itemWidth} skin={skin} badge={item.badge} notice={item.notice}
-                                badgeSource={badgeSource} noticeSource={noticeSource}
-                                badgeTop={badgeTopOverride}
-                                onClick={() => onSelect?.(item.id, item.index)} />
-                        </view>
-                    )}
-                </For>
-            </view>
-        </scroll-view>
+        <view name="TabBar" style={{ position: 'absolute', left: left, top: barTop, width: barWidth, height: barHeight }}>
+            <image name="TabBar/Base" visible={showTrack} source={trackSource}
+                style={{ position: 'absolute', left: 0, top: chipTop, width: barWidth, height: idleHeight }} />
+            <scroll-view name="TabBar/Scroll" direction="horizontal" inertia
+                style={{ position: 'absolute', left: 0, top: 0, width: barWidth, height: barHeight }}>
+                <view name="TabBar/Track" style={{ width: innerWidth, height: barHeight }}>
+                    <For each={rows} key="id">
+                        {(item) => (
+                            <view name="TabBar/Item"
+                                style={{ position: 'absolute', left: item.left, top: 0, width: itemWidth, height: barHeight }}>
+                                <Tab theme={theme} label={item.label} active={item.active} left={0} top={chipTop}
+                                    width={itemWidth} skin={skin} badge={item.badge} notice={item.notice}
+                                    badgeSource={badgeSource} noticeSource={noticeSource}
+                                    badgeTop={badgeTopOverride}
+                                    onClick={() => onSelect?.(item.id, item.index)} />
+                            </view>
+                        )}
+                    </For>
+                </view>
+            </scroll-view>
+        </view>
     );
 });

@@ -3,6 +3,8 @@ import type { ImageRef } from '../../../kits/uniflex/api/core/index';
 export interface TabSkin {
     readonly selected?: ImageRef;
     readonly unselected?: ImageRef;
+    /** Plate drawn behind the chips, in the idle row. */
+    readonly track?: ImageRef;
     readonly showSelected?: boolean;
     readonly showUnselected?: boolean;
     readonly sizeMode?: 'simple' | 'sliced';

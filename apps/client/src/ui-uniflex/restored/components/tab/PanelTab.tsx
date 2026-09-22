@@ -7,29 +7,20 @@ export interface PanelTabProps {
     readonly left: number;
     readonly top: number;
     readonly width: number;
-    readonly kind?: 'mail' | 'flag' | 'alliance';
     readonly onClick?: () => void;
 }
 
-/** Raised window tab shared by mail, backpack and alliance. `left`/`top`/`width` are the unselected chip. */
+/** Raised window tab. `left`/`top`/`width` are the unselected chip. */
 export const PanelTab = defineComponent<PanelTabProps>((p) => {
-    const flag = p.kind === 'flag';
-    const alliance = p.kind === 'alliance';
     const active = p.active;
-    const left = active ? (flag ? p.left - 2 : p.left - 3) : p.left;
-    const top = active ? (flag ? p.top - 14 : p.top - 15) : p.top;
+    const left = active ? p.left - 3 : p.left;
+    const top = active ? p.top - 15 : p.top;
     const width = active ? p.width + 6 : p.width;
     const fontSize = active ? 32 : 28;
     const height = active ? 67 : 52;
     const mailOn = imageRef('ui/mail/tab-active');
     const mailOff = imageRef('ui/mail/tab-inactive');
-    const flagOn = imageRef('ui/alliance/flag-tab-selected');
-    const flagOff = imageRef('ui/alliance/flag-tab-unselected');
-    const allianceOn = imageRef('ui/alliance/tab-selected');
-    const allianceOff = imageRef('ui/alliance/tab-unselected');
-    const source = flag ? (active ? flagOn : flagOff)
-        : alliance ? (active ? allianceOn : allianceOff)
-        : (active ? mailOn : mailOff);
+    const source = active ? mailOn : mailOff;
     return (
     <view name="PanelTab" interaction="press" onClick={() => p.onClick?.()}
         style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>

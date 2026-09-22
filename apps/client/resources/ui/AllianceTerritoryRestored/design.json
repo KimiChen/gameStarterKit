@@ -1798,7 +1798,7 @@
         "key": "PanelTab:AllianceTerritoryPage/AllianceTerritory/PanelTab:0/_:2",
         "role": "node",
         "definitionKey": "PanelTab",
-        "resourceId": "ui/alliance/flag-tab-selected",
+        "resourceId": "ui/mail/tab-active",
         "captureHash": "cff51ccd5d7f4a11ca05257f4a75c0e4dc9782b1418242f1ca8b1b2f5e4a232c"
       },
       "asset": "asset-b6c90fbc78484a1779c6b03ab6fb98fd372cf87237a009f8e62eae91a5a97609"
@@ -1887,7 +1887,7 @@
         "key": "PanelTab:AllianceTerritoryPage/AllianceTerritory/PanelTab:1/_:3",
         "role": "node",
         "definitionKey": "PanelTab",
-        "resourceId": "ui/alliance/flag-tab-unselected",
+        "resourceId": "ui/mail/tab-inactive",
         "captureHash": "40415f5bfdbe20767da04e52402a7e9a31bc18845fa63a9544a499f40d6a456d"
       },
       "asset": "asset-b4bb797848e5eae4e8c82db4cf8a4eec974b6789f090f3bd08be29f6a8ddeb7f"
@@ -1976,7 +1976,7 @@
         "key": "PanelTab:AllianceTerritoryPage/AllianceTerritory/PanelTab:2/_:3",
         "role": "node",
         "definitionKey": "PanelTab",
-        "resourceId": "ui/alliance/flag-tab-unselected",
+        "resourceId": "ui/mail/tab-inactive",
         "captureHash": "40415f5bfdbe20767da04e52402a7e9a31bc18845fa63a9544a499f40d6a456d"
       },
       "asset": "asset-b4bb797848e5eae4e8c82db4cf8a4eec974b6789f090f3bd08be29f6a8ddeb7f"

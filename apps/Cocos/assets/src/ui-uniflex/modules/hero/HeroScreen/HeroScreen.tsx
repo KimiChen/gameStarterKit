@@ -101,9 +101,7 @@ export const HeroScreen = defineView<HeroScreenParams | void>({ zIndex: 'screen'
                 onSelectBond={params.onSelectBond} onBondDetail={params.onBondDetail}
                 onSelectMember={params.onSelectCard} />
 
-            <image source={imageRef('ui/hero/tabs-base')}
-                style={{ position: 'absolute', left: 34, top: 1122, width: 682, height: 80 }} />
-            <TabBar skin={heroListTab} left={34} top={1122} itemWidth={227} gap={0} width={681}
+            <TabBar skin={heroListTab} left={34} top={1122} itemWidth={227} gap={0} width={682}
                 selected={tab} items={HERO_LIST_TABS} badgeTop={0} onSelect={selectHeroTab} />
             <NotificationBadge mode="dot" visible={tab === 'hero'} source={unreadDot}
                 left={236} top={1124} />

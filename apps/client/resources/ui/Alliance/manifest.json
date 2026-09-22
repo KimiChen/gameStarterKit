@@ -724,22 +724,6 @@
       "sha256": "e0546f076463475df574972024e95a93ace9028a811d7d242ef77cc1059ea4f6"
     },
     {
-      "id": "ui/alliance/tab-selected",
-      "kind": "image",
-      "file": "assets/alliance_tab_selected.png",
-      "width": 206,
-      "height": 67,
-      "sha256": "21b1a440f4aa9725d5bba913db66d55229328691368fe2e70553c05149abf399"
-    },
-    {
-      "id": "ui/alliance/tab-unselected",
-      "kind": "image",
-      "file": "assets/alliance_tab_unselected.png",
-      "width": 200,
-      "height": 52,
-      "sha256": "6540e1a27996bb35a30aa30afd047a59709769ae5ca52edf1712939ce921921c"
-    },
-    {
       "id": "ui/alliance/flag-header",
       "kind": "image",
       "file": "assets/alliance_flag_header.png",
@@ -768,22 +752,6 @@
         16,
         16
       ]
-    },
-    {
-      "id": "ui/alliance/flag-tab-selected",
-      "kind": "image",
-      "file": "assets/alliance_flag_tab_selected.png",
-      "width": 176,
-      "height": 67,
-      "sha256": "accc19192aba705ffcaaf56110ee9b595d0050228279da9add6892cdf4efc33b"
-    },
-    {
-      "id": "ui/alliance/flag-tab-unselected",
-      "kind": "image",
-      "file": "assets/alliance_flag_tab_unselected.png",
-      "width": 170,
-      "height": 52,
-      "sha256": "62363cdddf4625feb57d46213ed798f4a36f3ce6f82a73350d89242eb3331622"
     },
     {
       "id": "ui/alliance/flag-bottom",

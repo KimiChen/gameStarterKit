@@ -14,7 +14,7 @@ import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
 import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
-import { allianceTab, characterTab, flagTab, heroDetailTab, heroListTab, mailTab } from '../../../components/tab/tabSkins';
+import { characterTab, heroDetailTab, heroListTab, mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
@@ -62,25 +62,15 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const gearIcon = imageRef('ui/settings/gear');
     const gemIcon = itemIcon('gem');
     const showMailTab = part === 'cmp-tabs';
-    const showAllianceTab = part === 'cmp-tab-alliance';
-    const showFlagTab = part === 'cmp-tab-flag';
     const showCharacterTab = part === 'cmp-tab-character';
     const showHeroListTab = part === 'cmp-tab-hero-list';
     const showHeroDetailTab = part === 'cmp-tab-hero-detail';
-    const tabTop = showHeroDetailTab ? 0 : showCharacterTab ? 8 : (showFlagTab || showHeroListTab) ? 14 : 15;
-    const tabItemWidth = showHeroDetailTab ? 225 : showHeroListTab ? 227 : showCharacterTab ? 195 : showFlagTab ? 170 : showAllianceTab ? 200 : 190;
-    const tabGap = showHeroDetailTab ? -14 : showHeroListTab ? 0 : showCharacterTab ? 25 : showAllianceTab ? 13 : 14;
+    const tabTop = showHeroDetailTab ? 0 : showCharacterTab ? 8 : showHeroListTab ? 14 : 15;
+    const tabItemWidth = showHeroDetailTab ? 225 : showHeroListTab ? 227 : showCharacterTab ? 195 : 190;
+    const tabGap = showHeroDetailTab ? -14 : showHeroListTab ? 0 : showCharacterTab ? 25 : 14;
     const tabSkin = useMemo(() => {
         const badgeSource = theme.tab.badge;
         const noticeSource = theme.tab.notice;
-        if (showAllianceTab) {
-            const art = theme.tab.skins.alliance;
-            return { ...allianceTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.color, badgeSource, noticeSource };
-        }
-        if (showFlagTab) {
-            const art = theme.tab.skins.flag;
-            return { ...flagTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.color, badgeSource, noticeSource };
-        }
         if (showCharacterTab) {
             const art = theme.tab.skins.character;
             return { ...characterTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.color, badgeSource, noticeSource };
@@ -95,7 +85,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
         }
         const art = theme.tab.skins.mail;
         return { ...mailTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.activeColor, badgeSource, noticeSource };
-    }, [theme, showAllianceTab, showFlagTab, showCharacterTab, showHeroListTab, showHeroDetailTab]);
+    }, [theme, showCharacterTab, showHeroListTab, showHeroDetailTab]);
     const toggleChecked = () => setChecked(!checked);
     const selectTab = (id: string) => setSelectedTab(id);
     const onQuantity = (value: number) => setQuantity(value);
@@ -114,7 +104,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showInput = part === 'cmp-input';
     const showProgress = part === 'cmp-progress';
     const showEmpty = part === 'cmp-empty';
-    const showTabs = showMailTab || showAllianceTab || showFlagTab || showCharacterTab || showHeroListTab || showHeroDetailTab;
+    const showTabs = showMailTab || showCharacterTab || showHeroListTab || showHeroDetailTab;
     const showQuantity = part === 'cmp-quantity';
     const showSlot = part === 'cmp-slot';
     const showResource = part === 'cmp-resource';

@@ -70,10 +70,8 @@ export const midnightTheme = defineTheme({
         badgeInset: 26, badgeTop: -14,
         skins: {
             mail: { selected: imageRef('ui/mail/tab-active'), unselected: imageRef('ui/mail/tab-inactive') },
-            alliance: { selected: imageRef('ui/alliance/tab-selected'), unselected: imageRef('ui/alliance/tab-unselected') },
-            flag: { selected: imageRef('ui/alliance/flag-tab-selected'), unselected: imageRef('ui/alliance/flag-tab-unselected') },
             character: { selected: imageRef('ui/character/tab-selected'), unselected: imageRef('ui/character/tab-unselected') },
-            heroList: { selected: imageRef('ui/hero/tabs-selected') },
+            heroList: { selected: imageRef('ui/hero/tabs-selected'), track: imageRef('ui/hero/tabs-base') },
             heroDetail: { selected: imageRef('ui/hero-detail/nav-selected') },
         },
     },
