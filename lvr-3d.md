@@ -110,7 +110,7 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 - **M** 首发目标平台 = **微信小游戏 / WebGL1**（docs/3d.md SD10，2026-09-19 拍板 lvr 为首发消费方）：lvr 3D 内容以框架画质 **low 档**为必达档（docs/3D-ASSETS.md §11：只 base 层、无实时阴影、特效并发与同屏单位按 low 行上限，数字 SC0-B4 后冻结）；medium / high 是增益，⛔ 任何 M 需求不得只在 WebGL2 下成立。
 - **M** 每阶段证据：A1–A5 除 Creator 预览证据外，各附一份 Chrome `--disable-webgl2` 的 `creator-preview --perf` 报告（标注实际 WebGL 版本、画质档与设备，帧率用 raw wall frame interval，见 §7）；A3 必须在**真实微信客户端**验远程 bundle 冷缓存下载，实际触发缓存写入失败并观察 LRU 淘汰 / 清理、重试、重新访问与退出重启后的命中 / 必要重下载；记录平台实际存储容量 / 限制、可复现触发步骤与真实错误，以及机型 / OS / 微信 / 基础库、构建与 bundle 版本、网络 / 命中证据。⛔ 假设引擎有可配置容量开关或以「接近满」替代失败分支覆盖。口径同 docs/3D-ASSETS.md §12 与框架 SC4-B3；A3 等其退出且须补 lvr 内容的同类证据，失败不得退出。
 - **M** 资源部署：3D 资产全部走远程 bundle（SD12：`bundles/kit-lvr[-<map>]/`），首屏必需集合单独一个小 bundle。
-- 边界：渠道账号 / 登录 / 支付 / 广告 / 分享 SDK、渠道打包 / 审核 / 灰度仍按 lvr.md §9.3 ⛔ 不做；本条只要求「小游戏构建可跑、WebGL1 下 low 档达标」的技术证据。小游戏构建平台配置（构建面板 / 引擎模块 / 压缩预设）归框架 settings（SC0-B4 回填内置管线在小游戏构建的可用性），lvr 提需求走 docs/3d.md。
+- 边界：渠道账号 / 登录 / 支付 / 广告 / 分享 SDK、渠道打包 / 审核 / 灰度仍按 lvr.md §9.3 ⛔ 不做；本条的技术证据为 WebGL1 下 low 档表现及上述 A3 真实微信远程加载 / 缓存验收；微信测试项目 / AppID 与可运行构建证据不作为 3D 前置或退出要求（2026-09-22 范围调整，docs/3d.md §9.1）。平台配置（引擎模块 / 压缩预设）归框架 settings，lvr 提需求走 docs/3d.md。
 
 ### R1 场景与相机
 

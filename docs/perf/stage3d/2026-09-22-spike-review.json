@@ -18,12 +18,12 @@
     {
       "gate": "sc0-exit",
       "status": "pending",
-      "reason": "SC0-B1 still needs the real WeChat test project/AppID and runnable build evidence; SC0-B4 budget freeze remains separate. SC4 real-device cache-failure acceptance is a later gate."
+      "reason": "SC0-B4 budget freeze and prototype handoff remain pending. SC0-B1 is complete under the revised acceptance scope; the WeChat test project/AppID and runnable-build evidence requirements were removed by the user on 2026-09-22. Real WeChat low-tier / remote-load / cache acceptance remains in SC4."
     }
   ],
   "limits": [
     "The RGBA8 path is WebGL1 float-capability fault injection on a device with native float support. It is not a naturally limited or WeChat device test.",
-    "Desktop CSS/DPR emulation is not mobile hardware evidence. SC0-B1 still requires the WeChat test project/AppID and runnable build evidence, and SC0-B4 must freeze the budget after its prerequisites. SC4 real-device cache-failure acceptance remains a later-stage gate.",
+    "Desktop CSS/DPR emulation is not mobile hardware evidence. SC0 now awaits B4 budget freeze and prototype handoff; real WeChat low-tier / remote-load / cache acceptance remains a later SC4 gate.",
     "Startup maxima are preserved alongside steady p95. These numbers do not freeze candidate budgets or establish a universal performance target.",
     "Snake wheel coverage is fixture-only.",
     "Modal pre-block boosting=true was asserted live but its snapshot was not saved. Stored blocked/restored/stale/fresh snapshots show cancellation and fresh input, not the omitted prior state.",
@@ -3187,5 +3187,18 @@
       "sha256": "14fab57bf373933bdd881adec4fb4c79dc2b55c0e75adc6b044cf1dcaba0c7b1",
       "storage": "local-only"
     }
+  },
+  "acceptanceScopeRevision": {
+    "date": "2026-09-22",
+    "authority": "User instruction",
+    "removedRequirements": [
+      "WeChat test project/AppID",
+      "WeChat successful/runnable build evidence"
+    ],
+    "currentSc0Pending": [
+      "SC0-B4 budget freeze",
+      "SC0-B4 prototype handoff"
+    ],
+    "historyPolicy": "contexts[].sourcePending and all raw reports/summaries retain the requirements and results observed at capture time; they do not reintroduce removed requirements. No execution result or measured value was changed."
   }
 }

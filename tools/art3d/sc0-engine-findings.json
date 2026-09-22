@@ -882,7 +882,7 @@
       "owner": "main integrator",
       "requirement": "Run the full real fixture regression after integration; node/business-reference counts must return to the warmed baseline and GFX allocations must not keep growing.",
       "accepted": true,
-      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "acceptanceScope": "Fixed SC0 desktop fixture only; SC0-B4 budget freeze / prototype handoff and later SC4 real WeChat low-tier / remote-load / cache acceptance remain separate.",
       "evidenceKey": "finalAlignedCoherentRevalidation"
     },
     {
@@ -892,7 +892,7 @@
       "requirement": "Record actual device float-extension support, sampled texture capability, actual joint texture format, cross-animation grouping and complete input/resource/performance evidence.",
       "selectedBrowserEvidenceKey": "finalAlignedCoherentRevalidation.fullRuns[1]",
       "selectedBrowserExecutedAssertionsPassed": true,
-      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "acceptanceScope": "Fixed SC0 desktop fixture only; SC0-B4 budget freeze / prototype handoff and later SC4 real WeChat low-tier / remote-load / cache acceptance remain separate.",
       "evidenceKey": "finalAlignedCoherentRevalidation"
     },
     {
@@ -936,13 +936,13 @@
         "mainIntegratorVisualReview": "passed30phaseTargets"
       },
       "owner": "main integrator",
-      "requirement": "Prove advancing actual bone matrices and playback time on the same realtime instance, unchanged 99 baked siblings, return to baked sharing, visual correctness and subsequent warmed lifecycle recovery. Preserve independent WebGL1 float/RGBA8 and WeChat gates.",
+      "requirement": "Prove advancing actual bone matrices and playback time on the same realtime instance, unchanged 99 baked siblings, return to baked sharing, visual correctness and subsequent warmed lifecycle recovery. Preserve independent WebGL1 float/RGBA8 evidence and the later SC4 real WeChat low-tier / remote-load / cache gate.",
       "runLabels": [
         "stage3d-fixture-webgl2-aligned",
         "stage3d-fixture-webgl1-aligned",
         "stage3d-fixture-rgba8-coherent"
       ],
-      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "acceptanceScope": "Fixed SC0 desktop fixture only; SC0-B4 budget freeze / prototype handoff and later SC4 real WeChat low-tier / remote-load / cache acceptance remain separate.",
       "evidenceKey": "finalAlignedCoherentRevalidation"
     },
     {
@@ -959,7 +959,7 @@
       },
       "owner": "main integrator",
       "requirement": "Fresh-pool native WebGL2 float, native WebGL1 float and explicitly injected RGBA8 runs must verify actual72/144 widths, multi-clip/cross-atlas animation visually and numerically, realtime restoration, warmed20cycles and real frame sampling. Earlier64/128 results cannot close this gate.",
-      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "acceptanceScope": "Fixed SC0 desktop fixture only; SC0-B4 budget freeze / prototype handoff and later SC4 real WeChat low-tier / remote-load / cache acceptance remain separate.",
       "evidenceKey": "finalAlignedCoherentRevalidation"
     },
     {
@@ -980,7 +980,7 @@
       },
       "owner": "main integrator",
       "requirement": "Fresh context with dependent float extensions masked must report RGBA32F sampled=false and renderTarget=false, macro0 and actual alignedRGBA8 texture. Require close-up visual animation, fallback restoration and full resource/performance replay; no vendor/shader/format-table patch.",
-      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "acceptanceScope": "Fixed SC0 desktop fixture only; SC0-B4 budget freeze / prototype handoff and later SC4 real WeChat low-tier / remote-load / cache acceptance remain separate.",
       "evidenceKey": "finalAlignedCoherentRevalidation"
     }
   ],
@@ -1126,7 +1126,7 @@
         "textureGrowthBytes": 0
       },
       "owner": "main integrator",
-      "note": "Final3 context matrix/time/restoration and main-integrator30-image visual review passed; fullverify/SC0/WeChat gates remain separate.",
+      "note": "Final three-context matrix/time/restoration and main-integrator 30-image visual review passed; the full verification result is recorded separately. SC0-B4 budget freeze / prototype handoff and SC4 real WeChat acceptance remain separate.",
       "acceptanceScope": "Fixed desktop fixture only; no stage/platform exit."
     }
   },
@@ -3115,5 +3115,19 @@
     }
   },
   "stageComplete": false,
-  "sc0Exit": false
+  "sc0Exit": false,
+  "acceptanceScopeRevision": {
+    "date": "2026-09-22",
+    "authority": "User instruction",
+    "removedRequirements": [
+      "WeChat test project/AppID",
+      "WeChat successful/runnable build evidence"
+    ],
+    "currentSc0Pending": [
+      "SC0-B4 budget freeze",
+      "SC0-B4 prototype handoff"
+    ],
+    "retainedLaterGate": "SC4 real WeChat low-tier / remote-load / cache acceptance",
+    "historyPolicy": "Captured reports[].pending, fullRuns[].pending and postWorkaroundBrowserRegression.remaining describe historical checkpoints and are superseded as current gate lists. Preserve their original values and all measured results; this revision supplies the current acceptance scope."
+  }
 }

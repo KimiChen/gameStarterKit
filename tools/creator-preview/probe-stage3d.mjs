@@ -1380,7 +1380,7 @@ export async function runStage3dProbe(options) {
     if (options.mode === "fixture") {
       report.pending.push({ name: "snake-carrier", reason: "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence." });
       report.pending.push({ name: "visual-and-skinning-review", reason: "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths." });
-      report.pending.push({ name: "other-sc0-gates", reason: "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates." });
+      report.pending.push({ name: "other-sc0-gates", reason: "Independent baked-Prefab reload, the second WebGL context and SC0-B4 budget freeze / prototype handoff remain separate exit gates. Real WeChat low-tier / remote-load / cache acceptance belongs to SC4." });
     }
     report.finishedAt = new Date().toISOString();
     const observedEnvironment = report.environment ?? report.bootstrap?.baseline?.environment;

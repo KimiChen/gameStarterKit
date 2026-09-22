@@ -93,7 +93,7 @@ SC0 已按用户确认改成原 `idle` 动画 **t=0** 的透明静态图：使�
   扩展版本 `1.0.4`；`appid` / `orientation` 等属于构建任务 `packages.wechatgame`。
   因此 `settings/.../wechatgame.json` 只登记扩展版本，不塞入不会生效的构建选项。
 
-### 隔离工程与可重复构建
+### 隔离工程与可选桌面构建
 
 从目标 worktree 的仓库根运行以下命令（先完成安装与源码同步），在终端 PTY 内前台启动
 独立 Creator 实例，并保持该终端会话存活。使用工具启动时启用 `tty: true`；
@@ -122,35 +122,9 @@ mkdir -p .cache/stage3d/creator-home
   --build "platform=web-desktop;debug=true;outputName=stage3d-sc0-web;startScene=33a6cd88-ca61-42f3-97e1-6b18a9096a34"
 ```
 
-微信构建必须先取得**真实测试 AppID**。当前没有测试项目，不填虚构 ID，不将本地空配置记作构建通过。
-拿到 ID 后在当前终端设置 `STAGE3D_WECHAT_APPID`，生成仅含主场景的本地构建参数：
-
-```bash
-node --input-type=module <<'NODE'
-import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
-const appid = process.env.STAGE3D_WECHAT_APPID;
-if (!appid || !/^wx[0-9a-f]{16}$/i.test(appid)) throw new Error('请先设置真实 STAGE3D_WECHAT_APPID');
-const scene = JSON.parse(readFileSync('apps/Cocos/assets/scene.scene.meta', 'utf8'));
-const engine = JSON.parse(readFileSync('apps/Cocos/settings/v2/packages/engine.json', 'utf8'));
-const options = {
-  platform: 'wechatgame', taskName: 'stage3d-sc0-wechat', outputName: 'stage3d-sc0-wechat',
-  debug: true, buildPath: 'project://build', startScene: scene.uuid,
-  scenes: [{ url: 'db://assets/scene.scene', uuid: scene.uuid }],
-  includedModules: engine.modules.configs[engine.modules.globalConfigKey].includeModules,
-  packages: { wechatgame: {
-    appid, orientation: 'portrait', buildOpenDataContextTemplate: false,
-    separateEngine: false, highPerformanceMode: false, wasmSubpackage: false,
-  } },
-};
-mkdirSync('.cache/stage3d', { recursive: true });
-writeFileSync('.cache/stage3d/wechat-build.json', JSON.stringify(options, null, 2) + '\n');
-NODE
-/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/MacOS/CocosCreator \
-  --project "$PWD/apps/Cocos" \
-  --build "configPath=$PWD/.cache/stage3d/wechat-build.json"
-```
-
 Creator 命令行构建成功码为 **36**，32 是参数失败、34 是构建失败；不能仅用常见的退出码 0 规则判断。
 参数和退出码见 [Creator 3.8 官方命令行文档](https://docs.cocos.com/creator/3.8/manual/zh/editor/publish/publish-in-command-line.html)。
-构建后在真实测试项目运行 `apps/Cocos/build/stage3d-sc0-wechat`，保存构建日志和实际运行证据。
-未完成小游戏可运行性、SC0-B3 输入 / 性能与 SC0-B5 烘焙重载前，SC0 保持未退出；不提前冻结预算。
+2026-09-22 按用户要求，微信测试项目 / AppID 与可运行构建证据不再是 3D 实施前置或验收 / 退出条件。
+SC0-B1 的引擎配置与真实预览已完成；SC0 的剩余工作是 B4 预算冻结与原型移交，见
+[施工单 §8](../../docs/3D-PLAN.md#8-批次状态只在本文回写阶段级完成回写-3dmd-10)。
+WebGL1 逐阶段证据与 SC4 真实微信 low 档 / 远程加载 / 缓存验收按各自阶段执行。
