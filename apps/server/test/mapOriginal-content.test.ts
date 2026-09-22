@@ -3,9 +3,8 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 import {
-    decodeMapoTerrainRle, mapoAtlasCellId, mapoAtlasCellRect, mapoAtlasUv, mapoTerrainToBytes,
-    MAPO_ATLAS_CELL_H, MAPO_ATLAS_CELL_W, MAPO_ATLAS_COLS, MAPO_ATLAS_GUTTER,
-    MAPO_ATLAS_H, MAPO_ATLAS_LODS, MAPO_ATLAS_VARIANTS, MAPO_ATLAS_W, MAPO_MAP_COLS, MAPO_MAP_ROWS,
+    decodeMapoTerrainRle, mapoTerrainToBytes,
+    MAPO_MAP_COLS, MAPO_MAP_ROWS,
     MAPO_TERRAIN_HEADER_BYTES, MAPO_ORIGINAL_TILE_HALF_W, MAPO_REGION_D_BIAS,
     MAPO_REGION_HEADER_BYTES, MAPO_REGION_RECORD_BYTES, mapoGrid2Pos, mapoRegionPos,
 } from "@game/shared/kits/mapOriginal/api/hexmap/index";
@@ -33,6 +32,10 @@ import {
     MAPO_RIVER_RECORD_BYTES, MAPO_RIVER_SIDE, MAPO_RIVER_S_BIAS, MAPO_RIVER_SYSTEMS,
     MAPO_RIVER_TILES, MAPO_RIVER_TINT,
 } from "@game/shared/kits/mapOriginal/content/river.data";
+import {
+    MAPO_GROUND_BLOCK_TILES, MAPO_GROUND_GRID_SIDE, MAPO_GROUND_ORIGIN,
+    MAPO_GROUND_REPEAT_U, MAPO_GROUND_REPEAT_V, MAPO_GROUND_TEXTURE_SIZE,
+} from "@game/shared/kits/mapOriginal/content/ground.data";
 
 const MAP = MAPO_TERRAIN_MAP_ID;
 const kitDir = new URL(`../../kits/mapOriginal/data/maps/${MAP}/`, import.meta.url);
@@ -181,33 +184,45 @@ test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，�
     assert.ok(MAPO_DECOR_CELLS.some((c) => c.id >= MAPO_DECOR_CITY_BASE), "至少要有一件城址图");
 });
 
-test("mapOriginal 内容：图集布局 = shared 的 MAPO_ATLAS_* 常量（逐格）", () => {
-    for (const lod of MAPO_ATLAS_LODS) {
-        const meta = JSON.parse(kit(`atlas-lod${lod}.info.json`).toString("utf8")) as {
-            cell: [number, number]; gutter: number; gridCols: number; variants: number;
-            size: [number, number]; uv: string;
-            kinds: string[];
-            cells: { id: number; kindId: number; kind: string; variant: number;
-                     cell: [number, number, number, number] }[];
-        };
-        assert.deepEqual(meta.cell, [MAPO_ATLAS_CELL_W, MAPO_ATLAS_CELL_H], `lod${lod} 单格`);
-        assert.equal(meta.gutter, MAPO_ATLAS_GUTTER);
-        assert.equal(meta.gridCols, MAPO_ATLAS_COLS);
-        assert.deepEqual(meta.size, [MAPO_ATLAS_W, MAPO_ATLAS_H]);
-        assert.equal(meta.uv, "diamond-midpoints");
-        // ⚠ 每类 4 个变体是**去「铺地砖」的契约**：少了它整片地会读作重复瓦片
-        assert.equal(meta.variants, MAPO_ATLAS_VARIANTS, `lod${lod} 变体数`);
-        // ★ 地表图集按**粗类**建（不是按 61 个原版值）：等级差由摆件层体现
-        assert.deepEqual(meta.kinds, [...MAPO_VALUE_KINDS], `lod${lod} 粗类表`);
-        assert.equal(meta.cells.length, MAPO_VALUE_KINDS.length * MAPO_ATLAS_VARIANTS);
-        for (const c of meta.cells) {
-            // ⚠ 漂了的症状是「地形对不上颜色」—— UV 整体错格，画面照样出，极难查
-            assert.deepEqual(c.cell, [...mapoAtlasCellRect(c.id)], `lod${lod} 第 ${c.id} 格`);
-            assert.equal(c.id, mapoAtlasCellId(c.kindId, c.variant), `lod${lod} 格 id 编码`);
-            assert.equal(c.kindId, MAPO_VALUE_KINDS.indexOf(c.kind), `lod${lod} 粗类 id`);
-            const uv = mapoAtlasUv(c.id);
-            assert.ok(uv[0] >= 0 && uv[1] >= 0 && uv[0] + uv[2] <= 1 && uv[1] + uv[3] <= 1);
-        }
+test("mapOriginal 内容：地表底 = 一张 POT 底纹 + 整数次 REPEAT（⛔ 不是逐格贴片）", () => {
+    // ★ M2-B1：原版的地表底是「一块 10×10 格 + 一张 256² 底纹整数次 GL_REPEAT」（§1.4），
+    //   整张 S1 只用**一张** underground1（§1.5）。⛔ 早先的「8 粗类 × 4 变体逐格菱形贴片」
+    //   是本仓自创的，已删 —— 这条用例同时守着「别加回来」。
+    const meta = JSON.parse(kit("ground.info.json").toString("utf8")) as {
+        texture: { source: string; size: [number, number]; sha256: string; opaque: boolean; wrap: string };
+        block: { tiles: number; gridSide: number; origin: number; sizePx: [number, number] };
+        repeat: { u: number; v: number; timesU: number; timesV: number;
+                  stretchU: number; stretchV: number };
+        uv: Record<string, number[] | string>;
+    };
+    assert.equal(meta.block.tiles, MAPO_GROUND_BLOCK_TILES);
+    assert.equal(meta.block.gridSide, MAPO_GROUND_GRID_SIDE);
+    assert.equal(meta.block.origin, MAPO_GROUND_ORIGIN);
+    assert.equal(meta.repeat.timesU, MAPO_GROUND_REPEAT_U);
+    assert.equal(meta.repeat.timesV, MAPO_GROUND_REPEAT_V);
+    assert.deepEqual([...MAPO_GROUND_TEXTURE_SIZE], meta.texture.size);
+    // ★ 一块 = 10×10 逻辑格 = 3000×1500 原版 px（一格 300×150）
+    assert.deepEqual(meta.block.sizePx, [3000, 1500], "一块的原版像素尺寸");
+    // ★ 贴图必须 POT 且满幅不透明 —— 否则 WebGL1 下开不了 REPEAT、铺底会露背景
+    for (const n of meta.texture.size) assert.equal(n & (n - 1), 0, `贴图边长 ${n} 不是 2 的幂`);
+    assert.equal(meta.texture.opaque, true);
+    assert.equal(meta.texture.wrap, "REPEAT/REPEAT");
+    assert.equal(sha256(kit("ground-base.png")), meta.texture.sha256);
+    assert.ok(meta.texture.source.startsWith("ground_down/"), "底纹必须是原版 2D 侧素材");
+    // ★ **整周期**是关键：取 floor 让块边界落在整周期上，块与块之间不出现半个花纹的错茬
+    assert.equal(meta.repeat.u % meta.texture.size[0], 0, "横向不是整周期");
+    assert.equal(meta.repeat.v % meta.texture.size[1], 0, "纵向不是整周期");
+    assert.equal(meta.repeat.u, meta.texture.size[0] * MAPO_GROUND_REPEAT_U);
+    assert.equal(meta.repeat.v, meta.texture.size[1] * MAPO_GROUND_REPEAT_V);
+    // 拉伸量 = 块尺寸 / 整周期尺寸，必须略大于 1（整周期一定不超过块）
+    assert.ok(meta.repeat.stretchU > 1 && meta.repeat.stretchU < 1.2, `横向拉伸 ${meta.repeat.stretchU}`);
+    assert.ok(meta.repeat.stretchV > 1 && meta.repeat.stretchV < 1.3, `纵向拉伸 ${meta.repeat.stretchV}`);
+    // ★ 块网格必须正好盖住地图：150 块 × 10 格 = 1500 行，另加一圈 margin
+    assert.equal((MAPO_GROUND_GRID_SIDE - 2) * MAPO_GROUND_BLOCK_TILES, MAPO_MAP_ROWS);
+    assert.equal(MAPO_GROUND_ORIGIN, -MAPO_GROUND_BLOCK_TILES, "原点偏移 = 一整块的 margin");
+    // ⛔ 图集产物必须**已经不在**了
+    for (const lod of [0, 1, 2]) {
+        assert.throws(() => kit(`atlas-lod${lod}.png`), /ENOENT/, `atlas-lod${lod}.png 又回来了`);
     }
 });
 
@@ -217,8 +232,7 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
         //   镜像叫 .bytes 而 .meta 写 [".bin"] 时 Creator 会导出 `_native: ".bin"`，
         //   与库里的 .bytes 对不上 ⇒ 运行时「the native asset is missing」。
         ["terrain.bytes", "terrain.bin"],
-        ...MAPO_ATLAS_LODS.flatMap((l): [string, string][] =>
-            [[`atlas-lod${l}.png`, `atlas-lod${l}.png`], [`atlas-lod${l}.info.json`, `atlas-lod${l}.info.json`]]),
+        ["ground-base.png", "ground-base.png"],
         ["plate-lod4.png", "plate-lod4.png"], ["plate-lod4.info.json", "plate-lod4.info.json"],
         ["plate-lod5.png", "plate-lod5.png"], ["plate-lod5.info.json", "plate-lod5.info.json"],
         ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
@@ -613,11 +627,9 @@ const MAPO_2D_SOURCE_PREFIXES = [
 const MAPO_BANNED_SOURCE_PREFIXES = ["scene_3d/", "fairy/ui_3d/", "fairy/atlas_3d/", "ui_3d/"];
 
 test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2D 侧**（⛔ 无 scene_3d）", () => {
-    // ⚠ 跟着 `MAPO_ATLAS_LODS` 走，⛔ 不硬编码档数 —— 新增一档图集会静默逃逸出校验集。
-    // ⚠ 也 ⛔ 不用 readdirSync 全枚举：那会把「这几个必须被校」的显式契约换成
+    // ⚠ ⛔ 不用 readdirSync 全枚举：那会把「这几个必须被校」的显式契约换成
     //   「目录里有什么校什么」，产物被删/改名后同样静默退出。
-    const files = [...MAPO_ATLAS_LODS.map((l) => `atlas-lod${l}.info.json`),
-                   "decor-atlas.info.json", "region-atlas.info.json"];
+    const files = ["decor-atlas.info.json", "region-atlas.info.json"];
     let checked = 0;
     const perFile = new Map<string, number>();
     for (const name of files) {
@@ -649,7 +661,25 @@ test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2
     for (const name of files) {
         assert.ok((perFile.get(name) ?? 0) > 0, `${name} 一条 source 都没校到`);
     }
-    assert.ok(checked >= 100, `只校到 ${checked} 条 source，⛔ 像是白名单没覆盖到产物`);
+    // ★ 非「格」形态的产物也要校 source：地表底一张、河流三条水系各一张
+    const extra: [string, string][] = [
+        ["ground.info.json", (JSON.parse(kit("ground.info.json").toString("utf8")) as
+            { texture: { source: string } }).texture.source],
+        ...(JSON.parse(kit("rivers.info.json").toString("utf8")) as
+            { systems: { name: string; source: string }[] }).systems
+            .map((x): [string, string] => [`rivers.info.json/${x.name}`, x.source]),
+    ];
+    for (const [where, src] of extra) {
+        for (const bad of MAPO_BANNED_SOURCE_PREFIXES) {
+            assert.ok(!src.includes(bad), `${where} 的素材来自 3D 侧：${src}`);
+        }
+        assert.ok(MAPO_2D_SOURCE_PREFIXES.some((ok) => src.startsWith(ok)),
+            `${where} 的素材来源不在 2D 白名单里：${src}`);
+        assert.ok(!src.startsWith("/"), `${where} 的 source 是本机绝对路径`);
+        checked += 1;
+    }
+    // ⚠ 阈值随 M2-B1 下调：自创的 8 粗类 × 4 变体 × 3 档地表图集（96 条）已删。
+    assert.ok(checked >= 60, `只校到 ${checked} 条 source，⛔ 像是白名单没覆盖到产物`);
 });
 
 test("mapOriginal 内容：选材清单 select.json ⛔ 不许再出现 3D 侧前缀", () => {

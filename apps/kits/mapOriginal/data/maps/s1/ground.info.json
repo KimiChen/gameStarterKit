@@ -1,0 +1,56 @@
+{
+ "schemaVersion": 1,
+ "mapId": "s1",
+ "texture": {
+  "source": "ground_down/underground1.png",
+  "size": [
+   256,
+   256
+  ],
+  "sha256": "3f5f85df9e5ce417017f6b9ca9dcc3a09880fae2b70e61902dfb4d7f3a74a2da",
+  "opaque": true,
+  "wrap": "REPEAT/REPEAT"
+ },
+ "block": {
+  "tiles": 10,
+  "gridSide": 152,
+  "origin": -10,
+  "sizePx": [
+   3000,
+   1500
+  ],
+  "coversRows": "块 i 覆盖逻辑行 10·i-10 .. 10·i-1"
+ },
+ "repeat": {
+  "u": 2816,
+  "v": 1280,
+  "timesU": 11,
+  "timesV": 5,
+  "stretchU": 1.0653,
+  "stretchV": 1.1719,
+  "note": "取 floor 让块边界落在整周期上，块与块之间不出现半个花纹的错茬"
+ },
+ "uv": {
+  "W": [
+   0,
+   2.5
+  ],
+  "N": [
+   5.5,
+   0
+  ],
+  "E": [
+   11.0,
+   2.5
+  ],
+  "S": [
+   5.5,
+   5.0
+  ],
+  "note": "世界轴对齐的线性映射（GROUND_PIC_TBL 的 W/N/E/S 四点）⇒ 底纹不跟着菱形转"
+ },
+ "source": {
+  "authority": "MAPORIGINAL-2D §1.2 / §1.4 / §1.5",
+  "originNote": "块原点偏移 −10 按 §1.2 公式推（152 = 150 + 2 margin 自洽）；desert 块中心 88.6% 落在 logic_background==3（旁证，⛔ 非硬证）"
+ }
+}

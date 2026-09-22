@@ -28,9 +28,9 @@ FILES = {
     "terrain.bytes": "terrain.bytes",              # ⚠ 进两份：权威 + 运行时（BufferAsset）
     "terrain.pass.bytes": "terrain.pass.bytes",
     "terrain.info.json": "terrain.info.json",
-    "atlas-lod0.png": "atlas-lod0.png", "atlas-lod0.info.json": "atlas-lod0.info.json",
-    "atlas-lod1.png": "atlas-lod1.png", "atlas-lod1.info.json": "atlas-lod1.info.json",
-    "atlas-lod2.png": "atlas-lod2.png", "atlas-lod2.info.json": "atlas-lod2.info.json",
+    # ★ 地表底：一张 256² POT 底纹，整数次 GL_REPEAT 铺满一块 10×10 格（M2-B1）。
+    #   ⛔ 早先这里是 atlas-lod{0,1,2}「8 粗类 × 4 变体的逐格菱形贴片」—— 本仓自创，已删。
+    "ground-base.png": "ground-base.png", "ground.info.json": "ground.info.json",
     "plate-lod4.png": "plate-lod4.png", "plate-lod4.info.json": "plate-lod4.info.json",
     "plate-lod5.png": "plate-lod5.png", "plate-lod5.info.json": "plate-lod5.info.json",
     "minimap.png": "minimap.png", "minimap-mask.png": "minimap-mask.png",
@@ -45,7 +45,7 @@ FILES = {
     "labels.json": "labels.json",
 }
 KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
-            "rivers.info.json", "river-geo.index.json"}
+            "rivers.info.json", "river-geo.index.json", "ground.info.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。

@@ -33,8 +33,15 @@ def main() -> int:
     a = ap.parse_args()
     d = os.path.join(OUT, "pack", a.map)
     info = json.load(open(os.path.join(d, "terrain.info.json"), encoding="utf-8"))
-    atlas = json.load(open(os.path.join(d, "atlas-lod0.info.json"), encoding="utf-8"))
-    kinds = atlas["kinds"]                       # ⚠ 次序即粗类 id = 图集行号
+    # ⚠ 粗类表以 terrain.info.json 的**出现次序**为准（M2-B1 起地表图集已删，⛔ 不再从它取）
+    kinds: list = []
+    for e in info["palette"]:
+        if e["kind"] not in kinds:
+            kinds.append(e["kind"])
+    # ⚠ `unknown` 自 M0-B1 起在调色板里**已无对应项**（值 0 改归「多格地形覆盖」= 平地），
+    #   但它仍是 `MAPO_VALUE_KIND_ID` 的**越界兜底**下标 ⇒ 必须显式补在末位。
+    if "unknown" not in kinds:
+        kinds.append("unknown")
 
     pal = info["palette"]
     vmax = max(e["id"] for e in pal)
@@ -55,7 +62,7 @@ def main() -> int:
  * mapOriginal **原版值空间**调色板 —— **生成物，⛔ 勿手改**。
  *
  * 由 `tools/maporiginal-assets/emit_display_palette.py` 从 `terrain.info.json` +
- * `atlas-lod0.info.json` 派生。显示层每格存的就是**原版 res 值**（%s）。
+ * 派生。显示层每格存的就是**原版 res 值**（%s）。
  *
  * ★ 一格长什么样完全由这个值查出来，⛔ 不掺随机/哈希：
  *   ① `MAPO_VALUE_KIND_ID[v]` → 粗类 id → 地表图集第几行（%d 粗类 × 4 变体）；
@@ -81,7 +88,10 @@ export interface IMapoValueClass {
     readonly level?: number;
 }
 
-/** 粗类表：**次序即粗类 id**，与 `atlas-lod*.info.json` 的 `kinds` 逐项相等。 */
+/**
+ * 粗类表：**次序即粗类 id**。⚠ M2-B1 起它**只用于详情面板与远档着色**，
+ * ⛔ 不再对应任何图集行 —— 地表底已改成「一张底纹整数次 GL_REPEAT」。
+ */
 export const MAPO_VALUE_KINDS: readonly string[] = %s;
 /** 资源类型编号 → 中文。⚠ 静态数据定不了真实置换，见模块头。 */
 export const MAPO_RES_TYPE_CN: readonly string[] = %s;

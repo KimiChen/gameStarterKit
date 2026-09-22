@@ -37,43 +37,6 @@ PNG = os.path.join(OUT, "png")
 
 # ★ 地表图集按**粗类**建（资源格真正的样子由摆件层的原版 res_field 给，底下这层只是垫底）。
 #   ⚠ 次序即 kind id，⛔ 与 terrain.info.json 的 kind 名一一对应，改了要同步 shared。
-KINDS = ["plain", "resource", "gold", "river", "mountain", "grove", "scatter", "unknown"]
-
-# ★ 全部是原版 **2D 沙盘**侧的源（2026-09-22 换源；本 kit ⛔ 不再收 scene_3d/**，3D 归 mapOriginal3d）。
-#
-# ⚠ 判据不是「路径里有没有 3d」，是 2D 地表组预制体的**直接引用**：
-#   `scene/ground/<生物群系>/` 下各有 10 个 `*_polygon_mask_group.prefab`，其中的 `polygon_2d`
-#   节点直引本目录的 `tt_02`（各 10 次）。
-#   desert / snow 另有各 60 个 `*_polygon_group` 直引 `ground_down/underground{3,2}`。
-#
-# ⚠⚠ **口径修正（M1-B3，MAPORIGINAL-2D §1.7）**：上面这条只证明「这七张是**2D 侧素材**」，
-#   ⛔ **不证明「S1 画面上真在用」**。驱动 `_polygon_mask` 那层的四张 `multi_grid_*` 表在
-#   S1 **是空表**（`NEWTABLE` + `RETURN`、nk=0）⇒ 那一层在 S1 **一格都不画**。
-#   ⇒ 本 kit 这 8 张粗类底纹是**自创的**（原版 2D 的地表底是 block 级「一张底纹整数次
-#   GL_REPEAT」，见 §1.4，那是 M2-B1 才做的事）。⛔ 别把这里写成「原版就是这么铺的」。
-# ⚠ `plain` 是八条里**唯一带推断**的：`underground1` 的 2D 归属是实证（赛季配置表里登记名
-#   「草1」、且是 `all_root_res_list.cw` 的常驻根资源、无 scene_3d 对位），但「它被 polygon 平铺
-#   成草地底」没有直接证据 —— grass 的四个 `middlelevel_0N_group.prefab` 在手且只引 a1..a8。
-#   ⇒ 更可能是地图编辑器的**地表笔刷**（代码直贴）。台账里如实标注，⛔ 不要写成实证。
-# ⚠ 选源看的是**灰度质感与可平铺性**，⛔ 不是颜色：色相 100% 来自本仓调色板（见下面的着色式）。
-TEXTURE_OF = {
-    "plain":    "ground_down/underground1.png",              # 「草1」，256² 双向无缝
-    "resource": "scene/ground/caodi_gan/png/tt_02.png",      # 干草地；低频最低 ⇒ 96 万格不露节律
-    "gold":     "scene/ground/huangmo/png/tt_02.png",        # 荒漠；偏亮细砂
-    "river":    "scene/ground/zhaoze/png/tt_02.png",         # 沼泽；水系里唯一满幅不透明的底
-    "mountain": "scene/ground/caodi_shi/png/tt_02.png",      # 石草地；暗于平地
-    "grove":    "scene/ground/senlin/png/tt_02.png",         # 森林；对上 LAND_TYPE.FOREST
-    "scatter":  "scene/ground/caodi_huijin/png/tt_02.png",   # 草地灰烬
-    "unknown":  "scene/ground/dongtu_tuxue/png/tt_02.png",   # 冻土；纹理最强，兜底哨兵一眼可辨
-}
-# ⚠ 单格 240×120（仍 2:1）而不是 256×128：8 列 × (256+8) = 2112 > 2048 放不下，
-#   240 的节距 248 × 8 = 1984 ≤ 2048、行 128 × 8 = 1024 正好铺满。
-CELL_W, CELL_H, GUTTER = 240, 120, 4
-# ★ 每类 **4 个变体**：同一张片复制上千遍时整片地会读作「铺地砖」而不是连续地貌。
-#   16 类 × 4 变体 = 64 格，8×8 正好铺满 2048×1024。
-ATLAS_W, ATLAS_H, GRID_COLS, VARIANTS = 2048, 1024, 8, 4
-
-
 def load_pack(mid: str):
     d = os.path.join(OUT, "pack", mid)
     raw = open(os.path.join(d, "terrain.bytes"), "rb").read()
@@ -144,121 +107,12 @@ def bake_minimap(d, mid):
     print("  minimap %dx%d（内容垂直居中，上下各 1/4 留白）+ 菱形蒙版" % (side, side))
 
 
-def diamond_mask(w: int, h: int, bleed: int) -> np.ndarray:
-    yy, xx = np.mgrid[0:h, 0:w]
-    d = np.abs(xx - (w - 1) / 2) / ((w - 1) / 2) + np.abs(yy - (h - 1) / 2) / ((h - 1) / 2)
-    return (d <= 1.0 + bleed * 2.0 / w).astype(np.float32)
-
-
-def kind_style(info):
-    """kind -> (cn, 颜色)。取该 kind 下格数最多的那条调色板项的颜色。
-
-    ⚠ 自 M0-B1 起 `unknown` **在调色板里已无对应项**（值 0 改归「多格地形覆盖」= 平地）⇒
-      它落到下面的兜底 `(kind, [128,128,128])`，是一行**死哨兵**（0 格会用到）。
-      留着是给 `MAPO_VALUE_KIND_ID` 的越界兜底用，⛔ 别因为「没人用」就删掉那一行。
-    """
-    best = {}
-    for e in info["palette"]:
-        k = e["kind"]
-        if k not in best or e["tiles"] > best[k]["tiles"]:
-            best[k] = e
-    return {k: (best[k]["cn"], best[k]["color"]) for k in best}
-
-
-# 四个变体的取窗相位（0..1 的比例）。⚠ 任意两个**既不共行也不共列**，⛔ 别改成 (0,0)/(1,0)/(0,1)/(1,1)
-#   那种角窗 —— 源是正方且窗口等于源边长时四个角窗会塌成同一个。
-PHASES = [(0.00, 0.00), (0.62, 0.24), (0.24, 0.76), (0.86, 0.52)]
-
-
-def phase_crop(src, px, py, wW, wH):
-    """按相位取一个 wW×wH 的窗口；相位方向上没有余量时**环绕**取（np.roll）。
-
-    ⚠ 环绕只在「窗口 = 源边长」时才会触发；此时源必须是无缝可平铺的，否则片内会露缝。
-    """
-    W, H = src.width, src.height
-    fx, fy = W - wW, H - wH
-    if fx > 0 and fy > 0:
-        return src.crop((round(px * fx), round(py * fy),
-                         round(px * fx) + wW, round(py * fy) + wH))
-    a = np.asarray(src)
-    if fx <= 0:
-        a = np.roll(a, round(px * W), axis=1)
-    if fy <= 0:
-        a = np.roll(a, round(py * H), axis=0)
-    a = a[:wH, :wW] if fx <= 0 and fy <= 0 else (
-        a[round(py * fy):round(py * fy) + wH, :wW] if fx <= 0
-        else a[:wH, round(px * fx):round(px * fx) + wW])
-    return Image.fromarray(a)
-
-
-def pack_atlas(d, info, lods=(0, 1, 2)):
-    """每档一张 POT 图集：8 列 × 4 行的 240×120 菱形贴片（8 粗类 × 4 变体 = 32 格）+ 4px 出血带。
-
-    ⚠ 出血带是**边缘复制**，⛔ 不靠 UV 内缩（内缩会把画面往里压、菱形边缘少一圈）。
-    """
-    style = kind_style(info)
-    mask = diamond_mask(CELL_W, CELL_H, GUTTER)
-    cells = []
-    for lod in lods:
-        atlas = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
-        cells = []
-        for kid, kind in enumerate(KINDS):
-            e = {"id": kid, "name": kind, "cn": style.get(kind, (kind, [128, 128, 128]))[0],
-                 "color": style.get(kind, (kind, [128, 128, 128]))[1]}
-            tex_rel = TEXTURE_OF.get(kind)
-            if tex_rel and not os.path.exists(os.path.join(PNG, tex_rel)):
-                # ⛔ 不许静默降级成纯色：源没落位时以前不报错、画面直接变平涂，极难查
-                raise SystemExit("⛔ %s 的源没落位：%s\n   先解码：decode_ktx.py --name <key> --out out/png"
-                                 % (kind, os.path.join(PNG, tex_rel)))
-            src = None
-            if tex_rel:
-                im = Image.open(os.path.join(PNG, tex_rel)).convert("RGBA")
-                # ⚠ 透明区**合成到中性灰**再转 RGB，⛔ 不能直接 convert("RGB")：
-                #   那会把透明读成黑 ⇒ lum≈0 ⇒ 整片压成 0.62×底色的暗块。
-                #   取 128 是唯一不改色相的中性值（lum=0.5 ⇒ 增益 1.0 ⇒ 正好是调色板原色）。
-                src = Image.alpha_composite(
-                    Image.new("RGBA", im.size, (128, 128, 128, 255)), im).convert("RGB")
-                # ⚠ 远档 = 先**低通**再取同一窗口，⛔ 不是裁更小的块：
-                #   裁小块会越远越锐越花（与注释相反），实测现行 lod0→lod2 的 std 是上升的。
-                if lod:
-                    src = src.filter(ImageFilter.GaussianBlur(0.8 * (2 ** lod)))
-            col = np.array(e["color"], np.float32)
-            for v in range(VARIANTS):
-                idx = e["id"] * VARIANTS + v
-                if src is None:
-                    rgb = np.tile(col, (CELL_H, CELL_W, 1))
-                else:
-                    # ★ 四个变体 = **2:1 定形窗 + 四个错开相位**，⛔ 不再旋转、⛔ 不再按 lod 缩窗。
-                    # ⚠ 旧式 `side=min(w,h)//2**lod` + 角窗对**正方源在 lod0 必然退化**
-                    #   （ox=oy=0 ⇒ v0 与 v3 逐像素相同）；实测旧产物 8 类里 7 类 v0≡v3。
-                    # ⚠ 2:1 窗还消掉了「正方窗 resize 纵向压 2×、而 v1/v2 先转 90° 方向相反」
-                    #   造成的四片分裂成两种观感；512² 源取 240×120 是 1:1 像素、零重采样。
-                    wW = min(src.width, CELL_W)
-                    wH = min(src.height, max(1, wW // 2))
-                    px, py = PHASES[v]
-                    t = phase_crop(src, px, py, wW, wH)
-                    if (wW, wH) != (CELL_W, CELL_H):
-                        t = t.resize((CELL_W, CELL_H), Image.LANCZOS)
-                    base = np.asarray(t).astype(np.float32)
-                    lum = base.mean(2, keepdims=True) / 255.0
-                    rgb = np.clip(col * (0.62 + 0.76 * lum), 0, 255)
-                tile = np.dstack([rgb, mask * 255.0]).astype(np.uint8)
-                cx = (idx % GRID_COLS) * (CELL_W + GUTTER * 2) + GUTTER
-                cy = (idx // GRID_COLS) * (CELL_H + GUTTER * 2) + GUTTER
-                atlas.paste(Image.fromarray(tile, "RGBA"), (cx, cy))
-                cells.append({"id": idx, "kindId": kid, "kind": kind, "variant": v,
-                              "cn": e["cn"], "cell": [cx, cy, CELL_W, CELL_H],
-                              "source": tex_rel or "（纯色，无原版纹理）"})
-        p = os.path.join(d, "atlas-lod%d.png" % lod)
-        atlas.save(p)
-        json.dump({"schemaVersion": 1, "lod": lod, "cell": [CELL_W, CELL_H], "gutter": GUTTER,
-                   "gridCols": GRID_COLS, "variants": VARIANTS, "kinds": KINDS,
-                   "size": [ATLAS_W, ATLAS_H], "uv": "diamond-midpoints",
-                   "cells": cells},
-                  open(os.path.join(d, "atlas-lod%d.info.json" % lod), "w", encoding="utf-8"),
-                  ensure_ascii=False, indent=1)
-        print("  atlas-lod%d %dx%d（%d 粗类 × %d 变体 × %dx%d + %dpx 出血）" %
-              (lod, ATLAS_W, ATLAS_H, len(KINDS), VARIANTS, CELL_W, CELL_H, GUTTER))
+# ⚠ **图集烘焙已在 M2-B1 删除**：那是「8 粗类 × 4 变体的逐格菱形贴片」，是本仓**自创**的做法，
+#   与原版直接矛盾 —— 原版的地表底是「一块 10×10 格 + 一张 256² 底纹整数次 GL_REPEAT」
+#   （MAPORIGINAL-2D §1.4），画面上的颜色变化全部来自上层的 res_field 摆件与山体件。
+#   现在由 `build_ground.py` 出 `ground-base.png`。⛔ 别把逐格图集加回来。
+#   （连带删除的还有 diamond_mask / kind_style / PHASES / phase_crop / pack_atlas，
+#     以及 TEXTURE_OF 那七张 `tt_02` —— 它们驱动的 `_polygon_mask` 层在 S1 本来就一格不画，见 §1.7。）
 
 
 def main() -> int:
@@ -269,7 +123,6 @@ def main() -> int:
     print("烘焙内容包 %s（%dx%d，%d 类）" % (a.map, rows, cols, len(info["palette"])))
     bake_plate(d, rows, cols, cls, info)
     bake_minimap(d, a.map)
-    pack_atlas(d, info)
     print("→ %s" % d)
     return 0
 

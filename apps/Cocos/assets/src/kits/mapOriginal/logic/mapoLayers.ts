@@ -28,6 +28,8 @@ interface LayerGate {
 }
 
 export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
+    // ★ 地表底：**一块 10×10 格 + 一张底纹整数次 GL_REPEAT**（原版做法，MAPORIGINAL-2D §1.4）。
+    //   ⛔ 早先是「8 粗类 × 4 变体的逐格菱形贴片」——那是本仓自创的，M2-B1 已换掉。
     { id: "terrain", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
     // ⚠ 网格线：**尚未实现**（M1-B1 止血）。此前写着 implemented: true 而渲染器里一行都没有，
     //   违反本文件抬头立的规矩，还会向状态行与真机重放证据谎报。

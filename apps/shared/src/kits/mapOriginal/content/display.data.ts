@@ -2,7 +2,7 @@
  * mapOriginal **原版值空间**调色板 —— **生成物，⛔ 勿手改**。
  *
  * 由 `tools/maporiginal-assets/emit_display_palette.py` 从 `terrain.info.json` +
- * `atlas-lod0.info.json` 派生。显示层每格存的就是**原版 res 值**（1 平地；2..41 资源(类型=(v-2)//10、等级=(v-2)%10+1)；42..46 金矿 1..5 级；47 河流；48..61 山族 14 形的锚点（⛔ 无 56）；0 被多格地形覆盖）。
+ * 派生。显示层每格存的就是**原版 res 值**（1 平地；2..41 资源(类型=(v-2)//10、等级=(v-2)%10+1)；42..46 金矿 1..5 级；47 河流；48..61 山族 14 形的锚点（⛔ 无 56）；0 被多格地形覆盖）。
  *
  * ★ 一格长什么样完全由这个值查出来，⛔ 不掺随机/哈希：
  *   ① `MAPO_VALUE_KIND_ID[v]` → 粗类 id → 地表图集第几行（8 粗类 × 4 变体）；
@@ -28,8 +28,11 @@ export interface IMapoValueClass {
     readonly level?: number;
 }
 
-/** 粗类表：**次序即粗类 id**，与 `atlas-lod*.info.json` 的 `kinds` 逐项相等。 */
-export const MAPO_VALUE_KINDS: readonly string[] = ["plain", "resource", "gold", "river", "mountain", "grove", "scatter", "unknown"];
+/**
+ * 粗类表：**次序即粗类 id**。⚠ M2-B1 起它**只用于详情面板与远档着色**，
+ * ⛔ 不再对应任何图集行 —— 地表底已改成「一张底纹整数次 GL_REPEAT」。
+ */
+export const MAPO_VALUE_KINDS: readonly string[] = ["plain", "resource", "gold", "river", "scatter", "grove", "mountain", "unknown"];
 /** 资源类型编号 → 中文。⚠ 静态数据定不了真实置换，见模块头。 */
 export const MAPO_RES_TYPE_CN: readonly string[] = ["木", "铁", "石", "粮"];
 /** 原版值上界（含）。 */
@@ -705,7 +708,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
   {
     "id": 48,
     "kind": "scatter",
-    "kindId": 6,
+    "kindId": 4,
     "cn": "散落地物·48",
     "color": [
       130,
@@ -717,7 +720,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
   {
     "id": 49,
     "kind": "scatter",
-    "kindId": 6,
+    "kindId": 4,
     "cn": "散落地物·49",
     "color": [
       130,
@@ -729,7 +732,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
   {
     "id": 50,
     "kind": "scatter",
-    "kindId": 6,
+    "kindId": 4,
     "cn": "散落地物·50",
     "color": [
       130,
@@ -741,7 +744,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
   {
     "id": 51,
     "kind": "scatter",
-    "kindId": 6,
+    "kindId": 4,
     "cn": "散落地物·51",
     "color": [
       130,
@@ -837,7 +840,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
   {
     "id": 60,
     "kind": "mountain",
-    "kindId": 4,
+    "kindId": 6,
     "cn": "山地·60",
     "color": [
       123,
@@ -849,7 +852,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
   {
     "id": 61,
     "kind": "mountain",
-    "kindId": 4,
+    "kindId": 6,
     "cn": "山地·61",
     "color": [
       123,
@@ -865,7 +868,7 @@ export const MAPO_VALUE_BY_ID: ReadonlyMap<number, IMapoValueClass> =
     new Map(MAPO_VALUE_PALETTE.map((e) => [e.id, e]));
 
 /** 下标 = 原版值 → 粗类 id。**逐格热路径查这张表**，⛔ 不要查 Map。 */
-export const MAPO_VALUE_KIND_ID: readonly number[] = [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 6, 6, 6, 6, 5, 5, 5, 5, 7, 5, 5, 5, 4, 4];
+export const MAPO_VALUE_KIND_ID: readonly number[] = [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 4, 4, 4, 4, 5, 5, 5, 5, 7, 5, 5, 5, 6, 6];
 
 /** 下标 = 原版值 → RGB。远档着色与顶点色走它，⛔ 不要查 Map。 */
 export const MAPO_VALUE_COLORS: readonly (readonly [number, number, number])[] = [[137, 148, 100], [137, 148, 100], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [150, 152, 98], [176, 160, 100], [176, 160, 100], [176, 160, 100], [176, 160, 100], [176, 160, 100], [70, 120, 160], [130, 145, 98], [130, 145, 98], [130, 145, 98], [130, 145, 98], [95, 118, 80], [95, 118, 80], [95, 118, 80], [95, 118, 80], [120, 120, 120], [95, 118, 80], [95, 118, 80], [95, 118, 80], [123, 130, 126], [123, 130, 126]];

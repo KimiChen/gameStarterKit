@@ -18,7 +18,7 @@ import { CocosView } from "../../../view/CocosView";
 import { createSolidPlate } from "../../../view/uiPlate";
 import { MAPO_LOD_MAX, MAPO_MAP_COLS, MAPO_MAP_ROWS, mapoGrid2Pos } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import {
-    MAPO_VALUE_BY_ID, MAPO_VALUE_COLORS,
+    MAPO_VALUE_BY_ID,
 } from "../../../shared/kits/mapOriginal/content/display.data";
 import { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
 import { mapoInMapBand, mapoRootLocalToCamera } from "../logic/mapoCamera";
@@ -33,13 +33,12 @@ import {
     type MapoQuality,
     mapoDecorEnabledFor,
 } from "../logic/mapoSettings";
-import type { MapoRgb } from "../logic/mapoPalette";
 import { MapoViewportStencil } from "../logic/mapoViewport";
 import { MapoDecorRenderer } from "./MapoDecorRenderer";
+import { MapoGroundRenderer } from "./MapoGroundRenderer";
 import { MapoRegionRenderer } from "./MapoRegionRenderer";
 import { MapoRiverRenderer } from "./MapoRiverRenderer";
 import { MapoLabelRenderer } from "./MapoLabelRenderer";
-import { MapoMapRenderer } from "./MapoMapRenderer";
 import { MapoFarRenderer } from "./MapoFarRenderer";
 import { MapoMinimap } from "./MapoMinimap";
 import { loadMapoArt, type MapoArtResources } from "./MapoArtResources";
@@ -66,7 +65,9 @@ export class MapOriginalWorldView extends CocosView {
     private logic: MapOriginalWorldLogic | null = null;
     private world: Node | null = null;
     private selection: Node | null = null;
-    private renderer: MapoMapRenderer | null = null;
+    private renderer: MapoGroundRenderer | null = null;
+    /** 上一次建出来的地表块数。 */
+    private groundCount = 0;
     private decorRenderer: MapoDecorRenderer | null = null;
     private labelRenderer: MapoLabelRenderer | null = null;
     private farRenderer: MapoFarRenderer | null = null;
@@ -122,8 +123,7 @@ export class MapOriginalWorldView extends CocosView {
         this.buildSelection();
 
         // ⚠ 下标是**原版 res 值**，⛔ 不是 3 类通行层那份（拿原版值去查它会整片显示成「可走陆地」）
-        const base: MapoRgb[] = MAPO_VALUE_COLORS.map((c) => c as MapoRgb);
-        this.renderer = new MapoMapRenderer(this.world, null, base);
+        this.renderer = new MapoGroundRenderer(this.world, null);
         // ⚠ 兄弟序即绘制序：地表 → **河流** → 区域件（山林地貌）→ 逐格摆件（地物）→ 地名
         //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）
         this.riverRenderer = new MapoRiverRenderer(this.world, null);
@@ -155,7 +155,7 @@ export class MapOriginalWorldView extends CocosView {
             this.regionRenderer?.dispose();
             this.decorRenderer?.dispose();
             this.farRenderer?.dispose();
-            this.renderer = new MapoMapRenderer(this.world!, art, base);
+            this.renderer = new MapoGroundRenderer(this.world!, art);
             this.riverRenderer = new MapoRiverRenderer(this.world!, art);
             this.regionRenderer = new MapoRegionRenderer(this.world!, art);
             this.decorRenderer = new MapoDecorRenderer(this.world!, art);
@@ -432,7 +432,8 @@ export class MapOriginalWorldView extends CocosView {
             const cells: { row: number; col: number }[] = [];
             this.stencil.forEach(centre.row, centre.col, MAPO_MAP_ROWS, MAPO_MAP_COLS,
                 (row, col) => { cells.push({ row, col }); });
-            this.renderer?.render(l, cells);
+            // ★ 地表底：每块一个菱形 + 整数次 GL_REPEAT（原版做法，⛔ 不是逐格贴片）
+            this.groundCount = this.renderer?.render(cam.worldRect(1), true) ?? 0;
             // ⚠ 摆件在地表**之上**（兄弟序即绘制序），⛔ 不要反过来
             if (mapoLayerVisible("decor", cam.lod)) {
                 this.decorCount = this.decorRenderer?.render(l, cells) ?? 0;
@@ -445,6 +446,7 @@ export class MapOriginalWorldView extends CocosView {
             this.renderer?.clear();
             this.decorRenderer?.clear();
             this.farRenderer?.render(l);
+            this.groundCount = 0;
             this.decorCount = 0;
             this.visibleCount = 0;
         }
@@ -462,9 +464,11 @@ export class MapOriginalWorldView extends CocosView {
             const region = this.regionCount > 0 ? ` · 山林 ${this.regionCount}` : "";
             // ★ 水面片数：全图 3.1 万片，⛔ 掉到 0 说明 river-geo/rivers 两件没同时到位
             const river = this.riverCount > 0 ? ` · 水面 ${this.riverCount}` : "";
+            // ★ 地表块数：⛔ 掉到 0 说明 ground-base.png 没到位（整层不建）
+            const ground = near ? ` · 地表 ${this.groundCount}` : "";
             this.status.string =
                 `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}`
-                + `${decor}${region}${river}`;
+                + `${ground}${decor}${region}${river}`;
         }
         // ⚠ 置灰与高亮是**两件事**：enabled 决定能不能点（文字变灰），on 决定当前选中（底板变亮）
         for (const chip of this.chips) {

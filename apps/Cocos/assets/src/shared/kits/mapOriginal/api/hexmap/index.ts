@@ -315,72 +315,19 @@ export interface IMapoTerrain {
 // ⚠ 这些数是**契约**：打包脚本按它摆格，客户端按它算 UV，⛔ 两边必须同改。
 //   `apps/server/test/mapOriginal-content.test.ts` 拿 kit 数据目录里的 atlas-lod*.info.json
 //   逐格比对，漂了就红 —— 否则 UV 整体错格，屏幕上是「地形对不上颜色」这种很难查的症状。
-// ⚠ 格与格之间留出血带并复制边缘像素：菱形四个顶点正好落在图集格**四条边的中点**上，
-//   双线性采样会跨到隔壁格。⛔ 不靠 UV 内缩解决（内缩会把画面往里压，菱形边缘少一圈）。
-
-/** 单格画布（像素）。 */
-export const MAPO_ATLAS_CELL_W = 240;
-export const MAPO_ATLAS_CELL_H = 120;
-/** 格与格之间的出血带（像素，四周都有）。 */
-export const MAPO_ATLAS_GUTTER = 4;
-/** 每行几格；id = 行×列数 + 列。 */
-export const MAPO_ATLAS_COLS = 8;
-/**
- * 每个**粗类**在图集里有几个**变体片**。
- * ⚠ 存在的理由：同一张片复制上千遍时整片地读作「铺地砖」而不是连续地貌。
- *   四个变体取的是**同一张源纹理**的四个**错开相位**的 2:1 定形窗（`bake_content.py` 的 `PHASES`），
- *   ⛔ 不再旋转、⛔ 不再按 lod 缩窗 —— 旧式角窗对正方源在 LOD0 必然退化（v0 与 v3 逐像素相同）。
- * ⚠ 图集格 id = `kindId * MAPO_ATLAS_VARIANTS + variant`。
- */
-export const MAPO_ATLAS_VARIANTS = 4;
-
-/**
- * **粗类** + 变体 → 图集格 id。
+/*
+ * ⚠ **地表图集整套已在 M2-B1 删除**（`MAPO_ATLAS_*` / `mapoAtlasCellId` / `mapoAtlasCellRect`
+ *   / `mapoAtlasUv` / `mapoTileVariant`）。
  *
- * ⚠ 这里的第一个参数是**粗类 id**（`MAPO_VALUE_KINDS` 的下标：plain/resource/gold/river/
- *   mountain/grove/scatter/unknown），⛔ 不是原版 res 值 —— 原版 61 个值铺不进 8×4 的图集，
- *   而且值里的「等级」差别在**摆件层**（逐格 res_field）体现，地表这层只需垫底色调。
- *   值 → 粗类走 `MAPO_VALUE_KIND_ID[value]`。
- */
-export function mapoAtlasCellId(kindId: number, variant: number): number {
-    return kindId * MAPO_ATLAS_VARIANTS + (((variant % MAPO_ATLAS_VARIANTS) + MAPO_ATLAS_VARIANTS)
-        % MAPO_ATLAS_VARIANTS);
-}
-/** 图集尺寸。⚠ 取 2 的幂：NPOT 贴图在 WebGL1 上不能开 mipmap / repeat。 */
-export const MAPO_ATLAS_W = 2048;
-export const MAPO_ATLAS_H = 1024;
-/** 有图集的档位（地表层门控 hideAtLod:2 ⇒ LOD3 起改用整幅底图，⛔ 没有 atlas-lod3）。 */
-export const MAPO_ATLAS_LODS: readonly number[] = Object.freeze([0, 1, 2]);
-
-/** 第 id 格在图集里的像素矩形 [x, y, w, h]。 */
-export function mapoAtlasCellRect(terrainId: number): readonly [number, number, number, number] {
-    const row = Math.floor(terrainId / MAPO_ATLAS_COLS), col = terrainId % MAPO_ATLAS_COLS;
-    return [
-        MAPO_ATLAS_GUTTER + col * (MAPO_ATLAS_CELL_W + MAPO_ATLAS_GUTTER * 2),
-        MAPO_ATLAS_GUTTER + row * (MAPO_ATLAS_CELL_H + MAPO_ATLAS_GUTTER * 2),
-        MAPO_ATLAS_CELL_W, MAPO_ATLAS_CELL_H,
-    ];
-}
-/**
- * 逐格的图集取样变体（0..3，bit0 = 横向翻转、bit1 = 纵向翻转）。
+ * 它实现的是「8 粗类 × 4 变体的**逐格菱形贴片**」—— 那是本仓**自创**的做法，与原版直接矛盾：
+ * 原版的地表底是「**一块 10×10 格 + 一张 256² 底纹整数次 GL_REPEAT**」，UV 世界轴对齐、
+ * 底纹**不跟着菱形转**，观感是「一整张连续的大地毯被菱形裁出来」
+ * （docs/MAPORIGINAL-2D.md §1.4/§1.5）。整张 S1 的底就是**一张** `underground1`，
+ * 画面上的颜色变化**全部来自上层的 res_field 摆件与山体件**。
  *
- * ⚠ 存在的理由：每格采样的是**同一张源纹理**（一个粗类一张），不做变化的话整片地就是同一块
- * 复制上千遍，屏幕上读作「铺地砖」而不是连续地貌（真机 run 16 实证）。格是 240×120。
- * 翻转不需要额外美术、不破坏菱形几何，对草地/林冠/岩纹这类**各向同性**的纹理效果最好。
- * ⚠ 必须是**位置的纯函数**：同一格每帧要给出同一个变体，⛔ 不能用随机数，否则平移时会闪。
+ * 现在走 `content/ground.data.ts` 的 `MAPO_GROUND_*` 与客户端 `logic/mapoGround.ts`。
+ * ⛔ 别把逐格图集加回来；「四个变体避免铺地砖感」那套理由随之失效 —— REPEAT 本来就连续。
  */
-export function mapoTileVariant(row: number, col: number): number {
-    // 小整数混洗：乘质数 + 异或高位，低两位够用且在相邻格之间跳得开
-    let h = (row * 73856093) ^ (col * 19349663);
-    h = (h ^ (h >>> 13)) * 1274126177;
-    return (h ^ (h >>> 16)) & 3;
-}
-
-/** 第 id 格的归一化 UV [u0, v0, uw, vh]。⚠ v 原点在**上**（与 buildMapoDiamondMesh 一致）。 */
-export function mapoAtlasUv(terrainId: number): readonly [number, number, number, number] {
-    const [x, y, w, h] = mapoAtlasCellRect(terrainId);
-    return [x / MAPO_ATLAS_W, y / MAPO_ATLAS_H, w / MAPO_ATLAS_W, h / MAPO_ATLAS_H];
-}
 
 export const MAPO_TERRAIN_HEADER_BYTES = 8;
 

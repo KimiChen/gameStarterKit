@@ -30,11 +30,15 @@ export const MAPO_RIVER_FILL_ASSET = "kits/mapOriginal/maps/s1/river-fill";
 export const MAPO_RIVER_GEO_ASSET = "kits/mapOriginal/maps/s1/river-geo";
 /** 河流层：摆放表。 */
 export const MAPO_RIVERS_ASSET = "kits/mapOriginal/maps/s1/rivers";
+/** 地表底纹（256² POT，wrap = REPEAT）。⛔ 不进图集：图集里没法 GL_REPEAT。 */
+export const MAPO_GROUND_BASE_ASSET = "kits/mapOriginal/maps/s1/ground-base";
 export const MAPO_MINIMAP_ASSET = "kits/mapOriginal/maps/s1/minimap";
-/** 近档地表图集。⚠ 只有 LOD0/1/2 有（门控 hideAtLod:2），⛔ 没有 atlas-lod3。 */
-export function mapoAtlasAsset(lod: number): string {
-    return `kits/mapOriginal/maps/s1/atlas-lod${lod}`;
-}
+/*
+ * ⚠ 这里**故意没有**近档地表图集（M2-B1 删除）：那是「8 粗类 × 4 变体的逐格菱形贴片」，
+ *   是本仓**自创**的做法，与原版直接矛盾 —— 原版的地表底是「一块 10×10 格 + 一张底纹
+ *   整数次 GL_REPEAT」（MAPORIGINAL-2D §1.4），画面上的颜色变化全部来自上层的
+ *   res_field 摆件与山体件。现在走 `MAPO_GROUND_BASE_ASSET`。⛔ 别把逐格图集加回来。
+ */
 
 export function mapoPlateBounds(): IMapoWorldBounds {
     return mapoWorldBounds();

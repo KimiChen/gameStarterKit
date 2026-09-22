@@ -18,20 +18,8 @@ export interface MapoGeometry {
     readonly minPos: readonly [number, number, number];
     readonly maxPos: readonly [number, number, number];
 }
-export interface MapoQuadInput {
-    readonly row: number;
-    readonly col: number;
-    /** 图集格（左上 u,v 与宽高，均为 0..1）；不贴图就传 null。 */
-    readonly uv: readonly [number, number, number, number] | null;
-    /** 取样变体 0..3（bit0 横翻 / bit1 纵翻），打散"每格同一块纹理"的铺地砖感。默认 0。 */
-    readonly flip?: number;
-    readonly rgba: readonly [number, number, number, number];
-}
-
 /** Uint16 索引上限 ⇒ 单个 mesh 的四边形数硬顶。超了必须拆 mesh。 */
 export const MAPO_MAX_QUADS_PER_MESH = 16_383;
-/** 菱形四边中点的 UV（配合图集格的 2:1 尺寸）。 */
-const DIAMOND_UV: readonly (readonly [number, number])[] = [[0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]];
 
 /** 画家序比较：先 (row+col)，再 (row−col)。⛔ 两者都要，否则同一条斜线上的次序不稳定。 */
 export function mapoPainterCompare(a: { row: number; col: number }, b: { row: number; col: number }): number {
@@ -40,63 +28,10 @@ export function mapoPainterCompare(a: { row: number; col: number }, b: { row: nu
     return (a.row - a.col) - (b.row - b.col);
 }
 
-/**
- * 把一批格铺成一张 mesh。入参会被就地排序成画家序。
- * 半像素内缩沿**对角**边法线收（⛔ 不是轴向），否则图集相邻格会渗色。
+/*
+ * ⚠ **逐格菱形贴片 `buildMapoDiamondMesh` 已在 M2-B1 删除**：地表底改成「一块 10×10 格 +
+ *   一张底纹整数次 GL_REPEAT」（`buildMapoGroundMesh`），⛔ 别把逐格贴片加回来。
  */
-export function buildMapoDiamondMesh(quads: MapoQuadInput[], inset = 0): MapoGeometry {
-    if (quads.length > MAPO_MAX_QUADS_PER_MESH) {
-        throw new RangeError(`SGZZ mesh quads ${quads.length} > ${MAPO_MAX_QUADS_PER_MESH}`);
-    }
-    quads.sort(mapoPainterCompare);
-    const n = quads.length;
-    const positions = new Float32Array(n * 4 * 3);
-    const uvs = new Float32Array(n * 4 * 2);
-    const colors = new Float32Array(n * 4 * 4);
-    const indices16 = new Uint16Array(n * 6);
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    for (let i = 0; i < n; i += 1) {
-        const q = quads[i];
-        const c = mapoGrid2Pos(q.row, q.col);
-        const hw = MAPO_TILE_HALF_W, hh = MAPO_TILE_HALF_H;
-        // N, E, S, W
-        const pts: readonly (readonly [number, number])[] = [
-            [c.x, c.y + hh], [c.x + hw, c.y], [c.x, c.y - hh], [c.x - hw, c.y],
-        ];
-        for (let v = 0; v < 4; v += 1) {
-            const px = pts[v][0], py = pts[v][1];
-            positions[(i * 4 + v) * 3] = px;
-            positions[(i * 4 + v) * 3 + 1] = py;
-            positions[(i * 4 + v) * 3 + 2] = 0;
-            if (px < minX) minX = px;
-            if (px > maxX) maxX = px;
-            if (py < minY) minY = py;
-            if (py > maxY) maxY = py;
-
-            if (q.uv) {
-                const [u0, v0, uw, vh] = q.uv;
-                // ⚠ 翻转在**格内归一化**坐标上做（镜像 0.5），⛔ 不能翻整张图集，否则会采到隔壁格
-                const flip = q.flip ?? 0;
-                const su = (flip & 1) ? 1 - DIAMOND_UV[v][0] : DIAMOND_UV[v][0];
-                const sv = (flip & 2) ? 1 - DIAMOND_UV[v][1] : DIAMOND_UV[v][1];
-                // 朝格中心收 inset 比例，等价于沿四条对角边的法线内缩
-                const du = (su - 0.5) * (1 - inset) + 0.5;
-                const dv = (sv - 0.5) * (1 - inset) + 0.5;
-                uvs[(i * 4 + v) * 2] = u0 + du * uw;
-                uvs[(i * 4 + v) * 2 + 1] = v0 + dv * vh;
-            }
-            for (let k = 0; k < 4; k += 1) colors[(i * 4 + v) * 4 + k] = q.rgba[k];
-        }
-        const base = i * 4;
-        indices16.set([base, base + 1, base + 2, base, base + 2, base + 3], i * 6);
-    }
-    if (n === 0) { minX = minY = maxX = maxY = 0; }
-    return {
-        positions, uvs, colors, indices16, quads: n,
-        minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0],
-    };
-}
 
 /** 一张整幅底图的四边形（远档用）。 */
 export function buildMapoPlateMesh(bounds: { minX: number; minY: number; maxX: number; maxY: number },
@@ -392,5 +327,59 @@ export function buildMapoPolygonMesh(polys: MapoPolygonInput[]): MapoGeometry {
     if (vAt === 0) { minX = minY = maxX = maxY = 0; }
     // ⚠ `quads` 在多边形网格里没有意义，按「索引数 / 6」折算只为让上传路径统一
     return { positions, uvs, colors, indices16, quads: Math.ceil(ni / 6),
+             minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
+}
+
+/** 一块地表底（菱形 + 逐顶点 UV）。 */
+export interface MapoGroundInput {
+    /** 画家序键。 */
+    readonly key: number;
+    /** 块几何中心的世界坐标。 */
+    readonly x: number;
+    readonly y: number;
+    readonly halfW: number;
+    readonly halfH: number;
+    /** W / N / E / S 四角的 UV（wrap = REPEAT，**值会大于 1**）。 */
+    readonly uv: readonly (readonly [number, number])[];
+}
+
+/**
+ * 地表底合批：每块一个菱形、四角带**大于 1 的 UV**（靠 `GL_REPEAT` 平铺）。
+ * ⚠ 顶点序与 `buildMapoDiamondMesh` 一致（N/E/S/W），⛔ 别改成 W/N/E/S，
+ *   否则两个三角形会自交。UV 表按 W/N/E/S 给（与原版 `GROUND_PIC_TBL` 同序），这里换序取。
+ */
+export function buildMapoGroundMesh(blocks: readonly MapoGroundInput[]): MapoGeometry {
+    const n = Math.min(blocks.length, MAPO_MAX_QUADS_PER_MESH);
+    const positions = new Float32Array(n * 12);
+    const uvs = new Float32Array(n * 8);
+    const colors = new Float32Array(n * 16);
+    const indices16 = new Uint16Array(n * 6);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    // 原版 GROUND_PIC_TBL 的次序是 W/N/E/S；顶点按 N/E/S/W 走 ⇒ 取 UV 时换序
+    const ORDER = [1, 2, 3, 0];
+    for (let i = 0; i < n; i += 1) {
+        const b = blocks[i];
+        const pts: readonly (readonly [number, number])[] = [
+            [b.x, b.y + b.halfH], [b.x + b.halfW, b.y], [b.x, b.y - b.halfH], [b.x - b.halfW, b.y],
+        ];
+        for (let v = 0; v < 4; v += 1) {
+            const px = pts[v][0], py = pts[v][1];
+            positions[(i * 4 + v) * 3] = px;
+            positions[(i * 4 + v) * 3 + 1] = py;
+            positions[(i * 4 + v) * 3 + 2] = 0;
+            const uv = b.uv[ORDER[v]];
+            uvs[(i * 4 + v) * 2] = uv[0];
+            uvs[(i * 4 + v) * 2 + 1] = uv[1];
+            for (let k = 0; k < 4; k += 1) colors[(i * 4 + v) * 4 + k] = 1;
+            if (px < minX) minX = px;
+            if (px > maxX) maxX = px;
+            if (py < minY) minY = py;
+            if (py > maxY) maxY = py;
+        }
+        const base = i * 4;
+        indices16.set([base, base + 1, base + 2, base, base + 2, base + 3], i * 6);
+    }
+    if (n === 0) { minX = minY = maxX = maxY = 0; }
+    return { positions, uvs, colors, indices16, quads: n,
              minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
 }

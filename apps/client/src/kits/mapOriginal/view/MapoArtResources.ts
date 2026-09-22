@@ -6,11 +6,10 @@
  */
 import { BufferAsset, Texture2D, resources } from "cc";
 import {
-    MAPO_DECOR_ATLAS_ASSET, MAPO_MINIMAP_ASSET, MAPO_REGIONS_ASSET, MAPO_REGION_ATLAS_ASSET,
-    MAPO_RIVERS_ASSET, MAPO_RIVER_FILL_ASSET, MAPO_RIVER_GEO_ASSET,
-    MAPO_TERRAIN_ASSET, mapoAtlasAsset, mapoPlateAsset,
+    MAPO_DECOR_ATLAS_ASSET, MAPO_GROUND_BASE_ASSET, MAPO_MINIMAP_ASSET, MAPO_REGIONS_ASSET,
+    MAPO_REGION_ATLAS_ASSET, MAPO_RIVERS_ASSET, MAPO_RIVER_FILL_ASSET, MAPO_RIVER_GEO_ASSET,
+    MAPO_TERRAIN_ASSET, mapoPlateAsset,
 } from "../logic/mapoFar";
-import { MAPO_ATLAS_LODS } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
 export interface MapoArtResources {
     readonly plate4: Texture2D | null;
@@ -18,8 +17,11 @@ export interface MapoArtResources {
     readonly minimap: Texture2D | null;
     /** 16 类地形显示层。⚠ 缺席不致命：`mapoTerrain` 会退回 4 类通行层。 */
     readonly terrain: BufferAsset | null;
-    /** 近档地表图集，下标 = LOD。缺席则退回平涂顶点色。 */
-    atlasFor(lod: number): Texture2D | null;
+    /**
+     * 地表底纹（256² POT，整数次 GL_REPEAT 铺满一块 10×10 格）。
+     * ⚠ 缺席则地表底整层不建 —— ⛔ 不用纯色菱形占位（那正是 M2-B1 换掉的自创做法）。
+     */
+    readonly groundBase: Texture2D | null;
     /** 摆件图集（原版切片打包）。⚠ 缺席则整层不建，⛔ 不用纯色方块占位。 */
     readonly decorAtlas: Texture2D | null;
     /** 多格地形的区域件图集（山脉 / 林丛 / 散落）。 */
@@ -57,9 +59,8 @@ function loadBuffer(path: string): Promise<BufferAsset | null> {
 }
 
 export async function loadMapoArt(): Promise<MapoArtResources> {
-    const atlasLods = MAPO_ATLAS_LODS;
-    const [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill,
-           terrain, regions, riverGeo, rivers, ...atlases] =
+    const [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill, groundBase,
+           terrain, regions, riverGeo, rivers] =
         await Promise.all([
             loadTexture(mapoPlateAsset(4)),
             loadTexture(mapoPlateAsset(5)),
@@ -67,24 +68,21 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             loadTexture(MAPO_DECOR_ATLAS_ASSET),
             loadTexture(MAPO_REGION_ATLAS_ASSET),
             loadTexture(MAPO_RIVER_FILL_ASSET),
+            loadTexture(MAPO_GROUND_BASE_ASSET),
             loadBuffer(MAPO_TERRAIN_ASSET),
             loadBuffer(MAPO_REGIONS_ASSET),
             loadBuffer(MAPO_RIVER_GEO_ASSET),
             loadBuffer(MAPO_RIVERS_ASSET),
-            ...atlasLods.map((lod) => loadTexture(mapoAtlasAsset(lod))),
         ]);
-    const byLod = new Map<number, Texture2D | null>();
-    atlasLods.forEach((lod, i) => byLod.set(lod, atlases[i] ?? null));
     let released = false;
     return {
         plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
-        riverFill, riverGeo, rivers,
-        atlasFor: (lod) => byLod.get(lod) ?? null,
+        riverFill, riverGeo, rivers, groundBase,
         release() {
             if (released) return;
             released = true;
             for (const a of [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill,
-                             ...atlases]) a?.decRef();
+                             groundBase]) a?.decRef();
             terrain?.decRef();
             regions?.decRef();
             riverGeo?.decRef();
