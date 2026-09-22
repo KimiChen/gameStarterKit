@@ -44,6 +44,7 @@ function stampTabs(
     selected: string,
     itemWidth: number,
     gap: number,
+    padLeft: number,
 ): readonly TabBarRow[] {
     const rows: TabBarRow[] = [];
     const stride = itemWidth + gap;
@@ -57,7 +58,7 @@ function stampTabs(
             badge: item.badge ?? 0,
             notice: item.notice === true,
             active: item.id === selected,
-            left: i * stride,
+            left: padLeft + i * stride,
             index: i,
         });
         i += 1;
@@ -80,12 +81,17 @@ export const TabBar = defineComponent<TabBarProps>((p) => {
     const noticeSource = p.noticeSource;
     const badgeTopOverride = p.badgeTop;
     const activeTop = skin.activeTop ?? p.theme?.tab.activeTop ?? activeTheme.tab.activeTop;
+    const activeLeft = skin.activeLeft ?? p.theme?.tab.activeLeft ?? activeTheme.tab.activeLeft;
+    const activeWidth = skin.activeWidth ?? p.theme?.tab.activeWidth ?? activeTheme.tab.activeWidth;
     const idleHeight = skin.height ?? p.theme?.tab.height ?? activeTheme.tab.height;
     const selectedHeight = skin.activeHeight ?? p.theme?.tab.activeHeight ?? activeTheme.tab.activeHeight;
     const badgeIdleTop = p.badgeTop ?? skin.badgeTop ?? p.theme?.tab.badgeTop ?? activeTheme.tab.badgeTop;
     const liftPad = activeTop < 0 ? -activeTop : 0;
     const badgePad = badgeIdleTop < 0 ? -badgeIdleTop : 0;
     const padTop = liftPad < badgePad ? badgePad : liftPad;
+    const overhangLeft = activeLeft < 0 ? -activeLeft : 0;
+    const rightExtra = activeLeft + activeWidth;
+    const overhangRight = rightExtra > 0 ? rightExtra : 0;
     const idleBar = padTop + idleHeight;
     const activeBarTop = padTop + (activeTop < 0 ? activeTop : 0);
     const activeBar = (activeBarTop < 0 ? 0 : activeBarTop) + selectedHeight;
@@ -94,9 +100,9 @@ export const TabBar = defineComponent<TabBarProps>((p) => {
     const barTop = top - padTop;
     const chipTop = padTop;
     const count = items.length;
-    const contentWidth = count === 0 ? barWidth : count * itemWidth + (count - 1) * gap;
+    const contentWidth = count === 0 ? barWidth : overhangLeft + count * itemWidth + (count - 1) * gap + overhangRight;
     const innerWidth = contentWidth < barWidth ? barWidth : contentWidth;
-    const rows = useMemo(() => stampTabs(items, selected, itemWidth, gap), [items, selected, itemWidth, gap]);
+    const rows = useMemo(() => stampTabs(items, selected, itemWidth, gap, overhangLeft), [items, selected, itemWidth, gap, overhangLeft]);
     return (
         <scroll-view name="TabBar" direction="horizontal" inertia
             style={{ position: 'absolute', left: left, top: barTop, width: barWidth, height: barHeight }}>
