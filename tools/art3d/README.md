@@ -1,7 +1,8 @@
 # tools/art3d — SC0 合成灰盒
 
-当前交付 `greybox.py`；SC5 的 Unity 抽取、素材转换与离线 LOD 尚未实现。
-灰盒模型、动画和棋盘 PNG 由代码合成，不读取外部素材。生成器不写 `.meta`，不调用 Creator，
+当前交付 `greybox.py` 与隔离 Creator 作者态探针模板 `editor-probe/`；
+SC5 的 Unity 抽取、素材转换与离线 LOD 尚未实现。
+灰盒模型、动画和棋盘 PNG 由代码合成，B5 lightmap 由 Creator LightFX 烘焙，不读取外部素材。生成器不写 `.meta`，不调用 Creator，
 结构检查通过不表示 SC0-B2 的真实导入与 Prefab 加载已经通过。
 
 ## 隔离依赖与运行
@@ -46,6 +47,18 @@ manifest 的 `generatedAssets` 记录生成来源、SHA256、尺寸／面数／�
 实际 SC0 例外统一登记在 [sc0-asset-exceptions.json](sc0-asset-exceptions.json)，按精确路径、
 UUID 与文件 SHA 匹配；这份临时清单不是资产检查器。正式 `scripts/assets3d.config.json` 与
 SC1-B5 检查器尚未实现，后续按清单迁移，不能据此放宽业务资产规范。
+
+其中唯一采样例外是 `lightmaps/LightFX/output/LFX_Mesh_0000.png`：保留本次 Creator 3.8.8
+官方烘焙流程及默认导入得到的 `mipfilter:none`、`wrapModeS/T:repeat`。这不是 LightFX 对所有
+内容的采样规定；`min/mag:linear`、POT、尺寸预算和 lightmap 不压缩要求仍适用。
+例外同时钉 PNG、ImageAsset / Texture2D UUID、PNG 与 `.meta` SHA，不按目录或 `LFX_*` 前缀放行。
+
+当前 B5 对比范围仅为相机 `(7,7,7)` 看向 `(0,0.4,0)`、FOV 45、375×812 CSS / DPR 2 的固定距离。
+两个 128² 分配区域的 UV 变换覆盖 126²，起点分别为 `(1,1)` 与 `(129,1)` 个图集 texel；
+约 1 texel 的图块边界不证明 UV 岛内部或整条 mip 链有足够 padding。
+烘焙参数 `filter:true` 不等于生成 mipmap，整张图集的 clamp 也不解决内部图块串色。
+连续缩放、远距离与 mip 链保真尚未验证；修改采样或重新烘焙后须重核哈希、UV / padding、
+导入与独立预制画面对比。普通 3D 贴图继续开 mip，这个例外不能推广到其他 lightmap。
 
 ## Creator 3.8.8 导入与后续验收
 

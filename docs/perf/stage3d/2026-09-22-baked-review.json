@@ -1,0 +1,712 @@
+{
+  "schemaVersion": 1,
+  "kind": "stage3d-b5-two-context-acceptance-review",
+  "reviewDate": "2026-09-22",
+  "generatedAt": "2026-09-21T22:49:55.183Z",
+  "batch": "SC0-B5",
+  "runtimeEvidencePassed": true,
+  "visualReviewPassed": true,
+  "missingDependencyRecoveryPassed": true,
+  "batchComplete": true,
+  "b5Complete": true,
+  "sc0Exit": false,
+  "pending": [],
+  "scope": "Desktop Chrome 153 / Apple M4, real Creator 3.8.8 WebPipeline. Two independent fresh main-scene contexts load only stage3d/P_Stage3d_Baked; no runtime lights. This is not WeChat or mobile hardware evidence and does not close other SC0 gates.",
+  "integrity": {
+    "rawReportsUnchanged": true,
+    "recordedArtifactHashesRechecked": true,
+    "numericSummariesGeneratedBy": "tools/creator-preview/summarize-stage3d-baked.mjs",
+    "rawReportPendingPreserved": true,
+    "acceptanceIsSeparateReview": true
+  },
+  "sources": {
+    "extractReport": {
+      "file": ".cache/stage3d/editor-probe/result-extract-bake-001.json",
+      "sha256": "4db9485d8a13e86f0d4738ddadd2de113acfa0b6340f21317c6b714d47402e4a",
+      "bytes": 2926
+    },
+    "prefab": {
+      "file": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Baked.prefab",
+      "sha256": "fdfc33f7838f10720fa74a9ac86fa1852f6b852e59c1f0d16b7d980602063bf8",
+      "bytes": 6216,
+      "uuid": "6269db74-51e2-4ac9-9871-e7953553c576",
+      "resourcesPath": "stage3d/P_Stage3d_Baked",
+      "meta": {
+        "file": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Baked.prefab.meta",
+        "sha256": "ec4c1bcb04ac909be59ad9d992246b67944e60bf8de954a528822e942999ec08",
+        "bytes": 223
+      }
+    },
+    "mainScene": {
+      "file": "apps/Cocos/assets/scene.scene",
+      "sha256": "795edeef631993b13b0b9063468d52ae2149380800e3eba6092f654cad4d77a9",
+      "bytes": 8728,
+      "uuid": "33a6cd88-ca61-42f3-97e1-6b18a9096a34"
+    },
+    "authoringScene": {
+      "file": "apps/Cocos/assets/stage3d-bake-workbench.scene",
+      "sha256": "a84d49dd9ebebb2cad31e51585b27b32123afb9437c0d60e8b390f626d5443c4",
+      "bytes": 13229,
+      "uuid": "8dce5cae-b958-49a4-9e38-04555bdbd1f1"
+    },
+    "pngs": [
+      {
+        "file": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png",
+        "sha256": "a78228133b71946b2b44ef1011a49c7afb95f710fccc6eee629547be03fbd309",
+        "bytes": 18767,
+        "imageUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f",
+        "textureUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+        "width": 1024,
+        "height": 1024,
+        "mipfilter": "none",
+        "meta": {
+          "file": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png.meta",
+          "sha256": "9cebb5f031f311d7a074cf5f592d776a9591d40f610b8dd2ad6ea962834f7a68",
+          "bytes": 983
+        }
+      }
+    ],
+    "meshDependencies": [
+      {
+        "node": "Plane",
+        "meshUuid": "5f994f93-0805-43cd-a032-3efe875c7ccb@02e92",
+        "hasUv2": true,
+        "bakeable": true,
+        "materialUuids": [
+          "5f994f93-0805-43cd-a032-3efe875c7ccb@2012d"
+        ],
+        "uvParam": [
+          0.0009765625,
+          0.0009765625,
+          0.123046875,
+          1
+        ],
+        "textureUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+        "imageUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f",
+        "pngSha256": "a78228133b71946b2b44ef1011a49c7afb95f710fccc6eee629547be03fbd309"
+      },
+      {
+        "node": "Cube",
+        "meshUuid": "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@b5d26",
+        "hasUv2": true,
+        "bakeable": true,
+        "materialUuids": [
+          "48d8e4a8-bbf2-44d6-9090-d2cd8de55c8b@2012d"
+        ],
+        "uvParam": [
+          0.1259765625,
+          0.0009765625,
+          0.123046875,
+          1
+        ],
+        "textureUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+        "imageUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f",
+        "pngSha256": "a78228133b71946b2b44ef1011a49c7afb95f710fccc6eee629547be03fbd309"
+      }
+    ]
+  },
+  "bake": {
+    "report": {
+      "file": ".cache/stage3d/editor-probe/bake-b5-001.json",
+      "sha256": "be558d18d883dff38846a2463194722a49742172dccd8de8ec460f9529ac910e",
+      "bytes": 2939
+    },
+    "events": {
+      "file": ".cache/stage3d/editor-probe/bake-b5-001.events.jsonl",
+      "sha256": "247b558f6c5934c85305a8069666e6a0f4d77b65702f35a27383dd7c95a65eec",
+      "bytes": 1577
+    },
+    "terminalEvent": "lightmap:end",
+    "terminalObservedAt": "2026-09-21T21:51:29.111Z",
+    "eventCount": 11,
+    "applyPromiseState": "resolved",
+    "note": "Actual lightmap:end plus exported/runtime dependency checks support this review; Promise resolution alone is not completion."
+  },
+  "author": {
+    "report": {
+      "file": "docs/evidence/creator-2026-09-22/stage3d-baked-author/report.json",
+      "sha256": "8671ea6face8bb750f22141f14558a561bd071cdb603878404130aac40eab5a0",
+      "bytes": 1006
+    },
+    "screenshot": {
+      "file": "docs/evidence/creator-2026-09-22/stage3d-baked-author/author.png",
+      "sha256": "ac724872b7359cd49c764e4b05590c40891a4e1bed24a2b87217c9d0818fa645",
+      "bytes": 196377
+    },
+    "sceneUuid": "8dce5cae-b958-49a4-9e38-04555bdbd1f1",
+    "afterDrawFrames": 120
+  },
+  "contexts": [
+    {
+      "webgl": 2,
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl2-final/report.json",
+        "sha256": "97830f4a3ff1bd54d02a5a12817e57181d604f1f951896dae68baf0eb12ebf8d",
+        "bytes": 1402978
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-baked.json",
+        "sha256": "4b2af33c366d9c0ad97bb904e337ae1fd7237421b5cc52efb2d58ecf0e920598",
+        "bytes": 110780
+      },
+      "executedOk": true,
+      "sourceExitCode": 2,
+      "sourcePending": [
+        "Review the authored/reference and independent-runtime screenshots for preserved baked lighting and shadow appearance.",
+        "The other WebGL context requires its own fresh run; this report only requests WebGL 2."
+      ],
+      "startedAt": "2026-09-21T22:44:18.962Z",
+      "finishedAt": "2026-09-21T22:45:06.401Z",
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "platform": "MacIntel",
+        "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "bootStartedAtEpochMs": 1790030659171,
+        "webgl": 2,
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGL2Device",
+        "pipeline": "WebPipeline",
+        "width": 375,
+        "height": 812,
+        "dpr": 2,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624
+        }
+      },
+      "previewBinding": {
+        "project": "/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/apps/Cocos",
+        "pid": 87110,
+        "previewPort": 7457,
+        "command": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/MacOS/CocosCreator --project /Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/apps/Cocos --home /Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/.cache/stage3d/creator-home --user-data-dir=/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/.cache/stage3d/creator-user-data --remote-debugging-port=9233 --remote-debugging-address=127.0.0.1",
+        "readyFile": "/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/.cache/stage3d/editor-probe/ready.json",
+        "readySha256": "2f780b24fdf08e7e071730c96105d8833016e42c9edebc71284d35bafa53b6d0"
+      },
+      "firstLoad": {
+        "sampleFrames": 600,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.899999976158142,
+          "p95Ms": 33.40000009536743,
+          "maxMs": 40.10000002384186,
+          "meanMs": 18.748500000039737
+        },
+        "gfxPeak": {
+          "drawCalls": 33,
+          "triangles": 492,
+          "instances": 0,
+          "bufferBytes": 70432,
+          "textureBytes": 42645060,
+          "totalBytes": 42715492
+        },
+        "state": {
+          "businessRefs": 1,
+          "instanceNodes": 3,
+          "sceneNodes": 110,
+          "runtimeLights": 0,
+          "gfx": {
+            "bufferBytes": 70432,
+            "textureBytes": 42645060,
+            "drawCalls": 33,
+            "triangles": 492,
+            "instances": 0
+          }
+        }
+      },
+      "steady": {
+        "warmupFrames": 60,
+        "sampleFrames": 240,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.600000023841858,
+          "p95Ms": 18.700000047683716,
+          "maxMs": 19.5,
+          "meanMs": 16.682500000298024
+        },
+        "gfxPeak": {
+          "drawCalls": 33,
+          "triangles": 492,
+          "instances": 0,
+          "bufferBytes": 70432,
+          "textureBytes": 42645060,
+          "totalBytes": 42715492
+        },
+        "state": {
+          "businessRefs": 1,
+          "instanceNodes": 3,
+          "sceneNodes": 110,
+          "runtimeLights": 0,
+          "gfx": {
+            "bufferBytes": 70432,
+            "textureBytes": 42645060,
+            "drawCalls": 33,
+            "triangles": 492,
+            "instances": 0
+          }
+        }
+      },
+      "lifecycle": {
+        "observedCycles": 20,
+        "allCyclesPassed": true,
+        "openedPrefabBusinessRefs": {
+          "min": 1,
+          "max": 1
+        },
+        "openedPrefabNodes": {
+          "min": 3,
+          "max": 3
+        },
+        "openedMeshCount": {
+          "min": 2,
+          "max": 2
+        },
+        "closedBusinessRefs": {
+          "min": 0,
+          "max": 0
+        },
+        "closedInstanceNodes": {
+          "min": 0,
+          "max": 0
+        },
+        "closedSceneNodes": {
+          "min": 107,
+          "max": 107
+        },
+        "closedBufferBytes": {
+          "min": 66924,
+          "max": 66924
+        },
+        "closedTextureBytes": {
+          "min": 38428912,
+          "max": 38428912
+        },
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0,
+        "baseline": {
+          "businessRefs": 0,
+          "instanceNodes": 0,
+          "sceneNodes": 107,
+          "runtimeLights": 0,
+          "gfx": {
+            "bufferBytes": 66924,
+            "textureBytes": 38428912,
+            "drawCalls": 31,
+            "triangles": 478,
+            "instances": 0
+          }
+        },
+        "cleanup": {
+          "cameraDestroyed": true,
+          "remainingNodes": 106,
+          "closed": {
+            "businessRefs": 0,
+            "instanceNodes": 0,
+            "sceneNodes": 107,
+            "runtimeLights": 0,
+            "gfx": {
+              "bufferBytes": 66924,
+              "textureBytes": 38428912,
+              "drawCalls": 31,
+              "triangles": 478,
+              "instances": 0
+            }
+          }
+        },
+        "cachePolicy": "Record stable engine high-water marks; no cache flushing or releaseAll is performed. The probe owns zero assets while closed."
+      },
+      "diagnostics": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 2,
+          "actualWebgl": 2,
+          "device": "WebGL2Device",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790030659171,
+          "firstFixtureLoadStartedAtEpochMs": 1790030661253
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790030661253,
+        "expectedBootDiagnostics": [],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "screenshots": {
+        "firstLoad": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl2-final/001-independent-first-load.png",
+          "sha256": "321b8c77476230b877d27b8eb640e435db4a6ff57e8deb7183a9d2391306bb9c",
+          "bytes": 197808
+        },
+        "steadyState": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl2-final/002-independent-steady-state.png",
+          "sha256": "45625ec79fccdc11cfbea5351b120c8ddc622894245035f4fa1b572e28c97b67",
+          "bytes": 196341
+        },
+        "closed": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl2-final/003-closed-prefab-reference-zero.png",
+          "sha256": "d451c2f29aeee026e8b279f195358a616e264d37ca112a40f8bf458c6c74a4f9",
+          "bytes": 95804
+        },
+        "authorCopy": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl2-final/authoring-reference.png",
+          "sha256": "ac724872b7359cd49c764e4b05590c40891a4e1bed24a2b87217c9d0818fa645",
+          "bytes": 196377
+        }
+      }
+    },
+    {
+      "webgl": 1,
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl1-final/report.json",
+        "sha256": "fdc0a8178a71ced9e014fd39aa64aae39b8a3d43b086053220a929fb405e0746",
+        "bytes": 1404359
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-baked-webgl1.json",
+        "sha256": "4735719ebe6c87ec6bda710dc99a29be9653521c36a01fa0d5056ba2b62f7b09",
+        "bytes": 111219
+      },
+      "executedOk": true,
+      "sourceExitCode": 2,
+      "sourcePending": [
+        "Review the authored/reference and independent-runtime screenshots for preserved baked lighting and shadow appearance.",
+        "The other WebGL context requires its own fresh run; this report only requests WebGL 1."
+      ],
+      "startedAt": "2026-09-21T22:45:33.491Z",
+      "finishedAt": "2026-09-21T22:46:21.737Z",
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "platform": "MacIntel",
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "bootStartedAtEpochMs": 1790030733905.4,
+        "webgl": 1,
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "width": 375,
+        "height": 812,
+        "dpr": 2,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624
+        }
+      },
+      "previewBinding": {
+        "project": "/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/apps/Cocos",
+        "pid": 87110,
+        "previewPort": 7457,
+        "command": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/MacOS/CocosCreator --project /Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/apps/Cocos --home /Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/.cache/stage3d/creator-home --user-data-dir=/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/.cache/stage3d/creator-user-data --remote-debugging-port=9233 --remote-debugging-address=127.0.0.1",
+        "readyFile": "/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/.cache/stage3d/editor-probe/ready.json",
+        "readySha256": "2f780b24fdf08e7e071730c96105d8833016e42c9edebc71284d35bafa53b6d0"
+      },
+      "firstLoad": {
+        "sampleFrames": 600,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.600000023841858,
+          "p95Ms": 18.800000071525574,
+          "maxMs": 40.799999952316284,
+          "meanMs": 16.67200000007947
+        },
+        "gfxPeak": {
+          "drawCalls": 33,
+          "triangles": 492,
+          "instances": 0,
+          "bufferBytes": 70432,
+          "textureBytes": 42645060,
+          "totalBytes": 42715492
+        },
+        "state": {
+          "businessRefs": 1,
+          "instanceNodes": 3,
+          "sceneNodes": 110,
+          "runtimeLights": 0,
+          "gfx": {
+            "bufferBytes": 70432,
+            "textureBytes": 42645060,
+            "drawCalls": 33,
+            "triangles": 492,
+            "instances": 0
+          }
+        }
+      },
+      "steady": {
+        "warmupFrames": 60,
+        "sampleFrames": 240,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 18.5,
+          "maxMs": 20.200000047683716,
+          "meanMs": 16.66624999990066
+        },
+        "gfxPeak": {
+          "drawCalls": 33,
+          "triangles": 492,
+          "instances": 0,
+          "bufferBytes": 70432,
+          "textureBytes": 42645060,
+          "totalBytes": 42715492
+        },
+        "state": {
+          "businessRefs": 1,
+          "instanceNodes": 3,
+          "sceneNodes": 110,
+          "runtimeLights": 0,
+          "gfx": {
+            "bufferBytes": 70432,
+            "textureBytes": 42645060,
+            "drawCalls": 33,
+            "triangles": 492,
+            "instances": 0
+          }
+        }
+      },
+      "lifecycle": {
+        "observedCycles": 20,
+        "allCyclesPassed": true,
+        "openedPrefabBusinessRefs": {
+          "min": 1,
+          "max": 1
+        },
+        "openedPrefabNodes": {
+          "min": 3,
+          "max": 3
+        },
+        "openedMeshCount": {
+          "min": 2,
+          "max": 2
+        },
+        "closedBusinessRefs": {
+          "min": 0,
+          "max": 0
+        },
+        "closedInstanceNodes": {
+          "min": 0,
+          "max": 0
+        },
+        "closedSceneNodes": {
+          "min": 107,
+          "max": 107
+        },
+        "closedBufferBytes": {
+          "min": 66924,
+          "max": 66924
+        },
+        "closedTextureBytes": {
+          "min": 38428912,
+          "max": 38428912
+        },
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0,
+        "baseline": {
+          "businessRefs": 0,
+          "instanceNodes": 0,
+          "sceneNodes": 107,
+          "runtimeLights": 0,
+          "gfx": {
+            "bufferBytes": 66924,
+            "textureBytes": 38428912,
+            "drawCalls": 31,
+            "triangles": 478,
+            "instances": 0
+          }
+        },
+        "cleanup": {
+          "cameraDestroyed": true,
+          "remainingNodes": 106,
+          "closed": {
+            "businessRefs": 0,
+            "instanceNodes": 0,
+            "sceneNodes": 107,
+            "runtimeLights": 0,
+            "gfx": {
+              "bufferBytes": 66924,
+              "textureBytes": 38428912,
+              "drawCalls": 31,
+              "triangles": 478,
+              "instances": 0
+            }
+          }
+        },
+        "cachePolicy": "Record stable engine high-water marks; no cache flushing or releaseAll is performed. The probe owns zero assets while closed."
+      },
+      "diagnostics": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 1,
+          "actualWebgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790030733905.4,
+          "firstFixtureLoadStartedAtEpochMs": 1790030738021
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790030738021,
+        "expectedBootDiagnostics": [
+          {
+            "index": 0,
+            "entry": {
+              "level": "error",
+              "at": 1790030734409,
+              "text": "This device does not support WebGL2"
+            },
+            "reason": "Exact Creator 3.8.8 WebGL2 initialization diagnostic occurred within the verified cold-boot window; requested WebGL1 subsequently initialized as WebGLDevice with WebPipeline"
+          }
+        ],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "screenshots": {
+        "firstLoad": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl1-final/001-independent-first-load.png",
+          "sha256": "4eb2e4744020d59fb39e97dba86fdcca08a9cfc9722e1f8c84931c3965776122",
+          "bytes": 198801
+        },
+        "steadyState": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl1-final/002-independent-steady-state.png",
+          "sha256": "fd2604a74ae114b362761f830827011611e916c7c362d2eeec045201e49489e9",
+          "bytes": 197716
+        },
+        "closed": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl1-final/003-closed-prefab-reference-zero.png",
+          "sha256": "14a58acac83f773467d901b6264a4dcda93c82d3ba69c4c57b2caafa9fd7e970",
+          "bytes": 95860
+        },
+        "authorCopy": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl1-final/authoring-reference.png",
+          "sha256": "ac724872b7359cd49c764e4b05590c40891a4e1bed24a2b87217c9d0818fa645",
+          "bytes": 196377
+        }
+      }
+    }
+  ],
+  "missingPng": {
+    "raw": {
+      "file": ".cache/stage3d/baked-missing-png-report-rebased.json",
+      "sha256": "3587752e16bee5f06911929b5d00b92dfcad7082d1edd44ec7c732250675e706",
+      "bytes": 23212
+    },
+    "passed": true,
+    "blockedUrl": "http://127.0.0.1:7457/assets/resources/native/bd/bd657e57-24eb-4e16-97ff-d326e5b7bf9f.png",
+    "blockedRequestCount": 1,
+    "blockedRequests": [
+      {
+        "url": "http://127.0.0.1:7457/assets/resources/native/bd/bd657e57-24eb-4e16-97ff-d326e5b7bf9f.png",
+        "at": "2026-09-21T22:39:44.019Z"
+      }
+    ],
+    "injection": "Root runner intercepted exactly the native PNG request with HTTP 404; source assets were not removed.",
+    "loadCallbackOutcome": "resolved; invalid lightmap dependency was detected by the runtime dimension assertion, not by a fabricated load callback error",
+    "observedFailure": "Plane: lightmap texture dimensions changed; imageUuid=bd657e57-24eb-4e16-97ff-d326e5b7bf9f; imageNativeUrl=\"assets/resources/native/bd/bd657e57-24eb-4e16-97ff-d326e5b7bf9f.png\"; expected=1024x1024; observed=2x2",
+    "failedMeshes": [
+      {
+        "node": "Plane",
+        "imageUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f",
+        "imageNativeUrl": "assets/resources/native/bd/bd657e57-24eb-4e16-97ff-d326e5b7bf9f.png",
+        "expectedWidth": 1024,
+        "expectedHeight": 1024,
+        "observedWidth": 2,
+        "observedHeight": 2
+      },
+      {
+        "node": "Cube",
+        "imageUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f",
+        "imageNativeUrl": "assets/resources/native/bd/bd657e57-24eb-4e16-97ff-d326e5b7bf9f.png",
+        "expectedWidth": 1024,
+        "expectedHeight": 1024,
+        "observedWidth": 2,
+        "observedHeight": 2
+      }
+    ],
+    "afterFailure": {
+      "businessRefs": 0,
+      "instanceNodes": 0,
+      "sceneNodes": 107,
+      "runtimeLights": 0,
+      "gfx": {
+        "bufferBytes": 66924,
+        "textureBytes": 38428912,
+        "drawCalls": 31,
+        "triangles": 478,
+        "instances": 0
+      }
+    },
+    "recovery": "Request interception removed, then the same Prefab loaded again.",
+    "recoveredMeshes": [
+      {
+        "node": "Plane",
+        "imageUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f",
+        "imageNativeUrl": "assets/resources/native/bd/bd657e57-24eb-4e16-97ff-d326e5b7bf9f.png",
+        "width": 1024,
+        "height": 1024,
+        "hasUv2": true,
+        "lightmapBound": true
+      },
+      {
+        "node": "Cube",
+        "imageUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f",
+        "imageNativeUrl": "assets/resources/native/bd/bd657e57-24eb-4e16-97ff-d326e5b7bf9f.png",
+        "width": 1024,
+        "height": 1024,
+        "hasUv2": true,
+        "lightmapBound": true
+      }
+    ],
+    "afterRecovery": {
+      "businessRefs": 0,
+      "instanceNodes": 0,
+      "sceneNodes": 107,
+      "runtimeLights": 0,
+      "gfx": {
+        "bufferBytes": 66924,
+        "textureBytes": 38428912,
+        "drawCalls": 31,
+        "triangles": 478,
+        "instances": 0
+      }
+    },
+    "cameraDestroyed": true,
+    "remainingNodes": 106
+  },
+  "visualReview": {
+    "status": "reviewed",
+    "reviewer": "root agent",
+    "source": "Root explicitly confirmed view_image review of author.png and both final/002-independent-steady-state.png files: WebGL2 with authoring in one comparison, then WebGL1. This artifact records that review; it does not claim an automated visual test.",
+    "finding": "Root confirmed matching geometry, checker UVs, corner color markers, baked light/shadow appearance and ground contact area across authoring, WebGL2 and WebGL1.",
+    "observedDifferences": [
+      "Background clearColor differs between the authoring and independent scenes.",
+      "Lower-left profiler counters differ between captures; these display differences were not classified as asset deviations."
+    ],
+    "imageProcessing": "None. No crop, mask, pixel exclusion or screenshot modification was used in this review artifact.",
+    "automatedPixelComparison": false,
+    "reviewedFiles": [
+      "docs/evidence/creator-2026-09-22/stage3d-baked-author/author.png",
+      "docs/evidence/creator-2026-09-22/stage3d-baked-webgl2-final/002-independent-steady-state.png",
+      "docs/evidence/creator-2026-09-22/stage3d-baked-webgl1-final/002-independent-steady-state.png"
+    ]
+  },
+  "fullVerificationPassed": true,
+  "fullVerification": {
+    "command": "TMPDIR=/Volumes/KimData/.codex-stage3d-tests npm run verify:all",
+    "status": "passed",
+    "exitCode": 0,
+    "candidate": "B5 plus already committed prerequisites only; later batch sources hidden",
+    "recordedAt": "2026-09-22T00:15:26.600937+00:00",
+    "evidence": {
+      "file": ".cache/stage3d/verify-all-sc0-b5.log",
+      "bytes": 421815,
+      "sha256": "774e6416e2b24b77fa06c05cd308c81aeaee453ee74f4fd5a800cdd50ffc5050",
+      "storage": "local-only"
+    }
+  }
+}

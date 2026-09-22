@@ -56,6 +56,102 @@
         64
       ],
       "allowedDeviation": "64x64 is below the regular 256/512/1024/2048 size tiers. The ordinary linear mip policy still applies."
+    },
+    {
+      "id": "sc0-lightfx-fixed-distance-sampling",
+      "rule": "docs/3D-ASSETS.md §5 mip and atlas wrap defaults",
+      "usage": "baked-lightmap",
+      "status": "approved-exact-sc0-exception-acceptance-still-report-owned",
+      "asset": {
+        "path": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png",
+        "imageUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f",
+        "textureUuid": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+        "sha256": "a78228133b71946b2b44ef1011a49c7afb95f710fccc6eee629547be03fbd309",
+        "metaPath": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png.meta",
+        "metaSha256": "9cebb5f031f311d7a074cf5f592d776a9591d40f610b8dd2ad6ea962834f7a68"
+      },
+      "allowedTextureOverrides": {
+        "mipfilter": "none",
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat"
+      },
+      "unchangedRequirements": {
+        "type": "texture",
+        "dimensions": [
+          1024,
+          1024
+        ],
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "anisotropy": 0,
+        "compression": "uncompressed",
+        "budget": "Count this PNG and its GPU texture in the lightmap/package totals."
+      },
+      "origin": {
+        "creatorVersion": "3.8.8",
+        "baker": "Creator LightFX",
+        "observation": "Settings produced by this official bake/default-import workflow; not a universal baker requirement or a claim that every lightmap must disable mipmaps.",
+        "localBakeReport": ".cache/stage3d/editor-probe/bake-b5-001.json",
+        "localBakeReportSha256": "be558d18d883dff38846a2463194722a49742172dccd8de8ec460f9529ac910e",
+        "bakeFilterOption": true,
+        "bakeFilterIsMipmapProof": false
+      },
+      "fixedDistanceEvidence": {
+        "scope": "Existing SC0-B5 authored/independent-runtime comparison only; registration does not approve pending visual or WebGL acceptance.",
+        "cameraPosition": [
+          7,
+          7,
+          7
+        ],
+        "lookAt": [
+          0,
+          0.4,
+          0
+        ],
+        "fovDegrees": 45,
+        "viewportCss": [
+          375,
+          812
+        ],
+        "dpr": 2,
+        "near": 0.1,
+        "far": 100,
+        "independentPrefabPath": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Baked.prefab"
+      },
+      "uvBoundaryObservation": {
+        "atlasSize": [
+          1024,
+          1024
+        ],
+        "allocatedTileSize": [
+          128,
+          128
+        ],
+        "mappedTileSpanTexels": [
+          126,
+          126
+        ],
+        "tileOriginsTexels": {
+          "Plane": [
+            1,
+            1
+          ],
+          "Cube": [
+            129,
+            1
+          ]
+        },
+        "approximateTileInsetTexels": 1,
+        "islandInteriorPaddingVerified": false,
+        "fullMipChainPaddingVerified": false,
+        "note": "Observed ModelBakeSettings UV transforms show roughly one texel at tile boundaries. This does not prove sufficient padding within UV islands or throughout a mip chain; whole-atlas clamp does not isolate interior tiles."
+      },
+      "notValidated": [
+        "continuous camera zoom",
+        "distant/minified views",
+        "mip-chain fidelity"
+      ],
+      "changePolicy": "Changing PNG/meta bytes, UV layout, sampler, bake output or intended viewing range requires renewed identity checks, padding/mip analysis, Creator import and independent-prefab visual validation. This exception does not apply to another lightmap."
     }
   ]
 }

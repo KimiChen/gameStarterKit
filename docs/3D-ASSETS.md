@@ -106,6 +106,16 @@
 | 体积 | 单张 ≤ 4 MB png；kit `3d/textures/` 总量进 `art3d.config.json`（候选 32 MB） |
 | 图集 | 特效小图集在 DCC / `tools/art3d` 拼成 1024²；⛔ 依赖 Creator 动态图集处理 3D 贴图 |
 
+SC0-B5 的唯一采样例外登记在 [sc0-asset-exceptions.json](../tools/art3d/sc0-asset-exceptions.json)：
+只允许该清单精确路径、ImageAsset / Texture2D UUID、PNG 与 `.meta` SHA 同时匹配的
+`LFX_Mesh_0000.png` 保留 `mipfilter:none`、`wrapModeS/T:repeat`，用于复现本次 Creator 3.8.8
+官方 LightFX 烘焙及默认导入的结果；这不是所有 lightmap 的通用规则。POT、min / mag、预算与
+不压缩要求仍须满足。当前证据仅覆盖相机 `(7,7,7)` 看向 `(0,0.4,0)`、FOV 45、
+375×812 CSS / DPR 2 的固定距离；128² 分配区域映射 126²，图块边界约 1 texel，
+不能据此保证 UV 岛内部或整条 mip 链的 padding。烘焙 `filter:true` 不代表生成 mipmap，
+整张图集 clamp 也不能防止内部图块串色。连续缩放、远距离及 mip 链保真未验；若改采样或重新
+烘焙，须重新核对哈希、UV / padding、Creator 导入与独立预制画面，不自动沿用本次例外。
+
 ## 6. 光照与环境
 
 | 项 | 规则 |
@@ -203,15 +213,15 @@ Stage3D 租约 root
 | Creator 导入 | 运行时每个资产及 bundle 根的 `.meta` 存在，`importer` 与真实格式匹配；按 Creator 3.8.8 导入样本校验顶层与 `subMetas` 的实际字段；顶层 uuid 唯一继续交 `verify:sync`，本闸另建子资产索引并检查重复 / 悬空子资产。GLB / FBX 的 texture 子资产也必须接受图片规则检查，⛔ 只按独立文件扩展名筛选 |
 | GLB 结构与依赖 | 校验 glTF 2.0 头、声明长度、JSON / BIN chunk 长度与边界；解析 JSON 并拒绝内嵌图片（`images[].bufferView` / `data:`）、外部 buffer URI；图片相对 URI 经规范化与实际路径解析后必须落入本包资产根并存在，跨包 / 路径越界 / 远程 URI 均失败；独立图片全部进入后续检查 |
 | Creator 序列化依赖与归属（3D-44） | 对 `.prefab / .mtl / .anim / .animgraph / .animask`、模型 `.meta / subMetas` 等按 Creator 3.8.8 序列化格式抽取外部资产 UUID 引用，规范化完整 / 压缩 UUID 与子资产标识，区分 `__id__` 对象内部索引；递归解析到实际文件 / 子资产并检查闭合。允许本包资产（含同包细分 bundle）及框架维护的精确资源 / 子资产 allowlist；引擎内置 effect / 默认纹理等在该 allowlist 单列，并钉引擎版本与可解析性，⛔ 因 UUID 看似内置而放行。`requires.kits` 仍只授权声明的 kit API，⛔ 自动放行被依赖 kit 的内部资源；kit→kit 依赖仍禁。本轮不新增跨包内容依赖机制。缺文件、缺子资产、跨包或引用未登记宿主资产均失败；相同检查复用到 pack / install 的落盘前校验，不能只依赖母仓完整资源树 |
-| 贴图与压缩 | 校验实际图片格式、POT 与尺寸档（UI 例外须登记）；独立图片及导入 texture 子 `.meta` 的 `type`、wrap、min / mag、mipfilter、anisotropy、通道色彩空间均按 §5；`3d-default / 3d-alpha` 引用须在 `builder.json` 有对应平台与回落配置；lightmap / 天空 / 反射探针及获准不压的 VFX 须在配置标明用途并验证其不压设置，⛔ 目录改名即绕过压缩规则 |
+| 贴图与压缩 | 校验实际图片格式、POT 与尺寸档（UI 例外须登记）；独立图片及导入 texture 子 `.meta` 的 `type`、wrap、min / mag、mipfilter、anisotropy、通道色彩空间均按 §5；采样例外按用途及精确文件 / UUID / SHA 核对，⛔ 以 lightmap 目录或文件前缀整体放行；`3d-default / 3d-alpha` 引用须在 `builder.json` 有对应平台与回落配置；lightmap / 天空 / 反射探针及获准不压的 VFX 须在配置标明用途并验证其不压设置，⛔ 目录改名即绕过压缩规则 |
 | 模型与命名 | §3 所列模型导入选项（含 FBX 专有项）逐项等于缺省或有精确文件级例外；按 §2.2 检查目录、类型前缀、贴图通道后缀、LOD 文件名；灰盒固定文件名在框架配置显式声明，不以放宽所有命名规避 |
 | 预算 | 读取包 `art3d.config.json`（框架用 `scripts/assets3d.config.json`）：单 GLB / PNG、全部贴图、lightmap 与包总量均须在配置限额内；外提图片和细分 bundle 必须计入同一包总量，重复引用只按实体文件计一次；运行时性能预算另由 `--perf` 提供证据。数字仍为 §15 候选，SC0 后冻结，本轮文档修订不冻结数字 |
 | 授权覆盖 | kit / 插件必须存在 `art3d.config.json` 与 `art/3d/LICENSES.md`；授权台账覆盖每份源素材、转换产物、外提贴图与 LOD 的来源映射，引用不能悬空；只查存在 / 覆盖，许可是否允许用途仍归人工（§14） |
 
-SC0 的四个灰盒命名与 64² 棋盘 PNG 尺寸例外暂存于
+SC0 的四个灰盒命名、64² 棋盘 PNG 尺寸与上述 LightFX 采样例外统一暂存于
 [sc0-asset-exceptions.json](../tools/art3d/sc0-asset-exceptions.json)。确定性灰盒 manifest 仍记录
 生成需求，不手改为实测通过；临时清单尚未接入自动资产闸。SC1-B5 须将其逐项迁移到正式配置并
-实现匹配和拒绝用例，不能因清单存在就声称 verify:assets3d 已实现。
+实现匹配和拒绝用例，⛔ 因清单存在就声称 `verify:assets3d` 已实现。
 
 正例：合法 `.mtl / .hdr / .animgraph / .animask` 应通过白名单。反例必须逐项转红：PNG 改名 `.jpg`、删除 `.meta`、删掉必需 texture 子 `.meta`、`mipfilter: none` 未登记、压缩预设引用不存在、模型 `lods.enable:true` 未登记、GLB 内嵌 PNG / JPEG、图片 URI 指向另一包或远程地址、GLB 外部 buffer、授权漏一张外提贴图、下调预算到实际体积以下均失败。蒙皮须按实际 skin 与 JOINTS / WEIGHTS 属性识别，不能只看文件前缀；关闭蒙皮 `allowMeshDataAccess` 必须失败，静态网格开启而无精确工具用途例外也必须失败。混合静态 / 蒙皮 GLB 如受同一文件级开关影响，登记该文件的保留理由与 CPU 数据预算；导入报告中的 native buffer 字节数仅为数据量下界，不代表总 CPU 内存。另验证相邻包 `foo` / `foobar` 不互认所有权，细分 bundle 的命名冲突必须拒绝；这些反例随 SC1-B5 / B7 落地，当前文档不代表机检已实现。
 

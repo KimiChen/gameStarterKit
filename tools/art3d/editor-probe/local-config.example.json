@@ -1,0 +1,4 @@
+{
+  "expectedProject": "/absolute/path/to/isolated-worktree/apps/Cocos",
+  "cacheDirectory": "/absolute/path/to/isolated-worktree/.cache/stage3d/editor-probe"
+}

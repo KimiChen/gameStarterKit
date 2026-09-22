@@ -1,0 +1,14 @@
+{
+  "package_version": 2,
+  "name": "stage3d-probe",
+  "version": "0.0.1",
+  "description": "Local SC0 Creator editor probe template; install only in the isolated project.",
+  "main": "./main.js",
+  "contributions": {
+    "messages": {
+      "run-pending": { "methods": ["runPending"] },
+      "scene:ready": { "methods": ["onSceneReady"] }
+    },
+    "scene": { "script": "./scene.js" }
+  }
+}
