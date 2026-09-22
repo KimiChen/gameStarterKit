@@ -500,14 +500,9 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
             const frame = entry.target as HTMLElement;
             const record = frames.get(frame);
             if (!record) continue;
-            if (entry.isIntersecting) {
-                if (mounted.has(record.slot)) continue;
-                mounted.set(record.slot, record.item);
-                preview.show(record.slot, record.item, prefs.skin);
-            } else if (mounted.has(record.slot) && record.host === record.home) {
-                mounted.delete(record.slot);
-                preview.hide(record.slot);
-            }
+            if (!entry.isIntersecting || mounted.has(record.slot)) continue;
+            mounted.set(record.slot, record.item);
+            preview.show(record.slot, record.item, prefs.skin);
         }
     }, { rootMargin: "240px" });
 
@@ -665,12 +660,6 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
             record.host = record.home;
             if (record.live.parentElement !== record.home) record.home.append(record.live);
             fitLive(record.home, record.live, item.width, item.height);
-            const rect = record.home.getBoundingClientRect();
-            const onScreen = rect.bottom > -240 && rect.top < innerHeight + 240;
-            if (!onScreen && mounted.has(record.slot)) {
-                mounted.delete(record.slot);
-                preview.hide(record.slot);
-            }
         };
         const close = () => {
             restore();
