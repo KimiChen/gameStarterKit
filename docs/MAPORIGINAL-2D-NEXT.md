@@ -171,7 +171,20 @@ npm run sync:shared && npm run sync:client && npm run verify:all
 
 ---
 
-## 4. N2 · 城名标注（便宜且显眼）
+## 4. N2 · 城名标注（✅ **已退出**，2026-09-23）
+
+**结果**　地名三档分带落地：LOD 0–1 城名（249 座，`mapoCityLabelSize` 按 大型 24 / 中型 20 /
+小型 16 分档、洛阳 10 级独享 28）/ LOD 2 郡名 / LOD ≥3 大区名，三档不混画。
+渲染层零改动（`MapoLabelRenderer` 照旧建在 root 上、字号不跟缩放）。
+机检：新增 `apps/client/test/mapOriginal-labels.test.ts` 两条（分带 + 字号纪律），client 48 条绿。
+真机：重放 15 步全绿，洛阳步断言「洛阳」在屏（截图 `docs/evidence/creator-2026-09-23/maporiginal-n2/`）。
+重放侧配套：近档步不再等郡名（图心没有城 ⇒ 城名档下那里合法为空），郡名档由单测钉。
+
+⚠ 踩过一条环境坑：Creator 的脚本编译器会**静默停摆**（文件变了不重编、重放跑的是旧 bundle，
+症状是「新逻辑死活不生效且 console 0 条」）——判据：改完先看
+`temp/programming/packer-driver/targets/preview/chunks/` 里出现新代码再跑；不响就重启 Creator。
+
+<details><summary>N2 原始施工单（已退出，留档）</summary>
 
 **为什么**　249 座城的**真名已经在** `MAPO_CITY_SITES`（南皮 / 洛阳 / 风陵渡 …），
 但画面上一个字都没有。地名层 `label` 已有（大区 9 / 郡 55），扩一档即可。
@@ -185,6 +198,8 @@ npm run sync:shared && npm run sync:client && npm run verify:all
 
 **退出**　`npm run test:client` + N0 的重放截图里能看到城名。
 **风险**　低。**依赖**　N0。
+
+</details>
 
 ---
 

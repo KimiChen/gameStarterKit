@@ -179,8 +179,8 @@ export async function replayMapOriginalWorld(runner) {
     });
 
     const decorAndLabels = await runner.step(
-        "近档：逐格摆件 + 多格地形区域件 + 郡名都就位", async () => {
-        const evidence = await runner.waitFor("mapo-decor 在树上、件数够、且能读到郡名", (walk) => {
+        "近档：逐格摆件 + 多格地形区域件都就位", async () => {
+        const evidence = await runner.waitFor("mapo-decor 在树上且件数够", (walk) => {
             const value = readMapOriginalEvidence(walk);
             if (!value?.nearLoaded || !value.decor) return null;
             // ★ 原版每个资源/金矿格都有自己的 res_field（全图占 43.2%）⇒ 近档这个比例应在四成上下。
@@ -191,18 +191,16 @@ export async function replayMapOriginalWorld(runner) {
             // ★ 多格地形（山脉/林丛/散落）必须也摆出来了 —— 它们占全图 8.8%，
             //   近档一屏总会框进几个区；⛔ 0 就说明 regions.bin 这条链断了
             if (!(value.regionPieces > 0)) return null;
-            // ⚠ 城址件不在这里判：图心 (750,750) 的初始视口内**本来就没有城**
-            //   （最近的武关在 (690,750)，60 行外）——城的验收在最后「跳洛阳」那步。
-            // ⚠ 近档该看到的是**郡名**（带「郡/国」字），⛔ 不是远档那九个大区名
-            const jun = [...new Set(value.labels)].filter((t) => /[郡国]$/u.test(t));
-            return jun.length > 0 ? { ...value, jun } : null;
+            // ⚠ 近档（LOD 0–1）的地名是**城名**（N2 起三档分带：城/郡/大区），图心没有城 ⇒
+            //   这里地名可以是空，⛔ 别再等郡名（郡名在 LOD 2，由单测钉住；城名在洛阳步核）。
+            return value;
         }, 30_000);
         return { decor: evidence.decor, decorPlaced: evidence.decorPlaced,
                  visibleCells: evidence.visibleCells, regionPieces: evidence.regionPieces,
                  groundCount: evidence.groundCount, roadPieces: evidence.roadPieces,
                  riverPieces: evidence.riverPieces, topPieces: evidence.topPieces,
                  decorRatio: Number((evidence.decorPlaced / evidence.visibleCells).toFixed(3)),
-                 jun: evidence.jun, labelCount: new Set(evidence.labels).size,
+                 labelCount: new Set(evidence.labels).size,
                  shot: await runner.shot("maporiginal-decor-labels") };
     });
 
@@ -268,7 +266,7 @@ export async function replayMapOriginalWorld(runner) {
     // ★ 城址件的真机验收（M4-B1）：初始视口在图心 (750,750)，附近 60 行内没有城
     //   （最近的是武关 (690,750)）⇒ 图心的「城 0」是**合法的**，不能拿来判链条断没断。
     //   必须真的跳到一座城 —— 洛阳 (661,543)，全图唯一 10 级城、件有 218 个 sprite。
-    const city = await runner.step("城址件：缩略图跳洛阳，近档画出城（状态行 · 城 N > 0）", async () => {
+    const city = await runner.step("城址件：缩略图跳洛阳，近档画出城（· 城 N > 0）且城名「洛阳」在屏", async () => {
         const walk = await runner.walk();
         const mini = walk.nodes.find((node) => node.name === "mapo-minimap" && node.center)?.center ?? null;
         if (!mini) return { skipped: "缩略图不在渲染树上（贴图没加载出来时只留可点底板）" };
@@ -281,9 +279,11 @@ export async function replayMapOriginalWorld(runner) {
         const at = { x: mini.x + (uv.u - 0.5) * 180 * designToPage,
                      y: mini.y - (0.5 - uv.v) * 180 * designToPage };
         await runner.client.click(at.x, at.y);
-        const value = await runner.waitFor("跳到洛阳且城址件画出来（mapo-city 在树上、· 城 N > 0）", (w) => {
+        // ★ N2：近档地名档 = 城名 ⇒ 跳到洛阳后「洛阳」二字必须在屏（且它是全城最大的那枚）
+        const value = await runner.waitFor("跳到洛阳：城址件画出来（· 城 N > 0）且城名「洛阳」在屏", (w) => {
             const got = readMapOriginalEvidence(w);
-            return got?.nearLoaded && got.city && got.cityPieces > 0 ? got : null;
+            if (!got?.nearLoaded || !got.city || !(got.cityPieces > 0)) return null;
+            return got.labels.includes("洛阳") ? got : null;
         }, 30_000);
         // ★ 落点核对（公开信号）：点图心选一格，详情必须落在洛阳 (661, 543) 附近 ——
         //   缩略图 UV → 页面前要过一道 y 翻号，错了会跳到几百行外（踩过，见上）。
@@ -296,7 +296,8 @@ export async function replayMapOriginalWorld(runner) {
             return t && Math.abs(t.row - 661) <= 30 && Math.abs(t.col - 543) <= 30 ? got : null;
         }, 10_000);
         return { at: [Math.round(at.x), Math.round(at.y)], lod: value.lod,
-                 cityPieces: value.cityPieces, landed: landed.tile.text, status: value.status,
+                 cityPieces: value.cityPieces, cityLabels: value.labels, landed: landed.tile.text,
+                 status: value.status,
                  shot: await runner.shot("maporiginal-city") };
     });
 
