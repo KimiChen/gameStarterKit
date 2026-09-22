@@ -13,6 +13,7 @@
 | 分支 | `new`，工作树干净 |
 | **未推提交** | **2 个**：`9fad25c5`（城址件层）、`cdb5f0fb`（尺寸机检）。⚠ 推送需当事人确认 |
 | 机检 | client 997 / server 1373 全绿；`verify:sync`、`verify:protected-paths` 绿 |
+| ⚠ 一条踩过的 | `verify:sync` 的「缺 `.meta`」**只对已入库文件生效** ⇒ `git add` **之前**跑是绿的、之后才红。⛔ 新增镜像文件后要在 `git add` 之后**再跑一遍** |
 | 真机重放 | ⛔ **城址件层从未在 Cocos 里跑过** —— 见 N0，这是当前唯一的验收缺口 |
 | 工作树 | ⚠ **被多个会话共用**：测试跑一半树会变、git 会撞 `index.lock`。归因间歇性失败前先看有没有别的会话在写 |
 
@@ -68,9 +69,9 @@ plate 90 < terrain 100 < blocks 110 < region 300 < road 900 < grid 950
 但**只过了单测**。本仓的先例写得很清楚：sgzzmap 有 673 条绿单测，仍被真机重放抓出七条
 （见 `apps/kits/sgzzmap/README.md` 的两张表）。⛔ 别把「单测绿」当验收。
 
-**顺带解决**　`apps/Cocos/assets/src/` 里三个新文件（`mapoCities.ts` /
-`MapoCityRenderer.ts` / `cities.data.ts`）**还没有 `.meta`** —— 它们由 Creator 首次
-打开工程时生成。`resources/` 那侧的 `.meta` 已由 `install_to_kit.py` 确定性铸好。
+⚠ **`.meta` 已补齐**（2026-09-23 交接前）：`apps/Cocos/assets/src/` 下三个新文件的
+`.meta` 已由 Creator 生成并入库，`verify:sync` 恢复绿。
+⚠ 但**重放本身仍未跑** —— Creator 只是打开过、生成了 `.meta`，⛔ 不等于验收。
 
 **落点**　`tools/creator-preview/maporiginal.mjs`（已存在，本轮未动）
 
@@ -78,14 +79,13 @@ plate 90 < terrain 100 < blocks 110 < region 300 < road 900 < grid 950
 1. 跑重放，确认状态行出现 `· 城 N`（N > 0）。⛔ 掉到 0 说明 `cities.bin` / `city-atlas` 没到位。
 2. 肉眼核四件事：城**在地表之上**、**在资源件之上**、**不与摆件重叠**（第 4 道门）、
    **大小合理**（约 2.7–5 格宽）。
-3. 把 Creator 生成 / 改写的 `.meta` **一并提交**。
-   ⚠ Creator 正式导入**可能改写** `resources/` 下确定性铸的 uuid —— 改了就以它为准提交。
+3. ⚠ Creator 正式导入**可能改写** `resources/` 下确定性铸的 uuid —— 改了就以它为准提交。
 
 **退出**
 ```bash
 node tools/creator-preview/run.mjs mapOriginal --reuse --out /tmp/maporiginal-run
 ```
-落盘截图 + `report.json`；`git status` 里 `.meta` 全部入库；`npm run verify:sync` 仍绿。
+落盘截图 + `report.json`，截图里能看到城；`npm run verify:sync` 仍绿。
 
 **风险**　中。合批/材质在真引擎里可能暴露 sgzzmap README 里那五条硬规矩相关的问题。
 **依赖**　无。
