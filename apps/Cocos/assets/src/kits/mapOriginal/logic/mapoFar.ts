@@ -42,6 +42,9 @@ export function mapoBlockGeoAsset(kind: string): string {
 export function mapoBlockTableAsset(kind: string): string {
     return `kits/mapOriginal/maps/s1/${kind}`;
 }
+/** 道路层：路片图集 + 摆放表。 */
+export const MAPO_ROAD_ATLAS_ASSET = "kits/mapOriginal/maps/s1/road-atlas";
+export const MAPO_ROADS_ASSET = "kits/mapOriginal/maps/s1/roads";
 /** `_top_group` 手摆细节：每族一张图集 + 一份摆放库。 */
 export function mapoTopAtlasAsset(kind: string): string {
     return `kits/mapOriginal/maps/s1/${kind}-top-atlas`;

@@ -10,7 +10,8 @@
 import { MAPO_LOD_MAX } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
 export type MapoLayerId =
-    | "terrain" | "blocks" | "grid" | "river" | "region" | "decor" | "plate" | "banner" | "label";
+    | "terrain" | "blocks" | "road" | "grid" | "river" | "region" | "decor" | "plate"
+    | "banner" | "label";
 
 interface LayerGate {
     readonly id: MapoLayerId;
@@ -40,6 +41,9 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     // ★ snow / desert 的 block 级地貌带：**叠**在地表底之上（§1.3，⛔ 不是替换）。
     //   与 terrain 同档：它就是地表的一部分。
     { id: "blocks", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
+    // ★ 道路：原版路片。⚠ 在地表与河流**之间**（原版 MAP_ZORDER：TERRAIN 300 < ROAD 900 < RIVER 1600）。
+    //   ⚠ 路是**纯表现层**，⛔ 别拿它做通行/行军判定。
+    { id: "road", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
     // ★ 河流：原版水面多边形。⚠ 必须在地表**之上**、山族件与摆件**之下**
     //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）。
     //   ⚠ 比逐格摆件多盖一档：远档看水网走向最有用（与 region 同档）。
@@ -67,6 +71,7 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
 export const MAPO_LAYER_RENDERER: Readonly<Record<MapoLayerId, string | null>> = Object.freeze({
     terrain: "renderer",
     blocks: "blockRenderers",
+    road: "roadRenderer",
     grid: null,
     river: "riverRenderer",
     plate: "farRenderer",

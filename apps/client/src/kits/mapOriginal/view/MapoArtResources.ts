@@ -8,7 +8,8 @@ import { BufferAsset, Texture2D, resources } from "cc";
 import {
     MAPO_DECOR_ATLAS_ASSET, MAPO_GROUND_BASE_ASSET, MAPO_MINIMAP_ASSET, MAPO_REGIONS_ASSET,
     MAPO_REGION_ATLAS_ASSET, MAPO_RIVERS_ASSET, MAPO_RIVER_FILL_ASSET, MAPO_RIVER_GEO_ASSET,
-    MAPO_TERRAIN_ASSET, mapoBlockBaseAsset, mapoBlockGeoAsset, mapoBlockTableAsset,
+    MAPO_ROADS_ASSET, MAPO_ROAD_ATLAS_ASSET, MAPO_TERRAIN_ASSET,
+    mapoBlockBaseAsset, mapoBlockGeoAsset, mapoBlockTableAsset,
     mapoPlateAsset, mapoTopAtlasAsset, mapoTopsAsset,
 } from "../logic/mapoFar";
 import { MAPO_BLOCK_KINDS } from "../logic/mapoBlocks";
@@ -30,6 +31,9 @@ export interface MapoArtResources {
     /** snow / desert 块层的几何库与摆放表。⚠ 两件缺一则该层不建。 */
     blockGeo(kind: string): BufferAsset | null;
     blockTable(kind: string): BufferAsset | null;
+    /** 道路层：路片图集与摆放表。⚠ 两件缺一则整层不建。 */
+    readonly roadAtlas: Texture2D | null;
+    readonly roads: BufferAsset | null;
     /** `_top_group` 手摆细节：每族一张图集 + 一份摆放库。⚠ 两件缺一则该族不出手摆件。 */
     topAtlas(kind: string): Texture2D | null;
     tops(kind: string): BufferAsset | null;
@@ -70,8 +74,8 @@ function loadBuffer(path: string): Promise<BufferAsset | null> {
 }
 
 export async function loadMapoArt(): Promise<MapoArtResources> {
-    const [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill, groundBase,
-           terrain, regions, riverGeo, rivers] =
+    const [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill, groundBase, roadAtlas,
+           terrain, regions, riverGeo, rivers, roads] =
         await Promise.all([
             loadTexture(mapoPlateAsset(4)),
             loadTexture(mapoPlateAsset(5)),
@@ -80,10 +84,12 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             loadTexture(MAPO_REGION_ATLAS_ASSET),
             loadTexture(MAPO_RIVER_FILL_ASSET),
             loadTexture(MAPO_GROUND_BASE_ASSET),
+            loadTexture(MAPO_ROAD_ATLAS_ASSET),
             loadBuffer(MAPO_TERRAIN_ASSET),
             loadBuffer(MAPO_REGIONS_ASSET),
             loadBuffer(MAPO_RIVER_GEO_ASSET),
             loadBuffer(MAPO_RIVERS_ASSET),
+            loadBuffer(MAPO_ROADS_ASSET),
         ]);
     const blocks = await Promise.all(MAPO_BLOCK_KINDS.map(async (kind) => ({
         kind,
@@ -101,7 +107,7 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
     let released = false;
     return {
         plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
-        riverFill, riverGeo, rivers, groundBase,
+        riverFill, riverGeo, rivers, groundBase, roadAtlas, roads,
         blockBase: (kind) => blockBy.get(kind)?.base ?? null,
         blockGeo: (kind) => blockBy.get(kind)?.geo ?? null,
         blockTable: (kind) => blockBy.get(kind)?.table ?? null,
@@ -111,11 +117,12 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             if (released) return;
             released = true;
             for (const a of [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill,
-                             groundBase]) a?.decRef();
+                             groundBase, roadAtlas]) a?.decRef();
             terrain?.decRef();
             regions?.decRef();
             riverGeo?.decRef();
             rivers?.decRef();
+            roads?.decRef();
             for (const b of blocks) { b.base?.decRef(); b.geo?.decRef(); b.table?.decRef(); }
             for (const t of tops) { t.atlas?.decRef(); t.table?.decRef(); }
         },

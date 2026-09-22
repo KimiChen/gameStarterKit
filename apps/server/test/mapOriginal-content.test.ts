@@ -43,6 +43,11 @@ import {
 import {
     MAPO_TOP_ATLASES, MAPO_TOP_DOWNSCALE, MAPO_TOP_RECORD_BYTES,
 } from "@game/shared/kits/mapOriginal/content/tops.data";
+import {
+    MAPO_ROAD_ATLAS_H, MAPO_ROAD_ATLAS_W, MAPO_ROAD_CELLS, MAPO_ROAD_D_BIAS,
+    MAPO_ROAD_HALF_H, MAPO_ROAD_HALF_W, MAPO_ROAD_HEADER_BYTES, MAPO_ROAD_RECORD_BYTES,
+    MAPO_ROAD_SIDE, MAPO_ROAD_S_BIAS,
+} from "@game/shared/kits/mapOriginal/content/roads.data";
 
 const MAP = MAPO_TERRAIN_MAP_ID;
 const kitDir = new URL(`../../kits/mapOriginal/data/maps/${MAP}/`, import.meta.url);
@@ -244,6 +249,7 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
         ["desert.bin", "desert.bin"],
         ["snow-base.png", "snow-base.png"], ["snow-geo.bin", "snow-geo.bin"],
         ["snow.bin", "snow.bin"],
+        ["road-atlas.png", "road-atlas.png"], ["roads.bin", "roads.bin"],
         ["river-top-atlas.png", "river-top-atlas.png"], ["river-tops.bin", "river-tops.bin"],
         ["desert-top-atlas.png", "desert-top-atlas.png"], ["desert-tops.bin", "desert-tops.bin"],
         ["snow-top-atlas.png", "snow-top-atlas.png"], ["snow-tops.bin", "snow-tops.bin"],
@@ -394,6 +400,88 @@ test("mapOriginal 内容：城占格表 = city.bytes（249 座 / 2,689 格 / 首
     // ★ 占格形态只有 5 种（§5 的表）
     assert.deepEqual([...shapes.entries()].sort((a, b) => a[0] - b[0]),
         [[4, 1], [6, 11], [7, 24], [11, 204], [23, 9]], "占格形态分布");
+});
+
+test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / 摆放表）", () => {
+    // ★ M3-B1：坐标系由干净集 road_info.lua 的 layer_info 直给（§4.2）：
+    //   网格 1125²、一个路格半宽 200 / 半高 100 = **4/3 个逻辑格**。
+    //   ★ 独立佐证：18 张路片**每张都正好 400×200 px** = grid_width×2 / grid_height×2。
+    const meta = JSON.parse(kit("roads.info.json").toString("utf8")) as {
+        skin: string;
+        grid: { side: number; halfW: number; halfH: number; tilesPerCell: number; key: string };
+        sBias: number; dBias: number; recordBytes: number; headerBytes: number;
+        placements: number; placementSha256: string; typeCount: number; resIds: number[];
+        atlas: { size: [number, number]; downscale: number; sha256: string;
+                 cells: { id: number; resId: number; rect: [number, number, number, number];
+                          native: [number, number]; cls: string; source: string }[] };
+        binding: { degrees: number[]; undetermined: string[]; tier: string };
+    };
+    assert.equal(meta.grid.side, MAPO_ROAD_SIDE);
+    assert.equal(meta.grid.halfW, MAPO_ROAD_HALF_W);
+    assert.equal(meta.grid.halfH, MAPO_ROAD_HALF_H);
+    assert.equal(meta.recordBytes, MAPO_ROAD_RECORD_BYTES);
+    assert.equal(meta.headerBytes, MAPO_ROAD_HEADER_BYTES);
+    assert.equal(meta.sBias, MAPO_ROAD_S_BIAS);
+    assert.equal(meta.dBias, MAPO_ROAD_D_BIAS);
+    // ★ 坐标系自洽：1500 逻辑格 × (150 / 半宽) = 网格边长
+    assert.equal(1500 * 150 / MAPO_ROAD_HALF_W, MAPO_ROAD_SIDE, "网格边长与半宽不自洽");
+    assert.ok(Math.abs(meta.grid.tilesPerCell - MAPO_ROAD_HALF_W / 150) < 1e-6);
+    // ★ 每张路片都正好一个路格见方 —— 这是半值约定的独立佐证
+    assert.equal(meta.atlas.cells.length, 18);
+    assert.equal(MAPO_ROAD_CELLS.length, 18);
+    for (const c of meta.atlas.cells) {
+        assert.deepEqual(c.native, [MAPO_ROAD_HALF_W * 2, MAPO_ROAD_HALF_H * 2],
+            `路片 ${c.id}（${c.cls}）不是一个路格见方`);
+        const shared = MAPO_ROAD_CELLS.find((x) => x.id === c.id)!;
+        assert.ok(shared, `路片 ${c.id} 必须进 shared`);
+        assert.deepEqual([...shared.rect], c.rect);
+        assert.deepEqual([...shared.native], c.native);
+        assert.equal(shared.cls, c.cls);
+        assert.equal(c.rect[2], Math.round(c.native[0] * meta.atlas.downscale));
+        const [x, y, w, h] = c.rect;
+        assert.ok(x >= 0 && y >= 0 && x + w <= MAPO_ROAD_ATLAS_W && y + h <= MAPO_ROAD_ATLAS_H);
+        assert.ok(c.source.startsWith(`scene/ground/${meta.skin}/`), `路片 ${c.id} 的 source`);
+    }
+    assert.deepEqual([MAPO_ROAD_ATLAS_W, MAPO_ROAD_ATLAS_H], meta.atlas.size);
+    assert.equal(sha256(kit("road-atlas.png")), meta.atlas.sha256);
+    // ★ 结构签名：度序列必须与「12 个 2 度 + 2 个 3 度 + 1 个 4 度 + 3 个 1 度」吻合
+    const byDeg = new Map<number, number>();
+    for (const d of meta.binding.degrees) byDeg.set(d, (byDeg.get(d) ?? 0) + 1);
+    assert.deepEqual([...byDeg.entries()].sort((a, b) => a[0] - b[0]), [[1, 3], [2, 12], [3, 2], [4, 1]]);
+    assert.equal(meta.binding.degrees.length, 18);
+    // ⚠ 绑定是 [推断]，落盘必须自报档位，⛔ 不许写成干净集
+    assert.ok(meta.binding.tier.includes("[推断]"), "绑定档位必须自报 [推断]");
+    assert.equal(meta.binding.undetermined.length, 2, "未定的应恰是两张 upend");
+
+    // 摆放表：画家序 + 格 id 域 + 翻转位 + 行列在网格内
+    const raw = kit("roads.bin");
+    assert.equal(sha256(raw), meta.placementSha256);
+    assert.equal(raw.readUInt32BE(0), meta.placements);
+    assert.equal(raw.length, MAPO_ROAD_HEADER_BYTES + meta.placements * MAPO_ROAD_RECORD_BYTES);
+    const ids = new Set(MAPO_ROAD_CELLS.map((c) => c.id));
+    let prev = -1;
+    const seen = new Set<number>();
+    for (let i = 0; i < meta.placements; i += 1) {
+        const o = MAPO_ROAD_HEADER_BYTES + i * MAPO_ROAD_RECORD_BYTES;
+        const sRaw = raw.readUInt16BE(o);
+        assert.ok(sRaw >= prev, `第 ${i} 条不是升序`);
+        prev = sRaw;
+        assert.ok(ids.has(raw.readUInt8(o + 4)), `第 ${i} 条的图集格越界`);
+        const flip = raw.readUInt8(o + 5);
+        assert.ok(flip === 0 || flip === 1, `第 ${i} 条的翻转位 ${flip} 非法`);
+        const s = sRaw - MAPO_ROAD_S_BIAS, d = raw.readUInt16BE(o + 2) - MAPO_ROAD_D_BIAS;
+        assert.equal((s + d) & 1, 0, `第 ${i} 条 s/d 奇偶不同`);
+        const row = (s + d) / 2, col = (s - d) / 2;
+        assert.ok(row >= 0 && row < MAPO_ROAD_SIDE && col >= 0 && col < MAPO_ROAD_SIDE,
+            `第 ${i} 条的格 (${row}, ${col}) 出网格`);
+        const key = row * 100000 + col;
+        assert.ok(!seen.has(key), `路格 (${row}, ${col}) 重复`);
+        seen.add(key);
+    }
+    // ★ 实测：42,018 条（与 road_info.bytes 的记录数逐条互证过）
+    assert.equal(meta.placements, 42018);
+    assert.equal(meta.typeCount, 37);
+    assert.deepEqual(meta.resIds, Array.from({ length: 18 }, (_, i) => 1170 + i));
 });
 
 test("mapOriginal 内容：_top_group 手摆细节自洽（组数对齐几何库 / 长度精确 / native 未缩）", () => {
@@ -849,6 +937,9 @@ test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2
         ...Object.entries((JSON.parse(kit("blocks.info.json").toString("utf8")) as
             { kinds: Record<string, { texture: { source: string } }> }).kinds)
             .map(([k, x]): [string, string] => [`blocks.info.json/${k}`, x.texture.source]),
+        ...(JSON.parse(kit("roads.info.json").toString("utf8")) as
+            { atlas: { cells: { id: number; source: string }[] } }).atlas.cells
+            .map((c): [string, string] => [`roads.info.json#${c.id}`, c.source]),
         ...Object.entries((JSON.parse(kit("top-atlas.info.json").toString("utf8")) as
             { atlases: Record<string, { cells: { id: number; source: string }[] }> }).atlases)
             .flatMap(([k, x]) => x.cells.map((c): [string, string] =>

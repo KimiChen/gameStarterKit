@@ -1,0 +1,370 @@
+{
+ "schemaVersion": 1,
+ "mapId": "s1",
+ "skin": "road",
+ "grid": {
+  "side": 1125,
+  "halfW": 200,
+  "halfH": 100,
+  "tilesPerCell": 1.333333,
+  "key": "(row << 16) | col",
+  "order": "lua tiles；bytes 侧是 (col, row) 转置"
+ },
+ "sBias": 0,
+ "dBias": 1125,
+ "recordBytes": 6,
+ "headerBytes": 4,
+ "placements": 42018,
+ "placementSha256": "294ee96269ab3139356d6fb8beafc9fc19d221631d3c1c0efc7c05d04cdbdf14",
+ "typeCount": 37,
+ "resIds": [
+  1170,
+  1171,
+  1172,
+  1173,
+  1174,
+  1175,
+  1176,
+  1177,
+  1178,
+  1179,
+  1180,
+  1181,
+  1182,
+  1183,
+  1184,
+  1185,
+  1186,
+  1187
+ ],
+ "atlas": {
+  "size": [
+   1024,
+   1024
+  ],
+  "downscale": 0.5,
+  "cells": [
+   {
+    "id": 0,
+    "resId": 1170,
+    "rect": [
+     2,
+     2,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downend",
+    "source": "scene/ground/road/downend/7-1.png"
+   },
+   {
+    "id": 1,
+    "resId": 1171,
+    "rect": [
+     204,
+     2,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downend",
+    "source": "scene/ground/road/downend/7-2.png"
+   },
+   {
+    "id": 2,
+    "resId": 1172,
+    "rect": [
+     406,
+     2,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downtcross",
+    "source": "scene/ground/road/downtcross/9-1.png"
+   },
+   {
+    "id": 3,
+    "resId": 1173,
+    "rect": [
+     608,
+     2,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downverticalturn",
+    "source": "scene/ground/road/downverticalturn/4-1.png"
+   },
+   {
+    "id": 4,
+    "resId": 1174,
+    "rect": [
+     810,
+     2,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downverticalturn",
+    "source": "scene/ground/road/downverticalturn/4-2.png"
+   },
+   {
+    "id": 5,
+    "resId": 1175,
+    "rect": [
+     2,
+     104,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "horizonalturn",
+    "source": "scene/ground/road/horizonalturn/2-1.png"
+   },
+   {
+    "id": 6,
+    "resId": 1176,
+    "rect": [
+     204,
+     104,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "horizonalturn",
+    "source": "scene/ground/road/horizonalturn/2-2.png"
+   },
+   {
+    "id": 7,
+    "resId": 1177,
+    "rect": [
+     406,
+     104,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "horizonalturn",
+    "source": "scene/ground/road/horizonalturn/2-3.png"
+   },
+   {
+    "id": 8,
+    "resId": 1178,
+    "rect": [
+     608,
+     104,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "horizonalturn",
+    "source": "scene/ground/road/horizonalturn/2-4.png"
+   },
+   {
+    "id": 9,
+    "resId": 1179,
+    "rect": [
+     810,
+     104,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "line",
+    "source": "scene/ground/road/line/1-1.png"
+   },
+   {
+    "id": 10,
+    "resId": 1180,
+    "rect": [
+     2,
+     206,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "line",
+    "source": "scene/ground/road/line/1-2.png"
+   },
+   {
+    "id": 11,
+    "resId": 1181,
+    "rect": [
+     204,
+     206,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "line",
+    "source": "scene/ground/road/line/1-3.png"
+   },
+   {
+    "id": 12,
+    "resId": 1182,
+    "rect": [
+     406,
+     206,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "line",
+    "source": "scene/ground/road/line/1-4.png"
+   },
+   {
+    "id": 13,
+    "resId": 1183,
+    "rect": [
+     608,
+     206,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "upend",
+    "source": "scene/ground/road/upend/6-2.png"
+   },
+   {
+    "id": 14,
+    "resId": 1184,
+    "rect": [
+     810,
+     206,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "uptcross",
+    "source": "scene/ground/road/uptcross/8-1.png"
+   },
+   {
+    "id": 15,
+    "resId": 1185,
+    "rect": [
+     2,
+     308,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "upverticalturn",
+    "source": "scene/ground/road/upverticalturn/3-1.png"
+   },
+   {
+    "id": 16,
+    "resId": 1186,
+    "rect": [
+     204,
+     308,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "upverticalturn",
+    "source": "scene/ground/road/upverticalturn/3-2.png"
+   },
+   {
+    "id": 17,
+    "resId": 1187,
+    "rect": [
+     406,
+     308,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "xcross",
+    "source": "scene/ground/road/xcross/5-1.png"
+   }
+  ],
+  "sha256": "6b4059881def36559d0473c03d7cfcb708496faa01ed430b153da7e14d016f9b"
+ },
+ "binding": {
+  "method": "邻接度结构签名 + 完整路径字母序",
+  "degrees": [
+   1,
+   1,
+   3,
+   2,
+   2,
+   2,
+   2,
+   2,
+   2,
+   2,
+   2,
+   2,
+   2,
+   1,
+   3,
+   2,
+   2,
+   4
+  ],
+  "undetermined": [
+   "6-1.png",
+   "6-2.png"
+  ],
+  "tier": "[推断] —— client_res 在未解的 base.cw 里，⛔ 别当干净集引用"
+ },
+ "source": {
+  "config": "asset/config/S1/cn/res_pro/road_info.lua",
+  "atlas": "scene/_output_atlas_scene/atlas_tex/road.xml"
+ }
+}
