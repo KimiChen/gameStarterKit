@@ -1,7 +1,7 @@
 {
- "schemaVersion": 2,
+ "schemaVersion": 3,
  "mapId": "s1",
- "source": "src-lua/script/ui/view/map/birdview/season_cfg/s1/{canton,area}_name_info.lua + asset/config/S1/cn/res_pro/city_center.lua + map/s1/cn/city.bytes（占格表）",
+ "source": "src-lua/script/ui/view/map/birdview/season_cfg/s1/{canton,area}_name_info.lua + asset/config/S1/cn/res_pro/city_center.lua + map/s1/cn/city.bytes（占格表） + base.cw 的 city[1] / city_shape_grids / city_shape（城名与类型）",
  "cantons": [
   {
    "key": "地图文案_西凉",
@@ -449,1247 +449,2492 @@
   {
    "id": 1,
    "row": 648,
-   "col": 107
+   "col": 107,
+   "name": "南皮",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 2,
    "row": 688,
-   "col": 216
+   "col": 216,
+   "name": "平原",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 3,
    "row": 586,
-   "col": 40
+   "col": 40,
+   "name": "乐陵",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 4,
    "row": 619,
-   "col": 142
+   "col": 142,
+   "name": "乐成",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 5,
    "row": 465,
-   "col": 208
+   "col": 208,
+   "name": "真定",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 6,
    "row": 482,
-   "col": 157
+   "col": 157,
+   "name": "中山",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 7,
    "row": 516,
-   "col": 247
+   "col": 247,
+   "name": "钜鹿",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 8,
    "row": 601,
-   "col": 225
+   "col": 225,
+   "name": "甘陵",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 9,
    "row": 559,
-   "col": 144
+   "col": 144,
+   "name": "信都",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 10,
    "row": 159,
-   "col": 201
+   "col": 201,
+   "name": "九原",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 11,
    "row": 82,
-   "col": 256
+   "col": 256,
+   "name": "西安阳",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 12,
    "row": 202,
-   "col": 139
+   "col": 139,
+   "name": "定襄",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 13,
    "row": 319,
-   "col": 485
+   "col": 485,
+   "name": "高奴",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 14,
    "row": 267,
-   "col": 420
+   "col": 420,
+   "name": "肤施",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 15,
    "row": 209,
-   "col": 305
+   "col": 305,
+   "name": "桢林",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 16,
    "row": 441,
-   "col": 495
+   "col": 495,
+   "name": "平阳",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 17,
    "row": 416,
-   "col": 379
+   "col": 379,
+   "name": "晋阳",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 18,
    "row": 467,
-   "col": 386
+   "col": 386,
+   "name": "沾县",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 19,
    "row": 363,
-   "col": 402
+   "col": 402,
+   "name": "离石",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 20,
    "row": 456,
-   "col": 456
+   "col": 456,
+   "name": "壶关",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "RADIUS_2",
+   "clientResId": 14
   },
   {
    "id": 21,
    "row": 695,
-   "col": 364
+   "col": 364,
+   "name": "邺",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 8
   },
   {
    "id": 22,
    "row": 574,
-   "col": 366
+   "col": 366,
+   "name": "馆陶",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 23,
    "row": 644,
-   "col": 275
+   "col": 275,
+   "name": "顿丘",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 24,
    "row": 335,
-   "col": 210
+   "col": 210,
+   "name": "雁门",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 25,
    "row": 362,
-   "col": 288
+   "col": 288,
+   "name": "新兴",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 26,
    "row": 275,
-   "col": 97
+   "col": 97,
+   "name": "剧阳",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 27,
    "row": 500,
-   "col": 36
+   "col": 36,
+   "name": "蓟",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 28,
    "row": 330,
-   "col": 50
+   "col": 50,
+   "name": "居庸",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 29,
    "row": 554,
-   "col": 87
+   "col": 87,
+   "name": "涿县",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 30,
    "row": 404,
-   "col": 58
+   "col": 58,
+   "name": "代县",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 31,
    "row": 273,
-   "col": 1045
+   "col": 1045,
+   "name": "襄武",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 32,
    "row": 301,
-   "col": 1133
+   "col": 1133,
+   "name": "临洮",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 33,
    "row": 260,
-   "col": 1095
+   "col": 1095,
+   "name": "狄道",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 34,
    "row": 186,
-   "col": 1084
+   "col": 1084,
+   "name": "河关",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 35,
    "row": 248,
-   "col": 1042
+   "col": 1042,
+   "name": "榆中",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 36,
    "row": 213,
-   "col": 1059
+   "col": 1059,
+   "name": "金城",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 37,
    "row": 57,
-   "col": 870
+   "col": 870,
+   "name": "令居",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 38,
    "row": 164,
-   "col": 1054
+   "col": 1054,
+   "name": "允吾",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 39,
    "row": 63,
-   "col": 391
+   "col": 391,
+   "name": "临戎",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 40,
    "row": 19,
-   "col": 308
+   "col": 308,
+   "name": "高阙",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 41,
    "row": 33,
-   "col": 466
+   "col": 466,
+   "name": "鸡鹿塞",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 42,
    "row": 207,
-   "col": 592
+   "col": 592,
+   "name": "灵州",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 43,
    "row": 222,
-   "col": 806
+   "col": 806,
+   "name": "袓厉",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 44,
    "row": 216,
-   "col": 728
+   "col": 728,
+   "name": "富平",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 45,
    "row": 143,
-   "col": 807
+   "col": 807,
+   "name": "鸇阴",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 46,
    "row": 288,
-   "col": 943
+   "col": 943,
+   "name": "天水",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 6
   },
   {
    "id": 47,
    "row": 339,
-   "col": 924
+   "col": 924,
+   "name": "临渭",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 48,
    "row": 270,
-   "col": 836
+   "col": 836,
+   "name": "成纪",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 49,
    "row": 334,
-   "col": 976
+   "col": 976,
+   "name": "西县",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 50,
    "row": 315,
-   "col": 873
+   "col": 873,
+   "name": "街亭",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 51,
    "row": 72,
-   "col": 1060
+   "col": 1060,
+   "name": "西都",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 52,
    "row": 125,
-   "col": 992
+   "col": 992,
+   "name": "破羌",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 53,
    "row": 47,
-   "col": 1129
+   "col": 1129,
+   "name": "临羌",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 54,
    "row": 285,
-   "col": 1036
+   "col": 1036,
+   "name": "獂道",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 55,
    "row": 316,
-   "col": 1040
+   "col": 1040,
+   "name": "中陶",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 56,
    "row": 248,
-   "col": 981
+   "col": 981,
+   "name": "平襄",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 5
   },
   {
    "id": 57,
    "row": 743,
-   "col": 1287
+   "col": 1287,
+   "name": "江州",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 58,
    "row": 781,
-   "col": 1217
+   "col": 1217,
+   "name": "涪陵",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 59,
    "row": 883,
-   "col": 1320
+   "col": 1320,
+   "name": "汉复",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 60,
    "row": 718,
-   "col": 1374
+   "col": 1374,
+   "name": "江阳",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 61,
    "row": 453,
-   "col": 1461
+   "col": 1461,
+   "name": "汉嘉",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 62,
    "row": 516,
-   "col": 1417
+   "col": 1417,
+   "name": "武阳",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 63,
    "row": 560,
-   "col": 1475
+   "col": 1475,
+   "name": "江原",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 64,
    "row": 774,
-   "col": 1416
+   "col": 1416,
+   "name": "鄨县",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 65,
    "row": 870,
-   "col": 1397
+   "col": 1397,
+   "name": "牂柯",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 66,
    "row": 851,
-   "col": 1485
+   "col": 1485,
+   "name": "广谈",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 67,
    "row": 975,
-   "col": 1481
+   "col": 1481,
+   "name": "毋敛",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 68,
    "row": 470,
-   "col": 1353
+   "col": 1353,
+   "name": "成都",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 4
   },
   {
    "id": 69,
    "row": 558,
-   "col": 1317
+   "col": 1317,
+   "name": "郪县",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 70,
    "row": 648,
-   "col": 1371
+   "col": 1371,
+   "name": "汉安",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 71,
    "row": 624,
-   "col": 1257
+   "col": 1257,
+   "name": "德阳",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 72,
    "row": 477,
-   "col": 1264
+   "col": 1264,
+   "name": "涪县",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 73,
    "row": 546,
-   "col": 1159
+   "col": 1159,
+   "name": "阆中",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 74,
    "row": 550,
-   "col": 1044
+   "col": 1044,
+   "name": "汉昌",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 75,
    "row": 651,
-   "col": 1166
+   "col": 1166,
+   "name": "宕渠",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 76,
    "row": 684,
-   "col": 1104
+   "col": 1104,
+   "name": "汉丰",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 77,
    "row": 330,
-   "col": 1190
+   "col": 1190,
+   "name": "阴平",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 78,
    "row": 387,
-   "col": 1060
+   "col": 1060,
+   "name": "武都",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 79,
    "row": 428,
-   "col": 1154
+   "col": 1154,
+   "name": "广武",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 80,
    "row": 423,
-   "col": 1234
+   "col": 1234,
+   "name": "湔氐",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 81,
    "row": 388,
-   "col": 1292
+   "col": 1292,
+   "name": "剑阁",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "RADIUS_2",
+   "clientResId": 15
   },
   {
    "id": 82,
    "row": 346,
-   "col": 1326
+   "col": 1326,
+   "name": "梓潼",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 83,
    "row": 362,
-   "col": 1446
+   "col": 1446,
+   "name": "绵虒",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 84,
    "row": 407,
-   "col": 1368
+   "col": 1368,
+   "name": "绵竹关",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 85,
    "row": 272,
-   "col": 1428
+   "col": 1428,
+   "name": "平康",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 86,
    "row": 1259,
-   "col": 1162
+   "col": 1162,
+   "name": "桂阳",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 87,
    "row": 1318,
-   "col": 1236
+   "col": 1236,
+   "name": "临武",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 88,
    "row": 1398,
-   "col": 1282
+   "col": 1282,
+   "name": "浈阳",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 89,
    "row": 1210,
-   "col": 1124
+   "col": 1124,
+   "name": "耒阳",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 90,
    "row": 1084,
-   "col": 1057
+   "col": 1057,
+   "name": "湘南",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 91,
    "row": 1020,
-   "col": 1003
+   "col": 1003,
+   "name": "益阳",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 92,
    "row": 1139,
-   "col": 1132
+   "col": 1132,
+   "name": "重安",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 93,
    "row": 1040,
-   "col": 1269
+   "col": 1269,
+   "name": "零陵",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 94,
    "row": 1279,
-   "col": 1350
+   "col": 1350,
+   "name": "临贺",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 95,
    "row": 1122,
-   "col": 1282
+   "col": 1282,
+   "name": "舂陵",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 96,
    "row": 1159,
-   "col": 1364
+   "col": 1364,
+   "name": "观阳",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 97,
    "row": 978,
-   "col": 1000
+   "col": 1000,
+   "name": "武陵",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 98,
    "row": 959,
-   "col": 1286
+   "col": 1286,
+   "name": "舞阳",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 99,
    "row": 824,
-   "col": 1155
+   "col": 1155,
+   "name": "沙渠",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 100,
    "row": 840,
-   "col": 1020
+   "col": 1020,
+   "name": "佷山",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 101,
    "row": 1080,
-   "col": 1007
+   "col": 1007,
+   "name": "长沙",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 2
   },
   {
    "id": 102,
    "row": 1137,
-   "col": 1034
+   "col": 1034,
+   "name": "醴陵",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 103,
    "row": 1117,
-   "col": 960
+   "col": 960,
+   "name": "刘阳",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 104,
    "row": 1226,
-   "col": 1033
+   "col": 1033,
+   "name": "安成",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 105,
    "row": 1065,
-   "col": 944
+   "col": 944,
+   "name": "下隽",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 106,
    "row": 1464,
-   "col": 1338
+   "col": 1338,
+   "name": "南海",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 107,
    "row": 1418,
-   "col": 1307
+   "col": 1307,
+   "name": "中宿",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 108,
    "row": 1486,
-   "col": 1424
+   "col": 1424,
+   "name": "思平",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 109,
    "row": 1364,
-   "col": 1368
+   "col": 1368,
+   "name": "广信",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 110,
    "row": 1149,
-   "col": 1470
+   "col": 1470,
+   "name": "布山",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 111,
    "row": 1048,
-   "col": 1482
+   "col": 1482,
+   "name": "临浦",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 112,
    "row": 1037,
-   "col": 1445
+   "col": 1445,
+   "name": "桂林",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 113,
    "row": 998,
-   "col": 1378
+   "col": 1378,
+   "name": "建陵",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 114,
    "row": 1192,
-   "col": 836
+   "col": 836,
+   "name": "南昌",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 115,
    "row": 1166,
-   "col": 894
+   "col": 894,
+   "name": "艾县",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 116,
    "row": 1259,
-   "col": 957
+   "col": 957,
+   "name": "新淦",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 117,
    "row": 1215,
-   "col": 970
+   "col": 970,
+   "name": "上蔡",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 118,
    "row": 1206,
-   "col": 387
+   "col": 387,
+   "name": "建业",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 2
   },
   {
    "id": 119,
    "row": 1283,
-   "col": 252
+   "col": 252,
+   "name": "吴",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 120,
    "row": 1260,
-   "col": 491
+   "col": 491,
+   "name": "宣城",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 121,
    "row": 1332,
-   "col": 300
+   "col": 300,
+   "name": "嘉兴",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 122,
    "row": 1291,
-   "col": 581
+   "col": 581,
+   "name": "临城",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 123,
    "row": 1410,
-   "col": 360
+   "col": 360,
+   "name": "会稽",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 124,
    "row": 1479,
-   "col": 350
+   "col": 350,
+   "name": "鄞县",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 125,
    "row": 1380,
-   "col": 434
+   "col": 434,
+   "name": "建德",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 126,
    "row": 1471,
-   "col": 544
+   "col": 544,
+   "name": "永康",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 127,
    "row": 1342,
-   "col": 869
+   "col": 869,
+   "name": "南城",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 128,
    "row": 1424,
-   "col": 854
+   "col": 854,
+   "name": "昭武",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 129,
    "row": 1290,
-   "col": 866
+   "col": 866,
+   "name": "西平",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 130,
    "row": 1321,
-   "col": 946
+   "col": 946,
+   "name": "安浦",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 131,
    "row": 1367,
-   "col": 1054
+   "col": 1054,
+   "name": "高昌",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 132,
    "row": 1447,
-   "col": 1156
+   "col": 1156,
+   "name": "南野",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 133,
    "row": 1444,
-   "col": 1066
+   "col": 1066,
+   "name": "扬都",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 134,
    "row": 1329,
-   "col": 998
+   "col": 998,
+   "name": "阳城",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 135,
    "row": 1243,
-   "col": 772
+   "col": 772,
+   "name": "鄱阳",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 136,
    "row": 1160,
-   "col": 714
+   "col": 714,
+   "name": "彭泽",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 137,
    "row": 1278,
-   "col": 664
+   "col": 664,
+   "name": "黟县",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 138,
    "row": 1436,
-   "col": 756
+   "col": 756,
+   "name": "上饶",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 139,
    "row": 1344,
-   "col": 721
+   "col": 721,
+   "name": "乐安",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 1
   },
   {
    "id": 140,
    "row": 880,
-   "col": 91
+   "col": 91,
+   "name": "北海",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 141,
    "row": 804,
-   "col": 91
+   "col": 91,
+   "name": "高苑",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 142,
    "row": 928,
-   "col": 124
+   "col": 124,
+   "name": "东武",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 143,
    "row": 939,
-   "col": 180
+   "col": 180,
+   "name": "琅邪",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 144,
    "row": 770,
-   "col": 398
+   "col": 398,
+   "name": "濮阳",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 145,
    "row": 758,
-   "col": 453
+   "col": 453,
+   "name": "陈留",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 146,
    "row": 822,
-   "col": 561
+   "col": 561,
+   "name": "许昌",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 8
   },
   {
    "id": 147,
    "row": 855,
-   "col": 468
+   "col": 468,
+   "name": "襄邑",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 148,
    "row": 1047,
-   "col": 269
+   "col": 269,
+   "name": "淮陵",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 149,
    "row": 1105,
-   "col": 426
+   "col": 426,
+   "name": "合肥",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 150,
    "row": 1064,
-   "col": 346
+   "col": 346,
+   "name": "寿春",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 151,
    "row": 1168,
-   "col": 607
+   "col": 607,
+   "name": "皖县",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 152,
    "row": 1116,
-   "col": 547
+   "col": 547,
+   "name": "六安",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 153,
    "row": 959,
-   "col": 218
+   "col": 218,
+   "name": "彭城",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 154,
    "row": 1025,
-   "col": 209
+   "col": 209,
+   "name": "下邳",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 155,
    "row": 1082,
-   "col": 215
+   "col": 215,
+   "name": "广陵",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 156,
    "row": 1148,
-   "col": 233
+   "col": 233,
+   "name": "海陵",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 157,
    "row": 974,
-   "col": 448
+   "col": 448,
+   "name": "汝南",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 158,
    "row": 903,
-   "col": 442
+   "col": 442,
+   "name": "谯",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 159,
    "row": 1056,
-   "col": 543
+   "col": 543,
+   "name": "安风",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 160,
    "row": 859,
-   "col": 364
+   "col": 364,
+   "name": "睢阳",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 161,
    "row": 873,
-   "col": 232
+   "col": 232,
+   "name": "小沛",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 162,
    "row": 828,
-   "col": 191
+   "col": 191,
+   "name": "奉高",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 163,
    "row": 793,
-   "col": 240
+   "col": 240,
+   "name": "钜野",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 164,
    "row": 752,
-   "col": 141
+   "col": 141,
+   "name": "济北",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 165,
    "row": 940,
-   "col": 679
+   "col": 679,
+   "name": "庐江",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 166,
    "row": 986,
-   "col": 612
+   "col": 612,
+   "name": "弋阳",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 167,
    "row": 1029,
-   "col": 709
+   "col": 709,
+   "name": "蕲春",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 168,
    "row": 1045,
-   "col": 630
+   "col": 630,
+   "name": "松兹",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 169,
    "row": 457,
-   "col": 606
+   "col": 606,
+   "name": "临晋",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 170,
    "row": 403,
-   "col": 581
+   "col": 581,
+   "name": "粟邑",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 171,
    "row": 393,
-   "col": 664
+   "col": 664,
+   "name": "泥阳",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 172,
    "row": 421,
-   "col": 544
+   "col": 544,
+   "name": "夏阳",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 173,
    "row": 460,
-   "col": 810
+   "col": 810,
+   "name": "槐里",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 174,
    "row": 411,
-   "col": 874
+   "col": 874,
+   "name": "陈仓",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 175,
    "row": 367,
-   "col": 873
+   "col": 873,
+   "name": "汧县",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 176,
    "row": 408,
-   "col": 822
+   "col": 822,
+   "name": "杜阳",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 177,
    "row": 479,
-   "col": 973
+   "col": 973,
+   "name": "汉中",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 178,
    "row": 567,
-   "col": 921
+   "col": 921,
+   "name": "安阳",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 179,
    "row": 488,
-   "col": 919
+   "col": 919,
+   "name": "兴势",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 180,
    "row": 511,
-   "col": 742
+   "col": 742,
+   "name": "长安",
+   "cityType": "大型城池",
+   "level": 9,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 8
   },
   {
    "id": 181,
    "row": 512,
-   "col": 666
+   "col": 666,
+   "name": "郑县",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 182,
    "row": 589,
-   "col": 768
+   "col": 768,
+   "name": "蓝田",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 183,
    "row": 470,
-   "col": 682
+   "col": 682,
+   "name": "高陆",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 184,
    "row": 314,
-   "col": 784
+   "col": 784,
+   "name": "安定",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 185,
    "row": 384,
-   "col": 747
+   "col": 747,
+   "name": "漆县",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 186,
    "row": 333,
-   "col": 841
+   "col": 841,
+   "name": "泾阳",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 187,
    "row": 354,
-   "col": 806
+   "col": 806,
+   "name": "阴密",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 188,
    "row": 1045,
-   "col": 772
+   "col": 772,
+   "name": "江夏",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 189,
    "row": 1092,
-   "col": 743
+   "col": 743,
+   "name": "柴桑",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 190,
    "row": 1113,
-   "col": 823
+   "col": 823,
+   "name": "阳新",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 191,
    "row": 925,
-   "col": 929
+   "col": 929,
+   "name": "江陵",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 192,
    "row": 812,
-   "col": 975
+   "col": 975,
+   "name": "秭归",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 193,
    "row": 864,
-   "col": 957
+   "col": 957,
+   "name": "西陵",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 194,
    "row": 976,
-   "col": 880
+   "col": 880,
+   "name": "华容",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 195,
    "row": 871,
-   "col": 746
+   "col": 746,
+   "name": "宛",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 196,
    "row": 776,
-   "col": 714
+   "col": 714,
+   "name": "郦县",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 197,
    "row": 813,
-   "col": 735
+   "col": 735,
+   "name": "南乡",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 198,
    "row": 916,
-   "col": 792
+   "col": 792,
+   "name": "新野",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 199,
    "row": 709,
-   "col": 984
+   "col": 984,
+   "name": "上庸",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 200,
    "row": 748,
-   "col": 940
+   "col": 940,
+   "name": "房陵",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 201,
    "row": 773,
-   "col": 1004
+   "col": 1004,
+   "name": "绥阳",
+   "cityType": "小型城池",
+   "level": 4,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 202,
    "row": 659,
-   "col": 908
+   "col": 908,
+   "name": "钖县",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 203,
    "row": 895,
-   "col": 825
+   "col": 825,
+   "name": "襄阳",
+   "cityType": "大型城池",
+   "level": 9,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 4
   },
   {
    "id": 204,
    "row": 836,
-   "col": 826
+   "col": 826,
+   "name": "鄀县",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 205,
    "row": 942,
-   "col": 855
+   "col": 855,
+   "name": "临沮",
+   "cityType": "小型城池",
+   "level": 3,
+   "shape": "H_SHAPE",
+   "clientResId": 3
   },
   {
    "id": 206,
    "row": 661,
-   "col": 543
+   "col": 543,
+   "name": "洛阳",
+   "cityType": "大型城池",
+   "level": 10,
+   "shape": "DOUBLE_H_SHAPE",
+   "clientResId": 24
   },
   {
    "id": 207,
    "row": 739,
-   "col": 559
+   "col": 559,
+   "name": "京县",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 208,
    "row": 724,
-   "col": 607
+   "col": 607,
+   "name": "新城",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 209,
    "row": 781,
-   "col": 628
+   "col": 628,
+   "name": "新郑",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 210,
    "row": 604,
-   "col": 490
+   "col": 490,
+   "name": "河内",
+   "cityType": "大型城池",
+   "level": 9,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 211,
    "row": 551,
-   "col": 525
+   "col": 525,
+   "name": "东垣",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 212,
    "row": 520,
-   "col": 553
+   "col": 553,
+   "name": "安邑",
+   "cityType": "中型城池",
+   "level": 5,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 213,
    "row": 590,
-   "col": 647
+   "col": 647,
+   "name": "弘农",
+   "cityType": "大型城池",
+   "level": 9,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 214,
    "row": 647,
-   "col": 652
+   "col": 652,
+   "name": "宜阳",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 215,
    "row": 599,
-   "col": 574
+   "col": 574,
+   "name": "新安",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 216,
    "row": 672,
-   "col": 700
+   "col": 700,
+   "name": "卢氏",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "H_SHAPE",
+   "clientResId": 7
   },
   {
    "id": 217,
    "row": 679,
-   "col": 496
+   "col": 496,
+   "name": "虎牢关",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 218,
    "row": 623,
-   "col": 580
+   "col": 580,
+   "name": "函谷关",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "RADIUS_2",
+   "clientResId": 14
   },
   {
    "id": 219,
    "row": 668,
-   "col": 466
+   "col": 466,
+   "name": "孟津",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 220,
    "row": 483,
-   "col": 1054
+   "col": 1054,
+   "name": "阳平关",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "RADIUS_2",
+   "clientResId": 15
   },
   {
    "id": 221,
    "row": 396,
-   "col": 972
+   "col": 972,
+   "name": "散关",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 222,
    "row": 980,
-   "col": 1424
+   "col": 1424,
+   "name": "始安",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "RADIUS_2",
+   "clientResId": 14
   },
   {
    "id": 223,
    "row": 761,
-   "col": 1134
+   "col": 1134,
+   "name": "永安",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "RADIUS_2",
+   "clientResId": 14
   },
   {
    "id": 224,
    "row": 542,
-   "col": 643
+   "col": 643,
+   "name": "潼关",
+   "cityType": "大型城池",
+   "level": 9,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 225,
    "row": 494,
-   "col": 600
+   "col": 600,
+   "name": "风陵渡",
+   "cityType": "大型城池",
+   "level": 9,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 226,
    "row": 466,
-   "col": 542
+   "col": 542,
+   "name": "蒲坂津",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "PIER_1",
+   "clientResId": 26
   },
   {
    "id": 227,
    "row": 360,
-   "col": 568
+   "col": 568,
+   "name": "鄜城",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "RADIUS_2",
+   "clientResId": 15
   },
   {
    "id": 228,
    "row": 731,
-   "col": 222
+   "col": 222,
+   "name": "高唐",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 229,
    "row": 746,
-   "col": 421
+   "col": 421,
+   "name": "白马",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 230,
    "row": 276,
-   "col": 544
+   "col": 544,
+   "name": "大城",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 231,
    "row": 51,
-   "col": 280
+   "col": 280,
+   "name": "阴山",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "RADIUS_2",
+   "clientResId": 14
   },
   {
    "id": 232,
    "row": 1160,
-   "col": 845
+   "col": 845,
+   "name": "西安",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 233,
    "row": 1100,
-   "col": 719
+   "col": 719,
+   "name": "九江港",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 234,
    "row": 1214,
-   "col": 615
+   "col": 615,
+   "name": "皖口",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 235,
    "row": 1172,
-   "col": 415
+   "col": 415,
+   "name": "濡须口",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 236,
    "row": 690,
-   "col": 750
+   "col": 750,
+   "name": "武关",
+   "cityType": "大型城池",
+   "level": 9,
+   "shape": "RADIUS_2",
+   "clientResId": 15
   },
   {
    "id": 237,
    "row": 800,
-   "col": 684
+   "col": 684,
+   "name": "析县",
+   "cityType": "大型城池",
+   "level": 9,
+   "shape": "RADIUS_2",
+   "clientResId": 15
   },
   {
    "id": 238,
    "row": 1390,
-   "col": 1245
+   "col": 1245,
+   "name": "曲江",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "PIER_4",
+   "clientResId": 27
   },
   {
    "id": 239,
    "row": 1269,
-   "col": 1018
+   "col": 1018,
+   "name": "阳乐",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "RADIUS_2",
+   "clientResId": 14
   },
   {
    "id": 240,
    "row": 974,
-   "col": 917
+   "col": 917,
+   "name": "公安港",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "PIER_1",
+   "clientResId": 26
   },
   {
    "id": 241,
    "row": 845,
-   "col": 981
+   "col": 981,
+   "name": "夷陵",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 242,
    "row": 1025,
-   "col": 758
+   "col": 758,
+   "name": "夏口",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "PIER_2",
+   "clientResId": 25
   },
   {
    "id": 243,
    "row": 831,
-   "col": 659
+   "col": 659,
+   "name": "博望",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "RADIUS_2",
+   "clientResId": 14
   },
   {
    "id": 244,
    "row": 333,
-   "col": 995
+   "col": 995,
+   "name": "历城",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 245,
    "row": 248,
-   "col": 1358
+   "col": 1358,
+   "name": "甘松",
+   "cityType": "中型城池",
+   "level": 6,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 246,
    "row": 287,
-   "col": 822
+   "col": 822,
+   "name": "萧关",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 247,
    "row": 305,
-   "col": 710
+   "col": 710,
+   "name": "月支城",
+   "cityType": "大型城池",
+   "level": 7,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 248,
    "row": 622,
-   "col": 916
+   "col": 916,
+   "name": "西城",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   },
   {
    "id": 249,
    "row": 652,
-   "col": 831
+   "col": 831,
+   "name": "上洛",
+   "cityType": "大型城池",
+   "level": 8,
+   "shape": "RADIUS_2",
+   "clientResId": 16
   }
  ],
  "cityCells": [

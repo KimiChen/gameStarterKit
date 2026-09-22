@@ -9,7 +9,6 @@ import {
 import {
     MAPO_CITY_CELL_COUNTS, MAPO_CITY_CELL_KEYS, MAPO_CITY_SITES,
 } from "../src/shared/kits/mapOriginal/content/labels.data";
-import { MAPO_DECOR_CITY_BASE } from "../src/shared/kits/mapOriginal/content/decor.data";
 import { mapoDecorAt } from "../src/kits/mapOriginal/logic/mapoDecor";
 
 /** 第一座城的中心格与它的一个非中心占格。 */
@@ -18,10 +17,11 @@ const OTHER_KEY = MAPO_CITY_CELL_KEYS[1];              // 同一座城的第 2 �
 const OTHER = { row: Math.floor(OTHER_KEY / 10000), col: OTHER_KEY % 10000 };
 const RES_VALUE = 12;                                   // 某个资源值（2..41）
 
-test("mapOriginal 摆件：城中心格出城址件", () => {
-    const p = mapoDecorAt(SITE.row, SITE.col, 1, true);
-    assert.ok(p, "城中心没出件");
-    assert.ok(p.cell.id >= MAPO_DECOR_CITY_BASE, "城中心出的不是城址件");
+test("mapOriginal 摆件：城中心格**不**出摆件（城址件归 mapoCities 画）", () => {
+    // ⚠ 本用例 2026-09-23 反向：早先摆件层按「面积前 8 大 + 位置散列」在城中心挑一件城址件
+    //   —— 那是本仓自创的启发式。现在城由 `mapoCities` 画**原版真件**（15 个件 / 249 座），
+    //   中心格若还出摆件就会与城重叠。
+    assert.equal(mapoDecorAt(SITE.row, SITE.col, 1, true), null, "城中心仍出了摆件");
 });
 
 test("mapOriginal 摆件：第 4 道门 —— 城占的格不叠资源件", () => {
@@ -99,10 +99,12 @@ test("mapOriginal 分层：第 ② 级刻度照抄原版 MAP_ZORDER，且**留�
     assert.equal(mapoLayerZorder("road"), 900, "= 原版 ROAD");
     assert.equal(mapoLayerZorder("river"), 1600, "= 原版 RIVER");
     assert.equal(mapoLayerZorder("decor"), 3400, "res_field = 原版 RES");
-    // ★ 关键次序：远档底图 < 地表底 < 雪沙带 < 山族件 < 路 < 河 < 摆件 < 地名
-    // ⚠ banner = 原版 BUILD_TOP(3900) 在 decor = RES(3400) **之上**
+    assert.equal(mapoLayerZorder("city"), 3900, "城址件 = 原版 BUILD_TOP");
+    // ★ 关键次序：远档底图 < 地表底 < 雪沙带 < 山族件 < 路 < 河 < 摆件 < 城 < 旗 < 地名
+    // ⚠ city = 原版 BUILD_TOP(3900) 在 decor = RES(3400) **之上**；
+    //   banner（旗标）再在城之上 ⇒ 它从 3900 让到 3950
     const want = ["plate", "terrain", "blocks", "region", "road", "grid", "river",
-                  "decor", "banner", "label"];
+                  "decor", "city", "banner", "label"];
     const got = MAPO_LAYER_ORDER.filter((id) => (want as readonly string[]).includes(id));
     assert.deepEqual([...got], want.filter((id) => (got as readonly string[]).includes(id)),
         "刻度升序");

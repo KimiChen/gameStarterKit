@@ -55,12 +55,15 @@ FILES = {
     "river-fill.png": "river-fill.png", "river-geo.bin": "river-geo.bin",
     "rivers.bin": "rivers.bin", "rivers.info.json": "rivers.info.json",
     "river-geo.index.json": "river-geo.index.json",
+    # ★ 城址件：15 个原版件的图集 + 件库/摆位（§5）。⚠ 两件缺一则城址层整层不建。
+    "city-atlas.png": "city-atlas.png", "cities.bin": "cities.bin",
+    "cities.info.json": "cities.info.json",
     "labels.json": "labels.json",
 }
 KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
             "rivers.info.json", "river-geo.index.json", "ground.info.json",
             "blocks.info.json", "top-atlas.info.json", "roads.info.json",
-            "minimap.info.json"}
+            "minimap.info.json", "cities.info.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。

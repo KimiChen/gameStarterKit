@@ -10,7 +10,7 @@
 import { MAPO_LOD_MAX } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
 export type MapoLayerId =
-    | "terrain" | "blocks" | "road" | "grid" | "river" | "region" | "decor" | "plate"
+    | "terrain" | "blocks" | "road" | "grid" | "river" | "region" | "decor" | "city" | "plate"
     | "banner" | "label";
 
 interface LayerGate {
@@ -65,11 +65,17 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     // ★ 区域件（多格地形：山脉/林丛/散落）。⚠ 比逐格摆件多盖一档：远档看山林轮廓最有用。
     { id: "region", hideAtLod: 3, showFromLod: 0, streamed: true, implemented: true, zorder: 300 },
     { id: "decor", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 3400 },
+    // ★ 城址件：原版 15 个件、249 座真坐标（§5）。⚠ 在资源件**之上**
+    //   （原版 MAP_ZORDER：RES 3400 < BUILD_TOP 3900）。
+    //   ⚠ 比资源件多盖一档（hideAtLod 3）：远档一眼看城的分布最有用，而件只有 249 座、
+    //   一屏撑死几座，⛔ 开销不是这一层的瓶颈。
+    { id: "city", hideAtLod: 3, showFromLod: 0, streamed: false, implemented: true, zorder: 3900 },
     // ★ 地名：原版 canton/area 名表。⚠ 全档都画（远档大区、近档郡），⛔ 两档不要一起画。
     { id: "label", hideAtLod: MAPO_LOD_MAX, showFromLod: 0, streamed: false, implemented: true, zorder: 4000 },
     // ── 以下**尚未实现**：位置留着，⛔ 别当成能用 ──────────────────────────────
     // banner 目标旗要服务端的归属数据。
-    { id: "banner", hideAtLod: 1, showFromLod: 0, streamed: false, implemented: false, zorder: 3900 },
+    // ⚠ banner 从 3900 挪到 3950：3900 是原版 BUILD_TOP，已给城址件；旗标在建筑**之上**。
+    { id: "banner", hideAtLod: 1, showFromLod: 0, streamed: false, implemented: false, zorder: 3950 },
 ] as const);
 
 /**
@@ -89,6 +95,7 @@ export const MAPO_LAYER_RENDERER: Readonly<Record<MapoLayerId, string | null>> =
     plate: "farRenderer",
     region: "regionRenderer",
     decor: "decorRenderer",
+    city: "cityRenderer",
     label: "labelRenderer",
     banner: null,
 });

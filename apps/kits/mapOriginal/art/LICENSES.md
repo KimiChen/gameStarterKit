@@ -21,8 +21,8 @@
 | # | Catalog 逻辑名 | 源绝对路径 | SHA-256 | 许可证证据 | 批准 | 目标路径 | 转换/重绘说明 | 新 .meta | 状态 |
 |---:|---|---|---|---|---|---|---|---|---|
 | 1 | `terrain.bytes` | （合成，见说明） | `bbdec7fd14aa609852dbff765a476868edb846c3a0458b4d6185fd84760b3eaa` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/terrain.bytes` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 2 | `terrain.pass.bytes` | （合成，见说明） | `1aff1ac3de735f49fe5a1fe8b11cf0b6db8b9d19f45bd5275242d8c039d333f2` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/terrain.pass.bytes` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 3 | `terrain.info.json` | （合成，见说明） | `6008bdcd3f8e6e3d2ef21cdfd59ba5b0094df20964b719e23d4fb6b3df9f2479` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/terrain.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 2 | `terrain.pass.bytes` | （合成，见说明） | `cffa7328b450f4018b3becae74cf4da4409d3a9539621259a562045417a29158` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/terrain.pass.bytes` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 3 | `terrain.info.json` | （合成，见说明） | `63ca9df95f503d1756ccc69ce0dadba64533e3b47f2f3d04a0828d844f9c368f` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/terrain.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 4 | `ground-base.png` | （合成，见说明） | `3f5f85df9e5ce417017f6b9ca9dcc3a09880fae2b70e61902dfb4d7f3a74a2da` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/ground-base.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 5 | `ground.info.json` | （合成，见说明） | `90dd4ff3115d89512a68b394bebab0f1fb0da6736fce6a4b9c83abc4edcf94ed` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/ground.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 6 | `desert-base.png` | （合成，见说明） | `4d61842eef65bdfd6f962d0617a2045e2f60e061d789e792b31459af1b4d285a` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/desert-base.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
@@ -41,7 +41,7 @@
 | 19 | `top-atlas.info.json` | （合成，见说明） | `5efddc15ae8c5198395d85deabf7810579684d78e8f628ac0b5341aa56783bb2` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/top-atlas.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 20 | `road-atlas.png` | （合成，见说明） | `77dadb509cb0cf0dea64457d855798a2dfcdd780bac81a42100af2ee759a9a4f` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/road-atlas.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 21 | `roads.bin` | （合成，见说明） | `294ee96269ab3139356d6fb8beafc9fc19d221631d3c1c0efc7c05d04cdbdf14` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/roads.bin` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 22 | `roads.info.json` | （合成，见说明） | `8ad7139411010d4a023bc548ed015c35e01a9d9aad7cb3275abb170797d830d3` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/roads.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 22 | `roads.info.json` | （合成，见说明） | `8e8132223ae0a614509d80c0cb8bba85113abf667a10687292725701c957aa34` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/roads.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 23 | `minimap.info.json` | （合成，见说明） | `704663f52829b19d96e017b621d752189703411c252a690ca07720ae4dd93223` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/minimap.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 24 | `plate-lod4.png` | （合成，见说明） | `5c313272089d5af1cd538e6fda4a7ae043455564129e147f0974e93c77bea7eb` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/plate-lod4.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 25 | `plate-lod4.info.json` | （合成，见说明） | `6bbd6999e3c2fb0a16900c65eb7abcf0b7cf4cdc6585d620c035513b0ebf5730` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/plate-lod4.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
@@ -54,13 +54,16 @@
 | 32 | `region-atlas.png` | （合成，见说明） | `8585c010144d3afddd73f0386406bc85a76be4ad47b371fc2c94f562d2e255d3` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/region-atlas.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 33 | `region-atlas.info.json` | （合成，见说明） | `c98bf4fb3f0dbfd5985c0b4a51f150d7909e47570ff3e5a27a8f251b436cb483` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/region-atlas.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 34 | `regions.bin` | （合成，见说明） | `ca44fbe70217bf7db1e7b7e3650686ff4a969fbf3f23110dff50e89788f28ce8` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/regions.bin` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 35 | `regions.info.json` | （合成，见说明） | `7aa2046a9426780bafb8a2002c7619b3606db4741b3f9a343ed62508a6fc1412` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/regions.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 35 | `regions.info.json` | （合成，见说明） | `919824349ac4d064eaaeefdae351b4f9386d4827a1a4d36e4cca5a2ca7f23b4b` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/regions.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 36 | `river-fill.png` | （合成，见说明） | `1b56b30492f222ceebcef19888977ad862afd03ccb8e571e192336f53177084f` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/river-fill.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 37 | `river-geo.bin` | （合成，见说明） | `834447c193f63306119dfe0b2fbde4a43382df8bf04f4d0d9dfe3729bf9cd579` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/river-geo.bin` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 38 | `rivers.bin` | （合成，见说明） | `8e9301179adadb242da0046164c908722c1cc29e0cb6c4b40c44ab84205c485a` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/rivers.bin` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 39 | `rivers.info.json` | （合成，见说明） | `0d659711e798968078c7d7f462199aa498ad863984d970946cdd5e4b4f0b93f0` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/rivers.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 40 | `river-geo.index.json` | （合成，见说明） | `594ce1fe3486417c6e74b28dcdfb28d9b2d9ddff072d7717aa491c5d3c2fa431` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/river-geo.index.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 41 | `labels.json` | （合成，见说明） | `934b6190e66b541c639a0c69d78ae1bf2927ad80ab7156e500601d53699eea42` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/labels.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 41 | `city-atlas.png` | （合成，见说明） | `3027dc6712a63497fdf4956e997c58bbeecbc233b8c54fa9da6f5d50995166a5` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/city-atlas.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 42 | `cities.bin` | （合成，见说明） | `0dd70f4dffabf086c80c436bd7e44922cbca21ffcd6d51fe10690663eb27540e` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/cities.bin` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 43 | `cities.info.json` | （合成，见说明） | `e2f7c4e257fd28f4236ef35bdd117083038a267ffb29f362616924694affa0f9` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/cities.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 44 | `labels.json` | （合成，见说明） | `c801263fa8c7c6e8a4398557fc8569309459163ebec3f6963c2e98b8b6df5bad` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/labels.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 
 ## B. 源素材清单（仓外只读，⛔ 不入库）
 
@@ -163,7 +166,7 @@
 | `scene/ground/zhaoze/png/tt_02.ktx` | `ccbf9e04dbfb`/041 | `572aeee9f8d23caa` | ETC2 RGBA | 512x512 | `4f3b66de1328f5de735f688fa2b4909b11f67a23f8e7e8a6d3034f172752b6ba` |
 | `scene/ground/zhaoze/png/tt_04.ktx` | `ccbf9e04dbfb`/026 | `4dc30723d6504e6f` | ETC2 RGBA | 512x512 | `f117b75b2fe007469804b5f50d2600db51f5c703160ded605173ab4574d00893` |
 
-### B.2 图集切片（5586 张，来自上表的图集页）
+### B.2 图集切片（7108 张，来自上表的图集页）
 
 | 来源图集页 | 切出 | 说明 |
 |---|---:|---|
@@ -173,6 +176,8 @@
 | `scene/_output_atlas_scene/atlas_tex/armyline_i18n-1.png` | 180 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/build_attachment-1.png` | 37 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/ext_building_flag-1.png` | 465 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/gate-1.ktx` | 25 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/gongchengying-1.ktx` | 236 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/grid-1.png` | 97 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/ground-1.png` | 49 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/ground_dibiaohuawen-1.png` | 8 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
@@ -192,6 +197,11 @@
 | `scene/_output_atlas_scene/atlas_tex/npc_city_flood_mask1_5_yandi-1.png` | 5 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/npc_city_flood_mask_other-1.png` | 4 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/npc_city_flood_mask_other_yandi-1.png` | 4 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/pk19_build_4-1.ktx` | 173 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/pk19_build_zhongxincheng_1-1.ktx` | 236 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/pk19_build_zhongxincheng_2-1.ktx` | 205 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/pk21_liangcang-1.ktx` | 185 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/pk21_yingdichengchi-1.ktx` | 170 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/player_city-1.png` | 88 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/player_city_1-1.png` | 187 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/player_city_2-1.png` | 115 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
@@ -230,7 +240,8 @@
 | `scene/_output_atlas_scene/atlas_tex/road_liangdao-2.png` | 23 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/road_official-1.png` | 14 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/road_official-2.png` | 6 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
-| `scene/_output_atlas_scene/atlas_tex/small_build-1.png` | 263 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/s17_main_city-1.ktx` | 293 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/small_build-1.png` | 262 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/small_build-2.png` | 87 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/small_build_1-1.png` | 15 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/small_build_2-1.png` | 135 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |

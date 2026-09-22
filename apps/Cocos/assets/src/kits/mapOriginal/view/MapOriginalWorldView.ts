@@ -30,6 +30,7 @@ import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
 import { mapoSetRegions } from "../logic/mapoRegions";
 import { MAPO_BLOCK_KINDS, mapoSetBlockGeo, mapoSetBlocks } from "../logic/mapoBlocks";
+import { mapoSetCities } from "../logic/mapoCities";
 import { mapoSetRoads } from "../logic/mapoRoads";
 import { MAPO_TOP_KINDS, mapoSetTops } from "../logic/mapoTops";
 import { mapoSetRiverGeo, mapoSetRivers } from "../logic/mapoRivers";
@@ -42,6 +43,7 @@ import { MapoViewportStencil } from "../logic/mapoViewport";
 import { MapoDecorRenderer } from "./MapoDecorRenderer";
 import { MapoBlockRenderer } from "./MapoBlockRenderer";
 import { MapoGroundRenderer } from "./MapoGroundRenderer";
+import { MapoCityRenderer } from "./MapoCityRenderer";
 import { MapoRoadRenderer } from "./MapoRoadRenderer";
 import { MapoTopRenderer } from "./MapoTopRenderer";
 import { MapoRegionRenderer } from "./MapoRegionRenderer";
@@ -84,6 +86,8 @@ export class MapOriginalWorldView extends CocosView {
     private topCount = 0;
     /** 道路层：在地表与河流之间（原版 MAP_ZORDER 300 < 900 < 1600）。 */
     private roadRenderer: MapoRoadRenderer | null = null;
+    private cityRenderer: MapoCityRenderer | null = null;
+    private cityCount = 0;
     private roadCount = 0;
     /**
      * ★ 每层一个容器节点，**按 `MAPO_LAYER_ORDER`（第 ② 级刻度）升序建**。
@@ -165,6 +169,7 @@ export class MapOriginalWorldView extends CocosView {
             this.topRenderers.set(k, new MapoTopRenderer(this.layer("blocks"), null, k));
         }
         this.roadRenderer = new MapoRoadRenderer(this.layer("road"), null);
+        this.cityRenderer = new MapoCityRenderer(this.layer("city"), null);
         this.riverRenderer = new MapoRiverRenderer(this.layer("river"), null);
         this.topRenderers.set("river", new MapoTopRenderer(this.layer("river"), null, "river"));
         this.regionRenderer = new MapoRegionRenderer(this.layer("region"), null);
@@ -220,6 +225,11 @@ export class MapOriginalWorldView extends CocosView {
             }
             this.roadRenderer?.dispose();
             this.roadRenderer = new MapoRoadRenderer(this.layer("road"), art);
+            if (art.cities) {
+                try { mapoSetCities(art.cities.buffer()); } catch { /* 城址层不建 */ }
+            }
+            this.cityRenderer?.dispose();
+            this.cityRenderer = new MapoCityRenderer(this.layer("city"), art);
             this.riverRenderer?.dispose();
             this.regionRenderer?.dispose();
             this.decorRenderer?.dispose();
@@ -259,6 +269,7 @@ export class MapOriginalWorldView extends CocosView {
         for (const r of this.topRenderers.values()) r.dispose();
         this.topRenderers = new Map();
         this.roadRenderer?.dispose(); this.roadRenderer = null;
+        this.cityRenderer?.dispose(); this.cityRenderer = null;
         this.riverRenderer?.dispose(); this.riverRenderer = null;
         this.regionRenderer?.dispose(); this.regionRenderer = null;
         this.labelRenderer?.dispose(); this.labelRenderer = null;
@@ -502,6 +513,13 @@ export class MapOriginalWorldView extends CocosView {
             this.roadRenderer?.clear();
             this.roadCount = 0;
         }
+        // ★ 城址件：在资源件之上（原版 MAP_ZORDER：RES 3400 < BUILD_TOP 3900）
+        if (mapoLayerVisible("city", cam.lod)) {
+            this.cityCount = this.cityRenderer?.render(cam.worldRect(1), true) ?? 0;
+        } else {
+            this.cityRenderer?.clear();
+            this.cityCount = 0;
+        }
         if (mapoLayerVisible("river", cam.lod)) {
             const polys = this.riverRenderer?.render(cam.worldRect(2), true) ?? [];
             this.riverCount = polys.length;
@@ -560,6 +578,8 @@ export class MapOriginalWorldView extends CocosView {
             for (const r of this.blockRenderers) r.clear();
             for (const r of this.topRenderers.values()) r.clear();
             this.roadRenderer?.clear();
+            this.cityRenderer?.clear();
+            this.cityCount = 0;
             this.blockCount = 0;
             this.topCount = 0;
             this.roadCount = 0;
@@ -584,12 +604,14 @@ export class MapOriginalWorldView extends CocosView {
             const tops = this.topCount > 0 ? ` · 点缀 ${this.topCount}` : "";
             // ★ 路片数：⛔ 掉到 0 说明 roads.bin / road-atlas 没到位
             const road = this.roadCount > 0 ? ` · 道路 ${this.roadCount}` : "";
+            // ★ 城址件数：15 个原版件 / 249 座，⛔ 掉到 0 说明 cities.bin / city-atlas 没到位
+            const city = this.cityCount > 0 ? ` · 城 ${this.cityCount}` : "";
             // ★ 地表块数：⛔ 掉到 0 说明 ground-base.png 没到位（整层不建）
             const ground = near
                 ? ` · 地表 ${this.groundCount}${this.blockCount > 0 ? `+${this.blockCount}` : ""}` : "";
             this.status.string =
                 `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}`
-                + `${ground}${road}${decor}${region}${river}${tops}`;
+                + `${ground}${road}${decor}${region}${river}${tops}${city}`;
         }
         // ⚠ 置灰与高亮是**两件事**：enabled 决定能不能点（文字变灰），on 决定当前选中（底板变亮）
         for (const chip of this.chips) {

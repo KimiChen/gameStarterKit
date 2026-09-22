@@ -1,0 +1,2344 @@
+{
+ "schemaVersion": 1,
+ "mapId": "s1",
+ "atlas": {
+  "size": [
+   1024,
+   1024
+  ],
+  "pad": 2,
+  "downscale": 0.4,
+  "fill": 0.3998,
+  "cells": [
+   {
+    "id": 0,
+    "rect": [
+     2,
+     2,
+     356,
+     171
+    ],
+    "native": [
+     890,
+     427
+    ],
+    "source": "scene/build/Gate/png_new/1.png"
+   },
+   {
+    "id": 1,
+    "rect": [
+     360,
+     2,
+     344,
+     146
+    ],
+    "native": [
+     860,
+     364
+    ],
+    "source": "scene/build/Gate/png_new/2.png"
+   },
+   {
+    "id": 2,
+    "rect": [
+     706,
+     2,
+     265,
+     124
+    ],
+    "native": [
+     663,
+     311
+    ],
+    "source": "scene/build/Gate/png_new/3.png"
+   },
+   {
+    "id": 3,
+    "rect": [
+     2,
+     175,
+     193,
+     112
+    ],
+    "native": [
+     482,
+     280
+    ],
+    "source": "scene/build/main_city/building/1.png"
+   },
+   {
+    "id": 4,
+    "rect": [
+     197,
+     175,
+     133,
+     72
+    ],
+    "native": [
+     333,
+     180
+    ],
+    "source": "scene/build/main_city/building/20.png"
+   },
+   {
+    "id": 5,
+    "rect": [
+     332,
+     175,
+     83,
+     64
+    ],
+    "native": [
+     207,
+     159
+    ],
+    "source": "scene/build/main_city/building/28.png"
+   },
+   {
+    "id": 6,
+    "rect": [
+     417,
+     175,
+     92,
+     62
+    ],
+    "native": [
+     230,
+     155
+    ],
+    "source": "scene/build/main_city/wall/luoyang/6.png"
+   },
+   {
+    "id": 7,
+    "rect": [
+     511,
+     175,
+     92,
+     62
+    ],
+    "native": [
+     230,
+     155
+    ],
+    "source": "scene/build/main_city/wall/luoyang/6_1.png"
+   },
+   {
+    "id": 8,
+    "rect": [
+     605,
+     175,
+     118,
+     59
+    ],
+    "native": [
+     294,
+     148
+    ],
+    "source": "scene/build/main_city/floors/10.png"
+   },
+   {
+    "id": 9,
+    "rect": [
+     725,
+     175,
+     94,
+     59
+    ],
+    "native": [
+     234,
+     147
+    ],
+    "source": "scene/build/main_city/wall/south/11.png"
+   },
+   {
+    "id": 10,
+    "rect": [
+     821,
+     175,
+     100,
+     57
+    ],
+    "native": [
+     250,
+     143
+    ],
+    "source": "scene/build/main_city/building/30.png"
+   },
+   {
+    "id": 11,
+    "rect": [
+     2,
+     289,
+     100,
+     57
+    ],
+    "native": [
+     250,
+     143
+    ],
+    "source": "scene/build/main_city/building/31.png"
+   },
+   {
+    "id": 12,
+    "rect": [
+     104,
+     289,
+     78,
+     56
+    ],
+    "native": [
+     195,
+     139
+    ],
+    "source": "scene/build/main_city/wall/east/11.png"
+   },
+   {
+    "id": 13,
+    "rect": [
+     184,
+     289,
+     113,
+     54
+    ],
+    "native": [
+     282,
+     135
+    ],
+    "source": "scene/build/main_city/floors/1.png"
+   },
+   {
+    "id": 14,
+    "rect": [
+     299,
+     289,
+     77,
+     54
+    ],
+    "native": [
+     193,
+     135
+    ],
+    "source": "scene/build/main_city/building/2.png"
+   },
+   {
+    "id": 15,
+    "rect": [
+     378,
+     289,
+     98,
+     53
+    ],
+    "native": [
+     245,
+     132
+    ],
+    "source": "scene/build/main_city/wall/south/15.png"
+   },
+   {
+    "id": 16,
+    "rect": [
+     478,
+     289,
+     95,
+     53
+    ],
+    "native": [
+     237,
+     132
+    ],
+    "source": "scene/build/Wharf/png/b.png"
+   },
+   {
+    "id": 17,
+    "rect": [
+     575,
+     289,
+     67,
+     53
+    ],
+    "native": [
+     167,
+     133
+    ],
+    "source": "scene/build/main_city/floors/9.png"
+   },
+   {
+    "id": 18,
+    "rect": [
+     644,
+     289,
+     89,
+     52
+    ],
+    "native": [
+     222,
+     131
+    ],
+    "source": "scene/build/main_city/building/6.png"
+   },
+   {
+    "id": 19,
+    "rect": [
+     735,
+     289,
+     77,
+     52
+    ],
+    "native": [
+     192,
+     130
+    ],
+    "source": "scene/build/main_city/wall/north/7.png"
+   },
+   {
+    "id": 20,
+    "rect": [
+     814,
+     289,
+     77,
+     52
+    ],
+    "native": [
+     192,
+     130
+    ],
+    "source": "scene/build/main_city/wall/north/8.png"
+   },
+   {
+    "id": 21,
+    "rect": [
+     893,
+     289,
+     103,
+     49
+    ],
+    "native": [
+     257,
+     123
+    ],
+    "source": "scene/build/main_city/floors/7.png"
+   },
+   {
+    "id": 22,
+    "rect": [
+     2,
+     348,
+     96,
+     49
+    ],
+    "native": [
+     239,
+     122
+    ],
+    "source": "scene/build/main_city/building/3.png"
+   },
+   {
+    "id": 23,
+    "rect": [
+     100,
+     348,
+     92,
+     49
+    ],
+    "native": [
+     229,
+     122
+    ],
+    "source": "scene/build/main_city/building/5.png"
+   },
+   {
+    "id": 24,
+    "rect": [
+     194,
+     348,
+     86,
+     49
+    ],
+    "native": [
+     216,
+     122
+    ],
+    "source": "scene/build/main_city/building/4.png"
+   },
+   {
+    "id": 25,
+    "rect": [
+     282,
+     348,
+     94,
+     48
+    ],
+    "native": [
+     236,
+     120
+    ],
+    "source": "scene/build/main_city/wall/west/9.png"
+   },
+   {
+    "id": 26,
+    "rect": [
+     378,
+     348,
+     92,
+     48
+    ],
+    "native": [
+     231,
+     121
+    ],
+    "source": "scene/build/main_city/building/8.png"
+   },
+   {
+    "id": 27,
+    "rect": [
+     472,
+     348,
+     80,
+     48
+    ],
+    "native": [
+     199,
+     120
+    ],
+    "source": "scene/build/main_city/building/28_1.png"
+   },
+   {
+    "id": 28,
+    "rect": [
+     554,
+     348,
+     71,
+     48
+    ],
+    "native": [
+     178,
+     121
+    ],
+    "source": "scene/build/main_city/wall/east/8.png"
+   },
+   {
+    "id": 29,
+    "rect": [
+     627,
+     348,
+     70,
+     48
+    ],
+    "native": [
+     176,
+     121
+    ],
+    "source": "scene/build/main_city/wall/east/7.png"
+   },
+   {
+    "id": 30,
+    "rect": [
+     699,
+     348,
+     71,
+     47
+    ],
+    "native": [
+     177,
+     118
+    ],
+    "source": "scene/build/main_city/wall/west/6.png"
+   },
+   {
+    "id": 31,
+    "rect": [
+     772,
+     348,
+     71,
+     47
+    ],
+    "native": [
+     177,
+     118
+    ],
+    "source": "scene/build/main_city/wall/west/6_1.png"
+   },
+   {
+    "id": 32,
+    "rect": [
+     845,
+     348,
+     68,
+     47
+    ],
+    "native": [
+     169,
+     117
+    ],
+    "source": "scene/build/main_city/wall/south/10.png"
+   },
+   {
+    "id": 33,
+    "rect": [
+     915,
+     348,
+     68,
+     47
+    ],
+    "native": [
+     169,
+     117
+    ],
+    "source": "scene/build/main_city/wall/south/9.png"
+   },
+   {
+    "id": 34,
+    "rect": [
+     2,
+     399,
+     61,
+     45
+    ],
+    "native": [
+     153,
+     112
+    ],
+    "source": "scene/build/main_city/floors/4.png"
+   },
+   {
+    "id": 35,
+    "rect": [
+     65,
+     399,
+     86,
+     44
+    ],
+    "native": [
+     214,
+     110
+    ],
+    "source": "scene/build/main_city/building/29.png"
+   },
+   {
+    "id": 36,
+    "rect": [
+     153,
+     399,
+     79,
+     44
+    ],
+    "native": [
+     197,
+     110
+    ],
+    "source": "scene/build/main_city/wall/east/9.png"
+   },
+   {
+    "id": 37,
+    "rect": [
+     234,
+     399,
+     77,
+     44
+    ],
+    "native": [
+     192,
+     109
+    ],
+    "source": "scene/build/main_city/building/7.png"
+   },
+   {
+    "id": 38,
+    "rect": [
+     313,
+     399,
+     64,
+     44
+    ],
+    "native": [
+     159,
+     109
+    ],
+    "source": "scene/build/main_city/floors/6.png"
+   },
+   {
+    "id": 39,
+    "rect": [
+     379,
+     399,
+     62,
+     41
+    ],
+    "native": [
+     154,
+     103
+    ],
+    "source": "scene/build/main_city/floors/3_1.png"
+   },
+   {
+    "id": 40,
+    "rect": [
+     443,
+     399,
+     79,
+     40
+    ],
+    "native": [
+     197,
+     100
+    ],
+    "source": "scene/build/Wharf/png/a.png"
+   },
+   {
+    "id": 41,
+    "rect": [
+     524,
+     399,
+     75,
+     40
+    ],
+    "native": [
+     188,
+     99
+    ],
+    "source": "scene/build/main_city/floors/8.png"
+   },
+   {
+    "id": 42,
+    "rect": [
+     601,
+     399,
+     61,
+     40
+    ],
+    "native": [
+     153,
+     101
+    ],
+    "source": "scene/build/main_city/wall/north/10.png"
+   },
+   {
+    "id": 43,
+    "rect": [
+     664,
+     399,
+     61,
+     40
+    ],
+    "native": [
+     153,
+     101
+    ],
+    "source": "scene/build/main_city/wall/north/13.png"
+   },
+   {
+    "id": 44,
+    "rect": [
+     727,
+     399,
+     68,
+     38
+    ],
+    "native": [
+     171,
+     95
+    ],
+    "source": "scene/build/main_city/building/33.png"
+   },
+   {
+    "id": 45,
+    "rect": [
+     797,
+     399,
+     70,
+     37
+    ],
+    "native": [
+     174,
+     93
+    ],
+    "source": "scene/build/main_city/building/23.png"
+   },
+   {
+    "id": 46,
+    "rect": [
+     869,
+     399,
+     52,
+     37
+    ],
+    "native": [
+     129,
+     92
+    ],
+    "source": "scene/build/main_city/wall/east/12.png"
+   },
+   {
+    "id": 47,
+    "rect": [
+     923,
+     399,
+     49,
+     37
+    ],
+    "native": [
+     123,
+     93
+    ],
+    "source": "scene/build/main_city/tree/3.png"
+   },
+   {
+    "id": 48,
+    "rect": [
+     2,
+     446,
+     76,
+     36
+    ],
+    "native": [
+     191,
+     90
+    ],
+    "source": "scene/build/main_city/wall/luoyang/9.png"
+   },
+   {
+    "id": 49,
+    "rect": [
+     80,
+     446,
+     63,
+     36
+    ],
+    "native": [
+     158,
+     91
+    ],
+    "source": "scene/build/main_city/floors/5.png"
+   },
+   {
+    "id": 50,
+    "rect": [
+     145,
+     446,
+     62,
+     36
+    ],
+    "native": [
+     155,
+     91
+    ],
+    "source": "scene/build/main_city/building/32.png"
+   },
+   {
+    "id": 51,
+    "rect": [
+     209,
+     446,
+     48,
+     36
+    ],
+    "native": [
+     121,
+     90
+    ],
+    "source": "scene/build/main_city/tree/10.png"
+   },
+   {
+    "id": 52,
+    "rect": [
+     259,
+     446,
+     60,
+     32
+    ],
+    "native": [
+     151,
+     81
+    ],
+    "source": "scene/build/main_city/floors/4_1.png"
+   },
+   {
+    "id": 53,
+    "rect": [
+     321,
+     446,
+     52,
+     32
+    ],
+    "native": [
+     131,
+     81
+    ],
+    "source": "scene/build/main_city/wall/east/13.png"
+   },
+   {
+    "id": 54,
+    "rect": [
+     375,
+     446,
+     51,
+     32
+    ],
+    "native": [
+     127,
+     81
+    ],
+    "source": "scene/build/main_city/building/25.png"
+   },
+   {
+    "id": 55,
+    "rect": [
+     428,
+     446,
+     62,
+     31
+    ],
+    "native": [
+     154,
+     78
+    ],
+    "source": "scene/build/main_city/wall/west/10.png"
+   },
+   {
+    "id": 56,
+    "rect": [
+     492,
+     446,
+     47,
+     31
+    ],
+    "native": [
+     117,
+     78
+    ],
+    "source": "scene/build/main_city/tree/8.png"
+   },
+   {
+    "id": 57,
+    "rect": [
+     541,
+     446,
+     51,
+     30
+    ],
+    "native": [
+     127,
+     75
+    ],
+    "source": "scene/build/main_city/tree/1.png"
+   },
+   {
+    "id": 58,
+    "rect": [
+     594,
+     446,
+     51,
+     30
+    ],
+    "native": [
+     127,
+     75
+    ],
+    "source": "scene/build/main_city/tree/12.png"
+   },
+   {
+    "id": 59,
+    "rect": [
+     647,
+     446,
+     48,
+     30
+    ],
+    "native": [
+     121,
+     76
+    ],
+    "source": "scene/build/main_city/tree/5.png"
+   },
+   {
+    "id": 60,
+    "rect": [
+     697,
+     446,
+     26,
+     29
+    ],
+    "native": [
+     65,
+     72
+    ],
+    "source": "scene/build/main_city/wall/luoyang/3.png"
+   },
+   {
+    "id": 61,
+    "rect": [
+     725,
+     446,
+     57,
+     27
+    ],
+    "native": [
+     143,
+     67
+    ],
+    "source": "scene/build/main_city/building/22.png"
+   },
+   {
+    "id": 62,
+    "rect": [
+     784,
+     446,
+     46,
+     26
+    ],
+    "native": [
+     115,
+     66
+    ],
+    "source": "scene/build/main_city/wall/east/10.png"
+   },
+   {
+    "id": 63,
+    "rect": [
+     832,
+     446,
+     45,
+     26
+    ],
+    "native": [
+     112,
+     66
+    ],
+    "source": "scene/build/main_city/building/26.png"
+   },
+   {
+    "id": 64,
+    "rect": [
+     879,
+     446,
+     45,
+     26
+    ],
+    "native": [
+     112,
+     66
+    ],
+    "source": "scene/build/main_city/building/27.png"
+   },
+   {
+    "id": 65,
+    "rect": [
+     926,
+     446,
+     43,
+     26
+    ],
+    "native": [
+     108,
+     64
+    ],
+    "source": "scene/build/main_city/building/21.png"
+   },
+   {
+    "id": 66,
+    "rect": [
+     971,
+     446,
+     30,
+     26
+    ],
+    "native": [
+     76,
+     64
+    ],
+    "source": "scene/build/main_city/wall/luoyang/2_3.png"
+   },
+   {
+    "id": 67,
+    "rect": [
+     2,
+     484,
+     58,
+     25
+    ],
+    "native": [
+     146,
+     63
+    ],
+    "source": "scene/build/main_city/wall/south/12.png"
+   },
+   {
+    "id": 68,
+    "rect": [
+     62,
+     484,
+     51,
+     25
+    ],
+    "native": [
+     128,
+     63
+    ],
+    "source": "scene/build/main_city/tree/2.png"
+   },
+   {
+    "id": 69,
+    "rect": [
+     115,
+     484,
+     45,
+     25
+    ],
+    "native": [
+     112,
+     62
+    ],
+    "source": "scene/build/main_city/building/15.png"
+   },
+   {
+    "id": 70,
+    "rect": [
+     162,
+     484,
+     44,
+     25
+    ],
+    "native": [
+     111,
+     62
+    ],
+    "source": "scene/build/main_city/floors/2.png"
+   },
+   {
+    "id": 71,
+    "rect": [
+     208,
+     484,
+     30,
+     25
+    ],
+    "native": [
+     74,
+     62
+    ],
+    "source": "scene/build/main_city/wall/luoyang/2.png"
+   },
+   {
+    "id": 72,
+    "rect": [
+     240,
+     484,
+     28,
+     25
+    ],
+    "native": [
+     71,
+     62
+    ],
+    "source": "scene/build/main_city/wall/luoyang/1.png"
+   },
+   {
+    "id": 73,
+    "rect": [
+     270,
+     484,
+     23,
+     25
+    ],
+    "native": [
+     58,
+     62
+    ],
+    "source": "scene/build/main_city/wall/luoyang/2_1.png"
+   },
+   {
+    "id": 74,
+    "rect": [
+     295,
+     484,
+     23,
+     25
+    ],
+    "native": [
+     58,
+     62
+    ],
+    "source": "scene/build/main_city/wall/luoyang/2_2.png"
+   },
+   {
+    "id": 75,
+    "rect": [
+     320,
+     484,
+     17,
+     25
+    ],
+    "native": [
+     43,
+     62
+    ],
+    "source": "scene/build/main_city/wall/luoyang/1_2.png"
+   },
+   {
+    "id": 76,
+    "rect": [
+     339,
+     484,
+     73,
+     24
+    ],
+    "native": [
+     183,
+     60
+    ],
+    "source": "scene/build/main_city/floors/3.png"
+   },
+   {
+    "id": 77,
+    "rect": [
+     414,
+     484,
+     43,
+     24
+    ],
+    "native": [
+     108,
+     59
+    ],
+    "source": "scene/build/main_city/tree/7.png"
+   },
+   {
+    "id": 78,
+    "rect": [
+     459,
+     484,
+     41,
+     24
+    ],
+    "native": [
+     102,
+     60
+    ],
+    "source": "scene/build/main_city/wall/south/13.png"
+   },
+   {
+    "id": 79,
+    "rect": [
+     502,
+     484,
+     21,
+     24
+    ],
+    "native": [
+     53,
+     60
+    ],
+    "source": "scene/build/main_city/wall/east/2_1.png"
+   },
+   {
+    "id": 80,
+    "rect": [
+     525,
+     484,
+     17,
+     24
+    ],
+    "native": [
+     43,
+     60
+    ],
+    "source": "scene/build/main_city/wall/luoyang/4.png"
+   },
+   {
+    "id": 81,
+    "rect": [
+     544,
+     484,
+     17,
+     24
+    ],
+    "native": [
+     43,
+     60
+    ],
+    "source": "scene/build/main_city/wall/luoyang/4_1.png"
+   },
+   {
+    "id": 82,
+    "rect": [
+     563,
+     484,
+     17,
+     24
+    ],
+    "native": [
+     43,
+     60
+    ],
+    "source": "scene/build/main_city/wall/luoyang/5.png"
+   },
+   {
+    "id": 83,
+    "rect": [
+     582,
+     484,
+     26,
+     23
+    ],
+    "native": [
+     64,
+     58
+    ],
+    "source": "scene/build/main_city/wall/east/1.png"
+   },
+   {
+    "id": 84,
+    "rect": [
+     610,
+     484,
+     26,
+     23
+    ],
+    "native": [
+     65,
+     58
+    ],
+    "source": "scene/build/main_city/wall/east/2.png"
+   },
+   {
+    "id": 85,
+    "rect": [
+     638,
+     484,
+     21,
+     23
+    ],
+    "native": [
+     52,
+     58
+    ],
+    "source": "scene/build/main_city/wall/east/1_1.png"
+   },
+   {
+    "id": 86,
+    "rect": [
+     661,
+     484,
+     9,
+     23
+    ],
+    "native": [
+     23,
+     58
+    ],
+    "source": "scene/build/main_city/wall/east/3.png"
+   },
+   {
+    "id": 87,
+    "rect": [
+     672,
+     484,
+     9,
+     23
+    ],
+    "native": [
+     23,
+     58
+    ],
+    "source": "scene/build/main_city/wall/east/3_1.png"
+   },
+   {
+    "id": 88,
+    "rect": [
+     683,
+     484,
+     36,
+     22
+    ],
+    "native": [
+     90,
+     54
+    ],
+    "source": "scene/build/main_city/building/10.png"
+   },
+   {
+    "id": 89,
+    "rect": [
+     721,
+     484,
+     36,
+     22
+    ],
+    "native": [
+     90,
+     54
+    ],
+    "source": "scene/build/main_city/building/11.png"
+   },
+   {
+    "id": 90,
+    "rect": [
+     759,
+     484,
+     36,
+     22
+    ],
+    "native": [
+     90,
+     54
+    ],
+    "source": "scene/build/main_city/building/12.png"
+   },
+   {
+    "id": 91,
+    "rect": [
+     797,
+     484,
+     36,
+     22
+    ],
+    "native": [
+     90,
+     54
+    ],
+    "source": "scene/build/main_city/building/13.png"
+   },
+   {
+    "id": 92,
+    "rect": [
+     835,
+     484,
+     30,
+     22
+    ],
+    "native": [
+     76,
+     55
+    ],
+    "source": "scene/build/main_city/building/9.png"
+   },
+   {
+    "id": 93,
+    "rect": [
+     867,
+     484,
+     20,
+     22
+    ],
+    "native": [
+     51,
+     54
+    ],
+    "source": "scene/build/main_city/wall/east/2_2.png"
+   },
+   {
+    "id": 94,
+    "rect": [
+     889,
+     484,
+     40,
+     21
+    ],
+    "native": [
+     100,
+     52
+    ],
+    "source": "scene/build/main_city/building/18.png"
+   },
+   {
+    "id": 95,
+    "rect": [
+     931,
+     484,
+     25,
+     21
+    ],
+    "native": [
+     63,
+     52
+    ],
+    "source": "scene/build/main_city/wall/east/1_2.png"
+   },
+   {
+    "id": 96,
+    "rect": [
+     958,
+     484,
+     16,
+     21
+    ],
+    "native": [
+     40,
+     53
+    ],
+    "source": "scene/build/main_city/wall/east/6.png"
+   },
+   {
+    "id": 97,
+    "rect": [
+     976,
+     484,
+     15,
+     21
+    ],
+    "native": [
+     38,
+     53
+    ],
+    "source": "scene/build/main_city/wall/north/4.png"
+   },
+   {
+    "id": 98,
+    "rect": [
+     993,
+     484,
+     15,
+     21
+    ],
+    "native": [
+     38,
+     53
+    ],
+    "source": "scene/build/main_city/wall/north/5.png"
+   },
+   {
+    "id": 99,
+    "rect": [
+     2,
+     511,
+     15,
+     21
+    ],
+    "native": [
+     38,
+     53
+    ],
+    "source": "scene/build/main_city/wall/north/9.png"
+   },
+   {
+    "id": 100,
+    "rect": [
+     19,
+     511,
+     36,
+     20
+    ],
+    "native": [
+     91,
+     50
+    ],
+    "source": "scene/build/main_city/tree/6.png"
+   },
+   {
+    "id": 101,
+    "rect": [
+     57,
+     511,
+     36,
+     20
+    ],
+    "native": [
+     91,
+     50
+    ],
+    "source": "scene/build/main_city/tree/9.png"
+   },
+   {
+    "id": 102,
+    "rect": [
+     95,
+     511,
+     32,
+     20
+    ],
+    "native": [
+     81,
+     50
+    ],
+    "source": "scene/build/main_city/wall/luoyang/1_1.png"
+   },
+   {
+    "id": 103,
+    "rect": [
+     129,
+     511,
+     21,
+     20
+    ],
+    "native": [
+     53,
+     51
+    ],
+    "source": "scene/build/main_city/wall/north/1.png"
+   },
+   {
+    "id": 104,
+    "rect": [
+     152,
+     511,
+     21,
+     20
+    ],
+    "native": [
+     53,
+     51
+    ],
+    "source": "scene/build/main_city/wall/north/3.png"
+   },
+   {
+    "id": 105,
+    "rect": [
+     175,
+     511,
+     21,
+     20
+    ],
+    "native": [
+     53,
+     51
+    ],
+    "source": "scene/build/main_city/wall/north/3_1.png"
+   },
+   {
+    "id": 106,
+    "rect": [
+     198,
+     511,
+     16,
+     20
+    ],
+    "native": [
+     39,
+     51
+    ],
+    "source": "scene/build/main_city/wall/north/3_3.png"
+   },
+   {
+    "id": 107,
+    "rect": [
+     216,
+     511,
+     15,
+     20
+    ],
+    "native": [
+     38,
+     51
+    ],
+    "source": "scene/build/main_city/wall/north/3_2.png"
+   },
+   {
+    "id": 108,
+    "rect": [
+     233,
+     511,
+     14,
+     20
+    ],
+    "native": [
+     36,
+     49
+    ],
+    "source": "scene/build/main_city/wall/south/7.png"
+   },
+   {
+    "id": 109,
+    "rect": [
+     249,
+     511,
+     14,
+     20
+    ],
+    "native": [
+     36,
+     49
+    ],
+    "source": "scene/build/main_city/wall/south/8.png"
+   },
+   {
+    "id": 110,
+    "rect": [
+     265,
+     511,
+     8,
+     20
+    ],
+    "native": [
+     20,
+     49
+    ],
+    "source": "scene/build/main_city/wall/north/2.png"
+   },
+   {
+    "id": 111,
+    "rect": [
+     275,
+     511,
+     8,
+     20
+    ],
+    "native": [
+     21,
+     51
+    ],
+    "source": "scene/build/main_city/wall/north/2_1.png"
+   },
+   {
+    "id": 112,
+    "rect": [
+     285,
+     511,
+     33,
+     19
+    ],
+    "native": [
+     83,
+     48
+    ],
+    "source": "scene/build/main_city/building/16.png"
+   },
+   {
+    "id": 113,
+    "rect": [
+     320,
+     511,
+     33,
+     19
+    ],
+    "native": [
+     83,
+     48
+    ],
+    "source": "scene/build/main_city/building/17.png"
+   },
+   {
+    "id": 114,
+    "rect": [
+     355,
+     511,
+     22,
+     19
+    ],
+    "native": [
+     56,
+     47
+    ],
+    "source": "scene/build/main_city/wall/west/1.png"
+   },
+   {
+    "id": 115,
+    "rect": [
+     379,
+     511,
+     22,
+     19
+    ],
+    "native": [
+     55,
+     47
+    ],
+    "source": "scene/build/main_city/wall/west/2.png"
+   },
+   {
+    "id": 116,
+    "rect": [
+     403,
+     511,
+     22,
+     19
+    ],
+    "native": [
+     55,
+     47
+    ],
+    "source": "scene/build/main_city/wall/west/2_1.png"
+   },
+   {
+    "id": 117,
+    "rect": [
+     427,
+     511,
+     17,
+     19
+    ],
+    "native": [
+     43,
+     47
+    ],
+    "source": "scene/build/main_city/wall/west/1_1.png"
+   },
+   {
+    "id": 118,
+    "rect": [
+     446,
+     511,
+     13,
+     19
+    ],
+    "native": [
+     32,
+     47
+    ],
+    "source": "scene/build/main_city/wall/east/5.png"
+   },
+   {
+    "id": 119,
+    "rect": [
+     461,
+     511,
+     12,
+     19
+    ],
+    "native": [
+     30,
+     47
+    ],
+    "source": "scene/build/main_city/wall/luoyang/5_1.png"
+   },
+   {
+    "id": 120,
+    "rect": [
+     475,
+     511,
+     9,
+     19
+    ],
+    "native": [
+     23,
+     47
+    ],
+    "source": "scene/build/main_city/wall/east/5_1.png"
+   },
+   {
+    "id": 121,
+    "rect": [
+     486,
+     511,
+     8,
+     19
+    ],
+    "native": [
+     20,
+     47
+    ],
+    "source": "scene/build/main_city/wall/west/3.png"
+   },
+   {
+    "id": 122,
+    "rect": [
+     496,
+     511,
+     31,
+     18
+    ],
+    "native": [
+     77,
+     44
+    ],
+    "source": "scene/build/main_city/building/14.png"
+   },
+   {
+    "id": 123,
+    "rect": [
+     529,
+     511,
+     27,
+     18
+    ],
+    "native": [
+     68,
+     46
+    ],
+    "source": "scene/build/main_city/wall/east/14.png"
+   },
+   {
+    "id": 124,
+    "rect": [
+     558,
+     511,
+     25,
+     18
+    ],
+    "native": [
+     62,
+     44
+    ],
+    "source": "scene/build/main_city/tree/4.png"
+   },
+   {
+    "id": 125,
+    "rect": [
+     585,
+     511,
+     22,
+     18
+    ],
+    "native": [
+     55,
+     45
+    ],
+    "source": "scene/build/main_city/wall/south/1.png"
+   },
+   {
+    "id": 126,
+    "rect": [
+     609,
+     511,
+     22,
+     18
+    ],
+    "native": [
+     55,
+     45
+    ],
+    "source": "scene/build/main_city/wall/south/1_1.png"
+   },
+   {
+    "id": 127,
+    "rect": [
+     633,
+     511,
+     22,
+     18
+    ],
+    "native": [
+     55,
+     45
+    ],
+    "source": "scene/build/main_city/wall/south/1_2.png"
+   },
+   {
+    "id": 128,
+    "rect": [
+     657,
+     511,
+     22,
+     18
+    ],
+    "native": [
+     54,
+     45
+    ],
+    "source": "scene/build/main_city/wall/south/2_1.png"
+   },
+   {
+    "id": 129,
+    "rect": [
+     681,
+     511,
+     22,
+     18
+    ],
+    "native": [
+     54,
+     45
+    ],
+    "source": "scene/build/main_city/wall/south/2_2.png"
+   },
+   {
+    "id": 130,
+    "rect": [
+     705,
+     511,
+     21,
+     18
+    ],
+    "native": [
+     53,
+     44
+    ],
+    "source": "scene/build/main_city/wall/north/1_1.png"
+   },
+   {
+    "id": 131,
+    "rect": [
+     728,
+     511,
+     18,
+     18
+    ],
+    "native": [
+     45,
+     46
+    ],
+    "source": "scene/build/main_city/wall/west/2_2.png"
+   },
+   {
+    "id": 132,
+    "rect": [
+     748,
+     511,
+     12,
+     18
+    ],
+    "native": [
+     31,
+     45
+    ],
+    "source": "scene/build/main_city/wall/west/5.png"
+   },
+   {
+    "id": 133,
+    "rect": [
+     762,
+     511,
+     12,
+     18
+    ],
+    "native": [
+     31,
+     45
+    ],
+    "source": "scene/build/main_city/wall/west/5_1.png"
+   },
+   {
+    "id": 134,
+    "rect": [
+     776,
+     511,
+     11,
+     18
+    ],
+    "native": [
+     28,
+     45
+    ],
+    "source": "scene/build/main_city/wall/south/1_3.png"
+   },
+   {
+    "id": 135,
+    "rect": [
+     789,
+     511,
+     9,
+     18
+    ],
+    "native": [
+     22,
+     45
+    ],
+    "source": "scene/build/main_city/wall/south/4.png"
+   },
+   {
+    "id": 136,
+    "rect": [
+     800,
+     511,
+     26,
+     17
+    ],
+    "native": [
+     65,
+     43
+    ],
+    "source": "scene/build/main_city/tree/11.png"
+   },
+   {
+    "id": 137,
+    "rect": [
+     828,
+     511,
+     20,
+     17
+    ],
+    "native": [
+     49,
+     42
+    ],
+    "source": "scene/build/main_city/wall/south/2.png"
+   },
+   {
+    "id": 138,
+    "rect": [
+     850,
+     511,
+     20,
+     17
+    ],
+    "native": [
+     49,
+     42
+    ],
+    "source": "scene/build/main_city/wall/south/2_3.png"
+   },
+   {
+    "id": 139,
+    "rect": [
+     872,
+     511,
+     37,
+     16
+    ],
+    "native": [
+     93,
+     41
+    ],
+    "source": "scene/build/main_city/wall/luoyang/7.png"
+   },
+   {
+    "id": 140,
+    "rect": [
+     911,
+     511,
+     37,
+     16
+    ],
+    "native": [
+     93,
+     41
+    ],
+    "source": "scene/build/main_city/wall/luoyang/8.png"
+   },
+   {
+    "id": 141,
+    "rect": [
+     950,
+     511,
+     30,
+     16
+    ],
+    "native": [
+     74,
+     41
+    ],
+    "source": "scene/build/main_city/building/24.png"
+   },
+   {
+    "id": 142,
+    "rect": [
+     982,
+     511,
+     11,
+     16
+    ],
+    "native": [
+     27,
+     39
+    ],
+    "source": "scene/build/main_city/wall/west/1_2.png"
+   },
+   {
+    "id": 143,
+    "rect": [
+     995,
+     511,
+     10,
+     16
+    ],
+    "native": [
+     26,
+     41
+    ],
+    "source": "scene/build/main_city/wall/north/6.png"
+   },
+   {
+    "id": 144,
+    "rect": [
+     2,
+     534,
+     28,
+     15
+    ],
+    "native": [
+     69,
+     37
+    ],
+    "source": "scene/build/main_city/wall/south/16.png"
+   },
+   {
+    "id": 145,
+    "rect": [
+     32,
+     534,
+     16,
+     15
+    ],
+    "native": [
+     39,
+     37
+    ],
+    "source": "scene/build/main_city/wall/east/4.png"
+   },
+   {
+    "id": 146,
+    "rect": [
+     50,
+     534,
+     11,
+     15
+    ],
+    "native": [
+     28,
+     38
+    ],
+    "source": "scene/build/main_city/wall/south/5.png"
+   },
+   {
+    "id": 147,
+    "rect": [
+     63,
+     534,
+     9,
+     15
+    ],
+    "native": [
+     22,
+     37
+    ],
+    "source": "scene/build/main_city/wall/south/4_1.png"
+   },
+   {
+    "id": 148,
+    "rect": [
+     74,
+     534,
+     14,
+     14
+    ],
+    "native": [
+     34,
+     34
+    ],
+    "source": "scene/build/main_city/wall/south/6.png"
+   },
+   {
+    "id": 149,
+    "rect": [
+     90,
+     534,
+     12,
+     14
+    ],
+    "native": [
+     30,
+     34
+    ],
+    "source": "scene/build/main_city/wall/west/4.png"
+   },
+   {
+    "id": 150,
+    "rect": [
+     104,
+     534,
+     8,
+     14
+    ],
+    "native": [
+     20,
+     36
+    ],
+    "source": "scene/build/main_city/wall/west/4_1.png"
+   },
+   {
+    "id": 151,
+    "rect": [
+     114,
+     534,
+     31,
+     13
+    ],
+    "native": [
+     78,
+     33
+    ],
+    "source": "scene/build/main_city/wall/north/11.png"
+   },
+   {
+    "id": 152,
+    "rect": [
+     147,
+     534,
+     31,
+     13
+    ],
+    "native": [
+     78,
+     33
+    ],
+    "source": "scene/build/main_city/wall/north/12.png"
+   },
+   {
+    "id": 153,
+    "rect": [
+     180,
+     534,
+     28,
+     13
+    ],
+    "native": [
+     70,
+     32
+    ],
+    "source": "scene/build/main_city/wall/south/14.png"
+   },
+   {
+    "id": 154,
+    "rect": [
+     210,
+     534,
+     18,
+     13
+    ],
+    "native": [
+     46,
+     33
+    ],
+    "source": "scene/build/main_city/building/19.png"
+   },
+   {
+    "id": 155,
+    "rect": [
+     230,
+     534,
+     29,
+     12
+    ],
+    "native": [
+     72,
+     31
+    ],
+    "source": "scene/build/main_city/wall/west/7.png"
+   },
+   {
+    "id": 156,
+    "rect": [
+     261,
+     534,
+     29,
+     12
+    ],
+    "native": [
+     72,
+     31
+    ],
+    "source": "scene/build/main_city/wall/west/8.png"
+   },
+   {
+    "id": 157,
+    "rect": [
+     292,
+     534,
+     21,
+     12
+    ],
+    "native": [
+     53,
+     29
+    ],
+    "source": "scene/build/main_city/wall/south/3.png"
+   }
+  ],
+  "sha256": "3027dc6712a63497fdf4956e997c58bbeecbc233b8c54fa9da6f5d50995166a5"
+ },
+ "pieces": [
+  {
+   "order": 0,
+   "resId": 1,
+   "name": "东方NPC城池1",
+   "source": "scene/build/main_city/npc_east_tinycity_group.prefab.bin",
+   "sprites": 109
+  },
+  {
+   "order": 1,
+   "resId": 2,
+   "name": "东方NPC城池2",
+   "source": "scene/build/main_city/npc_east_capital_group.prefab.bin",
+   "sprites": 210
+  },
+  {
+   "order": 2,
+   "resId": 3,
+   "name": "南方NPC城池1",
+   "source": "scene/build/main_city/npc_south_tinycity_group.prefab.bin",
+   "sprites": 150
+  },
+  {
+   "order": 3,
+   "resId": 4,
+   "name": "南方NPC城池2",
+   "source": "scene/build/main_city/npc_south_capital_group.prefab.bin",
+   "sprites": 245
+  },
+  {
+   "order": 4,
+   "resId": 5,
+   "name": "西方NPC城池1",
+   "source": "scene/build/main_city/npc_west_tinycity_group.prefab.bin",
+   "sprites": 139
+  },
+  {
+   "order": 5,
+   "resId": 6,
+   "name": "西方NPC城池2",
+   "source": "scene/build/main_city/npc_west_capital_group.prefab.bin",
+   "sprites": 224
+  },
+  {
+   "order": 6,
+   "resId": 7,
+   "name": "北方NPC城池1",
+   "source": "scene/build/main_city/npc_north_tinycity_group.prefab.bin",
+   "sprites": 114
+  },
+  {
+   "order": 7,
+   "resId": 8,
+   "name": "北方NPC城池2",
+   "source": "scene/build/main_city/npc_north_capital_group.prefab.bin",
+   "sprites": 218
+  },
+  {
+   "order": 8,
+   "resId": 14,
+   "name": "关卡1",
+   "source": "scene/build/gate/gate_01_group.prefab.bin",
+   "sprites": 1
+  },
+  {
+   "order": 9,
+   "resId": 15,
+   "name": "关卡2",
+   "source": "scene/build/gate/gate_02_group.prefab.bin",
+   "sprites": 1
+  },
+  {
+   "order": 10,
+   "resId": 16,
+   "name": "关卡3",
+   "source": "scene/build/gate/gate_03_group.prefab.bin",
+   "sprites": 1
+  },
+  {
+   "order": 11,
+   "resId": 24,
+   "name": "NPC城池1",
+   "source": "scene/build/main_city/npc_maincity_ly01_group.prefab.bin",
+   "sprites": 218
+  },
+  {
+   "order": 12,
+   "resId": 25,
+   "name": "码头1",
+   "source": "scene/build/wharf/wharf_01_group.prefab.bin",
+   "sprites": 4
+  },
+  {
+   "order": 13,
+   "resId": 26,
+   "name": "码头2",
+   "source": "scene/build/wharf/wharf_02_group.prefab.bin",
+   "sprites": 4
+  },
+  {
+   "order": 14,
+   "resId": 27,
+   "name": "码头3",
+   "source": "scene/build/wharf/wharf_03_group.prefab.bin",
+   "sprites": 4
+  }
+ ],
+ "placements": 249,
+ "anchorOffsets": 12,
+ "recordBytes": {
+  "sprite": 22,
+  "placement": 6
+ },
+ "layout": "大端：u16 件数、u16 摆位数；件数×u16 每件精灵数；所有精灵按件序、件内按 low_z 升序 {u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle}；然后摆位 {u16 件号, u16 row, u16 col}",
+ "sha256": "0dd70f4dffabf086c80c436bd7e44922cbca21ffcd6d51fe10690663eb27540e",
+ "note": "件由 base.cw 的 city[1].client_res_id → city_res.editor_brush_res_path 定；row/col 已套 city_shape 的 even/odd_res_center 美术偏移（12 座渡口非零），⛔ 渲染侧别再套一次"
+}

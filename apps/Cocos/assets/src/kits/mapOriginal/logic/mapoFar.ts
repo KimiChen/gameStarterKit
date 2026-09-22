@@ -45,6 +45,9 @@ export function mapoBlockTableAsset(kind: string): string {
 /** 道路层：路片图集 + 摆放表。 */
 export const MAPO_ROAD_ATLAS_ASSET = "kits/mapOriginal/maps/s1/road-atlas";
 export const MAPO_ROADS_ASSET = "kits/mapOriginal/maps/s1/roads";
+/** 城址件图集与摆放表。⚠ 两件缺一则城址层整层不建。 */
+export const MAPO_CITY_ATLAS_ASSET = "kits/mapOriginal/maps/s1/city-atlas";
+export const MAPO_CITIES_ASSET = "kits/mapOriginal/maps/s1/cities";
 /** `_top_group` 手摆细节：每族一张图集 + 一份摆放库。 */
 export function mapoTopAtlasAsset(kind: string): string {
     return `kits/mapOriginal/maps/s1/${kind}-top-atlas`;
