@@ -18,9 +18,12 @@
 ★ **id → 精灵的绑定现在是 `[实测]`**（2026-09-23 解开 `base.cw` 的 `client_res` 表）：
   `client_res` 行给出 `id → scene/ground/road/<名>_complex_group.prefab`，再读该 prefab
   拿到它贴的图集精灵 —— 全链路都是数据，⛔ 不再靠字母序推断。
-  ⚠ **`type_info` 的 id 要 +1** 才是 `client_res` id：实测 `type_info` 覆盖 1170..1187，
-    而真表是 1170..1188（19 条，`up_end_2`「路19」占了最前的 1170、S1 不用）；
-    +1 之后 18 条逐条对上 prefab，且与邻接度签名逐位吻合。
+  ★ **`type_info` 的 id 与 `client_res` id 是 1:1**（⛔ 不加偏移）：真表里路片本体是
+    **1169..1187（19 条）**，`up_end_2`「路19」占最前的 1169 且 S1 不用，
+    `type_info` 正好覆盖 1170..1187 这 18 条，逐条对上 prefab，且与邻接度签名逐位吻合。
+  ⚠ **本文件一度写成「id 要 +1」**，那是因为当时用「扫键名 + 往前找行首」的启发式读表、
+    整体错位了一格；把 `libnative-lib.so` 的 ctable 解码器逆出来后按真结构重读，
+    偏移归零。⚠ 两处错误当时正好互相抵消 ⇒ **产物一直是对的**，只是推理错。
   ⚠ 早先的字母序推断 **17/18 命中**，错的正是当时就标为「未定」的那张
     （应 `upend/6-1`，推断取了 `6-2`）—— 已由本表改正。
 ★ 邻接度签名**保留为交叉校验**：每次构建都重算，与 base.cw 给出的类不符即退出。
@@ -57,8 +60,8 @@ ATLAS_W, ATLAS_H, PAD = 1024, 1024, 2
 S_BIAS, D_BIAS = 0, 1125
 DEG_OF_CLASS = {"line": 2, "horizonalturn": 2, "upverticalturn": 2, "downverticalturn": 2,
                 "upend": 1, "downend": 1, "uptcross": 3, "downtcross": 3, "xcross": 4}
-# ⚠ `type_info` 的 id 比 `client_res` id **小 1**（实测，见模块注释）
-TYPE_ID_TO_CLIENT_RES = 1
+# ★ `type_info` 的 id 与 `client_res` id **相同**（⛔ 不加偏移，见模块注释）
+TYPE_ID_TO_CLIENT_RES = 0
 
 
 def main() -> int:
@@ -82,7 +85,15 @@ def main() -> int:
 
     # ── ① 绑定：base.cw 的 client_res（实证）────────────────────
     cw = BaseCw()
-    pieces = cw.road_pieces()          # client_res id → `<名>_complex_group` 的名
+    # ★ 走真解码器：表目录 → client_res → 展平成 id → 行
+    rows = cw.rows(cw.tables()["client_res"])
+    pieces = {}
+    for rid, row in rows.items():
+        src = row.get("src_name")
+        if (isinstance(rid, int) and isinstance(src, str)
+                and src.startswith("scene/ground/road/")
+                and src.endswith("_complex_group.prefab") and "_complex_path" not in src):
+            pieces[rid] = src[len("scene/ground/road/"):-len("_complex_group.prefab")]
     bind = {}
     for tid in ids:
         name = pieces.get(tid + TYPE_ID_TO_CLIENT_RES)
@@ -173,7 +184,7 @@ def main() -> int:
                               "邻接度结构签名作交叉校验",
                     "typeIdToClientResId": TYPE_ID_TO_CLIENT_RES,
                     "degrees": obs,
-                    "tier": "[实测] —— 2026-09-23 解开 base.cw 的 client_res 定长行布局"},
+                    "tier": "[实测] —— 2026-09-23 逆出 base.cw 的 ctable 解码器，直读 client_res"},
         "source": {"config": "asset/config/%s/cn/res_pro/road_info.lua" % m.upper(),
                    "atlas": ROAD_ATLAS_XML},
     }

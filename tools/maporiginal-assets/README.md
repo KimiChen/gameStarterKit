@@ -51,7 +51,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `mountain_forms.py` | ★ 「山」族 14 形的**单一真源**：值 ↔ prefab ↔ 贴图 ↔ 足迹；足迹按 odd-row offset 生成并**逐锚点回代校验** |
 | `pack_regions.py` | ★ 山族件图集（13 形各一格，**格 id = 原版 res 值**，682×409 大格，**基础季**）；贴图与 `scale`/`pos`/`angle`/`pivot` 全从 prefab 读出，⛔ 不按面积/绿度挑、⛔ 不裁 bbox |
 | `build_ground.py` | ★ 地表底：`ground_down/underground1.png` → `ground-base.png`（256² POT）+ 块/REPEAT 常量；校验 POT、满幅不透明、整周期 |
-| `ctable_cw.py` | ★ `base.cw`（66.8 MB ctable）**定向读取**：头/串池/串索引已解，`client_res`（848 行）与 `land`（**49 列 / 392 B、键按字母序**，353 行）两张表的定长布局已定死；另出全部表名（1,339 项）。⛔ 不是通用解析器；⛔ 目录的 u32 **不是对象句柄**（已反证）；⛔ 列表列的对象编码未解 ⇒ `even_res_center` 读不出来 |
+| `ctable_cw.py` | ★ `base.cw`（66.8 MB ctable）**通用解码器**，格式逆自 `libnative-lib.so`（值解码 `0xb3fdb0` / 子项寻址 `0xb3f930` / 表布局 `0xb3fb50`）。`tables()` 读表目录（= 根的第 0 个子项，2,397 张）、`table(idx)` 解 `(array, hash)`、`rows(idx)` 按「含 `id` 键」向下展平多级分桶出行。⚠ **每行本身就是一个表对象**（长度天然可变）⇒ ⛔ 别再假设定长行；⚠ 根子项里也有**非表**的裸值对象，`table()` 对它们回 `None`（⛔ 别让它抛异常打断遍历）
 | `build_roads.py` | ★ 道路层：`road_info.lua` 的 42,018 格 → 路片图集（18 片，0.5× 缩存）+ 摆放表；绑定取自 `ctable_cw` 的 `client_res`（实测），**邻接度签名作交叉校验**、对不上直接退出 |
 | `recon_road.py` | ⏸ 道路层数据链勘察（**只勘察不出产物**）：坐标系由干净集 `road_info.lua` 直给（1125²、半宽 200/半高 100 = 4/3 逻辑格）、lua 与 bytes **42,018/42,018 逐条互证**（⚠ bytes 是 (col,row) 转置）、`type_info` 烘死片、id→精灵靠邻接度签名绑定 |
 | `build_tops.py` | ★ `_top_group` 手摆细节：三族 1,899 件 / 91 种贴图 → 每族一张图集（0.4× 缩存，`native` 记原版像素）+ 摆放库；贴图路径**归一化**（剥 atlas_mutil_assets 前缀与 @@材质名） |

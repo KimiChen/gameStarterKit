@@ -481,11 +481,13 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
     assert.equal(meta.binding.degrees.length, 18);
     // ★ 绑定已由 base.cw 的 client_res 表升为 [实测]（2026-09-23）
     assert.ok(meta.binding.tier.includes("[实测]"), "绑定档位应已是 [实测]");
-    // ⚠ type_info 的 id 比 client_res id **小 1**：真表 1170..1188 共 19 条，
-    //   `up_end_2`（名「路19」）占最前的 1170 而 S1 不用 ⇒ type_info 只覆盖 1170..1187。
-    assert.equal(meta.binding.typeIdToClientResId, 1);
+    // ★ type_info 的 id 与 client_res id **1:1**（⛔ 无偏移）：真表里路片本体是
+    //   1169..1187 共 19 条，`up_end_2`（名「路19」）占最前的 1169 而 S1 不用
+    //   ⇒ type_info 正好覆盖 1170..1187 这 18 条。
+    //   ⚠ 早先写成「要 +1」是因为当时用启发式扫表、整体错位了一格（已由真解码器纠正）。
+    assert.equal(meta.binding.typeIdToClientResId, 0);
     for (const c of meta.atlas.cells) {
-        assert.equal(c.clientResId, c.typeId + 1, `路片 ${c.id} 的 id 换算`);
+        assert.equal(c.clientResId, c.typeId, `路片 ${c.id} 的 id 换算`);
         // ★ prefab 名与精灵目录必须同类（下划线去掉后即目录名）
         const dir = c.source.split("/").slice(-2)[0];
         assert.equal(c.prefab.replace(/_/g, "").replace(/\d+$/, ""), dir.replace(/\d+$/, ""),

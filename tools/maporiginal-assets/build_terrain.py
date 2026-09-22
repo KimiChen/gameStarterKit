@@ -137,7 +137,8 @@ def main() -> int:
     # ⚠ 早先只挡 multi ∈ {60,61}（43,533 格），**少挡了 154,552 格** ——
     #   1/2/4/7 格的山形（48..55、57..59）同样 is_block，⛔ 别再按「只有大山挡路」想。
     cw = BaseCw()
-    blocking = {r["id"] for r in cw.land_rows() if r["is_block"] == cw.LAND_IS_BLOCK}
+    land = cw.rows(cw.tables()["land"])      # ★ 真解码器：目录 → land 表 → 展平成 id → 行
+    blocking = {i for i, r in land.items() if r.get("is_block") is True}
     present = set(np.unique(res).tolist()) | set(np.unique(multi).tolist())
     blk_here = sorted(v for v in present if v in blocking)
     if 47 not in blk_here:

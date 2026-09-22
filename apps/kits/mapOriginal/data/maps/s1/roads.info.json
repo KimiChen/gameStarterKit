@@ -47,7 +47,7 @@
    {
     "id": 0,
     "typeId": 1170,
-    "clientResId": 1171,
+    "clientResId": 1170,
     "prefab": "down_end_1",
     "rect": [
      2,
@@ -65,7 +65,7 @@
    {
     "id": 1,
     "typeId": 1171,
-    "clientResId": 1172,
+    "clientResId": 1171,
     "prefab": "down_end_2",
     "rect": [
      204,
@@ -83,7 +83,7 @@
    {
     "id": 2,
     "typeId": 1172,
-    "clientResId": 1173,
+    "clientResId": 1172,
     "prefab": "down_tcross_1",
     "rect": [
      406,
@@ -101,7 +101,7 @@
    {
     "id": 3,
     "typeId": 1173,
-    "clientResId": 1174,
+    "clientResId": 1173,
     "prefab": "down_vertical_turn_1",
     "rect": [
      608,
@@ -119,7 +119,7 @@
    {
     "id": 4,
     "typeId": 1174,
-    "clientResId": 1175,
+    "clientResId": 1174,
     "prefab": "down_vertical_turn_2",
     "rect": [
      810,
@@ -137,7 +137,7 @@
    {
     "id": 5,
     "typeId": 1175,
-    "clientResId": 1176,
+    "clientResId": 1175,
     "prefab": "horizonal_turn_1",
     "rect": [
      2,
@@ -155,7 +155,7 @@
    {
     "id": 6,
     "typeId": 1176,
-    "clientResId": 1177,
+    "clientResId": 1176,
     "prefab": "horizonal_turn_2",
     "rect": [
      204,
@@ -173,7 +173,7 @@
    {
     "id": 7,
     "typeId": 1177,
-    "clientResId": 1178,
+    "clientResId": 1177,
     "prefab": "horizonal_turn_3",
     "rect": [
      406,
@@ -191,7 +191,7 @@
    {
     "id": 8,
     "typeId": 1178,
-    "clientResId": 1179,
+    "clientResId": 1178,
     "prefab": "horizonal_turn_4",
     "rect": [
      608,
@@ -209,7 +209,7 @@
    {
     "id": 9,
     "typeId": 1179,
-    "clientResId": 1180,
+    "clientResId": 1179,
     "prefab": "line_1",
     "rect": [
      810,
@@ -227,7 +227,7 @@
    {
     "id": 10,
     "typeId": 1180,
-    "clientResId": 1181,
+    "clientResId": 1180,
     "prefab": "line_2",
     "rect": [
      2,
@@ -245,7 +245,7 @@
    {
     "id": 11,
     "typeId": 1181,
-    "clientResId": 1182,
+    "clientResId": 1181,
     "prefab": "line_3",
     "rect": [
      204,
@@ -263,7 +263,7 @@
    {
     "id": 12,
     "typeId": 1182,
-    "clientResId": 1183,
+    "clientResId": 1182,
     "prefab": "line_4",
     "rect": [
      406,
@@ -281,7 +281,7 @@
    {
     "id": 13,
     "typeId": 1183,
-    "clientResId": 1184,
+    "clientResId": 1183,
     "prefab": "up_end_1",
     "rect": [
      608,
@@ -299,7 +299,7 @@
    {
     "id": 14,
     "typeId": 1184,
-    "clientResId": 1185,
+    "clientResId": 1184,
     "prefab": "up_tcross_1",
     "rect": [
      810,
@@ -317,7 +317,7 @@
    {
     "id": 15,
     "typeId": 1185,
-    "clientResId": 1186,
+    "clientResId": 1185,
     "prefab": "up_vertical_turn_1",
     "rect": [
      2,
@@ -335,7 +335,7 @@
    {
     "id": 16,
     "typeId": 1186,
-    "clientResId": 1187,
+    "clientResId": 1186,
     "prefab": "up_vertical_turn_2",
     "rect": [
      204,
@@ -353,7 +353,7 @@
    {
     "id": 17,
     "typeId": 1187,
-    "clientResId": 1188,
+    "clientResId": 1187,
     "prefab": "xcross_1",
     "rect": [
      406,
@@ -373,7 +373,7 @@
  },
  "binding": {
   "method": "base.cw 的 client_res 表（id → prefab → 贴图）；邻接度结构签名作交叉校验",
-  "typeIdToClientResId": 1,
+  "typeIdToClientResId": 0,
   "degrees": [
    1,
    1,
@@ -394,7 +394,7 @@
    2,
    4
   ],
-  "tier": "[实测] —— 2026-09-23 解开 base.cw 的 client_res 定长行布局"
+  "tier": "[实测] —— 2026-09-23 逆出 base.cw 的 ctable 解码器，直读 client_res"
  },
  "source": {
   "config": "asset/config/S1/cn/res_pro/road_info.lua",

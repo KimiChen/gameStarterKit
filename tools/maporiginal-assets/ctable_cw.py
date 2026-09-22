@@ -1,58 +1,38 @@
 #!/usr/bin/env python3
-"""`base.cw`（ejoy2dx ctable 大包）的**定向读取**器。
+"""`base.cw`（ejoy2dx ctable 大包）**解码器** —— 从 `libnative-lib.so` 逆出来的，⛔ 不是猜的。
 
     /tmp/maporiginal-venv/bin/python ctable_cw.py --table client_res --prefix scene/ground/road/
 
-★ 已解开的部分（2026-09-23，MAPORIGINAL-2D §11-1 的最大缺口）：
+★ 值编码（arm64 `libnative-lib.so`，值解码器 `0xb3fdb0`）：
+  `cmp w2, #5` + 字节跳转表 `@0x11832b0 = 00 0b 10 1a 1f 25` ⇒ **类型标签只有 0..5**：
 
-    [0]  u32  串池偏移（实测 0x02ee49fc = 49,170,940，其后 17.6 MB 是 NUL 分隔的串池）
-    [4]  u32  **对象总数**（实测 712,948）
-    [8..] u32 **对象偏移表**（712,948 项，句柄 → 文件偏移，递增）
-
-  ⚠ 早先把 `[4]` 读成「串索引偏移」是**错的** —— 它是对象数；在 0xae0f4 处读到的
-  「池内偏移」其实是偏移表的表项（值恰好落在数据区、被 `s()` 当池偏移误解了）。
-
-★ **顶层表目录**：一段按**字母序**排的「表名 → 句柄」键值对（实测 1,339 项，
-  `build` … `zhongshuling_market_level_cfg`），就是 `get_cfg("<名>")` 的落点。
-  ⚠ 判据用「池里前一字节是 NUL」（真键必指向串**起点**），⛔ 别用「像标识符」那种软判据
-  —— 软判据会在 `IER_1` / `RY_6` 这类池内巧合上停住、把目录截断。
-★ **值编码已从 `libnative-lib.so` 的 ctable 模块逆出**（2026-09-23，⛔ 不再靠猜）：
-  值解码器在 `0xb3fdb0`，`cmp w2,#5` + 字节跳转表 `@0x11832b0 = 00 0b 10 1a 1f 25`
-  ⇒ **类型标签只有 0..5**：
-
-    0 = nil          1 = int32（符号扩展）   2 = float32
-    3 = boolean      4 = **嵌套表（值是容器内索引）**
+    0 = nil                         1 = int32（ldrsw，符号扩展）
+    2 = float32（ldr s0 + fcvt）    3 = boolean
+    4 = **嵌套表**（值是**根容器**的子项索引）
     5 = **字符串**：`ptr = base + *(u32*)base + value`
 
-  ⇒ 根容器的 `[0]` 就是串池偏移，这条由解码器直接印证（tag 5 用 `base[0]`）。
+  ⚠ 跳转表末字节 `0x25` 与紧随其后的字符串 `%_ctables` 的 `'%'` **共用同一个字节**
+    （链接器 packing），这反过来确认标签上界就是 5。
+  ⚠ 遍历时传给解码器的 `base` 始终是**根容器** ⇒ **所有索引与串偏移都是全局的**。
 
-★ **子容器寻址**（`0xb3f930`）：
-    `entries[i] = *(i32*)(base + 8 + i*4)`，`-1` = 该项不存在；
-    `count      = *(u32*)(base + 4)`；
-    `child(i)   = base + 8 + count*4 + entries[i]`   ← **entries 是相对偏移**
+★ 子容器寻址（`0xb3f930`）：
+    `count      = *(u32*)(root + 4)`
+    `entries[i] = *(i32*)(root + 8 + i*4)`   （`-1` = 该项不存在）
+    `child(i)   = root + 8 + count*4 + entries[i]`   ← **entries 是相对偏移**
 
-⚠ **更正上一版的结论**：先前写「目录的 u32 不是对象句柄、语义未知」是**错的** ——
-  它就是索引，只是我把 entries 当成了**绝对**文件偏移（正确是相对，差一个常数
-  `8 + count*4 = 0x2B83D8`，那正好是 entries 数组的末尾）。按正确公式，
-  `client_res` → 容器 @0x98ffac、`land` → @0x1c2da50、`city_res` → @0x93cbf8，都落在合理位置。
+★ 表对象布局（`0xb3fb50` 的遍历函数，寄存器 provenance 已追清）：
+    `O+0`                    u32 n_array
+    `O+4`                    u32 n_hash
+    `O+8`                    u8  tags[n_array + n_hash]
+    `O+8+pad`                u32 array_values[n_array]        pad = (n_array+n_hash+3) & ~3
+    `O+8+pad+4*n_array`      {u32 key, u32 value}[n_hash]     ← **哈希项 8 字节一对**
+  ⚠ 哈希的**键恒是串**（全数字时原版会转成整数键）；值的标签在 `tags[n_array + i]`。
+  ⚠ 数组部分步长 4、哈希部分步长 **8** —— 早先按 4 读会把键值交错读串。
 
-⛔ **仍未解**：**嵌套容器的头部布局**与根容器不同（根是 `[4]=count`、`[8..]=entries`；
-  而 `client_res` 容器头是 `[0]=串基址 [4]=109 [8]=8 [0xC]=328`，`0x10` 起是一大片
-  全 `04` 的标签字节）⇒ 行的键/值数组落点还没坐实。要继续得细追
-  `0xb3fc00` 那段的寄存器来源（`x22`/`x27` 的 provenance）。
+★ 顶层表目录：根容器的一个子表，**表名 → 子项索引**（1,339 项可见）。
 
-  **行是 `[u32 键池偏移][u32 值]` 的键值对序列**，值要么是池偏移（串），要么是整数。
-  同一张表的行**定长且对齐**（`client_res` 实测 100 B / 25 个 u32：6 对键值 +
-  9 个 u32 的尾巴 + `day_night_res_type` 对 + `id` 对）。
-
-⚠ **这不是通用 ctable 解析器**，⛔ 别当它是：
-  - 尾巴那 9 个 u32 的含义未解（疑似打包描述符）；
-  - 行长/列集**逐表不同**，本模块靠「必含某个键」来圈定一张表，⛔ 不解析表目录；
-  - 跨表的 `id` 会撞车（实测按 `name`+`id` 盲扫会捞到 3,875 行、来自多张表），
-    所以**必须**同时给一个该表独有的键（如 `client_res` 给 `src_name`）。
-
-★ 已验证的战果：`client_res` 的 848 行全出，其中 `scene/ground/road/` 152 条；
-  道路的 `type_info` id **+1** 后逐条对上 prefab（见 `build_roads.py`）。
+⛔ **别再用「扫键名 + 往前找行首」那套启发式**：表是**多级分桶**的
+  （`client_res` 是两级：外层桶 → id → 行），变长行上的行首启发式会串行。
 """
 from __future__ import annotations
 
@@ -62,15 +42,26 @@ import os
 import struct
 import sys
 
-import numpy as np
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
-# ⚠ base.cw **不在 name_map 里**（它没有路径条目）—— 按 namehash 锁定的容器内文件名直取。
+# ⚠ base.cw **不在 name_map 里**（没有路径条目）—— 按 namehash 锁定的容器内文件名直取。
 BASE_CW_REL = "files/6853c9b7f69310c7f443a091899cbda2_13055493/004_8d15b7ffcb4b2a2a.bin"
 BASE_CW_SIZE = 66_776_016
+TAG_NIL, TAG_INT, TAG_FLOAT, TAG_BOOL, TAG_TABLE, TAG_STR = range(6)
+
+
+class Ref:
+    """一个尚未展开的嵌套表（tag 4）。⚠ `idx` 是**根容器**的子项索引。"""
+
+    __slots__ = ("idx",)
+
+    def __init__(self, idx: int) -> None:
+        self.idx = idx
+
+    def __repr__(self) -> str:
+        return "<table #%d>" % self.idx
 
 
 class BaseCw:
@@ -88,170 +79,178 @@ class BaseCw:
                              % (os.path.getsize(path), BASE_CW_SIZE))
         self.path = path
         self.buf = open(path, "rb").read()
-        self.pool_off = struct.unpack_from("<I", self.buf, 0)[0]
-        self.strindex_off = struct.unpack_from("<I", self.buf, 4)[0]
-        self.pool = self.buf[self.pool_off:]
-        self.words = np.frombuffer(self.buf[: len(self.buf) // 4 * 4], "<u4")
-        self._key_cache: dict = {}
+        self.pool = self.u32(0)
+        self.count = self.u32(4)
+        self.data = 8 + self.count * 4
+        self._tables: dict | None = None
 
-    # ── 对象表与表目录 ──────────────────────────────────────
-    def obj_offset(self, handle: int) -> int:
-        """句柄 → 文件偏移。"""
-        return struct.unpack_from("<I", self.buf, 8 + handle * 4)[0]
+    # ── 基本读 ────────────────────────────────────────────────
+    def u32(self, o: int) -> int:
+        return struct.unpack_from("<I", self.buf, o)[0]
+
+    def i32(self, o: int) -> int:
+        return struct.unpack_from("<i", self.buf, o)[0]
+
+    def f32(self, o: int) -> float:
+        return struct.unpack_from("<f", self.buf, o)[0]
+
+    def s(self, v: int) -> str:
+        """tag 5：`ptr = root + root[0] + value`。"""
+        off = self.pool + v
+        end = self.buf.index(b"\x00", off)
+        return self.buf[off:end].decode("utf-8", "replace")
+
+    def child(self, idx: int) -> int | None:
+        if idx < 0 or idx >= self.count:
+            return None
+        ent = self.i32(8 + idx * 4)
+        return None if ent == -1 else self.data + ent
+
+    # ── 表 ────────────────────────────────────────────────────
+    def _val(self, tag: int, at: int):
+        if tag == TAG_NIL:
+            return None
+        if tag == TAG_INT:
+            return self.i32(at)
+        if tag == TAG_FLOAT:
+            return self.f32(at)
+        if tag == TAG_BOOL:
+            return bool(self.u32(at))
+        if tag == TAG_TABLE:
+            return Ref(self.u32(at))
+        if tag == TAG_STR:
+            return self.s(self.u32(at))
+        raise SystemExit("⛔ 未知类型标签 %d @%#x" % (tag, at))
+
+    def table(self, idx: int):
+        """子项 idx → `(array: list, hash: dict)`；不存在 / 不是合法表回 None。
+
+        ⚠ **不是每个子项都是表**（也有裸值对象）；越界或串读不到 NUL 一律当「不是表」，
+        ⛔ 别让它抛异常把整轮遍历打断。
+        """
+        try:
+            return self._table(idx)
+        except (ValueError, struct.error, IndexError):
+            return None
+
+    def _table(self, idx: int):
+        o = self.child(idx)
+        if o is None:
+            return None
+        if o + 8 > len(self.buf):
+            return None
+        na, nh = self.u32(o), self.u32(o + 4)
+        if na > 1 << 22 or nh > 1 << 22 or o + 8 + na + nh > len(self.buf):
+            return None      # ⚠ 不是表（根子项里也有裸值对象）
+        pad = (na + nh + 3) & ~3
+        tg, av = o + 8, o + 8 + pad
+        hv = av + 4 * na
+        # ⚠ 个别条目会读不出来（串越界 / 标签越界）：**逐项跳过**，
+        #   ⛔ 别让一条坏项把整张表作废（目录表就因此整张丢过）。
+        arr, hsh = [], {}
+        for k in range(na):
+            try:
+                arr.append(self._val(self.buf[tg + k], av + 4 * k))
+            except (ValueError, struct.error, IndexError, SystemExit):
+                arr.append(None)
+        for k in range(nh):
+            try:
+                hsh[self.s(self.u32(hv + 8 * k))] = self._val(self.buf[tg + na + k],
+                                                              hv + 8 * k + 4)
+            except (ValueError, struct.error, IndexError, SystemExit):
+                continue
+        return arr, hsh
+
+    def refs(self, idx: int) -> list:
+        t = self.table(idx)
+        if t is None:
+            return []
+        a, h = t
+        return ([v.idx for v in a if isinstance(v, Ref)]
+                + [v.idx for v in h.values() if isinstance(v, Ref)])
+
+    def rows(self, idx: int, marker: str = "id", maxdepth: int = 6) -> dict:
+        """把一张（多级分桶的）表展平成 `{id 或 子项号: 行 dict}`。
+
+        ⚠ 判「行」的判据是**含 `marker` 键**；⛔ 别假设固定层数 —— `client_res` 是两级、
+        别的表未必。
+        """
+        out, seen, stack = {}, set(), [(idx, 0)]
+        while stack:
+            i, d = stack.pop()
+            if i in seen or d > maxdepth:
+                continue
+            seen.add(i)
+            t = self.table(i)
+            if t is None:
+                continue
+            if d > 0 and marker in t[1]:
+                out[t[1].get(marker, i)] = t[1]
+                continue
+            for j in self.refs(i):
+                stack.append((j, d + 1))
+        return out
+
+    def index_at(self, file_off: int) -> int:
+        """文件偏移 → 覆盖它的子项索引。⚠ entries 是**单调递增**的相对偏移，可二分。"""
+        lo, hi = 0, self.count - 1
+        want = file_off - self.data
+        while lo < hi:
+            mid = (lo + hi + 1) // 2
+            ent = self.i32(8 + mid * 4)
+            if ent != -1 and ent <= want:
+                lo = mid
+            else:
+                hi = mid - 1
+        return lo
 
     def tables(self) -> dict:
-        """顶层表目录：表名 → **一个语义未知的 u32**。⚠ 以 `land_shape` 为锚向两头扩。
+        """顶层表目录：表名 → 子项索引。
 
-        ⛔ 那个 u32 **不是对象句柄**（已反证，见模块注释）。这张表目前只用来
-        **确认某张表存在 / 拿到全部表名**，⛔ 别拿它定位行。
+        ⚠ 定位办法：串池里找键 `land_shape` 的**串起点**，在数据区搜它的 u32 引用，
+        用 `index_at` 反查所属子项 —— ⛔ 别全量扫 712,948 个子项（慢且会踩到非表对象）。
         """
-        if getattr(self, "_tables", None) is not None:
+        if self._tables is not None:
             return self._tables
-        w = self.words
-        anchor = self.key_off("land_shape")
-        i = int(np.nonzero(w == anchor)[0][0])
-        k = i
-        while k > 2 and self.pool_key(int(w[k - 2])):
-            k -= 2
-        j = i
-        while j + 1 < len(w) and self.pool_key(int(w[j])):
-            j += 2
-        self._tables = {self.pool_key(int(w[k + t])): int(w[k + t + 1])
-                        for t in range(0, j - k, 2)}
-        return self._tables
-
-    # ⛔ **曾有一个 `owner_of(file_off)`，已删** ——它建在「对象按表分组、目录值是句柄」
-    #   这个假设上，而该假设**已被反证**：`client_res` 的行实测落在句柄 ~214,746，
-    #   目录里写的却是 164,841；`land` 是 ~505,131 vs 460,421，差值还不是常数。
-    #   ⇒ 目录的 u32 **不是对象句柄**，语义未知。⛔ 别再按「句柄区间 = 表」去归属地址。
-
-    def pool_key(self, off: int) -> str | None:
-        """池偏移 → 键名；⚠ 必须指向串**起点**（前一字节是 NUL），⛔ 否则是巧合。"""
-        if off <= 0 or off >= len(self.pool) or self.pool[off - 1] != 0:
-            return None
-        st = self.s(off)
-        return st if st and st.isascii() and 0 < len(st) < 64 else None
-
-    def s(self, off: int) -> str | None:
-        """池偏移 → 串；越界或太长回 None。"""
-        if off >= len(self.pool):
-            return None
-        end = self.pool.find(b"\x00", off)
-        if end < 0 or end - off > 512:
-            return None
-        return self.pool[off:end].decode("utf-8", "replace")
-
-    def key_off(self, name: str) -> int:
-        """键名 → 它在池里的偏移。⚠ 取**第一处**出现，键名短、重复风险低。"""
-        if name in self._key_cache:
-            return self._key_cache[name]
-        pat = b"\x00" + name.encode() + b"\x00"
-        i = self.pool.find(pat)
+        import numpy as np
+        pat = b"\x00land_shape\x00"
+        i = self.buf.find(pat, self.pool)
         if i < 0:
-            raise SystemExit("⛔ 串池里没有键 %r" % name)
-        self._key_cache[name] = i + 1
-        return i + 1
-
-    # ★ `client_res` 的**定长行布局**（100 B / 25 个 u32，实测逐行成立）：
-    #     [0]键 name [1]值 | [2]键 pool_id [3]值 | [4]键 res_season [5]值
-    #     [6]键 res_type [7]值 | [8]键 src_name [9]值 | [10]键 src_name_3d [11]值
-    #     [12..20] 尾巴 9 个 u32（含义未解，疑似打包描述符）
-    #     [21]键 day_night_res_type [22]值 | [23]键 id [24]值
-    # ⚠ **这是 `client_res` 这一张表的布局**，⛔ 别推广到别的表：行长与列集逐表不同。
-    #   换表要先照 §11-1 的办法重定：找一个该表独有的键的池偏移，
-    #   在文件里搜它的 u32 引用，dump 周围 ±40 B 看键值对节律。
-    CLIENT_RES_SLOTS = {"name": 1, "pool_id": 3, "res_season": 5, "res_type": 7,
-                        "src_name": 9, "src_name_3d": 11, "day_night_res_type": 22, "id": 24}
-    CLIENT_RES_KEYS = {0: "name", 2: "pool_id", 4: "res_season", 6: "res_type",
-                       8: "src_name", 10: "src_name_3d", 21: "day_night_res_type", 23: "id"}
-    CLIENT_RES_WORDS = 25
-
-    def client_res_rows(self) -> list:
-        """全量 `client_res` 行。⚠ 靠**四个键同时落在固定槽**圈定，⛔ 不是盲扫。"""
-        need = {slot: self.key_off(name) for slot, name in self.CLIENT_RES_KEYS.items()}
-        w = self.words
-        anchor = need[0]
-        cand = np.nonzero(w[: -self.CLIENT_RES_WORDS] == anchor)[0]
-        out = []
-        for i in cand:
-            if any(w[i + slot] != ko for slot, ko in need.items()):
-                continue
-            row = {"_at": int(i) * 4}
-            for col, slot in self.CLIENT_RES_SLOTS.items():
-                row[col] = int(w[i + slot])
-            out.append(row)
-        return out
-
-    def road_pieces(self) -> dict:
-        """`client_res` 里 `scene/ground/road/<名>_complex_group.prefab` 的 id → 名。
-
-        ⚠ 只收 `_complex_group`（本体），⛔ 不收 `_complex_path_*`（路点变体，26,055 起）
-        与 `_沙漠` 皮肤（26,038 起）。
-        """
-        out = {}
-        for r in self.client_res_rows():
-            src = self.s(r["src_name"])
-            if not src or not src.startswith("scene/ground/road/"):
-                continue
-            stem = src[len("scene/ground/road/"):]
-            if not stem.endswith("_complex_group.prefab") or "_complex_path" in stem:
-                continue
-            out[r["id"]] = stem[: -len("_complex_group.prefab")]
-        return out
-
-    # ★ `land` 表：**49 列 / 392 B 一行**，键按**字母序**排（与 `client_res` 的定长布局同理，
-    #   但列集完全不同 —— 又一次印证「行长与列集逐表不同」）。
-    # ⚠ 值分三类：标量 int 直接读；**字符串列**是池偏移（`name` → `1级木材`）；
-    #   **列表列**（`offset_2d` / `vector` / `variant_*_list` / `reward_*`）是**连号句柄**，
-    #   指向未解的数组池 ⇒ ⛔ 别把它们当数字读。
-    LAND_ANCHOR = "army_fight_confirm_diaplay_func"   # 字母序第一列，兼作行首锚
-    LAND_COLS = 49
-    # ⚠ `is_block` 的真值是 **0x01000000**（不是 1）：疑似大端布尔或高字节标志位。
-    #   实测只有 0 与它两种取值（229 / 124 行）。⛔ 别写成 `!= 0` 以外的判断。
-    LAND_IS_BLOCK = 0x01000000
-
-    def land_rows(self) -> list:
-        """全量 `land` 行（字典：列名 → 原始 u32）。⚠ 只保证**标量列**可直接当数读。"""
-        ka = self.key_off(self.LAND_ANCHOR)
-        w = self.words
-        out = []
-        for i in np.nonzero(w[: -self.LAND_COLS * 2] == ka)[0]:
-            row, ok = {}, True
-            for j in range(self.LAND_COLS):
-                key = self.s(int(w[i + j * 2]))
-                if not key or not key.replace("_", "a").isalnum() or key[0].isdigit():
-                    ok = False
-                    break
-                row[key] = int(w[i + j * 2 + 1])
-            if ok and "is_block" in row and "id" in row:
-                row["_at"] = int(i) * 4
-                out.append(row)
-        return out
+            raise SystemExit("⛔ 串池里没有 land_shape")
+        key = (i + 1) - self.pool
+        w = np.frombuffer(self.buf[: len(self.buf) // 4 * 4], "<u4")
+        for at in np.nonzero(w[: self.pool // 4] == key)[0]:
+            t = self.table(self.index_at(int(at) * 4))
+            if t and "client_res" in t[1] and "land" in t[1]:
+                self._tables = {k: v.idx for k, v in t[1].items() if isinstance(v, Ref)}
+                return self._tables
+        raise SystemExit("⛔ 找不到顶层表目录")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--table", default="client_res")
     ap.add_argument("--prefix", default="")
-    ap.add_argument("--limit", type=int, default=40)
+    ap.add_argument("--limit", type=int, default=20)
+    ap.add_argument("--dir-index", type=int, default=None,
+                    help="直接给表目录的子项索引（省去扫描）")
     a = ap.parse_args()
     cw = BaseCw()
     print("base.cw %s" % cw.path)
-    print("  串池偏移 %#x（%.1f MB 串池）  串索引偏移 %#x" % (cw.pool_off, len(cw.pool) / 1e6,
-                                                            cw.strindex_off))
-    if a.table != "client_res":
-        raise SystemExit("⛔ 目前只圈定了 client_res 的定长布局；别的表要先照 §11-1 的办法重定")
-    rows = cw.client_res_rows()
-    print("  client_res 行 %d 条" % len(rows))
-    got = []
-    for r in rows:
-        src = cw.s(r["src_name"])
-        if src and src.startswith(a.prefix):
-            got.append((r["id"], src, cw.s(r["name"])))
-    got.sort()
+    print("  串池 %#x  根子项 %d  子区起点 %#x" % (cw.pool, cw.count, cw.data))
+    idx = a.dir_index
+    if idx is None:
+        idx = cw.tables().get(a.table)
+    if idx is None:
+        raise SystemExit("⛔ 目录里没有表 %r" % a.table)
+    rows = cw.rows(idx)
+    print("  %s：%d 行" % (a.table, len(rows)))
+    got = [(k, v) for k, v in rows.items()
+           if isinstance(v.get("src_name"), str) and v["src_name"].startswith(a.prefix)]
+    got.sort(key=lambda kv: (kv[0] is None, kv[0]))
     print("  前缀 %r 命中 %d 条：" % (a.prefix, len(got)))
-    for i, src, nm in got[: a.limit]:
-        print("    %-7s %-58s %s" % (i, src, nm))
+    for k, v in got[: a.limit]:
+        print("    %-8s %-58s %s" % (k, v.get("src_name"), v.get("name")))
     return 0
 
 
