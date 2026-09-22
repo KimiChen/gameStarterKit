@@ -64,23 +64,23 @@ export const HeroDetail = defineView<HeroDetailParams | void>({ zIndex: 'window'
         if (id === 'attributes' || id === 'skills' || id === 'equip') setTab(id);
     };
     return (
-        <view name="HeroDetail" style={{ width: 750, height: 1624 }}>
+        <view name="HeroDetail" style={{ width: 750, height: 1334 }}>
             <image source={background}
-                style={{ position: 'absolute', width: 750, height: 1624 }} />
+                style={{ position: 'absolute', left: 0, top: -145, width: 750, height: 1624 }} />
             <image source={params.portrait ?? imageRef('ui/hero-detail/art')}
-                style={{ position: 'absolute', left: 163, top: 259, width: 469, height: 650 }} />
+                style={{ position: 'absolute', left: 163, top: 114, width: 469, height: 650 }} />
             <image source={imageRef('ui/hero-detail/shadow')}
-                style={{ position: 'absolute', left: 80, top: 789, width: 601, height: 186 }} />
+                style={{ position: 'absolute', left: 80, top: 644, width: 601, height: 186 }} />
             <text value={params.name ?? '凯伊'}
-                style={{ position: 'absolute', left: 250, top: 185, width: 250, height: 70,
+                style={{ position: 'absolute', left: 250, top: 40, width: 250, height: 70,
                     font: fontRef('fonts/regular', 700), fontSize: 56, color: '#ffffff', bold: true,
                     outlineColor: '#000000', outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center' }} />
             <view visible={tab === 'attributes'} interaction="press" onClick={() => params.onPrev?.()}
-                style={{ position: 'absolute', left: 25, top: 607, width: 58, height: 80 }}>
+                style={{ position: 'absolute', left: 25, top: 462, width: 58, height: 80 }}>
                 <image source={imageRef('ui/hero-detail/arrow')} style={{ width: 58, height: 80 }} />
             </view>
             <view visible={tab === 'attributes'} interaction="press" onClick={() => params.onNext?.()}
-                style={{ position: 'absolute', left: 667, top: 607, width: 58, height: 80 }}>
+                style={{ position: 'absolute', left: 667, top: 462, width: 58, height: 80 }}>
                 <image source={imageRef('ui/hero-detail/arrow-right')} style={{ width: 58, height: 80 }} />
             </view>
             <HeroDetailAttributes visible={tab === 'attributes'} power={params.power} level={params.level}
@@ -95,8 +95,8 @@ export const HeroDetail = defineView<HeroDetailParams | void>({ zIndex: 'window'
                     selected={tab} items={HERO_DETAIL_TABS} onSelect={selectDetailTab} />
             </view>
             <view visible={popup === 'power'} interaction="press" onClick={() => setPopup('none')}
-                style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624, backgroundColor: '#00000066' }}>
-                <view style={{ position: 'absolute', left: 180, top: 603, width: 390, height: 290 }}>
+                style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1334, backgroundColor: '#00000066' }}>
+                <view style={{ position: 'absolute', left: 180, top: 458, width: 390, height: 290 }}>
                     <image source={imageRef('ui/hero-detail/popup-power')} style={{ width: 390, height: 290 }} />
                     <text value="英雄战力" style={{ position: 'absolute', left: 16, top: 10, width: 200, height: 40,
                         font: fontRef('fonts/regular', 700), fontSize: 32, color: '#3F3254', bold: true, verticalAlign: 'center' }} />

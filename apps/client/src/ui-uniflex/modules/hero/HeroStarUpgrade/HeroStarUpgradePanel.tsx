@@ -48,10 +48,10 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
     const starLefts = starSlots;
     return (
         <view name="HeroStarUpgrade" visible={p.visible !== false}
-            style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
-            <PopupFrame title={p.title ?? '升星'} left={21} top={377} width={708} height={870}
+            style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1334 }}>
+            <PopupFrame title={p.title ?? '升星'} left={21} top={232} width={708} height={870}
                 onClose={p.onClose} />
-            <view style={{ position: 'absolute', left: 21, top: 377, width: 708, height: 870 }}>
+            <view style={{ position: 'absolute', left: 21, top: 232, width: 708, height: 870 }}>
                 <StarRow filled={starFull} empty={starEmpty} value={stars}
                     lefts={starLefts} top={123} width={68} height={64} />
                 <image source={imageRef('ui/star-upgrade/power')}

@@ -56,7 +56,7 @@
       "componentName": "HeroDetail",
       "restoredName": "HeroDetailRestored",
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetail.tsx",
-      "canvas": { "width": 750, "height": 1624 }
+      "canvas": { "width": 750, "height": 1334 }
     }
   ]
 }

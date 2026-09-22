@@ -5,7 +5,7 @@
   "source": "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgrade/HeroStarUpgrade.tsx",
   "canvas": {
     "width": 750,
-    "height": 1624
+    "height": 1334
   },
   "applyTarget": "restored",
   "export": {

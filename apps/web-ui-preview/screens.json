@@ -100,7 +100,7 @@
     {
       "id": "hero-detail",
       "aliases": ["hero-detail", "heroDetail"],
-      "canvas": { "width": 750, "height": 1624 },
+      "canvas": { "width": 750, "height": 1334 },
       "componentName": "HeroDetail",
       "rootName": "HeroDetail",
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetail.tsx"
@@ -108,7 +108,7 @@
     {
       "id": "hero-star-upgrade",
       "aliases": ["hero-star-upgrade", "heroStarUpgrade"],
-      "canvas": { "width": 750, "height": 1624 },
+      "canvas": { "width": 750, "height": 1334 },
       "componentName": "HeroStarUpgrade",
       "rootName": "HeroStarUpgradePage",
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgrade/HeroStarUpgrade.tsx"
@@ -276,7 +276,7 @@
     {
       "id": "hero-detail-restored",
       "aliases": ["hero-detail-restored", "heroDetailRestored"],
-      "canvas": { "width": 750, "height": 1624 },
+      "canvas": { "width": 750, "height": 1334 },
       "componentName": "HeroDetailRestored",
       "rootName": "HeroDetailRestored",
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetailRestored/HeroDetailRestored.tsx"
@@ -284,7 +284,7 @@
     {
       "id": "hero-star-upgrade-restored",
       "aliases": ["hero-star-upgrade-restored", "heroStarUpgradeRestored"],
-      "canvas": { "width": 750, "height": 1624 },
+      "canvas": { "width": 750, "height": 1334 },
       "componentName": "HeroStarUpgradeRestored",
       "rootName": "HeroStarUpgradePage",
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroStarUpgradeRestored/HeroStarUpgradeRestored.tsx"
