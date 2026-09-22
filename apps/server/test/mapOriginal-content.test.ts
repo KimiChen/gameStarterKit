@@ -7,6 +7,7 @@ import {
     MAPO_MAP_COLS, MAPO_MAP_ROWS,
     MAPO_TERRAIN_HEADER_BYTES, MAPO_ORIGINAL_TILE_HALF_W, MAPO_REGION_D_BIAS,
     MAPO_REGION_HEADER_BYTES, MAPO_REGION_RECORD_BYTES, mapoGrid2Pos, mapoRegionPos,
+    mapoDecodeBase64, mapoDecodeRle,
 } from "@game/shared/kits/mapOriginal/api/hexmap/index";
 import {
     MAPO_TERRAIN_COLS, MAPO_TERRAIN_MAP_ID, MAPO_TERRAIN_PALETTE,
@@ -18,12 +19,16 @@ import {
 } from "@game/shared/kits/mapOriginal/content/display.data";
 import {
     MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_CELL_H,
-    MAPO_DECOR_CELL_W, MAPO_DECOR_CITY_BASE,
+    MAPO_DECOR_CELL_W, MAPO_DECOR_CITY_BASE, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
 } from "@game/shared/kits/mapOriginal/content/decor.data";
 import {
     MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_CELL_H,
-    MAPO_REGION_CELL_W,
+    MAPO_REGION_CELL_W, MAPO_REGION_SNOW_CELLS,
 } from "@game/shared/kits/mapOriginal/content/region.data";
+import {
+    MAPO_BAND_COLS, MAPO_BAND_DESERT, MAPO_BAND_GROUND, MAPO_BAND_HEADER_BYTES,
+    MAPO_BAND_RLE_B64, MAPO_BAND_ROWS, MAPO_BAND_SHA256, MAPO_BAND_SNOW,
+} from "@game/shared/kits/mapOriginal/content/bands.data";
 import {
     MAPO_CITY_CELL_COUNTS, MAPO_CITY_CELL_KEYS, MAPO_CITY_SITES,
 } from "@game/shared/kits/mapOriginal/content/labels.data";
@@ -155,39 +160,54 @@ test("mapOriginal 内容：shared 值调色板 = terrain.info.json 的调色板"
 test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，一一对应）", () => {
     const meta = JSON.parse(kit("decor-atlas.info.json").toString("utf8")) as {
         cell: [number, number]; gridCols: number; size: [number, number];
-        anchor: string; cityBase: number; substitutions: (number | string)[];
-        cells: { id: number; kind: string; cell: [number, number, number, number];
+        anchor: string; cityBase: number;
+        substitutions: Record<string, (number | string)[]>;
+        variants: { resIds: Record<string, { base: number; snow: number; desert: number }> };
+        cells: { id: number; kind: string; variant: string; cell: [number, number, number, number];
                  art: [number, number, number, number]; native: [number, number];
-                 scale: [number, number]; offset: [number, number]; angle: number;
-                 pivot: [number, number]; lowZ: number; source: string }[];
+                 resType?: string; level?: number; source: string;
+                 prefab?: string; prefabScale?: number }[];
     };
     assert.deepEqual(meta.cell, [MAPO_DECOR_CELL_W, MAPO_DECOR_CELL_H]);
     assert.deepEqual(meta.size, [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H]);
     assert.equal(meta.cityBase, MAPO_DECOR_CITY_BASE);
     // ⚠ 锚点是底边中点：地物立在菱形中心上，⛔ 不是几何中心
     assert.equal(meta.anchor, "bottom-center");
-    assert.equal(meta.cells.length, MAPO_DECOR_CELLS.length);
-
-    const byId = new Map(MAPO_DECOR_CELLS.map((c) => [c.id, c]));
+    // ★ N1：图集是三套件一张（143 格 = 基础 53 + 雪 45 + 沙 45），shared 按 variant 分三表
+    assert.equal(meta.cells.length,
+        MAPO_DECOR_CELLS.length + MAPO_DECOR_SNOW_CELLS.length + MAPO_DECOR_DESERT_CELLS.length);
+    const sharedAll = [...MAPO_DECOR_CELLS, ...MAPO_DECOR_SNOW_CELLS, ...MAPO_DECOR_DESERT_CELLS];
+    const keyOf = (v: string, id: number) => `${v}:${id}`;
+    const byKey = new Map(sharedAll.map((c) => [keyOf(c.variant, c.id), c]));
+    const slots = new Set<string>();
     for (const c of meta.cells) {
-        const shared = byId.get(c.id);
-        assert.ok(shared, `摆件格 ${c.id} 必须进 shared`);
-        assert.deepEqual([...shared.cell], c.cell, `摆件格 ${c.id} 画布`);
-        assert.deepEqual([...shared.art], c.art, `摆件格 ${c.id} 图内矩形`);
+        const shared = byKey.get(keyOf(c.variant ?? "base", c.id));
+        assert.ok(shared, `摆件格 ${c.variant}:${c.id} 必须进 shared`);
+        assert.deepEqual([...shared.cell], c.cell, `摆件格 ${c.variant}:${c.id} 画布`);
+        assert.deepEqual([...shared.art], c.art, `摆件格 ${c.variant}:${c.id} 图内矩形`);
         // ★ 件多大由**原图像素**定（原版一格 300 px），⛔ 不按格宽拉伸 —— 等级差就在这上面
-        assert.deepEqual([...shared.native], c.native, `摆件格 ${c.id} 原图像素`);
-        assert.ok(c.native[0] > 0 && c.native[1] > 0, `摆件格 ${c.id} 原图像素非法`);
+        assert.deepEqual([...shared.native], c.native, `摆件格 ${c.variant}:${c.id} 原图像素`);
+        assert.ok(c.native[0] > 0 && c.native[1] > 0, `摆件格 ${c.variant}:${c.id} 原图像素非法`);
         // 纵横比必须与图集里的一致（缩略图保比例），⛔ 漂了就是件被压扁/拉长
         assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
-            `摆件格 ${c.id} 缩略图没保住纵横比`);
+            `摆件格 ${c.variant}:${c.id} 缩略图没保住纵横比`);
         // ⚠ 存证不许写本机绝对路径（会随机器漂、且泄漏路径）
-        assert.ok(!c.source.startsWith("/"), `摆件格 ${c.id} 的 source 必须是仓外相对路径`);
+        assert.ok(!c.source.startsWith("/"), `摆件格 ${c.variant}:${c.id} 的 source 必须是仓外相对路径`);
         const [ax, ay, aw, ah] = c.art;
         assert.ok(ax >= 0 && ay >= 0 && ax + aw <= MAPO_DECOR_CELL_W && ay + ah <= MAPO_DECOR_CELL_H,
-            `摆件格 ${c.id} 图内矩形越界`);
+            `摆件格 ${c.variant}:${c.id} 图内矩形越界`);
+        // ★ UV 不越界：格必须整张落在图集内（N1 图集已加宽到 4096×2048）
+        const [cx, cy, cw, ch] = c.cell;
+        assert.ok(cx >= 0 && cy >= 0 && cx + cw <= MAPO_DECOR_ATLAS_W && cy + ch <= MAPO_DECOR_ATLAS_H,
+            `摆件格 ${c.variant}:${c.id} 越出图集`);
+        // ⚠ 图集槽位不许撞车（两格同位 = 有一件盖住了另一件）
+        const slot = `${cx},${cy}`;
+        assert.ok(!slots.has(slot), `摆件格 ${c.variant}:${c.id} 的槽位 ${slot} 撞车`);
+        slots.add(slot);
     }
     // ★ 这条才是「按原游戏参数摆放」的机检：**每个资源/金矿值都得有自己的一张图**，
     //   ⛔ 少一个就会在近档出现「这一格什么都没有」的空地，而原版那里是有 res_field 的。
+    const byId = new Map(MAPO_DECOR_CELLS.map((c) => [c.id, c]));
     for (const e of info.palette) {
         if (e.kind !== "resource" && e.kind !== "gold") continue;
         assert.ok(byId.has(e.id), `原版值 ${e.id}（${e.cn}）缺摆件图`);
@@ -198,6 +218,60 @@ test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，�
         if (c.kind !== "city") assert.ok(MAPO_VALUE_BY_ID.has(c.id), `格 ${c.id} 不是原版值`);
     }
     assert.ok(MAPO_DECOR_CELLS.some((c) => c.id >= MAPO_DECOR_CITY_BASE), "至少要有一件城址图");
+});
+
+test("mapOriginal 内容（N1）：摆件三套件与 land 表一致（值 → {base, snow, desert}）", () => {
+    // ★ land 表的四套件列是选件真源（docs/MAPORIGINAL-2D.md §3.2，⛔ autumn 不接）：
+    //   info.json 落盘的 resIds 是打包期从 base.cw 读出的，shared 三张表是按它建的格 ——
+    //   两份产物互证，⛔ 不是同一处算两遍。
+    const meta = JSON.parse(kit("decor-atlas.info.json").toString("utf8")) as {
+        variants: { resIds: Record<string, { base: number; snow: number; desert: number }> };
+        cells: { id: number; kind: string; variant: string; source: string;
+                 resType?: string; level?: number }[];
+    };
+    const tables: Record<string, readonly { id: number; resType?: string; level?: number }[]> = {
+        base: MAPO_DECOR_CELLS, snow: MAPO_DECOR_SNOW_CELLS, desert: MAPO_DECOR_DESERT_CELLS,
+    };
+    // 三套件齐全：45 个资源值（2..46）在每套表里都恰有一格
+    const prefixOf: Record<string, string> = {
+        base: "scene/resource/", snow: "scene/resource_snow/", desert: "scene/resource_desert/",
+    };
+    for (const [variant, table] of Object.entries(tables)) {
+        const ids = table.filter((c) => c.id < MAPO_DECOR_CITY_BASE)
+            .map((c) => c.id).sort((x, y) => x - y);
+        assert.deepEqual(ids, Array.from({ length: 45 }, (_x, i) => i + 2),
+            `${variant} 表的值域必须精确是 2..46`);
+        for (const c of meta.cells.filter((x) => x.variant === variant && x.kind === "res")) {
+            // ★ 贴图必须长在**本套**树里（⛔ 雪件图落在基础季树 = 换件是假的）
+            assert.ok(c.source.startsWith(prefixOf[variant]),
+                `${variant} 格 ${c.id} 的 source ${c.source} 不在 ${prefixOf[variant]} 下`);
+        }
+    }
+    // land 表互证：45 个值的雪/沙套件 id 都必须与基础季**不同**（本 kit 消费的值全在
+    // 「113 个雪/沙件与基础件不同」之列 —— 若有例外落回同 id，说明 land 表读串了）
+    for (let v = 2; v <= 46; v += 1) {
+        const ids = meta.variants.resIds[String(v)];
+        assert.ok(ids, `值 ${v} 缺 resIds 记录`);
+        assert.ok(ids.base > 0 && ids.snow > 0 && ids.desert > 0, `值 ${v} 的套件 id 有 0`);
+        assert.notEqual(ids.snow, ids.base, `值 ${v} 的雪件 id 与基础季相同`);
+        assert.notEqual(ids.desert, ids.base, `值 ${v} 的沙件 id 与基础季相同`);
+    }
+    // ★ 同值的类型/等级在三套表里一致（打包期已用 prefab 名互校，这里钉 shared 侧）
+    for (let v = 2; v <= 46; v += 1) {
+        const b = tables.base.find((c) => c.id === v)!;
+        const s = tables.snow.find((c) => c.id === v)!;
+        const d = tables.desert.find((c) => c.id === v)!;
+        assert.equal(s.resType, b.resType, `值 ${v} 雪/基础类型`);
+        assert.equal(d.resType, b.resType, `值 ${v} 沙/基础类型`);
+        assert.equal(s.level, b.level, `值 ${v} 雪/基础等级`);
+        assert.equal(d.level, b.level, `值 ${v} 沙/基础等级`);
+    }
+    // ★ land 表坐实的资源类型次序：wood / stone / food / iron（⛔ 不是旧假设的铁/石/粮轮转）
+    //   12..21=石料(stone) / 22..31=粮食(food) / 32..41=铁矿(iron)，42..46=金矿(gold)
+    assert.equal(tables.base.find((c) => c.id === 12)!.resType, "stone", "12 是石料不是铁");
+    assert.equal(tables.base.find((c) => c.id === 22)!.resType, "food", "22 是粮食不是石");
+    assert.equal(tables.base.find((c) => c.id === 32)!.resType, "iron", "32 是铁矿不是粮");
+    assert.equal(tables.base.find((c) => c.id === 42)!.resType, "gold");
 });
 
 test("mapOriginal 内容：地表底 = 一张 POT 底纹 + 整数次 REPEAT（⛔ 不是逐格贴片）", () => {
@@ -270,7 +344,7 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
     }
     // ⚠ 通行层与 info 只留 kit 数据目录：⛔ 不多存一份到运行时
     for (const name of ["terrain.pass.bytes", "terrain.info.json", "terrain.bytes", "labels.json",
-                        "regions.info.json"]) {
+                        "regions.info.json", "bands.bytes", "bands.info.json"]) {
         assert.throws(() => cocos(name), /ENOENT/, `${name} ⛔ 不该进 Cocos`);
     }
 });
@@ -734,6 +808,84 @@ test("mapOriginal 内容：snow / desert 块层自洽（叠不是替 / 行主序
     assert.equal(meta.kinds.snow.placements, 4186);
 });
 
+test("mapOriginal 内容（N1）：cell 级地貌带 bands.bytes 与 shared 模块逐字节自洽", () => {
+    // ★ 选件带归属的真源是**原版的 cell 级层** `logic_background.bytes`：
+    //   原版 `check_ground_type` = `GROUND_TYPE_NAMES[格值] or "ground"`
+    //   （枚举定义 = 干净集 const.lua:252 的 def_enum("GROUND_TYPE","ground","snow","desert")；
+    //   层归属 = 干净集 map_layer_config.lua 的 logic_ground）。⇒ 2=雪 3=沙、其余回基础季。
+    //   ⛔ 不许拿雪/沙「块」层当选件判据：块带 489 块双挂且粒度是 10×10 格，
+    //   块级判据会把雪块里 38,066 个草地格误换雪件（数字见 bands.info.json）。
+    const meta = JSON.parse(kit("bands.info.json").toString("utf8")) as {
+        grid: { rows: number; cols: number; headerBytes: number; order: string };
+        byteLength: number; sha256: string;
+        values: Record<string, number>;
+        bandCells: { snow: number; desert: number };
+        rleBytes: number;
+    };
+    assert.equal(meta.grid.rows, MAPO_BAND_ROWS);
+    assert.equal(meta.grid.cols, MAPO_BAND_COLS);
+    assert.equal(meta.grid.headerBytes, MAPO_BAND_HEADER_BYTES);
+    assert.ok(meta.grid.order.includes("行主序"), "⛔ 带层是行主序，别抄 river 的列主序");
+    // ★ 枚举值钉死 def_enum 的声明序：ground=1 / snow=2 / desert=3
+    assert.equal(MAPO_BAND_GROUND, 1);
+    assert.equal(MAPO_BAND_SNOW, 2);
+    assert.equal(MAPO_BAND_DESERT, 3);
+
+    const raw = kit("bands.bytes");
+    assert.equal(raw.length, meta.byteLength);
+    assert.equal(raw.length, MAPO_BAND_HEADER_BYTES + MAPO_BAND_ROWS * MAPO_BAND_COLS);
+    assert.equal(raw.readUInt16BE(0), MAPO_BAND_ROWS, "头 2 字节大端 rows");
+    assert.equal(raw.readUInt16BE(2), MAPO_BAND_COLS, "次 2 字节大端 cols");
+    assert.equal(sha256(raw), meta.sha256);
+    assert.equal(meta.sha256, MAPO_BAND_SHA256, "shared 模块与权威产物的 sha256 必须一致");
+
+    // ★ shared 模块解码后 == 权威产物载荷（**逐字节**，与通行层同款互证）
+    const cells = mapoDecodeRle(mapoDecodeBase64(MAPO_BAND_RLE_B64),
+        MAPO_BAND_ROWS, MAPO_BAND_COLS);
+    assert.deepEqual(Buffer.from(cells), raw.subarray(MAPO_BAND_HEADER_BYTES),
+        "bands.data.ts 解码必须逐字节等于 bands.bytes 载荷");
+
+    // ★ 值分布与 info 逐值一致；带格数 = 打包期实测（雪 353,272 / 沙 354,478）
+    const counts = new Map<number, number>();
+    for (const v of cells) counts.set(v, (counts.get(v) ?? 0) + 1);
+    for (const [k, n] of Object.entries(meta.values)) {
+        assert.equal(counts.get(Number(k)) ?? 0, n, `带层值 ${k} 的格数`);
+    }
+    assert.equal(counts.get(MAPO_BAND_SNOW), meta.bandCells.snow);
+    assert.equal(counts.get(MAPO_BAND_DESERT), meta.bandCells.desert);
+    assert.equal(meta.bandCells.snow, 353272, "雪带格数（实测）");
+    assert.equal(meta.bandCells.desert, 354478, "沙带格数（实测）");
+
+    // ★ 交叉校验（全量 225 万格，⛔ 不是抽样）：值 2 的格必须落在 snow 块内、
+    //   值 3 必须落在 desert 块内 —— 块归属复用块层摆放表（build_blocks 的真映射
+    //   BLOCK_TILES=10 / ORIGIN=-10，客户端常量 MAPO_GROUND_* 与它钉死同源）。
+    for (const [file, want] of [["snow.bin", MAPO_BAND_SNOW],
+                                ["desert.bin", MAPO_BAND_DESERT]] as const) {
+        const table = kit(file);
+        const n = table.readUInt32BE(0);
+        const inBlock = new Uint8Array(152 * 152);
+        for (let i = 0; i < n; i += 1) {
+            const o = MAPO_BLOCK_HEADER_BYTES + i * MAPO_BLOCK_RECORD_BYTES;
+            const s = table.readUInt16BE(o) - MAPO_BLOCK_S_BIAS;
+            const d = table.readUInt16BE(o + 2) - MAPO_BLOCK_D_BIAS;
+            const row = (s + d) / 2, col = (s - d) / 2;
+            const bi = (row - MAPO_GROUND_ORIGIN) / MAPO_GROUND_BLOCK_TILES;
+            const bj = (col - MAPO_GROUND_ORIGIN) / MAPO_GROUND_BLOCK_TILES;
+            inBlock[bi * 152 + bj] = 1;
+        }
+        let bad = 0;
+        for (let r = 0; r < MAPO_BAND_ROWS; r += 1) {
+            for (let c = 0; c < MAPO_BAND_COLS; c += 1) {
+                if (cells[r * MAPO_BAND_COLS + c] !== want) continue;
+                const bi = Math.floor((r - MAPO_GROUND_ORIGIN) / MAPO_GROUND_BLOCK_TILES);
+                const bj = Math.floor((c - MAPO_GROUND_ORIGIN) / MAPO_GROUND_BLOCK_TILES);
+                if (!inBlock[bi * 152 + bj]) bad += 1;
+            }
+        }
+        assert.equal(bad, 0, `值 ${want} 的格有 ${bad} 个落在 ${file} 的块外`);
+    }
+});
+
 test("mapOriginal 内容：河流几何库 river-geo.bin 自洽（102 条 / 三角化合法 / 零残留）", () => {
     const meta = JSON.parse(kit("rivers.info.json").toString("utf8")) as {
         geoCount: number; geoBytes: number; geoSha256: string; verts: number; tris: number;
@@ -855,7 +1007,8 @@ test("mapOriginal 内容：mapoRegionPos 与 mapoGrid2Pos 同式（含奇数行�
 test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常量", () => {
     const meta = JSON.parse(kit("region-atlas.info.json").toString("utf8")) as {
         cell: [number, number]; gridCols: number; size: [number, number]; anchor: string;
-        cells: { id: number; kind: string; cell: [number, number, number, number];
+        variants?: { desertSameAsBase: number };
+        cells: { id: number; kind: string; variant: string; cell: [number, number, number, number];
                  art: [number, number, number, number]; native: [number, number];
                  scale: [number, number]; offset: [number, number]; angle: number;
                  pivot: [number, number]; lowZ: number; source: string }[];
@@ -863,60 +1016,92 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
     assert.deepEqual(meta.cell, [MAPO_REGION_CELL_W, MAPO_REGION_CELL_H]);
     assert.deepEqual(meta.size, [MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H]);
     assert.equal(meta.anchor, "bottom-center");
-    assert.equal(meta.cells.length, MAPO_REGION_CELLS.length);
-    const byId = new Map(MAPO_REGION_CELLS.map((c) => [c.id, c]));
+    // ★ N1：一张图集装两套（基础 13 + 雪 13 = 26 格，2048×4096）
+    assert.equal(meta.cells.length, MAPO_REGION_CELLS.length + MAPO_REGION_SNOW_CELLS.length);
+    const byKey = new Map([...MAPO_REGION_CELLS, ...MAPO_REGION_SNOW_CELLS]
+        .map((c) => [`${c.variant}:${c.id}`, c]));
+    const slots = new Set<string>();
     for (const c of meta.cells) {
-        const shared = byId.get(c.id);
-        assert.ok(shared, `区域件格 ${c.id} 必须进 shared`);
+        const shared = byKey.get(`${c.variant ?? "base"}:${c.id}`);
+        assert.ok(shared, `区域件格 ${c.variant}:${c.id} 必须进 shared`);
         assert.equal(shared.kind, c.kind);
         assert.deepEqual([...shared.cell], c.cell);
         assert.deepEqual([...shared.art], c.art);
-        assert.deepEqual([...shared.native], c.native, `区域件格 ${c.id} 原图像素`);
+        assert.deepEqual([...shared.native], c.native, `区域件格 ${c.variant}:${c.id} 原图像素`);
         // ★ M0-B2：件的大小 = 原图像素 × prefab 里的 scale，⛔ 只抄像素会把 14 形压成 10 形
-        assert.deepEqual([...shared.scale], c.scale, `区域件格 ${c.id} 的 scale`);
-        assert.deepEqual([...shared.offset], c.offset, `区域件格 ${c.id} 的 offset`);
-        assert.equal(shared.angle, c.angle, `区域件格 ${c.id} 的 angle`);
-        assert.deepEqual([...shared.pivot], c.pivot, `区域件格 ${c.id} 的 pivot`);
+        assert.deepEqual([...shared.scale], c.scale, `区域件格 ${c.variant}:${c.id} 的 scale`);
+        assert.deepEqual([...shared.offset], c.offset, `区域件格 ${c.variant}:${c.id} 的 offset`);
+        assert.equal(shared.angle, c.angle, `区域件格 ${c.variant}:${c.id} 的 angle`);
+        assert.deepEqual([...shared.pivot], c.pivot, `区域件格 ${c.variant}:${c.id} 的 pivot`);
         assert.ok(c.scale[0] > 0.1 && c.scale[0] < 8 && c.scale[1] > 0.1 && c.scale[1] < 8,
-            `区域件格 ${c.id} 的 scale ${c.scale} 不在 (0.1, 8.0) 内`);
+            `区域件格 ${c.variant}:${c.id} 的 scale ${c.scale} 不在 (0.1, 8.0) 内`);
         // ⚠ 原版 sprite 的 pivot 恒中心；位置换算（中心 → 底边中点）就建在这条上
-        assert.deepEqual(c.pivot, [0.5, 0.5], `区域件格 ${c.id} 的 pivot 不是中心`);
+        assert.deepEqual(c.pivot, [0.5, 0.5], `区域件格 ${c.variant}:${c.id} 的 pivot 不是中心`);
         assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
-            `区域件格 ${c.id} 缩略图没保住纵横比`);
+            `区域件格 ${c.variant}:${c.id} 缩略图没保住纵横比`);
         // ★ 件在世界里的**实际**宽度 = 原图像素 × scale ÷ 一格 300 px。
         //   ⚠ 必须随足迹单调放大：19 格的形只用 native 只有 1.88 格（比 7 格的形还小），
         //   补上 scale 后才是 4.06 格 —— 这条就是为 M0-B3.3 的那个缺陷设的。
         const tiles = (c.native[0] * c.scale[0]) / (MAPO_ORIGINAL_TILE_HALF_W * 2);
-        assert.ok(tiles > 0.9 && tiles < 5,
-            `区域件格 ${c.id} 在原版里占 ${tiles.toFixed(2)} 格，不像地物`);
+        assert.ok(tiles > 0.8 && tiles < 5,
+            `区域件格 ${c.variant}:${c.id} 在原版里占 ${tiles.toFixed(2)} 格，不像地物`);
         const want = new Map<number, readonly [number, number]>([
-            [1, [0.9, 1.4]], [2, [1.2, 2.1]], [4, [1.7, 2.4]], [7, [2.2, 3.0]], [19, [3.8, 4.6]],
+            // ⚠ 下沿为雪山件放宽过（N1 实测：雪 1m 0.88 格、雪 2m_xy 1.02 格，
+            //   雪件的 scale 全 1.0、就是比基础季小）；上沿不动，「忘乘 scale」仍会被 19m 拦下。
+            [1, [0.8, 1.4]], [2, [0.9, 2.1]], [4, [1.7, 2.4]], [7, [2.2, 3.0]], [19, [3.8, 4.6]],
         ]);
-        const fp = byId.get(c.id)!.footprintCells;
+        const fp = shared!.footprintCells;
         const band = want.get(fp)!;
         assert.ok(tiles >= band[0] && tiles <= band[1],
-            `区域件格 ${c.id}（足迹 ${fp} 格）宽 ${tiles.toFixed(2)} 格，不在 ${band} 内`);
+            `区域件格 ${c.variant}:${c.id}（足迹 ${fp} 格）宽 ${tiles.toFixed(2)} 格，不在 ${band} 内`);
         const [ax, ay, aw, ah] = c.art;
         assert.ok(ax >= 0 && ay >= 0 && ax + aw <= MAPO_REGION_CELL_W
-            && ay + ah <= MAPO_REGION_CELL_H, `区域件格 ${c.id} 图内矩形越界`);
+            && ay + ah <= MAPO_REGION_CELL_H, `区域件格 ${c.variant}:${c.id} 图内矩形越界`);
+        // ★ UV 不越界：格必须整张落在图集内（N1 图集已加高到 2048×4096）
+        const [cx, cy, cw, ch] = c.cell;
+        assert.ok(cx >= 0 && cy >= 0 && cx + cw <= MAPO_REGION_ATLAS_W && cy + ch <= MAPO_REGION_ATLAS_H,
+            `区域件格 ${c.variant}:${c.id} 越出图集`);
+        const slot = `${cx},${cy}`;
+        assert.ok(!slots.has(slot), `区域件格 ${c.variant}:${c.id} 的槽位 ${slot} 撞车`);
+        slots.add(slot);
         // ⚠ 素材全部来自原版切片，⛔ 存证不许写本机绝对路径
-        assert.ok(!c.source.startsWith("/"), `区域件格 ${c.id} 的 source 必须是仓外相对路径`);
-        assert.ok(c.source.startsWith("scene/"), `区域件格 ${c.id} 的 source 必须是原版资源路径`);
+        assert.ok(!c.source.startsWith("/"), `区域件格 ${c.variant}:${c.id} 的 source 必须是仓外相对路径`);
+        assert.ok(c.source.startsWith("scene/"), `区域件格 ${c.variant}:${c.id} 的 source 必须是原版资源路径`);
     }
     // ★ M0-B3：山体美术必须是**基础季**，⛔ 不是秋季（grass_fall_new）
-    for (const c of meta.cells) {
+    for (const c of meta.cells.filter((x) => x.variant === "base")) {
         assert.ok(c.source.startsWith("scene/ground/mountain_new/png/"),
             `区域件格 ${c.id} 的 source ${c.source} 不是基础季山体`);
         assert.ok(!c.source.includes("grass_fall"), `区域件格 ${c.id} 还指着秋季件`);
+    }
+    // ★ N1：雪件必须是 `mountain_snow` 的同形件；沙漠带的山件与基础季**同件**（实测 13/13），
+    //   ⛔ 没有也不许有沙件格 —— 出现了说明 land 表的荒地山列变了，要回去重读。
+    for (const c of meta.cells.filter((x) => x.variant === "snow")) {
+        assert.ok(c.source.startsWith("scene/ground/mountain_snow/png/"),
+            `雪山格 ${c.id} 的 source ${c.source} 不是雪山件`);
+    }
+    assert.ok(!meta.cells.some((c) => c.variant === "desert"), "⛔ 不该有沙件格（荒地山=基础季件）");
+    assert.equal(meta.variants?.desertSameAsBase, 13, "荒地山与基础季同件的实测计数");
+    // ★ 雪件的 transform 必须**逐形重读**：13 形的 scale/offset 与基础季全不同
+    //   （例如 19m：基础季 scale 2.163、雪山 2.0）—— 全同 = 抄了基础季，等于没接变体。
+    for (const base of MAPO_REGION_CELLS) {
+        const snow = MAPO_REGION_SNOW_CELLS.find((c) => c.id === base.id)!;
+        assert.ok(snow, `形 ${base.id} 缺雪山格`);
+        assert.notDeepEqual(
+            { scale: [...snow.scale], offset: [...snow.offset] },
+            { scale: [...base.scale], offset: [...base.offset] },
+            `形 ${base.id} 的雪/基础 transform 不该相同`);
     }
     // ★ M0-B1：原版 48..61 是**一族 14 形**（山1..山14，§3.2），山9（值 56）无 2D prefab
     //   且数据里 0 命中 ⇒ 格 id 集合必须精确等于 48..61 去掉 56。
     //   ⛔ 早先按「山脉 / 林丛 / 散落」三族分是本仓自创的分类。
     const want: number[] = [];
     for (let v = 48; v <= 61; v += 1) if (v !== 56) want.push(v);
-    assert.deepEqual(MAPO_REGION_CELLS.map((c) => c.id).slice().sort((a, b) => a - b), want,
-        "件的格 id 必须精确是原版山族值 48..61（⛔ 无 56）");
-    for (const c of MAPO_REGION_CELLS) {
+    for (const table of [MAPO_REGION_CELLS, MAPO_REGION_SNOW_CELLS]) {
+        assert.deepEqual(table.map((c) => c.id).slice().sort((a, b) => a - b), want,
+            "件的格 id 必须精确是原版山族值 48..61（⛔ 无 56）");
+    }
+    for (const c of [...MAPO_REGION_CELLS, ...MAPO_REGION_SNOW_CELLS]) {
         assert.equal(c.kind, "mountain", `格 ${c.id} 必须属山族`);
         assert.ok([1, 2, 4, 7, 19].includes(c.footprintCells), `格 ${c.id} 足迹 ${c.footprintCells} 不是原版的 1/2/4/7/19`);
         assert.ok(c.shan >= 1 && c.shan <= 14, `格 ${c.id} 的山号 ${c.shan} 越界`);

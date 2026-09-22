@@ -8,7 +8,7 @@
  *   ① `MAPO_VALUE_KIND_ID[v]` → 粗类 id → 地表图集第几行（8 粗类 × 4 变体）；
  *   ② 值本身就是摆件图集格 id → 该格放哪张原版 res_field 图（见 `decor.data.ts`）；
  *   ③ `MAPO_VALUE_BY_ID.get(v)` → 中文名 / 颜色 / 通行。
- * ⚠ 资源类型编号→中文是**假设**（类型0→木、1→铁、2→石、3→粮（⚠ 假设，静态数据定不了，可能是置换））。
+ * ⚠ 资源类型编号→中文是**假设**（类型0→木、1→石、2→粮、3→铁（★ 已由 base.cw 的 land 表定死，2026-09-23 N1：land.name 与 client_res.src_name 两列互证；⛔ 早先的 1→铁、2→石、3→粮 是轮转错位的假设））。
  * ⛔ 别拿 3 类通行层的 `MAPO_TERRAIN_PALETTE` 来查这里的 id。
  */
 
@@ -33,8 +33,8 @@ export interface IMapoValueClass {
  * ⛔ 不再对应任何图集行 —— 地表底已改成「一张底纹整数次 GL_REPEAT」。
  */
 export const MAPO_VALUE_KINDS: readonly string[] = ["plain", "resource", "gold", "river", "scatter", "grove", "mountain", "unknown"];
-/** 资源类型编号 → 中文。⚠ 静态数据定不了真实置换，见模块头。 */
-export const MAPO_RES_TYPE_CN: readonly string[] = ["木", "铁", "石", "粮"];
+/** 资源类型编号 → 中文。★ 次序已由 land 表定死（0木/1石/2粮/3铁，N1），见模块头。 */
+export const MAPO_RES_TYPE_CN: readonly string[] = ["木", "石", "粮", "铁"];
 /** 原版值上界（含）。 */
 export const MAPO_VALUE_MAX = 61;
 
@@ -207,7 +207,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 12,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·1级",
+    "cn": "石·1级",
     "color": [
       150,
       152,
@@ -221,7 +221,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 13,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·2级",
+    "cn": "石·2级",
     "color": [
       150,
       152,
@@ -235,7 +235,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 14,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·3级",
+    "cn": "石·3级",
     "color": [
       150,
       152,
@@ -249,7 +249,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 15,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·4级",
+    "cn": "石·4级",
     "color": [
       150,
       152,
@@ -263,7 +263,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 16,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·5级",
+    "cn": "石·5级",
     "color": [
       150,
       152,
@@ -277,7 +277,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 17,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·6级",
+    "cn": "石·6级",
     "color": [
       150,
       152,
@@ -291,7 +291,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 18,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·7级",
+    "cn": "石·7级",
     "color": [
       150,
       152,
@@ -305,7 +305,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 19,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·8级",
+    "cn": "石·8级",
     "color": [
       150,
       152,
@@ -319,7 +319,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 20,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·9级",
+    "cn": "石·9级",
     "color": [
       150,
       152,
@@ -333,7 +333,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 21,
     "kind": "resource",
     "kindId": 1,
-    "cn": "铁·10级",
+    "cn": "石·10级",
     "color": [
       150,
       152,
@@ -347,7 +347,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 22,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·1级",
+    "cn": "粮·1级",
     "color": [
       150,
       152,
@@ -361,7 +361,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 23,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·2级",
+    "cn": "粮·2级",
     "color": [
       150,
       152,
@@ -375,7 +375,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 24,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·3级",
+    "cn": "粮·3级",
     "color": [
       150,
       152,
@@ -389,7 +389,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 25,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·4级",
+    "cn": "粮·4级",
     "color": [
       150,
       152,
@@ -403,7 +403,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 26,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·5级",
+    "cn": "粮·5级",
     "color": [
       150,
       152,
@@ -417,7 +417,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 27,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·6级",
+    "cn": "粮·6级",
     "color": [
       150,
       152,
@@ -431,7 +431,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 28,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·7级",
+    "cn": "粮·7级",
     "color": [
       150,
       152,
@@ -445,7 +445,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 29,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·8级",
+    "cn": "粮·8级",
     "color": [
       150,
       152,
@@ -459,7 +459,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 30,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·9级",
+    "cn": "粮·9级",
     "color": [
       150,
       152,
@@ -473,7 +473,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 31,
     "kind": "resource",
     "kindId": 1,
-    "cn": "石·10级",
+    "cn": "粮·10级",
     "color": [
       150,
       152,
@@ -487,7 +487,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 32,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·1级",
+    "cn": "铁·1级",
     "color": [
       150,
       152,
@@ -501,7 +501,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 33,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·2级",
+    "cn": "铁·2级",
     "color": [
       150,
       152,
@@ -515,7 +515,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 34,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·3级",
+    "cn": "铁·3级",
     "color": [
       150,
       152,
@@ -529,7 +529,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 35,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·4级",
+    "cn": "铁·4级",
     "color": [
       150,
       152,
@@ -543,7 +543,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 36,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·5级",
+    "cn": "铁·5级",
     "color": [
       150,
       152,
@@ -557,7 +557,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 37,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·6级",
+    "cn": "铁·6级",
     "color": [
       150,
       152,
@@ -571,7 +571,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 38,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·7级",
+    "cn": "铁·7级",
     "color": [
       150,
       152,
@@ -585,7 +585,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 39,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·8级",
+    "cn": "铁·8级",
     "color": [
       150,
       152,
@@ -599,7 +599,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 40,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·9级",
+    "cn": "铁·9级",
     "color": [
       150,
       152,
@@ -613,7 +613,7 @@ export const MAPO_VALUE_PALETTE: readonly IMapoValueClass[] = [
     "id": 41,
     "kind": "resource",
     "kindId": 1,
-    "cn": "粮·10级",
+    "cn": "铁·10级",
     "color": [
       150,
       152,

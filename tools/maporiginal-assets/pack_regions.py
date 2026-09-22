@@ -1,16 +1,27 @@
 #!/usr/bin/env python3
 """原版「山」族 14 形的件图集（每形一格，格 id = **原版 res 值**）。
 
-    /tmp/maporiginal-venv/bin/python pack_regions.py [--map s1] [--season fall|base]
+    /tmp/maporiginal-venv/bin/python pack_regions.py [--map s1]
 
 ★ 素材与形的对应**不是挑的，是读出来的**：`mountain_forms.py` 逐个读
-  `scene/ground/mountain_new[/<季>]/<form>_group.prefab.bin` 的字符串池拿到贴图名。
+  `scene/ground/mountain_new/<form>_group.prefab.bin` 的字符串池拿到贴图名。
   13 形只用到 m1..m10 十张图（三对共用），⛔ 别再按面积/绿度启发式挑件。
 
 ★ **默认用基础季**（`mountain_new/png/`，M0-B3）：秋季（`grass_fall_new`）只是同一批件的换季版。
   ⚠ 顺带解决了一个坑：秋季 prefab 结构不同（根节点多 tag + 组件表），`prefab_bin.py` 会
   **静默**解成 0 个子节点 ⇒ 取不到 transform。所以 B2 的 transform 只能走基础季，
   施工单里「B3 依赖 B2」的次序实际是反的。
+
+★ **季/地貌变体（N1）**：`land` 表的 `snow_client_res_id` 指向
+  `scene/ground/mountain_snow/<同形>_group.prefab`（雪山1..14，逐形与本表**互校**，对不上即退出）；
+  雪件的贴图（`mountain_snow/png/1..9`）与 transform **逐形重读**，⛔ 不抄基础季的
+  （实测雪山 19m 的 scale 是 2.0，基础季是 2.163，offset 也不同）。
+  ⚠ **沙漠山不需要新美术**：`desert_client_res_id`（荒地山1..14）的 2D `src_name` 与基础季
+  **逐字相同**（只有 `src_name_3d` 不同）⇒ 2D 沙盘沙漠带的山件就是基础季件（实测，
+  14/14 全中）；客户端沙漠带回落基础季格，⛔ 不要为此复制一份图集格。
+  ⚠ 图集 2048×4096（3×10 格）：基础 13 + 雪 13 = 26 格 > 2048² 的 15 格位，故加高一倍
+  （竖着加 ⇒ 基础季 13 格的图内坐标**逐字节不变**）；选单图而不是按套分两张，是因为
+  一屏会混着两种带（带界穿屏），单图集单材质才能继续一张 mesh 合批。
 
 ★ **件的大小 = 原图像素 × prefab 里的 scale**（M0-B2，MAPORIGINAL-2D §3.3）：
   m2 只有 563 px 却要盖满 19 格的足迹，靠的就是 `mountain19m_01` 的 scale 2.163。
@@ -39,18 +50,20 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import land_variants as LV  # noqa: E402
 import mountain_forms as MF  # noqa: E402
 import prefab_bin  # noqa: E402
+from build_tops import normalize  # noqa: E402
 from decode_ktx import resolve_by_name  # noqa: E402
 
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 OUT = os.path.join(HERE, CFG["outDir"])
 
 CELL_W, CELL_H = 682, 409
-GRID_COLS, GRID_ROWS = 3, 5          # 15 格位 ≥ 13 形
+GRID_COLS, GRID_ROWS = 3, 10          # 30 格位 ≥ 基础 13 + 雪 13
 SCALE_MIN, SCALE_MAX = 0.1, 8.0      # 入库校验：prefab 的 scale 必须落在这区间
-ATLAS_W, ATLAS_H = 2048, 2048
-SEASON_DIR = {"base": MF.PREFAB_DIR_BASE, "fall": MF.PREFAB_DIR_FALL}
+ATLAS_W, ATLAS_H = 2048, 4096
+SNOW_DIR = "scene/ground/mountain_snow"
 
 
 def read_transform(season_dir: str, form: str) -> dict:
@@ -73,7 +86,8 @@ def read_transform(season_dir: str, form: str) -> dict:
     sx, sy = float(ch["scale"][0]), float(ch["scale"][1])
     if not (SCALE_MIN < sx < SCALE_MAX and SCALE_MIN < sy < SCALE_MAX):
         raise SystemExit("⛔ %s 的 scale %s 不在 (%s, %s) 内" % (form, (sx, sy), SCALE_MIN, SCALE_MAX))
-    return {"scale": [round(sx, 6), round(sy, 6)],
+    return {"texture": normalize(ch["texture"]),
+            "scale": [round(sx, 6), round(sy, 6)],
             "offset": [round(float(ch["position"][0]), 4), round(float(ch["position"][1]), 4)],
             "angle": round(float(ch["angle"][2]), 4),
             "pivot": [round(float(x), 4) for x in ch["pivot"]],
@@ -81,69 +95,93 @@ def read_transform(season_dir: str, form: str) -> dict:
             "size": [int(ch["size"][0]), int(ch["size"][1])]}
 
 
-def load_sprites(season_dir: str) -> dict:
-    """贴图基名 → **未裁**的 RGBA 图。⚠ 缺一张就退出，⛔ 不静默降级。"""
-    want = {t for _n, _p, t, _s in MF.FORMS.values()}
-    pat = re.compile(r"^%s/png/(m\d+)\.png$" % re.escape(season_dir))
+def load_sprites(*dirs: str) -> dict:
+    """贴图逻辑路径（小写）→ **未裁**的 RGBA 图。⚠ 缺一张就退出，⛔ 不静默降级。"""
     got = {}
     for line in open(os.path.join(OUT, "sprites.jsonl"), encoding="utf-8"):
         r = json.loads(line)
-        m = pat.match(r["logical"])
-        if not m or m.group(1) not in want:
+        lg = r["logical"]
+        if not any(lg.startswith("%s/png/" % d) for d in dirs):
             continue
         p = os.path.join(OUT, r["out"])
         if not os.path.exists(p):
             continue
         # ⛔ 不裁 bbox：裁了就与 prefab 的 size / position 对不上（M0-B2）
-        got[m.group(1)] = (r["logical"], Image.open(p).convert("RGBA"))
-    miss = sorted(want - set(got))
-    if miss:
-        raise SystemExit("⛔ %s 缺件 %s —— 先跑 slice_atlas.py --all（含 remain_tex 多页）"
-                         % (season_dir, miss))
+        got[lg.lower()] = (lg, Image.open(p).convert("RGBA"))
     return got
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--map", default="s1")
-    ap.add_argument("--season", default="base", choices=sorted(SEASON_DIR))
     a = ap.parse_args()
-    season_dir = SEASON_DIR[a.season]
-    sprites = load_sprites(season_dir)
+    sprites = load_sprites(MF.PREFAB_DIR_BASE, SNOW_DIR)
+
+    # ── land 表互校（N1）：雪件列必须指向同形的 mountain_snow prefab，
+    #    沙件列必须与基础季同路径（荒地山只有 src_name_3d 不同） ──────────
+    variant_ids: dict = {}
+    desert_same = 0
+    for v in MF.VALUES:
+        ids = LV.variant_res_ids(v)
+        variant_ids[v] = ids
+        form = MF.FORMS[v][1]
+        snow_src = LV.res_src_name(ids["snow"])
+        want_snow = "%s/%s_group.prefab" % (SNOW_DIR, form)
+        if snow_src.lower() != want_snow.lower():
+            raise SystemExit("⛔ land %d 的雪件列指向 %s，不是 %s" % (v, snow_src, want_snow))
+        desert_src = LV.res_src_name(ids["desert"])
+        base_src = LV.res_src_name(ids["base"])
+        if desert_src.lower() != base_src.lower():
+            raise SystemExit("⛔ land %d 的沙件列 %s ≠ 基础季 %s —— 「荒地山 2D 与基础季同件」"
+                             "的实测被推翻，沙漠带要有自己的山件图集格了" % (v, desert_src, base_src))
+        desert_same += 1
 
     atlas = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
     cells = []
-    for idx, v in enumerate(MF.VALUES):
-        shan, form, tex, shape = MF.FORMS[v]
-        logical, src = sprites[tex]
-        tr = read_transform(season_dir, form)
-        im = src.copy()
-        native = [im.width, im.height]          # ★ 原图像素（未缩、未裁）
+
+    def place(slot: int, v: int, tr: dict, variant: str) -> None:
+        shan, form, _tex, shape = MF.FORMS[v]
+        logical, src = sprites[tr["texture"].lower()]
+        native = [src.width, src.height]            # ★ 原图像素（未缩、未裁）
         if tr["size"] != native:
-            raise SystemExit("⛔ %s 的 prefab size %s ≠ 原图 %s —— 贴图对应搞错了"
-                             % (form, tr["size"], native))
+            raise SystemExit("⛔ %s（%s）的 prefab size %s ≠ 原图 %s —— 贴图对应搞错了"
+                             % (form, variant, tr["size"], native))
+        im = src.copy()
         im.thumbnail((CELL_W, CELL_H), Image.LANCZOS)
-        gx, gy = (idx % GRID_COLS) * CELL_W, (idx // GRID_COLS) * CELL_H
-        ox, oy = (CELL_W - im.width) // 2, CELL_H - im.height       # ⚠ 底对齐
+        gx, gy = (slot % GRID_COLS) * CELL_W, (slot // GRID_COLS) * CELL_H
+        ox, oy = (CELL_W - im.width) // 2, (CELL_H - im.height)       # ⚠ 底对齐
         atlas.paste(im, (gx + ox, gy + oy), im)
-        cells.append({"id": v, "kind": "mountain", "shan": shan, "form": form,
-                      "shape": shape, "footprintCells": len(MF.footprint_cells(v, 0)),
+        cells.append({"id": v, "kind": "mountain", "variant": variant, "shan": shan,
+                      "form": form, "shape": shape,
+                      "footprintCells": len(MF.footprint_cells(v, 0)),
                       "cell": [gx, gy, CELL_W, CELL_H],
                       "art": [ox, oy, im.width, im.height],
                       "native": native,
                       "scale": tr["scale"], "offset": tr["offset"], "angle": tr["angle"],
                       "pivot": tr["pivot"], "lowZ": tr["lowZ"], "source": logical})
 
+    for idx, v in enumerate(MF.VALUES):
+        place(idx, v, read_transform(MF.PREFAB_DIR_BASE, MF.FORMS[v][1]), "base")
+    for k, v in enumerate(MF.VALUES):
+        place(len(MF.VALUES) + k, v, read_transform(SNOW_DIR, MF.FORMS[v][1]), "snow")
+
     d = os.path.join(OUT, "pack", a.map)
     os.makedirs(d, exist_ok=True)
     atlas.save(os.path.join(d, "region-atlas.png"))
-    info = {"schemaVersion": 2, "mapId": a.map, "cell": [CELL_W, CELL_H],
+    info = {"schemaVersion": 3, "mapId": a.map, "cell": [CELL_W, CELL_H],
             "gridCols": GRID_COLS, "gridRows": GRID_ROWS, "size": [ATLAS_W, ATLAS_H],
-            "season": a.season, "seasonDir": season_dir,
             "anchor": "bottom-center",
-            "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出",
-            "transform": "scale/offset/angle/pivot 逐形取自 prefab 的 sprite_2d；"
+            "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出；"
+                        "变体格同 id 空间、按 variant 分表（N1）",
+            "transform": "scale/offset/angle/pivot 逐形取自该套件 prefab 的 sprite_2d；"
                          "offset 是精灵**中心**相对锚点格的偏移（原版 px），pivot 恒 [0.5, 0.5]",
+            "variants": {"来源": "base.cw land 表 snow_client_res_id/desert_client_res_id"
+                                 "（⛔ autumn 不接，M0-B3；雪件 = mountain_snow 同形 prefab）",
+                         "desertSameAsBase": desert_same,
+                         "desertSameAsBase依据": "荒地山的 2D src_name 与基础季逐字相同"
+                                                "（只有 src_name_3d 不同）——有 2D 件的 13 形全中"
+                                                "（山9 无 2D 件、数据 0 命中，不参与）",
+                         "resIds": {str(v): variant_ids[v] for v in MF.VALUES}},
             "cells": cells}
     json.dump(info, open(os.path.join(d, "region-atlas.info.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
@@ -156,6 +194,11 @@ def main() -> int:
  *   ⛔ 不是本仓早先分的「山脉 / 林丛 / 散落」三族。山9（值 56）无 2D prefab，数据里也 0 命中。
  * ★ 贴图对应是**从 prefab 读出来的**（`mountain_forms.py`）：13 形只用到 m1..m10 十张图，
  *   1m_01/1m_04 共用 m7、1m_02/1m_03 共用 m6、19m_01/19m_02 共用 m2，靠 transform 区分。
+ * ★ **季/地貌变体**（N1）：`MAPO_REGION_CELLS` 是基础季，`MAPO_REGION_SNOW_CELLS` 是雪件
+ *   （`mountain_snow` 同形 prefab，transform 逐形重读 ⛔ 不抄基础季）。哪格用哪套由
+ *   `logic/mapoBands.ts` 的 cell 级地貌带定。⚠ **沙漠带的山件 = 基础季件**：
+ *   land 表荒地山1..14 的 2D `src_name` 与基础季逐字相同（实测 14/14），⛔ 没有沙件表。
+ *   ⚠ `autumn_*` 不接（M0-B3）。
  * ⚠ 锚点是**底边中点**，⛔ 不是几何中心。
  * ★ **件的大小 = `native` × `scale`**（M0-B2，§3.3）：`native` 是原图像素、`scale` 是 prefab 里
  *   那个 sprite 的缩放。m2 只有 563 px 却要盖满 19 格，靠的就是 `mountain19m_01` 的 2.163；
@@ -170,6 +213,8 @@ export interface IMapoRegionCell {
     /** ★ 原版 res 值（48..61），同时是 `regions.bin` 里的 cell 字段。 */
     readonly id: number;
     readonly kind: string;
+    /** 基础季 / 雪（N1）。⚠ 沙漠带的山件与基础季同件，⛔ 没有沙件表。 */
+    readonly variant: string;
     /** 原版件号 `山N`。 */
     readonly shan: number;
     /** 原版 prefab 名，如 `mountain19m_01`。 */
@@ -186,11 +231,11 @@ export interface IMapoRegionCell {
     readonly scale: readonly [number, number];
     /** ★ 精灵**中心**相对锚点格的偏移（原版 px，+y 向上）。 */
     readonly offset: readonly [number, number];
-    /** prefab 里 sprite 绕中心的旋转（**度**，CCW 为正）。13 形里只有 2 形非零。 */
+    /** prefab 里 sprite 绕中心的旋转（**度**，CCW 为正）。 */
     readonly angle: number;
     /** prefab 里 sprite 的轴心，恒 [0.5, 0.5]（中心）。 */
     readonly pivot: readonly [number, number];
-    /** prefab 里 sprite 的 `low_z`（同节点内的叠序，13 形恒 1）。 */
+    /** prefab 里 sprite 的 `low_z`（同节点内的叠序）。 */
     readonly lowZ: number;
 }
 
@@ -198,14 +243,22 @@ export const MAPO_REGION_ATLAS_W = %d;
 export const MAPO_REGION_ATLAS_H = %d;
 export const MAPO_REGION_CELL_W = %d;
 export const MAPO_REGION_CELL_H = %d;
+/** 基础季 13 形。 */
 export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = %s;
+/** 雪山 13 形（id = 原版 res 值；N1）。 */
+export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = %s;
 ''' % (a.map, ATLAS_W, ATLAS_H, CELL_W, CELL_H,
-       json.dumps([{k: v for k, v in c.items() if k != "source"} for c in cells],
-                  ensure_ascii=False, indent=2))
+       json.dumps([{k: v for k, v in c.items() if k != "source"}
+                   for c in cells if c["variant"] == "base"], ensure_ascii=False, indent=2),
+       json.dumps([{k: v for k, v in c.items() if k != "source"}
+                   for c in cells if c["variant"] == "snow"], ensure_ascii=False, indent=2))
     open(os.path.join(d, "region.data.ts"), "w", encoding="utf-8").write(ts)
-    print("山族件 %d 形（季 %s）：%s" % (len(cells), a.season,
-                                       " ".join("%d=%s" % (c["id"], c["source"].rsplit("/", 1)[-1])
-                                                for c in cells)))
+    print("山族件 %d 形 ×2 套（基础 + 雪）：%s"
+          % (len(MF.VALUES),
+             " ".join("%d=%s" % (c["id"], c["source"].rsplit("/", 1)[-1])
+                      for c in cells if c["variant"] == "snow")))
+    print("  沙漠山与基础季同件 %d/13（实测，⛔ 无沙件格；山9 无 2D 件、数据 0 命中不参与）"
+          % desert_same)
     print("→ %s/region-atlas.png (%.1f MB)" % (d, os.path.getsize(os.path.join(d, "region-atlas.png")) / 1e6))
     return 0
 

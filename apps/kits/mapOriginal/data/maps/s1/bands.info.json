@@ -1,0 +1,43 @@
+{
+ "schemaVersion": 1,
+ "mapId": "s1",
+ "grid": {
+  "rows": 1500,
+  "cols": 1500,
+  "headerBytes": 4,
+  "order": "行主序（与 res.bytes / ground_*.bytes 同，⛔ 与 river 列主序不同）"
+ },
+ "byteLength": 2250004,
+ "sha256": "6a1288b64666cd62406f3b7f93ce992940155eff1c01d5fc66e5d77fb85b70ba",
+ "values": {
+  "1": 1362012,
+  "2": 353272,
+  "3": 354478,
+  "7": 7,
+  "8": 19,
+  "9": 7,
+  "11": 27157,
+  "13": 17845,
+  "16": 13450,
+  "17": 7,
+  "18": 121746
+ },
+ "semantics": "GROUND_TYPE_NAMES（const.lua def_enum，[干净集]）：2=雪 3=沙，其余回退基础季（check_ground_type 的 `or \"ground\"`，[disasm] map_mgr）。⛔ autumn 不接（M0-B3）。",
+ "bandCells": {
+  "snow": 353272,
+  "desert": 354478
+ },
+ "crossCheck": {
+  "值2落在雪块": 353272,
+  "值3落在沙块": 354478,
+  "双带块": 489,
+  "双带块内逐格分布": {
+   "1": 813,
+   "2": 41295,
+   "3": 3292
+  },
+  "雪值落在沙块+沙值落在雪块": 44587,
+  "mapping": "复用 build_blocks.py 的 BLOCK_TILES=10 / ORIGIN=-10 / GRID_SIDE=152"
+ },
+ "rleBytes": 163565
+}

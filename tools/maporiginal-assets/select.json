@@ -43,6 +43,7 @@
     "resource",
     "resource_food",
     "resource_gold",
+    "mountain_snow",
     "road",
     "small_build",
     "map_birdview_icons",
@@ -54,7 +55,7 @@
     "build_attachment",
     "alliance_extend_build"
    ],
-   "comment": "★ ground/resource/road/small_build 是**原版 2D 档**的地表与地物图集 —— 它们在包里（只是 .group 预制体不在），⛔ 别再说「原版 2D 地表不在基础包」。★ remain_tex 是**杂项兜底图集（17 页 1,284 张）**，原版 2D 山体件 `scene/ground/mountain_new/grass_fall_new/png/m1..m10`、高地 gaodi*、草丛 grass、长江/黄河 river_longriver 都在里面 —— ⛔ 别漏。"
+   "comment": "★ ground/resource/road/small_build 是**原版 2D 档**的地表与地物图集 —— 它们在包里（只是 .group 预制体不在），⛔ 别再说「原版 2D 地表不在基础包」。★ remain_tex 是**杂项兜底图集（17 页 1,284 张）**，原版 2D 山体件 `scene/ground/mountain_new/grass_fall_new/png/m1..m10`、高地 gaodi*、草丛 grass、长江/黄河 river_longriver 都在里面 —— ⛔ 别漏。★ mountain_snow 是雪山件（`scene/ground/mountain_snow/png/1..9`）—— N1 季/地貌变体换件用；resource*.xml 里已含 resource_snow/resource_desert 两树的切片，⛔ 无需另收。"
   }
  ]
 }

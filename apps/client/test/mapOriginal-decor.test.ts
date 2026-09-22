@@ -9,6 +9,13 @@ import {
 import {
     MAPO_CITY_CELL_COUNTS, MAPO_CITY_CELL_KEYS, MAPO_CITY_SITES,
 } from "../src/shared/kits/mapOriginal/content/labels.data";
+import {
+    MAPO_DECOR_CELLS, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
+} from "../src/shared/kits/mapOriginal/content/decor.data";
+import {
+    MAPO_BAND_DESERT, MAPO_BAND_GROUND, MAPO_BAND_SNOW,
+} from "../src/shared/kits/mapOriginal/content/bands.data";
+import { mapoBandAt } from "../src/kits/mapOriginal/logic/mapoBands";
 import { mapoDecorAt } from "../src/kits/mapOriginal/logic/mapoDecor";
 
 /** 第一座城的中心格与它的一个非中心占格。 */
@@ -49,6 +56,49 @@ test("mapOriginal 摆件：占格表自洽（249 座 / 2,689 格 / 计数和相�
     }
     assert.equal(new Set(MAPO_CITY_CELL_KEYS).size, MAPO_CITY_CELL_KEYS.length, "占格有重复");
 });
+
+// ── N1：季/地貌变体选件 ────────────────────────────────────────────────────
+// ⚠ 坐标钉自 s1 真实数据（bands.bytes + terrain.bytes）：(100,108) 雪带 res=32（1级铁矿）、
+//   (100,749) 沙带 res=32、(100,251) 绿地 res=13（2级石料）—— 三格都不在 2,689 个城占格里。
+const SNOW_CELL_RES32 = MAPO_DECOR_SNOW_CELLS.find((c) => c.id === 32)!;
+const DESERT_CELL_RES32 = MAPO_DECOR_DESERT_CELLS.find((c) => c.id === 32)!;
+const BASE_CELL_RES13 = MAPO_DECOR_CELLS.find((c) => c.id === 13)!;
+
+test("mapOriginal 摆件（N1）：三套件齐全且是三份独立格（⛔ 不是同一格复用）", () => {
+    assert.equal(MAPO_DECOR_SNOW_CELLS.length, 45, "雪件表必须覆盖全部 45 个资源值");
+    assert.equal(MAPO_DECOR_DESERT_CELLS.length, 45, "沙件表必须覆盖全部 45 个资源值");
+    const baseIds = new Set(MAPO_DECOR_CELLS.filter((c) => c.kind === "res").map((c) => c.id));
+    for (let v = 2; v <= 46; v += 1) {
+        assert.ok(baseIds.has(v), `基础季缺值 ${v}`);
+        const snow = MAPO_DECOR_SNOW_CELLS.find((c) => c.id === v)!;
+        const desert = MAPO_DECOR_DESERT_CELLS.find((c) => c.id === v)!;
+        const base = MAPO_DECOR_CELLS.find((c) => c.id === v)!;
+        assert.ok(snow && desert, `值 ${v} 的变体格缺失`);
+        assert.ok(snow !== base && desert !== base && snow !== desert,
+            `值 ${v} 的三套件必须是三份独立格（否则判带无从谈起）`);
+        assert.equal(snow.variant, "snow");
+        assert.equal(desert.variant, "desert");
+        assert.equal(base.variant, "base");
+    }
+});
+
+test("mapOriginal 摆件（N1）：带内换件、带外仍是基础件（选件与带归属逐格一致）", () => {
+    // ⚠ 先自证坐标钉没漂（bands 数据一变这里就该红，而不是静默换件错）
+    assert.equal(mapoBandAt(100, 108), MAPO_BAND_SNOW, "(100,108) 应在雪带");
+    assert.equal(mapoBandAt(100, 749), MAPO_BAND_DESERT, "(100,749) 应在沙带");
+    assert.equal(mapoBandAt(100, 251), MAPO_BAND_GROUND, "(100,251) 应是绿地");
+    const inSnow = mapoDecorAt(100, 108, 32, true);
+    assert.ok(inSnow && inSnow.cell === SNOW_CELL_RES32, "雪带里的 1级铁矿必须画雪地件");
+    const inDesert = mapoDecorAt(100, 749, 32, true);
+    assert.ok(inDesert && inDesert.cell === DESERT_CELL_RES32, "沙带里的 1级铁矿必须画沙漠件");
+    const onGrass = mapoDecorAt(100, 251, 13, true);
+    assert.ok(onGrass && onGrass.cell === BASE_CELL_RES13, "绿地上的 2级石料必须仍是基础季件");
+    // ⚠ 雪/沙件的图集坐标必须与基础件不同（同一格 = 没换件）
+    const base32 = MAPO_DECOR_CELLS.find((c) => c.id === 32)!;
+    assert.notDeepEqual([...SNOW_CELL_RES32.cell], [...base32.cell], "雪件与基础件不该同格");
+    assert.notDeepEqual([...DESERT_CELL_RES32.cell], [...base32.cell], "沙件与基础件不该同格");
+});
+
 
 test("mapOriginal 分层：implemented 的层必须真有渲染器（⛔ 不许门控与渲染两张皮）", () => {
     // ⚠ 这条是 M1-B1 的止血闸，且是**通用**的：将来新增层自动受管。

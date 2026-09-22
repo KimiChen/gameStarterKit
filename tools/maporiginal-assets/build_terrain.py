@@ -31,12 +31,16 @@
   ② 块内下标（`(v-2)%10`）随「离地图中心的距离」**单调递减**（3.26 → 1.33）
      ⇒ 是**地块等级**（三战的高级地在中心）。
   ③ 相应地，森林/丘陵/山地这些**地貌**不在 2..41 里，它们是 48..61 的多格地形。
-⚠ 四种资源（甲乙丙丁）↔ 木/铁/石/粮 的**对应关系静态数据里定不了**（在资源注册表/服务端）。
-  本管线按 `类型0→木、1→铁、2→石、3→粮` 取美术，⚠ 这是**假设**，可能是个置换。
+⚠ 四种资源（甲乙丙丁）↔ 木/石/粮/铁 的对应：**已坐实**（2026-09-23 N1，`base.cw` 的
+  land 表：2..11 名「N级木材」→ wood-new/、12..21「N级石料」→ stone-new/、
+  22..31「N级粮食」→ food-new/、32..41「N级铁矿」→ iron-new/，name 与 src_name 互证）。
+  ⛔ 早先「1→铁、2→石、3→粮」是假设且**轮转错位** —— 详情面板的类型名与摆件美术都曾照它错。
+⚠ `logic_background` 相邻同值率 96.5%（随机 41.9%）⇒ 它是**地貌分区层**；
+  ★ 2026-09-23 N1 更正：它同时**就是**原版的逐格季/地貌带判据（`check_ground_type` 读它，
+  2=雪 3=沙 其余回退基础季）—— 摆件/山件的换件走它（build_bands.py），
+  ⛔ 早先「静态数据里没有逐格美术变体」的说法作废。
 ⚠ 本 kit 把 48..61 拆成「山脉 / 林丛 / 散落」三粗类是**本仓自创的分类**，原版是**一族 14 形**；
   这三个 kind 目前只用于**垫底色**，件的形与贴图一律走 `mountain_forms.FORMS`。
-⚠ `logic_background` 相邻同值率 96.5%（随机 41.9%）⇒ 它是**地貌分区层**，⛔ 不是逐格美术变体；
-  静态数据里**没有**逐格美术变体，近档的 4 款变体片是本仓自己加的去重复手段。
 """
 from __future__ import annotations
 
@@ -58,8 +62,12 @@ from decode_ktx import resolve_by_name  # noqa: E402
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 OUT = os.path.join(HERE, CFG["outDir"])
 
-RES_TYPES = ["wood", "iron", "stone", "food"]          # ⚠ 假设的次序，见模块注释
-RES_TYPE_CN = ["木", "铁", "石", "粮"]
+# ★ 次序已由 `base.cw` 的 land 表**定死**（2026-09-23 N1，⛔ 不再是假设）：
+#   land 12..21 名「N级石料」→ stone-new/、22..31「N级粮食」→ food-new/、32..41「N级铁矿」→
+#   iron-new/ —— `land.name` 与 `client_res.src_name` 两列互证。早先的 1→铁、2→石、3→粮
+#   是**轮转错位**的假设，已改正。
+RES_TYPES = ["wood", "stone", "food", "iron"]
+RES_TYPE_CN = ["木", "石", "粮", "铁"]
 # 多格地形类型（res_multi 值）→ 粗类
 MULTI_KIND = {60: "mountain", 61: "mountain",
               57: "grove", 58: "grove", 59: "grove",
@@ -177,7 +185,9 @@ def main() -> int:
         "coverMask": "raw/multi.bytes（原版 res_multi）；通行层的山地由它的 60/61 派生",
         "rule": "1 平地；2..41 资源(类型=(v-2)//10、等级=(v-2)%10+1)；42..46 金矿 1..5 级；"
                 "47 河流；48..61 山族 14 形的锚点（⛔ 无 56）；0 被多格地形覆盖",
-        "resTypeAssumption": "类型0→木、1→铁、2→石、3→粮（⚠ 假设，静态数据定不了，可能是置换）",
+        "resTypeAssumption": "类型0→木、1→石、2→粮、3→铁（★ 已由 base.cw 的 land 表定死，"
+                             "2026-09-23 N1：land.name 与 client_res.src_name 两列互证；"
+                             "⛔ 早先的 1→铁、2→石、3→粮 是轮转错位的假设）",
         "palette": palette,
         "passPalette": [{"id": 0, "name": "land", "cn": "可走陆地", "passable": True,
                          "color": [137, 148, 100], "tiles": int((pas == 0).sum())},

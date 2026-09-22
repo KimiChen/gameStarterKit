@@ -1,25 +1,96 @@
 {
- "schemaVersion": 2,
+ "schemaVersion": 3,
  "mapId": "s1",
  "cell": [
   682,
   409
  ],
  "gridCols": 3,
- "gridRows": 5,
+ "gridRows": 10,
  "size": [
   2048,
-  2048
+  4096
  ],
- "season": "base",
- "seasonDir": "scene/ground/mountain_new",
  "anchor": "bottom-center",
- "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出",
- "transform": "scale/offset/angle/pivot 逐形取自 prefab 的 sprite_2d；offset 是精灵**中心**相对锚点格的偏移（原版 px），pivot 恒 [0.5, 0.5]",
+ "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出；变体格同 id 空间、按 variant 分表（N1）",
+ "transform": "scale/offset/angle/pivot 逐形取自该套件 prefab 的 sprite_2d；offset 是精灵**中心**相对锚点格的偏移（原版 px），pivot 恒 [0.5, 0.5]",
+ "variants": {
+  "来源": "base.cw land 表 snow_client_res_id/desert_client_res_id（⛔ autumn 不接，M0-B3；雪件 = mountain_snow 同形 prefab）",
+  "desertSameAsBase": 13,
+  "desertSameAsBase依据": "荒地山的 2D src_name 与基础季逐字相同（只有 src_name_3d 不同）——有 2D 件的 13 形全中（山9 无 2D 件、数据 0 命中，不参与）",
+  "resIds": {
+   "48": {
+    "base": 1112201,
+    "snow": 1112801,
+    "desert": 1114401
+   },
+   "49": {
+    "base": 1113301,
+    "snow": 1112901,
+    "desert": 1114501
+   },
+   "50": {
+    "base": 1114801,
+    "snow": 1113001,
+    "desert": 1114601
+   },
+   "51": {
+    "base": 1117601,
+    "snow": 1113101,
+    "desert": 1114701
+   },
+   "52": {
+    "base": 1119801,
+    "snow": 1113201,
+    "desert": 1115001
+   },
+   "53": {
+    "base": 1121801,
+    "snow": 1113401,
+    "desert": 1115101
+   },
+   "54": {
+    "base": 1121901,
+    "snow": 1113501,
+    "desert": 1115201
+   },
+   "55": {
+    "base": 1122001,
+    "snow": 1113601,
+    "desert": 1115301
+   },
+   "57": {
+    "base": 1112301,
+    "snow": 1113801,
+    "desert": 1115501
+   },
+   "58": {
+    "base": 1112401,
+    "snow": 1113901,
+    "desert": 1115601
+   },
+   "59": {
+    "base": 1112501,
+    "snow": 1114001,
+    "desert": 1115701
+   },
+   "60": {
+    "base": 1112601,
+    "snow": 1114101,
+    "desert": 1115801
+   },
+   "61": {
+    "base": 1112701,
+    "snow": 1114201,
+    "desert": 1115901
+   }
+  }
+ },
  "cells": [
   {
    "id": 48,
    "kind": "mountain",
+   "variant": "base",
    "shan": 1,
    "form": "mountain1m_01",
    "shape": "1m",
@@ -59,6 +130,7 @@
   {
    "id": 49,
    "kind": "mountain",
+   "variant": "base",
    "shan": 2,
    "form": "mountain1m_02",
    "shape": "1m",
@@ -98,6 +170,7 @@
   {
    "id": 50,
    "kind": "mountain",
+   "variant": "base",
    "shan": 3,
    "form": "mountain1m_03",
    "shape": "1m",
@@ -137,6 +210,7 @@
   {
    "id": 51,
    "kind": "mountain",
+   "variant": "base",
    "shan": 4,
    "form": "mountain1m_04",
    "shape": "1m",
@@ -176,6 +250,7 @@
   {
    "id": 52,
    "kind": "mountain",
+   "variant": "base",
    "shan": 5,
    "form": "mountain2m_x_01",
    "shape": "2m_x",
@@ -215,6 +290,7 @@
   {
    "id": 53,
    "kind": "mountain",
+   "variant": "base",
    "shan": 6,
    "form": "mountain2m_xy_01",
    "shape": "2m_xy",
@@ -254,6 +330,7 @@
   {
    "id": 54,
    "kind": "mountain",
+   "variant": "base",
    "shan": 7,
    "form": "mountain2m_y_01",
    "shape": "2m_y",
@@ -293,6 +370,7 @@
   {
    "id": 55,
    "kind": "mountain",
+   "variant": "base",
    "shan": 8,
    "form": "mountain4m_01",
    "shape": "4m",
@@ -332,6 +410,7 @@
   {
    "id": 57,
    "kind": "mountain",
+   "variant": "base",
    "shan": 10,
    "form": "mountain7m_01",
    "shape": "7m",
@@ -371,6 +450,7 @@
   {
    "id": 58,
    "kind": "mountain",
+   "variant": "base",
    "shan": 11,
    "form": "mountain7m_02",
    "shape": "7m",
@@ -410,6 +490,7 @@
   {
    "id": 59,
    "kind": "mountain",
+   "variant": "base",
    "shan": 12,
    "form": "mountain7m_03",
    "shape": "7m",
@@ -449,6 +530,7 @@
   {
    "id": 60,
    "kind": "mountain",
+   "variant": "base",
    "shan": 13,
    "form": "mountain19m_01",
    "shape": "19m",
@@ -488,6 +570,7 @@
   {
    "id": 61,
    "kind": "mountain",
+   "variant": "base",
    "shan": 14,
    "form": "mountain19m_02",
    "shape": "19m",
@@ -523,6 +606,526 @@
    ],
    "lowZ": 1,
    "source": "scene/ground/mountain_new/png/m2.png"
+  },
+  {
+   "id": 48,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 1,
+   "form": "mountain1m_01",
+   "shape": "1m",
+   "footprintCells": 1,
+   "cell": [
+    682,
+    1636,
+    682,
+    409
+   ],
+   "art": [
+    208,
+    254,
+    265,
+    155
+   ],
+   "native": [
+    265,
+    155
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    -1.7148,
+    -16.1963
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/9.png"
+  },
+  {
+   "id": 49,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 2,
+   "form": "mountain1m_02",
+   "shape": "1m",
+   "footprintCells": 1,
+   "cell": [
+    1364,
+    1636,
+    682,
+    409
+   ],
+   "art": [
+    208,
+    254,
+    265,
+    155
+   ],
+   "native": [
+    265,
+    155
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    -1.7148,
+    -16.1963
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/9.png"
+  },
+  {
+   "id": 50,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 3,
+   "form": "mountain1m_03",
+   "shape": "1m",
+   "footprintCells": 1,
+   "cell": [
+    0,
+    2045,
+    682,
+    409
+   ],
+   "art": [
+    208,
+    254,
+    265,
+    155
+   ],
+   "native": [
+    265,
+    155
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    -1.7148,
+    -16.1963
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/9.png"
+  },
+  {
+   "id": 51,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 4,
+   "form": "mountain1m_04",
+   "shape": "1m",
+   "footprintCells": 1,
+   "cell": [
+    682,
+    2045,
+    682,
+    409
+   ],
+   "art": [
+    208,
+    254,
+    265,
+    155
+   ],
+   "native": [
+    265,
+    155
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    -1.7148,
+    -16.1963
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/9.png"
+  },
+  {
+   "id": 52,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 5,
+   "form": "mountain2m_x_01",
+   "shape": "2m_x",
+   "footprintCells": 2,
+   "cell": [
+    1364,
+    2045,
+    682,
+    409
+   ],
+   "art": [
+    129,
+    179,
+    423,
+    230
+   ],
+   "native": [
+    423,
+    230
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    76.5703,
+    20.8184
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/8.png"
+  },
+  {
+   "id": 53,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 6,
+   "form": "mountain2m_xy_01",
+   "shape": "2m_xy",
+   "footprintCells": 2,
+   "cell": [
+    0,
+    2454,
+    682,
+    409
+   ],
+   "art": [
+    187,
+    152,
+    307,
+    257
+   ],
+   "native": [
+    307,
+    257
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    39.916,
+    -51.9434
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/7.png"
+  },
+  {
+   "id": 54,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 7,
+   "form": "mountain2m_y_01",
+   "shape": "2m_y",
+   "footprintCells": 2,
+   "cell": [
+    682,
+    2454,
+    682,
+    409
+   ],
+   "art": [
+    81,
+    210,
+    520,
+    199
+   ],
+   "native": [
+    520,
+    199
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    93.3691,
+    -41.0293
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/6.png"
+  },
+  {
+   "id": 55,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 8,
+   "form": "mountain4m_01",
+   "shape": "4m",
+   "footprintCells": 4,
+   "cell": [
+    1364,
+    2454,
+    682,
+    409
+   ],
+   "art": [
+    44,
+    111,
+    593,
+    298
+   ],
+   "native": [
+    593,
+    298
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    35.7813,
+    28.9414
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/5.png"
+  },
+  {
+   "id": 57,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 10,
+   "form": "mountain7m_01",
+   "shape": "7m",
+   "footprintCells": 7,
+   "cell": [
+    0,
+    2863,
+    682,
+    409
+   ],
+   "art": [
+    0,
+    86,
+    682,
+    323
+   ],
+   "native": [
+    893,
+    423
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    13.2217,
+    -8.2041
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/2.png"
+  },
+  {
+   "id": 58,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 11,
+   "form": "mountain7m_02",
+   "shape": "7m",
+   "footprintCells": 7,
+   "cell": [
+    682,
+    2863,
+    682,
+    409
+   ],
+   "art": [
+    0,
+    76,
+    682,
+    333
+   ],
+   "native": [
+    769,
+    375
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    -56.5664,
+    -1.667
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/3.png"
+  },
+  {
+   "id": 59,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 12,
+   "form": "mountain7m_03",
+   "shape": "7m",
+   "footprintCells": 7,
+   "cell": [
+    1364,
+    2863,
+    682,
+    409
+   ],
+   "art": [
+    0,
+    12,
+    682,
+    397
+   ],
+   "native": [
+    733,
+    427
+   ],
+   "scale": [
+    1.0,
+    1.0
+   ],
+   "offset": [
+    -26.3818,
+    -9.6885
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/4.png"
+  },
+  {
+   "id": 60,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 13,
+   "form": "mountain19m_01",
+   "shape": "19m",
+   "footprintCells": 19,
+   "cell": [
+    0,
+    3272,
+    682,
+    409
+   ],
+   "art": [
+    28,
+    81,
+    626,
+    328
+   ],
+   "native": [
+    626,
+    328
+   ],
+   "scale": [
+    2.0,
+    2.0
+   ],
+   "offset": [
+    21.0,
+    18.5
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/1.png"
+  },
+  {
+   "id": 61,
+   "kind": "mountain",
+   "variant": "snow",
+   "shan": 14,
+   "form": "mountain19m_02",
+   "shape": "19m",
+   "footprintCells": 19,
+   "cell": [
+    682,
+    3272,
+    682,
+    409
+   ],
+   "art": [
+    28,
+    81,
+    626,
+    328
+   ],
+   "native": [
+    626,
+    328
+   ],
+   "scale": [
+    2.0,
+    2.0
+   ],
+   "offset": [
+    21.0,
+    18.5
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_snow/png/1.png"
   }
  ]
 }

@@ -285,6 +285,16 @@ id 48..61 的 `name` 逐条就是 **`山1`..`山14`**，且 id 47 名「河」�
 `client_res_id / snow_client_res_id / desert_client_res_id` 三列里挑
 （补核轮：定义在 `map_mgr.lua.disasm`，调用现场三处独立印证，列名全对）。
 
+★ `[实测]` **带归属在 cell 级不在块级**（2026-09-23 N1 坐实）：`check_ground_type(row,col)`
+= `GROUND_TYPE_NAMES[logic_background.bytes 格值] or "ground"`（枚举定义 = 干净集
+`const.lua:252` 的 `def_enum("GROUND_TYPE","ground","snow","desert")`；层归属 = 干净集
+`map_layer_config.lua` 的 `logic_ground = logic_background.bytes`；选件消费现场 = 干净集
+`sparse_layer_block.lua:22-27`）。⇒ 逐格单值、**雪/沙块双挂不产生优先级问题**
+（489 个双挂块内实测：41,295 格雪 / 3,292 格沙 / 813 格草；值 2 格 100% ⊆ 雪块、
+值 3 格 100% ⊆ 沙块）。本 kit 已照此落地为 `mapoBandAt`（`bands.data.ts`）。
+⚠ 附带实测：`荒地山1..14` 的 **2D 件与基础季同件**（`src_name` 逐字相同，仅 `src_name_3d`
+不同，13/13）⇒ 沙漠带的山件就是基础季件，没有沙件山。
+
 > ⇒ 本 kit 把 48..61 拆成「山脉/林丛/散落」三族是**本仓自创的分类**，原版是**一族 14 形**。
 
 ### 3.3 件的大小 = 原图像素 × prefab 里的 scale
@@ -594,6 +604,7 @@ vp_scale_default = vp_scale_max        ← 默认值就是 max
 | 多格地形 | `res.bytes` 非零值 = **锚点**，一族 14 形足迹，件 = 图 × prefab scale | ✅ **已对齐**（M0-B1 / M0-B2，2026-09-22）：55,127 锚点直接出件，件 = 图 × prefab scale | ~~★ 核心假设错误~~ 已修；连通域整套已删 |
 | 山体拼接 | `mountain_patch` 是大山内部的**第二遍补件** | ✅ **已对齐**：降为补件（3,942 条），主表是 `res.bytes` 的锚点 | ~~用错位置~~ 已修 |
 | 逐格资源件 | 每资源格一个 res_field，**四道筛选门** | ✅ 第 4 门已补（M0-B4）：`city.bytes` 的 2,689 个城格抑制资源件 | ~~缺第 4 门~~ 已补 |
+| 季/地貌变体件 | `land` 表四套件列（基础/雪/沙/秋），`check_ground_type` 按 **cell 级** `logic_background` 选件（§3.2） | ✅ **已对齐**（N1，2026-09-23）：`mapoBandAt` 同一条数据链；摆件三套件 + 雪山件进图集 | ~~所有格一律基础件~~ 已修。⚠ `autumn_*` 不接（M0-B3 拍板）；沙漠山 2D 与基础季同件（实测 13/13）⇒ 无沙件山 |
 | 河流 | 独立几何层，河格 = 3×3 逻辑格，102 条手工形状、制图期烘死 | ✅ **已建**（M3-B2）：102 条原版多边形 + 31,140 片，对位覆盖 100% 的 `res==47` | ~~整层缺失~~ 已补，含 `_top_group` 597 件 |
 | 道路 | 选片**制图期烘死**（`type_info` 下标 + 水平翻转），三套皮肤 | ✅ **已建**（M3-B1）：路格 1125²、半宽 200/半高 100 = 4/3 逻辑格，42,018 片 | ~~整层缺失~~ 已补。~~id→精灵绑定是 `[推断]`~~ ✅ 已由 `base.cw.client_res` 升为 `[实测]`（§4.2） |
 | 建筑城营 | **AOI 驱动的 unit**，两级配置表选件 | 城址件按「面积前 8 大」**启发式**挑 | 机制不同（AOI 需服务端）。~~**选件**卡在 base.cw~~ ✅ **已建**（2026-09-23）：`city[1].client_res_id` → `city_res.editor_brush_res_path` → prefab，**15 个件覆盖 249 座**，1,642 sprite 已入 `cities.bin`；城名/类型/等级/形状入 `MAPO_CITY_SITES`。✅ **已过真机**（同日 N0）：洛阳 218 sprite 在屏，层序 / 第 4 道门 / 尺寸四项肉眼全过。⚠ 早先判 `.group` 是 3D 件是**错的**：路径在 `scene/`（2D 树）下，与 `_top_group` 完全同构。⛔ 余下未做的是 AOI 驱动的**动态** unit（军队/营） |

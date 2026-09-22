@@ -23,7 +23,7 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 OUT = os.path.join(HERE, CFG["outDir"])
-RES_TYPE_CN = ["木", "铁", "石", "粮"]
+RES_TYPE_CN = ["木", "石", "粮", "铁"]      # ★ 次序由 land 表定死（N1，见 build_terrain.py 抬头）
 
 
 def main() -> int:
@@ -93,7 +93,7 @@ export interface IMapoValueClass {
  * ⛔ 不再对应任何图集行 —— 地表底已改成「一张底纹整数次 GL_REPEAT」。
  */
 export const MAPO_VALUE_KINDS: readonly string[] = %s;
-/** 资源类型编号 → 中文。⚠ 静态数据定不了真实置换，见模块头。 */
+/** 资源类型编号 → 中文。★ 次序已由 land 表定死（0木/1石/2粮/3铁，N1），见模块头。 */
 export const MAPO_RES_TYPE_CN: readonly string[] = %s;
 /** 原版值上界（含）。 */
 export const MAPO_VALUE_MAX = %d;

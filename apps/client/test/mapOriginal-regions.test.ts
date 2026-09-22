@@ -4,7 +4,13 @@ import {
     MAPO_REGION_D_BIAS, MAPO_REGION_HEADER_BYTES, MAPO_REGION_RECORD_BYTES,
     mapoOriginalPxToWorld, mapoRegionPos,
 } from "../src/shared/kits/mapOriginal/api/hexmap/index";
-import { MAPO_REGION_CELLS } from "../src/shared/kits/mapOriginal/content/region.data";
+import {
+    MAPO_REGION_CELLS, MAPO_REGION_SNOW_CELLS,
+} from "../src/shared/kits/mapOriginal/content/region.data";
+import {
+    MAPO_BAND_DESERT, MAPO_BAND_GROUND, MAPO_BAND_SNOW,
+} from "../src/shared/kits/mapOriginal/content/bands.data";
+import { mapoBandAt } from "../src/kits/mapOriginal/logic/mapoBands";
 import { mapoRegionsInRect, mapoSetRegions } from "../src/kits/mapOriginal/logic/mapoRegions";
 import { buildMapoSpriteMesh } from "../src/kits/mapOriginal/logic/mapoMesh";
 
@@ -40,10 +46,11 @@ test("mapOriginal 区域件：世界尺寸 = 原图像素 × prefab 的 scale（
 
 test("mapOriginal 区域件：精灵中心 = 锚点格位置 + prefab 的 offset（pivot 恒中心）", () => {
     // ⚠ 渲染按「底边中点」对齐，所以 y 要比中心低 h/2；漏了这一步件会整体上浮半个身位
+    // ⚠ 坐标必须在**绿地**（N1 起雪带会换成雪山件格，offset 不同）：(838,1266) 实测是绿地。
     for (const cell of MAPO_REGION_CELLS) {
-        mapoSetRegions(makeTable([{ row: 501, col: 300, cell: cell.id }]));
+        mapoSetRegions(makeTable([{ row: 838, col: 1266, cell: cell.id }]));
         const [p] = mapoRegionsInRect(WHOLE, 8);
-        const anchor = mapoRegionPos(501 + 300, 501 - 300);
+        const anchor = mapoRegionPos(838 + 1266, 838 - 1266);
         assert.equal(p.x, anchor.x + mapoOriginalPxToWorld(cell.offset[0]), `格 ${cell.id} x`);
         assert.equal(p.y + p.h / 2, anchor.y + mapoOriginalPxToWorld(cell.offset[1]),
             `格 ${cell.id} 的精灵中心 y`);
@@ -74,4 +81,47 @@ test("mapOriginal 网格：angleDeg 绕**精灵中心**转，0 走轴对齐快�
     // ⚠ 旋转 ⛔ 不许改顶点数 / 索引，否则合批会错位
     assert.equal(spun.positions.length, flat.positions.length);
     assert.deepEqual(Array.from(spun.indices16), Array.from(flat.indices16));
+});
+
+// ── N1：山族件的季/地貌变体 ────────────────────────────────────────────────
+// ⚠ 坐标钉自 s1 真实数据（bands.bytes）：(437,319) 雪带、(334,579) 沙带、(838,1266) 绿地。
+const SNOW_59 = MAPO_REGION_SNOW_CELLS.find((c) => c.id === 59)!;
+const BASE_49 = MAPO_REGION_CELLS.find((c) => c.id === 49)!;
+
+test("mapOriginal 区域件（N1）：雪带锚点出**雪山件**（transform 逐形重读，⛔ 不抄基础季）", () => {
+    assert.equal(mapoBandAt(437, 319), MAPO_BAND_SNOW, "(437,319) 应在雪带");
+    mapoSetRegions(makeTable([{ row: 437, col: 319, cell: 59 }]));
+    const [p] = mapoRegionsInRect(WHOLE, 8);
+    assert.ok(p, "雪带锚点没摆出来");
+    assert.equal(p.cellLayout, SNOW_59, "雪带里的山12 必须用雪山件格");
+    // ★ 雪山 7m_03 的贴图是 mountain_snow/png/4.png（733×427，scale 1.0），
+    //   与基础季（m5 697×345，scale 1.15871）**不是同一份 transform** —— 尺寸必须按雪山的算
+    assert.equal(p.w, mapoOriginalPxToWorld(SNOW_59.native[0] * SNOW_59.scale[0]), "雪山宽");
+    assert.equal(p.h, mapoOriginalPxToWorld(SNOW_59.native[1] * SNOW_59.scale[1]), "雪山高");
+});
+
+test("mapOriginal 区域件（N1）：沙带/绿地的锚点仍是**基础季**件", () => {
+    // ★ 荒地山的 2D src_name 与基础季逐字相同（land 表实测 13/13）⇒ ⛔ 没有沙件表，
+    //   沙带里的山件就该是基础季件；绿地同理。
+    assert.equal(mapoBandAt(334, 579), MAPO_BAND_DESERT, "(334,579) 应在沙带");
+    assert.equal(mapoBandAt(838, 1266), MAPO_BAND_GROUND, "(838,1266) 应是绿地");
+    for (const [row, col] of [[334, 579], [838, 1266]] as const) {
+        mapoSetRegions(makeTable([{ row, col, cell: 49 }]));
+        const [p] = mapoRegionsInRect(WHOLE, 8);
+        assert.ok(p, `(${row},${col}) 没摆出来`);
+        assert.equal(p.cellLayout, BASE_49, `(${row},${col}) 必须用基础季件格`);
+    }
+});
+
+test("mapOriginal 区域件（N1）：雪山表与基础季表同 id 空间、逐形互异", () => {
+    // ★ 三套件齐全判据的山族半边：13 形每形都有雪件格，且与基础季格**不是同一个对象**。
+    assert.equal(MAPO_REGION_SNOW_CELLS.length, MAPO_REGION_CELLS.length);
+    for (const base of MAPO_REGION_CELLS) {
+        const snow = MAPO_REGION_SNOW_CELLS.find((c) => c.id === base.id)!;
+        assert.ok(snow, `形 ${base.id} 缺雪山格`);
+        assert.ok(snow !== base, `形 ${base.id} 的雪/基础格不该是同一对象`);
+        assert.equal(snow.variant, "snow");
+        assert.equal(base.variant, "base");
+        assert.notDeepEqual([...snow.cell], [...base.cell], `形 ${base.id} 的雪/基础格不该同坐标`);
+    }
 });

@@ -6,6 +6,11 @@
  *   ⛔ 不是本仓早先分的「山脉 / 林丛 / 散落」三族。山9（值 56）无 2D prefab，数据里也 0 命中。
  * ★ 贴图对应是**从 prefab 读出来的**（`mountain_forms.py`）：13 形只用到 m1..m10 十张图，
  *   1m_01/1m_04 共用 m7、1m_02/1m_03 共用 m6、19m_01/19m_02 共用 m2，靠 transform 区分。
+ * ★ **季/地貌变体**（N1）：`MAPO_REGION_CELLS` 是基础季，`MAPO_REGION_SNOW_CELLS` 是雪件
+ *   （`mountain_snow` 同形 prefab，transform 逐形重读 ⛔ 不抄基础季）。哪格用哪套由
+ *   `logic/mapoBands.ts` 的 cell 级地貌带定。⚠ **沙漠带的山件 = 基础季件**：
+ *   land 表荒地山1..14 的 2D `src_name` 与基础季逐字相同（实测 14/14），⛔ 没有沙件表。
+ *   ⚠ `autumn_*` 不接（M0-B3）。
  * ⚠ 锚点是**底边中点**，⛔ 不是几何中心。
  * ★ **件的大小 = `native` × `scale`**（M0-B2，§3.3）：`native` 是原图像素、`scale` 是 prefab 里
  *   那个 sprite 的缩放。m2 只有 563 px 却要盖满 19 格，靠的就是 `mountain19m_01` 的 2.163；
@@ -20,6 +25,8 @@ export interface IMapoRegionCell {
     /** ★ 原版 res 值（48..61），同时是 `regions.bin` 里的 cell 字段。 */
     readonly id: number;
     readonly kind: string;
+    /** 基础季 / 雪（N1）。⚠ 沙漠带的山件与基础季同件，⛔ 没有沙件表。 */
+    readonly variant: string;
     /** 原版件号 `山N`。 */
     readonly shan: number;
     /** 原版 prefab 名，如 `mountain19m_01`。 */
@@ -36,22 +43,24 @@ export interface IMapoRegionCell {
     readonly scale: readonly [number, number];
     /** ★ 精灵**中心**相对锚点格的偏移（原版 px，+y 向上）。 */
     readonly offset: readonly [number, number];
-    /** prefab 里 sprite 绕中心的旋转（**度**，CCW 为正）。13 形里只有 2 形非零。 */
+    /** prefab 里 sprite 绕中心的旋转（**度**，CCW 为正）。 */
     readonly angle: number;
     /** prefab 里 sprite 的轴心，恒 [0.5, 0.5]（中心）。 */
     readonly pivot: readonly [number, number];
-    /** prefab 里 sprite 的 `low_z`（同节点内的叠序，13 形恒 1）。 */
+    /** prefab 里 sprite 的 `low_z`（同节点内的叠序）。 */
     readonly lowZ: number;
 }
 
 export const MAPO_REGION_ATLAS_W = 2048;
-export const MAPO_REGION_ATLAS_H = 2048;
+export const MAPO_REGION_ATLAS_H = 4096;
 export const MAPO_REGION_CELL_W = 682;
 export const MAPO_REGION_CELL_H = 409;
+/** 基础季 13 形。 */
 export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 48,
     "kind": "mountain",
+    "variant": "base",
     "shan": 1,
     "form": "mountain1m_01",
     "shape": "1m",
@@ -90,6 +99,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 49,
     "kind": "mountain",
+    "variant": "base",
     "shan": 2,
     "form": "mountain1m_02",
     "shape": "1m",
@@ -128,6 +138,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 50,
     "kind": "mountain",
+    "variant": "base",
     "shan": 3,
     "form": "mountain1m_03",
     "shape": "1m",
@@ -166,6 +177,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 51,
     "kind": "mountain",
+    "variant": "base",
     "shan": 4,
     "form": "mountain1m_04",
     "shape": "1m",
@@ -204,6 +216,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 52,
     "kind": "mountain",
+    "variant": "base",
     "shan": 5,
     "form": "mountain2m_x_01",
     "shape": "2m_x",
@@ -242,6 +255,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 53,
     "kind": "mountain",
+    "variant": "base",
     "shan": 6,
     "form": "mountain2m_xy_01",
     "shape": "2m_xy",
@@ -280,6 +294,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 54,
     "kind": "mountain",
+    "variant": "base",
     "shan": 7,
     "form": "mountain2m_y_01",
     "shape": "2m_y",
@@ -318,6 +333,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 55,
     "kind": "mountain",
+    "variant": "base",
     "shan": 8,
     "form": "mountain4m_01",
     "shape": "4m",
@@ -356,6 +372,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 57,
     "kind": "mountain",
+    "variant": "base",
     "shan": 10,
     "form": "mountain7m_01",
     "shape": "7m",
@@ -394,6 +411,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 58,
     "kind": "mountain",
+    "variant": "base",
     "shan": 11,
     "form": "mountain7m_02",
     "shape": "7m",
@@ -432,6 +450,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 59,
     "kind": "mountain",
+    "variant": "base",
     "shan": 12,
     "form": "mountain7m_03",
     "shape": "7m",
@@ -470,6 +489,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 60,
     "kind": "mountain",
+    "variant": "base",
     "shan": 13,
     "form": "mountain19m_01",
     "shape": "19m",
@@ -508,6 +528,7 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
     "id": 61,
     "kind": "mountain",
+    "variant": "base",
     "shan": 14,
     "form": "mountain19m_02",
     "shape": "19m",
@@ -537,6 +558,516 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       15.9102
     ],
     "angle": -0.5181,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  }
+];
+/** 雪山 13 形（id = 原版 res 值；N1）。 */
+export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
+  {
+    "id": 48,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 1,
+    "form": "mountain1m_01",
+    "shape": "1m",
+    "footprintCells": 1,
+    "cell": [
+      682,
+      1636,
+      682,
+      409
+    ],
+    "art": [
+      208,
+      254,
+      265,
+      155
+    ],
+    "native": [
+      265,
+      155
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      -1.7148,
+      -16.1963
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 49,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 2,
+    "form": "mountain1m_02",
+    "shape": "1m",
+    "footprintCells": 1,
+    "cell": [
+      1364,
+      1636,
+      682,
+      409
+    ],
+    "art": [
+      208,
+      254,
+      265,
+      155
+    ],
+    "native": [
+      265,
+      155
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      -1.7148,
+      -16.1963
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 50,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 3,
+    "form": "mountain1m_03",
+    "shape": "1m",
+    "footprintCells": 1,
+    "cell": [
+      0,
+      2045,
+      682,
+      409
+    ],
+    "art": [
+      208,
+      254,
+      265,
+      155
+    ],
+    "native": [
+      265,
+      155
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      -1.7148,
+      -16.1963
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 51,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 4,
+    "form": "mountain1m_04",
+    "shape": "1m",
+    "footprintCells": 1,
+    "cell": [
+      682,
+      2045,
+      682,
+      409
+    ],
+    "art": [
+      208,
+      254,
+      265,
+      155
+    ],
+    "native": [
+      265,
+      155
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      -1.7148,
+      -16.1963
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 52,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 5,
+    "form": "mountain2m_x_01",
+    "shape": "2m_x",
+    "footprintCells": 2,
+    "cell": [
+      1364,
+      2045,
+      682,
+      409
+    ],
+    "art": [
+      129,
+      179,
+      423,
+      230
+    ],
+    "native": [
+      423,
+      230
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      76.5703,
+      20.8184
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 53,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 6,
+    "form": "mountain2m_xy_01",
+    "shape": "2m_xy",
+    "footprintCells": 2,
+    "cell": [
+      0,
+      2454,
+      682,
+      409
+    ],
+    "art": [
+      187,
+      152,
+      307,
+      257
+    ],
+    "native": [
+      307,
+      257
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      39.916,
+      -51.9434
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 54,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 7,
+    "form": "mountain2m_y_01",
+    "shape": "2m_y",
+    "footprintCells": 2,
+    "cell": [
+      682,
+      2454,
+      682,
+      409
+    ],
+    "art": [
+      81,
+      210,
+      520,
+      199
+    ],
+    "native": [
+      520,
+      199
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      93.3691,
+      -41.0293
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 55,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 8,
+    "form": "mountain4m_01",
+    "shape": "4m",
+    "footprintCells": 4,
+    "cell": [
+      1364,
+      2454,
+      682,
+      409
+    ],
+    "art": [
+      44,
+      111,
+      593,
+      298
+    ],
+    "native": [
+      593,
+      298
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      35.7813,
+      28.9414
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 57,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 10,
+    "form": "mountain7m_01",
+    "shape": "7m",
+    "footprintCells": 7,
+    "cell": [
+      0,
+      2863,
+      682,
+      409
+    ],
+    "art": [
+      0,
+      86,
+      682,
+      323
+    ],
+    "native": [
+      893,
+      423
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      13.2217,
+      -8.2041
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 58,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 11,
+    "form": "mountain7m_02",
+    "shape": "7m",
+    "footprintCells": 7,
+    "cell": [
+      682,
+      2863,
+      682,
+      409
+    ],
+    "art": [
+      0,
+      76,
+      682,
+      333
+    ],
+    "native": [
+      769,
+      375
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      -56.5664,
+      -1.667
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 59,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 12,
+    "form": "mountain7m_03",
+    "shape": "7m",
+    "footprintCells": 7,
+    "cell": [
+      1364,
+      2863,
+      682,
+      409
+    ],
+    "art": [
+      0,
+      12,
+      682,
+      397
+    ],
+    "native": [
+      733,
+      427
+    ],
+    "scale": [
+      1.0,
+      1.0
+    ],
+    "offset": [
+      -26.3818,
+      -9.6885
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 60,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 13,
+    "form": "mountain19m_01",
+    "shape": "19m",
+    "footprintCells": 19,
+    "cell": [
+      0,
+      3272,
+      682,
+      409
+    ],
+    "art": [
+      28,
+      81,
+      626,
+      328
+    ],
+    "native": [
+      626,
+      328
+    ],
+    "scale": [
+      2.0,
+      2.0
+    ],
+    "offset": [
+      21.0,
+      18.5
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "lowZ": 1
+  },
+  {
+    "id": 61,
+    "kind": "mountain",
+    "variant": "snow",
+    "shan": 14,
+    "form": "mountain19m_02",
+    "shape": "19m",
+    "footprintCells": 19,
+    "cell": [
+      682,
+      3272,
+      682,
+      409
+    ],
+    "art": [
+      28,
+      81,
+      626,
+      328
+    ],
+    "native": [
+      626,
+      328
+    ],
+    "scale": [
+      2.0,
+      2.0
+    ],
+    "offset": [
+      21.0,
+      18.5
+    ],
+    "angle": 0.0,
     "pivot": [
       0.5,
       0.5

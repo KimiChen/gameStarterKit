@@ -47,9 +47,11 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `slice_atlas.py` | `<TextureAtlas>` XML 切片（含 `r="y"` 旋转与 `oW/oH/oX/oY` 去裁边还原）→ `out/png/` + `out/sprites.jsonl` |
 | `build_terrain.py` | ★ 原版层 → `terrain.bytes`（**直接存原版 res 值**，`res==0` 用 `res_multi` 顶替）+ 3 类通行层 + 61 条调色板 |
 | `bake_content.py` | 远档底图 / 缩略图 / 近档地表图集（**按 8 个粗类 × 4 变体**建，⛔ 不按 61 个值建） |
-| `pack_decor.py` | ★ 摆件图集：**格 id = 原版 res 值**（2..46）+ 城址件从 64 起；缺级用最近一级顶上并存证 |
+| `pack_decor.py` | ★ 摆件图集：**格 id = 原版 res 值**（2..46）+ 城址件从 64 起；**三套件**（基础/雪/沙，N1）全从 `land` 表读（套件列 → client_res → prefab 主片，⛔ 不按文件名猜）；缺级用同套同类最近一级顶上并存证 |
+| `land_variants.py` | ★ N1 的单一真源：`base.cw` 的 `land` 表四套件列 → client_res → prefab；大小写不敏感查 name_map（VFS 全小写）、主片 = 变体树内面积最大的有贴图 sprite（剔阴影/特效） |
+| `build_bands.py` | ★ cell 级地貌带（N1 选件判据）：`logic_background.bytes` → `bands.bytes`（原样留档）+ shared TS（varint-RLE 213 KB）；语义 = 原版 `check_ground_type`（2=雪 3=沙 其余回基础季）；交叉校验复用 `build_blocks.py` 的块→格映射（值2 ⊆ 雪块 / 值3 ⊆ 沙块，100%） |
 | `mountain_forms.py` | ★ 「山」族 14 形的**单一真源**：值 ↔ prefab ↔ 贴图 ↔ 足迹；足迹按 odd-row offset 生成并**逐锚点回代校验** |
-| `pack_regions.py` | ★ 山族件图集（13 形各一格，**格 id = 原版 res 值**，682×409 大格，**基础季**）；贴图与 `scale`/`pos`/`angle`/`pivot` 全从 prefab 读出，⛔ 不按面积/绿度挑、⛔ 不裁 bbox |
+| `pack_regions.py` | ★ 山族件图集（13 形各一格 ×**基础季+雪山两套**（N1），格 id = 原版 res 值，682×409 大格）；贴图与 `scale`/`pos`/`angle`/`pivot` 全从**该套件** prefab 读出（雪山的 transform 与基础季不同，⛔ 不抄），⛔ 不按面积/绿度挑、⛔ 不裁 bbox；沙漠山 2D 与基础季同件（实测 13/13）⇒ ⛔ 无沙件格 |
 | `build_ground.py` | ★ 地表底：`ground_down/underground1.png` → `ground-base.png`（256² POT）+ 块/REPEAT 常量；校验 POT、满幅不透明、整周期 |
 | `ctable_cw.py` | ★ `base.cw`（66.8 MB ctable）**通用解码器**，格式逆自 `libnative-lib.so`（值解码 `0xb3fdb0` / 子项寻址 `0xb3f930` / 表布局 `0xb3fb50`）。`tables()` 读表目录（= 根的第 0 个子项，2,397 张）、`table(idx)` 解 `(array, hash)`、`rows(idx)` 按「含 `id` 键」向下展平多级分桶出行。⚠ **每行本身就是一个表对象**（长度天然可变）⇒ ⛔ 别再假设定长行；⚠ 根子项里也有**非表**的裸值对象，`table()` 对它们回 `None`（⛔ 别让它抛异常打断遍历）
 | `build_roads.py` | ★ 道路层：`road_info.lua` 的 42,018 格 → 路片图集（18 片，0.5× 缩存）+ 摆放表；绑定取自 `ctable_cw` 的 `client_res`（实测），**邻接度签名作交叉校验**、对不上直接退出 |
@@ -412,16 +414,21 @@ group 预制体。
 | `%10` 的均值 | 递减（越靠边越低级） | 3.26 → 1.33 | ✔ 是地块等级 |
 
 ⇒ 从此 `terrain.bytes` **直接存原版值**（不再折算成自造类），近档「这一格长什么样」变成纯查表。
-⚠ 类型编号→中文（0木/1铁/2石/3粮）仍是**假设**：静态数据定不了是否被置换。
+~~⚠ 类型编号→中文（0木/1铁/2石/3粮）仍是**假设**~~ ✅ **已由 `base.cw` 的 land 表定死**
+（2026-09-23 N1）：真值是 **0木/1石/2粮/3铁** —— land 12..21 名「N级石料」→ `stone-new/`、
+22..31「N级粮食」→ `food-new/`、32..41「N级铁矿」→ `iron-new/`，`name` 与 `src_name` 两列互证；
+早先的假设把铁/石/粮**轮转错位**，已改正（`build_terrain.py` 抬头）。
 
 ### 4.4 摆件 = 逐格 `res_field`，⛔ 不是撒装饰
 
 原作近档 = 底图 + **逐格一个 `res_field` 单位**，由该格的 `res` 值唯一决定 ⇒
 `pack_decor.py` 把图集**按原版值建格**（格 id = 值），客户端零猜测。
-素材取 `scene/resource/{wood,iron,stone,food,gold}-new/png/<等级>.png`（45 格）+ 城址 8 件。
+素材按 `land` 表三套件列读 prefab 主片：`scene/resource{,_snow,_desert}/<类>-new/`（45 格 × 3 套）
++ 城址 8 件（N1 起；早先按 `png/<等级>` 文件名取，⚠ 且 `wood/iron/stone/food` 次序假设是
+**轮转错位**的 —— land 表真值 `wood/stone/food/iron`，已改正）。
 
-⚠ **原版没出全 10 级**：wood 缺 4/6 级、iron/stone 缺 1 级、food 只有 5..10 级 ⇒
-8 处用最近一级顶上，逐条记在 `decor-atlas.info.json` 的 `substitutions`。
+⚠ **个别级没有可用件**：基础季铁矿 5/8/9/10 级的 prefab 没进包、雪地粮草 1/2 级全是阴影占位 ⇒
+用**同套同类最近一级**顶上，逐条记在 `decor-atlas.info.json` 的 `substitutions`（按套件分键）。
 
 ⛔ ~~**多格地形（值 48..61，占 8.8%）目前没有摆件**~~ **已由 M0-B1 按锚点模型解决**，下文留作沿革：原作是**一个模型跨整片连通区**
 （山脉平均 26 格、最大 228），其 `.group` 预制体不在 ELP 里（见 4.2）。

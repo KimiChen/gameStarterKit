@@ -9,7 +9,7 @@
  "valueSpace": "原版 res 值**原样**（逐字节等于 res.bytes 的体）；0 = 多格地形覆盖格",
  "coverMask": "raw/multi.bytes（原版 res_multi）；通行层的山地由它的 60/61 派生",
  "rule": "1 平地；2..41 资源(类型=(v-2)//10、等级=(v-2)%10+1)；42..46 金矿 1..5 级；47 河流；48..61 山族 14 形的锚点（⛔ 无 56）；0 被多格地形覆盖",
- "resTypeAssumption": "类型0→木、1→铁、2→石、3→粮（⚠ 假设，静态数据定不了，可能是置换）",
+ "resTypeAssumption": "类型0→木、1→石、2→粮、3→铁（★ 已由 base.cw 的 land 表定死，2026-09-23 N1：land.name 与 client_res.src_name 两列互证；⛔ 早先的 1→铁、2→石、3→粮 是轮转错位的假设）",
  "palette": [
   {
    "id": 0,
@@ -178,7 +178,7 @@
   {
    "id": 12,
    "kind": "resource",
-   "cn": "铁·1级",
+   "cn": "石·1级",
    "passable": true,
    "color": [
     150,
@@ -192,7 +192,7 @@
   {
    "id": 13,
    "kind": "resource",
-   "cn": "铁·2级",
+   "cn": "石·2级",
    "passable": true,
    "color": [
     150,
@@ -206,7 +206,7 @@
   {
    "id": 14,
    "kind": "resource",
-   "cn": "铁·3级",
+   "cn": "石·3级",
    "passable": true,
    "color": [
     150,
@@ -220,7 +220,7 @@
   {
    "id": 15,
    "kind": "resource",
-   "cn": "铁·4级",
+   "cn": "石·4级",
    "passable": true,
    "color": [
     150,
@@ -234,7 +234,7 @@
   {
    "id": 16,
    "kind": "resource",
-   "cn": "铁·5级",
+   "cn": "石·5级",
    "passable": true,
    "color": [
     150,
@@ -248,7 +248,7 @@
   {
    "id": 17,
    "kind": "resource",
-   "cn": "铁·6级",
+   "cn": "石·6级",
    "passable": true,
    "color": [
     150,
@@ -262,7 +262,7 @@
   {
    "id": 18,
    "kind": "resource",
-   "cn": "铁·7级",
+   "cn": "石·7级",
    "passable": true,
    "color": [
     150,
@@ -276,7 +276,7 @@
   {
    "id": 19,
    "kind": "resource",
-   "cn": "铁·8级",
+   "cn": "石·8级",
    "passable": true,
    "color": [
     150,
@@ -290,7 +290,7 @@
   {
    "id": 20,
    "kind": "resource",
-   "cn": "铁·9级",
+   "cn": "石·9级",
    "passable": true,
    "color": [
     150,
@@ -304,7 +304,7 @@
   {
    "id": 21,
    "kind": "resource",
-   "cn": "铁·10级",
+   "cn": "石·10级",
    "passable": true,
    "color": [
     150,
@@ -318,7 +318,7 @@
   {
    "id": 22,
    "kind": "resource",
-   "cn": "石·1级",
+   "cn": "粮·1级",
    "passable": true,
    "color": [
     150,
@@ -332,7 +332,7 @@
   {
    "id": 23,
    "kind": "resource",
-   "cn": "石·2级",
+   "cn": "粮·2级",
    "passable": true,
    "color": [
     150,
@@ -346,7 +346,7 @@
   {
    "id": 24,
    "kind": "resource",
-   "cn": "石·3级",
+   "cn": "粮·3级",
    "passable": true,
    "color": [
     150,
@@ -360,7 +360,7 @@
   {
    "id": 25,
    "kind": "resource",
-   "cn": "石·4级",
+   "cn": "粮·4级",
    "passable": true,
    "color": [
     150,
@@ -374,7 +374,7 @@
   {
    "id": 26,
    "kind": "resource",
-   "cn": "石·5级",
+   "cn": "粮·5级",
    "passable": true,
    "color": [
     150,
@@ -388,7 +388,7 @@
   {
    "id": 27,
    "kind": "resource",
-   "cn": "石·6级",
+   "cn": "粮·6级",
    "passable": true,
    "color": [
     150,
@@ -402,7 +402,7 @@
   {
    "id": 28,
    "kind": "resource",
-   "cn": "石·7级",
+   "cn": "粮·7级",
    "passable": true,
    "color": [
     150,
@@ -416,7 +416,7 @@
   {
    "id": 29,
    "kind": "resource",
-   "cn": "石·8级",
+   "cn": "粮·8级",
    "passable": true,
    "color": [
     150,
@@ -430,7 +430,7 @@
   {
    "id": 30,
    "kind": "resource",
-   "cn": "石·9级",
+   "cn": "粮·9级",
    "passable": true,
    "color": [
     150,
@@ -444,7 +444,7 @@
   {
    "id": 31,
    "kind": "resource",
-   "cn": "石·10级",
+   "cn": "粮·10级",
    "passable": true,
    "color": [
     150,
@@ -458,7 +458,7 @@
   {
    "id": 32,
    "kind": "resource",
-   "cn": "粮·1级",
+   "cn": "铁·1级",
    "passable": true,
    "color": [
     150,
@@ -472,7 +472,7 @@
   {
    "id": 33,
    "kind": "resource",
-   "cn": "粮·2级",
+   "cn": "铁·2级",
    "passable": true,
    "color": [
     150,
@@ -486,7 +486,7 @@
   {
    "id": 34,
    "kind": "resource",
-   "cn": "粮·3级",
+   "cn": "铁·3级",
    "passable": true,
    "color": [
     150,
@@ -500,7 +500,7 @@
   {
    "id": 35,
    "kind": "resource",
-   "cn": "粮·4级",
+   "cn": "铁·4级",
    "passable": true,
    "color": [
     150,
@@ -514,7 +514,7 @@
   {
    "id": 36,
    "kind": "resource",
-   "cn": "粮·5级",
+   "cn": "铁·5级",
    "passable": true,
    "color": [
     150,
@@ -528,7 +528,7 @@
   {
    "id": 37,
    "kind": "resource",
-   "cn": "粮·6级",
+   "cn": "铁·6级",
    "passable": true,
    "color": [
     150,
@@ -542,7 +542,7 @@
   {
    "id": 38,
    "kind": "resource",
-   "cn": "粮·7级",
+   "cn": "铁·7级",
    "passable": true,
    "color": [
     150,
@@ -556,7 +556,7 @@
   {
    "id": 39,
    "kind": "resource",
-   "cn": "粮·8级",
+   "cn": "铁·8级",
    "passable": true,
    "color": [
     150,
@@ -570,7 +570,7 @@
   {
    "id": 40,
    "kind": "resource",
-   "cn": "粮·9级",
+   "cn": "铁·9级",
    "passable": true,
    "color": [
     150,
@@ -584,7 +584,7 @@
   {
    "id": 41,
    "kind": "resource",
-   "cn": "粮·10级",
+   "cn": "铁·10级",
    "passable": true,
    "color": [
     150,

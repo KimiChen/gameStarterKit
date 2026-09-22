@@ -11,6 +11,11 @@
  * ⚠ 早先这里是「合并 res 与 res_multi → 八邻连通域 → 每区一件」：合并那一步
  *   把 142,958 个覆盖格填成了锚点值、销毁了锚点信息，连通域是为补救它才发明的。⛔ 别再回去。
  *
+ * ★ **季/地貌变体（N1）**：锚点格在雪带 ⇒ 用 `MAPO_REGION_SNOW_CELLS`（雪山同形 prefab，
+ *   transform 逐形重读）；沙带/其余 ⇒ 基础季（⚠ 荒地山的 2D 件与基础季**同件**，实测 13/13，
+ *   ⇒ ⛔ 没有沙件表）。带归属看 cell 级 `logic_background`（`mapoBandAt`），⛔ 不看块带。
+ *   ⚠ `autumn_*` 不接（M0-B3 已拍板）。
+ *
  * ⚠ 表**已按 s 升序落盘 = 画家序**，这里只做**区间二分 + 矩形裁剪**，
  * ⛔ 不要每帧对 2.8 万条排序或全表扫描。
  * ⚠ 件会**往上长**（锚在底边中点），所以二分的下界要往下多放一段（`S_MARGIN`），
@@ -21,12 +26,19 @@ import {
     mapoOriginalPxToWorld, mapoRegionPos, mapoRegionSAt, type IMapoRegionPiece,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import {
-    MAPO_REGION_CELLS, type IMapoRegionCell,
+    MAPO_REGION_CELLS, MAPO_REGION_SNOW_CELLS, type IMapoRegionCell,
 } from "../../../shared/kits/mapOriginal/content/region.data";
+import { MAPO_BAND_SNOW } from "../../../shared/kits/mapOriginal/content/bands.data";
+import { mapoBandAt } from "./mapoBands";
 
 /** 图集格（= 原版 res 值）→ 布局，一次算好。⛔ 不要每件 find。 */
 const CELL_BY_ID: ReadonlyMap<number, IMapoRegionCell> =
     new Map(MAPO_REGION_CELLS.map((c) => [c.id, c]));
+
+/** 雪山变体（N1）：值 → 图集格。⚠ **沙漠带的山件就是基础季件**（land 表里荒地山的 2D
+ *  `src_name` 与基础季逐字相同，实测 13/13）⇒ ⛔ 没有也不需要沙件表。 */
+const SNOW_CELL_BY_ID: ReadonlyMap<number, IMapoRegionCell> =
+    new Map(MAPO_REGION_SNOW_CELLS.map((c) => [c.id, c]));
 
 /**
  * 二分下界往下多放的 s 量（格）。
@@ -106,7 +118,12 @@ export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoReg
     for (let i = lowerBound(Math.max(0, sTop)); i < count && out.length < limit; i += 1) {
         const piece = recordAt(i);
         if (piece.s > sBottom) break;
-        const layout = CELL_BY_ID.get(piece.cell);
+        // ★ 先判带再选件（N1）：格在雪带 ⇒ 雪山件（transform 逐形重读，⛔ 不抄基础季）；
+        //   沙带/其余 ⇒ 基础季件（荒地山 2D 与基础季同件，实测）。
+        //   带归属 = 锚点格的 cell 级地貌带（mapoBands.ts，原版 check_ground_type 同一条链）。
+        const band = mapoBandAt((piece.s + piece.d) / 2, (piece.s - piece.d) / 2);
+        const layout = (band === MAPO_BAND_SNOW ? SNOW_CELL_BY_ID.get(piece.cell) : null)
+            ?? CELL_BY_ID.get(piece.cell);
         if (!layout) continue;
         const anchor = mapoRegionPos(piece.s, piece.d);
         // ★ 件多大 = **原图像素 × prefab 里的 scale**（⛔ 不按足迹拉伸，拉伸过一版是大绿斑）：

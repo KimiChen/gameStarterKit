@@ -5,6 +5,12 @@
  *   `res` 值（资源类型 + 等级）唯一决定。所以这里是**纯查表**：
  *   摆件图集的**格 id 就是原版值**（2..46）⇒ 值 → 图，⛔ 没有概率、没有哈希撒件。
  *   （早先按 16 类 + 哈希概率撒件，近档会出现「同样的 3 级粮田有的有有的没有」的穿帮。）
+ * ★ **季/地貌变体（N1）**：先判带再选件 —— 格在雪带用 `MAPO_DECOR_SNOW_CELLS`、
+ *   沙带用 `MAPO_DECOR_DESERT_CELLS`、否则基础季（`MAPO_DECOR_CELLS`）。
+ *   带归属 = `mapoBandAt`（cell 级 `logic_background`，原版 `check_ground_type` 同一条数据链；
+ *   ⛔ 别拿雪/沙**块**层当判据 —— 块带 489 块双挂、粒度粗，见 mapoBands.ts 抬头）。
+ *   原版没配变体件的值在**打包期**已回退基础季件（变体表里照样有一格），⛔ 运行时零补救。
+ *   ⚠ `autumn_*` 不接（M0-B3 已拍板山体换回基础季）。
  * ⚠ 摆件**超出菱形**（往上长），所以必须按**画家序**排（屏幕越低越靠前），
  * ⛔ 顺着可视模板的遍历序画会前后颠倒。
  * ⚠ 城址**不归这一层管**：2026-09-23 起由 `mapoCities` 画**原版真件**（`base.cw` 的两级配置
@@ -18,16 +24,27 @@
  */
 import {
     MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_CITY_BASE,
+    MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
     type IMapoDecorCell,
 } from "../../../shared/kits/mapOriginal/content/decor.data";
 import { MAPO_CITY_CELL_KEYS } from "../../../shared/kits/mapOriginal/content/labels.data";
 import {
+    MAPO_BAND_DESERT, MAPO_BAND_SNOW,
+} from "../../../shared/kits/mapOriginal/content/bands.data";
+import {
     mapoGrid2Pos, mapoOriginalPxToWorld,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
+import { mapoBandAt } from "./mapoBands";
 
 /** 值/城址 id → 图集格。一次算好，⛔ 不要每格 find。 */
 const BY_ID: ReadonlyMap<number, IMapoDecorCell> =
     new Map(MAPO_DECOR_CELLS.map((c) => [c.id, c]));
+
+/** 变体套：值 → 图集格（N1）。⚠ 键同样是**原版 res 值**，表不同而已。 */
+const SNOW_BY_ID: ReadonlyMap<number, IMapoDecorCell> =
+    new Map(MAPO_DECOR_SNOW_CELLS.map((c) => [c.id, c]));
+const DESERT_BY_ID: ReadonlyMap<number, IMapoDecorCell> =
+    new Map(MAPO_DECOR_DESERT_CELLS.map((c) => [c.id, c]));
 
 /** 城**占**的全部格（2,689 格，含中心格）：这些格一律不画资源件（第 4 道门）。 */
 const CITY_OCCUPIED = new Set<number>(MAPO_CITY_CELL_KEYS);
@@ -61,7 +78,11 @@ export function mapoDecorAt(row: number, col: number, value: number,
     //   中心格由 `mapoCities` 画真件，⛔ 这里不能再放摆件，否则会与城重叠）
     if (CITY_OCCUPIED.has(row * 10000 + col)) return null;
     // ★ 资源格：值即格 id，一一对应，⛔ 零猜测
-    const cell = BY_ID.get(value);
+    // ★ 先判带再选件（N1）：雪带 → 雪件表，沙带 → 沙件表，否则基础季表
+    const band = mapoBandAt(row, col);
+    const table = band === MAPO_BAND_SNOW ? SNOW_BY_ID
+        : band === MAPO_BAND_DESERT ? DESERT_BY_ID : BY_ID;
+    const cell = table.get(value) ?? BY_ID.get(value);
     if (!cell || cell.id >= MAPO_DECOR_CITY_BASE) return null;
     return { row, col, cell, x: pos.x, y: pos.y, scale: 1 };
 }
@@ -77,9 +98,9 @@ export function mapoDecorUv(cell: IMapoDecorCell): readonly [number, number, num
 /**
  * 摆件在世界里的尺寸 —— **按原图像素换算**，⛔ 不按格宽拉伸。
  *
- * ★ 原版 2D 一格 300 px 宽（`config_2d` 的 TILE_WIDTH=150 是半宽），所以一张 220 px 的
- *   3 级木材图在原版里就占 0.73 格。照这个比例还原，**件的大小也成了原版参数**：
- *   等级差本来就体现在件的大小上（资源件实测 0.53~1.10 格）。
+ * ★ 原版 2D 一格 300 px 宽（`config_2d` 的 TILE_WIDTH=150 是半宽），所以一张 232 px 的
+ *   3 级木材图在原版里就占 0.77 格。照这个比例还原，**件的大小也成了原版参数**：
+ *   等级差本来就体现在件的大小上（N1 起取 prefab 主片，基础季实测 0.17~1.10 格）。
  * ⚠ 早先按固定 1.0 格宽拉伸，把等级差抹平了，⛔ 别改回去。
  * ⚠ 高度按原图纵横比算，⛔ 不要单独拉高（会让塔楼变矮胖）。
  */

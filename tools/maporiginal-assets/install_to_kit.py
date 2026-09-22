@@ -36,6 +36,9 @@ FILES = {
     "desert.bin": "desert.bin",
     "snow-base.png": "snow-base.png", "snow-geo.bin": "snow-geo.bin", "snow.bin": "snow.bin",
     "blocks.info.json": "blocks.info.json",
+    # ★ cell 级地貌带（N1 选件判据，原版 check_ground_type 同一数据链）：
+    #   权威字节只留 kit 数据目录供机检比对；客户端消费的是 shared 的 bands.data.ts（RLE）
+    "bands.bytes": "bands.bytes", "bands.info.json": "bands.info.json",
     # ★ `_top_group` 手摆细节：每族一张图集 + 一份摆放库
     "river-top-atlas.png": "river-top-atlas.png", "river-tops.bin": "river-tops.bin",
     "desert-top-atlas.png": "desert-top-atlas.png", "desert-tops.bin": "desert-tops.bin",
@@ -62,8 +65,8 @@ FILES = {
 }
 KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
             "rivers.info.json", "river-geo.index.json", "ground.info.json",
-            "blocks.info.json", "top-atlas.info.json", "roads.info.json",
-            "minimap.info.json", "cities.info.json"}
+            "blocks.info.json", "bands.bytes", "bands.info.json", "top-atlas.info.json",
+            "roads.info.json", "minimap.info.json", "cities.info.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。

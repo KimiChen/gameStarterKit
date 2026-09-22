@@ -1,32 +1,318 @@
 {
- "schemaVersion": 2,
+ "schemaVersion": 3,
  "mapId": "s1",
  "cell": [
   256,
   192
  ],
- "gridCols": 8,
+ "gridCols": 16,
  "gridRows": 10,
  "size": [
-  2048,
+  4096,
   2048
  ],
  "anchor": "bottom-center",
  "cityBase": 64,
- "indexing": "格 id = 原版 res 值（2..46）；城址件从 cityBase 起",
- "substitutions": [
-  "5(用3级)",
-  "7(用5级)",
-  "12(用2级)",
-  "22(用2级)",
-  "32(用5级)",
-  "33(用5级)",
-  "34(用5级)",
-  "35(用5级)"
- ],
+ "indexing": "格 id = 原版 res 值（2..46）；城址件从 cityBase 起；变体格同 id 空间、按 variant 分表（N1）",
+ "variants": {
+  "来源": "base.cw land 表 client_res_id/snow_client_res_id/desert_client_res_id（⛔ autumn 不接，M0-B3）；类型/等级取套件 prefab 名（三套件互校，不一致即退出）",
+  "resIds": {
+   "2": {
+    "base": 2011,
+    "snow": 2105,
+    "desert": 2150
+   },
+   "3": {
+    "base": 2012,
+    "snow": 2106,
+    "desert": 2151
+   },
+   "4": {
+    "base": 2013,
+    "snow": 2107,
+    "desert": 2152
+   },
+   "5": {
+    "base": 2014,
+    "snow": 2108,
+    "desert": 2153
+   },
+   "6": {
+    "base": 2015,
+    "snow": 2109,
+    "desert": 2154
+   },
+   "7": {
+    "base": 2016,
+    "snow": 2110,
+    "desert": 2155
+   },
+   "8": {
+    "base": 2017,
+    "snow": 2111,
+    "desert": 2156
+   },
+   "9": {
+    "base": 2018,
+    "snow": 2112,
+    "desert": 2157
+   },
+   "10": {
+    "base": 2019,
+    "snow": 2113,
+    "desert": 2158
+   },
+   "11": {
+    "base": 2020,
+    "snow": 2114,
+    "desert": 2159
+   },
+   "12": {
+    "base": 2021,
+    "snow": 2115,
+    "desert": 2160
+   },
+   "13": {
+    "base": 2022,
+    "snow": 2116,
+    "desert": 2161
+   },
+   "14": {
+    "base": 2023,
+    "snow": 2117,
+    "desert": 2162
+   },
+   "15": {
+    "base": 2024,
+    "snow": 2118,
+    "desert": 2163
+   },
+   "16": {
+    "base": 2025,
+    "snow": 2119,
+    "desert": 2164
+   },
+   "17": {
+    "base": 2026,
+    "snow": 2120,
+    "desert": 2165
+   },
+   "18": {
+    "base": 2027,
+    "snow": 2121,
+    "desert": 2166
+   },
+   "19": {
+    "base": 2028,
+    "snow": 2122,
+    "desert": 2167
+   },
+   "20": {
+    "base": 2029,
+    "snow": 2123,
+    "desert": 2168
+   },
+   "21": {
+    "base": 2030,
+    "snow": 2124,
+    "desert": 2169
+   },
+   "22": {
+    "base": 2001,
+    "snow": 2095,
+    "desert": 2140
+   },
+   "23": {
+    "base": 2002,
+    "snow": 2096,
+    "desert": 2141
+   },
+   "24": {
+    "base": 2003,
+    "snow": 2097,
+    "desert": 2142
+   },
+   "25": {
+    "base": 2004,
+    "snow": 2098,
+    "desert": 2143
+   },
+   "26": {
+    "base": 2005,
+    "snow": 2099,
+    "desert": 2144
+   },
+   "27": {
+    "base": 2006,
+    "snow": 2100,
+    "desert": 2145
+   },
+   "28": {
+    "base": 2007,
+    "snow": 2101,
+    "desert": 2146
+   },
+   "29": {
+    "base": 2008,
+    "snow": 2102,
+    "desert": 2147
+   },
+   "30": {
+    "base": 2009,
+    "snow": 2103,
+    "desert": 2148
+   },
+   "31": {
+    "base": 2010,
+    "snow": 2104,
+    "desert": 2149
+   },
+   "32": {
+    "base": 2031,
+    "snow": 2125,
+    "desert": 2170
+   },
+   "33": {
+    "base": 2032,
+    "snow": 2126,
+    "desert": 2171
+   },
+   "34": {
+    "base": 2033,
+    "snow": 2127,
+    "desert": 2172
+   },
+   "35": {
+    "base": 2034,
+    "snow": 2128,
+    "desert": 2173
+   },
+   "36": {
+    "base": 2035,
+    "snow": 2129,
+    "desert": 2174
+   },
+   "37": {
+    "base": 2036,
+    "snow": 2130,
+    "desert": 2175
+   },
+   "38": {
+    "base": 2037,
+    "snow": 2131,
+    "desert": 2176
+   },
+   "39": {
+    "base": 2038,
+    "snow": 2132,
+    "desert": 2177
+   },
+   "40": {
+    "base": 2039,
+    "snow": 2133,
+    "desert": 2178
+   },
+   "41": {
+    "base": 2040,
+    "snow": 2134,
+    "desert": 2179
+   },
+   "42": {
+    "base": 2041,
+    "snow": 2135,
+    "desert": 2401
+   },
+   "43": {
+    "base": 2042,
+    "snow": 2136,
+    "desert": 2402
+   },
+   "44": {
+    "base": 2043,
+    "snow": 2137,
+    "desert": 2403
+   },
+   "45": {
+    "base": 2044,
+    "snow": 2138,
+    "desert": 2404
+   },
+   "46": {
+    "base": 2045,
+    "snow": 2139,
+    "desert": 2405
+   }
+  }
+ },
+ "substitutions": {
+  "base": [
+   "22(food用3级)",
+   "23(food用3级)",
+   "36(iron用4级)",
+   "39(iron用7级)",
+   "40(iron用7级)",
+   "41(iron用7级)"
+  ],
+  "snow": [
+   "22(food用3级)",
+   "23(food用3级)"
+  ],
+  "desert": []
+ },
  "cells": [
   {
+   "cell": [
+    0,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    103,
+    134,
+    50,
+    58
+   ],
+   "native": [
+    50,
+    58
+   ],
    "id": 2,
+   "kind": "res",
+   "variant": "base",
+   "resType": "wood",
+   "level": 1,
+   "source": "scene/resource/wood-new/png/3.png",
+   "prefab": "scene/resource/wood-new/Wood_01_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    256,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    70,
+    82,
+    115,
+    110
+   ],
+   "native": [
+    115,
+    110
+   ],
+   "id": 3,
+   "kind": "res",
+   "variant": "base",
+   "resType": "wood",
+   "level": 2,
+   "source": "scene/resource/wood-new/png/a.png",
+   "prefab": "scene/resource/wood-new/Wood_02_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
    "cell": [
     512,
     0,
@@ -34,23 +320,25 @@
     192
    ],
    "art": [
-    115,
-    141,
-    26,
-    51
+    12,
+    73,
+    232,
+    119
    ],
    "native": [
-    26,
-    51
+    232,
+    119
    ],
+   "id": 4,
    "kind": "res",
+   "variant": "base",
    "resType": "wood",
-   "level": 1,
-   "usedLevel": 1,
-   "source": "scene/resource/wood-new/png/1.png"
+   "level": 3,
+   "source": "scene/resource/wood-new/png/b.png",
+   "prefab": "scene/resource/wood-new/Wood_03_group.prefab",
+   "prefabScale": 0.922414
   },
   {
-   "id": 3,
    "cell": [
     768,
     0,
@@ -58,23 +346,25 @@
     192
    ],
    "art": [
-    119,
-    167,
-    18,
-    25
+    14,
+    59,
+    227,
+    133
    ],
    "native": [
-    18,
-    25
+    227,
+    133
    ],
+   "id": 5,
    "kind": "res",
+   "variant": "base",
    "resType": "wood",
-   "level": 2,
-   "usedLevel": 2,
-   "source": "scene/resource/wood-new/png/2.png"
+   "level": 4,
+   "source": "scene/resource/wood-new/png/c.png",
+   "prefab": "scene/resource/wood-new/Wood_04_group.prefab",
+   "prefabScale": 1.02745
   },
   {
-   "id": 4,
    "cell": [
     1024,
     0,
@@ -82,170 +372,28 @@
     192
    ],
    "art": [
-    103,
-    134,
-    50,
-    58
+    2,
+    42,
+    251,
+    150
    ],
    "native": [
-    50,
-    58
+    251,
+    150
    ],
+   "id": 6,
    "kind": "res",
+   "variant": "base",
    "resType": "wood",
-   "level": 3,
-   "usedLevel": 3,
-   "source": "scene/resource/wood-new/png/3.png"
+   "level": 5,
+   "source": "scene/resource/wood-new/png/5.png",
+   "prefab": "scene/resource/wood-new/Wood_05_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 5,
    "cell": [
     1280,
     0,
-    256,
-    192
-   ],
-   "art": [
-    103,
-    134,
-    50,
-    58
-   ],
-   "native": [
-    50,
-    58
-   ],
-   "kind": "res",
-   "resType": "wood",
-   "level": 4,
-   "usedLevel": 3,
-   "source": "scene/resource/wood-new/png/3.png"
-  },
-  {
-   "id": 6,
-   "cell": [
-    1536,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    2,
-    42,
-    251,
-    150
-   ],
-   "native": [
-    251,
-    150
-   ],
-   "kind": "res",
-   "resType": "wood",
-   "level": 5,
-   "usedLevel": 5,
-   "source": "scene/resource/wood-new/png/5.png"
-  },
-  {
-   "id": 7,
-   "cell": [
-    1792,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    2,
-    42,
-    251,
-    150
-   ],
-   "native": [
-    251,
-    150
-   ],
-   "kind": "res",
-   "resType": "wood",
-   "level": 6,
-   "usedLevel": 5,
-   "source": "scene/resource/wood-new/png/5.png"
-  },
-  {
-   "id": 8,
-   "cell": [
-    0,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    62,
-    256,
-    130
-   ],
-   "native": [
-    275,
-    140
-   ],
-   "kind": "res",
-   "resType": "wood",
-   "level": 7,
-   "usedLevel": 7,
-   "source": "scene/resource/wood-new/png/7.png"
-  },
-  {
-   "id": 9,
-   "cell": [
-    256,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    44,
-    256,
-    148
-   ],
-   "native": [
-    274,
-    158
-   ],
-   "kind": "res",
-   "resType": "wood",
-   "level": 8,
-   "usedLevel": 8,
-   "source": "scene/resource/wood-new/png/8.png"
-  },
-  {
-   "id": 10,
-   "cell": [
-    512,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    45,
-    256,
-    147
-   ],
-   "native": [
-    282,
-    162
-   ],
-   "kind": "res",
-   "resType": "wood",
-   "level": 9,
-   "usedLevel": 9,
-   "source": "scene/resource/wood-new/png/9.png"
-  },
-  {
-   "id": 11,
-   "cell": [
-    768,
-    192,
     256,
     192
    ],
@@ -259,14 +407,380 @@
     235,
     137
    ],
+   "id": 7,
    "kind": "res",
+   "variant": "base",
    "resType": "wood",
-   "level": 10,
-   "usedLevel": 10,
-   "source": "scene/resource/wood-new/png/10.png"
+   "level": 6,
+   "source": "scene/resource/wood-new/png/10.png",
+   "prefab": "scene/resource/wood-new/Wood_06_group.prefab",
+   "prefabScale": 1.0
   },
   {
+   "cell": [
+    1536,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    62,
+    256,
+    130
+   ],
+   "native": [
+    275,
+    140
+   ],
+   "id": 8,
+   "kind": "res",
+   "variant": "base",
+   "resType": "wood",
+   "level": 7,
+   "source": "scene/resource/wood-new/png/7.png",
+   "prefab": "scene/resource/wood-new/Wood_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1792,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    44,
+    256,
+    148
+   ],
+   "native": [
+    274,
+    158
+   ],
+   "id": 9,
+   "kind": "res",
+   "variant": "base",
+   "resType": "wood",
+   "level": 8,
+   "source": "scene/resource/wood-new/png/8.png",
+   "prefab": "scene/resource/wood-new/Wood_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2048,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    45,
+    256,
+    147
+   ],
+   "native": [
+    282,
+    162
+   ],
+   "id": 10,
+   "kind": "res",
+   "variant": "base",
+   "resType": "wood",
+   "level": 9,
+   "source": "scene/resource/wood-new/png/9.png",
+   "prefab": "scene/resource/wood-new/Wood_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2304,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    57,
+    256,
+    135
+   ],
+   "native": [
+    329,
+    174
+   ],
+   "id": 11,
+   "kind": "res",
+   "variant": "base",
+   "resType": "wood",
+   "level": 10,
+   "source": "scene/resource/wood-new/png/10b.png",
+   "prefab": "scene/resource/wood-new/Wood_10_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2560,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    16,
+    97,
+    224,
+    95
+   ],
+   "native": [
+    224,
+    95
+   ],
    "id": 12,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 1,
+   "source": "scene/resource/stone-new/png/2.png",
+   "prefab": "scene/resource/stone-new/Stone_01_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2816,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    108,
+    230,
+    84
+   ],
+   "native": [
+    230,
+    84
+   ],
+   "id": 13,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 2,
+   "source": "scene/resource/stone-new/png/3.png",
+   "prefab": "scene/resource/stone-new/Stone_02_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3072,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    40,
+    105,
+    176,
+    87
+   ],
+   "native": [
+    176,
+    87
+   ],
+   "id": 14,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 3,
+   "source": "scene/resource/stone-new/png/4.png",
+   "prefab": "scene/resource/stone-new/Stone_03_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3328,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    40,
+    80,
+    175,
+    112
+   ],
+   "native": [
+    175,
+    112
+   ],
+   "id": 15,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 4,
+   "source": "scene/resource/stone-new/png/a.png",
+   "prefab": "scene/resource/stone-new/Stone_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3584,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    85,
+    229,
+    107
+   ],
+   "native": [
+    229,
+    107
+   ],
+   "id": 16,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 5,
+   "source": "scene/resource/stone-new/png/5.png",
+   "prefab": "scene/resource/stone-new/Stone_05_group.prefab",
+   "prefabScale": 0.9869
+  },
+  {
+   "cell": [
+    3840,
+    0,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    83,
+    229,
+    109
+   ],
+   "native": [
+    229,
+    109
+   ],
+   "id": 17,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 6,
+   "source": "scene/resource/stone-new/png/6.png",
+   "prefab": "scene/resource/stone-new/Stone_06_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    0,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    2,
+    71,
+    252,
+    121
+   ],
+   "native": [
+    252,
+    121
+   ],
+   "id": 18,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 7,
+   "source": "scene/resource/stone-new/png/7.png",
+   "prefab": "scene/resource/stone-new/Stone_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    256,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    2,
+    65,
+    252,
+    127
+   ],
+   "native": [
+    252,
+    127
+   ],
+   "id": 19,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 8,
+   "source": "scene/resource/stone-new/png/8.png",
+   "prefab": "scene/resource/stone-new/Stone_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    512,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    4,
+    57,
+    248,
+    135
+   ],
+   "native": [
+    248,
+    135
+   ],
+   "id": 20,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 9,
+   "source": "scene/resource/stone-new/png/9.png",
+   "prefab": "scene/resource/stone-new/Stone_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    768,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    67,
+    256,
+    125
+   ],
+   "native": [
+    286,
+    140
+   ],
+   "id": 21,
+   "kind": "res",
+   "variant": "base",
+   "resType": "stone",
+   "level": 10,
+   "source": "scene/resource/stone-new/png/10.png",
+   "prefab": "scene/resource/stone-new/Stone_10_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
    "cell": [
     1024,
     192,
@@ -274,25 +788,261 @@
     192
    ],
    "art": [
-    38,
-    108,
-    179,
-    84
+    67,
+    116,
+    122,
+    76
    ],
    "native": [
-    179,
-    84
+    122,
+    76
    ],
+   "id": 22,
    "kind": "res",
-   "resType": "iron",
+   "variant": "base",
+   "resType": "food",
    "level": 1,
-   "usedLevel": 2,
-   "source": "scene/resource/iron-new/png/2.png"
+   "source": "scene/resource/food-new/png/c.png",
+   "prefab": "scene/resource/food-new/Food_03_group.prefab",
+   "prefabScale": 1.17213
   },
   {
-   "id": 13,
    "cell": [
     1280,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    67,
+    116,
+    122,
+    76
+   ],
+   "native": [
+    122,
+    76
+   ],
+   "id": 23,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 2,
+   "source": "scene/resource/food-new/png/c.png",
+   "prefab": "scene/resource/food-new/Food_03_group.prefab",
+   "prefabScale": 1.17213
+  },
+  {
+   "cell": [
+    1536,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    67,
+    116,
+    122,
+    76
+   ],
+   "native": [
+    122,
+    76
+   ],
+   "id": 24,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 3,
+   "source": "scene/resource/food-new/png/c.png",
+   "prefab": "scene/resource/food-new/Food_03_group.prefab",
+   "prefabScale": 1.17213
+  },
+  {
+   "cell": [
+    1792,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    48,
+    111,
+    159,
+    81
+   ],
+   "native": [
+    159,
+    81
+   ],
+   "id": 25,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 4,
+   "source": "scene/resource/food-new/png/10.png",
+   "prefab": "scene/resource/food-new/Food_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2048,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    30,
+    64,
+    196,
+    128
+   ],
+   "native": [
+    196,
+    128
+   ],
+   "id": 26,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 5,
+   "source": "scene/resource/food-new/png/5.png",
+   "prefab": "scene/resource/food-new/Food_05_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2304,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    3,
+    60,
+    250,
+    132
+   ],
+   "native": [
+    250,
+    132
+   ],
+   "id": 27,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 6,
+   "source": "scene/resource/food-new/png/6.png",
+   "prefab": "scene/resource/food-new/Food_06_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2560,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    2,
+    52,
+    251,
+    140
+   ],
+   "native": [
+    251,
+    140
+   ],
+   "id": 28,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 7,
+   "source": "scene/resource/food-new/png/7.png",
+   "prefab": "scene/resource/food-new/Food_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2816,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    57,
+    256,
+    135
+   ],
+   "native": [
+    277,
+    146
+   ],
+   "id": 29,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 8,
+   "source": "scene/resource/food-new/png/8.png",
+   "prefab": "scene/resource/food-new/Food_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3072,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    67,
+    256,
+    125
+   ],
+   "native": [
+    287,
+    140
+   ],
+   "id": 30,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 9,
+   "source": "scene/resource/food-new/png/9.png",
+   "prefab": "scene/resource/food-new/Food_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3328,
+    192,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    65,
+    256,
+    127
+   ],
+   "native": [
+    312,
+    155
+   ],
+   "id": 31,
+   "kind": "res",
+   "variant": "base",
+   "resType": "food",
+   "level": 10,
+   "source": "scene/resource/food-new/png/10b.png",
+   "prefab": "scene/resource/food-new/Food_10_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3584,
     192,
     256,
     192
@@ -307,16 +1057,18 @@
     179,
     84
    ],
+   "id": 32,
    "kind": "res",
+   "variant": "base",
    "resType": "iron",
-   "level": 2,
-   "usedLevel": 2,
-   "source": "scene/resource/iron-new/png/2.png"
+   "level": 1,
+   "source": "scene/resource/iron-new/png/2.png",
+   "prefab": "scene/resource/iron-new/Iron_01_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 14,
    "cell": [
-    1536,
+    3840,
     192,
     256,
     192
@@ -331,17 +1083,19 @@
     184,
     87
    ],
+   "id": 33,
    "kind": "res",
+   "variant": "base",
    "resType": "iron",
-   "level": 3,
-   "usedLevel": 3,
-   "source": "scene/resource/iron-new/png/3.png"
+   "level": 2,
+   "source": "scene/resource/iron-new/png/3.png",
+   "prefab": "scene/resource/iron-new/Iron_02_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 15,
    "cell": [
-    1792,
-    192,
+    0,
+    384,
     256,
     192
    ],
@@ -355,40 +1109,70 @@
     189,
     98
    ],
+   "id": 34,
    "kind": "res",
+   "variant": "base",
    "resType": "iron",
-   "level": 4,
-   "usedLevel": 4,
-   "source": "scene/resource/iron-new/png/4.png"
+   "level": 3,
+   "source": "scene/resource/iron-new/png/4.png",
+   "prefab": "scene/resource/iron-new/Iron_03_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 16,
    "cell": [
-    0,
+    256,
     384,
     256,
     192
    ],
    "art": [
-    8,
-    81,
-    239,
-    111
+    5,
+    100,
+    245,
+    92
    ],
    "native": [
-    239,
-    111
+    245,
+    92
    ],
+   "id": 35,
    "kind": "res",
+   "variant": "base",
    "resType": "iron",
-   "level": 5,
-   "usedLevel": 5,
-   "source": "scene/resource/iron-new/png/5.png"
+   "level": 4,
+   "source": "scene/resource/iron-new/png/a.png",
+   "prefab": "scene/resource/iron-new/Iron_04_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 17,
    "cell": [
+    512,
+    384,
     256,
+    192
+   ],
+   "art": [
+    5,
+    100,
+    245,
+    92
+   ],
+   "native": [
+    245,
+    92
+   ],
+   "id": 36,
+   "kind": "res",
+   "variant": "base",
+   "resType": "iron",
+   "level": 5,
+   "source": "scene/resource/iron-new/png/a.png",
+   "prefab": "scene/resource/iron-new/Iron_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    768,
     384,
     256,
     192
@@ -403,16 +1187,18 @@
     241,
     115
    ],
+   "id": 37,
    "kind": "res",
+   "variant": "base",
    "resType": "iron",
    "level": 6,
-   "usedLevel": 6,
-   "source": "scene/resource/iron-new/png/6.png"
+   "source": "scene/resource/iron-new/png/6.png",
+   "prefab": "scene/resource/iron-new/Iron_06_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 18,
    "cell": [
-    512,
+    1024,
     384,
     256,
     192
@@ -427,64 +1213,148 @@
     229,
     129
    ],
+   "id": 38,
    "kind": "res",
+   "variant": "base",
    "resType": "iron",
    "level": 7,
-   "usedLevel": 7,
-   "source": "scene/resource/iron-new/png/7.png"
+   "source": "scene/resource/iron-new/png/7.png",
+   "prefab": "scene/resource/iron-new/Iron_07_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 19,
-   "cell": [
-    768,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    61,
-    256,
-    131
-   ],
-   "native": [
-    262,
-    134
-   ],
-   "kind": "res",
-   "resType": "iron",
-   "level": 8,
-   "usedLevel": 8,
-   "source": "scene/resource/iron-new/png/8.png"
-  },
-  {
-   "id": 20,
-   "cell": [
-    1024,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    6,
-    62,
-    244,
-    130
-   ],
-   "native": [
-    244,
-    130
-   ],
-   "kind": "res",
-   "resType": "iron",
-   "level": 9,
-   "usedLevel": 9,
-   "source": "scene/resource/iron-new/png/9.png"
-  },
-  {
-   "id": 21,
    "cell": [
     1280,
+    384,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    63,
+    229,
+    129
+   ],
+   "native": [
+    229,
+    129
+   ],
+   "id": 39,
+   "kind": "res",
+   "variant": "base",
+   "resType": "iron",
+   "level": 8,
+   "source": "scene/resource/iron-new/png/7.png",
+   "prefab": "scene/resource/iron-new/Iron_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1536,
+    384,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    63,
+    229,
+    129
+   ],
+   "native": [
+    229,
+    129
+   ],
+   "id": 40,
+   "kind": "res",
+   "variant": "base",
+   "resType": "iron",
+   "level": 9,
+   "source": "scene/resource/iron-new/png/7.png",
+   "prefab": "scene/resource/iron-new/Iron_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1792,
+    384,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    63,
+    229,
+    129
+   ],
+   "native": [
+    229,
+    129
+   ],
+   "id": 41,
+   "kind": "res",
+   "variant": "base",
+   "resType": "iron",
+   "level": 10,
+   "source": "scene/resource/iron-new/png/7.png",
+   "prefab": "scene/resource/iron-new/Iron_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2048,
+    384,
+    256,
+    192
+   ],
+   "art": [
+    28,
+    82,
+    200,
+    110
+   ],
+   "native": [
+    200,
+    110
+   ],
+   "id": 42,
+   "kind": "res",
+   "variant": "base",
+   "resType": "gold",
+   "level": 1,
+   "source": "scene/resource/gold-new/png/1.png",
+   "prefab": "scene/resource/gold-new/Gold_01_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2304,
+    384,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    71,
+    229,
+    121
+   ],
+   "native": [
+    229,
+    121
+   ],
+   "id": 43,
+   "kind": "res",
+   "variant": "base",
+   "resType": "gold",
+   "level": 2,
+   "source": "scene/resource/gold-new/png/2.png",
+   "prefab": "scene/resource/gold-new/Gold_02_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2560,
     384,
     256,
     192
@@ -496,65 +1366,137 @@
     132
    ],
    "native": [
-    279,
-    144
+    262,
+    135
    ],
+   "id": 44,
    "kind": "res",
-   "resType": "iron",
-   "level": 10,
-   "usedLevel": 10,
-   "source": "scene/resource/iron-new/png/10.png"
+   "variant": "base",
+   "resType": "gold",
+   "level": 3,
+   "source": "scene/resource/gold-new/png/3.png",
+   "prefab": "scene/resource/gold-new/Gold_03_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 22,
    "cell": [
-    1536,
+    2816,
     384,
     256,
     192
    ],
    "art": [
-    16,
-    97,
-    224,
-    95
+    0,
+    64,
+    256,
+    128
    ],
    "native": [
-    224,
-    95
+    278,
+    139
    ],
+   "id": 45,
    "kind": "res",
-   "resType": "stone",
-   "level": 1,
-   "usedLevel": 2,
-   "source": "scene/resource/stone-new/png/2.png"
+   "variant": "base",
+   "resType": "gold",
+   "level": 4,
+   "source": "scene/resource/gold-new/png/4.png",
+   "prefab": "scene/resource/gold-new/Gold_04_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 23,
    "cell": [
-    1792,
+    3072,
     384,
     256,
     192
    ],
    "art": [
-    16,
-    97,
-    224,
-    95
+    0,
+    68,
+    256,
+    124
    ],
    "native": [
-    224,
-    95
+    276,
+    134
    ],
+   "id": 46,
    "kind": "res",
-   "resType": "stone",
-   "level": 2,
-   "usedLevel": 2,
-   "source": "scene/resource/stone-new/png/2.png"
+   "variant": "base",
+   "resType": "gold",
+   "level": 5,
+   "source": "scene/resource/gold-new/png/5.png",
+   "prefab": "scene/resource/gold-new/Gold_05_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 24,
+   "cell": [
+    3328,
+    384,
+    256,
+    192
+   ],
+   "art": [
+    32,
+    0,
+    192,
+    192
+   ],
+   "native": [
+    512,
+    512
+   ],
+   "id": 64,
+   "kind": "city",
+   "variant": "base",
+   "source": "scene/build_snow/main_city/28saiji_jianzhu/png/qianshao.png"
+  },
+  {
+   "cell": [
+    3584,
+    384,
+    256,
+    192
+   ],
+   "art": [
+    32,
+    0,
+    192,
+    192
+   ],
+   "native": [
+    512,
+    512
+   ],
+   "id": 65,
+   "kind": "city",
+   "variant": "base",
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_zuo.png"
+  },
+  {
+   "cell": [
+    3840,
+    384,
+    256,
+    192
+   ],
+   "art": [
+    32,
+    0,
+    192,
+    192
+   ],
+   "native": [
+    512,
+    512
+   ],
+   "id": 66,
+   "kind": "city",
+   "variant": "base",
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_you.png"
+  },
+  {
    "cell": [
     0,
     576,
@@ -562,23 +1504,21 @@
     192
    ],
    "art": [
-    13,
-    108,
-    230,
-    84
+    32,
+    0,
+    192,
+    192
    ],
    "native": [
-    230,
-    84
+    512,
+    512
    ],
-   "kind": "res",
-   "resType": "stone",
-   "level": 3,
-   "usedLevel": 3,
-   "source": "scene/resource/stone-new/png/3.png"
+   "id": 67,
+   "kind": "city",
+   "variant": "base",
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_xia.png"
   },
   {
-   "id": 25,
    "cell": [
     256,
     576,
@@ -586,23 +1526,21 @@
     192
    ],
    "art": [
-    40,
-    105,
-    176,
-    87
+    32,
+    0,
+    192,
+    192
    ],
    "native": [
-    176,
-    87
+    512,
+    512
    ],
-   "kind": "res",
-   "resType": "stone",
-   "level": 4,
-   "usedLevel": 4,
-   "source": "scene/resource/stone-new/png/4.png"
+   "id": 68,
+   "kind": "city",
+   "variant": "base",
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_shang.png"
   },
   {
-   "id": 26,
    "cell": [
     512,
     576,
@@ -610,23 +1548,21 @@
     192
    ],
    "art": [
-    13,
-    85,
-    229,
-    107
+    32,
+    0,
+    192,
+    192
    ],
    "native": [
-    229,
-    107
+    512,
+    512
    ],
-   "kind": "res",
-   "resType": "stone",
-   "level": 5,
-   "usedLevel": 5,
-   "source": "scene/resource/stone-new/png/5.png"
+   "id": 69,
+   "kind": "city",
+   "variant": "base",
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01.png"
   },
   {
-   "id": 27,
    "cell": [
     768,
     576,
@@ -634,23 +1570,21 @@
     192
    ],
    "art": [
-    13,
-    83,
-    229,
-    109
+    32,
+    0,
+    192,
+    192
    ],
    "native": [
-    229,
-    109
+    512,
+    512
    ],
-   "kind": "res",
-   "resType": "stone",
-   "level": 6,
-   "usedLevel": 6,
-   "source": "scene/resource/stone-new/png/6.png"
+   "id": 70,
+   "kind": "city",
+   "variant": "base",
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_c02_x.png"
   },
   {
-   "id": 28,
    "cell": [
     1024,
     576,
@@ -658,23 +1592,21 @@
     192
    ],
    "art": [
-    2,
-    71,
-    252,
-    121
+    32,
+    0,
+    192,
+    192
    ],
    "native": [
-    252,
-    121
+    512,
+    512
    ],
-   "kind": "res",
-   "resType": "stone",
-   "level": 7,
-   "usedLevel": 7,
-   "source": "scene/resource/stone-new/png/7.png"
+   "id": 71,
+   "kind": "city",
+   "variant": "base",
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_c02.png"
   },
   {
-   "id": 29,
    "cell": [
     1280,
     576,
@@ -682,217 +1614,651 @@
     192
    ],
    "art": [
-    2,
     65,
-    252,
-    127
+    118,
+    126,
+    74
    ],
    "native": [
-    252,
-    127
+    126,
+    74
    ],
+   "id": 2,
    "kind": "res",
-   "resType": "stone",
-   "level": 8,
-   "usedLevel": 8,
-   "source": "scene/resource/stone-new/png/8.png"
+   "variant": "snow",
+   "resType": "wood",
+   "level": 1,
+   "source": "scene/resource_snow/wood-new/png/s1.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_01_group.prefab",
+   "prefabScale": 1.38489
   },
   {
-   "id": 30,
    "cell": [
     1536,
     576,
+    256,
+    192
+   ],
+   "art": [
+    7,
+    83,
+    242,
+    109
+   ],
+   "native": [
+    242,
+    109
+   ],
+   "id": 3,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 2,
+   "source": "scene/resource_snow/wood-new/png/s2.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_02_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1792,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    17,
+    68,
+    221,
+    124
+   ],
+   "native": [
+    221,
+    124
+   ],
+   "id": 4,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 3,
+   "source": "scene/resource_snow/wood-new/png/s3.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_03_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2048,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    8,
+    70,
+    240,
+    122
+   ],
+   "native": [
+    240,
+    122
+   ],
+   "id": 5,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 4,
+   "source": "scene/resource_snow/wood-new/png/s4.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2304,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    51,
+    256,
+    141
+   ],
+   "native": [
+    258,
+    142
+   ],
+   "id": 6,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 5,
+   "source": "scene/resource_snow/wood-new/png/s5.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_05_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2560,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    17,
+    78,
+    221,
+    114
+   ],
+   "native": [
+    221,
+    114
+   ],
+   "id": 7,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 6,
+   "source": "scene/resource_snow/wood-new/png/s6.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_06_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2816,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    68,
+    256,
+    124
+   ],
+   "native": [
+    290,
+    141
+   ],
+   "id": 8,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 7,
+   "source": "scene/resource_snow/wood-new/png/s7.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3072,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    44,
+    256,
+    148
+   ],
+   "native": [
+    258,
+    149
+   ],
+   "id": 9,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 8,
+   "source": "scene/resource_snow/wood-new/png/s8.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3328,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    44,
+    256,
+    148
+   ],
+   "native": [
+    268,
+    155
+   ],
+   "id": 10,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 9,
+   "source": "scene/resource_snow/wood-new/png/s9.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3584,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    54,
+    256,
+    138
+   ],
+   "native": [
+    299,
+    161
+   ],
+   "id": 11,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "wood",
+   "level": 10,
+   "source": "scene/resource_snow/wood-new/png/s10.png",
+   "prefab": "scene/resource_snow/wood-new/Wood_10_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3840,
+    576,
+    256,
+    192
+   ],
+   "art": [
+    29,
+    104,
+    197,
+    88
+   ],
+   "native": [
+    197,
+    88
+   ],
+   "id": 12,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 1,
+   "source": "scene/resource_snow/stone-new/png/s1.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_01_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    0,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    39,
+    108,
+    178,
+    84
+   ],
+   "native": [
+    178,
+    84
+   ],
+   "id": 13,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 2,
+   "source": "scene/resource_snow/stone-new/png/s2.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_02_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    256,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    31,
+    86,
+    194,
+    106
+   ],
+   "native": [
+    194,
+    106
+   ],
+   "id": 14,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 3,
+   "source": "scene/resource_snow/stone-new/png/s3.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_03_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    512,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    19,
+    53,
+    217,
+    139
+   ],
+   "native": [
+    217,
+    139
+   ],
+   "id": 15,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 4,
+   "source": "scene/resource_snow/stone-new/png/s4.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    768,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    10,
+    72,
+    235,
+    120
+   ],
+   "native": [
+    235,
+    120
+   ],
+   "id": 16,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 5,
+   "source": "scene/resource_snow/stone-new/png/s5.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_05_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1024,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    78,
+    230,
+    114
+   ],
+   "native": [
+    230,
+    114
+   ],
+   "id": 17,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 6,
+   "source": "scene/resource_snow/stone-new/png/s6.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_06_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1280,
+    768,
     256,
     192
    ],
    "art": [
     4,
-    57,
+    71,
     248,
-    135
+    121
    ],
    "native": [
     248,
-    135
+    121
    ],
+   "id": 18,
    "kind": "res",
+   "variant": "snow",
    "resType": "stone",
-   "level": 9,
-   "usedLevel": 9,
-   "source": "scene/resource/stone-new/png/9.png"
+   "level": 7,
+   "source": "scene/resource_snow/stone-new/png/s7.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_07_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 31,
-   "cell": [
-    1792,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    67,
-    256,
-    125
-   ],
-   "native": [
-    286,
-    140
-   ],
-   "kind": "res",
-   "resType": "stone",
-   "level": 10,
-   "usedLevel": 10,
-   "source": "scene/resource/stone-new/png/10.png"
-  },
-  {
-   "id": 32,
-   "cell": [
-    0,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    30,
-    64,
-    196,
-    128
-   ],
-   "native": [
-    196,
-    128
-   ],
-   "kind": "res",
-   "resType": "food",
-   "level": 1,
-   "usedLevel": 5,
-   "source": "scene/resource/food-new/png/5.png"
-  },
-  {
-   "id": 33,
-   "cell": [
-    256,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    30,
-    64,
-    196,
-    128
-   ],
-   "native": [
-    196,
-    128
-   ],
-   "kind": "res",
-   "resType": "food",
-   "level": 2,
-   "usedLevel": 5,
-   "source": "scene/resource/food-new/png/5.png"
-  },
-  {
-   "id": 34,
-   "cell": [
-    512,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    30,
-    64,
-    196,
-    128
-   ],
-   "native": [
-    196,
-    128
-   ],
-   "kind": "res",
-   "resType": "food",
-   "level": 3,
-   "usedLevel": 5,
-   "source": "scene/resource/food-new/png/5.png"
-  },
-  {
-   "id": 35,
-   "cell": [
-    768,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    30,
-    64,
-    196,
-    128
-   ],
-   "native": [
-    196,
-    128
-   ],
-   "kind": "res",
-   "resType": "food",
-   "level": 4,
-   "usedLevel": 5,
-   "source": "scene/resource/food-new/png/5.png"
-  },
-  {
-   "id": 36,
-   "cell": [
-    1024,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    30,
-    64,
-    196,
-    128
-   ],
-   "native": [
-    196,
-    128
-   ],
-   "kind": "res",
-   "resType": "food",
-   "level": 5,
-   "usedLevel": 5,
-   "source": "scene/resource/food-new/png/5.png"
-  },
-  {
-   "id": 37,
-   "cell": [
-    1280,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    3,
-    60,
-    250,
-    132
-   ],
-   "native": [
-    250,
-    132
-   ],
-   "kind": "res",
-   "resType": "food",
-   "level": 6,
-   "usedLevel": 6,
-   "source": "scene/resource/food-new/png/6.png"
-  },
-  {
-   "id": 38,
    "cell": [
     1536,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    6,
+    64,
+    243,
+    128
+   ],
+   "native": [
+    243,
+    128
+   ],
+   "id": 19,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 8,
+   "source": "scene/resource_snow/stone-new/png/s8.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1792,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    4,
+    56,
+    248,
+    136
+   ],
+   "native": [
+    248,
+    136
+   ],
+   "id": 20,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 9,
+   "source": "scene/resource_snow/stone-new/png/s9.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2048,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    64,
+    256,
+    128
+   ],
+   "native": [
+    275,
+    138
+   ],
+   "id": 21,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "stone",
+   "level": 10,
+   "source": "scene/resource_snow/stone-new/png/s10.png",
+   "prefab": "scene/resource_snow/stone-new/Stone_10_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2304,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    67,
+    110,
+    122,
+    82
+   ],
+   "native": [
+    122,
+    82
+   ],
+   "id": 22,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "food",
+   "level": 1,
+   "source": "scene/resource_snow/food-new/png/s3.png",
+   "prefab": "scene/resource_snow/food-new/Food_03_group.prefab",
+   "prefabScale": 1.11784
+  },
+  {
+   "cell": [
+    2560,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    67,
+    110,
+    122,
+    82
+   ],
+   "native": [
+    122,
+    82
+   ],
+   "id": 23,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "food",
+   "level": 2,
+   "source": "scene/resource_snow/food-new/png/s3.png",
+   "prefab": "scene/resource_snow/food-new/Food_03_group.prefab",
+   "prefabScale": 1.11784
+  },
+  {
+   "cell": [
+    2816,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    67,
+    110,
+    122,
+    82
+   ],
+   "native": [
+    122,
+    82
+   ],
+   "id": 24,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "food",
+   "level": 3,
+   "source": "scene/resource_snow/food-new/png/s3.png",
+   "prefab": "scene/resource_snow/food-new/Food_03_group.prefab",
+   "prefabScale": 1.11784
+  },
+  {
+   "cell": [
+    3072,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    40,
+    117,
+    176,
+    75
+   ],
+   "native": [
+    176,
+    75
+   ],
+   "id": 25,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "food",
+   "level": 4,
+   "source": "scene/resource_snow/food-new/png/s4.png",
+   "prefab": "scene/resource_snow/food-new/Food_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3328,
+    768,
+    256,
+    192
+   ],
+   "art": [
+    27,
+    61,
+    201,
+    131
+   ],
+   "native": [
+    201,
+    131
+   ],
+   "id": 26,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "food",
+   "level": 5,
+   "source": "scene/resource_snow/food-new/png/s5.png",
+   "prefab": "scene/resource_snow/food-new/Food_05_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3584,
     768,
     256,
     192
@@ -907,40 +2273,70 @@
     251,
     140
    ],
+   "id": 27,
    "kind": "res",
+   "variant": "snow",
    "resType": "food",
-   "level": 7,
-   "usedLevel": 7,
-   "source": "scene/resource/food-new/png/7.png"
+   "level": 6,
+   "source": "scene/resource_snow/food-new/png/s6.png",
+   "prefab": "scene/resource_snow/food-new/Food_06_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 39,
    "cell": [
-    1792,
+    3840,
     768,
     256,
     192
    ],
    "art": [
+    2,
+    52,
+    251,
+    140
+   ],
+   "native": [
+    251,
+    140
+   ],
+   "id": 28,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "food",
+   "level": 7,
+   "source": "scene/resource_snow/food-new/png/s7.png",
+   "prefab": "scene/resource_snow/food-new/Food_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
     0,
-    57,
+    960,
     256,
-    135
+    192
+   ],
+   "art": [
+    0,
+    58,
+    256,
+    134
    ],
    "native": [
     277,
-    146
+    145
    ],
+   "id": 29,
    "kind": "res",
+   "variant": "snow",
    "resType": "food",
    "level": 8,
-   "usedLevel": 8,
-   "source": "scene/resource/food-new/png/8.png"
+   "source": "scene/resource_snow/food-new/png/s8.png",
+   "prefab": "scene/resource_snow/food-new/Food_08_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 40,
    "cell": [
-    0,
+    256,
     960,
     256,
     192
@@ -952,41 +2348,19 @@
     125
    ],
    "native": [
-    287,
+    286,
     140
    ],
+   "id": 30,
    "kind": "res",
+   "variant": "snow",
    "resType": "food",
    "level": 9,
-   "usedLevel": 9,
-   "source": "scene/resource/food-new/png/9.png"
+   "source": "scene/resource_snow/food-new/png/s9.png",
+   "prefab": "scene/resource_snow/food-new/Food_09_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 41,
-   "cell": [
-    256,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    48,
-    111,
-    159,
-    81
-   ],
-   "native": [
-    159,
-    81
-   ],
-   "kind": "res",
-   "resType": "food",
-   "level": 10,
-   "usedLevel": 10,
-   "source": "scene/resource/food-new/png/10.png"
-  },
-  {
-   "id": 42,
    "cell": [
     512,
     960,
@@ -994,23 +2368,25 @@
     192
    ],
    "art": [
-    28,
-    82,
-    200,
-    110
+    0,
+    65,
+    256,
+    127
    ],
    "native": [
-    200,
-    110
+    312,
+    155
    ],
+   "id": 31,
    "kind": "res",
-   "resType": "gold",
-   "level": 1,
-   "usedLevel": 1,
-   "source": "scene/resource/gold-new/png/1.png"
+   "variant": "snow",
+   "resType": "food",
+   "level": 10,
+   "source": "scene/resource_snow/food-new/png/s10.png",
+   "prefab": "scene/resource_snow/food-new/Food_10_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 43,
    "cell": [
     768,
     960,
@@ -1018,23 +2394,25 @@
     192
    ],
    "art": [
-    13,
-    71,
-    229,
-    121
+    51,
+    112,
+    154,
+    80
    ],
    "native": [
-    229,
-    121
+    154,
+    80
    ],
+   "id": 32,
    "kind": "res",
-   "resType": "gold",
-   "level": 2,
-   "usedLevel": 2,
-   "source": "scene/resource/gold-new/png/2.png"
+   "variant": "snow",
+   "resType": "iron",
+   "level": 1,
+   "source": "scene/resource_snow/iron-new/png/s1.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_01_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 44,
    "cell": [
     1024,
     960,
@@ -1042,23 +2420,25 @@
     192
    ],
    "art": [
-    0,
-    60,
-    256,
-    132
+    25,
+    94,
+    206,
+    98
    ],
    "native": [
-    262,
-    135
+    206,
+    98
    ],
+   "id": 33,
    "kind": "res",
-   "resType": "gold",
-   "level": 3,
-   "usedLevel": 3,
-   "source": "scene/resource/gold-new/png/3.png"
+   "variant": "snow",
+   "resType": "iron",
+   "level": 2,
+   "source": "scene/resource_snow/iron-new/png/s2.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_02_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 45,
    "cell": [
     1280,
     960,
@@ -1066,26 +2446,314 @@
     192
    ],
    "art": [
-    0,
-    64,
-    256,
-    128
+    48,
+    101,
+    159,
+    91
    ],
    "native": [
-    278,
-    139
+    159,
+    91
    ],
+   "id": 34,
    "kind": "res",
-   "resType": "gold",
-   "level": 4,
-   "usedLevel": 4,
-   "source": "scene/resource/gold-new/png/4.png"
+   "variant": "snow",
+   "resType": "iron",
+   "level": 3,
+   "source": "scene/resource_snow/iron-new/png/s3.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_03_group.prefab",
+   "prefabScale": 1.10703
   },
   {
-   "id": 46,
    "cell": [
     1536,
     960,
+    256,
+    192
+   ],
+   "art": [
+    5,
+    96,
+    245,
+    96
+   ],
+   "native": [
+    245,
+    96
+   ],
+   "id": 35,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "iron",
+   "level": 4,
+   "source": "scene/resource_snow/iron-new/png/s4.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1792,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    7,
+    82,
+    241,
+    110
+   ],
+   "native": [
+    241,
+    110
+   ],
+   "id": 36,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "iron",
+   "level": 5,
+   "source": "scene/resource_snow/iron-new/png/s5.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_05_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2048,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    12,
+    78,
+    231,
+    114
+   ],
+   "native": [
+    231,
+    114
+   ],
+   "id": 37,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "iron",
+   "level": 6,
+   "source": "scene/resource_snow/iron-new/png/s6.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_06_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2304,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    11,
+    61,
+    234,
+    131
+   ],
+   "native": [
+    234,
+    131
+   ],
+   "id": 38,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "iron",
+   "level": 7,
+   "source": "scene/resource_snow/iron-new/png/s7.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2560,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    65,
+    256,
+    127
+   ],
+   "native": [
+    268,
+    133
+   ],
+   "id": 39,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "iron",
+   "level": 8,
+   "source": "scene/resource_snow/iron-new/png/s8.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2816,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    7,
+    67,
+    241,
+    125
+   ],
+   "native": [
+    241,
+    125
+   ],
+   "id": 40,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "iron",
+   "level": 9,
+   "source": "scene/resource_snow/iron-new/png/s9.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3072,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    56,
+    256,
+    136
+   ],
+   "native": [
+    264,
+    140
+   ],
+   "id": 41,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "iron",
+   "level": 10,
+   "source": "scene/resource_snow/iron-new/png/s10.png",
+   "prefab": "scene/resource_snow/iron-new/Iron_10_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3328,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    24,
+    80,
+    208,
+    112
+   ],
+   "native": [
+    208,
+    112
+   ],
+   "id": 42,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "gold",
+   "level": 1,
+   "source": "scene/resource_snow/gold-new/png/1.png",
+   "prefab": "scene/resource_snow/gold-new/Gold_01_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3584,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    9,
+    62,
+    237,
+    130
+   ],
+   "native": [
+    237,
+    130
+   ],
+   "id": 43,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "gold",
+   "level": 2,
+   "source": "scene/resource_snow/gold-new/png/2.png",
+   "prefab": "scene/resource_snow/gold-new/Gold_02_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3840,
+    960,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    58,
+    256,
+    134
+   ],
+   "native": [
+    263,
+    138
+   ],
+   "id": 44,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "gold",
+   "level": 3,
+   "source": "scene/resource_snow/gold-new/png/3.png",
+   "prefab": "scene/resource_snow/gold-new/Gold_03_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    0,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    62,
+    256,
+    130
+   ],
+   "native": [
+    276,
+    140
+   ],
+   "id": 45,
+   "kind": "res",
+   "variant": "snow",
+   "resType": "gold",
+   "level": 4,
+   "source": "scene/resource_snow/gold-new/png/4.png",
+   "prefab": "scene/resource_snow/gold-new/Gold_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    256,
+    1152,
     256,
     192
    ],
@@ -1099,14 +2767,796 @@
     276,
     134
    ],
+   "id": 46,
    "kind": "res",
+   "variant": "snow",
    "resType": "gold",
    "level": 5,
-   "usedLevel": 5,
-   "source": "scene/resource/gold-new/png/5.png"
+   "source": "scene/resource_snow/gold-new/png/5.png",
+   "prefab": "scene/resource_snow/gold-new/Gold_05_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 64,
+   "cell": [
+    512,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    103,
+    143,
+    49,
+    49
+   ],
+   "native": [
+    49,
+    49
+   ],
+   "id": 2,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 1,
+   "source": "scene/resource_desert/wood-new/png/3.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_01_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    768,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    71,
+    83,
+    113,
+    109
+   ],
+   "native": [
+    113,
+    109
+   ],
+   "id": 3,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 2,
+   "source": "scene/resource_desert/wood-new/png/a.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_02_group.prefab",
+   "prefabScale": 1.0177
+  },
+  {
+   "cell": [
+    1024,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    12,
+    72,
+    232,
+    120
+   ],
+   "native": [
+    232,
+    120
+   ],
+   "id": 4,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 3,
+   "source": "scene/resource_desert/wood-new/png/b.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_03_group.prefab",
+   "prefabScale": 0.922414
+  },
+  {
+   "cell": [
+    1280,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    14,
+    69,
+    227,
+    123
+   ],
+   "native": [
+    227,
+    123
+   ],
+   "id": 5,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 4,
+   "source": "scene/resource_desert/wood-new/png/c.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_04_group.prefab",
+   "prefabScale": 1.02745
+  },
+  {
+   "cell": [
+    1536,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    44,
+    256,
+    148
+   ],
+   "native": [
+    260,
+    150
+   ],
+   "id": 6,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 5,
+   "source": "scene/resource_desert/wood-new/png/5.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_05_group.prefab",
+   "prefabScale": 0.965385
+  },
+  {
+   "cell": [
+    1792,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    17,
+    69,
+    221,
+    123
+   ],
+   "native": [
+    221,
+    123
+   ],
+   "id": 7,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 6,
+   "source": "scene/resource_desert/wood-new/png/10.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_06_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2048,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    71,
+    256,
+    121
+   ],
+   "native": [
+    272,
+    129
+   ],
+   "id": 8,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 7,
+   "source": "scene/resource_desert/wood-new/png/7.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_07_group.prefab",
+   "prefabScale": 1.01103
+  },
+  {
+   "cell": [
+    2304,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    43,
+    256,
+    149
+   ],
+   "native": [
+    271,
+    158
+   ],
+   "id": 9,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 8,
+   "source": "scene/resource_desert/wood-new/png/8.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2560,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    40,
+    256,
+    152
+   ],
+   "native": [
+    276,
+    164
+   ],
+   "id": 10,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 9,
+   "source": "scene/resource_desert/wood-new/png/9.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2816,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    51,
+    256,
+    141
+   ],
+   "native": [
+    319,
+    176
+   ],
+   "id": 11,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "wood",
+   "level": 10,
+   "source": "scene/resource_desert/wood-new/png/10b.png",
+   "prefab": "scene/resource_desert/wood-new/Wood_10_group.prefab",
+   "prefabScale": 1.03135
+  },
+  {
+   "cell": [
+    3072,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    16,
+    92,
+    224,
+    100
+   ],
+   "native": [
+    224,
+    100
+   ],
+   "id": 12,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 1,
+   "source": "scene/resource_desert/stone-new/png/2.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_01_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3328,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    28,
+    97,
+    200,
+    95
+   ],
+   "native": [
+    200,
+    95
+   ],
+   "id": 13,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 2,
+   "source": "scene/resource_desert/stone-new/png/3.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_02_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3584,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    20,
+    80,
+    215,
+    112
+   ],
+   "native": [
+    215,
+    112
+   ],
+   "id": 14,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 3,
+   "source": "scene/resource_desert/stone-new/png/4.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_03_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3840,
+    1152,
+    256,
+    192
+   ],
+   "art": [
+    35,
+    80,
+    185,
+    112
+   ],
+   "native": [
+    185,
+    112
+   ],
+   "id": 15,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 4,
+   "source": "scene/resource_desert/stone-new/png/a.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    0,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    18,
+    93,
+    220,
+    99
+   ],
+   "native": [
+    220,
+    99
+   ],
+   "id": 16,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 5,
+   "source": "scene/resource_desert/stone-new/png/5.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_05_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    256,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    76,
+    230,
+    116
+   ],
+   "native": [
+    230,
+    116
+   ],
+   "id": 17,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 6,
+   "source": "scene/resource_desert/stone-new/png/6.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_06_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    512,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    3,
+    71,
+    250,
+    121
+   ],
+   "native": [
+    250,
+    121
+   ],
+   "id": 18,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 7,
+   "source": "scene/resource_desert/stone-new/png/7.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    768,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    7,
+    64,
+    242,
+    128
+   ],
+   "native": [
+    242,
+    128
+   ],
+   "id": 19,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 8,
+   "source": "scene/resource_desert/stone-new/png/8.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1024,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    4,
+    57,
+    247,
+    135
+   ],
+   "native": [
+    247,
+    135
+   ],
+   "id": 20,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 9,
+   "source": "scene/resource_desert/stone-new/png/9.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1280,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    65,
+    256,
+    127
+   ],
+   "native": [
+    283,
+    140
+   ],
+   "id": 21,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "stone",
+   "level": 10,
+   "source": "scene/resource_desert/stone-new/png/10.png",
+   "prefab": "scene/resource_desert/stone-new/Stone_10_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    1536,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    53,
+    119,
+    149,
+    73
+   ],
+   "native": [
+    149,
+    73
+   ],
+   "id": 22,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 1,
+   "source": "scene/resource_desert/food-new/png/a.png",
+   "prefab": "scene/resource_desert/food-new/Food_01_group.prefab",
+   "prefabScale": 0.525194
+  },
+  {
+   "cell": [
+    1792,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    53,
+    119,
+    149,
+    73
+   ],
+   "native": [
+    149,
+    73
+   ],
+   "id": 23,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 2,
+   "source": "scene/resource_desert/food-new/png/a.png",
+   "prefab": "scene/resource_desert/food-new/Food_02_group.prefab",
+   "prefabScale": 1.34183
+  },
+  {
+   "cell": [
+    2048,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    30,
+    103,
+    195,
+    89
+   ],
+   "native": [
+    195,
+    89
+   ],
+   "id": 24,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 3,
+   "source": "scene/resource_desert/food-new/png/s3.png",
+   "prefab": "scene/resource_desert/food-new/Food_03_group.prefab",
+   "prefabScale": 1.11784
+  },
+  {
+   "cell": [
+    2304,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    8,
+    77,
+    239,
+    115
+   ],
+   "native": [
+    239,
+    115
+   ],
+   "id": 25,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 4,
+   "source": "scene/resource_desert/food-new/png/s4.png",
+   "prefab": "scene/resource_desert/food-new/Food_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2560,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    14,
+    62,
+    228,
+    130
+   ],
+   "native": [
+    228,
+    130
+   ],
+   "id": 26,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 5,
+   "source": "scene/resource_desert/food-new/png/s5.png",
+   "prefab": "scene/resource_desert/food-new/Food_05_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2816,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    3,
+    60,
+    249,
+    132
+   ],
+   "native": [
+    249,
+    132
+   ],
+   "id": 27,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 6,
+   "source": "scene/resource_desert/food-new/png/s6.png",
+   "prefab": "scene/resource_desert/food-new/Food_06_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3072,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    54,
+    256,
+    138
+   ],
+   "native": [
+    258,
+    139
+   ],
+   "id": 28,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 7,
+   "source": "scene/resource_desert/food-new/png/s7.png",
+   "prefab": "scene/resource_desert/food-new/Food_07_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3328,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    51,
+    256,
+    141
+   ],
+   "native": [
+    285,
+    157
+   ],
+   "id": 29,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 8,
+   "source": "scene/resource_desert/food-new/png/s8.png",
+   "prefab": "scene/resource_desert/food-new/Food_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3584,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    67,
+    256,
+    125
+   ],
+   "native": [
+    286,
+    140
+   ],
+   "id": 30,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 9,
+   "source": "scene/resource_desert/food-new/png/s9.png",
+   "prefab": "scene/resource_desert/food-new/Food_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3840,
+    1344,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    65,
+    256,
+    127
+   ],
+   "native": [
+    312,
+    155
+   ],
+   "id": 31,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "food",
+   "level": 10,
+   "source": "scene/resource_desert/food-new/png/s10.png",
+   "prefab": "scene/resource_desert/food-new/Food_10_group.prefab",
+   "prefabScale": 0.940468
+  },
+  {
    "cell": [
     0,
     1536,
@@ -1114,20 +3564,25 @@
     192
    ],
    "art": [
-    32,
-    0,
-    192,
-    192
+    12,
+    92,
+    232,
+    100
    ],
    "native": [
-    512,
-    512
+    232,
+    100
    ],
-   "kind": "city",
-   "source": "scene/build_snow/main_city/28saiji_jianzhu/png/qianshao.png"
+   "id": 32,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 1,
+   "source": "scene/resource_desert/iron-new/png/2.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_01_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 65,
    "cell": [
     256,
     1536,
@@ -1135,20 +3590,25 @@
     192
    ],
    "art": [
-    32,
-    0,
-    192,
-    192
+    15,
+    84,
+    226,
+    108
    ],
    "native": [
-    512,
-    512
+    226,
+    108
    ],
-   "kind": "city",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_zuo.png"
+   "id": 33,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 2,
+   "source": "scene/resource_desert/iron-new/png/3.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_02_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 66,
    "cell": [
     512,
     1536,
@@ -1156,20 +3616,25 @@
     192
    ],
    "art": [
-    32,
-    0,
-    192,
-    192
+    19,
+    81,
+    217,
+    111
    ],
    "native": [
-    512,
-    512
+    217,
+    111
    ],
-   "kind": "city",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_you.png"
+   "id": 34,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 3,
+   "source": "scene/resource_desert/iron-new/png/4.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_03_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 67,
    "cell": [
     768,
     1536,
@@ -1177,20 +3642,25 @@
     192
    ],
    "art": [
-    32,
-    0,
-    192,
-    192
+    6,
+    95,
+    244,
+    97
    ],
    "native": [
-    512,
-    512
+    244,
+    97
    ],
-   "kind": "city",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_xia.png"
+   "id": 35,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 4,
+   "source": "scene/resource_desert/iron-new/png/a.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_04_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 68,
    "cell": [
     1024,
     1536,
@@ -1198,20 +3668,25 @@
     192
    ],
    "art": [
-    32,
-    0,
-    192,
-    192
+    7,
+    77,
+    241,
+    115
    ],
    "native": [
-    512,
-    512
+    241,
+    115
    ],
-   "kind": "city",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_shang.png"
+   "id": 36,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 5,
+   "source": "scene/resource_desert/iron-new/png/5.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_05_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 69,
    "cell": [
     1280,
     1536,
@@ -1219,20 +3694,25 @@
     192
    ],
    "art": [
-    32,
-    0,
-    192,
-    192
+    7,
+    77,
+    241,
+    115
    ],
    "native": [
-    512,
-    512
+    241,
+    115
    ],
-   "kind": "city",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01.png"
+   "id": 37,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 6,
+   "source": "scene/resource_desert/iron-new/png/6.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_06_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 70,
    "cell": [
     1536,
     1536,
@@ -1240,20 +3720,25 @@
     192
    ],
    "art": [
-    32,
-    0,
-    192,
-    192
+    12,
+    63,
+    232,
+    129
    ],
    "native": [
-    512,
-    512
+    232,
+    129
    ],
-   "kind": "city",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_c02_x.png"
+   "id": 38,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 7,
+   "source": "scene/resource_desert/iron-new/png/7.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_07_group.prefab",
+   "prefabScale": 1.0
   },
   {
-   "id": 71,
    "cell": [
     1792,
     1536,
@@ -1261,17 +3746,205 @@
     192
    ],
    "art": [
-    32,
     0,
-    192,
-    192
+    68,
+    256,
+    124
    ],
    "native": [
-    512,
-    512
+    277,
+    134
    ],
-   "kind": "city",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_c02.png"
+   "id": 39,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 8,
+   "source": "scene/resource_desert/iron-new/png/8.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_08_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2048,
+    1536,
+    256,
+    192
+   ],
+   "art": [
+    7,
+    62,
+    242,
+    130
+   ],
+   "native": [
+    242,
+    130
+   ],
+   "id": 40,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 9,
+   "source": "scene/resource_desert/iron-new/png/9.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_09_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2304,
+    1536,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    59,
+    256,
+    133
+   ],
+   "native": [
+    279,
+    145
+   ],
+   "id": 41,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "iron",
+   "level": 10,
+   "source": "scene/resource_desert/iron-new/png/10.png",
+   "prefab": "scene/resource_desert/iron-new/Iron_10_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2560,
+    1536,
+    256,
+    192
+   ],
+   "art": [
+    28,
+    82,
+    200,
+    110
+   ],
+   "native": [
+    200,
+    110
+   ],
+   "id": 42,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "gold",
+   "level": 1,
+   "source": "scene/resource_desert/gold-new/png/1.png",
+   "prefab": "scene/resource_desert/gold-new/Gold_01_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    2816,
+    1536,
+    256,
+    192
+   ],
+   "art": [
+    13,
+    71,
+    229,
+    121
+   ],
+   "native": [
+    229,
+    121
+   ],
+   "id": 43,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "gold",
+   "level": 2,
+   "source": "scene/resource_desert/gold-new/png/2.png",
+   "prefab": "scene/resource_desert/gold-new/Gold_02_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3072,
+    1536,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    60,
+    256,
+    132
+   ],
+   "native": [
+    262,
+    135
+   ],
+   "id": 44,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "gold",
+   "level": 3,
+   "source": "scene/resource_desert/gold-new/png/3.png",
+   "prefab": "scene/resource_desert/gold-new/Gold_03_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3328,
+    1536,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    64,
+    256,
+    128
+   ],
+   "native": [
+    278,
+    139
+   ],
+   "id": 45,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "gold",
+   "level": 4,
+   "source": "scene/resource_desert/gold-new/png/4.png",
+   "prefab": "scene/resource_desert/gold-new/Gold_04_group.prefab",
+   "prefabScale": 1.0
+  },
+  {
+   "cell": [
+    3584,
+    1536,
+    256,
+    192
+   ],
+   "art": [
+    0,
+    68,
+    256,
+    124
+   ],
+   "native": [
+    276,
+    134
+   ],
+   "id": 46,
+   "kind": "res",
+   "variant": "desert",
+   "resType": "gold",
+   "level": 5,
+   "source": "scene/resource_desert/gold-new/png/5.png",
+   "prefab": "scene/resource_desert/gold-new/Gold_05_group.prefab",
+   "prefabScale": 1.0
   }
  ]
 }

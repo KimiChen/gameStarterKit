@@ -120,7 +120,24 @@ node tools/creator-preview/run.mjs mapOriginal --reuse --out /tmp/maporiginal-ru
 
 ---
 
-## 3. N1 · 季/地貌变体换件（★ 最大的保真缺口）
+## 3. N1 · 季/地貌变体换件（✅ **已退出**，2026-09-23）
+
+**结果**　选件带归属改用原版真机制 —— cell 级 `logic_background.bytes`
+（`check_ground_type` = `GROUND_TYPE_NAMES[格值] or "ground"`；枚举干净集 `const.lua:252`、
+层归属干净集 `map_layer_config.lua`、消费现场干净集 `sparse_layer_block.lua`）⇒ 逐格单值，
+**块带双挂无优先级问题**（489 双挂块内实测 雪 41,295 / 沙 3,292 / 草 813；值 2 格 100% ⊆ 雪块、
+值 3 格 100% ⊆ 沙块）。decor 三套件 143 格一张 4096×2048、region 基础季+雪山 26 格一张
+2048×4096（沙漠山 2D 与基础季同件 13/13 ⇒ 无沙件格）。新数据 `bands.data.ts`（shared RLE
+213 KB）+ kit 留档 `bands.bytes`。机检：三套件齐全 / 带内带外选件 / UV 不越界 / bands
+逐字节互证，verify:all 绿（client 1005 / server 1375）。
+真机抽验：重放 15 步回归全绿 + 跳雪带/沙带各一张截图（雪地雪覆件、沙地沙色件、带界过渡正常）。
+顺带坐实并修正**资源类型次序**（真值 木/石/粮/铁，`land.name` × `client_res.src_name` 互证；
+旧假设把铁/石/粮轮转错位，摆件美术与详情类型名已一并改正，`terrain.bytes` 逐字节不变）。
+
+⚠ 显存 +33.6 MB（两图集各扩一倍）；LOD0 逐件过采样比不变（≈1.8–1.9×，与 tops 既定同档）。
+⚠ 两个新 TS 镜像的 `.meta` 是确定性铸的，Creator 首次正式导入若改写 uuid 就以它为准补交。
+
+<details><summary>N1 原始施工单（已退出，留档）</summary>
 
 **为什么**　`base.cw` 的 `land` 表里，每个地块类型都有**四套件**：
 
@@ -168,6 +185,8 @@ npm run sync:shared && npm run sync:client && npm run verify:all
 
 **风险**　中。图集会变大（显存），要复核 LOD0 的过采样比。
 **依赖**　N0（真机验证通了再动图集，否则两个变量混在一起不好归因）。
+
+</details>
 
 ---
 
