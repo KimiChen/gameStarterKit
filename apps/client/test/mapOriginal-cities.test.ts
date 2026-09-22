@@ -11,7 +11,9 @@ import {
 import {
     mapoCitiesIn, mapoCityPlacements, mapoCityUv, mapoHasCities, mapoSetCities,
 } from "../src/kits/mapOriginal/logic/mapoCities";
-import { mapoGrid2Pos } from "../src/shared/kits/mapOriginal/api/hexmap/index";
+import {
+    MAPO_TILE_HALF_W, mapoGrid2Pos,
+} from "../src/shared/kits/mapOriginal/api/hexmap/index";
 
 const KIT = new URL("../../kits/mapOriginal/data/maps/s1/", import.meta.url);
 const bin = readFileSync(new URL("cities.bin", KIT));
@@ -120,4 +122,29 @@ test("mapOriginal 城址：注入会拒收对不上的表", () => {
     const bad = Uint8Array.from(bin);
     new DataView(bad.buffer).setUint16(2, 248);          // 摆位数改错
     assert.throws(() => mapoSetCities(bad), /摆位/);
+});
+
+test("mapOriginal 城址：每座城的世界尺寸落在格的量级（⛔ 钉住 32/150 那道换算）", () => {
+    // ★ 件的世界尺寸 = 原图像素 × prefab 的 scale × (32 / 150)。
+    //   ⚠ 漏掉那道换算会让所有城**一次性大 4.7 倍**，而 UV / 数量 / 次序的用例全都照过 ——
+    //   ⛔ 所以要专门钉一条尺寸量级的闸。
+    // 实测各形状的渲染宽度（格）：H_SHAPE 2.69..3.36（shape_box 宽 3）、
+    //   DOUBLE_H_SHAPE 4.23..5.05（box 5）、RADIUS_2 2.13..2.86、PIER_* 1.66..3.11。
+    mapoSetCities(bin);
+    const placed = mapoCityPlacements();
+    const cellW = MAPO_TILE_HALF_W * 2;
+    let widest = 0, narrowest = Infinity;
+    for (let i = 0; i < placed.length; i += 1) {
+        const q = placed[i];
+        const sp = mapoCitiesIn(q.x - 1, q.x + 1, q.y - 1, q.y + 1, 100_000);
+        const w = (Math.max(...sp.map((t) => t.x + t.w / 2))
+            - Math.min(...sp.map((t) => t.x - t.w / 2))) / cellW;
+        widest = Math.max(widest, w);
+        narrowest = Math.min(narrowest, w);
+        assert.ok(w >= 1 && w <= 8,
+            `第 ${i + 1} 座（${MAPO_CITY_SITES[i].name}）宽 ${w.toFixed(2)} 格，量级不对`);
+    }
+    // ⚠ 上下界留了足够余量，但**不能把 4.7× 放进来**：最宽的城若超过 8 格就说明换算漏了
+    assert.ok(widest < 6, `最宽的城 ${widest.toFixed(2)} 格`);
+    assert.ok(narrowest > 1.2, `最窄的城 ${narrowest.toFixed(2)} 格`);
 });
