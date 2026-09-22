@@ -32,6 +32,16 @@ export const MAPO_RIVER_GEO_ASSET = "kits/mapOriginal/maps/s1/river-geo";
 export const MAPO_RIVERS_ASSET = "kits/mapOriginal/maps/s1/rivers";
 /** 地表底纹（256² POT，wrap = REPEAT）。⛔ 不进图集：图集里没法 GL_REPEAT。 */
 export const MAPO_GROUND_BASE_ASSET = "kits/mapOriginal/maps/s1/ground-base";
+/** snow / desert 块层：底纹 / 几何库 / 摆放表。 */
+export function mapoBlockBaseAsset(kind: string): string {
+    return `kits/mapOriginal/maps/s1/${kind}-base`;
+}
+export function mapoBlockGeoAsset(kind: string): string {
+    return `kits/mapOriginal/maps/s1/${kind}-geo`;
+}
+export function mapoBlockTableAsset(kind: string): string {
+    return `kits/mapOriginal/maps/s1/${kind}`;
+}
 export const MAPO_MINIMAP_ASSET = "kits/mapOriginal/maps/s1/minimap";
 /*
  * ⚠ 这里**故意没有**近档地表图集（M2-B1 删除）：那是「8 粗类 × 4 变体的逐格菱形贴片」，

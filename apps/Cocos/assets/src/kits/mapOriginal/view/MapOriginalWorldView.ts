@@ -27,6 +27,7 @@ import { mapoSelectionEdges } from "../logic/mapoMesh";
 import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
 import { mapoSetRegions } from "../logic/mapoRegions";
+import { MAPO_BLOCK_KINDS, mapoSetBlockGeo, mapoSetBlocks } from "../logic/mapoBlocks";
 import { mapoSetRiverGeo, mapoSetRivers } from "../logic/mapoRivers";
 import {
     MAPO_QUALITY_LABELS,
@@ -35,6 +36,7 @@ import {
 } from "../logic/mapoSettings";
 import { MapoViewportStencil } from "../logic/mapoViewport";
 import { MapoDecorRenderer } from "./MapoDecorRenderer";
+import { MapoBlockRenderer } from "./MapoBlockRenderer";
 import { MapoGroundRenderer } from "./MapoGroundRenderer";
 import { MapoRegionRenderer } from "./MapoRegionRenderer";
 import { MapoRiverRenderer } from "./MapoRiverRenderer";
@@ -68,6 +70,9 @@ export class MapOriginalWorldView extends CocosView {
     private renderer: MapoGroundRenderer | null = null;
     /** 上一次建出来的地表块数。 */
     private groundCount = 0;
+    /** snow / desert 块层，各一个批（⚠ 一个材质只能挂一张贴图）。 */
+    private blockRenderers: MapoBlockRenderer[] = [];
+    private blockCount = 0;
     private decorRenderer: MapoDecorRenderer | null = null;
     private labelRenderer: MapoLabelRenderer | null = null;
     private farRenderer: MapoFarRenderer | null = null;
@@ -126,6 +131,8 @@ export class MapOriginalWorldView extends CocosView {
         this.renderer = new MapoGroundRenderer(this.world, null);
         // ⚠ 兄弟序即绘制序：地表 → **河流** → 区域件（山林地貌）→ 逐格摆件（地物）→ 地名
         //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）
+        // ⚠ 兄弟序即绘制序：ground(100) → desert(200) → snow(300)（原版 POLYGON_LAYER_ORDER）
+        this.blockRenderers = MAPO_BLOCK_KINDS.map((k) => new MapoBlockRenderer(this.world!, null, k));
         this.riverRenderer = new MapoRiverRenderer(this.world, null);
         this.regionRenderer = new MapoRegionRenderer(this.world, null);
         this.decorRenderer = new MapoDecorRenderer(this.world, null);
@@ -150,7 +157,19 @@ export class MapOriginalWorldView extends CocosView {
                     mapoSetRivers(art.rivers.buffer());
                 } catch { /* 河流层不建 */ }
             }
+            for (const kind of MAPO_BLOCK_KINDS) {
+                const geo = art.blockGeo(kind), table = art.blockTable(kind);
+                // ⚠ 几何库与摆放表**要么都进要么都不进**
+                if (geo && table) {
+                    try {
+                        mapoSetBlockGeo(kind, geo.buffer());
+                        mapoSetBlocks(kind, table.buffer());
+                    } catch { /* 该层不建 */ }
+                }
+            }
             this.renderer?.dispose();
+            for (const r of this.blockRenderers) r.dispose();
+            this.blockRenderers = MAPO_BLOCK_KINDS.map((k) => new MapoBlockRenderer(this.world!, art, k));
             this.riverRenderer?.dispose();
             this.regionRenderer?.dispose();
             this.decorRenderer?.dispose();
@@ -177,6 +196,8 @@ export class MapOriginalWorldView extends CocosView {
         this.offTick?.(); this.offTick = null;
         this.renderer?.dispose(); this.renderer = null;
         this.decorRenderer?.dispose(); this.decorRenderer = null;
+        for (const r of this.blockRenderers) r.dispose();
+        this.blockRenderers = [];
         this.riverRenderer?.dispose(); this.riverRenderer = null;
         this.regionRenderer?.dispose(); this.regionRenderer = null;
         this.labelRenderer?.dispose(); this.labelRenderer = null;
@@ -434,6 +455,14 @@ export class MapOriginalWorldView extends CocosView {
                 (row, col) => { cells.push({ row, col }); });
             // ★ 地表底：每块一个菱形 + 整数次 GL_REPEAT（原版做法，⛔ 不是逐格贴片）
             this.groundCount = this.renderer?.render(cam.worldRect(1), true) ?? 0;
+            // ★ snow / desert 叠在地表底之上（⛔ 不是替换）
+            if (mapoLayerVisible("blocks", cam.lod)) {
+                this.blockCount = this.blockRenderers
+                    .reduce((n, r) => n + r.render(cam.worldRect(1), true), 0);
+            } else {
+                for (const r of this.blockRenderers) r.clear();
+                this.blockCount = 0;
+            }
             // ⚠ 摆件在地表**之上**（兄弟序即绘制序），⛔ 不要反过来
             if (mapoLayerVisible("decor", cam.lod)) {
                 this.decorCount = this.decorRenderer?.render(l, cells) ?? 0;
@@ -447,6 +476,8 @@ export class MapOriginalWorldView extends CocosView {
             this.decorRenderer?.clear();
             this.farRenderer?.render(l);
             this.groundCount = 0;
+            for (const r of this.blockRenderers) r.clear();
+            this.blockCount = 0;
             this.decorCount = 0;
             this.visibleCount = 0;
         }
@@ -465,7 +496,8 @@ export class MapOriginalWorldView extends CocosView {
             // ★ 水面片数：全图 3.1 万片，⛔ 掉到 0 说明 river-geo/rivers 两件没同时到位
             const river = this.riverCount > 0 ? ` · 水面 ${this.riverCount}` : "";
             // ★ 地表块数：⛔ 掉到 0 说明 ground-base.png 没到位（整层不建）
-            const ground = near ? ` · 地表 ${this.groundCount}` : "";
+            const ground = near
+                ? ` · 地表 ${this.groundCount}${this.blockCount > 0 ? `+${this.blockCount}` : ""}` : "";
             this.status.string =
                 `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}`
                 + `${ground}${decor}${region}${river}`;

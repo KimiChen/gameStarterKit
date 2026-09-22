@@ -272,8 +272,13 @@ export interface MapoPolygonInput {
     readonly verts: Float32Array;
     /** 三角索引（指向 verts 的顶点下标）。 */
     readonly indices: Uint16Array;
-    /** 整片的 UV（平色填充 ⇒ 所有顶点同一个点）。 */
+    /** 整片的 UV（平色填充 ⇒ 所有顶点同一个点）。⚠ 给了 `uvs` 就以 `uvs` 为准。 */
     readonly uv: readonly [number, number];
+    /**
+     * 逐顶点 UV（`[u0, v0, u1, v1, …]`，与 `verts` 同长）。
+     * ⚠ 块级地貌带靠它做**世界投影 + GL_REPEAT** ⇒ 值会**大于 1**，⛔ 不是图集归一化坐标。
+     */
+    readonly uvs?: Float32Array;
     /** 整片的顶点色（0..1）。 */
     readonly rgba: readonly [number, number, number, number];
 }
@@ -312,8 +317,13 @@ export function buildMapoPolygonMesh(polys: MapoPolygonInput[]): MapoGeometry {
             positions[(base + v) * 3] = x;
             positions[(base + v) * 3 + 1] = y;
             positions[(base + v) * 3 + 2] = 0;
-            uvs[(base + v) * 2] = p.uv[0];
-            uvs[(base + v) * 2 + 1] = p.uv[1];
+            if (p.uvs) {
+                uvs[(base + v) * 2] = p.uvs[v * 2];
+                uvs[(base + v) * 2 + 1] = p.uvs[v * 2 + 1];
+            } else {
+                uvs[(base + v) * 2] = p.uv[0];
+                uvs[(base + v) * 2 + 1] = p.uv[1];
+            }
             colors.set(p.rgba, (base + v) * 4);
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;

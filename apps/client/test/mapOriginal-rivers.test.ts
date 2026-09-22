@@ -52,7 +52,7 @@ function near(actual: number, want: number, msg: string): void {
 }
 
 test("mapOriginal 河流：几何库条数/长度对不上就拒收（⛔ 不容忍半截几何库）", () => {
-    assert.throws(() => mapoSetRiverGeo(makeGeo(3)), /河流几何库 3 条/);
+    assert.throws(() => mapoSetRiverGeo(makeGeo(3)), /河流 几何库 3 条/);
     const good = makeGeo(MAPO_RIVER_GEO_COUNT);
     mapoSetRiverGeo(good);
     const trailing = new Uint8Array(good.length + 1);

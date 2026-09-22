@@ -10,7 +10,7 @@
 import { MAPO_LOD_MAX } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
 export type MapoLayerId =
-    | "terrain" | "grid" | "river" | "region" | "decor" | "plate" | "banner" | "label";
+    | "terrain" | "blocks" | "grid" | "river" | "region" | "decor" | "plate" | "banner" | "label";
 
 interface LayerGate {
     readonly id: MapoLayerId;
@@ -37,6 +37,9 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     //   `grid_state` 是 AOI 驱动的**归属态叠图**，⛔ 不是线框网格；
     //   「原版有没有线框网格层」目前**无证据** ⇒ 要做之前先补证据，⛔ 别照 sgzzmap 抄了当原版。
     { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: false },
+    // ★ snow / desert 的 block 级地貌带：**叠**在地表底之上（§1.3，⛔ 不是替换）。
+    //   与 terrain 同档：它就是地表的一部分。
+    { id: "blocks", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
     // ★ 河流：原版水面多边形。⚠ 必须在地表**之上**、山族件与摆件**之下**
     //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）。
     //   ⚠ 比逐格摆件多盖一档：远档看水网走向最有用（与 region 同档）。
@@ -57,11 +60,13 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
  * 每个层由**哪个渲染器字段**负责；`null` = 尚无渲染器。
  *
  * ★ 这张表是 M1-B1 的止血闸：机检拿它去扫 `MapOriginalWorldView.ts`，要求
- *   ① `implemented` ⟺ 这里非 null；② 非 null 的字段名在视图里真的有 `.render(` 调用。
+ *   ① `implemented` ⟺ 这里非 null；② 非 null 的字段名在视图里出现后**不远处就有 `.render(`**
+ *      （⚠ 不能只认 `this.x?.render(`：`blocks` 是一**组**渲染器，走的是 `reduce` 遍历）。
  *   ⛔ 新增层若写了 `implemented: true` 却没渲染器，用例立刻红 —— 将来的层自动受管。
  */
 export const MAPO_LAYER_RENDERER: Readonly<Record<MapoLayerId, string | null>> = Object.freeze({
     terrain: "renderer",
+    blocks: "blockRenderers",
     grid: null,
     river: "riverRenderer",
     plate: "farRenderer",

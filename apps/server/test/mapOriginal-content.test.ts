@@ -36,6 +36,10 @@ import {
     MAPO_GROUND_BLOCK_TILES, MAPO_GROUND_GRID_SIDE, MAPO_GROUND_ORIGIN,
     MAPO_GROUND_REPEAT_U, MAPO_GROUND_REPEAT_V, MAPO_GROUND_TEXTURE_SIZE,
 } from "@game/shared/kits/mapOriginal/content/ground.data";
+import {
+    MAPO_BLOCK_D_BIAS, MAPO_BLOCK_HEADER_BYTES, MAPO_BLOCK_LAYERS, MAPO_BLOCK_RECORD_BYTES,
+    MAPO_BLOCK_S_BIAS,
+} from "@game/shared/kits/mapOriginal/content/blocks.data";
 
 const MAP = MAPO_TERRAIN_MAP_ID;
 const kitDir = new URL(`../../kits/mapOriginal/data/maps/${MAP}/`, import.meta.url);
@@ -233,6 +237,10 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
         //   与库里的 .bytes 对不上 ⇒ 运行时「the native asset is missing」。
         ["terrain.bytes", "terrain.bin"],
         ["ground-base.png", "ground-base.png"],
+        ["desert-base.png", "desert-base.png"], ["desert-geo.bin", "desert-geo.bin"],
+        ["desert.bin", "desert.bin"],
+        ["snow-base.png", "snow-base.png"], ["snow-geo.bin", "snow-geo.bin"],
+        ["snow.bin", "snow.bin"],
         ["plate-lod4.png", "plate-lod4.png"], ["plate-lod4.info.json", "plate-lod4.info.json"],
         ["plate-lod5.png", "plate-lod5.png"], ["plate-lod5.info.json", "plate-lod5.info.json"],
         ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
@@ -380,6 +388,97 @@ test("mapOriginal 内容：城占格表 = city.bytes（249 座 / 2,689 格 / 首
     // ★ 占格形态只有 5 种（§5 的表）
     assert.deepEqual([...shapes.entries()].sort((a, b) => a[0] - b[0]),
         [[4, 1], [6, 11], [7, 24], [11, 204], [23, 9]], "占格形态分布");
+});
+
+test("mapOriginal 内容：snow / desert 块层自洽（叠不是替 / 行主序 / 下标域）", () => {
+    // ★ M2-B2：三个地表层是「叠」不是「替」（§1.3）—— 同一块可以同时挂草地底 + 沙漠 + 雪。
+    const meta = JSON.parse(kit("blocks.info.json").toString("utf8")) as {
+        grid: { side: number; blockTiles: number; origin: number; order: string };
+        sBias: number; dBias: number; recordBytes: number; headerBytes: number;
+        layerOrder: Record<string, number>; bothBlocks: number;
+        kinds: Record<string, {
+            texture: { source: string; size: [number, number]; sha256: string };
+            repeat: { timesU: number; timesV: number };
+            geoCount: number; geoBytes: number; geoSha256: string; verts: number; tris: number;
+            placements: number; placementSha256: string;
+        }>;
+    };
+    assert.equal(meta.sBias, MAPO_BLOCK_S_BIAS);
+    assert.equal(meta.dBias, MAPO_BLOCK_D_BIAS);
+    assert.equal(meta.recordBytes, MAPO_BLOCK_RECORD_BYTES);
+    assert.equal(meta.headerBytes, MAPO_BLOCK_HEADER_BYTES);
+    // ★ 网格与地表底**同构**（⛔ 别让两者漂开）
+    assert.equal(meta.grid.side, MAPO_GROUND_GRID_SIDE);
+    assert.equal(meta.grid.blockTiles, MAPO_GROUND_BLOCK_TILES);
+    assert.equal(meta.grid.origin, MAPO_GROUND_ORIGIN);
+    assert.ok(meta.grid.order.includes("行主序"), "⛔ 块层是行主序，别抄 river 的列主序");
+    // ★ 489 块两者兼有 —— 这就是「叠不是替」的硬证（§1.3 实测）
+    assert.equal(meta.bothBlocks, 489, "desert 与 snow 同时有的块数");
+    assert.deepEqual(meta.layerOrder, { ground: 100, desert: 200, snow: 300 });
+    assert.equal(MAPO_BLOCK_LAYERS.length, 2);
+    for (const layer of MAPO_BLOCK_LAYERS) {
+        const k = meta.kinds[layer.kind];
+        assert.ok(k, `${layer.kind} 没落盘`);
+        assert.equal(layer.geoCount, k.geoCount);
+        assert.deepEqual([...layer.repeat], [k.repeat.timesU, k.repeat.timesV]);
+        assert.deepEqual([...layer.textureSize], k.texture.size);
+        assert.equal(layer.order, (meta.layerOrder as Record<string, number>)[layer.kind]);
+        // ★ 底纹必须 POT（WebGL1 下 REPEAT 的前提）且是原版 2D 侧素材
+        for (const n of k.texture.size) assert.equal(n & (n - 1), 0, `${layer.kind} 底纹边长 ${n} 非 POT`);
+        assert.ok(k.texture.source.startsWith("ground_down/"), `${layer.kind} 底纹来源`);
+        assert.equal(sha256(kit(`${layer.kind}-base.png`)), k.texture.sha256);
+
+        // 几何库：逐条走完必须精确读完，索引不越本条顶点
+        const geo = kit(`${layer.kind}-geo.bin`);
+        assert.equal(geo.length, k.geoBytes);
+        assert.equal(sha256(geo), k.geoSha256);
+        assert.equal(geo.readUInt16BE(0), k.geoCount);
+        let o = 2, verts = 0, tris = 0;
+        for (let i = 0; i < k.geoCount; i += 1) {
+            const nv = geo.readUInt16BE(o + 1), ni = geo.readUInt16BE(o + 3);
+            o += 5;
+            assert.ok(nv >= 3, `${layer.kind} 第 ${i} 条只有 ${nv} 个顶点`);
+            assert.equal(ni % 3, 0, `${layer.kind} 第 ${i} 条索引数 ${ni} 不是 3 的倍数`);
+            o += nv * 8;
+            for (let t = 0; t < ni; t += 1) {
+                assert.ok(geo.readUInt16BE(o + t * 2) < nv, `${layer.kind} 第 ${i} 条索引越界`);
+            }
+            o += ni * 2;
+            verts += nv; tris += ni / 3;
+        }
+        assert.equal(o, geo.length, `${layer.kind} 几何库必须精确读完`);
+        assert.equal(verts, k.verts);
+        assert.equal(tris, k.tris);
+
+        // 摆放表：画家序 + 下标域 + 原点必须落在块上
+        const raw = kit(`${layer.kind}.bin`);
+        assert.equal(sha256(raw), k.placementSha256);
+        assert.equal(raw.readUInt32BE(0), k.placements);
+        assert.equal(raw.length, MAPO_BLOCK_HEADER_BYTES + k.placements * MAPO_BLOCK_RECORD_BYTES);
+        let prev = -1;
+        const seen = new Set<number>();
+        for (let i = 0; i < k.placements; i += 1) {
+            const off = MAPO_BLOCK_HEADER_BYTES + i * MAPO_BLOCK_RECORD_BYTES;
+            const sRaw = raw.readUInt16BE(off);
+            assert.ok(sRaw >= prev, `${layer.kind} 第 ${i} 条不是升序`);
+            prev = sRaw;
+            const g = raw.readUInt8(off + 4);
+            assert.ok(g >= 1 && g <= k.geoCount, `${layer.kind} 第 ${i} 条下标 ${g} 越界`);
+            const s = sRaw - MAPO_BLOCK_S_BIAS, d = raw.readUInt16BE(off + 2) - MAPO_BLOCK_D_BIAS;
+            assert.equal((s + d) & 1, 0, `${layer.kind} 第 ${i} 条 s/d 奇偶不同`);
+            const row = (s + d) / 2, col = (s - d) / 2;
+            assert.equal(Math.abs((row - MAPO_GROUND_ORIGIN) % MAPO_GROUND_BLOCK_TILES), 0,
+                `${layer.kind} 第 ${i} 条 row ${row} 不在块上`);
+            assert.equal(Math.abs((col - MAPO_GROUND_ORIGIN) % MAPO_GROUND_BLOCK_TILES), 0,
+                `${layer.kind} 第 ${i} 条 col ${col} 不在块上`);
+            const key = row * 100000 + col;
+            assert.ok(!seen.has(key), `${layer.kind} 块 (${row}, ${col}) 重复`);
+            seen.add(key);
+        }
+    }
+    // ★ desert 4,762 / snow 4,186 —— §1.3 的实测数字
+    assert.equal(meta.kinds.desert.placements, 4762);
+    assert.equal(meta.kinds.snow.placements, 4186);
 });
 
 test("mapOriginal 内容：河流几何库 river-geo.bin 自洽（102 条 / 三角化合法 / 零残留）", () => {
@@ -668,6 +767,9 @@ test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2
         ...(JSON.parse(kit("rivers.info.json").toString("utf8")) as
             { systems: { name: string; source: string }[] }).systems
             .map((x): [string, string] => [`rivers.info.json/${x.name}`, x.source]),
+        ...Object.entries((JSON.parse(kit("blocks.info.json").toString("utf8")) as
+            { kinds: Record<string, { texture: { source: string } }> }).kinds)
+            .map(([k, x]): [string, string] => [`blocks.info.json/${k}`, x.texture.source]),
     ];
     for (const [where, src] of extra) {
         for (const bad of MAPO_BANNED_SOURCE_PREFIXES) {

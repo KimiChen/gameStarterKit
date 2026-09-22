@@ -13,60 +13,22 @@
  * ⛔ 不要每帧对 3.1 万条排序。
  */
 import {
-    MAPO_TILE_HALF_H, mapoGrid2Pos, mapoOriginalPxToWorld,
+    MAPO_TILE_HALF_H, mapoGrid2Pos,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import {
     MAPO_RIVER_D_BIAS, MAPO_RIVER_GEO_COUNT, MAPO_RIVER_HEADER_BYTES,
     MAPO_RIVER_RECORD_BYTES, MAPO_RIVER_S_BIAS, MAPO_RIVER_TILES,
 } from "../../../shared/kits/mapOriginal/content/river.data";
 import type { MapoPolygonInput } from "./mapoMesh";
+import { parseMapoPolyLib, type IMapoPoly } from "./mapoPolyLib";
 
-interface RiverGeo {
-    readonly system: number;
-    /** 局部顶点（**已换算成世界单位**）：`[x0, y0, x1, y1, …]`。 */
-    readonly verts: Float32Array;
-    readonly indices: Uint16Array;
-    readonly minX: number; readonly maxX: number;
-    readonly minY: number; readonly maxY: number;
-}
-
-let geos: RiverGeo[] = [];
+let geos: IMapoPoly[] = [];
 let view: DataView | null = null;
 let count = 0;
 
 /** 注入 `river-geo.bin`。⚠ 条数/长度对不上就拒收，⛔ 不容忍半截几何库。 */
 export function mapoSetRiverGeo(buf: ArrayBuffer | Uint8Array): void {
-    const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-    const v = new DataView(u.buffer, u.byteOffset, u.byteLength);
-    const n = v.getUint16(0);
-    if (n !== MAPO_RIVER_GEO_COUNT) {
-        throw new Error(`mapOriginal 河流几何库 ${n} 条 ≠ ${MAPO_RIVER_GEO_COUNT}`);
-    }
-    const out: RiverGeo[] = [];
-    let o = 2;
-    for (let i = 0; i < n; i += 1) {
-        const system = v.getUint8(o);
-        const nv = v.getUint16(o + 1), ni = v.getUint16(o + 3);
-        o += 5;
-        const verts = new Float32Array(nv * 2);
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        for (let k = 0; k < nv; k += 1) {
-            const x = mapoOriginalPxToWorld(v.getFloat32(o));
-            const y = mapoOriginalPxToWorld(v.getFloat32(o + 4));
-            o += 8;
-            verts[k * 2] = x; verts[k * 2 + 1] = y;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-        }
-        const indices = new Uint16Array(ni);
-        for (let k = 0; k < ni; k += 1) { indices[k] = v.getUint16(o); o += 2; }
-        if (nv === 0) { minX = maxX = minY = maxY = 0; }
-        out.push({ system, verts, indices, minX, maxX, minY, maxY });
-    }
-    if (o !== u.length) throw new Error(`mapOriginal 河流几何库有 ${u.length - o} B 残留`);
-    geos = out;
+    geos = parseMapoPolyLib(buf, MAPO_RIVER_GEO_COUNT, "河流");
 }
 
 /** 注入 `rivers.bin`（含 4 字节大端头）。⚠ 长度对不上就拒收。 */
@@ -135,7 +97,7 @@ export function mapoRiversInRect(rect: IMapoWorldRectLike, limit: number,
         if (pos.x + geo.maxX < rect.left || pos.x + geo.minX > rect.right) continue;
         if (pos.y + geo.minY > rect.top || pos.y + geo.maxY < rect.bottom) continue;
         out.push({ s: sRaw, x: pos.x, y: pos.y, verts: geo.verts, indices: geo.indices,
-                   uv: uvOf(geo.system), rgba });
+                   uv: uvOf(geo.tag), rgba });
     }
     return out;
 }

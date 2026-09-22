@@ -31,6 +31,11 @@ FILES = {
     # ★ 地表底：一张 256² POT 底纹，整数次 GL_REPEAT 铺满一块 10×10 格（M2-B1）。
     #   ⛔ 早先这里是 atlas-lod{0,1,2}「8 粗类 × 4 变体的逐格菱形贴片」—— 本仓自创，已删。
     "ground-base.png": "ground-base.png", "ground.info.json": "ground.info.json",
+    # ★ snow / desert 的 block 级地貌带（叠在地表底之上，§1.3）
+    "desert-base.png": "desert-base.png", "desert-geo.bin": "desert-geo.bin",
+    "desert.bin": "desert.bin",
+    "snow-base.png": "snow-base.png", "snow-geo.bin": "snow-geo.bin", "snow.bin": "snow.bin",
+    "blocks.info.json": "blocks.info.json",
     "plate-lod4.png": "plate-lod4.png", "plate-lod4.info.json": "plate-lod4.info.json",
     "plate-lod5.png": "plate-lod5.png", "plate-lod5.info.json": "plate-lod5.info.json",
     "minimap.png": "minimap.png", "minimap-mask.png": "minimap-mask.png",
@@ -45,7 +50,8 @@ FILES = {
     "labels.json": "labels.json",
 }
 KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
-            "rivers.info.json", "river-geo.index.json", "ground.info.json"}
+            "rivers.info.json", "river-geo.index.json", "ground.info.json",
+            "blocks.info.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。

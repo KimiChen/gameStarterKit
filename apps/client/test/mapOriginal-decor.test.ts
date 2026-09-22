@@ -65,8 +65,14 @@ test("mapOriginal 分层：implemented 的层必须真有渲染器（⛔ 不许�
             }
             continue;
         }
-        assert.ok(view.includes(`this.${field}?.render(`) || view.includes(`this.${field}?.render (`),
-            `层 ${gate.id} 说由 ${field} 负责，但视图里找不到 this.${field}?.render(`);
+        // ⚠ 不能只认 `this.x?.render(`：blocks 是一**组**渲染器，走 reduce 遍历 ⇒
+        //   判据放宽成「字段名出现后 400 字符内有 .render(」，仍能抓住「声明了却从不渲染」。
+        let hit = false;
+        for (let at = view.indexOf(`this.${field}`); at >= 0;
+             at = view.indexOf(`this.${field}`, at + 1)) {
+            if (view.slice(at, at + 400).includes(".render(")) { hit = true; break; }
+        }
+        assert.ok(hit, `层 ${gate.id} 说由 ${field} 负责，但视图里找不到它的 .render( 调用`);
     }
 });
 

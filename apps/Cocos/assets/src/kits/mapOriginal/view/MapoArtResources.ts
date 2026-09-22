@@ -8,8 +8,9 @@ import { BufferAsset, Texture2D, resources } from "cc";
 import {
     MAPO_DECOR_ATLAS_ASSET, MAPO_GROUND_BASE_ASSET, MAPO_MINIMAP_ASSET, MAPO_REGIONS_ASSET,
     MAPO_REGION_ATLAS_ASSET, MAPO_RIVERS_ASSET, MAPO_RIVER_FILL_ASSET, MAPO_RIVER_GEO_ASSET,
-    MAPO_TERRAIN_ASSET, mapoPlateAsset,
+    MAPO_TERRAIN_ASSET, mapoBlockBaseAsset, mapoBlockGeoAsset, mapoBlockTableAsset, mapoPlateAsset,
 } from "../logic/mapoFar";
+import { MAPO_BLOCK_KINDS } from "../logic/mapoBlocks";
 
 export interface MapoArtResources {
     readonly plate4: Texture2D | null;
@@ -22,6 +23,11 @@ export interface MapoArtResources {
      * ⚠ 缺席则地表底整层不建 —— ⛔ 不用纯色菱形占位（那正是 M2-B1 换掉的自创做法）。
      */
     readonly groundBase: Texture2D | null;
+    /** snow / desert 块层的底纹（同样 POT + REPEAT）。 */
+    blockBase(kind: string): Texture2D | null;
+    /** snow / desert 块层的几何库与摆放表。⚠ 两件缺一则该层不建。 */
+    blockGeo(kind: string): BufferAsset | null;
+    blockTable(kind: string): BufferAsset | null;
     /** 摆件图集（原版切片打包）。⚠ 缺席则整层不建，⛔ 不用纯色方块占位。 */
     readonly decorAtlas: Texture2D | null;
     /** 多格地形的区域件图集（山脉 / 林丛 / 散落）。 */
@@ -74,10 +80,20 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             loadBuffer(MAPO_RIVER_GEO_ASSET),
             loadBuffer(MAPO_RIVERS_ASSET),
         ]);
+    const blocks = await Promise.all(MAPO_BLOCK_KINDS.map(async (kind) => ({
+        kind,
+        base: await loadTexture(mapoBlockBaseAsset(kind)),
+        geo: await loadBuffer(mapoBlockGeoAsset(kind)),
+        table: await loadBuffer(mapoBlockTableAsset(kind)),
+    })));
+    const blockBy = new Map(blocks.map((b) => [b.kind, b]));
     let released = false;
     return {
         plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
         riverFill, riverGeo, rivers, groundBase,
+        blockBase: (kind) => blockBy.get(kind)?.base ?? null,
+        blockGeo: (kind) => blockBy.get(kind)?.geo ?? null,
+        blockTable: (kind) => blockBy.get(kind)?.table ?? null,
         release() {
             if (released) return;
             released = true;
@@ -87,6 +103,7 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             regions?.decRef();
             riverGeo?.decRef();
             rivers?.decRef();
+            for (const b of blocks) { b.base?.decRef(); b.geo?.decRef(); b.table?.decRef(); }
         },
     };
 }
