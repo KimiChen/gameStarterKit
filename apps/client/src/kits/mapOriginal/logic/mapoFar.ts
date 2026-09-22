@@ -42,6 +42,13 @@ export function mapoBlockGeoAsset(kind: string): string {
 export function mapoBlockTableAsset(kind: string): string {
     return `kits/mapOriginal/maps/s1/${kind}`;
 }
+/** `_top_group` 手摆细节：每族一张图集 + 一份摆放库。 */
+export function mapoTopAtlasAsset(kind: string): string {
+    return `kits/mapOriginal/maps/s1/${kind}-top-atlas`;
+}
+export function mapoTopsAsset(kind: string): string {
+    return `kits/mapOriginal/maps/s1/${kind}-tops`;
+}
 export const MAPO_MINIMAP_ASSET = "kits/mapOriginal/maps/s1/minimap";
 /*
  * ⚠ 这里**故意没有**近档地表图集（M2-B1 删除）：那是「8 粗类 × 4 变体的逐格菱形贴片」，

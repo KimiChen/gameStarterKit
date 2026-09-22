@@ -72,15 +72,29 @@ def decode(blob: bytes):
     return Image.frombytes("RGBA", (w, h), raw, "raw", "BGRA"), name
 
 
+# ⚠ name_map 有 20 万条：**必须缓存**。早先每次调用都整读一遍 JSON，
+#   批量脚本（几千次 resolve）会卡成分钟级。⛔ 别把缓存去掉。
+_NAME_MAP: dict | None = None
+_CFG_CACHE: dict | None = None
+
+
+def _name_map() -> tuple:
+    global _NAME_MAP, _CFG_CACHE
+    if _NAME_MAP is None:
+        import json
+        here = os.path.dirname(os.path.abspath(__file__))
+        _CFG_CACHE = json.load(open(os.path.join(here, "assets.config.json")))
+        nm = os.path.join(here, _CFG_CACHE["outDir"], "name_map.json")
+        if not os.path.exists(nm):
+            raise SystemExit("⛔ 先跑 build_name_map.py 生成 out/name_map.json")
+        _NAME_MAP = json.load(open(nm))
+    return _NAME_MAP, _CFG_CACHE
+
+
 def resolve_by_name(name: str) -> str:
     """真实资源路径 -> elp-unpacked 里的磁盘路径（需先跑 build_name_map.py）。"""
-    import json
-    here = os.path.dirname(os.path.abspath(__file__))
-    cfg = json.load(open(os.path.join(here, "assets.config.json")))
-    nm = os.path.join(here, cfg["outDir"], "name_map.json")
-    if not os.path.exists(nm):
-        raise SystemExit("⛔ 先跑 build_name_map.py 生成 out/name_map.json")
-    row = json.load(open(nm)).get(name[6:] if name.startswith("asset/") else name)
+    mapping, cfg = _name_map()
+    row = mapping.get(name[6:] if name.startswith("asset/") else name)
     if row is None:
         raise SystemExit("⛔ name_map 里没有这条路径：%s" % name)
     # ⚠ 多根：APK 解包树 + CDN 解包树。容器目录名是 <md5>_<size>，⛔ 两根之间不会撞车。

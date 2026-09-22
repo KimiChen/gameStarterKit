@@ -40,6 +40,9 @@ import {
     MAPO_BLOCK_D_BIAS, MAPO_BLOCK_HEADER_BYTES, MAPO_BLOCK_LAYERS, MAPO_BLOCK_RECORD_BYTES,
     MAPO_BLOCK_S_BIAS,
 } from "@game/shared/kits/mapOriginal/content/blocks.data";
+import {
+    MAPO_TOP_ATLASES, MAPO_TOP_DOWNSCALE, MAPO_TOP_RECORD_BYTES,
+} from "@game/shared/kits/mapOriginal/content/tops.data";
 
 const MAP = MAPO_TERRAIN_MAP_ID;
 const kitDir = new URL(`../../kits/mapOriginal/data/maps/${MAP}/`, import.meta.url);
@@ -241,6 +244,9 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
         ["desert.bin", "desert.bin"],
         ["snow-base.png", "snow-base.png"], ["snow-geo.bin", "snow-geo.bin"],
         ["snow.bin", "snow.bin"],
+        ["river-top-atlas.png", "river-top-atlas.png"], ["river-tops.bin", "river-tops.bin"],
+        ["desert-top-atlas.png", "desert-top-atlas.png"], ["desert-tops.bin", "desert-tops.bin"],
+        ["snow-top-atlas.png", "snow-top-atlas.png"], ["snow-tops.bin", "snow-tops.bin"],
         ["plate-lod4.png", "plate-lod4.png"], ["plate-lod4.info.json", "plate-lod4.info.json"],
         ["plate-lod5.png", "plate-lod5.png"], ["plate-lod5.info.json", "plate-lod5.info.json"],
         ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
@@ -388,6 +394,79 @@ test("mapOriginal 内容：城占格表 = city.bytes（249 座 / 2,689 格 / 首
     // ★ 占格形态只有 5 种（§5 的表）
     assert.deepEqual([...shapes.entries()].sort((a, b) => a[0] - b[0]),
         [[4, 1], [6, 11], [7, 24], [11, 204], [23, 9]], "占格形态分布");
+});
+
+test("mapOriginal 内容：_top_group 手摆细节自洽（组数对齐几何库 / 长度精确 / native 未缩）", () => {
+    // ★ 原版 `_polygon_group` 铺面、配对的 `_top_group` 是手摆的点缀（§1.6）。
+    //   三族共 1,899 件；⚠ 每族的**组数必须等于该族几何库条数**，否则整族错位。
+    const meta = JSON.parse(kit("top-atlas.info.json").toString("utf8")) as {
+        atlases: Record<string, {
+            size: [number, number]; pad: number; downscale: number; fill: number;
+            sha256: string; cells: { id: number; rect: [number, number, number, number];
+                                     native: [number, number]; source: string }[];
+        }>;
+        recordBytes: number;
+        families: Record<string, { groups: number; sprites: number; bytes: number; sha256: string }>;
+    };
+    assert.equal(meta.recordBytes, MAPO_TOP_RECORD_BYTES);
+    assert.equal(MAPO_TOP_ATLASES.length, 3);
+    const geoCountOf: Record<string, number> = { river: MAPO_RIVER_GEO_COUNT };
+    for (const l of MAPO_BLOCK_LAYERS) geoCountOf[l.kind] = l.geoCount;
+    let sprites = 0;
+    for (const atlas of MAPO_TOP_ATLASES) {
+        const a = meta.atlases[atlas.kind], f = meta.families[atlas.kind];
+        assert.ok(a && f, `${atlas.kind} 没落盘`);
+        assert.deepEqual([...atlas.size], a.size);
+        assert.equal(atlas.groups, f.groups);
+        assert.equal(atlas.sprites, f.sprites);
+        // ★ 组数必须与该族几何库条数相等（river 102 / desert 51 / snow 52）
+        assert.equal(f.groups, geoCountOf[atlas.kind], `${atlas.kind} 的组数与几何库不齐`);
+        assert.equal(a.downscale, MAPO_TOP_DOWNSCALE);
+        for (const n of a.size) assert.equal(n & (n - 1), 0, `${atlas.kind} top 图集边长 ${n} 非 POT`);
+        assert.equal(sha256(kit(`${atlas.kind}-top-atlas.png`)), a.sha256);
+        assert.equal(atlas.cells.length, a.cells.length);
+        for (const c of a.cells) {
+            const shared = atlas.cells.find((x) => x.id === c.id)!;
+            assert.ok(shared, `${atlas.kind} 图集格 ${c.id} 必须进 shared`);
+            assert.deepEqual([...shared.rect], c.rect);
+            assert.deepEqual([...shared.native], c.native);
+            // ★ 图集里是**缩过的**、native 是原版像素 —— 两者必须按 downscale 对上
+            assert.equal(c.rect[2], Math.max(1, Math.round(c.native[0] * MAPO_TOP_DOWNSCALE)),
+                `${atlas.kind} 格 ${c.id} 宽与 downscale 不符`);
+            assert.equal(c.rect[3], Math.max(1, Math.round(c.native[1] * MAPO_TOP_DOWNSCALE)),
+                `${atlas.kind} 格 ${c.id} 高与 downscale 不符`);
+            const [x, y, w, h] = c.rect;
+            assert.ok(x >= 0 && y >= 0 && x + w <= a.size[0] && y + h <= a.size[1],
+                `${atlas.kind} 格 ${c.id} 越出图集`);
+            // ⚠ 贴图路径必须已归一化：⛔ 不许残留打包器前缀或 @@材质名
+            assert.ok(!c.source.includes("atlas_mutil_assets"), `${atlas.kind} 格 ${c.id} 没归一化`);
+            assert.ok(!c.source.includes("@@"), `${atlas.kind} 格 ${c.id} 还带 @@ 材质名`);
+            assert.ok(c.source.startsWith("scene/"), `${atlas.kind} 格 ${c.id} 的 source 不是原版 2D 路径`);
+        }
+        // 摆放库：头 + 每组件数 + 件，长度必须精确
+        const raw = kit(`${atlas.kind}-tops.bin`);
+        assert.equal(raw.length, f.bytes);
+        assert.equal(sha256(raw), f.sha256);
+        assert.equal(raw.readUInt16BE(0), f.groups, `${atlas.kind} 组数`);
+        let total = 0;
+        for (let i = 0; i < f.groups; i += 1) total += raw.readUInt16BE(2 + i * 2);
+        assert.equal(total, f.sprites, `${atlas.kind} 件数`);
+        assert.equal(raw.length, 2 + f.groups * 2 + total * MAPO_TOP_RECORD_BYTES,
+            `${atlas.kind} 摆放库长度不符`);
+        // 逐件：图集格必须存在，scale 不得为 0
+        const ids = new Set(a.cells.map((c) => c.id));
+        let o = 2 + f.groups * 2;
+        for (let i = 0; i < total; i += 1) {
+            assert.ok(ids.has(raw.readUInt16BE(o)), `${atlas.kind} 第 ${i} 件引用了不存在的格`);
+            const sx = raw.readFloatBE(o + 10), sy = raw.readFloatBE(o + 14);
+            assert.ok(Math.abs(sx) > 0.05 && Math.abs(sy) > 0.05, `${atlas.kind} 第 ${i} 件 scale 太小`);
+            o += MAPO_TOP_RECORD_BYTES;
+        }
+        sprites += f.sprites;
+    }
+    // ★ 实测总量：river 597 + desert 481 + snow 821
+    assert.equal(sprites, 1899, "三族手摆件总数");
+    assert.deepEqual(MAPO_TOP_ATLASES.map((a) => a.sprites), [597, 481, 821]);
 });
 
 test("mapOriginal 内容：snow / desert 块层自洽（叠不是替 / 行主序 / 下标域）", () => {
@@ -770,6 +849,10 @@ test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2
         ...Object.entries((JSON.parse(kit("blocks.info.json").toString("utf8")) as
             { kinds: Record<string, { texture: { source: string } }> }).kinds)
             .map(([k, x]): [string, string] => [`blocks.info.json/${k}`, x.texture.source]),
+        ...Object.entries((JSON.parse(kit("top-atlas.info.json").toString("utf8")) as
+            { atlases: Record<string, { cells: { id: number; source: string }[] }> }).atlases)
+            .flatMap(([k, x]) => x.cells.map((c): [string, string] =>
+                [`top-atlas.info.json/${k}#${c.id}`, c.source])),
     ];
     for (const [where, src] of extra) {
         for (const bad of MAPO_BANNED_SOURCE_PREFIXES) {

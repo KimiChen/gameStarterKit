@@ -97,7 +97,8 @@ export function mapoBlocksInRect(kind: string, rect: IMapoBlockRect,
                                      (col - MAPO_GROUND_ORIGIN) / MAPO_GROUND_BLOCK_TILES);
         if (p.x + geo.maxX < rect.left || p.x + geo.minX > rect.right) continue;
         if (p.y + geo.minY > rect.top || p.y + geo.maxY < rect.bottom) continue;
-        out.push({ s, x: p.x, y: p.y, verts: geo.verts, indices: geo.indices,
+        out.push({ s, x: p.x, y: p.y, geo: layer.view.getUint8(o + 4),
+                   verts: geo.verts, indices: geo.indices,
                    uv: [0, 0], uvs: layer.uvs[layer.view.getUint8(o + 4) - 1],
                    rgba: [1, 1, 1, 1] });
     }

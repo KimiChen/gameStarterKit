@@ -8,7 +8,7 @@
  * ⚠ 贴图与地表底一样要 POT + `WrapMode.REPEAT`。
  */
 import { Material, Node, Texture2D } from "cc";
-import { buildMapoPolygonMesh } from "../logic/mapoMesh";
+import { buildMapoPolygonMesh, type MapoPolygonInput } from "../logic/mapoMesh";
 import { mapoBlocksInRect, mapoHasBlocks, type IMapoBlockRect } from "../logic/mapoBlocks";
 import {
     createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoUnlitTechnique,
@@ -28,11 +28,13 @@ export class MapoBlockRenderer {
     constructor(private readonly root: Node, private readonly art: MapoArtResources | null,
                 private readonly kind: string) {}
 
-    /** @returns 真的建出来的片数。 */
-    render(rect: IMapoBlockRect, enabled: boolean): number {
-        if (this.disposed) return 0;
+    /**
+     * @returns 本帧裁剪出来的片（⚠ 同一批要喂给 `MapoTopRenderer`，⛔ 别让它再裁一遍）。
+     */
+    render(rect: IMapoBlockRect, enabled: boolean): MapoPolygonInput[] {
+        if (this.disposed) return [];
         const texture = this.art?.blockBase(this.kind) ?? null;
-        if (!texture || !enabled || !mapoHasBlocks(this.kind)) { this.clear(); return 0; }
+        if (!texture || !enabled || !mapoHasBlocks(this.kind)) { this.clear(); return []; }
         if (!this.wrapped) {
             texture.setWrapMode(Texture2D.WrapMode.REPEAT, Texture2D.WrapMode.REPEAT);
             this.wrapped = true;
@@ -42,14 +44,14 @@ export class MapoBlockRenderer {
             this.material.setProperty("mainTexture", texture);
         }
         const polys = mapoBlocksInRect(this.kind, rect, MAPO_BLOCK_MAX_PIECES);
-        if (polys.length === 0) { this.clear(); return 0; }
+        if (polys.length === 0) { this.clear(); return []; }
         const geometry = buildMapoPolygonMesh(polys);
         if (!this.batch) {
             this.batch = createMapoBatch(this.root, `mapo-block-${this.kind}`, geometry, this.material);
         } else {
             uploadMapoBatch(this.batch, geometry);
         }
-        return polys.length;
+        return polys;
     }
 
     clear(): void {

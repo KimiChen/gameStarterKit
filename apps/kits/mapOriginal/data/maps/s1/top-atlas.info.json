@@ -1,0 +1,1339 @@
+{
+ "schemaVersion": 1,
+ "mapId": "s1",
+ "atlases": {
+  "river": {
+   "size": [
+    2048,
+    2048
+   ],
+   "pad": 2,
+   "downscale": 0.4,
+   "fill": 0.5897,
+   "cells": [
+    {
+     "id": 0,
+     "rect": [
+      2,
+      2,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/1.png"
+    },
+    {
+     "id": 1,
+     "rect": [
+      364,
+      2,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/10.png"
+    },
+    {
+     "id": 2,
+     "rect": [
+      726,
+      2,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/10_1.png"
+    },
+    {
+     "id": 3,
+     "rect": [
+      1088,
+      2,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/10_2.png"
+    },
+    {
+     "id": 4,
+     "rect": [
+      1450,
+      2,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/10_3.png"
+    },
+    {
+     "id": 5,
+     "rect": [
+      2,
+      184,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/11.png"
+    },
+    {
+     "id": 6,
+     "rect": [
+      364,
+      184,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/11_1.png"
+    },
+    {
+     "id": 7,
+     "rect": [
+      726,
+      184,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/12.png"
+    },
+    {
+     "id": 8,
+     "rect": [
+      1088,
+      184,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/12_1.png"
+    },
+    {
+     "id": 9,
+     "rect": [
+      1450,
+      184,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/13.png"
+    },
+    {
+     "id": 10,
+     "rect": [
+      2,
+      366,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/14.png"
+    },
+    {
+     "id": 11,
+     "rect": [
+      364,
+      366,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/15.png"
+    },
+    {
+     "id": 12,
+     "rect": [
+      726,
+      366,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/16.png"
+    },
+    {
+     "id": 13,
+     "rect": [
+      1088,
+      366,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/1_1.png"
+    },
+    {
+     "id": 14,
+     "rect": [
+      1450,
+      366,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/1_2.png"
+    },
+    {
+     "id": 15,
+     "rect": [
+      2,
+      548,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/2.png"
+    },
+    {
+     "id": 16,
+     "rect": [
+      364,
+      548,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/2_1.png"
+    },
+    {
+     "id": 17,
+     "rect": [
+      726,
+      548,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/3.png"
+    },
+    {
+     "id": 18,
+     "rect": [
+      1088,
+      548,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/3_1.png"
+    },
+    {
+     "id": 19,
+     "rect": [
+      1450,
+      548,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/4.png"
+    },
+    {
+     "id": 20,
+     "rect": [
+      2,
+      730,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/4_1.png"
+    },
+    {
+     "id": 21,
+     "rect": [
+      364,
+      730,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/4_2.png"
+    },
+    {
+     "id": 22,
+     "rect": [
+      726,
+      730,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/5.png"
+    },
+    {
+     "id": 23,
+     "rect": [
+      1088,
+      730,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/5_1.png"
+    },
+    {
+     "id": 24,
+     "rect": [
+      1450,
+      730,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/6.png"
+    },
+    {
+     "id": 25,
+     "rect": [
+      2,
+      912,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/6_1.png"
+    },
+    {
+     "id": 26,
+     "rect": [
+      364,
+      912,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/7.png"
+    },
+    {
+     "id": 27,
+     "rect": [
+      726,
+      912,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/7_1.png"
+    },
+    {
+     "id": 28,
+     "rect": [
+      1088,
+      912,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/8.png"
+    },
+    {
+     "id": 29,
+     "rect": [
+      1450,
+      912,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/8_1.png"
+    },
+    {
+     "id": 30,
+     "rect": [
+      2,
+      1094,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/9.png"
+    },
+    {
+     "id": 31,
+     "rect": [
+      364,
+      1094,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/9_1.png"
+    },
+    {
+     "id": 32,
+     "rect": [
+      726,
+      1094,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/9_2.png"
+    },
+    {
+     "id": 33,
+     "rect": [
+      1088,
+      1094,
+      360,
+      180
+     ],
+     "native": [
+      900,
+      450
+     ],
+     "source": "scene/ground/river/png/9_3.png"
+    },
+    {
+     "id": 34,
+     "rect": [
+      1450,
+      1094,
+      164,
+      113
+     ],
+     "native": [
+      411,
+      282
+     ],
+     "source": "scene/ground/river_yellowriver/png/b.png"
+    },
+    {
+     "id": 35,
+     "rect": [
+      1616,
+      1094,
+      103,
+      104
+     ],
+     "native": [
+      258,
+      260
+     ],
+     "source": "scene/ground/river_yellowriver/png/9.png"
+    },
+    {
+     "id": 36,
+     "rect": [
+      1721,
+      1094,
+      30,
+      91
+     ],
+     "native": [
+      75,
+      228
+     ],
+     "source": "scene/ground/river_longriver/png/4_1.png"
+    },
+    {
+     "id": 37,
+     "rect": [
+      1753,
+      1094,
+      89,
+      90
+     ],
+     "native": [
+      222,
+      224
+     ],
+     "source": "scene/ground/river_yellowriver/png/8.png"
+    },
+    {
+     "id": 38,
+     "rect": [
+      1844,
+      1094,
+      42,
+      88
+     ],
+     "native": [
+      104,
+      219
+     ],
+     "source": "scene/ground/river_yellowriver/png/11.png"
+    },
+    {
+     "id": 39,
+     "rect": [
+      1888,
+      1094,
+      41,
+      86
+     ],
+     "native": [
+      103,
+      216
+     ],
+     "source": "scene/ground/river_longriver/png/4.png"
+    },
+    {
+     "id": 40,
+     "rect": [
+      2,
+      1276,
+      144,
+      83
+     ],
+     "native": [
+      359,
+      208
+     ],
+     "source": "scene/ground/river_longriver/png/2_2.png"
+    },
+    {
+     "id": 41,
+     "rect": [
+      148,
+      1276,
+      105,
+      80
+     ],
+     "native": [
+      263,
+      201
+     ],
+     "source": "scene/ground/river_longriver/png/6_1.png"
+    },
+    {
+     "id": 42,
+     "rect": [
+      255,
+      1276,
+      137,
+      78
+     ],
+     "native": [
+      343,
+      196
+     ],
+     "source": "scene/ground/river_yellowriver/png/4b.png"
+    },
+    {
+     "id": 43,
+     "rect": [
+      394,
+      1276,
+      105,
+      77
+     ],
+     "native": [
+      263,
+      193
+     ],
+     "source": "scene/ground/river_longriver/png/6.png"
+    },
+    {
+     "id": 44,
+     "rect": [
+      501,
+      1276,
+      105,
+      77
+     ],
+     "native": [
+      262,
+      193
+     ],
+     "source": "scene/ground/river_yellowriver/png/14.png"
+    },
+    {
+     "id": 45,
+     "rect": [
+      608,
+      1276,
+      105,
+      77
+     ],
+     "native": [
+      262,
+      193
+     ],
+     "source": "scene/ground/river_yellowriver/png/15.png"
+    },
+    {
+     "id": 46,
+     "rect": [
+      715,
+      1276,
+      104,
+      76
+     ],
+     "native": [
+      260,
+      191
+     ],
+     "source": "scene/ground/river_longriver/png/28.png"
+    },
+    {
+     "id": 47,
+     "rect": [
+      821,
+      1276,
+      89,
+      76
+     ],
+     "native": [
+      222,
+      190
+     ],
+     "source": "scene/ground/river_yellowriver/png/2.png"
+    },
+    {
+     "id": 48,
+     "rect": [
+      912,
+      1276,
+      43,
+      73
+     ],
+     "native": [
+      108,
+      183
+     ],
+     "source": "scene/ground/river_yellowriver/png/11b.png"
+    },
+    {
+     "id": 49,
+     "rect": [
+      957,
+      1276,
+      146,
+      72
+     ],
+     "native": [
+      365,
+      180
+     ],
+     "source": "scene/ground/river_yellowriver/png/4.png"
+    },
+    {
+     "id": 50,
+     "rect": [
+      1105,
+      1276,
+      87,
+      68
+     ],
+     "native": [
+      218,
+      169
+     ],
+     "source": "scene/ground/river_yellowriver/png/8b.png"
+    },
+    {
+     "id": 51,
+     "rect": [
+      1194,
+      1276,
+      148,
+      67
+     ],
+     "native": [
+      371,
+      167
+     ],
+     "source": "scene/ground/river_yellowriver/png/3.png"
+    },
+    {
+     "id": 52,
+     "rect": [
+      1344,
+      1276,
+      150,
+      66
+     ],
+     "native": [
+      375,
+      164
+     ],
+     "source": "scene/ground/river_yellowriver/png/3b.png"
+    },
+    {
+     "id": 53,
+     "rect": [
+      1496,
+      1276,
+      167,
+      64
+     ],
+     "native": [
+      418,
+      161
+     ],
+     "source": "scene/ground/river_longriver/png/3.png"
+    },
+    {
+     "id": 54,
+     "rect": [
+      1665,
+      1276,
+      83,
+      64
+     ],
+     "native": [
+      207,
+      160
+     ],
+     "source": "scene/ground/river_yellowriver/png/2b.png"
+    },
+    {
+     "id": 55,
+     "rect": [
+      1750,
+      1276,
+      38,
+      63
+     ],
+     "native": [
+      95,
+      158
+     ],
+     "source": "scene/ground/river_longriver/png/1_1.png"
+    },
+    {
+     "id": 56,
+     "rect": [
+      1790,
+      1276,
+      173,
+      61
+     ],
+     "native": [
+      432,
+      153
+     ],
+     "source": "scene/ground/river_longriver/png/3_1.png"
+    },
+    {
+     "id": 57,
+     "rect": [
+      2,
+      1361,
+      111,
+      61
+     ],
+     "native": [
+      277,
+      152
+     ],
+     "source": "scene/ground/river_yellowriver/png/6.png"
+    },
+    {
+     "id": 58,
+     "rect": [
+      115,
+      1361,
+      106,
+      61
+     ],
+     "native": [
+      264,
+      153
+     ],
+     "source": "scene/ground/river_yellowriver/png/6b.png"
+    },
+    {
+     "id": 59,
+     "rect": [
+      223,
+      1361,
+      135,
+      58
+     ],
+     "native": [
+      337,
+      146
+     ],
+     "source": "scene/ground/river_longriver/png/5_1.png"
+    },
+    {
+     "id": 60,
+     "rect": [
+      360,
+      1361,
+      128,
+      58
+     ],
+     "native": [
+      319,
+      146
+     ],
+     "source": "scene/ground/river_longriver/png/2.png"
+    },
+    {
+     "id": 61,
+     "rect": [
+      490,
+      1361,
+      59,
+      54
+     ],
+     "native": [
+      147,
+      134
+     ],
+     "source": "scene/ground/river_yellowriver/png/7.png"
+    },
+    {
+     "id": 62,
+     "rect": [
+      551,
+      1361,
+      43,
+      54
+     ],
+     "native": [
+      107,
+      135
+     ],
+     "source": "scene/ground/river_yellowriver/png/g.png"
+    },
+    {
+     "id": 63,
+     "rect": [
+      596,
+      1361,
+      118,
+      53
+     ],
+     "native": [
+      294,
+      133
+     ],
+     "source": "scene/ground/river_longriver/png/5.png"
+    },
+    {
+     "id": 64,
+     "rect": [
+      716,
+      1361,
+      71,
+      52
+     ],
+     "native": [
+      178,
+      129
+     ],
+     "source": "scene/ground/river_yellowriver/png/9b.png"
+    },
+    {
+     "id": 65,
+     "rect": [
+      789,
+      1361,
+      52,
+      52
+     ],
+     "native": [
+      130,
+      130
+     ],
+     "source": "scene/ground/river_yellowriver/png/7b.png"
+    },
+    {
+     "id": 66,
+     "rect": [
+      843,
+      1361,
+      83,
+      48
+     ],
+     "native": [
+      207,
+      120
+     ],
+     "source": "scene/ground/river_yellowriver/png/10.png"
+    },
+    {
+     "id": 67,
+     "rect": [
+      928,
+      1361,
+      145,
+      46
+     ],
+     "native": [
+      363,
+      114
+     ],
+     "source": "scene/ground/river_yellowriver/png/5.png"
+    },
+    {
+     "id": 68,
+     "rect": [
+      1075,
+      1361,
+      170,
+      42
+     ],
+     "native": [
+      424,
+      105
+     ],
+     "source": "scene/ground/river_yellowriver/png/13.png"
+    },
+    {
+     "id": 69,
+     "rect": [
+      1247,
+      1361,
+      145,
+      42
+     ],
+     "native": [
+      363,
+      106
+     ],
+     "source": "scene/ground/river_yellowriver/png/5b.png"
+    },
+    {
+     "id": 70,
+     "rect": [
+      1394,
+      1361,
+      90,
+      38
+     ],
+     "native": [
+      224,
+      96
+     ],
+     "source": "scene/ground/river_yellowriver/png/c.png"
+    },
+    {
+     "id": 71,
+     "rect": [
+      1486,
+      1361,
+      33,
+      33
+     ],
+     "native": [
+      83,
+      83
+     ],
+     "source": "scene/ground/river_longriver/png/27.png"
+    },
+    {
+     "id": 72,
+     "rect": [
+      1521,
+      1361,
+      134,
+      23
+     ],
+     "native": [
+      334,
+      57
+     ],
+     "source": "scene/ground/river_longriver/png/8.png"
+    },
+    {
+     "id": 73,
+     "rect": [
+      1657,
+      1361,
+      114,
+      16
+     ],
+     "native": [
+      286,
+      40
+     ],
+     "source": "scene/ground/river_yellowriver/png/12.png"
+    },
+    {
+     "id": 74,
+     "rect": [
+      1773,
+      1361,
+      100,
+      16
+     ],
+     "native": [
+      250,
+      40
+     ],
+     "source": "scene/ground/river_longriver/png/7.png"
+    },
+    {
+     "id": 75,
+     "rect": [
+      1875,
+      1361,
+      99,
+      16
+     ],
+     "native": [
+      248,
+      40
+     ],
+     "source": "scene/ground/river_longriver/png/9.png"
+    },
+    {
+     "id": 76,
+     "rect": [
+      2,
+      1424,
+      83,
+      16
+     ],
+     "native": [
+      208,
+      39
+     ],
+     "source": "scene/ground/river_longriver/png/10.png"
+    },
+    {
+     "id": 77,
+     "rect": [
+      87,
+      1424,
+      23,
+      12
+     ],
+     "native": [
+      57,
+      30
+     ],
+     "source": "scene/ground/river_longriver/png/29.png"
+    }
+   ],
+   "sha256": "a949ac2b02479d22464b82573e2e6b56caa48d743d52aa27d834bd63d5644cc1"
+  },
+  "desert": {
+   "size": [
+    512,
+    512
+   ],
+   "pad": 2,
+   "downscale": 0.4,
+   "fill": 0.5935,
+   "cells": [
+    {
+     "id": 0,
+     "rect": [
+      2,
+      2,
+      314,
+      216
+     ],
+     "native": [
+      786,
+      539
+     ],
+     "source": "scene/ground/desert/png/3.png"
+    },
+    {
+     "id": 1,
+     "rect": [
+      2,
+      220,
+      240,
+      128
+     ],
+     "native": [
+      600,
+      319
+     ],
+     "source": "scene/ground/desert/png/1.png"
+    },
+    {
+     "id": 2,
+     "rect": [
+      244,
+      220,
+      240,
+      113
+     ],
+     "native": [
+      600,
+      282
+     ],
+     "source": "scene/ground/desert/png/4.png"
+    },
+    {
+     "id": 3,
+     "rect": [
+      2,
+      350,
+      200,
+      100
+     ],
+     "native": [
+      499,
+      249
+     ],
+     "source": "scene/ground/desert/png/2.png"
+    },
+    {
+     "id": 4,
+     "rect": [
+      204,
+      350,
+      160,
+      62
+     ],
+     "native": [
+      400,
+      155
+     ],
+     "source": "scene/ground/desert/png/5.png"
+    }
+   ],
+   "sha256": "ba1951c1ac757cc40904a71f45f32be60713ce6d6dd6a3bc914db468a4f50754"
+  },
+  "snow": {
+   "size": [
+    1024,
+    1024
+   ],
+   "pad": 2,
+   "downscale": 0.4,
+   "fill": 0.196,
+   "cells": [
+    {
+     "id": 0,
+     "rect": [
+      2,
+      2,
+      326,
+      188
+     ],
+     "native": [
+      816,
+      471
+     ],
+     "source": "scene/ground/snow/png/a.png"
+    },
+    {
+     "id": 1,
+     "rect": [
+      330,
+      2,
+      326,
+      177
+     ],
+     "native": [
+      814,
+      442
+     ],
+     "source": "scene/ground/snow/png/b.png"
+    },
+    {
+     "id": 2,
+     "rect": [
+      658,
+      2,
+      196,
+      120
+     ],
+     "native": [
+      490,
+      300
+     ],
+     "source": "scene/ground/snow/png/4.png"
+    },
+    {
+     "id": 3,
+     "rect": [
+      2,
+      192,
+      245,
+      90
+     ],
+     "native": [
+      613,
+      226
+     ],
+     "source": "scene/ground/snow/png/6.png"
+    },
+    {
+     "id": 4,
+     "rect": [
+      249,
+      192,
+      154,
+      83
+     ],
+     "native": [
+      385,
+      208
+     ],
+     "source": "scene/ground/snow/png/3.png"
+    },
+    {
+     "id": 5,
+     "rect": [
+      405,
+      192,
+      224,
+      82
+     ],
+     "native": [
+      559,
+      204
+     ],
+     "source": "scene/ground/snow/png/5.png"
+    },
+    {
+     "id": 6,
+     "rect": [
+      631,
+      192,
+      87,
+      70
+     ],
+     "native": [
+      217,
+      176
+     ],
+     "source": "scene/ground/snow/png/2.png"
+    },
+    {
+     "id": 7,
+     "rect": [
+      720,
+      192,
+      61,
+      61
+     ],
+     "native": [
+      153,
+      153
+     ],
+     "source": "scene/ground/snow/png/1.png"
+    }
+   ],
+   "sha256": "8e743459d90104ae99f4e898ac8e64cfe3b5f8d877c23cfe70765c53c28198cb"
+  }
+ },
+ "recordBytes": 26,
+ "layout": "大端：u16 组数；组数×u16 每组件数；然后所有件按组序、组内按 low_z 升序：{u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle, f32 lowZ}",
+ "families": {
+  "river": {
+   "groups": 102,
+   "sprites": 597,
+   "bytes": 15728,
+   "sha256": "c3d7fd9245995d870ae8cb45eb607b04d8bf8a700889b9a36f980b59360bd395"
+  },
+  "desert": {
+   "groups": 51,
+   "sprites": 481,
+   "bytes": 12610,
+   "sha256": "5dc6a778333b975a1df2738f3d5ffe5a985aa2e37a5eedf9607fd8e8323c69d6"
+  },
+  "snow": {
+   "groups": 52,
+   "sprites": 821,
+   "bytes": 21452,
+   "sha256": "386c9243b08046aaf934345ffbc097287b8d119b79902a44e079efd9a2790996"
+  }
+ },
+ "note": "贴图路径已归一化：剥掉 _output_atlas_scene/atlas_mutil_assets 前缀与 @@材质名后缀；图集按 0.4× 缩存，native 记原版像素（世界尺寸的唯一依据）"
+}

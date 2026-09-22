@@ -8,9 +8,11 @@ import { BufferAsset, Texture2D, resources } from "cc";
 import {
     MAPO_DECOR_ATLAS_ASSET, MAPO_GROUND_BASE_ASSET, MAPO_MINIMAP_ASSET, MAPO_REGIONS_ASSET,
     MAPO_REGION_ATLAS_ASSET, MAPO_RIVERS_ASSET, MAPO_RIVER_FILL_ASSET, MAPO_RIVER_GEO_ASSET,
-    MAPO_TERRAIN_ASSET, mapoBlockBaseAsset, mapoBlockGeoAsset, mapoBlockTableAsset, mapoPlateAsset,
+    MAPO_TERRAIN_ASSET, mapoBlockBaseAsset, mapoBlockGeoAsset, mapoBlockTableAsset,
+    mapoPlateAsset, mapoTopAtlasAsset, mapoTopsAsset,
 } from "../logic/mapoFar";
 import { MAPO_BLOCK_KINDS } from "../logic/mapoBlocks";
+import { MAPO_TOP_KINDS } from "../logic/mapoTops";
 
 export interface MapoArtResources {
     readonly plate4: Texture2D | null;
@@ -28,6 +30,9 @@ export interface MapoArtResources {
     /** snow / desert 块层的几何库与摆放表。⚠ 两件缺一则该层不建。 */
     blockGeo(kind: string): BufferAsset | null;
     blockTable(kind: string): BufferAsset | null;
+    /** `_top_group` 手摆细节：每族一张图集 + 一份摆放库。⚠ 两件缺一则该族不出手摆件。 */
+    topAtlas(kind: string): Texture2D | null;
+    tops(kind: string): BufferAsset | null;
     /** 摆件图集（原版切片打包）。⚠ 缺席则整层不建，⛔ 不用纯色方块占位。 */
     readonly decorAtlas: Texture2D | null;
     /** 多格地形的区域件图集（山脉 / 林丛 / 散落）。 */
@@ -87,6 +92,12 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
         table: await loadBuffer(mapoBlockTableAsset(kind)),
     })));
     const blockBy = new Map(blocks.map((b) => [b.kind, b]));
+    const tops = await Promise.all(MAPO_TOP_KINDS.map(async (kind) => ({
+        kind,
+        atlas: await loadTexture(mapoTopAtlasAsset(kind)),
+        table: await loadBuffer(mapoTopsAsset(kind)),
+    })));
+    const topBy = new Map(tops.map((t) => [t.kind, t]));
     let released = false;
     return {
         plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
@@ -94,6 +105,8 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
         blockBase: (kind) => blockBy.get(kind)?.base ?? null,
         blockGeo: (kind) => blockBy.get(kind)?.geo ?? null,
         blockTable: (kind) => blockBy.get(kind)?.table ?? null,
+        topAtlas: (kind) => topBy.get(kind)?.atlas ?? null,
+        tops: (kind) => topBy.get(kind)?.table ?? null,
         release() {
             if (released) return;
             released = true;
@@ -104,6 +117,7 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             riverGeo?.decRef();
             rivers?.decRef();
             for (const b of blocks) { b.base?.decRef(); b.geo?.decRef(); b.table?.decRef(); }
+            for (const t of tops) { t.atlas?.decRef(); t.table?.decRef(); }
         },
     };
 }

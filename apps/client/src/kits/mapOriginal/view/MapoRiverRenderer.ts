@@ -10,7 +10,7 @@ import { Material, Node } from "cc";
 import {
     MAPO_RIVER_SYSTEMS, MAPO_RIVER_TINT,
 } from "../../../shared/kits/mapOriginal/content/river.data";
-import { buildMapoPolygonMesh } from "../logic/mapoMesh";
+import { buildMapoPolygonMesh, type MapoPolygonInput } from "../logic/mapoMesh";
 import { mapoHasRivers, mapoRiversInRect, type IMapoWorldRectLike } from "../logic/mapoRivers";
 import {
     createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoUnlitTechnique,
@@ -42,24 +42,26 @@ export class MapoRiverRenderer {
 
     constructor(private readonly root: Node, private readonly art: MapoArtResources | null) {}
 
-    /** @returns 真的建出来的片数（进状态行当重放证据）。 */
-    render(rect: IMapoWorldRectLike, enabled: boolean): number {
-        if (this.disposed) return 0;
+    /**
+     * @returns 本帧裁剪出来的片（⚠ 同一批要喂给 `MapoTopRenderer`，⛔ 别让它再裁一遍）。
+     */
+    render(rect: IMapoWorldRectLike, enabled: boolean): MapoPolygonInput[] {
+        if (this.disposed) return [];
         const texture = this.art?.riverFill ?? null;
-        if (!texture || !enabled || !mapoHasRivers()) { this.clear(); return 0; }
+        if (!texture || !enabled || !mapoHasRivers()) { this.clear(); return []; }
         if (!this.material) {
             this.material = createMapoMaterial(mapoUnlitTechnique(), true);
             this.material.setProperty("mainTexture", texture);
         }
         const polys = mapoRiversInRect(rect, MAPO_RIVER_MAX_PIECES, uvOfSystem, TINT_RGBA);
-        if (polys.length === 0) { this.clear(); return 0; }
+        if (polys.length === 0) { this.clear(); return []; }
         const geometry = buildMapoPolygonMesh(polys);
         if (!this.batch) {
             this.batch = createMapoBatch(this.root, "mapo-rivers", geometry, this.material);
         } else {
             uploadMapoBatch(this.batch, geometry);
         }
-        return polys.length;
+        return polys;
     }
 
     clear(): void {

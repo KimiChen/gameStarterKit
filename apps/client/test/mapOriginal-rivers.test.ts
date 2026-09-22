@@ -100,7 +100,7 @@ test("mapOriginal 河流：可视矩形外的片不进批", () => {
 
 test("mapOriginal 网格：多边形合批按 s 排序、索引整体偏移、顶点上限截断", () => {
     const tri = (s: number, x: number): MapoPolygonInput => ({
-        s, x, y: 0,
+        s, x, y: 0, geo: 1,
         verts: new Float32Array([0, 0, 10, 0, 0, 10]),
         indices: new Uint16Array([0, 1, 2]),
         uv: [0.25, 0.75], rgba: [0.1, 0.2, 0.3, 1],

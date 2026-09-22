@@ -28,6 +28,7 @@ import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
 import { mapoSetRegions } from "../logic/mapoRegions";
 import { MAPO_BLOCK_KINDS, mapoSetBlockGeo, mapoSetBlocks } from "../logic/mapoBlocks";
+import { MAPO_TOP_KINDS, mapoSetTops } from "../logic/mapoTops";
 import { mapoSetRiverGeo, mapoSetRivers } from "../logic/mapoRivers";
 import {
     MAPO_QUALITY_LABELS,
@@ -38,6 +39,7 @@ import { MapoViewportStencil } from "../logic/mapoViewport";
 import { MapoDecorRenderer } from "./MapoDecorRenderer";
 import { MapoBlockRenderer } from "./MapoBlockRenderer";
 import { MapoGroundRenderer } from "./MapoGroundRenderer";
+import { MapoTopRenderer } from "./MapoTopRenderer";
 import { MapoRegionRenderer } from "./MapoRegionRenderer";
 import { MapoRiverRenderer } from "./MapoRiverRenderer";
 import { MapoLabelRenderer } from "./MapoLabelRenderer";
@@ -73,6 +75,9 @@ export class MapOriginalWorldView extends CocosView {
     /** snow / desert 块层，各一个批（⚠ 一个材质只能挂一张贴图）。 */
     private blockRenderers: MapoBlockRenderer[] = [];
     private blockCount = 0;
+    /** `_top_group` 手摆细节，一族一个批；⚠ 必须紧贴在对应多边形层**之上**。 */
+    private topRenderers: Map<string, MapoTopRenderer> = new Map();
+    private topCount = 0;
     private decorRenderer: MapoDecorRenderer | null = null;
     private labelRenderer: MapoLabelRenderer | null = null;
     private farRenderer: MapoFarRenderer | null = null;
@@ -131,9 +136,16 @@ export class MapOriginalWorldView extends CocosView {
         this.renderer = new MapoGroundRenderer(this.world, null);
         // ⚠ 兄弟序即绘制序：地表 → **河流** → 区域件（山林地貌）→ 逐格摆件（地物）→ 地名
         //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）
-        // ⚠ 兄弟序即绘制序：ground(100) → desert(200) → snow(300)（原版 POLYGON_LAYER_ORDER）
-        this.blockRenderers = MAPO_BLOCK_KINDS.map((k) => new MapoBlockRenderer(this.world!, null, k));
+        // ⚠ 兄弟序即绘制序，与原版 POLYGON/TOP_LAYER_ORDER 对齐：
+        //   ground(100) → desert(200)+top(201) → snow(300)+top(301) → river(1600)+top
+        this.blockRenderers = [];
+        this.topRenderers = new Map();
+        for (const k of MAPO_BLOCK_KINDS) {
+            this.blockRenderers.push(new MapoBlockRenderer(this.world!, null, k));
+            this.topRenderers.set(k, new MapoTopRenderer(this.world!, null, k));
+        }
         this.riverRenderer = new MapoRiverRenderer(this.world, null);
+        this.topRenderers.set("river", new MapoTopRenderer(this.world, null, "river"));
         this.regionRenderer = new MapoRegionRenderer(this.world, null);
         this.decorRenderer = new MapoDecorRenderer(this.world, null);
         this.farRenderer = new MapoFarRenderer(this.world, null);
@@ -167,15 +179,28 @@ export class MapOriginalWorldView extends CocosView {
                     } catch { /* 该层不建 */ }
                 }
             }
+            for (const kind of MAPO_TOP_KINDS) {
+                const table = art.tops(kind);
+                if (table) {
+                    try { mapoSetTops(kind, table.buffer()); } catch { /* 该族不出手摆件 */ }
+                }
+            }
             this.renderer?.dispose();
             for (const r of this.blockRenderers) r.dispose();
-            this.blockRenderers = MAPO_BLOCK_KINDS.map((k) => new MapoBlockRenderer(this.world!, art, k));
+            for (const r of this.topRenderers.values()) r.dispose();
+            this.blockRenderers = [];
+            this.topRenderers = new Map();
+            for (const k of MAPO_BLOCK_KINDS) {
+                this.blockRenderers.push(new MapoBlockRenderer(this.world!, art, k));
+                this.topRenderers.set(k, new MapoTopRenderer(this.world!, art, k));
+            }
             this.riverRenderer?.dispose();
             this.regionRenderer?.dispose();
             this.decorRenderer?.dispose();
             this.farRenderer?.dispose();
             this.renderer = new MapoGroundRenderer(this.world!, art);
             this.riverRenderer = new MapoRiverRenderer(this.world!, art);
+            this.topRenderers.set("river", new MapoTopRenderer(this.world!, art, "river"));
             this.regionRenderer = new MapoRegionRenderer(this.world!, art);
             this.decorRenderer = new MapoDecorRenderer(this.world!, art);
             this.farRenderer = new MapoFarRenderer(this.world!, art);
@@ -198,6 +223,8 @@ export class MapOriginalWorldView extends CocosView {
         this.decorRenderer?.dispose(); this.decorRenderer = null;
         for (const r of this.blockRenderers) r.dispose();
         this.blockRenderers = [];
+        for (const r of this.topRenderers.values()) r.dispose();
+        this.topRenderers = new Map();
         this.riverRenderer?.dispose(); this.riverRenderer = null;
         this.regionRenderer?.dispose(); this.regionRenderer = null;
         this.labelRenderer?.dispose(); this.labelRenderer = null;
@@ -433,9 +460,12 @@ export class MapOriginalWorldView extends CocosView {
         }
         // ★ 河流：在地表之上、山族件之下（原版 MAP_ZORDER 次序）
         if (mapoLayerVisible("river", cam.lod)) {
-            this.riverCount = this.riverRenderer?.render(cam.worldRect(2), true) ?? 0;
+            const polys = this.riverRenderer?.render(cam.worldRect(2), true) ?? [];
+            this.riverCount = polys.length;
+            this.topCount += this.topRenderers.get("river")?.render(polys, true) ?? 0;
         } else {
             this.riverRenderer?.clear();
+            this.topRenderers.get("river")?.clear();
             this.riverCount = 0;
         }
         // ★ 区域件（多格地形）比逐格摆件多盖一档：远档看山林轮廓最有用
@@ -457,11 +487,19 @@ export class MapOriginalWorldView extends CocosView {
             this.groundCount = this.renderer?.render(cam.worldRect(1), true) ?? 0;
             // ★ snow / desert 叠在地表底之上（⛔ 不是替换）
             if (mapoLayerVisible("blocks", cam.lod)) {
-                this.blockCount = this.blockRenderers
-                    .reduce((n, r) => n + r.render(cam.worldRect(1), true), 0);
+                this.blockCount = 0;
+                this.topCount = 0;
+                for (let i = 0; i < this.blockRenderers.length; i += 1) {
+                    const polys = this.blockRenderers[i].render(cam.worldRect(1), true);
+                    this.blockCount += polys.length;
+                    // ⚠ 同一批喂给 top 层，⛔ 别让它再裁一遍
+                    this.topCount += this.topRenderers.get(MAPO_BLOCK_KINDS[i])?.render(polys, true) ?? 0;
+                }
             } else {
                 for (const r of this.blockRenderers) r.clear();
+                for (const k of MAPO_BLOCK_KINDS) this.topRenderers.get(k)?.clear();
                 this.blockCount = 0;
+                this.topCount = 0;
             }
             // ⚠ 摆件在地表**之上**（兄弟序即绘制序），⛔ 不要反过来
             if (mapoLayerVisible("decor", cam.lod)) {
@@ -477,7 +515,9 @@ export class MapOriginalWorldView extends CocosView {
             this.farRenderer?.render(l);
             this.groundCount = 0;
             for (const r of this.blockRenderers) r.clear();
+            for (const r of this.topRenderers.values()) r.clear();
             this.blockCount = 0;
+            this.topCount = 0;
             this.decorCount = 0;
             this.visibleCount = 0;
         }
@@ -495,12 +535,14 @@ export class MapOriginalWorldView extends CocosView {
             const region = this.regionCount > 0 ? ` · 山林 ${this.regionCount}` : "";
             // ★ 水面片数：全图 3.1 万片，⛔ 掉到 0 说明 river-geo/rivers 两件没同时到位
             const river = this.riverCount > 0 ? ` · 水面 ${this.riverCount}` : "";
+            // ★ 手摆件数：⛔ 掉到 0 说明 <kind>-tops.bin / top-atlas 没到位
+            const tops = this.topCount > 0 ? ` · 点缀 ${this.topCount}` : "";
             // ★ 地表块数：⛔ 掉到 0 说明 ground-base.png 没到位（整层不建）
             const ground = near
                 ? ` · 地表 ${this.groundCount}${this.blockCount > 0 ? `+${this.blockCount}` : ""}` : "";
             this.status.string =
                 `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}`
-                + `${ground}${decor}${region}${river}`;
+                + `${ground}${decor}${region}${river}${tops}`;
         }
         // ⚠ 置灰与高亮是**两件事**：enabled 决定能不能点（文字变灰），on 决定当前选中（底板变亮）
         for (const chip of this.chips) {

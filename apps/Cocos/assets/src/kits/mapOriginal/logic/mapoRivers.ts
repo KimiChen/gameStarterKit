@@ -96,8 +96,8 @@ export function mapoRiversInRect(rect: IMapoWorldRectLike, limit: number,
         const pos = mapoRiverPos(s, d);
         if (pos.x + geo.maxX < rect.left || pos.x + geo.minX > rect.right) continue;
         if (pos.y + geo.minY > rect.top || pos.y + geo.maxY < rect.bottom) continue;
-        out.push({ s: sRaw, x: pos.x, y: pos.y, verts: geo.verts, indices: geo.indices,
-                   uv: uvOf(geo.tag), rgba });
+        out.push({ s: sRaw, x: pos.x, y: pos.y, geo: view.getUint8(o + 4),
+                   verts: geo.verts, indices: geo.indices, uv: uvOf(geo.tag), rgba });
     }
     return out;
 }

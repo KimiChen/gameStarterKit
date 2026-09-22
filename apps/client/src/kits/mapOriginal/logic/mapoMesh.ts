@@ -268,6 +268,8 @@ export interface MapoPolygonInput {
     /** 多边形原点的世界坐标（局部顶点加在它上面）。 */
     readonly x: number;
     readonly y: number;
+    /** 几何库下标（1 起）。⚠ `_top_group` 的手摆件靠它查该组，⛔ 别在渲染器里另存一份。 */
+    readonly geo: number;
     /** 局部顶点，`[x0, y0, x1, y1, …]`，**已是世界单位**。 */
     readonly verts: Float32Array;
     /** 三角索引（指向 verts 的顶点下标）。 */
