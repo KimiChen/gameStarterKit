@@ -24,30 +24,38 @@
 | `[disasm]` | 只有反汇编形态（`disasm/`，17,106 份）。⚠ **常量池可信**（常量走 triangular M 流、不过 code 的每-Proto RC4）；**指令序列有弱 key 噪声** | 中。结构性结论可用，逐指令语义要交叉验证 |
 | `[推断]` | 由命名、并列关系、足迹计数等推出来的 | 低。⛔ 不许当事实引用，必须带「推断」字样 |
 
-★ 前缀表示**本轮由维护者本人独立复核过**（不只是调研 agent 报的）。
+★ 前缀表示**已独立复核**（不只是调研 agent 报的）。首核 13 条为维护者本人重跑/原地读；
+2026-09-22 **补核轮**（维护者指派、AI 助手执行，逐条原地核对 pointer + 找反例）覆盖其余 41 条。
 
-### ⚠ 本文档的核验深度（读之前必看）
+### 本文档的核验深度（2026-09-22 起：**全部已核验**）
 
-本文档的断言有**两个不同的可信来源**，⛔ 别一视同仁：
+本文档 54 处证据标记**当前全部带 ★**：
 
 | | 来源 | 核验状况 |
 |---|---|---|
-| **带 ★ 的条目** | 维护者本人重跑过脚本 / 原地读过文件 | **已核验**。可直接当依据动手 |
-| **不带 ★ 的条目** | 调研 agent 报的，证据指针照录 | **未独立核验**。⚠ 用它之前**先按文中的指针自己核一遍** |
+| 首核 13 条 | 维护者本人重跑过脚本 / 原地读过文件 | **已核验**。可直接当依据动手 |
+| 补核 41 条 | 2026-09-22 维护者指派 AI 助手逐条原地核对 pointer + 找反例 | **已核验**，裁定与修正就地写回 |
 
-原计划有一轮「逐条断言独立对抗核验」（每条两个 agent：一个原地核对 pointer、一个专门找反例），
-**因额度被终止、零结果**（2026-09-22）。所以上表的 `[干净集]`/`[disasm]` 等层级标记
-**是调研时的自标，不是核验结论**。
+原计划的「逐条断言独立对抗核验」首轮因额度被终止、零结果；**补核轮已于 2026-09-22 完成**。
+⚠ 补核轮的收获证明「自标不可尽信」是对的，三类错误都抓到了实例：
 
-⚠ 这一点不是形式主义 —— 本轮已经抓到过两次自标出错：
+- **内容错误 5 处**（已就地修正）：§2 的 `MAP_ZORDER` 值表（枚举实为 `i×100`，原记的
+  101/102/108… 是「索引 +100」）；§4.1 `conver_res_config` 示例（实为 `river_12_1_x`，
+  原写 `ground_river_12_1_x`，base.cw 串池 0 命中）；§6 `client_res` 源路径列数（**12 列**，
+  原写十列）；§6.1 根资源数字（两版 APK 实含 119 条、「1,784/95.2%」无现存出处，现值见 §6.1）；
+  §8 「2D 拉到头换小地图」（该链路是 **3D/自走棋**行为，2D 视口从不派发 `vp_scale_max_limit`）。
+- **证据档位标错 9 处**（已就地改标）：多条只存在于 `disasm/` 的文件被自标 `[干净集]`
+  （`ground_block_grid` / `river_layer_logic` / `res_layer_logic` / `layer_aoi_build` /
+  `share_res` / `_get_ground_res_id` 等）；反向地，`logic_road` 的消费者实为**干净集**铁证，
+  自标 `[disasm]` 反而标低了。
+- **表述过宽 3 处**（已收窄）：§1.6 `_top_group`「6+ sprite、low_z 逐个递增」与
+  `_polygon_mask_group` 的 `tt_03`/`scale 2.42`（单样本被写成定义）、§3.1「res_multi
+  消费者全是逻辑」（有渲染侧例外 `terrain_layer_view`，S1 无实际绘制）。
+
+首核阶段抓到的两处自标出错同列备案：
 ① 调研说「原版一格 150×75」，实测 `scene/grid_state/png/*.png` 逐格件画布正好 **300×150**
 （`TILE_WIDTH=150` 是**半宽**）；
 ② 调研说「ShowLayers2d 27 条」，实测是 **36 条**。
-两条都是被本人复核时才发现的。
-
-**补做的办法**（若日后要把本文升格为全核验）：对不带 ★ 的每条断言，按文中 pointer
-原地核对 + 找反例；重点查三类错 —— 把 3D 侧机制说成 2D 的、把 `[disasm]` 的弱 key 噪声当确证、
-把只在某赛季/某分支成立的写成普适。
 
 ---
 
@@ -55,22 +63,25 @@
 
 ### 1.1 数据层是三个，显示层只有一个
 
-`[干净集]` `script/config/map_layer_config.lua` 的 DataLayers 里有**三个平级**的地表层：
+★ `[干净集]` `script/config/map_layer_config.lua` 的 DataLayers 里有**三个平级**的地表层：
 `ground2.bytes`→`ground_layer_logic`、`ground_desert.bytes` + `ground_desert_path.json`、
 `ground_snow.bytes` + `ground_snow_path.json`。
 而 ShowLayers2d 里**只有一条** `ground`（`scene_clz = "2d.background.ground_layer_view"`，
 `grid_type = LAYER_TYPE.BLOCK`，`level = MAP_ZORDER.BG`）—— desert/snow **没有自己的显示层**，
 被 ground 的 view 一起画。
 
-`[干净集]` 三层 bytes 格式相同：`[u16 BE rows][u16 BE cols][行主序 u8]`，取值
+★ `[干净集]` 三层 bytes 格式相同：`[u16 BE rows][u16 BE cols][行主序 u8]`，取值
 `string.byte(gridInfo, col*r + c + 5)`（offset=5）。**整块字符串留在内存不解析。**
+（取值实现的直读落点是 `map_lua.lua`；基类 `base_layer_logic` 同构但只有 disasm 形态。）
 
 ### 1.2 「一格」= 一个 10×10 格的 block
 
-`[干净集]` 基类 `get_grid_size()` 返回 `TILE_WIDTH*2, TILE_HEIGHT*2` = **300×150**（一个逻辑格）；
+★ `[干净集]` 基类 `get_grid_size()` 返回 `TILE_WIDTH*2, TILE_HEIGHT*2` = **300×150**（一个逻辑格）；
 但 `GroundLayerData` / `BaseSurfaceLayerData` **都覆写成** `TILE_WIDTH*20, TILE_HEIGHT*20`
 = **3000×1500** ⇒ 这三层的「一格」是一个 **10×10 逻辑格的 block**。S1 是 **152×152 块**
 （150 格 + 一圈 margin；`layer_info.lua` 给三层的 `offset` 都是 `{-10,-10}`）。
+（补核轮：基类定义只在 disasm（常量池 `×2` 级），两个覆写在干净集 `ground_layer_logic.lua:7-9` /
+`base_surface_layer_logic.lua:14-16` 直读；`layer_info.lua` 三层 offset 逐字命中。）
 
 > ★ `[实测]` **原版一个逻辑格 = 300×150 px**。`config_2d.lua` 的 `TILE_WIDTH=150` / `TILE_HEIGHT=75`
 > 是**半宽/半高**。独立佐证：`scene/grid_state/png/*.png` 这些**逐格**状态件画布正好 300×150、
@@ -80,7 +91,7 @@
 
 ### 1.3 三层是「叠」不是「替」
 
-`[干净集]` `GroundBlockGrid:create_view` 里 `for _, ground_type in ipairs(GROUND_DATA_TYPE)`，
+★ `[disasm]` `GroundBlockGrid:create_view` 里 `for _, ground_type in ipairs(GROUND_DATA_TYPE)`，
 `GROUND_DATA_TYPE = {"ground","desert","snow"}`，每种地貌各建一个 polygon 节点 + 一个 top 节点：
 
 ```
@@ -88,12 +99,16 @@ POLYGON_LAYER_ORDER = { ground=100, desert=200, snow=300 }
 TOP_LAYER_ORDER     = { ground=101, desert=201, snow=301 }
 ```
 
-`[实测]` S1：ground 层 23,104 块**全非零**；desert 4,762 块（20.6%）、snow 4,186 块（18.1%）、
-两者同时有的 489 块。⇒ 同一块可以同时挂草地底 + 沙漠贴片 + 雪贴片。
+（⚠ 补核轮改标：`ground_block_grid.lua` **不在干净集**，证据是 `ground_block_grid.lua.disasm`；
+数值 100/200/101/201/301 从常量池直接解出，snow=300 落在未打印槽位、系结构推断。）
+
+★ `[实测]` S1：ground 层 23,104 块**全非零**；desert 4,762 块（20.6%）、snow 4,186 块（18.1%）、
+两者同时有的 489 块（补核轮 numpy 复算逐项一致）。⇒ 同一块可以同时挂草地底 + 沙漠贴片 + 雪贴片。
 
 ### 1.4 ★ 铺满一块的办法：整数次 GL_REPEAT + 微量拉伸
 
-这是「原版怎么用一张 256² 的图铺满 3000×1500」的答案。`[disasm]` `ground_layer_view.lua` 的 `_init`：
+这是「原版怎么用一张 256² 的图铺满 3000×1500」的答案。★ `[disasm]` `ground_layer_view.lua` 的 `_init`
+（补核轮逐指令+常量池核对吻合；⚠ `GROUND_VB_TBL` 一行实在**文件作用域**构建、非 `_init` 内，并列于此只是呈现）：
 
 ```lua
 local sprite_info = Texture:get_quad_info(grass_res.src_name, true)  -- ★ 第 2 参 = gl_repeat
@@ -107,14 +122,15 @@ GROUND_VB_TBL  = { -24000, 0,  0, -12000,  24000, 0,  0, 12000 }     -- 1/16 px 
 - 取 `floor` 的意义是**让块边界落在整周期上**，块与块之间不出现半个花纹的错茬。
 - UV 是世界/屏幕**轴对齐**的线性映射 ⇒ 底纹**不跟着菱形转**。
   ⇒ 观感是「**一整张连续的大地毯被菱形裁出来**」，⛔ **不是「每格一块菱形地砖」**。
-- `[干净集]` 节点摆在块的几何中心：`x, y = grid2pos(r-10, c-10); y -= TILE_HEIGHT * 9.0`
-  ⇒ 等价于块中心格 `(r-5.5, c-5.5)` 的坐标。
+- ★ `[disasm]` 节点摆在块的几何中心：`x, y = grid2pos(r-10, c-10); y -= TILE_HEIGHT * 9.0`
+  ⇒ 等价于块中心格 `(r-5.5, c-5.5)` 的坐标。（⚠ 补核轮改标：该摆位代码只在 disasm；
+  `9.0` 的 double 位形在常量池精确命中，回代 `grid2pos` 公式吻合。原自标 `[干净集]`。）
 
 ### 1.5 ★ 平地底全图只有一张图
 
-`[干净集]` `ground_layer_logic:get_grid_res()` = `share_res.get_client_res_by_id(id).src_name`，
-id 来自 `IdConsts.RES_GRASS_1`；`[干净集]` `season_func_def.lua:418` 的 `get_ground_grass_res = false`
-⇒ **常规季无季节覆盖**。`[disasm]` 2D 视图侧另有一条**独立入口**按名直取：
+★ `[干净集]` `ground_layer_logic:get_grid_res()` = `share_res.get_client_res_by_id(id).src_name`，
+id 来自 `IdConsts.RES_GRASS_1`；★ `[干净集]` `season_func_def.lua:418` 的 `get_ground_grass_res = false`
+⇒ **常规季无季节覆盖**（补核轮：行号与内容精确命中）。★ `[disasm]` 2D 视图侧另有一条**独立入口**按名直取：
 `ground_layer_view.lua.disasm` 常量池 `['share_res','get_client_res_by_name','草1',…]`。
 
 ★ `[实测]` `IdConsts` 的键在包里是乱码 `TES_RRASS_,`，经 **KS[11] 定点修复**还原为 `RES_GRASS_1`：
@@ -125,26 +141,30 @@ TES_RRASS_,  → RES_GRASS_1     RILEJHEIGHI → TILE_HEIGHT
 QORLQ_WIDTU  → WORLD_WIDTH     JOGIV_FRAMX → LOGIC_FRAME
 ```
 
-⇒ `[推断→实证]` `草1` / `RES_GRASS_1` 的落点是 **`ground_down/underground1.png`**（256²、ETC2 RGB、
-100% 不透明、双向 wrap 缝比 0.90/0.91）。
+⇒ ★ `[推断→实证]` `草1` / `RES_GRASS_1` 的落点是 **`ground_down/underground1.png`**（256²、ETC2 RGB、
+100% 不透明由压缩格式直接成立、双向 wrap 缝比 0.90/0.92［1px 边带 RGB Pearson 口径；
+原记 0.90/0.91 未注明口径，定性一致］）。
 ⚠ 它**在任何 prefab 里都不留路径** —— 按 id/名从 `share_res` 取 ⇒ 扫 prefab 永远扫不到它。
 「0 个 prefab 消费者」是**机制使然**，⛔ 不是缺证据。
+（补核轮：全量 100,689 个 prefab.bin 字节扫描 `underground1` **0 命中**；
+阳性对照 `underground2`/`underground3` 各中 60 个且位置与 §1.6 吻合，扫描方法有效。）
 
 > ⇒ **整张 S1 的地表底就是一张 `underground1` 铺满**，再叠 snow/desert 的 block 覆盖。
 > 画面上的颜色变化**全部来自上层的 res_field 摆件与山体件**，⛔ 不来自地表底。
 
-### 1.6 `_polygon_group` / `_top_group` 永远成对
+### 1.6 `_polygon_group` / `_top_group` 基本成对（⚠ river_hean 例外）
 
-`[实测]` 三种 prefab 后缀是三套不同的东西，⛔ 别混：
+★ `[实测]` 三种 prefab 后缀是三套不同的东西，⛔ 别混（补核轮：name_map 全量计数 + prefab_bin 结构解析；
+包内真后缀是 `.prefab.bin`）：
 
 | 后缀 | 结构 | 角色 |
 |---|---|---|
-| `_group` | 一个 `node_2d` 挂**一个** `sprite_2d` | **立体件本体**（山、树、资源田） |
-| `_polygon_group` + `_top_group` | 前者 = `polygon_2d` 铺一张底图；后者 = 6+ 个 `sprite_2d`，各带独立 pos/scale/angle 与逐个递增的 `low_z` | **区域底色多边形 + 手摆细节**。⚠ **只出现在 snow/desert/river 三条 block 级地貌带**（desert 60+60、snow 60+60、river 57+57…） |
-| `_polygon_mask_group` | `sprite_2d tt_03` + `comp_mask`(scale 2.42) + `polygon_2d tt_02` | 足迹形多边形用 `tt_02` 填充、`tt_03` 当遮罩做**软边**。挂 `MAP_ZORDER.TERRAIN_MASK` |
+| `_group` | 一个 `node_2d` 挂**一个** `sprite_2d` | **立体件本体**（山、树、资源田）。⚠ 该形态对山/树成立（mountain_new 13/13、senlin 10/10），但 scene/ground 全量 1,162 个 `_group` 里严格同构的约 61%（zhaoze/grass 等有多节点/动画帧变体） |
+| `_polygon_group` + `_top_group` | 前者 = `polygon_2d` 铺一张底图（177/177 零例外）；后者 = 若干个 `sprite_2d`（desert 5–17、snow 12–23、**river 仅 0–4**），各带独立 pos/scale/angle 与**互不相同的** `low_z`（约 2/3 按子序递增——原写「6+ 个、逐个递增」，补核轮按实测收窄） | **区域底色多边形 + 手摆细节**。⚠ **只出现在 snow/desert/river 三族 block 级地貌带**（desert 60+60、snow 60+60、river 57+57；river 系另有 bohai/longriver/yellowriver 变体目录；**`river_hean` 有 8 个 `_top_group` 无 polygon 对**，「永远成对」不绝对） |
+| `_polygon_mask_group` | `sprite_2d`（带 `comp_mask`，222/222）+ `polygon_2d` | 足迹形多边形用填充贴图（`tt_02` 占 150/224）、遮罩做**软边**。遮罩 sprite 名 = 其贴图基名（`tt_03` 只是 63/222）、`comp_mask` 的 `scale 2.42` 仅 36/222——两者都是**示例值不是定义**（原写成了定义，已收窄）。挂 `MAP_ZORDER.TERRAIN_MASK`（证据在 disasm 的 `terrain_layer_view`） |
 
-`[实测]` desert 的 60 个 `*_polygon_group` 铺 `ground_down/underground3.png`、
-snow 的 60 个铺 `underground2.png`、river 的铺 `river/png/26.png`。
+★ `[实测]` desert 的 60 个 `*_polygon_group` 铺 `ground_down/underground3.png`、
+snow 的 60 个铺 `underground2.png`、river 的铺 `river/png/26.png`（补核轮 177/177 全中、零例外）。
 
 ### 1.7 ⚠ `_polygon_mask` 那套多格地貌在 S1 **恒不生效**
 
@@ -169,22 +189,25 @@ disasm/asset/config/S1/cn/res_pro/multi_grid_{forest,hill,wetland,wild}.lua.disa
 
 | 层名 | 数据 | 视图类 | MAP_ZORDER |
 |---|---|---|---|
-| `res` | `res.bytes` | `common.res_show.res_logic_view` → `layer_res_field` | `RES` = 133 |
-| `terrain` | `res.bytes`（**同一份数据**） | `common.map.terrain_layer_view` → `terrain_layer_grid` | `TERRAIN`=102 / `TERRAIN_MASK`=101 |
-| `grid_state` | 走 **AOI**（服务端） | `2d.map.grid_state_2d_view` | `STATE_DEFAULT`=119 / `STATE_TOP`=137 |
+| `res` | `res.bytes` | `common.res_show.res_logic_view` → `layer_res_field` | `RES` = 3400 |
+| `terrain` | `res.bytes`（**同一份数据**） | `common.map.terrain_layer_view` → `terrain_layer_grid` | `TERRAIN`=300 / `TERRAIN_MASK`=200 |
+| `grid_state` | 走 **AOI**（服务端） | `2d.map.grid_state_2d_view` | `STATE_DEFAULT`=2000 / `STATE_TOP`=3800 |
 
-`[干净集]` `MAP_ZORDER` 是 base=100 的连号枚举（`const.lua:105`）：
+★ `[干净集]` `MAP_ZORDER` 是 step=100 的连号枚举（`const.lua:105` 调 `bef_pnum_ee(..., }, 100)`，
+函数体 `const.lua:90` 是 `enum_val = i * step`）。⚠ **补核轮修正**：原记的 101/102/108… 是
+「枚举索引 +100」，**真实值 = 索引 ×100**（顺序与「归属色块压在资源摆件之下」的推论不受影响）：
 
 ```
-BG(100) < TERRAIN_MASK(101) < TERRAIN(102) < ROAD(108) < RIVER(115)
-        < STATE_DEFAULT(119) < CREATURE(131) < RES(133) < STATE_TOP(137) < BUILD_TOP(138)
+BG(100) < TERRAIN_MASK(200) < TERRAIN(300) < ROAD(900) < RIVER(1600)
+        < STATE_DEFAULT(2000) < CREATURE(3200) < RES(3400) < STATE_TOP(3800) < BUILD_TOP(3900)
 ```
 
 ⇒ **归属色块默认压在资源摆件之下**，只有「顶层建筑」的格才抬到摆件之上。
 
 ### 2.1 `res` 层确实是「逐格一个 res_field 单位」
 
-`[disasm]` `ViewModelResField:check_validate(row,col)` 逐条筛，四道门：
+★ `[disasm]` `ViewModelResField:check_validate(row,col)` 逐条筛，四道门（补核轮：
+`view_model_resfield.lua.disasm` 常量池与指令结构逐门对上、顺序一致）：
 
 1. `map_data` 没好 → 不画；
 2. 新手引导抑制（`_ns0_should_suppress_res_field`）→ 不画；
@@ -223,28 +246,40 @@ BG(100) < TERRAIN_MASK(101) < TERRAIN(102) < ROAD(108) < RIVER(115)
 | 足迹 | 1 | 1 | 1 | 1 | **2** | 2 | 2 | **4** | **7** | 7 | 7 | **19** | 19 |
 
 1 / 2 / 4 / 7 / 19 是**六边形环**（7 = 中心+6 邻、19 = 半径 2）。
-`[推断]` 逐值足迹形状：48..51 单格；52 = 中心+西；53 = 中心+东南；54 = 中心+西南；
+★ `[实测]` 逐值足迹形状（补核轮从数据逐值复算全中；邻接约定 = 按行奇偶错行的六边形）：
+48..51 单格；52 = 中心+西；53 = 中心+东南；54 = 中心+西南；
 55 = 中心+W+NW+SW；57/58/59 = 半径 1 的 7 格；60/61 = 半径 2 的 19 格。
-回代 55,127 个锚点只有 2 例不吻合（99.996%）。
+回代 55,127 个锚点只有 2 例不吻合（99.996%）。⚠ 复现「2 例」依赖两条回代约定：
+**越界格跳过不计**（另有 71 例纯边缘裁切）+ **覆盖格允许是同值锚点本身**；从严口径是 74 例。
 
 > ⇒ **美术只按 `res.bytes` 的非零锚点出件；`res_multi` 是「这格属于哪个件」的掩码，⛔ 不参与出图。**
-> `[disasm]` `res_multi` 的消费者全是**逻辑**不是渲染：`shape_mgr` 的架桥判定（`.is_block`）、
-> 地貌 tips、环境音、`map_mgr`。
+> ★ `[disasm]` `res_multi` 的消费者**几乎全是逻辑**：`shape_mgr` 的架桥判定（`.is_block`）、
+> 地貌 tips、环境音（补核轮升格：干净集 `audio/amb/rule_grid_type.lua:10-15`）、`map_mgr`（mapallmodel 透传）。
+> ⚠ **有一个渲染侧例外**：`terrain_layer_view` 直接读 res_multi（§3.5 的连通区机制）——
+> 原写「全是逻辑不是渲染」的全称判断不成立；但 S1 四张 multi_grid 表全空、无实际绘制（§1.7），
+> 「res_multi 不参与 48..61 山体撒件」的核心意思仍成立。
 > `[推断]` 覆盖格的通行性继承多格 land 行的 `is_block` ⇒ **整片 19 格都挡路**
 > （⚠ `land` 表在未解的 `base.cw` 里，这条是推断）。
 
 ### 3.2 48..61 是同一族山体的 14 种足迹
 
-`[disasm]` `base.cw` 串池里 `山1..山14` 依次指向
-`scene/ground/mountain_new/mountain{1m_01..04, 2m_x_01, 2m_xy_01, 2m_y_01, 4m_01, (空), 7m_01..03, 19m_01, 19m_02}_group.prefab`，
-另有平行的 `雪山1..14`(mountain_snow) / `荒地山1..14` / `秋季山N`。
-**山9 没有 2D prefab，而数据里字节 56 恰好 0 命中** ⇒ `res 值 v ↔ 山(v−47)`，`RES_LAND_MOUNTAIN_1 = 48`。
+★ `[disasm]` `base.cw` 串池里 `山1..山14` 依次指向
+`scene/ground/mountain_new/mountain{1m_01..04, 2m_x_01, 2m_xy_01, 2m_y_01, 4m_01, (空), 7m_01..03, 19m_01, 19m_02}_group.prefab`
+（补核轮逐串核对：13 件精确吻合、无第 14 件；⚠ 山3..山8 的相邻性被 ctable 串池去重掩盖，
+其归属靠「13 形 × 足迹尺寸序 + 56/山9 双缺」三角定位成立），
+另有平行的 `雪山1..14`(mountain_snow) / `荒地山1..14` / `秋季山N`（⚠ 2D 秋季件挂在
+**`新秋季山N`** → `mountain_new/grass_fall_new/`，`秋季山N` 标签只带 3D）。
+**山9 没有 2D prefab，而数据里字节 56 恰好 0 命中**（res/multi 双侧均 0，补核轮复算；
+48..61 各值计数与 §3.1 表逐值一致）⇒ `res 值 v ↔ 山(v−47)`，`RES_LAND_MOUNTAIN_1 = 48`
+（⚠ 该数值本身无直接证据：IdConsts 在干净集只剩注解档，等号由回落逻辑 + 三角定位支撑）。
 
-`[干净集]` 代码铁证：`res_layer_logic:get_res_multi()` 在 `res_multi.bytes` 缺失时
+★ `[disasm]` 代码铁证：`res_layer_logic:get_res_multi()` 在 `res_multi.bytes` 缺失时
 **直接 `return IdConsts.RES_LAND_MOUNTAIN_1`** ⇒ res_multi 的值空间就是「山」的 land id 空间。
+（⚠ 补核轮改标：`res_layer_logic.lua` **不在干净集**，原自标 `[干净集]`；行为在 disasm 逐指令吻合。）
 
-`[disasm]` 选哪一套（草/雪/荒）由 `check_ground_type(row,col)` 在 land 行的
-`client_res_id / snow_client_res_id / desert_client_res_id` 三列里挑。
+★ `[disasm]` 选哪一套（草/雪/荒）由 `check_ground_type(row,col)` 在 land 行的
+`client_res_id / snow_client_res_id / desert_client_res_id` 三列里挑
+（补核轮：定义在 `map_mgr.lua.disasm`，调用现场三处独立印证，列名全对）。
 
 > ⇒ 本 kit 把 48..61 拆成「山脉/林丛/散落」三族是**本仓自创的分类**，原版是**一族 14 形**。
 
@@ -263,16 +298,18 @@ BG(100) < TERRAIN_MASK(101) < TERRAIN(102) < ROAD(108) < RIVER(115)
 ★ `[实测]` 布局 `[u24 BE 条数][条数 × {u16 row, u16 col, u8 件id}]`，3 + 5×3942 = **19,713 B 逐字节吻合**。
 件 id ∈ {52,53,55,58,59}，**全部落在 `res==0`、`res_multi ∈ 57..61` 的格上**（即大山**内部**的非锚点格），
 3,939/3,942（99.92%）落在多格覆盖区内 ⇒ 件 id 与 res 是**同一值空间**。
-`[disasm]` GM 面板把它叫「切换山体拼接」（`enable_mountain_patch`，改了要重启）。
+★ `[disasm]` GM 面板把它叫「切换山体拼接」（`enable_mountain_patch`，改了要重启——
+补核轮：面板项与 handler 俱在，tips 原文「打开/关闭山体拼接，请重启客户端」）。
 
 > ⇒ 作用是**在被 19m 大件平铺的大山区里再补中小件**打散重复感。
 > ⚠ 本 kit 把它当**主锚点源**用错了位置。
 
 ### 3.5 「按连通区一件」的机制存在，但 S1 恒关
 
-`[disasm]` `TerrainLayerView` 的 `get_center_pos` 查 `MultiGridDict[land_type]`（格key→中心key 预计算表），
+★ `[disasm]` `TerrainLayerView` 的 `get_center_pos` 查 `MultiGridDict[land_type]`（格key→中心key 预计算表），
 `make_dict` 用 `shape_mgr:get_land_range(shape,row,col)` 把该件全部格反向登记；
 一件只要有 ≥1 格进视口就整件显示。
+（补核轮：三个机制点全部对上；⚠ `MultiGridDict` 的构建点落在弱 key 噪声区，「预计算」系推断。）
 ⇒ 原版**确实同时存在**「按锚点撒件」与「按连通区一件」两套，但 S1 只跑前者（§1.7 四张表全空）。
 
 ---
@@ -281,29 +318,43 @@ BG(100) < TERRAIN_MASK(101) < TERRAIN(102) < ROAD(108) < RIVER(115)
 
 ### 4.1 河
 
-`[干净集]` `river.bytes` 是「河格 → `river_path.json` 下标」的单字节图，
-`[实测]` 头 `01f8 01f8` = **504×504**、body 254,016 B，**列主序** `byte(c*row + r + 5)`。
-`[干净集]` `river_layer_logic:_init` 里 `grid_width = TILE_WIDTH*6` ⇒ **一个「河格」= 3×3 逻辑格 = 900×450 px**。
+★ `[disasm]` `river.bytes` 是「河格 → `river_path.json` 下标」的单字节图
+（⚠ 补核轮改标：`river_layer_logic.lua` 不在干净集，原自标 `[干净集]`；
+字节值实测 ≤102 恰 = 路径表条数，强支持下标语义），
+★ `[实测]` 头 `01f8 01f8` = **504×504**、body 254,016 B，**列主序** `byte(c*row + r + 5)`
+（disasm 取值式 `p2*self.row + p1 + self.offset`，与基类行主序式形成结构对照）。
+★ `[disasm]` `river_layer_logic:_init` 里 `grid_width = TILE_WIDTH*6` ⇒ **一个「河格」= 3×3 逻辑格 = 900×450 px**
+（常量 6 以 denormal 位型 `3e-323` 出现，同档标错已改）。
 
-`[实测]` `river_path.json` **102 条**，每条形如
-`["scene/ground/river{,_yellowriver,_longriver}/<形状>_1[_x][_y][_xy].group"]`；
-`conver_res_config()` 就地改写成 res 名（`scene/ground/river/12_1_x.group` → `ground_river_12_1_x`）。
+★ `[实测]` `river_path.json` **102 条**（river 51 / yellowriver 26 / longriver 25），每条形如
+`["scene/ground/river{,_yellowriver,_longriver}/<形状>_<n>[_x][_y][_xy].group"]`
+（⚠ 补核轮修正：longriver 实际多一层 `river_longriver_high/` 目录；第二数字不恒为 1——
+`_1`×92、`_2`×6、`_3`×2、`_4`×2）；
+`conver_res_config()` 就地改写成 res 名（`scene/ground/river/12_1_x.group` → **`river_12_1_x`**，
+即剥掉 `scene/ground/` 两段；⚠ 原写的 `ground_river_12_1_x` 在 base.cw 串池 **0 命中**，已修正）。
 
-> ⇒ `_x/_y/_xy` 就是 x/y 镜像变体，形状号 1..21 是「直/弯/汇/岸」的**手工枚举**。
+> ⇒ `_x/_y/_xy` 就是 x/y 镜像变体，形状号 1..22 是「直/弯/汇/岸」的**手工枚举**（原写 1..21，漏 22）。
 > **运行时不做任何邻接判断** —— 选片在制图期就烘死在 `river.bytes` 的字节值里。
 
-`[disasm]` 三条水系的颜色差来自**一张 2048² 全图蒙版**（`river_color_mask.ktx`），⛔ 不是换贴图。
+★ `[disasm]` 三条水系的颜色差来自**一张 2048² 全图蒙版**（`river_color_mask.ktx`，实测 2048×2048 ETC2A8）：
+作为 `normal_river` 材质的额外 `set_param` 纹理采样，⛔ 不是换贴图。
 
 ### 4.2 道
 
-`[实测]` 图集片按 `line / horizonalturn / upverticalturn / downend / uptcross / xcross` 分类
-⇒ 明显是按邻接方向选片，机制与河同构（制图期烘死）。三套皮肤：`road` / `road_ash` / `road_snow`
-+ `road_official` / `ss_road` / `road_liangdao`。
+★ `[实测]` 图集片按邻接方向分类 ⇒ 机制与河同构（制图期烘死）。⚠ 补核轮修正：分类全集是 **9 类**
+（`line / horizonalturn［原版拼写如此］ / upverticalturn / downverticalturn / upend / downend /
+uptcross / downtcross / xcross`，另有 1 片 `mask`），原文档只列了 6 类。
+三套皮肤：`road` / `road_ash` / `road_snow`（**共用** `road.xml`，58 片）
++ `road_official` / `ss_road`（图集实名 `road_direct.xml`）/ `road_liangdao`。
 
 > ⇒ 本 kit **完全没有道路层**，而数据（`road_info.bytes` 半文本未解 / `logic_road.bytes`）
 > 与素材（三套 road 图集）**都在手**。
-> ⚠ `[disasm]` `logic_road.bytes` 是 **3D 地形 PCG 的压平遮罩源**，S1 连路径登记都没有、
-> 97.7% 落在平地 ⇒ 原版的路是**纯表现层**。⛔ 别拿它做通行/行军判定。
+> ⚠ ★ `[干净集]` `logic_road.bytes` 是 **3D 地形 PCG 的压平遮罩源**（补核轮**升格**：
+> 消费者在干净集 `pcg_assembly_standard_mask_map.lua:110-118` 与
+> `pcg_assembly_standard_splat_map.lua:84-98`，链为 logic_road → mask_logic_road → mask_flat_map）；
+> 文件结构实测是 **64,135 条 {u16 BE, u16 BE} 排序坐标对**（非带头网格），S1 无 logic_road 登记、
+> 97.75% 落在平地（62,690/64,135 格 res==1）⇒ 原版的路是**纯表现层**。⛔ 别拿它做通行/行军判定。
+> （⚠ 「S1 无登记」仅限 logic_road——`road_info.bytes` 在 S1 **有**登记。）
 
 ---
 
@@ -324,9 +375,11 @@ BG(100) < TERRAIN_MASK(101) < TERRAIN(102) < ROAD(108) < RIVER(115)
 ★ `[实测]` **城根本不在 `res.bytes` 里**：2,689 个城格 **100% 是 `res==1`（平地）且 `res_multi==0`**
 ⇒ 地块层完全不知道城的存在，城是**建筑层**画上去的。
 
-`[干净集]` 画它的是 `res` 层下的 `res_show/layer/layer_aoi_build.lua`：
+★ `[disasm]` 画它的是 `res` 层下的 `res_show/layer/layer_aoi_build.lua`：
 `scene_mgr:sc_create_unit_by_aoi(...)` 按**服务端 AOI** 建单位 ⇒
 **城/营/建筑一律是 AOI 驱动的 unit，⛔ 不是地块贴图，也不是逐格摆件。**
+（⚠ 补核轮改标：`layer_aoi_build.lua` 只在 disasm，原自标 `[干净集]`；干净集旁证：
+兄弟文件 `layer_aoi_unit.lua:11` 同款调用，装配链 `logic_layer_config.lua:55-60` 闭合。）
 
 ★ `[实测]` `birth_point.bytes` = `[u16 点数=19097][19097 × {u16 row,u16 col}]`，76,390 B 精确读完、
 零重复 ⇒ 是**出生/迁城候选格的稀疏点阵**，⛔ 与画面无关。
@@ -335,59 +388,76 @@ BG(100) < TERRAIN_MASK(101) < TERRAIN(102) < ROAD(108) < RIVER(115)
 
 ## 6. 资源加载：三段表 `share_res`
 
-`[干净集]` `share_res` 的三个索引都是**构建期预生成、随包发货**，⛔ 不是运行时建的：
+★ `[disasm]` `share_res` 的三个索引都是**构建期预生成、随包发货**，⛔ 不是运行时建的
+（⚠ 补核轮改标：`share_res.lua` 不在干净集；第一行实际带 `___get_special_cfg` 回退参）：
 
 ```lua
-share_res.client_res_cfg       = get_cfg("client_res")
+share_res.client_res_cfg       = get_cfg("client_res", ___get_special_cfg)
 share_res.client_res_id_2_name = get_cfg("res:id2name")
 share_res.client_res_name_2_id = get_cfg("res:name2id")
 ```
 
-`[disasm]` 表本体在**一个 ctable 大包**里：`config/<赛季小写>/<语言>/base.cw`（+ `base_patch.cw`），
+★ `[disasm]` 表本体在**一个 ctable 大包**里：`config/<赛季小写>/<语言>/base.cw`（+ `base_patch.cw`），
 `ctable.new(read_file_vfs(...))` **整包一次读入、不展开成 Lua 表**；字段**按需从 ctable 读**
 （所以 63.7 MB 配置常驻代价 ≈ 文件本身）。
+（补核轮：base.cw 本体经 namehash 密码学级锁定 = 66,776,016 B、头 `fc49ee02…` 偏移表首项 0x5458 全中；
+base_patch.cw 两版 APK 俱在。⚠ ctable 是 C 模块，「按需读」为 Lua 侧结构佐证。）
 
-`[disasm]` `client_res` 行里有**十列源路径**：
-`src_name` / `_v` / `_3d` / `_3d_v` / `_color` / `_color_3d` / `_common` / `_common_v` /
-`_common_7th` / `_common_v_7th` ⇒ **皮肤（2D/3D UI）、竖屏、无障碍色彩增强全靠「同一行里换一列」**。
+★ `[disasm]` `client_res` 行里有**十二列源路径**（⚠ 补核轮修正：原写十列，漏 `_color_v` 与 `_color_3d_v`）：
+`src_name` / `_v` / `_3d` / `_3d_v` / `_color` / `_color_v` / `_color_3d` / `_color_3d_v` /
+`_common` / `_common_v` / `_common_7th` / `_common_v_7th`
+⇒ **皮肤（2D/3D UI）、竖屏、无障碍色彩增强全靠「同一行里换一列」**
+（换列机制另有干净集直证：`create_res_factory.lua:19-33`）。
 
 > ⇒ 原版的寻址是「**逻辑名 → id → 真实路径**」三段表；本 kit 把格 id 直接焊进图集坐标。
 > ⚠ 这是**架构差异不是缺陷**：我们的像素在合并图集里，UV 只在那张 PNG 的坐标系里有意义。
 
 ### 6.1 `.group` 是组名不是文件名
 
-`[实测]` `*_path.json` 里的 `<n>_<m>.group` **不是文件名**，是**组名**；真身是
+★ `[实测]` `*_path.json` 里的 `<n>_<m>.group` **不是文件名**，是**组名**；真身是
 `<名>_polygon_group.prefab` + `<名>_top_group.prefab`（另有 `_polygon_mask_group`）。
-`[干净集]` `_get_ground_res_id(path, suffix)` 把它拼成 `snow_13_2_polygon` / `snow_13_2_top` 再查表。
+（补核轮全量验证：name_map 里 `.group` 结尾条目 0 个；snow 52 + desert 51 组名 103/103 成对存在。）
+★ `[disasm]` `_get_ground_res_id(path, suffix)` 把它拼成 `snow_13_2_polygon` / `snow_13_2_top` 再查
+`share_res.res_id`（⚠ 补核轮改标：该函数只在 disasm，原自标 `[干净集]`）。
 
-`[实测]` `scene/ground/**` 根资源共 **1,873 条，两版 APK 一条不含** ⇒ 运行时下载；
-已从发行商 CDN 取回 **1,784/1,873 = 95.2%**。
+★ `[实测]` `scene/ground/**` 根资源共 **1,873 条**（清单 `all_root_res_list.cw`），其中 **119 条两版
+APK 自带**（`road/*_complex_path_*` 116 条 + `grass/bianjieyun*` 3 条——⚠ 补核轮修正：
+原写「两版 APK 一条不含」，系较早的 `missing_ground_roots.json` 漏算 `+.bin` 变体所致）；
+**1,754/1,873（93.6%）靠运行时下载**。到位现状（按 `root_res_coverage.json` 口径复算）：
+CDN 已取 1,673、APK∪CDN 并集 **1,792（95.7%）**、仍缺 81。
+（⚠ 原写的「1,784/1,873 = 95.2%」在现存产物里找不到出处，疑似 CDN 增量抓取的中间态。）
 
 ---
 
 ## 7. 分层与 zorder：三级叠加
 
-`[干净集]` 原版任何可见物的绘制次序由**三级**决定，缺一不可：
+★ `[干净集]` 原版任何可见物的绘制次序由**三级**决定，缺一不可（补核轮：①② 的配置侧干净集直读；
+③ 的 `sort_child_by_id` 消费端与 `grid2pos` 公式只在 disasm，为 `[disasm]` 结构级）：
 
 1. **render_layer（引擎绘制桶）** —— `node:set_render_layer(render.LAYER_*)`。桶之间是硬分离的绘制批次。
 2. **层根 zorder（`MAP_ZORDER`，步长 100）** —— 每层 `layer_root:set_zorder(cfg.level)`。
-   步长 100 是**留缝**的：配置里大量出现 `RES + 1`、`TERRAIN + 1`、`RES - 2`，用来在两个语义层之间
-   插队而不动枚举表。
+   步长 100 是**留缝**的：配置里大量出现 `RES + 1`、`TERRAIN + 1`、`RES - 2`（按真值即 3401/301/3398，
+   插在相邻两个整百层之间），用来在两个语义层之间插队而不动枚举表。
 3. **层内逐节点 zorder = 屏幕 y 画家序** ——
    `grid_node:set_zorder(-pos_y - zorder_base + zorder_offset)` + 层根上
    `sort_child_by_id(true)`。因为 `grid2pos` 给出 `y = -(row+col+c)*75`
-   ⇒ **本质就是 (row+col) 升序、同斜线上奇数行压偶数行**。
+   ⇒ **本质就是 (row+col) 升序、同斜线上奇偶行错开**（⚠ 弱 key 噪声下「奇压偶」的方向不可逐值确认）。
 
-`[实测]` 四段实测条数：DataLayers **53** / ShowLayersCommon **31** / ShowLayers2d **36** /
-ShowLayers3d **42**。2D 实际生效的显示层 = Common 31 + 2d 36 = **67 条**。
+★ `[实测]` 四段实测条数：DataLayers **53** / ShowLayersCommon **31** / ShowLayers2d **36** /
+ShowLayers3d **42**（补核轮双重计数复核一致；附带发现：ShowLayers3d 末尾有一对同名重复
+`fudao_decorate`，疑原版自身笔误）。2D 实际生效的显示层 = Common 31 + 2d 36 = **67 条**。
 ⚠ 早先记的「ShowLayers2d 27 条」**是错的**。
 
 > ⇒ 本 kit 只有 6 层、深度**只有兄弟序**，缺的是第 ② 级那把「可插队的刻度」。
 
 ### 7.1 ⚠ 一条被用反的论据
 
-`[干净集]` 原版 2D 对**平铺层**（ground 细节 / road / grid_state）**本身也在合批**；
+★ `[disasm]` 原版 2D 对**平铺层**（ground 细节 / road / grid_state）**本身也在合批**；
 逐节点的是**立件层** + `sort_child_by_id`。
+（补核轮说破机制：Lua 侧平铺层**也逐格建节点**，合批发生在共有基类 `base_layer_view` 的
+`update_static_node` → `obj2d.static_nodes` 的 **2D 专属分支**［3D 分支只 set_parent］；
+消费方 grid_state/road/ground 三处俱在。例外：`ground_decal` 走 `decorate_layer_view`
+逐格建 unit、不烘焙。原自标 `[干净集]` 已改。）
 
 > ⇒ 「合并 mesh」的结论仍然对（Cocos 下 225 万格会变成上万节点），但
 > ⛔ **别再拿 `grid_state_2d_view` 的逐格 `sc_create_scene_node` 当论据** —— 那会把读者引向相反结论。
@@ -411,12 +481,16 @@ vp_scale_default = vp_scale_max        ← 默认值就是 max
 （`CAM_SCALE_MAX_FACTOR` 候选 1.45 / 1.35）；GM 接口 `unlock_view_scale` 做的事是
 `vp_scale_max *= 99` ⇒ 发行版这个上限是**刻意钉死的硬夹**。
 
-`[disasm]` 拉到头触发 `vp_scale_max_limit → on_vp_change_to_scale_max` →
-`close_main_and_open_minimap` ⇒ **关掉主界面、打开另一套 UI（小地图面板）**，
-面板底图是**美术手绘的位图**、⛔ 不是数据烘出来的。
+★ `[disasm]` 「拉到头换小地图」链路 `vp_scale_max_limit → on_vp_change_to_scale_max` →
+`close_main_and_open_minimap`（关主界面、开小地图面板）**真实存在，但只在 3D/自走棋成立**：
+⚠ **补核轮抓错** —— `vp_scale_max_limit` 全库只由 `viewport_3d`（3 处）与 `viewport_autochess` 派发，
+**2D 视口 `viewport.lua` 从无此事件**（`minimap` 一词 0 命中）；2D 到顶仅硬夹、不换视图。
+小地图面板底图是**预制静态美术贴图**（`minimap_bg` 配置 id 直取）、⛔ 不是数据烘出来的
+（这部分属实；「手绘」是对素材来源的推断）。
 
-> ⇒ 所谓「远」在原版是**换视图 + 换手绘素材**，⛔ 不是同一个相机继续缩小。
-> 本 kit 的 6 档 LOD + 自烘远档底图 + 常显缩略图整套是**自创**——见 §10 的定性。
+> ⇒ 修正后的结论：**2D 的「远」就是到此为止**（默认即最远、行程 ~1.4× 钉死，见上文 ★ 段）；
+> 「拉到头换视图 + 换预制素材」是 **3D** 的行为，原写「所谓『远』在原版是换视图」把 3D 误记到了 2D 头上。
+> 本 kit 的 6 档 LOD + 自烘远档底图 + 常显缩略图整套是**自创**——见 §10 的定性（结论不变）。
 
 ### 8.1 鸟瞰在 2D 恒不生效
 
@@ -443,9 +517,9 @@ vp_scale_default = vp_scale_max        ← 默认值就是 max
 | 河流 | 独立几何层，河格 = 3×3 逻辑格，102 条手工形状、制图期烘死 | 地表粗类的**一种颜色** | 整层缺失 |
 | 道路 | 按邻接方向选片，三套皮肤，制图期烘死 | **完全没有** | 整层缺失（数据素材都在手） |
 | 建筑城营 | **AOI 驱动的 unit**，两级配置表选件 | 城址件按「面积前 8 大」**启发式**挑 | 机制不同（AOI 需服务端） |
-| 归属状态 | `grid_state` 层，两个 z 档（119 / 137） | 无 | 需服务端 |
+| 归属状态 | `grid_state` 层，两个 z 档（2000 / 3800） | 无 | 需服务端 |
 | 分层深度 | render_layer + `MAP_ZORDER`（留缝） + 层内画家序**三级** | 只有兄弟序 | 缺第 ② 级刻度 |
-| 看全局 | 拉到头**换视图**（小地图面板，手绘底图） | 同相机 6 档 LOD + 自烘远档底图 | 自创（见 §10） |
+| 看全局 | 2D 到顶仅硬夹；**3D** 拉到头才换视图（小地图面板，预制静态底图） | 同相机 6 档 LOD + 自烘远档底图 | 自创（见 §10） |
 | 资源寻址 | 逻辑名 → id → 路径**三段表**，十列源路径换皮 | 格 id 焊进图集坐标 | 架构差异，非缺陷 |
 
 ---
