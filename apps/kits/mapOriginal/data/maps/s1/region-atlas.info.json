@@ -2,8 +2,8 @@
  "schemaVersion": 2,
  "mapId": "s1",
  "cell": [
-  680,
-  352
+  682,
+  409
  ],
  "gridCols": 3,
  "gridRows": 5,
@@ -11,10 +11,11 @@
   2048,
   2048
  ],
- "season": "fall",
- "seasonDir": "scene/ground/mountain_new/grass_fall_new",
+ "season": "base",
+ "seasonDir": "scene/ground/mountain_new",
  "anchor": "bottom-center",
  "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出",
+ "transform": "scale/offset/angle/pivot 逐形取自 prefab 的 sprite_2d；offset 是精灵**中心**相对锚点格的偏移（原版 px），pivot 恒 [0.5, 0.5]",
  "cells": [
   {
    "id": 48,
@@ -26,12 +27,12 @@
    "cell": [
     0,
     0,
-    680,
-    352
+    682,
+    409
    ],
    "art": [
-    199,
-    204,
+    200,
+    261,
     281,
     148
    ],
@@ -39,7 +40,21 @@
     281,
     148
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m7.png"
+   "scale": [
+    1.16614,
+    1.16614
+   ],
+   "offset": [
+    4.416,
+    7.8203
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m7.png"
   },
   {
    "id": 49,
@@ -49,14 +64,14 @@
    "shape": "1m",
    "footprintCells": 1,
    "cell": [
-    680,
+    682,
     0,
-    680,
-    352
+    682,
+    409
    ],
    "art": [
-    196,
-    204,
+    197,
+    261,
     287,
     148
    ],
@@ -64,7 +79,21 @@
     287,
     148
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m6.png"
+   "scale": [
+    1.22747,
+    1.22747
+   ],
+   "offset": [
+    -2.1065,
+    5.2822
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m6.png"
   },
   {
    "id": 50,
@@ -74,14 +103,14 @@
    "shape": "1m",
    "footprintCells": 1,
    "cell": [
-    1360,
+    1364,
     0,
-    680,
-    352
+    682,
+    409
    ],
    "art": [
-    196,
-    204,
+    197,
+    261,
     287,
     148
    ],
@@ -89,7 +118,21 @@
     287,
     148
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m6.png"
+   "scale": [
+    1.17858,
+    1.17858
+   ],
+   "offset": [
+    0.0059,
+    5.2822
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m6.png"
   },
   {
    "id": 51,
@@ -100,13 +143,13 @@
    "footprintCells": 1,
    "cell": [
     0,
-    352,
-    680,
-    352
+    409,
+    682,
+    409
    ],
    "art": [
-    199,
-    204,
+    200,
+    261,
     281,
     148
    ],
@@ -114,7 +157,21 @@
     281,
     148
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m7.png"
+   "scale": [
+    1.23793,
+    1.11194
+   ],
+   "offset": [
+    1.4141,
+    5.9863
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m7.png"
   },
   {
    "id": 52,
@@ -124,22 +181,36 @@
    "shape": "2m_x",
    "footprintCells": 2,
    "cell": [
-    680,
-    352,
-    680,
-    352
+    682,
+    409,
+    682,
+    409
    ],
    "art": [
     130,
-    118,
-    420,
+    175,
+    422,
     234
    ],
    "native": [
-    420,
+    422,
     234
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m8.png"
+   "scale": [
+    1.195,
+    1.00852
+   ],
+   "offset": [
+    74.5283,
+    45.6816
+   ],
+   "angle": -1.7436,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m8.png"
   },
   {
    "id": 53,
@@ -149,22 +220,36 @@
    "shape": "2m_xy",
    "footprintCells": 2,
    "cell": [
-    1360,
-    352,
-    680,
-    352
+    1364,
+    409,
+    682,
+    409
    ],
    "art": [
     189,
-    114,
-    302,
+    171,
+    303,
     238
    ],
    "native": [
-    302,
+    303,
     238
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m3.png"
+   "scale": [
+    1.23535,
+    1.23535
+   ],
+   "offset": [
+    19.5635,
+    -60.9512
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m3.png"
   },
   {
    "id": 54,
@@ -175,13 +260,13 @@
    "footprintCells": 2,
    "cell": [
     0,
-    704,
-    680,
-    352
+    818,
+    682,
+    409
    ],
    "art": [
-    85,
-    174,
+    86,
+    231,
     510,
     178
    ],
@@ -189,7 +274,21 @@
     510,
     178
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m9.png"
+   "scale": [
+    1.14433,
+    1.14433
+   ],
+   "offset": [
+    104.213,
+    -3.167
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m9.png"
   },
   {
    "id": 55,
@@ -199,22 +298,36 @@
    "shape": "4m",
    "footprintCells": 4,
    "cell": [
-    680,
-    704,
-    680,
-    352
+    682,
+    818,
+    682,
+    409
    ],
    "art": [
-    82,
-    62,
+    83,
+    117,
     516,
-    290
+    292
    ],
    "native": [
     516,
-    290
+    292
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m10.png"
+   "scale": [
+    1.14272,
+    1.14272
+   ],
+   "offset": [
+    62.8008,
+    48.2871
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m10.png"
   },
   {
    "id": 57,
@@ -224,22 +337,36 @@
    "shape": "7m",
    "footprintCells": 7,
    "cell": [
-    1360,
-    704,
-    680,
-    352
+    1364,
+    818,
+    682,
+    409
    ],
    "art": [
-    12,
-    11,
-    655,
-    341
+    13,
+    67,
+    656,
+    342
    ],
    "native": [
-    655,
-    341
+    656,
+    342
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m1.png"
+   "scale": [
+    1.11753,
+    1.11753
+   ],
+   "offset": [
+    -3.5703,
+    10.8662
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m1.png"
   },
   {
    "id": 58,
@@ -250,13 +377,13 @@
    "footprintCells": 7,
    "cell": [
     0,
-    1056,
-    680,
-    352
+    1227,
+    682,
+    409
    ],
    "art": [
-    11,
-    2,
+    12,
+    59,
     657,
     350
    ],
@@ -264,7 +391,21 @@
     657,
     350
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m4.png"
+   "scale": [
+    1.12063,
+    1.12063
+   ],
+   "offset": [
+    -5.7588,
+    -3.2344
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m4.png"
   },
   {
    "id": 59,
@@ -274,22 +415,36 @@
    "shape": "7m",
    "footprintCells": 7,
    "cell": [
-    680,
-    1056,
-    680,
-    352
+    682,
+    1227,
+    682,
+    409
    ],
    "art": [
-    3,
-    7,
-    674,
-    345
+    0,
+    71,
+    682,
+    338
    ],
    "native": [
-    674,
+    697,
     345
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m5.png"
+   "scale": [
+    1.15871,
+    1.15871
+   ],
+   "offset": [
+    -25.0195,
+    8.2734
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m5.png"
   },
   {
    "id": 60,
@@ -299,14 +454,14 @@
    "shape": "19m",
    "footprintCells": 19,
    "cell": [
-    1360,
-    1056,
-    680,
-    352
+    1364,
+    1227,
+    682,
+    409
    ],
    "art": [
-    58,
-    69,
+    59,
+    126,
     563,
     283
    ],
@@ -314,7 +469,21 @@
     563,
     283
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m2.png"
+   "scale": [
+    2.16305,
+    2.16305
+   ],
+   "offset": [
+    -7.791,
+    22.9844
+   ],
+   "angle": 0.0,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m2.png"
   },
   {
    "id": 61,
@@ -325,13 +494,13 @@
    "footprintCells": 19,
    "cell": [
     0,
-    1408,
-    680,
-    352
+    1636,
+    682,
+    409
    ],
    "art": [
-    58,
-    69,
+    59,
+    126,
     563,
     283
    ],
@@ -339,7 +508,21 @@
     563,
     283
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m2.png"
+   "scale": [
+    2.27932,
+    2.08262
+   ],
+   "offset": [
+    -7.7637,
+    15.9102
+   ],
+   "angle": -0.5181,
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "lowZ": 1,
+   "source": "scene/ground/mountain_new/png/m2.png"
   }
  ]
 }

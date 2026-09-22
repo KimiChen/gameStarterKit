@@ -48,7 +48,7 @@ export class MapoRegionRenderer {
         const sprites: MapoSpriteInput[] = placed.map((p) => ({
             // ⚠ row/col 只给画家序用；表已是画家序，这里给等距量即可（同序）
             row: p.piece.s, col: 0,
-            x: p.x, y: p.y, w: p.w, h: p.h,
+            x: p.x, y: p.y, w: p.w, h: p.h, angleDeg: p.angleDeg,
             uv: mapoRegionUv(p.cellLayout, MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H),
         }));
         const geometry = buildMapoSpriteMesh(sprites);

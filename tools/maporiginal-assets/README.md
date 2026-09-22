@@ -49,7 +49,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `bake_content.py` | 远档底图 / 缩略图 / 近档地表图集（**按 8 个粗类 × 4 变体**建，⛔ 不按 61 个值建） |
 | `pack_decor.py` | ★ 摆件图集：**格 id = 原版 res 值**（2..46）+ 城址件从 64 起；缺级用最近一级顶上并存证 |
 | `mountain_forms.py` | ★ 「山」族 14 形的**单一真源**：值 ↔ prefab ↔ 贴图 ↔ 足迹；足迹按 odd-row offset 生成并**逐锚点回代校验** |
-| `pack_regions.py` | ★ 山族件图集（13 形各一格，**格 id = 原版 res 值**，680×352 大格）；贴图从 prefab 字符串池读出，⛔ 不按面积/绿度挑 |
+| `pack_regions.py` | ★ 山族件图集（13 形各一格，**格 id = 原版 res 值**，682×409 大格，**基础季**）；贴图与 `scale`/`pos`/`angle`/`pivot` 全从 prefab 读出，⛔ 不按面积/绿度挑、⛔ 不裁 bbox |
 | `build_regions.py` | ★ 件摆放表 `regions.bin`：`res.bytes` 的 55,127 个锚点 + `mountain_patch` 的 3,942 条补件，按画家序落盘 |
 | `build_labels.py` / `emit_labels.py` | 原版地名（9 大区 / 55 郡 / 249 城址）→ `labels.json` → shared TS |
 | `emit_display_palette.py` | ★ 61 值调色板 + `MAPO_VALUE_KIND_ID` 粗类下标表 → shared TS |
@@ -239,7 +239,7 @@ python3 tools/maporiginal-assets/verify_root_res.py          # 全量
 | 远档 plate / 缩略图 | `fairy/ui/ui_common_map/map/map_s1/image/noexpo_birdview_map_1.ktx` | **4096×2048 ETC2**。⚠ 它在**共用 UI 包**树下（`fairy/ui_3d/` 无 `ui_common_map`），但像素是 3D 相机的透视渲染 ⇒ 归属是灰色地带，目前只当装饰性缩略图 |
 | 近档地表（八个粗类） | `ground_down/underground1` + `scene/ground/{caodi_gan,huangmo,zhaoze,caodi_shi,senlin,caodi_huijin,dongtu_tuxue}/png/tt_02` | 256² / 512² ETC2；判据见 §4.8、源表见 `bake_content.py` 的 `TEXTURE_OF` |
 | 逐格摆件（资源 res_field / 城址） | `scene/resource/{wood,iron,stone,food,gold}-new/png/<级>` + `scene/build{,_snow}/main_city/**` | 见 §4.4 |
-| 山族件（13 形） | `scene/ground/mountain_new/grass_fall_new/png/m1..m10` | 见 §4.5 |
+| 山族件（13 形） | `scene/ground/mountain_new/png/m1..m10`（**基础季**，由 `scene/_output_atlas_scene/atlas_tex/mountain.xml` 切出） | 见 §4.5 |
 | 行军线 / 旗帜 / 建筑 | `scene/_output_atlas_scene/atlas_tex/{armyline,ext_building_flag,build_attachment,…}-1.ktx` + 同名 `.xml` | 图集，XML 里有逐 sprite 原始路径 |
 
 ⚠ 原版 2D 地表的真实分层是「`*_polygon_group` 平铺底纹 + `_top_group`/MiddleLevel 散布贴片」，
@@ -298,6 +298,9 @@ python3 tools/maporiginal-assets/verify_root_res.py          # 全量
 
 ```bash
 python3 tools/maporiginal-assets/prefab_bin.py scene/ground/desert/10_1_top_group.prefab.bin
+# ⚠ 已知缺陷：根节点带 tag + 组件表的 prefab（如 mountain_new/grass_fall_new/ 秋季那批）
+#   会被**静默**解成 0 个子节点、却仍报 _bytes_left=0 ⇒ 取 transform 前必须查 children 非空。
+#   基础季 mountain_new/ 的 13 个全部零残留可解。
 python3 tools/maporiginal-assets/prefab_bin.py --scan scene/ground/      # 批量 + 成功率
 ```
 
@@ -482,7 +485,7 @@ if all(32 <= c < 127 for c in b[i+4:i+4+ln]): ...  # 再按 .png/.ktx 结尾筛
 | river_longriver（长江） | `river_longriver/png/27.png` | 349 |
 | river_yellowriver / river_bohai（黄河/渤海） | `river_yellowriver/png/{g,b,c}` | 125 / 100 / 50 |
 | gaodi / gaodi_shan（高地） | 各自 `png/01.png` + `xiepo_*` | 1 / 20 |
-| mountain_new | `mountain_new/grass_fall_new/png/m*.png`（★ 区域件正在用的那批） | 2 |
+| mountain_new | `mountain_new/png/m*.png`（★ 山族件正在用的那批，基础季）；`grass_fall_new/png/m*.png` 是换季版 | 2 |
 | road / road_official / ss_road | `xcross/5-1.png`、`downtcross/9-1.png`… | 26 / 12 |
 
 ⚠ **常规季平地底仍是推断**：在手的 `grass` 组 prefab **只引用云和阴影**，真正的底在缺失的

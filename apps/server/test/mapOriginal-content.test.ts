@@ -131,7 +131,8 @@ test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，�
         anchor: string; cityBase: number; substitutions: (number | string)[];
         cells: { id: number; kind: string; cell: [number, number, number, number];
                  art: [number, number, number, number]; native: [number, number];
-                 source: string }[];
+                 scale: [number, number]; offset: [number, number]; angle: number;
+                 pivot: [number, number]; lowZ: number; source: string }[];
     };
     assert.deepEqual(meta.cell, [MAPO_DECOR_CELL_W, MAPO_DECOR_CELL_H]);
     assert.deepEqual(meta.size, [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H]);
@@ -339,7 +340,8 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
         cell: [number, number]; gridCols: number; size: [number, number]; anchor: string;
         cells: { id: number; kind: string; cell: [number, number, number, number];
                  art: [number, number, number, number]; native: [number, number];
-                 source: string }[];
+                 scale: [number, number]; offset: [number, number]; angle: number;
+                 pivot: [number, number]; lowZ: number; source: string }[];
     };
     assert.deepEqual(meta.cell, [MAPO_REGION_CELL_W, MAPO_REGION_CELL_H]);
     assert.deepEqual(meta.size, [MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H]);
@@ -353,19 +355,42 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
         assert.deepEqual([...shared.cell], c.cell);
         assert.deepEqual([...shared.art], c.art);
         assert.deepEqual([...shared.native], c.native, `区域件格 ${c.id} 原图像素`);
+        // ★ M0-B2：件的大小 = 原图像素 × prefab 里的 scale，⛔ 只抄像素会把 14 形压成 10 形
+        assert.deepEqual([...shared.scale], c.scale, `区域件格 ${c.id} 的 scale`);
+        assert.deepEqual([...shared.offset], c.offset, `区域件格 ${c.id} 的 offset`);
+        assert.equal(shared.angle, c.angle, `区域件格 ${c.id} 的 angle`);
+        assert.deepEqual([...shared.pivot], c.pivot, `区域件格 ${c.id} 的 pivot`);
+        assert.ok(c.scale[0] > 0.1 && c.scale[0] < 8 && c.scale[1] > 0.1 && c.scale[1] < 8,
+            `区域件格 ${c.id} 的 scale ${c.scale} 不在 (0.1, 8.0) 内`);
+        // ⚠ 原版 sprite 的 pivot 恒中心；位置换算（中心 → 底边中点）就建在这条上
+        assert.deepEqual(c.pivot, [0.5, 0.5], `区域件格 ${c.id} 的 pivot 不是中心`);
         assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
             `区域件格 ${c.id} 缩略图没保住纵横比`);
-        // ★ 尺寸得落在原版的量级里（实测山族件原图 0.94~2.32 格宽；
-        //   ⚠ 件在世界里的**实际**大小还要乘 prefab 的 scale，那是 M0-B2）
-        const tiles = c.native[0] / (MAPO_ORIGINAL_TILE_HALF_W * 2);
-        assert.ok(tiles > 0.5 && tiles < 4,
+        // ★ 件在世界里的**实际**宽度 = 原图像素 × scale ÷ 一格 300 px。
+        //   ⚠ 必须随足迹单调放大：19 格的形只用 native 只有 1.88 格（比 7 格的形还小），
+        //   补上 scale 后才是 4.06 格 —— 这条就是为 M0-B3.3 的那个缺陷设的。
+        const tiles = (c.native[0] * c.scale[0]) / (MAPO_ORIGINAL_TILE_HALF_W * 2);
+        assert.ok(tiles > 0.9 && tiles < 5,
             `区域件格 ${c.id} 在原版里占 ${tiles.toFixed(2)} 格，不像地物`);
+        const want = new Map<number, readonly [number, number]>([
+            [1, [0.9, 1.4]], [2, [1.2, 2.1]], [4, [1.7, 2.4]], [7, [2.2, 3.0]], [19, [3.8, 4.6]],
+        ]);
+        const fp = byId.get(c.id)!.footprintCells;
+        const band = want.get(fp)!;
+        assert.ok(tiles >= band[0] && tiles <= band[1],
+            `区域件格 ${c.id}（足迹 ${fp} 格）宽 ${tiles.toFixed(2)} 格，不在 ${band} 内`);
         const [ax, ay, aw, ah] = c.art;
         assert.ok(ax >= 0 && ay >= 0 && ax + aw <= MAPO_REGION_CELL_W
             && ay + ah <= MAPO_REGION_CELL_H, `区域件格 ${c.id} 图内矩形越界`);
         // ⚠ 素材全部来自原版切片，⛔ 存证不许写本机绝对路径
         assert.ok(!c.source.startsWith("/"), `区域件格 ${c.id} 的 source 必须是仓外相对路径`);
         assert.ok(c.source.startsWith("scene/"), `区域件格 ${c.id} 的 source 必须是原版资源路径`);
+    }
+    // ★ M0-B3：山体美术必须是**基础季**，⛔ 不是秋季（grass_fall_new）
+    for (const c of meta.cells) {
+        assert.ok(c.source.startsWith("scene/ground/mountain_new/png/"),
+            `区域件格 ${c.id} 的 source ${c.source} 不是基础季山体`);
+        assert.ok(!c.source.includes("grass_fall"), `区域件格 ${c.id} 还指着秋季件`);
     }
     // ★ M0-B1：原版 48..61 是**一族 14 形**（山1..山14，§3.2），山9（值 56）无 2D prefab
     //   且数据里 0 命中 ⇒ 格 id 集合必须精确等于 48..61 去掉 56。

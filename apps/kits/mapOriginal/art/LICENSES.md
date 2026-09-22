@@ -37,10 +37,10 @@
 | 15 | `minimap-mask.png` | （合成，见说明） | `5606bcf12a163623c995c01c0edb831674d19fcbc183f7f7a922f162808f02eb` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/minimap-mask.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 16 | `decor-atlas.png` | （合成，见说明） | `093773e18d5dc4aca7a3ceec78beb589abe4f820d8c88a3231916c533dd26e6c` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/decor-atlas.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 17 | `decor-atlas.info.json` | （合成，见说明） | `7adb5e41e416d0a879c9e6b175e127f1fdd11d0b09953b5e1d6460c7764933ae` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/decor-atlas.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 18 | `region-atlas.png` | （合成，见说明） | `8ee9f6efc4e037f7ec49e3c31ec11c581de046ab4a9481c61bf54baf06e089a5` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/region-atlas.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 19 | `region-atlas.info.json` | （合成，见说明） | `a37fd561a7d446f36a93dd35562e41caa223d652449bdf9619c221dbd56a1a30` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/region-atlas.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 18 | `region-atlas.png` | （合成，见说明） | `8585c010144d3afddd73f0386406bc85a76be4ad47b371fc2c94f562d2e255d3` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/region-atlas.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 19 | `region-atlas.info.json` | （合成，见说明） | `c98bf4fb3f0dbfd5985c0b4a51f150d7909e47570ff3e5a27a8f251b436cb483` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/region-atlas.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 20 | `regions.bin` | （合成，见说明） | `ca44fbe70217bf7db1e7b7e3650686ff4a969fbf3f23110dff50e89788f28ce8` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/regions.bin` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 21 | `regions.info.json` | （合成，见说明） | `730682848ccd3d111940861b75f583fc17bbdecaf035f391d03c9f9aba206f5a` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/regions.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 21 | `regions.info.json` | （合成，见说明） | `7aa2046a9426780bafb8a2002c7619b3606db4741b3f9a343ed62508a6fc1412` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/regions.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 22 | `labels.json` | （合成，见说明） | `ab7b38af0f076d74f43446c280d8f2468de1b8be6a733773bda7cd09e1720cf8` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/labels.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 
 ## B. 源素材清单（仓外只读，⛔ 不入库）
@@ -144,7 +144,7 @@
 | `scene/ground/zhaoze/png/tt_02.ktx` | `ccbf9e04dbfb`/041 | `572aeee9f8d23caa` | ETC2 RGBA | 512x512 | `4f3b66de1328f5de735f688fa2b4909b11f67a23f8e7e8a6d3034f172752b6ba` |
 | `scene/ground/zhaoze/png/tt_04.ktx` | `ccbf9e04dbfb`/026 | `4dc30723d6504e6f` | ETC2 RGBA | 512x512 | `f117b75b2fe007469804b5f50d2600db51f5c703160ded605173ab4574d00893` |
 
-### B.2 图集切片（5418 张，来自上表的图集页）
+### B.2 图集切片（5318 张，来自上表的图集页）
 
 | 来源图集页 | 切出 | 说明 |
 |---|---:|---|
@@ -167,12 +167,13 @@
 | `scene/_output_atlas_scene/atlas_tex/ground_zudang-1.png` | 34 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/junying-1.png` | 276 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/map_birdview_icons-1.png` | 141 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/mountain-1.ktx` | 10 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/npc_city-1.png` | 572 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/npc_city_flood_mask1_5-1.png` | 5 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/npc_city_flood_mask1_5_yandi-1.png` | 5 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/npc_city_flood_mask_other-1.png` | 4 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/npc_city_flood_mask_other_yandi-1.png` | 4 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
-| `scene/_output_atlas_scene/atlas_tex/player_city-1.png` | 198 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
+| `scene/_output_atlas_scene/atlas_tex/player_city-1.png` | 88 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/player_city_1-1.png` | 187 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/player_city_2-1.png` | 115 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |
 | `scene/_output_atlas_scene/atlas_tex/player_city_3-1.png` | 117 | 按同名 `<TextureAtlas>` XML 的 sprite 矩形切出，含解旋转(`r="y"`)与去白边还原(`oW/oH/oX/oY`) |

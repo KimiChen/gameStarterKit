@@ -278,6 +278,11 @@ export interface MapoSpriteInput {
     readonly w: number;
     readonly h: number;
     readonly uv: readonly [number, number, number, number];
+    /**
+     * 绕**精灵中心**的旋转（度，CCW 为正）。缺省 / 0 走原来的轴对齐快路径。
+     * ⚠ 这是原版 prefab 里 sprite 的 `angle.z`（山族 13 形里只有 2 形非零，≤1.75°）。
+     */
+    readonly angleDeg?: number;
 }
 
 export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
@@ -292,7 +297,21 @@ export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
         const s = sprites[i];
         const x0 = s.x - s.w / 2, x1 = s.x + s.w / 2, y0 = s.y, y1 = s.y + s.h;
         const [u0, v0, uw, vh] = s.uv;
-        positions.set([x0, y1, 0, x1, y1, 0, x1, y0, 0, x0, y0, 0], i * 12);
+        const deg = s.angleDeg ?? 0;
+        if (deg === 0) {
+            positions.set([x0, y1, 0, x1, y1, 0, x1, y0, 0, x0, y0, 0], i * 12);
+        } else {
+            // ⚠ 绕**中心**转（原版 sprite 的 pivot 恒 [0.5, 0.5]），⛔ 不是绕底边中点
+            const cx = s.x, cy = s.y + s.h / 2;
+            const r = (deg * Math.PI) / 180, cs = Math.cos(r), sn = Math.sin(r);
+            const rot = (px: number, py: number): [number, number] => {
+                const dx = px - cx, dy = py - cy;
+                return [cx + dx * cs - dy * sn, cy + dx * sn + dy * cs];
+            };
+            const [ax, ay] = rot(x0, y1), [bx, by] = rot(x1, y1);
+            const [cx2, cy2] = rot(x1, y0), [dx2, dy2] = rot(x0, y0);
+            positions.set([ax, ay, 0, bx, by, 0, cx2, cy2, 0, dx2, dy2, 0], i * 12);
+        }
         uvs.set([u0, v0, u0 + uw, v0, u0 + uw, v0 + vh, u0, v0 + vh], i * 8);
         for (let v = 0; v < 16; v += 1) colors[i * 16 + v] = 1;   // ⚠ 贴图件取纯白，顶点色是相乘的
         const b = i * 4;

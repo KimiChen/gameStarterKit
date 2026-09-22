@@ -84,6 +84,8 @@ export interface IMapoRegionPlacement {
     readonly y: number;
     readonly w: number;
     readonly h: number;
+    /** 绕精灵中心的旋转（度），来自 prefab。 */
+    readonly angleDeg: number;
 }
 
 export interface IMapoWorldRect {
@@ -106,16 +108,21 @@ export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoReg
         if (piece.s > sBottom) break;
         const layout = CELL_BY_ID.get(piece.cell);
         if (!layout) continue;
-        const pos = mapoRegionPos(piece.s, piece.d);
-        // ★ 件多大**由原图像素定**（原版 2D 一格 300 px），⛔ 不按足迹拉伸 ——
-        //   拉伸过一版，真机上是糊成一团的大绿斑。`wTiles`/`cells` 只是足迹的诊断量。
+        const anchor = mapoRegionPos(piece.s, piece.d);
+        // ★ 件多大 = **原图像素 × prefab 里的 scale**（⛔ 不按足迹拉伸，拉伸过一版是大绿斑）：
+        //   m2 只有 563 px 却要盖满 19 格，靠的就是 `mountain19m_01` 的 scale 2.163；
+        //   三对共用贴图的形全靠 transform 区分 ⇒ ⛔ 只用 native 会把 14 形压成 10 形。
         const [nw, nh] = layout.native;
-        const w = mapoOriginalPxToWorld(nw);
-        const h = w * (nh / Math.max(nw, 1));
+        const w = mapoOriginalPxToWorld(nw * layout.scale[0]);
+        const h = mapoOriginalPxToWorld(nh * layout.scale[1]);
+        // ★ 精灵**中心** = 锚点格位置 + prefab 的 pos（pivot 恒 [0.5, 0.5]）；
+        //   渲染按「底边中点」对齐 ⇒ 再往下挪 h/2。
+        const x = anchor.x + mapoOriginalPxToWorld(layout.offset[0]);
+        const y = anchor.y + mapoOriginalPxToWorld(layout.offset[1]) - h / 2;
         // ⚠ 件是「底边中点对齐」：横向以 x 为中心、纵向从 y 往上长 h
-        if (pos.x + w / 2 < rect.left || pos.x - w / 2 > rect.right) continue;
-        if (pos.y > rect.top || pos.y + h < rect.bottom) continue;
-        out.push({ piece, cellLayout: layout, x: pos.x, y: pos.y, w, h });
+        if (x + w / 2 < rect.left || x - w / 2 > rect.right) continue;
+        if (y > rect.top || y + h < rect.bottom) continue;
+        out.push({ piece, cellLayout: layout, x, y, w, h, angleDeg: layout.angle });
     }
     return out;
 }

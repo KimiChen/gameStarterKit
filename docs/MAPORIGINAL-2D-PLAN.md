@@ -86,9 +86,10 @@ npm --workspace @game/server run test && npm run typecheck:client
 ```
 新增断言：`region-atlas.info.json` 每格都有 `scale`（> 0）与 `offset`，且与 shared 的 `region.data.ts` 逐项相等。
 
-**风险**　低。⚠ 若 `prefab_bin.py` 对 `node_2d` 的 transform 仍错位（本轮已知它对某些类
-浮点读成 NaN），先用**长度前缀串 + 已知偏移**抽，⛔ 不要把 NaN 写进产物 —— 加一条
-「scale 必须落在 (0.1, 8.0)」的入库校验。
+**风险**　低。⚠ 实测 `prefab_bin.py` 对**基础季** `mountain_new/` 的 13 个 prefab
+零残留可解（`_bytes_left=0`、`size` 与原图 13/13 相等），⛔ 没出现 NaN；
+入库校验「scale ∈ (0.1, 8.0)」已加，且加了「解出的必须是一个 node_2d 挂一个 sprite_2d、
+根节点 scale 必须为 1」两条硬拦。⚠ 对**秋季**那批仍不可解（见 B3 的依赖注）。
 
 **依赖**　M0-B1（同批改 `pack_regions` / `region.data.ts` 更省）
 
@@ -108,7 +109,12 @@ npm --workspace @game/server run test
 现有的「区域件 source 必须 `startsWith("scene/")`」断言已覆盖；追加一条
 「mountain 族的 source ⛔ 不含 `grass_fall`」。
 
-**风险**　低。产物像素变。**依赖**　M0-B2
+**风险**　低。产物像素变。**依赖**　~~M0-B2~~ —— ⚠ **实际次序相反，B3 必须先做**：
+秋季 prefab（`grass_fall_new/`）根节点多一段 tag + 组件表，`prefab_bin.py` 会**静默**
+解成 0 个子节点却仍报 `_bytes_left=0` ⇒ B2 的 transform 根本取不到；
+基础季 `mountain_new/` 的 13 个全部零残留可解。已按 B3 → B2 的次序施工。
+⚠ 另：基础季贴图原先不在切片集里，先切 `scene/_output_atlas_scene/atlas_tex/mountain.xml`
+（10 张，尺寸与 prefab 的 `size` 13/13 逐项相等 —— 这同时交叉校验了贴图对应）。
 
 ---
 
@@ -212,8 +218,8 @@ npm run verify:protected-paths
 | 批次 | 状态 | 提交 | 日期 |
 |---|---|---|---|
 | M0-B1 锚点模型 | ✅ 已完成 | （本轮） | 2026-09-22 |
-| M0-B2 件的 transform | ☐ 未开工 | | |
-| M0-B3 山体换基础季 | ☐ 未开工 | | |
+| M0-B2 件的 transform | ✅ 已完成 | （本轮） | 2026-09-22 |
+| M0-B3 山体换基础季 | ✅ 已完成（**先于 B2**，见其「依赖」注） | （本轮） | 2026-09-22 |
 | M0-B4 城格抑制资源件 | ☐ 未开工 | | |
 | M1-B1 grid 层止血 | ☐ 未开工 | | |
 | M1-B2 createStep 空头 | ☐ 未开工 | | |
