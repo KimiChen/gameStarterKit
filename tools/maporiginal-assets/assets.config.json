@@ -1,9 +1,14 @@
 {
   "comment": [
     "仓外只读素材根。⛔ 不要把 elp-unpacked 的任何原始文件拷进仓库（只入派生产物，同 tools/sgzzmap-maps 口径）。",
-    "换机器只改这两行。"
+    "换机器改 elpRoot / elpRootsExtra / sourceVersionRoot 三处。",
+    "★ elpRootsExtra：APK 之外从发行商 CDN 取回的那部分（fetch_cdn_assets.py + 同一个解包器）。",
+    "  容器目录名是 <md5>_<size>，两个根之间**天然不撞车**；工具按顺序找，先命中先用。"
   ],
   "elpRoot": "/Volumes/KimData/unlockTheWorld/apkdecode/sgzz-1768.2084/elp-unpacked",
   "sourceVersionRoot": "/Volumes/KimData/unlockTheWorld/sourceVersion/sgzz-2084.1768",
-  "outDir": "out"
+  "outDir": "out",
+  "elpRootsExtra": [
+    "/Volumes/KimData/unlockTheWorld/apkdecode/sgzz-1768.2084/cdn-unpacked"
+  ]
 }

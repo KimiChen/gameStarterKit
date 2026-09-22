@@ -83,10 +83,14 @@ def resolve_by_name(name: str) -> str:
     row = json.load(open(nm)).get(name[6:] if name.startswith("asset/") else name)
     if row is None:
         raise SystemExit("⛔ name_map 里没有这条路径：%s" % name)
-    d = os.path.join(cfg["elpRoot"], "files", row["container"])
-    for fe in os.scandir(d):
-        if fe.name.startswith("%03d_" % row["idx"]):
-            return fe.path
+    # ⚠ 多根：APK 解包树 + CDN 解包树。容器目录名是 <md5>_<size>，⛔ 两根之间不会撞车。
+    for rootdir in [cfg["elpRoot"]] + list(cfg.get("elpRootsExtra", [])):
+        d = os.path.join(rootdir, "files", row["container"])
+        if not os.path.isdir(d):
+            continue
+        for fe in os.scandir(d):
+            if fe.name.startswith("%03d_" % row["idx"]):
+                return fe.path
     raise SystemExit("⛔ 磁盘上找不到条目 %s/%03d" % (row["container"], row["idx"]))
 
 

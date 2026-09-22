@@ -120,7 +120,7 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 desert 120 / snow 120 / river 114 / river_bohai 81 / river_yellowriver 80 / road_liangdao 74 /
 gaodi* 129 / gaodi_shan* 90 / mountain_new 26 / menfacheng* 80 …
 
-⚠ **手机这条路走不通**（2026-09-22 实测，三星 SM-S9370 / Android 16）：
+（2026-09-22 实测，三星 SM-S9370 / Android 16）：
 - 应用外部目录 `/sdcard/Android/data/com.aligames.sgzzlb/files/` **只有 shader 缓存**（11 MB），
   没有任何下载的资源包 ⇒ 下载物落在内部存储；
 - 无 root、`su` 不存在、应用 `not debuggable`（`run-as` 拒绝）、`/proc/<pid>/{maps,fd}` 权限拒绝
@@ -128,8 +128,48 @@ gaodi* 129 / gaodi_shan* 90 / mountain_new 26 / menfacheng* 80 …
 - 顺带拉回的真机包 **2066.1489 比 2084.1768 素材更少**：`scene/ground` 图集精灵 137 < 184，
   连 2D 山体件 `mountain_new/grass_fall_new` 都没有 ⇒ ⛔ 别拿它当更全的样本。
 
-要拿到这 1,873 个根资源，只剩两条路：① root 的设备/模拟器跑一次游戏后读内部存储
-（⚠ sgzz 有 `libcheck_simu` 反模拟器）；② 从发行商 CDN 按根资源清单取（需先定位下载配置）。
+### 4.2·一 ★ 从发行商 CDN 全量取（2026-09-22 打通）
+
+线索链全部来自包内，⛔ 无猜测：
+
+1. `assets/unisdk/ejoy_pack_config.json` → 资源根 `files/data/Library/ejoy_s3`、`storage_type: internal`
+   —— 这解释了为什么真机外部目录只有 shader 缓存。
+2. **`assets/pkg/version.conf`** → 四组 URL × 四个频道 + `mods/sub_mod` 清单。
+   本包 `is_review="true"` ⇒ 频道 **REVIEW_RELEASE**：
+   `https://p10445-ob-hotfix-cdn.ejoy.com/S3-CN-OB-Publish/ob_v7_review`
+3. 最新清单 `{urls[频道]}/Newest/version_v2.conf`（804 KB）。
+   ⚠ 它的 `build_ver=1764`/`script_ver=1887` 与我们这个 APK **完全一致** ——
+   同一个构建，APK 只是**带了一部分**：清单 13.05 GB vs 包内 4.57 GB。
+4. **单文件 URL（探测实证）**：`{urls[频道]}/Newest/<md5>_<size>.elp`。
+   ⚠ `sound/video/asset_raw/asset_extra` 这些 `is_elp:false` 的模块**也用 `.elp` 后缀**
+   （sub_mod 里虽有 `base_path`，但 CDN 不按它寻址）——⛔ 按 base_path 拼 URL 是 404。
+   ⚠ 文件名自带 md5 与字节数 ⇒ 校验就是比对文件名 + 大小。
+
+| 量 | 数 |
+|---|---:|
+| 清单总条目 / 大小 | 3,586 条 / 13.05 GB |
+| 其中 ELP | 2,178 条 / 10.43 GB |
+| APK 内已有 | 872 条 |
+| **需从 CDN 取** | **2,712 条 / 9.56 GB** |
+
+脚本 `fetch_cdn_assets.py`（断点续传 + 大小校验 + 并发 6，⚠ 别调高，这是别人的 CDN）：
+
+```bash
+python3 tools/maporiginal-assets/fetch_cdn_assets.py --manifest        # 只刷清单看差集
+python3 tools/maporiginal-assets/fetch_cdn_assets.py --run             # 全量
+python3 tools/maporiginal-assets/fetch_cdn_assets.py --run --module scene_2d_S1   # 只取某模块
+# 解包（与 APK 用同一个解包器，只改 PKG/OUT）：
+python3 /Volumes/KimData/unlockTheWorld/apkdecode/sgzz-1768.2084/elp_unpack_cdn.py
+```
+
+产物落仓外 `apkdecode/sgzz-1768.2084/cdn-pkg/`（原始 elp）与 `cdn-unpacked/`（解包）。
+`assets.config.json` 新增 **`elpRootsExtra`**，`decode_ktx.resolve_by_name` 与
+`build_name_map.py` 都改成**多根**查找 —— 容器目录名是 `<md5>_<size>`，⛔ 两根之间不会撞车。
+
+⚠ 模块名就是内容分类，按需取即可：2D 档是 `scene_2d_S<赛季>[_tex_mobile|_tex_pc]`、
+`scene_common_S<赛季>*`；3D 是 `scene_3d_S<赛季>*`；UI 是 `ui_*`。
+
+### 4.2·二 ⛔ 真机这条路走不通
 
 ### 4.2·旧 近档素材：`.group` 预制体不在包里，但**它引用的精灵在**
 

@@ -28,6 +28,19 @@ from namehash import namehash, strip_asset  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 ELP = CFG["elpRoot"]
+# ★ 多根：APK 解包树 + CDN 解包树（容器目录名 <md5>_<size>，⛔ 不会撞车）
+ELP_ROOTS = [ELP] + list(CFG.get("elpRootsExtra", []))
+
+
+def elp_dirs():
+    """遍历所有根下的容器目录。"""
+    for r in ELP_ROOTS:
+        root = os.path.join(r, "files")
+        if not os.path.isdir(root):
+            continue
+        for d in os.scandir(root):
+            if d.is_dir():
+                yield d
 SV = CFG["sourceVersionRoot"]
 OUT = os.path.join(HERE, CFG["outDir"])
 
@@ -62,10 +75,7 @@ MAP_FILES = (
 def load_index() -> dict:
     """hash(u64) -> (container, idx, ext, rsize)"""
     idx = {}
-    root = os.path.join(ELP, "files")
-    for d in os.scandir(root):
-        if not d.is_dir():
-            continue
+    for d in elp_dirs():
         mf = os.path.join(d.path, "_manifest.json")
         if not os.path.exists(mf):
             continue
@@ -77,10 +87,7 @@ def load_index() -> dict:
 def collect_candidates() -> set:
     cand = set()
     # ① ELP 内文本资产
-    root = os.path.join(ELP, "files")
-    for d in os.scandir(root):
-        if not d.is_dir():
-            continue
+    for d in elp_dirs():
         for fe in os.scandir(d.path):
             if fe.name == "_manifest.json":
                 continue
@@ -146,8 +153,13 @@ def resolve(cand: set, idx: dict) -> dict:
     # 图集页：<xml 所在目录>/<imagePath>
     for k in [k for k in list(res) if k.endswith(".xml")]:
         cont, i, _ext, _sz = idx[res[k]]
-        hit = [p for p in os.scandir(os.path.join(ELP, "files", cont))
-               if p.name.startswith("%03d_" % i)]
+        hit = []
+        for r in ELP_ROOTS:
+            cd = os.path.join(r, "files", cont)
+            if os.path.isdir(cd):
+                hit = [p for p in os.scandir(cd) if p.name.startswith("%03d_" % i)]
+                if hit:
+                    break
         if not hit:
             continue
         m = IMG_RE.search(open(hit[0].path, "rb").read(4096))
