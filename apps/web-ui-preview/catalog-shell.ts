@@ -1,6 +1,12 @@
 import { buildCatalog, type CatalogLeaf, type CatalogSection } from "./catalog";
 import type { ScreenEntry } from "./screens";
 
+/** 目录卡片的预览挂载。卡片画在当前页，不再各开一个 iframe。 */
+export interface CatalogPreviewHost {
+    show(slot: HTMLElement, item: CatalogLeaf, skin: string): void;
+    hide(slot: HTMLElement): void;
+}
+
 const PREF_KEY = "uniflex-preview:catalog";
 const SHELL_CSS = `
 :host{
@@ -104,9 +110,8 @@ h1,h2,h3,h4,p{margin:0}
 .card__m{font:10.5px var(--ds-mono);color:var(--ds-faint);white-space:nowrap}
 .stage{position:relative;flex:1;background:var(--canvas)}
 .frame{position:relative;width:100%;margin:0 auto;overflow:hidden;background:transparent}
+.frame .live{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:auto;font:16px/1.2 sans-serif;color:#000}
 .frame iframe{position:absolute;left:0;top:0;width:100%;height:100%;border:0;pointer-events:none;background:transparent}
-.stage__hit{position:absolute;inset:0;border:0;background:transparent;cursor:zoom-in}
-.stage__hit:hover{background:rgba(127,127,127,.08)}
 .ds-canvas{position:relative;flex:1;display:flex;align-items:center;justify-content:center;min-height:120px;padding:18px 14px;background:var(--canvas)}
 .ds-canvas .frame{width:min(100%,var(--native,280px));flex:none;background:transparent}
 .btn{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border:1px solid var(--ds-border-strong);border-radius:6px;background:var(--ds-panel);font-size:12.5px;white-space:nowrap}
@@ -119,7 +124,7 @@ h1,h2,h3,h4,p{margin:0}
 .lightbox__h .ib{color:#e8e9ec}
 .lightbox__h .ib:hover{background:rgba(255,255,255,.12)}
 .lightbox__b{display:grid;place-items:center;min-height:0;overflow:hidden;padding:0 16px 16px}
-.lightbox .frame{width:auto;background:var(--canvas)}
+.lightbox .frame{width:auto;background:transparent}
 .lightbox .frame iframe{pointer-events:auto}
 @media (max-width:860px){
   .top .top__menu{display:inline-flex}
@@ -210,7 +215,7 @@ function readPrefs(): Prefs {
 }
 
 /** 无 screen/ui 参数时的预览目录：侧栏树 + 组件卡片和原稿界面。 */
-export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
+export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: CatalogPreviewHost): void {
     const sections = buildCatalog(screens);
     const prefs = readPrefs();
     let query = "";
@@ -285,6 +290,10 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
     };
     const applySkin = () => {
         syncFrameSrc();
+        for (const [slot, item] of mounted) {
+            if (item.kind !== "component") continue;
+            preview.show(slot, item, prefs.skin);
+        }
         for (const frame of Array.from(shadow.querySelectorAll<HTMLElement>('.frame[data-kind="component"]'))) {
             const iframe = frame.querySelector("iframe");
             if (!iframe?.getAttribute("src") || iframe.dataset.ready !== "1") continue;
@@ -393,6 +402,50 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
         return `${scope} ${item.label} ${item.keys}`.toLowerCase().includes(q);
     };
 
+    const frames = new Map<HTMLElement, { item: CatalogLeaf; slot: HTMLElement; live: HTMLElement; home: HTMLElement; host: HTMLElement }>();
+    const mounted = new Map<HTMLElement, CatalogLeaf>();
+    const frameSizes: ResizeObserver[] = [];
+    const fitLive = (frame: HTMLElement, live: HTMLElement, width: number, height: number) => {
+        live.style.width = `${width}px`;
+        live.style.height = `${height}px`;
+        const slot = live.shadowRoot?.firstElementChild as HTMLElement | undefined;
+        if (slot) {
+            slot.style.width = `${width}px`;
+            slot.style.height = `${height}px`;
+        }
+        if (frame.clientWidth > 0) {
+            live.style.visibility = "visible";
+            live.style.transform = `scale(${frame.clientWidth / width})`;
+        } else live.style.visibility = "hidden";
+    };
+    const createLive = (frame: HTMLElement, item: CatalogLeaf): HTMLElement => {
+        const live = document.createElement("div");
+        live.className = "live";
+        const root = live.attachShadow({ mode: "open" });
+        const slot = document.createElement("div");
+        slot.style.cssText = "position:relative;overflow:hidden;";
+        root.append(slot);
+        frame.append(live);
+        const record = { item, slot, live, home: frame, host: frame };
+        const fit = () => fitLive(record.host, record.live, item.width, item.height);
+        fit();
+        requestAnimationFrame(fit);
+        const observer = new ResizeObserver(fit);
+        observer.observe(frame);
+        frameSizes.push(observer);
+        frames.set(frame, record);
+        return slot;
+    };
+    const releaseMounted = () => {
+        for (const record of frames.values()) {
+            if (!mounted.has(record.slot)) continue;
+            mounted.delete(record.slot);
+            preview.hide(record.slot);
+        }
+        frames.clear();
+        for (const observer of frameSizes.splice(0)) observer.disconnect();
+    };
+
     const cardOf = (item: CatalogLeaf): HTMLElement => {
         const article = document.createElement("article");
         article.className = "card" + (item.wide ? " card--wide" : "");
@@ -426,24 +479,16 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
         frame.dataset.kind = item.kind;
         frame.style.aspectRatio = `${item.width}/${item.height}`;
         if (item.kind === "component") frame.style.setProperty("--native", `${item.width}px`);
-        const iframe = document.createElement("iframe");
-        iframe.title = item.label;
-        iframe.tabIndex = -1;
-        frame.append(iframe);
-        const hit = document.createElement("button");
-        hit.type = "button";
-        hit.className = "stage__hit";
-        hit.setAttribute("aria-label", `全屏 ${item.label}`);
-        hit.addEventListener("click", () => openLightbox(item));
+        createLive(frame, item);
         if (item.kind === "component") {
             const canvas = document.createElement("div");
             canvas.className = "ds-canvas";
-            canvas.append(frame, hit);
+            canvas.append(frame);
             article.append(header, canvas);
         } else {
             const stage = document.createElement("div");
             stage.className = "stage";
-            stage.append(frame, hit);
+            stage.append(frame);
             article.append(header, stage);
         }
         frameObserver.observe(frame);
@@ -452,16 +497,23 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
 
     const frameObserver = new IntersectionObserver((entries) => {
         for (const entry of entries) {
-            if (!entry.isIntersecting) continue;
             const frame = entry.target as HTMLElement;
-            const iframe = frame.querySelector("iframe");
-            const id = frame.dataset.id;
-            if (iframe && id && !iframe.getAttribute("src")) iframe.src = previewSrc(id, frame.dataset.kind ?? "screen", prefs.canvas, prefs.custom, prefs.skin);
-            frameObserver.unobserve(frame);
+            const record = frames.get(frame);
+            if (!record) continue;
+            if (entry.isIntersecting) {
+                if (mounted.has(record.slot)) continue;
+                mounted.set(record.slot, record.item);
+                preview.show(record.slot, record.item, prefs.skin);
+            } else if (mounted.has(record.slot) && record.host === record.home) {
+                mounted.delete(record.slot);
+                preview.hide(record.slot);
+            }
         }
-    }, { rootMargin: "280px" });
+    }, { rootMargin: "240px" });
 
     const renderMain = () => {
+        closeLightbox?.();
+        releaseMounted();
         frameObserver.disconnect();
         const main = $("#main", shadow);
         main.replaceChildren();
@@ -565,18 +617,63 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
         frame.className = "frame";
         frame.dataset.kind = item.kind;
         frame.dataset.id = item.id;
-        const iframe = document.createElement("iframe");
-        iframe.title = item.label;
-        iframe.src = previewSrc(item.id, item.kind, prefs.canvas, prefs.custom, prefs.skin);
-        frame.append(iframe);
+        let record: { item: CatalogLeaf; slot: HTMLElement; live: HTMLElement; home: HTMLElement; host: HTMLElement } | undefined;
+        for (const entry of frames.values()) {
+            if (entry.item.id === item.id && entry.item.kind === item.kind) { record = entry; break; }
+        }
+        let tempSlot: HTMLElement | null = null;
+        if (record) {
+            record.host = frame;
+            frame.append(record.live);
+        } else {
+            const live = document.createElement("div");
+            live.className = "live";
+            const root = live.attachShadow({ mode: "open" });
+            const slot = document.createElement("div");
+            slot.style.cssText = "position:relative;overflow:hidden;";
+            root.append(slot);
+            frame.append(live);
+            tempSlot = slot;
+            preview.show(slot, item, prefs.skin);
+        }
         body.append(frame);
         box.append(bar, body);
         const fit = () => {
             const scale = Math.min((body.clientWidth - 32) / item.width, (body.clientHeight - 16) / item.height, item.kind === "component" ? 1.5 : 1);
             frame.style.width = `${item.width * scale}px`;
             frame.style.height = `${item.height * scale}px`;
+            const live = frame.querySelector(".live") as HTMLElement | null;
+            if (!live) return;
+            const applied = frame.clientWidth > 0 ? frame.clientWidth / item.width : scale;
+            live.style.width = `${item.width}px`;
+            live.style.height = `${item.height}px`;
+            const slot = live.shadowRoot?.firstElementChild as HTMLElement | undefined;
+            if (slot) {
+                slot.style.width = `${item.width}px`;
+                slot.style.height = `${item.height}px`;
+            }
+            live.style.visibility = "visible";
+            live.style.transform = `scale(${applied})`;
+        };
+        const restore = () => {
+            if (tempSlot) {
+                preview.hide(tempSlot);
+                tempSlot = null;
+                return;
+            }
+            if (!record) return;
+            record.host = record.home;
+            if (record.live.parentElement !== record.home) record.home.append(record.live);
+            fitLive(record.home, record.live, item.width, item.height);
+            const rect = record.home.getBoundingClientRect();
+            const onScreen = rect.bottom > -240 && rect.top < innerHeight + 240;
+            if (!onScreen && mounted.has(record.slot)) {
+                mounted.delete(record.slot);
+                preview.hide(record.slot);
+            }
         };
         const close = () => {
+            restore();
             box.remove();
             window.removeEventListener("resize", fit);
             document.removeEventListener("keydown", onKey, true);
@@ -593,6 +690,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
         window.addEventListener("resize", fit);
         document.addEventListener("keydown", onKey, true);
         fit();
+        requestAnimationFrame(fit);
         closeLightbox = close;
         closeBtn.focus();
     };

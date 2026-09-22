@@ -4,7 +4,7 @@ import { flagValue } from "./lib/uniflex-screens.mjs";
 import { startUniflexWebPreview } from "./lib/uniflex-web-preview.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const host = flagValue(process.argv, "host") || "127.0.0.1";
+const host = flagValue(process.argv, "host") || "0.0.0.0";
 const portArg = flagValue(process.argv, "port");
 const preview = await startUniflexWebPreview({
     root,
