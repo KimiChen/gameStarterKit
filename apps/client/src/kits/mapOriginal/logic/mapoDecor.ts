@@ -8,12 +8,19 @@
  * ⚠ 摆件**超出菱形**（往上长），所以必须按**画家序**排（屏幕越低越靠前），
  * ⛔ 顺着可视模板的遍历序画会前后颠倒。
  * ⚠ 城址不在 `res` 值空间里（城建在平地上），它走 `city_center.lua` 的真坐标另开一段格 id。
+ * ★ **第 4 道门（M0-B4）**：原版 `ViewModelResField:check_validate` 最后一筛是
+ *   「该格有 build 且 `is_show_res_field()` 为假 ⇒ 不画」（MAPORIGINAL-2D §2.1）——
+ *   即**城/营占的格不叠资源件**。城占的是 2,689 格（249 座 × 4/6/7/11/23），
+ *   ⛔ 不是只有 249 个中心格；而 2,689 格 100% 是 `res==1` 平地 ⇒ 抑制**只能靠占格表**，
+ *   ⛔ 没法从地形值推出来。
  */
 import {
     MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_CITY_BASE,
     type IMapoDecorCell,
 } from "../../../shared/kits/mapOriginal/content/decor.data";
-import { MAPO_CITY_SITES } from "../../../shared/kits/mapOriginal/content/labels.data";
+import {
+    MAPO_CITY_CELL_KEYS, MAPO_CITY_SITES,
+} from "../../../shared/kits/mapOriginal/content/labels.data";
 import {
     mapoGrid2Pos, mapoOriginalPxToWorld,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
@@ -26,8 +33,11 @@ const BY_ID: ReadonlyMap<number, IMapoDecorCell> =
 const CITY_CELLS: readonly IMapoDecorCell[] =
     MAPO_DECOR_CELLS.filter((c) => c.id >= MAPO_DECOR_CITY_BASE);
 
-/** 城址集合：原版 `city_center.lua` 的真坐标。 */
+/** 城**中心**格：原版 `city_center.lua` 的真坐标，城址件画在这里。 */
 const CITY_AT = new Set<number>(MAPO_CITY_SITES.map((s) => s.row * 10000 + s.col));
+
+/** 城**占**的全部格（2,689 格）：这些格一律不画资源件（第 4 道门）。 */
+const CITY_OCCUPIED = new Set<number>(MAPO_CITY_CELL_KEYS);
 
 /** 位置的纯函数散列 —— **只用来在城址件里挑一件**，⛔ 不再决定「放不放」。 */
 function hash(row: number, col: number, salt: number): number {
@@ -66,6 +76,8 @@ export function mapoDecorAt(row: number, col: number, value: number,
         return { row, col, cell: CITY_CELLS[hash(row, col, 7) % CITY_CELLS.length],
                  x: pos.x, y: pos.y, scale: 1 };
     }
+    // ★ 第 4 道门：城占的格不叠资源件（⚠ 中心格已在上面 return，这里挡的是其余 2,440 格）
+    if (CITY_OCCUPIED.has(row * 10000 + col)) return null;
     // ★ 资源格：值即格 id，一一对应，⛔ 零猜测
     const cell = BY_ID.get(value);
     if (!cell || cell.id >= MAPO_DECOR_CITY_BASE) return null;

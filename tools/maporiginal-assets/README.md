@@ -53,6 +53,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `build_regions.py` | ★ 件摆放表 `regions.bin`：`res.bytes` 的 55,127 个锚点 + `mountain_patch` 的 3,942 条补件，按画家序落盘 |
 | `build_labels.py` / `emit_labels.py` | 原版地名（9 大区 / 55 郡 / 249 城址）→ `labels.json` → shared TS |
 | `emit_display_palette.py` | ★ 61 值调色板 + `MAPO_VALUE_KIND_ID` 粗类下标表 → shared TS |
+| `build_labels.py` / `emit_labels.py` | 地名（9 大区 / 55 郡）+ 城址真坐标 + ★ **城占格表**（`city.bytes` → 249 座 / 2,689 格）→ shared TS |
 | `emit_shared_terrain.py` | 通行层 → shared TS（varint-RLE + base64，111 KB） |
 | `install_to_kit.py` | 装 kit 数据目录 + Cocos 运行时镜像 + 确定性铸 `.meta`（uuid = `sha1("mapOriginal::<相对路径>")`） |
 

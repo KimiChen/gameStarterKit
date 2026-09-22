@@ -25,6 +25,9 @@ import {
     MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_CELL_H,
     MAPO_REGION_CELL_W,
 } from "@game/shared/kits/mapOriginal/content/region.data";
+import {
+    MAPO_CITY_CELL_COUNTS, MAPO_CITY_CELL_KEYS, MAPO_CITY_SITES,
+} from "@game/shared/kits/mapOriginal/content/labels.data";
 
 const MAP = MAPO_TERRAIN_MAP_ID;
 const kitDir = new URL(`../../kits/mapOriginal/data/maps/${MAP}/`, import.meta.url);
@@ -323,6 +326,41 @@ test("mapOriginal 内容：显示层 = res 原值（⛔ 不再 merge res_multi�
         { coverMask: Record<string, number> };
     assert.equal(mountainPass, regions.coverMask["60/61 覆盖格"],
         "不可通行山地格数 == 60/61 的覆盖掩码格数");
+});
+
+test("mapOriginal 内容：城占格表 = city.bytes（249 座 / 2,689 格 / 首格对上 city_center）", () => {
+    // ★ M0-B4：原版 res_field 的第 4 道门是「该格有 build ⇒ 不画」，城占的是 2,689 格、
+    //   ⛔ 不是 249 个中心格。而城格 100% 是 res==1 平地 ⇒ 抑制只能靠这张表。
+    const labels = JSON.parse(kit("labels.json").toString("utf8")) as {
+        cities: { id: number; row: number; col: number }[];
+        cityCells: [number, number][][];
+    };
+    assert.equal(labels.cities.length, 249, "城数");
+    assert.equal(labels.cityCells.length, 249, "占格表的城数");
+    assert.equal(MAPO_CITY_SITES.length, 249);
+    assert.equal(MAPO_CITY_CELL_COUNTS.length, 249);
+    // ★ 每城第 1 格 == city_center.lua[i]（249/249）—— 这是 city.bytes 布局的硬证
+    const shapes = new Map<number, number>();
+    let at = 0;
+    const display = kit("terrain.bytes");
+    for (let i = 0; i < 249; i += 1) {
+        const cells = labels.cityCells[i], site = MAPO_CITY_SITES[i];
+        assert.deepEqual(cells[0], [site.row, site.col], `第 ${i + 1} 座的首格`);
+        assert.equal(MAPO_CITY_CELL_COUNTS[i], cells.length, `第 ${i + 1} 座的格数`);
+        shapes.set(cells.length, (shapes.get(cells.length) ?? 0) + 1);
+        for (const [row, col] of cells) {
+            assert.equal(MAPO_CITY_CELL_KEYS[at], row * 10000 + col, `第 ${at} 个占格键`);
+            at += 1;
+            // ⚠ 城根本不在 res.bytes 里：城格 100% 是平地（§5）
+            assert.equal(display[MAPO_TERRAIN_HEADER_BYTES + row * MAPO_MAP_COLS + col], 1,
+                `城格 (${row}, ${col}) 不是 res==1 平地`);
+        }
+    }
+    assert.equal(at, 2689, "占格总数");
+    assert.equal(MAPO_CITY_CELL_KEYS.length, 2689);
+    // ★ 占格形态只有 5 种（§5 的表）
+    assert.deepEqual([...shapes.entries()].sort((a, b) => a[0] - b[0]),
+        [[4, 1], [6, 11], [7, 24], [11, 204], [23, 9]], "占格形态分布");
 });
 
 test("mapOriginal 内容：mapoRegionPos 与 mapoGrid2Pos 同式（含奇数行半格错位）", () => {

@@ -48,6 +48,21 @@ export const MAPO_AREA_LABELS: readonly IMapoLabel[] = {areas};
 
 /** 城址（{ncity} 座）：原版 `city_center.lua` 的**真坐标**，⛔ 无名字（名字在服务端 AOI 里）。 */
 export const MAPO_CITY_SITES: readonly IMapoCitySite[] = {cities};
+
+/**
+ * 城的**占格**（{ncity} 座共 {ncell} 格）—— 格键 `row * 10000 + col`，按城序、城内按原表序。
+ *
+ * ★ 来自 `map/{map}/cn/city.bytes`（MAPORIGINAL-2D §5），每城第 1 格 == `MAPO_CITY_SITES[i]`。
+ *   占格形态只有 5 种：{shapes}（格数:座数）。
+ * ★ 用途 = 原版 `ViewModelResField:check_validate` 的**第 4 道门**（§2.1）：
+ *   该格有 build 且 `is_show_res_field()` 为假 ⇒ **不画资源件**。⛔ 城址件与资源件不叠。
+ * ⚠ 城**不在 `res.bytes` 里**：2,689 个城格 100% 是 `res==1` 平地、`res_multi==0`，
+ *   地块层完全不知道城的存在 ⇒ 抑制只能靠这张表，⛔ 没法从地形值推出来。
+ */
+export const MAPO_CITY_CELL_KEYS: readonly number[] = {cityCellKeys};
+
+/** 每座城占几格（{ncity} 项，前缀和即可切回逐城分组）。 */
+export const MAPO_CITY_CELL_COUNTS: readonly number[] = {cityCellCounts};
 """
 
 
@@ -63,15 +78,23 @@ def main() -> int:
         return json.dumps([{k: v for k, v in e.items() if k != "key"} for e in data.get(key, [])],
                           ensure_ascii=False, indent=indent)
 
+    groups = data.get("cityCells", [])
+    keys = [r * 10000 + c for g in groups for r, c in g]
+    counts = [len(g) for g in groups]
+    shapes = {}
+    for n in counts:
+        shapes[n] = shapes.get(n, 0) + 1
     ts = HEAD.format(map=a.map, ncanton=len(data["cantons"]), narea=len(data["areas"]),
-                     ncity=len(data.get("cities", [])),
-                     cantons=rows("cantons"), areas=rows("areas"), cities=rows("cities", None))
+                     ncity=len(data.get("cities", [])), ncell=len(keys),
+                     shapes="、".join("%d:%d" % kv for kv in sorted(shapes.items())),
+                     cantons=rows("cantons"), areas=rows("areas"), cities=rows("cities", None),
+                     cityCellKeys=json.dumps(keys), cityCellCounts=json.dumps(counts))
     dst = a.out or os.path.join(d, "labels.data.ts")
     os.makedirs(os.path.dirname(os.path.abspath(dst)), exist_ok=True)
     open(dst, "w", encoding="utf-8").write(ts)
-    print("→ %s（大区 %d、郡 %d、城 %d，%.1f KB）"
+    print("→ %s（大区 %d、郡 %d、城 %d / 占格 %d，%.1f KB）"
           % (dst, len(data["cantons"]), len(data["areas"]), len(data.get("cities", [])),
-             os.path.getsize(dst) / 1024))
+             len(keys), os.path.getsize(dst) / 1024))
     return 0
 
 
