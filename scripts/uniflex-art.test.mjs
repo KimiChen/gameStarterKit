@@ -309,6 +309,21 @@ test("settings and alliance share the same WideMenuButton file", async () => {
     assert.doesNotMatch(originalAlliance, /restored/);
 });
 
+test("shared ScreenHeader PSD identity is the component, not a page instance", async () => {
+    const { readPsd } = loadAgPsd();
+    const psd = readPsd(await readFile(artComponentPsdPath(root, "ScreenHeader")), {
+        skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true,
+    });
+    const names = [];
+    const walk = (layer) => {
+        if (layer.name) names.push(layer.name);
+        for (const child of layer.children || []) walk(child);
+    };
+    for (const child of psd.children || []) walk(child);
+    assert.ok(names.some((name) => name.includes("[ui:ScreenHeader#component]")));
+    assert.equal(names.some((name) => name.includes("Alliance/")), false);
+});
+
 test("page-side linked-components.json manifests stay out of the committed art tree", async () => {
     const artRoot = resolve(root, "apps/art/uniflex");
     const offenders = [];
