@@ -24,7 +24,7 @@ export function artComponentJsonPath(root, key) {
 }
 
 export function artPsdPath(root, page) {
-    return join(artPageDir(root, page), "screen.psd");
+    return join(artPageDir(root, page), `${page.componentName}.psd`);
 }
 
 export function artJsonPath(root, page) {

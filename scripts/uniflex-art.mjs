@@ -22,7 +22,7 @@ const help = `Usage:
   npm run ui:art-sync [--force]
   npm run ui:art-check
 
-Exports UniFlex originals to apps/art/uniflex/<Page>/screen.psd and restorable
+Exports UniFlex originals to apps/art/uniflex/<Page>/<Page>.psd and restorable
 defineComponent instances to apps/art/uniflex/components/<Key>/<Key>.psd.
 Page PSDs link those files as smart objects. Imports overlay to applyTarget
 (catalog default: restored) via ui-uniflex/restored/ shared copies. Never writes
@@ -212,7 +212,7 @@ async function exportPage(page, catalog, { env, force = false }) {
 }
 
 function ART_REL(page) {
-    return `apps/art/uniflex/${page.componentName}/screen.psd`;
+    return `apps/art/uniflex/${page.componentName}/${page.componentName}.psd`;
 }
 
 async function importComponent(key, { env }) {

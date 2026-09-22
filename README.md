@@ -64,7 +64,7 @@ UniFlex 原生 `uniflex-compiler` 已按宿主平台放入 `vendor/uniflex/bin/`
 `ui:import-psd` / `ui:export-psd` / `ui:roundtrip` 使用锁定的 `vendor/web-ui-to-psd-0.1.12.tgz`，
 `npm ci` 后即可运行，不依赖本机转换器源码目录；转换器还需要本机 Chrome 与 `uv`。导出把
 UniFlex 组件身份和布局框打到 PSD 图层（`[ui:key#role]`，与 octane-lite 相同）；导入按身份还原
-catalog 组件，并把换图/改大小/改位置叠回原结构。设计师 PSD 落在 `apps/art/uniflex/<Page>/screen.psd`，
+catalog 组件，并把换图/改大小/改位置叠回原结构。设计师 PSD 落在 `apps/art/uniflex/<Page>/<Page>.psd`，
 用 `ui:art-export` / `ui:art-import` / `ui:art-sync` / `ui:art-check` 同步；当前只写回 `*Restored`。
 可选 `WEB_UI_TO_PSD_CLI` / `WEB_UI_TO_PSD_ROOT` 仅用于覆盖锁定包。
 

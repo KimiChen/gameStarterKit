@@ -7,7 +7,7 @@
 ```text
 原稿 UniFlex
   → npm run ui:art-export
-  → <Page>/screen.psd
+  → <Page>/<Page>.psd
   → 设计师改 PSD
   → npm run ui:art-import / ui:art-sync
   → *Restored
@@ -19,7 +19,7 @@
 | `npm run ui:art-export -- --all` | 导出缺 PSD 或原稿已变且 PSD 未改的页 |
 | `npm run ui:art-import -- --screen backpack` | 该页 PSD overlay 到 Restored |
 | `npm run ui:art-import -- --changed` | 只导 PSD 已改、尚未导入的页 |
-| `npm run ui:art-import -- --all` | 有 `screen.psd` 的页全部 overlay 到 Restored |
+| `npm run ui:art-import -- --all` | 有 `<Page>.psd` 的页全部 overlay 到 Restored |
 | `npm run ui:art-sync` | 按「干净 PSD 则导出，脏 PSD 则导入」分流；两边都脏则失败 |
 | `npm run ui:art-check` | 只读闸：PSD / 哈希 / Restored 是否新鲜 |
 

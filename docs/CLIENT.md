@@ -130,7 +130,7 @@ apps/Cocos/
   双向不动 TSX；实例内部新增记 skipped（组件结构权威在组件 TSX）。这几类结构变更
   全部只写 `*Restored` 并记入 IMPORT.md 的
   removed / blocked / swapped / conflict / added / skipped 条目。
-  设计师可编辑 PSD 的落点是 `apps/art/uniflex/<Page>/screen.psd`（建议 Git LFS；本机未装则按二进制入库）。
+  设计师可编辑 PSD 的落点是 `apps/art/uniflex/<Page>/<Page>.psd`（建议 Git LFS；本机未装则按二进制入库）。
   `ui:art-export` 从原稿功能页导出；`ui:art-import` / `ui:art-sync` 按身份 overlay 回去。
   当前 catalog `applyTarget` 为 `restored`，只写 `*Restored`，不覆盖原稿；`ui:art-check` 是只读新鲜度闸。
   PreviewHome 与还原预览首页不进 art catalog。中间产物仍在 `.cache/psd/`。

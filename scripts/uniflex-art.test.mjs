@@ -89,7 +89,7 @@ test("classifyArtPage splits export, import, ok, and conflict", () => {
 });
 
 test("backpack page PSD links shared UniFlex components instead of inlining them", async () => {
-    const page = await readArtPsd(resolve(root, "apps/art/uniflex/Backpack/screen.psd"));
+    const page = await readArtPsd(resolve(root, "apps/art/uniflex/Backpack/Backpack.psd"));
     const placed = collectPlaced(page);
     const linked = linkedPaths(page);
     const cardId = componentGuid("BackpackItemCard");
@@ -160,7 +160,7 @@ test("shop and backpack component PSDs share the same ItemSlot file", async () =
     const slotId = componentGuid("ItemSlot");
     const card = await readArtPsd(artComponentPsdPath(root, "BackpackItemCard"));
     const panel = await readArtPsd(artComponentPsdPath(root, "ShopGetItemPanel"));
-    const shopPage = await readArtPsd(resolve(root, "apps/art/uniflex/ShopGetItem/screen.psd"));
+    const shopPage = await readArtPsd(resolve(root, "apps/art/uniflex/ShopGetItem/ShopGetItem.psd"));
     assert.equal(linkedPaths(card).get(slotId)?.relativePath, "../ItemSlot/ItemSlot.psd");
     assert.equal(linkedPaths(panel).get(slotId)?.relativePath, "../ItemSlot/ItemSlot.psd");
     assert.equal(linkedPaths(card).get(slotId)?.childDocumentID, "");
@@ -196,8 +196,8 @@ test("prompt, confirm, and shop share the same ConfirmButton file", async () => 
     const cancelId = componentGuid("CancelButton");
     const actionId = componentGuid("ActionButton");
     const closeId = componentGuid("CloseButton");
-    const prompt = await readArtPsd(resolve(root, "apps/art/uniflex/Prompt/screen.psd"));
-    const confirm = await readArtPsd(resolve(root, "apps/art/uniflex/Confirm/screen.psd"));
+    const prompt = await readArtPsd(resolve(root, "apps/art/uniflex/Prompt/Prompt.psd"));
+    const confirm = await readArtPsd(resolve(root, "apps/art/uniflex/Confirm/Confirm.psd"));
     const shopPanel = await readArtPsd(artComponentPsdPath(root, "ShopGetItemPanel"));
     const confirmBtn = await readArtPsd(artComponentPsdPath(root, "ConfirmButton"));
     const cancelBtn = await readArtPsd(artComponentPsdPath(root, "CancelButton"));
@@ -239,8 +239,8 @@ test("prompt, confirm, and shop share the same ConfirmButton file", async () => 
 test("star upgrade and alliance announce share ConfirmButton with shop", async () => {
     const confirmId = componentGuid("ConfirmButton");
     const closeId = componentGuid("CloseButton");
-    const starPage = await readArtPsd(resolve(root, "apps/art/uniflex/HeroStarUpgrade/screen.psd"));
-    const announcePage = await readArtPsd(resolve(root, "apps/art/uniflex/AllianceAnnounce/screen.psd"));
+    const starPage = await readArtPsd(resolve(root, "apps/art/uniflex/HeroStarUpgrade/HeroStarUpgrade.psd"));
+    const announcePage = await readArtPsd(resolve(root, "apps/art/uniflex/AllianceAnnounce/AllianceAnnounce.psd"));
     const starPanel = await readArtPsd(artComponentPsdPath(root, "HeroStarUpgradePanel"));
     const announcePanel = await readArtPsd(artComponentPsdPath(root, "AllianceAnnouncePanel"));
     assert.equal(linkedPaths(starPage).get(componentGuid("HeroStarUpgradePanel"))?.relativePath,
@@ -277,8 +277,8 @@ test("star upgrade and alliance announce share ConfirmButton with shop", async (
 test("settings and alliance share the same WideMenuButton file", async () => {
     const buttonId = componentGuid("WideMenuButton");
     const homeId = componentGuid("AllianceHomePanel");
-    const settings = await readArtPsd(resolve(root, "apps/art/uniflex/Settings/screen.psd"));
-    const alliance = await readArtPsd(resolve(root, "apps/art/uniflex/Alliance/screen.psd"));
+    const settings = await readArtPsd(resolve(root, "apps/art/uniflex/Settings/Settings.psd"));
+    const alliance = await readArtPsd(resolve(root, "apps/art/uniflex/Alliance/Alliance.psd"));
     const home = await readArtPsd(artComponentPsdPath(root, "AllianceHomePanel"));
     assert.equal(linkedPaths(settings).get(buttonId)?.relativePath,
         "../components/WideMenuButton/WideMenuButton.psd");
