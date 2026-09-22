@@ -28,6 +28,11 @@ import {
 import {
     MAPO_CITY_CELL_COUNTS, MAPO_CITY_CELL_KEYS, MAPO_CITY_SITES,
 } from "@game/shared/kits/mapOriginal/content/labels.data";
+import {
+    MAPO_RIVER_D_BIAS, MAPO_RIVER_GEO_COUNT, MAPO_RIVER_HEADER_BYTES, MAPO_RIVER_ORIGIN,
+    MAPO_RIVER_RECORD_BYTES, MAPO_RIVER_SIDE, MAPO_RIVER_S_BIAS, MAPO_RIVER_SYSTEMS,
+    MAPO_RIVER_TILES, MAPO_RIVER_TINT,
+} from "@game/shared/kits/mapOriginal/content/river.data";
 
 const MAP = MAPO_TERRAIN_MAP_ID;
 const kitDir = new URL(`../../kits/mapOriginal/data/maps/${MAP}/`, import.meta.url);
@@ -361,6 +366,114 @@ test("mapOriginal 内容：城占格表 = city.bytes（249 座 / 2,689 格 / 首
     // ★ 占格形态只有 5 种（§5 的表）
     assert.deepEqual([...shapes.entries()].sort((a, b) => a[0] - b[0]),
         [[4, 1], [6, 11], [7, 24], [11, 204], [23, 9]], "占格形态分布");
+});
+
+test("mapOriginal 内容：河流几何库 river-geo.bin 自洽（102 条 / 三角化合法 / 零残留）", () => {
+    const meta = JSON.parse(kit("rivers.info.json").toString("utf8")) as {
+        geoCount: number; geoBytes: number; geoSha256: string; verts: number; tris: number;
+        placements: number; placementSha256: string; recordBytes: number;
+        sBias: number; dBias: number;
+        grid: { side: number; tilesPerCell: number; origin: number };
+        systems: { system: number; name: string; rgb: [number, number, number] }[];
+        tint: [number, number, number];
+        alignCheck: Record<string, number>;
+    };
+    const raw = kit("river-geo.bin");
+    assert.equal(raw.length, meta.geoBytes);
+    assert.equal(sha256(raw), meta.geoSha256);
+    assert.equal(raw.readUInt16BE(0), MAPO_RIVER_GEO_COUNT, "几何条数");
+    assert.equal(meta.geoCount, MAPO_RIVER_GEO_COUNT);
+    // ★ 逐条走一遍：顶点/索引数必须正好读完，索引必须落在本条的顶点范围内
+    let o = 2, verts = 0, tris = 0;
+    const bySystem = new Map<number, number>();
+    for (let i = 0; i < MAPO_RIVER_GEO_COUNT; i += 1) {
+        const system = raw.readUInt8(o);
+        const nv = raw.readUInt16BE(o + 1), ni = raw.readUInt16BE(o + 3);
+        o += 5;
+        assert.ok(system >= 0 && system < MAPO_RIVER_SYSTEMS.length, `第 ${i} 条水系 ${system} 越界`);
+        assert.ok(nv >= 3, `第 ${i} 条只有 ${nv} 个顶点，构不成多边形`);
+        assert.equal(ni % 3, 0, `第 ${i} 条索引数 ${ni} 不是 3 的倍数`);
+        o += nv * 8;
+        for (let k = 0; k < ni; k += 1) {
+            const idx = raw.readUInt16BE(o + k * 2);
+            assert.ok(idx < nv, `第 ${i} 条的索引 ${idx} 越出 ${nv} 个顶点`);
+        }
+        o += ni * 2;
+        verts += nv; tris += ni / 3;
+        bySystem.set(system, (bySystem.get(system) ?? 0) + 1);
+    }
+    assert.equal(o, raw.length, "几何库必须精确读完不多不少");
+    assert.equal(verts, meta.verts);
+    assert.equal(tris, meta.tris);
+    // ★ 三条水系的条数 = 原版 river_path.json 的分法（51 / 26 / 25）
+    assert.deepEqual([...bySystem.entries()].sort((a, b) => a[0] - b[0]), [[0, 51], [1, 26], [2, 25]]);
+    assert.deepEqual([...MAPO_RIVER_TINT], meta.tint);
+    assert.equal(MAPO_RIVER_SYSTEMS.length, meta.systems.length);
+    for (const s of meta.systems) {
+        const shared = MAPO_RIVER_SYSTEMS[s.system];
+        assert.equal(shared.name, s.name);
+        assert.deepEqual([...shared.rgb], s.rgb, `水系 ${s.name} 的原版平色`);
+    }
+});
+
+test("mapOriginal 内容：河流摆放表 rivers.bin 自洽（画家序 / 下标 / 对位覆盖）", () => {
+    const meta = JSON.parse(kit("rivers.info.json").toString("utf8")) as {
+        placements: number; placementSha256: string; recordBytes: number;
+        sBias: number; dBias: number;
+        grid: { side: number; tilesPerCell: number; origin: number };
+        alignCheck: Record<string, number>;
+    };
+    assert.equal(meta.recordBytes, MAPO_RIVER_RECORD_BYTES);
+    assert.equal(meta.sBias, MAPO_RIVER_S_BIAS);
+    assert.equal(meta.dBias, MAPO_RIVER_D_BIAS);
+    assert.equal(meta.grid.side, MAPO_RIVER_SIDE);
+    assert.equal(meta.grid.tilesPerCell, MAPO_RIVER_TILES);
+    assert.equal(meta.grid.origin, MAPO_RIVER_ORIGIN);
+    const raw = kit("rivers.bin");
+    assert.equal(sha256(raw), meta.placementSha256);
+    assert.equal(raw.readUInt32BE(0), meta.placements, "头 4 字节大端 count");
+    assert.equal(raw.length, MAPO_RIVER_HEADER_BYTES + meta.placements * MAPO_RIVER_RECORD_BYTES);
+
+    const display = kit("terrain.bytes");
+    const covered = new Uint8Array(MAPO_MAP_ROWS * MAPO_MAP_COLS);
+    let prevS = -1;
+    for (let i = 0; i < meta.placements; i += 1) {
+        const o = MAPO_RIVER_HEADER_BYTES + i * MAPO_RIVER_RECORD_BYTES;
+        const sRaw = raw.readUInt16BE(o);
+        const geo = raw.readUInt8(o + 4);
+        // ★ 表必须**已按 s 升序**落盘 —— 客户端靠它做二分与画家序
+        assert.ok(sRaw >= prevS, `第 ${i} 条 s=${sRaw} 小于前一条 ${prevS}`);
+        prevS = sRaw;
+        assert.ok(geo >= 1 && geo <= MAPO_RIVER_GEO_COUNT, `第 ${i} 条的几何下标 ${geo} 越界`);
+        assert.equal(raw.readUInt8(o + 5), 0, `第 ${i} 条的保留字节必须为 0`);
+        const s = sRaw - MAPO_RIVER_S_BIAS, d = raw.readUInt16BE(o + 2) - MAPO_RIVER_D_BIAS;
+        // ⚠ margin 块的 s/d 可为负，⛔ 别用 `% 2`：JS 的 `-12 % 2` 是 **-0**，
+        //   而 node:assert/strict 按 SameValue 比，`assert.equal(-0, 0)` 会红。
+        assert.equal((s + d) & 1, 0, `第 ${i} 条 s/d 奇偶不同 ⇒ row 不是整数`);
+        const row = (s + d) / 2, col = (s - d) / 2;
+        // ★ 原点格必须落在 3 的倍数减 6 上（河格 → 逻辑格的换算，⛔ 不许有半格）
+        assert.equal(Math.abs((row - MAPO_RIVER_ORIGIN) % MAPO_RIVER_TILES), 0,
+            `第 ${i} 条 row ${row} 不在河格上`);
+        assert.equal(Math.abs((col - MAPO_RIVER_ORIGIN) % MAPO_RIVER_TILES), 0,
+            `第 ${i} 条 col ${col} 不在河格上`);
+        for (let dr = 0; dr < MAPO_RIVER_TILES; dr += 1) {
+            for (let dc = 0; dc < MAPO_RIVER_TILES; dc += 1) {
+                const r = row + dr, c = col + dc;
+                if (r < 0 || r >= MAPO_MAP_ROWS || c < 0 || c >= MAPO_MAP_COLS) continue;
+                covered[r * MAPO_MAP_COLS + c] = 1;
+            }
+        }
+    }
+    // ★ 对位判据：**每个 res==47 格都要被某个河格覆盖**（打包期实测 235,290/235,292）
+    let river = 0, hit = 0;
+    for (let i = 0; i < covered.length; i += 1) {
+        if (display[MAPO_TERRAIN_HEADER_BYTES + i] !== 47) continue;
+        river += 1;
+        if (covered[i]) hit += 1;
+    }
+    assert.equal(river, meta.alignCheck["res==47 格"]);
+    assert.equal(hit, meta.alignCheck["被覆盖"]);
+    assert.ok(hit / river >= 0.999, `河格只覆盖了 ${(hit / river).toFixed(4)} 的 res==47 格`);
 });
 
 test("mapOriginal 内容：mapoRegionPos 与 mapoGrid2Pos 同式（含奇数行半格错位）", () => {

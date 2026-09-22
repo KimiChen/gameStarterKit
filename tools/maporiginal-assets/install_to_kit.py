@@ -38,9 +38,14 @@ FILES = {
     # ★ 多格地形的区域件：图集 + 摆放表（regions.bin 也要进运行时，走 BufferAsset）
     "region-atlas.png": "region-atlas.png", "region-atlas.info.json": "region-atlas.info.json",
     "regions.bin": "regions.bin", "regions.info.json": "regions.info.json",
+    # ★ 河流层：填充色图 + 几何库 + 摆放表（三件缺一则整层不建）
+    "river-fill.png": "river-fill.png", "river-geo.bin": "river-geo.bin",
+    "rivers.bin": "rivers.bin", "rivers.info.json": "rivers.info.json",
+    "river-geo.index.json": "river-geo.index.json",
     "labels.json": "labels.json",
 }
-KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json"}
+KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
+            "rivers.info.json", "river-geo.index.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。

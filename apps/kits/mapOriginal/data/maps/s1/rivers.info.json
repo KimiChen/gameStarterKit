@@ -1,0 +1,77 @@
+{
+ "schemaVersion": 1,
+ "mapId": "s1",
+ "grid": {
+  "side": 504,
+  "tilesPerCell": 3,
+  "origin": -6,
+  "order": "列主序 byte(c*row + r + 5)"
+ },
+ "placements": 31140,
+ "sBias": 16,
+ "dBias": 1500,
+ "recordBytes": 6,
+ "placementLayout": "大端：u16 s(=R+C+sBias), u16 d(=R−C+dBias), u8 geo(1..102), u8 保留；按 s 升序",
+ "placementSha256": "8e9301179adadb242da0046164c908722c1cc29e0cb6c4b40c44ab84205c485a",
+ "geoCount": 102,
+ "geoBytes": 60564,
+ "geoSha256": "834447c193f63306119dfe0b2fbde4a43382df8bf04f4d0d9dfe3729bf9cd579",
+ "geoLayout": "大端：u16 条数；每条 u8 system, u16 nVerts, u16 nIdx, nVerts×{f32 x, f32 y}（原版 px，局部坐标）, nIdx×u16",
+ "verts": 4379,
+ "tris": 4170,
+ "systems": [
+  {
+   "system": 0,
+   "name": "river",
+   "rgb": [
+    78,
+    88,
+    94
+   ],
+   "source": "scene/ground/river/png/26.png"
+  },
+  {
+   "system": 1,
+   "name": "river_yellowriver",
+   "rgb": [
+    148,
+    154,
+    155
+   ],
+   "source": "scene/ground/river_yellowriver/png/26.png"
+  },
+  {
+   "system": 2,
+   "name": "river_longriver",
+   "rgb": [
+    99,
+    108,
+    113
+   ],
+   "source": "scene/ground/river_longriver/png/26.png"
+  }
+ ],
+ "tint": [
+  70,
+  120,
+  160
+ ],
+ "tintNote": "顶点色 = 本仓调色板 river 色相；亮度由 river-fill.png 的原版平色给。⛔ 原版的 river_color_mask.ktx 蒙版本仓不复刻。",
+ "alignCheck": {
+  "res==47 格": 235292,
+  "被覆盖": 235290,
+  "覆盖率": 0.999991
+ },
+ "topGroupSprites": {
+  "合计": 597,
+  "每条 min/max": [
+   0,
+   30
+  ]
+ },
+ "source": {
+  "grid": "map/s1/cn/river.bytes",
+  "paths": "map/s1/cn/river_path.json",
+  "geometry": "scene/ground/river*/<形状>_polygon_group.prefab.bin"
+ }
+}

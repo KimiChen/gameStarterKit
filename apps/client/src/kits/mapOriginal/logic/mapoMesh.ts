@@ -325,3 +325,72 @@ export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
     return { positions, uvs, colors, indices16, quads: n,
              minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
 }
+
+/** 一片三角化好的多边形（河流 / 地貌带的 `polygon_2d`）。 */
+export interface MapoPolygonInput {
+    /** 画家序键（等距量 s = row + col，越大越靠屏幕下方）。 */
+    readonly s: number;
+    /** 多边形原点的世界坐标（局部顶点加在它上面）。 */
+    readonly x: number;
+    readonly y: number;
+    /** 局部顶点，`[x0, y0, x1, y1, …]`，**已是世界单位**。 */
+    readonly verts: Float32Array;
+    /** 三角索引（指向 verts 的顶点下标）。 */
+    readonly indices: Uint16Array;
+    /** 整片的 UV（平色填充 ⇒ 所有顶点同一个点）。 */
+    readonly uv: readonly [number, number];
+    /** 整片的顶点色（0..1）。 */
+    readonly rgba: readonly [number, number, number, number];
+}
+
+/**
+ * 多边形合批。⚠ 与 `buildMapoSpriteMesh` 的区别：
+ *   ① 顶点数/索引数**逐片不同**（⛔ 不能按「每片 4 顶点 6 索引」预算）；
+ *   ② 三角化是**原版 prefab 自带的**（`polygon_2d.indices`），⛔ 我们不做耳切；
+ *   ③ UV 是**整片一个点**（原版填充图是 2×2 单一平色）—— 色相走顶点色。
+ * ⚠ 顶点上限按 u16 索引封顶（65,535），超了**截断并如实少画**，
+ * ⛔ 不要悄悄换 u32：`MapoMeshBatch` 的索引缓冲是 16 位的。
+ */
+export const MAPO_MAX_VERTS_PER_MESH = 65_535;
+
+export function buildMapoPolygonMesh(polys: MapoPolygonInput[]): MapoGeometry {
+    const sorted = polys.slice().sort((a, b) => a.s - b.s);   // 画家序：屏幕从上到下
+    let nv = 0, ni = 0;
+    let take = 0;
+    for (const p of sorted) {
+        const vc = p.verts.length >> 1;
+        if (nv + vc > MAPO_MAX_VERTS_PER_MESH) break;
+        nv += vc; ni += p.indices.length; take += 1;
+    }
+    const positions = new Float32Array(nv * 3);
+    const uvs = new Float32Array(nv * 2);
+    const colors = new Float32Array(nv * 4);
+    const indices16 = new Uint16Array(ni);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let vAt = 0, iAt = 0;
+    for (let k = 0; k < take; k += 1) {
+        const p = sorted[k];
+        const base = vAt;
+        const vc = p.verts.length >> 1;
+        for (let v = 0; v < vc; v += 1) {
+            const x = p.x + p.verts[v * 2], y = p.y + p.verts[v * 2 + 1];
+            positions[(base + v) * 3] = x;
+            positions[(base + v) * 3 + 1] = y;
+            positions[(base + v) * 3 + 2] = 0;
+            uvs[(base + v) * 2] = p.uv[0];
+            uvs[(base + v) * 2 + 1] = p.uv[1];
+            colors.set(p.rgba, (base + v) * 4);
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+        }
+        for (let i = 0; i < p.indices.length; i += 1) indices16[iAt + i] = base + p.indices[i];
+        vAt += vc;
+        iAt += p.indices.length;
+    }
+    if (vAt === 0) { minX = minY = maxX = maxY = 0; }
+    // ⚠ `quads` 在多边形网格里没有意义，按「索引数 / 6」折算只为让上传路径统一
+    return { positions, uvs, colors, indices16, quads: Math.ceil(ni / 6),
+             minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
+}

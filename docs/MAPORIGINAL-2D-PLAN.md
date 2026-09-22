@@ -210,10 +210,10 @@ npm run verify:protected-paths
 
 | 批 | 内容 | 前置 |
 |---|---|---|
-| M2-B1 | 地表底改「一张底纹 + 整数次 REPEAT」（MAPORIGINAL-2D §1.4） | **图集里不能 GL_REPEAT** ⇒ 底纹必须单独出一张贴图、不进图集；要改材质与 UV 生成 |
+| M2-B1 | 地表底改「一张底纹 + 整数次 REPEAT」（MAPORIGINAL-2D §1.4） | **图集里不能 GL_REPEAT** ⇒ 底纹必须单独出一张贴图、不进图集；要改材质与 UV 生成。⚠ M3-B2 已经打通「非图集贴图 + 多边形合批」，**只剩 REPEAT 与世界投影 UV** |
 | M2-B2 | snow / desert 的 block 级覆盖层（§1.3） | M2-B1 |
 | M3-B1 | 道路层（§4.2） | `road_info.bytes` 的方向编码未解 |
-| M3-B2 | 河流独立几何层（§4.1） | 河格 = 3×3 逻辑格，要新的 mesh 构造 |
+| M3-B2 | ~~河流独立几何层（§4.1）~~ **已完成（本轮）** | ~~河格 = 3×3 逻辑格，要新的 mesh 构造~~ 已做：多边形合批 `buildMapoPolygonMesh` |
 
 ---
 
@@ -233,7 +233,7 @@ npm run verify:protected-paths
 | M2-B1 地表底 REPEAT | ☐ 未排期 | | |
 | M2-B2 snow/desert 块层 | ☐ 未排期 | | |
 | M3-B1 道路层 | ☐ 未排期 | | |
-| M3-B2 河流几何层 | ☐ 未排期 | | |
+| M3-B2 河流几何层 | ✅ 已完成（水面多边形；`_top_group` 手摆件留下一批） | （本轮） | 2026-09-23 |
 
 ---
 

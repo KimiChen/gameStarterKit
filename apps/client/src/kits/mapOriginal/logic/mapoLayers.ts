@@ -10,7 +10,7 @@
 import { MAPO_LOD_MAX } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
 export type MapoLayerId =
-    | "terrain" | "grid" | "region" | "decor" | "plate" | "banner" | "label";
+    | "terrain" | "grid" | "river" | "region" | "decor" | "plate" | "banner" | "label";
 
 interface LayerGate {
     readonly id: MapoLayerId;
@@ -35,6 +35,10 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     //   `grid_state` 是 AOI 驱动的**归属态叠图**，⛔ 不是线框网格；
     //   「原版有没有线框网格层」目前**无证据** ⇒ 要做之前先补证据，⛔ 别照 sgzzmap 抄了当原版。
     { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: false },
+    // ★ 河流：原版水面多边形。⚠ 必须在地表**之上**、山族件与摆件**之下**
+    //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）。
+    //   ⚠ 比逐格摆件多盖一档：远档看水网走向最有用（与 region 同档）。
+    { id: "river", hideAtLod: 3, showFromLod: 0, streamed: true, implemented: true },
     { id: "plate", hideAtLod: MAPO_LOD_MAX, showFromLod: 3, streamed: false, implemented: true },
     // ★ 摆件：**原版切片**（城/营/建筑/资源地物）立在格上。超出菱形，必须画在地表之上、按画家序排。
     // ★ 区域件（多格地形：山脉/林丛/散落）。⚠ 比逐格摆件多盖一档：远档看山林轮廓最有用。
@@ -57,6 +61,7 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
 export const MAPO_LAYER_RENDERER: Readonly<Record<MapoLayerId, string | null>> = Object.freeze({
     terrain: "renderer",
     grid: null,
+    river: "riverRenderer",
     plate: "farRenderer",
     region: "regionRenderer",
     decor: "decorRenderer",

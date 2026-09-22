@@ -1,0 +1,1022 @@
+[
+ {
+  "id": 1,
+  "path": "scene/ground/river/12_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   766.172,
+   383.086
+  ]
+ },
+ {
+  "id": 2,
+  "path": "scene/ground/river/13_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   923.487,
+   468.276
+  ]
+ },
+ {
+  "id": 3,
+  "path": "scene/ground/river/17_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   914.177,
+   389.796
+  ]
+ },
+ {
+  "id": 4,
+  "path": "scene/ground/river/10_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   617.482,
+   291.425
+  ]
+ },
+ {
+  "id": 5,
+  "path": "scene/ground/river/11_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   447.735,
+   303.784
+  ]
+ },
+ {
+  "id": 6,
+  "path": "scene/ground/river/18_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   767.034,
+   458.631
+  ]
+ },
+ {
+  "id": 7,
+  "path": "scene/ground/river/12_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   773.834,
+   391.389
+  ]
+ },
+ {
+  "id": 8,
+  "path": "scene/ground/river/10_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   610.128,
+   299.328
+  ]
+ },
+ {
+  "id": 9,
+  "path": "scene/ground/river/17_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   917.262,
+   384.591
+  ]
+ },
+ {
+  "id": 10,
+  "path": "scene/ground/river_yellowriver/12_1_x.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   775.863,
+   413.929
+  ]
+ },
+ {
+  "id": 11,
+  "path": "scene/ground/river_yellowriver/18_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   778.0,
+   457.0
+  ]
+ },
+ {
+  "id": 12,
+  "path": "scene/ground/river_yellowriver/11_1_x.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   538.509,
+   352.0
+  ]
+ },
+ {
+  "id": 13,
+  "path": "scene/ground/river/12_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   763.801,
+   385.324
+  ]
+ },
+ {
+  "id": 14,
+  "path": "scene/ground/river/14_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   619.961,
+   383.414
+  ]
+ },
+ {
+  "id": 15,
+  "path": "scene/ground/river/14_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   606.996,
+   378.841
+  ]
+ },
+ {
+  "id": 16,
+  "path": "scene/ground/river/11_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   522.301,
+   311.768
+  ]
+ },
+ {
+  "id": 17,
+  "path": "scene/ground/river_yellowriver/13_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   905.742,
+   455.062
+  ]
+ },
+ {
+  "id": 18,
+  "path": "scene/ground/river/18_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   772.269,
+   461.716
+  ]
+ },
+ {
+  "id": 19,
+  "path": "scene/ground/river_yellowriver/12_1_y.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   774.925,
+   385.64
+  ]
+ },
+ {
+  "id": 20,
+  "path": "scene/ground/river/21_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   920.191,
+   311.03
+  ]
+ },
+ {
+  "id": 21,
+  "path": "scene/ground/river_yellowriver/10_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   634.503,
+   256.806
+  ]
+ },
+ {
+  "id": 22,
+  "path": "scene/ground/river_yellowriver/12_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   776.272,
+   388.973
+  ]
+ },
+ {
+  "id": 23,
+  "path": "scene/ground/river_yellowriver/17_1_y.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   913.0,
+   402.39
+  ]
+ },
+ {
+  "id": 24,
+  "path": "scene/ground/river_yellowriver/17_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   915.0,
+   397.0
+  ]
+ },
+ {
+  "id": 25,
+  "path": "scene/ground/river_yellowriver/12_1_xy.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   781.371,
+   385.137
+  ]
+ },
+ {
+  "id": 26,
+  "path": "scene/ground/river_yellowriver/10_1_y.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   627.283,
+   233.459
+  ]
+ },
+ {
+  "id": 27,
+  "path": "scene/ground/river/12_1_xy.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   759.892,
+   382.126
+  ]
+ },
+ {
+  "id": 28,
+  "path": "scene/ground/river/15_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   766.0,
+   325.246
+  ]
+ },
+ {
+  "id": 29,
+  "path": "scene/ground/river_yellowriver/11_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   430.844,
+   320.0
+  ]
+ },
+ {
+  "id": 30,
+  "path": "scene/ground/river_yellowriver/18_1_x.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   780.528,
+   461.18
+  ]
+ },
+ {
+  "id": 31,
+  "path": "scene/ground/river/2_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   617.854,
+   309.165
+  ]
+ },
+ {
+  "id": 32,
+  "path": "scene/ground/river/3_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   265.17,
+   300.153
+  ]
+ },
+ {
+  "id": 33,
+  "path": "scene/ground/river/3_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   371.657,
+   311.659
+  ]
+ },
+ {
+  "id": 34,
+  "path": "scene/ground/river_yellowriver/22_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   654.446,
+   457.673
+  ]
+ },
+ {
+  "id": 35,
+  "path": "scene/ground/river/3_3.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   295.737,
+   304.253
+  ]
+ },
+ {
+  "id": 36,
+  "path": "scene/ground/river/3_3_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   206.012,
+   308.682
+  ]
+ },
+ {
+  "id": 37,
+  "path": "scene/ground/river/4_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   604.297,
+   227.099
+  ]
+ },
+ {
+  "id": 38,
+  "path": "scene/ground/river/4_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   614.143,
+   213.53
+  ]
+ },
+ {
+  "id": 39,
+  "path": "scene/ground/river/4_2.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   599.35,
+   209.838
+  ]
+ },
+ {
+  "id": 40,
+  "path": "scene/ground/river/4_2_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   615.858,
+   284.431
+  ]
+ },
+ {
+  "id": 41,
+  "path": "scene/ground/river/2_2_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   615.611,
+   306.156
+  ]
+ },
+ {
+  "id": 42,
+  "path": "scene/ground/river/2_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   601.171,
+   302.806
+  ]
+ },
+ {
+  "id": 43,
+  "path": "scene/ground/river/2_2.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   600.617,
+   300.406
+  ]
+ },
+ {
+  "id": 44,
+  "path": "scene/ground/river/3_2_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   265.633,
+   310.723
+  ]
+ },
+ {
+  "id": 45,
+  "path": "scene/ground/river/15_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   764.0,
+   321.755
+  ]
+ },
+ {
+  "id": 46,
+  "path": "scene/ground/river/3_2.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   239.228,
+   302.404
+  ]
+ },
+ {
+  "id": 47,
+  "path": "scene/ground/river/15_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   759.55,
+   306.836
+  ]
+ },
+ {
+  "id": 48,
+  "path": "scene/ground/river/15_1_xy.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   773.609,
+   312.895
+  ]
+ },
+ {
+  "id": 49,
+  "path": "scene/ground/river_yellowriver/21_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   923.548,
+   356.608
+  ]
+ },
+ {
+  "id": 50,
+  "path": "scene/ground/river/14_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   628.697,
+   382.86
+  ]
+ },
+ {
+  "id": 51,
+  "path": "scene/ground/river/22_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   620.17,
+   461.125
+  ]
+ },
+ {
+  "id": 52,
+  "path": "scene/ground/river/14_1_xy.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   624.617,
+   391.492
+  ]
+ },
+ {
+  "id": 53,
+  "path": "scene/ground/river/3_4.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   371.887,
+   308.17
+  ]
+ },
+ {
+  "id": 54,
+  "path": "scene/ground/river/3_4_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   340.107,
+   311.777
+  ]
+ },
+ {
+  "id": 55,
+  "path": "scene/ground/river_yellowriver/15_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   775.938,
+   327.348
+  ]
+ },
+ {
+  "id": 56,
+  "path": "scene/ground/river_yellowriver/14_1_y.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   635.037,
+   387.684
+  ]
+ },
+ {
+  "id": 57,
+  "path": "scene/ground/river_yellowriver/16_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   778.938,
+   395.001
+  ]
+ },
+ {
+  "id": 58,
+  "path": "scene/ground/river/1_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   338.432,
+   176.87
+  ]
+ },
+ {
+  "id": 59,
+  "path": "scene/ground/river_yellowriver/16_1_xy.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   775.819,
+   389.348
+  ]
+ },
+ {
+  "id": 60,
+  "path": "scene/ground/river/1_1_xy.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   267.878,
+   173.002
+  ]
+ },
+ {
+  "id": 61,
+  "path": "scene/ground/river/5_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   618.34,
+   307.842
+  ]
+ },
+ {
+  "id": 62,
+  "path": "scene/ground/river_yellowriver/15_1_xy.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   768.947,
+   326.94
+  ]
+ },
+ {
+  "id": 63,
+  "path": "scene/ground/river/5_1_xy.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   620.754,
+   311.203
+  ]
+ },
+ {
+  "id": 64,
+  "path": "scene/ground/river/1_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   432.267,
+   213.607
+  ]
+ },
+ {
+  "id": 65,
+  "path": "scene/ground/river/1_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   357.259,
+   195.0
+  ]
+ },
+ {
+  "id": 66,
+  "path": "scene/ground/river_yellowriver/15_1_x.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   776.87,
+   344.136
+  ]
+ },
+ {
+  "id": 67,
+  "path": "scene/ground/river_yellowriver/15_1_y.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   770.921,
+   331.885
+  ]
+ },
+ {
+  "id": 68,
+  "path": "scene/ground/river/16_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   768.052,
+   384.0
+  ]
+ },
+ {
+  "id": 69,
+  "path": "scene/ground/river_yellowriver/14_1.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   627.714,
+   382.789
+  ]
+ },
+ {
+  "id": 70,
+  "path": "scene/ground/river/16_1_y.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   776.973,
+   390.975
+  ]
+ },
+ {
+  "id": 71,
+  "path": "scene/ground/river/5_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   620.511,
+   309.571
+  ]
+ },
+ {
+  "id": 72,
+  "path": "scene/ground/river_longriver/river_longriver_high/10_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   605.792,
+   244.063
+  ]
+ },
+ {
+  "id": 73,
+  "path": "scene/ground/river_longriver/river_longriver_high/15_1_xy.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   780.086,
+   319.09
+  ]
+ },
+ {
+  "id": 74,
+  "path": "scene/ground/river_longriver/river_longriver_high/12_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   765.131,
+   380.125
+  ]
+ },
+ {
+  "id": 75,
+  "path": "scene/ground/river_longriver/river_longriver_high/17_1_y.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   920.742,
+   388.186
+  ]
+ },
+ {
+  "id": 76,
+  "path": "scene/ground/river_longriver/river_longriver_high/18_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   781.244,
+   465.825
+  ]
+ },
+ {
+  "id": 77,
+  "path": "scene/ground/river_longriver/river_longriver_high/11_1_x.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   431.726,
+   311.614
+  ]
+ },
+ {
+  "id": 78,
+  "path": "scene/ground/river_longriver/river_longriver_high/21_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   921.109,
+   317.148
+  ]
+ },
+ {
+  "id": 79,
+  "path": "scene/ground/river_longriver/river_longriver_high/17_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   922.043,
+   383.45
+  ]
+ },
+ {
+  "id": 80,
+  "path": "scene/ground/river_longriver/river_longriver_high/12_1_xy.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   763.856,
+   388.513
+  ]
+ },
+ {
+  "id": 81,
+  "path": "scene/ground/river_longriver/river_longriver_high/18_1_x.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   778.725,
+   461.567
+  ]
+ },
+ {
+  "id": 82,
+  "path": "scene/ground/river_longriver/river_longriver_high/10_1_y.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   607.897,
+   227.027
+  ]
+ },
+ {
+  "id": 83,
+  "path": "scene/ground/river_longriver/river_longriver_high/12_1_x.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   768.844,
+   386.481
+  ]
+ },
+ {
+  "id": 84,
+  "path": "scene/ground/river_longriver/river_longriver_high/13_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   923.487,
+   468.276
+  ]
+ },
+ {
+  "id": 85,
+  "path": "scene/ground/river_longriver/river_longriver_high/12_1_y.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   766.554,
+   379.432
+  ]
+ },
+ {
+  "id": 86,
+  "path": "scene/ground/river_longriver/river_longriver_high/11_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   331.044,
+   302.422
+  ]
+ },
+ {
+  "id": 87,
+  "path": "scene/ground/river/5_1_x.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   612.474,
+   310.119
+  ]
+ },
+ {
+  "id": 88,
+  "path": "scene/ground/river_yellowriver/14_1_xy.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   638.491,
+   388.777
+  ]
+ },
+ {
+  "id": 89,
+  "path": "scene/ground/river_longriver/river_longriver_high/16_1_x.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   769.698,
+   391.544
+  ]
+ },
+ {
+  "id": 90,
+  "path": "scene/ground/river_longriver/river_longriver_high/22_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   638.412,
+   465.825
+  ]
+ },
+ {
+  "id": 91,
+  "path": "scene/ground/river_yellowriver/16_1_y.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   773.83,
+   386.679
+  ]
+ },
+ {
+  "id": 92,
+  "path": "scene/ground/river_longriver/river_longriver_high/14_1_xy.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   615.774,
+   392.401
+  ]
+ },
+ {
+  "id": 93,
+  "path": "scene/ground/river_yellowriver/14_1_x.group",
+  "system": 1,
+  "texture": "scene/ground/river_yellowriver/png/26.png",
+  "size": [
+   647.282,
+   397.573
+  ]
+ },
+ {
+  "id": 94,
+  "path": "scene/ground/river_longriver/river_longriver_high/16_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   779.313,
+   394.437
+  ]
+ },
+ {
+  "id": 95,
+  "path": "scene/ground/river/16_1_xy.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   766.0,
+   389.627
+  ]
+ },
+ {
+  "id": 96,
+  "path": "scene/ground/river_longriver/river_longriver_high/14_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   620.684,
+   380.874
+  ]
+ },
+ {
+  "id": 97,
+  "path": "scene/ground/river_longriver/river_longriver_high/14_1_x.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   623.018,
+   391.464
+  ]
+ },
+ {
+  "id": 98,
+  "path": "scene/ground/river_longriver/river_longriver_high/15_1_x.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   775.1,
+   315.15
+  ]
+ },
+ {
+  "id": 99,
+  "path": "scene/ground/river/16_1.group",
+  "system": 0,
+  "texture": "scene/ground/river/png/26.png",
+  "size": [
+   771.596,
+   384.0
+  ]
+ },
+ {
+  "id": 100,
+  "path": "scene/ground/river_longriver/river_longriver_high/14_1_y.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   626.216,
+   387.776
+  ]
+ },
+ {
+  "id": 101,
+  "path": "scene/ground/river_longriver/river_longriver_high/16_1_xy.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   770.191,
+   395.472
+  ]
+ },
+ {
+  "id": 102,
+  "path": "scene/ground/river_longriver/river_longriver_high/15_1.group",
+  "system": 2,
+  "texture": "scene/ground/river_longriver/png/26.png",
+  "size": [
+   776.375,
+   322.572
+  ]
+ }
+]

@@ -27,6 +27,7 @@ import { mapoSelectionEdges } from "../logic/mapoMesh";
 import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
 import { mapoSetRegions } from "../logic/mapoRegions";
+import { mapoSetRiverGeo, mapoSetRivers } from "../logic/mapoRivers";
 import {
     MAPO_QUALITY_LABELS,
     type MapoQuality,
@@ -36,6 +37,7 @@ import type { MapoRgb } from "../logic/mapoPalette";
 import { MapoViewportStencil } from "../logic/mapoViewport";
 import { MapoDecorRenderer } from "./MapoDecorRenderer";
 import { MapoRegionRenderer } from "./MapoRegionRenderer";
+import { MapoRiverRenderer } from "./MapoRiverRenderer";
 import { MapoLabelRenderer } from "./MapoLabelRenderer";
 import { MapoMapRenderer } from "./MapoMapRenderer";
 import { MapoFarRenderer } from "./MapoFarRenderer";
@@ -80,6 +82,9 @@ export class MapOriginalWorldView extends CocosView {
     /** 上一次建出来的区域件数（多格地形：山脉 / 林丛 / 散落）。 */
     private regionCount = 0;
     private regionRenderer: MapoRegionRenderer | null = null;
+    /** 上一次建出来的水面片数。 */
+    private riverCount = 0;
+    private riverRenderer: MapoRiverRenderer | null = null;
     private detail: Label | null = null;
     private chips: Chip[] = [];
     private offTick: (() => void) | null = null;
@@ -119,7 +124,9 @@ export class MapOriginalWorldView extends CocosView {
         // ⚠ 下标是**原版 res 值**，⛔ 不是 3 类通行层那份（拿原版值去查它会整片显示成「可走陆地」）
         const base: MapoRgb[] = MAPO_VALUE_COLORS.map((c) => c as MapoRgb);
         this.renderer = new MapoMapRenderer(this.world, null, base);
-        // ⚠ 兄弟序即绘制序：地表 → **区域件（山林地貌）** → 逐格摆件（地物）→ 地名
+        // ⚠ 兄弟序即绘制序：地表 → **河流** → 区域件（山林地貌）→ 逐格摆件（地物）→ 地名
+        //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）
+        this.riverRenderer = new MapoRiverRenderer(this.world, null);
         this.regionRenderer = new MapoRegionRenderer(this.world, null);
         this.decorRenderer = new MapoDecorRenderer(this.world, null);
         this.farRenderer = new MapoFarRenderer(this.world, null);
@@ -136,11 +143,20 @@ export class MapOriginalWorldView extends CocosView {
             if (art.regions) {
                 try { mapoSetRegions(art.regions.buffer()); } catch { /* 区域件层不建 */ }
             }
+            // ⚠ 几何库与摆放表**要么都进要么都不进**：只进一半会摆出错位的水面
+            if (art.riverGeo && art.rivers) {
+                try {
+                    mapoSetRiverGeo(art.riverGeo.buffer());
+                    mapoSetRivers(art.rivers.buffer());
+                } catch { /* 河流层不建 */ }
+            }
             this.renderer?.dispose();
+            this.riverRenderer?.dispose();
             this.regionRenderer?.dispose();
             this.decorRenderer?.dispose();
             this.farRenderer?.dispose();
             this.renderer = new MapoMapRenderer(this.world!, art, base);
+            this.riverRenderer = new MapoRiverRenderer(this.world!, art);
             this.regionRenderer = new MapoRegionRenderer(this.world!, art);
             this.decorRenderer = new MapoDecorRenderer(this.world!, art);
             this.farRenderer = new MapoFarRenderer(this.world!, art);
@@ -161,6 +177,7 @@ export class MapOriginalWorldView extends CocosView {
         this.offTick?.(); this.offTick = null;
         this.renderer?.dispose(); this.renderer = null;
         this.decorRenderer?.dispose(); this.decorRenderer = null;
+        this.riverRenderer?.dispose(); this.riverRenderer = null;
         this.regionRenderer?.dispose(); this.regionRenderer = null;
         this.labelRenderer?.dispose(); this.labelRenderer = null;
         this.farRenderer?.dispose(); this.farRenderer = null;
@@ -393,6 +410,13 @@ export class MapOriginalWorldView extends CocosView {
         } else {
             this.labelRenderer?.clear();
         }
+        // ★ 河流：在地表之上、山族件之下（原版 MAP_ZORDER 次序）
+        if (mapoLayerVisible("river", cam.lod)) {
+            this.riverCount = this.riverRenderer?.render(cam.worldRect(2), true) ?? 0;
+        } else {
+            this.riverRenderer?.clear();
+            this.riverCount = 0;
+        }
         // ★ 区域件（多格地形）比逐格摆件多盖一档：远档看山林轮廓最有用
         if (mapoLayerVisible("region", cam.lod)) {
             this.regionCount = this.regionRenderer?.render(
@@ -436,8 +460,11 @@ export class MapOriginalWorldView extends CocosView {
             const decor = near ? ` · 摆件 ${this.decorCount}/${this.visibleCount}` : "";
             // ★ 区域件数：多格地形每区一件（原版锚点优先），⛔ 掉到 0 说明 regions.bin 没到位
             const region = this.regionCount > 0 ? ` · 山林 ${this.regionCount}` : "";
+            // ★ 水面片数：全图 3.1 万片，⛔ 掉到 0 说明 river-geo/rivers 两件没同时到位
+            const river = this.riverCount > 0 ? ` · 水面 ${this.riverCount}` : "";
             this.status.string =
-                `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}${decor}${region}`;
+                `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}`
+                + `${decor}${region}${river}`;
         }
         // ⚠ 置灰与高亮是**两件事**：enabled 决定能不能点（文字变灰），on 决定当前选中（底板变亮）
         for (const chip of this.chips) {

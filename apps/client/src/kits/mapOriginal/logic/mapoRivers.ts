@@ -1,0 +1,148 @@
+/**
+ * 河流层：原版的水面多边形。纯逻辑，⛔ 不碰 cc。
+ *
+ * ★ 摆放与选片**完全由原版数据定**（docs/MAPORIGINAL-2D.md §4.1）：
+ *   `river.bytes` 是「河格 → `river_path.json` 下标」的单字节图，**选片在制图期就烘死在
+ *   字节值里** ⇒ 运行时 ⛔ 不做任何邻接判断、⛔ 不拼接、⛔ 不随机。
+ * ★ 一个「河格」= **3×3 逻辑格**，节点摆在河格的**几何中心**
+ *   （与原版地表 block 同式：`grid2pos(R, C)` 再 `y -= (k−1)·halfH`，k = 3）。
+ * ★ 几何是**原版 prefab 自带的三角化**（`polygon_2d.vertices/indices`），⛔ 我们不做耳切。
+ * ⚠ 水面是**平色填充**：三张原版填充图都是 2×2 的单一平色 ⇒ 整片一个 UV 点，
+ *   色相走顶点色（`MAPO_RIVER_TINT`），亮度走贴图。⛔ 这一层不需要 REPEAT。
+ * ⚠ 表**已按 s 升序落盘 = 画家序**，这里只做区间二分 + 矩形裁剪，
+ * ⛔ 不要每帧对 3.1 万条排序。
+ */
+import {
+    MAPO_TILE_HALF_H, mapoGrid2Pos, mapoOriginalPxToWorld,
+} from "../../../shared/kits/mapOriginal/api/hexmap/index";
+import {
+    MAPO_RIVER_D_BIAS, MAPO_RIVER_GEO_COUNT, MAPO_RIVER_HEADER_BYTES,
+    MAPO_RIVER_RECORD_BYTES, MAPO_RIVER_S_BIAS, MAPO_RIVER_TILES,
+} from "../../../shared/kits/mapOriginal/content/river.data";
+import type { MapoPolygonInput } from "./mapoMesh";
+
+interface RiverGeo {
+    readonly system: number;
+    /** 局部顶点（**已换算成世界单位**）：`[x0, y0, x1, y1, …]`。 */
+    readonly verts: Float32Array;
+    readonly indices: Uint16Array;
+    readonly minX: number; readonly maxX: number;
+    readonly minY: number; readonly maxY: number;
+}
+
+let geos: RiverGeo[] = [];
+let view: DataView | null = null;
+let count = 0;
+
+/** 注入 `river-geo.bin`。⚠ 条数/长度对不上就拒收，⛔ 不容忍半截几何库。 */
+export function mapoSetRiverGeo(buf: ArrayBuffer | Uint8Array): void {
+    const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    const v = new DataView(u.buffer, u.byteOffset, u.byteLength);
+    const n = v.getUint16(0);
+    if (n !== MAPO_RIVER_GEO_COUNT) {
+        throw new Error(`mapOriginal 河流几何库 ${n} 条 ≠ ${MAPO_RIVER_GEO_COUNT}`);
+    }
+    const out: RiverGeo[] = [];
+    let o = 2;
+    for (let i = 0; i < n; i += 1) {
+        const system = v.getUint8(o);
+        const nv = v.getUint16(o + 1), ni = v.getUint16(o + 3);
+        o += 5;
+        const verts = new Float32Array(nv * 2);
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (let k = 0; k < nv; k += 1) {
+            const x = mapoOriginalPxToWorld(v.getFloat32(o));
+            const y = mapoOriginalPxToWorld(v.getFloat32(o + 4));
+            o += 8;
+            verts[k * 2] = x; verts[k * 2 + 1] = y;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+        }
+        const indices = new Uint16Array(ni);
+        for (let k = 0; k < ni; k += 1) { indices[k] = v.getUint16(o); o += 2; }
+        if (nv === 0) { minX = maxX = minY = maxY = 0; }
+        out.push({ system, verts, indices, minX, maxX, minY, maxY });
+    }
+    if (o !== u.length) throw new Error(`mapOriginal 河流几何库有 ${u.length - o} B 残留`);
+    geos = out;
+}
+
+/** 注入 `rivers.bin`（含 4 字节大端头）。⚠ 长度对不上就拒收。 */
+export function mapoSetRivers(buf: ArrayBuffer | Uint8Array): void {
+    const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    if (u.length < MAPO_RIVER_HEADER_BYTES) throw new Error("mapOriginal 河流表太短");
+    const n = (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3];
+    if (u.length !== MAPO_RIVER_HEADER_BYTES + n * MAPO_RIVER_RECORD_BYTES) {
+        throw new Error(`mapOriginal 河流表长度不符：${n} 条 / ${u.length} B`);
+    }
+    view = new DataView(u.buffer, u.byteOffset, u.byteLength);
+    count = n;
+}
+
+export function mapoHasRivers(): boolean { return view !== null && geos.length > 0; }
+export function mapoRiverCount(): number { return count; }
+
+/** 河格原点格 (R, C) 的世界坐标；节点摆在**河格几何中心**（与原版地表 block 同式）。 */
+export function mapoRiverPos(s: number, d: number): { x: number; y: number } {
+    const row = (s + d) / 2, col = (s - d) / 2;
+    const p = mapoGrid2Pos(row, col);
+    // ⚠ k 格见方的块，中心比原点格低 (k−1)·halfH；k = MAPO_RIVER_TILES = 3
+    return { x: p.x, y: p.y - (MAPO_RIVER_TILES - 1) * MAPO_TILE_HALF_H };
+}
+
+export interface IMapoWorldRectLike {
+    readonly left: number; readonly right: number;
+    readonly bottom: number; readonly top: number;
+}
+
+/** 第一条 `s >= want` 的下标（表已升序）。 */
+function lowerBound(want: number): number {
+    let lo = 0, hi = count;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (view!.getUint16(MAPO_RIVER_HEADER_BYTES + mid * MAPO_RIVER_RECORD_BYTES) < want) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    return lo;
+}
+
+/**
+ * 可视矩形内的水面多边形，**已是画家序**（表的落盘序）。
+ * @param uvOf  水系 → 填充图上的采样点（整片一个点）。
+ * @param rgba  整片顶点色（本仓色相）。
+ */
+export function mapoRiversInRect(rect: IMapoWorldRectLike, limit: number,
+                                 uvOf: (system: number) => readonly [number, number],
+                                 rgba: readonly [number, number, number, number]): MapoPolygonInput[] {
+    if (!view || count === 0 || geos.length === 0) return [];
+    // 屏幕越靠下 s 越大；⚠ 一片水面能横跨好几格，二分下界要往两边各放一段
+    const halfH = MAPO_TILE_HALF_H;
+    const sTop = Math.floor(-rect.top / halfH) - MAPO_RIVER_S_MARGIN;
+    const out: MapoPolygonInput[] = [];
+    for (let i = Math.max(0, lowerBound(Math.max(0, sTop))); i < count && out.length < limit; i += 1) {
+        const o = MAPO_RIVER_HEADER_BYTES + i * MAPO_RIVER_RECORD_BYTES;
+        const sRaw = view.getUint16(o);
+        if (-(sRaw - MAPO_RIVER_S_BIAS) * halfH < rect.bottom - MAPO_RIVER_S_MARGIN * halfH) break;
+        const s = sRaw - MAPO_RIVER_S_BIAS, d = view.getUint16(o + 2) - MAPO_RIVER_D_BIAS;
+        const geo = geos[view.getUint8(o + 4) - 1];
+        if (!geo) continue;
+        const pos = mapoRiverPos(s, d);
+        if (pos.x + geo.maxX < rect.left || pos.x + geo.minX > rect.right) continue;
+        if (pos.y + geo.minY > rect.top || pos.y + geo.maxY < rect.bottom) continue;
+        out.push({ s: sRaw, x: pos.x, y: pos.y, verts: geo.verts, indices: geo.indices,
+                   uv: uvOf(geo.system), rgba });
+    }
+    return out;
+}
+
+/**
+ * 二分上下界各往外放的 s 量（格）。
+ * ⚠ 一片水面最大横跨约 8 格（原版 `size` 最大 ~2600 px / 300 px 一格），取两倍余量。
+ * ⛔ 调小了屏幕上下沿的河会突然缺一截。
+ */
+export const MAPO_RIVER_S_MARGIN = 16;

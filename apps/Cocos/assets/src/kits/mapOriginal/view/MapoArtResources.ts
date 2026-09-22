@@ -7,6 +7,7 @@
 import { BufferAsset, Texture2D, resources } from "cc";
 import {
     MAPO_DECOR_ATLAS_ASSET, MAPO_MINIMAP_ASSET, MAPO_REGIONS_ASSET, MAPO_REGION_ATLAS_ASSET,
+    MAPO_RIVERS_ASSET, MAPO_RIVER_FILL_ASSET, MAPO_RIVER_GEO_ASSET,
     MAPO_TERRAIN_ASSET, mapoAtlasAsset, mapoPlateAsset,
 } from "../logic/mapoFar";
 import { MAPO_ATLAS_LODS } from "../../../shared/kits/mapOriginal/api/hexmap/index";
@@ -25,6 +26,12 @@ export interface MapoArtResources {
     readonly regionAtlas: Texture2D | null;
     /** 区域件摆放表 `regions.bin`。⚠ 缺席则区域件层整层不建。 */
     readonly regions: BufferAsset | null;
+    /** 河流水面的填充色图（6×2，三张原版 2×2 平色）。 */
+    readonly riverFill: Texture2D | null;
+    /** 河流几何库 `river-geo.bin`。 */
+    readonly riverGeo: BufferAsset | null;
+    /** 河流摆放表 `rivers.bin`。⚠ 三者缺一则河流层整层不建。 */
+    readonly rivers: BufferAsset | null;
     release(): void;
 }
 
@@ -51,15 +58,19 @@ function loadBuffer(path: string): Promise<BufferAsset | null> {
 
 export async function loadMapoArt(): Promise<MapoArtResources> {
     const atlasLods = MAPO_ATLAS_LODS;
-    const [plate4, plate5, minimap, decorAtlas, regionAtlas, terrain, regions, ...atlases] =
+    const [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill,
+           terrain, regions, riverGeo, rivers, ...atlases] =
         await Promise.all([
             loadTexture(mapoPlateAsset(4)),
             loadTexture(mapoPlateAsset(5)),
             loadTexture(MAPO_MINIMAP_ASSET),
             loadTexture(MAPO_DECOR_ATLAS_ASSET),
             loadTexture(MAPO_REGION_ATLAS_ASSET),
+            loadTexture(MAPO_RIVER_FILL_ASSET),
             loadBuffer(MAPO_TERRAIN_ASSET),
             loadBuffer(MAPO_REGIONS_ASSET),
+            loadBuffer(MAPO_RIVER_GEO_ASSET),
+            loadBuffer(MAPO_RIVERS_ASSET),
             ...atlasLods.map((lod) => loadTexture(mapoAtlasAsset(lod))),
         ]);
     const byLod = new Map<number, Texture2D | null>();
@@ -67,13 +78,17 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
     let released = false;
     return {
         plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
+        riverFill, riverGeo, rivers,
         atlasFor: (lod) => byLod.get(lod) ?? null,
         release() {
             if (released) return;
             released = true;
-            for (const a of [plate4, plate5, minimap, decorAtlas, regionAtlas, ...atlases]) a?.decRef();
+            for (const a of [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill,
+                             ...atlases]) a?.decRef();
             terrain?.decRef();
             regions?.decRef();
+            riverGeo?.decRef();
+            rivers?.decRef();
         },
     };
 }
