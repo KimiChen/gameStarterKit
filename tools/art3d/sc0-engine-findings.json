@@ -644,6 +644,7 @@
       "id": "retire-exact-owned-instancing",
       "status": "implemented-final-selected-desktop-regressions-passed",
       "implementation": "apps/client/src/view/scene3d/spikeOwnedInstancing.ts",
+      "sc1B4Successor": "apps/client/src/view/scene3d/ownedRendering.ts",
       "entryPoint": "captureSpikeOwnedInstancing",
       "integration": "apps/client/src/view/Stage3dFixtureView.ts",
       "integrationPoints": [

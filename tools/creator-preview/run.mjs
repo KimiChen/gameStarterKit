@@ -1234,6 +1234,13 @@ async function scenarioMmoHold(runner) {
 // ---------- 入口 ----------
 
 async function main() {
+  if (process.argv[2] === "stage3d") {
+    const { parseStage3dProbeArgs, runStage3dProbe } = await import("./probe-stage3d.mjs");
+    const options = parseStage3dProbeArgs(process.argv.slice(3));
+    if (options.help) { console.log("stage3d: --preview <loopback> --expect-webgl 1|2 [--force-webgl1] --out <dir> [--summary <file>]"); return 0; }
+    const result = await runStage3dProbe({ ...options, preview: process.argv.includes("--preview") ? options.preview : "http://localhost:7456" });
+    return result.report.exitCode;
+  }
   const options = parseArgs(process.argv.slice(2));
   if (options.help || !options.scenario) {
     console.log(`用法：node tools/creator-preview/run.mjs <${SCENARIOS.join("|")}> [--out <dir>] [--code <兑换码>] [--format jpeg|png] [--devtools <url>] [--preview <url>] [--scene <uuid>] [--boot-timeout <ms>] [--step-timeout <ms>] [--reuse]`);

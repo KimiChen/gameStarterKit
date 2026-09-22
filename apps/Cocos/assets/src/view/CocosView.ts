@@ -58,7 +58,7 @@ export abstract class CocosView extends ViewBase {
       button.enabled = this.disabledButtons.get(button)!;
       this.disabledButtons.delete(button);
     }
-    if (!this.inputEnabled) node.resumeSystemEvents();
+    if (!this.inputEnabled) node.resumeSystemEvents(false);
     for (const child of node.children) this.untrackInputNode(child);
   };
 

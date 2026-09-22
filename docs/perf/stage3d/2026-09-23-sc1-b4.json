@@ -1,0 +1,2618 @@
+{
+  "schemaVersion": 1,
+  "batch": "SC1-B4",
+  "date": "2026-09-23",
+  "status": "complete",
+  "sc1Exit": false,
+  "scope": "Production Stage3D port fixture, synchronous AssetRetainer boundary, actual WebGL2/WebGL1 lifecycle and mixed HUD input. Desktop Creator 3.8.8/Chrome only; SC3 async AssetLease and SC4 real-device/cache acceptance remain open.",
+  "implementation": [
+    "ViewMgr setup injects the live AppPorts.stage3d shared with GameplayServicesContext; no page-owned Stage3D service.",
+    "Five Prefab holds cross AssetRetainer; ordinary failure collects all callbacks, cancellation returns late holds, host abort detaches input before node destruction.",
+    "Creator 3.8.8 Billboard has no onDestroy allocation cleanup; capture its owned model/mesh/material and retire them after draw, preserving its borrowed texture.",
+    "All replaced model batches retire after draw before shared materials and Prefab holds are returned; cleanup protects foreign owners, source meshes and the global PassPool.",
+    "Generation-local page/HUD state with aggregate DEV-only reference diagnostics; independent baked Prefab and header/footer overlay consume earlier batches."
+  ],
+  "loadPolicy": "Fixed SC0 regression content: 500 cubes, 100 bipeds and one 50-capacity particle system, plus an independent 4x4 Billboard and the baked Prefab. This is not the selected quality tier capacity, mobile capacity or activation-budget acceptance.",
+  "sourceHashes": [
+    {
+      "path": "apps/client/src/view/Stage3dFixtureView.ts",
+      "sha256": "3138a38d624a9ba8b483a88655c1a673d7e4fd38b6ed8bd0df88030f939e54c9"
+    },
+    {
+      "path": "apps/client/src/view/Stage3dSpikeHudView.ts",
+      "sha256": "360937fe1b3ee14bfc76a3396d1e6db8ab744506c03abeb6b3ea7fffa4745dd6"
+    },
+    {
+      "path": "apps/client/src/view/CocosView.ts",
+      "sha256": "22946e614603715b227a6654cee18aaae32e1108bdd3e0148f57078d664105d2"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/fixturePrefabLoader.ts",
+      "sha256": "69c81a993fc544fba71f11fd261ceb0c89deb4d52f615690b295d091bd432a94"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/fixtureSession.ts",
+      "sha256": "8dba2f3588673a278da8b10634c399772d07774ab182bca111114cafda03124b"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/ownedRendering.ts",
+      "sha256": "7606760e02ec4bdcd7f977a30ceaf74ddaa35e120efd98a0eb2a25797f893f3a"
+    },
+    {
+      "path": "tools/creator-preview/probe-stage3d.mjs",
+      "sha256": "00da806c7d8bc641fac508b5c23568ce959dc27a3abe8ceecd1faf46fdf20703"
+    },
+    {
+      "path": "tools/creator-preview/run.mjs",
+      "sha256": "473b197dceb2489aacf4cebcf5c644ebf71211e69a0e436b417d31f9b898e565"
+    },
+    {
+      "path": "tools/creator-preview/stage3d-boot.mjs",
+      "sha256": "5f245505bb24c255192f301ce4be136d991e1b45b8357251f4b63c226ca4c118"
+    }
+  ],
+  "billboardEngineSource": {
+    "version": "3.8.8",
+    "path": "cocos/particle/billboard.ts",
+    "sha256": "35896890cf80cd26b27f80a1b585458b6c917779465c11e8227b848fc65b67cf"
+  },
+  "cases": [
+    {
+      "webgl": 2,
+      "device": "WebGL2Device",
+      "pipeline": "WebPipeline",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "quality": {
+        "details": true,
+        "shadows": "all",
+        "maxEffects": 48,
+        "maxUnits": 100,
+        "maxUnitsWithoutInstancing": 50,
+        "textureStepDown": 0,
+        "minTextureSize": 256,
+        "tier": "high",
+        "detectedTier": "high",
+        "overridden": false,
+        "instancing": true,
+        "jointTexture": "float",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "astc",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl2",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": true,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": true
+          }
+        }
+      },
+      "contextSelection": null,
+      "viewport": {
+        "requested": {
+          "width": 375,
+          "height": 812,
+          "deviceScaleFactor": 2,
+          "mobile": false
+        },
+        "requiredPreview": {
+          "device": "WebpageFullScreen",
+          "rotated": false,
+          "setup": "Select Creator native WebpageFullScreen before boot; no harness CSS, DOM layout, or engine size override."
+        },
+        "actual": {
+          "window": {
+            "width": 375,
+            "height": 812,
+            "dpr": 2,
+            "visualViewport": {
+              "width": 375,
+              "height": 812,
+              "scale": 1
+            }
+          },
+          "canvas": {
+            "x": 0,
+            "y": 0,
+            "width": 375,
+            "height": 812,
+            "backingWidth": 750,
+            "backingHeight": 1624
+          },
+          "preview": {
+            "device": "WebpageFullScreen",
+            "rotated": false,
+            "toolbar": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0,
+              "hidden": true
+            }
+          },
+          "cc": {
+            "visible": {
+              "width": 750,
+              "height": 1624
+            },
+            "design": {
+              "width": 750,
+              "height": 1624
+            },
+            "screenPixels": {
+              "width": 750,
+              "height": 1624
+            },
+            "dpr": 2
+          }
+        },
+        "action": "set-before-fixture-navigation",
+        "scope": "375x812 CSS canvas / 750x1624 backbuffer via Creator native WebpageFullScreen, desktop UA, desktop GPU and wheel; CSS/DPR emulation is not mobile hardware evidence.",
+        "valid": true,
+        "error": null
+      },
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/report.json",
+        "sha256": "6fba96d84f92a082214693afc000a69d7599d4a60cedd0085f127b7a4d3fea27"
+      },
+      "numeric": {
+        "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/numeric.json",
+        "sha256": "aa6937642bf04b6135da9c74c0cb6ecb7e97435e47c8e79e773037c01028604e"
+      },
+      "screenshots": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/001-initial-fixture.png",
+          "sha256": "3aa3e00b044c133baf43a046a9afb1449b9902b886ba4f1102096616e26adaea"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/002-baked-prefab.png",
+          "sha256": "84dccf6a98693d9e1b4948ef3aeb9eda39c742b98a0b3145f8bf302dae17c2b0"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/003-camera-layer-evidence.png",
+          "sha256": "e25c67433c60fe65fbcc1bd8fa48ebd09cb08ee38606e2fccf3a59de8a3df527"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/004-skinning-main-shared.png",
+          "sha256": "5db89c2ef2fac3b45566f39db796bf6d0cd53ccf424afe6028d31efbe333609b"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/005-skinning-main-shared-later.png",
+          "sha256": "ad12e3ec22ee9b441e2eaa93d23ea477b81c956d4216c6a0ac207d9c21b00ef1"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/006-skinning-alternate-0.png",
+          "sha256": "737a507a911f881a181f312b040321f5277cf3d0267db32e720de131b44b927a"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/007-skinning-alternate-0-later.png",
+          "sha256": "3d66d695d4d5d43a2bca365d6387c58a63b40d6012e71442c75f4d095edd3e90"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/008-skinning-alternate-1.png",
+          "sha256": "da3efa4a0cf70dd4f1a3ba19e7b4b00e5c34138c4ef7626c24d625fc26f8e8d3"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/009-skinning-main-restored.png",
+          "sha256": "1fc2a89276cb0d23b7c9e06e4b97b8c84d3acc11fe8286b082c73cfb20a62e28"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/010-realtime-baked-before.png",
+          "sha256": "c62f1ea4ae87e4b5385f1b00c4495dbd04c3718e53c7c58681e5bbcabcd591e2"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/011-realtime-realtime.png",
+          "sha256": "cae783bcb77aaac10f067bfa4975580fe4bdad711019e03c7bbc254908676756"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/012-realtime-realtime-later.png",
+          "sha256": "99fffcac2a99352360e66442d9f47286b46004f19b2fa1e8bf26aa15bf298238"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/013-realtime-baked-restored.png",
+          "sha256": "4b30456b6280cdec92424c2ea122d221c75decb74500cf216c6568601c72f860"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/014-hud-click.png",
+          "sha256": "16982f826d726d61c24ec9de947192a56056ecd9eaee635244d7dd5b25e86c1d"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/015-parallel-pointers.png",
+          "sha256": "3bbf1cb5e0216e48e48d93af862f8e3848155019071a5a1380ba0579e1a61928"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/016-modal-restored.png",
+          "sha256": "f6191cf4fddf7ce836720396348f468bfef50277e909f893cc3b0c3fecea9f16"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl2/017-steady-state.png",
+          "sha256": "b4ccdecb7093cb09df0819a1842dbaa10169d2b26e1914f0d54ff94a35c6c170"
+        }
+      ],
+      "visuallyReviewed": [
+        "001-initial-fixture.png",
+        "006-skinning-alternate-0.png",
+        "016-modal-restored.png"
+      ],
+      "visualObservation": "Fixed cube field, greybox units, central particle strip, independent white Billboard and baked patch render; header/footer HUD are legible and modal recovery preserves the world. This is not an arbitrary skeleton/asset quality review.",
+      "passedSteps": [
+        "systemjs-runtime-and-real-viewmgr",
+        "engine-touch-source-and-dom-capture",
+        "imported-prefab-paths",
+        "initial-load-and-first-activation",
+        "independent-baked-prefab",
+        "camera-and-layer-configuration",
+        "actual-skinning-textures-and-cross-atlas-switch",
+        "actual-realtime-skinning-without-instancing",
+        "hud-click",
+        "footer-hud-click",
+        "world-drag-across-hud",
+        "hud-drag-across-world",
+        "simultaneous-hud-and-world",
+        "wheel-current-hit",
+        "modal-cancels-held-world-and-restores-fresh-only",
+        "hud-close-remount-cancels-old-pointer",
+        "reset-fixed-framing-before-performance",
+        "steady-state-frame-window",
+        "prewarm-closed-resource-baseline",
+        "failed-load-and-early-close",
+        "repeated-open-close-resource-evidence"
+      ],
+      "baked": [
+        {
+          "name": "Stage3dFixture.Baked",
+          "renderers": [
+            {
+              "node": "Plane",
+              "texture": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+              "model": true,
+              "modelLightmap": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+              "lightmapBound": true
+            },
+            {
+              "node": "Cube",
+              "texture": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+              "model": true,
+              "modelLightmap": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+              "lightmapBound": true
+            }
+          ]
+        }
+      ],
+      "billboards": [
+        {
+          "active": true,
+          "width": 4,
+          "height": 4,
+          "modelAttached": true,
+          "passes": 2
+        }
+      ],
+      "trustedDomEvents": 32,
+      "inputCommands": 32,
+      "passedInputCommands": 32,
+      "console": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 2,
+          "actualWebgl": 2,
+          "device": "WebGL2Device",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790098969702.1,
+          "bootCompletedAtEpochMs": 1790098973794,
+          "firstFixtureLoadStartedAtEpochMs": 1790098973854
+        },
+        "bootDiagnosticCutoffAtEpochMs": 1790098973794,
+        "windowValid": true,
+        "expectedBootDiagnostics": 0,
+        "unexpectedErrors": 0,
+        "nonErrorCount": 0
+      },
+      "steady": {
+        "valid": true,
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "options": {
+          "warmupFrames": 60,
+          "sampleFrames": 240,
+          "timeoutMs": 60000
+        },
+        "visibilityChanges": 0,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.600000023841858,
+          "p95Ms": 19.300000071525574,
+          "maxMs": 20.399999976158142,
+          "meanMs": 16.657916667064033
+        },
+        "rawFrameIntervalsMs": [
+          15.600000023841858,
+          16.800000071525574,
+          16.799999952316284,
+          17.899999976158142,
+          15.100000023841858,
+          16.899999976158142,
+          17.300000071525574,
+          13.899999976158142,
+          16.799999952316284,
+          19.5,
+          16,
+          16.600000023841858,
+          17.399999976158142,
+          15.800000071525574,
+          16.5,
+          16.59999990463257,
+          14.800000071525574,
+          20.399999976158142,
+          15.899999976158142,
+          17.200000047683716,
+          15.399999976158142,
+          16.200000047683716,
+          17.59999990463257,
+          16.700000047683716,
+          15.899999976158142,
+          18.200000047683716,
+          14.199999928474426,
+          18.600000023841858,
+          16.100000023841858,
+          16.600000023841858,
+          17.399999976158142,
+          14.100000023841858,
+          16.899999976158142,
+          17.700000047683716,
+          18.5,
+          15.899999976158142,
+          16.899999976158142,
+          16.200000047683716,
+          15.299999952316284,
+          17.799999952316284,
+          13.600000023841858,
+          19.300000071525574,
+          18.09999990463257,
+          14.800000071525574,
+          17.600000023841858,
+          16.5,
+          17.59999990463257,
+          15.5,
+          14.400000095367432,
+          19.799999952316284,
+          17.799999952316284,
+          16,
+          16.300000071525574,
+          15.699999928474426,
+          17.200000047683716,
+          14.299999952316284,
+          19.600000023841858,
+          16,
+          16.899999976158142,
+          16.90000009536743,
+          16.899999976158142,
+          16.100000023841858,
+          15.899999976158142,
+          17.600000023841858,
+          14,
+          17.399999976158142,
+          18.799999952316284,
+          15,
+          18.200000047683716,
+          17.100000023841858,
+          15.399999976158142,
+          18.299999952316284,
+          14.600000023841858,
+          17,
+          17.899999976158142,
+          16.399999976158142,
+          16,
+          16.90000009536743,
+          14.099999904632568,
+          18.40000009536743,
+          17.699999928474426,
+          15.899999976158142,
+          15.600000023841858,
+          18.899999976158142,
+          17.300000071525574,
+          16.100000023841858,
+          16.299999952316284,
+          14.5,
+          19.600000023841858,
+          14.899999976158142,
+          17.100000023841858,
+          16.699999928474426,
+          18.40000009536743,
+          14.899999976158142,
+          16.399999976158142,
+          16.799999952316284,
+          18.100000023841858,
+          15.100000023841858,
+          17.899999976158142,
+          16,
+          17.300000071525574,
+          17.299999952316284,
+          16.399999976158142,
+          13,
+          20.100000023841858,
+          17.100000023841858,
+          14,
+          18.799999952316284,
+          16.300000071525574,
+          17.399999976158142,
+          16.5,
+          14.100000023841858,
+          17.09999990463257,
+          19.600000023841858,
+          16.800000071525574,
+          15.399999976158142,
+          17.299999952316284,
+          16.200000047683716,
+          16.399999976158142,
+          14.600000023841858,
+          18.699999928474426,
+          17.5,
+          16.700000047683716,
+          15.700000047683716,
+          14.399999976158142,
+          19.699999928474426,
+          15.600000023841858,
+          16.200000047683716,
+          17.299999952316284,
+          17,
+          16.399999976158142,
+          17.300000071525574,
+          16.299999952316284,
+          16,
+          17,
+          16.100000023841858,
+          16,
+          15.100000023841858,
+          20.199999928474426,
+          16.600000023841858,
+          15.5,
+          17.800000071525574,
+          16.199999928474426,
+          16.100000023841858,
+          17.700000047683716,
+          16.299999952316284,
+          16.200000047683716,
+          18.09999990463257,
+          15.700000047683716,
+          17.5,
+          15.600000023841858,
+          16.199999928474426,
+          18.5,
+          14.100000023841858,
+          19.300000071525574,
+          15.5,
+          17,
+          16.5,
+          16.399999976158142,
+          16.5,
+          17,
+          16.699999928474426,
+          17.5,
+          15.700000047683716,
+          16.799999952316284,
+          17,
+          16.800000071525574,
+          15.399999976158142,
+          17.399999976158142,
+          18.200000047683716,
+          15.799999952316284,
+          15.600000023841858,
+          17.399999976158142,
+          16.300000071525574,
+          16.199999928474426,
+          14.899999976158142,
+          19.800000071525574,
+          15.100000023841858,
+          18.399999976158142,
+          16.5,
+          15.699999928474426,
+          15.900000095367432,
+          17.09999990463257,
+          16.40000009536743,
+          15.399999976158142,
+          17,
+          19.199999928474426,
+          14.700000047683716,
+          17.399999976158142,
+          15.600000023841858,
+          19.100000023841858,
+          16.199999928474426,
+          17.200000047683716,
+          15.700000047683716,
+          17.399999976158142,
+          16.600000023841858,
+          16,
+          16.399999976158142,
+          17,
+          17.199999928474426,
+          17.40000009536743,
+          15.899999976158142,
+          15.899999976158142,
+          17.899999976158142,
+          16.899999976158142,
+          15.900000095367432,
+          15.5,
+          15.099999904632568,
+          18.90000009536743,
+          17.199999928474426,
+          16.800000071525574,
+          16.899999976158142,
+          16.399999976158142,
+          15.700000047683716,
+          16.899999976158142,
+          17.399999976158142,
+          16.899999976158142,
+          15.600000023841858,
+          16.100000023841858,
+          17.199999928474426,
+          17.200000047683716,
+          17.700000047683716,
+          12.699999928474426,
+          17.800000071525574,
+          19.399999976158142,
+          16,
+          16.799999952316284,
+          16.300000071525574,
+          16.299999952316284,
+          16.5,
+          17.799999952316284,
+          17.200000047683716,
+          15.399999976158142,
+          16.800000071525574,
+          16.399999976158142,
+          14.600000023841858,
+          19.899999976158142,
+          15.399999976158142,
+          18.399999976158142,
+          12.800000071525574
+        ],
+        "allFramesPeak": {
+          "drawCalls": 13,
+          "triangles": 16086,
+          "instances": 650,
+          "bufferBytes": 312208,
+          "textureBytes": 45879376,
+          "totalBytes": 46191584
+        }
+      },
+      "startup": {
+        "valid": true,
+        "clock": "performance.now",
+        "options": {
+          "warmupFrames": 0,
+          "sampleFrames": 600,
+          "timeoutMs": 120000
+        },
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 20.700000047683716,
+          "maxMs": 525.3999999761581,
+          "meanMs": 18.16816666662693
+        },
+        "allFramesPeak": {
+          "drawCalls": 13,
+          "triangles": 16086,
+          "instances": 650,
+          "bufferBytes": 309648,
+          "textureBytes": 45879376,
+          "totalBytes": 46189024
+        }
+      },
+      "prewarmedClosedBaseline": {
+        "sceneNodes": 13,
+        "fixtureNodes": 0,
+        "businessRefs": 0,
+        "input": {
+          "active": false,
+          "blocked": false,
+          "ownersCount": 0
+        },
+        "gfx": {
+          "drawCalls": 1,
+          "triangles": 180,
+          "instances": 0,
+          "bufferBytes": 69500,
+          "textureBytes": 41587296
+        }
+      },
+      "cycles": 20,
+      "perCycle": [
+        {
+          "cycle": 1,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 2,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 3,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 4,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 5,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 6,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 7,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 8,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 9,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 10,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 11,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 12,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 13,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 14,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 15,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 16,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 17,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 18,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 19,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 20,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        }
+      ],
+      "maxClosedGfxGrowthBytes": {
+        "bufferBytes": 0,
+        "textureBytes": 0
+      },
+      "faults": [
+        {
+          "kind": "failure",
+          "received": [
+            {
+              "path": "stage3d/greybox-plane/greybox-plane",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-biped/greybox-biped",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-biped-atlas-b/greybox-biped-atlas-b",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-cube/greybox-cube",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/P_Stage3d_Baked",
+              "loaded": true,
+              "error": null
+            }
+          ],
+          "openError": "SC1-B4 injected Prefab load failure",
+          "after": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "suspended": false,
+              "ownersCount": 0,
+              "pendingCount": 0,
+              "worldGeneration": null,
+              "counters": {
+                "worldStarts": 5,
+                "worldMoves": 5,
+                "worldEnds": 3,
+                "worldCancels": 2,
+                "worldWheels": 1,
+                "hudStarts": 6,
+                "cancellations": 40
+              },
+              "worldState": null
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            },
+            "businessRefs": 0
+          }
+        },
+        {
+          "kind": "early-close",
+          "received": [
+            {
+              "path": "stage3d/greybox-plane/greybox-plane",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-biped-atlas-b/greybox-biped-atlas-b",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-biped/greybox-biped",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/P_Stage3d_Baked",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-cube/greybox-cube",
+              "loaded": true,
+              "error": null
+            }
+          ],
+          "openError": "[ViewMgr] 页面打开已取消: Stage3dFixture",
+          "after": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "suspended": false,
+              "ownersCount": 0,
+              "pendingCount": 0,
+              "worldGeneration": null,
+              "counters": {
+                "worldStarts": 5,
+                "worldMoves": 5,
+                "worldEnds": 3,
+                "worldCancels": 2,
+                "worldWheels": 1,
+                "hudStarts": 6,
+                "cancellations": 44
+              },
+              "worldState": null
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            },
+            "businessRefs": 0
+          }
+        }
+      ],
+      "rawExitCode": 2,
+      "rawPending": [
+        {
+          "name": "snake-carrier",
+          "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+        },
+        {
+          "name": "visual-and-skinning-review",
+          "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+        },
+        {
+          "name": "other-sc0-gates",
+          "reason": "Independent baked-Prefab reload, the second WebGL context and SC0-B4 budget freeze / prototype handoff remain separate exit gates. Real WeChat low-tier / remote-load / cache acceptance belongs to SC4."
+        }
+      ]
+    },
+    {
+      "webgl": 1,
+      "device": "WebGLDevice",
+      "pipeline": "WebPipeline",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "quality": {
+        "details": false,
+        "shadows": "off",
+        "maxEffects": 8,
+        "maxUnits": 50,
+        "maxUnitsWithoutInstancing": 25,
+        "textureStepDown": 1,
+        "minTextureSize": 256,
+        "tier": "low",
+        "detectedTier": "low",
+        "overridden": false,
+        "instancing": true,
+        "jointTexture": "float",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "astc",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl1",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": true,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": true
+          }
+        }
+      },
+      "contextSelection": "Owned page rejects webgl2 context creation before Cocos boot; actual WebGLDevice and WebGL 1.0 are asserted. No extension/texture capability masking.",
+      "viewport": {
+        "requested": {
+          "width": 375,
+          "height": 812,
+          "deviceScaleFactor": 2,
+          "mobile": false
+        },
+        "requiredPreview": {
+          "device": "WebpageFullScreen",
+          "rotated": false,
+          "setup": "Select Creator native WebpageFullScreen before boot; no harness CSS, DOM layout, or engine size override."
+        },
+        "actual": {
+          "window": {
+            "width": 375,
+            "height": 812,
+            "dpr": 2,
+            "visualViewport": {
+              "width": 375,
+              "height": 812,
+              "scale": 1
+            }
+          },
+          "canvas": {
+            "x": 0,
+            "y": 0,
+            "width": 375,
+            "height": 812,
+            "backingWidth": 750,
+            "backingHeight": 1624
+          },
+          "preview": {
+            "device": "WebpageFullScreen",
+            "rotated": false,
+            "toolbar": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0,
+              "hidden": true
+            }
+          },
+          "cc": {
+            "visible": {
+              "width": 750,
+              "height": 1624
+            },
+            "design": {
+              "width": 750,
+              "height": 1624
+            },
+            "screenPixels": {
+              "width": 750,
+              "height": 1624
+            },
+            "dpr": 2
+          }
+        },
+        "action": "set-before-fixture-navigation",
+        "scope": "375x812 CSS canvas / 750x1624 backbuffer via Creator native WebpageFullScreen, desktop UA, desktop GPU and wheel; CSS/DPR emulation is not mobile hardware evidence.",
+        "valid": true,
+        "error": null
+      },
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/report.json",
+        "sha256": "8bbb5936595b29e323605673c1fac1f136fa81e7e14d68163f2ab53c54656108"
+      },
+      "numeric": {
+        "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/numeric.json",
+        "sha256": "d1133ac15be01f6c415d6377398435f72a0f36baf710f003b13895b240ee1e3e"
+      },
+      "screenshots": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/001-initial-fixture.png",
+          "sha256": "f3b129a04cb95b2ce7d2b4c61ecc6737ffa5a3f968330d6f2544a638296e5930"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/002-baked-prefab.png",
+          "sha256": "1960536c2f0263a735c893dcff6df666739367beea50cf7fd4f72b63f433ecbe"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/003-camera-layer-evidence.png",
+          "sha256": "a8be7682cb8c44dd14be55f60cbf93f4b100586a492670971598403515bf865d"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/004-skinning-main-shared.png",
+          "sha256": "7e6e009e77cd2bb39195f658376ad84c8cfe1e9e96d28a3b067234bb61bc7412"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/005-skinning-main-shared-later.png",
+          "sha256": "9a7829b211d848181af8a8b94721cc3ffd48d4f36b4e1c2c10966239f657ffb9"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/006-skinning-alternate-0.png",
+          "sha256": "61fb43a663cfd28822ca130649a3ef06b631f490928f28a620dbfae14da2c42f"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/007-skinning-alternate-0-later.png",
+          "sha256": "26c9c5de7c6cbc4dc8570f065f28ec6cd6e492f89feb0d24ee0e3cefdd954818"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/008-skinning-alternate-1.png",
+          "sha256": "4afe25742786edc79ef73e98e62202ba2fd801b5b97523f11192d9c5b3347e26"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/009-skinning-main-restored.png",
+          "sha256": "8c4d7328446a5227599974654e4bea8741b8c7544548af23fb0f94898e87b831"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/010-realtime-baked-before.png",
+          "sha256": "5a31c4ee16265c137a269fd79717f1f3576282f7293fa456cdb9dfd209411f23"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/011-realtime-realtime.png",
+          "sha256": "d7b01b72479689874c50f028a402507749b43b0dc4ad9cb3c4d583ed1bce86a6"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/012-realtime-realtime-later.png",
+          "sha256": "1e8360cbf35c0b4d12e5b133c7fe67fe68700bb720ae03556cec925be38e44ca"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/013-realtime-baked-restored.png",
+          "sha256": "f6603386235f02f9b860b18d0de08488cb23e17185e151936577c46f5f00a08e"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/014-hud-click.png",
+          "sha256": "f28f0bfe13f29bf84656793c13ae5b223719dfb68731c76ca51117368b4490f5"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/015-parallel-pointers.png",
+          "sha256": "942b68bc6e263d2bc87af43417814de30b80c33894d39865d6880188c7d8c743"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/016-modal-restored.png",
+          "sha256": "5c1621feadb57e0a5b98a1f0537b284fb03862eedd6e6972d3b1627c9c5f7cf9"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/webgl1/017-steady-state.png",
+          "sha256": "305dc4fa0a6e0f45e31191c5b8675ef6c350ae606a522c549bff636b12c44331"
+        }
+      ],
+      "visuallyReviewed": [
+        "001-initial-fixture.png",
+        "016-modal-restored.png"
+      ],
+      "visualObservation": "Fixed cube field, greybox units, central particle strip, independent white Billboard and baked patch render; header/footer HUD are legible and modal recovery preserves the world. This is not an arbitrary skeleton/asset quality review.",
+      "passedSteps": [
+        "systemjs-runtime-and-real-viewmgr",
+        "engine-touch-source-and-dom-capture",
+        "imported-prefab-paths",
+        "initial-load-and-first-activation",
+        "independent-baked-prefab",
+        "camera-and-layer-configuration",
+        "actual-skinning-textures-and-cross-atlas-switch",
+        "actual-realtime-skinning-without-instancing",
+        "hud-click",
+        "footer-hud-click",
+        "world-drag-across-hud",
+        "hud-drag-across-world",
+        "simultaneous-hud-and-world",
+        "wheel-current-hit",
+        "modal-cancels-held-world-and-restores-fresh-only",
+        "hud-close-remount-cancels-old-pointer",
+        "reset-fixed-framing-before-performance",
+        "steady-state-frame-window",
+        "prewarm-closed-resource-baseline",
+        "failed-load-and-early-close",
+        "repeated-open-close-resource-evidence"
+      ],
+      "baked": [
+        {
+          "name": "Stage3dFixture.Baked",
+          "renderers": [
+            {
+              "node": "Plane",
+              "texture": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+              "model": true,
+              "modelLightmap": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+              "lightmapBound": true
+            },
+            {
+              "node": "Cube",
+              "texture": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+              "model": true,
+              "modelLightmap": "bd657e57-24eb-4e16-97ff-d326e5b7bf9f@6c48a",
+              "lightmapBound": true
+            }
+          ]
+        }
+      ],
+      "billboards": [
+        {
+          "active": true,
+          "width": 4,
+          "height": 4,
+          "modelAttached": true,
+          "passes": 2
+        }
+      ],
+      "trustedDomEvents": 32,
+      "inputCommands": 32,
+      "passedInputCommands": 32,
+      "console": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 1,
+          "actualWebgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790099034891.7,
+          "bootCompletedAtEpochMs": 1790099038958,
+          "firstFixtureLoadStartedAtEpochMs": 1790099039021
+        },
+        "bootDiagnosticCutoffAtEpochMs": 1790099038958,
+        "windowValid": true,
+        "expectedBootDiagnostics": 1,
+        "unexpectedErrors": 0,
+        "nonErrorCount": 0
+      },
+      "steady": {
+        "valid": true,
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "options": {
+          "warmupFrames": 60,
+          "sampleFrames": 240,
+          "timeoutMs": 60000
+        },
+        "visibilityChanges": 0,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.800000071525574,
+          "p95Ms": 19.5,
+          "maxMs": 20.899999976158142,
+          "meanMs": 16.679166666666667
+        },
+        "rawFrameIntervalsMs": [
+          15.799999952316284,
+          16.799999952316284,
+          19.100000023841858,
+          14.5,
+          18.5,
+          18,
+          12.899999976158142,
+          17.200000047683716,
+          16.5,
+          18,
+          15.299999952316284,
+          19.200000047683716,
+          16.5,
+          15.899999976158142,
+          16.600000023841858,
+          16.200000047683716,
+          17.799999952316284,
+          16.799999952316284,
+          14.400000095367432,
+          17.09999990463257,
+          18.800000071525574,
+          14.299999952316284,
+          17.899999976158142,
+          15.200000047683716,
+          18.600000023841858,
+          16.699999928474426,
+          15.300000071525574,
+          16.399999976158142,
+          16.5,
+          17,
+          18,
+          16.299999952316284,
+          18,
+          13.800000071525574,
+          17,
+          17.399999976158142,
+          18.5,
+          14.100000023841858,
+          16.899999976158142,
+          17.600000023841858,
+          17.799999952316284,
+          15.800000071525574,
+          18,
+          13.5,
+          17.5,
+          18,
+          14.899999976158142,
+          19.299999952316284,
+          16.899999976158142,
+          14.300000071525574,
+          18.299999952316284,
+          14,
+          20.300000071525574,
+          15.399999976158142,
+          17.100000023841858,
+          17.59999990463257,
+          16.40000009536743,
+          15.899999976158142,
+          17.100000023841858,
+          13.099999904632568,
+          17.5,
+          18.800000071525574,
+          15.399999976158142,
+          15.899999976158142,
+          19.700000047683716,
+          14.100000023841858,
+          16.59999990463257,
+          18.40000009536743,
+          15.399999976158142,
+          16.600000023841858,
+          15.699999928474426,
+          19.100000023841858,
+          17.299999952316284,
+          14.600000023841858,
+          16.5,
+          19.100000023841858,
+          13.5,
+          16.700000047683716,
+          18.799999952316284,
+          16.700000047683716,
+          17.09999990463257,
+          14.200000047683716,
+          18.200000047683716,
+          18.59999990463257,
+          14.900000095367432,
+          17.5,
+          15.899999976158142,
+          14.799999952316284,
+          16.800000071525574,
+          18,
+          15.199999928474426,
+          16.300000071525574,
+          20.09999990463257,
+          13.400000095367432,
+          19.59999990463257,
+          17.100000023841858,
+          14.5,
+          18,
+          17.5,
+          13.600000023841858,
+          17.100000023841858,
+          18.5,
+          15.799999952316284,
+          15.100000023841858,
+          18.799999952316284,
+          16.100000023841858,
+          14.600000023841858,
+          17.799999952316284,
+          18.200000047683716,
+          15.700000047683716,
+          16.899999976158142,
+          17,
+          14.899999976158142,
+          16.600000023841858,
+          20,
+          13.399999976158142,
+          16.200000047683716,
+          19.399999976158142,
+          17.299999952316284,
+          14.399999976158142,
+          18.600000023841858,
+          16.399999976158142,
+          16.40000009536743,
+          16.399999976158142,
+          17.199999928474426,
+          16.5,
+          17.200000047683716,
+          14.299999952316284,
+          19.800000071525574,
+          14.299999952316284,
+          17.300000071525574,
+          15.199999928474426,
+          20.399999976158142,
+          15.200000047683716,
+          15.100000023841858,
+          17.100000023841858,
+          15.299999952316284,
+          16.600000023841858,
+          16.899999976158142,
+          16.700000047683716,
+          19.5,
+          15.099999904632568,
+          15.600000023841858,
+          19.5,
+          13,
+          17.800000071525574,
+          18.199999928474426,
+          14,
+          18.700000047683716,
+          18,
+          14.199999928474426,
+          19.800000071525574,
+          13.399999976158142,
+          19.700000047683716,
+          13.599999904632568,
+          16.90000009536743,
+          19.399999976158142,
+          14,
+          19.699999928474426,
+          13.300000071525574,
+          19,
+          16.600000023841858,
+          16.09999990463257,
+          14.800000071525574,
+          16.799999952316284,
+          18.899999976158142,
+          17.5,
+          14.200000047683716,
+          16.200000047683716,
+          18.699999928474426,
+          15.200000047683716,
+          18.699999928474426,
+          16.40000009536743,
+          16.899999976158142,
+          15.699999928474426,
+          15.700000047683716,
+          16.5,
+          17.700000047683716,
+          17.09999990463257,
+          18.200000047683716,
+          13.399999976158142,
+          16.899999976158142,
+          16.700000047683716,
+          16.799999952316284,
+          18.300000071525574,
+          17,
+          14.299999952316284,
+          17.100000023841858,
+          18,
+          14.200000047683716,
+          17.09999990463257,
+          19.200000047683716,
+          17.5,
+          13.299999952316284,
+          17.200000047683716,
+          18.200000047683716,
+          14.5,
+          19.199999928474426,
+          16.200000047683716,
+          17.399999976158142,
+          17.5,
+          13.399999976158142,
+          17.200000047683716,
+          18.199999928474426,
+          14.700000047683716,
+          19.799999952316284,
+          15.200000047683716,
+          17.100000023841858,
+          13.899999976158142,
+          20.899999976158142,
+          12.200000047683716,
+          17.399999976158142,
+          19.399999976158142,
+          14.600000023841858,
+          18.299999952316284,
+          17.700000047683716,
+          13.200000047683716,
+          17.399999976158142,
+          18.299999952316284,
+          14.5,
+          18.700000047683716,
+          17.100000023841858,
+          14,
+          19.399999976158142,
+          14,
+          19.399999976158142,
+          16.100000023841858,
+          18.399999976158142,
+          15.299999952316284,
+          15.900000095367432,
+          17.699999928474426,
+          16.200000047683716,
+          17.299999952316284,
+          14.5,
+          16,
+          18.100000023841858,
+          16.600000023841858,
+          17.899999976158142,
+          16.799999952316284,
+          16.90000009536743
+        ],
+        "allFramesPeak": {
+          "drawCalls": 13,
+          "triangles": 16086,
+          "instances": 650,
+          "bufferBytes": 312208,
+          "textureBytes": 45879376,
+          "totalBytes": 46191584
+        }
+      },
+      "startup": {
+        "valid": true,
+        "clock": "performance.now",
+        "options": {
+          "warmupFrames": 0,
+          "sampleFrames": 600,
+          "timeoutMs": 120000
+        },
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 20,
+          "maxMs": 253.79999995231628,
+          "meanMs": 17.645333333214126
+        },
+        "allFramesPeak": {
+          "drawCalls": 13,
+          "triangles": 16086,
+          "instances": 650,
+          "bufferBytes": 309648,
+          "textureBytes": 45879376,
+          "totalBytes": 46189024
+        }
+      },
+      "prewarmedClosedBaseline": {
+        "sceneNodes": 13,
+        "fixtureNodes": 0,
+        "businessRefs": 0,
+        "input": {
+          "active": false,
+          "blocked": false,
+          "ownersCount": 0
+        },
+        "gfx": {
+          "drawCalls": 1,
+          "triangles": 180,
+          "instances": 0,
+          "bufferBytes": 69500,
+          "textureBytes": 41587296
+        }
+      },
+      "cycles": 20,
+      "perCycle": [
+        {
+          "cycle": 1,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 2,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 3,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 4,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 5,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 6,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 7,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 8,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 9,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 10,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 11,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 12,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 13,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 14,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 15,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 16,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 17,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 18,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 19,
+          "closeMode": "realtime",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        },
+        {
+          "cycle": 20,
+          "closeMode": "restored-baked",
+          "openedBusinessRefs": 5,
+          "closed": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "ownersCount": 0
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            }
+          }
+        }
+      ],
+      "maxClosedGfxGrowthBytes": {
+        "bufferBytes": 0,
+        "textureBytes": 0
+      },
+      "faults": [
+        {
+          "kind": "failure",
+          "received": [
+            {
+              "path": "stage3d/greybox-plane/greybox-plane",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-biped/greybox-biped",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-biped-atlas-b/greybox-biped-atlas-b",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-cube/greybox-cube",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/P_Stage3d_Baked",
+              "loaded": true,
+              "error": null
+            }
+          ],
+          "openError": "SC1-B4 injected Prefab load failure",
+          "after": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "suspended": false,
+              "ownersCount": 0,
+              "pendingCount": 0,
+              "worldGeneration": null,
+              "counters": {
+                "worldStarts": 5,
+                "worldMoves": 5,
+                "worldEnds": 3,
+                "worldCancels": 2,
+                "worldWheels": 1,
+                "hudStarts": 6,
+                "cancellations": 40
+              },
+              "worldState": null
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            },
+            "businessRefs": 0
+          }
+        },
+        {
+          "kind": "early-close",
+          "received": [
+            {
+              "path": "stage3d/greybox-plane/greybox-plane",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-biped/greybox-biped",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-cube/greybox-cube",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/greybox-biped-atlas-b/greybox-biped-atlas-b",
+              "loaded": true,
+              "error": null
+            },
+            {
+              "path": "stage3d/P_Stage3d_Baked",
+              "loaded": true,
+              "error": null
+            }
+          ],
+          "openError": "[ViewMgr] 页面打开已取消: Stage3dFixture",
+          "after": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "input": {
+              "active": false,
+              "blocked": false,
+              "suspended": false,
+              "ownersCount": 0,
+              "pendingCount": 0,
+              "worldGeneration": null,
+              "counters": {
+                "worldStarts": 5,
+                "worldMoves": 5,
+                "worldEnds": 3,
+                "worldCancels": 2,
+                "worldWheels": 1,
+                "hudStarts": 6,
+                "cancellations": 44
+              },
+              "worldState": null
+            },
+            "gfx": {
+              "drawCalls": 1,
+              "triangles": 180,
+              "instances": 0,
+              "bufferBytes": 69500,
+              "textureBytes": 41587296
+            },
+            "businessRefs": 0
+          }
+        }
+      ],
+      "rawExitCode": 2,
+      "rawPending": [
+        {
+          "name": "snake-carrier",
+          "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+        },
+        {
+          "name": "visual-and-skinning-review",
+          "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+        },
+        {
+          "name": "other-sc0-gates",
+          "reason": "Independent baked-Prefab reload, the second WebGL context and SC0-B4 budget freeze / prototype handoff remain separate exit gates. Real WeChat low-tier / remote-load / cache acceptance belongs to SC4."
+        }
+      ]
+    }
+  ],
+  "headless": {
+    "targetedTests": 70,
+    "inputRegressionTests": 29,
+    "realEngineDeclarationDiagnostics": 0,
+    "realEngineDeclarationScope": [
+      "apps/client/src/view/Stage3dFixtureView.ts",
+      "apps/client/src/view/scene3d/fixturePrefabLoader.ts",
+      "apps/client/src/view/scene3d/ownedRendering.ts"
+    ],
+    "mutations": [
+      {
+        "name": "overlay-as-modal",
+        "file": "apps/client/src/view/ViewMgr.ts",
+        "change": {
+          "before": "resolveViewInputMode(page.meta) === \"modal\"",
+          "after": "resolveViewInputMode(page.meta) !== \"passive\""
+        },
+        "tests": [
+          "apps/client/test/viewLifecycle.test.ts"
+        ],
+        "exitCode": 1,
+        "failed": [
+          "✖ SC1-B9 overlay leaves lower Cocos active, passive FGUI cannot hit, modal/root changes cancel owners (2.097708ms)",
+          "✖ failing tests:",
+          "✖ SC1-B9 overlay leaves lower Cocos active, passive FGUI cannot hit, modal/root changes cancel owners (2.097708ms)"
+        ],
+        "restoredSha256": "9dca0a71ed87cb2a0b39ab9b55103b8a053a4852c9586389e083e4f346961115"
+      },
+      {
+        "name": "early-render-retirement",
+        "file": "apps/client/src/view/scene3d/ownedRendering.ts",
+        "change": {
+          "before": "if (release().pendingItems === 0)",
+          "after": "if (release().pendingItems >= 0)"
+        },
+        "tests": [
+          "apps/client/test/stage3d-owned-instancing.test.ts"
+        ],
+        "exitCode": 1,
+        "failed": [
+          "✖ Stage3D retirement waits for every replaced model before releasing shared assets (1.450833ms)",
+          "✖ failing tests:",
+          "✖ Stage3D retirement waits for every replaced model before releasing shared assets (1.450833ms)"
+        ],
+        "restoredSha256": "7606760e02ec4bdcd7f977a30ceaf74ddaa35e120efd98a0eb2a25797f893f3a"
+      }
+    ]
+  },
+  "verification": {
+    "verifyAllCommand": "UV_OFFLINE=1 npm run verify:all",
+    "nodeVersion": "v24.19.0",
+    "nodeExecutable": "/Users/kimi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "startedAt": "2026-09-22T18:41:56.745564+00:00",
+    "baseCommit": "cc8ff5ed6b9dc49a2bedf2591c1659a291cf8e35",
+    "directory": "/Volumes/KimData/unlockTheWorld/sc1-b4-verification/kitVersion",
+    "snapshotPatchSha256": "7abf967a7c125aee9777e0277cff52faa38002f3207cf5bf1d37c3212377651c",
+    "retryReason": "Prior Node 26.5.0 aggregate completed all core checks, then one UniFlex test process was cancelled with a pending Promise and no failed assertion. The unchanged 63-case contract rerun passed. This complete rerun selects installed Node 24.19.0 and the latest integrated cc8ff5ed baseline. Exact fonttools 4.64.0 is cached and resolved offline. No test omitted or weakened.",
+    "typecheckExitCode": 0,
+    "typecheckSource": "Executed and passed by the unchanged verify:core chain in this aggregate; the separate same-base log is typecheck-final.log.",
+    "verifyAllExitCode": 0,
+    "finishedAt": "2026-09-22T18:56:33.018616+00:00"
+  },
+  "integrationVerification": {
+    "baseCommit": "188c59dd8c9945df5cb61697b2d5abab660987b7",
+    "fullSuiteBaseCommit": "cc8ff5ed6b9dc49a2bedf2591c1659a291cf8e35",
+    "startedAt": "2026-09-22T18:58:53.234433+00:00",
+    "runtimeSourceHashesUnchanged": true,
+    "metaResolution": "Upstream 493f1947 supplies MapoTopRenderer.ts.meta; retained upstream UUID 713c2fb6-4461-4649-a8bb-5fe9fbbdb3c8 and dropped the temporary e409b8cc repair during rebase. The aggregate run remains pinned to the recorded verification snapshot.",
+    "upstreamChanges": [
+      "apps/Cocos/assets/resources/kits/mapOriginal/maps/s1/minimap.png",
+      "apps/Cocos/assets/resources/kits/mapOriginal/maps/s1/road-atlas.png",
+      "apps/Cocos/assets/src/kits/mapOriginal/logic/mapoLayers.ts",
+      "apps/Cocos/assets/src/kits/mapOriginal/view/MapOriginalWorldView.ts",
+      "apps/client/src/kits/mapOriginal/logic/mapoLayers.ts",
+      "apps/client/src/kits/mapOriginal/view/MapOriginalWorldView.ts",
+      "apps/client/test/mapOriginal-decor.test.ts",
+      "apps/client/test/mapOriginal-minimap.test.ts",
+      "apps/kits/mapOriginal/README.md",
+      "apps/kits/mapOriginal/art/LICENSES.md",
+      "apps/kits/mapOriginal/data/maps/s1/minimap.info.json",
+      "apps/kits/mapOriginal/data/maps/s1/minimap.png",
+      "apps/kits/mapOriginal/data/maps/s1/road-atlas.png",
+      "apps/kits/mapOriginal/data/maps/s1/roads.info.json",
+      "apps/server/test/mapOriginal-content.test.ts",
+      "apps/server/test/plugin-codegen.test.ts",
+      "docs/MAPORIGINAL-2D.md",
+      "tools/maporiginal-assets/README.md",
+      "tools/maporiginal-assets/bake_content.py",
+      "tools/maporiginal-assets/build_roads.py",
+      "tools/maporiginal-assets/ctable_cw.py",
+      "tools/maporiginal-assets/install_to_kit.py"
+    ],
+    "nodeVersion": "v24.19.0",
+    "typecheckExitCode": 0,
+    "regressionFiles": [
+      "apps/client/test/stage3d-fixture-lifecycle.test.ts",
+      "apps/client/test/stage3d-owned-instancing.test.ts",
+      "apps/client/test/stage3d-spike-hud-lifecycle.test.ts",
+      "apps/server/test/stage3d-probe.test.ts",
+      "apps/client/test/mapOriginal-blocks.test.ts",
+      "apps/client/test/mapOriginal-decor.test.ts",
+      "apps/client/test/mapOriginal-ground.test.ts",
+      "apps/client/test/mapOriginal-minimap.test.ts",
+      "apps/client/test/mapOriginal-regions.test.ts",
+      "apps/client/test/mapOriginal-rivers.test.ts",
+      "apps/client/test/mapOriginal-roads.test.ts",
+      "apps/client/test/mapOriginal-tops.test.ts",
+      "apps/server/test/mapOriginal-content.test.ts",
+      "apps/server/test/plugin-codegen.test.ts"
+    ],
+    "regressionExitCode": 0,
+    "regressionTests": 176,
+    "finishedAt": "2026-09-22T18:59:44.046582+00:00"
+  },
+  "verificationEvidence": [
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/targeted.log",
+      "sha256": "66a287242aee9e87d8a7012e7c709033be6bc608fda7ad5af0404a2302a164ee"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/input-regression.log",
+      "sha256": "21d8608e2ff141042c205b9cbdc80393d3e201b87e948adaaf95542632adc6a3"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/typecheck-final.log",
+      "sha256": "815400662382d23981044f33a45891d33e84802c2f4fe6c5feab1ad29a3ea430"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/verify-all.log",
+      "sha256": "4bb8fcbf00f296bbf38810ed88faafee676b2082035dbdc438b19aa0db368254"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/verification-results.json",
+      "sha256": "0529529a8facc13cbb6129bf508c3df39192b6c60b545242780dd2576060a208"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/integration-typecheck.log",
+      "sha256": "815400662382d23981044f33a45891d33e84802c2f4fe6c5feab1ad29a3ea430"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/integration-regression.log",
+      "sha256": "f6d8b622a69a7e4392cfb21a3cecb5c8bc58674c8b50a19ed23f155e8fdfba83"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/integration-verification.json",
+      "sha256": "a26ad54aae537bd339601c4bec71eabbf3e72d29fd9e7deca26ae486a461e742"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/real-engine-types.json",
+      "sha256": "140f8c4e641c3bc858c7bdaebf7d3b3f40b4aad356c69d88db5163301eaf4964"
+    },
+    {
+      "path": "docs/evidence/creator-2026-09-23/sc1-b4/mutations.json",
+      "sha256": "5914da8b5f5a79d54369943fe97d800d095f50e8b322017184b71bbfd636ac5d"
+    }
+  ],
+  "priorVerificationAttempts": [
+    {
+      "name": "internal-volume-disk-full",
+      "evidence": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/internal-volume-disk-full/enospc-verify-all.log",
+          "sha256": "2265d30d3c72b595487975e55913a613297b39ee853b33543b75adff15dfcbf7"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/internal-volume-disk-full/enospc-verification-results.json",
+          "sha256": "a0e4f19955e476042b8d98557b6582bf3403168aba645130a2d7de5c777fa393"
+        }
+      ]
+    },
+    {
+      "name": "pypi-tls-failure",
+      "evidence": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/pypi-tls-failure/pypi-verify-all.log",
+          "sha256": "2339fcd3c371a17fdc90acef6d6c3f8eef4c5238c3e203a90138533937ed0389"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/pypi-tls-failure/pypi-verification-results.json",
+          "sha256": "bcca0c6aba63e16eec3ff8216eba90fd62020e1821128f4e4c36c42e87526ad5"
+        }
+      ]
+    },
+    {
+      "name": "upstream-missing-script-meta",
+      "evidence": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/upstream-missing-script-meta/missing-meta-typecheck.log",
+          "sha256": "f16a1b0475dce1e306697e7c30d873f32046629c1d94d68eb239535eaf573332"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/upstream-missing-script-meta/missing-meta-verification-results.json",
+          "sha256": "4df33063cc27037996bea932d75a153d6ae3cccf6a04b103cf158ad8d394ef9f"
+        }
+      ]
+    },
+    {
+      "name": "node26-pending-promise-cancellation",
+      "evidence": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/node26-pending-promise-cancellation/node26-cancelled-verify-all.log",
+          "sha256": "491dc5ab49dece006a4b26a74de398c867377b6d3daac50d8b27ff4d79e94ec7"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/node26-pending-promise-cancellation/node26-cancelled-verification-results.json",
+          "sha256": "682806dc9e55ac43e4d0174a90cfd7d917b06961597b1d3153ffb52eb7d1c462"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b4/attempts/node26-pending-promise-cancellation/uniflex-cancel-repro.log",
+          "sha256": "4ed5780fe6b60dcd20f1d2e072a17c84159211436956523c3becab3ddc4c6575"
+        }
+      ]
+    }
+  ],
+  "rawPendingDisposition": [
+    {
+      "name": "snake-carrier",
+      "disposition": "Previously accepted SC1-B9 proof; Snake router behavior is unchanged by B4. B4 does not claim a new gameplay-carrier run.",
+      "source": {
+        "path": "docs/perf/stage3d/2026-09-23-sc1-b9.json",
+        "sha256": "68c03c89dda38c87e68852e9ae6da29198876eccef763118092ead1c6fa5836d"
+      }
+    },
+    {
+      "name": "visual-and-skinning-review",
+      "disposition": "Listed current screenshots reviewed for this fixed fixture; two-clip, cross-atlas and realtime restoration assertions pass in both contexts. Existing SC0 float/RGBA8 review is retained; no new RGBA8 fault-injection or arbitrary animation visual guarantee.",
+      "source": {
+        "path": "docs/perf/stage3d/2026-09-22-spike-review.json",
+        "sha256": "59ebe56022a14c3c6dca3967c54ebcf4eeba149362f0f1168cf4b5b3ed6a78ee"
+      }
+    },
+    {
+      "name": "other-sc0-gates",
+      "disposition": "Independent baked texture/model/GFX binding verified here, both actual contexts recorded, prior SC0 freeze/handoff accepted. SC4 true-device/cache gates remain open. Raw exit 2/pending are preserved rather than edited.",
+      "source": {
+        "path": "docs/perf/stage3d/2026-09-22-sc0-review.json",
+        "sha256": "463f1f63d67b38c72a0607125eaf32d3c5c28b3633433ce27def1f7115c33437"
+      }
+    }
+  ],
+  "creatorRecovery": [
+    "The synchronized baseline omitted MapoTopRenderer.ts.meta. Isolated Creator 3.8.8 generated it; committed separately as e409b8cc before final aggregate checks.",
+    "Built ignored UniFlex output before compiling the isolated project; restarted isolated programming cache to remove cached missing-module resolution.",
+    "After rebase, asset-db refresh of db://assets/src removed the deleted MapoMapRenderer entry and compiled the current footer layout. Verified reports above have no unexpected console errors; WebGL1 retains one specifically classified context-fallback diagnostic."
+  ],
+  "discardedEvidence": "Earlier attempts remain under .cache/stage3d/sc1-b4: cached missing-module failures, non-fullscreen boot, background-tab interruption and pre-refresh HUD layout. Only complete-webgl1/2 are acceptance inputs.",
+  "remaining": [
+    "SC1-B7 bundle ownership and UUID closure",
+    "SC1-B5 asset gates",
+    "SC1-B6 stage exit",
+    "SC3 full async AssetLease",
+    "SC4 real-device and remote-cache acceptance"
+  ],
+  "nextBatch": "SC1-B7"
+}

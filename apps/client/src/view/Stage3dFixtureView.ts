@@ -1,82 +1,90 @@
-/** SC0 fixed greybox spike. Not the SC1 Stage3D API; keep lifecycle explicit and observable. */
-import {
-    Camera, Color, DirectionalLight, director, Director, instantiate, Layers,
-    Material, MeshRenderer, Node, ParticleSystem, Prefab, resources, SkeletalAnimation, Vec3,
-} from "cc";
+/** DEV acceptance page for the production Stage3D port; content remains fixed greybox. */
+import { Billboard, instantiate, Material, MeshRenderer, Node, ParticleSystem, SkeletalAnimation } from "cc";
 import { DEV } from "cc/env";
 import { CocosView } from "./CocosView";
 import type { ViewLifecycleContext } from "./ViewBase";
-import { Stage3dFixtureLogic } from "../logic/page/Stage3dFixtureLogic";
-import { spikeSession } from "./scene3d/spikeSession";
+import type { Stage3DPort } from "./scene3d/Stage3D";
+import { beginFixtureSession } from "./scene3d/fixtureSession";
+import { FixturePrefabLoader } from "./scene3d/fixturePrefabLoader";
 import { createSpikeRealtimeSwitcher, createSpikeSkinningSwitcher, prepareSpikeSkinningLayouts } from "./scene3d/spikeSkinning";
-import { captureSpikeOwnedInstancing } from "./scene3d/spikeOwnedInstancing";
+import { captureOwnedBillboard, OwnedRenderingRetirement } from "./scene3d/ownedRendering";
 
 export class Stage3dFixtureView extends CocosView {
-    private world: Node | null = null;
-    private readonly assets: Prefab[] = [];
-    private readonly materials = new Map<Material, Material>();
-    private readonly atlasBMaterials = new Map<Material, Material>();
-    private readonly realtimeMaterials = new Map<Material, Material>();
-    private detachInput: (() => void) | null = null;
+    private opening: ViewLifecycleContext | undefined;
+    private releaseStage: (() => void) | undefined;
 
-    protected async onOpen(context: ViewLifecycleContext): Promise<void> {
-        if (!DEV) throw new Error("SC0 fixture is only available in development");
-        const logic = new Stage3dFixtureLogic();
-        spikeSession.logic = logic;
-        spikeSession.ready = false;
-        spikeSession.error = null;
-        spikeSession.skinning = null;
-        spikeSession.switchSkinningClip = null;
-        spikeSession.switchRealtimeSkinning = null;
-        const scene = director.getScene();
-        if (!scene) throw new Error("SC0 fixture needs a live scene");
-        const world = new Node("Stage3dSpike.World");
-        this.world = world;
-        scene.addChild(world);
-        const cameraNode = new Node("Stage3dSpike.Camera");
-        world.addChild(cameraNode);
-        // Keep all 500 cubes inside the fixed 375x812 portrait frustum.
-        cameraNode.setPosition(0, 110, 145);
-        cameraNode.lookAt(new Vec3(0, 0, 0));
-        const camera = cameraNode.addComponent(Camera);
-        camera.projection = Camera.ProjectionType.PERSPECTIVE;
-        camera.priority = 0;
-        camera.visibility = Layers.Enum.DEFAULT | 2;
-        camera.clearFlags = Camera.ClearFlag.SOLID_COLOR;
-        camera.clearColor = new Color(28, 40, 58, 255);
-        camera.near = 0.1; camera.far = 1000; camera.fov = 45;
-        const light = new Node("Stage3dSpike.Light");
-        world.addChild(light);
-        light.setRotationFromEuler(-60, -25, 0);
-        light.addComponent(DirectionalLight).illuminance = 65000;
-        this.detachInput = this.subscribeRawInput(context, {
-            touch: (phase, event) => {
-                const p = event.getUILocation();
-                spikeSession.logic.pointer(event.getID(), phase, p.x, p.y);
-                cameraNode.setPosition(spikeSession.logic.x * -0.03, 110, 145 + spikeSession.logic.y * 0.03);
-            },
-            wheel: () => { spikeSession.logic.wheels++; },
-            cancel: () => spikeSession.logic.cancelAll(),
-        });
+    protected onOpen(context: ViewLifecycleContext): void {
+        if (!DEV) throw new Error("Stage3D fixture is only available in development");
+        this.opening = context;
+    }
+
+    /** Inject the actual application's port via ViewHandle.run/open setup. */
+    async setup(ports: { readonly stage3d: Stage3DPort }, context: ViewLifecycleContext): Promise<void> {
+        if (this.opening !== context || !context.isActive()) throw new Error("Fixture setup cancelled");
+        if (this.releaseStage) throw new Error("Fixture already has a stage");
+        const lease = ports.stage3d.acquire(context, { clearColor: { r: 28, g: 40, b: 58, a: 255 } });
+        const session = beginFixtureSession(), logic = session.logic, world = lease.root;
+        const owner = { generation: context.generation, signal: lease.signal, isActive: () => context.isActive() && !lease.signal.aborted };
+        const loader = new FixturePrefabLoader(owner);
+        const retirement = new OwnedRenderingRetirement();
+        const materials = new Map<Material, Material>();
+        const atlasBMaterials = new Map<Material, Material>();
+        const realtimeMaterials = new Map<Material, Material>();
+        let detachInput: (() => void) | undefined;
+        let releaseBillboard: (() => void) | undefined;
+        const releaseStage = this.releaseStage = () => lease.release();
+        // Stage3D aborts its signal BEFORE destroying nodes, including host/scene
+        // disposal. Capture old descriptors here, not in the later View close hook.
+        lease.signal.addEventListener("abort", () => {
+            loader.cancel();
+            detachInput?.();
+            session.switchSkinningClip = null;
+            session.switchRealtimeSkinning = null;
+            session.ready = false;
+            session.nodeCount = 0;
+            if (this.releaseStage === releaseStage) this.releaseStage = undefined;
+            retirement.capture(world);
+            retirement.finish(() => {
+                releaseBillboard?.();
+                for (const material of [...materials.values(), ...atlasBMaterials.values(), ...realtimeMaterials.values()]) material.destroy();
+                materials.clear(); atlasBMaterials.clear(); realtimeMaterials.clear();
+                loader.release();
+            });
+        }, { once: true });
         try {
-            // Prefab children are verified against imported .meta by probe-stage3d before opening.
-            const [plane, cube, biped, atlasB] = await Promise.all([
-                "greybox-plane", "greybox-cube", "greybox-biped", "greybox-biped-atlas-b",
-            ].map((name) => this.load(`stage3d/${name}/${name}`, context)));
-            if (!context.isActive()) return;
+            // Fixed portrait framing retained for the SC0 render/performance comparisons.
+            lease.camera.setPose({ x: 0, y: 110, z: 145 }, { x: 0, y: 0, z: 0 });
+            lease.light.setDirection({ x: 0.211309, y: -0.866025, z: -0.453154 });
+            detachInput = this.subscribeRawInput(owner, {
+                touch: (phase, event) => {
+                    const id = event.getID();
+                    if (id === null) return;
+                    const p = event.getUILocation();
+                    logic.pointer(id, phase, p.x, p.y);
+                    lease.camera.setPose({ x: logic.x * -0.03, y: 110, z: 145 + logic.y * 0.03 }, { x: 0, y: 0, z: 0 });
+                },
+                wheel: () => { logic.wheels++; },
+                cancel: () => logic.cancelAll(),
+            });
+            const [plane, cube, biped, atlasB, baked] = await loader.load([
+                ...["greybox-plane", "greybox-cube", "greybox-biped", "greybox-biped-atlas-b"]
+                    .map((name) => `stage3d/${name}/${name}`),
+                "stage3d/P_Stage3d_Baked",
+            ]);
+            if (!owner.isActive()) throw new Error("Fixture setup cancelled");
             // Register before any instance can request a baked joint texture.
-            const skinning = prepareSpikeSkinningLayouts(biped, atlasB);
-            spikeSession.skinning = skinning.summary;
-            world.addChild(instantiate(plane));
+            const skinning = prepareSpikeSkinningLayouts(biped!, atlasB!);
+            session.skinning = skinning.summary;
+            world.addChild(instantiate(plane!));
             for (let i = 0; i < 500; i++) {
-                const node = instantiate(cube);
+                const node = instantiate(cube!);
                 node.name = `Stage3dSpike.Cube.${i}`;
                 node.setPosition((i % 25 - 12) * 2.3, 0.5, (Math.floor(i / 25) - 10) * 2.3);
                 world.addChild(node);
-                this.enableInstancing(node);
+                this.enableInstancing(node, materials);
             }
             for (let i = 0; i < 100; i++) {
-                const node = instantiate(biped);
+                const node = instantiate(biped!);
                 node.name = i === 99 ? "Stage3dSpike.CrossAtlas" : `Stage3dSpike.Biped.${i}`;
                 node.setPosition((i % 10 - 4.5) * 3, 1.1, (Math.floor(i / 10) - 4.5) * 3);
                 world.addChild(node);
@@ -84,28 +92,27 @@ export class Stage3dFixtureView extends CocosView {
                     animation.useBakedAnimation = true;
                     animation.play(skinning.mainClips[i % 2]!.name);
                 }
-                this.enableInstancing(node);
+                this.enableInstancing(node, materials);
                 if (i === 99) {
-                    spikeSession.switchSkinningClip = createSpikeSkinningSwitcher(node, skinning, (source) => {
-                        let material = this.atlasBMaterials.get(source);
+                    session.switchSkinningClip = createSpikeSkinningSwitcher(node, skinning, (source) => {
+                        let material = atlasBMaterials.get(source);
                         if (!material) {
                             material = new Material();
-                            this.atlasBMaterials.set(source, material);
+                            atlasBMaterials.set(source, material);
                             material.copy(source, { defines: { USE_INSTANCING: true } });
                         }
                         return material;
                     });
-                    spikeSession.switchRealtimeSkinning = createSpikeRealtimeSwitcher(node, skinning, (source) => {
-                        let material = this.realtimeMaterials.get(source);
+                    session.switchRealtimeSkinning = createSpikeRealtimeSwitcher(node, skinning, (source) => {
+                        let material = realtimeMaterials.get(source);
                         if (!material) {
                             material = new Material();
-                            this.realtimeMaterials.set(source, material);
+                            realtimeMaterials.set(source, material);
                             material.copy(source, { defines: { USE_INSTANCING: false } });
                         }
                         return material;
                     }, () => {
-                        const release = captureSpikeOwnedInstancing(node);
-                        this.afterInstancingRetired(release, () => {});
+                        retirement.capture(node);
                     });
                 }
             }
@@ -123,40 +130,36 @@ export class Stage3dFixtureView extends CocosView {
             // The CPU particle processor creates this owner-specific instance
             // outside RenderableComponent's material-instance ownership list.
             const particleMaterial = effect.processor.getDefaultMaterial();
-            if (particleMaterial) this.materials.set(particleMaterial, particleMaterial);
-            spikeSession.nodeCount = world.children.length;
-            spikeSession.ready = true;
+            if (particleMaterial) materials.set(particleMaterial, particleMaterial);
+            const marker = new Node("Stage3dFixture.Billboard");
+            marker.setPosition(31, 5, 0);
+            world.addChild(marker);
+            const billboard = marker.addComponent(Billboard);
+            releaseBillboard = captureOwnedBillboard(billboard);
+            billboard.width = 4;
+            billboard.height = 4;
+            const bakedNode = instantiate(baked!);
+            bakedNode.name = "Stage3dFixture.Baked";
+            // Keep the independent lightmap sample above the greybox ground.
+            bakedNode.setPosition(0, 0.03, 0);
+            world.addChild(bakedNode);
+            session.nodeCount = world.children.length;
+            session.ready = true;
         } catch (error) {
-            if (context.isActive() && spikeSession.logic === logic) {
-                spikeSession.error = error instanceof Error ? error.message : String(error);
-            }
+            if (owner.isActive()) session.error = error instanceof Error ? error.message : String(error);
+            releaseStage();
             throw error;
         }
     }
 
-    private load(path: string, context: ViewLifecycleContext): Promise<Prefab> {
-        return new Promise((resolve, reject) => resources.load(path, Prefab, (error, asset) => {
-            if (error || !asset) { reject(error ?? new Error(`Missing prefab: ${path}`)); return; }
-            asset.addRef();
-            if (!context.isActive()) {
-                asset.decRef();
-                reject(new Error(`SC0 load cancelled: ${path}`));
-                return;
-            }
-            this.assets.push(asset);
-            spikeSession.businessRefs++;
-            resolve(asset);
-        }));
-    }
-
-    private enableInstancing(node: Node): void {
+    private enableInstancing(node: Node, materials: Map<Material, Material>): void {
         for (const renderer of node.getComponentsInChildren(MeshRenderer)) {
             renderer.sharedMaterials.forEach((source, index) => {
                 if (!source) return;
-                let material = this.materials.get(source);
+                let material = materials.get(source);
                 if (!material) {
                     material = new Material();
-                    this.materials.set(source, material);
+                    materials.set(source, material);
                     material.copy(source, { defines: { USE_INSTANCING: true } });
                 }
                 renderer.setMaterial(material, index);
@@ -165,38 +168,7 @@ export class Stage3dFixtureView extends CocosView {
     }
 
     protected onCloseLifecycle(): void {
-        spikeSession.switchSkinningClip = null;
-        spikeSession.switchRealtimeSkinning = null;
-        this.detachInput?.();
-        this.detachInput = null;
-        const releaseInstancing = this.world ? captureSpikeOwnedInstancing(this.world) : null;
-        this.world?.removeFromParent();
-        this.world?.destroy();
-        this.world = null;
-        const assets = this.assets.splice(0);
-        const materials = [...this.materials.values(), ...this.atlasBMaterials.values(), ...this.realtimeMaterials.values()];
-        this.materials.clear();
-        this.atlasBMaterials.clear();
-        this.realtimeMaterials.clear();
-        spikeSession.ready = false;
-        spikeSession.nodeCount = 0;
-        // Cocos destroys components at frame end; release only after scene references are gone.
-        this.afterInstancingRetired(releaseInstancing, () => {
-            for (const material of materials) material.destroy();
-            for (const asset of assets) { asset.decRef(); spikeSession.businessRefs--; }
-        });
-    }
-
-    private afterInstancingRetired(release: ReturnType<typeof captureSpikeOwnedInstancing> | null, done: () => void): void {
-        const next = (): void => {
-            if (release?.().pendingItems) {
-                // Keep assets/materials retained until the exact old queue entries
-                // stop rendering. The probe cannot pass closed-ref checks early.
-                director.once(Director.EVENT_AFTER_DRAW, next);
-                return;
-            }
-            done();
-        };
-        director.once(Director.EVENT_AFTER_DRAW, next);
+        this.opening = undefined;
+        this.releaseStage?.();
     }
 }

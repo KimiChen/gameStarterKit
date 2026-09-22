@@ -1,5 +1,29 @@
-/** SC0 compatibility for the locked Creator 3.8.8 WebPipeline, not a framework pool API. */
-import { director, MeshRenderer, Node } from "cc";
+/** Framework-internal retirement for the locked Creator 3.8.8 WebPipeline. */
+import { director, Director, MeshRenderer, Node } from "cc";
+import type { Billboard } from "cc";
+
+/** Creator 3.8.8 Billboard.onDisable only detaches its model and has no
+ * onDestroy. Capture its exclusively owned allocations while alive; retire
+ * after node destruction/AFTER_DRAW, never its borrowed texture.
+ */
+export function captureOwnedBillboard(billboard: Billboard): () => void {
+    const owned = billboard as unknown as {
+        readonly _model: object;
+        readonly _mesh: { destroy(): void };
+        readonly _material: { destroy(): void };
+    };
+    const model = owned._model, mesh = owned._mesh, material = owned._material;
+    const root = director.root as unknown as { destroyModel(model: object): void } | null;
+    if (!root || !model || !mesh || !material) throw new Error("Stage3D requires an initialized Creator 3.8.8 Billboard");
+    let released = false;
+    return () => {
+        if (released) return;
+        released = true;
+        root.destroyModel(model);
+        mesh.destroy();
+        material.destroy();
+    };
+}
 
 interface OwnedRenderer {
     readonly model: { readonly subModels: readonly { readonly descriptorSet: object | null }[] } | null;
@@ -20,16 +44,16 @@ interface Culling {
     readonly numRenderQueues: number;
     readonly cullingPools: { readonly renderQueueRecycle: { readonly data: readonly RenderQueue[] } };
 }
-interface SpikePipeline { readonly _executor?: { readonly _context?: { readonly culling?: Culling } }; }
+interface OwnedPipeline { readonly _executor?: { readonly _context?: { readonly culling?: Culling } }; }
 
-export interface SpikeInstancingCleanup {
+export interface OwnedInstancingCleanup {
     readonly releasedItems: number;
     readonly releasedBytes: number;
     /** Nonzero means the caller ran before the owner stopped rendering; call again after a draw. */
     readonly pendingItems: number;
 }
 
-function releaseOwnedItems(owned: Set<object>, capturedCulling: Culling | null): () => SpikeInstancingCleanup {
+function releaseOwnedItems(owned: Set<object>, capturedCulling: Culling | null): () => OwnedInstancingCleanup {
     let culling = capturedCulling;
     return () => {
         let releasedItems = 0;
@@ -69,7 +93,7 @@ function releaseOwnedItems(owned: Set<object>, capturedCulling: Culling | null):
 }
 
 /**
- * Capture BEFORE destroying/replacing this fixture's models; run the returned cleanup
+ * Capture BEFORE destroying/replacing this owner's models; run the returned cleanup
  * AFTER_DRAW after the old models stop rendering, before releasing their materials/assets.
  * Capture again before each model replacement (for example baked -> realtime).
  *
@@ -77,9 +101,9 @@ function releaseOwnedItems(owned: Set<object>, capturedCulling: Culling | null):
  * RenderInstancingQueue. Their clear() retains the VB/IA, even after source meshes and
  * materials are destroyed. Remove only this owner's idle items, never source mesh buffers.
  * Do not call InstancedBuffer.destroy(): it also resets the engine-wide shared PassPool.
- * These private shapes are deliberately confined to this version-locked SC0 experiment.
+ * These private shapes are deliberately confined to this version-locked engine adapter.
  */
-export function captureSpikeOwnedInstancing(world: Node): () => SpikeInstancingCleanup {
+export function captureOwnedInstancing(world: Node): () => OwnedInstancingCleanup {
     const owned = new Set<object>();
     for (const component of world.getComponentsInChildren(MeshRenderer)) {
         const renderer = component as unknown as OwnedRenderer;
@@ -88,13 +112,55 @@ export function captureSpikeOwnedInstancing(world: Node): () => SpikeInstancingC
         }
     }
     if (owned.size === 0) return releaseOwnedItems(owned, null);
-    const root = director.root as unknown as { readonly pipeline: SpikePipeline } | null;
+    const root = director.root as unknown as { readonly pipeline: OwnedPipeline } | null;
     const culling = root?.pipeline?._executor?._context?.culling;
     if (!culling || !Array.isArray(culling.renderQueues)
         || !Number.isInteger(culling.numRenderQueues) || culling.numRenderQueues < 0
         || culling.numRenderQueues > culling.renderQueues.length
         || !Array.isArray(culling.cullingPools?.renderQueueRecycle?.data)) {
-        throw new Error("SC0 owned instancing cleanup requires Creator 3.8.8 WebPipeline culling queues");
+        throw new Error("Stage3D owned instancing cleanup requires Creator 3.8.8 WebPipeline culling queues");
     }
     return releaseOwnedItems(owned, culling);
+}
+
+/** One owner may replace several models before close. All old batches must retire
+ * before any shared material or Prefab hold is returned. Never tied to owner.signal:
+ * cancellation ends rendering, whereas AFTER_DRAW ends renderer references.
+ */
+export class OwnedRenderingRetirement {
+    private readonly pending = new Set<() => OwnedInstancingCleanup>();
+    private scheduled = false;
+    private finished = false;
+    private done: (() => void) | undefined;
+
+    capture(root: Node): void {
+        if (this.finished) throw new Error("Rendering retirement already finished");
+        this.pending.add(captureOwnedInstancing(root));
+        this.schedule();
+    }
+
+    finish(done: () => void): void {
+        if (this.finished || this.done) return;
+        this.done = done;
+        // Even an empty/no-instancing tree is destroyed at the frame boundary.
+        this.schedule();
+    }
+
+    private schedule(): void {
+        if (this.scheduled) return;
+        this.scheduled = true;
+        director.once(Director.EVENT_AFTER_DRAW, () => {
+            this.scheduled = false;
+            for (const release of this.pending) {
+                if (release().pendingItems === 0) this.pending.delete(release);
+            }
+            if (this.pending.size) { this.schedule(); return; }
+            if (this.done) {
+                const done = this.done;
+                this.done = undefined;
+                this.finished = true;
+                done();
+            }
+        });
+    }
 }

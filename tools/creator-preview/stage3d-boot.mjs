@@ -23,7 +23,7 @@ function inspectOwnedBoot(key, fixtureUuids, complete) {
   const glVersion = device?.gl?.getParameter(device.gl.VERSION) ?? null;
   const webgl = /WebGL 2/u.test(glVersion ?? "") ? 2 : /WebGL 1/u.test(glVersion ?? "") ? 1 : null;
   const entries = typeof globalThis.System?.entries === "function" ? [...System.entries()] : [];
-  const sessions = entries.map(([, module]) => module?.spikeSession).filter(Boolean);
+  const sessions = entries.map(([, module]) => module?.fixtureSession).filter(Boolean);
   const session = sessions.length === 1 ? sessions[0] : null;
   const observed = { timeOrigin: performance.timeOrigin, atEpochMs: Date.now(), url: location.href,
     webgl, glVersion, device: device?.constructor?.name ?? null, pipeline: pipeline?.constructor?.name ?? null,

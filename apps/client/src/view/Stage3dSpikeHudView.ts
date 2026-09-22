@@ -3,7 +3,7 @@ import { FguiView } from "./FguiView";
 import { GComponent, GTextField } from "db://fairygui-cc/fairygui.mjs";
 import { Color } from "cc";
 import { DEV } from "cc/env";
-import { spikeSession } from "./scene3d/spikeSession";
+import { fixtureSession } from "./scene3d/fixtureSession";
 import { ViewMgr, type ViewHandle } from "./ViewMgr";
 import type { ViewLifecycleContext } from "./ViewBase";
 import { ConfirmLogic } from "../logic/page/ConfirmLogic";
@@ -30,14 +30,15 @@ export class Stage3dSpikeHudView extends FguiView {
   private readonly modals = new Set<ViewHandle>();
 
   protected onOpen(context: ViewLifecycleContext): void {
-    if (!DEV) throw new Error("SC0 HUD is only available in development");
+    if (!DEV) throw new Error("Stage3D HUD is only available in development");
+    const session = fixtureSession.current;
     this.root.opaque = false;
     const counter = this.button("Stage3dSpike.HudButton", "HUD 0", 24, 48, () => {
-      counter.text = `HUD ${++spikeSession.logic.hudClicks}`;
+      counter.text = `HUD ${++session.logic.hudClicks}`;
     });
     this.button("Stage3dSpike.ModalButton", "打开模态", 224, 48, () => {
       this.observeAsync(async () => {
-        const logic = new ConfirmLogic({ title: "SC0 输入取消", content: "关闭后须重新按下；旧拖拽与加速不得恢复。", noText: null });
+        const logic = new ConfirmLogic({ title: "Stage3D 输入取消", content: "关闭后须重新按下；旧拖拽与加速不得恢复。", noText: null });
         const handle = await ViewMgr.open("Confirm");
         if (!context.isActive()) { handle.close(); return; }
         this.modals.add(handle);
@@ -54,7 +55,10 @@ export class Stage3dSpikeHudView extends FguiView {
         }
       }, "sc0-modal");
     });
-    this.button("Stage3dSpike.CloseButton", "关闭夹具", 424, 48, () => spikeSession.close());
+    this.button("Stage3dSpike.CloseButton", "关闭夹具", 424, 48, () => session.close());
+    this.button("Stage3dFixture.FooterButton", "底部 HUD", this.root.width - 204, this.root.height - 132, () => {
+      counter.text = `HUD ${++session.logic.hudClicks}`;
+    });
   }
 
   private button(name: string, text: string, x: number, y: number, click: () => void): GTextField {

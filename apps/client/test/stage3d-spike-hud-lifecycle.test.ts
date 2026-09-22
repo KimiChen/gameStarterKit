@@ -11,6 +11,8 @@ import {
 type LoaderModule = { _load: (request: string, parent: unknown, isMain: boolean) => unknown };
 class FakeComponent {
   name = "";
+  width = 750;
+  height = 1624;
   node = { name: "" };
   children: FakeComponent[] = [];
   click: () => void = () => {};

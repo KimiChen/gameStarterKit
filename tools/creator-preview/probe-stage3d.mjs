@@ -115,7 +115,7 @@ function readScheduledStageQueues(culling, camera) {
 /** Read the last submitted WebPipeline queues and actual model bounds; no culling or camera mutation. */
 function readStage3dFraming(readScheduledQueues) {
   const scene = cc.director.getScene(), pipeline = cc.director.root.pipeline;
-  const camera = scene.getComponentsInChildren("cc.Camera").find((value) => value.node.name === "Stage3dSpike.Camera");
+  const camera = scene.getComponentsInChildren("cc.Camera").find((value) => value.node.name === "Stage3DCamera");
   const culling = pipeline?._executor?._context?.culling;
   if (!camera?.camera || !culling?.renderQueueQueryIndex || !Array.isArray(culling.renderQueues)) {
     return { available: false, reason: "Locked Creator 3.8.8 camera/WebPipeline submitted-queue diagnostics unavailable" };
@@ -310,6 +310,7 @@ export function parseStage3dProbeArgs(argv) {
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") return { help: true };
+    if (arg === "--new-window") { options.newWindow = true; continue; }
     if (arg === "--input-only") { options.inputOnly = true; continue; }
     if (arg === "--force-webgl1") { options.forceWebgl1 = true; continue; }
     if (arg === "--reuse") { options.reuse = true; continue; }
@@ -321,10 +322,11 @@ export function parseStage3dProbeArgs(argv) {
     if (integers[arg] && (!Number.isSafeInteger(options[key]) || options[key] <= 0)) throw new Error(`${arg} needs a positive integer`);
   }
   if (!["fixture", "snake"].includes(options.mode)) throw new Error("--mode must be fixture or snake");
+  if (options.newWindow && options.reuse) throw new Error("--new-window requires a fresh probe page");
   if (options.tabId && !options.reuse) throw new Error("--tab requires --reuse; fresh fixture runs create their own tab");
   if (options.expectWebgl !== null && ![1, 2].includes(options.expectWebgl)) throw new Error("--expect-webgl must be 1 or 2");
-  if (options.forceWebgl1 && (!options.inputOnly || options.reuse || options.expectWebgl !== 1))
-    throw new Error("--force-webgl1 requires a fresh --input-only run with --expect-webgl 1");
+  if (options.forceWebgl1 && (options.reuse || options.expectWebgl !== 1))
+    throw new Error("--force-webgl1 requires a fresh run with --expect-webgl 1");
   for (const key of ["preview", "devtools"]) {
     const url = new URL(options[key]);
     if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) throw new Error(`${key} must use a loopback host`);
@@ -674,10 +676,10 @@ async function installHarness(mode, key, readViewport, readScheduledQueues) {
     return { url, module: await System.import(url) };
   };
   const managerImport = await discover("ViewMgr");
-  const sessionImport = await discover("spikeSession");
+  const sessionImport = await discover("fixtureSession");
   const inputImport = await discover("rawInput");
   const manager = managerImport.module.ViewMgr;
-  const session = sessionImport.module.spikeSession;
+  const session = sessionImport.module.fixtureSession;
   const readInput = () => inputImport.module.rawInput.inspect();
   if (globalThis[key]?.close) await globalThis[key].close();
   let worldHandle = null;
@@ -722,7 +724,7 @@ async function installHarness(mode, key, readViewport, readScheduledQueues) {
       priority: camera.priority, visibility: camera.visibility, projection: camera.projection,
       clearFlags: camera.clearFlags, rect: { x: camera.rect.x, y: camera.rect.y, width: camera.rect.width, height: camera.rect.height },
     }));
-    const stageCamera = scene.getComponentsInChildren("cc.Camera").find((camera) => camera.node.name === "Stage3dSpike.Camera")?.camera;
+    const stageCamera = scene.getComponentsInChildren("cc.Camera").find((camera) => camera.node.name === "Stage3DCamera")?.camera;
     const culling = cc.director.root.pipeline?._executor?._context?.culling;
     const directDraws = new Map(), modelPhases = new Map();
     for (const { queueId, phaseId, models } of readScheduledQueues(culling, stageCamera)) {
@@ -816,18 +818,37 @@ async function installHarness(mode, key, readViewport, readScheduledQueues) {
         },
         gpu: debugRenderer ? gl.getParameter(debugRenderer.UNMASKED_RENDERER_WEBGL) : null,
         gfxAPI: device.gfxAPI, device: device.constructor?.name, pipeline: cc.director.root.pipeline?.constructor?.name,
-        quality: "SC0 fixed greybox; SC1 quality tiers are not implemented" },
+        quality: mode === "fixture" ? appPorts().stage3d.quality : null,
+        loadPolicy: "Fixed acceptance fixture; population does not follow quality tier capacity" },
       session: { ready: session.ready, error: session.error, businessRefs: session.businessRefs, nodeCount: session.nodeCount, skinning: session.skinning ?? null },
       logic: { starts: session.logic.starts, moves: session.logic.moves, ends: session.logic.ends, cancels: session.logic.cancels,
         wheels: session.logic.wheels, hudClicks: session.logic.hudClicks, x: session.logic.x, y: session.logic.y, activePointers: session.logic.activePointers },
       input: readInput(), sceneNodes: nodes.length,
-      fixtureNodes: nodes.filter((node) => node.name.startsWith("Stage3dSpike.")).length,
+      fixtureNodes: nodes.filter((node) => (node.name.startsWith("Stage3dSpike.") || node.name.startsWith("Stage3dFixture.") || ["Stage3DRoot", "Stage3DCamera", "Stage3DLight"].includes(node.name))).length,
       cubes: nodes.filter((node) => /^Stage3dSpike\.Cube\.\d+$/u.test(node.name)).length,
       bipeds: bipedRoots.length,
       particles: nodes.filter((node) => node.name === "Stage3dSpike.Particle").length,
+      billboards: nodes.filter((node) => node.name === "Stage3dFixture.Billboard").map((node) => {
+        const component = node.getComponent("cc.Billboard");
+        return { active: node.activeInHierarchy && component?.enabledInHierarchy,
+          width: component?.width, height: component?.height,
+          modelAttached: !!component?._model?.scene, passes: component?._model?.subModels?.[0]?.passes?.length ?? 0 };
+      }),
       snake: { present: nodes.some((node) => node.name === "SnakeWorld" && node.activeInHierarchy),
         controls: nodes.some((node) => node.name === "SnakeWorld.Controls" && node.activeInHierarchy),
         overlays: nodes.filter((node) => /^SnakeWorld\.(Relive|Confirm|Result|Reconnect|ResourceFailure)$/u.test(node.name) && node.activeInHierarchy).map((node) => node.name) },
+      baked: nodes.filter((node) => node.name === "Stage3dFixture.Baked").map((node) => ({
+        name: node.name, renderers: node.getComponentsInChildren("cc.MeshRenderer").map((renderer) => {
+          const texture = renderer.bakeSettings?.texture, model = renderer.model;
+          const gfxTexture = texture?.getGFXTexture();
+          return { node: renderer.node.name, texture: texture?.uuid ?? null, model: !!model,
+            modelLightmap: model?._lightmap?.uuid ?? null,
+            // Creator 3.8.8 ModelLocalBindings.SAMPLER_LIGHTMAP = 11; same proof as the B5 probe.
+            lightmapBound: !!gfxTexture && model?.subModels.length > 0
+              && model.subModels.every((subModel) => subModel.descriptorSet?.getTexture(11) === gfxTexture),
+          };
+        }),
+      })),
       cameras, layers: { DEFAULT: cc.Layers.Enum.DEFAULT, UI_2D: cc.Layers.Enum.UI_2D },
       animation: { bakedAnimations, skinnedRenderers, missingJointTexture, playingClips: [...clips].map(([name, count]) => ({ name, count })), jointTextures: [...groups.values()], skinningInstances },
       gfx: { drawCalls: device.numDrawCalls, triangles: device.numTris, instances: device.numInstances,
@@ -855,12 +876,69 @@ async function installHarness(mode, key, readViewport, readScheduledQueues) {
     await waitFrames();
     return snapshot();
   };
+  // Read the existing host only for DEV probe injection; the View receives ports
+  // explicitly and has no service locator or second Stage3D instance.
+  const appPorts = () => {
+    const nodes = [cc.director.getScene()];
+    const runtimes = [];
+    for (const node of nodes) {
+      nodes.push(...node.children);
+      for (const component of node.components) if (component.constructor.name === "Main" && component.runtime) runtimes.push(component.runtime);
+    }
+    if (runtimes.length !== 1) throw new Error("Fixture requires exactly one real application runtime");
+    const runtime = runtimes[0];
+    if (runtime.ports.stage3d !== runtime.gameplayServices.stage3d) throw new Error("Stage3D ports disagree");
+    return runtime.ports;
+  };
   const open = async () => {
     if (mode !== "fixture") throw new Error("Snake mode does not launch or replace gameplay");
     if (worldHandle || hudHandle) throw new Error("Probe fixture is already open");
-    worldHandle = await manager.open("Stage3dFixture");
+    worldHandle = await manager.open("Stage3dFixture", (view, context) => view.setup(appPorts(), context));
+    session.current.close = () => { void close(); };
     await openHud();
     return snapshot();
+  };
+  const loadingFault = async (kind) => {
+    if (worldHandle || hudHandle || !["failure", "early-close"].includes(kind)) throw new Error("Loading fault requires a closed fixture");
+    const original = cc.resources.load;
+    const delayed = [];
+    const received = [];
+    const failure = "SC1-B4 injected Prefab load failure";
+    const before = snapshot();
+    let opened = null, openError = null;
+    cc.resources.load = function(path, ...args) {
+      const callback = args[args.length - 1];
+      if (!path.startsWith("stage3d/")) return original.call(this, path, ...args);
+      args[args.length - 1] = (error, asset) => {
+        received.push({ path, loaded: !!asset, error: error?.message ?? null });
+        if (kind === "early-close") delayed.push(() => callback(error, asset));
+        else callback(path.includes("greybox-cube/") ? new Error(failure) : error, asset);
+      };
+      return original.call(this, path, ...args);
+    };
+    try {
+      const opening = manager.open("Stage3dFixture", (view, context) => view.setup(appPorts(), context))
+        .then((handle) => { opened = handle; }, (error) => { openError = error.message; });
+      const deadline = Date.now() + 15000;
+      while (received.length < 5 && Date.now() < deadline) await waitFrames(1);
+      if (received.length !== 5 || received.some((load) => !load.loaded || load.error)) throw new Error("Fault requires five real successful resource loads");
+      if (kind === "early-close") {
+        manager.close("Stage3dFixture");
+        await waitFrames();
+        for (const deliver of delayed.splice(0)) deliver();
+      }
+      await opening;
+      await waitFrames(5);
+      if (opened || !openError || (kind === "failure" && !openError.includes(failure))) throw new Error("Expected fixture open rejection");
+      const after = snapshot();
+      if (after.session.businessRefs || after.fixtureNodes || after.input.active || appPorts().stage3d.active) throw new Error("Loading fault leaked owner resources");
+      return { kind, before, received, openError, after };
+    } finally {
+      cc.resources.load = original;
+      for (const deliver of delayed.splice(0)) deliver();
+      opened?.close();
+      manager.close("Stage3dFixture");
+    }
   };
   const switchSkinning = async (group, index) => {
     if (!["main", "atlasB"].includes(group) || ![0, 1].includes(index)) throw new Error("Invalid SC0 skinning clip selection");
@@ -882,9 +960,9 @@ async function installHarness(mode, key, readViewport, readScheduledQueues) {
     for (const name of ["Login", "Home", "PromoHome", "Settings", "EntryGroup"]) manager.close(name);
     await waitFrames();
   }
-  session.close = () => { void close(); };
-  globalThis[key] = { snapshot, open, openHud, closeHud, close, rebuildRoot, waitFrames, switchSkinning, switchRealtime };
-  return { moduleUrls: { ViewMgr: managerImport.url, spikeSession: sessionImport.url, rawInput: inputImport.url }, baseline: snapshot() };
+  session.current.close = () => { void close(); };
+  globalThis[key] = { snapshot, open, openHud, closeHud, close, rebuildRoot, waitFrames, switchSkinning, switchRealtime, loadingFault };
+  return { moduleUrls: { ViewMgr: managerImport.url, fixtureSession: sessionImport.url, rawInput: inputImport.url }, baseline: snapshot() };
 }
 
 export function createStage3dHarnessSource(mode) { return `(${installHarness.toString()})(${JSON.stringify(mode)},${JSON.stringify(HARNESS)},${readViewport.toString()},${readScheduledStageQueues.toString()})`; }
@@ -993,6 +1071,14 @@ async function inputScenarios(probe) {
     assert(after.logic.hudClicks === before.logic.hudClicks + 1, "HUD click was not delivered exactly once");
     assert(after.input.counters.worldStarts === before.input.counters.worldStarts, "HUD pointer entered the world router");
     return { before, after, screenshot: await probe.shot("hud-click") };
+  });
+  if (probe.options.mode === "fixture") await probe.step("footer-hud-click", async () => {
+    const before = await probe.snapshot();
+    await probe.tap(await probe.node("Stage3dFixture.FooterButton"));
+    const after = await probe.snapshot();
+    assert(after.logic.hudClicks === before.logic.hudClicks + 1 && after.input.counters.worldStarts === before.input.counters.worldStarts,
+      "Footer HUD was blocked or leaked into the world");
+    return { before, after };
   });
   await probe.step("world-drag-across-hud", async () => {
     const before = await probe.snapshot();
@@ -1239,13 +1325,23 @@ async function fixtureScenarios(probe) {
     assert(summary.valid, `Startup sample invalid: ${summary.reasons.join(", ")}`);
     assert(summary.lastFrame.atMs >= opened.atMs, "Startup window ended before fixture activation; rerun with larger --startup-frames");
     assert(opened.session.ready && opened.cubes === 500 && opened.bipeds === 100 && opened.particles === 1, "The required 500 cubes/100 bipeds/one particle fixture is incomplete");
+    assert(opened.billboards.length === 1 && opened.billboards[0].active && opened.billboards[0].modelAttached
+      && opened.billboards[0].width === 4 && opened.billboards[0].height === 4 && opened.billboards[0].passes > 0,
+    "The independent Billboard must have an active model and material pass");
     assert(opened.input.active && !opened.input.blocked, "Fixture raw-input adapter is inactive or blocked");
     return { opened, screenshot: await probe.shot("initial-fixture") };
   });
+  await probe.step("independent-baked-prefab", async () => {
+    const state = await probe.snapshot();
+    assert(state.baked.length === 1 && state.baked[0].renderers.length === 2, "Expected the independent two-mesh baked Prefab");
+    assert(state.baked[0].renderers.every((renderer) => renderer.texture && renderer.model
+      && renderer.modelLightmap === renderer.texture && renderer.lightmapBound), "Baked Prefab is missing its model lightmap/GFX binding");
+    return { baked: state.baked, refs: state.session.businessRefs, screenshot: await probe.shot("baked-prefab") };
+  });
   await probe.step("camera-and-layer-configuration", async () => {
     const state = await probe.snapshot();
-    const stage = state.cameras.find((camera) => camera.node === "Stage3dSpike.Camera" && camera.enabled);
-    const ui = state.cameras.filter((camera) => camera.enabled && camera.node !== "Stage3dSpike.Camera" && (camera.visibility & state.layers.UI_2D) !== 0);
+    const stage = state.cameras.find((camera) => camera.node === "Stage3DCamera" && camera.enabled);
+    const ui = state.cameras.filter((camera) => camera.enabled && camera.node !== "Stage3DCamera" && (camera.visibility & state.layers.UI_2D) !== 0);
     assert(stage && ui.length, "Active 3D and UI cameras are both required");
     assert((stage.visibility & state.layers.DEFAULT) !== 0 && (stage.visibility & state.layers.UI_2D) === 0, "3D camera has the wrong world/UI visibility mask");
     assert(ui.every((camera) => camera.priority > stage.priority), "UI camera must render after the stage camera");
@@ -1292,12 +1388,17 @@ async function fixtureScenarios(probe) {
     probe.report.prewarm = { closes, baseline: null };
     throw new Error("Closed node/GFX baseline did not stabilize across seven prewarm closes");
   });
+  await probe.step("failed-load-and-early-close", async () => {
+    const failed = await probe.invoke("loadingFault", "failure");
+    const cancelled = await probe.invoke("loadingFault", "early-close");
+    return { failed, cancelled };
+  });
   await probe.step("repeated-open-close-resource-evidence", async () => {
     const cycles = [];
     probe.report.cycles = cycles;
     for (let cycle = 1; cycle <= probe.options.cycles; cycle++) {
       const opened = await probe.invoke("open");
-      assert(opened.session.ready && opened.session.businessRefs === 4, `Cycle ${cycle}: loaded fixture did not hold its four Prefabs`);
+      assert(opened.session.ready && opened.session.businessRefs === 5, `Cycle ${cycle}: loaded fixture did not hold its five Prefabs`);
       const entry = { cycle, opened, realtime: null, realtimeProof: null, restored: null, restorationProof: null,
         closeMode: cycle % 2 ? "realtime" : "restored-baked", closed: null };
       cycles.push(entry);
@@ -1335,6 +1436,17 @@ export async function runStage3dProbe(options) {
     if (options.reuse) {
       const tabs = await (await fetch(`${options.devtools}/json`)).json();
       tab = selectStage3dReuseTab(tabs, options);
+    } else if (options.newWindow) {
+      // Use the existing local Chrome/CDP process, but keep this acceptance page
+      // in its own visible window so another task changing tabs cannot hide it.
+      const browser = await (await fetch(`${options.devtools}/json/version`)).json();
+      const control = await CdpClient.connect(browser.webSocketDebuggerUrl);
+      let targetId;
+      try { ({ targetId } = await control.send("Target.createTarget", { url: "about:blank", newWindow: true })); }
+      finally { control.close(); }
+      const target = (await (await fetch(`${options.devtools}/json`)).json()).find((entry) => entry.id === targetId);
+      if (!target?.webSocketDebuggerUrl) throw new Error("New acceptance window has no CDP page endpoint");
+      tab = { id: targetId, wsUrl: target.webSocketDebuggerUrl, created: true };
     } else tab = await acquireTab(options);
     client = await CdpClient.connect(tab.wsUrl);
     report.touchTransport.browser = await client.send("Browser.getVersion");
@@ -1460,7 +1572,7 @@ export async function runStage3dProbe(options) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const options = parseStage3dProbeArgs(process.argv.slice(2));
-    if (options.help) console.log("Usage: node tools/creator-preview/probe-stage3d.mjs [--mode fixture|snake] [--reuse] [--tab ID] [--expect-webgl 1|2] [--input-only] [--force-webgl1] [--cycles 20] [--out DIR] [--summary FILE]\nDefaults: Creator 127.0.0.1:7457, existing Chrome CDP 127.0.0.1:9222. --tab requires --reuse; ambiguous existing pages are rejected. Snake requires a live session; no backend is started. --input-only validates SC1-B9 input; it does not claim SC0/SC1-B4 rendering, performance, or asset lifecycle gates. --force-webgl1 rejects webgl2 context creation before a fresh input-only boot; actual WebGL 1.0 is asserted.");
+    if (options.help) console.log("Usage: node tools/creator-preview/probe-stage3d.mjs [--mode fixture|snake] [--reuse] [--tab ID] [--expect-webgl 1|2] [--input-only] [--force-webgl1] [--cycles 20] [--out DIR] [--summary FILE]\nDefaults: Creator 127.0.0.1:7457, existing Chrome CDP 127.0.0.1:9222. --tab requires --reuse; ambiguous existing pages are rejected. Snake requires a live session; no backend is started. --input-only validates SC1-B9 input; it does not claim SC0/SC1-B4 rendering, performance, or asset lifecycle gates. --new-window uses a separate visible window in the existing Chrome process. --force-webgl1 rejects webgl2 context creation before a fresh boot; actual WebGL 1.0 is asserted.");
     else {
       const result = await runStage3dProbe(options);
       console.log(JSON.stringify({ executedOk: result.report.executedOk, pending: result.report.pending.length,

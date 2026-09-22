@@ -15,16 +15,16 @@
 
 | 当前文件 | 目标批次与处置 | 正式化前的边界 |
 | --- | --- | --- |
-| [Stage3dFixtureView.ts](../apps/client/src/view/Stage3dFixtureView.ts)、[sidecar](../apps/client/src/view/Stage3dFixtureView.view.json) | SC1-B2/B3/B4：保留场景和生命周期断言，改为经 `ports.stage3d.acquire` 取得舞台 | 当前直接创建场景根、相机、灯；没有舞台 / 独立全局租约、统一 token 表或双入口注入 |
-| [Stage3dSpikeHudView.ts](../apps/client/src/view/Stage3dSpikeHudView.ts)、[sidecar](../apps/client/src/view/Stage3dSpikeHudView.view.json) | SC1-B9 已迁成 `inputMode:overlay`，移除名称特判，保留模态关闭与迟到 setup 断言；正式舞台消费仍归 B4 | HUD 仍为 DEV 夹具；输入能力由通用元数据与框架适配器提供 |
-| [Stage3dFixtureLogic.ts](../apps/client/src/logic/page/Stage3dFixtureLogic.ts)、[spikeSession.ts](../apps/client/src/view/scene3d/spikeSession.ts) | SC1-B4/B9：保留用例，替换指针归属原型与全局诊断 session | 固定指针表和坐标累计不是 SC2 的 cameraRig、LOD、流式或拾取数学 |
+| [Stage3dFixtureView.ts](../apps/client/src/view/Stage3dFixtureView.ts)、[sidecar](../apps/client/src/view/Stage3dFixtureView.view.json) | SC1-B4 已迁为 `ViewMgr.open` 的 setup 显式注入应用 ports，经 `ports.stage3d.acquire(context)` 取得舞台；保留原灰盒与独立烘焙 Prefab | 临时 loader 与固定蒙皮 / 粒子仍按后续 SC3 / SC4 移交；不另建舞台实例 |
+| [Stage3dSpikeHudView.ts](../apps/client/src/view/Stage3dSpikeHudView.ts)、[sidecar](../apps/client/src/view/Stage3dSpikeHudView.view.json) | SC1-B9 已迁成 `inputMode:overlay`，移除名称特判，保留模态关闭与迟到 setup 断言；正式舞台消费已在 B4 接入 | HUD 仍为 DEV 夹具；输入能力由通用元数据与框架适配器提供 |
+| [Stage3dFixtureLogic.ts](../apps/client/src/logic/page/Stage3dFixtureLogic.ts)、[fixtureSession.ts](../apps/client/src/view/scene3d/fixtureSession.ts) | SC1-B9 已替换输入原型；SC1-B4 把 session 改为每次打开独立对象，旧回调只持旧世代，跨世代引用总数仅作 DEV 诊断 | 固定指针表和坐标累计不是 SC2 的 cameraRig、LOD、流式或拾取数学 |
 | 原 spikeInput / spikeFguiInput → [view/input](../apps/client/src/view/input/README.md) | SC1-B9 已迁入正式适配器和 owner 绑定 raw-input 订阅 / 取消端口，删除旧文件；纯指针表迁到 `logic/input/PointerOwnership` | 单个活动世界订阅者；FairyGUI 1.2.2 私有面集中在框架适配器，升级必须重验双 WebGL |
 | [ViewMgr.ts](../apps/client/src/view/ViewMgr.ts)、[AppRuntime.ts](../apps/client/src/app/AppRuntime.ts)、[SnakeWorldView.ts](../apps/client/src/view/rooms/snake/SnakeWorldView.ts) | SC1-B9 已替换 `hasSpikeHud`；Snake / BallMove 全局触摸迁到同一 raw-input 端口，hide 先取消再关闭业务输入 | pointer 在玩法 router 前归属；`dispatchInput` 保持业务意图世代守卫 |
-| [Stage3dFixtureView.ts 的 loader](../apps/client/src/view/Stage3dFixtureView.ts) | SC1-B2/B4：成功回调即经真实同步 retainer 持有；SC3-B1/B4：换完整 AssetLease | 当前 `resources.load` + 直接 addRef/decRef 没有 bundle 寻址、15 秒 deadline 或正式批量失败语义 |
-| [spikeOwnedInstancing.ts](../apps/client/src/view/scene3d/spikeOwnedInstancing.ts) | SC1-B3 先交空舞台生产适配；SC1-B4 封装 owned rendering 退休与夹具资源持有顺序；SC3-B3、SC4-B1 延续实体 / 蒙皮生命周期断言，完成替换后删除 spike 文件 | 私有结构只绑定 Creator 3.8.8 WebPipeline；不得直接成为 kit API，不得清全局共享池 |
+| [fixturePrefabLoader.ts](../apps/client/src/view/scene3d/fixturePrefabLoader.ts) | SC1-B4 已经真实同步 retainer 持有；普通失败收齐在途回调后清理，提前关闭的迟到成功及携资产的错误回调都成对归还；SC3-B1/B4 换完整 AssetLease | 仍是 resources 固定 Prefab 清单，没有 bundle 寻址或 15 秒 deadline；不作为 kit API |
+| [ownedRendering.ts](../apps/client/src/view/scene3d/ownedRendering.ts) | SC1-B4 已迁为框架内部退休队列；租约 abort 在节点销毁前捕获，所有旧 model 的队列条目均退出 AFTER_DRAW 后才释放材质 / Prefab；独立 Billboard 的 model / mesh / material 也按此时序回收，纹理保持借用；SC3-B3、SC4-B1 复用此顺序，旧 spike 文件已删除 | 私有结构只绑定 Creator 3.8.8 WebPipeline / Billboard；不得直接成为 kit API，不得清全局共享池 |
 | [spikeSkinning.ts](../apps/client/src/view/scene3d/spikeSkinning.ts) | SC4-B1：迁移布局、实际 jointTexture 分组、跨图切换与实时初始化修正 | 固定两骨、四 clip、两图集；72/144 行宽不是任意骨架通用配置 |
 | [Stage3dFixtureView.ts 的粒子初始化](../apps/client/src/view/Stage3dFixtureView.ts) | SC4-B2：迁入 Vfx 生命周期与池管理 | 仅一个 capacity=50 的粒子实例；尚无池、LOD 门、定时回收或并发上限 |
-| [builtin/plugin.json](../apps/plugins/builtin/plugin.json)、[navigation.test.ts](../apps/client/test/navigation.test.ts) | SC1-B4/B9：按正式夹具调整路由与退出取消回归，再生成注册表和镜像 | `stage3dFixture` / `stage3dSpikeHud` 入口登记不代表正式舞台或输入能力 |
+| [builtin/plugin.json](../apps/plugins/builtin/plugin.json)、[navigation.test.ts](../apps/client/test/navigation.test.ts) | SC1-B4/B9 已复用现有夹具路由 / sidecar，并验证退出取消；本批 codegen 注册表无差异 | DEV 入口通过 setup 注入实际 ports；不作为普通玩法入口 |
 
 输入验收必须保留 HUD / 世界双指并行、双向跨界、wheel、按住 boost 开模态、关闭 / 重挂取消及只接受新手势的断言。
 FGUI 空白不保证传到全局 `input`；SC0 已验证从 UI/GRoot 明确分流。正式化继续使用该事实，不修改 vendor。
@@ -74,7 +74,7 @@ FGUI 空白不保证传到全局 `input`；SC0 已验证从 UI/GRoot 明确分�
 | UI 相机 | priority=1073741824、projection=0、visibility=41943040、clearFlags=6、rect=(0,0,1,1) |
 
 clearFlags=7 清颜色 / 深度 / 模板；6 只清深度 / 模板并保留颜色。三条桌面上下文均记录该叠加关系。
-SC1-B8 已交付画质、压缩预设与独立验收场景，见[本批摘要](perf/stage3d/2026-09-22-sc1-b8.json)；SC0 的历史证据仍保持原范围，正式混合页面生命周期验收留 SC1-B4。
+SC1-B8 已交付画质、压缩预设与独立验收场景，见[本批摘要](perf/stage3d/2026-09-22-sc1-b8.json)；SC0 的历史证据仍保持原范围，正式混合页面生命周期验收见 SC1-B4 记录。
 
 ## 5. 资产、工具与证据
 

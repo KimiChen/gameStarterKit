@@ -206,7 +206,39 @@ Creator 打开后会正式导入这些图并可能改写 uuid / 补 library 条�
 `--input-only --mode snake --reuse --tab <id>` 对已经登录并运行的 Snake 做同一套检查；脚本不代为启动服务或对局。
 WebGL1 使用引擎实际选择的 WebGLDevice 并传 `--expect-webgl 1`，保持触摸能力在页面启动前启用。
 复用已有 9222 进程时，新的 fixture 页面可再加 `--force-webgl1`：只在自有页面启动前拒绝 webgl2 context，
-不屏蔽浮点或其它扩展；报告断言实际 WebGL 1.0 并保留精确启动回退日志。该参数拒绝复用页面或非 input-only 运行。
+不屏蔽浮点或其它扩展；报告断言实际 WebGL 1.0 并保留精确启动回退日志。该参数拒绝复用页面；SC1-B4 起也可用于完整 fixture 验收。
 Snake 的 WebGL1 冷启动沿用 `stage3d-boot.mjs` 的前置标记与完成记录，避免把旧页面追认为冷启动。
 这是 SC1-B9 输入接缝证据；省去 SC0 的性能 / 蒙皮 / 20 次资源循环和其它阶段 pending，不据此宣布 SC1-B4 或 SC1 退出。
 原 SC0 命令不带该参数时的证据范围保持不变。
+
+
+## SC1-B4 正式舞台夹具
+
+```bash
+node tools/creator-preview/run.mjs stage3d --preview http://127.0.0.1:7457 --new-window --expect-webgl 2 --out .cache/stage3d/sc1-b4/webgl2
+node tools/creator-preview/run.mjs stage3d --preview http://127.0.0.1:7457 --new-window --expect-webgl 1 --force-webgl1 --out .cache/stage3d/sc1-b4/webgl1
+```
+
+复用已有 Chrome 9222；`--new-window` 在同一进程建立独立可见窗口，避免另一任务切标签时使采样失效。
+须先在该预览 origin 的原生设备选择器选「网页全屏」（WebpageFullScreen），关闭 Rotate。
+新隔离工程先 `npm ci`、`npm run build:uniflex-ui`、`npm run sync:client`，再启动 Creator，
+否则未入库的 UniFlex 生成文件缺失会被脚本编译器缓存为解析失败；生成后仍报旧错时重新导入消费脚本，
+必要时关闭该隔离 Creator，把其 `temp/programming` 缓存移走后重启，保留失败日志。
+Creator 运行期间切换 / rebase 后，若预览入口仍引用已删除脚本，先让资源数据库刷新整个
+`db://assets/src` 并等待脚本编译完成；单独重导入 HUD 不会清掉其它旧入口。检查实际编译产物及新预览，不能只凭磁盘源码认定热更新已生效。
+
+夹具由真实 `ViewMgr.open("Stage3dFixture", (view, context) => view.setup(ports, context))` 注入当前
+Main 所属 AppRuntime 的 ports；探针核对它与 gameplay services 的 stage3d 是同一实例。
+页面以生命周期 context 取得正式租约，相机 / 灯 / 根节点均归舞台；FGUI overlay 保留顶部控件并加底部按钮。
+每次持有五份 Prefab：四份灰盒子资源与独立 `stage3d/P_Stage3d_Baked`，不读取作者场景节点或 lightmap 数组。
+固定 500 cube / 100 biped / 1 particle 用于保留 SC0 回归，不是当前设备 quality 档位的容量承诺。
+另有独立 4×4 `Billboard`；3.8.8 的组件只在 disable 时脱离场景，框架捕获其独占 model / mesh / material，
+在节点销毁后的 AFTER_DRAW 归还模型池并销毁资产，不释放它借用的纹理。
+
+剧本复验真实输入、相机 / 层位、烘焙纹理、蒙皮切换、原始帧间隔和预热后的 20 次开关。
+另用真实资源回调故障注入验证普通加载失败、在途关闭与迟到成功：所有业务引用归零，节点与 GFX 不超过预热基线。
+资源退休等待所有替换前 model 的独立 instancing 缓冲退出 AFTER_DRAW，禁止释放外来 owner、源 mesh 缓冲或全局池。
+`fixtureSession` 只提供 DEV 观测；页面与 HUD 捕获各自世代，旧回调不得写入新开页面的状态。
+
+完整剧本保留原 SC0 的人工复核 pending（exit 2 表示已执行检查通过但仍需按阶段审阅）；
+SC1-B4 摘要须同时引用两上下文的原报告、截图与逐项接受理由，不能把历史 SC0、B9 或 SC4 的范围混为本批交付。

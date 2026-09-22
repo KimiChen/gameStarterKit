@@ -252,6 +252,9 @@ test("stage3d percentile summary preserves zero and long intervals without sorti
 test("stage3d real probe defaults to isolated 7457 and validates explicit modes/windows", () => {
   const defaults = parseStage3dProbeArgs([]);
   assert.equal(defaults.inputOnly, undefined);
+  assert.equal(parseStage3dProbeArgs(["--new-window", "--expect-webgl", "2"]).newWindow, true);
+  assert.throws(() => parseStage3dProbeArgs(["--new-window", "--reuse"]), /fresh probe page/);
+  assert.equal(parseStage3dProbeArgs(["--expect-webgl", "1", "--force-webgl1"]).forceWebgl1, true);
   assert.equal(parseStage3dProbeArgs(["--input-only", "--expect-webgl", "2"]).inputOnly, true);
   assert.equal(parseStage3dProbeArgs(["--input-only", "--expect-webgl", "1", "--force-webgl1"]).forceWebgl1, true);
   for (const args of [["--force-webgl1"], ["--input-only", "--expect-webgl", "2", "--force-webgl1"],
@@ -300,10 +303,10 @@ test("stage3d closed-cycle evidence refuses node/ref/input leaks and GFX above i
 
 test("stage3d browser harness imports discovered hashed SystemJS URLs and queries components by engine names", async () => {
   const imported: string[] = [], queried: string[] = [];
-  const session = { ready: false, error: null, businessRefs: 0, nodeCount: 0, logic: { starts: 0, moves: 0, ends: 0, cancels: 0, wheels: 0, hudClicks: 0, x: 0, y: 0, activePointers: 0 }, close: () => {} };
+  const session = { current: { close: () => {} }, ready: false, error: null, businessRefs: 0, nodeCount: 0, logic: { starts: 0, moves: 0, ends: 0, cancels: 0, wheels: 0, hudClicks: 0, x: 0, y: 0, activePointers: 0 }, close: () => {} };
   const entries = [
     ["http://127.0.0.1:7457/scripting/x/chunks/aaa.js", { ViewMgr: { open: () => {}, close: () => {} } }],
-    ["http://127.0.0.1:7457/scripting/x/chunks/bbb.js", { spikeSession: session }],
+    ["http://127.0.0.1:7457/scripting/x/chunks/bbb.js", { fixtureSession: session }],
     ["http://127.0.0.1:7457/scripting/x/chunks/ccc.js", { rawInput: { inspect: () => ({ active: false, blocked: false, ownersCount: 0 }) } }],
   ] as const;
   const node = { name: "scene", activeInHierarchy: true, children: [],
@@ -451,10 +454,10 @@ async function skinningHarness() {
     node.getComponentsInChildren = (name: string) => { queried.push(name); return name === "cc.SkeletalAnimation" ? [animation] : name === "cc.SkinnedMeshRenderer" ? [renderer] : []; };
     return node;
   });
-  const camera = { node: { name: "Stage3dSpike.Camera", activeInHierarchy: true }, camera: {}, enabled: true, rect: { x: 0, y: 0, width: 1, height: 1 } };
+  const camera = { node: { name: "Stage3DCamera", activeInHierarchy: true }, camera: {}, enabled: true, rect: { x: 0, y: 0, width: 1, height: 1 } };
   const directQueue: any = { camera: camera.camera, sceneFlags: 1, opaqueQueue: { instances: [] }, transparentQueue: { instances: [] } };
   const targetRenderer = nodes[99]!.getComponent("cc.SkinnedMeshRenderer"), originalModel = targetRenderer.model;
-  const session: any = { ready: true, error: null, businessRefs: 4, nodeCount: 604, logic: {},
+  const session: any = { ready: true, error: null, businessRefs: 5, nodeCount: 603, logic: {},
     skinning: { mainClips, atlasBClips, skeletonHash: 7 },
     switchSkinningClip: (group: string, index: number) => {
       const model = nodes[99]!.getComponent("cc.SkinnedMeshRenderer").model;
@@ -487,7 +490,8 @@ async function skinningHarness() {
     } } } }, device: {
     memoryStatus: { bufferSize: 100, textureSize: 200 }, numDrawCalls: 10, numTris: 1000, numInstances: 600, getFormatFeatures: () => 2,
   } } });
-  const entries = [["chunks/a", { ViewMgr: {} }], ["chunks/b", { spikeSession: session }], ["chunks/c", { rawInput: { inspect: () => ({}) } }]] as const;
+  session.current = session;
+  const entries = [["chunks/a", { ViewMgr: {} }], ["chunks/b", { fixtureSession: session }], ["chunks/c", { rawInput: { inspect: () => ({}) } }]] as const;
   const context = vm.createContext({ System: { entries: () => entries, import: async (url: string) => entries.find(([key]) => key === url)![1] },
     cc: { director, Director: { EVENT_AFTER_DRAW: "draw" }, Layers: { Enum: {} },
       gfx: { Format: { RGBA32F: 44, RGBA8: 35, 44: "RGBA32F", 35: "RGBA8" }, FormatFeatureBit: { SAMPLED_TEXTURE: 2 } } },
@@ -802,7 +806,7 @@ function ownedBootEvidence() {
   const session = { skinning: null, ready: false, businessRefs: 0, nodeCount: 0 };
   const loaded = new Map<string, unknown>(), fixtureUuids = ["a", "b", "c", "d"];
   const context: any = vm.createContext({ performance: { timeOrigin: 1000, now: () => now - 1000 }, Date: { now: () => now }, location: { href: "http://127.0.0.1:7457/?scene=main" },
-    System: { entries: () => [["chunk", { spikeSession: session }]] } });
+    System: { entries: () => [["chunk", { fixtureSession: session }]] } });
   vm.runInContext(createStage3dOwnedBootSource(request), context);
   context.cc = { director: { getScene: () => ({ uuid: "main" }), root: { device: { constructor: { name: "WebGLDevice" },
     gl: { VERSION: 1, getParameter: () => "WebGL 1.0" } }, pipeline: { constructor: { name: "WebPipeline" } } } }, assetManager: { assets: loaded } };
@@ -851,7 +855,7 @@ function framingEvidence() {
   const pass = { batchingScheme: 1, phaseID: 0 }, ia = { indexBuffer: { objectID: 11 }, vertexBuffers: [{ objectID: 12 }], instanceCount: 500 };
   const unusedPasses = Array.from({ length: 5 }, (_, index) => ({ batchingScheme: 1, phaseID: index + 1 }));
   const camera = { width: 750, height: 1624, viewport: { x: 0, y: 0, width: 1, height: 1 } };
-  const component = { camera, node: { name: "Stage3dSpike.Camera", activeInHierarchy: true,
+  const component = { camera, node: { name: "Stage3DCamera", activeInHierarchy: true,
     worldPosition: { x: 0, y: 110, z: 145 }, worldRotation: { x: 0, y: 0, z: 0, w: 1 } },
     enabled: true, fov: 45, near: 0.1, far: 1000, visibility: 1,
     worldToScreen: (world: Vector) => {

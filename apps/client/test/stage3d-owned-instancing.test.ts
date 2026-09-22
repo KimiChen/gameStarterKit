@@ -41,6 +41,10 @@ function queue(opaque: FakeItem[] = [], transparent: FakeItem[] = []) {
     };
 }
 let engineRoot: unknown = null;
+const afterDraw: Array<() => void> = [];
+function draw(): void { for (const callback of afterDraw.splice(0)) callback(); }
+let Retirement: typeof import("../src/view/scene3d/ownedRendering").OwnedRenderingRetirement;
+let captureBillboard: typeof import("../src/view/scene3d/ownedRendering").captureOwnedBillboard;
 function installQueues(active: ReturnType<typeof queue>[], cached = active) {
     const culling = {
         renderQueues: active, numRenderQueues: active.length, cullingPools: { renderQueueRecycle: { data: cached } },
@@ -53,12 +57,34 @@ const originalLoad = moduleApi._load;
 let capture!: (node: FakeNode) => { (): { releasedItems: number; releasedBytes: number; pendingItems: number } };
 try {
     moduleApi._load = (request, parent, isMain) => request === "cc"
-        ? { MeshRenderer: FakeMeshRenderer, Node: FakeNode, director: { get root() { return engineRoot; } } }
+        ? { MeshRenderer: FakeMeshRenderer, Node: FakeNode, Director: { EVENT_AFTER_DRAW: "after-draw" }, director: { get root() { return engineRoot; }, once: (_event: string, callback: () => void) => afterDraw.push(callback) } }
         : originalLoad(request, parent, isMain);
-    capture = createRequire(import.meta.url)("../src/view/scene3d/spikeOwnedInstancing").captureSpikeOwnedInstancing;
+    const loaded = createRequire(import.meta.url)("../src/view/scene3d/ownedRendering");
+  capture = loaded.captureOwnedInstancing;
+  Retirement = loaded.OwnedRenderingRetirement;
+  captureBillboard = loaded.captureOwnedBillboard;
 } finally { moduleApi._load = originalLoad; }
 
-test("SC0 releases only its exact idle queue items, including cached transparent queues", () => {
+test("Stage3D retires a Billboard's captured allocations once without releasing its borrowed texture", () => {
+    const destroyed: unknown[] = [];
+    const model = {};
+    const component = {
+        _model: model,
+        _mesh: { destroy: () => destroyed.push("mesh") },
+        _material: { destroy: () => destroyed.push("material") },
+        texture: { destroy: () => assert.fail("Billboard does not own its texture") },
+    };
+    engineRoot = { destroyModel: (value: unknown) => destroyed.push(value) };
+    const retire = captureBillboard(component as never);
+    assert.deepEqual(destroyed, []);
+    // The deferred cleanup must use the captured resources, not a later component state.
+    component._model = {};
+    component._mesh = { destroy: () => assert.fail("replacement mesh must survive") };
+    retire(); retire();
+    assert.deepEqual(destroyed, [model, "mesh", "material"]);
+});
+
+test("Stage3D releases only its exact idle queue items, including cached transparent queues", () => {
     const owned = {}, foreign = {};
     const ours = item(owned), theirs = item(foreign), alternate = item(owned, 0, 2560);
     const active = queue([ours, theirs]);
@@ -78,7 +104,7 @@ test("SC0 releases only its exact idle queue items, including cached transparent
     assert.deepEqual(cleanup(), { releasedItems: 0, releasedBytes: 0, pendingItems: 0 });
 });
 
-test("SC0 rechecks ownership at cleanup and leaves a foreign owner's reused item intact", () => {
+test("Stage3D rechecks ownership at cleanup and leaves a foreign owner's reused item intact", () => {
     const owned = {}, foreign = {};
     const reused = item(owned);
     const active = queue([reused]);
@@ -91,7 +117,7 @@ test("SC0 rechecks ownership at cleanup and leaves a foreign owner's reused item
     assert.equal(active.opaqueInstancingQueue.instanceBuffers[0]!.instances[0], reused);
 });
 
-test("SC0 refuses active items and permits retry after the engine clears their count", () => {
+test("Stage3D refuses active items and permits retry after the engine clears their count", () => {
     const owned = {};
     const busy = item(owned, 500);
     installQueues([queue([busy])]);
@@ -102,7 +128,7 @@ test("SC0 refuses active items and permits retry after the engine clears their c
     assert.deepEqual(cleanup(), { releasedItems: 1, releasedBytes: 32768, pendingItems: 0 });
 });
 
-test("SC0 releases a removed camera's cached queue despite its stale nonzero counts", () => {
+test("Stage3D releases a removed camera's cached queue despite its stale nonzero counts", () => {
     const owned = {}, foreign = {};
     const visible = item(foreign, 1), ours = item(owned, 500), cachedForeign = item(foreign, 3);
     const currentCamera = queue([visible]);
@@ -127,7 +153,7 @@ test("SC0 releases a removed camera's cached queue despite its stale nonzero cou
     assert.deepEqual(cleanup(), { releasedItems: 0, releasedBytes: 0, pendingItems: 0 });
 });
 
-test("SC0 uses numRenderQueues rather than retained renderQueues array capacity", () => {
+test("Stage3D uses numRenderQueues rather than retained renderQueues array capacity", () => {
     const owned = {};
     const retired = item(owned, 100);
     const culling = installQueues([queue(), queue([retired])]);
@@ -137,7 +163,7 @@ test("SC0 uses numRenderQueues rather than retained renderQueues array capacity"
     assert.equal(retired.vb.destroys, 1);
 });
 
-test("SC0 snapshots old model ownership before replacement and preserves the new model", () => {
+test("Stage3D snapshots old model ownership before replacement and preserves the new model", () => {
     const previous = {}, current = {};
     const oldItem = item(previous), newItem = item(current, 1);
     const active = queue([oldItem, newItem]);
@@ -150,7 +176,7 @@ test("SC0 snapshots old model ownership before replacement and preserves the new
     assert.deepEqual(active.opaqueInstancingQueue.instanceBuffers[0]!.instances, [newItem]);
 });
 
-test("SC0 repeated 20 owners release their two buffers without clearing shared queues", () => {
+test("Stage3D repeated 20 owners release their two buffers without clearing shared queues", () => {
     const foreign = item({}, 1);
     const active = queue([foreign]);
     installQueues([active]);
@@ -164,11 +190,51 @@ test("SC0 repeated 20 owners release their two buffers without clearing shared q
     assert.equal(foreign.vb.destroys, 0);
 });
 
-test("SC0 unloaded owners need no pipeline; loaded owners reject an unsupported pipeline", () => {
+test("Stage3D unloaded owners need no pipeline; loaded owners reject an unsupported pipeline", () => {
     engineRoot = null;
     assert.deepEqual(capture(new FakeNode([]))(), { releasedItems: 0, releasedBytes: 0, pendingItems: 0 });
     assert.throws(() => capture(new FakeNode([new FakeMeshRenderer({})])), /Creator 3.8.8 WebPipeline/);
     const culling = installQueues([queue()]);
     culling.numRenderQueues = 2;
     assert.throws(() => capture(new FakeNode([new FakeMeshRenderer({})])), /Creator 3.8.8 WebPipeline/);
+});
+
+// Mutation: remove pendingItems guard in OwnedRenderingRetirement -> the first
+// draw releases assets while the earlier replaced model's queue is still live.
+test("Stage3D retirement waits for every replaced model before releasing shared assets", () => {
+    const oldDescriptor = {}, currentDescriptor = {}, foreignDescriptor = {};
+    const old = item(oldDescriptor, 1), current = item(currentDescriptor), foreign = item(foreignDescriptor, 1);
+    const active = queue([old, current, foreign]);
+    installQueues([active]);
+    const retirement = new Retirement();
+    let released = 0;
+    retirement.capture(new FakeNode([new FakeMeshRenderer(oldDescriptor)]) as any);
+    retirement.capture(new FakeNode([new FakeMeshRenderer(currentDescriptor)]) as any);
+    retirement.finish(() => { released++; });
+    retirement.finish(() => { throw new Error("duplicate finish"); });
+    assert.equal(afterDraw.length, 1);
+    draw();
+    assert.equal(current.vb.destroys, 1);
+    assert.equal(old.vb.destroys, 0);
+    assert.equal(released, 0, "old replaced model keeps its materials and Prefabs alive");
+    old.count = 0;
+    draw();
+    assert.equal(released, 1);
+    assert.equal(old.vb.destroys, 1);
+    assert.equal(foreign.vb.destroys, 0);
+    assert.equal(afterDraw.length, 0);
+    assert.throws(() => retirement.capture(new FakeNode([]) as any), /already finished/);
+});
+
+test("Stage3D empty retirement still waits for deferred engine destruction", () => {
+    engineRoot = null;
+    const retirement = new Retirement();
+    let released = 0;
+    retirement.finish(() => { released++; });
+    assert.equal(released, 0);
+    draw();
+    assert.equal(released, 1);
+    retirement.finish(() => { released++; });
+    draw();
+    assert.equal(released, 1);
 });
