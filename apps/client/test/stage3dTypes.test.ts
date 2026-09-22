@@ -29,7 +29,7 @@ export function openStage(parent: Node, prefab: Prefab, globals: SceneGlobals): 
     camera.projection = Camera.ProjectionType.PERSPECTIVE;
     camera.rect = new Rect(0, 0, 1, 1);
     camera.priority = 0;
-    camera.visibility = Layers.Enum.DEFAULT | Layers.nameToLayer("Overlay");
+    camera.visibility = Layers.Enum.DEFAULT | (1 << Layers.nameToLayer("Overlay"));
     camera.fov = 45;
     camera.clearFlags = Camera.ClearFlag.SKYBOX;
     camera.clearFlags = Camera.ClearFlag.DONT_CLEAR;

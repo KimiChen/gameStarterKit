@@ -271,12 +271,14 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
-- [x] SC1-B1 [ ] SC1-B2 [ ] SC1-B3 [ ] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
+- [x] SC1-B1 [x] SC1-B2 [ ] SC1-B3 [ ] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-22 SC1-B2 完成：新增 Stage3D 协调器、场景作用域适配接口、统一全局 token 覆盖表与层掩码常量；同步 AssetRetainer 成对调用真实 addRef/decRef，viewport 纯数学保持 Cocos 左下原点与实际屏幕像素。61 项定向测试覆盖单舞台、三 token 全排列释放、字段撤回、owner/场景失效、取消回调重入、失败回滚与双故障恢复；无头预热后连续开关 20 次，节点与监听回基线。写回旧快照、删除 decRef、分别删除两套桩的 Camera 声明共 4 次变异均检出并恢复，补齐 B1 对正式 Stage3D 代码的 Camera 变异要求。两套客户端类型检查与本批 `verify:all` 全过（客户端 861 / 服务端 1341 项）；5 个脚本由隔离 Creator 3.8.8 导入并生成 meta，最终源文件针对真实引擎声明编译为 0 诊断。上游两份代理指南不一致已在独立提交修复；本批证据及哈希索引留本地 `.cache/stage3d/sc1-b2/`。生产 Cocos 适配器、双端口接线和保护面留 B3，真实舞台生命周期与 WebGL1 验收留 B4；SC1 未退出。
 
 - 2026-09-22 SC1-B1：对照本机 Creator 3.8.8 声明补齐两套 3D 类型桩，校正 Asset 继承、相机射线参数、只读属性与构造签名。双配置类型消费探针覆盖合法用法和误用拒绝，同一消费片段针对真实引擎声明编译为 0 诊断；两套客户端类型检查、10 项定向测试（2 项类型契约 + 8 项既有蒙皮回归）及本批 `verify:all` 通过（客户端 802 / 服务端 1339 项全绿）。分别删除两份桩的 Camera 声明，现有 Stage3dFixtureView 均编译失败；删除两份桩的 screenPointToRay，双配置类型契约均失败，三次变异全部检出并恢复。SC1-B2 尚未实施，其正式舞台代码的 Camera 变异随 B2 重验。原始日志与哈希索引留本地 `.cache/stage3d/sc1-b1/`；B9/B7 仅做实现前只读审计，SC1 未退出。
 
