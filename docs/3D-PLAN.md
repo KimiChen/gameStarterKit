@@ -1,6 +1,6 @@
 # 3D 实施施工单：SC0–SC5 逐批次 + 消费方接入（lvr / mmo / slg）
 
-> - 日期：2026-09-19；同日 **v1.2** 按三文档交叉审阅修订，**v1.3** 采纳第四轮审阅 3D-33–3D-40（§1.4）；**v1.4（2026-09-22）** 采纳第五轮审阅（§1.5）；**v1.5（2026-09-22）** 按当前范围精简平台验收条目，现行第五轮审阅为 3D-41–3D-45、3D-47。依据 [3d.md](3d.md) **v1.5** 与 [3D-ASSETS.md](3D-ASSETS.md) **v1.5**；[lvr-3d.md](../lvr-3d.md) 为消费方需求 v1.5。初稿基线 `f6fad19f`；MF9 已退出（MMO-PLAN §9，MF9-B2 = `745f5ca6`），保护面修改的前置已满足。v1.5 为文档基线；SC0 当前实施进度只在 §8 登记，素材预算数字仍为候选。
+> - 日期：2026-09-19；同日 **v1.2** 按三文档交叉审阅修订，**v1.3** 采纳第四轮审阅 3D-33–3D-40（§1.4）；**v1.4（2026-09-22）** 采纳第五轮审阅（§1.5）；**v1.5（2026-09-22）** 按当前范围精简平台验收条目，现行第五轮审阅为 3D-41–3D-45、3D-47。依据 [3d.md](3d.md) **v1.5** 与 [3D-ASSETS.md](3D-ASSETS.md) **v1.5**；[lvr-3d.md](../lvr-3d.md) 为消费方需求 v1.5。初稿基线 `f6fad19f`；MF9 已退出（MMO-PLAN §9，MF9-B2 = `745f5ca6`），保护面修改的前置已满足。v1.5 为设计基线；SC0 已于2026-09-22完成预算冻结与原型移交，批次进度只在 §8 登记；政策上限与实测覆盖分列在3D-ASSETS §15。
 > - 定位：**施工单 + 审阅记录**——§1 保留历次审阅（3D-13–3D-45、3D-47、L01–L09），§3–§4 把 3d.md §6 的每个阶段拆成可独立提交、可独立验收的批次（`SCx-Bn`），写清文件落点、机检退出条件与命令。⛔ 本文不是设计真源：机制以 3d.md 为准、素材以 3D-ASSETS.md 为准；施工细化须同步回写对应真源，⛔ 不在本文另立口径。
 > - 状态回写：阶段级完成只回写 3d.md §10；**批次级勾选只在本文 §8**；lvr 接入回写 lvr-3d.md §8。⛔ 不进 plan-v5。
 > - 形态与纪律照 [MMO-PLAN.md](MMO-PLAN.md)：一批一提交、变异验证进提交信息、夹具只用灰盒、阶段退出打轻量 tag。
@@ -130,7 +130,7 @@ lvr-3d.md 抬头已指向 3d.md，但正文当时仍是「全部落在 kit」的
 | SC0-B2 灰盒资产生成器 | `tools/art3d/greybox.py`（pygltflib + numpy，venv 照 `tools/slg-maps/README.md`）：`greybox-cube.glb`（静态）、`greybox-plane.glb`（地面 64×64、带 UV2）、`greybox-biped.glb`（两骨 skin + 至少两段可区分的 1 s 动画，另有能触发不同关节纹理图集的受控样本，供 B3 / SC4-B1 验同图集与跨图集）；各 GLB 的 scene 名固定为主文件名；输出到 `apps/Cocos/assets/resources/stage3d/`，不嵌入图片（cube 带一张 64² 外部 PNG 以**验证 Creator 3.8.8 对外部 `images[].uri` 的 `.glb` 导入**：texture 子 meta 生成、路径解析；失败退路 `.gltf + .bin` 或允许内嵌并改 3D-ASSETS §3，3D-38）；Creator 导入生成 `.meta`（`importer: "gltf"`）并记录 `gltf-scene` 子资源路径，例如 `stage3d/greybox-biped/greybox-biped`，写入夹具资源清单；若实际导入命名不同，以导入结果修正清单，⛔ 用 GLB 父路径代替 Prefab 子路径 | GLB 结构与 `.meta` 存在、子路径可加载为 Prefab；`verify:sync` 绿（uuid 唯一）；`python3 tools/art3d/greybox.py --check` 重生成字节一致；框架 `greybox-*` 命名例外写入框架资产配置 | `python3 tools/art3d/greybox.py --out apps/Cocos/assets/resources/stage3d` |
 | SC0-B3 CDP 探针实测 | `tools/creator-preview/probe-stage3d.mjs` 驱动隔离 spike 分支中的真实 `CocosView` 地图页、非模态 FGUI HUD 与模态弹窗（sidecar + builtin route + `codegen:plugins`；允许最小输入适配与类型桩，正式化见 SC1-B1/B9，⛔ 仅裸建 Node 判输入 PASS）；**原型范围**：允许固定夹具所需的最小完整 pointer 归属状态机、raw-input 分流与取消桥，放在玩法 router 之前，⛔ 提前泛化全部页面 / 元数据；**时间盒候选 3 人日**，超出即停并记 3d.md §8；第二载体用既有 snake 局迁到该原型，验证 HUD 点击、世界拖拽、跨边界、wheel、双指分别操作 HUD / 世界、按住 boost 打开模态后的取消与恢复。相机 / 灯运行时创建；按 B2 清单加载 biped ×100 + cube ×500 + ParticleSystem ×1：预烘焙 instancing 按实际 jointTexture 分组，验证 Joint Texture Layout 能否统一所需 clip，否则保持分批；至少两 clip 同播及切 clip 跨图集无错动画；验证浮点 / RGBA8 关节纹理路径，不能因缺浮点纹理直接判烘焙不可用，实时蒙皮关闭 instancing。真实帧回调以 `performance.now()` 相邻差值记录 240 帧原始间隔 ms（60 帧 warmup），自有递增序号；`root.frameTime` 仅辅助 dt，⛔ 以会重置的 `frameCount` 作采样标识；同时在帧末读 device 计数器，加载 / 首次激活峰值另采、不被 warmup 抹掉（3d.md §7）。预热至引擎缓存稳定后开关 20 次，业务引用归零、GFX 无持续增长；WebGL2 / `--disable-webgl2` 各跑一遍 | 接缝逐项 PASS / FAIL；JSON 落 `docs/perf/stage3d/<date>-spike{,-webgl1}.json`，含原始帧间隔 ms / p95、jointTexture 分组与 clip 证据、退化行为、开关节点 / 引用 / GFX 内存基线；内置管线两上下文可渲；HUD pointer 不进入世界 router，模态关闭不恢复旧 boost / 拖拽；最小桩与原型移交 SC1 | `node tools/creator-preview/probe-stage3d.mjs`（前置同 creator-preview README） |
 | SC0-B5 烘焙与预制加载（← B1/B2，先于 B4） | 在临时验收场景摆灰盒地面 / 立方体与静态光，LightFX 烘一次 lightmap 并 apply 到 `resources/stage3d/P_Stage3d_Baked.prefab`；烘焙产物及 meta 随预制资产入库；记录操作步骤与 UUID 依赖，关闭验收场景、清掉编辑器场景状态后，在主预览页仅按独立 Prefab 路径加载（⛔ 借用验收场景的 lightmap 数组 / 节点） | 原场景与独立动态加载对照截图一致、无丢贴图 / UUID，WebGL2 / WebGL1 可渲；开关后业务引用归零、GFX 按 3d.md §7 预热基线无持续增长；缺任一烘焙依赖必须可定位失败；不能 apply / 重载则 SC0 不退出，先修订规范 | Creator 人工烘焙 + `probe-stage3d.mjs` 烘焙预制场景 |
-| SC0-B4 冻结与回填（← B1/B2/B3/B5） | 3d.md §9.2 与 3D-ASSETS.md §15.1 素材数字由候选经实测后冻结；回填 WebGL1 退化、内置管线在 WebGL2 / WebGL1 预览中的可用性、raw-input 接缝、蒙皮分组与 B5 烘焙重载结果；不可用则修订设计并记录新拍板项，不带失败进入 SC1；3d.md §10 登记 SC0 | 素材待冻结表已由实测证据填实；全部接缝及烘焙重载 PASS；记录原型移交 / 移除清单 | 文档提交 |
+| SC0-B4 冻结与回填（← B1/B2/B3/B5） | 3d.md §9.2 与 3D-ASSETS.md §15.1 素材数字由候选经实测后冻结；回填 WebGL1 退化、内置管线在 WebGL2 / WebGL1 预览中的可用性、raw-input 接缝、蒙皮分组与 B5 烘焙重载结果；不可用则修订设计并记录新拍板项，不带失败进入 SC1；3d.md §10 登记 SC0 | 预算表已区分冻结政策与实测负载，后续容量验收仍按原阶段执行；全部接缝及烘焙重载 PASS；记录原型移交 / 移除清单 | 文档提交 |
 
 退出：B1/B2/B3/B5 完成后做 B4（B0 已完成）；tag `sc0-exit`。回滚：隔离 spike 中的临时页面 / 输入适配 / 桩按清单移除或移交 SC1；探针、灰盒与证据可保留；不得把原型记作正式能力。
 
@@ -270,13 +270,15 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
-- [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [ ] SC0-B4
+- [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [ ] SC1-B1 [ ] SC1-B2 [ ] SC1-B3 [ ] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-22 SC0-B4：预算冻结与[原型移交清单](SC0-HANDOFF.md)完成，B1/B2/B3/B5证据及哈希复核通过；入库政策、初始调度上限与实际负载分别记录于3D-ASSETS §15，high单位由100+收敛为100。两套客户端类型检查、客户端800项测试及本批`verify:all`通过，验证基线修复已独立提交（UI类型、Confirm/PSD契约断言与MMO测试时钟）。数字、边界与验证日志哈希见[SC0汇总](perf/stage3d/2026-09-22-sc0-review.json)；SC0退出并打轻量tag `sc0-exit`（解析tag即本批commit），SC1未开始。以下旧进展按当时批次口径保留。
 
 - 2026-09-22 SC0-B1：内置新管线、两个保留层位与 Spine 4.2 配置已落地；按用户确认将登录页 Spine 3.8.99 装饰动画改为原 idle 首帧静态展示，保留原素材归档，真实 4.2 预览无该资源错误。按 2026-09-22 用户范围调整，移除微信测试项目 / AppID 与可运行构建证据要求；既有配置、预览与该批 `verify:all` 已通过，B1 完成。SC0 尚待 B4 冻结与原型移交，预算仍候选，SC1 尚未开始。
 

@@ -8,11 +8,11 @@
 棋盘纹理、烘焙明暗一致；背景 clearColor 与 profiler 显示不同。缺 PNG 故障注入也已复验：
 加载回调仍成功，运行时检查定位 2×2 替代纹理及其 UUID / native URL；解除拦截后恢复
 1024×1024 依赖与两网格，并回收至业务引用 0。
-**SC0-B5 的完整批次退出仍等待最终全量验证；`batchComplete:false`、`sc0Exit:false`。**
+**SC0-B5 的真实证据与完整批次验证已通过；SC0-B4 汇总及当前阶段状态见[SC0 移交清单](../../../docs/SC0-HANDOFF.md)。**
 数字摘要见 [WebGL2](../../../docs/perf/stage3d/2026-09-22-baked.json)、
 [WebGL1](../../../docs/perf/stage3d/2026-09-22-baked-webgl1.json)；独立的
 [验收记录](../../../docs/perf/stage3d/2026-09-22-baked-review.json) 保存原始报告、源资产、
-导出与截图 SHA256、画面复核来源及全量验证待办。原始探针报告的 pending 原样保留，
+导出与截图 SHA256、画面复核来源及已通过的批次全量验证。原始探针报告的 pending 原样保留，
 两上下文与画面对照的合并判断只记在验收记录中。
 本目录不是项目扩展发现路径；由主任务安装到隔离工程的 `extensions/stage3d-probe/`。
 没有 npm 依赖，不改变项目配置。烘焙入口按安装版 Creator 3.8.8 的真实 Lightmap 面板与

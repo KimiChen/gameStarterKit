@@ -125,6 +125,7 @@ mkdir -p .cache/stage3d/creator-home
 Creator 命令行构建成功码为 **36**，32 是参数失败、34 是构建失败；不能仅用常见的退出码 0 规则判断。
 参数和退出码见 [Creator 3.8 官方命令行文档](https://docs.cocos.com/creator/3.8/manual/zh/editor/publish/publish-in-command-line.html)。
 2026-09-22 按用户要求，微信测试项目 / AppID 与可运行构建证据不再是 3D 实施前置或验收 / 退出条件。
-SC0-B1 的引擎配置与真实预览已完成；SC0 的剩余工作是 B4 预算冻结与原型移交，见
+SC0-B1–B5 已按施工顺序完成，B4 预算冻结与原型移交已交付，阶段标签为 `sc0-exit`。见
 [施工单 §8](../../docs/3D-PLAN.md#8-批次状态只在本文回写阶段级完成回写-3dmd-10)。
+预算和桌面实测边界见[资产规范 §15](../../docs/3D-ASSETS.md#15-sc0-冻结预算2026-09-22)，原型后续替换责任见[SC0 移交清单](../../docs/SC0-HANDOFF.md)。
 WebGL1 逐阶段证据与 SC4 真实微信 low 档 / 远程加载 / 缓存验收按各自阶段执行。

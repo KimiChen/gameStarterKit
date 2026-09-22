@@ -1,0 +1,991 @@
+{
+  "schemaVersion": 1,
+  "kind": "stage3d-sc0-exit-review",
+  "reviewDate": "2026-09-22",
+  "generatedAt": "2026-09-22T11:41:06.886661+00:00",
+  "batch": "SC0-B4",
+  "status": "complete",
+  "batchComplete": true,
+  "sc0Exit": true,
+  "exitTag": "sc0-exit",
+  "scope": "SC0 feasibility prototype, budget policy and handoff only. No SC1 implementation, arbitrary-content capacity certification, mobile qualification or final framework freeze.",
+  "acceptance": {
+    "engineConfigurationAndStaticSpineMigration": "SC0-B1 complete under the user-revised scope; built-in WebPipeline, two reserved layer masks and Spine 4.2, with the former 3.8 login decoration archived and replaced by its static initial pose.",
+    "greyboxImport": {
+      "passed": true,
+      "evidence": {
+        "file": "tools/art3d/creator-import-report.json",
+        "sha256": "5a871ba24774f5edb0ed0c1c61beb76b6b7f57421ad70e6dd824c925795dfc08",
+        "bytes": 43242
+      }
+    },
+    "inputSkinningAndLifecycle": {
+      "passed": true,
+      "evidence": {
+        "file": "docs/perf/stage3d/2026-09-22-spike-review.json",
+        "sha256": "59ebe56022a14c3c6dca3967c54ebcf4eeba149362f0f1168cf4b5b3ed6a78ee",
+        "bytes": 111279
+      },
+      "inputScope": "Real Cocos page and Snake, HUD/world multi-pointer ownership, both crossing directions, modal cancellation and fresh-gesture restoration; wheel is fixture-only."
+    },
+    "bakedPrefab": {
+      "passed": true,
+      "evidence": {
+        "file": "docs/perf/stage3d/2026-09-22-baked-review.json",
+        "sha256": "da812b037e10feda37630de09690fb83cf7100ebf0ef2e869b9cf3c6c7f552ba",
+        "bytes": 25664
+      },
+      "scope": "Fresh main-scene independent Prefab load, two WebGL contexts, authored/runtime visual comparison, real missing PNG 404 detected via placeholder dimensions and successful retry, 20 lifecycle cycles."
+    },
+    "budgetPolicy": {
+      "frozen": true,
+      "source": "docs/3D-ASSETS.md#15",
+      "meaning": "Authoring/admission policies and initial scheduler caps, not a claim that maximum-complexity assets have been stress-tested."
+    },
+    "performanceDecision": {
+      "description": "Accept the observed desktop approximately-60-fps feasibility result with unrounded arithmetic and all tails disclosed. No strict mean>=60 or p95<=16.6667 requirement is asserted as passed. No rounding of raw intervals or selection of a better rerun.",
+      "webgl2ObservedMeanFps": 59.98650303717418,
+      "policySource": "docs/3d.md §9.2; docs/3D-ASSETS.md §15.2"
+    },
+    "prototypeHandoff": {
+      "delivered": true,
+      "evidence": {
+        "file": "docs/SC0-HANDOFF.md",
+        "sha256": "f780b9b3d84ef407b35f38419825460283c309b9dbf47f705d9997ef61fd9b65",
+        "bytes": 14862
+      }
+    }
+  },
+  "evidenceIntegrity": {
+    "passed": true,
+    "referencedFiles": 140,
+    "missing": [],
+    "mismatched": [],
+    "reaggregation": {
+      "file": ".cache/stage3d/b4-evidence-audit.json",
+      "sha256": "35948fdb3842fe0d5391c489588a01243e368491ed20b39161f78a11303f360c",
+      "bytes": 145203
+    },
+    "auditScript": {
+      "file": ".cache/stage3d/audit-b4-evidence.py",
+      "sha256": "5c388ebbabc5b3f9c9f4d93fa28a5e189c99eed09dacff7d10607309fa524a71",
+      "bytes": 18671
+    },
+    "storage": "The audit script, full reaggregation, captures and logs stay local; this document retains numerical projections and SHA256 links."
+  },
+  "mutationVerification": {
+    "passed": true,
+    "command": "python3 .cache/stage3d/b4-evidence-mutations.py",
+    "healthyControlPassed": true,
+    "expectedFailures": 6,
+    "detectedFailures": 6,
+    "cases": [
+      {
+        "id": "healthy-control",
+        "observedExitCode": 0,
+        "expectedExitCode": 0,
+        "expectationMet": true
+      },
+      {
+        "id": "missing-file",
+        "observedExitCode": 1,
+        "expectedExitCode": 1,
+        "expectationMet": true
+      },
+      {
+        "id": "wrong-sha256",
+        "observedExitCode": 1,
+        "expectedExitCode": 1,
+        "expectationMet": true
+      },
+      {
+        "id": "wrong-byte-count",
+        "observedExitCode": 1,
+        "expectedExitCode": 1,
+        "expectationMet": true
+      },
+      {
+        "id": "clock-difference",
+        "observedExitCode": 1,
+        "expectedExitCode": 1,
+        "expectationMet": true
+      },
+      {
+        "id": "raw-summary-array",
+        "observedExitCode": 1,
+        "expectedExitCode": 1,
+        "expectationMet": true
+      },
+      {
+        "id": "closed-business-reference",
+        "observedExitCode": 1,
+        "expectedExitCode": 1,
+        "expectationMet": true
+      }
+    ],
+    "report": {
+      "file": ".cache/stage3d/b4-evidence-mutations.json",
+      "sha256": "84ba3c423e210e1b5d378ffc7bb0aa83200756d98c3dbf846588576288f35b9e",
+      "bytes": 5930
+    },
+    "log": {
+      "file": ".cache/stage3d/b4-evidence-mutations.log",
+      "sha256": "b02446e55854109564b6e7af51bd28233868e8572b4e9d588b0e2fca244850be",
+      "bytes": 1349
+    },
+    "script": {
+      "file": ".cache/stage3d/b4-evidence-mutations.py",
+      "sha256": "a1a05b6c5da69719df1f5671e5eafd246bcc77a414f582bcd029de546559ee34",
+      "bytes": 8428
+    },
+    "retainedEvidenceUnchanged": true
+  },
+  "sourceAssets": {
+    "root": "apps/Cocos/assets/resources/stage3d",
+    "excluding": [
+      ".meta files"
+    ],
+    "fileCount": 7,
+    "totalBytes": 85679,
+    "files": [
+      {
+        "file": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Baked.prefab",
+        "bytes": 6216,
+        "sha256": "fdfc33f7838f10720fa74a9ac86fa1852f6b852e59c1f0d16b7d980602063bf8"
+      },
+      {
+        "file": "apps/Cocos/assets/resources/stage3d/T_Greybox_Checker_BC.png",
+        "bytes": 16516,
+        "sha256": "b3651b49a622ce516b0bd5c58686ad5500435b1c3f9f4a811dbed517a26d1498",
+        "width": 64,
+        "height": 64
+      },
+      {
+        "file": "apps/Cocos/assets/resources/stage3d/greybox-biped-atlas-b.glb",
+        "bytes": 19504,
+        "sha256": "4781ace968432cc6b3014352a81ddee32878174bf9472f991798940f0cf4fadd",
+        "glb": {
+          "triangles": 96,
+          "vertices": 192,
+          "skins": 1,
+          "jointCounts": [
+            2
+          ],
+          "clipNames": [
+            "ANIM_Greybox_Sway_AtlasB",
+            "ANIM_Greybox_Bow_AtlasB"
+          ],
+          "effectiveWeightsMin": 1,
+          "effectiveWeightsMax": 1,
+          "primitives": [
+            {
+              "vertices": 192,
+              "triangles": 96,
+              "weightStorageComponents": 4,
+              "effectiveWeightsMin": 1,
+              "effectiveWeightsMax": 1
+            }
+          ]
+        }
+      },
+      {
+        "file": "apps/Cocos/assets/resources/stage3d/greybox-biped.glb",
+        "bytes": 19484,
+        "sha256": "e209df67d53c5d6a1208e15b7a3e69c5253f6faba6717feafae8c06958f98dd3",
+        "glb": {
+          "triangles": 96,
+          "vertices": 192,
+          "skins": 1,
+          "jointCounts": [
+            2
+          ],
+          "clipNames": [
+            "ANIM_Greybox_Sway_Main",
+            "ANIM_Greybox_Bow_Main"
+          ],
+          "effectiveWeightsMin": 1,
+          "effectiveWeightsMax": 1,
+          "primitives": [
+            {
+              "vertices": 192,
+              "triangles": 96,
+              "weightStorageComponents": 4,
+              "effectiveWeightsMin": 1,
+              "effectiveWeightsMax": 1
+            }
+          ]
+        }
+      },
+      {
+        "file": "apps/Cocos/assets/resources/stage3d/greybox-cube.glb",
+        "bytes": 3312,
+        "sha256": "fb18dd6d72b687954a20a185998db277effad50d43f98ed0b7e24d1cb5238f73",
+        "glb": {
+          "triangles": 12,
+          "vertices": 24,
+          "skins": 0,
+          "jointCounts": [],
+          "clipNames": [],
+          "effectiveWeightsMin": null,
+          "effectiveWeightsMax": null,
+          "primitives": [
+            {
+              "vertices": 24,
+              "triangles": 12,
+              "weightStorageComponents": null,
+              "effectiveWeightsMin": null,
+              "effectiveWeightsMax": null
+            }
+          ]
+        }
+      },
+      {
+        "file": "apps/Cocos/assets/resources/stage3d/greybox-plane.glb",
+        "bytes": 1880,
+        "sha256": "a3b9222791457b56bb89d6f418e8aa3df9227c089f45ce99df973e8734670de2",
+        "glb": {
+          "triangles": 2,
+          "vertices": 4,
+          "skins": 0,
+          "jointCounts": [],
+          "clipNames": [],
+          "effectiveWeightsMin": null,
+          "effectiveWeightsMax": null,
+          "primitives": [
+            {
+              "vertices": 4,
+              "triangles": 2,
+              "weightStorageComponents": null,
+              "effectiveWeightsMin": null,
+              "effectiveWeightsMax": null
+            }
+          ]
+        }
+      },
+      {
+        "file": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png",
+        "bytes": 18767,
+        "sha256": "a78228133b71946b2b44ef1011a49c7afb95f710fccc6eee629547be03fbd309",
+        "width": 1024,
+        "height": 1024
+      }
+    ],
+    "nativeSkinnedDataBytes": [
+      {
+        "file": "greybox-biped.glb",
+        "bytes": 15936
+      },
+      {
+        "file": "greybox-biped-atlas-b.glb",
+        "bytes": 15936
+      }
+    ],
+    "cpuDataScope": "Imported native buffer byte lengths only, not total CPU memory.",
+    "budgetScope": "Observed procedural fixture sizes, geometry and nonzero weights only. Candidate authoring limits and mobile capacity are not measured by this audit."
+  },
+  "unchangedMainScene": {
+    "file": "apps/Cocos/assets/scene.scene",
+    "sha256": "795edeef631993b13b0b9063468d52ae2149380800e3eba6092f654cad4d77a9",
+    "bytes": 8728,
+    "uuid": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+    "actualSha256": "795edeef631993b13b0b9063468d52ae2149380800e3eba6092f654cad4d77a9",
+    "unchangedSinceB5": true
+  },
+  "configuration": {
+    "files": [
+      {
+        "file": "apps/Cocos/settings/v2/packages/engine.json",
+        "sha256": "e6b5edee8927d258680d6db258857d2ef085bdafcf5e750ceb4dacfb8c067653",
+        "bytes": 5580
+      },
+      {
+        "file": "apps/Cocos/settings/v2/packages/project.json",
+        "sha256": "6d8cca434b57d544bbe872c90df20e1b654c4cb82e067e5b88d7c5e6a6dff341",
+        "bytes": 314
+      },
+      {
+        "file": "apps/Cocos/settings/v2/packages/wechatgame.json",
+        "sha256": "d914f9f19ffe02724337936d8c7907798c8666566902b78243eb1aa8da0baedd",
+        "bytes": 29
+      }
+    ],
+    "pipeline": "Builtin / WebPipeline",
+    "spine": "4.2",
+    "reservedLayers": [
+      {
+        "name": "STAGE3D_HIDDEN",
+        "bit": 0,
+        "mask": 1
+      },
+      {
+        "name": "STAGE3D_OVERLAY",
+        "bit": 1,
+        "mask": 2
+      }
+    ],
+    "stageCamera": {
+      "priority": 0,
+      "projection": 1,
+      "clearFlags": 7,
+      "visibility": 1073741826
+    },
+    "uiCamera": {
+      "priority": 1073741824,
+      "projection": 0,
+      "clearFlags": 6,
+      "visibility": 41943040
+    },
+    "settingsNote": "project.json stores masks; generated preview customLayers store bit indexes. custom-pipeline-builtin-scripts remains enabled in cache; Creator omits this dependency from includeModules."
+  },
+  "frozenPolicies": {
+    "measurementUnit": "bytes; MB is decimal 1000000 bytes",
+    "packageSourceBytes": 64000000,
+    "singleGlbBytes": 8000000,
+    "singlePngBytes": 4000000,
+    "textureDirectoryBytes": 32000000,
+    "meshTriangleCaps": {
+      "nearWorldEntity": 3000,
+      "farWorldEntity": 300,
+      "building": 10000,
+      "hero": 20000,
+      "mediumScene": 500000
+    },
+    "textureSizes": [
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "defaultTextureSize": 512,
+    "lowTextureStrategy": "Offline lower-resolution texture variants selected by runtime assetPlan according to quality x LOD; lower one texture tier, ordinary minimum256. Mesh LOD remains governed by the existing distance rules. Existing exact SC0 exceptions remain identity-bound. Implementation remains SC1/SC3/SC5.",
+    "skinCaps": {
+      "unitBones": 30,
+      "heroBones": 80,
+      "nonzeroWeightsPerVertex": 4
+    },
+    "vfxCaps": {
+      "particlesPerEffect": 200,
+      "materialsPerEffect": 2,
+      "low": 8,
+      "medium": 24,
+      "high": 48
+    },
+    "unitCaps": {
+      "low": 50,
+      "medium": 100,
+      "high": 100
+    },
+    "outOfRangeReleaseDelayMs": 5000,
+    "assetLeaseDeadlineMs": 15000,
+    "warmupFrames": 60,
+    "sampleFrames": 240,
+    "compressedTexturePolicy": "3d-default ASTC 8x8 medium + PNG quality80; 3d-alpha ASTC6x6 or uncompressed; lightmaps/sky/reflection uncompressed. Preset implementation and fallback tests remain SC1-B8/SC4.",
+    "decisions": [
+      "Retain v1.5 authoring size/geometry/skin/Vfx policies; separately disclose their untested capacity limits.",
+      "Constrain unbounded high 100+ to initial cap100; future increases require evidence and a recorded revision.",
+      "Use the existing offline-variant option for low texture resolution.",
+      "Freeze the actual Apple M4 desktop test environment; mobile device candidates remain unqualified until SC4."
+    ]
+  },
+  "contexts": [
+    {
+      "id": "spike-webgl2",
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/report.json",
+        "sha256": "94f0e97ebda526e392be1f0982eeb72c523d611e0275ea921a7a9a2dc173ed6b",
+        "bytes": 31586921
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-spike.json",
+        "sha256": "3f9345089fb79bad0245e92c300610d2126ab8ecc5c4e6ddcefda7c3fdb15219",
+        "bytes": 217215
+      },
+      "environment": {
+        "webgl": 2,
+        "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "device": "WebGL2Device",
+        "pipeline": "WebPipeline",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "steady": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 60,
+        "sampleFrames": 240,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 4000.899999976158,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 18.700000047683716,
+          "maxMs": 20.59999990463257,
+          "meanMs": 16.670416666567327
+        },
+        "observedMeanFps": 59.98650303717418,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": false,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 129,
+        "intervalsOver33_3333Ms": 0,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "startup": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 0,
+        "sampleFrames": 600,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 10336.899999976158,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 19.5,
+          "maxMs": 120.5,
+          "meanMs": 17.22816666662693
+        },
+        "observedMeanFps": 58.044481421062784,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": false,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 309,
+        "intervalsOver33_3333Ms": 10,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 308580,
+          "textureBytes": 41663260,
+          "totalBytes": 41971840
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "resources": {
+        "prewarmCloses": 2,
+        "count": 20,
+        "baseline": {
+          "sceneNodes": 13,
+          "ownedNodes": 0,
+          "businessRefs": 0,
+          "bufferBytes": 69500,
+          "textureBytes": 41587296
+        },
+        "allClosedStatesEqualBaseline": true,
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0
+      }
+    },
+    {
+      "id": "spike-webgl1",
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/report.json",
+        "sha256": "4d6f6106dd1c924a5d9e475ee69c9fbf53291a01a4d2afff03aa063ed9cf027f",
+        "bytes": 31596585
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-spike-webgl1.json",
+        "sha256": "83782493622a3899642f53bc44333c6471bf96c890127b1099d87b0b70ec4e2f",
+        "bytes": 217249
+      },
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "steady": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 60,
+        "sampleFrames": 240,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 4001.2999999523163,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 18.899999976158142,
+          "maxMs": 20.600000023841858,
+          "meanMs": 16.67208333313465
+        },
+        "observedMeanFps": 59.98050633615577,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": false,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 124,
+        "intervalsOver33_3333Ms": 0,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "startup": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 0,
+        "sampleFrames": 600,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 10119.0,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 18.899999976158142,
+          "maxMs": 148.69999992847443,
+          "meanMs": 16.865
+        },
+        "observedMeanFps": 59.29439667951379,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": false,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 326,
+        "intervalsOver33_3333Ms": 1,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 308580,
+          "textureBytes": 41663260,
+          "totalBytes": 41971840
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "resources": {
+        "prewarmCloses": 2,
+        "count": 20,
+        "baseline": {
+          "sceneNodes": 13,
+          "ownedNodes": 0,
+          "businessRefs": 0,
+          "bufferBytes": 69500,
+          "textureBytes": 41587296
+        },
+        "allClosedStatesEqualBaseline": true,
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0
+      }
+    },
+    {
+      "id": "spike-rgba8-injected",
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/report.json",
+        "sha256": "f56bebb0911fbdad35217a46678379de497798f179d3bfeb1bfec2d95d579c71",
+        "bytes": 31844462
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-spike-rgba8.json",
+        "sha256": "3c0d84c84cd35b654a2437c31a0533f9882284d9f46d1bd356e26377c7dedc8c",
+        "bytes": 477165
+      },
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "steady": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 60,
+        "sampleFrames": 240,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 3999.5,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.699999928474426,
+          "p95Ms": 18.799999952316284,
+          "maxMs": 21.600000023841858,
+          "meanMs": 16.664583333333333
+        },
+        "observedMeanFps": 60.0075009376172,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": true,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 124,
+        "intervalsOver33_3333Ms": 0,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "startup": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 0,
+        "sampleFrames": 600,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 11003.199999928474,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 33.10000002384186,
+          "maxMs": 126.59999990463257,
+          "meanMs": 18.338666666547457
+        },
+        "observedMeanFps": 54.52959139194964,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": false,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 341,
+        "intervalsOver33_3333Ms": 24,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 308580,
+          "textureBytes": 41663260,
+          "totalBytes": 41971840
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "resources": {
+        "prewarmCloses": 2,
+        "count": 20,
+        "baseline": {
+          "sceneNodes": 13,
+          "ownedNodes": 0,
+          "businessRefs": 0,
+          "bufferBytes": 69500,
+          "textureBytes": 41587296
+        },
+        "allClosedStatesEqualBaseline": true,
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0
+      }
+    },
+    {
+      "id": "baked-2",
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl2-final/report.json",
+        "sha256": "97830f4a3ff1bd54d02a5a12817e57181d604f1f951896dae68baf0eb12ebf8d",
+        "bytes": 1402978
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-baked.json",
+        "sha256": "4b2af33c366d9c0ad97bb904e337ae1fd7237421b5cc52efb2d58ecf0e920598",
+        "bytes": 110780
+      },
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "platform": "MacIntel",
+        "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "bootStartedAtEpochMs": 1790030659171,
+        "webgl": 2,
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGL2Device",
+        "pipeline": "WebPipeline",
+        "width": 375,
+        "height": 812,
+        "dpr": 2,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624
+        }
+      },
+      "steady": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 60,
+        "sampleFrames": 240,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 4003.8000000715256,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.600000023841858,
+          "p95Ms": 18.700000047683716,
+          "maxMs": 19.5,
+          "meanMs": 16.682500000298024
+        },
+        "observedMeanFps": 59.94305409753547,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": false,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 119,
+        "intervalsOver33_3333Ms": 0,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 33,
+          "triangles": 492,
+          "instances": 0,
+          "bufferBytes": 70432,
+          "textureBytes": 42645060,
+          "totalBytes": 42715492
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "startup": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 0,
+        "sampleFrames": 600,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 11249.100000023842,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.899999976158142,
+          "p95Ms": 33.40000009536743,
+          "maxMs": 40.10000002384186,
+          "meanMs": 18.748500000039737
+        },
+        "observedMeanFps": 53.337600341247594,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": false,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 355,
+        "intervalsOver33_3333Ms": 35,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 33,
+          "triangles": 492,
+          "instances": 0,
+          "bufferBytes": 70432,
+          "textureBytes": 42645060,
+          "totalBytes": 42715492
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "resources": {
+        "prewarmCloses": 2,
+        "count": 20,
+        "baseline": {
+          "sceneNodes": 107,
+          "ownedNodes": 0,
+          "businessRefs": 0,
+          "bufferBytes": 66924,
+          "textureBytes": 38428912
+        },
+        "allClosedStatesEqualBaseline": true,
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0
+      }
+    },
+    {
+      "id": "baked-1",
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl1-final/report.json",
+        "sha256": "fdc0a8178a71ced9e014fd39aa64aae39b8a3d43b086053220a929fb405e0746",
+        "bytes": 1404359
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-baked-webgl1.json",
+        "sha256": "4735719ebe6c87ec6bda710dc99a29be9653521c36a01fa0d5056ba2b62f7b09",
+        "bytes": 111219
+      },
+      "environment": {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "platform": "MacIntel",
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "bootStartedAtEpochMs": 1790030733905.4,
+        "webgl": 1,
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "width": 375,
+        "height": 812,
+        "dpr": 2,
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624
+        }
+      },
+      "steady": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 60,
+        "sampleFrames": 240,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 3999.899999976158,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 18.5,
+          "maxMs": 20.200000047683716,
+          "meanMs": 16.66624999990066
+        },
+        "observedMeanFps": 60.001500037858584,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": true,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 125,
+        "intervalsOver33_3333Ms": 0,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 33,
+          "triangles": 492,
+          "instances": 0,
+          "bufferBytes": 70432,
+          "textureBytes": 42645060,
+          "totalBytes": 42715492
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "startup": {
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "warmupFrames": 0,
+        "sampleFrames": 600,
+        "rawAndSummaryMatched": true,
+        "visibilityChanges": 0,
+        "sumIntervalsMs": 10003.200000047684,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.600000023841858,
+          "p95Ms": 18.800000071525574,
+          "maxMs": 40.799999952316284,
+          "meanMs": 16.67200000007947
+        },
+        "observedMeanFps": 59.98080614174863,
+        "fpsFormula": "sampleCount * 1000 / sum(raw performance.now interval milliseconds)",
+        "strictMeanAtLeast60": false,
+        "p95AtMost60HzInterval": false,
+        "intervalsOver16_6667Ms": 300,
+        "intervalsOver33_3333Ms": 1,
+        "intervalsOver1000Ms": 0,
+        "gfxPeakAllFramesIncludingWarmup": {
+          "drawCalls": 33,
+          "triangles": 492,
+          "instances": 0,
+          "bufferBytes": 70432,
+          "textureBytes": 42645060,
+          "totalBytes": 42715492
+        },
+        "interpretation": "Observed desktop fixture only; fps booleans are arithmetic comparisons, not an invented stage acceptance threshold. All long frames retained."
+      },
+      "resources": {
+        "prewarmCloses": 2,
+        "count": 20,
+        "baseline": {
+          "sceneNodes": 107,
+          "ownedNodes": 0,
+          "businessRefs": 0,
+          "bufferBytes": 66924,
+          "textureBytes": 38428912
+        },
+        "allClosedStatesEqualBaseline": true,
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0
+      }
+    }
+  ],
+  "engineFixHandoff": {
+    "source": {
+      "file": "tools/art3d/sc0-engine-findings.json",
+      "sha256": "c7f7bcd53432e943f266adfe5ed8a551768429196f8fd786ed9daaeed3a31cce",
+      "bytes": 128919
+    },
+    "implementedWorkarounds": [
+      {
+        "id": "retire-exact-owned-instancing",
+        "status": "implemented-final-selected-desktop-regressions-passed"
+      },
+      {
+        "id": "configure-particle-before-activation",
+        "status": "implemented-final-selected-desktop-regressions-passed"
+      },
+      {
+        "id": "retain-and-destroy-particle-default-material",
+        "status": "implemented-final-selected-desktop-regressions-passed"
+      },
+      {
+        "id": "recreate-existing-main-state-on-first-realtime-entry",
+        "status": "implemented-final-selected-desktop-regressions-passed"
+      },
+      {
+        "id": "align-custom-joint-texture-rows",
+        "status": "implemented-final-selected-desktop-regressions-passed"
+      },
+      {
+        "id": "coherent-rgba8-extension-mask",
+        "status": "implemented-final-selected-desktop-regressions-passed"
+      }
+    ],
+    "additionalFindings": [
+      "realtime evaluator state initialization",
+      "joint texture row alignment: fixture 72/144",
+      "coherent RGBA8 capability/macro fault injection"
+    ],
+    "formalDestination": "docs/SC0-HANDOFF.md §3",
+    "vendorModified": false
+  },
+  "limits": [
+    "Source fixture maximum is19504 bytes GLB /96 triangles /2 bones /1 nonzero weight per vertex; 30/80 bones, four effective weights and maximum geometry/size are admission policy, not measured throughput.",
+    "One ParticleSystem capacity50 does not prove8/24/48 simultaneous effects or200 particles per effect; SC4 workload acceptance remains.",
+    "WebGL1 and injected RGBA8 were tested on a natively float-capable Apple M4 desktop; no mobile or real WeChat performance claim.",
+    "GPU counters include the surrounding host UI and engine warmed caches;650instances is not650skinned units.",
+    "LightFX mip/wrap exception is exact-file fixed-distance evidence only; continuous zoom, UV-island padding and mip-chain fidelity remain unproven.",
+    "SC0 temporary adapters/loaders/stubs are explicitly handed off; Stage3D, AssetLease, quality, bundle ownership, Unity conversion and offline LOD are not yet delivered."
+  ],
+  "remainingSc0Gates": [],
+  "retainedLaterGates": [
+    "SC1 formal framework and type stubs, twoWebGL input/lifecycle and clean bundle installation/reimport",
+    "SC3 actual loading/pool/resource and performance acceptance",
+    "SC4 multi-animation/complex skinning and Vfx, WebGL1 and real WeChat low-tier/remote/cache failure/recovery",
+    "SC5 self-authored Unity fixture extraction/external PNG/GLB/offline LOD/Creator roundtrip and final stage3d-v1-frozen"
+  ],
+  "removedRequirements": [
+    "WeChat test project/AppID prerequisite",
+    "Successful/runnable WeChat build evidence as a separate3D acceptance gate"
+  ],
+  "historicalEvidencePolicy": "Older batch/raw reports retain their ok/exitCode/sc0Exit/pending at capture time. This B4 review and docs/3d.md §10 supply the latest phase conclusion; no raw value or historical failure is rewritten.",
+  "fullVerificationPassed": true,
+  "fullVerification": {
+    "command": "TMPDIR=/Volumes/KimData/.codex-stage3d-tests npm run verify:all",
+    "status": "passed",
+    "exitCode": 0,
+    "testedBaseCommit": "db1f4d1414d929d9bd772f4106442cd0a0e066ff",
+    "candidateManifest": {
+      "file": ".cache/stage3d/b4-tested-candidate.json",
+      "sha256": "bee2220bc90a2946226b30796d82917d7c8f5dd9cbeb7832322e588168508081",
+      "bytes": 1031
+    },
+    "log": {
+      "file": ".cache/stage3d/b4-verify-all-final.log",
+      "sha256": "40d419f3fa75bb271c428529eac907f489670a4a59a5b6367a370620336f114a",
+      "bytes": 428542
+    },
+    "scope": "Current B4 candidate on the baseline-fix commit. Only completion metadata was filled after this run."
+  }
+}
