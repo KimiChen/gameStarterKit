@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "batch": "SC1-B7",
   "date": "2026-09-23",
-  "status": "implemented-awaiting-final-verification",
+  "status": "complete",
   "sc1Exit": false,
   "scope": "Exact package bundle ownership, package asset-reference closure and clean Creator 3.8.8 import/loading. Complete verify:assets3d remains SC1-B5; asynchronous AssetLease remains SC3; full platform builds and real WeChat cache acceptance are not claimed.",
   "implementation": [
@@ -222,7 +222,7 @@
       "uniflexContractTests": 63,
       "serverTests": 1371,
       "bothClientTypechecks": true,
-      "scope": "Passed before the final host-root case-alias fix. The final rerun is still running at the user-requested initial commit/merge."
+      "scope": "Initial successful run before the final host-root case-alias fix; superseded by finalVerifyAll."
     },
     "bundleTests": {
       "command": "node --import tsx --test apps/server/test/plugin-bundles.test.ts",
@@ -275,8 +275,22 @@
     },
     "mutationsPhase": "Both mutations were executed and restored before the final host-root case-alias fix; final source hashes below include that later fix.",
     "finalVerifyAll": {
-      "status": "running",
-      "log": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc1-b7/verify-all-final.log"
+      "status": "passed",
+      "exitCode": 0,
+      "log": "verify-all-final.log",
+      "clientTests": 990,
+      "uniflexContractTests": 63,
+      "serverTests": 1372,
+      "bothClientTypechecks": true,
+      "scope": "Rerun after the case-alias fix. The latest map-only commit was rebased during completion; B7 source hashes stayed unchanged. Related map and bundle tests were rerun on the merged snapshot below."
+    },
+    "postMerge": {
+      "commit": "285ce1d208ae87f88f3fb1d3a6c674517dc9f2dd",
+      "command": "node --import tsx --test apps/server/test/plugin-bundles.test.ts apps/server/test/mapOriginal-content.test.ts",
+      "passed": 43,
+      "failed": 0,
+      "log": "post-merge-tests.log",
+      "sourceHashesUnchanged": true
     }
   },
   "reproducibility": "tools/art3d/bundle-probe/README.md",
@@ -402,6 +416,16 @@
       "path": "final-archive-validation.json",
       "sha256": "fbea978524c5f2d92488a087f06b613b9d4f86926c650d2192e4eb78ee988b9e",
       "bytes": 281
+    },
+    {
+      "path": "verify-all-final.log",
+      "sha256": "d9db893f1229a1a7b2c9c23a1eda6360364c116d7977b8bb7a0d79495b7e9132",
+      "bytes": 451910
+    },
+    {
+      "path": "post-merge-tests.log",
+      "sha256": "ca323cfa34479900a1e7dc31f4267f527fe37e21e4d770b6d3a220517959a63c",
+      "bytes": 4453
     }
   ],
   "attemptHistory": [

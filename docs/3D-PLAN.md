@@ -271,14 +271,14 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
-- [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
+- [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
 
-- 2026-09-23 SC1-B7 已实现，最终全量复验中（用户要求先提交并合入）：包工具全链接入 `kit/plugin-<id>[-<map>]` 精确所有权与根 `.meta`，拒绝宿主现有根的大小写别名冲突；pack / install 落盘前及 check 共用顶层 / subMeta UUID、压缩 UUID 和序列化引用闭合核心。同包多 bundle 可互引，悬空、缺子资产、跨包 / 宿主引用均拒绝，`requires.kits` 不授权内部资产；内置例外钉 Creator 3.8.8 实际文件与 meta 哈希。宿主 `package3d` profile 已由 Creator 读取验证（miniGame remote，native/web 本地），AssetAddress 固定 bundle + path。合成 kit 的 23 文件制品在无 Library / node_modules 的干净工程安装，移走作者原路径后首次导入、浏览器实际加载 Prefab → Mesh / Material → Texture 与 AnimationGraph → Clip / Mask 全过；卸载 9 文件相邻包后重新加载通过，18 个实际资产 / 子资产、14 条引用和所有锁定文件哈希保持一致。新增 22 项测试、两项变异（分别打红 2 / 9 项）、两套客户端类型检查及首轮 `verify:all` 全过（Node 24.19.0；客户端 990 / UniFlex 契约 63 / 服务端 1371 项）；最后补充的大小写冲突修复已过 22 项定向测试，全量复验仍在运行。详见[验收摘要](perf/stage3d/2026-09-23-sc1-b7.json)与[重跑步骤](../tools/art3d/bundle-probe/README.md)。下一批 B5；完整资产格式 / GLB / 压缩 / 预算 / 授权闸、完整平台构建与微信真机缓存不在本批验收范围，SC1 未退出。
+- 2026-09-23 SC1-B7 完成：包工具全链接入 `kit/plugin-<id>[-<map>]` 精确所有权与根 `.meta`，拒绝宿主现有根的大小写别名冲突；pack / install 落盘前及 check 共用顶层 / subMeta UUID、压缩 UUID 和序列化引用闭合核心。同包多 bundle 可互引，悬空、缺子资产、跨包 / 宿主引用均拒绝，`requires.kits` 不授权内部资产；内置例外钉 Creator 3.8.8 实际文件与 meta 哈希。宿主 `package3d` profile 已由 Creator 读取验证（miniGame remote，native/web 本地），AssetAddress 固定 bundle + path。合成 kit 的 23 文件制品在无 Library / node_modules 的干净工程安装，移走作者原路径后首次导入、浏览器实际加载 Prefab → Mesh / Material → Texture 与 AnimationGraph → Clip / Mask 全过；卸载 9 文件相邻包后重新加载通过，18 个实际资产 / 子资产、14 条引用和所有锁定文件哈希保持一致。新增 22 项测试、两项变异（分别打红 2 / 9 项）、两套客户端类型检查及最终 `verify:all` 全过（Node 24.19.0；客户端 990 / UniFlex 契约 63 / 服务端 1372 项）；按用户要求先提交并快进合入 `new`（285ce1d2），随后全量复验通过，最新地图基线上的 43 项相关回归也通过。详见[验收摘要](perf/stage3d/2026-09-23-sc1-b7.json)与[重跑步骤](../tools/art3d/bundle-probe/README.md)。下一批 B5；完整资产格式 / GLB / 压缩 / 预算 / 授权闸、完整平台构建与微信真机缓存不在本批验收范围，SC1 未退出。
 
 - 2026-09-23 SC1-B4 完成：DEV 夹具通过 setup 注入实际 AppPorts，并经 `ports.stage3d.acquire` 取得正式舞台；五份 Prefab 统一经同步 retainer 持有，普通失败收齐回调、提前关闭归还迟到资产，宿主 abort 先取消输入再销毁节点，所有旧 model 的 instancing 缓冲退休后才释放材质与资源。独立烘焙 Prefab、header/footer overlay 与独立 Billboard 已接入；补齐 Creator 3.8.8 Billboard 的独占 model/mesh/material 清理。WebGL2 / 实际 WebGL1 各 21 步、32 条 trusted DOM 触摸及 20 次开关通过，节点/业务引用回基线、GFX 增量 0；60 帧预热后采样 240 帧，p95 为 19.3 / 19.5 ms，启动最大间隔 525.4 / 253.8 ms 原样保留。70 项定向测试、两项变异、真实引擎声明编译零诊断、两套客户端类型检查及本批 `verify:all` 通过（Node 24.19.0；客户端 984 / UniFlex 契约 63 / 服务端 1349 项，PSD 使用锁定版本的离线缓存）；同步最新地图基线后的 176 项相关回归也通过。完整探针保留历史 SC0 pending / exit 2，逐项接受理由与证据哈希见[验收摘要](perf/stage3d/2026-09-23-sc1-b4.json)。下一批 B7；固定桌面灰盒不代表档位容量或微信真机验收，SC1 未退出。
 
