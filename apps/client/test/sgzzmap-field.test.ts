@@ -6,11 +6,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     SGZZ_FIELD_CELL_EDGE, SGZZ_FIELD_CLASSES, SGZZ_FIELD_DEFAULTS, SGZZ_FIELD_STEP,
-    bakeSgzzField, sgzzChamferDistance, sgzzFieldNoise, sgzzFromPlane, sgzzGaussianKernel, sgzzToPlane,
+    SGZZ_COAST_CLAMP_CELLS, bakeSgzzField, sgzzBoxRadiusFor, sgzzChamferDistance, sgzzFieldNoise,
+    sgzzFromPlane, sgzzGaussianKernel, sgzzToPlane,
 } from "../src/kits/sgzzmap/logic/sgzzField";
 import { SGZZ_TILE_HALF_W } from "../src/shared/kits/sgzzmap/api/hexmap/index";
 import {
-    SGZZ_FIELD_BAKE_STEP, SGZZ_FIELD_TIERS, sgzzFieldBakeRect, sgzzFieldChunkAt, sgzzFieldChunkKey,
+    SGZZ_FIELD_TIERS, sgzzFieldBakeRect, sgzzFieldChunkAt, sgzzFieldChunkKey,
     sgzzFieldChunkOf, sgzzFieldChunkQuad, sgzzFieldChunksFor, sgzzFieldTierFor,
 } from "../src/kits/sgzzmap/logic/sgzzFieldChunks";
 
@@ -135,14 +136,23 @@ test("★ 分块：块是缓存单元，⛔ 不是视觉边界 —— 同一世�
     assert.equal(keys.size, 49);
 });
 
-test("★ 烘焙区必须带 3σ halo，⛔ 截短了块边会有台阶", () => {
-    const chunk = sgzzFieldChunkOf(2, -1);
-    const { rect, inner } = sgzzFieldBakeRect(chunk);
-    const sigma = (SGZZ_FIELD_DEFAULTS.landSigmaCells * SGZZ_FIELD_CELL_EDGE) / SGZZ_FIELD_BAKE_STEP;
-    assert.ok(inner.x >= Math.ceil(sigma * 3), `halo ${inner.x} < 3σ ${Math.ceil(sigma * 3)}`);
-    assert.equal(rect.width, inner.width + inner.x * 2);
-    assert.equal(rect.minX + inner.x * rect.step, chunk.minX, "内区起点应正好对上块的左边");
-    assert.equal(inner.width, chunk.samples);
+test("★ halo 要盖住**所有**跨出内区的算子 —— ⛔ 只按陆地 σ 算，块边会留下可见接缝", () => {
+    // 真机 run 35 的 LOD4 上看得见竖直/水平淡线 —— v2 明说「分块不能成为视觉边界」。
+    // 三项都要算进去：① 陆地平滑 ② 海岸平滑（σ 更大）③ 距离场截断范围。
+    // ⚠ 三遍盒滤波的实际支撑是 3r（每遍 ±r），⛔ 不是 r。
+    for (const tier of SGZZ_FIELD_TIERS) {
+        const chunk = sgzzFieldChunkOf(2, -1, tier);
+        const { rect, inner } = sgzzFieldBakeRect(chunk);
+        const sL = (SGZZ_FIELD_DEFAULTS.landSigmaCells * SGZZ_FIELD_CELL_EDGE) / tier.step;
+        const sC = (SGZZ_FIELD_DEFAULTS.coastSigmaCells * SGZZ_FIELD_CELL_EDGE) / tier.step;
+        const need = 3 * Math.max(sgzzBoxRadiusFor(sL), sgzzBoxRadiusFor(sC))
+            + (SGZZ_COAST_CLAMP_CELLS * SGZZ_FIELD_CELL_EDGE) / tier.step;
+        assert.ok(inner.x >= need,
+            `tier${tier.tier} 的 halo ${inner.x} < 需要的 ${need.toFixed(1)} —— 块边会有接缝`);
+        assert.equal(rect.width, inner.width + inner.x * 2);
+        assert.equal(rect.minX + inner.x * rect.step, chunk.minX, "内区起点应正好对上块的左边");
+        assert.equal(inner.width, chunk.samples);
+    }
 });
 
 test("★ 视口取块：世界矩形要按四角换到平面，⛔ 只换中心点会少取一半", () => {

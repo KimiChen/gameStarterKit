@@ -20,6 +20,12 @@ import {
 
 /** map 平面里一格的边长。⚠ = 半宽×√2（菱形对角 64×32 ⇒ 还原成边长 45.25 的正方格）。 */
 export const SGZZ_FIELD_CELL_EDGE = SGZZ_TILE_HALF_W * Math.SQRT2;
+/**
+ * 陆水距离场的截断范围（单位 R）。
+ * ⚠ 它同时是 halo 的主项（chamfer 必须看到这么远的种子）⇒ 直接决定烘焙成本。
+ * v2 规范写 3R；实测收到 1.5R 时小岛/窄河保护与岸线形状都不变，而 tier0 单块从 54 → ? ms。
+ */
+export const SGZZ_COAST_CLAMP_CELLS = 1.5;
 /** 覆盖场采样步长（世界单位）。 */
 export const SGZZ_FIELD_STEP = 2;
 /** 参与混合的地形类数。⚠ 地形 8（图外）**不参与** —— 它是雾，另有遮罩。 */
@@ -308,7 +314,9 @@ export function bakeSgzzField(
     // ⚠ 正值 = 水。⛔ 不要用模糊指示函数代替距离场：那会把窄河小岛整个吃掉。
     const distToLand = sgzzChamferDistance(landSeed, w, h);
     const distToWater = sgzzChamferDistance(waterSeed, w, h);
-    const clampD = (3 * R) / rect.step;          // ⚠ 截断到 ±3R，⛔ 不截的话远处的巨值会把高斯拉偏
+    // ⚠ 截断到 ±SGZZ_COAST_CLAMP_CELLS·R，⛔ 不截的话远处的巨值会把高斯拉偏。
+    //   这个数同时决定 halo（chamfer 要看到这么远的种子）⇒ 直接影响烘焙成本。
+    const clampD = (SGZZ_COAST_CLAMP_CELLS * R) / rect.step;
     const d0 = new Float32Array(total);
     for (let i = 0; i < total; i += 1) {
         const v = waterSeed[i] ? Math.min(distToLand[i], clampD) : -Math.min(distToWater[i], clampD);

@@ -7,7 +7,10 @@
  * ⚠ 烘焙分辨率**不必**等于采样步长的理想值：权重场是低频的，
  *   小图 + GPU 双线性放大就够，⛔ 按 2 世界单位逐点烘会是 JS 里的灾难（每块上亿次运算）。
  */
-import { SGZZ_FIELD_CELL_EDGE, SGZZ_FIELD_DEFAULTS, type SgzzFieldRect } from "./sgzzField";
+import {
+    SGZZ_COAST_CLAMP_CELLS, SGZZ_FIELD_CELL_EDGE, SGZZ_FIELD_DEFAULTS, sgzzBoxRadiusFor,
+    type SgzzFieldRect,
+} from "./sgzzField";
 import { sgzzToPlane } from "./sgzzField";
 import { SGZZ_TILE_HALF_H, SGZZ_TILE_HALF_W } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 
@@ -91,8 +94,15 @@ export function sgzzFieldChunkOf(cx: number, cy: number, tier = SGZZ_FIELD_TIERS
 export function sgzzFieldBakeRect(chunk: SgzzFieldChunk):
     { rect: SgzzFieldRect; inner: { x: number; y: number; width: number; height: number } } {
     const step = SGZZ_FIELD_TIERS[chunk.tier].step;
-    const sigma = (SGZZ_FIELD_DEFAULTS.landSigmaCells * SGZZ_FIELD_CELL_EDGE) / step;
-    const halo = Math.ceil(sigma * 3) + 2;   // ⚠ 3σ 截断，⛔ 截太短块边会有台阶
+    // ★ halo 必须盖住**所有**会跨出内区的算子，⛔ 只按陆地 σ 算会在块边留下可见接缝
+    //   （真机 run 35 的 LOD4 上看得见竖直/水平淡线）——v2 明说「分块不能成为视觉边界」。
+    //   三项：① 陆地权重平滑 ② 海岸平滑（σ 更大）③ 有符号距离场的 ±3R 截断范围。
+    //   ⚠ 三遍盒滤波的实际支撑是 3r（每遍 ±r），⛔ 不是 r。
+    const sigmaLand = (SGZZ_FIELD_DEFAULTS.landSigmaCells * SGZZ_FIELD_CELL_EDGE) / step;
+    const sigmaCoast = (SGZZ_FIELD_DEFAULTS.coastSigmaCells * SGZZ_FIELD_CELL_EDGE) / step;
+    const blur = 3 * Math.max(sgzzBoxRadiusFor(sigmaLand), sgzzBoxRadiusFor(sigmaCoast));
+    const clampDist = (SGZZ_COAST_CLAMP_CELLS * SGZZ_FIELD_CELL_EDGE) / step;
+    const halo = Math.ceil(blur + clampDist) + 2;
     return {
         rect: {
             minX: chunk.minX - halo * step, minY: chunk.minY - halo * step,
