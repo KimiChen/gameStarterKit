@@ -1,0 +1,9 @@
+{
+  "key": "AllianceTechLink",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTech/AllianceTechLink.tsx",
+  "export": {
+    "uniflexSha256": "027210a47d84cb86fb1c5566fb11c2b1b250b2cf85a588ff6c090abb870c6f1a",
+    "psdSha256": "cd3b91ff9a465ca7da3441aa135ec66995d070368afd3d69cdd77a7b8e6d5a63",
+    "at": "2026-09-22T02:50:47.452Z"
+  }
+}

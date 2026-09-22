@@ -2,9 +2,9 @@
   "key": "ActionButton",
   "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx",
   "export": {
-    "uniflexSha256": "402c52216d37a375518e07819e9d1192e0fccb0097885cf980af9e0663a627a8",
-    "psdSha256": "414e5adfbc3445a723a8184b2c44ed022a86d33ef3e5f3192c78cf18706c5f5b",
-    "at": "2026-09-18T01:57:21.677Z"
+    "uniflexSha256": "41593bb45fcbde6566fcc3e1db7656c03e260f88caabe6d3475ae45b19a3dc25",
+    "psdSha256": "51f1df8d36c924e52878f0d7eecb2ec401aa2b61657af84156a61fd470ce2e58",
+    "at": "2026-09-22T02:50:00.268Z"
   },
   "import": {
     "psdSha256": "414e5adfbc3445a723a8184b2c44ed022a86d33ef3e5f3192c78cf18706c5f5b",

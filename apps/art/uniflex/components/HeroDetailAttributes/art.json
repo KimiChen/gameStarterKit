@@ -3,7 +3,7 @@
   "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailAttributes.tsx",
   "export": {
     "uniflexSha256": "4de9a6f497ce8f54ad34c1221b0c32e3e7ca198c73ff8a4d3ba344be615f52e1",
-    "psdSha256": "61bb16ce850cd5ba843f4a71b2dfe3b417e78fee8a31c57276e46693db984950",
-    "at": "2026-09-20T10:44:50.000Z"
+    "psdSha256": "3230d542dc9c7d1129a24f737ca015475bc3ce8afe1793880de43294748bff9b",
+    "at": "2026-09-22T02:51:20.321Z"
   }
 }

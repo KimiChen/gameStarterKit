@@ -1,9 +1,0 @@
-{
-  "key": "HeroDetailTabs",
-  "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailTabs.tsx",
-  "export": {
-    "uniflexSha256": "dc3aa5ab4ba03d60f66fd2d722778cf3f9da68f99d119db9de1d620e9b371f0d",
-    "psdSha256": "bf4f82bb8992612077383484ce0d4cc8896aab5a8796a926b55a102272ffc8e9",
-    "at": "2026-09-20T10:44:50.002Z"
-  }
-}

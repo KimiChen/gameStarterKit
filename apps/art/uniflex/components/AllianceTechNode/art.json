@@ -1,0 +1,9 @@
+{
+  "key": "AllianceTechNode",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTech/AllianceTechNode.tsx",
+  "export": {
+    "uniflexSha256": "2cfde3536731f7da1d7e44c2b3eaf16d996e78aaa3031ca91a27126ef4dfb57a",
+    "psdSha256": "c2cd63c4cdc855c67023ed0f24f48218e6c0c6ff34dc328191a511f49a5b04fd",
+    "at": "2026-09-22T02:50:47.455Z"
+  }
+}

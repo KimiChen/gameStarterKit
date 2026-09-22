@@ -2,9 +2,9 @@
   "key": "QuantityControl",
   "source": "apps/client/src/ui-uniflex/components/quantity/QuantityControl.tsx",
   "export": {
-    "uniflexSha256": "767efd4d8c6e2a981993e3ca3b537448319427adb9f57c6fda2774556db380bd",
-    "psdSha256": "00f784e4604a89f56d2936ea14076e7cd86d1733b9665acd789c8d75eec125d6",
-    "at": "2026-09-17T17:33:35.177Z"
+    "uniflexSha256": "4238968d3239ea2c0c5c6bdc7f925c29371570fc1b07a880758a3b70cdbcf413",
+    "psdSha256": "e22f9ad032277df3b965a3175425d27351f99339a17885f93c306021d50b6d62",
+    "at": "2026-09-22T02:51:04.503Z"
   },
   "import": {
     "psdSha256": "00f784e4604a89f56d2936ea14076e7cd86d1733b9665acd789c8d75eec125d6",

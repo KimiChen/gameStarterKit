@@ -2,8 +2,8 @@
   "key": "AllianceGiftPanel",
   "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceGift/AllianceGiftPanel.tsx",
   "export": {
-    "uniflexSha256": "98784311f108e57bf0dea429ed7f9a98c7565e2f7fab69144e280b437bebca56",
-    "psdSha256": "7ce3218bee1bf73d71360244eaee437114fb7eb676d2ecbd1b14532e8cabaead",
-    "at": "2026-09-20T10:45:26.044Z"
+    "uniflexSha256": "7aa8700bc455e0362c7ca71c159a2c513cc37ae47be4c4b0dd7ec2febd213964",
+    "psdSha256": "9da2fd80bd5fd3d59a9892794b96ece497f92f7aa34cb8d6f212d57f1190267f",
+    "at": "2026-09-22T02:50:17.116Z"
   }
 }

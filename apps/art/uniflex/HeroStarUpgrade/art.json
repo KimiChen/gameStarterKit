@@ -9,9 +9,9 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "e2780ed3dc7e1243008b132c95625116114625282c5440a03a4cd88fc4300bc7",
-    "psdSha256": "81270759a3faaf514eb5c92a363f1dc8e1e1a50415a64cd292f696c56153b385",
-    "at": "2026-09-20T10:44:53.380Z"
+    "uniflexSha256": "adff6a11a93d07e6ae97d43c1933e7ba5434636bf281fd71385f812924ec81ec",
+    "psdSha256": "74bc3bd20e382adb153541d5a3f74fa2bc666016247779c8b4ee4b7bb540f8d0",
+    "at": "2026-09-22T02:51:30.227Z"
   },
   "import": {
     "psdSha256": "377a078610056c0513361111052c148ea59c17b671d3f02e79a2803e94adb608",
@@ -21,7 +21,6 @@
   "linkedComponents": [
     "CloseButton",
     "StarRow",
-    "HeroStarAttributeRow",
     "ProgressBar",
     "ActionButton",
     "ConfirmButton",

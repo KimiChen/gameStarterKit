@@ -2,8 +2,8 @@
   "key": "AllianceMarchBoostPanel",
   "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceMarchBoost/AllianceMarchBoostPanel.tsx",
   "export": {
-    "uniflexSha256": "e67076e5a84328eb48d625c4d32b22b1f7018755b654aa94180f189be295bccd",
-    "psdSha256": "98e8ec0cb3e0e97b0eddcca163eb08a53cfc968d8e8fdbde27b366e3c5f05761",
-    "at": "2026-09-20T10:45:18.959Z"
+    "uniflexSha256": "9f1ff459827fb275be8039924d5df04872baaa2387346bea8bb58d17796cbeb0",
+    "psdSha256": "1822e0eed3271ec0d668e9e9f56ed83be5ae46af208f3271d806d3ec4c25f80a",
+    "at": "2026-09-22T02:50:35.719Z"
   }
 }

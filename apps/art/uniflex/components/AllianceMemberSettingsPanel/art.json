@@ -3,7 +3,7 @@
   "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceMemberSettings/AllianceMemberSettingsPanel.tsx",
   "export": {
     "uniflexSha256": "420d7cc3bec98fb0b4313c3546fe1aa844031522209a6134e96b99cc18866b4f",
-    "psdSha256": "e3e93e32d8c877bdbd6262c150be532e77edbe09e0a4de57b2efa732323621b4",
-    "at": "2026-09-20T10:45:07.860Z"
+    "psdSha256": "732f04ec299295263758638765aaa235bf60d0cd1755fc83aa24811ab1fbd7fb",
+    "at": "2026-09-22T02:50:41.020Z"
   }
 }

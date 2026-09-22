@@ -10,12 +10,21 @@
   "applyTarget": "restored",
   "export": {
     "uniflexSha256": "e966a9a3696e3b171db95f8fd9aefc3654b19405dcad4a5fff8ead449811b895",
-    "psdSha256": "5ad40043be03c00b0c48a49cc28b23f2c2f4215213f885fd44897e72b4b77bdd",
-    "at": "2026-09-17T08:14:35.425Z"
+    "psdSha256": "b09441ea8837e96bc709f6cd1f89b3fdc32c6166876f6f3cd0532cd34d7d3030",
+    "at": "2026-09-22T02:50:47.478Z"
   },
   "import": {
     "psdSha256": "5ad40043be03c00b0c48a49cc28b23f2c2f4215213f885fd44897e72b4b77bdd",
     "at": "2026-09-17T11:12:27.859Z",
     "target": "restored"
-  }
+  },
+  "linkedComponents": [
+    "AllianceTechLink",
+    "AllianceTechNode",
+    "ScreenHeader",
+    "BackButton",
+    "ScreenFooter",
+    "IconCaptionButton",
+    "AllianceTechPanel"
+  ]
 }

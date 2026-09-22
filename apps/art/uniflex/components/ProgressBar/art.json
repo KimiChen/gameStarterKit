@@ -2,8 +2,8 @@
   "key": "ProgressBar",
   "source": "apps/client/src/ui-uniflex/components/progress/ProgressBar.tsx",
   "export": {
-    "uniflexSha256": "9fd4d0f1854381896db7acd3581b1c8e78e9b6cb3c254f25369578b2d1e1b70d",
-    "psdSha256": "ec6d1546f1d07fb28260d0dc4544d530200d21d60954f326d3af16689d7c2a76",
-    "at": "2026-09-20T10:44:45.774Z"
+    "uniflexSha256": "c1f81d150844a8ad8df47b6be36804b321ce9918591a42ff858375caaf9feb75",
+    "psdSha256": "bbd4aa9f3c74c72eb990c0ba286348c981197e077457f9bb39eb5b1865fa27d3",
+    "at": "2026-09-22T02:50:35.713Z"
   }
 }

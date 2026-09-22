@@ -9,9 +9,9 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "019654c00ef427243273aa1f2d8c988a37e7956c3b1183427da191798b122195",
-    "psdSha256": "4a8c1e2d61e3669c23c806b191abddeed8592841d48cc31388e45b6d52e5d416",
-    "at": "2026-09-20T11:38:32.559Z"
+    "uniflexSha256": "a71711a041b43ffc51827daa6a6f395c65479a610de0784c374cdb4c780a46c7",
+    "psdSha256": "c1c6249dd64c14581690bed60eb8bca9a789374f60827a225df4687a57031b91",
+    "at": "2026-09-22T02:51:20.327Z"
   },
   "import": {
     "psdSha256": "86685c39201a58a31b44a2592d8601533dde1a010b68e7eccc4f08424544020f",
@@ -21,6 +21,9 @@
   "linkedComponents": [
     "StarRow",
     "HeroDetailAttributes",
-    "NotificationBadge"
+    "BackButton",
+    "ScreenFooter",
+    "NotificationBadge",
+    "Tab"
   ]
 }

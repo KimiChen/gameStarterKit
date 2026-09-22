@@ -2,8 +2,8 @@
   "key": "EmptyState",
   "source": "apps/client/src/ui-uniflex/gamecomponents/empty/EmptyState.tsx",
   "export": {
-    "uniflexSha256": "c58fc59aff508c7cca41f6ae8cd75f61477f1a2ba161700a1e16aa07769760b7",
-    "psdSha256": "498d42cb558897c52667f93144e92d2011ba2275a17be667a7241f57035f6389",
-    "at": "2026-09-20T10:45:22.214Z"
+    "uniflexSha256": "e5a5be9986b360a5b758d2d4fc5fd5188a7af3dfb6337c1cb9332569dead279a",
+    "psdSha256": "2e2e77e6ce6039a91abd8639c81972e4a26c275d8370694748512ca4e7548b35",
+    "at": "2026-09-22T02:50:17.098Z"
   }
 }

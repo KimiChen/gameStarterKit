@@ -2,13 +2,13 @@
   "key": "WideMenuButton",
   "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx",
   "export": {
-    "uniflexSha256": "868527e49a4d1a567c037ae2d2ada689f727e7dc7e94ece34b18a6a7a92912b0",
-    "psdSha256": "4fd5e410c4b8158d7509720c346b3df8acdb75b40715f389406c7d92936bbb28",
-    "at": "2026-09-18T06:19:11.856Z"
+    "uniflexSha256": "ba955a873144b4b99bc9581e3a82562382b1fe0a94f2cc7e3841238ea32bd056",
+    "psdSha256": "78ef5635fb6b43ccfd543a160bd4d87a195bd556a24151d53be1b1a8f1d103b4",
+    "at": "2026-09-22T02:49:54.584Z"
   },
   "import": {
     "psdSha256": "4fd5e410c4b8158d7509720c346b3df8acdb75b40715f389406c7d92936bbb28",
-    "at": "2026-09-18T06:19:57.523Z",
+    "at": "2026-09-22T02:28:55.162Z",
     "target": "restored"
   }
 }

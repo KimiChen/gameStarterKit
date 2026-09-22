@@ -2,8 +2,8 @@
   "key": "AllianceTerritoryPanel",
   "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTerritory/AllianceTerritoryPanel.tsx",
   "export": {
-    "uniflexSha256": "af2f6a09d4787bc196f0e1470790fa0ab87ca2b5d48147a0f403610889e9cc7f",
-    "psdSha256": "555cde324e6ec88246436d4466fc581b29b1322726c88be028eb738faa433ef5",
-    "at": "2026-09-20T10:45:15.541Z"
+    "uniflexSha256": "a554ae7d618f80cb57a6a1ea544bc6763dc8d1b0b66e9d4f6b420d73b8283447",
+    "psdSha256": "297ea85bf6aa00c7438881aa5361e75ed4ebc7d7d74a3a8970b9ef6347947d02",
+    "at": "2026-09-22T02:50:52.757Z"
   }
 }

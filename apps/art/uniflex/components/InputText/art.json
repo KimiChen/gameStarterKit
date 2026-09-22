@@ -2,8 +2,8 @@
   "key": "InputText",
   "source": "apps/client/src/ui-uniflex/components/input/InputText.tsx",
   "export": {
-    "uniflexSha256": "dc353ca5766b16992f27b830be9c91b8d04aade6e1d8f02ba726fd4e75d50354",
-    "psdSha256": "92db088a1c100b233fc4f91c0b22c5d3d0a94494dca211d7cc2be7ba230261ee",
-    "at": "2026-09-20T10:45:04.591Z"
+    "uniflexSha256": "473296454490f8907a4869b94eaabbca5e1b85e7a776bd69657a4f4ddd3a3ce3",
+    "psdSha256": "87d0d706f1d8d2f2feb23b02efe5044382c0cd08f0623e00fed49626b9091eba",
+    "at": "2026-09-22T02:50:07.628Z"
   }
 }
