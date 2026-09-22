@@ -17,7 +17,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { after, test } from "node:test";
+import { after, afterEach, test } from "node:test";
 import {
   ALL_LOBBY_RPC_TYPES,
   LOBBY_RPC_DOMAIN_CONTRACTS,
@@ -80,21 +80,48 @@ const FIXTURE_INPUT_DIRS = [
 ] as const;
 
 /**
- * 隔离根：拷贝生成器的全部输入面（lobbyRpc + plugins + kits + 客户端 view/logic/generated +
- * kit catalog 双端生成物 + art XML——闭包计算只读 XML，图集/位图不拷）。
+ * 生成器输入面的文件形态：整个输入面都是文本（domain descriptor / manifest / sidecar / 源码 / SQL / FGUI XML）。
+ * ⚠ 同在输入目录里的 ~98MB 素材（apps/kits/slg/art 的图集 PNG、mapOriginal / sgzzmap 的 .bytes/.bin 地图数据）
+ * 生成器一个都不读，⛔ 不进隔离根（拷进去就是下面 inputSnapshot 注释里那 12.4GB 的来源）。
+ * ⛔ 漏列一种新输入类型不会静默：生成器对缺文件 fail-closed，本文件当场红。
  */
-/** 本文件创建过的全部隔离根：文件级 after 钩子兜底删除（每个根是 ~1.3MB 的整棵输入树拷贝，⛔ 不泄漏到 os.tmpdir()）。 */
+const INPUT_FILE_SUFFIXES = [".ts", ".json", ".md", ".sql", ".xml"] as const;
+const isInputFile = (source: string): boolean =>
+  fs.statSync(source).isDirectory() || INPUT_FILE_SUFFIXES.some((suffix) => source.endsWith(suffix));
+
+/**
+ * 输入面快照：真仓在本进程里**只读一次**（lobbyRpc + plugins + kits + 客户端 view/logic/generated +
+ * kit catalog 双端生成物 + art XML——闭包计算只读 XML，图集/位图不拷），其余隔离根全部从这份不可变快照克隆。
+ *
+ * ⚠ 两条都是实测出来的理由，⛔ 不要退回「每个根现拷一次真仓」：
+ *  ① 体积。apps/kits/ 随 slg / mapOriginal / sgzzmap 进来后已经 ~110MB（其中 98MB 是生成器不读的
+ *     .png/.bytes/.bin），而本文件要开 ~119 个根、且旧写法要到文件级 after 才回收：实测 os.tmpdir()
+ *     峰值 12.4GB，把系统盘（/var/folders 在系统盘上）吃到只剩 125MB，然后 mkdtemp/cpSync 直接 ENOSPC。
+ *     盘上恰好剩多少空间是跑一次变一次的，红在哪条用例只看磁盘满的那一刻谁在建根——建根最多的两条 kit
+ *     用例（requires.kits 14 个 / 域名前缀 7 个）自然最常中枪，于是表现为「间歇性只红这两条」。
+ *     现在：快照按输入形态过滤只留文本（~12MB），且每条用例的根在用例结束即回收（afterEach）。
+ *  ② 一致性。真仓工作树是共享可变状态（编辑器、另一个会话、sync:* watch 都可能边跑测试边改它），
+ *     而生成器对中间态是 fail-closed 的（未登记的 *View.ts、写了一半的 plugin.json …）。旧写法把二十来次
+ *     整树拷贝摊在好几秒里，窗口里撞上一次中间态，readViewCatalog 抛的就是**陌生**错误
+ *     ⇒ 满屏 assert.throws(…, /特定正则/) 变红。只读一次之后，同一进程里的夹具彼此一致。
+ * ⛔ 显式的「真仓新鲜度」闸（assertPluginArtifactsFresh() 等）仍直接读 REPOSITORY_ROOT——那正是它们的判据。
+ */
+let inputSnapshot: string | null = null;
+/** 本条用例创建的隔离根：用例结束即回收（afterEach），⛔ 不泄漏到 os.tmpdir()、⛔ 不攒到文件末尾。 */
 const FIXTURE_ROOTS: string[] = [];
+afterEach(() => {
+  for (const root of FIXTURE_ROOTS.splice(0)) fs.rmSync(root, { recursive: true, force: true });
+});
 after(() => {
-  for (const root of FIXTURE_ROOTS) fs.rmSync(root, { recursive: true, force: true });
+  for (const root of FIXTURE_ROOTS.splice(0)) fs.rmSync(root, { recursive: true, force: true });
+  if (inputSnapshot !== null) fs.rmSync(inputSnapshot, { recursive: true, force: true });
 });
 
-function createFixture(): { readonly root: string; readonly options: PluginCodegenOptions } {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "plugin-codegen-"));
-  FIXTURE_ROOTS.push(root);
+function createInputSnapshot(): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "plugin-codegen-snapshot-"));
   for (const dir of FIXTURE_INPUT_DIRS) {
     if (OPTIONAL_INPUT_DIRS.has(dir) && !fs.existsSync(path.join(REPOSITORY_ROOT, dir))) continue;
-    fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true });
+    fs.cpSync(path.join(REPOSITORY_ROOT, dir), path.join(root, dir), { recursive: true, filter: isInputFile });
   }
   // 插件的贡献文件（plugin.json `contributes.<kit>.<id>` 指向的 module / data）可以落在输入面之外（如 apps/server/src/core/<id>/），
   // codegen 会读它们（存在性 / 导出 / schema）：逐个补拷，⛔ 假设树上没有带贡献点的插件（MG0 起有 mmodemo）。
@@ -111,7 +138,7 @@ function createFixture(): { readonly root: string; readonly options: PluginCodeg
         fs.mkdirSync(path.dirname(target), { recursive: true });
         fs.cpSync(source, target);
         // module 贡献的相对 import（同目录内）也要在：拷整个所在目录（apps/server/src/core/<id>/ 之类），只补缺失文件
-        fs.cpSync(path.dirname(source), path.dirname(target), { recursive: true, force: false, errorOnExist: false });
+        fs.cpSync(path.dirname(source), path.dirname(target), { recursive: true, force: false, errorOnExist: false, filter: isInputFile });
       }
     }
   }
@@ -125,6 +152,15 @@ function createFixture(): { readonly root: string; readonly options: PluginCodeg
       filter: (source) => fs.statSync(source).isDirectory() || source.endsWith(".xml"),
     },
   );
+  return root;
+}
+
+/** 隔离根：从不可变快照克隆一份（⛔ 不再各自现拷真仓；见 inputSnapshot 注释）。 */
+function createFixture(): { readonly root: string; readonly options: PluginCodegenOptions } {
+  inputSnapshot ??= createInputSnapshot();
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "plugin-codegen-"));
+  FIXTURE_ROOTS.push(root);
+  fs.cpSync(inputSnapshot, root, { recursive: true });
   return { root, options: { repositoryRoot: root } };
 }
 
