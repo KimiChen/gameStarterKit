@@ -215,6 +215,18 @@ describe('framework integration gates', () => {
         assert.deepStrictEqual(revived, [], 'income 第二套账户键不得再出现在运行时或脚本里')
     })
 
+    it('keeps native Lobby business persistence out of direct Redis stores', () => {
+        const lobbyStores = walkTypeScriptFiles(path.join(projectRoot, 'src/modules'))
+            .filter((file) => /[\\/]lobby[\\/][^\\/]+Store\.ts$/.test(file))
+            .map((file) => path.relative(projectRoot, file))
+        assert.deepStrictEqual(lobbyStores, [], 'Native Lobby 业务不得恢复直接写 Redis 的 *Store')
+        assert.strictEqual(
+            fs.existsSync(path.join(projectRoot, 'src/runtime/lobby/NativeLobbyGrants.ts')),
+            false,
+            '不得恢复绕过 User Bean 的独立奖励账本',
+        )
+    })
+
     it('keeps the Bean sync metadata consistent with the network surface', () => {
         const record = JSON.parse(fs.readFileSync(path.join(projectRoot, 'generated/records/record.json'), 'utf8')) as {
             readonly modVersion: number

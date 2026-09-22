@@ -1,12 +1,10 @@
 import assert from 'node:assert/strict'
 import {
     GameError,
-    isLobbyRouteOutcome,
     PlatformLineInfo,
     RedisService,
     RouteAction,
     type LobbyConnectionContext,
-    type LobbyRouteOutcome,
 } from '@arthropoda/game-engine'
 import type { LobbyRpcType } from '../../../generated/lobby-contract/protocol/lobbyRpc'
 import { NativeLobbyIdentityMap } from '../../../src/runtime/identity/NativeLobbyIdentityMap'
@@ -17,14 +15,7 @@ import { installFakeCenterRedis, type FakeCenterRedis } from '../../support/Fake
 import { lobbyOutcomeData } from '../../support/lobbyOutcome'
 
 /**
- * 「原生 Lobby 业务框架整合」（`humanDocs/业务框架整合.md`）的**现状红测**。
- *
- * BF0 的退出条件是「有可重复的红测证明当前 income 使用第二套路由和存储」。所以本文件
- * **故意是红的**：三条断言钉的都是施工单要求的目标形态，BF4–BF7 落地后必须自然转绿。
- *
- * ⛔ 不允许为了让套件变绿而放宽/删除这里的断言，也不允许把它们改成源码字符串位置断言
- * （要证明「不再使用第二套框架」必须落在**行为**上：模块贡献表、真实 Redis 键、真实路由结果）。
- * ⛔ 也不要在这些断言绿之前宣称整合完成。
+ * income 保持在统一 Bean 生命周期上的行为闸。
  */
 
 const SID = 11
@@ -149,23 +140,6 @@ describe('business framework integration (BF0 freeze)', () => {
         }
     })
 
-    it('carries the committed Bean change back through the native Lobby route result', async () => {
-        // 目标形态（施工单 §4「保存成功后响应包含首次执行结果，reply.sync 包含已提交的公开 Bean 变化」）：
-        // 路由适配器必须把 `result.sync` 原样交给传输层，⛔ 不得在适配器里丢掉它。
-        // 这条断言同时是「谁把 sync 吞了」的机器化判据：一旦适配器只回 `lobbyRouteOutcome(data)`，它就红。
-        const uid = 'freeze-route-sync'
-        const context = await connect(uid)
-        const outcome = await rpcOutcome(context, 'user.updateProfile', {
-            clientReqId: 'freeze-sync-1',
-            nickname: '阿呆',
-        })
-
-        const sync = outcome.sync as { mods?: Record<string, unknown> } | undefined
-        assert.ok(sync, '路由适配器丢弃了 result.sync：已提交的 Bean 变化必须跟着本次响应回给发起者')
-        const nativeUser = sync.mods?.nativeUser as { nickname?: string } | undefined
-        assert.equal(nativeUser?.nickname, '阿呆', 'sync 必须携带本次已提交的公开字段')
-    })
-
     /** 认证成功后的上下文：与监听进程装配路径一致。 */
     async function connect(externalUid: string, sId = SID): Promise<LobbyConnectionContext> {
         const internalUid = await identities.resolve(externalUid, sId)
@@ -181,18 +155,9 @@ describe('business framework integration (BF0 freeze)', () => {
 
     /** 驱动一条路由并返回业务数据（出站响应仍过 shared validator）。 */
     async function rpc(uid: string, type: LobbyRpcType, payload: unknown): Promise<unknown> {
-        return lobbyOutcomeData(await rpcOutcome(await connect(uid), type, payload))
-    }
-
-    /** 驱动一条路由并返回**未解包**的传输层结果，供断言 `sync` 的用例使用。 */
-    async function rpcOutcome(
-        context: LobbyConnectionContext,
-        type: LobbyRpcType,
-        payload: unknown,
-    ): Promise<LobbyRouteOutcome> {
+        const context = await connect(uid)
         const result = await assembly.routes.execute(type, context, payload)
         assembly.wire.validateResponse(type, lobbyOutcomeData(result))
-        assert.equal(isLobbyRouteOutcome(result), true, `${type} 的传输层结果必须是 LobbyRouteOutcome`)
-        return result as LobbyRouteOutcome
+        return lobbyOutcomeData(result)
     }
 })

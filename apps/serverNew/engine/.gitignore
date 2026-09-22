@@ -68,6 +68,7 @@ web_modules/
 
 # Output of 'npm pack'
 *.tgz
+!vendor/arthropoda-typeorm-0.3.22.tgz
 
 # Yarn Integrity file
 .yarn-integrity

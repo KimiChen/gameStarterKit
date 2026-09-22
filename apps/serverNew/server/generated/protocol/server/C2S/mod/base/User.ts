@@ -558,4 +558,8 @@ export interface User {
      * 上面那笔离线收益对应的离线秒数；同样只在领取时清零，供弹窗展示
      */
     offlineCopperSecondsPending: int
+    /**
+     * 已招募英雄；只由 heroRecruit 域读取和写入，不进入通用 User 同步面。
+     */
+    recruitedHeroIds?: int[]
 }

@@ -221,10 +221,10 @@ describe('native Lobby shared wire and identity boundary', () => {
         // 既没有生成的 Action 解析、也没有模块贡献 ⇒ 声明面里的本项目路由全是「无主」，
         // 必须 fail-closed（`unowned missing`），而不是「看起来能启动」。
         const routes = new NativeLobbyRouteRegistry(routeRegistryOptions())
-        assert.throws(() => routes.assertComplete(), /unowned missing=.*arena\.board/)
-        routes.register('user.getInfo', async () => ({ user: {} }))
-        assert.throws(() => routes.assertComplete(), /unowned missing=.*arena\.board/)
-        assert.throws(() => routes.register('user.getInfo', async () => ({})), /duplicate native Lobby route/)
+        assert.throws(() => routes.assertComplete(), /unowned missing=.*income\.getPending/)
+        routes.register('income.getPending', async () => ({}))
+        assert.throws(() => routes.assertComplete(), /unowned missing=.*income\.claimOffline/)
+        assert.throws(() => routes.register('income.getPending', async () => ({})), /duplicate native Lobby route/)
     })
 
     it('serves every schema-owned route from the generated Action registry instead of module contributions', () => {
@@ -263,7 +263,7 @@ describe('native Lobby shared wire and identity boundary', () => {
         const ungated = new NativeLobbyRouteRegistry({ resolveInternalUid: async () => 1001 })
         assert.throws(() => ungated.assertComplete(), /idempotency gate/)
         await assert.rejects(
-            () => ungated.execute('arena.capture', context(), { clientReqId: 'req-1', tile: 0 }),
+            () => ungated.execute('income.claimOffline', context(), { clientReqId: 'req-1' }),
             /idempotency gate/,
         )
     })

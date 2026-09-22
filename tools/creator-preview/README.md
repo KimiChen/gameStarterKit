@@ -13,12 +13,12 @@ docs/evidence/creator-2026-09-06/（预览证据目录按 .gitignore 政策不�
 
 ## 前置
 
-| 进程 | 要求 | 检测方式 |
-| --- | --- | --- |
-| Cocos Creator 3.8.8 | 已打开 `apps/Cocos`，预览服务在 `http://localhost:7456` | `Page.navigate` 失败即报错 |
-| Chrome | 按 CLAUDE.md 约定以 `--remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 --user-data-dir="$HOME/Desktop/chrome_profile"` 启动，**窗口可见** | `GET http://127.0.0.1:9222/json` 不通即报错 |
-| 本地栈 + 游戏服 | `npm run dev`（redis 6401/6402、MySQL 3316、游戏服 2568、`AUTH_PROVIDER=dev`） | 登录步骤超时即失败 |
-| 场景 | 默认读 `apps/Cocos/assets/scene.scene.meta` 的 uuid；`--scene <uuid>` 可换 | — |
+| 进程                | 要求                                                                                                                                                      | 检测方式                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Cocos Creator 3.8.8 | 已打开 `apps/Cocos`，预览服务在 `http://localhost:7456`                                                                                                   | `Page.navigate` 失败即报错                  |
+| Chrome              | 按 CLAUDE.md 约定以 `--remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 --user-data-dir="$HOME/Desktop/chrome_profile"` 启动，**窗口可见** | `GET http://127.0.0.1:9222/json` 不通即报错 |
+| 本地栈 + 游戏服     | `npm run dev`（redis 6401/6402、MySQL 3316、游戏服 2568、`AUTH_PROVIDER=dev`）                                                                            | 登录步骤超时即失败                          |
+| 场景                | 默认读 `apps/Cocos/assets/scene.scene.meta` 的 uuid；`--scene <uuid>` 可换                                                                                | —                                           |
 
 ## 用法
 
@@ -37,23 +37,23 @@ node tools/creator-preview/capture-uniflex-golden.mjs --screen backpack --out /t
 运行前需要 Creator 3.8.8 打开 `apps/Cocos` 并启动预览服务 `7456`，Chrome 需要开启本机
 `9222` 调试端口。输出 PNG 可直接作为 `ui:verify --cocos-image` 的 Cocos 证据。
 
-| 场景 | 步骤与判据 |
-| --- | --- |
-| `home` | 登录页 FGUI 对象 `btn_login` 可见 → 点击 → `PromoHomeView` 挂载且卡片含「协议 …」行 |
-| `settings` | 点首屏「设置」→ `SettingsView` 出现 → 确认上方「系统设置」和下方「玩法入口」，读取双列卡片标题与稳定 entryId；已在「通用设置」详情时先点返回箭头 |
-| `redeem` | 点「兑换码」整卡（必要时自动滚入视口）→ `RedeemView` + EditBox 出现 → 输入 `--code`（默认 `WELCOME2026`）→「兑换」→ 结果文案归类 `success` / `already-claimed` / `invalid` / `other` →「关闭」回设置面板 |
-| `tally` | 点「点数赛」整卡（必要时自动滚入视口）→「目标 N 次」出现 → 连点 `TAP` 直到「你赢了」→ 结算倒计时后 `PromoHomeView` 回来且结算文案消失 |
-| `cosmetic` | ⚠ 2026-09-06 起衣柜并入 snake，**设置面板没有「衣柜」条目**：先跑一局 snake 到结算页 → 点「我的衣柜」→ 先切回「全部」筛选（重放之间可能停在别的筛选上）→ 读皮肤行 → 切「已拥有」→ 点某行「装备」并等**那一行**变「已装备」（`snakeCosmetic.equip`；⛔ 不能数「装备」标签总数：换装是互换，总数不变）→ 切「可合成」试「合成」（`snakeCosmetic.unlock`，没有可合成皮肤时记 skip）→「关闭」回结算页 →「返回主页」 |
-| `snake` | 点「贪吃蛇大作战」整卡 → `SnakeWorld.Hud` 出现 →「结束本次」→ 确认框 → 确认 → 结算页读行 + 钉住「返回主页」与「我的衣柜」**同排**（Δy ≤ 4）→「返回主页」回首屏。⚠ 确认框首击会被吞，脚本等一拍再点、必要时重开重点一次并把 `retried` 写进报告 |
-| `ballMove` | 点「进入战斗」整卡 → `PlayersLayer` 挂载（画布演示无文本）→ 点左上角「离开」回首屏（2026-09-06 前该入口没有退出 UI） |
-| `arena` | 点「竞技场」整卡 → `EntryGroupView` →「竞技场 · arena」同行「进入」（**kit** 的 route 形态）→ `ArenaBoardView` 16 格 +「奖杯 N」→ 点一格 → `arena.capture` 结果归类 `captured` / `refused` → 点「刷新」重读 → 再点自己的格 = 加固（断言守备 +1 且奖杯不变；⚠ 必须等**与上一条不同**的提示，旧提示还挂在面板上）→「关闭」 |
-| `slg` | 设置中的「大地图」整卡（`map`）→ `SlgMapView` 贴图地表与透明装饰 → 点选可见无主格 → 免费占领（我方守备 1、奖杯 +1）→ 刷新后读回同格 → 中央鼠标拖动 → 中央滚轮逐档验证 LOD 1–4，并断言后台设置滚动偏移不变 → 总览实地图与当前位置框 → 山河绘卷展示、点击不改变位置 → 实地图点击命名地标定位 → 返回保留位置 → 关闭、重新进入验证资源恢复，再关闭。无主格在可见范围内择取，没有目标时明确失败。独立触发，未纳入既有 `all` 的 13 场景基线 |
-| `arenaCapture` | 「占领赛 · arena」（kit 的 gameplay mode）→「目标 N 格」→ 连点「占领」到「你赢了！」→ 回首屏 |
-| `arenaDuel` | 「决斗 · arena」（kit 的第二个 mode）→「HP N」→ 连点「出击」到「你赢了！」→ 回首屏 |
-| `arenaShop` | 「竞技场商店 · arenaShop」（建在 kit 上的 plugin）→ 经 kit 的 `board` 面读自有格（没有就先跑 `arena` 占一格）→ 取最上面一行的「+守备」（自有格可能多块）→ 结果归类 `bought` / `insufficient-balance` / `not-owned` → 点「刷新」重读 |
-| `areaList` | 登录页 FGUI `btn_server` → 区服列表（判据：子件 `lst_server`）→ `btn_close` 关闭回登录页 |
-| `loginNotice` | 登录页 FGUI `btn_notice` → 公告（判据：子件 `tge_tip`）→ 关闭。⚠ FGUI 视图挂在 `GRoot/…/layer_popup/…/GComponent` 下、节点名不是类名，只能按**独有子件名**判定；外部服务不在时会落到 ConfirmView（子件 `yesBtn`），脚本如实记 `outcome: error-confirm` |
-| `all` | 依次 areaList → loginNotice → home → settings → redeem → tally → cosmetic → arena → arenaCapture → arenaDuel → arenaShop → snake → ballMove（两个登录页场景排最前：它们会重载页面回登录态） |
+| 场景           | 步骤与判据                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `home`         | 登录页 FGUI 对象 `btn_login` 可见 → 点击 → `PromoHomeView` 挂载且卡片含「协议 …」行                                                                                                                                                                                                                                                                                                                                                   |
+| `settings`     | 点首屏「设置」→ `SettingsView` 出现 → 确认上方「系统设置」和下方「玩法入口」，读取双列卡片标题与稳定 entryId；已在「通用设置」详情时先点返回箭头                                                                                                                                                                                                                                                                                      |
+| `redeem`       | 点「兑换码」整卡（必要时自动滚入视口）→ `RedeemView` + EditBox 出现 → 输入 `--code`（默认 `WELCOME2026`）→「兑换」→ 结果文案归类 `success` / `already-claimed` / `invalid` / `other` →「关闭」回设置面板                                                                                                                                                                                                                              |
+| `tally`        | 点「点数赛」整卡（必要时自动滚入视口）→「目标 N 次」出现 → 连点 `TAP` 直到「你赢了」→ 结算倒计时后 `PromoHomeView` 回来且结算文案消失                                                                                                                                                                                                                                                                                                 |
+| `cosmetic`     | ⚠ 2026-09-06 起衣柜并入 snake，**设置面板没有「衣柜」条目**：先跑一局 snake 到结算页 → 点「我的衣柜」→ 先切回「全部」筛选（重放之间可能停在别的筛选上）→ 读皮肤行 → 切「已拥有」→ 点某行「装备」并等**那一行**变「已装备」（`snakeCosmetic.equip`；⛔ 不能数「装备」标签总数：换装是互换，总数不变）→ 切「可合成」试「合成」（`snakeCosmetic.unlock`，没有可合成皮肤时记 skip）→「关闭」回结算页 →「返回主页」                        |
+| `snake`        | 点「贪吃蛇大作战」整卡 → `SnakeWorld.Hud` 出现 →「结束本次」→ 确认框 → 确认 → 结算页读行 + 钉住「返回主页」与「我的衣柜」**同排**（Δy ≤ 4）→「返回主页」回首屏。⚠ 确认框首击会被吞，脚本等一拍再点、必要时重开重点一次并把 `retried` 写进报告                                                                                                                                                                                         |
+| `ballMove`     | 点「进入战斗」整卡 → `PlayersLayer` 挂载（画布演示无文本）→ 点左上角「离开」回首屏（2026-09-06 前该入口没有退出 UI）                                                                                                                                                                                                                                                                                                                  |
+| `arena`        | 点「竞技场」整卡 → `EntryGroupView` →「竞技场 · arena」同行「进入」（**kit** 的 route 形态）→ `ArenaBoardView` 16 格 +「奖杯 N」→ 点一格 → `arena.capture` 结果归类 `captured` / `refused` → 点「刷新」重读 → 再点自己的格 = 加固（断言守备 +1 且奖杯不变；⚠ 必须等**与上一条不同**的提示，旧提示还挂在面板上）→「关闭」                                                                                                              |
+| `slg`          | 设置中的「大地图」整卡（`map`）→ `SlgMapView` 贴图地表与透明装饰 → 点选可见无主格 → 免费占领（我方守备 1、奖杯 +1）→ 刷新后读回同格 → 中央鼠标拖动 → 中央滚轮逐档验证 LOD 1–4，并断言后台设置滚动偏移不变 → 总览实地图与当前位置框 → 山河绘卷展示、点击不改变位置 → 实地图点击命名地标定位 → 返回保留位置 → 关闭、重新进入验证资源恢复，再关闭。无主格在可见范围内择取，没有目标时明确失败。独立触发，未纳入既有 `all` 的 13 场景基线 |
+| `arenaCapture` | 「占领赛 · arena」（kit 的 gameplay mode）→「目标 N 格」→ 连点「占领」到「你赢了！」→ 回首屏                                                                                                                                                                                                                                                                                                                                          |
+| `arenaDuel`    | 「决斗 · arena」（kit 的第二个 mode）→「HP N」→ 连点「出击」到「你赢了！」→ 回首屏                                                                                                                                                                                                                                                                                                                                                    |
+| `arenaShop`    | 「竞技场商店 · arenaShop」（建在 kit 上的 plugin）→ 经 kit 的 `board` 面读自有格（没有就先跑 `arena` 占一格）→ 取最上面一行的「+守备」（自有格可能多块）→ 结果归类 `bought` / `insufficient-balance` / `not-owned` → 点「刷新」重读                                                                                                                                                                                                   |
+| `areaList`     | 登录页 FGUI `btn_server` → 区服列表（判据：子件 `lst_server`）→ `btn_close` 关闭回登录页                                                                                                                                                                                                                                                                                                                                              |
+| `loginNotice`  | 登录页 FGUI `btn_notice` → 公告（判据：子件 `tge_tip`）→ 关闭。⚠ FGUI 视图挂在 `GRoot/…/layer_popup/…/GComponent` 下、节点名不是类名，只能按**独有子件名**判定；外部服务不在时会落到 ConfirmView（子件 `yesBtn`），脚本如实记 `outcome: error-confirm`                                                                                                                                                                                |
+| `all`          | 依次 areaList → loginNotice → home → settings → redeem → tally → cosmetic → arena → arenaCapture → arenaDuel → arenaShop → snake → ballMove（两个登录页场景排最前：它们会重载页面回登录态）                                                                                                                                                                                                                                           |
 
 设置面板用纯 Cocos 代码绘制双列卡片：标题只有玩家可读的 label，不显示包 id，也没有独立「进入」按钮。
 重放按 `SettingsView/panel/viewport/content/card-<entryId>` 定位整卡，稳定 entryId 为
@@ -72,6 +72,7 @@ SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观�
 
 退出码：0 全部通过；1 有步骤失败（失败现场也会截图 `NN-failed-<step>.jpg`，报告仍落盘）；2 参数/连接错误。
 `report.json` 的 `ok`、`steps[].ok/detail/error/screenshots`、`console[]` 是复核依据；截图只是佐证。
+报告会脱敏 `--secret`；联调密钥只用于本地内部动作请求，不得写入证据目录、终端转发参数或提交物。
 
 ## 工作原理与已知坑（2026-09-05 实测）
 
@@ -100,7 +101,7 @@ SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观�
 - **arenaShop 的成功路径要有金币**：框架里唯一的入账路径是充值回调，dev 账号默认 0 金，直接买加固会得到
   「金币不足」（这本身就是 `tx.debit` 经主账本拒绝的实据）。要看成功路径就在开发库里种一次：
   `INSERT INTO user_currency (user_id, server_id, currency, balance) VALUES ('<uid>', 0, 1, 100)
-  ON DUPLICATE KEY UPDATE balance = 100`，再清掉 `*cache:currency*` 键。
+ON DUPLICATE KEY UPDATE balance = 100`，再清掉 `*cache:currency*` 键。
 - **兑换码是一次性的**：同一 dev 账号重跑 `redeem` 得到 `already-claimed`，属预期；要走成功路径换 `--code`（服务端码表见 `apps/plugins/redeem`）。
 
 ## 原生通道（native）预览

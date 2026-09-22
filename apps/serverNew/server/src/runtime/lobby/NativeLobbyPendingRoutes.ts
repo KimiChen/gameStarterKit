@@ -31,8 +31,41 @@ const MMO_PARTY_REASON = 'MMO MF6a-B3（e4f9f692）：party 域仅在 apps/serve
 const MMO_WORLD_REASON =
     'MMO MF8-B4（73716dac）/ MF10-B1（76ae49ff）：world 域依赖 persona / WorldRoom / world_instance，原生通道未迁移'
 
+const LEGACY_ARENA_REASON =
+    'arena kit 与 arenaShop plugin 的权威实现位于 apps/server（kits/arena、core/arenaShop、websocket/arena*）；serverNew 不保留重复 Redis 棋盘与商店实现'
+
+const LEGACY_SLG_REASON =
+    'slg kit 的权威实现位于 apps/server（kits/slg、websocket/slg）；serverNew 不保留重复 Redis 大地图与行军实现'
+
+const LEGACY_GUILD_REASON =
+    'guild 域的权威实现位于 apps/server（core/guild、websocket/guild）；serverNew 不保留重复 Redis 公会实现'
+
+const LEGACY_MAIL_REASON =
+    'mail 域的权威实现位于 apps/server（core/economy、websocket/mail）；serverNew 不保留重复 Redis 信箱与附件发放实现'
+
+const LEGACY_ROOM_REASON =
+    'room 私房票据的权威实现位于 apps/server（core/rooms、websocket/room）；serverNew 不保留重复 Redis ticket 实现'
+
+const LEGACY_SHOP_REASON =
+    'shop / redeem 经济权威位于 apps/server（core/economy、core/redeem、websocket/shop|redeem）；serverNew 不保留重复 Redis 钱包与发放实现'
+
+const LEGACY_SNAKE_COSMETIC_REASON =
+    'snakeCosmetic 的权威实现位于 apps/server（websocket/snakeCosmetic）；serverNew 不保留重复 Redis 衣柜实现'
+
+const LEGACY_USER_REASON =
+    'user Lobby 域的权威实现位于 apps/server（websocket/user）；serverNew 只保留内部 User Bean 建档与生命周期，不保留第二套 Redis profile'
+
 export const NativeLobbyPendingRoutes: Readonly<Record<string, string>> = {
+    'arena.board': LEGACY_ARENA_REASON,
+    'arena.capture': LEGACY_ARENA_REASON,
+    'arenaShop.buyBoost': LEGACY_ARENA_REASON,
     'chat.send': 'MMO MF6a-B4（1280037e）：chat 域（realm / party 频道）仅在 apps/server 实现，原生通道未迁移',
+    'guild.getEvents': LEGACY_GUILD_REASON,
+    'guild.join': LEGACY_GUILD_REASON,
+    'guild.leave': LEGACY_GUILD_REASON,
+    'mail.claimAttach': LEGACY_MAIL_REASON,
+    'mail.list': LEGACY_MAIL_REASON,
+    'mail.markRead': LEGACY_MAIL_REASON,
     'party.create': MMO_PARTY_REASON,
     'party.invite': MMO_PARTY_REASON,
     'party.accept': MMO_PARTY_REASON,
@@ -42,6 +75,22 @@ export const NativeLobbyPendingRoutes: Readonly<Record<string, string>> = {
     'party.transferLeader': MMO_PARTY_REASON,
     'party.get': MMO_PARTY_REASON,
     'party.getEvents': MMO_PARTY_REASON,
+    'redeem.claim': LEGACY_SHOP_REASON,
+    'room.prepareCreate': LEGACY_ROOM_REASON,
+    'room.resolve': LEGACY_ROOM_REASON,
+    'shop.purchase': LEGACY_SHOP_REASON,
+    'shop.queryOp': LEGACY_SHOP_REASON,
+    'slg.mapTiles': LEGACY_SLG_REASON,
+    'slg.tileCapture': LEGACY_SLG_REASON,
+    'slg.marchDispatch': LEGACY_SLG_REASON,
+    'slg.marchRecall': LEGACY_SLG_REASON,
+    'snakeCosmetic.getSnapshot': LEGACY_SNAKE_COSMETIC_REASON,
+    'snakeCosmetic.equip': LEGACY_SNAKE_COSMETIC_REASON,
+    'snakeCosmetic.unlock': LEGACY_SNAKE_COSMETIC_REASON,
+    'user.getInfo': LEGACY_USER_REASON,
+    'user.getProfile': LEGACY_USER_REASON,
+    'user.getUserId': LEGACY_USER_REASON,
+    'user.updateProfile': LEGACY_USER_REASON,
     'world.enter': MMO_WORLD_REASON,
     'world.resolveTransfer': MMO_WORLD_REASON,
 }

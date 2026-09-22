@@ -31,8 +31,8 @@ export interface ISnakeCosmeticCatalogEntry {
 }
 
 export interface ISnakeCosmeticSnapshotRes {
-    readonly profile: ISnakeCosmeticProfile
-    readonly catalog: readonly ISnakeCosmeticCatalogEntry[]
+    profile: ISnakeCosmeticProfile
+    catalog: ISnakeCosmeticCatalogEntry[]
 }
 
 export interface ISnakeCosmeticSkinReq {
@@ -40,7 +40,7 @@ export interface ISnakeCosmeticSkinReq {
 }
 
 export interface ISnakeCosmeticProfileRes {
-    readonly profile: ISnakeCosmeticProfile
+    profile: ISnakeCosmeticProfile
 }
 
 function parseISnakeCosmeticGetSnapshotReq(input: unknown, path: string): ISnakeCosmeticGetSnapshotReq {
@@ -118,7 +118,7 @@ export const validateSnakeCosmeticUnlockRes: RuntimeValidator<ISnakeCosmeticProf
 
 export default defineLobbyRpcDomain({
     domain: "snakeCosmetic",
-    contractVersion: 7,
+    contractVersion: 8,
     errorCodes: ["SNAKE_SKIN_UNKNOWN","SNAKE_SKIN_NOT_OWNED","SNAKE_SKIN_NOT_CRAFTABLE","SNAKE_SKIN_FRAGMENTS_INSUFFICIENT","SNAKE_COSMETIC_WRITES_DISABLED"],
     pushes: [],
     routes: [

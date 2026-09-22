@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 2,
+  "id": "heroRecruit",
+  "description": "英雄招募：使用铜币购买固定英雄目录，并在独立全屏场景管理招募状态",
+  "domains": ["heroRecruit"],
+  "category": "extra",
+  "docs": ["apps/plugins/heroRecruit/README.md"],
+  "resident": false,
+  "entry": "apps/client/src/plugins/heroRecruit/index.ts",
+  "viewDirs": ["apps/client/src/plugins/heroRecruit/view"],
+  "views": [
+    "apps/client/src/plugins/heroRecruit/view/HeroRecruitSceneView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "heroRecruit",
+      "logicDir": "apps/client/src/plugins/heroRecruit/logic"
+    }
+  ],
+  "routes": [{ "id": "heroRecruit", "view": "HeroRecruitScene" }],
+  "menu": [
+    {
+      "entryId": "heroRecruit",
+      "label": "英雄招募",
+      "labelKey": "menu.heroRecruit",
+      "launch": { "kind": "route", "routeId": "heroRecruit" }
+    }
+  ]
+}

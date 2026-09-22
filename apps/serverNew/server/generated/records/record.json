@@ -2831,9 +2831,9 @@
       "initFunc": true
     },
     "User.ts": {
-      "version": 172,
-      "md5": "f97a0a1e03ed78d4fd33e1308ee4b120",
-      "mtime": 1789911456213,
+      "version": 173,
+      "md5": "9cf0ed40a92e009540c8db48c8379357",
+      "mtime": 1790049834716,
       "sourcePath": "src/modules/user/bean/User.ts",
       "relativePath": "/base/User",
       "name": "User",
@@ -5635,6 +5635,25 @@
           "hasQuestionToken": false,
           "sourceType": "int",
           "sourceInitializer": "0",
+          "decorators": [
+            "@OnlyRedis"
+          ],
+          "saveType": "SaveType.ForRedis",
+          "modType": "ModType.None",
+          "listen": "undefined"
+        },
+        "recruitedHeroIds": {
+          "id": 172,
+          "name": "recruitedHeroIds",
+          "type": "Array",
+          "comment": "已招募英雄；只由 heroRecruit 域读取和写入，不进入通用 User 同步面。",
+          "typeImport": "",
+          "hasQuestionToken": true,
+          "collectionTypes": [
+            "int"
+          ],
+          "sourceType": "DiffArray<int>",
+          "sourceInitializer": null,
           "decorators": [
             "@OnlyRedis"
           ],

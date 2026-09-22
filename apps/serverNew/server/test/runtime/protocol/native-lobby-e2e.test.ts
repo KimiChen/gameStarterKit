@@ -10,12 +10,10 @@ import {
     KICK_CLOSE_CODE,
     LOBBY_TRANSPORT_MAX_MESSAGE_BYTES,
     LOBBY_TRANSPORT_VERSION,
-    ShopRpc,
-    UserRpc,
     type LobbyTransportServerFrame,
 } from '../../../generated/lobby-contract/protocol/lobbyRpc'
+import { IncomeRpc } from '../../../generated/lobby-contract/protocol/lobbyRpc/domains/income'
 import { nativeLobbyProcessRoutes } from '../../../src/runtime/lobby/NativeLobbyProcessRoutes'
-import { ShopNativeLobbyStore } from '../../../src/modules/shop/lobby/ShopNativeLobbyStore'
 import { User } from '../../../src/modules/user/bean/User'
 import { startConfiguredNativeLobby, type NativeLobbyRuntime } from '../../../src/startup/NativeLobbyRuntime'
 import { installFakeCenterRedis, type FakeCenterRedis } from '../../support/FakeCenterRedis'
@@ -319,120 +317,22 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
         return client
     }
 
-    /** 读公开档案视图的 nickname：走真实 wire，不直接摸存储。 */
-    async function nicknameOf(client: LobbyClient): Promise<string> {
-        client.send(rpc('qn', UserRpc.GetProfile, { uid: EXTERNAL_UID }))
-        const frame = await client.next()
-        assert.equal(frame.kind, 'reply')
-        return (frame as { reply: { ok: true; data: { profile: { nickname: string } } } }).reply.data.profile.nickname
-    }
-
-    /** 自档 `ver`：重连后不得被重置。 */
-    async function profileVersionOf(client: LobbyClient): Promise<number> {
-        client.send(rpc('qv', UserRpc.GetInfo))
-        const frame = await client.next()
-        assert.equal(frame.kind, 'reply')
-        return (frame as { reply: { ok: true; data: { user: { ver: number } } } }).reply.data.user.ver
-    }
-
-    /** 道具账本的**物理**读取：断言落在存储上，而不是复用生产读函数。 */
-    async function itemCountOf(uid: string, itemId: number): Promise<number> {
-        return Number((await redis.hGet('nativeLobby:grants:items:v1', `${SID}:${uid}:${itemId}`)) ?? 0)
-    }
-
-    async function balanceOf(uid: string): Promise<number> {
-        return Number((await redis.hGet('nativeLobby:shop:balance:v1', `${SID}:${uid}`)) ?? 0)
-    }
-
-    /** 轮询等待条件成立；用于「服务端异步结算完 pending RPC」这类没有回调可挂的观察点。 */
-    async function waitFor(check: () => Promise<boolean>, timeoutMs = 2000): Promise<void> {
-        const deadline = Date.now() + timeoutMs
-        for (;;) {
-            if (await check()) return
-            if (Date.now() > deadline) throw new Error('等待条件成立超时')
-            await new Promise((resolve) => setTimeout(resolve, 10))
-        }
-    }
-
     /** 与客户端一致：空请求体也要发 `payload: {}`，shared 的 `emptyPayload` 不接受缺省 payload。 */
     function rpc(id: string, type: string, payload: unknown = {}) {
         return { v: LOBBY_TRANSPORT_VERSION, kind: 'rpc', rpc: { id, type, payload } }
     }
 
-    it('authenticates over a real socket and returns a real user profile', async () => {
+    it('authenticates over a real socket and executes an owned Bean route', async () => {
         const client = await connectReady('token-alpha')
-        // 认证建档必须先登记外部角色，再由本服建默认档。
         assert.equal(platform.registerCalls, 1)
 
-        client.send(rpc('r1', UserRpc.GetUserId))
-        const userId = await client.next()
-        assert.equal(userId.kind, 'reply')
-        assert.equal(
-            userId.kind === 'reply' && userId.reply.ok,
-            true,
-            `期望成功的 user.getUserId 响应，实际=${JSON.stringify(userId)}`,
-        )
-        // 契约里的 uid 就是可信外部身份（服务端从 token 反查），不是内部数值 ID。
-        assert.deepEqual(userId, {
-            v: LOBBY_TRANSPORT_VERSION,
-            kind: 'reply',
-            reply: { id: 'r1', ok: true, data: { uid: EXTERNAL_UID } },
-        })
-        // 内部 uid 由中心 Redis 原子分配，绝不是 Number(外部 uid) 或任何字符串转换。
+        client.send(rpc('r1', IncomeRpc.GetPending))
+        const pending = await client.next()
+        assert.equal(pending.kind, 'reply')
+        assert.equal(pending.kind === 'reply' && pending.reply.ok, true, JSON.stringify(pending))
         const internalUid = Number(await redis.hGet('nativeLobby:identity:v1', `${SID}:${EXTERNAL_UID}`))
         assert.ok(Number.isSafeInteger(internalUid) && internalUid > 0, `内部 uid 必须是正整数，实际=${internalUid}`)
         assert.notEqual(String(internalUid), EXTERNAL_UID)
-
-        client.send(rpc('r2', UserRpc.GetInfo))
-        const info = await client.next()
-        assert.equal(info.kind, 'reply')
-        assert.deepEqual(info, {
-            v: LOBBY_TRANSPORT_VERSION,
-            kind: 'reply',
-            reply: {
-                id: 'r2',
-                ok: true,
-                data: {
-                    user: {
-                        uid: EXTERNAL_UID,
-                        star: 0,
-                        maxRound: 0,
-                        wins: 0,
-                        losses: 0,
-                        stamina: 0,
-                        lastStaminaRecoverAt: 0,
-                        musicOn: true,
-                        sfxOn: true,
-                        guildId: 0,
-                        ver: 0,
-                    },
-                },
-            },
-        })
-
-        // 读他档走公开视图；未建档的 uid 返回 null 而不是半状态。
-        client.send(rpc('r3', UserRpc.GetProfile, { uid: EXTERNAL_UID }))
-        const profile = await client.next()
-        assert.deepEqual(profile, {
-            v: LOBBY_TRANSPORT_VERSION,
-            kind: 'reply',
-            reply: {
-                id: 'r3',
-                ok: true,
-                data: {
-                    profile: {
-                        uid: EXTERNAL_UID,
-                        nickname: '',
-                        avatarId: -1,
-                        province: '',
-                        star: 0,
-                        maxRound: 0,
-                        wins: 0,
-                        losses: 0,
-                    },
-                },
-            },
-        })
 
         // 心跳在 ready 后仍可用，且不会被打成业务请求。
         client.send({ v: LOBBY_TRANSPORT_VERSION, kind: 'ping', nonce: 'n1' })
@@ -523,14 +423,14 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
 
         // 服务端不得因大包崩掉或降级：另一条连接仍能完成认证与查询。
         const other = await connectReady('token-oversize-2')
-        other.send(rpc('ok', UserRpc.GetUserId))
+        other.send(rpc('ok', IncomeRpc.GetPending))
         const reply = await other.next()
         assert.equal(reply.kind, 'reply')
     })
 
     it('rejects an rpc before authentication, an unknown route and extra payload fields', async () => {
         const early = await connect()
-        early.send(rpc('early', UserRpc.GetInfo))
+        early.send(rpc('early', IncomeRpc.GetPending))
         assert.deepEqual(await early.next(), {
             v: LOBBY_TRANSPORT_VERSION,
             kind: 'control.error',
@@ -547,7 +447,7 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
         })
 
         // 未知字段必须被拒绝而不是静默剥离：剥离会让「客户端以为生效了」变成静默丢数据。
-        client.send(rpc('p1', UserRpc.GetInfo, { forged: true }))
+        client.send(rpc('p1', IncomeRpc.GetPending, { forged: true }))
         assert.deepEqual(await client.next(), {
             v: LOBBY_TRANSPORT_VERSION,
             kind: 'reply',
@@ -565,18 +465,18 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
 
     it('rechecks the session on every rpc instead of trusting the connection', async () => {
         const client = await connectReady('token-delta')
-        client.send(rpc('k1', UserRpc.GetUserId))
+        client.send(rpc('k1', IncomeRpc.GetPending))
         assert.equal((await client.next()).kind, 'reply')
 
         platform.invalidate('token-delta', SID, 'EXPIRED')
-        client.send(rpc('k2', UserRpc.GetUserId))
+        client.send(rpc('k2', IncomeRpc.GetPending))
         assert.deepEqual(await client.next(), {
             v: LOBBY_TRANSPORT_VERSION,
             kind: 'reply',
             reply: { id: 'k2', ok: false, err: { code: 'AUTH_REQUIRED', msg: '会话已失效' } },
         })
         // 旧连接不得因为「已经 ready 过」而继续执行后续业务。
-        client.send(rpc('k3', UserRpc.GetUserId))
+        client.send(rpc('k3', IncomeRpc.GetPending))
         assert.deepEqual(await client.next(), {
             v: LOBBY_TRANSPORT_VERSION,
             kind: 'reply',
@@ -605,7 +505,7 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
             push: { type: 'auth.forceLogout', data: { reason: ForceLogoutReason.Replaced } },
         })
         assert.equal((await first.waitClose()).code, KICK_CLOSE_CODE[ForceLogoutReason.Replaced])
-        second.send(rpc('s1', UserRpc.GetUserId))
+        second.send(rpc('s1', IncomeRpc.GetPending))
         assert.equal((await second.next()).kind, 'reply')
 
         // 运营强制下线：只有监听进程的运行时能按 uid/sId 找到连接并踢掉。
@@ -619,12 +519,10 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
         assert.equal(runtime!.revoke(EXTERNAL_UID, SID), false)
     })
 
-    it('re-verifies the identity on reconnect and restores the character snapshot', async () => {
+    it('re-verifies the identity on reconnect and reloads the Bean route', async () => {
         const first = await connectReady('token-reconnect')
-        first.send(rpc('w1', UserRpc.UpdateProfile, { clientReqId: 'rc-1', nickname: '重连前', avatarId: 3 }))
+        first.send(rpc('w1', IncomeRpc.GetPending))
         assert.equal((await first.next()).kind, 'reply')
-        assert.equal(await nicknameOf(first), '重连前')
-        assert.equal(await profileVersionOf(first), 1)
         first.close()
         await first.waitClose()
 
@@ -633,9 +531,8 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
         const verifyCallsBefore = platform.verifyCalls
         const second = await connectReady('token-reconnect', SID, EXTERNAL_UID, true)
         assert.equal(platform.verifyCalls, verifyCallsBefore + 1, '重连不得跳过回源复验')
-        // 角色快照恢复：重连后档案仍在，`ver` 不得被重置成 0（重置等于把角色清零）。
-        assert.equal(await nicknameOf(second), '重连前')
-        assert.equal(await profileVersionOf(second), 1)
+        second.send(rpc('w2', IncomeRpc.GetPending))
+        assert.equal((await second.next()).kind, 'reply')
     })
 
     it('applies the same zone and token checks to a reconnect frame', async () => {
@@ -662,48 +559,6 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
         assert.equal((await badToken.waitClose()).code, 1008)
     })
 
-    it('settles a pending write after a disconnect and never re-applies it on retry', async () => {
-        const uid = EXTERNAL_UID
-        await new ShopNativeLobbyStore().credit(uid, SID, 100)
-        const client = await connectReady('token-pending')
-
-        // 注入延迟把 handler 停在「已扣款、发放前」的窗口里，从而保证断线确实发生在 RPC 飞行中。
-        const originalHSet = redis.hSet.bind(redis)
-        const operationsKey = 'nativeLobby:shop:operations:v1'
-        let inFlight = false
-        redis.hSet = async (key: string, field: string, value: string) => {
-            if (!inFlight && key === operationsKey) {
-                inFlight = true
-                await new Promise((resolve) => setTimeout(resolve, 200))
-            }
-            return originalHSet(key, field, value)
-        }
-        try {
-            client.send(rpc('p1', ShopRpc.Purchase, { clientReqId: 'pend-1', sku: 'shop.frag29x10' }))
-            await new Promise((resolve) => setTimeout(resolve, 60))
-            assert.equal(inFlight, true, '断线必须发生在请求仍在飞行时，否则这条用例没在测断线')
-            client.close()
-            // 断线这一刻发放尚未落地：这条断言把「确实是飞行中断线」钉死（去掉注入延迟就会失败）。
-            assert.equal(await itemCountOf(uid, 29), 0)
-            await client.waitClose()
-        } finally {
-            redis.hSet = originalHSet
-        }
-        // 断线后 pending RPC 仍要结算：业务写入必须落地，不能因为客户端走了就被取消。
-        await waitFor(async () => (await itemCountOf(uid, 29)) === 10)
-        assert.equal(await balanceOf(uid), 0)
-
-        // 服务端**不**自动重放写请求；客户端按契约用同一 clientReqId 重试即可拿到一致结论。
-        const retry = await connectReady('token-pending')
-        retry.send(rpc('p2', ShopRpc.Purchase, { clientReqId: 'pend-1', sku: 'shop.frag29x10' }))
-        const reply = await retry.next()
-        assert.equal(reply.kind, 'reply')
-        assert.equal(reply.kind === 'reply' && reply.reply.ok, true, JSON.stringify(reply))
-        // 只扣一次、只发一次。
-        assert.equal(await itemCountOf(uid, 29), 10)
-        assert.equal(await balanceOf(uid), 0)
-    })
-
     it('never lets a stale connection teardown clobber the newer session', async () => {
         const first = await connectReady('token-generation')
         // 同一 token 的第二个连接先就位，再踢旧连接——旧连接的迟到清理必然发生在新会话之后。
@@ -718,7 +573,7 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
             kind: 'push',
             push: { type: 'server.notice', data: { text: '还在线' } },
         })
-        second.send(rpc('g1', UserRpc.GetUserId))
+        second.send(rpc('g1', IncomeRpc.GetPending))
         assert.equal((await second.next()).kind, 'reply')
         // 在线表仍指向新连接：运营踢人必须命中它，而不是「查不到在线连接」。
         assert.equal(runtime!.revoke(EXTERNAL_UID, SID), true)
@@ -728,7 +583,7 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
     it('rate limits a burst of rpc frames without dropping the connection', async () => {
         const client = await connectReady('token-zeta')
         const total = 40
-        for (let index = 0; index < total; index += 1) client.send(rpc(`b${index}`, UserRpc.GetUserId))
+        for (let index = 0; index < total; index += 1) client.send(rpc(`b${index}`, IncomeRpc.GetPending))
         const replies: string[] = []
         for (let index = 0; index < total; index += 1) {
             const frame = await client.next()

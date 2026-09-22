@@ -21,7 +21,7 @@
         "编译发布": "node publish.js"
     },
     "dependencies": {
-        "@arthropoda/typeorm": "0.3.22",
+        "@arthropoda/typeorm": "file:vendor/arthropoda-typeorm-0.3.22.tgz",
         "@redis/client": "^1.5.13",
         "async-mutex": "^0.4.0",
         "axios": "^1.6.3",

@@ -5,7 +5,7 @@ import { SystemErrors } from '../../../runtime/errors/SystemErrors'
  *
  * 旧二进制通道（`commom/PushErrorStatus` 与 `User` Bean 变更推送）已随 P6 删除，
  * 本类暂无出口。原生 Lobby 侧的服务器状态通知需按 shared 声明的领域推送，
- * 在 serverSettings 模块的 NativeLobbyStore 内显式发送。
+ * 由拥有该 shared 路由的服务显式发送。
  * ⛔ 不要在此处恢复框架级隐式推送。
  */
 export class ServerStatusNotifier {

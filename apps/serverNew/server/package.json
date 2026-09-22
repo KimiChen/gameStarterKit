@@ -62,7 +62,6 @@
         "verify": "pnpm check:generated && pnpm check:static && pnpm test -- --skip-bean-validation && pnpm build",
         "verify:module": "ts-node --project scripts/tsconfig.json scripts/modules/VerifyModule.ts",
         "verify:native-lobby-live": "node scripts/verify/native-lobby-live.cjs",
-        "verify:native-lobby-multiprocess-live": "node scripts/verify/native-lobby-multiprocess-live.cjs",
         "verify:quick": "pnpm check:quick",
         "一键生成代码": "pnpm generate",
         "启动http": "pnpm dev:http",

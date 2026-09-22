@@ -273,16 +273,6 @@
       }
     },
     {
-      "name": "arena",
-      "source": "src/modules/arena/ArenaModule.ts",
-      "systems": {}
-    },
-    {
-      "name": "arenaShop",
-      "source": "src/modules/arenaShop/ArenaShopModule.ts",
-      "systems": {}
-    },
-    {
       "name": "attr",
       "source": "src/modules/attr/AttrModule.ts",
       "systems": {
@@ -527,6 +517,11 @@
           }
         ]
       }
+    },
+    {
+      "name": "heroRecruit",
+      "source": "src/modules/heroRecruit/HeroRecruitModule.ts",
+      "systems": {}
     },
     {
       "name": "income",
@@ -779,30 +774,6 @@
       }
     },
     {
-      "name": "redeem",
-      "source": "src/modules/redeem/RedeemModule.ts",
-      "systems": {}
-    },
-    {
-      "name": "room",
-      "source": "src/modules/room/RoomModule.ts",
-      "systems": {
-        "startup": [
-          {
-            "moduleName": "room",
-            "source": "src/modules/room/RoomModule.ts",
-            "contribution": {
-              "name": "assert-room-gameplay-catalog",
-              "app": "service",
-              "phase": "configuration-loaded",
-              "scope": "process",
-              "run": "assertInviteProfilesDeclared"
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "scene",
       "source": "src/modules/scene/SceneModule.ts",
       "systems": {
@@ -838,21 +809,6 @@
           }
         ]
       }
-    },
-    {
-      "name": "shop",
-      "source": "src/modules/shop/ShopModule.ts",
-      "systems": {}
-    },
-    {
-      "name": "slg",
-      "source": "src/modules/slg/SlgModule.ts",
-      "systems": {}
-    },
-    {
-      "name": "snakeCosmetic",
-      "source": "src/modules/snakeCosmetic/SnakeCosmeticModule.ts",
-      "systems": {}
     },
     {
       "name": "task",
@@ -1020,7 +976,7 @@
               "kind": "handler",
               "name": "user-native-lobby-auth",
               "app": "service",
-              "onAuthenticated": "async (uid, internalUid, sId, services) => {\n                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`\n                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。\n                    await NativeLobbyUserEnter.enter(internalUid, sId)\n                    await new NativeLobbyUserStore(services.registerCharacter).ensure(uid, sId)\n                }",
+              "onAuthenticated": "async (uid, internalUid, sId, services) => {\n                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`\n                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。\n                    await NativeLobbyUserEnter.enter(internalUid, sId)\n                    await services.registerCharacter(uid, sId)\n                }",
               "onReleased": "async ({ internalUid }) => {\n                    const user = await User.load(internalUid)\n                    if (user) await UserSessionLifecycle.leave(user)\n                }"
             }
           }
@@ -1714,7 +1670,7 @@
           "kind": "handler",
           "name": "user-native-lobby-auth",
           "app": "service",
-          "onAuthenticated": "async (uid, internalUid, sId, services) => {\n                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`\n                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。\n                    await NativeLobbyUserEnter.enter(internalUid, sId)\n                    await new NativeLobbyUserStore(services.registerCharacter).ensure(uid, sId)\n                }",
+          "onAuthenticated": "async (uid, internalUid, sId, services) => {\n                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`\n                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。\n                    await NativeLobbyUserEnter.enter(internalUid, sId)\n                    await services.registerCharacter(uid, sId)\n                }",
           "onReleased": "async ({ internalUid }) => {\n                    const user = await User.load(internalUid)\n                    if (user) await UserSessionLifecycle.leave(user)\n                }"
         }
       },
@@ -1765,17 +1721,6 @@
           "phase": "persistence-ready",
           "scope": "process",
           "run": "() => GmConfigCatalog.loadAllConfig()"
-        }
-      },
-      {
-        "moduleName": "room",
-        "source": "src/modules/room/RoomModule.ts",
-        "contribution": {
-          "name": "assert-room-gameplay-catalog",
-          "app": "service",
-          "phase": "configuration-loaded",
-          "scope": "process",
-          "run": "assertInviteProfilesDeclared"
         }
       },
       {

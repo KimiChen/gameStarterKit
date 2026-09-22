@@ -13,8 +13,7 @@
  * 断言落在真实 Redis 上（用 redis-cli 直接读，不复用生产读函数），
  * 因此「测试通过」等于「存储里真的只有一份副作用」，而不是「内存假体说只有一份」。
  *
- * 场景集本身在 `lobbyProtocolScenarios.cjs`：**多进程线路跑的是同一份代码**
- * （见 `native-lobby-multiprocess-live.cjs`），本文件只负责夹具与进程生命周期。
+ * 场景集在 `lobbyProtocolScenarios.cjs`，只覆盖本项目仍拥有的认证与 Bean 路由。
  *
  * 用法：
  *   node scripts/verify/native-lobby-live.cjs [-p bearjoy] [-v live] [--sid 1]
@@ -126,7 +125,7 @@ async function main() {
     }
     console.log(`日志：${h.logPath}`)
     console.log(`本次数据在 Redis db ${h.CENTER_REDIS_DB}（中心）；如需清理：redis-cli -n ${h.CENTER_REDIS_DB} flushdb`)
-    console.log(`关键键：nativeLobby:identity:v1 / nativeLobby:guild:* / IdGenerater:user:${h.SID}`)
+    console.log(`关键键：nativeLobby:identity:v1 / User_<internalUid> / IdGenerater:user:${h.SID}`)
     process.exit(failed.length ? 1 : 0)
 }
 

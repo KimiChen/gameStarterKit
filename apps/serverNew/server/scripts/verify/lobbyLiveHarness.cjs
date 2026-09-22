@@ -296,9 +296,6 @@ function createHarness(fixture) {
         LobbyClient,
         V: contract.LOBBY_TRANSPORT_VERSION,
         MAX_BYTES: contract.LOBBY_TRANSPORT_MAX_MESSAGE_BYTES,
-        UserRpc: contract.UserRpc,
-        GuildRpc: contract.GuildRpc,
-        RoomRpc: contract.RoomRpc,
         /**
          * income 域的路由名常量。
          *

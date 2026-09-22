@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": "heroRecruit",
+  "kind": "cocos",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": true,
+  "logic": "apps/client/src/plugins/heroRecruit/logic/HeroRecruitLogic.ts",
+  "group": "authenticated",
+  "restore": "discard"
+}

@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@arthropoda/typeorm':
-        specifier: 0.3.22
-        version: 0.3.22(redis@4.6.7)(ts-node@10.9.2)
+        specifier: file:vendor/arthropoda-typeorm-0.3.22.tgz
+        version: file:vendor/arthropoda-typeorm-0.3.22.tgz(redis@4.6.7)(ts-node@10.9.2)
       '@redis/client':
         specifier: ^1.5.13
         version: 1.5.13
@@ -134,8 +134,11 @@ packages:
       '@jridgewell/trace-mapping': 0.3.19
     dev: false
 
-  /@arthropoda/typeorm@0.3.22(redis@4.6.7)(ts-node@10.9.2):
-    resolution: {integrity: sha512-xlnKSauPVEv7ZBupNL6jwcsCrOEh7bCGddjSfk9pSAjQ7Gvav3epTHT6CkOkW+EpQTx7lgvU/pTFfp4AXN667Q==}
+  file:vendor/arthropoda-typeorm-0.3.22.tgz(redis@4.6.7)(ts-node@10.9.2):
+    resolution: {integrity: sha512-osiYgAsWaRD+YSdrwXXcZh8PS04OoBROhsr4UBh5By7D+8ILFpPfXaxfaPZHXFnjemohK9QUeUF18rggdh+gmA==, tarball: file:vendor/arthropoda-typeorm-0.3.22.tgz}
+    id: file:vendor/arthropoda-typeorm-0.3.22.tgz
+    name: '@arthropoda/typeorm'
+    version: 0.3.22
     engines: {node: '>=16.13.0'}
     hasBin: true
     peerDependencies:

@@ -13,7 +13,7 @@ import { ActivityRank } from './ActivityRank'
  *
  * 旧二进制通道的变更推送（`Activity` / `ActivityRank` Bean mod 推送）已随 P6 删除。
  * 定榜只负责把奖励写进奖励缓存与定榜数据；客户端可见的结算通知需按 shared 声明的
- * 领域推送，在 activity 模块的 NativeLobbyStore 内显式发送。
+ * 领域推送由拥有该 shared 路由的服务显式发送。
  * ⛔ 不要在此处恢复框架级隐式推送。
  */
 export class ActivityRankFinalize {

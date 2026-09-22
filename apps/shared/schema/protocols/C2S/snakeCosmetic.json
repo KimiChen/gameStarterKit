@@ -1,6 +1,6 @@
 {
   "domain": "snakeCosmetic",
-  "contractVersion": 7,
+  "contractVersion": 8,
   "errorCodes": [
     "SNAKE_SKIN_UNKNOWN",
     "SNAKE_SKIN_NOT_OWNED",
@@ -41,7 +41,7 @@
     "ISnakeCosmeticProfileRes": {
       "kind": "object",
       "fields": [
-        { "name": "profile", "kind": "ref", "ref": "ISnakeCosmeticProfile", "readonly": true }
+        { "name": "profile", "kind": "ref", "ref": "ISnakeCosmeticProfile" }
       ]
     },
     "ISnakeCosmeticCatalogEntry": {
@@ -57,13 +57,12 @@
     "ISnakeCosmeticSnapshotRes": {
       "kind": "object",
       "fields": [
-        { "name": "profile", "kind": "ref", "ref": "ISnakeCosmeticProfile", "readonly": true },
+        { "name": "profile", "kind": "ref", "ref": "ISnakeCosmeticProfile" },
         {
           "name": "catalog",
           "kind": "array",
           "items": { "kind": "ref", "ref": "ISnakeCosmeticCatalogEntry" },
-          "maxItems": 256,
-          "readonly": true
+          "maxItems": 256
         }
       ]
     }

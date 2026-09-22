@@ -3,15 +3,15 @@
     "semanticArtifacts": {
         "unifiedRecord": {
             "path": "generated/records/record.json",
-            "semanticSha256": "ef7109f2e65556718e1c75324b9b6852acb77a2cab71d46079a5e349c61620d9"
+            "semanticSha256": "de543ade5982324b8647a51b5ccda0b62dd3116619165ae911bbaf8dc95f7edb"
         },
         "beanDefinition": {
             "path": "generated/records/bean.json5",
-            "semanticSha256": "bdd17dbc702beaf77b406481ee07875f36d98629dd58291d673910bbfc3675b8"
+            "semanticSha256": "23c10b554e14bb47e7c840bc68483f94d3538c3a24409c57ca7f6604a33431a0"
         },
         "protocolDefinition": {
             "path": "generated/records/proto.json5",
-            "semanticSha256": "ef7109f2e65556718e1c75324b9b6852acb77a2cab71d46079a5e349c61620d9"
+            "semanticSha256": "de543ade5982324b8647a51b5ccda0b62dd3116619165ae911bbaf8dc95f7edb"
         },
         "c2sServiceProtocol": {
             "path": "generated/protocol/server/C2S/serviceProto.ts",
@@ -25,19 +25,19 @@
     "physicalArtifacts": {
         "unifiedRecord": {
             "path": "generated/records/record.json",
-            "sha256": "26c127007f037b2794f4703765a738686ca91222b34608299dfeb6bd30d67916"
+            "sha256": "ea18e6a0a0e9641b2e7344d12a20cd3b60c8a2b896cdcf629caed2c381da20cd"
         },
         "beanDefinition": {
             "path": "generated/records/bean.json5",
-            "sha256": "8aea44ec55f0481fe2919758da9f91faa863fee8f765273b8adcb42efb4ed688"
+            "sha256": "6d10d60a9103ff925e4562b725c0d345fc09e1979d838104a1b86a458cc3f1f7"
         },
         "protocolDefinition": {
             "path": "generated/records/proto.json5",
-            "sha256": "61a26ddcb3e8b6a436f5856d4fe91de5aece9a2c2f74b6a96621f344bc8c5fb7"
+            "sha256": "be2482a5b54d24b7f08af05d1d5ba9c24523bac52045c28fc410ba85a95caf67"
         },
         "c2sServiceProtocol": {
             "path": "generated/protocol/server/C2S/serviceProto.ts",
-            "sha256": "74a3520a1311df3db5321126a9cb1f3841e678946b3a79139d65c9b91e5d148b"
+            "sha256": "9887bcae965aeaffa21c8615193f8cb321174953b4d437aed5b91cd88417115d"
         },
         "s2sServiceProtocol": {
             "path": "generated/protocol/server/S2S/serviceProto.ts",
@@ -5654,7 +5654,7 @@
                 },
                 {
                     "className": "User",
-                    "nextFieldId": 172,
+                    "nextFieldId": 173,
                     "diffType": 2,
                     "idFieldType": "int",
                     "saveType": "SaveType.All",
@@ -6784,6 +6784,15 @@
                             "type": "int",
                             "collectionTypes": [],
                             "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "recruitedHeroIds",
+                            "id": 172,
+                            "deleted": false,
+                            "type": "Array",
+                            "collectionTypes": ["int"],
+                            "saveType": "SaveType.ForRedis",
                             "modType": "ModType.None"
                         },
                         {
@@ -10264,22 +10273,6 @@
                 "value": "adjust:sso:token:"
             },
             {
-                "sourceName": "ArenaNativeLobbyStore.operationsKey",
-                "value": "nativeLobby:arena:operations:v1"
-            },
-            {
-                "sourceName": "ArenaNativeLobbyStore.tilesKey",
-                "value": "nativeLobby:arena:tiles:v1"
-            },
-            {
-                "sourceName": "ArenaNativeLobbyStore.trophiesKey",
-                "value": "nativeLobby:arena:trophies:v1"
-            },
-            {
-                "sourceName": "ArenaShopNativeLobbyStore.operationsKey",
-                "value": "nativeLobby:arenaShop:operations:v1"
-            },
-            {
                 "sourceName": "ChatMessageKeys.CHAT_CROSS_ACTIVITY_KEY",
                 "value": "chat:cross:activity:"
             },
@@ -10308,28 +10301,8 @@
                 "value": "lock:global_mail_init"
             },
             {
-                "sourceName": "NativeLobbyGrants.ITEMS_KEY",
-                "value": "nativeLobby:grants:items:v1"
-            },
-            {
-                "sourceName": "NativeLobbyGrants.PROFILE_KEY",
-                "value": "nativeLobby:user:profile:v1"
-            },
-            {
-                "sourceName": "NativeLobbyGrants.RECEIPTS_KEY",
-                "value": "nativeLobby:grants:receipts:v1"
-            },
-            {
                 "sourceName": "NativeLobbyIdentityMap.key",
                 "value": "nativeLobby:identity:v1"
-            },
-            {
-                "sourceName": "NativeLobbyUserStore.profilesKey",
-                "value": "nativeLobby:user:profile:v1"
-            },
-            {
-                "sourceName": "NativeLobbyUserStore.updateOperationsKey",
-                "value": "nativeLobby:user:update-operation:v1"
             },
             {
                 "sourceName": "RankHelper.formatRankInfoKey.key",
@@ -10342,14 +10315,6 @@
             {
                 "sourceName": "RankHelper.formatRankKey.key",
                 "value": "Rank:"
-            },
-            {
-                "sourceName": "RedeemNativeLobbyStore.claim.claimsKey",
-                "value": "nativeLobby:redeem:claims:v1"
-            },
-            {
-                "sourceName": "RedeemNativeLobbyStore.claim.requestsKey",
-                "value": "nativeLobby:redeem:requests:v1"
             },
             {
                 "sourceName": "ServerSettingsKeys.CACHE_SETTING_MANAGER_VALUES",
@@ -10366,46 +10331,6 @@
             {
                 "sourceName": "ServerSettingsKeys.LOCK_RELOAD_SETTINGS",
                 "value": "lock:reload_settings"
-            },
-            {
-                "sourceName": "ShopNativeLobbyStore.balanceKey",
-                "value": "nativeLobby:shop:balance:v1"
-            },
-            {
-                "sourceName": "ShopNativeLobbyStore.debit.receiptKey",
-                "value": "nativeLobby:shop:wallet-receipts:v1"
-            },
-            {
-                "sourceName": "ShopNativeLobbyStore.operationsKey",
-                "value": "nativeLobby:shop:operations:v1"
-            },
-            {
-                "sourceName": "SlgNativeLobbyStore.DUE_KEY_PREFIX",
-                "value": "nativeLobby:slg:due:v1:"
-            },
-            {
-                "sourceName": "SlgNativeLobbyStore.marchesKey",
-                "value": "nativeLobby:slg:marches:v1"
-            },
-            {
-                "sourceName": "SlgNativeLobbyStore.operationsKey",
-                "value": "nativeLobby:slg:operations:v1"
-            },
-            {
-                "sourceName": "SlgNativeLobbyStore.revisionsKey",
-                "value": "nativeLobby:slg:revisions:v1"
-            },
-            {
-                "sourceName": "SlgNativeLobbyStore.tilesKey",
-                "value": "nativeLobby:slg:tiles:v1"
-            },
-            {
-                "sourceName": "SlgNativeLobbyStore.trophiesKey",
-                "value": "nativeLobby:slg:trophies:v1"
-            },
-            {
-                "sourceName": "SnakeCosmeticNativeLobbyStore.profilesKey",
-                "value": "nativeLobby:snakeCosmetic:profiles:v1"
             },
             {
                 "sourceName": "UserAccountKeys.USER_NAME_LOCK_KEY",
@@ -15358,18 +15283,6 @@
             ],
             "actions": [
                 {
-                    "route": "C2S:arena.board",
-                    "sourceName": "ActionArenaBoard"
-                },
-                {
-                    "route": "C2S:arena.capture",
-                    "sourceName": "ActionArenaCapture"
-                },
-                {
-                    "route": "C2S:arenaShop.buyBoost",
-                    "sourceName": "ActionArenaShopBuyBoost"
-                },
-                {
                     "route": "C2S:base/Login",
                     "sourceName": "ActionLogin"
                 },
@@ -15378,16 +15291,12 @@
                     "sourceName": "ActionDefault"
                 },
                 {
-                    "route": "C2S:guild.getEvents",
-                    "sourceName": "ActionGuildGetEvents"
+                    "route": "C2S:heroRecruit.buy",
+                    "sourceName": "ActionHeroRecruitBuy"
                 },
                 {
-                    "route": "C2S:guild.join",
-                    "sourceName": "ActionGuildJoin"
-                },
-                {
-                    "route": "C2S:guild.leave",
-                    "sourceName": "ActionGuildLeave"
+                    "route": "C2S:heroRecruit.getCatalog",
+                    "sourceName": "ActionHeroRecruitGetCatalog"
                 },
                 {
                     "route": "C2S:income.claimOffline",
@@ -15400,82 +15309,6 @@
                 {
                     "route": "C2S:income.settleOnline",
                     "sourceName": "ActionIncomeSettleOnline"
-                },
-                {
-                    "route": "C2S:mail.claimAttach",
-                    "sourceName": "ActionMailClaimAttach"
-                },
-                {
-                    "route": "C2S:mail.list",
-                    "sourceName": "ActionMailList"
-                },
-                {
-                    "route": "C2S:mail.markRead",
-                    "sourceName": "ActionMailMarkRead"
-                },
-                {
-                    "route": "C2S:redeem.claim",
-                    "sourceName": "ActionRedeemClaim"
-                },
-                {
-                    "route": "C2S:room.prepareCreate",
-                    "sourceName": "ActionRoomPrepareCreate"
-                },
-                {
-                    "route": "C2S:room.resolve",
-                    "sourceName": "ActionRoomResolve"
-                },
-                {
-                    "route": "C2S:shop.purchase",
-                    "sourceName": "ActionShopPurchase"
-                },
-                {
-                    "route": "C2S:shop.queryOp",
-                    "sourceName": "ActionShopQueryOp"
-                },
-                {
-                    "route": "C2S:slg.mapTiles",
-                    "sourceName": "ActionSlgMapTiles"
-                },
-                {
-                    "route": "C2S:slg.marchDispatch",
-                    "sourceName": "ActionSlgMarchDispatch"
-                },
-                {
-                    "route": "C2S:slg.marchRecall",
-                    "sourceName": "ActionSlgMarchRecall"
-                },
-                {
-                    "route": "C2S:slg.tileCapture",
-                    "sourceName": "ActionSlgTileCapture"
-                },
-                {
-                    "route": "C2S:snakeCosmetic.equip",
-                    "sourceName": "ActionSnakeCosmeticEquip"
-                },
-                {
-                    "route": "C2S:snakeCosmetic.getSnapshot",
-                    "sourceName": "ActionSnakeCosmeticGetSnapshot"
-                },
-                {
-                    "route": "C2S:snakeCosmetic.unlock",
-                    "sourceName": "ActionSnakeCosmeticUnlock"
-                },
-                {
-                    "route": "C2S:user.getInfo",
-                    "sourceName": "ActionUserGetInfo"
-                },
-                {
-                    "route": "C2S:user.getProfile",
-                    "sourceName": "ActionUserGetProfile"
-                },
-                {
-                    "route": "C2S:user.getUserId",
-                    "sourceName": "ActionUserGetUserId"
-                },
-                {
-                    "route": "C2S:user.updateProfile",
-                    "sourceName": "ActionUserUpdateProfile"
                 },
                 {
                     "route": "S2S:activity/ActivityClose",
@@ -16072,10 +15905,10 @@
         "protocolMessages": 45,
         "protocolFields": 105,
         "beans": 94,
-        "beanFields": 625,
+        "beanFields": 626,
         "mods": 30,
         "errorCodes": 312,
-        "redisKeys": 40,
+        "redisKeys": 19,
         "databaseTables": 32,
         "databaseFields": 346,
         "classListEntries": 28

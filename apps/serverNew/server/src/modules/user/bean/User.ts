@@ -108,6 +108,10 @@ export class User extends UserHash {
     /** 铜币 */
     copper: int = 0
 
+    /** 已招募英雄；只由 heroRecruit 域读取和写入，不进入通用 User 同步面。 */
+    @OnlyRedis
+    recruitedHeroIds?: DiffArray<int>
+
     /** 铜币上次结算时间；仅服务端持久化，不下发客户端 */
     @OnlyRedis
     lastCopperIncomeTime: int = 0

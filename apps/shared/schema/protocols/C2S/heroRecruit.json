@@ -1,0 +1,136 @@
+{
+  "domain": "heroRecruit",
+  "contractVersion": 3,
+  "errorCodes": [
+    "HERO_RECRUIT_UNKNOWN",
+    "HERO_RECRUIT_ALREADY_OWNED",
+    "HERO_RECRUIT_INSUFFICIENT_COPPER",
+    "HERO_RECRUIT_USER_UNAVAILABLE"
+  ],
+  "types": {
+    "IHeroRecruitCatalogEntry": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "heroId",
+          "kind": "integer",
+          "check": {
+            "fn": "validateHeroRecruitId",
+            "from": "../checks/heroRecruit"
+          },
+          "readonly": true
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "readonly": true
+        },
+        {
+          "name": "title",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "readonly": true
+        },
+        {
+          "name": "rarity",
+          "kind": "integer",
+          "min": 1,
+          "max": 5,
+          "readonly": true
+        },
+        { "name": "copperPrice", "kind": "integer", "min": 1, "readonly": true }
+      ]
+    },
+    "IHeroRecruitSnapshot": {
+      "kind": "object",
+      "fields": [
+        { "name": "copper", "kind": "integer", "min": 0, "readonly": true },
+        {
+          "name": "ownedHeroIds",
+          "kind": "array",
+          "items": { "kind": "integer", "min": 1 },
+          "maxItems": 256,
+          "readonly": true
+        },
+        {
+          "name": "catalog",
+          "kind": "array",
+          "items": { "kind": "ref", "ref": "IHeroRecruitCatalogEntry" },
+          "maxItems": 64,
+          "readonly": true
+        }
+      ]
+    },
+    "IHeroRecruitGetCatalogReq": { "kind": "object", "fields": [] },
+    "IHeroRecruitGetCatalogRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "snapshot",
+          "kind": "ref",
+          "ref": "IHeroRecruitSnapshot"
+        }
+      ]
+    },
+    "IHeroRecruitBuyReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "heroId",
+          "kind": "integer",
+          "check": {
+            "fn": "validateHeroRecruitId",
+            "from": "../checks/heroRecruit"
+          }
+        }
+      ]
+    },
+    "IHeroRecruitBuyRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "purchasedHeroId",
+          "kind": "integer",
+          "check": {
+            "fn": "validateHeroRecruitId",
+            "from": "../checks/heroRecruit"
+          }
+        },
+        {
+          "name": "snapshot",
+          "kind": "ref",
+          "ref": "IHeroRecruitSnapshot"
+        }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "HeroRecruitGetCatalog",
+      "route": "heroRecruit.getCatalog",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "heroRecruit",
+      "request": { "kind": "ref", "ref": "IHeroRecruitGetCatalogReq" },
+      "response": { "kind": "ref", "ref": "IHeroRecruitGetCatalogRes" }
+    },
+    {
+      "name": "HeroRecruitBuy",
+      "route": "heroRecruit.buy",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "heroRecruit",
+      "request": { "kind": "ref", "ref": "IHeroRecruitBuyReq" },
+      "response": { "kind": "ref", "ref": "IHeroRecruitBuyRes" }
+    }
+  ]
+}

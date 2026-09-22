@@ -32,6 +32,12 @@ import type {
     IGuildLeaveRes,
 } from '../../../lobby-contract/protocol/lobbyRpc/domains/guild'
 import type {
+    IHeroRecruitBuyReq,
+    IHeroRecruitBuyRes,
+    IHeroRecruitGetCatalogReq,
+    IHeroRecruitGetCatalogRes,
+} from '../../../lobby-contract/protocol/lobbyRpc/domains/heroRecruit'
+import type {
     IIncomeClaimOfflineReq,
     IIncomeClaimOfflineRes,
     IIncomeGetPendingReq,
@@ -143,6 +149,14 @@ export interface ServiceType {
         'guild.leave': {
             req: IGuildLeaveReq
             res: IGuildLeaveRes
+        }
+        'heroRecruit.buy': {
+            req: IHeroRecruitBuyReq
+            res: IHeroRecruitBuyRes
+        }
+        'heroRecruit.getCatalog': {
+            req: IHeroRecruitGetCatalogReq
+            res: IHeroRecruitGetCatalogRes
         }
         'income.claimOffline': {
             req: IIncomeClaimOfflineReq
@@ -331,6 +345,16 @@ export const serviceProto: ServiceProto = {
         },
         {
             name: 'guild.leave',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'heroRecruit.buy',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'heroRecruit.getCatalog',
             type: 'api',
             serviceType: 'Base',
         },

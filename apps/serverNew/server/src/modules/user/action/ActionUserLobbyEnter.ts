@@ -28,8 +28,7 @@ export class ActionUserLobbyEnter extends GameAction {
     }
 
     async doAction(): Promise<void> {
-        // 昵称真源是 `nativeLobby:user:profile:v1`（`User.name` 不由原生通道维护），
-        // 所以这里只保证档存在，不塞任何业务初值。
+        // 外部公开档案归旧 apps/server 的 user 域；这里只保证本项目的 Bean 业务有内部热档。
         await UserLoginInitializer.loadOrCreate(this.enterUid, '', SERVER_ID)
     }
 }

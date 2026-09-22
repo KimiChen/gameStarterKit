@@ -8,6 +8,7 @@ import { validateArenaBoardReq, validateArenaBoardRes, validateArenaCaptureReq, 
 import { validateArenaShopBuyBoostReq, validateArenaShopBuyBoostRes, type IArenaShopBuyBoostReq, type IArenaShopBuyBoostRes } from "./domains/arenaShop";
 import { validateChatMessagePush, validateChatSendReq, validateChatSendRes, type IChatMessagePush, type IChatSendReq, type IChatSendRes } from "./domains/chat";
 import { validateGuildEventPush, validateGuildGetEventsReq, validateGuildGetEventsRes, validateGuildJoinReq, validateGuildJoinRes, validateGuildLeaveReq, validateGuildLeaveRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
+import { validateHeroRecruitBuyReq, validateHeroRecruitBuyRes, validateHeroRecruitGetCatalogReq, validateHeroRecruitGetCatalogRes, type IHeroRecruitBuyReq, type IHeroRecruitBuyRes, type IHeroRecruitGetCatalogReq, type IHeroRecruitGetCatalogRes } from "./domains/heroRecruit";
 import { validateIncomeClaimOfflineReq, validateIncomeClaimOfflineRes, validateIncomeGetPendingReq, validateIncomeGetPendingRes, validateIncomeSettleOnlineReq, validateIncomeSettleOnlineRes, type IIncomeClaimOfflineReq, type IIncomeClaimOfflineRes, type IIncomeGetPendingReq, type IIncomeGetPendingRes, type IIncomeSettleOnlineReq, type IIncomeSettleOnlineRes } from "./domains/income";
 import { validateMailClaimAttachReq, validateMailClaimAttachRes, validateMailListReq, validateMailListRes, validateMailMarkReadReq, validateMailMarkReadRes, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
 import { validatePartyAcceptReq, validatePartyAcceptRes, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyKickRes, validatePartyLeaveReq, validatePartyLeaveRes, validatePartyTransferLeaderReq, validatePartyTransferLeaderRes, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
@@ -25,6 +26,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "arenaShop",
     "chat",
     "guild",
+    "heroRecruit",
     "income",
     "mail",
     "party",
@@ -46,6 +48,8 @@ export interface LobbyRpcMap {
     "guild.join": { req: IGuildJoinReq; res: IGuildJoinRes };
     "guild.leave": { req: IGuildLeaveReq; res: IGuildLeaveRes };
     "guild.getEvents": { req: IGuildGetEventsReq; res: IGuildGetEventsRes };
+    "heroRecruit.getCatalog": { req: IHeroRecruitGetCatalogReq; res: IHeroRecruitGetCatalogRes };
+    "heroRecruit.buy": { req: IHeroRecruitBuyReq; res: IHeroRecruitBuyRes };
     "income.getPending": { req: IIncomeGetPendingReq; res: IIncomeGetPendingRes };
     "income.settleOnline": { req: IIncomeSettleOnlineReq; res: IIncomeSettleOnlineRes };
     "income.claimOffline": { req: IIncomeClaimOfflineReq; res: IIncomeClaimOfflineRes };
@@ -91,6 +95,7 @@ export type LobbyRpcIdemType =
     | "arenaShop.buyBoost"
     | "guild.join"
     | "guild.leave"
+    | "heroRecruit.buy"
     | "income.claimOffline"
     | "mail.claimAttach"
     | "party.create"
@@ -126,6 +131,8 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "guild.join": "idempotent-write",
     "guild.leave": "idempotent-write",
     "guild.getEvents": "query",
+    "heroRecruit.getCatalog": "query",
+    "heroRecruit.buy": "idempotent-write",
     "income.getPending": "query",
     "income.settleOnline": "natural-write",
     "income.claimOffline": "idempotent-write",
@@ -170,6 +177,8 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "guild.join",
     "guild.leave",
     "guild.getEvents",
+    "heroRecruit.getCatalog",
+    "heroRecruit.buy",
     "income.getPending",
     "income.settleOnline",
     "income.claimOffline",
@@ -215,6 +224,8 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "guild.join": 1,
     "guild.leave": 1,
     "guild.getEvents": 1,
+    "heroRecruit.getCatalog": 1,
+    "heroRecruit.buy": 1,
     "income.getPending": 1,
     "income.settleOnline": 1,
     "income.claimOffline": 1,
@@ -256,6 +267,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     arenaShop: { contractVersion: 6, digest: "44fd4a3a5aff367dc06a4352bb977c20cf5edacbd1d90217e1bcc1966628bd3f" },
     chat: { contractVersion: 5, digest: "3f171c821824feddb819ae71834150beab752ce95d6436888c435a88e0f65d5f" },
     guild: { contractVersion: 5, digest: "005c6a6195a8c937dbafead7e4d3479391b91d0a6bf1a0641ba48c33cf1886ce" },
+    heroRecruit: { contractVersion: 3, digest: "7be638092a43cc2cf87be4edb69c716c4be074111c8d1ce2769239828336cf4f" },
     income: { contractVersion: 7, digest: "b30d2190e3f60c2c321962190c33400ac1aef8c6cf023802b2033e396bbb676b" },
     mail: { contractVersion: 5, digest: "88ddc9bd181b49f01007cc4af01655845fabdd13365095e56ff776c47c208368" },
     party: { contractVersion: 5, digest: "a80b6379ef7d6242f4c035dc41c54fc5a0648bbfe9f9780974bcb86bb1279b24" },
@@ -263,7 +275,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     room: { contractVersion: 5, digest: "390209b1681dc83e238b1c52fdc2a3d446844b6522ea3a1a6e595bc67fa86003" },
     shop: { contractVersion: 5, digest: "68e696920a46d253a8c4e6ee27a636f3a45562085c35c70aa7a611a1f07c3e5f" },
     slg: { contractVersion: 6, digest: "83374c275d0159ffba1c4700cddf22ea548ba204ee14407cd262b89e21840064" },
-    snakeCosmetic: { contractVersion: 7, digest: "138da20da633269cb11f13de65abf04041b92d851328bb6a3998383d79802f11" },
+    snakeCosmetic: { contractVersion: 8, digest: "23c46ec15c59bf33d418733c6cc99719b7f342835390412cbfeb0493e79d7d89" },
     user: { contractVersion: 5, digest: "2bdaf7c83b42005ee958d933e9e846b923c7d17176231d220133b35108d39c6f" },
     world: { contractVersion: 6, digest: "1eaea7435245ec9d128571b9dbff4aae9a356d1c70ec9e47acf2e25fdda323f5" },
 };
@@ -289,6 +301,8 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "guild.join": guardRpcValidator("payload", validateGuildJoinReq),
     "guild.leave": guardRpcValidator("payload", validateGuildLeaveReq),
     "guild.getEvents": guardRpcValidator("payload", validateGuildGetEventsReq),
+    "heroRecruit.getCatalog": guardRpcValidator("payload", validateHeroRecruitGetCatalogReq),
+    "heroRecruit.buy": guardRpcValidator("payload", validateHeroRecruitBuyReq),
     "income.getPending": guardRpcValidator("payload", validateIncomeGetPendingReq),
     "income.settleOnline": guardRpcValidator("payload", validateIncomeSettleOnlineReq),
     "income.claimOffline": guardRpcValidator("payload", validateIncomeClaimOfflineReq),
@@ -333,6 +347,8 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "guild.join": guardRpcValidator("response", validateGuildJoinRes),
     "guild.leave": guardRpcValidator("response", validateGuildLeaveRes),
     "guild.getEvents": guardRpcValidator("response", validateGuildGetEventsRes),
+    "heroRecruit.getCatalog": guardRpcValidator("response", validateHeroRecruitGetCatalogRes),
+    "heroRecruit.buy": guardRpcValidator("response", validateHeroRecruitBuyRes),
     "income.getPending": guardRpcValidator("response", validateIncomeGetPendingRes),
     "income.settleOnline": guardRpcValidator("response", validateIncomeSettleOnlineRes),
     "income.claimOffline": guardRpcValidator("response", validateIncomeClaimOfflineRes),
@@ -408,6 +424,10 @@ export const RPC_ERR_CODES = [
     "ARENA_SHOP_TILE_NOT_OWNED",
     "CHAT_CHANNEL_FORBIDDEN",
     "CHAT_UNAVAILABLE",
+    "HERO_RECRUIT_UNKNOWN",
+    "HERO_RECRUIT_ALREADY_OWNED",
+    "HERO_RECRUIT_INSUFFICIENT_COPPER",
+    "HERO_RECRUIT_USER_UNAVAILABLE",
     "PARTY_NOT_FOUND",
     "PARTY_FULL",
     "PARTY_NOT_MEMBER",

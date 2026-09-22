@@ -27,7 +27,11 @@ import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
 const SERVER_NEW_ROOT = path.join(REPO_ROOT, "apps", "serverNew", "server");
 const RUN_ID = `${Date.now().toString(36)}`;
 
@@ -59,21 +63,53 @@ function parseArgv(argv) {
       return next;
     };
     switch (key) {
-      case "portal-port": options.portalPort = Number(take()); break;
-      case "internal-port": options.internalPort = Number(take()); break;
-      case "native-port": options.nativePort = Number(take()); break;
-      case "sid": options.sid = Number(take()); break;
-      case "secret": options.secret = take(); break;
-      case "service-id": options.serviceId = take(); break;
-      case "service-secret": options.serviceSecret = take(); break;
-      case "game-http": options.gameHttp = take(); break;
-      case "game-ws": options.gameWs = take(); break;
-      case "preview": options.preview = take(); break;
-      case "devtools": options.devtools = take(); break;
-      case "out": options.out = take(); break;
-      case "skip-gui": options.skipGui = true; break;
-      case "old-server": options.oldServer = take(); break;
-      default: options.passthrough.push(token, ...(next !== undefined && !next.startsWith("--") ? [take()] : []));
+      case "portal-port":
+        options.portalPort = Number(take());
+        break;
+      case "internal-port":
+        options.internalPort = Number(take());
+        break;
+      case "native-port":
+        options.nativePort = Number(take());
+        break;
+      case "sid":
+        options.sid = Number(take());
+        break;
+      case "secret":
+        options.secret = take();
+        break;
+      case "service-id":
+        options.serviceId = take();
+        break;
+      case "service-secret":
+        options.serviceSecret = take();
+        break;
+      case "game-http":
+        options.gameHttp = take();
+        break;
+      case "game-ws":
+        options.gameWs = take();
+        break;
+      case "preview":
+        options.preview = take();
+        break;
+      case "devtools":
+        options.devtools = take();
+        break;
+      case "out":
+        options.out = take();
+        break;
+      case "skip-gui":
+        options.skipGui = true;
+        break;
+      case "old-server":
+        options.oldServer = take();
+        break;
+      default:
+        options.passthrough.push(
+          token,
+          ...(next !== undefined && !next.startsWith("--") ? [take()] : []),
+        );
     }
   }
   return options;
@@ -83,9 +119,16 @@ const logDir = path.join(SERVER_NEW_ROOT, "log", "verify");
 fs.mkdirSync(logDir, { recursive: true });
 
 function start(label, command, args, cwd, env) {
-  const logPath = path.join(logDir, `native-lobby-stack.${label}.${RUN_ID}.log`);
+  const logPath = path.join(
+    logDir,
+    `native-lobby-stack.${label}.${RUN_ID}.log`,
+  );
   const stream = fs.createWriteStream(logPath, { flags: "a" });
-  const child = spawn(command, args, { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn(command, args, {
+    cwd,
+    env: { ...process.env, ...env },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
   const tail = [];
   const mirror = (chunk) => {
     stream.write(chunk);
@@ -104,7 +147,8 @@ async function stop(handle) {
   if (!handle || handle.child.exitCode !== null) return;
   handle.child.kill("SIGTERM");
   const deadline = Date.now() + 8000;
-  while (handle.child.exitCode === null && Date.now() < deadline) await sleep(100);
+  while (handle.child.exitCode === null && Date.now() < deadline)
+    await sleep(100);
   if (handle.child.exitCode === null) handle.child.kill("SIGKILL");
 }
 
@@ -128,14 +172,19 @@ async function tcpReachable(port) {
 async function internalAction(origin, secret, payload) {
   const response = await fetch(new URL("/internal/action", origin), {
     method: "POST",
-    headers: { "content-type": "application/json", "x-internal-secret": secret },
+    headers: {
+      "content-type": "application/json",
+      "x-internal-secret": secret,
+    },
     body: JSON.stringify(payload),
   });
   const text = await response.text();
   try {
     return { status: response.status, body: JSON.parse(text) };
   } catch {
-    throw new Error(`内部动作入口返回了非 JSON（HTTP ${response.status}）：${text.slice(0, 200)}`);
+    throw new Error(
+      `内部动作入口返回了非 JSON（HTTP ${response.status}）：${text.slice(0, 200)}`,
+    );
   }
 }
 
@@ -144,7 +193,9 @@ async function waitFor(label, handle, probe, timeoutMs) {
   let lastError = "未开始";
   while (Date.now() < deadline) {
     if (handle.child.exitCode !== null)
-      throw new Error(`${label} 提前退出（code=${handle.child.exitCode}），日志尾部：\n${handle.tail.slice(-25).join("\n")}`);
+      throw new Error(
+        `${label} 提前退出（code=${handle.child.exitCode}），日志尾部：\n${handle.tail.slice(-25).join("\n")}`,
+      );
     try {
       const value = await probe();
       if (value) return value;
@@ -161,7 +212,10 @@ async function waitFor(label, handle, probe, timeoutMs) {
 
 async function main() {
   const options = parseArgv(process.argv.slice(2));
-  if (!options.secret) throw new Error("--secret 必填（联调线路 platform.json5 的 gmSecret，内部动作入口的唯一鉴权）");
+  if (!options.secret)
+    throw new Error(
+      "--secret 必填（联调线路 platform.json5 的 gmSecret，内部动作入口的唯一鉴权）",
+    );
   const portalOrigin = `http://127.0.0.1:${options.portalPort}`;
   const internalOrigin = `http://127.0.0.1:${options.internalPort}`;
   const lobbyUrl = `ws://127.0.0.1:${options.nativePort}`;
@@ -170,12 +224,15 @@ async function main() {
     [6379, "Redis", "启动本机 redis-server（联调线路用 db 9/8/7）"],
     [3306, "MySQL", "启动本机 mysqld"],
   ]) {
-    if (!(await tcpReachable(port))) throw new Error(`前置不成立：${label} 127.0.0.1:${port} 不可达——${hint}`);
+    if (!(await tcpReachable(port)))
+      throw new Error(`前置不成立：${label} 127.0.0.1:${port} 不可达——${hint}`);
   }
   let oldServer = null;
   if (!(await tcpReachable(2568))) {
     if (options.oldServer === "skip")
-      throw new Error("前置不成立：旧 apps/server 未在 2568（客户端选服后的 HTTP 仍走它），且 --old-server=skip");
+      throw new Error(
+        "前置不成立：旧 apps/server 未在 2568（客户端选服后的 HTTP 仍走它），且 --old-server=skip",
+      );
     // 客户端选服后的 HTTP（公告、兑换码…）仍走旧服务，所以它必须在场；否则 GUI 侧会看到
     // 一屏 404 而不是「原生通道有问题」。它同时也是 GameRoom 回归那条链的服务端。
     oldServer = start(
@@ -190,10 +247,15 @@ async function main() {
         CODEBUDDY_SAFE_DELETE_ENABLED: "0",
       },
     );
-    await waitFor("旧 apps/server", oldServer, async () => {
-      const response = await fetch("http://127.0.0.1:2568/v1/areas");
-      return response.status === 200;
-    }, 120_000);
+    await waitFor(
+      "旧 apps/server",
+      oldServer,
+      async () => {
+        const response = await fetch("http://127.0.0.1:2568/v1/areas");
+        return response.status === 200;
+      },
+      120_000,
+    );
   }
 
   const platform = start(
@@ -201,13 +263,20 @@ async function main() {
     process.execPath,
     [
       path.join(SERVER_NEW_ROOT, "scripts", "verify", "webplatform-local.cjs"),
-      "--sid", String(options.sid),
-      "--public-port", String(options.portalPort),
-      "--internal-port", String(options.internalPort),
-      "--game-http", options.gameHttp,
-      "--game-ws", options.gameWs,
-      "--service-id", options.serviceId,
-      "--service-secret", options.serviceSecret,
+      "--sid",
+      String(options.sid),
+      "--public-port",
+      String(options.portalPort),
+      "--internal-port",
+      String(options.internalPort),
+      "--game-http",
+      options.gameHttp,
+      "--game-ws",
+      options.gameWs,
+      "--service-id",
+      options.serviceId,
+      "--service-secret",
+      options.serviceSecret,
     ],
     SERVER_NEW_ROOT,
     {},
@@ -215,7 +284,15 @@ async function main() {
   const server = start(
     "servernew",
     process.execPath,
-    [path.join("deploy", "dev", "entrypoint.cjs"), "-p", "bearjoy", "-v", "live", "--sid", String(options.sid)],
+    [
+      path.join("deploy", "dev", "entrypoint.cjs"),
+      "-p",
+      "bearjoy",
+      "-v",
+      "live",
+      "--sid",
+      String(options.sid),
+    ],
     SERVER_NEW_ROOT,
     {
       NATIVE_LOBBY_HOST: "127.0.0.1",
@@ -229,21 +306,43 @@ async function main() {
   );
 
   try {
-    console.log(`本地 WebPlatform 副本：${portalOrigin}（Internal ${internalOrigin}）`);
-    await waitFor("本地 WebPlatform 副本", platform, async () => {
-      const response = await fetch(`${portalOrigin}/v1/areas`);
-      return response.status === 200;
-    }, 30_000);
+    console.log(
+      `本地 WebPlatform 副本：${portalOrigin}（Internal ${internalOrigin}）`,
+    );
+    await waitFor(
+      "本地 WebPlatform 副本",
+      platform,
+      async () => {
+        const response = await fetch(`${portalOrigin}/v1/areas`);
+        return response.status === 200;
+      },
+      30_000,
+    );
 
-    console.log(`serverNew 原生 Lobby：${lobbyUrl}（内网 HTTP http://127.0.0.1:28090）`);
-    await waitFor("serverNew 原生 Lobby", server, async () => {
-      if (!(await tcpReachable(options.nativePort))) return false;
-      const probe = await internalAction(`http://127.0.0.1:28090`, options.secret, {
-        type: "lobbyKick",
-        actionParams: { uid: `stack-probe-${RUN_ID}`, sId: options.sid },
-      });
-      return probe.status === 200 && probe.body?.code === 0 && probe.body?.data?.json?.kicked === false;
-    }, 180_000);
+    console.log(
+      `serverNew 原生 Lobby：${lobbyUrl}（内网 HTTP http://127.0.0.1:28090）`,
+    );
+    await waitFor(
+      "serverNew 原生 Lobby",
+      server,
+      async () => {
+        if (!(await tcpReachable(options.nativePort))) return false;
+        const probe = await internalAction(
+          `http://127.0.0.1:28090`,
+          options.secret,
+          {
+            type: "lobbyKick",
+            actionParams: { uid: `stack-probe-${RUN_ID}`, sId: options.sid },
+          },
+        );
+        return (
+          probe.status === 200 &&
+          probe.body?.code === 0 &&
+          probe.body?.data?.json?.kicked === false
+        );
+      },
+      180_000,
+    );
 
     if (options.skipGui) {
       console.log("✔ 两个进程均就绪（--skip-gui，不驱动 GUI）");
@@ -252,19 +351,38 @@ async function main() {
 
     const args = [
       path.join(REPO_ROOT, "tools", "creator-preview", "native-lobby.mjs"),
-      "--portal", portalOrigin,
-      "--lobby-url", lobbyUrl,
-      "--internal", "http://127.0.0.1:28090",
-      "--secret", options.secret,
-      "--sid", String(options.sid),
-      "--preview", options.preview,
-      "--devtools", options.devtools,
+      "--portal",
+      portalOrigin,
+      "--lobby-url",
+      lobbyUrl,
+      "--internal",
+      "http://127.0.0.1:28090",
+      "--secret",
+      options.secret,
+      "--sid",
+      String(options.sid),
+      "--preview",
+      options.preview,
+      "--devtools",
+      options.devtools,
       ...(options.out ? ["--out", options.out] : []),
       ...options.passthrough,
     ];
-    console.log(`驱动 Creator 预览：node ${path.relative(REPO_ROOT, args[0])} ${args.slice(1).join(" ")}`);
-    const gui = spawn(process.execPath, args, { cwd: REPO_ROOT, stdio: "inherit" });
-    const code = await new Promise((resolve) => gui.once("exit", (value) => resolve(value ?? 1)));
+    const displayArgs = args
+      .slice(1)
+      .map((value, index, all) =>
+        all[index - 1] === "--secret" ? "[redacted]" : value,
+      );
+    console.log(
+      `驱动 Creator 预览：node ${path.relative(REPO_ROOT, args[0])} ${displayArgs.join(" ")}`,
+    );
+    const gui = spawn(process.execPath, args, {
+      cwd: REPO_ROOT,
+      stdio: "inherit",
+    });
+    const code = await new Promise((resolve) =>
+      gui.once("exit", (value) => resolve(value ?? 1)),
+    );
     return code;
   } finally {
     await stop(server);
@@ -279,7 +397,9 @@ async function main() {
 main().then(
   (code) => process.exit(code),
   (error) => {
-    console.error(`✘ ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `✘ ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exit(2);
   },
 );

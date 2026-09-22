@@ -7,7 +7,6 @@ import { UserTelemetryProperties } from './telemetry/UserTelemetryProperties'
 import { SsoController } from './http/SsoController'
 import { UserEnterTelemetryHandler, UserLoginActionLogHandler } from './event/UserActionEventHandlers'
 import { NativeLobbyUserEnter } from './lobby/NativeLobbyUserEnter'
-import { NativeLobbyUserStore } from './lobby/NativeLobbyUserStore'
 
 export const UserModule = defineGameModule({
     name: 'user',
@@ -62,7 +61,7 @@ export const UserModule = defineGameModule({
                     // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`
                     // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。
                     await NativeLobbyUserEnter.enter(internalUid, sId)
-                    await new NativeLobbyUserStore(services.registerCharacter).ensure(uid, sId)
+                    await services.registerCharacter(uid, sId)
                 },
                 onReleased: async ({ internalUid }) => {
                     const user = await User.load(internalUid)

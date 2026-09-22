@@ -17,6 +17,7 @@
 ## 依赖约束
 
 - engine 的 `pnpm-lock.yaml` 仍是 v6，使用 pnpm 8 维护；不要用 server 的 pnpm 10 强制重建 engine 锁文件。
+- `@arthropoda/typeorm` 使用 `vendor/arthropoda-typeorm-0.3.22.tgz` 内嵌制品；安装和更新锁文件不得改回远程 registry 版本。
 - 框架能力、Redis Bean、Change、定时和日志的开发约束统一维护在 `docs/development.md`，README 不重复普通构建和测试命令。
 
 ## 验证约束
