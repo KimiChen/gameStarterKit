@@ -43,7 +43,7 @@ FILES = {
     "top-atlas.info.json": "top-atlas.info.json",
     # ★ 道路层：路片图集 + 摆放表
     "road-atlas.png": "road-atlas.png", "roads.bin": "roads.bin",
-    "roads.info.json": "roads.info.json",
+    "roads.info.json": "roads.info.json", "minimap.info.json": "minimap.info.json",
     "plate-lod4.png": "plate-lod4.png", "plate-lod4.info.json": "plate-lod4.info.json",
     "plate-lod5.png": "plate-lod5.png", "plate-lod5.info.json": "plate-lod5.info.json",
     "minimap.png": "minimap.png", "minimap-mask.png": "minimap-mask.png",
@@ -59,7 +59,8 @@ FILES = {
 }
 KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
             "rivers.info.json", "river-geo.index.json", "ground.info.json",
-            "blocks.info.json", "top-atlas.info.json", "roads.info.json"}
+            "blocks.info.json", "top-atlas.info.json", "roads.info.json",
+            "minimap.info.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。

@@ -402,6 +402,25 @@ test("mapOriginal 内容：城占格表 = city.bytes（249 座 / 2,689 格 / 首
         [[4, 1], [6, 11], [7, 24], [11, 204], [23, 9]], "占格形态分布");
 });
 
+test("mapOriginal 内容：缩略图由地形烘、投影与点选同源（⛔ 不再贴原版鸟瞰插画）", () => {
+    // ⚠ 缩略图在本 kit 里是**可点击导航**的（mapoMinimapCell → centerOn）⇒
+    //   图与点选换算必须同一套投影。原版 noexpo_birdview 是 **3D 透视渲染**，
+    //   与正交等距 ⛔ 无可靠对齐（实测相似变换 IoU 0.62、河网 NCC 0.30）。
+    const meta = JSON.parse(kit("minimap.info.json").toString("utf8")) as {
+        size: [number, number]; content: [number, number]; contentTop: number;
+        source: string; projection: string;
+    };
+    assert.deepEqual(meta.size, [512, 512]);
+    // ★ 内容占**中间半幅**，上下各 1/4 留白 —— 与 mapoWorldToMinimap 的 `0.25 + v*0.5` 严格对应
+    assert.deepEqual(meta.content, [meta.size[0], meta.size[1] / 2]);
+    assert.equal(meta.contentTop, meta.size[1] / 4);
+    assert.ok(meta.source.startsWith("terrain.bytes"), "缩略图必须由地形烘");
+    assert.ok(!meta.source.includes("birdview"), "⛔ 不许再贴原版鸟瞰插画");
+    // 上下留白必须全透明（否则点选留白区会被当成地图内）
+    const png = kit("minimap.png");
+    assert.ok(png.length > 1000);
+});
+
 test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / 摆放表）", () => {
     // ★ M3-B1：坐标系由干净集 road_info.lua 的 layer_info 直给（§4.2）：
     //   网格 1125²、一个路格半宽 200 / 半高 100 = **4/3 个逻辑格**。

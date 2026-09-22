@@ -1,0 +1,15 @@
+{
+ "schemaVersion": 2,
+ "size": [
+  512,
+  512
+ ],
+ "content": [
+  512,
+  256
+ ],
+ "contentTop": 128,
+ "source": "terrain.bytes（覆盖格按 res_multi 补成概览）",
+ "projection": "与 plate 同式 = mapoWorldToMinimap 的 0.25 + v*0.5",
+ "note": "⛔ 不再贴原版 noexpo_birdview（3D 透视渲染，与正交等距无可靠对齐）；本图**参与点选定位**，⇒ 投影必须与 mapoMinimapCell 同源"
+}

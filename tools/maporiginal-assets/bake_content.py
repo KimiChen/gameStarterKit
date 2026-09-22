@@ -59,24 +59,39 @@ def summary_layer(d, cls):
     return np.where(cls == 0, multi, cls).astype(np.uint8)
 
 
+def project_plate(rows, cols, cls, pal, W, H):
+    """把格阵按**世界包围盒**线性投到 W×H。
+
+    ★ 这就是 `mapoWorldToMinimap` / `mapoPlateBounds` 用的同一套映射 ——
+      远档底图与缩略图都走它，⇒ 图与点选换算天然一致，⛔ 不存在标定误差。
+    """
+    r, c = np.meshgrid(np.arange(rows), np.arange(cols), indexing="ij")
+    u = (((r - c) + cols - 1) / (rows + cols - 2) * (W - 1)).astype(np.int32)
+    v = ((r + c) / (rows + cols - 2) * (H - 1)).astype(np.int32)
+    img = np.zeros((H, W, 4), np.uint8)
+    img[v.ravel(), u.ravel(), :3] = pal[cls.ravel()]
+    img[v.ravel(), u.ravel(), 3] = 255
+    # 菱形内部的采样空洞：一次 2x2 最大值填补
+    from scipy.ndimage import grey_dilation
+    for ch in range(4):
+        img[..., ch] = grey_dilation(img[..., ch], size=(2, 2))
+    return img
+
+
+def value_palette(info):
+    pal = np.zeros((64, 3), np.uint8)
+    for e in info["palette"]:
+        pal[e["id"]] = e["color"]
+    return pal
+
+
 def bake_plate(d, rows, cols, cls, info, sizes=((2048, 1024, 4), (1024, 512, 5))):
     """按世界包围盒烘远档底图（**逐格精确对齐**，⛔ 无标定误差）。"""
     cls = summary_layer(d, cls)          # ★ 远档概览：覆盖格按所属件取色（见 summary_layer）
     # 远档底图按**原版值**直接取色（调色板是按值建的，⛔ 不用再折算 kind）
-    pal = np.zeros((64, 3), np.uint8)
-    for e in info["palette"]:
-        pal[e["id"]] = e["color"]
-    r, c = np.meshgrid(np.arange(rows), np.arange(cols), indexing="ij")
+    pal = value_palette(info)
     for W, H, lod in sizes:
-        u = (((r - c) + cols - 1) / (rows + cols - 2) * (W - 1)).astype(np.int32)
-        v = ((r + c) / (rows + cols - 2) * (H - 1)).astype(np.int32)
-        img = np.zeros((H, W, 4), np.uint8)
-        img[v.ravel(), u.ravel(), :3] = pal[cls.ravel()]
-        img[v.ravel(), u.ravel(), 3] = 255
-        # 菱形内部的采样空洞：一次 3x3 最大值填补
-        from scipy.ndimage import grey_dilation
-        for ch in range(4):
-            img[..., ch] = grey_dilation(img[..., ch], size=(2, 2))
+        img = project_plate(rows, cols, cls, pal, W, H)
         p = os.path.join(d, "plate-lod%d.png" % lod)
         Image.fromarray(img).save(p)
         json.dump({"schemaVersion": 1, "lod": lod, "size": [W, H],
@@ -87,24 +102,35 @@ def bake_plate(d, rows, cols, cls, info, sizes=((2048, 1024, 4), (1024, 512, 5))
         print("  plate-lod%d %dx%d -> %s" % (lod, W, H, os.path.basename(p)))
 
 
-def bake_minimap(d, mid):
-    """原版鸟瞰底图 -> 装饰性缩略图 + 菱形蒙版。⚠ 装饰件，⛔ 不参与点选定位。"""
-    src = os.path.join(PNG, "fairy/ui/ui_common_map/map/map_%s/image/noexpo_birdview_map_1.png" % mid)
-    if not os.path.exists(src):
-        print("  ⚠ 缺原版鸟瞰底图，跳过缩略图")
-        return
-    im = Image.open(src).convert("RGBA")
-    side = 512
-    im2 = im.resize((side, side // 2), Image.LANCZOS)
+def bake_minimap(d, rows, cols, cls, info, side=512):
+    """缩略图：**由地形按与点选换算同一套投影烘**（⛔ 不再贴原版鸟瞰插画）。
+
+    ⚠ 换掉的理由：原版 `noexpo_birdview_map_1` 是 **3D 相机的透视渲染**，与本仓的正交等距
+      ⛔ 不存在可靠对齐（实测相似变换 IoU 0.62、河网 NCC 0.30）。而缩略图在本 kit 里是
+      **可点击导航**的（`mapoMinimapCell` → `centerOn`）⇒ 图与点选换算必须同一套投影，
+      否则用户点哪跑哪。现在两者都走 `project_plate`（= `mapoWorldToMinimap` 的映射）。
+    ⚠ 画布是正方、内容占中间半幅（上下各 1/4 留白）—— 与 `mapoWorldToMinimap` 的
+      `0.25 + v * 0.5` 严格对应，⛔ 改一边必须改另一边。
+    """
+    cls = summary_layer(d, cls)
+    img = project_plate(rows, cols, cls, value_palette(info), side, side // 2)
     canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    canvas.paste(im2, (0, side // 4))          # ⚠ 正方画布、内容垂直居中：上下各 1/4 留白
+    canvas.paste(Image.fromarray(img), (0, side // 4))
     canvas.save(os.path.join(d, "minimap.png"))
     mask = np.zeros((side, side), np.uint8)
     yy, xx = np.mgrid[0:side, 0:side]
     inside = (np.abs(xx - side / 2) / (side / 2) + np.abs(yy - side / 2) / (side / 4)) <= 1.0
     mask[inside] = 255
     Image.fromarray(mask, "L").save(os.path.join(d, "minimap-mask.png"))
-    print("  minimap %dx%d（内容垂直居中，上下各 1/4 留白）+ 菱形蒙版" % (side, side))
+    json.dump({"schemaVersion": 2, "size": [side, side], "content": [side, side // 2],
+               "contentTop": side // 4,
+               "source": "terrain.bytes（覆盖格按 res_multi 补成概览）",
+               "projection": "与 plate 同式 = mapoWorldToMinimap 的 0.25 + v*0.5",
+               "note": "⛔ 不再贴原版 noexpo_birdview（3D 透视渲染，与正交等距无可靠对齐）；"
+                       "本图**参与点选定位**，⇒ 投影必须与 mapoMinimapCell 同源"},
+              open(os.path.join(d, "minimap.info.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1)
+    print("  minimap %dx%d（由地形烘，投影与点选同源）+ 菱形蒙版" % (side, side))
 
 
 # ⚠ **图集烘焙已在 M2-B1 删除**：那是「8 粗类 × 4 变体的逐格菱形贴片」，是本仓**自创**的做法，
@@ -122,7 +148,7 @@ def main() -> int:
     d, rows, cols, cls, info = load_pack(a.map)
     print("烘焙内容包 %s（%dx%d，%d 类）" % (a.map, rows, cols, len(info["palette"])))
     bake_plate(d, rows, cols, cls, info)
-    bake_minimap(d, a.map)
+    bake_minimap(d, rows, cols, cls, info)
     print("→ %s" % d)
     return 0
 
