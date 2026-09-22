@@ -270,17 +270,25 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
         $("#btnTheme", shadow).replaceChildren(icon(theme === "dark" ? "sun" : "moon"));
         shellBg();
     };
+    const syncFrameSrc = () => {
+        for (const frame of Array.from(shadow.querySelectorAll<HTMLElement>(".frame[data-id]"))) {
+            const id = frame.dataset.id;
+            if (!id) continue;
+            frame.dataset.src = previewSrc(id, frame.dataset.kind ?? "screen", prefs.canvas, prefs.custom, prefs.skin);
+        }
+    };
     const applyCanvas = () => {
         const root = shadow.host as HTMLElement;
         root.dataset.canvas = prefs.canvas;
         root.style.setProperty("--canvas-custom", prefs.custom);
-        for (const frame of Array.from(shadow.querySelectorAll<HTMLElement>(".frame[data-id]"))) {
-            const id = frame.dataset.id;
-            if (!id) continue;
-            const src = previewSrc(id, frame.dataset.kind ?? "screen", prefs.canvas, prefs.custom, prefs.skin);
-            frame.dataset.src = src;
+        syncFrameSrc();
+    };
+    const applySkin = () => {
+        syncFrameSrc();
+        for (const frame of Array.from(shadow.querySelectorAll<HTMLElement>('.frame[data-kind="component"]'))) {
             const iframe = frame.querySelector("iframe");
-            if (iframe?.getAttribute("src")) iframe.src = src;
+            if (!iframe?.getAttribute("src") || iframe.dataset.ready !== "1") continue;
+            iframe.contentWindow?.postMessage({ type: "uniflex-preview-skin", skin: prefs.skin }, location.origin);
         }
     };
 
@@ -555,6 +563,8 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
         body.className = "lightbox__b";
         const frame = document.createElement("div");
         frame.className = "frame";
+        frame.dataset.kind = item.kind;
+        frame.dataset.id = item.id;
         const iframe = document.createElement("iframe");
         iframe.title = item.label;
         iframe.src = previewSrc(item.id, item.kind, prefs.canvas, prefs.custom, prefs.skin);
@@ -681,7 +691,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
                     prefs.skin = skin.id;
                     savePrefs();
                     paintSkin();
-                    applyCanvas();
+                    applySkin();
                     close();
                 }));
             }
@@ -723,6 +733,18 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[]): void {
         if (event.origin !== location.origin) return;
         const data = event.data as { type?: string } | null;
         if (data?.type === "uniflex-preview-back") closeLightbox?.();
+        if (data?.type !== "uniflex-preview-ready") return;
+        for (const iframe of Array.from(shadow.querySelectorAll("iframe"))) {
+            if (iframe.contentWindow !== event.source) continue;
+            iframe.dataset.ready = "1";
+            const frame = iframe.parentElement;
+            if (frame?.dataset.kind !== "component") return;
+            const current = new URL(iframe.src, location.href).searchParams.get("skin");
+            if (previewSkin(current ?? undefined) !== prefs.skin) {
+                iframe.contentWindow?.postMessage({ type: "uniflex-preview-skin", skin: prefs.skin }, location.origin);
+            }
+            return;
+        }
     });
     let spyRaf = 0;
     document.addEventListener("scroll", () => {

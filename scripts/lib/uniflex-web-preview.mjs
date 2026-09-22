@@ -1,4 +1,4 @@
-import { access, cp, mkdir } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { networkInterfaces } from "node:os";
 import { resolve } from "node:path";
 import { context } from "esbuild";
@@ -11,7 +11,13 @@ export async function startUniflexWebPreview({
         throw new Error("Missing UniFlex resources; run npm run build:uniflex-ui first.");
     });
     await mkdir(output, { recursive: true });
-    await cp(resolve(root, "apps/web-ui-preview/index.html"), resolve(output, "index.html"));
+    const indexSource = resolve(root, "apps/web-ui-preview/index.html");
+    const indexOut = resolve(output, "index.html");
+    let previewVersion = Date.now().toString(36);
+    const writeIndex = async () => {
+        const html = await readFile(indexSource, "utf8");
+        await writeFile(indexOut, html.replace('src="/preview.js"', `src="/preview.js?v=${previewVersion}"`));
+    };
     const build = await context({
         absWorkingDir: root,
         entryPoints: ["apps/web-ui-preview/main.ts"],
@@ -32,6 +38,15 @@ export async function startUniflexWebPreview({
                         ? resolve(root, "apps/client/src/ui-uniflex/themes", suffix)
                         : resolve(root, "apps/client/src/kits", suffix);
                     return { path: base.endsWith(".ts") ? base : `${base}.ts` };
+                });
+            },
+        }, {
+            name: "uniflex-preview-index",
+            setup(api) {
+                api.onEnd(async (result) => {
+                    if (result.errors.length > 0) return;
+                    previewVersion = Date.now().toString(36);
+                    await writeIndex();
                 });
             },
         }],
