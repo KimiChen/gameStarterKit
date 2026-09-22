@@ -1,8 +1,14 @@
-import { defineComponent, For, useMemo } from '@uniflex/compiler';
+import { defineComponent, For, useMemo, useState } from '@uniflex/compiler';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
 import { IconCaptionButton } from '../../../components/button/IconCaptionButton';
 import { SCREEN_FOOTER_HEIGHT, ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
+import {
+    allianceTechMaxLevel,
+    getAllianceTech,
+    getPreviewTechRuntime,
+} from '../../../gamecomponents/tech/allianceTech';
+import { AllianceMarchBoostPanel } from '../AllianceMarchBoost/AllianceMarchBoostPanel';
 import { AllianceTechLink, type AllianceTechLinkData } from './AllianceTechLink';
 import { AllianceTechNode, allianceTechNodeSize, type AllianceTechNodeData } from './AllianceTechNode';
 
@@ -23,16 +29,40 @@ const LINE_THICK = 12;
 const LINE_GOLD = '#F0B429';
 const LINE_GRAY = '#5E5E5E';
 
+function techNode(
+    id: string,
+    kind: AllianceTechNodeData['kind'],
+    left: number,
+    top: number,
+    techId: number,
+    locked = false,
+    parentIds?: readonly string[],
+): AllianceTechNodeData {
+    const tech = getAllianceTech(techId);
+    const runtime = getPreviewTechRuntime(techId);
+    return {
+        id,
+        kind,
+        left,
+        top,
+        parentIds,
+        locked,
+        techId,
+        level: runtime.level,
+        maxLevel: allianceTechMaxLevel(tech),
+    };
+}
+
 /** Content origin is the tree background top-left (page y=112). */
 export const DEFAULT_ALLIANCE_TECH_NODES: readonly AllianceTechNodeData[] = [
-    { id: 'shield', kind: 'shield', left: 294, top: 158, level: 5, maxLevel: 5 },
-    { id: 'heart', kind: 'heart', left: 57, top: 421, parentIds: ['shield'], level: 1, maxLevel: 5 },
-    { id: 'swords', kind: 'swords', left: 529, top: 420, parentIds: ['shield'], level: 1, maxLevel: 5 },
-    { id: 'crate-left', kind: 'crate', left: 56, top: 700, parentIds: ['heart'], locked: true, level: 0, maxLevel: 5 },
-    { id: 'crate-right', kind: 'crate', left: 529, top: 700, parentIds: ['swords'], locked: true, level: 0, maxLevel: 5 },
-    { id: 'crate-mid', kind: 'crate', left: 294, top: 972, parentIds: ['crate-left', 'crate-right'], locked: true, level: 0, maxLevel: 5 },
-    { id: 'crate-bot-left', kind: 'crate', left: 56, top: 1244, parentIds: ['crate-mid'], locked: true, level: 0, maxLevel: 5 },
-    { id: 'crate-bot-right', kind: 'crate', left: 529, top: 1244, parentIds: ['crate-mid'], locked: true, level: 0, maxLevel: 5 },
+    techNode('shield', 'shield', 294, 158, 1011),
+    techNode('heart', 'heart', 57, 421, 1021, false, ['shield']),
+    techNode('swords', 'swords', 529, 420, 1022, false, ['shield']),
+    techNode('crate-left', 'crate', 56, 700, 1031, true, ['heart']),
+    techNode('crate-right', 'crate', 529, 700, 1041, true, ['swords']),
+    techNode('crate-mid', 'crate', 294, 972, 1042, true, ['crate-left', 'crate-right']),
+    techNode('crate-bot-left', 'crate', 56, 1244, 1051, true, ['crate-mid']),
+    techNode('crate-bot-right', 'crate', 529, 1244, 1061, true, ['crate-mid']),
 ];
 
 function techCenterX(node: AllianceTechNodeData): number {
@@ -100,16 +130,23 @@ export function allianceTechContentHeight(nodes: readonly AllianceTechNodeData[]
 }
 
 export const AllianceTechPanel = defineComponent<AllianceTechPanelProps>((p) => {
+    const [detailTechId, setDetailTechId] = useState(0);
+    const detailOpen = detailTechId > 0;
     const back = () => {
         p.onBack?.();
         p.onAction?.('back');
     };
+    const closeDetail = () => setDetailTechId(0);
     const rankIcon = imageRef('ui/alliance/tech-rank');
     const rankLabel = p.rankLabel ?? '排行榜';
     const nodes = p.nodes ?? DEFAULT_ALLIANCE_TECH_NODES;
     const links = useMemo(() => buildAllianceTechLinks(nodes), [nodes]);
     const contentHeight = allianceTechContentHeight(nodes);
-    const emit = (id: string) => p.onAction?.(`tech_${id}`);
+    const openTech = (node: AllianceTechNodeData) => {
+        p.onAction?.(`tech_${node.id}`);
+        const techId = node.techId;
+        if (techId != null && techId > 0) setDetailTechId(techId);
+    };
     return (
         <view name="AllianceTech" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1624 }}>
@@ -129,7 +166,7 @@ export const AllianceTechPanel = defineComponent<AllianceTechPanelProps>((p) => 
                         {(link) => <AllianceTechLink link={link} />}
                     </For>
                     <For each={nodes} key="id">
-                        {(node) => <AllianceTechNode node={node} onClick={() => emit(node.id)} />}
+                        {(node) => <AllianceTechNode node={node} onClick={() => openTech(node)} />}
                     </For>
                 </view>
             </scroll-view>
@@ -145,6 +182,10 @@ export const AllianceTechPanel = defineComponent<AllianceTechPanelProps>((p) => 
             <IconCaptionButton icon={rankIcon} label={rankLabel} left={646} top={1521}
                 iconWidth={82} iconHeight={78} labelTop={71} labelHeight={26}
                 onClick={() => p.onAction?.('open_tech_rank')} />
+            <AllianceMarchBoostPanel visible={detailOpen} techId={detailTechId}
+                onClose={closeDetail}
+                onPayGem={() => p.onAction?.('donate_gem')}
+                onPayCoin={() => p.onAction?.('donate_coin')} />
         </view>
     );
 });

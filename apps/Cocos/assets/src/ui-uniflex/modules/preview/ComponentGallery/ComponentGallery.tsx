@@ -19,16 +19,18 @@ import { mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
+import { RewardItem } from '../../../gamecomponents/item/RewardItem';
 import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
 import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
 import { StarRow } from '../../../gamecomponents/star/StarRow';
+import { TECH_ICON_HEIGHT, TECH_ICON_WIDTH, TechIcon } from '../../../gamecomponents/tech/TechIcon';
 import { themes, type ComponentTheme, type ThemeName } from '../../../themes/active';
 
 const PAGE_WIDTH = 750;
 const PAGE_HEIGHT = 1424;
 const HEADER_HEIGHT = 188;
 const SCROLL_HEIGHT = PAGE_HEIGHT - HEADER_HEIGHT;
-const CONTENT_HEIGHT = 2580;
+const CONTENT_HEIGHT = 2780;
 const SECTION_WIDTH = 710;
 const INNER_WIDTH = 674;
 const SECTION_GAP = 24;
@@ -251,6 +253,20 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                             </view>
                             <view style={{ width: 240, height: 40 }}>
                                 <StarRow theme={theme} value={4} lefts={STAR_LEFTS} top={0} width={40} height={40} />
+                            </view>
+                        </view>
+                        <view style={{ width: INNER_WIDTH, flexDirection: 'row', flexWrap: 'wrap', gap: ITEM_GAP, alignItems: 'center' }}>
+                            <view style={{ position: 'relative', width: TECH_ICON_WIDTH, height: TECH_ICON_HEIGHT }}>
+                                <TechIcon left={0} top={0} kind="heart" level="1/3" />
+                            </view>
+                            <view style={{ position: 'relative', width: 195, height: 53 }}>
+                                <RewardItem item={{ id: 'gem', itemId: 'gem', count: '30000', left: 0, top: 0 }} />
+                            </view>
+                            <view style={{ position: 'relative', width: 187, height: 50 }}>
+                                <RewardItem item={{ id: 'leaf', itemId: 'leaf', count: '30000', left: 0, top: 0 }} />
+                            </view>
+                            <view style={{ position: 'relative', width: 184, height: 52 }}>
+                                <RewardItem item={{ id: 'ticket', itemId: 'ticket', count: '30000', left: 0, top: 0 }} />
                             </view>
                         </view>
                     </view>

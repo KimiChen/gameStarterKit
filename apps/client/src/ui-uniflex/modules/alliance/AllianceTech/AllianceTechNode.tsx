@@ -12,6 +12,7 @@ export interface AllianceTechNodeData {
     readonly locked?: boolean;
     readonly level: number;
     readonly maxLevel: number;
+    readonly techId?: number;
 }
 
 export interface AllianceTechNodeProps {

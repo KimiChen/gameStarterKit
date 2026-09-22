@@ -318,6 +318,11 @@
       "source": "apps/client/src/ui-uniflex/gamecomponents/resource/ResourceCounter.tsx"
     },
     {
+      "key": "RewardItem",
+      "rootName": "RewardItem",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/item/RewardItem.tsx"
+    },
+    {
       "key": "ScreenFooter",
       "rootName": "ScreenFooter",
       "source": "apps/client/src/ui-uniflex/components/chrome/ScreenFooter.tsx"
@@ -356,6 +361,11 @@
       "key": "TabBar",
       "rootName": "TabBar",
       "source": "apps/client/src/ui-uniflex/components/tab/TabBar.tsx"
+    },
+    {
+      "key": "TechIcon",
+      "rootName": "TechIcon",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/tech/TechIcon.tsx"
     },
     {
       "key": "WideMenuButton",

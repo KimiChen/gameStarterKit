@@ -66,6 +66,8 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 | 空态 | `EmptyState` |
 | 资源条 | `ResourceCounter` |
 | 道具格 | `ItemSlot` |
+| 奖励道具 | `RewardItem` |
+| 科技图标 | `TechIcon` |
 | 全屏标题栏 | `ScreenHeader` |
 | 全屏底栏 | `ScreenFooter` |
 | 底栏 / 红点 | `MainNav` / `NotificationBadge` |
