@@ -28,6 +28,19 @@ export const MAPO_MAX_CELL = MAPO_MAP_ROWS * MAPO_CELL_STRIDE;
 /** 半对角（设计像素 @ scale 1）。一格读作 2×halfW × 2×halfH 的菱形，世界包围盒恰好 2:1。 */
 export const MAPO_TILE_HALF_W = 32;
 export const MAPO_TILE_HALF_H = 16;
+/**
+ * 原作 2D 沙盘的**半格宽**（像素，`script/config/config_2d.lua` 的 `TILE_WIDTH`）。
+ * ⚠ 它是**换算原版素材尺寸的分母**，⛔ 不是本 kit 的格尺寸（那是 `MAPO_TILE_HALF_W`）。
+ *   原版一张地物图多少像素宽，就等于它在原版里占几格 —— 我们照这个比例还原，
+ *   件的大小于是**也是原版参数**（资源件 0.53~1.10 格、山体 0.94~2.25 格、树簇 0.12~0.45 格）。
+ */
+export const MAPO_ORIGINAL_TILE_HALF_W = 150;
+
+/** 原版素材像素 → 本 kit 世界单位。 */
+export function mapoOriginalPxToWorld(px: number): number {
+    return px * (MAPO_TILE_HALF_W / MAPO_ORIGINAL_TILE_HALF_W);
+}
+
 /** 近景 chunk 边长（格）。对齐原作 BLOCK_SIZE=10，且与最细一档鸟瞰 chunk 同尺寸。 */
 export const MAPO_CHUNK_TILES = 10;
 
@@ -355,6 +368,56 @@ export function mapoAtlasUv(terrainId: number): readonly [number, number, number
 }
 
 export const MAPO_TERRAIN_HEADER_BYTES = 8;
+
+// ── 多格地形的区域摆件表 regions.bin（与 tools/maporiginal-assets/build_regions.py 一一对应） ──
+//
+// ★ 为什么是**区域**而不是逐格：原作的山脉/林丛是跨整片区的大件，⛔ 不是每格一棵树。
+//   摆放有两个来源，原版优先：① `mountain_patch.bytes` 的 3,942 条原版锚点；
+//   ② 没有原版锚点的连通区，每区补一件（锚在区内屏幕最低格，按区的等距跨度缩放）。
+// ⚠ 表**已按 s 升序落盘 = 画家序**，客户端 ⛔ 不要再排一遍（2.8 万条每帧排会卡）。
+// ⚠ 坐标存的是**等距量** (s, d) 而不是 (row, col)：
+//     s = row + col          ⇒ 世界 y = -TILE_HALF_H * (s + 1)
+//     d = row - col + dBias  ⇒ 世界 x =  TILE_HALF_W * (d - dBias)
+//   这样可视裁剪就是一次矩形比较，⛔ 不用把每条都反解回 (row, col)。
+
+/** 头长度：4 字节大端 count。 */
+export const MAPO_REGION_HEADER_BYTES = 4;
+/** 单条长度。 */
+export const MAPO_REGION_RECORD_BYTES = 8;
+/** d 的偏置，保证非负。 */
+export const MAPO_REGION_D_BIAS = 1500;
+
+export interface IMapoRegionPiece {
+    /** row + col。 */
+    readonly s: number;
+    /** row - col（**已去偏置**）。 */
+    readonly d: number;
+    /** 区域件图集格 id。 */
+    readonly cell: number;
+    /** 件宽（格数）。 */
+    readonly wTiles: number;
+    /** 所属连通区的格数（诊断用）。 */
+    readonly cells: number;
+}
+
+/**
+ * 等距量 → 世界坐标（菱形中心）。⚠ 与 `mapoGrid2Pos` **必须同式**，包括奇数行的半格错位。
+ *
+ * ⚠ 行奇偶不用另存：`row = (s + d) / 2` 恒为整数（s、d 同奇偶），
+ * ⛔ 别省掉这一步 —— 漏了奇数行的 -0.5 偏移，整个区域件层会与地表错半格。
+ */
+export function mapoRegionPos(s: number, d: number): { x: number; y: number } {
+    const row = (s + d) / 2;
+    if ((row & 1) === 0) {
+        return { x: d * MAPO_TILE_HALF_W, y: -(s + 1) * MAPO_TILE_HALF_H };
+    }
+    return { x: (d - 0.5) * MAPO_TILE_HALF_W, y: -(s + 1.5) * MAPO_TILE_HALF_H };
+}
+
+/** 世界 y → s（`mapoRegionPos` 的逆，用来在按 s 排好的表上二分）。⚠ 只用于裁剪，容一格误差。 */
+export function mapoRegionSAt(y: number): number {
+    return -y / MAPO_TILE_HALF_H - 1;
+}
 export const MAPO_TERRAIN_MAX_CLASSES = 16;
 
 /**

@@ -3,6 +3,9 @@
  *
  * ★ 格 id = **原版 res 值**（2..46）：客户端拿到某格的值就直接查到该放哪张图，⛔ 零猜测。
  *   这是「按原游戏参数摆放」的落点——原作近档就是逐格一个 res_field，由该格的类型+等级决定。
+ * ★ `native` 是**原图像素尺寸**：原版 2D 一格 300×150 px（config_2d 的 TILE_WIDTH/HEIGHT 是半值），
+ *   所以件的世界宽 = native[0] × (MAPO_TILE_HALF_W / 150)。资源件实测占 0.53~1.10 格
+ *   —— 等级差本来就体现在**件的大小**上，⛔ 别再按固定格宽拉伸（那会把等级差抹平）。
  * ⚠ 锚点是**底边中点**（地物立在菱形中心上），⛔ 不是几何中心。
  * ⚠ 原版没单独出图的等级用最近一级顶上（`MAPO_DECOR_SUBSTITUTIONS`）。
  */
@@ -12,6 +15,8 @@ export interface IMapoDecorCell {
   readonly kind: string;
   readonly cell: readonly [number, number, number, number];
   readonly art: readonly [number, number, number, number];
+  /** ★ **原图像素尺寸**（切片时的原始大小）。件在世界里多大由它定，⛔ 不是按格拉伸。 */
+  readonly native: readonly [number, number];
   readonly resType?: string;
   readonly level?: number;
 }
@@ -39,6 +44,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       26,
       51
     ],
+    "native": [
+      26,
+      51
+    ],
     "kind": "res",
     "resType": "wood",
     "level": 1
@@ -54,6 +63,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       119,
       167,
+      18,
+      25
+    ],
+    "native": [
       18,
       25
     ],
@@ -75,6 +88,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       50,
       58
     ],
+    "native": [
+      50,
+      58
+    ],
     "kind": "res",
     "resType": "wood",
     "level": 3
@@ -90,6 +107,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       103,
       134,
+      50,
+      58
+    ],
+    "native": [
       50,
       58
     ],
@@ -111,6 +132,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       251,
       150
     ],
+    "native": [
+      251,
+      150
+    ],
     "kind": "res",
     "resType": "wood",
     "level": 5
@@ -126,6 +151,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       2,
       42,
+      251,
+      150
+    ],
+    "native": [
       251,
       150
     ],
@@ -147,6 +176,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       130
     ],
+    "native": [
+      275,
+      140
+    ],
     "kind": "res",
     "resType": "wood",
     "level": 7
@@ -164,6 +197,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       44,
       256,
       148
+    ],
+    "native": [
+      274,
+      158
     ],
     "kind": "res",
     "resType": "wood",
@@ -183,6 +220,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       147
     ],
+    "native": [
+      282,
+      162
+    ],
     "kind": "res",
     "resType": "wood",
     "level": 9
@@ -198,6 +239,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       10,
       55,
+      235,
+      137
+    ],
+    "native": [
       235,
       137
     ],
@@ -219,6 +264,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       179,
       84
     ],
+    "native": [
+      179,
+      84
+    ],
     "kind": "res",
     "resType": "iron",
     "level": 1
@@ -234,6 +283,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       38,
       108,
+      179,
+      84
+    ],
+    "native": [
       179,
       84
     ],
@@ -255,6 +308,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       184,
       87
     ],
+    "native": [
+      184,
+      87
+    ],
     "kind": "res",
     "resType": "iron",
     "level": 3
@@ -270,6 +327,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       33,
       94,
+      189,
+      98
+    ],
+    "native": [
       189,
       98
     ],
@@ -291,6 +352,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       239,
       111
     ],
+    "native": [
+      239,
+      111
+    ],
     "kind": "res",
     "resType": "iron",
     "level": 5
@@ -306,6 +371,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       7,
       77,
+      241,
+      115
+    ],
+    "native": [
       241,
       115
     ],
@@ -327,6 +396,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       229,
       129
     ],
+    "native": [
+      229,
+      129
+    ],
     "kind": "res",
     "resType": "iron",
     "level": 7
@@ -345,6 +418,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       131
     ],
+    "native": [
+      262,
+      134
+    ],
     "kind": "res",
     "resType": "iron",
     "level": 8
@@ -360,6 +437,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       6,
       62,
+      244,
+      130
+    ],
+    "native": [
       244,
       130
     ],
@@ -381,6 +462,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       132
     ],
+    "native": [
+      279,
+      144
+    ],
     "kind": "res",
     "resType": "iron",
     "level": 10
@@ -396,6 +481,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       16,
       97,
+      224,
+      95
+    ],
+    "native": [
       224,
       95
     ],
@@ -417,6 +506,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       224,
       95
     ],
+    "native": [
+      224,
+      95
+    ],
     "kind": "res",
     "resType": "stone",
     "level": 2
@@ -432,6 +525,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       13,
       108,
+      230,
+      84
+    ],
+    "native": [
       230,
       84
     ],
@@ -453,6 +550,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       176,
       87
     ],
+    "native": [
+      176,
+      87
+    ],
     "kind": "res",
     "resType": "stone",
     "level": 4
@@ -468,6 +569,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       13,
       85,
+      229,
+      107
+    ],
+    "native": [
       229,
       107
     ],
@@ -489,6 +594,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       229,
       109
     ],
+    "native": [
+      229,
+      109
+    ],
     "kind": "res",
     "resType": "stone",
     "level": 6
@@ -504,6 +613,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       2,
       71,
+      252,
+      121
+    ],
+    "native": [
       252,
       121
     ],
@@ -525,6 +638,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       252,
       127
     ],
+    "native": [
+      252,
+      127
+    ],
     "kind": "res",
     "resType": "stone",
     "level": 8
@@ -540,6 +657,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       4,
       57,
+      248,
+      135
+    ],
+    "native": [
       248,
       135
     ],
@@ -561,6 +682,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       125
     ],
+    "native": [
+      286,
+      140
+    ],
     "kind": "res",
     "resType": "stone",
     "level": 10
@@ -576,6 +701,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       30,
       64,
+      196,
+      128
+    ],
+    "native": [
       196,
       128
     ],
@@ -597,6 +726,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       196,
       128
     ],
+    "native": [
+      196,
+      128
+    ],
     "kind": "res",
     "resType": "food",
     "level": 2
@@ -612,6 +745,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       30,
       64,
+      196,
+      128
+    ],
+    "native": [
       196,
       128
     ],
@@ -633,6 +770,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       196,
       128
     ],
+    "native": [
+      196,
+      128
+    ],
     "kind": "res",
     "resType": "food",
     "level": 4
@@ -648,6 +789,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       30,
       64,
+      196,
+      128
+    ],
+    "native": [
       196,
       128
     ],
@@ -669,6 +814,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       250,
       132
     ],
+    "native": [
+      250,
+      132
+    ],
     "kind": "res",
     "resType": "food",
     "level": 6
@@ -684,6 +833,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       2,
       52,
+      251,
+      140
+    ],
+    "native": [
       251,
       140
     ],
@@ -705,6 +858,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       135
     ],
+    "native": [
+      277,
+      146
+    ],
     "kind": "res",
     "resType": "food",
     "level": 8
@@ -723,6 +880,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       125
     ],
+    "native": [
+      287,
+      140
+    ],
     "kind": "res",
     "resType": "food",
     "level": 9
@@ -738,6 +899,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       48,
       111,
+      159,
+      81
+    ],
+    "native": [
       159,
       81
     ],
@@ -759,6 +924,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       200,
       110
     ],
+    "native": [
+      200,
+      110
+    ],
     "kind": "res",
     "resType": "gold",
     "level": 1
@@ -774,6 +943,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "art": [
       13,
       71,
+      229,
+      121
+    ],
+    "native": [
       229,
       121
     ],
@@ -795,6 +968,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       132
     ],
+    "native": [
+      262,
+      135
+    ],
     "kind": "res",
     "resType": "gold",
     "level": 3
@@ -812,6 +989,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       64,
       256,
       128
+    ],
+    "native": [
+      278,
+      139
     ],
     "kind": "res",
     "resType": "gold",
@@ -831,6 +1012,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       256,
       124
     ],
+    "native": [
+      276,
+      134
+    ],
     "kind": "res",
     "resType": "gold",
     "level": 5
@@ -849,6 +1034,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192,
       192
     ],
+    "native": [
+      512,
+      512
+    ],
     "kind": "city"
   },
   {
@@ -865,6 +1054,10 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192,
       192
     ],
+    "native": [
+      512,
+      512
+    ],
     "kind": "city"
   },
   {
@@ -876,10 +1069,14 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      24,
+      32,
       0,
-      208,
+      192,
       192
+    ],
+    "native": [
+      512,
+      512
     ],
     "kind": "city"
   },
@@ -892,10 +1089,14 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      24,
+      32,
       0,
-      208,
+      192,
       192
+    ],
+    "native": [
+      512,
+      512
     ],
     "kind": "city"
   },
@@ -908,10 +1109,14 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      24,
+      32,
       0,
-      208,
+      192,
       192
+    ],
+    "native": [
+      512,
+      512
     ],
     "kind": "city"
   },
@@ -924,10 +1129,14 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
+      32,
       0,
-      48,
-      256,
-      144
+      192,
+      192
+    ],
+    "native": [
+      512,
+      512
     ],
     "kind": "city"
   },
@@ -940,10 +1149,14 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
+      32,
       0,
-      50,
-      256,
-      142
+      192,
+      192
+    ],
+    "native": [
+      512,
+      512
     ],
     "kind": "city"
   },
@@ -956,10 +1169,14 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      11,
+      32,
       0,
-      233,
+      192,
       192
+    ],
+    "native": [
+      512,
+      512
     ],
     "kind": "city"
   }

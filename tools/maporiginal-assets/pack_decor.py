@@ -81,12 +81,13 @@ def main() -> int:
 
     def place(idx: int, path: str, meta: dict) -> None:
         im = Image.open(path).convert("RGBA")
+        native = [im.width, im.height]          # ★ 原图像素 = 原版尺寸的唯一依据
         im.thumbnail((CELL_W, CELL_H), Image.LANCZOS)
         gx, gy = (idx % GRID_COLS) * CELL_W, (idx // GRID_COLS) * CELL_H
         ox, oy = (CELL_W - im.width) // 2, CELL_H - im.height      # ⚠ 底对齐：地物立在格上
         atlas.paste(im, (gx + ox, gy + oy), im)
         cells.append({"id": idx, "cell": [gx, gy, CELL_W, CELL_H],
-                      "art": [ox, oy, im.width, im.height], **meta})
+                      "art": [ox, oy, im.width, im.height], "native": native, **meta})
 
     missing = []
     for v in range(2, 47):
@@ -122,6 +123,9 @@ def main() -> int:
  *
  * ★ 格 id = **原版 res 值**（2..46）：客户端拿到某格的值就直接查到该放哪张图，⛔ 零猜测。
  *   这是「按原游戏参数摆放」的落点——原作近档就是逐格一个 res_field，由该格的类型+等级决定。
+ * ★ `native` 是**原图像素尺寸**：原版 2D 一格 300×150 px（config_2d 的 TILE_WIDTH/HEIGHT 是半值），
+ *   所以件的世界宽 = native[0] × (MAPO_TILE_HALF_W / 150)。资源件实测占 0.53~1.10 格
+ *   —— 等级差本来就体现在**件的大小**上，⛔ 别再按固定格宽拉伸（那会把等级差抹平）。
  * ⚠ 锚点是**底边中点**（地物立在菱形中心上），⛔ 不是几何中心。
  * ⚠ 原版没单独出图的等级用最近一级顶上（`MAPO_DECOR_SUBSTITUTIONS`）。
  */
@@ -131,6 +135,8 @@ export interface IMapoDecorCell {
   readonly kind: string;
   readonly cell: readonly [number, number, number, number];
   readonly art: readonly [number, number, number, number];
+  /** ★ **原图像素尺寸**（切片时的原始大小）。件在世界里多大由它定，⛔ 不是按格拉伸。 */
+  readonly native: readonly [number, number];
   readonly resType?: string;
   readonly level?: number;
 }

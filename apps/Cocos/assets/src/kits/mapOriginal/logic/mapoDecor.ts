@@ -14,7 +14,9 @@ import {
     type IMapoDecorCell,
 } from "../../../shared/kits/mapOriginal/content/decor.data";
 import { MAPO_CITY_SITES } from "../../../shared/kits/mapOriginal/content/labels.data";
-import { mapoGrid2Pos } from "../../../shared/kits/mapOriginal/api/hexmap/index";
+import {
+    mapoGrid2Pos, mapoOriginalPxToWorld,
+} from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
 /** 值/城址 id → 图集格。一次算好，⛔ 不要每格 find。 */
 const BY_ID: ReadonlyMap<number, IMapoDecorCell> =
@@ -41,7 +43,7 @@ export interface IMapoDecorPlacement {
     /** 世界坐标（菱形中心）。摆件**底边中点**对齐到这里。 */
     readonly x: number;
     readonly y: number;
-    /** 城址上的件画得大一点。 */
+    /** 额外放大系数。⚠ 常态是 1：件的大小由原图像素定（见 `mapoDecorSize`）。 */
     readonly scale: number;
 }
 
@@ -62,7 +64,7 @@ export function mapoDecorAt(row: number, col: number, value: number,
     // ★ 城址：原版真坐标，恒放且放大
     if (CITY_AT.has(row * 10000 + col) && CITY_CELLS.length > 0) {
         return { row, col, cell: CITY_CELLS[hash(row, col, 7) % CITY_CELLS.length],
-                 x: pos.x, y: pos.y, scale: 1.35 };
+                 x: pos.x, y: pos.y, scale: 1 };
     }
     // ★ 资源格：值即格 id，一一对应，⛔ 零猜测
     const cell = BY_ID.get(value);
@@ -79,15 +81,16 @@ export function mapoDecorUv(cell: IMapoDecorCell): readonly [number, number, num
 }
 
 /**
- * 摆件在世界里的尺寸。图集格宽 = 一格菱形宽的 `WIDTH_TILES` 倍。
- * ⚠ 原版 res_field 是**画在格内**的地物（不像城那样压邻格），所以这里按格宽走，
- *   城址件再乘 `scale`。高度按原始像素比例算，⛔ 不要拉伸（拉伸会让塔楼变矮胖）。
+ * 摆件在世界里的尺寸 —— **按原图像素换算**，⛔ 不按格宽拉伸。
+ *
+ * ★ 原版 2D 一格 300 px 宽（`config_2d` 的 TILE_WIDTH=150 是半宽），所以一张 220 px 的
+ *   3 级木材图在原版里就占 0.73 格。照这个比例还原，**件的大小也成了原版参数**：
+ *   等级差本来就体现在件的大小上（资源件实测 0.53~1.10 格）。
+ * ⚠ 早先按固定 1.0 格宽拉伸，把等级差抹平了，⛔ 别改回去。
+ * ⚠ 高度按原图纵横比算，⛔ 不要单独拉高（会让塔楼变矮胖）。
  */
-export const MAPO_DECOR_WIDTH_TILES = 1.0;
-
-export function mapoDecorSize(cell: IMapoDecorCell, tileHalfW: number,
-                              scale: number): { w: number; h: number } {
-    const [, , aw, ah] = cell.art;
-    const w = tileHalfW * 2 * MAPO_DECOR_WIDTH_TILES * scale;
-    return { w, h: w * (ah / Math.max(aw, 1)) };
+export function mapoDecorSize(cell: IMapoDecorCell, scale: number): { w: number; h: number } {
+    const [nw, nh] = cell.native;
+    const w = mapoOriginalPxToWorld(nw) * scale;
+    return { w, h: w * (nh / Math.max(nw, 1)) };
 }

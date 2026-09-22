@@ -39,6 +39,10 @@
     26,
     51
    ],
+   "native": [
+    26,
+    51
+   ],
    "kind": "res",
    "resType": "wood",
    "level": 1,
@@ -56,6 +60,10 @@
    "art": [
     119,
     167,
+    18,
+    25
+   ],
+   "native": [
     18,
     25
    ],
@@ -79,6 +87,10 @@
     50,
     58
    ],
+   "native": [
+    50,
+    58
+   ],
    "kind": "res",
    "resType": "wood",
    "level": 3,
@@ -96,6 +108,10 @@
    "art": [
     103,
     134,
+    50,
+    58
+   ],
+   "native": [
     50,
     58
    ],
@@ -119,6 +135,10 @@
     251,
     150
    ],
+   "native": [
+    251,
+    150
+   ],
    "kind": "res",
    "resType": "wood",
    "level": 5,
@@ -136,6 +156,10 @@
    "art": [
     2,
     42,
+    251,
+    150
+   ],
+   "native": [
     251,
     150
    ],
@@ -159,6 +183,10 @@
     256,
     130
    ],
+   "native": [
+    275,
+    140
+   ],
    "kind": "res",
    "resType": "wood",
    "level": 7,
@@ -178,6 +206,10 @@
     44,
     256,
     148
+   ],
+   "native": [
+    274,
+    158
    ],
    "kind": "res",
    "resType": "wood",
@@ -199,6 +231,10 @@
     256,
     147
    ],
+   "native": [
+    282,
+    162
+   ],
    "kind": "res",
    "resType": "wood",
    "level": 9,
@@ -216,6 +252,10 @@
    "art": [
     10,
     55,
+    235,
+    137
+   ],
+   "native": [
     235,
     137
    ],
@@ -239,6 +279,10 @@
     179,
     84
    ],
+   "native": [
+    179,
+    84
+   ],
    "kind": "res",
    "resType": "iron",
    "level": 1,
@@ -256,6 +300,10 @@
    "art": [
     38,
     108,
+    179,
+    84
+   ],
+   "native": [
     179,
     84
    ],
@@ -279,6 +327,10 @@
     184,
     87
    ],
+   "native": [
+    184,
+    87
+   ],
    "kind": "res",
    "resType": "iron",
    "level": 3,
@@ -296,6 +348,10 @@
    "art": [
     33,
     94,
+    189,
+    98
+   ],
+   "native": [
     189,
     98
    ],
@@ -319,6 +375,10 @@
     239,
     111
    ],
+   "native": [
+    239,
+    111
+   ],
    "kind": "res",
    "resType": "iron",
    "level": 5,
@@ -336,6 +396,10 @@
    "art": [
     7,
     77,
+    241,
+    115
+   ],
+   "native": [
     241,
     115
    ],
@@ -359,6 +423,10 @@
     229,
     129
    ],
+   "native": [
+    229,
+    129
+   ],
    "kind": "res",
    "resType": "iron",
    "level": 7,
@@ -379,6 +447,10 @@
     256,
     131
    ],
+   "native": [
+    262,
+    134
+   ],
    "kind": "res",
    "resType": "iron",
    "level": 8,
@@ -396,6 +468,10 @@
    "art": [
     6,
     62,
+    244,
+    130
+   ],
+   "native": [
     244,
     130
    ],
@@ -419,6 +495,10 @@
     256,
     132
    ],
+   "native": [
+    279,
+    144
+   ],
    "kind": "res",
    "resType": "iron",
    "level": 10,
@@ -436,6 +516,10 @@
    "art": [
     16,
     97,
+    224,
+    95
+   ],
+   "native": [
     224,
     95
    ],
@@ -459,6 +543,10 @@
     224,
     95
    ],
+   "native": [
+    224,
+    95
+   ],
    "kind": "res",
    "resType": "stone",
    "level": 2,
@@ -476,6 +564,10 @@
    "art": [
     13,
     108,
+    230,
+    84
+   ],
+   "native": [
     230,
     84
    ],
@@ -499,6 +591,10 @@
     176,
     87
    ],
+   "native": [
+    176,
+    87
+   ],
    "kind": "res",
    "resType": "stone",
    "level": 4,
@@ -516,6 +612,10 @@
    "art": [
     13,
     85,
+    229,
+    107
+   ],
+   "native": [
     229,
     107
    ],
@@ -539,6 +639,10 @@
     229,
     109
    ],
+   "native": [
+    229,
+    109
+   ],
    "kind": "res",
    "resType": "stone",
    "level": 6,
@@ -556,6 +660,10 @@
    "art": [
     2,
     71,
+    252,
+    121
+   ],
+   "native": [
     252,
     121
    ],
@@ -579,6 +687,10 @@
     252,
     127
    ],
+   "native": [
+    252,
+    127
+   ],
    "kind": "res",
    "resType": "stone",
    "level": 8,
@@ -596,6 +708,10 @@
    "art": [
     4,
     57,
+    248,
+    135
+   ],
+   "native": [
     248,
     135
    ],
@@ -619,6 +735,10 @@
     256,
     125
    ],
+   "native": [
+    286,
+    140
+   ],
    "kind": "res",
    "resType": "stone",
    "level": 10,
@@ -636,6 +756,10 @@
    "art": [
     30,
     64,
+    196,
+    128
+   ],
+   "native": [
     196,
     128
    ],
@@ -659,6 +783,10 @@
     196,
     128
    ],
+   "native": [
+    196,
+    128
+   ],
    "kind": "res",
    "resType": "food",
    "level": 2,
@@ -676,6 +804,10 @@
    "art": [
     30,
     64,
+    196,
+    128
+   ],
+   "native": [
     196,
     128
    ],
@@ -699,6 +831,10 @@
     196,
     128
    ],
+   "native": [
+    196,
+    128
+   ],
    "kind": "res",
    "resType": "food",
    "level": 4,
@@ -716,6 +852,10 @@
    "art": [
     30,
     64,
+    196,
+    128
+   ],
+   "native": [
     196,
     128
    ],
@@ -739,6 +879,10 @@
     250,
     132
    ],
+   "native": [
+    250,
+    132
+   ],
    "kind": "res",
    "resType": "food",
    "level": 6,
@@ -756,6 +900,10 @@
    "art": [
     2,
     52,
+    251,
+    140
+   ],
+   "native": [
     251,
     140
    ],
@@ -779,6 +927,10 @@
     256,
     135
    ],
+   "native": [
+    277,
+    146
+   ],
    "kind": "res",
    "resType": "food",
    "level": 8,
@@ -799,6 +951,10 @@
     256,
     125
    ],
+   "native": [
+    287,
+    140
+   ],
    "kind": "res",
    "resType": "food",
    "level": 9,
@@ -816,6 +972,10 @@
    "art": [
     48,
     111,
+    159,
+    81
+   ],
+   "native": [
     159,
     81
    ],
@@ -839,6 +999,10 @@
     200,
     110
    ],
+   "native": [
+    200,
+    110
+   ],
    "kind": "res",
    "resType": "gold",
    "level": 1,
@@ -856,6 +1020,10 @@
    "art": [
     13,
     71,
+    229,
+    121
+   ],
+   "native": [
     229,
     121
    ],
@@ -879,6 +1047,10 @@
     256,
     132
    ],
+   "native": [
+    262,
+    135
+   ],
    "kind": "res",
    "resType": "gold",
    "level": 3,
@@ -898,6 +1070,10 @@
     64,
     256,
     128
+   ],
+   "native": [
+    278,
+    139
    ],
    "kind": "res",
    "resType": "gold",
@@ -919,6 +1095,10 @@
     256,
     124
    ],
+   "native": [
+    276,
+    134
+   ],
    "kind": "res",
    "resType": "gold",
    "level": 5,
@@ -939,8 +1119,12 @@
     192,
     192
    ],
+   "native": [
+    512,
+    512
+   ],
    "kind": "city",
-   "source": "scene/build/main_city/png/wenli_64.png"
+   "source": "scene/build_snow/main_city/28saiji_jianzhu/png/qianshao.png"
   },
   {
    "id": 65,
@@ -956,8 +1140,12 @@
     192,
     192
    ],
+   "native": [
+    512,
+    512
+   ],
    "kind": "city",
-   "source": "scene/build/main_city/28saiji_jianzhu/png/qianshao.png"
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_zuo.png"
   },
   {
    "id": 66,
@@ -968,13 +1156,17 @@
     192
    ],
    "art": [
-    24,
+    32,
     0,
-    208,
+    192,
     192
    ],
+   "native": [
+    512,
+    512
+   ],
    "kind": "city",
-   "source": "scene/build/main_city/28saiji_jianzhu/png/shuaiqi_03.png"
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_you.png"
   },
   {
    "id": 67,
@@ -985,13 +1177,17 @@
     192
    ],
    "art": [
-    24,
+    32,
     0,
-    208,
+    192,
     192
    ],
+   "native": [
+    512,
+    512
+   ],
    "kind": "city",
-   "source": "scene/build/main_city/28saiji_jianzhu/png/shuaiqi_02.png"
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_xia.png"
   },
   {
    "id": 68,
@@ -1002,13 +1198,17 @@
     192
    ],
    "art": [
-    24,
+    32,
     0,
-    208,
+    192,
     192
    ],
+   "native": [
+    512,
+    512
+   ],
    "kind": "city",
-   "source": "scene/build/main_city/28saiji_jianzhu/png/shuaiqi_01.png"
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_shang.png"
   },
   {
    "id": 69,
@@ -1019,13 +1219,17 @@
     192
    ],
    "art": [
+    32,
     0,
-    48,
-    256,
-    144
+    192,
+    192
+   ],
+   "native": [
+    512,
+    512
    ],
    "kind": "city",
-   "source": "scene/build/main_city/13saiji_jianzhu/juedi/png/02.png"
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01.png"
   },
   {
    "id": 70,
@@ -1036,13 +1240,17 @@
     192
    ],
    "art": [
+    32,
     0,
-    50,
-    256,
-    142
+    192,
+    192
+   ],
+   "native": [
+    512,
+    512
    ],
    "kind": "city",
-   "source": "scene/build/main_city/13saiji_jianzhu/juedi/png/01.png"
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_c02_x.png"
   },
   {
    "id": 71,
@@ -1053,13 +1261,17 @@
     192
    ],
    "art": [
-    11,
+    32,
     0,
-    233,
+    192,
     192
    ],
+   "native": [
+    512,
+    512
+   ],
    "kind": "city",
-   "source": "scene/build_snow/main_city/floors/37_6.png"
+   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_c02.png"
   }
  ]
 }

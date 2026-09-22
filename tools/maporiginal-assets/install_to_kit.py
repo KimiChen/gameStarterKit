@@ -34,10 +34,14 @@ FILES = {
     "plate-lod5.png": "plate-lod5.png", "plate-lod5.info.json": "plate-lod5.info.json",
     "minimap.png": "minimap.png", "minimap-mask.png": "minimap-mask.png",
     "decor-atlas.png": "decor-atlas.png", "decor-atlas.info.json": "decor-atlas.info.json",
+    # ★ 多格地形的区域件：图集 + 摆放表（regions.bin 也要进运行时，走 BufferAsset）
+    "region-atlas.png": "region-atlas.png", "region-atlas.info.json": "region-atlas.info.json",
+    "regions.bin": "regions.bin", "regions.info.json": "regions.info.json",
     "labels.json": "labels.json",
     "plate.calib.json": "plate.calib.json",
 }
-KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "plate.calib.json", "labels.json"}
+KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "plate.calib.json", "labels.json",
+            "regions.info.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。
@@ -91,6 +95,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--map", default="s1")
     ap.add_argument("--check", action="store_true", help="只比对，不落盘")
+    ap.add_argument("--remint", action="store_true",
+                    help="重铸已存在的 .meta。⚠ 只在 Creator 没导入过时用 —— "
+                         "覆写 Creator 导入出来的 .meta 会造成同图两个 texture 子资源（动态加载 URL 相同）")
     a = ap.parse_args()
 
     src = os.path.join(OUT, "pack", a.map)
@@ -149,6 +156,14 @@ def main() -> int:
         if owner and os.path.abspath(owner) != os.path.abspath(mp):
             print("  ❌ uuid 撞车 %s 已属 %s" % (meta["uuid"], owner))
             bad += 1
+            continue
+        # ★ 已经有 .meta 就**不动它**（除非 --remint）。
+        # ⚠ 这里踩过一次：脚本无条件覆写，把 Creator 导入出来的 .meta 换成我们铸的，
+        #   而两边的 subMeta id 不同（我们 sha1 出 `dddbd`、Creator 出 `6c48a`），
+        #   于是同一张 PNG 出现两个 texture 子资源、**动态加载 URL 相同**
+        #   （`kits/mapOriginal/maps/s1/atlas-lod0/texture`），Creator 七张图各报一条 warn。
+        #   确定性 uuid 只在**第一次落地**时需要；之后 Creator 才是 .meta 的权威。
+        if os.path.isfile(mp) and not a.remint:
             continue
         open(mp, "w", encoding="utf-8").write(json.dumps(meta, ensure_ascii=False, indent=2) + "\n")
 

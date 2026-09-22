@@ -1,0 +1,69 @@
+{
+ "schemaVersion": 1,
+ "mapId": "s1",
+ "count": 27811,
+ "recordBytes": 8,
+ "headerBytes": 4,
+ "dBias": 1500,
+ "byteLength": 222492,
+ "sha256": "71f5c0cbeb51e529911df54eab77cbb9c154c3641b3580cf9a33ae2af7332b90",
+ "layout": "大端：u16 s(row+col), u16 d(row-col+dBias), u8 cell, u8 wTiles, u16 cells；按 s 升序",
+ "families": {
+  "mountain": [
+   60,
+   61
+  ],
+  "grove": [
+   52,
+   53,
+   54,
+   55,
+   57,
+   58,
+   59
+  ],
+  "scatter": [
+   48,
+   49,
+   50,
+   51
+  ]
+ },
+ "anchorTiles": {
+  "mountain": 7,
+  "grove": 4,
+  "scatter": 2
+ },
+ "fallbackCap": {
+  "mountain": 12,
+  "grove": 8,
+  "scatter": 3
+ },
+ "stats": {
+  "mountain": {
+   "格数": 43533,
+   "连通区": 994,
+   "原版锚点": 966,
+   "有锚区": 275,
+   "兜底区": 719
+  },
+  "grove": {
+   "格数": 136820,
+   "连通区": 8415,
+   "原版锚点": 2973,
+   "有锚区": 1180,
+   "兜底区": 7235
+  },
+  "scatter": {
+   "格数": 17732,
+   "连通区": 15918,
+   "原版锚点": 3,
+   "有锚区": 3,
+   "兜底区": 15915
+  }
+ },
+ "source": {
+  "anchors": "map/s1/cn/mountain_patch.bytes（原版大件摆放表，[u24 条数][{u16 row,u16 col,u8 件id}]）",
+  "fallback": "res/res_multi 合并层的八邻连通域，每个**无原版锚点**的区补一件"
+ }
+}

@@ -21,6 +21,9 @@ export function mapoPlateAsset(lod: number): string {
 export const MAPO_TERRAIN_ASSET = "kits/mapOriginal/maps/s1/terrain";
 /** 摆件图集（原版切片打包，2048²）。 */
 export const MAPO_DECOR_ATLAS_ASSET = "kits/mapOriginal/maps/s1/decor-atlas";
+/** 多格地形的区域件图集与摆放表。 */
+export const MAPO_REGION_ATLAS_ASSET = "kits/mapOriginal/maps/s1/region-atlas";
+export const MAPO_REGIONS_ASSET = "kits/mapOriginal/maps/s1/regions";
 export const MAPO_MINIMAP_ASSET = "kits/mapOriginal/maps/s1/minimap";
 /** 近档地表图集。⚠ 只有 LOD0/1/2 有（门控 hideAtLod:2），⛔ 没有 atlas-lod3。 */
 export function mapoAtlasAsset(lod: number): string {

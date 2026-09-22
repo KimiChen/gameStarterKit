@@ -16,11 +16,12 @@ const inView = (node) => node.path.includes(`${VIEW}/`);
 /** 标题形如「原版大地图 · LOD 2/5」。 */
 const TITLE_RE = /^原版大地图 · LOD ([0-5])\/5$/u;
 /**
- * 状态形如「s1 · 近档 · 画面：2D 沙盘/标准/普通 · 层：terrain / decor · 摆件 137/312」。
- * ⚠ 末尾的「摆件 建出来的/可视格」只在近档有；它是「按原版值逐格摆件」这条链的活体证据。
+ * 状态形如「s1 · 近档 · 画面：2D 沙盘/标准/普通 · 层：… · 摆件 137/312 · 山林 48」。
+ * ⚠ 「摆件 建出来的/可视格」只在近档有；「山林 N」是多格地形的区域件数（近远档都可能有）。
+ *   两个数都是活体证据：前者证「按原版值逐格摆件」，后者证「多格地形每区一件」。
  */
 const STATUS_RE =
-    /^s1 · (近档|远档) · 画面：([^/]+)\/([^/·]+?)\/([^/·]+?)(\/鸟瞰)? · 层：(.*?)( · 摆件 (\d+)\/(\d+))?$/u;
+    /^s1 · (近档|远档) · 画面：([^/]+)\/([^/·]+?)\/([^/·]+?)(\/鸟瞰)? · 层：(.*?)( · 摆件 (\d+)\/(\d+))?( · 山林 (\d+))?$/u;
 /**
  * 详情形如「(750, 751) 木·1级 · 原版值 2」，不可通行多一段，显示层没到位再多「· 读取中…」。
  * ⚠ 地形名里**自带 `·`**（原版调色板就是「类型·等级」），所以这里 ⛔ 不能用 `[^\s·]+` 去截。
@@ -56,6 +57,8 @@ export function readMapOriginalEvidence(walk) {
         // ★ 摆件：建出来的件数 / 可视格数。原版每个资源格都有 res_field ⇒ 近档这个比例应在四成上下
         decorPlaced: statusMatch?.[8] !== undefined ? Number(statusMatch[8]) : null,
         visibleCells: statusMatch?.[9] !== undefined ? Number(statusMatch[9]) : null,
+        // ★ 区域件：多格地形每区一件（原版 mountain_patch 锚点优先 + 无锚连通区兜底）
+        regionPieces: statusMatch?.[11] !== undefined ? Number(statusMatch[11]) : null,
         // 近档 / 远档各自的「画出来了」
         terrain: has("mapo-terrain"),
         // ★ 摆件层：原版切片立在格上（去「铺地砖」的主力）
@@ -162,7 +165,8 @@ export async function replayMapOriginalWorld(runner) {
         };
     });
 
-    const decorAndLabels = await runner.step("近档：摆件按**原版逐格**摆出来 + 郡名就位", async () => {
+    const decorAndLabels = await runner.step(
+        "近档：逐格摆件 + 多格地形区域件 + 郡名都就位", async () => {
         const evidence = await runner.waitFor("mapo-decor 在树上、件数够、且能读到郡名", (walk) => {
             const value = readMapOriginalEvidence(walk);
             if (!value?.nearLoaded || !value.decor) return null;
@@ -171,12 +175,15 @@ export async function replayMapOriginalWorld(runner) {
             //   但一屏只有几十件、同级资源有的有有的没有 —— 那正是要根除的穿帮。
             const placed = value.decorPlaced ?? 0, cells = value.visibleCells ?? 0;
             if (cells <= 0 || placed / cells < 0.25) return null;
+            // ★ 多格地形（山脉/林丛/散落）必须也摆出来了 —— 它们占全图 8.8%，
+            //   近档一屏总会框进几个区；⛔ 0 就说明 regions.bin 这条链断了
+            if (!(value.regionPieces > 0)) return null;
             // ⚠ 近档该看到的是**郡名**（带「郡/国」字），⛔ 不是远档那九个大区名
             const jun = [...new Set(value.labels)].filter((t) => /[郡国]$/u.test(t));
             return jun.length > 0 ? { ...value, jun } : null;
         }, 30_000);
         return { decor: evidence.decor, decorPlaced: evidence.decorPlaced,
-                 visibleCells: evidence.visibleCells,
+                 visibleCells: evidence.visibleCells, regionPieces: evidence.regionPieces,
                  decorRatio: Number((evidence.decorPlaced / evidence.visibleCells).toFixed(3)),
                  jun: evidence.jun, labelCount: new Set(evidence.labels).size,
                  shot: await runner.shot("maporiginal-decor-labels") };

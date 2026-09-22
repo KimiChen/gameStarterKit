@@ -6,7 +6,8 @@ import {
     decodeMapoTerrainRle, mapoAtlasCellId, mapoAtlasCellRect, mapoAtlasUv, mapoTerrainToBytes,
     MAPO_ATLAS_CELL_H, MAPO_ATLAS_CELL_W, MAPO_ATLAS_COLS, MAPO_ATLAS_GUTTER,
     MAPO_ATLAS_H, MAPO_ATLAS_LODS, MAPO_ATLAS_VARIANTS, MAPO_ATLAS_W, MAPO_MAP_COLS, MAPO_MAP_ROWS,
-    MAPO_TERRAIN_HEADER_BYTES,
+    MAPO_TERRAIN_HEADER_BYTES, MAPO_ORIGINAL_TILE_HALF_W, MAPO_REGION_D_BIAS,
+    MAPO_REGION_HEADER_BYTES, MAPO_REGION_RECORD_BYTES, mapoGrid2Pos, mapoRegionPos,
 } from "@game/shared/kits/mapOriginal/api/hexmap/index";
 import {
     MAPO_TERRAIN_COLS, MAPO_TERRAIN_MAP_ID, MAPO_TERRAIN_PALETTE,
@@ -20,6 +21,10 @@ import {
     MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_CELL_H,
     MAPO_DECOR_CELL_W, MAPO_DECOR_CITY_BASE,
 } from "@game/shared/kits/mapOriginal/content/decor.data";
+import {
+    MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_CELL_H,
+    MAPO_REGION_CELL_W,
+} from "@game/shared/kits/mapOriginal/content/region.data";
 
 const MAP = MAPO_TERRAIN_MAP_ID;
 const kitDir = new URL(`../../kits/mapOriginal/data/maps/${MAP}/`, import.meta.url);
@@ -119,7 +124,8 @@ test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，�
         cell: [number, number]; gridCols: number; size: [number, number];
         anchor: string; cityBase: number; substitutions: (number | string)[];
         cells: { id: number; kind: string; cell: [number, number, number, number];
-                 art: [number, number, number, number]; source: string }[];
+                 art: [number, number, number, number]; native: [number, number];
+                 source: string }[];
     };
     assert.deepEqual(meta.cell, [MAPO_DECOR_CELL_W, MAPO_DECOR_CELL_H]);
     assert.deepEqual(meta.size, [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H]);
@@ -134,6 +140,12 @@ test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，�
         assert.ok(shared, `摆件格 ${c.id} 必须进 shared`);
         assert.deepEqual([...shared.cell], c.cell, `摆件格 ${c.id} 画布`);
         assert.deepEqual([...shared.art], c.art, `摆件格 ${c.id} 图内矩形`);
+        // ★ 件多大由**原图像素**定（原版一格 300 px），⛔ 不按格宽拉伸 —— 等级差就在这上面
+        assert.deepEqual([...shared.native], c.native, `摆件格 ${c.id} 原图像素`);
+        assert.ok(c.native[0] > 0 && c.native[1] > 0, `摆件格 ${c.id} 原图像素非法`);
+        // 纵横比必须与图集里的一致（缩略图保比例），⛔ 漂了就是件被压扁/拉长
+        assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
+            `摆件格 ${c.id} 缩略图没保住纵横比`);
         // ⚠ 存证不许写本机绝对路径（会随机器漂、且泄漏路径）
         assert.ok(!c.source.startsWith("/"), `摆件格 ${c.id} 的 source 必须是仓外相对路径`);
         const [ax, ay, aw, ah] = c.art;
@@ -196,12 +208,114 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
         ["plate-lod5.png", "plate-lod5.png"], ["plate-lod5.info.json", "plate-lod5.info.json"],
         ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
         ["decor-atlas.png", "decor-atlas.png"], ["decor-atlas.info.json", "decor-atlas.info.json"],
+        ["region-atlas.png", "region-atlas.png"],
+        ["region-atlas.info.json", "region-atlas.info.json"],
+        ["regions.bin", "regions.bin"],
     ];
     for (const [src, dst] of mirrored) {
         assert.deepEqual(kit(src), cocos(dst), `${src} → ${dst} 两处必须逐字节一致`);
     }
     // ⚠ 通行层与 info 只留 kit 数据目录：⛔ 不多存一份到运行时
-    for (const name of ["terrain.pass.bytes", "terrain.info.json", "terrain.bytes", "labels.json"]) {
+    for (const name of ["terrain.pass.bytes", "terrain.info.json", "terrain.bytes", "labels.json",
+                        "regions.info.json"]) {
         assert.throws(() => cocos(name), /ENOENT/, `${name} ⛔ 不该进 Cocos`);
+    }
+});
+
+test("mapOriginal 内容：区域摆件表 regions.bin 自洽（布局 / 画家序 / 格 id）", () => {
+    const meta = JSON.parse(kit("regions.info.json").toString("utf8")) as {
+        count: number; recordBytes: number; headerBytes: number; dBias: number;
+        byteLength: number; sha256: string;
+        families: Record<string, number[]>;
+        stats: Record<string, Record<string, number>>;
+    };
+    const raw = kit("regions.bin");
+    assert.equal(meta.headerBytes, MAPO_REGION_HEADER_BYTES);
+    assert.equal(meta.recordBytes, MAPO_REGION_RECORD_BYTES);
+    assert.equal(meta.dBias, MAPO_REGION_D_BIAS);
+    assert.equal(raw.length, meta.byteLength);
+    assert.equal(raw.readUInt32BE(0), meta.count, "头 4 字节大端 count");
+    assert.equal(raw.length, MAPO_REGION_HEADER_BYTES + meta.count * MAPO_REGION_RECORD_BYTES);
+    assert.equal(sha256(raw), meta.sha256);
+
+    const cellIds = new Set(MAPO_REGION_CELLS.map((c) => c.id));
+    const kindOfCell = new Map(MAPO_REGION_CELLS.map((c) => [c.id, c.kind]));
+    const famOfValue = new Map<number, string>();
+    for (const [fam, vals] of Object.entries(meta.families)) {
+        for (const v of vals) famOfValue.set(v, fam);
+    }
+    const display = kit("terrain.bytes");
+    let prevS = -1;
+    for (let i = 0; i < meta.count; i += 1) {
+        const o = MAPO_REGION_HEADER_BYTES + i * MAPO_REGION_RECORD_BYTES;
+        const s = raw.readUInt16BE(o);
+        const d = raw.readUInt16BE(o + 2) - MAPO_REGION_D_BIAS;
+        const cell = raw.readUInt8(o + 4), wTiles = raw.readUInt8(o + 5);
+        // ★ 表必须**已按 s 升序**落盘 —— 客户端靠它做二分与画家序，⛔ 不再排一遍
+        assert.ok(s >= prevS, `第 ${i} 条 s=${s} 小于前一条 ${prevS}：表不是升序`);
+        prevS = s;
+        assert.ok(cellIds.has(cell), `第 ${i} 条的图集格 ${cell} 不存在`);
+        assert.ok(wTiles >= 1, `第 ${i} 条件宽 ${wTiles} 非法`);
+        // s、d 必须同奇偶（否则 row 不是整数），且反解出的格在图内
+        assert.equal((s + d) % 2, 0, `第 ${i} 条 s/d 奇偶不同 ⇒ row 不是整数`);
+        const row = (s + d) / 2, col = (s - d) / 2;
+        assert.ok(row >= 0 && row < MAPO_MAP_ROWS && col >= 0 && col < MAPO_MAP_COLS,
+            `第 ${i} 条反解出的格 (${row}, ${col}) 出图`);
+        // ⚠ 件必须真的落在该族的多格地形上，⛔ 不许摆到平地/河里
+        const value = display[MAPO_TERRAIN_HEADER_BYTES + row * MAPO_MAP_COLS + col];
+        assert.equal(famOfValue.get(value), kindOfCell.get(cell),
+            `第 ${i} 条：格 (${row}, ${col}) 的原版值 ${value} 与件的族 ${kindOfCell.get(cell)} 不符`);
+    }
+    // ★ 每族都要有件，且原版锚点 + 兜底区 = 总条数（⛔ 不许有来路不明的记录）
+    let expect = 0;
+    for (const st of Object.values(meta.stats)) expect += st["原版锚点"] + st["兜底区"];
+    assert.equal(meta.count, expect, "条数 = 原版锚点 + 无锚连通区");
+});
+
+test("mapOriginal 内容：mapoRegionPos 与 mapoGrid2Pos 同式（含奇数行半格错位）", () => {
+    // ⚠ 漏了奇数行的 -0.5 偏移，整个区域件层会与地表错半格 —— 这条就是为它设的
+    for (const [row, col] of [[0, 0], [1, 0], [0, 1], [1, 1], [749, 750], [750, 749],
+                              [1499, 1499], [1234, 567], [567, 1234]] as const) {
+        const a = mapoGrid2Pos(row, col);
+        const b = mapoRegionPos(row + col, row - col);
+        assert.deepEqual([b.x, b.y], [a.x, a.y], `(${row}, ${col})`);
+    }
+});
+
+test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常量", () => {
+    const meta = JSON.parse(kit("region-atlas.info.json").toString("utf8")) as {
+        cell: [number, number]; gridCols: number; size: [number, number]; anchor: string;
+        cells: { id: number; kind: string; cell: [number, number, number, number];
+                 art: [number, number, number, number]; native: [number, number];
+                 source: string }[];
+    };
+    assert.deepEqual(meta.cell, [MAPO_REGION_CELL_W, MAPO_REGION_CELL_H]);
+    assert.deepEqual(meta.size, [MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H]);
+    assert.equal(meta.anchor, "bottom-center");
+    assert.equal(meta.cells.length, MAPO_REGION_CELLS.length);
+    const byId = new Map(MAPO_REGION_CELLS.map((c) => [c.id, c]));
+    for (const c of meta.cells) {
+        const shared = byId.get(c.id);
+        assert.ok(shared, `区域件格 ${c.id} 必须进 shared`);
+        assert.equal(shared.kind, c.kind);
+        assert.deepEqual([...shared.cell], c.cell);
+        assert.deepEqual([...shared.art], c.art);
+        assert.deepEqual([...shared.native], c.native, `区域件格 ${c.id} 原图像素`);
+        assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
+            `区域件格 ${c.id} 缩略图没保住纵横比`);
+        // ★ 尺寸得落在原版的量级里（山体 ~1..2.3 格、树簇 ~0.1..0.5 格）
+        const tiles = c.native[0] / (MAPO_ORIGINAL_TILE_HALF_W * 2);
+        assert.ok(tiles > 0.05 && tiles < 4,
+            `区域件格 ${c.id} 在原版里占 ${tiles.toFixed(2)} 格，不像地物`);
+        const [ax, ay, aw, ah] = c.art;
+        assert.ok(ax >= 0 && ay >= 0 && ax + aw <= MAPO_REGION_CELL_W
+            && ay + ah <= MAPO_REGION_CELL_H, `区域件格 ${c.id} 图内矩形越界`);
+        // ⚠ 素材全部来自原版切片，⛔ 存证不许写本机绝对路径
+        assert.ok(!c.source.startsWith("/"), `区域件格 ${c.id} 的 source 必须是仓外相对路径`);
+        assert.ok(c.source.startsWith("scene/"), `区域件格 ${c.id} 的 source 必须是原版资源路径`);
+    }
+    // ★ 三族都要有件：缺一族就会有一片多格地形是平菱形
+    for (const kind of ["mountain", "grove", "scatter"]) {
+        assert.ok(MAPO_REGION_CELLS.some((c) => c.kind === kind), `缺 ${kind} 件`);
     }
 });

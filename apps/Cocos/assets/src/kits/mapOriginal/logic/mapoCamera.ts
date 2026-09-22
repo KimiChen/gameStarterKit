@@ -59,6 +59,17 @@ export class MapoCamera {
             y: (this.y - wy) * this.scale + this.height / 2,
         };
     }
+    /**
+     * 当前可视的**世界矩形**（区域件层按它裁剪）。
+     * ⚠ 与 `worldAt` 同式，⛔ 不要另写一份换算 —— 两份换算漂了就是「件在屏幕外/边上缺一块」。
+     */
+    worldRect(marginTiles = 0): { left: number; right: number; bottom: number; top: number } {
+        const hw = this.width / 2 / this.scale, hh = this.height / 2 / this.scale;
+        const m = marginTiles * MAPO_TILE_HALF_W * 2;
+        return { left: this.x - hw - m, right: this.x + hw + m,
+                 bottom: this.y - hh - m, top: this.y + hh + m };
+    }
+
     /** 屏幕像素落在哪一格（已钳进图内）。 */
     cellAt(sx: number, sy: number): MapoCellRef {
         const w = this.worldAt(sx, sy);

@@ -26,13 +26,16 @@ import { mapoIsNearField, mapoLayerVisible } from "../logic/mapoLayers";
 import { mapoSelectionEdges } from "../logic/mapoMesh";
 import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
+import { mapoSetRegions } from "../logic/mapoRegions";
 import {
     MAPO_COLOR_LABELS, MAPO_QUALITY_LABELS, MAPO_SANDBOX_LABELS,
     type MapoColorMode, type MapoQuality, type MapoSandboxMode,
+    mapoDecorEnabledFor,
 } from "../logic/mapoSettings";
 import type { MapoRgb } from "../logic/mapoPalette";
 import { MapoViewportStencil } from "../logic/mapoViewport";
 import { MapoDecorRenderer } from "./MapoDecorRenderer";
+import { MapoRegionRenderer } from "./MapoRegionRenderer";
 import { MapoLabelRenderer } from "./MapoLabelRenderer";
 import { MapoMapRenderer } from "./MapoMapRenderer";
 import { MapoFarRenderer } from "./MapoFarRenderer";
@@ -74,6 +77,9 @@ export class MapOriginalWorldView extends CocosView {
     /** 上一次建出来的摆件数 / 可视格数 —— 只给状态行当证据用。 */
     private decorCount = 0;
     private visibleCount = 0;
+    /** 上一次建出来的区域件数（多格地形：山脉 / 林丛 / 散落）。 */
+    private regionCount = 0;
+    private regionRenderer: MapoRegionRenderer | null = null;
     private detail: Label | null = null;
     private chips: Chip[] = [];
     private offTick: (() => void) | null = null;
@@ -113,6 +119,8 @@ export class MapOriginalWorldView extends CocosView {
         // ⚠ 下标是**原版 res 值**，⛔ 不是 3 类通行层那份（拿原版值去查它会整片显示成「可走陆地」）
         const base: MapoRgb[] = MAPO_VALUE_COLORS.map((c) => c as MapoRgb);
         this.renderer = new MapoMapRenderer(this.world, null, base);
+        // ⚠ 兄弟序即绘制序：地表 → **区域件（山林地貌）** → 逐格摆件（地物）→ 地名
+        this.regionRenderer = new MapoRegionRenderer(this.world, null);
         this.decorRenderer = new MapoDecorRenderer(this.world, null);
         this.farRenderer = new MapoFarRenderer(this.world, null);
         // ⚠ 地名建在 root 上、⛔ 不挂 world：文本要保持可读字号，不能跟着相机缩放糊掉
@@ -125,10 +133,15 @@ export class MapOriginalWorldView extends CocosView {
             if (art.terrain) {
                 try { mapoSetDisplayTerrain(art.terrain.buffer()); } catch { /* 退回通行层 */ }
             }
+            if (art.regions) {
+                try { mapoSetRegions(art.regions.buffer()); } catch { /* 区域件层不建 */ }
+            }
             this.renderer?.dispose();
+            this.regionRenderer?.dispose();
             this.decorRenderer?.dispose();
             this.farRenderer?.dispose();
             this.renderer = new MapoMapRenderer(this.world!, art, base);
+            this.regionRenderer = new MapoRegionRenderer(this.world!, art);
             this.decorRenderer = new MapoDecorRenderer(this.world!, art);
             this.farRenderer = new MapoFarRenderer(this.world!, art);
             this.minimap = new MapoMinimap(this.root, 180, w / 2 - 110, this.mapBottom + 110, art,
@@ -148,6 +161,7 @@ export class MapOriginalWorldView extends CocosView {
         this.offTick?.(); this.offTick = null;
         this.renderer?.dispose(); this.renderer = null;
         this.decorRenderer?.dispose(); this.decorRenderer = null;
+        this.regionRenderer?.dispose(); this.regionRenderer = null;
         this.labelRenderer?.dispose(); this.labelRenderer = null;
         this.farRenderer?.dispose(); this.farRenderer = null;
         this.minimap?.dispose(); this.minimap = null;
@@ -389,6 +403,14 @@ export class MapOriginalWorldView extends CocosView {
         } else {
             this.labelRenderer?.clear();
         }
+        // ★ 区域件（多格地形）比逐格摆件多盖一档：远档看山林轮廓最有用
+        if (mapoLayerVisible("region", cam.lod)) {
+            this.regionCount = this.regionRenderer?.render(
+                cam.worldRect(2), mapoDecorEnabledFor(l.graphics.quality)) ?? 0;
+        } else {
+            this.regionRenderer?.clear();
+            this.regionCount = 0;
+        }
         if (near) {
             this.farRenderer?.clear();
             // ⚠ 可视格用偏移模板：平移时只换中心格，⛔ 不每帧重算整套偏移
@@ -423,7 +445,10 @@ export class MapOriginalWorldView extends CocosView {
             // ★ 摆件数进状态行：原版每个资源格都有 res_field ⇒ 近档这个数应该接近可视格的四成，
             //   ⛔ 掉到 0 或个位数就说明「按原版值查表」这条链断了（重放据此判定）。
             const decor = near ? ` · 摆件 ${this.decorCount}/${this.visibleCount}` : "";
-            this.status.string = `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}${decor}`;
+            // ★ 区域件数：多格地形每区一件（原版锚点优先），⛔ 掉到 0 说明 regions.bin 没到位
+            const region = this.regionCount > 0 ? ` · 山林 ${this.regionCount}` : "";
+            this.status.string =
+                `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}${decor}${region}`;
         }
         // ⚠ 置灰与高亮是**两件事**：enabled 决定能不能点（文字变灰），on 决定当前选中（底板变亮）
         for (const chip of this.chips) {

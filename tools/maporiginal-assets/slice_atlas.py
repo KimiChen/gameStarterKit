@@ -54,12 +54,23 @@ def page_image(xml_logical: str, image_path: str):
 
 
 def slice_one(xml_logical: str, rows: list) -> int:
-    from PIL import Image
+    """一个 xml 可能带**多页** `<TextureAtlas>`，⚠ 必须全切。
+
+    ⚠ 这里踩过一次：早先写的是 `root.find("TextureAtlas")` 只取**第一页**，
+    `remain_tex.xml` 有 17 页 ⇒ 1,284 张里只切出 100 来张，后 16 页整片丢失
+    （2D 山体件 `scene/ground/mountain_new/grass_fall_new/png/m1..m10` 就在里面，
+    于是一度误判「原版 2D 山/林素材不在包里」）。⛔ 别再改回 find()。
+    """
+    n = 0
     blob = open(resolve_by_name(xml_logical), "rb").read()
     root = ET.fromstring(blob.decode("utf-8", "replace"))
-    ta = root.find("TextureAtlas")
-    if ta is None:
-        return 0
+    for ta in root.findall("TextureAtlas"):
+        n += slice_page(xml_logical, ta, rows)
+    return n
+
+
+def slice_page(xml_logical: str, ta, rows: list) -> int:
+    from PIL import Image
     page, page_logical = page_image(xml_logical, ta.get("imagePath"))
     n = 0
     for sp in ta.findall("sprite"):

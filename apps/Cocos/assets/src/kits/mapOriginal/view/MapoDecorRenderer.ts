@@ -6,7 +6,7 @@
  * ⚠ 图集没加载出来就整层不建 —— ⛔ 不用纯色方块占位（那比没有还难看）。
  */
 import { Material, Node } from "cc";
-import { MAPO_TILE_HALF_W } from "../../../shared/kits/mapOriginal/api/hexmap/index";
+import { MAPO_TILE_HALF_H } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import { mapoDecorAt, mapoDecorSize, mapoDecorUv } from "../logic/mapoDecor";
 import { buildMapoSpriteMesh, type MapoSpriteInput } from "../logic/mapoMesh";
 import { mapoDecorEnabledFor } from "../logic/mapoSettings";
@@ -39,9 +39,9 @@ export class MapoDecorRenderer {
         for (const { row, col } of cells) {
             const place = mapoDecorAt(row, col, mapoValueAt(row, col), enabled);
             if (!place) continue;
-            const size = mapoDecorSize(place.cell, MAPO_TILE_HALF_W, place.scale);
+            const size = mapoDecorSize(place.cell, place.scale);
             sprites.push({
-                row, col, x: place.x, y: place.y - MAPO_TILE_HALF_W / 4,
+                row, col, x: place.x, y: place.y - MAPO_TILE_HALF_H / 2,
                 w: size.w, h: size.h, uv: mapoDecorUv(place.cell),
             });
         }

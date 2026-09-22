@@ -45,6 +45,8 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `build_terrain.py` | ★ 原版层 → `terrain.bytes`（**直接存原版 res 值**，`res==0` 用 `res_multi` 顶替）+ 3 类通行层 + 61 条调色板 |
 | `bake_content.py` | 远档底图 / 缩略图 / 近档地表图集（**按 8 个粗类 × 4 变体**建，⛔ 不按 61 个值建） |
 | `pack_decor.py` | ★ 摆件图集：**格 id = 原版 res 值**（2..46）+ 城址件从 64 起；缺级用最近一级顶上并存证 |
+| `pack_regions.py` | ★ 多格地形的**区域件**图集（山体 m1..m10 / 树簇 / 草丛，512×320 大格）；树簇用**绿度**剔掉伐木道具 |
+| `build_regions.py` | ★ 区域摆件表 `regions.bin`：原版 `mountain_patch` 锚点 + 无锚连通区每区一件，按画家序落盘 |
 | `build_labels.py` / `emit_labels.py` | 原版地名（9 大区 / 55 郡 / 249 城址）→ `labels.json` → shared TS |
 | `emit_display_palette.py` | ★ 61 值调色板 + `MAPO_VALUE_KIND_ID` 粗类下标表 → shared TS |
 | `emit_shared_terrain.py` | 通行层 → shared TS（varint-RLE + base64，111 KB） |
@@ -167,9 +169,38 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 ⚠ 要补的话正确做法是**连通域 → 每区一件、锚在区内最低格、按区尺寸缩放**，
 ⛔ 不是逐格放一棵树 —— 那是我们编的，不是原版参数。
 
+### 4.5 `mountain_patch.bytes` = 原版的**大件摆放表**（2026-09-22 逆出）
+
+```
+[u24 BE 条数][条数 × { u16 row, u16 col, u8 件id }]      3 + 5×3942 = 19713 B  逐字节吻合
+```
+判据：row 全程非降序、row/col 都在 0..1499、**99.67% 的锚点落在 `res==0` 的多格地形锚点格上**。
+`件id` ∈ {52,53,55,58,59} 是**原版的美术 id**（⚠ 与 res 值不同空间，`share_res.id2name("res", id)`
+才是名字，那张表不在反编译源码里）。
+
+⚠ **它不是「每区一条」**：3,930 条只覆盖 1,689 个连通区，744 个区有多条，4,717 个区一条没有。
+实测密度 ≈ **1 件 / 20 格**（3,578 格的大区 14 件；中位 7 格的小区 0 件）。
+⇒ 本 kit 的用法：有原版锚点的区**只用原版的**，没有的按连通域每区补一件。
+
+### 4.6 ⚠ `slice_atlas.py` 只切了多页图集的第一页（已修）
+
+`remain_tex.xml` 有 **17 页 1,284 张**，而早先的 `root.find("TextureAtlas")` 只取第一页
+⇒ 后 16 页整片丢失。**原版 2D 山体件 `scene/ground/mountain_new/grass_fall_new/png/m1..m10`
+就在里面**，于是一度误判「原版 2D 山林素材不在包里」。
+修正后切片从 3,510 涨到 **4,881 张**；`select.json` 的 atlas `only` 也补收了 `remain_tex`。
+⛔ 别再改回 `find()`。
+
+### 4.7 件的尺寸 = 原图像素 × (本 kit 半格宽 / 150)
+
+原版 2D 一格 300×150 px（`config_2d` 的 TILE_WIDTH/HEIGHT 是半值）⇒
+「图多少像素宽」= 「它在原版里占几格」。实测：资源件 0.53–1.10 格、山体 0.94–2.25 格、
+树簇 0.12–0.45 格、草丛 0.82–2.03 格。所以图集里逐格记 `native`（原图像素），
+客户端按它定世界尺寸。⛔ 别按格宽或连通区跨度拉伸（两版都踩过，见 kit README §六·五）。
+
 ## 五、待办
 
-- **多格地形的连通域摆件**（见 4.4）：`res_multi` 连通域 → 每区一件；这是当前近档最后一块平菱形。
+- ~~多格地形的连通域摆件~~ **已完成**（见 4.5）：`build_regions.py` + `pack_regions.py`。
+  ⚠ 山脉区仍偏空 —— 原版锚点密度就是 1 件/20 格，不是我们漏了。
 - `road_info` / `logic_road` 的记录表格式（半文本，尚未解）⇒ 道路层。
 - 长字符串 L≥77 的残字：`terrain_attr.lua` 里仍有 `["CXTE[D_LANY"] = 17` 这类键，
   ⚠ 照抄数值表前**逐条目检**。

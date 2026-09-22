@@ -6,7 +6,8 @@
  */
 import { MAPO_LOD_MAX } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
-export type MapoLayerId = "terrain" | "grid" | "decor" | "plate" | "banner" | "label";
+export type MapoLayerId =
+    | "terrain" | "grid" | "region" | "decor" | "plate" | "banner" | "label";
 
 interface LayerGate {
     readonly id: MapoLayerId;
@@ -29,6 +30,8 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: true },
     { id: "plate", hideAtLod: MAPO_LOD_MAX, showFromLod: 3, streamed: false, implemented: true },
     // ★ 摆件：**原版切片**（城/营/建筑/资源地物）立在格上。超出菱形，必须画在地表之上、按画家序排。
+    // ★ 区域件（多格地形：山脉/林丛/散落）。⚠ 比逐格摆件多盖一档：远档看山林轮廓最有用。
+    { id: "region", hideAtLod: 3, showFromLod: 0, streamed: true, implemented: true },
     { id: "decor", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
     // ★ 地名：原版 canton/area 名表。⚠ 全档都画（远档大区、近档郡），⛔ 两档不要一起画。
     { id: "label", hideAtLod: MAPO_LOD_MAX, showFromLod: 0, streamed: false, implemented: true },
