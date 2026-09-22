@@ -284,17 +284,18 @@ export async function replaySgzzmapWorld(runner) {
         return { ...evidence, shot: await runner.shot("sgzzmap-lod2-tier1") };
     });
 
-    const far = await runner.step("拉远到远档：逐格网格撤走，⚠ 覆盖场要一路盖到 LOD4", async () => {
+    const far = await runner.step("拉远到远档：逐格网格撤走，⚠ 覆盖场要一路盖到 LOD5", async () => {
         const area = sgzzmapGestureArea(await runner.walk());
         await sgzzmapWheel(runner, area, 240, 14);
-        const evidence = await runner.waitFor("LOD ≥ 3 且底图/色块在、地表网格已撤", (walk) => {
+        const evidence = await runner.waitFor("LOD ≥ 3、地表网格已撤、覆盖场仍在", (walk) => {
             const value = readSgzzmapEvidence(walk);
             // ⚠ 逐格地表/摆件/过渡片必须撤干净：压在底图上会把远档糊成一片。
             // ★ 但覆盖场**要留着**：它一直盖到 LOD4 —— ⛔ 撤掉的话切到 LOD3 岸线会跳回底图的旧轮廓。
             if (!value || value.lod === null || value.lod < 3 || !value.farLoaded) return null;
             if (value.terrain || value.decor || value.blend) return null;
-            const wantField = value.lod <= 4;
-            return (value.fieldChunks > 0) === wantField ? value : null;
+            // ★ 覆盖场**全档 0–5** 都要在：⛔ 任何一档交给整幅底图，切档时岸线都会跳回旧轮廓。
+            //   （这条判据曾经写「LOD5 必须没有 field」，放开门控时忘了同步 —— 重放正确地拒绝了。）
+            return value.fieldChunks > 0 ? value : null;
         }, 45_000);
         return { ...evidence, shot: await runner.shot("sgzzmap-far") };
     });
