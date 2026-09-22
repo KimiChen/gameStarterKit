@@ -16,6 +16,7 @@ key 原样留在 `key` 里备查，⛔ 不要丢。
 from __future__ import annotations
 
 import argparse
+import collections
 import json
 import os
 import re
@@ -52,6 +53,51 @@ def parse_cities(path: str) -> list:
     body = open(path, encoding="utf-8", errors="ignore").read()
     return [{"id": int(i), "row": int(r), "col": int(c)}
             for i, r, c in re.findall(r"\[(\d+)\]\s*=\s*\{(\d+),\s*(\d+)\}", body)]
+
+
+def annotate_cities(cities: list, city_cells: list) -> int:
+    """★ 给 249 座城补上**真名 / 类型 / 等级 / 形状**（2026-09-23，base.cw 解开后新增）。
+
+    来源 `base.cw`（见 MAPORIGINAL-2D §11-1）：
+      · `city_shape_grids`：**格 → 城序号** 的反向索引，2,689 项与 `city.bytes` 的城格集合
+        **精确相等**（⛔ 它不是形状表，名字有误导性）；
+      · `city`：⚠ 是个**命名空间**，9 张互不相干的表 —— 真城在 `[1]` 桶（249 行 / 40 列），
+        ⛔ 别用 `rows()` 合并（会和 `[0]` 桶的「部队攻击/谋略…」撞 id）。
+
+    ⚠ 本文档一度写着「⛔ 无名字（名字在服务端 AOI 里）」—— **那是错的**，名字一直在客户端
+    配置里，只是当时 base.cw 没解开。
+    ⚠ `client_res_id` 指向的是 **3D 件**（`asset/scene/build/**.group`），2D 沙盘用不上，
+    所以只记 id 备查、⛔ 不落 `.group` 路径。
+    """
+    from ctable_cw import BaseCw                       # noqa: PLC0415 —— 只有本函数要它
+    from decode_ktx import resolve_by_name             # noqa: PLC0415
+
+    cw = BaseCw()
+    tbl = cw.tables()
+    rows = dict(cw.groups(tbl["city"]))["[1]"]
+    _, grids = cw.table(tbl["city_shape_grids"])
+    grid2city = {int(k): v for k, v in grids.items()}
+    shapes = cw.rows(tbl["city_shape"])
+
+    keyset = {(r << 16) | c for g in city_cells for r, c in g}
+    if set(grid2city) != keyset:
+        raise SystemExit("⛔ city_shape_grids 的键集 ≠ city.bytes 的城格集合（%d vs %d）"
+                         % (len(grid2city), len(keyset)))
+    done = 0
+    for city, cells in zip(cities, city_cells):
+        seq = {grid2city[(r << 16) | c] for r, c in cells}
+        if len(seq) != 1:
+            raise SystemExit("⛔ 城 %s 的格分属 %d 个城序号" % (city, sorted(seq)))
+        row = rows.get(seq.pop())
+        if not row:
+            raise SystemExit("⛔ 城序号 %r 不在 city[1] 表里" % city)
+        city["name"] = row["name"]
+        city["cityType"] = row["city_type"]
+        city["level"] = row["level"]
+        city["shape"] = shapes.get(row["shape"], {}).get("allias", "")
+        city["clientResId"] = row["client_res_id"]
+        done += 1
+    return done
 
 
 def parse_city_cells(logical: str, cities: list) -> list:
@@ -121,19 +167,22 @@ def main() -> int:
     os.makedirs(d, exist_ok=True)
     # ★ M0-B4：城的**占格**（249 座共 2,689 格）。原版第 4 道门 = 该格有 build 就不画资源件。
     city_cells = parse_city_cells("map/%s/cn/city.bytes" % a.map, cities)
-    payload = {"schemaVersion": 2, "mapId": a.map,
+    named = annotate_cities(cities, city_cells)
+    payload = {"schemaVersion": 3, "mapId": a.map,
                "source": f"{SEASON_DIR}/{a.map}/{{canton,area}}_name_info.lua"
                          " + asset/config/S1/cn/res_pro/city_center.lua"
-                         f" + map/{a.map}/cn/city.bytes（占格表）",
+                         f" + map/{a.map}/cn/city.bytes（占格表）"
+                         " + base.cw 的 city[1] / city_shape_grids / city_shape（城名与类型）",
                "cantons": cantons, "areas": areas, "cities": cities,
                "cityCells": city_cells}
     json.dump(payload, open(os.path.join(d, "labels.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
     print("大区 %d 个：%s" % (len(cantons), "、".join(x["name"] for x in cantons)))
     print("郡 %d 个：%s …" % (len(areas), "、".join(x["name"] for x in areas[:8])))
-    import collections
     shapes = collections.Counter(len(c) for c in city_cells)
-    print("城 %d 座（真坐标，来自 city_center.lua）" % len(cities))
+    print("城 %d 座（真坐标来自 city_center.lua；%d 座补上了真名/类型，来自 base.cw）"
+          % (len(cities), named))
+    print("   类型 %s" % dict(collections.Counter(c["cityType"] for c in cities)))
     print("占格 %d 格，形态 %s（格数:座数）"
           % (sum(len(c) for c in city_cells), dict(sorted(shapes.items()))))
     print("→ %s/labels.json" % d)

@@ -412,6 +412,51 @@ test("mapOriginal 内容：城占格表 = city.bytes（249 座 / 2,689 格 / 首
         [[4, 1], [6, 11], [7, 24], [11, 204], [23, 9]], "占格形态分布");
 });
 
+test("mapOriginal 内容：249 座城的真名/类型/形状，且形状与占格 1:1 自洽", () => {
+    // ★ 名字来自 base.cw 的 city[1] 桶（§11-1），经 city_shape_grids（格 → 城序号）对上。
+    // ⚠ 本 kit 一度写着「⛔ 无名字（名字在服务端 AOI 里）」——**那是错的**，名字一直在
+    //   客户端配置里，只是当时 base.cw 没解开。
+    const types = new Map<string, number>();
+    // 形状 → 它对应的占格数集合。★ 这是**两条独立数据链的互证**：
+    //   占格数出自 city.bytes（二进制），形状出自 base.cw 的 city.shape → city_shape。
+    const byShape = new Map<string, Set<number>>();
+    for (let i = 0; i < MAPO_CITY_SITES.length; i += 1) {
+        const s = MAPO_CITY_SITES[i];
+        assert.ok(s.name.length > 0 && !/^\d+$/.test(s.name), `第 ${i + 1} 座没有真名：${s.name}`);
+        assert.ok(["大型城池", "中型城池", "小型城池"].includes(s.cityType),
+            `第 ${i + 1} 座的类型异常：${s.cityType}`);
+        // ⚠ 等级实测是 **3..10**（⛔ 不是 1..8）：10 级只有洛阳一座、9 级 8 座州城
+        assert.ok(s.level >= 3 && s.level <= 10, `第 ${i + 1} 座的等级越界：${s.level}`);
+        types.set(s.cityType, (types.get(s.cityType) ?? 0) + 1);
+        const set = byShape.get(s.shape) ?? new Set<number>();
+        set.add(MAPO_CITY_CELL_COUNTS[i]);
+        byShape.set(s.shape, set);
+    }
+    assert.equal(new Set(MAPO_CITY_SITES.map((s) => s.name)).size, 249, "城名互不重复");
+    assert.deepEqual([...types.entries()].sort(),
+        [["中型城池", 104], ["大型城池", 71], ["小型城池", 74]], "城池类型分布");
+    // ★ 每个形状**只对应一种占格数**（⛔ 一对多即说明绑定链串了）
+    assert.deepEqual([...byShape.entries()].map(([k, v]) => [k, [...v]]).sort(),
+        [["DOUBLE_H_SHAPE", [23]], ["H_SHAPE", [11]], ["PIER_1", [6]],
+            ["PIER_2", [6]], ["PIER_4", [4]], ["RADIUS_2", [7]]], "形状 ↔ 占格 1:1");
+    // ⚠ 12 座渡口（PIER_*）在 city_shape 里带非零美术偏移 even_res_center/odd_res_center；
+    //   ⛔ 将来画城址件时这 12 座要套偏移，其余 237 座为 0。
+    // ★ §5 判读「23 格 / 9 座 = 大型城池（州城 / 洛阳级）」由此**独立坐实**：
+    //   23 格的那 9 座正是 DOUBLE_H_SHAPE，且 10 级唯一一座就是洛阳。
+    const big = MAPO_CITY_SITES.filter((_s, i) => MAPO_CITY_CELL_COUNTS[i] === 23);
+    assert.equal(big.length, 9);
+    assert.ok(big.every((s) => s.shape === "DOUBLE_H_SHAPE" && s.cityType === "大型城池"));
+    assert.ok(big.some((s) => s.name === "洛阳"), "23 格里应有洛阳");
+    const top = MAPO_CITY_SITES.filter((s) => s.level === 10);
+    assert.deepEqual(top.map((s) => s.name), ["洛阳"], "10 级唯一一座");
+
+    const piers = MAPO_CITY_SITES.filter((s) => s.shape.startsWith("PIER"));
+    assert.equal(piers.length, 12, "渡口类城址座数");
+    for (const name of ["孟津", "风陵渡", "蒲坂津", "白马", "夏口"]) {
+        assert.ok(piers.some((s) => s.name === name), `渡口 ${name} 应在 PIER_* 里`);
+    }
+});
+
 test("mapOriginal 内容：缩略图由地形烘、投影与点选同源（⛔ 不再贴原版鸟瞰插画）", () => {
     // ⚠ 缩略图在本 kit 里是**可点击导航**的（mapoMinimapCell → centerOn）⇒
     //   图与点选换算必须同一套投影。原版 noexpo_birdview 是 **3D 透视渲染**，

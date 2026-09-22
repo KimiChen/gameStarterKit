@@ -52,6 +52,14 @@ BASE_CW_SIZE = 66_776_016
 TAG_NIL, TAG_INT, TAG_FLOAT, TAG_BOOL, TAG_TABLE, TAG_STR = range(6)
 
 
+class _IsRow(Exception):
+    """内部：`groups()` 遍历时「这个子项本身就是一行」的信号。"""
+
+    def __init__(self, row: dict) -> None:
+        super().__init__()
+        self.row = row
+
+
 class Ref:
     """一个尚未展开的嵌套表（tag 4）。⚠ `idx` 是**根容器**的子项索引。"""
 
@@ -169,26 +177,50 @@ class BaseCw:
         return ([v.idx for v in a if isinstance(v, Ref)]
                 + [v.idx for v in h.values() if isinstance(v, Ref)])
 
-    def rows(self, idx: int, marker: str = "id", maxdepth: int = 6) -> dict:
-        """把一张（多级分桶的）表展平成 `{id 或 子项号: 行 dict}`。
+    def groups(self, idx: int, marker: str = "id", maxdepth: int = 6) -> list:
+        """把一张表展开成**若干互不相干的叶子表**：`[(桶路径, {id: 行}), …]`。
 
-        ⚠ 判「行」的判据是**含 `marker` 键**；⛔ 别假设固定层数 —— `client_res` 是两级、
-        别的表未必。
+        ⚠ **目录里的名字未必是一张表，也可能是命名空间**。实测 `city` 就有 11 个兄弟桶，
+        各是一张独立的表（`city[0]` 是 9 行「部队攻击/谋略…」、`city[1]` 才是 249 座真城、
+        `city[2]` 是 10 行 `HP/alliance_member_cnt…`）—— ⛔ 合并它们会按 `id` 互相覆盖。
         """
-        out, seen, stack = {}, set(), [(idx, 0)]
-        while stack:
-            i, d = stack.pop()
-            if i in seen or d > maxdepth:
-                continue
-            seen.add(i)
+        out: list = []
+
+        def walk(i: int, d: int, path: str) -> None:
+            if d > maxdepth:
+                return
             t = self.table(i)
             if t is None:
-                continue
+                return
             if d > 0 and marker in t[1]:
-                out[t[1].get(marker, i)] = t[1]
-                continue
-            for j in self.refs(i):
-                stack.append((j, d + 1))
+                raise _IsRow(t[1])
+            bucket: dict = {}
+            for n, j in enumerate(self.refs(i)):
+                try:
+                    walk(j, d + 1, "%s[%d]" % (path, n))
+                except _IsRow as r:
+                    bucket[r.row.get(marker, j)] = r.row
+            if bucket:
+                out.append((path, bucket))
+
+        walk(idx, 0, "")
+        return out
+
+    def rows(self, idx: int, marker: str = "id", maxdepth: int = 6) -> dict:
+        """把一张（多级分桶的）表展平成 `{id: 行}`。
+
+        ⚠ 分桶**本身是正常的**：`client_res` 就散在 336 个桶里，73,679 个 `id` 全局唯一。
+        ⛔ 但目录名也可能是**命名空间**（`city` 下 9 张互不相干的表，`id` 各自从 1 起）——
+        那时合并会静默互相覆盖，所以本方法**一撞 id 就报错**，请改用 `groups()` 自己挑桶。
+        """
+        out: dict = {}
+        for path, bucket in self.groups(idx, marker, maxdepth):
+            for k, row in bucket.items():
+                if k in out:
+                    raise ValueError(
+                        "⛔ 子项 %d 展平时 %s=%r 撞车（桶 %s）—— 这多半是个**命名空间**而不是"
+                        "一张表，改用 groups() 自己挑桶" % (idx, marker, k, path or "·"))
+                out[k] = row
         return out
 
     def index_at(self, file_off: int) -> int:

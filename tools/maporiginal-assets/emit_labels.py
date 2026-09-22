@@ -38,6 +38,16 @@ export interface IMapoCitySite {{
   readonly id: number;
   readonly row: number;
   readonly col: number;
+  /** 城名，如「南皮」「风陵渡」。 */
+  readonly name: string;
+  /** `大型城池` / `中型城池` / `小型城池`。 */
+  readonly cityType: string;
+  /** 城池等级（1..8）。 */
+  readonly level: number;
+  /** 占格形状代号，如 `H_SHAPE` / `DOUBLE_H_SHAPE` / `RADIUS_2` / `PIER_*`。 */
+  readonly shape: string;
+  /** 原版 3D 件 id（`city_res`）；⚠ 2D 沙盘用不上，只作溯源。 */
+  readonly clientResId: number;
 }}
 
 /** 大区（{ncanton} 个）：远档显示。 */
@@ -46,7 +56,18 @@ export const MAPO_CANTON_LABELS: readonly IMapoLabel[] = {cantons};
 /** 郡（{narea} 个）：中近档显示。 */
 export const MAPO_AREA_LABELS: readonly IMapoLabel[] = {areas};
 
-/** 城址（{ncity} 座）：原版 `city_center.lua` 的**真坐标**，⛔ 无名字（名字在服务端 AOI 里）。 */
+/**
+ * 城址（{ncity} 座）：原版 `city_center.lua` 的**真坐标** + `base.cw` 的**真名与类型**。
+ *
+ * ★ 名字/类型/等级/形状来自 `base.cw` 的 `city[1]` 桶（2026-09-23，MAPORIGINAL-2D §11-1），
+ *   经 `city_shape_grids`（格 → 城序号）对上。
+ *   ⚠ 本模块一度写着「⛔ 无名字（名字在服务端 AOI 里）」——**那是错的**，
+ *   名字一直在客户端配置里，只是当时 `base.cw` 没解开。
+ * ★ **形状与占格 1:1 自洽**（独立互证）：{shapePairs}。
+ * ⚠ 其中 **12 座是渡口**（`PIER_*`：孟津/风陵渡/蒲坂津/白马/夏口…），
+ *   它们在 `city_shape` 里带非零 `even_res_center`/`odd_res_center` 美术偏移；
+ *   ⛔ 将来画城址件时这 12 座要套偏移，其余 237 座偏移为 0。
+ */
 export const MAPO_CITY_SITES: readonly IMapoCitySite[] = {cities};
 
 /**
@@ -84,7 +105,13 @@ def main() -> int:
     shapes = {}
     for n in counts:
         shapes[n] = shapes.get(n, 0) + 1
+    pairs = {}
+    for c, g in zip(data.get("cities", []), groups):
+        pairs.setdefault(c.get("shape", "?"), set()).add(len(g))
+    shape_pairs = "、".join("%s=%s 格" % (k, "/".join(str(x) for x in sorted(v)))
+                           for k, v in sorted(pairs.items()))
     ts = HEAD.format(map=a.map, ncanton=len(data["cantons"]), narea=len(data["areas"]),
+                     shapePairs=shape_pairs,
                      ncity=len(data.get("cities", [])), ncell=len(keys),
                      shapes="、".join("%d:%d" % kv for kv in sorted(shapes.items())),
                      cantons=rows("cantons"), areas=rows("areas"), cities=rows("cities", None),
