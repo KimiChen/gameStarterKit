@@ -3,26 +3,29 @@
 
     /tmp/maporiginal-venv/bin/python build_terrain.py [--map s1]
 
-输入（仓外只读，按真名反查）：
-    map/<id>/cn/res.bytes             1500x1500  主地块层，字节值 = LAND_TYPE / TERRAIN_TYPE
-    map/<id>/cn/res_multi.bytes       1500x1500  多格地形（本体格的类型）
-    map/<id>/cn/logic_background.bytes 1500x1500 地表底色
+★ **值空间就是原版的**（2026-09-22 定性修正）：`terrain.bytes` 每格存原版 `res` 值，
+   只把 `res == 0`（多格地形的非锚点格）换成该格的 `res_multi` 值 ⇒ 一个字节无损承载全部语义。
 
-输出 out/pack/<id>/：
-    terrain.bytes      **本仓格式**：8B 大端头 (u32 rows, u32 cols) + 行主序 u8 的**显示类**
-    terrain.info.json  尺寸 / sha256 / 调色板（含原版 id 与 passable）/ 管线溯源
-    raw/{res,multi,ground}.bytes  原版三层原值留档（4B 头照抄），⛔ 供将来扩展，v1 不消费
+语义（权威：`asset/config/S1/cn/res_pro/terrain_attr.lua` + 本轮统计判据）：
 
-语义（2026-09-22 实测，权威表 asset/config/S1/cn/res_pro/terrain_attr.lua）：
-    res==1                 LAND 平地
-    2 <= res <= 41         资源/地形地块：LAND_TYPE = (res-2)%10 + 2，(res-2)//10 是 4 款变体
-                           2木 3石 4粮 5铁 6金 7水 8森林 9湿地 10荒漠 11丘陵
-    42 <= res <= 46        未定性（格数 7321/2924/1363/402/100 递减，像是要塞/关隘分级）
-    res==47                RIVER 河流
-    res==0 或 res>=48      **多格地形本体/锚点**，类型取 res_multi：
-                           60/61 平均 26 格、最大 228 ⇒ 山脉（⛔ 不可通行）
-                           57/58/59 平均 8 格 ⇒ 林丛；52..55 中小；48..51 单格地物
-⚠ 字节值就是资源 id：`res_bytes_id_map.lua` 的 id 集合跳过 56，而数据里 56 恰好零命中。
+| 值 | 含义 |
+|---|---|
+| 1 | 平地 |
+| 2..41 | **资源地块**：`类型 = (v-2)//10`（0..3，四种等量）、`等级 = (v-2)%10 + 1`（1..10） |
+| 42..46 | **金矿** 等级 1..5（`gold-new` 恰好 5–6 张资产，对得上） |
+| 47 | 河流（⛔ 不可通行） |
+| 48..61 | **多格地形**锚点/本体：60/61 山脉（⛔ 不可通行）、52..55 与 57..59 林丛、48..51 单格地物 |
+
+⚠ **这两个下标是怎么定死的**（⛔ 别再按 LAND_TYPE 去读 `(v-2)%10+2`，那是早先的误读）：
+  ① 块下标（`(v-2)//10`）四挡计数几乎完全相等（240044/240058/240153/240124），
+     相邻同值率 24.9%（随机恰好 25%），且**在各半径上恒为 1.50** ⇒ 是**资源类型**，与位置无关；
+  ② 块内下标（`(v-2)%10`）随「离地图中心的距离」**单调递减**（3.26 → 1.33）
+     ⇒ 是**地块等级**（三战的高级地在中心）。
+  ③ 相应地，森林/丘陵/山地这些**地貌**不在 2..41 里，它们是 48..61 的多格地形。
+⚠ 四种资源（甲乙丙丁）↔ 木/铁/石/粮 的**对应关系静态数据里定不了**（在资源注册表/服务端）。
+  本管线按 `类型0→木、1→铁、2→石、3→粮` 取美术，⚠ 这是**假设**，可能是个置换。
+⚠ `logic_background` 相邻同值率 96.5%（随机 41.9%）⇒ 它是**地貌分区层**，⛔ 不是逐格美术变体；
+  静态数据里**没有**逐格美术变体，近档的 4 款变体片是本仓自己加的去重复手段。
 """
 from __future__ import annotations
 
@@ -31,6 +34,7 @@ import hashlib
 import json
 import os
 import struct
+
 import sys
 
 import numpy as np
@@ -42,43 +46,48 @@ from decode_ktx import resolve_by_name  # noqa: E402
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 OUT = os.path.join(HERE, CFG["outDir"])
 
-# 显示类调色板。color 是 LOD0 平涂与远档鸟瞰共用的基色（贴图没到货时的兜底）。
-PALETTE = [
-    ("plain",    "平地",   True,  (137, 148, 100)),
-    ("wood",     "木材",   True,  (104, 132,  78)),
-    ("stone",    "石料",   True,  (150, 148, 112)),
-    ("food",     "粮田",   True,  (166, 168,  96)),
-    ("iron",     "铁矿",   True,  (128, 124, 116)),
-    ("gold",     "金矿",   True,  (176, 160, 100)),
-    ("water",    "水域",   False, (96, 128, 138)),
-    ("forest",   "森林",   True,  (86, 112,  74)),
-    ("wetland",  "湿地",   True,  (112, 132, 104)),
-    ("desert",   "荒漠",   True,  (176, 166, 124)),
-    ("hill",     "丘陵",   True,  (150, 148, 112)),
-    ("river",    "河流",   False, (70, 120, 160)),
-    ("mountain", "山地",   False, (123, 130, 126)),
-    ("grove",    "林丛",   True,  (95, 118,  80)),
-    ("scatter",  "散落地物", True, (130, 145,  98)),
-    ("special",  "特殊地块", True, (170, 140, 110)),
-]
-NAME2ID = {n: i for i, (n, _cn, _p, _c) in enumerate(PALETTE)}
-# 通行层（4 类）：0 可走陆地 / 1 河流 / 2 山地 / 3 水域。
-# ⚠ 为什么要单独一层：16 类全分辨率层一阶熵 2.95 bit/格、zlib 都只到 772 KB，
-#   varint-RLE 反而胀到 125.6%（3.95 MB TS）—— ⛔ 塞不进 shared 模块。
-#   通行层游程平均 19.2，RLE 后 237 KB / base64 309 KB，与 sgzzmap 的 282 KB 同量级。
-PASS_PALETTE = [("land", "可走陆地", True, (137, 148, 100)),
-                ("river", "河流", False, (70, 120, 160)),
-                ("mountain", "山地", False, (123, 130, 126)),
-                ("water", "水域", False, (96, 128, 138))]
-PASS_OF = {"river": 1, "mountain": 2, "water": 3}
-# LAND_TYPE -> 显示类
-LT2CLASS = {2: "wood", 3: "stone", 4: "food", 5: "iron", 6: "gold",
-            7: "water", 8: "forest", 9: "wetland", 10: "desert", 11: "hill"}
-# res_multi -> 显示类（按团块规模实测定性）
-MULTI2CLASS = {60: "mountain", 61: "mountain",
-               57: "grove", 58: "grove", 59: "grove",
-               52: "grove", 53: "grove", 54: "grove", 55: "grove",
-               48: "scatter", 49: "scatter", 50: "scatter", 51: "scatter"}
+RES_TYPES = ["wood", "iron", "stone", "food"]          # ⚠ 假设的次序，见模块注释
+RES_TYPE_CN = ["木", "铁", "石", "粮"]
+# 多格地形类型（res_multi 值）→ 粗类
+MULTI_KIND = {60: "mountain", 61: "mountain",
+              57: "grove", 58: "grove", 59: "grove",
+              52: "grove", 53: "grove", 54: "grove", 55: "grove",
+              48: "scatter", 49: "scatter", 50: "scatter", 51: "scatter"}
+# 粗类 → 底色与通行。⚠ 底色只是垫底：资源格真正的样子由**摆件层的原版 res_field**给。
+KIND_STYLE = {
+    "plain":    ("平地", True, (137, 148, 100)),
+    "resource": ("资源", True, (150, 152, 98)),
+    "gold":     ("金矿", True, (176, 160, 100)),
+    "river":    ("河流", False, (70, 120, 160)),
+    "mountain": ("山地", False, (123, 130, 126)),
+    "grove":    ("林丛", True, (95, 118, 80)),
+    "scatter":  ("散落地物", True, (130, 145, 98)),
+    "unknown":  ("未定性", True, (120, 120, 120)),
+}
+KINDS = list(KIND_STYLE)
+
+
+def classify_value(v: int) -> tuple:
+    """原版值 -> (粗类, 中文名, 可通行, 颜色, 资源类型|None, 等级|None)。"""
+    if v == 1:
+        cn, passable, color = KIND_STYLE["plain"]
+        return ("plain", cn, passable, color, None, None)
+    if 2 <= v <= 41:
+        t, lv = (v - 2) // 10, (v - 2) % 10 + 1
+        cn, passable, color = KIND_STYLE["resource"]
+        return ("resource", "%s·%d级" % (RES_TYPE_CN[t], lv), passable, color, t, lv)
+    if 42 <= v <= 46:
+        cn, passable, color = KIND_STYLE["gold"]
+        return ("gold", "金矿·%d级" % (v - 41), passable, color, 4, v - 41)
+    if v == 47:
+        cn, passable, color = KIND_STYLE["river"]
+        return ("river", cn, passable, color, None, None)
+    kind = MULTI_KIND.get(v)
+    if kind:
+        cn, passable, color = KIND_STYLE[kind]
+        return (kind, "%s·%d" % (cn, v), passable, color, None, None)
+    cn, passable, color = KIND_STYLE["unknown"]
+    return ("unknown", "%s·%d" % (cn, v), passable, color, None, None)
 
 
 def load_layer(logical: str):
@@ -88,24 +97,9 @@ def load_layer(logical: str):
     return rows, cols, arr, blob
 
 
-def classify(res: np.ndarray, multi: np.ndarray) -> np.ndarray:
-    out = np.full(res.shape, NAME2ID["plain"], np.uint8)
-    lt = ((res.astype(np.int16) - 2) % 10) + 2
-    m = (res >= 2) & (res <= 41)
-    for v, name in LT2CLASS.items():
-        out[m & (lt == v)] = NAME2ID[name]
-    out[(res >= 42) & (res <= 46)] = NAME2ID["special"]
-    out[res == 47] = NAME2ID["river"]
-    body = (res == 0) | (res >= 48)
-    for v, name in MULTI2CLASS.items():
-        out[body & (multi == v)] = NAME2ID[name]
-    out[res == 1] = NAME2ID["plain"]
-    return out
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--map", default=SEL_MAP_DEFAULT if (SEL_MAP_DEFAULT := "s1") else "s1")
+    ap.add_argument("--map", default="s1")
     a = ap.parse_args()
     mid = a.map
 
@@ -115,13 +109,14 @@ def main() -> int:
     print("原版层 %dx%d：res %d 值 / multi %d 值 / ground %d 值"
           % (rows, cols, len(np.unique(res)), len(np.unique(multi)), len(np.unique(ground))))
 
-    cls = classify(res, multi)
-    body = struct.pack(">II", rows, cols) + cls.tobytes()
-    assert len(body) == 8 + rows * cols
+    # ★ res==0 用 res_multi 顶替：一个字节无损承载原版全部语义
+    merged = np.where(res == 0, multi, res).astype(np.uint8)
+    body = struct.pack(">II", rows, cols) + merged.tobytes()
 
-    pas = np.zeros(cls.shape, np.uint8)
-    for name, pid in PASS_OF.items():
-        pas[cls == NAME2ID[name]] = pid
+    # 通行层：0 可走陆地 / 1 河流 / 2 山地。⚠ 水域已并入河流（原版海与河同为 47）
+    pas = np.zeros(merged.shape, np.uint8)
+    pas[merged == 47] = 1
+    pas[(merged == 60) | (merged == 61)] = 2
     pass_body = struct.pack(">II", rows, cols) + pas.tobytes()
 
     d = os.path.join(OUT, "pack", mid)
@@ -131,38 +126,51 @@ def main() -> int:
     for nm, blob in (("res", res_blob), ("multi", multi_blob), ("ground", ground_blob)):
         open(os.path.join(d, "raw", nm + ".bytes"), "wb").write(blob)
 
-    counts = np.bincount(cls.ravel(), minlength=len(PALETTE))
+    counts = np.bincount(merged.ravel(), minlength=64)
+    palette = []
+    for v in range(64):
+        kind, cn, passable, color, rtype, level = classify_value(v)
+        if counts[v] == 0 and v != 0:
+            continue
+        entry = {"id": v, "kind": kind, "cn": cn, "passable": bool(passable),
+                 "color": list(color), "tiles": int(counts[v])}
+        if rtype is not None:
+            entry["resType"] = int(rtype)
+            entry["level"] = int(level)
+        palette.append(entry)
+
     info = {
-        "schemaVersion": 1, "mapId": mid, "maxRow": rows, "maxCol": cols,
+        "schemaVersion": 2, "mapId": mid, "maxRow": rows, "maxCol": cols,
         "byteLength": len(body), "sha256": hashlib.sha256(body).hexdigest(),
-        "palette": [{"id": i, "name": n, "cn": cn, "passable": p,
-                     "color": list(c), "tiles": int(counts[i])}
-                    for i, (n, cn, p, c) in enumerate(PALETTE)],
-        "passPalette": [{"id": i, "name": n, "cn": cn, "color": list(c), "passable": p,
-                         "tiles": int((pas == i).sum())}
-                        for i, (n, cn, p, c) in enumerate(PASS_PALETTE)],
         "passSha256": hashlib.sha256(pass_body).hexdigest(),
-        "layering": "16 类显示层走 Cocos BufferAsset（全分辨率、近档选片用）；"
-                    "4 类通行层走 shared TS 模块（首帧轮廓 + 通行判定）。"
-                    "⚠ 16 类层熵 2.95 bit/格，RLE 胀到 125.6%，⛔ 进不了 shared。",
-        "source": {
-            "upstream": "《三国志·战略版》2084.1768",
-            "layers": ["map/%s/cn/res.bytes" % mid, "map/%s/cn/res_multi.bytes" % mid,
-                       "map/%s/cn/logic_background.bytes" % mid],
-            "rule": "res==1 平地；2..41 → LAND_TYPE=(res-2)%10+2；42..46 特殊；47 河流；"
-                    "res==0 或 >=48 取 res_multi（60/61 山地，57..59/52..55 林丛，48..51 散落）",
-            "authority": "asset/config/S1/cn/res_pro/terrain_attr.lua",
-        },
+        "valueSpace": "原版 res 值；res==0 用 res_multi 顶替",
+        "rule": "1 平地；2..41 资源(类型=(v-2)//10、等级=(v-2)%10+1)；42..46 金矿 1..5 级；"
+                "47 河流；48..61 多格地形（60/61 山脉）",
+        "resTypeAssumption": "类型0→木、1→铁、2→石、3→粮（⚠ 假设，静态数据定不了，可能是置换）",
+        "palette": palette,
+        "passPalette": [{"id": 0, "name": "land", "cn": "可走陆地", "passable": True,
+                         "color": [137, 148, 100], "tiles": int((pas == 0).sum())},
+                        {"id": 1, "name": "river", "cn": "河流", "passable": False,
+                         "color": [70, 120, 160], "tiles": int((pas == 1).sum())},
+                        {"id": 2, "name": "mountain", "cn": "山地", "passable": False,
+                         "color": [123, 130, 126], "tiles": int((pas == 2).sum())}],
+        "source": {"upstream": "《三国志·战略版》2084.1768",
+                   "layers": ["map/%s/cn/res.bytes" % mid, "map/%s/cn/res_multi.bytes" % mid,
+                              "map/%s/cn/logic_background.bytes" % mid],
+                   "authority": "asset/config/S1/cn/res_pro/terrain_attr.lua"},
     }
     json.dump(info, open(os.path.join(d, "terrain.info.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
 
     tot = rows * cols
-    print("terrain.bytes %d B  sha256 %s" % (len(body), info["sha256"][:16]))
-    for i, (n, cn, p, _c) in enumerate(PALETTE):
-        if counts[i]:
-            print("   %-9s %-6s %8d  %5.2f%%  %s" % (n, cn, counts[i], 100.0 * counts[i] / tot,
-                                                     "" if p else "⛔不可通行"))
+    print("terrain.bytes %d B  sha256 %s  调色板 %d 条"
+          % (len(body), info["sha256"][:16], len(palette)))
+    import collections
+    bykind = collections.Counter()
+    for e in palette:
+        bykind[e["kind"]] += e["tiles"]
+    for k, n in bykind.most_common():
+        print("   %-9s %8d  %5.2f%%" % (k, n, 100.0 * n / tot))
     print("→ %s" % d)
     return 0
 

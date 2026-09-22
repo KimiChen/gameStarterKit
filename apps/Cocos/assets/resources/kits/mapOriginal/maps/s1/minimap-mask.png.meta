@@ -8,30 +8,6 @@
     ".png"
   ],
   "subMetas": {
-    "870b3": {
-      "importer": "texture",
-      "uuid": "0fbc7e6a-b43d-493f-aeed-72f9646733e8@870b3",
-      "displayName": "minimap-mask",
-      "id": "870b3",
-      "name": "texture",
-      "userData": {
-        "wrapModeS": "clamp-to-edge",
-        "wrapModeT": "clamp-to-edge",
-        "minfilter": "linear",
-        "magfilter": "linear",
-        "mipfilter": "none",
-        "anisotropy": 0,
-        "isUuid": true,
-        "imageUuidOrDatabaseUri": "0fbc7e6a-b43d-493f-aeed-72f9646733e8",
-        "visible": false
-      },
-      "ver": "1.0.22",
-      "imported": true,
-      "files": [
-        ".json"
-      ],
-      "subMetas": {}
-    },
     "6c48a": {
       "importer": "texture",
       "uuid": "0fbc7e6a-b43d-493f-aeed-72f9646733e8@6c48a",

@@ -1,14 +1,30 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "mapId": "s1",
  "maxRow": 1500,
  "maxCol": 1500,
  "byteLength": 2250008,
- "sha256": "a77826d39e72e677f1f4c25e258ed5f7dbf2c966050c6fe6e21788f2737604a3",
+ "sha256": "1de825dd604e7c4bd5938de49d5754017e22ca215502660ea3b24ca5d4f1b67b",
+ "passSha256": "1aff1ac3de735f49fe5a1fe8b11cf0b6db8b9d19f45bd5275242d8c039d333f2",
+ "valueSpace": "原版 res 值；res==0 用 res_multi 顶替",
+ "rule": "1 平地；2..41 资源(类型=(v-2)//10、等级=(v-2)%10+1)；42..46 金矿 1..5 级；47 河流；48..61 多格地形（60/61 山脉）",
+ "resTypeAssumption": "类型0→木、1→铁、2→石、3→粮（⚠ 假设，静态数据定不了，可能是置换）",
  "palette": [
   {
    "id": 0,
-   "name": "plain",
+   "kind": "unknown",
+   "cn": "未定性·0",
+   "passable": true,
+   "color": [
+    120,
+    120,
+    120
+   ],
+   "tiles": 0
+  },
+  {
+   "id": 1,
+   "kind": "plain",
    "cn": "平地",
    "passable": true,
    "color": [
@@ -19,128 +35,638 @@
    "tiles": 844134
   },
   {
-   "id": 1,
-   "name": "wood",
-   "cn": "木材",
-   "passable": true,
-   "color": [
-    104,
-    132,
-    78
-   ],
-   "tiles": 180654
-  },
-  {
    "id": 2,
-   "name": "stone",
-   "cn": "石料",
+   "kind": "resource",
+   "cn": "木·1级",
    "passable": true,
    "color": [
     150,
-    148,
-    112
+    152,
+    98
    ],
-   "tiles": 154656
+   "tiles": 45130,
+   "resType": 0,
+   "level": 1
   },
   {
    "id": 3,
-   "name": "food",
-   "cn": "粮田",
+   "kind": "resource",
+   "cn": "木·2级",
    "passable": true,
    "color": [
-    166,
-    168,
-    96
+    150,
+    152,
+    98
    ],
-   "tiles": 222473
+   "tiles": 38661,
+   "resType": 0,
+   "level": 2
   },
   {
    "id": 4,
-   "name": "iron",
-   "cn": "铁矿",
+   "kind": "resource",
+   "cn": "木·3级",
    "passable": true,
    "color": [
-    128,
-    124,
-    116
+    150,
+    152,
+    98
    ],
-   "tiles": 210511
+   "tiles": 55616,
+   "resType": 0,
+   "level": 3
   },
   {
    "id": 5,
-   "name": "gold",
-   "cn": "金矿",
+   "kind": "resource",
+   "cn": "木·4级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 52611,
+   "resType": 0,
+   "level": 4
+  },
+  {
+   "id": 6,
+   "kind": "resource",
+   "cn": "木·5级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 33214,
+   "resType": 0,
+   "level": 5
+  },
+  {
+   "id": 7,
+   "kind": "resource",
+   "cn": "木·6级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 8488,
+   "resType": 0,
+   "level": 6
+  },
+  {
+   "id": 8,
+   "kind": "resource",
+   "cn": "木·7级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 3850,
+   "resType": 0,
+   "level": 7
+  },
+  {
+   "id": 9,
+   "kind": "resource",
+   "cn": "木·8级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 1530,
+   "resType": 0,
+   "level": 8
+  },
+  {
+   "id": 10,
+   "kind": "resource",
+   "cn": "木·9级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 566,
+   "resType": 0,
+   "level": 9
+  },
+  {
+   "id": 11,
+   "kind": "resource",
+   "cn": "木·10级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 378,
+   "resType": 0,
+   "level": 10
+  },
+  {
+   "id": 12,
+   "kind": "resource",
+   "cn": "铁·1级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 45151,
+   "resType": 1,
+   "level": 1
+  },
+  {
+   "id": 13,
+   "kind": "resource",
+   "cn": "铁·2级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 38642,
+   "resType": 1,
+   "level": 2
+  },
+  {
+   "id": 14,
+   "kind": "resource",
+   "cn": "铁·3级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 55611,
+   "resType": 1,
+   "level": 3
+  },
+  {
+   "id": 15,
+   "kind": "resource",
+   "cn": "铁·4级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 52630,
+   "resType": 1,
+   "level": 4
+  },
+  {
+   "id": 16,
+   "kind": "resource",
+   "cn": "铁·5级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 33212,
+   "resType": 1,
+   "level": 5
+  },
+  {
+   "id": 17,
+   "kind": "resource",
+   "cn": "铁·6级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 8489,
+   "resType": 1,
+   "level": 6
+  },
+  {
+   "id": 18,
+   "kind": "resource",
+   "cn": "铁·7级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 3849,
+   "resType": 1,
+   "level": 7
+  },
+  {
+   "id": 19,
+   "kind": "resource",
+   "cn": "铁·8级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 1530,
+   "resType": 1,
+   "level": 8
+  },
+  {
+   "id": 20,
+   "kind": "resource",
+   "cn": "铁·9级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 566,
+   "resType": 1,
+   "level": 9
+  },
+  {
+   "id": 21,
+   "kind": "resource",
+   "cn": "铁·10级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 378,
+   "resType": 1,
+   "level": 10
+  },
+  {
+   "id": 22,
+   "kind": "resource",
+   "cn": "石·1级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 45222,
+   "resType": 2,
+   "level": 1
+  },
+  {
+   "id": 23,
+   "kind": "resource",
+   "cn": "石·2级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 38659,
+   "resType": 2,
+   "level": 2
+  },
+  {
+   "id": 24,
+   "kind": "resource",
+   "cn": "石·3级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 55635,
+   "resType": 2,
+   "level": 3
+  },
+  {
+   "id": 25,
+   "kind": "resource",
+   "cn": "石·4级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 52622,
+   "resType": 2,
+   "level": 4
+  },
+  {
+   "id": 26,
+   "kind": "resource",
+   "cn": "石·5级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 33203,
+   "resType": 2,
+   "level": 5
+  },
+  {
+   "id": 27,
+   "kind": "resource",
+   "cn": "石·6级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 8490,
+   "resType": 2,
+   "level": 6
+  },
+  {
+   "id": 28,
+   "kind": "resource",
+   "cn": "石·7级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 3848,
+   "resType": 2,
+   "level": 7
+  },
+  {
+   "id": 29,
+   "kind": "resource",
+   "cn": "石·8级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 1530,
+   "resType": 2,
+   "level": 8
+  },
+  {
+   "id": 30,
+   "kind": "resource",
+   "cn": "石·9级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 566,
+   "resType": 2,
+   "level": 9
+  },
+  {
+   "id": 31,
+   "kind": "resource",
+   "cn": "石·10级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 378,
+   "resType": 2,
+   "level": 10
+  },
+  {
+   "id": 32,
+   "kind": "resource",
+   "cn": "粮·1级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 45151,
+   "resType": 3,
+   "level": 1
+  },
+  {
+   "id": 33,
+   "kind": "resource",
+   "cn": "粮·2级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 38694,
+   "resType": 3,
+   "level": 2
+  },
+  {
+   "id": 34,
+   "kind": "resource",
+   "cn": "粮·3级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 55611,
+   "resType": 3,
+   "level": 3
+  },
+  {
+   "id": 35,
+   "kind": "resource",
+   "cn": "粮·4级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 52648,
+   "resType": 3,
+   "level": 4
+  },
+  {
+   "id": 36,
+   "kind": "resource",
+   "cn": "粮·5级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 33206,
+   "resType": 3,
+   "level": 5
+  },
+  {
+   "id": 37,
+   "kind": "resource",
+   "cn": "粮·6级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 8491,
+   "resType": 3,
+   "level": 6
+  },
+  {
+   "id": 38,
+   "kind": "resource",
+   "cn": "粮·7级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 3848,
+   "resType": 3,
+   "level": 7
+  },
+  {
+   "id": 39,
+   "kind": "resource",
+   "cn": "粮·8级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 1530,
+   "resType": 3,
+   "level": 8
+  },
+  {
+   "id": 40,
+   "kind": "resource",
+   "cn": "粮·9级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 566,
+   "resType": 3,
+   "level": 9
+  },
+  {
+   "id": 41,
+   "kind": "resource",
+   "cn": "粮·10级",
+   "passable": true,
+   "color": [
+    150,
+    152,
+    98
+   ],
+   "tiles": 379,
+   "resType": 3,
+   "level": 10
+  },
+  {
+   "id": 42,
+   "kind": "gold",
+   "cn": "金矿·1级",
    "passable": true,
    "color": [
     176,
     160,
     100
    ],
-   "tiles": 132835
+   "tiles": 7321,
+   "resType": 4,
+   "level": 1
   },
   {
-   "id": 6,
-   "name": "water",
-   "cn": "水域",
-   "passable": false,
-   "color": [
-    96,
-    128,
-    138
-   ],
-   "tiles": 33958
-  },
-  {
-   "id": 7,
-   "name": "forest",
-   "cn": "森林",
-   "passable": true,
-   "color": [
-    86,
-    112,
-    74
-   ],
-   "tiles": 15395
-  },
-  {
-   "id": 8,
-   "name": "wetland",
-   "cn": "湿地",
-   "passable": true,
-   "color": [
-    112,
-    132,
-    104
-   ],
-   "tiles": 6120
-  },
-  {
-   "id": 9,
-   "name": "desert",
-   "cn": "荒漠",
+   "id": 43,
+   "kind": "gold",
+   "cn": "金矿·2级",
    "passable": true,
    "color": [
     176,
-    166,
-    124
+    160,
+    100
    ],
-   "tiles": 2264
+   "tiles": 2924,
+   "resType": 4,
+   "level": 2
   },
   {
-   "id": 10,
-   "name": "hill",
-   "cn": "丘陵",
+   "id": 44,
+   "kind": "gold",
+   "cn": "金矿·3级",
    "passable": true,
    "color": [
-    150,
-    148,
-    112
+    176,
+    160,
+    100
    ],
-   "tiles": 1513
+   "tiles": 1363,
+   "resType": 4,
+   "level": 3
   },
   {
-   "id": 11,
-   "name": "river",
+   "id": 45,
+   "kind": "gold",
+   "cn": "金矿·4级",
+   "passable": true,
+   "color": [
+    176,
+    160,
+    100
+   ],
+   "tiles": 402,
+   "resType": 4,
+   "level": 4
+  },
+  {
+   "id": 46,
+   "kind": "gold",
+   "cn": "金矿·5级",
+   "passable": true,
+   "color": [
+    176,
+    160,
+    100
+   ],
+   "tiles": 100,
+   "resType": 4,
+   "level": 5
+  },
+  {
+   "id": 47,
+   "kind": "river",
    "cn": "河流",
    "passable": false,
    "color": [
@@ -151,52 +677,160 @@
    "tiles": 235292
   },
   {
-   "id": 12,
-   "name": "mountain",
-   "cn": "山地",
-   "passable": false,
-   "color": [
-    123,
-    130,
-    126
-   ],
-   "tiles": 43533
-  },
-  {
-   "id": 13,
-   "name": "grove",
-   "cn": "林丛",
-   "passable": true,
-   "color": [
-    95,
-    118,
-    80
-   ],
-   "tiles": 136820
-  },
-  {
-   "id": 14,
-   "name": "scatter",
-   "cn": "散落地物",
+   "id": 48,
+   "kind": "scatter",
+   "cn": "散落地物·48",
    "passable": true,
    "color": [
     130,
     145,
     98
    ],
-   "tiles": 17732
+   "tiles": 4570
   },
   {
-   "id": 15,
-   "name": "special",
-   "cn": "特殊地块",
+   "id": 49,
+   "kind": "scatter",
+   "cn": "散落地物·49",
    "passable": true,
    "color": [
-    170,
-    140,
-    110
+    130,
+    145,
+    98
    ],
-   "tiles": 12110
+   "tiles": 4331
+  },
+  {
+   "id": 50,
+   "kind": "scatter",
+   "cn": "散落地物·50",
+   "passable": true,
+   "color": [
+    130,
+    145,
+    98
+   ],
+   "tiles": 4515
+  },
+  {
+   "id": 51,
+   "kind": "scatter",
+   "cn": "散落地物·51",
+   "passable": true,
+   "color": [
+    130,
+    145,
+    98
+   ],
+   "tiles": 4316
+  },
+  {
+   "id": 52,
+   "kind": "grove",
+   "cn": "林丛·52",
+   "passable": true,
+   "color": [
+    95,
+    118,
+    80
+   ],
+   "tiles": 17989
+  },
+  {
+   "id": 53,
+   "kind": "grove",
+   "cn": "林丛·53",
+   "passable": true,
+   "color": [
+    95,
+    118,
+    80
+   ],
+   "tiles": 8105
+  },
+  {
+   "id": 54,
+   "kind": "grove",
+   "cn": "林丛·54",
+   "passable": true,
+   "color": [
+    95,
+    118,
+    80
+   ],
+   "tiles": 9820
+  },
+  {
+   "id": 55,
+   "kind": "grove",
+   "cn": "林丛·55",
+   "passable": true,
+   "color": [
+    95,
+    118,
+    80
+   ],
+   "tiles": 25244
+  },
+  {
+   "id": 57,
+   "kind": "grove",
+   "cn": "林丛·57",
+   "passable": true,
+   "color": [
+    95,
+    118,
+    80
+   ],
+   "tiles": 25235
+  },
+  {
+   "id": 58,
+   "kind": "grove",
+   "cn": "林丛·58",
+   "passable": true,
+   "color": [
+    95,
+    118,
+    80
+   ],
+   "tiles": 24806
+  },
+  {
+   "id": 59,
+   "kind": "grove",
+   "cn": "林丛·59",
+   "passable": true,
+   "color": [
+    95,
+    118,
+    80
+   ],
+   "tiles": 25621
+  },
+  {
+   "id": 60,
+   "kind": "mountain",
+   "cn": "山地·60",
+   "passable": false,
+   "color": [
+    123,
+    130,
+    126
+   ],
+   "tiles": 22890
+  },
+  {
+   "id": 61,
+   "kind": "mountain",
+   "cn": "山地·61",
+   "passable": false,
+   "color": [
+    123,
+    130,
+    126
+   ],
+   "tiles": 20643
   }
  ],
  "passPalette": [
@@ -204,53 +838,39 @@
    "id": 0,
    "name": "land",
    "cn": "可走陆地",
+   "passable": true,
    "color": [
     137,
     148,
     100
    ],
-   "passable": true,
-   "tiles": 1937217
+   "tiles": 1971175
   },
   {
    "id": 1,
    "name": "river",
    "cn": "河流",
+   "passable": false,
    "color": [
     70,
     120,
     160
    ],
-   "passable": false,
    "tiles": 235292
   },
   {
    "id": 2,
    "name": "mountain",
    "cn": "山地",
+   "passable": false,
    "color": [
     123,
     130,
     126
    ],
-   "passable": false,
    "tiles": 43533
-  },
-  {
-   "id": 3,
-   "name": "water",
-   "cn": "水域",
-   "color": [
-    96,
-    128,
-    138
-   ],
-   "passable": false,
-   "tiles": 33958
   }
  ],
- "passSha256": "27a36a16754c83de04bb4816c8b1d31df3dcc132ca5e7d2a392f23e35d3718e2",
- "layering": "16 类显示层走 Cocos BufferAsset（全分辨率、近档选片用）；4 类通行层走 shared TS 模块（首帧轮廓 + 通行判定）。⚠ 16 类层熵 2.95 bit/格，RLE 胀到 125.6%，⛔ 进不了 shared。",
  "source": {
   "upstream": "《三国志·战略版》2084.1768",
   "layers": [
@@ -258,7 +878,6 @@
    "map/s1/cn/res_multi.bytes",
    "map/s1/cn/logic_background.bytes"
   ],
-  "rule": "res==1 平地；2..41 → LAND_TYPE=(res-2)%10+2；42..46 特殊；47 河流；res==0 或 >=48 取 res_multi（60/61 山地，57..59/52..55 林丛，48..51 散落）",
   "authority": "asset/config/S1/cn/res_pro/terrain_attr.lua"
  }
 }

@@ -17,7 +17,9 @@ import { Color, EventMouse, EventTouch, Label, Node, Sprite, UITransform, Vec3 }
 import { CocosView } from "../../../view/CocosView";
 import { createSolidPlate } from "../../../view/uiPlate";
 import { MAPO_LOD_MAX, MAPO_MAP_COLS, MAPO_MAP_ROWS, mapoGrid2Pos } from "../../../shared/kits/mapOriginal/api/hexmap/index";
-import { MAPO_DISPLAY_BY_ID, MAPO_DISPLAY_PALETTE } from "../../../shared/kits/mapOriginal/content/display.data";
+import {
+    MAPO_VALUE_BY_ID, MAPO_VALUE_COLORS,
+} from "../../../shared/kits/mapOriginal/content/display.data";
 import { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
 import { mapoInMapBand, mapoRootLocalToCamera } from "../logic/mapoCamera";
 import { mapoIsNearField, mapoLayerVisible } from "../logic/mapoLayers";
@@ -69,6 +71,9 @@ export class MapOriginalWorldView extends CocosView {
     private assetGeneration = 0;
     private titleLabel: Label | null = null;
     private status: Label | null = null;
+    /** 上一次建出来的摆件数 / 可视格数 —— 只给状态行当证据用。 */
+    private decorCount = 0;
+    private visibleCount = 0;
     private detail: Label | null = null;
     private chips: Chip[] = [];
     private offTick: (() => void) | null = null;
@@ -105,8 +110,8 @@ export class MapOriginalWorldView extends CocosView {
         this.buildSettings(w);
         this.buildSelection();
 
-        // ⚠ 用 **16 类显示层**调色板，⛔ 不是 4 类通行层那份（拿 16 类 id 去查它会显示成「可走陆地」）
-        const base: MapoRgb[] = MAPO_DISPLAY_PALETTE.map((e) => e.color as MapoRgb);
+        // ⚠ 下标是**原版 res 值**，⛔ 不是 3 类通行层那份（拿原版值去查它会整片显示成「可走陆地」）
+        const base: MapoRgb[] = MAPO_VALUE_COLORS.map((c) => c as MapoRgb);
         this.renderer = new MapoMapRenderer(this.world, null, base);
         this.decorRenderer = new MapoDecorRenderer(this.world, null);
         this.farRenderer = new MapoFarRenderer(this.world, null);
@@ -337,9 +342,12 @@ export class MapOriginalWorldView extends CocosView {
         const l = this.logic; if (!l) return;
         const info = l.select({ row, col });
         if (!info || !this.detail) return;
-        const name = MAPO_DISPLAY_BY_ID.get(info.classId)?.cn ?? `#${info.classId}`;
-        // ⚠ 显示层没到位时标注出来，⛔ 不拿退回值冒充真相
-        this.detail.string = `(${info.row}, ${info.col}) ${name}`
+        const cls = MAPO_VALUE_BY_ID.get(info.value);
+        // ⚠ 中文名里已经带「木·1级」这样的类型+等级（调色板就是按原版值建的），⛔ 别再拼一遍
+        const name = cls?.cn ?? `#${info.value}`;
+        // ★ 把**原版 res 值**摊在面板上：这是本 kit 与 sgzzmap 最本质的差别（那边是自造地形），
+        //   也让真引擎重放能直接验到「值空间确实走到了 UI」。
+        this.detail.string = `(${info.row}, ${info.col}) ${name} · 原版值 ${info.value}`
             + `${info.passable ? "" : " · 不可通行"}${info.detailed ? "" : " · 读取中…"}`;
     }
 
@@ -390,12 +398,19 @@ export class MapOriginalWorldView extends CocosView {
                 (row, col) => { cells.push({ row, col }); });
             this.renderer?.render(l, cells);
             // ⚠ 摆件在地表**之上**（兄弟序即绘制序），⛔ 不要反过来
-            if (mapoLayerVisible("decor", cam.lod)) this.decorRenderer?.render(l, cells);
-            else this.decorRenderer?.clear();
+            if (mapoLayerVisible("decor", cam.lod)) {
+                this.decorCount = this.decorRenderer?.render(l, cells) ?? 0;
+            } else {
+                this.decorRenderer?.clear();
+                this.decorCount = 0;
+            }
+            this.visibleCount = cells.length;
         } else {
             this.renderer?.clear();
             this.decorRenderer?.clear();
             this.farRenderer?.render(l);
+            this.decorCount = 0;
+            this.visibleCount = 0;
         }
         if (this.titleLabel) this.titleLabel.string = `原版大地图 · LOD ${cam.lod}/${MAPO_LOD_MAX}`;
         if (this.status) {
@@ -405,7 +420,10 @@ export class MapOriginalWorldView extends CocosView {
             //   ⛔ 不让重放去调 Logic 读内部状态。
             const graphics = `${MAPO_SANDBOX_LABELS[g.sandbox]}/${MAPO_COLOR_LABELS[g.colorMode]}`
                 + `/${MAPO_QUALITY_LABELS[g.quality]}${g.birdview ? "/鸟瞰" : ""}`;
-            this.status.string = `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}`;
+            // ★ 摆件数进状态行：原版每个资源格都有 res_field ⇒ 近档这个数应该接近可视格的四成，
+            //   ⛔ 掉到 0 或个位数就说明「按原版值查表」这条链断了（重放据此判定）。
+            const decor = near ? ` · 摆件 ${this.decorCount}/${this.visibleCount}` : "";
+            this.status.string = `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}${decor}`;
         }
         // ⚠ 置灰与高亮是**两件事**：enabled 决定能不能点（文字变灰），on 决定当前选中（底板变亮）
         for (const chip of this.chips) {

@@ -298,17 +298,24 @@ export const MAPO_ATLAS_GUTTER = 4;
 /** 每行几格；id = 行×列数 + 列。 */
 export const MAPO_ATLAS_COLS = 8;
 /**
- * 每个地形类在图集里有几个**变体片**。
+ * 每个**粗类**在图集里有几个**变体片**。
  * ⚠ 存在的理由：同一张片复制上千遍时整片地读作「铺地砖」而不是连续地貌。
  *   四个变体取的是源纹理**不同位置 + 不同朝向**的窗口，⛔ 不是同一块的镜像
  *   （镜像只在格内翻，整片地仍读得出重复节律）。
- * ⚠ 图集格 id = `classId * MAPO_ATLAS_VARIANTS + variant`。
+ * ⚠ 图集格 id = `kindId * MAPO_ATLAS_VARIANTS + variant`。
  */
 export const MAPO_ATLAS_VARIANTS = 4;
 
-/** 地形类 + 变体 → 图集格 id。 */
-export function mapoAtlasCellId(classId: number, variant: number): number {
-    return classId * MAPO_ATLAS_VARIANTS + (((variant % MAPO_ATLAS_VARIANTS) + MAPO_ATLAS_VARIANTS)
+/**
+ * **粗类** + 变体 → 图集格 id。
+ *
+ * ⚠ 这里的第一个参数是**粗类 id**（`MAPO_VALUE_KINDS` 的下标：plain/resource/gold/river/
+ *   mountain/grove/scatter/unknown），⛔ 不是原版 res 值 —— 原版 61 个值铺不进 8×4 的图集，
+ *   而且值里的「等级」差别在**摆件层**（逐格 res_field）体现，地表这层只需垫底色调。
+ *   值 → 粗类走 `MAPO_VALUE_KIND_ID[value]`。
+ */
+export function mapoAtlasCellId(kindId: number, variant: number): number {
+    return kindId * MAPO_ATLAS_VARIANTS + (((variant % MAPO_ATLAS_VARIANTS) + MAPO_ATLAS_VARIANTS)
         % MAPO_ATLAS_VARIANTS);
 }
 /** 图集尺寸。⚠ 取 2 的幂：NPOT 贴图在 WebGL1 上不能开 mipmap / repeat。 */

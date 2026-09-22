@@ -27,24 +27,18 @@ CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 OUT = os.path.join(HERE, CFG["outDir"])
 PNG = os.path.join(OUT, "png")
 
-# 每个显示类取哪张原版 albedo 做底纹（⛔ 不存在的就退化为纯色）
+# ★ 地表图集按**粗类**建（资源格真正的样子由摆件层的原版 res_field 给，底下这层只是垫底）。
+#   ⚠ 次序即 kind id，⛔ 与 terrain.info.json 的 kind 名一一对应，改了要同步 shared。
+KINDS = ["plain", "resource", "gold", "river", "mountain", "grove", "scatter", "unknown"]
 TEXTURE_OF = {
     "plain":    "scene_3d/ground/gaodi/tex/grass.png",
-    "wood":     "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_01_d.png",
-    "stone":    "scene_3d/ground/gaodi_shan/tex/m_grass_xl_04_d.png",
-    "food":     "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_01_d.png",
-    "iron":     "scene_3d/ground/dibiaohuawen/tex/xiaobujian_d.png",
+    "resource": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_01_d.png",
     "gold":     "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_03_d.png",
-    "water":    "scene_3d/pcg_v5/water/normal.png",
-    "forest":   "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_01_d.png",
-    "wetland":  "scene_3d/ground/gaodi/tex/grass.png",
-    "desert":   "scene_3d/ground/gaodi_snow/tex/zhandao_02_d.png",
-    "hill":     "scene_3d/ground/gaodi_shan/tex/m_grass_xl_04_d.png",
     "river":    "scene_3d/ground/terrain/albedo_river_v2.png",
     "mountain": "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_03_d.png",
     "grove":    "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_03_d.png",
     "scatter":  "scene_3d/ground/gaodi/tex/grass.png",
-    "special":  "scene_3d/ground/dibiaohuawen_snow/tex/xiaobujian_d.png",
+    "unknown":  "scene_3d/ground/dibiaohuawen/tex/xiaobujian_d.png",
 }
 # ⚠ 单格 240×120（仍 2:1）而不是 256×128：8 列 × (256+8) = 2112 > 2048 放不下，
 #   240 的节距 248 × 8 = 1984 ≤ 2048、行 128 × 8 = 1024 正好铺满。
@@ -65,7 +59,10 @@ def load_pack(mid: str):
 
 def bake_plate(d, rows, cols, cls, info, sizes=((2048, 1024, 4), (1024, 512, 5))):
     """按世界包围盒烘远档底图（**逐格精确对齐**，⛔ 无标定误差）。"""
-    pal = np.array([e["color"] for e in info["palette"]], np.uint8)
+    # 远档底图按**原版值**直接取色（调色板是按值建的，⛔ 不用再折算 kind）
+    pal = np.zeros((64, 3), np.uint8)
+    for e in info["palette"]:
+        pal[e["id"]] = e["color"]
     r, c = np.meshgrid(np.arange(rows), np.arange(cols), indexing="ij")
     for W, H, lod in sizes:
         u = (((r - c) + cols - 1) / (rows + cols - 2) * (W - 1)).astype(np.int32)
@@ -113,19 +110,31 @@ def diamond_mask(w: int, h: int, bleed: int) -> np.ndarray:
     return (d <= 1.0 + bleed * 2.0 / w).astype(np.float32)
 
 
+def kind_style(info):
+    """kind -> (cn, 颜色)。取该 kind 下格数最多的那条调色板项的颜色。"""
+    best = {}
+    for e in info["palette"]:
+        k = e["kind"]
+        if k not in best or e["tiles"] > best[k]["tiles"]:
+            best[k] = e
+    return {k: (best[k]["cn"], best[k]["color"]) for k in best}
+
+
 def pack_atlas(d, info, lods=(0, 1, 2)):
     """每档一张 POT 图集：4x4 的 256x128 菱形贴片 + 4px 出血带。
 
     ⚠ 出血带是**边缘复制**，⛔ 不靠 UV 内缩（内缩会把画面往里压、菱形边缘少一圈）。
     """
-    pal = info["palette"]
+    style = kind_style(info)
     mask = diamond_mask(CELL_W, CELL_H, GUTTER)
     cells = []
     for lod in lods:
         atlas = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
         cells = []
-        for e in pal:
-            tex_rel = TEXTURE_OF.get(e["name"])
+        for kid, kind in enumerate(KINDS):
+            e = {"id": kid, "name": kind, "cn": style.get(kind, (kind, [128, 128, 128]))[0],
+                 "color": style.get(kind, (kind, [128, 128, 128]))[1]}
+            tex_rel = TEXTURE_OF.get(kind)
             src = None
             if tex_rel and os.path.exists(os.path.join(PNG, tex_rel)):
                 src = Image.open(os.path.join(PNG, tex_rel)).convert("RGB")
@@ -152,20 +161,19 @@ def pack_atlas(d, info, lods=(0, 1, 2)):
                 cx = (idx % GRID_COLS) * (CELL_W + GUTTER * 2) + GUTTER
                 cy = (idx // GRID_COLS) * (CELL_H + GUTTER * 2) + GUTTER
                 atlas.paste(Image.fromarray(tile, "RGBA"), (cx, cy))
-                cells.append({"id": idx, "classId": e["id"], "variant": v,
-                              "name": e["name"], "cn": e["cn"],
-                              "cell": [cx, cy, CELL_W, CELL_H],
+                cells.append({"id": idx, "kindId": kid, "kind": kind, "variant": v,
+                              "cn": e["cn"], "cell": [cx, cy, CELL_W, CELL_H],
                               "source": tex_rel or "（纯色，无原版纹理）"})
         p = os.path.join(d, "atlas-lod%d.png" % lod)
         atlas.save(p)
         json.dump({"schemaVersion": 1, "lod": lod, "cell": [CELL_W, CELL_H], "gutter": GUTTER,
-                   "gridCols": GRID_COLS, "variants": VARIANTS,
+                   "gridCols": GRID_COLS, "variants": VARIANTS, "kinds": KINDS,
                    "size": [ATLAS_W, ATLAS_H], "uv": "diamond-midpoints",
                    "cells": cells},
                   open(os.path.join(d, "atlas-lod%d.info.json" % lod), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=1)
-        print("  atlas-lod%d %dx%d（%d 类 × %d 变体 × %dx%d + %dpx 出血）" %
-              (lod, ATLAS_W, ATLAS_H, len(pal), VARIANTS, CELL_W, CELL_H, GUTTER))
+        print("  atlas-lod%d %dx%d（%d 粗类 × %d 变体 × %dx%d + %dpx 出血）" %
+              (lod, ATLAS_W, ATLAS_H, len(KINDS), VARIANTS, CELL_W, CELL_H, GUTTER))
 
 
 def main() -> int:

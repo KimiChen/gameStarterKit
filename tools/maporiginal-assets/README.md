@@ -40,6 +40,15 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 |---|---|
 | `namehash.py` | 纯标准库。`namehash(path)` / `namehash_hex(path)`；`--selftest` 跑官方 SipHash 向量 + 3 条真实条目 |
 | `build_name_map.py` | 全量反查 → `out/name_map.json`（路径 → hash/容器/下标/扩展名/大小）+ `out/coverage.json` |
+| `decode_ktx.py` / `decode_batch.py` | KTX(ETC2/ASTC/R8) → PNG；`--name` 走 name_map 按真名取 |
+| `slice_atlas.py` | `<TextureAtlas>` XML 切片（含 `r="y"` 旋转与 `oW/oH/oX/oY` 去裁边还原）→ `out/png/` + `out/sprites.jsonl` |
+| `build_terrain.py` | ★ 原版层 → `terrain.bytes`（**直接存原版 res 值**，`res==0` 用 `res_multi` 顶替）+ 3 类通行层 + 61 条调色板 |
+| `bake_content.py` | 远档底图 / 缩略图 / 近档地表图集（**按 8 个粗类 × 4 变体**建，⛔ 不按 61 个值建） |
+| `pack_decor.py` | ★ 摆件图集：**格 id = 原版 res 值**（2..46）+ 城址件从 64 起；缺级用最近一级顶上并存证 |
+| `build_labels.py` / `emit_labels.py` | 原版地名（9 大区 / 55 郡 / 249 城址）→ `labels.json` → shared TS |
+| `emit_display_palette.py` | ★ 61 值调色板 + `MAPO_VALUE_KIND_ID` 粗类下标表 → shared TS |
+| `emit_shared_terrain.py` | 通行层 → shared TS（varint-RLE + base64，111 KB） |
+| `install_to_kit.py` | 装 kit 数据目录 + Cocos 运行时镜像 + 确定性铸 `.meta`（uuid = `sha1("mapOriginal::<相对路径>")`） |
 
 ```bash
 python3 tools/maporiginal-assets/namehash.py --selftest
@@ -80,7 +89,7 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 
 | 层 | 网格 | 取值 | 判定 |
 |---|---|---:|---|
-| `res.bytes` | **1500×1500** | 61 | 主地块/资源层。1=LAND(844,134)、47=RIVER(235,292)、0=142,958（郡界/障碍）、`等级×10+资源类型`（4/14/24/34…） |
+| `res.bytes` | **1500×1500** | 61 | 主地块/资源层。1=LAND(844,134)、47=RIVER(235,292)、0=142,958（多格地形锚点）、**2..41 = 资源：类型 `(v-2)//10`、等级 `(v-2)%10+1`**；42..46 金矿 1..5 级 |
 | `res_multi.bytes` | **1500×1500** | 14 | 多格地形簇（0 占 91%，55–60 稀疏） |
 | `logic_background.bytes` | **1500×1500** | 11 | 地表底色（1/2/3/18/11/13…） |
 | `map_region.bytes` | 1500×1500 **+970 B** | 227 | 郡/州分区；255=图外(434,011)。尾部多出的 970 B 是附加表，⚠ 解析时按 `rows*cols` 截断 |
@@ -131,9 +140,37 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 原版 3D 地表是按 splat 权重实时混合可平铺贴图的，所以近档菱形贴片要由这些可平铺 albedo
 **合成**（`pack-atlas.py` 的活），⛔ 不存在「直接拿来就是一张地块图」的素材。
 
+### 4.3 ★ `res` 的「类型 / 等级」读反过一次（2026-09-22 更正）
+
+早先把 `(v-2)%10+2` 当 LAND_TYPE、`(v-2)//10` 当「4 款变体」，**正好反了**。
+单测钉不出来（钉的就是那个错假设），判据只能来自**与地理相关的统计量**：
+
+| 量 | 若 `//10` 是类型 | 实测（按距图心半径分箱） | 结论 |
+|---|---|---|---|
+| `//10` 的均值 | 平坦（类型与远近无关） | 1.50 → 1.50 恒平 | ✔ 是资源类型 |
+| `%10` 的均值 | 递减（越靠边越低级） | 3.26 → 1.33 | ✔ 是地块等级 |
+
+⇒ 从此 `terrain.bytes` **直接存原版值**（不再折算成自造类），近档「这一格长什么样」变成纯查表。
+⚠ 类型编号→中文（0木/1铁/2石/3粮）仍是**假设**：静态数据定不了是否被置换。
+
+### 4.4 摆件 = 逐格 `res_field`，⛔ 不是撒装饰
+
+原作近档 = 底图 + **逐格一个 `res_field` 单位**，由该格的 `res` 值唯一决定 ⇒
+`pack_decor.py` 把图集**按原版值建格**（格 id = 值），客户端零猜测。
+素材取 `scene/resource/{wood,iron,stone,food,gold}-new/png/<等级>.png`（45 格）+ 城址 8 件。
+
+⚠ **原版没出全 10 级**：wood 缺 4/6 级、iron/stone 缺 1 级、food 只有 5..10 级 ⇒
+8 处用最近一级顶上，逐条记在 `decor-atlas.info.json` 的 `substitutions`。
+
+⛔ **多格地形（值 48..61，占 8.8%）目前没有摆件**：原作是**一个模型跨整片连通区**
+（山脉平均 26 格、最大 228），其 `.group` 预制体不在 ELP 里（见 4.2）。
+⚠ 要补的话正确做法是**连通域 → 每区一件、锚在区内最低格、按区尺寸缩放**，
+⛔ 不是逐格放一棵树 —— 那是我们编的，不是原版参数。
+
 ## 五、待办
 
-- `decode-ktx.py`：KTX(ETC2/ASTC) → PNG（venv 装 `texture2ddecoder` + Pillow；
-  ⚠ Creator 3.8 不收 `.ktx`，且 `docs/3D-ASSETS.md` §5 ⛔ 禁压缩纹理入库）
-- `slice-atlas.py`：718 个 `<TextureAtlas>` XML × `<sprite n x y w h>` → 按原始路径切片
-- `collect-sources.py`：逐文件存证（源路径 / 容器 md5 / namehash / SHA-256）→ 授权台账素材
+- **多格地形的连通域摆件**（见 4.4）：`res_multi` 连通域 → 每区一件；这是当前近档最后一块平菱形。
+- `road_info` / `logic_road` 的记录表格式（半文本，尚未解）⇒ 道路层。
+- 长字符串 L≥77 的残字：`terrain_attr.lua` 里仍有 `["CXTE[D_LANY"] = 17` 这类键，
+  ⚠ 照抄数值表前**逐条目检**。
+- 1620² 的 pk 系赛季图（等 s1 这张跑顺）。

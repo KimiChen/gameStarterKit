@@ -52,7 +52,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--map", default="s1")
     ap.add_argument("--layer", default="pass", choices=["pass", "display"],
-                    help="pass=4 类通行层（进 shared）；display=16 类显示层（⚠ 3.9 MB，⛔ 别进 shared）")
+                    help="pass=3 类通行层（进 shared）；display=原版值显示层（⚠ 3.9 MB，⛔ 别进 shared）")
     ap.add_argument("--out")
     a = ap.parse_args()
 
@@ -82,7 +82,7 @@ def main() -> int:
  *
  * ⚠ 走 TS 字面量而不是读盘：kit 服务端 ⛔ 不得 import `node:*`；shared 又零依赖
  *   （无 zlib / atob / Buffer），解码器 `mapoDecodeBase64` / `mapoDecodeRle` 自带。
- * ⚠ **本模块是 4 类通行层，不是 16 类显示层**：16 类层一阶熵 2.95 bit/格，
+ * ⚠ **本模块是 3 类通行层，不是原版值显示层**：显示层一阶熵 2.95 bit/格，
  *   varint-RLE 会胀到 125.6%%（3.9 MB TS），⛔ 塞不进 shared；它走 Cocos 资源。
  */
 import type { IMapoTerrainClass } from "../api/hexmap/index";

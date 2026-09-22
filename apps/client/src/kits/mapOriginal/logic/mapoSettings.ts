@@ -73,14 +73,14 @@ export function mapoCreateStepFor(q: MapoQuality): number {
     }
 }
 
-/** 画质档 -> 摆件密度系数（0 = 不建摆件层）。 */
-export function mapoDecorDensityFor(q: MapoQuality): number {
-    switch (q) {
-        case "smooth": return 0;
-        case "normal": return 0.5;
-        case "high": return 1;
-        default: return 1;
-    }
+/**
+ * 画质档 -> 建不建摆件层。
+ * ⚠ 这一层**全有或全无**：原版每个资源格都有自己的 res_field，按密度砍一半会出现
+ * 「同样的 3 级粮田有的有有的没有」的穿帮 ⇒ ⛔ 别改回密度系数。
+ *   要省开销只有整层关掉（流畅档）这一条路；近档一屏本来也只有几十格。
+ */
+export function mapoDecorEnabledFor(q: MapoQuality): boolean {
+    return q !== "smooth";
 }
 
 /** 合法化外来设置（存档/旧版本），⛔ 不信任输入。 */

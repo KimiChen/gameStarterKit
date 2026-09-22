@@ -15,10 +15,17 @@ const inView = (node) => node.path.includes(`${VIEW}/`);
 
 /** 标题形如「原版大地图 · LOD 2/5」。 */
 const TITLE_RE = /^原版大地图 · LOD ([0-5])\/5$/u;
-/** 状态形如「s1 · 近档 · 画面：2D 沙盘/标准/普通 · 层：terrain / grid」。 */
-const STATUS_RE = /^s1 · (近档|远档) · 画面：([^/]+)\/([^/·]+?)\/([^/·]+?)(\/鸟瞰)? · 层：(.*)$/u;
-/** 详情形如「(750, 751) 平地」，不可通行多一段，显示层没到位再多一段「· 读取中…」。 */
-const DETAIL_RE = /^\((\d+), (\d+)\) ([^\s·]+)( · 不可通行)?( · 读取中…)?$/u;
+/**
+ * 状态形如「s1 · 近档 · 画面：2D 沙盘/标准/普通 · 层：terrain / decor · 摆件 137/312」。
+ * ⚠ 末尾的「摆件 建出来的/可视格」只在近档有；它是「按原版值逐格摆件」这条链的活体证据。
+ */
+const STATUS_RE =
+    /^s1 · (近档|远档) · 画面：([^/]+)\/([^/·]+?)\/([^/·]+?)(\/鸟瞰)? · 层：(.*?)( · 摆件 (\d+)\/(\d+))?$/u;
+/**
+ * 详情形如「(750, 751) 木·1级 · 原版值 2」，不可通行多一段，显示层没到位再多「· 读取中…」。
+ * ⚠ 地形名里**自带 `·`**（原版调色板就是「类型·等级」），所以这里 ⛔ 不能用 `[^\s·]+` 去截。
+ */
+const DETAIL_RE = /^\((\d+), (\d+)\) (\S+) · 原版值 (\d+)( · 不可通行)?( · 读取中…)?$/u;
 
 /**
  * 解析地图页的公开 UI。⚠ 刻意拒绝「标题还没出来」这些中间态 ——
@@ -46,6 +53,9 @@ export function readMapOriginalEvidence(walk) {
                 birdview: !!statusMatch[5] }
             : null,
         layers: statusMatch ? statusMatch[6].split(" / ").filter((s) => s && s !== "（无）") : [],
+        // ★ 摆件：建出来的件数 / 可视格数。原版每个资源格都有 res_field ⇒ 近档这个比例应在四成上下
+        decorPlaced: statusMatch?.[8] !== undefined ? Number(statusMatch[8]) : null,
+        visibleCells: statusMatch?.[9] !== undefined ? Number(statusMatch[9]) : null,
         // 近档 / 远档各自的「画出来了」
         terrain: has("mapo-terrain"),
         // ★ 摆件层：原版切片立在格上（去「铺地砖」的主力）
@@ -63,9 +73,11 @@ export function readMapOriginalEvidence(walk) {
             ? {
                 row: Number(detailMatch[1]), col: Number(detailMatch[2]),
                 terrainName: detailMatch[3],
-                passable: !detailMatch[4],
+                // ★ 原版 res 值（1 平地 / 2..46 资源与金矿 / 47 河流 / 48..61 多格地形）
+                value: Number(detailMatch[4]),
+                passable: !detailMatch[5],
                 // ⚠ 显示层（BufferAsset）没到位时详情会带「读取中…」——⛔ 不拿退回值冒充真相
-                detailed: !detailMatch[5],
+                detailed: !detailMatch[6],
                 text: detail,
             }
             : null,
@@ -150,16 +162,23 @@ export async function replayMapOriginalWorld(runner) {
         };
     });
 
-    const decorAndLabels = await runner.step("近档：摆件层与郡名就位（⛔ 不接受只有地表）", async () => {
-        const evidence = await runner.waitFor("mapo-decor 在树上且能读到郡名", (walk) => {
+    const decorAndLabels = await runner.step("近档：摆件按**原版逐格**摆出来 + 郡名就位", async () => {
+        const evidence = await runner.waitFor("mapo-decor 在树上、件数够、且能读到郡名", (walk) => {
             const value = readMapOriginalEvidence(walk);
             if (!value?.nearLoaded || !value.decor) return null;
+            // ★ 原版每个资源/金矿格都有自己的 res_field（全图占 43.2%）⇒ 近档这个比例应在四成上下。
+            //   ⛔ 只判「mapo-decor 节点在不在」是不够的：早先按哈希概率撒件时节点也在，
+            //   但一屏只有几十件、同级资源有的有有的没有 —— 那正是要根除的穿帮。
+            const placed = value.decorPlaced ?? 0, cells = value.visibleCells ?? 0;
+            if (cells <= 0 || placed / cells < 0.25) return null;
             // ⚠ 近档该看到的是**郡名**（带「郡/国」字），⛔ 不是远档那九个大区名
             const jun = [...new Set(value.labels)].filter((t) => /[郡国]$/u.test(t));
             return jun.length > 0 ? { ...value, jun } : null;
         }, 30_000);
-        return { decor: evidence.decor, jun: evidence.jun,
-                 labelCount: new Set(evidence.labels).size,
+        return { decor: evidence.decor, decorPlaced: evidence.decorPlaced,
+                 visibleCells: evidence.visibleCells,
+                 decorRatio: Number((evidence.decorPlaced / evidence.visibleCells).toFixed(3)),
+                 jun: evidence.jun, labelCount: new Set(evidence.labels).size,
                  shot: await runner.shot("maporiginal-decor-labels") };
     });
 

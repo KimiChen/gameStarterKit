@@ -12,7 +12,8 @@ import {
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import { buildMapoDiamondMesh, MAPO_MAX_QUADS_PER_MESH, type MapoQuadInput } from "../logic/mapoMesh";
 import { MAPO_TEXTURED_TINT, mapoBuildPalette, type MapoRgb } from "../logic/mapoPalette";
-import { mapoDisplayClassAt } from "../logic/mapoTerrain";
+import { mapoValueAt } from "../logic/mapoTerrain";
+import { MAPO_VALUE_KIND_ID } from "../../../shared/kits/mapOriginal/content/display.data";
 import type { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
 import {
     createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoPipelineToneMapping,
@@ -32,7 +33,10 @@ export class MapoMapRenderer {
     private paletteKey = "";
     private disposed = false;
 
-    /** ⚠ baseColors 必须是 **16 类显示层**调色板（`MAPO_DISPLAY_PALETTE`），⛔ 不是 4 类通行层那份。 */
+    /**
+     * ⚠ baseColors 的**下标是原版 res 值**（`MAPO_VALUE_COLORS`），⛔ 不是 3 类通行层那份，
+     *   也不是粗类 —— 值不同、颜色就该不同（等级差在远档看得出来）。
+     */
     constructor(private readonly root: Node, private readonly art: MapoArtResources | null,
                 private readonly baseColors: readonly MapoRgb[]) {
         this.technique = mapoUnlitTechnique();
@@ -73,14 +77,16 @@ export class MapoMapRenderer {
         const limit = Math.min(cells.length, MAPO_MAX_QUADS_PER_MESH);
         for (let i = 0; i < limit; i += 1) {
             const { row, col } = cells[i];
-            const id = mapoDisplayClassAt(row, col);
+            // ★ 值 = 原版 res 值；地表图集按**粗类**建（8 行），⛔ 不是按值建
+            const value = mapoValueAt(row, col);
+            const kind = MAPO_VALUE_KIND_ID[value] ?? 0;
             // ⚠ 贴图时顶点色取纯白：顶点色是相乘的，拿地形色去乘会把贴图整体染一遍
-            const c = textured ? MAPO_TEXTURED_TINT : (this.palette[id] ?? this.palette[0]);
+            const c = textured ? MAPO_TEXTURED_TINT : (this.palette[value] ?? this.palette[1]);
             // ★ 变体选**片**、flip 在格内**镜像**：两者用不同的散列源，叠起来 16 种组合
             //   —— 这是去「铺地砖」的主要手段，⛔ 只翻不换片是不够的。
             quads.push({
                 row, col,
-                uv: textured ? mapoAtlasUv(mapoAtlasCellId(id, mapoTileVariant(row, col))) : null,
+                uv: textured ? mapoAtlasUv(mapoAtlasCellId(kind, mapoTileVariant(row, col))) : null,
                 flip: textured ? mapoTileVariant(col, row) : 0,
                 rgba: [c[0] / 255, c[1] / 255, c[2] / 255, 1],
             });

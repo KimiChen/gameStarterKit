@@ -1,11 +1,13 @@
 /**
- * 客户端地形：**两层**。
+ * 客户端地形：**两层**，值空间不同，⛔ 别混用。
  *
- *   ① 通行层（4 类）：来自 shared 内容模块（varint-RLE + base64）⇒ **首帧即可画轮廓**，
- *      ⛔ 不等资源加载。将来接玩法时服务端也用它。
- *   ② 显示层（16 类）：2.25 MB 的 `terrain.bytes`，走 Cocos `BufferAsset`。
+ *   ① 通行层（3 类：0 陆 / 1 河 / 2 山）：来自 shared 内容模块（varint-RLE + base64）
+ *      ⇒ **首帧即可画轮廓**，⛔ 不等资源加载。将来接玩法时服务端也用它。
+ *   ② 显示层（**原版 res 值** 1..61）：2.25 MB 的 `terrain.bytes`，走 Cocos `BufferAsset`。
  *      ⚠ 为什么不塞 shared：它一阶熵 2.95 bit/格，varint-RLE 反而胀到 125.6%（3.9 MB TS）。
  *
+ * ★ 显示层的值就是原版每格的真值（类型 + 等级），近档的地表片与摆件**都**由它查表定，
+ *   ⛔ 不掺随机 —— 这是「按原游戏参数摆放」的落点。
  * ⚠ 顶层无副作用：首次调用才解码；显示层由 View 层加载完调 `mapoSetDisplayTerrain` 注入。
  */
 import {
@@ -18,7 +20,7 @@ import {
 
 let passCache: IMapoTerrain | null = null;
 
-/** 4 类通行层（shared 单源）。 */
+/** 3 类通行层（shared 单源）。 */
 export function mapoPassTerrain(): IMapoTerrain {
     if (!passCache) {
         passCache = decodeMapoTerrainRle({
@@ -33,12 +35,19 @@ export function mapoPassableAt(row: number, col: number): boolean {
     return mapoIsPassable(mapoPassTerrain(), row, col);
 }
 
-/** 通行层的 4 类 id：0 陆 / 1 河 / 2 山 / 3 水。首帧轮廓按它上色。 */
+/** 通行层的 3 类 id：0 陆 / 1 河 / 2 山。 */
 export function mapoPassClassAt(row: number, col: number): number {
     return mapoTerrainAt(mapoPassTerrain(), row, col);
 }
 
-// ── 显示层（16 类，Cocos BufferAsset 注入） ──────────────────────────────────
+/**
+ * 通行类 → 原版值的退化映射。
+ * ⚠ 只在显示层还没到位时用，让**整条渲染链只认一个值空间**，
+ * ⛔ 不要让渲染器去分辨「这个数是 3 类还是原版值」。
+ */
+const PASS_TO_VALUE: readonly number[] = [1, 47, 60];
+
+// ── 显示层（原版值，Cocos BufferAsset 注入） ────────────────────────────────
 
 let displayCells: Uint8Array | null = null;
 let displayCols = 0;
@@ -65,15 +74,16 @@ export function mapoHasDisplayTerrain(): boolean {
 }
 
 /**
- * 显示类 id（0..15）。**显示层没到位时退回通行层的 4 类**，
+ * 某格的**原版 res 值**（1..61）。
+ * ⚠ 显示层没到位时按通行类退化到同一值空间（陆→1 / 河→47 / 山→60），
  * ⛔ 不要返回 -1 让渲染器去判空 —— 首帧就该能画出东西。
  */
-export function mapoDisplayClassAt(row: number, col: number): number {
+export function mapoValueAt(row: number, col: number): number {
     if (displayCells && row >= 0 && col >= 0
         && row < MAPO_TERRAIN_ROWS && col < MAPO_TERRAIN_COLS) {
         return displayCells[row * displayCols + col];
     }
-    return mapoPassClassAt(row, col);
+    return PASS_TO_VALUE[mapoPassClassAt(row, col)] ?? 1;
 }
 
 /** 仅供测试重置。 */

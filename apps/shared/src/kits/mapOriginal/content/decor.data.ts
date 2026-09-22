@@ -1,61 +1,32 @@
 /**
  * mapOriginal 摆件图集布局（s1）—— **生成物，⛔ 勿手改**。
  *
- * 由 `tools/maporiginal-assets/pack_decor.py` 从**原版切片**打包派生。
- * ⚠ 锚点是**底边中点**（摆件立在菱形中心上），⛔ 不是几何中心。
- * ⚠ `art` 是该件在格内的实际像素矩形（居中、底对齐），格内其余是透明填充。
+ * ★ 格 id = **原版 res 值**（2..46）：客户端拿到某格的值就直接查到该放哪张图，⛔ 零猜测。
+ *   这是「按原游戏参数摆放」的落点——原作近档就是逐格一个 res_field，由该格的类型+等级决定。
+ * ⚠ 锚点是**底边中点**（地物立在菱形中心上），⛔ 不是几何中心。
+ * ⚠ 原版没单独出图的等级用最近一级顶上（`MAPO_DECOR_SUBSTITUTIONS`）。
  */
 
 export interface IMapoDecorCell {
   readonly id: number;
-  /** city / camp / build / resource —— 放置逻辑按它挑件。 */
   readonly kind: string;
-  /** 图集里的格矩形 [x, y, w, h]。 */
   readonly cell: readonly [number, number, number, number];
-  /** 格内实际画面的矩形 [x, y, w, h]（相对格左上）。 */
   readonly art: readonly [number, number, number, number];
+  readonly resType?: string;
+  readonly level?: number;
 }
 
 export const MAPO_DECOR_ATLAS_W = 2048;
 export const MAPO_DECOR_ATLAS_H = 2048;
 export const MAPO_DECOR_CELL_W = 256;
 export const MAPO_DECOR_CELL_H = 192;
+/** 城址件的起始格 id；`city_center.lua` 的 249 座城按真坐标落在这里。 */
+export const MAPO_DECOR_CITY_BASE = 64;
+/** 原版缺级、用邻近级顶上的记录（只作存证）。 */
+export const MAPO_DECOR_SUBSTITUTIONS: readonly (number | string)[] = ["5(用3级)", "7(用5级)", "12(用2级)", "22(用2级)", "32(用5级)", "33(用5级)", "34(用5级)", "35(用5级)"];
 export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
   {
-    "id": 0,
-    "kind": "build",
-    "cell": [
-      0,
-      0,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 1,
-    "kind": "build",
-    "cell": [
-      256,
-      0,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
     "id": 2,
-    "kind": "camp",
     "cell": [
       512,
       0,
@@ -63,15 +34,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      32,
-      0,
-      192,
-      192
-    ]
+      115,
+      141,
+      26,
+      51
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 1
   },
   {
     "id": 3,
-    "kind": "camp",
     "cell": [
       768,
       0,
@@ -79,15 +52,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      32,
-      0,
-      192,
-      192
-    ]
+      119,
+      167,
+      18,
+      25
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 2
   },
   {
     "id": 4,
-    "kind": "camp",
     "cell": [
       1024,
       0,
@@ -95,15 +70,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      32,
-      0,
-      192,
-      192
-    ]
+      103,
+      134,
+      50,
+      58
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 3
   },
   {
     "id": 5,
-    "kind": "camp",
     "cell": [
       1280,
       0,
@@ -111,15 +88,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      32,
-      0,
-      192,
-      192
-    ]
+      103,
+      134,
+      50,
+      58
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 4
   },
   {
     "id": 6,
-    "kind": "camp",
     "cell": [
       1536,
       0,
@@ -127,15 +106,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      32,
-      0,
-      192,
-      192
-    ]
+      2,
+      42,
+      251,
+      150
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 5
   },
   {
     "id": 7,
-    "kind": "camp",
     "cell": [
       1792,
       0,
@@ -143,402 +124,20 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      32,
-      0,
-      192,
-      192
-    ]
+      2,
+      42,
+      251,
+      150
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 6
   },
   {
     "id": 8,
-    "kind": "camp",
     "cell": [
       0,
       192,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 9,
-    "kind": "city",
-    "cell": [
-      256,
-      192,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 10,
-    "kind": "resource",
-    "cell": [
-      512,
-      192,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 11,
-    "kind": "resource",
-    "cell": [
-      768,
-      192,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 12,
-    "kind": "resource",
-    "cell": [
-      1024,
-      192,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 13,
-    "kind": "resource",
-    "cell": [
-      1280,
-      192,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 14,
-    "kind": "resource",
-    "cell": [
-      1536,
-      192,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 15,
-    "kind": "resource",
-    "cell": [
-      1792,
-      192,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 16,
-    "kind": "resource",
-    "cell": [
-      0,
-      384,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 17,
-    "kind": "resource",
-    "cell": [
-      256,
-      384,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 18,
-    "kind": "resource",
-    "cell": [
-      512,
-      384,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 19,
-    "kind": "build",
-    "cell": [
-      768,
-      384,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 20,
-    "kind": "build",
-    "cell": [
-      1024,
-      384,
-      256,
-      192
-    ],
-    "art": [
-      32,
-      0,
-      192,
-      192
-    ]
-  },
-  {
-    "id": 21,
-    "kind": "build",
-    "cell": [
-      1280,
-      384,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      32,
-      256,
-      160
-    ]
-  },
-  {
-    "id": 22,
-    "kind": "build",
-    "cell": [
-      1536,
-      384,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      32,
-      256,
-      160
-    ]
-  },
-  {
-    "id": 23,
-    "kind": "city",
-    "cell": [
-      1792,
-      384,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      48,
-      256,
-      144
-    ]
-  },
-  {
-    "id": 24,
-    "kind": "city",
-    "cell": [
-      0,
-      576,
-      256,
-      192
-    ],
-    "art": [
-      11,
-      0,
-      233,
-      192
-    ]
-  },
-  {
-    "id": 25,
-    "kind": "build",
-    "cell": [
-      256,
-      576,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      71,
-      256,
-      121
-    ]
-  },
-  {
-    "id": 26,
-    "kind": "city",
-    "cell": [
-      512,
-      576,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      71,
-      256,
-      121
-    ]
-  },
-  {
-    "id": 27,
-    "kind": "city",
-    "cell": [
-      768,
-      576,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      5,
-      256,
-      187
-    ]
-  },
-  {
-    "id": 28,
-    "kind": "city",
-    "cell": [
-      1024,
-      576,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      43,
-      256,
-      149
-    ]
-  },
-  {
-    "id": 29,
-    "kind": "camp",
-    "cell": [
-      1280,
-      576,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      35,
-      256,
-      157
-    ]
-  },
-  {
-    "id": 30,
-    "kind": "city",
-    "cell": [
-      1536,
-      576,
-      256,
-      192
-    ],
-    "art": [
-      13,
-      0,
-      230,
-      192
-    ]
-  },
-  {
-    "id": 31,
-    "kind": "camp",
-    "cell": [
-      1792,
-      576,
-      256,
-      192
-    ],
-    "art": [
-      17,
-      0,
-      221,
-      192
-    ]
-  },
-  {
-    "id": 32,
-    "kind": "city",
-    "cell": [
-      0,
-      768,
       256,
       192
     ],
@@ -547,11 +146,445 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       62,
       256,
       130
-    ]
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 7
+  },
+  {
+    "id": 9,
+    "cell": [
+      256,
+      192,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      44,
+      256,
+      148
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 8
+  },
+  {
+    "id": 10,
+    "cell": [
+      512,
+      192,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      45,
+      256,
+      147
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 9
+  },
+  {
+    "id": 11,
+    "cell": [
+      768,
+      192,
+      256,
+      192
+    ],
+    "art": [
+      10,
+      55,
+      235,
+      137
+    ],
+    "kind": "res",
+    "resType": "wood",
+    "level": 10
+  },
+  {
+    "id": 12,
+    "cell": [
+      1024,
+      192,
+      256,
+      192
+    ],
+    "art": [
+      38,
+      108,
+      179,
+      84
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 1
+  },
+  {
+    "id": 13,
+    "cell": [
+      1280,
+      192,
+      256,
+      192
+    ],
+    "art": [
+      38,
+      108,
+      179,
+      84
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 2
+  },
+  {
+    "id": 14,
+    "cell": [
+      1536,
+      192,
+      256,
+      192
+    ],
+    "art": [
+      36,
+      105,
+      184,
+      87
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 3
+  },
+  {
+    "id": 15,
+    "cell": [
+      1792,
+      192,
+      256,
+      192
+    ],
+    "art": [
+      33,
+      94,
+      189,
+      98
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 4
+  },
+  {
+    "id": 16,
+    "cell": [
+      0,
+      384,
+      256,
+      192
+    ],
+    "art": [
+      8,
+      81,
+      239,
+      111
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 5
+  },
+  {
+    "id": 17,
+    "cell": [
+      256,
+      384,
+      256,
+      192
+    ],
+    "art": [
+      7,
+      77,
+      241,
+      115
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 6
+  },
+  {
+    "id": 18,
+    "cell": [
+      512,
+      384,
+      256,
+      192
+    ],
+    "art": [
+      13,
+      63,
+      229,
+      129
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 7
+  },
+  {
+    "id": 19,
+    "cell": [
+      768,
+      384,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      61,
+      256,
+      131
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 8
+  },
+  {
+    "id": 20,
+    "cell": [
+      1024,
+      384,
+      256,
+      192
+    ],
+    "art": [
+      6,
+      62,
+      244,
+      130
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 9
+  },
+  {
+    "id": 21,
+    "cell": [
+      1280,
+      384,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      60,
+      256,
+      132
+    ],
+    "kind": "res",
+    "resType": "iron",
+    "level": 10
+  },
+  {
+    "id": 22,
+    "cell": [
+      1536,
+      384,
+      256,
+      192
+    ],
+    "art": [
+      16,
+      97,
+      224,
+      95
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 1
+  },
+  {
+    "id": 23,
+    "cell": [
+      1792,
+      384,
+      256,
+      192
+    ],
+    "art": [
+      16,
+      97,
+      224,
+      95
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 2
+  },
+  {
+    "id": 24,
+    "cell": [
+      0,
+      576,
+      256,
+      192
+    ],
+    "art": [
+      13,
+      108,
+      230,
+      84
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 3
+  },
+  {
+    "id": 25,
+    "cell": [
+      256,
+      576,
+      256,
+      192
+    ],
+    "art": [
+      40,
+      105,
+      176,
+      87
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 4
+  },
+  {
+    "id": 26,
+    "cell": [
+      512,
+      576,
+      256,
+      192
+    ],
+    "art": [
+      13,
+      85,
+      229,
+      107
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 5
+  },
+  {
+    "id": 27,
+    "cell": [
+      768,
+      576,
+      256,
+      192
+    ],
+    "art": [
+      13,
+      83,
+      229,
+      109
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 6
+  },
+  {
+    "id": 28,
+    "cell": [
+      1024,
+      576,
+      256,
+      192
+    ],
+    "art": [
+      2,
+      71,
+      252,
+      121
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 7
+  },
+  {
+    "id": 29,
+    "cell": [
+      1280,
+      576,
+      256,
+      192
+    ],
+    "art": [
+      2,
+      65,
+      252,
+      127
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 8
+  },
+  {
+    "id": 30,
+    "cell": [
+      1536,
+      576,
+      256,
+      192
+    ],
+    "art": [
+      4,
+      57,
+      248,
+      135
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 9
+  },
+  {
+    "id": 31,
+    "cell": [
+      1792,
+      576,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      67,
+      256,
+      125
+    ],
+    "kind": "res",
+    "resType": "stone",
+    "level": 10
+  },
+  {
+    "id": 32,
+    "cell": [
+      0,
+      768,
+      256,
+      192
+    ],
+    "art": [
+      30,
+      64,
+      196,
+      128
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 1
   },
   {
     "id": 33,
-    "kind": "city",
     "cell": [
       256,
       768,
@@ -559,15 +592,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      0,
-      18,
-      256,
-      174
-    ]
+      30,
+      64,
+      196,
+      128
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 2
   },
   {
     "id": 34,
-    "kind": "city",
     "cell": [
       512,
       768,
@@ -575,15 +610,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      25,
-      0,
-      206,
-      192
-    ]
+      30,
+      64,
+      196,
+      128
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 3
   },
   {
     "id": 35,
-    "kind": "build",
     "cell": [
       768,
       768,
@@ -591,15 +628,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      0,
-      42,
-      256,
-      150
-    ]
+      30,
+      64,
+      196,
+      128
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 4
   },
   {
     "id": 36,
-    "kind": "camp",
     "cell": [
       1024,
       768,
@@ -607,15 +646,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      0,
-      25,
-      256,
-      167
-    ]
+      30,
+      64,
+      196,
+      128
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 5
   },
   {
     "id": 37,
-    "kind": "build",
     "cell": [
       1280,
       768,
@@ -623,15 +664,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      0,
-      40,
-      256,
-      152
-    ]
+      3,
+      60,
+      250,
+      132
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 6
   },
   {
     "id": 38,
-    "kind": "build",
     "cell": [
       1536,
       768,
@@ -639,15 +682,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      0,
-      26,
-      256,
-      166
-    ]
+      2,
+      52,
+      251,
+      140
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 7
   },
   {
     "id": 39,
-    "kind": "build",
     "cell": [
       1792,
       768,
@@ -656,14 +701,16 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     ],
     "art": [
       0,
-      26,
+      57,
       256,
-      166
-    ]
+      135
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 8
   },
   {
     "id": 40,
-    "kind": "city",
     "cell": [
       0,
       960,
@@ -672,14 +719,16 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     ],
     "art": [
       0,
-      11,
+      67,
       256,
-      181
-    ]
+      125
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 9
   },
   {
     "id": 41,
-    "kind": "city",
     "cell": [
       256,
       960,
@@ -687,15 +736,17 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      4,
-      4,
-      248,
-      188
-    ]
+      48,
+      111,
+      159,
+      81
+    ],
+    "kind": "res",
+    "resType": "food",
+    "level": 10
   },
   {
     "id": 42,
-    "kind": "build",
     "cell": [
       512,
       960,
@@ -703,18 +754,92 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       192
     ],
     "art": [
-      0,
-      89,
-      256,
-      103
-    ]
+      28,
+      82,
+      200,
+      110
+    ],
+    "kind": "res",
+    "resType": "gold",
+    "level": 1
   },
   {
     "id": 43,
-    "kind": "city",
     "cell": [
       768,
       960,
+      256,
+      192
+    ],
+    "art": [
+      13,
+      71,
+      229,
+      121
+    ],
+    "kind": "res",
+    "resType": "gold",
+    "level": 2
+  },
+  {
+    "id": 44,
+    "cell": [
+      1024,
+      960,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      60,
+      256,
+      132
+    ],
+    "kind": "res",
+    "resType": "gold",
+    "level": 3
+  },
+  {
+    "id": 45,
+    "cell": [
+      1280,
+      960,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      64,
+      256,
+      128
+    ],
+    "kind": "res",
+    "resType": "gold",
+    "level": 4
+  },
+  {
+    "id": 46,
+    "cell": [
+      1536,
+      960,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      68,
+      256,
+      124
+    ],
+    "kind": "res",
+    "resType": "gold",
+    "level": 5
+  },
+  {
+    "id": 64,
+    "cell": [
+      0,
+      1536,
       256,
       192
     ],
@@ -723,582 +848,119 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
       0,
       192,
       192
-    ]
-  },
-  {
-    "id": 44,
-    "kind": "build",
-    "cell": [
-      1024,
-      960,
-      256,
-      192
     ],
-    "art": [
-      2,
-      38,
-      252,
-      154
-    ]
+    "kind": "city"
   },
   {
-    "id": 45,
-    "kind": "build",
+    "id": 65,
     "cell": [
-      1280,
-      960,
       256,
-      192
-    ],
-    "art": [
-      2,
-      38,
-      252,
-      154
-    ]
-  },
-  {
-    "id": 46,
-    "kind": "build",
-    "cell": [
       1536,
-      960,
       256,
       192
     ],
     "art": [
-      2,
-      38,
-      252,
-      154
-    ]
-  },
-  {
-    "id": 47,
-    "kind": "build",
-    "cell": [
-      1792,
-      960,
-      256,
-      192
-    ],
-    "art": [
+      32,
       0,
-      69,
-      256,
-      123
-    ]
-  },
-  {
-    "id": 48,
-    "kind": "city",
-    "cell": [
-      0,
-      1152,
-      256,
+      192,
       192
     ],
-    "art": [
-      0,
-      69,
-      256,
-      123
-    ]
+    "kind": "city"
   },
   {
-    "id": 49,
-    "kind": "city",
-    "cell": [
-      256,
-      1152,
-      256,
-      192
-    ],
-    "art": [
-      4,
-      46,
-      247,
-      146
-    ]
-  },
-  {
-    "id": 50,
-    "kind": "city",
+    "id": 66,
     "cell": [
       512,
-      1152,
+      1536,
       256,
       192
     ],
     "art": [
-      13,
-      37,
-      230,
-      155
-    ]
+      24,
+      0,
+      208,
+      192
+    ],
+    "kind": "city"
   },
   {
-    "id": 51,
-    "kind": "build",
+    "id": 67,
     "cell": [
       768,
-      1152,
+      1536,
       256,
       192
     ],
     "art": [
-      3,
-      51,
-      249,
-      141
-    ]
+      24,
+      0,
+      208,
+      192
+    ],
+    "kind": "city"
   },
   {
-    "id": 52,
-    "kind": "build",
+    "id": 68,
     "cell": [
       1024,
-      1152,
+      1536,
       256,
       192
     ],
     "art": [
-      3,
-      51,
-      249,
-      141
-    ]
+      24,
+      0,
+      208,
+      192
+    ],
+    "kind": "city"
   },
   {
-    "id": 53,
-    "kind": "city",
+    "id": 69,
     "cell": [
       1280,
-      1152,
+      1536,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      48,
+      256,
+      144
+    ],
+    "kind": "city"
+  },
+  {
+    "id": 70,
+    "cell": [
+      1536,
+      1536,
+      256,
+      192
+    ],
+    "art": [
+      0,
+      50,
+      256,
+      142
+    ],
+    "kind": "city"
+  },
+  {
+    "id": 71,
+    "cell": [
+      1792,
+      1536,
       256,
       192
     ],
     "art": [
       11,
-      45,
-      234,
-      147
-    ]
-  },
-  {
-    "id": 54,
-    "kind": "city",
-    "cell": [
-      1536,
-      1152,
-      256,
-      192
-    ],
-    "art": [
-      21,
-      38,
-      213,
-      154
-    ]
-  },
-  {
-    "id": 55,
-    "kind": "city",
-    "cell": [
-      1792,
-      1152,
-      256,
-      192
-    ],
-    "art": [
-      21,
-      38,
-      213,
-      154
-    ]
-  },
-  {
-    "id": 56,
-    "kind": "city",
-    "cell": [
       0,
-      1344,
-      256,
+      233,
       192
     ],
-    "art": [
-      48,
-      0,
-      160,
-      192
-    ]
-  },
-  {
-    "id": 57,
-    "kind": "city",
-    "cell": [
-      256,
-      1344,
-      256,
-      192
-    ],
-    "art": [
-      48,
-      0,
-      160,
-      192
-    ]
-  },
-  {
-    "id": 58,
-    "kind": "city",
-    "cell": [
-      512,
-      1344,
-      256,
-      192
-    ],
-    "art": [
-      22,
-      56,
-      211,
-      136
-    ]
-  },
-  {
-    "id": 59,
-    "kind": "city",
-    "cell": [
-      768,
-      1344,
-      256,
-      192
-    ],
-    "art": [
-      29,
-      52,
-      198,
-      140
-    ]
-  },
-  {
-    "id": 60,
-    "kind": "city",
-    "cell": [
-      1024,
-      1344,
-      256,
-      192
-    ],
-    "art": [
-      0,
-      88,
-      256,
-      104
-    ]
-  },
-  {
-    "id": 61,
-    "kind": "camp",
-    "cell": [
-      1280,
-      1344,
-      256,
-      192
-    ],
-    "art": [
-      19,
-      72,
-      217,
-      120
-    ]
-  },
-  {
-    "id": 62,
-    "kind": "camp",
-    "cell": [
-      1536,
-      1344,
-      256,
-      192
-    ],
-    "art": [
-      19,
-      73,
-      217,
-      119
-    ]
-  },
-  {
-    "id": 63,
-    "kind": "build",
-    "cell": [
-      1792,
-      1344,
-      256,
-      192
-    ],
-    "art": [
-      22,
-      72,
-      212,
-      120
-    ]
-  },
-  {
-    "id": 64,
-    "kind": "city",
-    "cell": [
-      0,
-      1536,
-      256,
-      192
-    ],
-    "art": [
-      44,
-      41,
-      168,
-      151
-    ]
-  },
-  {
-    "id": 65,
-    "kind": "build",
-    "cell": [
-      256,
-      1536,
-      256,
-      192
-    ],
-    "art": [
-      22,
-      75,
-      211,
-      117
-    ]
-  },
-  {
-    "id": 66,
-    "kind": "build",
-    "cell": [
-      512,
-      1536,
-      256,
-      192
-    ],
-    "art": [
-      29,
-      78,
-      197,
-      114
-    ]
-  },
-  {
-    "id": 67,
-    "kind": "build",
-    "cell": [
-      768,
-      1536,
-      256,
-      192
-    ],
-    "art": [
-      35,
-      73,
-      185,
-      119
-    ]
-  },
-  {
-    "id": 68,
-    "kind": "city",
-    "cell": [
-      1024,
-      1536,
-      256,
-      192
-    ],
-    "art": [
-      35,
-      73,
-      185,
-      119
-    ]
-  },
-  {
-    "id": 69,
-    "kind": "build",
-    "cell": [
-      1280,
-      1536,
-      256,
-      192
-    ],
-    "art": [
-      30,
-      83,
-      196,
-      109
-    ]
-  },
-  {
-    "id": 70,
-    "kind": "city",
-    "cell": [
-      1536,
-      1536,
-      256,
-      192
-    ],
-    "art": [
-      39,
-      74,
-      177,
-      118
-    ]
-  },
-  {
-    "id": 71,
-    "kind": "city",
-    "cell": [
-      1792,
-      1536,
-      256,
-      192
-    ],
-    "art": [
-      39,
-      74,
-      177,
-      118
-    ]
-  },
-  {
-    "id": 72,
-    "kind": "build",
-    "cell": [
-      0,
-      1728,
-      256,
-      192
-    ],
-    "art": [
-      43,
-      80,
-      170,
-      112
-    ]
-  },
-  {
-    "id": 73,
-    "kind": "camp",
-    "cell": [
-      256,
-      1728,
-      256,
-      192
-    ],
-    "art": [
-      36,
-      90,
-      183,
-      102
-    ]
-  },
-  {
-    "id": 74,
-    "kind": "city",
-    "cell": [
-      512,
-      1728,
-      256,
-      192
-    ],
-    "art": [
-      51,
-      77,
-      154,
-      115
-    ]
-  },
-  {
-    "id": 75,
-    "kind": "build",
-    "cell": [
-      768,
-      1728,
-      256,
-      192
-    ],
-    "art": [
-      70,
-      77,
-      115,
-      115
-    ]
-  },
-  {
-    "id": 76,
-    "kind": "resource",
-    "cell": [
-      1024,
-      1728,
-      256,
-      192
-    ],
-    "art": [
-      55,
-      102,
-      146,
-      90
-    ]
-  },
-  {
-    "id": 77,
-    "kind": "city",
-    "cell": [
-      1280,
-      1728,
-      256,
-      192
-    ],
-    "art": [
-      72,
-      87,
-      112,
-      105
-    ]
-  },
-  {
-    "id": 78,
-    "kind": "city",
-    "cell": [
-      1536,
-      1728,
-      256,
-      192
-    ],
-    "art": [
-      72,
-      87,
-      112,
-      105
-    ]
-  },
-  {
-    "id": 79,
-    "kind": "build",
-    "cell": [
-      1792,
-      1728,
-      256,
-      192
-    ],
-    "art": [
-      66,
-      99,
-      123,
-      93
-    ]
+    "kind": "city"
   }
 ];

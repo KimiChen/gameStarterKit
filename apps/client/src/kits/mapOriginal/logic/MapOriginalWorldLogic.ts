@@ -7,7 +7,7 @@
 import { MAPO_MAP_COLS, MAPO_MAP_ROWS, mapoCellOf } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import { MapoCamera, type MapoCellRef } from "./mapoCamera";
 import { mapoIsNearField, mapoVisibleLayers, type MapoLayerId } from "./mapoLayers";
-import { mapoDisplayClassAt, mapoPassClassAt, mapoHasDisplayTerrain } from "./mapoTerrain";
+import { mapoValueAt, mapoPassClassAt, mapoHasDisplayTerrain } from "./mapoTerrain";
 import {
     MAPO_DEFAULT_GRAPHICS, mapoCameraAvailability, mapoCreateStepFor, mapoNormalizeGraphics,
     mapoSandboxAvailability, type IMapoGraphicsSettings,
@@ -17,8 +17,8 @@ export interface IMapoTileInfo {
     readonly row: number;
     readonly col: number;
     readonly cell: number;
-    /** 显示类 id（显示层没到位时是通行层的 4 类）。 */
-    readonly classId: number;
+/** 该格的**原版 res 值**；显示层没到位时是通行类退化来的同空间值（1/47/60）。 */
+    readonly value: number;
     readonly passable: boolean;
     /** 显示层是否已就位 —— ⛔ 不要拿「退回值」冒充真相，面板要标注。 */
     readonly detailed: boolean;
@@ -69,11 +69,11 @@ export class MapOriginalWorldLogic {
 
     tileAt(row: number, col: number): IMapoTileInfo {
         const detailed = mapoHasDisplayTerrain();
-        const classId = detailed ? mapoDisplayClassAt(row, col) : mapoPassClassAt(row, col);
-        // ⚠ 通行判定始终走通行层：它是 shared 单源，⛔ 不从显示类反推
+        const value = mapoValueAt(row, col);
+        // ⚠ 通行判定始终走通行层：它是 shared 单源，⛔ 不从原版值反推
         const passCls = mapoPassClassAt(row, col);
         return {
-            row, col, cell: mapoCellOf(row, col), classId,
+            row, col, cell: mapoCellOf(row, col), value,
             passable: passCls === 0, detailed,
         };
     }
