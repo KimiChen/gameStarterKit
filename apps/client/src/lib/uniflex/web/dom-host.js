@@ -217,6 +217,7 @@ export class DOMHostDriver {
                     this.pressedButton = undefined;
                 }
                 handle.pressed = pressed;
+                this.writePresentation(handle);
                 (_c = (_b = handle.props).onPressChange) === null || _c === void 0 ? void 0 : _c.call(_b, pressed);
             };
             const down = (event) => {
@@ -584,14 +585,18 @@ export class DOMHostDriver {
         const effect = h.entrance;
         const translateX = Number((_a = h.props.translateX) !== null && _a !== void 0 ? _a : 0);
         const translateY = Number((_b = h.props.translateY) !== null && _b !== void 0 ? _b : 0);
-        h.element.style.translate = `${translateX + ((_c = effect === null || effect === void 0 ? void 0 : effect.x) !== null && _c !== void 0 ? _c : 0)}px ${translateY + ((_d = effect === null || effect === void 0 ? void 0 : effect.y) !== null && _d !== void 0 ? _d : 0)}px`;
-        h.element.style.scale = String(Number((_e = h.props.scale) !== null && _e !== void 0 ? _e : 1));
+        const pressed = this.pressedVisual(h);
+        h.element.style.translate = `${translateX + ((_c = effect === null || effect === void 0 ? void 0 : effect.x) !== null && _c !== void 0 ? _c : 0)}px ${translateY + ((_d = effect === null || effect === void 0 ? void 0 : effect.y) !== null && _d !== void 0 ? _d : 0) + (pressed ? 3 : 0)}px`;
+        h.element.style.scale = String(Number((_e = h.props.scale) !== null && _e !== void 0 ? _e : 1) * (pressed ? 0.92 : 1));
+        h.element.style.filter = pressed ? 'brightness(0.8)' : '';
         const rotation = namedRotation(h.props.name);
         h.element.style.rotate = rotation === 0 ? '' : `${rotation}deg`;
         const duration = Math.max(0, Number((_f = h.props.transformDurationMs) !== null && _f !== void 0 ? _f : 0));
         h.element.style.transition = duration
-            ? `translate ${duration}ms linear, scale ${duration}ms linear`
-            : '';
+            ? `translate ${duration}ms linear, scale ${duration}ms linear, filter ${duration}ms linear`
+            : h.element.dataset.uniflexInteraction === 'press'
+                ? (pressed ? 'none' : 'translate 90ms ease, scale 90ms ease, filter 90ms ease')
+                : '';
         h.element.style.opacity = String(Number((_g = h.props.opacity) !== null && _g !== void 0 ? _g : 1) * ((_h = effect === null || effect === void 0 ? void 0 : effect.opacity) !== null && _h !== void 0 ? _h : 1));
     }
     flushLayout() {
@@ -745,7 +750,21 @@ export class DOMHostDriver {
         if (!active.handle.pressed)
             return;
         active.handle.pressed = false;
+        this.writePresentation(active.handle);
         (_b = (_a = active.handle.props).onPressChange) === null || _b === void 0 ? void 0 : _b.call(_a, false);
+    }
+    pressedVisual(h) {
+        if (!h.pressed || h.element.dataset.uniflexInteraction !== 'press')
+            return false;
+        const name = h.element.dataset.name ?? '';
+        if (name.endsWith('Mask'))
+            return false;
+        const frame = h.flex?.frame;
+        const background = h.element.style.backgroundColor;
+        if (frame && frame.width >= this.width * 0.9 && frame.height >= this.height * 0.9 &&
+            background && background !== 'transparent')
+            return false;
+        return true;
     }
     property(record, property, value) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
