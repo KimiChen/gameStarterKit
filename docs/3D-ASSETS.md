@@ -180,6 +180,8 @@ Stage3D 租约 root
 - 档位表 `data/quality.json`（Cyberpunk `data-quality.json` 同法：fps 上限、每档开关）；dev 下 URL 参数 `?quality=low&shadows=0` 覆盖（Cyberpunk `HrefSetting` 同法）；`--perf` 报告必须标注档位与设备。
 - 档位由框架 `quality` 给出（3d.md §4），kit 只消费 `ports.stage3d.quality`。
 
+SC1-B8 的数据契约与示例见 [tools/art3d/quality.md](../tools/art3d/quality.md)：`quality.json` 为框架默认政策真源，`pool.json` 描述逐帧激活预算与各档容量，`detail-layers.json` 明确 base / details 归属及 quality × LOD 纹理地址。实际加载、细节层门控和激活队列由 SC3 消费；本批仅交付契约、校验及画质判定。
+
 ## 12. 加载、缓存与释放
 
 | 项 | 规则 |

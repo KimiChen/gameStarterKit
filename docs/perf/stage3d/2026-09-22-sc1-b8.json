@@ -1,0 +1,584 @@
+{
+  "batch": "SC1-B8",
+  "date": "2026-09-22",
+  "status": "passed",
+  "baseCommit": "3b7332727e24ecddcc542f80f924e39385123d02",
+  "validation": {
+    "verifyAll": {
+      "exitCode": 0,
+      "clientTests": 939,
+      "uniflexContractTests": 63,
+      "serverTests": 1341
+    },
+    "clientTypechecks": [
+      "strict ES2022",
+      "legacy ES2017"
+    ],
+    "realCreatorDeclarations": {
+      "engine": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/bin/.declarations/cc.d.ts",
+      "files": [
+        "apps/client/src/view/scene3d/quality.ts",
+        "apps/client/src/view/scene3d/Stage3dDevScene.ts"
+      ],
+      "hashes": {
+        "apps/client/src/view/scene3d/quality.ts": "9a117504c7f34006302d64b7aae7d88b619bc3ba04bbee0f55e9a77fa417a566",
+        "apps/client/src/view/scene3d/Stage3dDevScene.ts": "23e8292076d611bcdaa26890c7b0309d153cd8c75cb31915ce691f00dbe053ee"
+      },
+      "diagnostics": []
+    },
+    "newTests": 51,
+    "mutations": [
+      {
+        "name": "astc-clamp",
+        "source": "apps/client/src/logic/scene3d/qualityTiers.ts",
+        "change": "textureFormat: caps.astc ? \"astc\" : \"png\" -> textureFormat: \"astc\"",
+        "test": "apps/client/test/qualityTiers.test.ts",
+        "pattern": "dev high without ASTC",
+        "exitCode": 1,
+        "detected": true
+      },
+      {
+        "name": "bootstrap-quality",
+        "source": "apps/client/src/app/bootstrap.ts",
+        "change": "new Stage3D(new CocosStage3DEngine(), undefined, readStage3DQuality) -> new Stage3D(new CocosStage3DEngine())",
+        "test": "apps/client/test/appRuntime.test.ts",
+        "pattern": "bootstrap 创建生产",
+        "exitCode": 1,
+        "detected": true
+      }
+    ]
+  },
+  "runtime": {
+    "webgl2": {
+      "createdAt": "2026-09-22T15:46:39.581Z",
+      "engine": "3.8.8",
+      "sceneUuid": "a38c7586-d661-493c-872f-9feaab7ad770",
+      "qualityModule": "http://localhost:7456/scripting/x/chunks/61/61eeff33de0e5d017be980d571586acd35d56714.js",
+      "quality": {
+        "details": true,
+        "shadows": "all",
+        "maxEffects": 48,
+        "maxUnits": 100,
+        "maxUnitsWithoutInstancing": 50,
+        "textureStepDown": 0,
+        "minTextureSize": 256,
+        "tier": "high",
+        "detectedTier": "high",
+        "overridden": false,
+        "instancing": true,
+        "jointTexture": "float",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "astc",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl2",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": true,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": true
+          }
+        }
+      },
+      "checks": [
+        {
+          "name": "real Apple M4 defaults high",
+          "passed": true,
+          "detail": {
+            "details": true,
+            "shadows": "all",
+            "maxEffects": 48,
+            "maxUnits": 100,
+            "maxUnitsWithoutInstancing": 50,
+            "textureStepDown": 0,
+            "minTextureSize": 256,
+            "tier": "high",
+            "detectedTier": "high",
+            "overridden": false,
+            "instancing": true,
+            "jointTexture": "float",
+            "bakedSkinningInstancing": true,
+            "realtimeSkinningInstancing": false,
+            "textureFormat": "astc",
+            "device": {
+              "platform": "desktop",
+              "api": "webgl2",
+              "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+              "capabilities": {
+                "instancing": true,
+                "floatJointTexture": true,
+                "rgba8JointTexture": true,
+                "shadowMap": true,
+                "astc": true
+              }
+            }
+          }
+        },
+        {
+          "name": "independent developer loader ready",
+          "passed": true
+        },
+        {
+          "name": "standalone Prefab has two loaded lightmaps",
+          "passed": true
+        },
+        {
+          "name": "dev low uses frozen limits",
+          "passed": true,
+          "detail": {
+            "details": false,
+            "shadows": "off",
+            "maxEffects": 8,
+            "maxUnits": 50,
+            "maxUnitsWithoutInstancing": 25,
+            "textureStepDown": 1,
+            "minTextureSize": 256,
+            "tier": "low",
+            "detectedTier": "high",
+            "overridden": true,
+            "instancing": true,
+            "jointTexture": "float",
+            "bakedSkinningInstancing": true,
+            "realtimeSkinningInstancing": false,
+            "textureFormat": "astc",
+            "device": {
+              "platform": "desktop",
+              "api": "webgl2",
+              "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+              "capabilities": {
+                "instancing": true,
+                "floatJointTexture": true,
+                "rgba8JointTexture": true,
+                "shadowMap": true,
+                "astc": true
+              }
+            }
+          }
+        },
+        {
+          "name": "dev disables shadows",
+          "passed": true
+        },
+        {
+          "name": "dev high cannot restore ASTC/float/instancing",
+          "passed": true,
+          "detail": {
+            "details": true,
+            "shadows": "all",
+            "maxEffects": 48,
+            "maxUnits": 50,
+            "maxUnitsWithoutInstancing": 50,
+            "textureStepDown": 0,
+            "minTextureSize": 256,
+            "tier": "high",
+            "detectedTier": "high",
+            "overridden": false,
+            "instancing": false,
+            "jointTexture": "rgba8",
+            "bakedSkinningInstancing": false,
+            "realtimeSkinningInstancing": false,
+            "textureFormat": "png",
+            "device": {
+              "platform": "desktop",
+              "api": "webgl2",
+              "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+              "capabilities": {
+                "instancing": false,
+                "floatJointTexture": false,
+                "rgba8JointTexture": true,
+                "shadowMap": true,
+                "astc": false
+              }
+            }
+          }
+        },
+        {
+          "name": "Creator ImageAsset selects actual PNG native extension without ASTC",
+          "passed": true,
+          "detail": {
+            "native": ".png"
+          }
+        }
+      ],
+      "scope": "SC1-B8 functional acceptance. No SC3/SC4 performance or device-capacity claim."
+    },
+    "webgl1": {
+      "createdAt": "2026-09-22T15:41:26.416Z",
+      "engine": "3.8.8",
+      "sceneUuid": "a38c7586-d661-493c-872f-9feaab7ad770",
+      "qualityModule": "http://localhost:7456/scripting/x/chunks/61/61eeff33de0e5d017be980d571586acd35d56714.js",
+      "quality": {
+        "details": false,
+        "shadows": "off",
+        "maxEffects": 8,
+        "maxUnits": 50,
+        "maxUnitsWithoutInstancing": 25,
+        "textureStepDown": 1,
+        "minTextureSize": 256,
+        "tier": "low",
+        "detectedTier": "low",
+        "overridden": false,
+        "instancing": true,
+        "jointTexture": "float",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "astc",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl1",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": true,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": true
+          }
+        }
+      },
+      "checks": [
+        {
+          "name": "real WebGL1 context defaults low",
+          "passed": true,
+          "detail": {
+            "details": false,
+            "shadows": "off",
+            "maxEffects": 8,
+            "maxUnits": 50,
+            "maxUnitsWithoutInstancing": 25,
+            "textureStepDown": 1,
+            "minTextureSize": 256,
+            "tier": "low",
+            "detectedTier": "low",
+            "overridden": false,
+            "instancing": true,
+            "jointTexture": "float",
+            "bakedSkinningInstancing": true,
+            "realtimeSkinningInstancing": false,
+            "textureFormat": "astc",
+            "device": {
+              "platform": "desktop",
+              "api": "webgl1",
+              "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+              "capabilities": {
+                "instancing": true,
+                "floatJointTexture": true,
+                "rgba8JointTexture": true,
+                "shadowMap": true,
+                "astc": true
+              }
+            }
+          }
+        },
+        {
+          "name": "independent developer loader ready",
+          "passed": true
+        },
+        {
+          "name": "standalone Prefab has two loaded lightmaps",
+          "passed": true
+        },
+        {
+          "name": "dev low uses frozen limits",
+          "passed": true,
+          "detail": {
+            "details": false,
+            "shadows": "off",
+            "maxEffects": 8,
+            "maxUnits": 50,
+            "maxUnitsWithoutInstancing": 25,
+            "textureStepDown": 1,
+            "minTextureSize": 256,
+            "tier": "low",
+            "detectedTier": "low",
+            "overridden": false,
+            "instancing": true,
+            "jointTexture": "float",
+            "bakedSkinningInstancing": true,
+            "realtimeSkinningInstancing": false,
+            "textureFormat": "astc",
+            "device": {
+              "platform": "desktop",
+              "api": "webgl1",
+              "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+              "capabilities": {
+                "instancing": true,
+                "floatJointTexture": true,
+                "rgba8JointTexture": true,
+                "shadowMap": true,
+                "astc": true
+              }
+            }
+          }
+        },
+        {
+          "name": "dev disables shadows",
+          "passed": true
+        },
+        {
+          "name": "dev high cannot restore ASTC/float/instancing",
+          "passed": true,
+          "detail": {
+            "details": true,
+            "shadows": "all",
+            "maxEffects": 48,
+            "maxUnits": 50,
+            "maxUnitsWithoutInstancing": 50,
+            "textureStepDown": 0,
+            "minTextureSize": 256,
+            "tier": "high",
+            "detectedTier": "low",
+            "overridden": true,
+            "instancing": false,
+            "jointTexture": "rgba8",
+            "bakedSkinningInstancing": false,
+            "realtimeSkinningInstancing": false,
+            "textureFormat": "png",
+            "device": {
+              "platform": "desktop",
+              "api": "webgl1",
+              "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+              "capabilities": {
+                "instancing": false,
+                "floatJointTexture": false,
+                "rgba8JointTexture": true,
+                "shadowMap": true,
+                "astc": false
+              }
+            }
+          }
+        },
+        {
+          "name": "Creator ImageAsset selects actual PNG native extension without ASTC",
+          "passed": true,
+          "detail": {
+            "native": ".png"
+          }
+        }
+      ],
+      "scope": "WebGL2 context creation disabled in this test tab; actual Creator WebGLDevice. SC1-B8 functional acceptance. No SC3/SC4 performance or device-capacity claim."
+    },
+    "webgl1BootDiagnostic": "This device does not support WebGL2 (context creation disabled in this test tab; actual WebGLDevice fallback)",
+    "visualReview": "Both captured previews show the independently loaded checker cube, plane and baked shadow; two mesh lightmaps are 1024x1024. No author-scene lightmap array or Main dependency.",
+    "screenshotsArePerformanceEvidence": false
+  },
+  "builderHook": {
+    "before": [
+      {
+        "url": "db://assets/scene.scene",
+        "uuid": "33a6cd88-ca61-42f3-97e1-6b18a9096a34"
+      },
+      {
+        "url": "db://assets/stage3d-dev.scene",
+        "uuid": "a38c7586-d661-493c-872f-9feaab7ad770"
+      },
+      {
+        "url": "db://assets/stage3d-bake-workbench.scene",
+        "uuid": "8dce5cae-b958-49a4-9e38-04555bdbd1f1"
+      }
+    ],
+    "after": [
+      {
+        "url": "db://assets/scene.scene",
+        "uuid": "33a6cd88-ca61-42f3-97e1-6b18a9096a34"
+      }
+    ],
+    "registration": {
+      "hooks": "/Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/extensions/stage3d-build/hooks.js",
+      "internal": false
+    },
+    "scope": "Registered hook invoked in Creator with project metadata; not a completed platform build."
+  },
+  "presets": {
+    "3d-default": {
+      "name": "3d-default",
+      "options": {
+        "android": {
+          "astc_8x8": {
+            "quality": "medium"
+          },
+          "png": {
+            "quality": 80
+          }
+        },
+        "ios": {
+          "astc_8x8": {
+            "quality": "medium"
+          },
+          "png": {
+            "quality": 80
+          }
+        },
+        "web": {
+          "astc_8x8": {
+            "quality": "medium"
+          },
+          "png": {
+            "quality": 80
+          }
+        },
+        "miniGame": {
+          "astc_8x8": {
+            "quality": "medium"
+          },
+          "png": {
+            "quality": 80
+          }
+        }
+      }
+    },
+    "3d-alpha": {
+      "name": "3d-alpha",
+      "options": {
+        "android": {
+          "astc_6x6": {
+            "quality": "medium"
+          },
+          "png": {
+            "quality": 80
+          }
+        },
+        "ios": {
+          "astc_6x6": {
+            "quality": "medium"
+          },
+          "png": {
+            "quality": 80
+          }
+        },
+        "web": {
+          "astc_6x6": {
+            "quality": "medium"
+          },
+          "png": {
+            "quality": 80
+          }
+        },
+        "miniGame": {
+          "astc_6x6": {
+            "quality": "medium"
+          },
+          "png": {
+            "quality": 80
+          }
+        }
+      }
+    }
+  },
+  "mipmaps": true,
+  "policy": {
+    "source": "apps/Cocos/assets/resources/stage3d/data/quality.json",
+    "sourceSha256": "a1ef38bc6c6807b3e8853a3102695a44b18aaa40eb9f86c9efdd3c9eedaab2ba",
+    "frozenMaxEffects": [
+      8,
+      24,
+      48
+    ],
+    "frozenMaxUnits": [
+      50,
+      100,
+      100
+    ],
+    "noInstancingOrJointTextureMaxUnits": [
+      25,
+      50,
+      50
+    ],
+    "poolActivationExample": [
+      4,
+      8,
+      16
+    ],
+    "textureExample": "All nine quality/LOD cells use the exact SC0 64x64 checker exception; actual offline texture variants and selection remain SC3/SC5."
+  },
+  "rawEvidence": [
+    {
+      "path": ".cache/stage3d/sc1-b8/verify-all.log",
+      "sha256": "1e62e18c44a3428b2736955cafe67ccdde3c8f26791ed96d7d2c9b5fafbb8bbf"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/typecheck.log",
+      "sha256": "815400662382d23981044f33a45891d33e84802c2f4fe6c5feab1ad29a3ea430"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/client-tests.log",
+      "sha256": "8bade8e4b475b938cc1d209cc8a6e93458b0255e79c98896f2a15a65ccd318cc"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/targeted-restored.log",
+      "sha256": "fecab801e9cb13e1a587221d759931b72af9631770ebac1ff3fa313b30909679"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/real-engine-types.json",
+      "sha256": "69d4a4fc80375677c62e258237f2207663f7712f714f6c342745a50782dcb871"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/mutations.json",
+      "sha256": "19517d7a14a7f05463b42e33f57a20f0340369d1e2648f9ee2b2116a431c94a8"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/mutation-astc-clamp.log",
+      "sha256": "73140bbc7650715ffb985254361d50635a26c09ae83ad5020aafc75b2273e3db"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/mutation-bootstrap-quality.log",
+      "sha256": "3ce4588b9ab9ebfc28f304222370c86864d0e157b057663b468a35e3aa5d938e"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/runtime-checks.json",
+      "sha256": "80ed0d306d5da81c70a88ae39c9d597994348719e3cde143f0e8ceb75779849e"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/runtime-checks-webgl1.json",
+      "sha256": "6337c84001658571837a65938e9ec589bb0d18bea3dd9964eb90b04149b26206"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/preview-console.json",
+      "sha256": "26ee5b694b687c694c6593b970b61b6fc112ebfe12a26a7bc92cbc2145c96474"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/preview-console-webgl1.json",
+      "sha256": "a9e2603d04a566ab0086493e2c507490440da84398cfe28033bacf127dc755c5"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/dev-scene.png",
+      "sha256": "e1a0e0c4f94519fc370a58a9e34a80547b3c2a9f4f2d4cfa6efb28202546ae25"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/dev-scene-webgl1.png",
+      "sha256": "62a6bea0afde7ade0afa33851892674b32df862bb8b773a1c4fa445ea17431cb"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/loaded-modules.json",
+      "sha256": "9560af0952e7ce6b51a357ba3296376ea4c2967224a6655970e0effdd69246fd"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/loaded-modules-webgl1.json",
+      "sha256": "08881c90ed7f4dad58b044834ea91a682bdec1319b2a809944390a6afaef6902"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/editor-probe/result-create-dev.json",
+      "sha256": "a7a76855bb9c9a702ab51bec0c1db86916593e126e1128b0d78a692f21a1358f"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b8/editor-probe/result-build-scene-check.json",
+      "sha256": "cadef009424508c0add4a5e96ea72315fce696ef37d4bace4749189133c1f5e0"
+    }
+  ],
+  "remainingStageWork": [
+    "SC1-B9 raw input",
+    "SC1-B4 mixed page lifecycle and 20 reopen cycles",
+    "SC1-B7 bundle ownership",
+    "SC1-B5 full asset gate",
+    "SC1-B6 exit"
+  ],
+  "notClaimed": [
+    "SC1 exit",
+    "Completed platform build",
+    "SC3 asset loading/pool execution or measured capacity",
+    "SC4 WeChat device/cache acceptance"
+  ]
+}

@@ -7,7 +7,7 @@ const crypto = require('crypto');
 module.paths.push(path.join(Editor.App.path, 'node_modules'));
 const {
   director, Node, Scene, Prefab, SceneAsset, CCObject, assetManager, Vec3, Camera, DirectionalLight, Light,
-  MeshRenderer, SkinnedMeshRenderer, SkeletalAnimation,
+  MeshRenderer, SkinnedMeshRenderer, SkeletalAnimation, js,
 } = require('cc');
 
 const WORKBENCH_ROOT = 'P_Stage3d_Baked';
@@ -429,7 +429,29 @@ async function extractPrefab(options) {
 
 exports.load = function load() {};
 exports.unload = function unload() {};
+async function createDevScene() {
+  configuredProject();
+  const url = 'db://assets/stage3d-dev.scene';
+  if (await Editor.Message.request('asset-db', 'query-asset-info', url)) throw new Error('Developer scene already exists');
+  const component = js.getClassByName('Stage3dDevScene');
+  if (!component || typeof EditorExtends.serialize !== 'function') throw new Error('Stage3dDevScene or Creator serializer is unavailable');
+  const scene = new Scene('stage3d-dev');
+  const root = new Node('Stage3dDev');
+  scene.addChild(root);
+  root.addComponent(component);
+  scene.globals.skybox.enabled = false;
+  const asset = new SceneAsset('stage3d-dev');
+  asset.scene = scene;
+  const serialized = EditorExtends.serialize(asset);
+  try {
+    const info = await Editor.Message.request('asset-db', 'create-asset', url,
+      typeof serialized === 'string' ? serialized : JSON.stringify(serialized), { overwrite: false });
+    return { url, uuid: info.uuid, standalonePrefab: BAKED_PREFAB_URL, script: 'Stage3dDevScene', buildExcludedBy: 'stage3d-build' };
+  } finally { scene.destroy(); }
+}
+
 exports.methods = {
+  createDevScene,
   createEmptyWorkbenchScene,
   createWorkbench,
   saveWorkbenchScene,

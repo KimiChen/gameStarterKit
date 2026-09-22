@@ -14,6 +14,7 @@ import { initHttp, initPortal } from "../core/http";
 import { AppRuntime } from "./AppRuntime";
 import { Stage3D } from "../view/scene3d/Stage3D";
 import { CocosStage3DEngine } from "../view/scene3d/cocosStage3DEngine";
+import { readStage3DQuality } from "../view/scene3d/quality";
 import { installCocosLifecycleBridge } from "./CocosLifecycleBridge";
 import { lifecycleBus, wireConnectionEvents } from "./wiring";
 import type { Node } from "cc";
@@ -49,7 +50,7 @@ export interface AppBootstrapOptions {
  */
 export function createAppRuntime(options: AppBootstrapOptions): AppRuntime {
     // 惰性引擎适配器：启动 2D 页面不占舞台、不读取当前 Scene.globals。
-    const stage3d = new Stage3D(new CocosStage3DEngine());
+    const stage3d = new Stage3D(new CocosStage3DEngine(), undefined, readStage3DQuality);
     let runtime: AppRuntime | undefined;
     try {
         runtime = new AppRuntime({

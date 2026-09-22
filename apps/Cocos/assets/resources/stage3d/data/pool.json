@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "maxActivationsPerFrame": {
+    "low": 4,
+    "medium": 8,
+    "high": 16
+  },
+  "entries": [
+    {
+      "id": "cubes",
+      "prefab": {
+        "bundle": "resources",
+        "path": "stage3d/greybox-cube/greybox-cube"
+      },
+      "capacity": {
+        "low": 100,
+        "medium": 300,
+        "high": 500
+      }
+    }
+  ]
+}

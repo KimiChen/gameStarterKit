@@ -274,9 +274,29 @@ async function runStep(step) {
       return null;
     case 'save-scene':
       return await Editor.Message.request('scene', 'save-scene');
+    case 'quality-settings':
+      return {
+        presets: await Editor.Profile.getProject('builder', 'textureCompressConfig.userPreset'),
+        mipmaps: await Editor.Profile.getProject('builder', 'textureCompressConfig.genMipmaps'),
+        compression: await Editor.Message.request('builder', 'query-compress-config'),
+      };
+    case 'quality-build-scenes': {
+      const project = assertProject();
+      const names = ['scene.scene', 'stage3d-dev.scene', 'stage3d-bake-workbench.scene'];
+      const scenes = names.map(name => ({ url: 'db://assets/' + name,
+        uuid: JSON.parse(fs.readFileSync(path.join(project, 'assets', name + '.meta'), 'utf8')).uuid }));
+      const builderFile = path.join(project, 'extensions/stage3d-build/builder.js');
+      const config = require(builderFile).configs['*'];
+      const hook = require(path.resolve(path.dirname(builderFile), config.hooks));
+      const options = { startScene: scenes[0].uuid, scenes: [...scenes] };
+      hook.onBeforeBuild(options);
+      if (options.scenes.length !== 1 || options.scenes[0].uuid !== scenes[0].uuid) throw new Error('Developer scene build exclusion failed');
+      return { before: scenes, after: options.scenes, registration: config,
+        scope: 'Registered hook invoked in Creator with project metadata; not a completed platform build.' };
+    }
     case 'scene-call':
       // Extend this list and scene.js together for concrete authoring operations.
-      if (!['inspectScene', 'inspectLightmapApi', 'createEmptyWorkbenchScene', 'createWorkbench',
+      if (!['inspectScene', 'inspectLightmapApi', 'createEmptyWorkbenchScene', 'createWorkbench', 'createDevScene',
         'saveWorkbenchScene', 'inspectBake', 'prepareBake', 'extractPrefab', 'startBake'].includes(step.method)) {
         throw new Error('Scene method is not allowed');
       }

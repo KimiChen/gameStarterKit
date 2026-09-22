@@ -618,6 +618,11 @@ test("SC1-B3：bootstrap 创建生产 Stage3D 并注入两个入口，2D 启动�
     const services = (runtime as unknown as { gameplayServices: { stage3d: unknown } }).gameplayServices;
     assert.equal(services.stage3d, runtime.ports.stage3d);
     assert.equal(runtime.ports.stage3d.active, false);
+    // SC1-B8: read the injected Cocos device, not Stage3D's unknown-device default.
+    assert.equal(runtime.ports.stage3d.quality.tier, "high");
+    assert.equal(runtime.ports.stage3d.quality.device.renderer, "Apple M4");
+    assert.equal(runtime.ports.stage3d.quality.textureFormat, "png");
+    assert.deepEqual(services.stage3d.quality, runtime.ports.stage3d.quality);
   } finally { runtime.dispose(); }
 });
 

@@ -1,0 +1,7 @@
+{
+  "name": "stage3d-build",
+  "version": "1.0.0",
+  "package_version": 2,
+  "description": "Exclude framework 3D authoring and acceptance scenes from every build.",
+  "contributions": { "builder": "./builder.js" }
+}

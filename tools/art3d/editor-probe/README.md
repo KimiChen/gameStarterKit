@@ -138,3 +138,16 @@ IPC 参数与结果只传 JSON，禁止传原生 Node / Asset / GFX 对象。
 依据：Creator 3.8.8 安装包内 blank 扩展模板、asset-db / scene 消息声明，及官方
 [操作当前场景](https://docs.cocos.com/creator/3.8/manual/zh/editor/extension/scene-script.html)、
 [消息系统](https://docs.cocos.com/creator/3.8/manual/zh/editor/extension/messages.html)。
+
+## SC1-B8 复用
+
+仍须安装方在 `local-config.json` 显式指定本轮工程与证据目录。新增操作：
+
+- `scene-call / createDevScene`：要求已导入 `Stage3dDevScene`，由 Creator 的 SceneAsset 序列化器
+  创建 `assets/stage3d-dev.scene`；已有场景拒绝覆盖，不修改当前作者工位。
+- `quality-settings`：通过 `Editor.Profile.getProject` 读取正式预设与 mipmap 设置，附 Creator 的格式支持表。
+- `quality-build-scenes`：读取工程三份 scene meta，按扩展登记入口调用实际 `onBeforeBuild`，断言仅保留正式入口。
+  这是 Creator 内的钩子检查，不是完整平台构建。
+
+验收场景的内容在运行时从 `stage3d/P_Stage3d_Baked` 独立加载；烘焙内容更新继续使用上面的 B5 流程。
+本批摘要见 [SC1-B8](../../../docs/perf/stage3d/2026-09-22-sc1-b8.json)，数据规范见 [quality.md](../quality.md)。

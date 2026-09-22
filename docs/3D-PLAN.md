@@ -271,12 +271,14 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
-- [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [ ] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
+- [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-22 SC1-B8 完成：按平台、GPU 与真实 GFX 能力提供 `ports.stage3d.quality`，未知设备 / WebGL1 / 微信默认 low；开发参数只改请求档位，生产忽略覆写，ASTC、关节纹理、instancing 与阴影仍受能力限制。quality / pool / detail-layers JSON 契约及同步默认值生成已落地；冻结预算保持不变，缺 instancing / 可用关节纹理时单位上限保守降为 25 / 50 / 50，池激活示例为每帧 4 / 8 / 16（执行和容量验收留 SC3/SC4）。两套压缩预设、PNG 回落、mipmap 与独立 `stage3d-dev.scene` 已由 Creator 3.8.8 验证；沿用 SC0 独立烘焙 Prefab，不读取作者场景状态。WebGL2 / 实际 WebGL1 各 7 项功能检查通过，ASTC 故障注入下真实 ImageAsset 选择 PNG；两个开发场景由全平台构建钩子排除，已在 Creator 内验证过滤结果，未宣称完整平台构建。新增 51 项测试、两次变异、真实引擎声明编译、两套客户端类型检查及本批 `verify:all` 全过（客户端 939 / UniFlex 契约 63 / 服务端 1341 项）。[验收摘要](perf/stage3d/2026-09-22-sc1-b8.json) 记录证据与哈希。下一批 B9；SC1 未退出，完整页面生命周期、资产闸与真机缓存仍按 B4/B5/SC4 验收。
 
 - 2026-09-22 SC1-B3 完成：生产 Cocos 适配器、bootstrap 唯一实例与 AppPorts / GameplayServicesContext 两个 stage3d 入口已接线；宿主 dispose 兜底释放独立全局与舞台租约，启动失败清理含订阅原子回滚与旧宿主身份保护。适配器绑定捕获场景、严格有效性检查、真实屏幕视口换算与同帧矩阵更新；垂直相机 / 灯光使用备用 up，全局字段按启停顺序和实际变化写入，部分 setter 失败及回滚失败后强制重放并刷新管线。110 项定向测试、漏注入变异、真实引擎声明编译（0 诊断）及原工程 Creator 3.8.8 的 WebGL2 空舞台 15 项检查通过；两套客户端类型检查与本批 `verify:all` 全过（客户端 888 / UniFlex 契约 63 / 服务端 1341 项）。MMO 测试夹具适配必填端口，按包规则升至 0.1.30 并由 from-tree 工具重锁，API 面和冻结标签不变；原工程依赖通过 `npm ci` 恢复到锁定版本。按用户要求通过 Dashboard 面板打开原工程，证据与哈希索引留本地 `.cache/stage3d/sc1-b3/`。下一批为 B8；资产 / GPU 退休及 WebGL1 阶段证据仍归 B4，SC1 未退出。
 

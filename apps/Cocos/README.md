@@ -129,3 +129,14 @@ SC0-B1–B5 已按施工顺序完成，B4 预算冻结与原型移交已交付�
 [施工单 §8](../../docs/3D-PLAN.md#8-批次状态只在本文回写阶段级完成回写-3dmd-10)。
 预算和桌面实测边界见[资产规范 §15](../../docs/3D-ASSETS.md#15-sc0-冻结预算2026-09-22)，原型后续替换责任见[SC0 移交清单](../../docs/SC0-HANDOFF.md)。
 WebGL1 逐阶段证据与 SC4 真实微信 low 档 / 远程加载 / 缓存验收按各自阶段执行。
+
+## SC1-B8 独立验收
+
+`assets/stage3d-dev.scene` 由 Creator 序列化生成，只通过 `Stage3dDevScene` 加载三张画质数据表及
+已有独立烘焙 Prefab；无需登录或先打开作者工位。预览 URL 可加 `quality=low`、`quality=medium`
+或 `quality=high&shadows=0`，生产忽略覆写，真实能力始终限制可用特性。
+
+工程扩展 `stage3d-build` 在各平台构建前排除 `stage3d-dev.scene` 和 `stage3d-bake-workbench.scene`，
+并拒绝将其作为构建入口；首次加入时在扩展管理器刷新并确认启用。正式入口仍为 `scene.scene`。
+压缩设置与操作见 [画质资料](../../tools/art3d/quality.md)，验收范围见
+[SC1-B8 摘要](../../docs/perf/stage3d/2026-09-22-sc1-b8.json)。

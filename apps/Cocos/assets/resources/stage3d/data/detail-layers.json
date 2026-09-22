@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "layers": [
+    {
+      "id": "base",
+      "prefabs": [
+        {
+          "bundle": "resources",
+          "path": "stage3d/P_Stage3d_Baked"
+        }
+      ],
+      "pools": [],
+      "textures": [
+        {
+          "id": "checker",
+          "variants": [
+            {
+              "quality": "low",
+              "lod": 0,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            },
+            {
+              "quality": "low",
+              "lod": 1,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            },
+            {
+              "quality": "low",
+              "lod": 2,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            },
+            {
+              "quality": "medium",
+              "lod": 0,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            },
+            {
+              "quality": "medium",
+              "lod": 1,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            },
+            {
+              "quality": "medium",
+              "lod": 2,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            },
+            {
+              "quality": "high",
+              "lod": 0,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            },
+            {
+              "quality": "high",
+              "lod": 1,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            },
+            {
+              "quality": "high",
+              "lod": 2,
+              "asset": {
+                "bundle": "resources",
+                "path": "stage3d/T_Greybox_Checker_BC/texture"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "details",
+      "prefabs": [],
+      "pools": [
+        "cubes"
+      ],
+      "textures": []
+    }
+  ]
+}

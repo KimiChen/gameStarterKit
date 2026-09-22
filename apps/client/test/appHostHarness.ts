@@ -101,8 +101,18 @@ export function loadAppHost(): Promise<AppHostModules> {
       },
       view: { setDesignResolutionSize: () => {} },
       ResolutionPolicy: { FIXED_WIDTH: {} },
-      director: { getScene: () => null },
+      director: { getScene: () => null, root: { device: {
+        gfxAPI: 7, renderer: "Apple M4", capabilities: { maxVertexTextureUnits: 0 },
+        hasFeature: () => false, getFormatFeatures: () => 0,
+      } } },
+      gfx: {
+        API: { UNKNOWN: 0, GLES2: 1, GLES3: 2, METAL: 3, VULKAN: 4, WEBGL: 6, WEBGL2: 7 },
+        Feature: { INSTANCED_ARRAYS: 1 }, Format: { RGBA8: 35, RGBA32F: 44, ASTC_RGBA_6X6: 93, ASTC_RGBA_8X8: 96 },
+        FormatFeatureBit: { SAMPLED_TEXTURE: 2, RENDER_TARGET: 1 },
+      },
       sys: {
+        platform: "DESKTOP_BROWSER", Platform: { WECHAT_GAME: "WECHAT_GAME" },
+        isMobile: false, isBrowser: true, isNative: false,
         getSafeAreaRect: () => ({ x: 0, y: 0, width: 1, height: 1 }),
         localStorage: {},
       },

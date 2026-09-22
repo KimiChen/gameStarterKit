@@ -1,5 +1,7 @@
 import type { Camera, DirectionalLight, Node } from "cc";
 import { designToScreen, resolveViewport } from "../../logic/scene3d/viewport";
+import { resolveQuality, UNKNOWN_QUALITY_DEVICE } from "../../logic/scene3d/qualityTiers";
+import type { Stage3DQuality } from "../../logic/scene3d/qualityTiers";
 import type { RectDesignPx, ViewportMetrics } from "../../logic/scene3d/viewport";
 import { cloneGlobals, normalizeGlobalsPatch, resolveGlobals } from "./stage3dGlobals";
 import type { Stage3DGlobalsPatch, Stage3DGlobalsState } from "./stage3dGlobals";
@@ -31,8 +33,8 @@ export interface Stage3DLease extends Stage3DGlobalsLease {
     screenToRay(xDesignPx: number, yDesignPx: number): RayLike;
 }
 export interface Stage3DAcquireOptions { readonly clearColor?: Stage3DColor; readonly viewport?: RectDesignPx; }
-/** The quality member is added with its implementation in SC1-B8. */
 export interface Stage3DPort {
+    readonly quality: Stage3DQuality;
     acquire(owner: Stage3DOwner, options?: Stage3DAcquireOptions): Stage3DLease;
     acquireGlobals(owner: Stage3DOwner, patch: Stage3DGlobalsPatch): Stage3DGlobalsLease;
     readonly active: boolean;
@@ -118,7 +120,10 @@ export class Stage3D implements Stage3DPort {
     private readonly pendingReleases = new Set<Token>();
 
     constructor(private readonly engine: Stage3DEngine,
-        private readonly onError: (error: unknown) => void = (error) => console.error("[Stage3D] lifecycle cleanup failed", error)) {}
+        private readonly onError: (error: unknown) => void = (error) => console.error("[Stage3D] lifecycle cleanup failed", error),
+        private readonly readQuality: () => Stage3DQuality = () => resolveQuality(UNKNOWN_QUALITY_DEVICE)) {}
+
+    get quality(): Stage3DQuality { return this.readQuality(); }
 
     get active(): boolean {
         const committed = () => this.tokens.some((token) => !!token.stage);

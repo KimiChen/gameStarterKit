@@ -141,6 +141,18 @@ declare module "cc" {
     onGeometryChanged(): void;
   }
   export namespace gfx {
+    /** SC1-B8: Creator 3.8.8 device capability subset; cc.d.ts:8480–9022,9626–9879. */
+    enum API { UNKNOWN = 0, GLES2 = 1, GLES3 = 2, METAL = 3, VULKAN = 4, NVN = 5, WEBGL = 6, WEBGL2 = 7, WEBGPU = 8 }
+    enum Feature { INSTANCED_ARRAYS = 1 }
+    enum Format { RGBA8 = 35, RGBA32F = 44, ASTC_RGBA_6X6 = 93, ASTC_RGBA_8X8 = 96 }
+    enum FormatFeatureBit { NONE = 0, RENDER_TARGET = 1, SAMPLED_TEXTURE = 2, LINEAR_FILTER = 4 }
+    interface Device {
+        readonly gfxAPI: API; readonly renderer: string;
+        readonly capabilities: { readonly maxVertexTextureUnits: number };
+        hasFeature(feature: Feature): boolean;
+        getFormatFeatures(format: Format): number;
+    }
+
     const CullMode: { NONE: number; FRONT: number; BACK: number };
   }
   export const utils: {
@@ -198,7 +210,7 @@ declare module "cc" {
   export const director: {
       on(type: string, callback: () => void, target?: unknown): void;
       off(type: string, callback: () => void, target?: unknown): void;
-      root: { dataPoolManager: { jointTexturePool: {
+      root: { readonly device: gfx.Device; dataPoolManager: { jointTexturePool: {
         registerCustomTextureLayouts(layouts: { textureLength: number; contents: { skeleton: number; clips: number[] }[] }[]): void;
       } } } | null;
       once(type: string, callback: () => void): void;
@@ -206,6 +218,8 @@ declare module "cc" {
     getScene(): Scene | null;
   };
   export const sys: {
+        readonly isMobile: boolean; readonly isBrowser: boolean; readonly isNative: boolean;
+        readonly platform: string; readonly Platform: { WECHAT_GAME: string };
     getSafeAreaRect(): { x: number; y: number; width: number; height: number };
     localStorage: Storage;
   };
