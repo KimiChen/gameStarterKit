@@ -46,7 +46,9 @@
   "cells": [
    {
     "id": 0,
-    "resId": 1170,
+    "typeId": 1170,
+    "clientResId": 1171,
+    "prefab": "down_end_1",
     "rect": [
      2,
      2,
@@ -62,7 +64,9 @@
    },
    {
     "id": 1,
-    "resId": 1171,
+    "typeId": 1171,
+    "clientResId": 1172,
+    "prefab": "down_end_2",
     "rect": [
      204,
      2,
@@ -78,7 +82,9 @@
    },
    {
     "id": 2,
-    "resId": 1172,
+    "typeId": 1172,
+    "clientResId": 1173,
+    "prefab": "down_tcross_1",
     "rect": [
      406,
      2,
@@ -94,7 +100,9 @@
    },
    {
     "id": 3,
-    "resId": 1173,
+    "typeId": 1173,
+    "clientResId": 1174,
+    "prefab": "down_vertical_turn_1",
     "rect": [
      608,
      2,
@@ -110,7 +118,9 @@
    },
    {
     "id": 4,
-    "resId": 1174,
+    "typeId": 1174,
+    "clientResId": 1175,
+    "prefab": "down_vertical_turn_2",
     "rect": [
      810,
      2,
@@ -126,7 +136,9 @@
    },
    {
     "id": 5,
-    "resId": 1175,
+    "typeId": 1175,
+    "clientResId": 1176,
+    "prefab": "horizonal_turn_1",
     "rect": [
      2,
      104,
@@ -142,7 +154,9 @@
    },
    {
     "id": 6,
-    "resId": 1176,
+    "typeId": 1176,
+    "clientResId": 1177,
+    "prefab": "horizonal_turn_2",
     "rect": [
      204,
      104,
@@ -158,7 +172,9 @@
    },
    {
     "id": 7,
-    "resId": 1177,
+    "typeId": 1177,
+    "clientResId": 1178,
+    "prefab": "horizonal_turn_3",
     "rect": [
      406,
      104,
@@ -174,7 +190,9 @@
    },
    {
     "id": 8,
-    "resId": 1178,
+    "typeId": 1178,
+    "clientResId": 1179,
+    "prefab": "horizonal_turn_4",
     "rect": [
      608,
      104,
@@ -190,7 +208,9 @@
    },
    {
     "id": 9,
-    "resId": 1179,
+    "typeId": 1179,
+    "clientResId": 1180,
+    "prefab": "line_1",
     "rect": [
      810,
      104,
@@ -206,7 +226,9 @@
    },
    {
     "id": 10,
-    "resId": 1180,
+    "typeId": 1180,
+    "clientResId": 1181,
+    "prefab": "line_2",
     "rect": [
      2,
      206,
@@ -222,7 +244,9 @@
    },
    {
     "id": 11,
-    "resId": 1181,
+    "typeId": 1181,
+    "clientResId": 1182,
+    "prefab": "line_3",
     "rect": [
      204,
      206,
@@ -238,7 +262,9 @@
    },
    {
     "id": 12,
-    "resId": 1182,
+    "typeId": 1182,
+    "clientResId": 1183,
+    "prefab": "line_4",
     "rect": [
      406,
      206,
@@ -254,7 +280,9 @@
    },
    {
     "id": 13,
-    "resId": 1183,
+    "typeId": 1183,
+    "clientResId": 1184,
+    "prefab": "up_end_1",
     "rect": [
      608,
      206,
@@ -266,11 +294,13 @@
      200
     ],
     "cls": "upend",
-    "source": "scene/ground/road/upend/6-2.png"
+    "source": "scene/ground/road/upend/6-1.png"
    },
    {
     "id": 14,
-    "resId": 1184,
+    "typeId": 1184,
+    "clientResId": 1185,
+    "prefab": "up_tcross_1",
     "rect": [
      810,
      206,
@@ -286,7 +316,9 @@
    },
    {
     "id": 15,
-    "resId": 1185,
+    "typeId": 1185,
+    "clientResId": 1186,
+    "prefab": "up_vertical_turn_1",
     "rect": [
      2,
      308,
@@ -302,7 +334,9 @@
    },
    {
     "id": 16,
-    "resId": 1186,
+    "typeId": 1186,
+    "clientResId": 1187,
+    "prefab": "up_vertical_turn_2",
     "rect": [
      204,
      308,
@@ -318,7 +352,9 @@
    },
    {
     "id": 17,
-    "resId": 1187,
+    "typeId": 1187,
+    "clientResId": 1188,
+    "prefab": "xcross_1",
     "rect": [
      406,
      308,
@@ -333,10 +369,11 @@
     "source": "scene/ground/road/xcross/5-1.png"
    }
   ],
-  "sha256": "6b4059881def36559d0473c03d7cfcb708496faa01ed430b153da7e14d016f9b"
+  "sha256": "77dadb509cb0cf0dea64457d855798a2dfcdd780bac81a42100af2ee759a9a4f"
  },
  "binding": {
-  "method": "邻接度结构签名 + 完整路径字母序",
+  "method": "base.cw 的 client_res 表（id → prefab → 贴图）；邻接度结构签名作交叉校验",
+  "typeIdToClientResId": 1,
   "degrees": [
    1,
    1,
@@ -357,11 +394,7 @@
    2,
    4
   ],
-  "undetermined": [
-   "6-1.png",
-   "6-2.png"
-  ],
-  "tier": "[推断] —— client_res 在未解的 base.cw 里，⛔ 别当干净集引用"
+  "tier": "[实测] —— 2026-09-23 解开 base.cw 的 client_res 定长行布局"
  },
  "source": {
   "config": "asset/config/S1/cn/res_pro/road_info.lua",

@@ -15,11 +15,15 @@
      ⇒ **选片在制图期就烘死了**，与河同构，运行时 ⛔ 不做邻接判断。
   ③ `type_info[i] = {client_res id ∈ 1170..1187, 水平翻转 ±1, 1}`。
 
-⚠ **id → 精灵的绑定是 `[推断]`**（`client_res` 在未解的 `base.cw` 里）：按路网**邻接度**
-  给每个 id 定类（纯度基本 1.00），再与精灵按**完整路径字母序**的度序列比对，18 位逐位全等。
-  唯一未定的是 `upend/6-1` 还是 `6-2`（两者度相同且相邻，签名分不开）——
-  本脚本取字母序靠前的那张，⚠ 换一张只影响这一类的贴图、不影响摆位。
-  ⛔ 别把这条当干净集引用；本脚本每次构建都**重算签名**，对不上直接退出。
+★ **id → 精灵的绑定现在是 `[实测]`**（2026-09-23 解开 `base.cw` 的 `client_res` 表）：
+  `client_res` 行给出 `id → scene/ground/road/<名>_complex_group.prefab`，再读该 prefab
+  拿到它贴的图集精灵 —— 全链路都是数据，⛔ 不再靠字母序推断。
+  ⚠ **`type_info` 的 id 要 +1** 才是 `client_res` id：实测 `type_info` 覆盖 1170..1187，
+    而真表是 1170..1188（19 条，`up_end_2`「路19」占了最前的 1170、S1 不用）；
+    +1 之后 18 条逐条对上 prefab，且与邻接度签名逐位吻合。
+  ⚠ 早先的字母序推断 **17/18 命中**，错的正是当时就标为「未定」的那张
+    （应 `upend/6-1`，推断取了 `6-2`）—— 已由本表改正。
+★ 邻接度签名**保留为交叉校验**：每次构建都重算，与 base.cw 给出的类不符即退出。
 
 ⚠ 三套皮肤 `road / road_ash / road_snow` 结构相同，S1 取 **`road`**
   （`type_info` 第三列恒 1，疑似皮肤下标，⚠ 无直接证据）。
@@ -34,12 +38,12 @@ import os
 import re
 import struct
 import sys
-import xml.etree.ElementTree as ET
 
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+from ctable_cw import BaseCw  # noqa: E402
 from decode_ktx import resolve_by_name  # noqa: E402
 
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
@@ -47,12 +51,14 @@ OUT = os.path.join(HERE, CFG["outDir"])
 SV = CFG["sourceVersionRoot"]
 
 SKIN = "road"
-ROAD_ATLAS_XML = "scene/_output_atlas_scene/atlas_tex/road.xml"
+ROAD_ATLAS_XML = "scene/_output_atlas_scene/atlas_tex/road.xml"   # 只用于切片存证
 DOWNSCALE = 0.5          # ★ 400 px 的片在 LOD0 只占 85 世界像素，存 200 px 仍 2.3× 过采样
 ATLAS_W, ATLAS_H, PAD = 1024, 1024, 2
 S_BIAS, D_BIAS = 0, 1125
 DEG_OF_CLASS = {"line": 2, "horizonalturn": 2, "upverticalturn": 2, "downverticalturn": 2,
                 "upend": 1, "downend": 1, "uptcross": 3, "downtcross": 3, "xcross": 4}
+# ⚠ `type_info` 的 id 比 `client_res` id **小 1**（实测，见模块注释）
+TYPE_ID_TO_CLIENT_RES = 1
 
 
 def main() -> int:
@@ -74,32 +80,42 @@ def main() -> int:
             re.findall(r"\{\s*(-?\d+),\s*(-?\d+),\s*(-?\d+)\s*\}", txt[txt.index("type_info"):])]
     ids = sorted({t[0] for t in trip})
 
-    # ── 结构签名：邻接度 → 类，再按字母序绑定精灵 ────────────────
+    # ── ① 绑定：base.cw 的 client_res（实证）────────────────────
+    cw = BaseCw()
+    pieces = cw.road_pieces()          # client_res id → `<名>_complex_group` 的名
+    bind = {}
+    for tid in ids:
+        name = pieces.get(tid + TYPE_ID_TO_CLIENT_RES)
+        if not name:
+            raise SystemExit("⛔ client_res 里没有 id %d（type_info id %d +%d）"
+                             % (tid + TYPE_ID_TO_CLIENT_RES, tid, TYPE_ID_TO_CLIENT_RES))
+        blob = open(resolve_by_name("scene/ground/road/%s_complex_group.prefab.bin" % name),
+                    "rb").read()
+        tex = re.findall(rb"asset/scene/ground/road/[\x20-\x7e]+?\.png", blob)
+        cand = [t.decode()[len("asset/"):] for t in tex if b"/mask/" not in t]
+        if len(set(cand)) != 1:
+            raise SystemExit("⛔ %s 里不是恰好一张路片贴图：%s" % (name, cand))
+        bind[tid] = (cand[0], name)
+
+    # ── ② 交叉校验：路网邻接度必须与 base.cw 给出的类吻合 ────────
     cells_set = {(k >> 16, k & 0xFFFF) for k in tiles}
     deg: dict = {}
     for k, v in tiles.items():
         r, c = k >> 16, k & 0xFFFF
         d4 = sum(1 for dr, dc in ((0, 1), (0, -1), (1, 0), (-1, 0)) if (r + dr, c + dc) in cells_set)
-        # ⚠ 度 0 = **孤立的一格路头**（实测 16 例）：端头本来就允许 0 或 1 邻 ⇒ 归入 1，
-        #   ⛔ 别当成噪声，也 ⛔ 别因此放宽纯度阈值（那会把真的绑定错误放过去）。
+        # ⚠ 度 0 = **孤立的一格路头**（实测 16 例）：端头本来就允许 0 或 1 邻 ⇒ 归入 1。
         deg.setdefault(trip[v - 1][0], collections.Counter())[max(1, d4)] += 1
     obs = []
     for i in ids:
         cnt = deg[i]
         top, num = cnt.most_common(1)[0]
         if num / sum(cnt.values()) < 0.9:
-            raise SystemExit("⛔ id %d 的邻接度不纯（%s）——绑定不可信" % (i, dict(cnt)))
+            raise SystemExit("⛔ id %d 的邻接度不纯（%s）" % (i, dict(cnt)))
+        cls = bind[i][0].split("/")[-2]
+        if DEG_OF_CLASS[cls] != top:
+            raise SystemExit("⛔ 交叉校验不过：id %d 绑到 %s（应 %d 度），实测 %d 度"
+                             % (i, cls, DEG_OF_CLASS[cls], top))
         obs.append(top)
-    root = ET.parse(resolve_by_name(ROAD_ATLAS_XML)).getroot()
-    names = sorted(n for n in (sp.get("n") for ta in root.findall("TextureAtlas")
-                               for sp in ta.findall("sprite"))
-                   if "/ground/%s/" % SKIN in n and "/mask/" not in n)
-    exp = [DEG_OF_CLASS[n.split("/")[-2]] for n in names]
-    drop = [i for i in range(len(exp)) if [d for j, d in enumerate(exp) if j != i] == obs]
-    if not drop:
-        raise SystemExit("⛔ 字母序绑定不成立（度序列 %s vs %s），⛔ 别硬用" % (obs, exp))
-    keep = [n for j, n in enumerate(names) if j != drop[0]]
-    bind = dict(zip(ids, keep))
 
     # ── 图集：18 片，按 0.5× 缩存 ───────────────────────────────
     sprites = {}
@@ -110,7 +126,7 @@ def main() -> int:
     cells, x, y, row_h = [], PAD, PAD, 0
     cell_of = {}
     for i in ids:
-        logical = bind[i][len("asset/"):]
+        logical = bind[i][0]
         p = os.path.join(OUT, sprites.get(logical, ""))
         if not sprites.get(logical) or not os.path.exists(p):
             raise SystemExit("⛔ 路片没落位：%s —— 先跑 slice_atlas.py %s" % (logical, ROAD_ATLAS_XML))
@@ -124,8 +140,9 @@ def main() -> int:
             raise SystemExit("⛔ 路片图集装不下")
         atlas.paste(im, (x, y), im)
         cell_of[i] = len(cells)
-        cells.append({"id": len(cells), "resId": i, "rect": [x, y, tw, th],
-                      "native": native, "cls": bind[i].split("/")[-2], "source": logical})
+        cells.append({"id": len(cells), "typeId": i, "clientResId": i + TYPE_ID_TO_CLIENT_RES,
+                      "prefab": bind[i][1], "rect": [x, y, tw, th],
+                      "native": native, "cls": logical.split("/")[-2], "source": logical})
         x += tw + PAD
         row_h = max(row_h, th)
     d = os.path.join(OUT, "pack", m)
@@ -152,9 +169,11 @@ def main() -> int:
         "typeCount": len(trip), "resIds": ids,
         "atlas": {"size": [ATLAS_W, ATLAS_H], "downscale": DOWNSCALE, "cells": cells,
                   "sha256": hashlib.sha256(open(os.path.join(d, "road-atlas.png"), "rb").read()).hexdigest()},
-        "binding": {"method": "邻接度结构签名 + 完整路径字母序",
-                    "degrees": obs, "undetermined": [names[i].split("/", 5)[-1] for i in drop],
-                    "tier": "[推断] —— client_res 在未解的 base.cw 里，⛔ 别当干净集引用"},
+        "binding": {"method": "base.cw 的 client_res 表（id → prefab → 贴图）；"
+                              "邻接度结构签名作交叉校验",
+                    "typeIdToClientResId": TYPE_ID_TO_CLIENT_RES,
+                    "degrees": obs,
+                    "tier": "[实测] —— 2026-09-23 解开 base.cw 的 client_res 定长行布局"},
         "source": {"config": "asset/config/%s/cn/res_pro/road_info.lua" % m.upper(),
                    "atlas": ROAD_ATLAS_XML},
     }
@@ -204,8 +223,8 @@ export const MAPO_ROAD_CELLS: readonly IMapoRoadCell[] = %s;
     open(os.path.join(d, "roads.data.ts"), "w", encoding="utf-8").write(ts)
 
     print("  网格 %d²，半宽/半高 %d/%d（= %.4g 个逻辑格）" % (side, half_w, half_h, half_w / 150))
-    print("  绑定：度序列 %s；未定 %s" % (obs, [names[i].split("/")[-2] + "/" + names[i].split("/")[-1]
-                                               for i in drop]))
+    print("  绑定：base.cw client_res（type_info id +%d）；邻接度交叉校验 %s"
+          % (TYPE_ID_TO_CLIENT_RES, obs))
     print("  图集 %d 片（%d²，%.2g× 缩存）；摆放 %d 条（%.0f KB）"
           % (len(cells), ATLAS_W, DOWNSCALE, len(recs), len(blob) / 1024))
     print("  片类分布 %s" % dict(collections.Counter(c["cls"] for c in cells)))

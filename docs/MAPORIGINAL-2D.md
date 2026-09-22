@@ -382,22 +382,22 @@ uptcross / downtcross / xcross`，另有 1 片 `mask`），原文档只列了 6 
 > ⚠ 本文档 2026-09-23 曾一度据「记录只带组号」改写成「运行时按邻接拼」，**那是错的**
 > （把类型下标误读成了组号），已撤回。
 >
-> ★ `[推断]` **id → 精灵的绑定靠结构签名**（`client_res` 在未解的 `base.cw` 里，查不到名字）：
-> 逐类型算路网**邻接度**，纯度基本 1.00，按主邻接度分桶恰好 **12 个 2 度 + 2 个 3 度 +
-> 1 个 4 度 + 3 个 1 度**，而 `road.xml` 一套皮肤正是 line 4 + horizonalturn 4 +
-> up/downverticalturn 4 = 12 个双连、tcross 2、xcross 1、end 4。更进一步：
-> id 1170..1187 的**度序列**与精灵按**完整路径字母序**排的度序列**逐位全等**
-> （19 片去掉一片 `upend` 后 18 位相同）：
+> ★ `[实测]` **id → 精灵的绑定已由 `base.cw` 的 `client_res` 表给出**（2026-09-23，见 §11-1）：
+> 表里 **19 条**路片本体（id **1170..1188**），按 prefab 名字母序排，
+> 但 `up_end_2`（名「路19」）占了**最前的 1170**、S1 不用。
+> ⚠ **`type_info` 的 id 比 `client_res` id 小 1**：`type_info` 覆盖 1170..1187，+1 后 18 条
+> 逐条对上 prefab；再读 prefab 拿到它贴的图集精灵，全链路都是数据。
 >
 > ```
-> 1170 downend/7-1   1173 dverticalturn/4-1  1179 line/1-1   1184 uptcross/8-1
-> 1171 downend/7-2   1174 dverticalturn/4-2  1180 line/1-2   1185 uverticalturn/3-1
-> 1172 downtcross/9-1 1175..1178 horizonalturn/2-1..2-4  1181 line/1-3  1186 uverticalturn/3-2
-> 1183 upend/6-?      1182 line/1-4                                     1187 xcross/5-1
+> type#1170→cr1171 down_end_1 → downend/7-1      type#1179→cr1180 line_1  → line/1-1
+> type#1172→cr1173 down_tcross_1 → downtcross/9-1 type#1183→cr1184 up_end_1 → upend/6-1
+> type#1184→cr1185 up_tcross_1 → uptcross/8-1     type#1187→cr1188 xcross_1 → xcross/5-1
 > ```
 >
-> ⚠ 唯一未定的是 `upend/6-1` 还是 `6-2`（两者度相同且相邻，签名分不开）。
-> ⚠ 这条是 `[推断]`（18 位度序列全等，巧合概率极低，但仍是推断），⛔ 别当干净集引用。
+> ⚠ **早先的「邻接度签名 + 字母序」推断 17/18 命中**，唯一错的正是当时就标为「未定」的
+> 那张（应 `upend/6-1`，推断取了 `6-2`）—— 已由本表改正。
+> 邻接度签名**保留为交叉校验**：`build_roads.py` 每次构建都重算，与 `client_res` 给出的类
+> 不符即退出。⚠ 度 0 = **孤立的一格路头**（实测 16 例），归入 1。
 >
 > 复现：`tools/maporiginal-assets/recon_road.py`。⇒ **道路层已解除阻塞**。
 
@@ -588,12 +588,30 @@ vp_scale_default = vp_scale_max        ← 默认值就是 max
 
 ## 11. 仍不清楚的
 
-1. ★ **`config/s1/cn/base.cw`（63.7 MB ctable）没解开** —— 本轮最大缺口。里面是
-   `client_res` 三段表、`land` / `land_shape`（含 **`even_res_center` = 件的美术锚点偏移**，
+1. ⚠ **`base.cw`（66,776,016 B ctable）已解开一部分**（2026-09-23）。
+
+   ★ `[实测]` **头与串池**：`[0] u32 = 0x02ee49fc` 是**串池偏移**（其后 17.6 MB 是
+   NUL 分隔串池，含全部字段名）；`[4] u32 = 0xae0f4` 是**串索引**（114,752 个递增的池内偏移）；
+   `[8..]` 是递增的 u32 偏移表（首项 0、次项 0x5458 = 第一段数据起点）。
+   ⚠ base.cw **不在 `name_map` 里**（没有路径条目），按容器内文件名直取。
+
+   ★ `[实测]` **行是 `[u32 键池偏移][u32 值]` 的键值对**，值要么是池偏移（串）要么是整数；
+   **同一张表的行定长且对齐**。已把 `client_res` 的布局定死（100 B / 25 个 u32）：
+
+   ```
+   [0]name [2]pool_id [4]res_season [6]res_type [8]src_name [10]src_name_3d
+   [12..20] 尾巴 9 个 u32（含义未解，疑似打包描述符）
+   [21]day_night_res_type [23]id        ← 奇数槽是值
+   ```
+
+   ⇒ `client_res` **848 行全出**，`scene/ground/road/` 152 条 —— 道路的 id→精灵绑定
+   已由此从 `[推断]` 升为 `[实测]`（§4.2）。复现：`tools/maporiginal-assets/ctable_cw.py`。
+
+   ⛔ **仍未解**：`land` / `land_shape`（含 **`even_res_center` = 件的美术锚点偏移**，
    直接影响摆位精度）、`city_info` / `city_res`（249 城各用哪个方位×规模件）、`minimap_plate`。
-   ⇒ 现在 `land` 表的语义是由命名 + 足迹计数**反推**的。
-   **怎么查清**：文件头是 `fc 49 ee 02 | f4 e0 0a 00 | <u32 偏移表…>`（首项 0x5458），
-   尾部约 49 MB 起是明文串池；需要啃 `ejoy2dx.ctable` 的行结构。
+   ⚠ **别把 `client_res` 的布局推广到它们**：行长与列集**逐表不同**，本轮的通用 KV 盲扫
+   实测会捞到 45,786 行（跨表串味）。换表要重定：找该表独有键的池偏移 → 搜它的 u32 引用
+   → dump 周围 ±40 B 看键值对节律 → 用一组固定槽圈定。
 2. ~~`road_info.bytes` 是半文本、未解~~ ✅ **已解**（2026-09-23，见 §4.2）：它是**二进制**
    （可打印仅 15.6%），且坐标系由干净集 `road_info.lua` 直给、片由 `type_info` 烘死。
    ⚠ 余下的只有 **id → 精灵的绑定仍是 `[推断]`**（结构签名），要升为实证得先解 `client_res`（即第 1 条）。

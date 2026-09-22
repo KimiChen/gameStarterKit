@@ -412,9 +412,10 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
         sBias: number; dBias: number; recordBytes: number; headerBytes: number;
         placements: number; placementSha256: string; typeCount: number; resIds: number[];
         atlas: { size: [number, number]; downscale: number; sha256: string;
-                 cells: { id: number; resId: number; rect: [number, number, number, number];
+                 cells: { id: number; typeId: number; clientResId: number; prefab: string;
+                          rect: [number, number, number, number];
                           native: [number, number]; cls: string; source: string }[] };
-        binding: { degrees: number[]; undetermined: string[]; tier: string };
+        binding: { degrees: number[]; typeIdToClientResId: number; tier: string };
     };
     assert.equal(meta.grid.side, MAPO_ROAD_SIDE);
     assert.equal(meta.grid.halfW, MAPO_ROAD_HALF_W);
@@ -449,9 +450,18 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
     for (const d of meta.binding.degrees) byDeg.set(d, (byDeg.get(d) ?? 0) + 1);
     assert.deepEqual([...byDeg.entries()].sort((a, b) => a[0] - b[0]), [[1, 3], [2, 12], [3, 2], [4, 1]]);
     assert.equal(meta.binding.degrees.length, 18);
-    // ⚠ 绑定是 [推断]，落盘必须自报档位，⛔ 不许写成干净集
-    assert.ok(meta.binding.tier.includes("[推断]"), "绑定档位必须自报 [推断]");
-    assert.equal(meta.binding.undetermined.length, 2, "未定的应恰是两张 upend");
+    // ★ 绑定已由 base.cw 的 client_res 表升为 [实测]（2026-09-23）
+    assert.ok(meta.binding.tier.includes("[实测]"), "绑定档位应已是 [实测]");
+    // ⚠ type_info 的 id 比 client_res id **小 1**：真表 1170..1188 共 19 条，
+    //   `up_end_2`（名「路19」）占最前的 1170 而 S1 不用 ⇒ type_info 只覆盖 1170..1187。
+    assert.equal(meta.binding.typeIdToClientResId, 1);
+    for (const c of meta.atlas.cells) {
+        assert.equal(c.clientResId, c.typeId + 1, `路片 ${c.id} 的 id 换算`);
+        // ★ prefab 名与精灵目录必须同类（下划线去掉后即目录名）
+        const dir = c.source.split("/").slice(-2)[0];
+        assert.equal(c.prefab.replace(/_/g, "").replace(/\d+$/, ""), dir.replace(/\d+$/, ""),
+            `路片 ${c.id}：prefab ${c.prefab} 与精灵目录 ${dir} 不同类`);
+    }
 
     // 摆放表：画家序 + 格 id 域 + 翻转位 + 行列在网格内
     const raw = kit("roads.bin");
