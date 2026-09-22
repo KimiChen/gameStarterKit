@@ -102,9 +102,7 @@ def collect_candidates() -> set:
                 if "/" in s and "." in s.rsplit("/", 1)[-1]:
                     cand.add(s)
     # ② 资源总索引（键是图集 xml 路径，值是被合图吃掉的源图）
-    for d in os.scandir(root):
-        if not d.is_dir():
-            continue
+    for d in elp_dirs():
         for fe in os.scandir(d.path):
             if not fe.name.endswith(".json") or fe.stat().st_size < 10_000_000:
                 continue

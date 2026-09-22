@@ -39,7 +39,9 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | 脚本 | 用途 |
 |---|---|
 | `namehash.py` | 纯标准库。`namehash(path)` / `namehash_hex(path)`；`--selftest` 跑官方 SipHash 向量 + 3 条真实条目 |
-| `build_name_map.py` | 全量反查 → `out/name_map.json`（路径 → hash/容器/下标/扩展名/大小）+ `out/coverage.json` |
+| `build_name_map.py` | 全量反查 → `out/name_map.json`（路径 → hash/容器/下标/扩展名/大小）+ `out/coverage.json`。⚠ **多根**（APK + CDN），双根下命名率 37.8%（108,927/287,967） |
+| `fetch_cdn_assets.py` | ★ 按发行商清单从 CDN 全量取 APK 没带的那部分（2,712 条 / 9.56 GB，断点续传+大小校验） |
+| `verify_root_res.py` | ★ 用根资源清单核对本地到位率（含**追加式 `.bin`** 规则，⛔ 少了它 prefab 全判缺失） |
 | `decode_ktx.py` / `decode_batch.py` | KTX(ETC2/ASTC/R8) → PNG；`--name` 走 name_map 按真名取 |
 | `slice_atlas.py` | `<TextureAtlas>` XML 切片（含 `r="y"` 旋转与 `oW/oH/oX/oY` 去裁边还原）→ `out/png/` + `out/sprites.jsonl` |
 | `build_terrain.py` | ★ 原版层 → `terrain.bytes`（**直接存原版 res 值**，`res==0` 用 `res_multi` 顶替）+ 3 类通行层 + 61 条调色板 |
@@ -107,6 +109,9 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 
 ### 4.2 ★ 近档地表的真身 = `*_group.prefab` **根资源**，两版 APK 都没打进包（2026-09-22 定案）
 
+> ✅ **已从 CDN 取到**（见 4.2·一 / 4.2·一·五）：1,784/1,873 = 95.2%。
+> ⚠ 包里的名字是 `<完整路径>.prefab**.bin**`（追加式），⛔ 别按替换扩展名查。
+
 从手机（真机 2066.1489）拉回第二个样本后查清，结论比早先精确得多：
 
 | 事实 | 证据 |
@@ -168,6 +173,39 @@ python3 /Volumes/KimData/unlockTheWorld/apkdecode/sgzz-1768.2084/elp_unpack_cdn.
 
 ⚠ 模块名就是内容分类，按需取即可：2D 档是 `scene_2d_S<赛季>[_tex_mobile|_tex_pc]`、
 `scene_common_S<赛季>*`；3D 是 `scene_3d_S<赛季>*`；UI 是 `ui_*`。
+
+### 4.2·一·五 ★★ 编译型资源在包里叫 `<完整路径>.bin`（**追加**，不是替换）
+
+这条让我两次误判「`.group` 预制体两包都没有」。真相：
+
+```
+根资源清单里            asset/scene/ground/desert/10_1_polygon_group.prefab
+包里的 namehash 用的是   scene/ground/desert/10_1_polygon_group.prefab.bin   ← 追加 .bin
+```
+
+⛔ **别按「替换扩展名」去查**（`.prefab` → `.bin`）——那是 0 命中。
+`prefab / mesh / material / timeline` 这些编译型资源都走**追加**规则（少数落成 `.txt`/`.json`）。
+纠正后：`scene/ground/**` 根资源 **1,784/1,873 = 95.2% 到位**（全部 `+.bin`）；
+全量根资源从 22.6% → **65.6%**（52,147/79,521）。
+剩下的缺口主要是 `.png` 12,891（本来就被合进图集、⛔ 无独立条目）与 `fairy/ui/**` 的 UI prefab。
+
+单格地表的真身长这样（`10_1_polygon_group.prefab.bin`，637 B）：
+
+```
+node_2d "10_1_polygon"
+  └ polygon_2d "underground3"   + material + 顶点/UV 浮点数据
+                                + 贴图 asset/ground_down/underground3.png
+```
+即 **多边形网格 + 贴图**，⛔ 不是一张现成的方块图 —— 要还原得解这个二进制 prefab。
+配套还有 `<名>_top_group.prefab.bin`（上层）与 `<名>_polygon_mask_group.prefab.bin`（遮罩，
+对上 2D 代码 `big_city_house_layer_grid.lua` 的 `res_name .. "_polygon_mask"`）。
+
+`verify_root_res.py` 是这条的机检：
+
+```bash
+python3 tools/maporiginal-assets/verify_root_res.py --prefix scene/ground/
+python3 tools/maporiginal-assets/verify_root_res.py          # 全量
+```
 
 ### 4.2·二 ⛔ 真机这条路走不通
 
