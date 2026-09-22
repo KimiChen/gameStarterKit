@@ -92,7 +92,8 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 
 | 线 | 入口 | 页面 |
 |---|---|---|
-| 原稿（默认 `/`、`?ui=preview-home`） | `PreviewHome` | 手写页：`Alliance`、`AllianceTerritory`… |
+| 目录（默认 `/`） | Web 预览壳 | 侧栏里先是组件卡片，再是原稿界面。还原页不进目录。`?ui=preview-home` 仍是旧按钮首页，目录里不放 |
+| 原稿（`?ui=preview-home`） | `PreviewHome` | 手写页：`Alliance`、`AllianceTerritory`… |
 | 还原（`?ui=restored-home`） | `RestoredPreviewHome` | PSD 回写的 `*Restored`。`applyTarget` 钉 `restored`，不覆盖原稿 |
 
 新页 id 例如 `alliance-foo`，必须同时改：

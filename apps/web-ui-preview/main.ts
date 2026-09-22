@@ -1,23 +1,70 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, ComponentGallery, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, Shop, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, ComponentGallery, ComponentSpecimen, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, Shop, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored, loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
+import { mountPreviewCatalog } from "./catalog-shell";
+import { findSpecimen } from "../client/src/ui-uniflex/modules/preview/ComponentSpecimen/specimens";
 import { declarePsdOwnership, stampPsdIdentities } from "./psd-ownership";
-import { findPreviewScreen, psdComponents, type ScreenEntry } from "./screens";
+import { findPreviewScreen, psdComponents, screenCatalog, type ScreenEntry } from "./screens";
 
 const params = new URLSearchParams(location.search);
 const requested = params.get("screen") || params.get("ui");
-const active = requested ? findPreviewScreen(requested) : findPreviewScreen(null);
+const exportMode = params.get("psd") === "1";
+const specimen = requested === "component-specimen" ? findSpecimen(params.get("part")) : null;
+const catalogMode = !requested && !exportMode;
+if (requested === "component-specimen" && !specimen) {
+    throw new Error(`Unknown component specimen: ${params.get("part") ?? ""}`);
+}
+
+function notifyPreviewHost(): boolean {
+    if (window.parent === window) return false;
+    window.parent.postMessage({ type: "uniflex-preview-back" }, location.origin);
+    return true;
+}
+function applyEmbedCanvas(): void {
+    const mode = params.get("canvas");
+    if (mode === "light") document.body.style.background = "#eef0f3";
+    else if (mode === "dark") document.body.style.background = "#14161b";
+    else if (mode === "checker") {
+        if (params.get("embed") === "1") {
+            document.documentElement.style.background = "transparent";
+            document.body.style.background = "transparent";
+        } else {
+            document.body.style.backgroundColor = "#f3f4f6";
+            document.body.style.backgroundImage = "repeating-conic-gradient(#d4d6dc 0% 25%, #f3f4f6 0% 50%)";
+            document.body.style.backgroundSize = "16px 16px";
+        }
+    } else if (mode === "custom") {
+        const color = params.get("canvasColor") ?? "";
+        if (/^#[0-9a-fA-F]{6}$/.test(color)) document.body.style.background = color;
+    }
+}
+
+if (catalogMode) {
+    document.body.classList.add("is-catalog");
+    mountPreviewCatalog(screenCatalog.screens);
+} else {
+document.body.classList.add("is-screen");
+applyEmbedCanvas();
+const active = specimen
+    ? {
+        id: "component-specimen",
+        aliases: [] as readonly string[],
+        canvas: { width: specimen.width, height: specimen.height },
+        componentName: "ComponentSpecimen",
+        rootName: "ComponentSpecimen",
+        source: "apps/client/src/ui-uniflex/modules/preview/ComponentSpecimen/ComponentSpecimen.tsx",
+    }
+    : (requested ? findPreviewScreen(requested) : findPreviewScreen(null));
 if (requested && !active) {
     throw new Error(`Unknown UniFlex preview screen: ${requested}`);
 }
 if (!active) throw new Error("UniFlex preview catalog has no default screen.");
 
-const exportMode = params.get("psd") === "1";
 const container = document.getElementById("ui")!;
 container.style.width = `${active.canvas.width}px`;
 container.style.height = `${active.canvas.height}px`;
@@ -50,10 +97,12 @@ function dispose() {
     runtime.dispose();
 }
 function backToPreview() {
+    if (notifyPreviewHost()) return;
     location.href = "/";
 }
 function backToRestored() {
-    location.href = "?ui=restored-home";
+    if (notifyPreviewHost()) return;
+    location.href = "/#/v-restored";
 }
 /** Preview-only: MainNav has no ScreenFooter; wheel temporarily returns to the catalog. */
 function onPreviewMainNav(slot: string, label: string, back: () => void = backToPreview): void {
@@ -68,6 +117,16 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
         case "component-gallery":
             await runtime.start(ComponentGallery, { onBack: backToPreview });
             return;
+        case "component-specimen": {
+            const skin: "classic" | "midnight" = params.get("skin") === "midnight" ? "midnight" : "classic";
+            await runtime.start(ComponentSpecimen, {
+                part: specimen?.id ?? "",
+                skin,
+                width: entry.canvas.width,
+                height: entry.canvas.height,
+            });
+            return;
+        }
         case "preview-home":
             await runtime.start(PreviewHome, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
             return;
@@ -497,4 +556,5 @@ try {
     container.style.fontSize = "28px";
     container.style.padding = "40px";
     dispose();
+}
 }
