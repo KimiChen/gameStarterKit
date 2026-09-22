@@ -652,5 +652,19 @@ vp_scale_default = vp_scale_max        ← 默认值就是 max
 3. ~~覆盖格通行性「整片足迹都挡路」是 `[推断]`~~ ✅ **已实证**（2026-09-23）：
    `land` 表 id **1..46 通行 / 47..61 挡路**，⇒ 挡路的是**全部 14 形**（198,085 格）。
    ⚠ 顺带查出本 kit 早先只挡 `{60,61}`（43,533 格）、**少挡了 154,552 格**，已改正。
-4. `CAM_SCALE_MAX_FACTOR` 的确切值（1.45 / 1.35 两个候选）。
-5. 小地图底图的落位是否数据驱动（线索：`grid2point_pid` / `WORLD_PLATE_ID`），未验证。
+4. `CAM_SCALE_MAX_FACTOR` 的确切值 —— **已收窄、仍未定死**（2026-09-23）：
+   ★ `[disasm]` 1.45 与 1.35 **都是 `script/util/viewport.lua` 的文件作用域局部**，
+   且落在**相邻寄存器**（R15 = 1.45、R16 = 1.35，主 chunk 的 LOADK 序）
+   ⇒ 这一对就是 `{CAM_SCALE_FACTOR, CAM_SCALE_MAX_FACTOR}`，按声明序绑定。
+   ⚠ **哪个是哪个读不出来**：该 Proto 的 disasm 没有 `locvar` 名表。
+   同批相邻常量还有 1.7778（= 16/9 横屏比）、0.5625（= 9/16 竖屏比）、0.76，
+   对得上 `PORTRAIT/LANDSCAPE_STAND_ASPECT_RADIO` 等同组局部。
+   **怎么定死**：拿到该 Proto 的 locvar 名表，或运行时读一次。
+5. ~~小地图底图的落位是否数据驱动，未验证~~ ✅ **是数据驱动的**（2026-09-23）：
+   ★ `[disasm]` `script/ui/view/map/minimap_main.lua` 走
+   `share_res.get_cfg('minimap_plate')` → `pairs` → 按 **`canton_group_id`** 分组插表
+   ⇒ 底图是**按大区分块**的一组 plate，⛔ 不是一张静态整图。
+   ★ `[干净集]` `minimap_attr.lua:38` 的 **`WORLD_PLATE_ID = 9999`** 是「整幅世界」那块的哨兵 id
+   （与逐大区的 plate 并列）；同文件还有 `MAP_MODE = {RHOMBUS = 0, SQUARE = 1}`。
+   ⚠ 对本 kit **已无影响**：缩略图现在由地形按 `mapoWorldToMinimap` 的同一套投影自烘
+   （见 §10），⛔ 不走 plate 表。
