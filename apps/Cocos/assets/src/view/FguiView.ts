@@ -35,7 +35,29 @@ export type {
   FguiPackageScheduler,
 } from "./packageLoader";
 
+import { rawInput } from "./input/RawInput";
+import { installFguiRawInput } from "./input/FguiRawInput";
+
 export abstract class FguiView extends ViewBase {
+  private static inputRoot: GRoot | null = null;
+  private static releaseRawInput: (() => void) | null = null;
+
+  /** Only overlay needs UI/GRoot forwarding. Default modal arbitration stays unchanged. */
+  static syncRawInputAdapter(required: boolean): void {
+    const root = (GRoot as unknown as { _inst?: GRoot })._inst;
+    if (required && root?.node.isValid && FguiView.inputRoot === root) return;
+    FguiView.releaseRawInput?.();
+    FguiView.releaseRawInput = null;
+    FguiView.inputRoot = null;
+    if (required && root?.node.isValid) {
+      FguiView.releaseRawInput = installFguiRawInput(root);
+      FguiView.inputRoot = root;
+    }
+  }
+
+  /** Overlay roots must not capture their blank background; interactive descendants still hit. */
+  setOverlayInput(): void { this.root.opaque = false; }
+
   /**
    * 懒启动 GRoot：**只在第一个 FairyGUI 视图真正挂载时**才建，没用 FairyGUI 时它绝不常驻（避免全屏
    * GRoot/InputProcessor 干扰游戏输入，如战斗拖拽）。等价官方 `GRoot.create()` 但规避其硬编码找场景直接
@@ -50,25 +72,17 @@ export abstract class FguiView extends ViewBase {
     canvasNode.addChild(groot.node);
     G._inst = groot; // 注入单例(fgui 未开放此注入,故走类型断言;仅此一处)
     groot.onWinResize();
-    // ⚠ 关键:懒启动的 GRoot 默认**不捕获指针**。FairyGUI 的 InputProcessor 在 GRoot 节点上注册
-    //   node.on(TOUCH_START/MOUSE_DOWN);而 Cocos 3.4.1+ 把「节点树指针派发器」(优先级 UI=1)排在
-    //   「全局 input 派发器」(GLOBAL=0)**之前**,且任一派发器吞掉事件即中断整条派发链(input.ts _emitEvent)。
-    //   GRoot 全屏 → hitTest 恒真 → 吞掉每一次点击 → 战斗拖拽的全局 `input.on`(DragDropInput)整条收不到,
-    //   表现为「按下去没反应、拖不动」。故默认关掉 InputProcessor,让全局输入活着。
-    //   交互式弹窗(有按钮/需模态挡输入)由其自身在 show 时 setInputEnabled(true)、hide 时置回/ dispose GRoot。
+    // Native UI dispatch precedes the global source. ViewMgr enables capture for
+    // modal/overlay pages; overlay's instance adapter explicitly forwards world pointers.
     FguiView.setInputEnabled(false);
   }
 
-  /**
-   * 开/关 GRoot 全局指针捕获(=其 InputProcessor.enabled)。
-   * - **纯展示 HUD**(零输入)与战斗共存时须 `false`——否则全屏 GRoot 吞掉战斗触摸输入。
-   * - **交互式/模态弹窗**须 `true`——那时全屏吞输入正是想要的「模态挡住背后战斗」;关闭弹窗时置回 `false`
-   *   (或 dispose 掉 GRoot)以恢复游戏触摸输入。见 ensureRoot 注释与 docs/CLIENT.md 输入共存。
-   */
+  /** ViewMgr alone controls the shared processor; the raw adapter prevents duplicate global delivery. */
   static setInputEnabled(on: boolean): void {
     const G = GRoot as unknown as { _inst?: GRoot };
     const ip = G._inst?.inputProcessor;
     if (ip) { ip.enabled = on; }
+    rawInput.setUiCapturing(on && !!ip);
   }
 
   /** End captured presses before disabling the shared processor, without synthesizing clicks. */

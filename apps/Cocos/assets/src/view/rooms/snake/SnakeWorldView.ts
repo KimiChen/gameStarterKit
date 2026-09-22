@@ -4,9 +4,7 @@ import {
     AudioSource,
     Color,
     EventTouch,
-    Game,
     Graphics,
-    Input,
     JsonAsset,
     Label,
     Node,
@@ -15,8 +13,6 @@ import {
     SpriteFrame,
     Texture2D,
     UITransform,
-    game,
-    input,
     resources,
     sys,
     view,
@@ -44,7 +40,7 @@ import { snakeCameraScale, SNAKE_RULESET } from "../../../shared/gameplays/snake
 import type { ISnakeReliveDecisionResult, ISnakeReliveOffered, ISnakeReliveResolved, ISnakeRunFinalizing } from "../../../shared/index";
 import { SnakeMeshRenderer, snakeTimedFrame } from "./SnakeMeshRenderer";
 import { SnakeFoodMeshRenderer } from "./SnakeFoodMeshRenderer";
-import { isSpikeInputActive, registerSpikeWorld } from "../../scene3d/spikeInput";
+import type { RawInputOwner, RawInputPort } from "../../input/RawInput";
 import {
     SnakeMagnetAuraRenderer,
     snakeMagnetAuraDependencies,
@@ -143,7 +139,7 @@ export class SnakeWorldView implements SnakePresentation {
     private audioSource: AudioSource | null = null;
     private observedMagnetRunId: string | null = null;
     private observedMagnetCount = 0;
-    private releaseSpikeWorld: (() => void) | null = null;
+    private releaseRawInput: (() => void) | null = null;
 
     constructor(
         private readonly host: Node,
@@ -152,10 +148,12 @@ export class SnakeWorldView implements SnakePresentation {
         private readonly sfxEnabled: () => boolean = () => true,
         /** 结算页「我的衣柜」：打开衣柜 route（装配件经 plugin holder 接线）。缺省 no-op 供无头装配。 */
         private readonly openWardrobe: () => void = () => {},
+        private readonly rawInput?: { port: RawInputPort; owner: RawInputOwner },
     ) {}
 
     mount(): void {
         if (this.mounted) return;
+        if (!this.rawInput) throw new Error("Snake presentation requires owner-bound raw input");
         this.mounted = true;
         this.uiLayer = this.host.layer;
         const root = this.node("SnakeWorld", this.host);
@@ -169,11 +167,7 @@ export class SnakeWorldView implements SnakePresentation {
         this.safeBottom = this.readSafeBottom();
         this.buildHud();
         this.buildControls();
-        input.on(Input.EventType.TOUCH_START, this.onGlobalTouchStart, this);
-        input.on(Input.EventType.TOUCH_MOVE, this.onGlobalTouchMove, this);
-        input.on(Input.EventType.TOUCH_END, this.onGlobalTouchEnd, this);
-        input.on(Input.EventType.TOUCH_CANCEL, this.onGlobalTouchCancel, this);
-        this.releaseSpikeWorld = registerSpikeWorld({
+        this.releaseRawInput = this.rawInput.port.subscribe(this.rawInput.owner, {
             touch: (phase, event) => {
                 if (phase === "start") this.onTouchStart(event);
                 else if (phase === "move") this.onTouchMove(event);
@@ -184,7 +178,6 @@ export class SnakeWorldView implements SnakePresentation {
             inspect: () => ({ kind: "snake", boosting: this.boosting, routerOwnersCount: this.router?.ownerCount ?? 0,
                 joystickX: this.joystickKnob?.position.x ?? 0, joystickY: this.joystickKnob?.position.y ?? 0 }),
         });
-        game.on(Game.EVENT_HIDE, this.cancelInput, this);
         // ⚠ 必须接管：loadAssets 内任何抛出都会让 this.assets 永不赋值、整局退化成默认视觉。
         // 曾经是裸 `void`，真引擎里的 pivot TypeError 就只表现为一条无来源的 PromiseRejectionEvent。
         void this.loadAssets().catch((error: unknown) => {
@@ -307,13 +300,8 @@ export class SnakeWorldView implements SnakePresentation {
         if (!this.mounted && !this.root) return;
         this.mounted = false;
         this.cancelInput();
-        this.releaseSpikeWorld?.();
-        this.releaseSpikeWorld = null;
-        input.off(Input.EventType.TOUCH_START, this.onGlobalTouchStart, this);
-        input.off(Input.EventType.TOUCH_MOVE, this.onGlobalTouchMove, this);
-        input.off(Input.EventType.TOUCH_END, this.onGlobalTouchEnd, this);
-        input.off(Input.EventType.TOUCH_CANCEL, this.onGlobalTouchCancel, this);
-        game.off(Game.EVENT_HIDE, this.cancelInput, this);
+        this.releaseRawInput?.();
+        this.releaseRawInput = null;
         this.meshRenderer?.dispose();
         this.meshRenderer = null;
         this.foodRenderer?.dispose();
@@ -879,12 +867,6 @@ export class SnakeWorldView implements SnakePresentation {
             if (control.action === "boost") apply(this.slotNodes.get(control.id), this.assets.boost, control.visibleDiameter);
         }
     }
-
-    /** SC0 raw bridge is the sole source while its fixed overlay is active. */
-    private onGlobalTouchStart(event: EventTouch): void { if (!isSpikeInputActive()) this.onTouchStart(event); }
-    private onGlobalTouchMove(event: EventTouch): void { if (!isSpikeInputActive()) this.onTouchMove(event); }
-    private onGlobalTouchEnd(event: EventTouch): void { if (!isSpikeInputActive()) this.onTouchEnd(event); }
-    private onGlobalTouchCancel(event: EventTouch): void { if (!isSpikeInputActive()) this.onTouchCancel(event); }
 
     private onTouchStart(event: EventTouch): void {
         if (!this.mounted || this.reliveLayer || this.confirmLayer || this.resultLayer || this.reconnectLayer) return;

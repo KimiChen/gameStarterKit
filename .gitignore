@@ -47,6 +47,7 @@ Desktop.ini
 # Cocos Creator（apps/Cocos）——编辑器可再生目录
 apps/Cocos/library/
 apps/Cocos/temp/
+apps/Cocos/.creator/
 apps/Cocos/local/
 apps/Cocos/build/
 apps/Cocos/profiles/

@@ -12,14 +12,15 @@
  *
  * 输入：interactive:true 表示模态交互页，须用 BlockInputEvents 等全屏屏障阻止点击穿透。
  * ViewMgr 按层级暂停被遮挡节点的系统事件，并切换全局 FGUI InputProcessor。
- * 非模态展示/玩法页保留 interactive:false。
+ * 非模态世界页使用 inputMode:passive；subscribeRawInput 先分流再进入自身 router。
  *
  * 尺寸：`mountToLayer` 按层容器当前尺寸铺满根节点（层容器自身经 FGUI Size relation 跟随
  * GRoot）。⚠ 已挂载期间的实时 resize 不跟随——FGUI relation 驱动不了裸 Node；GRoot 重建/
  * 页面重挂时会按新尺寸重新铺满。子类布局请读 `layerWidth/layerHeight`，⛔ 不写死像素。
  */
 import { Button, Node, UITransform } from "cc";
-import { ViewBase } from "./ViewBase";
+import { ViewBase, type ViewLifecycleContext } from "./ViewBase";
+import { rawInput, type RawInputSubscriber } from "./input/RawInput";
 
 export abstract class CocosView extends ViewBase {
   /** 页面根节点：与实例同寿命，dispose 时销毁；ViewMgr 之外 ⛔ 不要自行 addChild 到别处。 */
@@ -27,6 +28,10 @@ export abstract class CocosView extends ViewBase {
   /** 最近一次挂载时的层容器尺寸（设计像素）；子类按它做相对布局。 */
   protected layerWidth = 0;
   protected layerHeight = 0;
+  /** Subscribe before the page's own pointer router; automatically cancelled with this open generation. */
+  protected subscribeRawInput(owner: ViewLifecycleContext, subscriber: RawInputSubscriber): () => void {
+    return rawInput.subscribe(owner, subscriber);
+  }
   private inputEnabled = true;
   private readonly disabledButtons = new Map<Button, boolean>();
   private readonly watchedNodes = new Set<Node>();
@@ -95,6 +100,7 @@ export abstract class CocosView extends ViewBase {
 
   /** 从父节点摘下但**不销毁**（permanent 页面 close 用；再次 open 直接重挂）。 */
   unmount(): void {
+    rawInput.cancel();
     this.unwatchAncestors();
     this.root.removeFromParent();
   }
@@ -107,6 +113,7 @@ export abstract class CocosView extends ViewBase {
 
   /** ViewMgr 在混合模态页面之间切换输入；不改变渲染可见性。 */
   setInputEnabled(enabled: boolean): void {
+    if (this.inputEnabled && !enabled) rawInput.cancel();
     this.inputEnabled = enabled;
     for (const node of this.watchedNodes) this.applyNodeInput(node, enabled);
   }

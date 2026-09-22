@@ -1,4 +1,5 @@
-import { cancelSpikeWorldInput } from "../view/scene3d/spikeInput";
+import { rawInput } from "../view/input/RawInput";
+import { installCocosRawInput } from "../view/input/CocosRawInput";
 /**
  * AppRuntime（Non-intrusive §7.2 阶段 5b）：应用宿主根。原 Cocos 组件 Main.ts 的全部
  * 编排逻辑（gameplay 装配 / enterBattle / startGameplay / stopGameplay / dispose 顺序）
@@ -292,6 +293,7 @@ export class AppRuntime {
             lifecycleBus.subscribe("battle", (event) => {
                 if (event.kind === "reconnected" || event.kind === "ready" || event.kind === "closed") {
                     this.battleInputHold = false;
+                    rawInput.setSuspended(this.hostHidden);
                 }
             }),
         );
@@ -299,7 +301,7 @@ export class AppRuntime {
 
     /** §7.8 (1)(2)：hide 暂停本地 tick/预测与新输入意图。 */
     private onHostHide(): void {
-        cancelSpikeWorldInput();
+        rawInput.setSuspended(true);
         this.hostHidden = true;
         this.frameScheduler.setPaused(true);
     }
@@ -322,6 +324,7 @@ export class AppRuntime {
         this.battleInputHold = battle.state === "dropped"
             && this.roomController?.status === "running";
         this.hostHidden = false;
+        rawInput.setSuspended(this.battleInputHold);
     }
 
     /** 战斗连接快照（seam 可注入；生产读 gameplay services 的 roomClient）。 */
@@ -367,6 +370,7 @@ export class AppRuntime {
             try { action(); } catch (error) { failures.push(error); }
         };
         if (!this.disposed) {
+            rawInput.cancel();
             this.disposed = true;
             const disposePages = this.disposePages;
             this.disposePages = null;
@@ -417,6 +421,7 @@ export class AppRuntime {
             dispatchInput: (input) => this.dispatchGameplayInput(input),
             requestStop: async (reason) => {
                 const sessionGeneration = getSessionGeneration();
+                rawInput.cancel();
                 await this.roomController?.stop(reason);
                 // 玩法侧发起的退出（user-exit / settled → manual）：局已停、房已离，把 authenticated base
                 // （首屏）恢复回来。此前 closed{voluntary} 不触发导航、controller.stop 也不导航，
@@ -427,6 +432,7 @@ export class AppRuntime {
         };
         const presentationHost = {
             node,
+            rawInput,
             dispatchInput: (input: unknown): void => {
                 void this.dispatchGameplayInput(input).catch((error) => {
                     console.error("[AppRuntime] gameplay input 失败：", error);
@@ -438,6 +444,8 @@ export class AppRuntime {
             controllerBridge,
             presentationHost,
         });
+        rawInput.setSuspended(false);
+        this.unsubs.push(installCocosRawInput());
         this.unregisterGameplay = registerGeneratedGameplays(registry, services);
         this.gameplayRegistry = registry;
         this.gameplayServices = services;
@@ -613,6 +621,7 @@ export class AppRuntime {
     }
 
     private stopGameplay(kind: "cancelled" | "room-lost"): void {
+        rawInput.cancel();
         this.battleAbort?.abort();
         void this.roomController?.stop({ kind }).catch((error) => {
             console.error("[AppRuntime] gameplay stop 失败：", error);

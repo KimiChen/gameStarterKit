@@ -24,7 +24,8 @@ import type { CocosView } from "./CocosView";
 import { VIEW_LAYERS, type ViewLayer } from "./layers";
 import type { ViewMeta } from "./defineView";
 import { VIEW_REGISTRY } from "./viewRegistry";
-import { cancelSpikeWorldInput, setSpikeInputBlocked } from "./scene3d/spikeInput";
+import { rawInput } from "./input/RawInput";
+import { resolveViewInputMode } from "./defineView";
 
 /** open 的返回句柄：关闭唯一入口（幂等）。 */
 export interface ViewHandle {
@@ -113,6 +114,8 @@ function teardownRoot(): void {
   tearingDownRoot = true;
   try {
     rootGeneration++;
+    rawInput.cancel();
+    FguiView.syncRawInputAdapter(false);
 
     const pendingRecords = [...pendingAll];
     pendingAll.clear();
@@ -230,7 +233,8 @@ function mount(view: ViewBase, meta: ViewMeta): () => void {
   const slot = new GComponent();
   try {
     slot.node.name = `view_${meta.name}`;
-    slot.opaque = meta.interactive && meta.kind !== "cocos";
+    slot.opaque = resolveViewInputMode(meta) === "modal" && meta.kind !== "cocos";
+    if (resolveViewInputMode(meta) === "overlay") (view as FguiView).setOverlayInput();
     parent.addChild(slot);
     slot.setSize(parent.width, parent.height);
     slot.addRelation(parent, RelationType.Size);
@@ -271,29 +275,31 @@ function comparePages(left: MountedPage, right: MountedPage): number {
 function syncInput(): void {
   let top: MountedPage | undefined;
   for (const page of mountedPages.values()) {
-    if (page.meta.interactive && (!top || comparePages(page, top) > 0)) top = page;
+    if (resolveViewInputMode(page.meta) === "modal" && (!top || comparePages(page, top) > 0)) top = page;
   }
   if (inputOwner !== top?.view) {
     inputOwner = top?.view;
-    cancelSpikeWorldInput();
+    rawInput.cancel();
     FguiView.cancelPendingInput();
     return syncInput();
   }
   for (const page of mountedPages.values()) {
-    page.slot.touchable = page.meta.kind !== "cocos" && (!top || comparePages(page, top) >= 0);
+    page.slot.touchable = page.meta.kind !== "cocos" && resolveViewInputMode(page.meta) !== "passive"
+      && (!top || comparePages(page, top) >= 0);
     if (page.meta.kind === "cocos") {
       (page.view as CocosView).setInputEnabled(!top || comparePages(page, top) >= 0);
     }
   }
-  // SC0 fixed-fixture exception; full inputMode metadata belongs to SC1-B9.
-  const hasSpikeHud = [...mountedPages.values()].some((page) => page.meta.name === "Stage3dSpikeHud"
-    && (!top || comparePages(page, top) >= 0));
-  setSpikeInputBlocked(!!top);
-  FguiView.setInputEnabled((!!top && top.meta.kind !== "cocos") || hasSpikeHud);
+  const overlays = [...mountedPages.values()].filter((page) => resolveViewInputMode(page.meta) === "overlay");
+  FguiView.syncRawInputAdapter(overlays.length > 0 && !tearingDownRoot);
+  rawInput.setBlocked(!!top);
+  FguiView.setInputEnabled((!!top && top.meta.kind !== "cocos")
+    || overlays.some((page) => !top || comparePages(page, top) >= 0));
 }
 
 function closeEffects(view: ViewBase): void {
   mountedPages.delete(view);
+  rawInput.cancel();
   try { syncInput(); } catch (e) {
     console.error("[ViewMgr] 关闭页面后恢复输入失败", e);
   }
@@ -304,6 +310,7 @@ function bringToFront(view: ViewBase): void {
   if (!page) return;
   const parent = layerRoots.get(page.meta.layer)!;
   parent.setChildIndex(page.slot, parent.numChildren - 1);
+  rawInput.cancel();
   page.order = ++mountOrder;
   syncInput();
 }

@@ -273,19 +273,33 @@ ViewMgr 的生命周期语义：onlyOne/permanent 页面的在途 open 会合流
 - detached Promise 必须显式处理错误。
 - 关闭页面后，迟到的 HTTP/RPC 结果不得继续更新 View。
 
-### `interactive` 的含义
+### `inputMode` 与原始输入
 
-FairyGUI 在当前 Cocos 运行时只有一个全局 InputProcessor。`interactive` 表示模态输入所有权，
-ViewMgr 按 `base < popup < top` 和同层置顶顺序选择最高交互页：
+页面 `.view.json` 声明 `inputMode: "modal" | "overlay" | "passive"`。`interactive` 保留为兼容别名：
+true 对应 modal，false 对应 passive；两个字段均省略时为 passive，同时声明必须一致。
+codegen 与 `defineView` 均拒绝矛盾声明、未知值及非 FGUI overlay。
 
-- 最高交互页为 FGUI 时启用 InputProcessor；为 Cocos 时禁用它。被遮挡的 FGUI 挂载槽关闭
-  `touchable`，被遮挡的 Cocos 页面暂停节点系统事件并禁用原生 Button，恢复时保留原开关状态。
-- `interactive: false` 不争夺模态所有权，适合展示 HUD 或非模态玩法页；它不是绕过上层遮挡的标记。
-- Cocos 模态页需自行提供全屏输入屏障，Confirm 在资源加载期间也挂有 `BlockInputEvents`。
-  每页独占 FGUI 管理的挂载槽，避免裸 Node 与 GComponent 混排导致显示和输入顺序不一致。
-- 输入所有者切换时取消 FGUI 在途 click 并结束已捕获的按压，重置 Cocos Button 的按压状态；
-  原生节点新增或所在树重新激活后重新落实输入暂停，避免引擎激活流程恢复被遮挡页面。
-  这不替代玩法自行管理的全局键盘、拖拽或网络输入取消逻辑。
+- `modal`：按 `base < popup < top` 和同层置顶顺序建立最高模态边界。下层 FGUI 槽不参与命中，
+  Cocos 页面暂停节点事件和 Button；恢复时保留 Button 原开关。Cocos 模态页仍须提供全屏输入屏障。
+- `overlay`：仅限 FGUI，控件可点击、空白可穿透，不暂停下层世界。框架把挂载槽和页面根设为
+  `opaque:false`；作者须对内部空白容器同样设置，并把装饰对象设为 `touchable:false`。
+- `passive`：不建立模态边界。FGUI 槽不参与命中；Cocos 世界页可接收世界原始输入，仍受上层模态遮挡。
+
+框架 `view/input/` 在玩法 router 之前按起点固定每根 pointer 的 HUD / 世界归属，跨边界保持至 end / cancel；
+wheel 按当前命中分流。FGUI overlay 从 GRoot 显式转发世界事件，宿主的全局输入仅在它未捕获时接收，
+避免丢事件和重复派发。装饰、空白及命中使用锁定 FairyGUI 的相机和坐标转换，不改 vendor。
+
+Cocos 世界页通过 `this.subscribeRawInput(context, { touch, wheel, cancel })` 订阅；gameplay 模块把
+`services.presentationHost.rawInput` 与当前 `GameplayInstanceHost` 注入 presentation，后者在 mount 时
+调用 `port.subscribe(owner, subscriber)`，unmount 归还返回的释放函数。owner 的 signal / isActive 共同守住
+打开或玩法世代；单个活动世界订阅被替换后不会被旧释放函数恢复。原始事件提供 pointer ID 和
+`getUILocation()` 设计坐标。Snake 与 BallMove 已迁移；新增表现件不再自行注册全局触摸。
+
+模态切换、HUD 关闭 / 置顶、页面关闭 / 重挂、GRoot 重建及宿主 hide 会取消在途按压，清空 router、
+摇杆和 boost；恢复只接受新手势，不补 click。取消回调先于宿主 hide 的业务意图禁用执行，必要停止意图
+仍可走原 `dispatchInput`；该业务通道继续守玩法世代与后台状态，HUD 主动发出的业务动作也使用它。
+FGUI InputProcessor 仍只有一个：无 overlay 时保持既有 modal 仲裁，有 overlay 时由框架适配器管理
+当前 root 的处理器安装 / 释放，页面不自行安装输入桥。
 
 关闭必须走 open 返回的 `ViewHandle.close()`；onlyOne/permanent 页也可用 `ViewMgr.close(name)`——它会
 取消该名字下的在途 open，但对已挂载的多实例实例是空操作。直调 `view.dispose()` 会让 `interactive`

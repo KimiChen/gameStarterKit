@@ -251,6 +251,11 @@ test("stage3d percentile summary preserves zero and long intervals without sorti
 
 test("stage3d real probe defaults to isolated 7457 and validates explicit modes/windows", () => {
   const defaults = parseStage3dProbeArgs([]);
+  assert.equal(defaults.inputOnly, undefined);
+  assert.equal(parseStage3dProbeArgs(["--input-only", "--expect-webgl", "2"]).inputOnly, true);
+  assert.equal(parseStage3dProbeArgs(["--input-only", "--expect-webgl", "1", "--force-webgl1"]).forceWebgl1, true);
+  for (const args of [["--force-webgl1"], ["--input-only", "--expect-webgl", "2", "--force-webgl1"],
+    ["--input-only", "--reuse", "--expect-webgl", "1", "--force-webgl1"]]) assert.throws(() => parseStage3dProbeArgs(args), /requires a fresh/);
   assert.equal(defaults.preview, "http://127.0.0.1:7457");
   assert.equal(defaults.devtools, "http://127.0.0.1:9222");
   assert.equal(defaults.cycles, 20);
@@ -299,7 +304,7 @@ test("stage3d browser harness imports discovered hashed SystemJS URLs and querie
   const entries = [
     ["http://127.0.0.1:7457/scripting/x/chunks/aaa.js", { ViewMgr: { open: () => {}, close: () => {} } }],
     ["http://127.0.0.1:7457/scripting/x/chunks/bbb.js", { spikeSession: session }],
-    ["http://127.0.0.1:7457/scripting/x/chunks/ccc.js", { readSpikeInputDebug: () => ({ active: false, blocked: false, ownersCount: 0 }) }],
+    ["http://127.0.0.1:7457/scripting/x/chunks/ccc.js", { rawInput: { inspect: () => ({ active: false, blocked: false, ownersCount: 0 }) } }],
   ] as const;
   const node = { name: "scene", activeInHierarchy: true, children: [],
     getComponent: (name: string) => { queried.push(name); return null; },
@@ -482,7 +487,7 @@ async function skinningHarness() {
     } } } }, device: {
     memoryStatus: { bufferSize: 100, textureSize: 200 }, numDrawCalls: 10, numTris: 1000, numInstances: 600, getFormatFeatures: () => 2,
   } } });
-  const entries = [["chunks/a", { ViewMgr: {} }], ["chunks/b", { spikeSession: session }], ["chunks/c", { readSpikeInputDebug: () => ({}) }]] as const;
+  const entries = [["chunks/a", { ViewMgr: {} }], ["chunks/b", { spikeSession: session }], ["chunks/c", { rawInput: { inspect: () => ({}) } }]] as const;
   const context = vm.createContext({ System: { entries: () => entries, import: async (url: string) => entries.find(([key]) => key === url)![1] },
     cc: { director, Director: { EVENT_AFTER_DRAW: "draw" }, Layers: { Enum: {} },
       gfx: { Format: { RGBA32F: 44, RGBA8: 35, 44: "RGBA32F", 35: "RGBA8" }, FormatFeatureBit: { SAMPLED_TEXTURE: 2 } } },

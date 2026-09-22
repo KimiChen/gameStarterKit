@@ -100,7 +100,8 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
     }),
     Stage3dSpikeHud: defineView({
         name: "Stage3dSpikeHud", kind: "fgui", contract: STAGE3DSPIKEHUD_CONTRACT, layer: "popup",
-        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        fullscreen: true, onlyOne: true, permanent: false,
+        inputMode: "overlay",
         load: () => import("../view/Stage3dSpikeHudView").then((m) => m.Stage3dSpikeHudView),
     }),
     Wardrobe: defineView({

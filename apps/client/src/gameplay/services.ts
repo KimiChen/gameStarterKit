@@ -12,6 +12,7 @@
  * 转发目标，由 AppRuntime 绑定其当前 controller 注入）。
  */
 import type { Node } from "cc";
+import type { RawInputPort } from "../view/input/RawInput";
 import type { Stage3DPort } from "../view/scene3d/Stage3D";
 import type { GameplayControllerBridge, GameplayRegistry } from "../logic/gameplay/index";
 import type { SessionReadPort } from "../app/ports";
@@ -37,7 +38,9 @@ export type AppGameplayRegistry = GameplayRegistry<any, any>;
 /** Engine host passed once to the services context; module 只经它取得挂载节点。 */
 export interface GameplayPresentationHost {
     readonly node: Node;
-    /** 宿主原始输入通道（§7.8 hide 闸位于宿主实现内）；View 建议改经 GameplayInstanceHost。 */
+    /** Owner-bound raw touch / wheel subscription; always precedes gameplay routers. */
+    readonly rawInput: RawInputPort;
+    /** 宿主业务意图通道（§7.8 hide 闸位于宿主实现内）；View 建议改经 GameplayInstanceHost。 */
     readonly dispatchInput: (input: unknown) => void;
 }
 

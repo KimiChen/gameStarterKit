@@ -16,10 +16,10 @@
 | 当前文件 | 目标批次与处置 | 正式化前的边界 |
 | --- | --- | --- |
 | [Stage3dFixtureView.ts](../apps/client/src/view/Stage3dFixtureView.ts)、[sidecar](../apps/client/src/view/Stage3dFixtureView.view.json) | SC1-B2/B3/B4：保留场景和生命周期断言，改为经 `ports.stage3d.acquire` 取得舞台 | 当前直接创建场景根、相机、灯；没有舞台 / 独立全局租约、统一 token 表或双入口注入 |
-| [Stage3dSpikeHudView.ts](../apps/client/src/view/Stage3dSpikeHudView.ts)、[sidecar](../apps/client/src/view/Stage3dSpikeHudView.view.json) | SC1-B4/B9：迁成正式 overlay 夹具，继续覆盖模态关闭与迟到 setup | 当前 DEV 固定页、`interactive:false`；`ViewMgr` 按名称特判，尚无 `inputMode:overlay` |
+| [Stage3dSpikeHudView.ts](../apps/client/src/view/Stage3dSpikeHudView.ts)、[sidecar](../apps/client/src/view/Stage3dSpikeHudView.view.json) | SC1-B9 已迁成 `inputMode:overlay`，移除名称特判，保留模态关闭与迟到 setup 断言；正式舞台消费仍归 B4 | HUD 仍为 DEV 夹具；输入能力由通用元数据与框架适配器提供 |
 | [Stage3dFixtureLogic.ts](../apps/client/src/logic/page/Stage3dFixtureLogic.ts)、[spikeSession.ts](../apps/client/src/view/scene3d/spikeSession.ts) | SC1-B4/B9：保留用例，替换指针归属原型与全局诊断 session | 固定指针表和坐标累计不是 SC2 的 cameraRig、LOD、流式或拾取数学 |
-| [spikeInput.ts](../apps/client/src/view/scene3d/spikeInput.ts)、[spikeFguiInput.ts](../apps/client/src/view/scene3d/spikeFguiInput.ts) | SC1-B9：迁入正式 `view/input/` 适配器和 owner 绑定 raw-input 订阅 / 取消端口，再移除 spike 文件 | 当前单个 world 订阅者和 FairyGUI 1.2.2 实例处理器适配；只验证固定夹具所需分流 |
-| [ViewMgr.ts](../apps/client/src/view/ViewMgr.ts)、[AppRuntime.ts](../apps/client/src/app/AppRuntime.ts)、[SnakeWorldView.ts](../apps/client/src/view/rooms/snake/SnakeWorldView.ts) | SC1-B9：替换 `hasSpikeHud`、hide 取消与 Snake 全局触摸旁路；所有 presentation 接入同一适配器 | pointer 必须在玩法 router 前归属；`dispatchInput` 后置业务过滤不能替代原始输入分流 |
+| 原 spikeInput / spikeFguiInput → [view/input](../apps/client/src/view/input/README.md) | SC1-B9 已迁入正式适配器和 owner 绑定 raw-input 订阅 / 取消端口，删除旧文件；纯指针表迁到 `logic/input/PointerOwnership` | 单个活动世界订阅者；FairyGUI 1.2.2 私有面集中在框架适配器，升级必须重验双 WebGL |
+| [ViewMgr.ts](../apps/client/src/view/ViewMgr.ts)、[AppRuntime.ts](../apps/client/src/app/AppRuntime.ts)、[SnakeWorldView.ts](../apps/client/src/view/rooms/snake/SnakeWorldView.ts) | SC1-B9 已替换 `hasSpikeHud`；Snake / BallMove 全局触摸迁到同一 raw-input 端口，hide 先取消再关闭业务输入 | pointer 在玩法 router 前归属；`dispatchInput` 保持业务意图世代守卫 |
 | [Stage3dFixtureView.ts 的 loader](../apps/client/src/view/Stage3dFixtureView.ts) | SC1-B2/B4：成功回调即经真实同步 retainer 持有；SC3-B1/B4：换完整 AssetLease | 当前 `resources.load` + 直接 addRef/decRef 没有 bundle 寻址、15 秒 deadline 或正式批量失败语义 |
 | [spikeOwnedInstancing.ts](../apps/client/src/view/scene3d/spikeOwnedInstancing.ts) | SC1-B3 先交空舞台生产适配；SC1-B4 封装 owned rendering 退休与夹具资源持有顺序；SC3-B3、SC4-B1 延续实体 / 蒙皮生命周期断言，完成替换后删除 spike 文件 | 私有结构只绑定 Creator 3.8.8 WebPipeline；不得直接成为 kit API，不得清全局共享池 |
 | [spikeSkinning.ts](../apps/client/src/view/scene3d/spikeSkinning.ts) | SC4-B1：迁移布局、实际 jointTexture 分组、跨图切换与实时初始化修正 | 固定两骨、四 clip、两图集；72/144 行宽不是任意骨架通用配置 |
@@ -94,7 +94,7 @@ SC1-B8 已交付画质、压缩预设与独立验收场景，见[本批摘要](p
 模型导入、UUID 与子资产检查移交 SC1-B7/B5，不能以当前 resources 夹具加载替代无开发树 / Library 缓存的包安装验收。
 
 客户端回归保留 [stage3d-fixture-lifecycle](../apps/client/test/stage3d-fixture-lifecycle.test.ts)、
-[stage3d-spike-hud-lifecycle](../apps/client/test/stage3d-spike-hud-lifecycle.test.ts)、[stage3d-spike-input](../apps/client/test/stage3d-spike-input.test.ts)、
+[stage3d-spike-hud-lifecycle](../apps/client/test/stage3d-spike-hud-lifecycle.test.ts)、[raw-input（B9 接续输入原型断言）](../apps/client/test/raw-input.test.ts)、
 [stage3d-owned-instancing](../apps/client/test/stage3d-owned-instancing.test.ts)、[stage3d-spike-skinning](../apps/client/test/stage3d-spike-skinning.test.ts)；
 正式替换时迁移断言，不因删除 spike 实现而删掉失败、迟到回调、取消、乱序释放和共享资源隔离用例。
 工具回归通过 [stage3d-probe](../apps/server/test/stage3d-probe.test.ts)、[stage3d-tool-regressions](../apps/server/test/stage3d-tool-regressions.test.ts)、

@@ -2984,6 +2984,7 @@ apps/client/src/net/RoomClient.ts
 apps/client/src/net/rooms/GameRoomTransport.ts
 apps/client/src/gameplay/catalog.ts
 apps/client/src/gameplay/services.ts
+apps/client/src/view/input/**
 apps/client/src/view/scene3d/Stage3D.ts
 apps/client/src/view/scene3d/stage3dLayers.ts
 apps/client/src/view/scene3d/stage3dGlobals.ts

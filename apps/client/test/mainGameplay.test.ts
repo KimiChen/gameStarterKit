@@ -119,7 +119,9 @@ async function loadHostRuntime(): Promise<HostRuntime> {
       Canvas: class {},
       Layers: { Enum: {} },
       game: { on: () => {}, off: () => {} },
-      Game: { EVENT_HIDE: "game_on_hide", EVENT_SHOW: "game_on_show" },
+    input: { on() {}, off() {} },
+    Input: { EventType: { TOUCH_START: "touch-start", TOUCH_MOVE: "touch-move", TOUCH_END: "touch-end", TOUCH_CANCEL: "touch-cancel", MOUSE_WHEEL: "mouse-wheel" } },
+    Game: { EVENT_HIDE: "game_on_hide", EVENT_SHOW: "game_on_show" },
     };
 
     moduleApi._load = function patchedLoad(request, parent, isMain): unknown {

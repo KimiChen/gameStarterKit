@@ -243,6 +243,7 @@ import { bindDeferredUISurface, createUISurfaceRegistry, type BoundUILayer } fro
 import { Confirm, createConfirm, uiResourceIds } from './Confirm';
 import { catalogRef } from './catalog-ref';
 import { planRefs } from './plan-refs';
+import { pageResourceCatalog } from '../resourceCatalog';
 ${aotFiles.filter(file => file !== "Confirm.logic.ts").map(file => {
     const name = file.replace(/\.logic\.ts$/, "");
     return `import { ${name}, create${name}, uiResourceIds as ${name}ResourceIds } from './${name}';`;
@@ -256,11 +257,11 @@ export async function loadGameUI(provider: UIProvider) {
     const catalog = parseResourceCatalog(await provider.assets.loadJson(catalogRef));
     const registry = createUISurfaceRegistry([
         bindDeferredUISurface(Confirm, async () =>
-            prepareUIComponent(provider.assets, catalog, uiResourceIds,
+            prepareUIComponent(provider.assets, pageResourceCatalog(catalog, uiResourceIds), uiResourceIds,
                 createConfirm(await provider.assets.loadJson(planRefs.Confirm)))),
 ${aotFiles.filter(file => file !== "Confirm.logic.ts").map(file => {
                 const name = file.replace(/\.logic\.ts$/, "");
-                return `        bindDeferredUISurface(${name}, async () =>\n            prepareUIComponent(provider.assets, catalog, ${name}ResourceIds,\n                create${name}(await provider.assets.loadJson(planRefs.${name})))),`;
+                return `        bindDeferredUISurface(${name}, async () =>\n            prepareUIComponent(provider.assets, pageResourceCatalog(catalog, ${name}ResourceIds), ${name}ResourceIds,\n                create${name}(await provider.assets.loadJson(planRefs.${name})))),`;
             }).join("\n")}
     ]);
     const layers: readonly BoundUILayer[] = [];

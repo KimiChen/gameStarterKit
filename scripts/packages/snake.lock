@@ -1,7 +1,7 @@
-# scripts/packages/snake.lock —— 已安装插件 snake@1.2.4 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/snake.lock —— 已安装插件 snake@1.2.5 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"snake","version":"1.2.4","kinds":["client","gameplay"],"constantName":"Snake","domains":["snakeCosmetic"],"fguiPackages":[]}
-# source {"kind":"tree","filesLockSha256":"c8e48d6b94baf2ba71251fa9087589d143924a666e83e238b932b45172e15aa9","forkedFrom":{"kind":"package","filesLockSha256":"ee8abb67f3736bbe97566edabf6497d72c9b2609a6a45be0cd954fb5323eeddb"}}
+# manifest {"id":"snake","version":"1.2.5","kinds":["client","gameplay"],"constantName":"Snake","domains":["snakeCosmetic"],"fguiPackages":[]}
+# source {"kind":"tree","filesLockSha256":"cf184b0e92fb64888554f5b5aa0f9a6b482baa5590d304d7d9d312ad0294b26e","forkedFrom":{"kind":"package","filesLockSha256":"ee8abb67f3736bbe97566edabf6497d72c9b2609a6a45be0cd954fb5323eeddb"}}
 apps/Cocos/assets/resources/plugins/snake.meta 85e68ed472c0da45ebea35950a476a5cb976516eccd675d2b181ce83f3dbf63d
 apps/Cocos/assets/resources/plugins/snake/previews.meta fd3ada6b751ad55808b6099d569bb617669c68b1a6bb8928f44fa6c245d355a2
 apps/Cocos/assets/resources/plugins/snake/previews/snake_skin_101_preview.png 4feb052ee2474e59e5da9e038eed03801ff47ff4d017a90b2ec0491aba3ba3c0
@@ -131,7 +131,7 @@ apps/Cocos/assets/resources/plugins/snake/snake_wall_block_1.png.meta 76f4df2856
 apps/Cocos/assets/resources/plugins/snake/snake_wall_block_2.png e02ebb01563ab418947b86f131bcb50598bd2446687f51ab022c0b5110ceeaf1
 apps/Cocos/assets/resources/plugins/snake/snake_wall_block_2.png.meta dfa28768d47afda9e11954e72597382bf84a7e1ac0cc71347101730d4fabfdcc
 apps/Cocos/assets/src/gameplay/modes/snake.meta 78a411a1d360a3d3f78e7f3dd8ffe9e6c9b9693219d2ec0835dc1906e955762d
-apps/Cocos/assets/src/gameplay/modes/snake/index.ts 739092ca4e91fbc8c57343d5d06d5c9fec272c6c4dbbf6b611b1b084b8fbe17d
+apps/Cocos/assets/src/gameplay/modes/snake/index.ts fbc1bf30438fde7fbb140197d705cb717e6cb5497a9cdff0f49adf97b58f4b51
 apps/Cocos/assets/src/gameplay/modes/snake/index.ts.meta 706270f86337407c87a1ea840d1f46114bf559f0b65afb3fd92f27434d13bf4a
 apps/Cocos/assets/src/logic/rooms/snake.meta 63287020c081f9db8e472ba45e027d299b6fe1996f1bad844fb569a62f91a98c
 apps/Cocos/assets/src/logic/rooms/snake/SnakeControls.ts cde041f80024227138eb2963897cc884289a55791ca1c20208d5d49767c18795
@@ -168,13 +168,13 @@ apps/Cocos/assets/src/view/rooms/snake/SnakeMagnetAuraRenderer.ts 560ff98dd8f844
 apps/Cocos/assets/src/view/rooms/snake/SnakeMagnetAuraRenderer.ts.meta a86aadc05178a37d8caf0e8873cd1fb46def8886e5a0fbbeda39a14978c8202f
 apps/Cocos/assets/src/view/rooms/snake/SnakeMeshRenderer.ts 9299319a73f61f4537500b445e5cfc516583a706711d3aa240c15b1e7b8c3f55
 apps/Cocos/assets/src/view/rooms/snake/SnakeMeshRenderer.ts.meta 21f92f45ef2c4300ac434b2f432203fe67956fb8240509ba5eea00f0844a9c1b
-apps/Cocos/assets/src/view/rooms/snake/SnakeWorldView.ts a656ebbcea500fa86ade4b5ce406d7ef943e89a9ea1b23d299a9b756ec0d8e3a
+apps/Cocos/assets/src/view/rooms/snake/SnakeWorldView.ts 9ae2d8c236d55384a3ca848ea58d2d0351df6d3af6cc9ef28ac838d98f625453
 apps/Cocos/assets/src/view/rooms/snake/SnakeWorldView.ts.meta cc8283f80e9102492c91c66da623e48717ff91c11d8d7278a9e831268bcf37fc
 apps/Cocos/assets/src/view/rooms/snake/SnakeWorldView.view.json a696147e7a8b4b3df9f7ca70949bd6c7aba946a9f00d6a31c3b031ff6b2b6b40
 apps/Cocos/assets/src/view/rooms/snake/SnakeWorldView.view.json.meta f0b87b863d51ceb4e9ea8cfb0d10852188a6db5b6c7207909ab2a1a1f86d9d21
 apps/Cocos/assets/src/view/rooms/snake/snakeQuadMesh.ts 9bc4e15650da2654d246850b61408a4c5d626c25489c51b46b687df29fa121ae
 apps/Cocos/assets/src/view/rooms/snake/snakeQuadMesh.ts.meta a8da74de39fa306232f1da2157d1f5958af07d3fb9a55ff03357784ff9ea463c
-apps/client/src/gameplay/modes/snake/index.ts 739092ca4e91fbc8c57343d5d06d5c9fec272c6c4dbbf6b611b1b084b8fbe17d
+apps/client/src/gameplay/modes/snake/index.ts fbc1bf30438fde7fbb140197d705cb717e6cb5497a9cdff0f49adf97b58f4b51
 apps/client/src/logic/rooms/snake/SnakeControls.ts cde041f80024227138eb2963897cc884289a55791ca1c20208d5d49767c18795
 apps/client/src/logic/rooms/snake/SnakeGameplay.ts 4778001ece19572970fee5cff27e40f2ad7bc24f743e12e617cea6cda3da38e4
 apps/client/src/logic/rooms/snake/SnakeHud.ts 98b9b7fcc4533a148c00a1cf2a22038b5cead42302db1e14d26149f569909cc6
@@ -190,17 +190,17 @@ apps/client/src/plugins/snake/view/WardrobeView.view.json c63600d621b5b426689d32
 apps/client/src/view/rooms/snake/SnakeFoodMeshRenderer.ts b7b44fae447a5256c01f4441cfc3543d4fef4d9c67e8d9187963834ee7f3113e
 apps/client/src/view/rooms/snake/SnakeMagnetAuraRenderer.ts 560ff98dd8f8443740cdeaaea204083f57c980c50443cd957b07d5ce2567294f
 apps/client/src/view/rooms/snake/SnakeMeshRenderer.ts 9299319a73f61f4537500b445e5cfc516583a706711d3aa240c15b1e7b8c3f55
-apps/client/src/view/rooms/snake/SnakeWorldView.ts a656ebbcea500fa86ade4b5ce406d7ef943e89a9ea1b23d299a9b756ec0d8e3a
+apps/client/src/view/rooms/snake/SnakeWorldView.ts 9ae2d8c236d55384a3ca848ea58d2d0351df6d3af6cc9ef28ac838d98f625453
 apps/client/src/view/rooms/snake/SnakeWorldView.view.json a696147e7a8b4b3df9f7ca70949bd6c7aba946a9f00d6a31c3b031ff6b2b6b40
 apps/client/src/view/rooms/snake/snakeQuadMesh.ts 9bc4e15650da2654d246850b61408a4c5d626c25489c51b46b687df29fa121ae
 apps/client/test/snake-gameplay.test.ts 963313b719a35606be0d5288dd2c14f812482b656f8a139b353a405ef915c7be
-apps/client/test/snake-presentation.test.ts 6459d80416127f2ac47503d436894b480bec31c7aa1e239bcf645a4d0497f22a
+apps/client/test/snake-presentation.test.ts e4f385c57c6b6f5b7178063148ade0f0e78c8b03db0ec15f76c6d9585e5274f8
 apps/client/test/snake-skin-catalog.test.ts 706ce9d96b6831ac4a79e5ffaa27aa08f62504a7378985ab005d2b2bb510755b
 apps/client/test/snake-wardrobe-logic.test.ts cb49b54fcefa2eb8724be8cb739da61be09baeb0ce5a9161598d0eb485087628
-apps/plugins/snake/README.md 0870abd19fb84a54d14cdf2049da47e9f8df1b92ac64b87dfd5a3bd978830552
+apps/plugins/snake/README.md cda7893da50238131c1a2435266d4c1e23e808c59bc7feaf5b11572f8244927e
 apps/plugins/snake/gameplay/manifest.json 311e776e01d511c93611c38705cb4e150123db099b561b0a8047cf577463653d
 apps/plugins/snake/gameplay/state.json f8637eb1265c04f2f21ca3836505edbeb2c7e3e765385227de2e7619a7cf57bc
-apps/plugins/snake/plugin.json 6d2284897352f5a0865d2e9c2c63d8a377ffe9276ddab4455ee1b64cae4255f2
+apps/plugins/snake/plugin.json bf1458db12c8ad1ccbb9d4b6be6d76352efd4887c35cbeb851445a6a1722d9fe
 apps/server/src/rooms/modes/snake/ai.ts 6c0eb0d0632fdc6e4233206cba61612f556720898f9c1fd162136ea9b8eb497e
 apps/server/src/rooms/modes/snake/cosmeticProfile.ts b225d2820e693a932a60a198cf1995aef83f93ce3f627af4797107bfe129084c
 apps/server/src/rooms/modes/snake/cosmeticRpc.ts e2532c37e9b8872c951c86a17933961b6a908653a844f7071b9b97fed9a0c3af

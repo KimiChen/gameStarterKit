@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "batch": "SC1-B9",
+  "date": "2026-09-23",
+  "status": "complete",
+  "sc1Exit": false,
+  "scope": "Framework raw-input and inputMode only. Desktop Chrome / Creator 3.8.8 WebGL1 and WebGL2. No SC1-B4 20-cycle/performance/asset-retirement exit or SC4 device/cache claim.",
+  "packages": {
+    "snake": "1.2.5",
+    "mmo": "0.1.31",
+    "protocolChanged": false,
+    "vendorChanged": false
+  },
+  "implementation": [
+    "modal/overlay/passive with compatible interactive alias and fail-closed sidecars",
+    "owner signal/isActive subscription before gameplay pointer routers",
+    "FGUI hit adapter and single host-owned global fallback",
+    "modal/hide/unmount/root cancellation precedes business input hold",
+    "Snake and BallMove migrated; DEV fixture consumes the same port"
+  ],
+  "baselineRepair": "Confirm fallback font candidates now contain common fonts and explicitly declared page fonts; unrelated imported page fonts no longer become defaults. Private font rendering is outside this batch.",
+  "cases": [
+    {
+      "carrier": "fixture",
+      "webgl": 2,
+      "device": "WebGL2Device",
+      "pipeline": "WebPipeline",
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-root-webgl2/report.json",
+        "sha256": "f76f590f86868b3194d3745a7c5ec861b380b0144e3d0d98607e9b4a71dd87f5"
+      },
+      "screenshots": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-root-webgl2/001-hud-click.png",
+          "sha256": "d78fceb9e3b5aa740a75ad5565b744df0efc6cd2ff4aec50445ae38a093df674"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-root-webgl2/002-parallel-pointers.png",
+          "sha256": "32878de58a19f5247d1294d3e6debef7e9dba38caa95b207df53611fe3166cf0"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-root-webgl2/003-modal-restored.png",
+          "sha256": "aef80f256ce60506208e5a6febe5f654d8a9597c550a98c031ef121470b4d5fb"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-root-webgl2/004-root-rebuilt.png",
+          "sha256": "65669c83f3c19cf5f6e9457877b8fb0e1aa4a3ec1ecb1ba776ce08dfe313a2f6"
+        }
+      ],
+      "passedSteps": 11,
+      "steps": [
+        "systemjs-runtime-and-real-viewmgr",
+        "engine-touch-source-and-dom-capture",
+        "open-real-world-page-and-overlay",
+        "hud-click",
+        "world-drag-across-hud",
+        "hud-drag-across-world",
+        "simultaneous-hud-and-world",
+        "wheel-current-hit",
+        "modal-cancels-held-world-and-restores-fresh-only",
+        "hud-close-remount-cancels-old-pointer",
+        "root-rebuild-cancels-and-requires-fresh-pointer"
+      ],
+      "trustedTouchCommands": 37,
+      "trustedDomEvents": 37,
+      "expectedBootDiagnostics": 0,
+      "unexpectedErrors": 0,
+      "modalCancellation": {
+        "owners": 0,
+        "world": null,
+        "restored": null,
+        "oldMovesRejected": true
+      },
+      "contextSelection": "Native WebGL2",
+      "boot": {
+        "bootStartedAtEpochMs": 1790094784946.6,
+        "firstFixtureLoadStartedAtEpochMs": null,
+        "coldBoot": true
+      }
+    },
+    {
+      "carrier": "fixture",
+      "webgl": 1,
+      "device": "WebGLDevice",
+      "pipeline": "WebPipeline",
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-webgl1/report.json",
+        "sha256": "591beb825ecb508d650312b7b220e195db6c88de57bc567af575036b7121f01d"
+      },
+      "screenshots": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-webgl1/001-hud-click.png",
+          "sha256": "41f43c92fa678f0d1c541ffef67f676f2e9a88ad8c7a1341a3e8fef97fed13ca"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-webgl1/002-parallel-pointers.png",
+          "sha256": "3739b48f3753812783680a9bfe785b418cf8b607a919d5b5ce4044ea14eb52dc"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-webgl1/003-modal-restored.png",
+          "sha256": "e1fbd70615785360e15aa9d6a00e4a83294bd4e56bfcc22a71be74e23db522b7"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-fixture-webgl1/004-root-rebuilt.png",
+          "sha256": "5d79077420540c6548f9791344407355a545c69a2ca38ef3ada9be5594d59776"
+        }
+      ],
+      "passedSteps": 11,
+      "steps": [
+        "systemjs-runtime-and-real-viewmgr",
+        "engine-touch-source-and-dom-capture",
+        "open-real-world-page-and-overlay",
+        "hud-click",
+        "world-drag-across-hud",
+        "hud-drag-across-world",
+        "simultaneous-hud-and-world",
+        "wheel-current-hit",
+        "modal-cancels-held-world-and-restores-fresh-only",
+        "hud-close-remount-cancels-old-pointer",
+        "root-rebuild-cancels-and-requires-fresh-pointer"
+      ],
+      "trustedTouchCommands": 37,
+      "trustedDomEvents": 37,
+      "expectedBootDiagnostics": 1,
+      "unexpectedErrors": 0,
+      "modalCancellation": {
+        "owners": 0,
+        "world": null,
+        "restored": null,
+        "oldMovesRejected": true
+      },
+      "contextSelection": "Owned page rejects webgl2 context creation before Cocos boot; actual WebGLDevice and WebGL 1.0 are asserted. No extension/texture capability masking.",
+      "boot": {
+        "bootStartedAtEpochMs": 1790094951616.5,
+        "firstFixtureLoadStartedAtEpochMs": null,
+        "bootCompletedAtEpochMs": 1790094955652,
+        "coldBoot": true
+      }
+    },
+    {
+      "carrier": "snake",
+      "webgl": 2,
+      "device": "WebGL2Device",
+      "pipeline": "WebPipeline",
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc1-b9-snake-webgl2/report.json",
+        "sha256": "a89506f67fde1a9d6c500b6df266206f0a2ab3169d32bdb1e67551e7f97c167e"
+      },
+      "screenshots": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-snake-webgl2/001-hud-click.png",
+          "sha256": "bb5da9f31487d3aa025ec57bf3585838914b7cc56797ac15d994fd72b937eea7"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-snake-webgl2/002-parallel-pointers.png",
+          "sha256": "51eb4c7511c62377fd4dcb64e524c92fb695fb812c3377497ca4564748138ae5"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-snake-webgl2/003-modal-restored.png",
+          "sha256": "9e3b5191431855347b663a2b2475d881845fb5452d7ab14c33092148ea67e233"
+        }
+      ],
+      "passedSteps": 10,
+      "steps": [
+        "systemjs-runtime-and-real-viewmgr",
+        "engine-touch-source-and-dom-capture",
+        "existing-snake-prerequisite",
+        "attach-real-fgui-hud-to-snake",
+        "hud-click",
+        "world-drag-across-hud",
+        "hud-drag-across-world",
+        "simultaneous-hud-and-world",
+        "modal-cancels-held-world-and-restores-fresh-only",
+        "hud-close-remount-cancels-old-pointer"
+      ],
+      "trustedTouchCommands": 32,
+      "trustedDomEvents": 32,
+      "expectedBootDiagnostics": 0,
+      "unexpectedErrors": 0,
+      "modalCancellation": {
+        "owners": 0,
+        "world": {
+          "kind": "snake",
+          "boosting": false,
+          "routerOwnersCount": 0,
+          "joystickX": 0,
+          "joystickY": 0
+        },
+        "restored": {
+          "kind": "snake",
+          "boosting": false,
+          "routerOwnersCount": 0,
+          "joystickX": 0,
+          "joystickY": 0
+        },
+        "oldMovesRejected": true
+      },
+      "contextSelection": "Native WebGL2",
+      "boot": {
+        "coldBoot": true,
+        "bootStartedAtEpochMs": 1790095236470.6,
+        "bootCompletedAtEpochMs": 1790095240553,
+        "firstFixtureLoadStartedAtEpochMs": null,
+        "provenance": {
+          "kind": "owned-snake-cold-boot",
+          "tabId": "289643D7FBF462E700FF639B532503AE",
+          "expectedWebgl": 2,
+          "sceneUuidAtBoot": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+          "fixtureUuidsUnloaded": true
+        }
+      }
+    },
+    {
+      "carrier": "snake",
+      "webgl": 1,
+      "device": "WebGLDevice",
+      "pipeline": "WebPipeline",
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc1-b9-snake-webgl1/report.json",
+        "sha256": "f1be44b04d43a3d4fe55f41b702ca1e88da6681e9ff3f7e948b57f89923c0e7d"
+      },
+      "screenshots": [
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-snake-webgl1/001-hud-click.png",
+          "sha256": "fa106ff16866548d8dc1f0380ed9ac9fff106179e0acaf0a6149f2e846b6d3b4"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-snake-webgl1/002-parallel-pointers.png",
+          "sha256": "f6bb1ae049011847c86cf947e6a7454a572dea9f1d65422c6cf691f7bb1b9772"
+        },
+        {
+          "path": "docs/evidence/creator-2026-09-23/sc1-b9-snake-webgl1/003-modal-restored.png",
+          "sha256": "c266c0b1de2ffab410123b26d811209bb98e5beb0b8be03ab0b166ae07081864"
+        }
+      ],
+      "passedSteps": 10,
+      "steps": [
+        "systemjs-runtime-and-real-viewmgr",
+        "engine-touch-source-and-dom-capture",
+        "existing-snake-prerequisite",
+        "attach-real-fgui-hud-to-snake",
+        "hud-click",
+        "world-drag-across-hud",
+        "hud-drag-across-world",
+        "simultaneous-hud-and-world",
+        "modal-cancels-held-world-and-restores-fresh-only",
+        "hud-close-remount-cancels-old-pointer"
+      ],
+      "trustedTouchCommands": 32,
+      "trustedDomEvents": 32,
+      "expectedBootDiagnostics": 1,
+      "unexpectedErrors": 0,
+      "modalCancellation": {
+        "owners": 0,
+        "world": {
+          "kind": "snake",
+          "boosting": false,
+          "routerOwnersCount": 0,
+          "joystickX": 0,
+          "joystickY": 0
+        },
+        "restored": {
+          "kind": "snake",
+          "boosting": false,
+          "routerOwnersCount": 0,
+          "joystickX": 0,
+          "joystickY": 0
+        },
+        "oldMovesRejected": true
+      },
+      "contextSelection": "Owned fresh Snake page rejects webgl2 context before boot; stage3d-boot.mjs verifies cold provenance. No extension masking.",
+      "boot": {
+        "coldBoot": true,
+        "bootStartedAtEpochMs": 1790095311133.6,
+        "bootCompletedAtEpochMs": 1790095313173,
+        "firstFixtureLoadStartedAtEpochMs": null,
+        "provenance": {
+          "kind": "owned-snake-cold-boot",
+          "tabId": "0DE749F3F8414D3276C350412F63BD59",
+          "expectedWebgl": 1,
+          "sceneUuidAtBoot": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+          "fixtureUuidsUnloaded": true
+        }
+      }
+    }
+  ],
+  "defaultArbitrationTestsUnchanged": true,
+  "mutation": {
+    "mutation": "remove RawInputRouter.setBlocked cancellation",
+    "command": "node --import tsx --test apps/client/test/raw-input.test.ts",
+    "exitCode": 1,
+    "detected": true,
+    "sourceSha256": "71fd78254d0818d6a395f509b300082d1ac2b4589ca78d571ac09a683b2d0214",
+    "failedTests": 5,
+    "totalTests": 20,
+    "restored": true,
+    "log": {
+      "path": ".cache/stage3d/sc1-b9/mutation-delete-modal-cancel.log",
+      "sha256": "796a9536d003faa781baff12a17b60374f05abb322da3c4ca9af89f35de8f66d"
+    }
+  },
+  "engineTypecheck": {
+    "engine": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/bin/.declarations/cc.d.ts",
+    "files": [
+      "apps/client/src/view/input/RawInput.ts",
+      "apps/client/src/view/input/CocosRawInput.ts",
+      "apps/client/src/view/input/FguiRawInput.ts"
+    ],
+    "hashes": {
+      "apps/client/src/view/input/RawInput.ts": "71fd78254d0818d6a395f509b300082d1ac2b4589ca78d571ac09a683b2d0214",
+      "apps/client/src/view/input/CocosRawInput.ts": "d5973c14de05bff76faa3f875a71411305e6a76ad30c28c19a2fc9e64e7b2d75",
+      "apps/client/src/view/input/FguiRawInput.ts": "2774c7da4dca8e3e5c6ab05b6e3643f1d3f5dc14525be52074024f356b8889ed"
+    },
+    "diagnostics": []
+  },
+  "verification": {
+    "verifyAll": {
+      "exitCode": 0,
+      "clientTests": 956,
+      "uniflexContractTests": 63,
+      "serverTests": 1344,
+      "log": {
+        "path": ".cache/stage3d/sc1-b9/verify-all-final.log",
+        "sha256": "2748ec937b7ff8b29753f8b050cc89716c19d053a7cebb12c01799ee3528d988"
+      }
+    },
+    "typecheck": [
+      "strict client",
+      "legacy ES2017 client",
+      "shared",
+      "server",
+      "UniFlex author and web"
+    ],
+    "restoredRawInputAndProbeTests": {
+      "tests": 59,
+      "failed": 0,
+      "log": {
+        "path": ".cache/stage3d/sc1-b9/raw-probe-restored.log",
+        "sha256": "99ab319a138be157f0ac94d899ba46363bbafbf668f3e9f4f1f79aeb012d83b6"
+      }
+    },
+    "pluginLockCheck": {
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/stage3d/sc1-b9/plugin-check-final.log",
+        "sha256": "587f250d5663dcd1f2362dd8a127c794e3597124858c5070fd82188fa73dc306"
+      }
+    },
+    "previewDeviceRestored": {
+      "before": "WebpageFullScreen",
+      "after": "Apple iPhone X; XS; 11 Pro; 12/13 Mini",
+      "restored": true,
+      "probeTabsAlreadyClosed": true
+    }
+  },
+  "sourceSha256": {
+    "apps/client/src/app/AppRuntime.ts": "ee48a32237fb04f46c63380384f166657e2e07fe4aa2b0c12a42d85c05c89645",
+    "apps/client/src/gameplay/modes/ballMove/index.ts": "08e35b3d795ca98811c5aa30617d702834d572d70556178f07b1e28bc6e6c65c",
+    "apps/client/src/gameplay/modes/snake/index.ts": "fbc1bf30438fde7fbb140197d705cb717e6cb5497a9cdff0f49adf97b58f4b51",
+    "apps/client/src/gameplay/services.ts": "27d01ab386344db2fc48b6945ada3d78acafa9806550ec7ecaf85ac88e91f73b",
+    "apps/client/src/generated/views.generated.ts": "ec9f375e4803e40a144a86cbdc3435d4c9d9c79f608afbfa19c5862b3fda8135",
+    "apps/client/src/logic/gameplay/GameplayModule.ts": "10889d834141bc6c1a93cb8bada944704392b188b275a57e571003a49ae2e512",
+    "apps/client/src/logic/input/PointerOwnership.ts": "534b0648e4f65f59beb1fa90ffce4297c1cbe9d5388b48ed4fb1a793bf8309a6",
+    "apps/client/src/logic/page/Stage3dFixtureLogic.ts": "1252c41527a554e0a4c47c5a62dc1041ffce32e3c6494fe36edc645b6f370a0b",
+    "apps/client/src/shared/kits/catalog.generated.ts": "8c4b07d8f0d36f652e9b891f12adebced0b36033f98b6ad2587a41e91dd963f7",
+    "apps/client/src/ui-uniflex/resourceCatalog.ts": "2c8cab2380f4528816bc3b59a9df9f9e887911c0ab9c5078ed98b25b5e3aaaa2",
+    "apps/client/src/view/CocosView.ts": "ef7f95bc161534510413e6303e4feb774402a3fa065ac25cfed327cf352c8c78",
+    "apps/client/src/view/FguiView.ts": "1cbb92ca702f86b1368e537c25f816ea9c212b55b2fa31c081bf9d07885126f9",
+    "apps/client/src/view/Stage3dFixtureView.ts": "1a35a22723cbdb100806c224d1db632a8bafe8ea5d189cda843f3bbec8b6600b",
+    "apps/client/src/view/Stage3dSpikeHudView.ts": "372adad7e64028dea585b38bfc3699191bc7394191c37ef136d3499b0d16d2fd",
+    "apps/client/src/view/Stage3dSpikeHudView.view.json": "26cc0eb6cf8c58c000851f2a9aa569e64ab084c16853d5ef0a557486cd2426fd",
+    "apps/client/src/view/ViewMgr.ts": "9dca0a71ed87cb2a0b39ab9b55103b8a053a4852c9586389e083e4f346961115",
+    "apps/client/src/view/defineView.ts": "2ac151fe4f7aa9fe8e6d71bb69d28de52c378b75e6130a285be2540096dab164",
+    "apps/client/src/view/input/CocosRawInput.ts": "d5973c14de05bff76faa3f875a71411305e6a76ad30c28c19a2fc9e64e7b2d75",
+    "apps/client/src/view/input/FguiRawInput.ts": "2774c7da4dca8e3e5c6ab05b6e3643f1d3f5dc14525be52074024f356b8889ed",
+    "apps/client/src/view/input/RawInput.ts": "71fd78254d0818d6a395f509b300082d1ac2b4589ca78d571ac09a683b2d0214",
+    "apps/client/src/view/rooms/ballMove/BallMoveView.ts": "122601b89c01920ce47fce770f6f72df655bebf893b211a596802c833ccbf7fd",
+    "apps/client/src/view/rooms/snake/SnakeWorldView.ts": "9ae2d8c236d55384a3ca848ea58d2d0351df6d3af6cc9ef28ac838d98f625453",
+    "apps/client/test/appHostHarness.ts": "04b1b98dc6f0925e7e1e5aa94d8db3ee2b4e5dd9505e56c815893382afea0190",
+    "apps/client/test/appRuntime.test.ts": "d1f0547b7190e0f80ca1cac09b9a4e77b724855d51afff28c13445d81ec6b66b",
+    "apps/client/test/gameplayLifecycle.test.ts": "cda920432e3b2da4de53299f7ccc15ef3b7aa120fe79dcbcd3b848b2b82b0d9f",
+    "apps/client/test/gameplayPresentation.test.ts": "fe07113191c5708851c9c4585e72e0ff3966bcb86fee61021ca973f6b4dd4501",
+    "apps/client/test/mainGameplay.test.ts": "5bd4a9f42ed7c9faf36fbb287e0fa449467d35a85fdb77d26b2d48b19fdc5061",
+    "apps/client/test/mmoWorld-gameplay.test.ts": "d6cf55e5c1a11e2ba9522b37528f5e56bde6727f8851aef3ba231e27310149e0",
+    "apps/client/test/performanceBaseline.test.ts": "fc3682c3368dca837235e60d0032903a704411707e897fd752d9c2d360578bf7",
+    "apps/client/test/raw-input.test.ts": "ec8c0e485d9a1ede5a2e8d28a2cdf61dfb87d156d9772ac3ca1dbebc8dcc6cd9",
+    "apps/client/test/snake-presentation.test.ts": "e4f385c57c6b6f5b7178063148ade0f0e78c8b03db0ec15f76c6d9585e5274f8",
+    "apps/client/test/stage3d-fixture-lifecycle.test.ts": "8bf233382a5239163475b30eab9252e2bb1bb84fd4de513bdc482db196c03c9e",
+    "apps/client/test/stage3d-spike-hud-lifecycle.test.ts": "31a138d4b458880de69c10db065cc1b8fc5222a8f7d725ec9a0a4867b1e53e6a",
+    "apps/client/test/uniflex-resource-catalog.test.ts": "6c951ae2ee137cd7a9190192c75a1ed006245bdcb01cf3d1431ce005e3901cf8",
+    "apps/client/test/viewLifecycle.test.ts": "c043f333ce2ac8e3d3365ae133437702cdf8ffc3810067f84dbb74371592cba8",
+    "apps/kits/mmo/kit.json": "36afe0eb6e8eb2c6b180dd1beb55d460a8ae397883c46860b8e3f315dddd667d",
+    "apps/plugins/snake/plugin.json": "bf1458db12c8ad1ccbb9d4b6be6d76352efd4887c35cbeb851445a6a1722d9fe",
+    "apps/server/src/kits/catalog.generated.ts": "eb529e02bc4e64ca5a4e9aa31b85bcde53a546eba7386ef65c334bdd81be0931",
+    "apps/server/test/plugin-codegen.test.ts": "25f8d0f8576396edcde0148b3aa7ecccd77a6b6384a72e4a924bb8d69792e614",
+    "apps/server/test/stage3d-probe.test.ts": "1c24a89604e774b62f042c5fa3ea7c0ab74996dff100206e49ad86da00b2a61f",
+    "apps/server/tools/plugin-codegen/viewCatalog.ts": "fddbb9e4b1490eb3c60576a5f457f488d47437e872ac6b4da781f17d9bb54e33",
+    "apps/shared/src/kits/catalog.generated.ts": "8c4b07d8f0d36f652e9b891f12adebced0b36033f98b6ad2587a41e91dd963f7",
+    "scripts/build-uniflex-ui.mjs": "d92e344506461afd59e8f49b59b149108db64a995be15315e7e6df0b83602878",
+    "scripts/protected-paths.json": "5aff7ef12e7a76bb6e22fff0c9777d8a3fde37afb19e6b1a6e3c210a1328c8d3",
+    "tools/creator-preview/probe-stage3d.mjs": "5bd87f8f60282b570a26698c6fc1aeabd962f35c8ba0e6f16fda245649e702e8"
+  }
+}

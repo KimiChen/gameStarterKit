@@ -198,3 +198,15 @@ node tools/creator-preview/run.mjs sgzzmap --reuse --out /tmp/sgzzmap-run
 Creator 打开后会正式导入这些图并可能改写 uuid / 补 library 条目 —— 那是正常的，
 **把 Creator 改动后的 `.meta` 一并提交**即可。在 Creator 真正导入之前，
 `resources.load` 很可能找不到底图与缩略图贴图：此时远档只有鸟瞰色块、缩略图只有可点底板（都有兜底，⛔ 不崩）。
+
+## SC1-B9 原始输入验收
+
+`node tools/creator-preview/probe-stage3d.mjs --input-only --mode fixture --preview http://localhost:7456 --expect-webgl 2 --out <dir> --summary <file>`
+复用真实 ViewMgr 世界页 / FGUI HUD / Confirm，执行双向跨界、双指、wheel、模态取消、关闭重挂与根重建。
+`--input-only --mode snake --reuse --tab <id>` 对已经登录并运行的 Snake 做同一套检查；脚本不代为启动服务或对局。
+WebGL1 使用引擎实际选择的 WebGLDevice 并传 `--expect-webgl 1`，保持触摸能力在页面启动前启用。
+复用已有 9222 进程时，新的 fixture 页面可再加 `--force-webgl1`：只在自有页面启动前拒绝 webgl2 context，
+不屏蔽浮点或其它扩展；报告断言实际 WebGL 1.0 并保留精确启动回退日志。该参数拒绝复用页面或非 input-only 运行。
+Snake 的 WebGL1 冷启动沿用 `stage3d-boot.mjs` 的前置标记与完成记录，避免把旧页面追认为冷启动。
+这是 SC1-B9 输入接缝证据；省去 SC0 的性能 / 蒙皮 / 20 次资源循环和其它阶段 pending，不据此宣布 SC1-B4 或 SC1 退出。
+原 SC0 命令不带该参数时的证据范围保持不变。

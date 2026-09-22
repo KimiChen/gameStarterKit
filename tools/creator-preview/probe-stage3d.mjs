@@ -3,7 +3,7 @@
  * SC0 real Creator evidence. This file never starts Creator, Chrome, or a backend.
  * node tools/creator-preview/probe-stage3d.mjs [--mode fixture|snake] [--reuse] [--tab ID]
  *   [--preview http://127.0.0.1:7457] [--devtools http://127.0.0.1:9222]
- *   [--expect-webgl 1|2] [--cycles 20] [--out DIR] [--summary FILE]
+ *   [--expect-webgl 1|2] [--input-only] [--force-webgl1] [--cycles 20] [--out DIR] [--summary FILE]
  * Creator must select its native WebpageFullScreen preview device, Rotate off,
  * before boot. Metrics alone cannot remove the Default-device toolbar/layout.
  * Snake mode requires --reuse and an already live Snake run; missing prerequisites
@@ -310,6 +310,8 @@ export function parseStage3dProbeArgs(argv) {
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") return { help: true };
+    if (arg === "--input-only") { options.inputOnly = true; continue; }
+    if (arg === "--force-webgl1") { options.forceWebgl1 = true; continue; }
     if (arg === "--reuse") { options.reuse = true; continue; }
     const key = strings[arg] ?? integers[arg];
     if (!key) throw new Error(`Unknown option: ${arg}`);
@@ -321,6 +323,8 @@ export function parseStage3dProbeArgs(argv) {
   if (!["fixture", "snake"].includes(options.mode)) throw new Error("--mode must be fixture or snake");
   if (options.tabId && !options.reuse) throw new Error("--tab requires --reuse; fresh fixture runs create their own tab");
   if (options.expectWebgl !== null && ![1, 2].includes(options.expectWebgl)) throw new Error("--expect-webgl must be 1 or 2");
+  if (options.forceWebgl1 && (!options.inputOnly || options.reuse || options.expectWebgl !== 1))
+    throw new Error("--force-webgl1 requires a fresh --input-only run with --expect-webgl 1");
   for (const key of ["preview", "devtools"]) {
     const url = new URL(options[key]);
     if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) throw new Error(`${key} must use a loopback host`);
@@ -671,10 +675,10 @@ async function installHarness(mode, key, readViewport, readScheduledQueues) {
   };
   const managerImport = await discover("ViewMgr");
   const sessionImport = await discover("spikeSession");
-  const inputImport = await discover("readSpikeInputDebug");
+  const inputImport = await discover("rawInput");
   const manager = managerImport.module.ViewMgr;
   const session = sessionImport.module.spikeSession;
-  const readInput = inputImport.module.readSpikeInputDebug;
+  const readInput = () => inputImport.module.rawInput.inspect();
   if (globalThis[key]?.close) await globalThis[key].close();
   let worldHandle = null;
   let hudHandle = null;
@@ -838,6 +842,13 @@ async function installHarness(mode, key, readViewport, readScheduledQueues) {
     await waitFrames();
     return snapshot();
   };
+  const rebuildRoot = async () => {
+    if (mode !== "fixture") throw new Error("Root reconstruction belongs to the fixture carrier");
+    manager.disposeViewRoot();
+    hudHandle = null; worldHandle = null;
+    await waitFrames();
+    return snapshot();
+  };
   const openHud = async () => {
     if (hudHandle) throw new Error("Probe HUD is already open");
     hudHandle = await manager.open("Stage3dSpikeHud");
@@ -872,8 +883,8 @@ async function installHarness(mode, key, readViewport, readScheduledQueues) {
     await waitFrames();
   }
   session.close = () => { void close(); };
-  globalThis[key] = { snapshot, open, openHud, closeHud, close, waitFrames, switchSkinning, switchRealtime };
-  return { moduleUrls: { ViewMgr: managerImport.url, spikeSession: sessionImport.url, spikeInput: inputImport.url }, baseline: snapshot() };
+  globalThis[key] = { snapshot, open, openHud, closeHud, close, rebuildRoot, waitFrames, switchSkinning, switchRealtime };
+  return { moduleUrls: { ViewMgr: managerImport.url, spikeSession: sessionImport.url, rawInput: inputImport.url }, baseline: snapshot() };
 }
 
 export function createStage3dHarnessSource(mode) { return `(${installHarness.toString()})(${JSON.stringify(mode)},${JSON.stringify(HARNESS)},${readViewport.toString()},${readScheduledStageQueues.toString()})`; }
@@ -1087,6 +1098,25 @@ async function inputScenarios(probe) {
     assert(clicked.logic.hudClicks === reopened.logic.hudClicks + 1, "Reopened HUD click was lost/duplicated");
     return { closed, reopened, after, clicked };
   });
+  if (probe.options.inputOnly && probe.options.mode === "fixture") await probe.step("root-rebuild-cancels-and-requires-fresh-pointer", async () => {
+    await probe.touch("touchStart", 901, p.world);
+    await probe.touch("touchMove", 901, p.moved);
+    const destroyed = await probe.invoke("rebuildRoot");
+    assert(!destroyed.input.active && destroyed.input.ownersCount === 0 && destroyed.input.worldState === null,
+      "Root teardown retained an adapter, pointer, or world subscription");
+    const reopened = await probe.invoke("open");
+    await probe.touch("touchMove", 901, p.world);
+    await probe.touch("touchEnd", 901);
+    const stale = await probe.snapshot();
+    assert(stale.input.counters.worldMoves === reopened.input.counters.worldMoves, "Root reconstruction resumed an old pointer");
+    await probe.touch("touchStart", 901, p.world);
+    await probe.touch("touchMove", 901, p.moved);
+    await probe.touch("touchEnd", 901);
+    const fresh = await probe.snapshot();
+    assert(fresh.input.counters.worldMoves > stale.input.counters.worldMoves && fresh.input.ownersCount === 0,
+      "Rebuilt root did not route a fresh complete world gesture");
+    return { destroyed, reopened, stale, fresh, screenshot: await probe.shot("root-rebuilt") };
+  });
 }
 
 async function skinningScenarios(probe) {
@@ -1298,7 +1328,7 @@ export async function runStage3dProbe(options) {
       policy: "Chrome 153 live diagnostics: partial touchEnd carries ended points; final touchEnd is empty. This conflicts with the local CDP schema description that touchEnd must be empty. Every command validates actual window-capture DOM changedTouches and remaining touches; another runtime failing that check is a failed probe.",
       commands: [],
     } };
-  let client, probe, scriptId;
+  let client, probe, scriptId, forceWebgl1ScriptId;
   try {
     if (options.mode === "snake" && !options.reuse) throw new PendingEvidence("Snake mode requires --reuse and an already running, controllable Snake session. No backend/gameplay was started.");
     let tab;
@@ -1315,6 +1345,16 @@ export async function runStage3dProbe(options) {
     if (report.viewport.valid === false) throw new PendingEvidence(`Existing preview layout cannot be changed after boot for this evidence: ${report.viewport.error}. Boot with fixed metrics before running --reuse.`);
     const hook = await client.send("Page.addScriptToEvaluateOnNewDocument", { source: consoleHookSource });
     scriptId = hook.identifier;
+    if (options.forceWebgl1) {
+      const fallback = await client.send("Page.addScriptToEvaluateOnNewDocument", { source: `(() => {
+        const original = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function(type, ...args) {
+          return type === "webgl2" ? null : original.call(this, type, ...args);
+        };
+      })()` });
+      forceWebgl1ScriptId = fallback.identifier;
+      report.contextSelection = "Owned page rejects webgl2 context creation before Cocos boot; actual WebGLDevice and WebGL 1.0 are asserted. No extension/texture capability masking.";
+    }
     await client.send("Page.bringToFront");
     if (options.mode !== "snake" && !options.reuse) {
       const sceneUuid = options.scene ?? sceneUuidFromMeta(fs.readFileSync(path.join(REPO_ROOT, "apps/Cocos/assets/scene.scene.meta"), "utf8"));
@@ -1323,6 +1363,7 @@ export async function runStage3dProbe(options) {
     const faultBefore = options.capabilityFaultInjection?.before;
     const currentTimeOrigin = await client.evaluate("performance.timeOrigin");
     report.boot = { bootStartedAtEpochMs: options.reuse && faultBefore ? faultBefore.bootStartedAtEpochMs : currentTimeOrigin, firstFixtureLoadStartedAtEpochMs: null,
+      bootCompletedAtEpochMs: options.reuse ? null : await client.evaluate("Date.now()"),
       coldBoot: !options.reuse || (options.mode === "fixture" && faultBefore?.installedBeforeCocos === true
         && faultBefore.bootStartedAtEpochMs === currentTimeOrigin && Number.isFinite(currentTimeOrigin)
         && Array.isArray(faultBefore.alreadyLoadedFixturePrefabs) && faultBefore.alreadyLoadedFixturePrefabs.length === 0) };
@@ -1350,9 +1391,22 @@ export async function runStage3dProbe(options) {
         `Cocos boot did not register touch input: ${JSON.stringify(capability)}; touch emulation must be enabled before navigation`);
       return { capability, capture: await client.evaluate(createStage3dTouchTraceSource()) };
     });
-    if (options.mode === "fixture") await fixtureScenarios(probe);
+    if (options.mode === "fixture" && options.inputOnly) {
+      await probe.step("open-real-world-page-and-overlay", async () => {
+        const state = await probe.invoke("open");
+        report.environment = state.environment;
+        assert(options.expectWebgl === null || state.environment.webgl === options.expectWebgl, "Actual WebGL context mismatch");
+        return state;
+      });
+      await inputScenarios(probe);
+    } else if (options.mode === "fixture") await fixtureScenarios(probe);
     else {
-      await probe.step("existing-snake-prerequisite", () => probe.requireSnake());
+      await probe.step("existing-snake-prerequisite", async () => {
+        const state = await probe.requireSnake();
+        report.environment = state.environment;
+        assert(options.expectWebgl === null || state.environment.webgl === options.expectWebgl, "Actual WebGL context mismatch");
+        return state;
+      });
       await probe.step("attach-real-fgui-hud-to-snake", () => probe.invoke("openHud"));
       await inputScenarios(probe);
     }
@@ -1375,9 +1429,10 @@ export async function runStage3dProbe(options) {
       } catch (error) { report.cleanupError ??= error instanceof Error ? error.message : String(error); }
       try { report.console = await client.evaluate("(window.__creatorPreviewLogs || []).slice()"); } catch {}
       if (scriptId) await client.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: scriptId }).catch(() => {});
+      if (forceWebgl1ScriptId) await client.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: forceWebgl1ScriptId }).catch(() => {});
       client.close();
     }
-    if (options.mode === "fixture") {
+    if (options.mode === "fixture" && !options.inputOnly) {
       report.pending.push({ name: "snake-carrier", reason: "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence." });
       report.pending.push({ name: "visual-and-skinning-review", reason: "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths." });
       report.pending.push({ name: "other-sc0-gates", reason: "Independent baked-Prefab reload, the second WebGL context and SC0-B4 budget freeze / prototype handoff remain separate exit gates. Real WeChat low-tier / remote-load / cache acceptance belongs to SC4." });
@@ -1392,7 +1447,8 @@ export async function runStage3dProbe(options) {
       && report.consoleClassification.unexpectedErrors.length === 0;
     report.ok = report.executedOk && report.pending.length === 0;
     report.exitCode = report.executedOk ? report.pending.length ? 2 : 0 : 1;
-    const summary = path.resolve(options.summary ?? path.join(REPO_ROOT, "docs/perf/stage3d", `${date}-${options.mode === "fixture" ? "spike" : "snake-input"}${report.environment?.webgl === 1 ? "-webgl1" : ""}.json`));
+    const summaryName = options.inputOnly ? `sc1-b9-${options.mode}-input` : options.mode === "fixture" ? "spike" : "snake-input";
+    const summary = path.resolve(options.summary ?? path.join(REPO_ROOT, "docs/perf/stage3d", `${date}-${summaryName}${report.environment?.webgl === 1 ? "-webgl1" : ""}.json`));
     fs.mkdirSync(path.dirname(summary), { recursive: true });
     const reportPath = path.join(out, "report.json");
     fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
@@ -1404,7 +1460,7 @@ export async function runStage3dProbe(options) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const options = parseStage3dProbeArgs(process.argv.slice(2));
-    if (options.help) console.log("Usage: node tools/creator-preview/probe-stage3d.mjs [--mode fixture|snake] [--reuse] [--tab ID] [--expect-webgl 1|2] [--cycles 20] [--out DIR] [--summary FILE]\nDefaults: Creator 127.0.0.1:7457, existing Chrome CDP 127.0.0.1:9222. --tab requires --reuse; ambiguous existing pages are rejected. Snake requires a live session; no backend is started.");
+    if (options.help) console.log("Usage: node tools/creator-preview/probe-stage3d.mjs [--mode fixture|snake] [--reuse] [--tab ID] [--expect-webgl 1|2] [--input-only] [--force-webgl1] [--cycles 20] [--out DIR] [--summary FILE]\nDefaults: Creator 127.0.0.1:7457, existing Chrome CDP 127.0.0.1:9222. --tab requires --reuse; ambiguous existing pages are rejected. Snake requires a live session; no backend is started. --input-only validates SC1-B9 input; it does not claim SC0/SC1-B4 rendering, performance, or asset lifecycle gates. --force-webgl1 rejects webgl2 context creation before a fresh input-only boot; actual WebGL 1.0 is asserted.");
     else {
       const result = await runStage3dProbe(options);
       console.log(JSON.stringify({ executedOk: result.report.executedOk, pending: result.report.pending.length,

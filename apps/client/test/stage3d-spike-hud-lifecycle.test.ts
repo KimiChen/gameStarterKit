@@ -26,8 +26,6 @@ class FakeFguiView extends ViewBase {
 }
 interface OpenRequest { resolve(handle: FakeHandle): void; reject(error: Error): void; }
 const requests: OpenRequest[] = [];
-let activeAdapters = 0;
-let releasedAdapters = 0;
 let Hud: any;
 class FakeHandle {
   closeCalls = 0;
@@ -57,10 +55,6 @@ async function loadHud(): Promise<any> {
       assert.equal(name, "Confirm");
       return new Promise<FakeHandle>((resolve, reject) => requests.push({ resolve, reject }));
     } } };
-    if (request === "./scene3d/spikeFguiInput") return { installSpikeFguiInput: () => {
-      activeAdapters++;
-      return () => { activeAdapters--; releasedAdapters++; };
-    } };
     return original.call(this, request, parent, isMain);
   };
   try { Hud = (await import("../src/view/Stage3dSpikeHudView")).Stage3dSpikeHudView; }
@@ -76,23 +70,20 @@ function pendingNavigation() {
   return { ready: navigator.goto(surface).ready, destroy: () => navigator.destroy() };
 }
 async function start(): Promise<{ hud: any; modal(): OpenRequest }> {
-  assert.equal(activeAdapters, 0, "previous HUD must release its adapter");
   requests.length = 0;
-  releasedAdapters = 0;
   const Type = await loadHud();
   const root = new FakeComponent();
   const hud = new Type(root);
   const context = hud.beginLifecycle(1);
   await hud.runCreate(context);
   await hud.runOpen(context);
-  assert.equal(activeAdapters, 1);
   return { hud, modal: () => {
     root.children.find((child) => child.name === "Stage3dSpike.ModalButton")!.click();
     return requests[requests.length - 1]!;
   } };
 }
 
-test("SC0 HUD closes every Confirm it opened and releases its adapter once", async () => {
+test("SC0 HUD closes every Confirm it opened without owning the framework input adapter", async () => {
   const { hud, modal } = await start();
   const handles = [new FakeHandle(), new FakeHandle()];
   for (const handle of handles) { modal().resolve(handle); await flush(); }
@@ -101,8 +92,6 @@ test("SC0 HUD closes every Confirm it opened and releases its adapter once", asy
   await hud.closeLifecycle();
   hud.dispose();
   assert.deepEqual(handles.map((handle) => handle.closeCalls), [1, 1]);
-  assert.equal(activeAdapters, 0);
-  assert.equal(releasedAdapters, 1);
 });
 
 test("SC0 HUD closes a late Confirm immediately without configuring the stale view", async () => {
@@ -115,7 +104,6 @@ test("SC0 HUD closes a late Confirm immediately without configuring the stale vi
   assert.equal(handle.closeCalls, 1);
   assert.equal(handle.runCalls, 0);
   assert.equal(handle.logic, null);
-  assert.equal(activeAdapters, 0);
   hud.dispose();
 });
 
@@ -129,7 +117,6 @@ test("SC0 Confirm completion relinquishes HUD ownership before closing its handl
   assert.equal(handle.closeCalls, 1);
   await hud.closeLifecycle();
   assert.equal(handle.closeCalls, 1, "HUD must not retain a completed multi-instance modal");
-  assert.equal(activeAdapters, 0);
   hud.dispose();
 });
 
@@ -146,7 +133,6 @@ test("SC0 HUD cleans up a failed Confirm setup and observes its rejection", asyn
   assert.equal(errors[0]![1], handle.runFailure);
   await hud.closeLifecycle();
   assert.equal(handle.closeCalls, 1);
-  assert.equal(activeAdapters, 0);
   hud.dispose();
 });
 
@@ -163,7 +149,6 @@ test("SC0 HUD closes an owned modal even while its setup operation is pending", 
   finish();
   await flush();
   assert.equal(handle.closeCalls, 1);
-  assert.equal(activeAdapters, 0);
   hud.dispose();
 });
 
@@ -185,8 +170,6 @@ for (const closeBy of ["confirm", "hud"] as const) {
     assert.deepEqual(errors, [], "owned destruction is a normal cancellation, not a failed handler");
     await hud.closeLifecycle();
     assert.equal(handle.closeCalls, 1);
-    assert.equal(activeAdapters, 0);
-    assert.equal(releasedAdapters, 1);
     hud.dispose();
   });
 }

@@ -1,16 +1,24 @@
 // SC0-B3 mutation executed: route() uses current hit instead of the recorded owner
 // -> boundary/concurrent-touch and stale desktop end cases fail (2/11); restored.
+// SC1-B9 mutation executed: remove RawInputRouter.setBlocked's cancel() call
+// -> modal ownership + real Snake joystick/boost reset fail (5/20); restored.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { EventMouse, EventTouch } from "cc";
 import type { GRoot } from "db://fairygui-cc/fairygui.mjs";
 import { SnakePointerRouter } from "../src/logic/rooms/snake/SnakeControls";
-import { SpikePointerOwnership } from "../src/logic/page/Stage3dFixtureLogic";
-import { installSpikeFguiInput } from "../src/view/scene3d/spikeFguiInput";
-import {
-    activateSpikeInputAdapter, cancelSpikeWorldInput, isSpikeInputActive, peekSpikePointerOwner, readSpikeInputDebug,
-    registerSpikeWorld, routeSpikeTouch, setSpikeInputBlocked,
-} from "../src/view/scene3d/spikeInput";
+import { PointerOwnership } from "../src/logic/input/PointerOwnership";
+import { installFguiRawInput } from "../src/view/input/FguiRawInput";
+import { rawInput, type RawInputSubscriber } from "../src/view/input/RawInput";
+const owner = () => ({ signal: new AbortController().signal, isActive: () => true });
+const registerWorld = (subscriber: RawInputSubscriber) => rawInput.subscribe(owner(), subscriber);
+const readInput = () => rawInput.inspect();
+const isActive = () => readInput().active;
+const cancelInput = () => rawInput.cancel();
+const setBlocked = (value: boolean) => rawInput.setBlocked(value);
+const activateAdapter = (cancel: (id: number, event: EventTouch) => void) => rawInput.attachAdapter(cancel);
+const peekOwner = (id: number) => rawInput.peek(id);
+const routeTouch = rawInput.routeTouch.bind(rawInput);
 
 type RawEvent = { getID(): number; getLocation(): { x: number; y: number }; getUILocation(): { x: number; y: number }; preventSwallow?: boolean };
 const event = (id: number, x: number, y = 0): RawEvent => ({ getID: () => id, getLocation: () => ({ x, y }), getUILocation: () => ({ x, y }) });
@@ -101,29 +109,29 @@ class FakeProcessor {
     mouseWheelHandler(_value: RawEvent): void { this.calls.wheel++; }
 }
 function fixture() {
-    setSpikeInputBlocked(false);
+    setBlocked(false);
     const root = { node: new FakeNode(), inputProcessor: null as FakeProcessor | null };
     const ip = new FakeProcessor(root);
     root.inputProcessor = ip;
     const worldEvents: string[] = [];
     let cancels = 0;
-    const unregister = registerSpikeWorld({
+    const unregister = registerWorld({
         touch: (phase, value) => worldEvents.push(`${phase}:${value.getID()}`),
         wheel: () => worldEvents.push("wheel"), cancel: () => { cancels++; },
     });
     const originalBegin = ip.touchBeginHandler;
-    const release = installSpikeFguiInput(root as unknown as GRoot);
+    const release = installFguiRawInput(root as unknown as GRoot);
     return { root, ip, worldEvents, originalBegin, cancels: () => cancels,
-        dispose: () => { release(); unregister(); setSpikeInputBlocked(false); }, release };
+        dispose: () => { release(); unregister(); setBlocked(false); }, release };
 }
 
-test("SC0 FGUI bridge locks touch ownership across both boundaries and handles concurrent HUD/world fingers", () => {
+test("SC1-B9 FGUI bridge locks touch ownership across both boundaries and handles concurrent HUD/world fingers", () => {
     const f = fixture();
     try {
         const hudStart = event(1, 20), worldStart = event(2, 200);
         f.root.node.emit("touch-start", hudStart);
         f.root.node.emit("touch-start", worldStart);
-        assert.equal((readSpikeInputDebug() as { ownersCount: number }).ownersCount, 2);
+        assert.equal((readInput() as { ownersCount: number }).ownersCount, 2);
         const hudMove = event(1, 200), worldMove = event(2, 20);
         f.root.node.emit("touch-move", hudMove);
         f.root.node.emit("touch-move", worldMove);
@@ -138,12 +146,12 @@ test("SC0 FGUI bridge locks touch ownership across both boundaries and handles c
         assert.equal(hudMove.preventSwallow, false, "HUD drag out must remain swallowed");
         assert.equal(worldStart.preventSwallow, true);
         assert.equal(worldMove.preventSwallow, true, "world drag keeps native Cocos propagation");
-        assert.equal((readSpikeInputDebug() as { ownersCount: number }).ownersCount, 0);
+        assert.equal((readInput() as { ownersCount: number }).ownersCount, 0);
         assert.equal(f.ip.infos.filter((info) => info.touchId !== -1).length, 0, "world hit queries cannot leak FGUI captures");
     } finally { f.dispose(); }
 });
 
-test("SC0 world hit and wheel do not claim a recycled FGUI slot after a HUD tap", () => {
+test("SC1-B9 world hit and wheel do not claim a recycled FGUI slot after a HUD tap", () => {
     const f = fixture();
     try {
         f.root.node.emit("touch-start", event(903, 20));
@@ -156,11 +164,11 @@ test("SC0 world hit and wheel do not claim a recycled FGUI slot after a HUD tap"
         assert.equal(f.ip.infos.filter((info) => info.touchId !== -1).length, 0, "wheel must not leave a synthetic mouse capture");
         f.root.node.emit("touch-end", event(901, 200));
         assert.deepEqual(f.worldEvents, ["start:901", "wheel", "end:901"]);
-        assert.equal(readSpikeInputDebug().ownersCount, 0);
+        assert.equal(readInput().ownersCount, 0);
     } finally { f.dispose(); }
 });
 
-test("SC0 wheel hits current location without corrupting a HUD touch; desktop mouse does not synthesize world touches", () => {
+test("SC1-B9 wheel hits current location without corrupting a HUD touch; desktop mouse does not synthesize world touches", () => {
     const f = fixture();
     try {
         f.root.node.emit("touch-start", event(0, 20));
@@ -179,13 +187,13 @@ test("SC0 wheel hits current location without corrupting a HUD touch; desktop mo
     } finally { f.dispose(); }
 });
 
-test("SC0 modal cancellation clears both owners and allows the modal's own fresh FGUI clicks", () => {
+test("SC1-B9 modal cancellation clears both owners and allows the modal's own fresh FGUI clicks", () => {
     const f = fixture();
     try {
         f.root.node.emit("touch-start", event(1, 20));
         f.root.node.emit("touch-start", event(2, 200));
-        setSpikeInputBlocked(true);
-        assert.equal((readSpikeInputDebug() as { ownersCount: number }).ownersCount, 0);
+        setBlocked(true);
+        assert.equal((readInput() as { ownersCount: number }).ownersCount, 0);
         assert.deepEqual(f.worldEvents, ["start:2", "cancel:2"]);
         assert.equal(f.ip.calls.cancel, 1);
         f.root.node.emit("touch-end", event(1, 20));
@@ -193,7 +201,7 @@ test("SC0 modal cancellation clears both owners and allows the modal's own fresh
         f.root.node.emit("touch-start", event(3, 20));
         f.root.node.emit("touch-end", event(3, 20));
         assert.equal(f.ip.calls.click, 1, "modal remains interactive through the original FGUI handlers");
-        setSpikeInputBlocked(false);
+        setBlocked(false);
         f.root.node.emit("touch-move", event(2, 210));
         f.root.node.emit("touch-end", event(2, 210));
         assert.deepEqual(f.worldEvents, ["start:2", "cancel:2"], "restoring input cannot resume an old world pointer");
@@ -202,13 +210,13 @@ test("SC0 modal cancellation clears both owners and allows the modal's own fresh
     } finally { f.dispose(); }
 });
 
-test("SC0 world replacement cancels the former owner and stale release does not resurrect it", () => {
+test("SC1-B9 world replacement cancels the former owner and stale release does not resurrect it", () => {
     const f = fixture();
     const replacement: string[] = [];
     let releaseNew: (() => void) | undefined;
     try {
         f.root.node.emit("touch-start", event(7, 200));
-        releaseNew = registerSpikeWorld({ touch: (phase) => replacement.push(phase), cancel: () => replacement.push("cancelAll") });
+        releaseNew = registerWorld({ touch: (phase) => replacement.push(phase), cancel: () => replacement.push("cancelAll") });
         assert.deepEqual(f.worldEvents, ["start:7", "cancel:7"]);
         assert.ok(f.cancels() >= 2);
         f.root.node.emit("touch-move", event(7, 210));
@@ -221,7 +229,7 @@ test("SC0 world replacement cancels the former owner and stale release does not 
     } finally { releaseNew?.(); f.dispose(); }
 });
 
-test("SC0 adapter survives processor disable/enable and restores original prototype handlers on release", () => {
+test("SC1-B9 adapter survives processor disable/enable and restores original prototype handlers on release", () => {
     const f = fixture();
     try {
         f.ip.setEnabled(false);
@@ -232,7 +240,7 @@ test("SC0 adapter survives processor disable/enable and restores original protot
         assert.deepEqual(f.worldEvents, ["start:1"]);
         f.release();
         f.release();
-        assert.equal(isSpikeInputActive(), false);
+        assert.equal(isActive(), false);
         assert.equal(f.ip.touchBeginHandler, f.originalBegin);
         assert.equal(Object.hasOwn(f.ip, "touchBeginHandler"), false);
         assert.equal(f.root.node.count("touch-start"), 1);
@@ -241,19 +249,19 @@ test("SC0 adapter survives processor disable/enable and restores original protot
     } finally { f.dispose(); }
 });
 
-test("SC0 adapter replacement restores old root listeners and stale release leaves the new root active", () => {
+test("SC1-B9 adapter replacement restores old root listeners and stale release leaves the new root active", () => {
     const first = fixture();
     const second = fixture();
     try {
         first.release();
-        assert.equal(isSpikeInputActive(), true);
+        assert.equal(isActive(), true);
         assert.equal(first.ip.touchBeginHandler, first.originalBegin);
         second.root.node.emit("touch-start", event(4, 200));
         assert.deepEqual(second.worldEvents, ["start:4"]);
     } finally { first.dispose(); second.dispose(); }
 });
 
-test("SC0 cancellation clears real Snake router joystick/boost state and reopening requires fresh gestures", () => {
+test("SC1-B9 cancellation clears real Snake router joystick/boost state and reopening requires fresh gestures", () => {
     const f = fixture();
     let boosting = false;
     let knob = { x: 0, y: 0 };
@@ -261,7 +269,7 @@ test("SC0 cancellation clears real Snake router joystick/boost state and reopeni
         steer: (_x, _y, x, y) => { knob = { x, y }; }, centerJoystick: () => { knob = { x: 0, y: 0 }; },
         setBoost: (value) => { boosting = value; }, activate: () => {},
     });
-    const unregister = registerSpikeWorld({
+    const unregister = registerWorld({
         touch: (phase, value) => {
             const p = value.getUILocation();
             if (phase === "cancel") router.cancel(value.getID());
@@ -275,25 +283,25 @@ test("SC0 cancellation clears real Snake router joystick/boost state and reopeni
         f.root.node.emit("touch-start", event(2, 620, 410));
         assert.equal(boosting, true);
         assert.notEqual(knob.x, 0);
-        setSpikeInputBlocked(true);
+        setBlocked(true);
         assert.equal(boosting, false);
         assert.equal(router.ownerCount, 0);
         assert.deepEqual(knob, { x: 0, y: 0 });
-        setSpikeInputBlocked(false);
+        setBlocked(false);
         f.root.node.emit("touch-move", event(1, 480, 220));
         assert.deepEqual(knob, { x: 0, y: 0 });
         f.root.node.emit("touch-start", event(2, 620, 410));
-        cancelSpikeWorldInput();
+        cancelInput();
         assert.equal(boosting, false);
         assert.equal(router.ownerCount, 0);
     } finally { unregister(); f.dispose(); }
 });
 
-test("SC0 subscribers receive the original raw events during dispatch", () => {
+test("SC1-B9 subscribers receive the original raw events during dispatch", () => {
     const f = fixture();
     let receivedTouch: EventTouch | null = null;
     let receivedMouse: EventMouse | null = null;
-    const unregister = registerSpikeWorld({ touch: (_phase, value: EventTouch) => { receivedTouch = value; },
+    const unregister = registerWorld({ touch: (_phase, value: EventTouch) => { receivedTouch = value; },
         wheel: (value: EventMouse) => { receivedMouse = value; }, cancel: () => {} });
     try {
         const touch = event(1, 200);
@@ -305,7 +313,7 @@ test("SC0 subscribers receive the original raw events during dispatch", () => {
     } finally { unregister(); f.dispose(); }
 });
 
-test("SC0 deferred cancellation snapshots IDs because Cocos reuses EventTouch across multiple touches", () => {
+test("SC1-B9 deferred cancellation snapshots IDs because Cocos reuses EventTouch across multiple touches", () => {
     const f = fixture();
     let id = 1;
     const sharedEvent = { ...event(1, 200), getID: () => id };
@@ -314,27 +322,29 @@ test("SC0 deferred cancellation snapshots IDs because Cocos reuses EventTouch ac
         id = 2;
         f.root.node.emit("touch-start", sharedEvent);
         id = 99;
-        cancelSpikeWorldInput();
+        cancelInput();
         assert.deepEqual(f.worldEvents, ["start:1", "start:2", "cancel:1", "cancel:2"]);
-        assert.equal(readSpikeInputDebug().ownersCount, 0);
+        assert.equal(readInput().ownersCount, 0);
     } finally { f.dispose(); }
 });
 
-test("SC0 hooks do not cancel default gameplay while no fixture adapter is active", () => {
-    assert.equal(isSpikeInputActive(), false);
+test("SC1-B9 modal/hide cancellation also guards gameplay without an overlay adapter", () => {
+    assert.equal(isActive(), false);
     let cancels = 0;
-    const unregister = registerSpikeWorld({ touch: () => {}, cancel: () => { cancels++; } });
+    const unregister = registerWorld({ touch: () => {}, cancel: () => { cancels++; } });
     try {
-        setSpikeInputBlocked(true);
-        cancelSpikeWorldInput();
-        assert.equal(cancels, 0);
-        assert.equal(readSpikeInputDebug().blocked, true, "future adapter must inherit the current modal boundary");
-        setSpikeInputBlocked(false);
-    } finally { unregister(); setSpikeInputBlocked(false); }
-    assert.equal(cancels, 0);
+        setBlocked(true);
+        assert.equal(cancels, 1);
+        cancelInput();
+        assert.equal(cancels, 2);
+        assert.equal(readInput().blocked, true);
+        setBlocked(false);
+        assert.equal(cancels, 3);
+    } finally { unregister(); setBlocked(false); }
+    assert.equal(cancels, 4);
 });
 
-test("SC0 partial listener installation failure restores originals and removes the active adapter", () => {
+test("SC1-B9 partial listener installation failure restores originals and removes the active adapter", () => {
     const root = { node: new FakeNode(), inputProcessor: null as FakeProcessor | null };
     const ip = new FakeProcessor(root);
     root.inputProcessor = ip;
@@ -345,15 +355,15 @@ test("SC0 partial listener installation failure restores originals and removes t
         if (type === "mouse-move" && !failed) { failed = true; throw new Error("fixture registration failed"); }
         originalOn(type, fn, target);
     };
-    assert.throws(() => installSpikeFguiInput(root as unknown as GRoot), /fixture registration failed/u);
-    assert.equal(isSpikeInputActive(), false);
+    assert.throws(() => installFguiRawInput(root as unknown as GRoot), /fixture registration failed/u);
+    assert.equal(isActive(), false);
     assert.equal(ip.touchBeginHandler, original);
     for (const [type] of bindings) assert.equal(root.node.count(type), 1, type);
 });
 
-test("SC0 pointer cancellation completes every owner before rethrowing the first failure", () => {
+test("SC1-B9 pointer cancellation completes every owner before rethrowing the first failure", () => {
     const visited: number[] = [], first = new Error("HUD cancellation failed");
-    const ownership = new SpikePointerOwnership((id) => { visited.push(id); throw id === 1 ? first : new Error("world cancellation failed"); });
+    const ownership = new PointerOwnership((id) => { visited.push(id); throw id === 1 ? first : new Error("world cancellation failed"); });
     ownership.route(1, "start", "hud"); ownership.route(2, "start", "world");
     assert.throws(() => ownership.cancelAll(), (error) => error === first);
     assert.deepEqual(visited, [1, 2]);
@@ -361,28 +371,28 @@ test("SC0 pointer cancellation completes every owner before rethrowing the first
     assert.equal(ownership.route(2, "move", "world"), null);
 });
 
-test("SC0 throwing HUD cancellation still cancels every world pointer, clears pending and permits host lifecycle continuation", () => {
+test("SC1-B9 throwing HUD cancellation still cancels every world pointer, clears pending and permits host lifecycle continuation", () => {
     for (const action of ["hide", "block", "release"] as const) {
-        setSpikeInputBlocked(false);
+        setBlocked(false);
         const first = new Error(`HUD cancel ${action}`), reported: unknown[][] = [], received: string[] = [];
         const oldError = console.error;
         console.error = (...values: unknown[]) => { reported.push(values); };
         let armed = false, cancelAll = 0;
-        const unregister = registerSpikeWorld({
+        const unregister = registerWorld({
             touch: (phase, touch) => { received.push(`${phase}:${touch.getID()}`); if (armed && phase === "cancel") throw new Error("world touch failure"); },
             cancel: () => { cancelAll++; if (armed) throw new Error("world cancelAll failure"); },
         });
-        const release = activateSpikeInputAdapter(() => { throw first; });
+        const release = activateAdapter(() => { throw first; });
         try {
-            routeSpikeTouch("start", event(1, 20) as unknown as EventTouch, "hud");
-            routeSpikeTouch("start", event(2, 200) as unknown as EventTouch, "world");
-            routeSpikeTouch("start", event(3, 210) as unknown as EventTouch, "world");
+            routeTouch("start", event(1, 20) as unknown as EventTouch, "hud");
+            routeTouch("start", event(2, 200) as unknown as EventTouch, "world");
+            routeTouch("start", event(3, 210) as unknown as EventTouch, "world");
             const beforeCancels = cancelAll;
             armed = true;
             let hostContinued = false;
             assert.doesNotThrow(() => {
-                if (action === "hide") cancelSpikeWorldInput();
-                else if (action === "block") setSpikeInputBlocked(true);
+                if (action === "hide") cancelInput();
+                else if (action === "block") setBlocked(true);
                 else release();
                 hostContinued = true;
             });
@@ -391,19 +401,19 @@ test("SC0 throwing HUD cancellation still cancels every world pointer, clears pe
             assert.equal(cancelAll, beforeCancels + 1);
             assert.equal(reported.length, 1, "only the first failure is reported after complete cleanup");
             assert.equal(reported[0]![1], first);
-            assert.equal(readSpikeInputDebug().ownersCount, 0);
-            assert.equal(readSpikeInputDebug().pendingCount, 0);
-            for (const id of [1, 2, 3]) assert.equal(peekSpikePointerOwner(id), null);
-            setSpikeInputBlocked(false);
-            routeSpikeTouch("move", event(2, 220) as unknown as EventTouch, "world");
+            assert.equal(readInput().ownersCount, 0);
+            assert.equal(readInput().pendingCount, 0);
+            for (const id of [1, 2, 3]) assert.equal(peekOwner(id), null);
+            setBlocked(false);
+            routeTouch("move", event(2, 220) as unknown as EventTouch, "world");
             assert.equal(received.at(-1), "cancel:3", "old world gestures cannot resume after reported failure");
         } finally {
-            armed = false; release(); unregister(); setSpikeInputBlocked(false); console.error = oldError;
+            armed = false; release(); unregister(); setBlocked(false); console.error = oldError;
         }
     }
 });
 
-test("SC0 FGUI release restores original handlers even when native HUD cancel fails", () => {
+test("SC1-B9 FGUI release restores original handlers even when native HUD cancel fails", () => {
     const f = fixture(), first = new Error("native FGUI cancel failed"), reported: unknown[][] = [];
     const updateInfo = f.ip.updateInfo, oldError = console.error;
     console.error = (...values: unknown[]) => { reported.push(values); };
@@ -414,25 +424,106 @@ test("SC0 FGUI release restores original handlers even when native HUD cancel fa
         assert.doesNotThrow(() => f.release());
         assert.deepEqual(f.worldEvents, ["start:2", "cancel:2"]);
         assert.equal(reported[0]![1], first);
-        assert.equal(readSpikeInputDebug().pendingCount, 0);
-        assert.equal(isSpikeInputActive(), false);
+        assert.equal(readInput().pendingCount, 0);
+        assert.equal(isActive(), false);
         assert.equal(f.ip.touchBeginHandler, f.originalBegin);
         for (const [type] of bindings) assert.equal(f.root.node.count(type), 1);
         assert.equal(f.ip.infos.filter((info) => info.touchId !== -1).length, 0);
     } finally { f.ip.updateInfo = updateInfo; f.dispose(); console.error = oldError; }
 });
 
-test("SC0 a modal opened during HUD cancellation preserves remaining world cancellation snapshots", () => {
-    setSpikeInputBlocked(false);
+test("SC1-B9 a modal opened during HUD cancellation preserves remaining world cancellation snapshots", () => {
+    setBlocked(false);
     const received: string[] = [];
-    const unregister = registerSpikeWorld({ touch: (phase, value) => { received.push(`${phase}:${value.getID()}`); }, cancel: () => {} });
-    const release = activateSpikeInputAdapter(() => setSpikeInputBlocked(true));
+    const unregister = registerWorld({ touch: (phase, value) => { received.push(`${phase}:${value.getID()}`); }, cancel: () => {} });
+    const release = activateAdapter(() => setBlocked(true));
     try {
-        routeSpikeTouch("start", event(1, 20) as unknown as EventTouch, "hud");
-        routeSpikeTouch("start", event(2, 200) as unknown as EventTouch, "world");
-        cancelSpikeWorldInput();
+        routeTouch("start", event(1, 20) as unknown as EventTouch, "hud");
+        routeTouch("start", event(2, 200) as unknown as EventTouch, "world");
+        cancelInput();
         assert.deepEqual(received, ["start:2", "cancel:2"]);
-        assert.equal(readSpikeInputDebug().pendingCount, 0);
-        assert.equal(readSpikeInputDebug().ownersCount, 0);
-    } finally { release(); unregister(); setSpikeInputBlocked(false); }
+        assert.equal(readInput().pendingCount, 0);
+        assert.equal(readInput().ownersCount, 0);
+    } finally { release(); unregister(); setBlocked(false); }
+});
+
+test("SC1-B9 expired owner aborts immediately, clears both pointer maps and cannot be reused", () => {
+    const f = fixture();
+    const controller = new AbortController();
+    const events: string[] = [];
+    const owned = { signal: controller.signal, isActive: () => !controller.signal.aborted };
+    const release = rawInput.subscribe(owned, { touch: (phase) => events.push(phase), cancel: () => events.push("clear") });
+    try {
+        f.root.node.emit("touch-start", event(1, 200));
+        controller.abort();
+        assert.deepEqual(events, ["start", "cancel", "clear"]);
+        assert.equal(readInput().ownersCount, 0);
+        assert.equal(readInput().pendingCount, 0);
+        assert.equal(readInput().worldGeneration, null);
+        assert.throws(() => rawInput.subscribe(owned, { touch() {}, cancel() {} }), /inactive/);
+        f.root.node.emit("touch-move", event(1, 230));
+        f.root.node.emit("touch-end", event(1, 230));
+        release();
+        assert.deepEqual(events, ["start", "cancel", "clear"]);
+    } finally { release(); f.dispose(); }
+});
+
+test("SC1-B9 generation-only expiry cancels before the next router event and stale release is inert", () => {
+    const f = fixture();
+    let current = true;
+    const events: string[] = [];
+    const release = rawInput.subscribe({ signal: new AbortController().signal, isActive: () => current }, {
+        touch: (phase) => events.push(phase), cancel: () => events.push("clear"),
+    });
+    try {
+        f.root.node.emit("touch-start", event(1, 200));
+        current = false;
+        f.root.node.emit("touch-move", event(1, 230));
+        assert.deepEqual(events, ["start", "cancel", "clear"]);
+        const next: string[] = [];
+        const releaseNext = registerWorld({ touch: (phase) => next.push(phase), cancel() {} });
+        release();
+        f.root.node.emit("touch-end", event(1, 230));
+        assert.deepEqual(next, []);
+        f.root.node.emit("touch-start", event(1, 230));
+        assert.deepEqual(next, ["start"]);
+        releaseNext();
+    } finally { release(); f.dispose(); }
+});
+
+test("SC1-B9 hide cancels first, blocks all old events and resumes only fresh gestures", () => {
+    const f = fixture();
+    try {
+        f.root.node.emit("touch-start", event(1, 200));
+        f.root.node.emit("touch-start", event(2, 20));
+        rawInput.setSuspended(true);
+        assert.deepEqual(f.worldEvents, ["start:1", "cancel:1"]);
+        f.root.node.emit("touch-start", event(3, 20));
+        f.root.node.emit("touch-end", event(3, 20));
+        f.root.node.emit("touch-start", event(4, 200));
+        f.root.node.emit("mouse-wheel", event(0, 20));
+        assert.equal(f.ip.calls.click, 0);
+        assert.equal(f.ip.calls.wheel, 0);
+        rawInput.setSuspended(false);
+        f.root.node.emit("touch-end", event(1, 20));
+        f.root.node.emit("touch-end", event(2, 20));
+        assert.equal(f.ip.calls.click, 0);
+        f.root.node.emit("touch-start", event(5, 200));
+        assert.equal(f.worldEvents.at(-1), "start:5");
+    } finally { rawInput.setSuspended(false); f.dispose(); }
+});
+
+test("SC1-B9 duplicate start cancellation cannot reenter a newly modal world", () => {
+    const f = fixture();
+    const events: string[] = [];
+    const release = registerWorld({
+        touch: (phase) => { events.push(phase); if (phase === "cancel") setBlocked(true); }, cancel() {},
+    });
+    try {
+        f.root.node.emit("touch-start", event(1, 200));
+        f.root.node.emit("touch-start", event(1, 200));
+        assert.deepEqual(events, ["start", "cancel"]);
+        assert.equal(readInput().ownersCount, 0);
+        assert.equal(readInput().pendingCount, 0);
+    } finally { release(); f.dispose(); }
 });

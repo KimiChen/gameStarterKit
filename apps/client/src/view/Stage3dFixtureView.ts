@@ -7,7 +7,6 @@ import { DEV } from "cc/env";
 import { CocosView } from "./CocosView";
 import type { ViewLifecycleContext } from "./ViewBase";
 import { Stage3dFixtureLogic } from "../logic/page/Stage3dFixtureLogic";
-import { registerSpikeWorld } from "./scene3d/spikeInput";
 import { spikeSession } from "./scene3d/spikeSession";
 import { createSpikeRealtimeSwitcher, createSpikeSkinningSwitcher, prepareSpikeSkinningLayouts } from "./scene3d/spikeSkinning";
 import { captureSpikeOwnedInstancing } from "./scene3d/spikeOwnedInstancing";
@@ -50,7 +49,7 @@ export class Stage3dFixtureView extends CocosView {
         world.addChild(light);
         light.setRotationFromEuler(-60, -25, 0);
         light.addComponent(DirectionalLight).illuminance = 65000;
-        this.detachInput = registerSpikeWorld({
+        this.detachInput = this.subscribeRawInput(context, {
             touch: (phase, event) => {
                 const p = event.getUILocation();
                 spikeSession.logic.pointer(event.getID(), phase, p.x, p.y);

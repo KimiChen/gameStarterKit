@@ -32,6 +32,8 @@ export type GameplayExitReason = "user-exit" | "settled";
 export interface GameplayInstanceHost<TInput = unknown> {
     /** 本局 generation = RoomController.currentGeneration 为本局分配的值（plugin.start 时绑定；绑定前为 0）。 */
     readonly generation: number;
+    /** Owner cancellation signal, bound to the same room generation. */
+    readonly signal: AbortSignal;
     isActive(): boolean;
     /** 转发 RoomController.input；旧 generation / 未启动 / route signal 失效一律拒绝（false）。 */
     dispatchInput(input: TInput): Promise<boolean>;
@@ -141,7 +143,9 @@ function createModulePlugin<TLaunch, TInput, TRoom>(
     let bound: GameplayContext<TRoom> | null = null;
     const isCurrentGeneration = (): boolean =>
         bound !== null && bridge.currentGeneration() === bound.generation;
+    const unboundSignal = new AbortController().signal;
     const host: GameplayInstanceHost<TInput> = {
+        get signal(): AbortSignal { return bound?.signal ?? unboundSignal; },
         get generation(): number {
             return bound?.generation ?? 0;
         },

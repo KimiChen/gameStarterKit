@@ -271,12 +271,14 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
-- [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
+- [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-23 SC1-B9 完成：`inputMode:modal/overlay/passive` 与 `interactive` 兼容校验、owner 绑定 raw-input 端口、FGUI 命中适配及宿主全局后备输入已交付；Snake / BallMove 在玩法 router 前接入同一分流，模态 / hide / 关闭 / 重挂先取消摇杆与 boost，再关闭业务输入。旧输入原型已迁移删除，未改 vendor；默认仲裁测试原文未改。Creator 3.8.8 的 WebGL2 / 实际 WebGL1：夹具各 11 步（含根重建与 wheel）、真实 Snake 各 10 步，共 138 条 trusted DOM 触摸，全部通过。删除模态 cancel 的变异使 5 / 20 条输入测试转红并已恢复；真实引擎声明编译零诊断，本批 `verify:all` 全绿（客户端 956 / UniFlex 契约 63 / 服务端 1344 项，含两套客户端类型检查）。为完成真实 Confirm 验收，修复了页面私有字体被其它页面选作默认字体的问题；Snake 升至 1.2.5，MMO 测试夹具适配后升至 0.1.31，安装锁与保护锁同步。详见[验收摘要](perf/stage3d/2026-09-23-sc1-b9.json)。下一批 B4；本批只验输入接缝，未代替正式舞台的 20 次资源 / GFX 生命周期验收，SC1 未退出。
 
 - 2026-09-22 SC1-B8 完成：按平台、GPU 与真实 GFX 能力提供 `ports.stage3d.quality`，未知设备 / WebGL1 / 微信默认 low；开发参数只改请求档位，生产忽略覆写，ASTC、关节纹理、instancing 与阴影仍受能力限制。quality / pool / detail-layers JSON 契约及同步默认值生成已落地；冻结预算保持不变，缺 instancing / 可用关节纹理时单位上限保守降为 25 / 50 / 50，池激活示例为每帧 4 / 8 / 16（执行和容量验收留 SC3/SC4）。两套压缩预设、PNG 回落、mipmap 与独立 `stage3d-dev.scene` 已由 Creator 3.8.8 验证；沿用 SC0 独立烘焙 Prefab，不读取作者场景状态。WebGL2 / 实际 WebGL1 各 7 项功能检查通过，ASTC 故障注入下真实 ImageAsset 选择 PNG；两个开发场景由全平台构建钩子排除，已在 Creator 内验证过滤结果，未宣称完整平台构建。新增 51 项测试、两次变异、真实引擎声明编译、两套客户端类型检查及本批 `verify:all` 全过（客户端 939 / UniFlex 契约 63 / 服务端 1341 项）。[验收摘要](perf/stage3d/2026-09-22-sc1-b8.json) 记录证据与哈希。下一批 B9；SC1 未退出，完整页面生命周期、资产闸与真机缓存仍按 B4/B5/SC4 验收。
 

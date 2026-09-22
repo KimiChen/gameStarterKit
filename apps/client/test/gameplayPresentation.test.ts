@@ -1,3 +1,4 @@
+import { RawInputRouter } from "../src/view/input/RawInput";
 import { createFakeStage3D } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -176,6 +177,8 @@ test("gameplay catalog：正向动态 presentation factory 可挂载并在 stop 
         }),
     };
     let unregister: (() => void) | null = null;
+    let releaseSource: (() => void) | null = null;
+    const rawInput = new RawInputRouter();
     try {
         // Import the gameplay module only after the cc loader is installed. The
         // module itself must stay free of a static BallMoveView dependency
@@ -186,6 +189,8 @@ test("gameplay catalog：正向动态 presentation factory 可挂载并在 stop 
         const registry = new GameplayRegistry<any, any>();
         const controller = new RoomController<any, any>();
         // §7.7：View 输入回流经 generation-fenced GameplayInstanceHost → controller 桥。
+        const { installCocosRawInput } = await import("../src/view/input/CocosRawInput");
+        releaseSource = installCocosRawInput(rawInput);
         const services = createGameplayServices({
             stage3d: createFakeStage3D(),
             controllerBridge: {
@@ -196,7 +201,7 @@ test("gameplay catalog：正向动态 presentation factory 可挂载并在 stop 
                 },
                 requestStop: (reason) => controller.stop(reason),
             },
-            presentationHost: { node: host as never, dispatchInput: (value) => dispatched.push(value) },
+            presentationHost: { rawInput, node: host as never, dispatchInput: (value) => dispatched.push(value) },
         });
         unregister = registerGameplayModule(registry, {
             ...createGameplayModule(services),
@@ -208,19 +213,20 @@ test("gameplay catalog：正向动态 presentation factory 可挂载并在 stop 
             pluginId: "ballMove",
         });
         assert.equal(host.children.length, 1, "动态 factory 必须创建并挂载 BallMoveView layer");
-        assert.equal(input.count(), 4, "BallMoveView mount 必须登记四个触摸监听");
+        assert.equal(input.count(), 5, "宿主登记四个触摸和一个滚轮监听，表现件只订阅端口");
 
-        input.emit("touch-start", { getUILocation: () => ({ x: 12, y: 34 }) });
+        input.emit("touch-start", { getID: () => 1, getUILocation: () => ({ x: 12, y: 34 }) });
         assert.equal(dispatched.length, 1, "挂载后的 presentation 必须把触摸转发给 host");
         assert.equal((dispatched[0] as { type: string }).type, "target");
 
         await controller.stop({ kind: "manual" });
         assert.equal(host.children.length, 0, "stop 必须卸载动态创建的 view layer");
-        assert.equal(input.count(), 0, "stop 必须释放 BallMoveView 的全部触摸监听");
+        assert.equal(rawInput.inspect().worldGeneration, null, "stop 必须释放表现件原始输入订阅");
         assert.equal(leaveCalls, 1, "stop 必须释放本次 room capability");
-        input.emit("touch-start", { getUILocation: () => ({ x: 50, y: 60 }) });
+        input.emit("touch-start", { getID: () => 1, getUILocation: () => ({ x: 50, y: 60 }) });
         assert.equal(dispatched.length, 1, "卸载后不得继续转发触摸");
     } finally {
+        releaseSource?.();
         await unregister?.();
         moduleApi._load = originalLoad;
     }

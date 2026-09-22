@@ -6,7 +6,7 @@
   "fullscreen": true,
   "onlyOne": true,
   "permanent": false,
-  "interactive": false,
+  "inputMode": "overlay",
   "package": "Common_Component",
   "component": "GoContainer",
   "logic": "apps/client/src/logic/page/Stage3dFixtureLogic.ts",

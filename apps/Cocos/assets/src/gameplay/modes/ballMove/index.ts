@@ -83,5 +83,5 @@ async function createBallMovePresentation(
         void host.dispatchInput(input).catch((error) => {
             console.error("[ballMove] gameplay input 失败：", error);
         });
-    });
+    }, { port: presentationHost.rawInput, owner: host });
 }

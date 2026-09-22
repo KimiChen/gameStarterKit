@@ -1,3 +1,5 @@
+import { rawInput, type RawInputSubscriber } from "../src/view/input/RawInput";
+import type { ViewLifecycleContext } from "../src/view/ViewBase";
 /** Resource/lifecycle contract of the real SC0 View; rendering remains a Creator gate. */
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -103,6 +105,7 @@ class FakePrefab {
   decRef(): void { this.refCount--; this.removes++; destructionOrder.push(`asset:${this.name}`); assert.ok(this.refCount >= 0); }
 }
 class FakeCocosBase extends ViewBase {
+  protected subscribeRawInput(owner: ViewLifecycleContext, subscriber: RawInputSubscriber) { return rawInput.subscribe(owner, subscriber); }
   unmount(): void {}
   bringToFront(): void {}
   protected disposeRoot(): void {}

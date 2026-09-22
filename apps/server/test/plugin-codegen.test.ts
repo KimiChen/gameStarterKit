@@ -2067,3 +2067,38 @@ test("MF9 带参 launch：payload / profile 渲染进 GeneratedLaunchTarget；pr
   }
 });
 
+
+test("SC1-B9 sidecar inputMode accepts overlay and aliases, rejects contradictions/non-FGUI/unknown modes", () => {
+  for (const patch of [
+    { inputMode: "overlay", interactive: undefined },
+    { inputMode: "modal", interactive: true },
+    { inputMode: "passive", interactive: false },
+    { interactive: undefined },
+  ]) {
+    const { root, options } = createFixture();
+    addFixtureView(root);
+    fs.writeFileSync(path.join(root, "apps/client/src/view/FxView.view.json"), fixtureSidecar(patch));
+    assert.doesNotThrow(() => writePluginArtifacts(options));
+    const output = fs.readFileSync(path.join(root, "apps/client/src/generated/views.generated.ts"), "utf8");
+    if (patch.inputMode) assert.ok(output.includes(`inputMode: "${patch.inputMode}"`));
+    assert.ok(!output.includes("interactive: undefined"));
+  }
+  for (const patch of [
+    { inputMode: "overlay", interactive: true }, { inputMode: "overlay", interactive: false },
+    { inputMode: "modal", interactive: false }, { inputMode: "passive", interactive: true },
+    { inputMode: "hover" }, { inputMode: null }, { interactive: "yes" },
+  ]) {
+    const { root } = createFixture();
+    addFixtureView(root);
+    fs.writeFileSync(path.join(root, "apps/client/src/view/FxView.view.json"), fixtureSidecar(patch));
+    assert.throws(() => readViewCatalog(root), /inputMode|interactive/);
+  }
+  const { root } = createFixture();
+  addFixtureCocosView(root, { route: true });
+  const file = path.join(root, "apps/client/src/view/CxView.view.json");
+  const sidecar = JSON.parse(fs.readFileSync(file, "utf8"));
+  delete sidecar.interactive;
+  sidecar.inputMode = "overlay";
+  fs.writeFileSync(file, JSON.stringify(sidecar));
+  assert.throws(() => readViewCatalog(root), /overlay requires kind: fgui/);
+});

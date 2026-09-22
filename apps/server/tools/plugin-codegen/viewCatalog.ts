@@ -188,7 +188,8 @@ export type ViewSidecar = {
   readonly fullscreen: boolean;
   readonly onlyOne: boolean;
   readonly permanent: boolean;
-  readonly interactive: boolean;
+  readonly interactive?: boolean;
+  readonly inputMode?: "modal" | "overlay" | "passive";
   readonly package?: string;
   readonly component?: string;
   readonly logic: string;
@@ -206,7 +207,7 @@ export type ViewSidecar = {
 
 const SIDECAR_KEYS = new Set([
   "schemaVersion", "owner", "kind", "layer", "fullscreen", "onlyOne", "permanent",
-  "interactive", "package", "component", "logic", "sharedPkgs", "manualRequired",
+  "interactive", "inputMode", "package", "component", "logic", "sharedPkgs", "manualRequired",
   "nested", "listItems", "controllers", "relations", "assetUrls", "group", "restore", "aliasOf",
 ]);
 
@@ -277,8 +278,16 @@ function parseSidecar(input: unknown, label: string): ViewSidecar {
   if (!(VIEW_LAYERS as readonly string[]).includes(input.layer as string)) {
     fail(label, `layer must be one of ${VIEW_LAYERS.join("/")}`);
   }
-  for (const key of ["fullscreen", "onlyOne", "permanent", "interactive"] as const) {
+  for (const key of ["fullscreen", "onlyOne", "permanent"] as const) {
     if (typeof input[key] !== "boolean") fail(label, `${key} must be a boolean`);
+  }
+  if (input.interactive !== undefined && typeof input.interactive !== "boolean") fail(label, "interactive must be a boolean");
+  if (input.inputMode !== undefined) {
+    if (!["modal", "overlay", "passive"].includes(input.inputMode as string)) fail(label, "invalid inputMode");
+    if (input.interactive !== undefined && input.inputMode !== (input.interactive ? "modal" : "passive")) {
+      fail(label, "contradictory inputMode / interactive");
+    }
+    if (input.inputMode === "overlay" && input.kind !== "fgui") fail(label, "overlay requires kind: fgui");
   }
   // logic 落点：中央 logic/、plugin 自持目录 apps/client/src/plugins/<id>/（Non-intrusive §11.3 的插件形态）
   // 或 kit 自持目录 apps/client/src/kits/<id>/（docs/KIT.md §2）。
@@ -350,7 +359,8 @@ function parseSidecar(input: unknown, label: string): ViewSidecar {
     fullscreen: input.fullscreen as boolean,
     onlyOne: input.onlyOne as boolean,
     permanent: input.permanent as boolean,
-    interactive: input.interactive as boolean,
+    ...(input.interactive === undefined ? {} : { interactive: input.interactive as boolean }),
+    ...(input.inputMode === undefined ? {} : { inputMode: input.inputMode as ViewSidecar["inputMode"] }),
     ...(input.package === undefined ? {} : { package: input.package as string }),
     ...(input.component === undefined ? {} : { component: input.component as string }),
     logic: input.logic,
@@ -1245,7 +1255,8 @@ export function renderViews(catalog: ViewCatalog): string {
     // cocos 页面结构上没有 FGUI 段（无 contract / 无 sharedPkgs）——ViewMeta 判别联合在检。
     const contractSegment = sidecar.kind === "fgui" ? `contract: ${contractConstName(entry.name)}, ` : "";
     lines.push(`        name: ${JSON.stringify(entry.name)}, kind: ${JSON.stringify(sidecar.kind)}, ${contractSegment}layer: ${JSON.stringify(sidecar.layer)},`);
-    lines.push(`        fullscreen: ${sidecar.fullscreen}, onlyOne: ${sidecar.onlyOne}, permanent: ${sidecar.permanent}, interactive: ${sidecar.interactive},`);
+    lines.push(`        fullscreen: ${sidecar.fullscreen}, onlyOne: ${sidecar.onlyOne}, permanent: ${sidecar.permanent},${sidecar.interactive === undefined ? "" : ` interactive: ${sidecar.interactive},`}`);
+    if (sidecar.inputMode !== undefined) lines.push(`        inputMode: ${JSON.stringify(sidecar.inputMode)},`);
     if (sidecar.kind === "fgui" && sidecar.sharedPkgs !== undefined) {
       lines.push(`        sharedPkgs: ${JSON.stringify(sidecar.sharedPkgs)},`);
     }

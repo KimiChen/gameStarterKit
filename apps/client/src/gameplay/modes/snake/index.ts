@@ -89,5 +89,6 @@ async function createSnakePresentation(
                 console.error("[snake] 打开衣柜失败：", error);
             });
         },
+        { port: presentationHost.rawInput, owner: host },
     );
 }

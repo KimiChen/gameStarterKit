@@ -1,3 +1,4 @@
+import { RawInputRouter } from "../src/view/input/RawInput";
 import { createFakeStage3D } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -265,6 +266,7 @@ test("gameplay module：idle 不创建 BallMove presentation，缺失 presentati
     const controller = new RoomController<any, any>();
     let nodeReads = 0;
     const host: GameplayPresentationHost = {
+        rawInput: new RawInputRouter(),
         get node(): never {
             nodeReads++;
             return {} as never;

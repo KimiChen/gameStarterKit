@@ -59,7 +59,7 @@ test("MmoWorldGameplay：实体表 → 模型（本人 / 视野 / hp）；输入
     const { room, calls, observer } = fakeRoom();
     const { presentation, renders } = fakePresentation();
     const exits: string[] = [];
-    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async (reason: string) => { exits.push(reason); } };
+    const host = { generation: 1, signal: new AbortController().signal, isActive: () => true, dispatchInput: async () => true, requestExit: async (reason: string) => { exits.push(reason); } };
     const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
     const context = contextOf(room);
     await gameplay.start(context);
@@ -98,7 +98,7 @@ test("MmoWorldGameplay：实体表 → 模型（本人 / 视野 / hp）；输入
 test("MmoWorldGameplay：本人位置取本地预测（fighter 120 / 步 6）；pos 回执按 seq 和解后继续预测；视野流位置只给他人", async () => {
     const { room, observer } = fakeRoom();
     const { presentation, renders } = fakePresentation();
-    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const host = { generation: 1, signal: new AbortController().signal, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
     const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
     const context = contextOf(room);
     await gameplay.start(context);
@@ -255,7 +255,7 @@ test("两图交接（gameplay）：传送输入只在传送门半径内发（预
     const { presentation, renders } = fakePresentation();
     const exits: string[] = [];
     const handed: string[] = [];
-    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async (reason: string) => { exits.push(reason); } };
+    const host = { generation: 1, signal: new AbortController().signal, isActive: () => true, dispatchInput: async () => true, requestExit: async (reason: string) => { exits.push(reason); } };
     const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1", onTransfer: (ready) => { handed.push(ready.transferId); } });
     const context = contextOf(room);
     await gameplay.start(context);
@@ -279,7 +279,7 @@ test("两图交接（gameplay）：传送输入只在传送门半径内发（预
 test("附近聊天（gameplay）：say 输入 ⇒ room.say（空白不发）；收到 chat 只映射 fromEntityId → 视野实体名（不在表 ⇒ ?），日志保留最新 50 行", async () => {
     const { room, calls, observer } = fakeRoom();
     const { presentation, renders } = fakePresentation();
-    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const host = { generation: 1, signal: new AbortController().signal, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
     const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
     const context = contextOf(room);
     await gameplay.start(context);
@@ -300,7 +300,7 @@ test("附近聊天（gameplay）：say 输入 ⇒ room.say（空白不发）；�
 test("战斗（gameplay）：target 输入选目标；cast 无目标时自动选最近存活怪并同步目标；冷却来自 private 集合本地倒计时、冷却中不发；技能栏来自职业模板", async () => {
     const { room, calls, observer } = fakeRoom();
     const { presentation, renders } = fakePresentation();
-    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const host = { generation: 1, signal: new AbortController().signal, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
     const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
     const context = contextOf(room);
     await gameplay.start(context);
@@ -332,7 +332,7 @@ test("战斗（gameplay）：target 输入选目标；cast 无目标时自动选
 test("掉落（gameplay，MK2-B3）：视野里的 loot 实体带 count 进模型；pickup 输入 ⇒ 拾取半径内最近的掉落（本人预测位置）⇒ room.pickup；没有 ⇒ 提示不发", async () => {
     const { room, calls, observer } = fakeRoom();
     const { presentation, renders } = fakePresentation();
-    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const host = { generation: 1, signal: new AbortController().signal, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
     const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
     const context = contextOf(room);
     await gameplay.start(context);
@@ -356,7 +356,7 @@ test("掉落（gameplay，MK2-B3）：视野里的 loot 实体带 count 进模�
 test("背包（gameplay，MK3-B1）：private 流的 bag 进模型 + HUD 摘要（背包数 / 装备名 / 邮箱数）；未收到 ⇒ null / 空串", async () => {
     const { room, observer } = fakeRoom();
     const { presentation, renders } = fakePresentation();
-    const host = { generation: 1, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
+    const host = { generation: 1, signal: new AbortController().signal, isActive: () => true, dispatchInput: async () => true, requestExit: async () => undefined };
     const gameplay = new MmoWorldGameplay({ host, presentation, selfCharacterId: "c1" });
     const context = contextOf(room);
     await gameplay.start(context);

@@ -1,14 +1,7 @@
-/**
- * Fixed SC0 fixture adapter for locked FairyGUI 1.2.2. No vendor changes.
- * Handler ordering, native UI propagation, and mouse/touch synthesis still require
- * Creator evidence; headless tests cannot establish that SC0 passed.
- */
+/** Locked FairyGUI 1.2.2 instance adapter; no vendor changes. See README for engine evidence. */
 import type { EventMouse, EventTouch } from "cc";
 import type { GRoot } from "db://fairygui-cc/fairygui.mjs";
-import type { SpikePointerPhase } from "../../logic/page/Stage3dFixtureLogic";
-import {
-    activateSpikeInputAdapter, isSpikeInputBlocked, peekSpikePointerOwner, routeSpikeTouch, routeSpikeWheel,
-} from "./spikeInput";
+import { rawInput, type RawInputRouter } from "./RawInput";
 
 interface Point { x: number; y: number; }
 type RawTouch = EventTouch & { getLocation(): Point; preventSwallow?: boolean };
@@ -19,7 +12,7 @@ interface TouchInfo {
 }
 type TouchHandler = (event: RawTouch) => unknown;
 type MouseHandler = (event: RawMouse) => unknown;
-interface SpikeInputProcessor {
+interface FguiInputProcessor {
     enabled: boolean;
     _touches: TouchInfo[];
     touchBeginHandler: TouchHandler; touchMoveHandler: TouchHandler;
@@ -40,15 +33,15 @@ const mouseBindings = [
 type HandlerName = typeof touchBindings[number][1] | typeof mouseBindings[number][1];
 let installed: { release(): void } | null = null;
 
-export function installSpikeFguiInput(root: GRoot): () => void {
+export function installFguiRawInput(root: GRoot, router: RawInputRouter = rawInput): () => void {
     installed?.release();
-    const ip = root.inputProcessor as unknown as SpikeInputProcessor;
+    const ip = root.inputProcessor as unknown as FguiInputProcessor;
     for (const [, key] of [...touchBindings, ...mouseBindings]) {
-        if (typeof ip?.[key] !== "function") throw new Error(`[stage3d spike] missing FGUI handler ${key}`);
+        if (typeof ip?.[key] !== "function") throw new Error(`[raw-input] missing FGUI handler ${key}`);
     }
-    if (!Array.isArray(ip._touches)) throw new Error("[stage3d spike] missing FGUI touch records");
+    if (!Array.isArray(ip._touches)) throw new Error("[raw-input] missing FGUI touch records");
     for (const key of ["updateInfo", "cancelClick"] as const) {
-        if (typeof ip[key] !== "function") throw new Error(`[stage3d spike] missing FGUI method ${key}`);
+        if (typeof ip[key] !== "function") throw new Error(`[raw-input] missing FGUI method ${key}`);
     }
     const originals = new Map<HandlerName, TouchHandler | MouseHandler>();
     const descriptors = new Map<HandlerName, PropertyDescriptor | undefined>();
@@ -63,7 +56,7 @@ export function installSpikeFguiInput(root: GRoot): () => void {
     // temporary touch record so wheel/hit queries cannot corrupt pointer 0 or
     // leave a world pointer inside InputProcessor.getAllTouches().
     const hit = (event: RawTouch | RawMouse): "hud" | "world" => {
-        const id = "getID" in event ? event.getID() : 0;
+        const id = "getID" in event ? event.getID() ?? 0 : 0;
         // getInfo(id, false) still claims an existing vacant slot in FairyGUI
         // 1.2.2; only an exact record lookup is a non-mutating peek.
         const previous = ip._touches.find((touch) => touch.touchId === id);
@@ -80,7 +73,7 @@ export function installSpikeFguiInput(root: GRoot): () => void {
         return result;
     };
 
-    const deactivate = activateSpikeInputAdapter((id, event) => {
+    const deactivate = router.attachAdapter((id, event) => {
         const info = ip._touches.find((touch) => touch.touchId === id);
         if (!info) return;
         ip.cancelClick(id);
@@ -122,20 +115,15 @@ export function installSpikeFguiInput(root: GRoot): () => void {
             const original = originals.get(key) as TouchHandler;
             replace(type, key, (event: RawTouch) => {
                 if (released) return;
-                // Modal pages remain operable. ViewMgr owns their hit-test boundary.
-                if (isSpikeInputBlocked()) {
-                    try { return original.call(ip, event); }
-                    finally { event.preventSwallow = false; }
-                }
-                const owner = routeSpikeTouch(phase as SpikePointerPhase, event, phase === "start" ? hit(event) : "world");
+                const owner = router.routeTouch(phase, event, phase === "start" ? hit(event) : "world");
                 if (owner === "hud") {
                     try { return original.call(ip, event); }
                     finally { event.preventSwallow = false; }
                 }
                 // World input was explicitly routed; skip FGUI so crossing into a
                 // HUD cannot generate a click. Native Cocos nodes may still receive
-                // their UI event; Snake's global subscription is guarded separately.
-                event.preventSwallow = owner === "world" && !isSpikeInputBlocked();
+                // their UI event; the host global source skips events while this adapter captures.
+                event.preventSwallow = owner === "world" && !router.isBlocked;
                 return undefined;
             });
         }
@@ -143,19 +131,16 @@ export function installSpikeFguiInput(root: GRoot): () => void {
             const original = originals.get(key) as MouseHandler;
             replace(type, key, (event: RawMouse) => {
                 if (released) return;
-                if (isSpikeInputBlocked()) {
-                    try { return original.call(ip, event); }
-                    finally { event.preventSwallow = false; }
-                }
-                const owner = key === "mouseWheelHandler" ? routeSpikeWheel(event, hit(event))
-                    : peekSpikePointerOwner(0) ?? hit(event);
+                if (router.isSuspended) { event.preventSwallow = false; return undefined; }
+                const owner = key === "mouseWheelHandler" ? router.routeWheel(event, hit(event))
+                    : router.peek(0) ?? hit(event);
                 if (owner === "hud") {
                     try { return original.call(ip, event); }
                     finally { event.preventSwallow = false; }
                 }
                 // Cocos synthesizes touch from desktop mouse. Never synthesize a
                 // second world gesture here; only wheel has a separate raw route.
-                event.preventSwallow = owner === "world";
+                event.preventSwallow = owner === "world" && !router.isBlocked;
                 return undefined;
             });
         }

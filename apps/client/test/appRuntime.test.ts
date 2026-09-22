@@ -715,3 +715,40 @@ test("SC1-B3：旧导航启动迟到失败只清理旧舞台，保留新宿主�
     second?.dispose();
   }
 });
+
+test("SC1-B9 presentation port shares the page router; hide sends cancellation before the business gate closes", async () => {
+  const { appRuntime, makeNode } = await loadAppHost();
+  const { rawInput } = await import("../src/view/input/RawInput");
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() }) as unknown as Record<string, any>;
+  assert.equal(runtime.gameplayServices.presentationHost.rawInput, rawInput);
+  const sent: string[] = [];
+  let held = false;
+  runtime.roomController = {
+    input: async (input: { type: string }) => { sent.push(input.type); return true; },
+    dispose: async () => {},
+  };
+  const release = rawInput.subscribe({ signal: new AbortController().signal, isActive: () => true }, {
+    touch: (phase) => { if (phase === "start") held = true; },
+    cancel: () => {
+      if (held) { held = false; void runtime.dispatchGameplayInput({ type: "release-boost" }); }
+    },
+  });
+  const event = { getID: () => 1, getUILocation: () => ({ x: 10, y: 10 }) } as any;
+  try {
+    rawInput.setBlocked(false);
+    rawInput.routeTouch("start", event, "world");
+    runtime.onHostHide();
+    assert.deepEqual(sent, ["release-boost"]);
+    assert.equal(held, false);
+    assert.equal(rawInput.inspect().ownersCount, 0);
+    assert.equal(await runtime.dispatchGameplayInput({ type: "steer" }), false);
+    rawInput.routeTouch("start", event, "world");
+    assert.equal(held, false);
+    runtime.battleConnection = () => ({ state: "ready" });
+    runtime.onHostShow();
+    rawInput.routeTouch("move", event, "world");
+    assert.equal(held, false);
+    rawInput.routeTouch("start", event, "world");
+    assert.equal(held, true);
+  } finally { release(); runtime.dispose(); rawInput.setSuspended(false); }
+});

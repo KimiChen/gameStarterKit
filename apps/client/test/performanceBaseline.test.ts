@@ -1,3 +1,4 @@
+import { RawInputRouter, type RawInputOwner, type RawInputPort } from "../src/view/input/RawInput";
 /**
  * Headless client performance baseline contract.
  * Timing and heap values are intentionally treated as observations: host
@@ -96,7 +97,7 @@ function graphicsChecksum(run: (graphics: GraphicsSink) => void): number {
 }
 
 async function loadBallMoveViewRuntime(): Promise<{
-    BallMoveView: new (host: any, dispatchInput: (input: unknown) => void) => {
+    BallMoveView: new (host: any, dispatchInput: (input: unknown) => void, rawInput: { port: RawInputPort; owner: RawInputOwner }) => {
         mount(): void;
         render(world: GameECS): void;
         unmount(): void;
@@ -316,7 +317,7 @@ test("client baseline：动态执行真实 BallMoveView 并与无头探针比较
     ecs.addPlayer({ id: "other", name: "Other", x: 500.75, y: 600.5, hp: 50, maxHp: 200, alive: true }, false);
     ecs.addPlayer({ id: "dead", name: "Dead", x: 300, y: 400, hp: 10, maxHp: 0, alive: false }, false);
 
-    const view = new runtime.BallMoveView(runtime.createHost(), () => {});
+    const view = new runtime.BallMoveView(runtime.createHost(), () => {}, { port: new RawInputRouter(), owner: { signal: new AbortController().signal, isActive: () => true } });
     view.mount();
     view.render(ecs);
     const viewTrace = runtime.getGraphics().trace;

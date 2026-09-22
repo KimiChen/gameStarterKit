@@ -8,6 +8,8 @@
 import type { FguiContract } from "./fguiContracts";
 import type { ViewLayer } from "./layers";
 
+export type ViewInputMode = "modal" | "overlay" | "passive";
+
 /** View 构造器的不透明形状（实际为 FguiView / CocosView 子类构造器）。 */
 export type ViewCtorLike = new (root: never) => unknown;
 
@@ -23,12 +25,10 @@ interface ViewMetaBase {
     onlyOne: boolean;
     /** 常驻：close() 只摘下不销毁（缓存实例），再次 open 秒开 */
     permanent: boolean;
-    /**
-     * 模态交互页 = true：由最高层交互页的 kind 决定 FGUI 输入开关；
-     * 其下 Cocos 页暂停系统事件。Cocos 模态页自身必须提供全屏输入屏障。
-     * 非模态展示/玩法页 = false，不获取模态输入所有权。
-     */
-    interactive: boolean;
+    /** 输入策略；缺省沿用 interactive，二者均省略时为 passive。overlay 仅限 FGUI。 */
+    inputMode?: ViewInputMode;
+    /** 兼容别名：true = modal，false = passive；与 inputMode 同时声明必须一致。 */
+    interactive?: boolean;
     /** 动态 import 闭包（铁律 10：fairygui 不进静态依赖图）；也是后续资源拆分的加载点 */
     load: () => Promise<ViewCtorLike>;
 }
@@ -57,5 +57,17 @@ export type ViewMeta = FguiViewMeta | CocosViewMeta;
 
 /** 恒等构造器：只为类型收窄与登记点语法统一（对齐 defineRpc/defineMock 哲学）。 */
 export function defineView(meta: ViewMeta): ViewMeta {
+    resolveViewInputMode(meta);
     return meta;
+}
+
+/** Runtime and codegen reject the same invalid combinations. No engine dependency. */
+export function resolveViewInputMode(meta: Pick<ViewMeta, "kind" | "inputMode" | "interactive">): ViewInputMode {
+    const mode = meta.inputMode ?? (meta.interactive === true ? "modal" : "passive");
+    if (!["modal", "overlay", "passive"].includes(mode)) throw new TypeError("Invalid view inputMode");
+    if (meta.interactive !== undefined && typeof meta.interactive !== "boolean") throw new TypeError("Invalid view interactive");
+    if (meta.inputMode !== undefined && meta.interactive !== undefined
+        && mode !== (meta.interactive ? "modal" : "passive")) throw new TypeError("Contradictory inputMode / interactive");
+    if (mode === "overlay" && meta.kind !== "fgui") throw new TypeError("overlay requires kind: fgui");
+    return mode;
 }

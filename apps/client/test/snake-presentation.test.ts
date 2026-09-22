@@ -1,3 +1,4 @@
+import { RawInputRouter } from "../src/view/input/RawInput";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
@@ -431,6 +432,10 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
     };
 
     try {
+        const { installCocosRawInput } = await import("../src/view/input/CocosRawInput");
+        const rawInput = new RawInputRouter();
+        const releaseSource = installCocosRawInput(rawInput);
+        const inputBinding = { port: rawInput, owner: { signal: new AbortController().signal, isActive: () => true } };
         const { SnakeWorldView } = await import("../src/view/rooms/snake/SnakeWorldView");
         const { CLIENT_SNAKE_PRESENTATION_CATALOG, SNAKE_ENTITY_PRESENTATION_CATALOG,
             deriveSkinLayoutMetrics, getClientSnakeSkinPresentation } = await import("../src/logic/rooms/snake/SnakePresentationCatalog");
@@ -444,7 +449,7 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
         let wardrobeOpens = 0;
         const presentation = new SnakeWorldView(
             host as never, (value) => dispatched.push(value), () => { exits += 1; }, () => sfxEnabled,
-            () => { wardrobeOpens += 1; },
+            () => { wardrobeOpens += 1; }, inputBinding,
         );
 
         presentation.mount();
@@ -470,7 +475,7 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
             const sprite = node?.getComponent(FakeSprite);
             assert.ok(sprite?.spriteFrame?.texture, `${name} 必须挂载已加载纹理的 Sprite`);
         }
-        assert.equal(input.count(), 4, "mount 必须登记完整触摸监听");
+        assert.equal(input.count(), 5, "宿主拥有原始触摸及滚轮监听");
 
         presentation.render({
             tick: 0,
@@ -800,19 +805,20 @@ test("SnakeWorldView：Texture2D 使用 /texture 子资源，控件可见且触�
             "结算页在显示时必须拒绝再开确认框，否则两层叠在一起互相压字");
 
         presentation.unmount();
-        assert.equal(input.count(), 0, "unmount 必须释放全部触摸监听");
+        assert.equal(rawInput.inspect().worldGeneration, null, "unmount 必须释放 owner 订阅");
         assert.equal(game.count(), 0, "unmount 必须释放失焦监听");
 
         missingResources.add("plugins/snake/snake_magnet_tools/texture");
         const failedHost = new FakeNode("failed-host");
         failedHost.setPosition(375, 812, 0);
-        const missingMagnet = new SnakeWorldView(failedHost as never, () => {}, () => {});
+        const missingMagnet = new SnakeWorldView(failedHost as never, () => {}, () => {}, undefined, undefined, inputBinding);
         missingMagnet.mount();
         await new Promise<void>((resolve) => setImmediate(resolve));
         assert.ok(findNode(failedHost, "SnakeWorld.RequiredResourceFailure"),
             "required magnet world texture 缺失必须阻断 V2 战斗，而不是画猜测占位");
         assert.equal(findNode(failedHost, "SnakeWorld.Controls")?.active, false);
         missingMagnet.unmount();
+        releaseSource();
         assert.equal(input.count(), 0);
         assert.equal(game.count(), 0);
     } finally {

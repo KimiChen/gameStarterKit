@@ -2,12 +2,10 @@ import {
     Color,
     EventTouch,
     Graphics,
-    Input,
     Label,
     Node,
     UITransform,
     Vec3,
-    input,
 } from "cc";
 import type {
     BallMoveInput,
@@ -16,6 +14,8 @@ import type {
 } from "../../../logic/rooms/ballMove/BallMoveGameplay";
 import { renderBallMoveWorld } from "../../../logic/rooms/ballMove/BallMoveGameplay";
 import { MAP_HEIGHT, MAP_WIDTH } from "../../../shared/index";
+
+import type { RawInputOwner, RawInputPort } from "../../input/RawInput";
 
 const COLOR_BORDER = new Color(120, 120, 120, 255);
 const COLOR_DEAD = new Color(100, 100, 100, 255);
@@ -44,18 +44,17 @@ export class BallMoveView implements BallMovePresentation {
     private waitingLabel: Label | null = null;
     private layer: Node | null = null;
     private mounted = false;
-    private touchStartBound = false;
-    private touchMoveBound = false;
-    private touchEndBound = false;
-    private touchCancelBound = false;
+    private releaseRawInput: (() => void) | null = null;
 
     constructor(
         private readonly host: Node,
         private readonly dispatchInput: (input: BallMoveInput) => void,
+        private readonly rawInput?: { port: RawInputPort; owner: RawInputOwner },
     ) {}
 
     mount(): void {
         if (this.mounted) return;
+        if (!this.rawInput) throw new Error("BallMove presentation requires owner-bound raw input");
         let layer: Node | null = null;
         const cleanupErrors: unknown[] = [];
         try {
@@ -66,16 +65,13 @@ export class BallMoveView implements BallMovePresentation {
             this.host.addChild(layer);
             this.graphics = layer.addComponent(Graphics);
 
-            // Set ownership before calling into the engine. If registration throws
-            // after installing a listener, rollback still attempts the matching off.
-            this.touchStartBound = true;
-            input.on(Input.EventType.TOUCH_START, this.onTouch, this);
-            this.touchMoveBound = true;
-            input.on(Input.EventType.TOUCH_MOVE, this.onTouch, this);
-            this.touchEndBound = true;
-            input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
-            this.touchCancelBound = true;
-            input.on(Input.EventType.TOUCH_CANCEL, this.onTouchEnd, this);
+            this.releaseRawInput = this.rawInput.port.subscribe(this.rawInput.owner, {
+                touch: (phase, event) => {
+                    if (phase === "start" || phase === "move") this.onTouch(event);
+                    else this.onTouchEnd();
+                },
+                cancel: () => this.onTouchEnd(),
+            });
             this.buildExitButton(layer);
             this.mounted = true;
         } catch (error) {
@@ -155,9 +151,9 @@ export class BallMoveView implements BallMovePresentation {
 
     unmount(): void {
         if (!this.mounted && !this.layer) return;
-        this.mounted = false;
         const cleanupErrors: unknown[] = [];
         this.releaseTouchListeners(cleanupErrors);
+        this.mounted = false;
         const layer = this.layer ?? this.graphics?.node ?? null;
         this.graphics = null;
         this.layerTransform = null;
@@ -186,22 +182,9 @@ export class BallMoveView implements BallMovePresentation {
     }
 
     private releaseTouchListeners(errors: unknown[]): void {
-        if (this.touchStartBound) {
-            this.touchStartBound = false;
-            this.tryCleanup(() => input.off(Input.EventType.TOUCH_START, this.onTouch, this), errors);
-        }
-        if (this.touchMoveBound) {
-            this.touchMoveBound = false;
-            this.tryCleanup(() => input.off(Input.EventType.TOUCH_MOVE, this.onTouch, this), errors);
-        }
-        if (this.touchEndBound) {
-            this.touchEndBound = false;
-            this.tryCleanup(() => input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this), errors);
-        }
-        if (this.touchCancelBound) {
-            this.touchCancelBound = false;
-            this.tryCleanup(() => input.off(Input.EventType.TOUCH_CANCEL, this.onTouchEnd, this), errors);
-        }
+        const release = this.releaseRawInput;
+        this.releaseRawInput = null;
+        if (release) this.tryCleanup(release, errors);
     }
 
     private destroyLayer(layer: Node | null, errors: unknown[]): void {

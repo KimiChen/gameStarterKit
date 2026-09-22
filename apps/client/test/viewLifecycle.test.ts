@@ -2164,3 +2164,70 @@ test("启动链路单槽注册各只注册一次：openLogin 全链在 fail-fast
     harness.cleanup();
   }
 });
+
+test("SC1-B9 overlay leaves lower Cocos active, passive FGUI cannot hit, modal/root changes cancel owners", async () => {
+  const runtime = await loadViewRuntime();
+  const { rawInput } = await import("../src/view/input/RawInput");
+  runtime.ViewMgr.disposeViewRoot();
+  runtime.FguiView.ensureRoot();
+  const ip = runtime.getInputProcessor();
+  // Only this test needs the locked processor adapter surface. Existing default arbitration probes stay unchanged.
+  ip._touches = [];
+  ip.updateInfo = () => { throw new Error("This arbitration test must not perform hit testing"); };
+  ip.cancelClick = () => {};
+  for (const key of ["touchBeginHandler", "touchMoveHandler", "touchEndHandler", "touchCancelHandler",
+    "mouseDownHandler", "mouseMoveHandler", "mouseUpHandler", "mouseWheelHandler"]) ip[key] = () => {};
+  const events: string[] = [];
+  class World extends runtime.CocosView {
+    protected onOpen(context: any): void {
+      this.subscribeRawInput(context, { touch: (phase: string) => events.push(phase), cancel: () => events.push("clear") });
+    }
+  }
+  class Hud extends runtime.FguiView { protected bind(): void {} }
+  const names = ["__raw_world", "__raw_hud", "__raw_passive", "__raw_modal"];
+  runtime.VIEW_REGISTRY[names[0]] = cocosRouteMeta(names[0], World, { interactive: false, onlyOne: true });
+  for (const [index, mode] of [[1, "overlay"], [2, "passive"], [3, "modal"]] as const) {
+    runtime.VIEW_REGISTRY[names[index]] = {
+      name: names[index], kind: "fgui", contract: { pkg: names[index], comp: "Root", required: [] },
+      layer: index === 3 ? "top" : "popup", fullscreen: true, onlyOne: true, permanent: false,
+      inputMode: mode, load: async () => Hud,
+    };
+  }
+  const touch = { getID: () => 1, getUILocation: () => ({ x: 300, y: 300 }) } as any;
+  const handles: any[] = [];
+  try {
+    const world = await runtime.ViewMgr.open(names[0]); handles.push(world);
+    const hud = await runtime.ViewMgr.open(names[1]); handles.push(hud);
+    const passive = await runtime.ViewMgr.open(names[2]); handles.push(passive);
+    assert.equal(world.view.root.inputPaused, false);
+    assert.equal(hud.view.root.opaque, false);
+    assert.equal(hud.view.root.parent.opaque, false);
+    assert.equal(hud.view.root.parent.touchable, true);
+    assert.equal(passive.view.root.parent.touchable, false);
+    assert.equal(runtime.getInputEnabled(), true);
+    rawInput.routeTouch("start", touch, "world");
+    const modal = await runtime.ViewMgr.open(names[3]); handles.push(modal);
+    assert.equal(world.view.root.inputPaused, true);
+    assert.equal(hud.view.root.parent.touchable, false);
+    assert.ok(events.includes("cancel"));
+    assert.equal(rawInput.inspect().ownersCount, 0);
+    const count = events.length;
+    modal.close();
+    rawInput.routeTouch("move", touch, "world");
+    assert.equal(events.slice(count).includes("move"), false);
+    assert.equal(world.view.root.inputPaused, false);
+    rawInput.routeTouch("start", touch, "world");
+    hud.close();
+    assert.equal(rawInput.inspect().ownersCount, 0);
+    assert.equal(runtime.getInputEnabled(), false);
+    rawInput.routeTouch("start", touch, "world");
+    runtime.ViewMgr.disposeViewRoot();
+    assert.equal(rawInput.inspect().ownersCount, 0);
+    assert.equal(rawInput.inspect().worldGeneration, null);
+    assert.equal(rawInput.inspect().active, false);
+  } finally {
+    for (const handle of handles) handle.close();
+    runtime.ViewMgr.disposeViewRoot();
+    for (const name of names) delete runtime.VIEW_REGISTRY[name];
+  }
+});
