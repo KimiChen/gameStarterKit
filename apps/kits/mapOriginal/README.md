@@ -197,15 +197,24 @@ npm --workspace @game/server run codegen:plugins && npm run sync:shared
 | 1 | 地图区**全黑**，只剩选中框 | world 节点 transform 把「相机坐标原点」当节点位置用了 —— 相机坐标原点在地图区**左上**且 y 向下，而根局部原点在屏幕中心、y 向上。整张网格被推到屏幕外 | `refresh()` 里改成 `rootX=(wx−cam.x)·scale`、`rootY=centre+(wy−cam.y)·scale`；选中框与 world **共用同一套换算**，⛔ 不再各写一份 |
 | 2 | 详情把「森林」显示成「可走陆地」、近档配色全落回第 0 类 | 拿显示层 id 去查**通行层**的 `MAPO_TERRAIN_PALETTE` | 新增生成物 `content/display.data.ts`；⛔ 两份调色板不许混用 |
 
-### 追加一条：Creator 的「动态加载 URL 相同」warn 是**装配脚本**造的（2026-09-22）
+### 追加一条：Creator 的「动态加载 URL 相同」warn（2026-09-22，已根治）
 
-Creator 控制台七条 warn：
-`资源 …/atlas-lod0.png@dddbd 与 …/atlas-lod0.png@6c48a 的动态加载 URL 相同`。
-根因：`install_to_kit.py` **无条件覆写 `.meta`**，它铸的 subMeta id 是
-`sha1("mapOriginal::sub::<路径>")`，而 Creator 导入出来的是自己那套 ⇒ 同一张 PNG 出现
-两个 texture 子资源、URL 都是 `…/atlas-lod0/texture`。
-⇒ 脚本改成**只在 `.meta` 不存在时铸**（`--remint` 才覆写）：确定性 uuid 只有**第一次落地**
-需要，之后 Creator 才是 `.meta` 的权威。⛔ 别再无条件覆写。
+症状：`资源 …/decor-atlas.png@b2b1d 与 …/decor-atlas.png@6c48a 的动态加载 URL 相同
+(kits/mapOriginal/maps/s1/decor-atlas/texture)`，七张图各一条，反复刷。
+
+根因有**两层**，只修第一层会复发：
+
+| # | 根因 | 修法 |
+|---|---|---|
+| ① | `install_to_kit.py` **无条件覆写 `.meta`**，把 Creator 导入出来的换成我们铸的 | 改成**只在 `.meta` 不存在时铸**（`--remint` 才覆写）——确定性 uuid 只有第一次落地需要，之后 Creator 是权威 |
+| ② | 我们铸的 subMeta id 是 `sha1("mapOriginal::sub::<路径>")`，而 **Creator 3.8 给图片的 texture 子资源用固定 id `6c48a`** ⇒ 首次落地就会造出两套 | 铸的时候**直接用 `6c48a`**，并把 `.meta` 形状逐字对齐 Creator 的导入结果（含 `wrapMode=repeat`、`hasAlpha` 按 PNG 的 IHDR 色彩类型算） |
+
+⚠ 只修 ① 的话，**干净克隆第一次打开仍会复发**（那时没有 `.meta`，走的就是铸的那条路）。
+现在九张图「铸出来的 == Creator 导入出来的」逐字节一致，机检钉在
+`mapOriginal-content.test.ts`「图片 .meta 只有 Creator 那一个 texture 子资源」。
+⚠ 坏 `.meta` 一旦提交过，Creator 的**本地缓存** `apps/Cocos/library/.assets-data.json`
+会留下孤儿条目（库里并没有对应文件），即使仓库已自愈也继续刷 warn ——
+删掉那条即可（该文件 gitignore、可重建）。
 
 ### 追加一条：重放第一次红是**旧 chunk**，不是代码错（2026-09-22）
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 import {
     decodeMapoTerrainRle, mapoAtlasCellId, mapoAtlasCellRect, mapoAtlasUv, mapoTerrainToBytes,
@@ -317,5 +317,33 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
     // ★ 三族都要有件：缺一族就会有一片多格地形是平菱形
     for (const kind of ["mountain", "grove", "scatter"]) {
         assert.ok(MAPO_REGION_CELLS.some((c) => c.kind === kind), `缺 ${kind} 件`);
+    }
+});
+
+test("mapOriginal 内容：图片 .meta 只有 Creator 那一个 texture 子资源（⛔ 不许两套 id）", () => {
+    // ⚠ 这条是为一条真实缺陷设的：装配脚本早先自己 sha1 出一个 subMeta id（如 `b2b1d`），
+    //   覆写掉 Creator 导入出来的 `6c48a` 之后，同一张 PNG 就有了**两个 texture 子资源**、
+    //   动态加载 URL 相同（`kits/mapOriginal/maps/s1/<图名>/texture`）——
+    //   Creator 每次导入都刷一条 warn，运行时按 URL 取图还可能拿错那一个。
+    //   ⛔ 别再引入第二套 sub id：Creator 3.8 给图片 texture 用的就是固定的 `6c48a`。
+    const dir = new URL(`../../Cocos/assets/resources/kits/mapOriginal/maps/${MAP}/`, import.meta.url);
+    const metas = readdirSync(dir).filter((f) => f.endsWith(".png.meta"));
+    assert.ok(metas.length > 0, "运行时镜像里应当有图片");
+    for (const file of metas) {
+        const meta = JSON.parse(readFileSync(new URL(file, dir)).toString("utf8")) as {
+            uuid: string; importer: string;
+            subMetas: Record<string, { id: string; name: string }>;
+            userData: { redirect: string; hasAlpha: boolean };
+        };
+        assert.equal(meta.importer, "image", `${file} 的 importer`);
+        const ids = Object.keys(meta.subMetas);
+        assert.deepEqual(ids, ["6c48a"], `${file} 的 subMeta 必须只有 Creator 那个 6c48a`);
+        assert.equal(meta.subMetas["6c48a"].name, "texture", `${file} 的子资源名`);
+        assert.equal(meta.userData.redirect, `${meta.uuid}@6c48a`, `${file} 的 redirect`);
+        // hasAlpha 由 Creator 按真实图算：PNG 的 IHDR 色彩类型 4/6 才有 alpha 通道。
+        // ⚠ 硬编码成 true 的话，灰度蒙版图首次打开就会被 Creator 改写一次。
+        const png = readFileSync(new URL(file.slice(0, -5), dir));
+        assert.equal(meta.userData.hasAlpha, png[25] === 4 || png[25] === 6,
+            `${file} 的 hasAlpha 与 PNG 色彩类型 ${png[25]} 不符`);
     }
 });

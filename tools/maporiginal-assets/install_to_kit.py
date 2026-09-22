@@ -55,8 +55,11 @@ def uuid_for(rel: str) -> str:
     return "%s-%s-4%s-a%s-%s" % (h[0:8], h[8:12], h[13:16], h[17:20], h[20:32])
 
 
-def sub_id(rel: str) -> str:
-    return hashlib.sha1(("mapOriginal::sub::" + rel).encode()).hexdigest()[:5]
+# ★ Creator 3.8 给图片的 `texture` 子资源用的是**固定 id** `6c48a`（仓里每一张已导入的
+#   图片 .meta 都是它）。⛔ 别再自己 sha1 出一个：两套 id 并存时同一张 PNG 会出现两个
+#   texture 子资源、动态加载 URL 相同（`…/<图名>/texture`），Creator 每次导入都报 warn，
+#   运行时按 URL 取图还可能拿错。实测踩过一次（decor-atlas 的 `b2b1d` vs `6c48a`）。
+CREATOR_TEXTURE_SUB_ID = "6c48a"
 
 
 def dir_meta_for(rel: str) -> dict:
@@ -64,23 +67,36 @@ def dir_meta_for(rel: str) -> dict:
             "files": [], "subMetas": {}, "userData": {}}
 
 
-def meta_for(rel: str, name: str) -> dict:
+def png_has_alpha(data: bytes) -> bool:
+    """PNG 的 IHDR 色彩类型里有没有 alpha 通道（4=灰+α、6=RGBA）。
+
+    ⚠ Creator 会把它写进 `userData.hasAlpha`，**按真实图算**（缩略图蒙版是灰度图 ⇒ false）。
+    ⛔ 别硬编码成 true：铸出来的与 Creator 导入出来的不一致，首次打开就会被改写一次。
+    """
+    if len(data) < 26 or data[:8] != b"\x89PNG\r\n\x1a\n":
+        return True
+    return data[25] in (4, 6)
+
+
+def meta_for(rel: str, name: str, data: bytes = b"") -> dict:
     uuid = uuid_for(rel)
     if name.endswith(".png"):
-        sid = sub_id(rel)
+        # ⚠ 形状**逐字对齐 Creator 自己导入出来的 .meta**（含 wrapMode=repeat 这类默认值）：
+        #   铸出来的与导入出来的一致 ⇒ Creator 首次打开时不会改写、也不会多出一个子资源。
+        sid = CREATOR_TEXTURE_SUB_ID
         return {
             "ver": "1.0.27", "importer": "image", "imported": True, "uuid": uuid,
             "files": [".json", ".png"],
             "subMetas": {sid: {
                 "importer": "texture", "uuid": "%s@%s" % (uuid, sid),
                 "displayName": name[:-4], "id": sid, "name": "texture",
-                "userData": {"wrapModeS": "clamp-to-edge", "wrapModeT": "clamp-to-edge",
+                "userData": {"wrapModeS": "repeat", "wrapModeT": "repeat",
                              "minfilter": "linear", "magfilter": "linear", "mipfilter": "none",
                              "anisotropy": 0, "isUuid": True,
                              "imageUuidOrDatabaseUri": uuid, "visible": False},
                 "ver": "1.0.22", "imported": True, "files": [".json"], "subMetas": {}}},
             "userData": {"type": "texture", "fixAlphaTransparencyArtifacts": False,
-                         "hasAlpha": True, "redirect": "%s@%s" % (uuid, sid)},
+                         "hasAlpha": png_has_alpha(data), "redirect": "%s@%s" % (uuid, sid)},
         }
     if name.endswith(".json"):
         return {"ver": "2.0.1", "importer": "json", "imported": True, "uuid": uuid,
@@ -150,7 +166,7 @@ def main() -> int:
         if a.check or ship in KIT_ONLY:
             continue
         rel = os.path.relpath(os.path.join(coc, mirror_name), assets)
-        meta = meta_for(rel, mirror_name)
+        meta = meta_for(rel, mirror_name, data)
         owner = existing.get(meta["uuid"])
         mp = os.path.join(coc, mirror_name + ".meta")
         if owner and os.path.abspath(owner) != os.path.abspath(mp):
