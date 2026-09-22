@@ -285,7 +285,7 @@
     86,
     48
    ],
-   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/main_city/tree/6@@junying.png"
+   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/6@@player_city_2.png"
   },
   {
    "id": 13,
@@ -306,7 +306,7 @@
     86,
     48
    ],
-   "source": "scene/build/city/png/tree/6.png"
+   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/6@@player_city_3.png"
   },
   {
    "id": 14,
@@ -314,6 +314,69 @@
    "cell": [
     1024,
     960,
+    512,
+    320
+   ],
+   "art": [
+    213,
+    272,
+    86,
+    48
+   ],
+   "native": [
+    86,
+    48
+   ],
+   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/main_city/tree/6@@junying.png"
+  },
+  {
+   "id": 15,
+   "kind": "grove",
+   "cell": [
+    1536,
+    960,
+    512,
+    320
+   ],
+   "art": [
+    213,
+    272,
+    86,
+    48
+   ],
+   "native": [
+    86,
+    48
+   ],
+   "source": "scene/build/city/png/tree/6.png"
+  },
+  {
+   "id": 16,
+   "kind": "grove",
+   "cell": [
+    0,
+    1280,
+    512,
+    320
+   ],
+   "art": [
+    213,
+    272,
+    86,
+    48
+   ],
+   "native": [
+    86,
+    48
+   ],
+   "source": "scene/build/city/png/tree/6.png"
+  },
+  {
+   "id": 17,
+   "kind": "grove",
+   "cell": [
+    512,
+    1280,
     512,
     320
    ],
@@ -328,69 +391,6 @@
     49
    ],
    "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/6@@player_city_4.png"
-  },
-  {
-   "id": 15,
-   "kind": "grove",
-   "cell": [
-    1536,
-    960,
-    512,
-    320
-   ],
-   "art": [
-    213,
-    263,
-    85,
-    57
-   ],
-   "native": [
-    85,
-    57
-   ],
-   "source": "scene/build/main_city/tree/14.png"
-  },
-  {
-   "id": 16,
-   "kind": "grove",
-   "cell": [
-    0,
-    1280,
-    512,
-    320
-   ],
-   "art": [
-    202,
-    270,
-    107,
-    50
-   ],
-   "native": [
-    107,
-    50
-   ],
-   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/7@@player_city.png"
-  },
-  {
-   "id": 17,
-   "kind": "grove",
-   "cell": [
-    512,
-    1280,
-    512,
-    320
-   ],
-   "art": [
-    202,
-    270,
-    107,
-    50
-   ],
-   "native": [
-    107,
-    50
-   ],
-   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/7@@player_city_4.png"
   },
   {
    "id": 18,

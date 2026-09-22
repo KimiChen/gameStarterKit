@@ -18,21 +18,18 @@
   },
   {
    "kind": "ground",
+   "comment": "★ 原版 **2D 沙盘**的地表底纹。判据是 2D 地表组预制体的直接引用：`scene/ground/<生物群系>/` 各有 10 个 `*_polygon_mask_group.prefab`，其 `polygon_2d` 直引本目录 `tt_02`；desert/snow 另有各 60 个 `*_polygon_group` 直引 `ground_down/underground{3,2}`。⛔ 不许再出现 scene_3d/**。",
    "prefixes": [
-    "scene_3d/ground/gaodi/tex/",
-    "scene_3d/ground/gaodi_snow/tex/",
-    "scene_3d/ground/gaodi_shan/tex/",
-    "scene_3d/ground/dibiaohuawen/tex/",
-    "scene_3d/ground/dibiaohuawen_snow/tex/",
-    "scene_3d/ground/terrain/"
-   ]
-  },
-  {
-   "kind": "ground",
-   "prefixes": [
-    "scene_3d/ground/mountain_new/"
+    "ground_down/underground",
+    "scene/ground/caodi_gan/png/",
+    "scene/ground/caodi_shi/png/",
+    "scene/ground/caodi_huijin/png/",
+    "scene/ground/huangmo/png/",
+    "scene/ground/zhaoze/png/",
+    "scene/ground/senlin/png/",
+    "scene/ground/dongtu_tuxue/png/"
    ],
-   "suffix": "_d.ktx"
+   "suffix": ".ktx"
   },
   {
    "kind": "atlas",

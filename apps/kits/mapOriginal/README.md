@@ -19,7 +19,7 @@
 | 地形来源 | 10 张 AI 概念图 + seed 程序化 | **原版 `map/s1/cn/res.bytes` 等 23 个数据层** |
 | 地形类数 | 9 | **16**（原版 `LAND_TYPE` 语义） |
 | 远档底图 | 概念图 warp 进世界空间 | **由地形烘焙**（逐格精确对齐） |
-| 近档贴片 | 概念图切片 + 美术重绘 | **原版可平铺 3D 地表 albedo 合成** |
+| 近档贴片 | 概念图切片 + 美术重绘 | **原版 2D 沙盘地表底纹合成**（`tt_02` 族 + `underground1`） |
 | 玩法 | 占领 / 行军 / 同盟 / 鸟瞰聚合 | ⛔ v1 无（无 SQL / 无 RPC / 无 worker） |
 
 ## 二、v1 范围：只做「看得见的原版地图」
@@ -67,7 +67,8 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
    205 条 `scene/ground/**.group` 确实不在 ELP（预制体按需热更），但
    `scene/_output_atlas_scene/atlas_tex/` 下的 62 个图集里有**逐格地皮精灵、小建筑、城、营、道路、
    鸟瞰图标**共 3,510 张。找不到它们的原因是图集页扩展名：XML 的 `imagePath` 写 `.png`、
-   包里是构建期转出的 `.ktx`。⇒ **摆件层直接用原版切片**；底下那层菱形仍由可平铺 3D albedo 合成。
+   包里是构建期转出的 `.ktx`。⇒ **摆件层直接用原版切片**；底下那层菱形由原版 **2D** 地表底纹合成
+   （2026-09-22 换源，见 §四·六；早先用的是 `scene_3d/**` 的 3D albedo，已随「只用 2D 素材」拍板换掉）。
 2. **原版鸟瞰底图不能当远档 plate**。`noexpo_birdview_map_1.ktx`（4096×2048 ETC2）是
    **3D 相机的透视渲染**，与本仓正交等距 ⛔ 不存在可靠 2D 对齐 ——
    实测相似变换 IoU 0.62、河网 NCC 0.30、全仿射拟合退化成竖条纹假峰（NCC 0.51）。
@@ -76,17 +77,28 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
 
 素材授权按九字段登记在 [`art/LICENSES.md`](art/LICENSES.md)（⚠ 法务 load-bearing，⛔ 不得删改）。
 
-## 五、画面设置（复刻原作「设置 → 画面设置」）
+## 五、画面设置（只复刻原作「设置 → 画面设置」里**属于 2D 沙盘**的两项）
 
-| 项 | 档位 | v1 状态 |
+| 项 | 档位 | 状态 |
 |---|---|---|
-| 沙盘模式 | 2D 沙盘 / 3D 沙盘 | ✅ 2D；**3D 置灰** —— 框架 Stage3D（`docs/3d.md` SC0–SC5）零实施，⛔ 不在 kit 内自建相机 |
-| 镜头视角 | 鸟瞰开关 / FOV 档 | **置灰** —— 与原作同因：「2D沙盘不支持鸟瞰视角」「2d不支持调整镜头参数」 |
 | 色彩模式 | 标准 / 鲜艳 / 低饱和 | ✅ 在 `mapoPalette` 的顶点色 + tonemapping 预补偿那层做。⚠ 原作选项名是图片按钮、没留字符串，这是**等价实现** |
-| 画质 | 流畅 / 普通 / 高清 / 超高 | ✅ 映射到分帧建格步长与**建不建摆件层**。⚠ 摆件是**全有或全无**（见下），⛔ 不是密度系数 |
+| 画质 | 流畅 / 普通 / 高清 / 超高 | ✅ 映射到分帧建格步长与**建不建摆件层**。⚠ 摆件是**全有或全无**（见下），⛔ 不是密度系数。⚠ 原作 `quality_mgr_2d.lua` 是**空壳**（旋钮全在 `quality_mgr_3d.lua`）⇒ 这是自创的等价实现，⛔ 无原版对照 |
 
-⚠ 四项契约（`logic/mapoSettings.ts`）**一次做对**：不可用项禁用并给出与原作同义的理由，
-将来接 3D ⛔ 不改协议。⛔ 不许出现「选中但不生效」的档位（`mapoNormalizeGraphics` 会落回）。
+### ⛔ 这里**没有**沙盘模式 / 镜头视角 / 鸟瞰（2026-09-22 拍板）
+
+本 kit 只承载原版 **2D 沙盘**，3D 沙盘另开 kit `mapOriginal3d`。所以：
+
+- **沙盘模式**是跨 kit 的事，⛔ 不该由 2D kit 提供一个永远选不动的 3D 档位当「契约占位」；
+- **镜头视角**（fov / angle / distance）只存在于原作 `script/util/viewport_3d_cfg.lua`，
+  2D 的 `util/viewport.lua` 只有 `vp_scale_min/max/default`；
+- **鸟瞰**的 7 条显示层（`birdview_*`）在 `map_layer_config.lua` 里**全部且仅**落在 `ShowLayers3d`
+  （2d 段与 common 段各 0 条）。
+
+⚠ 早先这里写「按原作同因置灰」并引了「2D沙盘不支持鸟瞰视角」「2d不支持调整镜头参数」——
+**出处是错的**：那两句只在 GM 调试台（`gm_client_cmd.lua`）的串里，零售面板是把镜头区
+**整块隐藏**（`setting_screen_dimension` 的 `show_camera_view(is_select_3d_scene)`），⛔ 不是置灰。
+⚠ 真机重放第 10 步现在是**否定判据**：面板里出现「沙盘模式/2D 沙盘/3D 沙盘/镜头视角/鸟瞰」
+任一字样即红，同时要求「色彩模式」「画质」两行都在。
 
 ## 六、分层门控
 
@@ -155,6 +167,40 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
 ⚠ 相应地，**地表图集改按 8 个粗类建**（plain/resource/gold/river/mountain/grove/scatter/unknown
 × 4 变体 = 32 格）：61 个原版值铺不进 8×4 的图集，而值里的「等级」差别本来就该由摆件层体现，
 地表那层只需垫底色调。值 → 粗类走 `MAPO_VALUE_KIND_ID`，⛔ 别把原版值直接喂给 `mapoAtlasCellId`。
+
+### 六·六 ★ 地表图集的源已换成原版 **2D 沙盘**侧（2026-09-22）
+
+本 kit 只承载原版 2D 沙盘 ⇒ 八个粗类的底纹全部从 `scene_3d/**` 换成 2D 侧（机检见 §八·二）：
+
+| 粗类 | 2D 源 | 依据 |
+|---|---|---|
+| `plain` 平地 | `ground_down/underground1` | ⚠ **唯一带推断的一条**。2D 归属是实证（赛季配置表登记名「草1」、`all_root_res_list.cw` 常驻根资源、无 scene_3d 对位）；但「被 polygon 平铺成草地底」**没有**直接证据——grass 的四个 `middlelevel_0N_group.prefab` 在手且只引 `a1..a8`。更可能是编辑器的**地表笔刷**（代码直贴） |
+| `resource` 资源格 | `scene/ground/caodi_gan/png/tt_02`（干草地） | 低频能量全库最低 ⇒ 铺满 96 万格不露节律 |
+| `gold` 金矿 | `scene/ground/huangmo/png/tt_02`（荒漠） | 偏亮细砂 |
+| `river` 河流 | `scene/ground/zhaoze/png/tt_02`（沼泽） | 水系里唯一满幅不透明的地表底 |
+| `mountain` 山脉 | `scene/ground/caodi_shi/png/tt_02`（石草地） | 暗于平地 |
+| `grove` 林丛 | `scene/ground/senlin/png/tt_02`（森林） | 语义对上 `LAND_TYPE.FOREST` |
+| `scatter` 散落 | `scene/ground/caodi_huijin/png/tt_02`（草地灰烬） | 对上 `sparse_flammable_layer_logic` 的 10 个 `RES_LAND_GRASS_ASHES_*` |
+| `unknown` 兜底 | `scene/ground/dongtu_tuxue/png/tt_02`（冻土） | 纹理最强，兜底哨兵一眼可辨 |
+
+★ 除 `plain` 外**七条都是实证**：`scene/ground/<生物群系>/` 各有 **10 个在手的 `*_polygon_mask_group.prefab`**，
+其中 `polygon_2d` 节点直引本目录的 `tt_02`（各 10 次）—— 这就是原版 2D 铺该地貌时真正用的底纹。
+
+### 六·七 顺带修掉的三个烘焙缺陷（换任何源都得先修）
+
+1. **透明区被读成黑**：`bake_content.py` 原来是 `.convert("RGB")`。现役 3D 源里 6 张带 alpha
+   （`albedo_river_v2` 不透明率仅 **0.177**、`xiaobujian_d` 仅 **0.003**）⇒ 透明区 `lum≈0`、被压成
+   `0.62×底色` 的暗块。⇒ 改成**合成到中性灰 128** 再转 RGB（`lum=0.5` ⇒ 增益 1.0 = 调色板原色，
+   是唯一不改色相的中性值）。
+2. **四个变体里有两个是同一张**：旧式 `side = min(w,h)//2**lod` + 角窗，对**正方源在 LOD0 必然退化**
+   （`ox=oy=0` ⇒ v0 与 v3 逐像素相同）；实测旧产物 8 类里 **7 类 v0≡v3**。
+   ⇒ 改成 **2:1 定形窗 + 四个错开相位**（任意两个既不共行也不共列），并**去掉旋转**
+   （旋转会让四片分裂成「横向拖影」与「正常颗粒」两种观感）。512² 源取 240×120 是 1:1 像素、零重采样。
+3. **LOD 极性反了**：注释写「远档取更大的纹理块 ⇒ 更平」，代码 `//2**lod` 取的却是**更小**的块，
+   实测 lod0→lod2 的 std 是**上升**的。⇒ 改成**先低通再取同一窗**（`GaussianBlur(0.8*2**lod)`）。
+
+⚠ 另外 `bake_content.py` 现在在源没落位时**直接报错**，⛔ 不再静默降级成纯色 —— 旧行为是
+`os.path.exists` 落空即 `src=None`，画面变平涂却不报，极难查。
 
 ## 七、客户端五条硬规矩（与 sgzzmap 同，⛔ 别再踩）
 
@@ -254,7 +300,11 @@ npm --workspace @game/server run codegen:plugins && npm run sync:shared
   （进入 → 近档地表 → 点选含坐标换算判据 → 色彩模式生效 → **3D 沙盘断言切不过去** →
   拉远换远档底图 → 缩略图跳转 → 推回近档）。实测 LOD0 近档 48 FPS / 130 draw call / 4234 三角形。
   ⚠ 真机重放抓出的**两条**缺陷（673 条绿单测一条没抓到，见下）已修并有回归。
-- ⛔ **P6 3D 沙盘**：等框架 `docs/3d.md` 的 SC0–SC1。
+- ⛔ **3D 沙盘不再是本 kit 的 P6**（2026-09-22 拍板）：原版 3D 沙盘（`asset/scene_3d/**`、
+  `config_3d.lua`、`mapview/3d/**`、鸟瞰与镜头视角）整体归新 kit **`mapOriginal3d`**。
+  ⚠ 框架 `docs/3d.md` 的 Stage3D（SC0–SC5）仍是它的前置，本 kit ⛔ 不再登记 3D 阶段。
+  ⚠ kit 间禁依赖（`docs/KIT.md:162`）⇒ mapOriginal3d 要用 `MAPO_*` 几何/调色板只能**抄改一份**
+  （与当初 mapOriginal 抄 sgzzmap 同例），⛔ 不许 import。
 - ✅ **多格地形区域件**（2026-09-22）：`regions.bin` 2.78 万条 = 原版 `mountain_patch` 3,942 条锚点
   + 无锚连通区每区一件；件用原版 2D 山体 `m1..m10` / 树簇 / 草丛，尺寸按原图像素还原。
   真机近档实测「山林 41」件、50 FPS / 136 draw call。

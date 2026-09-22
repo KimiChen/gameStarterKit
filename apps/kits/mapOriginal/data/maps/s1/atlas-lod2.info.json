@@ -36,7 +36,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/gaodi/tex/grass.png"
+   "source": "ground_down/underground1.png"
   },
   {
    "id": 1,
@@ -50,7 +50,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/gaodi/tex/grass.png"
+   "source": "ground_down/underground1.png"
   },
   {
    "id": 2,
@@ -64,7 +64,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/gaodi/tex/grass.png"
+   "source": "ground_down/underground1.png"
   },
   {
    "id": 3,
@@ -78,7 +78,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/gaodi/tex/grass.png"
+   "source": "ground_down/underground1.png"
   },
   {
    "id": 4,
@@ -92,7 +92,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_01_d.png"
+   "source": "scene/ground/caodi_gan/png/tt_02.png"
   },
   {
    "id": 5,
@@ -106,7 +106,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_01_d.png"
+   "source": "scene/ground/caodi_gan/png/tt_02.png"
   },
   {
    "id": 6,
@@ -120,7 +120,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_01_d.png"
+   "source": "scene/ground/caodi_gan/png/tt_02.png"
   },
   {
    "id": 7,
@@ -134,7 +134,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_01_d.png"
+   "source": "scene/ground/caodi_gan/png/tt_02.png"
   },
   {
    "id": 8,
@@ -148,7 +148,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_03_d.png"
+   "source": "scene/ground/huangmo/png/tt_02.png"
   },
   {
    "id": 9,
@@ -162,7 +162,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_03_d.png"
+   "source": "scene/ground/huangmo/png/tt_02.png"
   },
   {
    "id": 10,
@@ -176,7 +176,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_03_d.png"
+   "source": "scene/ground/huangmo/png/tt_02.png"
   },
   {
    "id": 11,
@@ -190,7 +190,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_03_d.png"
+   "source": "scene/ground/huangmo/png/tt_02.png"
   },
   {
    "id": 12,
@@ -204,7 +204,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/terrain/albedo_river_v2.png"
+   "source": "scene/ground/zhaoze/png/tt_02.png"
   },
   {
    "id": 13,
@@ -218,7 +218,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/terrain/albedo_river_v2.png"
+   "source": "scene/ground/zhaoze/png/tt_02.png"
   },
   {
    "id": 14,
@@ -232,7 +232,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/terrain/albedo_river_v2.png"
+   "source": "scene/ground/zhaoze/png/tt_02.png"
   },
   {
    "id": 15,
@@ -246,7 +246,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/terrain/albedo_river_v2.png"
+   "source": "scene/ground/zhaoze/png/tt_02.png"
   },
   {
    "id": 16,
@@ -260,7 +260,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_03_d.png"
+   "source": "scene/ground/caodi_shi/png/tt_02.png"
   },
   {
    "id": 17,
@@ -274,7 +274,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_03_d.png"
+   "source": "scene/ground/caodi_shi/png/tt_02.png"
   },
   {
    "id": 18,
@@ -288,7 +288,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_03_d.png"
+   "source": "scene/ground/caodi_shi/png/tt_02.png"
   },
   {
    "id": 19,
@@ -302,7 +302,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_03_d.png"
+   "source": "scene/ground/caodi_shi/png/tt_02.png"
   },
   {
    "id": 20,
@@ -316,7 +316,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_03_d.png"
+   "source": "scene/ground/senlin/png/tt_02.png"
   },
   {
    "id": 21,
@@ -330,7 +330,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_03_d.png"
+   "source": "scene/ground/senlin/png/tt_02.png"
   },
   {
    "id": 22,
@@ -344,7 +344,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_03_d.png"
+   "source": "scene/ground/senlin/png/tt_02.png"
   },
   {
    "id": 23,
@@ -358,7 +358,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_03_d.png"
+   "source": "scene/ground/senlin/png/tt_02.png"
   },
   {
    "id": 24,
@@ -372,7 +372,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/gaodi/tex/grass.png"
+   "source": "scene/ground/caodi_huijin/png/tt_02.png"
   },
   {
    "id": 25,
@@ -386,7 +386,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/gaodi/tex/grass.png"
+   "source": "scene/ground/caodi_huijin/png/tt_02.png"
   },
   {
    "id": 26,
@@ -400,7 +400,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/gaodi/tex/grass.png"
+   "source": "scene/ground/caodi_huijin/png/tt_02.png"
   },
   {
    "id": 27,
@@ -414,7 +414,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/gaodi/tex/grass.png"
+   "source": "scene/ground/caodi_huijin/png/tt_02.png"
   },
   {
    "id": 28,
@@ -428,7 +428,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/dibiaohuawen/tex/xiaobujian_d.png"
+   "source": "scene/ground/dongtu_tuxue/png/tt_02.png"
   },
   {
    "id": 29,
@@ -442,7 +442,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/dibiaohuawen/tex/xiaobujian_d.png"
+   "source": "scene/ground/dongtu_tuxue/png/tt_02.png"
   },
   {
    "id": 30,
@@ -456,7 +456,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/dibiaohuawen/tex/xiaobujian_d.png"
+   "source": "scene/ground/dongtu_tuxue/png/tt_02.png"
   },
   {
    "id": 31,
@@ -470,7 +470,7 @@
     240,
     120
    ],
-   "source": "scene_3d/ground/dibiaohuawen/tex/xiaobujian_d.png"
+   "source": "scene/ground/dongtu_tuxue/png/tt_02.png"
   }
  ]
 }

@@ -16,12 +16,14 @@ const inView = (node) => node.path.includes(`${VIEW}/`);
 /** 标题形如「原版大地图 · LOD 2/5」。 */
 const TITLE_RE = /^原版大地图 · LOD ([0-5])\/5$/u;
 /**
- * 状态形如「s1 · 近档 · 画面：2D 沙盘/标准/普通 · 层：… · 摆件 137/312 · 山林 48」。
+ * 状态形如「s1 · 近档 · 画面：标准/普通 · 层：… · 摆件 137/312 · 山林 48」。
  * ⚠ 「摆件 建出来的/可视格」只在近档有；「山林 N」是多格地形的区域件数（近远档都可能有）。
  *   两个数都是活体证据：前者证「按原版值逐格摆件」，后者证「多格地形每区一件」。
+ * ⚠ **画面只剩两段**（色彩模式/画质）：沙盘模式与镜头视角随 3D 迁出本 kit（2026-09-22）。
+ *   ⛔ 改这条正则必须同步改下面按组号取值的地方 —— 组号前移过一次，踩过。
  */
 const STATUS_RE =
-    /^s1 · (近档|远档) · 画面：([^/]+)\/([^/·]+?)\/([^/·]+?)(\/鸟瞰)? · 层：(.*?)( · 摆件 (\d+)\/(\d+))?( · 山林 (\d+))?$/u;
+    /^s1 · (近档|远档) · 画面：([^/·]+?)\/([^/·]+?) · 层：(.*?)( · 摆件 (\d+)\/(\d+))?( · 山林 (\d+))?$/u;
 /**
  * 详情形如「(750, 751) 木·1级 · 原版值 2」，不可通行多一段，显示层没到位再多「· 读取中…」。
  * ⚠ 地形名里**自带 `·`**（原版调色板就是「类型·等级」），所以这里 ⛔ 不能用 `[^\s·]+` 去截。
@@ -49,16 +51,13 @@ export function readMapOriginalEvidence(walk) {
         lod: titleMatch ? Number(titleMatch[1]) : null,
         title, status,
         band: statusMatch ? statusMatch[1] : null,
-        graphics: statusMatch
-            ? { sandbox: statusMatch[2], colorMode: statusMatch[3], quality: statusMatch[4],
-                birdview: !!statusMatch[5] }
-            : null,
-        layers: statusMatch ? statusMatch[6].split(" / ").filter((s) => s && s !== "（无）") : [],
+        graphics: statusMatch ? { colorMode: statusMatch[2], quality: statusMatch[3] } : null,
+        layers: statusMatch ? statusMatch[4].split(" / ").filter((s) => s && s !== "（无）") : [],
         // ★ 摆件：建出来的件数 / 可视格数。原版每个资源格都有 res_field ⇒ 近档这个比例应在四成上下
-        decorPlaced: statusMatch?.[8] !== undefined ? Number(statusMatch[8]) : null,
-        visibleCells: statusMatch?.[9] !== undefined ? Number(statusMatch[9]) : null,
+        decorPlaced: statusMatch?.[6] !== undefined ? Number(statusMatch[6]) : null,
+        visibleCells: statusMatch?.[7] !== undefined ? Number(statusMatch[7]) : null,
         // ★ 区域件：多格地形每区一件（原版 mountain_patch 锚点优先 + 无锚连通区兜底）
-        regionPieces: statusMatch?.[11] !== undefined ? Number(statusMatch[11]) : null,
+        regionPieces: statusMatch?.[9] !== undefined ? Number(statusMatch[9]) : null,
         // 近档 / 远档各自的「画出来了」
         terrain: has("mapo-terrain"),
         // ★ 摆件层：原版切片立在格上（去「铺地砖」的主力）
@@ -199,18 +198,22 @@ export async function replayMapOriginalWorld(runner) {
         return { before, after: after.graphics, shot: await runner.shot("maporiginal-color-vivid") };
     });
 
-    const sandbox3d = await runner.step("画面设置：3D 沙盘按原作行为置灰 —— 点它 ⛔ 不该生效", async () => {
-        await runner.tapText("3D 沙盘", { pathIncludes: VIEW });
-        await sleep(600);
-        const value = readMapOriginalEvidence(await runner.walk());
-        if (!value?.graphics) throw new Error("读不到状态行");
-        // ★ 这一条是**否定判据**：点了必须还是 2D。能切过去反而是缺陷
-        //   （框架 Stage3D 零实施，⛔ 不许 kit 内自建 3D 相机）
-        if (value.graphics.sandbox !== "2D 沙盘") {
-            throw new Error(`3D 沙盘不该能切：现在是 ${value.graphics.sandbox}`);
+    const noSandboxRow = await runner.step(
+        "画面设置：面板里 ⛔ 不该出现沙盘模式 / 镜头视角 / 鸟瞰", async () => {
+        // ★ **否定判据**：本 kit 只承载原版 2D 沙盘，3D 另开 kit `mapOriginal3d`（2026-09-22 拍板）。
+        //   ⛔ 不许再留一个永远选不动的 3D 档位当「契约占位」—— 早先那版就是这么写的。
+        const walk = await runner.walk();
+        const texts = walk.nodes.filter(inView)
+            .map((n) => (typeof n.text === "string" ? n.text.trim() : "")).filter(Boolean);
+        const banned = ["沙盘模式", "2D 沙盘", "3D 沙盘", "镜头视角", "鸟瞰"];
+        const found = banned.filter((b) => texts.includes(b));
+        if (found.length > 0) throw new Error(`面板里还留着 3D 的东西：${found.join("、")}`);
+        // 该有的两行必须都在，⛔ 不能把整块面板删没了还算过
+        for (const must of ["色彩模式", "画质"]) {
+            if (!texts.includes(must)) throw new Error(`画面设置缺「${must}」行`);
         }
-        return { sandbox: value.graphics.sandbox, outcome: "按预期置灰",
-                 shot: await runner.shot("maporiginal-3d-disabled") };
+        return { banned: found, kept: ["色彩模式", "画质"],
+                 shot: await runner.shot("maporiginal-no-3d-rows") };
     });
 
     const far = await runner.step("拉远：换成远档底图（mapo-plate-4/5）", async () => {
@@ -253,5 +256,5 @@ export async function replayMapOriginalWorld(runner) {
         return { lod: value.lod, band: value.band, shot: await runner.shot("maporiginal-back") };
     });
 
-    return { opened, selected, decorAndLabels, colorMode, sandbox3d, far, jumped, back };
+    return { opened, selected, decorAndLabels, colorMode, noSandboxRow, far, jumped, back };
 }

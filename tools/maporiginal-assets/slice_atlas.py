@@ -130,7 +130,22 @@ def main() -> int:
             continue
         total += c
         print("  %-62s %4d 张" % (x, c))
+    # ⚠ 只有 --all 才整份覆写存证；切单个 xml 时**并入**已有记录。
+    # ⛔ 早先无条件覆写：跑一次 `slice_atlas.py <某个xml>` 就把 sprites.jsonl 削成那一个图集，
+    #   下游 pack_decor / pack_regions / emit_ledger 全部静默拿到残表（台账从 4,881 掉到 8 张）。
     path = os.path.join(OUT, "sprites.jsonl")
+    if not a.all and os.path.exists(path):
+        merged = {}
+        for line in open(path, encoding="utf-8"):
+            try:
+                old_row = json.loads(line)
+            except ValueError:
+                continue
+            merged[old_row["logical"]] = old_row
+        for r in rows:
+            merged[r["logical"]] = r
+        rows = [merged[k] for k in sorted(merged)]
+        print("  （非 --all：并入已有存证，合计 %d 条）" % len(rows))
     with open(path, "w", encoding="utf-8") as fo:
         for r in rows:
             fo.write(json.dumps(r, ensure_ascii=False) + "\n")

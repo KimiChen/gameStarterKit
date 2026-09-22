@@ -20,7 +20,7 @@ import os
 import struct
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
@@ -30,15 +30,27 @@ PNG = os.path.join(OUT, "png")
 # ★ 地表图集按**粗类**建（资源格真正的样子由摆件层的原版 res_field 给，底下这层只是垫底）。
 #   ⚠ 次序即 kind id，⛔ 与 terrain.info.json 的 kind 名一一对应，改了要同步 shared。
 KINDS = ["plain", "resource", "gold", "river", "mountain", "grove", "scatter", "unknown"]
+
+# ★ 全部是原版 **2D 沙盘**侧的源（2026-09-22 换源；本 kit ⛔ 不再收 scene_3d/**，3D 归 mapOriginal3d）。
+#
+# ⚠ 判据不是「路径里有没有 3d」，是 2D 地表组预制体的**直接引用**：
+#   `scene/ground/<生物群系>/` 下各有 10 个 `*_polygon_mask_group.prefab`，其中的 `polygon_2d`
+#   节点直引本目录的 `tt_02`（各 10 次）—— 这是原版 2D 铺该地貌时真正用的底纹。
+#   desert / snow 另有各 60 个 `*_polygon_group` 直引 `ground_down/underground{3,2}`。
+# ⚠ `plain` 是八条里**唯一带推断**的：`underground1` 的 2D 归属是实证（赛季配置表里登记名
+#   「草1」、且是 `all_root_res_list.cw` 的常驻根资源、无 scene_3d 对位），但「它被 polygon 平铺
+#   成草地底」没有直接证据 —— grass 的四个 `middlelevel_0N_group.prefab` 在手且只引 a1..a8。
+#   ⇒ 更可能是地图编辑器的**地表笔刷**（代码直贴）。台账里如实标注，⛔ 不要写成实证。
+# ⚠ 选源看的是**灰度质感与可平铺性**，⛔ 不是颜色：色相 100% 来自本仓调色板（见下面的着色式）。
 TEXTURE_OF = {
-    "plain":    "scene_3d/ground/gaodi/tex/grass.png",
-    "resource": "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_01_d.png",
-    "gold":     "scene_3d/ground/mountain_new/grass_fall/tex/m_grass_fall_xl_slope_03_d.png",
-    "river":    "scene_3d/ground/terrain/albedo_river_v2.png",
-    "mountain": "scene_3d/ground/mountain_new/th_shan/tex/m_grass_xl_slope_03_d.png",
-    "grove":    "scene_3d/ground/mountain_new/grass/tex/m_grass_xl_slope_03_d.png",
-    "scatter":  "scene_3d/ground/gaodi/tex/grass.png",
-    "unknown":  "scene_3d/ground/dibiaohuawen/tex/xiaobujian_d.png",
+    "plain":    "ground_down/underground1.png",              # 「草1」，256² 双向无缝
+    "resource": "scene/ground/caodi_gan/png/tt_02.png",      # 干草地；低频最低 ⇒ 96 万格不露节律
+    "gold":     "scene/ground/huangmo/png/tt_02.png",        # 荒漠；偏亮细砂
+    "river":    "scene/ground/zhaoze/png/tt_02.png",         # 沼泽；水系里唯一满幅不透明的底
+    "mountain": "scene/ground/caodi_shi/png/tt_02.png",      # 石草地；暗于平地
+    "grove":    "scene/ground/senlin/png/tt_02.png",         # 森林；对上 LAND_TYPE.FOREST
+    "scatter":  "scene/ground/caodi_huijin/png/tt_02.png",   # 草地灰烬
+    "unknown":  "scene/ground/dongtu_tuxue/png/tt_02.png",   # 冻土；纹理最强，兜底哨兵一眼可辨
 }
 # ⚠ 单格 240×120（仍 2:1）而不是 256×128：8 列 × (256+8) = 2112 > 2048 放不下，
 #   240 的节距 248 × 8 = 1984 ≤ 2048、行 128 × 8 = 1024 正好铺满。
@@ -120,6 +132,32 @@ def kind_style(info):
     return {k: (best[k]["cn"], best[k]["color"]) for k in best}
 
 
+# 四个变体的取窗相位（0..1 的比例）。⚠ 任意两个**既不共行也不共列**，⛔ 别改成 (0,0)/(1,0)/(0,1)/(1,1)
+#   那种角窗 —— 源是正方且窗口等于源边长时四个角窗会塌成同一个。
+PHASES = [(0.00, 0.00), (0.62, 0.24), (0.24, 0.76), (0.86, 0.52)]
+
+
+def phase_crop(src, px, py, wW, wH):
+    """按相位取一个 wW×wH 的窗口；相位方向上没有余量时**环绕**取（np.roll）。
+
+    ⚠ 环绕只在「窗口 = 源边长」时才会触发；此时源必须是无缝可平铺的，否则片内会露缝。
+    """
+    W, H = src.width, src.height
+    fx, fy = W - wW, H - wH
+    if fx > 0 and fy > 0:
+        return src.crop((round(px * fx), round(py * fy),
+                         round(px * fx) + wW, round(py * fy) + wH))
+    a = np.asarray(src)
+    if fx <= 0:
+        a = np.roll(a, round(px * W), axis=1)
+    if fy <= 0:
+        a = np.roll(a, round(py * H), axis=0)
+    a = a[:wH, :wW] if fx <= 0 and fy <= 0 else (
+        a[round(py * fy):round(py * fy) + wH, :wW] if fx <= 0
+        else a[:wH, round(px * fx):round(px * fx) + wW])
+    return Image.fromarray(a)
+
+
 def pack_atlas(d, info, lods=(0, 1, 2)):
     """每档一张 POT 图集：4x4 的 256x128 菱形贴片 + 4px 出血带。
 
@@ -135,25 +173,39 @@ def pack_atlas(d, info, lods=(0, 1, 2)):
             e = {"id": kid, "name": kind, "cn": style.get(kind, (kind, [128, 128, 128]))[0],
                  "color": style.get(kind, (kind, [128, 128, 128]))[1]}
             tex_rel = TEXTURE_OF.get(kind)
+            if tex_rel and not os.path.exists(os.path.join(PNG, tex_rel)):
+                # ⛔ 不许静默降级成纯色：源没落位时以前不报错、画面直接变平涂，极难查
+                raise SystemExit("⛔ %s 的源没落位：%s\n   先解码：decode_ktx.py --name <key> --out out/png"
+                                 % (kind, os.path.join(PNG, tex_rel)))
             src = None
-            if tex_rel and os.path.exists(os.path.join(PNG, tex_rel)):
-                src = Image.open(os.path.join(PNG, tex_rel)).convert("RGB")
+            if tex_rel:
+                im = Image.open(os.path.join(PNG, tex_rel)).convert("RGBA")
+                # ⚠ 透明区**合成到中性灰**再转 RGB，⛔ 不能直接 convert("RGB")：
+                #   那会把透明读成黑 ⇒ lum≈0 ⇒ 整片压成 0.62×底色的暗块。
+                #   取 128 是唯一不改色相的中性值（lum=0.5 ⇒ 增益 1.0 ⇒ 正好是调色板原色）。
+                src = Image.alpha_composite(
+                    Image.new("RGBA", im.size, (128, 128, 128, 255)), im).convert("RGB")
+                # ⚠ 远档 = 先**低通**再取同一窗口，⛔ 不是裁更小的块：
+                #   裁小块会越远越锐越花（与注释相反），实测现行 lod0→lod2 的 std 是上升的。
+                if lod:
+                    src = src.filter(ImageFilter.GaussianBlur(0.8 * (2 ** lod)))
             col = np.array(e["color"], np.float32)
             for v in range(VARIANTS):
                 idx = e["id"] * VARIANTS + v
                 if src is None:
                     rgb = np.tile(col, (CELL_H, CELL_W, 1))
                 else:
-                    step = max(1, 2 ** lod)             # 远档取更大的纹理块 ⇒ 更平
-                    side = max(8, min(src.width, src.height) // step)
-                    # ⚠ 四个变体取**不同位置 + 不同朝向**的窗口，⛔ 不是同一块的镜像
-                    #   （镜像只在格内翻，整片地仍读得出重复节律）
-                    ox = (v % 2) * max(0, src.width - side)
-                    oy = (v // 2) * max(0, src.height - side)
-                    t = src.crop((ox, oy, ox + side, oy + side))
-                    if v in (1, 2):
-                        t = t.transpose(Image.Transpose.ROTATE_90 if v == 1 else Image.Transpose.ROTATE_270)
-                    t = t.resize((CELL_W, CELL_H), Image.LANCZOS)
+                    # ★ 四个变体 = **2:1 定形窗 + 四个错开相位**，⛔ 不再旋转、⛔ 不再按 lod 缩窗。
+                    # ⚠ 旧式 `side=min(w,h)//2**lod` + 角窗对**正方源在 lod0 必然退化**
+                    #   （ox=oy=0 ⇒ v0 与 v3 逐像素相同）；实测旧产物 8 类里 7 类 v0≡v3。
+                    # ⚠ 2:1 窗还消掉了「正方窗 resize 纵向压 2×、而 v1/v2 先转 90° 方向相反」
+                    #   造成的四片分裂成两种观感；512² 源取 240×120 是 1:1 像素、零重采样。
+                    wW = min(src.width, CELL_W)
+                    wH = min(src.height, max(1, wW // 2))
+                    px, py = PHASES[v]
+                    t = phase_crop(src, px, py, wW, wH)
+                    if (wW, wH) != (CELL_W, CELL_H):
+                        t = t.resize((CELL_W, CELL_H), Image.LANCZOS)
                     base = np.asarray(t).astype(np.float32)
                     lum = base.mean(2, keepdims=True) / 255.0
                     rgb = np.clip(col * (0.62 + 0.76 * lum), 0, 255)

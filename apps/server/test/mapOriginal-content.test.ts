@@ -347,3 +347,73 @@ test("mapOriginal 内容：图片 .meta 只有 Creator 那一个 texture 子资�
             `${file} 的 hasAlpha 与 PNG 色彩类型 ${png[25]} 不符`);
     }
 });
+
+/**
+ * ★ 「2D kit 只用 2D 素材」的机检（2026-09-22 拍板：3D 沙盘另开 kit `mapOriginal3d`）。
+ *
+ * 判据来自原版源码，⛔ 不是按名字里有没有 "3d"：
+ * - `asset/scene/**` = 2D 沙盘美术根、`asset/scene_3d/**` = 3D 沙盘。铁证：基础包里全部
+ *   `.prefab`/`.mesh`/`.material`/`.static_scene` 都落在 `scene_3d/**`，`scene/**` 下一个都没有；
+ *   而 `script/logic/res_load_control/res_2d_atlas.lua`（文件名就带 2d）整表是 `scene/_output_atlas_scene/`。
+ * - `asset/ground_down/**` 是 2D 侧：desert/snow 各 60 个 `*_polygon_group.prefab` 引用它作地面底。
+ * - `fairy/atlas_3d/**`、`fairy/ui_3d/**`、`ui_3d/**` 是 **3D UI 皮肤**，与沙盘维度**正交**
+ *   （`const.lua:651-657` 两套独立 tag）⇒ 两个沙盘 kit 都不收。
+ * - `map/<赛季>/cn/**` 数据层两版共用（`map_layer_config.lua` 的 `DataLayers` 与 2d/3d 段平级）。
+ */
+const MAPO_2D_SOURCE_PREFIXES = [
+    "scene/",            // 2D 沙盘美术根（含 _output_atlas_scene 图集页与切片）
+    "ground_down/",      // 2D 地面底（underground1/2/3）
+    "map/",              // 数据层，两版共用
+    "asset/config/",     // 数值/语义配置，无维度分支
+    "fairy/ui/",         // 2D UI 皮肤
+    "fairy/atlas/",      // 2D UI 图集
+    "fairy/atlas_common/", // 两套 UI 皮肤共用
+];
+/** ⛔ 出现即红。⚠ 前缀要**带斜杠**，否则 `scene/` 会把 `scene_3d/` 也放过去。 */
+const MAPO_BANNED_SOURCE_PREFIXES = ["scene_3d/", "fairy/ui_3d/", "fairy/atlas_3d/", "ui_3d/"];
+
+test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2D 侧**（⛔ 无 scene_3d）", () => {
+    const files = ["atlas-lod0.info.json", "atlas-lod1.info.json", "atlas-lod2.info.json",
+                   "decor-atlas.info.json", "region-atlas.info.json"];
+    let checked = 0;
+    for (const name of files) {
+        const meta = JSON.parse(kit(name).toString("utf8")) as {
+            cells?: { id: number; source?: string }[];
+        };
+        for (const c of meta.cells ?? []) {
+            const src = c.source;
+            // 纯色兜底格没有真实来源，跳过；⛔ 但不许静默跳过「有 source 却不合规」的
+            if (!src || src.startsWith("（")) continue;
+            checked += 1;
+            for (const bad of MAPO_BANNED_SOURCE_PREFIXES) {
+                // ⚠ 判**子串**不只是前缀：原版语料里确有
+                //   `asset/scene/effect/_output_atlas_se/atlas_mutil_assets/asset/ground_down/…`
+                //   这种嵌套前缀写法，纯 startsWith 会让 `scene/…/scene_3d/…` 漏网。
+                assert.ok(!src.includes(bad),
+                    `${name} 第 ${c.id} 格的素材来自 3D 侧：${src}\n`
+                    + "  ⇒ 本 kit 只承载原版 2D 沙盘，3D 素材属于 mapOriginal3d");
+            }
+            assert.ok(MAPO_2D_SOURCE_PREFIXES.some((ok) => src.startsWith(ok)),
+                `${name} 第 ${c.id} 格的素材来源不在 2D 白名单里：${src}`);
+            // ⚠ 本机绝对路径会随机器漂，也让上面的前缀判定失效
+            assert.ok(!src.startsWith("/"), `${name} 第 ${c.id} 格的 source 是本机绝对路径`);
+        }
+    }
+    assert.ok(checked >= 100, `只校到 ${checked} 条 source，⛔ 像是白名单没覆盖到产物`);
+});
+
+test("mapOriginal 内容：选材清单 select.json ⛔ 不许再出现 3D 侧前缀", () => {
+    // ⚠ 钉**入口**而不只是产物：产物是烘出来的，选材表才是「下次重烘会拿什么」的真源。
+    const sel = JSON.parse(
+        readFileSync(new URL("../../../tools/maporiginal-assets/select.json", import.meta.url))
+            .toString("utf8")) as {
+        groups: { kind: string; paths?: string[]; prefixes?: string[] }[];
+    };
+    for (const g of sel.groups) {
+        for (const p of [...(g.paths ?? []), ...(g.prefixes ?? [])]) {
+            for (const bad of MAPO_BANNED_SOURCE_PREFIXES) {
+                assert.ok(!p.includes(bad), `select.json 的 ${g.kind} 组还指着 3D 侧：${p}`);
+            }
+        }
+    }
+});

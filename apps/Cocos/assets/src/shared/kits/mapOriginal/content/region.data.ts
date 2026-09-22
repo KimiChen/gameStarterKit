@@ -315,13 +315,13 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
     ],
     "art": [
       213,
-      271,
-      85,
-      49
+      272,
+      86,
+      48
     ],
     "native": [
-      85,
-      49
+      86,
+      48
     ]
   },
   {
@@ -335,13 +335,13 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
     ],
     "art": [
       213,
-      263,
-      85,
-      57
+      272,
+      86,
+      48
     ],
     "native": [
-      85,
-      57
+      86,
+      48
     ]
   },
   {
@@ -354,14 +354,14 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       320
     ],
     "art": [
-      202,
-      270,
-      107,
-      50
+      213,
+      272,
+      86,
+      48
     ],
     "native": [
-      107,
-      50
+      86,
+      48
     ]
   },
   {
@@ -374,14 +374,14 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       320
     ],
     "art": [
-      202,
-      270,
-      107,
-      50
+      213,
+      271,
+      85,
+      49
     ],
     "native": [
-      107,
-      50
+      85,
+      49
     ]
   },
   {

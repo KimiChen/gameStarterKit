@@ -9,8 +9,7 @@ import { MapoCamera, type MapoCellRef } from "./mapoCamera";
 import { mapoIsNearField, mapoVisibleLayers, type MapoLayerId } from "./mapoLayers";
 import { mapoValueAt, mapoPassClassAt, mapoHasDisplayTerrain } from "./mapoTerrain";
 import {
-    MAPO_DEFAULT_GRAPHICS, mapoCameraAvailability, mapoCreateStepFor, mapoNormalizeGraphics,
-    mapoSandboxAvailability, type IMapoGraphicsSettings,
+    MAPO_DEFAULT_GRAPHICS, mapoCreateStepFor, mapoNormalizeGraphics, type IMapoGraphicsSettings,
 } from "./mapoSettings";
 
 export interface IMapoTileInfo {
@@ -44,14 +43,6 @@ export class MapOriginalWorldLogic {
     setGraphics(next: unknown): IMapoGraphicsSettings {
         this.graphicsValue = mapoNormalizeGraphics(next);
         return this.graphicsValue;
-    }
-
-    /** 面板要展示的可用性（与原作同义的置灰理由）。 */
-    availability(): { sandbox3d: string; camera: string } {
-        return {
-            sandbox3d: mapoSandboxAvailability("3d").reason,
-            camera: mapoCameraAvailability(this.graphicsValue).reason,
-        };
     }
 
     select(ref: MapoCellRef | null): IMapoTileInfo | null {

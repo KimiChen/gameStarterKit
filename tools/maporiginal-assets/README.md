@@ -230,22 +230,22 @@ python3 tools/maporiginal-assets/verify_root_res.py          # 全量
 转出的 `.ktx`（与 §1 坑③同源）。`slice_atlas.py` 现在会按扩展名回退再找一遍。
 现已切出 **3,510 张**原版切片。
 
-因此近档贴片的来源改为**原版可平铺的 3D 地表 albedo**（仍是原版像素）：
+⚠ **这一段早先写成「近档贴片用原版可平铺的 3D 地表 albedo」，已作废**（2026-09-22 换源）：
+本 kit 只收原版 **2D 沙盘**素材（见 §4.8），近档八个粗类的源全部改成 2D 侧。
 
 | 用途 | 素材 | 规格 |
 |---|---|---|
-| 远档 plate / 缩略图 | `fairy/ui/ui_common_map/map/map_s1/image/noexpo_birdview_map_1.ktx` | **4096×2048 ETC2**，等距菱形陆块 + 州郡线 + 河网 + 云雾。⚠ 带云雾外扩、与数据层不同尺度，落位要标定 |
-| 草地 / 雪地 | `scene_3d/ground/gaodi{,_snow}/tex/grass.ktx` | 1024×1024 ETC2 RGBA |
-| 山体（草/沙/雪三套 × 4 档） | `scene_3d/ground/mountain_new_lod/{th_shan,sand,snow}/tex/m_*_xl_0*_lod2_{d,n}.ktx` | 1024×1024 ASTC，201 张 |
-| 地表花纹贴花 | `scene_3d/ground/dibiaohuawen{,_snow}/tex/xiaobujian_{d,n,ao}.ktx` | 256×256 / 128×128 ASTC |
-| 河流 | `scene_3d/ground/terrain/albedo_river_v2.ktx` + `normal_river_v2.ktx` | 512×64 ETC2 RGBA |
-| 水面 | `scene_3d/pcg_v5/water/{normal,bank,whitwave,flow_map}.ktx` | 256² / 2048² |
-| s1 全局法线 | `scene_3d/pcg_v5/s1/cf_global_normal.ktx` | **4096×4096 ASTC** |
+| 远档 plate / 缩略图 | `fairy/ui/ui_common_map/map/map_s1/image/noexpo_birdview_map_1.ktx` | **4096×2048 ETC2**。⚠ 它在**共用 UI 包**树下（`fairy/ui_3d/` 无 `ui_common_map`），但像素是 3D 相机的透视渲染 ⇒ 归属是灰色地带，目前只当装饰性缩略图 |
+| 近档地表（八个粗类） | `ground_down/underground1` + `scene/ground/{caodi_gan,huangmo,zhaoze,caodi_shi,senlin,caodi_huijin,dongtu_tuxue}/png/tt_02` | 256² / 512² ETC2；判据见 §4.8、源表见 `bake_content.py` 的 `TEXTURE_OF` |
+| 逐格摆件（资源 res_field / 城址） | `scene/resource/{wood,iron,stone,food,gold}-new/png/<级>` + `scene/build{,_snow}/main_city/**` | 见 §4.4 |
+| 区域件（山 / 林 / 草） | `scene/ground/mountain_new/grass_fall_new/png/m1..m10`、`scene/build/**/tree`、`scene/ground/grass/png/a*` | 见 §4.5 |
 | 行军线 / 旗帜 / 建筑 | `scene/_output_atlas_scene/atlas_tex/{armyline,ext_building_flag,build_attachment,…}-1.ktx` + 同名 `.xml` | 图集，XML 里有逐 sprite 原始路径 |
 
-⛔ 包里**没有**合并好的地表 diffuse/splat 图集（`merge`/`splat`/`diffuse` 关键词 0 命中）——
-原版 3D 地表是按 splat 权重实时混合可平铺贴图的，所以近档菱形贴片要由这些可平铺 albedo
-**合成**（`pack-atlas.py` 的活），⛔ 不存在「直接拿来就是一张地块图」的素材。
+⚠ 原版 2D 地表的真实分层是「`*_polygon_group` 平铺底纹 + `_top_group`/MiddleLevel 散布贴片」，
+本 kit 的分工与它一致（底纹 = 地表图集、散布 = 摆件层与区域件层），但**不同构**：
+原版底纹是 256px 铺满一整块（`ground_layer_logic.lua:8` 的 `TILE_WIDTH*20` = 10 格一块）、
+每格只摊到约 25 texel，我们是**每格一张 240×120 贴片**，格内纹理密度高于原版。
+⛔ 不要为了「对齐原版」去取 25×13 的窗口放大 —— 那是不可用的糊。
 
 ### 4.2·一·六 ★★★ 二进制 prefab 格式已破（`prefab_bin.py`）
 

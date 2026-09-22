@@ -99,6 +99,8 @@ SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观�
   最后通过 CDP 发真实鼠标点击；不直接调用 SettingsLogic 或入口回调。
 - **页面必须可见**：`document.hidden` 时没有 rAF，Cocos 不启动——不要用应用内隐藏的浏览器面板，脚本会 `Page.bringToFront`。
 - **编辑器重编译**：Creator 只在应用激活时重编译脚本，改了源码先激活一次 Creator（`osascript -e 'tell application "CocosCreator" to activate'`）再跑，否则预览拿的是旧 chunk。
+  ⚠ 光等「出现新 chunk」不够 —— 改了**资源**（图集 PNG 等）时 Creator 会先重导资源再重编脚本，中途跑重放会拿到半成品 bundle（实测症状：整页挂不上、连标题都没有，而 console **0 条**，极难查）。
+  判据要改成**等静默**：`apps/Cocos/temp/programming/packer-driver/targets/preview` 与 `apps/Cocos/temp/asset-db` 连续 20 秒无文件变动再跑。
 - **有些路径要先有资源**：皮肤装备/合成要求账号已拥有第二件皮肤或够数的碎片（种完 `gp:snake:user` 的
   `ownedSkinIds` / `fragmentBalances` 后**必须重启游戏服**——`cosmeticProfile` 每进程按 uid 只 hydrate 一次）；
   arenaShop 的成功路径要有金币。

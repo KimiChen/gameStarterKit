@@ -117,7 +117,11 @@ def main() -> int:
     dst = a.dst
     if not dst:
         base = (a.name or os.path.basename(src)).rsplit(".", 1)[0]
-        dst = os.path.join(a.out or ".", base.replace("/", "_") + ".png")
+        # ⚠ 给了 --name 就**保留逻辑路径的目录结构**，⛔ 不要拍平成 a_b_c.png：
+        #   下游（bake_content / pack_* / slice_atlas）一律按 `out/png/<逻辑路径>.png` 取图，
+        #   拍平的话 `os.path.exists` 落空 ⇒ 该类**静默烘成纯色**、不报错（踩过）。
+        dst = os.path.join(a.out or ".",
+                           base + ".png" if a.name else base.replace("/", "_") + ".png")
     os.makedirs(os.path.dirname(os.path.abspath(dst)), exist_ok=True)
     img.save(dst)
     print("%s  %dx%d  %s  -> %s" % (src.split("/")[-1], img.width, img.height, fmt, dst))

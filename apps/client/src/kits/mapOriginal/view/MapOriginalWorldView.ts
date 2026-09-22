@@ -28,8 +28,8 @@ import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
 import { mapoSetRegions } from "../logic/mapoRegions";
 import {
-    MAPO_COLOR_LABELS, MAPO_QUALITY_LABELS, MAPO_SANDBOX_LABELS,
-    type MapoColorMode, type MapoQuality, type MapoSandboxMode,
+    MAPO_COLOR_LABELS, MAPO_QUALITY_LABELS,
+    type MapoColorMode, type MapoQuality,
     mapoDecorEnabledFor,
 } from "../logic/mapoSettings";
 import type { MapoRgb } from "../logic/mapoPalette";
@@ -261,20 +261,10 @@ export class MapOriginalWorldView extends CocosView {
             const l = this.logic; if (!l) return;
             l.setGraphics({ ...l.graphics, ...patch });
         };
-        row("沙盘模式", "sandbox", (["2d", "3d"] as MapoSandboxMode[]).map((m) => ({
-            text: MAPO_SANDBOX_LABELS[m],
-            apply: () => set({ sandbox: m }),
-            on: () => this.logic?.graphics.sandbox === m,
-            // ⚠ 3D 置灰的理由与原作同义：框架 Stage3D 未实施，⛔ 不在 kit 内自建相机
-            enabled: () => m === "2d",
-        })));
-        row("镜头视角", "camera", [{
-            text: "鸟瞰",
-            apply: () => set({ birdview: !this.logic?.graphics.birdview }),
-            on: () => this.logic?.graphics.birdview === true,
-            // 原作：「2D沙盘不支持鸟瞰视角」
-            enabled: () => this.logic?.graphics.sandbox === "3d",
-        }]);
+        // ★ 本 kit 只承载原版 2D 沙盘 ⇒ 面板里**没有**沙盘模式与镜头视角两行（2026-09-22 拍板）。
+        //   3D 沙盘另开 kit `mapOriginal3d`；镜头视角（fov/angle/distance）与鸟瞰是 3D 独占
+        //   （`viewport_3d_cfg.lua`；7 条 `birdview_*` 显示层全部且仅在 `ShowLayers3d`）。
+        //   ⛔ 别再在这里放一个永远选不动的 3D 档位当「契约占位」。
         row("色彩模式", "color", (["standard", "vivid", "muted"] as MapoColorMode[]).map((m) => ({
             text: MAPO_COLOR_LABELS[m], apply: () => set({ colorMode: m }),
             on: () => this.logic?.graphics.colorMode === m, enabled: () => true,
@@ -440,8 +430,7 @@ export class MapOriginalWorldView extends CocosView {
             const g = l.graphics;
             // ⚠ 画面设置写进**渲染出来的文本**：真引擎重放据此判定档位是否真的生效，
             //   ⛔ 不让重放去调 Logic 读内部状态。
-            const graphics = `${MAPO_SANDBOX_LABELS[g.sandbox]}/${MAPO_COLOR_LABELS[g.colorMode]}`
-                + `/${MAPO_QUALITY_LABELS[g.quality]}${g.birdview ? "/鸟瞰" : ""}`;
+            const graphics = `${MAPO_COLOR_LABELS[g.colorMode]}/${MAPO_QUALITY_LABELS[g.quality]}`;
             // ★ 摆件数进状态行：原版每个资源格都有 res_field ⇒ 近档这个数应该接近可视格的四成，
             //   ⛔ 掉到 0 或个位数就说明「按原版值查表」这条链断了（重放据此判定）。
             const decor = near ? ` · 摆件 ${this.decorCount}/${this.visibleCount}` : "";
