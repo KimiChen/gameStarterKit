@@ -18,6 +18,10 @@
 - **对齐**（M2）= 架构级改动，有前置。
 - **补层**（M3）= 原版有我们没有的整层。属**新增**，⛔ 不是修 bug。
 
+⚠ **动手前先核断言**：`MAPORIGINAL-2D.md` 里**不带 ★** 的条目未经独立核验
+（原定的逐条核验轮因额度终止、零结果）。每批开工的第一步是按该文的 pointer
+把**本批依赖的那几条**原地核一遍，⛔ 不要整篇重核。各批依赖的断言已在「为什么」里点名。
+
 ⚠ 每批的退出判据必须是**机检**（命令 + 断言），⛔ 不许「目视确认」。
 可用的闸：`npm --workspace @game/server run test`、`npm run typecheck`、`npm run verify:sync`、
 `npm run verify:protected-paths`、`npm run test:client`，以及往
