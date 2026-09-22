@@ -14,7 +14,7 @@
 | **未推提交** | **2 个**：`9fad25c5`（城址件层）、`cdb5f0fb`（尺寸机检）。⚠ 推送需当事人确认 |
 | 机检 | client 997 / server 1373 全绿；`verify:sync`、`verify:protected-paths` 绿 |
 | ⚠ 一条踩过的 | `verify:sync` 的「缺 `.meta`」**只对已入库文件生效** ⇒ `git add` **之前**跑是绿的、之后才红。⛔ 新增镜像文件后要在 `git add` 之后**再跑一遍** |
-| 真机重放 | ⛔ **城址件层从未在 Cocos 里跑过** —— 见 N0，这是当前唯一的验收缺口 |
+| 真机重放 | ✅ **N0 已退出**（2026-09-23）：15 步全绿、肉眼四项全过；抓出并修掉 2 条回归（层容器 layer 黑屏 / 重放解析器漂移 + 缩略图 y 翻号），见 §2 |
 | 工作树 | ⚠ **被多个会话共用**：测试跑一半树会变、git 会撞 `index.lock`。归因间歇性失败前先看有没有别的会话在写 |
 
 **原始素材永远留仓外只读**（`../apkdecode/`、`../sourceVersion/`），只入派生产物，
@@ -55,7 +55,7 @@ plate 90 < terrain 100 < blocks 110 < region 300 < road 900 < grid 950
 | `road` 道路 | ✅ 42,018 片，id→精灵绑定已升 `[实测]` |
 | `river` 河流 | ✅ 水面多边形 + `_top_group` 手摆件 |
 | `decor` 摆件 | ✅ 值即格 id，零概率零哈希 |
-| **`city` 城址** | ✅ **本轮新增**，⛔ 未经真机验证 |
+| **`city` 城址** | ✅ **本轮新增 + 已过真机**（N0，2026-09-23：洛阳 218 sprite 在屏、四项肉眼全过） |
 | `label` 地名 | ✅ 大区 9 / 郡 55 |
 | `plate` 远档 | ✅ 由地形自烘 |
 | `grid` 网格线 | ⛔ 未实现（**原版有没有这层目前无证据**，见 N4-B3） |
@@ -63,7 +63,33 @@ plate 90 < terrain 100 < blocks 110 < region 300 < road 900 < grid 950
 
 ---
 
-## 2. N0 · 真机重放与 `.meta`（⚠ 阻塞验收，**先做这个**）
+## 2. N0 · 真机重放与 `.meta`（✅ **已退出**，2026-09-23）
+
+**结果**　`node tools/creator-preview/run.mjs mapOriginal --out /tmp/maporiginal-run` **15 步全绿**、
+console 0 条；状态行 `· 城 218`（洛阳整件 218 sprite 全在屏）。证据留档
+`docs/evidence/creator-2026-09-23/maporiginal-n0/`（截图 + report.json，按 .gitignore 政策不入库）。
+肉眼四项全过：城在地表之上、在资源件之上、城墙内无摆件（第 4 道门）、洛阳约 5 格宽（档内最大件）。
+
+⚠ **真机重放抓出两条单测全绿盖不住的回归**（sgzzmap 的教训再次命中）：
+
+1. **全部 mesh 层黑屏**（188c59dd 引入）：`mapo-layer-<id>` 容器没继承 layer —— Cocos 的
+   `addChild` **不传播** layer，新节点默认 `DEFAULT`（2^30），而 UI 相机只看 `UI_2D`
+   ⇒ 地表/路/河/山/摆件/城**整批被裁掉**。状态行计数照涨、重放节点判据照过、画面全黑。
+   修复 = `MapOriginalWorldView.onOpen` 建容器时 `node.layer = this.world.layer`。
+2. **重放解析器漂移**：M2/M3 往状态行加了「地表/道路/水面/点缀」段但没同步
+   `maporiginal.mjs` 的 `STATUS_RE`（摆件/山林组静默失配），且近档地表节点早在 M2-B1
+   改名 `mapo-ground`（重放还在等 `mapo-terrain`）。⇒ **重放自 M2 起就没跑通过**，
+   层表里那些 ✅ 此前只有单测。已全修：段序对齐、组号重排、`· 城 N` 进判据。
+
+另修一条工具 bug：缩略图点击换算的 **y 翻号**（局部 y 上 / 页面 y 下）——写反会跳到
+(938,823) 而非洛阳；新增「点图心读详情格」公开信号钉住落点（±30 格容差：缩略图 1 CSS px ≈ 9 行）。
+
+⚠ 初始视口在图心 (750,750)，**附近 60 行内没有城**（最近的武关在 (690,750)）⇒ 图心的
+「城 0」是合法的，城的验收必须跳到洛阳去做（重放最后一步）。
+
+`.meta`：本轮无新增镜像文件，`verify:sync` 绿；Creator 未改写 `resources/` 的 uuid。
+
+<details><summary>N0 原始施工单（已退出，留档）</summary>
 
 **为什么**　城址件层新开了一个材质、一个合批、一张 1024² 图集、1,642 个 sprite，
 但**只过了单测**。本仓的先例写得很清楚：sgzzmap 有 673 条绿单测，仍被真机重放抓出七条
@@ -89,6 +115,8 @@ node tools/creator-preview/run.mjs mapOriginal --reuse --out /tmp/maporiginal-ru
 
 **风险**　中。合批/材质在真引擎里可能暴露 sgzzmap README 里那五条硬规矩相关的问题。
 **依赖**　无。
+
+</details>
 
 ---
 

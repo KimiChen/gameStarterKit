@@ -16,15 +16,16 @@ const inView = (node) => node.path.includes(`${VIEW}/`);
 /** 标题形如「原版大地图 · LOD 2/5」。 */
 const TITLE_RE = /^原版大地图 · LOD ([0-5])\/5$/u;
 /**
- * 状态形如「s1 · 近档 · 画面：普通 · 层：… · 摆件 137/312 · 山林 48」。
- * ⚠ 「摆件 建出来的/可视格」只在近档有；「山林 N」是多格地形的区域件数（近远档都可能有）。
- *   两个数都是活体证据：前者证「按原版值逐格摆件」，后者证「多格地形每区一件」。
+ * 状态形如「s1 · 近档 · 画面：普通 · 层：… · 地表 12+3 · 道路 5 · 摆件 137/312 · 山林 48
+ *   · 水面 5 · 点缀 2 · 城 8」（段序固定 = 视图里的拼接序；除「层」外各段都只在 >0 时出现，
+ *   「地表 / 摆件」仅近档有）。
+ * ⚠ 每段都是活体证据：掉到 0 的那一段说明对应的 bin / 图集没到位（城 ⇒ cities.bin / city-atlas）。
  * ⚠ **画面只剩一段（画质）**：沙盘模式 / 镜头视角 / 鸟瞰 / **色彩模式** 四项都是 3D 侧，
  *   已随 3D 迁出本 kit（2026-09-22）。⛔ 改这条正则必须同步改下面按组号取值的地方 ——
  *   组号前移过两次，都踩过。
  */
 const STATUS_RE =
-    /^s1 · (近档|远档) · 画面：([^/·]+?) · 层：(.*?)( · 摆件 (\d+)\/(\d+))?( · 山林 (\d+))?$/u;
+    /^s1 · (近档|远档) · 画面：([^/·]+?) · 层：(.*?)( · 地表 (\d+)(?:\+(\d+))?)?( · 道路 (\d+))?( · 摆件 (\d+)\/(\d+))?( · 山林 (\d+))?( · 水面 (\d+))?( · 点缀 (\d+))?( · 城 (\d+))?$/u;
 /**
  * 详情形如「(750, 751) 木·1级 · 原版值 2」，不可通行多一段，显示层没到位再多「· 读取中…」。
  * ⚠ 地形名里**自带 `·`**（原版调色板就是「类型·等级」），所以这里 ⛔ 不能用 `[^\s·]+` 去截。
@@ -55,14 +56,26 @@ export function readMapOriginalEvidence(walk) {
         graphics: statusMatch ? { quality: statusMatch[2] } : null,
         layers: statusMatch ? statusMatch[3].split(" / ").filter((s) => s && s !== "（无）") : [],
         // ★ 摆件：建出来的件数 / 可视格数。原版每个资源格都有 res_field ⇒ 近档这个比例应在四成上下
-        decorPlaced: statusMatch?.[5] !== undefined ? Number(statusMatch[5]) : null,
-        visibleCells: statusMatch?.[6] !== undefined ? Number(statusMatch[6]) : null,
+        decorPlaced: statusMatch?.[10] !== undefined ? Number(statusMatch[10]) : null,
+        visibleCells: statusMatch?.[11] !== undefined ? Number(statusMatch[11]) : null,
         // ★ 区域件：多格地形每区一件（原版 mountain_patch 锚点优先 + 无锚连通区兜底）
-        regionPieces: statusMatch?.[8] !== undefined ? Number(statusMatch[8]) : null,
+        regionPieces: statusMatch?.[13] !== undefined ? Number(statusMatch[13]) : null,
+        // ★ 其余各段的活体计数（掉到 0 = 对应 bin / 图集没到位；地表 / 摆件仅近档有）
+        groundCount: statusMatch?.[5] !== undefined ? Number(statusMatch[5]) : null,
+        blockCount: statusMatch?.[6] !== undefined ? Number(statusMatch[6]) : null,
+        roadPieces: statusMatch?.[8] !== undefined ? Number(statusMatch[8]) : null,
+        riverPieces: statusMatch?.[15] !== undefined ? Number(statusMatch[15]) : null,
+        topPieces: statusMatch?.[17] !== undefined ? Number(statusMatch[17]) : null,
+        // ★ 城址件：15 个原版件 / 249 座，⛔ 掉到 0 说明 cities.bin / city-atlas 没到位
+        cityPieces: statusMatch?.[19] !== undefined ? Number(statusMatch[19]) : null,
         // 近档 / 远档各自的「画出来了」
-        terrain: has("mapo-terrain"),
+        // ⚠ 近档地表底的节点叫 mapo-ground（M2-B1 起：一块 10×10 格 + GL_REPEAT 底纹，
+        //   旧的逐格 mapo-terrain 已随那次改造删掉），⛔ 别再等一个不存在的老名字
+        terrain: has("mapo-ground"),
         // ★ 摆件层：原版切片立在格上（去「铺地砖」的主力）
         decor: has("mapo-decor"),
+        // ★ 城址件层：一个批、一张城址图集（zorder 3900 = 原版 BUILD_TOP）
+        city: has("mapo-city"),
         // ★ 地名层：远档大区名、近档郡名。取的是**渲染出来的文本**，⛔ 不读内部状态
         labels: nodes.filter((node) => node.path.includes("/mapo-label-")
             && typeof node.text === "string" && node.text.trim().length > 0)
@@ -84,7 +97,7 @@ export function readMapOriginalEvidence(walk) {
                 text: detail,
             }
             : null,
-        nearLoaded: !!titleMatch && has("mapo-terrain"),
+        nearLoaded: !!titleMatch && has("mapo-ground"),
         farLoaded: !!titleMatch && nodes.some((node) => /^mapo-plate-[45]$/u.test(node.name)),
     };
 }
@@ -138,7 +151,7 @@ export async function replayMapOriginalWorld(runner) {
         async () => runner.tapSettingsEntry("originalWorld"));
 
     const opened = await runner.step("近档：标题与地表就位", async () => {
-        const evidence = await runner.waitFor("地图标题 + mapo-terrain 在渲染树上", (walk) => {
+        const evidence = await runner.waitFor("地图标题 + mapo-ground 在渲染树上", (walk) => {
             const value = readMapOriginalEvidence(walk);
             return value?.nearLoaded ? value : null;
         }, 60_000);
@@ -178,12 +191,16 @@ export async function replayMapOriginalWorld(runner) {
             // ★ 多格地形（山脉/林丛/散落）必须也摆出来了 —— 它们占全图 8.8%，
             //   近档一屏总会框进几个区；⛔ 0 就说明 regions.bin 这条链断了
             if (!(value.regionPieces > 0)) return null;
+            // ⚠ 城址件不在这里判：图心 (750,750) 的初始视口内**本来就没有城**
+            //   （最近的武关在 (690,750)，60 行外）——城的验收在最后「跳洛阳」那步。
             // ⚠ 近档该看到的是**郡名**（带「郡/国」字），⛔ 不是远档那九个大区名
             const jun = [...new Set(value.labels)].filter((t) => /[郡国]$/u.test(t));
             return jun.length > 0 ? { ...value, jun } : null;
         }, 30_000);
         return { decor: evidence.decor, decorPlaced: evidence.decorPlaced,
                  visibleCells: evidence.visibleCells, regionPieces: evidence.regionPieces,
+                 groundCount: evidence.groundCount, roadPieces: evidence.roadPieces,
+                 riverPieces: evidence.riverPieces, topPieces: evidence.topPieces,
                  decorRatio: Number((evidence.decorPlaced / evidence.visibleCells).toFixed(3)),
                  jun: evidence.jun, labelCount: new Set(evidence.labels).size,
                  shot: await runner.shot("maporiginal-decor-labels") };
@@ -248,5 +265,40 @@ export async function replayMapOriginalWorld(runner) {
         return { lod: value.lod, band: value.band, shot: await runner.shot("maporiginal-back") };
     });
 
-    return { opened, selected, decorAndLabels, noSandboxRow, far, jumped, back };
+    // ★ 城址件的真机验收（M4-B1）：初始视口在图心 (750,750)，附近 60 行内没有城
+    //   （最近的是武关 (690,750)）⇒ 图心的「城 0」是**合法的**，不能拿来判链条断没断。
+    //   必须真的跳到一座城 —— 洛阳 (661,543)，全图唯一 10 级城、件有 218 个 sprite。
+    const city = await runner.step("城址件：缩略图跳洛阳，近档画出城（状态行 · 城 N > 0）", async () => {
+        const walk = await runner.walk();
+        const mini = walk.nodes.find((node) => node.name === "mapo-minimap" && node.center)?.center ?? null;
+        if (!mini) return { skipped: "缩略图不在渲染树上（贴图没加载出来时只留可点底板）" };
+        // ★ 洛阳在缩略图上的归一化位置：由 shared 的 mapoMinimapMark(661, 543) 算得
+        //   （2026-09-23 钉），⛔ 别把 hexmap 公式抄进本工具。锚点居中：local.x=(u−0.5)·size、
+        //   local.y=(0.5−v)·size，size=180 设计像素（MapOriginalWorldView 里 new MapoMinimap 的实参）。
+        // ⚠ 局部 y 向上、页面 y 向下 ⇒ y 要**减**（写成加会落到 (938,823) 而不是洛阳，踩过）。
+        const uv = { u: 0.5392565427571262, v: 0.45088318613564404 };
+        const designToPage = walk.canvas.width / walk.visible.width;
+        const at = { x: mini.x + (uv.u - 0.5) * 180 * designToPage,
+                     y: mini.y - (0.5 - uv.v) * 180 * designToPage };
+        await runner.client.click(at.x, at.y);
+        const value = await runner.waitFor("跳到洛阳且城址件画出来（mapo-city 在树上、· 城 N > 0）", (w) => {
+            const got = readMapOriginalEvidence(w);
+            return got?.nearLoaded && got.city && got.cityPieces > 0 ? got : null;
+        }, 30_000);
+        // ★ 落点核对（公开信号）：点图心选一格，详情必须落在洛阳 (661, 543) 附近 ——
+        //   缩略图 UV → 页面前要过一道 y 翻号，错了会跳到几百行外（踩过，见上）。
+        //   ⚠ 缩略图导航天生粗（1 CSS px ≈ 9 行），给 ±30 格容差，⛔ 别钉死精确格。
+        const area = mapOriginalGestureArea(await runner.walk());
+        await runner.client.click(area.x, area.y);
+        const landed = await runner.waitFor("图心详情落在洛阳 (661, 543) ±30 格", (w) => {
+            const got = readMapOriginalEvidence(w);
+            const t = got?.tile;
+            return t && Math.abs(t.row - 661) <= 30 && Math.abs(t.col - 543) <= 30 ? got : null;
+        }, 10_000);
+        return { at: [Math.round(at.x), Math.round(at.y)], lod: value.lod,
+                 cityPieces: value.cityPieces, landed: landed.tile.text, status: value.status,
+                 shot: await runner.shot("maporiginal-city") };
+    });
+
+    return { opened, selected, decorAndLabels, noSandboxRow, far, jumped, back, city };
 }

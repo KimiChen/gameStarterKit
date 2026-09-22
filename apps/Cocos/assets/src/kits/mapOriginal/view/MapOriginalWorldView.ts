@@ -153,6 +153,10 @@ export class MapOriginalWorldView extends CocosView {
         this.layerNodes = new Map();
         for (const id of MAPO_LAYER_ORDER) {
             const node = new Node(`mapo-layer-${id}`);
+            // ★ layer 必须显式继承：Cocos 的 addChild ⛔ 不传播 layer，新节点默认 DEFAULT，
+            //   而 UI 相机只看 UI_2D —— 不设的话挂进容器的整批 mesh 全被裁掉
+            //   （真机症状：计数全在涨、画面全黑；2026-09-23 N0 重放抓到）。
+            node.layer = this.world.layer;
             node.addComponent(UITransform);
             this.world.addChild(node);
             this.layerNodes.set(id, node);
