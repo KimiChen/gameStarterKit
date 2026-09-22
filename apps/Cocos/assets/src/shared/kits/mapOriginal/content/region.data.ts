@@ -1,18 +1,28 @@
 /**
- * mapOriginal **区域件**图集布局（s1）—— **生成物，⛔ 勿手改**。
+ * mapOriginal 「山」族件图集（s1）—— **生成物，⛔ 勿手改**。
  *
- * ★ 多格地形（山脉 / 林丛 / 散落）的件。摆放表在 `regions.bin`（Cocos BufferAsset），
- *   ⛔ 不进 shared：2.8 万条、217 KB。这里只有**图集布局**。
+ * ★ **格 id = 原版 res 值**（48..61，⛔ 无 56）：客户端拿到锚点值就直接查到该放哪张图。
+ *   原版 48..61 是**一族 14 形**（`山1..山14`，见 docs/MAPORIGINAL-2D.md §3.2），
+ *   ⛔ 不是本仓早先分的「山脉 / 林丛 / 散落」三族。山9（值 56）无 2D prefab，数据里也 0 命中。
+ * ★ 贴图对应是**从 prefab 读出来的**（`mountain_forms.py`）：13 形只用到 m1..m10 十张图，
+ *   1m_01/1m_04 共用 m7、1m_02/1m_03 共用 m6、19m_01/19m_02 共用 m2，靠 transform 区分。
  * ⚠ 锚点是**底边中点**，⛔ 不是几何中心。
- * ⚠ 族内按面积**升序**排，`build_regions.py` 按区的等距跨度挑件（大区用大件）。
- * ★ `native` 是原图像素：原版 2D 一格 300×150 px ⇒ 世界宽 = native[0] × (MAPO_TILE_HALF_W / 150)。
- *   实测山体件占 0.94~2.25 格、树簇 0.12~0.45 格 —— 这就是原版的比例。
+ * ★ `native` 是原图像素：世界宽 = native[0] × (MAPO_TILE_HALF_W / 150)。
  * ⚠ 早先按连通区跨度把件**拉大到整片区**，真机一看是糊成一团的大绿斑，⛔ 别再拉伸。
  */
 
 export interface IMapoRegionCell {
+    /** ★ 原版 res 值（48..61），同时是 `regions.bin` 里的 cell 字段。 */
     readonly id: number;
     readonly kind: string;
+    /** 原版件号 `山N`。 */
+    readonly shan: number;
+    /** 原版 prefab 名，如 `mountain19m_01`。 */
+    readonly form: string;
+    /** 足迹形：1m / 2m_x / 2m_xy / 2m_y / 4m / 7m / 19m。 */
+    readonly shape: string;
+    /** 该形覆盖的格数（1 / 2 / 4 / 7 / 19）。 */
+    readonly footprintCells: number;
     readonly cell: readonly [number, number, number, number];
     readonly art: readonly [number, number, number, number];
     /** ★ **原图像素尺寸**。件在世界里多大由它定，⛔ 不是按连通区拉伸。 */
@@ -21,21 +31,25 @@ export interface IMapoRegionCell {
 
 export const MAPO_REGION_ATLAS_W = 2048;
 export const MAPO_REGION_ATLAS_H = 2048;
-export const MAPO_REGION_CELL_W = 512;
-export const MAPO_REGION_CELL_H = 320;
+export const MAPO_REGION_CELL_W = 680;
+export const MAPO_REGION_CELL_H = 352;
 export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
   {
-    "id": 0,
+    "id": 48,
     "kind": "mountain",
+    "shan": 1,
+    "form": "mountain1m_01",
+    "shape": "1m",
+    "footprintCells": 1,
     "cell": [
       0,
       0,
-      512,
-      320
+      680,
+      352
     ],
     "art": [
-      115,
-      172,
+      199,
+      204,
       281,
       148
     ],
@@ -45,17 +59,21 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
     ]
   },
   {
-    "id": 1,
+    "id": 49,
     "kind": "mountain",
+    "shan": 2,
+    "form": "mountain1m_02",
+    "shape": "1m",
+    "footprintCells": 1,
     "cell": [
-      512,
+      680,
       0,
-      512,
-      320
+      680,
+      352
     ],
     "art": [
-      112,
-      172,
+      196,
+      204,
       287,
       148
     ],
@@ -65,79 +83,143 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
     ]
   },
   {
-    "id": 2,
+    "id": 50,
     "kind": "mountain",
+    "shan": 3,
+    "form": "mountain1m_03",
+    "shape": "1m",
+    "footprintCells": 1,
     "cell": [
-      1024,
+      1360,
       0,
-      512,
-      320
+      680,
+      352
     ],
     "art": [
-      105,
+      196,
+      204,
+      287,
+      148
+    ],
+    "native": [
+      287,
+      148
+    ]
+  },
+  {
+    "id": 51,
+    "kind": "mountain",
+    "shan": 4,
+    "form": "mountain1m_04",
+    "shape": "1m",
+    "footprintCells": 1,
+    "cell": [
+      0,
+      352,
+      680,
+      352
+    ],
+    "art": [
+      199,
+      204,
+      281,
+      148
+    ],
+    "native": [
+      281,
+      148
+    ]
+  },
+  {
+    "id": 52,
+    "kind": "mountain",
+    "shan": 5,
+    "form": "mountain2m_x_01",
+    "shape": "2m_x",
+    "footprintCells": 2,
+    "cell": [
+      680,
+      352,
+      680,
+      352
+    ],
+    "art": [
+      130,
+      118,
+      420,
+      234
+    ],
+    "native": [
+      420,
+      234
+    ]
+  },
+  {
+    "id": 53,
+    "kind": "mountain",
+    "shan": 6,
+    "form": "mountain2m_xy_01",
+    "shape": "2m_xy",
+    "footprintCells": 2,
+    "cell": [
+      1360,
+      352,
+      680,
+      352
+    ],
+    "art": [
+      189,
+      114,
+      302,
+      238
+    ],
+    "native": [
+      302,
+      238
+    ]
+  },
+  {
+    "id": 54,
+    "kind": "mountain",
+    "shan": 7,
+    "form": "mountain2m_y_01",
+    "shape": "2m_y",
+    "footprintCells": 2,
+    "cell": [
+      0,
+      704,
+      680,
+      352
+    ],
+    "art": [
+      85,
+      174,
+      510,
+      178
+    ],
+    "native": [
+      510,
+      178
+    ]
+  },
+  {
+    "id": 55,
+    "kind": "mountain",
+    "shan": 8,
+    "form": "mountain4m_01",
+    "shape": "4m",
+    "footprintCells": 4,
+    "cell": [
+      680,
+      704,
+      680,
+      352
+    ],
+    "art": [
       82,
-      302,
-      238
-    ],
-    "native": [
-      302,
-      238
-    ]
-  },
-  {
-    "id": 3,
-    "kind": "mountain",
-    "cell": [
-      1536,
-      0,
-      512,
-      320
-    ],
-    "art": [
-      1,
-      142,
-      510,
-      178
-    ],
-    "native": [
-      510,
-      178
-    ]
-  },
-  {
-    "id": 4,
-    "kind": "mountain",
-    "cell": [
-      0,
-      320,
-      512,
-      320
-    ],
-    "art": [
-      46,
-      86,
-      420,
-      234
-    ],
-    "native": [
-      420,
-      234
-    ]
-  },
-  {
-    "id": 5,
-    "kind": "mountain",
-    "cell": [
-      512,
-      320,
-      512,
-      320
-    ],
-    "art": [
-      0,
-      32,
-      512,
-      288
+      62,
+      516,
+      290
     ],
     "native": [
       516,
@@ -145,39 +227,23 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
     ]
   },
   {
-    "id": 6,
+    "id": 57,
     "kind": "mountain",
+    "shan": 10,
+    "form": "mountain7m_01",
+    "shape": "7m",
+    "footprintCells": 7,
     "cell": [
-      1024,
-      320,
-      512,
-      320
+      1360,
+      704,
+      680,
+      352
     ],
     "art": [
-      0,
-      63,
-      512,
-      257
-    ],
-    "native": [
-      563,
-      283
-    ]
-  },
-  {
-    "id": 7,
-    "kind": "mountain",
-    "cell": [
-      1536,
-      320,
-      512,
-      320
-    ],
-    "art": [
-      0,
-      53,
-      512,
-      267
+      12,
+      11,
+      655,
+      341
     ],
     "native": [
       655,
@@ -185,19 +251,23 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
     ]
   },
   {
-    "id": 8,
+    "id": 58,
     "kind": "mountain",
+    "shan": 11,
+    "form": "mountain7m_02",
+    "shape": "7m",
+    "footprintCells": 7,
     "cell": [
       0,
-      640,
-      512,
-      320
+      1056,
+      680,
+      352
     ],
     "art": [
-      0,
-      47,
-      512,
-      273
+      11,
+      2,
+      657,
+      350
     ],
     "native": [
       657,
@@ -205,19 +275,23 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
     ]
   },
   {
-    "id": 9,
+    "id": 59,
     "kind": "mountain",
+    "shan": 12,
+    "form": "mountain7m_03",
+    "shape": "7m",
+    "footprintCells": 7,
     "cell": [
-      512,
-      640,
-      512,
-      320
+      680,
+      1056,
+      680,
+      352
     ],
     "art": [
-      0,
-      58,
-      512,
-      262
+      3,
+      7,
+      674,
+      345
     ],
     "native": [
       674,
@@ -225,283 +299,51 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
     ]
   },
   {
-    "id": 10,
-    "kind": "grove",
+    "id": 60,
+    "kind": "mountain",
+    "shan": 13,
+    "form": "mountain19m_01",
+    "shape": "19m",
+    "footprintCells": 19,
     "cell": [
-      1024,
-      640,
-      512,
-      320
+      1360,
+      1056,
+      680,
+      352
     ],
     "art": [
-      213,
-      272,
-      85,
-      48
+      58,
+      69,
+      563,
+      283
     ],
     "native": [
-      85,
-      48
+      563,
+      283
     ]
   },
   {
-    "id": 11,
-    "kind": "grove",
-    "cell": [
-      1536,
-      640,
-      512,
-      320
-    ],
-    "art": [
-      213,
-      272,
-      86,
-      48
-    ],
-    "native": [
-      86,
-      48
-    ]
-  },
-  {
-    "id": 12,
-    "kind": "grove",
+    "id": 61,
+    "kind": "mountain",
+    "shan": 14,
+    "form": "mountain19m_02",
+    "shape": "19m",
+    "footprintCells": 19,
     "cell": [
       0,
-      960,
-      512,
-      320
+      1408,
+      680,
+      352
     ],
     "art": [
-      213,
-      272,
-      86,
-      48
+      58,
+      69,
+      563,
+      283
     ],
     "native": [
-      86,
-      48
-    ]
-  },
-  {
-    "id": 13,
-    "kind": "grove",
-    "cell": [
-      512,
-      960,
-      512,
-      320
-    ],
-    "art": [
-      213,
-      272,
-      86,
-      48
-    ],
-    "native": [
-      86,
-      48
-    ]
-  },
-  {
-    "id": 14,
-    "kind": "grove",
-    "cell": [
-      1024,
-      960,
-      512,
-      320
-    ],
-    "art": [
-      213,
-      272,
-      86,
-      48
-    ],
-    "native": [
-      86,
-      48
-    ]
-  },
-  {
-    "id": 15,
-    "kind": "grove",
-    "cell": [
-      1536,
-      960,
-      512,
-      320
-    ],
-    "art": [
-      213,
-      272,
-      86,
-      48
-    ],
-    "native": [
-      86,
-      48
-    ]
-  },
-  {
-    "id": 16,
-    "kind": "grove",
-    "cell": [
-      0,
-      1280,
-      512,
-      320
-    ],
-    "art": [
-      213,
-      272,
-      86,
-      48
-    ],
-    "native": [
-      86,
-      48
-    ]
-  },
-  {
-    "id": 17,
-    "kind": "grove",
-    "cell": [
-      512,
-      1280,
-      512,
-      320
-    ],
-    "art": [
-      213,
-      271,
-      85,
-      49
-    ],
-    "native": [
-      85,
-      49
-    ]
-  },
-  {
-    "id": 18,
-    "kind": "scatter",
-    "cell": [
-      1024,
-      1280,
-      512,
-      320
-    ],
-    "art": [
-      76,
-      149,
-      360,
-      171
-    ],
-    "native": [
-      360,
-      171
-    ]
-  },
-  {
-    "id": 19,
-    "kind": "scatter",
-    "cell": [
-      1536,
-      1280,
-      512,
-      320
-    ],
-    "art": [
-      18,
-      93,
-      475,
-      227
-    ],
-    "native": [
-      475,
-      227
-    ]
-  },
-  {
-    "id": 20,
-    "kind": "scatter",
-    "cell": [
-      0,
-      1600,
-      512,
-      320
-    ],
-    "art": [
-      36,
-      42,
-      439,
-      278
-    ],
-    "native": [
-      439,
-      278
-    ]
-  },
-  {
-    "id": 21,
-    "kind": "scatter",
-    "cell": [
-      512,
-      1600,
-      512,
-      320
-    ],
-    "art": [
-      0,
-      116,
-      512,
-      204
-    ],
-    "native": [
-      571,
-      228
-    ]
-  },
-  {
-    "id": 22,
-    "kind": "scatter",
-    "cell": [
-      1024,
-      1600,
-      512,
-      320
-    ],
-    "art": [
-      0,
-      132,
-      512,
-      188
-    ],
-    "native": [
-      609,
-      224
-    ]
-  },
-  {
-    "id": 23,
-    "kind": "scatter",
-    "cell": [
-      1536,
-      1600,
-      512,
-      320
-    ],
-    "art": [
-      7,
-      17,
-      497,
-      303
-    ],
-    "native": [
-      497,
-      303
+      563,
+      283
     ]
   }
 ];

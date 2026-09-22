@@ -48,8 +48,9 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `build_terrain.py` | ★ 原版层 → `terrain.bytes`（**直接存原版 res 值**，`res==0` 用 `res_multi` 顶替）+ 3 类通行层 + 61 条调色板 |
 | `bake_content.py` | 远档底图 / 缩略图 / 近档地表图集（**按 8 个粗类 × 4 变体**建，⛔ 不按 61 个值建） |
 | `pack_decor.py` | ★ 摆件图集：**格 id = 原版 res 值**（2..46）+ 城址件从 64 起；缺级用最近一级顶上并存证 |
-| `pack_regions.py` | ★ 多格地形的**区域件**图集（山体 m1..m10 / 树簇 / 草丛，512×320 大格）；树簇用**绿度**剔掉伐木道具 |
-| `build_regions.py` | ★ 区域摆件表 `regions.bin`：原版 `mountain_patch` 锚点 + 无锚连通区每区一件，按画家序落盘 |
+| `mountain_forms.py` | ★ 「山」族 14 形的**单一真源**：值 ↔ prefab ↔ 贴图 ↔ 足迹；足迹按 odd-row offset 生成并**逐锚点回代校验** |
+| `pack_regions.py` | ★ 山族件图集（13 形各一格，**格 id = 原版 res 值**，680×352 大格）；贴图从 prefab 字符串池读出，⛔ 不按面积/绿度挑 |
+| `build_regions.py` | ★ 件摆放表 `regions.bin`：`res.bytes` 的 55,127 个锚点 + `mountain_patch` 的 3,942 条补件，按画家序落盘 |
 | `build_labels.py` / `emit_labels.py` | 原版地名（9 大区 / 55 郡 / 249 城址）→ `labels.json` → shared TS |
 | `emit_display_palette.py` | ★ 61 值调色板 + `MAPO_VALUE_KIND_ID` 粗类下标表 → shared TS |
 | `emit_shared_terrain.py` | 通行层 → shared TS（varint-RLE + base64，111 KB） |
@@ -238,7 +239,7 @@ python3 tools/maporiginal-assets/verify_root_res.py          # 全量
 | 远档 plate / 缩略图 | `fairy/ui/ui_common_map/map/map_s1/image/noexpo_birdview_map_1.ktx` | **4096×2048 ETC2**。⚠ 它在**共用 UI 包**树下（`fairy/ui_3d/` 无 `ui_common_map`），但像素是 3D 相机的透视渲染 ⇒ 归属是灰色地带，目前只当装饰性缩略图 |
 | 近档地表（八个粗类） | `ground_down/underground1` + `scene/ground/{caodi_gan,huangmo,zhaoze,caodi_shi,senlin,caodi_huijin,dongtu_tuxue}/png/tt_02` | 256² / 512² ETC2；判据见 §4.8、源表见 `bake_content.py` 的 `TEXTURE_OF` |
 | 逐格摆件（资源 res_field / 城址） | `scene/resource/{wood,iron,stone,food,gold}-new/png/<级>` + `scene/build{,_snow}/main_city/**` | 见 §4.4 |
-| 区域件（山 / 林 / 草） | `scene/ground/mountain_new/grass_fall_new/png/m1..m10`、`scene/build/**/tree`、`scene/ground/grass/png/a*` | 见 §4.5 |
+| 山族件（13 形） | `scene/ground/mountain_new/grass_fall_new/png/m1..m10` | 见 §4.5 |
 | 行军线 / 旗帜 / 建筑 | `scene/_output_atlas_scene/atlas_tex/{armyline,ext_building_flag,build_attachment,…}-1.ktx` + 同名 `.xml` | 图集，XML 里有逐 sprite 原始路径 |
 
 ⚠ 原版 2D 地表的真实分层是「`*_polygon_group` 平铺底纹 + `_top_group`/MiddleLevel 散布贴片」，
@@ -410,7 +411,7 @@ group 预制体。
 ⚠ **原版没出全 10 级**：wood 缺 4/6 级、iron/stone 缺 1 级、food 只有 5..10 级 ⇒
 8 处用最近一级顶上，逐条记在 `decor-atlas.info.json` 的 `substitutions`。
 
-⛔ **多格地形（值 48..61，占 8.8%）目前没有摆件**：原作是**一个模型跨整片连通区**
+⛔ ~~**多格地形（值 48..61，占 8.8%）目前没有摆件**~~ **已由 M0-B1 按锚点模型解决**，下文留作沿革：原作是**一个模型跨整片连通区**
 （山脉平均 26 格、最大 228），其 `.group` 预制体不在 ELP 里（见 4.2）。
 ⚠ 要补的话正确做法是**连通域 → 每区一件、锚在区内最低格、按区尺寸缩放**，
 ⛔ 不是逐格放一棵树 —— 那是我们编的，不是原版参数。
@@ -426,7 +427,10 @@ group 预制体。
 
 ⚠ **它不是「每区一条」**：3,930 条只覆盖 1,689 个连通区，744 个区有多条，4,717 个区一条没有。
 实测密度 ≈ **1 件 / 20 格**（3,578 格的大区 14 件；中位 7 格的小区 0 件）。
-⇒ 本 kit 的用法：有原版锚点的区**只用原版的**，没有的按连通域每区补一件。
+⇒ ~~本 kit 的用法：有原版锚点的区**只用原版的**，没有的按连通域每区补一件。~~
+**2026-09-22 M0-B1 更正**：`mountain_patch` 是**第二遍补件**，⛔ 不是主锚点表。
+主锚点表是 `res.bytes` 自己的 55,127 个非零值（48..61），连通域整套已删除。
+见 `docs/MAPORIGINAL-2D.md` §3.1/§3.4 与 `mountain_forms.py`。
 
 ### 4.6 ⚠ `slice_atlas.py` 只切了多页图集的第一页（已修）
 
@@ -488,7 +492,8 @@ if all(32 <= c < 127 for c in b[i+4:i+4+ln]): ...  # 再按 .png/.ktx 结尾筛
 
 ## 五、待办
 
-- ~~多格地形的连通域摆件~~ **已完成**（见 4.5）：`build_regions.py` + `pack_regions.py`。
+- ~~多格地形的连通域摆件~~ **已被 M0-B1 取代**：改按 `res.bytes` 的 55,127 个锚点出件
+  （`mountain_forms.py` + `build_regions.py` + `pack_regions.py`），连通域整套删除。
   ⚠ 山脉区仍偏空 —— 原版锚点密度就是 1 件/20 格，不是我们漏了。
 - `road_info` / `logic_road` 的记录表格式（半文本，尚未解）⇒ 道路层。
 - 长字符串 L≥77 的残字：`terrain_attr.lua` 里仍有 `["CXTE[D_LANY"] = 17` 这类键，

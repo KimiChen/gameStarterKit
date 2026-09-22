@@ -80,19 +80,25 @@ test("mapOriginal 内容：通行层是显示层的派生（河流/山脉不可�
     const display = kit("terrain.bytes");
     const pass = kit("terrain.pass.bytes");
     const passIdOf = new Map(info.passPalette.map((e) => [e.name, e.id]));
-    // ★ 派生规则只看**粗类**：river → 河、mountain → 山、其余 → 可走陆地
-    const expect = new Array<number>(256).fill(passIdOf.get("land")!);
-    for (const e of info.palette) {
-        if (e.kind === "river") expect[e.id] = passIdOf.get("river")!;
-        else if (e.kind === "mountain") expect[e.id] = passIdOf.get("mountain")!;
-    }
+    const LAND = passIdOf.get("land")!, RIVER = passIdOf.get("river")!, MOUNTAIN = passIdOf.get("mountain")!;
+    // ★ M0-B1 起通行层**不再是显示层的逐格函数**：山地按 res_multi 的**整片足迹**挡路
+    //   （[推断]，MAPORIGINAL-2D §3.1），而显示层在覆盖格上是 0 ⇒ 只能钉住这三条蕴含关系。
+    //   ⛔ 别改回「值 → 通行类」的查表，那会把 19 格大山的 18 格判成可走。
+    let blocked = 0;
     const n = display.length;
     for (let i = MAPO_TERRAIN_HEADER_BYTES; i < n; i += 1) {
-        if (pass[i] !== expect[display[i]]) {
-            assert.fail(`第 ${i - MAPO_TERRAIN_HEADER_BYTES} 格：原版值 ${display[i]} 应派生出通行类 `
-                + `${expect[display[i]]}，实际 ${pass[i]}`);
-        }
+        const v = display[i], p = pass[i], at = i - MAPO_TERRAIN_HEADER_BYTES;
+        if (v === 47) assert.equal(p, RIVER, `第 ${at} 格是河流却不是不可通行河`);
+        else if (v === 60 || v === 61) assert.equal(p, MOUNTAIN, `第 ${at} 格是山脉锚点却不挡路`);
+        else if (v === 0) assert.ok(p === LAND || p === MOUNTAIN, `第 ${at} 格覆盖格的通行类 ${p} 非法`);
+        else assert.equal(p, LAND, `第 ${at} 格原版值 ${v} 不该挡路，实际 ${p}`);
+        if (p === MOUNTAIN) blocked += 1;
     }
+    // ★ 挡路格数必须等于覆盖掩码里 60/61 的格数（两份产物互证）
+    const regionsMeta = JSON.parse(kit("regions.info.json").toString("utf8")) as
+        { coverMask: Record<string, number> };
+    assert.equal(blocked, regionsMeta.coverMask["60/61 覆盖格"],
+        "挡路格数 == res_multi ∈ {60,61} 的格数");
     // ⚠ 通行层的三类里只有 land 可通行
     for (const e of info.passPalette) assert.equal(e.passable, e.name === "land", e.name);
 });
@@ -226,8 +232,11 @@ test("mapOriginal 内容：区域摆件表 regions.bin 自洽（布局 / 画家�
     const meta = JSON.parse(kit("regions.info.json").toString("utf8")) as {
         count: number; recordBytes: number; headerBytes: number; dBias: number;
         byteLength: number; sha256: string;
-        families: Record<string, number[]>;
-        stats: Record<string, Record<string, number>>;
+        anchors: number; patches: number;
+        footprints: Record<string, { shape: string; form: string; cells: number; dSpan: number }>;
+        footprintCheck: { 命中: number; 不符: number; 命中率: number };
+        patchPlacement: Record<string, number>;
+        coverMask: Record<string, number>;
     };
     const raw = kit("regions.bin");
     assert.equal(meta.headerBytes, MAPO_REGION_HEADER_BYTES);
@@ -239,37 +248,80 @@ test("mapOriginal 内容：区域摆件表 regions.bin 自洽（布局 / 画家�
     assert.equal(sha256(raw), meta.sha256);
 
     const cellIds = new Set(MAPO_REGION_CELLS.map((c) => c.id));
-    const kindOfCell = new Map(MAPO_REGION_CELLS.map((c) => [c.id, c.kind]));
-    const famOfValue = new Map<number, string>();
-    for (const [fam, vals] of Object.entries(meta.families)) {
-        for (const v of vals) famOfValue.set(v, fam);
-    }
+    const footprintOf = new Map(MAPO_REGION_CELLS.map((c) => [c.id, c.footprintCells]));
     const display = kit("terrain.bytes");
     let prevS = -1;
+    // ★ M0-B1：记录分两类，且**只能是这两类**（MAPORIGINAL-2D §3.1 / §3.4）——
+    //   ① 主表锚点：该格的 `res` 原值 == 件的 cell 值；
+    //   ② mountain_patch 补件：落在大山**内部**的覆盖格上 ⇒ 该格 `res` == 0。
+    //   ⚠ 早先这里查的是「合并层的值属于件的族」，那是建立在 merge 之上的 —— merge 已删。
+    //   ⚠ 补件**不一定**落在覆盖格上：实测 13 条落在别的件的锚点格（原版就是叠着画的），
+    //   所以这里按「值 == 件值 / 值 == 0」两类计数，再与打包期落盘的分解对钉。
+    let sameValueHits = 0, coveredHits = 0, otherAnchorHits = 0;
     for (let i = 0; i < meta.count; i += 1) {
         const o = MAPO_REGION_HEADER_BYTES + i * MAPO_REGION_RECORD_BYTES;
         const s = raw.readUInt16BE(o);
         const d = raw.readUInt16BE(o + 2) - MAPO_REGION_D_BIAS;
         const cell = raw.readUInt8(o + 4), wTiles = raw.readUInt8(o + 5);
+        const cells = raw.readUInt16BE(o + 6);
         // ★ 表必须**已按 s 升序**落盘 —— 客户端靠它做二分与画家序，⛔ 不再排一遍
         assert.ok(s >= prevS, `第 ${i} 条 s=${s} 小于前一条 ${prevS}：表不是升序`);
         prevS = s;
         assert.ok(cellIds.has(cell), `第 ${i} 条的图集格 ${cell} 不存在`);
         assert.ok(wTiles >= 1, `第 ${i} 条件宽 ${wTiles} 非法`);
+        // ★ cells 字段必须等于该形的足迹格数（1/2/4/7/19），⛔ 不是连通区大小了
+        assert.equal(cells, footprintOf.get(cell), `第 ${i} 条足迹格数与形 ${cell} 不符`);
         // s、d 必须同奇偶（否则 row 不是整数），且反解出的格在图内
         assert.equal((s + d) % 2, 0, `第 ${i} 条 s/d 奇偶不同 ⇒ row 不是整数`);
         const row = (s + d) / 2, col = (s - d) / 2;
         assert.ok(row >= 0 && row < MAPO_MAP_ROWS && col >= 0 && col < MAPO_MAP_COLS,
             `第 ${i} 条反解出的格 (${row}, ${col}) 出图`);
-        // ⚠ 件必须真的落在该族的多格地形上，⛔ 不许摆到平地/河里
         const value = display[MAPO_TERRAIN_HEADER_BYTES + row * MAPO_MAP_COLS + col];
-        assert.equal(famOfValue.get(value), kindOfCell.get(cell),
-            `第 ${i} 条：格 (${row}, ${col}) 的原版值 ${value} 与件的族 ${kindOfCell.get(cell)} 不符`);
+        // ★ 件只能落在多格地形上：要么是锚点格（值 ∈ 48..61），要么是覆盖格（值 0）。
+        //   ⛔ 不许摆到平地 / 资源 / 河里 —— 这条就是为它设的。
+        if (value === cell) sameValueHits += 1;
+        else if (value === 0) coveredHits += 1;
+        else if (value >= 48 && value <= 61 && value !== 56) otherAnchorHits += 1;
+        else {
+            assert.fail(`第 ${i} 条：格 (${row}, ${col}) 的原版值 ${value} 不是多格地形 `
+                + `（件 ${cell}）—— 件被摆到了平地/资源/河上`);
+        }
     }
-    // ★ 每族都要有件，且原版锚点 + 兜底区 = 总条数（⛔ 不许有来路不明的记录）
-    let expect = 0;
-    for (const st of Object.values(meta.stats)) expect += st["原版锚点"] + st["兜底区"];
-    assert.equal(meta.count, expect, "条数 = 原版锚点 + 无锚连通区");
+    // ★ 条数 = res 锚点 + mountain_patch 补件，⛔ 不许有来路不明的记录
+    assert.equal(meta.count, meta.anchors + meta.patches, "条数 = res 锚点 + mountain_patch 补件");
+    assert.equal(coveredHits, meta.patchPlacement["落在覆盖格"], "落在覆盖格上的补件数");
+    assert.equal(otherAnchorHits, meta.patchPlacement["落在异值锚点格"], "落在异值锚点格的补件数");
+    assert.equal(sameValueHits, meta.anchors + meta.patchPlacement["落在同值锚点格"],
+        "值 == 件值的记录 = 全部锚点 + 落在同值锚点格的补件");
+    assert.equal(Object.values(meta.patchPlacement).reduce((a, b) => a + b, 0), meta.patches,
+        "补件三类之和 = 补件总数");
+    // ★ 锚点总数 == terrain.bytes 里 48..61 的格数（两份产物互证，⛔ 不是同一处算两遍）
+    let anchorCells = 0;
+    for (const e of info.palette) if (e.id >= 48 && e.id <= 61) anchorCells += e.tiles;
+    assert.equal(meta.anchors, anchorCells, "锚点数 == terrain.bytes 的 48..61 格数");
+    // ★ 足迹逐值回代在打包期已做（regions.info.json.footprintCheck），这里钉住它真的跑过且合格
+    assert.ok(meta.footprintCheck.命中率 >= 0.999, `足迹回代命中率 ${meta.footprintCheck.命中率} 过低`);
+    for (const v of MAPO_REGION_CELLS) {
+        assert.equal(meta.footprints[String(v.id)].cells, v.footprintCells, `形 ${v.id} 足迹格数`);
+    }
+});
+
+test("mapOriginal 内容：显示层 = res 原值（⛔ 不再 merge res_multi）", () => {
+    // ⚠ 这条是为 M0-B1 设的：早先 `merged = np.where(res == 0, multi, res)` 把 142,958 个
+    //   **覆盖格**填成了锚点值，销毁了锚点信息 —— 本 kit 当初不得不发明连通域正是因为它。
+    //   数字来自 MAPORIGINAL-2D §3.1 的六项判据（实测）。
+    const byId = new Map(info.palette.map((e) => [e.id, e]));
+    assert.equal(byId.get(0)?.tiles, 142958, "值 0（多格地形覆盖格）必须是 142,958 格");
+    let anchors = 0;
+    for (const e of info.palette) if (e.id >= 48 && e.id <= 61) anchors += e.tiles;
+    assert.equal(anchors, 55127, "48..61 锚点必须是 55,127 格");
+    assert.ok(!byId.has(56), "值 56（山9）在原版数据里 0 命中，⛔ 不该出现在调色板里");
+    // ★ 通行层的山地 = res_multi ∈ {60,61} 的**整片足迹**（[推断]：覆盖格继承多格 land 的 is_block）
+    const mountainPass = info.passPalette.find((e) => e.name === "mountain")!.tiles;
+    const regions = JSON.parse(kit("regions.info.json").toString("utf8")) as
+        { coverMask: Record<string, number> };
+    assert.equal(mountainPass, regions.coverMask["60/61 覆盖格"],
+        "不可通行山地格数 == 60/61 的覆盖掩码格数");
 });
 
 test("mapOriginal 内容：mapoRegionPos 与 mapoGrid2Pos 同式（含奇数行半格错位）", () => {
@@ -303,9 +355,10 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
         assert.deepEqual([...shared.native], c.native, `区域件格 ${c.id} 原图像素`);
         assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
             `区域件格 ${c.id} 缩略图没保住纵横比`);
-        // ★ 尺寸得落在原版的量级里（山体 ~1..2.3 格、树簇 ~0.1..0.5 格）
+        // ★ 尺寸得落在原版的量级里（实测山族件原图 0.94~2.32 格宽；
+        //   ⚠ 件在世界里的**实际**大小还要乘 prefab 的 scale，那是 M0-B2）
         const tiles = c.native[0] / (MAPO_ORIGINAL_TILE_HALF_W * 2);
-        assert.ok(tiles > 0.05 && tiles < 4,
+        assert.ok(tiles > 0.5 && tiles < 4,
             `区域件格 ${c.id} 在原版里占 ${tiles.toFixed(2)} 格，不像地物`);
         const [ax, ay, aw, ah] = c.art;
         assert.ok(ax >= 0 && ay >= 0 && ax + aw <= MAPO_REGION_CELL_W
@@ -314,9 +367,18 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
         assert.ok(!c.source.startsWith("/"), `区域件格 ${c.id} 的 source 必须是仓外相对路径`);
         assert.ok(c.source.startsWith("scene/"), `区域件格 ${c.id} 的 source 必须是原版资源路径`);
     }
-    // ★ 三族都要有件：缺一族就会有一片多格地形是平菱形
-    for (const kind of ["mountain", "grove", "scatter"]) {
-        assert.ok(MAPO_REGION_CELLS.some((c) => c.kind === kind), `缺 ${kind} 件`);
+    // ★ M0-B1：原版 48..61 是**一族 14 形**（山1..山14，§3.2），山9（值 56）无 2D prefab
+    //   且数据里 0 命中 ⇒ 格 id 集合必须精确等于 48..61 去掉 56。
+    //   ⛔ 早先按「山脉 / 林丛 / 散落」三族分是本仓自创的分类。
+    const want: number[] = [];
+    for (let v = 48; v <= 61; v += 1) if (v !== 56) want.push(v);
+    assert.deepEqual(MAPO_REGION_CELLS.map((c) => c.id).slice().sort((a, b) => a - b), want,
+        "件的格 id 必须精确是原版山族值 48..61（⛔ 无 56）");
+    for (const c of MAPO_REGION_CELLS) {
+        assert.equal(c.kind, "mountain", `格 ${c.id} 必须属山族`);
+        assert.ok([1, 2, 4, 7, 19].includes(c.footprintCells), `格 ${c.id} 足迹 ${c.footprintCells} 不是原版的 1/2/4/7/19`);
+        assert.ok(c.shan >= 1 && c.shan <= 14, `格 ${c.id} 的山号 ${c.shan} 越界`);
+        assert.equal(c.id, c.shan + 47, `格 ${c.id} 与山号 ${c.shan} 不满足 v = 山N + 47`);
     }
 });
 

@@ -1,69 +1,203 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "mapId": "s1",
- "count": 27811,
+ "count": 59069,
  "recordBytes": 8,
  "headerBytes": 4,
  "dBias": 1500,
- "byteLength": 222492,
- "sha256": "71f5c0cbeb51e529911df54eab77cbb9c154c3641b3580cf9a33ae2af7332b90",
- "layout": "大端：u16 s(row+col), u16 d(row-col+dBias), u8 cell, u8 wTiles, u16 cells；按 s 升序",
- "families": {
-  "mountain": [
-   60,
-   61
-  ],
-  "grove": [
-   52,
-   53,
-   54,
-   55,
-   57,
-   58,
-   59
-  ],
-  "scatter": [
-   48,
-   49,
-   50,
-   51
-  ]
+ "byteLength": 472556,
+ "sha256": "ca44fbe70217bf7db1e7b7e3650686ff4a969fbf3f23110dff50e89788f28ce8",
+ "layout": "大端：u16 s(row+col), u16 d(row-col+dBias), u8 cell(=原版 res 值), u8 wTiles(足迹横跨度/半宽), u16 cells(足迹格数)；按 s 升序",
+ "anchors": 55127,
+ "patches": 3942,
+ "anchorsByValue": {
+  "48": 4570,
+  "49": 4331,
+  "50": 4515,
+  "51": 4316,
+  "52": 8996,
+  "53": 4054,
+  "54": 4913,
+  "55": 6315,
+  "57": 3609,
+  "58": 3546,
+  "59": 3663,
+  "60": 1210,
+  "61": 1089
  },
- "anchorTiles": {
-  "mountain": 7,
-  "grove": 4,
-  "scatter": 2
+ "patchesByValue": {
+  "52": 52,
+  "59": 432,
+  "58": 449,
+  "55": 2965,
+  "53": 44
  },
- "fallbackCap": {
-  "mountain": 12,
-  "grove": 8,
-  "scatter": 3
+ "patchPlacement": {
+  "落在覆盖格": 3929,
+  "落在同值锚点格": 1,
+  "落在异值锚点格": 12
  },
- "stats": {
-  "mountain": {
-   "格数": 43533,
-   "连通区": 994,
-   "原版锚点": 966,
-   "有锚区": 275,
-   "兜底区": 719
+ "footprints": {
+  "48": {
+   "shape": "1m",
+   "form": "mountain1m_01",
+   "cells": 1,
+   "dSpan": 1
   },
-  "grove": {
-   "格数": 136820,
-   "连通区": 8415,
-   "原版锚点": 2973,
-   "有锚区": 1180,
-   "兜底区": 7235
+  "49": {
+   "shape": "1m",
+   "form": "mountain1m_02",
+   "cells": 1,
+   "dSpan": 1
   },
-  "scatter": {
-   "格数": 17732,
-   "连通区": 15918,
-   "原版锚点": 3,
-   "有锚区": 3,
-   "兜底区": 15915
+  "50": {
+   "shape": "1m",
+   "form": "mountain1m_03",
+   "cells": 1,
+   "dSpan": 1
+  },
+  "51": {
+   "shape": "1m",
+   "form": "mountain1m_04",
+   "cells": 1,
+   "dSpan": 1
+  },
+  "52": {
+   "shape": "2m_x",
+   "form": "mountain2m_x_01",
+   "cells": 2,
+   "dSpan": 2
+  },
+  "53": {
+   "shape": "2m_xy",
+   "form": "mountain2m_xy_01",
+   "cells": 2,
+   "dSpan": 2
+  },
+  "54": {
+   "shape": "2m_y",
+   "form": "mountain2m_y_01",
+   "cells": 2,
+   "dSpan": 3
+  },
+  "55": {
+   "shape": "4m",
+   "form": "mountain4m_01",
+   "cells": 4,
+   "dSpan": 4
+  },
+  "57": {
+   "shape": "7m",
+   "form": "mountain7m_01",
+   "cells": 7,
+   "dSpan": 5
+  },
+  "58": {
+   "shape": "7m",
+   "form": "mountain7m_02",
+   "cells": 7,
+   "dSpan": 5
+  },
+  "59": {
+   "shape": "7m",
+   "form": "mountain7m_03",
+   "cells": 7,
+   "dSpan": 5
+  },
+  "60": {
+   "shape": "19m",
+   "form": "mountain19m_01",
+   "cells": 19,
+   "dSpan": 7
+  },
+  "61": {
+   "shape": "19m",
+   "form": "mountain19m_02",
+   "cells": 19,
+   "dSpan": 7
   }
  },
+ "footprintCheck": {
+  "命中": 198086,
+  "不符": 2,
+  "命中率": 0.99999,
+  "逐值": {
+   "48": {
+    "命中": 4570,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "49": {
+    "命中": 4331,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "50": {
+    "命中": 4515,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "51": {
+    "命中": 4316,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "52": {
+    "命中": 17989,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "53": {
+    "命中": 8106,
+    "不符": 2,
+    "命中率": 0.999753
+   },
+   "54": {
+    "命中": 9820,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "55": {
+    "命中": 25244,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "57": {
+    "命中": 25235,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "58": {
+    "命中": 24806,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "59": {
+    "命中": 25621,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "60": {
+    "命中": 22890,
+    "不符": 0,
+    "命中率": 1.0
+   },
+   "61": {
+    "命中": 20643,
+    "不符": 0,
+    "命中率": 1.0
+   }
+  }
+ },
+ "coverMask": {
+  "res_multi 非零": 198085,
+  "60/61 覆盖格": 43533,
+  "res 非锚点(==0)": 142958,
+  "锚点处 res==multi": 55127
+ },
  "source": {
-  "anchors": "map/s1/cn/mountain_patch.bytes（原版大件摆放表，[u24 条数][{u16 row,u16 col,u8 件id}]）",
-  "fallback": "res/res_multi 合并层的八邻连通域，每个**无原版锚点**的区补一件"
+  "anchors": "map/s1/cn/res.bytes 的非零值 48..61（= 锚点，§3.1）",
+  "cover": "map/s1/cn/res_multi.bytes（覆盖掩码，⛔ 不参与出件）",
+  "patches": "map/s1/cn/mountain_patch.bytes（第二遍补件，§3.4）"
  }
 }

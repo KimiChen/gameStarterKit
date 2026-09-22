@@ -407,11 +407,11 @@ export interface IMapoRegionPiece {
     readonly s: number;
     /** row - col（**已去偏置**）。 */
     readonly d: number;
-    /** 区域件图集格 id。 */
+    /** 件图集格 id = **原版 res 值**（48..61，⛔ 无 56）。 */
     readonly cell: number;
-    /** 件宽（格数）。 */
+    /** 该形足迹的等距横跨度（半宽数，诊断/裁剪用）。 */
     readonly wTiles: number;
-    /** 所属连通区的格数（诊断用）。 */
+    /** 该形的足迹格数：1 / 2 / 4 / 7 / 19（诊断用）。 */
     readonly cells: number;
 }
 

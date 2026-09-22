@@ -3,8 +3,14 @@
 
     /tmp/maporiginal-venv/bin/python build_terrain.py [--map s1]
 
-★ **值空间就是原版的**（2026-09-22 定性修正）：`terrain.bytes` 每格存原版 `res` 值，
-   只把 `res == 0`（多格地形的非锚点格）换成该格的 `res_multi` 值 ⇒ 一个字节无损承载全部语义。
+★ **值空间就是原版的，且逐字节等于 `res.bytes`**（2026-09-22 M0-B1）：
+   `terrain.bytes` 每格存**原版 `res` 原值**，⛔ 不再用 `res_multi` 顶替 `res == 0`。
+   `res` 的非零值**就是多格地形的锚点**（docs/MAPORIGINAL-2D.md §3.1），
+   早先 `merged = np.where(res == 0, multi, res)` 把 142,958 个覆盖格填成了锚点值，
+   **销毁了锚点信息** —— 那正是本 kit 当初不得不发明连通域的唯一原因。⛔ 别再合并。
+
+   **覆盖掩码**留在 `raw/multi.bytes`（原版 `res_multi` 原件）：它只回答「这格属于哪个件」，
+   ⛔ 不参与出图（§3.1），通行层由它派生。
 
 语义（权威：`asset/config/S1/cn/res_pro/terrain_attr.lua` + 本轮统计判据）：
 
@@ -14,7 +20,10 @@
 | 2..41 | **资源地块**：`类型 = (v-2)//10`（0..3，四种等量）、`等级 = (v-2)%10 + 1`（1..10） |
 | 42..46 | **金矿** 等级 1..5（`gold-new` 恰好 5–6 张资产，对得上） |
 | 47 | 河流（⛔ 不可通行） |
-| 48..61 | **多格地形**锚点/本体：60/61 山脉（⛔ 不可通行）、52..55 与 57..59 林丛、48..51 单格地物 |
+| 48..61 | **「山」族 14 形的锚点**（`山1..山14`，§3.2）：48..51 单格、52..54 两格、55 四格、
+          57..59 七格、60/61 十九格；值 56（山9）无 2D prefab，数据里 0 命中 |
+| 0 | **被多格地形覆盖的非锚点格**（142,958 格）：原版这里由 `terrain` 层整片出件、
+     `res` 层不画（§2.1 第 3 道门），底下仍是普通地表 |
 
 ⚠ **这两个下标是怎么定死的**（⛔ 别再按 LAND_TYPE 去读 `(v-2)%10+2`，那是早先的误读）：
   ① 块下标（`(v-2)//10`）四挡计数几乎完全相等（240044/240058/240153/240124），
@@ -24,6 +33,8 @@
   ③ 相应地，森林/丘陵/山地这些**地貌**不在 2..41 里，它们是 48..61 的多格地形。
 ⚠ 四种资源（甲乙丙丁）↔ 木/铁/石/粮 的**对应关系静态数据里定不了**（在资源注册表/服务端）。
   本管线按 `类型0→木、1→铁、2→石、3→粮` 取美术，⚠ 这是**假设**，可能是个置换。
+⚠ 本 kit 把 48..61 拆成「山脉 / 林丛 / 散落」三粗类是**本仓自创的分类**，原版是**一族 14 形**；
+  这三个 kind 目前只用于**垫底色**，件的形与贴图一律走 `mountain_forms.FORMS`。
 ⚠ `logic_background` 相邻同值率 96.5%（随机 41.9%）⇒ 它是**地貌分区层**，⛔ 不是逐格美术变体；
   静态数据里**没有**逐格美术变体，近档的 4 款变体片是本仓自己加的去重复手段。
 """
@@ -69,6 +80,11 @@ KINDS = list(KIND_STYLE)
 
 def classify_value(v: int) -> tuple:
     """原版值 -> (粗类, 中文名, 可通行, 颜色, 资源类型|None, 等级|None)。"""
+    if v == 0:
+        # ★ 多格地形的覆盖格：原版 res 层不画它（§2.1 第 3 道门），底下就是普通地表 ⇒
+        #   垫底沿用平地。⚠ 真正的原版底是 block 级的一张底纹整数次 REPEAT（§1.4，M2-B1 才做）。
+        _cn, passable, color = KIND_STYLE["plain"]
+        return ("plain", "多格地形覆盖", passable, color, None, None)
     if v == 1:
         cn, passable, color = KIND_STYLE["plain"]
         return ("plain", cn, passable, color, None, None)
@@ -109,14 +125,16 @@ def main() -> int:
     print("原版层 %dx%d：res %d 值 / multi %d 值 / ground %d 值"
           % (rows, cols, len(np.unique(res)), len(np.unique(multi)), len(np.unique(ground))))
 
-    # ★ res==0 用 res_multi 顶替：一个字节无损承载原版全部语义
-    merged = np.where(res == 0, multi, res).astype(np.uint8)
-    body = struct.pack(">II", rows, cols) + merged.tobytes()
+    # ★ M0-B1：显示层 = **res 原值**，⛔ 不再 merge。覆盖掩码是 res_multi 本身（留档 raw/multi.bytes）。
+    disp = np.ascontiguousarray(res).astype(np.uint8)
+    body = struct.pack(">II", rows, cols) + disp.tobytes()
 
     # 通行层：0 可走陆地 / 1 河流 / 2 山地。⚠ 水域已并入河流（原版海与河同为 47）
-    pas = np.zeros(merged.shape, np.uint8)
-    pas[merged == 47] = 1
-    pas[(merged == 60) | (merged == 61)] = 2
+    # ⚠ 山地按**整片足迹**挡路（multi ∈ {60,61}，含 19 格覆盖区）—— 这条是 `[推断]`：
+    #   覆盖格的通行性继承多格 land 行的 `is_block`，而 land 表在未解的 base.cw 里（§3.1）。
+    pas = np.zeros(disp.shape, np.uint8)
+    pas[res == 47] = 1
+    pas[(multi == 60) | (multi == 61)] = 2
     pass_body = struct.pack(">II", rows, cols) + pas.tobytes()
 
     d = os.path.join(OUT, "pack", mid)
@@ -126,11 +144,11 @@ def main() -> int:
     for nm, blob in (("res", res_blob), ("multi", multi_blob), ("ground", ground_blob)):
         open(os.path.join(d, "raw", nm + ".bytes"), "wb").write(blob)
 
-    counts = np.bincount(merged.ravel(), minlength=64)
+    counts = np.bincount(disp.ravel(), minlength=64)
     palette = []
     for v in range(64):
         kind, cn, passable, color, rtype, level = classify_value(v)
-        if counts[v] == 0 and v != 0:
+        if counts[v] == 0:
             continue
         entry = {"id": v, "kind": kind, "cn": cn, "passable": bool(passable),
                  "color": list(color), "tiles": int(counts[v])}
@@ -143,9 +161,10 @@ def main() -> int:
         "schemaVersion": 2, "mapId": mid, "maxRow": rows, "maxCol": cols,
         "byteLength": len(body), "sha256": hashlib.sha256(body).hexdigest(),
         "passSha256": hashlib.sha256(pass_body).hexdigest(),
-        "valueSpace": "原版 res 值；res==0 用 res_multi 顶替",
+        "valueSpace": "原版 res 值**原样**（逐字节等于 res.bytes 的体）；0 = 多格地形覆盖格",
+        "coverMask": "raw/multi.bytes（原版 res_multi）；通行层的山地由它的 60/61 派生",
         "rule": "1 平地；2..41 资源(类型=(v-2)//10、等级=(v-2)%10+1)；42..46 金矿 1..5 级；"
-                "47 河流；48..61 多格地形（60/61 山脉）",
+                "47 河流；48..61 山族 14 形的锚点（⛔ 无 56）；0 被多格地形覆盖",
         "resTypeAssumption": "类型0→木、1→铁、2→石、3→粮（⚠ 假设，静态数据定不了，可能是置换）",
         "palette": palette,
         "passPalette": [{"id": 0, "name": "land", "cn": "可走陆地", "passable": True,
@@ -154,6 +173,7 @@ def main() -> int:
                          "color": [70, 120, 160], "tiles": int((pas == 1).sum())},
                         {"id": 2, "name": "mountain", "cn": "山地", "passable": False,
                          "color": [123, 130, 126], "tiles": int((pas == 2).sum())}],
+        "passNote": "山地按整片足迹挡路（res_multi ∈ {60,61}）—— [推断]，见 MAPORIGINAL-2D §3.1",
         "source": {"upstream": "《三国志·战略版》2084.1768",
                    "layers": ["map/%s/cn/res.bytes" % mid, "map/%s/cn/res_multi.bytes" % mid,
                               "map/%s/cn/logic_background.bytes" % mid],

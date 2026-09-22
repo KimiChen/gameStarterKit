@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""多格地形的**区域件**图集（山脉 / 林丛 / 散落）。
+"""原版「山」族 14 形的件图集（每形一格，格 id = **原版 res 值**）。
 
-    /tmp/maporiginal-venv/bin/python pack_regions.py [--map s1]
+    /tmp/maporiginal-venv/bin/python pack_regions.py [--map s1] [--season fall|base]
 
-★ 素材全是原版 2D 等距件，⛔ 无一张是我们画的：
-    山脉 `scene/ground/mountain_new/grass_fall_new/png/m1..m10`（原版 2D 山体，10 张）
-    林丛 `scene/build/{main_city,city/png}/tree/*`（原版树簇）
-    散落 `scene/ground/grass/png/a*`（原版草丛）
-⚠ 这些件早先「找不到」是因为 `slice_atlas.py` 只切了多页图集的**第一页**
-  （`remain_tex.xml` 有 17 页），⛔ 别再据此下「原版 2D 山林素材不在包里」的结论。
+★ 素材与形的对应**不是挑的，是读出来的**：`mountain_forms.py` 逐个读
+  `scene/ground/mountain_new[/<季>]/<form>_group.prefab.bin` 的字符串池拿到贴图名。
+  13 形只用到 m1..m10 十张图（三对共用），⛔ 别再按面积/绿度启发式挑件。
 
-⚠ 格子比摆件图集大得多（512×320 而不是 256×192）：一座山要横跨 7 格菱形 ≈ 2100 世界像素，
-  用 256 宽的源会糊成一团。⛔ 别为了省纹理把它塞回摆件图集。
+⚠ 2026-09-22 M0-B1 起改成**一族 14 形**（见 docs/MAPORIGINAL-2D.md §3.2）：
+  早先分的「山脉 / 林丛 / 散落」三族是本仓自创的分类，树簇与草丛件已移除 ——
+  48..61 在原版全是 `山1..山14`，⛔ 别再往里塞 tree/grass。
+
+⚠ 格子按最大原图定（m5 697×345）：只有 m5 被缩 2.4%，其余全是原生像素。
+  ⛔ 别为了省纹理缩到 512 —— 件在世界里要跨到 3.5 格宽（M0-B2 还要再乘 prefab 的 scale）。
 """
 from __future__ import annotations
 
@@ -19,134 +20,108 @@ import argparse
 import json
 import os
 import re
+import sys
 
-import numpy as np
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import mountain_forms as MF  # noqa: E402
+
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 OUT = os.path.join(HERE, CFG["outDir"])
 
-CELL_W, CELL_H = 512, 320
-GRID_COLS, GRID_ROWS = 4, 6
+CELL_W, CELL_H = 680, 352
+GRID_COLS, GRID_ROWS = 3, 5          # 15 格位 ≥ 13 形
 ATLAS_W, ATLAS_H = 2048, 2048
-
-MOUNTAIN_RE = re.compile(r"scene/ground/mountain_new/grass_fall_new/png/m(\d+)\.png$")
-GRASS_RE = re.compile(r"scene/ground/grass/png/a(\d+)\.png$")
-TREE_RE = re.compile(r"scene/build/(?:main_city|city/png)/tree/[^/]+\.png$")
-# ⚠ 树目录里混着**伐木场道具**（树桩 / 原木 / 木板堆），它们不是林丛。
-#   按文件名剔不住（叫 15/17/18_04 这种），⛔ 别写名字黑名单 —— 换季/换图就漏。
-#   判据用**绿度** = G / ((R+B)/2)：实测道具 ≤ 1.114、树簇（含秋黄）≥ 1.142，分得很开。
-TREE_GREEN_MIN = 1.13
+SEASON_DIR = {"base": MF.PREFAB_DIR_BASE, "fall": MF.PREFAB_DIR_FALL}
 
 
-def greenness(im) -> float:
-    a = np.asarray(im.convert("RGBA")).astype(np.float32)
-    m = a[..., 3] > 40
-    if m.sum() < 50:
-        return 0.0
-    r, g, b = a[..., 0][m].mean(), a[..., 1][m].mean(), a[..., 2][m].mean()
-    return float(g / max((r + b) / 2, 1.0))
-
-
-def load_sprites():
-    rows = [json.loads(x) for x in open(os.path.join(OUT, "sprites.jsonl"), encoding="utf-8")]
-    mountains, trees, grass = [], [], []
-    for r in rows:
-        lg, p = r["logical"], os.path.join(OUT, r["out"])
+def load_sprites(season_dir: str) -> dict:
+    """贴图基名 → 已按 bbox 裁过的 RGBA 图。⚠ 缺一张就退出，⛔ 不静默降级。"""
+    want = {t for _n, _p, t, _s in MF.FORMS.values()}
+    pat = re.compile(r"^%s/png/(m\d+)\.png$" % re.escape(season_dir))
+    got = {}
+    for line in open(os.path.join(OUT, "sprites.jsonl"), encoding="utf-8"):
+        r = json.loads(line)
+        m = pat.match(r["logical"])
+        if not m or m.group(1) not in want:
+            continue
+        p = os.path.join(OUT, r["out"])
         if not os.path.exists(p):
             continue
-        m = MOUNTAIN_RE.search(lg)
-        if m:
-            mountains.append((int(m.group(1)), lg, p))
-            continue
-        g = GRASS_RE.search(lg)
-        if g:
-            grass.append((int(g.group(1)), lg, p))
-            continue
-        if TREE_RE.search(lg):
-            try:
-                im = Image.open(p)
-                w, h = im.size
-            except OSError:
-                continue
-            if w * h >= 4000 and greenness(im) >= TREE_GREEN_MIN:
-                trees.append((w * h, lg, p))
-    mountains.sort()
-    grass.sort()
-    trees.sort(reverse=True)
-    return mountains, trees, grass
+        im = Image.open(p).convert("RGBA")
+        bb = im.getbbox()
+        got[m.group(1)] = (r["logical"], im.crop(bb) if bb else im)
+    miss = sorted(want - set(got))
+    if miss:
+        raise SystemExit("⛔ %s 缺件 %s —— 先跑 slice_atlas.py --all（含 remain_tex 多页）"
+                         % (season_dir, miss))
+    return got
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--map", default="s1")
+    ap.add_argument("--season", default="fall", choices=sorted(SEASON_DIR))
     a = ap.parse_args()
-    mountains, trees, grass = load_sprites()
-    print("原版件：山体 %d / 树簇 %d / 草丛 %d" % (len(mountains), len(trees), len(grass)))
-    if not mountains or not trees or not grass:
-        raise SystemExit("⛔ 原版件缺料 —— 先跑 slice_atlas.py --all（含 remain_tex 多页）")
-
-    # ⚠ 每族的件按**从小到大**排：build_regions 用区的跨度挑件，次序就是「小区用小件」
-    def by_area(items):
-        out = []
-        for _k, lg, p in items:
-            im = Image.open(p).convert("RGBA")
-            bb = im.getbbox()
-            if bb:
-                im = im.crop(bb)
-            out.append((im.width * im.height, lg, im))   # ⚠ im 已按 bbox 裁过 = 原版实心尺寸
-        out.sort()
-        return out
-
-    picks = [("mountain", by_area(mountains)[:10]),
-             ("grove", by_area(trees)[:8]),
-             ("scatter", by_area(grass)[:6])]
+    season_dir = SEASON_DIR[a.season]
+    sprites = load_sprites(season_dir)
 
     atlas = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
-    cells, idx = [], 0
-    for kind, items in picks:
-        for _area, lg, im in items:
-            if idx >= GRID_COLS * GRID_ROWS:
-                raise SystemExit("⛔ region 图集格位不够（%d）" % idx)
-            im = im.copy()
-            native = [im.width, im.height]       # ★ 原图像素 = 原版尺寸的唯一依据
-            im.thumbnail((CELL_W, CELL_H), Image.LANCZOS)
-            gx, gy = (idx % GRID_COLS) * CELL_W, (idx // GRID_COLS) * CELL_H
-            ox, oy = (CELL_W - im.width) // 2, CELL_H - im.height   # ⚠ 底对齐
-            atlas.paste(im, (gx + ox, gy + oy), im)
-            cells.append({"id": idx, "kind": kind,
-                          "cell": [gx, gy, CELL_W, CELL_H],
-                          "art": [ox, oy, im.width, im.height],
-                          "native": native, "source": lg})
-            idx += 1
+    cells = []
+    for idx, v in enumerate(MF.VALUES):
+        shan, form, tex, shape = MF.FORMS[v]
+        logical, src = sprites[tex]
+        im = src.copy()
+        native = [im.width, im.height]          # ★ 原图像素（未缩）= 件尺寸的唯一依据
+        im.thumbnail((CELL_W, CELL_H), Image.LANCZOS)
+        gx, gy = (idx % GRID_COLS) * CELL_W, (idx // GRID_COLS) * CELL_H
+        ox, oy = (CELL_W - im.width) // 2, CELL_H - im.height       # ⚠ 底对齐
+        atlas.paste(im, (gx + ox, gy + oy), im)
+        cells.append({"id": v, "kind": "mountain", "shan": shan, "form": form,
+                      "shape": shape, "footprintCells": len(MF.footprint_cells(v, 0)),
+                      "cell": [gx, gy, CELL_W, CELL_H],
+                      "art": [ox, oy, im.width, im.height],
+                      "native": native, "source": logical})
 
     d = os.path.join(OUT, "pack", a.map)
     os.makedirs(d, exist_ok=True)
     atlas.save(os.path.join(d, "region-atlas.png"))
-    info = {"schemaVersion": 1, "mapId": a.map, "cell": [CELL_W, CELL_H],
+    info = {"schemaVersion": 2, "mapId": a.map, "cell": [CELL_W, CELL_H],
             "gridCols": GRID_COLS, "gridRows": GRID_ROWS, "size": [ATLAS_W, ATLAS_H],
+            "season": a.season, "seasonDir": season_dir,
             "anchor": "bottom-center",
-            "indexing": "格 id 由 build_regions 写进 regions.bin；族内按面积升序（小区用小件）",
+            "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出",
             "cells": cells}
     json.dump(info, open(os.path.join(d, "region-atlas.info.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
 
     ts = '''/**
- * mapOriginal **区域件**图集布局（%s）—— **生成物，⛔ 勿手改**。
+ * mapOriginal 「山」族件图集（%s）—— **生成物，⛔ 勿手改**。
  *
- * ★ 多格地形（山脉 / 林丛 / 散落）的件。摆放表在 `regions.bin`（Cocos BufferAsset），
- *   ⛔ 不进 shared：2.8 万条、217 KB。这里只有**图集布局**。
+ * ★ **格 id = 原版 res 值**（48..61，⛔ 无 56）：客户端拿到锚点值就直接查到该放哪张图。
+ *   原版 48..61 是**一族 14 形**（`山1..山14`，见 docs/MAPORIGINAL-2D.md §3.2），
+ *   ⛔ 不是本仓早先分的「山脉 / 林丛 / 散落」三族。山9（值 56）无 2D prefab，数据里也 0 命中。
+ * ★ 贴图对应是**从 prefab 读出来的**（`mountain_forms.py`）：13 形只用到 m1..m10 十张图，
+ *   1m_01/1m_04 共用 m7、1m_02/1m_03 共用 m6、19m_01/19m_02 共用 m2，靠 transform 区分。
  * ⚠ 锚点是**底边中点**，⛔ 不是几何中心。
- * ⚠ 族内按面积**升序**排，`build_regions.py` 按区的等距跨度挑件（大区用大件）。
- * ★ `native` 是原图像素：原版 2D 一格 300×150 px ⇒ 世界宽 = native[0] × (MAPO_TILE_HALF_W / 150)。
- *   实测山体件占 0.94~2.25 格、树簇 0.12~0.45 格 —— 这就是原版的比例。
+ * ★ `native` 是原图像素：世界宽 = native[0] × (MAPO_TILE_HALF_W / 150)。
  * ⚠ 早先按连通区跨度把件**拉大到整片区**，真机一看是糊成一团的大绿斑，⛔ 别再拉伸。
  */
 
 export interface IMapoRegionCell {
+    /** ★ 原版 res 值（48..61），同时是 `regions.bin` 里的 cell 字段。 */
     readonly id: number;
     readonly kind: string;
+    /** 原版件号 `山N`。 */
+    readonly shan: number;
+    /** 原版 prefab 名，如 `mountain19m_01`。 */
+    readonly form: string;
+    /** 足迹形：1m / 2m_x / 2m_xy / 2m_y / 4m / 7m / 19m。 */
+    readonly shape: string;
+    /** 该形覆盖的格数（1 / 2 / 4 / 7 / 19）。 */
+    readonly footprintCells: number;
     readonly cell: readonly [number, number, number, number];
     readonly art: readonly [number, number, number, number];
     /** ★ **原图像素尺寸**。件在世界里多大由它定，⛔ 不是按连通区拉伸。 */
@@ -162,7 +137,9 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = %s;
        json.dumps([{k: v for k, v in c.items() if k != "source"} for c in cells],
                   ensure_ascii=False, indent=2))
     open(os.path.join(d, "region.data.ts"), "w", encoding="utf-8").write(ts)
-    print("区域件 %d 格（%s）" % (len(cells), {k: len(v) for k, v in picks}))
+    print("山族件 %d 形（季 %s）：%s" % (len(cells), a.season,
+                                       " ".join("%d=%s" % (c["id"], c["source"].rsplit("/", 1)[-1])
+                                                for c in cells)))
     print("→ %s/region-atlas.png (%.1f MB)" % (d, os.path.getsize(os.path.join(d, "region-atlas.png")) / 1e6))
     return 0
 

@@ -1,31 +1,37 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "mapId": "s1",
  "cell": [
-  512,
-  320
+  680,
+  352
  ],
- "gridCols": 4,
- "gridRows": 6,
+ "gridCols": 3,
+ "gridRows": 5,
  "size": [
   2048,
   2048
  ],
+ "season": "fall",
+ "seasonDir": "scene/ground/mountain_new/grass_fall_new",
  "anchor": "bottom-center",
- "indexing": "格 id 由 build_regions 写进 regions.bin；族内按面积升序（小区用小件）",
+ "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出",
  "cells": [
   {
-   "id": 0,
+   "id": 48,
    "kind": "mountain",
+   "shan": 1,
+   "form": "mountain1m_01",
+   "shape": "1m",
+   "footprintCells": 1,
    "cell": [
     0,
     0,
-    512,
-    320
+    680,
+    352
    ],
    "art": [
-    115,
-    172,
+    199,
+    204,
     281,
     148
    ],
@@ -36,17 +42,21 @@
    "source": "scene/ground/mountain_new/grass_fall_new/png/m7.png"
   },
   {
-   "id": 1,
+   "id": 49,
    "kind": "mountain",
+   "shan": 2,
+   "form": "mountain1m_02",
+   "shape": "1m",
+   "footprintCells": 1,
    "cell": [
-    512,
+    680,
     0,
-    512,
-    320
+    680,
+    352
    ],
    "art": [
-    112,
-    172,
+    196,
+    204,
     287,
     148
    ],
@@ -57,59 +67,71 @@
    "source": "scene/ground/mountain_new/grass_fall_new/png/m6.png"
   },
   {
-   "id": 2,
+   "id": 50,
    "kind": "mountain",
+   "shan": 3,
+   "form": "mountain1m_03",
+   "shape": "1m",
+   "footprintCells": 1,
    "cell": [
-    1024,
+    1360,
     0,
-    512,
-    320
+    680,
+    352
    ],
    "art": [
-    105,
-    82,
-    302,
-    238
+    196,
+    204,
+    287,
+    148
    ],
    "native": [
-    302,
-    238
+    287,
+    148
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m3.png"
+   "source": "scene/ground/mountain_new/grass_fall_new/png/m6.png"
   },
   {
-   "id": 3,
+   "id": 51,
    "kind": "mountain",
+   "shan": 4,
+   "form": "mountain1m_04",
+   "shape": "1m",
+   "footprintCells": 1,
    "cell": [
-    1536,
     0,
-    512,
-    320
+    352,
+    680,
+    352
    ],
    "art": [
-    1,
-    142,
-    510,
-    178
+    199,
+    204,
+    281,
+    148
    ],
    "native": [
-    510,
-    178
+    281,
+    148
    ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m9.png"
+   "source": "scene/ground/mountain_new/grass_fall_new/png/m7.png"
   },
   {
-   "id": 4,
+   "id": 52,
    "kind": "mountain",
+   "shan": 5,
+   "form": "mountain2m_x_01",
+   "shape": "2m_x",
+   "footprintCells": 2,
    "cell": [
-    0,
-    320,
-    512,
-    320
+    680,
+    352,
+    680,
+    352
    ],
    "art": [
-    46,
-    86,
+    130,
+    118,
     420,
     234
    ],
@@ -120,19 +142,73 @@
    "source": "scene/ground/mountain_new/grass_fall_new/png/m8.png"
   },
   {
-   "id": 5,
+   "id": 53,
    "kind": "mountain",
+   "shan": 6,
+   "form": "mountain2m_xy_01",
+   "shape": "2m_xy",
+   "footprintCells": 2,
    "cell": [
-    512,
-    320,
-    512,
-    320
+    1360,
+    352,
+    680,
+    352
    ],
    "art": [
+    189,
+    114,
+    302,
+    238
+   ],
+   "native": [
+    302,
+    238
+   ],
+   "source": "scene/ground/mountain_new/grass_fall_new/png/m3.png"
+  },
+  {
+   "id": 54,
+   "kind": "mountain",
+   "shan": 7,
+   "form": "mountain2m_y_01",
+   "shape": "2m_y",
+   "footprintCells": 2,
+   "cell": [
     0,
-    32,
-    512,
-    288
+    704,
+    680,
+    352
+   ],
+   "art": [
+    85,
+    174,
+    510,
+    178
+   ],
+   "native": [
+    510,
+    178
+   ],
+   "source": "scene/ground/mountain_new/grass_fall_new/png/m9.png"
+  },
+  {
+   "id": 55,
+   "kind": "mountain",
+   "shan": 8,
+   "form": "mountain4m_01",
+   "shape": "4m",
+   "footprintCells": 4,
+   "cell": [
+    680,
+    704,
+    680,
+    352
+   ],
+   "art": [
+    82,
+    62,
+    516,
+    290
    ],
    "native": [
     516,
@@ -141,40 +217,23 @@
    "source": "scene/ground/mountain_new/grass_fall_new/png/m10.png"
   },
   {
-   "id": 6,
+   "id": 57,
    "kind": "mountain",
+   "shan": 10,
+   "form": "mountain7m_01",
+   "shape": "7m",
+   "footprintCells": 7,
    "cell": [
-    1024,
-    320,
-    512,
-    320
+    1360,
+    704,
+    680,
+    352
    ],
    "art": [
-    0,
-    63,
-    512,
-    257
-   ],
-   "native": [
-    563,
-    283
-   ],
-   "source": "scene/ground/mountain_new/grass_fall_new/png/m2.png"
-  },
-  {
-   "id": 7,
-   "kind": "mountain",
-   "cell": [
-    1536,
-    320,
-    512,
-    320
-   ],
-   "art": [
-    0,
-    53,
-    512,
-    267
+    12,
+    11,
+    655,
+    341
    ],
    "native": [
     655,
@@ -183,19 +242,23 @@
    "source": "scene/ground/mountain_new/grass_fall_new/png/m1.png"
   },
   {
-   "id": 8,
+   "id": 58,
    "kind": "mountain",
+   "shan": 11,
+   "form": "mountain7m_02",
+   "shape": "7m",
+   "footprintCells": 7,
    "cell": [
     0,
-    640,
-    512,
-    320
+    1056,
+    680,
+    352
    ],
    "art": [
-    0,
-    47,
-    512,
-    273
+    11,
+    2,
+    657,
+    350
    ],
    "native": [
     657,
@@ -204,19 +267,23 @@
    "source": "scene/ground/mountain_new/grass_fall_new/png/m4.png"
   },
   {
-   "id": 9,
+   "id": 59,
    "kind": "mountain",
+   "shan": 12,
+   "form": "mountain7m_03",
+   "shape": "7m",
+   "footprintCells": 7,
    "cell": [
-    512,
-    640,
-    512,
-    320
+    680,
+    1056,
+    680,
+    352
    ],
    "art": [
-    0,
-    58,
-    512,
-    262
+    3,
+    7,
+    674,
+    345
    ],
    "native": [
     674,
@@ -225,298 +292,54 @@
    "source": "scene/ground/mountain_new/grass_fall_new/png/m5.png"
   },
   {
-   "id": 10,
-   "kind": "grove",
+   "id": 60,
+   "kind": "mountain",
+   "shan": 13,
+   "form": "mountain19m_01",
+   "shape": "19m",
+   "footprintCells": 19,
    "cell": [
-    1024,
-    640,
-    512,
-    320
+    1360,
+    1056,
+    680,
+    352
    ],
    "art": [
-    213,
-    272,
-    85,
-    48
+    58,
+    69,
+    563,
+    283
    ],
    "native": [
-    85,
-    48
+    563,
+    283
    ],
-   "source": "scene/build/main_city/tree/9.png"
+   "source": "scene/ground/mountain_new/grass_fall_new/png/m2.png"
   },
   {
-   "id": 11,
-   "kind": "grove",
-   "cell": [
-    1536,
-    640,
-    512,
-    320
-   ],
-   "art": [
-    213,
-    272,
-    86,
-    48
-   ],
-   "native": [
-    86,
-    48
-   ],
-   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/6@@player_city.png"
-  },
-  {
-   "id": 12,
-   "kind": "grove",
+   "id": 61,
+   "kind": "mountain",
+   "shan": 14,
+   "form": "mountain19m_02",
+   "shape": "19m",
+   "footprintCells": 19,
    "cell": [
     0,
-    960,
-    512,
-    320
+    1408,
+    680,
+    352
    ],
    "art": [
-    213,
-    272,
-    86,
-    48
+    58,
+    69,
+    563,
+    283
    ],
    "native": [
-    86,
-    48
+    563,
+    283
    ],
-   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/6@@player_city_2.png"
-  },
-  {
-   "id": 13,
-   "kind": "grove",
-   "cell": [
-    512,
-    960,
-    512,
-    320
-   ],
-   "art": [
-    213,
-    272,
-    86,
-    48
-   ],
-   "native": [
-    86,
-    48
-   ],
-   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/6@@player_city_3.png"
-  },
-  {
-   "id": 14,
-   "kind": "grove",
-   "cell": [
-    1024,
-    960,
-    512,
-    320
-   ],
-   "art": [
-    213,
-    272,
-    86,
-    48
-   ],
-   "native": [
-    86,
-    48
-   ],
-   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/main_city/tree/6@@junying.png"
-  },
-  {
-   "id": 15,
-   "kind": "grove",
-   "cell": [
-    1536,
-    960,
-    512,
-    320
-   ],
-   "art": [
-    213,
-    272,
-    86,
-    48
-   ],
-   "native": [
-    86,
-    48
-   ],
-   "source": "scene/build/city/png/tree/6.png"
-  },
-  {
-   "id": 16,
-   "kind": "grove",
-   "cell": [
-    0,
-    1280,
-    512,
-    320
-   ],
-   "art": [
-    213,
-    272,
-    86,
-    48
-   ],
-   "native": [
-    86,
-    48
-   ],
-   "source": "scene/build/city/png/tree/6.png"
-  },
-  {
-   "id": 17,
-   "kind": "grove",
-   "cell": [
-    512,
-    1280,
-    512,
-    320
-   ],
-   "art": [
-    213,
-    271,
-    85,
-    49
-   ],
-   "native": [
-    85,
-    49
-   ],
-   "source": "scene/_output_atlas_scene/atlas_mutil_assets/asset/scene/build/city/png/tree/6@@player_city_4.png"
-  },
-  {
-   "id": 18,
-   "kind": "scatter",
-   "cell": [
-    1024,
-    1280,
-    512,
-    320
-   ],
-   "art": [
-    76,
-    149,
-    360,
-    171
-   ],
-   "native": [
-    360,
-    171
-   ],
-   "source": "scene/ground/grass/png/a3.png"
-  },
-  {
-   "id": 19,
-   "kind": "scatter",
-   "cell": [
-    1536,
-    1280,
-    512,
-    320
-   ],
-   "art": [
-    18,
-    93,
-    475,
-    227
-   ],
-   "native": [
-    475,
-    227
-   ],
-   "source": "scene/ground/grass/png/a8.png"
-  },
-  {
-   "id": 20,
-   "kind": "scatter",
-   "cell": [
-    0,
-    1600,
-    512,
-    320
-   ],
-   "art": [
-    36,
-    42,
-    439,
-    278
-   ],
-   "native": [
-    439,
-    278
-   ],
-   "source": "scene/ground/grass/png/a4.png"
-  },
-  {
-   "id": 21,
-   "kind": "scatter",
-   "cell": [
-    512,
-    1600,
-    512,
-    320
-   ],
-   "art": [
-    0,
-    116,
-    512,
-    204
-   ],
-   "native": [
-    571,
-    228
-   ],
-   "source": "scene/ground/grass/png/a1.png"
-  },
-  {
-   "id": 22,
-   "kind": "scatter",
-   "cell": [
-    1024,
-    1600,
-    512,
-    320
-   ],
-   "art": [
-    0,
-    132,
-    512,
-    188
-   ],
-   "native": [
-    609,
-    224
-   ],
-   "source": "scene/ground/grass/png/a2.png"
-  },
-  {
-   "id": 23,
-   "kind": "scatter",
-   "cell": [
-    1536,
-    1600,
-    512,
-    320
-   ],
-   "art": [
-    7,
-    17,
-    497,
-    303
-   ],
-   "native": [
-    497,
-    303
-   ],
-   "source": "scene/ground/grass/png/a7.png"
+   "source": "scene/ground/mountain_new/grass_fall_new/png/m2.png"
   }
  ]
 }

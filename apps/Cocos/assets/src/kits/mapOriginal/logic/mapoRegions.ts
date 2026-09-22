@@ -1,10 +1,15 @@
 /**
- * 多格地形的**区域件**层：山脉 / 林丛 / 散落，**每区一件**。纯逻辑，⛔ 不碰 cc。
+ * 多格地形的件层：原版「山」族 14 形（`山1..山14`）。纯逻辑，⛔ 不碰 cc。
  *
- * ★ 摆放不是我们撒的，两个来源、原版优先：
- *   ① 原版 `mountain_patch.bytes` 的 3,942 条大件锚点（本轮逆出来的表，见 kit README §四）；
- *   ② 没有原版锚点的连通区，**每区补一件**，锚在区内屏幕最低格、按区的等距跨度缩放。
- *   两者都已在打包期算好，落 `regions.bin`（2.78 万条 / 217 KB，Cocos BufferAsset）。
+ * ★ 摆放**完全由原版数据定**，⛔ 零连通域、零启发式、零随机：
+ *   ① **主表 = `res.bytes` 的 55,127 个非零锚点**（值 48..61）——
+ *      `res` 的非零值**就是锚点**、`res_multi` 只是覆盖掩码（docs/MAPORIGINAL-2D.md §3.1）；
+ *      件的形与贴图由值直接查 `MAPO_REGION_CELLS`（格 id = 原版 res 值）。
+ *   ② **补件 = `mountain_patch.bytes` 的 3,942 条**（§3.4）：落在大山内部、打散重复感。
+ *   两者都已在打包期算好，落 `regions.bin`（5.9 万条 / 461 KB，Cocos BufferAsset）。
+ *
+ * ⚠ 早先这里是「合并 res 与 res_multi → 八邻连通域 → 每区一件」：合并那一步
+ *   把 142,958 个覆盖格填成了锚点值、销毁了锚点信息，连通域是为补救它才发明的。⛔ 别再回去。
  *
  * ⚠ 表**已按 s 升序落盘 = 画家序**，这里只做**区间二分 + 矩形裁剪**，
  * ⛔ 不要每帧对 2.8 万条排序或全表扫描。
@@ -19,7 +24,7 @@ import {
     MAPO_REGION_CELLS, type IMapoRegionCell,
 } from "../../../shared/kits/mapOriginal/content/region.data";
 
-/** 图集格 → 布局，一次算好。⛔ 不要每件 find。 */
+/** 图集格（= 原版 res 值）→ 布局，一次算好。⛔ 不要每件 find。 */
 const CELL_BY_ID: ReadonlyMap<number, IMapoRegionCell> =
     new Map(MAPO_REGION_CELLS.map((c) => [c.id, c]));
 
@@ -102,8 +107,8 @@ export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoReg
         const layout = CELL_BY_ID.get(piece.cell);
         if (!layout) continue;
         const pos = mapoRegionPos(piece.s, piece.d);
-        // ★ 件多大**由原图像素定**（原版 2D 一格 300 px），⛔ 不按连通区跨度拉伸 ——
-        //   拉伸过一版，真机上是糊成一团的大绿斑。`wTiles` 只在打包期用来**挑件**。
+        // ★ 件多大**由原图像素定**（原版 2D 一格 300 px），⛔ 不按足迹拉伸 ——
+        //   拉伸过一版，真机上是糊成一团的大绿斑。`wTiles`/`cells` 只是足迹的诊断量。
         const [nw, nh] = layout.native;
         const w = mapoOriginalPxToWorld(nw);
         const h = w * (nh / Math.max(nw, 1));
