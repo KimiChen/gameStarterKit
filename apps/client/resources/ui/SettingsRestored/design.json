@@ -27,7 +27,7 @@
       },
       "children": [
         "layer-2",
-        "layer-13"
+        "layer-12"
       ]
     },
     "layer-2": {
@@ -98,10 +98,10 @@
       "name": "PopupFrame/Panel",
       "kind": "group",
       "frame": {
-        "x": 21,
-        "y": 171,
-        "width": 708,
-        "height": 992
+        "x": 18,
+        "y": 136,
+        "width": 714,
+        "height": 1027
       },
       "opacity": 1,
       "visible": true,
@@ -112,38 +112,75 @@
       },
       "children": [
         "layer-6",
-        "layer-9",
-        "layer-10"
+        "layer-8",
+        "layer-9"
       ]
     },
     "layer-6": {
       "id": "layer-6",
-      "name": "PopupBackground",
-      "kind": "image",
+      "name": "PopupFrame/Background",
+      "kind": "group",
       "frame": {
         "x": 0,
         "y": 0,
+        "width": 714,
+        "height": 1027
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-7",
+        "layer-84"
+      ]
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "PopupFrame/Background",
+      "kind": "image",
+      "frame": {
+        "x": 3,
+        "y": 35,
         "width": 708,
         "height": 992
       },
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "PopupBackground:SettingsPage/PopupFrame/PopupFrame/Panel/PopupBackground",
-        "role": "component",
-        "definitionKey": "PopupBackground"
+        "key": "PopupFrame:SettingsPage/PopupFrame/PopupFrame/Panel/PopupFrame/Background",
+        "role": "node",
+        "definitionKey": "PopupFrame",
+        "resourceId": "ui/popup/prompt",
+        "captureHash": "ac963780549a9a64ef14b229ab74955582209e489156a43a315d4c03e4d3b977"
       },
-      "asset": "asset-30b3bd65fab9847ea1208c43bb41a96c2db2f3ab6097202f798149a940fe9c47"
+      "asset": "asset-d0e9d4de559edab68fdb0c9c1abca50a431a91cc5247eae25305c2ca512a006d"
     },
-    "layer-9": {
-      "id": "layer-9",
+    "layer-84": {
+      "id": "layer-84",
+      "name": "PopupFrame/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 714,
+        "height": 1027
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PopupFrame:SettingsPage/PopupFrame/PopupFrame/Panel/PopupFrame/Background",
+        "role": "node"
+      },
+      "asset": "asset-6c6210b7a0b52bb5c662415f71a29195f349ae33f93142d9e451331b9399bccb"
+    },
+    "layer-8": {
+      "id": "layer-8",
       "name": "PopupFrame/Title",
       "kind": "text",
       "frame": {
-        "x": 116,
-        "y": 21,
-        "width": 476,
-        "height": 84
+        "x": 315.5,
+        "y": 34,
+        "width": 83,
+        "height": 80
       },
       "opacity": 1,
       "visible": true,
@@ -154,26 +191,25 @@
       },
       "text": {
         "value": "设置",
-        "fontId": "font-72180cb66b9fc5df",
+        "fontId": "font-9386e356e761e6dd",
         "size": 40,
         "lineHeight": 40,
         "align": "center",
-        "fauxBold": true,
         "wrap": false,
-        "outlineWidth": 2,
-        "outlineColor": "#593d84",
-        "color": "#ffffff"
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#e1e8c7"
       }
     },
-    "layer-10": {
-      "id": "layer-10",
+    "layer-9": {
+      "id": "layer-9",
       "name": "CloseButton",
       "kind": "image",
       "frame": {
-        "x": 621,
-        "y": 6,
-        "width": 72,
-        "height": 72
+        "x": 637,
+        "y": 31,
+        "width": 65,
+        "height": 65
       },
       "opacity": 1,
       "visible": true,
@@ -182,10 +218,10 @@
         "role": "component",
         "definitionKey": "CloseButton"
       },
-      "asset": "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c"
+      "asset": "asset-6416cc08bbf151cce21c0a90699ecdac47654ea1ddfcdb8abb589712a5e1b8df"
     },
-    "layer-13": {
-      "id": "layer-13",
+    "layer-12": {
+      "id": "layer-12",
       "name": "Settings/Content",
       "kind": "group",
       "frame": {
@@ -202,21 +238,21 @@
         "definitionKey": "Settings"
       },
       "children": [
-        "layer-14",
-        "layer-20",
-        "layer-26",
-        "layer-32",
-        "layer-38",
-        "layer-44",
-        "layer-50",
-        "layer-56",
-        "layer-62",
-        "layer-68",
-        "layer-74"
+        "layer-13",
+        "layer-19",
+        "layer-25",
+        "layer-31",
+        "layer-37",
+        "layer-43",
+        "layer-49",
+        "layer-55",
+        "layer-61",
+        "layer-67",
+        "layer-73"
       ]
     },
-    "layer-14": {
-      "id": "layer-14",
+    "layer-13": {
+      "id": "layer-13",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -232,10 +268,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-99c4ca2d30910f2af74a0e04df49fea16332d41d38655f30f83f7c82782dd65c"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-20": {
-      "id": "layer-20",
+    "layer-19": {
+      "id": "layer-19",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -251,10 +287,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-da34b0ce1b0c6e2637eabcb335412d20996e9cc9abbeb092725dae666a359632"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-26": {
-      "id": "layer-26",
+    "layer-25": {
+      "id": "layer-25",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -270,10 +306,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-a1eba252fa88b454a9b475834e9d786434c3d013b84c3e6cc46bbd635b20ecca"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-32": {
-      "id": "layer-32",
+    "layer-31": {
+      "id": "layer-31",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -289,10 +325,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-43d30d8cb45faabfd4ebb137eb5b9f386cbd77d17591eb7cf43f9e553a1e648b"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-38": {
-      "id": "layer-38",
+    "layer-37": {
+      "id": "layer-37",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -308,10 +344,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-27d8ece9a591a8cfdcc836d79cebe3a34bcea1b9340f15c0ec8de225ed9c4287"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-44": {
-      "id": "layer-44",
+    "layer-43": {
+      "id": "layer-43",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -327,10 +363,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-b191f2c1bf53a144819a0c945873974e3896eac450151d510007dce6f19c3011"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-50": {
-      "id": "layer-50",
+    "layer-49": {
+      "id": "layer-49",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -346,10 +382,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-0d21af0793e6c1581a398c2039a686b27438044a299a49b878845014261a3cf5"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-56": {
-      "id": "layer-56",
+    "layer-55": {
+      "id": "layer-55",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -365,10 +401,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-1fa536081a3b189f0471692e386bf8f14268ee7e957bb256b3b36b05e29dfb6b"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-62": {
-      "id": "layer-62",
+    "layer-61": {
+      "id": "layer-61",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -384,10 +420,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-2caafd0bb4d6d2adabfa1bf53a14ae574920fc7a782075fd59862b0edb3088a0"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-68": {
-      "id": "layer-68",
+    "layer-67": {
+      "id": "layer-67",
       "name": "WideMenuButton",
       "kind": "image",
       "frame": {
@@ -403,10 +439,10 @@
         "role": "component",
         "definitionKey": "WideMenuButton"
       },
-      "asset": "asset-f586cc27267820a9138f1bdaf9c79a5fea9364f7468c52ca260ad24105c91f4f"
+      "asset": "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d"
     },
-    "layer-74": {
-      "id": "layer-74",
+    "layer-73": {
+      "id": "layer-73",
       "name": "Group",
       "kind": "group",
       "frame": {
@@ -418,11 +454,11 @@
       "opacity": 1,
       "visible": true,
       "children": [
-        "layer-75"
+        "layer-74"
       ]
     },
-    "layer-75": {
-      "id": "layer-75",
+    "layer-74": {
+      "id": "layer-74",
       "name": "Canvas",
       "kind": "image",
       "frame": {
@@ -451,86 +487,30 @@
       "width": 750,
       "height": 1334
     },
-    "asset-30b3bd65fab9847ea1208c43bb41a96c2db2f3ab6097202f798149a940fe9c47": {
-      "path": "assets/30b3bd65fab9847ea1208c43bb41a96c2db2f3ab6097202f798149a940fe9c47.png",
-      "sha256": "30b3bd65fab9847ea1208c43bb41a96c2db2f3ab6097202f798149a940fe9c47",
+    "asset-d0e9d4de559edab68fdb0c9c1abca50a431a91cc5247eae25305c2ca512a006d": {
+      "path": "assets/d0e9d4de559edab68fdb0c9c1abca50a431a91cc5247eae25305c2ca512a006d.png",
+      "sha256": "d0e9d4de559edab68fdb0c9c1abca50a431a91cc5247eae25305c2ca512a006d",
       "mime": "image/png",
       "width": 708,
       "height": 992
     },
-    "asset-d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c": {
-      "path": "assets/d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c.png",
-      "sha256": "d1795b2d8195d4cad758b7d26b669719c668eae19d1b31f7484ae9686086f14c",
+    "asset-6c6210b7a0b52bb5c662415f71a29195f349ae33f93142d9e451331b9399bccb": {
+      "path": "assets/6c6210b7a0b52bb5c662415f71a29195f349ae33f93142d9e451331b9399bccb.png",
+      "sha256": "6c6210b7a0b52bb5c662415f71a29195f349ae33f93142d9e451331b9399bccb",
       "mime": "image/png",
-      "width": 72,
-      "height": 72
+      "width": 714,
+      "height": 1027
     },
-    "asset-99c4ca2d30910f2af74a0e04df49fea16332d41d38655f30f83f7c82782dd65c": {
-      "path": "assets/99c4ca2d30910f2af74a0e04df49fea16332d41d38655f30f83f7c82782dd65c.png",
-      "sha256": "99c4ca2d30910f2af74a0e04df49fea16332d41d38655f30f83f7c82782dd65c",
+    "asset-6416cc08bbf151cce21c0a90699ecdac47654ea1ddfcdb8abb589712a5e1b8df": {
+      "path": "assets/6416cc08bbf151cce21c0a90699ecdac47654ea1ddfcdb8abb589712a5e1b8df.png",
+      "sha256": "6416cc08bbf151cce21c0a90699ecdac47654ea1ddfcdb8abb589712a5e1b8df",
       "mime": "image/png",
-      "width": 326,
-      "height": 114
+      "width": 65,
+      "height": 65
     },
-    "asset-da34b0ce1b0c6e2637eabcb335412d20996e9cc9abbeb092725dae666a359632": {
-      "path": "assets/da34b0ce1b0c6e2637eabcb335412d20996e9cc9abbeb092725dae666a359632.png",
-      "sha256": "da34b0ce1b0c6e2637eabcb335412d20996e9cc9abbeb092725dae666a359632",
-      "mime": "image/png",
-      "width": 326,
-      "height": 114
-    },
-    "asset-a1eba252fa88b454a9b475834e9d786434c3d013b84c3e6cc46bbd635b20ecca": {
-      "path": "assets/a1eba252fa88b454a9b475834e9d786434c3d013b84c3e6cc46bbd635b20ecca.png",
-      "sha256": "a1eba252fa88b454a9b475834e9d786434c3d013b84c3e6cc46bbd635b20ecca",
-      "mime": "image/png",
-      "width": 326,
-      "height": 114
-    },
-    "asset-43d30d8cb45faabfd4ebb137eb5b9f386cbd77d17591eb7cf43f9e553a1e648b": {
-      "path": "assets/43d30d8cb45faabfd4ebb137eb5b9f386cbd77d17591eb7cf43f9e553a1e648b.png",
-      "sha256": "43d30d8cb45faabfd4ebb137eb5b9f386cbd77d17591eb7cf43f9e553a1e648b",
-      "mime": "image/png",
-      "width": 326,
-      "height": 114
-    },
-    "asset-27d8ece9a591a8cfdcc836d79cebe3a34bcea1b9340f15c0ec8de225ed9c4287": {
-      "path": "assets/27d8ece9a591a8cfdcc836d79cebe3a34bcea1b9340f15c0ec8de225ed9c4287.png",
-      "sha256": "27d8ece9a591a8cfdcc836d79cebe3a34bcea1b9340f15c0ec8de225ed9c4287",
-      "mime": "image/png",
-      "width": 326,
-      "height": 114
-    },
-    "asset-b191f2c1bf53a144819a0c945873974e3896eac450151d510007dce6f19c3011": {
-      "path": "assets/b191f2c1bf53a144819a0c945873974e3896eac450151d510007dce6f19c3011.png",
-      "sha256": "b191f2c1bf53a144819a0c945873974e3896eac450151d510007dce6f19c3011",
-      "mime": "image/png",
-      "width": 326,
-      "height": 114
-    },
-    "asset-0d21af0793e6c1581a398c2039a686b27438044a299a49b878845014261a3cf5": {
-      "path": "assets/0d21af0793e6c1581a398c2039a686b27438044a299a49b878845014261a3cf5.png",
-      "sha256": "0d21af0793e6c1581a398c2039a686b27438044a299a49b878845014261a3cf5",
-      "mime": "image/png",
-      "width": 326,
-      "height": 114
-    },
-    "asset-1fa536081a3b189f0471692e386bf8f14268ee7e957bb256b3b36b05e29dfb6b": {
-      "path": "assets/1fa536081a3b189f0471692e386bf8f14268ee7e957bb256b3b36b05e29dfb6b.png",
-      "sha256": "1fa536081a3b189f0471692e386bf8f14268ee7e957bb256b3b36b05e29dfb6b",
-      "mime": "image/png",
-      "width": 326,
-      "height": 114
-    },
-    "asset-2caafd0bb4d6d2adabfa1bf53a14ae574920fc7a782075fd59862b0edb3088a0": {
-      "path": "assets/2caafd0bb4d6d2adabfa1bf53a14ae574920fc7a782075fd59862b0edb3088a0.png",
-      "sha256": "2caafd0bb4d6d2adabfa1bf53a14ae574920fc7a782075fd59862b0edb3088a0",
-      "mime": "image/png",
-      "width": 326,
-      "height": 114
-    },
-    "asset-f586cc27267820a9138f1bdaf9c79a5fea9364f7468c52ca260ad24105c91f4f": {
-      "path": "assets/f586cc27267820a9138f1bdaf9c79a5fea9364f7468c52ca260ad24105c91f4f.png",
-      "sha256": "f586cc27267820a9138f1bdaf9c79a5fea9364f7468c52ca260ad24105c91f4f",
+    "asset-1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d": {
+      "path": "assets/1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d.png",
+      "sha256": "1a0aa8ba4bbf9825b4d1aa802dfa04df1ee6960da2bc938e944646c4c232bc7d",
       "mime": "image/png",
       "width": 326,
       "height": 114
@@ -544,17 +524,16 @@
     }
   },
   "fonts": {
-    "font-72180cb66b9fc5df": {
-      "path": "fonts/7b42614f70107b0e-0-400.ttf",
-      "sha256": "7b42614f70107b0e9d9e70c100ad3926c51b327509b0ae274e92ceed60fc2b78",
-      "postscriptName": "WebPSD-18463539-0-Regular",
-      "weight": 400,
+    "font-9386e356e761e6dd": {
+      "path": "fonts/64ca83ed532c6e64-0-700.otf",
+      "sha256": "64ca83ed532c6e64f0c1344de1def681540b21e92f8e5e52482bf1b3cf8ee060",
+      "postscriptName": "DOUYINSANSBOLD-GB",
+      "weight": 700,
       "italic": false
     }
   },
   "warnings": [
     "UniFlex export baseline recovered; it is not the edited PSD state.",
-    "PopupBackground: shape/smart-object preview is an image in Web; parsed source data retained separately.",
     "CloseButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
     "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",
     "WideMenuButton: shape/smart-object preview is an image in Web; parsed source data retained separately.",

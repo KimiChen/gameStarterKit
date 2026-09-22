@@ -22,7 +22,7 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton",
+        "key": "CloseButton:AllianceAnnouncePage/AllianceAnnounce/PopupFrame/PopupFrame/Panel/CloseButton",
         "role": "component",
         "definitionKey": "CloseButton"
       },
@@ -59,7 +59,7 @@
       "opacity": 1,
       "visible": true,
       "identity": {
-        "key": "CloseButton:ShopGetItemPage/ShopGetItem/ShopGetItem/Panel/CloseButton/_",
+        "key": "CloseButton:AllianceAnnouncePage/AllianceAnnounce/PopupFrame/PopupFrame/Panel/CloseButton/_",
         "role": "node"
       },
       "asset": "asset-08048d8f5d4c2449b9ec73d538542f5b51a975caa43b904082deab5321943534"

@@ -1,0 +1,1025 @@
+{
+  "schemaVersion": 1,
+  "kind": "uniflex-design",
+  "canvas": {
+    "width": 750,
+    "height": 1334
+  },
+  "roots": [
+    "layer-1"
+  ],
+  "nodes": {
+    "layer-1": {
+      "id": "layer-1",
+      "name": "PreviewHome",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root",
+        "role": "page",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-2",
+        "layer-3",
+        "layer-4",
+        "layer-5"
+      ]
+    },
+    "layer-2": {
+      "id": "layer-2",
+      "name": "PreviewHome / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 750,
+        "height": 1334
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "ce5ef6658d70d3fc94b1ec2af3a77fb82cc49b221f8bf5ffac349933f001b59f"
+      },
+      "asset": "asset-15fa03188a2751042d76b63f79d6933d4c5f7e2c6212e25b0958ad64e01bbc22"
+    },
+    "layer-3": {
+      "id": "layer-3",
+      "name": "UniFlex UI 预览",
+      "kind": "text",
+      "frame": {
+        "x": 48,
+        "y": 54.8828,
+        "width": 654,
+        "height": 84
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_:0",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "UniFlex UI 预览",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 42,
+        "lineHeight": 42,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-4": {
+      "id": "layer-4",
+      "name": "选择功能界面",
+      "kind": "text",
+      "frame": {
+        "x": 48,
+        "y": 124.6875,
+        "width": 654,
+        "height": 50
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_:1",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "选择功能界面",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 24,
+        "lineHeight": 24,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#aab4c4"
+      }
+    },
+    "layer-5": {
+      "id": "layer-5",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 225,
+        "y": 161.624,
+        "width": 300,
+        "height": 1172.376
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-6",
+        "layer-11",
+        "layer-16",
+        "layer-19",
+        "layer-22",
+        "layer-25",
+        "layer-28",
+        "layer-31",
+        "layer-34",
+        "layer-37"
+      ]
+    },
+    "layer-6": {
+      "id": "layer-6",
+      "name": "ConfirmButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 36,
+        "width": 300,
+        "height": 101.6289
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ConfirmButton:PreviewHome/_/ConfirmButton",
+        "role": "component",
+        "definitionKey": "ConfirmButton"
+      },
+      "children": [
+        "layer-7"
+      ]
+    },
+    "layer-7": {
+      "id": "layer-7",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PreviewHome/_/ConfirmButton/ActionButton",
+        "role": "component",
+        "definitionKey": "ActionButton"
+      },
+      "children": [
+        "layer-8",
+        "layer-10"
+      ]
+    },
+    "layer-8": {
+      "id": "layer-8",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0.376,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-9"
+      ]
+    },
+    "layer-9": {
+      "id": "layer-9",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PreviewHome/_/ConfirmButton/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/confirm",
+        "captureHash": "e0da50c5a5574a08be2ecdfba628b31be9e989565bc4b9356f7742579e801966"
+      },
+      "asset": "asset-4bb8449bcab19e6fe8c6d0ba9b1fa8149001c1545103a591fab8eee9f0d90aad"
+    },
+    "layer-10": {
+      "id": "layer-10",
+      "name": "ActionButton/Label",
+      "kind": "text",
+      "frame": {
+        "x": 4,
+        "y": 24.9854,
+        "width": 292,
+        "height": 86
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PreviewHome/_/ConfirmButton/ActionButton/ActionButton/Label",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "提示弹窗",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#643e14",
+        "color": "#ffffff"
+      }
+    },
+    "layer-11": {
+      "id": "layer-11",
+      "name": "CancelButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 153.6289,
+        "width": 300,
+        "height": 101.6289
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "CancelButton:PreviewHome/_/CancelButton",
+        "role": "component",
+        "definitionKey": "CancelButton"
+      },
+      "children": [
+        "layer-12"
+      ]
+    },
+    "layer-12": {
+      "id": "layer-12",
+      "name": "ActionButton",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PreviewHome/_/CancelButton/ActionButton",
+        "role": "component",
+        "definitionKey": "ActionButton"
+      },
+      "children": [
+        "layer-13",
+        "layer-15"
+      ]
+    },
+    "layer-13": {
+      "id": "layer-13",
+      "name": "ActionButton/Background",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": -0.2529,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "children": [
+        "layer-14"
+      ]
+    },
+    "layer-14": {
+      "id": "layer-14",
+      "name": "ActionButton/Background",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PreviewHome/_/CancelButton/ActionButton/ActionButton/Background",
+        "role": "node",
+        "definitionKey": "ActionButton",
+        "resourceId": "ui/button/cancel",
+        "captureHash": "7a78a2e10368fb14c3c1b27843d21da08af20fd504a47fc40507266682a840dc"
+      },
+      "asset": "asset-6c0ab81a3b1a976b410591d5ba89d26f902dc1c9a368b7376d8d8a88463be3f2"
+    },
+    "layer-15": {
+      "id": "layer-15",
+      "name": "ActionButton/Label",
+      "kind": "text",
+      "frame": {
+        "x": 4,
+        "y": 24.9815,
+        "width": 292,
+        "height": 86
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "ActionButton:PreviewHome/_/CancelButton/ActionButton/ActionButton/Label",
+        "role": "node",
+        "definitionKey": "ActionButton"
+      },
+      "text": {
+        "value": "小弹窗底板",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 40,
+        "lineHeight": 40,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 2,
+        "outlineColor": "#4e783b",
+        "color": "#ffffff"
+      }
+    },
+    "layer-16": {
+      "id": "layer-16",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 271.2578,
+        "width": 300,
+        "height": 101.6289
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:0",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-17",
+        "layer-18"
+      ]
+    },
+    "layer-17": {
+      "id": "layer-17",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0.1182,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:0",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "c6f60f97c11a8a2f83ec1eeb2e6267974abdff9c6199187ab0dc85b1fbe4e7cd"
+      },
+      "asset": "asset-014be11250b11af0e38e9f04be723099a1e27b9970ced182e7654e590ec19e00"
+    },
+    "layer-18": {
+      "id": "layer-18",
+      "name": "背包界面",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 33.7901,
+        "width": 304,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:0/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "背包界面",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 34,
+        "lineHeight": 34,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-19": {
+      "id": "layer-19",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 388.8866,
+        "width": 300,
+        "height": 101.6289
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:1",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-20",
+        "layer-21"
+      ]
+    },
+    "layer-20": {
+      "id": "layer-20",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": -0.5106,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:1",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "b445efdb2c8e7b81b1287def8d16846aed0b2f3acf91ae15bfb45e09c9299481"
+      },
+      "asset": "asset-5a112b0ac1b5cbc0f41a01a5999364aa5fbf163b03dc384dbb75d8e14409a049"
+    },
+    "layer-21": {
+      "id": "layer-21",
+      "name": "邮件战报",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 33.7863,
+        "width": 304,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:1/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "邮件战报",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 34,
+        "lineHeight": 34,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-22": {
+      "id": "layer-22",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 506.5155,
+        "width": 300,
+        "height": 101.6289
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:2",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-23",
+        "layer-24"
+      ]
+    },
+    "layer-23": {
+      "id": "layer-23",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": -0.1395,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:2",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "76e1ac7364341ae67c323d454a69f6e97e34710f509a58f65772120afbf85ff6"
+      },
+      "asset": "asset-a0c54d19316ec52843c483f25b6d0edb7e8fdb8c7b8b951aa53548b7103ffbbb"
+    },
+    "layer-24": {
+      "id": "layer-24",
+      "name": "还原邮件",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 33.7824,
+        "width": 304,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:2/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "还原邮件",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 34,
+        "lineHeight": 34,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-25": {
+      "id": "layer-25",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 624.1444,
+        "width": 300,
+        "height": 101.6289
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:3",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-26",
+        "layer-27"
+      ]
+    },
+    "layer-26": {
+      "id": "layer-26",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0.2316,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:3",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "993ae1ea92b3a4593dfae393355c69f05fa9dd87f5a63b85329d6146f2a7fd2a"
+      },
+      "asset": "asset-ea588a28a8e98cc1c9aa126cd67994dd059254a4083e9f780661fd6a14b0fb38"
+    },
+    "layer-27": {
+      "id": "layer-27",
+      "name": "还原背包",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 33.7941,
+        "width": 304,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:3/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "还原背包",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 34,
+        "lineHeight": 34,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-28": {
+      "id": "layer-28",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 741.7732,
+        "width": 300,
+        "height": 101.6289
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:4",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-29",
+        "layer-30"
+      ]
+    },
+    "layer-29": {
+      "id": "layer-29",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": -0.3972,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:4",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "81c1993c0774bf991f67f6705a457611ed939f2b007e7df24d427e33093c898b"
+      },
+      "asset": "asset-05d646f30a36f505c6ea2dea7bb0c7594ec508780ff7b8c9ef3f728f932c070d"
+    },
+    "layer-30": {
+      "id": "layer-30",
+      "name": "设置界面",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 33.7903,
+        "width": 304,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:4/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "设置界面",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 34,
+        "lineHeight": 34,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-31": {
+      "id": "layer-31",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 859.4021,
+        "width": 300,
+        "height": 101.6289
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:5",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-32",
+        "layer-33"
+      ]
+    },
+    "layer-32": {
+      "id": "layer-32",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": -0.0261,
+        "width": 300,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:5",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "a3112b26d643d58bca578a6388f51a5715dc7066d92c39d12970943ed3d7ca28"
+      },
+      "asset": "asset-000c3ee8e5a7f739b42f1f7ed625e21541b936ab3a1c474d72a5a38312ab5edf"
+    },
+    "layer-33": {
+      "id": "layer-33",
+      "name": "角色管理",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 33.7864,
+        "width": 304,
+        "height": 102
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:5/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "角色管理",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 34,
+        "lineHeight": 34,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-34": {
+      "id": "layer-34",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 977.0309,
+        "width": 300,
+        "height": 89.6725
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:6",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-35",
+        "layer-36"
+      ]
+    },
+    "layer-35": {
+      "id": "layer-35",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": 0.3451,
+        "width": 300,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:6",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "0cb58a17452bff272c3861e0ba879231f68057a139cdfbb67ec6b587bf953637"
+      },
+      "asset": "asset-6c70ab14737f81ea5767056ac439fd6b099e9e599e676686a2723719dec6ec79"
+    },
+    "layer-36": {
+      "id": "layer-36",
+      "name": "英雄卡牌",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 27.806,
+        "width": 304,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:6/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "英雄卡牌",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 34,
+        "lineHeight": 34,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    },
+    "layer-37": {
+      "id": "layer-37",
+      "name": "Group",
+      "kind": "group",
+      "frame": {
+        "x": 0,
+        "y": 1082.7035,
+        "width": 300,
+        "height": 89.6725
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:7",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "children": [
+        "layer-38",
+        "layer-39"
+      ]
+    },
+    "layer-38": {
+      "id": "layer-38",
+      "name": "Background / fill",
+      "kind": "image",
+      "frame": {
+        "x": 0,
+        "y": -0.3275,
+        "width": 300,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:7",
+        "role": "fill",
+        "definitionKey": "PreviewHome",
+        "captureHash": "97fb0d06d64d304c5ac073f2ac2dc0d39021e7068fdce1ff78c465204a4d9e41"
+      },
+      "asset": "asset-8f283ee9cea7ca9664cde5592de377c66accfbb8fa4763e7b695409d58b81fb8"
+    },
+    "layer-39": {
+      "id": "layer-39",
+      "name": "英雄详情",
+      "kind": "text",
+      "frame": {
+        "x": -2,
+        "y": 27.8209,
+        "width": 304,
+        "height": 90
+      },
+      "opacity": 1,
+      "visible": true,
+      "identity": {
+        "key": "PreviewHome.root/_/_:7/_",
+        "role": "node",
+        "definitionKey": "PreviewHome"
+      },
+      "text": {
+        "value": "英雄详情",
+        "fontId": "font-72180cb66b9fc5df",
+        "size": 34,
+        "lineHeight": 34,
+        "align": "center",
+        "wrap": false,
+        "outlineWidth": 0,
+        "outlineColor": "#000000",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "assets": {
+    "asset-15fa03188a2751042d76b63f79d6933d4c5f7e2c6212e25b0958ad64e01bbc22": {
+      "path": "assets/15fa03188a2751042d76b63f79d6933d4c5f7e2c6212e25b0958ad64e01bbc22.png",
+      "sha256": "15fa03188a2751042d76b63f79d6933d4c5f7e2c6212e25b0958ad64e01bbc22",
+      "mime": "image/png",
+      "width": 750,
+      "height": 1334
+    },
+    "asset-4bb8449bcab19e6fe8c6d0ba9b1fa8149001c1545103a591fab8eee9f0d90aad": {
+      "path": "assets/4bb8449bcab19e6fe8c6d0ba9b1fa8149001c1545103a591fab8eee9f0d90aad.png",
+      "sha256": "4bb8449bcab19e6fe8c6d0ba9b1fa8149001c1545103a591fab8eee9f0d90aad",
+      "mime": "image/png",
+      "width": 300,
+      "height": 102
+    },
+    "asset-6c0ab81a3b1a976b410591d5ba89d26f902dc1c9a368b7376d8d8a88463be3f2": {
+      "path": "assets/6c0ab81a3b1a976b410591d5ba89d26f902dc1c9a368b7376d8d8a88463be3f2.png",
+      "sha256": "6c0ab81a3b1a976b410591d5ba89d26f902dc1c9a368b7376d8d8a88463be3f2",
+      "mime": "image/png",
+      "width": 300,
+      "height": 102
+    },
+    "asset-014be11250b11af0e38e9f04be723099a1e27b9970ced182e7654e590ec19e00": {
+      "path": "assets/014be11250b11af0e38e9f04be723099a1e27b9970ced182e7654e590ec19e00.png",
+      "sha256": "014be11250b11af0e38e9f04be723099a1e27b9970ced182e7654e590ec19e00",
+      "mime": "image/png",
+      "width": 300,
+      "height": 102
+    },
+    "asset-5a112b0ac1b5cbc0f41a01a5999364aa5fbf163b03dc384dbb75d8e14409a049": {
+      "path": "assets/5a112b0ac1b5cbc0f41a01a5999364aa5fbf163b03dc384dbb75d8e14409a049.png",
+      "sha256": "5a112b0ac1b5cbc0f41a01a5999364aa5fbf163b03dc384dbb75d8e14409a049",
+      "mime": "image/png",
+      "width": 300,
+      "height": 102
+    },
+    "asset-a0c54d19316ec52843c483f25b6d0edb7e8fdb8c7b8b951aa53548b7103ffbbb": {
+      "path": "assets/a0c54d19316ec52843c483f25b6d0edb7e8fdb8c7b8b951aa53548b7103ffbbb.png",
+      "sha256": "a0c54d19316ec52843c483f25b6d0edb7e8fdb8c7b8b951aa53548b7103ffbbb",
+      "mime": "image/png",
+      "width": 300,
+      "height": 102
+    },
+    "asset-ea588a28a8e98cc1c9aa126cd67994dd059254a4083e9f780661fd6a14b0fb38": {
+      "path": "assets/ea588a28a8e98cc1c9aa126cd67994dd059254a4083e9f780661fd6a14b0fb38.png",
+      "sha256": "ea588a28a8e98cc1c9aa126cd67994dd059254a4083e9f780661fd6a14b0fb38",
+      "mime": "image/png",
+      "width": 300,
+      "height": 102
+    },
+    "asset-05d646f30a36f505c6ea2dea7bb0c7594ec508780ff7b8c9ef3f728f932c070d": {
+      "path": "assets/05d646f30a36f505c6ea2dea7bb0c7594ec508780ff7b8c9ef3f728f932c070d.png",
+      "sha256": "05d646f30a36f505c6ea2dea7bb0c7594ec508780ff7b8c9ef3f728f932c070d",
+      "mime": "image/png",
+      "width": 300,
+      "height": 102
+    },
+    "asset-000c3ee8e5a7f739b42f1f7ed625e21541b936ab3a1c474d72a5a38312ab5edf": {
+      "path": "assets/000c3ee8e5a7f739b42f1f7ed625e21541b936ab3a1c474d72a5a38312ab5edf.png",
+      "sha256": "000c3ee8e5a7f739b42f1f7ed625e21541b936ab3a1c474d72a5a38312ab5edf",
+      "mime": "image/png",
+      "width": 300,
+      "height": 102
+    },
+    "asset-6c70ab14737f81ea5767056ac439fd6b099e9e599e676686a2723719dec6ec79": {
+      "path": "assets/6c70ab14737f81ea5767056ac439fd6b099e9e599e676686a2723719dec6ec79.png",
+      "sha256": "6c70ab14737f81ea5767056ac439fd6b099e9e599e676686a2723719dec6ec79",
+      "mime": "image/png",
+      "width": 300,
+      "height": 90
+    },
+    "asset-8f283ee9cea7ca9664cde5592de377c66accfbb8fa4763e7b695409d58b81fb8": {
+      "path": "assets/8f283ee9cea7ca9664cde5592de377c66accfbb8fa4763e7b695409d58b81fb8.png",
+      "sha256": "8f283ee9cea7ca9664cde5592de377c66accfbb8fa4763e7b695409d58b81fb8",
+      "mime": "image/png",
+      "width": 300,
+      "height": 90
+    }
+  },
+  "fonts": {
+    "font-72180cb66b9fc5df": {
+      "path": "fonts/5f0931984f96808c-0-400.ttf",
+      "sha256": "5f0931984f96808ceb264f15ee9c2eeca46d11f23bab574230e0e19e854c50fc",
+      "postscriptName": "WebPSD-18463539-0-Regular",
+      "weight": 400,
+      "italic": false
+    }
+  },
+  "warnings": [
+    "UniFlex export baseline recovered; it is not the edited PSD state.",
+    "Fixed-size visual layout only; buttons, data bindings and responsive rules are not inferred.",
+    "Supplement stores parsed PSD fields, not every original binary block. Lossless PSD reconstruction is not guaranteed.",
+    "Install and license the original fonts; browser and Photoshop text rendering may differ."
+  ]
+}

@@ -1,5 +1,45 @@
 {
   "version": 1,
   "feature": "uniflex-import",
-  "assets": []
+  "assets": [
+    {
+      "id": "SettingsRestored-asset-6c6210b7a0b52bb5c662415f71a29195f349ae33f93142d9e451331b9399bccb",
+      "kind": "image",
+      "file": "assets/6c6210b7a0b52bb5c662415f71a29195f349ae33f93142d9e451331b9399bccb.png",
+      "width": 714,
+      "height": 1027,
+      "sha256": "6c6210b7a0b52bb5c662415f71a29195f349ae33f93142d9e451331b9399bccb"
+    },
+    {
+      "id": "SettingsRestored-asset-6416cc08bbf151cce21c0a90699ecdac47654ea1ddfcdb8abb589712a5e1b8df",
+      "kind": "image",
+      "file": "assets/6416cc08bbf151cce21c0a90699ecdac47654ea1ddfcdb8abb589712a5e1b8df.png",
+      "width": 65,
+      "height": 65,
+      "sha256": "6416cc08bbf151cce21c0a90699ecdac47654ea1ddfcdb8abb589712a5e1b8df"
+    },
+    {
+      "id": "SettingsRestored-asset-abf6c9ca3211b90dec395dfd8e164e52f6b27dde8695aba49b80a9a9c1cd004a",
+      "kind": "image",
+      "file": "assets/abf6c9ca3211b90dec395dfd8e164e52f6b27dde8695aba49b80a9a9c1cd004a.png",
+      "width": 326,
+      "height": 114,
+      "sha256": "abf6c9ca3211b90dec395dfd8e164e52f6b27dde8695aba49b80a9a9c1cd004a"
+    },
+    {
+      "id": "SettingsRestored-asset-b3853c92a53eecba1429f8e27c827bc0fe1306de37efea2faa322eb043221e95",
+      "kind": "image",
+      "file": "assets/b3853c92a53eecba1429f8e27c827bc0fe1306de37efea2faa322eb043221e95.png",
+      "width": 54,
+      "height": 54,
+      "sha256": "b3853c92a53eecba1429f8e27c827bc0fe1306de37efea2faa322eb043221e95"
+    },
+    {
+      "id": "SettingsRestored-font-9386e356e761e6dd",
+      "kind": "font",
+      "file": "assets/fonts/64ca83ed532c6e64-0-700.otf",
+      "sha256": "64ca83ed532c6e64f0c1344de1def681540b21e92f8e5e52482bf1b3cf8ee060",
+      "weight": 700
+    }
+  ]
 }

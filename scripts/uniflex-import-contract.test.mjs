@@ -507,12 +507,12 @@ test("editing BackpackItemCard PSD overlays the shared restored copy and leaves 
         ], { cwd: root, env });
         const overlayed = await readFile(
             join(packageDir, "restored/modules/backpack/Backpack/components/BackpackItemCard.tsx"), "utf8");
-        assert.match(overlayed, /<ItemSlot left=\{8\} top=\{0\}/);
+        assert.match(overlayed, /<ItemSlot theme=\{p\.theme\} left=\{8\} top=\{0\}/);
         assert.match(overlayed, /gamecomponents\/item\/ItemSlot'/);
         const original = await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"),
             "utf8");
-        assert.match(original, /<ItemSlot left=\{0\} top=\{0\}/);
+        assert.match(original, /<ItemSlot theme=\{p\.theme\} left=\{0\} top=\{0\}/);
         await execFileAsync(process.execPath, [
             resolve(root, "scripts/import-uniflex-package.mjs"),
             "--update", "--name", "BackpackItemCard", "--out", importRoot, packageDir,
@@ -525,7 +525,7 @@ test("editing BackpackItemCard PSD overlays the shared restored copy and leaves 
             false);
         assert.match(await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"),
-            "utf8"), /<ItemSlot left=\{0\} top=\{0\}/);
+            "utf8"), /<ItemSlot theme=\{p\.theme\} left=\{0\} top=\{0\}/);
         assert.match(await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"), "utf8"),
             /from '\.\/components\/BackpackItemCard'/);
@@ -572,7 +572,9 @@ test("editing Confirm PSD text rewrites ?? fallbacks and reports pure bindings",
         const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
         assert.match(report, /Text and style write-back/);
         assert.match(report, /fallback: .*PopupFrame\.title/);
-        assert.match(report, /bound: .*ConfirmRestored\/Message\.value/);
+        // Confirm/Message is now rendered through AbsoluteThemeText, so the raw
+        // <text> write-back cannot locate a tag and degrades to not-found.
+        assert.match(report, /not-found: .*ConfirmRestored\/Message\.value/);
         assert.match(await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/popup/Confirm/Confirm.tsx"), "utf8"),
             /title=\{params\.title \?\? '提示'\}/);
@@ -878,9 +880,9 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => (
         assert.match(mailReport, /style: .*MailBattleReportRestored\.backgroundColor/);
         assert.match(mailReport,
             /not-found: .*MailBattleReport\.root\/_:0\.backgroundColor/);
-        assert.match(await readFile(
+        assert.doesNotMatch(await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/mail/MailBattleReport/MailBattleReport.tsx"),
-            "utf8"), /backgroundColor: '#F3EFE9'/);
+            "utf8"), /#112233/i, "the original page source must stay untouched");
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }
@@ -1149,6 +1151,22 @@ test("swapping a smart object to another catalog component renames the tag", {
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }
+});
+
+test("restored copies retarget themes and keep sibling component imports", async () => {
+    const { rewriteRestoredExternalImports } = await import(
+        "../node_modules/web-ui-to-psd/lib/uniflex-page-source.mjs");
+    const source = [
+        "import { CloseButton } from '../button/CloseButton';",
+        "import { theme as activeTheme } from '../../themes/active';",
+        "import type { ImageRef } from '../../../kits/uniflex/api/core/index';",
+        "",
+    ].join("\n");
+    const out = rewriteRestoredExternalImports(
+        source, "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx");
+    assert.match(out, /from '\.\.\/button\/CloseButton'/);
+    assert.match(out, /from '\.\.\/\.\.\/\.\.\/themes\/active'/);
+    assert.match(out, /from '\.\.\/\.\.\/\.\.\/\.\.\/kits\/uniflex\/api\/core\/index'/);
 });
 
 test("linking a smart object to a foreign psd reports conflict and keeps the TSX", {
@@ -1424,5 +1442,64 @@ export const Rows = defineView(() => (
         assert.match(report, /skipped: .*Added\/Inside\.add \[inside-instance\]/);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
+    }
+});
+
+test("rotated subtrees bake to one bitmap layer; rotated text still throws", {
+    skip: available ? false : "pinned web-ui-to-psd package is not installed",
+}, async () => {
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { chromium } = converterRequire("playwright");
+    const { collectUniFlex } = await import(
+        resolve(root, "node_modules/web-ui-to-psd/lib/capture.mjs"));
+    const browser = await chromium.launch({ channel: "chrome", headless: true });
+    try {
+        const page = await browser.newPage({ viewport: { width: 200, height: 200 } });
+        await page.setContent(`<div id="root" data-kind="view" data-name="Page"
+            style="position:relative;width:200px;height:200px;background-color:#ffffff">
+            <div data-kind="view" data-name="Page/Card"
+                style="position:absolute;left:20px;top:20px;width:64px;height:66px;background-color:#ff0000"></div>
+            <div data-kind="view" data-name="rot:-29"
+                style="position:absolute;left:20px;top:100px;width:64px;height:66px;rotate:-29deg">
+                <div data-kind="view" data-name="rot:-29/Inner"
+                    style="position:absolute;left:8px;top:8px;width:48px;height:50px;background-color:#00ff00"></div>
+            </div>
+        </div>`);
+        const model = await page.evaluate(collectUniFlex, {
+            selector: "#root", fonts: [], inputFallbackFont: undefined, groupNames: {},
+        });
+        const baked = model.children.find((item) => item.name === "rot:-29");
+        assert.ok(baked, "rotated container becomes one capture item");
+        assert.equal(baked.kind, "raster");
+        assert.equal(baked.children, undefined, "baked subtree flattens to a single layer");
+        assert.ok(baked.bake?.marker && baked.bake.clip, "bake carries the screenshot payload");
+        assert.ok(baked.rasterBounds.width > 64 && baked.rasterBounds.height > 66,
+            "rasterBounds carry the rotated axis-aligned bounding box");
+        assert.ok(baked.width === 64 && baked.height === 66,
+            "the snapshot-facing box stays the unrotated layout box");
+        assert.ok(baked.rasterBounds.x <= baked.x && baked.rasterBounds.y <= baked.y,
+            "AABB covers the unrotated box");
+        assert.ok(model.warnings.some((w) => /rot:-29.*rotate -29deg/.test(w)),
+            "validation warning names the layer and the angle");
+        const marked = await page.evaluate(
+            () => document.querySelector("[data-wp-bake]")?.dataset.name);
+        assert.equal(marked, "rot:-29", "the rotated element keeps its bake marker");
+
+        await page.setContent(`<div id="root" data-kind="view" data-name="Page"
+            style="position:relative;width:200px;height:200px;background-color:#ffffff">
+            <div data-kind="text" data-name="Page/Label"
+                style="position:absolute;left:10px;top:10px;width:80px;height:20px;rotate:10deg">
+                <span>hello</span><canvas></canvas>
+            </div>
+        </div>`);
+        await assert.rejects(
+            page.evaluate(collectUniFlex, {
+                selector: "#root", fonts: [], inputFallbackFont: undefined, groupNames: {},
+            }),
+            /Unsupported CSS effect/,
+            "text with rotate still fails explicitly",
+        );
+    } finally {
+        await browser.close();
     }
 });

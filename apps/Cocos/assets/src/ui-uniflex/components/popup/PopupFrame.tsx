@@ -1,5 +1,5 @@
 import { defineComponent } from '@uniflex/compiler';
-import type { ImageRef } from '../../../kits/uniflex/api/core/index';
+import type { FontRef, ImageRef } from '../../../kits/uniflex/api/core/index';
 import { CloseButton } from '../button/CloseButton';
 import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
@@ -12,9 +12,20 @@ export interface PopupFrameProps {
     readonly width?: number;
     readonly height?: number;
     readonly onClose?: () => void;
+    readonly titleFont?: FontRef;
     readonly titleColor?: string;
     readonly titleOutline?: string;
+    readonly titleOutlineWidth?: number;
+    readonly titleLeft?: number;
+    readonly titleRight?: number;
+    readonly titleTop?: number;
+    readonly titleHeight?: number;
     readonly maskColor?: string;
+    readonly closeSource?: ImageRef;
+    readonly closeRight?: number;
+    readonly closeTop?: number;
+    readonly closeHit?: number;
+    readonly closeIcon?: number;
 }
 
 /** Mask + chrome + close. `left`/`top` are page-absolute so assembled window values paste through. */
@@ -26,16 +37,16 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
     const left = p.left;
     const top = p.top;
     const onClose = p.onClose;
-    const font = theme.popup.font;
+    const font = p.titleFont ?? theme.popup.font;
     const background = p.background ?? theme.popup.prompt;
     // UniFlex AOT inlines `theme.popup.titleLeft` to classic's number; `p.theme?.popup.*` stays a runtime read.
-    const titleLeft = p.theme?.popup.titleLeft ?? activeTheme.popup.titleLeft;
-    const titleRight = p.theme?.popup.titleRight ?? activeTheme.popup.titleRight;
-    const titleTop = p.theme?.popup.titleTop ?? activeTheme.popup.titleTop;
-    const titleHeight = p.theme?.popup.titleHeight ?? activeTheme.popup.titleHeight;
+    const titleLeft = p.titleLeft ?? p.theme?.popup.titleLeft ?? activeTheme.popup.titleLeft;
+    const titleRight = p.titleRight ?? p.theme?.popup.titleRight ?? activeTheme.popup.titleRight;
+    const titleTop = p.titleTop ?? p.theme?.popup.titleTop ?? activeTheme.popup.titleTop;
+    const titleHeight = p.titleHeight ?? p.theme?.popup.titleHeight ?? activeTheme.popup.titleHeight;
     const titleSize = p.theme?.popup.titleSize ?? activeTheme.popup.titleSize;
     const titleAlign = p.theme?.popup.titleAlign ?? activeTheme.popup.titleAlign;
-    const titleOutlineWidth = p.theme?.popup.titleOutlineWidth ?? activeTheme.popup.titleOutlineWidth;
+    const titleOutlineWidth = p.titleOutlineWidth ?? p.theme?.popup.titleOutlineWidth ?? activeTheme.popup.titleOutlineWidth;
     const titleColor = p.titleColor ?? theme.popup.title;
     const titleOutline = p.titleOutline ?? theme.popup.outline;
     const maskColor = p.maskColor ?? theme.popup.mask;
@@ -51,7 +62,8 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
                         font: font, fontSize: titleSize, bold: true,
                         color: titleColor, outlineColor: titleOutline,
                         outlineWidth: titleOutlineWidth, horizontalAlign: titleAlign, verticalAlign: 'center', overflow: 'shrink' }} />
-                <CloseButton theme={theme} onClick={onClose} />
+                <CloseButton theme={theme} source={p.closeSource} right={p.closeRight} top={p.closeTop}
+                    hit={p.closeHit} iconSize={p.closeIcon} onClick={onClose} />
             </view>
         </view>
     );

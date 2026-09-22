@@ -4,6 +4,10 @@
     {"id":"ui/settings/panel","kind":"image","file":"assets/panel.png","width":130,"height":126,"sha256":"24f2f37d199c425dc38a96c60b364e8471dd28c4aac387faa5b6d6f4a6e55982","nineSlice":[90,88,36,34]},
     {"id":"ui/settings/button","kind":"image","file":"assets/button.png","width":150,"height":114,"sha256":"8d38be303fb0d22e66c2ecc577de179a0ca5b70b3c6f248c11f29abdfa6ae618","nineSlice":[128,0,18,0]},
     {"id":"ui/settings/gear","kind":"image","file":"assets/gear.png","width":54,"height":54,"sha256":"86aaaee918e8c3eaece36d1013d0d9bd075db6a2c2ec9a7b5a476d2f84f589b4"},
-    {"id":"ui/settings/divider","kind":"image","file":"assets/divider.png","width":8,"height":3,"sha256":"f77d0963418847929ec659a13eb61c7d119d10d211ee1511dc7dd2166a5f37be","nineSlice":[2,0,2,0]}
+    {"id":"ui/settings/divider","kind":"image","file":"assets/divider.png","width":8,"height":3,"sha256":"f77d0963418847929ec659a13eb61c7d119d10d211ee1511dc7dd2166a5f37be","nineSlice":[2,0,2,0]},
+    {"id":"ui/settings/panel-dragon","kind":"image","file":"assets/panel-dragon.png","width":714,"height":1027,"sha256":"6c6210b7a0b52bb5c662415f71a29195f349ae33f93142d9e451331b9399bccb"},
+    {"id":"ui/settings/close-circle","kind":"image","file":"assets/close-circle.png","width":65,"height":65,"sha256":"6416cc08bbf151cce21c0a90699ecdac47654ea1ddfcdb8abb589712a5e1b8df"},
+    {"id":"ui/settings/button-gold","kind":"image","file":"assets/button-gold.png","width":326,"height":114,"sha256":"abf6c9ca3211b90dec395dfd8e164e52f6b27dde8695aba49b80a9a9c1cd004a"},
+    {"id":"ui/settings/gear-gold","kind":"image","file":"assets/gear-gold.png","width":54,"height":54,"sha256":"b3853c92a53eecba1429f8e27c827bc0fe1306de37efea2faa322eb043221e95"}
   ]
 }

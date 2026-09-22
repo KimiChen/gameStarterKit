@@ -1,47 +1,69 @@
 import { defineComponent } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import type { FontRef, ImageRef } from '../../../../kits/uniflex/api/core/index';
 import { CloseButton } from '../button/CloseButton';
+import { theme as activeTheme, type ComponentTheme } from '../../../themes/active';
 
 export interface PopupFrameProps {
+    readonly theme?: ComponentTheme;
     readonly title: string;
+    readonly background?: ImageRef;
     readonly left: number;
     readonly top: number;
     readonly width?: number;
     readonly height?: number;
     readonly onClose?: () => void;
+    readonly titleFont?: FontRef;
+    readonly titleColor?: string;
+    readonly titleOutline?: string;
+    readonly titleOutlineWidth?: number;
+    readonly titleLeft?: number;
+    readonly titleRight?: number;
+    readonly titleTop?: number;
+    readonly titleHeight?: number;
+    readonly maskColor?: string;
+    readonly closeSource?: ImageRef;
+    readonly closeRight?: number;
+    readonly closeTop?: number;
+    readonly closeHit?: number;
+    readonly closeIcon?: number;
 }
-
-const DEFAULT_WIDTH = 708;
-const DEFAULT_HEIGHT = 510;
-const TITLE_PAD = 90;
-const TITLE_TOP = 18;
-const TITLE_HEIGHT = 58;
-const TITLE_COLOR = '#ffffff';
-const TITLE_OUTLINE = '#593d84';
 
 /** Mask + chrome + close. `left`/`top` are page-absolute so assembled window values paste through. */
 export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
+    const theme = p.theme ?? activeTheme;
     const title = p.title;
-    const width = p.width ?? DEFAULT_WIDTH;
-    const height = p.height ?? DEFAULT_HEIGHT;
+    const width = p.width ?? p.theme?.popup.width ?? activeTheme.popup.width;
+    const height = p.height ?? p.theme?.popup.height ?? activeTheme.popup.height;
     const left = p.left;
     const top = p.top;
     const onClose = p.onClose;
-    const font = fontRef('fonts/regular', 400);
-    const background = imageRef('ui/popup/prompt');
+    const font = p.titleFont ?? theme.popup.font;
+    const background = p.background ?? theme.popup.prompt;
+    // UniFlex AOT inlines `theme.popup.titleLeft` to classic's number; `p.theme?.popup.*` stays a runtime read.
+    const titleLeft = p.titleLeft ?? p.theme?.popup.titleLeft ?? activeTheme.popup.titleLeft;
+    const titleRight = p.titleRight ?? p.theme?.popup.titleRight ?? activeTheme.popup.titleRight;
+    const titleTop = p.titleTop ?? p.theme?.popup.titleTop ?? activeTheme.popup.titleTop;
+    const titleHeight = p.titleHeight ?? p.theme?.popup.titleHeight ?? activeTheme.popup.titleHeight;
+    const titleSize = p.theme?.popup.titleSize ?? activeTheme.popup.titleSize;
+    const titleAlign = p.theme?.popup.titleAlign ?? activeTheme.popup.titleAlign;
+    const titleOutlineWidth = p.titleOutlineWidth ?? p.theme?.popup.titleOutlineWidth ?? activeTheme.popup.titleOutlineWidth;
+    const titleColor = p.titleColor ?? theme.popup.title;
+    const titleOutline = p.titleOutline ?? theme.popup.outline;
+    const maskColor = p.maskColor ?? theme.popup.mask;
     return (
         <view name="PopupFrame" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
             <view name="PopupFrame/Mask" interaction="press"
-                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: '#00000099' }} />
+                style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: maskColor }} />
             <view name="PopupFrame/Panel" style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
                 <image name="PopupFrame/Background" source={background}
                     style={{ position: 'absolute', width: '100%', height: '100%', sizeMode: 'sliced' }} />
                 <text name="PopupFrame/Title" value={title}
-                    style={{ position: 'absolute', left: TITLE_PAD, right: TITLE_PAD, top: TITLE_TOP, height: TITLE_HEIGHT,
-                        font: font, fontSize: 40, bold: true,
-                        color: TITLE_COLOR, outlineColor: TITLE_OUTLINE,
-                        outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-                <CloseButton onClick={onClose} />
+                    style={{ position: 'absolute', left: titleLeft, right: titleRight, top: titleTop, height: titleHeight,
+                        font: font, fontSize: titleSize, bold: true,
+                        color: titleColor, outlineColor: titleOutline,
+                        outlineWidth: titleOutlineWidth, horizontalAlign: titleAlign, verticalAlign: 'center', overflow: 'shrink' }} />
+                <CloseButton theme={theme} source={p.closeSource} right={p.closeRight} top={p.closeTop}
+                    hit={p.closeHit} iconSize={p.closeIcon} onClick={onClose} />
             </view>
         </view>
     );

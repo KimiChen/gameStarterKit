@@ -6,15 +6,19 @@ export interface CloseButtonProps {
     readonly onClick?: () => void;
     readonly source?: ImageRef;
     readonly theme?: ComponentTheme;
+    readonly right?: number;
+    readonly top?: number;
+    readonly hit?: number;
+    readonly iconSize?: number;
 }
 
 /** Hit target around the close icon, anchored to the popup's top-right from the theme layout. */
 export const CloseButton = defineComponent<CloseButtonProps>((p) => {
     // Same AOT constraint as PopupFrame: numbers on a local `theme.popup` get inlined to classic.
-    const closeRight = p.theme?.popup.closeRight ?? activeTheme.popup.closeRight;
-    const closeTop = p.theme?.popup.closeTop ?? activeTheme.popup.closeTop;
-    const closeHit = p.theme?.popup.closeHit ?? activeTheme.popup.closeHit;
-    const closeIcon = p.theme?.popup.closeIcon ?? activeTheme.popup.closeIcon;
+    const closeRight = p.right ?? p.theme?.popup.closeRight ?? activeTheme.popup.closeRight;
+    const closeTop = p.top ?? p.theme?.popup.closeTop ?? activeTheme.popup.closeTop;
+    const closeHit = p.hit ?? p.theme?.popup.closeHit ?? activeTheme.popup.closeHit;
+    const closeIcon = p.iconSize ?? p.theme?.popup.closeIcon ?? activeTheme.popup.closeIcon;
     const closeIconInset = (closeHit - closeIcon) / 2;
     const source = p.source ?? (p.theme ?? activeTheme).popup.close;
     return (<view name="CloseButton" interaction="press" onClick={() => p.onClick?.()}
