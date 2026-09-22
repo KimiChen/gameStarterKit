@@ -318,6 +318,51 @@ python3 tools/maporiginal-assets/prefab_bin.py --scan scene/ground/      # 批�
 zhuandibiao_waicheng_fall 20 / ss_chibi_shan 9 / sanxia_shan_fall 6 / zudang_fall 4 /
 river_hean 1 / road/mask/lu_mask.png 1。⚠ 与常规季 s1 无关。
 
+### 4.2·一·八·五 ★★★ 实锤：默认地表 pass = `ground_layer_logic` → `RES_GRASS_1` → `underground1.png`
+
+⚠ **不在 native 里**（`libnative-lib.so` 全无 `underground`/`ground2` 字符串），在 Lua 层：
+
+```lua
+-- script/logic/mapmodel/layermodel/ground_layer_logic.lua（全文 27 行）
+function GroundLayerData:get_grid_size()
+  return Config.TILE_WIDTH * 20, Config.TILE_HEIGHT * 20      -- 20×20 格一块
+end
+function GroundLayerData:get_grid_res()                        -- ⚠ **不带 row/col**
+  local res_id = self:get_jijie_grass_res()                    --   ⇒ 全图每块同一个资源
+  return { Global.share_res.get_client_res_by_id(res_id).src_name, 1, 1 }
+end
+function GroundLayerData:get_jijie_grass_res()
+  local res_id = IdConsts["TES_RRASS_,"]                       -- ★ 残字 = RES_GRASS_1
+  return MapUtil.get_ground_grass_res() or res_id              --   季节覆盖优先
+end
+```
+
+完整链条（每一环都有实证）：
+
+```
+map_layer_config.lua: ground2.bytes → name "ground" → logic_clz "ground_layer_logic"
+  → get_jijie_grass_res() → IdConsts.RES_GRASS_1
+  → share_res.get_client_res_by_id(...).src_name
+  → 配置表里「草1」→ ground_down/underground1.png            ★ 实锤，非推断
+  秋季覆盖 → 「秋季草1」→ ground_down/underground1_qiutian.png
+```
+
+证据：
+- 残字键 `TES_RRASS_,` 与 `RES_GRASS_1` **11 位中 8 位相同**（差位正是长字符串 XOR 残余），
+  且 `RES_GRASS_1` 确实存在于 66 MB 配置表的**按字母排序**常量名表里
+  （`RES_FALL_PLOT_2` → **`RES_GRASS_1`** → `RES_GRID_SURFACE`）。
+- 同一张表里「草1」与 `ground_down/underground1.png` **紧邻成对**，
+  紧接着是「地1/3/4」→ `grass/MiddleLevel_01/03/04_group.prefab`。
+- 常量名表里另有 **`RES_EARTH_1/2`** —— 「地」= EARTH、「草」= GRASS，两族泾渭分明：
+  **`RES_GRASS_1` = 底（一张平铺贴图）**，**`RES_EARTH_1..4` = MiddleLevel 草丛散布层（4 个变体）**。
+
+⇒ 「零消费者」的原因也清楚了：它是**按 share_res 的 id 取的**，⛔ 不是由哪个 prefab 写死路径引用，
+所以任何「扫 prefab 里的贴图路径」的做法都永远找不到它。
+
+⚠ 与之对照：`underground2/3.png` **不在**这张配置表里 —— 它们是 snow/desert 的 `polygon_2d`
+直接写死路径引用的（各 60 个）。**两套机制，⛔ 别混为一谈**：
+常规季草地走 share_res id + 20×20 块整层平铺；沙漠/雪走 `_path.json` 的逐块 group 预制体。
+
 ### 4.2·一·八 ★★ 「常规季平地底 = underground1」的证据链（2026-09-22 查证）
 
 先更正一条**我自己的误判**：`grass/MiddleLevel_01..04` 曾被当成「最要紧的缺口」。
@@ -338,9 +383,10 @@ MiddleLevel_01  node_2d，35 个 sprite_2d，全部引用 grass/png/a1..a8.png
 | ③ **结构** | `grass/` 的根资源只有 8 个 MiddleLevel + 5 个边界云，**没有任何 polygon/底层组**；且 `ground2.bytes`（基础地表块层）**没有配套 `_path.json`**，而 `ground_snow`/`ground_desert` 各有 | 根资源清单 + s1 层清单 |
 
 ⇒ 合起来的结论：**常规季草地是「底」，沙漠/雪是盖在它上面的覆盖层**——所以草地根本没有逐块
-group 预制体，`underground1` 也就不会被任何 prefab 引用。这解释了「零消费者」本身。
-⚠ 但**仍是推断**：全盘没有任何字符串写着 `ground_down/underground1.png`（只有 `_qiutian` 那条），
-⛔ 别把它当实锤写进代码注释。要坐实只能从 native 的默认地表 pass 里找。
+group 预制体。
+✅ **已于同日坐实**，见上一节 4.2·一·八·五（`ground_layer_logic` → `RES_GRASS_1` → 「草1」）。
+⚠ 上表第②条当时写「全盘没有 `ground_down/underground1.png`」是**错的**：它在 66 MB 配置表里，
+只是我当时只搜了 27 MB 那个串池。⛔ 别只搜一个表就下「不存在」的结论。
 
 ### 4.3 ★ `res` 的「类型 / 等级」读反过一次（2026-09-22 更正）
 
