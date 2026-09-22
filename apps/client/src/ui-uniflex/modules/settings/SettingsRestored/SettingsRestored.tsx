@@ -1,5 +1,5 @@
 import { defineView, For } from '@uniflex/compiler';
-import { imageRef, type ImageRef, fontRef } from '../../../../kits/uniflex/api/core/index';
+import { imageRef, fontRef } from '../../../../kits/uniflex/api/core/index';
 import { WideMenuButton } from '../../../restored/components/button/WideMenuButton';
 import { PopupFrame } from '../../../restored/components/popup/PopupFrame';
 import { theme as activeTheme, type ComponentTheme } from '../../../themes/active';

@@ -58,6 +58,69 @@ function repaintLayer(layer, createCanvas, paint) {
     layer.imageData = context.getImageData(0, 0, width, height);
 }
 
+// Fill conversion uses a self-authored PSD with a real pixel hash baseline. Its
+// root/anonymous identities stay stable when the product art is repainted.
+async function stageFillFixture(directory) {
+    const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
+    const { createCanvas } = converterRequire("@napi-rs/canvas");
+    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    const { encodeUniFlexMetadata } = await import(
+        "../node_modules/web-ui-to-psd/lib/uniflex-metadata.mjs");
+    initializeCanvas(createCanvas);
+    const ids = {};
+    const identity = (id, key, role) => (ids[id] = { key, role, definitionKey: "FillFixture" });
+    const fill = (id, name, key, size, color) => {
+        const layer = { id, name: `${name} [ui:${key}#fill]`,
+            left: 0, top: 0, right: size, bottom: size };
+        repaintLayer(layer, createCanvas, (g, w, h) => {
+            g.fillStyle = color;
+            g.fillRect(0, 0, w, h);
+        });
+        identity(id, key, "fill").captureHash = createHash("sha256")
+            .update(Buffer.from(layer.imageData.data)).digest("hex");
+        return layer;
+    };
+    const pageIdentity = identity(1, "FillFixture.root", "page");
+    const anonIdentity = identity(3, "FillFixture.root/_:0", "node");
+    const baseline = {
+        schemaVersion: 1, kind: "uniflex-design-snapshot", canvas: { width: 16, height: 16 },
+        ids,
+        nodes: [
+            { id: 1, parent: null, kind: "view", name: "FillFixture", identity: pageIdentity },
+            { id: 3, parent: 1, kind: "view", name: "", identity: anonIdentity },
+        ],
+        componentDeclarations: {
+            schemaVersion: 1, kind: "uniflex-component-declarations",
+            definitions: [{ key: "FillFixture", source: "apps/client/src/ui-uniflex/pages/FillFixture/FillFixture.tsx" }],
+            instances: [{ key: "FillFixture.root", definitionKey: "FillFixture", role: "page", rootRecordId: 1 }],
+        },
+    };
+    const children = [{ id: 1, name: "FillFixture [ui:FillFixture.root#page]", children: [
+        { id: 3, name: "Background [ui:FillFixture.root/_:0#node]", children: [
+            fill(4, "Background / fill", "FillFixture.root/_:0", 8, "#553E78"),
+        ] },
+        fill(2, "FillFixture / fill", "FillFixture.root", 16, "#F3EFE9"),
+    ] }];
+    const psd = readPsd(writePsdBuffer({ width: 16, height: 16, children,
+        imageResources: { xmpMetadata: encodeUniFlexMetadata(baseline) },
+    }), { useImageData: true });
+    const sourceRoot = join(directory, "fill-source");
+    const sourcePath = join(sourceRoot, "apps/client/src/ui-uniflex/pages/FillFixture/FillFixture.tsx");
+    const source = `import { defineView } from '@uniflex/compiler';
+export const FillFixture = defineView(() => (
+    <view name="FillFixture" style={{ width: 16, height: 16, backgroundColor: '#F3EFE9' }}>
+        <view style={{ position: 'absolute', left: 0, top: 0, width: 8, height: 8, backgroundColor: '#553E78' }} />
+    </view>
+));
+`;
+    await mkdir(join(sourceRoot, "apps/client/src/ui-uniflex/pages/FillFixture"), { recursive: true });
+    await writeFile(sourcePath, source);
+    const pageFill = findLayer(psd, (layer) => layer.name === "FillFixture / fill [ui:FillFixture.root#fill]");
+    const anonFill = findLayer(psd, (layer) => layer.name === "Background / fill [ui:FillFixture.root/_:0#fill]");
+    assert.ok(pageFill && anonFill, "self-authored fixture must retain both exact fill identities");
+    return { psd, pageFill, anonFill, sourceRoot, sourcePath, source };
+}
+
 const execFileAsync = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
 const env = { ...process.env };
@@ -507,12 +570,12 @@ test("editing BackpackItemCard PSD overlays the shared restored copy and leaves 
         ], { cwd: root, env });
         const overlayed = await readFile(
             join(packageDir, "restored/modules/backpack/Backpack/components/BackpackItemCard.tsx"), "utf8");
-        assert.match(overlayed, /<ItemSlot theme=\{p\.theme\} left=\{8\} top=\{0\}/);
+        assert.match(overlayed, /<ItemSlot left=\{8\} top=\{0\} itemId=\{p\.item\.id\} count=\{count\}/);
         assert.match(overlayed, /gamecomponents\/item\/ItemSlot'/);
         const original = await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"),
             "utf8");
-        assert.match(original, /<ItemSlot theme=\{p\.theme\} left=\{0\} top=\{0\}/);
+        assert.match(original, /<ItemSlot left=\{0\} top=\{0\} itemId=\{p\.item\.id\} count=\{count\}/);
         await execFileAsync(process.execPath, [
             resolve(root, "scripts/import-uniflex-package.mjs"),
             "--update", "--name", "BackpackItemCard", "--out", importRoot, packageDir,
@@ -525,7 +588,7 @@ test("editing BackpackItemCard PSD overlays the shared restored copy and leaves 
             false);
         assert.match(await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"),
-            "utf8"), /<ItemSlot theme=\{p\.theme\} left=\{0\} top=\{0\}/);
+            "utf8"), /<ItemSlot left=\{0\} top=\{0\} itemId=\{p\.item\.id\} count=\{count\}/);
         assert.match(await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"), "utf8"),
             /from '\.\/components\/BackpackItemCard'/);
@@ -572,9 +635,8 @@ test("editing Confirm PSD text rewrites ?? fallbacks and reports pure bindings",
         const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
         assert.match(report, /Text and style write-back/);
         assert.match(report, /fallback: .*PopupFrame\.title/);
-        // Confirm/Message is now rendered through AbsoluteThemeText, so the raw
-        // <text> write-back cannot locate a tag and degrades to not-found.
-        assert.match(report, /not-found: .*ConfirmRestored\/Message\.value/);
+        // A raw text node with a pure prop binding must be reported without rewriting it.
+        assert.match(report, /bound: .*ConfirmRestored\/Message\.value/);
         assert.match(await readFile(
             resolve(root, "apps/client/src/ui-uniflex/modules/popup/Confirm/Confirm.tsx"), "utf8"),
             /title=\{params\.title \?\? '提示'\}/);
@@ -595,9 +657,9 @@ test("editing ActionButton PSD text skips pure prop bindings and reports them", 
     const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-action-button-text-edit-"));
     try {
         const psd = readPsd(await readFile(psdPath), { useImageData: true });
-        const label = findTextLayer(psd, "ActionButton/IconLabel");
-        assert.ok(label, "ActionButton.psd should keep the IconLabel text layer editable");
-        label.text.text = "2000";
+        const label = findTextLayer(psd, "ActionButton/Label [ui:");
+        assert.ok(label, "ActionButton.psd should keep the Label text layer editable");
+        label.text.text = "定确";
         const edited = join(tempRoot, "component.psd");
         await writeFile(edited, writePsdBuffer(psd));
         const designDir = join(tempRoot, "design");
@@ -612,14 +674,14 @@ test("editing ActionButton PSD text skips pure prop bindings and reports them", 
         ], { cwd: root, env });
         const restored = await readFile(
             join(packageDir, "restored/components/button/ActionButton.tsx"), "utf8");
-        assert.match(restored, /name="ActionButton\/IconLabel" value=\{p\.label\}/);
-        assert.ok(!restored.includes("2000"),
+        assert.match(restored, /name="ActionButton\/Label" visible=\{!hasIcon\} value=\{p\.label\}/);
+        assert.ok(!restored.includes("定确"),
             "value={p.label} has no ?? fallback and must stay untouched");
         const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
-        assert.match(report, /bound: .*ActionButton\/IconLabel\.value/);
+        assert.match(report, /bound: .*ActionButton\/Label\.value/);
         const original = await readFile(
             resolve(root, "apps/client/src/ui-uniflex/components/button/ActionButton.tsx"), "utf8");
-        assert.match(original, /name="ActionButton\/IconLabel" value=\{p\.label\}/);
+        assert.match(original, /name="ActionButton\/Label" visible=\{!hasIcon\} value=\{p\.label\}/);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }
@@ -845,14 +907,9 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => (
         assert.match(min.report, /undeclared: .*PopupFrame\.titleBold/);
         assert.match(min.report, /undeclared: .*PopupFrame\.opacity/);
 
-        // Uniform fill repaint writes backgroundColor into the real page root view.
-        const mailPsd = readPsd(await readFile(
-            artPsdPath(root, { componentName: "MailBattleReport" })), { useImageData: true });
-        const pageFill = findLayer(mailPsd, (layer) => !layer.children
-            && String(layer.name || "").startsWith("MailBattleReport / fill"));
-        const anonFill = findLayer(mailPsd, (layer) => !layer.children
-            && String(layer.name || "").startsWith("Background / fill"));
-        assert.ok(pageFill && anonFill, "mail page should keep both fill layers");
+        // Uniform repaint writes the named root style; an anonymous target stays explicit in the report.
+        const fixture = await stageFillFixture(tempRoot);
+        const { pageFill, anonFill } = fixture;
         repaintLayer(pageFill, createCanvas, (g, w, h) => {
             g.fillStyle = "#112233";
             g.fillRect(0, 0, w, h);
@@ -861,28 +918,35 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => (
             g.fillStyle = "#AABBCC";
             g.fillRect(0, 0, w, h);
         });
-        const editedMail = join(tempRoot, "mail.psd");
-        await writeFile(editedMail, writePsdBuffer(mailPsd));
-        const mailDesign = join(tempRoot, "mail-design");
+        const editedFill = join(tempRoot, "fill.psd");
+        await writeFile(editedFill, writePsdBuffer(fixture.psd));
+        const fillDesign = join(tempRoot, "fill-design");
         await execFileAsync(converter.command, [
-            ...converter.args, "psd-import", "--file", editedMail, "--out", mailDesign,
+            ...converter.args, "psd-import", "--file", editedFill, "--out", fillDesign,
             "--font-dir", resolve(root, "apps/art/uniflex/fonts"),
         ], { cwd: root, env });
+        const design = JSON.parse(await readFile(join(fillDesign, "design.json"), "utf8"));
+        for (const [key, color] of [["FillFixture.root", "#112233"], ["FillFixture.root/_:0", "#aabbcc"]]) {
+            const fill = Object.values(design.nodes).find((node) =>
+                node.identity?.role === "fill" && node.identity.key === key);
+            assert.ok(fill, `exact fixture fill ${key} must survive PSD import`);
+            assert.equal(fill.identity.fillColor, color);
+            assert.equal(fill.identity.imageChanged, undefined, "uniform repaint must use style write-back");
+        }
         await execFileAsync(converter.command, [
-            ...converter.args, "uniflex-package", "--design", join(mailDesign, "design.json"),
-            "--name", "MailBattleReportRestored", "--source-root", root,
-            "--out", join(tempRoot, "pkg-mail"),
+            ...converter.args, "uniflex-package", "--design", join(fillDesign, "design.json"),
+            "--name", "FillFixtureRestored", "--source-root", fixture.sourceRoot,
+            "--out", join(tempRoot, "pkg-fill"),
         ], { cwd: root, env });
-        const mailAuthoring = await readFile(
-            join(tempRoot, "pkg-mail/MailBattleReportRestored.authoring.tsx"), "utf8");
-        assert.match(mailAuthoring, /backgroundColor: "#112233"/);
-        const mailReport = await readFile(join(tempRoot, "pkg-mail/IMPORT.md"), "utf8");
-        assert.match(mailReport, /style: .*MailBattleReportRestored\.backgroundColor/);
-        assert.match(mailReport,
-            /not-found: .*MailBattleReport\.root\/_:0\.backgroundColor/);
-        assert.doesNotMatch(await readFile(
-            resolve(root, "apps/client/src/ui-uniflex/modules/mail/MailBattleReport/MailBattleReport.tsx"),
-            "utf8"), /#112233/i, "the original page source must stay untouched");
+        const fillAuthoring = await readFile(
+            join(tempRoot, "pkg-fill/FillFixtureRestored.authoring.tsx"), "utf8");
+        assert.match(fillAuthoring, /backgroundColor: "#112233"/);
+        const fillReport = await readFile(join(tempRoot, "pkg-fill/IMPORT.md"), "utf8");
+        assert.match(fillReport, /style: .*FillFixtureRestored\.backgroundColor/);
+        assert.match(fillReport,
+            /not-found: .*FillFixture\.root\/_:0\.backgroundColor/);
+        assert.equal(await readFile(fixture.sourcePath, "utf8"), fixture.source,
+            "the original fixture source must stay untouched");
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }
@@ -891,18 +955,14 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => (
 test("repainting a fill non-uniformly keeps the bitmap swap path", {
     skip: available ? false : "pinned web-ui-to-psd package is not installed",
 }, async () => {
-    const psdPath = artPsdPath(root, { componentName: "MailBattleReport" });
-    await access(psdPath);
     const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
     const { createCanvas } = converterRequire("@napi-rs/canvas");
-    const { initializeCanvas, readPsd, writePsdBuffer } = converterRequire("ag-psd");
+    const { initializeCanvas, writePsdBuffer } = converterRequire("ag-psd");
     initializeCanvas(createCanvas);
     const tempRoot = await mkdtemp(join(tmpdir(), "uniflex-fill-split-"));
     try {
-        const psd = readPsd(await readFile(psdPath), { useImageData: true });
-        const pageFill = findLayer(psd, (layer) => !layer.children
-            && String(layer.name || "").startsWith("MailBattleReport / fill"));
-        assert.ok(pageFill, "page root fill layer should exist");
+        const fixture = await stageFillFixture(tempRoot);
+        const { psd, pageFill } = fixture;
         repaintLayer(pageFill, createCanvas, (g, w, h) => {
             g.fillStyle = "#112233";
             g.fillRect(0, 0, w / 2, h);
@@ -918,28 +978,33 @@ test("repainting a fill non-uniformly keeps the bitmap swap path", {
         ], { cwd: root, env });
         const design = JSON.parse(await readFile(join(designDir, "design.json"), "utf8"));
         const fill = Object.values(design.nodes).find((node) =>
-            node.identity?.role === "fill" && node.identity.key === "MailBattleReport.root");
+            node.identity?.role === "fill" && node.identity.key === "FillFixture.root");
         assert.ok(fill, "fill node should exist in the design");
         assert.equal(fill.identity.imageChanged, true, "non-uniform fill stays a bitmap swap");
         assert.equal(fill.identity.fillColor, undefined);
-        const sourceRoot = join(tempRoot, "src");
-        const base = join(sourceRoot, "apps/client/src/ui-uniflex/pages/MailBattleReport");
-        await mkdir(base, { recursive: true });
-        await writeFile(join(base, "MailBattleReport.tsx"), `import { defineView } from '@uniflex/compiler';
-export const MailBattleReport = defineView(() => (
-    <view name="MailBattleReport" style={{ width: 750, height: 1334, backgroundColor: '#F3EFE9' }} />
-));
-`);
+        assert.equal(fill.kind, "image");
+        const bitmap = design.assets[fill.asset];
+        assert.ok(bitmap, "non-uniform fill must retain its imported bitmap asset");
+        const pixels = await converterRequire("sharp")(join(designDir, bitmap.path))
+            .ensureAlpha().raw().toBuffer();
+        assert.deepEqual([...pixels.subarray(0, 4)], [0x11, 0x22, 0x33, 0xff]);
+        assert.deepEqual([...pixels.subarray(8 * 4, 9 * 4)], [0x44, 0x55, 0x66, 0xff]);
+        const unchanged = Object.values(design.nodes).find((node) =>
+            node.identity?.role === "fill" && node.identity.key === "FillFixture.root/_:0");
+        assert.ok(unchanged, "untouched anonymous fill must retain its identity");
+        assert.equal(unchanged.identity.imageChanged, undefined);
+        assert.equal(unchanged.identity.fillColor, undefined, "unchanged pixels must not create an edit");
         const packageDir = join(tempRoot, "package");
         await execFileAsync(converter.command, [
             ...converter.args, "uniflex-package", "--design", join(designDir, "design.json"),
-            "--name", "MailBattleReportRestored", "--source-root", sourceRoot, "--out", packageDir,
+            "--name", "FillFixtureRestored", "--source-root", fixture.sourceRoot, "--out", packageDir,
         ], { cwd: root, env });
         const authoring = await readFile(
-            join(packageDir, "MailBattleReportRestored.authoring.tsx"), "utf8");
+            join(packageDir, "FillFixtureRestored.authoring.tsx"), "utf8");
         assert.doesNotMatch(authoring, /#112233|#445566/i);
         const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
         assert.doesNotMatch(report, /backgroundColor/);
+        assert.equal(await readFile(fixture.sourcePath, "utf8"), fixture.source);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }

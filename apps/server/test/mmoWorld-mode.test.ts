@@ -935,7 +935,8 @@ const ORCH_CONTENT: IContentPackIndex = (() => {
     return indexContentPack(validateContentPack(pack));
 })();
 const orchHarness = (module = bossTimer, extra: Partial<MmoWorldModeOptions> = {}): Harness =>
-    harness(ORCH_CONTENT, null, { checkpoint: { kitId: "mmo", port: new MemoryCheckpointPort(), schema: MMO_WORLD_CHECKPOINT_SCHEMA, eventTable: MMO_WORLD_EVENT_TABLE }, orchestration: module, ...extra });
+    // 接线测试固定墙钟，避免并发调度触发预算；超预算由 mmo-orchestration.test.ts 的假时钟专测。
+    harness(ORCH_CONTENT, null, { checkpoint: { kitId: "mmo", port: new MemoryCheckpointPort(), schema: MMO_WORLD_CHECKPOINT_SCHEMA, eventTable: MMO_WORLD_EVENT_TABLE }, orchestration: module, orchestrationClock: () => 0, ...extra });
 const broadcastsOf = (h: Harness, type: string) => h.direct.filter((m) => m.session === "*" && m.type === type).map((m) => m.payload);
 
 test("编排（MK4-B1）：instanceStarted / playerEntered（sayNearby ⇒ 世界聊天）/ timer ⇒ 脚本 spawn + notice / tick ⇒ scriptState（值不变不发）/ 击杀 boss ⇒ grantItem 事件行 + durable 强制点 / interact ⇒ prompt ⇒ choice ⇒ grantCurrency", async () => {

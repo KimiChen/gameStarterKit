@@ -1273,6 +1273,7 @@ test("official openConfirm uses separate UniFlex instances and settles through e
   const start = runtime.uniflexInstances.length;
   const first = pages.openConfirm({ content: "first" });
   const pending = [first];
+  const actions = await trackConfirmLogicActions();
   try {
     await waitForPageFlow(() => runtime.uniflexInstances.length === start + 1, "first Confirm runtime");
     const a = runtime.uniflexInstances[start];
@@ -1282,20 +1283,35 @@ test("official openConfirm uses separate UniFlex instances and settles through e
     await waitForPageFlow(() => runtime.uniflexInstances.length === start + 2, "second Confirm runtime");
     const b = runtime.uniflexInstances[start + 1];
     b.ready.resolve();
-    assert.equal(a.params.logic.content, "first");
-    assert.equal(b.params.logic.hasCancel, false);
-    assert.equal(a.params.isActive(), false, "covered Confirm must reject stale UI actions");
-    assert.equal(b.params.isActive(), true);
-    b.params.logic.yes();
+    assert.notEqual(a, b, "each Confirm owns a separate runtime");
+    assert.equal(a.params.message, "first");
+    assert.equal(b.params.message, "second");
+    assert.equal(a.params.cancelText, "取消");
+    assert.equal(b.params.cancelText, null);
+    a.params.onConfirm();
+    a.params.onCancel();
+    a.params.onClose();
+    assert.deepEqual(actions.calls, [], "covered Confirm must reject every stale UI action");
+    assert.equal(a.disposals, 0);
+    b.params.onConfirm();
     assert.equal(await second, true);
+    assert.deepEqual(actions.calls, ["yes"]);
     assert.equal(b.disposals, 1);
-    assert.equal(a.params.isActive(), true);
-    a.params.logic.no();
+    b.params.onConfirm();
+    b.params.onCancel();
+    b.params.onClose();
+    assert.deepEqual(actions.calls, ["yes"], "closed Confirm must reject every stale UI action");
+    a.params.onCancel();
     assert.equal(await first, false);
+    assert.deepEqual(actions.calls, ["yes", "no"], "uncovered Confirm must accept new UI actions");
     assert.equal(a.disposals, 1);
-    a.params.logic.yes();
+    a.params.onConfirm();
+    a.params.onCancel();
+    a.params.onClose();
+    assert.deepEqual(actions.calls, ["yes", "no"]);
     assert.equal(a.disposals, 1);
   } finally {
+    actions.restore();
     await cleanupConfirmFlows(runtime, start, pending);
   }
 });
@@ -1307,6 +1323,7 @@ test("official openConfirm rolls back rejected async setup and late completion a
   const start = runtime.uniflexInstances.length;
   const failed = pages.openConfirm({ content: "failure" });
   const pending = [failed];
+  const actions = await trackConfirmLogicActions();
   try {
     await waitForPageFlow(() => runtime.uniflexInstances.length === start + 1, "failed Confirm runtime");
     const a = runtime.uniflexInstances[start];
@@ -1314,18 +1331,30 @@ test("official openConfirm rolls back rejected async setup and late completion a
     assert.equal(await failed, false, "setup Promise must be awaited, otherwise caller hangs");
     assert.equal(a.disposals, 1);
     assert.equal(runtime.getLayerNode("top").children.length, 0);
+    a.params.onConfirm();
+    a.params.onCancel();
+    a.params.onClose();
+    assert.deepEqual(actions.calls, [], "failed setup must invalidate all UI callbacks");
     const late = pages.openConfirm({ content: "late" });
     pending.push(late);
     await waitForPageFlow(() => runtime.uniflexInstances.length === start + 2, "late Confirm runtime");
     const b = runtime.uniflexInstances[start + 1];
     runtime.ViewMgr.disposeViewRoot();
     assert.equal(await late, false);
-    assert.equal(b.params.isActive(), false);
+    b.params.onConfirm();
+    b.params.onCancel();
+    b.params.onClose();
+    assert.deepEqual(actions.calls, [], "root disposal must invalidate callbacks before async setup settles");
     b.ready.resolve();
     await Promise.resolve();
+    b.params.onConfirm();
+    b.params.onCancel();
+    b.params.onClose();
+    assert.deepEqual(actions.calls, [], "late setup completion must not revive callbacks");
     assert.equal(b.disposals, 1);
     assert.equal(runtime.getInputEnabled(), false);
   } finally {
+    actions.restore();
     await cleanupConfirmFlows(runtime, start, pending);
   }
 });
@@ -1709,6 +1738,22 @@ async function waitForPageFlow(predicate: () => boolean, message: string): Promi
     await new Promise<void>((resolve) => setTimeout(resolve, 5));
   }
   assert.fail(message);
+}
+
+async function trackConfirmLogicActions(): Promise<{ calls: ("yes" | "no")[]; restore(): void }> {
+  const { ConfirmLogic } = await import("../src/logic/page/ConfirmLogic");
+  const calls: ("yes" | "no")[] = [];
+  const yes = ConfirmLogic.prototype.yes;
+  const no = ConfirmLogic.prototype.no;
+  ConfirmLogic.prototype.yes = function (): void { calls.push("yes"); yes.call(this); };
+  ConfirmLogic.prototype.no = function (): void { calls.push("no"); no.call(this); };
+  return {
+    calls,
+    restore(): void {
+      ConfirmLogic.prototype.yes = yes;
+      ConfirmLogic.prototype.no = no;
+    },
+  };
 }
 
 async function cleanupConfirmFlows(runtime: ViewRuntime, start: number, pending: Promise<boolean>[]): Promise<void> {
