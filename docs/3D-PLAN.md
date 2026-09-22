@@ -271,12 +271,14 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
-- [ ] SC1-B1 [ ] SC1-B2 [ ] SC1-B3 [ ] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
+- [x] SC1-B1 [ ] SC1-B2 [ ] SC1-B3 [ ] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-22 SC1-B1：对照本机 Creator 3.8.8 声明补齐两套 3D 类型桩，校正 Asset 继承、相机射线参数、只读属性与构造签名。双配置类型消费探针覆盖合法用法和误用拒绝，同一消费片段针对真实引擎声明编译为 0 诊断；两套客户端类型检查、10 项定向测试（2 项类型契约 + 8 项既有蒙皮回归）及本批 `verify:all` 通过（客户端 802 / 服务端 1339 项全绿）。分别删除两份桩的 Camera 声明，现有 Stage3dFixtureView 均编译失败；删除两份桩的 screenPointToRay，双配置类型契约均失败，三次变异全部检出并恢复。SC1-B2 尚未实施，其正式舞台代码的 Camera 变异随 B2 重验。原始日志与哈希索引留本地 `.cache/stage3d/sc1-b1/`；B9/B7 仅做实现前只读审计，SC1 未退出。
 
 - 2026-09-22 SC0-B4：预算冻结与[原型移交清单](SC0-HANDOFF.md)完成，B1/B2/B3/B5证据及哈希复核通过；入库政策、初始调度上限与实际负载分别记录于3D-ASSETS §15，high单位由100+收敛为100。两套客户端类型检查、客户端800项测试及本批`verify:all`通过，验证基线修复已独立提交（UI类型、Confirm/PSD契约断言与MMO测试时钟）。数字、边界与验证日志哈希见[SC0汇总](perf/stage3d/2026-09-22-sc0-review.json)；SC0退出并打轻量tag `sc0-exit`（解析tag即本批commit），SC1未开始。以下旧进展按当时批次口径保留。
 

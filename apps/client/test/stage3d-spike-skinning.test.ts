@@ -56,10 +56,21 @@ function usePool(): FakePool {
     fakeDirector.root = { dataPoolManager: { jointTexturePool: pool } };
     return pool;
 }
+// Type stubs model clips as Assets; these layout-only fixtures still never load cc.
+class FakeClip implements AnimationClip {
+    readonly uuid: string;
+    isValid = true;
+    private references = 0;
+    constructor(public name: string, readonly hash: number) { this.uuid = `fixture-clip-${hash}`; }
+    get refCount(): number { return this.references; }
+    addRef(): this { this.references++; return this; }
+    decRef(_autoRelease?: boolean): this { this.references = Math.max(0, this.references - 1); return this; }
+    destroy(): boolean { this.isValid = false; return true; }
+}
 function fixture(alternate = false, skeletonHash = 77): { data: FakeNode } {
     const clips = alternate
-        ? [{ name: "sway-b", hash: 21 }, { name: "bow-b", hash: 22 }]
-        : [{ name: "sway-main", hash: 11 }, { name: "bow-main", hash: 12 }];
+        ? [new FakeClip("sway-b", 21), new FakeClip("bow-b", 22)]
+        : [new FakeClip("sway-main", 11), new FakeClip("bow-main", 12)];
     return { data: new FakeNode(new FakeRenderer({ hash: skeletonHash, joints: ["Root", "Root/Upper"] }), new FakeAnimation(clips)) };
 }
 const asPrefab = (value: { data: FakeNode }): Prefab => value as unknown as Prefab;
@@ -155,7 +166,7 @@ test("SC0 rejects incompatible or colliding fixtures before allocating GPU layou
     wrongPaths.data.renderer.skeleton.joints[1] = "OtherRoot/Upper";
     assert.throws(() => prepareSpikeSkinningLayouts(asPrefab(fixture()), asPrefab(wrongPaths)), /joint paths/u);
     const duplicate = fixture(true);
-    duplicate.data.animation.clips[0] = { name: "duplicate", hash: 11 };
+    duplicate.data.animation.clips[0] = new FakeClip("duplicate", 11);
     assert.throws(() => prepareSpikeSkinningLayouts(asPrefab(fixture()), asPrefab(duplicate)), /distinct nonzero clip hashes/u);
     assert.equal(pool.calls.length, 0);
 });
