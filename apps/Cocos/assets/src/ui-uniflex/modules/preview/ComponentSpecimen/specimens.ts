@@ -21,7 +21,7 @@ export const componentSpecimens: readonly ComponentSpecimenSpec[] = [
     { id: "cmp-check", group: "cmp-feedback", groupLabel: "反馈、输入与状态", label: "勾选", width: 210, height: 60, wide: false },
     { id: "cmp-input", group: "cmp-feedback", groupLabel: "反馈、输入与状态", label: "输入", width: 290, height: 56, wide: false },
     { id: "cmp-progress", group: "cmp-feedback", groupLabel: "反馈、输入与状态", label: "进度条", width: 674, height: 34, wide: true },
-    { id: "cmp-empty", group: "cmp-feedback", groupLabel: "反馈、输入与状态", label: "空状态", width: 674, height: 160, wide: true },
+    { id: "cmp-empty", group: "cmp-feedback", groupLabel: "反馈、输入与状态", label: "空状态", width: 674, height: 168, wide: true },
     { id: "cmp-tabs", group: "cmp-items", groupLabel: "页签、数量与道具", label: "邮件页签", width: 674, height: 67, wide: true },
     { id: "cmp-tab-alliance", group: "cmp-items", groupLabel: "页签、数量与道具", label: "联盟页签", width: 674, height: 67, wide: true },
     { id: "cmp-tab-flag", group: "cmp-items", groupLabel: "页签、数量与道具", label: "旗帜页签", width: 674, height: 67, wide: true },
