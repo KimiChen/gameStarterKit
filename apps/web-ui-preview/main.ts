@@ -147,20 +147,16 @@ async function startScreen(entry: ScreenEntry): Promise<void> {
                             while (pending && pending !== activeSkin && !stopped) {
                                 const chosen = pending;
                                 pending = null;
-                                const previous = runtime;
-                                const nextRuntime = createPreviewRuntime();
+                                runtime.dispose();
+                                runtime = createPreviewRuntime();
                                 try {
-                                    await mountRuntime(nextRuntime, chosen);
+                                    await mountRuntime(runtime, chosen);
                                 } catch (error) {
                                     console.error(error);
-                                    continue;
+                                    if (stopped) return;
+                                    runtime = createPreviewRuntime();
+                                    await mountRuntime(runtime, chosen);
                                 }
-                                if (stopped) {
-                                    nextRuntime.dispose();
-                                    return;
-                                }
-                                previous.dispose();
-                                runtime = nextRuntime;
                                 activeSkin = chosen;
                             }
                         } finally {
