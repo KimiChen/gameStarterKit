@@ -23,7 +23,7 @@ const help = `Usage:
   npm run ui:art-check
 
 Exports UniFlex originals to apps/art/uniflex/<Page>/screen.psd and restorable
-defineComponent instances to apps/art/uniflex/components/<Key>/component.psd.
+defineComponent instances to apps/art/uniflex/components/<Key>/<Key>.psd.
 Page PSDs link those files as smart objects. Imports overlay to applyTarget
 (catalog default: restored) via ui-uniflex/restored/ shared copies. Never writes
 originals unless applyTarget is original. Chrome, uv, and build:uniflex-ui are required.
@@ -218,7 +218,7 @@ function ART_REL(page) {
 async function importComponent(key, { env }) {
     const psd = artComponentPsdPath(root, key);
     if (!await pathExists(psd))
-        throw new Error(`${key}: missing apps/art/uniflex/components/${key}/component.psd`);
+        throw new Error(`${key}: missing apps/art/uniflex/components/${key}/${key}.psd`);
     const fontDir = sharedArtFontDir(root);
     const cache = resolve(root, ".cache/psd/art-import", "components", key);
     await rm(cache, { recursive: true, force: true });
@@ -230,7 +230,7 @@ async function importComponent(key, { env }) {
     await writeComponentArtJson(root, previous, {
         import: { psdSha256: psdSha, at: nowIso(), target: "restored" },
     });
-    console.log(`imported apps/art/uniflex/components/${key}/component.psd → restored/${key}`);
+    console.log(`imported apps/art/uniflex/components/${key}/${key}.psd → restored/${key}`);
     return inspectArtComponent(root, key);
 }
 

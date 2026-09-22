@@ -16,7 +16,7 @@ export function artComponentDir(root, key) {
 }
 
 export function artComponentPsdPath(root, key) {
-    return join(artComponentDir(root, key), "component.psd");
+    return join(artComponentDir(root, key), `${key}.psd`);
 }
 
 export function artComponentJsonPath(root, key) {
