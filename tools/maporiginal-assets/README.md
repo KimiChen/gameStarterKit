@@ -105,7 +105,33 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 配套 JSON：`river_path` / `ground_snow_path` / `ground_desert_path`（**group 资源名表**）、
 `river_area_info`、`mountain_effect`（大整数即 `(row<<16)|col` 客户端格键）。
 
-### 4.2 近档素材：`.group` 预制体不在包里，但**它引用的精灵在**
+### 4.2 ★ 近档地表的真身 = `*_group.prefab` **根资源**，两版 APK 都没打进包（2026-09-22 定案）
+
+从手机（真机 2066.1489）拉回第二个样本后查清，结论比早先精确得多：
+
+| 事实 | 证据 |
+|---|---|
+| `*_path.json` 里的 `scene/ground/**/<n>_<m>.group` **不是文件名**，是**组名** | 按 `.group` 及 8 种换扩展名变体在两包里 hash 反查，命中 **0** |
+| 真身是 `<名>_polygon_group.prefab` + `<名>_top_group.prefab`（另有 `_polygon_mask_group.prefab`） | `debug_res/ignore_file_cfg.json` 与 `config/res_config/season_all_root_res/all_root_res_list.cw` 里逐条列着；`_polygon_mask` 正好对上 2D 代码 `big_city_house_layer_grid.lua` 的 `res_name .. "_polygon_mask"` |
+| 它们是**根资源**，共 1,873 条（`scene/ground/**`，1,872 prefab + 1 png） | `all_root_res_list.cw` 是 NUL 分隔的路径清单，共 79,521 条根资源 |
+| **两包都一条不含** | 1,873/1,873 在 2084.1768 与 2066.1489 里按 hash 全未命中 ⇒ 运行时下载 |
+
+完整缺失清单落 `out/missing_ground_roots.json`。按目录：river_longriver 137 / road 136 /
+desert 120 / snow 120 / river 114 / river_bohai 81 / river_yellowriver 80 / road_liangdao 74 /
+gaodi* 129 / gaodi_shan* 90 / mountain_new 26 / menfacheng* 80 …
+
+⚠ **手机这条路走不通**（2026-09-22 实测，三星 SM-S9370 / Android 16）：
+- 应用外部目录 `/sdcard/Android/data/com.aligames.sgzzlb/files/` **只有 shader 缓存**（11 MB），
+  没有任何下载的资源包 ⇒ 下载物落在内部存储；
+- 无 root、`su` 不存在、应用 `not debuggable`（`run-as` 拒绝）、`/proc/<pid>/{maps,fd}` 权限拒绝
+  ⇒ `/data/data/<pkg>/` 读不到；`adb backup` 在 Android 12+ 已废。
+- 顺带拉回的真机包 **2066.1489 比 2084.1768 素材更少**：`scene/ground` 图集精灵 137 < 184，
+  连 2D 山体件 `mountain_new/grass_fall_new` 都没有 ⇒ ⛔ 别拿它当更全的样本。
+
+要拿到这 1,873 个根资源，只剩两条路：① root 的设备/模拟器跑一次游戏后读内部存储
+（⚠ sgzz 有 `libcheck_simu` 反模拟器）；② 从发行商 CDN 按根资源清单取（需先定位下载配置）。
+
+### 4.2·旧 近档素材：`.group` 预制体不在包里，但**它引用的精灵在**
 
 ⚠ **更正（2026-09-22，早先这里写错过）**：`*_path.json` 里那 205 条
 `scene/ground/{river,snow,desert}/<n>_<m>.group` 确实一条都不在 ELP 中（**预制体**按需热更），
