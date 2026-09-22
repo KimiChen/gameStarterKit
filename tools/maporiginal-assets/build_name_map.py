@@ -136,14 +136,26 @@ def resolve(cand: set, idx: dict) -> dict:
     res = {}
 
     def put(q: str) -> None:
-        if q in res:
-            return
-        if namehash(q) in idx:
-            res[q] = namehash(q)
+        """登记一条候选。
+
+        ⚠ ★ 包里的 namehash 有的按**原样**路径算、有的按**全小写**算
+          （`scene/ground/grass/MiddleLevel_01_group.prefab.bin` 只在小写下命中）。
+          ⛔ 只试原样会把常规季草地那几件关键 prefab 判成「不在包里」——实际在。
+          同源坑：赛季目录 VFS 里是小写 `s1`，而 `map_path_config.lua` 写大写 `S1`。
+        """
+        for form in (q, q.lower()) if q != q.lower() else (q,):
+            if form in res:
+                return
+            if namehash(form) in idx:
+                res[form] = namehash(form)
+                return
 
     for s in cand:
         q = strip_asset(s)
         put(q)
+        # ★ 编译型资源（prefab/mesh/material/timeline）在包里是**追加** `.bin`
+        for ap in (".bin", ".txt"):
+            put(q + ap)
         base, _, ext = q.rpartition(".")
         if base and ext.lower() in SRC_EXT:
             for ne in TEX_EXT:

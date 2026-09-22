@@ -30,6 +30,7 @@ ROOTS = [CFG["elpRoot"]] + list(CFG.get("elpRootsExtra", []))
 #      `<完整路径>.bin`（如 `scene/ground/desert/10_1_polygon_group.prefab.bin`）。
 #      早先只试①，把 41,482 条 prefab 判成 0.2% 到位 —— 实际是 98%+。
 REPLACE_EXT = ("", ".ktx", ".win.ktx", ".png", ".tga", ".bin", ".txt", ".json", ".xml")
+#   ③ **全小写**路径：见下方注释
 APPEND_EXT = (".bin", ".txt", ".json")
 ROOT_RES_LIST = "config/res_config/season_all_root_res/all_root_res_list.cw"
 
@@ -82,19 +83,26 @@ def main() -> int:
     hit, miss = [], []
     for p in want:
         q = p[6:]                       # 去 asset/ 前缀
-        base = q.rsplit(".", 1)[0]
         got = None
-        for e in REPLACE_EXT:
-            h = namehash_hex(base + e if e else q)
-            if h in idx:
-                got = (e or "(原名)", idx[h])
-                break
-        if got is None:
-            for e in APPEND_EXT:
-                h = namehash_hex(q + e)
+        # ⚠ ★ 路径大小写：包里的 namehash 有的按**原样**、有的按**全小写**算
+        #   （`MiddleLevel_01_group.prefab` 就只在小写下命中）。⛔ 两种都要试，
+        #   只试原样会把常规季草地平地组这种关键件误判成缺失。
+        #   同源坑：赛季目录 VFS 里是小写 `s1`，而 `map_path_config.lua` 写大写 `S1`。
+        for form in (q, q.lower()):
+            base = form.rsplit(".", 1)[0]
+            for e in REPLACE_EXT:
+                h = namehash_hex(base + e if e else form)
                 if h in idx:
-                    got = ("+" + e, idx[h])
-                    break
+                    got = (e or "(原名)", idx[h]); break
+            if got is None:
+                for e in APPEND_EXT:
+                    h = namehash_hex(form + e)
+                    if h in idx:
+                        got = ("+" + e, idx[h]); break
+            if got:
+                if form != q:
+                    got = (got[0] + "(小写)", got[1])
+                break
         (hit if got else miss).append((p, got))
     print("\n★ 到位 %d / %d（%.1f%%）；缺 %d" %
           (len(hit), len(want), 100.0 * len(hit) / max(len(want), 1), len(miss)))

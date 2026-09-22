@@ -300,6 +300,48 @@ python3 tools/maporiginal-assets/prefab_bin.py scene/ground/desert/10_1_top_grou
 python3 tools/maporiginal-assets/prefab_bin.py --scan scene/ground/      # 批量 + 成功率
 ```
 
+### 4.2·一·七 ★ 大小写：namehash 有的按原样算、有的按**全小写**算（2026-09-22）
+
+`scene/ground/grass/MiddleLevel_01_group.prefab` 一度被判「不在包里」——实际在，
+只是包里的 namehash 用的是**小写**路径 `scene/ground/grass/middlelevel_01_group.prefab.bin`。
+⛔ 只试原样会漏；⚠ 同源坑早有记录：赛季目录 VFS 里是小写 `s1`，`map_path_config.lua` 写大写 `S1`。
+
+补上「小写形态」+「追加式 `.bin`」两条规则后：
+
+| 量 | 只按原样 | 补两条规则后 |
+|---|---:|---:|
+| `build_name_map.py` 命名率 | 37.8%（108,927） | **70.0%（201,443 / 287,967）** |
+| `scene/ground/**` 根资源到位 | 1,784 / 1,873 | **1,792 / 1,873（95.7%）** |
+| 全量根资源到位 | 65.6% | **69.5%（55,277 / 79,521）** |
+
+剩余 81 条 `scene/ground` 缺口全是季节·特殊图变体：qiuling 20 / zhuandibiao_neicheng_fall 20 /
+zhuandibiao_waicheng_fall 20 / ss_chibi_shan 9 / sanxia_shan_fall 6 / zudang_fall 4 /
+river_hean 1 / road/mask/lu_mask.png 1。⚠ 与常规季 s1 无关。
+
+### 4.2·一·八 ★★ 「常规季平地底 = underground1」的证据链（2026-09-22 查证）
+
+先更正一条**我自己的误判**：`grass/MiddleLevel_01..04` 曾被当成「最要紧的缺口」。
+拿到并解开后发现——**它们不是平地底**：
+
+```
+MiddleLevel_01  node_2d，35 个 sprite_2d，全部引用 grass/png/a1..a8.png
+                ⛔ 零 polygon_2d、零 underground* 引用   ⇒ 是**草丛散布层**
+```
+⇒ 拿到 MiddleLevel **并不能**回答 underground1 的归属；它从来就不是那个缺失的消费者。
+
+`underground1` 仍然**零消费者**，但现在有两条独立证据把推断顶到很高的可信度：
+
+| # | 证据 | 来源 |
+|---|---|---|
+| ① **排除法** | `underground3` → 沙漠（desert 的 60/60 个 polygon）；`underground2` → 雪（snow 的 60/60）；河流各用 `river*/png/26.png`。盘上 `underground*` 只有 1/2/3 三张，⇒ 剩下的 1 归常规季草地 | `prefab_bin.py` 全量解 1,872 个 ground prefab |
+| ② **命名与季节表** | 季节/昼夜换资源表（27 MB 串池 `c1168e183082/107_671fe911405430ee.bin`，字段 `day_night_res_type/res_season/src_name`）里有 **「秋季草1」→ `ground_down/underground1_qiutian.png`**；`_qiutian` 是基础件的秋季变体 ⇒ `underground1` 属「草」族 | 同上串池 |
+| ③ **结构** | `grass/` 的根资源只有 8 个 MiddleLevel + 5 个边界云，**没有任何 polygon/底层组**；且 `ground2.bytes`（基础地表块层）**没有配套 `_path.json`**，而 `ground_snow`/`ground_desert` 各有 | 根资源清单 + s1 层清单 |
+
+⇒ 合起来的结论：**常规季草地是「底」，沙漠/雪是盖在它上面的覆盖层**——所以草地根本没有逐块
+group 预制体，`underground1` 也就不会被任何 prefab 引用。这解释了「零消费者」本身。
+⚠ 但**仍是推断**：全盘没有任何字符串写着 `ground_down/underground1.png`（只有 `_qiutian` 那条），
+⛔ 别把它当实锤写进代码注释。要坐实只能从 native 的默认地表 pass 里找。
+
 ### 4.3 ★ `res` 的「类型 / 等级」读反过一次（2026-09-22 更正）
 
 早先把 `(v-2)%10+2` 当 LAND_TYPE、`(v-2)//10` 当「4 款变体」，**正好反了**。
@@ -354,6 +396,49 @@ python3 tools/maporiginal-assets/prefab_bin.py --scan scene/ground/      # 批�
 「图多少像素宽」= 「它在原版里占几格」。实测：资源件 0.53–1.10 格、山体 0.94–2.25 格、
 树簇 0.12–0.45 格、草丛 0.82–2.03 格。所以图集里逐格记 `native`（原图像素），
 客户端按它定世界尺寸。⛔ 别按格宽或连通区跨度拉伸（两版都踩过，见 kit README §六·五）。
+
+### 4.8 ★ 本 kit 只收原版 **2D 沙盘**素材（2026-09-22 拍板）
+
+3D 沙盘（`asset/scene_3d/**`、`config_3d.lua`、`mapview/3d/**`）另开 kit `mapOriginal3d`。
+`select.json` 里 ⛔ 不许再出现这些前缀，机检在
+`apps/server/test/mapOriginal-content.test.ts`（两条：产物 `info.json` 的 `source` 白名单 + 选材表入口）。
+
+| 前缀 | 归属 | 判据 |
+|---|---|---|
+| `asset/scene/**` | ✅ 2D 沙盘 | `res_load_control/res_2d_atlas.lua`（名字就带 2d）整表是它；基础包里 `scene/**` 下**一个模型件都没有** |
+| `asset/ground_down/**` | ✅ 2D 侧地面底 | desert / snow 各 **60 个** `*_polygon_group.prefab` 引用 `underground3` / `underground2` |
+| `map/<赛季>/cn/**` | ✅ 两版共用 | `map_layer_config.lua` 的 `DataLayers` 段与 `ShowLayers2d/3d` **平级并列**，条目无维度字段 |
+| `asset/scene_3d/**` | ⛔ 3D 沙盘 | 全包 `.prefab`(89)/`.mesh`(17)/`.material`(45)/`.static_scene`(4) 全落在这儿 |
+| `fairy/atlas_3d/**`、`fairy/ui_3d/**`、`ui_3d/**` | ⛔ 两个沙盘 kit 都不收 | 它是 **3D UI 皮肤**，与沙盘维度**正交**：`const.lua:651-657` 是 `SCENE_TAG_TYPE` 与 `UI_TAG_TYPE` 两套独立 tag，设置里是四个并列按钮（2D场景/3D场景/2D界面/3D界面）。要地图 UI 用 `fairy/atlas/map_s1`（2D UI）或 `fairy/atlas_common/map_s1`（共用） |
+| `scene_3d/pcg_v5/**` | ⛔ 3D | PCG 地形系统贴图；`quality_mgr_3d.lua` 是全仓唯一 require `pcg_terrain_system` 的文件，`quality_mgr_2d.lua` 是只继承 base 的空壳 |
+
+### 4.9 ★ 地表组预制体的贴图引用已全量扫出（1,872/1,872）
+
+CDN 素材落地后，`scene/ground/**.prefab.bin` **1,872 个全部在手**。不必等结构解析器对齐——
+prefab 里的资源路径是 **u32 LE 长度 + ASCII**，直接扫长度前缀串就能拿到「每类地表用哪些贴图」：
+
+```python
+ln = struct.unpack_from("<I", b, i)[0]            # 4 ≤ ln ≤ 200
+if all(32 <= c < 127 for c in b[i+4:i+4+ln]): ...  # 再按 .png/.ktx 结尾筛
+```
+
+结果（引用次数 = 该类地表的主片）：
+
+| 地表类 | 主贴图 | 次数 |
+|---|---|---:|
+| desert | `ground_down/underground3.png`（**底**）+ `scene/ground/desert/png/1..5`（装饰） | 60 / 154+ |
+| snow | `ground_down/underground2.png`（**底**）+ `snow/png/{a,b,1,5}` | 60 / 409+ |
+| river | `scene/ground/river/png/26.png` | 57 |
+| river_longriver（长江） | `river_longriver/png/27.png` | 349 |
+| river_yellowriver / river_bohai（黄河/渤海） | `river_yellowriver/png/{g,b,c}` | 125 / 100 / 50 |
+| gaodi / gaodi_shan（高地） | 各自 `png/01.png` + `xiepo_*` | 1 / 20 |
+| mountain_new | `mountain_new/grass_fall_new/png/m*.png`（★ 区域件正在用的那批） | 2 |
+| road / road_official / ss_road | `xcross/5-1.png`、`downtcross/9-1.png`… | 26 / 12 |
+
+⚠ **常规季平地底仍是推断**：在手的 `grass` 组 prefab **只引用云和阴影**，真正的底在缺失的
+`scene/ground/grass/MiddleLevel_01..04_group.prefab` 里（89 条缺项之一）。
+`underground1.ktx` 与 `underground2/3` **字节数完全相同**（32836 B）、同族同编号，
+而 2=snow、3=desert 已实证 ⇒ 「1 = 常规季」是**强推断**，⛔ 不是实证。拿到那 4 个 prefab 即可定案。
 
 ## 五、待办
 

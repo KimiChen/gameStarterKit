@@ -1,7 +1,12 @@
 {
  "comment": [
-  "第一版要接的原版素材清单（前缀匹配）。⛔ 不要一把梭全解 9,018 张 KTX——只取大地图用得上的。",
-  "kind: plate=远档底图 / ground=可平铺地表 albedo / atlas=图集页(配同名 xml 切片) / mask=遮罩 / ui=地图 UI"
+  "第一版要接的原版素材清单（前缀匹配）。⛔ 不要一把梭全解——只取大地图用得上的。",
+  "kind: plate=远档底图 / ground=可平铺地表（★ 只许 2D 侧 scene/** 或 ground_down/**）/ atlas=图集页(配同名 xml 切片)",
+  "★ 本 kit 只承载原版 **2D 沙盘**（2026-09-22 拍板，3D 另开 kit mapOriginal3d）：",
+  "  ⛔ 任何 scene_3d/** 前缀都不许再进这张表 —— 那是 3D 沙盘的地形材质。",
+  "  ⛔ fairy/atlas_3d/** 也不许：它是 3D **UI 皮肤**（const.lua:651-657 是与沙盘维度正交的另一套 tag），",
+  "     两个沙盘 kit 都不该收。要地图 UI 就用 fairy/atlas/map_s1（2D UI）或 fairy/atlas_common/map_s1（共用）。",
+  "  机检在 apps/server/test/mapOriginal-content.test.ts（产物 info.json 的 source 前缀白名单）。"
  ],
  "mapId": "s1",
  "groups": [
@@ -30,13 +35,6 @@
    "suffix": "_d.ktx"
   },
   {
-   "kind": "mask",
-   "prefixes": [
-    "scene_3d/pcg_v5/water/"
-   ],
-   "maxBytes": 200000
-  },
-  {
    "kind": "atlas",
    "prefixes": [
     "scene/_output_atlas_scene/atlas_tex/"
@@ -60,12 +58,6 @@
     "alliance_extend_build"
    ],
    "comment": "★ ground/resource/road/small_build 是**原版 2D 档**的地表与地物图集 —— 它们在包里（只是 .group 预制体不在），⛔ 别再说「原版 2D 地表不在基础包」。★ remain_tex 是**杂项兜底图集（17 页 1,284 张）**，原版 2D 山体件 `scene/ground/mountain_new/grass_fall_new/png/m1..m10`、高地 gaodi*、草丛 grass、长江/黄河 river_longriver 都在里面 —— ⛔ 别漏。"
-  },
-  {
-   "kind": "ui",
-   "prefixes": [
-    "fairy/atlas_3d/map_s1"
-   ]
   }
  ]
 }
