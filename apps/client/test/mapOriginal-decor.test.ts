@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { MAPO_LOD_MAX } from "../src/shared/kits/mapOriginal/api/hexmap/index";
 import {
-    MAPO_LAYERS, MAPO_LAYER_RENDERER, MAPO_PLANNED_LAYERS, mapoLayerVisible,
+    MAPO_LAYERS, MAPO_LAYER_ORDER, MAPO_LAYER_RENDERER, MAPO_PLANNED_LAYERS,
+    mapoLayerVisible, mapoLayerZorder,
 } from "../src/kits/mapOriginal/logic/mapoLayers";
 import {
     MAPO_CITY_CELL_COUNTS, MAPO_CITY_CELL_KEYS, MAPO_CITY_SITES,
@@ -87,4 +88,44 @@ test("mapOriginal 画质：⛔ 不再有「分帧建格步长」这个没人调�
     const logic = readFileSync(
         new URL("../src/kits/mapOriginal/logic/MapOriginalWorldLogic.ts", import.meta.url), "utf8");
     assert.ok(!logic.includes("createStep"), "MapOriginalWorldLogic 还留着 createStep");
+});
+
+test("mapOriginal 分层：第 ② 级刻度照抄原版 MAP_ZORDER，且**留了缝**", () => {
+    // ★ 原版是 render_layer + MAP_ZORDER（留缝）+ 层内画家序**三级**；本 kit 早先只有兄弟序，
+    //   次序取决于「谁先 render」—— 实测那会让地表底挂在路/河/山之后、把它们全盖住。
+    //   ⛔ 别把刻度排满：留缝是为了新增层能往里插。
+    assert.equal(mapoLayerZorder("terrain"), 100, "地表底 = 原版 BG");
+    assert.equal(mapoLayerZorder("region"), 300, "山族件 = 原版 TERRAIN");
+    assert.equal(mapoLayerZorder("road"), 900, "= 原版 ROAD");
+    assert.equal(mapoLayerZorder("river"), 1600, "= 原版 RIVER");
+    assert.equal(mapoLayerZorder("decor"), 3400, "res_field = 原版 RES");
+    // ★ 关键次序：远档底图 < 地表底 < 雪沙带 < 山族件 < 路 < 河 < 摆件 < 地名
+    // ⚠ banner = 原版 BUILD_TOP(3900) 在 decor = RES(3400) **之上**
+    const want = ["plate", "terrain", "blocks", "region", "road", "grid", "river",
+                  "decor", "banner", "label"];
+    const got = MAPO_LAYER_ORDER.filter((id) => (want as readonly string[]).includes(id));
+    assert.deepEqual([...got], want.filter((id) => (got as readonly string[]).includes(id)),
+        "刻度升序");
+    // ⚠ 刻度必须两两不同（同值时容器建序不稳定）
+    const zs = MAPO_LAYERS.map((l) => l.zorder);
+    assert.equal(new Set(zs).size, zs.length, "刻度不许撞车");
+    // ⚠ 相邻刻度至少留 10 的缝
+    const sorted = zs.slice().sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i += 1) {
+        assert.ok(sorted[i] - sorted[i - 1] >= 10,
+            `刻度 ${sorted[i - 1]} 与 ${sorted[i]} 之间没留缝`);
+    }
+});
+
+test("mapOriginal 分层：渲染器挂各自的层容器，⛔ 不许直接挂 world", () => {
+    // ⚠ 这条钉住 P4 的修法：次序由**容器建序**定，与「谁先 render」无关。
+    const view = readFileSync(
+        new URL("../src/kits/mapOriginal/view/MapOriginalWorldView.ts", import.meta.url), "utf8");
+    for (const m of view.matchAll(/new Mapo(\w+)Renderer\(([^,)]+)/g)) {
+        const kind = m[1], parent = m[2].trim();
+        if (kind === "Label") continue;            // 地名建在 root 上（字号不跟相机缩放）
+        assert.ok(parent.startsWith("this.layer("),
+            `Mapo${kind}Renderer 挂的是 ${parent}，应挂 this.layer(<层>)`);
+    }
+    assert.ok(view.includes("MAPO_LAYER_ORDER"), "容器必须按第 ② 级刻度升序建");
 });

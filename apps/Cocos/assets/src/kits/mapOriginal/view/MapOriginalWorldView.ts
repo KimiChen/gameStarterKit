@@ -22,7 +22,9 @@ import {
 } from "../../../shared/kits/mapOriginal/content/display.data";
 import { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
 import { mapoInMapBand, mapoRootLocalToCamera } from "../logic/mapoCamera";
-import { mapoIsNearField, mapoLayerVisible } from "../logic/mapoLayers";
+import {
+    MAPO_LAYER_ORDER, mapoIsNearField, mapoLayerVisible, type MapoLayerId,
+} from "../logic/mapoLayers";
 import { mapoSelectionEdges } from "../logic/mapoMesh";
 import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
@@ -83,6 +85,12 @@ export class MapOriginalWorldView extends CocosView {
     /** 道路层：在地表与河流之间（原版 MAP_ZORDER 300 < 900 < 1600）。 */
     private roadRenderer: MapoRoadRenderer | null = null;
     private roadCount = 0;
+    /**
+     * ★ 每层一个容器节点，**按 `MAPO_LAYER_ORDER`（第 ② 级刻度）升序建**。
+     * ⚠ 早先所有渲染器共用 `world`，兄弟序由「谁先 render」定 —— 实测那会让
+     *   地表底挂在路 / 河 / 山**之后**、把它们全盖住。⛔ 别退回共用 world。
+     */
+    private layerNodes: Map<MapoLayerId, Node> = new Map();
     private decorRenderer: MapoDecorRenderer | null = null;
     private labelRenderer: MapoLabelRenderer | null = null;
     private farRenderer: MapoFarRenderer | null = null;
@@ -137,24 +145,31 @@ export class MapOriginalWorldView extends CocosView {
         this.buildSettings(w);
         this.buildSelection();
 
+        // ★ 先按第 ② 级刻度把层容器建齐，⛔ 之后任何渲染器都不许直接挂 world
+        this.layerNodes = new Map();
+        for (const id of MAPO_LAYER_ORDER) {
+            const node = new Node(`mapo-layer-${id}`);
+            node.addComponent(UITransform);
+            this.world.addChild(node);
+            this.layerNodes.set(id, node);
+        }
         // ⚠ 下标是**原版 res 值**，⛔ 不是 3 类通行层那份（拿原版值去查它会整片显示成「可走陆地」）
-        this.renderer = new MapoGroundRenderer(this.world, null);
+        this.renderer = new MapoGroundRenderer(this.layer("terrain"), null);
         // ⚠ 兄弟序即绘制序：地表 → **河流** → 区域件（山林地貌）→ 逐格摆件（地物）→ 地名
         //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）
-        // ⚠ 兄弟序即绘制序，与原版 POLYGON/TOP_LAYER_ORDER 对齐：
-        //   ground(100) → desert(200)+top(201) → snow(300)+top(301) → river(1600)+top
+        // ⚠ 次序已由**层容器**（第 ② 级刻度）定死，⛔ 不再靠这里的构造顺序
         this.blockRenderers = [];
         this.topRenderers = new Map();
         for (const k of MAPO_BLOCK_KINDS) {
-            this.blockRenderers.push(new MapoBlockRenderer(this.world!, null, k));
-            this.topRenderers.set(k, new MapoTopRenderer(this.world!, null, k));
+            this.blockRenderers.push(new MapoBlockRenderer(this.layer("blocks"), null, k));
+            this.topRenderers.set(k, new MapoTopRenderer(this.layer("blocks"), null, k));
         }
-        this.roadRenderer = new MapoRoadRenderer(this.world, null);
-        this.riverRenderer = new MapoRiverRenderer(this.world, null);
-        this.topRenderers.set("river", new MapoTopRenderer(this.world, null, "river"));
-        this.regionRenderer = new MapoRegionRenderer(this.world, null);
-        this.decorRenderer = new MapoDecorRenderer(this.world, null);
-        this.farRenderer = new MapoFarRenderer(this.world, null);
+        this.roadRenderer = new MapoRoadRenderer(this.layer("road"), null);
+        this.riverRenderer = new MapoRiverRenderer(this.layer("river"), null);
+        this.topRenderers.set("river", new MapoTopRenderer(this.layer("river"), null, "river"));
+        this.regionRenderer = new MapoRegionRenderer(this.layer("region"), null);
+        this.decorRenderer = new MapoDecorRenderer(this.layer("decor"), null);
+        this.farRenderer = new MapoFarRenderer(this.layer("plate"), null);
         // ⚠ 地名建在 root 上、⛔ 不挂 world：文本要保持可读字号，不能跟着相机缩放糊掉
         this.labelRenderer = new MapoLabelRenderer(this.root);
 
@@ -197,24 +212,24 @@ export class MapOriginalWorldView extends CocosView {
             this.blockRenderers = [];
             this.topRenderers = new Map();
             for (const k of MAPO_BLOCK_KINDS) {
-                this.blockRenderers.push(new MapoBlockRenderer(this.world!, art, k));
-                this.topRenderers.set(k, new MapoTopRenderer(this.world!, art, k));
+                this.blockRenderers.push(new MapoBlockRenderer(this.layer("blocks"), art, k));
+                this.topRenderers.set(k, new MapoTopRenderer(this.layer("blocks"), art, k));
             }
             if (art.roads) {
                 try { mapoSetRoads(art.roads.buffer()); } catch { /* 道路层不建 */ }
             }
             this.roadRenderer?.dispose();
-            this.roadRenderer = new MapoRoadRenderer(this.world!, art);
+            this.roadRenderer = new MapoRoadRenderer(this.layer("road"), art);
             this.riverRenderer?.dispose();
             this.regionRenderer?.dispose();
             this.decorRenderer?.dispose();
             this.farRenderer?.dispose();
-            this.renderer = new MapoGroundRenderer(this.world!, art);
-            this.riverRenderer = new MapoRiverRenderer(this.world!, art);
-            this.topRenderers.set("river", new MapoTopRenderer(this.world!, art, "river"));
-            this.regionRenderer = new MapoRegionRenderer(this.world!, art);
-            this.decorRenderer = new MapoDecorRenderer(this.world!, art);
-            this.farRenderer = new MapoFarRenderer(this.world!, art);
+            this.renderer = new MapoGroundRenderer(this.layer("terrain"), art);
+            this.riverRenderer = new MapoRiverRenderer(this.layer("river"), art);
+            this.topRenderers.set("river", new MapoTopRenderer(this.layer("river"), art, "river"));
+            this.regionRenderer = new MapoRegionRenderer(this.layer("region"), art);
+            this.decorRenderer = new MapoDecorRenderer(this.layer("decor"), art);
+            this.farRenderer = new MapoFarRenderer(this.layer("plate"), art);
             this.minimap = new MapoMinimap(this.root, 180, w / 2 - 110, this.mapBottom + 110, art,
                 (row, col) => { this.logic?.centerOn(row, col); this.refresh(true); });
             this.refresh(true);
@@ -224,6 +239,13 @@ export class MapOriginalWorldView extends CocosView {
         if (rt) this.offTick = rt.tick((dt) => this.onTick(dt));
         this.bindInput(true);
         this.refresh(true);
+    }
+
+    /** 层容器。⚠ 缺了直接炸，⛔ 不要静默回退到 world（那会把次序又交给调用时机）。 */
+    private layer(id: MapoLayerId): Node {
+        const node = this.layerNodes.get(id);
+        if (!node) throw new Error(`mapOriginal 层容器 ${id} 没建`);
+        return node;
     }
 
     protected onCloseLifecycle(): void {
@@ -243,6 +265,8 @@ export class MapOriginalWorldView extends CocosView {
         this.farRenderer?.dispose(); this.farRenderer = null;
         this.minimap?.dispose(); this.minimap = null;
         this.art?.release(); this.art = null;
+        for (const node of this.layerNodes.values()) node.destroy();
+        this.layerNodes = new Map();
         this.chips = [];
         this.logic = null;
     }

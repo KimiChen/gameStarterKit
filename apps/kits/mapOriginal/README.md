@@ -109,7 +109,21 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
 
 ## 六、分层门控
 
-`logic/mapoLayers.ts` 的 `MAPO_LAYERS` 是唯一真源，每层带 `implemented`。
+`logic/mapoLayers.ts` 的 `MAPO_LAYERS` 是唯一真源，每层带 `implemented` 与 **`zorder`**。
+
+★ **第 ② 级刻度**（2026-09-23 补）：原版是 `render_layer` + `MAP_ZORDER`（留缝）+ 层内画家序
+**三级**，本 kit 早先只有兄弟序 —— 次序取决于**谁先 render**。实测那有真缺陷：
+地表底挂在路 / 河 / 山**之后**，把它们全盖住。
+现在**每层一个容器节点**、按 `MAPO_LAYER_ORDER` 升序建，次序与调用时机无关：
+
+```
+plate 90 < terrain 100 < blocks 110 < region 300 < road 900 < grid 950
+      < river 1600 < decor 3400 < banner 3900 < label 4000
+```
+
+值尽量照抄原版 `MAP_ZORDER`（`BG 100 / TERRAIN 300 / ROAD 900 / RIVER 1600 / RES 3400 /
+BUILD_TOP 3900`）。⛔ **留缝是故意的**，新增层往缝里插；机检要求相邻刻度至少差 10、
+且渲染器**必须挂 `this.layer(<层>)`**，⛔ 不许直接挂 `world`。
 ⚠ **未实现的层 `mapoLayerVisible` 恒回 false** —— ⛔ 不许「门控说该建、渲染器根本没写」的两张皮
 （sgzzmap 真机重放为此红过一次）。
 
